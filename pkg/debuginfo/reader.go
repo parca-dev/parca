@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/bufbuild/connect-go"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -26,7 +27,7 @@ import (
 )
 
 type UploadReader struct {
-	stream debuginfopb.DebuginfoService_UploadServer
+	stream *connect.ClientStream[debuginfopb.UploadRequest]
 	cur    io.Reader
 	size   uint64
 }
@@ -65,20 +66,14 @@ func (r *UploadReader) Read(p []byte) (int, error) {
 }
 
 func (r *UploadReader) next() (io.Reader, error) {
-	err := contextError(r.stream.Context())
-	if err != nil {
-		return nil, err
+	if r.stream.Receive() {
+		return bytes.NewBuffer(r.stream.Msg().GetChunkData()), nil
 	}
-
-	req, err := r.stream.Recv()
+	err := r.stream.Err()
 	if err == io.EOF {
 		return nil, io.EOF
 	}
-	if err != nil {
-		return nil, fmt.Errorf("receive from stream: %w", err)
-	}
-
-	return bytes.NewBuffer(req.GetChunkData()), nil
+	return nil, fmt.Errorf("receive from stream: %w", err)
 }
 
 func contextError(ctx context.Context) error {

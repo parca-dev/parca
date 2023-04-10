@@ -22,6 +22,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bufbuild/connect-go"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
@@ -33,12 +34,13 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 
 	profilepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
+	"github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1/profilestorev1alpha1connect"
 	"github.com/parca-dev/parca/pkg/config"
 )
 
 // scrapePool manages scrapes for sets of targets.
 type scrapePool struct {
-	store   profilepb.ProfileStoreServiceServer
+	store   profilestorev1alpha1connect.ProfileStoreServiceHandler
 	logger  log.Logger
 	metrics *scrapePoolMetrics
 
@@ -69,7 +71,7 @@ type scrapePoolMetrics struct {
 
 func newScrapePool(
 	cfg *config.ScrapeConfig,
-	store profilepb.ProfileStoreServiceServer,
+	store profilestorev1alpha1connect.ProfileStoreServiceHandler,
 	logger log.Logger,
 	externalLabels labels.Labels,
 	metrics *scrapePoolMetrics,
@@ -368,7 +370,7 @@ type scrapeLoop struct {
 
 	buffers *pool.Pool
 
-	store     profilepb.ProfileStoreServiceServer
+	store     profilestorev1alpha1connect.ProfileStoreServiceHandler
 	ctx       context.Context
 	scrapeCtx context.Context
 	cancel    func()
@@ -382,7 +384,7 @@ func newScrapeLoop(ctx context.Context,
 	externalLabels labels.Labels,
 	targetIntervalLength *prometheus.SummaryVec,
 	buffers *pool.Pool,
-	store profilepb.ProfileStoreServiceServer,
+	store profilestorev1alpha1connect.ProfileStoreServiceHandler,
 	normalizedAddresses bool,
 ) *scrapeLoop {
 	if l == nil {
@@ -486,7 +488,7 @@ mainLoop:
 				})
 			}
 
-			_, err := sl.store.WriteRaw(sl.ctx, &profilepb.WriteRawRequest{
+			_, err := sl.store.WriteRaw(sl.ctx, connect.NewRequest(&profilepb.WriteRawRequest{
 				Normalized: sl.normalizedAddresses,
 				Series: []*profilepb.RawProfileSeries{
 					{
@@ -498,7 +500,7 @@ mainLoop:
 						},
 					},
 				},
-			})
+			}))
 			if err != nil {
 				switch errc {
 				case nil:

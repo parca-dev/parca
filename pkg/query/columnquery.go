@@ -21,6 +21,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bufbuild/connect-go"
 	"github.com/go-kit/log"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -30,6 +31,7 @@ import (
 
 	metastorev1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	"github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1/queryv1alpha1connect"
 	sharepb "github.com/parca-dev/parca/gen/proto/go/parca/share/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
 )
@@ -46,7 +48,7 @@ type Querier interface {
 // ColumnQueryAPI is the read api interface for parca
 // It implements the proto/query/query.proto APIServer interface.
 type ColumnQueryAPI struct {
-	pb.UnimplementedQueryServiceServer
+	queryv1alpha1connect.UnimplementedQueryServiceHandler
 
 	logger      log.Logger
 	tracer      trace.Tracer
@@ -89,60 +91,60 @@ func NewTableConverterPool() *sync.Pool {
 }
 
 // Labels issues a labels request against the storage.
-func (q *ColumnQueryAPI) Labels(ctx context.Context, req *pb.LabelsRequest) (*pb.LabelsResponse, error) {
-	vals, err := q.querier.Labels(ctx, req.Match, req.Start.AsTime(), req.End.AsTime())
+func (q *ColumnQueryAPI) Labels(ctx context.Context, req *connect.Request[pb.LabelsRequest]) (*connect.Response[pb.LabelsResponse], error) {
+	vals, err := q.querier.Labels(ctx, req.Msg.Match, req.Msg.Start.AsTime(), req.Msg.End.AsTime())
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.LabelsResponse{
+	return connect.NewResponse(&pb.LabelsResponse{
 		LabelNames: vals,
-	}, nil
+	}), nil
 }
 
 // Values issues a values request against the storage.
-func (q *ColumnQueryAPI) Values(ctx context.Context, req *pb.ValuesRequest) (*pb.ValuesResponse, error) {
-	vals, err := q.querier.Values(ctx, req.LabelName, req.Match, req.Start.AsTime(), req.End.AsTime())
+func (q *ColumnQueryAPI) Values(ctx context.Context, req *connect.Request[pb.ValuesRequest]) (*connect.Response[pb.ValuesResponse], error) {
+	vals, err := q.querier.Values(ctx, req.Msg.LabelName, req.Msg.Match, req.Msg.Start.AsTime(), req.Msg.End.AsTime())
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.ValuesResponse{
+	return connect.NewResponse(&pb.ValuesResponse{
 		LabelValues: vals,
-	}, nil
+	}), nil
 }
 
 // QueryRange issues a range query against the storage.
-func (q *ColumnQueryAPI) QueryRange(ctx context.Context, req *pb.QueryRangeRequest) (*pb.QueryRangeResponse, error) {
-	if err := req.Validate(); err != nil {
+func (q *ColumnQueryAPI) QueryRange(ctx context.Context, req *connect.Request[pb.QueryRangeRequest]) (*connect.Response[pb.QueryRangeResponse], error) {
+	if err := req.Msg.Validate(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	res, err := q.querier.QueryRange(ctx, req.Query, req.Start.AsTime(), req.End.AsTime(), req.Step.AsDuration(), req.Limit)
+	res, err := q.querier.QueryRange(ctx, req.Msg.Query, req.Msg.Start.AsTime(), req.Msg.End.AsTime(), req.Msg.Step.AsDuration(), req.Msg.Limit)
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.QueryRangeResponse{
+	return connect.NewResponse(&pb.QueryRangeResponse{
 		Series: res,
-	}, nil
+	}), nil
 }
 
 // Types returns the available types of profiles.
-func (q *ColumnQueryAPI) ProfileTypes(ctx context.Context, req *pb.ProfileTypesRequest) (*pb.ProfileTypesResponse, error) {
+func (q *ColumnQueryAPI) ProfileTypes(ctx context.Context, req *connect.Request[pb.ProfileTypesRequest]) (*connect.Response[pb.ProfileTypesResponse], error) {
 	types, err := q.querier.ProfileTypes(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.ProfileTypesResponse{
+	return connect.NewResponse(&pb.ProfileTypesResponse{
 		Types: types,
-	}, nil
+	}), nil
 }
 
 // Query issues an instant query against the storage.
-func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryResponse, error) {
-	if err := req.Validate(); err != nil {
+func (q *ColumnQueryAPI) Query(ctx context.Context, req *connect.Request[pb.QueryRequest]) (*connect.Response[pb.QueryResponse], error) {
+	if err := req.Msg.Validate(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -152,13 +154,13 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		err      error
 	)
 
-	switch req.Mode {
+	switch req.Msg.Mode {
 	case pb.QueryRequest_MODE_SINGLE_UNSPECIFIED:
-		p, err = q.selectSingle(ctx, req.GetSingle())
+		p, err = q.selectSingle(ctx, req.Msg.GetSingle())
 	case pb.QueryRequest_MODE_MERGE:
-		p, err = q.selectMerge(ctx, req.GetMerge())
+		p, err = q.selectMerge(ctx, req.Msg.GetMerge())
 	case pb.QueryRequest_MODE_DIFF:
-		p, err = q.selectDiff(ctx, req.GetDiff())
+		p, err = q.selectDiff(ctx, req.Msg.GetDiff())
 	default:
 		return nil, status.Error(codes.InvalidArgument, "unknown query mode")
 	}
@@ -166,15 +168,15 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		return nil, err
 	}
 
-	if req.FilterQuery != nil {
-		p, filtered = FilterProfileData(ctx, q.tracer, p, req.GetFilterQuery())
+	if req.Msg.FilterQuery != nil {
+		p, filtered = FilterProfileData(ctx, q.tracer, p, req.Msg.GetFilterQuery())
 	}
 
 	return q.renderReport(
 		ctx,
 		p,
-		req.GetReportType(),
-		req.GetNodeTrimThreshold(),
+		req.Msg.GetReportType(),
+		req.Msg.GetNodeTrimThreshold(),
 		filtered,
 	)
 }
@@ -236,7 +238,7 @@ func (q *ColumnQueryAPI) renderReport(
 	typ pb.QueryRequest_ReportType,
 	nodeTrimThreshold float32,
 	filtered int64,
-) (*pb.QueryResponse, error) {
+) (*connect.Response[pb.QueryResponse], error) {
 	return RenderReport(ctx, q.tracer, p, typ, nodeTrimThreshold, filtered, q.tableConverterPool)
 }
 
@@ -248,7 +250,7 @@ func RenderReport(
 	nodeTrimThreshold float32,
 	filtered int64,
 	pool *sync.Pool,
-) (*pb.QueryResponse, error) {
+) (*connect.Response[pb.QueryResponse], error) {
 	ctx, span := tracer.Start(ctx, "renderReport")
 	span.SetAttributes(attribute.String("reportType", typ.String()))
 	defer span.End()
@@ -265,26 +267,26 @@ func RenderReport(
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
 		}
-		return &pb.QueryResponse{
+		return connect.NewResponse(&pb.QueryResponse{
 			Total:    fg.Total,
 			Filtered: filtered,
 			Report: &pb.QueryResponse_Flamegraph{
 				Flamegraph: fg,
 			},
-		}, nil
+		}), nil
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_TABLE:
 		fg, err := GenerateFlamegraphTable(ctx, tracer, p, nodeTrimFraction, pool)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
 		}
-		return &pb.QueryResponse{
+		return connect.NewResponse(&pb.QueryResponse{
 			//nolint:staticcheck // SA1019: TODO: The cumulative should be passed differently in the future.
 			Total:    fg.Total,
 			Filtered: filtered,
 			Report: &pb.QueryResponse_Flamegraph{
 				Flamegraph: fg,
 			},
-		}, nil
+		}), nil
 	case pb.QueryRequest_REPORT_TYPE_PPROF:
 		pp, err := GenerateFlatPprof(ctx, p)
 		if err != nil {
@@ -296,34 +298,34 @@ func RenderReport(
 			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
 		}
 
-		return &pb.QueryResponse{
+		return connect.NewResponse(&pb.QueryResponse{
 			Total:    0, // TODO: Figure out how to get total for pprof
 			Filtered: filtered,
 			Report:   &pb.QueryResponse_Pprof{Pprof: buf.Bytes()},
-		}, nil
+		}), nil
 	case pb.QueryRequest_REPORT_TYPE_TOP:
 		top, err := GenerateTopTable(ctx, p)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
 		}
 
-		return &pb.QueryResponse{
+		return connect.NewResponse(&pb.QueryResponse{
 			//nolint:staticcheck // SA1019: TODO: The cumulative should be passed differently in the future.
 			Total:    int64(top.Total),
 			Filtered: filtered,
 			Report:   &pb.QueryResponse_Top{Top: top},
-		}, nil
+		}), nil
 	case pb.QueryRequest_REPORT_TYPE_CALLGRAPH:
 		callgraph, err := GenerateCallgraph(ctx, p)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate callgraph: %v", err.Error())
 		}
-		return &pb.QueryResponse{
+		return connect.NewResponse(&pb.QueryResponse{
 			//nolint:staticcheck // SA1019: TODO: The cumulative should be passed differently in the future.
 			Total:    callgraph.Cumulative,
 			Filtered: filtered,
 			Report:   &pb.QueryResponse_Callgraph{Callgraph: callgraph},
-		}, nil
+		}), nil
 	default:
 		return nil, status.Error(codes.InvalidArgument, "requested report type does not exist")
 	}
@@ -426,20 +428,21 @@ func (q *ColumnQueryAPI) selectProfileForDiff(ctx context.Context, s *pb.Profile
 	}
 }
 
-func (q *ColumnQueryAPI) ShareProfile(ctx context.Context, req *pb.ShareProfileRequest) (*pb.ShareProfileResponse, error) {
-	req.QueryRequest.ReportType = pb.QueryRequest_REPORT_TYPE_PPROF
-	resp, err := q.Query(ctx, req.QueryRequest)
+func (q *ColumnQueryAPI) ShareProfile(ctx context.Context, req *connect.Request[pb.ShareProfileRequest]) (*connect.Response[pb.ShareProfileResponse], error) {
+	req.Msg.QueryRequest.ReportType = pb.QueryRequest_REPORT_TYPE_PPROF
+	resp, err := q.Query(ctx, connect.NewRequest(req.Msg.QueryRequest))
 	if err != nil {
 		return nil, err
 	}
 	uploadResp, err := q.shareClient.Upload(ctx, &sharepb.UploadRequest{
-		Profile:     resp.GetPprof(),
-		Description: *req.Description,
+		Profile:     resp.Msg.GetPprof(),
+		Description: *req.Msg.Description,
 	})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to upload profile: %s", err.Error())
 	}
-	return &pb.ShareProfileResponse{
+
+	return connect.NewResponse(&pb.ShareProfileResponse{
 		Link: uploadResp.Link,
-	}, nil
+	}), nil
 }

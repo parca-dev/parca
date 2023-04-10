@@ -16,6 +16,7 @@ package scrape
 import (
 	"context"
 
+	"github.com/bufbuild/connect-go"
 	"github.com/prometheus/prometheus/model/labels"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -25,9 +26,9 @@ import (
 )
 
 // Targets implements the Targets RCP.
-func (m *Manager) Targets(ctx context.Context, req *pb.TargetsRequest) (*pb.TargetsResponse, error) {
+func (m *Manager) Targets(ctx context.Context, req *connect.Request[pb.TargetsRequest]) (*connect.Response[pb.TargetsResponse], error) {
 	var targets map[string][]*Target
-	switch req.State {
+	switch req.Msg.State {
 	case pb.TargetsRequest_STATE_ACTIVE:
 		targets = m.TargetsActive()
 	case pb.TargetsRequest_STATE_DROPPED:
@@ -67,7 +68,7 @@ func (m *Manager) Targets(ctx context.Context, req *pb.TargetsRequest) (*pb.Targ
 		}
 	}
 
-	return resp, nil
+	return connect.NewResponse(resp), nil
 }
 
 // ProtoLabelsFromLabels converts labels.Labels into a proto label set.

@@ -13,19 +13,19 @@
 
 import React, {useEffect, useState} from 'react';
 
-import {GrpcWebFetchTransport} from '@protobuf-ts/grpcweb-transport';
+import {PromiseClient, createPromiseClient} from '@bufbuild/connect';
+import {createConnectTransport} from '@bufbuild/connect-web';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 
 import {
   Agent,
   AgentsResponse,
-  AgentsServiceClient,
-  ScrapeServiceClient,
+  AgentsService,
+  ScrapeService,
   Target,
   Targets,
-  TargetsRequest_State,
   TargetsResponse,
-} from '@parca/client';
+} from '@parca/client/src/connect';
 import {EmptyState} from '@parca/components';
 
 import AgentsTable from '../components/Targets/AgentsTable';
@@ -38,18 +38,15 @@ export interface ITargetsResult {
   error: RpcError | null;
 }
 
-export const useTargets = (client: ScrapeServiceClient): ITargetsResult => {
+export const useTargets = (client: PromiseClient<typeof ScrapeService>): ITargetsResult => {
   const [result, setResult] = useState<ITargetsResult>({
     response: null,
     error: null,
   });
 
   useEffect(() => {
-    const call = client.targets({
-      state: TargetsRequest_State.ANY_UNSPECIFIED,
-    });
-
-    call.response
+    client
+      .targets({})
       .then(response => setResult({response, error: null}))
       .catch(error => setResult({error, response: null}));
   }, [client]);
@@ -57,8 +54,9 @@ export const useTargets = (client: ScrapeServiceClient): ITargetsResult => {
   return result;
 };
 
-const scrapeClient = new ScrapeServiceClient(
-  new GrpcWebFetchTransport({
+const scrapeClient = createPromiseClient(
+  ScrapeService,
+  createConnectTransport({
     baseUrl: apiEndpoint === undefined ? `${window.PATH_PREFIX}/api` : `${apiEndpoint}/api`,
   })
 );
@@ -73,16 +71,15 @@ export interface IAgentsResult {
   error: RpcError | null;
 }
 
-export const useAgents = (client: AgentsServiceClient): IAgentsResult => {
+export const useAgents = (client: PromiseClient<typeof AgentsService>): IAgentsResult => {
   const [result, setResult] = useState<IAgentsResult>({
     response: null,
     error: null,
   });
 
   useEffect(() => {
-    const call = client.agents({});
-
-    call.response
+    client
+      .agents({})
       .then(response => setResult({response, error: null}))
       .catch(error => setResult({error, response: null}));
   }, [client]);
@@ -90,8 +87,9 @@ export const useAgents = (client: AgentsServiceClient): IAgentsResult => {
   return result;
 };
 
-const agentsClient = new AgentsServiceClient(
-  new GrpcWebFetchTransport({
+const agentsClient = createPromiseClient(
+  AgentsService,
+  createConnectTransport({
     baseUrl: apiEndpoint === undefined ? `${window.PATH_PREFIX}/api` : `${apiEndpoint}/api`,
   })
 );

@@ -12,6 +12,11 @@ plugins:
     out: gen/proto/go
     opt: paths=source_relative
 
+  # renovate: datasource=github-releases depName=bufbuild/connect-go
+  - plugin: connect-go
+    out: gen/proto/go
+    opt: paths=source_relative
+
   # renovate: datasource=github-releases depName=planetscale/vtprotobuf
   - plugin: buf.build/community/planetscale-vtprotobuf:v0.4.0
     out: gen/proto/go
@@ -25,15 +30,14 @@ plugins:
       - long_type_string
       - generate_dependencies
 
-  # renovate: datasource=github-releases depName=grpc-ecosystem/grpc-gateway
-  - plugin: buf.build/grpc-ecosystem/gateway:v2.15.2
-    out: gen/proto/go
+  # renovate: datasource=github-releases depName=bufbuild/connect-es
+  - plugin: es
+    out: ui/packages/shared/client/src
     opt:
-      - paths=source_relative
-      - generate_unbound_methods=true
+     - target=ts
 
-  # renovate: datasource=github-releases depName=grpc-ecosystem/grpc-gateway
-  - plugin: buf.build/grpc-ecosystem/openapiv2:v2.15.2
-    out: gen/proto/swagger
+  # renovate: datasource=github-releases depName=bufbuild/connect-web
+  - plugin: connect-web
+    out: ui/packages/shared/client/src
     opt:
-      - allow_merge=false
+      - target=ts

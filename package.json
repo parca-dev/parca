@@ -1,8 +1,14 @@
 {
   "devDependencies": {
+    "@bufbuild/buf": "^1.15.0-1",
+    "@bufbuild/connect": "^0.8.4",
+    "@bufbuild/connect-web": "^0.8.4",
+    "@bufbuild/protobuf": "^1.2.0",
+    "@bufbuild/protoc-gen-connect-es": "^0.8.4",
+    "@bufbuild/protoc-gen-connect-web": "^0.8.4",
+    "@bufbuild/protoc-gen-es": "^1.2.0",
     "@typescript-eslint/eslint-plugin": "^5.48.2",
     "@typescript-eslint/parser": "^5.48.2",
-    "all-contributors-cli": "6.24.0",
-    "ts-protoc-gen": "0.15.0"
+    "all-contributors-cli": "6.24.0"
   }
 }

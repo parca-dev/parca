@@ -15,7 +15,7 @@ import {useEffect, useState} from 'react';
 
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 
-import {Duration, Label, QueryRangeResponse, QueryServiceClient, Timestamp} from '@parca/client';
+import {Label, QueryRangeResponse, QueryServiceClient, Timestamp} from '@parca/client';
 import {DateTimeRange, useGrpcMetadata, useParcaContext} from '@parca/components';
 import {Query} from '@parca/parser';
 import {getStepDuration} from '@parca/utilities';
@@ -68,7 +68,7 @@ export const useQueryRange = (
           query: queryExpression,
           start: Timestamp.fromDate(new Date(start)),
           end: Timestamp.fromDate(new Date(end)),
-          step: Duration.create(stepDuration),
+          step: stepDuration,
           limit: 0,
         },
         {meta: metadata}
