@@ -4268,9 +4268,9 @@
     "@sinonjs/commons" "^1.7.0"
 
 "@snyk/dep-graph@^2.3.0":
-  version "2.5.0"
-  resolved "https://registry.yarnpkg.com/@snyk/dep-graph/-/dep-graph-2.5.0.tgz#32708d29501738a6d32529770818ae5aa75d14ef"
-  integrity sha512-wFKHAhsD1VBfESiuN2nHHeulEYAAod1Z4E/2t+ztsiJ5DCeD0pSXtJizdp2PhMZ0cFFce8ln3NO8xBhl+C4H+Q==
+  version "2.6.0"
+  resolved "https://registry.yarnpkg.com/@snyk/dep-graph/-/dep-graph-2.6.0.tgz#fde01bb7837798fb2a4f8168424a1ecf5de09177"
+  integrity sha512-9NPk7cTvDNA90NyNQvh87LYKgkCoD67i+FGdRpwA0/CL59RRY7cG37RTFe++Y3ZALxpYK1sLNzU+yeB7vzVhqQ==
   dependencies:
     event-loop-spinner "^2.1.0"
     lodash.clone "^4.5.0"
@@ -9289,9 +9289,9 @@ chownr@^2.0.0:
   integrity sha512-bIomtDF5KGpdogkLd9VspvFzk9KfpyyGlS8YFVZl7TGPBHL5snIOnxeshwVgPteQ9b4Eydl+pVbIyE1DcvCWgQ==
 
 chromatic@^6.17.2:
-  version "6.17.2"
-  resolved "https://registry.yarnpkg.com/chromatic/-/chromatic-6.17.2.tgz#ae303ffe38e2852a854aae3f5898dc42945babee"
-  integrity sha512-rtrkywh1CuDDuuiRWXpdiX38aEGN3sGCATsgdh3X/EUBjQjgQtEbSzcMusC3cqz3K9dFKcWwKpFm3jaw9gNymA==
+  version "6.17.3"
+  resolved "https://registry.yarnpkg.com/chromatic/-/chromatic-6.17.3.tgz#e0825f30e3efe71b016f7b5e265fbfbfde71c522"
+  integrity sha512-x6WAHLBqub/BYiGXEOsgw9T3m459SmwOvIz0Ra7rCriE2A9AqDKRmVdAEhzVud24ut6ehd54FJpDtArnR5/TbA==
   dependencies:
     "@discoveryjs/json-ext" "^0.5.7"
     "@types/webpack-env" "^1.17.0"
@@ -20384,9 +20384,9 @@ package-json@^4.0.0:
     semver "^5.1.0"
 
 packageurl-js@^1.0.0:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/packageurl-js/-/packageurl-js-1.0.1.tgz#5b5fbdf7962d2cf61774e999b5ccc3889576d8ea"
-  integrity sha512-EtXC0kgLjy/C7S4SN3Kk1SDRWLzIn/LUK0gXlz3gsxDdpI0k7q8C3SASpV0pc+v0yADBTt5rWewq/flGdGxtoQ==
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/packageurl-js/-/packageurl-js-1.0.2.tgz#c568a569848c66be8f2b467ac41b0f1427672b00"
+  integrity sha512-fWC4ZPxo80qlh3xN5FxfIoQD3phVY4+EyzTIqyksjhKNDmaicdpxSvkWwIrYTtv9C1/RcUN6pxaTwGmj2NzS6A==
 
 pacote@13.6.2, pacote@^13.6.1:
   version "13.6.2"
@@ -23955,14 +23955,14 @@ semver@7.3.4:
   dependencies:
     lru-cache "^6.0.0"
 
-semver@7.3.8, semver@7.x, semver@^7.0.0, semver@^7.1.1, semver@^7.1.2, semver@^7.2, semver@^7.3.2, semver@^7.3.4, semver@^7.3.5, semver@^7.3.8:
+semver@7.3.8, semver@7.x, semver@^7.1.1, semver@^7.2, semver@^7.3.2, semver@^7.3.4, semver@^7.3.8:
   version "7.3.8"
   resolved "https://registry.yarnpkg.com/semver/-/semver-7.3.8.tgz#07a78feafb3f7b32347d725e33de7e2a2df67798"
   integrity sha512-NB1ctGL5rlHrPJtFDVIVzTyQylMLu9N9VICA6HSFJo8MCGVTMW6gfpicwKmmK/dAjTOrqu5l63JJOpDSrAis3A==
   dependencies:
     lru-cache "^6.0.0"
 
-semver@^7.3.7:
+semver@^7.0.0, semver@^7.1.2, semver@^7.3.5, semver@^7.3.7:
   version "7.4.0"
   resolved "https://registry.yarnpkg.com/semver/-/semver-7.4.0.tgz#8481c92feffc531ab1e012a8ffc15bdd3a0f4318"
   integrity sha512-RgOxM8Mw+7Zus0+zcLEUn8+JfoLpj/huFTItQy2hsM4khuC1HYRDp0cU482Ewn/Fcy6bCjufD8vAj7voC66KQw==
@@ -24360,9 +24360,9 @@ snyk-config@^5.0.0:
     minimist "^1.2.5"
 
 snyk-nodejs-lockfile-parser@^1.47.4:
-  version "1.48.0"
-  resolved "https://registry.yarnpkg.com/snyk-nodejs-lockfile-parser/-/snyk-nodejs-lockfile-parser-1.48.0.tgz#8b8576131fec3081dc22f59c4728014bc57e87aa"
-  integrity sha512-kq4gVwL5V0SUatDxyyzbptKkaX4Ew9N3ZDNR5r7sqBRparY+U+xGuYBhTaJdweBUD+jkvs7rKO1JV1h0Z8c2ew==
+  version "1.48.3"
+  resolved "https://registry.yarnpkg.com/snyk-nodejs-lockfile-parser/-/snyk-nodejs-lockfile-parser-1.48.3.tgz#0b8f970654eb9282a96ea0cc50de40dab566340c"
+  integrity sha512-+hPMt3w95r7C6NNXJQALJuSKzRY0Z8S5Dad5Dm0R7Qvm7mg1Tcd9yFXtWGTUP82VPIXcuxbw1YDqZ9DnnuyNPw==
   dependencies:
     "@snyk/dep-graph" "^2.3.0"
     "@snyk/graphlib" "2.1.9-patch.3"
