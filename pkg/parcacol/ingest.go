@@ -170,20 +170,10 @@ func (ing NormalizedIngester) Ingest(ctx context.Context, series []Series) error
 	return nil
 }
 
-// Ingest persists pprof samples.
-func Ingest(
-	ctx context.Context,
-	req *profilestorepb.WriteRawRequest,
-	logger log.Logger,
-	table Table,
-	schema *dynparquet.Schema,
-	metastore metastorepb.MetastoreServiceClient,
-	bufferPool *sync.Pool,
-) error {
-	return fmt.Errorf("raw samples ingestion is not supported yet")
-}
-
-// NormalizedIngest normalizes and persists pprof samples.
+// NormalizedIngest normalizes and persists pprof samples
+// (mappings, functions, locations, stack traces).
+// Note, normalization is used in broad terms (think db normalization),
+// it doesn't necessarily mean address normalization (PIE).
 func NormalizedIngest(
 	ctx context.Context,
 	req *profilestorepb.WriteRawRequest,
@@ -192,8 +182,10 @@ func NormalizedIngest(
 	schema *dynparquet.Schema,
 	metastore metastorepb.MetastoreServiceClient,
 	bufferPool *sync.Pool,
+	enableAddressNormalization bool,
 ) error {
-	normalizedRequest, err := NormalizeWriteRawRequest(ctx, NewNormalizer(metastore), req)
+	normalizer := NewNormalizer(metastore, enableAddressNormalization)
+	normalizedRequest, err := NormalizeWriteRawRequest(ctx, normalizer, req)
 	if err != nil {
 		return err
 	}
@@ -224,6 +216,10 @@ type Normalizer interface {
 	NormalizePprof(ctx context.Context, name string, takenLabelNames map[string]string, p *pprofpb.Profile, normalizedAddress bool) ([]*profile.NormalizedProfile, error)
 }
 
+// NormalizeWriteRawRequest normalizes the profiles
+// (mappings, functions, locations, stack traces) to prepare for ingestion.
+// It also validates label names of profiles' series,
+// decompresses the samples, unmarshals and validates them.
 func NormalizeWriteRawRequest(ctx context.Context, normalizer Normalizer, req *profilestorepb.WriteRawRequest) (NormalizedWriteRawRequest, error) {
 	allLabelNames := make(map[string]struct{})
 	allPprofLabelNames := make(map[string]struct{})

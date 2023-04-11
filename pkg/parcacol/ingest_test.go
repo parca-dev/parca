@@ -140,6 +140,7 @@ func TestPprofToParquet(t *testing.T) {
 						return bytes.NewBuffer(nil)
 					},
 				},
+				true,
 			)
 			require.NoError(t, err)
 
@@ -243,6 +244,7 @@ func TestUncompressedPprofToParquet(t *testing.T) {
 						return bytes.NewBuffer(nil)
 					},
 				},
+				true,
 			)
 			require.NoError(t, err)
 

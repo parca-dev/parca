@@ -50,9 +50,9 @@ type ProfileColumnStore struct {
 
 	table  *frostdb.Table
 	schema *dynparquet.Schema
-	// isNormalizationEnabled indicates whether the ingester has to
+	// isAddrNormEnabled indicates whether the ingester has to
 	// normalize sampled addresses for PIC/PIE (position independent code/executable).
-	isNormalizationEnabled bool
+	isAddrNormEnabled bool
 
 	mtx sync.Mutex
 	// ip as the key
@@ -69,16 +69,16 @@ func NewProfileColumnStore(
 	metastore metastorepb.MetastoreServiceClient,
 	table *frostdb.Table,
 	schema *dynparquet.Schema,
-	enableNormalization bool,
+	enableAddressNormalization bool,
 ) *ProfileColumnStore {
 	return &ProfileColumnStore{
-		logger:                 logger,
-		tracer:                 tracer,
-		metastore:              metastore,
-		table:                  table,
-		schema:                 schema,
-		isNormalizationEnabled: enableNormalization,
-		agents:                 make(map[string]agent),
+		logger:            logger,
+		tracer:            tracer,
+		metastore:         metastore,
+		table:             table,
+		schema:            schema,
+		isAddrNormEnabled: enableAddressNormalization,
+		agents:            make(map[string]agent),
 		bufferPool: &sync.Pool{
 			New: func() any {
 				return new(bytes.Buffer)
@@ -88,11 +88,7 @@ func NewProfileColumnStore(
 }
 
 func (s *ProfileColumnStore) writeSeries(ctx context.Context, req *profilestorepb.WriteRawRequest) error {
-	if s.isNormalizationEnabled {
-		return parcacol.NormalizedIngest(ctx, req, s.logger, s.table, s.schema, s.metastore, s.bufferPool)
-	}
-
-	return parcacol.Ingest(ctx, req, s.logger, s.table, s.schema, s.metastore, s.bufferPool)
+	return parcacol.NormalizedIngest(ctx, req, s.logger, s.table, s.schema, s.metastore, s.bufferPool, s.isAddrNormEnabled)
 }
 
 func (s *ProfileColumnStore) updateAgents(nodeNameAndIP string, ag agent) {

@@ -220,7 +220,7 @@ func testGenerateFlamegraphFromProfile(t *testing.T, l metastorepb.MetastoreServ
 	err := p.UnmarshalVT(fileContent)
 	require.NoError(t, err)
 
-	normalizer := parcacol.NewNormalizer(l)
+	normalizer := parcacol.NewNormalizer(l, true)
 	profiles, err := normalizer.NormalizePprof(ctx, "test", map[string]string{}, p, false)
 	require.NoError(t, err)
 
@@ -278,7 +278,7 @@ func TestGenerateFlamegraphWithInlined(t *testing.T) {
 	require.NoError(t, err)
 
 	metastore := metastore.NewInProcessClient(store)
-	normalizer := parcacol.NewNormalizer(metastore)
+	normalizer := parcacol.NewNormalizer(metastore, true)
 	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false)
 	require.NoError(t, err)
 
@@ -426,7 +426,7 @@ func TestGenerateFlamegraphWithInlinedExisting(t *testing.T) {
 	err = p.UnmarshalVT(MustDecompressGzip(t, b.Bytes()))
 	require.NoError(t, err)
 
-	normalizer := parcacol.NewNormalizer(metastore)
+	normalizer := parcacol.NewNormalizer(metastore, true)
 	profiles, err := normalizer.NormalizePprof(ctx, "", map[string]string{}, p, false)
 	require.NoError(t, err)
 
