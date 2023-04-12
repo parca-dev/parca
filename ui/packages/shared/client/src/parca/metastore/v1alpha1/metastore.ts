@@ -447,6 +447,13 @@ export interface Location {
      * @generated from protobuf field: uint32 mapping_index = 7;
      */
     mappingIndex: number;
+    /**
+     * is_raw_address indicates whether the address is normalized
+     * for PIC/PIE (position independent code/executable).
+     *
+     * @generated from protobuf field: bool is_raw_address = 8;
+     */
+    isRawAddress: boolean;
 }
 /**
  * Line describes a source code function and its line number.
@@ -1928,11 +1935,12 @@ class Location$Type extends MessageType<Location> {
             { no: 4, name: "mapping_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 5, name: "is_folded", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 6, name: "lines", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Line },
-            { no: 7, name: "mapping_index", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 7, name: "mapping_index", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 8, name: "is_raw_address", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<Location>): Location {
-        const message = { id: "", address: "0", mappingId: "", isFolded: false, lines: [], mappingIndex: 0 };
+        const message = { id: "", address: "0", mappingId: "", isFolded: false, lines: [], mappingIndex: 0, isRawAddress: false };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Location>(this, message, value);
@@ -1960,6 +1968,9 @@ class Location$Type extends MessageType<Location> {
                     break;
                 case /* uint32 mapping_index */ 7:
                     message.mappingIndex = reader.uint32();
+                    break;
+                case /* bool is_raw_address */ 8:
+                    message.isRawAddress = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1991,6 +2002,9 @@ class Location$Type extends MessageType<Location> {
         /* uint32 mapping_index = 7; */
         if (message.mappingIndex !== 0)
             writer.tag(7, WireType.Varint).uint32(message.mappingIndex);
+        /* bool is_raw_address = 8; */
+        if (message.isRawAddress !== false)
+            writer.tag(8, WireType.Varint).bool(message.isRawAddress);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

@@ -240,6 +240,10 @@ message Location {
 
   // mapping_index has the index into the mapping table where mappings are sent deduplicated.
   uint32 mapping_index = 7;
+
+  // is_raw_address indicates whether the address is normalized
+  // for PIC/PIE (position independent code/executable).
+  bool is_raw_address = 8;
 }
 
 // Line describes a source code function and its line number.

@@ -124,6 +124,10 @@
           "type": "integer",
           "format": "int64",
           "description": "mapping_index has the index into the mapping table where mappings are sent deduplicated."
+        },
+        "isRawAddress": {
+          "type": "boolean",
+          "description": "is_raw_address indicates whether the address is normalized\nfor PIC/PIE (position independent code/executable)."
         }
       },
       "description": "Location describes a single location of a stack traces."
