@@ -50,7 +50,7 @@ jobs:
       run:
         working-directory: ./ui
     steps:
-      - uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f # v3.4.0
+      - uses: actions/checkout@83b7061638ee4956cf7545a6f7efe594e5ad0247 # v3.5.1
         with:
           fetch-depth: 0 # Required to retrieve git history
       - name: Set up Node.js
