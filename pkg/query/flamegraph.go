@@ -267,10 +267,11 @@ func locationToTreeNodes(location *profile.Location) []*querypb.FlamegraphNode {
 	return []*querypb.FlamegraphNode{{
 		Meta: &querypb.FlamegraphNodeMeta{
 			Location: &pb.Location{
-				Id:        location.ID,
-				MappingId: mappingID,
-				Address:   location.Address,
-				IsFolded:  location.IsFolded,
+				Id:           location.ID,
+				MappingId:    mappingID,
+				Address:      location.Address,
+				IsRawAddress: location.IsRawAddress,
+				IsFolded:     location.IsFolded,
 			},
 			Mapping: location.Mapping,
 		},
@@ -327,10 +328,11 @@ func lineToTreeNode(
 	return &querypb.FlamegraphNode{
 		Meta: &querypb.FlamegraphNodeMeta{
 			Location: &pb.Location{
-				Id:        location.ID,
-				MappingId: mappingID,
-				Address:   location.Address,
-				IsFolded:  location.IsFolded,
+				Id:           location.ID,
+				MappingId:    mappingID,
+				Address:      location.Address,
+				IsRawAddress: location.IsRawAddress,
+				IsFolded:     location.IsFolded,
 			},
 			Function: line.Function,
 			Line: &pb.Line{

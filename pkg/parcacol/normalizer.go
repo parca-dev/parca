@@ -340,10 +340,11 @@ func (n *MetastoreNormalizer) NormalizeLocations(
 		}
 
 		req.Locations = append(req.Locations, &pb.Location{
-			Address:   addr,
-			IsFolded:  location.IsFolded,
-			MappingId: mappingId,
-			Lines:     lines,
+			Address:      addr,
+			IsRawAddress: false,
+			IsFolded:     location.IsFolded,
+			MappingId:    mappingId,
+			Lines:        lines,
 		})
 	}
 

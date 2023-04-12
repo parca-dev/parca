@@ -252,11 +252,12 @@ func (c *ArrowToProfileConverter) getLocationsFromSerializedLocations(
 		}
 
 		res = append(res, &profile.Location{
-			ID:       location.Id,
-			Address:  location.Address,
-			IsFolded: location.IsFolded,
-			Mapping:  mapping,
-			Lines:    symbolizedLines,
+			ID:           location.Id,
+			Address:      location.Address,
+			IsRawAddress: location.IsRawAddress,
+			IsFolded:     location.IsFolded,
+			Mapping:      mapping,
+			Lines:        symbolizedLines,
 		})
 	}
 
