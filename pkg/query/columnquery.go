@@ -308,6 +308,7 @@ func RenderReport(
 		}
 
 		return &pb.QueryResponse{
+			//nolint:staticcheck // SA1019: TODO: The cumulative should be passed differently in the future.
 			Total:    cumulative,
 			Filtered: filtered,
 			Report:   &pb.QueryResponse_Top{Top: top},
