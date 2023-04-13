@@ -467,6 +467,12 @@ export interface Top {
      * @generated from protobuf field: string unit = 4;
      */
     unit: string;
+    /**
+     * cumulative is the cumulative value of the top list
+     *
+     * @generated from protobuf field: int64 cumulative = 5;
+     */
+    cumulative: string;
 }
 /**
  * TopNode is a node entry in a top list
@@ -1814,11 +1820,12 @@ class Top$Type extends MessageType<Top> {
             { no: 1, name: "list", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => TopNode },
             { no: 2, name: "reported", kind: "scalar", T: 5 /*ScalarType.INT32*/ },
             { no: 3, name: "total", kind: "scalar", T: 5 /*ScalarType.INT32*/ },
-            { no: 4, name: "unit", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 4, name: "unit", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "cumulative", kind: "scalar", T: 3 /*ScalarType.INT64*/ }
         ]);
     }
     create(value?: PartialMessage<Top>): Top {
-        const message = { list: [], reported: 0, total: 0, unit: "" };
+        const message = { list: [], reported: 0, total: 0, unit: "", cumulative: "0" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Top>(this, message, value);
@@ -1840,6 +1847,9 @@ class Top$Type extends MessageType<Top> {
                     break;
                 case /* string unit */ 4:
                     message.unit = reader.string();
+                    break;
+                case /* int64 cumulative */ 5:
+                    message.cumulative = reader.int64().toString();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1865,6 +1875,9 @@ class Top$Type extends MessageType<Top> {
         /* string unit = 4; */
         if (message.unit !== "")
             writer.tag(4, WireType.LengthDelimited).string(message.unit);
+        /* int64 cumulative = 5; */
+        if (message.cumulative !== "0")
+            writer.tag(5, WireType.Varint).int64(message.cumulative);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

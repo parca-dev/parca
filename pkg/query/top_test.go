@@ -60,6 +60,7 @@ func TestGenerateTopTable(t *testing.T) {
 	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 	require.Equal(t, int32(1886), res.Total)
 	require.Equal(t, int32(899), res.Reported)
+	require.Equal(t, int64(310797348), res.Cumulative)
 	require.Len(t, res.List, 899)
 
 	found := false

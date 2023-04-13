@@ -27,7 +27,9 @@ func GenerateTopTable(ctx context.Context, p *parcaprofile.Profile) (*pb.Top, er
 	// Calculate the cumulative value of all locations of all samples.
 	// In the end return a *pb.TopNode for each location including all the metadata we have.
 	locationsTopNodes := map[string]*pb.TopNode{}
+	cumulative := int64(0)
 	for _, sample := range p.Samples {
+		cumulative += sample.Value
 		for i, location := range sample.Locations {
 			if node, found := locationsTopNodes[location.ID]; found {
 				node.Cumulative += sample.Value
@@ -73,10 +75,11 @@ func GenerateTopTable(ctx context.Context, p *parcaprofile.Profile) (*pb.Top, er
 	}
 
 	top := &pb.Top{
-		List:     list,
-		Reported: int32(len(list)),
-		Total:    int32(len(list)),
-		Unit:     p.Meta.SampleType.Unit,
+		List:       list,
+		Reported:   int32(len(list)),
+		Total:      int32(len(list)),
+		Unit:       p.Meta.SampleType.Unit,
+		Cumulative: cumulative,
 	}
 
 	return aggregateTopByFunction(top), nil
@@ -161,7 +164,8 @@ func aggregateTopByFunction(top *pb.Top) *pb.Top {
 		List:     list,
 		Reported: int32(len(list)),
 		//nolint:staticcheck // SA1019: Fow now we want to support these APIs
-		Total: top.GetTotal(),
-		Unit:  top.GetUnit(),
+		Total:      top.GetTotal(),
+		Unit:       top.GetUnit(),
+		Cumulative: top.Cumulative,
 	}
 }

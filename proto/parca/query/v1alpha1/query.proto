@@ -253,6 +253,9 @@ message Top {
 
   // unit is the unit represented by top table
   string unit = 4;
+
+  // cumulative is the cumulative value of the top list
+  int64 cumulative = 5;
 }
 
 // TopNode is a node entry in a top list
