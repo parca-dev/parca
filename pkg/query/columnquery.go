@@ -302,13 +302,13 @@ func RenderReport(
 			Report:   &pb.QueryResponse_Pprof{Pprof: buf.Bytes()},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_TOP:
-		top, err := GenerateTopTable(ctx, p)
+		top, cumulative, err := GenerateTopTable(ctx, p)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
 		}
 
 		return &pb.QueryResponse{
-			Total:    top.Cumulative,
+			Total:    cumulative,
 			Filtered: filtered,
 			Report:   &pb.QueryResponse_Top{Top: top},
 		}, nil

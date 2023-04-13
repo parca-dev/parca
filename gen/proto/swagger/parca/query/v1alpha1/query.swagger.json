@@ -1333,11 +1333,6 @@
         "unit": {
           "type": "string",
           "title": "unit is the unit represented by top table"
-        },
-        "cumulative": {
-          "type": "string",
-          "format": "int64",
-          "title": "cumulative is the cumulative value of the top list"
         }
       },
       "title": "Top is the top report type"

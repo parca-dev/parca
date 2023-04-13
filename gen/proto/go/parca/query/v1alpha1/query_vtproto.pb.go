@@ -1244,11 +1244,6 @@ func (m *Top) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.Cumulative != 0 {
-		i = encodeVarint(dAtA, i, uint64(m.Cumulative))
-		i--
-		dAtA[i] = 0x28
-	}
 	if len(m.Unit) > 0 {
 		i -= len(m.Unit)
 		copy(dAtA[i:], m.Unit)
@@ -3043,9 +3038,6 @@ func (m *Top) SizeVT() (n int) {
 	l = len(m.Unit)
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
-	}
-	if m.Cumulative != 0 {
-		n += 1 + sov(uint64(m.Cumulative))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -5610,25 +5602,6 @@ func (m *Top) UnmarshalVT(dAtA []byte) error {
 			}
 			m.Unit = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 5:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Cumulative", wireType)
-			}
-			m.Cumulative = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Cumulative |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])
