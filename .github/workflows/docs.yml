@@ -48,7 +48,7 @@ jobs:
     timeout-minutes: 45
     steps:
       - name: Check out code into the Go module directory
-        uses: actions/checkout@83b7061638ee4956cf7545a6f7efe594e5ad0247 # v3.5.1
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
 
       - name: Set up Go
         uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
