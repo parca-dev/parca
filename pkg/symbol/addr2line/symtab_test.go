@@ -225,7 +225,7 @@ func TestSymtabLiner_PCToLines(t *testing.T) {
 				searcher:  searcher,
 				demangler: demangle.NewDemangler("simple", false),
 			}
-			gotLines, err := lnr.PCToLines(tt.args.addr)
+			gotLines, err := lnr.PCToLines(tt.args.addr, false)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("PCToLines() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -41,12 +41,13 @@ type SymtabLiner struct {
 	demangler *demangle.Demangler
 	searcher  symbolsearcher.Searcher
 
-	filename string
-	f        *elf.File
+	filename    string
+	f           *elf.File
+	baseAddress uint64
 }
 
 // Symbols creates a new SymtabLiner.
-func Symbols(logger log.Logger, filename string, f *elf.File, demangler *demangle.Demangler) (*SymtabLiner, error) {
+func Symbols(logger log.Logger, filename string, f *elf.File, base uint64, demangler *demangle.Demangler) (*SymtabLiner, error) {
 	symbols, err := symtab(f)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch symbols from object file: %w", err)
@@ -54,11 +55,12 @@ func Symbols(logger log.Logger, filename string, f *elf.File, demangler *demangl
 
 	searcher := symbolsearcher.New(symbols)
 	return &SymtabLiner{
-		logger:    log.With(logger, "liner", "symtab"),
-		searcher:  searcher,
-		demangler: demangler,
-		filename:  filename,
-		f:         f,
+		logger:      log.With(logger, "liner", "symtab"),
+		searcher:    searcher,
+		demangler:   demangler,
+		filename:    filename,
+		f:           f,
+		baseAddress: base,
 	}, nil
 }
 
@@ -75,7 +77,10 @@ func (lnr *SymtabLiner) PCRange() ([2]uint64, error) {
 }
 
 // PCToLines looks up the line number information for a program counter (memory address).
-func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []profile.LocationLine, err error) {
+func (lnr *SymtabLiner) PCToLines(addr uint64, isRawAddr bool) (lines []profile.LocationLine, err error) {
+	if isRawAddr {
+		addr = addr - lnr.baseAddress
+	}
 	name, err := lnr.searcher.Search(addr)
 	if err != nil {
 		return nil, err

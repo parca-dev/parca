@@ -35,11 +35,11 @@ func TestDwarfSymbolizer(t *testing.T) {
 	}
 	defer elfFile.Close()
 
-	dwarf, err := DWARF(logger, filename, elfFile, demangler)
+	dwarf, err := DWARF(logger, filename, elfFile, 0, demangler)
 	if err != nil {
 		panic("failure reading DWARF file")
 	}
-	gotLines, err := dwarf.PCToLines(0x401125)
+	gotLines, err := dwarf.PCToLines(0x401125, false)
 	if err != nil {
 		panic("failure reading lines")
 	}

@@ -31,23 +31,25 @@ import (
 type GoLiner struct {
 	logger log.Logger
 
-	symtab   *gosym.Table
-	f        *elf.File
-	filename string
+	symtab      *gosym.Table
+	f           *elf.File
+	filename    string
+	baseAddress uint64
 }
 
 // Go creates a new GoLiner.
-func Go(logger log.Logger, filename string, f *elf.File) (*GoLiner, error) {
+func Go(logger log.Logger, filename string, f *elf.File, base uint64) (*GoLiner, error) {
 	tab, err := gosymtab(f)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create go symbtab: %w", err)
 	}
 
 	return &GoLiner{
-		logger:   log.With(logger, "liner", "go"),
-		symtab:   tab,
-		f:        f,
-		filename: filename,
+		logger:      log.With(logger, "liner", "go"),
+		symtab:      tab,
+		f:           f,
+		filename:    filename,
+		baseAddress: base,
 	}, nil
 }
 
@@ -77,7 +79,7 @@ func (gl *GoLiner) PCRange() ([2]uint64, error) {
 }
 
 // PCToLines looks up the line number information for a program counter (memory address).
-func (gl *GoLiner) PCToLines(addr uint64) (lines []profile.LocationLine, err error) {
+func (gl *GoLiner) PCToLines(addr uint64, isRawAddr bool) (lines []profile.LocationLine, err error) {
 	defer func() {
 		// PCToLine panics with "invalid memory address or nil pointer dereference",
 		//	- when it refers to an address that doesn't actually exist.
@@ -89,6 +91,9 @@ func (gl *GoLiner) PCToLines(addr uint64) (lines []profile.LocationLine, err err
 
 	name := "?"
 	// TODO(kakkoyun): Do we need to consider the base address for any part of Go binaries?
+	if isRawAddr {
+		addr = addr - gl.baseAddress
+	}
 	file, line, fn := gl.symtab.PCToLine(addr)
 	if fn != nil {
 		name = fn.Name

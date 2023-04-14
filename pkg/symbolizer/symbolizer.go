@@ -54,7 +54,7 @@ type DebuginfoMetadata interface {
 // which read an object file (symbol table or debug information) and return
 // source code lines by a given memory address.
 type liner interface {
-	PCToLines(pc uint64) ([]profile.LocationLine, error)
+	PCToLines(pc uint64, isRawAddress bool) ([]profile.LocationLine, error)
 	PCRange() ([2]uint64, error)
 	Close() error
 	File() string
@@ -484,7 +484,10 @@ func (s *Symbolizer) symbolizeLocationsForMapping(ctx context.Context, m *pb.Map
 				return nil, nil, fmt.Errorf("check debuginfo quality: %w", ErrNoDebuginfo)
 			}
 		}
-		liner, err = s.newLiner(f.Name(), e, dbginfo.Quality)
+
+		baseAddress := elfutils.BaseAddress(e, m.Start, m.Offset)
+
+		liner, err = s.newLiner(f.Name(), e, baseAddress, dbginfo.Quality)
 		if err != nil {
 			return nil, nil, fmt.Errorf("new liner: %w", err)
 		}
@@ -514,7 +517,7 @@ func (s *Symbolizer) symbolizeLocationsForMapping(ctx context.Context, m *pb.Map
 			continue
 		}
 		if pcRange[0] <= loc.Address && loc.Address <= pcRange[1] {
-			locationsLines[i] = s.pcToLines(liner, key, loc.Address)
+			locationsLines[i] = s.pcToLines(liner, key, loc.Address, loc.IsRawAddress)
 		}
 	}
 
@@ -540,17 +543,17 @@ func (s *Symbolizer) countLocationsToSymbolize(key string, locations []*pb.Locat
 }
 
 // newLiner creates a new liner for the given mapping and object file path.
-func (s *Symbolizer) newLiner(filepath string, f *elf.File, quality *debuginfopb.DebuginfoQuality) (liner, error) {
+func (s *Symbolizer) newLiner(filepath string, f *elf.File, base uint64, quality *debuginfopb.DebuginfoQuality) (liner, error) {
 	switch {
 	case quality.HasDwarf:
-		lnr, err := addr2line.DWARF(s.logger, filepath, f, s.demangler)
+		lnr, err := addr2line.DWARF(s.logger, filepath, f, base, s.demangler)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create DWARF liner: %w", err)
 		}
 
 		return lnr, nil
 	case quality.HasGoPclntab:
-		lnr, err := addr2line.Go(s.logger, filepath, f)
+		lnr, err := addr2line.Go(s.logger, filepath, f, base)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create Go liner: %w", err)
 		}
@@ -558,7 +561,7 @@ func (s *Symbolizer) newLiner(filepath string, f *elf.File, quality *debuginfopb
 		return lnr, nil
 		// TODO CHECK plt
 	case quality.HasSymtab || quality.HasDynsym:
-		lnr, err := addr2line.Symbols(s.logger, filepath, f, s.demangler)
+		lnr, err := addr2line.Symbols(s.logger, filepath, f, base, s.demangler)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create Symtab liner: %w", err)
 		}
@@ -570,8 +573,8 @@ func (s *Symbolizer) newLiner(filepath string, f *elf.File, quality *debuginfopb
 }
 
 // pcToLines returns the line number of the given PC while keeping the track of symbolization attempts and failures.
-func (s *Symbolizer) pcToLines(liner liner, key string, addr uint64) []profile.LocationLine {
-	lines, err := liner.PCToLines(addr)
+func (s *Symbolizer) pcToLines(liner liner, key string, addr uint64, isRawAddr bool) []profile.LocationLine {
+	lines, err := liner.PCToLines(addr, isRawAddr)
 	level.Debug(s.logger).Log("msg", "symbolized location", "build_id", key, "address", addr, "lines_count", len(lines), "err", err, "liner_type", fmt.Sprintf("%T", liner))
 	if err != nil {
 		// Error bookkeeping.
