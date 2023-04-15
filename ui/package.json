@@ -81,7 +81,7 @@
     "chromatic": "^6.17.2",
     "css-loader": "6.7.3",
     "dev-kong": "0.11.0",
-    "eslint": "8.37.0",
+    "eslint": "8.38.0",
     "eslint-config-prettier": "8.8.0",
     "eslint-config-react-app": "7.0.1",
     "eslint-config-standard-with-typescript": "22.0.0",
