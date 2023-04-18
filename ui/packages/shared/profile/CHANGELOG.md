@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 0.16.164 (2023-04-18)
+
+**Note:** Version bump only for package @parca/profile
+
 ## 0.16.163 (2023-04-08)
 
 **Note:** Version bump only for package @parca/profile
