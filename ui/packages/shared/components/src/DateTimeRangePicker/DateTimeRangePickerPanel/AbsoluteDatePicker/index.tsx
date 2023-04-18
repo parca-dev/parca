@@ -51,14 +51,16 @@ const AbsoluteDatePicker = ({
           <UTCDateTimePicker selected={to} onChange={date => date != null && setTo(date)} />
         </div>
       </div>
-      <div className="mx-auto mt-4 w-32">
-        <Button
-          onClick={() => {
-            onChange(new AbsoluteDate(from), new AbsoluteDate(to));
-          }}
-        >
-          Apply
-        </Button>
+      <div className="mt-4 flex">
+        <div className="mx-auto">
+          <Button
+            onClick={() => {
+              onChange(new AbsoluteDate(from), new AbsoluteDate(to));
+            }}
+          >
+            Apply
+          </Button>
+        </div>
       </div>
       <p className="m-4 text-center text-xs italic text-gray-500">
         Note: All date and time values are in UTC.

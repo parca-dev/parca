@@ -116,17 +116,19 @@ const RelativeDatePicker = ({
             onSelection={key => setUnit(key)}
           />
         </div>
-        <div className="mx-auto w-32 pb-2">
-          <Button
-            onClick={() => {
-              onChange(new RelativeDate(unit, value), NOW);
-            }}
-          >
-            Apply
-          </Button>
+        <div className="mt-4 flex">
+          <div className="mx-auto">
+            <Button
+              onClick={() => {
+                onChange(new RelativeDate(unit, value), NOW);
+              }}
+            >
+              Apply
+            </Button>
+          </div>
         </div>
       </div>
-      <p className="mx-4 text-center text-xs italic text-gray-500">
+      <p className="m-4 text-center text-xs italic text-gray-500">
         Note: Setting a relative time means that on every search the time will be set to the time of
         the search.
       </p>
