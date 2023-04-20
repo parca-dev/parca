@@ -30,7 +30,7 @@ require (
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
 	github.com/polarsignals/frostdb v0.0.0-20230413075830-e3ff39dc60f9
-	github.com/prometheus/client_golang v1.14.0
+	github.com/prometheus/client_golang v1.15.0
 	github.com/prometheus/common v0.42.0
 	github.com/prometheus/prometheus v0.43.0
 	github.com/segmentio/parquet-go v0.0.0-20230309140036-b6d0a6236da6
