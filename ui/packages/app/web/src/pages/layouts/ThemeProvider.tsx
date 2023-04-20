@@ -18,6 +18,17 @@ import {selectDarkMode, useAppSelector} from '@parca/store';
 const ThemeProvider = ({children}: {children: React.ReactNode}) => {
   const darkMode = useAppSelector(selectDarkMode);
 
+  const persistRootStorage = localStorage.getItem('persist:root');
+  const parsedPersistRootStorage = JSON.parse(persistRootStorage);
+  const localStorageDarkMode = JSON.parse(parsedPersistRootStorage.ui).darkMode;
+  console.log(
+    '🚀 ~ file: ThemeProvider.tsx:24 ~ ThemeProvider ~ localStorageDarkMode:',
+    localStorageDarkMode
+  );
+
+  let mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  console.log('🚀 ~ file: ThemeProvider.tsx:30 ~ ThemeProvider ~ mediaQuery:', mediaQuery);
+
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
