@@ -25,7 +25,7 @@ const Dropdown = ({
   variant = 'neutral',
   children,
 }: {
-  text: string;
+  text?: string;
   element?: React.ReactNode;
   variant?: 'neutral' | 'link' | 'primary' | undefined;
   children?: React.ReactNode;

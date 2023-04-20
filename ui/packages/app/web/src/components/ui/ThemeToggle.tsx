@@ -16,34 +16,48 @@ import {Icon} from '@iconify/react';
 import {Dropdown, IconButton} from '@parca/components';
 import {selectDarkMode, setDarkMode, useAppDispatch, useAppSelector} from '@parca/store';
 
-const modes = [
-  {
-    key: 'light',
-    label: 'Light',
-    icon: 'heroicons:sun-20-solid',
-  },
-
-  {
-    key: 'dark',
-    label: 'Dark',
-    icon: 'heroicons:moon-20-solid',
-  },
-
-  {
-    key: 'system',
-    label: 'System',
-    icon: 'heroicons:computer-desktop-solid',
-  },
-];
-
 const ThemeToggle = () => {
   const dispatch = useAppDispatch();
   const isDarkMode = useAppSelector(selectDarkMode);
 
+  const systemSettingsDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+  const updateWithSystemSettings = () => {
+    dispatch(setDarkMode(systemSettingsDarkMode));
+    localStorage.setItem('parcaDarkModeSystemSettings', 'true');
+  };
+
+  const updateModesOnly = (value: boolean) => {
+    dispatch(setDarkMode(value));
+    localStorage.removeItem('parcaDarkModeSystemSettings');
+  };
+
+  const modes = [
+    {
+      key: 'light',
+      label: 'Light',
+      icon: 'heroicons:sun-20-solid',
+      onSelect: () => updateModesOnly(false),
+    },
+
+    {
+      key: 'dark',
+      label: 'Dark',
+      icon: 'heroicons:moon-20-solid',
+      onSelect: () => updateModesOnly(true),
+    },
+
+    {
+      key: 'system',
+      label: 'System',
+      icon: 'heroicons:computer-desktop-solid',
+      onSelect: updateWithSystemSettings,
+    },
+  ];
+
   return (
     <div>
       <Dropdown
-        text="text here"
         element={
           <IconButton
             icon={
@@ -57,7 +71,7 @@ const ThemeToggle = () => {
         }
       >
         {modes.map(item => (
-          <Dropdown.Item key={item.key} onSelect={() => dispatch(setDarkMode(!isDarkMode))}>
+          <Dropdown.Item key={item.key} onSelect={item.onSelect}>
             <div className="flex items-center">
               <span className="mr-2">
                 <Icon icon={item.icon} />
