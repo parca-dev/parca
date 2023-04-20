@@ -536,6 +536,13 @@ func (m *QueryRangeRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.FilterQuery != nil {
+		i -= len(*m.FilterQuery)
+		copy(dAtA[i:], *m.FilterQuery)
+		i = encodeVarint(dAtA, i, uint64(len(*m.FilterQuery)))
+		i--
+		dAtA[i] = 0x32
+	}
 	if m.Step != nil {
 		if vtmsg, ok := interface{}(m.Step).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
@@ -2762,6 +2769,10 @@ func (m *QueryRangeRequest) SizeVT() (n int) {
 		}
 		n += 1 + l + sov(uint64(l))
 	}
+	if m.FilterQuery != nil {
+		l = len(*m.FilterQuery)
+		n += 1 + l + sov(uint64(l))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -4194,6 +4205,39 @@ func (m *QueryRangeRequest) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FilterQuery", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.FilterQuery = &s
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

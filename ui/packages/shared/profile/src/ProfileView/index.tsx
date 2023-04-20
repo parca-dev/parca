@@ -44,7 +44,6 @@ import {ProfileSource} from '../ProfileSource';
 import {TopTable} from '../TopTable';
 import ProfileShareButton from '../components/ProfileShareButton';
 import useDelayedLoader from '../useDelayedLoader';
-import FilterByFunctionButton from './FilterByFunctionButton';
 import ViewSelector from './ViewSelector';
 import {VisualizationPanel} from './VisualizationPanel';
 
@@ -335,7 +334,6 @@ export const ProfileView = ({
                     Download pprof
                   </Button>
                 </div>
-                <FilterByFunctionButton navigateTo={navigateTo} />
               </div>
 
               <div className="ml-auto flex gap-2">

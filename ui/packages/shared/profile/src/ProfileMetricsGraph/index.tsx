@@ -30,6 +30,7 @@ interface ProfileMetricsGraphProps {
   profile: ProfileSelection | null;
   from: number;
   to: number;
+  filterByFunction: string | undefined;
   setTimeRange: (range: DateTimeRange) => void;
   addLabelMatcher: (key: string, value: string) => void;
   onPointClick: (timestamp: number, labels: Label[], queryExpression: string) => void;
@@ -45,7 +46,8 @@ export const useQueryRange = (
   client: QueryServiceClient,
   queryExpression: string,
   start: number,
-  end: number
+  end: number,
+  filterByFunction: string | undefined
 ): IQueryRangeState => {
   const [state, setState] = useState<IQueryRangeState>({
     response: null,
@@ -63,22 +65,22 @@ export const useQueryRange = (
       });
 
       const stepDuration = getStepDuration(start, end);
-      const call = client.queryRange(
-        {
-          query: queryExpression,
-          start: Timestamp.fromDate(new Date(start)),
-          end: Timestamp.fromDate(new Date(end)),
-          step: Duration.create(stepDuration),
-          limit: 0,
-        },
+
+      const call = client.queryRange( {
+        query: queryExpression,
+        start: Timestamp.fromDate(new Date(start)),
+        end: Timestamp.fromDate(new Date(end)),
+        step: Duration.create(stepDuration),
+        limit: 0,
+        filterQuery: filterByFunction,
+      },
         {meta: metadata}
       );
-
       call.response
         .then(response => setState({response, isLoading: false, error: null}))
         .catch(error => setState({response: null, isLoading: false, error}));
     })();
-  }, [client, queryExpression, start, end, metadata]);
+  }, [client, queryExpression, start, end, filterByFunction, metadata]);
 
   return state;
 };
@@ -89,11 +91,12 @@ const ProfileMetricsGraph = ({
   profile,
   from,
   to,
+  filterByFunction,
   setTimeRange,
   addLabelMatcher,
   onPointClick,
 }: ProfileMetricsGraphProps): JSX.Element => {
-  const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to);
+  const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to, filterByFunction);
   const isLoaderVisible = useDelayedLoader(isLoading);
   const {loader, onError, perf} = useParcaContext();
 

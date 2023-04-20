@@ -23,6 +23,7 @@ import {
   DateTimeRange,
   DateTimeRangePicker,
   IconButton,
+  Input,
   useGrpcMetadata,
 } from '@parca/components';
 import {CloseIcon} from '@parca/icons';
@@ -42,6 +43,7 @@ export interface QuerySelection {
   timeSelection: string;
   mergeFrom?: number;
   mergeTo?: number;
+  filter_by_function?: string;
 }
 
 interface ProfileSelectorProps {
@@ -104,6 +106,10 @@ const ProfileSelector = ({
   );
   const [queryExpressionString, setQueryExpressionString] = useState(querySelection.expression);
 
+  const [functionFilter, setFunctionFilter] = useState<string>(
+    querySelection.filter_by_function ?? ''
+  );
+
   useEffect(() => {
     if (enforcedProfileName !== '') {
       const [q, changed] = Query.parse(querySelection.expression).setProfileName(
@@ -144,6 +150,7 @@ const ProfileSelector = ({
       from,
       to,
       timeSelection: timeRangeSelection.getRangeKey(),
+      filter_by_function: functionFilter,
       ...mergeParams,
     });
   };
@@ -201,13 +208,21 @@ const ProfileSelector = ({
               error={error}
             />
           </div>
-          <div className="w-full flex-1">
+          <div className="flex w-full flex-1">
             <MatchersInput
               queryClient={queryClient}
               setMatchersString={setMatchersString}
               runQuery={setQueryExpression}
               currentQuery={query}
             />
+            <div>
+              <Input
+                className="divider-y block w-full flex-1 rounded rounded-l-none bg-gray-50 px-2 py-2 text-sm outline-none focus:ring-indigo-800 dark:bg-gray-900"
+                placeholder="filter function name..."
+                value={functionFilter}
+                onChange={e => setFunctionFilter(e.target.value)}
+              />
+            </div>
           </div>
           <DateTimeRangePicker
             onRangeSelection={setTimeRangeSelection}
@@ -240,48 +255,52 @@ const ProfileSelector = ({
           querySelection.expression.length > 0 &&
           querySelection.from !== undefined &&
           querySelection.to !== undefined ? (
-            <ProfileMetricsGraph
-              queryClient={queryClient}
-              queryExpression={querySelection.expression}
-              from={querySelection.from}
-              to={querySelection.to}
-              profile={profileSelection}
-              setTimeRange={(range: DateTimeRange) => {
-                const from = range.getFromMs();
-                const to = range.getToMs();
-                let mergedProfileParams = {};
-                if (query.profileType().delta) {
-                  mergedProfileParams = {mergeFrom: from, mergeTo: to};
-                }
-                setTimeRangeSelection(range);
-                selectQuery({
-                  expression: queryExpressionString,
-                  from,
-                  to,
-                  timeSelection: range.getRangeKey(),
-                  ...mergedProfileParams,
-                });
-              }}
-              addLabelMatcher={addLabelMatcher}
-              onPointClick={(timestamp, labels, queryExpression) => {
-                // TODO: Pass the query object via click rather than queryExpression
-                let query = Query.parse(queryExpression);
-                labels.forEach(l => {
-                  const [newQuery, updated] = query.setMatcher(l.name, l.value);
-                  if (updated) {
-                    query = newQuery;
+            <>
+              <ProfileMetricsGraph
+                queryClient={queryClient}
+                queryExpression={querySelection.expression}
+                from={querySelection.from}
+                to={querySelection.to}
+                filterByFunction={querySelection.filter_by_function}
+                profile={profileSelection}
+                setTimeRange={(range: DateTimeRange) => {
+                  const from = range.getFromMs();
+                  const to = range.getToMs();
+                  let mergedProfileParams = {};
+                  if (query.profileType().delta) {
+                    mergedProfileParams = {mergeFrom: from, mergeTo: to};
                   }
-                });
+                  setTimeRangeSelection(range);
+                  selectQuery({
+                    expression: queryExpressionString,
+                    from,
+                    to,
+                    timeSelection: range.getRangeKey(),
+                    filter_by_function: functionFilter,
+                    ...mergedProfileParams,
+                  });
+                }}
+                addLabelMatcher={addLabelMatcher}
+                onPointClick={(timestamp, labels, queryExpression) => {
+                  // TODO: Pass the query object via click rather than queryExpression
+                  let query = Query.parse(queryExpression);
+                  labels.forEach(l => {
+                    const [newQuery, updated] = query.setMatcher(l.name, l.value);
+                    if (updated) {
+                      query = newQuery;
+                    }
+                  });
 
-                const stepDuration = getStepDuration(querySelection.from, querySelection.to);
-                const stepDurationInMilliseconds = getStepDurationInMilliseconds(stepDuration);
-                const mergeFrom = timestamp;
-                const mergeTo = query.profileType().delta
-                  ? mergeFrom + stepDurationInMilliseconds
-                  : mergeFrom;
-                selectProfile(new MergedProfileSelection(mergeFrom, mergeTo, query));
-              }}
-            />
+                  const stepDuration = getStepDuration(querySelection.from, querySelection.to);
+                  const stepDurationInMilliseconds = getStepDurationInMilliseconds(stepDuration);
+                  const mergeFrom = timestamp;
+                  const mergeTo = query.profileType().delta
+                    ? mergeFrom + stepDurationInMilliseconds
+                    : mergeFrom;
+                  selectProfile(new MergedProfileSelection(mergeFrom, mergeTo, query));
+                }}
+              />
+            </>
           ) : (
             <>
               {profileSelection == null && (

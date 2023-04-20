@@ -227,6 +227,108 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 	require.Equal(t, 10, len(res.Series[0].Samples))
 }
 
+func TestColumnQueryAPIQueryRangeFilter(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	col, err := columnstore.New()
+	require.NoError(t, err)
+	colDB, err := col.DB(context.Background(), "parca")
+	require.NoError(t, err)
+
+	schema, err := parcacol.Schema()
+	require.NoError(t, err)
+
+	table, err := colDB.Table(
+		"stacktraces",
+		columnstore.NewTableConfig(parcacol.SchemaDefinition()),
+	)
+	require.NoError(t, err)
+	m := metastoretest.NewTestMetastore(
+		t,
+		logger,
+		reg,
+		tracer,
+	)
+
+	dir := "./testdata/many/"
+	files, err := os.ReadDir(dir)
+	require.NoError(t, err)
+
+	metastore := metastore.NewInProcessClient(m)
+	store := profilestore.NewProfileColumnStore(
+		logger,
+		tracer,
+		metastore,
+		table,
+		schema,
+	)
+
+	for _, f := range files {
+		fileContent, err := os.ReadFile(dir + f.Name())
+		require.NoError(t, err)
+
+		_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
+			Series: []*profilestorepb.RawProfileSeries{{
+				Labels: &profilestorepb.LabelSet{
+					Labels: []*profilestorepb.Label{
+						{
+							Name:  "__name__",
+							Value: "memory",
+						},
+						{
+							Name:  "job",
+							Value: "default",
+						},
+					},
+				},
+				Samples: []*profilestorepb.RawSample{{
+					RawProfile: fileContent,
+				}},
+			}},
+		})
+		require.NoError(t, err)
+	}
+
+	api := NewColumnQueryAPI(
+		logger,
+		tracer,
+		getShareServerConn(t),
+		parcacol.NewQuerier(
+			logger,
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
+		),
+	)
+	res, err := api.QueryRange(ctx, &pb.QueryRangeRequest{
+		Query:       `memory:alloc_objects:count:space:bytes{job="default"}`,
+		Start:       timestamppb.New(timestamp.Time(0)),
+		End:         timestamppb.New(timestamp.Time(9223372036854775807)),
+		FilterQuery: ptrToString("runtime"),
+	})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(res.Series))
+	require.Equal(t, 1, len(res.Series[0].Labelset.Labels))
+	require.Equal(t, 10, len(res.Series[0].Samples))
+
+	values := make([]int64, len(res.Series[0].Samples))
+	filteredValuePerSecond := make([]float64, len(res.Series[0].Samples))
+	for i, s := range res.Series[0].Samples {
+		values[i] = s.Value
+		filteredValuePerSecond[i] = s.ValuePerSecond
+	}
+	require.Equal(t, []int64{83487, 83487, 83487, 83487, 83487, 83487, 83487, 83487, 112767, 112767}, values)
+	require.Equal(t, []float64{83463, 83463, 83463, 83463, 83463, 83463, 83463, 83463, 107184, 107184}, filteredValuePerSecond)
+}
+
 func ptrToString(s string) *string {
 	return &s
 }

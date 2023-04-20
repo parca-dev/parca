@@ -50,6 +50,7 @@ export interface HighlightedSeries {
   timestamp: number;
   value: number;
   valuePerSecond: number;
+  valuePercentage: number;
   duration: number;
   x: number;
   y: number;
@@ -140,7 +141,7 @@ export const RawMetricsGraph = ({
         values: s.samples.reduce<number[][]>(function (agg: number[][], d: MetricsSample) {
           if (d.timestamp !== undefined && d.valuePerSecond !== undefined) {
             const t = (+d.timestamp.seconds * 1e9 + d.timestamp.nanos) / 1e6; // https://github.com/microsoft/TypeScript/issues/5710#issuecomment-157886246
-            agg.push([t, d.valuePerSecond, parseFloat(d.value), parseFloat(d.duration)]);
+            agg.push([t, d.valuePerSecond, parseFloat(d.value), parseFloat(d.duration), d.valuePrecision]);
           }
           return agg;
         }, []),
@@ -211,6 +212,7 @@ export const RawMetricsGraph = ({
       labels: series[closestSeriesIndex].metric,
       timestamp: point[0],
       valuePerSecond: point[1],
+      valuePercentage: point[4],
       value: point[2],
       duration: point[3],
       x: xScale(point[0]),
@@ -336,6 +338,7 @@ export const RawMetricsGraph = ({
       seriesIndex,
       timestamp: sample[0],
       valuePerSecond: sample[1],
+      valuePercentage: sample[4],
       value: sample[2],
       duration: sample[3],
       x: xScale(sample[0]),
