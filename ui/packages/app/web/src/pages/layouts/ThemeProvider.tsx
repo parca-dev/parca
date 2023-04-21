@@ -19,13 +19,28 @@ const ThemeProvider = ({children}: {children: React.ReactNode}) => {
   const dispatch = useAppDispatch();
   const darkMode = useAppSelector(selectDarkMode);
 
+  //On the first load, if the system settings are set to dark mode, then set the dark mode to true.
+  useEffect(() => {
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('parcaDarkModeSystemSettings', 'true');
+      dispatch(setDarkMode(true));
+    }
+  }, [dispatch]);
+
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
+    // Listen for changes to the prefers-color-scheme media query and then update the theme accordingly.
     mediaQuery.onchange = media => {
       // @ts-expect-error
-      if (localStorage['parcaDarkModeSystemSettings'] && media.currentTarget.matches) {
+      if (media.currentTarget.matches === true) {
         document.documentElement.classList.add('dark');
+      } else if (
+        // @ts-expect-error
+        media.currentTarget.matches === false
+      ) {
+        document.documentElement.classList.remove('dark');
       } else {
         document.documentElement.classList.remove('dark');
       }
@@ -34,6 +49,7 @@ const ThemeProvider = ({children}: {children: React.ReactNode}) => {
     if (localStorage['parcaDarkModeSystemSettings']) dispatch(setDarkMode(mediaQuery.matches));
   });
 
+  // This useffect is responsible for updating the theme when the user changes the theme from the dropdown in the navbar.
   useEffect(() => {
     if (
       localStorage['parcaDarkModeSystemSettings'] &&
