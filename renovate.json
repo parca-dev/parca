@@ -34,6 +34,11 @@
       "groupName": "prettier"
     },
     {
+      "description": "Group vtprotobuf packages",
+      "matchSourceUrls": ["https://github.com/planetscale/vtprotobuf"],
+      "groupName": "vtprotobuf"
+    },
+    {
       "description": "Disable tailwindcss upgrades",
       "matchPackageNames": ["tailwindcss"],
       "enabled": false
