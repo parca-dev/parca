@@ -34,6 +34,11 @@
       "groupName": "prettier"
     },
     {
+      "description": "Group protobuf-go packages",
+      "matchSourceUrls": ["https://github.com/protocolbuffers/protobuf-go"],
+      "groupName": "protobuf-go"
+    },
+    {
       "description": "Group vtprotobuf packages",
       "matchSourceUrls": ["https://github.com/planetscale/vtprotobuf"],
       "groupName": "vtprotobuf"
