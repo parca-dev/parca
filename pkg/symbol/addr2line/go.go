@@ -24,6 +24,7 @@ import (
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
+	"github.com/parca-dev/parca/pkg/symbol/objectfile"
 )
 
 // GoLiner is a liner which utilizes .gopclntab section to symbolize addresses.
@@ -31,34 +32,30 @@ import (
 type GoLiner struct {
 	logger log.Logger
 
-	symtab      *gosym.Table
-	f           *elf.File
-	filename    string
-	baseAddress uint64
+	symtab  *gosym.Table
+	objFile *objectfile.ObjectFile
 }
 
 // Go creates a new GoLiner.
-func Go(logger log.Logger, filename string, f *elf.File, base uint64) (*GoLiner, error) {
-	tab, err := gosymtab(f)
+func Go(logger log.Logger, objFile *objectfile.ObjectFile) (*GoLiner, error) {
+	tab, err := gosymtab(objFile.ElfFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create go symbtab: %w", err)
 	}
 
 	return &GoLiner{
-		logger:      log.With(logger, "liner", "go"),
-		symtab:      tab,
-		f:           f,
-		filename:    filename,
-		baseAddress: base,
+		logger:  log.With(logger, "liner", "go"),
+		symtab:  tab,
+		objFile: objFile,
 	}, nil
 }
 
 func (gl *GoLiner) Close() error {
-	return gl.f.Close()
+	return gl.objFile.ElfFile.Close()
 }
 
 func (gl *GoLiner) File() string {
-	return gl.filename
+	return gl.objFile.Path
 }
 
 func (gl *GoLiner) PCRange() ([2]uint64, error) {
@@ -92,7 +89,9 @@ func (gl *GoLiner) PCToLines(addr uint64, isRawAddr bool) (lines []profile.Locat
 	name := "?"
 	// TODO(kakkoyun): Do we need to consider the base address for any part of Go binaries?
 	if isRawAddr {
-		addr = addr - gl.baseAddress
+		if addr, err = gl.objFile.ObjAddr(addr); err != nil {
+			return nil, err
+		}
 	}
 	file, line, fn := gl.symtab.PCToLine(addr)
 	if fn != nil {

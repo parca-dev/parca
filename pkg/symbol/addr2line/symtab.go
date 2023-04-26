@@ -27,6 +27,7 @@ import (
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
+	"github.com/parca-dev/parca/pkg/symbol/objectfile"
 	"github.com/parca-dev/parca/pkg/symbol/symbolsearcher"
 )
 
@@ -41,35 +42,31 @@ type SymtabLiner struct {
 	demangler *demangle.Demangler
 	searcher  symbolsearcher.Searcher
 
-	filename    string
-	f           *elf.File
-	baseAddress uint64
+	objFile *objectfile.ObjectFile
 }
 
 // Symbols creates a new SymtabLiner.
-func Symbols(logger log.Logger, filename string, f *elf.File, base uint64, demangler *demangle.Demangler) (*SymtabLiner, error) {
-	symbols, err := symtab(f)
+func Symbols(logger log.Logger, objFile *objectfile.ObjectFile, demangler *demangle.Demangler) (*SymtabLiner, error) {
+	symbols, err := symtab(objFile.ElfFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch symbols from object file: %w", err)
 	}
 
 	searcher := symbolsearcher.New(symbols)
 	return &SymtabLiner{
-		logger:      log.With(logger, "liner", "symtab"),
-		searcher:    searcher,
-		demangler:   demangler,
-		filename:    filename,
-		f:           f,
-		baseAddress: base,
+		logger:    log.With(logger, "liner", "symtab"),
+		searcher:  searcher,
+		demangler: demangler,
+		objFile:   objFile,
 	}, nil
 }
 
 func (lnr *SymtabLiner) Close() error {
-	return lnr.f.Close()
+	return lnr.objFile.ElfFile.Close()
 }
 
 func (lnr *SymtabLiner) File() string {
-	return lnr.filename
+	return lnr.objFile.Path
 }
 
 func (lnr *SymtabLiner) PCRange() ([2]uint64, error) {
@@ -79,7 +76,9 @@ func (lnr *SymtabLiner) PCRange() ([2]uint64, error) {
 // PCToLines looks up the line number information for a program counter (memory address).
 func (lnr *SymtabLiner) PCToLines(addr uint64, isRawAddr bool) (lines []profile.LocationLine, err error) {
 	if isRawAddr {
-		addr = addr - lnr.baseAddress
+		if addr, err = lnr.objFile.ObjAddr(addr); err != nil {
+			return nil, err
+		}
 	}
 	name, err := lnr.searcher.Search(addr)
 	if err != nil {

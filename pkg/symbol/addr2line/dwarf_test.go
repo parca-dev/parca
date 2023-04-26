@@ -23,6 +23,7 @@ import (
 
 	metastorev1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
+	"github.com/parca-dev/parca/pkg/symbol/objectfile"
 )
 
 func TestDwarfSymbolizer(t *testing.T) {
@@ -35,7 +36,12 @@ func TestDwarfSymbolizer(t *testing.T) {
 	}
 	defer elfFile.Close()
 
-	dwarf, err := DWARF(logger, filename, elfFile, 0, demangler)
+	objFile, err := objectfile.NewObjectFile(filename, elfFile, 0x401000, 0x402000, 0x1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	dwarf, err := DWARF(logger, objFile, demangler)
 	if err != nil {
 		panic("failure reading DWARF file")
 	}
