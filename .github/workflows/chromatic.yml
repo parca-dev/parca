@@ -43,7 +43,7 @@ jobs:
           skip_after_successful_duplicate: false
   chromatic-deployment:
     needs: skip-check
-    if: ${{ needs.skip-check.outputs.should_skip != 'true' }}
+    if: needs.skip-check.outputs.should_skip != 'true' && '!github.event.pull_request.head.repo.fork'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
@@ -62,7 +62,6 @@ jobs:
         run: yarn install --frozen-lockfile --prefer-offline && yarn bootstrap && yarn build
         # 👇 Adds Chromatic as a step in the workflow
       - name: Publish to Chromatic
-        if: '!github.event.pull_request.head.repo.fork'
         uses: chromaui/action@d51b84e79d164fbe8fc5bb7175695d88ddd04b72 # v1
         # Chromatic GitHub Action options
         with:
