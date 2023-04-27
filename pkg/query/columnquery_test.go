@@ -995,7 +995,7 @@ func BenchmarkQuery(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, _ = RenderReport(ctx, tracer, sp, pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_TABLE, 0, 0, NewTableConverterPool())
+		_, _ = RenderReport(ctx, tracer, sp, pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW, 0, 0, NewTableConverterPool())
 	}
 }
 

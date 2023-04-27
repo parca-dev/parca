@@ -227,6 +227,9 @@ message QueryRequest {
 
     // REPORT_TYPE_FLAMEGRAPH_TABLE unspecified
     REPORT_TYPE_FLAMEGRAPH_TABLE = 4;
+
+    // REPORT_TYPE_FLAMEGRAPH_ARROW unspecified
+    REPORT_TYPE_FLAMEGRAPH_ARROW = 5;
   }
 
   // report_type is the type of report to return
