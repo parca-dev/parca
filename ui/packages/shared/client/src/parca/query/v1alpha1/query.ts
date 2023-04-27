@@ -433,7 +433,13 @@ export enum QueryRequest_ReportType {
      *
      * @generated from protobuf enum value: REPORT_TYPE_FLAMEGRAPH_TABLE = 4;
      */
-    FLAMEGRAPH_TABLE = 4
+    FLAMEGRAPH_TABLE = 4,
+    /**
+     * REPORT_TYPE_FLAMEGRAPH_ARROW unspecified
+     *
+     * @generated from protobuf enum value: REPORT_TYPE_FLAMEGRAPH_ARROW = 5;
+     */
+    FLAMEGRAPH_ARROW = 5
 }
 /**
  * Top is the top report type
