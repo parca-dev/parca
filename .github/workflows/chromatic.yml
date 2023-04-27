@@ -43,7 +43,7 @@ jobs:
           skip_after_successful_duplicate: false
   chromatic-deployment:
     needs: skip-check
-    if: needs.skip-check.outputs.should_skip != 'true' && '!github.event.pull_request.head.repo.fork'
+    if: needs.skip-check.outputs.should_skip != 'true' && !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
