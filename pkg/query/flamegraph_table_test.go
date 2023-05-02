@@ -132,13 +132,13 @@ func TestGenerateFlamegraphTable(t *testing.T) {
 
 	p, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
 		Samples: []*parcaprofile.NormalizedSample{{
-			StacktraceID: s1.Id,
+			StacktraceID: []string{s1.Id},
 			Value:        2,
 		}, {
-			StacktraceID: s2.Id,
+			StacktraceID: []string{s2.Id},
 			Value:        1,
 		}, {
-			StacktraceID: s3.Id,
+			StacktraceID: []string{s3.Id},
 			Value:        3,
 		}},
 	})
@@ -294,14 +294,14 @@ func TestGenerateFlamegraphTableTrimming(t *testing.T) {
 
 	p, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
 		Samples: []*parcaprofile.NormalizedSample{{
-			StacktraceID: s1.Id,
+			StacktraceID: []string{s1.Id},
 			Value:        10,
 		}, {
 			// The following two samples are trimmed from the flamegraph.
-			StacktraceID: s2.Id,
+			StacktraceID: []string{s2.Id},
 			Value:        1,
 		}, {
-			StacktraceID: s3.Id,
+			StacktraceID: []string{s3.Id},
 			Value:        3,
 		}},
 	})
@@ -438,16 +438,16 @@ func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 
 	p, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
 		Samples: []*parcaprofile.NormalizedSample{{
-			StacktraceID: s1.Id,
+			StacktraceID: []string{s1.Id},
 			Value:        2,
 		}, {
-			StacktraceID: s3.Id,
+			StacktraceID: []string{s3.Id},
 			Value:        2,
 		}, {
-			StacktraceID: s4.Id,
+			StacktraceID: []string{s4.Id},
 			Value:        2,
 		}, {
-			StacktraceID: s2.Id,
+			StacktraceID: []string{s2.Id},
 			Value:        1,
 		}},
 	})
@@ -1181,18 +1181,18 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 
 	p, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
 		Samples: []*parcaprofile.NormalizedSample{{
-			StacktraceID: s1.Id,
+			StacktraceID: []string{s1.Id},
 			Value:        2,
 		}, {
-			StacktraceID: s2.Id,
+			StacktraceID: []string{s2.Id},
 			Value:        1,
 		}, {
 			// Only this sample will be in the final flamegraph.
 			// The two above will be filtered and the last one will be trimmed.
-			StacktraceID: s3.Id,
+			StacktraceID: []string{s3.Id},
 			Value:        12,
 		}, {
-			StacktraceID: s4.Id,
+			StacktraceID: []string{s4.Id},
 			Value:        3,
 		}},
 	})

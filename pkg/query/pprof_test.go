@@ -166,7 +166,7 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
 		Samples: []*parcaprofile.NormalizedSample{{
-			StacktraceID: s.Id,
+			StacktraceID: []string{s.Id},
 			Value:        1,
 		}},
 	})

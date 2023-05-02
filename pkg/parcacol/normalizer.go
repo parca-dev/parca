@@ -85,7 +85,7 @@ func (n *MetastoreNormalizer) NormalizePprof(ctx context.Context, name string, t
 			}
 
 			ns := &profile.NormalizedSample{
-				StacktraceID: stacktraces[i].Id,
+				StacktraceID: []string{stacktraces[i].Id},
 				Value:        sample.Value[j],
 				Label:        labels,
 				NumLabel:     numLabels,

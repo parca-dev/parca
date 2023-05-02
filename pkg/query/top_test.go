@@ -142,13 +142,13 @@ func TestGenerateTopTableAggregateFlat(t *testing.T) {
 
 	p, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &profile.NormalizedProfile{
 		Samples: []*profile.NormalizedSample{{
-			StacktraceID: st1.Id,
+			StacktraceID: []string{st1.Id},
 			Value:        1,
 		}, {
-			StacktraceID: st2.Id,
+			StacktraceID: []string{st2.Id},
 			Value:        1,
 		}, {
-			StacktraceID: st3.Id,
+			StacktraceID: []string{st3.Id},
 			Value:        1,
 		}},
 	})

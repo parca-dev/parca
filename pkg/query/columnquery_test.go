@@ -562,7 +562,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 				Timestamp:  1,
 			},
 			Samples: []*profile.NormalizedSample{{
-				StacktraceID: st1.Id,
+				StacktraceID: []string{st1.Id},
 				Value:        1,
 			}},
 		}}},
@@ -578,7 +578,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 				Timestamp:  2,
 			},
 			Samples: []*profile.NormalizedSample{{
-				StacktraceID: st2.Id,
+				StacktraceID: []string{st2.Id},
 				Value:        2,
 			}},
 		}}},

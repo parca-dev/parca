@@ -52,7 +52,7 @@ type SymbolizedSample struct {
 }
 
 type NormalizedSample struct {
-	StacktraceID string
+	StacktraceID []string
 	Value        int64
 	DiffValue    int64
 	Label        map[string]string

@@ -131,13 +131,13 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 
 	p, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
 		Samples: []*parcaprofile.NormalizedSample{{
-			StacktraceID: s1.Id,
+			StacktraceID: []string{s1.Id},
 			Value:        2,
 		}, {
-			StacktraceID: s2.Id,
+			StacktraceID: []string{s2.Id},
 			Value:        1,
 		}, {
-			StacktraceID: s3.Id,
+			StacktraceID: []string{s3.Id},
 			Value:        3,
 		}},
 	})

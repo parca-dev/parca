@@ -105,7 +105,7 @@ func (c *ArrowToProfileConverter) Convert(
 func (c *ArrowToProfileConverter) SymbolizeNormalizedProfile(ctx context.Context, p *profile.NormalizedProfile) (*profile.Profile, error) {
 	stacktraceIDs := make([]string, len(p.Samples))
 	for i, sample := range p.Samples {
-		stacktraceIDs[i] = sample.StacktraceID
+		stacktraceIDs[i] = sample.StacktraceID[0]
 	}
 
 	stacktraceLocations, err := c.resolveStacktraces(ctx, stacktraceIDs)

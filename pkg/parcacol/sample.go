@@ -68,7 +68,7 @@ func SampleToParquetRow(
 			row = append(row, parquet.ValueOf(meta.SampleType.Unit).Level(0, 0, columnIndex))
 			columnIndex++
 		case ColumnStacktrace:
-			row = append(row, parquet.ValueOf(s.StacktraceID).Level(0, 0, columnIndex))
+			row = append(row, parquet.ValueOf(s.StacktraceID[0]).Level(0, 0, columnIndex))
 			columnIndex++
 		case ColumnTimestamp:
 			row = append(row, parquet.ValueOf(meta.Timestamp).Level(0, 0, columnIndex))
@@ -169,7 +169,7 @@ func SeriesToArrowRecord(
 							err = bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(p.Meta.SampleType.Unit)
 							i++
 						case ColumnStacktrace:
-							bldr.Field(i).(*array.BinaryBuilder).AppendString(sample.StacktraceID)
+							bldr.Field(i).(*array.BinaryBuilder).AppendString(sample.StacktraceID[0])
 							i++
 						case ColumnTimestamp:
 							bldr.Field(i).(*array.Int64Builder).Append(p.Meta.Timestamp)
