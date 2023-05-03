@@ -76,6 +76,36 @@ func TestLabelsFromSample(t *testing.T) {
 	}
 }
 
+func BenchmarkLabelsFromSample(b *testing.B) {
+	var (
+		takenLabels = map[string]string{
+			"foo": "bar",
+		}
+		stringTable = []string{"", "foo", "bar", "exported_foo", "baz"}
+		samples     = []*pprofpb.Label{{
+			Key: 1,
+			Str: 2,
+		}, {
+			Key: 3,
+			Str: 4,
+		}}
+	)
+	var (
+		resultLabels = map[string]string{
+			"exported_foo":          "baz",
+			"exported_exported_foo": "bar",
+		}
+		resultNumLabels = map[string]int64{}
+	)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		labels, numLabels := LabelsFromSample(takenLabels, stringTable, samples)
+		require.Equal(b, resultLabels, labels)
+		require.Equal(b, resultNumLabels, numLabels)
+	}
+}
+
 func TestSampleKey(t *testing.T) {
 	tests := map[string]struct {
 		stacktraceID string
