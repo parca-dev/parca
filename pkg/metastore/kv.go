@@ -14,17 +14,82 @@
 package metastore
 
 import (
+	"bytes"
 	"crypto/sha512"
 	"encoding/base64"
 	"encoding/binary"
+	"sync"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 )
 
+func NewKeyMaker() *KeyMaker {
+	return &KeyMaker{
+		pool: sync.Pool{New: func() interface{} {
+			return &bytes.Buffer{}
+		}},
+	}
+}
+
+// KeyMaker is responsible for creating keys used in BadgerMetastore.
+type KeyMaker struct {
+	// pool is a pool of buffers.
+	pool sync.Pool
+}
+
 // MakeLocationKey returns the key to be used to store/lookup the location in a
 // key-value store.
-func MakeLocationKey(l *pb.Location) string {
-	return MakeLocationKeyWithID(MakeLocationID(l))
+func (m *KeyMaker) MakeLocationKey(l *pb.Location) string {
+	return MakeLocationKeyWithID(m.MakeLocationID(l))
+}
+
+// MakeLocationID returns a key for the location that uniquely identifies the
+// location. Locations are uniquely identified by their mapping ID and their
+// address and whether the address is folded. If a location address is 0, then
+// the lines are expected to be non empty and to be already resolved as they
+// cannot be asynchronously symbolized. The lines are then taken into the
+// location key.
+func (m *KeyMaker) MakeLocationID(l *pb.Location) string {
+	hbuf := m.pool.Get().(*bytes.Buffer)
+	defer m.pool.Put(hbuf)
+
+	hbuf.Reset()
+	hbuf.WriteString(l.MappingId)
+
+	// ibuf is a buffer that is used to encode integers.
+	ibuf := make([]byte, 8)
+	binary.BigEndian.PutUint64(ibuf, l.Address)
+	hbuf.Write(ibuf)
+
+	// If the address is 0, then the functions attached to the
+	// location are not from a native binary, but instead from a dynamic
+	// runtime/language eg. ruby or python. In those cases we have no better
+	// uniqueness factor than the actual functions, and since there is no
+	// address there is no potential for asynchronously symbolizing.
+	if l.Address == 0 {
+		for _, line := range l.Lines {
+			hbuf.WriteString(line.FunctionId)
+
+			binary.BigEndian.PutUint64(ibuf, uint64(line.Line))
+			hbuf.Write(ibuf)
+		}
+	}
+
+	hash := sha512.New512_256()
+	hash.Write(hbuf.Bytes())
+	sum := hash.Sum(nil)
+	mappingId := l.MappingId
+	if mappingId == "" {
+		mappingId = "unknown-mapping"
+	}
+
+	hashLen := base64.URLEncoding.EncodedLen(len(sum))
+	hbuf.Reset()
+	hbuf.Grow(hashLen)
+	b := hbuf.Bytes()[:hashLen]
+	base64.URLEncoding.Encode(b, sum)
+
+	return mappingId + "/" + string(b)
 }
 
 // Locations are namespaced by their mapping ID
@@ -55,61 +120,6 @@ func LocationIDFromUnsymbolizedKey(key string) string {
 // LocationIDFromKey returns the location ID portion of the provided key.
 func LocationIDFromKey(key string) string {
 	return key[len(locationsKeyPrefix):]
-}
-
-// MakeLocationID returns a key for the location that uniquely identifies the
-// location. Locations are uniquely identified by their mapping ID and their
-// address and whether the address is folded. If a location address is 0, then
-// the lines are expected to be non empty and to be already resolved as they
-// cannot be asynchronously symbolized. The lines are then taken into the
-// location key.
-func MakeLocationID(l *pb.Location) string {
-	hash := sha512.New512_256()
-
-	hash.Write([]byte(l.MappingId))
-
-	//nolint:errcheck // ignore error as writing to the hash will cannot error
-	binary.Write(hash, binary.BigEndian, l.Address)
-	if l.IsFolded {
-		// If IsFolded is false this means automatically that these 8 bytes are
-		// 0. This works out well as the key is byte aligned to the nearest 8
-		// bytes that way.
-
-		//nolint:errcheck,staticcheck
-		// ignore the error as writing to the hash will not error
-		// https://staticcheck.io/docs/checks#SA1003
-		// The encoding/binary package can only serialize types with known sizes.
-		// This precludes the use of the int and uint types, as their sizes differ on different architectures.
-		// TODO: Fix this.
-		binary.Write(hash, binary.BigEndian, 1)
-	} else {
-		//nolint:errcheck,staticcheck
-		// ignore the error as writing to the hash will not error
-		// https://staticcheck.io/docs/checks#SA1003
-		// TODO: Fix this.
-		binary.Write(hash, binary.BigEndian, 0)
-	}
-
-	// If the address is 0, then the functions attached to the
-	// location are not from a native binary, but instead from a dynamic
-	// runtime/language eg. ruby or python. In those cases we have no better
-	// uniqueness factor than the actual functions, and since there is no
-	// address there is no potential for asynchronously symbolizing.
-	if l.Address == 0 {
-		for _, line := range l.Lines {
-			hash.Write([]byte(line.FunctionId))
-
-			//nolint:errcheck // ignore error as writing to the hash will cannot error
-			binary.Write(hash, binary.BigEndian, line.Line)
-		}
-	}
-
-	sum := hash.Sum(nil)
-	mappingId := l.MappingId
-	if mappingId == "" {
-		mappingId = "unknown-mapping"
-	}
-	return mappingId + "/" + base64.URLEncoding.EncodeToString(sum[:])
 }
 
 // MakeFunctionKey returns the key to be used to store/lookup the function in a
