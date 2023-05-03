@@ -56,7 +56,8 @@ func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profil
 		{Name: flamegraphFieldDiff, Type: arrow.PrimitiveTypes.Int64, Nullable: true},
 	}, nil)
 
-	rb := builder.NewRecordBuilder(memory.NewGoAllocator(), schema)
+	mem := memory.NewGoAllocator()
+	rb := builder.NewRecordBuilder(mem, schema)
 
 	builderMappingStart := rb.Field(schema.FieldIndices(flamegraphFieldMappingStart)[0]).(*array.Uint64Builder)
 	builderMappingLimit := rb.Field(schema.FieldIndices(flamegraphFieldMappingLimit)[0]).(*array.Uint64Builder)
@@ -74,13 +75,19 @@ func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profil
 	builderFunctionFileName := rb.Field(schema.FieldIndices(flamegraphFieldFunctionFileName)[0]).(*array.StringBuilder)
 
 	builderChildren := rb.Field(schema.FieldIndices(flamegraphFieldChildren)[0]).(*builder.ListBuilder)
+	builderChildrenValues := builderChildren.ValueBuilder().(*array.Uint32Builder)
 	builderCumulative := rb.Field(schema.FieldIndices(flamegraphFieldCumulative)[0]).(*builder.OptInt64Builder)
 	builderDiff := rb.Field(schema.FieldIndices(flamegraphFieldDiff)[0]).(*builder.OptInt64Builder)
 
+	// start with -1 so the first row++ will be 0
+	row := -1
 	for _, s := range p.Samples {
+		// every new sample resets the childRow to -1 indicating that we start with a leaf again.
+		childRow := -1
 		for i := len(s.Locations) - 1; i >= 0; i-- {
 			location := s.Locations[i]
 			for _, line := range location.Lines {
+				row++
 				for j := range rb.Fields() {
 					switch schema.Field(j).Name {
 					// Mapping
@@ -124,8 +131,12 @@ func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profil
 						builderFunctionFileName.Append(line.Function.Filename)
 					// Values
 					case flamegraphFieldChildren:
-						// TODO: Figure out how to append multiple values
-						builderChildren.AppendNull()
+						if childRow >= 0 {
+							builderChildren.Append(true)
+							builderChildrenValues.Append(uint32(childRow))
+						} else {
+							builderChildren.AppendNull() // leaf
+						}
 					case flamegraphFieldCumulative:
 						builderCumulative.Append(s.Value)
 					case flamegraphFieldDiff:
@@ -138,6 +149,7 @@ func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profil
 						panic(fmt.Sprintf("unknown field %s", schema.Field(j).Name))
 					}
 				}
+				childRow = row
 			}
 		}
 	}
