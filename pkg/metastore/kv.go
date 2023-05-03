@@ -75,19 +75,18 @@ func (m *KeyMaker) MakeLocationID(l *pb.Location) string {
 		}
 	}
 
-	hash := sha512.New512_256()
-	hash.Write(hbuf.Bytes())
-	sum := hash.Sum(nil)
-	mappingId := l.MappingId
-	if mappingId == "" {
-		mappingId = "unknown-mapping"
-	}
+	sum := sha512.Sum512_256(hbuf.Bytes())
 
 	hashLen := base64.URLEncoding.EncodedLen(len(sum))
 	hbuf.Reset()
 	hbuf.Grow(hashLen)
 	b := hbuf.Bytes()[:hashLen]
-	base64.URLEncoding.Encode(b, sum)
+	base64.URLEncoding.Encode(b, sum[:])
+
+	mappingId := l.MappingId
+	if mappingId == "" {
+		mappingId = "unknown-mapping"
+	}
 
 	return mappingId + "/" + string(b)
 }
