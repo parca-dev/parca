@@ -17,14 +17,14 @@ require (
 	github.com/go-delve/delve v1.20.2
 	github.com/go-kit/log v0.2.1
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
-	github.com/google/pprof v0.0.0-20230406165453-00490a63f317
+	github.com/google/pprof v0.0.0-20230429030804-905365eefe3e
 	github.com/google/uuid v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2 v2.0.0-rc.3
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.3
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.15.2
-	github.com/ianlancetaylor/demangle v0.0.0-20230322204757-857afb9054cd
+	github.com/ianlancetaylor/demangle v0.0.0-20230425220036-24673e7931eb
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/klauspost/compress v1.16.5
 	github.com/nanmu42/limitio v1.0.0
@@ -46,7 +46,7 @@ require (
 	golang.org/x/net v0.9.0
 	golang.org/x/oauth2 v0.7.0
 	golang.org/x/sync v0.1.0
-	google.golang.org/api v0.118.0
+	google.golang.org/api v0.120.0
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 	google.golang.org/grpc v1.54.0
 	google.golang.org/protobuf v1.30.0
@@ -138,7 +138,7 @@ require (
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/google/s2a-go v0.1.0 // indirect
+	github.com/google/s2a-go v0.1.2 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.3 // indirect
 	github.com/googleapis/gax-go/v2 v2.8.0 // indirect
 	github.com/gophercloud/gophercloud v1.2.0 // indirect
