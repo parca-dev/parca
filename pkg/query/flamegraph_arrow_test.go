@@ -133,16 +133,79 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 	require.Equal(t, int64(10), fa.NumRows())
 	require.Equal(t, int64(15), fa.NumCols())
 
+	// Create a list of all rows for humans.
+	rows := []struct {
+		MappingStart       uint64
+		MappingLimit       uint64
+		MappingOffset      uint64
+		MappingFile        string
+		MappingBuildID     string
+		LocationAddress    uint64
+		LocationFolded     bool
+		LocationLine       int64
+		FunctionStartLine  int64
+		FunctionName       string
+		FunctionSystemName string
+		FunctionFilename   string
+		Children           []uint32
+		Cumulative         int64
+	}{
+		{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, FunctionStartLine: 1, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Children: []uint32{1, 2, 3, 4, 5}, Cumulative: 2},
+		{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 2, FunctionStartLine: 2, FunctionName: "2", FunctionSystemName: "2", FunctionFilename: "2", Children: []uint32{1, 2, 3, 4, 5}, Cumulative: 2},
+		{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, FunctionStartLine: 1, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Children: []uint32{1, 2, 3, 4, 5}, Cumulative: 1},
+		{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 2, FunctionStartLine: 2, FunctionName: "2", FunctionSystemName: "2", FunctionFilename: "2", Children: []uint32{1, 2, 3, 4, 5}, Cumulative: 1},
+		{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa3, LocationFolded: false, LocationLine: 3, FunctionStartLine: 3, FunctionName: "3", FunctionSystemName: "3", FunctionFilename: "3", Children: []uint32{1, 2, 3, 4, 5}, Cumulative: 1},
+		{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa5, LocationFolded: false, LocationLine: 5, FunctionStartLine: 5, FunctionName: "5", FunctionSystemName: "5", FunctionFilename: "5", Children: []uint32{1, 2, 3, 4, 5}, Cumulative: 1},
+		{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, FunctionStartLine: 1, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Children: []uint32{1, 2, 3, 4, 5}, Cumulative: 3},
+		{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 2, FunctionStartLine: 2, FunctionName: "2", FunctionSystemName: "2", FunctionFilename: "2", Children: []uint32{1, 2, 3, 4, 5}, Cumulative: 3},
+		{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa3, LocationFolded: false, LocationLine: 3, FunctionStartLine: 3, FunctionName: "3", FunctionSystemName: "3", FunctionFilename: "3", Children: []uint32{1, 2, 3, 4, 5}, Cumulative: 3},
+		{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa4, LocationFolded: false, LocationLine: 4, FunctionStartLine: 4, FunctionName: "4", FunctionSystemName: "4", FunctionFilename: "4", Children: []uint32{1, 2, 3, 4, 5}, Cumulative: 3},
+	}
+
+	// Convert the rows to columns for easier access when testing below.
+	columns := struct {
+		mappingStart        []uint64
+		mappingLimit        []uint64
+		mappingOffset       []uint64
+		mappingFiles        []string
+		mappingBuildIDs     []string
+		locationAddresses   []uint64
+		locationFolded      []bool
+		locationLines       []int64
+		functionStartLines  []int64
+		functionNames       []string
+		functionSystemNames []string
+		functionFileNames   []string
+		children            [][]uint32
+		cumulative          []int64
+	}{}
+	for _, row := range rows {
+		columns.mappingStart = append(columns.mappingStart, row.MappingStart)
+		columns.mappingLimit = append(columns.mappingLimit, row.MappingLimit)
+		columns.mappingOffset = append(columns.mappingOffset, row.MappingOffset)
+		columns.mappingFiles = append(columns.mappingFiles, row.MappingFile)
+		columns.mappingBuildIDs = append(columns.mappingBuildIDs, row.MappingBuildID)
+		columns.locationAddresses = append(columns.locationAddresses, row.LocationAddress)
+		columns.locationFolded = append(columns.locationFolded, row.LocationFolded)
+		columns.locationLines = append(columns.locationLines, row.LocationLine)
+		columns.functionStartLines = append(columns.functionStartLines, row.FunctionStartLine)
+		columns.functionNames = append(columns.functionNames, row.FunctionName)
+		columns.functionSystemNames = append(columns.functionSystemNames, row.FunctionSystemName)
+		columns.functionFileNames = append(columns.functionFileNames, row.FunctionFilename)
+		columns.children = append(columns.children, row.Children)
+		columns.cumulative = append(columns.cumulative, row.Cumulative)
+	}
+
 	require.Equal(t,
-		[]uint64{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+		columns.mappingStart,
 		fa.Column(fa.Schema().FieldIndices(flamegraphFieldMappingStart)[0]).(*array.Uint64).Uint64Values(),
 	)
 	require.Equal(t,
-		[]uint64{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+		columns.mappingLimit,
 		fa.Column(fa.Schema().FieldIndices(flamegraphFieldMappingLimit)[0]).(*array.Uint64).Uint64Values(),
 	)
 	require.Equal(t,
-		[]uint64{0x1234, 0x1234, 0x1234, 0x1234, 0x1234, 0x1234, 0x1234, 0x1234, 0x1234, 0x1234},
+		columns.mappingOffset,
 		fa.Column(fa.Schema().FieldIndices(flamegraphFieldMappingOffset)[0]).(*array.Uint64).Uint64Values(),
 	)
 
@@ -152,7 +215,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 	for i := 0; i < int(fa.NumRows()); i++ {
 		mappingFiles[i] = mappingFilesString.Value(mappingFilesDict.GetValueIndex(i))
 	}
-	require.Equal(t, []string{"a", "a", "a", "a", "a", "a", "a", "a", "a", "a"}, mappingFiles)
+	require.Equal(t, columns.mappingFiles, mappingFiles)
 
 	mappingBuildIDDict := fa.Column(fa.Schema().FieldIndices(flamegraphFieldMappingBuildID)[0]).(*array.Dictionary)
 	mappingBuildIDString := mappingBuildIDDict.Dictionary().(*array.String)
@@ -160,31 +223,43 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 	for i := 0; i < int(fa.NumRows()); i++ {
 		mappingBuildID[i] = mappingBuildIDString.Value(mappingBuildIDDict.GetValueIndex(i))
 	}
-	require.Equal(t, []string{"aID", "aID", "aID", "aID", "aID", "aID", "aID", "aID", "aID", "aID"}, mappingBuildID)
+	require.Equal(t, columns.mappingBuildIDs, mappingBuildID)
 
 	require.Equal(t,
-		[]uint64{0xa1, 0xa2, 0xa1, 0xa2, 0xa3, 0xa5, 0xa1, 0xa2, 0xa3, 0xa4},
+		columns.locationAddresses,
 		fa.Column(fa.Schema().FieldIndices(flamegraphFieldLocationAddress)[0]).(*array.Uint64).Uint64Values(),
 	)
 
+	locationFolded := make([]bool, fa.NumRows())
+	for i := 0; i < int(fa.NumRows()); i++ {
+		locationFolded[i] = fa.Column(fa.Schema().FieldIndices(flamegraphFieldLocationFolded)[0]).(*array.Boolean).Value(i)
+	}
+	require.Equal(t, columns.locationFolded, locationFolded)
+
 	require.Equal(t,
-		[]int64{1, 2, 1, 2, 3, 5, 1, 2, 3, 4},
+		columns.locationLines,
 		fa.Column(fa.Schema().FieldIndices(flamegraphFieldLocationLine)[0]).(*array.Int64).Int64Values(),
 	)
 
-	functionNames := make([]string, fa.NumRows())
-	for i := 0; i < int(fa.NumRows()); i++ {
-		functionNames[i] = fa.Column(fa.Schema().FieldIndices(flamegraphFieldFunctionName)[0]).(*array.String).Value(i)
-	}
 	require.Equal(t,
-		[]string{"1", "2", "1", "2", "3", "5", "1", "2", "3", "4"},
-		functionNames,
+		columns.functionStartLines,
+		fa.Column(fa.Schema().FieldIndices(flamegraphFieldFunctionStartLine)[0]).(*array.Int64).Int64Values(),
 	)
 
-	// TODO: Finish testing functions
+	functionNames := make([]string, fa.NumRows())
+	functionSystemNames := make([]string, fa.NumRows())
+	functionFileNames := make([]string, fa.NumRows())
+	for i := 0; i < int(fa.NumRows()); i++ {
+		functionNames[i] = fa.Column(fa.Schema().FieldIndices(flamegraphFieldFunctionName)[0]).(*array.String).Value(i)
+		functionSystemNames[i] = fa.Column(fa.Schema().FieldIndices(flamegraphFieldFunctionSystemName)[0]).(*array.String).Value(i)
+		functionFileNames[i] = fa.Column(fa.Schema().FieldIndices(flamegraphFieldFunctionFileName)[0]).(*array.String).Value(i)
+	}
+	require.Equal(t, columns.functionNames, functionNames)
+	require.Equal(t, columns.functionSystemNames, functionSystemNames)
+	require.Equal(t, columns.functionFileNames, functionFileNames)
 
 	require.Equal(t,
-		[]int64{2, 2, 1, 1, 1, 1, 3, 3, 3, 3},
+		columns.cumulative,
 		fa.Column(fa.Schema().FieldIndices(flamegraphFieldCumulative)[0]).(*array.Int64).Int64Values(),
 	)
 	require.Equal(t,
