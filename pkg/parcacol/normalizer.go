@@ -17,6 +17,8 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
+	"strings"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
@@ -104,16 +106,29 @@ func (n *MetastoreNormalizer) NormalizePprof(ctx context.Context, name string, t
 	return profiles, nil
 }
 
+// sampleKey combines stack trace ID and all key-value label pairs
+// with a semicolon delimeter.
 func sampleKey(stacktraceID string, labels map[string]string, numLabels map[string]int64) string {
-	key := stacktraceID + ";"
+	var key strings.Builder
+	key.WriteString(stacktraceID)
+	key.WriteRune(';')
+
 	for k, v := range labels {
-		key += fmt.Sprintf("%s=%s;", k, v)
+		key.WriteString(k)
+		key.WriteRune('=')
+		key.WriteString(v)
+		key.WriteRune(';')
 	}
-	key += ";"
+	key.WriteRune(';')
+
 	for k, v := range numLabels {
-		key += fmt.Sprintf("%s=%d;", k, v)
+		key.WriteString(k)
+		key.WriteRune('=')
+		key.WriteString(strconv.FormatInt(v, 10))
+		key.WriteRune(';')
 	}
-	return key
+
+	return key.String()
 }
 
 func LabelNamesFromSamples(
