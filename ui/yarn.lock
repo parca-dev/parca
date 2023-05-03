@@ -3829,15 +3829,7 @@
   resolved "https://registry.yarnpkg.com/@popperjs/core/-/core-2.11.7.tgz#ccab5c8f7dc557a52ca3288c10075c9ccd37fff7"
   integrity sha512-Cr4OjIkipTtcXKjAsm8agyleBuDHvxzeBoa1v543lbv1YaIwQjESsVcmjiWiPEbC1FIeHOG/Op9kdCmAmiS3Kw==
 
-"@protobuf-ts/grpcweb-transport@2.8.3":
-  version "2.8.3"
-  resolved "https://registry.yarnpkg.com/@protobuf-ts/grpcweb-transport/-/grpcweb-transport-2.8.3.tgz#2a3e479681b0b2c4b6476d74f8a6139b4eb27474"
-  integrity sha512-m6E/1JySQ5imGZgQbqQc++Cd/8xm0y7ilrQm2OQpJHex3IGnd0SiLJgnfluQVlXF9AE4hRJTKcEnBUevp6oIyA==
-  dependencies:
-    "@protobuf-ts/runtime" "^2.8.3"
-    "@protobuf-ts/runtime-rpc" "^2.8.3"
-
-"@protobuf-ts/grpcweb-transport@^2.5.0":
+"@protobuf-ts/grpcweb-transport@2.9.0", "@protobuf-ts/grpcweb-transport@^2.5.0":
   version "2.9.0"
   resolved "https://registry.yarnpkg.com/@protobuf-ts/grpcweb-transport/-/grpcweb-transport-2.9.0.tgz#4273517fef2c5dbe34386e626776f146ba29a3ec"
   integrity sha512-KhHfcbQ1Z0974nrw1VAnbjkWuadWHQBvvzSPr7lZwOlLngksfASAWXFn02l5+sub2YUQx5XwygJxWZNPI78bHQ==
@@ -3845,14 +3837,14 @@
     "@protobuf-ts/runtime" "^2.9.0"
     "@protobuf-ts/runtime-rpc" "^2.9.0"
 
-"@protobuf-ts/runtime-rpc@^2.5.0", "@protobuf-ts/runtime-rpc@^2.8.3", "@protobuf-ts/runtime-rpc@^2.9.0":
+"@protobuf-ts/runtime-rpc@^2.5.0", "@protobuf-ts/runtime-rpc@^2.9.0":
   version "2.9.0"
   resolved "https://registry.yarnpkg.com/@protobuf-ts/runtime-rpc/-/runtime-rpc-2.9.0.tgz#9431d9dfa1f49c6787bc88c6d3b71b4392082494"
   integrity sha512-h2S86+u2cNJACjzbBubbjKmNrnXkTmJ9yJHW4t7ZVS9xdV1C68blsVIh3Su4ghR8Nlj0459FuIUTsjWR8hA/7g==
   dependencies:
     "@protobuf-ts/runtime" "^2.9.0"
 
-"@protobuf-ts/runtime@^2.5.0", "@protobuf-ts/runtime@^2.8.3", "@protobuf-ts/runtime@^2.9.0":
+"@protobuf-ts/runtime@^2.5.0", "@protobuf-ts/runtime@^2.9.0":
   version "2.9.0"
   resolved "https://registry.yarnpkg.com/@protobuf-ts/runtime/-/runtime-2.9.0.tgz#fca33476d0fcdd8255680321df893af7ed5bab21"
   integrity sha512-DnJtLZFMglADv9jiawBmg0RaET4a6fNSAaAHuU6Ovw2ZhJ23ehIY0NrlYLS0Lc8HRH0S5rkLI1QF1A1h8uKUnA==
