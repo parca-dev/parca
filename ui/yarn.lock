@@ -6617,7 +6617,17 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-datepicker@4.10.0", "@types/react-datepicker@^4.4.0":
+"@types/react-datepicker@4.11.0":
+  version "4.11.0"
+  resolved "https://registry.yarnpkg.com/@types/react-datepicker/-/react-datepicker-4.11.0.tgz#94729462a72cfb20427bc3b91ca9048ed7bb4429"
+  integrity sha512-naH5k8Uu5NG9+1esiCIIl9HU2hq6W6ck/3xA5XpX3kc6WUBP+ndklciQ5avGbjiYE3BvdqlHtAeHd5jcZatdTw==
+  dependencies:
+    "@popperjs/core" "^2.9.2"
+    "@types/react" "*"
+    date-fns "^2.0.1"
+    react-popper "^2.2.5"
+
+"@types/react-datepicker@^4.4.0":
   version "4.10.0"
   resolved "https://registry.yarnpkg.com/@types/react-datepicker/-/react-datepicker-4.10.0.tgz#fcb0e6a7787491bf2f37fbda2b537062608a0056"
   integrity sha512-Cq+ks20vBIU6XN67TbkCHu8M7V46Y6vJrKE2n+8q/GfueJyWWTIKeC3Z7cz/d+qxGDq/VCrqA929R0U4lNuztg==
