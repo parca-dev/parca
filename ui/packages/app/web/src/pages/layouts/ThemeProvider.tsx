@@ -13,20 +13,28 @@
 
 import React, {useEffect} from 'react';
 
-import {selectDarkMode, setDarkMode, useAppDispatch, useAppSelector} from '@parca/store';
+import {
+  selectDarkMode,
+  selectParcaThemeSystemSettings,
+  setDarkMode,
+  setParcaThemeSystemSettings,
+  useAppDispatch,
+  useAppSelector,
+} from '@parca/store';
 
 const ThemeProvider = ({children}: {children: React.ReactNode}) => {
   const dispatch = useAppDispatch();
   const darkMode = useAppSelector(selectDarkMode);
+  const isSystemSettingsTheme = useAppSelector(selectParcaThemeSystemSettings);
 
   //On the first load, if the system settings are set to dark mode, then set the dark mode to true.
   useEffect(() => {
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches && isSystemSettingsTheme) {
       document.documentElement.classList.add('dark');
-      localStorage.setItem('parcaDarkModeSystemSettings', 'true');
+      dispatch(setParcaThemeSystemSettings(true));
       dispatch(setDarkMode(true));
     }
-  }, [dispatch]);
+  }, [dispatch, isSystemSettingsTheme]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -46,22 +54,19 @@ const ThemeProvider = ({children}: {children: React.ReactNode}) => {
       }
     };
 
-    if (localStorage['parcaDarkModeSystemSettings']) dispatch(setDarkMode(mediaQuery.matches));
+    if (isSystemSettingsTheme) dispatch(setDarkMode(mediaQuery.matches));
   });
 
   // This useffect is responsible for updating the theme when the user changes the theme from the dropdown in the navbar.
   useEffect(() => {
-    if (
-      localStorage['parcaDarkModeSystemSettings'] &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches
-    ) {
+    if (isSystemSettingsTheme && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       document.documentElement.classList.add('dark');
     } else if (darkMode) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-  }, [darkMode]);
+  }, [darkMode, isSystemSettingsTheme]);
 
   return <div style={{minHeight: '100vh'}}>{children}</div>;
 };

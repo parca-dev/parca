@@ -11,25 +11,55 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {useCallback, useEffect, useState} from 'react';
+
 import {Icon} from '@iconify/react';
 
 import {Dropdown, IconButton} from '@parca/components';
-import {selectDarkMode, setDarkMode, useAppDispatch, useAppSelector} from '@parca/store';
+import {
+  selectDarkMode,
+  selectParcaThemeSystemSettings,
+  setDarkMode,
+  setParcaThemeSystemSettings,
+  useAppDispatch,
+  useAppSelector,
+} from '@parca/store';
 
 const ThemeToggle = () => {
   const dispatch = useAppDispatch();
   const isDarkMode = useAppSelector(selectDarkMode);
+  const isSystemSettingsTheme = useAppSelector(selectParcaThemeSystemSettings);
+  const [systemSettingsDarkMode, setSystemSettingsDarkMode] = useState(false);
 
-  const systemSettingsDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    // Listen for changes to the prefers-color-scheme media query and then update the theme accordingly.
+    mediaQuery.onchange = media => {
+      if (mediaQuery.matches === true) {
+        setSystemSettingsDarkMode(true);
+      } else {
+        setSystemSettingsDarkMode(false);
+      }
+    };
+  });
+
+  const conditionalDarkMode = useCallback(() => {
+    if (isSystemSettingsTheme && systemSettingsDarkMode) {
+      return true;
+    } else {
+      return isDarkMode;
+    }
+  }, [isSystemSettingsTheme, systemSettingsDarkMode, isDarkMode]);
 
   const updateWithSystemSettings = () => {
     dispatch(setDarkMode(systemSettingsDarkMode));
-    localStorage.setItem('parcaDarkModeSystemSettings', 'true');
+    dispatch(setParcaThemeSystemSettings(true));
   };
 
   const updateModesOnly = (value: boolean) => {
     dispatch(setDarkMode(value));
-    localStorage.removeItem('parcaDarkModeSystemSettings');
+    dispatch(setParcaThemeSystemSettings(false));
   };
 
   const modes = [
@@ -64,7 +94,7 @@ const ThemeToggle = () => {
               <Icon
                 className="h-5 w-5"
                 aria-hidden="true"
-                icon={isDarkMode ? 'heroicons:moon-20-solid' : 'heroicons:sun-20-solid'}
+                icon={conditionalDarkMode() ? 'heroicons:moon-20-solid' : 'heroicons:sun-20-solid'}
               />
             }
           />
