@@ -745,6 +745,28 @@ func DictionaryFromRecord(ar arrow.Record, name string) (*array.Dictionary, erro
 	return col, nil
 }
 
+func ListFromRecord(ar arrow.Record, name string) (*array.List, error) {
+	indices := ar.Schema().FieldIndices(name)
+	if len(indices) != 1 {
+		return nil, fmt.Errorf("expected 1 column named %q, got %d", name, len(indices))
+	}
+
+	col, ok := ar.Column(indices[0]).(*array.List)
+	if !ok {
+		return nil, fmt.Errorf("expected column %q to be a list column, got %T", name, ar.Column(indices[0]))
+	}
+	return col, nil
+}
+
+func Uint32sFromList(arr *array.List, i int) []uint32 {
+	if !arr.IsValid(i) {
+		return nil
+	}
+
+	start, end := arr.ValueOffsets(i)
+	return arr.ListValues().(*array.Uint32).Uint32Values()[start:end]
+}
+
 func BinaryFieldFromRecord(ar arrow.Record, name string) (*array.Binary, error) {
 	indices := ar.Schema().FieldIndices(name)
 	if len(indices) != 1 {

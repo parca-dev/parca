@@ -23,6 +23,7 @@ import (
 	"github.com/polarsignals/frostdb/pqarrow/builder"
 	"go.opentelemetry.io/otel/trace"
 
+	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -183,4 +184,43 @@ func convertSymbolizedProfile(p *profile.Profile) (arrow.Record, error) {
 	}
 
 	return rb.NewRecord(), nil
+}
+
+func aggregateByFunctionArrow(ctx context.Context, tracer trace.Tracer, ar arrow.Record, fraction float32) (arrow.Record, error) {
+	rootsArr, err := parcacol.BooleanFieldFromRecord(ar, flamegraphFieldRoot)
+	if err != nil {
+		return nil, err
+	}
+	// TODO: Figure out if there isn't a better way to read the indexes of the roots from the bitmap
+	roots := make([]int, 0, rootsArr.Len()/4)
+	for i := 0; i < int(ar.NumRows()); i++ {
+		if rootsArr.IsValid(i) && rootsArr.Value(i) {
+			roots = append(roots, i)
+		}
+	}
+
+	functionNameDict, err := parcacol.DictionaryFromRecord(ar, flamegraphFieldFunctionName)
+	if err != nil {
+		return nil, err
+	}
+	childrenList, err := parcacol.ListFromRecord(ar, flamegraphFieldChildren)
+	if err != nil {
+		return nil, err
+	}
+
+	// Iterate over all roots and merge the children for all functions with the same name
+	// Breadth first search through all children (iteratively adding new children to a queue) and merge them if necessary
+	// All merged rows are marked as invalid in a bitmap for the entire record.
+
+	// For inspiration:
+	// https://github.com/polarsignals/frostdb/blob/main/query/physicalplan/distinct.go
+	// https://www.techiedelight.com/breadth-first-search/
+
+	for _, i := range roots {
+		functionName := parcacol.StringValueFromDictionary(functionNameDict, i)
+		children := parcacol.Uint32sFromList(childrenList, i)
+		fmt.Println(functionName, children)
+	}
+
+	return ar, nil
 }
