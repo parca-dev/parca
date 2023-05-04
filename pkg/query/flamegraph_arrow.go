@@ -60,9 +60,9 @@ func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profil
 		{Name: flamegraphFieldLocationLine, Type: arrow.PrimitiveTypes.Int64},
 		// Function
 		{Name: flamegraphFieldFunctionStartLine, Type: arrow.PrimitiveTypes.Int64},
-		{Name: flamegraphFieldFunctionName, Type: arrow.BinaryTypes.String},
-		{Name: flamegraphFieldFunctionSystemName, Type: arrow.BinaryTypes.String},
-		{Name: flamegraphFieldFunctionFileName, Type: arrow.BinaryTypes.String},
+		{Name: flamegraphFieldFunctionName, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.String}},
+		{Name: flamegraphFieldFunctionSystemName, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint16, ValueType: arrow.BinaryTypes.String}},
+		{Name: flamegraphFieldFunctionFileName, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.String}},
 		// Values
 		{Name: flamegraphFieldChildren, Type: arrow.ListOf(arrow.PrimitiveTypes.Uint32)},
 		{Name: flamegraphFieldCumulative, Type: arrow.PrimitiveTypes.Int64},
@@ -83,9 +83,9 @@ func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profil
 	builderLocationLine := rb.Field(schema.FieldIndices(flamegraphFieldLocationLine)[0]).(*builder.OptInt64Builder)
 
 	builderFunctionStartLine := rb.Field(schema.FieldIndices(flamegraphFieldFunctionStartLine)[0]).(*builder.OptInt64Builder)
-	builderFunctionName := rb.Field(schema.FieldIndices(flamegraphFieldFunctionName)[0]).(*array.StringBuilder)
-	builderFunctionSystemName := rb.Field(schema.FieldIndices(flamegraphFieldFunctionSystemName)[0]).(*array.StringBuilder)
-	builderFunctionFileName := rb.Field(schema.FieldIndices(flamegraphFieldFunctionFileName)[0]).(*array.StringBuilder)
+	builderFunctionName := rb.Field(schema.FieldIndices(flamegraphFieldFunctionName)[0]).(*array.BinaryDictionaryBuilder)
+	builderFunctionSystemName := rb.Field(schema.FieldIndices(flamegraphFieldFunctionSystemName)[0]).(*array.BinaryDictionaryBuilder)
+	builderFunctionFileName := rb.Field(schema.FieldIndices(flamegraphFieldFunctionFileName)[0]).(*array.BinaryDictionaryBuilder)
 
 	builderChildren := rb.Field(schema.FieldIndices(flamegraphFieldChildren)[0]).(*builder.ListBuilder)
 	builderChildrenValues := builderChildren.ValueBuilder().(*array.Uint32Builder)
@@ -137,11 +137,11 @@ func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profil
 					case flamegraphFieldFunctionStartLine:
 						builderFunctionStartLine.Append(line.Function.StartLine)
 					case flamegraphFieldFunctionName:
-						builderFunctionName.Append(line.Function.Name)
+						_ = builderFunctionName.AppendString(line.Function.Name)
 					case flamegraphFieldFunctionSystemName:
-						builderFunctionSystemName.Append(line.Function.SystemName)
+						_ = builderFunctionSystemName.AppendString(line.Function.SystemName)
 					case flamegraphFieldFunctionFileName:
-						builderFunctionFileName.Append(line.Function.Filename)
+						_ = builderFunctionFileName.AppendString(line.Function.Filename)
 					// Values
 					case flamegraphFieldChildren:
 						if childRow >= 0 {
