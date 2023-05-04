@@ -1,6 +1,6 @@
 {
   "name": "@parca/grafana-panel",
-  "version": "0.0.117",
+  "version": "0.0.118",
   "description": "A Grafana panel plugin for Parca",
   "scripts": {
     "build": "grafana-toolkit plugin:build",
@@ -23,8 +23,8 @@
     "node": ">=14"
   },
   "dependencies": {
-    "@parca/profile": "^0.16.165",
-    "@parca/store": "^0.16.74"
+    "@parca/profile": "^0.16.166",
+    "@parca/store": "^0.16.75"
   },
   "private": true
 }
