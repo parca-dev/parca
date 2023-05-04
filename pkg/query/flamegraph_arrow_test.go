@@ -259,13 +259,20 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 		fa.Column(fa.Schema().FieldIndices(flamegraphFieldFunctionStartLine)[0]).(*array.Int64).Int64Values(),
 	)
 
+	functionNameDict := fa.Column(fa.Schema().FieldIndices(flamegraphFieldFunctionName)[0]).(*array.Dictionary)
+	functionNameString := functionNameDict.Dictionary().(*array.String)
+	functionSystemNameDict := fa.Column(fa.Schema().FieldIndices(flamegraphFieldFunctionSystemName)[0]).(*array.Dictionary)
+	functionSystemNameString := functionSystemNameDict.Dictionary().(*array.String)
+	functionFileNameDict := fa.Column(fa.Schema().FieldIndices(flamegraphFieldFunctionFileName)[0]).(*array.Dictionary)
+	functionFileNameString := functionFileNameDict.Dictionary().(*array.String)
+
 	functionNames := make([]string, fa.NumRows())
 	functionSystemNames := make([]string, fa.NumRows())
 	functionFileNames := make([]string, fa.NumRows())
 	for i := 0; i < int(fa.NumRows()); i++ {
-		functionNames[i] = fa.Column(fa.Schema().FieldIndices(flamegraphFieldFunctionName)[0]).(*array.String).Value(i)
-		functionSystemNames[i] = fa.Column(fa.Schema().FieldIndices(flamegraphFieldFunctionSystemName)[0]).(*array.String).Value(i)
-		functionFileNames[i] = fa.Column(fa.Schema().FieldIndices(flamegraphFieldFunctionFileName)[0]).(*array.String).Value(i)
+		functionNames[i] = functionNameString.Value(functionNameDict.GetValueIndex(i))
+		functionSystemNames[i] = functionSystemNameString.Value(functionSystemNameDict.GetValueIndex(i))
+		functionFileNames[i] = functionFileNameString.Value(functionFileNameDict.GetValueIndex(i))
 	}
 	require.Equal(t, columns.functionNames, functionNames)
 	require.Equal(t, columns.functionSystemNames, functionSystemNames)
