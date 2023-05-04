@@ -43,12 +43,19 @@ const (
 	flamegraphFieldFunctionFileName   = "function_file_name"
 
 	flamegraphFieldChildren   = "children"
+	flamegraphFieldRoot       = "root"
 	flamegraphFieldCumulative = "cumulative"
 	flamegraphFieldDiff       = "diff"
 )
 
 func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profile.Profile, trimFraction float32) (arrow.Record, error) {
-	return convertSymbolizedProfile(p)
+	ar, err := convertSymbolizedProfile(p)
+	if err != nil {
+		return nil, err
+	}
+
+	ar, err = aggregateByFunctionArrow(ctx, tracer, ar, trimFraction)
+	return ar, err
 }
 
 func convertSymbolizedProfile(p *profile.Profile) (arrow.Record, error) {
@@ -68,6 +75,7 @@ func convertSymbolizedProfile(p *profile.Profile) (arrow.Record, error) {
 		{Name: flamegraphFieldFunctionSystemName, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint16, ValueType: arrow.BinaryTypes.String}},
 		{Name: flamegraphFieldFunctionFileName, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.String}},
 		// Values
+		{Name: flamegraphFieldRoot, Type: &arrow.BooleanType{}},
 		{Name: flamegraphFieldChildren, Type: arrow.ListOf(arrow.PrimitiveTypes.Uint32)},
 		{Name: flamegraphFieldCumulative, Type: arrow.PrimitiveTypes.Int64},
 		{Name: flamegraphFieldDiff, Type: arrow.PrimitiveTypes.Int64, Nullable: true},
@@ -92,6 +100,7 @@ func convertSymbolizedProfile(p *profile.Profile) (arrow.Record, error) {
 	builderFunctionSystemName := rb.Field(schema.FieldIndices(flamegraphFieldFunctionSystemName)[0]).(*array.BinaryDictionaryBuilder)
 	builderFunctionFileName := rb.Field(schema.FieldIndices(flamegraphFieldFunctionFileName)[0]).(*array.BinaryDictionaryBuilder)
 
+	builderRoots := rb.Field(schema.FieldIndices(flamegraphFieldRoot)[0]).(*builder.OptBooleanBuilder)
 	builderChildren := rb.Field(schema.FieldIndices(flamegraphFieldChildren)[0]).(*builder.ListBuilder)
 	builderChildrenValues := builderChildren.ValueBuilder().(*array.Uint32Builder)
 	builderCumulative := rb.Field(schema.FieldIndices(flamegraphFieldCumulative)[0]).(*builder.OptInt64Builder)
@@ -102,8 +111,7 @@ func convertSymbolizedProfile(p *profile.Profile) (arrow.Record, error) {
 	for _, s := range p.Samples {
 		// every new sample resets the childRow to -1 indicating that we start with a leaf again.
 		childRow := -1
-		for i := len(s.Locations) - 1; i >= 0; i-- {
-			location := s.Locations[i]
+		for i, location := range s.Locations {
 			for _, line := range location.Lines {
 				row++
 				for j := range rb.Fields() {
@@ -148,6 +156,8 @@ func convertSymbolizedProfile(p *profile.Profile) (arrow.Record, error) {
 					case flamegraphFieldFunctionFileName:
 						_ = builderFunctionFileName.AppendString(line.Function.Filename)
 					// Values
+					case flamegraphFieldRoot:
+						builderRoots.AppendSingle(i == len(s.Locations)-1)
 					case flamegraphFieldChildren:
 						if childRow >= 0 {
 							builderChildren.Append(true)
