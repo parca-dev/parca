@@ -48,6 +48,10 @@ const (
 )
 
 func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profile.Profile, trimFraction float32) (arrow.Record, error) {
+	return convertSymbolizedProfile(p)
+}
+
+func convertSymbolizedProfile(p *profile.Profile) (arrow.Record, error) {
 	schema := arrow.NewSchema([]arrow.Field{
 		{Name: flamegraphFieldMappingStart, Type: arrow.PrimitiveTypes.Uint64},
 		{Name: flamegraphFieldMappingLimit, Type: arrow.PrimitiveTypes.Uint64},
@@ -72,6 +76,7 @@ func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profil
 	mem := memory.NewGoAllocator()
 	rb := builder.NewRecordBuilder(mem, schema)
 
+	// TODO: Potentially good to .Reserve() the number of samples to avoid reallocations
 	builderMappingStart := rb.Field(schema.FieldIndices(flamegraphFieldMappingStart)[0]).(*array.Uint64Builder)
 	builderMappingLimit := rb.Field(schema.FieldIndices(flamegraphFieldMappingLimit)[0]).(*array.Uint64Builder)
 	builderMappingOffset := rb.Field(schema.FieldIndices(flamegraphFieldMappingOffset)[0]).(*array.Uint64Builder)
