@@ -131,6 +131,50 @@ func (m *KeyMaker) MakeFunctionID(f *pb.Function) string {
 	return string(fb) + "/" + string(b)
 }
 
+// MakeMappingKey returns the key to be used to store/lookup the mapping in a
+// key-value store.
+func (m *KeyMaker) MakeMappingKey(mp *pb.Mapping) string {
+	return MakeMappingKeyWithID(m.MakeMappingID(mp))
+}
+
+// MakeMappingID returns a key for the mapping. Mappings are uniquely
+// identified by their build id (or file if build id is not available), their
+// size, and offset.
+func (m *KeyMaker) MakeMappingID(mp *pb.Mapping) string {
+	hbuf := m.pool.Get().(*bytes.Buffer)
+	defer m.pool.Put(hbuf)
+
+	size := mp.Limit - mp.Start
+	size = size + mapsizeRounding - 1
+	size = size - (size % mapsizeRounding)
+
+	hbuf.Reset()
+	switch {
+	case mp.BuildId != "":
+		// BuildID has precedence over file as we can rely on it being more
+		// unique.
+		hbuf.WriteString(mp.BuildId)
+	case mp.File != "":
+		hbuf.WriteString(mp.File)
+	default:
+		// A mapping containing neither build ID nor file name is a fake mapping. A
+		// key with empty buildIDOrFile is used for fake mappings so that they are
+		// treated as the same mapping during merging.
+	}
+
+	// ibuf is a buffer that is used to encode integers.
+	ibuf := make([]byte, 8)
+	binary.BigEndian.PutUint64(ibuf, size)
+	hbuf.Write(ibuf)
+	binary.BigEndian.PutUint64(ibuf, mp.Offset)
+	hbuf.Write(ibuf)
+
+	sum := sha512.Sum512_256(hbuf.Bytes())
+	b := unsafeURLEncode(sum, hbuf)
+
+	return string(b)
+}
+
 // unsafeURLEncode base64 encodes the hash sum using the supplied buffer
 // to avoid allocations.
 // Note, once the buffer is modified in any fashion,
@@ -200,12 +244,6 @@ const mapsizeRounding = 0x1000
 // `v1/mappings/by-key/<hashed-mapping-key>`.
 const mappingKeyPrefix = "v1/mappings/by-key/"
 
-// MakeMappingKey returns the key to be used to store/lookup the mapping in a
-// key-value store.
-func MakeMappingKey(m *pb.Mapping) string {
-	return MakeMappingKeyWithID(MakeMappingID(m))
-}
-
 // MakeMappingKeyWithID returns the key to be used to store/lookup a mapping
 // with the provided ID in a key-value store.
 func MakeMappingKeyWithID(mappingID string) string {
@@ -215,38 +253,6 @@ func MakeMappingKeyWithID(mappingID string) string {
 // MappingIDFromKey returns the mapping ID portion of the provided key.
 func MappingIDFromKey(key string) string {
 	return key[len(mappingKeyPrefix):]
-}
-
-// MakeMappingID returns a key for the mapping. Mappings are uniquely
-// identified by their build id (or file if build id is not available), their
-// size, and offset.
-func MakeMappingID(m *pb.Mapping) string {
-	hash := sha512.New512_256()
-
-	size := m.Limit - m.Start
-	size = size + mapsizeRounding - 1
-	size = size - (size % mapsizeRounding)
-
-	switch {
-	case m.BuildId != "":
-		// BuildID has precedence over file as we can rely on it being more
-		// unique.
-		hash.Write([]byte(m.BuildId))
-	case m.File != "":
-		hash.Write([]byte(m.File))
-	default:
-		// A mapping containing neither build ID nor file name is a fake mapping. A
-		// key with empty buildIDOrFile is used for fake mappings so that they are
-		// treated as the same mapping during merging.
-	}
-
-	//nolint:errcheck // ignore error as writing to the hash will cannot error
-	binary.Write(hash, binary.BigEndian, size)
-	//nolint:errcheck // ignore error as writing to the hash will cannot error
-	binary.Write(hash, binary.BigEndian, m.Offset)
-
-	sum := hash.Sum(nil)
-	return base64.URLEncoding.EncodeToString(sum[:])
 }
 
 // Stacktraces are organized prefixed by their root location and then their full key.

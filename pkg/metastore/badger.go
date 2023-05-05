@@ -121,7 +121,7 @@ func (m *BadgerMetastore) GetOrCreateMappings(ctx context.Context, r *pb.GetOrCr
 
 	mappingKeys := make([]string, 0, len(r.Mappings))
 	for _, id := range r.Mappings {
-		mappingKeys = append(mappingKeys, MakeMappingKey(id))
+		mappingKeys = append(mappingKeys, m.keymaker.MakeMappingKey(id))
 	}
 
 	err := m.db.Update(func(txn *badger.Txn) error {

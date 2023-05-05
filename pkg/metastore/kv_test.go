@@ -153,3 +153,64 @@ func BenchmarkMakeFunctionID(b *testing.B) {
 		}
 	}
 }
+
+func TestMakeMappingID(t *testing.T) {
+	tests := map[string]struct {
+		m    *pb.Mapping
+		want string
+	}{
+		"buildID": {
+			m: &pb.Mapping{
+				Start:   4194304,
+				Limit:   4603904,
+				BuildId: "2d6912fd3dd64542f6f6294f4bf9cb6c265b3085",
+			},
+			want: "NV3TGa0pQ3Xyt-oqzJOF7HklQRs8uJXtO-koTl8ySow=",
+		},
+		"file has_functions": {
+			m: &pb.Mapping{
+				Start:        4194304,
+				Limit:        4898816,
+				File:         "/vagrant/parca/pkg/parca/testdata/pgotest",
+				HasFunctions: true,
+			},
+			want: "jzVUbRN-7tBCz4LbEk7h4AEuH5BbsjOJgh41zsoMw24=",
+		},
+		"file": {
+			m: &pb.Mapping{
+				Start: 140729113411584,
+				Limit: 140729113419776,
+				File:  "[vdso]",
+			},
+			want: "EhTELjgEXjN888CueYVJRkvMxNFAAPEYmrsINwviMtA=",
+		},
+	}
+
+	km := NewKeyMaker()
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := km.MakeMappingID(tc.m)
+			if tc.want != got {
+				t.Errorf("expected %q got %q", tc.want, got)
+			}
+		})
+	}
+}
+
+func BenchmarkMakeMappingID(b *testing.B) {
+	km := NewKeyMaker()
+	m := &pb.Mapping{
+		Start:   4194304,
+		Limit:   4603904,
+		BuildId: "2d6912fd3dd64542f6f6294f4bf9cb6c265b3085",
+	}
+	want := "NV3TGa0pQ3Xyt-oqzJOF7HklQRs8uJXtO-koTl8ySow="
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		got := km.MakeMappingID(m)
+		if want != got {
+			b.Errorf("expected %q got %q", want, got)
+		}
+	}
+}
