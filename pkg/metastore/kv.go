@@ -91,6 +91,62 @@ func (m *KeyMaker) MakeLocationID(l *pb.Location) string {
 	return mappingId + "/" + string(b)
 }
 
+// MakeFunctionKey returns the key to be used to store/lookup the function in a
+// key-value store.
+func (m *KeyMaker) MakeFunctionKey(f *pb.Function) string {
+	return MakeFunctionKeyWithID(m.MakeFunctionID(f))
+}
+
+// MakeFunctionID returns a key for the function. Functions are uniquely
+// identified by their name, filename, starting line number and system name.
+func (m *KeyMaker) MakeFunctionID(f *pb.Function) string {
+	hbuf := m.pool.Get().(*bytes.Buffer)
+	defer m.pool.Put(hbuf)
+
+	// ibuf is a buffer that is used to encode integers.
+	ibuf := make([]byte, 8)
+	binary.BigEndian.PutUint64(ibuf, uint64(f.StartLine))
+	hbuf.Reset()
+	hbuf.Write(ibuf)
+
+	hbuf.WriteString(f.Name)
+	hbuf.WriteString(f.SystemName)
+	hbuf.WriteString(f.Filename)
+
+	sum := sha512.Sum512_256(hbuf.Bytes())
+	b := unsafeURLEncode(sum, hbuf)
+
+	if f.Filename == "" {
+		return "unknown-filename/" + string(b)
+	}
+
+	fbuf := m.pool.Get().(*bytes.Buffer)
+	defer m.pool.Put(fbuf)
+
+	fbuf.Reset()
+	fbuf.WriteString(f.Filename)
+	filenameHash := sha512.Sum512_256(fbuf.Bytes())
+	fb := unsafeURLEncode(filenameHash, fbuf)
+
+	return string(fb) + "/" + string(b)
+}
+
+// unsafeURLEncode base64 encodes the hash sum using the supplied buffer
+// to avoid allocations.
+// Note, once the buffer is modified in any fashion,
+// the returned byte slice will be affected as well because
+// it's part of the buffer.
+func unsafeURLEncode(sum [32]byte, buf *bytes.Buffer) []byte {
+	buf.Reset()
+
+	hashLen := base64.URLEncoding.EncodedLen(len(sum))
+	buf.Grow(hashLen)
+	b := buf.Bytes()[:hashLen]
+	base64.URLEncoding.Encode(b, sum[:])
+
+	return b
+}
+
 // Locations are namespaced by their mapping ID
 // `v1/locations/by-key/<hashed-mapping-key>/<hashed-location-key>`.
 const locationsKeyPrefix = "v1/locations/by-key/"
@@ -121,12 +177,6 @@ func LocationIDFromKey(key string) string {
 	return key[len(locationsKeyPrefix):]
 }
 
-// MakeFunctionKey returns the key to be used to store/lookup the function in a
-// key-value store.
-func MakeFunctionKey(f *pb.Function) string {
-	return MakeFunctionKeyWithID(MakeFunctionID(f))
-}
-
 // Functions are namespaced by their filename.
 // `v1/functions/by-key/<filename-hash>/<hashed-function-key>`.
 const functionKeyPrefix = "v1/functions/by-key/"
@@ -140,30 +190,6 @@ func MakeFunctionKeyWithID(functionID string) string {
 // FunctionIDFromKey returns the function ID portion of the provided key.
 func FunctionIDFromKey(key string) string {
 	return key[len(functionKeyPrefix):]
-}
-
-// MakeFunctionID returns a key for the function. Functions are uniquely
-// identified by their name, filename, starting line number and system name.
-func MakeFunctionID(f *pb.Function) string {
-	hash := sha512.New512_256()
-
-	//nolint:errcheck // ignore error as writing to the hash will cannot error
-	binary.Write(hash, binary.BigEndian, f.StartLine)
-
-	hash.Write([]byte(f.Name))
-	hash.Write([]byte(f.SystemName))
-	hash.Write([]byte(f.Filename))
-
-	sum := hash.Sum(nil)
-	if f.Filename == "" {
-		return "unknown-filename/" + base64.URLEncoding.EncodeToString(sum[:])
-	}
-
-	filenameHash := sha512.Sum512_256([]byte(f.Filename))
-
-	return base64.URLEncoding.EncodeToString(filenameHash[:]) +
-		"/" +
-		base64.URLEncoding.EncodeToString(sum[:])
 }
 
 // Normalize addresses to handle address space randomization.

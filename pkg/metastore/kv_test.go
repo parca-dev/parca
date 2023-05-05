@@ -101,3 +101,55 @@ func BenchmarkMakeLocationID(b *testing.B) {
 		}
 	}
 }
+
+func TestMakeFunctionID(t *testing.T) {
+	tests := map[string]struct {
+		f    *pb.Function
+		want string
+	}{
+		"k8s": {
+			f: &pb.Function{
+				Name:       "k8s.io/apimachinery/pkg/util/net.CloneHeader",
+				SystemName: "k8s.io/apimachinery/pkg/util/net.CloneHeader",
+				Filename:   "/home/runner/go/pkg/mod/k8s.io/apimachinery@v0.19.2/pkg/util/net/http.go",
+			},
+			want: "LyobRlcs0hfG2gj9yNHcjcCQoZsgdyH_1PgJoMRu1qI=/BGYf55XWQ8LntSPMGLsYojB-CvbvjzfoW5sUhYuy1Pw=",
+		},
+		"prom": {
+			f: &pb.Function{
+				Name:       "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1alpha1.newAlertmanagerConfigs",
+				SystemName: "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1alpha1.newAlertmanagerConfigs",
+				Filename:   "/home/runner/work/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1alpha1/alertmanagerconfig.go",
+			},
+			want: "aHfN-tXDeVXU8Dcm2cYE8JFXiUJaseYC8kkI8OfSr3w=/qNCGQxzcAbzz1sFpEnk_f3sqxYy3UlHqmf57-xiRxgo=",
+		},
+	}
+
+	km := NewKeyMaker()
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := km.MakeFunctionID(tc.f)
+			if tc.want != got {
+				t.Errorf("expected %q got %q", tc.want, got)
+			}
+		})
+	}
+}
+
+func BenchmarkMakeFunctionID(b *testing.B) {
+	km := NewKeyMaker()
+	f := &pb.Function{
+		Name:       "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1alpha1.newAlertmanagerConfigs",
+		SystemName: "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1alpha1.newAlertmanagerConfigs",
+		Filename:   "/home/runner/work/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1alpha1/alertmanagerconfig.go",
+	}
+	want := "aHfN-tXDeVXU8Dcm2cYE8JFXiUJaseYC8kkI8OfSr3w=/qNCGQxzcAbzz1sFpEnk_f3sqxYy3UlHqmf57-xiRxgo="
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		got := km.MakeFunctionID(f)
+		if want != got {
+			b.Errorf("expected %q got %q", want, got)
+		}
+	}
+}

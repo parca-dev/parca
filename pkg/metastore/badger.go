@@ -211,7 +211,7 @@ func (m *BadgerMetastore) GetOrCreateFunctions(ctx context.Context, r *pb.GetOrC
 
 	functionKeys := make([]string, 0, len(r.Functions))
 	for _, function := range r.Functions {
-		functionKeys = append(functionKeys, MakeFunctionKey(function))
+		functionKeys = append(functionKeys, m.keymaker.MakeFunctionKey(function))
 	}
 
 	err := m.db.Update(func(txn *badger.Txn) error {
