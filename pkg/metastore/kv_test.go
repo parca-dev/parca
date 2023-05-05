@@ -214,3 +214,53 @@ func BenchmarkMakeMappingID(b *testing.B) {
 		}
 	}
 }
+
+func TestMakeStacktraceID(t *testing.T) {
+	tests := map[string]struct {
+		s    *pb.Stacktrace
+		want string
+	}{
+		"no location IDs": {
+			s: &pb.Stacktrace{
+				LocationIds: nil,
+			},
+			want: "empty-stacktrace",
+		},
+		"location IDs": {
+			s: &pb.Stacktrace{
+				LocationIds: []string{
+					"2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/6-T7FujFgmEW5lxsVl5_Vyns3HwT4GDRzyb1XR9ywNo=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/QYu_0KTF2Gt1K5G2QG1aB_H_yfkRa6E4U2_uzQ-Xuv8=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/vYMTDe0aPeGnhicxwpMri1VlFRZ20XRnlZ_8Htr6xdY=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/d3UCFTQGH24y755FgDF0NDFtdc3txunOkzvWcXQstzc=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/cNytybYd5Pr3-XsIG-n2a7UrW3gfyHj-ivHc1c6Mhqc=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/SjCsGLa0587ijwzDLRe6MEb3ZlR-U-1Yl31e_KX8-TM=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/0SPf0RRit-KuVet_G-gUVOn5HgD4O0FLckf68nOHD4c=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/hpdra4vpDkfwD1jbx3FBtLe15aUoJLSLlkHjMRPsfWM=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/oNOzXHB9JA3nvmJv8tupxLvLTSt18R6KaMoCkCwVU7I=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/d3UCFTQGH24y755FgDF0NDFtdc3txunOkzvWcXQstzc=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/cNytybYd5Pr3-XsIG-n2a7UrW3gfyHj-ivHc1c6Mhqc=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/SjCsGLa0587ijwzDLRe6MEb3ZlR-U-1Yl31e_KX8-TM=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/0SPf0RRit-KuVet_G-gUVOn5HgD4O0FLckf68nOHD4c=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/hpdra4vpDkfwD1jbx3FBtLe15aUoJLSLlkHjMRPsfWM=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/oNOzXHB9JA3nvmJv8tupxLvLTSt18R6KaMoCkCwVU7I=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/d3UCFTQGH24y755FgDF0NDFtdc3txunOkzvWcXQstzc=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/cNytybYd5Pr3-XsIG-n2a7UrW3gfyHj-ivHc1c6Mhqc=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/SjCsGLa0587ijwzDLRe6MEb3ZlR-U-1Yl31e_KX8-TM=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/0SPf0RRit-KuVet_G-gUVOn5HgD4O0FLckf68nOHD4c=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/hpdra4vpDkfwD1jbx3FBtLe15aUoJLSLlkHjMRPsfWM=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/5tY465_RJPfYD1SpeKedQ0IPSmL-iHawLd2ST1R4_Vk=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/ALOMngTNZMGufgSVyrWYyHwOalaKORZAG-jd2i4EQSc=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/lrwPh7-60oemzHnE3POSFhgYl7LScSYnZ4TepL3KsUU=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/vTOjUx_ljAU2FZqyrByg_OY2cgo0X7AUSYilj7ZByd4=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/lNuBC6PJiVsGu8cVU1FIwdnwppcawOvY2PFDlcAR45Q=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/xBWYu4TkB3nQvGcGLB0cGmGLmhwU19pI5M9e8qSFGYU=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/jX38ZG3Vief3Kmfl0MBAlylr-cess1OUfiMWJZsfvjA=",
+				},
+			},
+			want: "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/jX38ZG3Vief3Kmfl0MBAlylr-cess1OUfiMWJZsfvjA=/mUeut4y9HHvRshC19OuNRSi19_88qXBoekXsC6w2K00=",
+		},
+	}
+
+	km := NewKeyMaker()
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := km.MakeStacktraceID(tc.s)
+			if tc.want != got {
+				t.Errorf("expected %q got %q", tc.want, got)
+			}
+		})
+	}
+}
+
+func BenchmarkMakeStacktraceID(b *testing.B) {
+	km := NewKeyMaker()
+	s := &pb.Stacktrace{
+		LocationIds: []string{
+			"2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/6-T7FujFgmEW5lxsVl5_Vyns3HwT4GDRzyb1XR9ywNo=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/QYu_0KTF2Gt1K5G2QG1aB_H_yfkRa6E4U2_uzQ-Xuv8=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/vYMTDe0aPeGnhicxwpMri1VlFRZ20XRnlZ_8Htr6xdY=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/d3UCFTQGH24y755FgDF0NDFtdc3txunOkzvWcXQstzc=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/cNytybYd5Pr3-XsIG-n2a7UrW3gfyHj-ivHc1c6Mhqc=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/SjCsGLa0587ijwzDLRe6MEb3ZlR-U-1Yl31e_KX8-TM=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/0SPf0RRit-KuVet_G-gUVOn5HgD4O0FLckf68nOHD4c=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/hpdra4vpDkfwD1jbx3FBtLe15aUoJLSLlkHjMRPsfWM=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/oNOzXHB9JA3nvmJv8tupxLvLTSt18R6KaMoCkCwVU7I=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/d3UCFTQGH24y755FgDF0NDFtdc3txunOkzvWcXQstzc=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/cNytybYd5Pr3-XsIG-n2a7UrW3gfyHj-ivHc1c6Mhqc=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/SjCsGLa0587ijwzDLRe6MEb3ZlR-U-1Yl31e_KX8-TM=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/0SPf0RRit-KuVet_G-gUVOn5HgD4O0FLckf68nOHD4c=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/hpdra4vpDkfwD1jbx3FBtLe15aUoJLSLlkHjMRPsfWM=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/oNOzXHB9JA3nvmJv8tupxLvLTSt18R6KaMoCkCwVU7I=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/d3UCFTQGH24y755FgDF0NDFtdc3txunOkzvWcXQstzc=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/cNytybYd5Pr3-XsIG-n2a7UrW3gfyHj-ivHc1c6Mhqc=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/SjCsGLa0587ijwzDLRe6MEb3ZlR-U-1Yl31e_KX8-TM=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/0SPf0RRit-KuVet_G-gUVOn5HgD4O0FLckf68nOHD4c=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/hpdra4vpDkfwD1jbx3FBtLe15aUoJLSLlkHjMRPsfWM=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/5tY465_RJPfYD1SpeKedQ0IPSmL-iHawLd2ST1R4_Vk=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/ALOMngTNZMGufgSVyrWYyHwOalaKORZAG-jd2i4EQSc=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/lrwPh7-60oemzHnE3POSFhgYl7LScSYnZ4TepL3KsUU=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/vTOjUx_ljAU2FZqyrByg_OY2cgo0X7AUSYilj7ZByd4=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/lNuBC6PJiVsGu8cVU1FIwdnwppcawOvY2PFDlcAR45Q=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/xBWYu4TkB3nQvGcGLB0cGmGLmhwU19pI5M9e8qSFGYU=", "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/jX38ZG3Vief3Kmfl0MBAlylr-cess1OUfiMWJZsfvjA=",
+		},
+	}
+	want := "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/jX38ZG3Vief3Kmfl0MBAlylr-cess1OUfiMWJZsfvjA=/mUeut4y9HHvRshC19OuNRSi19_88qXBoekXsC6w2K00="
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		got := km.MakeStacktraceID(s)
+		if want != got {
+			b.Errorf("expected %q got %q", want, got)
+		}
+	}
+}

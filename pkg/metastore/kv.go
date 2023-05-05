@@ -175,6 +175,33 @@ func (m *KeyMaker) MakeMappingID(mp *pb.Mapping) string {
 	return string(b)
 }
 
+// MakeStacktraceKey returns the key to be used to store/lookup the mapping in a
+// key-value store.
+func (m *KeyMaker) MakeStacktraceKey(s *pb.Stacktrace) string {
+	return MakeStacktraceKeyWithID(m.MakeStacktraceID(s))
+}
+
+// MakeStacktraceID returns a key for the stacktrace. Stacktraces are uniquely
+// identified by their unique combination and order of locations.
+func (m *KeyMaker) MakeStacktraceID(s *pb.Stacktrace) string {
+	if len(s.LocationIds) == 0 {
+		return "empty-stacktrace"
+	}
+
+	hbuf := m.pool.Get().(*bytes.Buffer)
+	defer m.pool.Put(hbuf)
+
+	hbuf.Reset()
+	for _, locationID := range s.LocationIds {
+		hbuf.WriteString(locationID)
+	}
+
+	sum := sha512.Sum512_256(hbuf.Bytes())
+	b := unsafeURLEncode(sum, hbuf)
+
+	return s.LocationIds[len(s.LocationIds)-1] + "/" + string(b)
+}
+
 // unsafeURLEncode base64 encodes the hash sum using the supplied buffer
 // to avoid allocations.
 // Note, once the buffer is modified in any fashion,
@@ -259,12 +286,6 @@ func MappingIDFromKey(key string) string {
 // `v1/stacktraces/by-key/<root-location-id>/<hashed-mapping-key>`.
 const stacktraceKeyPrefix = "v1/stacktraces/by-key/"
 
-// MakeStacktraceKey returns the key to be used to store/lookup the mapping in a
-// key-value store.
-func MakeStacktraceKey(s *pb.Stacktrace) string {
-	return MakeStacktraceKeyWithID(MakeStacktraceID(s))
-}
-
 // MakeStacktraceKeyWithID returns the key to be used to store/lookup a mapping
 // with the provided ID in a key-value store.
 func MakeStacktraceKeyWithID(stacktraceID string) string {
@@ -274,21 +295,4 @@ func MakeStacktraceKeyWithID(stacktraceID string) string {
 // StacktraceIDFromKey returns the mapping ID portion of the provided key.
 func StacktraceIDFromKey(key string) string {
 	return key[len(stacktraceKeyPrefix):]
-}
-
-// MakeStacktraceID returns a key for the stacktrace. Stacktraces are uniquely
-// identified by their unique combination and order of locations.
-func MakeStacktraceID(s *pb.Stacktrace) string {
-	if len(s.LocationIds) == 0 {
-		return "empty-stacktrace"
-	}
-
-	hash := sha512.New512_256()
-
-	for _, locationID := range s.LocationIds {
-		hash.Write([]byte(locationID))
-	}
-
-	sum := hash.Sum(nil)
-	return string(s.LocationIds[len(s.LocationIds)-1]) + "/" + base64.URLEncoding.EncodeToString(sum[:])
 }

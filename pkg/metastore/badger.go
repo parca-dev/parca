@@ -442,7 +442,7 @@ func (m *BadgerMetastore) GetOrCreateStacktraces(ctx context.Context, r *pb.GetO
 
 	stacktraceKeys := make([]string, 0, len(r.Stacktraces))
 	for _, stacktrace := range r.Stacktraces {
-		stacktraceKeys = append(stacktraceKeys, MakeStacktraceKey(stacktrace))
+		stacktraceKeys = append(stacktraceKeys, m.keymaker.MakeStacktraceKey(stacktrace))
 	}
 
 	const maxRetries = 100
