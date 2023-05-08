@@ -10,12 +10,13 @@ ifeq ($(GITHUB_BRANCH_NAME),)
 else
 	BRANCH := $(GITHUB_BRANCH_NAME)-
 endif
+COMMIT_TIMESTAMP := $(shell $(CMD_GIT) show --no-patch --format=%ct)-
 ifeq ($(GITHUB_SHA),)
-	COMMIT := $(shell $(CMD_GIT) describe --no-match --dirty --always --abbrev=8)
+	COMMIT := $(shell $(CMD_GIT) rev-parse --short=8 HEAD)
 else
 	COMMIT := $(shell echo $(GITHUB_SHA) | cut -c1-8)
 endif
-VERSION ?= $(if $(RELEASE_TAG),$(RELEASE_TAG),$(shell $(CMD_GIT) describe --tags --match='v*' || echo '$(subst /,-,$(BRANCH))$(COMMIT)'))
+VERSION ?= $(if $(RELEASE_TAG),$(RELEASE_TAG),$(shell $(CMD_GIT) describe --tags --match='v*' || echo '$(subst /,-,$(BRANCH))$(COMMIT_TIMESTAMP)$(COMMIT)'))
 OUT_DOCKER ?= ghcr.io/parca-dev/parca
 
 ENABLE_RACE := no
