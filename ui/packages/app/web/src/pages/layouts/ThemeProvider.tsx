@@ -36,17 +36,18 @@ const ThemeProvider = ({children}: {children: React.ReactNode}) => {
     }
   }, [dispatch, isSystemSettingsTheme]);
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
+  useEffect(() => {
     // Listen for changes to the prefers-color-scheme media query and then update the theme accordingly.
     mediaQuery.onchange = media => {
       // @ts-expect-error
-      if (media.currentTarget.matches === true) {
+      if (media.currentTarget.matches === true && isSystemSettingsTheme) {
         document.documentElement.classList.add('dark');
       } else if (
         // @ts-expect-error
-        media.currentTarget.matches === false
+        media.currentTarget.matches === false &&
+        isSystemSettingsTheme
       ) {
         document.documentElement.classList.remove('dark');
       } else {
@@ -55,7 +56,7 @@ const ThemeProvider = ({children}: {children: React.ReactNode}) => {
     };
 
     if (isSystemSettingsTheme) dispatch(setDarkMode(mediaQuery.matches));
-  });
+  }, [mediaQuery, dispatch, isSystemSettingsTheme]);
 
   // This useffect is responsible for updating the theme when the user changes the theme from the dropdown in the navbar.
   useEffect(() => {

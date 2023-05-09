@@ -31,9 +31,9 @@ const ThemeToggle = () => {
   const isSystemSettingsTheme = useAppSelector(selectParcaThemeSystemSettings);
   const [systemSettingsDarkMode, setSystemSettingsDarkMode] = useState(false);
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
+  useEffect(() => {
     // Listen for changes to the prefers-color-scheme media query and then update the theme accordingly.
     mediaQuery.onchange = media => {
       if (mediaQuery.matches === true) {
@@ -42,7 +42,7 @@ const ThemeToggle = () => {
         setSystemSettingsDarkMode(false);
       }
     };
-  });
+  }, [mediaQuery]);
 
   const conditionalDarkMode = useCallback(() => {
     if (isSystemSettingsTheme && systemSettingsDarkMode) {
