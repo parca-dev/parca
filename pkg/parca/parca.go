@@ -262,7 +262,12 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	}
 
 	if flags.EnablePersistence {
-		frostdbOptions = append(frostdbOptions, frostdb.WithBucketStorage(objstore.NewPrefixedBucket(bucket, "blocks")))
+		frostdbOptions = append(
+			frostdbOptions,
+			frostdb.WithReadWriteStorage(
+				frostdb.NewDefaultObjstoreBucket(objstore.NewPrefixedBucket(bucket, "blocks")),
+			),
+		)
 	}
 
 	if flags.Storage.EnableWAL {
