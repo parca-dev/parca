@@ -22,6 +22,7 @@ import (
 	"github.com/apache/arrow/go/v10/arrow/memory"
 	"github.com/polarsignals/frostdb/pqarrow/builder"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/exp/slices"
 
 	"github.com/parca-dev/parca/pkg/profile"
 )
@@ -43,18 +44,12 @@ const (
 	flamegraphFieldFunctionFileName   = "function_file_name"
 
 	flamegraphFieldChildren   = "children"
-	flamegraphFieldRoot       = "root"
 	flamegraphFieldCumulative = "cumulative"
 	flamegraphFieldDiff       = "diff"
 )
 
 func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profile.Profile, trimFraction float32) (arrow.Record, error) {
 	ar, err := convertSymbolizedProfile(p)
-	if err != nil {
-		return nil, err
-	}
-
-	ar, err = aggregateByFunctionArrow(ctx, tracer, ar, trimFraction)
 	return ar, err
 }
 
@@ -75,7 +70,6 @@ func convertSymbolizedProfile(p *profile.Profile) (arrow.Record, error) {
 		{Name: flamegraphFieldFunctionSystemName, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint16, ValueType: arrow.BinaryTypes.String}},
 		{Name: flamegraphFieldFunctionFileName, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.String}},
 		// Values
-		{Name: flamegraphFieldRoot, Type: &arrow.BooleanType{}},
 		{Name: flamegraphFieldChildren, Type: arrow.ListOf(arrow.PrimitiveTypes.Uint32)},
 		{Name: flamegraphFieldCumulative, Type: arrow.PrimitiveTypes.Int64},
 		{Name: flamegraphFieldDiff, Type: arrow.PrimitiveTypes.Int64, Nullable: true},
@@ -100,20 +94,48 @@ func convertSymbolizedProfile(p *profile.Profile) (arrow.Record, error) {
 	builderFunctionSystemName := rb.Field(schema.FieldIndices(flamegraphFieldFunctionSystemName)[0]).(*array.BinaryDictionaryBuilder)
 	builderFunctionFileName := rb.Field(schema.FieldIndices(flamegraphFieldFunctionFileName)[0]).(*array.BinaryDictionaryBuilder)
 
-	builderRoots := rb.Field(schema.FieldIndices(flamegraphFieldRoot)[0]).(*builder.OptBooleanBuilder)
 	builderChildren := rb.Field(schema.FieldIndices(flamegraphFieldChildren)[0]).(*builder.ListBuilder)
 	builderChildrenValues := builderChildren.ValueBuilder().(*array.Uint32Builder)
 	builderCumulative := rb.Field(schema.FieldIndices(flamegraphFieldCumulative)[0]).(*builder.OptInt64Builder)
 	builderDiff := rb.Field(schema.FieldIndices(flamegraphFieldDiff)[0]).(*builder.OptInt64Builder)
 
-	// start with -1 so the first row++ will be 0
-	row := -1
+	// The very first row is the root row. It doesn't contain any metadata.
+	// It only contains the root cumulative value and list of children (which are actual roots).
+	builderMappingStart.AppendNull()
+	builderMappingLimit.AppendNull()
+	builderMappingOffset.AppendNull()
+	builderMappingFile.AppendNull()
+	builderMappingBuildID.AppendNull()
+	builderLocationAddress.AppendNull()
+	builderLocationFolded.AppendNull()
+	builderLocationLine.AppendNull()
+	builderFunctionStartLine.AppendNull()
+	builderFunctionName.AppendNull()
+	builderFunctionSystemName.AppendNull()
+	builderFunctionFileName.AppendNull()
+	builderCumulative.AppendNull()
+	builderDiff.AppendNull()
+
+	cumulative := int64(0)
+	rootsRow := []int{}
+	children := make([][]uint32, len(p.Samples))
+
+	parent := -1
+	row := 0
 	for _, s := range p.Samples {
 		// every new sample resets the childRow to -1 indicating that we start with a leaf again.
-		childRow := -1
-		for i, location := range s.Locations {
+		for i := len(s.Locations) - 1; i >= 0; i-- {
+			location := s.Locations[i]
 			for _, line := range location.Lines {
 				row++
+
+				if i == len(s.Locations)-1 { // root of the stacktrace
+					rootsRow = append(rootsRow, row)
+					parent = -1
+				}
+				if i == 0 { // leaf of the stacktrace
+					cumulative += s.Value
+				}
 				for j := range rb.Fields() {
 					switch schema.Field(j).Name {
 					// Mapping
@@ -156,14 +178,17 @@ func convertSymbolizedProfile(p *profile.Profile) (arrow.Record, error) {
 					case flamegraphFieldFunctionFileName:
 						_ = builderFunctionFileName.AppendString(line.Function.Filename)
 					// Values
-					case flamegraphFieldRoot:
-						builderRoots.AppendSingle(i == len(s.Locations)-1)
 					case flamegraphFieldChildren:
-						if childRow >= 0 {
-							builderChildren.Append(true)
-							builderChildrenValues.Append(uint32(childRow))
-						} else {
-							builderChildren.AppendNull() // leaf
+						if len(children) == row {
+							children = slices.Grow(children, len(children))
+							children = children[:cap(children)]
+						}
+						if parent > -1 {
+							if len(children[parent]) == 0 {
+								children[parent] = []uint32{uint32(row)}
+							} else {
+								children[parent] = append(children[parent], uint32(row))
+							}
 						}
 					case flamegraphFieldCumulative:
 						builderCumulative.Append(s.Value)
@@ -177,7 +202,27 @@ func convertSymbolizedProfile(p *profile.Profile) (arrow.Record, error) {
 						panic(fmt.Sprintf("unknown field %s", schema.Field(j).Name))
 					}
 				}
-				childRow = row
+				parent = row
+			}
+		}
+	}
+
+	builderCumulative.Set(0, cumulative)
+
+	for i := 0; i < builderCumulative.Len(); i++ {
+		if i == 0 {
+			builderChildren.Append(true)
+			for _, child := range rootsRow {
+				builderChildrenValues.Append(uint32(child))
+			}
+			continue
+		}
+		if len(children[i]) == 0 {
+			builderChildren.AppendNull() // leaf
+		} else {
+			builderChildren.Append(true)
+			for _, child := range children[i] {
+				builderChildrenValues.Append(child)
 			}
 		}
 	}
