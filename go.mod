@@ -17,7 +17,7 @@ require (
 	github.com/go-delve/delve v1.20.2
 	github.com/go-kit/log v0.2.1
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
-	github.com/google/pprof v0.0.0-20230429030804-905365eefe3e
+	github.com/google/pprof v0.0.0-20230502171905-255e3b9b56de
 	github.com/google/uuid v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2 v2.0.0-rc.3
@@ -29,23 +29,23 @@ require (
 	github.com/klauspost/compress v1.16.5
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
-	github.com/polarsignals/frostdb v0.0.0-20230413075830-e3ff39dc60f9
+	github.com/polarsignals/frostdb v0.0.0-20230509170248-d7019b7373d7
 	github.com/prometheus/client_golang v1.15.0
 	github.com/prometheus/common v0.42.0
 	github.com/prometheus/prometheus v0.43.0
-	github.com/segmentio/parquet-go v0.0.0-20230404173032-05ed5ed000b1
+	github.com/segmentio/parquet-go v0.0.0-20230427215636-d483faba23a5
 	github.com/stretchr/testify v1.8.2
 	github.com/thanos-io/objstore v0.0.0-20230406135154-d1711f1d2924
-	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.40.0
-	go.opentelemetry.io/otel v1.14.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.14.0
-	go.opentelemetry.io/otel/sdk v1.14.0
-	go.opentelemetry.io/otel/trace v1.14.0
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.41.1
+	go.opentelemetry.io/otel v1.15.1
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.15.1
+	go.opentelemetry.io/otel/sdk v1.15.1
+	go.opentelemetry.io/otel/trace v1.15.1
 	go.uber.org/automaxprocs v1.5.2
-	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
+	golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53
 	golang.org/x/net v0.9.0
 	golang.org/x/oauth2 v0.7.0
-	golang.org/x/sync v0.1.0
+	golang.org/x/sync v0.2.0
 	google.golang.org/api v0.120.0
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 	google.golang.org/grpc v1.54.0
@@ -94,11 +94,15 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.16.1 // indirect
 	github.com/aws/smithy-go v1.11.1 // indirect
 	github.com/baidubce/bce-sdk-go v0.9.111 // indirect
+	github.com/benbjohnson/immutable v0.4.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.2.0 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/clbanning/mxj v1.8.4 // indirect
 	github.com/cncf/xds/go v0.0.0-20230112175826-46e39c7b9b43 // indirect
+	github.com/coreos/etcd v3.3.27+incompatible // indirect
+	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf // indirect
+	github.com/coreos/pkg v0.0.0-20220810130054-c7d1c02cb6cf // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
@@ -115,16 +119,16 @@ require (
 	github.com/envoyproxy/go-control-plane v0.11.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v0.9.1 // indirect
 	github.com/fatih/color v1.14.1 // indirect
-	github.com/gin-gonic/gin v1.7.7 // indirect
+	github.com/gin-gonic/gin v1.9.0 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
-	github.com/go-logr/logr v1.2.3 // indirect
+	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-openapi/swag v0.22.3 // indirect
 	github.com/go-resty/resty/v2 v2.7.0 // indirect
 	github.com/go-zookeeper/zk v1.0.3 // indirect
-	github.com/goccy/go-json v0.9.11 // indirect
+	github.com/goccy/go-json v0.10.0 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
@@ -199,6 +203,7 @@ require (
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/polarsignals/wal v0.0.0-20230427102350-18d6223bfbdc // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/rivo/uniseg v0.3.4 // indirect
@@ -210,17 +215,13 @@ require (
 	github.com/sony/gobreaker v0.5.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/tencentyun/cos-go-sdk-v5 v0.7.40 // indirect
-	github.com/tidwall/gjson v1.14.3 // indirect
-	github.com/tidwall/match v1.1.1 // indirect
-	github.com/tidwall/pretty v1.2.0 // indirect
-	github.com/tidwall/tinylru v1.1.0 // indirect
-	github.com/tidwall/wal v1.1.7 // indirect
 	github.com/vultr/govultr/v2 v2.17.2 // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
+	go.etcd.io/bbolt v1.3.6 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.14.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.14.0 // indirect
-	go.opentelemetry.io/otel/metric v0.37.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.15.1 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.15.1 // indirect
+	go.opentelemetry.io/otel/metric v0.38.1 // indirect
 	go.opentelemetry.io/proto/otlp v0.19.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/goleak v1.2.1 // indirect
