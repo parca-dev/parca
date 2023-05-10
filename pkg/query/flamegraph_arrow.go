@@ -78,7 +78,7 @@ func convertSymbolizedProfile(p *profile.Profile) (arrow.Record, error) {
 	mem := memory.NewGoAllocator()
 	rb := builder.NewRecordBuilder(mem, schema)
 
-	// TODO: Potentially good to .Reserve() the number of samples to avoid reallocations
+	// TODO: Potentially good to .Reserve() the number of samples to avoid re-allocations
 	builderMappingStart := rb.Field(schema.FieldIndices(flamegraphFieldMappingStart)[0]).(*array.Uint64Builder)
 	builderMappingLimit := rb.Field(schema.FieldIndices(flamegraphFieldMappingLimit)[0]).(*array.Uint64Builder)
 	builderMappingOffset := rb.Field(schema.FieldIndices(flamegraphFieldMappingOffset)[0]).(*array.Uint64Builder)
@@ -117,11 +117,14 @@ func convertSymbolizedProfile(p *profile.Profile) (arrow.Record, error) {
 	builderDiff.AppendNull()
 
 	cumulative := int64(0)
-	rootsRow := []int{}
+	rootsRow := []uint32{}
 	children := make([][]uint32, len(p.Samples))
 
+	// these change with every iteration below
+	row := uint32(0)
 	parent := -1
-	row := 0
+	compareRows := []uint32{}
+
 	for _, s := range p.Samples {
 		// every new sample resets the childRow to -1 indicating that we start with a leaf again.
 		for i := len(s.Locations) - 1; i >= 0; i-- {
@@ -130,12 +133,23 @@ func convertSymbolizedProfile(p *profile.Profile) (arrow.Record, error) {
 				row++
 
 				if i == len(s.Locations)-1 { // root of the stacktrace
+					compareRows = compareRows[:0] //  reset the compare rows
+					compareRows = append(compareRows, rootsRow...)
+					// append this row afterward to not compare to itself
 					rootsRow = append(rootsRow, row)
 					parent = -1
 				}
 				if i == 0 { // leaf of the stacktrace
 					cumulative += s.Value
 				}
+
+				// Get rows to compare the current location against.
+				// If the location is a root we compare against the root rows.
+				// If the (root) already has children we need to add them for the next lower level to compare against.
+
+				// builderFunctionName.NewDictionaryArray().GetValueIndex()
+				// builderFunctionName.
+
 				for j := range rb.Fields() {
 					switch schema.Field(j).Name {
 					// Mapping
@@ -179,7 +193,7 @@ func convertSymbolizedProfile(p *profile.Profile) (arrow.Record, error) {
 						_ = builderFunctionFileName.AppendString(line.Function.Filename)
 					// Values
 					case flamegraphFieldChildren:
-						if len(children) == row {
+						if uint32(len(children)) == row {
 							children = slices.Grow(children, len(children))
 							children = children[:cap(children)]
 						}
@@ -202,7 +216,7 @@ func convertSymbolizedProfile(p *profile.Profile) (arrow.Record, error) {
 						panic(fmt.Sprintf("unknown field %s", schema.Field(j).Name))
 					}
 				}
-				parent = row
+				parent = int(row)
 			}
 		}
 	}
@@ -213,7 +227,7 @@ func convertSymbolizedProfile(p *profile.Profile) (arrow.Record, error) {
 		if i == 0 {
 			builderChildren.Append(true)
 			for _, child := range rootsRow {
-				builderChildrenValues.Append(uint32(child))
+				builderChildrenValues.Append(child)
 			}
 			continue
 		}
