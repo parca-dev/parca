@@ -36,39 +36,34 @@ export const capitalize = (a: string): string =>
     .join(' ');
 
 interface Unit {
-  divisor: number;
+  multiplier: number;
   symbol: string;
 }
 
 const unitsInBytes = {
-  bytes: {divisor: 1, symbol: 'Bytes'},
-  kilobytes: {divisor: 1e3, symbol: 'kB'},
-  megabytes: {divisor: 1e6, symbol: 'MB'},
-  gigabytes: {divisor: 1e9, symbol: 'GB'},
-  terabytes: {divisor: 1e12, symbol: 'TB'},
-  petabytes: {divisor: 1e15, symbol: 'PB'},
-  exabytes: {divisor: 1e18, symbol: 'EB'},
+  bytes: {multiplier: 1, symbol: 'Bytes'},
+  kilobytes: {multiplier: 1e3, symbol: 'kB'},
+  megabytes: {multiplier: 1e6, symbol: 'MB'},
+  gigabytes: {multiplier: 1e9, symbol: 'GB'},
+  terabytes: {multiplier: 1e12, symbol: 'TB'},
+  petabytes: {multiplier: 1e15, symbol: 'PB'},
+  exabytes: {multiplier: 1e18, symbol: 'EB'},
 };
 
 const unitsInCount = {
-  unit: {divisor: 1, symbol: ''},
-  kilo: {divisor: 1e3, symbol: 'k'},
-  mega: {divisor: 1e6, symbol: 'M'},
-  giga: {divisor: 1e9, symbol: 'G'},
-  tera: {divisor: 1e12, symbol: 'T'},
-  peta: {divisor: 1e15, symbol: 'P'},
-  exa: {divisor: 1e18, symbol: 'E'},
-};
-
-const percentage = {
-  percentage: {divisor: 0.01, symbol: '%'} // dividing by 0.01 is like multiplying by 100.
+  unit: {multiplier: 1, symbol: ''},
+  kilo: {multiplier: 1e3, symbol: 'k'},
+  mega: {multiplier: 1e6, symbol: 'M'},
+  giga: {multiplier: 1e9, symbol: 'G'},
+  tera: {multiplier: 1e12, symbol: 'T'},
+  peta: {multiplier: 1e15, symbol: 'P'},
+  exa: {multiplier: 1e18, symbol: 'E'},
 };
 
 const knownValueFormatters = {
   bytes: unitsInBytes,
   nanoseconds: unitsInTime,
   count: unitsInCount,
-  percentage,
 };
 
 export const valueFormatter = (num: number, unit: string, digits: number): string => {
@@ -91,11 +86,11 @@ export const valueFormatter = (num: number, unit: string, digits: number): strin
   const rx = /\.0+$|(\.[0-9]*[1-9])0+$/;
   let i: number;
   for (i = format.length - 1; i > 0; i--) {
-    if (absoluteNum >= format[i].divisor) {
+    if (absoluteNum >= format[i].multiplier) {
       break;
     }
   }
-  return `${(num / format[i].divisor).toFixed(digits).replace(rx, '$1')}${format[i].symbol}`;
+  return `${(num / format[i].multiplier).toFixed(digits).replace(rx, '$1')}${format[i].symbol}`;
 };
 
 export const isDevMode = (): boolean => {

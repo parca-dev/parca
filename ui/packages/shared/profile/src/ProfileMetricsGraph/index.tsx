@@ -66,14 +66,15 @@ export const useQueryRange = (
 
       const stepDuration = getStepDuration(start, end);
 
-      const call = client.queryRange( {
-        query: queryExpression,
-        start: Timestamp.fromDate(new Date(start)),
-        end: Timestamp.fromDate(new Date(end)),
-        step: Duration.create(stepDuration),
-        limit: 0,
-        filterQuery: filterByFunction,
-      },
+      const call = client.queryRange(
+        {
+          query: queryExpression,
+          start: Timestamp.fromDate(new Date(start)),
+          end: Timestamp.fromDate(new Date(end)),
+          step: Duration.create(stepDuration),
+          limit: 0,
+          filterQuery: filterByFunction,
+        },
         {meta: metadata}
       );
       call.response
@@ -96,7 +97,13 @@ const ProfileMetricsGraph = ({
   addLabelMatcher,
   onPointClick,
 }: ProfileMetricsGraphProps): JSX.Element => {
-  const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to, filterByFunction);
+  const {isLoading, response, error} = useQueryRange(
+    queryClient,
+    queryExpression,
+    from,
+    to,
+    filterByFunction
+  );
   const isLoaderVisible = useDelayedLoader(isLoading);
   const {loader, onError, perf} = useParcaContext();
 

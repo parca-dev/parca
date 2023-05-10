@@ -122,9 +122,6 @@ const MetricsTooltip = ({
                         <td className="w-1/4">Value</td>
                         <td className="w-3/4">
                           {valueFormatter(highlighted.valuePerSecond, sampleUnit, 5)}{' '}
-                          {highlighted.valuePercentage > 0 &&
-                            <>({valueFormatter(highlighted.valuePercentage, 'percentage', 2)})</>
-                          }
                         </td>
                       </tr>
                       {delta && (

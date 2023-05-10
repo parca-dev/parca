@@ -24,15 +24,15 @@ interface MetricsSeriesProps {
 
 const MetricsSeries = ({data, line, color, strokeWidth}: MetricsSeriesProps): JSX.Element => (
   <g className="line-group">
-      <path
+    <path
       className="line"
-        d={line(data.values) ?? undefined}
-        style={{
-          stroke: color,
+      d={line(data.values) ?? undefined}
+      style={{
+        stroke: color,
         strokeWidth,
-        }}
-      />
-    </g>
-  );
+      }}
+    />
+  </g>
+);
 
 export default MetricsSeries;
