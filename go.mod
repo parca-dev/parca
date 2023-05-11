@@ -31,7 +31,7 @@ require (
 	github.com/oklog/run v1.1.0
 	github.com/polarsignals/frostdb v0.0.0-20230509170248-d7019b7373d7
 	github.com/prometheus/client_golang v1.15.1
-	github.com/prometheus/common v0.42.0
+	github.com/prometheus/common v0.43.0
 	github.com/prometheus/prometheus v0.43.0
 	github.com/segmentio/parquet-go v0.0.0-20230427215636-d483faba23a5
 	github.com/stretchr/testify v1.8.2
@@ -204,7 +204,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/polarsignals/wal v0.0.0-20230427102350-18d6223bfbdc // indirect
-	github.com/prometheus/client_model v0.3.0 // indirect
+	github.com/prometheus/client_model v0.4.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/rivo/uniseg v0.3.4 // indirect
 	github.com/rs/cors v1.8.0 // indirect
