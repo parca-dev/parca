@@ -41,7 +41,7 @@ jobs:
             [
               "**.go",
               ".github/workflows/release-dry-run.yml",
-              ".goreleaser.yml"
+              ".goreleaser.yml",
               ".go-version",
               ".node-version",
               "cmd/**",
