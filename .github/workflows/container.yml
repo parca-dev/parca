@@ -16,7 +16,7 @@ concurrency:
 
 env:
   # renovate: datasource=go depName=github.com/goreleaser/goreleaser
-  GORELEASER_VERSION: v1.18.1
+  GORELEASER_VERSION: v1.18.2
 
 jobs:
   skip-check:
