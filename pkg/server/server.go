@@ -31,8 +31,8 @@ import (
 	"github.com/go-kit/log/level"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	grpc_logging "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/prometheus/client_golang/prometheus"
@@ -106,9 +106,13 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, addr str
 		grpc_logging.WithLevels(DefaultCodeToLevelGRPC),
 	}
 
-	met := grpc_prometheus.NewServerMetrics()
-	met.EnableHandlingTimeHistogram(
-		grpc_prometheus.WithHistogramBuckets([]float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120}),
+	met := grpc_prometheus.NewServerMetrics(
+		grpc_prometheus.WithServerHandlingTimeHistogram(
+			grpc_prometheus.WithHistogramOpts(&prometheus.HistogramOpts{
+				NativeHistogramBucketFactor: 1.1,
+				Buckets:                     nil,
+			}),
+		),
 	)
 
 	// Start grpc server with API server registered
