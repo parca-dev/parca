@@ -24,7 +24,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.3
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.15.2
-	github.com/ianlancetaylor/demangle v0.0.0-20230425220036-24673e7931eb
+	github.com/ianlancetaylor/demangle v0.0.0-20230514194600-d34d4e9283ea
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/klauspost/compress v1.16.5
 	github.com/nanmu42/limitio v1.0.0
