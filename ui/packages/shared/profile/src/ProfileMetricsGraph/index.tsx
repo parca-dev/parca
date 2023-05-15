@@ -30,7 +30,7 @@ interface ProfileMetricsGraphProps {
   profile: ProfileSelection | null;
   from: number;
   to: number;
-  filterByFunction: string | undefined;
+  filterByFunction?: string;
   setTimeRange: (range: DateTimeRange) => void;
   addLabelMatcher: (key: string, value: string) => void;
   onPointClick: (timestamp: number, labels: Label[], queryExpression: string) => void;
@@ -47,7 +47,7 @@ export const useQueryRange = (
   queryExpression: string,
   start: number,
   end: number,
-  filterByFunction: string | undefined
+  filterByFunction?: string,
 ): IQueryRangeState => {
   const [state, setState] = useState<IQueryRangeState>({
     response: null,

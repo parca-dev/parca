@@ -215,15 +215,13 @@ const ProfileSelector = ({
               runQuery={setQueryExpression}
               currentQuery={query}
             />
-            <div>
-              <Input
-                className="divider-y block w-full flex-1 rounded rounded-l-none bg-gray-50 px-2 py-2 text-sm outline-none focus:ring-indigo-800 dark:bg-gray-900"
-                placeholder="filter function name..."
-                value={functionFilter}
-                onChange={e => setFunctionFilter(e.target.value)}
-              />
-            </div>
           </div>
+          <Input
+            className="divider-y block rounded bg-gray-50 px-2 py-2 text-sm outline-none focus:ring-indigo-800 dark:bg-gray-900"
+            placeholder="Filter function name..."
+            value={functionFilter}
+            onChange={e => setFunctionFilter(e.target.value)}
+          />
           <DateTimeRangePicker
             onRangeSelection={setTimeRangeSelection}
             range={timeRangeSelection}
