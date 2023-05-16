@@ -31,11 +31,15 @@ const (
 
 type MetastoreNormalizer struct {
 	metastore pb.MetastoreServiceClient
+	// isAddrNormEnabled indicates whether the metastore normalizer has to
+	// normalize sampled addresses for PIC/PIE (position independent code/executable).
+	isAddrNormEnabled bool
 }
 
-func NewNormalizer(metastore pb.MetastoreServiceClient) *MetastoreNormalizer {
+func NewNormalizer(metastore pb.MetastoreServiceClient, enableAddressNormalization bool) *MetastoreNormalizer {
 	return &MetastoreNormalizer{
-		metastore: metastore,
+		metastore:         metastore,
+		isAddrNormEnabled: enableAddressNormalization,
 	}
 }
 
@@ -316,7 +320,7 @@ func (n *MetastoreNormalizer) NormalizeLocations(
 			mappingIndex := location.MappingId - 1
 			mappingNormalizationInfo := mappings[mappingIndex]
 
-			if !normalizedAddress {
+			if n.isAddrNormEnabled && !normalizedAddress {
 				addr = uint64(int64(addr) + mappingNormalizationInfo.offset)
 			}
 			mappingId = mappingNormalizationInfo.id

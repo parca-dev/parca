@@ -170,41 +170,31 @@ func (ing NormalizedIngester) Ingest(ctx context.Context, series []Series) error
 	return nil
 }
 
-type Ingester struct {
-	logger     log.Logger
-	table      Table
-	schema     *dynparquet.Schema
-	metastore  metastorepb.MetastoreServiceClient
-	bufferPool *sync.Pool
-}
-
-func NewIngester(
+// NormalizedIngest normalizes and persists pprof samples
+// (mappings, functions, locations, stack traces).
+// Note, normalization is used in broad terms (think db normalization),
+// it doesn't necessarily mean address normalization (PIE).
+func NormalizedIngest(
+	ctx context.Context,
+	req *profilestorepb.WriteRawRequest,
 	logger log.Logger,
 	table Table,
 	schema *dynparquet.Schema,
 	metastore metastorepb.MetastoreServiceClient,
 	bufferPool *sync.Pool,
-) Ingester {
-	return Ingester{
-		logger:     logger,
-		table:      table,
-		schema:     schema,
-		metastore:  metastore,
-		bufferPool: bufferPool,
-	}
-}
-
-func (ing Ingester) Ingest(ctx context.Context, req *profilestorepb.WriteRawRequest) error {
-	normalizedRequest, err := NormalizeWriteRawRequest(ctx, NewNormalizer(ing.metastore), req)
+	enableAddressNormalization bool,
+) error {
+	normalizer := NewNormalizer(metastore, enableAddressNormalization)
+	normalizedRequest, err := NormalizeWriteRawRequest(ctx, normalizer, req)
 	if err != nil {
 		return err
 	}
 
 	if err := NewNormalizedIngester(
-		ing.logger,
-		ing.table,
-		ing.schema,
-		ing.bufferPool,
+		logger,
+		table,
+		schema,
+		bufferPool,
 		normalizedRequest.AllLabelNames,
 		normalizedRequest.AllPprofLabelNames,
 		normalizedRequest.AllPprofNumLabelNames,
@@ -226,6 +216,10 @@ type Normalizer interface {
 	NormalizePprof(ctx context.Context, name string, takenLabelNames map[string]string, p *pprofpb.Profile, normalizedAddress bool) ([]*profile.NormalizedProfile, error)
 }
 
+// NormalizeWriteRawRequest normalizes the profiles
+// (mappings, functions, locations, stack traces) to prepare for ingestion.
+// It also validates label names of profiles' series,
+// decompresses the samples, unmarshals and validates them.
 func NormalizeWriteRawRequest(ctx context.Context, normalizer Normalizer, req *profilestorepb.WriteRawRequest) (NormalizedWriteRawRequest, error) {
 	allLabelNames := make(map[string]struct{})
 	allPprofLabelNames := make(map[string]struct{})

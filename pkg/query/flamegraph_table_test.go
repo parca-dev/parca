@@ -555,7 +555,7 @@ func testGenerateFlamegraphTableFromProfile(t Testing, l metastorepb.MetastoreSe
 	err := p.UnmarshalVT(fileContent)
 	require.NoError(t, err)
 
-	normalizer := parcacol.NewNormalizer(l)
+	normalizer := parcacol.NewNormalizer(l, true)
 	profiles, err := normalizer.NormalizePprof(ctx, "test", map[string]string{}, p, false)
 	require.NoError(t, err)
 
@@ -584,7 +584,7 @@ func Benchmark_GenerateFlamegraphTable_FromProfile(b *testing.B) {
 	ctx := context.Background()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	lc := metastore.NewInProcessClient(l)
-	normalizer := parcacol.NewNormalizer(lc)
+	normalizer := parcacol.NewNormalizer(lc, true)
 	profiles, err := normalizer.NormalizePprof(ctx, "test", map[string]string{}, p, false)
 	require.NoError(b, err)
 
@@ -647,7 +647,7 @@ func TestGenerateFlamegraphTableWithInlined(t *testing.T) {
 	require.NoError(t, err)
 
 	metastore := metastore.NewInProcessClient(store)
-	normalizer := parcacol.NewNormalizer(metastore)
+	normalizer := parcacol.NewNormalizer(metastore, true)
 	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false)
 	require.NoError(t, err)
 
@@ -801,7 +801,7 @@ func TestGenerateFlamegraphTableWithInlinedExisting(t *testing.T) {
 	err = p.UnmarshalVT(MustDecompressGzip(t, b.Bytes()))
 	require.NoError(t, err)
 
-	normalizer := parcacol.NewNormalizer(metastore)
+	normalizer := parcacol.NewNormalizer(metastore, true)
 	profiles, err := normalizer.NormalizePprof(ctx, "", map[string]string{}, p, false)
 	require.NoError(t, err)
 
