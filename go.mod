@@ -5,7 +5,7 @@ go 1.19
 require (
 	cloud.google.com/go/storage v1.30.1
 	github.com/alecthomas/kong v0.7.1
-	github.com/apache/arrow/go/v10 v10.0.1
+	github.com/apache/arrow/go/v12 v12.0.0
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
@@ -79,6 +79,7 @@ require (
 	github.com/RoaringBitmap/roaring v0.9.4 // indirect
 	github.com/aliyun/aliyun-oss-go-sdk v2.2.2+incompatible // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
+	github.com/apache/arrow/go/v10 v10.0.1 // indirect
 	github.com/apache/thrift v0.16.0 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/aws/aws-sdk-go v1.44.217 // indirect
@@ -113,7 +114,7 @@ require (
 	github.com/docker/docker v23.0.3+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/dustin/go-humanize v1.0.0 // indirect
+	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/efficientgo/core v1.0.0-rc.0.0.20221201130417-ba593f67d2a4 // indirect
 	github.com/emicklei/go-restful/v3 v3.10.1 // indirect
 	github.com/envoyproxy/go-control-plane v0.11.0 // indirect
