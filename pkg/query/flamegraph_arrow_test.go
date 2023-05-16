@@ -140,14 +140,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	fa, err := GenerateFlamegraphArrow(ctx, tracer, p, 0)
-	require.NoError(t, err)
-
-	require.Equal(t, int64(11), fa.NumRows())
-	require.Equal(t, int64(15), fa.NumCols())
-
-	// Create a list of all rows for humans.
-	rows := []struct {
+	type row struct {
 		MappingStart       uint64
 		MappingLimit       uint64
 		MappingOffset      uint64
@@ -162,143 +155,177 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 		FunctionFilename   string
 		Children           []uint32
 		Cumulative         int64
-	}{
-		// the first row is the root row. None of the columns are actually used except children.
-		{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0, LocationFolded: false, LocationLine: 0, FunctionStartLine: 0, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 6, Children: []uint32{1, 3, 7}},    // 0
-		{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, FunctionStartLine: 1, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 2, Children: []uint32{2}},  // 1
-		{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 2, FunctionStartLine: 2, FunctionName: "2", FunctionSystemName: "2", FunctionFilename: "2", Cumulative: 2, Children: nil},          // 2
-		{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, FunctionStartLine: 1, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 1, Children: []uint32{4}},  // 3
-		{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 2, FunctionStartLine: 2, FunctionName: "2", FunctionSystemName: "2", FunctionFilename: "2", Cumulative: 1, Children: []uint32{5}},  // 4
-		{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa3, LocationFolded: false, LocationLine: 3, FunctionStartLine: 3, FunctionName: "3", FunctionSystemName: "3", FunctionFilename: "3", Cumulative: 1, Children: []uint32{6}},  // 5
-		{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa5, LocationFolded: false, LocationLine: 5, FunctionStartLine: 5, FunctionName: "5", FunctionSystemName: "5", FunctionFilename: "5", Cumulative: 1, Children: nil},          // 6
-		{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, FunctionStartLine: 1, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 3, Children: []uint32{8}},  // 7
-		{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 2, FunctionStartLine: 2, FunctionName: "2", FunctionSystemName: "2", FunctionFilename: "2", Cumulative: 3, Children: []uint32{9}},  // 8
-		{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa3, LocationFolded: false, LocationLine: 3, FunctionStartLine: 3, FunctionName: "3", FunctionSystemName: "3", FunctionFilename: "3", Cumulative: 3, Children: []uint32{10}}, // 9
-		{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa4, LocationFolded: false, LocationLine: 4, FunctionStartLine: 4, FunctionName: "4", FunctionSystemName: "4", FunctionFilename: "4", Cumulative: 3, Children: nil},          // 10
 	}
 
-	// Convert the rows to columns for easier access when testing below.
-	columns := struct {
-		mappingStart        []uint64
-		mappingLimit        []uint64
-		mappingOffset       []uint64
-		mappingFiles        []string
-		mappingBuildIDs     []string
-		locationAddresses   []uint64
-		locationFolded      []bool
-		locationLines       []int64
-		functionStartLines  []int64
-		functionNames       []string
-		functionSystemNames []string
-		functionFileNames   []string
-		children            [][]uint32
-		cumulative          []int64
-	}{}
-	for _, row := range rows {
-		columns.mappingStart = append(columns.mappingStart, row.MappingStart)
-		columns.mappingLimit = append(columns.mappingLimit, row.MappingLimit)
-		columns.mappingOffset = append(columns.mappingOffset, row.MappingOffset)
-		columns.mappingFiles = append(columns.mappingFiles, row.MappingFile)
-		columns.mappingBuildIDs = append(columns.mappingBuildIDs, row.MappingBuildID)
-		columns.locationAddresses = append(columns.locationAddresses, row.LocationAddress)
-		columns.locationFolded = append(columns.locationFolded, row.LocationFolded)
-		columns.locationLines = append(columns.locationLines, row.LocationLine)
-		columns.functionStartLines = append(columns.functionStartLines, row.FunctionStartLine)
-		columns.functionNames = append(columns.functionNames, row.FunctionName)
-		columns.functionSystemNames = append(columns.functionSystemNames, row.FunctionSystemName)
-		columns.functionFileNames = append(columns.functionFileNames, row.FunctionFilename)
-		columns.children = append(columns.children, row.Children)
-		columns.cumulative = append(columns.cumulative, row.Cumulative)
+	for _, tc := range []struct {
+		name   string
+		equals RowEquals
+		// expectations
+		numRows int64
+		rows    []row
+	}{{
+		name:   "aggregate-default",
+		equals: RowEqualsDefault,
+		// expectations
+		numRows: 6,
+		rows: []row{
+			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0, LocationFolded: false, LocationLine: 0, FunctionStartLine: 0, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 6, Children: []uint32{1}},            // 0
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, FunctionStartLine: 1, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 6, Children: []uint32{2}},    // 1
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 2, FunctionStartLine: 2, FunctionName: "2", FunctionSystemName: "2", FunctionFilename: "2", Cumulative: 6, Children: []uint32{3}},    // 2
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa3, LocationFolded: false, LocationLine: 3, FunctionStartLine: 3, FunctionName: "3", FunctionSystemName: "3", FunctionFilename: "3", Cumulative: 4, Children: []uint32{4, 5}}, // 3
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa5, LocationFolded: false, LocationLine: 5, FunctionStartLine: 5, FunctionName: "5", FunctionSystemName: "5", FunctionFilename: "5", Cumulative: 1, Children: nil},            // 4
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa4, LocationFolded: false, LocationLine: 4, FunctionStartLine: 4, FunctionName: "4", FunctionSystemName: "4", FunctionFilename: "4", Cumulative: 3, Children: nil},            // 5
+		},
+	}, {
+		name:   "aggregate-never",
+		equals: RowEqualsNever,
+		// expectations
+		numRows: 11,
+		rows: []row{
+			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0, LocationFolded: false, LocationLine: 0, FunctionStartLine: 0, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 6, Children: []uint32{1, 3, 7}},    // 0
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, FunctionStartLine: 1, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 2, Children: []uint32{2}},  // 1
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 2, FunctionStartLine: 2, FunctionName: "2", FunctionSystemName: "2", FunctionFilename: "2", Cumulative: 2, Children: nil},          // 2
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, FunctionStartLine: 1, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 1, Children: []uint32{4}},  // 3
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 2, FunctionStartLine: 2, FunctionName: "2", FunctionSystemName: "2", FunctionFilename: "2", Cumulative: 1, Children: []uint32{5}},  // 4
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa3, LocationFolded: false, LocationLine: 3, FunctionStartLine: 3, FunctionName: "3", FunctionSystemName: "3", FunctionFilename: "3", Cumulative: 1, Children: []uint32{6}},  // 5
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa5, LocationFolded: false, LocationLine: 5, FunctionStartLine: 5, FunctionName: "5", FunctionSystemName: "5", FunctionFilename: "5", Cumulative: 1, Children: nil},          // 6
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, FunctionStartLine: 1, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 3, Children: []uint32{8}},  // 7
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 2, FunctionStartLine: 2, FunctionName: "2", FunctionSystemName: "2", FunctionFilename: "2", Cumulative: 3, Children: []uint32{9}},  // 8
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa3, LocationFolded: false, LocationLine: 3, FunctionStartLine: 3, FunctionName: "3", FunctionSystemName: "3", FunctionFilename: "3", Cumulative: 3, Children: []uint32{10}}, // 9
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa4, LocationFolded: false, LocationLine: 4, FunctionStartLine: 4, FunctionName: "4", FunctionSystemName: "4", FunctionFilename: "4", Cumulative: 3, Children: nil},          // 10
+		},
+	}} {
+		t.Run(tc.name, func(t *testing.T) {
+			fa, err := GenerateFlamegraphArrow(ctx, tracer, p, 0, tc.equals)
+			require.NoError(t, err)
+
+			require.Equal(t, tc.numRows, fa.NumRows())
+			require.Equal(t, int64(15), fa.NumCols())
+
+			// Convert the numRows to columns for easier access when testing below.
+			columns := struct {
+				mappingStart        []uint64
+				mappingLimit        []uint64
+				mappingOffset       []uint64
+				mappingFiles        []string
+				mappingBuildIDs     []string
+				locationAddresses   []uint64
+				locationFolded      []bool
+				locationLines       []int64
+				functionStartLines  []int64
+				functionNames       []string
+				functionSystemNames []string
+				functionFileNames   []string
+				children            [][]uint32
+				cumulative          []int64
+			}{}
+			for _, row := range tc.rows {
+				columns.mappingStart = append(columns.mappingStart, row.MappingStart)
+				columns.mappingLimit = append(columns.mappingLimit, row.MappingLimit)
+				columns.mappingOffset = append(columns.mappingOffset, row.MappingOffset)
+				columns.mappingFiles = append(columns.mappingFiles, row.MappingFile)
+				columns.mappingBuildIDs = append(columns.mappingBuildIDs, row.MappingBuildID)
+				columns.locationAddresses = append(columns.locationAddresses, row.LocationAddress)
+				columns.locationFolded = append(columns.locationFolded, row.LocationFolded)
+				columns.locationLines = append(columns.locationLines, row.LocationLine)
+				columns.functionStartLines = append(columns.functionStartLines, row.FunctionStartLine)
+				columns.functionNames = append(columns.functionNames, row.FunctionName)
+				columns.functionSystemNames = append(columns.functionSystemNames, row.FunctionSystemName)
+				columns.functionFileNames = append(columns.functionFileNames, row.FunctionFilename)
+				columns.children = append(columns.children, row.Children)
+				columns.cumulative = append(columns.cumulative, row.Cumulative)
+			}
+
+			require.Equal(t,
+				columns.mappingStart,
+				fa.Column(fa.Schema().FieldIndices(flamegraphFieldMappingStart)[0]).(*array.Uint64).Uint64Values(),
+			)
+			require.Equal(t,
+				columns.mappingLimit,
+				fa.Column(fa.Schema().FieldIndices(flamegraphFieldMappingLimit)[0]).(*array.Uint64).Uint64Values(),
+			)
+			require.Equal(t,
+				columns.mappingOffset,
+				fa.Column(fa.Schema().FieldIndices(flamegraphFieldMappingOffset)[0]).(*array.Uint64).Uint64Values(),
+			)
+
+			mappingFilesDict := fa.Column(fa.Schema().FieldIndices(flamegraphFieldMappingFile)[0]).(*array.Dictionary)
+			mappingFilesString := mappingFilesDict.Dictionary().(*array.String)
+			mappingFiles := make([]string, fa.NumRows())
+			for i := 0; i < int(fa.NumRows()); i++ {
+				mappingFiles[i] = mappingFilesString.Value(mappingFilesDict.GetValueIndex(i))
+			}
+			require.Equal(t, columns.mappingFiles, mappingFiles)
+
+			mappingBuildIDDict := fa.Column(fa.Schema().FieldIndices(flamegraphFieldMappingBuildID)[0]).(*array.Dictionary)
+			mappingBuildIDString := mappingBuildIDDict.Dictionary().(*array.String)
+			mappingBuildID := make([]string, fa.NumRows())
+			for i := 0; i < int(fa.NumRows()); i++ {
+				mappingBuildID[i] = mappingBuildIDString.Value(mappingBuildIDDict.GetValueIndex(i))
+			}
+			require.Equal(t, columns.mappingBuildIDs, mappingBuildID)
+
+			require.Equal(t,
+				columns.locationAddresses,
+				fa.Column(fa.Schema().FieldIndices(flamegraphFieldLocationAddress)[0]).(*array.Uint64).Uint64Values(),
+			)
+
+			locationFolded := make([]bool, fa.NumRows())
+			for i := 0; i < int(fa.NumRows()); i++ {
+				locationFolded[i] = fa.Column(fa.Schema().FieldIndices(flamegraphFieldLocationFolded)[0]).(*array.Boolean).Value(i)
+			}
+			require.Equal(t, columns.locationFolded, locationFolded)
+
+			require.Equal(t,
+				columns.locationLines,
+				fa.Column(fa.Schema().FieldIndices(flamegraphFieldLocationLine)[0]).(*array.Int64).Int64Values(),
+			)
+
+			require.Equal(t,
+				columns.functionStartLines,
+				fa.Column(fa.Schema().FieldIndices(flamegraphFieldFunctionStartLine)[0]).(*array.Int64).Int64Values(),
+			)
+
+			functionNameDict := fa.Column(fa.Schema().FieldIndices(flamegraphFieldFunctionName)[0]).(*array.Dictionary)
+			functionNameString := functionNameDict.Dictionary().(*array.String)
+			functionSystemNameDict := fa.Column(fa.Schema().FieldIndices(flamegraphFieldFunctionSystemName)[0]).(*array.Dictionary)
+			functionSystemNameString := functionSystemNameDict.Dictionary().(*array.String)
+			functionFileNameDict := fa.Column(fa.Schema().FieldIndices(flamegraphFieldFunctionFileName)[0]).(*array.Dictionary)
+			functionFileNameString := functionFileNameDict.Dictionary().(*array.String)
+
+			functionNames := make([]string, fa.NumRows())
+			functionSystemNames := make([]string, fa.NumRows())
+			functionFileNames := make([]string, fa.NumRows())
+			for i := 0; i < int(fa.NumRows()); i++ {
+				functionNames[i] = functionNameString.Value(functionNameDict.GetValueIndex(i))
+				functionSystemNames[i] = functionSystemNameString.Value(functionSystemNameDict.GetValueIndex(i))
+				functionFileNames[i] = functionFileNameString.Value(functionFileNameDict.GetValueIndex(i))
+			}
+			require.Equal(t, columns.functionNames, functionNames)
+			require.Equal(t, columns.functionSystemNames, functionSystemNames)
+			require.Equal(t, columns.functionFileNames, functionFileNames)
+
+			children := make([][]uint32, fa.NumRows())
+			list := fa.Column(fa.Schema().FieldIndices(flamegraphFieldChildren)[0]).(*array.List)
+			listValues := list.ListValues().(*array.Uint32).Uint32Values()
+			for i := 0; i < int(fa.NumRows()); i++ {
+				if !list.IsValid(i) {
+					children[i] = nil
+				} else {
+					start, end := list.ValueOffsets(i)
+					children[i] = listValues[start:end]
+				}
+			}
+			require.Equal(t, columns.children, children)
+
+			require.Equal(t,
+				columns.cumulative,
+				fa.Column(fa.Schema().FieldIndices(flamegraphFieldCumulative)[0]).(*array.Int64).Int64Values(),
+			)
+			require.Equal(t,
+				int(tc.numRows),
+				fa.Column(fa.Schema().FieldIndices(flamegraphFieldDiff)[0]).(*array.Int64).NullN(),
+			)
+		})
 	}
-
-	require.Equal(t,
-		columns.mappingStart,
-		fa.Column(fa.Schema().FieldIndices(flamegraphFieldMappingStart)[0]).(*array.Uint64).Uint64Values(),
-	)
-	require.Equal(t,
-		columns.mappingLimit,
-		fa.Column(fa.Schema().FieldIndices(flamegraphFieldMappingLimit)[0]).(*array.Uint64).Uint64Values(),
-	)
-	require.Equal(t,
-		columns.mappingOffset,
-		fa.Column(fa.Schema().FieldIndices(flamegraphFieldMappingOffset)[0]).(*array.Uint64).Uint64Values(),
-	)
-
-	mappingFilesDict := fa.Column(fa.Schema().FieldIndices(flamegraphFieldMappingFile)[0]).(*array.Dictionary)
-	mappingFilesString := mappingFilesDict.Dictionary().(*array.String)
-	mappingFiles := make([]string, fa.NumRows())
-	for i := 0; i < int(fa.NumRows()); i++ {
-		mappingFiles[i] = mappingFilesString.Value(mappingFilesDict.GetValueIndex(i))
-	}
-	require.Equal(t, columns.mappingFiles, mappingFiles)
-
-	mappingBuildIDDict := fa.Column(fa.Schema().FieldIndices(flamegraphFieldMappingBuildID)[0]).(*array.Dictionary)
-	mappingBuildIDString := mappingBuildIDDict.Dictionary().(*array.String)
-	mappingBuildID := make([]string, fa.NumRows())
-	for i := 0; i < int(fa.NumRows()); i++ {
-		mappingBuildID[i] = mappingBuildIDString.Value(mappingBuildIDDict.GetValueIndex(i))
-	}
-	require.Equal(t, columns.mappingBuildIDs, mappingBuildID)
-
-	require.Equal(t,
-		columns.locationAddresses,
-		fa.Column(fa.Schema().FieldIndices(flamegraphFieldLocationAddress)[0]).(*array.Uint64).Uint64Values(),
-	)
-
-	locationFolded := make([]bool, fa.NumRows())
-	for i := 0; i < int(fa.NumRows()); i++ {
-		locationFolded[i] = fa.Column(fa.Schema().FieldIndices(flamegraphFieldLocationFolded)[0]).(*array.Boolean).Value(i)
-	}
-	require.Equal(t, columns.locationFolded, locationFolded)
-
-	require.Equal(t,
-		columns.locationLines,
-		fa.Column(fa.Schema().FieldIndices(flamegraphFieldLocationLine)[0]).(*array.Int64).Int64Values(),
-	)
-
-	require.Equal(t,
-		columns.functionStartLines,
-		fa.Column(fa.Schema().FieldIndices(flamegraphFieldFunctionStartLine)[0]).(*array.Int64).Int64Values(),
-	)
-
-	functionNameDict := fa.Column(fa.Schema().FieldIndices(flamegraphFieldFunctionName)[0]).(*array.Dictionary)
-	functionNameString := functionNameDict.Dictionary().(*array.String)
-	functionSystemNameDict := fa.Column(fa.Schema().FieldIndices(flamegraphFieldFunctionSystemName)[0]).(*array.Dictionary)
-	functionSystemNameString := functionSystemNameDict.Dictionary().(*array.String)
-	functionFileNameDict := fa.Column(fa.Schema().FieldIndices(flamegraphFieldFunctionFileName)[0]).(*array.Dictionary)
-	functionFileNameString := functionFileNameDict.Dictionary().(*array.String)
-
-	functionNames := make([]string, fa.NumRows())
-	functionSystemNames := make([]string, fa.NumRows())
-	functionFileNames := make([]string, fa.NumRows())
-	for i := 0; i < int(fa.NumRows()); i++ {
-		functionNames[i] = functionNameString.Value(functionNameDict.GetValueIndex(i))
-		functionSystemNames[i] = functionSystemNameString.Value(functionSystemNameDict.GetValueIndex(i))
-		functionFileNames[i] = functionFileNameString.Value(functionFileNameDict.GetValueIndex(i))
-	}
-	require.Equal(t, columns.functionNames, functionNames)
-	require.Equal(t, columns.functionSystemNames, functionSystemNames)
-	require.Equal(t, columns.functionFileNames, functionFileNames)
-
-	children := make([][]uint32, fa.NumRows())
-	list := fa.Column(fa.Schema().FieldIndices(flamegraphFieldChildren)[0]).(*array.List)
-	listValues := list.ListValues().(*array.Uint32).Uint32Values()
-	for i := 0; i < int(fa.NumRows()); i++ {
-		if !list.IsValid(i) {
-			children[i] = nil
-		} else {
-			start, end := list.ValueOffsets(i)
-			children[i] = listValues[start:end]
-		}
-	}
-	require.Equal(t, columns.children, children)
-
-	require.Equal(t,
-		columns.cumulative,
-		fa.Column(fa.Schema().FieldIndices(flamegraphFieldCumulative)[0]).(*array.Int64).Int64Values(),
-	)
-	require.Equal(t,
-		11,
-		fa.Column(fa.Schema().FieldIndices(flamegraphFieldDiff)[0]).(*array.Int64).NullN(),
-	)
 }

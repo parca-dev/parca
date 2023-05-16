@@ -48,12 +48,21 @@ const (
 	flamegraphFieldDiff       = "diff"
 )
 
-func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profile.Profile, trimFraction float32) (arrow.Record, error) {
-	ar, err := convertSymbolizedProfile(p)
+// RowEquals is a function that can be used to customize the equality check for merging rows.
+type RowEquals func(line profile.LocationLine, functionName string) bool
+
+var RowEqualsDefault = func(line profile.LocationLine, fn string) bool {
+	return line.Function.Name == fn
+}
+
+var RowEqualsNever = func(line profile.LocationLine, fn string) bool { return false }
+
+func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profile.Profile, trimFraction float32, equals RowEquals) (arrow.Record, error) {
+	ar, err := convertSymbolizedProfile(p, equals)
 	return ar, err
 }
 
-func convertSymbolizedProfile(p *profile.Profile) (arrow.Record, error) {
+func convertSymbolizedProfile(p *profile.Profile, equals RowEquals) (arrow.Record, error) {
 	schema := arrow.NewSchema([]arrow.Field{
 		{Name: flamegraphFieldMappingStart, Type: arrow.PrimitiveTypes.Uint64},
 		{Name: flamegraphFieldMappingLimit, Type: arrow.PrimitiveTypes.Uint64},
@@ -118,10 +127,11 @@ func convertSymbolizedProfile(p *profile.Profile) (arrow.Record, error) {
 
 	cumulative := int64(0)
 	rootsRow := []uint32{}
+	functionNames := make(map[uint32]string, len(p.Samples))
 	children := make([][]uint32, len(p.Samples))
 
 	// these change with every iteration below
-	row := uint32(0)
+	row := uint32(builderCumulative.Len())
 	parent := -1
 	compareRows := []uint32{}
 
@@ -129,26 +139,35 @@ func convertSymbolizedProfile(p *profile.Profile) (arrow.Record, error) {
 		// every new sample resets the childRow to -1 indicating that we start with a leaf again.
 		for i := len(s.Locations) - 1; i >= 0; i-- {
 			location := s.Locations[i]
+		stacktraces:
 			for _, line := range location.Lines {
-				row++
-
 				if i == len(s.Locations)-1 { // root of the stacktrace
 					compareRows = compareRows[:0] //  reset the compare rows
 					compareRows = append(compareRows, rootsRow...)
 					// append this row afterward to not compare to itself
-					rootsRow = append(rootsRow, row)
 					parent = -1
 				}
 				if i == 0 { // leaf of the stacktrace
 					cumulative += s.Value
 				}
 
-				// Get rows to compare the current location against.
-				// If the location is a root we compare against the root rows.
-				// If the (root) already has children we need to add them for the next lower level to compare against.
+				for _, cr := range compareRows {
+					if fn, found := functionNames[cr]; found {
+						if equals(line, fn) {
+							// Add the cumulative value to the row we merge with.
+							builderCumulative.Add(int(cr), s.Value)
+							// Continue with this row as the parent for the next iteration and compare to its children.
+							parent = int(cr)
+							compareRows = children[cr]
+							continue stacktraces
+						}
+					}
+				}
 
-				// builderFunctionName.NewDictionaryArray().GetValueIndex()
-				// builderFunctionName.
+				if i == len(s.Locations)-1 { // root of the stacktrace
+					// We aren't merging this root, so we'll keep track of it as a new one.
+					rootsRow = append(rootsRow, row)
+				}
 
 				for j := range rb.Fields() {
 					switch schema.Field(j).Name {
@@ -187,6 +206,7 @@ func convertSymbolizedProfile(p *profile.Profile) (arrow.Record, error) {
 						builderFunctionStartLine.Append(line.Function.StartLine)
 					case flamegraphFieldFunctionName:
 						_ = builderFunctionName.AppendString(line.Function.Name)
+						functionNames[row] = line.Function.Name
 					case flamegraphFieldFunctionSystemName:
 						_ = builderFunctionSystemName.AppendString(line.Function.SystemName)
 					case flamegraphFieldFunctionFileName:
@@ -199,9 +219,9 @@ func convertSymbolizedProfile(p *profile.Profile) (arrow.Record, error) {
 						}
 						if parent > -1 {
 							if len(children[parent]) == 0 {
-								children[parent] = []uint32{uint32(row)}
+								children[parent] = []uint32{row}
 							} else {
-								children[parent] = append(children[parent], uint32(row))
+								children[parent] = append(children[parent], row)
 							}
 						}
 					case flamegraphFieldCumulative:
@@ -217,6 +237,7 @@ func convertSymbolizedProfile(p *profile.Profile) (arrow.Record, error) {
 					}
 				}
 				parent = int(row)
+				row = uint32(builderCumulative.Len())
 			}
 		}
 	}

@@ -286,7 +286,7 @@ func RenderReport(
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW:
-		_, err := GenerateFlamegraphArrow(ctx, tracer, p, nodeTrimFraction)
+		_, err := GenerateFlamegraphArrow(ctx, tracer, p, nodeTrimFraction, RowEqualsDefault)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate arrow flamegraph: %v", err.Error())
 		}
