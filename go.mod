@@ -29,7 +29,7 @@ require (
 	github.com/klauspost/compress v1.16.5
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
-	github.com/polarsignals/frostdb v0.0.0-20230509170248-d7019b7373d7
+	github.com/polarsignals/frostdb v0.0.0-20230516175933-552125a71de6
 	github.com/prometheus/client_golang v1.15.1
 	github.com/prometheus/common v0.43.0
 	github.com/prometheus/prometheus v0.43.1
@@ -79,7 +79,6 @@ require (
 	github.com/RoaringBitmap/roaring v0.9.4 // indirect
 	github.com/aliyun/aliyun-oss-go-sdk v2.2.2+incompatible // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
-	github.com/apache/arrow/go/v10 v10.0.1 // indirect
 	github.com/apache/thrift v0.16.0 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/aws/aws-sdk-go v1.44.217 // indirect
@@ -204,7 +203,7 @@ require (
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/polarsignals/wal v0.0.0-20230427102350-18d6223bfbdc // indirect
+	github.com/polarsignals/wal v0.0.0-20230509073041-6731e243de20 // indirect
 	github.com/prometheus/client_model v0.4.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/rivo/uniseg v0.3.4 // indirect

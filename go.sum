@@ -109,8 +109,6 @@ github.com/aliyun/aliyun-oss-go-sdk v2.2.2+incompatible/go.mod h1:T/Aws4fEfogEE9
 github.com/andybalholm/brotli v1.0.4 h1:V7DdXeJtZscaqfNuAdSRuRFzuiKlHSC/Zh3zl9qY3JY=
 github.com/andybalholm/brotli v1.0.4/go.mod h1:fO7iG3H7G2nSZ7m0zPUDn85XEX2GTukHGRSepvi9Eig=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
-github.com/apache/arrow/go/v10 v10.0.1 h1:n9dERvixoC/1JjDmBcs9FPaEryoANa2sCgVFo6ez9cI=
-github.com/apache/arrow/go/v10 v10.0.1/go.mod h1:YvhnlEePVnBS4+0z3fhPfUy7W1Ikj0Ih0vcRo/gZ1M0=
 github.com/apache/arrow/go/v12 v12.0.0 h1:xtZE63VWl7qLdB0JObIXvvhGjoVNrQ9ciIHG2OK5cmc=
 github.com/apache/arrow/go/v12 v12.0.0/go.mod h1:d+tV/eHZZ7Dz7RPrFKtPK02tpr+c9/PEd/zm8mDS9Vg=
 github.com/apache/thrift v0.12.0/go.mod h1:cp2SuWMxlEZw2r+iP2GNCdIi4C1qmUzdZFSVb+bacwQ=
@@ -788,10 +786,10 @@ github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINE
 github.com/pkg/profile v1.2.1/go.mod h1:hJw3o1OdXxsrSjjVksARp5W95eeEaEfptyVZyv6JUPA=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/polarsignals/frostdb v0.0.0-20230509170248-d7019b7373d7 h1:jWS6vc2hhE4PEbdLni4u6U/m9APBleuuxv/mj4QeGq8=
-github.com/polarsignals/frostdb v0.0.0-20230509170248-d7019b7373d7/go.mod h1:j7EH7wnQ1M4g67YFR7I+rXg5NWd10u0gP0bOLtLuJ3I=
-github.com/polarsignals/wal v0.0.0-20230427102350-18d6223bfbdc h1:MaM3z8W07K24G+mQB9TTbMCF2XZ4weFKbuKhEF/pkmY=
-github.com/polarsignals/wal v0.0.0-20230427102350-18d6223bfbdc/go.mod h1:EVDHAAe+7GQ33A1/x+/gE+sBPN4toQ0XG5RoLD49xr8=
+github.com/polarsignals/frostdb v0.0.0-20230516175933-552125a71de6 h1:W6osMauT8VuhbyIGgZFHvi8TohuoukZH2yxjvpuSSFs=
+github.com/polarsignals/frostdb v0.0.0-20230516175933-552125a71de6/go.mod h1:vTp004VQ2fzpXqlp8bKHQ8CMX+jPCdR3ubIyX78DJD8=
+github.com/polarsignals/wal v0.0.0-20230509073041-6731e243de20 h1:YverywcwPHYj5iQq1/Zy/EihWVyw2F0S7j52FvGWK4w=
+github.com/polarsignals/wal v0.0.0-20230509073041-6731e243de20/go.mod h1:EVDHAAe+7GQ33A1/x+/gE+sBPN4toQ0XG5RoLD49xr8=
 github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndrE9hABlRI=
 github.com/posener/complete v1.2.3/go.mod h1:WZIdtGGp+qx0sLrYKtIRAruyNpv6hFCicSgv7Sy7s/s=
 github.com/prashantv/gostub v1.1.0 h1:BTyx3RfQjRHnUWaGF9oQos79AlQ5k8WNktv7VGvVH4g=
