@@ -21,7 +21,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2 v2.0.0-rc.3
-	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.0-rc.0
+	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.0-rc.0.0.20230515140958-a18e1e2bacb2
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.3
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.15.2
 	github.com/ianlancetaylor/demangle v0.0.0-20230514194600-d34d4e9283ea
@@ -249,6 +249,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
-
-// https://github.com/grpc-ecosystem/go-grpc-middleware/pull/584
-replace github.com/metalmatze/go-grpc-middleware/providers/prometheus v0.0.0-20230513102206-41d0628938a8 => github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.0-rc.0
