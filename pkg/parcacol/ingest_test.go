@@ -288,7 +288,7 @@ func BenchmarkNormalizeWriteRawRequest(b *testing.B) {
 	fileContent, err := os.ReadFile("../query/testdata/alloc_objects.pb.gz")
 	require.NoError(b, err)
 
-	normalizer := NewNormalizer(metastore)
+	normalizer := NewNormalizer(metastore, true)
 	req := &profilestorepb.WriteRawRequest{
 		Series: []*profilestorepb.RawProfileSeries{{
 			Labels: &profilestorepb.LabelSet{
