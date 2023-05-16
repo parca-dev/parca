@@ -44,7 +44,7 @@ require (
 	go.uber.org/automaxprocs v1.5.2
 	golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53
 	golang.org/x/net v0.10.0
-	golang.org/x/oauth2 v0.7.0
+	golang.org/x/oauth2 v0.8.0
 	golang.org/x/sync v0.2.0
 	google.golang.org/api v0.122.0
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
