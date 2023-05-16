@@ -23,7 +23,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/apache/arrow/go/v10/arrow"
+	"github.com/apache/arrow/go/v12/arrow"
 	"github.com/go-kit/log"
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/prometheus/client_golang/prometheus"
@@ -288,7 +288,7 @@ func BenchmarkNormalizeWriteRawRequest(b *testing.B) {
 	fileContent, err := os.ReadFile("../query/testdata/alloc_objects.pb.gz")
 	require.NoError(b, err)
 
-	normalizer := NewNormalizer(metastore)
+	normalizer := NewNormalizer(metastore, true)
 	req := &profilestorepb.WriteRawRequest{
 		Series: []*profilestorepb.RawProfileSeries{{
 			Labels: &profilestorepb.LabelSet{
