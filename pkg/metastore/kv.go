@@ -76,12 +76,7 @@ func (m *KeyMaker) MakeLocationID(l *pb.Location) string {
 	}
 
 	sum := sha512.Sum512_256(hbuf.Bytes())
-
-	hashLen := base64.URLEncoding.EncodedLen(len(sum))
-	hbuf.Reset()
-	hbuf.Grow(hashLen)
-	b := hbuf.Bytes()[:hashLen]
-	base64.URLEncoding.Encode(b, sum[:])
+	b := unsafeURLEncode(sum, hbuf)
 
 	mappingId := l.MappingId
 	if mappingId == "" {
