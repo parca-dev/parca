@@ -264,3 +264,50 @@ func TestUncompressedPprofToParquet(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkNormalizeWriteRawRequest(b *testing.B) {
+	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	ctx := context.Background()
+
+	m := metastoretest.NewTestMetastore(
+		b,
+		logger,
+		reg,
+		tracer,
+	)
+	metastore := metastore.NewInProcessClient(m)
+
+	fileContent, err := os.ReadFile("../query/testdata/alloc_objects.pb.gz")
+	require.NoError(b, err)
+
+	normalizer := NewNormalizer(metastore)
+	req := &profilestorepb.WriteRawRequest{
+		Series: []*profilestorepb.RawProfileSeries{{
+			Labels: &profilestorepb.LabelSet{
+				Labels: []*profilestorepb.Label{
+					{
+						Name:  "__name__",
+						Value: "memory",
+					},
+					{
+						Name:  "job",
+						Value: "default",
+					},
+				},
+			},
+			Samples: []*profilestorepb.RawSample{{
+				RawProfile: fileContent,
+			}},
+		}},
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err = NormalizeWriteRawRequest(ctx, normalizer, req)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
