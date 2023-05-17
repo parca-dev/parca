@@ -12,6 +12,8 @@ spec:
   window: 2w
   indicator:
     ratio:
+      grouping:
+      - grpc_method
       errors:
         metric: grpc_server_handled_total{grpc_service="parca.query.v1alpha1.QueryService",grpc_method=~"Labels|Values",grpc_code=~"Aborted|Unavailable|Internal|Unknown|Unimplemented|DataLoss"}
       total:
