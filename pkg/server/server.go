@@ -30,7 +30,6 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/go-grpc-middleware/providers/kit/v2"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	grpc_logging "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -46,7 +45,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	grpc_health "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
-	"google.golang.org/grpc/status"
 
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/prober"
@@ -61,15 +59,6 @@ type RegisterableFunc func(ctx context.Context, srv *grpc.Server, mux *runtime.S
 
 func (f RegisterableFunc) Register(ctx context.Context, srv *grpc.Server, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
 	return f(ctx, srv, mux, endpoint, opts)
-}
-
-// MapAllowedLevels allows to map a given level to a list of allowed level.
-// Convention taken from go-kit/level v0.10.0 https://godoc.org/github.com/go-kit/kit/log/level#AllowAll.
-var MapAllowedLevels = map[string][]string{
-	"DEBUG": {"INFO", "DEBUG", "WARN", "ERROR"},
-	"ERROR": {"ERROR"},
-	"INFO":  {"INFO", "WARN", "ERROR"},
-	"WARN":  {"WARN", "ERROR"},
 }
 
 // Server is a wrapper around the http.Server.
@@ -91,18 +80,9 @@ func NewServer(reg *prometheus.Registry, version string) *Server {
 // ListenAndServe starts the http grpc gateway server.
 func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, addr string, allowedCORSOrigins []string, pathPrefix string, registerables ...Registerable) error {
 	level.Info(logger).Log("msg", "starting server", "addr", addr)
-	logLevel := "ERROR"
 
 	logOpts := []grpc_logging.Option{
-		grpc_logging.WithDecider(func(_ string, err error) grpc_logging.Decision {
-			runtimeLevel := grpc_logging.DefaultServerCodeToLevel(status.Code(err))
-			for _, lvl := range MapAllowedLevels[logLevel] {
-				if string(runtimeLevel) == strings.ToLower(lvl) {
-					return grpc_logging.LogFinishCall
-				}
-			}
-			return grpc_logging.NoLogCall
-		}),
+		grpc_logging.WithLogOnEvents(grpc_logging.FinishCall),
 		grpc_logging.WithLevels(DefaultCodeToLevelGRPC),
 	}
 
@@ -124,13 +104,13 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, addr str
 			grpc_middleware.ChainStreamServer(
 				otelgrpc.StreamServerInterceptor(),
 				met.StreamServerInterceptor(),
-				grpc_logging.StreamServerInterceptor(kit.InterceptorLogger(logger), logOpts...),
+				grpc_logging.StreamServerInterceptor(InterceptorLogger(logger), logOpts...),
 			)),
 		grpc.UnaryInterceptor(
 			grpc_middleware.ChainUnaryServer(
 				otelgrpc.UnaryServerInterceptor(),
 				met.UnaryServerInterceptor(),
-				grpc_logging.UnaryServerInterceptor(kit.InterceptorLogger(logger), logOpts...),
+				grpc_logging.UnaryServerInterceptor(InterceptorLogger(logger), logOpts...),
 			),
 		),
 	)
@@ -332,12 +312,31 @@ func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler, allowed
 	}), &http2.Server{}))
 }
 
+// InterceptorLogger adapts go-kit logger to interceptor logger.
+func InterceptorLogger(l log.Logger) grpc_logging.Logger {
+	return grpc_logging.LoggerFunc(func(_ context.Context, lvl grpc_logging.Level, msg string, fields ...any) {
+		largs := append([]any{"msg", msg}, fields...)
+		switch lvl {
+		case grpc_logging.LevelDebug:
+			_ = level.Debug(l).Log(largs...)
+		case grpc_logging.LevelInfo:
+			_ = level.Info(l).Log(largs...)
+		case grpc_logging.LevelWarn:
+			_ = level.Warn(l).Log(largs...)
+		case grpc_logging.LevelError:
+			_ = level.Error(l).Log(largs...)
+		default:
+			panic(fmt.Sprintf("unknown level %v", lvl))
+		}
+	})
+}
+
 // DefaultCodeToLevelGRPC is the helper mapper that maps gRPC Response codes to log levels.
 func DefaultCodeToLevelGRPC(c codes.Code) grpc_logging.Level {
 	switch c {
 	case codes.Unknown, codes.Unimplemented, codes.Internal, codes.DataLoss:
-		return grpc_logging.ERROR
+		return grpc_logging.LevelError
 	default:
-		return grpc_logging.DEBUG
+		return grpc_logging.LevelDebug
 	}
 }
