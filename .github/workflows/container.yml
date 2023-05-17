@@ -86,7 +86,7 @@ jobs:
         with:
           distribution: goreleaser
           version: ${{ env.GORELEASER_VERSION }}
-          args: build --rm-dist --skip-validate --snapshot --debug
+          args: build --clean --skip-validate --snapshot --debug
         env:
           GORELEASER_CURRENT_TAG: "${{ env.goreleaser_current_tag }}"
 
