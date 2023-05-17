@@ -46,7 +46,10 @@ local defaults = {
     if labelName != 'app.kubernetes.io/version'
   },
 
+  // Pod level security context.
   securityContext:: {
+    runAsNonRoot: true,
+    supplementalGroups: [65534],
     fsGroup: 65534,
     runAsUser: 65534,
   },
@@ -95,99 +98,6 @@ function(params) {
     },
   },
 
-  podSecurityPolicy: {
-    apiVersion: 'policy/v1beta1',
-    kind: 'PodSecurityPolicy',
-    metadata: {
-      name: prc.config.name,
-    },
-    spec: {
-      allowPrivilegeEscalation: false,
-      fsGroup: {
-        ranges: [
-          {
-            max: 65535,
-            min: 1,
-          },
-        ],
-        rule: 'MustRunAs',
-      },
-      requiredDropCapabilities: [
-        'ALL',
-      ],
-      runAsUser: {
-        rule: 'MustRunAsNonRoot',
-      },
-      seLinux: {
-        rule: 'RunAsAny',
-      },
-      supplementalGroups: {
-        ranges: [
-          {
-            max: 65535,
-            min: 1,
-          },
-        ],
-        rule: 'MustRunAs',
-      },
-      volumes: [
-        'configMap',
-        'emptyDir',
-        'projected',
-        'secret',
-        'downwardAPI',
-        'persistentVolumeClaim',
-      ],
-    },
-  },
-
-  role: {
-    apiVersion: 'rbac.authorization.k8s.io/v1',
-    kind: 'Role',
-    metadata: {
-      name: prc.config.name,
-      namespace: prc.config.namespace,
-      labels: prc.config.commonLabels,
-    },
-    rules: [
-      {
-        apiGroups: [
-          'policy',
-        ],
-        resourceNames: [
-          prc.config.name,
-        ],
-        resources: [
-          'podsecuritypolicies',
-        ],
-        verbs: [
-          'use',
-        ],
-      },
-    ],
-  },
-
-  roleBinding: {
-    apiVersion: 'rbac.authorization.k8s.io/v1',
-    kind: 'RoleBinding',
-    metadata: {
-      name: prc.config.name,
-      namespace: prc.config.namespace,
-      labels: prc.config.commonLabels,
-    },
-    roleRef: {
-      apiGroup: 'rbac.authorization.k8s.io',
-      kind: 'Role',
-      name: prc.role.metadata.name,
-    },
-    subjects: [
-      {
-        kind: 'ServiceAccount',
-        name: prc.serviceAccount.metadata.name,
-      },
-    ],
-  },
-
   configMap: {
     apiVersion: 'v1',
     kind: 'ConfigMap',
@@ -225,6 +135,12 @@ function(params) {
         { name: port.name, containerPort: port.port }
         for port in prc.service.spec.ports
       ],
+      securityContext: {
+        allowPrivilegeEscalation: false,
+        capabilities: {
+          drop: ['ALL'],
+        },
+      },
       volumeMounts: [
         {
           name: 'config',

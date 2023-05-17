@@ -98,6 +98,10 @@ function deploy() {
     echo "Deploying dev environment"
     echo "----------------------------------------------------------"
     # Deploy all generated manifests
+    kubectl create namespace parca --dry-run=client -o yaml | kubectl apply -f -
+    kubectl label --overwrite ns parca \
+        pod-security.kubernetes.io/enforce=privileged \
+        pod-security.kubernetes.io/enforce-version=v1.27
     kubectl apply -R -f ./deploy/tilt
 }
 
