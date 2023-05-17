@@ -61,7 +61,7 @@ func main() {
 	)
 
 	if _, err := maxprocs.Set(maxprocs.Logger(func(format string, a ...interface{}) {
-		level.Info(logger).Log("msg", fmt.Sprintf(format, a...))
+		level.Debug(logger).Log("msg", fmt.Sprintf(format, a...))
 	})); err != nil {
 		level.Warn(logger).Log("msg", "failed to set GOMAXPROCS automatically", "err", err)
 	}

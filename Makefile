@@ -10,12 +10,13 @@ ifeq ($(GITHUB_BRANCH_NAME),)
 else
 	BRANCH := $(GITHUB_BRANCH_NAME)-
 endif
+COMMIT_TIMESTAMP := $(shell $(CMD_GIT) show --no-patch --format=%ct)-
 ifeq ($(GITHUB_SHA),)
-	COMMIT := $(shell $(CMD_GIT) describe --no-match --dirty --always --abbrev=8)
+	COMMIT := $(shell $(CMD_GIT) rev-parse --short=8 HEAD)
 else
 	COMMIT := $(shell echo $(GITHUB_SHA) | cut -c1-8)
 endif
-VERSION ?= $(if $(RELEASE_TAG),$(RELEASE_TAG),$(shell $(CMD_GIT) describe --tags --match='v*' || echo '$(subst /,-,$(BRANCH))$(COMMIT)'))
+VERSION ?= $(if $(RELEASE_TAG),$(RELEASE_TAG),$(shell $(CMD_GIT) describe --tags --match='v*' || echo '$(subst /,-,$(BRANCH))$(COMMIT_TIMESTAMP)$(COMMIT)'))
 OUT_DOCKER ?= ghcr.io/parca-dev/parca
 
 ENABLE_RACE := no
@@ -96,7 +97,7 @@ go/test-clean:
 UI_FILES ?= $(shell find ./ui -name "*" -not -path "./ui/lib/node_modules/*" -not -path "./ui/node_modules/*" -not -path "./ui/packages/app/template/node_modules/*" -not -path "./ui/packages/app/web/node_modules/*" -not -path "./ui/packages/app/web/build/*")
 .PHONY: ui/build
 ui/build: $(UI_FILES)
-	cd ui && yarn --prefer-offline && yarn bootstrap && yarn build
+	cd ui && yarn install --frozen-lockfile --prefer-offline && yarn bootstrap && yarn build
 
 .PHONY: ui/test
 ui/test:
@@ -203,8 +204,8 @@ README.md: embedmd tmp/help.txt
 
 .PHONY: release-dry-run
 release-dry-run:
-	goreleaser release --rm-dist --auto-snapshot --skip-validate --skip-publish --debug
+	goreleaser release --clean --auto-snapshot --skip-validate --skip-publish --debug
 
 .PHONY: release-build
 release-build:
-	goreleaser build --rm-dist --skip-validate --snapshot --debug
+	goreleaser build --clean --skip-validate --snapshot --debug

@@ -1,7 +1,7 @@
 apiVersion: pyrra.dev/v1alpha1
 kind: ServiceLevelObjective
 metadata:
-  name: parca-grpc-queryrange-latency
+  name: parca-grpc-profiletypes-latency
   namespace: parca
   labels:
     prometheus: k8s
@@ -11,7 +11,7 @@ spec:
   target: '95'
   window: 2w
   indicator:
-    latencyNative:
-      latency: 3s
+    latency:
+      latency: 600ms
       total:
-        metric: grpc_server_handling_seconds{grpc_service="parca.query.v1alpha1.QueryService",grpc_method="QueryRange"}
+        metric: grpc_server_handling_seconds{grpc_service="parca.query.v1alpha1.QueryService",grpc_method="ProfileTypes"}

@@ -16,7 +16,7 @@ concurrency:
 
 env:
   # renovate: datasource=go depName=github.com/goreleaser/goreleaser
-  GORELEASER_VERSION: v1.17.2
+  GORELEASER_VERSION: v1.18.2
 
 permissions:
   contents: write
@@ -41,6 +41,7 @@ jobs:
             [
               "**.go",
               ".github/workflows/release-dry-run.yml",
+              ".goreleaser.yml",
               ".go-version",
               ".node-version",
               "cmd/**",
@@ -108,7 +109,7 @@ jobs:
         with:
           distribution: goreleaser
           version: ${{ env.GORELEASER_VERSION }}
-          args: release --rm-dist --skip-validate --skip-publish
+          args: release --clean --skip-validate --skip-publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_CURRENT_TAG: "${{ env.goreleaser_current_tag }}"

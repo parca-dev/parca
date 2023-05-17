@@ -19,9 +19,9 @@ import (
 	"io"
 	"strings"
 
-	"github.com/apache/arrow/go/v10/arrow"
-	"github.com/apache/arrow/go/v10/arrow/array"
-	"github.com/apache/arrow/go/v10/arrow/memory"
+	"github.com/apache/arrow/go/v12/arrow"
+	"github.com/apache/arrow/go/v12/arrow/array"
+	"github.com/apache/arrow/go/v12/arrow/memory"
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/polarsignals/frostdb/pqarrow"
 	"github.com/polarsignals/frostdb/query/logicalplan"
@@ -118,7 +118,7 @@ func SeriesToArrowRecord(
 	series []Series,
 	labelNames, profileLabelNames, profileNumLabelNames []string,
 ) (arrow.Record, error) {
-	ps, err := schema.DynamicParquetSchema(map[string][]string{
+	ps, err := schema.GetDynamicParquetSchema(map[string][]string{
 		ColumnLabels:         labelNames,
 		ColumnPprofLabels:    profileLabelNames,
 		ColumnPprofNumLabels: profileNumLabelNames,
@@ -126,9 +126,10 @@ func SeriesToArrowRecord(
 	if err != nil {
 		return nil, err
 	}
+	defer schema.PutPooledParquetSchema(ps)
 
 	ctx := context.Background()
-	as, err := pqarrow.ParquetSchemaToArrowSchema(ctx, ps, logicalplan.IterOptions{})
+	as, err := pqarrow.ParquetSchemaToArrowSchema(ctx, ps.Schema, logicalplan.IterOptions{})
 	if err != nil {
 		return nil, err
 	}

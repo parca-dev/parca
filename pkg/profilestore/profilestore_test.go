@@ -65,6 +65,7 @@ func Test_LabelName_Error(t *testing.T) {
 		metastore.NewInProcessClient(m),
 		table,
 		schema,
+		true,
 	)
 
 	cases := []struct {
@@ -144,6 +145,7 @@ func BenchmarkProfileColumnStoreWriteSeries(b *testing.B) {
 		metastore.NewInProcessClient(m),
 		table,
 		schema,
+		true,
 	)
 
 	content, err := os.ReadFile("../query/testdata/alloc_objects.pb.gz")

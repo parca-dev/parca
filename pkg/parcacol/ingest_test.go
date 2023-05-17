@@ -23,7 +23,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/apache/arrow/go/v10/arrow"
+	"github.com/apache/arrow/go/v12/arrow"
 	"github.com/go-kit/log"
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/prometheus/client_golang/prometheus"
@@ -99,29 +99,17 @@ func TestPprofToParquet(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			table := &fakeTable{
-				schema: schema,
-			}
-
-			ing := NewIngester(
-				logger,
-				table,
-				schema,
-				metastore,
-				&sync.Pool{
-					New: func() interface{} {
-						return bytes.NewBuffer(nil)
-					},
-				},
-			)
-
 			if test.arrow {
 				ExperimentalArrow = true
 				t.Cleanup(func() {
 					ExperimentalArrow = false
 				})
 			}
-			require.NoError(t, ing.Ingest(ctx, &profilestorepb.WriteRawRequest{
+
+			table := &fakeTable{
+				schema: schema,
+			}
+			req := &profilestorepb.WriteRawRequest{
 				Series: []*profilestorepb.RawProfileSeries{{
 					Labels: &profilestorepb.LabelSet{
 						Labels: []*profilestorepb.Label{
@@ -139,7 +127,22 @@ func TestPprofToParquet(t *testing.T) {
 						RawProfile: fileContent,
 					}},
 				}},
-			}))
+			}
+			err := NormalizedIngest(
+				ctx,
+				req,
+				logger,
+				table,
+				schema,
+				metastore,
+				&sync.Pool{
+					New: func() interface{} {
+						return bytes.NewBuffer(nil)
+					},
+				},
+				true,
+			)
+			require.NoError(t, err)
 
 			for i, insert := range table.inserts {
 				serBuf, err := dynparquet.ReaderFromBytes(insert)
@@ -200,29 +203,17 @@ func TestUncompressedPprofToParquet(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			table := &fakeTable{
-				schema: schema,
-			}
-
-			ing := NewIngester(
-				logger,
-				table,
-				schema,
-				metastore,
-				&sync.Pool{
-					New: func() interface{} {
-						return bytes.NewBuffer(nil)
-					},
-				},
-			)
-
 			if test.arrow {
 				ExperimentalArrow = true
 				t.Cleanup(func() {
 					ExperimentalArrow = false
 				})
 			}
-			require.NoError(t, ing.Ingest(ctx, &profilestorepb.WriteRawRequest{
+
+			table := &fakeTable{
+				schema: schema,
+			}
+			req := &profilestorepb.WriteRawRequest{
 				Series: []*profilestorepb.RawProfileSeries{{
 					Labels: &profilestorepb.LabelSet{
 						Labels: []*profilestorepb.Label{
@@ -240,7 +231,22 @@ func TestUncompressedPprofToParquet(t *testing.T) {
 						RawProfile: fileContent,
 					}},
 				}},
-			}))
+			}
+			err := NormalizedIngest(
+				ctx,
+				req,
+				logger,
+				table,
+				schema,
+				metastore,
+				&sync.Pool{
+					New: func() interface{} {
+						return bytes.NewBuffer(nil)
+					},
+				},
+				true,
+			)
+			require.NoError(t, err)
 
 			for i, insert := range table.inserts {
 				serBuf, err := dynparquet.ReaderFromBytes(insert)
@@ -262,5 +268,52 @@ func TestUncompressedPprofToParquet(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func BenchmarkNormalizeWriteRawRequest(b *testing.B) {
+	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	ctx := context.Background()
+
+	m := metastoretest.NewTestMetastore(
+		b,
+		logger,
+		reg,
+		tracer,
+	)
+	metastore := metastore.NewInProcessClient(m)
+
+	fileContent, err := os.ReadFile("../query/testdata/alloc_objects.pb.gz")
+	require.NoError(b, err)
+
+	normalizer := NewNormalizer(metastore, true)
+	req := &profilestorepb.WriteRawRequest{
+		Series: []*profilestorepb.RawProfileSeries{{
+			Labels: &profilestorepb.LabelSet{
+				Labels: []*profilestorepb.Label{
+					{
+						Name:  "__name__",
+						Value: "memory",
+					},
+					{
+						Name:  "job",
+						Value: "default",
+					},
+				},
+			},
+			Samples: []*profilestorepb.RawSample{{
+				RawProfile: fileContent,
+			}},
+		}},
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err = NormalizeWriteRawRequest(ctx, normalizer, req)
+		if err != nil {
+			b.Fatal(err)
+		}
 	}
 }

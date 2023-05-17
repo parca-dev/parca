@@ -98,7 +98,7 @@ const ReleaseNotesViewer = ({version}: Props) => {
                 className="w-fit"
                 onClick={() => {
                   window.open(
-                    `https://github.com/parca-dev/parca/releases/tag/${version}`,
+                    `https://github.com/parca-dev/parca/releases/tag/v${version}`,
                     '_blank'
                   );
                   onClose();

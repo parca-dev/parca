@@ -29,6 +29,11 @@
       "groupName": "grpc-health-probe"
     },
     {
+      "description": "Group protobuf-ts packages",
+      "matchSourceUrls": ["https://github.com/timostamm/protobuf-ts"],
+      "groupName": "protobuf-ts"
+    },
+    {
       "description": "Group prettier packages",
       "matchPackageNames": ["pre-commit/mirrors-prettier", "prettier"],
       "groupName": "prettier"

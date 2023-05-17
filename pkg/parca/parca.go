@@ -26,11 +26,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/apache/arrow/go/v10/arrow/memory"
+	"github.com/apache/arrow/go/v12/arrow/memory"
 	"github.com/dgraph-io/badger/v3"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/oklog/run"
 	"github.com/polarsignals/frostdb"
@@ -115,6 +115,8 @@ type Flags struct {
 	ExternalLabel      map[string]string `kong:"help='Label(s) to attach to all profiles in scraper-only mode.'"`
 
 	ExperimentalArrow bool `default:"false" help:"EXPERIMENTAL: Enables Arrow ingestion, this will reduce CPU usage but will increase memory usage."`
+
+	Hidden FlagsHidden `embed:"" prefix:""`
 }
 
 type FlagsLogs struct {
@@ -147,6 +149,11 @@ type FlagsDebuginfo struct {
 type FlagsDebuginfod struct {
 	UpstreamServers    []string      `default:"https://debuginfod.elfutils.org" help:"Upstream debuginfod servers. Defaults to https://debuginfod.elfutils.org. It is an ordered list of servers to try. Learn more at https://sourceware.org/elfutils/Debuginfod.html"`
 	HTTPRequestTimeout time.Duration `default:"5m" help:"Timeout duration for HTTP request to upstream debuginfod server. Defaults to 5m"`
+}
+
+// FlagsHidden contains hidden flags intended only for debugging.
+type FlagsHidden struct {
+	DebugNormalizeAddresses bool `kong:"help='Normalize sampled addresses.',default='true',hidden=''"`
 }
 
 // Run the parca server.
@@ -262,7 +269,12 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	}
 
 	if flags.EnablePersistence {
-		frostdbOptions = append(frostdbOptions, frostdb.WithBucketStorage(objstore.NewPrefixedBucket(bucket, "blocks")))
+		frostdbOptions = append(
+			frostdbOptions,
+			frostdb.WithReadWriteStorage(
+				frostdb.NewDefaultObjstoreBucket(objstore.NewPrefixedBucket(bucket, "blocks")),
+			),
+		)
 	}
 
 	if flags.Storage.EnableWAL {
@@ -305,6 +317,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		metastore,
 		table,
 		schema,
+		flags.Hidden.DebugNormalizeAddresses,
 	)
 	conn, err := grpc.Dial(flags.ProfileShareServer, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
 	if err != nil {
@@ -536,8 +549,13 @@ func runScraper(
 		return fmt.Errorf("parca scraper mode needs to have a --store-address")
 	}
 
-	metrics := grpc_prometheus.NewClientMetrics()
-	metrics.EnableClientHandlingTimeHistogram()
+	metrics := grpc_prometheus.NewClientMetrics(
+		grpc_prometheus.WithClientHandlingTimeHistogram(
+			grpc_prometheus.WithHistogramOpts(&prometheus.HistogramOpts{
+				NativeHistogramBucketFactor: 1.1,
+			}),
+		),
+	)
 	reg.MustRegister(metrics)
 
 	opts := []grpc.DialOption{

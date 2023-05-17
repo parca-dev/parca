@@ -29,8 +29,9 @@ import (
 // BadgerMetastore is an implementation of the metastore using the badger KV
 // store.
 type BadgerMetastore struct {
-	tracer trace.Tracer
-	logger log.Logger
+	tracer   trace.Tracer
+	logger   log.Logger
+	keymaker *KeyMaker
 
 	db *badger.DB
 
@@ -68,9 +69,10 @@ func NewBadgerMetastore(
 	db *badger.DB,
 ) *BadgerMetastore {
 	return &BadgerMetastore{
-		db:     db,
-		tracer: tracer,
-		logger: logger,
+		db:       db,
+		tracer:   tracer,
+		logger:   logger,
+		keymaker: NewKeyMaker(),
 	}
 }
 
@@ -305,7 +307,7 @@ func (m *BadgerMetastore) GetOrCreateLocations(ctx context.Context, r *pb.GetOrC
 
 	locationKeys := make([]string, 0, len(r.Locations))
 	for _, location := range r.Locations {
-		locationKeys = append(locationKeys, MakeLocationKey(location))
+		locationKeys = append(locationKeys, m.keymaker.MakeLocationKey(location))
 	}
 
 	err := m.db.Update(func(txn *badger.Txn) error {

@@ -473,6 +473,7 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 		metastore,
 		table,
 		schema,
+		true,
 	)
 
 	lis, err := net.Listen("tcp", "127.0.0.1:0")
