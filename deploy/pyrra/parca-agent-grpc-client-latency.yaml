@@ -1,0 +1,20 @@
+apiVersion: pyrra.dev/v1alpha1
+kind: ServiceLevelObjective
+metadata:
+  name: parca-agent-grpc-client-latency
+  namespace: parca
+  labels:
+    prometheus: k8s
+    role: alert-rules
+    pyrra.dev/team: parca-agent
+spec:
+  target: '90'
+  window: 4w
+  indicator:
+    latency:
+      grouping:
+      - grpc_method
+      success:
+        metric: grpc_client_handling_seconds_bucket{job="parca/parca-agent",le="0.5"}
+      total:
+        metric: grpc_client_handling_seconds_count{job="parca/parca-agent"}
