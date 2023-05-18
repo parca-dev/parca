@@ -110,6 +110,13 @@ export interface RawSample {
      * @generated from protobuf field: bytes raw_profile = 1;
      */
     rawProfile: Uint8Array;
+    /**
+     * base_addresses contains base addresses for each pprof mapping
+     * found in the raw profile in pprof format.
+     *
+     * @generated from protobuf field: repeated uint64 base_addresses = 2;
+     */
+    baseAddresses: string[];
 }
 /**
  * AgentsRequest is the request to retrieve a list of agents
@@ -409,11 +416,12 @@ export const LabelSet = new LabelSet$Type();
 class RawSample$Type extends MessageType<RawSample> {
     constructor() {
         super("parca.profilestore.v1alpha1.RawSample", [
-            { no: 1, name: "raw_profile", kind: "scalar", T: 12 /*ScalarType.BYTES*/ }
+            { no: 1, name: "raw_profile", kind: "scalar", T: 12 /*ScalarType.BYTES*/ },
+            { no: 2, name: "base_addresses", kind: "scalar", repeat: 1 /*RepeatType.PACKED*/, T: 4 /*ScalarType.UINT64*/ }
         ]);
     }
     create(value?: PartialMessage<RawSample>): RawSample {
-        const message = { rawProfile: new Uint8Array(0) };
+        const message = { rawProfile: new Uint8Array(0), baseAddresses: [] };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<RawSample>(this, message, value);
@@ -426,6 +434,13 @@ class RawSample$Type extends MessageType<RawSample> {
             switch (fieldNo) {
                 case /* bytes raw_profile */ 1:
                     message.rawProfile = reader.bytes();
+                    break;
+                case /* repeated uint64 base_addresses */ 2:
+                    if (wireType === WireType.LengthDelimited)
+                        for (let e = reader.int32() + reader.pos; reader.pos < e;)
+                            message.baseAddresses.push(reader.uint64().toString());
+                    else
+                        message.baseAddresses.push(reader.uint64().toString());
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -442,6 +457,13 @@ class RawSample$Type extends MessageType<RawSample> {
         /* bytes raw_profile = 1; */
         if (message.rawProfile.length)
             writer.tag(1, WireType.LengthDelimited).bytes(message.rawProfile);
+        /* repeated uint64 base_addresses = 2; */
+        if (message.baseAddresses.length) {
+            writer.tag(2, WireType.LengthDelimited).fork();
+            for (let i = 0; i < message.baseAddresses.length; i++)
+                writer.uint64(message.baseAddresses[i]);
+            writer.join();
+        }
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

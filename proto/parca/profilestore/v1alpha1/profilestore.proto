@@ -60,6 +60,9 @@ message LabelSet {
 message RawSample {
   // raw_profile is the set of bytes of the pprof profile
   bytes raw_profile = 1;
+  // base_addresses contains base addresses for each pprof mapping
+  // found in the raw profile in pprof format.
+  repeated uint64 base_addresses = 2;
 }
 
 // AgentsService maintains the agents

@@ -213,7 +213,14 @@ type NormalizedWriteRawRequest struct {
 }
 
 type Normalizer interface {
-	NormalizePprof(ctx context.Context, name string, takenLabelNames map[string]string, p *pprofpb.Profile, normalizedAddress bool) ([]*profile.NormalizedProfile, error)
+	NormalizePprof(
+		ctx context.Context,
+		name string,
+		takenLabelNames map[string]string,
+		p *pprofpb.Profile,
+		baseAddresses []uint64,
+		normalizedAddress bool,
+	) ([]*profile.NormalizedProfile, error)
 }
 
 // NormalizeWriteRawRequest normalizes the profiles
@@ -284,7 +291,7 @@ func NormalizeWriteRawRequest(ctx context.Context, normalizer Normalizer, req *p
 				allPprofNumLabelNames,
 			)
 
-			normalizedProfiles, err := normalizer.NormalizePprof(ctx, name, ls, p, req.Normalized)
+			normalizedProfiles, err := normalizer.NormalizePprof(ctx, name, ls, p, sample.BaseAddresses, req.Normalized)
 			if err != nil {
 				return NormalizedWriteRawRequest{}, fmt.Errorf("normalize profile: %w", err)
 			}

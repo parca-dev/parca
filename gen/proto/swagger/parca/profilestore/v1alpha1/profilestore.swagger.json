@@ -195,6 +195,14 @@
           "type": "string",
           "format": "byte",
           "title": "raw_profile is the set of bytes of the pprof profile"
+        },
+        "baseAddresses": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uint64"
+          },
+          "description": "base_addresses contains base addresses for each pprof mapping\nfound in the raw profile in pprof format."
         }
       },
       "title": "RawSample is the set of bytes that correspond to a pprof profile"

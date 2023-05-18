@@ -59,7 +59,7 @@ func TestGenerateFlatPprof(t *testing.T) {
 	)
 	metastore := metastore.NewInProcessClient(l)
 	normalizer := parcacol.NewNormalizer(metastore, true)
-	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false)
+	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, nil, false)
 	require.NoError(t, err)
 
 	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])

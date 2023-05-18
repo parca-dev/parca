@@ -43,8 +43,8 @@ func NewNormalizer(metastore pb.MetastoreServiceClient, enableAddressNormalizati
 	}
 }
 
-func (n *MetastoreNormalizer) NormalizePprof(ctx context.Context, name string, takenLabelNames map[string]string, p *pprofpb.Profile, normalizedAddress bool) ([]*profile.NormalizedProfile, error) {
-	mappings, err := n.NormalizeMappings(ctx, p.Mapping, p.StringTable)
+func (n *MetastoreNormalizer) NormalizePprof(ctx context.Context, name string, takenLabelNames map[string]string, p *pprofpb.Profile, baseAddresses []uint64, normalizedAddress bool) ([]*profile.NormalizedProfile, error) {
+	mappings, err := n.NormalizeMappings(ctx, p.Mapping, p.StringTable, baseAddresses)
 	if err != nil {
 		return nil, fmt.Errorf("normalize mappings: %w", err)
 	}
@@ -234,7 +234,13 @@ type mappingNormalizationInfo struct {
 	offset int64
 }
 
-func (n *MetastoreNormalizer) NormalizeMappings(ctx context.Context, mappings []*pprofpb.Mapping, stringTable []string) ([]mappingNormalizationInfo, error) {
+// NormalizeMappings converts pprof mappings into the internal mapping format
+// and stores them in the metastore (Badger).
+func (n *MetastoreNormalizer) NormalizeMappings(ctx context.Context, mappings []*pprofpb.Mapping, stringTable []string, baseAddresses []uint64) ([]mappingNormalizationInfo, error) {
+	if len(baseAddresses) > len(mappings) {
+		return nil, fmt.Errorf("too many base addresses: %d/%d", len(baseAddresses), len(mappings))
+	}
+
 	req := &pb.GetOrCreateMappingsRequest{
 		Mappings: make([]*pb.Mapping, 0, len(mappings)),
 	}
@@ -251,6 +257,13 @@ func (n *MetastoreNormalizer) NormalizeMappings(ctx context.Context, mappings []
 			HasLineNumbers:  mapping.HasLineNumbers,
 			HasInlineFrames: mapping.HasInlineFrames,
 		})
+	}
+	// The ingester receives raw samples in pprof format
+	// whose format we can't change, so we send base addresses in a separate field.
+	// The position in the array corresponds to a mapping position in pprof.
+	// Note, the sender (Parca Agent) might decide not to send anything.
+	for i, base := range baseAddresses {
+		req.Mappings[i].BaseAddress = base
 	}
 
 	res, err := n.metastore.GetOrCreateMappings(ctx, req)
