@@ -32,8 +32,6 @@ jobs:
         uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
         with:
           go-version-file: .go-version
-          check-latest: true
-          cache: true
 
       - name: Set up Node.js
         uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
@@ -79,7 +77,6 @@ jobs:
         uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
         with:
           go-version-file: .go-version
-          check-latest: true
 
       - name: Set up Jsonnet
         run: ./env-jsonnet.sh
@@ -150,12 +147,6 @@ jobs:
       # The checkout action is supposed to take care of it, but it is not enough :/
       - name: Add repository directory to the git global config as a safe directory
         run: git config --global --add safe.directory /__w/parca/parca
-
-      - name: Set up Go
-        uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
-        with:
-          go-version-file: .go-version
-          check-latest: true
 
       - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
         with:
