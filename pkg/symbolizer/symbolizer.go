@@ -37,7 +37,6 @@ import (
 	"github.com/parca-dev/parca/pkg/symbol/addr2line"
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
 	"github.com/parca-dev/parca/pkg/symbol/elfutils"
-	"github.com/parca-dev/parca/pkg/symbol/objectfile"
 )
 
 var (
@@ -486,12 +485,9 @@ func (s *Symbolizer) symbolizeLocationsForMapping(ctx context.Context, m *pb.Map
 			}
 		}
 
-		objFile, err := objectfile.NewObjectFile(f.Name(), e, m.Start, m.Limit, m.Offset)
-		if err != nil {
-			return nil, nil, fmt.Errorf("object file: %w", err)
-		}
+		baseAddress := elfutils.BaseAddress(e, m.Start, m.Offset)
 
-		liner, err = s.newLiner(objFile, dbginfo.Quality)
+		liner, err = s.newLiner(f.Name(), e, baseAddress, dbginfo.Quality)
 		if err != nil {
 			return nil, nil, fmt.Errorf("new liner: %w", err)
 		}
@@ -547,17 +543,17 @@ func (s *Symbolizer) countLocationsToSymbolize(key string, locations []*pb.Locat
 }
 
 // newLiner creates a new liner for the given mapping and object file path.
-func (s *Symbolizer) newLiner(objFile *objectfile.ObjectFile, quality *debuginfopb.DebuginfoQuality) (liner, error) {
+func (s *Symbolizer) newLiner(filepath string, f *elf.File, base uint64, quality *debuginfopb.DebuginfoQuality) (liner, error) {
 	switch {
 	case quality.HasDwarf:
-		lnr, err := addr2line.DWARF(s.logger, objFile, s.demangler)
+		lnr, err := addr2line.DWARF(s.logger, filepath, f, base, s.demangler)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create DWARF liner: %w", err)
 		}
 
 		return lnr, nil
 	case quality.HasGoPclntab:
-		lnr, err := addr2line.Go(s.logger, objFile)
+		lnr, err := addr2line.Go(s.logger, filepath, f, base)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create Go liner: %w", err)
 		}
@@ -565,7 +561,7 @@ func (s *Symbolizer) newLiner(objFile *objectfile.ObjectFile, quality *debuginfo
 		return lnr, nil
 		// TODO CHECK plt
 	case quality.HasSymtab || quality.HasDynsym:
-		lnr, err := addr2line.Symbols(s.logger, objFile, s.demangler)
+		lnr, err := addr2line.Symbols(s.logger, filepath, f, base, s.demangler)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create Symtab liner: %w", err)
 		}

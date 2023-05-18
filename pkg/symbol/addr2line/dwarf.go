@@ -15,6 +15,7 @@ package addr2line
 
 import (
 	"debug/dwarf"
+	"debug/elf"
 	"fmt"
 	"runtime/debug"
 
@@ -23,21 +24,22 @@ import (
 	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
 	"github.com/parca-dev/parca/pkg/symbol/elfutils"
-	"github.com/parca-dev/parca/pkg/symbol/objectfile"
 )
 
 // DwarfLiner is a symbolizer that uses DWARF debug info to symbolize addresses.
 type DwarfLiner struct {
 	logger log.Logger
 
-	debugData *dwarf.Data
-	dbgFile   elfutils.DebugInfoFile
-	objFile   *objectfile.ObjectFile
+	debugData   *dwarf.Data
+	dbgFile     elfutils.DebugInfoFile
+	f           *elf.File
+	filename    string
+	baseAddress uint64
 }
 
 // DWARF creates a new DwarfLiner.
-func DWARF(logger log.Logger, objFile *objectfile.ObjectFile, demangler *demangle.Demangler) (*DwarfLiner, error) {
-	debugData, err := objFile.ElfFile.DWARF()
+func DWARF(logger log.Logger, filename string, f *elf.File, base uint64, demangler *demangle.Demangler) (*DwarfLiner, error) {
+	debugData, err := f.DWARF()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read DWARF data: %w", err)
 	}
@@ -48,19 +50,21 @@ func DWARF(logger log.Logger, objFile *objectfile.ObjectFile, demangler *demangl
 	}
 
 	return &DwarfLiner{
-		logger:    log.With(logger, "liner", "dwarf"),
-		dbgFile:   dbgFile,
-		debugData: debugData,
-		objFile:   objFile,
+		logger:      log.With(logger, "liner", "dwarf"),
+		dbgFile:     dbgFile,
+		debugData:   debugData,
+		f:           f,
+		filename:    filename,
+		baseAddress: base,
 	}, nil
 }
 
 func (dl *DwarfLiner) Close() error {
-	return dl.objFile.ElfFile.Close()
+	return dl.f.Close()
 }
 
 func (dl *DwarfLiner) File() string {
-	return dl.objFile.Path
+	return dl.filename
 }
 
 func (dl *DwarfLiner) PCRange() ([2]uint64, error) {
@@ -108,9 +112,7 @@ func (dl *DwarfLiner) PCToLines(addr uint64, isRawAddr bool) (lines []profile.Lo
 	}()
 
 	if isRawAddr {
-		if addr, err = dl.objFile.ObjAddr(addr); err != nil {
-			return nil, err
-		}
+		addr = addr - dl.baseAddress
 	}
 	lines, err = dl.dbgFile.SourceLines(addr)
 	if err != nil {
