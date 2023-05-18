@@ -178,8 +178,6 @@ jobs:
           make push-container
 
       - name: Sign container
-        env:
-          COSIGN_EXPERIMENTAL: true
         run: |
           make sign-container
 
