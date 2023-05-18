@@ -614,6 +614,16 @@ export interface Mapping {
      * @generated from protobuf field: uint32 build_id_string_index = 12;
      */
     buildIdStringIndex: number;
+    /**
+     * base_address is the base address of the ELF file so
+     * sampled addresses can be normalized by subtracting the base from those addresses.
+     * This normalization is needed for PIE (position independent executable)
+     * which is used by default in gcc for security measures,
+     * i.e., address space layout randomization.
+     *
+     * @generated from protobuf field: uint64 base_address = 13;
+     */
+    baseAddress: string;
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class GetOrCreateMappingsRequest$Type extends MessageType<GetOrCreateMappingsRequest> {
@@ -2187,11 +2197,12 @@ class Mapping$Type extends MessageType<Mapping> {
             { no: 9, name: "has_line_numbers", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 10, name: "has_inline_frames", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 11, name: "file_string_index", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 12, name: "build_id_string_index", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 12, name: "build_id_string_index", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 13, name: "base_address", kind: "scalar", T: 4 /*ScalarType.UINT64*/ }
         ]);
     }
     create(value?: PartialMessage<Mapping>): Mapping {
-        const message = { id: "", start: "0", limit: "0", offset: "0", file: "", buildId: "", hasFunctions: false, hasFilenames: false, hasLineNumbers: false, hasInlineFrames: false, fileStringIndex: 0, buildIdStringIndex: 0 };
+        const message = { id: "", start: "0", limit: "0", offset: "0", file: "", buildId: "", hasFunctions: false, hasFilenames: false, hasLineNumbers: false, hasInlineFrames: false, fileStringIndex: 0, buildIdStringIndex: 0, baseAddress: "0" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Mapping>(this, message, value);
@@ -2237,6 +2248,9 @@ class Mapping$Type extends MessageType<Mapping> {
                     break;
                 case /* uint32 build_id_string_index */ 12:
                     message.buildIdStringIndex = reader.uint32();
+                    break;
+                case /* uint64 base_address */ 13:
+                    message.baseAddress = reader.uint64().toString();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2286,6 +2300,9 @@ class Mapping$Type extends MessageType<Mapping> {
         /* uint32 build_id_string_index = 12; */
         if (message.buildIdStringIndex !== 0)
             writer.tag(12, WireType.Varint).uint32(message.buildIdStringIndex);
+        /* uint64 base_address = 13; */
+        if (message.baseAddress !== "0")
+            writer.tag(13, WireType.Varint).uint64(message.baseAddress);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

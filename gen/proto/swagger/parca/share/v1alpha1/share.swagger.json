@@ -187,6 +187,11 @@
           "type": "integer",
           "format": "int64",
           "description": "build_id_string_index is the index in the string table to the build ID of the mapping."
+        },
+        "baseAddress": {
+          "type": "string",
+          "format": "uint64",
+          "description": "base_address is the base address of the ELF file so\nsampled addresses can be normalized by subtracting the base from those addresses.\nThis normalization is needed for PIE (position independent executable)\nwhich is used by default in gcc for security measures,\ni.e., address space layout randomization."
         }
       },
       "description": "Mapping describes a memory mapping."

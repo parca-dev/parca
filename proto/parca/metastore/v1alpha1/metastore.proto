@@ -323,4 +323,11 @@ message Mapping {
 
   // build_id_string_index is the index in the string table to the build ID of the mapping.
   uint32 build_id_string_index = 12;
+
+  // base_address is the base address of the ELF file so
+  // sampled addresses can be normalized by subtracting the base from those addresses.
+  // This normalization is needed for PIE (position independent executable)
+  // which is used by default in gcc for security measures,
+  // i.e., address space layout randomization.
+  uint64 base_address = 13;
 }

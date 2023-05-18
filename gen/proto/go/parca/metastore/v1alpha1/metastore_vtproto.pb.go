@@ -1947,6 +1947,11 @@ func (m *Mapping) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.BaseAddress != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.BaseAddress))
+		i--
+		dAtA[i] = 0x68
+	}
 	if m.BuildIdStringIndex != 0 {
 		i = encodeVarint(dAtA, i, uint64(m.BuildIdStringIndex))
 		i--
@@ -2642,6 +2647,9 @@ func (m *Mapping) SizeVT() (n int) {
 	}
 	if m.BuildIdStringIndex != 0 {
 		n += 1 + sov(uint64(m.BuildIdStringIndex))
+	}
+	if m.BaseAddress != 0 {
+		n += 1 + sov(uint64(m.BaseAddress))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -6220,6 +6228,25 @@ func (m *Mapping) UnmarshalVT(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.BuildIdStringIndex |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 13:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BaseAddress", wireType)
+			}
+			m.BaseAddress = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.BaseAddress |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

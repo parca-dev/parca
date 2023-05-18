@@ -341,7 +341,7 @@ func (n *MetastoreNormalizer) NormalizeLocations(
 
 		req.Locations = append(req.Locations, &pb.Location{
 			Address:      addr,
-			IsRawAddress: false,
+			IsRawAddress: !n.isAddrNormEnabled,
 			IsFolded:     location.IsFolded,
 			MappingId:    mappingId,
 			Lines:        lines,

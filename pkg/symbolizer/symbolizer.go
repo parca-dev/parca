@@ -485,9 +485,7 @@ func (s *Symbolizer) symbolizeLocationsForMapping(ctx context.Context, m *pb.Map
 			}
 		}
 
-		baseAddress := elfutils.BaseAddress(e, m.Start, m.Offset)
-
-		liner, err = s.newLiner(f.Name(), e, baseAddress, dbginfo.Quality)
+		liner, err = s.newLiner(f.Name(), e, m.BaseAddress, dbginfo.Quality)
 		if err != nil {
 			return nil, nil, fmt.Errorf("new liner: %w", err)
 		}
