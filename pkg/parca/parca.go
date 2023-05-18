@@ -27,7 +27,7 @@ import (
 	"time"
 
 	"github.com/apache/arrow/go/v12/arrow/memory"
-	"github.com/dgraph-io/badger/v3"
+	"github.com/dgraph-io/badger/v4"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
