@@ -21,11 +21,8 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/common-nighthawk/go-figure"
 	"github.com/go-kit/log/level"
-	vtproto "github.com/planetscale/vtprotobuf/codec/grpc"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/automaxprocs/maxprocs"
-	"google.golang.org/grpc/encoding"
-	_ "google.golang.org/grpc/encoding/proto"
 
 	"github.com/parca-dev/parca/pkg/parca"
 )
@@ -34,10 +31,6 @@ var (
 	version = "dev"
 	commit  = "dev"
 )
-
-func init() {
-	encoding.RegisterCodec(vtproto.Codec{})
-}
 
 func main() {
 	ctx := context.Background()
