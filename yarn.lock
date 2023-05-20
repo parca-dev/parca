@@ -136,10 +136,10 @@
     "@typescript-eslint/types" "5.59.6"
     eslint-visitor-keys "^3.3.0"
 
-all-contributors-cli@6.25.0:
-  version "6.25.0"
-  resolved "https://registry.yarnpkg.com/all-contributors-cli/-/all-contributors-cli-6.25.0.tgz#e6bcd79e8ad51826250a70933bad8f9628a927f9"
-  integrity sha512-vsMPLmpnYxzUV0Em/4RNmrnmCruUnIWcY10I0QNRUU9A0275VEuJTVhICi/L2V6foIemwog3ZeNfNV9qeetfsw==
+all-contributors-cli@6.25.1:
+  version "6.25.1"
+  resolved "https://registry.yarnpkg.com/all-contributors-cli/-/all-contributors-cli-6.25.1.tgz#d6fbd4e7264939dc8efe897a9ccddc5329e46235"
+  integrity sha512-Q9MfsO6FH09h71IG6OobfESA7lbooB3/bnO2wnuXbLPye1lFsYsa/jpNZP0YBx6zbhwXqqm6CXRZ9HO/tmD4NQ==
   dependencies:
     "@babel/runtime" "^7.7.6"
     async "^3.1.0"
