@@ -6539,10 +6539,10 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-16.11.26.tgz#63d204d136c9916fb4dcd1b50f9740fe86884e47"
   integrity sha512-GZ7bu5A6+4DtG7q9GsoHXy3ALcgeIHP4NnL0Vv2wu0uUB/yQex26v0tf6/na1mm0+bS9Uw+0DFex7aaKr2qawQ==
 
-"@types/node@18.16.11":
-  version "18.16.11"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-18.16.11.tgz#21d13d5a62ad24365b8dd043b00a01d7f24ce6df"
-  integrity sha512-yCnrJruhy5kqKDVi+shQlQ/bdeESTUr2zUeihKkoxG6IMQaZUjZjqnHHwaYr1nv5/X+WtLZ8gPYgWlCTevOXrg==
+"@types/node@18.16.12":
+  version "18.16.12"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-18.16.12.tgz#f11e19055c5b3daeb79dc6eb7ccdd3d036313034"
+  integrity sha512-tIRrjbY9C277MOfP8M3zjMIhtMlUJ6YVqkGgLjz+74jVsdf4/UjC6Hku4+1N0BS0qyC0JAS6tJLUk9H6JUKviQ==
 
 "@types/node@^13.7.0":
   version "13.13.52"
