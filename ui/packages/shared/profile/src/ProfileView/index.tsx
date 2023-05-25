@@ -133,12 +133,10 @@ export const ProfileView = ({
 
   const {loader, perf} = useParcaContext();
 
-  // TODO: Figure out why profileSource's constantly changing value causes an infinite render on PSC, thereby causing the instant reset bug in the icicle graph as reported in https://github.com/polarsignals/polarsignals/issues/1991#event-9340441410
-
-  // useEffect(() => {
-  //   // Reset the current path when the profile source changes
-  //   setCurPath([]);
-  // }, [profileSource]);
+  useEffect(() => {
+    // Reset the current path when the profile source changes
+    setCurPath([]);
+  }, [profileSource]);
 
   useEffect(() => {
     async function loadGraphviz(): Promise<void> {
