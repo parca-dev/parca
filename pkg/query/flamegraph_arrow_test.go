@@ -17,7 +17,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/apache/arrow/go/v10/arrow/array"
+	"github.com/apache/arrow/go/v13/arrow/array"
 	"github.com/go-kit/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
@@ -158,14 +158,14 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 	}
 
 	for _, tc := range []struct {
-		name   string
-		equals RowEquals
+		name    string
+		groupBy []string
 		// expectations
 		numRows int64
 		rows    []row
 	}{{
-		name:   "aggregate-default",
-		equals: RowEqualsDefault,
+		name:    "aggregate-default",
+		groupBy: nil,
 		// expectations
 		numRows: 6,
 		rows: []row{
@@ -177,8 +177,8 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa4, LocationFolded: false, LocationLine: 4, FunctionStartLine: 4, FunctionName: "4", FunctionSystemName: "4", FunctionFilename: "4", Cumulative: 3, Children: nil},            // 5
 		},
 	}, {
-		name:   "aggregate-never",
-		equals: RowEqualsNever,
+		name:    "aggregate-never",
+		groupBy: []string{FlamegraphFieldMappingFile, FlamegraphFieldFunctionName},
 		// expectations
 		numRows: 11,
 		rows: []row{
@@ -196,7 +196,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 		},
 	}} {
 		t.Run(tc.name, func(t *testing.T) {
-			fa, err := GenerateFlamegraphArrow(ctx, tracer, p, 0, tc.equals)
+			fa, err := GenerateFlamegraphArrow(ctx, tracer, p, tc.groupBy, 0)
 			require.NoError(t, err)
 
 			require.Equal(t, tc.numRows, fa.NumRows())
@@ -238,18 +238,18 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 
 			require.Equal(t,
 				columns.mappingStart,
-				fa.Column(fa.Schema().FieldIndices(flamegraphFieldMappingStart)[0]).(*array.Uint64).Uint64Values(),
+				fa.Column(fa.Schema().FieldIndices(FlamegraphFieldMappingStart)[0]).(*array.Uint64).Uint64Values(),
 			)
 			require.Equal(t,
 				columns.mappingLimit,
-				fa.Column(fa.Schema().FieldIndices(flamegraphFieldMappingLimit)[0]).(*array.Uint64).Uint64Values(),
+				fa.Column(fa.Schema().FieldIndices(FlamegraphFieldMappingLimit)[0]).(*array.Uint64).Uint64Values(),
 			)
 			require.Equal(t,
 				columns.mappingOffset,
-				fa.Column(fa.Schema().FieldIndices(flamegraphFieldMappingOffset)[0]).(*array.Uint64).Uint64Values(),
+				fa.Column(fa.Schema().FieldIndices(FlamegraphFieldMappingOffset)[0]).(*array.Uint64).Uint64Values(),
 			)
 
-			mappingFilesDict := fa.Column(fa.Schema().FieldIndices(flamegraphFieldMappingFile)[0]).(*array.Dictionary)
+			mappingFilesDict := fa.Column(fa.Schema().FieldIndices(FlamegraphFieldMappingFile)[0]).(*array.Dictionary)
 			mappingFilesString := mappingFilesDict.Dictionary().(*array.String)
 			mappingFiles := make([]string, fa.NumRows())
 			for i := 0; i < int(fa.NumRows()); i++ {
@@ -257,7 +257,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 			}
 			require.Equal(t, columns.mappingFiles, mappingFiles)
 
-			mappingBuildIDDict := fa.Column(fa.Schema().FieldIndices(flamegraphFieldMappingBuildID)[0]).(*array.Dictionary)
+			mappingBuildIDDict := fa.Column(fa.Schema().FieldIndices(FlamegraphFieldMappingBuildID)[0]).(*array.Dictionary)
 			mappingBuildIDString := mappingBuildIDDict.Dictionary().(*array.String)
 			mappingBuildID := make([]string, fa.NumRows())
 			for i := 0; i < int(fa.NumRows()); i++ {
@@ -267,30 +267,30 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 
 			require.Equal(t,
 				columns.locationAddresses,
-				fa.Column(fa.Schema().FieldIndices(flamegraphFieldLocationAddress)[0]).(*array.Uint64).Uint64Values(),
+				fa.Column(fa.Schema().FieldIndices(FlamegraphFieldLocationAddress)[0]).(*array.Uint64).Uint64Values(),
 			)
 
 			locationFolded := make([]bool, fa.NumRows())
 			for i := 0; i < int(fa.NumRows()); i++ {
-				locationFolded[i] = fa.Column(fa.Schema().FieldIndices(flamegraphFieldLocationFolded)[0]).(*array.Boolean).Value(i)
+				locationFolded[i] = fa.Column(fa.Schema().FieldIndices(FlamegraphFieldLocationFolded)[0]).(*array.Boolean).Value(i)
 			}
 			require.Equal(t, columns.locationFolded, locationFolded)
 
 			require.Equal(t,
 				columns.locationLines,
-				fa.Column(fa.Schema().FieldIndices(flamegraphFieldLocationLine)[0]).(*array.Int64).Int64Values(),
+				fa.Column(fa.Schema().FieldIndices(FlamegraphFieldLocationLine)[0]).(*array.Int64).Int64Values(),
 			)
 
 			require.Equal(t,
 				columns.functionStartLines,
-				fa.Column(fa.Schema().FieldIndices(flamegraphFieldFunctionStartLine)[0]).(*array.Int64).Int64Values(),
+				fa.Column(fa.Schema().FieldIndices(FlamegraphFieldFunctionStartLine)[0]).(*array.Int64).Int64Values(),
 			)
 
-			functionNameDict := fa.Column(fa.Schema().FieldIndices(flamegraphFieldFunctionName)[0]).(*array.Dictionary)
+			functionNameDict := fa.Column(fa.Schema().FieldIndices(FlamegraphFieldFunctionName)[0]).(*array.Dictionary)
 			functionNameString := functionNameDict.Dictionary().(*array.String)
-			functionSystemNameDict := fa.Column(fa.Schema().FieldIndices(flamegraphFieldFunctionSystemName)[0]).(*array.Dictionary)
+			functionSystemNameDict := fa.Column(fa.Schema().FieldIndices(FlamegraphFieldFunctionSystemName)[0]).(*array.Dictionary)
 			functionSystemNameString := functionSystemNameDict.Dictionary().(*array.String)
-			functionFileNameDict := fa.Column(fa.Schema().FieldIndices(flamegraphFieldFunctionFileName)[0]).(*array.Dictionary)
+			functionFileNameDict := fa.Column(fa.Schema().FieldIndices(FlamegraphFieldFunctionFileName)[0]).(*array.Dictionary)
 			functionFileNameString := functionFileNameDict.Dictionary().(*array.String)
 
 			functionNames := make([]string, fa.NumRows())
@@ -306,7 +306,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 			require.Equal(t, columns.functionFileNames, functionFileNames)
 
 			children := make([][]uint32, fa.NumRows())
-			list := fa.Column(fa.Schema().FieldIndices(flamegraphFieldChildren)[0]).(*array.List)
+			list := fa.Column(fa.Schema().FieldIndices(FlamegraphFieldChildren)[0]).(*array.List)
 			listValues := list.ListValues().(*array.Uint32).Uint32Values()
 			for i := 0; i < int(fa.NumRows()); i++ {
 				if !list.IsValid(i) {
@@ -320,11 +320,11 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 
 			require.Equal(t,
 				columns.cumulative,
-				fa.Column(fa.Schema().FieldIndices(flamegraphFieldCumulative)[0]).(*array.Int64).Int64Values(),
+				fa.Column(fa.Schema().FieldIndices(FlamegraphFieldCumulative)[0]).(*array.Int64).Int64Values(),
 			)
 			require.Equal(t,
 				int(tc.numRows),
-				fa.Column(fa.Schema().FieldIndices(flamegraphFieldDiff)[0]).(*array.Int64).NullN(),
+				fa.Column(fa.Schema().FieldIndices(FlamegraphFieldDiff)[0]).(*array.Int64).NullN(),
 			)
 		})
 	}

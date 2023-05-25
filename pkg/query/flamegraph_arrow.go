@@ -17,9 +17,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/apache/arrow/go/v10/arrow"
-	"github.com/apache/arrow/go/v10/arrow/array"
-	"github.com/apache/arrow/go/v10/arrow/memory"
+	"github.com/apache/arrow/go/v13/arrow"
+	"github.com/apache/arrow/go/v13/arrow/array"
+	"github.com/apache/arrow/go/v13/arrow/memory"
 	"github.com/polarsignals/frostdb/pqarrow/builder"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/exp/slices"
@@ -28,85 +28,81 @@ import (
 )
 
 const (
-	flamegraphFieldMappingStart   = "mapping_start"
-	flamegraphFieldMappingLimit   = "mapping_limit"
-	flamegraphFieldMappingOffset  = "mapping_offset"
-	flamegraphFieldMappingFile    = "mapping_file"
-	flamegraphFieldMappingBuildID = "mapping_build_id"
+	FlamegraphFieldMappingStart   = "mapping_start"
+	FlamegraphFieldMappingLimit   = "mapping_limit"
+	FlamegraphFieldMappingOffset  = "mapping_offset"
+	FlamegraphFieldMappingFile    = "mapping_file"
+	FlamegraphFieldMappingBuildID = "mapping_build_id"
 
-	flamegraphFieldLocationAddress = "location_address"
-	flamegraphFieldLocationFolded  = "location_folded"
-	flamegraphFieldLocationLine    = "location_line"
+	FlamegraphFieldLocationAddress = "location_address"
+	FlamegraphFieldLocationFolded  = "location_folded"
+	FlamegraphFieldLocationLine    = "location_line"
 
-	flamegraphFieldFunctionStartLine  = "function_startline"
-	flamegraphFieldFunctionName       = "function_name"
-	flamegraphFieldFunctionSystemName = "function_system_name"
-	flamegraphFieldFunctionFileName   = "function_file_name"
+	FlamegraphFieldFunctionStartLine  = "function_startline"
+	FlamegraphFieldFunctionName       = "function_name"
+	FlamegraphFieldFunctionSystemName = "function_system_name"
+	FlamegraphFieldFunctionFileName   = "function_file_name"
 
-	flamegraphFieldChildren   = "children"
-	flamegraphFieldCumulative = "cumulative"
-	flamegraphFieldDiff       = "diff"
+	FlamegraphFieldChildren   = "children"
+	FlamegraphFieldCumulative = "cumulative"
+	FlamegraphFieldDiff       = "diff"
 )
 
-// RowEquals is a function that can be used to customize the equality check for merging rows.
-type RowEquals func(line profile.LocationLine, functionName string) bool
+func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profile.Profile, groupBy []string, trimFraction float32) (arrow.Record, error) {
+	aggregateFields := map[string]struct{}{
+		// TODO: Add pprof labels by default
+		FlamegraphFieldMappingFile:  {},
+		FlamegraphFieldFunctionName: {},
+	}
+	for _, f := range groupBy {
+		// don't aggregate by fields that we should group by.
+		delete(aggregateFields, f)
+	}
 
-var RowEqualsDefault = func(line profile.LocationLine, fn string) bool {
-	return line.Function.Name == fn
-}
-
-var RowEqualsNever = func(line profile.LocationLine, fn string) bool { return false }
-
-func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profile.Profile, trimFraction float32, equals RowEquals) (arrow.Record, error) {
-	ar, err := convertSymbolizedProfile(p, equals)
-	return ar, err
-}
-
-func convertSymbolizedProfile(p *profile.Profile, equals RowEquals) (arrow.Record, error) {
 	schema := arrow.NewSchema([]arrow.Field{
-		{Name: flamegraphFieldMappingStart, Type: arrow.PrimitiveTypes.Uint64},
-		{Name: flamegraphFieldMappingLimit, Type: arrow.PrimitiveTypes.Uint64},
-		{Name: flamegraphFieldMappingOffset, Type: arrow.PrimitiveTypes.Uint64},
-		{Name: flamegraphFieldMappingFile, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint16, ValueType: arrow.BinaryTypes.String}},
-		{Name: flamegraphFieldMappingBuildID, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint16, ValueType: arrow.BinaryTypes.String}},
+		{Name: FlamegraphFieldMappingStart, Type: arrow.PrimitiveTypes.Uint64},
+		{Name: FlamegraphFieldMappingLimit, Type: arrow.PrimitiveTypes.Uint64},
+		{Name: FlamegraphFieldMappingOffset, Type: arrow.PrimitiveTypes.Uint64},
+		{Name: FlamegraphFieldMappingFile, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint16, ValueType: arrow.BinaryTypes.String}},
+		{Name: FlamegraphFieldMappingBuildID, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint16, ValueType: arrow.BinaryTypes.String}},
 		// Location
-		{Name: flamegraphFieldLocationAddress, Type: arrow.PrimitiveTypes.Uint64},
-		{Name: flamegraphFieldLocationFolded, Type: &arrow.BooleanType{}},
-		{Name: flamegraphFieldLocationLine, Type: arrow.PrimitiveTypes.Int64},
+		{Name: FlamegraphFieldLocationAddress, Type: arrow.PrimitiveTypes.Uint64},
+		{Name: FlamegraphFieldLocationFolded, Type: &arrow.BooleanType{}},
+		{Name: FlamegraphFieldLocationLine, Type: arrow.PrimitiveTypes.Int64},
 		// Function
-		{Name: flamegraphFieldFunctionStartLine, Type: arrow.PrimitiveTypes.Int64},
-		{Name: flamegraphFieldFunctionName, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.String}},
-		{Name: flamegraphFieldFunctionSystemName, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint16, ValueType: arrow.BinaryTypes.String}},
-		{Name: flamegraphFieldFunctionFileName, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.String}},
+		{Name: FlamegraphFieldFunctionStartLine, Type: arrow.PrimitiveTypes.Int64},
+		{Name: FlamegraphFieldFunctionName, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.String}},
+		{Name: FlamegraphFieldFunctionSystemName, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint16, ValueType: arrow.BinaryTypes.String}},
+		{Name: FlamegraphFieldFunctionFileName, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.String}},
 		// Values
-		{Name: flamegraphFieldChildren, Type: arrow.ListOf(arrow.PrimitiveTypes.Uint32)},
-		{Name: flamegraphFieldCumulative, Type: arrow.PrimitiveTypes.Int64},
-		{Name: flamegraphFieldDiff, Type: arrow.PrimitiveTypes.Int64, Nullable: true},
+		{Name: FlamegraphFieldChildren, Type: arrow.ListOf(arrow.PrimitiveTypes.Uint32)},
+		{Name: FlamegraphFieldCumulative, Type: arrow.PrimitiveTypes.Int64},
+		{Name: FlamegraphFieldDiff, Type: arrow.PrimitiveTypes.Int64, Nullable: true},
 	}, nil)
 
 	mem := memory.NewGoAllocator()
 	rb := builder.NewRecordBuilder(mem, schema)
 
 	// TODO: Potentially good to .Reserve() the number of samples to avoid re-allocations
-	builderMappingStart := rb.Field(schema.FieldIndices(flamegraphFieldMappingStart)[0]).(*array.Uint64Builder)
-	builderMappingLimit := rb.Field(schema.FieldIndices(flamegraphFieldMappingLimit)[0]).(*array.Uint64Builder)
-	builderMappingOffset := rb.Field(schema.FieldIndices(flamegraphFieldMappingOffset)[0]).(*array.Uint64Builder)
-	builderMappingFile := rb.Field(schema.FieldIndices(flamegraphFieldMappingFile)[0]).(*array.BinaryDictionaryBuilder)
-	builderMappingBuildID := rb.Field(schema.FieldIndices(flamegraphFieldMappingBuildID)[0]).(*array.BinaryDictionaryBuilder)
+	builderMappingStart := rb.Field(schema.FieldIndices(FlamegraphFieldMappingStart)[0]).(*array.Uint64Builder)
+	builderMappingLimit := rb.Field(schema.FieldIndices(FlamegraphFieldMappingLimit)[0]).(*array.Uint64Builder)
+	builderMappingOffset := rb.Field(schema.FieldIndices(FlamegraphFieldMappingOffset)[0]).(*array.Uint64Builder)
+	builderMappingFile := rb.Field(schema.FieldIndices(FlamegraphFieldMappingFile)[0]).(*array.BinaryDictionaryBuilder)
+	builderMappingBuildID := rb.Field(schema.FieldIndices(FlamegraphFieldMappingBuildID)[0]).(*array.BinaryDictionaryBuilder)
 
-	builderLocationAddress := rb.Field(schema.FieldIndices(flamegraphFieldLocationAddress)[0]).(*array.Uint64Builder)
-	builderLocationFolded := rb.Field(schema.FieldIndices(flamegraphFieldLocationFolded)[0]).(*builder.OptBooleanBuilder)
-	builderLocationLine := rb.Field(schema.FieldIndices(flamegraphFieldLocationLine)[0]).(*builder.OptInt64Builder)
+	builderLocationAddress := rb.Field(schema.FieldIndices(FlamegraphFieldLocationAddress)[0]).(*array.Uint64Builder)
+	builderLocationFolded := rb.Field(schema.FieldIndices(FlamegraphFieldLocationFolded)[0]).(*builder.OptBooleanBuilder)
+	builderLocationLine := rb.Field(schema.FieldIndices(FlamegraphFieldLocationLine)[0]).(*builder.OptInt64Builder)
 
-	builderFunctionStartLine := rb.Field(schema.FieldIndices(flamegraphFieldFunctionStartLine)[0]).(*builder.OptInt64Builder)
-	builderFunctionName := rb.Field(schema.FieldIndices(flamegraphFieldFunctionName)[0]).(*array.BinaryDictionaryBuilder)
-	builderFunctionSystemName := rb.Field(schema.FieldIndices(flamegraphFieldFunctionSystemName)[0]).(*array.BinaryDictionaryBuilder)
-	builderFunctionFileName := rb.Field(schema.FieldIndices(flamegraphFieldFunctionFileName)[0]).(*array.BinaryDictionaryBuilder)
+	builderFunctionStartLine := rb.Field(schema.FieldIndices(FlamegraphFieldFunctionStartLine)[0]).(*builder.OptInt64Builder)
+	builderFunctionName := rb.Field(schema.FieldIndices(FlamegraphFieldFunctionName)[0]).(*array.BinaryDictionaryBuilder)
+	builderFunctionSystemName := rb.Field(schema.FieldIndices(FlamegraphFieldFunctionSystemName)[0]).(*array.BinaryDictionaryBuilder)
+	builderFunctionFileName := rb.Field(schema.FieldIndices(FlamegraphFieldFunctionFileName)[0]).(*array.BinaryDictionaryBuilder)
 
-	builderChildren := rb.Field(schema.FieldIndices(flamegraphFieldChildren)[0]).(*builder.ListBuilder)
+	builderChildren := rb.Field(schema.FieldIndices(FlamegraphFieldChildren)[0]).(*builder.ListBuilder)
 	builderChildrenValues := builderChildren.ValueBuilder().(*array.Uint32Builder)
-	builderCumulative := rb.Field(schema.FieldIndices(flamegraphFieldCumulative)[0]).(*builder.OptInt64Builder)
-	builderDiff := rb.Field(schema.FieldIndices(flamegraphFieldDiff)[0]).(*builder.OptInt64Builder)
+	builderCumulative := rb.Field(schema.FieldIndices(FlamegraphFieldCumulative)[0]).(*builder.OptInt64Builder)
+	builderDiff := rb.Field(schema.FieldIndices(FlamegraphFieldDiff)[0]).(*builder.OptInt64Builder)
 
 	// The very first row is the root row. It doesn't contain any metadata.
 	// It only contains the root cumulative value and list of children (which are actual roots).
@@ -127,7 +123,6 @@ func convertSymbolizedProfile(p *profile.Profile, equals RowEquals) (arrow.Recor
 
 	cumulative := int64(0)
 	rootsRow := []uint32{}
-	functionNames := make(map[uint32]string, len(p.Samples))
 	children := make([][]uint32, len(p.Samples))
 
 	// these change with every iteration below
@@ -151,17 +146,32 @@ func convertSymbolizedProfile(p *profile.Profile, equals RowEquals) (arrow.Recor
 					cumulative += s.Value
 				}
 
+			compareRows:
 				for _, cr := range compareRows {
-					if fn, found := functionNames[cr]; found {
-						if equals(line, fn) {
-							// Add the cumulative value to the row we merge with.
-							builderCumulative.Add(int(cr), s.Value)
-							// Continue with this row as the parent for the next iteration and compare to its children.
-							parent = int(cr)
-							compareRows = children[cr]
-							continue stacktraces
+					for f := range aggregateFields {
+						// TODO: Make this more generic by using a helper struct from the schema to builders
+						if f == FlamegraphFieldMappingFile {
+							childMappingFile := builderMappingFile.ValueStr(builderMappingFile.GetValueIndex(int(cr)))
+							if location.Mapping.File != childMappingFile {
+								// compare against the next row if it matches
+								continue compareRows
+							}
+						}
+						if f == FlamegraphFieldFunctionName {
+							childFunctionName := builderFunctionName.ValueStr(builderFunctionName.GetValueIndex(int(cr)))
+							if line.Function.Name != childFunctionName {
+								// compare against the next row if it matches
+								continue compareRows
+							}
 						}
 					}
+
+					// All fields match, so we can aggregate this new row with the existing one.
+					builderCumulative.Add(int(cr), s.Value)
+					// Continue with this row as the parent for the next iteration and compare to its children.
+					parent = int(cr)
+					compareRows = children[cr]
+					continue stacktraces
 				}
 
 				if i == len(s.Locations)-1 { // root of the stacktrace
@@ -172,47 +182,55 @@ func convertSymbolizedProfile(p *profile.Profile, equals RowEquals) (arrow.Recor
 				for j := range rb.Fields() {
 					switch schema.Field(j).Name {
 					// Mapping
-					case flamegraphFieldMappingStart:
-						if location.Mapping.Start > 0 {
+					case FlamegraphFieldMappingStart:
+						if location.Mapping != nil && location.Mapping.Start > 0 {
 							builderMappingStart.Append(location.Mapping.Start)
 						} else {
 							builderMappingStart.AppendNull()
 						}
-					case flamegraphFieldMappingLimit:
-						builderMappingLimit.Append(location.Mapping.Limit)
-					case flamegraphFieldMappingOffset:
-						builderMappingOffset.Append(location.Mapping.Offset)
-					case flamegraphFieldMappingFile:
-						if location.Mapping.File != "" {
+					case FlamegraphFieldMappingLimit:
+						if location.Mapping != nil && location.Mapping.Limit > 0 {
+							builderMappingLimit.Append(location.Mapping.Limit)
+						} else {
+							builderMappingLimit.AppendNull()
+						}
+					case FlamegraphFieldMappingOffset:
+						if location.Mapping != nil && location.Mapping.Offset > 0 {
+							builderMappingOffset.Append(location.Mapping.Offset)
+						} else {
+							builderMappingOffset.AppendNull()
+						}
+					case FlamegraphFieldMappingFile:
+						if location.Mapping != nil && location.Mapping.File != "" {
 							_ = builderMappingFile.AppendString(location.Mapping.File)
 						} else {
 							builderMappingFile.AppendNull()
 						}
-					case flamegraphFieldMappingBuildID:
-						if location.Mapping.BuildId != "" {
+					case FlamegraphFieldMappingBuildID:
+						if location.Mapping != nil && location.Mapping.BuildId != "" {
 							_ = builderMappingBuildID.AppendString(location.Mapping.BuildId)
 						} else {
 							builderMappingBuildID.AppendNull()
 						}
 					// Location
-					case flamegraphFieldLocationAddress:
+					case FlamegraphFieldLocationAddress:
 						builderLocationAddress.Append(location.Address)
-					case flamegraphFieldLocationFolded:
+					case FlamegraphFieldLocationFolded:
 						builderLocationFolded.AppendSingle(location.IsFolded)
-					case flamegraphFieldLocationLine:
+					case FlamegraphFieldLocationLine:
 						builderLocationLine.Append(line.Line)
 					// Function
-					case flamegraphFieldFunctionStartLine:
+					case FlamegraphFieldFunctionStartLine:
 						builderFunctionStartLine.Append(line.Function.StartLine)
-					case flamegraphFieldFunctionName:
+					case FlamegraphFieldFunctionName:
 						_ = builderFunctionName.AppendString(line.Function.Name)
-						functionNames[row] = line.Function.Name
-					case flamegraphFieldFunctionSystemName:
+						// functionNames[row] = line.Function.Name
+					case FlamegraphFieldFunctionSystemName:
 						_ = builderFunctionSystemName.AppendString(line.Function.SystemName)
-					case flamegraphFieldFunctionFileName:
+					case FlamegraphFieldFunctionFileName:
 						_ = builderFunctionFileName.AppendString(line.Function.Filename)
 					// Values
-					case flamegraphFieldChildren:
+					case FlamegraphFieldChildren:
 						if uint32(len(children)) == row {
 							children = slices.Grow(children, len(children))
 							children = children[:cap(children)]
@@ -224,9 +242,9 @@ func convertSymbolizedProfile(p *profile.Profile, equals RowEquals) (arrow.Recor
 								children[parent] = append(children[parent], row)
 							}
 						}
-					case flamegraphFieldCumulative:
+					case FlamegraphFieldCumulative:
 						builderCumulative.Append(s.Value)
-					case flamegraphFieldDiff:
+					case FlamegraphFieldDiff:
 						if s.DiffValue > 0 {
 							builderDiff.Append(s.DiffValue)
 						} else {
