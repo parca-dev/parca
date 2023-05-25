@@ -49,6 +49,8 @@ const (
 )
 
 func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profile.Profile, groupBy []string, trimFraction float32) (arrow.Record, error) {
+	mem := memory.NewGoAllocator()
+
 	aggregateFields := map[string]struct{}{
 		// TODO: Add pprof labels by default
 		FlamegraphFieldMappingFile:  {},
@@ -80,7 +82,6 @@ func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profil
 		{Name: FlamegraphFieldDiff, Type: arrow.PrimitiveTypes.Int64, Nullable: true},
 	}, nil)
 
-	mem := memory.NewGoAllocator()
 	rb := builder.NewRecordBuilder(mem, schema)
 
 	// TODO: Potentially good to .Reserve() the number of samples to avoid re-allocations
@@ -103,6 +104,20 @@ func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profil
 	builderChildrenValues := builderChildren.ValueBuilder().(*array.Uint32Builder)
 	builderCumulative := rb.Field(schema.FieldIndices(FlamegraphFieldCumulative)[0]).(*builder.OptInt64Builder)
 	builderDiff := rb.Field(schema.FieldIndices(FlamegraphFieldDiff)[0]).(*builder.OptInt64Builder)
+
+	// This field compares the current sample with the already added values in the builders.
+	equalField := func(fieldName string, location *profile.Location, line profile.LocationLine, row uint32) bool {
+		switch fieldName {
+		case FlamegraphFieldMappingStart:
+			rowMappingFile := builderMappingFile.ValueStr(builderMappingFile.GetValueIndex(int(row)))
+			return location.Mapping.File == rowMappingFile
+		case FlamegraphFieldFunctionName:
+			rowFunctionName := builderFunctionName.ValueStr(builderFunctionName.GetValueIndex(int(row)))
+			return line.Function.Name == rowFunctionName
+		default:
+			return false
+		}
+	}
 
 	// The very first row is the root row. It doesn't contain any metadata.
 	// It only contains the root cumulative value and list of children (which are actual roots).
@@ -151,20 +166,9 @@ func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profil
 				compareRows:
 					for _, cr := range compareRows {
 						for f := range aggregateFields {
-							// TODO: Make this more generic by using a helper struct from the schema to builders
-							if f == FlamegraphFieldMappingFile {
-								childMappingFile := builderMappingFile.ValueStr(builderMappingFile.GetValueIndex(int(cr)))
-								if location.Mapping.File != childMappingFile {
-									// compare against the next row if it matches
-									continue compareRows
-								}
-							}
-							if f == FlamegraphFieldFunctionName {
-								childFunctionName := builderFunctionName.ValueStr(builderFunctionName.GetValueIndex(int(cr)))
-								if line.Function.Name != childFunctionName {
-									// compare against the next row if it matches
-									continue compareRows
-								}
+							if !equalField(f, location, line, cr) {
+								// If any field doesn't match, we can't aggregate this row with the existing one.
+								continue compareRows
 							}
 						}
 
@@ -227,7 +231,6 @@ func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profil
 						builderFunctionStartLine.Append(line.Function.StartLine)
 					case FlamegraphFieldFunctionName:
 						_ = builderFunctionName.AppendString(line.Function.Name)
-						// functionNames[row] = line.Function.Name
 					case FlamegraphFieldFunctionSystemName:
 						_ = builderFunctionSystemName.AppendString(line.Function.SystemName)
 					case FlamegraphFieldFunctionFileName:
