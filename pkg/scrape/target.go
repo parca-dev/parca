@@ -202,17 +202,15 @@ func (t *Target) Health() TargetHealth {
 }
 
 // LabelsByProfiles returns the labels for a given ProfilingConfig.
-func LabelsByProfiles(lset labels.Labels, c *config.ProfilingConfig) []labels.Labels {
+func LabelsByProfiles(lb *labels.Builder, c *config.ProfilingConfig) []labels.Labels {
 	res := []labels.Labels{}
 
 	if len(c.PprofConfig) > 0 {
-		b := labels.NewScratchBuilder(lset.Len() + 2)
 		for profilingType, profilingConfig := range c.PprofConfig {
 			if *profilingConfig.Enabled {
-				b.Assign(lset)
-				b.Add(ProfilePath, profilingConfig.Path)
-				b.Add(ProfileName, profilingType)
-				res = append(res, b.Labels())
+				lb.Set(ProfilePath, profilingConfig.Path)
+				lb.Set(ProfileName, profilingType)
+				res = append(res, lb.Labels())
 			}
 		}
 	}
@@ -236,16 +234,15 @@ const (
 // populateLabels builds a label set from the given label set and scrape configuration.
 // It returns a label set before relabeling was applied as the second return value.
 // Returns the original discovered label set found before relabelling was applied if the target is dropped during relabeling.
-func populateLabels(lset labels.Labels, cfg *config.ScrapeConfig) (res, orig labels.Labels, err error) {
+func populateLabels(lb *labels.Builder, cfg *config.ScrapeConfig) (res, orig labels.Labels, err error) {
 	// Copy labels into the labelset for the target if they are not set already.
 	scrapeLabels := labels.Labels{
 		{Name: model.JobLabel, Value: cfg.JobName},
 		{Name: model.SchemeLabel, Value: cfg.Scheme},
 	}
-	lb := labels.NewBuilder(lset)
 
 	scrapeLabels.Range(func(l labels.Label) {
-		if lv := lset.Get(l.Name); lv == "" {
+		if lb.Get(l.Name) == "" {
 			lb.Set(l.Name, l.Value)
 		}
 	})
@@ -257,17 +254,15 @@ func populateLabels(lset labels.Labels, cfg *config.ScrapeConfig) (res, orig lab
 	}
 
 	preRelabelLabels := lb.Labels()
-	lset, keep := relabel.Process(preRelabelLabels, cfg.RelabelConfigs...)
+	keep := relabel.ProcessBuilder(lb, cfg.RelabelConfigs...)
 
 	// Check if the target was dropped.
 	if !keep {
 		return labels.EmptyLabels(), preRelabelLabels, nil
 	}
-	if v := lset.Get(model.AddressLabel); v == "" {
+	if lb.Get(model.AddressLabel) == "" {
 		return labels.EmptyLabels(), labels.EmptyLabels(), errors.New("no address")
 	}
-
-	lb = labels.NewBuilder(lset)
 
 	// addPort checks whether we should add a default port to the address.
 	// If the address is not valid, we don't append a port either.
@@ -281,11 +276,11 @@ func populateLabels(lset labels.Labels, cfg *config.ScrapeConfig) (res, orig lab
 		_, _, err := net.SplitHostPort(s + ":1234")
 		return err == nil
 	}
-	addr := lset.Get(model.AddressLabel)
+	addr := lb.Get(model.AddressLabel)
 	// If it's an address with no trailing port, infer it based on the used scheme.
 	if addPort(addr) {
 		// Addresses reaching this point are already wrapped in [] if necessary.
-		switch lset.Get(model.SchemeLabel) {
+		switch lb.Get(model.SchemeLabel) {
 		case "http", "":
 			addr = addr + ":80"
 		case "https":
@@ -302,14 +297,14 @@ func populateLabels(lset labels.Labels, cfg *config.ScrapeConfig) (res, orig lab
 
 	// Meta labels are deleted after relabelling. Other internal labels propagate to
 	// the target which decides whether they will be part of their label set.
-	lset.Range(func(l labels.Label) {
+	lb.Range(func(l labels.Label) {
 		if strings.HasPrefix(l.Name, model.MetaLabelPrefix) {
 			lb.Del(l.Name)
 		}
 	})
 
 	// Default the instance label to the target address.
-	if v := lset.Get(model.InstanceLabel); v == "" {
+	if lb.Get(model.InstanceLabel) == "" {
 		lb.Set(model.InstanceLabel, addr)
 	}
 
@@ -325,36 +320,36 @@ func populateLabels(lset labels.Labels, cfg *config.ScrapeConfig) (res, orig lab
 		return labels.EmptyLabels(), labels.EmptyLabels(), err
 	}
 
-	return res, lset, nil
+	return res, preRelabelLabels, nil
 }
 
 // targetsFromGroup builds targets based on the given TargetGroup and config.
-func targetsFromGroup(tg *targetgroup.Group, cfg *config.ScrapeConfig) ([]*Target, error) {
-	targets := make([]*Target, 0, len(tg.Targets))
+func targetsFromGroup(tg *targetgroup.Group, cfg *config.ScrapeConfig, targets []*Target, lb *labels.Builder) ([]*Target, error) {
+	targets = targets[:0]
 
 	for i, tlset := range tg.Targets {
-		b := labels.NewScratchBuilder(len(tlset) + len(tg.Labels))
+		lb.Reset(labels.EmptyLabels())
 
 		for ln, lv := range tlset {
-			b.Add(string(ln), string(lv))
+			lb.Set(string(ln), string(lv))
 		}
 		for ln, lv := range tg.Labels {
 			if _, ok := tlset[ln]; !ok {
-				b.Add(string(ln), string(lv))
+				lb.Set(string(ln), string(lv))
 			}
 		}
 
-		lset := labels.New(b.Labels()...)
-		lsets := LabelsByProfiles(lset, cfg.ProfilingConfig)
+		lsets := LabelsByProfiles(lb, cfg.ProfilingConfig)
 
 		for _, lset := range lsets {
+			lb.Reset(lset)
 			var profType string
-			lset.Range(func(l labels.Label) {
+			lb.Range(func(l labels.Label) {
 				if l.Name == ProfileName {
 					profType = l.Value
 				}
 			})
-			lset, origLabels, err := populateLabels(lset, cfg)
+			lset, origLabels, err := populateLabels(lb, cfg)
 			if err != nil {
 				return nil, fmt.Errorf("instance %d in group %s: %s", i, tg, err)
 			}

@@ -206,10 +206,12 @@ func (sp *scrapePool) Sync(tgs []*targetgroup.Group) {
 	start := time.Now()
 
 	var all []*Target
+	var targets []*Target
+	lb := labels.NewBuilder(labels.EmptyLabels())
 	sp.mtx.Lock()
 	sp.droppedTargets = []*Target{}
 	for _, tg := range tgs {
-		targets, err := targetsFromGroup(tg, sp.config)
+		targets, err := targetsFromGroup(tg, sp.config, targets, lb)
 		if err != nil {
 			level.Error(sp.logger).Log("msg", "creating targets failed", "err", err)
 			continue
