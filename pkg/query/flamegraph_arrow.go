@@ -146,32 +146,35 @@ func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profil
 					cumulative += s.Value
 				}
 
-			compareRows:
-				for _, cr := range compareRows {
-					for f := range aggregateFields {
-						// TODO: Make this more generic by using a helper struct from the schema to builders
-						if f == FlamegraphFieldMappingFile {
-							childMappingFile := builderMappingFile.ValueStr(builderMappingFile.GetValueIndex(int(cr)))
-							if location.Mapping.File != childMappingFile {
-								// compare against the next row if it matches
-								continue compareRows
+				// If there are no fields we should aggregate we can skip the comparison
+				if len(aggregateFields) > 0 {
+				compareRows:
+					for _, cr := range compareRows {
+						for f := range aggregateFields {
+							// TODO: Make this more generic by using a helper struct from the schema to builders
+							if f == FlamegraphFieldMappingFile {
+								childMappingFile := builderMappingFile.ValueStr(builderMappingFile.GetValueIndex(int(cr)))
+								if location.Mapping.File != childMappingFile {
+									// compare against the next row if it matches
+									continue compareRows
+								}
+							}
+							if f == FlamegraphFieldFunctionName {
+								childFunctionName := builderFunctionName.ValueStr(builderFunctionName.GetValueIndex(int(cr)))
+								if line.Function.Name != childFunctionName {
+									// compare against the next row if it matches
+									continue compareRows
+								}
 							}
 						}
-						if f == FlamegraphFieldFunctionName {
-							childFunctionName := builderFunctionName.ValueStr(builderFunctionName.GetValueIndex(int(cr)))
-							if line.Function.Name != childFunctionName {
-								// compare against the next row if it matches
-								continue compareRows
-							}
-						}
-					}
 
-					// All fields match, so we can aggregate this new row with the existing one.
-					builderCumulative.Add(int(cr), s.Value)
-					// Continue with this row as the parent for the next iteration and compare to its children.
-					parent = int(cr)
-					compareRows = children[cr]
-					continue stacktraces
+						// All fields match, so we can aggregate this new row with the existing one.
+						builderCumulative.Add(int(cr), s.Value)
+						// Continue with this row as the parent for the next iteration and compare to its children.
+						parent = int(cr)
+						compareRows = children[cr]
+						continue stacktraces
+					}
 				}
 
 				if i == len(s.Locations)-1 { // root of the stacktrace
