@@ -14,6 +14,7 @@
 package query
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 
@@ -108,12 +109,17 @@ func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profil
 	// This field compares the current sample with the already added values in the builders.
 	equalField := func(fieldName string, location *profile.Location, line profile.LocationLine, row uint32) bool {
 		switch fieldName {
-		case FlamegraphFieldMappingStart:
-			rowMappingFile := builderMappingFile.ValueStr(builderMappingFile.GetValueIndex(int(row)))
-			return location.Mapping.File == rowMappingFile
+		case FlamegraphFieldMappingFile:
+			if location.Mapping == nil {
+				return true
+			}
+			rowMappingFile := builderMappingFile.Value(builderMappingFile.GetValueIndex(int(row)))
+			// rather than comparing the strings, we compare bytes to avoid allocations.
+			return bytes.Equal([]byte(location.Mapping.File), rowMappingFile)
 		case FlamegraphFieldFunctionName:
-			rowFunctionName := builderFunctionName.ValueStr(builderFunctionName.GetValueIndex(int(row)))
-			return line.Function.Name == rowFunctionName
+			rowFunctionName := builderFunctionName.Value(builderFunctionName.GetValueIndex(int(row)))
+			// rather than comparing the strings, we compare bytes to avoid allocations.
+			return bytes.Equal([]byte(line.Function.Name), rowFunctionName)
 		default:
 			return false
 		}
@@ -235,6 +241,8 @@ func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profil
 						_ = builderFunctionSystemName.AppendString(line.Function.SystemName)
 					case FlamegraphFieldFunctionFileName:
 						_ = builderFunctionFileName.AppendString(line.Function.Filename)
+					// pprof labels
+					// TODO: add support for pprof labels
 					// Values
 					case FlamegraphFieldChildren:
 						if uint32(len(children)) == row {
