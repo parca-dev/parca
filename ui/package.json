@@ -79,7 +79,7 @@
     "@typescript-eslint/parser": "^5.45.1",
     "arg": "5.0.2",
     "chromatic": "^6.17.2",
-    "css-loader": "6.7.3",
+    "css-loader": "6.7.4",
     "dev-kong": "0.11.0",
     "eslint": "8.40.0",
     "eslint-config-prettier": "8.8.0",
