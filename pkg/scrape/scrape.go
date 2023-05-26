@@ -218,9 +218,12 @@ func (sp *scrapePool) Sync(tgs []*targetgroup.Group) {
 		}
 
 		for _, t := range targets {
-			if !t.Labels().IsEmpty() {
+			// Replicate .Labels().IsEmpty() with a loop here to avoid generating garbage.
+			nonEmpty := false
+			t.LabelsRange(func(l labels.Label) { nonEmpty = true })
+			if nonEmpty {
 				all = append(all, t)
-			} else if !t.DiscoveredLabels().IsEmpty() {
+			} else if !t.discoveredLabels.IsEmpty() {
 				sp.droppedTargets = append(sp.droppedTargets, t)
 			}
 		}
