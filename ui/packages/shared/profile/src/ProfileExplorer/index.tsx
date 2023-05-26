@@ -137,7 +137,7 @@ const ProfileExplorerApp = ({
 
     setProfileA(profileA);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [merge_from_a, merge_to_a, filter_by_function]);
+  }, [expression_a, from_a, to_a, merge_from_a, merge_to_a, labels_a, filter_by_function]);
 
   useEffect(() => {
     const mergeFrom = merge_from_b ?? undefined;
@@ -155,7 +155,7 @@ const ProfileExplorerApp = ({
 
     setProfileB(profileB);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [merge_from_b, merge_to_b, filter_by_function]);
+  }, [expression_b, from_b, to_b, merge_from_b, merge_to_b, labels_b, filter_by_function]);
 
   if (profileTypesLoading) {
     return <>{loader}</>;
