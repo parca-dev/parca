@@ -46,7 +46,7 @@ export const useTargets = (client: ScrapeServiceClient): ITargetsResult => {
 
   useEffect(() => {
     const call = client.targets({
-      state: TargetsRequest_State.ANY_UNSPECIFIED,
+      state: TargetsRequest_State.ACTIVE,
     });
 
     call.response
