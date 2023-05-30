@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/apache/arrow/go/v13/arrow/array"
+	"github.com/apache/arrow/go/v13/arrow/memory"
 	"github.com/go-kit/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
@@ -32,6 +33,7 @@ import (
 
 func TestGenerateFlamegraphArrow(t *testing.T) {
 	ctx := context.Background()
+	mem := memory.NewGoAllocator()
 	var err error
 
 	l := metastoretest.NewTestMetastore(
@@ -163,10 +165,14 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 		// expectations
 		numRows int64
 		rows    []row
+		height  int32
+		trimmed int64
 	}{{
 		name:    "aggregate-default",
 		groupBy: nil,
 		// expectations
+		height:  5,
+		trimmed: 0, // TODO
 		numRows: 6,
 		rows: []row{
 			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0, LocationFolded: false, LocationLine: 0, FunctionStartLine: 0, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 6, Children: []uint32{1}},            // 0
@@ -180,6 +186,8 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 		name:    "aggregate-never",
 		groupBy: []string{FlamegraphFieldMappingFile, FlamegraphFieldFunctionName},
 		// expectations
+		height:  5,
+		trimmed: 0, // TODO
 		numRows: 11,
 		rows: []row{
 			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0, LocationFolded: false, LocationLine: 0, FunctionStartLine: 0, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 6, Children: []uint32{1, 3, 7}},    // 0
@@ -196,9 +204,11 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 		},
 	}} {
 		t.Run(tc.name, func(t *testing.T) {
-			fa, err := GenerateFlamegraphArrow(ctx, tracer, p, tc.groupBy, 0)
+			fa, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, p, tc.groupBy, 0)
 			require.NoError(t, err)
 
+			require.Equal(t, tc.height, height)
+			require.Equal(t, tc.trimmed, trimmed)
 			require.Equal(t, tc.numRows, fa.NumRows())
 			require.Equal(t, int64(15), fa.NumCols())
 

@@ -747,6 +747,10 @@
           "$ref": "#/definitions/v1alpha1Callgraph",
           "title": "callgraph is a callgraph nodes and edges representation of the report"
         },
+        "flamegraphArrow": {
+          "$ref": "#/definitions/v1alpha1FlamegraphArrow",
+          "title": "flamegraph_arrow is a flamegraph encoded as a arrow record"
+        },
         "total": {
           "type": "string",
           "format": "int64",
@@ -986,6 +990,31 @@
           "type": "string",
           "format": "int64",
           "description": "untrimmed_total is the total weight of the flame graph before trimming.\nUse trimmed instead."
+        },
+        "trimmed": {
+          "type": "string",
+          "format": "int64",
+          "description": "trimmed is the amount of cumulative value trimmed from the flame graph."
+        }
+      },
+      "title": "Flamegraph is the flame graph report type"
+    },
+    "v1alpha1FlamegraphArrow": {
+      "type": "object",
+      "properties": {
+        "record": {
+          "type": "string",
+          "format": "byte",
+          "title": "record is the arrow record containing the actual flamegraph data"
+        },
+        "unit": {
+          "type": "string",
+          "title": "unit is the unit represented by the flame graph"
+        },
+        "height": {
+          "type": "integer",
+          "format": "int32",
+          "title": "height is the max height of the graph"
         },
         "trimmed": {
           "type": "string",

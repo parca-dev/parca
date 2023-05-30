@@ -20,11 +20,13 @@ import (
 
 	"github.com/apache/arrow/go/v13/arrow"
 	"github.com/apache/arrow/go/v13/arrow/array"
+	"github.com/apache/arrow/go/v13/arrow/ipc"
 	"github.com/apache/arrow/go/v13/arrow/memory"
 	"github.com/polarsignals/frostdb/pqarrow/builder"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/exp/slices"
 
+	queryv1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -49,9 +51,36 @@ const (
 	FlamegraphFieldDiff       = "diff"
 )
 
-func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profile.Profile, groupBy []string, trimFraction float32) (arrow.Record, error) {
+func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profile.Profile, groupBy []string, trimFraction float32) (*queryv1alpha1.FlamegraphArrow, error) {
 	mem := memory.NewGoAllocator()
+	record, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, p, groupBy, trimFraction)
+	if err != nil {
+		return nil, err
+	}
 
+	// TODO: Reuse buffer and potentially writers
+	var buf bytes.Buffer
+	w := ipc.NewWriter(&buf,
+		ipc.WithSchema(record.Schema()),
+		ipc.WithAllocator(mem),
+	)
+
+	if err = w.Write(record); err != nil {
+		return nil, err
+	}
+	if err := w.Close(); err != nil {
+		return nil, err
+	}
+
+	return &queryv1alpha1.FlamegraphArrow{
+		Record:  buf.Bytes(),
+		Unit:    p.Meta.SampleType.Unit,
+		Height:  height, // add one for the root
+		Trimmed: trimmed,
+	}, nil
+}
+
+func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tracer trace.Tracer, p *profile.Profile, groupBy []string, trimFraction float32) (arrow.Record, int32, int64, error) {
 	aggregateFields := map[string]struct{}{
 		// TODO: Add pprof labels by default
 		FlamegraphFieldMappingFile:  {},
@@ -143,6 +172,7 @@ func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profil
 	builderDiff.AppendNull()
 
 	cumulative := int64(0)
+	height := int32(0)
 	rootsRow := []uint32{}
 	children := make([][]uint32, len(p.Samples))
 
@@ -152,6 +182,10 @@ func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profil
 	compareRows := []uint32{}
 
 	for _, s := range p.Samples {
+		if int32(len(s.Locations)) > height {
+			height = int32(len(s.Locations))
+		}
+
 		// every new sample resets the childRow to -1 indicating that we start with a leaf again.
 		for i := len(s.Locations) - 1; i >= 0; i-- {
 			location := s.Locations[i]
@@ -294,5 +328,5 @@ func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profil
 		}
 	}
 
-	return rb.NewRecord(), nil
+	return rb.NewRecord(), height + 1, 0, nil
 }
