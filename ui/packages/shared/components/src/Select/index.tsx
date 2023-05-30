@@ -81,6 +81,7 @@ const Select = ({
               primary ? primaryStyles : defaultStyles,
               {[className]: className.length > 0}
             )}
+            id="listbox-button"
           >
             <span className="ml-3 block overflow-x-hidden text-ellipsis">
               {selection?.key !== '' ? selection.element.active : placeholder}
@@ -102,8 +103,9 @@ const Select = ({
                 <div className="w-[270px]">{loader}</div>
               ) : (
                 items.length > 0 &&
-                items.map(option => (
+                items.map((option, index) => (
                   <Listbox.Option
+                    id={`listbox-option-${index}`}
                     key={option.key}
                     disabled={option.disabled ?? false}
                     className={({active, disabled}) =>

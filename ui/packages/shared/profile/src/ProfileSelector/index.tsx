@@ -222,6 +222,7 @@ const ProfileSelector = ({
               </>
             )}
             <Button
+              id="search-button"
               disabled={searchDisabled}
               onClick={(e: React.MouseEvent<HTMLElement>) => {
                 e.preventDefault();

@@ -121,7 +121,7 @@ const ProfileIcicleGraph = ({
   return (
     <div className="relative">
       {compareMode && <DiffLegend />}
-      <div ref={ref}>
+      <div id="profile-icicle-graph" ref={ref}>
         <IcicleGraph
           width={dimensions?.width}
           graph={graph}

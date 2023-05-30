@@ -40,6 +40,7 @@ const CompareButton = ({
   return (
     <div ref={setComparePopperReferenceElement}>
       <Button
+        id="compare-button"
         color="neutral"
         disabled={disabled}
         onClick={onClick}

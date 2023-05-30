@@ -312,7 +312,7 @@ export const ProfileView = ({
 
   return (
     <KeyDownProvider>
-      <div className="py-3">
+      <div id="profile-view" className="py-3">
         <Card>
           <Card.Body>
             <div className="flex w-full py-3">

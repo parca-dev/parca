@@ -137,6 +137,7 @@ const ProfileMetricsGraph = ({
       <div
         className="rounded border-gray-300 dark:border-gray-500 dark:bg-gray-700"
         style={{borderWidth: 1}}
+        id="profile-metrics-graph"
       >
         <MetricsGraph
           data={series}
