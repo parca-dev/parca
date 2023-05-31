@@ -127,17 +127,20 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, addr str
 	grpc_health.RegisterHealthServer(srv, s.grpcProbe.HealthServer())
 
 	internalMux := chi.NewRouter()
-	internalMux.Mount(pathPrefix+"/api", grpcWebMux)
 
-	internalMux.Handle(pathPrefix+"/metrics", promhttp.HandlerFor(s.reg, promhttp.HandlerOpts{}))
+	internalMux.Route(pathPrefix+"/", func(r chi.Router) {
+		r.Mount("/api", grpcWebMux)
 
-	// Add the pprof handler to profile Parca
-	internalMux.Handle(pathPrefix+"/debug/pprof/*", http.StripPrefix(pathPrefix, http.HandlerFunc(pprof.Index)))
-	internalMux.Handle(pathPrefix+"/debug/pprof/fgprof", fgprof.Handler())
-	internalMux.HandleFunc(pathPrefix+"/debug/pprof/cmdline", pprof.Cmdline)
-	internalMux.HandleFunc(pathPrefix+"/debug/pprof/profile", pprof.Profile)
-	internalMux.HandleFunc(pathPrefix+"/debug/pprof/symbol", pprof.Symbol)
-	internalMux.HandleFunc(pathPrefix+"/debug/pprof/trace", pprof.Trace)
+		r.Handle("/metrics", promhttp.HandlerFor(s.reg, promhttp.HandlerOpts{}))
+
+		// Add the pprof handler to profile Parca
+		r.Handle("/debug/pprof/*", http.StripPrefix(pathPrefix, http.HandlerFunc(pprof.Index)))
+		r.Handle("/debug/pprof/fgprof", fgprof.Handler())
+		r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		r.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		r.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	})
 
 	// Strip the subpath
 	uiFS, err := fs.Sub(ui.FS, "packages/app/web/build")
