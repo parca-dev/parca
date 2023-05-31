@@ -15,10 +15,12 @@ import {ReactNode, createContext, useContext, useEffect, useMemo, useState} from
 
 export interface KeyDownState {
   isShiftDown: boolean;
+  keys: (string | number)[];
 }
 
 const DEFAULT_VALUE = {
   isShiftDown: false,
+  keys: [],
 };
 
 const KeyDownContext = createContext<KeyDownState>(DEFAULT_VALUE);
@@ -29,36 +31,34 @@ export const KeyDownProvider = ({
   children: ReactNode;
   value?: KeyDownState;
 }): JSX.Element => {
-  const [isShiftDown, setIsShiftDown] = useState<boolean>(false);
+  const [keys, setKeys] = useState<(number | string)[]>([]); // keyCode or key string
+  // Shift requires special handling because it is a shortcut key
+  const isShiftDown = keys.includes('Shift') && !keys.includes('Meta');
 
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
     }
 
-    const handleShiftDown = (event: {keyCode: number}): void => {
-      if (event.keyCode === 16) {
-        setIsShiftDown(true);
-      }
+    const handleKeyDown = (event: {key: string}): void => {
+      setKeys(keys => [...keys, event.key]);
     };
 
-    window.addEventListener('keydown', handleShiftDown);
+    window.addEventListener('keydown', handleKeyDown);
 
-    const handleShiftUp = (event: {keyCode: number}): void => {
-      if (event.keyCode === 16) {
-        setIsShiftDown(false);
-      }
+    const handleKeyUp = (event: {key: string}): void => {
+      setKeys([...keys.filter(key => key !== event.key)]);
     };
 
-    window.addEventListener('keyup', handleShiftUp);
+    window.addEventListener('keyup', handleKeyUp);
 
     return () => {
-      window.removeEventListener('keydown', handleShiftDown);
-      window.removeEventListener('keyup', handleShiftUp);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
     };
   }, []);
 
-  const value = useMemo(() => ({isShiftDown}), [isShiftDown]);
+  const value = useMemo(() => ({keys, isShiftDown}), [keys, isShiftDown]);
 
   return <KeyDownContext.Provider value={value}>{children}</KeyDownContext.Provider>;
 };
