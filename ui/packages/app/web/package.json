@@ -1,7 +1,7 @@
 {
   "name": "@parca/web",
   "private": true,
-  "version": "0.16.335",
+  "version": "0.16.339",
   "description": "Parca Web Interface",
   "scripts": {
     "lint": "eslint --no-error-on-unmatched-pattern --ext .ts,.tsx,.js src/*",
@@ -43,7 +43,7 @@
     "postcss": "8.4.23",
     "postcss-flexbugs-fixes": "5.0.2",
     "postcss-preset-env": "8.4.1",
-    "react-datepicker": "4.11.0",
+    "react-datepicker": "4.12.0",
     "react-dom": "18.2.0",
     "react-github-btn": "^1.4.0",
     "react-markdown": "^8.0.4",
@@ -72,7 +72,7 @@
     "tslint-config-prettier": "1.18.0",
     "tslint-plugin-prettier": "2.3.0",
     "tslint-react": "5.0.0",
-    "webpack": "5.83.1"
+    "webpack": "5.84.1"
   },
   "eslintConfig": {
     "extends": [
