@@ -119,6 +119,8 @@ func (c *ArrowToProfileConverter) SymbolizeNormalizedProfile(ctx context.Context
 			Value:     sample.Value,
 			DiffValue: sample.DiffValue,
 			Locations: stacktraceLocations[i],
+			Label:     sample.Label,
+			NumLabel:  sample.NumLabel,
 		}
 	}
 

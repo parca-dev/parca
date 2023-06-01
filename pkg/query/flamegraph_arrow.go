@@ -46,6 +46,7 @@ const (
 	FlamegraphFieldFunctionSystemName = "function_system_name"
 	FlamegraphFieldFunctionFileName   = "function_file_name"
 
+	FlamegraphFieldLabels     = "labels"
 	FlamegraphFieldChildren   = "children"
 	FlamegraphFieldCumulative = "cumulative"
 	FlamegraphFieldDiff       = "diff"
@@ -82,9 +83,9 @@ func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profil
 
 func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tracer trace.Tracer, p *profile.Profile, groupBy []string, trimFraction float32) (arrow.Record, int32, int64, error) {
 	aggregateFields := map[string]struct{}{
-		// TODO: Add pprof labels by default
 		FlamegraphFieldMappingFile:  {},
 		FlamegraphFieldFunctionName: {},
+		// FlamegraphFieldLabels:    {}, // TODO: Add support for reading labels from MapBuilder
 	}
 	for _, f := range groupBy {
 		// don't aggregate by fields that we should group by.
@@ -107,6 +108,8 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		{Name: FlamegraphFieldFunctionSystemName, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint16, ValueType: arrow.BinaryTypes.String}},
 		{Name: FlamegraphFieldFunctionFileName, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.String}},
 		// Values
+		// TODO: Figure out if dictionaries within maps are supported (most labels are probably going to repeat A LOT)
+		{Name: FlamegraphFieldLabels, Type: arrow.MapOf(arrow.BinaryTypes.String, arrow.BinaryTypes.String)},
 		{Name: FlamegraphFieldChildren, Type: arrow.ListOf(arrow.PrimitiveTypes.Uint32)},
 		{Name: FlamegraphFieldCumulative, Type: arrow.PrimitiveTypes.Int64},
 		{Name: FlamegraphFieldDiff, Type: arrow.PrimitiveTypes.Int64, Nullable: true},
@@ -130,6 +133,9 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	builderFunctionSystemName := rb.Field(schema.FieldIndices(FlamegraphFieldFunctionSystemName)[0]).(*array.BinaryDictionaryBuilder)
 	builderFunctionFileName := rb.Field(schema.FieldIndices(FlamegraphFieldFunctionFileName)[0]).(*array.BinaryDictionaryBuilder)
 
+	builderLabels := rb.Field(schema.FieldIndices(FlamegraphFieldLabels)[0]).(*array.MapBuilder)
+	builderLabelsKey := builderLabels.KeyBuilder().(*array.StringBuilder)
+	builderLabelsValue := builderLabels.ItemBuilder().(*array.StringBuilder)
 	builderChildren := rb.Field(schema.FieldIndices(FlamegraphFieldChildren)[0]).(*builder.ListBuilder)
 	builderChildrenValues := builderChildren.ValueBuilder().(*array.Uint32Builder)
 	builderCumulative := rb.Field(schema.FieldIndices(FlamegraphFieldCumulative)[0]).(*builder.OptInt64Builder)
@@ -149,6 +155,9 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			rowFunctionName := builderFunctionName.Value(builderFunctionName.GetValueIndex(int(row)))
 			// rather than comparing the strings, we compare bytes to avoid allocations.
 			return bytes.Equal([]byte(line.Function.Name), rowFunctionName)
+		case FlamegraphFieldLabels:
+			// TODO: Add support for reading Values to the MapBuilder
+			return false
 		default:
 			return false
 		}
@@ -168,6 +177,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	builderFunctionName.AppendNull()
 	builderFunctionSystemName.AppendNull()
 	builderFunctionFileName.AppendNull()
+	builderLabels.AppendNull()
 	builderCumulative.AppendNull()
 	builderDiff.AppendNull()
 
@@ -275,9 +285,18 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						_ = builderFunctionSystemName.AppendString(line.Function.SystemName)
 					case FlamegraphFieldFunctionFileName:
 						_ = builderFunctionFileName.AppendString(line.Function.Filename)
-					// pprof labels
-					// TODO: add support for pprof labels
 					// Values
+					case FlamegraphFieldLabels:
+						if len(s.Label) > 0 {
+							builderLabels.Append(true)
+							for k, v := range s.Label {
+								// given all our strings are utf8 the error can be ignored
+								_ = builderLabelsKey.AppendValueFromString(k)
+								_ = builderLabelsValue.AppendValueFromString(v)
+							}
+						} else {
+							builderLabels.AppendNull()
+						}
 					case FlamegraphFieldChildren:
 						if uint32(len(children)) == row {
 							children = slices.Grow(children, len(children))
