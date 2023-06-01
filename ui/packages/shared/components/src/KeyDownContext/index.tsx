@@ -15,7 +15,7 @@ import {ReactNode, createContext, useContext, useEffect, useMemo, useState} from
 
 export interface KeyDownState {
   isShiftDown: boolean;
-  keys: (string | number)[];
+  keys: string[];
 }
 
 const DEFAULT_VALUE = {
@@ -31,7 +31,7 @@ export const KeyDownProvider = ({
   children: ReactNode;
   value?: KeyDownState;
 }): JSX.Element => {
-  const [keys, setKeys] = useState<(number | string)[]>([]); // keyCode or key string
+  const [keys, setKeys] = useState<string[]>([]);
   // Shift requires special handling because it is a shortcut key
   const isShiftDown = keys.includes('Shift') && !keys.includes('Meta');
 
@@ -47,7 +47,7 @@ export const KeyDownProvider = ({
     window.addEventListener('keydown', handleKeyDown);
 
     const handleKeyUp = (event: {key: string}): void => {
-      setKeys([...keys.filter(key => key !== event.key)]);
+      setKeys(keys => [...keys.filter(key => key !== event.key)]);
     };
 
     window.addEventListener('keyup', handleKeyUp);
