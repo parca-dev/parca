@@ -26,11 +26,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/apache/arrow/go/v10/arrow/memory"
-	"github.com/dgraph-io/badger/v3"
+	"github.com/apache/arrow/go/v12/arrow/memory"
+	"github.com/dgraph-io/badger/v4"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/oklog/run"
 	"github.com/polarsignals/frostdb"
@@ -549,8 +549,13 @@ func runScraper(
 		return fmt.Errorf("parca scraper mode needs to have a --store-address")
 	}
 
-	metrics := grpc_prometheus.NewClientMetrics()
-	metrics.EnableClientHandlingTimeHistogram()
+	metrics := grpc_prometheus.NewClientMetrics(
+		grpc_prometheus.WithClientHandlingTimeHistogram(
+			grpc_prometheus.WithHistogramOpts(&prometheus.HistogramOpts{
+				NativeHistogramBucketFactor: 1.1,
+			}),
+		),
+	)
 	reg.MustRegister(metrics)
 
 	opts := []grpc.DialOption{

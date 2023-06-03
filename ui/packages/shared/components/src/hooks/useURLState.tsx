@@ -73,7 +73,7 @@ export const useURLState = ({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value, highlightAfterFilteringEnabled, param, withURLUpdate, navigateTo]);
+  }, [value, highlightAfterFilteringEnabled, param, withURLUpdate]);
 
   if (param === 'dashboard_items') {
     let dashboardItems: string[] = [];

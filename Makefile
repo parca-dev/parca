@@ -156,7 +156,7 @@ push-container:
 .PHONY: sign-container
 sign-container:
 	crane digest $(OUT_DOCKER):$(VERSION)
-	cosign sign --force -a GIT_HASH=$(COMMIT) -a GIT_VERSION=$(VERSION) $(OUT_DOCKER)@$(shell crane digest $(OUT_DOCKER):$(VERSION))
+	cosign sign --yes -a GIT_HASH=$(COMMIT) -a GIT_VERSION=$(VERSION) $(OUT_DOCKER)@$(shell crane digest $(OUT_DOCKER):$(VERSION))
 
 .PHONY: push-quay-container
 push-quay-container:
@@ -204,8 +204,8 @@ README.md: embedmd tmp/help.txt
 
 .PHONY: release-dry-run
 release-dry-run:
-	goreleaser release --rm-dist --auto-snapshot --skip-validate --skip-publish --debug
+	goreleaser release --clean --auto-snapshot --skip-validate --skip-publish --debug
 
 .PHONY: release-build
 release-build:
-	goreleaser build --rm-dist --skip-validate --snapshot --debug
+	goreleaser build --clean --skip-validate --snapshot --debug
