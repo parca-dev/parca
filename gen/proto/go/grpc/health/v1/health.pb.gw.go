@@ -104,7 +104,7 @@ func RegisterHealthHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/grpc.health.v1.Health/Check", runtime.WithHTTPPathPattern("/grpc.health.v1.Health/Check"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/grpc.health.v1.Health/Check", runtime.WithHTTPPathPattern("/Health/Check"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -175,7 +175,7 @@ func RegisterHealthHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/grpc.health.v1.Health/Check", runtime.WithHTTPPathPattern("/grpc.health.v1.Health/Check"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/grpc.health.v1.Health/Check", runtime.WithHTTPPathPattern("/Health/Check"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -197,7 +197,7 @@ func RegisterHealthHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/grpc.health.v1.Health/Watch", runtime.WithHTTPPathPattern("/grpc.health.v1.Health/Watch"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/grpc.health.v1.Health/Watch", runtime.WithHTTPPathPattern("/Health/Watch"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -217,9 +217,9 @@ func RegisterHealthHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 }
 
 var (
-	pattern_Health_Check_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"grpc.health.v1.Health", "Check"}, ""))
+	pattern_Health_Check_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"Health", "Check"}, ""))
 
-	pattern_Health_Watch_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"grpc.health.v1.Health", "Watch"}, ""))
+	pattern_Health_Watch_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"Health", "Watch"}, ""))
 )
 
 var (

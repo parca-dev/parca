@@ -147,7 +147,7 @@ func RegisterShareServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.share.v1alpha1.ShareService/Upload", runtime.WithHTTPPathPattern("/parca.share.v1alpha1.ShareService/Upload"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.share.v1alpha1.ShareService/Upload", runtime.WithHTTPPathPattern("/ShareService/Upload"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -172,7 +172,7 @@ func RegisterShareServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.share.v1alpha1.ShareService/Query", runtime.WithHTTPPathPattern("/parca.share.v1alpha1.ShareService/Query"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.share.v1alpha1.ShareService/Query", runtime.WithHTTPPathPattern("/ShareService/Query"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -197,7 +197,7 @@ func RegisterShareServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.share.v1alpha1.ShareService/ProfileTypes", runtime.WithHTTPPathPattern("/parca.share.v1alpha1.ShareService/ProfileTypes"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.share.v1alpha1.ShareService/ProfileTypes", runtime.WithHTTPPathPattern("/ShareService/ProfileTypes"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -261,7 +261,7 @@ func RegisterShareServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.share.v1alpha1.ShareService/Upload", runtime.WithHTTPPathPattern("/parca.share.v1alpha1.ShareService/Upload"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.share.v1alpha1.ShareService/Upload", runtime.WithHTTPPathPattern("/ShareService/Upload"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -283,7 +283,7 @@ func RegisterShareServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.share.v1alpha1.ShareService/Query", runtime.WithHTTPPathPattern("/parca.share.v1alpha1.ShareService/Query"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.share.v1alpha1.ShareService/Query", runtime.WithHTTPPathPattern("/ShareService/Query"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -305,7 +305,7 @@ func RegisterShareServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.share.v1alpha1.ShareService/ProfileTypes", runtime.WithHTTPPathPattern("/parca.share.v1alpha1.ShareService/ProfileTypes"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.share.v1alpha1.ShareService/ProfileTypes", runtime.WithHTTPPathPattern("/ShareService/ProfileTypes"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -325,11 +325,11 @@ func RegisterShareServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 }
 
 var (
-	pattern_ShareService_Upload_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.share.v1alpha1.ShareService", "Upload"}, ""))
+	pattern_ShareService_Upload_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"ShareService", "Upload"}, ""))
 
-	pattern_ShareService_Query_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.share.v1alpha1.ShareService", "Query"}, ""))
+	pattern_ShareService_Query_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"ShareService", "Query"}, ""))
 
-	pattern_ShareService_ProfileTypes_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.share.v1alpha1.ShareService", "ProfileTypes"}, ""))
+	pattern_ShareService_ProfileTypes_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"ShareService", "ProfileTypes"}, ""))
 )
 
 var (
