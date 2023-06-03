@@ -121,7 +121,7 @@ func (m *BadgerMetastore) GetOrCreateMappings(ctx context.Context, r *pb.GetOrCr
 
 	mappingKeys := make([]string, 0, len(r.Mappings))
 	for _, id := range r.Mappings {
-		mappingKeys = append(mappingKeys, MakeMappingKey(id))
+		mappingKeys = append(mappingKeys, m.keymaker.MakeMappingKey(id))
 	}
 
 	err := m.db.Update(func(txn *badger.Txn) error {
@@ -211,7 +211,7 @@ func (m *BadgerMetastore) GetOrCreateFunctions(ctx context.Context, r *pb.GetOrC
 
 	functionKeys := make([]string, 0, len(r.Functions))
 	for _, function := range r.Functions {
-		functionKeys = append(functionKeys, MakeFunctionKey(function))
+		functionKeys = append(functionKeys, m.keymaker.MakeFunctionKey(function))
 	}
 
 	err := m.db.Update(func(txn *badger.Txn) error {
@@ -442,7 +442,7 @@ func (m *BadgerMetastore) GetOrCreateStacktraces(ctx context.Context, r *pb.GetO
 
 	stacktraceKeys := make([]string, 0, len(r.Stacktraces))
 	for _, stacktrace := range r.Stacktraces {
-		stacktraceKeys = append(stacktraceKeys, MakeStacktraceKey(stacktrace))
+		stacktraceKeys = append(stacktraceKeys, m.keymaker.MakeStacktraceKey(stacktrace))
 	}
 
 	const maxRetries = 100
