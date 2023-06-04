@@ -10794,10 +10794,10 @@ css-in-js-utils@^3.1.0:
   dependencies:
     hyphenate-style-name "^1.0.3"
 
-css-loader@6.8.0:
-  version "6.8.0"
-  resolved "https://registry.yarnpkg.com/css-loader/-/css-loader-6.8.0.tgz#dd6bb4dc6a86d0db93bf2e1877d7af8d9e6dbdea"
-  integrity sha512-oBmqObfEW1tAmLoKjxz8wlUxwvnea21GyplYqZUuMpeNC5I1EW0S0y3/pk0adzUW8oxMlhbA1X2fgOpRxDNDqA==
+css-loader@6.8.1, css-loader@^6.7.1:
+  version "6.8.1"
+  resolved "https://registry.yarnpkg.com/css-loader/-/css-loader-6.8.1.tgz#0f8f52699f60f5e679eab4ec0fcd68b8e8a50a88"
+  integrity sha512-xDAXtEVGlD0gJ07iclwWVkLoZOpEvAWaSyf6W18S2pOC//K8+qUDIx8IIT3D+HjnmkJPQeesOPv5aiUaJsCM2g==
   dependencies:
     icss-utils "^5.1.0"
     postcss "^8.4.21"
@@ -10836,20 +10836,6 @@ css-loader@^6.5.1:
     postcss "^8.4.21"
     postcss-modules-extract-imports "^3.0.0"
     postcss-modules-local-by-default "^4.0.1"
-    postcss-modules-scope "^3.0.0"
-    postcss-modules-values "^4.0.0"
-    postcss-value-parser "^4.2.0"
-    semver "^7.3.8"
-
-css-loader@^6.7.1:
-  version "6.8.1"
-  resolved "https://registry.yarnpkg.com/css-loader/-/css-loader-6.8.1.tgz#0f8f52699f60f5e679eab4ec0fcd68b8e8a50a88"
-  integrity sha512-xDAXtEVGlD0gJ07iclwWVkLoZOpEvAWaSyf6W18S2pOC//K8+qUDIx8IIT3D+HjnmkJPQeesOPv5aiUaJsCM2g==
-  dependencies:
-    icss-utils "^5.1.0"
-    postcss "^8.4.21"
-    postcss-modules-extract-imports "^3.0.0"
-    postcss-modules-local-by-default "^4.0.3"
     postcss-modules-scope "^3.0.0"
     postcss-modules-values "^4.0.0"
     postcss-value-parser "^4.2.0"
