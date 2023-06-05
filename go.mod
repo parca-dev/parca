@@ -28,7 +28,7 @@ require (
 	github.com/klauspost/compress v1.16.5
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
-	github.com/polarsignals/frostdb v0.0.0-20230523134043-de0759c40516
+	github.com/polarsignals/frostdb v0.0.0-20230601194106-22dda7f2f0f0
 	github.com/prometheus/client_golang v1.15.1
 	github.com/prometheus/common v0.44.0
 	github.com/prometheus/prometheus v0.43.1
