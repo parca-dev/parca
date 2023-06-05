@@ -256,7 +256,7 @@ func populateLabels(lset labels.Labels, cfg *config.ScrapeConfig) (res, orig lab
 		}
 	}
 
-	preRelabelLabels := lb.Labels(labels.EmptyLabels())
+	preRelabelLabels := lb.Labels()
 	lset, keep := relabel.Process(preRelabelLabels, cfg.RelabelConfigs...)
 
 	// Check if the target was dropped.
@@ -313,7 +313,7 @@ func populateLabels(lset labels.Labels, cfg *config.ScrapeConfig) (res, orig lab
 		lb.Set(model.InstanceLabel, addr)
 	}
 
-	res = lb.Labels(labels.EmptyLabels())
+	res = lb.Labels()
 	err = res.Validate(func(l labels.Label) error {
 		// Check label values are valid, drop the target if not.
 		if !model.LabelValue(l.Value).IsValid() {
