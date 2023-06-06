@@ -16,6 +16,7 @@ package query
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/apache/arrow/go/v13/arrow"
@@ -24,6 +25,7 @@ import (
 	"github.com/apache/arrow/go/v13/arrow/memory"
 	"github.com/polarsignals/frostdb/pqarrow/builder"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 
 	queryv1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
@@ -52,9 +54,9 @@ const (
 	FlamegraphFieldDiff       = "diff"
 )
 
-func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profile.Profile, groupBy []string, trimFraction float32) (*queryv1alpha1.FlamegraphArrow, error) {
+func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profile.Profile, aggregate []string, trimFraction float32) (*queryv1alpha1.FlamegraphArrow, error) {
 	mem := memory.NewGoAllocator()
-	record, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, p, groupBy, trimFraction)
+	record, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, p, aggregate, trimFraction)
 	if err != nil {
 		return nil, err
 	}
@@ -81,15 +83,10 @@ func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profil
 	}, nil
 }
 
-func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tracer trace.Tracer, p *profile.Profile, groupBy []string, trimFraction float32) (arrow.Record, int32, int64, error) {
-	aggregateFields := map[string]struct{}{
-		FlamegraphFieldMappingFile:  {},
-		FlamegraphFieldFunctionName: {},
-		// FlamegraphFieldLabels:    {}, // TODO: Add support for reading labels from MapBuilder
-	}
-	for _, f := range groupBy {
-		// don't aggregate by fields that we should group by.
-		delete(aggregateFields, f)
+func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tracer trace.Tracer, p *profile.Profile, aggregate []string, trimFraction float32) (arrow.Record, int32, int64, error) {
+	aggregateFields := make(map[string]struct{}, len(aggregate))
+	for _, f := range aggregate {
+		aggregateFields[f] = struct{}{}
 	}
 
 	schema := arrow.NewSchema([]arrow.Field{
@@ -108,8 +105,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		{Name: FlamegraphFieldFunctionSystemName, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint16, ValueType: arrow.BinaryTypes.String}},
 		{Name: FlamegraphFieldFunctionFileName, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.String}},
 		// Values
-		// TODO: Figure out if dictionaries within maps are supported (most labels are probably going to repeat A LOT)
-		{Name: FlamegraphFieldLabels, Type: arrow.MapOf(arrow.BinaryTypes.String, arrow.BinaryTypes.String)},
+		{Name: FlamegraphFieldLabels, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.String}},
 		{Name: FlamegraphFieldChildren, Type: arrow.ListOf(arrow.PrimitiveTypes.Uint32)},
 		{Name: FlamegraphFieldCumulative, Type: arrow.PrimitiveTypes.Int64},
 		{Name: FlamegraphFieldDiff, Type: arrow.PrimitiveTypes.Int64, Nullable: true},
@@ -133,16 +129,14 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	builderFunctionSystemName := rb.Field(schema.FieldIndices(FlamegraphFieldFunctionSystemName)[0]).(*array.BinaryDictionaryBuilder)
 	builderFunctionFileName := rb.Field(schema.FieldIndices(FlamegraphFieldFunctionFileName)[0]).(*array.BinaryDictionaryBuilder)
 
-	builderLabels := rb.Field(schema.FieldIndices(FlamegraphFieldLabels)[0]).(*array.MapBuilder)
-	builderLabelsKey := builderLabels.KeyBuilder().(*array.StringBuilder)
-	builderLabelsValue := builderLabels.ItemBuilder().(*array.StringBuilder)
+	builderLabels := rb.Field(schema.FieldIndices(FlamegraphFieldLabels)[0]).(*array.BinaryDictionaryBuilder)
 	builderChildren := rb.Field(schema.FieldIndices(FlamegraphFieldChildren)[0]).(*builder.ListBuilder)
 	builderChildrenValues := builderChildren.ValueBuilder().(*array.Uint32Builder)
 	builderCumulative := rb.Field(schema.FieldIndices(FlamegraphFieldCumulative)[0]).(*builder.OptInt64Builder)
 	builderDiff := rb.Field(schema.FieldIndices(FlamegraphFieldDiff)[0]).(*builder.OptInt64Builder)
 
 	// This field compares the current sample with the already added values in the builders.
-	equalField := func(fieldName string, location *profile.Location, line profile.LocationLine, row uint32) bool {
+	equalField := func(fieldName string, location *profile.Location, line profile.LocationLine, pprofLabels map[string]string, row uint32) bool {
 		switch fieldName {
 		case FlamegraphFieldMappingFile:
 			if location.Mapping == nil {
@@ -156,8 +150,25 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			// rather than comparing the strings, we compare bytes to avoid allocations.
 			return bytes.Equal([]byte(line.Function.Name), rowFunctionName)
 		case FlamegraphFieldLabels:
-			// TODO: Add support for reading Values to the MapBuilder
-			return false
+			isNull := builderLabels.IsNull(int(row))
+			if len(pprofLabels) == 0 && isNull {
+				return true
+			}
+			if len(pprofLabels) > 0 && isNull {
+				return false
+			}
+			if len(pprofLabels) == 0 && !isNull {
+				return false
+			}
+			// Both sides have values, let's compare them properly.
+			value := builderLabels.Value(builderLabels.GetValueIndex(int(row)))
+			compareLabels := map[string]string{}
+			err := json.Unmarshal(value, &compareLabels)
+			if err != nil {
+				return false
+			}
+
+			return maps.Equal(pprofLabels, compareLabels)
 		default:
 			return false
 		}
@@ -216,7 +227,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				compareRows:
 					for _, cr := range compareRows {
 						for f := range aggregateFields {
-							if !equalField(f, location, line, cr) {
+							if !equalField(f, location, line, s.Label, cr) {
 								// If any field doesn't match, we can't aggregate this row with the existing one.
 								continue compareRows
 							}
@@ -288,12 +299,11 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					// Values
 					case FlamegraphFieldLabels:
 						if len(s.Label) > 0 {
-							builderLabels.Append(true)
-							for k, v := range s.Label {
-								// given all our strings are utf8 the error can be ignored
-								_ = builderLabelsKey.AppendValueFromString(k)
-								_ = builderLabelsValue.AppendValueFromString(v)
+							lset, err := json.Marshal(s.Label)
+							if err != nil {
+								return nil, 0, 0, err
 							}
+							_ = builderLabels.Append(lset)
 						} else {
 							builderLabels.AppendNull()
 						}
