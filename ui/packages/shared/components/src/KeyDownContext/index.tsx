@@ -15,12 +15,10 @@ import {ReactNode, createContext, useContext, useEffect, useMemo, useState} from
 
 export interface KeyDownState {
   isShiftDown: boolean;
-  keys: string[];
 }
 
 const DEFAULT_VALUE = {
   isShiftDown: false,
-  keys: [],
 };
 
 const KeyDownContext = createContext<KeyDownState>(DEFAULT_VALUE);
@@ -31,25 +29,32 @@ export const KeyDownProvider = ({
   children: ReactNode;
   value?: KeyDownState;
 }): JSX.Element => {
-  const [keys, setKeys] = useState<string[]>([]);
-  // Shift requires special handling because it is a shortcut key
-  const isShiftDown = keys.includes('Shift') && !keys.includes('Meta');
+  // Shift requires special handling because it is a shortcut key and
+  // keydown and keyup is not recognized when the window begins taking a screenshot
+  const [isShiftDown, setIsShiftDown] = useState<boolean>(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
     }
 
-    const handleKeyDown = (event: {key: string}): void => {
-      setKeys(keys => [...keys, event.key]);
+    const handleKeyDown = (event: {key: string; preventDefault: any}): void => {
+      if (event.key === 'Shift') {
+        setIsShiftDown(true);
+        return;
+      }
+
+      // if any other key is pressed, reset the shift state
+      setIsShiftDown(false);
+    };
+
+    const handleKeyUp = (event: {key: string}): void => {
+      if (event.key === 'Shift') {
+        setIsShiftDown(false);
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
-
-    const handleKeyUp = (event: {key: string}): void => {
-      setKeys(keys => [...keys.filter(key => key !== event.key)]);
-    };
-
     window.addEventListener('keyup', handleKeyUp);
 
     return () => {
@@ -58,7 +63,7 @@ export const KeyDownProvider = ({
     };
   }, []);
 
-  const value = useMemo(() => ({keys, isShiftDown}), [keys, isShiftDown]);
+  const value = useMemo(() => ({isShiftDown}), [isShiftDown]);
 
   return <KeyDownContext.Provider value={value}>{children}</KeyDownContext.Provider>;
 };
