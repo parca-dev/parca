@@ -13,8 +13,6 @@
 
 import {Tooltip} from 'react-tooltip';
 
-import 'react-tooltip/dist/react-tooltip.css';
-
 import {cutToMaxStringLength} from '@parca/utilities';
 
 export interface Props {
