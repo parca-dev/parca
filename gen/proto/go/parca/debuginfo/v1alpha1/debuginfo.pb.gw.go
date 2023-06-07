@@ -198,7 +198,7 @@ func RegisterDebuginfoServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/ShouldInitiateUpload", runtime.WithHTTPPathPattern("/DebuginfoService/ShouldInitiateUpload"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/ShouldInitiateUpload", runtime.WithHTTPPathPattern("/parca.debuginfo.v1alpha1.DebuginfoService/ShouldInitiateUpload"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -223,7 +223,7 @@ func RegisterDebuginfoServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/InitiateUpload", runtime.WithHTTPPathPattern("/DebuginfoService/InitiateUpload"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/InitiateUpload", runtime.WithHTTPPathPattern("/parca.debuginfo.v1alpha1.DebuginfoService/InitiateUpload"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -248,7 +248,7 @@ func RegisterDebuginfoServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/MarkUploadFinished", runtime.WithHTTPPathPattern("/DebuginfoService/MarkUploadFinished"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/MarkUploadFinished", runtime.WithHTTPPathPattern("/parca.debuginfo.v1alpha1.DebuginfoService/MarkUploadFinished"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -312,7 +312,7 @@ func RegisterDebuginfoServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/Upload", runtime.WithHTTPPathPattern("/DebuginfoService/Upload"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/Upload", runtime.WithHTTPPathPattern("/parca.debuginfo.v1alpha1.DebuginfoService/Upload"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -334,7 +334,7 @@ func RegisterDebuginfoServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/ShouldInitiateUpload", runtime.WithHTTPPathPattern("/DebuginfoService/ShouldInitiateUpload"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/ShouldInitiateUpload", runtime.WithHTTPPathPattern("/parca.debuginfo.v1alpha1.DebuginfoService/ShouldInitiateUpload"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -356,7 +356,7 @@ func RegisterDebuginfoServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/InitiateUpload", runtime.WithHTTPPathPattern("/DebuginfoService/InitiateUpload"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/InitiateUpload", runtime.WithHTTPPathPattern("/parca.debuginfo.v1alpha1.DebuginfoService/InitiateUpload"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -378,7 +378,7 @@ func RegisterDebuginfoServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/MarkUploadFinished", runtime.WithHTTPPathPattern("/DebuginfoService/MarkUploadFinished"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/MarkUploadFinished", runtime.WithHTTPPathPattern("/parca.debuginfo.v1alpha1.DebuginfoService/MarkUploadFinished"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -398,13 +398,13 @@ func RegisterDebuginfoServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 }
 
 var (
-	pattern_DebuginfoService_Upload_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"DebuginfoService", "Upload"}, ""))
+	pattern_DebuginfoService_Upload_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.debuginfo.v1alpha1.DebuginfoService", "Upload"}, ""))
 
-	pattern_DebuginfoService_ShouldInitiateUpload_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"DebuginfoService", "ShouldInitiateUpload"}, ""))
+	pattern_DebuginfoService_ShouldInitiateUpload_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.debuginfo.v1alpha1.DebuginfoService", "ShouldInitiateUpload"}, ""))
 
-	pattern_DebuginfoService_InitiateUpload_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"DebuginfoService", "InitiateUpload"}, ""))
+	pattern_DebuginfoService_InitiateUpload_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.debuginfo.v1alpha1.DebuginfoService", "InitiateUpload"}, ""))
 
-	pattern_DebuginfoService_MarkUploadFinished_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"DebuginfoService", "MarkUploadFinished"}, ""))
+	pattern_DebuginfoService_MarkUploadFinished_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.debuginfo.v1alpha1.DebuginfoService", "MarkUploadFinished"}, ""))
 )
 
 var (

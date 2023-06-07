@@ -385,7 +385,7 @@ func RegisterMetastoreServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateMappings", runtime.WithHTTPPathPattern("/MetastoreService/GetOrCreateMappings"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateMappings", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/GetOrCreateMappings"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -410,7 +410,7 @@ func RegisterMetastoreServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateFunctions", runtime.WithHTTPPathPattern("/MetastoreService/GetOrCreateFunctions"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateFunctions", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/GetOrCreateFunctions"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -435,7 +435,7 @@ func RegisterMetastoreServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateLocations", runtime.WithHTTPPathPattern("/MetastoreService/GetOrCreateLocations"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateLocations", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/GetOrCreateLocations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -460,7 +460,7 @@ func RegisterMetastoreServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateStacktraces", runtime.WithHTTPPathPattern("/MetastoreService/GetOrCreateStacktraces"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateStacktraces", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/GetOrCreateStacktraces"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -485,7 +485,7 @@ func RegisterMetastoreServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/UnsymbolizedLocations", runtime.WithHTTPPathPattern("/MetastoreService/UnsymbolizedLocations"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/UnsymbolizedLocations", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/UnsymbolizedLocations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -510,7 +510,7 @@ func RegisterMetastoreServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/CreateLocationLines", runtime.WithHTTPPathPattern("/MetastoreService/CreateLocationLines"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/CreateLocationLines", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/CreateLocationLines"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -535,7 +535,7 @@ func RegisterMetastoreServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Locations", runtime.WithHTTPPathPattern("/MetastoreService/Locations"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Locations", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/Locations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -560,7 +560,7 @@ func RegisterMetastoreServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Functions", runtime.WithHTTPPathPattern("/MetastoreService/Functions"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Functions", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/Functions"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -585,7 +585,7 @@ func RegisterMetastoreServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Mappings", runtime.WithHTTPPathPattern("/MetastoreService/Mappings"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Mappings", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/Mappings"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -610,7 +610,7 @@ func RegisterMetastoreServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Stacktraces", runtime.WithHTTPPathPattern("/MetastoreService/Stacktraces"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Stacktraces", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/Stacktraces"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -674,7 +674,7 @@ func RegisterMetastoreServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateMappings", runtime.WithHTTPPathPattern("/MetastoreService/GetOrCreateMappings"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateMappings", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/GetOrCreateMappings"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -696,7 +696,7 @@ func RegisterMetastoreServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateFunctions", runtime.WithHTTPPathPattern("/MetastoreService/GetOrCreateFunctions"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateFunctions", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/GetOrCreateFunctions"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -718,7 +718,7 @@ func RegisterMetastoreServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateLocations", runtime.WithHTTPPathPattern("/MetastoreService/GetOrCreateLocations"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateLocations", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/GetOrCreateLocations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -740,7 +740,7 @@ func RegisterMetastoreServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateStacktraces", runtime.WithHTTPPathPattern("/MetastoreService/GetOrCreateStacktraces"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateStacktraces", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/GetOrCreateStacktraces"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -762,7 +762,7 @@ func RegisterMetastoreServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/UnsymbolizedLocations", runtime.WithHTTPPathPattern("/MetastoreService/UnsymbolizedLocations"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/UnsymbolizedLocations", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/UnsymbolizedLocations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -784,7 +784,7 @@ func RegisterMetastoreServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/CreateLocationLines", runtime.WithHTTPPathPattern("/MetastoreService/CreateLocationLines"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/CreateLocationLines", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/CreateLocationLines"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -806,7 +806,7 @@ func RegisterMetastoreServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Locations", runtime.WithHTTPPathPattern("/MetastoreService/Locations"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Locations", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/Locations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -828,7 +828,7 @@ func RegisterMetastoreServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Functions", runtime.WithHTTPPathPattern("/MetastoreService/Functions"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Functions", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/Functions"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -850,7 +850,7 @@ func RegisterMetastoreServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Mappings", runtime.WithHTTPPathPattern("/MetastoreService/Mappings"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Mappings", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/Mappings"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -872,7 +872,7 @@ func RegisterMetastoreServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Stacktraces", runtime.WithHTTPPathPattern("/MetastoreService/Stacktraces"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Stacktraces", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/Stacktraces"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -892,25 +892,25 @@ func RegisterMetastoreServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 }
 
 var (
-	pattern_MetastoreService_GetOrCreateMappings_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"MetastoreService", "GetOrCreateMappings"}, ""))
+	pattern_MetastoreService_GetOrCreateMappings_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "GetOrCreateMappings"}, ""))
 
-	pattern_MetastoreService_GetOrCreateFunctions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"MetastoreService", "GetOrCreateFunctions"}, ""))
+	pattern_MetastoreService_GetOrCreateFunctions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "GetOrCreateFunctions"}, ""))
 
-	pattern_MetastoreService_GetOrCreateLocations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"MetastoreService", "GetOrCreateLocations"}, ""))
+	pattern_MetastoreService_GetOrCreateLocations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "GetOrCreateLocations"}, ""))
 
-	pattern_MetastoreService_GetOrCreateStacktraces_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"MetastoreService", "GetOrCreateStacktraces"}, ""))
+	pattern_MetastoreService_GetOrCreateStacktraces_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "GetOrCreateStacktraces"}, ""))
 
-	pattern_MetastoreService_UnsymbolizedLocations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"MetastoreService", "UnsymbolizedLocations"}, ""))
+	pattern_MetastoreService_UnsymbolizedLocations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "UnsymbolizedLocations"}, ""))
 
-	pattern_MetastoreService_CreateLocationLines_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"MetastoreService", "CreateLocationLines"}, ""))
+	pattern_MetastoreService_CreateLocationLines_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "CreateLocationLines"}, ""))
 
-	pattern_MetastoreService_Locations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"MetastoreService", "Locations"}, ""))
+	pattern_MetastoreService_Locations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "Locations"}, ""))
 
-	pattern_MetastoreService_Functions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"MetastoreService", "Functions"}, ""))
+	pattern_MetastoreService_Functions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "Functions"}, ""))
 
-	pattern_MetastoreService_Mappings_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"MetastoreService", "Mappings"}, ""))
+	pattern_MetastoreService_Mappings_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "Mappings"}, ""))
 
-	pattern_MetastoreService_Stacktraces_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"MetastoreService", "Stacktraces"}, ""))
+	pattern_MetastoreService_Stacktraces_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "Stacktraces"}, ""))
 )
 
 var (
