@@ -23759,10 +23759,10 @@ react-textarea-autosize@^8.4.0:
     use-composed-ref "^1.3.0"
     use-latest "^1.2.1"
 
-react-tooltip@^5.7.5:
-  version "5.13.1"
-  resolved "https://registry.yarnpkg.com/react-tooltip/-/react-tooltip-5.13.1.tgz#d0b64d6c783301fa87248b45c662299a0a1276f9"
-  integrity sha512-9NstDFdjyy6cIH9zjeT70zXTHlW/TIGCOWQmhkAyqLFeQioLg1FXvb9ec7AxSpn0zyFUkFSLdFYxZRuewti3Aw==
+react-tooltip@5.13.0:
+  version "5.13.0"
+  resolved "https://registry.yarnpkg.com/react-tooltip/-/react-tooltip-5.13.0.tgz#d9d91ec91ec7852651d557e1335a27d6b7b81406"
+  integrity sha512-7D+vJL2FCwx8t4s4YJnnq0umpkIj47l/c80Lp56zG7++efrN0F5JFVcqQ2d7BrcOeWsADCf5ysWlPa9n0+Srxg==
   dependencies:
     "@floating-ui/dom" "^1.0.0"
     classnames "^2.3.0"
