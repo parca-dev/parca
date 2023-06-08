@@ -54,11 +54,11 @@ const (
 	FlamegraphFieldDiff       = "diff"
 )
 
-func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profile.Profile, aggregate []string, trimFraction float32) (*queryv1alpha1.FlamegraphArrow, error) {
+func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profile.Profile, aggregate []string, trimFraction float32) (*queryv1alpha1.FlamegraphArrow, int64, error) {
 	mem := memory.NewGoAllocator()
-	record, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, p, aggregate, trimFraction)
+	record, cumulative, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, p, aggregate, trimFraction)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	// TODO: Reuse buffer and potentially writers
@@ -69,10 +69,10 @@ func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profil
 	)
 
 	if err = w.Write(record); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	if err := w.Close(); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	return &queryv1alpha1.FlamegraphArrow{
@@ -80,10 +80,10 @@ func GenerateFlamegraphArrow(ctx context.Context, tracer trace.Tracer, p *profil
 		Unit:    p.Meta.SampleType.Unit,
 		Height:  height, // add one for the root
 		Trimmed: trimmed,
-	}, nil
+	}, cumulative, nil
 }
 
-func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tracer trace.Tracer, p *profile.Profile, aggregate []string, trimFraction float32) (arrow.Record, int32, int64, error) {
+func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tracer trace.Tracer, p *profile.Profile, aggregate []string, trimFraction float32) (arrow.Record, int64, int32, int64, error) {
 	aggregateFields := make(map[string]struct{}, len(aggregate))
 	for _, f := range aggregate {
 		aggregateFields[f] = struct{}{}
@@ -189,7 +189,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	builderFunctionSystemName.AppendNull()
 	builderFunctionFileName.AppendNull()
 	builderLabels.AppendNull()
-	builderCumulative.AppendNull()
+	builderCumulative.Append(0)
 	builderDiff.AppendNull()
 
 	cumulative := int64(0)
@@ -301,7 +301,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						if len(s.Label) > 0 {
 							lset, err := json.Marshal(s.Label)
 							if err != nil {
-								return nil, 0, 0, err
+								return nil, 0, 0, 0, err
 							}
 							_ = builderLabels.Append(lset)
 						} else {
@@ -357,5 +357,5 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		}
 	}
 
-	return rb.NewRecord(), height + 1, 0, nil
+	return rb.NewRecord(), cumulative, height + 1, 0, nil
 }

@@ -287,13 +287,13 @@ func RenderReport(
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW:
 		// TODO: Make the fields to aggregate by configurable via the API.
-		fa, err := GenerateFlamegraphArrow(ctx, tracer, p, []string{FlamegraphFieldFunctionName}, nodeTrimFraction)
+		fa, total, err := GenerateFlamegraphArrow(ctx, tracer, p, []string{FlamegraphFieldFunctionName}, nodeTrimFraction)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate arrow flamegraph: %v", err.Error())
 		}
 
 		return &pb.QueryResponse{
-			Total:    0,
+			Total:    total,
 			Filtered: filtered,
 			Report: &pb.QueryResponse_FlamegraphArrow{
 				FlamegraphArrow: fa,
