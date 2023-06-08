@@ -24,7 +24,7 @@ import {
   type DropResult,
 } from 'react-beautiful-dnd';
 
-import {Callgraph as CallgraphType, Flamegraph, QueryServiceClient, Top} from '@parca/client';
+import {Callgraph as CallgraphType, QueryServiceClient, Top} from '@parca/client';
 import {
   Button,
   Card,
@@ -47,12 +47,13 @@ import useDelayedLoader from '../useDelayedLoader';
 import FilterByFunctionButton from './FilterByFunctionButton';
 import ViewSelector from './ViewSelector';
 import {VisualizationPanel} from './VisualizationPanel';
+import {Table} from 'apache-arrow';
 
 type NavigateFunction = (path: string, queryParams: any, options?: {replace?: boolean}) => void;
 
 export interface FlamegraphData {
   loading: boolean;
-  data?: Flamegraph;
+  data?: Table<any>;
   total?: bigint;
   filtered?: bigint;
   error?: any;

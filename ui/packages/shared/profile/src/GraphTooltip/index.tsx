@@ -11,8 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 
+import {Table} from 'apache-arrow';
 import {pointer} from 'd3-selection';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {usePopper} from 'react-popper';
@@ -30,13 +31,22 @@ import {
   Function as ParcaFunction,
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import {useKeyDown} from '@parca/components';
-import {selectHoveringNode, useAppSelector} from '@parca/store';
+import {selectHoveringRow, useAppSelector} from '@parca/store';
 import {divide, getLastItem, valueFormatter} from '@parca/utilities';
 
 import {hexifyAddress, truncateString, truncateStringReverse} from '../';
+import {
+  FIELD_CUMULATIVE,
+  FIELD_DIFF,
+  FIELD_FUNCTION_FILE_NAME,
+  FIELD_FUNCTION_NAME,
+  FIELD_LOCATION_ADDRESS,
+  FIELD_MAPPING_BUILD_ID,
+  FIELD_MAPPING_FILE,
+} from '../ProfileIcicleGraph/IcicleGraphArrow';
 import {ExpandOnHover} from './ExpandOnHoverValue';
 
-const NoData = (): JSX.Element => {
+const NoData = (): React.JSX.Element => {
   return <span className="rounded bg-gray-200 px-2 dark:bg-gray-800">Not available</span>;
 };
 
@@ -51,6 +61,7 @@ interface HoveringNode extends FlamegraphRootNode, FlamegraphNode, CallgraphNode
 }
 
 interface GraphTooltipProps {
+  table: Table<any>;
   x?: number;
   y?: number;
   unit: string;
@@ -110,7 +121,7 @@ const TooltipMetaInfo = ({
   locations?: Location[];
   functions?: ParcaFunction[];
   type?: string;
-}): JSX.Element => {
+}): React.JSX.Element => {
   // populate meta from the flamegraph metadata tables
   if (
     type === 'flamegraph' &&
@@ -263,7 +274,7 @@ export const GraphTooltipContent = ({
   locations?: Location[];
   functions?: ParcaFunction[];
   type?: string;
-}): JSX.Element => {
+}): React.JSX.Element => {
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
   const onCopy = (): void => {
@@ -287,10 +298,10 @@ export const GraphTooltipContent = ({
   const getTextForCumulative = (hoveringNodeCumulative: bigint): string => {
     const filtered =
       totalUnfiltered > total
-        ? ` / ${divide(hoveringNodeCumulative * 100n, total).toFixed(2)}% of filtered`
+        ? ` / ${(100 * divide(hoveringNodeCumulative, total)).toFixed(2)}% of filtered`
         : '';
     return `${valueFormatter(hoveringNodeCumulative, unit, 2)}
-    (${divide(hoveringNodeCumulative * 100n, totalUnfiltered).toFixed(2)}%${filtered})`;
+    (${(100 * divide(hoveringNodeCumulative, totalUnfiltered)).toFixed(2)}%${filtered})`;
   };
 
   return (
@@ -380,12 +391,12 @@ export const GraphTooltipContent = ({
 };
 
 const GraphTooltip = ({
+  table,
   x,
   y,
   unit,
   total,
   totalUnfiltered,
-  hoveringNode: hoveringNodeProp,
   contextElement,
   isFixed = false,
   virtualContextElement = true,
@@ -394,23 +405,68 @@ const GraphTooltip = ({
   locations,
   functions,
   type = 'flamegraph',
-}: GraphTooltipProps): JSX.Element => {
-  const hoveringNodeState = useAppSelector(selectHoveringNode);
-  // @ts-expect-error
-  const hoveringNode = useMemo<HoveringNode>(() => {
-    const h = hoveringNodeProp ?? hoveringNodeState;
-    if (h == null) {
-      return h;
+}: GraphTooltipProps): React.JSX.Element => {
+  const hoveringNodeState = useAppSelector(selectHoveringRow);
+  const hoveringNode = useMemo<HoveringNode | undefined>(() => {
+    const s = hoveringNodeState;
+    if (s === undefined) {
+      return undefined;
     }
 
-    // Cloning the object to avoid the mutating error as this is Redux store object and we are modifying the meta object in GraphTooltipContent component.
-    return {
-      ...h,
+    const mappingFile: string = table.getChild(FIELD_MAPPING_FILE)?.get(s.row) ?? '';
+    const mappingBuildID: string = table.getChild(FIELD_MAPPING_BUILD_ID)?.get(s.row) ?? '';
+    const locationAddress: bigint = table.getChild(FIELD_LOCATION_ADDRESS)?.get(s.row) ?? 0n;
+    const functionName: string = table.getChild(FIELD_FUNCTION_NAME)?.get(s.row) ?? '';
+    const functionFileName: string = table.getChild(FIELD_FUNCTION_FILE_NAME)?.get(s.row) ?? '';
+    const cumulative: bigint = table.getChild(FIELD_CUMULATIVE)?.get(s.row) ?? 0n;
+    const diff: bigint = table.getChild(FIELD_DIFF)?.get(s.row) ?? 0n;
+
+    const fhn: HoveringNode = {
+      id: '',
+      flat: 0n,
+      children: [],
+
+      cumulative,
+      diff: diff === null ? 0n : diff,
       meta: {
-        ...h.meta,
+        locationIndex: 0,
+        lineIndex: 0,
+        mapping: {
+          id: '',
+          start: 0n,
+          limit: 0n,
+          offset: 0n,
+          file: mappingFile,
+          buildId: mappingBuildID,
+          hasFunctions: false,
+          hasFilenames: false,
+          hasLineNumbers: false,
+          hasInlineFrames: false,
+          fileStringIndex: 0,
+          buildIdStringIndex: 0,
+        },
+        location: {
+          id: '',
+          address: locationAddress,
+          mappingId: '',
+          isFolded: false,
+          lines: [],
+          mappingIndex: 0,
+        },
+        function: {
+          id: '',
+          startLine: 0n,
+          name: functionName,
+          systemName: '',
+          filename: functionFileName,
+          nameStringIndex: 0,
+          systemNameStringIndex: 0,
+          filenameStringIndex: 0,
+        },
       },
     };
-  }, [hoveringNodeProp, hoveringNodeState]);
+    return fhn;
+  }, [table, hoveringNodeState]);
 
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
 

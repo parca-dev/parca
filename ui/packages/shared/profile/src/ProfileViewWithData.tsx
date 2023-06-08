@@ -22,6 +22,7 @@ import {ProfileSource} from './ProfileSource';
 import {ProfileView} from './ProfileView';
 import {useQuery} from './useQuery';
 import {downloadPprof} from './utils';
+import {tableFromIPC} from 'apache-arrow';
 
 interface ProfileViewWithDataProps {
   queryClient: QueryServiceClient;
@@ -57,7 +58,7 @@ export const ProfileViewWithData = ({
     isLoading: flamegraphLoading,
     response: flamegraphResponse,
     error: flamegraphError,
-  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMEGRAPH_TABLE, {
+  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMEGRAPH_ARROW, {
     skip: !dashboardItems.includes('icicle'),
     nodeTrimThreshold,
   });
@@ -80,16 +81,16 @@ export const ProfileViewWithData = ({
   });
 
   useEffect(() => {
-    if (!flamegraphLoading && flamegraphResponse?.report.oneofKind === 'flamegraph') {
-      perf?.markInteraction('Flamegraph render', flamegraphResponse.report.flamegraph.total);
+    if (!flamegraphLoading && flamegraphResponse?.report.oneofKind === 'flamegraphArrow') {
+      perf?.markInteraction('Flamegraph render', flamegraphResponse.total);
     }
 
     if (!topTableLoading && topTableResponse?.report.oneofKind === 'top') {
-      perf?.markInteraction('Top table render', topTableResponse?.report?.top.total);
+      perf?.markInteraction('Top table render', topTableResponse.total);
     }
 
     if (!callgraphLoading && callgraphResponse?.report.oneofKind === 'callgraph') {
-      perf?.markInteraction('Callgraph render', callgraphResponse?.report?.callgraph.cumulative);
+      perf?.markInteraction('Callgraph render', callgraphResponse.total);
     }
   }, [
     flamegraphLoading,
@@ -141,8 +142,8 @@ export const ProfileViewWithData = ({
       flamegraphData={{
         loading: flamegraphLoading,
         data:
-          flamegraphResponse?.report.oneofKind === 'flamegraph'
-            ? flamegraphResponse?.report?.flamegraph
+          flamegraphResponse?.report.oneofKind === 'flamegraphArrow'
+            ? tableFromIPC(flamegraphResponse?.report?.flamegraphArrow.record)
             : undefined,
         total: BigInt(flamegraphResponse?.total ?? '0'),
         filtered: BigInt(flamegraphResponse?.filtered ?? '0'),

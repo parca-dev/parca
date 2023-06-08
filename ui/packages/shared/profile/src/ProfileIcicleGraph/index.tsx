@@ -13,13 +13,14 @@
 
 import {useEffect, useMemo} from 'react';
 
-import {Flamegraph} from '@parca/client';
+import {Table} from 'apache-arrow';
+
 import {Button} from '@parca/components';
 import {useContainerDimensions} from '@parca/hooks';
 import {divide, selectQueryParam, type NavigateFunction} from '@parca/utilities';
 
 import DiffLegend from '../components/DiffLegend';
-import {IcicleGraph} from './IcicleGraph';
+import IcicleGraphArrow from './IcicleGraphArrow';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 
@@ -27,7 +28,7 @@ export type ResizeHandler = (width: number, height: number) => void;
 
 interface ProfileIcicleGraphProps {
   width?: number;
-  graph: Flamegraph | undefined;
+  graph: Table<any>;
   total: bigint;
   filtered: bigint;
   sampleUnit: string;
@@ -66,7 +67,8 @@ const ProfileIcicleGraph = ({
       return ['0', '0', false, '0', '0', false, '0', '0'];
     }
 
-    const trimmed = graph.trimmed;
+    // const trimmed = graph.trimmed;
+    const trimmed = 0n;
 
     const totalUnfiltered = total + filtered;
     // safeguard against division by zero
@@ -113,9 +115,9 @@ const ProfileIcicleGraph = ({
     <div className="relative">
       {compareMode && <DiffLegend />}
       <div ref={ref}>
-        <IcicleGraph
+        <IcicleGraphArrow
           width={dimensions?.width}
-          graph={graph}
+          table={graph}
           total={total}
           filtered={filtered}
           curPath={curPath}

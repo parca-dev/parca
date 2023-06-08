@@ -38,11 +38,16 @@ export interface HoveringNode extends FlamegraphRootNode, FlamegraphNode, Callgr
   cumulative: bigint;
 }
 
+export interface HoveringRow {
+  row: number;
+}
+
 // Define a type for the slice state
 export interface ColorsState {
   colors: StackColorMap;
   binaries: string[];
   hoveringNode: HoveringNode | undefined;
+  hoveringRow: HoveringRow | undefined;
 }
 
 // Define the initial state using that type
@@ -50,6 +55,7 @@ const initialState: ColorsState = {
   colors: {},
   binaries: [],
   hoveringNode: undefined,
+  hoveringRow: undefined,
 };
 
 export interface StackColor {
@@ -149,13 +155,16 @@ export const colorsSlice = createSlice({
     setHoveringNode: (state, action: PayloadAction<HoveringNode | undefined>) => {
       state.hoveringNode = action.payload;
     },
+    setHoveringRow: (state, action: PayloadAction<HoveringRow | undefined>) => {
+      state.hoveringRow = action.payload;
+    },
     resetColors: state => {
       state.colors = {};
     },
   },
 });
 
-export const {addColor, resetColors, setFeatures, setHoveringNode} = colorsSlice.actions;
+export const {addColor, resetColors, setFeatures, setHoveringNode, setHoveringRow} = colorsSlice.actions;
 
 // Other code such as selectors can use the imported `RootState` type
 export const selectStackColors = (state: RootState): StackColorMap => state.colors.colors;
@@ -164,5 +173,8 @@ export const selectBinaries = (state: RootState): string[] => state.colors.binar
 
 export const selectHoveringNode = (state: RootState): HoveringNode | undefined =>
   state.colors.hoveringNode;
+
+export const selectHoveringRow = (state: RootState): HoveringRow | undefined =>
+  state.colors.hoveringRow;
 
 export default colorsSlice.reducer;
