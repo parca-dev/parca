@@ -32,9 +32,9 @@ require (
 	github.com/prometheus/client_golang v1.15.1
 	github.com/prometheus/common v0.44.0
 	github.com/prometheus/prometheus v0.44.0
-	github.com/segmentio/parquet-go v0.0.0-20230427215636-d483faba23a5
+	github.com/segmentio/parquet-go v0.0.0-20230605165518-1fd7f3303070
 	github.com/stretchr/testify v1.8.4
-	github.com/thanos-io/objstore v0.0.0-20230406135154-d1711f1d2924
+	github.com/thanos-io/objstore v0.0.0-20230522103316-23ebe2eacadd
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.42.0
 	go.opentelemetry.io/otel v1.16.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.16.0
@@ -158,6 +158,7 @@ require (
 	github.com/hashicorp/nomad/api v0.0.0-20230418003350-3067191c5197 // indirect
 	github.com/hashicorp/serf v0.10.1 // indirect
 	github.com/hetznercloud/hcloud-go v1.42.0 // indirect
+	github.com/huaweicloud/huaweicloud-sdk-go-obs v3.23.3+incompatible // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/ionos-cloud/sdk-go/v6 v6.1.6 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect

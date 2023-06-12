@@ -40,9 +40,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
-      - uses: bufbuild/buf-setup-action@f81a411d98889e05c98e449510eda5f0d19291da # v1.20.0
+      - uses: bufbuild/buf-setup-action@0b2634d023322ed4186879e9a60c01783a8963d4 # v1.21.0
 
       - name: version
         run: buf --version
