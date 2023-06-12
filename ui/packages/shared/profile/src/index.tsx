@@ -27,12 +27,11 @@ export * from './ProfileView';
 export * from './ProfileViewWithData';
 export * from './utils';
 export * from './ProfileTypeSelector';
+export {default as Callgraph} from './Callgraph';
 
 export type {CallgraphProps};
 
-const Callgraph = lazy(async () => await import('@parca/profile/src/Callgraph'));
-
-export {Callgraph, ProfileExplorer, ProfileTypeSelector};
+export {ProfileExplorer, ProfileTypeSelector};
 
 // Leaving this in here due to lack of a better place to put it.
 interface GrafanaParcaDataPayload {
