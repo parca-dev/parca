@@ -30,15 +30,16 @@ import (
 type DwarfLiner struct {
 	logger log.Logger
 
-	debugData   *dwarf.Data
-	dbgFile     elfutils.DebugInfoFile
-	f           *elf.File
-	filename    string
-	baseAddress uint64
+	debugData      *dwarf.Data
+	dbgFile        elfutils.DebugInfoFile
+	f              *elf.File
+	filename       string
+	baseAddress    uint64
+	isRawAddresses bool
 }
 
 // DWARF creates a new DwarfLiner.
-func DWARF(logger log.Logger, filename string, f *elf.File, base uint64, demangler *demangle.Demangler) (*DwarfLiner, error) {
+func DWARF(logger log.Logger, filename string, f *elf.File, base uint64, isRawAddresses bool, demangler *demangle.Demangler) (*DwarfLiner, error) {
 	debugData, err := f.DWARF()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read DWARF data: %w", err)
@@ -50,12 +51,13 @@ func DWARF(logger log.Logger, filename string, f *elf.File, base uint64, demangl
 	}
 
 	return &DwarfLiner{
-		logger:      log.With(logger, "liner", "dwarf"),
-		dbgFile:     dbgFile,
-		debugData:   debugData,
-		f:           f,
-		filename:    filename,
-		baseAddress: base,
+		logger:         log.With(logger, "liner", "dwarf"),
+		dbgFile:        dbgFile,
+		debugData:      debugData,
+		f:              f,
+		filename:       filename,
+		baseAddress:    base,
+		isRawAddresses: isRawAddresses,
 	}, nil
 }
 
@@ -103,7 +105,7 @@ func (dl *DwarfLiner) PCRange() ([2]uint64, error) {
 }
 
 // PCToLines returns the resolved source lines for a program counter (memory address).
-func (dl *DwarfLiner) PCToLines(addr uint64, isRawAddr bool) (lines []profile.LocationLine, err error) {
+func (dl *DwarfLiner) PCToLines(addr uint64) (lines []profile.LocationLine, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("recovered stack trace:\n", string(debug.Stack()))
@@ -111,7 +113,7 @@ func (dl *DwarfLiner) PCToLines(addr uint64, isRawAddr bool) (lines []profile.Lo
 		}
 	}()
 
-	if isRawAddr {
+	if dl.isRawAddresses {
 		addr = addr - dl.baseAddress
 	}
 	lines, err = dl.dbgFile.SourceLines(addr)

@@ -447,13 +447,6 @@ export interface Location {
      * @generated from protobuf field: uint32 mapping_index = 7;
      */
     mappingIndex: number;
-    /**
-     * is_raw_address indicates whether the address is normalized
-     * for PIC/PIE (position independent code/executable).
-     *
-     * @generated from protobuf field: bool is_raw_address = 8;
-     */
-    isRawAddress: boolean;
 }
 /**
  * Line describes a source code function and its line number.
@@ -624,6 +617,13 @@ export interface Mapping {
      * @generated from protobuf field: uint64 base_address = 13;
      */
     baseAddress: string;
+    /**
+     * is_raw_addresses indicates whether the addresses that correspond to this mapping
+     * are normalized for PIC/PIE (position independent code/executable).
+     *
+     * @generated from protobuf field: bool is_raw_addresses = 14;
+     */
+    isRawAddresses: boolean;
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class GetOrCreateMappingsRequest$Type extends MessageType<GetOrCreateMappingsRequest> {
@@ -1945,12 +1945,11 @@ class Location$Type extends MessageType<Location> {
             { no: 4, name: "mapping_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 5, name: "is_folded", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 6, name: "lines", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Line },
-            { no: 7, name: "mapping_index", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 8, name: "is_raw_address", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 7, name: "mapping_index", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<Location>): Location {
-        const message = { id: "", address: "0", mappingId: "", isFolded: false, lines: [], mappingIndex: 0, isRawAddress: false };
+        const message = { id: "", address: "0", mappingId: "", isFolded: false, lines: [], mappingIndex: 0 };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Location>(this, message, value);
@@ -1978,9 +1977,6 @@ class Location$Type extends MessageType<Location> {
                     break;
                 case /* uint32 mapping_index */ 7:
                     message.mappingIndex = reader.uint32();
-                    break;
-                case /* bool is_raw_address */ 8:
-                    message.isRawAddress = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2012,9 +2008,6 @@ class Location$Type extends MessageType<Location> {
         /* uint32 mapping_index = 7; */
         if (message.mappingIndex !== 0)
             writer.tag(7, WireType.Varint).uint32(message.mappingIndex);
-        /* bool is_raw_address = 8; */
-        if (message.isRawAddress !== false)
-            writer.tag(8, WireType.Varint).bool(message.isRawAddress);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2198,11 +2191,12 @@ class Mapping$Type extends MessageType<Mapping> {
             { no: 10, name: "has_inline_frames", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 11, name: "file_string_index", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
             { no: 12, name: "build_id_string_index", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 13, name: "base_address", kind: "scalar", T: 4 /*ScalarType.UINT64*/ }
+            { no: 13, name: "base_address", kind: "scalar", T: 4 /*ScalarType.UINT64*/ },
+            { no: 14, name: "is_raw_addresses", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<Mapping>): Mapping {
-        const message = { id: "", start: "0", limit: "0", offset: "0", file: "", buildId: "", hasFunctions: false, hasFilenames: false, hasLineNumbers: false, hasInlineFrames: false, fileStringIndex: 0, buildIdStringIndex: 0, baseAddress: "0" };
+        const message = { id: "", start: "0", limit: "0", offset: "0", file: "", buildId: "", hasFunctions: false, hasFilenames: false, hasLineNumbers: false, hasInlineFrames: false, fileStringIndex: 0, buildIdStringIndex: 0, baseAddress: "0", isRawAddresses: false };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Mapping>(this, message, value);
@@ -2251,6 +2245,9 @@ class Mapping$Type extends MessageType<Mapping> {
                     break;
                 case /* uint64 base_address */ 13:
                     message.baseAddress = reader.uint64().toString();
+                    break;
+                case /* bool is_raw_addresses */ 14:
+                    message.isRawAddresses = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2303,6 +2300,9 @@ class Mapping$Type extends MessageType<Mapping> {
         /* uint64 base_address = 13; */
         if (message.baseAddress !== "0")
             writer.tag(13, WireType.Varint).uint64(message.baseAddress);
+        /* bool is_raw_addresses = 14; */
+        if (message.isRawAddresses !== false)
+            writer.tag(14, WireType.Varint).bool(message.isRawAddresses);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

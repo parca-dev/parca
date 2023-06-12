@@ -43,8 +43,24 @@ func NewNormalizer(metastore pb.MetastoreServiceClient, enableAddressNormalizati
 	}
 }
 
-func (n *MetastoreNormalizer) NormalizePprof(ctx context.Context, name string, takenLabelNames map[string]string, p *pprofpb.Profile, baseAddresses []uint64, normalizedAddress bool) ([]*profile.NormalizedProfile, error) {
-	mappings, err := n.NormalizeMappings(ctx, p.Mapping, p.StringTable, baseAddresses)
+// NormalizePprof converts the raw profile in pprof format into the internal format
+// and stores it in the metastore (Badger).
+// Optional base addresses can be later used to calculate normalized addresses.
+// A caller indicates with the normalizedAddresses flag
+// whether the addresses in the profile are already normalized
+// for PIC/PIE (position independent code/executable),
+// i.e., the sender (Parca Agent) could have normalized them.
+func (n *MetastoreNormalizer) NormalizePprof(ctx context.Context, name string, takenLabelNames map[string]string, p *pprofpb.Profile, baseAddresses []uint64, normalizedAddresses bool) ([]*profile.NormalizedProfile, error) {
+	// The fact whether addresses are normalized is recorded by NormalizeMappings.
+	// If Parca runs with --debug-normalize-addresses=true,
+	// it will normalize addresses before writing them to metastore, see NormalizeLocations.
+	// Otherwise the raw addresses will be stored and normalized when queried from metastore.
+	mustNormalizeAddresses := n.isAddrNormEnabled && !normalizedAddresses
+	if mustNormalizeAddresses {
+		normalizedAddresses = true
+	}
+
+	mappings, err := n.NormalizeMappings(ctx, p.Mapping, p.StringTable, baseAddresses, normalizedAddresses)
 	if err != nil {
 		return nil, fmt.Errorf("normalize mappings: %w", err)
 	}
@@ -59,7 +75,7 @@ func (n *MetastoreNormalizer) NormalizePprof(ctx context.Context, name string, t
 		p.Location,
 		mappings,
 		functions,
-		normalizedAddress,
+		mustNormalizeAddresses,
 		p.StringTable,
 	)
 	if err != nil {
@@ -236,7 +252,11 @@ type mappingNormalizationInfo struct {
 
 // NormalizeMappings converts pprof mappings into the internal mapping format
 // and stores them in the metastore (Badger).
-func (n *MetastoreNormalizer) NormalizeMappings(ctx context.Context, mappings []*pprofpb.Mapping, stringTable []string, baseAddresses []uint64) ([]mappingNormalizationInfo, error) {
+// Optional base addresses can be later used to calculate normalized addresses.
+// A caller indicates with the normalizedAddresses flag
+// whether the addresses in the profile are already normalized
+// for PIC/PIE (position independent code/executable).
+func (n *MetastoreNormalizer) NormalizeMappings(ctx context.Context, mappings []*pprofpb.Mapping, stringTable []string, baseAddresses []uint64, normalizedAddresses bool) ([]mappingNormalizationInfo, error) {
 	if len(baseAddresses) > len(mappings) {
 		return nil, fmt.Errorf("too many base addresses: %d/%d", len(baseAddresses), len(mappings))
 	}
@@ -245,6 +265,7 @@ func (n *MetastoreNormalizer) NormalizeMappings(ctx context.Context, mappings []
 		Mappings: make([]*pb.Mapping, 0, len(mappings)),
 	}
 
+	isRawAddresses := !normalizedAddresses
 	for _, mapping := range mappings {
 		req.Mappings = append(req.Mappings, &pb.Mapping{
 			Start:           mapping.MemoryStart,
@@ -256,6 +277,7 @@ func (n *MetastoreNormalizer) NormalizeMappings(ctx context.Context, mappings []
 			HasFilenames:    mapping.HasFilenames,
 			HasLineNumbers:  mapping.HasLineNumbers,
 			HasInlineFrames: mapping.HasInlineFrames,
+			IsRawAddresses:  isRawAddresses,
 		})
 	}
 	// The ingester receives raw samples in pprof format
@@ -304,12 +326,17 @@ func (n *MetastoreNormalizer) NormalizeFunctions(ctx context.Context, functions 
 	return res.Functions, nil
 }
 
+// NormalizeLocations converts pprof locations into the internal format
+// and stores them in the metastore (Badger).
+// A caller indicates with the mustNormalizeAddresses flag
+// whether the addresses must be normalized
+// for PIC/PIE (position independent code/executable) before writing them to the metastore.
 func (n *MetastoreNormalizer) NormalizeLocations(
 	ctx context.Context,
 	locations []*pprofpb.Location,
 	mappings []mappingNormalizationInfo,
 	functions []*pb.Function,
-	normalizedAddress bool,
+	mustNormalizeAddresses bool,
 	stringTable []string,
 ) ([]*pb.Location, error) {
 	req := &pb.GetOrCreateLocationsRequest{
@@ -333,7 +360,7 @@ func (n *MetastoreNormalizer) NormalizeLocations(
 			mappingIndex := location.MappingId - 1
 			mappingNormalizationInfo := mappings[mappingIndex]
 
-			if n.isAddrNormEnabled && !normalizedAddress {
+			if mustNormalizeAddresses {
 				addr = uint64(int64(addr) + mappingNormalizationInfo.offset)
 			}
 			mappingId = mappingNormalizationInfo.id
@@ -353,11 +380,10 @@ func (n *MetastoreNormalizer) NormalizeLocations(
 		}
 
 		req.Locations = append(req.Locations, &pb.Location{
-			Address:      addr,
-			IsRawAddress: !n.isAddrNormEnabled,
-			IsFolded:     location.IsFolded,
-			MappingId:    mappingId,
-			Lines:        lines,
+			Address:   addr,
+			IsFolded:  location.IsFolded,
+			MappingId: mappingId,
+			Lines:     lines,
 		})
 	}
 

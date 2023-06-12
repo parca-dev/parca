@@ -45,11 +45,10 @@ func GenerateTopTable(ctx context.Context, p *parcaprofile.Profile) (*pb.Top, in
 					Meta: &pb.TopNodeMeta{
 						Mapping: location.Mapping,
 						Location: &metastorev1alpha1.Location{
-							Id:           location.ID,
-							MappingId:    location.Mapping.GetId(),
-							Address:      location.Address,
-							IsRawAddress: location.IsRawAddress,
-							IsFolded:     location.IsFolded,
+							Id:        location.ID,
+							MappingId: location.Mapping.GetId(),
+							Address:   location.Address,
+							IsFolded:  location.IsFolded,
 						},
 					},
 				}

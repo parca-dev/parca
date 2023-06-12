@@ -104,11 +104,10 @@ func locationToCallgraphNodes(location *profile.Location) []*querypb.CallgraphNo
 		Id: location.ID,
 		Meta: &querypb.CallgraphNodeMeta{
 			Location: &pb.Location{
-				Id:           location.ID,
-				MappingId:    mappingID,
-				Address:      location.Address,
-				IsRawAddress: location.IsRawAddress,
-				IsFolded:     location.IsFolded,
+				Id:        location.ID,
+				MappingId: mappingID,
+				Address:   location.Address,
+				IsFolded:  location.IsFolded,
 			},
 			Mapping: location.Mapping,
 		},
@@ -160,11 +159,10 @@ func lineToGraphNode(
 		Id: location.ID + "_" + strconv.FormatInt(line.Line, 10),
 		Meta: &querypb.CallgraphNodeMeta{
 			Location: &pb.Location{
-				Id:           location.ID,
-				MappingId:    mappingID,
-				Address:      location.Address,
-				IsRawAddress: location.IsRawAddress,
-				IsFolded:     location.IsFolded,
+				Id:        location.ID,
+				MappingId: mappingID,
+				Address:   location.Address,
+				IsFolded:  location.IsFolded,
 			},
 			Function: line.Function,
 			Line: &pb.Line{
