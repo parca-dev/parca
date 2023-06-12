@@ -130,7 +130,8 @@ const (
 // given build ID. Checking if an upload should even be initiated allows the
 // parca-agent to avoid extracting debuginfos unnecessarily from a binary.
 func (s *Store) ShouldInitiateUpload(ctx context.Context, req *debuginfopb.ShouldInitiateUploadRequest) (*debuginfopb.ShouldInitiateUploadResponse, error) {
-	span := trace.SpanFromContext(ctx)
+	ctx, span := s.tracer.Start(ctx, "ShouldInitiateUpload")
+	defer span.End()
 	span.SetAttributes(attribute.String("build_id", req.BuildId))
 
 	buildID := req.BuildId
@@ -236,7 +237,8 @@ func (s *Store) ShouldInitiateUpload(ctx context.Context, req *debuginfopb.Shoul
 }
 
 func (s *Store) InitiateUpload(ctx context.Context, req *debuginfopb.InitiateUploadRequest) (*debuginfopb.InitiateUploadResponse, error) {
-	span := trace.SpanFromContext(ctx)
+	ctx, span := s.tracer.Start(ctx, "InitiateUpload")
+	defer span.End()
 	span.SetAttributes(attribute.String("build_id", req.BuildId))
 
 	if req.Hash == "" {
@@ -304,7 +306,8 @@ func (s *Store) InitiateUpload(ctx context.Context, req *debuginfopb.InitiateUpl
 }
 
 func (s *Store) MarkUploadFinished(ctx context.Context, req *debuginfopb.MarkUploadFinishedRequest) (*debuginfopb.MarkUploadFinishedResponse, error) {
-	span := trace.SpanFromContext(ctx)
+	ctx, span := s.tracer.Start(ctx, "MarkUploadFinished")
+	defer span.End()
 	span.SetAttributes(attribute.String("build_id", req.BuildId))
 	span.SetAttributes(attribute.String("upload_id", req.UploadId))
 
@@ -346,8 +349,8 @@ func (s *Store) Upload(stream debuginfopb.DebuginfoService_UploadServer) error {
 		r        = &UploadReader{stream: stream}
 	)
 
-	ctx := stream.Context()
-	span := trace.SpanFromContext(ctx)
+	ctx, span := s.tracer.Start(stream.Context(), "Upload")
+	defer span.End()
 	span.SetAttributes(attribute.String("build_id", buildID))
 	span.SetAttributes(attribute.String("upload_id", uploadID))
 
