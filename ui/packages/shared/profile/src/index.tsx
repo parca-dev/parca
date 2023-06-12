@@ -11,8 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {lazy} from 'react';
-
 import {QueryServiceClient} from '@parca/client';
 import type {Props as CallgraphProps} from '@parca/profile/src/Callgraph';
 
