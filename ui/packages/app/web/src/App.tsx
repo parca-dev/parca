@@ -23,7 +23,7 @@ import './style/profile.css';
 import './style/sidenav.css';
 import 'react-datepicker/dist/react-datepicker.css';
 
-import {QueryClient, QueryClientProvider} from 'react-query';
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {Provider} from 'react-redux';
 
 import {isDevMode} from '@parca/utilities';
