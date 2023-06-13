@@ -68,6 +68,7 @@ const ThemeToggle = () => {
       label: 'Light',
       icon: 'heroicons:sun-20-solid',
       onSelect: () => updateModesOnly(false),
+      selected: !isSystemSettingsTheme && !isDarkMode,
     },
 
     {
@@ -75,6 +76,7 @@ const ThemeToggle = () => {
       label: 'Dark',
       icon: 'heroicons:moon-20-solid',
       onSelect: () => updateModesOnly(true),
+      selected: !isSystemSettingsTheme && isDarkMode,
     },
 
     {
@@ -82,6 +84,7 @@ const ThemeToggle = () => {
       label: 'System',
       icon: 'heroicons:computer-desktop-solid',
       onSelect: updateWithSystemSettings,
+      selected: isSystemSettingsTheme,
     },
   ];
 
@@ -101,7 +104,7 @@ const ThemeToggle = () => {
         }
       >
         {modes.map(item => (
-          <Dropdown.Item key={item.key} onSelect={item.onSelect}>
+          <Dropdown.Item key={item.key} onSelect={item.onSelect} selected={item.selected}>
             <div className="flex items-center">
               <span className="mr-2">
                 <Icon icon={item.icon} />

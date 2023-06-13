@@ -70,9 +70,11 @@ const Dropdown = ({
 const Item = ({
   children,
   onSelect,
+  selected,
 }: {
   children: React.ReactNode;
   onSelect: () => void;
+  selected?: boolean;
 }): JSX.Element => {
   return (
     <Menu.Item>
@@ -80,7 +82,8 @@ const Item = ({
         <button
           className={cx(
             active ? 'bg-indigo-500 text-white' : 'text-gray-900 dark:text-white',
-            'group flex w-full items-center rounded-md px-2 py-2 text-sm'
+            'group mb-px flex w-full items-center rounded-md px-2 py-2 text-sm',
+            selected && 'bg-indigo-500 font-bold !text-white'
           )}
           onClick={onSelect}
         >

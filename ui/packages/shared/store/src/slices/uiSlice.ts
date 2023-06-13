@@ -24,7 +24,7 @@ export interface UiState {
 // Define the initial state using that type
 const initialState: UiState = {
   darkMode: false,
-  parcaThemeSystemSettings: false,
+  parcaThemeSystemSettings: true,
 };
 
 export const uiSlice = createSlice({
