@@ -20,7 +20,7 @@
     "react-flame-graph": "^1.4.0",
     "react-inlinesvg": "^3.0.2",
     "react-map-interaction": "^2.1.0",
-    "react-query": "^3.39.2",
+    "@tanstack/react-query": "^4.0.5",
     "react-textarea-autosize": "^8.4.0",
     "with-alpha-hex": "^1.0.6"
   },
