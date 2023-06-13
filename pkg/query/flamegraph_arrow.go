@@ -298,7 +298,9 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						_ = builderFunctionFileName.AppendString(line.Function.Filename)
 					// Values
 					case FlamegraphFieldLabels:
-						if len(s.Label) > 0 {
+						// Only append labels if there are any and only on the root of the stack.
+						// Otherwise, append null.
+						if len(s.Label) > 0 && i == len(s.Locations)-1 {
 							lset, err := json.Marshal(s.Label)
 							if err != nil {
 								return nil, 0, 0, 0, err
