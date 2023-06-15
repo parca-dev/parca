@@ -1,0 +1,20 @@
+apiVersion: pyrra.dev/v1alpha1
+kind: ServiceLevelObjective
+metadata:
+  name: parca-agent-grpc-client-errors
+  namespace: parca
+  labels:
+    prometheus: k8s
+    role: alert-rules
+    pyrra.dev/team: parca-agent
+spec:
+  target: '90'
+  window: 4w
+  indicator:
+    ratio:
+      grouping:
+      - grpc_method
+      errors:
+        metric: grpc_client_handled_total{job="parca/parca-agent",grpc_code=~"Aborted|Unavailable|Internal|Unknown|Unimplemented|DataLoss"}
+      total:
+        metric: grpc_client_handled_total{job="parca/parca-agent"}

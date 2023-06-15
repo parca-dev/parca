@@ -144,7 +144,7 @@ func TestGenerateFlamegraphTable(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphTable(ctx, tracer, p, float32(0), newTableConverterPool())
+	fg, err := GenerateFlamegraphTable(ctx, tracer, p, float32(0), NewTableConverterPool())
 	require.NoError(t, err)
 
 	require.Equal(t, int32(5), fg.Height)
@@ -307,7 +307,7 @@ func TestGenerateFlamegraphTableTrimming(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphTable(ctx, tracer, p, float32(0.5), newTableConverterPool())
+	fg, err := GenerateFlamegraphTable(ctx, tracer, p, float32(0.5), NewTableConverterPool())
 	require.NoError(t, err)
 
 	require.Equal(t, int32(5), fg.Height)
@@ -453,7 +453,7 @@ func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphTable(ctx, tracer, p, float32(0), newTableConverterPool())
+	fg, err := GenerateFlamegraphTable(ctx, tracer, p, float32(0), NewTableConverterPool())
 	require.NoError(t, err)
 
 	require.Equal(t, int32(2), fg.Height)
@@ -555,14 +555,14 @@ func testGenerateFlamegraphTableFromProfile(t Testing, l metastorepb.MetastoreSe
 	err := p.UnmarshalVT(fileContent)
 	require.NoError(t, err)
 
-	normalizer := parcacol.NewNormalizer(l)
+	normalizer := parcacol.NewNormalizer(l, true)
 	profiles, err := normalizer.NormalizePprof(ctx, "test", map[string]string{}, p, false)
 	require.NoError(t, err)
 
 	sp, err := parcacol.NewArrowToProfileConverter(tracer, l).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphTable(ctx, tracer, sp, float32(0), newTableConverterPool())
+	fg, err := GenerateFlamegraphTable(ctx, tracer, sp, float32(0), NewTableConverterPool())
 	require.NoError(t, err)
 
 	return fg
@@ -584,11 +584,11 @@ func Benchmark_GenerateFlamegraphTable_FromProfile(b *testing.B) {
 	ctx := context.Background()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	lc := metastore.NewInProcessClient(l)
-	normalizer := parcacol.NewNormalizer(lc)
+	normalizer := parcacol.NewNormalizer(lc, true)
 	profiles, err := normalizer.NormalizePprof(ctx, "test", map[string]string{}, p, false)
 	require.NoError(b, err)
 
-	pool := newTableConverterPool()
+	pool := NewTableConverterPool()
 
 	var dontOptimise *querypb.Flamegraph
 	for i := 0; i < b.N; i++ {
@@ -647,14 +647,14 @@ func TestGenerateFlamegraphTableWithInlined(t *testing.T) {
 	require.NoError(t, err)
 
 	metastore := metastore.NewInProcessClient(store)
-	normalizer := parcacol.NewNormalizer(metastore)
+	normalizer := parcacol.NewNormalizer(metastore, true)
 	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false)
 	require.NoError(t, err)
 
 	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphTable(ctx, tracer, symbolizedProfile, float32(0), newTableConverterPool())
+	fg, err := GenerateFlamegraphTable(ctx, tracer, symbolizedProfile, float32(0), NewTableConverterPool())
 	require.NoError(t, err)
 
 	require.Equal(t, []*metastorepb.Mapping{}, fg.GetMapping())
@@ -801,14 +801,14 @@ func TestGenerateFlamegraphTableWithInlinedExisting(t *testing.T) {
 	err = p.UnmarshalVT(MustDecompressGzip(t, b.Bytes()))
 	require.NoError(t, err)
 
-	normalizer := parcacol.NewNormalizer(metastore)
+	normalizer := parcacol.NewNormalizer(metastore, true)
 	profiles, err := normalizer.NormalizePprof(ctx, "", map[string]string{}, p, false)
 	require.NoError(t, err)
 
 	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphTable(ctx, tracer, symbolizedProfile, float32(0), newTableConverterPool())
+	fg, err := GenerateFlamegraphTable(ctx, tracer, symbolizedProfile, float32(0), NewTableConverterPool())
 	require.NoError(t, err)
 
 	require.Equal(t, []*metastorepb.Mapping{}, fg.GetMapping())
@@ -1200,7 +1200,7 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 
 	p, filtered := FilterProfileData(ctx, tracer, p, "b") // querying for "b" should filter out the "5.c" function.
 
-	fg, err := GenerateFlamegraphTable(ctx, tracer, p, float32(0.5), newTableConverterPool()) // 50% threshold
+	fg, err := GenerateFlamegraphTable(ctx, tracer, p, float32(0.5), NewTableConverterPool()) // 50% threshold
 	require.NoError(t, err)
 
 	require.Equal(t, int32(6), fg.Height)

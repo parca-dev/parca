@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apache/arrow/go/v10/arrow/memory"
+	"github.com/apache/arrow/go/v12/arrow/memory"
 	"github.com/go-kit/log"
 	"github.com/polarsignals/frostdb"
 	columnstore "github.com/polarsignals/frostdb"
@@ -76,6 +76,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 				metastore,
 				table,
 				schema,
+				true,
 			)
 
 			for j := 0; j < n; j++ {

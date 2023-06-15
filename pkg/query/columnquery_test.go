@@ -24,7 +24,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apache/arrow/go/v10/arrow/memory"
+	"github.com/apache/arrow/go/v12/arrow/memory"
 	"github.com/go-kit/log"
 	columnstore "github.com/polarsignals/frostdb"
 	"github.com/polarsignals/frostdb/query"
@@ -172,6 +172,7 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 		metastore,
 		table,
 		schema,
+		true,
 	)
 
 	for _, f := range files {
@@ -264,6 +265,7 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 		metastore,
 		table,
 		schema,
+		true,
 	)
 
 	fileContent, err := os.ReadFile("testdata/alloc_objects.pb.gz")
@@ -397,6 +399,7 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 		metastore,
 		table,
 		schema,
+		true,
 	)
 
 	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
@@ -744,6 +747,7 @@ func TestColumnQueryAPITypes(t *testing.T) {
 		metastore,
 		table,
 		schema,
+		true,
 	)
 
 	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
@@ -837,6 +841,7 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 		metastore,
 		table,
 		schema,
+		true,
 	)
 
 	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
@@ -920,6 +925,7 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 		metastore,
 		table,
 		schema,
+		true,
 	)
 
 	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{

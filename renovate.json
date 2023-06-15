@@ -14,11 +14,6 @@
       "groupName": "buf"
     },
     {
-      "description": "Group packages from go-grpc-middleware monorepo together",
-      "matchSourceUrls": ["https://github.com/grpc-ecosystem/go-grpc-middleware"],
-      "groupName": "go-grpc-middleware-monorepo"
-    },
-    {
       "description": "Group grpc-gateway packages",
       "matchSourceUrls": ["https://github.com/grpc-ecosystem/grpc-gateway"],
       "groupName": "grpc-gateway"
@@ -29,9 +24,24 @@
       "groupName": "grpc-health-probe"
     },
     {
+      "description": "Group protobuf-ts packages",
+      "matchSourceUrls": ["https://github.com/timostamm/protobuf-ts"],
+      "groupName": "protobuf-ts"
+    },
+    {
       "description": "Group prettier packages",
       "matchPackageNames": ["pre-commit/mirrors-prettier", "prettier"],
       "groupName": "prettier"
+    },
+    {
+      "description": "Group protobuf-go packages",
+      "matchSourceUrls": ["https://github.com/protocolbuffers/protobuf-go"],
+      "groupName": "protobuf-go"
+    },
+    {
+      "description": "Group vtprotobuf packages",
+      "matchSourceUrls": ["https://github.com/planetscale/vtprotobuf"],
+      "groupName": "vtprotobuf"
     },
     {
       "description": "Disable tailwindcss upgrades",

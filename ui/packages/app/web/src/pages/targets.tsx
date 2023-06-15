@@ -46,7 +46,7 @@ export const useTargets = (client: ScrapeServiceClient): ITargetsResult => {
 
   useEffect(() => {
     const call = client.targets({
-      state: TargetsRequest_State.ANY_UNSPECIFIED,
+      state: TargetsRequest_State.ACTIVE,
     });
 
     call.response
@@ -155,14 +155,14 @@ const TargetsPage = (): JSX.Element => {
                 <></>
               )}
               {Object.keys(targets ?? {}).length > 0 ? (
-                <div className="overflow-hidden border-b border-gray-200 shadow sm:rounded-lg">
+                <div className="overflow-hidden border-b border-gray-200 dark:border-gray-700 shadow sm:rounded-lg">
                   {sortTargets(targetNamespaces)?.map(namespace => {
                     const name = Object.keys(namespace)[0];
                     const targets = namespace[name].sort((a: Target, b: Target) => {
                       return a.url.localeCompare(b.url);
                     });
                     return (
-                      <div key={name} className="my-2 border-b-2 p-2">
+                      <div key={name} className="my-2 border-b-2 p-2 dark:border-gray-700">
                         <div className="my-2">
                           <span className="text-xl font-semibold">{name}</span>
                         </div>

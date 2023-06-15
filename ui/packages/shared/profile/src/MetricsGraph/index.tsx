@@ -221,6 +221,11 @@ export const RawMetricsGraph = ({
   const highlighted = getClosest();
 
   const onMouseDown = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement, MouseEvent>): void => {
+    // if shift is down, disable mouse behavior
+    if (isShiftDown) {
+      return;
+    }
+
     // only left mouse button
     if (e.button !== 0) {
       return;
@@ -251,6 +256,10 @@ export const RawMetricsGraph = ({
   };
 
   const onMouseUp = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement, MouseEvent>): void => {
+    if (isShiftDown) {
+      return;
+    }
+
     setDragging(false);
 
     if (relPos === -1) {
@@ -283,6 +292,11 @@ export const RawMetricsGraph = ({
   const throttledSetPos = throttle(setPos, 20);
 
   const onMouseMove = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement, MouseEvent>): void => {
+    // do not update position if shift is down because this means the user is locking the tooltip
+    if (isShiftDown) {
+      return;
+    }
+
     // X/Y coordinate array relative to svg
     const rel = pointer(e);
 
@@ -291,9 +305,7 @@ export const RawMetricsGraph = ({
     const yCoordinate = rel[1];
     const yCoordinateWithoutMargin = yCoordinate - margin;
 
-    if (!isShiftDown) {
-      throttledSetPos([xCoordinateWithoutMargin, yCoordinateWithoutMargin]);
-    }
+    throttledSetPos([xCoordinateWithoutMargin, yCoordinateWithoutMargin]);
   };
 
   const findSelectedProfile = (): HighlightedSeries | null => {

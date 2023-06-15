@@ -43,15 +43,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # v3.5.0
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
-      - name: Set up Go
-        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
-        with:
-          go-version-file: .go-version
-          check-latest: true
-
-      - uses: bufbuild/buf-setup-action@00661b48f00bf682921f8aab99306c7f1a7a3ec3 # v1.15.1
+      - uses: bufbuild/buf-setup-action@0b2634d023322ed4186879e9a60c01783a8963d4 # v1.21.0
 
       - name: version
         run: buf --version

@@ -11,8 +11,9 @@ spec:
   target: '95'
   window: 2w
   indicator:
-    latency:
-      success:
-        metric: grpc_server_handling_seconds_bucket{grpc_service="parca.query.v1alpha1.QueryService",grpc_method=~"Labels|Values",le="0.3"}
+    latencyNative:
+      latency: 300ms
       total:
-        metric: grpc_server_handling_seconds_count{grpc_service="parca.query.v1alpha1.QueryService",grpc_method=~"Labels|Values"}
+        metric: grpc_server_handling_seconds{grpc_service="parca.query.v1alpha1.QueryService",grpc_method=~"Labels|Values"}
+      grouping:
+      - grpc_method

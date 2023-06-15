@@ -426,12 +426,19 @@ const GraphTooltip = ({
           options: {
             tether: false,
             altAxis: true,
+            boundary: contextElement ?? undefined,
           },
         },
         {
           name: 'offset',
           options: {
             offset: [30, 30],
+          },
+        },
+        {
+          name: 'flip',
+          options: {
+            boundary: contextElement ?? undefined,
           },
         },
       ],

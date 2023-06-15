@@ -21,7 +21,7 @@ import {Parca, ParcaSmall} from '@parca/icons';
 import {selectDarkMode, useAppSelector} from '@parca/store';
 
 import ReleaseNotesViewer from '../ReleaseNotesViewer';
-import DarkModeToggle from './DarkModeToggle';
+import ThemeToggle from './ThemeToggle';
 
 const pathPrefix = process.env.NODE_ENV === 'development' ? '' : window.PATH_PREFIX;
 
@@ -131,14 +131,14 @@ const Navbar = () => {
                   <UserPreferences />
                 </div>
                 <div className="">
-                  <DarkModeToggle />
+                  <ThemeToggle />
                 </div>
               </div>
             </div>
           </div>
 
           <Disclosure.Panel className="sm:hidden">
-            <div className="space-y-1 px-2 pt-2 pb-3">
+            <div className="space-y-1 px-2 pb-3 pt-2">
               {Object.values(links).map(item => (
                 <a
                   key={item.label}

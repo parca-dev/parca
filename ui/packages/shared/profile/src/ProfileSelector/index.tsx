@@ -189,7 +189,7 @@ const ProfileSelector = ({
   const compareDisabled = selectedProfileName === '' || querySelection.expression === undefined;
 
   return (
-    <Card>
+    <Card className="overflow-visible">
       <Card.Header className="flex !items-center space-x-2">
         <div className="flex w-full flex-wrap items-center justify-start space-x-2 space-y-1">
           <div className="ml-2 mt-1">

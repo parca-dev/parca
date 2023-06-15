@@ -19,9 +19,9 @@ import (
 	"io"
 	"strings"
 
-	"github.com/apache/arrow/go/v10/arrow"
-	"github.com/apache/arrow/go/v10/arrow/array"
-	"github.com/apache/arrow/go/v10/arrow/memory"
+	"github.com/apache/arrow/go/v12/arrow"
+	"github.com/apache/arrow/go/v12/arrow/array"
+	"github.com/apache/arrow/go/v12/arrow/memory"
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/polarsignals/frostdb/pqarrow"
 	"github.com/polarsignals/frostdb/query/logicalplan"
@@ -118,7 +118,7 @@ func SeriesToArrowRecord(
 	series []Series,
 	labelNames, profileLabelNames, profileNumLabelNames []string,
 ) (arrow.Record, error) {
-	ps, err := schema.DynamicParquetSchema(map[string][]string{
+	ps, err := schema.GetDynamicParquetSchema(map[string][]string{
 		ColumnLabels:         labelNames,
 		ColumnPprofLabels:    profileLabelNames,
 		ColumnPprofNumLabels: profileNumLabelNames,
@@ -126,9 +126,10 @@ func SeriesToArrowRecord(
 	if err != nil {
 		return nil, err
 	}
+	defer schema.PutPooledParquetSchema(ps)
 
 	ctx := context.Background()
-	as, err := pqarrow.ParquetSchemaToArrowSchema(ctx, ps, logicalplan.IterOptions{})
+	as, err := pqarrow.ParquetSchemaToArrowSchema(ctx, ps.Schema, logicalplan.IterOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +225,8 @@ func SeriesToArrowRecord(
 	return bldr.NewRecord(), nil
 }
 
-func ParquetBufToArrowRecord(ctx context.Context, buf *dynparquet.Buffer) (arrow.Record, error) {
+// ParquetBufToArrowRecord converts a parquet buffer to an arrow record. If rowsPerRecord is 0, then the entire buffer is converted to a single record.
+func ParquetBufToArrowRecord(ctx context.Context, buf *dynparquet.Buffer, rowsPerRecord uint) ([]arrow.Record, error) {
 	as, err := pqarrow.ParquetSchemaToArrowSchema(ctx, buf.Schema(), logicalplan.IterOptions{})
 	if err != nil {
 		return nil, err
@@ -239,6 +241,8 @@ func ParquetBufToArrowRecord(ctx context.Context, buf *dynparquet.Buffer) (arrow
 	buffSize := 256
 	rowBuf := make([]parquet.Row, buffSize)
 
+	records := []arrow.Record{}
+	recordSize := uint(0)
 	for {
 		n, err := rows.ReadRows(rowBuf)
 		if err != nil && err != io.EOF {
@@ -298,8 +302,20 @@ func ParquetBufToArrowRecord(ctx context.Context, buf *dynparquet.Buffer) (arrow
 					}
 				}
 			}
+
+			recordSize++
+			if rowsPerRecord != 0 && recordSize >= rowsPerRecord {
+				records = append(records, bldr.NewRecord())
+				recordSize = 0
+			}
 		}
 	}
 
-	return bldr.NewRecord(), nil
+	// Append final record
+	r := bldr.NewRecord()
+	if r.NumRows() > 0 {
+		records = append(records, r)
+	}
+
+	return records, nil
 }
