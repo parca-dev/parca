@@ -14,7 +14,6 @@
 import React, {useMemo} from 'react';
 
 import cx from 'classnames';
-import {scaleLinear} from 'd3-scale';
 
 import {FlamegraphNode} from '@parca/client';
 import {
@@ -24,7 +23,7 @@ import {
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import {useKeyDown} from '@parca/components';
 import {selectBinaries, setHoveringNode, useAppDispatch, useAppSelector} from '@parca/store';
-import {isSearchMatch} from '@parca/utilities';
+import {isSearchMatch, scaleLinear} from '@parca/utilities';
 
 import useNodeColor from './useNodeColor';
 import {nodeLabel} from './utils';
@@ -39,13 +38,13 @@ interface IcicleGraphNodesProps {
   functions: ParcaFunction[];
   x: number;
   y: number;
-  total: number;
+  total: bigint;
   totalWidth: number;
   level: number;
   curPath: string[];
   setCurPath: (path: string[]) => void;
   path: string[];
-  xScale: (value: number) => number;
+  xScale: (value: bigint) => number;
   searchString?: string;
   compareMode: boolean;
 }
@@ -82,7 +81,7 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
   return (
     <g transform={`translate(${x}, ${y})`}>
       {nodes.map(function nodeMapper(d, i) {
-        const start = nodes.slice(0, i).reduce((sum, d) => sum + parseFloat(d.cumulative), 0);
+        const start = nodes.slice(0, i).reduce((sum, d) => sum + d.cumulative, 0n);
         const xStart = xScale(start);
 
         return (
@@ -125,9 +124,9 @@ interface IcicleNodeProps {
   locations: Location[];
   functions: ParcaFunction[];
   path: string[];
-  total: number;
+  total: bigint;
   setCurPath: (path: string[]) => void;
-  xScale: (value: number) => number;
+  xScale: (value: bigint) => number;
   isRoot?: boolean;
   searchString?: string;
   compareMode: boolean;
@@ -176,11 +175,11 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const isFaded = curPath.length > 0 && name !== curPath[curPath.length - 1];
   const styles = isFaded ? fadedIcicleRectStyles : icicleRectStyles;
   const nextLevel = level + 1;
-  const cumulative = parseFloat(data.cumulative);
+  const cumulative = data.cumulative;
   const nextCurPath = curPath.length === 0 ? [] : curPath.slice(1);
   const newXScale =
     nextCurPath.length === 0 && curPath.length === 1
-      ? scaleLinear().domain([0, cumulative]).range([0, totalWidth])
+      ? scaleLinear([0n, cumulative], [0, totalWidth])
       : xScale;
 
   const width =
@@ -203,7 +202,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     if (isShiftDown) return;
 
     // need to add id and flat for tooltip purposes
-    dispatch(setHoveringNode({...data, id: '', flat: ''}));
+    dispatch(setHoveringNode({...data, id: '', flat: 0n}));
   };
   const onMouseLeave = (): void => {
     if (isShiftDown) return;

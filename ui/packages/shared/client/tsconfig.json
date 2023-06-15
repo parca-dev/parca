@@ -6,7 +6,7 @@
     "outDir": "dist",
     "noEmit": false,
     "declaration": true,
-    "target": "ES6"
+    "target": "es2020"
   },
   "exclude": ["node_modules", "dist", "**/*.d.ts"]
 }

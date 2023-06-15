@@ -13,11 +13,9 @@
 
 import {memo, useEffect, useMemo, useRef, useState} from 'react';
 
-import {scaleLinear} from 'd3-scale';
-
 import {Flamegraph} from '@parca/client';
 import {setHoveringNode, useAppDispatch} from '@parca/store';
-import {selectQueryParam, type NavigateFunction} from '@parca/utilities';
+import {scaleLinear, selectQueryParam, type NavigateFunction} from '@parca/utilities';
 
 import GraphTooltip from '../../GraphTooltip';
 import ColorStackLegend from './ColorStackLegend';
@@ -26,8 +24,8 @@ import useColoredGraph from './useColoredGraph';
 
 interface IcicleGraphProps {
   graph: Flamegraph;
-  total: number;
-  filtered: number;
+  total: bigint;
+  filtered: bigint;
   sampleUnit: string;
   width?: number;
   curPath: string[];
@@ -65,9 +63,7 @@ export const IcicleGraph = memo(function IcicleGraph({
     if (width === undefined) {
       return () => 0;
     }
-    return scaleLinear()
-      .domain([0, Number(total)])
-      .range([0, width]);
+    return scaleLinear([0n, total], [0, width]);
   }, [total, width]);
 
   if (coloredGraph.root === undefined || width === undefined) {

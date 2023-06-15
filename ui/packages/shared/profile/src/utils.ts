@@ -15,11 +15,11 @@ import type {RpcMetadata} from '@protobuf-ts/runtime-rpc';
 
 import {QueryRequest, QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 
-export const hexifyAddress = (address?: string): string => {
+export const hexifyAddress = (address?: bigint): string => {
   if (address == null) {
     return '';
   }
-  return `0x${BigInt(address).toString(16)}`;
+  return `0x${address.toString(16)}`;
 };
 
 export const downloadPprof = async (

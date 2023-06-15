@@ -22,7 +22,6 @@ plugins:
   - plugin: buf.build/community/timostamm-protobuf-ts:v2.9.0
     out: ui/packages/shared/client/src
     opt:
-      - long_type_string
       - generate_dependencies
 
   # renovate: datasource=github-releases depName=grpc-ecosystem/grpc-gateway

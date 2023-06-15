@@ -15,11 +15,13 @@ import colors from 'tailwindcss/colors';
 
 import {Label} from '@parca/client';
 
+import {abs, divide} from './bigint';
 import {unitsInTime} from './time';
 
 export * from './time';
 export * from './string';
 export * from './binary-search';
+export * from './bigint';
 
 export type NavigateFunction = (
   path: string,
@@ -66,15 +68,9 @@ const knownValueFormatters = {
   count: unitsInCount,
 };
 
-export const valueFormatter = (num: number, unit: string, digits: number): string => {
-  // TODO: remove this after the columnstore backend is the main storage
-  // backend. This is a temporary fix while the columnstore backend does not
-  // return the correct unit.
-  if (unit === undefined || unit === '') {
-    return num.toFixed(digits);
-  }
-
-  const absoluteNum = Math.abs(num);
+export const valueFormatter = (num: bigint | number, unit: string, digits: number): string => {
+  const isBigInt = typeof num === 'bigint';
+  const absoluteNum = isBigInt ? abs(num) : Math.abs(num);
   const format: Unit[] = Object.values(
     knownValueFormatters[unit as keyof typeof knownValueFormatters]
   );
@@ -90,7 +86,11 @@ export const valueFormatter = (num: number, unit: string, digits: number): strin
       break;
     }
   }
-  return `${(num / format[i].multiplier).toFixed(digits).replace(rx, '$1')}${format[i].symbol}`;
+
+  const multiplier = format[i].multiplier;
+  return `${(isBigInt ? divide(num, BigInt(multiplier)) : num / multiplier)
+    .toFixed(digits)
+    .replace(rx, '$1')}${format[i].symbol}`;
 };
 
 export const isDevMode = (): boolean => {
@@ -263,19 +263,18 @@ export const getReducedSpanColor = (transparency: number, isDarkMode: boolean): 
     : `rgba(164, 214, 153, ${transparency})`;
 };
 
-export const diffColor = (diff: number, cumulative: number, isDarkMode: boolean): string => {
+export const diffColor = (diff: bigint, cumulative: bigint, isDarkMode: boolean): string => {
   const prevValue = cumulative - diff;
-  const diffRatio = prevValue > 0 ? (Math.abs(diff) > 0 ? diff / prevValue : 0) : 1.0;
+  const diffRatio = prevValue > 0 ? (diff !== 0n ? divide(diff, prevValue) : 0) : 1.0;
 
-  const diffTransparency =
-    Math.abs(diff) > 0 ? Math.min((Math.abs(diffRatio) / 2 + 0.5) * 0.8, 0.8) : 0;
+  const diffTransparency = diff !== 0n ? Math.min((Math.abs(diffRatio) / 2 + 0.5) * 0.8, 0.8) : 0;
 
   const newSpanColor = getNewSpanColor(isDarkMode);
   const increasedSpanColor = getIncreasedSpanColor(diffTransparency, isDarkMode);
   const reducedSpanColor = getReducedSpanColor(diffTransparency, isDarkMode);
 
   const color: string =
-    diff === 0 ? newSpanColor : diff > 0 ? increasedSpanColor : reducedSpanColor;
+    diff === 0n ? newSpanColor : diff > 0n ? increasedSpanColor : reducedSpanColor;
 
   return color;
 };
