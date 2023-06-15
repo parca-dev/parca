@@ -87,6 +87,7 @@ export interface ProfileViewProps {
   compare?: boolean;
   onDownloadPProf: () => void;
   onFlamegraphContainerResize?: ResizeHandler;
+  pprofDownloading?: boolean;
 }
 
 function arrayEquals<T>(a: T[], b: T[]): boolean {
@@ -110,6 +111,7 @@ export const ProfileView = ({
   navigateTo,
   onDownloadPProf,
   onFlamegraphContainerResize,
+  pprofDownloading,
 }: ProfileViewProps): JSX.Element => {
   const {ref, dimensions} = useContainerDimensions();
   const [curPath, setCurPath] = useState<string[]>([]);
@@ -331,8 +333,11 @@ export const ProfileView = ({
                       e.preventDefault();
                       onDownloadPProf();
                     }}
+                    disabled={pprofDownloading}
                   >
-                    Download pprof
+                    {pprofDownloading != null && pprofDownloading
+                      ? 'Downloading'
+                      : 'Download pprof'}
                   </Button>
                 </div>
                 <FilterByFunctionButton navigateTo={navigateTo} />
