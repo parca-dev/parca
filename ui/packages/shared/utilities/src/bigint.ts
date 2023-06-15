@@ -34,10 +34,11 @@ export const scaleLinear = (
   const domainRange = domainMax - domainMin;
   const rangeRange = BigInt(rangeMax - rangeMin);
 
-  // rate * 100 to retain the decimal places in BigInt format, then divide by 100 to get the final result
-  const rate = BigInt(Math.round(divide(rangeRange, domainRange) * 100));
+  // rate * 100000 to retain the decimal places in BigInt format, then divide by 100000 to get the final result
+  const multiple = 100000;
+  const rate = BigInt(Math.round(divide(rangeRange, domainRange) * multiple));
 
   return x => {
-    return Number(BigInt(rangeMin) + (x - domainMin) * rate) / 100;
+    return Number(BigInt(rangeMin) + (x - domainMin) * rate) / multiple;
   };
 };

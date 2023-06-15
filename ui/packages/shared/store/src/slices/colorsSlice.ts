@@ -35,6 +35,7 @@ interface ExtendedCallgraphNodeMeta extends CallgraphNodeMeta {
 export interface HoveringNode extends FlamegraphRootNode, FlamegraphNode, CallgraphNode {
   diff: bigint;
   meta?: FlamegraphNodeMeta | ExtendedCallgraphNodeMeta;
+  cumulative: bigint;
 }
 
 // Define a type for the slice state
