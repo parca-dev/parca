@@ -39,6 +39,7 @@ export const ProfileViewWithData = ({
   const [dashboardItems] = useURLState({param: 'dashboard_items', navigateTo});
   const [nodeTrimThreshold, setNodeTrimThreshold] = useState<number>(0);
   const [enableTrimming] = useUserPreference<boolean>(USER_PREFERENCES.ENABLE_GRAPH_TRIMMING.key);
+  const [pprofDownloading, setPprofDownloading] = useState<boolean>(false);
 
   useEffect(() => {
     if (!enableTrimming) {
@@ -113,9 +114,12 @@ export const ProfileViewWithData = ({
     }
 
     try {
+      setPprofDownloading(true);
       const blob = await downloadPprof(profileSource.QueryRequest(), queryClient, metadata);
       saveAsBlob(blob, `profile.pb.gz`);
+      setPprofDownloading(false);
     } catch (error) {
+      setPprofDownloading(false);
       console.error('Error while querying', error);
     }
   };
@@ -168,6 +172,7 @@ export const ProfileViewWithData = ({
       queryClient={queryClient}
       navigateTo={navigateTo}
       onDownloadPProf={() => void downloadPProfClick()}
+      pprofDownloading={pprofDownloading}
       onFlamegraphContainerResize={onFlamegraphContainerResize}
     />
   );
