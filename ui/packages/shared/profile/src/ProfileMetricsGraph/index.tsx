@@ -47,7 +47,7 @@ export const useQueryRange = (
   queryExpression: string,
   start: number,
   end: number,
-  filterByFunction?: string,
+  filterByFunction?: string
 ): IQueryRangeState => {
   const [state, setState] = useState<IQueryRangeState>({
     response: null,
