@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package signedupload
+package signedrequests
 
 import (
 	"context"
@@ -41,6 +41,11 @@ type Client interface {
 		ctx context.Context,
 		objectKey string,
 		size int64,
+		expiry time.Time,
+	) (string, error)
+	SignedGET(
+		ctx context.Context,
+		objectKey string,
 		expiry time.Time,
 	) (string, error)
 }
@@ -83,6 +88,14 @@ func (c *PrefixedClient) SignedPUT(
 	expiry time.Time,
 ) (string, error) {
 	return c.client.SignedPUT(ctx, conditionalPrefix(c.prefix, objectKey), size, expiry)
+}
+
+func (c *PrefixedClient) SignedGET(
+	ctx context.Context,
+	objectKey string,
+	expiry time.Time,
+) (string, error) {
+	return c.client.SignedGET(ctx, conditionalPrefix(c.prefix, objectKey), expiry)
 }
 
 func (c *PrefixedClient) Close() error {

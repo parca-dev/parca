@@ -33,7 +33,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
-	"github.com/parca-dev/parca/pkg/signedupload"
 )
 
 var ErrDebuginfoNotFound = errors.New("debuginfo not found")
@@ -84,9 +83,13 @@ type Store struct {
 	timeNow func() time.Time
 }
 
+type SignedUploadClient interface {
+	SignedPUT(ctx context.Context, objectKey string, size int64, expiry time.Time) (signedURL string, err error)
+}
+
 type SignedUpload struct {
 	Enabled bool
-	Client  signedupload.Client
+	Client  SignedUploadClient
 }
 
 // NewStore returns a new debug info store.

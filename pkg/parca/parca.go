@@ -68,7 +68,7 @@ import (
 	queryservice "github.com/parca-dev/parca/pkg/query"
 	"github.com/parca-dev/parca/pkg/scrape"
 	"github.com/parca-dev/parca/pkg/server"
-	"github.com/parca-dev/parca/pkg/signedupload"
+	"github.com/parca-dev/parca/pkg/signedrequests"
 	"github.com/parca-dev/parca/pkg/symbolizer"
 )
 
@@ -212,10 +212,10 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	var signedUploadClient signedupload.Client
+	var signedRequestsClient signedrequests.Client
 	if flags.Debuginfo.UploadsSignedURL {
 		var err error
-		signedUploadClient, err = signedupload.NewClient(
+		signedRequestsClient, err = signedrequests.NewClient(
 			context.Background(),
 			cfg.ObjectStorage.Bucket,
 		)
@@ -225,7 +225,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			return err
 		}
 
-		defer signedUploadClient.Close()
+		defer signedRequestsClient.Close()
 	}
 
 	var mStr metastorepb.MetastoreServiceServer
@@ -377,7 +377,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	}
 
 	debuginfoBucket := objstore.NewPrefixedBucket(bucket, "debuginfo")
-	prefixedSignedUploadClient := signedupload.NewPrefixedClient(signedUploadClient, "debuginfo")
+	prefixedSignedRequestsClient := signedrequests.NewPrefixedClient(signedRequestsClient, "debuginfo")
 	debuginfoMetadata := debuginfo.NewObjectStoreMetadata(logger, debuginfoBucket)
 	dbginfo, err := debuginfo.NewStore(
 		tracerProvider.Tracer("debuginfo"),
@@ -387,7 +387,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		debuginfodClient,
 		debuginfo.SignedUpload{
 			Enabled: flags.Debuginfo.UploadsSignedURL,
-			Client:  prefixedSignedUploadClient,
+			Client:  prefixedSignedRequestsClient,
 		},
 		flags.Debuginfo.UploadMaxDuration,
 		flags.Debuginfo.UploadMaxSize,

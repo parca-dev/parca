@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package signedupload
+package signedrequests
 
 import (
 	"context"
@@ -87,5 +87,16 @@ func (c *GCSClient) SignedPUT(
 		Headers: []string{
 			"X-Upload-Content-Length:" + strconv.FormatInt(size, 10),
 		},
+	})
+}
+
+func (c *GCSClient) SignedGET(
+	ctx context.Context,
+	objectKey string,
+	expiry time.Time,
+) (string, error) {
+	return c.bucket.SignedURL(objectKey, &storage.SignedURLOptions{
+		Method:  "GET",
+		Expires: expiry,
 	})
 }
