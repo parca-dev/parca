@@ -246,3 +246,6 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
+
+// Remove once https://github.com/apache/arrow/pull/36165 merges
+replace github.com/apache/arrow/go/v13 => github.com/metalmatze/arrow/go/v13 v13.0.0-20230620095556-1cb29f249716

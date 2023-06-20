@@ -136,7 +136,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	builderDiff := rb.Field(schema.FieldIndices(FlamegraphFieldDiff)[0]).(*builder.OptInt64Builder)
 
 	// This field compares the current sample with the already added values in the builders.
-	equalField := func(fieldName string, location *profile.Location, line profile.LocationLine, pprofLabels map[string]string, row uint32) bool {
+	equalField := func(fieldName string, location *profile.Location, line profile.LocationLine, pprofLabels map[string]string, row uint32, height int) bool {
 		switch fieldName {
 		case FlamegraphFieldMappingFile:
 			if location.Mapping == nil {
@@ -150,6 +150,11 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			// rather than comparing the strings, we compare bytes to avoid allocations.
 			return bytes.Equal([]byte(line.Function.Name), rowFunctionName)
 		case FlamegraphFieldLabels:
+			// We only compare the labels of roots of stacktraces.
+			if height > 0 {
+				return true
+			}
+
 			isNull := builderLabels.IsNull(int(row))
 			if len(pprofLabels) == 0 && isNull {
 				return true
@@ -227,8 +232,8 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				compareRows:
 					for _, cr := range compareRows {
 						for f := range aggregateFields {
-							if !equalField(f, location, line, s.Label, cr) {
-								// If any field doesn't match, we can't aggregate this row with the existing one.
+							if !equalField(f, location, line, s.Label, cr, len(s.Locations)-1-i) {
+								// If a field doesn't match, we can't aggregate this row with the existing one.
 								continue compareRows
 							}
 						}
@@ -240,6 +245,9 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						compareRows = children[cr]
 						continue stacktraces
 					}
+					// reset the compare rows
+					// if there are no matching rows here, we don't want to merge their children either.
+					compareRows = compareRows[:0]
 				}
 
 				if i == len(s.Locations)-1 { // root of the stacktrace

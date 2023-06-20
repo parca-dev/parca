@@ -1000,6 +1000,8 @@ func BenchmarkQuery(b *testing.B) {
 }
 
 func PprofToSymbolizedProfile(meta profile.Meta, prof *pprofprofile.Profile, index int) (*profile.Profile, error) {
+	km := metastore.NewKeyMaker()
+
 	p := &profile.Profile{
 		Meta:    meta,
 		Samples: make([]*profile.SymbolizedSample, 0, len(prof.Sample)),
@@ -1023,7 +1025,7 @@ func PprofToSymbolizedProfile(meta profile.Meta, prof *pprofprofile.Profile, ind
 					File:    loc.Mapping.File,
 					BuildId: loc.Mapping.BuildID,
 				}
-				symLoc.Mapping.Id = metastore.MakeMappingID(symLoc.Mapping)
+				symLoc.Mapping.Id = km.MakeMappingID(symLoc.Mapping)
 				symLoc.ID = symLoc.Mapping.Id + "-" + strconv.FormatUint(loc.Address, 16)
 			}
 
@@ -1036,7 +1038,7 @@ func PprofToSymbolizedProfile(meta profile.Meta, prof *pprofprofile.Profile, ind
 						SystemName: line.Function.SystemName,
 						Filename:   line.Function.Filename,
 					}
-					f.Id = metastore.MakeFunctionID(f)
+					f.Id = km.MakeFunctionID(f)
 					symLoc.Lines = append(symLoc.Lines, profile.LocationLine{
 						Line:     line.Line,
 						Function: f,
