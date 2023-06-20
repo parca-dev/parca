@@ -86,7 +86,6 @@ export interface ProfileViewProps {
   navigateTo?: NavigateFunction;
   compare?: boolean;
   onDownloadPProf: () => void;
-  onFlamegraphContainerResize?: ResizeHandler;
   pprofDownloading?: boolean;
 }
 
@@ -110,7 +109,6 @@ export const ProfileView = ({
   queryClient,
   navigateTo,
   onDownloadPProf,
-  onFlamegraphContainerResize,
   pprofDownloading,
 }: ProfileViewProps): JSX.Element => {
   const {ref, dimensions} = useContainerDimensions();
@@ -248,7 +246,6 @@ export const ProfileView = ({
               total={total}
               filtered={filtered}
               sampleUnit={sampleUnit}
-              onContainerResize={onFlamegraphContainerResize}
               navigateTo={navigateTo}
               loading={flamegraphData.loading}
               setActionButtons={setActionButtons}
