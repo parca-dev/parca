@@ -26,7 +26,6 @@ import (
 	"github.com/polarsignals/frostdb/pqarrow/builder"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 
 	queryv1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
@@ -136,17 +135,17 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	builderDiff := rb.Field(schema.FieldIndices(FlamegraphFieldDiff)[0]).(*builder.OptInt64Builder)
 
 	// This field compares the current sample with the already added values in the builders.
-	equalField := func(fieldName string, location *profile.Location, line profile.LocationLine, pprofLabels map[string]string, row uint32, height int) bool {
+	equalField := func(fieldName string, location *profile.Location, line profile.LocationLine, pprofLabels map[string]string, row, height int) bool {
 		switch fieldName {
 		case FlamegraphFieldMappingFile:
 			if location.Mapping == nil {
 				return true
 			}
-			rowMappingFile := builderMappingFile.Value(builderMappingFile.GetValueIndex(int(row)))
+			rowMappingFile := builderMappingFile.Value(builderMappingFile.GetValueIndex(row))
 			// rather than comparing the strings, we compare bytes to avoid allocations.
 			return bytes.Equal([]byte(location.Mapping.File), rowMappingFile)
 		case FlamegraphFieldFunctionName:
-			rowFunctionName := builderFunctionName.Value(builderFunctionName.GetValueIndex(int(row)))
+			rowFunctionName := builderFunctionName.Value(builderFunctionName.GetValueIndex(row))
 			// rather than comparing the strings, we compare bytes to avoid allocations.
 			return bytes.Equal([]byte(line.Function.Name), rowFunctionName)
 		case FlamegraphFieldLabels:
@@ -155,7 +154,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				return true
 			}
 
-			isNull := builderLabels.IsNull(int(row))
+			isNull := builderLabels.IsNull(row)
 			if len(pprofLabels) == 0 && isNull {
 				return true
 			}
@@ -166,7 +165,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				return false
 			}
 			// Both sides have values, let's compare them properly.
-			value := builderLabels.Value(builderLabels.GetValueIndex(int(row)))
+			value := builderLabels.Value(builderLabels.GetValueIndex(row))
 			compareLabels := map[string]string{}
 			err := json.Unmarshal(value, &compareLabels)
 			if err != nil {
@@ -199,13 +198,13 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 	cumulative := int64(0)
 	height := int32(0)
-	rootsRow := []uint32{}
-	children := make([][]uint32, len(p.Samples))
+	rootsRow := []int{}
+	children := make(map[int][]int, len(p.Samples))
 
 	// these change with every iteration below
-	row := uint32(builderCumulative.Len())
+	row := builderCumulative.Len()
 	parent := -1
-	compareRows := []uint32{}
+	compareRows := []int{}
 
 	for _, s := range p.Samples {
 		if int32(len(s.Locations)) > height {
@@ -239,10 +238,10 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						}
 
 						// All fields match, so we can aggregate this new row with the existing one.
-						builderCumulative.Add(int(cr), s.Value)
+						builderCumulative.Add(cr, s.Value)
 						// Continue with this row as the parent for the next iteration and compare to its children.
-						parent = int(cr)
-						compareRows = children[cr]
+						parent = cr
+						copy(compareRows, children[cr])
 						continue stacktraces
 					}
 					// reset the compare rows
@@ -318,14 +317,13 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 							builderLabels.AppendNull()
 						}
 					case FlamegraphFieldChildren:
-						if uint32(len(children)) == row {
-							children = slices.Grow(children, len(children))
-							children = children[:cap(children)]
-						}
+						// If there is a parent for this stack the parent is not -1 but the parent's row number.
 						if parent > -1 {
+							// this is the first time we see this parent have a child, so we need to initialize the slice
 							if len(children[parent]) == 0 {
-								children[parent] = []uint32{row}
+								children[parent] = []int{row}
 							} else {
+								// otherwise we can just append this row's number to the parent's slice
 								children[parent] = append(children[parent], row)
 							}
 						}
@@ -341,8 +339,8 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						panic(fmt.Sprintf("unknown field %s", schema.Field(j).Name))
 					}
 				}
-				parent = int(row)
-				row = uint32(builderCumulative.Len())
+				parent = row
+				row = builderCumulative.Len()
 			}
 		}
 	}
@@ -353,7 +351,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		if i == 0 {
 			builderChildren.Append(true)
 			for _, child := range rootsRow {
-				builderChildrenValues.Append(child)
+				builderChildrenValues.Append(uint32(child))
 			}
 			continue
 		}
@@ -362,7 +360,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		} else {
 			builderChildren.Append(true)
 			for _, child := range children[i] {
-				builderChildrenValues.Append(child)
+				builderChildrenValues.Append(uint32(child))
 			}
 		}
 	}
