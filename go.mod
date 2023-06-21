@@ -5,7 +5,7 @@ go 1.19
 require (
 	cloud.google.com/go/storage v1.30.1
 	github.com/alecthomas/kong v0.8.0
-	github.com/apache/arrow/go/v13 v13.0.0-20230618204152-e798e2a08c1b
+	github.com/apache/arrow/go/v13 v13.0.0-20230621162149-5854d0405366
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/cespare/xxhash v1.1.0
 	github.com/cespare/xxhash/v2 v2.2.0
@@ -246,6 +246,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
-
-// Remove once https://github.com/apache/arrow/pull/36165 merges
-replace github.com/apache/arrow/go/v13 => github.com/metalmatze/arrow/go/v13 v13.0.0-20230620095556-1cb29f249716
