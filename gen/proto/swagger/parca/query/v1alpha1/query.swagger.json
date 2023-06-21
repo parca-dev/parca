@@ -389,6 +389,13 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "filterQuery",
+            "description": "filter_query is the query string to filter the profile samples",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [

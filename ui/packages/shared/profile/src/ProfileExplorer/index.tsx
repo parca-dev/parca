@@ -209,6 +209,7 @@ const ProfileExplorerApp = ({
     to: parseInt(to_a as string),
     timeSelection: time_selection_a as string,
     profile_name: profile_name_a as string,
+    filter_by_function: filter_by_function as string,
   };
 
   // Show the SingleProfileExplorer when not comparing
@@ -229,6 +230,7 @@ const ProfileExplorerApp = ({
             from_a: q.from.toString(),
             to_a: q.to.toString(),
             time_selection_a: q.timeSelection,
+            filter_by_function: q.filter_by_function, // TODO: Add _a suffix
             dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
             ...mergeParams,
           },

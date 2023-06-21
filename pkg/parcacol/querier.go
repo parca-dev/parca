@@ -59,6 +59,7 @@ func NewQuerier(
 		tracer:    tracer,
 		engine:    engine,
 		tableName: tableName,
+		metastore: metastore,
 		converter: NewArrowToProfileConverter(
 			tracer,
 			metastore,
@@ -70,6 +71,7 @@ type Querier struct {
 	logger    log.Logger
 	engine    Engine
 	tableName string
+	metastore metastorepb.MetastoreServiceClient
 	converter *ArrowToProfileConverter
 	tracer    trace.Tracer
 }
@@ -292,6 +294,7 @@ func (q *Querier) QueryRange(
 	startTime, endTime time.Time,
 	step time.Duration,
 	limit uint32,
+	filterQuery string,
 ) ([]*pb.MetricsSeries, error) {
 	queryParts, selectorExprs, err := QueryToFilterExprs(query)
 	if err != nil {
@@ -315,10 +318,10 @@ func (q *Querier) QueryRange(
 	filterExpr := logicalplan.And(exprs...)
 
 	if queryParts.Delta {
-		return q.queryRangeDelta(ctx, filterExpr, step, queryParts.Meta.SampleType.Unit)
+		return q.queryRangeDelta(ctx, filterExpr, step, queryParts.Meta.SampleType.Unit, filterQuery)
 	}
 
-	return q.queryRangeNonDelta(ctx, filterExpr, step)
+	return q.queryRangeNonDelta(ctx, filterExpr, step, filterQuery)
 }
 
 const (
@@ -328,7 +331,16 @@ const (
 	ColumnValueSum    = "sum(" + ColumnValue + ")"
 )
 
-func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration, sampleTypeUnit string) ([]*pb.MetricsSeries, error) {
+func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration, sampleTypeUnit, filterQuery string) ([]*pb.MetricsSeries, error) {
+	groupBy := []logicalplan.Expr{
+		logicalplan.DynCol(ColumnLabels),
+		logicalplan.Duration(step),
+	}
+	if filterQuery != "" {
+		// If we have a filter query we need to group by the stacktrace column as well to be able to filter them out.
+		groupBy = append(groupBy, logicalplan.Col(ColumnStacktrace))
+	}
+
 	records := []arrow.Record{}
 	rows := 0
 	err := q.engine.ScanTable(q.tableName).
@@ -340,10 +352,7 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 				logicalplan.Sum(logicalplan.Col(ColumnValue)),
 				logicalplan.Count(logicalplan.Col(ColumnValue)),
 			},
-			[]logicalplan.Expr{
-				logicalplan.DynCol(ColumnLabels),
-				logicalplan.Duration(step),
-			},
+			groupBy,
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
@@ -368,18 +377,32 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 		Timestamp   int
 		ValueCount  int
 		ValueSum    int
+		Stacktrace  int
 	}{
 		DurationSum: -1,
 		PeriodSum:   -1,
 		Timestamp:   -1,
 		ValueCount:  -1,
 		ValueSum:    -1,
+		Stacktrace:  -1,
 	}
 
+	matchingStacktraces := map[string]bool{}
 	labelColumnIndices := []int{}
+	labelsetToIndex := map[string]int{}
+
 	labelSet := labels.Labels{}
 	resSeries := []*pb.MetricsSeries{}
-	labelsetToIndex := map[string]int{}
+
+	// These structs are only used when filtering for specific stacktraces.
+	// They are used as intermediate helpers before being converted to the final MetricsSeries.
+	type metricsSeriesStacktrace struct {
+		durationSum int64
+		periodSum   int64
+		valueSum    int64
+		valueCount  int64
+	}
+	resSeriesStacktraces := map[int]map[int64]metricsSeriesStacktrace{}
 
 	for _, ar := range records {
 		fields := ar.Schema().Fields()
@@ -399,6 +422,9 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 				continue
 			case ColumnValueSum:
 				columnIndices.ValueSum = i
+				continue
+			case ColumnStacktrace:
+				columnIndices.Stacktrace = i
 				continue
 			}
 
@@ -421,6 +447,9 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 		}
 		if columnIndices.ValueSum == -1 {
 			return nil, errors.New("sum(value) column not found")
+		}
+		if columnIndices.Stacktrace == -1 && filterQuery != "" {
+			return nil, errors.New("stacktrace column not found")
 		}
 
 		for i := 0; i < int(ar.NumRows()); i++ {
@@ -451,6 +480,7 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 				resSeries = append(resSeries, &pb.MetricsSeries{Labelset: &profilestorepb.LabelSet{Labels: pbLabelSet}})
 				index = len(resSeries) - 1
 				labelsetToIndex[s] = index
+				resSeriesStacktraces[index] = map[int64]metricsSeriesStacktrace{}
 			}
 
 			ts := ar.Column(columnIndices.Timestamp).(*array.Int64).Value(i)
@@ -459,30 +489,66 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 			valueSum := ar.Column(columnIndices.ValueSum).(*array.Int64).Value(i)
 			valueCount := ar.Column(columnIndices.ValueCount).(*array.Int64).Value(i)
 
-			// TODO: We should do these period and duration calculations in frostDB,
-			// so that we can push these down as projections.
+			if filterQuery == "" {
+				resSeries[index].Samples = append(resSeries[index].Samples,
+					deltaMetricsSample(ts, durationSum, periodSum, valueSum, valueCount, sampleTypeUnit),
+				)
+			} else {
+				// If we have a filter query we iterate through each stacktrace for each timestamp.
+				// Only if a stacktrace matches the filter query we add its values to the intermediate metricsSeriesStacktrace.
+				// After all timestamps have been seen we compute the final values and valuesPerSecond below.
+				stacktrace := ar.Column(columnIndices.Stacktrace).(*array.Binary).Value(i)
 
-			// Because we store the period with each sample yet query for the sum(period) we need to normalize by the amount of values (rows in a database).
-			period := periodSum / valueCount
-			// Because we store the duration with each sample yet query for the sum(duration) we need to normalize by the amount of values (rows in a database).
-			duration := durationSum / valueCount
+				matches, found := matchingStacktraces[string(stacktrace)]
+				if !found {
+					matches, err = q.matchingStacktrace(ctx, string(stacktrace), filterQuery)
+					if err != nil {
+						return nil, err
+					}
+					matchingStacktraces[string(stacktrace)] = matches
+				}
 
-			// If we have a CPU samples value type we make sure we always do the next calculation with cpu nanoseconds.
-			// If we already have CPU nanoseconds we don't need to multiply by the period.
-			valuePerSecondSum := valueSum
-			if sampleTypeUnit != "nanoseconds" {
-				valuePerSecondSum = valueSum * period
+				if sample, found := resSeriesStacktraces[index][ts]; found {
+					if matches {
+						sample.durationSum += durationSum
+						sample.periodSum += periodSum
+						sample.valueSum += valueSum
+						sample.valueCount += valueCount
+						resSeriesStacktraces[index][ts] = sample
+					}
+					continue
+				}
+
+				var sample metricsSeriesStacktrace
+				if matches {
+					// only set values if we have a match otherwise they will be 0
+					sample = metricsSeriesStacktrace{
+						durationSum: durationSum,
+						periodSum:   periodSum,
+						valueSum:    valueSum,
+						valueCount:  valueCount,
+					}
+				}
+				resSeriesStacktraces[index][ts] = sample
 			}
+		}
+	}
 
-			valuePerSecond := float64(valuePerSecondSum) / float64(duration)
-
-			series := resSeries[index]
-			series.Samples = append(series.Samples, &pb.MetricsSample{
-				Timestamp:      timestamppb.New(timestamp.Time(ts)),
-				Value:          valueSum,
-				ValuePerSecond: valuePerSecond,
-				Duration:       duration,
-			})
+	if filterQuery != "" {
+		// We have aggregated the metric samples for each timestamp if the underlying stacktrace match.
+		// Now we need to convert those raw values to the metric samples value and valuePerSecond.
+		for i, times := range resSeriesStacktraces {
+			for ts, sample := range times {
+				resSeries[i].Samples = append(resSeries[i].Samples,
+					deltaMetricsSample(
+						ts,
+						sample.durationSum,
+						sample.periodSum,
+						sample.valueSum,
+						sample.valueCount,
+						sampleTypeUnit,
+					))
+			}
 		}
 	}
 
@@ -496,19 +562,57 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 	return resSeries, nil
 }
 
-func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration) ([]*pb.MetricsSeries, error) {
+func deltaMetricsSample(ts, durationSum, periodSum, valueSum, valueCount int64, sampleTypeUnit string) *pb.MetricsSample {
+	// If the valueCount is zero we cannot do any calculations.
+	// We simply return a sample with all values set to 0.
+	if valueCount == 0 {
+		return &pb.MetricsSample{
+			Timestamp: timestamppb.New(timestamp.Time(ts)),
+			// everything else is 0
+		}
+	}
+
+	// TODO: We should do these period and duration calculations in frostDB, so that we can push these down as projections.
+
+	// Because we store the period with each sample yet query for the sum(period) we need to normalize by the amount of values (rows in a database).
+	period := periodSum / valueCount
+	// Because we store the duration with each sample yet query for the sum(duration) we need to normalize by the amount of values (rows in a database).
+	duration := durationSum / valueCount
+
+	// If we have a CPU samples value type we make sure we always do the next calculation with cpu nanoseconds.
+	// If we already have CPU nanoseconds we don't need to multiply by the period.
+	valuePerSecondSum := valueSum
+	if sampleTypeUnit != "nanoseconds" {
+		valuePerSecondSum = valueSum * period
+	}
+
+	valuePerSecond := float64(valuePerSecondSum) / float64(duration)
+
+	return &pb.MetricsSample{
+		Timestamp:      timestamppb.New(timestamp.Time(ts)),
+		Value:          valueSum,
+		ValuePerSecond: valuePerSecond,
+		Duration:       duration,
+	}
+}
+
+func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration, filterQuery string) ([]*pb.MetricsSeries, error) {
+	groupBy := []logicalplan.Expr{
+		logicalplan.DynCol(ColumnLabels),
+		logicalplan.Col(ColumnTimestamp),
+	}
+	if filterQuery != "" {
+		// If we have a filter query we need to group by the stacktrace column as well to be able to filter them out.
+		groupBy = append(groupBy, logicalplan.Col(ColumnStacktrace))
+	}
+
 	records := []arrow.Record{}
 	rows := 0
 	err := q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Aggregate(
-			[]logicalplan.Expr{
-				logicalplan.Sum(logicalplan.Col(ColumnValue)),
-			},
-			[]logicalplan.Expr{
-				logicalplan.DynCol(ColumnLabels),
-				logicalplan.Col(ColumnTimestamp),
-			},
+			[]logicalplan.Expr{logicalplan.Sum(logicalplan.Col(ColumnValue))},
+			groupBy,
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
@@ -532,14 +636,18 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 	}
 	// Add necessary columns and their found value is false by default.
 	columnIndices := map[string]columnIndex{
-		ColumnTimestamp: {},
-		ColumnValueSum:  {},
+		ColumnTimestamp:  {},
+		ColumnStacktrace: {},
+		ColumnValueSum:   {},
 	}
 	labelColumnIndices := []int{}
+
+	matchingStacktraces := map[string]bool{}
+	resSeriesBuckets := map[int]map[int64]*pb.MetricsSample{}
+	labelsetToIndex := map[string]int{}
+
 	labelSet := labels.Labels{}
 	resSeries := []*pb.MetricsSeries{}
-	resSeriesBuckets := map[int]map[int64]struct{}{}
-	labelsetToIndex := map[string]int{}
 
 	for _, ar := range records {
 		fields := ar.Schema().Fields()
@@ -558,6 +666,9 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 		}
 
 		for name, index := range columnIndices {
+			if name == ColumnStacktrace && filterQuery == "" {
+				continue
+			}
 			if !index.found {
 				return nil, fmt.Errorf("%s column not found", name)
 			}
@@ -591,35 +702,76 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 				resSeries = append(resSeries, &pb.MetricsSeries{Labelset: &profilestorepb.LabelSet{Labels: pbLabelSet}})
 				index = len(resSeries) - 1
 				labelsetToIndex[s] = index
-				resSeriesBuckets[index] = map[int64]struct{}{}
+				resSeriesBuckets[index] = map[int64]*pb.MetricsSample{}
 			}
 
 			ts := ar.Column(columnIndices[ColumnTimestamp].index).(*array.Int64).Value(i)
 			value := ar.Column(columnIndices[ColumnValueSum].index).(*array.Int64).Value(i)
 
-			// Each step bucket will only return one of the timestamps and its value.
-			// For this reason we'll take each timestamp and divide it by the step seconds.
-			// If we have seen a MetricsSample for this bucket before, we'll ignore this one.
-			// If we haven't seen one we'll add this sample to the response.
+			if filterQuery == "" {
+				// Each step bucket will only return one of the timestamps and its value.
+				// For this reason we'll take each timestamp and divide it by the step seconds.
+				// If we have seen a MetricsSample for this bucket before, we'll ignore this one.
+				// If we haven't seen one we'll add this sample to the response.
 
-			// TODO: This still queries way too much data from the underlying database.
-			// This needs to be moved to FrostDB to not even query all of this data in the first place.
-			// With a scrape interval of 10s and a query range of 1d we'd query 8640 samples and at most return 960.
-			// Even worse for a week, we'd query 60480 samples and only return 1000.
-			tsBucket := ts / 1000 / int64(step.Seconds())
-			if _, found := resSeriesBuckets[index][tsBucket]; found {
-				// We already have a MetricsSample for this timestamp bucket, ignore it.
-				continue
+				// TODO: This still queries way too much data from the underlying database.
+				// This needs to be moved to FrostDB to not even query all of this data in the first place.
+				// With a scrape interval of 10s and a query range of 1d we'd query 8640 samples and at most return 960.
+				// Even worse for a week, we'd query 60480 samples and only return 1000.
+				tsBucket := ts / 1000 / int64(step.Seconds())
+				if _, found := resSeriesBuckets[index][tsBucket]; found {
+					// We already have a MetricsSample for this timestamp bucket, ignore it.
+					continue
+				}
+
+				// Add a sample for this timestamp bucket.
+				resSeriesBuckets[index][tsBucket] = &pb.MetricsSample{
+					Timestamp:      timestamppb.New(timestamp.Time(ts)),
+					Value:          value,
+					ValuePerSecond: float64(value),
+				}
+			} else {
+				stacktrace := ar.Column(columnIndices[ColumnStacktrace].index).(*array.Binary).Value(i)
+
+				matches, found := matchingStacktraces[string(stacktrace)]
+				if !found {
+					matches, err = q.matchingStacktrace(ctx, string(stacktrace), filterQuery)
+					if err != nil {
+						return nil, err
+					}
+					matchingStacktraces[string(stacktrace)] = matches
+				}
+
+				tsBucket := ts / 1000 / int64(step.Seconds())
+				if sample, found := resSeriesBuckets[index][tsBucket]; found {
+					// FrostDB stores millisecond timestamps.
+					if sample.Timestamp.AsTime().UnixMilli() == ts {
+						bs := resSeriesBuckets[index][tsBucket]
+						bs.Value += value
+						if matches {
+							bs.ValuePerSecond += float64(value)
+						}
+						resSeriesBuckets[index][tsBucket] = bs
+					}
+					continue
+				}
+
+				sample := &pb.MetricsSample{
+					Timestamp: timestamppb.New(timestamp.Time(ts)),
+					Value:     value,
+				}
+				if matches {
+					sample.ValuePerSecond += float64(value)
+				}
+				resSeriesBuckets[index][tsBucket] = sample
 			}
+		}
+	}
 
-			series := resSeries[index]
-			series.Samples = append(series.Samples, &pb.MetricsSample{
-				Timestamp:      timestamppb.New(timestamp.Time(ts)),
-				Value:          value,
-				ValuePerSecond: float64(value),
-			})
-			// Mark the timestamp bucket as filled by the above MetricsSample.
-			resSeriesBuckets[index][tsBucket] = struct{}{}
+	for index, buckets := range resSeriesBuckets {
+		resSeries[index].Samples = make([]*pb.MetricsSample, 0, len(buckets))
+		for _, sample := range buckets {
+			resSeries[index].Samples = append(resSeries[index].Samples, sample)
 		}
 	}
 
@@ -953,4 +1105,37 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 		Timestamp:  start,
 	}
 	return records, "sum(value)", meta, nil
+}
+
+func (q *Querier) matchingStacktrace(ctx context.Context, stacktrace, filter string) (bool, error) {
+	stacktraces, err := q.metastore.Stacktraces(ctx, &metastorepb.StacktracesRequest{StacktraceIds: []string{stacktrace}})
+	if err != nil {
+		return false, err
+	}
+	if len(stacktraces.Stacktraces) == 0 {
+		return false, nil
+	}
+
+	for _, s := range stacktraces.Stacktraces {
+		locations, err := q.metastore.Locations(ctx, &metastorepb.LocationsRequest{LocationIds: s.GetLocationIds()})
+		if err != nil {
+			return false, err
+		}
+
+		for _, loc := range locations.Locations {
+			for _, line := range loc.GetLines() {
+				functions, err := q.metastore.Functions(ctx, &metastorepb.FunctionsRequest{FunctionIds: []string{line.GetFunctionId()}})
+				if err != nil {
+					return false, err
+				}
+				for _, function := range functions.Functions {
+					if strings.Contains(strings.ToLower(function.Name), filter) {
+						return true, nil
+					}
+				}
+			}
+		}
+	}
+
+	return false, nil
 }

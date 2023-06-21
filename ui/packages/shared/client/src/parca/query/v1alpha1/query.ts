@@ -118,6 +118,12 @@ export interface QueryRangeRequest {
      * @generated from protobuf field: google.protobuf.Duration step = 5;
      */
     step?: Duration;
+    /**
+     * filter_query is the query string to filter the profile samples
+     *
+     * @generated from protobuf field: optional string filter_query = 6;
+     */
+    filterQuery?: string;
 }
 /**
  * QueryRangeResponse is the set of matching profile values
@@ -1223,7 +1229,8 @@ class QueryRangeRequest$Type extends MessageType<QueryRangeRequest> {
             { no: 2, name: "start", kind: "message", T: () => Timestamp },
             { no: 3, name: "end", kind: "message", T: () => Timestamp },
             { no: 4, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 5, name: "step", kind: "message", T: () => Duration }
+            { no: 5, name: "step", kind: "message", T: () => Duration },
+            { no: 6, name: "filter_query", kind: "scalar", opt: true, T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<QueryRangeRequest>): QueryRangeRequest {
@@ -1253,6 +1260,9 @@ class QueryRangeRequest$Type extends MessageType<QueryRangeRequest> {
                 case /* google.protobuf.Duration step */ 5:
                     message.step = Duration.internalBinaryRead(reader, reader.uint32(), options, message.step);
                     break;
+                case /* optional string filter_query */ 6:
+                    message.filterQuery = reader.string();
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1280,6 +1290,9 @@ class QueryRangeRequest$Type extends MessageType<QueryRangeRequest> {
         /* google.protobuf.Duration step = 5; */
         if (message.step)
             Duration.internalBinaryWrite(message.step, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* optional string filter_query = 6; */
+        if (message.filterQuery !== undefined)
+            writer.tag(6, WireType.LengthDelimited).string(message.filterQuery);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
