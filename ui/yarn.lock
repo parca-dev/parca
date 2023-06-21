@@ -2019,15 +2019,20 @@
   resolved "https://registry.yarnpkg.com/@csstools/css-parser-algorithms/-/css-parser-algorithms-2.1.1.tgz#7b62e6412a468a2d1096ed267edd1e4a7fd4a119"
   integrity sha512-viRnRh02AgO4mwIQb2xQNJju0i+Fh9roNgmbR5xEuG7J3TGgxjnE95HnBLgsFJOJOksvcfxOUCgODcft6Y07cA==
 
+"@csstools/css-parser-algorithms@^2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@csstools/css-parser-algorithms/-/css-parser-algorithms-2.2.0.tgz#1268b07196d1118296443aeff41bca27d94b0981"
+  integrity sha512-9BoQ/jSrPq4vv3b9jjLW+PNNv56KlDH5JMx5yASSNrCtvq70FCNZUjXRvbCeR9hYj9ZyhURtqpU/RFIgg6kiOw==
+
 "@csstools/css-tokenizer@^2.1.1":
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/@csstools/css-tokenizer/-/css-tokenizer-2.1.1.tgz#07ae11a0a06365d7ec686549db7b729bc036528e"
   integrity sha512-GbrTj2Z8MCTUv+52GE0RbFGM527xuXZ0Xa5g0Z+YN573uveS4G0qi6WNOMyz3yrFM/jaILTTwJ0+umx81EzqfA==
 
-"@csstools/media-query-list-parser@^2.1.0":
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/@csstools/media-query-list-parser/-/media-query-list-parser-2.1.0.tgz#6e1a5e12e0d103cd13b94bddb88b878bd6866103"
-  integrity sha512-MXkR+TeaS2q9IkpyO6jVCdtA/bfpABJxIrfkLswThFN8EZZgI2RfAHhm6sDNDuYV25d5+b8Lj1fpTccIcSLPsQ==
+"@csstools/media-query-list-parser@^2.1.1":
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/@csstools/media-query-list-parser/-/media-query-list-parser-2.1.1.tgz#7c92053c957f188c35acb30c0678a90d460a4bb4"
+  integrity sha512-pUjtFbaKbiFNjJo8pprrIaXLvQvWIlwPiFnRI4sEnc4F0NIGTOsw8kaJSR3CmZAKEvV8QYckovgAnWQC0bgLLQ==
 
 "@csstools/normalize.css@*":
   version "12.0.0"
@@ -2169,24 +2174,24 @@
   dependencies:
     "@csstools/css-tokenizer" "^2.1.1"
 
-"@csstools/postcss-media-minmax@^1.0.3":
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/@csstools/postcss-media-minmax/-/postcss-media-minmax-1.0.3.tgz#997c03e1060c9cc2d0690e18cbfe1bf0456951d4"
-  integrity sha512-os7qe2HV/qBILKCGa/dl5AbpO6c+MZyunFBWPWJBrEVhulCYo13FgEWbhyERFM5FeJghiqYgJxM54oiJASpBnw==
+"@csstools/postcss-media-minmax@^1.0.4":
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/@csstools/postcss-media-minmax/-/postcss-media-minmax-1.0.4.tgz#5fd5877167259462abad2ffdb2bfef1ddd6f6147"
+  integrity sha512-olnKTQk9+RMzpIpkjv55d44L4Ni02j8ZJoedJezQC5M03a56npcM1hx0apaTRG4Fz1wfPCQ0DBjQ8zsiJFelmA==
   dependencies:
     "@csstools/css-calc" "^1.1.1"
-    "@csstools/css-parser-algorithms" "^2.1.1"
+    "@csstools/css-parser-algorithms" "^2.2.0"
     "@csstools/css-tokenizer" "^2.1.1"
-    "@csstools/media-query-list-parser" "^2.1.0"
+    "@csstools/media-query-list-parser" "^2.1.1"
 
-"@csstools/postcss-media-queries-aspect-ratio-number-values@^1.0.3":
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/@csstools/postcss-media-queries-aspect-ratio-number-values/-/postcss-media-queries-aspect-ratio-number-values-1.0.3.tgz#2c39191f4dfacfd2277a8d99ab2743fd79f69995"
-  integrity sha512-JHdwBSNZsur/mJXwzuC/gxyekhfSdWJaTiSOhUITk2D8pYRYcjV1MZiCiWupQNfM2Qp2W7w1A/gEU6U/xlpIyA==
+"@csstools/postcss-media-queries-aspect-ratio-number-values@^1.0.4":
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/@csstools/postcss-media-queries-aspect-ratio-number-values/-/postcss-media-queries-aspect-ratio-number-values-1.0.4.tgz#5d0d69a3176d9c7ca131388cef38c80437956e2f"
+  integrity sha512-IwyTbyR8E2y3kh6Fhrs251KjKBJeUPV5GlnUKnpU70PRFEN2DolWbf2V4+o/B9+Oj77P/DullLTulWEQ8uFtAA==
   dependencies:
-    "@csstools/css-parser-algorithms" "^2.1.1"
+    "@csstools/css-parser-algorithms" "^2.2.0"
     "@csstools/css-tokenizer" "^2.1.1"
-    "@csstools/media-query-list-parser" "^2.1.0"
+    "@csstools/media-query-list-parser" "^2.1.1"
 
 "@csstools/postcss-nested-calc@^1.0.0":
   version "1.0.0"
@@ -9480,7 +9485,7 @@ browserslist@^4.0.0, browserslist@^4.18.1, browserslist@^4.20.2, browserslist@^4
     node-releases "^2.0.8"
     update-browserslist-db "^1.0.10"
 
-browserslist@^4.14.5, browserslist@^4.21.3, browserslist@^4.21.5:
+browserslist@^4.14.5, browserslist@^4.21.3, browserslist@^4.21.5, browserslist@^4.21.9:
   version "4.21.9"
   resolved "https://registry.yarnpkg.com/browserslist/-/browserslist-4.21.9.tgz#e11bdd3c313d7e2a9e87e8b4b0c7872b13897635"
   integrity sha512-M0MFoZzbUrRU4KNfCrDLnvyE7gub+peetoTid3TBIqtunaDJyXlwhakT+/VkvSXcfIzFfK/nkCs4nmyTmxdNSg==
@@ -21777,15 +21782,15 @@ postcss-custom-media@^8.0.0, postcss-custom-media@^8.0.2:
   dependencies:
     postcss-value-parser "^4.2.0"
 
-postcss-custom-media@^9.1.4:
-  version "9.1.4"
-  resolved "https://registry.yarnpkg.com/postcss-custom-media/-/postcss-custom-media-9.1.4.tgz#90ea49986b91512f95430775b191d83893142c16"
-  integrity sha512-4A7WEG3iIyKwfpxL5bkuSlHoHHGRTHl0212Z3uvpwJPyVfZJlkZAQNNgVC+oogrJgksDnfKyuuMbG6HafZPW8Q==
+postcss-custom-media@^9.1.5:
+  version "9.1.5"
+  resolved "https://registry.yarnpkg.com/postcss-custom-media/-/postcss-custom-media-9.1.5.tgz#20c5822dd15155d768f8dd84e07a6ffd5d01b054"
+  integrity sha512-GStyWMz7Qbo/Gtw1xVspzVSX8eipgNg4lpsO3CAeY4/A1mzok+RV6MCv3fg62trWijh/lYEj6vps4o8JcBBpDA==
   dependencies:
     "@csstools/cascade-layer-name-parser" "^1.0.2"
-    "@csstools/css-parser-algorithms" "^2.1.1"
+    "@csstools/css-parser-algorithms" "^2.2.0"
     "@csstools/css-tokenizer" "^2.1.1"
-    "@csstools/media-query-list-parser" "^2.1.0"
+    "@csstools/media-query-list-parser" "^2.1.1"
 
 postcss-custom-properties@^12.1.10, postcss-custom-properties@^12.1.5:
   version "12.1.11"
@@ -22354,10 +22359,10 @@ postcss-preset-env@7.4.3:
     postcss-selector-not "^5.0.0"
     postcss-value-parser "^4.2.0"
 
-postcss-preset-env@8.5.0:
-  version "8.5.0"
-  resolved "https://registry.yarnpkg.com/postcss-preset-env/-/postcss-preset-env-8.5.0.tgz#42eacef909fdeb3e501c9afa0c80646df6e66315"
-  integrity sha512-aqAbT5dXqYX5ZvicGKQpaW/eDEZFRfnhV6Hn1Jn2bCKEB9L2MgsTdnIsXsZyFUQflIV2wIs9HTEQgkH5duMCNg==
+postcss-preset-env@8.5.1:
+  version "8.5.1"
+  resolved "https://registry.yarnpkg.com/postcss-preset-env/-/postcss-preset-env-8.5.1.tgz#f4f10fb5374514b80cc68b8937deb310a4f07415"
+  integrity sha512-qhWnJJjP6ArLUINWJ38t6Aftxnv9NW6cXK0NuwcLCcRilbuw72dSFLkCVUJeCfHGgJiKzX+pnhkGiki0PEynWg==
   dependencies:
     "@csstools/postcss-cascade-layers" "^3.0.1"
     "@csstools/postcss-color-function" "^2.2.3"
@@ -22370,8 +22375,8 @@ postcss-preset-env@8.5.0:
     "@csstools/postcss-logical-float-and-clear" "^1.0.1"
     "@csstools/postcss-logical-resize" "^1.0.1"
     "@csstools/postcss-logical-viewport-units" "^1.0.3"
-    "@csstools/postcss-media-minmax" "^1.0.3"
-    "@csstools/postcss-media-queries-aspect-ratio-number-values" "^1.0.3"
+    "@csstools/postcss-media-minmax" "^1.0.4"
+    "@csstools/postcss-media-queries-aspect-ratio-number-values" "^1.0.4"
     "@csstools/postcss-nested-calc" "^2.0.2"
     "@csstools/postcss-normalize-display-values" "^2.0.1"
     "@csstools/postcss-oklab-function" "^2.2.3"
@@ -22383,7 +22388,7 @@ postcss-preset-env@8.5.0:
     "@csstools/postcss-trigonometric-functions" "^2.1.1"
     "@csstools/postcss-unset-value" "^2.0.1"
     autoprefixer "^10.4.14"
-    browserslist "^4.21.5"
+    browserslist "^4.21.9"
     css-blank-pseudo "^5.0.2"
     css-has-pseudo "^5.0.2"
     css-prefers-color-scheme "^8.0.2"
@@ -22393,7 +22398,7 @@ postcss-preset-env@8.5.0:
     postcss-color-functional-notation "^5.1.0"
     postcss-color-hex-alpha "^9.0.2"
     postcss-color-rebeccapurple "^8.0.2"
-    postcss-custom-media "^9.1.4"
+    postcss-custom-media "^9.1.5"
     postcss-custom-properties "^13.2.0"
     postcss-custom-selectors "^7.1.3"
     postcss-dir-pseudo-class "^7.0.2"
