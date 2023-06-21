@@ -39,7 +39,7 @@ import {getNewSpanColor} from '@parca/utilities';
 
 import {Callgraph} from '../';
 import {jsonToDot} from '../Callgraph/utils';
-import ProfileIcicleGraph, {ResizeHandler} from '../ProfileIcicleGraph';
+import ProfileIcicleGraph from '../ProfileIcicleGraph';
 import {ProfileSource} from '../ProfileSource';
 import {TopTable} from '../TopTable';
 import ProfileShareButton from '../components/ProfileShareButton';
