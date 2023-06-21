@@ -26,6 +26,7 @@ import (
 	"github.com/polarsignals/frostdb/pqarrow/builder"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 
 	queryv1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
@@ -193,17 +194,23 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	builderFunctionSystemName.AppendNull()
 	builderFunctionFileName.AppendNull()
 	builderLabels.AppendNull()
+	// The cumulative values is calculated and at the end set to the correct value.
 	builderCumulative.Append(0)
 	builderDiff.AppendNull()
 
+	// This keeps track of the total cumulative value so that we can set the first row's cumulative value at the end.
 	cumulative := int64(0)
+	// This keeps track of the max depth of our flame graph.
 	height := int32(0)
+	// This keeps track of the root rows.
+	// This will be the root row's children, which is always our row 0 in flame graphs.
 	rootsRow := []int{}
+	// This keeps track of a row's children and will be converted to an arrow array of lists at the end.
 	children := make(map[int][]int, len(p.Samples))
 
 	// these change with every iteration below
 	row := builderCumulative.Len()
-	parent := -1
+	parent := parent(-1)
 	compareRows := []int{}
 
 	for _, s := range p.Samples {
@@ -216,13 +223,13 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			location := s.Locations[i]
 		stacktraces:
 			for _, line := range location.Lines {
-				if i == len(s.Locations)-1 { // root of the stacktrace
+				if isRoot(s.Locations, i) {
 					compareRows = compareRows[:0] //  reset the compare rows
 					compareRows = append(compareRows, rootsRow...)
 					// append this row afterward to not compare to itself
-					parent = -1
+					parent.Reset()
 				}
-				if i == 0 { // leaf of the stacktrace
+				if isLeaf(i) {
 					cumulative += s.Value
 				}
 
@@ -240,8 +247,8 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						// All fields match, so we can aggregate this new row with the existing one.
 						builderCumulative.Add(cr, s.Value)
 						// Continue with this row as the parent for the next iteration and compare to its children.
-						parent = cr
-						copy(compareRows, children[cr])
+						parent.Set(cr)
+						compareRows = slices.Clone(children[cr])
 						continue stacktraces
 					}
 					// reset the compare rows
@@ -249,7 +256,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					compareRows = compareRows[:0]
 				}
 
-				if i == len(s.Locations)-1 { // root of the stacktrace
+				if isRoot(s.Locations, i) {
 					// We aren't merging this root, so we'll keep track of it as a new one.
 					rootsRow = append(rootsRow, row)
 				}
@@ -307,7 +314,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					case FlamegraphFieldLabels:
 						// Only append labels if there are any and only on the root of the stack.
 						// Otherwise, append null.
-						if len(s.Label) > 0 && i == len(s.Locations)-1 {
+						if len(s.Label) > 0 && isRoot(s.Locations, i) {
 							lset, err := json.Marshal(s.Label)
 							if err != nil {
 								return nil, 0, 0, 0, err
@@ -318,13 +325,13 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						}
 					case FlamegraphFieldChildren:
 						// If there is a parent for this stack the parent is not -1 but the parent's row number.
-						if parent > -1 {
+						if parent.Has() {
 							// this is the first time we see this parent have a child, so we need to initialize the slice
-							if len(children[parent]) == 0 {
-								children[parent] = []int{row}
+							if len(children[parent.Get()]) == 0 {
+								children[parent.Get()] = []int{row}
 							} else {
 								// otherwise we can just append this row's number to the parent's slice
-								children[parent] = append(children[parent], row)
+								children[parent.Get()] = append(children[parent.Get()], row)
 							}
 						}
 					case FlamegraphFieldCumulative:
@@ -339,14 +346,19 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						panic(fmt.Sprintf("unknown field %s", schema.Field(j).Name))
 					}
 				}
-				parent = row
+				parent.Set(row)
 				row = builderCumulative.Len()
 			}
 		}
 	}
 
+	// We have manually tracked the total cumulative value.
+	// Now we set/overwrite the cumulative value for the root row (which is always the 0 row in our flame graphs).
 	builderCumulative.Set(0, cumulative)
 
+	// We have manually tracked each row's children.
+	// So now we need to iterate over all rows in the record and append their children.
+	// We cannot do this while building the rows as we need to append the children while iterating over the rows.
 	for i := 0; i < builderCumulative.Len(); i++ {
 		if i == 0 {
 			builderChildren.Append(true)
@@ -367,3 +379,22 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 	return rb.NewRecord(), cumulative, height + 1, 0, nil
 }
+
+func isRoot(ls []*profile.Location, i int) bool {
+	return len(ls)-1 == i
+}
+
+func isLeaf(i int) bool {
+	return i == 0
+}
+
+// parent stores the parent's row number of a stack.
+type parent int
+
+func (p *parent) Set(i int) { *p = parent(i) }
+
+func (p *parent) Reset() { *p = -1 }
+
+func (p *parent) Get() int { return int(*p) }
+
+func (p *parent) Has() bool { return *p > -1 }
