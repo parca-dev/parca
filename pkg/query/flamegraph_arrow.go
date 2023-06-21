@@ -206,7 +206,8 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	// This will be the root row's children, which is always our row 0 in flame graphs.
 	rootsRow := []int{}
 	// This keeps track of a row's children and will be converted to an arrow array of lists at the end.
-	children := make(map[int][]int, len(p.Samples))
+	// Allocating for an average of 8 children per stacktrace upfront.
+	children := make([][]int, len(p.Samples)*8)
 
 	// these change with every iteration below
 	row := builderCumulative.Len()
@@ -324,6 +325,13 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 							builderLabels.AppendNull()
 						}
 					case FlamegraphFieldChildren:
+						if len(children) == row {
+							// We need to grow the children slice, so we'll do that here.
+							// We'll double the capacity of the slice.
+							newChildren := make([][]int, len(children)*2)
+							copy(newChildren, children)
+							children = newChildren
+						}
 						// If there is a parent for this stack the parent is not -1 but the parent's row number.
 						if parent.Has() {
 							// this is the first time we see this parent have a child, so we need to initialize the slice
