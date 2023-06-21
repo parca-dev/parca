@@ -15,7 +15,7 @@
  * Divides two bigints and returns a number with two decimal places
  */
 export const divide = (a: bigint, b: bigint): number => {
-  return Number((a * 10000n) / b) / 10000;
+  return Number((a * 1000000n) / b) / 1000000;
 };
 
 /**

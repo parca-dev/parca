@@ -39,7 +39,7 @@ import {getNewSpanColor} from '@parca/utilities';
 
 import {Callgraph} from '../';
 import {jsonToDot} from '../Callgraph/utils';
-import ProfileIcicleGraph, {ResizeHandler} from '../ProfileIcicleGraph';
+import ProfileIcicleGraph from '../ProfileIcicleGraph';
 import {ProfileSource} from '../ProfileSource';
 import {TopTable} from '../TopTable';
 import ProfileShareButton from '../components/ProfileShareButton';
@@ -86,7 +86,6 @@ export interface ProfileViewProps {
   navigateTo?: NavigateFunction;
   compare?: boolean;
   onDownloadPProf: () => void;
-  onFlamegraphContainerResize?: ResizeHandler;
   pprofDownloading?: boolean;
 }
 
@@ -110,7 +109,6 @@ export const ProfileView = ({
   queryClient,
   navigateTo,
   onDownloadPProf,
-  onFlamegraphContainerResize,
   pprofDownloading,
 }: ProfileViewProps): JSX.Element => {
   const {ref, dimensions} = useContainerDimensions();
@@ -248,7 +246,6 @@ export const ProfileView = ({
               total={total}
               filtered={filtered}
               sampleUnit={sampleUnit}
-              onContainerResize={onFlamegraphContainerResize}
               navigateTo={navigateTo}
               loading={flamegraphData.loading}
               setActionButtons={setActionButtons}

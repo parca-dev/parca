@@ -33,7 +33,6 @@ interface ProfileIcicleGraphProps {
   sampleUnit: string;
   curPath: string[] | [];
   setNewCurPath: (path: string[]) => void;
-  onContainerResize?: ResizeHandler;
   navigateTo?: NavigateFunction;
   loading: boolean;
   setActionButtons?: (buttons: JSX.Element) => void;
@@ -46,7 +45,6 @@ const ProfileIcicleGraph = ({
   curPath,
   setNewCurPath,
   sampleUnit,
-  onContainerResize,
   navigateTo,
   loading,
   setActionButtons,
@@ -54,13 +52,6 @@ const ProfileIcicleGraph = ({
   const compareMode: boolean =
     selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
   const {ref, dimensions} = useContainerDimensions();
-
-  useEffect(() => {
-    if (dimensions === undefined) return;
-    if (onContainerResize === undefined) return;
-
-    onContainerResize(dimensions.width, dimensions.height);
-  }, [dimensions, onContainerResize]);
 
   const [
     totalFormatted,

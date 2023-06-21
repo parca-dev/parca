@@ -4353,14 +4353,6 @@
   resolved "https://registry.yarnpkg.com/@opentelemetry/semantic-conventions/-/semantic-conventions-1.11.0.tgz#b7ed9a601acb6e0aef67564b37e4f9abad449170"
   integrity sha512-fG4D0AktoHyHwGhFGv+PzKrZjxbKJfckJauTJdq2A+ej5cTazmNYjJVAODXXkYyrsI10muMl+B1iO2q1R6Lp+w==
 
-"@parca/hooks@^0.0.2":
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/@parca/hooks/-/hooks-0.0.2.tgz#16ceb66d6895e93304123271ec1c05986bedd4f7"
-  integrity sha512-SRko1R3lLHyIeowymUytpTifCP5bbBTyhSSkvf1jmru6NQwnzheO0flBliOpT4/sv9tZPtY0yAv9KJiWt32/Cg==
-  dependencies:
-    "@parca/client" "^0.16.63"
-    "@rehooks/local-storage" "^2.4.4"
-
 "@parca/react-benchmark@^5.3.0":
   version "5.3.0"
   resolved "https://registry.yarnpkg.com/@parca/react-benchmark/-/react-benchmark-5.3.0.tgz#f5b376cf5d39d9bd3eaf4dc29a8512e5dfa8da9e"
@@ -7359,7 +7351,7 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-datepicker@4.11.2", "@types/react-datepicker@^4.4.0":
+"@types/react-datepicker@4.11.2":
   version "4.11.2"
   resolved "https://registry.yarnpkg.com/@types/react-datepicker/-/react-datepicker-4.11.2.tgz#44abfc6379faa58d28eb5730a058d6a389d40eac"
   integrity sha512-ELYyX3lb3K1WltqdlF1hbnaDGgzlF6PIR5T4W38cSEcfrQDIrPE+Ioq5pwRe/KEJ+ihHMjvTVZQkwJx0pWMNHQ==
@@ -23364,7 +23356,7 @@ react-custom-scrollbars-2@4.5.0:
     prop-types "^15.5.10"
     raf "^3.1.0"
 
-react-datepicker@4.14.0, react-datepicker@^4.6.0:
+react-datepicker@4.14.0:
   version "4.14.0"
   resolved "https://registry.yarnpkg.com/react-datepicker/-/react-datepicker-4.14.0.tgz#d6af5d51adb2202ace39d8a995c77a3498d57fdf"
   integrity sha512-MLky2SF8hVTPgFRseauoOprjz6/rUMWq8MHadWYwExJvojUyCZOWDMWq9bRqoliQqqPhcViYjyxAxvFQpD9aDA==

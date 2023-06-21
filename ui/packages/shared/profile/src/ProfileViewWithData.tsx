@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 
 import {QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata, useParcaContext, useURLState} from '@parca/components';
@@ -37,26 +37,21 @@ export const ProfileViewWithData = ({
 }: ProfileViewWithDataProps): JSX.Element => {
   const metadata = useGrpcMetadata();
   const [dashboardItems] = useURLState({param: 'dashboard_items', navigateTo});
-  const [nodeTrimThreshold, setNodeTrimThreshold] = useState<number>(0);
   const [enableTrimming] = useUserPreference<boolean>(USER_PREFERENCES.ENABLE_GRAPH_TRIMMING.key);
   const [pprofDownloading, setPprofDownloading] = useState<boolean>(false);
 
-  useEffect(() => {
+  const nodeTrimThreshold = useMemo(() => {
     if (!enableTrimming) {
-      setNodeTrimThreshold(0);
+      return 0;
     }
-  }, [enableTrimming]);
 
-  const onFlamegraphContainerResize = (width: number): void => {
-    if (!enableTrimming || width === 0) {
-      return;
-    }
-    const threshold = (1 / width) * 100;
-    if (threshold === nodeTrimThreshold) {
-      return;
-    }
-    setNodeTrimThreshold(threshold);
-  };
+    let width =
+      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+      window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+    // subtract the padding
+    width = width - 12 - 16 - 12;
+    return (1 / width) * 100;
+  }, [enableTrimming]);
 
   const {
     isLoading: flamegraphLoading,
@@ -173,7 +168,6 @@ export const ProfileViewWithData = ({
       navigateTo={navigateTo}
       onDownloadPProf={() => void downloadPProfClick()}
       pprofDownloading={pprofDownloading}
-      onFlamegraphContainerResize={onFlamegraphContainerResize}
     />
   );
 };
