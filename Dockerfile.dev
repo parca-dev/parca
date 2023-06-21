@@ -1,5 +1,5 @@
 # vim: ft=dockerfile
-FROM docker.io/node:16.20.0-alpine@sha256:296f32946d2fb5227e43fa51e608bbb11a208d648a833e9b264934fb0c7f404b AS ui-deps
+FROM docker.io/node:16.20.1-alpine@sha256:e5973154d5943265bdcd803f4b769db84b38ac35c1e235f1bb2afcbb4a743740 AS ui-deps
 
 WORKDIR /app
 
@@ -8,7 +8,7 @@ COPY ui/packages/app/web/package.json ./packages/app/web/package.json
 COPY ui/package.json ui/yarn.lock ./
 RUN yarn workspace @parca/web install --frozen-lockfile
 
-FROM docker.io/node:16.20.0-alpine@sha256:296f32946d2fb5227e43fa51e608bbb11a208d648a833e9b264934fb0c7f404b AS ui-builder
+FROM docker.io/node:16.20.1-alpine@sha256:e5973154d5943265bdcd803f4b769db84b38ac35c1e235f1bb2afcbb4a743740 AS ui-builder
 
 WORKDIR /app
 
