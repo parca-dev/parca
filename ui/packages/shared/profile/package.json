@@ -1,10 +1,10 @@
 {
   "name": "@parca/profile",
-  "version": "0.16.186",
+  "version": "0.16.187",
   "description": "Profile viewing libraries",
   "dependencies": {
     "@parca/client": "^0.16.74",
-    "@parca/components": "^0.16.147",
+    "@parca/components": "^0.16.148",
     "@parca/dynamicsize": "^0.16.54",
     "@parca/hooks": "^0.0.9",
     "@parca/parser": "^0.16.55",
