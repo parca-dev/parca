@@ -20,7 +20,7 @@ import {useKeyDown} from '@parca/components';
 import {selectBinaries, setHoveringRow, useAppDispatch, useAppSelector} from '@parca/store';
 import {isSearchMatch, scaleLinear} from '@parca/utilities';
 
-import {FIELD_CHILDREN, FIELD_CUMULATIVE} from './index';
+import {FIELD_CHILDREN, FIELD_CUMULATIVE, FIELD_DIFF, FIELD_FUNCTION_NAME} from './index';
 import {nodeLabel} from './utils';
 
 export const RowHeight = 26;
@@ -39,6 +39,7 @@ interface IcicleGraphNodesProps {
   path: string[];
   xScale: (value: bigint) => number;
   searchString?: string;
+  sortBy: string;
   compareMode: boolean;
 }
 
@@ -54,6 +55,7 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
   path,
   setCurPath,
   curPath,
+  sortBy,
   searchString,
   compareMode,
 }: IcicleGraphNodesProps): React.JSX.Element {
@@ -90,6 +92,7 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
         curPath={curPath}
         total={total}
         xScale={xScale}
+        sortBy={sortBy}
         searchString={searchString}
         compareMode={compareMode}
       />
@@ -114,6 +117,7 @@ interface IcicleNodeProps {
   xScale: (value: bigint) => number;
   isRoot?: boolean;
   searchString?: string;
+  sortBy: string;
   compareMode: boolean;
 }
 
@@ -142,13 +146,55 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   xScale,
   isRoot = false,
   searchString,
+  sortBy,
   compareMode,
 }: IcicleNodeProps): React.JSX.Element {
   const {isShiftDown} = useKeyDown();
   const dispatch = useAppDispatch();
 
-  const cumulative: bigint = table.getChild(FIELD_CUMULATIVE)?.get(row);
+  const functionNameColumn = table.getChild(FIELD_FUNCTION_NAME);
+  const cumulativeColumn = table.getChild(FIELD_CUMULATIVE);
+  const diffColumn = table.getChild(FIELD_DIFF);
+
+  const cumulative: bigint = cumulativeColumn?.get(row);
   const children: number[] = Array.from(table.getChild(FIELD_CHILDREN)?.get(row) ?? []);
+
+  // TODO: Maybe it's better to pass down the sorter function as prop instead of figuring this out here.
+  switch (sortBy) {
+    case FIELD_FUNCTION_NAME:
+      children.sort((a, b) => {
+        // TODO: Support fallthrough to comparing addresses or something
+        const afn: string = functionNameColumn?.get(a);
+        const bfn: string = functionNameColumn?.get(b);
+        return afn.localeCompare(bfn);
+      });
+      break;
+    case FIELD_CUMULATIVE:
+      children.sort((a, b) => {
+        const aCumulative: bigint = cumulativeColumn?.get(a);
+        const bCumulative: bigint = cumulativeColumn?.get(b);
+        return Number(bCumulative - aCumulative);
+      });
+      break;
+    case FIELD_DIFF:
+      children.sort((a, b) => {
+        const aDiff: bigint | null = diffColumn?.get(a);
+        const bDiff: bigint | null = diffColumn?.get(b);
+        // TODO: Double check this sorting actually makes sense, when coloring is back
+        if (aDiff !== null && bDiff !== null) {
+          return Number(bDiff - aDiff);
+        }
+        if (aDiff === null && bDiff !== null) {
+          return 1;
+        }
+        if (aDiff !== null && bDiff === null) {
+          return -1;
+        }
+        // both are null
+        return 0;
+      });
+      break;
+  }
 
   const binaries = useAppSelector(selectBinaries);
   // const {isShiftDown} = useKeyDown();
@@ -238,6 +284,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
           curPath={nextCurPath}
           setCurPath={setCurPath}
           searchString={searchString}
+          sortBy={sortBy}
           compareMode={compareMode}
         />
       )}

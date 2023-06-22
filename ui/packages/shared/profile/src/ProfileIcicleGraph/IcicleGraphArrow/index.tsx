@@ -54,6 +54,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 }: IcicleGraphArrowProps): React.JSX.Element {
   const dispatch = useAppDispatch();
   const [height, setHeight] = useState(0);
+  const [sortBy, setSortBy] = useState(FIELD_FUNCTION_NAME);
   const svg = useRef(null);
   const ref = useRef<SVGGElement>(null);
 
@@ -96,6 +97,14 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   return (
     <div onMouseLeave={() => dispatch(setHoveringNode(undefined))}>
+      <select
+        className="rounded-md border bg-gray-50 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:bg-gray-900"
+        onChange={e => setSortBy(e.target.value)}
+      >
+        <option value="function_name">Function Name</option>
+        <option value="cumulative">Cumulative</option>
+        <option value="diff">Diff</option>
+      </select>
       <ColorStackLegend mappings={mappings} navigateTo={navigateTo} compareMode={compareMode} />
       <GraphTooltip
         table={table}
@@ -128,6 +137,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               level={0}
               isRoot={true}
               searchString={currentSearchString}
+              sortBy={sortBy}
               compareMode={compareMode}
             />
           </g>
