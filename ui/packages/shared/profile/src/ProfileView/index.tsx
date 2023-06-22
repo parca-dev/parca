@@ -13,6 +13,7 @@
 
 import {Profiler, ProfilerProps, useEffect, useMemo, useState} from 'react';
 
+import {Table} from 'apache-arrow';
 import cx from 'classnames';
 import {scaleLinear} from 'd3';
 import graphviz from 'graphviz-wasm';
@@ -47,7 +48,6 @@ import useDelayedLoader from '../useDelayedLoader';
 import FilterByFunctionButton from './FilterByFunctionButton';
 import ViewSelector from './ViewSelector';
 import {VisualizationPanel} from './VisualizationPanel';
-import {Table} from 'apache-arrow';
 
 type NavigateFunction = (path: string, queryParams: any, options?: {replace?: boolean}) => void;
 

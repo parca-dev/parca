@@ -13,6 +13,8 @@
 
 import {useEffect, useMemo, useState} from 'react';
 
+import {tableFromIPC} from 'apache-arrow';
+
 import {QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata, useParcaContext, useURLState} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
@@ -22,7 +24,6 @@ import {ProfileSource} from './ProfileSource';
 import {ProfileView} from './ProfileView';
 import {useQuery} from './useQuery';
 import {downloadPprof} from './utils';
-import {tableFromIPC} from 'apache-arrow';
 
 interface ProfileViewWithDataProps {
   queryClient: QueryServiceClient;

@@ -164,7 +164,8 @@ export const colorsSlice = createSlice({
   },
 });
 
-export const {addColor, resetColors, setFeatures, setHoveringNode, setHoveringRow} = colorsSlice.actions;
+export const {addColor, resetColors, setFeatures, setHoveringNode, setHoveringRow} =
+  colorsSlice.actions;
 
 // Other code such as selectors can use the imported `RootState` type
 export const selectStackColors = (state: RootState): StackColorMap => state.colors.colors;

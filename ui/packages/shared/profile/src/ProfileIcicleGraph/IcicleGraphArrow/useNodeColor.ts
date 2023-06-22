@@ -12,9 +12,12 @@
 // limitations under the License.
 
 import {useMemo} from 'react';
+
+import {Table} from 'apache-arrow';
+
 import {EVERYTHING_ELSE, selectDarkMode, selectStackColors, useAppSelector} from '@parca/store';
 import {diffColor} from '@parca/utilities';
-import {Table} from 'apache-arrow';
+
 import {FIELD_CUMULATIVE, FIELD_DIFF} from './index';
 
 interface Props {
@@ -35,7 +38,7 @@ const useNodeColor = ({table, row, compareMode}: Props): string => {
       return diffColor(diff, cumulative, isDarkMode);
     }
 
-    console.log(colors)
+    console.log(colors);
 
     const color = colors[EVERYTHING_ELSE];
     // const color =
