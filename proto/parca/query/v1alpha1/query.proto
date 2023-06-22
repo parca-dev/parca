@@ -227,6 +227,9 @@ message QueryRequest {
 
     // REPORT_TYPE_FLAMEGRAPH_TABLE unspecified
     REPORT_TYPE_FLAMEGRAPH_TABLE = 4;
+
+    // REPORT_TYPE_FLAMEGRAPH_ARROW unspecified
+    REPORT_TYPE_FLAMEGRAPH_ARROW = 5;
   }
 
   // report_type is the type of report to return
@@ -318,6 +321,21 @@ message Flamegraph {
 
   // trimmed is the amount of cumulative value trimmed from the flame graph.
   int64 trimmed = 10;
+}
+
+// Flamegraph is the flame graph report type
+message FlamegraphArrow {
+  // record is the arrow record containing the actual flamegraph data
+  bytes record = 1;
+
+  // unit is the unit represented by the flame graph
+  string unit = 2;
+
+  // height is the max height of the graph
+  int32 height = 3;
+
+  // trimmed is the amount of cumulative value trimmed from the flame graph.
+  int64 trimmed = 4;
 }
 
 // FlamegraphRootNode is a root node of a flame graph
@@ -444,6 +462,9 @@ message QueryResponse {
 
     // callgraph is a callgraph nodes and edges representation of the report
     Callgraph callgraph = 8;
+
+    // flamegraph_arrow is a flamegraph encoded as a arrow record
+    FlamegraphArrow flamegraph_arrow = 11;
   }
 
   // total is the total number of samples shown in the report.

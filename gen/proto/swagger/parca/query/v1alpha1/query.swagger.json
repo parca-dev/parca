@@ -299,7 +299,7 @@
           },
           {
             "name": "reportType",
-            "description": "report_type is the type of report to return\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified",
+            "description": "report_type is the type of report to return\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified",
             "in": "query",
             "required": false,
             "type": "string",
@@ -308,7 +308,8 @@
               "REPORT_TYPE_PPROF",
               "REPORT_TYPE_TOP",
               "REPORT_TYPE_CALLGRAPH",
-              "REPORT_TYPE_FLAMEGRAPH_TABLE"
+              "REPORT_TYPE_FLAMEGRAPH_TABLE",
+              "REPORT_TYPE_FLAMEGRAPH_ARROW"
             ],
             "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED"
           },
@@ -513,10 +514,11 @@
         "REPORT_TYPE_PPROF",
         "REPORT_TYPE_TOP",
         "REPORT_TYPE_CALLGRAPH",
-        "REPORT_TYPE_FLAMEGRAPH_TABLE"
+        "REPORT_TYPE_FLAMEGRAPH_TABLE",
+        "REPORT_TYPE_FLAMEGRAPH_ARROW"
       ],
       "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
-      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified",
+      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified",
       "title": "ReportType is the type of report to return"
     },
     "metastorev1alpha1Function": {
@@ -744,6 +746,10 @@
         "callgraph": {
           "$ref": "#/definitions/v1alpha1Callgraph",
           "title": "callgraph is a callgraph nodes and edges representation of the report"
+        },
+        "flamegraphArrow": {
+          "$ref": "#/definitions/v1alpha1FlamegraphArrow",
+          "title": "flamegraph_arrow is a flamegraph encoded as a arrow record"
         },
         "total": {
           "type": "string",
@@ -984,6 +990,31 @@
           "type": "string",
           "format": "int64",
           "description": "untrimmed_total is the total weight of the flame graph before trimming.\nUse trimmed instead."
+        },
+        "trimmed": {
+          "type": "string",
+          "format": "int64",
+          "description": "trimmed is the amount of cumulative value trimmed from the flame graph."
+        }
+      },
+      "title": "Flamegraph is the flame graph report type"
+    },
+    "v1alpha1FlamegraphArrow": {
+      "type": "object",
+      "properties": {
+        "record": {
+          "type": "string",
+          "format": "byte",
+          "title": "record is the arrow record containing the actual flamegraph data"
+        },
+        "unit": {
+          "type": "string",
+          "title": "unit is the unit represented by the flame graph"
+        },
+        "height": {
+          "type": "integer",
+          "format": "int32",
+          "title": "height is the max height of the graph"
         },
         "trimmed": {
           "type": "string",

@@ -433,7 +433,13 @@ export enum QueryRequest_ReportType {
      *
      * @generated from protobuf enum value: REPORT_TYPE_FLAMEGRAPH_TABLE = 4;
      */
-    FLAMEGRAPH_TABLE = 4
+    FLAMEGRAPH_TABLE = 4,
+    /**
+     * REPORT_TYPE_FLAMEGRAPH_ARROW unspecified
+     *
+     * @generated from protobuf enum value: REPORT_TYPE_FLAMEGRAPH_ARROW = 5;
+     */
+    FLAMEGRAPH_ARROW = 5
 }
 /**
  * Top is the top report type
@@ -598,6 +604,37 @@ export interface Flamegraph {
      * trimmed is the amount of cumulative value trimmed from the flame graph.
      *
      * @generated from protobuf field: int64 trimmed = 10;
+     */
+    trimmed: bigint;
+}
+/**
+ * Flamegraph is the flame graph report type
+ *
+ * @generated from protobuf message parca.query.v1alpha1.FlamegraphArrow
+ */
+export interface FlamegraphArrow {
+    /**
+     * record is the arrow record containing the actual flamegraph data
+     *
+     * @generated from protobuf field: bytes record = 1;
+     */
+    record: Uint8Array;
+    /**
+     * unit is the unit represented by the flame graph
+     *
+     * @generated from protobuf field: string unit = 2;
+     */
+    unit: string;
+    /**
+     * height is the max height of the graph
+     *
+     * @generated from protobuf field: int32 height = 3;
+     */
+    height: number;
+    /**
+     * trimmed is the amount of cumulative value trimmed from the flame graph.
+     *
+     * @generated from protobuf field: int64 trimmed = 4;
      */
     trimmed: bigint;
 }
@@ -867,6 +904,14 @@ export interface QueryResponse {
          * @generated from protobuf field: parca.query.v1alpha1.Callgraph callgraph = 8;
          */
         callgraph: Callgraph;
+    } | {
+        oneofKind: "flamegraphArrow";
+        /**
+         * flamegraph_arrow is a flamegraph encoded as a arrow record
+         *
+         * @generated from protobuf field: parca.query.v1alpha1.FlamegraphArrow flamegraph_arrow = 11;
+         */
+        flamegraphArrow: FlamegraphArrow;
     } | {
         oneofKind: undefined;
     };
@@ -2122,6 +2167,74 @@ class Flamegraph$Type extends MessageType<Flamegraph> {
  */
 export const Flamegraph = new Flamegraph$Type();
 // @generated message type with reflection information, may provide speed optimized methods
+class FlamegraphArrow$Type extends MessageType<FlamegraphArrow> {
+    constructor() {
+        super("parca.query.v1alpha1.FlamegraphArrow", [
+            { no: 1, name: "record", kind: "scalar", T: 12 /*ScalarType.BYTES*/ },
+            { no: 2, name: "unit", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "height", kind: "scalar", T: 5 /*ScalarType.INT32*/ },
+            { no: 4, name: "trimmed", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ }
+        ]);
+    }
+    create(value?: PartialMessage<FlamegraphArrow>): FlamegraphArrow {
+        const message = { record: new Uint8Array(0), unit: "", height: 0, trimmed: 0n };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<FlamegraphArrow>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: FlamegraphArrow): FlamegraphArrow {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bytes record */ 1:
+                    message.record = reader.bytes();
+                    break;
+                case /* string unit */ 2:
+                    message.unit = reader.string();
+                    break;
+                case /* int32 height */ 3:
+                    message.height = reader.int32();
+                    break;
+                case /* int64 trimmed */ 4:
+                    message.trimmed = reader.int64().toBigInt();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: FlamegraphArrow, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bytes record = 1; */
+        if (message.record.length)
+            writer.tag(1, WireType.LengthDelimited).bytes(message.record);
+        /* string unit = 2; */
+        if (message.unit !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.unit);
+        /* int32 height = 3; */
+        if (message.height !== 0)
+            writer.tag(3, WireType.Varint).int32(message.height);
+        /* int64 trimmed = 4; */
+        if (message.trimmed !== 0n)
+            writer.tag(4, WireType.Varint).int64(message.trimmed);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.query.v1alpha1.FlamegraphArrow
+ */
+export const FlamegraphArrow = new FlamegraphArrow$Type();
+// @generated message type with reflection information, may provide speed optimized methods
 class FlamegraphRootNode$Type extends MessageType<FlamegraphRootNode> {
     constructor() {
         super("parca.query.v1alpha1.FlamegraphRootNode", [
@@ -2612,6 +2725,7 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
             { no: 6, name: "pprof", kind: "scalar", oneof: "report", T: 12 /*ScalarType.BYTES*/ },
             { no: 7, name: "top", kind: "message", oneof: "report", T: () => Top },
             { no: 8, name: "callgraph", kind: "message", oneof: "report", T: () => Callgraph },
+            { no: 11, name: "flamegraph_arrow", kind: "message", oneof: "report", T: () => FlamegraphArrow },
             { no: 9, name: "total", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ },
             { no: 10, name: "filtered", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ }
         ]);
@@ -2652,6 +2766,12 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
                         callgraph: Callgraph.internalBinaryRead(reader, reader.uint32(), options, (message.report as any).callgraph)
                     };
                     break;
+                case /* parca.query.v1alpha1.FlamegraphArrow flamegraph_arrow */ 11:
+                    message.report = {
+                        oneofKind: "flamegraphArrow",
+                        flamegraphArrow: FlamegraphArrow.internalBinaryRead(reader, reader.uint32(), options, (message.report as any).flamegraphArrow)
+                    };
+                    break;
                 case /* int64 total */ 9:
                     message.total = reader.int64().toBigInt();
                     break;
@@ -2682,6 +2802,9 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
         /* parca.query.v1alpha1.Callgraph callgraph = 8; */
         if (message.report.oneofKind === "callgraph")
             Callgraph.internalBinaryWrite(message.report.callgraph, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* parca.query.v1alpha1.FlamegraphArrow flamegraph_arrow = 11; */
+        if (message.report.oneofKind === "flamegraphArrow")
+            FlamegraphArrow.internalBinaryWrite(message.report.flamegraphArrow, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
         /* int64 total = 9; */
         if (message.total !== 0n)
             writer.tag(9, WireType.Varint).int64(message.total);
