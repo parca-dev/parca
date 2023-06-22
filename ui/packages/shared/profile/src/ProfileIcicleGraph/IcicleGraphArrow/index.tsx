@@ -15,8 +15,22 @@ import React, {memo, useEffect, useMemo, useRef, useState} from 'react';
 
 import {Dictionary, Table, Vector} from 'apache-arrow';
 
-import {setHoveringNode, useAppDispatch} from '@parca/store';
-import {getLastItem, scaleLinear, selectQueryParam, type NavigateFunction} from '@parca/utilities';
+import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
+import {
+  FEATURE_TYPES,
+  FeaturesMap,
+  selectDarkMode,
+  setHoveringNode,
+  useAppDispatch,
+  useAppSelector,
+} from '@parca/store';
+import {
+  ColorProfileName,
+  getLastItem,
+  scaleLinear,
+  selectQueryParam,
+  type NavigateFunction,
+} from '@parca/utilities';
 
 import GraphTooltip from '../../GraphTooltip';
 import ColorStackLegend from './ColorStackLegend';
@@ -53,6 +67,11 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   navigateTo,
 }: IcicleGraphArrowProps): React.JSX.Element {
   const dispatch = useAppDispatch();
+  const [colorProfile] = useUserPreference<ColorProfileName>(
+    USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
+  );
+  const isDarkMode = useAppSelector(selectDarkMode);
+
   const [height, setHeight] = useState(0);
   const [sortBy, setSortBy] = useState(FIELD_FUNCTION_NAME);
   const svg = useRef(null);
@@ -69,14 +88,25 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
         const dict = mapping.dictionary;
         const len = dict?.data.length ?? 0;
         const values: string[] = [];
-        for (let i = 0; i < len; i++) {
+        for (let i = 0; i <= len; i++) {
           // Read the value and only append the binaries last part - binary name
           values.push(getLastItem(dict?.get(i)) ?? '');
         }
         return values;
       })
-      .flat();
+      .flat()
+      .sort((a, b) => a.localeCompare(b));
   }, [table]);
+
+  const mappingFeatures = useMemo(() => {
+    const features: FeaturesMap = {
+      runtime: FEATURE_TYPES.Runtime,
+    };
+    mappings.forEach(mapping => {
+      features[mapping] = FEATURE_TYPES.Binary;
+    });
+    return features;
+  }, [mappings, colorProfile]);
 
   useEffect(() => {
     if (ref.current != null) {
@@ -105,7 +135,11 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
         <option value="cumulative">Cumulative</option>
         <option value="diff">Diff</option>
       </select>
-      <ColorStackLegend mappings={mappings} navigateTo={navigateTo} compareMode={compareMode} />
+      <ColorStackLegend
+        mappingsFeatures={mappingFeatures}
+        navigateTo={navigateTo}
+        compareMode={compareMode}
+      />
       <GraphTooltip
         table={table}
         unit={sampleUnit}

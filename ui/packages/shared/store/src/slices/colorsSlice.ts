@@ -94,7 +94,7 @@ const getColorForFeature = (
 ): string => {
   const colors: ColorsDuo[] = COLOR_PROFILES[colorProfileName].colors;
 
-  // Add charaters in the feature name to the color map
+  // Add characters in the feature name to the color map
   const colorIndex =
     feature === EVERYTHING_ELSE
       ? colors.length - 1

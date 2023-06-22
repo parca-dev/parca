@@ -11,31 +11,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useMemo} from 'react';
+import React, {useMemo} from 'react';
 
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
 import {useURLState} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
-import {EVERYTHING_ELSE, selectStackColors, useAppSelector} from '@parca/store';
+import {EVERYTHING_ELSE, FeaturesMap} from '@parca/store';
 import type {NavigateFunction} from '@parca/utilities';
 
 interface Props {
-  mappings: string[];
+  mappingsFeatures: FeaturesMap;
   navigateTo?: NavigateFunction;
   compareMode?: boolean;
 }
 
-const ColorStackLegend = ({mappings, navigateTo, compareMode = false}: Props): JSX.Element => {
+const ColorStackLegend = ({
+  mappingsFeatures,
+  navigateTo,
+  compareMode = false,
+}: Props): React.JSX.Element => {
+  if (mappingsFeatures === undefined) {
+    return <></>;
+  }
+
   const [colorProfileName] = useUserPreference<string>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
   const [currentSearchString, setSearchString] = useURLState({param: 'search_string', navigateTo});
-  const stackColors = useAppSelector(selectStackColors);
+
+  if (Object.entries(mappingsFeatures).length === 0) {
+    return <></>;
+  }
 
   const stackColorArray = useMemo(() => {
-    return Object.entries(stackColors).sort(([featureA], [featureB]) => {
+    return Object.entries(mappingsFeatures).sort(([featureA], [featureB]) => {
       if (featureA === EVERYTHING_ELSE) {
         return 1;
       }
@@ -44,9 +55,7 @@ const ColorStackLegend = ({mappings, navigateTo, compareMode = false}: Props): J
       }
       return featureA?.localeCompare(featureB ?? '') ?? 0;
     });
-  }, [stackColors]);
-
-  console.log(stackColorArray);
+  }, [mappingsFeatures]);
 
   if (colorProfileName === 'default' || compareMode) {
     return <></>;
