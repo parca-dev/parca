@@ -27,7 +27,7 @@ import (
 	"time"
 
 	"github.com/apache/arrow/go/v13/arrow/memory"
-	"github.com/cespare/xxhash"
+	"github.com/cespare/xxhash/v2"
 	"github.com/go-kit/log"
 	pprofprofile "github.com/google/pprof/profile"
 	columnstore "github.com/polarsignals/frostdb"
