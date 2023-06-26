@@ -55,4 +55,12 @@ describe('bigint scaleLinear', () => {
     expect(scale(0n)).toBe(0);
     expect(scale(20n)).toBe(10);
   });
+
+  it('scale works with decimal values to range', () => {
+    const scale = scaleLinear([0n, 100n], [0, 51.5]);
+    expect(scale(50n)).toBe(25.5);
+    expect(scale(100n)).toBe(51);
+    expect(scale(0n)).toBe(0);
+    expect(scale(20n)).toBe(10.2);
+  });
 });

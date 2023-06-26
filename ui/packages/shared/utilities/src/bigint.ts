@@ -32,7 +32,7 @@ export const scaleLinear = (
   const [domainMin, domainMax] = domain;
   const [rangeMin, rangeMax] = range;
   const domainRange = domainMax - domainMin;
-  const rangeRange = BigInt(Math.round(rangeMax - rangeMin));
+  const rangeRange = BigInt(Math.floor(rangeMax - rangeMin));
 
   // rate * 100000 to retain the decimal places in BigInt format, then divide by 100000 to get the final result
   const multiple = 100000;
