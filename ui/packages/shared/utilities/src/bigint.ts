@@ -14,8 +14,17 @@
 /**
  * Divides two bigints and returns a number with two decimal places
  */
+
+export const lowestNumberWithSameNumberOfDigits = (a: number): number => {
+  const digits = Math.floor(Math.log10(a)) + 1;
+  return 10 ** (digits - 1);
+};
+
+const MULTIPLE = lowestNumberWithSameNumberOfDigits(Number.MAX_SAFE_INTEGER);
+const MULTIPLE_BIGINT = BigInt(MULTIPLE);
+
 export const divide = (a: bigint, b: bigint): number => {
-  return Number((a * 1000000n) / b) / 1000000;
+  return Number((a * MULTIPLE_BIGINT) / b) / MULTIPLE;
 };
 
 /**
@@ -25,20 +34,18 @@ export const abs = (a: bigint): bigint => {
   return a < 0n ? -a : a;
 };
 
-export const scaleLinear = (
-  domain: [bigint, bigint],
-  range: [number, number]
-): ((x: bigint) => number) => {
+export type ScaleFunction = (x: bigint) => number;
+
+export const scaleLinear = (domain: [bigint, bigint], range: [number, number]): ScaleFunction => {
   const [domainMin, domainMax] = domain;
   const [rangeMin, rangeMax] = range;
   const domainRange = domainMax - domainMin;
   const rangeRange = BigInt(Math.floor(rangeMax - rangeMin));
 
-  // rate * 100000 to retain the decimal places in BigInt format, then divide by 100000 to get the final result
-  const multiple = 100000;
-  const rate = BigInt(Math.round(divide(rangeRange, domainRange) * multiple));
+  // rate * MULTIPLE to retain the decimal places in BigInt format, then divide by MULTIPLE to get the final result
+  const rate = BigInt(Math.round(divide(rangeRange, domainRange) * MULTIPLE));
 
   return x => {
-    return Number(BigInt(rangeMin) + (x - domainMin) * rate) / multiple;
+    return Number(BigInt(rangeMin) + (x - domainMin) * rate) / MULTIPLE;
   };
 };
