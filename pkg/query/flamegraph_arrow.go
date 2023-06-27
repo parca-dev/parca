@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"unsafe"
 
 	"github.com/apache/arrow/go/v13/arrow"
 	"github.com/apache/arrow/go/v13/arrow/array"
@@ -144,11 +145,11 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			}
 			rowMappingFile := builderMappingFile.Value(builderMappingFile.GetValueIndex(row))
 			// rather than comparing the strings, we compare bytes to avoid allocations.
-			return bytes.Equal([]byte(location.Mapping.File), rowMappingFile)
+			return bytes.Equal(stringToBytes(location.Mapping.File), rowMappingFile)
 		case FlamegraphFieldFunctionName:
 			rowFunctionName := builderFunctionName.Value(builderFunctionName.GetValueIndex(row))
 			// rather than comparing the strings, we compare bytes to avoid allocations.
-			return bytes.Equal([]byte(line.Function.Name), rowFunctionName)
+			return bytes.Equal(stringToBytes(line.Function.Name), rowFunctionName)
 		case FlamegraphFieldLabels:
 			// We only compare the labels of roots of stacktraces.
 			if height > 0 {
@@ -406,3 +407,7 @@ func (p *parent) Reset() { *p = -1 }
 func (p *parent) Get() int { return int(*p) }
 
 func (p *parent) Has() bool { return *p > -1 }
+
+func stringToBytes(s string) []byte {
+	return unsafe.Slice(unsafe.StringData(s), len(s))
+}
