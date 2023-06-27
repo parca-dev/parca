@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {abs, divide, scaleLinear} from './bigint';
+import {abs, divide, lowestNumberWithSameNumberOfDigits, scaleLinear} from './bigint';
 
 describe('bigint divide', () => {
   it('divides two bigints and returns a number', () => {
@@ -54,5 +54,30 @@ describe('bigint scaleLinear', () => {
     expect(scale(100n)).toBe(50);
     expect(scale(0n)).toBe(0);
     expect(scale(20n)).toBe(10);
+  });
+
+  it('scale works with decimal values to range', () => {
+    const scale = scaleLinear([0n, 100n], [0, 51.5]);
+    expect(scale(50n)).toBe(25.5);
+    expect(scale(100n)).toBe(51);
+    expect(scale(0n)).toBe(0);
+    expect(scale(20n)).toBe(10.2);
+  });
+});
+
+describe('lowestNumberWithSameNumberOfDigits', () => {
+  it('returns the lowest number with the same number of digits', () => {
+    expect(lowestNumberWithSameNumberOfDigits(1)).toBe(1);
+    expect(lowestNumberWithSameNumberOfDigits(8)).toBe(1);
+    expect(lowestNumberWithSameNumberOfDigits(10)).toBe(10);
+    expect(lowestNumberWithSameNumberOfDigits(99)).toBe(10);
+    expect(lowestNumberWithSameNumberOfDigits(100)).toBe(100);
+    expect(lowestNumberWithSameNumberOfDigits(600)).toBe(100);
+    expect(lowestNumberWithSameNumberOfDigits(999)).toBe(100);
+    expect(lowestNumberWithSameNumberOfDigits(1000)).toBe(1000);
+    expect(lowestNumberWithSameNumberOfDigits(6000)).toBe(1000);
+    expect(lowestNumberWithSameNumberOfDigits(9999)).toBe(1000);
+    expect(lowestNumberWithSameNumberOfDigits(10000)).toBe(10000);
+    expect(lowestNumberWithSameNumberOfDigits(9007199254740991)).toBe(1000000000000000);
   });
 });

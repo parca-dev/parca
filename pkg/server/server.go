@@ -293,16 +293,11 @@ func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler, allowed
 	})
 
 	return corsMiddleware.Handler(h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
-			grpcServer.ServeHTTP(w, r)
-		} else {
-			if wrappedGrpc.IsGrpcWebRequest(r) {
-				wrappedGrpc.ServeHTTP(w, r)
-				return
-			}
-
-			otherHandler.ServeHTTP(w, r)
+		if strings.HasPrefix(r.Header.Get("Content-Type"), "application/grpc") {
+			wrappedGrpc.ServeHTTP(w, r)
+			return
 		}
+		otherHandler.ServeHTTP(w, r)
 	}), &http2.Server{}))
 }
 

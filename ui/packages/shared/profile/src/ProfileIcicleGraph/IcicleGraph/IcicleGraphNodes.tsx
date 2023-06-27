@@ -23,7 +23,7 @@ import {
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import {useKeyDown} from '@parca/components';
 import {selectBinaries, setHoveringNode, useAppDispatch, useAppSelector} from '@parca/store';
-import {isSearchMatch, scaleLinear} from '@parca/utilities';
+import {isSearchMatch, scaleLinear, type ScaleFunction} from '@parca/utilities';
 
 import useNodeColor from './useNodeColor';
 import {nodeLabel} from './utils';
@@ -44,7 +44,7 @@ interface IcicleGraphNodesProps {
   curPath: string[];
   setCurPath: (path: string[]) => void;
   path: string[];
-  xScale: (value: bigint) => number;
+  xScale: ScaleFunction;
   searchString?: string;
   compareMode: boolean;
 }
@@ -126,7 +126,7 @@ interface IcicleNodeProps {
   path: string[];
   total: bigint;
   setCurPath: (path: string[]) => void;
-  xScale: (value: bigint) => number;
+  xScale: ScaleFunction;
   isRoot?: boolean;
   searchString?: string;
   compareMode: boolean;

@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.0.11](https://github.com/parca-dev/parca/compare/@parca/hooks@0.0.10...@parca/hooks@0.0.11) (2023-06-25)
+
+**Note:** Version bump only for package @parca/hooks
+
 ## 0.0.10 (2023-06-22)
 
 **Note:** Version bump only for package @parca/hooks
