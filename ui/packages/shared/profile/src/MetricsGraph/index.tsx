@@ -474,7 +474,7 @@ export const RawMetricsGraph = ({
                 >
                   <line stroke="currentColor" x2={-6} />
                   <text fill="currentColor" x={-9} dy={'0.32em'}>
-                    {valueFormatter(1000, sampleUnit, 1)}
+                    {valueFormatter(d, sampleUnit, 1)}
                   </text>
                 </g>
               ))}
