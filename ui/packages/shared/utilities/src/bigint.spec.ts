@@ -81,3 +81,15 @@ describe('lowestNumberWithSameNumberOfDigits', () => {
     expect(lowestNumberWithSameNumberOfDigits(9007199254740991)).toBe(1000000000000000);
   });
 });
+
+describe('divide', () => {
+  it('divides two bigints and returns a number', () => {
+    expect(divide(4n, 2n)).toBe(2);
+  });
+  it('divides two bigints and returns a number with decimals if available', () => {
+    expect(divide(5n, 2n)).toBe(2.5);
+  });
+  it('handles divide by zero', () => {
+    expect(divide(5n, 0n)).toBe(Infinity);
+  });
+});

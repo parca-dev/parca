@@ -24,6 +24,9 @@ const MULTIPLE = lowestNumberWithSameNumberOfDigits(Number.MAX_SAFE_INTEGER);
 const MULTIPLE_BIGINT = BigInt(MULTIPLE);
 
 export const divide = (a: bigint, b: bigint): number => {
+  if (b === 0n) {
+    return Infinity;
+  }
   return Number((a * MULTIPLE_BIGINT) / b) / MULTIPLE;
 };
 
