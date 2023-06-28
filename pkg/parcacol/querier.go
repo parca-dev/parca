@@ -74,6 +74,11 @@ type Querier struct {
 	tracer    trace.Tracer
 }
 
+const (
+	ColumnLabelsPrefix      = ColumnLabels + "."
+	ColumnPprofLabelsPrefix = ColumnPprofLabels + "."
+)
+
 func (q *Querier) Labels(
 	ctx context.Context,
 	match []string,
@@ -169,7 +174,25 @@ func (q *Querier) Values(
 }
 
 func MatcherToBooleanExpression(matcher *labels.Matcher) (logicalplan.Expr, error) {
-	ref := logicalplan.Col("labels." + matcher.Name)
+	label := logicalplan.Col(ColumnLabelsPrefix + matcher.Name)
+	labelExpr, err := matcherToBinaryExpression(matcher, label)
+	if err != nil {
+		return nil, err
+	}
+	pprofLabel := logicalplan.Col(ColumnPprofLabelsPrefix + matcher.Name)
+	pprofLabelExpr, err := matcherToBinaryExpression(matcher, pprofLabel)
+	if err != nil {
+		return nil, err
+	}
+
+	return logicalplan.Or(
+			logicalplan.And(pprofLabel.Eq(&logicalplan.LiteralExpr{Value: scalar.ScalarNull}), labelExpr),
+			logicalplan.And(label.Eq(&logicalplan.LiteralExpr{Value: scalar.ScalarNull}), pprofLabelExpr),
+		),
+		nil
+}
+
+func matcherToBinaryExpression(matcher *labels.Matcher, ref *logicalplan.Column) (*logicalplan.BinaryExpr, error) {
 	switch matcher.Type {
 	case labels.MatchEqual:
 		if matcher.Value == "" {
