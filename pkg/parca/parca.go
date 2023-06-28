@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	goruntime "runtime"
+	"runtime/pprof"
 	"strings"
 	"syscall"
 	"time"
@@ -435,7 +436,13 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		ctx, cancel := context.WithCancel(ctx)
 		gr.Add(
 			func() error {
-				return s.Run(ctx, symbolizationInterval)
+				var err error
+
+				pprof.Do(ctx, pprof.Labels("parca_component", "symbolizer"), func(ctx context.Context) {
+					err = s.Run(ctx, symbolizationInterval)
+				})
+
+				return err
 			},
 			func(_ error) {
 				level.Debug(logger).Log("msg", "symbolizer server shutting down")
@@ -444,7 +451,13 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	}
 	gr.Add(
 		func() error {
-			return discoveryManager.Run()
+			var err error
+
+			pprof.Do(ctx, pprof.Labels("parca_component", "discovery"), func(_ context.Context) {
+				err = discoveryManager.Run()
+			})
+
+			return err
 		},
 		func(_ error) {
 			level.Debug(logger).Log("msg", "discovery manager exiting")
@@ -453,7 +466,13 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	)
 	gr.Add(
 		func() error {
-			return m.Run(discoveryManager.SyncCh())
+			var err error
+
+			pprof.Do(ctx, pprof.Labels("parca_component", "scraper"), func(_ context.Context) {
+				err = m.Run(discoveryManager.SyncCh())
+			})
+
+			return err
 		},
 		func(_ error) {
 			level.Debug(logger).Log("msg", "scrape manager exiting")
@@ -462,7 +481,13 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	)
 	gr.Add(
 		func() error {
-			return cfgReloader.Run(ctx)
+			var err error
+
+			pprof.Do(ctx, pprof.Labels("parca_component", "config_reloader"), func(ctx context.Context) {
+				err = cfgReloader.Run(ctx)
+			})
+
+			return err
 		},
 		func(_ error) {
 			level.Debug(logger).Log("msg", "config file reloader exiting")
@@ -472,42 +497,48 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	parcaserver := server.NewServer(reg, version)
 	gr.Add(
 		func() error {
-			return parcaserver.ListenAndServe(
-				ctx,
-				logger,
-				flags.HTTPAddress,
-				flags.CORSAllowedOrigins,
-				flags.PathPrefix,
-				server.RegisterableFunc(func(ctx context.Context, srv *grpc.Server, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
-					debuginfopb.RegisterDebuginfoServiceServer(srv, dbginfo)
-					profilestorepb.RegisterProfileStoreServiceServer(srv, s)
-					profilestorepb.RegisterAgentsServiceServer(srv, s)
-					querypb.RegisterQueryServiceServer(srv, q)
-					scrapepb.RegisterScrapeServiceServer(srv, m)
+			var err error
 
-					if err := debuginfopb.RegisterDebuginfoServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
-						return err
-					}
+			pprof.Do(ctx, pprof.Labels("parca_component", "http_server"), func(ctx context.Context) {
+				err = parcaserver.ListenAndServe(
+					ctx,
+					logger,
+					flags.HTTPAddress,
+					flags.CORSAllowedOrigins,
+					flags.PathPrefix,
+					server.RegisterableFunc(func(ctx context.Context, srv *grpc.Server, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
+						debuginfopb.RegisterDebuginfoServiceServer(srv, dbginfo)
+						profilestorepb.RegisterProfileStoreServiceServer(srv, s)
+						profilestorepb.RegisterAgentsServiceServer(srv, s)
+						querypb.RegisterQueryServiceServer(srv, q)
+						scrapepb.RegisterScrapeServiceServer(srv, m)
 
-					if err := profilestorepb.RegisterProfileStoreServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
-						return err
-					}
+						if err := debuginfopb.RegisterDebuginfoServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+							return err
+						}
 
-					if err := profilestorepb.RegisterAgentsServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
-						return err
-					}
+						if err := profilestorepb.RegisterProfileStoreServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+							return err
+						}
 
-					if err := querypb.RegisterQueryServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
-						return err
-					}
+						if err := profilestorepb.RegisterAgentsServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+							return err
+						}
 
-					if err := scrapepb.RegisterScrapeServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
-						return err
-					}
+						if err := querypb.RegisterQueryServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+							return err
+						}
 
-					return nil
-				}),
-			)
+						if err := scrapepb.RegisterScrapeServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+							return err
+						}
+
+						return nil
+					}),
+				)
+			})
+
+			return err
 		},
 		func(_ error) {
 			ctx, cancel := context.WithTimeout(ctx, 30*time.Second) // TODO make this a graceful shutdown config setting
