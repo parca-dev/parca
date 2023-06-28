@@ -14,14 +14,13 @@
 import {tryLoadAndStartRecorder} from '@alwaysmeticulous/recorder-loader';
 import {createRoot} from 'react-dom/client';
 
+import {isDevModeOrPreview} from '@parca/utilities';
+
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
-const shouldEnableMeticulousRecorder =
-  process.env.NODE_ENV === 'development' || process.env.VERCEL_ENV === 'preview';
-
 async function startApp() {
-  if (shouldEnableMeticulousRecorder) {
+  if (isDevModeOrPreview()) {
     // Start the Meticulous recorder before you initialise your app.
     // Note: all errors are caught and logged, so no need to surround with try/catch
     await tryLoadAndStartRecorder({

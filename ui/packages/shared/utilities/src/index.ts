@@ -93,8 +93,8 @@ export const valueFormatter = (num: bigint | number, unit: string, digits: numbe
     .replace(rx, '$1')}${format[i].symbol}`;
 };
 
-export const isDevMode = (): boolean => {
-  return process.env.NODE_ENV === 'development';
+export const isDevModeOrPreview = (): boolean => {
+  return process.env.NODE_ENV === 'development' || process.env.VERCEL_ENV === 'preview';
 };
 export const getLastItem = (thePath: string | undefined): string | undefined => {
   if (thePath === undefined || thePath === '') return;
