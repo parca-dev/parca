@@ -42,7 +42,7 @@ jobs:
     steps:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
-      - uses: bufbuild/buf-setup-action@3d89ae03696c6ff9978a9b79e72f9a16de514968 # v1.22.0
+      - uses: bufbuild/buf-setup-action@a2450ddf330ebcbbb88645837933e7141568fd09 # v1.23.1
 
       - name: Generate
         run:
