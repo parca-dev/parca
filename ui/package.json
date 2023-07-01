@@ -73,7 +73,7 @@
     "@types/command-line-args": "^5.2.0",
     "@types/jest": "29.5.2",
     "@types/node": "18.16.18",
-    "@types/react": "18.2.13",
+    "@types/react": "18.2.14",
     "@types/react-dom": "18.2.6",
     "@typescript-eslint/eslint-plugin": "^5.45.1",
     "@typescript-eslint/parser": "^5.45.1",
