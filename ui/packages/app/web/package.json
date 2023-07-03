@@ -20,6 +20,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@alwaysmeticulous/recorder-loader": "^2.63.0",
     "@headlessui/react": "1.7.15",
     "@parca/client": "^0.16.76",
     "@parca/components": "^0.16.157",
