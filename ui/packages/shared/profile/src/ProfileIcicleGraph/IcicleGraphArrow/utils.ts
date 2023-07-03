@@ -78,14 +78,13 @@ export function nodeLabel(table: Table<any>, row: number, showBinaryName: boolea
   //return fallback === '' ? '<unknown>' : fallback;
 }
 
-export const extractFeature = (table: Table<any>, row: number): Feature => {
-  const name = nodeLabel(table, row, false).trim();
-  if (name.startsWith('runtime') || name === 'root') {
+export const extractFeature = (mapping: string): Feature => {
+  if (mapping.startsWith('runtime') || mapping === 'root') {
     return {name: 'runtime', type: FEATURE_TYPES.Runtime};
   }
 
-  if (binaryName != null) {
-    return {name: binaryName, type: FEATURE_TYPES.Binary};
+  if (mapping != null && mapping !== '') {
+    return {name: mapping, type: FEATURE_TYPES.Binary};
   }
 
   return {name: EVERYTHING_ELSE, type: FEATURE_TYPES.Misc};

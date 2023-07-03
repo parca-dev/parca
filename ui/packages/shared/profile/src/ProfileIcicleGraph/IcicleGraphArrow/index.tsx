@@ -19,6 +19,7 @@ import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {
   FEATURE_TYPES,
   FeaturesMap,
+  getColorForFeature,
   selectDarkMode,
   setHoveringNode,
   useAppDispatch,
@@ -35,6 +36,7 @@ import {
 import GraphTooltip from '../../GraphTooltip';
 import ColorStackLegend from './ColorStackLegend';
 import {IcicleNode, RowHeight} from './IcicleGraphNodes';
+import {extractFeature} from './utils';
 
 export const FIELD_MAPPING_FILE = 'mapping_file';
 export const FIELD_MAPPING_BUILD_ID = 'mapping_build_id';
@@ -82,8 +84,9 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
 
   const mappings = useMemo(() => {
+    // Reading the mappings from the dictionary that contains all mapping strings.
     const mappingsDict: Vector<Dictionary> | null = table.getChild(FIELD_MAPPING_FILE);
-    return Array.from(mappingsDict?.data.values() ?? [])
+    const mappings = Array.from(mappingsDict?.data.values() ?? [])
       .map((mapping): string[] => {
         const dict = mapping.dictionary;
         const len = dict?.data.length ?? 0;
@@ -94,19 +97,41 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
         }
         return values;
       })
-      .flat()
-      .sort((a, b) => a.localeCompare(b));
+      .flat();
+
+    // We add a EVERYTHING ELSE mapping to the list.
+    mappings.push('');
+
+    // We look through the function names to find out if there's a runtime function.
+    const functionNamesDict: Vector<Dictionary> | null = table.getChild(FIELD_FUNCTION_NAME);
+    // TODO: There must be a better way to do this. Somehow read the function name dictionary rather than iterating over all rows.
+    for (let i = 0; i < table.numRows; i++) {
+      const fn: string | null = functionNamesDict?.get(i);
+      if (fn?.startsWith('runtime') === true) {
+        mappings.push('runtime');
+        break;
+      }
+    }
+
+    // We sort the mappings alphabetically to make sure that the order is always the same.
+    mappings.sort((a, b) => a.localeCompare(b));
+    return mappings;
   }, [table]);
 
+  // TODO: Somehow figure out how to add runtime to this, if stacks are present.
+  // Potentially read the function name dictionary and check if it contains strings starting with runtime.
   const mappingFeatures = useMemo(() => {
-    const features: FeaturesMap = {
-      runtime: FEATURE_TYPES.Runtime,
-    };
-    mappings.forEach(mapping => {
-      features[mapping] = FEATURE_TYPES.Binary;
+    return mappings.map(mapping => extractFeature(mapping));
+  }, [mappings]);
+
+  // TODO: Unify with mappingFeatures
+  const mappingColors = useMemo(() => {
+    const colors = {};
+    Object.entries(mappingFeatures).forEach(([_, feature]) => {
+      colors[feature.name] = getColorForFeature(feature.name, isDarkMode, colorProfile);
     });
-    return features;
-  }, [mappings, colorProfile]);
+    return colors;
+  }, [colorProfile, isDarkMode, mappingFeatures]);
 
   useEffect(() => {
     if (ref.current != null) {
@@ -136,7 +161,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
         <option value="diff">Diff</option>
       </select>
       <ColorStackLegend
-        mappingsFeatures={mappingFeatures}
+        mappingColors={mappingColors}
         navigateTo={navigateTo}
         compareMode={compareMode}
       />
@@ -159,6 +184,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
             <IcicleNode
               table={table}
               row={0} // root is always row 0 in the arrow record
+              mappingColors={mappingColors}
               x={0}
               y={0}
               totalWidth={width}

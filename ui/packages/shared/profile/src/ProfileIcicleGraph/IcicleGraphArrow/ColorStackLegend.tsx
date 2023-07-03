@@ -22,17 +22,17 @@ import {EVERYTHING_ELSE, FeaturesMap} from '@parca/store';
 import type {NavigateFunction} from '@parca/utilities';
 
 interface Props {
-  mappingsFeatures: FeaturesMap;
+  mappingColors: FeaturesMap;
   navigateTo?: NavigateFunction;
   compareMode?: boolean;
 }
 
 const ColorStackLegend = ({
-  mappingsFeatures,
+  mappingColors,
   navigateTo,
   compareMode = false,
 }: Props): React.JSX.Element => {
-  if (mappingsFeatures === undefined) {
+  if (mappingColors === undefined) {
     return <></>;
   }
 
@@ -41,12 +41,12 @@ const ColorStackLegend = ({
   );
   const [currentSearchString, setSearchString] = useURLState({param: 'search_string', navigateTo});
 
-  if (Object.entries(mappingsFeatures).length === 0) {
+  if (Object.entries(mappingColors).length === 0) {
     return <></>;
   }
 
   const stackColorArray = useMemo(() => {
-    return Object.entries(mappingsFeatures).sort(([featureA], [featureB]) => {
+    return Object.entries(mappingColors).sort(([featureA], [featureB]) => {
       if (featureA === EVERYTHING_ELSE) {
         return 1;
       }
@@ -55,7 +55,7 @@ const ColorStackLegend = ({
       }
       return featureA?.localeCompare(featureB ?? '') ?? 0;
     });
-  }, [mappingsFeatures]);
+  }, [mappingColors]);
 
   if (colorProfileName === 'default' || compareMode) {
     return <></>;

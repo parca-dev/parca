@@ -87,7 +87,7 @@ const findAColor = (colorIndex: number, colors: ColorsDuo[]): ColorsDuo => {
   // TODO: add some logic to find unallocated colors if this index is already allocated to another feature for better color distribution.
 };
 
-const getColorForFeature = (
+export const getColorForFeature = (
   feature: string,
   isDarkMode: boolean,
   colorProfileName: ColorProfileName

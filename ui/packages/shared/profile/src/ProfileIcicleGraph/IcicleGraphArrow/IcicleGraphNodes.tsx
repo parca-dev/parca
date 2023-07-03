@@ -17,10 +17,22 @@ import {Table} from 'apache-arrow';
 import cx from 'classnames';
 
 import {useKeyDown} from '@parca/components';
-import {selectBinaries, setHoveringRow, useAppDispatch, useAppSelector} from '@parca/store';
-import {isSearchMatch, scaleLinear} from '@parca/utilities';
+import {
+  EVERYTHING_ELSE,
+  selectBinaries,
+  setHoveringRow,
+  useAppDispatch,
+  useAppSelector,
+} from '@parca/store';
+import {getLastItem, isSearchMatch, scaleLinear} from '@parca/utilities';
 
-import {FIELD_CHILDREN, FIELD_CUMULATIVE, FIELD_DIFF, FIELD_FUNCTION_NAME} from './index';
+import {
+  FIELD_CHILDREN,
+  FIELD_CUMULATIVE,
+  FIELD_DIFF,
+  FIELD_FUNCTION_NAME,
+  FIELD_MAPPING_FILE,
+} from './index';
 import {nodeLabel} from './utils';
 
 export const RowHeight = 26;
@@ -28,6 +40,7 @@ export const RowHeight = 26;
 interface IcicleGraphNodesProps {
   table: Table<any>;
   row: number;
+  mappingColors: mappingColors;
   children: number[];
   x: number;
   y: number;
@@ -46,6 +59,7 @@ interface IcicleGraphNodesProps {
 export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
   table,
   children,
+  mappingColors,
   x,
   y,
   xScale,
@@ -82,6 +96,7 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
         key={`node-${level}-${i}`}
         table={table}
         row={child}
+        mappingColors={mappingColors}
         x={xStart}
         y={0}
         totalWidth={totalWidth}
@@ -102,6 +117,10 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
   return <g transform={`translate(${x}, ${y})`}>{childrenElements}</g>;
 });
 
+interface mappingColors {
+  [key: string]: string;
+}
+
 interface IcicleNodeProps {
   x: number;
   y: number;
@@ -111,6 +130,7 @@ interface IcicleNodeProps {
   level: number;
   table: Table<any>;
   row: number;
+  mappingColors: mappingColors;
   path: string[];
   total: bigint;
   setCurPath: (path: string[]) => void;
@@ -134,6 +154,7 @@ const fadedIcicleRectStyles = {
 export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   table,
   row,
+  mappingColors,
   x,
   y,
   height,
@@ -152,10 +173,14 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const {isShiftDown} = useKeyDown();
   const dispatch = useAppDispatch();
 
+  // get the columns to read from
+  const mappingColumn = table.getChild(FIELD_MAPPING_FILE);
   const functionNameColumn = table.getChild(FIELD_FUNCTION_NAME);
   const cumulativeColumn = table.getChild(FIELD_CUMULATIVE);
   const diffColumn = table.getChild(FIELD_DIFF);
-
+  // get the actual values from the columns
+  const mappingFile: string | null = mappingColumn?.get(row);
+  const functionName: string | null = functionNameColumn?.get(row);
   const cumulative: bigint = cumulativeColumn?.get(row);
   const children: number[] = Array.from(table.getChild(FIELD_CHILDREN)?.get(row) ?? []);
 
@@ -238,6 +263,14 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     dispatch(setHoveringRow(undefined));
   };
 
+  // To get the color we first check if the function name starts with 'runtime'.
+  // If it does, we color it as runtime. Otherwise, we check the mapping file.
+  // If there is no mapping file, we color it as 'everything else'.
+  const color =
+    functionName?.startsWith('runtime') === true
+      ? mappingColors.runtime
+      : mappingColors[getLastItem(mappingFile ?? '') ?? EVERYTHING_ELSE];
+
   return (
     <>
       <g
@@ -255,7 +288,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
           width={width}
           height={height}
           style={{
-            fill: '#929FEB', // TODO: Introduce color coding for binaries again
+            fill: color,
           }}
           className={cx('stroke-white dark:stroke-gray-700', {
             'opacity-50': isHighlightEnabled && !isHighlighted,
@@ -273,6 +306,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
         <IcicleGraphNodes
           table={table}
           row={row}
+          mappingColors={mappingColors}
           children={children}
           x={x}
           y={RowHeight}
