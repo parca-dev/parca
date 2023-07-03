@@ -5,7 +5,7 @@ go 1.20
 require (
 	cloud.google.com/go/storage v1.30.1
 	github.com/alecthomas/kong v0.8.0
-	github.com/apache/arrow/go/v13 v13.0.0-20230625201601-3b06a4c9f3f8
+	github.com/apache/arrow/go/v13 v13.0.0-20230702165929-575b0957a601
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
