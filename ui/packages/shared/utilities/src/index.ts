@@ -94,7 +94,7 @@ export const valueFormatter = (num: bigint | number, unit: string, digits: numbe
 };
 
 export const isDevModeOrPreview = (): boolean => {
-  return process.env.NODE_ENV === 'development' || process.env.VERCEL_ENV === 'preview';
+  return process.env.NODE_ENV === 'development' || process.env.REACT_APP_VERCEL_ENV === 'preview';
 };
 export const getLastItem = (thePath: string | undefined): string | undefined => {
   if (thePath === undefined || thePath === '') return;
