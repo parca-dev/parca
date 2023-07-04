@@ -5,7 +5,9 @@ function(version='v0.0.3-alpha.2')
     metadata: {
       name: 'parca',
       labels: {
-        'pod-security.kubernetes.io/enforce': 'baseline',
+        'pod-security.kubernetes.io/enforce': 'privileged',
+        'pod-security.kubernetes.io/audit': 'privileged',
+        'pod-security.kubernetes.io/warn': 'privileged',
       },
     },
   };
