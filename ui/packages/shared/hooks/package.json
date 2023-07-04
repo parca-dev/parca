@@ -1,0 +1,23 @@
+{
+  "name": "@parca/hooks",
+  "version": "0.0.11",
+  "description": "A library containing React hooks used in the Parca UI",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "jest --coverage --config ../../../jest.config.js ./src/*",
+    "prepublish": "yarn build",
+    "build": "tsc",
+    "watch": "tsc-watch"
+  },
+  "dependencies": {
+    "@parca/client": "^0.16.76",
+    "@rehooks/local-storage": "^2.4.4"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

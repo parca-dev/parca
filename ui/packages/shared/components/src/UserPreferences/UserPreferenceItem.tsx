@@ -13,7 +13,7 @@
 
 import cx from 'classnames';
 
-import useUserPreference, {UserPreferenceDetails} from '@parca/functions/useUserPreference';
+import {useUserPreference, type UserPreferenceDetails} from '@parca/hooks';
 
 interface GenericInputProps {
   id: string;
@@ -34,7 +34,7 @@ const GenericInput = ({
     case 'boolean':
       return (
         <input
-          className="bg-inherit border disabled:cursor-not-allowed mt-[5px]"
+          className="mt-[5px] border bg-inherit disabled:cursor-not-allowed"
           id={id}
           type="checkbox"
           checked={value}
@@ -45,7 +45,7 @@ const GenericInput = ({
     case 'number':
       return (
         <input
-          className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 p-1 px-2 w-20 disabled:cursor-not-allowed rounded-md"
+          className="w-20 rounded-md border border-gray-200 bg-gray-50 p-1 px-2 disabled:cursor-not-allowed dark:border-gray-600 dark:bg-gray-900"
           id={id}
           type="number"
           min="0"
@@ -77,7 +77,7 @@ function UserPreferenceItem<T>({
 
   return (
     <div
-      className={cx('flex gap-2 mb-1 items-start', {
+      className={cx('mb-1 flex items-start gap-2', {
         [className]: className,
         'opacity-50': disabled,
       })}

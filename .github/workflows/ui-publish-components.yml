@@ -41,7 +41,7 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GH_PAT_UI }}
     steps:
-      - uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f # v3.4.0
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
         with:
           fetch-depth: "0"
           token: ${{ secrets.GH_PAT_UI }}
@@ -69,9 +69,9 @@ jobs:
           git config --global user.name "${{ github.actor }}"
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
 
-      - name: Bootstrap lerna
+      - name: Install packages with yarn
         working-directory: ui
-        run: yarn bootstrap
+        run: yarn install
 
       - name: Build Packages
         working-directory: ui

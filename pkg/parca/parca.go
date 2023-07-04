@@ -18,23 +18,27 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	goruntime "runtime"
+	"runtime/pprof"
 	"strings"
 	"syscall"
 	"time"
 
-	"github.com/apache/arrow/go/v10/arrow/memory"
-	"github.com/dgraph-io/badger/v3"
+	"github.com/apache/arrow/go/v13/arrow/memory"
+	"github.com/dgraph-io/badger/v4"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/oklog/run"
 	"github.com/polarsignals/frostdb"
+	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/polarsignals/frostdb/query"
 	"github.com/prometheus/client_golang/prometheus"
+	promconfig "github.com/prometheus/common/config"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/thanos-io/objstore"
@@ -65,7 +69,7 @@ import (
 	queryservice "github.com/parca-dev/parca/pkg/query"
 	"github.com/parca-dev/parca/pkg/scrape"
 	"github.com/parca-dev/parca/pkg/server"
-	"github.com/parca-dev/parca/pkg/signedupload"
+	"github.com/parca-dev/parca/pkg/signedrequests"
 	"github.com/parca-dev/parca/pkg/symbolizer"
 )
 
@@ -112,6 +116,8 @@ type Flags struct {
 	ExternalLabel      map[string]string `kong:"help='Label(s) to attach to all profiles in scraper-only mode.'"`
 
 	ExperimentalArrow bool `default:"false" help:"EXPERIMENTAL: Enables Arrow ingestion, this will reduce CPU usage but will increase memory usage."`
+
+	Hidden FlagsHidden `embed:"" prefix:""`
 }
 
 type FlagsLogs struct {
@@ -144,6 +150,11 @@ type FlagsDebuginfo struct {
 type FlagsDebuginfod struct {
 	UpstreamServers    []string      `default:"https://debuginfod.elfutils.org" help:"Upstream debuginfod servers. Defaults to https://debuginfod.elfutils.org. It is an ordered list of servers to try. Learn more at https://sourceware.org/elfutils/Debuginfod.html"`
 	HTTPRequestTimeout time.Duration `default:"5m" help:"Timeout duration for HTTP request to upstream debuginfod server. Defaults to 5m"`
+}
+
+// FlagsHidden contains hidden flags intended only for debugging.
+type FlagsHidden struct {
+	DebugNormalizeAddresses bool `kong:"help='Normalize sampled addresses.',default='true',hidden=''"`
 }
 
 // Run the parca server.
@@ -202,10 +213,10 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	var signedUploadClient signedupload.Client
+	var signedRequestsClient signedrequests.Client
 	if flags.Debuginfo.UploadsSignedURL {
 		var err error
-		signedUploadClient, err = signedupload.NewClient(
+		signedRequestsClient, err = signedrequests.NewClient(
 			context.Background(),
 			cfg.ObjectStorage.Bucket,
 		)
@@ -215,7 +226,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			return err
 		}
 
-		defer signedUploadClient.Close()
+		defer signedRequestsClient.Close()
 	}
 
 	var mStr metastorepb.MetastoreServiceServer
@@ -259,7 +270,12 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	}
 
 	if flags.EnablePersistence {
-		frostdbOptions = append(frostdbOptions, frostdb.WithBucketStorage(objstore.NewPrefixedBucket(bucket, "blocks")))
+		frostdbOptions = append(
+			frostdbOptions,
+			frostdb.WithReadWriteStorage(
+				frostdb.NewDefaultObjstoreBucket(objstore.NewPrefixedBucket(bucket, "blocks")),
+			),
+		)
 	}
 
 	if flags.Storage.EnableWAL {
@@ -272,31 +288,27 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	if err := col.ReplayWALs(context.Background()); err != nil {
-		level.Error(logger).Log("msg", "failed to replay WAL", "err", err)
-		return err
-	}
-
 	colDB, err := col.DB(ctx, "parca")
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to load database", "err", err)
 		return err
 	}
 
-	schema, err := parcacol.Schema()
-	if err != nil {
-		level.Error(logger).Log("msg", "failed to get schema", "err", err)
-		return err
-	}
-
+	def := parcacol.SchemaDefinition()
 	table, err := colDB.Table("stacktraces",
 		frostdb.NewTableConfig(
-			schema,
+			def,
 			frostdb.WithRowGroupSize(flags.Storage.RowGroupSize),
 		),
 	)
 	if err != nil {
 		level.Error(logger).Log("msg", "create table", "err", err)
+		return err
+	}
+
+	schema, err := dynparquet.SchemaFromDefinition(def)
+	if err != nil {
+		level.Error(logger).Log("msg", "schema from definition", "err", err)
 		return err
 	}
 
@@ -306,6 +318,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		metastore,
 		table,
 		schema,
+		flags.Hidden.DebugNormalizeAddresses,
 	)
 	conn, err := grpc.Dial(flags.ProfileShareServer, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
 	if err != nil {
@@ -344,7 +357,10 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 
 	var debuginfodClient debuginfo.DebuginfodClient = debuginfo.NopDebuginfodClient{}
 	if len(flags.Debuginfod.UpstreamServers) > 0 {
-		httpDebugInfoClient, err := debuginfo.NewHTTPDebuginfodClient(logger, flags.Debuginfod.UpstreamServers, flags.Debuginfod.HTTPRequestTimeout)
+		httpDebugInfoClient, err := debuginfo.NewHTTPDebuginfodClient(logger, flags.Debuginfod.UpstreamServers, &http.Client{
+			Transport: promconfig.NewUserAgentRoundTripper(fmt.Sprintf("parca.dev/debuginfod-client/%s", version), http.DefaultTransport),
+			Timeout:   flags.Debuginfod.HTTPRequestTimeout,
+		})
 		if err != nil {
 			level.Error(logger).Log("msg", "failed to initialize debuginfod http client", "err", err)
 			return err
@@ -362,7 +378,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	}
 
 	debuginfoBucket := objstore.NewPrefixedBucket(bucket, "debuginfo")
-	prefixedSignedUploadClient := signedupload.NewPrefixedClient(signedUploadClient, "debuginfo")
+	prefixedSignedRequestsClient := signedrequests.NewPrefixedClient(signedRequestsClient, "debuginfo")
 	debuginfoMetadata := debuginfo.NewObjectStoreMetadata(logger, debuginfoBucket)
 	dbginfo, err := debuginfo.NewStore(
 		tracerProvider.Tracer("debuginfo"),
@@ -372,7 +388,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		debuginfodClient,
 		debuginfo.SignedUpload{
 			Enabled: flags.Debuginfo.UploadsSignedURL,
-			Client:  prefixedSignedUploadClient,
+			Client:  prefixedSignedRequestsClient,
 		},
 		flags.Debuginfo.UploadMaxDuration,
 		flags.Debuginfo.UploadMaxSize,
@@ -420,7 +436,13 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		ctx, cancel := context.WithCancel(ctx)
 		gr.Add(
 			func() error {
-				return s.Run(ctx, symbolizationInterval)
+				var err error
+
+				pprof.Do(ctx, pprof.Labels("parca_component", "symbolizer"), func(ctx context.Context) {
+					err = s.Run(ctx, symbolizationInterval)
+				})
+
+				return err
 			},
 			func(_ error) {
 				level.Debug(logger).Log("msg", "symbolizer server shutting down")
@@ -429,7 +451,13 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	}
 	gr.Add(
 		func() error {
-			return discoveryManager.Run()
+			var err error
+
+			pprof.Do(ctx, pprof.Labels("parca_component", "discovery"), func(_ context.Context) {
+				err = discoveryManager.Run()
+			})
+
+			return err
 		},
 		func(_ error) {
 			level.Debug(logger).Log("msg", "discovery manager exiting")
@@ -438,7 +466,13 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	)
 	gr.Add(
 		func() error {
-			return m.Run(discoveryManager.SyncCh())
+			var err error
+
+			pprof.Do(ctx, pprof.Labels("parca_component", "scraper"), func(_ context.Context) {
+				err = m.Run(discoveryManager.SyncCh())
+			})
+
+			return err
 		},
 		func(_ error) {
 			level.Debug(logger).Log("msg", "scrape manager exiting")
@@ -447,7 +481,13 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	)
 	gr.Add(
 		func() error {
-			return cfgReloader.Run(ctx)
+			var err error
+
+			pprof.Do(ctx, pprof.Labels("parca_component", "config_reloader"), func(ctx context.Context) {
+				err = cfgReloader.Run(ctx)
+			})
+
+			return err
 		},
 		func(_ error) {
 			level.Debug(logger).Log("msg", "config file reloader exiting")
@@ -457,42 +497,48 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	parcaserver := server.NewServer(reg, version)
 	gr.Add(
 		func() error {
-			return parcaserver.ListenAndServe(
-				ctx,
-				logger,
-				flags.HTTPAddress,
-				flags.CORSAllowedOrigins,
-				flags.PathPrefix,
-				server.RegisterableFunc(func(ctx context.Context, srv *grpc.Server, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
-					debuginfopb.RegisterDebuginfoServiceServer(srv, dbginfo)
-					profilestorepb.RegisterProfileStoreServiceServer(srv, s)
-					profilestorepb.RegisterAgentsServiceServer(srv, s)
-					querypb.RegisterQueryServiceServer(srv, q)
-					scrapepb.RegisterScrapeServiceServer(srv, m)
+			var err error
 
-					if err := debuginfopb.RegisterDebuginfoServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
-						return err
-					}
+			pprof.Do(ctx, pprof.Labels("parca_component", "http_server"), func(ctx context.Context) {
+				err = parcaserver.ListenAndServe(
+					ctx,
+					logger,
+					flags.HTTPAddress,
+					flags.CORSAllowedOrigins,
+					flags.PathPrefix,
+					server.RegisterableFunc(func(ctx context.Context, srv *grpc.Server, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
+						debuginfopb.RegisterDebuginfoServiceServer(srv, dbginfo)
+						profilestorepb.RegisterProfileStoreServiceServer(srv, s)
+						profilestorepb.RegisterAgentsServiceServer(srv, s)
+						querypb.RegisterQueryServiceServer(srv, q)
+						scrapepb.RegisterScrapeServiceServer(srv, m)
 
-					if err := profilestorepb.RegisterProfileStoreServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
-						return err
-					}
+						if err := debuginfopb.RegisterDebuginfoServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+							return err
+						}
 
-					if err := profilestorepb.RegisterAgentsServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
-						return err
-					}
+						if err := profilestorepb.RegisterProfileStoreServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+							return err
+						}
 
-					if err := querypb.RegisterQueryServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
-						return err
-					}
+						if err := profilestorepb.RegisterAgentsServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+							return err
+						}
 
-					if err := scrapepb.RegisterScrapeServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
-						return err
-					}
+						if err := querypb.RegisterQueryServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+							return err
+						}
 
-					return nil
-				}),
-			)
+						if err := scrapepb.RegisterScrapeServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+							return err
+						}
+
+						return nil
+					}),
+				)
+			})
+
+			return err
 		},
 		func(_ error) {
 			ctx, cancel := context.WithTimeout(ctx, 30*time.Second) // TODO make this a graceful shutdown config setting
@@ -534,8 +580,13 @@ func runScraper(
 		return fmt.Errorf("parca scraper mode needs to have a --store-address")
 	}
 
-	metrics := grpc_prometheus.NewClientMetrics()
-	metrics.EnableClientHandlingTimeHistogram()
+	metrics := grpc_prometheus.NewClientMetrics(
+		grpc_prometheus.WithClientHandlingTimeHistogram(
+			grpc_prometheus.WithHistogramOpts(&prometheus.HistogramOpts{
+				NativeHistogramBucketFactor: 1.1,
+			}),
+		),
+	)
 	reg.MustRegister(metrics)
 
 	opts := []grpc.DialOption{

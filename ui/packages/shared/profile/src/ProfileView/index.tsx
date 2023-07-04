@@ -33,13 +33,13 @@ import {
   useParcaContext,
   useURLState,
 } from '@parca/components';
-import {useContainerDimensions} from '@parca/dynamicsize';
-import {getNewSpanColor} from '@parca/functions';
+import {useContainerDimensions} from '@parca/hooks';
 import {selectDarkMode, useAppSelector} from '@parca/store';
+import {getNewSpanColor} from '@parca/utilities';
 
 import {Callgraph} from '../';
 import {jsonToDot} from '../Callgraph/utils';
-import ProfileIcicleGraph, {ResizeHandler} from '../ProfileIcicleGraph';
+import ProfileIcicleGraph from '../ProfileIcicleGraph';
 import {ProfileSource} from '../ProfileSource';
 import {TopTable} from '../TopTable';
 import ProfileShareButton from '../components/ProfileShareButton';
@@ -53,22 +53,30 @@ type NavigateFunction = (path: string, queryParams: any, options?: {replace?: bo
 export interface FlamegraphData {
   loading: boolean;
   data?: Flamegraph;
+  total?: bigint;
+  filtered?: bigint;
   error?: any;
 }
 
 export interface TopTableData {
   loading: boolean;
   data?: Top;
+  total?: bigint;
+  filtered?: bigint;
   error?: any;
 }
 
 interface CallgraphData {
   loading: boolean;
   data?: CallgraphType;
+  total?: bigint;
+  filtered?: bigint;
   error?: any;
 }
 
 export interface ProfileViewProps {
+  total: bigint;
+  filtered: bigint;
   flamegraphData?: FlamegraphData;
   topTableData?: TopTableData;
   callgraphData?: CallgraphData;
@@ -78,7 +86,7 @@ export interface ProfileViewProps {
   navigateTo?: NavigateFunction;
   compare?: boolean;
   onDownloadPProf: () => void;
-  onFlamegraphContainerResize?: ResizeHandler;
+  pprofDownloading?: boolean;
 }
 
 function arrayEquals<T>(a: T[], b: T[]): boolean {
@@ -91,6 +99,8 @@ function arrayEquals<T>(a: T[], b: T[]): boolean {
 }
 
 export const ProfileView = ({
+  total,
+  filtered,
   flamegraphData,
   topTableData,
   callgraphData,
@@ -99,7 +109,7 @@ export const ProfileView = ({
   queryClient,
   navigateTo,
   onDownloadPProf,
-  onFlamegraphContainerResize,
+  pprofDownloading,
 }: ProfileViewProps): JSX.Element => {
   const {ref, dimensions} = useContainerDimensions();
   const [curPath, setCurPath] = useState<string[]>([]);
@@ -197,7 +207,7 @@ export const ProfileView = ({
   if (flamegraphData?.error !== null) {
     console.error('Error: ', flamegraphData?.error);
     return (
-      <div className="p-10 flex justify-center">
+      <div className="flex justify-center p-10">
         An error occurred: {flamegraphData?.error.message}
       </div>
     );
@@ -233,8 +243,9 @@ export const ProfileView = ({
               curPath={curPath}
               setNewCurPath={setNewCurPath}
               graph={flamegraphData.data}
+              total={total}
+              filtered={filtered}
               sampleUnit={sampleUnit}
-              onContainerResize={onFlamegraphContainerResize}
               navigateTo={navigateTo}
               loading={flamegraphData.loading}
               setActionButtons={setActionButtons}
@@ -303,8 +314,8 @@ export const ProfileView = ({
       <div className="py-3">
         <Card>
           <Card.Body>
-            <div className="flex py-3 w-full">
-              <div className="lg:w-1/2 flex space-x-4">
+            <div className="flex w-full py-3">
+              <div className="flex space-x-4 lg:w-1/2">
                 <div className="flex space-x-1">
                   {profileSource !== undefined && queryClient !== undefined ? (
                     <ProfileShareButton
@@ -314,20 +325,22 @@ export const ProfileView = ({
                   ) : null}
 
                   <Button
-                    className="!w-auto"
                     color="neutral"
                     onClick={e => {
                       e.preventDefault();
                       onDownloadPProf();
                     }}
+                    disabled={pprofDownloading}
                   >
-                    Download pprof
+                    {pprofDownloading != null && pprofDownloading
+                      ? 'Downloading'
+                      : 'Download pprof'}
                   </Button>
                 </div>
                 <FilterByFunctionButton navigateTo={navigateTo} />
               </div>
 
-              <div className="flex ml-auto gap-2">
+              <div className="ml-auto flex gap-2">
                 <ViewSelector
                   defaultValue=""
                   navigateTo={navigateTo}
@@ -349,7 +362,7 @@ export const ProfileView = ({
                     {provided => (
                       <div
                         ref={provided.innerRef}
-                        className="flex space-x-4 justify-between w-full"
+                        className="flex w-full justify-between space-x-4"
                         {...provided.droppableProps}
                       >
                         {dashboardItems.map((dashboardItem, index) => {
@@ -366,7 +379,7 @@ export const ProfileView = ({
                                   {...provided.draggableProps}
                                   key={dashboardItem}
                                   className={cx(
-                                    'border dark:bg-gray-700 rounded border-gray-300 dark:border-gray-500 p-3',
+                                    'rounded border border-gray-300 p-3 dark:border-gray-500 dark:bg-gray-700',
                                     isMultiPanelView ? 'w-1/2' : 'w-full',
                                     snapshot.isDragging ? 'bg-gray-200' : 'bg-white'
                                   )}

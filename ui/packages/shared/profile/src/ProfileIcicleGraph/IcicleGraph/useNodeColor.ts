@@ -13,8 +13,8 @@
 
 import {useMemo} from 'react';
 
-import {COLOR_PROFILES, diffColor} from '@parca/functions';
 import {EVERYTHING_ELSE, selectDarkMode, selectStackColors, useAppSelector} from '@parca/store';
+import {COLOR_PROFILES, diffColor} from '@parca/utilities';
 
 import type {ColoredFlamegraphNode} from './useColoredGraph';
 
@@ -29,8 +29,8 @@ const useNodeColor = ({data, compareMode}: Props): string => {
 
   const color: string = useMemo(() => {
     if (compareMode) {
-      const diff = parseFloat(data.diff);
-      const cumulative = parseFloat(data.cumulative);
+      const diff = data.diff;
+      const cumulative = data.cumulative;
       return diffColor(diff, cumulative, isDarkMode);
     }
 

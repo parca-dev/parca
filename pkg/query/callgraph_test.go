@@ -45,7 +45,7 @@ func TestGenerateCallgraph(t *testing.T) {
 		tracer,
 	)
 	metastore := metastore.NewInProcessClient(l)
-	normalizer := parcacol.NewNormalizer(metastore)
+	normalizer := parcacol.NewNormalizer(metastore, true)
 	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false)
 	require.NoError(t, err)
 
@@ -56,6 +56,7 @@ func TestGenerateCallgraph(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, res)
 
+	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 	require.Equal(t, int64(310797348), res.Cumulative, "Root cummulative value mismatch")
 
 	/*

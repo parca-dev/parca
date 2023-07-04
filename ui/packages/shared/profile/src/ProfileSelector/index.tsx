@@ -22,11 +22,12 @@ import {
   Card,
   DateTimeRange,
   DateTimeRangePicker,
+  IconButton,
   useGrpcMetadata,
 } from '@parca/components';
-import {getStepDuration, getStepDurationInMilliseconds} from '@parca/functions';
 import {CloseIcon} from '@parca/icons';
 import {Query} from '@parca/parser';
+import {getStepDuration, getStepDurationInMilliseconds} from '@parca/utilities';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
 import MatchersInput from '../MatchersInput/index';
@@ -188,9 +189,9 @@ const ProfileSelector = ({
   const compareDisabled = selectedProfileName === '' || querySelection.expression === undefined;
 
   return (
-    <Card>
-      <Card.Header className="flex space-x-2">
-        <div className="flex flex-wrap w-full justify-start space-x-2 space-y-1">
+    <Card className="overflow-visible">
+      <Card.Header className="flex !items-center space-x-2">
+        <div className="flex w-full flex-wrap items-center justify-start space-x-2 space-y-1">
           <div className="ml-2 mt-1">
             <ProfileTypeSelector
               profileTypesData={profileTypesData}
@@ -231,13 +232,7 @@ const ProfileSelector = ({
             </Button>
           </ButtonGroup>
         </div>
-        <div>
-          {comparing && (
-            <button type="button" onClick={() => closeProfile()}>
-              <CloseIcon />
-            </button>
-          )}
-        </div>
+        <div>{comparing && <IconButton onClick={() => closeProfile()} icon={<CloseIcon />} />}</div>
       </Card.Header>
       {
         <Card.Body>

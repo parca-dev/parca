@@ -5,7 +5,8 @@
     "module": "CommonJS",
     "strict": true,
     "isolatedModules": true,
-    "baseUrl": "."
+    "baseUrl": ".",
+    "target": "es2020"
   },
   "exclude": ["node_modules", "**/*.benchmark.tsx"],
   "ts-node": {

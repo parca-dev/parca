@@ -1,0 +1,17 @@
+apiVersion: pyrra.dev/v1alpha1
+kind: ServiceLevelObjective
+metadata:
+  name: parca-grpc-profiletypes-latency
+  namespace: parca
+  labels:
+    prometheus: k8s
+    role: alert-rules
+    pyrra.dev/team: parca
+spec:
+  target: '95'
+  window: 2w
+  indicator:
+    latency:
+      latency: 600ms
+      total:
+        metric: grpc_server_handling_seconds{grpc_service="parca.query.v1alpha1.QueryService",grpc_method="ProfileTypes"}

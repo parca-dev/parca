@@ -16,6 +16,7 @@ package query
 import (
 	"context"
 	"sort"
+	"sync"
 
 	"go.opentelemetry.io/otel/trace"
 
@@ -24,24 +25,21 @@ import (
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
-func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profile.Profile, nodeTrimFraction float32) (*querypb.Flamegraph, error) {
+func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profile.Profile, nodeTrimFraction float32, pool *sync.Pool) (*querypb.Flamegraph, error) {
+	ctx, span := tracer.Start(ctx, "GenerateFlamegraphTable")
+	defer span.End()
 	rootNode := &querypb.FlamegraphNode{}
 	current := rootNode
 
 	var height int32
 
-	tables := &tableConverter{
-		stringsSlice:   []string{},
-		stringsIndex:   map[string]uint32{},
-		mappingsSlice:  []*metastorev1alpha1.Mapping{},
-		mappingsIndex:  map[string]uint32{},
-		locationsSlice: []*metastorev1alpha1.Location{},
-		locationsIndex: map[string]uint32{},
-		functionsSlice: []*metastorev1alpha1.Function{},
-		functionsIndex: map[string]uint32{},
-	}
-
-	tables.AddString("") // Add empty string to the string table.
+	tables := pool.Get().(*tableConverter)
+	go func() {
+		<-ctx.Done()
+		tables.Reset()
+		pool.Put(tables)
+	}()
+	tables.AddString("") // Add empty string to the string table. This is expected by pprof.
 
 	for _, s := range p.Samples {
 		locations := s.Locations
@@ -52,7 +50,7 @@ func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profil
 		// Reverse walking the location as stacked location are like 3 > 2 > 1 > 0 where 0 is the root.
 		for i := len(locations) - 1; i >= 0; i-- {
 			tables.AddMapping(locations[i].Mapping)
-			li := tables.AddLocation(locations[i])
+			li := tables.AddProfileLocation(locations[i])
 			location := tables.locationsSlice[li-1]
 
 			nodes := tableLocationToTreeNodes(location, li)
@@ -115,19 +113,27 @@ func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profil
 		Function:    tables.Functions(),
 	}
 
-	for _, f := range flamegraph.Function {
-		// At this point we don't need the function's ID anymore, so we don't
-		// need to transfer it over the wire.
+	aggregatedFlamegraph := aggregateByFunctionTable(ctx, tracer, tables, flamegraph)
+
+	// Remove the IDs from the aggregated graph.
+	// The frontend doesn't need them, and they take up a lot of space.
+	for _, m := range aggregatedFlamegraph.Mapping {
+		m.Id = ""
+	}
+	for _, l := range aggregatedFlamegraph.Locations {
+		l.Id = ""
+	}
+	for _, f := range aggregatedFlamegraph.Function {
 		f.Id = ""
 	}
-
-	aggregatedFlamegraph := aggregateByFunctionTable(tables, flamegraph)
 
 	if nodeTrimFraction == 0 {
 		return aggregatedFlamegraph, nil
 	}
 
-	return TrimFlamegraph(ctx, tracer, aggregatedFlamegraph, nodeTrimFraction), nil
+	trimmedGraph := TrimFlamegraph(ctx, tracer, aggregatedFlamegraph, nodeTrimFraction)
+
+	return trimmedGraph, nil
 }
 
 type tableConverter struct {
@@ -141,18 +147,63 @@ type tableConverter struct {
 	functionsIndex map[string]uint32
 }
 
+func (c *tableConverter) Reset() {
+	c.stringsSlice = c.stringsSlice[:0]
+	for k := range c.stringsIndex {
+		delete(c.stringsIndex, k)
+	}
+	c.mappingsSlice = c.mappingsSlice[:0]
+	for k := range c.mappingsIndex {
+		delete(c.mappingsIndex, k)
+	}
+	c.locationsSlice = c.locationsSlice[:0]
+	for k := range c.locationsIndex {
+		delete(c.locationsIndex, k)
+	}
+	c.functionsSlice = c.functionsSlice[:0]
+	for k := range c.functionsIndex {
+		delete(c.functionsIndex, k)
+	}
+}
+
 // Strings return the table, slice more specifically, of all strings.
 func (c *tableConverter) Strings() []string {
 	return c.stringsSlice
 }
 
+// AddString to the string table and return the strings index in the table.
+func (c *tableConverter) AddString(s string) uint32 {
+	if i, ok := c.stringsIndex[s]; ok {
+		return i
+	}
+	c.stringsSlice = append(c.stringsSlice, s)
+	c.stringsIndex[s] = uint32(len(c.stringsSlice) - 1)
+	return c.stringsIndex[s]
+}
+
+func (c *tableConverter) GetString(index uint32) string {
+	if uint32(len(c.stringsSlice)) <= index {
+		return ""
+	}
+
+	return c.stringsSlice[index]
+}
+
 // Mappings return the table, slice more specifically, of all mappings.
 func (c *tableConverter) Mappings() []*metastorev1alpha1.Mapping {
-	for _, m := range c.mappingsSlice {
-		// Set all for unnecessary fields, for the frontend, to empty strings.
-		m.Id = ""
-	}
 	return c.mappingsSlice
+}
+
+func (c *tableConverter) GetMapping(index uint32) *metastorev1alpha1.Mapping {
+	if index == 0 {
+		return nil
+	}
+
+	if uint32(len(c.mappingsSlice)) <= (index - 1) {
+		return nil
+	}
+
+	return c.mappingsSlice[index-1]
 }
 
 // GetLocation by its index. Returns nil if index doesn't exist.
@@ -190,16 +241,6 @@ func (c *tableConverter) Functions() []*metastorev1alpha1.Function {
 	return c.functionsSlice
 }
 
-// AddString to the string table and return the strings index in the table.
-func (c *tableConverter) AddString(s string) uint32 {
-	if i, ok := c.stringsIndex[s]; ok {
-		return i
-	}
-	c.stringsSlice = append(c.stringsSlice, s)
-	c.stringsIndex[s] = uint32(len(c.stringsSlice) - 1)
-	return c.stringsIndex[s]
-}
-
 // AddMapping by its ID and only add it if it's not yet in the table.
 // Returns the mapping's index in the table.
 func (c *tableConverter) AddMapping(m *metastorev1alpha1.Mapping) uint32 {
@@ -207,6 +248,8 @@ func (c *tableConverter) AddMapping(m *metastorev1alpha1.Mapping) uint32 {
 		return 0
 	}
 	if i, ok := c.mappingsIndex[m.Id]; ok {
+		m.File = ""
+		m.BuildId = ""
 		return i
 	}
 
@@ -221,9 +264,9 @@ func (c *tableConverter) AddMapping(m *metastorev1alpha1.Mapping) uint32 {
 	return c.mappingsIndex[m.Id]
 }
 
-// AddLocation by its ID and only add it if it's not yet in the table.
-// Returns the locations's index in the table.
-func (c *tableConverter) AddLocation(l *profile.Location) uint32 {
+// AddProfileLocation by its ID and only add it if it's not yet in the table.
+// Returns the location's index in the table.
+func (c *tableConverter) AddProfileLocation(l *profile.Location) uint32 {
 	if i, ok := c.locationsIndex[l.ID]; ok {
 		return i
 	}
@@ -243,16 +286,24 @@ func (c *tableConverter) AddLocation(l *profile.Location) uint32 {
 	}
 
 	msl := &metastorev1alpha1.Location{
-		// Id Not important for the frontend
+		Id:           l.ID,
 		Address:      l.Address,
 		MappingIndex: mid,
 		IsFolded:     l.IsFolded,
 		Lines:        lines,
 	}
 
-	c.locationsSlice = append(c.locationsSlice, msl)
-	c.locationsIndex[l.ID] = uint32(len(c.locationsSlice))
-	return c.locationsIndex[l.ID]
+	return c.AddLocation(msl)
+}
+
+func (c *tableConverter) AddLocation(l *metastorev1alpha1.Location) uint32 {
+	if i, ok := c.locationsIndex[l.Id]; ok {
+		return i
+	}
+
+	c.locationsSlice = append(c.locationsSlice, l)
+	c.locationsIndex[l.Id] = uint32(len(c.locationsSlice))
+	return c.locationsIndex[l.Id]
 }
 
 // AddFunction by its ID and only add it if it's not yet in the table.
@@ -304,7 +355,9 @@ type TableGetter interface {
 	GetFunction(index uint32) *metastorev1alpha1.Function
 }
 
-func aggregateByFunctionTable(tables TableGetter, fg *querypb.Flamegraph) *querypb.Flamegraph {
+func aggregateByFunctionTable(ctx context.Context, tracer trace.Tracer, tables TableGetter, fg *querypb.Flamegraph) *querypb.Flamegraph {
+	_, span := tracer.Start(ctx, "aggregateByFunctionTable")
+	defer span.End()
 	oldRootNode := &querypb.FlamegraphNode{
 		Cumulative: fg.Root.Cumulative,
 		Diff:       fg.Root.Diff,
@@ -314,6 +367,7 @@ func aggregateByFunctionTable(tables TableGetter, fg *querypb.Flamegraph) *query
 
 	it := NewFlamegraphIterator(oldRootNode)
 	tree := &querypb.Flamegraph{
+		//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 		Total:  fg.Total,
 		Height: fg.Height,
 		Root: &querypb.FlamegraphRootNode{
@@ -501,63 +555,150 @@ func (n FlamegraphChildren) Diff() int64 {
 	return diff
 }
 
-func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Flamegraph, thresholdRate float32) *querypb.Flamegraph {
-	ctx, span := tracer.Start(ctx, "trimFlamegraph")
+func TrimFlamegraph(ctx context.Context, tracer trace.Tracer, graph *querypb.Flamegraph, threshold float32) *querypb.Flamegraph {
+	_, span := tracer.Start(ctx, "trimFlamegraph")
 	defer span.End()
 	if graph == nil {
 		return nil
 	}
-	total := graph.Total
 
-	threshold := int64(float64(thresholdRate) * float64(total))
-	var children FlamegraphChildren = trimFlamegraphNodes(ctx, tracer, graph.Root.Children, threshold)
-	newTotal := int64(0)
-	newDiff := int64(0)
-	if len(graph.Root.Children) > 0 {
-		newTotal = children.Cumulative()
-		newDiff = children.Diff()
+	table := &tableConverter{
+		stringsSlice:   graph.StringTable,
+		mappingsSlice:  graph.Mapping,
+		locationsSlice: graph.Locations,
+		functionsSlice: graph.Function,
 	}
 
+	it := NewFlamegraphIterator(&querypb.FlamegraphNode{
+		Cumulative: graph.Root.Cumulative,
+		Diff:       graph.Root.Diff,
+		Children:   graph.Root.Children,
+	})
 	trimmedGraph := &querypb.Flamegraph{
+		//nolint:staticcheck // SA1019: Fow now we want to support these APIs
+		Total:  graph.Total,
+		Height: graph.Height,
+		Unit:   graph.Unit,
 		Root: &querypb.FlamegraphRootNode{
-			Children:   children,
-			Cumulative: newTotal,
-			Diff:       newDiff,
+			Cumulative: graph.Root.Cumulative,
+			Diff:       graph.Root.Diff,
 		},
-		Total:          newTotal,
-		UntrimmedTotal: graph.Total,
-		Unit:           graph.Unit,
-		Height:         graph.Height,
-		StringTable:    graph.StringTable,
-		Locations:      graph.Locations,
-		Mapping:        graph.Mapping,
-		Function:       graph.Function,
+		StringTable: graph.StringTable,
+		Locations:   graph.Locations,
+		Mapping:     graph.Mapping,
+		Function:    graph.Function,
+	}
+	if !it.HasMore() {
+		return trimmedGraph
+	}
+
+	newRootNode := &querypb.FlamegraphNode{
+		Cumulative: graph.Root.Cumulative,
+		Diff:       graph.Root.Diff,
+	}
+	stack := TreeStack{{nodes: []*querypb.FlamegraphNode{newRootNode}}}
+
+	trimmedCumulative := int64(0)
+	keepStrings := map[uint32]struct{}{}
+	keepLocations := map[uint32]struct{}{}
+	keepFunctions := map[uint32]struct{}{}
+
+	for it.HasMore() {
+		if it.NextChild() {
+			node := it.At()
+			parent := it.AtParent()
+			c := node.Cumulative
+			cp := parent.Cumulative
+			ct := float32(cp) * threshold
+
+			// This is the trimming part. If the cumulative value of the node is
+			// less than the threshold, we skip it and don't add it back to the flame graph.
+			if float32(c) < ct {
+				trimmedCumulative += c
+				// TODO: Are these really correct?
+				continue
+			}
+
+			// We only want to trim the graph if the graph has locations.
+			// This is mostly for testing purposes, in production we always have locations.
+			if graph.Locations != nil {
+				location := table.GetLocation(node.Meta.LocationIndex)
+				if location != nil {
+					keepLocations[node.Meta.LocationIndex-1] = struct{}{}
+
+					mapping := table.GetMapping(location.MappingIndex)
+					if mapping != nil {
+						keepStrings[mapping.FileStringIndex] = struct{}{}
+						keepStrings[mapping.BuildIdStringIndex] = struct{}{}
+					}
+
+					for _, line := range location.Lines {
+						function := table.GetFunction(line.FunctionIndex)
+						if function != nil {
+							keepFunctions[line.FunctionIndex-1] = struct{}{}
+							keepStrings[function.NameStringIndex] = struct{}{}
+							keepStrings[function.SystemNameStringIndex] = struct{}{}
+							keepStrings[function.FilenameStringIndex] = struct{}{}
+						}
+					}
+				}
+			}
+
+			// Create a new node with the new meta data.
+			// We need a new node because we are going to append children to it,
+			// but avoiding cyclic iterations.
+			cur := &querypb.FlamegraphNode{
+				Meta:       node.Meta,
+				Cumulative: node.Cumulative,
+				Diff:       node.Diff,
+			}
+
+			peekNodes := stack.Peek().nodes
+			peekNode := peekNodes[len(peekNodes)-1]
+			peekNode.Children = append(peekNode.Children, cur)
+
+			steppedInto := it.StepInto()
+			if steppedInto {
+				stack.Push(&TreeStackEntry{
+					nodes: []*querypb.FlamegraphNode{cur},
+				})
+			}
+			continue
+		}
+		it.StepUp()
+		stack.Pop()
+	}
+
+	trimmedGraph.Trimmed = trimmedCumulative
+	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
+	trimmedGraph.UntrimmedTotal = graph.Total
+	trimmedGraph.Root.Children = newRootNode.Children
+
+	// Only trim the string table entries if we actually have fewer strings to keep.
+	if len(keepStrings) < len(graph.StringTable) {
+		// Iterate over the string table and set the strings we don't need to empty string.
+		for i := range graph.StringTable {
+			if _, ok := keepStrings[uint32(i)]; !ok {
+				graph.StringTable[i] = ""
+			}
+		}
+	}
+	if len(keepLocations) < len(graph.Locations) {
+		// Iterate over the locations table and set the locations we don't need to nil.
+		for i := range graph.Locations {
+			if _, ok := keepLocations[uint32(i)]; !ok {
+				graph.Locations[i] = nil
+			}
+		}
+	}
+	if len(keepFunctions) < len(graph.Function) {
+		// Iterate over the functions table and set the functions we don't need to nil.
+		for i := range graph.Function {
+			if _, ok := keepFunctions[uint32(i)]; !ok {
+				graph.Function[i] = nil
+			}
+		}
 	}
 
 	return trimmedGraph
-}
-
-func trimFlamegraphNodes(ctx context.Context, tracer trace.Tracer, nodes []*querypb.FlamegraphNode, threshold int64) []*querypb.FlamegraphNode {
-	var trimmedNodes []*querypb.FlamegraphNode
-	for _, node := range nodes {
-		if node.Cumulative < threshold {
-			continue
-		}
-		var oldChildren FlamegraphChildren = node.Children
-		flat := node.Cumulative - oldChildren.Cumulative()
-		var children FlamegraphChildren = trimFlamegraphNodes(ctx, tracer, node.Children, threshold)
-		newCum := int64(flat)
-		newDiff := int64(node.Diff)
-		if len(children) > 0 {
-			newCum += children.Cumulative()
-			newDiff += children.Diff()
-		}
-		trimmedNodes = append(trimmedNodes, &querypb.FlamegraphNode{
-			Meta:       node.Meta,
-			Cumulative: newCum,
-			Diff:       newDiff,
-			Children:   children,
-		})
-	}
-	return trimmedNodes
 }

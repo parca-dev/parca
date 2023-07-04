@@ -29,6 +29,8 @@ export const KeyDownProvider = ({
   children: ReactNode;
   value?: KeyDownState;
 }): JSX.Element => {
+  // Shift requires special handling because it is a shortcut key and
+  // keydown and keyup is not recognized when the window begins taking a screenshot
   const [isShiftDown, setIsShiftDown] = useState<boolean>(false);
 
   useEffect(() => {
@@ -36,25 +38,28 @@ export const KeyDownProvider = ({
       return;
     }
 
-    const handleShiftDown = (event: {keyCode: number}): void => {
-      if (event.keyCode === 16) {
+    const handleKeyDown = (event: {key: string; preventDefault: any}): void => {
+      if (event.key === 'Shift') {
         setIsShiftDown(true);
+        return;
       }
+
+      // if any other key is pressed, reset the shift state
+      setIsShiftDown(false);
     };
 
-    window.addEventListener('keydown', handleShiftDown);
-
-    const handleShiftUp = (event: {keyCode: number}): void => {
-      if (event.keyCode === 16) {
+    const handleKeyUp = (event: {key: string}): void => {
+      if (event.key === 'Shift') {
         setIsShiftDown(false);
       }
     };
 
-    window.addEventListener('keyup', handleShiftUp);
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
 
     return () => {
-      window.removeEventListener('keydown', handleShiftDown);
-      window.removeEventListener('keyup', handleShiftUp);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
     };
   }, []);
 

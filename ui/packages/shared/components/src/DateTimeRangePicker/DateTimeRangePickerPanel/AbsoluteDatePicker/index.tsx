@@ -13,7 +13,7 @@
 
 import {useState} from 'react';
 
-import Button from '../../../Button';
+import {Button} from '../../../Button';
 import {UTCDateTimePicker} from '../../../DateTimePicker';
 import {AbsoluteDate, DateTimeRange, getDateHoursAgo} from '../../utils';
 
@@ -35,32 +35,34 @@ const AbsoluteDatePicker = ({
   return (
     <div className="p-4">
       <div className="mb-2 hidden">
-        <span className="uppercase text-xs">Absolute Range</span>
+        <span className="text-xs uppercase">Absolute Range</span>
       </div>
       <div className="flex flex-col justify-center">
         <div className="mb-2">
           <div className="mb-2">
-            <span className="uppercase text-xs">From:</span>
+            <span className="text-xs uppercase">From:</span>
           </div>
           <UTCDateTimePicker selected={from} onChange={date => date != null && setFrom(date)} />
         </div>
         <div className="mb-1">
           <div className="mb-2">
-            <span className="uppercase text-xs">To:</span>
+            <span className="text-xs uppercase">To:</span>
           </div>
           <UTCDateTimePicker selected={to} onChange={date => date != null && setTo(date)} />
         </div>
       </div>
-      <div className="w-32 mx-auto mt-4">
-        <Button
-          onClick={() => {
-            onChange(new AbsoluteDate(from), new AbsoluteDate(to));
-          }}
-        >
-          Apply
-        </Button>
+      <div className="mt-4 flex">
+        <div className="mx-auto">
+          <Button
+            onClick={() => {
+              onChange(new AbsoluteDate(from), new AbsoluteDate(to));
+            }}
+          >
+            Apply
+          </Button>
+        </div>
       </div>
-      <p className="text-gray-500 text-xs italic text-center m-4">
+      <p className="m-4 text-center text-xs italic text-gray-500">
         Note: All date and time values are in UTC.
       </p>
     </div>

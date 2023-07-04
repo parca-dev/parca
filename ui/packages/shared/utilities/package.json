@@ -1,0 +1,24 @@
+{
+  "name": "@parca/utilities",
+  "version": "0.0.15",
+  "description": "A set of reusable functions for Parca",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "jest --coverage ./src/*",
+    "prepublish": "yarn build",
+    "build": "tsc",
+    "watch": "tsc-watch"
+  },
+  "dependencies": {
+    "@parca/client": "^0.16.76",
+    "@rehooks/local-storage": "^2.4.4",
+    "tailwindcss": "3.2.4"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

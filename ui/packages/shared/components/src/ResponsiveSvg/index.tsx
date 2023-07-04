@@ -13,7 +13,7 @@
 
 import {Children, useEffect, useState} from 'react';
 
-import {useContainerDimensions} from '@parca/dynamicsize';
+import {useContainerDimensions} from '@parca/hooks';
 
 interface Props {
   children: JSX.Element;

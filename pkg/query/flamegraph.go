@@ -87,6 +87,12 @@ func (fgi *FlamegraphIterator) At() *querypb.FlamegraphNode {
 	return peekNode.Children[fgi.stack.Peek().currentChild]
 }
 
+func (fgi *FlamegraphIterator) AtParent() *querypb.FlamegraphNode {
+	peekNodes := fgi.stack.Peek().nodes
+	peekNode := peekNodes[len(peekNodes)-1]
+	return peekNode
+}
+
 func (fgi *FlamegraphIterator) StepInto() bool {
 	peekNodes := fgi.stack.Peek().nodes
 	peekNode := peekNodes[len(peekNodes)-1]
@@ -120,6 +126,7 @@ func aggregateByFunction(fg *querypb.Flamegraph) *querypb.Flamegraph {
 
 	it := NewFlamegraphIterator(oldRootNode)
 	tree := &querypb.Flamegraph{
+		//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 		Total:  fg.Total,
 		Height: fg.Height,
 		Root: &querypb.FlamegraphRootNode{

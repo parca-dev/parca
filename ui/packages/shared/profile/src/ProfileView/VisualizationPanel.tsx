@@ -17,8 +17,9 @@ import {Icon} from '@iconify/react';
 import cx from 'classnames';
 import type {DraggableProvidedDragHandleProps} from 'react-beautiful-dnd';
 
-import type {NavigateFunction} from '@parca/functions';
+import {IconButton} from '@parca/components';
 import {CloseIcon} from '@parca/icons';
+import type {NavigateFunction} from '@parca/utilities';
 
 import ViewSelector from './ViewSelector';
 
@@ -49,8 +50,8 @@ export const VisualizationPanel = React.memo(function VisualizationPanel({
 
   return (
     <>
-      <div className="w-full flex justify-end pb-2">
-        <div className="w-full flex justify-between items-center">
+      <div className="flex w-full justify-end gap-2 pb-2">
+        <div className="flex w-full items-center justify-between">
           <div className="flex">
             <div
               className={cx(isMultiPanelView ? 'visible' : 'invisible', 'flex items-center')}
@@ -64,9 +65,7 @@ export const VisualizationPanel = React.memo(function VisualizationPanel({
         </div>
 
         {isMultiPanelView && (
-          <button type="button" onClick={() => handleClosePanel(dashboardItem)} className="pl-2">
-            <CloseIcon />
-          </button>
+          <IconButton onClick={() => handleClosePanel(dashboardItem)} icon={<CloseIcon />} />
         )}
       </div>
       {getDashboardItemByType({

@@ -18,9 +18,11 @@ module.exports = {
       },
     },
     '@storybook/addon-mdx-gfm',
+    'storybook-dark-mode',
+    'storybook-css-modules-preset',
   ],
-  core:{
-    isableTelemetry: true
+  core: {
+    disableTelemetry: true,
   },
   framework: {
     name: '@storybook/react-webpack5',

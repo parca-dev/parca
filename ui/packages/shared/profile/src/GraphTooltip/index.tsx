@@ -30,14 +30,14 @@ import {
   Function as ParcaFunction,
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import {useKeyDown} from '@parca/components';
-import {getLastItem, valueFormatter} from '@parca/functions';
 import {selectHoveringNode, useAppSelector} from '@parca/store';
+import {divide, getLastItem, valueFormatter} from '@parca/utilities';
 
 import {hexifyAddress, truncateString, truncateStringReverse} from '../';
 import {ExpandOnHover} from './ExpandOnHoverValue';
 
 const NoData = (): JSX.Element => {
-  return <span className="rounded bg-gray-200 dark:bg-gray-800 px-2">Not available</span>;
+  return <span className="rounded bg-gray-200 px-2 dark:bg-gray-800">Not available</span>;
 };
 
 interface ExtendedCallgraphNodeMeta extends CallgraphNodeMeta {
@@ -46,7 +46,7 @@ interface ExtendedCallgraphNodeMeta extends CallgraphNodeMeta {
 }
 
 interface HoveringNode extends FlamegraphRootNode, FlamegraphNode, CallgraphNode {
-  diff: string;
+  diff: bigint;
   meta?: FlamegraphNodeMeta | ExtendedCallgraphNodeMeta;
 }
 
@@ -54,7 +54,8 @@ interface GraphTooltipProps {
   x?: number;
   y?: number;
   unit: string;
-  total: number;
+  total: bigint;
+  totalUnfiltered: bigint;
   hoveringNode?: HoveringNode;
   contextElement: Element | null;
   isFixed?: boolean;
@@ -157,11 +158,11 @@ const TooltipMetaInfo = ({
     if (hoveringNode.meta?.function == null) return '<unknown>';
 
     return `${hoveringNode.meta.function.filename} ${
-      hoveringNode.meta.line?.line !== undefined && hoveringNode.meta.line?.line !== '0'
+      hoveringNode.meta.line?.line !== undefined && hoveringNode.meta.line?.line !== 0n
         ? ` +${hoveringNode.meta.line.line.toString()}`
         : `${
             hoveringNode.meta.function?.startLine !== undefined &&
-            hoveringNode.meta.function?.startLine !== '0'
+            hoveringNode.meta.function?.startLine !== 0n
               ? ` +${hoveringNode.meta.function.startLine}`
               : ''
           }`
@@ -179,7 +180,7 @@ const TooltipMetaInfo = ({
             <NoData />
           ) : (
             <CopyToClipboard onCopy={onCopy} text={file}>
-              <button className="cursor-pointer text-left whitespace-nowrap">
+              <button className="cursor-pointer whitespace-nowrap text-left">
                 <ExpandOnHover value={file} displayValue={truncateStringReverse(file, 40)} />
               </button>
             </CopyToClipboard>
@@ -191,7 +192,7 @@ const TooltipMetaInfo = ({
         <td className="w-1/4">Address</td>
         <td className="w-3/4 break-all">
           {hoveringNode.meta?.location?.address == null ||
-          hoveringNode.meta?.location.address === '0' ? (
+          hoveringNode.meta?.location.address === 0n ? (
             <NoData />
           ) : (
             <CopyToClipboard
@@ -244,6 +245,7 @@ export const GraphTooltipContent = ({
   hoveringNode,
   unit,
   total,
+  totalUnfiltered,
   isFixed,
   strings,
   mappings,
@@ -253,7 +255,8 @@ export const GraphTooltipContent = ({
 }: {
   hoveringNode: HoveringNode;
   unit: string;
-  total: number;
+  total: bigint;
+  totalUnfiltered: bigint;
   isFixed: boolean;
   strings?: string[];
   mappings?: Mapping[];
@@ -272,27 +275,31 @@ export const GraphTooltipContent = ({
     timeoutHandle = setTimeout(() => setIsCopied(false), 3000);
   };
 
-  const hoveringNodeCumulative = parseFloat(hoveringNode.cumulative);
-  const diff = hoveringNode.diff === undefined ? 0 : parseFloat(hoveringNode.diff);
+  const hoveringNodeCumulative = hoveringNode.cumulative;
+  const diff = hoveringNode.diff;
   const prevValue = hoveringNodeCumulative - diff;
-  const diffRatio = Math.abs(diff) > 0 ? diff / prevValue : 0;
+  const diffRatio = diff !== 0n ? divide(diff, prevValue) : 0;
   const diffSign = diff > 0 ? '+' : '';
   const diffValueText = diffSign + valueFormatter(diff, unit, 1);
   const diffPercentageText = diffSign + (diffRatio * 100).toFixed(2) + '%';
   const diffText = `${diffValueText} (${diffPercentageText})`;
 
-  const getTextForCumulative = (hoveringNodeCumulative: number): string => {
-    return `${valueFormatter(hoveringNodeCumulative, unit, 2)} (
-      ${((hoveringNodeCumulative * 100) / total).toFixed(2)}%)`;
+  const getTextForCumulative = (hoveringNodeCumulative: bigint): string => {
+    const filtered =
+      totalUnfiltered > total
+        ? ` / ${divide(hoveringNodeCumulative * 100n, total).toFixed(2)}% of filtered`
+        : '';
+    return `${valueFormatter(hoveringNodeCumulative, unit, 2)}
+    (${divide(hoveringNodeCumulative * 100n, totalUnfiltered).toFixed(2)}%${filtered})`;
   };
 
   return (
-    <div className={`text-sm flex ${isFixed ? 'w-full' : ''}`}>
+    <div className={`flex text-sm ${isFixed ? 'w-full' : ''}`}>
       <div className={`m-auto w-full ${isFixed ? 'w-full' : ''}`}>
-        <div className="border border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg min-h-52 w-[500px] flex justify-between flex-col">
+        <div className="min-h-52 flex w-[500px] flex-col justify-between rounded-lg border border-gray-300 bg-gray-50 p-3 shadow-lg dark:border-gray-500 dark:bg-gray-900">
           <div className="flex flex-row">
             <div className="mx-2">
-              <div className="font-semibold break-all h-10 flex items-center">
+              <div className="flex h-10 items-center break-all font-semibold">
                 {hoveringNode.meta === undefined ? (
                   <p>root</p>
                 ) : (
@@ -307,7 +314,7 @@ export const GraphTooltipContent = ({
                     ) : (
                       <>
                         {hoveringNode.meta.location !== undefined &&
-                        parseInt(hoveringNode.meta.location.address, 10) !== 0 ? (
+                        hoveringNode.meta.location.address !== 0n ? (
                           <CopyToClipboard
                             onCopy={onCopy}
                             text={hexifyAddress(hoveringNode.meta.location.address)}
@@ -324,7 +331,7 @@ export const GraphTooltipContent = ({
                   </>
                 )}
               </div>
-              <table className="table-fixed pr-0 text-gray-700 dark:text-gray-300 my-2 w-full">
+              <table className="my-2 w-full table-fixed pr-0 text-gray-700 dark:text-gray-300">
                 <tbody>
                   <tr>
                     <td className="w-1/4">Cumulative</td>
@@ -340,7 +347,7 @@ export const GraphTooltipContent = ({
                       </CopyToClipboard>
                     </td>
                   </tr>
-                  {hoveringNode.diff !== undefined && diff !== 0 && (
+                  {hoveringNode.diff !== undefined && diff !== 0n && (
                     <tr>
                       <td className="w-1/4">Diff</td>
                       <td className="w-3/4">
@@ -363,7 +370,7 @@ export const GraphTooltipContent = ({
               </table>
             </div>
           </div>
-          <span className="block text-gray-500 text-xs mx-2">
+          <span className="mx-2 block text-xs text-gray-500">
             {isCopied ? 'Copied!' : 'Hold shift and click on a value to copy.'}
           </span>
         </div>
@@ -377,6 +384,7 @@ const GraphTooltip = ({
   y,
   unit,
   total,
+  totalUnfiltered,
   hoveringNode: hoveringNodeProp,
   contextElement,
   isFixed = false,
@@ -418,12 +426,19 @@ const GraphTooltip = ({
           options: {
             tether: false,
             altAxis: true,
+            boundary: contextElement ?? undefined,
           },
         },
         {
           name: 'offset',
           options: {
             offset: [30, 30],
+          },
+        },
+        {
+          name: 'flip',
+          options: {
+            boundary: contextElement ?? undefined,
           },
         },
       ],
@@ -468,6 +483,7 @@ const GraphTooltip = ({
       hoveringNode={hoveringNode}
       unit={unit}
       total={total}
+      totalUnfiltered={totalUnfiltered}
       isFixed={isFixed}
       type={type}
     />
@@ -477,6 +493,7 @@ const GraphTooltip = ({
         hoveringNode={hoveringNode}
         unit={unit}
         total={total}
+        totalUnfiltered={totalUnfiltered}
         isFixed={isFixed}
         strings={strings}
         mappings={mappings}

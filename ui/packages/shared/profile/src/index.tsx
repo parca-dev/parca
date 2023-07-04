@@ -11,8 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {lazy} from 'react';
-
 import {QueryServiceClient} from '@parca/client';
 import type {Props as CallgraphProps} from '@parca/profile/src/Callgraph';
 
@@ -27,12 +25,11 @@ export * from './ProfileView';
 export * from './ProfileViewWithData';
 export * from './utils';
 export * from './ProfileTypeSelector';
+export {default as Callgraph} from './Callgraph';
 
 export type {CallgraphProps};
 
-const Callgraph = lazy(async () => await import('@parca/profile/src/Callgraph'));
-
-export {Callgraph, ProfileExplorer, ProfileTypeSelector};
+export {ProfileExplorer, ProfileTypeSelector};
 
 // Leaving this in here due to lack of a better place to put it.
 interface GrafanaParcaDataPayload {

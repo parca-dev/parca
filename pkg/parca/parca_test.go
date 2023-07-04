@@ -26,7 +26,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apache/arrow/go/v10/arrow/memory"
+	"github.com/apache/arrow/go/v13/arrow/memory"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
@@ -76,6 +76,9 @@ func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceCl
 				ActiveMemory: 512 * 1024 * 1024,
 			},
 			ProfileShareServer: "api.pprof.dummy:443",
+			Hidden: FlagsHidden{
+				DebugNormalizeAddresses: true,
+			},
 		}, "test-version")
 		if !errors.Is(err, context.Canceled) {
 			require.NoError(b, err)
@@ -186,7 +189,7 @@ func TestConsistency(t *testing.T) {
 
 	table, err := colDB.Table(
 		"stacktraces",
-		frostdb.NewTableConfig(schema),
+		frostdb.NewTableConfig(parcacol.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -214,6 +217,7 @@ func TestConsistency(t *testing.T) {
 		metastore,
 		table,
 		schema,
+		true,
 	)
 
 	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
@@ -301,7 +305,7 @@ func TestPGOE2e(t *testing.T) {
 
 	table, err := colDB.Table(
 		"stacktraces",
-		frostdb.NewTableConfig(schema),
+		frostdb.NewTableConfig(parcacol.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -322,6 +326,7 @@ func TestPGOE2e(t *testing.T) {
 		metastore,
 		table,
 		schema,
+		true,
 	)
 
 	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
@@ -380,4 +385,108 @@ func TestPGOE2e(t *testing.T) {
 
 	require.NoError(t, os.WriteFile("./testdata/pgotest.res.prof", rawPprof, 0o644))
 	runCmd(t, "go", "build", "-pgo", "./testdata/pgotest.res.prof", "-o", "./testdata/pgotest", "./testdata/pgotest.go")
+}
+
+func TestLabels(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	col, err := frostdb.New()
+	require.NoError(t, err)
+	colDB, err := col.DB(context.Background(), "parca")
+	require.NoError(t, err)
+
+	schema, err := parcacol.Schema()
+	require.NoError(t, err)
+
+	table, err := colDB.Table(
+		"labels",
+		frostdb.NewTableConfig(parcacol.SchemaDefinition()),
+	)
+	require.NoError(t, err)
+	m := metastoretest.NewTestMetastore(
+		t,
+		logger,
+		reg,
+		tracer,
+	)
+
+	metastore := metastore.NewInProcessClient(m)
+
+	fileContent, err := os.ReadFile("testdata/labels.pb.gz")
+	require.NoError(t, err)
+
+	store := profilestore.NewProfileColumnStore(
+		logger,
+		tracer,
+		metastore,
+		table,
+		schema,
+		true,
+	)
+
+	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
+		Series: []*profilestorepb.RawProfileSeries{{
+			Labels: &profilestorepb.LabelSet{
+				Labels: []*profilestorepb.Label{
+					{
+						Name:  "__name__",
+						Value: "process_cpu",
+					},
+					{
+						Name:  "job",
+						Value: "default",
+					},
+				},
+			},
+			Samples: []*profilestorepb.RawSample{{
+				RawProfile: fileContent,
+			}},
+		}},
+	})
+	require.NoError(t, err)
+
+	require.NoError(t, table.EnsureCompaction())
+	api := queryservice.NewColumnQueryAPI(
+		logger,
+		tracer,
+		getShareServerConn(t),
+		parcacol.NewQuerier(
+			logger,
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"labels",
+			metastore,
+		),
+	)
+
+	ts := timestamppb.New(timestamp.Time(1677488315039)) // time_nanos of the profile divided by 1e6
+	res, err := api.Query(ctx, &querypb.QueryRequest{
+		ReportType: querypb.QueryRequest_REPORT_TYPE_PPROF,
+		Options: &querypb.QueryRequest_Single{
+			Single: &querypb.SingleProfile{
+				Query: `process_cpu:samples:count:cpu:nanoseconds:delta`,
+				Time:  ts,
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	resPprof, err := profile.ParseData(res.Report.(*querypb.QueryResponse_Pprof).Pprof)
+	require.NoError(t, err)
+
+	got := make(map[string]struct{})
+	for _, s := range resPprof.Sample {
+		for l := range s.Label {
+			got[l] = struct{}{}
+		}
+	}
+	want := map[string]struct{}{"api": {}}
+	require.Equal(t, want, got, "profile should contain pprof_labels from the original profile only")
 }

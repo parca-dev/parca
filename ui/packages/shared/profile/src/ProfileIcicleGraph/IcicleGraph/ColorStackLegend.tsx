@@ -17,9 +17,9 @@ import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
 import {useURLState} from '@parca/components';
-import type {NavigateFunction} from '@parca/functions';
-import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
+import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {EVERYTHING_ELSE, selectStackColors, useAppSelector} from '@parca/store';
+import type {NavigateFunction} from '@parca/utilities';
 
 interface Props {
   navigateTo?: NavigateFunction;
@@ -50,14 +50,14 @@ const ColorStackLegend = ({navigateTo, compareMode = false}: Props): JSX.Element
   }
 
   return (
-    <div className="flex flex-wrap gap-2 my-6 justify-center">
+    <div className="my-6 flex flex-wrap justify-center gap-2">
       {stackColorArray.map(([feature, color]) => {
         const filteringAllowed = feature !== EVERYTHING_ELSE;
         const isHighlighted = currentSearchString === feature;
         return (
           <div
             key={feature}
-            className={cx('flex gap-1 items-center text-ellipsis p-1 justify-between pr-2', {
+            className={cx('flex items-center justify-between gap-1 text-ellipsis p-1 pr-2', {
               'cursor-pointer': filteringAllowed,
               'bg-gray-200 dark:bg-gray-800': isHighlighted,
             })}
@@ -73,7 +73,7 @@ const ColorStackLegend = ({navigateTo, compareMode = false}: Props): JSX.Element
             }}
           >
             <div className="flex items-center">
-              <div className="w-4 h-4 mr-1 inline-block" style={{backgroundColor: color}} />
+              <div className="mr-1 inline-block h-4 w-4" style={{backgroundColor: color}} />
               <span className="text-sm">{feature}</span>
             </div>
             {isHighlighted ? (

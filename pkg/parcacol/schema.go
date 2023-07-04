@@ -36,8 +36,8 @@ const (
 	ColumnValue          = "value"
 )
 
-func Schema() (*dynparquet.Schema, error) {
-	return dynparquet.SchemaFromDefinition(&schemapb.Schema{
+func SchemaDefinition() *schemapb.Schema {
+	return &schemapb.Schema{
 		Name: SchemaName,
 		Columns: []*schemapb.Column{
 			{
@@ -178,5 +178,9 @@ func Schema() (*dynparquet.Schema, error) {
 				NullsFirst: true,
 			},
 		},
-	})
+	}
+}
+
+func Schema() (*dynparquet.Schema, error) {
+	return dynparquet.SchemaFromDefinition(SchemaDefinition())
 }

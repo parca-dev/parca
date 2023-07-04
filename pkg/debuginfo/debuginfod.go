@@ -15,6 +15,7 @@ package debuginfo
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -59,7 +60,7 @@ type DebuginfodClientObjectStorageCache struct {
 }
 
 // NewHTTPDebuginfodClient returns a new HTTP debug info client.
-func NewHTTPDebuginfodClient(logger log.Logger, serverURLs []string, timeoutDuration time.Duration) (*HTTPDebuginfodClient, error) {
+func NewHTTPDebuginfodClient(logger log.Logger, serverURLs []string, client *http.Client) (*HTTPDebuginfodClient, error) {
 	logger = log.With(logger, "component", "debuginfod")
 	parsedURLs := make([]*url.URL, 0, len(serverURLs))
 	for _, serverURL := range serverURLs {
@@ -74,10 +75,11 @@ func NewHTTPDebuginfodClient(logger log.Logger, serverURLs []string, timeoutDura
 
 		parsedURLs = append(parsedURLs, u)
 	}
+
 	return &HTTPDebuginfodClient{
 		logger:          logger,
 		upstreamServers: parsedURLs,
-		client:          &http.Client{Timeout: timeoutDuration},
+		client:          client,
 	}, nil
 }
 
@@ -90,44 +92,37 @@ func NewDebuginfodClientWithObjectStorageCache(logger log.Logger, bucket objstor
 	}, nil
 }
 
-type closer func() error
-
-func (f closer) Close() error { return f() }
-
-type readCloser struct {
-	io.Reader
-	closer
-}
-
 // Get returns debuginfo for given buildid while caching it in object storage.
 func (c *DebuginfodClientObjectStorageCache) Get(ctx context.Context, buildID string) (io.ReadCloser, error) {
-	debuginfo, err := c.client.Get(ctx, buildID)
+	rc, err := c.bucket.Get(ctx, objectPath(buildID))
+	if err != nil {
+		if c.bucket.IsObjNotFoundErr(err) {
+			return c.getAndCache(ctx, buildID)
+		}
+
+		return nil, err
+	}
+
+	return rc, nil
+}
+
+func (c *DebuginfodClientObjectStorageCache) getAndCache(ctx context.Context, buildID string) (io.ReadCloser, error) {
+	r, err := c.client.Get(ctx, buildID)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+
+	if err := c.bucket.Upload(ctx, objectPath(buildID), r); err != nil {
+		level.Error(c.logger).Log("msg", "failed to upload downloaded debuginfod file", "err", err, "build_id", buildID)
+	}
+
+	r, err = c.bucket.Get(ctx, objectPath(buildID))
 	if err != nil {
 		return nil, err
 	}
 
-	r, w := io.Pipe()
-	go func() {
-		defer w.Close()
-		defer debuginfo.Close()
-
-		// TODO(kakkoyun): Use store.upload() to upload the debuginfo to object storage.
-		if err := c.bucket.Upload(ctx, objectPath(buildID), r); err != nil {
-			level.Error(c.logger).Log("msg", "failed to upload downloaded debuginfod file", "err", err, "build_id", buildID)
-		}
-	}()
-
-	return readCloser{
-		Reader: io.TeeReader(debuginfo, w),
-		closer: closer(func() error {
-			defer debuginfo.Close()
-
-			if err := w.Close(); err != nil {
-				return err
-			}
-			return nil
-		}),
-	}, nil
+	return r, nil
 }
 
 // Exists returns true if debuginfo for given buildid exists.
@@ -157,14 +152,7 @@ func (c *HTTPDebuginfodClient) Get(ctx context.Context, buildID string) (io.Read
 	// "https://debuginfod.archlinux.org/"
 	// "https://debuginfod.centos.org/"
 	for _, u := range c.upstreamServers {
-		serverURL := *u
-		rc, err := func(serverURL url.URL) (io.ReadCloser, error) {
-			rc, err := c.request(ctx, serverURL, buildID)
-			if err != nil {
-				return nil, err
-			}
-			return rc, nil
-		}(serverURL)
+		rc, err := c.request(ctx, *u, buildID)
 		if err != nil {
 			continue
 		}
@@ -204,17 +192,38 @@ func (c *HTTPDebuginfodClient) request(ctx context.Context, u url.URL, buildID s
 		return nil, fmt.Errorf("request failed: %w", err)
 	}
 
-	switch resp.StatusCode / 100 {
-	case 2:
-		return resp.Body, nil
-	case 4:
-		if resp.StatusCode == http.StatusNotFound {
-			return nil, ErrDebuginfoNotFound
+	return c.handleResponse(ctx, resp)
+}
+
+func (c *HTTPDebuginfodClient) handleResponse(ctx context.Context, resp *http.Response) (io.ReadCloser, error) {
+	// Follow at most 2 redirects.
+	for i := 0; i < 2; i++ {
+		switch resp.StatusCode / 100 {
+		case 2:
+			return resp.Body, nil
+		case 3:
+			req, err := http.NewRequestWithContext(ctx, "GET", resp.Header.Get("Location"), nil)
+			if err != nil {
+				return nil, fmt.Errorf("create request: %w", err)
+			}
+
+			resp, err = c.client.Do(req)
+			if err != nil {
+				return nil, fmt.Errorf("request failed: %w", err)
+			}
+
+			continue
+		case 4:
+			if resp.StatusCode == http.StatusNotFound {
+				return nil, ErrDebuginfoNotFound
+			}
+			return nil, fmt.Errorf("client error: %s", resp.Status)
+		case 5:
+			return nil, fmt.Errorf("server error: %s", resp.Status)
+		default:
+			return nil, fmt.Errorf("unexpected status code: %s", resp.Status)
 		}
-		return nil, fmt.Errorf("client error: %s", resp.Status)
-	case 5:
-		return nil, fmt.Errorf("server error: %s", resp.Status)
-	default:
-		return nil, fmt.Errorf("unexpected status code: %s", resp.Status)
 	}
+
+	return nil, errors.New("too many redirects")
 }

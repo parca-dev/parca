@@ -11,16 +11,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {tryLoadAndStartRecorder} from '@alwaysmeticulous/recorder-loader';
 import {createRoot} from 'react-dom/client';
+
+import {isDevModeOrPreview} from '@parca/utilities';
 
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
-const container = document.getElementById('root');
-const root = createRoot(container!);
-root.render(<App />);
+async function startApp() {
+  if (isDevModeOrPreview()) {
+    // Start the Meticulous recorder before you initialise your app.
+    // Note: all errors are caught and logged, so no need to surround with try/catch
+    await tryLoadAndStartRecorder({
+      projectId: 'lgBUqjZEtPYwCUmwxdv0IEiMsaPwDJWo9AJHvbzX',
+    });
+  }
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
+  // Initalise app after the Meticulous recorder is ready: Meticulous needs to be initialised first,
+  // so it can capture the initial network requests
+  const container = document.getElementById('root');
+  const root = createRoot(container!);
+  root.render(<App />);
+
+  // If you want to start measuring performance in your app, pass a function
+  // to log results (for example: reportWebVitals(console.log))
+  // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+  reportWebVitals();
+}
+
+startApp();

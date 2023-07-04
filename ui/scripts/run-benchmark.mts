@@ -11,16 +11,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import glob from 'glob-promise';
 import path from 'path';
 import {fileURLToPath} from 'url';
-import ReactBenchmark from '@parca/react-benchmark';
-import StopWatch from './stop-watch.js';
-import ora from 'ora';
+
 import commandLineArgs from 'command-line-args';
-import notLog from 'not-a-log';
 import {execa} from 'execa';
 import fs from 'fs-extra';
+import glob from 'glob-promise';
+import notLog from 'not-a-log';
+import ora from 'ora';
+
+import ReactBenchmark from '@parca/react-benchmark';
+
+import StopWatch from './stop-watch.js';
 
 const DIR_NAME = path.dirname(fileURLToPath(import.meta.url));
 

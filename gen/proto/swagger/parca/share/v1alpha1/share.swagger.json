@@ -24,10 +24,11 @@
         "REPORT_TYPE_PPROF",
         "REPORT_TYPE_TOP",
         "REPORT_TYPE_CALLGRAPH",
-        "REPORT_TYPE_FLAMEGRAPH_TABLE"
+        "REPORT_TYPE_FLAMEGRAPH_TABLE",
+        "REPORT_TYPE_FLAMEGRAPH_ARROW"
       ],
       "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
-      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified",
+      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified",
       "title": "ReportType is the type of report to return"
     },
     "metastorev1alpha1Function": {
@@ -224,6 +225,16 @@
         "callgraph": {
           "$ref": "#/definitions/v1alpha1Callgraph",
           "title": "callgraph is a callgraph nodes and edges representation of the report"
+        },
+        "total": {
+          "type": "string",
+          "format": "int64",
+          "description": "total is the total number of samples shown in the report."
+        },
+        "filtered": {
+          "type": "string",
+          "format": "int64",
+          "description": "filtered is the number of samples filtered out of the report."
         }
       },
       "description": "QueryResponse is the returned report for the given query."
@@ -292,7 +303,7 @@
         "cumulative": {
           "type": "string",
           "format": "int64",
-          "title": "cumulative is the total cumulative value of the callgraph"
+          "description": "cumulative is the total cumulative value of the callgraph\nUse total from the top level query response instead."
         }
       },
       "title": "Callgraph is the callgraph report type"
@@ -380,7 +391,7 @@
         "total": {
           "type": "string",
           "format": "int64",
-          "title": "total is the total weight of the flame graph"
+          "description": "total is the total weight of the flame graph\nUse total from the top level query response instead."
         },
         "unit": {
           "type": "string",
@@ -425,7 +436,12 @@
         "untrimmedTotal": {
           "type": "string",
           "format": "int64",
-          "title": "untrimmed_total is the total weight of the flame graph before trimming"
+          "description": "untrimmed_total is the total weight of the flame graph before trimming.\nUse trimmed instead."
+        },
+        "trimmed": {
+          "type": "string",
+          "format": "int64",
+          "description": "trimmed is the amount of cumulative value trimmed from the flame graph."
         }
       },
       "title": "Flamegraph is the flame graph report type"
@@ -563,7 +579,7 @@
         "total": {
           "type": "integer",
           "format": "int32",
-          "title": "total is the number of lines that exist in the report"
+          "description": "total is the number of lines that exist in the report\nUse total from the top level query response instead."
         },
         "unit": {
           "type": "string",

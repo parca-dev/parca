@@ -20,7 +20,7 @@ import {
   FlamegraphNodeMeta,
   FlamegraphRootNode,
 } from '@parca/client';
-import {COLOR_PROFILES, type ColorProfileName, type ColorsDuo} from '@parca/functions';
+import {COLOR_PROFILES, type ColorProfileName, type ColorsDuo} from '@parca/utilities';
 
 import type {RootState} from '../store';
 
@@ -33,8 +33,9 @@ interface ExtendedCallgraphNodeMeta extends CallgraphNodeMeta {
 }
 
 export interface HoveringNode extends FlamegraphRootNode, FlamegraphNode, CallgraphNode {
-  diff: string;
+  diff: bigint;
   meta?: FlamegraphNodeMeta | ExtendedCallgraphNodeMeta;
+  cumulative: bigint;
 }
 
 // Define a type for the slice state
@@ -145,7 +146,7 @@ export const colorsSlice = createSlice({
           }
         );
     },
-    setHoveringNode: (state, action: PayloadAction<HoveringNode>) => {
+    setHoveringNode: (state, action: PayloadAction<HoveringNode | undefined>) => {
       state.hoveringNode = action.payload;
     },
     resetColors: state => {

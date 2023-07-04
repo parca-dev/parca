@@ -23,7 +23,7 @@ import {
   parseParams,
   valueFormatter,
   type NavigateFunction,
-} from '@parca/functions';
+} from '@parca/utilities';
 
 import {hexifyAddress} from '../utils';
 
@@ -100,7 +100,7 @@ export const TopTable = React.memo(function TopTable({
       }),
       columnHelper.accessor('flat', {
         header: () => 'Flat',
-        cell: info => valueFormatter(Number(info.getValue()), unit, 2),
+        cell: info => valueFormatter(info.getValue(), unit, 2),
         size: 150,
         meta: {
           align: 'right',
@@ -109,7 +109,7 @@ export const TopTable = React.memo(function TopTable({
       }),
       columnHelper.accessor('cumulative', {
         header: () => 'Cumulative',
-        cell: info => valueFormatter(Number(info.getValue()), unit, 2),
+        cell: info => valueFormatter(info.getValue(), unit, 2),
         size: 150,
         meta: {
           align: 'right',
@@ -121,7 +121,7 @@ export const TopTable = React.memo(function TopTable({
       cols.push(
         columnHelper.accessor('diff', {
           header: () => 'Diff',
-          cell: info => addPlusSign(valueFormatter(Number(info.getValue()), unit, 2)),
+          cell: info => addPlusSign(valueFormatter(info.getValue(), unit, 2)),
           size: 150,
           meta: {
             align: 'right',
@@ -224,7 +224,7 @@ export const TopTable = React.memo(function TopTable({
 
   return (
     <div className="relative">
-      <div className="w-full font-robotoMono h-[80vh] overflow-scroll">
+      <div className="font-robotoMono h-[80vh] w-full overflow-scroll">
         <Table
           data={top?.list ?? []}
           columns={columns}

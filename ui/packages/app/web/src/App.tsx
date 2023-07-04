@@ -23,10 +23,10 @@ import './style/profile.css';
 import './style/sidenav.css';
 import 'react-datepicker/dist/react-datepicker.css';
 
-import {QueryClient, QueryClientProvider} from 'react-query';
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {Provider} from 'react-redux';
 
-import {isDevMode} from '@parca/functions';
+import {isDevModeOrPreview} from '@parca/utilities';
 
 import HomePage from './pages/index';
 import Component404 from './pages/layouts/Component404';
@@ -73,7 +73,7 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<HomePage />} />
                   <Route path="/targets" element={<TargetsPage />} />
-                  {isDevMode() && (
+                  {isDevModeOrPreview() && (
                     <Route path="/PATH_PREFIX_VAR" element={<Navigate to="/" replace />} />
                   )}
                   <Route path="*" element={<Component404 />} />

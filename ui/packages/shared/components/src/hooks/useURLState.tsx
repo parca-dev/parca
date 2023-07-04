@@ -13,14 +13,14 @@
 
 import {useEffect} from 'react';
 
-import {parseParams} from '@parca/functions';
-import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
+import {USER_PREFERENCES, useUserPreference} from '@parca/hooks/';
 import {
   selectProfileStateValue,
   setProfileStateValue,
   useAppDispatch,
   useAppSelector,
 } from '@parca/store';
+import {parseParams} from '@parca/utilities';
 
 interface Props {
   param: string;
@@ -73,17 +73,17 @@ export const useURLState = ({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value, highlightAfterFilteringEnabled, param, withURLUpdate, navigateTo]);
+  }, [value, highlightAfterFilteringEnabled, param, withURLUpdate]);
 
   if (param === 'dashboard_items') {
     let dashboardItems: string[] = [];
     if (typeof value === 'string') {
       dashboardItems = [value] ?? [];
     } else {
-      dashboardItems = value;
+      dashboardItems = value as string[];
     }
     return [dashboardItems, setValue];
   }
 
-  return [value, setValue];
+  return [value as string[], setValue];
 };

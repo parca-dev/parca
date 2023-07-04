@@ -16,7 +16,7 @@ import {useRef} from 'react';
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
-import Button from '../Button';
+import {Button} from '../Button';
 
 interface SelfProps {
   className?: string;
@@ -56,7 +56,7 @@ const Input = ({
       <input
         {...props}
         className={cx(
-          'p-2 rounded-md bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600',
+          'rounded-md border border-gray-200 bg-gray-50 p-2 dark:border-gray-600 dark:bg-gray-900',
           {
             [className]: className.length > 0,
             'pr-10': onAction != null,
@@ -71,7 +71,7 @@ const Input = ({
       {onAction != null ? (
         <Button
           onClick={onAction}
-          className="!absolute !w-auto inset-y-0 right-0 !px-2 rounded-tl-none rounded-bl-none"
+          className="!absolute inset-y-0 right-0 !w-auto rounded-tl-none rounded-bl-none !px-2"
         >
           {actionIcon}
         </Button>

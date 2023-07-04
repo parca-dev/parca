@@ -1,6 +1,6 @@
 {
   "name": "@parca/client",
-  "version": "0.16.67",
+  "version": "0.16.76",
   "description": "Parca API Client",
   "main": "dist/index.js",
   "scripts": {
@@ -14,7 +14,7 @@
     "@protobuf-ts/runtime-rpc": "^2.5.0"
   },
   "devDependencies": {
-    "globby": "13.1.3"
+    "globby": "13.2.0"
   },
   "keywords": [],
   "author": "",

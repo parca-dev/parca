@@ -13,11 +13,9 @@
 
 import {memo, useEffect, useMemo, useRef, useState} from 'react';
 
-import {scaleLinear} from 'd3-scale';
-
 import {Flamegraph} from '@parca/client';
-import {selectQueryParam, type NavigateFunction} from '@parca/functions';
 import {setHoveringNode, useAppDispatch} from '@parca/store';
+import {scaleLinear, selectQueryParam, type NavigateFunction} from '@parca/utilities';
 
 import GraphTooltip from '../../GraphTooltip';
 import ColorStackLegend from './ColorStackLegend';
@@ -26,6 +24,8 @@ import useColoredGraph from './useColoredGraph';
 
 interface IcicleGraphProps {
   graph: Flamegraph;
+  total: bigint;
+  filtered: bigint;
   sampleUnit: string;
   width?: number;
   curPath: string[];
@@ -35,6 +35,8 @@ interface IcicleGraphProps {
 
 export const IcicleGraph = memo(function IcicleGraph({
   graph,
+  total,
+  filtered,
   width,
   setCurPath,
   curPath,
@@ -57,12 +59,11 @@ export const IcicleGraph = memo(function IcicleGraph({
     }
   }, [width, coloredGraph]);
 
-  const total = useMemo(() => parseFloat(coloredGraph.total), [coloredGraph.total]);
   const xScale = useMemo(() => {
     if (width === undefined) {
       return () => 0;
     }
-    return scaleLinear().domain([0, total]).range([0, width]);
+    return scaleLinear([0n, total], [0, width]);
   }, [total, width]);
 
   if (coloredGraph.root === undefined || width === undefined) {
@@ -75,6 +76,7 @@ export const IcicleGraph = memo(function IcicleGraph({
       <GraphTooltip
         unit={sampleUnit}
         total={total}
+        totalUnfiltered={total + filtered}
         contextElement={svg.current}
         strings={coloredGraph.stringTable}
         mappings={coloredGraph.mapping}

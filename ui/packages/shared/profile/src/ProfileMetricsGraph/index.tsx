@@ -17,8 +17,8 @@ import {RpcError} from '@protobuf-ts/runtime-rpc';
 
 import {Duration, Label, QueryRangeResponse, QueryServiceClient, Timestamp} from '@parca/client';
 import {DateTimeRange, useGrpcMetadata, useParcaContext} from '@parca/components';
-import {getStepDuration} from '@parca/functions';
 import {Query} from '@parca/parser';
+import {getStepDuration} from '@parca/utilities';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
 import MetricsGraph from '../MetricsGraph';
@@ -118,7 +118,7 @@ const ProfileMetricsGraph = ({
   if (error !== null) {
     return (
       <div
-        className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+        className="relative rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700"
         role="alert"
       >
         <strong className="font-bold">Error! </strong>
@@ -135,7 +135,7 @@ const ProfileMetricsGraph = ({
 
     return (
       <div
-        className="dark:bg-gray-700 rounded border-gray-300 dark:border-gray-500"
+        className="rounded border-gray-300 dark:border-gray-500 dark:bg-gray-700"
         style={{borderWidth: 1}}
       >
         <MetricsGraph
@@ -154,7 +154,7 @@ const ProfileMetricsGraph = ({
   }
   return (
     <div className="grid grid-cols-1">
-      <div className="py-20 flex justify-center">
+      <div className="flex justify-center py-20">
         <p className="m-0">No data found. Try a different query.</p>
       </div>
     </div>

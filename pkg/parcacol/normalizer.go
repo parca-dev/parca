@@ -17,6 +17,10 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
+	"strings"
+
+	"github.com/prometheus/common/model"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
@@ -29,11 +33,15 @@ const (
 
 type MetastoreNormalizer struct {
 	metastore pb.MetastoreServiceClient
+	// isAddrNormEnabled indicates whether the metastore normalizer has to
+	// normalize sampled addresses for PIC/PIE (position independent code/executable).
+	isAddrNormEnabled bool
 }
 
-func NewNormalizer(metastore pb.MetastoreServiceClient) *MetastoreNormalizer {
+func NewNormalizer(metastore pb.MetastoreServiceClient, enableAddressNormalization bool) *MetastoreNormalizer {
 	return &MetastoreNormalizer{
-		metastore: metastore,
+		metastore:         metastore,
+		isAddrNormEnabled: enableAddressNormalization,
 	}
 }
 
@@ -104,16 +112,29 @@ func (n *MetastoreNormalizer) NormalizePprof(ctx context.Context, name string, t
 	return profiles, nil
 }
 
+// sampleKey combines stack trace ID and all key-value label pairs
+// with a semicolon delimeter.
 func sampleKey(stacktraceID string, labels map[string]string, numLabels map[string]int64) string {
-	key := stacktraceID + ";"
+	var key strings.Builder
+	key.WriteString(stacktraceID)
+	key.WriteRune(';')
+
 	for k, v := range labels {
-		key += fmt.Sprintf("%s=%s;", k, v)
+		key.WriteString(k)
+		key.WriteRune('=')
+		key.WriteString(v)
+		key.WriteRune(';')
 	}
-	key += ";"
+	key.WriteRune(';')
+
 	for k, v := range numLabels {
-		key += fmt.Sprintf("%s=%d;", k, v)
+		key.WriteString(k)
+		key.WriteRune('=')
+		key.WriteString(strconv.FormatInt(v, 10))
+		key.WriteRune(';')
 	}
-	return key
+
+	return key.String()
 }
 
 func LabelNamesFromSamples(
@@ -142,10 +163,10 @@ func LabelNamesFromSamples(
 	for labelName := range labels {
 		resLabelName := labelName
 		if _, ok := takenLabels[labelName]; ok {
-			resLabelName = "exported_" + resLabelName
+			resLabelName = model.ExportedLabelPrefix + resLabelName
 		}
-		if _, ok := resLabels[resLabelName]; !ok {
-			resLabelName = "exported_" + resLabelName
+		if _, ok := resLabels[resLabelName]; ok {
+			resLabelName = model.ExportedLabelPrefix + resLabelName
 		}
 		resLabels[resLabelName] = struct{}{}
 	}
@@ -167,7 +188,7 @@ func LabelNamesFromSamples(
 }
 
 // TODO: support num label units.
-func LabelsFromSample(takenLabelNames map[string]string, stringTable []string, plabels []*pprofpb.Label) (map[string]string, map[string]int64) {
+func LabelsFromSample(takenLabels map[string]string, stringTable []string, plabels []*pprofpb.Label) (map[string]string, map[string]int64) {
 	labels := map[string][]string{}
 	labelNames := []string{}
 	for _, label := range plabels {
@@ -188,11 +209,11 @@ func LabelsFromSample(takenLabelNames map[string]string, stringTable []string, p
 	resLabels := map[string]string{}
 	for _, labelName := range labelNames {
 		resLabelName := labelName
-		if _, ok := takenLabelNames[resLabelName]; ok {
-			resLabelName = "exported_" + resLabelName
+		if _, ok := takenLabels[resLabelName]; ok {
+			resLabelName = model.ExportedLabelPrefix + resLabelName
 		}
 		if _, ok := resLabels[resLabelName]; ok {
-			resLabelName = "exported_" + resLabelName
+			resLabelName = model.ExportedLabelPrefix + resLabelName
 		}
 		resLabels[resLabelName] = labels[labelName][0]
 	}
@@ -301,7 +322,7 @@ func (n *MetastoreNormalizer) NormalizeLocations(
 			mappingIndex := location.MappingId - 1
 			mappingNormalizationInfo := mappings[mappingIndex]
 
-			if !normalizedAddress {
+			if n.isAddrNormEnabled && !normalizedAddress {
 				addr = uint64(int64(addr) + mappingNormalizationInfo.offset)
 			}
 			mappingId = mappingNormalizationInfo.id

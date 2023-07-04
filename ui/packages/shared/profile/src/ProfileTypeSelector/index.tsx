@@ -36,13 +36,11 @@ export const wellKnownProfiles: WellKnownProfiles = {
     name: 'Block Contention Time Total',
     help: 'Time delayed stack traces caused by blocking on synchronization primitives.',
   },
-  // Unfortunately, fgprof does not set the period type and unit.
-  'fgprof:samples:count::': {
+  'fgprof:samples:count:wallclock:nanoseconds:delta': {
     name: 'Fgprof Samples Total',
     help: 'CPU profile samples observed regardless of their current On/Off CPU scheduling status',
   },
-  // Unfortunately, fgprof does not set the period type and unit.
-  'fgprof:time:nanoseconds::': {
+  'fgprof:time:nanoseconds:wallclock:nanoseconds:delta': {
     name: 'Fgprof Samples Time Total',
     help: 'CPU profile measured regardless of their current On/Off CPU scheduling status in nanoseconds',
   },
@@ -108,7 +106,7 @@ function flexibleWellKnownProfileMatching(name: string): WellKnownProfile | unde
   return requiredKey != null ? wellKnownProfiles[requiredKey] : undefined;
 }
 
-function profileSelectElement(
+export function profileSelectElement(
   name: string,
   flexibleKnownProfilesDetection: boolean
 ): SelectElement {

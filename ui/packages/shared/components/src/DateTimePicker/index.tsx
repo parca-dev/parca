@@ -13,7 +13,7 @@
 
 import ReactDatePicker from 'react-datepicker';
 
-import {convertLocalToUTCDate, convertUTCToLocalDate} from '@parca/functions';
+import {convertLocalToUTCDate, convertUTCToLocalDate} from '@parca/utilities';
 
 interface Props {
   selected: Date;
@@ -25,8 +25,8 @@ const DateTimePicker = ({selected, onChange}: Props): JSX.Element => (
     selected={selected}
     onChange={onChange}
     showTimeInput
-    dateFormat="MMMM d, yyyy h:mm aa"
-    className="text-sm w-52 p-2 rounded-md  bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600"
+    dateFormat="yyyy-MM-dd HH:mm:ss"
+    className="w-full rounded-md border border-gray-200  bg-gray-50 p-2 text-sm dark:border-gray-600 dark:bg-gray-900"
   />
 );
 
@@ -35,8 +35,8 @@ export const UTCDateTimePicker = ({selected, onChange}: Props): JSX.Element => (
     selected={convertUTCToLocalDate(selected)}
     onChange={date => onChange(date != null ? convertLocalToUTCDate(date) : null)}
     showTimeInput
-    dateFormat="MMMM d, yyyy h:mm aa"
-    className="text-sm w-52 p-2 rounded-md  bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600"
+    dateFormat="yyyy-MM-dd HH:mm:ss"
+    className="w-full rounded-md border border-gray-200  bg-gray-50 p-2 text-sm dark:border-gray-600 dark:bg-gray-900"
   />
 );
 

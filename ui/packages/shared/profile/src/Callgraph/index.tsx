@@ -20,8 +20,8 @@ import {MapInteractionCSS} from 'react-map-interaction';
 
 import {CallgraphEdge, Callgraph as CallgraphType} from '@parca/client';
 import {Button, useKeyDown, useURLState} from '@parca/components';
-import {getNewSpanColor} from '@parca/functions';
 import {selectDarkMode, setHoveringNode, useAppDispatch, useAppSelector} from '@parca/store';
+import {getNewSpanColor} from '@parca/utilities';
 
 import GraphTooltip from '../GraphTooltip';
 
@@ -64,7 +64,7 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
   const maxColor: string = getNewSpanColor(isDarkMode);
   const minColor: string = d3.scaleLinear([isDarkMode ? 'black' : 'white', maxColor])(0.3);
   const colorRange: [string, string] = [minColor, maxColor];
-  const cumulatives = data.edges.map((edge: CallgraphEdge) => parseInt(edge.cumulative));
+  const cumulatives = data.edges.map((edge: CallgraphEdge) => edge.cumulative.toString());
   const cumulativesRange = d3.extent(cumulatives);
   const colorScale = d3
     .scaleSequentialLog(d3.interpolateBlues)
@@ -83,8 +83,7 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
 
         nodes.each(function () {
           const nodeData = data.nodes.find((n): boolean => {
-            // @ts-expect-error
-            return n.id === this.id;
+            return n.id === (this as Element).id;
           });
           const defaultColor = colorScale(Number(nodeData?.cumulative));
           const node = d3.select(this);
@@ -126,7 +125,7 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
     view.translation.y !== originalView.translation.y;
 
   return (
-    <div className="w-full relative">
+    <div className="relative w-full">
       <div ref={containerRef} className="w-full overflow-hidden">
         <MapInteractionCSS
           showControls
@@ -148,7 +147,8 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
           <GraphTooltip
             type="callgraph"
             unit={sampleUnit}
-            total={parseInt(data.cumulative)}
+            total={data.cumulative}
+            totalUnfiltered={data.cumulative}
             contextElement={containerRef.current}
           />
         )}
@@ -156,7 +156,7 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
       <div
         className={cx(
           dashboardItems.length > 1 ? 'left-[25px]' : 'left-0',
-          'w-auto absolute top-[-46px]'
+          'absolute top-[-46px] w-auto'
         )}
       >
         <Button

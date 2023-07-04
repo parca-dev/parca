@@ -46,7 +46,7 @@ func TestGenerateTopTable(t *testing.T) {
 		trace.NewNoopTracerProvider().Tracer(""),
 	)
 	metastore := metastore.NewInProcessClient(l)
-	normalizer := parcacol.NewNormalizer(metastore)
+	normalizer := parcacol.NewNormalizer(metastore, true)
 	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false)
 	require.NoError(t, err)
 
@@ -54,11 +54,13 @@ func TestGenerateTopTable(t *testing.T) {
 	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
-	res, err := GenerateTopTable(ctx, symbolizedProfile)
+	res, cummulative, err := GenerateTopTable(ctx, symbolizedProfile)
 	require.NoError(t, err)
 
-	require.Equal(t, int32(1886), res.Total)
+	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
+	require.Equal(t, int32(310797348), res.Total)
 	require.Equal(t, int32(899), res.Reported)
+	require.Equal(t, int64(310797348), cummulative)
 	require.Len(t, res.List, 899)
 
 	found := false
@@ -152,7 +154,7 @@ func TestGenerateTopTableAggregateFlat(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	top, err := GenerateTopTable(ctx, p)
+	top, _, err := GenerateTopTable(ctx, p)
 	require.NoError(t, err)
 
 	require.Equal(t, 4, len(top.List))
@@ -186,7 +188,7 @@ func TestGenerateDiffTopTable(t *testing.T) {
 		trace.NewNoopTracerProvider().Tracer(""),
 	)
 	metastore := metastore.NewInProcessClient(l)
-	normalizer := parcacol.NewNormalizer(metastore)
+	normalizer := parcacol.NewNormalizer(metastore, true)
 	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p1, false)
 	require.NoError(t, err)
 
@@ -209,7 +211,7 @@ func TestGenerateDiffTopTable(t *testing.T) {
 	p, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
-	res, err := GenerateTopTable(ctx, p)
+	res, _, err := GenerateTopTable(ctx, p)
 	require.NoError(t, err)
 
 	found = false

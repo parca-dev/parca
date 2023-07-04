@@ -17,8 +17,8 @@ import {Provider} from 'react-redux';
 
 import {QueryServiceClient} from '@parca/client';
 import {DateTimeRange, KeyDownProvider, useParcaContext} from '@parca/components';
-import type {NavigateFunction} from '@parca/functions';
 import {store} from '@parca/store';
+import type {NavigateFunction} from '@parca/utilities';
 
 import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
 import {QuerySelection, useProfileTypes} from '../ProfileSelector';
@@ -124,7 +124,7 @@ const ProfileExplorerApp = ({
   useEffect(() => {
     const mergeFrom = merge_from_a ?? undefined;
     const mergeTo = merge_to_a ?? undefined;
-    const labels = (labels_a as string[]) ?? [''];
+    const labels = typeof labels_a === 'string' ? [labels_a] : (labels_a as string[]) ?? [''];
     const profileA = ProfileSelectionFromParams(
       expression_a,
       from_a as string,
@@ -137,12 +137,12 @@ const ProfileExplorerApp = ({
 
     setProfileA(profileA);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [merge_from_a, merge_to_a, filter_by_function]);
+  }, [expression_a, from_a, to_a, merge_from_a, merge_to_a, labels_a, filter_by_function]);
 
   useEffect(() => {
     const mergeFrom = merge_from_b ?? undefined;
     const mergeTo = merge_to_b ?? undefined;
-    const labels = (labels_b as string[]) ?? [''];
+    const labels = typeof labels_b === 'string' ? [labels_b] : (labels_b as string[]) ?? [''];
     const profileB = ProfileSelectionFromParams(
       expression_b,
       from_b as string,
@@ -155,7 +155,7 @@ const ProfileExplorerApp = ({
 
     setProfileB(profileB);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [merge_from_b, merge_to_b, filter_by_function]);
+  }, [expression_b, from_b, to_b, merge_from_b, merge_to_b, labels_b, filter_by_function]);
 
   if (profileTypesLoading) {
     return <>{loader}</>;
@@ -168,7 +168,7 @@ const ProfileExplorerApp = ({
   if (profileTypesError !== undefined && profileTypesError !== null) {
     return (
       <div
-        className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+        className="relative rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700"
         role="alert"
       >
         <strong className="font-bold">Error! </strong>

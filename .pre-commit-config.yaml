@@ -7,7 +7,7 @@ repos:
       - id: trailing-whitespace
         exclude: ^ui/packages/shared/client/
   - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.4.2
+    rev: v1.5.1
     hooks:
       - id: insert-license
         name: Insert license in comments (Go)
@@ -35,7 +35,7 @@ repos:
         files: \.tsx?$
         exclude: ^ui/packages/shared/client/
   - repo: https://github.com/bufbuild/buf
-    rev: v1.15.1
+    rev: v1.23.1
     hooks:
       # Hijack an existing hook ID to run buf generate
       # It also mean running `pre-commit run buf-format` will run both format and generate
@@ -48,7 +48,7 @@ repos:
         args:
           - --against=https://github.com/parca-dev/parca.git#branch=main,ref=HEAD~1,subdir=proto
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.51.2
+    rev: v1.53.3
     hooks:
       - id: golangci-lint
   - repo: https://github.com/hadolint/hadolint
@@ -70,7 +70,7 @@ repos:
           - --case-indent
           - --binary-next-line
   - repo: https://github.com/google/go-jsonnet
-    rev: v0.19.1
+    rev: v0.20.0
     hooks:
       - id: jsonnet-format
   - repo: https://github.com/pre-commit/mirrors-prettier
