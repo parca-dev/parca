@@ -17,7 +17,7 @@ import {tableFromIPC} from 'apache-arrow';
 
 import {QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata, useParcaContext, useURLState} from '@parca/components';
-import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
+import {USER_PREFERENCES, useUIFeatureFlag, useUserPreference} from '@parca/hooks';
 import {saveAsBlob, type NavigateFunction} from '@parca/utilities';
 
 import {ProfileSource} from './ProfileSource';
@@ -40,6 +40,7 @@ export const ProfileViewWithData = ({
   const metadata = useGrpcMetadata();
   const [dashboardItems] = useURLState({param: 'dashboard_items', navigateTo});
   const [enableTrimming] = useUserPreference<boolean>(USER_PREFERENCES.ENABLE_GRAPH_TRIMMING.key);
+  const [arrowFlamegraphEnabled] = useUIFeatureFlag('flamegraph-arrow');
   const [pprofDownloading, setPprofDownloading] = useState<boolean>(false);
 
   const nodeTrimThreshold = useMemo(() => {
@@ -55,11 +56,15 @@ export const ProfileViewWithData = ({
     return (1 / width) * 100;
   }, [enableTrimming]);
 
+  const reportType = arrowFlamegraphEnabled
+    ? QueryRequest_ReportType.FLAMEGRAPH_ARROW
+    : QueryRequest_ReportType.FLAMEGRAPH_TABLE;
+
   const {
     isLoading: flamegraphLoading,
     response: flamegraphResponse,
     error: flamegraphError,
-  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMEGRAPH_ARROW, {
+  } = useQuery(queryClient, profileSource, reportType, {
     skip: !dashboardItems.includes('icicle'),
     nodeTrimThreshold,
   });
@@ -82,7 +87,10 @@ export const ProfileViewWithData = ({
   });
 
   useEffect(() => {
-    if (!flamegraphLoading && flamegraphResponse?.report.oneofKind === 'flamegraphArrow') {
+    if (
+      (!flamegraphLoading && flamegraphResponse?.report.oneofKind === 'flamegraph') ||
+      flamegraphResponse?.report.oneofKind === 'flamegraphArrow'
+    ) {
       perf?.markInteraction('Flamegraph render', flamegraphResponse.total);
     }
 
@@ -142,7 +150,11 @@ export const ProfileViewWithData = ({
       filtered={filtered}
       flamegraphData={{
         loading: flamegraphLoading,
-        data:
+        graph:
+          flamegraphResponse?.report.oneofKind === 'flamegraph'
+            ? flamegraphResponse?.report?.flamegraph
+            : undefined,
+        table:
           flamegraphResponse?.report.oneofKind === 'flamegraphArrow'
             ? tableFromIPC(flamegraphResponse?.report?.flamegraphArrow.record)
             : undefined,

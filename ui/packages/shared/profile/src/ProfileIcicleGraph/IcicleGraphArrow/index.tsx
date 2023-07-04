@@ -17,8 +17,6 @@ import {Dictionary, Table, Vector} from 'apache-arrow';
 
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {
-  FEATURE_TYPES,
-  FeaturesMap,
   getColorForFeature,
   selectDarkMode,
   setHoveringNode,
@@ -33,7 +31,7 @@ import {
   type NavigateFunction,
 } from '@parca/utilities';
 
-import GraphTooltip from '../../GraphTooltip';
+import GraphTooltipArrow from '../../GraphTooltipArrow';
 import ColorStackLegend from './ColorStackLegend';
 import {IcicleNode, RowHeight} from './IcicleGraphNodes';
 import {extractFeature} from './utils';
@@ -165,7 +163,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
         navigateTo={navigateTo}
         compareMode={compareMode}
       />
-      <GraphTooltip
+      <GraphTooltipArrow
         table={table}
         unit={sampleUnit}
         total={total}

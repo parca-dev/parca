@@ -15,11 +15,13 @@ import {useEffect, useMemo} from 'react';
 
 import {Table} from 'apache-arrow';
 
+import {Flamegraph} from '@parca/client';
 import {Button} from '@parca/components';
 import {useContainerDimensions} from '@parca/hooks';
 import {divide, selectQueryParam, type NavigateFunction} from '@parca/utilities';
 
 import DiffLegend from '../components/DiffLegend';
+import IcicleGraph from './IcicleGraph';
 import IcicleGraphArrow from './IcicleGraphArrow';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
@@ -28,7 +30,8 @@ export type ResizeHandler = (width: number, height: number) => void;
 
 interface ProfileIcicleGraphProps {
   width?: number;
-  graph: Table<any>;
+  graph?: Flamegraph;
+  table?: Table<any>;
   total: bigint;
   filtered: bigint;
   sampleUnit: string;
@@ -41,6 +44,7 @@ interface ProfileIcicleGraphProps {
 
 const ProfileIcicleGraph = ({
   graph,
+  table,
   total,
   filtered,
   curPath,
@@ -103,7 +107,7 @@ const ProfileIcicleGraph = ({
     );
   }, [setNewCurPath, curPath, setActionButtons]);
 
-  if (graph === undefined) return <div>no data...</div>;
+  if (graph === undefined && table === undefined) return <div>no data...</div>;
 
   if (total === 0n && !loading) return <>Profile has no samples</>;
 
@@ -115,16 +119,30 @@ const ProfileIcicleGraph = ({
     <div className="relative">
       {compareMode && <DiffLegend />}
       <div ref={ref}>
-        <IcicleGraphArrow
-          width={dimensions?.width}
-          table={graph}
-          total={total}
-          filtered={filtered}
-          curPath={curPath}
-          setCurPath={setNewCurPath}
-          sampleUnit={sampleUnit}
-          navigateTo={navigateTo}
-        />
+        {graph !== undefined && (
+          <IcicleGraph
+            width={dimensions?.width}
+            graph={graph}
+            total={total}
+            filtered={filtered}
+            curPath={curPath}
+            setCurPath={setNewCurPath}
+            sampleUnit={sampleUnit}
+            navigateTo={navigateTo}
+          />
+        )}
+        {table !== undefined && (
+          <IcicleGraphArrow
+            width={dimensions?.width}
+            table={table}
+            total={total}
+            filtered={filtered}
+            curPath={curPath}
+            setCurPath={setNewCurPath}
+            sampleUnit={sampleUnit}
+            navigateTo={navigateTo}
+          />
+        )}
       </div>
       <p className="my-2 text-xs">
         Showing {totalFormatted}{' '}
