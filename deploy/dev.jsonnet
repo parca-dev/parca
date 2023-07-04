@@ -1,4 +1,4 @@
-function(namespace='parca', agentVersion='v0.10.0-rc.0', separateUI=true)
+function(namespace='parca', agentVersion='latest', separateUI=true)
   local parca = (import 'parca/parca.libsonnet')({
     name: 'parca',
     namespace: namespace,
