@@ -306,7 +306,6 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
           table={table}
           row={row}
           mappingColors={mappingColors}
-          children={children}
           x={x}
           y={RowHeight}
           xScale={newXScale}
@@ -320,7 +319,9 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
           sortBy={sortBy}
           darkMode={darkMode}
           compareMode={compareMode}
-        />
+        >
+          {children}
+        </IcicleGraphNodes>
       )}
     </>
   );

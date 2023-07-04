@@ -18,7 +18,7 @@ import cx from 'classnames';
 
 import {useURLState} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
-import {EVERYTHING_ELSE, FeaturesMap} from '@parca/store';
+import {EVERYTHING_ELSE, type FeaturesMap} from '@parca/store';
 import type {NavigateFunction} from '@parca/utilities';
 
 interface Props {

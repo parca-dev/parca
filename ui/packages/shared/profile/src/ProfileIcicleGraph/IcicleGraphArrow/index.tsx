@@ -24,10 +24,10 @@ import {
   useAppSelector,
 } from '@parca/store';
 import {
-  ColorProfileName,
   getLastItem,
   scaleLinear,
   selectQueryParam,
+  type ColorProfileName,
   type NavigateFunction,
 } from '@parca/utilities';
 
