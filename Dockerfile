@@ -36,10 +36,10 @@ RUN chmod +x parca
 FROM --platform="${TARGETPLATFORM:-linux/amd64}"  docker.io/alpine:3.18.2@sha256:82d1e9d7ed48a7523bdebc18cf6290bdb97b82302a8a9c27d4fe885949ea94d1 AS runner
 
 LABEL \
-  org.opencontainers.image.source="https://github.com/parca-dev/parca" \
-  org.opencontainers.image.url="https://github.com/parca-dev/parca" \
-  org.opencontainers.image.description="Continuous profiling for analysis of CPU and memory usage, down to the line number and throughout time. Saving infrastructure cost, improving performance, and increasing reliability." \
-  org.opencontainers.image.licenses="Apache-2.0"
+    org.opencontainers.image.source="https://github.com/parca-dev/parca" \
+    org.opencontainers.image.url="https://github.com/parca-dev/parca" \
+    org.opencontainers.image.description="Continuous profiling for analysis of CPU and memory usage, down to the line number and throughout time. Saving infrastructure cost, improving performance, and increasing reliability." \
+    org.opencontainers.image.licenses="Apache-2.0"
 
 USER nobody
 
