@@ -36,7 +36,7 @@ interface IcicleGraphNodesProps {
   table: Table<any>;
   row: number;
   mappingColors: mappingColors;
-  children: number[];
+  childRows: number[];
   x: number;
   y: number;
   total: bigint;
@@ -54,7 +54,7 @@ interface IcicleGraphNodesProps {
 
 export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
   table,
-  children,
+  childRows,
   mappingColors,
   x,
   y,
@@ -72,18 +72,18 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
 }: IcicleGraphNodesProps): React.JSX.Element {
   const cumulatives = table.getChild(FIELD_CUMULATIVE);
 
-  if (children === undefined || children.length === 0) {
+  if (childRows === undefined || childRows.length === 0) {
     return <></>;
   }
 
-  children =
+  childRows =
     curPath.length === 0
-      ? children
-      : children.filter(c => nodeLabel(table, c, false) === curPath[0]);
+      ? childRows
+      : childRows.filter(c => nodeLabel(table, c, false) === curPath[0]);
 
   let childrenCumulative = BigInt(0);
   const childrenElements: ReactNode[] = [];
-  children.forEach((child, i) => {
+  childRows.forEach((child, i) => {
     const xStart = Math.floor(xScale(childrenCumulative));
     const c: bigint = cumulatives?.get(child);
     childrenCumulative += c;
@@ -183,12 +183,12 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const functionName: string | null = functionNameColumn?.get(row);
   const cumulative: bigint = cumulativeColumn?.get(row);
   const diff: bigint | null = diffColumn?.get(row);
-  const children: number[] = Array.from(table.getChild(FIELD_CHILDREN)?.get(row) ?? []);
+  const childRows: number[] = Array.from(table.getChild(FIELD_CHILDREN)?.get(row) ?? []);
 
   // TODO: Maybe it's better to pass down the sorter function as prop instead of figuring this out here.
   switch (sortBy) {
     case FIELD_FUNCTION_NAME:
-      children.sort((a, b) => {
+      childRows.sort((a, b) => {
         // TODO: Support fallthrough to comparing addresses or something
         const afn: string = functionNameColumn?.get(a);
         const bfn: string = functionNameColumn?.get(b);
@@ -196,14 +196,14 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
       });
       break;
     case FIELD_CUMULATIVE:
-      children.sort((a, b) => {
+      childRows.sort((a, b) => {
         const aCumulative: bigint = cumulativeColumn?.get(a);
         const bCumulative: bigint = cumulativeColumn?.get(b);
         return Number(bCumulative - aCumulative);
       });
       break;
     case FIELD_DIFF:
-      children.sort((a, b) => {
+      childRows.sort((a, b) => {
         const aDiff: bigint | null = diffColumn?.get(a);
         const bDiff: bigint | null = diffColumn?.get(b);
         if (aDiff !== null && bDiff !== null) {
@@ -301,11 +301,12 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
           </svg>
         )}
       </g>
-      {children.length > 0 && (
+      {childRows.length > 0 && (
         <IcicleGraphNodes
           table={table}
           row={row}
           mappingColors={mappingColors}
+          childRows={childRows}
           x={x}
           y={RowHeight}
           xScale={newXScale}
@@ -319,9 +320,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
           sortBy={sortBy}
           darkMode={darkMode}
           compareMode={compareMode}
-        >
-          {children}
-        </IcicleGraphNodes>
+        />
       )}
     </>
   );
