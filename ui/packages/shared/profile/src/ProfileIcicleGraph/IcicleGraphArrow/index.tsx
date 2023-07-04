@@ -82,34 +82,45 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
 
   const mappings = useMemo(() => {
-    // Reading the mappings from the dictionary that contains all mapping strings.
+    // Read the mappings from the dictionary that contains all mapping strings.
+    // This is great, as might only have a dozen or so mappings,
+    // and don't need to read through all the rows (potentially thousands).
     const mappingsDict: Vector<Dictionary> | null = table.getChild(FIELD_MAPPING_FILE);
-    const mappings = Array.from(mappingsDict?.data.values() ?? [])
-      .map((mapping): string[] => {
-        const dict = mapping.dictionary;
-        const len = dict?.data.length ?? 0;
-        const values: string[] = [];
-        for (let i = 0; i <= len; i++) {
-          // Read the value and only append the binaries last part - binary name
-          values.push(getLastItem(dict?.get(i)) ?? '');
-        }
-        return values;
-      })
-      .flat();
+    const mappings =
+      mappingsDict?.data
+        .map(mapping => {
+          if (mapping.dictionary == null) {
+            return [];
+          }
+          const len = mapping.dictionary.length;
+          const entries: string[] = [];
+          for (let i = 0; i < len; i++) {
+            entries.push(getLastItem(mapping.dictionary.get(i)) ?? '');
+          }
+          return entries;
+        })
+        .flat() ?? [];
 
     // We add a EVERYTHING ELSE mapping to the list.
     mappings.push('');
 
     // We look through the function names to find out if there's a runtime function.
+    // Again, we only read through the dictionary, which is much faster than reading through all the rows.
+    // We stop as soon as we find a runtime function.
     const functionNamesDict: Vector<Dictionary> | null = table.getChild(FIELD_FUNCTION_NAME);
-    // TODO: There must be a better way to do this. Somehow read the function name dictionary rather than iterating over all rows.
-    for (let i = 0; i < table.numRows; i++) {
-      const fn: string | null = functionNamesDict?.get(i);
-      if (fn?.startsWith('runtime') === true) {
-        mappings.push('runtime');
-        break;
+    functionNamesDict?.data.forEach(fn => {
+      if (fn.dictionary == null) {
+        return;
       }
-    }
+      const len = fn.dictionary.length;
+      for (let i = 0; i < len; i++) {
+        const fn: string | null = functionNamesDict?.get(i);
+        if (fn?.startsWith('runtime') === true) {
+          mappings.push('runtime');
+          break;
+        }
+      }
+    });
 
     // We sort the mappings alphabetically to make sure that the order is always the same.
     mappings.sort((a, b) => a.localeCompare(b));
@@ -196,6 +207,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               isRoot={true}
               searchString={currentSearchString}
               sortBy={sortBy}
+              darkMode={isDarkMode}
               compareMode={compareMode}
             />
           </g>

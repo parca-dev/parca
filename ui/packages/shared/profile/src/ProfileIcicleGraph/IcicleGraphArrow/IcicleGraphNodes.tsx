@@ -17,14 +17,8 @@ import {Table} from 'apache-arrow';
 import cx from 'classnames';
 
 import {useKeyDown} from '@parca/components';
-import {
-  EVERYTHING_ELSE,
-  selectBinaries,
-  setHoveringRow,
-  useAppDispatch,
-  useAppSelector,
-} from '@parca/store';
-import {getLastItem, isSearchMatch, scaleLinear} from '@parca/utilities';
+import {selectBinaries, setHoveringRow, useAppDispatch, useAppSelector} from '@parca/store';
+import {isSearchMatch, scaleLinear} from '@parca/utilities';
 
 import {
   FIELD_CHILDREN,
@@ -33,6 +27,7 @@ import {
   FIELD_FUNCTION_NAME,
   FIELD_MAPPING_FILE,
 } from './index';
+import useNodeColor from './useNodeColor';
 import {nodeLabel} from './utils';
 
 export const RowHeight = 26;
@@ -53,6 +48,7 @@ interface IcicleGraphNodesProps {
   xScale: (value: bigint) => number;
   searchString?: string;
   sortBy: string;
+  darkMode: boolean;
   compareMode: boolean;
 }
 
@@ -71,6 +67,7 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
   curPath,
   sortBy,
   searchString,
+  darkMode,
   compareMode,
 }: IcicleGraphNodesProps): React.JSX.Element {
   const cumulatives = table.getChild(FIELD_CUMULATIVE);
@@ -109,6 +106,7 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
         xScale={xScale}
         sortBy={sortBy}
         searchString={searchString}
+        darkMode={darkMode}
         compareMode={compareMode}
       />
     );
@@ -138,6 +136,7 @@ interface IcicleNodeProps {
   isRoot?: boolean;
   searchString?: string;
   sortBy: string;
+  darkMode: boolean;
   compareMode: boolean;
 }
 
@@ -168,6 +167,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   isRoot = false,
   searchString,
   sortBy,
+  darkMode,
   compareMode,
 }: IcicleNodeProps): React.JSX.Element {
   const {isShiftDown} = useKeyDown();
@@ -182,6 +182,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const mappingFile: string | null = mappingColumn?.get(row);
   const functionName: string | null = functionNameColumn?.get(row);
   const cumulative: bigint = cumulativeColumn?.get(row);
+  const diff: bigint | null = diffColumn?.get(row);
   const children: number[] = Array.from(table.getChild(FIELD_CHILDREN)?.get(row) ?? []);
 
   // TODO: Maybe it's better to pass down the sorter function as prop instead of figuring this out here.
@@ -205,7 +206,6 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
       children.sort((a, b) => {
         const aDiff: bigint | null = diffColumn?.get(a);
         const bDiff: bigint | null = diffColumn?.get(b);
-        // TODO: Double check this sorting actually makes sense, when coloring is back
         if (aDiff !== null && bDiff !== null) {
           return Number(bDiff - aDiff);
         }
@@ -222,8 +222,15 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   }
 
   const binaries = useAppSelector(selectBinaries);
-  // const {isShiftDown} = useKeyDown();
-  // const colorResult = useNodeColor({table, row, compareMode});
+  const colorResult = useNodeColor({
+    isDarkMode: darkMode,
+    compareMode,
+    cumulative,
+    diff,
+    mappingColors,
+    mappingFile,
+    functionName,
+  });
   const name = useMemo(() => {
     return isRoot ? 'root' : nodeLabel(table, row, binaries.length > 1);
   }, [table, row, isRoot, binaries]);
@@ -263,14 +270,6 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     dispatch(setHoveringRow(undefined));
   };
 
-  // To get the color we first check if the function name starts with 'runtime'.
-  // If it does, we color it as runtime. Otherwise, we check the mapping file.
-  // If there is no mapping file, we color it as 'everything else'.
-  const color =
-    functionName?.startsWith('runtime') === true
-      ? mappingColors.runtime
-      : mappingColors[getLastItem(mappingFile ?? '') ?? EVERYTHING_ELSE];
-
   return (
     <>
       <g
@@ -288,7 +287,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
           width={width}
           height={height}
           style={{
-            fill: color,
+            fill: colorResult,
           }}
           className={cx('stroke-white dark:stroke-gray-700', {
             'opacity-50': isHighlightEnabled && !isHighlighted,
@@ -319,6 +318,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
           setCurPath={setCurPath}
           searchString={searchString}
           sortBy={sortBy}
+          darkMode={darkMode}
           compareMode={compareMode}
         />
       )}

@@ -11,44 +11,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useMemo} from 'react';
+import {EVERYTHING_ELSE} from '@parca/store';
+import {diffColor, getLastItem} from '@parca/utilities';
 
-import {Table} from 'apache-arrow';
-
-import {EVERYTHING_ELSE, selectDarkMode, selectStackColors, useAppSelector} from '@parca/store';
-import {diffColor} from '@parca/utilities';
-
-import {FIELD_CUMULATIVE, FIELD_DIFF} from './index';
-
-interface Props {
-  table: Table<any>;
-  row: number;
-  compareMode: boolean;
+interface mappingColors {
+  [key: string]: string;
 }
 
-const useNodeColor = ({table, row, compareMode}: Props): string => {
-  const colors = useAppSelector(selectStackColors);
-  const isDarkMode = useAppSelector(selectDarkMode);
+interface Props {
+  isDarkMode: boolean;
+  compareMode: boolean;
+  cumulative: bigint;
+  diff: bigint | null;
+  mappingColors: mappingColors;
+  functionName: string | null;
+  mappingFile: string | null;
+}
 
-  const cumulative = table.getChild(FIELD_CUMULATIVE)?.get(row);
-  const diff = table.getChild(FIELD_DIFF)?.get(row);
+const useNodeColor = ({
+  isDarkMode,
+  compareMode,
+  cumulative,
+  diff,
+  mappingColors,
+  functionName,
+  mappingFile,
+}: Props): string => {
+  if (compareMode) {
+    return diffColor(diff ?? 0n, cumulative, isDarkMode);
+  }
 
-  const color: string = useMemo(() => {
-    if (compareMode) {
-      return diffColor(diff, cumulative, isDarkMode);
-    }
-
-    console.log(colors);
-
-    const color = colors[EVERYTHING_ELSE];
-    // const color =
-    //   colors[data.feature ?? EVERYTHING_ELSE] ??
-    //   (!isDarkMode ? COLOR_PROFILES.default.colors[0][0] : COLOR_PROFILES.default.colors[0][1]);
-
-    return color;
-  }, [compareMode, colors, diff, cumulative, isDarkMode]);
-
-  return color;
+  // To get the color we first check if the function name starts with 'runtime'.
+  // If it does, we color it as runtime. Otherwise, we check the mapping file.
+  // If there is no mapping file, we color it as 'everything else'.
+  return functionName?.startsWith('runtime') === true
+    ? mappingColors.runtime
+    : mappingColors[getLastItem(mappingFile ?? '') ?? EVERYTHING_ELSE];
 };
 
 export default useNodeColor;

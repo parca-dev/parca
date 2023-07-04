@@ -13,69 +13,29 @@
 
 import {Table} from 'apache-arrow';
 
-import {FlamegraphNode} from '@parca/client';
-import {Location, Mapping} from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
 import {EVERYTHING_ELSE, FEATURE_TYPES, type Feature} from '@parca/store';
 import {getLastItem} from '@parca/utilities';
 
-import {FIELD_FUNCTION_NAME} from './index';
-
-export const getBinaryName = (
-  node: FlamegraphNode,
-  mappings: Mapping[],
-  locations: Location[],
-  strings: string[]
-): string | undefined => {
-  if (node.meta?.locationIndex === undefined || node.meta?.locationIndex === 0) {
-    return undefined;
-  }
-  if (node.meta.locationIndex > locations.length) {
-    return undefined;
-  }
-
-  const location = locations[node.meta.locationIndex - 1];
-
-  if (location.mappingIndex === undefined || location.mappingIndex === 0) {
-    return undefined;
-  }
-  const mapping = mappings[location.mappingIndex - 1];
-  if (mapping == null || mapping.fileStringIndex == null) {
-    return undefined;
-  }
-
-  const mappingFile = strings[mapping.fileStringIndex];
-  return getLastItem(mappingFile);
-};
+import {hexifyAddress} from '../../utils';
+import {FIELD_FUNCTION_NAME, FIELD_LOCATION_ADDRESS, FIELD_MAPPING_FILE} from './index';
 
 export function nodeLabel(table: Table<any>, row: number, showBinaryName: boolean): string {
-  const functionName = table.getChild(FIELD_FUNCTION_NAME)?.get(row);
-  return functionName;
+  const functionName: string | null = table.getChild(FIELD_FUNCTION_NAME)?.get(row);
+  if (functionName !== null && functionName !== '') {
+    return functionName;
+  }
 
-  //if (node.meta.locationIndex > locations.length) {
-  //  console.info('location index out of bounds', node.meta.locationIndex, locations.length);
-  //  return '<unknown>';
-  //}
+  let mappingString = '';
+  if (showBinaryName) {
+    const mappingFile: string | null = table.getChild(FIELD_MAPPING_FILE)?.get(row) ?? '';
+    const binary: string | undefined = getLastItem(mappingFile ?? undefined);
+    if (binary != null) mappingString = `[${binary}]`;
+  }
 
-  //const location = locations[node.meta.locationIndex - 1];
-  //if (location === undefined) return '<unknown>';
-
-  //let mappingString = '';
-
-  //if (showBinaryName) {
-  //  const binary = getBinaryName(node, mappings, locations, strings);
-  //  if (binary != null) mappingString = `[${binary}]`;
-  //}
-
-  //if (location.lines.length > 0) {
-  //  const funcName =
-  //    strings[functions[location.lines[node.meta.lineIndex].functionIndex - 1].nameStringIndex];
-  //  return `${mappingString.length > 0 ? `${mappingString} ` : ''}${funcName}`;
-  //}
-
-  //const address = hexifyAddress(location.address);
-  //const fallback = `${mappingString}${address}`;
-
-  //return fallback === '' ? '<unknown>' : fallback;
+  const addressBigInt: bigint = table.getChild(FIELD_LOCATION_ADDRESS)?.get(row);
+  const address = hexifyAddress(addressBigInt);
+  const fallback = `${mappingString}${address}`;
+  return fallback === '' ? '<unknown>' : fallback;
 }
 
 export const extractFeature = (mapping: string): Feature => {

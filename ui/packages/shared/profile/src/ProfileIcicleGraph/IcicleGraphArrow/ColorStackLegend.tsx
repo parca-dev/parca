@@ -32,18 +32,10 @@ const ColorStackLegend = ({
   navigateTo,
   compareMode = false,
 }: Props): React.JSX.Element => {
-  if (mappingColors === undefined) {
-    return <></>;
-  }
-
   const [colorProfileName] = useUserPreference<string>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
   const [currentSearchString, setSearchString] = useURLState({param: 'search_string', navigateTo});
-
-  if (Object.entries(mappingColors).length === 0) {
-    return <></>;
-  }
 
   const stackColorArray = useMemo(() => {
     return Object.entries(mappingColors).sort(([featureA], [featureB]) => {
@@ -56,6 +48,14 @@ const ColorStackLegend = ({
       return featureA?.localeCompare(featureB ?? '') ?? 0;
     });
   }, [mappingColors]);
+
+  if (mappingColors === undefined) {
+    return <></>;
+  }
+
+  if (Object.entries(mappingColors).length === 0) {
+    return <></>;
+  }
 
   if (colorProfileName === 'default' || compareMode) {
     return <></>;
