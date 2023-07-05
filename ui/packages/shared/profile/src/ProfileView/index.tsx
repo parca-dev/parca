@@ -53,7 +53,7 @@ type NavigateFunction = (path: string, queryParams: any, options?: {replace?: bo
 
 export interface FlamegraphData {
   loading: boolean;
-  graph?: Flamegraph;
+  data?: Flamegraph;
   table?: Table<any>;
   total?: bigint;
   filtered?: bigint;
@@ -232,7 +232,7 @@ export const ProfileView = ({
   }): JSX.Element => {
     switch (type) {
       case 'icicle': {
-        return flamegraphData?.table !== undefined || flamegraphData.graph !== undefined ? (
+        return flamegraphData?.table !== undefined || flamegraphData.data !== undefined ? (
           <ConditionalWrapper<ProfilerProps>
             condition={perf?.onRender != null}
             WrapperComponent={Profiler}
@@ -245,7 +245,7 @@ export const ProfileView = ({
               curPath={curPath}
               setNewCurPath={setNewCurPath}
               table={flamegraphData.table}
-              graph={flamegraphData.graph}
+              graph={flamegraphData.data}
               total={total}
               filtered={filtered}
               sampleUnit={sampleUnit}

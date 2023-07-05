@@ -73,7 +73,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const isDarkMode = useAppSelector(selectDarkMode);
 
   const [height, setHeight] = useState(0);
-  const [sortBy, setSortBy] = useState(FIELD_FUNCTION_NAME);
+  const sortBy = FIELD_FUNCTION_NAME; // TODO: make this configurable via UI
   const svg = useRef(null);
   const ref = useRef<SVGGElement>(null);
 
@@ -161,14 +161,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   return (
     <div onMouseLeave={() => dispatch(setHoveringNode(undefined))}>
-      <select
-        className="rounded-md border bg-gray-50 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:bg-gray-900"
-        onChange={e => setSortBy(e.target.value)}
-      >
-        <option value="function_name">Function Name</option>
-        <option value="cumulative">Cumulative</option>
-        <option value="diff">Diff</option>
-      </select>
       <ColorStackLegend
         mappingColors={mappingColors}
         navigateTo={navigateTo}

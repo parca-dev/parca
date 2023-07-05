@@ -150,7 +150,7 @@ export const ProfileViewWithData = ({
       filtered={filtered}
       flamegraphData={{
         loading: flamegraphLoading,
-        graph:
+        data:
           flamegraphResponse?.report.oneofKind === 'flamegraph'
             ? flamegraphResponse?.report?.flamegraph
             : undefined,
