@@ -33,7 +33,7 @@ import {
 
 import GraphTooltipArrow from '../../GraphTooltipArrow';
 import ColorStackLegend from './ColorStackLegend';
-import {IcicleNode, RowHeight} from './IcicleGraphNodes';
+import {IcicleNode, RowHeight, mappingColors} from './IcicleGraphNodes';
 import {extractFeature} from './utils';
 
 export const FIELD_MAPPING_FILE = 'mapping_file';
@@ -135,7 +135,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   // TODO: Unify with mappingFeatures
   const mappingColors = useMemo(() => {
-    const colors = {};
+    const colors: mappingColors = {};
     Object.entries(mappingFeatures).forEach(([_, feature]) => {
       colors[feature.name] = getColorForFeature(feature.name, isDarkMode, colorProfile);
     });

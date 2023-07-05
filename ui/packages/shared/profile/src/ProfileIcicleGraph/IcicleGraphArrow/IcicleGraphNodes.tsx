@@ -115,7 +115,7 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
   return <g transform={`translate(${x}, ${y})`}>{childrenElements}</g>;
 });
 
-interface mappingColors {
+export interface mappingColors {
   [key: string]: string;
 }
 
