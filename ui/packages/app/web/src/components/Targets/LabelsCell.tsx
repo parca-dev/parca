@@ -12,7 +12,9 @@
 // limitations under the License.
 
 import {useState} from 'react';
-import {ChevronDoubleDownIcon, ChevronDoubleUpIcon} from '@heroicons/react/20/solid';
+
+import {Icon} from '@iconify/react';
+
 import {Label} from '@parca/client';
 import {Pill, PillVariant} from '@parca/components';
 
@@ -31,7 +33,7 @@ const LabelsCell = ({
     'flex rounded-lg bg-gray-100 p-1 justify-center items-center mt-1 dark:bg-gray-700 dark:text-gray-300 cursor-pointer';
 
   return (
-    <td key={key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 flex flex-col w-96">
+    <td key={key} className="flex w-96 flex-col whitespace-nowrap px-6 py-4 text-sm text-gray-500">
       <div className="flex flex-wrap">
         {allLabels.length > 0 &&
           allLabels.map(item => {
@@ -48,12 +50,12 @@ const LabelsCell = ({
       {areDiscoveredLabelsVisible ? (
         <div className={buttonClasses} onClick={() => setAreDiscoveredLabelsVisible(false)}>
           <span className="mr-1">Hide Discovered Labels</span>
-          <ChevronDoubleUpIcon className="h-5 w-5" aria-hidden="true" />
+          <Icon icon="heroicons:chevron-double-up-20-solid" aria-hidden="true" />
         </div>
       ) : (
         <div className={buttonClasses} onClick={() => setAreDiscoveredLabelsVisible(true)}>
           <span className="mr-1">Show Discovered Labels</span>
-          <ChevronDoubleDownIcon className="h-5 w-5" aria-hidden="true" />
+          <Icon icon="heroicons:chevron-double-down-20-solid" aria-hidden="true" />
         </div>
       )}
     </td>

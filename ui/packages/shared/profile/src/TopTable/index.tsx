@@ -11,24 +11,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useMemo} from 'react';
+import React, {useCallback, useEffect, useMemo} from 'react';
 
-import {getLastItem, valueFormatter, isSearchMatch, parseParams} from '@parca/functions';
-import type {NavigateFunction} from '@parca/functions';
-import {TopNode, TopNodeMeta, Top} from '@parca/client';
+import {createColumnHelper, type ColumnDef} from '@tanstack/react-table';
+
+import {Top, TopNode, TopNodeMeta} from '@parca/client';
 import {Button, Table, useURLState} from '@parca/components';
-import {createColumnHelper} from '@tanstack/react-table';
-import type {ColumnDef} from '@tanstack/react-table';
+import {
+  getLastItem,
+  isSearchMatch,
+  parseParams,
+  valueFormatter,
+  type NavigateFunction,
+} from '@parca/utilities';
 
 import {hexifyAddress} from '../utils';
-
-import '../TopTable.styles.css';
 
 interface TopTableProps {
   loading: boolean;
   data?: Top;
   sampleUnit: string;
   navigateTo?: NavigateFunction;
+  currentSearchString?: string;
+  setActionButtons?: (buttons: JSX.Element) => void;
 }
 
 export const RowLabel = (meta: TopNodeMeta | undefined): string => {
@@ -57,20 +62,26 @@ const addPlusSign = (num: string): string => {
   return `+${num}`;
 };
 
-export const TopTable = ({
+export const TopTable = React.memo(function TopTable({
   data: top,
   sampleUnit: unit,
   navigateTo,
   loading,
-}: TopTableProps): JSX.Element => {
-  const router = parseParams(window.location.search);
+  currentSearchString,
+  setActionButtons,
+}: TopTableProps): JSX.Element {
+  const router = parseParams(window?.location.search);
   const [rawDashboardItems] = useURLState({param: 'dashboard_items'});
-  const [currentSearchString] = useURLState({param: 'search_string'});
   const [rawcompareMode] = useURLState({param: 'compare_a'});
 
   const compareMode: boolean = rawcompareMode === undefined ? false : rawcompareMode === 'true';
 
-  const dashboardItems = rawDashboardItems as string[];
+  const dashboardItems = useMemo(() => {
+    if (rawDashboardItems !== undefined) {
+      return rawDashboardItems as string[];
+    }
+    return ['icicle'];
+  }, [rawDashboardItems]);
 
   const columns = useMemo(() => {
     const cols: Array<ColumnDef<TopNode, any>> = [
@@ -89,7 +100,7 @@ export const TopTable = ({
       }),
       columnHelper.accessor('flat', {
         header: () => 'Flat',
-        cell: info => valueFormatter(Number(info.getValue()), unit, 2),
+        cell: info => valueFormatter(info.getValue(), unit, 2),
         size: 150,
         meta: {
           align: 'right',
@@ -98,7 +109,7 @@ export const TopTable = ({
       }),
       columnHelper.accessor('cumulative', {
         header: () => 'Cumulative',
-        cell: info => valueFormatter(Number(info.getValue()), unit, 2),
+        cell: info => valueFormatter(info.getValue(), unit, 2),
         size: 150,
         meta: {
           align: 'right',
@@ -110,7 +121,7 @@ export const TopTable = ({
       cols.push(
         columnHelper.accessor('diff', {
           header: () => 'Diff',
-          cell: info => addPlusSign(valueFormatter(Number(info.getValue()), unit, 2)),
+          cell: info => addPlusSign(valueFormatter(info.getValue(), unit, 2)),
           size: 150,
           meta: {
             align: 'right',
@@ -182,6 +193,27 @@ export const TopTable = ({
     }
   }, [navigateTo, router]);
 
+  useEffect(() => {
+    if (setActionButtons === undefined) {
+      return;
+    }
+    setActionButtons(
+      dashboardItems.length > 1 ? (
+        <Button
+          color="neutral"
+          onClick={clearSelection}
+          className="w-auto"
+          variant="neutral"
+          disabled={currentSearchString === undefined || currentSearchString.length === 0}
+        >
+          Clear selection
+        </Button>
+      ) : (
+        <></>
+      )
+    );
+  }, [dashboardItems, clearSelection, currentSearchString, setActionButtons]);
+
   const initialSorting = useMemo(() => {
     return [{id: compareMode ? 'diff' : 'cumulative', desc: true}];
   }, [compareMode]);
@@ -192,22 +224,7 @@ export const TopTable = ({
 
   return (
     <div className="relative">
-      {/* Clearing the selection is only useful when two visualizations types are selected. So we'll only show it in that case */}
-      {dashboardItems.length > 1 && (
-        <div className="left-[25px] top-[-45px] absolute">
-          <Button
-            color="neutral"
-            onClick={clearSelection}
-            className="w-auto"
-            variant="neutral"
-            disabled={currentSearchString === undefined || currentSearchString.length === 0}
-          >
-            Clear selection
-          </Button>
-        </div>
-      )}
-
-      <div className="w-full font-robotoMono h-[80vh] overflow-scroll">
+      <div className="font-robotoMono h-[80vh] w-full overflow-scroll">
         <Table
           data={top?.list ?? []}
           columns={columns}
@@ -220,6 +237,6 @@ export const TopTable = ({
       </div>
     </div>
   );
-};
+});
 
 export default TopTable;

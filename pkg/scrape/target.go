@@ -1,4 +1,4 @@
-// Copyright 2022 The Parca Authors
+// Copyright 2022-2023 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -108,22 +108,29 @@ func (t *Target) Params() url.Values {
 
 // Labels returns a copy of the set of all public labels of the target.
 func (t *Target) Labels() labels.Labels {
-	lset := make(labels.Labels, 0, len(t.labels))
-	for _, l := range t.labels {
+	b := labels.NewScratchBuilder(t.labels.Len())
+	t.labels.Range(func(l labels.Label) {
 		if !strings.HasPrefix(l.Name, model.ReservedLabelPrefix) {
-			lset = append(lset, l)
+			b.Add(l.Name, l.Value)
 		}
-	}
-	return lset
+	})
+	return b.Labels()
+}
+
+// LabelsRange calls f on each public label of the target.
+func (t *Target) LabelsRange(f func(l labels.Label)) {
+	t.labels.Range(func(l labels.Label) {
+		if !strings.HasPrefix(l.Name, model.ReservedLabelPrefix) {
+			f(l)
+		}
+	})
 }
 
 // DiscoveredLabels returns a copy of the target's labels before any processing.
 func (t *Target) DiscoveredLabels() labels.Labels {
 	t.mtx.Lock()
 	defer t.mtx.Unlock()
-	lset := make(labels.Labels, len(t.discoveredLabels))
-	copy(lset, t.discoveredLabels)
-	return lset
+	return t.discoveredLabels.Copy()
 }
 
 // Clone returns a clone of the target.
@@ -150,9 +157,9 @@ func (t *Target) URL() *url.URL {
 		params[k] = make([]string, len(v))
 		copy(params[k], v)
 	}
-	for _, l := range t.labels {
+	t.labels.Range(func(l labels.Label) {
 		if !strings.HasPrefix(l.Name, model.ParamLabelPrefix) {
-			continue
+			return
 		}
 		ks := l.Name[len(model.ParamLabelPrefix):]
 
@@ -161,7 +168,7 @@ func (t *Target) URL() *url.URL {
 		} else {
 			params[ks] = []string{l.Value}
 		}
-	}
+	})
 
 	return &url.URL{
 		Scheme:   t.labels.Get(model.SchemeLabel),
@@ -204,21 +211,16 @@ func (t *Target) Health() TargetHealth {
 }
 
 // LabelsByProfiles returns the labels for a given ProfilingConfig.
-func LabelsByProfiles(lset labels.Labels, c *config.ProfilingConfig) []labels.Labels {
+func LabelsByProfiles(lb *labels.Builder, c *config.ProfilingConfig) []labels.Labels {
 	res := []labels.Labels{}
-	add := func(profileType string, cfgs ...config.PprofProfilingConfig) {
-		for _, p := range cfgs {
-			if *p.Enabled {
-				l := lset.Copy()
-				l = append(l, labels.Label{Name: ProfilePath, Value: p.Path}, labels.Label{Name: ProfileName, Value: profileType})
-				res = append(res, l)
-			}
-		}
-	}
 
-	if c.PprofConfig != nil {
+	if len(c.PprofConfig) > 0 {
 		for profilingType, profilingConfig := range c.PprofConfig {
-			add(profilingType, *profilingConfig)
+			if *profilingConfig.Enabled {
+				lb.Set(ProfilePath, profilingConfig.Path)
+				lb.Set(ProfileName, profilingType)
+				res = append(res, lb.Labels())
+			}
 		}
 	}
 
@@ -241,19 +243,18 @@ const (
 // populateLabels builds a label set from the given label set and scrape configuration.
 // It returns a label set before relabeling was applied as the second return value.
 // Returns the original discovered label set found before relabelling was applied if the target is dropped during relabeling.
-func populateLabels(lset labels.Labels, cfg *config.ScrapeConfig) (res, orig labels.Labels, err error) {
+func populateLabels(lb *labels.Builder, cfg *config.ScrapeConfig) (res, orig labels.Labels, err error) {
 	// Copy labels into the labelset for the target if they are not set already.
-	scrapeLabels := []labels.Label{
+	scrapeLabels := labels.Labels{
 		{Name: model.JobLabel, Value: cfg.JobName},
 		{Name: model.SchemeLabel, Value: cfg.Scheme},
 	}
-	lb := labels.NewBuilder(lset)
 
-	for _, l := range scrapeLabels {
-		if lv := lset.Get(l.Name); lv == "" {
+	scrapeLabels.Range(func(l labels.Label) {
+		if lb.Get(l.Name) == "" {
 			lb.Set(l.Name, l.Value)
 		}
-	}
+	})
 	// Encode scrape query parameters as labels.
 	for k, v := range cfg.Params {
 		if len(v) > 0 {
@@ -261,22 +262,16 @@ func populateLabels(lset labels.Labels, cfg *config.ScrapeConfig) (res, orig lab
 		}
 	}
 
-	preRelabelLabels := lb.Labels(nil)
-	lset = relabel.Process(preRelabelLabels, cfg.RelabelConfigs...)
+	preRelabelLabels := lb.Labels()
+	keep := relabel.ProcessBuilder(lb, cfg.RelabelConfigs...)
 
 	// Check if the target was dropped.
-	if lset == nil {
-		return nil, preRelabelLabels, nil
+	if !keep {
+		return labels.EmptyLabels(), preRelabelLabels, nil
 	}
-	if v := lset.Get(model.AddressLabel); v == "" {
-		return nil, nil, errors.New("no address")
+	if lb.Get(model.AddressLabel) == "" {
+		return labels.EmptyLabels(), labels.EmptyLabels(), errors.New("no address")
 	}
-
-	if v := lset.Get(model.AddressLabel); v == "" {
-		return nil, nil, fmt.Errorf("no address")
-	}
-
-	lb = labels.NewBuilder(lset)
 
 	// addPort checks whether we should add a default port to the address.
 	// If the address is not valid, we don't append a port either.
@@ -290,80 +285,84 @@ func populateLabels(lset labels.Labels, cfg *config.ScrapeConfig) (res, orig lab
 		_, _, err := net.SplitHostPort(s + ":1234")
 		return err == nil
 	}
-	addr := lset.Get(model.AddressLabel)
+	addr := lb.Get(model.AddressLabel)
 	// If it's an address with no trailing port, infer it based on the used scheme.
 	if addPort(addr) {
 		// Addresses reaching this point are already wrapped in [] if necessary.
-		switch lset.Get(model.SchemeLabel) {
+		switch lb.Get(model.SchemeLabel) {
 		case "http", "":
 			addr = addr + ":80"
 		case "https":
 			addr = addr + ":443"
 		default:
-			return nil, nil, fmt.Errorf("invalid scheme: %q", cfg.Scheme)
+			return labels.EmptyLabels(), labels.EmptyLabels(), fmt.Errorf("invalid scheme: %q", cfg.Scheme)
 		}
 		lb.Set(model.AddressLabel, addr)
 	}
 
 	if err := config.CheckTargetAddress(model.LabelValue(addr)); err != nil {
-		return nil, nil, err
+		return labels.EmptyLabels(), labels.EmptyLabels(), err
 	}
 
 	// Meta labels are deleted after relabelling. Other internal labels propagate to
 	// the target which decides whether they will be part of their label set.
-	for _, l := range lset {
+	lb.Range(func(l labels.Label) {
 		if strings.HasPrefix(l.Name, model.MetaLabelPrefix) {
 			lb.Del(l.Name)
 		}
-	}
+	})
 
 	// Default the instance label to the target address.
-	if v := lset.Get(model.InstanceLabel); v == "" {
+	if lb.Get(model.InstanceLabel) == "" {
 		lb.Set(model.InstanceLabel, addr)
 	}
 
-	res = lb.Labels(nil)
-	for _, l := range res {
+	res = lb.Labels()
+	err = res.Validate(func(l labels.Label) error {
 		// Check label values are valid, drop the target if not.
 		if !model.LabelValue(l.Value).IsValid() {
-			return nil, nil, fmt.Errorf("invalid label value for %q: %q", l.Name, l.Value)
+			return fmt.Errorf("invalid label value for %q: %q", l.Name, l.Value)
 		}
+		return nil
+	})
+	if err != nil {
+		return labels.EmptyLabels(), labels.EmptyLabels(), err
 	}
 
-	return res, lset, nil
+	return res, preRelabelLabels, nil
 }
 
 // targetsFromGroup builds targets based on the given TargetGroup and config.
-func targetsFromGroup(tg *targetgroup.Group, cfg *config.ScrapeConfig) ([]*Target, error) {
-	targets := make([]*Target, 0, len(tg.Targets))
+func targetsFromGroup(tg *targetgroup.Group, cfg *config.ScrapeConfig, targets []*Target, lb *labels.Builder) ([]*Target, error) {
+	targets = targets[:0]
 
 	for i, tlset := range tg.Targets {
-		lbls := make([]labels.Label, 0, len(tlset)+len(tg.Labels))
+		lb.Reset(labels.EmptyLabels())
 
 		for ln, lv := range tlset {
-			lbls = append(lbls, labels.Label{Name: string(ln), Value: string(lv)})
+			lb.Set(string(ln), string(lv))
 		}
 		for ln, lv := range tg.Labels {
 			if _, ok := tlset[ln]; !ok {
-				lbls = append(lbls, labels.Label{Name: string(ln), Value: string(lv)})
+				lb.Set(string(ln), string(lv))
 			}
 		}
 
-		lset := labels.New(lbls...)
-		lsets := LabelsByProfiles(lset, cfg.ProfilingConfig)
+		lsets := LabelsByProfiles(lb, cfg.ProfilingConfig)
 
 		for _, lset := range lsets {
+			lb.Reset(lset)
 			var profType string
-			for _, label := range lset {
-				if label.Name == ProfileName {
-					profType = label.Value
+			lb.Range(func(l labels.Label) {
+				if l.Name == ProfileName {
+					profType = l.Value
 				}
-			}
-			lbls, origLabels, err := populateLabels(lset, cfg)
+			})
+			lset, origLabels, err := populateLabels(lb, cfg)
 			if err != nil {
 				return nil, fmt.Errorf("instance %d in group %s: %s", i, tg, err)
 			}
-			if lbls != nil || origLabels != nil {
+			if !lset.IsEmpty() || !origLabels.IsEmpty() {
 				params := cfg.Params
 				if params == nil {
 					params = url.Values{}
@@ -373,7 +372,7 @@ func targetsFromGroup(tg *targetgroup.Group, cfg *config.ScrapeConfig) ([]*Targe
 					params.Add("seconds", strconv.Itoa(int(time.Duration(cfg.ScrapeInterval)/time.Second)))
 				}
 
-				targets = append(targets, NewTarget(lbls, origLabels, params))
+				targets = append(targets, NewTarget(lset, origLabels, params))
 			}
 		}
 	}

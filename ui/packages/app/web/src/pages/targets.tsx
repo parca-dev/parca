@@ -12,6 +12,10 @@
 // limitations under the License.
 
 import React, {useEffect, useState} from 'react';
+
+import {GrpcWebFetchTransport} from '@protobuf-ts/grpcweb-transport';
+import {RpcError} from '@protobuf-ts/runtime-rpc';
+
 import {
   Agent,
   AgentsResponse,
@@ -22,11 +26,10 @@ import {
   TargetsRequest_State,
   TargetsResponse,
 } from '@parca/client';
-import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {EmptyState} from '@parca/components';
-import TargetsTable from '../components/Targets/TargetsTable';
-import {GrpcWebFetchTransport} from '@protobuf-ts/grpcweb-transport';
+
 import AgentsTable from '../components/Targets/AgentsTable';
+import TargetsTable from '../components/Targets/TargetsTable';
 
 const apiEndpoint = process.env.REACT_APP_PUBLIC_API_ENDPOINT;
 
@@ -43,7 +46,7 @@ export const useTargets = (client: ScrapeServiceClient): ITargetsResult => {
 
   useEffect(() => {
     const call = client.targets({
-      state: TargetsRequest_State.ANY_UNSPECIFIED,
+      state: TargetsRequest_State.ACTIVE,
     });
 
     call.response
@@ -121,7 +124,7 @@ const TargetsPage = (): JSX.Element => {
   return (
     <div className="flex flex-col">
       <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-        <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+        <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
           <EmptyState
             isEmpty={targetNamespaces?.length <= 0 && agents.length <= 0}
             title="No targets available"
@@ -140,10 +143,10 @@ const TargetsPage = (): JSX.Element => {
           >
             <>
               {agents.length > 0 ? (
-                <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                  <div className="my-2 p-2 border-b-2">
+                <div className="overflow-hidden border-b border-gray-200 shadow sm:rounded-lg">
+                  <div className="my-2 border-b-2 p-2">
                     <div className="my-2">
-                      <span className="font-semibold text-xl">Parca Agents</span>
+                      <span className="text-xl font-semibold">Parca Agents</span>
                     </div>
                     <AgentsTable agents={sortAgents(agents)} />
                   </div>
@@ -152,16 +155,16 @@ const TargetsPage = (): JSX.Element => {
                 <></>
               )}
               {Object.keys(targets ?? {}).length > 0 ? (
-                <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                <div className="overflow-hidden border-b border-gray-200 dark:border-gray-700 shadow sm:rounded-lg">
                   {sortTargets(targetNamespaces)?.map(namespace => {
                     const name = Object.keys(namespace)[0];
                     const targets = namespace[name].sort((a: Target, b: Target) => {
                       return a.url.localeCompare(b.url);
                     });
                     return (
-                      <div key={name} className="my-2 p-2 border-b-2">
+                      <div key={name} className="my-2 border-b-2 p-2 dark:border-gray-700">
                         <div className="my-2">
-                          <span className="font-semibold text-xl">{name}</span>
+                          <span className="text-xl font-semibold">{name}</span>
                         </div>
                         <TargetsTable targets={targets} />
                       </div>

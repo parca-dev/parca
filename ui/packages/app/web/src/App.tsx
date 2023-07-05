@@ -13,21 +13,26 @@
 
 import {BrowserRouter, Navigate, Route, Routes} from 'react-router-dom';
 import {PersistGate} from 'redux-persist/integration/react';
+
 import {store} from '@parca/store';
+
 import 'tailwindcss/tailwind.css';
 import './style/file-input.css';
 import './style/metrics.css';
 import './style/profile.css';
 import './style/sidenav.css';
 import 'react-datepicker/dist/react-datepicker.css';
+
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
+import {Provider} from 'react-redux';
+
+import {isDevModeOrPreview} from '@parca/utilities';
+
+import HomePage from './pages/index';
+import Component404 from './pages/layouts/Component404';
 import Header from './pages/layouts/Header';
 import ThemeProvider from './pages/layouts/ThemeProvider';
-import HomePage from './pages/index';
 import TargetsPage from './pages/targets';
-import Component404 from './pages/layouts/Component404';
-import {isDevMode} from '@parca/functions';
-import {Provider} from 'react-redux';
-import {QueryClient, QueryClientProvider} from 'react-query';
 
 declare global {
   interface Window {
@@ -68,7 +73,7 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<HomePage />} />
                   <Route path="/targets" element={<TargetsPage />} />
-                  {isDevMode() && (
+                  {isDevModeOrPreview() && (
                     <Route path="/PATH_PREFIX_VAR" element={<Navigate to="/" replace />} />
                   )}
                   <Route path="*" element={<Component404 />} />

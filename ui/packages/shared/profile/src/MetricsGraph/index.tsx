@@ -12,20 +12,25 @@
 // limitations under the License.
 
 import React, {useRef, useState} from 'react';
+
 import * as d3 from 'd3';
 import {pointer} from 'd3-selection';
 import throttle from 'lodash.throttle';
 
+import {Label, MetricsSample, MetricsSeries as MetricsSeriesPb} from '@parca/client';
 import {DateTimeRange, useKeyDown} from '@parca/components';
-import {useContainerDimensions} from '@parca/dynamicsize';
-import {formatForTimespan} from '@parca/functions';
-import {MetricsSeries as MetricsSeriesPb, MetricsSample, Label} from '@parca/client';
-import {valueFormatter, formatDate, sanitizeHighlightedValues} from '@parca/functions';
+import {useContainerDimensions} from '@parca/hooks';
+import {
+  formatDate,
+  formatForTimespan,
+  sanitizeHighlightedValues,
+  valueFormatter,
+} from '@parca/utilities';
 
-import MetricsSeries from '../MetricsSeries';
-import MetricsCircle from '../MetricsCircle';
-import MetricsTooltip from './MetricsTooltip';
 import {MergedProfileSelection} from '..';
+import MetricsCircle from '../MetricsCircle';
+import MetricsSeries from '../MetricsSeries';
+import MetricsTooltip from './MetricsTooltip';
 
 interface Props {
   data: MetricsSeriesPb[];
@@ -44,6 +49,8 @@ export interface HighlightedSeries {
   labels: Label[];
   timestamp: number;
   value: number;
+  valuePerSecond: number;
+  duration: number;
   x: number;
   y: number;
 }
@@ -51,6 +58,7 @@ export interface HighlightedSeries {
 interface Series {
   metric: Label[];
   values: number[][];
+  labelset: string;
 }
 
 const MetricsGraph = ({
@@ -126,19 +134,24 @@ export const RawMetricsGraph = ({
 
   const series: Series[] = data.reduce<Series[]>(function (agg: Series[], s: MetricsSeriesPb) {
     if (s.labelset !== undefined) {
+      const metric = s.labelset.labels.sort((a, b) => a.name.localeCompare(b.name));
       agg.push({
-        metric: s.labelset.labels,
+        metric,
         values: s.samples.reduce<number[][]>(function (agg: number[][], d: MetricsSample) {
-          if (d.timestamp !== undefined && d.value !== undefined) {
-            const t = (+d.timestamp.seconds * 1e9 + d.timestamp.nanos) / 1e6; // https://github.com/microsoft/TypeScript/issues/5710#issuecomment-157886246
-            agg.push([t, parseFloat(d.value)]);
+          if (d.timestamp !== undefined && d.valuePerSecond !== undefined) {
+            const t = (Number(d.timestamp.seconds) * 1e9 + d.timestamp.nanos) / 1e6; // https://github.com/microsoft/TypeScript/issues/5710#issuecomment-157886246
+            agg.push([t, d.valuePerSecond, Number(d.value), Number(d.duration)]);
           }
           return agg;
         }, []),
+        labelset: metric.map(m => `${m.name}=${m.value}`).join(','),
       });
     }
     return agg;
   }, []);
+
+  // Sort series by id to make sure the colors are consistent
+  series.sort((a, b) => a.labelset.localeCompare(b.labelset));
 
   const extentsY = series.map(function (s) {
     return d3.extent(s.values, function (d) {
@@ -197,7 +210,9 @@ export const RawMetricsGraph = ({
       seriesIndex: closestSeriesIndex,
       labels: series[closestSeriesIndex].metric,
       timestamp: point[0],
-      value: point[1],
+      valuePerSecond: point[1],
+      value: point[2],
+      duration: point[3],
       x: xScale(point[0]),
       y: yScale(point[1]),
     };
@@ -206,6 +221,11 @@ export const RawMetricsGraph = ({
   const highlighted = getClosest();
 
   const onMouseDown = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement, MouseEvent>): void => {
+    // if shift is down, disable mouse behavior
+    if (isShiftDown) {
+      return;
+    }
+
     // only left mouse button
     if (e.button !== 0) {
       return;
@@ -236,6 +256,10 @@ export const RawMetricsGraph = ({
   };
 
   const onMouseUp = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement, MouseEvent>): void => {
+    if (isShiftDown) {
+      return;
+    }
+
     setDragging(false);
 
     if (relPos === -1) {
@@ -268,6 +292,11 @@ export const RawMetricsGraph = ({
   const throttledSetPos = throttle(setPos, 20);
 
   const onMouseMove = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement, MouseEvent>): void => {
+    // do not update position if shift is down because this means the user is locking the tooltip
+    if (isShiftDown) {
+      return;
+    }
+
     // X/Y coordinate array relative to svg
     const rel = pointer(e);
 
@@ -276,9 +305,7 @@ export const RawMetricsGraph = ({
     const yCoordinate = rel[1];
     const yCoordinateWithoutMargin = yCoordinate - margin;
 
-    if (!isShiftDown) {
-      throttledSetPos([xCoordinateWithoutMargin, yCoordinateWithoutMargin]);
-    }
+    throttledSetPos([xCoordinateWithoutMargin, yCoordinateWithoutMargin]);
   };
 
   const findSelectedProfile = (): HighlightedSeries | null => {
@@ -290,14 +317,14 @@ export const RawMetricsGraph = ({
     let seriesIndex = -1;
 
     outer: for (let i = 0; i < series.length; i++) {
-      const keys = profile.labels.map(e => e.name);
+      const keys = profile.query.matchers.map(e => e.key);
       for (let j = 0; j < keys.length; j++) {
-        const labelName = keys[j];
-        const label = series[i].metric.find(e => e.name === labelName);
+        const matcherKey = keys[j];
+        const label = series[i].metric.find(e => e.name === matcherKey);
         if (label === undefined) {
           continue outer; // label doesn't exist to begin with
         }
-        if (profile.labels[j].value !== label.value) {
+        if (profile.query.matchers[j].value !== label.value) {
           continue outer; // label values don't match
         }
       }
@@ -320,7 +347,9 @@ export const RawMetricsGraph = ({
       labels: [],
       seriesIndex,
       timestamp: sample[0],
-      value: sample[1],
+      valuePerSecond: sample[1],
+      value: sample[2],
+      duration: sample[3],
       x: xScale(sample[0]),
       y: yScale(sample[1]),
     };
@@ -342,6 +371,7 @@ export const RawMetricsGraph = ({
             onLabelClick={onLabelClick}
             contextElement={graph.current}
             sampleUnit={sampleUnit}
+            delta={profile !== null ? profile?.query.profType.delta : false}
           />
         </div>
       )}

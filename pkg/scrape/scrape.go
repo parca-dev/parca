@@ -1,4 +1,4 @@
-// Copyright 2022 The Parca Authors
+// Copyright 2022-2023 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -206,19 +206,24 @@ func (sp *scrapePool) Sync(tgs []*targetgroup.Group) {
 	start := time.Now()
 
 	var all []*Target
+	var targets []*Target
+	lb := labels.NewBuilder(labels.EmptyLabels())
 	sp.mtx.Lock()
 	sp.droppedTargets = []*Target{}
 	for _, tg := range tgs {
-		targets, err := targetsFromGroup(tg, sp.config)
+		targets, err := targetsFromGroup(tg, sp.config, targets, lb)
 		if err != nil {
 			level.Error(sp.logger).Log("msg", "creating targets failed", "err", err)
 			continue
 		}
 
 		for _, t := range targets {
-			if t.Labels().Len() > 0 {
+			// Replicate .Labels().IsEmpty() with a loop here to avoid generating garbage.
+			nonEmpty := false
+			t.LabelsRange(func(l labels.Label) { nonEmpty = true })
+			if nonEmpty {
 				all = append(all, t)
-			} else if t.DiscoveredLabels().Len() > 0 {
+			} else if !t.discoveredLabels.IsEmpty() {
 				sp.droppedTargets = append(sp.droppedTargets, t)
 			}
 		}
@@ -468,12 +473,12 @@ mainLoop:
 
 			tl := sl.target.Labels()
 			tl = append(tl, labels.Label{Name: "__name__", Value: profileType})
-			for _, l := range sl.externalLabels {
+			sl.externalLabels.Range(func(l labels.Label) {
 				tl = append(tl, labels.Label{
 					Name:  l.Name,
 					Value: l.Value,
 				})
-			}
+			})
 			level.Debug(sl.l).Log("msg", "appending new sample", "labels", tl.String())
 
 			protolbls := &profilepb.LabelSet{

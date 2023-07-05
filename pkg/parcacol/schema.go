@@ -1,4 +1,4 @@
-// Copyright 2022 The Parca Authors
+// Copyright 2022-2023 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -36,8 +36,8 @@ const (
 	ColumnValue          = "value"
 )
 
-func Schema() (*dynparquet.Schema, error) {
-	return dynparquet.SchemaFromDefinition(&schemapb.Schema{
+func SchemaDefinition() *schemapb.Schema {
+	return &schemapb.Schema{
 		Name: SchemaName,
 		Columns: []*schemapb.Column{
 			{
@@ -178,5 +178,9 @@ func Schema() (*dynparquet.Schema, error) {
 				NullsFirst: true,
 			},
 		},
-	})
+	}
+}
+
+func Schema() (*dynparquet.Schema, error) {
+	return dynparquet.SchemaFromDefinition(SchemaDefinition())
 }

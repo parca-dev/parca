@@ -12,11 +12,13 @@
 // limitations under the License.
 
 import {useCallback} from 'react';
+
 import {GrpcWebFetchTransport} from '@protobuf-ts/grpcweb-transport';
-import {QueryServiceClient} from '@parca/client';
 import {useLocation, useNavigate} from 'react-router-dom';
-import {parseParams, convertToQueryParams} from '@parca/functions';
+
+import {QueryServiceClient} from '@parca/client';
 import {ProfileExplorer} from '@parca/profile';
+import {convertToQueryParams, parseParams} from '@parca/utilities';
 
 const apiEndpoint = process.env.REACT_APP_PUBLIC_API_ENDPOINT;
 

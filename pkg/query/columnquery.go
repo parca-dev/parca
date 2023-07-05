@@ -1,4 +1,4 @@
-// Copyright 2022 The Parca Authors
+// Copyright 2022-2023 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-kit/log"
@@ -27,6 +28,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	metastorev1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	sharepb "github.com/parca-dev/parca/gen/proto/go/parca/share/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
@@ -50,6 +52,8 @@ type ColumnQueryAPI struct {
 	tracer      trace.Tracer
 	shareClient sharepb.ShareServiceClient
 	querier     Querier
+
+	tableConverterPool *sync.Pool
 }
 
 func NewColumnQueryAPI(
@@ -59,10 +63,28 @@ func NewColumnQueryAPI(
 	querier Querier,
 ) *ColumnQueryAPI {
 	return &ColumnQueryAPI{
-		logger:      logger,
-		tracer:      tracer,
-		shareClient: shareClient,
-		querier:     querier,
+		logger:             logger,
+		tracer:             tracer,
+		shareClient:        shareClient,
+		querier:            querier,
+		tableConverterPool: NewTableConverterPool(),
+	}
+}
+
+func NewTableConverterPool() *sync.Pool {
+	return &sync.Pool{
+		New: func() any {
+			return &tableConverter{
+				stringsSlice:   []string{},
+				stringsIndex:   map[string]uint32{},
+				mappingsSlice:  []*metastorev1alpha1.Mapping{},
+				mappingsIndex:  map[string]uint32{},
+				locationsSlice: []*metastorev1alpha1.Location{},
+				locationsIndex: map[string]uint32{},
+				functionsSlice: []*metastorev1alpha1.Function{},
+				functionsIndex: map[string]uint32{},
+			}
+		},
 	}
 }
 
@@ -118,15 +140,16 @@ func (q *ColumnQueryAPI) ProfileTypes(ctx context.Context, req *pb.ProfileTypesR
 	}, nil
 }
 
-// Query issues a instant query against the storage.
+// Query issues an instant query against the storage.
 func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryResponse, error) {
 	if err := req.Validate(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	var (
-		p   *profile.Profile
-		err error
+		p        *profile.Profile
+		filtered int64
+		err      error
 	)
 
 	switch req.Mode {
@@ -139,22 +162,27 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	default:
 		return nil, status.Error(codes.InvalidArgument, "unknown query mode")
 	}
-
 	if err != nil {
 		return nil, err
 	}
 
 	if req.FilterQuery != nil {
-		p = q.filterProfileData(ctx, p, *req.FilterQuery)
+		p, filtered = FilterProfileData(ctx, q.tracer, p, req.GetFilterQuery())
 	}
 
-	return q.renderReport(ctx, p, req.GetReportType(), req.GetNodeTrimThreshold())
+	return q.renderReport(
+		ctx,
+		p,
+		req.GetReportType(),
+		req.GetNodeTrimThreshold(),
+		filtered,
+	)
 }
 
 func keepSample(s *profile.SymbolizedSample, filterQuery string) bool {
 	for _, loc := range s.Locations {
 		for _, l := range loc.Lines {
-			if l.Function != nil && strings.Contains(strings.ToLower(l.Function.Name), strings.ToLower(filterQuery)) {
+			if l.Function != nil && strings.Contains(strings.ToLower(l.Function.Name), filterQuery) {
 				return true
 			}
 		}
@@ -162,23 +190,66 @@ func keepSample(s *profile.SymbolizedSample, filterQuery string) bool {
 	return false
 }
 
-func (q *ColumnQueryAPI) filterProfileData(ctx context.Context, p *profile.Profile, filterQuery string) *profile.Profile {
-	_, span := q.tracer.Start(ctx, "filterByFunction")
+type FilteredProfile struct {
+	TotalUnfiltered int64
+	*profile.Profile
+}
+
+func FilterProfileData(
+	ctx context.Context,
+	tracer trace.Tracer,
+	p *profile.Profile,
+	filterQuery string,
+) (*profile.Profile, int64) {
+	_, span := tracer.Start(ctx, "filterByFunction")
 	defer span.End()
+
+	// We want to filter by function name case-insensitive, so we need to lowercase the query.
+	// We lower case the query here, so we don't have to do it for every sample.
+	filterQuery = strings.ToLower(filterQuery)
+
+	var (
+		totalUnfiltered int64
+		totalFiltered   int64
+	)
 	filteredSamples := []*profile.SymbolizedSample{}
 	for _, s := range p.Samples {
+		// We sum up the total number of values here, regardless whether it's filtered or not,
+		// to get the unfiltered total.
+		totalUnfiltered += s.Value
+
 		if keepSample(s, filterQuery) {
 			filteredSamples = append(filteredSamples, s)
+			totalFiltered += s.Value
 		}
 	}
+
 	return &profile.Profile{
 		Samples: filteredSamples,
 		Meta:    p.Meta,
-	}
+	}, totalUnfiltered - totalFiltered
 }
 
-func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.Profile, typ pb.QueryRequest_ReportType, nodeTrimThreshold float32) (*pb.QueryResponse, error) {
-	ctx, span := q.tracer.Start(ctx, "renderReport")
+func (q *ColumnQueryAPI) renderReport(
+	ctx context.Context,
+	p *profile.Profile,
+	typ pb.QueryRequest_ReportType,
+	nodeTrimThreshold float32,
+	filtered int64,
+) (*pb.QueryResponse, error) {
+	return RenderReport(ctx, q.tracer, p, typ, nodeTrimThreshold, filtered, q.tableConverterPool)
+}
+
+func RenderReport(
+	ctx context.Context,
+	tracer trace.Tracer,
+	p *profile.Profile,
+	typ pb.QueryRequest_ReportType,
+	nodeTrimThreshold float32,
+	filtered int64,
+	pool *sync.Pool,
+) (*pb.QueryResponse, error) {
+	ctx, span := tracer.Start(ctx, "renderReport")
 	span.SetAttributes(attribute.String("reportType", typ.String()))
 	defer span.End()
 
@@ -190,23 +261,42 @@ func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.Profile, t
 	switch typ {
 	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED:
-		fg, err := GenerateFlamegraphFlat(ctx, q.tracer, p)
+		fg, err := GenerateFlamegraphFlat(ctx, tracer, p)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
 		}
 		return &pb.QueryResponse{
+			Total:    fg.Total,
+			Filtered: filtered,
 			Report: &pb.QueryResponse_Flamegraph{
 				Flamegraph: fg,
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_TABLE:
-		fg, err := GenerateFlamegraphTable(ctx, q.tracer, p, nodeTrimFraction)
+		fg, err := GenerateFlamegraphTable(ctx, tracer, p, nodeTrimFraction, pool)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
 		}
 		return &pb.QueryResponse{
+			//nolint:staticcheck // SA1019: TODO: The cumulative should be passed differently in the future.
+			Total:    fg.Total,
+			Filtered: filtered,
 			Report: &pb.QueryResponse_Flamegraph{
 				Flamegraph: fg,
+			},
+		}, nil
+	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW:
+		// TODO: Make the fields to aggregate by configurable via the API.
+		fa, total, err := GenerateFlamegraphArrow(ctx, tracer, p, []string{FlamegraphFieldFunctionName}, nodeTrimFraction)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to generate arrow flamegraph: %v", err.Error())
+		}
+
+		return &pb.QueryResponse{
+			Total:    total,
+			Filtered: filtered,
+			Report: &pb.QueryResponse_FlamegraphArrow{
+				FlamegraphArrow: fa,
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_PPROF:
@@ -221,16 +311,21 @@ func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.Profile, t
 		}
 
 		return &pb.QueryResponse{
-			Report: &pb.QueryResponse_Pprof{Pprof: buf.Bytes()},
+			Total:    0, // TODO: Figure out how to get total for pprof
+			Filtered: filtered,
+			Report:   &pb.QueryResponse_Pprof{Pprof: buf.Bytes()},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_TOP:
-		top, err := GenerateTopTable(ctx, p)
+		top, cumulative, err := GenerateTopTable(ctx, p)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
 		}
 
 		return &pb.QueryResponse{
-			Report: &pb.QueryResponse_Top{Top: top},
+			//nolint:staticcheck // SA1019: TODO: The cumulative should be passed differently in the future.
+			Total:    cumulative,
+			Filtered: filtered,
+			Report:   &pb.QueryResponse_Top{Top: top},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_CALLGRAPH:
 		callgraph, err := GenerateCallgraph(ctx, p)
@@ -238,7 +333,10 @@ func (q *ColumnQueryAPI) renderReport(ctx context.Context, p *profile.Profile, t
 			return nil, status.Errorf(codes.Internal, "failed to generate callgraph: %v", err.Error())
 		}
 		return &pb.QueryResponse{
-			Report: &pb.QueryResponse_Callgraph{Callgraph: callgraph},
+			//nolint:staticcheck // SA1019: TODO: The cumulative should be passed differently in the future.
+			Total:    callgraph.Cumulative,
+			Filtered: filtered,
+			Report:   &pb.QueryResponse_Callgraph{Callgraph: callgraph},
 		}, nil
 	default:
 		return nil, status.Error(codes.InvalidArgument, "requested report type does not exist")

@@ -12,9 +12,12 @@
 // limitations under the License.
 
 import {useState} from 'react';
-import {Button, Modal, useGrpcMetadata} from '@parca/components';
+
 import {Icon} from '@iconify/react';
+
 import {QueryRequest, QueryServiceClient} from '@parca/client';
+import {Button, Modal, useGrpcMetadata} from '@parca/components';
+
 import ResultBox from './ResultBox';
 
 interface Props {
@@ -82,16 +85,16 @@ const ProfileShareModal = ({
         </p>
         {!isShared || error?.length > 0 ? (
           <>
-            <p className="text-sm text-gray-500 dark:text-gray-300 mt-3 mb-2">
+            <p className="mt-3 mb-2 text-sm text-gray-500 dark:text-gray-300">
               Enter a description (optional)
             </p>
             <textarea
-              className="border w-full text-gray-500 dark:text-gray-300 bg-inherit text-sm px-2 py-2"
+              className="w-full border bg-inherit px-2 py-2 text-sm text-gray-500 dark:text-gray-300"
               value={description}
               onChange={e => setDescription(e.target.value)}
             ></textarea>
             <Button
-              className="w-fit mt-4"
+              className="mt-4"
               onClick={e => {
                 e.preventDefault();
                 void handleSubmit();
@@ -106,7 +109,7 @@ const ProfileShareModal = ({
         ) : (
           <>
             <ResultBox value={sharedLink} className="mt-4" />
-            <div className="flex justify-center mt-8">
+            <div className="mt-8 flex justify-center">
               <Button variant="neutral" className="w-fit" onClick={onClose}>
                 Close
               </Button>
@@ -123,7 +126,7 @@ const ProfileShareButton = ({queryRequest, queryClient, disabled = false}: Props
 
   return (
     <>
-      <Button color="neutral" className="w-fit" onClick={() => setIsOpen(true)} disabled={disabled}>
+      <Button color="neutral" onClick={() => setIsOpen(true)} disabled={disabled}>
         <Icon icon="ei:share-apple" width={20} />
       </Button>
       <ProfileShareModal

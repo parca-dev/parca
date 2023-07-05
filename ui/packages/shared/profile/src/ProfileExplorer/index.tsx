@@ -12,15 +12,18 @@
 // limitations under the License.
 
 import {useEffect, useState} from 'react';
-import {QuerySelection, useProfileTypes} from '../ProfileSelector';
-import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
-import ProfileExplorerSingle from './ProfileExplorerSingle';
-import ProfileExplorerCompare from './ProfileExplorerCompare';
-import {QueryServiceClient} from '@parca/client';
-import {store} from '@parca/store';
+
 import {Provider} from 'react-redux';
-import {DateTimeRange, useParcaContext} from '@parca/components';
-import type {NavigateFunction} from '@parca/functions';
+
+import {QueryServiceClient} from '@parca/client';
+import {DateTimeRange, KeyDownProvider, useParcaContext} from '@parca/components';
+import {store} from '@parca/store';
+import type {NavigateFunction} from '@parca/utilities';
+
+import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
+import {QuerySelection, useProfileTypes} from '../ProfileSelector';
+import ProfileExplorerCompare from './ProfileExplorerCompare';
+import ProfileExplorerSingle from './ProfileExplorerSingle';
 
 interface ProfileExplorerProps {
   queryClient: QueryServiceClient;
@@ -108,6 +111,12 @@ const ProfileExplorerApp = ({
     dashboard_items,
   } = queryParams;
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const expression_a = getExpressionAsAString(queryParams.expression_a);
+
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const expression_b = getExpressionAsAString(queryParams.expression_b);
+
   /* eslint-enable @typescript-eslint/naming-convention */
   const [profileA, setProfileA] = useState<ProfileSelection | null>(null);
   const [profileB, setProfileB] = useState<ProfileSelection | null>(null);
@@ -115,7 +124,7 @@ const ProfileExplorerApp = ({
   useEffect(() => {
     const mergeFrom = merge_from_a ?? undefined;
     const mergeTo = merge_to_a ?? undefined;
-    const labels = (labels_a as string[]) ?? [''];
+    const labels = typeof labels_a === 'string' ? [labels_a] : (labels_a as string[]) ?? [''];
     const profileA = ProfileSelectionFromParams(
       expression_a,
       from_a as string,
@@ -128,12 +137,12 @@ const ProfileExplorerApp = ({
 
     setProfileA(profileA);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [merge_from_a, merge_to_a]);
+  }, [expression_a, from_a, to_a, merge_from_a, merge_to_a, labels_a, filter_by_function]);
 
   useEffect(() => {
     const mergeFrom = merge_from_b ?? undefined;
     const mergeTo = merge_to_b ?? undefined;
-    const labels = (labels_b as string[]) ?? [''];
+    const labels = typeof labels_b === 'string' ? [labels_b] : (labels_b as string[]) ?? [''];
     const profileB = ProfileSelectionFromParams(
       expression_b,
       from_b as string,
@@ -146,7 +155,7 @@ const ProfileExplorerApp = ({
 
     setProfileB(profileB);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [merge_from_b, merge_to_b]);
+  }, [expression_b, from_b, to_b, merge_from_b, merge_to_b, labels_b, filter_by_function]);
 
   if (profileTypesLoading) {
     return <>{loader}</>;
@@ -159,7 +168,7 @@ const ProfileExplorerApp = ({
   if (profileTypesError !== undefined && profileTypesError !== null) {
     return (
       <div
-        className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+        className="relative rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700"
         role="alert"
       >
         <strong className="font-bold">Error! </strong>
@@ -172,12 +181,6 @@ const ProfileExplorerApp = ({
   time_selection_a = sanitizedRange.time_selection_a;
   from_a = sanitizedRange.from_a;
   to_a = sanitizedRange.to_a;
-
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  const expression_a = getExpressionAsAString(queryParams.expression_a);
-
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  const expression_b = getExpressionAsAString(queryParams.expression_b);
 
   if ((queryParams?.expression_a ?? '') !== '') queryParams.expression_a = expression_a;
   if ((queryParams?.expression_b ?? '') !== '') queryParams.expression_b = expression_b;
@@ -388,11 +391,13 @@ const ProfileExplorer = ({
 
   return (
     <Provider store={reduxStore}>
-      <ProfileExplorerApp
-        queryClient={queryClient}
-        queryParams={queryParams}
-        navigateTo={navigateTo}
-      />
+      <KeyDownProvider>
+        <ProfileExplorerApp
+          queryClient={queryClient}
+          queryParams={queryParams}
+          navigateTo={navigateTo}
+        />
+      </KeyDownProvider>
     </Provider>
   );
 };

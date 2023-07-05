@@ -12,10 +12,12 @@
 // limitations under the License.
 
 import {useEffect, useState} from 'react';
-import {useCookie} from 'react-use';
+
 import cx from 'classnames';
 import ReactMarkdown from 'react-markdown';
-import {Modal, Button} from '@parca/components';
+import {useCookie} from 'react-use';
+
+import {Button, Modal} from '@parca/components';
 
 interface Props {
   version: string;
@@ -34,7 +36,7 @@ const ReleaseNotesViewer = ({version}: Props) => {
         return;
       }
       const release = await fetch(
-        `https://api.github.com/repos/parca-dev/parca/releases/tags/${version}`
+        `https://api.github.com/repos/parca-dev/parca/releases/tags/v${version}`
       ).then(res => res.json());
       setReleaseNotes(
         `Here's the list of changes in this release:\n${release.body
@@ -72,13 +74,13 @@ const ReleaseNotesViewer = ({version}: Props) => {
       </span>
       {isReleaseNotesAvailable ? (
         <Modal
-          className="w-3/5 h-[80vh]"
+          className="h-[80vh] w-3/5"
           isOpen={isOpen}
           closeModal={onClose}
           title={`What's new in Parca ${version} 🎉`}
         >
-          <div className="flex flex-col h-full pb-4 text-gray-800 dark:text-gray-200">
-            <div className="prose dark:prose-invert overflow-scroll max-w-none pt-2 flex-1 prose-gray">
+          <div className="flex h-full flex-col pb-4 text-gray-800 dark:text-gray-200">
+            <div className="prose dark:prose-invert prose-gray max-w-none flex-1 overflow-scroll pt-2">
               <ReactMarkdown
                 components={{
                   // eslint-disable-next-line jsx-a11y/anchor-has-content
@@ -88,7 +90,7 @@ const ReleaseNotesViewer = ({version}: Props) => {
                 {releaseNotes}
               </ReactMarkdown>
             </div>
-            <div className="flex gap-2 justify-between items-center mt-4">
+            <div className="mt-4 flex items-center justify-between gap-2">
               <Button variant="neutral" className="w-fit" onClick={onClose}>
                 Close
               </Button>
@@ -96,7 +98,7 @@ const ReleaseNotesViewer = ({version}: Props) => {
                 className="w-fit"
                 onClick={() => {
                   window.open(
-                    `https://github.com/parca-dev/parca/releases/tag/${version}`,
+                    `https://github.com/parca-dev/parca/releases/tag/v${version}`,
                     '_blank'
                   );
                   onClose();

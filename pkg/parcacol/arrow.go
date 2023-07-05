@@ -1,4 +1,4 @@
-// Copyright 2022 The Parca Authors
+// Copyright 2022-2023 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -16,9 +16,10 @@ package parcacol
 import (
 	"context"
 	"fmt"
+	"strings"
 
-	"github.com/apache/arrow/go/v10/arrow"
-	"github.com/apache/arrow/go/v10/arrow/array"
+	"github.com/apache/arrow/go/v13/arrow"
+	"github.com/apache/arrow/go/v13/arrow/array"
 	"go.opentelemetry.io/otel/trace"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
@@ -51,43 +52,69 @@ func NewArrowToProfileConverter(
 
 func (c *ArrowToProfileConverter) Convert(
 	ctx context.Context,
-	ar arrow.Record,
+	records []arrow.Record,
 	valueColumnName string,
 	meta profile.Meta,
 ) (*profile.Profile, error) {
 	ctx, span := c.tracer.Start(ctx, "convert-arrow-record-to-profile")
 	defer span.End()
 
-	schema := ar.Schema()
-	indices := schema.FieldIndices("stacktrace")
-	if len(indices) != 1 {
-		return nil, ErrMissingColumn{Column: "stacktrace", Columns: len(indices)}
+	rows := 0
+	for _, ar := range records {
+		rows += int(ar.NumRows())
 	}
-	stacktraceColumn := ar.Column(indices[0]).(*array.Binary)
-
-	indices = schema.FieldIndices("sum(value)")
-	if len(indices) != 1 {
-		return nil, ErrMissingColumn{Column: "value", Columns: len(indices)}
-	}
-	valueColumn := ar.Column(indices[0]).(*array.Int64)
-
-	rows := int(ar.NumRows())
-	stacktraceIDs := make([]string, rows)
-	for i := 0; i < rows; i++ {
-		stacktraceIDs[i] = string(stacktraceColumn.Value(i))
-	}
-
-	stacktraceLocations, err := c.resolveStacktraces(ctx, stacktraceIDs)
-	if err != nil {
-		return nil, fmt.Errorf("read stacktrace metadata: %w", err)
-	}
-
 	samples := make([]*profile.SymbolizedSample, 0, rows)
-	for i := 0; i < rows; i++ {
-		samples = append(samples, &profile.SymbolizedSample{
-			Value:     valueColumn.Value(i),
-			Locations: stacktraceLocations[i],
-		})
+	for _, ar := range records {
+		schema := ar.Schema()
+		indices := schema.FieldIndices("stacktrace")
+		if len(indices) != 1 {
+			return nil, ErrMissingColumn{Column: "stacktrace", Columns: len(indices)}
+		}
+		stacktraceColumn := ar.Column(indices[0]).(*array.Binary)
+
+		indices = schema.FieldIndices("sum(value)")
+		if len(indices) != 1 {
+			return nil, ErrMissingColumn{Column: "value", Columns: len(indices)}
+		}
+		valueColumn := ar.Column(indices[0]).(*array.Int64)
+
+		rows := int(ar.NumRows())
+		stacktraceIDs := make([]string, rows)
+		for i := 0; i < rows; i++ {
+			stacktraceIDs[i] = string(stacktraceColumn.Value(i))
+		}
+
+		stacktraceLocations, err := c.resolveStacktraces(ctx, stacktraceIDs)
+		if err != nil {
+			return nil, fmt.Errorf("read stacktrace metadata: %w", err)
+		}
+
+		labelIndexes := make(map[string]int)
+		for i, field := range schema.Fields() {
+			if strings.HasPrefix(field.Name, ColumnPprofLabels+".") {
+				labelIndexes[strings.TrimPrefix(field.Name, ColumnPprofLabels+".")] = i
+			}
+		}
+
+		for i := 0; i < rows; i++ {
+			labels := make(map[string]string, len(labelIndexes))
+			for name, index := range labelIndexes {
+				c := ar.Column(index).(*array.Dictionary)
+				d := c.Dictionary().(*array.Binary)
+				if !c.IsNull(i) {
+					labelValue := d.Value(c.GetValueIndex(i))
+					if len(labelValue) > 0 {
+						labels[name] = string(labelValue)
+					}
+				}
+			}
+
+			samples = append(samples, &profile.SymbolizedSample{
+				Value:     valueColumn.Value(i),
+				Locations: stacktraceLocations[i],
+				Label:     labels,
+			})
+		}
 	}
 
 	return &profile.Profile{
@@ -113,6 +140,8 @@ func (c *ArrowToProfileConverter) SymbolizeNormalizedProfile(ctx context.Context
 			Value:     sample.Value,
 			DiffValue: sample.DiffValue,
 			Locations: stacktraceLocations[i],
+			Label:     sample.Label,
+			NumLabel:  sample.NumLabel,
 		}
 	}
 

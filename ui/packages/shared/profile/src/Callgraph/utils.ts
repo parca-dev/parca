@@ -12,8 +12,9 @@
 // limitations under the License.
 
 import * as d3 from 'd3';
-import {CallgraphNode, CallgraphEdge} from '@parca/client';
-import {DEFAULT_NODE_HEIGHT} from './constants';
+import {withAlphaHex} from 'with-alpha-hex';
+
+import {CallgraphEdge, CallgraphNode} from '@parca/client';
 
 export const pixelsToInches = (pixels: number): number => pixels / 96;
 
@@ -92,28 +93,23 @@ export const jsonToDot = ({
   colorRange: [string, string];
 }): string => {
   const {nodes, edges} = graph;
-  const cumulatives = nodes.map((node: CallgraphNode) => node.cumulative);
-  const cumulativesRange = d3.extent(cumulatives).map(value => Number(value));
-
+  const cumulatives = edges.map((edge: CallgraphEdge) => Number(edge.cumulative));
+  const cumulativesRange = d3.extent(cumulatives) as [number, number];
   const colorScale = d3
     .scaleSequentialLog(d3.interpolateBlues)
     .domain(cumulativesRange)
     .range(colorRange);
-  const colorOpacityScale = d3.scaleSequentialLog().domain(cumulativesRange).range([0.2, 1]);
-  const boxWidthScale = d3
-    .scaleLog()
-    .domain(cumulativesRange)
-    .range([DEFAULT_NODE_HEIGHT, DEFAULT_NODE_HEIGHT + 40]);
+  const colorOpacityScale = d3.scaleLinear().domain(cumulativesRange).range([0.5, 1]);
 
   const nodesAsStrings = nodes.map((node: CallgraphNode) => {
+    const rgbColor = colorScale(Number(node.cumulative));
+    const hexColor = d3.color(rgbColor)?.formatHex() ?? 'red';
     const dataAttributes = {
-      address: node.meta?.location?.address ?? '',
-      functionName: node.meta?.function?.name ?? '',
-      cumulative: node.cumulative ?? '',
+      label: node.meta?.function?.name.substring(0, 12) ?? '',
       root: (node.id === 'root').toString(),
-      // TODO: set box width scale to be based on flat value once we have that value available
-      width: boxWidthScale(Number(node.cumulative)),
-      color: colorScale(Number(node.cumulative)),
+      fillcolor: hexColor,
+      className: 'node',
+      id: node.id,
     };
 
     return `"${node.id}" [${objectAsDotAttributes(dataAttributes)}]`;
@@ -121,22 +117,22 @@ export const jsonToDot = ({
 
   const edgesAsStrings = edges.map((edge: CallgraphEdge) => {
     const dataAttributes = {
-      cumulative: edge.cumulative,
-      color: colorRange[1],
-      opacity: colorOpacityScale(Number(edge.cumulative)),
-      boxHeight: DEFAULT_NODE_HEIGHT,
+      cumulative: Number(edge.cumulative),
+      color: withAlphaHex(colorRange[1], colorOpacityScale(Number(edge.cumulative))),
+      className: 'edge',
+      // boxHeight: DEFAULT_NODE_HEIGHT,
     };
 
     return `"${edge.source}" -> "${edge.target}" [${objectAsDotAttributes(dataAttributes)}]`;
   });
 
   const graphAsDot = `digraph "callgraph" {
-      rankdir="BT"
+      rankdir="TB"
       overlap="prism"
       ratio="1,3"
       margin=15
       edge [margin=0]
-      node [shape=box style=rounded height=${DEFAULT_NODE_HEIGHT}]
+      node [shape=box style="rounded,filled"]
       ${nodesAsStrings.join(' ')}
       ${edgesAsStrings.join(' ')}
     }`;

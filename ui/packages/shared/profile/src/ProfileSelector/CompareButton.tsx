@@ -12,7 +12,9 @@
 // limitations under the License.
 
 import {useState} from 'react';
+
 import {usePopper} from 'react-popper';
+
 import {Button} from '@parca/components';
 
 const CompareButton = ({
@@ -55,10 +57,10 @@ const CompareButton = ({
         >
           <div className="flex">
             <div className="relative mx-2">
-              <svg className="text-black h-1 w-full left-0" x="0px" y="0px" viewBox="0 0 255 127.5">
+              <svg className="left-0 h-1 w-full text-black" x="0px" y="0px" viewBox="0 0 255 127.5">
                 <polygon className="fill-current" points="0,127.5 127.5,0 255,127.5" />
               </svg>
-              <div className="bg-black text-white text-xs rounded py-2 px-3 right-0 w-40">
+              <div className="right-0 w-40 rounded bg-black py-2 px-3 text-xs text-white">
                 {compareExplanation}
               </div>
             </div>

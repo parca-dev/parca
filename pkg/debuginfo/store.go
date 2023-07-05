@@ -1,4 +1,4 @@
-// Copyright 2022 The Parca Authors
+// Copyright 2022-2023 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -33,7 +33,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
-	"github.com/parca-dev/parca/pkg/signedupload"
 )
 
 var ErrDebuginfoNotFound = errors.New("debuginfo not found")
@@ -84,9 +83,13 @@ type Store struct {
 	timeNow func() time.Time
 }
 
+type SignedUploadClient interface {
+	SignedPUT(ctx context.Context, objectKey string, size int64, expiry time.Time) (signedURL string, err error)
+}
+
 type SignedUpload struct {
 	Enabled bool
-	Client  signedupload.Client
+	Client  SignedUploadClient
 }
 
 // NewStore returns a new debug info store.
@@ -130,7 +133,8 @@ const (
 // given build ID. Checking if an upload should even be initiated allows the
 // parca-agent to avoid extracting debuginfos unnecessarily from a binary.
 func (s *Store) ShouldInitiateUpload(ctx context.Context, req *debuginfopb.ShouldInitiateUploadRequest) (*debuginfopb.ShouldInitiateUploadResponse, error) {
-	span := trace.SpanFromContext(ctx)
+	ctx, span := s.tracer.Start(ctx, "ShouldInitiateUpload")
+	defer span.End()
 	span.SetAttributes(attribute.String("build_id", req.BuildId))
 
 	buildID := req.BuildId
@@ -150,10 +154,14 @@ func (s *Store) ShouldInitiateUpload(ctx context.Context, req *debuginfopb.Shoul
 		}
 
 		if existsInDebuginfod {
+			if err := s.metadata.MarkAsDebuginfodSource(ctx, buildID); err != nil {
+				return nil, status.Error(codes.Internal, fmt.Errorf("mark Build ID to be available from debuginfod: %w", err).Error())
+			}
+
 			return &debuginfopb.ShouldInitiateUploadResponse{
 				ShouldInitiateUpload: false,
 				Reason:               ReasonDebuginfoInDebuginfod,
-			}, s.metadata.MarkAsDebuginfodSource(ctx, buildID)
+			}, nil
 		}
 
 		return &debuginfopb.ShouldInitiateUploadResponse{
@@ -232,7 +240,8 @@ func (s *Store) ShouldInitiateUpload(ctx context.Context, req *debuginfopb.Shoul
 }
 
 func (s *Store) InitiateUpload(ctx context.Context, req *debuginfopb.InitiateUploadRequest) (*debuginfopb.InitiateUploadResponse, error) {
-	span := trace.SpanFromContext(ctx)
+	ctx, span := s.tracer.Start(ctx, "InitiateUpload")
+	defer span.End()
 	span.SetAttributes(attribute.String("build_id", req.BuildId))
 
 	if req.Hash == "" {
@@ -300,7 +309,8 @@ func (s *Store) InitiateUpload(ctx context.Context, req *debuginfopb.InitiateUpl
 }
 
 func (s *Store) MarkUploadFinished(ctx context.Context, req *debuginfopb.MarkUploadFinishedRequest) (*debuginfopb.MarkUploadFinishedResponse, error) {
-	span := trace.SpanFromContext(ctx)
+	ctx, span := s.tracer.Start(ctx, "MarkUploadFinished")
+	defer span.End()
 	span.SetAttributes(attribute.String("build_id", req.BuildId))
 	span.SetAttributes(attribute.String("upload_id", req.UploadId))
 
@@ -342,8 +352,8 @@ func (s *Store) Upload(stream debuginfopb.DebuginfoService_UploadServer) error {
 		r        = &UploadReader{stream: stream}
 	)
 
-	ctx := stream.Context()
-	span := trace.SpanFromContext(ctx)
+	ctx, span := s.tracer.Start(stream.Context(), "Upload")
+	defer span.End()
 	span.SetAttributes(attribute.String("build_id", buildID))
 	span.SetAttributes(attribute.String("upload_id", uploadID))
 

@@ -11,26 +11,52 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {useEffect, useMemo, useState} from 'react';
+
+import {pointer} from 'd3-selection';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
-import {useState, useEffect} from 'react';
 import {usePopper} from 'react-popper';
 
-import {CallgraphNode, FlamegraphNode, FlamegraphNodeMeta, FlamegraphRootNode} from '@parca/client';
-import {getLastItem, valueFormatter} from '@parca/functions';
-import {hexifyAddress, truncateString} from '../';
-import {useKeyDown} from '@parca/components';
 import {
-  Function as ParcaFunction,
+  CallgraphNode,
+  CallgraphNodeMeta,
+  FlamegraphNode,
+  FlamegraphNodeMeta,
+  FlamegraphRootNode,
+} from '@parca/client';
+import {
   Location,
   Mapping,
+  Function as ParcaFunction,
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
+import {useKeyDown} from '@parca/components';
+import {selectHoveringNode, useAppSelector} from '@parca/store';
+import {divide, getLastItem, valueFormatter} from '@parca/utilities';
+
+import {hexifyAddress, truncateString, truncateStringReverse} from '../';
+import {ExpandOnHover} from './ExpandOnHoverValue';
+
+const NoData = (): JSX.Element => {
+  return <span className="rounded bg-gray-200 px-2 dark:bg-gray-800">Not available</span>;
+};
+
+interface ExtendedCallgraphNodeMeta extends CallgraphNodeMeta {
+  lineIndex: number;
+  locationIndex: number;
+}
+
+interface HoveringNode extends FlamegraphRootNode, FlamegraphNode, CallgraphNode {
+  diff: bigint;
+  meta?: FlamegraphNodeMeta | ExtendedCallgraphNodeMeta;
+}
 
 interface GraphTooltipProps {
-  x: number;
-  y: number;
+  x?: number;
+  y?: number;
   unit: string;
-  total: number;
-  hoveringNode: HoveringNode;
+  total: bigint;
+  totalUnfiltered: bigint;
+  hoveringNode?: HoveringNode;
   contextElement: Element | null;
   isFixed?: boolean;
   virtualContextElement?: boolean;
@@ -38,6 +64,7 @@ interface GraphTooltipProps {
   mappings?: Mapping[];
   locations?: Location[];
   functions?: ParcaFunction[];
+  type?: string;
 }
 
 const virtualElement = {
@@ -74,20 +101,21 @@ const TooltipMetaInfo = ({
   mappings,
   locations,
   functions,
+  type = 'flamegraph',
 }: {
-  hoveringNode: FlamegraphNode;
+  hoveringNode: HoveringNode;
   onCopy: () => void;
   strings?: string[];
   mappings?: Mapping[];
   locations?: Location[];
   functions?: ParcaFunction[];
+  type?: string;
 }): JSX.Element => {
-  if (hoveringNode.meta === undefined) return <></>;
-
   // populate meta from the flamegraph metadata tables
   if (
+    type === 'flamegraph' &&
     locations !== undefined &&
-    hoveringNode.meta.locationIndex !== undefined &&
+    hoveringNode.meta?.locationIndex !== undefined &&
     hoveringNode.meta.locationIndex !== 0
   ) {
     const location = locations[hoveringNode.meta.locationIndex - 1];
@@ -126,104 +154,115 @@ const TooltipMetaInfo = ({
     }
   }
 
-  const getTextForFile = (hoveringNode: FlamegraphNode): string => {
+  const getTextForFile = (hoveringNode: HoveringNode): string => {
     if (hoveringNode.meta?.function == null) return '<unknown>';
 
     return `${hoveringNode.meta.function.filename} ${
-      hoveringNode.meta.line?.line !== undefined && hoveringNode.meta.line?.line !== '0'
+      hoveringNode.meta.line?.line !== undefined && hoveringNode.meta.line?.line !== 0n
         ? ` +${hoveringNode.meta.line.line.toString()}`
         : `${
             hoveringNode.meta.function?.startLine !== undefined &&
-            hoveringNode.meta.function?.startLine !== '0'
+            hoveringNode.meta.function?.startLine !== 0n
               ? ` +${hoveringNode.meta.function.startLine}`
               : ''
           }`
     }`;
   };
+  const file = getTextForFile(hoveringNode);
 
   return (
     <>
-      {hoveringNode.meta.function?.filename !== undefined &&
-        hoveringNode.meta.function?.filename !== '' && (
-          <tr>
-            <td className="w-1/5">File</td>
-            <td className="w-4/5 break-all">
-              <CopyToClipboard onCopy={onCopy} text={getTextForFile(hoveringNode)}>
-                <button className="cursor-pointer text-left">{getTextForFile(hoveringNode)}</button>
-              </CopyToClipboard>
-            </td>
-          </tr>
-        )}
-      {hoveringNode.meta.location?.address !== undefined &&
-        hoveringNode.meta.location?.address !== '0' && (
-          <tr>
-            <td className="w-1/5">Address</td>
-            <td className="w-4/5 break-all">
-              <CopyToClipboard
-                onCopy={onCopy}
-                text={hexifyAddress(hoveringNode.meta.location.address)}
-              >
-                <button className="cursor-pointer">
-                  {hexifyAddress(hoveringNode.meta.location.address)}
-                </button>
-              </CopyToClipboard>
-            </td>
-          </tr>
-        )}
-      {hoveringNode.meta.mapping !== undefined && hoveringNode.meta.mapping.file !== '' && (
-        <tr>
-          <td className="w-1/5">Binary</td>
-          <td className="w-4/5 break-all">
+      <tr>
+        <td className="w-1/4">File</td>
+        <td className="w-3/4 break-all">
+          {hoveringNode.meta?.function?.filename == null ||
+          hoveringNode.meta?.function.filename === '' ? (
+            <NoData />
+          ) : (
+            <CopyToClipboard onCopy={onCopy} text={file}>
+              <button className="cursor-pointer whitespace-nowrap text-left">
+                <ExpandOnHover value={file} displayValue={truncateStringReverse(file, 40)} />
+              </button>
+            </CopyToClipboard>
+          )}
+        </td>
+      </tr>
+
+      <tr>
+        <td className="w-1/4">Address</td>
+        <td className="w-3/4 break-all">
+          {hoveringNode.meta?.location?.address == null ||
+          hoveringNode.meta?.location.address === 0n ? (
+            <NoData />
+          ) : (
+            <CopyToClipboard
+              onCopy={onCopy}
+              text={hexifyAddress(hoveringNode.meta.location.address)}
+            >
+              <button className="cursor-pointer">
+                {hexifyAddress(hoveringNode.meta.location.address)}
+              </button>
+            </CopyToClipboard>
+          )}
+        </td>
+      </tr>
+      <tr>
+        <td className="w-1/4">Binary</td>
+        <td className="w-3/4 break-all">
+          {hoveringNode.meta?.mapping == null || hoveringNode.meta.mapping.file === '' ? (
+            <NoData />
+          ) : (
             <CopyToClipboard onCopy={onCopy} text={hoveringNode.meta.mapping.file}>
               <button className="cursor-pointer">
                 {getLastItem(hoveringNode.meta.mapping.file)}
               </button>
             </CopyToClipboard>
-          </td>
-        </tr>
-      )}
-      {hoveringNode.meta.mapping !== undefined && hoveringNode.meta.mapping.buildId !== '' && (
-        <tr>
-          <td className="w-1/5">Build Id</td>
-          <td className="w-4/5 break-all">
+          )}
+        </td>
+      </tr>
+
+      <tr>
+        <td className="w-1/4">Build Id</td>
+        <td className="w-3/4 break-all">
+          {hoveringNode.meta?.mapping == null || hoveringNode.meta?.mapping.buildId === '' ? (
+            <NoData />
+          ) : (
             <CopyToClipboard onCopy={onCopy} text={hoveringNode.meta.mapping.buildId}>
               <button className="cursor-pointer">
-                {truncateString(getLastItem(hoveringNode.meta.mapping.buildId) as string, 16)}
+                {truncateString(getLastItem(hoveringNode.meta.mapping.buildId) as string, 28)}
               </button>
             </CopyToClipboard>
-          </td>
-        </tr>
-      )}
+          )}
+        </td>
+      </tr>
     </>
   );
 };
 
-// @ts-expect-error
-export interface HoveringNode extends CallgraphNode, FlamegraphRootNode, FlamegraphNode {
-  diff: string;
-  meta?: FlamegraphNodeMeta | {[key: string]: any};
-}
-
 let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
-const GraphTooltipContent = ({
+export const GraphTooltipContent = ({
   hoveringNode,
   unit,
   total,
+  totalUnfiltered,
   isFixed,
   strings,
   mappings,
   locations,
   functions,
+  type = 'flamegraph',
 }: {
   hoveringNode: HoveringNode;
   unit: string;
-  total: number;
+  total: bigint;
+  totalUnfiltered: bigint;
   isFixed: boolean;
   strings?: string[];
   mappings?: Mapping[];
   locations?: Location[];
   functions?: ParcaFunction[];
+  type?: string;
 }): JSX.Element => {
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
@@ -236,44 +275,31 @@ const GraphTooltipContent = ({
     timeoutHandle = setTimeout(() => setIsCopied(false), 3000);
   };
 
-  const hoveringNodeCumulative = parseFloat(hoveringNode.cumulative);
-  const diff = hoveringNode.diff === undefined ? 0 : parseFloat(hoveringNode.diff);
+  const hoveringNodeCumulative = hoveringNode.cumulative;
+  const diff = hoveringNode.diff;
   const prevValue = hoveringNodeCumulative - diff;
-  const diffRatio = Math.abs(diff) > 0 ? diff / prevValue : 0;
+  const diffRatio = diff !== 0n ? divide(diff, prevValue) : 0;
   const diffSign = diff > 0 ? '+' : '';
   const diffValueText = diffSign + valueFormatter(diff, unit, 1);
   const diffPercentageText = diffSign + (diffRatio * 100).toFixed(2) + '%';
   const diffText = `${diffValueText} (${diffPercentageText})`;
-  const metaRows =
-    hoveringNode.meta === undefined ? (
-      <></>
-    ) : (
-      <TooltipMetaInfo
-        onCopy={onCopy}
-        // @ts-expect-error
-        hoveringNode={hoveringNode}
-        strings={strings}
-        mappings={mappings}
-        locations={locations}
-        functions={functions}
-      />
-    );
 
-  const getTextForCumulative = (hoveringNodeCumulative: number): string => {
-    return `${valueFormatter(hoveringNodeCumulative, unit, 2)} (
-      ${((hoveringNodeCumulative * 100) / total).toFixed(2)}%)`;
+  const getTextForCumulative = (hoveringNodeCumulative: bigint): string => {
+    const filtered =
+      totalUnfiltered > total
+        ? ` / ${divide(hoveringNodeCumulative * 100n, total).toFixed(2)}% of filtered`
+        : '';
+    return `${valueFormatter(hoveringNodeCumulative, unit, 2)}
+    (${divide(hoveringNodeCumulative * 100n, totalUnfiltered).toFixed(2)}%${filtered})`;
   };
 
   return (
-    <div className={`flex ${isFixed ? 'w-full h-36' : ''}`}>
-      <div className={`m-auto w-full ${isFixed ? 'w-full h-36' : ''}`}>
-        <div
-          className="border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg opacity-90"
-          style={{borderWidth: 1}}
-        >
+    <div className={`flex text-sm ${isFixed ? 'w-full' : ''}`}>
+      <div className={`m-auto w-full ${isFixed ? 'w-full' : ''}`}>
+        <div className="min-h-52 flex w-[500px] flex-col justify-between rounded-lg border border-gray-300 bg-gray-50 p-3 shadow-lg dark:border-gray-500 dark:bg-gray-900">
           <div className="flex flex-row">
-            <div className="ml-2 mr-6">
-              <span className="font-semibold break-all">
+            <div className="mx-2">
+              <div className="flex h-10 items-center break-all font-semibold">
                 {hoveringNode.meta === undefined ? (
                   <p>root</p>
                 ) : (
@@ -288,7 +314,7 @@ const GraphTooltipContent = ({
                     ) : (
                       <>
                         {hoveringNode.meta.location !== undefined &&
-                        parseInt(hoveringNode.meta.location.address, 10) !== 0 ? (
+                        hoveringNode.meta.location.address !== 0n ? (
                           <CopyToClipboard
                             onCopy={onCopy}
                             text={hexifyAddress(hoveringNode.meta.location.address)}
@@ -304,44 +330,49 @@ const GraphTooltipContent = ({
                     )}
                   </>
                 )}
-              </span>
-              <span className="text-gray-700 dark:text-gray-300 my-2">
-                <table className="table-fixed">
-                  <tbody>
-                    <tr>
-                      <td className="w-1/5">Cumulative</td>
+              </div>
+              <table className="my-2 w-full table-fixed pr-0 text-gray-700 dark:text-gray-300">
+                <tbody>
+                  <tr>
+                    <td className="w-1/4">Cumulative</td>
 
-                      <td className="w-4/5">
-                        <CopyToClipboard
-                          onCopy={onCopy}
-                          text={getTextForCumulative(hoveringNodeCumulative)}
-                        >
-                          <button className="cursor-pointer">
-                            {getTextForCumulative(hoveringNodeCumulative)}
-                          </button>
+                    <td className="w-3/4">
+                      <CopyToClipboard
+                        onCopy={onCopy}
+                        text={getTextForCumulative(hoveringNodeCumulative)}
+                      >
+                        <button className="cursor-pointer">
+                          {getTextForCumulative(hoveringNodeCumulative)}
+                        </button>
+                      </CopyToClipboard>
+                    </td>
+                  </tr>
+                  {hoveringNode.diff !== undefined && diff !== 0n && (
+                    <tr>
+                      <td className="w-1/4">Diff</td>
+                      <td className="w-3/4">
+                        <CopyToClipboard onCopy={onCopy} text={diffText}>
+                          <button className="cursor-pointer">{diffText}</button>
                         </CopyToClipboard>
                       </td>
                     </tr>
-                    {hoveringNode.diff !== undefined && diff !== 0 && (
-                      <tr>
-                        <td className="w-1/5">Diff</td>
-                        <td className="w-4/5">
-                          <CopyToClipboard onCopy={onCopy} text={diffText}>
-                            <button className="cursor-pointer">{diffText}</button>
-                          </CopyToClipboard>
-                        </td>
-                      </tr>
-                    )}
-                    {metaRows}
-                  </tbody>
-                </table>
-              </span>
-
-              <span className="block text-gray-500 text-xs mt-2">
-                {isCopied ? 'Copied!' : 'Hold shift and click on a value to copy.'}
-              </span>
+                  )}
+                  <TooltipMetaInfo
+                    onCopy={onCopy}
+                    hoveringNode={hoveringNode}
+                    strings={strings}
+                    mappings={mappings}
+                    locations={locations}
+                    functions={functions}
+                    type={type}
+                  />
+                </tbody>
+              </table>
             </div>
           </div>
+          <span className="mx-2 block text-xs text-gray-500">
+            {isCopied ? 'Copied!' : 'Hold shift and click on a value to copy.'}
+          </span>
         </div>
       </div>
     </div>
@@ -353,7 +384,8 @@ const GraphTooltip = ({
   y,
   unit,
   total,
-  hoveringNode,
+  totalUnfiltered,
+  hoveringNode: hoveringNodeProp,
   contextElement,
   isFixed = false,
   virtualContextElement = true,
@@ -361,14 +393,32 @@ const GraphTooltip = ({
   mappings,
   locations,
   functions,
+  type = 'flamegraph',
 }: GraphTooltipProps): JSX.Element => {
+  const hoveringNodeState = useAppSelector(selectHoveringNode);
+  // @ts-expect-error
+  const hoveringNode = useMemo<HoveringNode>(() => {
+    const h = hoveringNodeProp ?? hoveringNodeState;
+    if (h == null) {
+      return h;
+    }
+
+    // Cloning the object to avoid the mutating error as this is Redux store object and we are modifying the meta object in GraphTooltipContent component.
+    return {
+      ...h,
+      meta: {
+        ...h.meta,
+      },
+    };
+  }, [hoveringNodeProp, hoveringNodeState]);
+
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
 
   const {styles, attributes, ...popperProps} = usePopper(
     virtualContextElement ? virtualElement : contextElement,
     popperElement,
     {
-      placement: 'auto-start',
+      placement: 'bottom-start',
       strategy: 'absolute',
       modifiers: [
         {
@@ -376,6 +426,7 @@ const GraphTooltip = ({
           options: {
             tether: false,
             altAxis: true,
+            boundary: contextElement ?? undefined,
           },
         },
         {
@@ -384,37 +435,71 @@ const GraphTooltip = ({
             offset: [30, 30],
           },
         },
+        {
+          name: 'flip',
+          options: {
+            boundary: contextElement ?? undefined,
+          },
+        },
       ],
     }
   );
 
-  const update = popperProps.update;
   const {isShiftDown} = useKeyDown();
 
   useEffect(() => {
-    if (contextElement != null) {
-      if (isShiftDown) return;
+    if (contextElement === null) return;
+    const onMouseMove: EventListenerOrEventListenerObject = (e: Event) => {
+      if (isShiftDown) {
+        return;
+      }
 
-      virtualElement.getBoundingClientRect = generateGetBoundingClientRect(contextElement, x, y);
-      void update?.();
-    }
-  }, [x, y, contextElement, update, isShiftDown]);
+      let tooltipX = x;
+      let tooltipY = y;
+      if (tooltipX == null || tooltipY == null) {
+        const rel = pointer(e);
+        tooltipX = rel[0];
+        tooltipY = rel[1];
+      }
+      virtualElement.getBoundingClientRect = generateGetBoundingClientRect(
+        contextElement,
+        tooltipX,
+        tooltipY
+      );
+
+      void popperProps.update?.();
+    };
+
+    contextElement.addEventListener('mousemove', onMouseMove);
+    return () => {
+      contextElement.removeEventListener('mousemove', onMouseMove);
+    };
+  }, [contextElement, popperProps, isShiftDown, x, y]);
 
   if (hoveringNode === undefined || hoveringNode == null) return <></>;
 
   return isFixed ? (
-    <GraphTooltipContent hoveringNode={hoveringNode} unit={unit} total={total} isFixed={isFixed} />
+    <GraphTooltipContent
+      hoveringNode={hoveringNode}
+      unit={unit}
+      total={total}
+      totalUnfiltered={totalUnfiltered}
+      isFixed={isFixed}
+      type={type}
+    />
   ) : (
     <div ref={setPopperElement} style={styles.popper} {...attributes.popper}>
       <GraphTooltipContent
         hoveringNode={hoveringNode}
         unit={unit}
         total={total}
+        totalUnfiltered={totalUnfiltered}
         isFixed={isFixed}
         strings={strings}
         mappings={mappings}
         locations={locations}
         functions={functions}
+        type={type}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright 2022 The Parca Authors
+# Copyright 2022-2023 The Parca Authors
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -19,7 +19,7 @@ set -euo pipefail
 TARGET_DIR=${TARGET_DIR:-${HOME}/.local/bin}
 
 # renovate: datasource=go depName=github.com/kubernetes/minikube
-MINIKUBE_VERSION='v1.29.0'
+MINIKUBE_VERSION='v1.30.1'
 
 GOOS="$(go env GOOS)"
 GOARCH="$(go env GOARCH)"

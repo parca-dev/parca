@@ -1,4 +1,4 @@
-// Copyright 2022 The Parca Authors
+// Copyright 2022-2023 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -15,6 +15,7 @@ package config
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -97,7 +98,21 @@ func (r *ConfigReloader) watchFile() {
 				level.Debug(r.logger).Log("msg", "config file watcher events channel closed. exiting goroutine.")
 				return
 			}
-			if event.Op&fsnotify.Write == fsnotify.Write {
+			if event.Has(fsnotify.Remove) {
+				// Handle case where the config file is a symlink (e.g. Kubernetes ConfigMap)
+				level.Debug(r.logger).Log("msg", "config file has been removed/recreated")
+				// Ensure watcher has stopped monitoring the removed file
+				if err := r.watcher.Remove(event.Name); err != nil && !errors.Is(err, fsnotify.ErrNonExistentWatch) {
+					level.Error(r.logger).Log("msg", "failed to stop watching old config file", "err", err, "path", r.filename)
+					return
+				}
+				// Watch new file (fsnotify follows symlinks)
+				if err := r.watcher.Add(r.filename); err != nil {
+					level.Error(r.logger).Log("msg", "failed to start watching new config file", "err", err, "path", r.filename)
+					return
+				}
+				r.triggerReload <- struct{}{}
+			} else if event.Has(fsnotify.Write) {
 				level.Debug(r.logger).Log("msg", "config file has been modified")
 				r.triggerReload <- struct{}{}
 			}

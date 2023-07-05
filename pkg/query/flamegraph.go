@@ -1,4 +1,4 @@
-// Copyright 2022 The Parca Authors
+// Copyright 2022-2023 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -87,6 +87,12 @@ func (fgi *FlamegraphIterator) At() *querypb.FlamegraphNode {
 	return peekNode.Children[fgi.stack.Peek().currentChild]
 }
 
+func (fgi *FlamegraphIterator) AtParent() *querypb.FlamegraphNode {
+	peekNodes := fgi.stack.Peek().nodes
+	peekNode := peekNodes[len(peekNodes)-1]
+	return peekNode
+}
+
 func (fgi *FlamegraphIterator) StepInto() bool {
 	peekNodes := fgi.stack.Peek().nodes
 	peekNode := peekNodes[len(peekNodes)-1]
@@ -120,6 +126,7 @@ func aggregateByFunction(fg *querypb.Flamegraph) *querypb.Flamegraph {
 
 	it := NewFlamegraphIterator(oldRootNode)
 	tree := &querypb.Flamegraph{
+		//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 		Total:  fg.Total,
 		Height: fg.Height,
 		Root: &querypb.FlamegraphRootNode{

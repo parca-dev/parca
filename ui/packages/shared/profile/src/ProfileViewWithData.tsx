@@ -11,16 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useState} from 'react';
-import {QueryServiceClient, QueryRequest_ReportType} from '@parca/client';
-import {useQuery} from './useQuery';
-import {ProfileView} from './ProfileView';
-import {ProfileSource} from './ProfileSource';
-import {downloadPprof} from './utils';
+import {useEffect, useMemo, useState} from 'react';
+
+import {QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata, useParcaContext, useURLState} from '@parca/components';
-import {saveAsBlob} from '@parca/functions';
-import type {NavigateFunction} from '@parca/functions';
-import useUserPreference, {USER_PREFERENCES} from '@parca/functions/useUserPreference';
+import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
+import {saveAsBlob, type NavigateFunction} from '@parca/utilities';
+
+import {ProfileSource} from './ProfileSource';
+import {ProfileView} from './ProfileView';
+import {useQuery} from './useQuery';
+import {downloadPprof} from './utils';
 
 interface ProfileViewWithDataProps {
   queryClient: QueryServiceClient;
@@ -36,25 +37,22 @@ export const ProfileViewWithData = ({
 }: ProfileViewWithDataProps): JSX.Element => {
   const metadata = useGrpcMetadata();
   const [dashboardItems = ['icicle']] = useURLState({param: 'dashboard_items', navigateTo});
-  const [nodeTrimThreshold, setNodeTrimThreshold] = useState<number>(0);
+
   const [enableTrimming] = useUserPreference<boolean>(USER_PREFERENCES.ENABLE_GRAPH_TRIMMING.key);
+  const [pprofDownloading, setPprofDownloading] = useState<boolean>(false);
 
-  useEffect(() => {
+  const nodeTrimThreshold = useMemo(() => {
     if (!enableTrimming) {
-      setNodeTrimThreshold(0);
+      return 0;
     }
-  }, [enableTrimming]);
 
-  const onFlamegraphContainerResize = (width: number): void => {
-    if (!enableTrimming || width === 0) {
-      return;
-    }
-    const threshold = (1 / width) * 100;
-    if (threshold === nodeTrimThreshold) {
-      return;
-    }
-    setNodeTrimThreshold(threshold);
-  };
+    let width =
+      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+      window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+    // subtract the padding
+    width = width - 12 - 16 - 12;
+    return (1 / width) * 100;
+  }, [enableTrimming]);
 
   const {
     isLoading: flamegraphLoading,
@@ -65,18 +63,6 @@ export const ProfileViewWithData = ({
     nodeTrimThreshold,
   });
   const {perf} = useParcaContext();
-
-  useEffect(() => {
-    if (flamegraphLoading) {
-      return;
-    }
-
-    if (flamegraphResponse?.report.oneofKind !== 'flamegraph') {
-      return;
-    }
-
-    perf?.markInteraction('Flamegraph Render', flamegraphResponse?.report?.flamegraph.total);
-  }, [flamegraphLoading, flamegraphResponse, perf]);
 
   const {
     isLoading: topTableLoading,
@@ -94,6 +80,28 @@ export const ProfileViewWithData = ({
     skip: !dashboardItems.includes('callgraph'),
   });
 
+  useEffect(() => {
+    if (!flamegraphLoading && flamegraphResponse?.report.oneofKind === 'flamegraph') {
+      perf?.markInteraction('Flamegraph render', flamegraphResponse.report.flamegraph.total);
+    }
+
+    if (!topTableLoading && topTableResponse?.report.oneofKind === 'top') {
+      perf?.markInteraction('Top table render', topTableResponse?.report?.top.total);
+    }
+
+    if (!callgraphLoading && callgraphResponse?.report.oneofKind === 'callgraph') {
+      perf?.markInteraction('Callgraph render', callgraphResponse?.report?.callgraph.cumulative);
+    }
+  }, [
+    flamegraphLoading,
+    flamegraphResponse,
+    callgraphResponse,
+    callgraphLoading,
+    topTableLoading,
+    topTableResponse,
+    perf,
+  ]);
+
   const sampleUnit = profileSource.ProfileType().sampleUnit;
 
   const downloadPProfClick = async (): Promise<void> => {
@@ -102,21 +110,43 @@ export const ProfileViewWithData = ({
     }
 
     try {
+      setPprofDownloading(true);
       const blob = await downloadPprof(profileSource.QueryRequest(), queryClient, metadata);
       saveAsBlob(blob, `profile.pb.gz`);
+      setPprofDownloading(false);
     } catch (error) {
+      setPprofDownloading(false);
       console.error('Error while querying', error);
     }
   };
 
+  // TODO: Refactor how we get responses such that we have a single response,
+  //  regardless of the report type.
+  let total = BigInt(0);
+  let filtered = BigInt(0);
+  if (flamegraphResponse !== null) {
+    total = BigInt(flamegraphResponse.total);
+    filtered = BigInt(flamegraphResponse.filtered);
+  } else if (topTableResponse !== null) {
+    total = BigInt(topTableResponse.total);
+    filtered = BigInt(topTableResponse.filtered);
+  } else if (callgraphResponse !== null) {
+    total = BigInt(callgraphResponse.total);
+    filtered = BigInt(callgraphResponse.filtered);
+  }
+
   return (
     <ProfileView
+      total={total}
+      filtered={filtered}
       flamegraphData={{
         loading: flamegraphLoading,
         data:
           flamegraphResponse?.report.oneofKind === 'flamegraph'
             ? flamegraphResponse?.report?.flamegraph
             : undefined,
+        total: BigInt(flamegraphResponse?.total ?? '0'),
+        filtered: BigInt(flamegraphResponse?.filtered ?? '0'),
         error: flamegraphError,
       }}
       topTableData={{
@@ -138,7 +168,7 @@ export const ProfileViewWithData = ({
       queryClient={queryClient}
       navigateTo={navigateTo}
       onDownloadPProf={() => void downloadPProfClick()}
-      onFlamegraphContainerResize={onFlamegraphContainerResize}
+      pprofDownloading={pprofDownloading}
     />
   );
 };

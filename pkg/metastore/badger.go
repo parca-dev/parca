@@ -1,4 +1,4 @@
-// Copyright 2022 The Parca Authors
+// Copyright 2022-2023 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -17,7 +17,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/dgraph-io/badger/v3"
+	"github.com/dgraph-io/badger/v4"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
@@ -29,8 +29,9 @@ import (
 // BadgerMetastore is an implementation of the metastore using the badger KV
 // store.
 type BadgerMetastore struct {
-	tracer trace.Tracer
-	logger log.Logger
+	tracer   trace.Tracer
+	logger   log.Logger
+	keymaker *KeyMaker
 
 	db *badger.DB
 
@@ -68,9 +69,10 @@ func NewBadgerMetastore(
 	db *badger.DB,
 ) *BadgerMetastore {
 	return &BadgerMetastore{
-		db:     db,
-		tracer: tracer,
-		logger: logger,
+		db:       db,
+		tracer:   tracer,
+		logger:   logger,
+		keymaker: NewKeyMaker(),
 	}
 }
 
@@ -119,7 +121,7 @@ func (m *BadgerMetastore) GetOrCreateMappings(ctx context.Context, r *pb.GetOrCr
 
 	mappingKeys := make([]string, 0, len(r.Mappings))
 	for _, id := range r.Mappings {
-		mappingKeys = append(mappingKeys, MakeMappingKey(id))
+		mappingKeys = append(mappingKeys, m.keymaker.MakeMappingKey(id))
 	}
 
 	err := m.db.Update(func(txn *badger.Txn) error {
@@ -209,7 +211,7 @@ func (m *BadgerMetastore) GetOrCreateFunctions(ctx context.Context, r *pb.GetOrC
 
 	functionKeys := make([]string, 0, len(r.Functions))
 	for _, function := range r.Functions {
-		functionKeys = append(functionKeys, MakeFunctionKey(function))
+		functionKeys = append(functionKeys, m.keymaker.MakeFunctionKey(function))
 	}
 
 	err := m.db.Update(func(txn *badger.Txn) error {
@@ -305,7 +307,7 @@ func (m *BadgerMetastore) GetOrCreateLocations(ctx context.Context, r *pb.GetOrC
 
 	locationKeys := make([]string, 0, len(r.Locations))
 	for _, location := range r.Locations {
-		locationKeys = append(locationKeys, MakeLocationKey(location))
+		locationKeys = append(locationKeys, m.keymaker.MakeLocationKey(location))
 	}
 
 	err := m.db.Update(func(txn *badger.Txn) error {
@@ -440,7 +442,7 @@ func (m *BadgerMetastore) GetOrCreateStacktraces(ctx context.Context, r *pb.GetO
 
 	stacktraceKeys := make([]string, 0, len(r.Stacktraces))
 	for _, stacktrace := range r.Stacktraces {
-		stacktraceKeys = append(stacktraceKeys, MakeStacktraceKey(stacktrace))
+		stacktraceKeys = append(stacktraceKeys, m.keymaker.MakeStacktraceKey(stacktrace))
 	}
 
 	const maxRetries = 100

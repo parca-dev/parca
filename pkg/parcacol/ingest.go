@@ -1,4 +1,4 @@
-// Copyright 2022 The Parca Authors
+// Copyright 2022-2023 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -22,7 +22,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/apache/arrow/go/v10/arrow"
+	"github.com/apache/arrow/go/v13/arrow"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/klauspost/compress/gzip"
@@ -88,31 +88,6 @@ type Series struct {
 }
 
 func (ing NormalizedIngester) Ingest(ctx context.Context, series []Series) error {
-	// Experimental feature that ingests profiles as arrow records.
-	if ExperimentalArrow {
-		record, err := SeriesToArrowRecord(
-			ing.schema,
-			series,
-			ing.allLabelNames,
-			ing.allPprofLabelNames,
-			ing.allPprofNumLabelNames,
-		)
-		if err != nil {
-			return err
-		}
-		defer record.Release()
-
-		if record.NumRows() == 0 {
-			return nil
-		}
-
-		if _, err := ing.table.InsertRecord(ctx, record); err != nil {
-			return err
-		}
-
-		return nil
-	}
-
 	pBuf, err := ing.schema.GetBuffer(map[string][]string{
 		ColumnLabels:         ing.allLabelNames,
 		ColumnPprofLabels:    ing.allPprofLabelNames,
@@ -155,6 +130,31 @@ func (ing NormalizedIngester) Ingest(ctx context.Context, series []Series) error
 
 	pBuf.Sort()
 
+	// Experimental feature that ingests profiles as arrow records.
+	if ExperimentalArrow {
+		// Read sorted rows into an arrow record
+		records, err := ParquetBufToArrowRecord(ctx, pBuf.Buffer, 0)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			for _, record := range records {
+				record.Release()
+			}
+		}()
+
+		for _, record := range records {
+			if record.NumRows() == 0 {
+				return nil
+			}
+
+			if _, err := ing.table.InsertRecord(ctx, record); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
 	buf := ing.bufferPool.Get().(*bytes.Buffer)
 	buf.Reset()
 	defer ing.bufferPool.Put(buf)
@@ -170,41 +170,31 @@ func (ing NormalizedIngester) Ingest(ctx context.Context, series []Series) error
 	return nil
 }
 
-type Ingester struct {
-	logger     log.Logger
-	table      Table
-	schema     *dynparquet.Schema
-	metastore  metastorepb.MetastoreServiceClient
-	bufferPool *sync.Pool
-}
-
-func NewIngester(
+// NormalizedIngest normalizes and persists pprof samples
+// (mappings, functions, locations, stack traces).
+// Note, normalization is used in broad terms (think db normalization),
+// it doesn't necessarily mean address normalization (PIE).
+func NormalizedIngest(
+	ctx context.Context,
+	req *profilestorepb.WriteRawRequest,
 	logger log.Logger,
 	table Table,
 	schema *dynparquet.Schema,
 	metastore metastorepb.MetastoreServiceClient,
 	bufferPool *sync.Pool,
-) Ingester {
-	return Ingester{
-		logger:     logger,
-		table:      table,
-		schema:     schema,
-		metastore:  metastore,
-		bufferPool: bufferPool,
-	}
-}
-
-func (ing Ingester) Ingest(ctx context.Context, req *profilestorepb.WriteRawRequest) error {
-	normalizedRequest, err := NormalizeWriteRawRequest(ctx, NewNormalizer(ing.metastore), req)
+	enableAddressNormalization bool,
+) error {
+	normalizer := NewNormalizer(metastore, enableAddressNormalization)
+	normalizedRequest, err := NormalizeWriteRawRequest(ctx, normalizer, req)
 	if err != nil {
 		return err
 	}
 
 	if err := NewNormalizedIngester(
-		ing.logger,
-		ing.table,
-		ing.schema,
-		ing.bufferPool,
+		logger,
+		table,
+		schema,
+		bufferPool,
 		normalizedRequest.AllLabelNames,
 		normalizedRequest.AllPprofLabelNames,
 		normalizedRequest.AllPprofNumLabelNames,
@@ -226,6 +216,10 @@ type Normalizer interface {
 	NormalizePprof(ctx context.Context, name string, takenLabelNames map[string]string, p *pprofpb.Profile, normalizedAddress bool) ([]*profile.NormalizedProfile, error)
 }
 
+// NormalizeWriteRawRequest normalizes the profiles
+// (mappings, functions, locations, stack traces) to prepare for ingestion.
+// It also validates label names of profiles' series,
+// decompresses the samples, unmarshals and validates them.
 func NormalizeWriteRawRequest(ctx context.Context, normalizer Normalizer, req *profilestorepb.WriteRawRequest) (NormalizedWriteRawRequest, error) {
 	allLabelNames := make(map[string]struct{})
 	allPprofLabelNames := make(map[string]struct{})
@@ -259,22 +253,22 @@ func NormalizeWriteRawRequest(ctx context.Context, normalizer Normalizer, req *p
 
 		samples := make([][]*profile.NormalizedProfile, 0, len(rawSeries.Samples))
 		for _, sample := range rawSeries.Samples {
-			r, err := gzip.NewReader(bytes.NewBuffer(sample.RawProfile))
-			if err != nil {
-				return NormalizedWriteRawRequest{}, status.Errorf(codes.Internal, "failed to create gzip reader: %v", err)
-			}
+			if len(sample.RawProfile) >= 2 && sample.RawProfile[0] == 0x1f && sample.RawProfile[1] == 0x8b {
+				gz, err := gzip.NewReader(bytes.NewBuffer(sample.RawProfile))
+				if err == nil {
+					sample.RawProfile, err = io.ReadAll(gz)
+				}
+				if err != nil {
+					return NormalizedWriteRawRequest{}, fmt.Errorf("decompressing profile: %v", err)
+				}
 
-			content, err := io.ReadAll(r)
-			if err != nil {
-				return NormalizedWriteRawRequest{}, status.Errorf(codes.InvalidArgument, "failed to decompress profile: %v", err)
-			}
-
-			if err := r.Close(); err != nil {
-				return NormalizedWriteRawRequest{}, status.Errorf(codes.Internal, "failed to close gzip reader: %v", err)
+				if err := gz.Close(); err != nil {
+					return NormalizedWriteRawRequest{}, fmt.Errorf("close gzip reader: %v", err)
+				}
 			}
 
 			p := &pprofpb.Profile{}
-			if err := p.UnmarshalVT(content); err != nil {
+			if err := p.UnmarshalVT(sample.RawProfile); err != nil {
 				return NormalizedWriteRawRequest{}, status.Errorf(codes.InvalidArgument, "failed to parse profile: %v", err)
 			}
 

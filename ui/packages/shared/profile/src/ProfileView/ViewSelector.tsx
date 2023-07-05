@@ -11,10 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import type {NavigateFunction} from '@parca/functions';
-import {Select, useURLState} from '@parca/components';
-import type {SelectElement} from '@parca/components';
-import useUIFeatureFlag from '@parca/functions/useUIFeatureFlag';
+import {Select, useURLState, type SelectElement} from '@parca/components';
+import {useUIFeatureFlag} from '@parca/hooks';
+import type {NavigateFunction} from '@parca/utilities';
 
 interface Props {
   position: number;

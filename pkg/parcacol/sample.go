@@ -1,4 +1,4 @@
-// Copyright 2022 The Parca Authors
+// Copyright 2022-2023 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -16,10 +16,12 @@ package parcacol
 import (
 	"context"
 	"fmt"
+	"io"
+	"strings"
 
-	"github.com/apache/arrow/go/v10/arrow"
-	"github.com/apache/arrow/go/v10/arrow/array"
-	"github.com/apache/arrow/go/v10/arrow/memory"
+	"github.com/apache/arrow/go/v13/arrow"
+	"github.com/apache/arrow/go/v13/arrow/array"
+	"github.com/apache/arrow/go/v13/arrow/memory"
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/polarsignals/frostdb/pqarrow"
 	"github.com/polarsignals/frostdb/query/logicalplan"
@@ -116,7 +118,7 @@ func SeriesToArrowRecord(
 	series []Series,
 	labelNames, profileLabelNames, profileNumLabelNames []string,
 ) (arrow.Record, error) {
-	ps, err := schema.DynamicParquetSchema(map[string][]string{
+	ps, err := schema.GetDynamicParquetSchema(map[string][]string{
 		ColumnLabels:         labelNames,
 		ColumnPprofLabels:    profileLabelNames,
 		ColumnPprofNumLabels: profileNumLabelNames,
@@ -124,9 +126,10 @@ func SeriesToArrowRecord(
 	if err != nil {
 		return nil, err
 	}
+	defer schema.PutPooledParquetSchema(ps)
 
 	ctx := context.Background()
-	as, err := pqarrow.ParquetSchemaToArrowSchema(ctx, ps, logicalplan.IterOptions{})
+	as, err := pqarrow.ParquetSchemaToArrowSchema(ctx, ps.Schema, logicalplan.IterOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -220,4 +223,99 @@ func SeriesToArrowRecord(
 	}
 
 	return bldr.NewRecord(), nil
+}
+
+// ParquetBufToArrowRecord converts a parquet buffer to an arrow record. If rowsPerRecord is 0, then the entire buffer is converted to a single record.
+func ParquetBufToArrowRecord(ctx context.Context, buf *dynparquet.Buffer, rowsPerRecord uint) ([]arrow.Record, error) {
+	as, err := pqarrow.ParquetSchemaToArrowSchema(ctx, buf.Schema(), logicalplan.IterOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	bldr := array.NewRecordBuilder(memory.NewGoAllocator(), as)
+	defer bldr.Release()
+
+	rows := buf.Rows()
+	defer rows.Close()
+
+	buffSize := 256
+	rowBuf := make([]parquet.Row, buffSize)
+
+	records := []arrow.Record{}
+	recordSize := uint(0)
+	for {
+		n, err := rows.ReadRows(rowBuf)
+		if err != nil && err != io.EOF {
+			return nil, err
+		}
+
+		if n == 0 {
+			break
+		}
+
+		// Write each row to the arrow record
+		for _, r := range rowBuf[:n] {
+			for i := range r {
+				switch as.Field(i).Name {
+				case ColumnName:
+					fallthrough
+				case ColumnPeriodType:
+					fallthrough
+				case ColumnPeriodUnit:
+					fallthrough
+				case ColumnSampleType:
+					fallthrough
+				case ColumnSampleUnit:
+					if err := bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(r[i].String()); err != nil {
+						return nil, err
+					}
+				case ColumnStacktrace:
+					bldr.Field(i).(*array.BinaryBuilder).AppendString(r[i].String())
+				case ColumnDuration:
+					fallthrough
+				case ColumnPeriod:
+					fallthrough
+				case ColumnTimestamp:
+					fallthrough
+				case ColumnValue:
+					bldr.Field(i).(*array.Int64Builder).Append(r[i].Int64())
+				default:
+					switch {
+					case strings.HasPrefix(as.Field(i).Name, ColumnPprofNumLabels):
+						if r[i].IsNull() {
+							bldr.Field(i).AppendNull()
+						} else {
+							bldr.Field(i).(*array.Int64Builder).Append(r[i].Int64())
+						}
+					case strings.HasPrefix(as.Field(i).Name, ColumnPprofLabels):
+						fallthrough
+					case strings.HasPrefix(as.Field(i).Name, ColumnLabels):
+						if r[i].IsNull() {
+							bldr.Field(i).AppendNull()
+						} else {
+							if err := bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(r[i].String()); err != nil {
+								return nil, err
+							}
+						}
+					default:
+						panic(fmt.Sprintf("unknown column %v", as.Field(i).Name))
+					}
+				}
+			}
+
+			recordSize++
+			if rowsPerRecord != 0 && recordSize >= rowsPerRecord {
+				records = append(records, bldr.NewRecord())
+				recordSize = 0
+			}
+		}
+	}
+
+	// Append final record
+	r := bldr.NewRecord()
+	if r.NumRows() > 0 {
+		records = append(records, r)
+	}
+
+	return records, nil
 }

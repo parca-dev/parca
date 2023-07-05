@@ -11,9 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import cx from 'classnames';
-import {DateTimeRange, formatDateStringForUI} from './utils';
 import {Popover} from '@headlessui/react';
+import cx from 'classnames';
+
+import {DateTimeRange, formatDateStringForUI} from './utils';
 
 interface DateTimeRangePickerTriggerProps {
   range: DateTimeRange;
@@ -36,16 +37,16 @@ const DateTimeRangePickerTrigger = ({
         <div
           onClick={onClick}
           className={cx(
-            'text-gray-600 dark:text-gray-300 relative flex justify-between min-w-[200px] border-t border-r border-b border-l dark:border-gray-600 rounded-md shadow-sm px-3 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm',
+            'relative flex min-w-[200px] cursor-default justify-between rounded-md border-t border-r border-b border-l px-3 py-2 text-left text-gray-600 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:text-gray-300 sm:text-sm',
             {'bg-gray-50 dark:bg-gray-900': !isActive},
             {'!justify-center, bg-gray-100 dark:bg-gray-800': isActive}
           )}
         >
-          <span className="w-[147px] xl:w-auto text-ellipsis overflow-hidden whitespace-nowrap">
+          <span className="w-[147px] overflow-hidden text-ellipsis whitespace-nowrap xl:w-auto">
             {dateString}
           </span>
 
-          <span className="px-2 cursor-pointer">{!isActive ? '▼' : '▲'}</span>
+          <span className="cursor-pointer px-2">{!isActive ? '▼' : '▲'}</span>
         </div>
       </Popover.Button>
     </>

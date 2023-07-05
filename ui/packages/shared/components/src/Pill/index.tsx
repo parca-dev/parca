@@ -15,28 +15,28 @@ import cx from 'classnames';
 
 const VARIANTS = {
   primary: {
-    color: 'text-gray-600',
-    bg: 'bg-indigo-100',
+    color: 'text-gray-600 dark:text-gray-200',
+    bg: 'bg-indigo-100 dark:bg-indigo-900',
   },
   success: {
-    color: 'text-green-800',
-    bg: 'bg-green-100',
+    color: 'text-green-800 dark:text-green-200',
+    bg: 'bg-green-100 dark:bg-green-900',
   },
   danger: {
-    color: 'text-red-800',
-    bg: 'bg-red-100',
+    color: 'text-red-800 dark:text-red-200',
+    bg: 'bg-red-100 dark:bg-red-900',
   },
   warning: {
-    color: 'text-amber-800',
-    bg: 'bg-amber-100',
+    color: 'text-amber-800 dark:text-amber-200',
+    bg: 'bg-amber-100 dark:bg-amber-900',
   },
   info: {
-    color: 'text-blue-600',
-    bg: 'bg-blue-100',
+    color: 'text-blue-600 dark:text-blue-200',
+    bg: 'bg-blue-100 dark:bg-blue-800',
   },
   neutral: {
-    color: 'text-neutral-800',
-    bg: 'bg-neutral-100',
+    color: 'text-neutral-800 dark:text-neutral-200',
+    bg: 'bg-neutral-100 dark:bg-neutral-900',
   },
 };
 
@@ -54,7 +54,7 @@ const Pill = ({
     className={cx(
       VARIANTS[variant].color,
       VARIANTS[variant].bg,
-      `px-2 inline-flex text-xs leading-5 font-semibold rounded-full whitespace-nowrap `
+      `inline-flex whitespace-nowrap rounded-full px-2 text-xs font-semibold leading-5 `
     )}
     {...props}
   >

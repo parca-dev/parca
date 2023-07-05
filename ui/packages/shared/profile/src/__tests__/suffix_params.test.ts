@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {SuffixParams, ParseLabels} from '../ProfileSource';
+import {ParseLabels, SuffixParams} from '../ProfileSource';
 
 test('prefixes keys', () => {
   const input = {key: 'value'};

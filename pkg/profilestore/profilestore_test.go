@@ -1,4 +1,4 @@
-// Copyright 2022 The Parca Authors
+// Copyright 2022-2023 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -49,7 +49,7 @@ func Test_LabelName_Error(t *testing.T) {
 
 	table, err := colDB.Table(
 		"stacktraces",
-		frostdb.NewTableConfig(schema),
+		frostdb.NewTableConfig(parcacol.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -65,6 +65,7 @@ func Test_LabelName_Error(t *testing.T) {
 		metastore.NewInProcessClient(m),
 		table,
 		schema,
+		true,
 	)
 
 	cases := []struct {
@@ -128,7 +129,7 @@ func BenchmarkProfileColumnStoreWriteSeries(b *testing.B) {
 
 	table, err := colDB.Table(
 		"stacktraces",
-		frostdb.NewTableConfig(schema),
+		frostdb.NewTableConfig(parcacol.SchemaDefinition()),
 	)
 	require.NoError(b, err)
 	m := metastoretest.NewTestMetastore(
@@ -144,6 +145,7 @@ func BenchmarkProfileColumnStoreWriteSeries(b *testing.B) {
 		metastore.NewInProcessClient(m),
 		table,
 		schema,
+		true,
 	)
 
 	content, err := os.ReadFile("../query/testdata/alloc_objects.pb.gz")

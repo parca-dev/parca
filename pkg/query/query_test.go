@@ -1,4 +1,4 @@
-// Copyright 2022 The Parca Authors
+// Copyright 2022-2023 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apache/arrow/go/v10/arrow/memory"
+	"github.com/apache/arrow/go/v13/arrow/memory"
 	"github.com/go-kit/log"
 	"github.com/polarsignals/frostdb"
 	columnstore "github.com/polarsignals/frostdb"
@@ -57,7 +57,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 
 			table, err := colDB.Table(
 				"stacktraces",
-				columnstore.NewTableConfig(schema),
+				columnstore.NewTableConfig(parcacol.SchemaDefinition()),
 			)
 			require.NoError(b, err)
 			metastore := metastore.NewInProcessClient(metastoretest.NewTestMetastore(
@@ -76,6 +76,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 				metastore,
 				table,
 				schema,
+				true,
 			)
 
 			for j := 0; j < n; j++ {
@@ -154,8 +155,6 @@ func Benchmark_ProfileTypes(b *testing.B) {
 		frostdb.WithStoragePath("../../data"),
 	)
 	require.NoError(b, err)
-
-	require.NoError(b, col.ReplayWALs(ctx))
 
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(b, err)

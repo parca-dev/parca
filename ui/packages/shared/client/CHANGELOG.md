@@ -3,6 +3,60 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.76](https://github.com/parca-dev/parca/compare/@parca/client@0.16.75...@parca/client@0.16.76) (2023-06-25)
+
+**Note:** Version bump only for package @parca/client
+
+## 0.16.75 (2023-06-22)
+
+**Note:** Version bump only for package @parca/client
+
+## 0.16.74 (2023-06-15)
+
+**Note:** Version bump only for package @parca/client
+
+## 0.16.73 (2023-05-03)
+
+**Note:** Version bump only for package @parca/client
+
+## 0.16.72 (2023-04-18)
+
+**Note:** Version bump only for package @parca/client
+
+## 0.16.71 (2023-03-29)
+
+**Note:** Version bump only for package @parca/client
+
+## 0.16.70 (2023-03-28)
+
+**Note:** Version bump only for package @parca/client
+
+## 0.16.69 (2023-03-21)
+
+**Note:** Version bump only for package @parca/client
+
+## 0.16.68 (2023-03-21)
+
+**Note:** Version bump only for package @parca/client
+
+## 0.16.67 (2023-03-20)
+
+**Note:** Version bump only for package @parca/client
+
+## 0.16.66 (2023-03-07)
+
+**Note:** Version bump only for package @parca/client
+
+## 0.16.65 (2023-03-02)
+
+# 0.16.0 (2023-03-01)
+
+**Note:** Version bump only for package @parca/client
+
+## 0.16.64 (2023-02-22)
+
+**Note:** Version bump only for package @parca/client
+
 ## 0.16.63 (2023-02-15)
 
 **Note:** Version bump only for package @parca/client

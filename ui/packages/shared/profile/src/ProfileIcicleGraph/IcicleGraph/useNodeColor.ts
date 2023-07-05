@@ -11,9 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {diffColor} from '@parca/functions';
-import {EVERYTHING_ELSE, selectDarkMode, selectStackColors, useAppSelector} from '@parca/store';
 import {useMemo} from 'react';
+
+import {EVERYTHING_ELSE, selectDarkMode, selectStackColors, useAppSelector} from '@parca/store';
+import {COLOR_PROFILES, diffColor} from '@parca/utilities';
+
 import type {ColoredFlamegraphNode} from './useColoredGraph';
 
 interface Props {
@@ -27,12 +29,15 @@ const useNodeColor = ({data, compareMode}: Props): string => {
 
   const color: string = useMemo(() => {
     if (compareMode) {
-      const diff = parseFloat(data.diff);
-      const cumulative = parseFloat(data.cumulative);
+      const diff = data.diff;
+      const cumulative = data.cumulative;
       return diffColor(diff, cumulative, isDarkMode);
     }
 
-    const color = colors[data.feature ?? EVERYTHING_ELSE];
+    const color =
+      colors[data.feature ?? EVERYTHING_ELSE] ??
+      (!isDarkMode ? COLOR_PROFILES.default.colors[0][0] : COLOR_PROFILES.default.colors[0][1]);
+
     return color;
   }, [data, colors, isDarkMode, compareMode]);
 

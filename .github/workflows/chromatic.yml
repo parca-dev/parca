@@ -1,0 +1,71 @@
+# .github/workflows/chromatic.yml
+
+# Workflow name
+name: 'Chromatic'
+
+# Event for the workflow
+on:
+  push:
+    branches:
+    - main
+    - release-*
+  pull_request:
+    branches:
+    - main
+    - release-*
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
+
+# List of jobs
+jobs:
+  skip-check:
+    name: Skip check
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      should_skip: ${{ steps.skip-check.outputs.should_skip }}
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - id: skip-check
+        uses: fkirc/skip-duplicate-actions@12aca0a884f6137d619d6a8a09fcc3406ced5281 # v5.3.0
+        with:
+          do_not_skip: '["schedule", "workflow_dispatch"]'
+          paths: |-
+            [
+              ".github/workflows/chromatic.yml",
+              ".node-version",
+              "ui/**"
+            ]
+          skip_after_successful_duplicate: false
+  chromatic-deployment:
+    needs: skip-check
+    if: needs.skip-check.outputs.should_skip != 'true' && !github.event.pull_request.head.repo.fork
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: ./ui
+    steps:
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+        with:
+          fetch-depth: 0 # Required to retrieve git history
+      - name: Set up Node.js
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        with:
+          node-version-file: .node-version
+          cache: yarn
+      - name: Install dependencies and build app
+        run: yarn install --frozen-lockfile --prefer-offline && yarn build
+        # 👇 Adds Chromatic as a step in the workflow
+      - name: Publish to Chromatic
+        uses: chromaui/action@44caff7e88d584b04f79f04e31e819f9a95d4d8f # v1
+        # Chromatic GitHub Action options
+        with:
+          # 👇 Chromatic projectToken, refer to the manage page to obtain it.
+          projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
+          workingDir: ./ui
+          exitZeroOnChanges: true

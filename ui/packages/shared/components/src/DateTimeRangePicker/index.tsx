@@ -12,12 +12,14 @@
 // limitations under the License.
 
 import {useRef, useState} from 'react';
-import cx from 'classnames';
+
 import {Popover} from '@headlessui/react';
-import {DateTimeRange, DateUnion} from './utils';
+import cx from 'classnames';
 import {useClickAway} from 'react-use';
-import DateTimeRangePickerTrigger from './DateTimeRangePickerTrigger';
+
 import DateTimeRangePickerPanel from './DateTimeRangePickerPanel';
+import DateTimeRangePickerTrigger from './DateTimeRangePickerTrigger';
+import {DateTimeRange, DateUnion} from './utils';
 
 interface DateTimeRangePickerProps {
   onRangeSelection: (range: DateTimeRange) => void;
@@ -33,7 +35,7 @@ const DateTimeRangePicker = ({onRangeSelection, range}: DateTimeRangePickerProps
 
   return (
     <Popover>
-      <div ref={containerRef} className="items-center w-fit">
+      <div ref={containerRef} className="w-fit items-center">
         <DateTimeRangePickerTrigger
           range={range}
           isActive={isActive}
@@ -44,7 +46,7 @@ const DateTimeRangePicker = ({onRangeSelection, range}: DateTimeRangePickerProps
         {isActive ? (
           <Popover.Panel
             className={cx(
-              'absolute z-10 w-fit mt-2 rounded shadow-lg ring-1 ring-black ring-opacity-5 border dark:border-gray-600'
+              'absolute z-10 mt-2 w-fit rounded border shadow-lg ring-1 ring-black ring-opacity-5 dark:border-gray-600'
             )}
             static
           >

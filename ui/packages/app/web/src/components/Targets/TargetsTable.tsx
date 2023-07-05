@@ -12,12 +12,14 @@
 // limitations under the License.
 
 import React from 'react';
+
 import {Target} from '@parca/client';
+import {Pill} from '@parca/components';
+import {TimeObject} from '@parca/utilities';
+
 import LabelsCell from './LabelsCell';
 import LastScrapeCell from './LastScrapeCell';
 import {getHealthStatus} from './utils';
-import {Pill} from '@parca/components';
-import {TimeObject} from '@parca/functions';
 
 const TargetsTableHeader = {
   url: 'URL',
@@ -40,9 +42,9 @@ const getRowContentByHeader = ({
     case TargetsTableHeader.url: {
       const {url} = target;
       return (
-        <td key={key} className="px-6 py-4 whitespace-nowrap">
+        <td key={key} className="whitespace-nowrap px-6 py-4">
           <a
-            className="text-sm text-gray-900 text-bold dark:text-gray-200"
+            className="text-bold text-sm text-gray-900 dark:text-gray-200"
             href={url}
             target="_blank"
             rel="noreferrer"
@@ -62,7 +64,7 @@ const getRowContentByHeader = ({
       return (
         <td
           key={key}
-          className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-200"
+          className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-200"
         >
           {lastError}
         </td>
@@ -96,7 +98,7 @@ const getRowContentByHeader = ({
       const {label, colorVariant} = getHealthStatus(health);
 
       return (
-        <td key={key} className="px-6 py-4 whitespace-nowrap">
+        <td key={key} className="whitespace-nowrap px-6 py-4">
           <Pill variant={colorVariant}>{label}</Pill>
         </td>
       );
@@ -118,14 +120,14 @@ const TargetsTable = ({targets}: {targets: Target[]}) => {
             <th
               key={header}
               scope="col"
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-200 uppercase tracking-wider"
+              className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-200"
             >
               {TargetsTableHeader[header]}
             </th>
           ))}
         </tr>
       </thead>
-      <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
+      <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
         {targets.map((target: Target) => {
           return (
             <tr key={target.url}>

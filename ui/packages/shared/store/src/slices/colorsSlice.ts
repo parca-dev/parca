@@ -11,25 +11,45 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import type {ColorProfileName, ColorsDuo} from '@parca/functions';
-import {COLOR_PROFILES} from '@parca/functions';
-import {createSlice} from '@reduxjs/toolkit';
-import type {PayloadAction} from '@reduxjs/toolkit';
+import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
+
+import {
+  CallgraphNode,
+  CallgraphNodeMeta,
+  FlamegraphNode,
+  FlamegraphNodeMeta,
+  FlamegraphRootNode,
+} from '@parca/client';
+import {COLOR_PROFILES, type ColorProfileName, type ColorsDuo} from '@parca/utilities';
+
 import type {RootState} from '../store';
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type StackColorMap = {[key: string]: string};
 
+interface ExtendedCallgraphNodeMeta extends CallgraphNodeMeta {
+  lineIndex: number;
+  locationIndex: number;
+}
+
+export interface HoveringNode extends FlamegraphRootNode, FlamegraphNode, CallgraphNode {
+  diff: bigint;
+  meta?: FlamegraphNodeMeta | ExtendedCallgraphNodeMeta;
+  cumulative: bigint;
+}
+
 // Define a type for the slice state
 export interface ColorsState {
   colors: StackColorMap;
   binaries: string[];
+  hoveringNode: HoveringNode | undefined;
 }
 
 // Define the initial state using that type
 const initialState: ColorsState = {
   colors: {},
   binaries: [],
+  hoveringNode: undefined,
 };
 
 export interface StackColor {
@@ -43,7 +63,7 @@ export const FEATURE_TYPES = {
   Misc: 'Misc',
 } as const;
 
-export type FeatureType = typeof FEATURE_TYPES[keyof typeof FEATURE_TYPES];
+export type FeatureType = (typeof FEATURE_TYPES)[keyof typeof FEATURE_TYPES];
 
 export interface Feature {
   name: string;
@@ -126,17 +146,23 @@ export const colorsSlice = createSlice({
           }
         );
     },
+    setHoveringNode: (state, action: PayloadAction<HoveringNode | undefined>) => {
+      state.hoveringNode = action.payload;
+    },
     resetColors: state => {
       state.colors = {};
     },
   },
 });
 
-export const {addColor, resetColors, setFeatures} = colorsSlice.actions;
+export const {addColor, resetColors, setFeatures, setHoveringNode} = colorsSlice.actions;
 
 // Other code such as selectors can use the imported `RootState` type
 export const selectStackColors = (state: RootState): StackColorMap => state.colors.colors;
 
 export const selectBinaries = (state: RootState): string[] => state.colors.binaries;
+
+export const selectHoveringNode = (state: RootState): HoveringNode | undefined =>
+  state.colors.hoveringNode;
 
 export default colorsSlice.reducer;

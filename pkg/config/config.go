@@ -1,4 +1,4 @@
-// Copyright 2022 The Parca Authors
+// Copyright 2022-2023 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -14,6 +14,7 @@
 package config
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"net/url"
@@ -30,7 +31,7 @@ import (
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/model/relabel"
 	"github.com/thanos-io/objstore/client"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -119,8 +120,9 @@ func (c *Config) SetDirectory(dir string) {
 func Load(s string) (*Config, error) {
 	cfg := &Config{}
 
-	err := yaml.UnmarshalStrict([]byte(s), cfg)
-	if err != nil {
+	dec := yaml.NewDecoder(bytes.NewBuffer([]byte(s)))
+	dec.KnownFields(true)
+	if err := dec.Decode(cfg); err != nil {
 		return nil, err
 	}
 

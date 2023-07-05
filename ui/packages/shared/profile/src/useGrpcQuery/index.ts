@@ -11,10 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useQuery, UseQueryResult} from 'react-query';
+import {useQuery, type UseQueryResult} from '@tanstack/react-query';
 
 interface Props<IRes> {
-  key: string | any[];
+  key: unknown[];
   queryFn: () => Promise<IRes>;
   options?: {
     enabled?: boolean | undefined;

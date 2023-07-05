@@ -14,9 +14,9 @@
       "groupName": "buf"
     },
     {
-      "description": "Group packages from go-grpc-middleware monorepo together",
-      "matchSourceUrls": ["https://github.com/grpc-ecosystem/go-grpc-middleware"],
-      "groupName": "go-grpc-middleware-monorepo"
+      "description": "Group grafana packages",
+      "matchSourceUrls": ["https://github.com/grafana/grafana"],
+      "groupName": "grafana"
     },
     {
       "description": "Group grpc-gateway packages",
@@ -29,9 +29,29 @@
       "groupName": "grpc-health-probe"
     },
     {
+      "description": "Group protobuf-ts packages",
+      "matchSourceUrls": ["https://github.com/timostamm/protobuf-ts"],
+      "groupName": "protobuf-ts"
+    },
+    {
       "description": "Group prettier packages",
       "matchPackageNames": ["pre-commit/mirrors-prettier", "prettier"],
       "groupName": "prettier"
+    },
+    {
+      "description": "Group protobuf-go packages",
+      "matchSourceUrls": ["https://github.com/protocolbuffers/protobuf-go"],
+      "groupName": "protobuf-go"
+    },
+    {
+      "description": "Group vtprotobuf packages",
+      "matchSourceUrls": ["https://github.com/planetscale/vtprotobuf"],
+      "groupName": "vtprotobuf"
+    },
+    {
+      "description": "Disable tailwindcss upgrades",
+      "matchPackageNames": ["tailwindcss"],
+      "enabled": false
     }
   ],
   "regexManagers": [
@@ -39,7 +59,7 @@
       "description": "Update Buf plugins",
       "fileMatch": ["(^|/)buf\\.gen\\.yaml$"],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>.+?) depName=(?<depName>.+?)(?: (?:packageName)=(?<packageName>.+?))?(?: versioning=(?<versioning>.+?))?\\s*-?\\s*remote: ('|\")?.*:(?<currentValue>.+?)(-\\d+)?('|\")?\\s"
+        "# renovate: datasource=(?<datasource>.+?) depName=(?<depName>.+?)(?: (?:packageName)=(?<packageName>.+?))?(?: versioning=(?<versioning>.+?))?\\s*-?\\s*plugin: ('|\")?.*:(?<currentValue>.+?)('|\")?\\s"
       ]
     }
   ]

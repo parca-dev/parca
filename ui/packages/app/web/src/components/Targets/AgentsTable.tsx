@@ -12,9 +12,11 @@
 // limitations under the License.
 
 import React from 'react';
+
 import {Agent} from '@parca/client';
+import {TimeObject} from '@parca/utilities';
+
 import LastScrapeCell from './LastScrapeCell';
-import {TimeObject} from '@parca/functions';
 
 const AgentsTableHeader = {
   id: 'Name',
@@ -34,7 +36,7 @@ const getRowContentByHeader = ({
   switch (header) {
     case AgentsTableHeader.id: {
       return (
-        <td key={key} className="px-6 py-4 whitespace-nowrap">
+        <td key={key} className="whitespace-nowrap px-6 py-4">
           {agent.id}
         </td>
       );
@@ -43,7 +45,7 @@ const getRowContentByHeader = ({
       return (
         <td
           key={key}
-          className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-200"
+          className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-200"
         >
           {agent.lastError}
         </td>
@@ -89,14 +91,14 @@ const AgentsTable = ({agents}: {agents: Agent[]}) => {
             <th
               key={header}
               scope="col"
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-200 uppercase tracking-wider"
+              className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-200"
             >
               {AgentsTableHeader[header]}
             </th>
           ))}
         </tr>
       </thead>
-      <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
+      <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
         {agents.map((agent: Agent) => {
           return (
             <tr key={agent.id}>

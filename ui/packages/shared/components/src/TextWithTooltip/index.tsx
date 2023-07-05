@@ -12,11 +12,10 @@
 // limitations under the License.
 
 import {Tooltip} from 'react-tooltip';
-import 'react-tooltip/dist/react-tooltip.css';
 
-import {cutToMaxStringLength} from '@parca/functions';
+import {cutToMaxStringLength} from '@parca/utilities';
 
-interface Props {
+export interface Props {
   text: string;
   maxTextLength: number;
   id: string;

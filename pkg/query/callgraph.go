@@ -1,4 +1,4 @@
-// Copyright 2022 The Parca Authors
+// Copyright 2022-2023 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -192,6 +192,7 @@ func prunableNodes(nodes []*querypb.CallgraphNode, c int64) []*querypb.Callgraph
 }
 
 func pruneGraph(graph *querypb.Callgraph) *querypb.Callgraph {
+	//nolint:staticcheck // SA1019: This needs to be updated in a follow-up PR.
 	prunableNodes := prunableNodes(graph.Nodes, graph.Cumulative)
 	finalNodes := make([]*querypb.CallgraphNode, 0)
 	finalEdges := make([]*querypb.CallgraphEdge, 0)
@@ -268,6 +269,7 @@ func pruneGraph(graph *querypb.Callgraph) *querypb.Callgraph {
 	}
 	finalEdges = append(finalEdges, edgesToCreate...)
 
+	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 	return &querypb.Callgraph{Nodes: finalNodes, Edges: finalEdges, Cumulative: graph.Cumulative}
 }
 

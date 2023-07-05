@@ -1,4 +1,4 @@
-// Copyright 2022 The Parca Authors
+// Copyright 2022-2023 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -32,22 +32,21 @@ import (
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 )
 
-type fakeDebuginfodClient struct {
-	items map[string]io.ReadCloser
-}
+func newFakeDebuginfodClientWithItems(items map[string]io.ReadCloser) *fakeDebuginfodClient {
+	return &fakeDebuginfodClient{
+		get: func(ctx context.Context, buildid string) (io.ReadCloser, error) {
+			item, ok := items[buildid]
+			if !ok {
+				return nil, ErrDebuginfoNotFound
+			}
 
-func (c *fakeDebuginfodClient) Get(ctx context.Context, buildid string) (io.ReadCloser, error) {
-	item, ok := c.items[buildid]
-	if !ok {
-		return nil, ErrDebuginfoNotFound
+			return item, nil
+		},
+		exists: func(ctx context.Context, buildid string) (bool, error) {
+			_, ok := items[buildid]
+			return ok, nil
+		},
 	}
-
-	return item, nil
-}
-
-func (c *fakeDebuginfodClient) Exists(ctx context.Context, buildid string) (bool, error) {
-	_, ok := c.items[buildid]
-	return ok, nil
 }
 
 func TestStore(t *testing.T) {
@@ -63,11 +62,9 @@ func TestStore(t *testing.T) {
 		logger,
 		metadata,
 		bucket,
-		&fakeDebuginfodClient{
-			items: map[string]io.ReadCloser{
-				"deadbeef": io.NopCloser(bytes.NewBufferString("debuginfo1")),
-			},
-		},
+		newFakeDebuginfodClientWithItems(map[string]io.ReadCloser{
+			"deadbeef": io.NopCloser(bytes.NewBufferString("debuginfo1")),
+		}),
 		SignedUpload{
 			Enabled: false,
 		},

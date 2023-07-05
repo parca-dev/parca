@@ -12,10 +12,12 @@
 // limitations under the License.
 
 import {Fragment, useState} from 'react';
+
 import {Popover, Transition} from '@headlessui/react';
-import {useAppSelector, selectDarkMode} from '@parca/store';
-import {getNewSpanColor, getIncreasedSpanColor, getReducedSpanColor} from '@parca/functions';
 import {usePopper} from 'react-popper';
+
+import {selectDarkMode, useAppSelector} from '@parca/store';
+import {getIncreasedSpanColor, getNewSpanColor, getReducedSpanColor} from '@parca/utilities';
 
 const transparencyValues = [-100, -80, -60, -40, -20, 0, 20, 40, 60, 80, 100];
 
@@ -29,7 +31,7 @@ const DiffLegendBar = ({
   const isDarkMode = useAppSelector(selectDarkMode);
 
   return (
-    <div className="flex items-center m-2">
+    <div className="m-2 flex items-center">
       {transparencyValues.map(value => {
         const valueAsPercentage = value / 100;
         const absoluteValue = Math.abs(valueAsPercentage);
@@ -37,7 +39,7 @@ const DiffLegendBar = ({
           <div
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
-            className="w-8 h-4"
+            className="h-4 w-8"
             key={valueAsPercentage}
             style={{
               backgroundColor:
@@ -92,7 +94,7 @@ const DiffLegend = (): JSX.Element => {
           >
             <Popover.Panel ref={setPopperElement} style={styles.popper} {...attributes.popper}>
               <div className="overflow-hidden rounded-lg shadow-lg ring-1 ring-black ring-opacity-5">
-                <div className="p-4 bg-gray-50 dark:bg-gray-800">
+                <div className="bg-gray-50 p-4 dark:bg-gray-800">
                   <div className="flex items-center justify-center"></div>
                   <span className="block text-sm text-gray-500 dark:text-gray-50">
                     This is a differential icicle graph, where a purple-colored node means

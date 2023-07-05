@@ -11,8 +11,7 @@ spec:
   target: '95'
   window: 4w
   indicator:
-    latency:
-      success:
-        metric: grpc_server_handling_seconds_bucket{grpc_service="parca.profilestore.v1alpha1.ProfileStoreService",grpc_method="WriteRaw",le="1"}
+    latencyNative:
+      latency: 1s
       total:
-        metric: grpc_server_handling_seconds_count{grpc_service="parca.profilestore.v1alpha1.ProfileStoreService",grpc_method="WriteRaw"}
+        metric: grpc_server_handling_seconds{grpc_service="parca.profilestore.v1alpha1.ProfileStoreService",grpc_method="WriteRaw"}

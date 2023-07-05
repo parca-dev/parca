@@ -3,6 +3,344 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.198](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.188...@parca/profile@0.16.198) (2023-07-03)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.197](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.196...@parca/profile@0.16.197) (2023-06-30)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.196](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.195...@parca/profile@0.16.196) (2023-06-30)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.195](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.192...@parca/profile@0.16.195) (2023-06-28)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.194](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.193...@parca/profile@0.16.194) (2023-06-27)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.193](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.192...@parca/profile@0.16.193) (2023-06-27)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.192](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.191...@parca/profile@0.16.192) (2023-06-26)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.191](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.190...@parca/profile@0.16.191) (2023-06-26)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.190](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.189...@parca/profile@0.16.190) (2023-06-25)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.189 (2023-06-22)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.188 (2023-06-21)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.187](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.186...@parca/profile@0.16.187) (2023-06-20)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.186 (2023-06-19)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.185](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.184...@parca/profile@0.16.185) (2023-06-15)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.184](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.183...@parca/profile@0.16.184) (2023-06-15)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.183](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.182...@parca/profile@0.16.183) (2023-06-14)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.182](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.181...@parca/profile@0.16.182) (2023-06-13)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.181](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.180...@parca/profile@0.16.181) (2023-06-12)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.180 (2023-06-10)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.179](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.178...@parca/profile@0.16.179) (2023-06-07)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.178](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.177...@parca/profile@0.16.178) (2023-06-07)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.177 (2023-06-06)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.176 (2023-06-05)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.175](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.174...@parca/profile@0.16.175) (2023-06-01)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.174](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.173...@parca/profile@0.16.174) (2023-06-01)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.173 (2023-06-01)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.172 (2023-05-30)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.171 (2023-05-26)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.170 (2023-05-25)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.169 (2023-05-10)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.168](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.167...@parca/profile@0.16.168) (2023-05-04)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.167 (2023-05-04)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.166 (2023-05-03)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.165](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.164...@parca/profile@0.16.165) (2023-04-18)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.164 (2023-04-18)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.163 (2023-04-08)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.162](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.161...@parca/profile@0.16.162) (2023-04-06)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.161 (2023-04-06)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.160 (2023-04-04)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.159 (2023-04-01)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.158 (2023-03-31)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.157](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.156...@parca/profile@0.16.157) (2023-03-29)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.156 (2023-03-29)
+
+# 0.17.0 (2023-03-29)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.155](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.154...@parca/profile@0.16.155) (2023-03-28)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.154 (2023-03-28)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.153 (2023-03-28)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.152](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.150...@parca/profile@0.16.152) (2023-03-27)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.151 (2023-03-27)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.150](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.149...@parca/profile@0.16.150) (2023-03-23)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.149 (2023-03-23)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.148](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.147...@parca/profile@0.16.148) (2023-03-22)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.147](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.146...@parca/profile@0.16.147) (2023-03-22)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.146](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.145...@parca/profile@0.16.146) (2023-03-22)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.145](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.144...@parca/profile@0.16.145) (2023-03-21)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.144](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.143...@parca/profile@0.16.144) (2023-03-21)
+
+# 0.16.0 (2023-03-01)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.143](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.142...@parca/profile@0.16.143) (2023-03-21)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.142](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.141...@parca/profile@0.16.142) (2023-03-21)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.141 (2023-03-20)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.140](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.139...@parca/profile@0.16.140) (2023-03-16)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.139](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.138...@parca/profile@0.16.139) (2023-03-16)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.138 (2023-03-16)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.137 (2023-03-15)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.136](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.135...@parca/profile@0.16.136) (2023-03-13)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.135](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.134...@parca/profile@0.16.135) (2023-03-07)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.134](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.133...@parca/profile@0.16.134) (2023-03-07)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.133](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.132...@parca/profile@0.16.133) (2023-03-07)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.132 (2023-03-07)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.131](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.130...@parca/profile@0.16.131) (2023-03-06)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.130 (2023-03-06)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.129](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.128...@parca/profile@0.16.129) (2023-03-02)
+
+## 0.16.1 (2023-03-02)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.128 (2023-03-02)
+
+# 0.16.0 (2023-03-01)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.127](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.126...@parca/profile@0.16.127) (2023-03-01)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.126](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.125...@parca/profile@0.16.126) (2023-02-27)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.125 (2023-02-23)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.124](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.123...@parca/profile@0.16.124) (2023-02-22)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.123](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.122...@parca/profile@0.16.123) (2023-02-22)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.122](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.121...@parca/profile@0.16.122) (2023-02-22)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.121 (2023-02-21)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.16.120 (2023-02-21)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.119](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.118...@parca/profile@0.16.119) (2023-02-21)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.16.118](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.117...@parca/profile@0.16.118) (2023-02-16)
+
+### Reverts
+
+- Revert "[pre-commit.ci lite] apply automatic fixes" ([8982724](https://github.com/parca-dev/parca/commit/8982724b9adc0630bcf2c15f9ebca31ba69b0cb6))
+
+## 0.16.117 (2023-02-16)
+
+**Note:** Version bump only for package @parca/profile
+
 ## 0.16.116 (2023-02-15)
 
 **Note:** Version bump only for package @parca/profile

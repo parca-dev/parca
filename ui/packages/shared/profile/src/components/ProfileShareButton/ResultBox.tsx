@@ -12,10 +12,12 @@
 // limitations under the License.
 
 import {useState} from 'react';
-import cx from 'classnames';
+
 import {Icon} from '@iconify/react';
-import {Button} from '@parca/components';
+import cx from 'classnames';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
+
+import {Button} from '@parca/components';
 
 interface Props {
   value: string;
@@ -28,6 +30,10 @@ const ResultBox = ({value, className = ''}: Props): JSX.Element => {
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
   const onCopy = (): void => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     setIsCopied(true);
     (window.document?.activeElement as HTMLElement)?.blur();
     if (timeoutHandle != null) {
@@ -37,20 +43,20 @@ const ResultBox = ({value, className = ''}: Props): JSX.Element => {
   };
 
   return (
-    <div className={cx('flex flex-row w-full', {[className]: className?.length > 0})}>
-      <span className="flex justify-center items-center border border-r-0 w-16 rounded-l">
+    <div className={cx('flex w-full flex-row', {[className]: className?.length > 0})}>
+      <span className="flex w-16 items-center justify-center rounded-l border border-r-0">
         <Icon icon="ant-design:link-outlined" />
       </span>
       <input
         type="text"
-        className="border text-sm bg-inherit w-full px-1 py-2 flex-grow"
+        className="w-full flex-grow border bg-inherit px-1 py-2 text-sm"
         value={value}
         readOnly
       />
       <CopyToClipboard text={value} onCopy={onCopy}>
         <Button
           variant="link"
-          className="border border-l-0 w-fit whitespace-nowrap p-4 items-center !text-indigo-600 dark:!text-indigo-400 rounded-none rounded-r"
+          className="w-fit items-center whitespace-nowrap rounded-none rounded-r border border-l-0 p-4 !text-indigo-600 dark:!text-indigo-400"
         >
           {isCopied ? 'Copied!' : 'Copy Link'}
         </Button>

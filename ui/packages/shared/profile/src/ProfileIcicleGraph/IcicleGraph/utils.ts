@@ -11,16 +11,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {getLastItem} from '@parca/functions';
 import {FlamegraphNode} from '@parca/client';
 import {
+  Location,
   Mapping,
   Function as ParcaFunction,
-  Location,
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
+import {EVERYTHING_ELSE, FEATURE_TYPES, type Feature} from '@parca/store';
+import {getLastItem} from '@parca/utilities';
+
 import {hexifyAddress} from '../../utils';
-import {EVERYTHING_ELSE, FEATURE_TYPES} from '@parca/store';
-import type {Feature} from '@parca/store';
 
 export const getBinaryName = (
   node: FlamegraphNode,
@@ -29,6 +29,9 @@ export const getBinaryName = (
   strings: string[]
 ): string | undefined => {
   if (node.meta?.locationIndex === undefined || node.meta?.locationIndex === 0) {
+    return undefined;
+  }
+  if (node.meta.locationIndex > locations.length) {
     return undefined;
   }
 
@@ -57,7 +60,13 @@ export function nodeLabel(
   if (node.meta?.locationIndex === undefined) return '<unknown>';
   if (node.meta?.locationIndex === 0) return '<unknown>';
 
+  if (node.meta.locationIndex > locations.length) {
+    console.info('location index out of bounds', node.meta.locationIndex, locations.length);
+    return '<unknown>';
+  }
+
   const location = locations[node.meta.locationIndex - 1];
+  if (location === undefined) return '<unknown>';
 
   let mappingString = '';
 

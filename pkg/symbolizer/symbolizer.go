@@ -1,4 +1,4 @@
-// Copyright 2022 The Parca Authors
+// Copyright 2022-2023 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -126,27 +126,27 @@ func New(
 ) *Symbolizer {
 	attemptsTotal := promauto.With(reg).NewCounter(
 		prometheus.CounterOpts{
-			Name: "symbolizer_symbolication_attempts_total",
+			Name: "parca_symbolizer_symbolication_attempts_total",
 			Help: "Total number of symbolication attempts in batches.",
 		},
 	)
 	errorsTotal := promauto.With(reg).NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "symbolizer_symbolication_errors_total",
+			Name: "parca_symbolizer_symbolication_errors_total",
 			Help: "Total number of symbolication errors in batches, partitioned by an error reason.",
 		},
 		[]string{"reason"},
 	)
 	duration := promauto.With(reg).NewHistogram(
 		prometheus.HistogramOpts{
-			Name:    "symbolizer_symbolication_duration_seconds",
+			Name:    "parca_symbolizer_symbolication_duration_seconds",
 			Help:    "How long it took in seconds to finish a round of the symbolication cycle in batches.",
 			Buckets: []float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120},
 		},
 	)
 	storeDuration := promauto.With(reg).NewHistogram(
 		prometheus.HistogramOpts{
-			Name:    "symbolizer_store_duration_seconds",
+			Name:    "parca_symbolizer_store_duration_seconds",
 			Help:    "How long it took in seconds to store a batch of the symbolized locations.",
 			Buckets: []float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120},
 		},
@@ -399,7 +399,7 @@ func (s *Symbolizer) symbolizeLocationsForMapping(ctx context.Context, m *pb.Map
 		if dbginfo.Quality.NotValidElf {
 			return nil, nil, ErrNotValidElf
 		}
-		if !dbginfo.Quality.HasDwarf && !dbginfo.Quality.HasGoPclntab && !(dbginfo.Quality.HasSymtab && dbginfo.Quality.HasDynsym) {
+		if !dbginfo.Quality.HasDwarf && !dbginfo.Quality.HasGoPclntab && !(dbginfo.Quality.HasSymtab || dbginfo.Quality.HasDynsym) {
 			return nil, nil, fmt.Errorf("check previously reported debuginfo quality: %w", ErrNoDebuginfo)
 		}
 	}
@@ -430,35 +430,28 @@ func (s *Symbolizer) symbolizeLocationsForMapping(ctx context.Context, m *pb.Map
 		if err != nil {
 			return nil, nil, fmt.Errorf("fetch debuginfo (BuildID: %q): %w", m.BuildId, err)
 		}
+		defer func() {
+			if err := rc.Close(); err != nil {
+				level.Error(s.logger).Log("msg", "failed to close debuginfo reader", "err", err)
+			}
+		}()
 
 		f, err := os.CreateTemp(s.tmpDir, "parca-symbolizer-*")
 		if err != nil {
-			if err := rc.Close(); err != nil {
-				level.Error(s.logger).Log("msg", "failed to close debuginfo reader", "err", err)
-			}
 			return nil, nil, fmt.Errorf("create temp file: %w", err)
 		}
-
-		_, err = io.Copy(f, rc)
-		if err != nil {
-			if err := rc.Close(); err != nil {
-				level.Error(s.logger).Log("msg", "failed to close debuginfo reader", "err", err)
-			}
+		defer func() {
 			if err := f.Close(); err != nil {
 				level.Error(s.logger).Log("msg", "failed to close debuginfo file", "err", err)
 			}
 			if err := os.Remove(f.Name()); err != nil {
 				level.Error(s.logger).Log("msg", "failed to remove debuginfo file", "err", err)
 			}
+		}()
+
+		_, err = io.Copy(f, rc)
+		if err != nil {
 			return nil, nil, fmt.Errorf("copy debuginfo to temp file: %w", err)
-		}
-
-		if err := rc.Close(); err != nil {
-			return nil, nil, fmt.Errorf("close debuginfo reader: %w", err)
-		}
-
-		if err := f.Close(); err != nil {
-			return nil, nil, fmt.Errorf("close debuginfo file: %w", err)
 		}
 
 		e, err := elf.Open(f.Name())
@@ -469,12 +462,13 @@ func (s *Symbolizer) symbolizeLocationsForMapping(ctx context.Context, m *pb.Map
 				level.Error(s.logger).Log("msg", "failed to set metadata quality", "err", merr)
 			}
 
-			if err := os.Remove(f.Name()); err != nil {
-				level.Error(s.logger).Log("msg", "failed to remove debuginfo file", "err", err)
-			}
-
 			return nil, nil, fmt.Errorf("open temp file as ELF: %w", err)
 		}
+		defer func() {
+			if err := e.Close(); err != nil {
+				level.Error(s.logger).Log("msg", "failed to close debuginfo file", "err", err)
+			}
+		}()
 
 		if dbginfo.Quality == nil {
 			dbginfo.Quality = &debuginfopb.DebuginfoQuality{
@@ -484,35 +478,14 @@ func (s *Symbolizer) symbolizeLocationsForMapping(ctx context.Context, m *pb.Map
 				HasDynsym:    elfutils.HasDynsym(e),
 			}
 			if err := s.metadata.SetQuality(ctx, m.BuildId, dbginfo.Quality); err != nil {
-				if err := e.Close(); err != nil {
-					level.Error(s.logger).Log("msg", "failed to close debuginfo file", "err", err)
-				}
-
-				if err := os.Remove(f.Name()); err != nil {
-					level.Error(s.logger).Log("msg", "failed to remove debuginfo file", "err", err)
-				}
 				return nil, nil, fmt.Errorf("set quality: %w", err)
 			}
-			if !dbginfo.Quality.HasDwarf && !dbginfo.Quality.HasGoPclntab && !(dbginfo.Quality.HasSymtab && dbginfo.Quality.HasDynsym) {
-				if err := e.Close(); err != nil {
-					level.Error(s.logger).Log("msg", "failed to close debuginfo file", "err", err)
-				}
-
-				if err := os.Remove(f.Name()); err != nil {
-					level.Error(s.logger).Log("msg", "failed to remove debuginfo file", "err", err)
-				}
+			if !dbginfo.Quality.HasDwarf && !dbginfo.Quality.HasGoPclntab && !(dbginfo.Quality.HasSymtab || dbginfo.Quality.HasDynsym) {
 				return nil, nil, fmt.Errorf("check debuginfo quality: %w", ErrNoDebuginfo)
 			}
 		}
 		liner, err = s.newLiner(f.Name(), e, dbginfo.Quality)
 		if err != nil {
-			if err := e.Close(); err != nil {
-				level.Error(s.logger).Log("msg", "failed to close debuginfo file", "err", err)
-			}
-
-			if err := os.Remove(f.Name()); err != nil {
-				level.Error(s.logger).Log("msg", "failed to remove debuginfo file", "err", err)
-			}
 			return nil, nil, fmt.Errorf("new liner: %w", err)
 		}
 	}
@@ -583,7 +556,8 @@ func (s *Symbolizer) newLiner(filepath string, f *elf.File, quality *debuginfopb
 		}
 
 		return lnr, nil
-	case quality.HasSymtab && quality.HasDynsym:
+		// TODO CHECK plt
+	case quality.HasSymtab || quality.HasDynsym:
 		lnr, err := addr2line.Symbols(s.logger, filepath, f, s.demangler)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create Symtab liner: %w", err)

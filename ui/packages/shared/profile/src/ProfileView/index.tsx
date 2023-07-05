@@ -11,52 +11,72 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Profiler, useEffect, useMemo, useState} from 'react';
-import {scaleLinear} from 'd3';
+import {Profiler, ProfilerProps, useEffect, useMemo, useState} from 'react';
 
 import cx from 'classnames';
-import {getNewSpanColor} from '@parca/functions';
-import {CloseIcon} from '@parca/icons';
-import {Icon} from '@iconify/react';
-import {QueryServiceClient, Flamegraph, Top, Callgraph as CallgraphType} from '@parca/client';
-import {Button, Card, useParcaContext, KeyDownProvider, useURLState} from '@parca/components';
-import {useContainerDimensions} from '@parca/dynamicsize';
-import {useAppSelector, selectDarkMode} from '@parca/store';
-import {DragDropContext, Droppable, Draggable} from 'react-beautiful-dnd';
-import type {DropResult, DraggableLocation} from 'react-beautiful-dnd';
+import {scaleLinear} from 'd3';
+import graphviz from 'graphviz-wasm';
+import {
+  DragDropContext,
+  Draggable,
+  Droppable,
+  type DraggableLocation,
+  type DropResult,
+} from 'react-beautiful-dnd';
+
+import {Callgraph as CallgraphType, Flamegraph, QueryServiceClient, Top} from '@parca/client';
+import {
+  Button,
+  Card,
+  ConditionalWrapper,
+  KeyDownProvider,
+  useParcaContext,
+  useURLState,
+} from '@parca/components';
+import {useContainerDimensions} from '@parca/hooks';
+import {selectDarkMode, useAppSelector} from '@parca/store';
+import {getNewSpanColor} from '@parca/utilities';
 
 import {Callgraph} from '../';
-import ProfileShareButton from '../components/ProfileShareButton';
-import FilterByFunctionButton from './FilterByFunctionButton';
-import ViewSelector from './ViewSelector';
-import ProfileIcicleGraph, {ResizeHandler} from '../ProfileIcicleGraph';
+import {jsonToDot} from '../Callgraph/utils';
+import ProfileIcicleGraph from '../ProfileIcicleGraph';
 import {ProfileSource} from '../ProfileSource';
 import {TopTable} from '../TopTable';
+import ProfileShareButton from '../components/ProfileShareButton';
 import useDelayedLoader from '../useDelayedLoader';
-
-import '../ProfileView.styles.css';
+import FilterByFunctionButton from './FilterByFunctionButton';
+import ViewSelector from './ViewSelector';
+import {VisualizationPanel} from './VisualizationPanel';
 
 type NavigateFunction = (path: string, queryParams: any, options?: {replace?: boolean}) => void;
 
 export interface FlamegraphData {
   loading: boolean;
   data?: Flamegraph;
+  total?: bigint;
+  filtered?: bigint;
   error?: any;
 }
 
 export interface TopTableData {
   loading: boolean;
   data?: Top;
+  total?: bigint;
+  filtered?: bigint;
   error?: any;
 }
 
 interface CallgraphData {
   loading: boolean;
   data?: CallgraphType;
+  total?: bigint;
+  filtered?: bigint;
   error?: any;
 }
 
 export interface ProfileViewProps {
+  total: bigint;
+  filtered: bigint;
   flamegraphData?: FlamegraphData;
   topTableData?: TopTableData;
   callgraphData?: CallgraphData;
@@ -66,7 +86,7 @@ export interface ProfileViewProps {
   navigateTo?: NavigateFunction;
   compare?: boolean;
   onDownloadPProf: () => void;
-  onFlamegraphContainerResize?: ResizeHandler;
+  pprofDownloading?: boolean;
 }
 
 function arrayEquals<T>(a: T[], b: T[]): boolean {
@@ -79,6 +99,8 @@ function arrayEquals<T>(a: T[], b: T[]): boolean {
 }
 
 export const ProfileView = ({
+  total,
+  filtered,
   flamegraphData,
   topTableData,
   callgraphData,
@@ -87,7 +109,7 @@ export const ProfileView = ({
   queryClient,
   navigateTo,
   onDownloadPProf,
-  onFlamegraphContainerResize,
+  pprofDownloading,
 }: ProfileViewProps): JSX.Element => {
   const {ref, dimensions} = useContainerDimensions();
   const [curPath, setCurPath] = useState<string[]>([]);
@@ -95,7 +117,17 @@ export const ProfileView = ({
     param: 'dashboard_items',
     navigateTo,
   });
-  const dashboardItems = rawDashboardItems as string[];
+  const [graphvizLoaded, setGraphvizLoaded] = useState(false);
+  const [callgraphSVG, setCallgraphSVG] = useState<string | undefined>(undefined);
+  const [currentSearchString] = useURLState({param: 'search_string'});
+
+  const dashboardItems = useMemo(() => {
+    if (rawDashboardItems !== undefined) {
+      return rawDashboardItems as string[];
+    }
+    return ['icicle'];
+  }, [rawDashboardItems]);
+
   const isDarkMode = useAppSelector(selectDarkMode);
   const isMultiPanelView = dashboardItems.length > 1;
 
@@ -106,25 +138,76 @@ export const ProfileView = ({
     setCurPath([]);
   }, [profileSource]);
 
+  useEffect(() => {
+    async function loadGraphviz(): Promise<void> {
+      await graphviz.loadWASM();
+      setGraphvizLoaded(true);
+    }
+    void loadGraphviz();
+  }, []);
+
   const isLoading = useMemo(() => {
     if (dashboardItems.includes('icicle')) {
       return Boolean(flamegraphData?.loading);
     }
     if (dashboardItems.includes('callgraph')) {
-      return Boolean(callgraphData?.loading);
+      return Boolean(callgraphData?.loading) || Boolean(callgraphSVG === undefined);
     }
     if (dashboardItems.includes('table')) {
       return Boolean(topTableData?.loading);
     }
     return false;
-  }, [dashboardItems, callgraphData?.loading, flamegraphData?.loading, topTableData?.loading]);
+  }, [
+    dashboardItems,
+    callgraphData?.loading,
+    flamegraphData?.loading,
+    topTableData?.loading,
+    callgraphSVG,
+  ]);
 
   const isLoaderVisible = useDelayedLoader(isLoading);
 
-  if (flamegraphData?.error != null) {
+  const maxColor: string = getNewSpanColor(isDarkMode);
+  const minColor: string = scaleLinear([isDarkMode ? 'black' : 'white', maxColor])(0.3);
+  const colorRange: [string, string] = [minColor, maxColor];
+  // Note: If we want to further optimize the experience, we could try to load the graphviz layout in the ProfileViewWithData layer
+  // and pass it down to the ProfileView. This would allow us to load the layout in parallel with the flamegraph data.
+  // However, the layout calculation is dependent on the width and color range of the graph container, which is why it is done at this level
+  useEffect(() => {
+    async function loadCallgraphSVG(
+      graph: CallgraphType,
+      width: number,
+      colorRange: [string, string]
+    ): Promise<void> {
+      await setCallgraphSVG(undefined);
+      // Translate JSON to 'dot' graph string
+      const dataAsDot = await jsonToDot({
+        graph,
+        width,
+        colorRange,
+      });
+
+      // Use Graphviz-WASM to translate the 'dot' graph to a 'JSON' graph
+      const svgGraph = await graphviz.layout(dataAsDot, 'svg', 'dot');
+      await setCallgraphSVG(svgGraph);
+    }
+
+    if (
+      graphvizLoaded &&
+      callgraphData?.data !== null &&
+      callgraphData?.data !== undefined &&
+      dimensions?.width !== undefined
+    ) {
+      void loadCallgraphSVG(callgraphData?.data, dimensions?.width, colorRange);
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [graphvizLoaded, callgraphData?.data]);
+
+  if (flamegraphData?.error !== null) {
     console.error('Error: ', flamegraphData?.error);
     return (
-      <div className="p-10 flex justify-center">
+      <div className="flex justify-center p-10">
         An error occurred: {flamegraphData?.error.message}
       </div>
     );
@@ -136,42 +219,51 @@ export const ProfileView = ({
     }
   };
 
-  const maxColor: string = getNewSpanColor(isDarkMode);
-  const minColor: string = scaleLinear([isDarkMode ? 'black' : 'white', maxColor])(0.3);
-  const colorRange: [string, string] = [minColor, maxColor];
-
   const getDashboardItemByType = ({
     type,
     isHalfScreen,
+    setActionButtons,
   }: {
     type: string;
     isHalfScreen: boolean;
+    setActionButtons: (actionButtons: JSX.Element) => void;
   }): JSX.Element => {
     switch (type) {
       case 'icicle': {
         return flamegraphData?.data != null ? (
-          <Profiler id="icicleGraph" onRender={perf?.onRender as React.ProfilerOnRenderCallback}>
+          <ConditionalWrapper<ProfilerProps>
+            condition={perf?.onRender != null}
+            WrapperComponent={Profiler}
+            wrapperProps={{
+              id: 'icicleGraph',
+              onRender: perf?.onRender as React.ProfilerOnRenderCallback,
+            }}
+          >
             <ProfileIcicleGraph
               curPath={curPath}
               setNewCurPath={setNewCurPath}
               graph={flamegraphData.data}
+              total={total}
+              filtered={filtered}
               sampleUnit={sampleUnit}
-              onContainerResize={onFlamegraphContainerResize}
               navigateTo={navigateTo}
               loading={flamegraphData.loading}
+              setActionButtons={setActionButtons}
             />
-          </Profiler>
+          </ConditionalWrapper>
         ) : (
           <> </>
         );
       }
       case 'callgraph': {
-        return callgraphData?.data != null && dimensions?.width !== undefined ? (
+        return callgraphData?.data !== undefined &&
+          callgraphSVG !== undefined &&
+          dimensions?.width !== undefined ? (
           <Callgraph
-            graph={callgraphData.data}
+            data={callgraphData.data}
+            svgString={callgraphSVG}
             sampleUnit={sampleUnit}
             width={isHalfScreen ? dimensions?.width / 2 : dimensions?.width}
-            colorRange={colorRange}
           />
         ) : (
           <></>
@@ -184,6 +276,8 @@ export const ProfileView = ({
             data={topTableData.data}
             sampleUnit={sampleUnit}
             navigateTo={navigateTo}
+            setActionButtons={setActionButtons}
+            currentSearchString={currentSearchString as string}
           />
         ) : (
           <></>
@@ -220,10 +314,10 @@ export const ProfileView = ({
       <div className="py-3">
         <Card>
           <Card.Body>
-            <div className="flex py-3 w-full">
-              <div className="w-2/5 flex space-x-4">
+            <div className="flex w-full py-3">
+              <div className="flex space-x-4 lg:w-1/2">
                 <div className="flex space-x-1">
-                  {profileSource != null && queryClient != null ? (
+                  {profileSource !== undefined && queryClient !== undefined ? (
                     <ProfileShareButton
                       queryRequest={profileSource.QueryRequest()}
                       queryClient={queryClient}
@@ -236,14 +330,17 @@ export const ProfileView = ({
                       e.preventDefault();
                       onDownloadPProf();
                     }}
+                    disabled={pprofDownloading}
                   >
-                    Download pprof
+                    {pprofDownloading != null && pprofDownloading
+                      ? 'Downloading'
+                      : 'Download pprof'}
                   </Button>
                 </div>
                 <FilterByFunctionButton navigateTo={navigateTo} />
               </div>
 
-              <div className="flex ml-auto gap-2">
+              <div className="ml-auto flex gap-2">
                 <ViewSelector
                   defaultValue=""
                   navigateTo={navigateTo}
@@ -256,16 +353,16 @@ export const ProfileView = ({
               </div>
             </div>
 
-            {isLoaderVisible ? (
-              <>{loader}</>
-            ) : (
-              <DragDropContext onDragEnd={onDragEnd}>
-                <div className="w-full" ref={ref}>
+            <div className="w-full" ref={ref}>
+              {isLoaderVisible ? (
+                <>{loader}</>
+              ) : (
+                <DragDropContext onDragEnd={onDragEnd}>
                   <Droppable droppableId="droppable" direction="horizontal">
                     {provided => (
                       <div
                         ref={provided.innerRef}
-                        className="flex space-x-4 justify-between w-full"
+                        className="flex w-full justify-between space-x-4"
                         {...provided.droppableProps}
                       >
                         {dashboardItems.map((dashboardItem, index) => {
@@ -282,46 +379,20 @@ export const ProfileView = ({
                                   {...provided.draggableProps}
                                   key={dashboardItem}
                                   className={cx(
-                                    'border dark:bg-gray-700 rounded border-gray-300 dark:border-gray-500 p-3',
+                                    'rounded border border-gray-300 p-3 dark:border-gray-500 dark:bg-gray-700',
                                     isMultiPanelView ? 'w-1/2' : 'w-full',
                                     snapshot.isDragging ? 'bg-gray-200' : 'bg-white'
                                   )}
                                 >
-                                  <div className="w-full flex justify-end pb-2">
-                                    <div className="w-full flex justify-between">
-                                      <div
-                                        className={cx(
-                                          isMultiPanelView ? 'visible' : 'invisible',
-                                          'flex items-center'
-                                        )}
-                                        {...provided.dragHandleProps}
-                                      >
-                                        <Icon
-                                          className="text-xl"
-                                          icon="material-symbols:drag-indicator"
-                                        />
-                                      </div>
-                                      <ViewSelector
-                                        defaultValue={dashboardItem}
-                                        navigateTo={navigateTo}
-                                        position={index}
-                                      />
-                                    </div>
-
-                                    {isMultiPanelView && (
-                                      <button
-                                        type="button"
-                                        onClick={() => handleClosePanel(dashboardItem)}
-                                        className="pl-2"
-                                      >
-                                        <CloseIcon />
-                                      </button>
-                                    )}
-                                  </div>
-                                  {getDashboardItemByType({
-                                    type: dashboardItem,
-                                    isHalfScreen: isMultiPanelView,
-                                  })}
+                                  <VisualizationPanel
+                                    handleClosePanel={handleClosePanel}
+                                    isMultiPanelView={isMultiPanelView}
+                                    dashboardItem={dashboardItem}
+                                    getDashboardItemByType={getDashboardItemByType}
+                                    dragHandleProps={provided.dragHandleProps}
+                                    navigateTo={navigateTo}
+                                    index={index}
+                                  />
                                 </div>
                               )}
                             </Draggable>
@@ -330,9 +401,9 @@ export const ProfileView = ({
                       </div>
                     )}
                   </Droppable>
-                </div>
-              </DragDropContext>
-            )}
+                </DragDropContext>
+              )}
+            </div>
           </Card.Body>
         </Card>
       </div>

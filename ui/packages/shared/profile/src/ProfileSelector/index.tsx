@@ -11,25 +11,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Query} from '@parca/parser';
-import {QueryServiceClient, ProfileTypesResponse} from '@parca/client';
-import {getStepDuration, getStepDurationInMilliseconds} from '@parca/functions';
-import {RpcError} from '@protobuf-ts/runtime-rpc';
-import {MergedProfileSelection, ProfileSelection} from '..';
 import React, {useEffect, useState} from 'react';
-import ProfileMetricsGraph from '../ProfileMetricsGraph';
-import MatchersInput from '../MatchersInput/index';
-import CompareButton from './CompareButton';
+
+import {RpcError} from '@protobuf-ts/runtime-rpc';
+
+import {ProfileTypesResponse, QueryServiceClient} from '@parca/client';
 import {
-  Card,
-  DateTimeRangePicker,
-  DateTimeRange,
   Button,
   ButtonGroup,
+  Card,
+  DateTimeRange,
+  DateTimeRangePicker,
+  IconButton,
   useGrpcMetadata,
 } from '@parca/components';
 import {CloseIcon} from '@parca/icons';
+import {Query} from '@parca/parser';
+import {getStepDuration, getStepDurationInMilliseconds} from '@parca/utilities';
+
+import {MergedProfileSelection, ProfileSelection} from '..';
+import MatchersInput from '../MatchersInput/index';
+import ProfileMetricsGraph from '../ProfileMetricsGraph';
 import ProfileTypeSelector from '../ProfileTypeSelector/index';
+import CompareButton from './CompareButton';
 import {useAutoQuerySelector} from './useAutoQuerySelector';
 
 export interface QuerySelection {
@@ -155,6 +159,7 @@ const ProfileSelector = ({
     const newValue = value.includes('\\') ? value.replaceAll('\\', '\\\\') : value;
     const [newQuery, changed] = Query.parse(queryExpressionString).setMatcher(key, newValue);
     if (changed) {
+      // TODO: Change this to store the query object
       setNewQueryExpression(newQuery.toString());
     }
   };
@@ -192,9 +197,9 @@ const ProfileSelector = ({
   const compareDisabled = selectedProfileName === '' || querySelection.expression === undefined;
 
   return (
-    <Card>
-      <Card.Header className="flex space-x-2">
-        <div className="flex flex-wrap w-full justify-start space-x-2 space-y-1">
+    <Card className="overflow-visible">
+      <Card.Header className="flex !items-center space-x-2">
+        <div className="flex w-full flex-wrap items-center justify-start space-x-2 space-y-1">
           <div className="ml-2 mt-1">
             <ProfileTypeSelector
               profileTypesData={profileTypesData}
@@ -235,13 +240,7 @@ const ProfileSelector = ({
             </Button>
           </ButtonGroup>
         </div>
-        <div>
-          {comparing && (
-            <button type="button" onClick={() => closeProfile()}>
-              <CloseIcon />
-            </button>
-          )}
-        </div>
+        <div>{comparing && <IconButton onClick={() => closeProfile()} icon={<CloseIcon />} />}</div>
       </Card.Header>
       {
         <Card.Body>
@@ -256,24 +255,39 @@ const ProfileSelector = ({
               to={querySelection.to}
               profile={profileSelection}
               setTimeRange={(range: DateTimeRange) => {
+                const from = range.getFromMs();
+                const to = range.getToMs();
+                let mergedProfileParams = {};
+                if (query.profileType().delta) {
+                  mergedProfileParams = {mergeFrom: from, mergeTo: to};
+                }
                 setTimeRangeSelection(range);
                 selectQuery({
                   expression: queryExpressionString,
-                  from: range.getFromMs(),
-                  to: range.getToMs(),
+                  from,
+                  to,
                   timeSelection: range.getRangeKey(),
+                  ...mergedProfileParams,
                 });
               }}
               addLabelMatcher={addLabelMatcher}
               onPointClick={(timestamp, labels, queryExpression) => {
+                // TODO: Pass the query object via click rather than queryExpression
+                let query = Query.parse(queryExpression);
+                labels.forEach(l => {
+                  const [newQuery, updated] = query.setMatcher(l.name, l.value);
+                  if (updated) {
+                    query = newQuery;
+                  }
+                });
+
                 const stepDuration = getStepDuration(querySelection.from, querySelection.to);
                 const stepDurationInMilliseconds = getStepDurationInMilliseconds(stepDuration);
-                const isDeltaType = Query.parse(queryExpression).profileType().delta;
                 const mergeFrom = timestamp;
-                const mergeTo = isDeltaType ? mergeFrom + stepDurationInMilliseconds : mergeFrom;
-                selectProfile(
-                  new MergedProfileSelection(mergeFrom, mergeTo, labels, queryExpression)
-                );
+                const mergeTo = query.profileType().delta
+                  ? mergeFrom + stepDurationInMilliseconds
+                  : mergeFrom;
+                selectProfile(new MergedProfileSelection(mergeFrom, mergeTo, query));
               }}
             />
           ) : (

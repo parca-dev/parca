@@ -13,6 +13,7 @@ builds:
     goos:
       - linux
       - darwin
+      - windows
     goarch:
       - amd64
       - arm64
@@ -23,8 +24,10 @@ builds:
       # Default is `-s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.builtBy=goreleaser`.
       - -X main.version={{.Version}} -X main.commit={{.Commit}}
 archives:
+    # e.g. parca_0.15.0_Darwin_arm64.tar.gz, parca_0.15.0_Darwin_x86_64.tar.gz, parca_0.15.0_Linux_arm64.tar.gz, parca_0.15.0_Linux_x86_64.tar.gz
   - name_template: >-
       {{ .ProjectName }}_
+      {{- trimprefix .Version "v" }}_
       {{- title .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else }}{{ .Arch }}{{ end }}

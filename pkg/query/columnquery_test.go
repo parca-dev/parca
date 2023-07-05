@@ -1,4 +1,4 @@
-// Copyright 2022 The Parca Authors
+// Copyright 2022-2023 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -18,14 +18,18 @@ import (
 	"compress/gzip"
 	"context"
 	"crypto/tls"
+	"encoding/binary"
 	"io"
 	"os"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/apache/arrow/go/v10/arrow/memory"
+	"github.com/apache/arrow/go/v13/arrow/memory"
+	"github.com/cespare/xxhash/v2"
 	"github.com/go-kit/log"
+	pprofprofile "github.com/google/pprof/profile"
 	columnstore "github.com/polarsignals/frostdb"
 	"github.com/polarsignals/frostdb/query"
 	"github.com/prometheus/client_golang/prometheus"
@@ -69,10 +73,7 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := parcacol.Schema()
-	require.NoError(t, err)
-
-	_, err = colDB.Table("stacktraces", columnstore.NewTableConfig(schema))
+	_, err = colDB.Table("stacktraces", columnstore.NewTableConfig(parcacol.SchemaDefinition()))
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
 		t,
@@ -154,7 +155,7 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(schema),
+		columnstore.NewTableConfig(parcacol.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -175,6 +176,7 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 		metastore,
 		table,
 		schema,
+		true,
 	)
 
 	for _, f := range files {
@@ -250,7 +252,7 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(schema),
+		columnstore.NewTableConfig(parcacol.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -267,6 +269,7 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 		metastore,
 		table,
 		schema,
+		true,
 	)
 
 	fileContent, err := os.ReadFile("testdata/alloc_objects.pb.gz")
@@ -380,7 +383,7 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(schema),
+		columnstore.NewTableConfig(parcacol.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -400,6 +403,7 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 		metastore,
 		table,
 		schema,
+		true,
 	)
 
 	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
@@ -467,7 +471,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(schema),
+		columnstore.NewTableConfig(parcacol.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -727,7 +731,7 @@ func TestColumnQueryAPITypes(t *testing.T) {
 
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(schema),
+		columnstore.NewTableConfig(parcacol.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -747,6 +751,7 @@ func TestColumnQueryAPITypes(t *testing.T) {
 		metastore,
 		table,
 		schema,
+		true,
 	)
 
 	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
@@ -820,7 +825,7 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(schema),
+		columnstore.NewTableConfig(parcacol.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -840,6 +845,7 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 		metastore,
 		table,
 		schema,
+		true,
 	)
 
 	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
@@ -903,7 +909,7 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(schema),
+		columnstore.NewTableConfig(parcacol.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -923,6 +929,7 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 		metastore,
 		table,
 		schema,
+		true,
 	)
 
 	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
@@ -969,4 +976,129 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 	require.Equal(t, []string{
 		"default",
 	}, res.LabelValues)
+}
+
+func BenchmarkQuery(b *testing.B) {
+	ctx := context.Background()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+
+	fileContent, err := os.ReadFile("testdata/alloc_objects.pb.gz")
+	require.NoError(b, err)
+
+	p, err := pprofprofile.ParseData(fileContent)
+	require.NoError(b, err)
+
+	sp, err := PprofToSymbolizedProfile(profile.Meta{}, p, 0)
+	require.NoError(b, err)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_, _ = RenderReport(ctx, tracer, sp, pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW, 0, 0, NewTableConverterPool())
+	}
+}
+
+func PprofToSymbolizedProfile(meta profile.Meta, prof *pprofprofile.Profile, index int) (*profile.Profile, error) {
+	km := metastore.NewKeyMaker()
+
+	p := &profile.Profile{
+		Meta:    meta,
+		Samples: make([]*profile.SymbolizedSample, 0, len(prof.Sample)),
+	}
+	for i := range prof.Sample {
+		if len(prof.Sample[i].Value) <= index {
+			return nil, status.Errorf(codes.InvalidArgument, "failed to find samples for profile type")
+		}
+
+		locs := make([]*profile.Location, 0, len(prof.Sample[i].Location))
+		for _, loc := range prof.Sample[i].Location {
+			symLoc := &profile.Location{
+				Address: loc.Address,
+			}
+
+			if loc.Mapping != nil {
+				symLoc.Mapping = &metastorepb.Mapping{
+					Start:   loc.Mapping.Start,
+					Limit:   loc.Mapping.Limit,
+					Offset:  loc.Mapping.Offset,
+					File:    loc.Mapping.File,
+					BuildId: loc.Mapping.BuildID,
+				}
+				symLoc.Mapping.Id = km.MakeMappingID(symLoc.Mapping)
+				symLoc.ID = symLoc.Mapping.Id + "-" + strconv.FormatUint(loc.Address, 16)
+			}
+
+			if loc.Line != nil {
+				symLoc.Lines = make([]profile.LocationLine, 0, len(loc.Line))
+				for _, line := range loc.Line {
+					f := &metastorepb.Function{
+						StartLine:  line.Function.StartLine,
+						Name:       line.Function.Name,
+						SystemName: line.Function.SystemName,
+						Filename:   line.Function.Filename,
+					}
+					f.Id = km.MakeFunctionID(f)
+					symLoc.Lines = append(symLoc.Lines, profile.LocationLine{
+						Line:     line.Line,
+						Function: f,
+					})
+				}
+
+				symLoc.ID = makeLocationIDWithLines(symLoc.Lines)
+			}
+
+			locs = append(locs, symLoc)
+		}
+
+		var labels map[string]string
+		if len(prof.Sample[i].Label) > 0 {
+			labels = make(map[string]string, len(prof.Sample[i].Label))
+			for key, values := range prof.Sample[i].Label {
+				if len(values) > 0 {
+					labels[key] = values[0]
+				}
+			}
+		}
+
+		p.Samples = append(p.Samples, &profile.SymbolizedSample{
+			Locations: locs,
+			Value:     prof.Sample[i].Value[index],
+			Label:     labels,
+		})
+	}
+
+	return p, nil
+}
+
+// makeLocationIDWithLines returns a key for the location that uniquely
+// identifies the location. Locations are uniquely identified by their inlined
+// function callstack.
+func makeLocationIDWithLines(lines []profile.LocationLine) string {
+	size := len(lines) * 16 // 8 bytes for line number and 8 bytes for function start line number
+
+	for _, line := range lines {
+		size += len(line.Function.Name) + len(line.Function.SystemName) + len(line.Function.Filename)
+	}
+
+	buf := make([]byte, size)
+	pos := 0
+	for _, line := range lines {
+		binary.BigEndian.PutUint64(buf[pos:], uint64(line.Line))
+		pos += 8
+
+		binary.BigEndian.PutUint64(buf[pos:], uint64(line.Function.StartLine))
+		pos += 8
+
+		copy(buf[pos:], line.Function.Name)
+		pos += len(line.Function.Name)
+
+		copy(buf[pos:], line.Function.SystemName)
+		pos += len(line.Function.SystemName)
+
+		copy(buf[pos:], line.Function.Filename)
+		pos += len(line.Function.Filename)
+	}
+
+	return strconv.FormatUint(xxhash.Sum64(buf), 16)
 }

@@ -12,9 +12,10 @@
 // limitations under the License.
 
 import React from 'react';
+
 import cx from 'classnames';
 
-interface CardProps {
+export interface CardProps {
   children: React.ReactNode;
   className?: string;
 }
@@ -24,7 +25,7 @@ const Card = ({children, className = ''}: CardProps): JSX.Element => {
     <div className="mx-auto">
       <div
         className={cx(
-          'g-gray bg-white dark:bg-gray-700 shadow overflow-hidden sm:rounded-lg flex-1 flex-column',
+          'g-gray flex-column flex-1 overflow-hidden bg-white shadow dark:bg-gray-700 sm:rounded-lg',
           {[className]: className.length}
         )}
       >
@@ -43,7 +44,7 @@ const Header = ({
 }): JSX.Element => {
   return (
     <div
-      className={cx('bg-gray-200 dark:bg-gray-800 px-4 py-4 sm:px-6', {
+      className={cx('bg-gray-200 px-4 py-4 dark:bg-gray-800 sm:px-6', {
         [className]: className.length,
       })}
       style={{justifyContent: 'space-between', alignItems: 'stretch'}}

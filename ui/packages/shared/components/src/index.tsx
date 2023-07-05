@@ -11,28 +11,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Button, {IconButton} from './Button';
+import {Button, IconButton} from './Button';
 import ButtonGroup from './ButtonGroup';
 import Card from './Card';
-import DateTimeRangePicker, {DateTimeRange} from './DateTimeRangePicker';
+import {ConditionalWrapper} from './ConditionalWrapper';
 import DateTimePicker from './DateTimePicker';
+import DateTimeRangePicker, {DateTimeRange} from './DateTimeRangePicker';
 import Dropdown from './Dropdown';
+import EmptyState from './EmptyState';
 import GrpcMetadataContext, {GrpcMetadataProvider, useGrpcMetadata} from './GrpcMetadataContext';
 import Input from './Input';
 import {KeyDownProvider, useKeyDown} from './KeyDownContext';
 import Modal from './Modal';
 import {NoDataPrompt} from './NoDataPrompt';
-import ParcaContext, {defaultValue, ParcaContextProvider, useParcaContext} from './ParcaContext';
+import ParcaContext, {ParcaContextProvider, defaultValue, useParcaContext} from './ParcaContext';
 import Pill, {PillVariant} from './Pill';
 import ResponsiveSvg from './ResponsiveSvg';
-import Select from './Select';
-import type {SelectElement} from './Select';
+import Select, {type SelectElement} from './Select';
 import Spinner from './Spinner';
 import Tab from './Tab';
 import Table from './Table';
-import EmptyState from './EmptyState';
-import {useURLState} from './hooks/useURLState';
 import TextWithTooltip from './TextWithTooltip';
+import UserPreferences from './UserPreferences';
+import {useURLState} from './hooks/useURLState';
 
 export type {PillVariant, SelectElement};
 
@@ -40,6 +41,7 @@ export {
   Button,
   ButtonGroup,
   Card,
+  ConditionalWrapper,
   DateTimePicker,
   DateTimeRange,
   DateTimeRangePicker,
@@ -66,4 +68,5 @@ export {
   useKeyDown,
   useParcaContext,
   useURLState,
+  UserPreferences,
 };

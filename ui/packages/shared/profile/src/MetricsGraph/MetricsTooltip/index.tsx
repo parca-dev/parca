@@ -12,15 +12,16 @@
 // limitations under the License.
 
 import {useEffect, useState} from 'react';
-import {usePopper} from 'react-popper';
+
 import type {VirtualElement} from '@popperjs/core';
+import {usePopper} from 'react-popper';
 
 import {Label} from '@parca/client';
 import {TextWithTooltip} from '@parca/components';
-import {valueFormatter, formatDate} from '@parca/functions';
+import {formatDate, valueFormatter} from '@parca/utilities';
 
-import {timeFormat} from '../../';
 import {HighlightedSeries} from '../';
+import {timeFormat} from '../../';
 
 interface Props {
   x: number;
@@ -29,6 +30,7 @@ interface Props {
   onLabelClick: (labelName: string, labelValue: string) => void;
   contextElement: Element | null;
   sampleUnit: string;
+  delta: boolean;
 }
 
 const virtualElement: VirtualElement = {
@@ -66,6 +68,7 @@ const MetricsTooltip = ({
   onLabelClick,
   contextElement,
   sampleUnit,
+  delta,
 }: Props): JSX.Element => {
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
 
@@ -106,21 +109,37 @@ const MetricsTooltip = ({
       <div className="flex max-w-md">
         <div className="m-auto">
           <div
-            className="border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 shadow-lg opacity-90"
+            className="rounded-lg border-gray-300 bg-gray-50 p-3 opacity-90 shadow-lg dark:border-gray-500 dark:bg-gray-900"
             style={{borderWidth: 1}}
           >
             <div className="flex flex-row">
               <div className="ml-2 mr-6">
                 <span className="font-semibold">{highlightedNameLabel.value}</span>
-                <span className="block text-gray-700 dark:text-gray-300 my-2">
+                <span className="my-2 block text-gray-700 dark:text-gray-300">
                   <table className="table-auto">
                     <tbody>
                       <tr>
                         <td className="w-1/4">Value</td>
                         <td className="w-3/4">
-                          {valueFormatter(highlighted.value, sampleUnit, 1)}
+                          {valueFormatter(highlighted.valuePerSecond, sampleUnit, 5)}
                         </td>
                       </tr>
+                      {delta && (
+                        <tr>
+                          <td className="w-1/4">Total</td>
+                          <td className="w-3/4">
+                            {valueFormatter(highlighted.value, sampleUnit, 2)}
+                          </td>
+                        </tr>
+                      )}
+                      {highlighted.duration > 0 && (
+                        <tr>
+                          <td className="w-1/4">Duration</td>
+                          <td className="w-3/4">
+                            {valueFormatter(highlighted.duration, 'nanoseconds', 2)}
+                          </td>
+                        </tr>
+                      )}
                       <tr>
                         <td className="w-1/4">At</td>
                         <td className="w-3/4">{formatDate(highlighted.timestamp, timeFormat)}</td>
@@ -128,7 +147,7 @@ const MetricsTooltip = ({
                     </tbody>
                   </table>
                 </span>
-                <span className="block text-gray-500 my-2">
+                <span className="my-2 block text-gray-500">
                   {highlighted.labels
                     .filter((label: Label) => label.name !== '__name__')
                     .map(function (label: Label) {
@@ -136,7 +155,7 @@ const MetricsTooltip = ({
                         <button
                           key={label.name}
                           type="button"
-                          className="inline-block rounded-lg text-gray-700 bg-gray-200 dark:bg-gray-700 dark:text-gray-400 px-2 py-1 text-xs font-bold mr-3"
+                          className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
                           onClick={() => onLabelClick(label.name, label.value)}
                         >
                           <TextWithTooltip
@@ -148,7 +167,7 @@ const MetricsTooltip = ({
                       );
                     })}
                 </span>
-                <span className="block text-gray-500 text-xs">
+                <span className="block text-xs text-gray-500">
                   Hold shift and click label to add to query.
                 </span>
               </div>

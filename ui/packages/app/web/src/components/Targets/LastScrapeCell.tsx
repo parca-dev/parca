@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {TimeObject, formatDuration, TimeUnits, convertTime} from '@parca/functions';
+import {TimeObject, TimeUnits, convertTime, formatDuration} from '@parca/utilities';
 
 const LastScrapeCell = ({
   lastScrape,
@@ -26,7 +26,7 @@ const LastScrapeCell = ({
     TimeUnits.Nanos
   );
   return (
-    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-200">
+    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-200">
       <p>Last Scrape: {formatDuration(lastScrape, nowInNanoseconds)} ago</p>
       <p>Duration: {formatDuration(lastScrapeDuration)}</p>
     </td>

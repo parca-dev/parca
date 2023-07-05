@@ -11,18 +11,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {createSlice} from '@reduxjs/toolkit';
-import type {PayloadAction} from '@reduxjs/toolkit';
+import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
+
 import type {RootState} from '../store';
 
 // Define a type for the slice state
 export interface UiState {
   darkMode: boolean;
+  parcaThemeSystemSettings: boolean;
 }
 
 // Define the initial state using that type
 const initialState: UiState = {
   darkMode: false,
+  parcaThemeSystemSettings: true,
 };
 
 export const uiSlice = createSlice({
@@ -33,12 +35,18 @@ export const uiSlice = createSlice({
     setDarkMode: (state, action: PayloadAction<boolean>) => {
       state.darkMode = action.payload;
     },
+    setParcaThemeSystemSettings: (state, action: PayloadAction<boolean>) => {
+      state.parcaThemeSystemSettings = action.payload;
+    },
   },
 });
 
-export const {setDarkMode} = uiSlice.actions;
+export const {setDarkMode, setParcaThemeSystemSettings} = uiSlice.actions;
 
 // Other code such as selectors can use the imported `RootState` type
 export const selectDarkMode = (state: RootState): boolean => state.ui.darkMode;
+
+export const selectParcaThemeSystemSettings = (state: RootState): boolean =>
+  state.ui.parcaThemeSystemSettings;
 
 export default uiSlice.reducer;

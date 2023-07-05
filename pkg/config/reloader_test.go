@@ -1,4 +1,4 @@
-// Copyright 2022 The Parca Authors
+// Copyright 2022-2023 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -122,5 +122,105 @@ func TestReloadInvalid(t *testing.T) {
 	case <-reloadConfig:
 		t.Error("invalid configuration was reloaded")
 	case <-ctx.Done():
+	}
+}
+
+func TestReloadSymlink(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*300))
+	defer cancel()
+	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
+	reloadConfig := make(chan *Config, 1)
+
+	tmpDir := t.TempDir()
+	filenameOld := filepath.Join(tmpDir, "parca_old.yaml")
+	filenameNew := filepath.Join(tmpDir, "parca_new.yaml")
+	symlinkName := filepath.Join(tmpDir, "parca.yaml")
+
+	config := `object_storage:
+  bucket:
+    type: "FILESYSTEM"
+    config:
+      directory: "./tmp"
+
+scrape_configs:
+  - job_name: "default"
+    scrape_interval: "3s"
+    static_configs:
+      - targets: [ '127.0.0.1:7070' ]
+`
+
+	// Create old config file
+	fold, err := os.OpenFile(filenameOld, os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		t.Errorf("failed to open config file: %v", err)
+	}
+	if _, err := fold.WriteString(config); err != nil {
+		t.Errorf("failed to write old config file: %v", err)
+	}
+	fold.Close()
+
+	// Create symlink to old config file
+	if err := os.Symlink(filenameOld, symlinkName); err != nil {
+		t.Errorf("failed to create symlink to old config file: %v", err)
+	}
+
+	config += `    scrape_timeout: "4s"
+`
+
+	// Create new config file
+	fnew, err := os.OpenFile(filenameNew, os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		t.Errorf("failed to open new config file: %v", err)
+	}
+	if _, err := fnew.WriteString(config); err != nil {
+		t.Errorf("failed to write new config file: %v", err)
+	}
+	fnew.Close()
+
+	// Set up reloader
+	reloaders := []ComponentReloader{
+		{
+			Name: "test",
+			Reloader: func(cfg *Config) error {
+				reloadConfig <- cfg
+				return nil
+			},
+		},
+	}
+
+	cfgReloader, err := NewConfigReloader(logger, reg, symlinkName, reloaders)
+	if err != nil {
+		t.Errorf("failed to instantiate config reloader: %v", err)
+	}
+
+	go cfgReloader.Run(ctx)
+
+	time.Sleep(time.Millisecond * 100)
+
+	// Recreate symlink, but pointing to new config file
+	if err := os.Remove(symlinkName); err != nil {
+		t.Errorf("failed to remove symlink to old config file: %v", err)
+	}
+	if err := os.Symlink(filenameNew, symlinkName); err != nil {
+		t.Errorf("failed to create symlink to new config file: %v", err)
+	}
+	// Delete old config file
+	// Actually triggers the reload since the symlink was followed
+	// when the watcher was created
+	// https://github.com/fsnotify/fsnotify/issues/199
+	// https://github.com/fsnotify/fsnotify/issues/394
+	if err := os.Remove(filenameOld); err != nil {
+		t.Errorf("failed to remove old config file: %v", err)
+	}
+
+	// Wait for reload
+	select {
+	case cfg := <-reloadConfig:
+		require.Equal(t, model.Duration(time.Second*4), cfg.ScrapeConfigs[0].ScrapeTimeout)
+	case <-ctx.Done():
+		t.Error("configuration reload timed out")
 	}
 }
