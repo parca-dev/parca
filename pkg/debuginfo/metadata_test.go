@@ -58,7 +58,7 @@ func TestMetadata(t *testing.T) {
 	store, err := NewStore(
 		tracer,
 		logger,
-		NewObjectStoreMetadata(logger, bucket),
+		NewObjectStoreMetadata(trace.NewNoopTracerProvider().Tracer(""), logger, bucket),
 		bucket,
 		NopDebuginfodClient{},
 		SignedUpload{

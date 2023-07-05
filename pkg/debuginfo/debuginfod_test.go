@@ -31,6 +31,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/objstore"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/net/context"
 	"gopkg.in/dnaeon/go-vcr.v3/recorder"
 )
@@ -78,8 +79,8 @@ func TestHTTPDebugInfodClient_request(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &HTTPDebuginfodClient{
-				logger:          log.NewNopLogger(),
-				timeoutDuration: tt.fields.timeoutDuration,
+				tracer: trace.NewNoopTracerProvider().Tracer(""),
+				logger: log.NewNopLogger(),
 				client: &http.Client{
 					// Recorder transport passed, so the recorded data from testdata/fixtures will ber passed.
 					// Use make go/test-clean to remove the recorded data.
@@ -152,7 +153,7 @@ func TestHTTPDebugInfodClientRedirect(t *testing.T) {
 	}))
 	defer rs.Close()
 
-	c, err := NewHTTPDebuginfodClient(log.NewNopLogger(), []string{rs.URL}, &http.Client{
+	c, err := NewHTTPDebuginfodClient(trace.NewNoopTracerProvider().Tracer(""), log.NewNopLogger(), []string{rs.URL}, &http.Client{
 		Timeout: 30 * time.Second,
 	})
 	require.NoError(t, err)
@@ -195,6 +196,7 @@ func TestHTTPDebugInfodCache(t *testing.T) {
 	}
 
 	cache, err := NewDebuginfodClientWithObjectStorageCache(
+		trace.NewNoopTracerProvider().Tracer(""),
 		log.NewNopLogger(),
 		objstore.NewInMemBucket(),
 		c,

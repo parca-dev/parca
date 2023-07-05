@@ -56,7 +56,7 @@ func TestStore(t *testing.T) {
 	logger := log.NewNopLogger()
 	bucket := objstore.NewInMemBucket()
 
-	metadata := NewObjectStoreMetadata(logger, bucket)
+	metadata := NewObjectStoreMetadata(trace.NewNoopTracerProvider().Tracer(""), logger, bucket)
 	s, err := NewStore(
 		tracer,
 		logger,

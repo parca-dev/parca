@@ -444,7 +444,7 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 	bucket, err := client.NewBucket(logger, cfg, prometheus.NewRegistry(), "parca/store")
 	require.NoError(t, err)
 
-	metadata := debuginfo.NewObjectStoreMetadata(logger, bucket)
+	metadata := debuginfo.NewObjectStoreMetadata(trace.NewNoopTracerProvider().Tracer(""), logger, bucket)
 	debuginfodClient := debuginfo.NopDebuginfodClient{}
 	dbgStr, err := debuginfo.NewStore(
 		tracer,
@@ -506,7 +506,7 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 		prometheus.NewRegistry(),
 		metadata,
 		metastore,
-		debuginfo.NewFetcher(debuginfodClient, bucket),
+		debuginfo.NewFetcher(trace.NewNoopTracerProvider().Tracer(""), debuginfodClient, bucket),
 		symbolizerCacheDir,
 		0,
 	)
