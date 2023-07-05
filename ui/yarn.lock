@@ -8736,9 +8736,9 @@ anymatch@^3.0.0, anymatch@^3.0.3, anymatch@~3.1.2:
     picomatch "^2.0.4"
 
 apache-arrow@^12.0.0:
-  version "12.0.0"
-  resolved "https://registry.yarnpkg.com/apache-arrow/-/apache-arrow-12.0.0.tgz#3fe1e0b110dd30618ff00774372f54591a54d9ab"
-  integrity sha512-uI+hnZZsGfNJiR/wG8j5yPQuDjmOHx4hZpkA743G4x3TlFrCpA3MMX7KUkIOIw0e/CwZ8NYuaMzaQsblA47qVA==
+  version "12.0.1"
+  resolved "https://registry.yarnpkg.com/apache-arrow/-/apache-arrow-12.0.1.tgz#dffd865850d1d94896f1e1aa8332d586fb9e7de1"
+  integrity sha512-g17ARsc/KEAzViy8PEFsDBlL4ZLx3BesgQCplDLgUWtY0aFWNdEmfaZsbbXVRDfQ21D7vbUKtu0ZWNgcbxDrig==
   dependencies:
     "@types/command-line-args" "5.2.0"
     "@types/command-line-usage" "5.0.2"
