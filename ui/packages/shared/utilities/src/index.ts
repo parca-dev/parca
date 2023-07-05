@@ -97,7 +97,7 @@ export const isDevModeOrPreview = (): boolean => {
   return process.env.NODE_ENV === 'development' || process.env.REACT_APP_VERCEL_ENV === 'preview';
 };
 export const getLastItem = (thePath: string | undefined): string | undefined => {
-  if (thePath === undefined || thePath === '') return;
+  if (thePath === undefined || thePath === null || thePath === '') return;
 
   const index = thePath.lastIndexOf('/');
   if (index === -1) return thePath;
