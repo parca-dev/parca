@@ -3089,9 +3089,9 @@
     signal-exit "^3.0.2"
 
 "@iconify/react@^4.0.0":
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/@iconify/react/-/react-4.1.0.tgz#5ea86acae6e209a2f5b1b52922ab85d0d22f9b45"
-  integrity sha512-Mf72i3TNNKpKCKxmo7kzqyrUdCgaoljpqtWmtqpqwyxoV4ukhnDsSRNLhf2yBnqGr3cVZsdj/i0FMpXIY0Qk0g==
+  version "4.1.1"
+  resolved "https://registry.yarnpkg.com/@iconify/react/-/react-4.1.1.tgz#da1bf03cdca9427f07cf22cf5b63fa8f02db4722"
+  integrity sha512-jed14EjvKjee8mc0eoscGxlg7mSQRkwQG3iX3cPBCO7UlOjz0DtlvTqxqEcHUJGh+z1VJ31Yhu5B9PxfO0zbdg==
   dependencies:
     "@iconify/types" "^2.0.0"
 
