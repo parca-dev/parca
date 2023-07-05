@@ -357,16 +357,21 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 
 	var debuginfodClient debuginfo.DebuginfodClient = debuginfo.NopDebuginfodClient{}
 	if len(flags.Debuginfod.UpstreamServers) > 0 {
-		httpDebugInfoClient, err := debuginfo.NewHTTPDebuginfodClient(logger, flags.Debuginfod.UpstreamServers, &http.Client{
-			Transport: promconfig.NewUserAgentRoundTripper(fmt.Sprintf("parca.dev/debuginfod-client/%s", version), http.DefaultTransport),
-			Timeout:   flags.Debuginfod.HTTPRequestTimeout,
-		})
+		httpDebugInfoClient, err := debuginfo.NewHTTPDebuginfodClient(
+			tracerProvider.Tracer("debuginfod_http_client"),
+			logger,
+			flags.Debuginfod.UpstreamServers,
+			&http.Client{
+				Transport: promconfig.NewUserAgentRoundTripper(fmt.Sprintf("parca.dev/debuginfod-client/%s", version), http.DefaultTransport),
+				Timeout:   flags.Debuginfod.HTTPRequestTimeout,
+			})
 		if err != nil {
 			level.Error(logger).Log("msg", "failed to initialize debuginfod http client", "err", err)
 			return err
 		}
 
 		debuginfodClient, err = debuginfo.NewDebuginfodClientWithObjectStorageCache(
+			tracerProvider.Tracer("debuginfod_objectstore_cache"),
 			logger,
 			objstore.NewPrefixedBucket(bucket, "debuginfod-cache"),
 			httpDebugInfoClient,
@@ -379,7 +384,11 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 
 	debuginfoBucket := objstore.NewPrefixedBucket(bucket, "debuginfo")
 	prefixedSignedRequestsClient := signedrequests.NewPrefixedClient(signedRequestsClient, "debuginfo")
-	debuginfoMetadata := debuginfo.NewObjectStoreMetadata(logger, debuginfoBucket)
+	debuginfoMetadata := debuginfo.NewObjectStoreMetadata(
+		tracerProvider.Tracer("debuginfo_objectstore_metadata"),
+		logger,
+		debuginfoBucket,
+	)
 	dbginfo, err := debuginfo.NewStore(
 		tracerProvider.Tracer("debuginfo"),
 		logger,
@@ -427,7 +436,11 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			reg,
 			debuginfoMetadata,
 			metastore,
-			debuginfo.NewFetcher(debuginfodClient, debuginfoBucket),
+			debuginfo.NewFetcher(
+				tracerProvider.Tracer("debuginfo_fetcher"),
+				debuginfodClient,
+				debuginfoBucket,
+			),
 			flags.Debuginfo.CacheDir,
 			0,
 			symbolizer.WithDemangleMode(flags.Symbolizer.DemangleMode),

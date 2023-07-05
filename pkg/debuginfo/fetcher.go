@@ -19,6 +19,8 @@ import (
 	"io"
 
 	"github.com/thanos-io/objstore"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 )
@@ -29,21 +31,30 @@ var (
 )
 
 type Fetcher struct {
+	tracer trace.Tracer
+
 	debuginfodClient DebuginfodClient
 	bucket           objstore.Bucket
 }
 
 func NewFetcher(
+	tracer trace.Tracer,
 	debuginfodClient DebuginfodClient,
 	bucket objstore.Bucket,
 ) *Fetcher {
 	return &Fetcher{
+		tracer: tracer,
+
 		debuginfodClient: debuginfodClient,
 		bucket:           bucket,
 	}
 }
 
 func (f *Fetcher) FetchDebuginfo(ctx context.Context, dbginfo *debuginfopb.Debuginfo) (io.ReadCloser, error) {
+	ctx, span := f.tracer.Start(ctx, "FetchDebuginfo")
+	defer span.End()
+	span.SetAttributes(attribute.String("build_id", dbginfo.BuildId))
+
 	switch dbginfo.Source {
 	case debuginfopb.Debuginfo_SOURCE_UPLOAD:
 		return f.fetchFromBucket(ctx, dbginfo)
@@ -55,9 +66,17 @@ func (f *Fetcher) FetchDebuginfo(ctx context.Context, dbginfo *debuginfopb.Debug
 }
 
 func (f *Fetcher) fetchFromBucket(ctx context.Context, dbginfo *debuginfopb.Debuginfo) (io.ReadCloser, error) {
+	ctx, span := f.tracer.Start(ctx, "fetchFromBucket")
+	defer span.End()
+	span.SetAttributes(attribute.String("build_id", dbginfo.BuildId))
+
 	return f.bucket.Get(ctx, objectPath(dbginfo.BuildId))
 }
 
 func (f *Fetcher) fetchFromDebuginfod(ctx context.Context, dbginfo *debuginfopb.Debuginfo) (io.ReadCloser, error) {
+	ctx, span := f.tracer.Start(ctx, "fetchFromDebuginfod")
+	defer span.End()
+	span.SetAttributes(attribute.String("build_id", dbginfo.BuildId))
+
 	return f.debuginfodClient.Get(ctx, dbginfo.BuildId)
 }

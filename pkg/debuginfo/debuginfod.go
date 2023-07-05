@@ -21,11 +21,12 @@ import (
 	"net/http"
 	"net/url"
 	"path"
-	"time"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/thanos-io/objstore"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/net/context"
 )
 
@@ -45,14 +46,15 @@ func (NopDebuginfodClient) Exists(context.Context, string) (bool, error) {
 }
 
 type HTTPDebuginfodClient struct {
+	tracer trace.Tracer
 	logger log.Logger
 	client *http.Client
 
 	upstreamServers []*url.URL
-	timeoutDuration time.Duration
 }
 
 type DebuginfodClientObjectStorageCache struct {
+	tracer trace.Tracer
 	logger log.Logger
 
 	client DebuginfodClient
@@ -60,7 +62,7 @@ type DebuginfodClientObjectStorageCache struct {
 }
 
 // NewHTTPDebuginfodClient returns a new HTTP debug info client.
-func NewHTTPDebuginfodClient(logger log.Logger, serverURLs []string, client *http.Client) (*HTTPDebuginfodClient, error) {
+func NewHTTPDebuginfodClient(tracer trace.Tracer, logger log.Logger, serverURLs []string, client *http.Client) (*HTTPDebuginfodClient, error) {
 	logger = log.With(logger, "component", "debuginfod")
 	parsedURLs := make([]*url.URL, 0, len(serverURLs))
 	for _, serverURL := range serverURLs {
@@ -77,6 +79,7 @@ func NewHTTPDebuginfodClient(logger log.Logger, serverURLs []string, client *htt
 	}
 
 	return &HTTPDebuginfodClient{
+		tracer:          tracer,
 		logger:          logger,
 		upstreamServers: parsedURLs,
 		client:          client,
@@ -84,8 +87,9 @@ func NewHTTPDebuginfodClient(logger log.Logger, serverURLs []string, client *htt
 }
 
 // NewDebuginfodClientWithObjectStorageCache creates a new DebuginfodClient that caches the debug information in the object storage.
-func NewDebuginfodClientWithObjectStorageCache(logger log.Logger, bucket objstore.Bucket, h DebuginfodClient) (DebuginfodClient, error) {
+func NewDebuginfodClientWithObjectStorageCache(tracer trace.Tracer, logger log.Logger, bucket objstore.Bucket, h DebuginfodClient) (DebuginfodClient, error) {
 	return &DebuginfodClientObjectStorageCache{
+		tracer: tracer,
 		logger: logger,
 		client: h,
 		bucket: bucket,
@@ -94,6 +98,10 @@ func NewDebuginfodClientWithObjectStorageCache(logger log.Logger, bucket objstor
 
 // Get returns debuginfo for given buildid while caching it in object storage.
 func (c *DebuginfodClientObjectStorageCache) Get(ctx context.Context, buildID string) (io.ReadCloser, error) {
+	ctx, span := c.tracer.Start(ctx, "Get")
+	defer span.End()
+	span.SetAttributes(attribute.String("build_id", buildID))
+
 	rc, err := c.bucket.Get(ctx, objectPath(buildID))
 	if err != nil {
 		if c.bucket.IsObjNotFoundErr(err) {
@@ -107,6 +115,10 @@ func (c *DebuginfodClientObjectStorageCache) Get(ctx context.Context, buildID st
 }
 
 func (c *DebuginfodClientObjectStorageCache) getAndCache(ctx context.Context, buildID string) (io.ReadCloser, error) {
+	ctx, span := c.tracer.Start(ctx, "getAndCache")
+	defer span.End()
+	span.SetAttributes(attribute.String("build_id", buildID))
+
 	r, err := c.client.Get(ctx, buildID)
 	if err != nil {
 		return nil, err
@@ -127,6 +139,10 @@ func (c *DebuginfodClientObjectStorageCache) getAndCache(ctx context.Context, bu
 
 // Exists returns true if debuginfo for given buildid exists.
 func (c *DebuginfodClientObjectStorageCache) Exists(ctx context.Context, buildID string) (bool, error) {
+	ctx, span := c.tracer.Start(ctx, "Exists")
+	defer span.End()
+	span.SetAttributes(attribute.String("build_id", buildID))
+
 	exists, err := c.bucket.Exists(ctx, objectPath(buildID))
 	if err != nil {
 		return false, err
@@ -141,6 +157,10 @@ func (c *DebuginfodClientObjectStorageCache) Exists(ctx context.Context, buildID
 
 // Get returns debug information file for given buildID by downloading it from upstream servers.
 func (c *HTTPDebuginfodClient) Get(ctx context.Context, buildID string) (io.ReadCloser, error) {
+	ctx, span := c.tracer.Start(ctx, "Get")
+	defer span.End()
+	span.SetAttributes(attribute.String("build_id", buildID))
+
 	// e.g:
 	// "https://debuginfod.elfutils.org/"
 	// "https://debuginfod.systemtap.org/"
@@ -164,6 +184,10 @@ func (c *HTTPDebuginfodClient) Get(ctx context.Context, buildID string) (io.Read
 }
 
 func (c *HTTPDebuginfodClient) Exists(ctx context.Context, buildID string) (bool, error) {
+	ctx, span := c.tracer.Start(ctx, "Exists")
+	defer span.End()
+	span.SetAttributes(attribute.String("build_id", buildID))
+
 	r, err := c.Get(ctx, buildID)
 	if err != nil {
 		if err == ErrDebuginfoNotFound {
@@ -176,6 +200,10 @@ func (c *HTTPDebuginfodClient) Exists(ctx context.Context, buildID string) (bool
 }
 
 func (c *HTTPDebuginfodClient) request(ctx context.Context, u url.URL, buildID string) (io.ReadCloser, error) {
+	ctx, span := c.tracer.Start(ctx, "request")
+	defer span.End()
+	span.SetAttributes(attribute.String("build_id", buildID))
+
 	// https://www.mankier.com/8/debuginfod#Webapi
 	// Endpoint: /buildid/BUILDID/debuginfo
 	// If the given buildid is known to the server,

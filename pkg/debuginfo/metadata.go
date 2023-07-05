@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/thanos-io/objstore"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -38,16 +39,24 @@ var (
 )
 
 type ObjectStoreMetadata struct {
+	tracer trace.Tracer
 	logger log.Logger
 
 	bucket objstore.Bucket
 }
 
-func NewObjectStoreMetadata(logger log.Logger, bucket objstore.Bucket) *ObjectStoreMetadata {
-	return &ObjectStoreMetadata{logger: log.With(logger, "component", "debuginfo-metadata"), bucket: bucket}
+func NewObjectStoreMetadata(tracer trace.Tracer, logger log.Logger, bucket objstore.Bucket) *ObjectStoreMetadata {
+	return &ObjectStoreMetadata{
+		tracer: tracer,
+		logger: log.With(logger, "component", "debuginfo-metadata"),
+		bucket: bucket,
+	}
 }
 
 func (m *ObjectStoreMetadata) SetQuality(ctx context.Context, buildID string, quality *debuginfopb.DebuginfoQuality) error {
+	ctx, span := m.tracer.Start(ctx, "SetQuality")
+	defer span.End()
+
 	dbginfo, err := m.Fetch(ctx, buildID)
 	if err != nil {
 		return err
@@ -63,6 +72,9 @@ func (m *ObjectStoreMetadata) SetQuality(ctx context.Context, buildID string, qu
 }
 
 func (m *ObjectStoreMetadata) MarkAsDebuginfodSource(ctx context.Context, buildID string) error {
+	ctx, span := m.tracer.Start(ctx, "MarkAsDebuginfodSource")
+	defer span.End()
+
 	return m.write(ctx, &debuginfopb.Debuginfo{
 		BuildId: buildID,
 		Source:  debuginfopb.Debuginfo_SOURCE_DEBUGINFOD,
@@ -70,6 +82,9 @@ func (m *ObjectStoreMetadata) MarkAsDebuginfodSource(ctx context.Context, buildI
 }
 
 func (m *ObjectStoreMetadata) MarkAsUploading(ctx context.Context, buildID, uploadID, hash string, startedAt *timestamppb.Timestamp) error {
+	ctx, span := m.tracer.Start(ctx, "MarkAsUploading")
+	defer span.End()
+
 	return m.write(ctx, &debuginfopb.Debuginfo{
 		BuildId: buildID,
 		Source:  debuginfopb.Debuginfo_SOURCE_UPLOAD,
@@ -83,6 +98,9 @@ func (m *ObjectStoreMetadata) MarkAsUploading(ctx context.Context, buildID, uplo
 }
 
 func (m *ObjectStoreMetadata) MarkAsUploaded(ctx context.Context, buildID, uploadID string, finishedAt *timestamppb.Timestamp) error {
+	ctx, span := m.tracer.Start(ctx, "MarkAsUploaded")
+	defer span.End()
+
 	dbginfo, err := m.Fetch(ctx, buildID)
 	if err != nil {
 		return err
@@ -103,6 +121,9 @@ func (m *ObjectStoreMetadata) MarkAsUploaded(ctx context.Context, buildID, uploa
 }
 
 func (m *ObjectStoreMetadata) Fetch(ctx context.Context, buildID string) (*debuginfopb.Debuginfo, error) {
+	ctx, span := m.tracer.Start(ctx, "Fetch")
+	defer span.End()
+
 	r, err := m.bucket.Get(ctx, metadataObjectPath(buildID))
 	if err != nil {
 		if m.bucket.IsObjNotFoundErr(err) {
@@ -125,6 +146,9 @@ func (m *ObjectStoreMetadata) Fetch(ctx context.Context, buildID string) (*debug
 }
 
 func (m *ObjectStoreMetadata) write(ctx context.Context, dbginfo *debuginfopb.Debuginfo) error {
+	ctx, span := m.tracer.Start(ctx, "write")
+	defer span.End()
+
 	if dbginfo.BuildId == "" {
 		return errors.New("build id is required to wirte debuginfo metadata")
 	}
