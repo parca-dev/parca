@@ -42,6 +42,8 @@ import (
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/thanos-io/objstore"
+	"github.com/thanos-io/objstore/client"
+	objstoretracing "github.com/thanos-io/objstore/tracing/opentelemetry"
 	tracing "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
@@ -59,7 +61,6 @@ import (
 	"github.com/parca-dev/parca/pkg/config"
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/metastore"
-	"github.com/parca-dev/parca/pkg/objectstore"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profilestore"
 	queryservice "github.com/parca-dev/parca/pkg/query"
@@ -218,11 +219,13 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	bucket, err := objectstore.NewBucket(tracerProvider.Tracer("objstore_bucket"), logger, bucketCfg, reg, "parca")
+	bucket, err := client.NewBucket(logger, bucketCfg, "parca")
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize object storage bucket", "err", err)
 		return err
 	}
+	bucket = client.NewInstrumentedBucket(reg, bucket)
+	bucket = objstoretracing.NewTracingBucket(tracerProvider.Tracer("objstore_bucket"), bucket)
 
 	var signedRequestsClient signedrequests.Client
 	if flags.Debuginfo.UploadsSignedURL {
