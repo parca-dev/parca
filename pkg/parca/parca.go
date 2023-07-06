@@ -34,7 +34,6 @@ import (
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/oklog/run"
-	"github.com/opentracing/opentracing-go"
 	"github.com/polarsignals/frostdb"
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/polarsignals/frostdb/query"
@@ -43,7 +42,6 @@ import (
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/thanos-io/objstore"
-	"github.com/thanos-io/objstore/client"
 	tracing "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
@@ -61,6 +59,7 @@ import (
 	"github.com/parca-dev/parca/pkg/config"
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/objectstore"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profilestore"
 	queryservice "github.com/parca-dev/parca/pkg/query"
@@ -219,12 +218,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	bridgeTracer, wrappedTracerProvider := tracer.Bridge(tracerProvider, tracerProvider.Tracer("objstore_bucket"))
-	// There is no way to pass the tracer to the object storage client, so we set it as global tracer.
-	opentracing.SetGlobalTracer(bridgeTracer)
-	tracerProvider = wrappedTracerProvider
-
-	bucket, err := client.NewBucket(logger, bucketCfg, reg, "parca")
+	bucket, err := objectstore.NewBucket(tracerProvider.Tracer("objstore_bucket"), logger, bucketCfg, reg, "parca")
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize object storage bucket", "err", err)
 		return err

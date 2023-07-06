@@ -23,10 +23,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/opentracing/opentracing-go"
-	"go.opentelemetry.io/contrib/propagators/autoprop"
 	"go.opentelemetry.io/otel"
-	bridge "go.opentelemetry.io/otel/bridge/opentracing"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
@@ -102,7 +99,6 @@ func NewProvider(ctx context.Context, version string, exporter sdktrace.SpanExpo
 		sdktrace.WithResource(res),
 		sdktrace.WithSpanProcessor(sdktrace.NewBatchSpanProcessor(exporter)),
 	)
-
 	// Set global propagator to tracecontext (the default is no-op).
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 	otel.SetTracerProvider(provider)
@@ -178,11 +174,4 @@ func resources(ctx context.Context, version string) (*resource.Resource, error) 
 		return nil, fmt.Errorf("failed to create resource: %w", err)
 	}
 	return res, nil
-}
-
-// Bridge is a bringe between OpenTelemetry and OpenTracing.
-func Bridge(tp trace.TracerProvider, otelTracer trace.Tracer) (opentracing.Tracer, trace.TracerProvider) {
-	bridgeTracer, wrappedTracerProvider := bridge.NewTracerPair(otelTracer)
-	bridgeTracer.SetTextMapPropagator(autoprop.NewTextMapPropagator())
-	return bridgeTracer, wrappedTracerProvider
 }
