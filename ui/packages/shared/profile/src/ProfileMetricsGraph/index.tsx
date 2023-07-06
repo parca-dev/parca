@@ -129,7 +129,10 @@ const ProfileMetricsGraph = ({
     perf?.markInteraction('Metrics graph render', response.series[0].samples.length);
   }, [perf, response]);
 
-  if (isLoaderVisible) {
+  const series = response?.series;
+  const dataAvailable = series !== null && series !== undefined && series?.length > 0;
+
+  if (isLoaderVisible || (isLoading && !dataAvailable)) {
     return <>{loader}</>;
   }
 
@@ -145,8 +148,7 @@ const ProfileMetricsGraph = ({
     );
   }
 
-  const series = response?.series;
-  if (series !== null && series !== undefined && series?.length > 0) {
+  if (dataAvailable) {
     const handleSampleClick = (timestamp: number, _value: number, labels: Label[]): void => {
       onPointClick(timestamp, labels, queryExpression);
     };
