@@ -19,7 +19,6 @@ import throttle from 'lodash.throttle';
 
 import {Label, MetricsSample, MetricsSeries as MetricsSeriesPb} from '@parca/client';
 import {DateTimeRange, useKeyDown} from '@parca/components';
-import {useContainerDimensions} from '@parca/hooks';
 import {
   formatDate,
   formatForTimespan,
@@ -42,6 +41,9 @@ interface Props {
   setTimeRange: (range: DateTimeRange) => void;
   sampleUnit: string;
   width?: number;
+  height?: number;
+  margin?: number;
+  marginRight?: number;
 }
 
 export interface HighlightedSeries {
@@ -70,23 +72,26 @@ const MetricsGraph = ({
   onLabelClick,
   setTimeRange,
   sampleUnit,
+  width = 0,
+  height = 0,
+  margin = 0,
+  marginRight = 0,
 }: Props): JSX.Element => {
-  const {ref, dimensions} = useContainerDimensions();
-
   return (
-    <div ref={ref}>
-      <RawMetricsGraph
-        data={data}
-        from={from}
-        to={to}
-        profile={profile}
-        onSampleClick={onSampleClick}
-        onLabelClick={onLabelClick}
-        setTimeRange={setTimeRange}
-        sampleUnit={sampleUnit}
-        width={dimensions?.width}
-      />
-    </div>
+    <RawMetricsGraph
+      data={data}
+      from={from}
+      to={to}
+      profile={profile}
+      onSampleClick={onSampleClick}
+      onLabelClick={onLabelClick}
+      setTimeRange={setTimeRange}
+      sampleUnit={sampleUnit}
+      width={width}
+      height={height}
+      margin={margin}
+      marginRight={marginRight}
+    />
   );
 };
 
@@ -111,6 +116,9 @@ export const RawMetricsGraph = ({
   onLabelClick,
   setTimeRange,
   width,
+  height = 50,
+  margin = 0,
+  marginRight = 0,
   sampleUnit,
 }: Props): JSX.Element => {
   const graph = useRef(null);
@@ -127,10 +135,6 @@ export const RawMetricsGraph = ({
   if (width === undefined || width == null) {
     width = 0;
   }
-
-  const height = Math.min(width / 2.5, 400);
-  const margin = 50;
-  const marginRight = 20;
 
   const series: Series[] = data.reduce<Series[]>(function (agg: Series[], s: MetricsSeriesPb) {
     if (s.labelset !== undefined) {

@@ -38,7 +38,8 @@ export const ProfileViewWithData = ({
   navigateTo,
 }: ProfileViewWithDataProps): JSX.Element => {
   const metadata = useGrpcMetadata();
-  const [dashboardItems] = useURLState({param: 'dashboard_items', navigateTo});
+  const [dashboardItems = ['icicle']] = useURLState({param: 'dashboard_items', navigateTo});
+
   const [enableTrimming] = useUserPreference<boolean>(USER_PREFERENCES.ENABLE_GRAPH_TRIMMING.key);
   const [arrowFlamegraphEnabled] = useUIFeatureFlag('flamegraph-arrow');
   const [pprofDownloading, setPprofDownloading] = useState<boolean>(false);

@@ -38,7 +38,7 @@ const LabelsCell = ({
         {allLabels.length > 0 &&
           allLabels.map(item => {
             return (
-              <div className="pb-1 pr-1">
+              <div className="pb-1 pr-1" key={`${item.name}="${item.value}"`}>
                 <Pill
                   key={item.name}
                   variant={'info' as PillVariant}

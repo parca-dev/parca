@@ -115,7 +115,7 @@ export const ProfileView = ({
 }: ProfileViewProps): JSX.Element => {
   const {ref, dimensions} = useContainerDimensions();
   const [curPath, setCurPath] = useState<string[]>([]);
-  const [rawDashboardItems, setDashboardItems] = useURLState({
+  const [rawDashboardItems = ['icicle'], setDashboardItems] = useURLState({
     param: 'dashboard_items',
     navigateTo,
   });
