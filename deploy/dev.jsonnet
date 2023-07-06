@@ -1,15 +1,7 @@
-function(agentVersion='v0.10.0-rc.0', separateUI=true)
-  local ns = {
-    apiVersion: 'v1',
-    kind: 'Namespace',
-    metadata: {
-      name: 'parca',
-    },
-  };
-
+function(namespace='parca', agentVersion='latest', separateUI=true)
   local parca = (import 'parca/parca.libsonnet')({
     name: 'parca',
-    namespace: ns.metadata.name,
+    namespace: namespace,
     image: 'localhost:5000/parca:dev',
     version: 'dev',
     replicas: 1,
@@ -25,7 +17,7 @@ function(agentVersion='v0.10.0-rc.0', separateUI=true)
 
   local parcaAgent = (import 'parca-agent/parca-agent.libsonnet')({
     name: 'parca-agent',
-    namespace: ns.metadata.name,
+    namespace: namespace,
     image: 'ghcr.io/parca-dev/parca-agent:' + agentVersion,
     version: agentVersion,
     stores: ['%s.%s.svc.cluster.local:%d' % [parca.service.metadata.name, parca.service.metadata.namespace, parca.config.port]],
@@ -38,8 +30,6 @@ function(agentVersion='v0.10.0-rc.0', separateUI=true)
   });
 
   {
-    '0namespace': ns,
-  } + {
     ['parca-server-' + name]: parca[name]
     for name in std.objectFields(parca)
     if parca[name] != null
@@ -52,7 +42,7 @@ function(agentVersion='v0.10.0-rc.0', separateUI=true)
       // Only for development purposes. Parca actually serves its UI itself.
       local parcaUI = (import 'parca/parca-ui.libsonnet')({
         name: 'parca-ui',
-        namespace: ns.metadata.name,
+        namespace: namespace,
         image: 'parca.io/parca/parca-ui:dev',
         version: 'dev',
         replicas: 1,

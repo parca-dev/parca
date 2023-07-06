@@ -26,6 +26,7 @@ local defaults = {
   port: 7070,
 
   serviceMonitor: false,
+  podSecurityPolicy: false,
   livenessProbe: true,
   readinessProbe: true,
   storageRetentionTime: '',
@@ -46,9 +47,15 @@ local defaults = {
     if labelName != 'app.kubernetes.io/version'
   },
 
+  // Pod level security context.
   securityContext:: {
+    supplementalGroups: [65534],
     fsGroup: 65534,
     runAsUser: 65534,
+    runAsNonRoot: true,
+    seccompProfile: {
+      type: 'RuntimeDefault',
+    },
   },
 };
 
@@ -95,99 +102,6 @@ function(params) {
     },
   },
 
-  podSecurityPolicy: {
-    apiVersion: 'policy/v1beta1',
-    kind: 'PodSecurityPolicy',
-    metadata: {
-      name: prc.config.name,
-    },
-    spec: {
-      allowPrivilegeEscalation: false,
-      fsGroup: {
-        ranges: [
-          {
-            max: 65535,
-            min: 1,
-          },
-        ],
-        rule: 'MustRunAs',
-      },
-      requiredDropCapabilities: [
-        'ALL',
-      ],
-      runAsUser: {
-        rule: 'MustRunAsNonRoot',
-      },
-      seLinux: {
-        rule: 'RunAsAny',
-      },
-      supplementalGroups: {
-        ranges: [
-          {
-            max: 65535,
-            min: 1,
-          },
-        ],
-        rule: 'MustRunAs',
-      },
-      volumes: [
-        'configMap',
-        'emptyDir',
-        'projected',
-        'secret',
-        'downwardAPI',
-        'persistentVolumeClaim',
-      ],
-    },
-  },
-
-  role: {
-    apiVersion: 'rbac.authorization.k8s.io/v1',
-    kind: 'Role',
-    metadata: {
-      name: prc.config.name,
-      namespace: prc.config.namespace,
-      labels: prc.config.commonLabels,
-    },
-    rules: [
-      {
-        apiGroups: [
-          'policy',
-        ],
-        resourceNames: [
-          prc.config.name,
-        ],
-        resources: [
-          'podsecuritypolicies',
-        ],
-        verbs: [
-          'use',
-        ],
-      },
-    ],
-  },
-
-  roleBinding: {
-    apiVersion: 'rbac.authorization.k8s.io/v1',
-    kind: 'RoleBinding',
-    metadata: {
-      name: prc.config.name,
-      namespace: prc.config.namespace,
-      labels: prc.config.commonLabels,
-    },
-    roleRef: {
-      apiGroup: 'rbac.authorization.k8s.io',
-      kind: 'Role',
-      name: prc.role.metadata.name,
-    },
-    subjects: [
-      {
-        kind: 'ServiceAccount',
-        name: prc.serviceAccount.metadata.name,
-      },
-    ],
-  },
-
   configMap: {
     apiVersion: 'v1',
     kind: 'ConfigMap',
@@ -225,6 +139,13 @@ function(params) {
         { name: port.name, containerPort: port.port }
         for port in prc.service.spec.ports
       ],
+      // Container level security context.
+      securityContext: {
+        allowPrivilegeEscalation: false,
+        capabilities: {
+          drop: ['ALL'],
+        },
+      },
       volumeMounts: [
         {
           name: 'config',
@@ -291,7 +212,7 @@ function(params) {
       },
     },
 
-  serviceMonitor: if prc.config.serviceMonitor == true then {
+  [if std.objectHas(params, 'serviceMonitor') && params.serviceMonitor then 'serviceMonitor']: {
     apiVersion: 'monitoring.coreos.com/v1',
     kind: 'ServiceMonitor',
     metadata+: {
@@ -314,5 +235,98 @@ function(params) {
         },
       ],
     },
+  },
+
+  [if std.objectHas(params, 'podSecurityPolicy') && params.podSecurityPolicy then 'podSecurityPolicy']: {
+    apiVersion: 'policy/v1',
+    kind: 'PodSecurityPolicy',
+    metadata: {
+      name: prc.config.name,
+    },
+    spec: {
+      allowPrivilegeEscalation: false,
+      fsGroup: {
+        ranges: [
+          {
+            max: 65535,
+            min: 1,
+          },
+        ],
+        rule: 'MustRunAs',
+      },
+      requiredDropCapabilities: [
+        'ALL',
+      ],
+      runAsUser: {
+        rule: 'MustRunAsNonRoot',
+      },
+      seLinux: {
+        rule: 'RunAsAny',
+      },
+      supplementalGroups: {
+        ranges: [
+          {
+            max: 65535,
+            min: 1,
+          },
+        ],
+        rule: 'MustRunAs',
+      },
+      volumes: [
+        'configMap',
+        'emptyDir',
+        'projected',
+        'secret',
+        'downwardAPI',
+        'persistentVolumeClaim',
+      ],
+    },
+  },
+
+  [if std.objectHas(params, 'podSecurityPolicy') && params.podSecurityPolicy then 'role']: {
+    apiVersion: 'rbac.authorization.k8s.io/v1',
+    kind: 'Role',
+    metadata: {
+      name: prc.config.name,
+      namespace: prc.config.namespace,
+      labels: prc.config.commonLabels,
+    },
+    rules: [
+      {
+        apiGroups: [
+          'policy',
+        ],
+        resourceNames: [
+          prc.config.name,
+        ],
+        resources: [
+          'podsecuritypolicies',
+        ],
+        verbs: [
+          'use',
+        ],
+      },
+    ],
+  },
+
+  [if std.objectHas(params, 'podSecurityPolicy') && params.podSecurityPolicy then 'roleBinding']: {
+    apiVersion: 'rbac.authorization.k8s.io/v1',
+    kind: 'RoleBinding',
+    metadata: {
+      name: prc.config.name,
+      namespace: prc.config.namespace,
+      labels: prc.config.commonLabels,
+    },
+    roleRef: {
+      apiGroup: 'rbac.authorization.k8s.io',
+      kind: 'Role',
+      name: prc.role.metadata.name,
+    },
+    subjects: [
+      {
+        kind: 'ServiceAccount',
+        name: prc.serviceAccount.metadata.name,
+      },
+    ],
   },
 }

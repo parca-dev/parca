@@ -13,9 +13,11 @@
 
 import {useEffect, useMemo, useState} from 'react';
 
+import {tableFromIPC} from 'apache-arrow';
+
 import {QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata, useParcaContext, useURLState} from '@parca/components';
-import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
+import {USER_PREFERENCES, useUIFeatureFlag, useUserPreference} from '@parca/hooks';
 import {saveAsBlob, type NavigateFunction} from '@parca/utilities';
 
 import {ProfileSource} from './ProfileSource';
@@ -39,6 +41,7 @@ export const ProfileViewWithData = ({
   const [dashboardItems = ['icicle']] = useURLState({param: 'dashboard_items', navigateTo});
 
   const [enableTrimming] = useUserPreference<boolean>(USER_PREFERENCES.ENABLE_GRAPH_TRIMMING.key);
+  const [arrowFlamegraphEnabled] = useUIFeatureFlag('flamegraph-arrow');
   const [pprofDownloading, setPprofDownloading] = useState<boolean>(false);
 
   const nodeTrimThreshold = useMemo(() => {
@@ -54,11 +57,15 @@ export const ProfileViewWithData = ({
     return (1 / width) * 100;
   }, [enableTrimming]);
 
+  const reportType = arrowFlamegraphEnabled
+    ? QueryRequest_ReportType.FLAMEGRAPH_ARROW
+    : QueryRequest_ReportType.FLAMEGRAPH_TABLE;
+
   const {
     isLoading: flamegraphLoading,
     response: flamegraphResponse,
     error: flamegraphError,
-  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMEGRAPH_TABLE, {
+  } = useQuery(queryClient, profileSource, reportType, {
     skip: !dashboardItems.includes('icicle'),
     nodeTrimThreshold,
   });
@@ -81,16 +88,19 @@ export const ProfileViewWithData = ({
   });
 
   useEffect(() => {
-    if (!flamegraphLoading && flamegraphResponse?.report.oneofKind === 'flamegraph') {
-      perf?.markInteraction('Flamegraph render', flamegraphResponse.report.flamegraph.total);
+    if (
+      (!flamegraphLoading && flamegraphResponse?.report.oneofKind === 'flamegraph') ||
+      flamegraphResponse?.report.oneofKind === 'flamegraphArrow'
+    ) {
+      perf?.markInteraction('Flamegraph render', flamegraphResponse.total);
     }
 
     if (!topTableLoading && topTableResponse?.report.oneofKind === 'top') {
-      perf?.markInteraction('Top table render', topTableResponse?.report?.top.total);
+      perf?.markInteraction('Top table render', topTableResponse.total);
     }
 
     if (!callgraphLoading && callgraphResponse?.report.oneofKind === 'callgraph') {
-      perf?.markInteraction('Callgraph render', callgraphResponse?.report?.callgraph.cumulative);
+      perf?.markInteraction('Callgraph render', callgraphResponse.total);
     }
   }, [
     flamegraphLoading,
@@ -144,6 +154,10 @@ export const ProfileViewWithData = ({
         data:
           flamegraphResponse?.report.oneofKind === 'flamegraph'
             ? flamegraphResponse?.report?.flamegraph
+            : undefined,
+        table:
+          flamegraphResponse?.report.oneofKind === 'flamegraphArrow'
+            ? tableFromIPC(flamegraphResponse?.report?.flamegraphArrow.record)
             : undefined,
         total: BigInt(flamegraphResponse?.total ?? '0'),
         filtered: BigInt(flamegraphResponse?.filtered ?? '0'),
