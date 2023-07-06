@@ -19,8 +19,8 @@ const Spinner = (): JSX.Element => {
         justifyContent: 'center',
         alignItems: 'center',
         height: 'inherit',
-        marginTop: 40,
-        marginBottom: 40,
+        paddingTop: 40,
+        paddingBottom: 40,
       }}
     >
       <svg

@@ -18,12 +18,14 @@ import type {RootState} from '../store';
 // Define a type for the slice state
 export interface ProfileState {
   filterByFunction: string | undefined;
+  autoQuery: string | undefined;
   [key: string]: string | string[] | undefined;
 }
 
 // Define the initial state using that type
 const initialState: ProfileState = {
   filterByFunction: undefined,
+  autoQuery: undefined,
 };
 
 export const profileSlice = createSlice({
@@ -36,15 +38,19 @@ export const profileSlice = createSlice({
     ) => {
       state[action.payload.key] = action.payload.value;
     },
+    setAutoQuery: (state, action: PayloadAction<string>) => {
+      state.autoQuery = action.payload;
+    },
   },
 });
 
-export const {setProfileStateValue} = profileSlice.actions;
+export const {setProfileStateValue, setAutoQuery} = profileSlice.actions;
 
 export const selectFilterByFunction = (state: RootState): string | undefined =>
   state.profile.filterByFunction;
 export const selectProfileStateValue = (key: string) => (state: RootState) => {
   return state.profile[key];
 };
+export const selectAutoQuery = (state: RootState): string | undefined => state.profile.autoQuery;
 
 export default profileSlice.reducer;
