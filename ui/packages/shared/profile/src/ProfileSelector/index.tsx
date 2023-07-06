@@ -296,7 +296,9 @@ const ProfileSelector = ({
             ) : (
               <>
                 {profileSelection == null ? (
-                  <ProfileMetricsEmptyState message="No metrics found" />
+                  <ProfileMetricsEmptyState
+                    message={`Please select a profile type and click "Search" to begin.`}
+                  />
                 ) : null}
               </>
             )}
