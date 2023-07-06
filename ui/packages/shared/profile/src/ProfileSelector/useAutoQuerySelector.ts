@@ -43,12 +43,16 @@ export const useAutoQuerySelector = ({
       if (profileTypesData?.types == null || profileTypesData.types.length < 1) {
         return;
       }
-      if (autoQuery !== undefined) {
-        // Not the first load
+      if (autoQuery === 'true') {
+        // Autoquery already enabled.
         return;
       }
       dispatch(setAutoQuery('true'));
-      setProfileName(constructProfileName(profileTypesData.types[0]));
+      let profileType = profileTypesData.types.find(type => type.name === 'parca_agent_cpu');
+      if (profileType == null) {
+        profileType = profileTypesData.types[0];
+      }
+      setProfileName(constructProfileName(profileType));
     })();
   }, [
     profileTypesData,
