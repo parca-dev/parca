@@ -11,10 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {ProfileTypesResponse} from '@parca/client';
-import {constructProfileName} from '../ProfileTypeSelector';
 import {useEffect} from 'react';
+
+import {ProfileTypesResponse} from '@parca/client';
 import {selectAutoQuery, setAutoQuery, useAppDispatch, useAppSelector} from '@parca/store';
+
+import {constructProfileName} from '../ProfileTypeSelector';
 
 interface Props {
   selectedProfileName: string;
@@ -35,7 +37,7 @@ export const useAutoQuerySelector = ({
   // Effect to load some initial data on load when is no selection
   useEffect(() => {
     void (async () => {
-      if (selectedProfileName?.length > 0) {
+      if (selectedProfileName.length > 0) {
         return;
       }
       if (profileTypesData?.types == null || profileTypesData.types.length < 1) {
@@ -62,12 +64,20 @@ export const useAutoQuerySelector = ({
       if (
         autoQuery !== 'true' ||
         profileTypesData?.types == null ||
-        profileTypesData.types.length < 1
+        profileTypesData.types.length < 1 ||
+        selectedProfileName.length === 0
       ) {
         return;
       }
       setQueryExpression();
       dispatch(setAutoQuery('false'));
     })();
-  }, [profileTypesData, setQueryExpression, autoQuery, setProfileName, dispatch]);
+  }, [
+    profileTypesData,
+    setQueryExpression,
+    autoQuery,
+    setProfileName,
+    dispatch,
+    selectedProfileName,
+  ]);
 };

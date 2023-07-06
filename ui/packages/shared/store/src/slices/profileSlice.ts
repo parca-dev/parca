@@ -51,6 +51,6 @@ export const selectFilterByFunction = (state: RootState): string | undefined =>
 export const selectProfileStateValue = (key: string) => (state: RootState) => {
   return state.profile[key];
 };
-export const selectAutoQuery = (state: RootState): string => state.profile.autoQuery;
+export const selectAutoQuery = (state: RootState): string | undefined => state.profile.autoQuery;
 
 export default profileSlice.reducer;

@@ -14,6 +14,7 @@
 import {useEffect, useState} from 'react';
 
 import {RpcError} from '@protobuf-ts/runtime-rpc';
+import {set} from 'date-fns';
 
 import {Duration, Label, QueryRangeResponse, QueryServiceClient, Timestamp} from '@parca/client';
 import {DateTimeRange, useGrpcMetadata, useParcaContext} from '@parca/components';
@@ -22,7 +23,20 @@ import {getStepDuration} from '@parca/utilities';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
 import MetricsGraph from '../MetricsGraph';
+import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
 import useDelayedLoader from '../useDelayedLoader';
+
+interface ProfileMetricsEmptyStateProps {
+  message: string;
+}
+
+export const ProfileMetricsEmptyState = ({message}: ProfileMetricsEmptyStateProps): JSX.Element => {
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center">
+      <p>{message}</p>
+    </div>
+  );
+};
 
 interface ProfileMetricsGraphProps {
   queryClient: QueryServiceClient;
@@ -52,15 +66,12 @@ export const useQueryRange = (
     isLoading: true,
     error: null,
   });
+  const [isLoading, setLoading] = useState<boolean>(true);
   const metadata = useGrpcMetadata();
 
   useEffect(() => {
     void (async () => {
-      setState({
-        response: null,
-        isLoading: true,
-        error: null,
-      });
+      setLoading(true);
 
       const stepDuration = getStepDuration(start, end);
       const call = client.queryRange(
@@ -75,12 +86,19 @@ export const useQueryRange = (
       );
 
       call.response
-        .then(response => setState({response, isLoading: false, error: null}))
-        .catch(error => setState({response: null, isLoading: false, error}));
+        .then(response => {
+          setState({response, isLoading: false, error: null});
+          setLoading(false);
+          return null;
+        })
+        .catch(error => {
+          setState({response: null, isLoading: false, error});
+          setLoading(false);
+        });
     })();
   }, [client, queryExpression, start, end, metadata]);
 
-  return state;
+  return {...state, isLoading};
 };
 
 const ProfileMetricsGraph = ({
@@ -96,6 +114,7 @@ const ProfileMetricsGraph = ({
   const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to);
   const isLoaderVisible = useDelayedLoader(isLoading);
   const {loader, onError, perf} = useParcaContext();
+  const {width, height, margin, marginRight} = useMetricsGraphDimensions();
 
   useEffect(() => {
     if (error !== null) {
@@ -135,7 +154,7 @@ const ProfileMetricsGraph = ({
 
     return (
       <div
-        className="rounded border-gray-300 dark:border-gray-500 dark:bg-gray-700"
+        className="h-full w-full rounded border-gray-300 dark:border-gray-500 dark:bg-gray-700"
         style={{borderWidth: 1}}
       >
         <MetricsGraph
@@ -146,19 +165,17 @@ const ProfileMetricsGraph = ({
           setTimeRange={setTimeRange}
           onSampleClick={handleSampleClick}
           onLabelClick={addLabelMatcher}
-          width={0}
           sampleUnit={Query.parse(queryExpression).profileType().sampleUnit}
+          height={height}
+          width={width}
+          margin={margin}
+          marginRight={marginRight}
         />
       </div>
     );
   }
-  return (
-    <div className="grid grid-cols-1">
-      <div className="flex justify-center py-20">
-        <p className="m-0">No data found. Try a different query.</p>
-      </div>
-    </div>
-  );
+
+  return <ProfileMetricsEmptyState message="No data found. Try a different query." />;
 };
 
 export default ProfileMetricsGraph;

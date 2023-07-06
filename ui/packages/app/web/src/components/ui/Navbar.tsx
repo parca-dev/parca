@@ -15,7 +15,7 @@ import {Disclosure} from '@headlessui/react';
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
 import GitHubButton from 'react-github-btn';
-import {useLocation} from 'react-router-dom';
+import {Link, useLocation} from 'react-router-dom';
 
 import {UserPreferences} from '@parca/components';
 import {Parca, ParcaSmall} from '@parca/icons';
@@ -90,23 +90,31 @@ const Navbar = () => {
                 </div>
                 <div className="hidden sm:ml-6 sm:block">
                   <div className="flex items-center gap-2">
-                    {Object.values(links).map(item => (
-                      <a
-                        key={item.label}
-                        href={item.href}
-                        target={item.external ? '_blank' : undefined}
-                        className={cx(
+                    {Object.values(links).map(item => {
+                      const href = item.href;
+                      const props = {
+                        target: item.external ? '_blank' : undefined,
+                        className: cx(
                           isCurrentPage(item)
                             ? 'bg-gray-900 text-white dark:bg-gray-700'
                             : 'text-gray-700 hover:bg-gray-700 hover:text-white dark:text-gray-300',
                           'rounded-md px-3 py-2 text-sm font-medium'
-                        )}
-                        aria-current={isCurrentPage(item) ? 'page' : undefined}
-                        rel="noreferrer"
-                      >
-                        {item.label}
-                      </a>
-                    ))}
+                        ),
+                        rel: item.external ? 'noreferrer' : undefined,
+                      };
+                      if (isCurrentPage(item)) {
+                        props['aria-current'] = 'page';
+                      }
+                      return item.external ? (
+                        <a key={item.label} {...props} href={href}>
+                          {item.label}
+                        </a>
+                      ) : (
+                        <Link key={item.label} {...props} to={href}>
+                          {item.label}
+                        </Link>
+                      );
+                    })}
                     <div className="hidden px-3 pt-2 md:flex">
                       <GitHubStarButton />
                     </div>
