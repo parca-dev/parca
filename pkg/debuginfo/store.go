@@ -58,7 +58,7 @@ type CacheConfig struct {
 }
 
 type MetadataManager interface {
-	MarkAsDebuginfodSource(ctx context.Context, buildID string) error
+	MarkAsDebuginfodSource(ctx context.Context, servers []string, buildID string) error
 	MarkAsUploading(ctx context.Context, buildID, uploadID, hash string, startedAt *timestamppb.Timestamp) error
 	MarkAsUploaded(ctx context.Context, buildID, uploadID string, finishedAt *timestamppb.Timestamp) error
 	Fetch(ctx context.Context, buildID string) (*debuginfopb.Debuginfo, error)
@@ -72,8 +72,8 @@ type Store struct {
 
 	bucket objstore.Bucket
 
-	metadata         MetadataManager
-	debuginfodClient DebuginfodClient
+	metadata          MetadataManager
+	debuginfodClients DebuginfodClients
 
 	signedUpload SignedUpload
 
@@ -98,7 +98,7 @@ func NewStore(
 	logger log.Logger,
 	metadata MetadataManager,
 	bucket objstore.Bucket,
-	debuginfodClient DebuginfodClient,
+	debuginfodClients DebuginfodClients,
 	signedUpload SignedUpload,
 	maxUploadDuration time.Duration,
 	maxUploadSize int64,
@@ -108,7 +108,7 @@ func NewStore(
 		logger:            log.With(logger, "component", "debuginfo"),
 		bucket:            bucket,
 		metadata:          metadata,
-		debuginfodClient:  debuginfodClient,
+		debuginfodClients: debuginfodClients,
 		signedUpload:      signedUpload,
 		maxUploadDuration: maxUploadDuration,
 		maxUploadSize:     maxUploadSize,
@@ -148,13 +148,13 @@ func (s *Store) ShouldInitiateUpload(ctx context.Context, req *debuginfopb.Shoul
 	} else if errors.Is(err, ErrMetadataNotFound) {
 		// First time we see this Build ID.
 
-		existsInDebuginfod, err := s.debuginfodClient.Exists(ctx, buildID)
+		existsInDebuginfods, err := s.debuginfodClients.Exists(ctx, buildID)
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
-		if existsInDebuginfod {
-			if err := s.metadata.MarkAsDebuginfodSource(ctx, buildID); err != nil {
+		if len(existsInDebuginfods) > 0 {
+			if err := s.metadata.MarkAsDebuginfodSource(ctx, existsInDebuginfods, buildID); err != nil {
 				return nil, status.Error(codes.Internal, fmt.Errorf("mark Build ID to be available from debuginfod: %w", err).Error())
 			}
 

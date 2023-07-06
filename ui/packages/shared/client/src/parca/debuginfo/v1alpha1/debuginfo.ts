@@ -270,6 +270,12 @@ export interface Debuginfo {
      * @generated from protobuf field: parca.debuginfo.v1alpha1.DebuginfoQuality quality = 4;
      */
     quality?: DebuginfoQuality;
+    /**
+     * The debuginfod servers this piece of debuginfo is available at.
+     *
+     * @generated from protobuf field: repeated string debuginfod_servers = 5;
+     */
+    debuginfodServers: string[];
 }
 /**
  * Source is the source of the debuginfo.
@@ -934,11 +940,12 @@ class Debuginfo$Type extends MessageType<Debuginfo> {
             { no: 1, name: "build_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "source", kind: "enum", T: () => ["parca.debuginfo.v1alpha1.Debuginfo.Source", Debuginfo_Source, "SOURCE_"] },
             { no: 3, name: "upload", kind: "message", T: () => DebuginfoUpload },
-            { no: 4, name: "quality", kind: "message", T: () => DebuginfoQuality }
+            { no: 4, name: "quality", kind: "message", T: () => DebuginfoQuality },
+            { no: 5, name: "debuginfod_servers", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<Debuginfo>): Debuginfo {
-        const message = { buildId: "", source: 0 };
+        const message = { buildId: "", source: 0, debuginfodServers: [] };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Debuginfo>(this, message, value);
@@ -960,6 +967,9 @@ class Debuginfo$Type extends MessageType<Debuginfo> {
                     break;
                 case /* parca.debuginfo.v1alpha1.DebuginfoQuality quality */ 4:
                     message.quality = DebuginfoQuality.internalBinaryRead(reader, reader.uint32(), options, message.quality);
+                    break;
+                case /* repeated string debuginfod_servers */ 5:
+                    message.debuginfodServers.push(reader.string());
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -985,6 +995,9 @@ class Debuginfo$Type extends MessageType<Debuginfo> {
         /* parca.debuginfo.v1alpha1.DebuginfoQuality quality = 4; */
         if (message.quality)
             DebuginfoQuality.internalBinaryWrite(message.quality, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* repeated string debuginfod_servers = 5; */
+        for (let i = 0; i < message.debuginfodServers.length; i++)
+            writer.tag(5, WireType.LengthDelimited).string(message.debuginfodServers[i]);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

@@ -31,7 +31,7 @@ local defaults = {
   readinessProbe: true,
   storageRetentionTime: '',
 
-  debugInfodUpstreamServers: ['https://debuginfod.systemtap.org'],
+  debugInfodUpstreamServers: ['debuginfod.systemtap.org'],
   debugInfodHTTPRequestTimeout: '5m',
 
   commonLabels:: {

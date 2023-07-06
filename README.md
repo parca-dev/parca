@@ -131,10 +131,10 @@ Flags:
       --debuginfo-uploads-signed-url
                                 Whether to use signed URLs for debuginfo
                                 uploads.
-      --debuginfod-upstream-servers=https://debuginfod.elfutils.org,...
+      --debuginfod-upstream-servers=debuginfod.elfutils.org,...
                                 Upstream debuginfod servers. Defaults to
-                                https://debuginfod.elfutils.org. It is an
-                                ordered list of servers to try. Learn more at
+                                debuginfod.elfutils.org. It is an ordered
+                                list of servers to try. Learn more at
                                 https://sourceware.org/elfutils/Debuginfod.html
       --debuginfod-http-request-timeout=5m
                                 Timeout duration for HTTP request to upstream

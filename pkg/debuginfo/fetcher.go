@@ -29,17 +29,17 @@ var (
 )
 
 type Fetcher struct {
-	debuginfodClient DebuginfodClient
-	bucket           objstore.Bucket
+	debuginfodClients DebuginfodClients
+	bucket            objstore.Bucket
 }
 
 func NewFetcher(
-	debuginfodClient DebuginfodClient,
+	debuginfodClients DebuginfodClients,
 	bucket objstore.Bucket,
 ) *Fetcher {
 	return &Fetcher{
-		debuginfodClient: debuginfodClient,
-		bucket:           bucket,
+		debuginfodClients: debuginfodClients,
+		bucket:            bucket,
 	}
 }
 
@@ -59,5 +59,12 @@ func (f *Fetcher) fetchFromBucket(ctx context.Context, dbginfo *debuginfopb.Debu
 }
 
 func (f *Fetcher) fetchFromDebuginfod(ctx context.Context, dbginfo *debuginfopb.Debuginfo) (io.ReadCloser, error) {
-	return f.debuginfodClient.Get(ctx, dbginfo.BuildId)
+	if len(dbginfo.DebuginfodServers) == 0 {
+		return nil, errors.New("no debuginfod servers")
+	}
+
+	// Servers are stored in order of preference.
+	debuginfodServer := dbginfo.DebuginfodServers[0]
+
+	return f.debuginfodClients.Get(ctx, debuginfodServer, dbginfo.BuildId)
 }
