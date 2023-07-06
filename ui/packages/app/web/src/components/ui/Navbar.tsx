@@ -15,7 +15,7 @@ import {Disclosure} from '@headlessui/react';
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
 import GitHubButton from 'react-github-btn';
-import {Link, useLocation} from 'react-router-dom';
+import {Link, LinkProps, useLocation} from 'react-router-dom';
 
 import {UserPreferences} from '@parca/components';
 import {Parca, ParcaSmall} from '@parca/icons';
@@ -92,7 +92,12 @@ const Navbar = () => {
                   <div className="flex items-center gap-2">
                     {Object.values(links).map(item => {
                       const href = item.href;
-                      const props = {
+                      const props: {
+                        target?: LinkProps['target'];
+                        className: string;
+                        rel?: LinkProps['rel'];
+                        'aria-current'?: 'page';
+                      } = {
                         target: item.external ? '_blank' : undefined,
                         className: cx(
                           isCurrentPage(item)
