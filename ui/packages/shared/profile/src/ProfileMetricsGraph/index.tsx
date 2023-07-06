@@ -14,7 +14,6 @@
 import {useEffect, useState} from 'react';
 
 import {RpcError} from '@protobuf-ts/runtime-rpc';
-import {set} from 'date-fns';
 
 import {Duration, Label, QueryRangeResponse, QueryServiceClient, Timestamp} from '@parca/client';
 import {DateTimeRange, useGrpcMetadata, useParcaContext} from '@parca/components';
