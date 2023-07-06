@@ -454,6 +454,147 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 	require.Equal(t, 1, len(res.Series[0].Samples))
 }
 
+func TestColumnQueryAPIQueryCumulative(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	col, err := columnstore.New()
+	require.NoError(t, err)
+	colDB, err := col.DB(context.Background(), "parca")
+	require.NoError(t, err)
+
+	schema, err := parcacol.Schema()
+	require.NoError(t, err)
+
+	table, err := colDB.Table(
+		"stacktraces",
+		columnstore.NewTableConfig(parcacol.SchemaDefinition()),
+	)
+	require.NoError(t, err)
+	m := metastoretest.NewTestMetastore(
+		t,
+		logger,
+		reg,
+		tracer,
+	)
+
+	metastore := metastore.NewInProcessClient(m)
+	store := profilestore.NewProfileColumnStore(
+		logger,
+		tracer,
+		metastore,
+		table,
+		schema,
+		true,
+	)
+
+	// Load CPU and memory profiles
+	fileNames := []string{
+		"testdata/alloc_objects.pb.gz",
+		"testdata/profile1.pb.gz",
+	}
+	labelSets := []*profilestorepb.LabelSet{
+		{
+			Labels: []*profilestorepb.Label{
+				{Name: "__name__", Value: "memory"},
+				{Name: "job", Value: "default"},
+			},
+		},
+		{
+			Labels: []*profilestorepb.Label{
+				{Name: "__name__", Value: "cpu"},
+				{Name: "job", Value: "default"},
+			},
+		},
+	}
+	for i, fileName := range fileNames {
+		fileContent, err := os.ReadFile(fileName)
+		require.NoError(t, err)
+
+		p := &pprofpb.Profile{}
+		require.NoError(t, p.UnmarshalVT(MustDecompressGzip(t, fileContent)))
+
+		_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
+			Series: []*profilestorepb.RawProfileSeries{{
+				Labels: labelSets[i],
+				Samples: []*profilestorepb.RawSample{{
+					RawProfile: fileContent,
+				}},
+			}},
+		})
+		require.NoError(t, err)
+	}
+
+	api := NewColumnQueryAPI(
+		logger,
+		tracer,
+		getShareServerConn(t),
+		parcacol.NewQuerier(
+			logger,
+			tracer,
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			metastore,
+		),
+	)
+
+	// These have been extracted from the profiles above.
+	queries := []struct {
+		name      string
+		query     string
+		timeNanos int64
+		// expected
+		total    int64
+		filtered int64
+	}{{
+		name:      "memory",
+		query:     `memory:alloc_objects:count:space:bytes{job="default"}`,
+		timeNanos: 1608199718549304626,
+		total:     int64(310797348),
+		filtered:  int64(0),
+	}, {
+		name:      "cpu",
+		query:     `cpu:samples:count:cpu:nanoseconds:delta{job="default"}`,
+		timeNanos: 1626013307085084416,
+		total:     int64(48),
+		filtered:  int64(0),
+	}}
+
+	// Check that the following report type return the same cumulative and filtered values.
+
+	reportTypes := []pb.QueryRequest_ReportType{
+		pb.QueryRequest_REPORT_TYPE_TOP,
+		pb.QueryRequest_REPORT_TYPE_CALLGRAPH,
+		pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_TABLE,
+		pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW,
+	}
+
+	for _, query := range queries {
+		for _, reportType := range reportTypes {
+			t.Run(query.name+"-"+pb.QueryRequest_ReportType_name[int32(reportType)], func(t *testing.T) {
+				res, err := api.Query(ctx, &pb.QueryRequest{
+					ReportType: pb.QueryRequest_REPORT_TYPE_TOP,
+					Options: &pb.QueryRequest_Single{
+						Single: &pb.SingleProfile{
+							Query: query.query,
+							Time:  timestamppb.New(timestamp.Time(query.timeNanos / time.Millisecond.Nanoseconds())),
+						},
+					},
+				})
+				require.NoError(t, err)
+				require.Equal(t, query.total, res.Total)
+				require.Equal(t, query.filtered, res.Filtered)
+			})
+		}
+	}
+}
+
 func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	t.Parallel()
 
