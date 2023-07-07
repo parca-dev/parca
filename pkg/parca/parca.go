@@ -148,7 +148,7 @@ type FlagsDebuginfo struct {
 
 // FlagsDebuginfod configures the Parca Debuginfo daemon / server.
 type FlagsDebuginfod struct {
-	UpstreamServers    []string      `default:"https://debuginfod.elfutils.org" help:"Upstream debuginfod servers. Defaults to https://debuginfod.elfutils.org. It is an ordered list of servers to try. Learn more at https://sourceware.org/elfutils/Debuginfod.html"`
+	UpstreamServers    []string      `default:"debuginfod.elfutils.org" help:"Upstream debuginfod servers. Defaults to debuginfod.elfutils.org. It is an ordered list of servers to try. Learn more at https://sourceware.org/elfutils/Debuginfod.html"`
 	HTTPRequestTimeout time.Duration `default:"5m" help:"Timeout duration for HTTP request to upstream debuginfod server. Defaults to 5m"`
 }
 
@@ -355,26 +355,16 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	var debuginfodClient debuginfo.DebuginfodClient = debuginfo.NopDebuginfodClient{}
+	var debuginfodClients debuginfo.DebuginfodClients = debuginfo.NopDebuginfodClients{}
 	if len(flags.Debuginfod.UpstreamServers) > 0 {
-		httpDebugInfoClient, err := debuginfo.NewHTTPDebuginfodClient(logger, flags.Debuginfod.UpstreamServers, &http.Client{
-			Transport: promconfig.NewUserAgentRoundTripper(fmt.Sprintf("parca.dev/debuginfod-client/%s", version), http.DefaultTransport),
-			Timeout:   flags.Debuginfod.HTTPRequestTimeout,
-		})
-		if err != nil {
-			level.Error(logger).Log("msg", "failed to initialize debuginfod http client", "err", err)
-			return err
-		}
-
-		debuginfodClient, err = debuginfo.NewDebuginfodClientWithObjectStorageCache(
-			logger,
+		debuginfodClients = debuginfo.NewDebuginfodClients(
+			reg,
+			tracerProvider,
+			flags.Debuginfod.UpstreamServers,
+			promconfig.NewUserAgentRoundTripper(fmt.Sprintf("parca.dev/debuginfod-client/%s", version), http.DefaultTransport),
+			flags.Debuginfod.HTTPRequestTimeout,
 			objstore.NewPrefixedBucket(bucket, "debuginfod-cache"),
-			httpDebugInfoClient,
 		)
-		if err != nil {
-			level.Error(logger).Log("msg", "failed to initialize debuginfod client cache", "err", err)
-			return err
-		}
 	}
 
 	debuginfoBucket := objstore.NewPrefixedBucket(bucket, "debuginfo")
@@ -385,7 +375,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		logger,
 		debuginfoMetadata,
 		debuginfoBucket,
-		debuginfodClient,
+		debuginfodClients,
 		debuginfo.SignedUpload{
 			Enabled: flags.Debuginfo.UploadsSignedURL,
 			Client:  prefixedSignedRequestsClient,
@@ -427,7 +417,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			reg,
 			debuginfoMetadata,
 			metastore,
-			debuginfo.NewFetcher(debuginfodClient, debuginfoBucket),
+			debuginfo.NewFetcher(debuginfodClients, debuginfoBucket),
 			flags.Debuginfo.CacheDir,
 			0,
 			symbolizer.WithDemangleMode(flags.Symbolizer.DemangleMode),

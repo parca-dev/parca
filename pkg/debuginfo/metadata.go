@@ -62,10 +62,11 @@ func (m *ObjectStoreMetadata) SetQuality(ctx context.Context, buildID string, qu
 	return nil
 }
 
-func (m *ObjectStoreMetadata) MarkAsDebuginfodSource(ctx context.Context, buildID string) error {
+func (m *ObjectStoreMetadata) MarkAsDebuginfodSource(ctx context.Context, servers []string, buildID string) error {
 	return m.write(ctx, &debuginfopb.Debuginfo{
-		BuildId: buildID,
-		Source:  debuginfopb.Debuginfo_SOURCE_DEBUGINFOD,
+		BuildId:           buildID,
+		DebuginfodServers: servers,
+		Source:            debuginfopb.Debuginfo_SOURCE_DEBUGINFOD,
 	})
 }
 
