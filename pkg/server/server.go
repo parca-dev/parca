@@ -136,7 +136,6 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, addr str
 		// Add the pprof handler to profile Parca
 		r.Handle("/debug/pprof/*", http.StripPrefix(pathPrefix, http.HandlerFunc(pprof.Index)))
 		r.Handle("/debug/pprof/fgprof", fgprof.Handler())
-		r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
 		r.HandleFunc("/debug/pprof/profile", pprof.Profile)
 		r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 		r.HandleFunc("/debug/pprof/trace", pprof.Trace)
