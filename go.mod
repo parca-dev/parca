@@ -17,7 +17,7 @@ require (
 	github.com/go-delve/delve v1.21.0
 	github.com/go-kit/log v0.2.1
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
-	github.com/google/pprof v0.0.0-20230602150820-91b7bce49751
+	github.com/google/pprof v0.0.0-20230705174524-200ffdc848b8
 	github.com/google/uuid v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.0-rc.0.0.20230515140958-a18e1e2bacb2
