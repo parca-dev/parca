@@ -16,7 +16,7 @@ COPY ui .
 COPY --from=ui-deps /app/node_modules ./node_modules
 RUN yarn install --frozen-lockfile --prefer-offline && yarn build
 
-FROM docker.io/golang:1.20.5-alpine@sha256:fd9d9d7194ec40a9a6ae89fcaef3e47c47de7746dd5848ab5343695dbbd09f8c AS builder
+FROM docker.io/golang:1.20.6-alpine@sha256:e9590019f04a00029bb5ac512c3d3dfff0ec0e66418cfb5035e22313af891d81 AS builder
 
 # renovate: datasource=go depName=github.com/go-delve/delve
 ARG DLV_VERSION=v1.21.0
@@ -45,7 +45,7 @@ COPY ./gen /app/gen
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -gcflags="all=-N -l" -o parca ./cmd/parca
 
-FROM docker.io/golang:1.20.5-alpine@sha256:fd9d9d7194ec40a9a6ae89fcaef3e47c47de7746dd5848ab5343695dbbd09f8c
+FROM docker.io/golang:1.20.6-alpine@sha256:e9590019f04a00029bb5ac512c3d3dfff0ec0e66418cfb5035e22313af891d81
 
 COPY --from=builder /go/bin/dlv /
 COPY --from=builder /go/bin/grpc-health-probe /
