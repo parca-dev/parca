@@ -126,11 +126,12 @@ type FlagsLogs struct {
 }
 
 type FlagsStorage struct {
-	GranuleSize  int64  `default:"26265625" help:"Granule size in bytes for storage."`
-	ActiveMemory int64  `default:"536870912" help:"Amount of memory to use for active storage. Defaults to 512MB."`
-	Path         string `default:"data" help:"Path to storage directory."`
-	EnableWAL    bool   `default:"false" help:"Enables write ahead log for profile storage."`
-	RowGroupSize int    `default:"8192" help:"Number of rows in each row group during compaction and persistence. Setting to <= 0 results in a single row group per file."`
+	GranuleSize         int64  `default:"26265625" help:"Granule size in bytes for storage."`
+	ActiveMemory        int64  `default:"536870912" help:"Amount of memory to use for active storage. Defaults to 512MB."`
+	Path                string `default:"data" help:"Path to storage directory."`
+	EnableWAL           bool   `default:"false" help:"Enables write ahead log for profile storage."`
+	SnapshotTriggerSize int64  `default:"134217728" help:"Number of bytes to trigger a snapshot. Defaults to 1/4 of active memory. This is only used if enable-wal is set."`
+	RowGroupSize        int    `default:"8192" help:"Number of rows in each row group during compaction and persistence. Setting to <= 0 results in a single row group per file."`
 }
 
 type FlagsSymbolizer struct {
@@ -279,7 +280,12 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	}
 
 	if flags.Storage.EnableWAL {
-		frostdbOptions = append(frostdbOptions, frostdb.WithWAL(), frostdb.WithStoragePath(flags.Storage.Path))
+		frostdbOptions = append(
+			frostdbOptions,
+			frostdb.WithWAL(),
+			frostdb.WithStoragePath(flags.Storage.Path),
+			frostdb.WithSnapshotTriggerSize(flags.Storage.SnapshotTriggerSize),
+		)
 	}
 
 	col, err := frostdb.New(frostdbOptions...)
