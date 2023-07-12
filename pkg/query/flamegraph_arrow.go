@@ -240,15 +240,16 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			// We work with the location address instead.
 			isRoot := isRoot(s.Locations, i)
 
+			if isLeaf(i) {
+				cumulative += s.Value
+			}
+
 			if len(location.Lines) == 0 {
 				if isRoot {
 					compareRows = compareRows[:0] //  reset the compare rows
 					compareRows = append(compareRows, rootsRow...)
 					// append this row afterward to not compare to itself
 					fb.parent.Reset()
-				}
-				if isLeaf(i) {
-					cumulative += s.Value
 				}
 
 				// We compare the location address to the existing rows.
@@ -292,9 +293,6 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					compareRows = append(compareRows, rootsRow...)
 					// append this row afterward to not compare to itself
 					fb.parent.Reset()
-				}
-				if isLeaf(i) {
-					cumulative += s.Value
 				}
 
 				// If there are no fields we should aggregate we can skip the comparison
