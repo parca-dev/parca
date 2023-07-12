@@ -31,9 +31,11 @@ import {getStepDuration, getStepDurationInMilliseconds} from '@parca/utilities';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
 import MatchersInput from '../MatchersInput/index';
-import ProfileMetricsGraph from '../ProfileMetricsGraph';
+import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
+import ProfileMetricsGraph, {ProfileMetricsEmptyState} from '../ProfileMetricsGraph';
 import ProfileTypeSelector from '../ProfileTypeSelector/index';
 import CompareButton from './CompareButton';
+import {useAutoQuerySelector} from './useAutoQuerySelector';
 
 export interface QuerySelection {
   expression: string;
@@ -98,6 +100,7 @@ const ProfileSelector = ({
     data: profileTypesData,
     error,
   } = useProfileTypes(queryClient);
+  const {heightStyle} = useMetricsGraphDimensions();
 
   const [timeRangeSelection, setTimeRangeSelection] = useState(
     DateTimeRange.fromRangeKey(querySelection.timeSelection)
@@ -179,6 +182,13 @@ const ProfileSelector = ({
     }
   };
 
+  useAutoQuerySelector({
+    selectedProfileName,
+    profileTypesData,
+    setProfileName,
+    setQueryExpression,
+  });
+
   const handleCompareClick = (): void => onCompareProfile();
 
   const searchDisabled =
@@ -236,61 +246,63 @@ const ProfileSelector = ({
       </Card.Header>
       {
         <Card.Body>
-          {querySelection.expression !== undefined &&
-          querySelection.expression.length > 0 &&
-          querySelection.from !== undefined &&
-          querySelection.to !== undefined ? (
-            <ProfileMetricsGraph
-              queryClient={queryClient}
-              queryExpression={querySelection.expression}
-              from={querySelection.from}
-              to={querySelection.to}
-              profile={profileSelection}
-              setTimeRange={(range: DateTimeRange) => {
-                const from = range.getFromMs();
-                const to = range.getToMs();
-                let mergedProfileParams = {};
-                if (query.profileType().delta) {
-                  mergedProfileParams = {mergeFrom: from, mergeTo: to};
-                }
-                setTimeRangeSelection(range);
-                selectQuery({
-                  expression: queryExpressionString,
-                  from,
-                  to,
-                  timeSelection: range.getRangeKey(),
-                  ...mergedProfileParams,
-                });
-              }}
-              addLabelMatcher={addLabelMatcher}
-              onPointClick={(timestamp, labels, queryExpression) => {
-                // TODO: Pass the query object via click rather than queryExpression
-                let query = Query.parse(queryExpression);
-                labels.forEach(l => {
-                  const [newQuery, updated] = query.setMatcher(l.name, l.value);
-                  if (updated) {
-                    query = newQuery;
+          <div style={{height: heightStyle}}>
+            {querySelection.expression !== undefined &&
+            querySelection.expression.length > 0 &&
+            querySelection.from !== undefined &&
+            querySelection.to !== undefined ? (
+              <ProfileMetricsGraph
+                queryClient={queryClient}
+                queryExpression={querySelection.expression}
+                from={querySelection.from}
+                to={querySelection.to}
+                profile={profileSelection}
+                setTimeRange={(range: DateTimeRange) => {
+                  const from = range.getFromMs();
+                  const to = range.getToMs();
+                  let mergedProfileParams = {};
+                  if (query.profileType().delta) {
+                    mergedProfileParams = {mergeFrom: from, mergeTo: to};
                   }
-                });
+                  setTimeRangeSelection(range);
+                  selectQuery({
+                    expression: queryExpressionString,
+                    from,
+                    to,
+                    timeSelection: range.getRangeKey(),
+                    ...mergedProfileParams,
+                  });
+                }}
+                addLabelMatcher={addLabelMatcher}
+                onPointClick={(timestamp, labels, queryExpression) => {
+                  // TODO: Pass the query object via click rather than queryExpression
+                  let query = Query.parse(queryExpression);
+                  labels.forEach(l => {
+                    const [newQuery, updated] = query.setMatcher(l.name, l.value);
+                    if (updated) {
+                      query = newQuery;
+                    }
+                  });
 
-                const stepDuration = getStepDuration(querySelection.from, querySelection.to);
-                const stepDurationInMilliseconds = getStepDurationInMilliseconds(stepDuration);
-                const mergeFrom = timestamp;
-                const mergeTo = query.profileType().delta
-                  ? mergeFrom + stepDurationInMilliseconds
-                  : mergeFrom;
-                selectProfile(new MergedProfileSelection(mergeFrom, mergeTo, query));
-              }}
-            />
-          ) : (
-            <>
-              {profileSelection == null && (
-                <div className="my-20 text-center">
-                  <p>Run a query, and the result will be displayed here.</p>
-                </div>
-              )}
-            </>
-          )}
+                  const stepDuration = getStepDuration(querySelection.from, querySelection.to);
+                  const stepDurationInMilliseconds = getStepDurationInMilliseconds(stepDuration);
+                  const mergeFrom = timestamp;
+                  const mergeTo = query.profileType().delta
+                    ? mergeFrom + stepDurationInMilliseconds
+                    : mergeFrom;
+                  selectProfile(new MergedProfileSelection(mergeFrom, mergeTo, query));
+                }}
+              />
+            ) : (
+              <>
+                {profileSelection == null ? (
+                  <ProfileMetricsEmptyState
+                    message={`Please select a profile type and click "Search" to begin.`}
+                  />
+                ) : null}
+              </>
+            )}
+          </div>
         </Card.Body>
       }
     </Card>

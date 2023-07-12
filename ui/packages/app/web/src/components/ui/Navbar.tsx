@@ -15,15 +15,17 @@ import {Disclosure} from '@headlessui/react';
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
 import GitHubButton from 'react-github-btn';
+import {Link, LinkProps, useLocation} from 'react-router-dom';
 
 import {UserPreferences} from '@parca/components';
 import {Parca, ParcaSmall} from '@parca/icons';
 import {selectDarkMode, useAppSelector} from '@parca/store';
+import {isDevModeOrPreview} from '@parca/utilities';
 
 import ReleaseNotesViewer from '../ReleaseNotesViewer';
 import ThemeToggle from './ThemeToggle';
 
-const pathPrefix = process.env.NODE_ENV === 'development' ? '' : window.PATH_PREFIX;
+const pathPrefix = isDevModeOrPreview() ? '' : window.PATH_PREFIX;
 
 const links: {[path: string]: {label: string; href: string; external: boolean}} = {
   '/': {label: 'Profiles', href: `${pathPrefix}/`, external: false},
@@ -48,17 +50,10 @@ const GitHubStarButton = () => {
 };
 
 const Navbar = () => {
-  const removePathPrefix = (href: string) =>
-    href.startsWith(window.PATH_PREFIX) ? href.slice(window.PATH_PREFIX.length) : href;
+  const location = useLocation();
 
-  const getPageByHref = (href: string = '/'): {label: string; href: string; external: boolean} => {
-    const link = removePathPrefix(href);
-    return links[link] ?? links['/'];
-  };
-
-  const currentPage = getPageByHref(window.location.pathname);
   const isCurrentPage = (item: {label: string; href: string; external: boolean}) =>
-    item.href === currentPage.href;
+    location.pathname === item.href;
 
   return (
     <Disclosure as="nav" className="relative z-10 dark:bg-gray-900">
@@ -95,23 +90,36 @@ const Navbar = () => {
                 </div>
                 <div className="hidden sm:ml-6 sm:block">
                   <div className="flex items-center gap-2">
-                    {Object.values(links).map(item => (
-                      <a
-                        key={item.label}
-                        href={item.href}
-                        target={item.external ? '_blank' : undefined}
-                        className={cx(
+                    {Object.values(links).map(item => {
+                      const href = item.href;
+                      const props: {
+                        target?: LinkProps['target'];
+                        className: string;
+                        rel?: LinkProps['rel'];
+                        'aria-current'?: 'page';
+                      } = {
+                        target: item.external ? '_blank' : undefined,
+                        className: cx(
                           isCurrentPage(item)
                             ? 'bg-gray-900 text-white dark:bg-gray-700'
                             : 'text-gray-700 hover:bg-gray-700 hover:text-white dark:text-gray-300',
                           'rounded-md px-3 py-2 text-sm font-medium'
-                        )}
-                        aria-current={isCurrentPage(item) ? 'page' : undefined}
-                        rel="noreferrer"
-                      >
-                        {item.label}
-                      </a>
-                    ))}
+                        ),
+                        rel: item.external ? 'noreferrer' : undefined,
+                      };
+                      if (isCurrentPage(item)) {
+                        props['aria-current'] = 'page';
+                      }
+                      return item.external ? (
+                        <a key={item.label} {...props} href={href}>
+                          {item.label}
+                        </a>
+                      ) : (
+                        <Link key={item.label} {...props} to={href}>
+                          {item.label}
+                        </Link>
+                      );
+                    })}
                     <div className="hidden px-3 pt-2 md:flex">
                       <GitHubStarButton />
                     </div>

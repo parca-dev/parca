@@ -139,6 +139,9 @@ message Debuginfo {
   // Quality is the quality of the debuginfo. This is set asynchonously by the
   // symbolizer when the debuginfo is actually used.
   DebuginfoQuality quality = 4;
+
+  // The debuginfod servers this piece of debuginfo is available at.
+  repeated string debuginfod_servers = 5;
 }
 
 // DebuginfoUpload contains metadata about a debuginfo upload.

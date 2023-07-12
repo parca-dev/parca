@@ -13,6 +13,7 @@
 
 import {Profiler, ProfilerProps, useEffect, useMemo, useState} from 'react';
 
+import {Table} from 'apache-arrow';
 import cx from 'classnames';
 import {scaleLinear} from 'd3';
 import graphviz from 'graphviz-wasm';
@@ -53,6 +54,7 @@ type NavigateFunction = (path: string, queryParams: any, options?: {replace?: bo
 export interface FlamegraphData {
   loading: boolean;
   data?: Flamegraph;
+  table?: Table<any>;
   total?: bigint;
   filtered?: bigint;
   error?: any;
@@ -113,7 +115,7 @@ export const ProfileView = ({
 }: ProfileViewProps): JSX.Element => {
   const {ref, dimensions} = useContainerDimensions();
   const [curPath, setCurPath] = useState<string[]>([]);
-  const [rawDashboardItems, setDashboardItems] = useURLState({
+  const [rawDashboardItems = ['icicle'], setDashboardItems] = useURLState({
     param: 'dashboard_items',
     navigateTo,
   });
@@ -230,7 +232,7 @@ export const ProfileView = ({
   }): JSX.Element => {
     switch (type) {
       case 'icicle': {
-        return flamegraphData?.data != null ? (
+        return flamegraphData?.table !== undefined || flamegraphData.data !== undefined ? (
           <ConditionalWrapper<ProfilerProps>
             condition={perf?.onRender != null}
             WrapperComponent={Profiler}
@@ -242,6 +244,7 @@ export const ProfileView = ({
             <ProfileIcicleGraph
               curPath={curPath}
               setNewCurPath={setNewCurPath}
+              table={flamegraphData.table}
               graph={flamegraphData.data}
               total={total}
               filtered={filtered}

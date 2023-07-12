@@ -32,19 +32,36 @@ import (
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 )
 
-func newFakeDebuginfodClientWithItems(items map[string]io.ReadCloser) *fakeDebuginfodClient {
-	return &fakeDebuginfodClient{
-		get: func(ctx context.Context, buildid string) (io.ReadCloser, error) {
+type fakeDebuginfodClients struct {
+	get    func(ctx context.Context, server, buildID string) (io.ReadCloser, error)
+	exists func(ctx context.Context, buildID string) ([]string, error)
+}
+
+func (f *fakeDebuginfodClients) Get(ctx context.Context, server, buildID string) (io.ReadCloser, error) {
+	return f.get(ctx, server, buildID)
+}
+
+func (f *fakeDebuginfodClients) Exists(ctx context.Context, buildID string) ([]string, error) {
+	return f.exists(ctx, buildID)
+}
+
+func newFakeDebuginfodClientsWithItems(items map[string]io.ReadCloser) *fakeDebuginfodClients {
+	return &fakeDebuginfodClients{
+		get: func(ctx context.Context, server, buildid string) (io.ReadCloser, error) {
 			item, ok := items[buildid]
-			if !ok {
+			if !ok || server != "fake" {
 				return nil, ErrDebuginfoNotFound
 			}
 
 			return item, nil
 		},
-		exists: func(ctx context.Context, buildid string) (bool, error) {
+		exists: func(ctx context.Context, buildid string) ([]string, error) {
 			_, ok := items[buildid]
-			return ok, nil
+			if ok {
+				return []string{"fake"}, nil
+			}
+
+			return nil, nil
 		},
 	}
 }
@@ -62,7 +79,7 @@ func TestStore(t *testing.T) {
 		logger,
 		metadata,
 		bucket,
-		newFakeDebuginfodClientWithItems(map[string]io.ReadCloser{
+		newFakeDebuginfodClientsWithItems(map[string]io.ReadCloser{
 			"deadbeef": io.NopCloser(bytes.NewBufferString("debuginfo1")),
 		}),
 		SignedUpload{

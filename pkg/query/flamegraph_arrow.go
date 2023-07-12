@@ -213,6 +213,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	// these change with every iteration below
 	row := builderCumulative.Len()
 	parent := parent(-1)
+	// compareRows are the rows that we compare to the current location against and potentially merge.
 	compareRows := []int{}
 
 	for _, s := range p.Samples {
@@ -221,10 +222,13 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		}
 
 		// every new sample resets the childRow to -1 indicating that we start with a leaf again.
+		// pprof stores locations in reverse order, thus we loop over locations in reverse order.
 		for i := len(s.Locations) - 1; i >= 0; i-- {
 			location := s.Locations[i]
 		stacktraces:
-			for _, line := range location.Lines {
+			// just like locations, pprof stores lines in reverse order.
+			for k := len(location.Lines) - 1; k >= 0; k-- {
+				line := location.Lines[k]
 				if isRoot(s.Locations, i) {
 					compareRows = compareRows[:0] //  reset the compare rows
 					compareRows = append(compareRows, rootsRow...)

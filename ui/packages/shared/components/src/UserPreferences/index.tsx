@@ -65,6 +65,7 @@ const UserPreferences = (): JSX.Element => {
           <div className="min-w-96 mt-10">
             <h4 className="mb-2 font-medium">Experimental Features</h4>
             <FlagToggle name="Enable Callgraph" id="callgraph" />
+            <FlagToggle name="Enable Arrow Flamegraph" id="flamegraph-arrow" />
           </div>
         </div>
         <div className="flex justify-end">
