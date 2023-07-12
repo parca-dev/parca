@@ -417,13 +417,13 @@ func (fb *flamegraphBuilder) appendRow(
 			}
 		case FlamegraphFieldMappingFile:
 			if location.Mapping != nil && location.Mapping.File != "" {
-				_ = fb.builderMappingFile.AppendString(location.Mapping.File)
+				_ = fb.builderMappingFile.Append(stringToBytes(location.Mapping.File))
 			} else {
 				fb.builderMappingFile.AppendNull()
 			}
 		case FlamegraphFieldMappingBuildID:
 			if location.Mapping != nil && location.Mapping.BuildId != "" {
-				_ = fb.builderMappingBuildID.AppendString(location.Mapping.BuildId)
+				_ = fb.builderMappingBuildID.Append(stringToBytes(location.Mapping.BuildId))
 			} else {
 				fb.builderMappingBuildID.AppendNull()
 			}
@@ -443,19 +443,19 @@ func (fb *flamegraphBuilder) appendRow(
 			}
 		case FlamegraphFieldFunctionName:
 			if line.Function != nil {
-				_ = fb.builderFunctionName.AppendString(line.Function.Name)
+				_ = fb.builderFunctionName.Append(stringToBytes(line.Function.Name))
 			} else {
 				fb.builderFunctionName.AppendNull()
 			}
 		case FlamegraphFieldFunctionSystemName:
 			if line.Function != nil {
-				_ = fb.builderFunctionSystemName.AppendString(line.Function.SystemName)
+				_ = fb.builderFunctionSystemName.Append(stringToBytes(line.Function.SystemName))
 			} else {
 				fb.builderFunctionSystemName.AppendNull()
 			}
 		case FlamegraphFieldFunctionFileName:
 			if line.Function != nil {
-				_ = fb.builderFunctionFileName.AppendString(line.Function.Filename)
+				_ = fb.builderFunctionFileName.Append(stringToBytes(line.Function.Filename))
 			} else {
 				fb.builderFunctionFileName.AppendNull()
 			}
