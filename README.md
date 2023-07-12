@@ -111,6 +111,10 @@ Flags:
                                 Defaults to 512MB.
       --storage-path="data"     Path to storage directory.
       --storage-enable-wal      Enables write ahead log for profile storage.
+      --storage-snapshot-trigger-size=134217728
+                                Number of bytes to trigger a snapshot. Defaults
+                                to 1/4 of active memory. This is only used if
+                                enable-wal is set.
       --storage-row-group-size=8192
                                 Number of rows in each row group during
                                 compaction and persistence. Setting to <= 0
