@@ -13,6 +13,8 @@
 
 import {useWindowSize} from 'react-use';
 
+import {useParcaContext} from '@parca/components';
+
 interface MetricsGraphDimensions {
   width: number;
   height: number;
@@ -24,14 +26,16 @@ interface MetricsGraphDimensions {
 const maxHeight = 402;
 const margin = 50;
 
-const heightStyle = `min(${maxHeight + margin}px, 47vw - 24px)`;
-
 export const useMetricsGraphDimensions = (): MetricsGraphDimensions => {
   let {width} = useWindowSize();
-  width = width - 58;
+  const {profileExplorer} = useParcaContext();
+  width = width - profileExplorer.PaddingX;
 
   const height = Math.min(width / 2.5, maxHeight);
   const marginRight = 20;
+  const heightStyle = `min(${maxHeight + margin}px, ${
+    profileExplorer.metricsGraph.maxHeightStyle
+  })`;
   return {
     width,
     height,
