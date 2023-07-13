@@ -224,8 +224,8 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		level.Error(logger).Log("msg", "failed to initialize object storage bucket", "err", err)
 		return err
 	}
-	bucket = client.NewInstrumentedBucket(reg, bucket)
-	bucket = objstoretracing.NewTracingBucket(tracerProvider.Tracer("objstore_bucket"), bucket)
+	bucket = objstore.WrapWithMetrics(bucket, reg, bucket.Name())
+	bucket = objstoretracing.WrapWithTraces(bucket, tracerProvider.Tracer("objstore_bucket"))
 
 	var signedRequestsClient signedrequests.Client
 	if flags.Debuginfo.UploadsSignedURL {
