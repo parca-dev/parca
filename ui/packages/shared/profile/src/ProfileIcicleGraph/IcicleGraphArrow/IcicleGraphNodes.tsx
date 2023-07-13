@@ -190,9 +190,19 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     case FIELD_FUNCTION_NAME:
       childRows.sort((a, b) => {
         // TODO: Support fallthrough to comparing addresses or something
-        const afn: string = functionNameColumn?.get(a);
-        const bfn: string = functionNameColumn?.get(b);
-        return afn.localeCompare(bfn);
+        const afn: string | null = functionNameColumn?.get(a);
+        const bfn: string | null = functionNameColumn?.get(b);
+        if (afn !== null && bfn !== null) {
+          return afn.localeCompare(bfn);
+        }
+        if (afn === null && bfn !== null) {
+          return -1;
+        }
+        if (afn !== null && bfn === null) {
+          return 1;
+        }
+        // both are null
+        return 0;
       });
       break;
     case FIELD_CUMULATIVE:
@@ -210,10 +220,10 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
           return Number(bDiff - aDiff);
         }
         if (aDiff === null && bDiff !== null) {
-          return 1;
+          return -1;
         }
         if (aDiff !== null && bDiff === null) {
-          return -1;
+          return 1;
         }
         // both are null
         return 0;

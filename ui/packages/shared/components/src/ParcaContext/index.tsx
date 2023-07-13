@@ -21,6 +21,12 @@ import Spinner from '../Spinner';
 interface Props {
   loader: ReactNode;
   noDataPrompt: ReactNode;
+  profileExplorer: {
+    PaddingX: number;
+    metricsGraph: {
+      maxHeightStyle: string;
+    };
+  };
   perf?: {
     onRender?: ProfilerOnRenderCallback;
     markInteraction: (interactionName: string, sampleCount: number | string | bigint) => void;
@@ -31,6 +37,12 @@ interface Props {
 export const defaultValue: Props = {
   loader: <Spinner />,
   noDataPrompt: <NoDataPrompt />,
+  profileExplorer: {
+    PaddingX: 58,
+    metricsGraph: {
+      maxHeightStyle: 'calc(47vw - 24px)',
+    },
+  },
   perf: {
     onRender: () => {},
     markInteraction: () => {},
