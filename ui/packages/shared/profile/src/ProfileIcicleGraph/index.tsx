@@ -13,9 +13,9 @@
 
 import {useEffect, useMemo} from 'react';
 
-import {Table} from 'apache-arrow';
+import {tableFromIPC} from 'apache-arrow';
 
-import {Flamegraph} from '@parca/client';
+import {Flamegraph, FlamegraphArrow} from '@parca/client';
 import {Button} from '@parca/components';
 import {useContainerDimensions} from '@parca/hooks';
 import {divide, selectQueryParam, type NavigateFunction} from '@parca/utilities';
@@ -31,7 +31,7 @@ export type ResizeHandler = (width: number, height: number) => void;
 interface ProfileIcicleGraphProps {
   width?: number;
   graph?: Flamegraph;
-  table?: Table<any>;
+  arrow?: FlamegraphArrow;
   total: bigint;
   filtered: bigint;
   sampleUnit: string;
@@ -44,7 +44,7 @@ interface ProfileIcicleGraphProps {
 
 const ProfileIcicleGraph = ({
   graph,
-  table,
+  arrow,
   total,
   filtered,
   curPath,
@@ -67,12 +67,11 @@ const ProfileIcicleGraph = ({
     isFiltered,
     filteredPercentage,
   ] = useMemo(() => {
-    if (graph === undefined) {
+    if (graph === undefined && arrow === undefined) {
       return ['0', '0', false, '0', '0', false, '0', '0'];
     }
 
-    // const trimmed = graph.trimmed;
-    const trimmed = 0n;
+    const trimmed = graph?.trimmed ?? arrow?.trimmed ?? 0n;
 
     const totalUnfiltered = total + filtered;
     // safeguard against division by zero
@@ -87,7 +86,7 @@ const ProfileIcicleGraph = ({
       filtered > 0,
       numberFormatter.format(divide(total * 100n, totalUnfilteredDivisor)),
     ];
-  }, [graph, filtered, total]);
+  }, [graph, arrow, total, filtered]);
 
   useEffect(() => {
     if (setActionButtons === undefined) {
@@ -107,7 +106,7 @@ const ProfileIcicleGraph = ({
     );
   }, [setNewCurPath, curPath, setActionButtons]);
 
-  if (graph === undefined && table === undefined) return <div>no data...</div>;
+  if (graph === undefined && arrow === undefined) return <div>no data...</div>;
 
   if (total === 0n && !loading) return <>Profile has no samples</>;
 
@@ -131,10 +130,10 @@ const ProfileIcicleGraph = ({
             navigateTo={navigateTo}
           />
         )}
-        {table !== undefined && (
+        {arrow !== undefined && (
           <IcicleGraphArrow
             width={dimensions?.width}
-            table={table}
+            table={tableFromIPC(arrow?.record)}
             total={total}
             filtered={filtered}
             curPath={curPath}

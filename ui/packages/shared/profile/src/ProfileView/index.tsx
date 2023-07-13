@@ -25,7 +25,13 @@ import {
   type DropResult,
 } from 'react-beautiful-dnd';
 
-import {Callgraph as CallgraphType, Flamegraph, QueryServiceClient, Top} from '@parca/client';
+import {
+  Callgraph as CallgraphType,
+  Flamegraph,
+  FlamegraphArrow,
+  QueryServiceClient,
+  Top,
+} from '@parca/client';
 import {
   Button,
   Card,
@@ -54,7 +60,7 @@ type NavigateFunction = (path: string, queryParams: any, options?: {replace?: bo
 export interface FlamegraphData {
   loading: boolean;
   data?: Flamegraph;
-  table?: Table<any>;
+  arrow?: FlamegraphArrow;
   total?: bigint;
   filtered?: bigint;
   error?: any;
@@ -232,7 +238,7 @@ export const ProfileView = ({
   }): JSX.Element => {
     switch (type) {
       case 'icicle': {
-        return flamegraphData?.table !== undefined || flamegraphData.data !== undefined ? (
+        return flamegraphData?.arrow !== undefined || flamegraphData.data !== undefined ? (
           <ConditionalWrapper<ProfilerProps>
             condition={perf?.onRender != null}
             WrapperComponent={Profiler}
@@ -244,7 +250,7 @@ export const ProfileView = ({
             <ProfileIcicleGraph
               curPath={curPath}
               setNewCurPath={setNewCurPath}
-              table={flamegraphData.table}
+              arrow={flamegraphData.arrow}
               graph={flamegraphData.data}
               total={total}
               filtered={filtered}

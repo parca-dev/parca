@@ -338,17 +338,47 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	// Now we set/overwrite the cumulative value for the root row (which is always the 0 row in our flame graphs).
 	fb.builderCumulative.Set(0, cumulative)
 
+	// Set the children for the root row to the root rows we have tracked.
+	fb.children[0] = rootsRow
+
+	// Iterate over all rows.
+	// Read their cumulative values and compare that against the childrens cumulative values.
+	// If any children is below the trimming threshold, we remove it from the children.
+	// Any trimmed value needs to be added to the total trimmed value.
+	trimmed := int64(0)
+	trimmedRows := map[int]struct{}{}
+	for i := 0; i < fb.builderCumulative.Len(); i++ {
+		v := fb.builderCumulative.Value(i)
+		tv := float32(v) * trimFraction
+		if _, found := trimmedRows[i]; found {
+			// this row has already been trimmed, so we don't need to check its children.
+			// we add its children to the trimmed list and remove its children.
+			// this is mostly an optimization to making rewriting the entire trimmed record easier later on.
+			for _, child := range fb.children[i] {
+				trimmedRows[child] = struct{}{}
+			}
+			fb.children[i] = nil
+		} else {
+			for j, child := range fb.children[i] {
+				cv := fb.builderCumulative.Value(child)
+				// if the child's cumulative value is below the trimming threshold, we remove it from the children.
+				if float32(cv) < tv {
+					trimmed += cv
+					trimmedRows[child] = struct{}{}
+					if len(fb.children[i]) == 1 {
+						fb.children[i] = nil
+					} else {
+						fb.children[i] = slices.Delete(fb.children[i], j, j+1)
+					}
+				}
+			}
+		}
+	}
+
 	// We have manually tracked each row's children.
 	// So now we need to iterate over all rows in the record and append their children.
 	// We cannot do this while building the rows as we need to append the children while iterating over the rows.
 	for i := 0; i < fb.builderCumulative.Len(); i++ {
-		if i == 0 {
-			builderChildren.Append(true)
-			for _, child := range rootsRow {
-				fb.builderChildrenValues.Append(uint32(child))
-			}
-			continue
-		}
 		if len(fb.children[i]) == 0 {
 			builderChildren.AppendNull() // leaf
 		} else {
@@ -359,7 +389,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		}
 	}
 
-	return rb.NewRecord(), cumulative, height + 1, 0, nil
+	return rb.NewRecord(), cumulative, height + 1, trimmed, nil
 }
 
 type flamegraphBuilder struct {
