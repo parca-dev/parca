@@ -11,18 +11,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useMemo} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 
 import {Table} from 'apache-arrow';
 
 import {Flamegraph} from '@parca/client';
-import {Button} from '@parca/components';
+import {Button, Select} from '@parca/components';
 import {useContainerDimensions} from '@parca/hooks';
 import {divide, selectQueryParam, type NavigateFunction} from '@parca/utilities';
 
 import DiffLegend from '../components/DiffLegend';
 import IcicleGraph from './IcicleGraph';
-import IcicleGraphArrow from './IcicleGraphArrow';
+import IcicleGraphArrow, {
+  FIELD_CUMULATIVE,
+  FIELD_DIFF,
+  FIELD_FUNCTION_NAME,
+} from './IcicleGraphArrow';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 
@@ -39,7 +43,7 @@ interface ProfileIcicleGraphProps {
   setNewCurPath: (path: string[]) => void;
   navigateTo?: NavigateFunction;
   loading: boolean;
-  setActionButtons?: (buttons: JSX.Element) => void;
+  setActionButtons?: (buttons: React.JSX.Element) => void;
 }
 
 const ProfileIcicleGraph = ({
@@ -57,6 +61,7 @@ const ProfileIcicleGraph = ({
   const compareMode: boolean =
     selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
   const {ref, dimensions} = useContainerDimensions();
+  const [sortBy, setSortBy] = useState<string>(FIELD_FUNCTION_NAME);
 
   const [
     totalFormatted,
@@ -94,18 +99,73 @@ const ProfileIcicleGraph = ({
       return;
     }
     setActionButtons(
-      <>
-        <Button
-          color="neutral"
-          onClick={() => setNewCurPath([])}
-          disabled={curPath.length === 0}
-          variant="neutral"
-        >
-          Reset View
-        </Button>
-      </>
+      <div className="flex w-full justify-end gap-2 pb-2">
+        <div className="flex w-full items-center justify-between space-x-2">
+          {table !== undefined && (
+            <div>
+              <label className="text-sm">SortBy</label>
+              <Select
+                items={[
+                  {
+                    key: FIELD_FUNCTION_NAME,
+                    disabled: false,
+                    element: {
+                      active: <>Function</>,
+                      expanded: (
+                        <>
+                          <span>Function</span>
+                        </>
+                      ),
+                    },
+                  },
+                  {
+                    key: FIELD_CUMULATIVE,
+                    disabled: false,
+                    element: {
+                      active: <>Cumulative</>,
+                      expanded: (
+                        <>
+                          <span>Cumulative</span>
+                        </>
+                      ),
+                    },
+                  },
+                  {
+                    key: FIELD_DIFF,
+                    disabled: !compareMode,
+                    element: {
+                      active: <>Diff</>,
+                      expanded: (
+                        <>
+                          <span>Diff</span>
+                        </>
+                      ),
+                    },
+                  },
+                ]}
+                selectedKey={sortBy}
+                onSelection={key => setSortBy(key)}
+                placeholder={'Sort By'}
+                primary={false}
+                disabled={false}
+              />
+            </div>
+          )}
+          <div>
+            <label>&nbsp;</label>
+            <Button
+              color="neutral"
+              onClick={() => setNewCurPath([])}
+              disabled={curPath.length === 0}
+              variant="neutral"
+            >
+              Reset View
+            </Button>
+          </div>
+        </div>
+      </div>
     );
-  }, [setNewCurPath, curPath, setActionButtons]);
+  }, [setNewCurPath, curPath, setActionButtons, sortBy, table, compareMode]);
 
   if (graph === undefined && table === undefined) return <div>no data...</div>;
 
@@ -141,6 +201,7 @@ const ProfileIcicleGraph = ({
             setCurPath={setNewCurPath}
             sampleUnit={sampleUnit}
             navigateTo={navigateTo}
+            sortBy={sortBy}
           />
         )}
       </div>
