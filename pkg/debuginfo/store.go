@@ -117,16 +117,17 @@ func NewStore(
 }
 
 const (
-	ReasonDebuginfoInDebuginfod  = "Debuginfo exists in debuginfod, therefore no upload is necessary."
-	ReasonFirstTimeSeen          = "First time we see this Build ID, and it does not exist in debuginfod, therefore please upload!"
-	ReasonUploadStale            = "A previous upload was started but not finished and is now stale, so it can be retried."
-	ReasonUploadInProgress       = "A previous upload is still in-progress and not stale yet (only stale uploads can be retried)."
-	ReasonDebuginfoAlreadyExists = "Debuginfo already exists and is not marked as invalid, therefore no new upload is needed."
-	ReasonDebuginfoInvalid       = "Debuginfo already exists but is marked as invalid, therefore a new upload is needed. Hash the debuginfo and initiate the upload."
-	ReasonDebuginfoEqual         = "Debuginfo already exists and is marked as invalid, but the proposed hash is the same as the one already available, therefore the upload is not accepted as it would result in the same invalid debuginfos."
-	ReasonDebuginfoNotEqual      = "Debuginfo already exists but is marked as invalid, therefore a new upload will be accepted."
-	ReasonDebuginfodSource       = "Debuginfo is available from debuginfod already and not marked as invalid, therefore no new upload is needed."
-	ReasonDebuginfodInvalid      = "Debuginfo is available from debuginfod already but is marked as invalid, therefore a new upload is needed."
+	ReasonDebuginfoInDebuginfod           = "Debuginfo exists in debuginfod, therefore no upload is necessary."
+	ReasonFirstTimeSeen                   = "First time we see this Build ID, and it does not exist in debuginfod, therefore please upload!"
+	ReasonUploadStale                     = "A previous upload was started but not finished and is now stale, so it can be retried."
+	ReasonUploadInProgress                = "A previous upload is still in-progress and not stale yet (only stale uploads can be retried)."
+	ReasonDebuginfoAlreadyExists          = "Debuginfo already exists and is not marked as invalid, therefore no new upload is needed."
+	ReasonDebuginfoAlreadyExistsButForced = "Debuginfo already exists and is not marked as invalid, therefore wouldn't have accepted a new upload, but accepting it because it's requested to be forced."
+	ReasonDebuginfoInvalid                = "Debuginfo already exists but is marked as invalid, therefore a new upload is needed. Hash the debuginfo and initiate the upload."
+	ReasonDebuginfoEqual                  = "Debuginfo already exists and is marked as invalid, but the proposed hash is the same as the one already available, therefore the upload is not accepted as it would result in the same invalid debuginfos."
+	ReasonDebuginfoNotEqual               = "Debuginfo already exists but is marked as invalid, therefore a new upload will be accepted."
+	ReasonDebuginfodSource                = "Debuginfo is available from debuginfod already and not marked as invalid, therefore no new upload is needed."
+	ReasonDebuginfodInvalid               = "Debuginfo is available from debuginfod already but is marked as invalid, therefore a new upload is needed."
 )
 
 // ShouldInitiateUpload returns whether an upload should be initiated for the
@@ -192,6 +193,13 @@ func (s *Store) ShouldInitiateUpload(ctx context.Context, req *debuginfopb.Shoul
 				}, nil
 			case debuginfopb.DebuginfoUpload_STATE_UPLOADED:
 				if dbginfo.Quality == nil || !dbginfo.Quality.NotValidElf {
+					if req.Force {
+						return &debuginfopb.ShouldInitiateUploadResponse{
+							ShouldInitiateUpload: true,
+							Reason:               ReasonDebuginfoAlreadyExistsButForced,
+						}, nil
+					}
+
 					return &debuginfopb.ShouldInitiateUploadResponse{
 						ShouldInitiateUpload: false,
 						Reason:               ReasonDebuginfoAlreadyExists,
@@ -256,6 +264,7 @@ func (s *Store) InitiateUpload(ctx context.Context, req *debuginfopb.InitiateUpl
 	shouldInitiateResp, err := s.ShouldInitiateUpload(ctx, &debuginfopb.ShouldInitiateUploadRequest{
 		BuildId: req.BuildId,
 		Hash:    req.Hash,
+		Force:   req.Force,
 	})
 	if err != nil {
 		return nil, err

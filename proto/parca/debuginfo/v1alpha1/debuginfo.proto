@@ -25,6 +25,8 @@ message ShouldInitiateUploadRequest {
   string build_id = 1;
   // Hash of the debuginfo to upload.
   string hash = 2;
+  // Force uploading even if valid debuginfos are already available.
+  bool force = 3;
 }
 
 // ShouldInitiateUploadResponse is the response for ShouldInitiateUpload.
@@ -43,6 +45,8 @@ message InitiateUploadRequest {
   int64 size = 2;
   // Hash of the debuginfo to upload.
   string hash = 3;
+  // Force uploading even if valid debuginfos are already available.
+  bool force = 4;
 }
 
 // InitiateUploadResponse is the response to an InitiateUploadRequest.
