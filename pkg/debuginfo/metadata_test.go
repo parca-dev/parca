@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/go-kit/log"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/objstore/client"
 	"github.com/thanos-io/objstore/providers/filesystem"
@@ -52,7 +51,7 @@ func TestMetadata(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	bucket, err := client.NewBucket(logger, cfg, prometheus.NewRegistry(), "parca/store")
+	bucket, err := client.NewBucket(logger, cfg, "parca/store")
 	require.NoError(t, err)
 
 	store, err := NewStore(

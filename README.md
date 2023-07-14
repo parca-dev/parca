@@ -93,10 +93,10 @@ Flags:
       --log-level="info"        Log level.
       --log-format="logfmt"     Configure if structured logging as JSON or as
                                 logfmt
+      --otlp-address=STRING     The endpoint to send OTLP traces to.
+      --otlp-exporter="grpc"    The OTLP exporter to use.
       --cors-allowed-origins=CORS-ALLOWED-ORIGINS,...
                                 Allowed CORS origins.
-      --otlp-address=STRING     OpenTelemetry collector address to send traces
-                                to.
       --version                 Show application version.
       --path-prefix=""          Path prefix for the UI
       --mutex-profile-fraction=0

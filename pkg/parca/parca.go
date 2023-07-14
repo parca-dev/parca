@@ -43,12 +43,9 @@ import (
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/thanos-io/objstore"
 	"github.com/thanos-io/objstore/client"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	objstoretracing "github.com/thanos-io/objstore/tracing/opentelemetry"
+	tracing "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/resource"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -71,6 +68,7 @@ import (
 	"github.com/parca-dev/parca/pkg/server"
 	"github.com/parca-dev/parca/pkg/signedrequests"
 	"github.com/parca-dev/parca/pkg/symbolizer"
+	"github.com/parca-dev/parca/pkg/tracer"
 )
 
 const (
@@ -86,9 +84,9 @@ type Flags struct {
 	Port        string `default:"" help:"(DEPRECATED) Use http-address instead."`
 
 	Logs FlagsLogs `embed:"" prefix:"log-"`
+	OTLP FlagsOTLP `embed:"" prefix:"otlp-"`
 
 	CORSAllowedOrigins []string `help:"Allowed CORS origins."`
-	OTLPAddress        string   `help:"OpenTelemetry collector address to send traces to."`
 	Version            bool     `help:"Show application version."`
 	PathPrefix         string   `default:"" help:"Path prefix for the UI"`
 
@@ -123,6 +121,12 @@ type Flags struct {
 type FlagsLogs struct {
 	Level  string `enum:"error,warn,info,debug" default:"info" help:"Log level."`
 	Format string `enum:"logfmt,json" default:"logfmt" help:"Configure if structured logging as JSON or as logfmt"`
+}
+
+// FlagsOTLP provides OTLP configuration flags.
+type FlagsOTLP struct {
+	Address  string `help:"The endpoint to send OTLP traces to."`
+	Exporter string `default:"grpc"                              enum:"grpc,http,stdout" help:"The OTLP exporter to use."`
 }
 
 type FlagsStorage struct {
@@ -163,16 +167,23 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	goruntime.SetBlockProfileRate(flags.BlockProfileRate)
 	goruntime.SetMutexProfileFraction(flags.MutexProfileFraction)
 
-	tracerProvider := trace.NewNoopTracerProvider()
-	if flags.OTLPAddress != "" {
-		var closer func()
+	// Initialize tracing.
+	var (
+		exporter       tracer.Exporter
+		tracerProvider = trace.NewNoopTracerProvider()
+	)
+	if flags.OTLP.Address != "" {
 		var err error
-		tracerProvider, closer, err = initTracer(logger, flags.OTLPAddress)
+
+		exporter, err = tracer.NewExporter(flags.OTLP.Exporter, flags.OTLP.Address)
 		if err != nil {
-			level.Error(logger).Log("msg", "failed to initialize tracing", "err", err)
-			return err
+			level.Error(logger).Log("msg", "failed to create tracing exporter", "err", err)
 		}
-		defer closer()
+		// NewExporter always returns a non-nil exporter and non-nil error.
+		tracerProvider, err = tracer.NewProvider(ctx, version, exporter)
+		if err != nil {
+			level.Error(logger).Log("msg", "failed to create tracing provider", "err", err)
+		}
 	}
 
 	// Enable arrow ingestion
@@ -208,11 +219,13 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	bucket, err := client.NewBucket(logger, bucketCfg, reg, "parca")
+	bucket, err := client.NewBucket(logger, bucketCfg, "parca")
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize object storage bucket", "err", err)
 		return err
 	}
+	bucket = objstore.WrapWithMetrics(bucket, reg, bucket.Name())
+	bucket = objstoretracing.WrapWithTraces(bucket, tracerProvider.Tracer("objstore_bucket"))
 
 	var signedRequestsClient signedrequests.Client
 	if flags.Debuginfo.UploadsSignedURL {
@@ -317,7 +330,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		level.Error(logger).Log("msg", "schema from definition", "err", err)
 		return err
 	}
-
 	s := profilestore.NewProfileColumnStore(
 		logger,
 		tracerProvider.Tracer("profilestore"),
@@ -326,7 +338,24 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		schema,
 		flags.Hidden.DebugNormalizeAddresses,
 	)
-	conn, err := grpc.Dial(flags.ProfileShareServer, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
+
+	propagators := propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
+	opts := []grpc.DialOption{
+		grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})),
+		grpc.WithChainUnaryInterceptor(
+			tracing.UnaryClientInterceptor(
+				tracing.WithTracerProvider(tracerProvider),
+				tracing.WithPropagators(propagators),
+			),
+		),
+		grpc.WithChainStreamInterceptor(
+			tracing.StreamClientInterceptor(
+				tracing.WithTracerProvider(tracerProvider),
+				tracing.WithPropagators(propagators),
+			),
+		),
+	}
+	conn, err := grpc.Dial(flags.ProfileShareServer, opts...)
 	if err != nil {
 		return fmt.Errorf("failed to create gRPC connection to ProfileShareServer: %s, %w", flags.ProfileShareServer, err)
 	}
@@ -417,6 +446,30 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 
 	var gr run.Group
 	gr.Add(run.SignalHandler(ctx, os.Interrupt, syscall.SIGINT, syscall.SIGTERM))
+
+	// Run group of OTL exporter.
+	if exporter != nil {
+		logger := log.With(logger, "group", "otlp_exporter")
+		ctx, cancel := context.WithCancel(ctx)
+		gr.Add(func() error {
+			if err := exporter.Start(ctx); err != nil {
+				return fmt.Errorf("failed to start exporter: %w", err)
+			}
+			<-ctx.Done()
+			return nil
+		}, func(error) {
+			level.Debug(logger).Log("msg", "shutting down otlp exporter")
+			cancel()
+
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+
+			if err := exporter.Shutdown(ctx); err != nil {
+				level.Error(logger).Log("msg", "failed to stop exporter", "err", err)
+			}
+		})
+	}
+
 	{
 		s := symbolizer.New(
 			logger,
@@ -585,9 +638,22 @@ func runScraper(
 	)
 	reg.MustRegister(metrics)
 
+	propagators := propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
+
 	opts := []grpc.DialOption{
-		grpc.WithUnaryInterceptor(
+		grpc.WithChainUnaryInterceptor(
 			metrics.UnaryClientInterceptor(),
+			tracing.UnaryClientInterceptor(
+				tracing.WithTracerProvider(tracer),
+				tracing.WithPropagators(propagators),
+			),
+		),
+		grpc.WithChainStreamInterceptor(
+			metrics.StreamClientInterceptor(),
+			tracing.StreamClientInterceptor(
+				tracing.WithTracerProvider(tracer),
+				tracing.WithPropagators(propagators),
+			),
 		),
 	}
 	if flags.Insecure {
@@ -761,46 +827,4 @@ func getDiscoveryConfigs(cfgs []*config.ScrapeConfig) map[string]discovery.Confi
 		c[v.JobName] = v.ServiceDiscoveryConfigs
 	}
 	return c
-}
-
-func initTracer(logger log.Logger, otlpAddress string) (trace.TracerProvider, func(), error) {
-	ctx := context.Background()
-
-	res, err := resource.New(ctx,
-		resource.WithAttributes(
-			semconv.ServiceNameKey.String("parca"),
-		),
-	)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create resource: %w", err)
-	}
-
-	// Set up a trace exporter
-	exporter, err := otlptracegrpc.New(ctx,
-		otlptracegrpc.WithInsecure(),
-		otlptracegrpc.WithEndpoint(otlpAddress),
-	)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create trace exporter: %w", err)
-	}
-
-	// Register the trace exporter with a TracerProvider, using a batch
-	// span processor to aggregate spans before export.
-	bsp := sdktrace.NewBatchSpanProcessor(exporter)
-	provider := sdktrace.NewTracerProvider(
-		sdktrace.WithSampler(sdktrace.AlwaysSample()),
-		sdktrace.WithResource(res),
-		sdktrace.WithSpanProcessor(bsp),
-	)
-
-	// set global propagator to tracecontext (the default is no-op).
-	otel.SetTextMapPropagator(propagation.TraceContext{})
-	otel.SetTracerProvider(provider)
-
-	return provider, func() {
-		err := exporter.Shutdown(context.Background())
-		if err != nil {
-			level.Error(logger).Log("msg", "failed to stop exporter", "err", err)
-		}
-	}, nil
 }

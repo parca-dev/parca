@@ -441,7 +441,7 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 	})
 	require.NoError(t, err)
 
-	bucket, err := client.NewBucket(logger, cfg, prometheus.NewRegistry(), "parca/store")
+	bucket, err := client.NewBucket(logger, cfg, "parca/store")
 	require.NoError(t, err)
 
 	metadata := debuginfo.NewObjectStoreMetadata(logger, bucket)

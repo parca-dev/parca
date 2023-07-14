@@ -28,17 +28,20 @@ require (
 	github.com/klauspost/compress v1.16.7
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
-	github.com/polarsignals/frostdb v0.0.0-20230626160949-575a3f643680
+	github.com/polarsignals/frostdb v0.0.0-20230713135300-a7f96ef74c0e
 	github.com/prometheus/client_golang v1.16.0
 	github.com/prometheus/common v0.44.0
 	github.com/prometheus/prometheus v0.45.0
 	github.com/segmentio/parquet-go v0.0.0-20230622230624-510764ae9e80
 	github.com/stretchr/testify v1.8.4
-	github.com/thanos-io/objstore v0.0.0-20230522103316-23ebe2eacadd
+	github.com/thanos-io/objstore v0.0.0-20230713070940-eb01c83b89a4
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.42.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.42.0
 	go.opentelemetry.io/otel v1.16.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.16.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.16.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.16.0
+	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.16.0
 	go.opentelemetry.io/otel/sdk v1.16.0
 	go.opentelemetry.io/otel/trace v1.16.0
 	go.uber.org/atomic v1.11.0
@@ -112,7 +115,7 @@ require (
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/efficientgo/core v1.0.0-rc.0.0.20221201130417-ba593f67d2a4 // indirect
+	github.com/efficientgo/core v1.0.0-rc.2 // indirect
 	github.com/emicklei/go-restful/v3 v3.10.1 // indirect
 	github.com/envoyproxy/go-control-plane v0.11.1-0.20230524094728-9239064ad72f // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.0.1 // indirect
@@ -192,7 +195,6 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
-	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/oracle/oci-go-sdk/v65 v65.13.0 // indirect
 	github.com/ovh/go-ovh v1.4.1 // indirect
 	github.com/pierrec/lz4/v4 v4.1.17 // indirect
@@ -201,7 +203,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/polarsignals/wal v0.0.0-20230509073041-6731e243de20 // indirect
 	github.com/prometheus/client_model v0.4.0 // indirect
-	github.com/prometheus/procfs v0.10.1 // indirect
+	github.com/prometheus/procfs v0.11.0 // indirect
 	github.com/rivo/uniseg v0.3.4 // indirect
 	github.com/rs/cors v1.8.0 // indirect
 	github.com/rs/xid v1.4.0 // indirect
@@ -216,7 +218,6 @@ require (
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.16.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.16.0 // indirect
 	go.opentelemetry.io/otel/metric v1.16.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.19.0 // indirect
 	go.uber.org/goleak v1.2.1 // indirect
