@@ -89,7 +89,6 @@ snapshot:
   name_template: "{{ incpatch .Tag }}-{{ .ShortCommit }}"
 source:
   enabled: true
-  rlcp: true
 release:
   prerelease: auto
   # Defaults to empty.
