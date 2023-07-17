@@ -100,7 +100,7 @@ const ProfileSelector = ({
     data: profileTypesData,
     error,
   } = useProfileTypes(queryClient);
-  const {heightStyle} = useMetricsGraphDimensions();
+  const {heightStyle} = useMetricsGraphDimensions(comparing);
 
   const [timeRangeSelection, setTimeRangeSelection] = useState(
     DateTimeRange.fromRangeKey(querySelection.timeSelection)
@@ -257,6 +257,7 @@ const ProfileSelector = ({
                 from={querySelection.from}
                 to={querySelection.to}
                 profile={profileSelection}
+                comparing={comparing}
                 setTimeRange={(range: DateTimeRange) => {
                   const from = range.getFromMs();
                   const to = range.getToMs();
