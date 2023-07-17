@@ -93,10 +93,10 @@ Flags:
       --log-level="info"        Log level.
       --log-format="logfmt"     Configure if structured logging as JSON or as
                                 logfmt
+      --otlp-address=STRING     The endpoint to send OTLP traces to.
+      --otlp-exporter="grpc"    The OTLP exporter to use.
       --cors-allowed-origins=CORS-ALLOWED-ORIGINS,...
                                 Allowed CORS origins.
-      --otlp-address=STRING     OpenTelemetry collector address to send traces
-                                to.
       --version                 Show application version.
       --path-prefix=""          Path prefix for the UI
       --mutex-profile-fraction=0
@@ -111,6 +111,10 @@ Flags:
                                 Defaults to 512MB.
       --storage-path="data"     Path to storage directory.
       --storage-enable-wal      Enables write ahead log for profile storage.
+      --storage-snapshot-trigger-size=134217728
+                                Number of bytes to trigger a snapshot. Defaults
+                                to 1/4 of active memory. This is only used if
+                                enable-wal is set.
       --storage-row-group-size=8192
                                 Number of rows in each row group during
                                 compaction and persistence. Setting to <= 0
