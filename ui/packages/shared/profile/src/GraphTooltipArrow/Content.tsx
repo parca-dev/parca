@@ -181,14 +181,16 @@ const TooltipMetaInfo = ({
     .sort((a, b) => {
       return a[0].localeCompare(b[0]);
     })
-    .map(l => (
-      <span
-        key={l[0]}
-        className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
-      >
-        {l[0]}=&quot;{l[1]}&quot;
-      </span>
-    ));
+    .map(
+      (l): React.JSX.Element => (
+        <span
+          key={l[0]}
+          className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+        >
+          {`${l[0]}="${l[1] as string}"`}
+        </span>
+      )
+    );
 
   return (
     <>
