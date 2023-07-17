@@ -374,6 +374,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			"stacktraces",
 			metastore,
 		),
+		memory.DefaultAllocator,
 	)
 
 	ctx, cancel := context.WithCancel(ctx)

@@ -257,6 +257,7 @@ func TestConsistency(t *testing.T) {
 			"stacktraces",
 			metastore,
 		),
+		memory.DefaultAllocator,
 	)
 
 	ts := timestamppb.New(timestamp.Time(1608199718549)) // time_nanos of the profile divided by 1e6
@@ -366,6 +367,7 @@ func TestPGOE2e(t *testing.T) {
 			"stacktraces",
 			metastore,
 		),
+		memory.DefaultAllocator,
 	)
 
 	res, err := api.Query(ctx, &querypb.QueryRequest{
@@ -464,6 +466,7 @@ func TestLabels(t *testing.T) {
 			"labels",
 			metastore,
 		),
+		memory.DefaultAllocator,
 	)
 
 	ts := timestamppb.New(timestamp.Time(1677488315039)) // time_nanos of the profile divided by 1e6
