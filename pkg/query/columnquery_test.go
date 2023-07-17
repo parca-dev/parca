@@ -97,6 +97,7 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 			"stacktraces",
 			metastore,
 		),
+		memory.DefaultAllocator,
 	)
 	_, err = api.QueryRange(ctx, &pb.QueryRangeRequest{
 		Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
@@ -219,6 +220,7 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 			"stacktraces",
 			metastore,
 		),
+		memory.DefaultAllocator,
 	)
 	res, err := api.QueryRange(ctx, &pb.QueryRangeRequest{
 		Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
@@ -313,6 +315,7 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 			"stacktraces",
 			metastore,
 		),
+		memory.DefaultAllocator,
 	)
 	ts := timestamppb.New(timestamp.Time(p.TimeNanos / time.Millisecond.Nanoseconds()))
 	res, err := api.Query(ctx, &pb.QueryRequest{
@@ -441,6 +444,7 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 			"stacktraces",
 			metastore,
 		),
+		memory.DefaultAllocator,
 	)
 
 	res, err := api.QueryRange(ctx, &pb.QueryRangeRequest{
@@ -542,6 +546,7 @@ func TestColumnQueryAPIQueryCumulative(t *testing.T) {
 			"stacktraces",
 			metastore,
 		),
+		memory.DefaultAllocator,
 	)
 
 	// These have been extracted from the profiles above.
@@ -751,6 +756,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 			"stacktraces",
 			metastore,
 		),
+		memory.DefaultAllocator,
 	)
 
 	res, err := api.Query(ctx, &pb.QueryRequest{
@@ -932,6 +938,7 @@ func TestColumnQueryAPITypes(t *testing.T) {
 			"stacktraces",
 			metastore,
 		),
+		memory.DefaultAllocator,
 	)
 	res, err := api.ProfileTypes(ctx, &pb.ProfileTypesRequest{})
 	require.NoError(t, err)
@@ -1024,6 +1031,7 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 			"stacktraces",
 			metastore,
 		),
+		memory.DefaultAllocator,
 	)
 	res, err := api.Labels(ctx, &pb.LabelsRequest{})
 	require.NoError(t, err)
@@ -1108,6 +1116,7 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 			"stacktraces",
 			metastore,
 		),
+		memory.DefaultAllocator,
 	)
 	res, err := api.Values(ctx, &pb.ValuesRequest{
 		LabelName: "job",
@@ -1136,7 +1145,7 @@ func BenchmarkQuery(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, _ = RenderReport(ctx, tracer, sp, pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW, 0, 0, NewTableConverterPool())
+		_, _ = RenderReport(ctx, tracer, sp, pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW, 0, 0, NewTableConverterPool(), memory.DefaultAllocator)
 	}
 }
 

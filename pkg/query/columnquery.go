@@ -21,6 +21,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/apache/arrow/go/v13/arrow/memory"
 	"github.com/go-kit/log"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -54,6 +55,7 @@ type ColumnQueryAPI struct {
 	querier     Querier
 
 	tableConverterPool *sync.Pool
+	mem                memory.Allocator
 }
 
 func NewColumnQueryAPI(
@@ -61,6 +63,7 @@ func NewColumnQueryAPI(
 	tracer trace.Tracer,
 	shareClient sharepb.ShareServiceClient,
 	querier Querier,
+	mem memory.Allocator,
 ) *ColumnQueryAPI {
 	return &ColumnQueryAPI{
 		logger:             logger,
@@ -68,6 +71,7 @@ func NewColumnQueryAPI(
 		shareClient:        shareClient,
 		querier:            querier,
 		tableConverterPool: NewTableConverterPool(),
+		mem:                mem,
 	}
 }
 
@@ -237,7 +241,7 @@ func (q *ColumnQueryAPI) renderReport(
 	nodeTrimThreshold float32,
 	filtered int64,
 ) (*pb.QueryResponse, error) {
-	return RenderReport(ctx, q.tracer, p, typ, nodeTrimThreshold, filtered, q.tableConverterPool)
+	return RenderReport(ctx, q.tracer, p, typ, nodeTrimThreshold, filtered, q.tableConverterPool, q.mem)
 }
 
 func RenderReport(
@@ -248,6 +252,7 @@ func RenderReport(
 	nodeTrimThreshold float32,
 	filtered int64,
 	pool *sync.Pool,
+	mem memory.Allocator,
 ) (*pb.QueryResponse, error) {
 	ctx, span := tracer.Start(ctx, "renderReport")
 	span.SetAttributes(attribute.String("reportType", typ.String()))
@@ -287,7 +292,7 @@ func RenderReport(
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW:
 		// TODO: Make the fields to aggregate by configurable via the API.
-		fa, total, err := GenerateFlamegraphArrow(ctx, tracer, p, []string{FlamegraphFieldFunctionName}, nodeTrimFraction)
+		fa, total, err := GenerateFlamegraphArrow(ctx, mem, tracer, p, []string{FlamegraphFieldFunctionName}, nodeTrimFraction)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate arrow flamegraph: %v", err.Error())
 		}
