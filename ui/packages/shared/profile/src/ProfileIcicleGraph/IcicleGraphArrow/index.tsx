@@ -32,6 +32,7 @@ import {
 } from '@parca/utilities';
 
 import GraphTooltipArrow from '../../GraphTooltipArrow';
+import GraphTooltipArrowContent from '../../GraphTooltipArrow/Content';
 import ColorStackLegend from './ColorStackLegend';
 import {IcicleNode, RowHeight, mappingColors} from './IcicleGraphNodes';
 import {extractFeature} from './utils';
@@ -39,9 +40,12 @@ import {extractFeature} from './utils';
 export const FIELD_MAPPING_FILE = 'mapping_file';
 export const FIELD_MAPPING_BUILD_ID = 'mapping_build_id';
 export const FIELD_LOCATION_ADDRESS = 'location_address';
+export const FIELD_LOCATION_LINE = 'location_line';
 export const FIELD_FUNCTION_NAME = 'function_name';
 export const FIELD_FUNCTION_FILE_NAME = 'function_file_name';
+export const FIELD_FUNCTION_START_LINE = 'function_startline';
 export const FIELD_CHILDREN = 'children';
+export const FIELD_LABELS = 'labels';
 export const FIELD_CUMULATIVE = 'cumulative';
 export const FIELD_DIFF = 'diff';
 
@@ -73,6 +77,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const isDarkMode = useAppSelector(selectDarkMode);
 
   const [height, setHeight] = useState(0);
+  const [hoveringRow, setHoveringRow] = useState<number | null>(null);
   const sortBy = FIELD_FUNCTION_NAME; // TODO: make this configurable via UI
   const svg = useRef(null);
   const ref = useRef<SVGGElement>(null);
@@ -166,13 +171,16 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
         navigateTo={navigateTo}
         compareMode={compareMode}
       />
-      <GraphTooltipArrow
-        table={table}
-        unit={sampleUnit}
-        total={total}
-        totalUnfiltered={total + filtered}
-        contextElement={svg.current}
-      />
+      <GraphTooltipArrow contextElement={svg.current}>
+        <GraphTooltipArrowContent
+          table={table}
+          row={hoveringRow}
+          isFixed={false}
+          total={total}
+          totalUnfiltered={total + filtered}
+          unit={sampleUnit}
+        />
+      </GraphTooltipArrow>
       <svg
         className="font-robotoMono"
         width={width}
@@ -198,6 +206,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               level={0}
               isRoot={true}
               searchString={currentSearchString}
+              setHoveringRow={setHoveringRow}
               sortBy={sortBy}
               darkMode={isDarkMode}
               compareMode={compareMode}
