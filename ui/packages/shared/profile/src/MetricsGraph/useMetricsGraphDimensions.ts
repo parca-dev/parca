@@ -26,15 +26,19 @@ interface MetricsGraphDimensions {
 const maxHeight = 402;
 const margin = 50;
 
-export const useMetricsGraphDimensions = (): MetricsGraphDimensions => {
+export const useMetricsGraphDimensions = (comparing: boolean): MetricsGraphDimensions => {
   let {width} = useWindowSize();
   const {profileExplorer} = useParcaContext();
   width = width - profileExplorer.PaddingX;
-
+  if (comparing) {
+    width = width / 2 - 32;
+  }
   const height = Math.min(width / 2.5, maxHeight);
   const marginRight = 20;
   const heightStyle = `min(${maxHeight + margin}px, ${
-    profileExplorer.metricsGraph.maxHeightStyle
+    comparing
+      ? profileExplorer.metricsGraph.maxHeightStyle.compareMode
+      : profileExplorer.metricsGraph.maxHeightStyle.default
   })`;
   return {
     width,
