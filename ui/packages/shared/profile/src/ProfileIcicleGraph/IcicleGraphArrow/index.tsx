@@ -160,6 +160,58 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     return scaleLinear([0n, total], [0, width]);
   }, [total, width]);
 
+  // useMemo for the root graph as it otherwise renders the whole graph if the hoveringRow changes.
+  const root = useMemo(() => {
+    return (
+      <svg
+        className="font-robotoMono"
+        width={width}
+        height={height}
+        preserveAspectRatio="xMinYMid"
+        ref={svg}
+      >
+        <g ref={ref}>
+          <g transform={'translate(0, 0)'}>
+            <IcicleNode
+              table={table}
+              row={0} // root is always row 0 in the arrow record
+              mappingColors={mappingColors}
+              x={0}
+              y={0}
+              totalWidth={width ?? 1}
+              height={RowHeight}
+              setCurPath={setCurPath}
+              curPath={curPath}
+              total={total}
+              xScale={xScale}
+              path={[]}
+              level={0}
+              isRoot={true}
+              searchString={currentSearchString}
+              setHoveringRow={setHoveringRow}
+              sortBy={sortBy}
+              darkMode={isDarkMode}
+              compareMode={compareMode}
+            />
+          </g>
+        </g>
+      </svg>
+    );
+  }, [
+    compareMode,
+    curPath,
+    currentSearchString,
+    height,
+    isDarkMode,
+    mappingColors,
+    setCurPath,
+    sortBy,
+    table,
+    total,
+    width,
+    xScale,
+  ]);
+
   if (table.numRows === 0 || width === undefined) {
     return <></>;
   }
@@ -181,39 +233,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           unit={sampleUnit}
         />
       </GraphTooltipArrow>
-      <svg
-        className="font-robotoMono"
-        width={width}
-        height={height}
-        preserveAspectRatio="xMinYMid"
-        ref={svg}
-      >
-        <g ref={ref}>
-          <g transform={'translate(0, 0)'}>
-            <IcicleNode
-              table={table}
-              row={0} // root is always row 0 in the arrow record
-              mappingColors={mappingColors}
-              x={0}
-              y={0}
-              totalWidth={width}
-              height={RowHeight}
-              setCurPath={setCurPath}
-              curPath={curPath}
-              total={total}
-              xScale={xScale}
-              path={[]}
-              level={0}
-              isRoot={true}
-              searchString={currentSearchString}
-              setHoveringRow={setHoveringRow}
-              sortBy={sortBy}
-              darkMode={isDarkMode}
-              compareMode={compareMode}
-            />
-          </g>
-        </g>
-      </svg>
+      {root}
     </div>
   );
 });
