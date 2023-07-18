@@ -83,6 +83,8 @@ func GenerateFlamegraphArrow(ctx context.Context, mem memory.Allocator, tracer t
 	}, cumulative, nil
 }
 
+const labelsDiffer = "THESELABELSDIFFER"
+
 func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tracer trace.Tracer, p *profile.Profile, aggregate []string, trimFraction float32) (arrow.Record, int64, int32, int64, error) {
 	aggregateFields := make(map[string]struct{}, len(aggregate))
 	for _, f := range aggregate {
@@ -121,6 +123,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		// This keeps track of a row's children and will be converted to an arrow array of lists at the end.
 		// Allocating for an average of 8 children per stacktrace upfront.
 		children: make([][]int, len(p.Samples)*8),
+		labels:   make(map[int]map[string]string),
 
 		// TODO: Potentially good to .Reserve() the number of samples to avoid re-allocations
 		builderMappingStart:   rb.Field(schema.FieldIndices(FlamegraphFieldMappingStart)[0]).(*array.Uint64Builder),
@@ -168,26 +171,19 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			if height > 0 {
 				return true
 			}
-
-			isNull := fb.builderLabels.IsNull(row)
-			if len(pprofLabels) == 0 && isNull {
+			if len(pprofLabels) == 0 && fb.labels[row] == nil {
 				return true
 			}
-			if len(pprofLabels) > 0 && isNull {
+			if len(pprofLabels) > 0 && fb.labels[row] == nil {
 				return false
 			}
-			if len(pprofLabels) == 0 && !isNull {
+			if len(pprofLabels) == 0 && fb.labels[row] != nil {
 				return false
 			}
-			// Both sides have values, let's compare them properly.
-			value := fb.builderLabels.Value(fb.builderLabels.GetValueIndex(row))
-			compareLabels := map[string]string{}
-			err := json.Unmarshal(value, &compareLabels)
-			if err != nil {
+			if len(pprofLabels) != len(fb.labels[row]) {
 				return false
 			}
-
-			return maps.Equal(pprofLabels, compareLabels)
+			return maps.Equal(pprofLabels, fb.labels[row])
 		default:
 			return false
 		}
@@ -207,7 +203,6 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	fb.builderFunctionName.AppendNull()
 	fb.builderFunctionSystemName.AppendNull()
 	fb.builderFunctionFileName.AppendNull()
-	fb.builderLabels.AppendNull()
 	// The cumulative values is calculated and at the end set to the correct value.
 	fb.builderCumulative.Append(0)
 	fb.builderDiff.AppendNull()
@@ -274,7 +269,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					rootsRow = append(rootsRow, row)
 				}
 
-				err := fb.appendRow(location, profile.LocationLine{}, s, row, isRoot)
+				err := fb.appendRow(location, profile.LocationLine{}, s, row)
 				if err != nil {
 					return nil, 0, 0, 0, err
 				}
@@ -305,6 +300,24 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 							}
 						}
 
+						// If we don't group by the labels, we only want to keep the labels if they are the same.
+						if _, groupBy := aggregateFields[FlamegraphFieldLabels]; !groupBy {
+							// Only if the current sample and the sample to compare contain labels we compare them.
+							if len(s.Label) > 0 && fb.labels[cr] == nil {
+								// Previously this row didn't have labels, but now it does.
+								fb.labels[cr] = maps.Clone(s.Label)
+							}
+							if len(s.Label) > 0 && fb.labels[cr] != nil {
+								for k, v := range s.Label {
+									if fb.labels[cr][k] != v {
+										// If the same key differs in value, we remove this label from the row.
+										// The labelsDiffer value is later ignored when marshalling the row's labels.
+										fb.labels[cr][k] = labelsDiffer
+									}
+								}
+							}
+						}
+
 						// All fields match, so we can aggregate this new row with the existing one.
 						fb.builderCumulative.Add(cr, s.Value)
 						// Continue with this row as the parent for the next iteration and compare to its children.
@@ -322,7 +335,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					rootsRow = append(rootsRow, row)
 				}
 
-				err := fb.appendRow(location, line, s, row, isRoot)
+				err := fb.appendRow(location, line, s, row)
 				if err != nil {
 					return nil, 0, 0, 0, err
 				}
@@ -357,6 +370,28 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			}
 		}
 	}
+	for i := 0; i < fb.builderCumulative.Len(); i++ {
+		if ls, ok := fb.labels[i]; ok {
+			for k, v := range ls {
+				if v == labelsDiffer {
+					delete(ls, k)
+				}
+			}
+			if len(ls) > 0 {
+				lsbytes, err := json.Marshal(ls)
+				if err != nil {
+					return nil, 0, 0, 0, err
+				}
+				if err := fb.builderLabels.Append(lsbytes); err != nil {
+					return nil, 0, 0, 0, err
+				}
+			} else {
+				fb.builderLabels.AppendNull()
+			}
+		} else {
+			fb.builderLabels.AppendNull()
+		}
+	}
 
 	return rb.NewRecord(), cumulative, height + 1, 0, nil
 }
@@ -366,6 +401,7 @@ type flamegraphBuilder struct {
 	schema   *arrow.Schema
 	parent   parent
 	children [][]int
+	labels   map[int]map[string]string
 
 	builderMappingStart       *array.Uint64Builder
 	builderMappingLimit       *array.Uint64Builder
@@ -391,7 +427,6 @@ func (fb *flamegraphBuilder) appendRow(
 	line profile.LocationLine,
 	s *profile.SymbolizedSample,
 	row int,
-	isRoot bool,
 ) error {
 	for j := range fb.rb.Fields() {
 		switch fb.schema.Field(j).Name {
@@ -460,16 +495,9 @@ func (fb *flamegraphBuilder) appendRow(
 			}
 		// Values
 		case FlamegraphFieldLabels:
-			// Only append labels if there are any and only on the root of the stack.
-			// Otherwise, append null.
-			if len(s.Label) > 0 && isRoot {
-				lset, err := json.Marshal(s.Label)
-				if err != nil {
-					return err
-				}
-				_ = fb.builderLabels.Append(lset)
-			} else {
-				fb.builderLabels.AppendNull()
+			if len(s.Label) > 0 {
+				// We need to clone the map because the map may end up different for each sample.
+				fb.labels[row] = maps.Clone(s.Label)
 			}
 		case FlamegraphFieldChildren:
 			if len(fb.children) == row {
