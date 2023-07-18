@@ -634,3 +634,37 @@ func TestParents(t *testing.T) {
 	require.Equal(t, -1, p.Get())
 	require.False(t, p.Has())
 }
+
+func TestMapsIntersection(t *testing.T) {
+	// empty
+	require.Equal(t, map[string]string{}, mapsIntersection([]map[string]string{}))
+	require.Equal(t, map[string]string{}, mapsIntersection([]map[string]string{{}}))
+	require.Equal(t, map[string]string{}, mapsIntersection([]map[string]string{{}, {}}))
+	require.Equal(t, map[string]string{}, mapsIntersection([]map[string]string{{}, {"thread": "1"}}))
+	require.Equal(t, map[string]string{}, mapsIntersection([]map[string]string{{"thread": "1"}, {}}))
+	// one
+	require.Equal(t, map[string]string{"thread": "1"}, mapsIntersection([]map[string]string{{"thread": "1"}}))
+	require.Equal(t, map[string]string{"thread": "1"}, mapsIntersection([]map[string]string{
+		{"thread": "1"},
+		{"thread": "1"},
+	}))
+	require.Equal(t, map[string]string{"thread": "1"}, mapsIntersection([]map[string]string{
+		{"thread": "1"},
+		{"thread": "1"},
+		{"thread": "1"},
+	}))
+	// two
+	require.Equal(t, map[string]string{"thread": "1", "thread_name": "name"}, mapsIntersection([]map[string]string{
+		{"thread": "1", "thread_name": "name"},
+		{"thread": "1", "thread_name": "name"},
+	}))
+	// different
+	require.Equal(t, map[string]string{}, mapsIntersection([]map[string]string{
+		{"thread": "1"},
+		{"thread": "2"},
+	}))
+	require.Equal(t, map[string]string{"thread_name": "name"}, mapsIntersection([]map[string]string{
+		{"thread": "1", "thread_name": "name"},
+		{"thread": "2", "thread_name": "name"},
+	}))
+}
