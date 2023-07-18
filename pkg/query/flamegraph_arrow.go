@@ -66,7 +66,6 @@ func GenerateFlamegraphArrow(ctx context.Context, mem memory.Allocator, tracer t
 	w := ipc.NewWriter(&buf,
 		ipc.WithSchema(record.Schema()),
 		ipc.WithAllocator(mem),
-		ipc.WithLZ4(),
 	)
 
 	if err = w.Write(record); err != nil {
