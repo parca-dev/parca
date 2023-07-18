@@ -465,6 +465,141 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 	requireColumnChildren(t, record, columns.children)
 }
 
+func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
+	ctx := context.Background()
+	mem := memory.NewGoAllocator()
+	var err error
+
+	l := metastoretest.NewTestMetastore(
+		t,
+		log.NewNopLogger(),
+		prometheus.NewRegistry(),
+		trace.NewNoopTracerProvider().Tracer(""),
+	)
+
+	metastore := metastore.NewInProcessClient(l)
+
+	mres, err := metastore.GetOrCreateMappings(ctx, &metastorepb.GetOrCreateMappingsRequest{
+		Mappings: []*metastorepb.Mapping{{Start: 1, Limit: 1, Offset: 0x1234, File: "a", BuildId: "aID"}},
+	})
+	require.NoError(t, err)
+	m := mres.Mappings[0]
+
+	lres, err := metastore.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
+		Locations: []*metastorepb.Location{
+			{MappingId: m.Id, Address: 0xa1},
+			{MappingId: m.Id, Address: 0xa2},
+			{MappingId: m.Id, Address: 0xa3},
+			{MappingId: m.Id, Address: 0xa4},
+			{MappingId: m.Id, Address: 0xa5},
+		},
+	})
+	require.NoError(t, err)
+	l1 := lres.Locations[0]
+	l2 := lres.Locations[1]
+	l3 := lres.Locations[2]
+	l4 := lres.Locations[3]
+	l5 := lres.Locations[4]
+
+	sres, err := metastore.GetOrCreateStacktraces(ctx, &metastorepb.GetOrCreateStacktracesRequest{
+		Stacktraces: []*metastorepb.Stacktrace{{
+			LocationIds: []string{l2.Id, l1.Id},
+		}, {
+			LocationIds: []string{l5.Id, l3.Id, l2.Id, l1.Id},
+		}, {
+			LocationIds: []string{l4.Id, l3.Id, l2.Id, l1.Id},
+		}},
+	})
+	require.NoError(t, err)
+	s1 := sres.Stacktraces[0]
+	s2 := sres.Stacktraces[1]
+	s3 := sres.Stacktraces[2]
+
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+
+	p, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
+		Samples: []*parcaprofile.NormalizedSample{{
+			StacktraceID: s1.Id,
+			Value:        2,
+		}, {
+			StacktraceID: s2.Id,
+			Value:        1,
+		}, {
+			StacktraceID: s3.Id,
+			Value:        3,
+		}},
+	})
+	require.NoError(t, err)
+
+	for _, tc := range []struct {
+		name      string
+		aggregate []string
+		// expectations
+		rows       []flamegraphRow
+		cumulative int64
+		height     int32
+		trimmed    int64
+	}{
+		// Aggregating by nothing or by function name yields the same result without function names.
+		{
+			name:      "aggregate-nothing", // raw
+			aggregate: nil,
+			// expectations
+			cumulative: 6,
+			height:     5,
+			trimmed:    0, // TODO
+			rows: []flamegraphRow{
+				{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0, LocationFolded: false, LocationLine: 0, Cumulative: 6, Children: []uint32{1}},            // 0
+				{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, Cumulative: 6, Children: []uint32{2}},    // 1
+				{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 2, Cumulative: 6, Children: []uint32{3}},    // 2
+				{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa3, LocationFolded: false, LocationLine: 3, Cumulative: 4, Children: []uint32{4, 5}}, // 3
+				{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa5, LocationFolded: false, LocationLine: 5, Cumulative: 1, Children: nil},            // 4
+				{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa4, LocationFolded: false, LocationLine: 4, Cumulative: 3, Children: nil},            // 5
+			},
+		},
+		{
+			name:      "aggregate-function-name",
+			aggregate: []string{FlamegraphFieldFunctionName},
+			// expectations
+			cumulative: 6,
+			height:     5,
+			trimmed:    0, // TODO
+			rows: []flamegraphRow{
+				{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0, LocationFolded: false, LocationLine: 0, Cumulative: 6, Children: []uint32{1}},            // 0
+				{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, Cumulative: 6, Children: []uint32{2}},    // 1
+				{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 2, Cumulative: 6, Children: []uint32{3}},    // 2
+				{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa3, LocationFolded: false, LocationLine: 3, Cumulative: 4, Children: []uint32{4, 5}}, // 3
+				{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa5, LocationFolded: false, LocationLine: 5, Cumulative: 1, Children: nil},            // 4
+				{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa4, LocationFolded: false, LocationLine: 4, Cumulative: 3, Children: nil},            // 5
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			fa, cumulative, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, p, tc.aggregate, 0)
+			require.NoError(t, err)
+
+			require.Equal(t, tc.cumulative, cumulative)
+			require.Equal(t, tc.height, height)
+			require.Equal(t, tc.trimmed, trimmed)
+			require.Equal(t, int64(len(tc.rows)), fa.NumRows())
+			require.Equal(t, int64(16), fa.NumCols())
+
+			// Convert the numRows to columns for easier access when testing below.
+			columns := rowsToColumn(tc.rows)
+
+			requireColumn(t, fa, FlamegraphFieldMappingStart, columns.mappingStart)
+			requireColumn(t, fa, FlamegraphFieldMappingLimit, columns.mappingLimit)
+			requireColumn(t, fa, FlamegraphFieldMappingOffset, columns.mappingOffset)
+			requireColumnDict(t, fa, FlamegraphFieldMappingFile, columns.mappingFiles)
+			requireColumnDict(t, fa, FlamegraphFieldMappingBuildID, columns.mappingBuildIDs)
+			requireColumn(t, fa, FlamegraphFieldLocationAddress, columns.locationAddresses)
+			requireColumn(t, fa, FlamegraphFieldLocationFolded, columns.locationFolded)
+			requireColumn(t, fa, FlamegraphFieldCumulative, columns.cumulative)
+			requireColumnChildren(t, fa, columns.children)
+		})
+	}
+}
+
 func TestParents(t *testing.T) {
 	p := parent(-1)
 	require.Equal(t, -1, p.Get())

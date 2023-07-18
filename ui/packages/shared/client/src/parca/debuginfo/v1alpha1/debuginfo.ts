@@ -31,6 +31,12 @@ export interface ShouldInitiateUploadRequest {
      * @generated from protobuf field: string hash = 2;
      */
     hash: string;
+    /**
+     * Force uploading even if valid debuginfos are already available.
+     *
+     * @generated from protobuf field: bool force = 3;
+     */
+    force: boolean;
 }
 /**
  * ShouldInitiateUploadResponse is the response for ShouldInitiateUpload.
@@ -75,6 +81,12 @@ export interface InitiateUploadRequest {
      * @generated from protobuf field: string hash = 3;
      */
     hash: string;
+    /**
+     * Force uploading even if valid debuginfos are already available.
+     *
+     * @generated from protobuf field: bool force = 4;
+     */
+    force: boolean;
 }
 /**
  * InitiateUploadResponse is the response to an InitiateUploadRequest.
@@ -406,11 +418,12 @@ class ShouldInitiateUploadRequest$Type extends MessageType<ShouldInitiateUploadR
     constructor() {
         super("parca.debuginfo.v1alpha1.ShouldInitiateUploadRequest", [
             { no: 1, name: "build_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "hash", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 2, name: "hash", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "force", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<ShouldInitiateUploadRequest>): ShouldInitiateUploadRequest {
-        const message = { buildId: "", hash: "" };
+        const message = { buildId: "", hash: "", force: false };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<ShouldInitiateUploadRequest>(this, message, value);
@@ -426,6 +439,9 @@ class ShouldInitiateUploadRequest$Type extends MessageType<ShouldInitiateUploadR
                     break;
                 case /* string hash */ 2:
                     message.hash = reader.string();
+                    break;
+                case /* bool force */ 3:
+                    message.force = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -445,6 +461,9 @@ class ShouldInitiateUploadRequest$Type extends MessageType<ShouldInitiateUploadR
         /* string hash = 2; */
         if (message.hash !== "")
             writer.tag(2, WireType.LengthDelimited).string(message.hash);
+        /* bool force = 3; */
+        if (message.force !== false)
+            writer.tag(3, WireType.Varint).bool(message.force);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -515,11 +534,12 @@ class InitiateUploadRequest$Type extends MessageType<InitiateUploadRequest> {
         super("parca.debuginfo.v1alpha1.InitiateUploadRequest", [
             { no: 1, name: "build_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "size", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ },
-            { no: 3, name: "hash", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 3, name: "hash", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "force", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<InitiateUploadRequest>): InitiateUploadRequest {
-        const message = { buildId: "", size: 0n, hash: "" };
+        const message = { buildId: "", size: 0n, hash: "", force: false };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<InitiateUploadRequest>(this, message, value);
@@ -538,6 +558,9 @@ class InitiateUploadRequest$Type extends MessageType<InitiateUploadRequest> {
                     break;
                 case /* string hash */ 3:
                     message.hash = reader.string();
+                    break;
+                case /* bool force */ 4:
+                    message.force = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -560,6 +583,9 @@ class InitiateUploadRequest$Type extends MessageType<InitiateUploadRequest> {
         /* string hash = 3; */
         if (message.hash !== "")
             writer.tag(3, WireType.LengthDelimited).string(message.hash);
+        /* bool force = 4; */
+        if (message.force !== false)
+            writer.tag(4, WireType.Varint).bool(message.force);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

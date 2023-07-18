@@ -118,6 +118,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 					"stacktraces",
 					metastore,
 				),
+				memory.DefaultAllocator,
 			)
 			b.ResetTimer()
 
@@ -185,6 +186,7 @@ func Benchmark_ProfileTypes(b *testing.B) {
 			"stacktraces",
 			m,
 		),
+		memory.DefaultAllocator,
 	)
 	b.ResetTimer()
 

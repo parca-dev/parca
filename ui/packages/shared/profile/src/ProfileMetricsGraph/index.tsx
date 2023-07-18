@@ -46,6 +46,7 @@ interface ProfileMetricsGraphProps {
   setTimeRange: (range: DateTimeRange) => void;
   addLabelMatcher: (key: string, value: string) => void;
   onPointClick: (timestamp: number, labels: Label[], queryExpression: string) => void;
+  comparing?: boolean;
 }
 
 export interface IQueryRangeState {
@@ -109,11 +110,12 @@ const ProfileMetricsGraph = ({
   setTimeRange,
   addLabelMatcher,
   onPointClick,
+  comparing = false,
 }: ProfileMetricsGraphProps): JSX.Element => {
   const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to);
   const isLoaderVisible = useDelayedLoader(isLoading);
   const {loader, onError, perf} = useParcaContext();
-  const {width, height, margin, marginRight} = useMetricsGraphDimensions();
+  const {width, height, margin, marginRight} = useMetricsGraphDimensions(comparing);
 
   useEffect(() => {
     if (error !== null) {

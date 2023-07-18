@@ -1,7 +1,7 @@
 {
   "name": "@parca/web",
   "private": true,
-  "version": "0.16.405",
+  "version": "0.16.411",
   "description": "Parca Web Interface",
   "scripts": {
     "lint": "eslint --no-error-on-unmatched-pattern --ext .ts,.tsx,.js src/*",
@@ -22,15 +22,15 @@
   "dependencies": {
     "@alwaysmeticulous/recorder-loader": "^2.63.0",
     "@headlessui/react": "1.7.15",
-    "@parca/client": "^0.16.79",
-    "@parca/components": "^0.16.165",
+    "@parca/client": "^0.16.80",
+    "@parca/components": "^0.16.168",
     "@parca/dynamicsize": "^0.16.54",
-    "@parca/hooks": "^0.0.14",
+    "@parca/hooks": "^0.0.15",
     "@parca/icons": "^0.16.54",
     "@parca/parser": "^0.16.55",
-    "@parca/profile": "^0.16.205",
-    "@parca/store": "^0.16.90",
-    "@parca/utilities": "^0.0.19",
+    "@parca/profile": "^0.16.209",
+    "@parca/store": "^0.16.91",
+    "@parca/utilities": "^0.0.20",
     "@svgr/webpack": "6.5.1",
     "@tailwindcss/typography": "^0.5.8",
     "@testing-library/jest-dom": "5.16.5",
@@ -41,7 +41,7 @@
     "lodash.debounce": "4.0.8",
     "lodash.throttle": "4.1.1",
     "moment": "2.29.4",
-    "postcss": "8.4.24",
+    "postcss": "8.4.25",
     "postcss-flexbugs-fixes": "5.0.2",
     "postcss-preset-env": "8.5.1",
     "react-datepicker": "4.15.0",
@@ -51,7 +51,7 @@
     "react-router-dom": "6.14.1",
     "react-use": "17.4.0",
     "tailwindcss": "3.2.4",
-    "web-vitals": "3.3.2"
+    "web-vitals": "3.4.0"
   },
   "devDependencies": {
     "@craco/craco": "7.1.0",

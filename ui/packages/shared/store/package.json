@@ -1,6 +1,6 @@
 {
   "name": "@parca/store",
-  "version": "0.16.90",
+  "version": "0.16.91",
   "description": "State management for Parca UI",
   "main": "dist/index.js",
   "scripts": {
@@ -13,9 +13,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@parca/client": "^0.16.79",
-    "@parca/hooks": "^0.0.14",
-    "@parca/utilities": "^0.0.19",
+    "@parca/client": "^0.16.80",
+    "@parca/hooks": "^0.0.15",
+    "@parca/utilities": "^0.0.20",
     "@reduxjs/toolkit": "^1.7.2",
     "react-redux": "^8.0.2",
     "redux-persist": "^6.0.0"
