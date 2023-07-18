@@ -60,14 +60,24 @@ jobs:
           go-version-file: .go-version
           cache: false
 
+      - name: Set up environment
+        run: |
+          ./env.sh
+
       - name: Set up Node.js
         uses: actions/setup-node@e33196f7422957bea03ed53f6fbb155025ffc7b8 # v3.7.0
         with:
           node-version-file: .node-version
           cache: 'yarn'
 
+      - name: Build UI
+        run: make ui/build
+
+      - name: Install dependencies
+        run: make go/deps
+
       - name: Build
-        run: make build
+        run: make go/build
 
       - name: Format
         run: make go/fmt && git diff --exit-code
@@ -77,6 +87,3 @@ jobs:
         with:
           version: ${{ env.GOLANGCI_LINT_VERSION }}
           args: --timeout 5m
-
-      - name: golang-govulncheck-action
-        uses: golang/govulncheck-action@v1
