@@ -118,7 +118,7 @@ const ProfileIcicleGraph = ({
   return (
     <div className="relative">
       {compareMode && <DiffLegend />}
-      <div ref={ref}>
+      <div ref={ref} className="min-h-48">
         {graph !== undefined && (
           <IcicleGraph
             width={dimensions?.width}
