@@ -17,7 +17,7 @@ import {Table} from 'apache-arrow';
 import cx from 'classnames';
 
 import {useKeyDown} from '@parca/components';
-import {selectBinaries, setHoveringRow, useAppDispatch, useAppSelector} from '@parca/store';
+import {selectBinaries, useAppSelector} from '@parca/store';
 import {isSearchMatch, scaleLinear} from '@parca/utilities';
 
 import {
@@ -44,6 +44,7 @@ interface IcicleGraphNodesProps {
   level: number;
   curPath: string[];
   setCurPath: (path: string[]) => void;
+  setHoveringRow: (row: number | null) => void;
   path: string[];
   xScale: (value: bigint) => number;
   searchString?: string;
@@ -64,6 +65,7 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
   level,
   path,
   setCurPath,
+  setHoveringRow,
   curPath,
   sortBy,
   searchString,
@@ -100,6 +102,7 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
         height={RowHeight}
         path={path}
         setCurPath={setCurPath}
+        setHoveringRow={setHoveringRow}
         level={level}
         curPath={curPath}
         total={total}
@@ -132,6 +135,7 @@ interface IcicleNodeProps {
   path: string[];
   total: bigint;
   setCurPath: (path: string[]) => void;
+  setHoveringRow: (row: number | null) => void;
   xScale: (value: bigint) => number;
   isRoot?: boolean;
   searchString?: string;
@@ -166,12 +170,12 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   xScale,
   isRoot = false,
   searchString,
+  setHoveringRow,
   sortBy,
   darkMode,
   compareMode,
 }: IcicleNodeProps): React.JSX.Element {
   const {isShiftDown} = useKeyDown();
-  const dispatch = useAppDispatch();
 
   // get the columns to read from
   const mappingColumn = table.getChild(FIELD_MAPPING_FILE);
@@ -272,12 +276,12 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
 
   const onMouseEnter = (): void => {
     if (isShiftDown) return;
-    dispatch(setHoveringRow({row}));
+    setHoveringRow(row);
   };
 
   const onMouseLeave = (): void => {
     if (isShiftDown) return;
-    dispatch(setHoveringRow(undefined));
+    setHoveringRow(null);
   };
 
   return (
@@ -326,6 +330,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
           path={nextPath}
           curPath={nextCurPath}
           setCurPath={setCurPath}
+          setHoveringRow={setHoveringRow}
           searchString={searchString}
           sortBy={sortBy}
           darkMode={darkMode}
