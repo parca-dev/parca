@@ -77,3 +77,6 @@ jobs:
         with:
           version: ${{ env.GOLANGCI_LINT_VERSION }}
           args: --timeout 5m
+
+      - name: golang-govulncheck-action
+        uses: golang/govulncheck-action@v1
