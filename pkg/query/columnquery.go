@@ -180,6 +180,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		req.GetReportType(),
 		req.GetNodeTrimThreshold(),
 		filtered,
+		req.GetGroupBy().GetFields(),
 	)
 }
 
@@ -240,8 +241,9 @@ func (q *ColumnQueryAPI) renderReport(
 	typ pb.QueryRequest_ReportType,
 	nodeTrimThreshold float32,
 	filtered int64,
+	groupBy []string,
 ) (*pb.QueryResponse, error) {
-	return RenderReport(ctx, q.tracer, p, typ, nodeTrimThreshold, filtered, q.tableConverterPool, q.mem)
+	return RenderReport(ctx, q.tracer, p, typ, nodeTrimThreshold, filtered, groupBy, q.tableConverterPool, q.mem)
 }
 
 func RenderReport(
@@ -251,6 +253,7 @@ func RenderReport(
 	typ pb.QueryRequest_ReportType,
 	nodeTrimThreshold float32,
 	filtered int64,
+	groupBy []string,
 	pool *sync.Pool,
 	mem memory.Allocator,
 ) (*pb.QueryResponse, error) {
@@ -291,8 +294,17 @@ func RenderReport(
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW:
-		// TODO: Make the fields to aggregate by configurable via the API.
-		fa, total, err := GenerateFlamegraphArrow(ctx, mem, tracer, p, []string{FlamegraphFieldFunctionName}, nodeTrimFraction)
+		allowedGroupBy := map[string]struct{}{
+			FlamegraphFieldFunctionName: {},
+			FlamegraphFieldLabels:       {},
+		}
+		for _, f := range groupBy {
+			if _, allowed := allowedGroupBy[f]; !allowed {
+				return nil, status.Errorf(codes.InvalidArgument, "invalid group by field: %s", f)
+			}
+		}
+
+		fa, total, err := GenerateFlamegraphArrow(ctx, mem, tracer, p, groupBy, nodeTrimFraction)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate arrow flamegraph: %v", err.Error())
 		}

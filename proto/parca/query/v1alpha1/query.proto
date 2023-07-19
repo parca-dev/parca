@@ -240,6 +240,15 @@ message QueryRequest {
 
   // node_trim_threshold is the threshold % where the nodes with Value less than this will be removed from the report
   optional float node_trim_threshold = 7;
+
+  // group_by indicates the fields to group by
+  optional GroupBy group_by = 8;
+}
+
+message GroupBy {
+  // the names of the fields to group by.
+  // special fields are the ones prefixed with "labels." which are grouping by pprof labels.
+  repeated string fields = 1;
 }
 
 // Top is the top report type
