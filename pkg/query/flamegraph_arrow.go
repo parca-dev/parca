@@ -121,6 +121,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		// This keeps track of a row's children and will be converted to an arrow array of lists at the end.
 		// Allocating for an average of 8 children per stacktrace upfront.
 		children: make([][]int, len(p.Samples)*8),
+		labels:   make(map[int][]map[string]string),
 
 		// TODO: Potentially good to .Reserve() the number of samples to avoid re-allocations
 		builderMappingStart:   rb.Field(schema.FieldIndices(FlamegraphFieldMappingStart)[0]).(*array.Uint64Builder),
@@ -160,34 +161,35 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			rowLocationAddress := fb.builderLocationAddress.Value(row)
 			return location.Address == rowLocationAddress
 		case FlamegraphFieldFunctionName:
-			rowFunctionName := fb.builderFunctionName.Value(fb.builderFunctionName.GetValueIndex(row))
-			// rather than comparing the strings, we compare bytes to avoid allocations.
-			return bytes.Equal(stringToBytes(line.Function.Name), rowFunctionName)
+			isNull := fb.builderFunctionName.IsNull(row)
+			if !isNull {
+				rowFunctionName := fb.builderFunctionName.Value(fb.builderFunctionName.GetValueIndex(row))
+				// rather than comparing the strings, we compare bytes to avoid allocations.
+				return bytes.Equal(stringToBytes(line.Function.Name), rowFunctionName)
+			}
+			// isNull
+			if line.Function == nil || line.Function.Name == "" {
+				return true
+			}
+			return false
 		case FlamegraphFieldLabels:
 			// We only compare the labels of roots of stacktraces.
 			if height > 0 {
 				return true
 			}
-
-			isNull := fb.builderLabels.IsNull(row)
-			if len(pprofLabels) == 0 && isNull {
+			if len(pprofLabels) == 0 && fb.labels[row] == nil {
 				return true
 			}
-			if len(pprofLabels) > 0 && isNull {
+			if len(pprofLabels) > 0 && fb.labels[row] == nil {
 				return false
 			}
-			if len(pprofLabels) == 0 && !isNull {
+			if len(pprofLabels) == 0 && fb.labels[row] != nil {
 				return false
 			}
-			// Both sides have values, let's compare them properly.
-			value := fb.builderLabels.Value(fb.builderLabels.GetValueIndex(row))
-			compareLabels := map[string]string{}
-			err := json.Unmarshal(value, &compareLabels)
-			if err != nil {
+			if len(pprofLabels) != len(fb.labels[row][0]) {
 				return false
 			}
-
-			return maps.Equal(pprofLabels, compareLabels)
+			return maps.Equal(pprofLabels, fb.labels[row][0])
 		default:
 			return false
 		}
@@ -207,7 +209,6 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	fb.builderFunctionName.AppendNull()
 	fb.builderFunctionSystemName.AppendNull()
 	fb.builderFunctionFileName.AppendNull()
-	fb.builderLabels.AppendNull()
 	// The cumulative values is calculated and at the end set to the correct value.
 	fb.builderCumulative.Append(0)
 	fb.builderDiff.AppendNull()
@@ -255,9 +256,13 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				// If we find a matching address, we merge the values.
 			compareRowsAddr:
 				for _, cr := range compareRows {
-					// TODO: Add support to group by pprof labels with just address available
 					if !equalField(FlamegraphFieldLocationAddress, location, profile.LocationLine{}, s.Label, cr, len(s.Locations)-1-i) {
 						continue compareRowsAddr
+					}
+
+					// If we don't group by the labels, we add all labels to the row and later on intersect the values before adding them to the flame graph.
+					if _, groupBy := aggregateFields[FlamegraphFieldLabels]; !groupBy {
+						fb.labels[cr] = append(fb.labels[cr], s.Label)
 					}
 
 					fb.builderCumulative.Add(cr, s.Value)
@@ -274,7 +279,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					rootsRow = append(rootsRow, row)
 				}
 
-				err := fb.appendRow(location, profile.LocationLine{}, s, row, isRoot)
+				err := fb.appendRow(location, profile.LocationLine{}, s, row)
 				if err != nil {
 					return nil, 0, 0, 0, err
 				}
@@ -305,6 +310,11 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 							}
 						}
 
+						// If we don't group by the labels, we add all labels to the row and later on intersect the values before adding them to the flame graph.
+						if _, groupBy := aggregateFields[FlamegraphFieldLabels]; !groupBy {
+							fb.labels[cr] = append(fb.labels[cr], s.Label)
+						}
+
 						// All fields match, so we can aggregate this new row with the existing one.
 						fb.builderCumulative.Add(cr, s.Value)
 						// Continue with this row as the parent for the next iteration and compare to its children.
@@ -322,7 +332,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					rootsRow = append(rootsRow, row)
 				}
 
-				err := fb.appendRow(location, line, s, row, isRoot)
+				err := fb.appendRow(location, line, s, row)
 				if err != nil {
 					return nil, 0, 0, 0, err
 				}
@@ -357,6 +367,25 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			}
 		}
 	}
+	for i := 0; i < fb.builderCumulative.Len(); i++ {
+		if lsets, hasLabels := fb.labels[i]; hasLabels {
+			inter := mapsIntersection(lsets)
+			if len(inter) == 0 {
+				fb.builderLabels.AppendNull()
+				continue
+			}
+
+			lsbytes, err := json.Marshal(inter)
+			if err != nil {
+				return nil, 0, 0, 0, err
+			}
+			if err := fb.builderLabels.Append(lsbytes); err != nil {
+				return nil, 0, 0, 0, err
+			}
+		} else {
+			fb.builderLabels.AppendNull()
+		}
+	}
 
 	return rb.NewRecord(), cumulative, height + 1, 0, nil
 }
@@ -366,6 +395,7 @@ type flamegraphBuilder struct {
 	schema   *arrow.Schema
 	parent   parent
 	children [][]int
+	labels   map[int][]map[string]string
 
 	builderMappingStart       *array.Uint64Builder
 	builderMappingLimit       *array.Uint64Builder
@@ -391,7 +421,6 @@ func (fb *flamegraphBuilder) appendRow(
 	line profile.LocationLine,
 	s *profile.SymbolizedSample,
 	row int,
-	isRoot bool,
 ) error {
 	for j := range fb.rb.Fields() {
 		switch fb.schema.Field(j).Name {
@@ -460,16 +489,9 @@ func (fb *flamegraphBuilder) appendRow(
 			}
 		// Values
 		case FlamegraphFieldLabels:
-			// Only append labels if there are any and only on the root of the stack.
-			// Otherwise, append null.
-			if len(s.Label) > 0 && isRoot {
-				lset, err := json.Marshal(s.Label)
-				if err != nil {
-					return err
-				}
-				_ = fb.builderLabels.Append(lset)
-			} else {
-				fb.builderLabels.AppendNull()
+			if len(s.Label) > 0 {
+				// We add the labels to the potential labels for this row.
+				fb.labels[row] = append(fb.labels[row], s.Label)
 			}
 		case FlamegraphFieldChildren:
 			if len(fb.children) == row {
@@ -525,4 +547,32 @@ func (p *parent) Has() bool { return *p > -1 }
 
 func stringToBytes(s string) []byte {
 	return unsafe.Slice(unsafe.StringData(s), len(s))
+}
+
+func mapsIntersection(maps []map[string]string) map[string]string {
+	if len(maps) == 0 {
+		return map[string]string{}
+	}
+	if len(maps) == 1 {
+		return maps[0]
+	}
+
+	// this compares the first maps keys to all other maps keys
+	// only if a key exists in all maps, and it has the SAME VALUE it will be added to the intersection
+	intersection := map[string]string{}
+keys:
+	for k, v := range maps[0] {
+		for i, m := range maps {
+			if i == 0 { // don't compare to self
+				continue
+			}
+			if m[k] != v {
+				continue keys
+			}
+		}
+		// all maps have the same value for this key
+		intersection[k] = v
+	}
+
+	return intersection
 }
