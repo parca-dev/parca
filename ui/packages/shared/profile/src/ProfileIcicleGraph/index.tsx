@@ -88,8 +88,6 @@ const ProfileIcicleGraph = ({
     return [FIELD_FUNCTION_NAME];
   }, [storeGroupBy]);
 
-  console.log('groupBy', storeGroupBy, groupBy);
-
   const setGroupBy = useCallback(
     (keys: string[]): void => {
       setStoreGroupBy(keys);
@@ -102,7 +100,7 @@ const ProfileIcicleGraph = ({
         ? setGroupBy(groupBy.filter(v => v !== key)) // remove
         : setGroupBy([...groupBy, key]); // add
     },
-    [groupBy]
+    [groupBy, setGroupBy]
   );
 
   const [
@@ -150,7 +148,7 @@ const ProfileIcicleGraph = ({
             </>
           )}
           <div>
-            <label>&nbsp;</label>
+            <label className="inline-block"></label>
             <Button
               color="neutral"
               onClick={() => setNewCurPath([])}
