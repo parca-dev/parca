@@ -49,6 +49,9 @@ clean:
 .PHONY: go/deps
 go/deps:
 	go mod tidy
+
+.PHONY: go/deps-check
+go/deps-check:
 	govulncheck ./...
 
 .PHONY: go/build
@@ -76,7 +79,7 @@ go/fmt: gofumpt
 	$(GOFUMPT) -l -w $(shell go list -f {{.Dir}} ./... | grep -v gen/proto)
 
 .PHONY: go/lint
-go/lint:
+go/lint: go/deps-check
 	golangci-lint run
 
 .PHONY: check-license
