@@ -15,10 +15,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
   cancel-in-progress: true
 
-env:
-  # renovate: datasource=go depName=github.com/golangci/golangci-lint
-  GOLANGCI_LINT_VERSION: v1.53.3
-
 jobs:
   skip-check:
     name: Skip check
@@ -82,8 +78,5 @@ jobs:
       - name: Format
         run: make go/fmt && git diff --exit-code
 
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@639cd343e1d3b897ff35927a75193d57cfcba299 # v3.6.0
-        with:
-          version: ${{ env.GOLANGCI_LINT_VERSION }}
-          args: --timeout 5m
+      - name: Lint
+        run: make go/lint
