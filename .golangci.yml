@@ -31,6 +31,8 @@ linters-settings:
             desc: Use github.com/go-kit/log instead of github.com/go-kit/kit/log
           - pkg: github.com/pkg/errors
             desc: Use fmt.Errorf instead
+          - pkg: github.com/segmentio/parquet-go
+            desc: Use github.com/parquet-go/parquet-go instead
   errcheck:
     exclude: ./.errcheck_excludes.txt
   goimports:
