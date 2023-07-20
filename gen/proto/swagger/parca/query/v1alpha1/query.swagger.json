@@ -1133,7 +1133,8 @@
           },
           "description": "the names of the fields to group by.\nspecial fields are the ones prefixed with \"labels.\" which are grouping by pprof labels."
         }
-      }
+      },
+      "title": "GroupBy encapsulates the repeated fields to group by"
     },
     "v1alpha1LabelSet": {
       "type": "object",

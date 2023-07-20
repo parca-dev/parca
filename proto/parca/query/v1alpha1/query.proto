@@ -245,6 +245,7 @@ message QueryRequest {
   optional GroupBy group_by = 8;
 }
 
+// GroupBy encapsulates the repeated fields to group by
 message GroupBy {
   // the names of the fields to group by.
   // special fields are the ones prefixed with "labels." which are grouping by pprof labels.
