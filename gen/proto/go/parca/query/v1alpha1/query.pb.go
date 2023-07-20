@@ -1086,6 +1086,7 @@ func (*QueryRequest_Merge) isQueryRequest_Options() {}
 
 func (*QueryRequest_Single) isQueryRequest_Options() {}
 
+// GroupBy encapsulates the repeated fields to group by
 type GroupBy struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

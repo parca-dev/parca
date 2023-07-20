@@ -78,12 +78,12 @@ const ProfileIcicleGraph = ({
     param: 'group_by',
     navigateTo,
   });
-  const groupBy = useMemo(() => {
+  const groupBy: string[] = useMemo(() => {
     if (storeGroupBy !== undefined) {
       if (typeof storeGroupBy === 'string') {
         return [storeGroupBy];
       }
-      return storeGroupBy as string[];
+      return storeGroupBy;
     }
     return [FIELD_FUNCTION_NAME];
   }, [storeGroupBy]);

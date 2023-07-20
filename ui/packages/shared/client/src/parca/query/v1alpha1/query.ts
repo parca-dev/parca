@@ -448,6 +448,8 @@ export enum QueryRequest_ReportType {
     FLAMEGRAPH_ARROW = 5
 }
 /**
+ * GroupBy encapsulates the repeated fields to group by
+ *
  * @generated from protobuf message parca.query.v1alpha1.GroupBy
  */
 export interface GroupBy {
