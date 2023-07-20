@@ -58,6 +58,7 @@ interface IcicleGraphArrowProps {
   curPath: string[];
   setCurPath: (path: string[]) => void;
   navigateTo?: NavigateFunction;
+  sortBy: string;
 }
 
 export const IcicleGraphArrow = memo(function IcicleGraphArrow({
@@ -69,6 +70,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   curPath,
   sampleUnit,
   navigateTo,
+  sortBy,
 }: IcicleGraphArrowProps): React.JSX.Element {
   const dispatch = useAppDispatch();
   const [colorProfile] = useUserPreference<ColorProfileName>(
@@ -78,7 +80,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   const [height, setHeight] = useState(0);
   const [hoveringRow, setHoveringRow] = useState<number | null>(null);
-  const sortBy = FIELD_FUNCTION_NAME; // TODO: make this configurable via UI
   const svg = useRef(null);
   const ref = useRef<SVGGElement>(null);
 

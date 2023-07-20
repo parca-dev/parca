@@ -327,6 +327,17 @@
             "required": false,
             "type": "number",
             "format": "float"
+          },
+          {
+            "name": "groupBy.fields",
+            "description": "the names of the fields to group by.\nspecial fields are the ones prefixed with \"labels.\" which are grouping by pprof labels.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
           }
         ],
         "tags": [
@@ -723,6 +734,10 @@
           "type": "number",
           "format": "float",
           "title": "node_trim_threshold is the threshold % where the nodes with Value less than this will be removed from the report"
+        },
+        "groupBy": {
+          "$ref": "#/definitions/v1alpha1GroupBy",
+          "title": "group_by indicates the fields to group by"
         }
       },
       "title": "QueryRequest is a request for a profile query"
@@ -1107,6 +1122,19 @@
         }
       },
       "title": "FlamegraphRootNode is a root node of a flame graph"
+    },
+    "v1alpha1GroupBy": {
+      "type": "object",
+      "properties": {
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "the names of the fields to group by.\nspecial fields are the ones prefixed with \"labels.\" which are grouping by pprof labels."
+        }
+      },
+      "title": "GroupBy encapsulates the repeated fields to group by"
     },
     "v1alpha1LabelSet": {
       "type": "object",

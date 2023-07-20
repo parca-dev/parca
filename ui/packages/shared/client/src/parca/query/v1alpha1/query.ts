@@ -371,6 +371,12 @@ export interface QueryRequest {
      * @generated from protobuf field: optional float node_trim_threshold = 7;
      */
     nodeTrimThreshold?: number;
+    /**
+     * group_by indicates the fields to group by
+     *
+     * @generated from protobuf field: optional parca.query.v1alpha1.GroupBy group_by = 8;
+     */
+    groupBy?: GroupBy;
 }
 /**
  * Mode is the type of query request
@@ -440,6 +446,20 @@ export enum QueryRequest_ReportType {
      * @generated from protobuf enum value: REPORT_TYPE_FLAMEGRAPH_ARROW = 5;
      */
     FLAMEGRAPH_ARROW = 5
+}
+/**
+ * GroupBy encapsulates the repeated fields to group by
+ *
+ * @generated from protobuf message parca.query.v1alpha1.GroupBy
+ */
+export interface GroupBy {
+    /**
+     * the names of the fields to group by.
+     * special fields are the ones prefixed with "labels." which are grouping by pprof labels.
+     *
+     * @generated from protobuf field: repeated string fields = 1;
+     */
+    fields: string[];
 }
 /**
  * Top is the top report type
@@ -1764,7 +1784,8 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
             { no: 4, name: "single", kind: "message", oneof: "options", T: () => SingleProfile },
             { no: 5, name: "report_type", kind: "enum", T: () => ["parca.query.v1alpha1.QueryRequest.ReportType", QueryRequest_ReportType, "REPORT_TYPE_"] },
             { no: 6, name: "filter_query", kind: "scalar", opt: true, T: 9 /*ScalarType.STRING*/ },
-            { no: 7, name: "node_trim_threshold", kind: "scalar", opt: true, T: 2 /*ScalarType.FLOAT*/ }
+            { no: 7, name: "node_trim_threshold", kind: "scalar", opt: true, T: 2 /*ScalarType.FLOAT*/ },
+            { no: 8, name: "group_by", kind: "message", T: () => GroupBy }
         ]);
     }
     create(value?: PartialMessage<QueryRequest>): QueryRequest {
@@ -1809,6 +1830,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
                 case /* optional float node_trim_threshold */ 7:
                     message.nodeTrimThreshold = reader.float();
                     break;
+                case /* optional parca.query.v1alpha1.GroupBy group_by */ 8:
+                    message.groupBy = GroupBy.internalBinaryRead(reader, reader.uint32(), options, message.groupBy);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1842,6 +1866,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         /* optional float node_trim_threshold = 7; */
         if (message.nodeTrimThreshold !== undefined)
             writer.tag(7, WireType.Bit32).float(message.nodeTrimThreshold);
+        /* optional parca.query.v1alpha1.GroupBy group_by = 8; */
+        if (message.groupBy)
+            GroupBy.internalBinaryWrite(message.groupBy, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1852,6 +1879,53 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
  * @generated MessageType for protobuf message parca.query.v1alpha1.QueryRequest
  */
 export const QueryRequest = new QueryRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GroupBy$Type extends MessageType<GroupBy> {
+    constructor() {
+        super("parca.query.v1alpha1.GroupBy", [
+            { no: 1, name: "fields", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<GroupBy>): GroupBy {
+        const message = { fields: [] };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<GroupBy>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GroupBy): GroupBy {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated string fields */ 1:
+                    message.fields.push(reader.string());
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GroupBy, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated string fields = 1; */
+        for (let i = 0; i < message.fields.length; i++)
+            writer.tag(1, WireType.LengthDelimited).string(message.fields[i]);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.query.v1alpha1.GroupBy
+ */
+export const GroupBy = new GroupBy$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class Top$Type extends MessageType<Top> {
     constructor() {
