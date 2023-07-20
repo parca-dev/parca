@@ -765,8 +765,8 @@ github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINE
 github.com/pkg/profile v1.2.1/go.mod h1:hJw3o1OdXxsrSjjVksARp5W95eeEaEfptyVZyv6JUPA=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/polarsignals/frostdb v0.0.0-20230713135300-a7f96ef74c0e h1:JjUHkY4TOMEPn1M2YfBtQJYnnniAcuMwx+CFGA7aJVA=
-github.com/polarsignals/frostdb v0.0.0-20230713135300-a7f96ef74c0e/go.mod h1:skEfKtwq5jcJmClheFeyJijV5T9WddUnXKzYKtmShuM=
+github.com/polarsignals/frostdb v0.0.0-20230720151814-402d7262a77c h1:qgwGnPWRmQgChYgTolJhpNN/mW02w2kQEcAEaoo2rEQ=
+github.com/polarsignals/frostdb v0.0.0-20230720151814-402d7262a77c/go.mod h1:48YrjSFd2/qlMkBQQANV0ZkLrxu6GgWumkgAoHu6C1w=
 github.com/polarsignals/wal v0.0.0-20230509073041-6731e243de20 h1:YverywcwPHYj5iQq1/Zy/EihWVyw2F0S7j52FvGWK4w=
 github.com/polarsignals/wal v0.0.0-20230509073041-6731e243de20/go.mod h1:EVDHAAe+7GQ33A1/x+/gE+sBPN4toQ0XG5RoLD49xr8=
 github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndrE9hABlRI=
@@ -836,8 +836,6 @@ github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529/go.mod h1:DxrIzT+xaE7yg
 github.com/segmentio/asm v1.1.3/go.mod h1:Ld3L4ZXGNcSLRg4JBsZ3//1+f/TjYl0Mzen/DQy1EJg=
 github.com/segmentio/encoding v0.3.6 h1:E6lVLyDPseWEulBmCmAKPanDd3jiyGDo5gMcugCRwZQ=
 github.com/segmentio/encoding v0.3.6/go.mod h1:n0JeuIqEQrQoPDGsjo8UNd1iA0U8d8+oHAA4E3G3OxM=
-github.com/segmentio/parquet-go v0.0.0-20230712180008-5d42db8f0d47 h1:5am1AKPVBj3ncaEsqsGQl/cvsW5mSrO9NSPqWWhH8OA=
-github.com/segmentio/parquet-go v0.0.0-20230712180008-5d42db8f0d47/go.mod h1:+J0xQnJjm8DuQUHBO7t57EnmPbstT6+b45+p3DC9k1Q=
 github.com/shoenig/test v0.6.6 h1:Oe8TPH9wAbv++YPNDKJWUnI8Q4PPWCx3UbOfH+FxiMU=
 github.com/shurcooL/sanitized_anchor_name v1.0.0/go.mod h1:1NzhyTcUVG4SuEtjjoZeVRXNmyL/1OwPU0+IJeTBvfc=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=

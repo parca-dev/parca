@@ -29,7 +29,7 @@ require (
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
 	github.com/parquet-go/parquet-go v0.0.0-20230717201923-bb12c19a1110
-	github.com/polarsignals/frostdb v0.0.0-20230713135300-a7f96ef74c0e
+	github.com/polarsignals/frostdb v0.0.0-20230720151814-402d7262a77c
 	github.com/prometheus/client_golang v1.16.0
 	github.com/prometheus/common v0.44.0
 	github.com/prometheus/prometheus v0.45.0
@@ -209,7 +209,6 @@ require (
 	github.com/rs/xid v1.4.0 // indirect
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.17 // indirect
 	github.com/segmentio/encoding v0.3.6 // indirect
-	github.com/segmentio/parquet-go v0.0.0-20230712180008-5d42db8f0d47 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/sony/gobreaker v0.5.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
