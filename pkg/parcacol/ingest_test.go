@@ -25,9 +25,9 @@ import (
 
 	"github.com/apache/arrow/go/v13/arrow"
 	"github.com/go-kit/log"
+	"github.com/parquet-go/parquet-go"
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/segmentio/parquet-go"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 

@@ -28,11 +28,11 @@ require (
 	github.com/klauspost/compress v1.16.7
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
+	github.com/parquet-go/parquet-go v0.0.0-20230717201923-bb12c19a1110
 	github.com/polarsignals/frostdb v0.0.0-20230713135300-a7f96ef74c0e
 	github.com/prometheus/client_golang v1.16.0
 	github.com/prometheus/common v0.44.0
 	github.com/prometheus/prometheus v0.45.0
-	github.com/segmentio/parquet-go v0.0.0-20230712180008-5d42db8f0d47
 	github.com/stretchr/testify v1.8.4
 	github.com/thanos-io/objstore v0.0.0-20230713070940-eb01c83b89a4
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.42.0
@@ -81,7 +81,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.0 // indirect
 	github.com/RoaringBitmap/roaring v0.9.4 // indirect
 	github.com/aliyun/aliyun-oss-go-sdk v2.2.2+incompatible // indirect
-	github.com/andybalholm/brotli v1.0.4 // indirect
+	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/aws/aws-sdk-go v1.44.276 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.16.0 // indirect
@@ -197,7 +197,7 @@ require (
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/oracle/oci-go-sdk/v65 v65.13.0 // indirect
 	github.com/ovh/go-ovh v1.4.1 // indirect
-	github.com/pierrec/lz4/v4 v4.1.17 // indirect
+	github.com/pierrec/lz4/v4 v4.1.18 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -208,7 +208,8 @@ require (
 	github.com/rs/cors v1.8.0 // indirect
 	github.com/rs/xid v1.4.0 // indirect
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.17 // indirect
-	github.com/segmentio/encoding v0.3.5 // indirect
+	github.com/segmentio/encoding v0.3.6 // indirect
+	github.com/segmentio/parquet-go v0.0.0-20230712180008-5d42db8f0d47 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/sony/gobreaker v0.5.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
