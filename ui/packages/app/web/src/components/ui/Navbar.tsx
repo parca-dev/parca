@@ -20,12 +20,12 @@ import {Link, LinkProps, useLocation} from 'react-router-dom';
 import {UserPreferences} from '@parca/components';
 import {Parca, ParcaSmall} from '@parca/icons';
 import {selectDarkMode, useAppSelector} from '@parca/store';
-import {isDevModeOrPreview} from '@parca/utilities';
+import {isDevMode} from '@parca/utilities';
 
 import ReleaseNotesViewer from '../ReleaseNotesViewer';
 import ThemeToggle from './ThemeToggle';
 
-const pathPrefix = isDevModeOrPreview() ? '' : window.PATH_PREFIX;
+const pathPrefix = isDevMode() ? '' : window.PATH_PREFIX;
 
 const links: {[path: string]: {label: string; href: string; external: boolean}} = {
   '/': {label: 'Profiles', href: `${pathPrefix}/`, external: false},
