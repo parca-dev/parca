@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
+import React, {Fragment, useCallback, useEffect, useMemo} from 'react';
 
 import {Menu, Transition} from '@headlessui/react';
 import {Icon} from '@iconify/react';
@@ -49,7 +49,58 @@ interface ProfileIcicleGraphProps {
   setActionButtons?: (buttons: React.JSX.Element) => void;
 }
 
-const ProfileIcicleGraph = ({
+const GroupAndSortActionButtons = ({navigateTo}: {navigateTo?: NavigateFunction}): JSX.Element => {
+  const [storeSortBy = FIELD_FUNCTION_NAME, setStoreSortBy] = useURLState({
+    param: 'sort_by',
+    navigateTo,
+  });
+  const compareMode: boolean =
+    selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
+
+  const [storeGroupBy = [FIELD_FUNCTION_NAME], setStoreGroupBy] = useURLState({
+    param: 'group_by',
+    navigateTo,
+  });
+
+  const setGroupBy = useCallback(
+    (keys: string[]): void => {
+      setStoreGroupBy(keys);
+    },
+    [setStoreGroupBy]
+  );
+
+  const groupBy = useMemo(() => {
+    if (storeGroupBy !== undefined) {
+      if (typeof storeGroupBy === 'string') {
+        return [storeGroupBy];
+      }
+      return storeGroupBy;
+    }
+    return [FIELD_FUNCTION_NAME];
+  }, [storeGroupBy]);
+
+  const toggleGroupBy = useCallback(
+    (key: string): void => {
+      groupBy.includes(key)
+        ? setGroupBy(groupBy.filter(v => v !== key)) // remove
+        : setGroupBy([...groupBy, key]); // add
+    },
+    [groupBy, setGroupBy]
+  );
+
+  return (
+    <>
+      <GroupByDropdown groupBy={groupBy} toggleGroupBy={toggleGroupBy} />
+      <SortBySelect
+        compareMode={compareMode}
+        sortBy={storeSortBy as string}
+        setSortBy={setStoreSortBy}
+      />
+    </>
+  );
+};
+
+const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   graph,
   table,
   total,
@@ -60,50 +111,15 @@ const ProfileIcicleGraph = ({
   navigateTo,
   loading,
   setActionButtons,
-}: ProfileIcicleGraphProps): JSX.Element => {
+}: ProfileIcicleGraphProps): JSX.Element {
   const compareMode: boolean =
     selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
   const {ref, dimensions} = useContainerDimensions();
-  const [storeSortBy, setStoreSortBy] = useURLState({param: 'sort_by', navigateTo});
-  const [localSortBy = FIELD_FUNCTION_NAME, setLocalSortBy] = useState(storeSortBy as string);
-  const setSortBy = useCallback(
-    (key: string) => {
-      setLocalSortBy(key);
-      setStoreSortBy(key);
-    },
-    [setLocalSortBy, setStoreSortBy]
-  );
 
-  const [storeGroupBy = [FIELD_FUNCTION_NAME], setStoreGroupBy] = useURLState({
-    param: 'group_by',
+  const [storeSortBy = FIELD_FUNCTION_NAME] = useURLState({
+    param: 'sort_by',
     navigateTo,
   });
-  const groupBy = useMemo(() => {
-    if (storeGroupBy !== undefined) {
-      if (typeof storeGroupBy === 'string') {
-        return [storeGroupBy];
-      }
-      return storeGroupBy as string[];
-    }
-    return [FIELD_FUNCTION_NAME];
-  }, [storeGroupBy]);
-
-  console.log('groupBy', storeGroupBy, groupBy);
-
-  const setGroupBy = useCallback(
-    (keys: string[]): void => {
-      setStoreGroupBy(keys);
-    },
-    [setStoreGroupBy]
-  );
-  const toggleGroupBy = useCallback(
-    (key: string): void => {
-      groupBy.includes(key)
-        ? setGroupBy(groupBy.filter(v => v !== key)) // remove
-        : setGroupBy([...groupBy, key]); // add
-    },
-    [groupBy]
-  );
 
   const [
     totalFormatted,
@@ -143,12 +159,7 @@ const ProfileIcicleGraph = ({
     setActionButtons(
       <div className="flex w-full justify-end gap-2 pb-2">
         <div className="flex w-full items-center justify-between space-x-2">
-          {table !== undefined && (
-            <>
-              <GroupByDropdown groupBy={groupBy} toggleGroupBy={toggleGroupBy} />
-              <SortBySelect compareMode={compareMode} sortBy={localSortBy} setSortBy={setSortBy} />
-            </>
-          )}
+          {table !== undefined && <GroupAndSortActionButtons navigateTo={navigateTo} />}
           <div>
             <label>&nbsp;</label>
             <Button
@@ -163,7 +174,7 @@ const ProfileIcicleGraph = ({
         </div>
       </div>
     );
-  }, [setNewCurPath, curPath, setActionButtons, table, compareMode, localSortBy, groupBy]);
+  }, [navigateTo, table, curPath, setNewCurPath, setActionButtons]);
 
   if (graph === undefined && table === undefined) return <div>no data...</div>;
 
@@ -199,7 +210,7 @@ const ProfileIcicleGraph = ({
             setCurPath={setNewCurPath}
             sampleUnit={sampleUnit}
             navigateTo={navigateTo}
-            sortBy={localSortBy}
+            sortBy={storeSortBy as string}
           />
         )}
       </div>

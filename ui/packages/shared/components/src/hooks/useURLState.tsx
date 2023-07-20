@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect} from 'react';
+import {useCallback, useEffect} from 'react';
 
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks/';
 import {
@@ -41,10 +41,14 @@ export const useURLState = ({
 
   // 1. set initial value to the store value or URL value
   const value = useAppSelector(selectProfileStateValue(param)) ?? router[param];
-  const setValue = (
-    value: string | string[]
-  ): {payload: {key: string; value?: string | string[]}; type: string} =>
-    dispatch(setProfileStateValue({key: param, value}));
+  const setValue = useCallback(
+    (
+      value: string | string[]
+    ): {payload: {key: string; value?: string | string[]}; type: string} => {
+      return dispatch(setProfileStateValue({key: param, value}));
+    },
+    [dispatch, param]
+  );
 
   // whenever the store value changes, (optionally) update the URL
   useEffect(() => {
