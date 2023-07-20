@@ -20,16 +20,13 @@ import {Link, LinkProps, useLocation} from 'react-router-dom';
 import {UserPreferences} from '@parca/components';
 import {Parca, ParcaSmall} from '@parca/icons';
 import {selectDarkMode, useAppSelector} from '@parca/store';
-import {isDevMode} from '@parca/utilities';
 
 import ReleaseNotesViewer from '../ReleaseNotesViewer';
 import ThemeToggle from './ThemeToggle';
 
-const pathPrefix = isDevMode() ? '' : window.PATH_PREFIX;
-
 const links: {[path: string]: {label: string; href: string; external: boolean}} = {
-  '/': {label: 'Profiles', href: `${pathPrefix}/`, external: false},
-  '/targets': {label: 'Targets', href: `${pathPrefix}/targets`, external: false},
+  '/': {label: 'Profiles', href: `/`, external: false},
+  '/targets': {label: 'Targets', href: `/targets`, external: false},
   '/help': {label: 'Help', href: 'https://parca.dev/docs/overview', external: true},
 };
 
