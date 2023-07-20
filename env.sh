@@ -25,3 +25,7 @@ go install "mvdan.cc/gofumpt@${GOFUMPT_VERSION}"
 # renovate: datasource=go depName=github.com/golangci/golangci-lint
 GOLANGCI_LINT_VERSION='v1.53.3'
 go install "github.com/golangci/golangci-lint/cmd/golangci-lint@${GOLANGCI_LINT_VERSION}"
+
+# renovate: datasource=go depName=golang.org/x/vuln
+GOVULNCHECK_VERSION='v1.0.0'
+go install "golang.org/x/vuln/cmd/govulncheck@${GOVULNCHECK_VERSION}"

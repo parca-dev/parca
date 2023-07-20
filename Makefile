@@ -49,6 +49,10 @@ clean:
 .PHONY: go/deps
 go/deps:
 	go mod tidy
+	govulncheck ./...
+
+.PHONY: go/build
+go/build: go/bin
 
 .PHONY: go/bin
 go/bin: go/deps
