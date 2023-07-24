@@ -1159,10 +1159,10 @@ func BenchmarkQuery(b *testing.B) {
 	}
 }
 
-func PprofToSymbolizedProfile(meta profile.Meta, prof *pprofprofile.Profile, index int) (*profile.Profile, error) {
+func PprofToSymbolizedProfile(meta profile.Meta, prof *pprofprofile.Profile, index int) (profile.OldProfile, error) {
 	km := metastore.NewKeyMaker()
 
-	p := &profile.Profile{
+	p := profile.Profile{
 		Meta:    meta,
 		Samples: make([]*profile.SymbolizedSample, 0, len(prof.Sample)),
 	}

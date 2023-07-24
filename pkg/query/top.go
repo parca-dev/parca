@@ -22,7 +22,7 @@ import (
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
-func GenerateTopTable(ctx context.Context, p *parcaprofile.Profile) (*pb.Top, int64, error) {
+func GenerateTopTable(ctx context.Context, p parcaprofile.OldProfile) (*pb.Top, int64, error) {
 	// Iterate over all samples and their locations.
 	// Calculate the cumulative value of all locations of all samples.
 	// In the end return a *pb.TopNode for each location including all the metadata we have.

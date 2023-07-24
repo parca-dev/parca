@@ -62,6 +62,7 @@ import (
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/parcacol"
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/profilestore"
 	queryservice "github.com/parca-dev/parca/pkg/query"
 	"github.com/parca-dev/parca/pkg/scrape"
@@ -273,7 +274,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	metastore := metastore.NewInProcessClient(mStr)
+	mc := metastore.NewInProcessClient(mStr)
 
 	frostdbOptions := []frostdb.Option{
 		frostdb.WithActiveMemorySize(flags.Storage.ActiveMemory),
@@ -313,7 +314,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	def := parcacol.SchemaDefinition()
+	def := profile.SchemaDefinition()
 	table, err := colDB.Table("stacktraces",
 		frostdb.NewTableConfig(
 			def,
@@ -333,7 +334,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	s := profilestore.NewProfileColumnStore(
 		logger,
 		tracerProvider.Tracer("profilestore"),
-		metastore,
+		mc,
 		table,
 		schema,
 		flags.Hidden.DebugNormalizeAddresses,
@@ -359,6 +360,12 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	if err != nil {
 		return fmt.Errorf("failed to create gRPC connection to ProfileShareServer: %s, %w", flags.ProfileShareServer, err)
 	}
+
+	converter := parcacol.NewArrowToProfileConverter(
+		tracerProvider.Tracer("arrow_to_profile_converter"),
+		mc,
+		metastore.NewKeyMaker(),
+	)
 	q := queryservice.NewColumnQueryAPI(
 		logger,
 		tracerProvider.Tracer("query-service"),
@@ -372,9 +379,11 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 				query.WithTracer(tracerProvider.Tracer("query-engine")),
 			),
 			"stacktraces",
-			metastore,
+			converter,
+			memory.DefaultAllocator,
 		),
 		memory.DefaultAllocator,
+		converter,
 	)
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -476,7 +485,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			logger,
 			reg,
 			debuginfoMetadata,
-			metastore,
+			mc,
 			debuginfo.NewFetcher(debuginfodClients, debuginfoBucket),
 			flags.Debuginfo.CacheDir,
 			0,

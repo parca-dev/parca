@@ -20,9 +20,11 @@ import (
 
 	"github.com/apache/arrow/go/v13/arrow"
 	"github.com/apache/arrow/go/v13/arrow/array"
+	"github.com/apache/arrow/go/v13/arrow/memory"
 	"go.opentelemetry.io/otel/trace"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
+	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -38,92 +40,146 @@ func (e ErrMissingColumn) Error() string {
 type ArrowToProfileConverter struct {
 	tracer trace.Tracer
 	m      pb.MetastoreServiceClient
+	key    *metastore.KeyMaker
 }
 
 func NewArrowToProfileConverter(
 	tracer trace.Tracer,
 	m pb.MetastoreServiceClient,
+	keyMaker *metastore.KeyMaker,
 ) *ArrowToProfileConverter {
 	return &ArrowToProfileConverter{
 		tracer: tracer,
 		m:      m,
+		key:    keyMaker,
 	}
 }
 
 func (c *ArrowToProfileConverter) Convert(
 	ctx context.Context,
-	records []arrow.Record,
-	valueColumnName string,
-	meta profile.Meta,
-) (*profile.Profile, error) {
-	ctx, span := c.tracer.Start(ctx, "convert-arrow-record-to-profile")
-	defer span.End()
+	p profile.Profile,
+) (profile.OldProfile, error) {
+	samples := make([]*profile.SymbolizedSample, 0, p.Samples.NumRows())
 
-	rows := 0
-	for _, ar := range records {
-		rows += int(ar.NumRows())
+	ar := p.Samples
+	schema := ar.Schema()
+	indices := schema.FieldIndices("locations")
+	if len(indices) != 1 {
+		return profile.OldProfile{}, ErrMissingColumn{Column: "locations", Columns: len(indices)}
 	}
-	samples := make([]*profile.SymbolizedSample, 0, rows)
-	for _, ar := range records {
-		schema := ar.Schema()
-		indices := schema.FieldIndices("stacktrace")
-		if len(indices) != 1 {
-			return nil, ErrMissingColumn{Column: "stacktrace", Columns: len(indices)}
-		}
-		stacktraceColumn := ar.Column(indices[0]).(*array.Binary)
+	locations := ar.Column(indices[0]).(*array.List)
+	locationOffsets := locations.Offsets()
+	location := locations.ListValues().(*array.Struct)
+	address := location.Field(0).(*array.Uint64)
+	mapping := location.Field(1).(*array.Struct)
+	mappingStart := mapping.Field(0).(*array.Uint64)
+	mappingLimit := mapping.Field(1).(*array.Uint64)
+	mappingOffset := mapping.Field(2).(*array.Uint64)
+	mappingFile := mapping.Field(3).(*array.String)
+	mappingBuildID := mapping.Field(4).(*array.String)
+	lines := location.Field(2).(*array.List)
+	lineOffsets := lines.Offsets()
+	line := lines.ListValues().(*array.Struct)
+	lineNumber := line.Field(0).(*array.Int64)
+	lineFunction := line.Field(1).(*array.Struct)
+	lineFunctionName := lineFunction.Field(0).(*array.String)
+	lineFunctionSystemName := lineFunction.Field(1).(*array.String)
+	lineFunctionFilename := lineFunction.Field(2).(*array.String)
+	lineFunctionStartLine := lineFunction.Field(3).(*array.Int64)
 
-		indices = schema.FieldIndices("sum(value)")
-		if len(indices) != 1 {
-			return nil, ErrMissingColumn{Column: "value", Columns: len(indices)}
-		}
-		valueColumn := ar.Column(indices[0]).(*array.Int64)
+	indices = schema.FieldIndices("value")
+	if len(indices) != 1 {
+		return profile.OldProfile{}, ErrMissingColumn{Column: "value", Columns: len(indices)}
+	}
+	valueColumn := ar.Column(indices[0]).(*array.Int64)
 
-		rows := int(ar.NumRows())
-		stacktraceIDs := make([]string, rows)
-		for i := 0; i < rows; i++ {
-			stacktraceIDs[i] = string(stacktraceColumn.Value(i))
-		}
+	indices = schema.FieldIndices("diff")
+	if len(indices) != 1 {
+		return profile.OldProfile{}, ErrMissingColumn{Column: "diff", Columns: len(indices)}
+	}
+	diffColumn := ar.Column(indices[0]).(*array.Int64)
 
-		stacktraceLocations, err := c.resolveStacktraces(ctx, stacktraceIDs)
-		if err != nil {
-			return nil, fmt.Errorf("read stacktrace metadata: %w", err)
+	labelIndexes := make(map[string]int)
+	for i, field := range schema.Fields() {
+		if strings.HasPrefix(field.Name, profile.ColumnPprofLabelsPrefix) {
+			labelIndexes[strings.TrimPrefix(field.Name, profile.ColumnPprofLabelsPrefix)] = i
 		}
+	}
 
-		labelIndexes := make(map[string]int)
-		for i, field := range schema.Fields() {
-			if strings.HasPrefix(field.Name, ColumnPprofLabels+".") {
-				labelIndexes[strings.TrimPrefix(field.Name, ColumnPprofLabels+".")] = i
-			}
-		}
-
-		for i := 0; i < rows; i++ {
-			labels := make(map[string]string, len(labelIndexes))
-			for name, index := range labelIndexes {
-				c := ar.Column(index).(*array.Dictionary)
-				d := c.Dictionary().(*array.Binary)
-				if !c.IsNull(i) {
-					labelValue := d.Value(c.GetValueIndex(i))
-					if len(labelValue) > 0 {
-						labels[name] = string(labelValue)
-					}
+	for i := 0; i < int(ar.NumRows()); i++ {
+		labels := make(map[string]string, len(labelIndexes))
+		for name, index := range labelIndexes {
+			c := ar.Column(index).(*array.Dictionary)
+			d := c.Dictionary().(*array.Binary)
+			if !c.IsNull(i) {
+				labelValue := d.Value(c.GetValueIndex(i))
+				if len(labelValue) > 0 {
+					labels[name] = string(labelValue)
 				}
 			}
-
-			samples = append(samples, &profile.SymbolizedSample{
-				Value:     valueColumn.Value(i),
-				Locations: stacktraceLocations[i],
-				Label:     labels,
-			})
 		}
+
+		lOffsetStart := locationOffsets[i]
+		lOffsetEnd := locationOffsets[i+1]
+		stacktrace := make([]*profile.Location, 0, lOffsetEnd-lOffsetStart)
+		for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
+			llOffsetStart := lineOffsets[j]
+			llOffsetEnd := lineOffsets[j+1]
+			lines := make([]profile.LocationLine, 0, llOffsetEnd-llOffsetStart)
+
+			for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
+				var f *pb.Function
+				if lineFunction.IsValid(k) {
+					f = &pb.Function{
+						Name:       lineFunctionName.Value(k),
+						SystemName: lineFunctionSystemName.Value(k),
+						Filename:   lineFunctionFilename.Value(k),
+						StartLine:  int64(lineFunctionStartLine.Value(k)),
+					}
+					f.Id = c.key.MakeFunctionID(f)
+				}
+				lines = append(lines, profile.LocationLine{
+					Line:     int64(lineNumber.Value(k)),
+					Function: f,
+				})
+			}
+
+			var m *pb.Mapping
+			if !mapping.IsNull(j) {
+				m = &pb.Mapping{
+					Start:   mappingStart.Value(j),
+					Limit:   mappingLimit.Value(j),
+					Offset:  mappingOffset.Value(j),
+					File:    mappingFile.Value(j),
+					BuildId: mappingBuildID.Value(j),
+				}
+				m.Id = c.key.MakeMappingID(m)
+			}
+
+			loc := &profile.Location{
+				Address: address.Value(j),
+				Mapping: m,
+				Lines:   lines,
+			}
+			loc.ID = c.key.MakeProfileLocationID(loc)
+			stacktrace = append(stacktrace, loc)
+		}
+
+		samples = append(samples, &profile.SymbolizedSample{
+			Value:     valueColumn.Value(i),
+			DiffValue: diffColumn.Value(i),
+			Locations: stacktrace,
+			Label:     labels,
+		})
 	}
 
-	return &profile.Profile{
+	return profile.OldProfile{
 		Samples: samples,
-		Meta:    meta,
+		Meta:    p.Meta,
 	}, nil
 }
 
-func (c *ArrowToProfileConverter) SymbolizeNormalizedProfile(ctx context.Context, p *profile.NormalizedProfile) (*profile.Profile, error) {
+func (c *ArrowToProfileConverter) SymbolizeNormalizedProfile(ctx context.Context, p *profile.NormalizedProfile) (profile.OldProfile, error) {
 	stacktraceIDs := make([]string, len(p.Samples))
 	for i, sample := range p.Samples {
 		stacktraceIDs[i] = sample.StacktraceID
@@ -131,7 +187,7 @@ func (c *ArrowToProfileConverter) SymbolizeNormalizedProfile(ctx context.Context
 
 	stacktraceLocations, err := c.resolveStacktraces(ctx, stacktraceIDs)
 	if err != nil {
-		return nil, fmt.Errorf("read stacktrace metadata: %w", err)
+		return profile.OldProfile{}, fmt.Errorf("read stacktrace metadata: %w", err)
 	}
 
 	samples := make([]*profile.SymbolizedSample, len(p.Samples))
@@ -145,7 +201,7 @@ func (c *ArrowToProfileConverter) SymbolizeNormalizedProfile(ctx context.Context
 		}
 	}
 
-	return &profile.Profile{
+	return profile.OldProfile{
 		Samples: samples,
 		Meta:    p.Meta,
 	}, nil
@@ -158,11 +214,36 @@ func (c *ArrowToProfileConverter) resolveStacktraces(ctx context.Context, stackt
 	ctx, span := c.tracer.Start(ctx, "resolve-stacktraces")
 	defer span.End()
 
+	stacktraces, locations, locationIndex, err := c.resolveStacktraceLocations(ctx, stacktraceIDs)
+	if err != nil {
+		return nil, fmt.Errorf("resolve stacktrace locations: %w", err)
+	}
+
+	stacktraceLocations := make([][]*profile.Location, len(stacktraces))
+	for i, stacktrace := range stacktraces {
+		stacktraceLocations[i] = make([]*profile.Location, len(stacktrace.LocationIds))
+		for j, id := range stacktrace.LocationIds {
+			stacktraceLocations[i][j] = locations[locationIndex[id]]
+		}
+	}
+
+	return stacktraceLocations, nil
+}
+
+func (c *ArrowToProfileConverter) resolveStacktraceLocations(ctx context.Context, stacktraceIDs []string) (
+	[]*pb.Stacktrace,
+	[]*profile.Location,
+	map[string]int,
+	error,
+) {
+	ctx, span := c.tracer.Start(ctx, "resolve-stacktraces")
+	defer span.End()
+
 	sres, err := c.m.Stacktraces(ctx, &pb.StacktracesRequest{
 		StacktraceIds: stacktraceIDs,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("read stacktraces: %w", err)
+		return nil, nil, nil, fmt.Errorf("read stacktraces: %w", err)
 	}
 
 	locationNum := 0
@@ -183,23 +264,77 @@ func (c *ArrowToProfileConverter) resolveStacktraces(ctx context.Context, stackt
 
 	lres, err := c.m.Locations(ctx, &pb.LocationsRequest{LocationIds: locationIDs})
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
 	locations, err := c.getLocationsFromSerializedLocations(ctx, locationIDs, lres.Locations)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
-	stacktraceLocations := make([][]*profile.Location, len(sres.Stacktraces))
-	for i, stacktrace := range sres.Stacktraces {
-		stacktraceLocations[i] = make([]*profile.Location, len(stacktrace.LocationIds))
-		for j, id := range stacktrace.LocationIds {
-			stacktraceLocations[i][j] = locations[locationIndex[id]]
+	return sres.Stacktraces, locations, locationIndex, nil
+}
+
+func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrace, resolvedLocations []*profile.Location, locationIndex map[string]int) arrow.Record {
+	b := array.NewRecordBuilder(allocator, profile.LocationsArrowSchema())
+	defer b.Release()
+
+	locationsList := b.Field(0).(*array.ListBuilder)
+	locations := locationsList.ValueBuilder().(*array.StructBuilder)
+
+	addresses := locations.FieldBuilder(0).(*array.Uint64Builder)
+
+	mapping := locations.FieldBuilder(1).(*array.StructBuilder)
+	mappingStart := mapping.FieldBuilder(0).(*array.Uint64Builder)
+	mappingLimit := mapping.FieldBuilder(1).(*array.Uint64Builder)
+	mappingOffset := mapping.FieldBuilder(2).(*array.Uint64Builder)
+	mappingFile := mapping.FieldBuilder(3).(*array.StringBuilder)
+	mappingBuildID := mapping.FieldBuilder(4).(*array.StringBuilder)
+
+	lines := locations.FieldBuilder(2).(*array.ListBuilder)
+	line := lines.ValueBuilder().(*array.StructBuilder)
+	lineNumber := line.FieldBuilder(0).(*array.Int64Builder)
+	function := line.FieldBuilder(1).(*array.StructBuilder)
+	functionName := function.FieldBuilder(0).(*array.StringBuilder)
+	functionSystemName := function.FieldBuilder(1).(*array.StringBuilder)
+	functionFilename := function.FieldBuilder(2).(*array.StringBuilder)
+	functionStartLine := function.FieldBuilder(3).(*array.Int64Builder)
+
+	for _, stacktrace := range stacktraces {
+		locationsList.Append(true)
+		for _, id := range stacktrace.LocationIds {
+			locations.Append(true)
+			loc := resolvedLocations[locationIndex[id]]
+
+			addresses.Append(loc.Address)
+
+			mapping.Append(loc.Mapping != nil)
+			if loc.Mapping != nil {
+				mappingStart.Append(loc.Mapping.Start)
+				mappingLimit.Append(loc.Mapping.Limit)
+				mappingOffset.Append(loc.Mapping.Offset)
+				mappingFile.Append(loc.Mapping.File)
+				mappingBuildID.Append(loc.Mapping.BuildId)
+			}
+
+			lines.Append(len(loc.Lines) > 0)
+			if loc.Lines != nil {
+				for _, l := range loc.Lines {
+					line.Append(true)
+					lineNumber.Append(l.Line)
+					function.Append(l.Function != nil)
+					if l.Function != nil {
+						functionName.Append(l.Function.Name)
+						functionSystemName.Append(l.Function.SystemName)
+						functionFilename.Append(l.Function.Filename)
+						functionStartLine.Append(l.Function.StartLine)
+					}
+				}
+			}
 		}
 	}
 
-	return stacktraceLocations, nil
+	return b.NewRecord()
 }
 
 func (c *ArrowToProfileConverter) getLocationsFromSerializedLocations(
