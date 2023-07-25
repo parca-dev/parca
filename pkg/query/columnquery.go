@@ -389,11 +389,6 @@ func RenderReport(
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW:
-		op, err := converter.Convert(ctx, p)
-		if err != nil {
-			return nil, err
-		}
-
 		allowedGroupBy := map[string]struct{}{
 			FlamegraphFieldFunctionName: {},
 			FlamegraphFieldLabels:       {},
@@ -404,7 +399,7 @@ func RenderReport(
 			}
 		}
 
-		fa, total, err := GenerateFlamegraphArrow(ctx, mem, tracer, op, groupBy, nodeTrimFraction)
+		fa, total, err := GenerateFlamegraphArrow(ctx, mem, tracer, p, groupBy, nodeTrimFraction)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate arrow flamegraph: %v", err.Error())
 		}
