@@ -26,7 +26,7 @@
     "d3-selection": "3.0.0",
     "graphviz-wasm": "3.0.0",
     "react-datepicker": "4.16.0",
-    "react-tooltip": "5.18.0",
+    "react-tooltip": "5.18.1",
     "react-use": "^17.3.2",
     "react-virtual": "^2.10.4",
     "tailwind-merge": "^1.10.0"
