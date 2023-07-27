@@ -45,6 +45,7 @@ interface IcicleGraphNodesProps {
   curPath: string[];
   setCurPath: (path: string[]) => void;
   setHoveringRow: (row: number | null) => void;
+  setHoveringLevel: (level: number | null) => void;
   path: string[];
   xScale: (value: bigint) => number;
   searchString?: string;
@@ -66,6 +67,7 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
   path,
   setCurPath,
   setHoveringRow,
+  setHoveringLevel,
   curPath,
   sortBy,
   searchString,
@@ -81,7 +83,7 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
   childRows =
     curPath.length === 0
       ? childRows
-      : childRows.filter(c => nodeLabel(table, c, false) === curPath[0]);
+      : childRows.filter(c => nodeLabel(table, c, level, false) === curPath[0]);
 
   let childrenCumulative = BigInt(0);
   const childrenElements: ReactNode[] = [];
@@ -103,6 +105,7 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
         path={path}
         setCurPath={setCurPath}
         setHoveringRow={setHoveringRow}
+        setHoveringLevel={setHoveringLevel}
         level={level}
         curPath={curPath}
         total={total}
@@ -136,6 +139,7 @@ interface IcicleNodeProps {
   total: bigint;
   setCurPath: (path: string[]) => void;
   setHoveringRow: (row: number | null) => void;
+  setHoveringLevel: (level: number | null) => void;
   xScale: (value: bigint) => number;
   isRoot?: boolean;
   searchString?: string;
@@ -171,6 +175,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   isRoot = false,
   searchString,
   setHoveringRow,
+  setHoveringLevel,
   sortBy,
   darkMode,
   compareMode,
@@ -246,8 +251,8 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     functionName,
   });
   const name = useMemo(() => {
-    return isRoot ? 'root' : nodeLabel(table, row, binaries.length > 1);
-  }, [table, row, isRoot, binaries]);
+    return isRoot ? 'root' : nodeLabel(table, row, level, binaries.length > 1);
+  }, [table, row, level, isRoot, binaries]);
   const nextPath = path.concat([name]);
   const isFaded = curPath.length > 0 && name !== curPath[curPath.length - 1];
   const styles = isFaded ? fadedIcicleRectStyles : icicleRectStyles;
@@ -277,11 +282,13 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const onMouseEnter = (): void => {
     if (isShiftDown) return;
     setHoveringRow(row);
+    setHoveringLevel(level);
   };
 
   const onMouseLeave = (): void => {
     if (isShiftDown) return;
     setHoveringRow(null);
+    setHoveringLevel(null);
   };
 
   return (
@@ -331,6 +338,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
           curPath={nextCurPath}
           setCurPath={setCurPath}
           setHoveringRow={setHoveringRow}
+          setHoveringLevel={setHoveringLevel}
           searchString={searchString}
           sortBy={sortBy}
           darkMode={darkMode}
