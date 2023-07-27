@@ -80,6 +80,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   const [height, setHeight] = useState(0);
   const [hoveringRow, setHoveringRow] = useState<number | null>(null);
+  const [hoveringLevel, setHoveringLevel] = useState<number | null>(null);
   const svg = useRef(null);
   const ref = useRef<SVGGElement>(null);
 
@@ -190,6 +191,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               isRoot={true}
               searchString={currentSearchString}
               setHoveringRow={setHoveringRow}
+              setHoveringLevel={setHoveringLevel}
               sortBy={sortBy}
               darkMode={isDarkMode}
               compareMode={compareMode}
@@ -228,6 +230,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
         <GraphTooltipArrowContent
           table={table}
           row={hoveringRow}
+          level={hoveringLevel ?? 0}
           isFixed={false}
           total={total}
           totalUnfiltered={total + filtered}
