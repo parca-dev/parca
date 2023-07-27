@@ -361,11 +361,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return fmt.Errorf("failed to create gRPC connection to ProfileShareServer: %s, %w", flags.ProfileShareServer, err)
 	}
 
-	converter := parcacol.NewArrowToProfileConverter(
-		tracerProvider.Tracer("arrow_to_profile_converter"),
-		mc,
-		metastore.NewKeyMaker(),
-	)
 	q := queryservice.NewColumnQueryAPI(
 		logger,
 		tracerProvider.Tracer("query-service"),
@@ -379,11 +374,17 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 				query.WithTracer(tracerProvider.Tracer("query-engine")),
 			),
 			"stacktraces",
-			converter,
+			parcacol.NewProfileSymbolizer(
+				tracerProvider.Tracer("profile-symbolizer"),
+				mc,
+			),
 			memory.DefaultAllocator,
 		),
 		memory.DefaultAllocator,
-		converter,
+		parcacol.NewArrowToProfileConverter(
+			tracerProvider.Tracer("arrow_to_profile_converter"),
+			metastore.NewKeyMaker(),
+		),
 	)
 
 	ctx, cancel := context.WithCancel(ctx)

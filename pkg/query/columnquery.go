@@ -214,37 +214,13 @@ func FilterProfileData(
 	// TODO: This is a bit inefficient because it completely rebuilds the
 	// profile, we should only ever rebuild dictionaries once at the very end
 	// before we send a result to the user.
-	resBuilder := array.NewRecordBuilder(pool, profile.ArrowSchema(r.LabelFields))
-	defer resBuilder.Release()
-
-	labelBuilders := make([]*array.BinaryDictionaryBuilder, len(r.LabelFields))
-	labelNum := len(r.LabelFields)
-	for i := 0; i < labelNum; i++ {
-		labelBuilders[i] = resBuilder.Field(i).(*array.BinaryDictionaryBuilder)
+	labelNames := make([]string, 0, len(r.LabelFields))
+	for _, lf := range r.LabelFields {
+		labelNames = append(labelNames, strings.TrimPrefix(lf.Name, profile.ColumnPprofLabelsPrefix))
 	}
-	resLocationsList := resBuilder.Field(labelNum).(*array.ListBuilder)
-	resLocations := resLocationsList.ValueBuilder().(*array.StructBuilder)
 
-	resAddresses := resLocations.FieldBuilder(0).(*array.Uint64Builder)
-
-	resMapping := resLocations.FieldBuilder(1).(*array.StructBuilder)
-	resMappingStart := resMapping.FieldBuilder(0).(*array.Uint64Builder)
-	resMappingLimit := resMapping.FieldBuilder(1).(*array.Uint64Builder)
-	resMappingOffset := resMapping.FieldBuilder(2).(*array.Uint64Builder)
-	resMappingFile := resMapping.FieldBuilder(3).(*array.StringBuilder)
-	resMappingBuildID := resMapping.FieldBuilder(4).(*array.StringBuilder)
-
-	resLines := resLocations.FieldBuilder(2).(*array.ListBuilder)
-	resLine := resLines.ValueBuilder().(*array.StructBuilder)
-	resLineNumber := resLine.FieldBuilder(0).(*array.Int64Builder)
-	resFunction := resLine.FieldBuilder(1).(*array.StructBuilder)
-	resFunctionName := resFunction.FieldBuilder(0).(*array.StringBuilder)
-	resFunctionSystemName := resFunction.FieldBuilder(1).(*array.StringBuilder)
-	resFunctionFilename := resFunction.FieldBuilder(2).(*array.StringBuilder)
-	resFunctionStartLine := resFunction.FieldBuilder(3).(*array.Int64Builder)
-
-	resValues := resBuilder.Field(labelNum + 1).(*array.Int64Builder)
-	resDiff := resBuilder.Field(labelNum + 2).(*array.Int64Builder)
+	w := profile.NewWriter(pool, labelNames)
+	defer w.RecordBuilder.Release()
 
 	for i := 0; i < int(r.Profile.Samples.NumRows()); i++ {
 		lOffsetStart := r.LocationOffsets[i]
@@ -263,46 +239,46 @@ func FilterProfileData(
 		}
 
 		if keepRow {
-			resValues.Append(r.Value.Value(i))
-			resDiff.Append(r.Diff.Value(i))
+			w.Value.Append(r.Value.Value(i))
+			w.Diff.Append(r.Diff.Value(i))
 
 			for j, label := range r.LabelColumns {
 				if label.Col.IsValid(i) {
-					labelBuilders[j].Append(label.Dict.Value(label.Col.GetValueIndex(i)))
+					w.LabelBuilders[j].Append([]byte(label.Dict.Value(label.Col.GetValueIndex(i))))
 				} else {
-					labelBuilders[j].AppendNull()
+					w.LabelBuilders[j].AppendNull()
 				}
 			}
 
-			resLocationsList.Append(true)
+			w.LocationsList.Append(true)
 			for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
-				resLocations.Append(true)
-				resAddresses.Append(r.Address.Value(j))
+				w.Locations.Append(true)
+				w.Addresses.Append(r.Address.Value(j))
 
-				resMapping.Append(r.Mapping.IsValid(j))
+				w.Mapping.Append(r.Mapping.IsValid(j))
 				if r.Mapping.IsValid(j) {
-					resMappingStart.Append(r.MappingStart.Value(j))
-					resMappingLimit.Append(r.MappingLimit.Value(j))
-					resMappingOffset.Append(r.MappingOffset.Value(j))
-					resMappingFile.Append(r.MappingFile.Value(j))
-					resMappingBuildID.Append(r.MappingBuildID.Value(j))
+					w.MappingStart.Append(r.MappingStart.Value(j))
+					w.MappingLimit.Append(r.MappingLimit.Value(j))
+					w.MappingOffset.Append(r.MappingOffset.Value(j))
+					w.MappingFile.Append(r.MappingFile.Value(j))
+					w.MappingBuildID.Append(r.MappingBuildID.Value(j))
 				}
 
-				resLines.Append(r.Lines.IsValid(j))
+				w.Lines.Append(r.Lines.IsValid(j))
 
 				if r.Lines.IsValid(j) {
 					llOffsetStart := r.LineOffsets[j]
 					llOffsetEnd := r.LineOffsets[j+1]
 					for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
-						resLine.Append(true)
-						resLineNumber.Append(r.LineNumber.Value(k))
-						resFunction.Append(r.LineFunction.IsValid(k))
+						w.Line.Append(true)
+						w.LineNumber.Append(r.LineNumber.Value(k))
+						w.Function.Append(r.LineFunction.IsValid(k))
 
 						if r.LineFunction.IsValid(k) {
-							resFunctionName.Append(r.LineFunctionName.Value(k))
-							resFunctionSystemName.Append(r.LineFunctionSystemName.Value(k))
-							resFunctionFilename.Append(r.LineFunctionFilename.Value(k))
-							resFunctionStartLine.Append(r.LineFunctionStartLine.Value(k))
+							w.FunctionName.Append(r.LineFunctionName.Value(k))
+							w.FunctionSystemName.Append(r.LineFunctionSystemName.Value(k))
+							w.FunctionFilename.Append(r.LineFunctionFilename.Value(k))
+							w.FunctionStartLine.Append(r.LineFunctionStartLine.Value(k))
 						}
 					}
 				}
@@ -312,10 +288,10 @@ func FilterProfileData(
 
 	res := profile.Profile{
 		Meta:    p.Meta,
-		Samples: resBuilder.NewRecord(),
+		Samples: w.RecordBuilder.NewRecord(),
 	}
 	numFields := res.Samples.Schema().NumFields()
-	filteredValue := res.Samples.Column(numFields - 1).(*array.Int64)
+	filteredValue := res.Samples.Column(numFields - 2).(*array.Int64)
 	return res, math.Int64.Sum(r.Value) - math.Int64.Sum(filteredValue), nil
 }
 

@@ -52,26 +52,26 @@ func NewQuerier(
 	tracer trace.Tracer,
 	engine Engine,
 	tableName string,
-	converter *ArrowToProfileConverter,
+	symbolizer *ProfileSymbolizer,
 	pool memory.Allocator,
 ) *Querier {
 	return &Querier{
-		logger:    logger,
-		tracer:    tracer,
-		engine:    engine,
-		tableName: tableName,
-		converter: converter,
-		pool:      pool,
+		logger:     logger,
+		tracer:     tracer,
+		engine:     engine,
+		tableName:  tableName,
+		symbolizer: symbolizer,
+		pool:       pool,
 	}
 }
 
 type Querier struct {
-	logger    log.Logger
-	engine    Engine
-	tableName string
-	converter *ArrowToProfileConverter
-	tracer    trace.Tracer
-	pool      memory.Allocator
+	logger     log.Logger
+	engine     Engine
+	tableName  string
+	symbolizer *ProfileSymbolizer
+	tracer     trace.Tracer
+	pool       memory.Allocator
 }
 
 func (q *Querier) Labels(
@@ -831,7 +831,7 @@ func (q *Querier) SymbolizeArrowRecord(
 		}
 	}
 
-	stacktraces, locations, locationIndex, err := q.converter.resolveStacktraceLocations(ctx, stacktraceIDs)
+	stacktraces, locations, locationIndex, err := q.symbolizer.resolveStacktraceLocations(ctx, stacktraceIDs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve stacktrace locations: %w", err)
 	}

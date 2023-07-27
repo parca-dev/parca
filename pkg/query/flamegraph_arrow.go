@@ -150,7 +150,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	}
 
 	// This field compares the current sample with the already added values in the builders.
-	equalField := func(fieldName string, pprofLabels map[string]string, sampleRow, locationRow, lineRow, flamegraphRow int, isRoot bool) bool {
+	equalField := func(fieldName string, pprofLabels map[string]string, sampleRow, locationRow, lineRow, flamegraphRow int, height int) bool {
 		switch fieldName {
 		case FlamegraphFieldMappingFile:
 			if !r.Mapping.IsValid(locationRow) {
@@ -177,7 +177,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			return false
 		case FlamegraphFieldLabels:
 			// We only compare the labels of roots of stacktraces.
-			if !isRoot {
+			if height > 0 {
 				return true
 			}
 			if len(pprofLabels) == 0 && fb.labels[flamegraphRow] == nil {
@@ -240,7 +240,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 		var sampleLabels map[string]string
 		for j, labelColumn := range r.LabelColumns {
-			if labelColumn.Col.IsValid(j) {
+			if labelColumn.Col.IsValid(i) {
 				if sampleLabels == nil {
 					sampleLabels = map[string]string{}
 				}
@@ -275,7 +275,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				// If we find a matching address, we merge the values.
 			compareRowsAddr:
 				for _, cr := range compareRows {
-					if !equalField(FlamegraphFieldLocationAddress, sampleLabels, i, j, 0, cr, isRoot) {
+					if !equalField(FlamegraphFieldLocationAddress, sampleLabels, i, j, 0, cr, end-1-j) {
 						continue compareRowsAddr
 					}
 
@@ -298,7 +298,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					rootsRow = append(rootsRow, row)
 				}
 
-				err := fb.appendRow(r, sampleLabels, i, j, 0, row)
+				err := fb.appendRow(r, sampleLabels, i, j, -1, row)
 				if err != nil {
 					return nil, 0, 0, 0, err
 				}
@@ -323,7 +323,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				compareRows:
 					for _, cr := range compareRows {
 						for f := range aggregateFields {
-							if !equalField(f, sampleLabels, i, j, k, cr, isRoot) {
+							if !equalField(f, sampleLabels, i, j, k, cr, end-1-j) {
 								// If a field doesn't match, we can't aggregate this row with the existing one.
 								continue compareRows
 							}
@@ -482,28 +482,32 @@ func (fb *flamegraphBuilder) appendRow(
 		case FlamegraphFieldLocationFolded:
 			fb.builderLocationFolded.AppendSingle(false)
 		case FlamegraphFieldLocationLine:
-			fb.builderLocationLine.Append(r.LineNumber.Value(lineRow))
+			if lineRow >= 0 && r.Line.IsValid(lineRow) {
+				fb.builderLocationLine.Append(r.LineNumber.Value(lineRow))
+			} else {
+				fb.builderLocationLine.AppendNull()
+			}
 		// Function
 		case FlamegraphFieldFunctionStartLine:
-			if r.LineFunction.IsValid(lineRow) && r.LineFunctionStartLine.Value(lineRow) > 0 {
+			if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && r.LineFunctionStartLine.Value(lineRow) > 0 {
 				fb.builderFunctionStartLine.Append(r.LineFunctionStartLine.Value(lineRow))
 			} else {
 				fb.builderFunctionStartLine.AppendNull()
 			}
 		case FlamegraphFieldFunctionName:
-			if r.LineFunction.IsValid(lineRow) && r.LineFunctionName.Value(lineRow) != "" {
+			if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && r.LineFunctionName.Value(lineRow) != "" {
 				_ = fb.builderFunctionName.Append(stringToBytes(r.LineFunctionName.Value(lineRow)))
 			} else {
 				fb.builderFunctionName.AppendNull()
 			}
 		case FlamegraphFieldFunctionSystemName:
-			if r.LineFunction.IsValid(lineRow) && r.LineFunctionSystemName.Value(lineRow) != "" {
+			if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && r.LineFunctionSystemName.Value(lineRow) != "" {
 				_ = fb.builderFunctionSystemName.Append(stringToBytes(r.LineFunctionSystemName.Value(lineRow)))
 			} else {
 				fb.builderFunctionSystemName.AppendNull()
 			}
 		case FlamegraphFieldFunctionFileName:
-			if r.LineFunction.IsValid(lineRow) && r.LineFunctionFilename.Value(lineRow) != "" {
+			if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && r.LineFunctionFilename.Value(lineRow) != "" {
 				_ = fb.builderFunctionFileName.Append(stringToBytes(r.LineFunctionFilename.Value(lineRow)))
 			} else {
 				fb.builderFunctionFileName.AppendNull()

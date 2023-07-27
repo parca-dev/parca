@@ -9,7 +9,7 @@ import (
 
 type LabelColumn struct {
 	Col  *array.Dictionary
-	Dict *array.Binary
+	Dict *array.String
 }
 
 type Reader struct {
@@ -58,7 +58,7 @@ func NewReader(p Profile) Reader {
 		col := ar.Column(i).(*array.Dictionary)
 		labelColumns[i] = LabelColumn{
 			Col:  col,
-			Dict: col.Dictionary().(*array.Binary),
+			Dict: col.Dictionary().(*array.String),
 		}
 	}
 	labelNum := len(labelFields)

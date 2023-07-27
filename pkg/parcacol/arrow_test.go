@@ -39,6 +39,6 @@ func TestBuildArrowLocations(t *testing.T) {
 	}}
 	locationIndex := map[string]int{"1": 0, "2": 1}
 
-	r := buildArrowLocations(memory.DefaultAllocator, stacktraces, locations, locationIndex)
+	r := BuildArrowLocations(memory.DefaultAllocator, stacktraces, locations, locationIndex)
 	fmt.Println(r)
 }

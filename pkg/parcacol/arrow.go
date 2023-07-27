@@ -39,18 +39,15 @@ func (e ErrMissingColumn) Error() string {
 
 type ArrowToProfileConverter struct {
 	tracer trace.Tracer
-	m      pb.MetastoreServiceClient
 	key    *metastore.KeyMaker
 }
 
 func NewArrowToProfileConverter(
 	tracer trace.Tracer,
-	m pb.MetastoreServiceClient,
 	keyMaker *metastore.KeyMaker,
 ) *ArrowToProfileConverter {
 	return &ArrowToProfileConverter{
 		tracer: tracer,
-		m:      m,
 		key:    keyMaker,
 	}
 }
@@ -179,13 +176,28 @@ func (c *ArrowToProfileConverter) Convert(
 	}, nil
 }
 
-func (c *ArrowToProfileConverter) SymbolizeNormalizedProfile(ctx context.Context, p *profile.NormalizedProfile) (profile.OldProfile, error) {
+type ProfileSymbolizer struct {
+	tracer trace.Tracer
+	m      pb.MetastoreServiceClient
+}
+
+func NewProfileSymbolizer(
+	tracer trace.Tracer,
+	m pb.MetastoreServiceClient,
+) *ProfileSymbolizer {
+	return &ProfileSymbolizer{
+		tracer: tracer,
+		m:      m,
+	}
+}
+
+func (s *ProfileSymbolizer) SymbolizeNormalizedProfile(ctx context.Context, p *profile.NormalizedProfile) (profile.OldProfile, error) {
 	stacktraceIDs := make([]string, len(p.Samples))
 	for i, sample := range p.Samples {
 		stacktraceIDs[i] = sample.StacktraceID
 	}
 
-	stacktraceLocations, err := c.resolveStacktraces(ctx, stacktraceIDs)
+	stacktraceLocations, err := s.resolveStacktraces(ctx, stacktraceIDs)
 	if err != nil {
 		return profile.OldProfile{}, fmt.Errorf("read stacktrace metadata: %w", err)
 	}
@@ -207,14 +219,14 @@ func (c *ArrowToProfileConverter) SymbolizeNormalizedProfile(ctx context.Context
 	}, nil
 }
 
-func (c *ArrowToProfileConverter) resolveStacktraces(ctx context.Context, stacktraceIDs []string) (
+func (s *ProfileSymbolizer) resolveStacktraces(ctx context.Context, stacktraceIDs []string) (
 	[][]*profile.Location,
 	error,
 ) {
-	ctx, span := c.tracer.Start(ctx, "resolve-stacktraces")
+	ctx, span := s.tracer.Start(ctx, "resolve-stacktraces")
 	defer span.End()
 
-	stacktraces, locations, locationIndex, err := c.resolveStacktraceLocations(ctx, stacktraceIDs)
+	stacktraces, locations, locationIndex, err := s.resolveStacktraceLocations(ctx, stacktraceIDs)
 	if err != nil {
 		return nil, fmt.Errorf("resolve stacktrace locations: %w", err)
 	}
@@ -230,16 +242,16 @@ func (c *ArrowToProfileConverter) resolveStacktraces(ctx context.Context, stackt
 	return stacktraceLocations, nil
 }
 
-func (c *ArrowToProfileConverter) resolveStacktraceLocations(ctx context.Context, stacktraceIDs []string) (
+func (s *ProfileSymbolizer) resolveStacktraceLocations(ctx context.Context, stacktraceIDs []string) (
 	[]*pb.Stacktrace,
 	[]*profile.Location,
 	map[string]int,
 	error,
 ) {
-	ctx, span := c.tracer.Start(ctx, "resolve-stacktraces")
+	ctx, span := s.tracer.Start(ctx, "resolve-stacktraces")
 	defer span.End()
 
-	sres, err := c.m.Stacktraces(ctx, &pb.StacktracesRequest{
+	sres, err := s.m.Stacktraces(ctx, &pb.StacktracesRequest{
 		StacktraceIds: stacktraceIDs,
 	})
 	if err != nil {
@@ -262,12 +274,12 @@ func (c *ArrowToProfileConverter) resolveStacktraceLocations(ctx context.Context
 		}
 	}
 
-	lres, err := c.m.Locations(ctx, &pb.LocationsRequest{LocationIds: locationIDs})
+	lres, err := s.m.Locations(ctx, &pb.LocationsRequest{LocationIds: locationIDs})
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	locations, err := c.getLocationsFromSerializedLocations(ctx, locationIDs, lres.Locations)
+	locations, err := s.getLocationsFromSerializedLocations(ctx, locationIDs, lres.Locations)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -337,7 +349,7 @@ func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrac
 	return b.NewRecord()
 }
 
-func (c *ArrowToProfileConverter) getLocationsFromSerializedLocations(
+func (s *ProfileSymbolizer) getLocationsFromSerializedLocations(
 	ctx context.Context,
 	locationIds []string,
 	locations []*pb.Location,
@@ -360,7 +372,7 @@ func (c *ArrowToProfileConverter) getLocationsFromSerializedLocations(
 
 	var mappings []*pb.Mapping
 	if len(mappingIDs) > 0 {
-		mres, err := c.m.Mappings(ctx, &pb.MappingsRequest{
+		mres, err := s.m.Mappings(ctx, &pb.MappingsRequest{
 			MappingIds: mappingIDs,
 		})
 		if err != nil {
@@ -383,7 +395,7 @@ func (c *ArrowToProfileConverter) getLocationsFromSerializedLocations(
 		}
 	}
 
-	fres, err := c.m.Functions(ctx, &pb.FunctionsRequest{
+	fres, err := s.m.Functions(ctx, &pb.FunctionsRequest{
 		FunctionIds: functionIDs,
 	})
 	if err != nil {

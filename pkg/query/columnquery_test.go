@@ -73,7 +73,7 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	_, err = colDB.Table("stacktraces", columnstore.NewTableConfig(parcacol.SchemaDefinition()))
+	_, err = colDB.Table("stacktraces", columnstore.NewTableConfig(profile.SchemaDefinition()))
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
 		t,
@@ -81,7 +81,7 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 		reg,
 		tracer,
 	)
-	metastore := metastore.NewInProcessClient(m)
+	mc := metastore.NewInProcessClient(m)
 
 	api := NewColumnQueryAPI(
 		logger,
@@ -95,9 +95,11 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 				colDB.TableProvider(),
 			),
 			"stacktraces",
-			metastore,
+			parcacol.NewProfileSymbolizer(tracer, mc),
+			memory.DefaultAllocator,
 		),
 		memory.DefaultAllocator,
+		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 	)
 	_, err = api.QueryRange(ctx, &pb.QueryRangeRequest{
 		Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
@@ -151,12 +153,12 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := parcacol.Schema()
+	schema, err := profile.Schema()
 	require.NoError(t, err)
 
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(parcacol.SchemaDefinition()),
+		columnstore.NewTableConfig(profile.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -170,11 +172,11 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 	files, err := os.ReadDir(dir)
 	require.NoError(t, err)
 
-	metastore := metastore.NewInProcessClient(m)
+	mc := metastore.NewInProcessClient(m)
 	store := profilestore.NewProfileColumnStore(
 		logger,
 		tracer,
-		metastore,
+		mc,
 		table,
 		schema,
 		true,
@@ -218,9 +220,11 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 				colDB.TableProvider(),
 			),
 			"stacktraces",
-			metastore,
+			parcacol.NewProfileSymbolizer(tracer, mc),
+			memory.DefaultAllocator,
 		),
 		memory.DefaultAllocator,
+		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 	)
 	res, err := api.QueryRange(ctx, &pb.QueryRangeRequest{
 		Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
@@ -249,12 +253,12 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := parcacol.Schema()
+	schema, err := profile.Schema()
 	require.NoError(t, err)
 
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(parcacol.SchemaDefinition()),
+		columnstore.NewTableConfig(profile.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -264,11 +268,11 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 		tracer,
 	)
 
-	metastore := metastore.NewInProcessClient(m)
+	mc := metastore.NewInProcessClient(m)
 	store := profilestore.NewProfileColumnStore(
 		logger,
 		tracer,
-		metastore,
+		mc,
 		table,
 		schema,
 		true,
@@ -313,9 +317,11 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 				colDB.TableProvider(),
 			),
 			"stacktraces",
-			metastore,
+			parcacol.NewProfileSymbolizer(tracer, mc),
+			memory.DefaultAllocator,
 		),
 		memory.DefaultAllocator,
+		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 	)
 	ts := timestamppb.New(timestamp.Time(p.TimeNanos / time.Millisecond.Nanoseconds()))
 	res, err := api.Query(ctx, &pb.QueryRequest{
@@ -381,12 +387,12 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := parcacol.Schema()
+	schema, err := profile.Schema()
 	require.NoError(t, err)
 
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(parcacol.SchemaDefinition()),
+		columnstore.NewTableConfig(profile.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -399,11 +405,11 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 	fileContent, err := os.ReadFile("testdata/fgprof.pb.gz")
 	require.NoError(t, err)
 
-	metastore := metastore.NewInProcessClient(m)
+	mc := metastore.NewInProcessClient(m)
 	store := profilestore.NewProfileColumnStore(
 		logger,
 		tracer,
-		metastore,
+		mc,
 		table,
 		schema,
 		true,
@@ -442,9 +448,11 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 				colDB.TableProvider(),
 			),
 			"stacktraces",
-			metastore,
+			parcacol.NewProfileSymbolizer(tracer, mc),
+			memory.DefaultAllocator,
 		),
 		memory.DefaultAllocator,
+		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 	)
 
 	res, err := api.QueryRange(ctx, &pb.QueryRangeRequest{
@@ -470,12 +478,12 @@ func TestColumnQueryAPIQueryCumulative(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := parcacol.Schema()
+	schema, err := profile.Schema()
 	require.NoError(t, err)
 
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(parcacol.SchemaDefinition()),
+		columnstore.NewTableConfig(profile.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -485,11 +493,11 @@ func TestColumnQueryAPIQueryCumulative(t *testing.T) {
 		tracer,
 	)
 
-	metastore := metastore.NewInProcessClient(m)
+	mc := metastore.NewInProcessClient(m)
 	store := profilestore.NewProfileColumnStore(
 		logger,
 		tracer,
-		metastore,
+		mc,
 		table,
 		schema,
 		true,
@@ -544,9 +552,11 @@ func TestColumnQueryAPIQueryCumulative(t *testing.T) {
 				colDB.TableProvider(),
 			),
 			"stacktraces",
-			metastore,
+			parcacol.NewProfileSymbolizer(tracer, mc),
+			memory.DefaultAllocator,
 		),
 		memory.DefaultAllocator,
+		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 	)
 
 	// These have been extracted from the profiles above.
@@ -612,12 +622,12 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := parcacol.Schema()
+	schema, err := profile.Schema()
 	require.NoError(t, err)
 
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(parcacol.SchemaDefinition()),
+		columnstore.NewTableConfig(profile.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -626,7 +636,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 		reg,
 		tracer,
 	)
-	metastore := metastore.NewInProcessClient(m)
+	mc := metastore.NewInProcessClient(m)
 
 	fres, err := m.GetOrCreateFunctions(ctx, &metastorepb.GetOrCreateFunctionsRequest{
 		Functions: []*metastorepb.Function{{
@@ -754,9 +764,11 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 				colDB.TableProvider(),
 			),
 			"stacktraces",
-			metastore,
+			parcacol.NewProfileSymbolizer(tracer, mc),
+			memory.DefaultAllocator,
 		),
 		memory.DefaultAllocator,
+		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 	)
 
 	res, err := api.Query(ctx, &pb.QueryRequest{
@@ -873,12 +885,12 @@ func TestColumnQueryAPITypes(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := parcacol.Schema()
+	schema, err := profile.Schema()
 	require.NoError(t, err)
 
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(parcacol.SchemaDefinition()),
+		columnstore.NewTableConfig(profile.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -891,11 +903,11 @@ func TestColumnQueryAPITypes(t *testing.T) {
 	fileContent, err := os.ReadFile("testdata/alloc_space_delta.pb.gz")
 	require.NoError(t, err)
 
-	metastore := metastore.NewInProcessClient(m)
+	mc := metastore.NewInProcessClient(m)
 	store := profilestore.NewProfileColumnStore(
 		logger,
 		tracer,
-		metastore,
+		mc,
 		table,
 		schema,
 		true,
@@ -936,9 +948,11 @@ func TestColumnQueryAPITypes(t *testing.T) {
 				colDB.TableProvider(),
 			),
 			"stacktraces",
-			metastore,
+			parcacol.NewProfileSymbolizer(tracer, mc),
+			memory.DefaultAllocator,
 		),
 		memory.DefaultAllocator,
+		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 	)
 	res, err := api.ProfileTypes(ctx, &pb.ProfileTypesRequest{})
 	require.NoError(t, err)
@@ -968,12 +982,12 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := parcacol.Schema()
+	schema, err := profile.Schema()
 	require.NoError(t, err)
 
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(parcacol.SchemaDefinition()),
+		columnstore.NewTableConfig(profile.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -986,11 +1000,11 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 	fileContent, err := os.ReadFile("testdata/alloc_objects.pb.gz")
 	require.NoError(t, err)
 
-	metastore := metastore.NewInProcessClient(m)
+	mc := metastore.NewInProcessClient(m)
 	store := profilestore.NewProfileColumnStore(
 		logger,
 		tracer,
-		metastore,
+		mc,
 		table,
 		schema,
 		true,
@@ -1029,9 +1043,11 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 				colDB.TableProvider(),
 			),
 			"stacktraces",
-			metastore,
+			parcacol.NewProfileSymbolizer(tracer, mc),
+			memory.DefaultAllocator,
 		),
 		memory.DefaultAllocator,
+		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 	)
 	res, err := api.Labels(ctx, &pb.LabelsRequest{})
 	require.NoError(t, err)
@@ -1053,12 +1069,12 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := parcacol.Schema()
+	schema, err := profile.Schema()
 	require.NoError(t, err)
 
 	table, err := colDB.Table(
 		"stacktraces",
-		columnstore.NewTableConfig(parcacol.SchemaDefinition()),
+		columnstore.NewTableConfig(profile.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -1071,11 +1087,11 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 	fileContent, err := os.ReadFile("testdata/alloc_objects.pb.gz")
 	require.NoError(t, err)
 
-	metastore := metastore.NewInProcessClient(m)
+	mc := metastore.NewInProcessClient(m)
 	store := profilestore.NewProfileColumnStore(
 		logger,
 		tracer,
-		metastore,
+		mc,
 		table,
 		schema,
 		true,
@@ -1114,9 +1130,11 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 				colDB.TableProvider(),
 			),
 			"stacktraces",
-			metastore,
+			parcacol.NewProfileSymbolizer(tracer, mc),
+			memory.DefaultAllocator,
 		),
 		memory.DefaultAllocator,
+		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 	)
 	res, err := api.Values(ctx, &pb.ValuesRequest{
 		LabelName: "job",
@@ -1155,80 +1173,153 @@ func BenchmarkQuery(b *testing.B) {
 			[]string{FlamegraphFieldFunctionName},
 			NewTableConverterPool(),
 			memory.DefaultAllocator,
+			parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 		)
 	}
 }
 
-func PprofToSymbolizedProfile(meta profile.Meta, prof *pprofprofile.Profile, index int) (profile.OldProfile, error) {
-	km := metastore.NewKeyMaker()
-
-	p := profile.Profile{
-		Meta:    meta,
-		Samples: make([]*profile.SymbolizedSample, 0, len(prof.Sample)),
+func PprofToSymbolizedProfile(meta profile.Meta, prof *pprofprofile.Profile, index int) (profile.Profile, error) {
+	labelNameSet := make(map[string]struct{})
+	for _, s := range prof.Sample {
+		for k := range s.Label {
+			labelNameSet[k] = struct{}{}
+		}
 	}
+	labelNames := make([]string, 0, len(labelNameSet))
+	for l := range labelNameSet {
+		labelNames = append(labelNames, l)
+	}
+
+	w := profile.NewWriter(memory.DefaultAllocator, labelNames)
+	defer w.RecordBuilder.Release()
 	for i := range prof.Sample {
 		if len(prof.Sample[i].Value) <= index {
-			return nil, status.Errorf(codes.InvalidArgument, "failed to find samples for profile type")
+			return profile.Profile{}, status.Errorf(codes.InvalidArgument, "failed to find samples for profile type")
 		}
 
-		locs := make([]*profile.Location, 0, len(prof.Sample[i].Location))
-		for _, loc := range prof.Sample[i].Location {
-			symLoc := &profile.Location{
-				Address: loc.Address,
+		w.Value.Append(prof.Sample[i].Value[index])
+		w.Diff.Append(0)
+
+		for labelName, labelBuilder := range w.LabelBuildersMap {
+			if prof.Sample[i].Label == nil {
+				labelBuilder.AppendNull()
+				continue
 			}
 
-			if loc.Mapping != nil {
-				symLoc.Mapping = &metastorepb.Mapping{
-					Start:   loc.Mapping.Start,
-					Limit:   loc.Mapping.Limit,
-					Offset:  loc.Mapping.Offset,
-					File:    loc.Mapping.File,
-					BuildId: loc.Mapping.BuildID,
+			if labelValues, ok := prof.Sample[i].Label[labelName]; ok && len(labelValues) > 0 {
+				labelBuilder.Append([]byte(labelValues[0]))
+			} else {
+				labelBuilder.AppendNull()
+			}
+		}
+
+		w.LocationsList.Append(len(prof.Sample[i].Location) > 0)
+		if len(prof.Sample[i].Location) > 0 {
+			for _, loc := range prof.Sample[i].Location {
+				w.Locations.Append(true)
+				w.Addresses.Append(loc.Address)
+
+				w.Mapping.Append(loc.Mapping != nil)
+				if loc.Mapping != nil {
+					w.MappingStart.Append(loc.Mapping.Start)
+					w.MappingLimit.Append(loc.Mapping.Limit)
+					w.MappingOffset.Append(loc.Mapping.Offset)
+					w.MappingFile.Append(loc.Mapping.File)
+					w.MappingBuildID.Append(loc.Mapping.BuildID)
 				}
-				symLoc.Mapping.Id = km.MakeMappingID(symLoc.Mapping)
-				symLoc.ID = symLoc.Mapping.Id + "-" + strconv.FormatUint(loc.Address, 16)
-			}
 
-			if loc.Line != nil {
-				symLoc.Lines = make([]profile.LocationLine, 0, len(loc.Line))
-				for _, line := range loc.Line {
-					f := &metastorepb.Function{
-						StartLine:  line.Function.StartLine,
-						Name:       line.Function.Name,
-						SystemName: line.Function.SystemName,
-						Filename:   line.Function.Filename,
+				w.Lines.Append(len(loc.Line) > 0)
+				if len(loc.Line) > 0 {
+					for _, line := range loc.Line {
+						w.Line.Append(true)
+						w.LineNumber.Append(line.Line)
+						w.Function.Append(line.Function != nil)
+						if line.Function != nil {
+							w.FunctionName.Append(line.Function.Name)
+							w.FunctionSystemName.Append(line.Function.SystemName)
+							w.FunctionFilename.Append(line.Function.Filename)
+							w.FunctionStartLine.Append(line.Function.StartLine)
+						}
 					}
-					f.Id = km.MakeFunctionID(f)
-					symLoc.Lines = append(symLoc.Lines, profile.LocationLine{
-						Line:     line.Line,
-						Function: f,
-					})
-				}
-
-				symLoc.ID = makeLocationIDWithLines(symLoc.Lines)
-			}
-
-			locs = append(locs, symLoc)
-		}
-
-		var labels map[string]string
-		if len(prof.Sample[i].Label) > 0 {
-			labels = make(map[string]string, len(prof.Sample[i].Label))
-			for key, values := range prof.Sample[i].Label {
-				if len(values) > 0 {
-					labels[key] = values[0]
 				}
 			}
 		}
-
-		p.Samples = append(p.Samples, &profile.SymbolizedSample{
-			Locations: locs,
-			Value:     prof.Sample[i].Value[index],
-			Label:     labels,
-		})
 	}
 
-	return p, nil
+	return profile.Profile{
+		Meta:    meta,
+		Samples: w.RecordBuilder.NewRecord(),
+	}, nil
+}
+
+func OldProfileToArrowProfile(p profile.OldProfile) (profile.Profile, error) {
+	labelNameSet := make(map[string]struct{})
+	for _, s := range p.Samples {
+		for k := range s.Label {
+			labelNameSet[k] = struct{}{}
+		}
+	}
+	labelNames := make([]string, 0, len(labelNameSet))
+	for l := range labelNameSet {
+		labelNames = append(labelNames, l)
+	}
+
+	w := profile.NewWriter(memory.DefaultAllocator, labelNames)
+	defer w.RecordBuilder.Release()
+	for i := range p.Samples {
+		w.Value.Append(p.Samples[i].Value)
+		w.Diff.Append(p.Samples[i].DiffValue)
+
+		for labelName, labelBuilder := range w.LabelBuildersMap {
+			if p.Samples[i].Label == nil {
+				labelBuilder.AppendNull()
+				continue
+			}
+
+			if labelValue, ok := p.Samples[i].Label[labelName]; ok {
+				labelBuilder.Append([]byte(labelValue))
+			} else {
+				labelBuilder.AppendNull()
+			}
+		}
+
+		w.LocationsList.Append(len(p.Samples[i].Locations) > 0)
+		if len(p.Samples[i].Locations) > 0 {
+			for _, loc := range p.Samples[i].Locations {
+				w.Locations.Append(true)
+				w.Addresses.Append(loc.Address)
+
+				w.Mapping.Append(loc.Mapping != nil)
+				if loc.Mapping != nil {
+					w.MappingStart.Append(loc.Mapping.Start)
+					w.MappingLimit.Append(loc.Mapping.Limit)
+					w.MappingOffset.Append(loc.Mapping.Offset)
+					w.MappingFile.Append(loc.Mapping.File)
+					w.MappingBuildID.Append(loc.Mapping.BuildId)
+				}
+
+				w.Lines.Append(len(loc.Lines) > 0)
+				if len(loc.Lines) > 0 {
+					for _, line := range loc.Lines {
+						w.Line.Append(true)
+						w.LineNumber.Append(line.Line)
+						w.Function.Append(line.Function != nil)
+						if line.Function != nil {
+							w.FunctionName.Append(line.Function.Name)
+							w.FunctionSystemName.Append(line.Function.SystemName)
+							w.FunctionFilename.Append(line.Function.Filename)
+							w.FunctionStartLine.Append(line.Function.StartLine)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return profile.Profile{
+		Meta:    p.Meta,
+		Samples: w.RecordBuilder.NewRecord(),
+	}, nil
 }
 
 // makeLocationIDWithLines returns a key for the location that uniquely
