@@ -53,6 +53,7 @@ export const useQuery = (
       return response;
     },
     options: {
+      retry: false,
       enabled: !skip,
       staleTime: 1000 * 60 * 5, // 5 minutes
     },
