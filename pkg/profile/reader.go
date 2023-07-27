@@ -13,7 +13,12 @@ type LabelColumn struct {
 }
 
 type Reader struct {
-	Profile Profile
+	Profile       Profile
+	RecordReaders []RecordReader
+}
+
+type RecordReader struct {
+	Record arrow.Record
 
 	LabelFields  []arrow.Field
 	LabelColumns []LabelColumn
@@ -43,7 +48,17 @@ type Reader struct {
 }
 
 func NewReader(p Profile) Reader {
-	ar := p.Samples
+	r := Reader{
+		Profile: p,
+	}
+
+	for _, ar := range p.Samples {
+		r.RecordReaders = append(r.RecordReaders, NewRecordReader(ar))
+	}
+	return r
+}
+
+func NewRecordReader(ar arrow.Record) RecordReader {
 	schema := ar.Schema()
 
 	labelFields := make([]arrow.Field, 0, schema.NumFields())
@@ -86,8 +101,8 @@ func NewReader(p Profile) Reader {
 	valueColumn := ar.Column(labelNum + 1).(*array.Int64)
 	diffColumn := ar.Column(labelNum + 2).(*array.Int64)
 
-	return Reader{
-		Profile:                p,
+	return RecordReader{
+		Record:                 ar,
 		LabelFields:            labelFields,
 		LabelColumns:           labelColumns,
 		Locations:              locations,

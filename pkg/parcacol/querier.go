@@ -795,60 +795,60 @@ func (q *Querier) SymbolizeArrowRecord(
 	ctx context.Context,
 	records []arrow.Record,
 	valueColumnName string,
-) (arrow.Record, error) {
-	if len(records) != 1 {
-		return nil, fmt.Errorf("expected 1 record, got %d", len(records))
-	}
+) ([]arrow.Record, error) {
+	res := make([]arrow.Record, len(records))
 
-	r := records[0]
-	defer r.Release()
-	schema := r.Schema()
+	for i, r := range records {
+		schema := r.Schema()
 
-	indices := schema.FieldIndices("stacktrace")
-	if len(indices) != 1 {
-		return nil, ErrMissingColumn{Column: "stacktrace", Columns: len(indices)}
-	}
-	stacktraceColumn := r.Column(indices[0]).(*array.Binary)
-
-	rows := int(r.NumRows())
-	stacktraceIDs := make([]string, rows)
-	for i := 0; i < rows; i++ {
-		stacktraceIDs[i] = string(stacktraceColumn.Value(i))
-	}
-
-	indices = schema.FieldIndices(valueColumnName)
-	if len(indices) != 1 {
-		return nil, ErrMissingColumn{Column: "value", Columns: len(indices)}
-	}
-	valueColumn := r.Column(indices[0]).(*array.Int64)
-
-	profileLabels := []arrow.Field{}
-	profileLabelColumns := []arrow.Array{}
-	for i, field := range schema.Fields() {
-		if strings.HasPrefix(field.Name, profile.ColumnPprofLabelsPrefix) {
-			profileLabels = append(profileLabels, field)
-			profileLabelColumns = append(profileLabelColumns, r.Column(i))
+		indices := schema.FieldIndices("stacktrace")
+		if len(indices) != 1 {
+			return nil, ErrMissingColumn{Column: "stacktrace", Columns: len(indices)}
 		}
+		stacktraceColumn := r.Column(indices[0]).(*array.Binary)
+
+		rows := int(r.NumRows())
+		stacktraceIDs := make([]string, rows)
+		for i := 0; i < rows; i++ {
+			stacktraceIDs[i] = string(stacktraceColumn.Value(i))
+		}
+
+		indices = schema.FieldIndices(valueColumnName)
+		if len(indices) != 1 {
+			return nil, ErrMissingColumn{Column: "value", Columns: len(indices)}
+		}
+		valueColumn := r.Column(indices[0]).(*array.Int64)
+
+		profileLabels := []arrow.Field{}
+		profileLabelColumns := []arrow.Array{}
+		for i, field := range schema.Fields() {
+			if strings.HasPrefix(field.Name, profile.ColumnPprofLabelsPrefix) {
+				profileLabels = append(profileLabels, field)
+				profileLabelColumns = append(profileLabelColumns, r.Column(i))
+			}
+		}
+
+		stacktraces, locations, locationIndex, err := q.symbolizer.resolveStacktraceLocations(ctx, stacktraceIDs)
+		if err != nil {
+			return nil, fmt.Errorf("failed to resolve stacktrace locations: %w", err)
+		}
+
+		locationsRecord := BuildArrowLocations(q.pool, stacktraces, locations, locationIndex)
+		defer locationsRecord.Release()
+
+		columns := make([]arrow.Array, len(profileLabels)+3) // +3 for stacktrace locations, value and diff
+		copy(columns, profileLabelColumns)
+		columns[len(columns)-3] = locationsRecord.Column(0)
+		columns[len(columns)-2] = valueColumn
+
+		diffColumn := CreateDiffColumn(q.pool, rows)
+		defer diffColumn.Release()
+		columns[len(columns)-1] = diffColumn
+
+		res[i] = array.NewRecord(profile.ArrowSchema(profileLabels), columns, r.NumRows())
 	}
 
-	stacktraces, locations, locationIndex, err := q.symbolizer.resolveStacktraceLocations(ctx, stacktraceIDs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to resolve stacktrace locations: %w", err)
-	}
-
-	locationsRecord := BuildArrowLocations(q.pool, stacktraces, locations, locationIndex)
-	defer locationsRecord.Release()
-
-	columns := make([]arrow.Array, len(profileLabels)+3) // +3 for stacktrace locations, value and diff
-	copy(columns, profileLabelColumns)
-	columns[len(columns)-3] = locationsRecord.Column(0)
-	columns[len(columns)-2] = valueColumn
-
-	diffColumn := CreateDiffColumn(q.pool, rows)
-	defer diffColumn.Release()
-	columns[len(columns)-1] = diffColumn
-
-	return array.NewRecord(profile.ArrowSchema(profileLabels), columns, r.NumRows()), nil
+	return res, nil
 }
 
 func CreateDiffColumn(pool memory.Allocator, rows int) arrow.Array {
@@ -875,14 +875,19 @@ func (q *Querier) QuerySingle(
 	ctx, span := q.tracer.Start(ctx, "Querier/QuerySingle")
 	defer span.End()
 
-	ar, valueColumn, meta, err := q.findSingle(ctx, query, time)
+	records, valueColumn, meta, err := q.findSingle(ctx, query, time)
 	if err != nil {
 		return profile.Profile{}, err
 	}
+	defer func() {
+		for _, r := range records {
+			r.Release()
+		}
+	}()
 
-	record, err := q.SymbolizeArrowRecord(
+	symbolizedRecords, err := q.SymbolizeArrowRecord(
 		ctx,
-		ar,
+		records,
 		valueColumn,
 	)
 	if err != nil {
@@ -894,13 +899,18 @@ func (q *Querier) QuerySingle(
 		return profile.Profile{}, err
 	}
 
-	if record.NumRows() == 0 {
+	totalRows := int64(0)
+	for _, r := range symbolizedRecords {
+		totalRows += r.NumRows()
+	}
+
+	if totalRows == 0 {
 		return profile.Profile{}, status.Error(codes.NotFound, "could not find profile at requested time and selectors")
 	}
 
 	return profile.Profile{
 		Meta:    meta,
-		Samples: record,
+		Samples: symbolizedRecords,
 	}, nil
 }
 
@@ -971,7 +981,7 @@ func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.
 		}
 	}()
 
-	record, err := q.SymbolizeArrowRecord(
+	symbolizedRecords, err := q.SymbolizeArrowRecord(
 		ctx,
 		records,
 		valueColumn,
@@ -982,7 +992,7 @@ func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.
 
 	return profile.Profile{
 		Meta:    meta,
-		Samples: record,
+		Samples: symbolizedRecords,
 	}, nil
 }
 

@@ -56,118 +56,124 @@ func (c *ArrowToProfileConverter) Convert(
 	ctx context.Context,
 	p profile.Profile,
 ) (profile.OldProfile, error) {
-	samples := make([]*profile.SymbolizedSample, 0, p.Samples.NumRows())
-
-	ar := p.Samples
-	schema := ar.Schema()
-	indices := schema.FieldIndices("locations")
-	if len(indices) != 1 {
-		return profile.OldProfile{}, ErrMissingColumn{Column: "locations", Columns: len(indices)}
+	sampleNum := int64(0)
+	for _, r := range p.Samples {
+		sampleNum += r.NumRows()
 	}
-	locations := ar.Column(indices[0]).(*array.List)
-	locationOffsets := locations.Offsets()
-	location := locations.ListValues().(*array.Struct)
-	address := location.Field(0).(*array.Uint64)
-	mapping := location.Field(1).(*array.Struct)
-	mappingStart := mapping.Field(0).(*array.Uint64)
-	mappingLimit := mapping.Field(1).(*array.Uint64)
-	mappingOffset := mapping.Field(2).(*array.Uint64)
-	mappingFile := mapping.Field(3).(*array.String)
-	mappingBuildID := mapping.Field(4).(*array.String)
-	lines := location.Field(2).(*array.List)
-	lineOffsets := lines.Offsets()
-	line := lines.ListValues().(*array.Struct)
-	lineNumber := line.Field(0).(*array.Int64)
-	lineFunction := line.Field(1).(*array.Struct)
-	lineFunctionName := lineFunction.Field(0).(*array.String)
-	lineFunctionSystemName := lineFunction.Field(1).(*array.String)
-	lineFunctionFilename := lineFunction.Field(2).(*array.String)
-	lineFunctionStartLine := lineFunction.Field(3).(*array.Int64)
 
-	indices = schema.FieldIndices("value")
-	if len(indices) != 1 {
-		return profile.OldProfile{}, ErrMissingColumn{Column: "value", Columns: len(indices)}
-	}
-	valueColumn := ar.Column(indices[0]).(*array.Int64)
+	samples := make([]*profile.SymbolizedSample, 0, sampleNum)
 
-	indices = schema.FieldIndices("diff")
-	if len(indices) != 1 {
-		return profile.OldProfile{}, ErrMissingColumn{Column: "diff", Columns: len(indices)}
-	}
-	diffColumn := ar.Column(indices[0]).(*array.Int64)
-
-	labelIndexes := make(map[string]int)
-	for i, field := range schema.Fields() {
-		if strings.HasPrefix(field.Name, profile.ColumnPprofLabelsPrefix) {
-			labelIndexes[strings.TrimPrefix(field.Name, profile.ColumnPprofLabelsPrefix)] = i
+	for _, ar := range p.Samples {
+		schema := ar.Schema()
+		indices := schema.FieldIndices("locations")
+		if len(indices) != 1 {
+			return profile.OldProfile{}, ErrMissingColumn{Column: "locations", Columns: len(indices)}
 		}
-	}
+		locations := ar.Column(indices[0]).(*array.List)
+		locationOffsets := locations.Offsets()
+		location := locations.ListValues().(*array.Struct)
+		address := location.Field(0).(*array.Uint64)
+		mapping := location.Field(1).(*array.Struct)
+		mappingStart := mapping.Field(0).(*array.Uint64)
+		mappingLimit := mapping.Field(1).(*array.Uint64)
+		mappingOffset := mapping.Field(2).(*array.Uint64)
+		mappingFile := mapping.Field(3).(*array.String)
+		mappingBuildID := mapping.Field(4).(*array.String)
+		lines := location.Field(2).(*array.List)
+		lineOffsets := lines.Offsets()
+		line := lines.ListValues().(*array.Struct)
+		lineNumber := line.Field(0).(*array.Int64)
+		lineFunction := line.Field(1).(*array.Struct)
+		lineFunctionName := lineFunction.Field(0).(*array.String)
+		lineFunctionSystemName := lineFunction.Field(1).(*array.String)
+		lineFunctionFilename := lineFunction.Field(2).(*array.String)
+		lineFunctionStartLine := lineFunction.Field(3).(*array.Int64)
 
-	for i := 0; i < int(ar.NumRows()); i++ {
-		labels := make(map[string]string, len(labelIndexes))
-		for name, index := range labelIndexes {
-			c := ar.Column(index).(*array.Dictionary)
-			d := c.Dictionary().(*array.Binary)
-			if !c.IsNull(i) {
-				labelValue := d.Value(c.GetValueIndex(i))
-				if len(labelValue) > 0 {
-					labels[name] = string(labelValue)
-				}
+		indices = schema.FieldIndices("value")
+		if len(indices) != 1 {
+			return profile.OldProfile{}, ErrMissingColumn{Column: "value", Columns: len(indices)}
+		}
+		valueColumn := ar.Column(indices[0]).(*array.Int64)
+
+		indices = schema.FieldIndices("diff")
+		if len(indices) != 1 {
+			return profile.OldProfile{}, ErrMissingColumn{Column: "diff", Columns: len(indices)}
+		}
+		diffColumn := ar.Column(indices[0]).(*array.Int64)
+
+		labelIndexes := make(map[string]int)
+		for i, field := range schema.Fields() {
+			if strings.HasPrefix(field.Name, profile.ColumnPprofLabelsPrefix) {
+				labelIndexes[strings.TrimPrefix(field.Name, profile.ColumnPprofLabelsPrefix)] = i
 			}
 		}
 
-		lOffsetStart := locationOffsets[i]
-		lOffsetEnd := locationOffsets[i+1]
-		stacktrace := make([]*profile.Location, 0, lOffsetEnd-lOffsetStart)
-		for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
-			llOffsetStart := lineOffsets[j]
-			llOffsetEnd := lineOffsets[j+1]
-			lines := make([]profile.LocationLine, 0, llOffsetEnd-llOffsetStart)
-
-			for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
-				var f *pb.Function
-				if lineFunction.IsValid(k) {
-					f = &pb.Function{
-						Name:       lineFunctionName.Value(k),
-						SystemName: lineFunctionSystemName.Value(k),
-						Filename:   lineFunctionFilename.Value(k),
-						StartLine:  int64(lineFunctionStartLine.Value(k)),
+		for i := 0; i < int(ar.NumRows()); i++ {
+			labels := make(map[string]string, len(labelIndexes))
+			for name, index := range labelIndexes {
+				c := ar.Column(index).(*array.Dictionary)
+				d := c.Dictionary().(*array.Binary)
+				if !c.IsNull(i) {
+					labelValue := d.Value(c.GetValueIndex(i))
+					if len(labelValue) > 0 {
+						labels[name] = string(labelValue)
 					}
-					f.Id = c.key.MakeFunctionID(f)
 				}
-				lines = append(lines, profile.LocationLine{
-					Line:     int64(lineNumber.Value(k)),
-					Function: f,
-				})
 			}
 
-			var m *pb.Mapping
-			if !mapping.IsNull(j) {
-				m = &pb.Mapping{
-					Start:   mappingStart.Value(j),
-					Limit:   mappingLimit.Value(j),
-					Offset:  mappingOffset.Value(j),
-					File:    mappingFile.Value(j),
-					BuildId: mappingBuildID.Value(j),
+			lOffsetStart := locationOffsets[i]
+			lOffsetEnd := locationOffsets[i+1]
+			stacktrace := make([]*profile.Location, 0, lOffsetEnd-lOffsetStart)
+			for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
+				llOffsetStart := lineOffsets[j]
+				llOffsetEnd := lineOffsets[j+1]
+				lines := make([]profile.LocationLine, 0, llOffsetEnd-llOffsetStart)
+
+				for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
+					var f *pb.Function
+					if lineFunction.IsValid(k) {
+						f = &pb.Function{
+							Name:       lineFunctionName.Value(k),
+							SystemName: lineFunctionSystemName.Value(k),
+							Filename:   lineFunctionFilename.Value(k),
+							StartLine:  int64(lineFunctionStartLine.Value(k)),
+						}
+						f.Id = c.key.MakeFunctionID(f)
+					}
+					lines = append(lines, profile.LocationLine{
+						Line:     int64(lineNumber.Value(k)),
+						Function: f,
+					})
 				}
-				m.Id = c.key.MakeMappingID(m)
+
+				var m *pb.Mapping
+				if !mapping.IsNull(j) {
+					m = &pb.Mapping{
+						Start:   mappingStart.Value(j),
+						Limit:   mappingLimit.Value(j),
+						Offset:  mappingOffset.Value(j),
+						File:    mappingFile.Value(j),
+						BuildId: mappingBuildID.Value(j),
+					}
+					m.Id = c.key.MakeMappingID(m)
+				}
+
+				loc := &profile.Location{
+					Address: address.Value(j),
+					Mapping: m,
+					Lines:   lines,
+				}
+				loc.ID = c.key.MakeProfileLocationID(loc)
+				stacktrace = append(stacktrace, loc)
 			}
 
-			loc := &profile.Location{
-				Address: address.Value(j),
-				Mapping: m,
-				Lines:   lines,
-			}
-			loc.ID = c.key.MakeProfileLocationID(loc)
-			stacktrace = append(stacktrace, loc)
+			samples = append(samples, &profile.SymbolizedSample{
+				Value:     valueColumn.Value(i),
+				DiffValue: diffColumn.Value(i),
+				Locations: stacktrace,
+				Label:     labels,
+			})
 		}
-
-		samples = append(samples, &profile.SymbolizedSample{
-			Value:     valueColumn.Value(i),
-			DiffValue: diffColumn.Value(i),
-			Locations: stacktrace,
-			Label:     labels,
-		})
 	}
 
 	return profile.OldProfile{

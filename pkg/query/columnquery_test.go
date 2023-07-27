@@ -26,6 +26,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/apache/arrow/go/v13/arrow"
 	"github.com/apache/arrow/go/v13/arrow/memory"
 	"github.com/cespare/xxhash/v2"
 	"github.com/go-kit/log"
@@ -1248,7 +1249,7 @@ func PprofToSymbolizedProfile(meta profile.Meta, prof *pprofprofile.Profile, ind
 
 	return profile.Profile{
 		Meta:    meta,
-		Samples: w.RecordBuilder.NewRecord(),
+		Samples: []arrow.Record{w.RecordBuilder.NewRecord()},
 	}, nil
 }
 
@@ -1318,7 +1319,7 @@ func OldProfileToArrowProfile(p profile.OldProfile) (profile.Profile, error) {
 
 	return profile.Profile{
 		Meta:    p.Meta,
-		Samples: w.RecordBuilder.NewRecord(),
+		Samples: []arrow.Record{w.RecordBuilder.NewRecord()},
 	}, nil
 }
 

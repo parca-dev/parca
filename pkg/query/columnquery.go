@@ -178,11 +178,16 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	}
 
 	if req.FilterQuery != nil {
-		p, filtered, err = FilterProfileData(ctx, q.tracer, q.mem, p, req.GetFilterQuery())
+		p.Samples, filtered = FilterProfileData(ctx, q.tracer, q.mem, p.Samples, req.GetFilterQuery())
 		if err != nil {
 			return nil, fmt.Errorf("filtering profile: %w", err)
 		}
 	}
+	defer func() {
+		for _, r := range p.Samples {
+			r.Release()
+		}
+	}()
 
 	return q.renderReport(
 		ctx,
@@ -198,22 +203,49 @@ func FilterProfileData(
 	ctx context.Context,
 	tracer trace.Tracer,
 	pool memory.Allocator,
-	p profile.Profile,
+	records []arrow.Record,
 	filterQuery string,
-) (profile.Profile, int64, error) {
+) ([]arrow.Record, int64) {
 	_, span := tracer.Start(ctx, "filterByFunction")
 	defer span.End()
+
+	// TODO: This is a bit inefficient because it completely rebuilds the
+	// profile, we should only ever rebuild dictionaries once at the very end
+	// before we send a result to the user. Because we are rebuilding the
+	// records whe need to release the previous ones.
+	defer func() {
+		for _, r := range records {
+			r.Release()
+		}
+	}()
 
 	// We want to filter by function name case-insensitive, so we need to lowercase the query.
 	// We lower case the query here, so we don't have to do it for every sample.
 	filterQuery = strings.ToLower(filterQuery)
+	res := make([]arrow.Record, 0, len(records))
+	allValues := int64(0)
+	allFiltered := int64(0)
 
-	r := profile.NewReader(p)
+	for _, r := range records {
+		filteredRecord, valueSum, filteredSum := filterRecord(ctx, tracer, pool, r, filterQuery)
+		res = append(res, filteredRecord)
+		allValues += valueSum
+		allFiltered += filteredSum
+	}
+
+	return res, allValues - allFiltered
+}
+
+func filterRecord(
+	ctx context.Context,
+	tracer trace.Tracer,
+	pool memory.Allocator,
+	rec arrow.Record,
+	filterQuery string,
+) (arrow.Record, int64, int64) {
+	r := profile.NewRecordReader(rec)
 
 	// Builders for the result profile.
-	// TODO: This is a bit inefficient because it completely rebuilds the
-	// profile, we should only ever rebuild dictionaries once at the very end
-	// before we send a result to the user.
 	labelNames := make([]string, 0, len(r.LabelFields))
 	for _, lf := range r.LabelFields {
 		labelNames = append(labelNames, strings.TrimPrefix(lf.Name, profile.ColumnPprofLabelsPrefix))
@@ -222,7 +254,7 @@ func FilterProfileData(
 	w := profile.NewWriter(pool, labelNames)
 	defer w.RecordBuilder.Release()
 
-	for i := 0; i < int(r.Profile.Samples.NumRows()); i++ {
+	for i := 0; i < int(rec.NumRows()); i++ {
 		lOffsetStart := r.LocationOffsets[i]
 		lOffsetEnd := r.LocationOffsets[i+1]
 		keepRow := false
@@ -286,13 +318,13 @@ func FilterProfileData(
 		}
 	}
 
-	res := profile.Profile{
-		Meta:    p.Meta,
-		Samples: w.RecordBuilder.NewRecord(),
-	}
-	numFields := res.Samples.Schema().NumFields()
-	filteredValue := res.Samples.Column(numFields - 2).(*array.Int64)
-	return res, math.Int64.Sum(r.Value) - math.Int64.Sum(filteredValue), nil
+	res := w.RecordBuilder.NewRecord()
+	numFields := res.Schema().NumFields()
+	filteredValue := res.Column(numFields - 2).(*array.Int64)
+
+	return res,
+		math.Int64.Sum(r.Value),
+		math.Int64.Sum(filteredValue)
 }
 
 func (q *ColumnQueryAPI) renderReport(
@@ -506,48 +538,41 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile) (pro
 		return profile.Profile{}, err
 	}
 
-	labelFields, labelArrays, err := mergeDiffLabelColumns(q.mem, compare, base)
-	if err != nil {
-		return profile.Profile{}, fmt.Errorf("merging label columns: %w", err)
+	records := make([]arrow.Record, 0, len(compare.Samples)+len(base.Samples))
+
+	for _, r := range compare.Samples {
+		columns := r.Columns()
+		// This is intentional, the diff value of the `compare` profile is the same
+		// as the value of the `compare` profile, because what we're actually doing
+		// is subtracting the `base` profile, but the actual calculation happens
+		// when building the visualizations. We should eventually have this be done
+		// directly by the query engine.
+		columns[len(columns)-1] = columns[len(columns)-2]
+		records = append(records, array.NewRecord(
+			r.Schema(),
+			columns,
+			r.NumRows(),
+		))
+		r.Release()
 	}
 
-	compareColumns := compare.Samples.Columns()
-	baseColumns := base.Samples.Columns()
-	compareValueColumn := compareColumns[len(compareColumns)-2].(*array.Int64)
-	baseValueColumn := baseColumns[len(baseColumns)-2].(*array.Int64)
-
-	locationsColumn, err := array.Concatenate([]arrow.Array{compareColumns[len(compareColumns)-3], baseColumns[len(baseColumns)-3]}, q.mem)
-	if err != nil {
-		return profile.Profile{}, fmt.Errorf("concatenate locations column: %w", err)
-	}
-
-	valueColumn, err := array.Concatenate([]arrow.Array{compareValueColumn, zeroArray(q.mem, int(base.Samples.NumRows()))}, q.mem)
-	if err != nil {
-		return profile.Profile{}, fmt.Errorf("concatenate value column: %w", err)
-	}
-
-	// This is intentional, the diff value of the `compare` profile is the same
-	// as the value of the `compare` profile, because what we're actually doing
-	// is subtracting the `base` profile, but the actual calculation happens
-	// when building the visualizations. We should eventually have this be done
-	// directly by the query engine.
-	diffColumn, err := array.Concatenate([]arrow.Array{compareValueColumn, multiplyInt64By(q.mem, baseValueColumn, -1)}, q.mem)
-	if err != nil {
-		return profile.Profile{}, fmt.Errorf("concatenate diff column: %w", err)
+	for _, r := range base.Samples {
+		columns := r.Columns()
+		// This has to be this order as we're overriding the value column (-2)
+		// in the next line.
+		columns[len(columns)-1] = multiplyInt64By(q.mem, columns[len(columns)-2].(*array.Int64), -1)
+		columns[len(columns)-2] = zeroArray(q.mem, int(r.NumRows()))
+		records = append(records, array.NewRecord(
+			r.Schema(),
+			columns,
+			r.NumRows(),
+		))
+		r.Release()
 	}
 
 	return profile.Profile{
-		Meta: compare.Meta,
-		Samples: array.NewRecord(
-			profile.ArrowSchema(labelFields),
-			append(
-				labelArrays,
-				locationsColumn,
-				valueColumn,
-				diffColumn,
-			),
-			compare.Samples.NumRows()+base.Samples.NumRows(),
-		),
+		Meta:    compare.Meta,
+		Samples: records,
 	}, nil
 }
 
@@ -580,62 +605,15 @@ func zeroArray(pool memory.Allocator, rows int) arrow.Array {
 	return b.NewArray()
 }
 
-func mergeDiffLabelColumns(pool memory.Allocator, compare, base profile.Profile) ([]arrow.Field, []arrow.Array, error) {
-	labelFields := []arrow.Field{}
-	columns := [][2]arrow.Array{}
-	labelIndex := map[string]int{}
-	for i, f := range compare.Samples.Schema().Fields() {
-		if strings.HasPrefix(f.Name, profile.ColumnPprofLabelsPrefix) {
-			labelFields = append(labelFields, f)
-			columns = append(columns, [2]arrow.Array{
-				compare.Samples.Column(i),
-				nil,
-			})
-			labelIndex[f.Name] = len(labelFields) - 1
-		}
-	}
+func nullLabelColumn(pool memory.Allocator, rows int) arrow.Array {
+	b := array.NewDictionaryBuilder(pool, &arrow.DictionaryType{
+		IndexType: arrow.PrimitiveTypes.Int64,
+		ValueType: arrow.BinaryTypes.String,
+	}).(*array.BinaryDictionaryBuilder)
+	defer b.Release()
 
-	for i, f := range base.Samples.Schema().Fields() {
-		if strings.HasPrefix(f.Name, profile.ColumnPprofLabelsPrefix) {
-			j, ok := labelIndex[f.Name]
-			if !ok {
-				labelFields = append(labelFields, f)
-				columns = append(columns, [2]arrow.Array{
-					nil,
-					base.Samples.Column(i),
-				})
-				labelIndex[f.Name] = len(labelFields) - 1
-			}
-			columns[j][1] = compare.Samples.Column(i)
-		}
-	}
-
-	firstLength := compare.Samples.NumRows()
-	secondLength := base.Samples.NumRows()
-
-	for _, cols := range columns {
-		if cols[0] == nil {
-			builder := array.NewBuilder(pool, cols[1].DataType())
-			builder.AppendNulls(int(firstLength))
-			cols[0] = builder.NewArray()
-		}
-		if cols[1] == nil {
-			builder := array.NewBuilder(pool, cols[0].DataType())
-			builder.AppendNulls(int(secondLength))
-			cols[0] = builder.NewArray()
-		}
-	}
-
-	labelArrays := make([]arrow.Array, len(labelFields))
-	var err error
-	for i, cols := range columns {
-		labelArrays[i], err = array.Concatenate(cols[:], pool)
-		if err != nil {
-			return nil, nil, fmt.Errorf("concatenate label column %q: %w", labelFields[i].Name, err)
-		}
-	}
-
-	return labelFields, labelArrays, nil
+	b.AppendNulls(rows)
+	return b.NewArray()
 }
 
 func (q *ColumnQueryAPI) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelection) (profile.Profile, error) {

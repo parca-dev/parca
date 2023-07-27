@@ -1,7 +1,6 @@
 package parcacol
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/apache/arrow/go/v13/arrow/memory"
@@ -39,6 +38,5 @@ func TestBuildArrowLocations(t *testing.T) {
 	}}
 	locationIndex := map[string]int{"1": 0, "2": 1}
 
-	r := BuildArrowLocations(memory.DefaultAllocator, stacktraces, locations, locationIndex)
-	fmt.Println(r)
+	BuildArrowLocations(memory.DefaultAllocator, stacktraces, locations, locationIndex)
 }
