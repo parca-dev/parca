@@ -294,65 +294,44 @@ func (s *ProfileSymbolizer) resolveStacktraceLocations(ctx context.Context, stac
 }
 
 func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrace, resolvedLocations []*profile.Location, locationIndex map[string]int) arrow.Record {
-	b := array.NewRecordBuilder(allocator, profile.LocationsArrowSchema())
-	defer b.Release()
-
-	locationsList := b.Field(0).(*array.ListBuilder)
-	locations := locationsList.ValueBuilder().(*array.StructBuilder)
-
-	addresses := locations.FieldBuilder(0).(*array.Uint64Builder)
-
-	mapping := locations.FieldBuilder(1).(*array.StructBuilder)
-	mappingStart := mapping.FieldBuilder(0).(*array.Uint64Builder)
-	mappingLimit := mapping.FieldBuilder(1).(*array.Uint64Builder)
-	mappingOffset := mapping.FieldBuilder(2).(*array.Uint64Builder)
-	mappingFile := mapping.FieldBuilder(3).(*array.StringBuilder)
-	mappingBuildID := mapping.FieldBuilder(4).(*array.StringBuilder)
-
-	lines := locations.FieldBuilder(2).(*array.ListBuilder)
-	line := lines.ValueBuilder().(*array.StructBuilder)
-	lineNumber := line.FieldBuilder(0).(*array.Int64Builder)
-	function := line.FieldBuilder(1).(*array.StructBuilder)
-	functionName := function.FieldBuilder(0).(*array.StringBuilder)
-	functionSystemName := function.FieldBuilder(1).(*array.StringBuilder)
-	functionFilename := function.FieldBuilder(2).(*array.StringBuilder)
-	functionStartLine := function.FieldBuilder(3).(*array.Int64Builder)
+	w := profile.NewLocationsWriter(allocator)
+	defer w.RecordBuilder.Release()
 
 	for _, stacktrace := range stacktraces {
-		locationsList.Append(true)
+		w.LocationsList.Append(true)
 		for _, id := range stacktrace.LocationIds {
-			locations.Append(true)
+			w.Locations.Append(true)
 			loc := resolvedLocations[locationIndex[id]]
 
-			addresses.Append(loc.Address)
+			w.Addresses.Append(loc.Address)
 
-			mapping.Append(loc.Mapping != nil)
+			w.Mapping.Append(loc.Mapping != nil)
 			if loc.Mapping != nil {
-				mappingStart.Append(loc.Mapping.Start)
-				mappingLimit.Append(loc.Mapping.Limit)
-				mappingOffset.Append(loc.Mapping.Offset)
-				mappingFile.Append(loc.Mapping.File)
-				mappingBuildID.Append(loc.Mapping.BuildId)
+				w.MappingStart.Append(loc.Mapping.Start)
+				w.MappingLimit.Append(loc.Mapping.Limit)
+				w.MappingOffset.Append(loc.Mapping.Offset)
+				w.MappingFile.Append(loc.Mapping.File)
+				w.MappingBuildID.Append(loc.Mapping.BuildId)
 			}
 
-			lines.Append(len(loc.Lines) > 0)
+			w.Lines.Append(len(loc.Lines) > 0)
 			if loc.Lines != nil {
 				for _, l := range loc.Lines {
-					line.Append(true)
-					lineNumber.Append(l.Line)
-					function.Append(l.Function != nil)
+					w.Line.Append(true)
+					w.LineNumber.Append(l.Line)
+					w.Function.Append(l.Function != nil)
 					if l.Function != nil {
-						functionName.Append(l.Function.Name)
-						functionSystemName.Append(l.Function.SystemName)
-						functionFilename.Append(l.Function.Filename)
-						functionStartLine.Append(l.Function.StartLine)
+						w.FunctionName.Append(l.Function.Name)
+						w.FunctionSystemName.Append(l.Function.SystemName)
+						w.FunctionFilename.Append(l.Function.Filename)
+						w.FunctionStartLine.Append(l.Function.StartLine)
 					}
 				}
 			}
 		}
 	}
 
-	return b.NewRecord()
+	return w.RecordBuilder.NewRecord()
 }
 
 func (s *ProfileSymbolizer) getLocationsFromSerializedLocations(
