@@ -28,7 +28,7 @@ require (
 	github.com/klauspost/compress v1.16.7
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
-	github.com/parquet-go/parquet-go v0.0.0-20230717201923-bb12c19a1110
+	github.com/parquet-go/parquet-go v0.17.0
 	github.com/polarsignals/frostdb v0.0.0-20230720151814-402d7262a77c
 	github.com/prometheus/client_golang v1.16.0
 	github.com/prometheus/common v0.44.0
