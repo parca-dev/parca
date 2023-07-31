@@ -26,8 +26,6 @@ import 'react-datepicker/dist/react-datepicker.css';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {Provider} from 'react-redux';
 
-import {isDevModeOrPreview} from '@parca/utilities';
-
 import HomePage from './pages/index';
 import Component404 from './pages/layouts/Component404';
 import Header from './pages/layouts/Header';
