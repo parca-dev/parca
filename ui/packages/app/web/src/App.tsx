@@ -26,8 +26,6 @@ import 'react-datepicker/dist/react-datepicker.css';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {Provider} from 'react-redux';
 
-import {isDevModeOrPreview} from '@parca/utilities';
-
 import HomePage from './pages/index';
 import Component404 from './pages/layouts/Component404';
 import Header from './pages/layouts/Header';
@@ -73,9 +71,7 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<HomePage />} />
                   <Route path="/targets" element={<TargetsPage />} />
-                  {isDevModeOrPreview() && (
-                    <Route path="/PATH_PREFIX_VAR" element={<Navigate to="/" replace />} />
-                  )}
+                  <Route path="/PATH_PREFIX_VAR" element={<Navigate to="/" replace />} />
                   <Route path="*" element={<Component404 />} />
                 </Routes>
               </div>
