@@ -195,7 +195,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				}
 				rowMappingFile := fb.builderMappingFile.Value(fb.builderMappingFile.GetValueIndex(flamegraphRow))
 				// rather than comparing the strings, we compare bytes to avoid allocations.
-				return bytes.Equal(stringToBytes(r.MappingFile.Value(locationRow)), rowMappingFile)
+				return bytes.Equal(r.MappingFileDict.Value(r.MappingFile.GetValueIndex(locationRow)), rowMappingFile)
 			case FlamegraphFieldLocationAddress:
 				// TODO: do we need to check for null?
 				rowLocationAddress := fb.builderLocationAddress.Value(flamegraphRow)
@@ -205,10 +205,10 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				if !isNull {
 					rowFunctionName := fb.builderFunctionName.Value(fb.builderFunctionName.GetValueIndex(flamegraphRow))
 					// rather than comparing the strings, we compare bytes to avoid allocations.
-					return bytes.Equal(stringToBytes(r.LineFunctionName.Value(lineRow)), rowFunctionName)
+					return bytes.Equal(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow)), rowFunctionName)
 				}
 				// isNull
-				if !r.LineFunction.IsValid(lineRow) || r.LineFunctionName.Value(lineRow) == "" {
+				if !r.LineFunction.IsValid(lineRow) || len(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow))) == 0 {
 					return true
 				}
 				return false
@@ -470,14 +470,14 @@ func (fb *flamegraphBuilder) appendRow(
 				fb.builderMappingOffset.AppendNull()
 			}
 		case FlamegraphFieldMappingFile:
-			if r.Mapping.IsValid(locationRow) && r.MappingFile.Value(locationRow) != "" {
-				_ = fb.builderMappingFile.Append(stringToBytes(r.MappingFile.Value(locationRow)))
+			if r.Mapping.IsValid(locationRow) && len(r.MappingFileDict.Value(r.MappingFile.GetValueIndex(locationRow))) > 0 {
+				_ = fb.builderMappingFile.Append(r.MappingFileDict.Value(r.MappingFile.GetValueIndex(locationRow)))
 			} else {
 				fb.builderMappingFile.AppendNull()
 			}
 		case FlamegraphFieldMappingBuildID:
-			if r.Mapping.IsValid(locationRow) && r.MappingBuildID.Value(locationRow) != "" {
-				_ = fb.builderMappingBuildID.Append(stringToBytes(r.MappingBuildID.Value(locationRow)))
+			if r.Mapping.IsValid(locationRow) && len(r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(locationRow))) > 0 {
+				_ = fb.builderMappingBuildID.Append(r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(locationRow)))
 			} else {
 				fb.builderMappingBuildID.AppendNull()
 			}
@@ -502,20 +502,20 @@ func (fb *flamegraphBuilder) appendRow(
 				fb.builderFunctionStartLine.AppendNull()
 			}
 		case FlamegraphFieldFunctionName:
-			if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && r.LineFunctionName.Value(lineRow) != "" {
-				_ = fb.builderFunctionName.Append(stringToBytes(r.LineFunctionName.Value(lineRow)))
+			if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && len(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow))) > 0 {
+				_ = fb.builderFunctionName.Append(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow)))
 			} else {
 				fb.builderFunctionName.AppendNull()
 			}
 		case FlamegraphFieldFunctionSystemName:
-			if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && r.LineFunctionSystemName.Value(lineRow) != "" {
-				_ = fb.builderFunctionSystemName.Append(stringToBytes(r.LineFunctionSystemName.Value(lineRow)))
+			if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && len(r.LineFunctionSystemNameDict.Value(r.LineFunctionSystemName.GetValueIndex(lineRow))) > 0 {
+				_ = fb.builderFunctionSystemName.Append(r.LineFunctionSystemNameDict.Value(r.LineFunctionSystemName.GetValueIndex(lineRow)))
 			} else {
 				fb.builderFunctionSystemName.AppendNull()
 			}
 		case FlamegraphFieldFunctionFileName:
-			if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && r.LineFunctionFilename.Value(lineRow) != "" {
-				_ = fb.builderFunctionFileName.Append(stringToBytes(r.LineFunctionFilename.Value(lineRow)))
+			if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && len(r.LineFunctionFilenameDict.Value(r.LineFunctionFilename.GetValueIndex(lineRow))) > 0 {
+				_ = fb.builderFunctionFileName.Append(r.LineFunctionFilenameDict.Value(r.LineFunctionFilename.GetValueIndex(lineRow)))
 			} else {
 				fb.builderFunctionFileName.AppendNull()
 			}

@@ -17,15 +17,15 @@ type Writer struct {
 	MappingStart       *array.Uint64Builder
 	MappingLimit       *array.Uint64Builder
 	MappingOffset      *array.Uint64Builder
-	MappingFile        *array.StringBuilder
-	MappingBuildID     *array.StringBuilder
+	MappingFile        *array.BinaryDictionaryBuilder
+	MappingBuildID     *array.BinaryDictionaryBuilder
 	Lines              *array.ListBuilder
 	Line               *array.StructBuilder
 	LineNumber         *array.Int64Builder
 	Function           *array.StructBuilder
-	FunctionName       *array.StringBuilder
-	FunctionSystemName *array.StringBuilder
-	FunctionFilename   *array.StringBuilder
+	FunctionName       *array.BinaryDictionaryBuilder
+	FunctionSystemName *array.BinaryDictionaryBuilder
+	FunctionFilename   *array.BinaryDictionaryBuilder
 	FunctionStartLine  *array.Int64Builder
 	Value              *array.Int64Builder
 	Diff               *array.Int64Builder
@@ -60,16 +60,16 @@ func NewWriter(pool memory.Allocator, labelNames []string) Writer {
 	mappingStart := mapping.FieldBuilder(0).(*array.Uint64Builder)
 	mappingLimit := mapping.FieldBuilder(1).(*array.Uint64Builder)
 	mappingOffset := mapping.FieldBuilder(2).(*array.Uint64Builder)
-	mappingFile := mapping.FieldBuilder(3).(*array.StringBuilder)
-	mappingBuildID := mapping.FieldBuilder(4).(*array.StringBuilder)
+	mappingFile := mapping.FieldBuilder(3).(*array.BinaryDictionaryBuilder)
+	mappingBuildID := mapping.FieldBuilder(4).(*array.BinaryDictionaryBuilder)
 
 	lines := locations.FieldBuilder(2).(*array.ListBuilder)
 	line := lines.ValueBuilder().(*array.StructBuilder)
 	lineNumber := line.FieldBuilder(0).(*array.Int64Builder)
 	function := line.FieldBuilder(1).(*array.StructBuilder)
-	functionName := function.FieldBuilder(0).(*array.StringBuilder)
-	functionSystemName := function.FieldBuilder(1).(*array.StringBuilder)
-	functionFilename := function.FieldBuilder(2).(*array.StringBuilder)
+	functionName := function.FieldBuilder(0).(*array.BinaryDictionaryBuilder)
+	functionSystemName := function.FieldBuilder(1).(*array.BinaryDictionaryBuilder)
+	functionFilename := function.FieldBuilder(2).(*array.BinaryDictionaryBuilder)
 	functionStartLine := function.FieldBuilder(3).(*array.Int64Builder)
 
 	value := b.Field(labelNum + 1).(*array.Int64Builder)
@@ -112,15 +112,15 @@ type LocationsWriter struct {
 	MappingStart       *array.Uint64Builder
 	MappingLimit       *array.Uint64Builder
 	MappingOffset      *array.Uint64Builder
-	MappingFile        *array.StringBuilder
-	MappingBuildID     *array.StringBuilder
+	MappingFile        *array.BinaryDictionaryBuilder
+	MappingBuildID     *array.BinaryDictionaryBuilder
 	Lines              *array.ListBuilder
 	Line               *array.StructBuilder
 	LineNumber         *array.Int64Builder
 	Function           *array.StructBuilder
-	FunctionName       *array.StringBuilder
-	FunctionSystemName *array.StringBuilder
-	FunctionFilename   *array.StringBuilder
+	FunctionName       *array.BinaryDictionaryBuilder
+	FunctionSystemName *array.BinaryDictionaryBuilder
+	FunctionFilename   *array.BinaryDictionaryBuilder
 	FunctionStartLine  *array.Int64Builder
 	Value              *array.Int64Builder
 	Diff               *array.Int64Builder
@@ -138,16 +138,16 @@ func NewLocationsWriter(pool memory.Allocator) LocationsWriter {
 	mappingStart := mapping.FieldBuilder(0).(*array.Uint64Builder)
 	mappingLimit := mapping.FieldBuilder(1).(*array.Uint64Builder)
 	mappingOffset := mapping.FieldBuilder(2).(*array.Uint64Builder)
-	mappingFile := mapping.FieldBuilder(3).(*array.StringBuilder)
-	mappingBuildID := mapping.FieldBuilder(4).(*array.StringBuilder)
+	mappingFile := mapping.FieldBuilder(3).(*array.BinaryDictionaryBuilder)
+	mappingBuildID := mapping.FieldBuilder(4).(*array.BinaryDictionaryBuilder)
 
 	lines := locations.FieldBuilder(2).(*array.ListBuilder)
 	line := lines.ValueBuilder().(*array.StructBuilder)
 	lineNumber := line.FieldBuilder(0).(*array.Int64Builder)
 	function := line.FieldBuilder(1).(*array.StructBuilder)
-	functionName := function.FieldBuilder(0).(*array.StringBuilder)
-	functionSystemName := function.FieldBuilder(1).(*array.StringBuilder)
-	functionFilename := function.FieldBuilder(2).(*array.StringBuilder)
+	functionName := function.FieldBuilder(0).(*array.BinaryDictionaryBuilder)
+	functionSystemName := function.FieldBuilder(1).(*array.BinaryDictionaryBuilder)
+	functionFilename := function.FieldBuilder(2).(*array.BinaryDictionaryBuilder)
 	functionStartLine := function.FieldBuilder(3).(*array.Int64Builder)
 
 	return LocationsWriter{

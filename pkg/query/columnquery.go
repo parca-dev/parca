@@ -263,7 +263,7 @@ func filterRecord(
 			llOffsetEnd := r.LineOffsets[j+1]
 
 			for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
-				if r.LineFunction.IsValid(k) && strings.Contains(strings.ToLower(r.LineFunctionName.Value(k)), filterQuery) {
+				if r.LineFunction.IsValid(k) && bytes.Contains(bytes.ToLower(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(k))), []byte(filterQuery)) {
 					keepRow = true
 					break
 				}
@@ -292,8 +292,8 @@ func filterRecord(
 					w.MappingStart.Append(r.MappingStart.Value(j))
 					w.MappingLimit.Append(r.MappingLimit.Value(j))
 					w.MappingOffset.Append(r.MappingOffset.Value(j))
-					w.MappingFile.Append(r.MappingFile.Value(j))
-					w.MappingBuildID.Append(r.MappingBuildID.Value(j))
+					w.MappingFile.Append(r.MappingFileDict.Value(r.MappingFile.GetValueIndex(j)))
+					w.MappingBuildID.Append(r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(j)))
 				}
 
 				w.Lines.Append(r.Lines.IsValid(j))
@@ -307,9 +307,9 @@ func filterRecord(
 						w.Function.Append(r.LineFunction.IsValid(k))
 
 						if r.LineFunction.IsValid(k) {
-							w.FunctionName.Append(r.LineFunctionName.Value(k))
-							w.FunctionSystemName.Append(r.LineFunctionSystemName.Value(k))
-							w.FunctionFilename.Append(r.LineFunctionFilename.Value(k))
+							w.FunctionName.Append(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(k)))
+							w.FunctionSystemName.Append(r.LineFunctionSystemNameDict.Value(r.LineFunctionSystemName.GetValueIndex(k)))
+							w.FunctionFilename.Append(r.LineFunctionFilenameDict.Value(r.LineFunctionFilename.GetValueIndex(k)))
 							w.FunctionStartLine.Append(r.LineFunctionStartLine.Value(k))
 						}
 					}

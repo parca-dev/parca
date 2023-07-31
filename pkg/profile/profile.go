@@ -45,10 +45,10 @@ var (
 				Type: arrow.PrimitiveTypes.Uint64,
 			}, {
 				Name: "file",
-				Type: arrow.BinaryTypes.String,
+				Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
 			}, {
 				Name: "build_id",
-				Type: arrow.BinaryTypes.String,
+				Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
 			}}...),
 		}, {
 			Name: "lines",
@@ -59,13 +59,13 @@ var (
 				Name: "function",
 				Type: arrow.StructOf([]arrow.Field{{
 					Name: "name",
-					Type: arrow.BinaryTypes.String,
+					Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
 				}, {
 					Name: "system_name",
-					Type: arrow.BinaryTypes.String,
+					Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
 				}, {
 					Name: "filename",
-					Type: arrow.BinaryTypes.String,
+					Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
 				}, {
 					Name: "start_line",
 					Type: arrow.PrimitiveTypes.Int64,

@@ -310,8 +310,8 @@ func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrac
 				w.MappingStart.Append(loc.Mapping.Start)
 				w.MappingLimit.Append(loc.Mapping.Limit)
 				w.MappingOffset.Append(loc.Mapping.Offset)
-				w.MappingFile.Append(loc.Mapping.File)
-				w.MappingBuildID.Append(loc.Mapping.BuildId)
+				w.MappingFile.Append([]byte(loc.Mapping.File))
+				w.MappingBuildID.Append([]byte(loc.Mapping.BuildId))
 			}
 
 			w.Lines.Append(len(loc.Lines) > 0)
@@ -321,9 +321,9 @@ func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrac
 					w.LineNumber.Append(l.Line)
 					w.Function.Append(l.Function != nil)
 					if l.Function != nil {
-						w.FunctionName.Append(l.Function.Name)
-						w.FunctionSystemName.Append(l.Function.SystemName)
-						w.FunctionFilename.Append(l.Function.Filename)
+						w.FunctionName.Append([]byte(l.Function.Name))
+						w.FunctionSystemName.Append([]byte(l.Function.SystemName))
+						w.FunctionFilename.Append([]byte(l.Function.Filename))
 						w.FunctionStartLine.Append(l.Function.StartLine)
 					}
 				}

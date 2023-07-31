@@ -23,25 +23,30 @@ type RecordReader struct {
 	LabelFields  []arrow.Field
 	LabelColumns []LabelColumn
 
-	Locations              *array.List
-	LocationOffsets        []int32
-	Location               *array.Struct
-	Address                *array.Uint64
-	Mapping                *array.Struct
-	MappingStart           *array.Uint64
-	MappingLimit           *array.Uint64
-	MappingOffset          *array.Uint64
-	MappingFile            *array.String
-	MappingBuildID         *array.String
-	Lines                  *array.List
-	LineOffsets            []int32
-	Line                   *array.Struct
-	LineNumber             *array.Int64
-	LineFunction           *array.Struct
-	LineFunctionName       *array.String
-	LineFunctionSystemName *array.String
-	LineFunctionFilename   *array.String
-	LineFunctionStartLine  *array.Int64
+	Locations                  *array.List
+	LocationOffsets            []int32
+	Location                   *array.Struct
+	Address                    *array.Uint64
+	Mapping                    *array.Struct
+	MappingStart               *array.Uint64
+	MappingLimit               *array.Uint64
+	MappingOffset              *array.Uint64
+	MappingFile                *array.Dictionary
+	MappingFileDict            *array.Binary
+	MappingBuildID             *array.Dictionary
+	MappingBuildIDDict         *array.Binary
+	Lines                      *array.List
+	LineOffsets                []int32
+	Line                       *array.Struct
+	LineNumber                 *array.Int64
+	LineFunction               *array.Struct
+	LineFunctionName           *array.Dictionary
+	LineFunctionNameDict       *array.Binary
+	LineFunctionSystemName     *array.Dictionary
+	LineFunctionSystemNameDict *array.Binary
+	LineFunctionFilename       *array.Dictionary
+	LineFunctionFilenameDict   *array.Binary
+	LineFunctionStartLine      *array.Int64
 
 	Value *array.Int64
 	Diff  *array.Int64
@@ -87,44 +92,54 @@ func NewRecordReader(ar arrow.Record) RecordReader {
 	mappingStart := mapping.Field(0).(*array.Uint64)
 	mappingLimit := mapping.Field(1).(*array.Uint64)
 	mappingOffset := mapping.Field(2).(*array.Uint64)
-	mappingFile := mapping.Field(3).(*array.String)
-	mappingBuildID := mapping.Field(4).(*array.String)
+	mappingFile := mapping.Field(3).(*array.Dictionary)
+	mappingFileDict := mappingFile.Dictionary().(*array.Binary)
+	mappingBuildID := mapping.Field(4).(*array.Dictionary)
+	mappingBuildIDDict := mappingBuildID.Dictionary().(*array.Binary)
 	lines := location.Field(2).(*array.List)
 	lineOffsets := lines.Offsets()
 	line := lines.ListValues().(*array.Struct)
 	lineNumber := line.Field(0).(*array.Int64)
 	lineFunction := line.Field(1).(*array.Struct)
-	lineFunctionName := lineFunction.Field(0).(*array.String)
-	lineFunctionSystemName := lineFunction.Field(1).(*array.String)
-	lineFunctionFilename := lineFunction.Field(2).(*array.String)
+	lineFunctionName := lineFunction.Field(0).(*array.Dictionary)
+	lineFunctionNameDict := lineFunctionName.Dictionary().(*array.Binary)
+	lineFunctionSystemName := lineFunction.Field(1).(*array.Dictionary)
+	lineFunctionSystemNameDict := lineFunctionSystemName.Dictionary().(*array.Binary)
+	lineFunctionFilename := lineFunction.Field(2).(*array.Dictionary)
+	lineFunctionFilenameDict := lineFunctionFilename.Dictionary().(*array.Binary)
 	lineFunctionStartLine := lineFunction.Field(3).(*array.Int64)
 	valueColumn := ar.Column(labelNum + 1).(*array.Int64)
 	diffColumn := ar.Column(labelNum + 2).(*array.Int64)
 
 	return RecordReader{
-		Record:                 ar,
-		LabelFields:            labelFields,
-		LabelColumns:           labelColumns,
-		Locations:              locations,
-		LocationOffsets:        locationOffsets,
-		Location:               location,
-		Address:                address,
-		Mapping:                mapping,
-		MappingStart:           mappingStart,
-		MappingLimit:           mappingLimit,
-		MappingOffset:          mappingOffset,
-		MappingFile:            mappingFile,
-		MappingBuildID:         mappingBuildID,
-		Lines:                  lines,
-		LineOffsets:            lineOffsets,
-		Line:                   line,
-		LineNumber:             lineNumber,
-		LineFunction:           lineFunction,
-		LineFunctionName:       lineFunctionName,
-		LineFunctionSystemName: lineFunctionSystemName,
-		LineFunctionFilename:   lineFunctionFilename,
-		LineFunctionStartLine:  lineFunctionStartLine,
-		Value:                  valueColumn,
-		Diff:                   diffColumn,
+		Record:                     ar,
+		LabelFields:                labelFields,
+		LabelColumns:               labelColumns,
+		Locations:                  locations,
+		LocationOffsets:            locationOffsets,
+		Location:                   location,
+		Address:                    address,
+		Mapping:                    mapping,
+		MappingStart:               mappingStart,
+		MappingLimit:               mappingLimit,
+		MappingOffset:              mappingOffset,
+		MappingFile:                mappingFile,
+		MappingFileDict:            mappingFileDict,
+		MappingBuildID:             mappingBuildID,
+		MappingBuildIDDict:         mappingBuildIDDict,
+		Lines:                      lines,
+		LineOffsets:                lineOffsets,
+		Line:                       line,
+		LineNumber:                 lineNumber,
+		LineFunction:               lineFunction,
+		LineFunctionName:           lineFunctionName,
+		LineFunctionNameDict:       lineFunctionNameDict,
+		LineFunctionSystemName:     lineFunctionSystemName,
+		LineFunctionSystemNameDict: lineFunctionSystemNameDict,
+		LineFunctionFilename:       lineFunctionFilename,
+		LineFunctionFilenameDict:   lineFunctionFilenameDict,
+		LineFunctionStartLine:      lineFunctionStartLine,
+		Value:                      valueColumn,
+		Diff:                       diffColumn,
 	}
 }
