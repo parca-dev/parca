@@ -37,7 +37,6 @@ type RecordReader struct {
 	LabelColumns []LabelColumn
 
 	Locations                  *array.List
-	LocationOffsets            []int32
 	Location                   *array.Struct
 	Address                    *array.Uint64
 	Mapping                    *array.Struct
@@ -49,7 +48,6 @@ type RecordReader struct {
 	MappingBuildID             *array.Dictionary
 	MappingBuildIDDict         *array.Binary
 	Lines                      *array.List
-	LineOffsets                []int32
 	Line                       *array.Struct
 	LineNumber                 *array.Int64
 	LineFunction               *array.Struct
@@ -98,7 +96,6 @@ func NewRecordReader(ar arrow.Record) RecordReader {
 
 	// Get readers from the unfiltered profile.
 	locations := ar.Column(labelNum).(*array.List)
-	locationOffsets := locations.Offsets()
 	location := locations.ListValues().(*array.Struct)
 	address := location.Field(0).(*array.Uint64)
 	mapping := location.Field(1).(*array.Struct)
@@ -110,7 +107,6 @@ func NewRecordReader(ar arrow.Record) RecordReader {
 	mappingBuildID := mapping.Field(4).(*array.Dictionary)
 	mappingBuildIDDict := mappingBuildID.Dictionary().(*array.Binary)
 	lines := location.Field(2).(*array.List)
-	lineOffsets := lines.Offsets()
 	line := lines.ListValues().(*array.Struct)
 	lineNumber := line.Field(0).(*array.Int64)
 	lineFunction := line.Field(1).(*array.Struct)
@@ -129,7 +125,6 @@ func NewRecordReader(ar arrow.Record) RecordReader {
 		LabelFields:                labelFields,
 		LabelColumns:               labelColumns,
 		Locations:                  locations,
-		LocationOffsets:            locationOffsets,
 		Location:                   location,
 		Address:                    address,
 		Mapping:                    mapping,
@@ -141,7 +136,6 @@ func NewRecordReader(ar arrow.Record) RecordReader {
 		MappingBuildID:             mappingBuildID,
 		MappingBuildIDDict:         mappingBuildIDDict,
 		Lines:                      lines,
-		LineOffsets:                lineOffsets,
 		Line:                       line,
 		LineNumber:                 lineNumber,
 		LineFunction:               lineFunction,

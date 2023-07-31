@@ -352,6 +352,11 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 			np, err := OldProfileToArrowProfile(p)
 			require.NoError(t, err)
 
+			np.Samples = []arrow.Record{
+				np.Samples[0].NewSlice(0, 2),
+				np.Samples[0].NewSlice(2, 4),
+			}
+
 			fa, cumulative, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, np, tc.aggregate, 0)
 			require.NoError(t, err)
 

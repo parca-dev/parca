@@ -137,11 +137,27 @@ func (c *ArrowToProfileConverter) Convert(
 				for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
 					var f *pb.Function
 					if lineFunction.IsValid(k) {
+						name := ""
+						if lineFunctionName.IsValid(k) {
+							name = string(lineFunctionNameDict.Value(lineFunctionName.GetValueIndex(k)))
+						}
+						systemName := ""
+						if lineFunctionSystemName.IsValid(k) {
+							systemName = string(lineFunctionSystemNameDict.Value(lineFunctionSystemName.GetValueIndex(k)))
+						}
+						filename := ""
+						if lineFunctionFilename.IsValid(k) {
+							filename = string(lineFunctionFilenameDict.Value(lineFunctionFilename.GetValueIndex(k)))
+						}
+						startLine := int64(0)
+						if lineFunctionStartLine.IsValid(k) {
+							startLine = int64(lineFunctionStartLine.Value(k))
+						}
 						f = &pb.Function{
-							Name:       string(lineFunctionNameDict.Value(lineFunctionName.GetValueIndex(k))),
-							SystemName: string(lineFunctionSystemNameDict.Value(lineFunctionSystemName.GetValueIndex(k))),
-							Filename:   string(lineFunctionFilenameDict.Value(lineFunctionFilename.GetValueIndex(k))),
-							StartLine:  int64(lineFunctionStartLine.Value(k)),
+							Name:       name,
+							SystemName: systemName,
+							Filename:   filename,
+							StartLine:  startLine,
 						}
 						f.Id = c.key.MakeFunctionID(f)
 					}
@@ -153,12 +169,20 @@ func (c *ArrowToProfileConverter) Convert(
 
 				var m *pb.Mapping
 				if !mapping.IsNull(j) {
+					buildID := ""
+					if mappingBuildID.IsValid(j) {
+						buildID = string(mappingBuildIDDict.Value(mappingBuildID.GetValueIndex(j)))
+					}
+					file := ""
+					if mappingFile.IsValid(j) {
+						file = string(mappingFileDict.Value(mappingFile.GetValueIndex(j)))
+					}
 					m = &pb.Mapping{
 						Start:   mappingStart.Value(j),
 						Limit:   mappingLimit.Value(j),
 						Offset:  mappingOffset.Value(j),
-						File:    string(mappingFileDict.Value(mappingFile.GetValueIndex(j))),
-						BuildId: string(mappingBuildIDDict.Value(mappingBuildID.GetValueIndex(j))),
+						File:    file,
+						BuildId: buildID,
 					}
 					m.Id = c.key.MakeMappingID(m)
 				}
@@ -310,17 +334,19 @@ func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrac
 
 			w.Addresses.Append(loc.Address)
 
-			w.Mapping.Append(loc.Mapping != nil)
 			if loc.Mapping != nil {
+				w.Mapping.Append(true)
 				w.MappingStart.Append(loc.Mapping.Start)
 				w.MappingLimit.Append(loc.Mapping.Limit)
 				w.MappingOffset.Append(loc.Mapping.Offset)
 				w.MappingFile.Append([]byte(loc.Mapping.File))
 				w.MappingBuildID.Append([]byte(loc.Mapping.BuildId))
+			} else {
+				w.Mapping.AppendNull()
 			}
 
-			w.Lines.Append(len(loc.Lines) > 0)
-			if loc.Lines != nil {
+			if loc.Lines != nil && len(loc.Lines) > 0 {
+				w.Lines.Append(true)
 				for _, l := range loc.Lines {
 					w.Line.Append(true)
 					w.LineNumber.Append(l.Line)
@@ -332,6 +358,8 @@ func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrac
 						w.FunctionStartLine.Append(l.Function.StartLine)
 					}
 				}
+			} else {
+				w.Lines.AppendNull()
 			}
 		}
 	}

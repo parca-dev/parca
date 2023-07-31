@@ -236,7 +236,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		}
 
 		for i := 0; i < int(r.Record.NumRows()); i++ {
-			beg, end := int(r.LocationOffsets[i]), int(r.LocationOffsets[i+1])
+			beg, end := r.Locations.ValueOffsets(i)
 
 			// TODO: This height is only an estimation, inlined functions are not taken into account.
 			numLocations := int32(end - beg)
@@ -259,12 +259,12 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			// every new sample resets the childRow to -1 indicating that we start with a leaf again.
 			// pprof stores locations in reverse order, thus we loop over locations in reverse order.
 		locations:
-			for j := end - 1; j >= beg; j-- {
+			for j := int(end - 1); j >= int(beg); j-- {
 				// If the location has no lines, it's not symbolized.
 				// We work with the location address instead.
-				isRoot := isRoot(end, j)
+				isRoot := isRoot(int(end), j)
 
-				if isLeaf(beg, j) {
+				if isLeaf(int(beg), j) {
 					cumulative += r.Value.Value(i)
 				}
 
@@ -281,7 +281,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					// If we find a matching address, we merge the values.
 				compareRowsAddr:
 					for _, cr := range compareRows {
-						if !equalField(FlamegraphFieldLocationAddress, sampleLabels, i, j, 0, cr, end-1-j) {
+						if !equalField(FlamegraphFieldLocationAddress, sampleLabels, i, j, 0, cr, int(end)-1-j) {
 							continue compareRowsAddr
 						}
 
@@ -329,7 +329,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					compareRows:
 						for _, cr := range compareRows {
 							for f := range aggregateFields {
-								if !equalField(f, sampleLabels, i, j, k, cr, end-1-j) {
+								if !equalField(f, sampleLabels, i, j, k, cr, int(end)-1-j) {
 									// If a field doesn't match, we can't aggregate this row with the existing one.
 									continue compareRows
 								}
@@ -368,48 +368,49 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			}
 		}
 
-		// We have manually tracked the total cumulative value.
-		// Now we set/overwrite the cumulative value for the root row (which is always the 0 row in our flame graphs).
-		fb.builderCumulative.Set(0, cumulative)
+	}
 
-		// We have manually tracked each row's children.
-		// So now we need to iterate over all rows in the record and append their children.
-		// We cannot do this while building the rows as we need to append the children while iterating over the rows.
-		for i := 0; i < fb.builderCumulative.Len(); i++ {
-			if i == 0 {
-				builderChildren.Append(true)
-				for _, child := range rootsRow {
-					fb.builderChildrenValues.Append(uint32(child))
-				}
-				continue
+	// We have manually tracked the total cumulative value.
+	// Now we set/overwrite the cumulative value for the root row (which is always the 0 row in our flame graphs).
+	fb.builderCumulative.Set(0, cumulative)
+
+	// We have manually tracked each row's children.
+	// So now we need to iterate over all rows in the record and append their children.
+	// We cannot do this while building the rows as we need to append the children while iterating over the rows.
+	for i := 0; i < fb.builderCumulative.Len(); i++ {
+		if i == 0 {
+			builderChildren.Append(true)
+			for _, child := range rootsRow {
+				fb.builderChildrenValues.Append(uint32(child))
 			}
-			if len(fb.children[i]) == 0 {
-				builderChildren.AppendNull() // leaf
-			} else {
-				builderChildren.Append(true)
-				for _, child := range fb.children[i] {
-					fb.builderChildrenValues.Append(uint32(child))
-				}
+			continue
+		}
+		if len(fb.children[i]) == 0 {
+			builderChildren.AppendNull() // leaf
+		} else {
+			builderChildren.Append(true)
+			for _, child := range fb.children[i] {
+				fb.builderChildrenValues.Append(uint32(child))
 			}
 		}
-		for i := 0; i < fb.builderCumulative.Len(); i++ {
-			if lsets, hasLabels := fb.labels[i]; hasLabels {
-				inter := mapsIntersection(lsets)
-				if len(inter) == 0 {
-					fb.builderLabels.AppendNull()
-					continue
-				}
-
-				lsbytes, err := json.Marshal(inter)
-				if err != nil {
-					return nil, 0, 0, 0, err
-				}
-				if err := fb.builderLabels.Append(lsbytes); err != nil {
-					return nil, 0, 0, 0, err
-				}
-			} else {
+	}
+	for i := 0; i < fb.builderCumulative.Len(); i++ {
+		if lsets, hasLabels := fb.labels[i]; hasLabels {
+			inter := mapsIntersection(lsets)
+			if len(inter) == 0 {
 				fb.builderLabels.AppendNull()
+				continue
 			}
+
+			lsbytes, err := json.Marshal(inter)
+			if err != nil {
+				return nil, 0, 0, 0, err
+			}
+			if err := fb.builderLabels.Append(lsbytes); err != nil {
+				return nil, 0, 0, 0, err
+			}
+		} else {
+			fb.builderLabels.AppendNull()
 		}
 	}
 

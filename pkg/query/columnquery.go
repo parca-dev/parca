@@ -255,12 +255,10 @@ func filterRecord(
 	defer w.RecordBuilder.Release()
 
 	for i := 0; i < int(rec.NumRows()); i++ {
-		lOffsetStart := r.LocationOffsets[i]
-		lOffsetEnd := r.LocationOffsets[i+1]
+		lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 		keepRow := false
 		for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
-			llOffsetStart := r.LineOffsets[j]
-			llOffsetEnd := r.LineOffsets[j+1]
+			llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
 
 			for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
 				if r.LineFunction.IsValid(k) && bytes.Contains(bytes.ToLower(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(k))), []byte(filterQuery)) {
@@ -282,38 +280,46 @@ func filterRecord(
 				}
 			}
 
-			w.LocationsList.Append(true)
-			for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
-				w.Locations.Append(true)
-				w.Addresses.Append(r.Address.Value(j))
+			if lOffsetEnd-lOffsetStart > 0 {
+				w.LocationsList.Append(true)
+				for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
+					w.Locations.Append(true)
+					w.Addresses.Append(r.Address.Value(j))
 
-				w.Mapping.Append(r.Mapping.IsValid(j))
-				if r.Mapping.IsValid(j) {
-					w.MappingStart.Append(r.MappingStart.Value(j))
-					w.MappingLimit.Append(r.MappingLimit.Value(j))
-					w.MappingOffset.Append(r.MappingOffset.Value(j))
-					w.MappingFile.Append(r.MappingFileDict.Value(r.MappingFile.GetValueIndex(j)))
-					w.MappingBuildID.Append(r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(j)))
-				}
+					if r.Mapping.IsValid(j) {
+						w.Mapping.Append(true)
+						w.MappingStart.Append(r.MappingStart.Value(j))
+						w.MappingLimit.Append(r.MappingLimit.Value(j))
+						w.MappingOffset.Append(r.MappingOffset.Value(j))
+						w.MappingFile.Append(r.MappingFileDict.Value(r.MappingFile.GetValueIndex(j)))
+						w.MappingBuildID.Append(r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(j)))
+					} else {
+						w.Mapping.AppendNull()
+					}
 
-				w.Lines.Append(r.Lines.IsValid(j))
+					if r.Lines.IsValid(j) {
+						llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
+						if llOffsetEnd-llOffsetStart > 0 {
+							w.Lines.Append(true)
+							for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
+								w.Line.Append(true)
+								w.LineNumber.Append(r.LineNumber.Value(k))
+								w.Function.Append(r.LineFunction.IsValid(k))
 
-				if r.Lines.IsValid(j) {
-					llOffsetStart := r.LineOffsets[j]
-					llOffsetEnd := r.LineOffsets[j+1]
-					for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
-						w.Line.Append(true)
-						w.LineNumber.Append(r.LineNumber.Value(k))
-						w.Function.Append(r.LineFunction.IsValid(k))
-
-						if r.LineFunction.IsValid(k) {
-							w.FunctionName.Append(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(k)))
-							w.FunctionSystemName.Append(r.LineFunctionSystemNameDict.Value(r.LineFunctionSystemName.GetValueIndex(k)))
-							w.FunctionFilename.Append(r.LineFunctionFilenameDict.Value(r.LineFunctionFilename.GetValueIndex(k)))
-							w.FunctionStartLine.Append(r.LineFunctionStartLine.Value(k))
+								if r.LineFunction.IsValid(k) {
+									w.FunctionName.Append(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(k)))
+									w.FunctionSystemName.Append(r.LineFunctionSystemNameDict.Value(r.LineFunctionSystemName.GetValueIndex(k)))
+									w.FunctionFilename.Append(r.LineFunctionFilenameDict.Value(r.LineFunctionFilename.GetValueIndex(k)))
+									w.FunctionStartLine.Append(r.LineFunctionStartLine.Value(k))
+								}
+							}
+							continue
 						}
 					}
+					w.Lines.AppendNull()
 				}
+			} else {
+				w.LocationsList.Append(false)
 			}
 		}
 	}
