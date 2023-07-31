@@ -26,54 +26,52 @@ const (
 	ColumnPprofLabelsPrefix = ColumnPprofLabels + "."
 )
 
-var (
-	LocationsField = arrow.Field{
-		Name: "locations",
-		Type: arrow.ListOf(arrow.StructOf([]arrow.Field{{
-			Name: "address",
+var LocationsField = arrow.Field{
+	Name: "locations",
+	Type: arrow.ListOf(arrow.StructOf([]arrow.Field{{
+		Name: "address",
+		Type: arrow.PrimitiveTypes.Uint64,
+	}, {
+		Name: "mapping",
+		Type: arrow.StructOf([]arrow.Field{{
+			Name: "start",
 			Type: arrow.PrimitiveTypes.Uint64,
 		}, {
-			Name: "mapping",
-			Type: arrow.StructOf([]arrow.Field{{
-				Name: "start",
-				Type: arrow.PrimitiveTypes.Uint64,
-			}, {
-				Name: "limit",
-				Type: arrow.PrimitiveTypes.Uint64,
-			}, {
-				Name: "offset",
-				Type: arrow.PrimitiveTypes.Uint64,
-			}, {
-				Name: "file",
-				Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
-			}, {
-				Name: "build_id",
-				Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
-			}}...),
+			Name: "limit",
+			Type: arrow.PrimitiveTypes.Uint64,
 		}, {
-			Name: "lines",
-			Type: arrow.ListOf(arrow.StructOf([]arrow.Field{{
-				Name: "line",
-				Type: arrow.PrimitiveTypes.Int64,
+			Name: "offset",
+			Type: arrow.PrimitiveTypes.Uint64,
+		}, {
+			Name: "file",
+			Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
+		}, {
+			Name: "build_id",
+			Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
+		}}...),
+	}, {
+		Name: "lines",
+		Type: arrow.ListOf(arrow.StructOf([]arrow.Field{{
+			Name: "line",
+			Type: arrow.PrimitiveTypes.Int64,
+		}, {
+			Name: "function",
+			Type: arrow.StructOf([]arrow.Field{{
+				Name: "name",
+				Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
 			}, {
-				Name: "function",
-				Type: arrow.StructOf([]arrow.Field{{
-					Name: "name",
-					Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
-				}, {
-					Name: "system_name",
-					Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
-				}, {
-					Name: "filename",
-					Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
-				}, {
-					Name: "start_line",
-					Type: arrow.PrimitiveTypes.Int64,
-				}}...),
-			}}...)),
+				Name: "system_name",
+				Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
+			}, {
+				Name: "filename",
+				Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
+			}, {
+				Name: "start_line",
+				Type: arrow.PrimitiveTypes.Int64,
+			}}...),
 		}}...)),
-	}
-)
+	}}...)),
+}
 
 func LocationsArrowSchema() *arrow.Schema {
 	return arrow.NewSchema([]arrow.Field{LocationsField}, nil)
