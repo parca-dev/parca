@@ -73,9 +73,7 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<HomePage />} />
                   <Route path="/targets" element={<TargetsPage />} />
-                  {isDevModeOrPreview() && (
-                    <Route path="/PATH_PREFIX_VAR" element={<Navigate to="/" replace />} />
-                  )}
+                  <Route path="/PATH_PREFIX_VAR" element={<Navigate to="/" replace />} />
                   <Route path="*" element={<Component404 />} />
                 </Routes>
               </div>
