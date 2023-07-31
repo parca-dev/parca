@@ -9,7 +9,7 @@ import (
 
 type LabelColumn struct {
 	Col  *array.Dictionary
-	Dict *array.String
+	Dict *array.Binary
 }
 
 type Reader struct {
@@ -73,7 +73,7 @@ func NewRecordReader(ar arrow.Record) RecordReader {
 		col := ar.Column(i).(*array.Dictionary)
 		labelColumns[i] = LabelColumn{
 			Col:  col,
-			Dict: col.Dictionary().(*array.String),
+			Dict: col.Dictionary().(*array.Binary),
 		}
 	}
 	labelNum := len(labelFields)
