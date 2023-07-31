@@ -1225,8 +1225,8 @@ func PprofToSymbolizedProfile(meta profile.Meta, prof *pprofprofile.Profile, ind
 					w.MappingStart.Append(loc.Mapping.Start)
 					w.MappingLimit.Append(loc.Mapping.Limit)
 					w.MappingOffset.Append(loc.Mapping.Offset)
-					w.MappingFile.Append(loc.Mapping.File)
-					w.MappingBuildID.Append(loc.Mapping.BuildID)
+					w.MappingFile.Append([]byte(loc.Mapping.File))
+					w.MappingBuildID.Append([]byte(loc.Mapping.BuildID))
 				}
 
 				w.Lines.Append(len(loc.Line) > 0)
@@ -1236,9 +1236,9 @@ func PprofToSymbolizedProfile(meta profile.Meta, prof *pprofprofile.Profile, ind
 						w.LineNumber.Append(line.Line)
 						w.Function.Append(line.Function != nil)
 						if line.Function != nil {
-							w.FunctionName.Append(line.Function.Name)
-							w.FunctionSystemName.Append(line.Function.SystemName)
-							w.FunctionFilename.Append(line.Function.Filename)
+							w.FunctionName.Append([]byte(line.Function.Name))
+							w.FunctionSystemName.Append([]byte(line.Function.SystemName))
+							w.FunctionFilename.Append([]byte(line.Function.Filename))
 							w.FunctionStartLine.Append(line.Function.StartLine)
 						}
 					}
@@ -1295,8 +1295,8 @@ func OldProfileToArrowProfile(p profile.OldProfile) (profile.Profile, error) {
 					w.MappingStart.Append(loc.Mapping.Start)
 					w.MappingLimit.Append(loc.Mapping.Limit)
 					w.MappingOffset.Append(loc.Mapping.Offset)
-					w.MappingFile.Append(loc.Mapping.File)
-					w.MappingBuildID.Append(loc.Mapping.BuildId)
+					w.MappingFile.Append([]byte(loc.Mapping.File))
+					w.MappingBuildID.Append([]byte(loc.Mapping.BuildId))
 				}
 
 				w.Lines.Append(len(loc.Lines) > 0)
@@ -1306,9 +1306,9 @@ func OldProfileToArrowProfile(p profile.OldProfile) (profile.Profile, error) {
 						w.LineNumber.Append(line.Line)
 						w.Function.Append(line.Function != nil)
 						if line.Function != nil {
-							w.FunctionName.Append(line.Function.Name)
-							w.FunctionSystemName.Append(line.Function.SystemName)
-							w.FunctionFilename.Append(line.Function.Filename)
+							w.FunctionName.Append([]byte(line.Function.Name))
+							w.FunctionSystemName.Append([]byte(line.Function.SystemName))
+							w.FunctionFilename.Append([]byte(line.Function.Filename))
 							w.FunctionStartLine.Append(line.Function.StartLine)
 						}
 					}

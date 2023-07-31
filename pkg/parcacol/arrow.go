@@ -77,16 +77,21 @@ func (c *ArrowToProfileConverter) Convert(
 		mappingStart := mapping.Field(0).(*array.Uint64)
 		mappingLimit := mapping.Field(1).(*array.Uint64)
 		mappingOffset := mapping.Field(2).(*array.Uint64)
-		mappingFile := mapping.Field(3).(*array.String)
-		mappingBuildID := mapping.Field(4).(*array.String)
+		mappingFile := mapping.Field(3).(*array.Dictionary)
+		mappingFileDict := mappingFile.Dictionary().(*array.Binary)
+		mappingBuildID := mapping.Field(4).(*array.Dictionary)
+		mappingBuildIDDict := mappingBuildID.Dictionary().(*array.Binary)
 		lines := location.Field(2).(*array.List)
 		lineOffsets := lines.Offsets()
 		line := lines.ListValues().(*array.Struct)
 		lineNumber := line.Field(0).(*array.Int64)
 		lineFunction := line.Field(1).(*array.Struct)
-		lineFunctionName := lineFunction.Field(0).(*array.String)
-		lineFunctionSystemName := lineFunction.Field(1).(*array.String)
-		lineFunctionFilename := lineFunction.Field(2).(*array.String)
+		lineFunctionName := lineFunction.Field(0).(*array.Dictionary)
+		lineFunctionNameDict := lineFunctionName.Dictionary().(*array.Binary)
+		lineFunctionSystemName := lineFunction.Field(1).(*array.Dictionary)
+		lineFunctionSystemNameDict := lineFunctionSystemName.Dictionary().(*array.Binary)
+		lineFunctionFilename := lineFunction.Field(2).(*array.Dictionary)
+		lineFunctionFilenameDict := lineFunctionFilename.Dictionary().(*array.Binary)
 		lineFunctionStartLine := lineFunction.Field(3).(*array.Int64)
 
 		indices = schema.FieldIndices("value")
@@ -133,9 +138,9 @@ func (c *ArrowToProfileConverter) Convert(
 					var f *pb.Function
 					if lineFunction.IsValid(k) {
 						f = &pb.Function{
-							Name:       lineFunctionName.Value(k),
-							SystemName: lineFunctionSystemName.Value(k),
-							Filename:   lineFunctionFilename.Value(k),
+							Name:       string(lineFunctionNameDict.Value(lineFunctionName.GetValueIndex(k))),
+							SystemName: string(lineFunctionSystemNameDict.Value(lineFunctionSystemName.GetValueIndex(k))),
+							Filename:   string(lineFunctionFilenameDict.Value(lineFunctionFilename.GetValueIndex(k))),
 							StartLine:  int64(lineFunctionStartLine.Value(k)),
 						}
 						f.Id = c.key.MakeFunctionID(f)
@@ -152,8 +157,8 @@ func (c *ArrowToProfileConverter) Convert(
 						Start:   mappingStart.Value(j),
 						Limit:   mappingLimit.Value(j),
 						Offset:  mappingOffset.Value(j),
-						File:    mappingFile.Value(j),
-						BuildId: mappingBuildID.Value(j),
+						File:    string(mappingFileDict.Value(mappingFile.GetValueIndex(j))),
+						BuildId: string(mappingBuildIDDict.Value(mappingBuildID.GetValueIndex(j))),
 					}
 					m.Id = c.key.MakeMappingID(m)
 				}
