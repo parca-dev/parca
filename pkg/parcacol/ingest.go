@@ -89,9 +89,9 @@ type Series struct {
 
 func (ing NormalizedIngester) Ingest(ctx context.Context, series []Series) error {
 	pBuf, err := ing.schema.GetBuffer(map[string][]string{
-		ColumnLabels:         ing.allLabelNames,
-		ColumnPprofLabels:    ing.allPprofLabelNames,
-		ColumnPprofNumLabels: ing.allPprofNumLabelNames,
+		profile.ColumnLabels:         ing.allLabelNames,
+		profile.ColumnPprofLabels:    ing.allPprofLabelNames,
+		profile.ColumnPprofNumLabels: ing.allPprofNumLabelNames,
 	})
 	if err != nil {
 		return err

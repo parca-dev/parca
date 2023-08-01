@@ -61,7 +61,7 @@ func (s *LocationStack) ToLocationStacktrace() []*profile.Location {
 	return a
 }
 
-func GenerateFlatPprof(ctx context.Context, ip *parcaprofile.Profile) (*profile.Profile, error) {
+func GenerateFlatPprof(ctx context.Context, ip parcaprofile.OldProfile) (*profile.Profile, error) {
 	meta := ip.Meta
 
 	mappingByID := map[string]*profile.Mapping{}

@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
+	"github.com/parca-dev/parca/pkg/profile"
 )
 
 func NewKeyMaker() *KeyMaker {
@@ -81,6 +82,45 @@ func (m *KeyMaker) MakeLocationID(l *pb.Location) string {
 	mappingId := l.MappingId
 	if mappingId == "" {
 		mappingId = "unknown-mapping"
+	}
+
+	return mappingId + "/" + string(b)
+}
+
+func (m *KeyMaker) MakeProfileLocationID(l *profile.Location) string {
+	hbuf := m.pool.Get().(*bytes.Buffer)
+	defer m.pool.Put(hbuf)
+
+	hbuf.Reset()
+	if l.Mapping != nil {
+		hbuf.WriteString(l.Mapping.Id)
+	}
+
+	// ibuf is a buffer that is used to encode integers.
+	ibuf := make([]byte, 8)
+	binary.BigEndian.PutUint64(ibuf, l.Address)
+	hbuf.Write(ibuf)
+
+	// If the address is 0, then the functions attached to the
+	// location are not from a native binary, but instead from a dynamic
+	// runtime/language eg. ruby or python. In those cases we have no better
+	// uniqueness factor than the actual functions, and since there is no
+	// address there is no potential for asynchronously symbolizing.
+	if l.Address == 0 {
+		for _, line := range l.Lines {
+			hbuf.WriteString(line.Function.Id)
+
+			binary.BigEndian.PutUint64(ibuf, uint64(line.Line))
+			hbuf.Write(ibuf)
+		}
+	}
+
+	sum := sha512.Sum512_256(hbuf.Bytes())
+	b := unsafeURLEncode(sum, hbuf)
+
+	mappingId := "unknown-mapping"
+	if l.Mapping != nil {
+		mappingId = l.Mapping.Id
 	}
 
 	return mappingId + "/" + string(b)

@@ -21,6 +21,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/apache/arrow/go/v13/arrow"
+	"github.com/apache/arrow/go/v13/arrow/array"
+	"github.com/apache/arrow/go/v13/arrow/math"
 	"github.com/apache/arrow/go/v13/arrow/memory"
 	"github.com/go-kit/log"
 	"go.opentelemetry.io/otel/attribute"
@@ -32,6 +35,7 @@ import (
 	metastorev1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	sharepb "github.com/parca-dev/parca/gen/proto/go/parca/share/v1alpha1"
+	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -40,8 +44,8 @@ type Querier interface {
 	Values(ctx context.Context, labelName string, match []string, start, end time.Time) ([]string, error)
 	QueryRange(ctx context.Context, query string, startTime, endTime time.Time, step time.Duration, limit uint32) ([]*pb.MetricsSeries, error)
 	ProfileTypes(ctx context.Context) ([]*pb.ProfileType, error)
-	QuerySingle(ctx context.Context, query string, time time.Time) (*profile.Profile, error)
-	QueryMerge(ctx context.Context, query string, start, end time.Time) (*profile.Profile, error)
+	QuerySingle(ctx context.Context, query string, time time.Time) (profile.Profile, error)
+	QueryMerge(ctx context.Context, query string, start, end time.Time) (profile.Profile, error)
 }
 
 // ColumnQueryAPI is the read api interface for parca
@@ -56,6 +60,7 @@ type ColumnQueryAPI struct {
 
 	tableConverterPool *sync.Pool
 	mem                memory.Allocator
+	converter          *parcacol.ArrowToProfileConverter
 }
 
 func NewColumnQueryAPI(
@@ -64,6 +69,7 @@ func NewColumnQueryAPI(
 	shareClient sharepb.ShareServiceClient,
 	querier Querier,
 	mem memory.Allocator,
+	converter *parcacol.ArrowToProfileConverter,
 ) *ColumnQueryAPI {
 	return &ColumnQueryAPI{
 		logger:             logger,
@@ -72,6 +78,7 @@ func NewColumnQueryAPI(
 		querier:            querier,
 		tableConverterPool: NewTableConverterPool(),
 		mem:                mem,
+		converter:          converter,
 	}
 }
 
@@ -151,7 +158,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	}
 
 	var (
-		p        *profile.Profile
+		p        profile.Profile
 		filtered int64
 		err      error
 	)
@@ -171,8 +178,16 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	}
 
 	if req.FilterQuery != nil {
-		p, filtered = FilterProfileData(ctx, q.tracer, p, req.GetFilterQuery())
+		p.Samples, filtered, err = FilterProfileData(ctx, q.tracer, q.mem, p.Samples, req.GetFilterQuery())
+		if err != nil {
+			return nil, fmt.Errorf("filtering profile: %w", err)
+		}
 	}
+	defer func() {
+		for _, r := range p.Samples {
+			r.Release()
+		}
+	}()
 
 	return q.renderReport(
 		ctx,
@@ -184,78 +199,179 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	)
 }
 
-func keepSample(s *profile.SymbolizedSample, filterQuery string) bool {
-	for _, loc := range s.Locations {
-		for _, l := range loc.Lines {
-			if l.Function != nil && strings.Contains(strings.ToLower(l.Function.Name), filterQuery) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-type FilteredProfile struct {
-	TotalUnfiltered int64
-	*profile.Profile
-}
-
 func FilterProfileData(
 	ctx context.Context,
 	tracer trace.Tracer,
-	p *profile.Profile,
+	pool memory.Allocator,
+	records []arrow.Record,
 	filterQuery string,
-) (*profile.Profile, int64) {
+) ([]arrow.Record, int64, error) {
 	_, span := tracer.Start(ctx, "filterByFunction")
 	defer span.End()
+
+	// TODO: This is a bit inefficient because it completely rebuilds the
+	// profile, we should only ever rebuild dictionaries once at the very end
+	// before we send a result to the user. Because we are rebuilding the
+	// records whe need to release the previous ones.
+	defer func() {
+		for _, r := range records {
+			r.Release()
+		}
+	}()
 
 	// We want to filter by function name case-insensitive, so we need to lowercase the query.
 	// We lower case the query here, so we don't have to do it for every sample.
 	filterQuery = strings.ToLower(filterQuery)
+	res := make([]arrow.Record, 0, len(records))
+	allValues := int64(0)
+	allFiltered := int64(0)
 
-	var (
-		totalUnfiltered int64
-		totalFiltered   int64
-	)
-	filteredSamples := []*profile.SymbolizedSample{}
-	for _, s := range p.Samples {
-		// We sum up the total number of values here, regardless whether it's filtered or not,
-		// to get the unfiltered total.
-		totalUnfiltered += s.Value
+	for _, r := range records {
+		filteredRecord, valueSum, filteredSum, err := filterRecord(ctx, tracer, pool, r, filterQuery)
+		if err != nil {
+			return nil, 0, fmt.Errorf("filter record: %w", err)
+		}
 
-		if keepSample(s, filterQuery) {
-			filteredSamples = append(filteredSamples, s)
-			totalFiltered += s.Value
+		res = append(res, filteredRecord)
+		allValues += valueSum
+		allFiltered += filteredSum
+	}
+
+	return res, allValues - allFiltered, nil
+}
+
+func filterRecord(
+	ctx context.Context,
+	tracer trace.Tracer,
+	pool memory.Allocator,
+	rec arrow.Record,
+	filterQuery string,
+) (arrow.Record, int64, int64, error) {
+	r := profile.NewRecordReader(rec)
+
+	// Builders for the result profile.
+	labelNames := make([]string, 0, len(r.LabelFields))
+	for _, lf := range r.LabelFields {
+		labelNames = append(labelNames, strings.TrimPrefix(lf.Name, profile.ColumnPprofLabelsPrefix))
+	}
+
+	w := profile.NewWriter(pool, labelNames)
+	defer w.RecordBuilder.Release()
+
+	for i := 0; i < int(rec.NumRows()); i++ {
+		lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
+		keepRow := false
+		for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
+			llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
+
+			for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
+				if r.LineFunction.IsValid(k) && bytes.Contains(bytes.ToLower(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(k))), []byte(filterQuery)) {
+					keepRow = true
+					break
+				}
+			}
+		}
+
+		if keepRow {
+			w.Value.Append(r.Value.Value(i))
+			w.Diff.Append(r.Diff.Value(i))
+
+			for j, label := range r.LabelColumns {
+				if label.Col.IsValid(i) {
+					if err := w.LabelBuilders[j].Append([]byte(label.Dict.Value(label.Col.GetValueIndex(i)))); err != nil {
+						return nil, 0, 0, fmt.Errorf("append label: %w", err)
+					}
+				} else {
+					w.LabelBuilders[j].AppendNull()
+				}
+			}
+
+			if lOffsetEnd-lOffsetStart > 0 {
+				w.LocationsList.Append(true)
+				for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
+					w.Locations.Append(true)
+					w.Addresses.Append(r.Address.Value(j))
+
+					if r.Mapping.IsValid(j) {
+						w.Mapping.Append(true)
+						w.MappingStart.Append(r.MappingStart.Value(j))
+						w.MappingLimit.Append(r.MappingLimit.Value(j))
+						w.MappingOffset.Append(r.MappingOffset.Value(j))
+						if err := w.MappingFile.Append(r.MappingFileDict.Value(r.MappingFile.GetValueIndex(j))); err != nil {
+							return nil, 0, 0, fmt.Errorf("append mapping file: %w", err)
+						}
+						if err := w.MappingBuildID.Append(r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(j))); err != nil {
+							return nil, 0, 0, fmt.Errorf("append mapping build id: %w", err)
+						}
+					} else {
+						w.Mapping.AppendNull()
+					}
+
+					if r.Lines.IsValid(j) {
+						llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
+						if llOffsetEnd-llOffsetStart > 0 {
+							w.Lines.Append(true)
+							for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
+								w.Line.Append(true)
+								w.LineNumber.Append(r.LineNumber.Value(k))
+								w.Function.Append(r.LineFunction.IsValid(k))
+
+								if r.LineFunction.IsValid(k) {
+									if err := w.FunctionName.Append(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(k))); err != nil {
+										return nil, 0, 0, fmt.Errorf("append function name: %w", err)
+									}
+									if err := w.FunctionSystemName.Append(r.LineFunctionSystemNameDict.Value(r.LineFunctionSystemName.GetValueIndex(k))); err != nil {
+										return nil, 0, 0, fmt.Errorf("append function system name: %w", err)
+									}
+									if err := w.FunctionFilename.Append(r.LineFunctionFilenameDict.Value(r.LineFunctionFilename.GetValueIndex(k))); err != nil {
+										return nil, 0, 0, fmt.Errorf("append function filename: %w", err)
+									}
+									w.FunctionStartLine.Append(r.LineFunctionStartLine.Value(k))
+								}
+							}
+							continue
+						}
+					}
+					w.Lines.AppendNull()
+				}
+			} else {
+				w.LocationsList.Append(false)
+			}
 		}
 	}
 
-	return &profile.Profile{
-		Samples: filteredSamples,
-		Meta:    p.Meta,
-	}, totalUnfiltered - totalFiltered
+	res := w.RecordBuilder.NewRecord()
+	numFields := res.Schema().NumFields()
+	filteredValue := res.Column(numFields - 2).(*array.Int64)
+
+	return res,
+		math.Int64.Sum(r.Value),
+		math.Int64.Sum(filteredValue),
+		nil
 }
 
 func (q *ColumnQueryAPI) renderReport(
 	ctx context.Context,
-	p *profile.Profile,
+	p profile.Profile,
 	typ pb.QueryRequest_ReportType,
 	nodeTrimThreshold float32,
 	filtered int64,
 	groupBy []string,
 ) (*pb.QueryResponse, error) {
-	return RenderReport(ctx, q.tracer, p, typ, nodeTrimThreshold, filtered, groupBy, q.tableConverterPool, q.mem)
+	return RenderReport(ctx, q.tracer, p, typ, nodeTrimThreshold, filtered, groupBy, q.tableConverterPool, q.mem, q.converter)
 }
 
 func RenderReport(
 	ctx context.Context,
 	tracer trace.Tracer,
-	p *profile.Profile,
+	p profile.Profile,
 	typ pb.QueryRequest_ReportType,
 	nodeTrimThreshold float32,
 	filtered int64,
 	groupBy []string,
 	pool *sync.Pool,
 	mem memory.Allocator,
+	converter *parcacol.ArrowToProfileConverter,
 ) (*pb.QueryResponse, error) {
 	ctx, span := tracer.Start(ctx, "renderReport")
 	span.SetAttributes(attribute.String("reportType", typ.String()))
@@ -269,7 +385,12 @@ func RenderReport(
 	switch typ {
 	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED:
-		fg, err := GenerateFlamegraphFlat(ctx, tracer, p)
+		op, err := converter.Convert(ctx, p)
+		if err != nil {
+			return nil, err
+		}
+
+		fg, err := GenerateFlamegraphFlat(ctx, tracer, op)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
 		}
@@ -281,7 +402,12 @@ func RenderReport(
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_TABLE:
-		fg, err := GenerateFlamegraphTable(ctx, tracer, p, nodeTrimFraction, pool)
+		op, err := converter.Convert(ctx, p)
+		if err != nil {
+			return nil, err
+		}
+
+		fg, err := GenerateFlamegraphTable(ctx, tracer, op, nodeTrimFraction, pool)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate flamegraph: %v", err.Error())
 		}
@@ -317,7 +443,12 @@ func RenderReport(
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_PPROF:
-		pp, err := GenerateFlatPprof(ctx, p)
+		op, err := converter.Convert(ctx, p)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to convert profile: %v", err.Error())
+		}
+
+		pp, err := GenerateFlatPprof(ctx, op)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
 		}
@@ -333,7 +464,12 @@ func RenderReport(
 			Report:   &pb.QueryResponse_Pprof{Pprof: buf.Bytes()},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_TOP:
-		top, cumulative, err := GenerateTopTable(ctx, p)
+		op, err := converter.Convert(ctx, p)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to convert profile: %v", err.Error())
+		}
+
+		top, cumulative, err := GenerateTopTable(ctx, op)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
 		}
@@ -345,7 +481,12 @@ func RenderReport(
 			Report:   &pb.QueryResponse_Top{Top: top},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_CALLGRAPH:
-		callgraph, err := GenerateCallgraph(ctx, p)
+		op, err := converter.Convert(ctx, p)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to convert profile: %v", err.Error())
+		}
+
+		callgraph, err := GenerateCallgraph(ctx, op)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate callgraph: %v", err.Error())
 		}
@@ -360,20 +501,20 @@ func RenderReport(
 	}
 }
 
-func (q *ColumnQueryAPI) selectSingle(ctx context.Context, s *pb.SingleProfile) (*profile.Profile, error) {
+func (q *ColumnQueryAPI) selectSingle(ctx context.Context, s *pb.SingleProfile) (profile.Profile, error) {
 	p, err := q.querier.QuerySingle(
 		ctx,
 		s.Query,
 		s.Time.AsTime(),
 	)
 	if err != nil {
-		return nil, err
+		return profile.Profile{}, err
 	}
 
 	return p, nil
 }
 
-func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (*profile.Profile, error) {
+func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (profile.Profile, error) {
 	p, err := q.querier.QueryMerge(
 		ctx,
 		m.Query,
@@ -381,22 +522,22 @@ func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (*
 		m.End.AsTime(),
 	)
 	if err != nil {
-		return nil, err
+		return profile.Profile{}, err
 	}
 
 	return p, nil
 }
 
-func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile) (*profile.Profile, error) {
+func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile) (profile.Profile, error) {
 	ctx, span := q.tracer.Start(ctx, "diffRequest")
 	defer span.End()
 
 	if d == nil {
-		return nil, status.Error(codes.InvalidArgument, "requested diff mode, but did not provide parameters for diff")
+		return profile.Profile{}, status.Error(codes.InvalidArgument, "requested diff mode, but did not provide parameters for diff")
 	}
 
 	g, ctx := errgroup.WithContext(ctx)
-	var base *profile.Profile
+	var base profile.Profile
 	g.Go(func() error {
 		var err error
 		base, err = q.selectProfileForDiff(ctx, d.A)
@@ -406,7 +547,7 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile) (*pr
 		return nil
 	})
 
-	var compare *profile.Profile
+	var compare profile.Profile
 	g.Go(func() error {
 		var err error
 		compare, err = q.selectProfileForDiff(ctx, d.B)
@@ -417,43 +558,84 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile) (*pr
 	})
 
 	if err := g.Wait(); err != nil {
-		return nil, err
+		return profile.Profile{}, err
 	}
 
-	// TODO: This is cheating a bit. This should be done with a sub-query in the columnstore.
-	diff := &profile.Profile{}
+	records := make([]arrow.Record, 0, len(compare.Samples)+len(base.Samples))
 
-	// TODO: Use parcacol.Sample for comparing these
-	for i := range compare.Samples {
-		diff.Samples = append(diff.Samples, &profile.SymbolizedSample{
-			Locations: compare.Samples[i].Locations,
-			Value:     compare.Samples[i].Value,
-			DiffValue: compare.Samples[i].Value,
-			Label:     compare.Samples[i].Label,
-			NumLabel:  compare.Samples[i].NumLabel,
-		})
+	for _, r := range compare.Samples {
+		columns := r.Columns()
+		// This is intentional, the diff value of the `compare` profile is the same
+		// as the value of the `compare` profile, because what we're actually doing
+		// is subtracting the `base` profile, but the actual calculation happens
+		// when building the visualizations. We should eventually have this be done
+		// directly by the query engine.
+		columns[len(columns)-1] = columns[len(columns)-2]
+		records = append(records, array.NewRecord(
+			r.Schema(),
+			columns,
+			r.NumRows(),
+		))
+		r.Release()
 	}
 
-	for i := range base.Samples {
-		diff.Samples = append(diff.Samples, &profile.SymbolizedSample{
-			Locations: base.Samples[i].Locations,
-			DiffValue: -base.Samples[i].Value,
-			Label:     base.Samples[i].Label,
-			NumLabel:  base.Samples[i].NumLabel,
-		})
+	for _, r := range base.Samples {
+		columns := r.Columns()
+		// This has to be this order as we're overriding the value column (-2)
+		// in the next line.
+		columns[len(columns)-1] = multiplyInt64By(q.mem, columns[len(columns)-2].(*array.Int64), -1)
+		columns[len(columns)-2] = zeroArray(q.mem, int(r.NumRows()))
+		records = append(records, array.NewRecord(
+			r.Schema(),
+			columns,
+			r.NumRows(),
+		))
+		r.Release()
 	}
 
-	return diff, nil
+	return profile.Profile{
+		Meta:    compare.Meta,
+		Samples: records,
+	}, nil
 }
 
-func (q *ColumnQueryAPI) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelection) (*profile.Profile, error) {
+func multiplyInt64By(pool memory.Allocator, arr *array.Int64, factor int64) arrow.Array {
+	b := array.NewInt64Builder(pool)
+	defer b.Release()
+
+	values := arr.Int64Values()
+	valid := make([]bool, len(values))
+	for i := range values {
+		values[i] *= factor
+		valid[i] = true
+	}
+
+	b.AppendValues(values, valid)
+	return b.NewArray()
+}
+
+func zeroArray(pool memory.Allocator, rows int) arrow.Array {
+	b := array.NewInt64Builder(pool)
+	defer b.Release()
+
+	values := make([]int64, rows)
+	valid := make([]bool, len(values))
+	for i := range values {
+		valid[i] = true
+	}
+
+	b.AppendValues(values, valid)
+	return b.NewArray()
+}
+
+func (q *ColumnQueryAPI) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelection) (profile.Profile, error) {
 	switch s.Mode {
 	case pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED:
 		return q.selectSingle(ctx, s.GetSingle())
 	case pb.ProfileDiffSelection_MODE_MERGE:
 		return q.selectMerge(ctx, s.GetMerge())
 	default:
-		return nil, status.Error(codes.InvalidArgument, "unknown mode for diff profile selection")
+		return profile.Profile{}, status.Error(codes.InvalidArgument, "unknown mode for diff profile selection")
 	}
 }
 

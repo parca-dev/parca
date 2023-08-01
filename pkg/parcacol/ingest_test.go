@@ -34,6 +34,7 @@ import (
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/metastoretest"
+	"github.com/parca-dev/parca/pkg/profile"
 )
 
 func MustReadAllGzip(t require.TestingT, filename string) []byte {
@@ -76,7 +77,7 @@ func TestPprofToParquet(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	ctx := context.Background()
 
-	schema, err := Schema()
+	schema, err := profile.Schema()
 	require.NoError(t, err)
 
 	m := metastoretest.NewTestMetastore(
@@ -173,7 +174,7 @@ func TestUncompressedPprofToParquet(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	ctx := context.Background()
 
-	schema, err := Schema()
+	schema, err := profile.Schema()
 	require.NoError(t, err)
 
 	m := metastoretest.NewTestMetastore(

@@ -150,15 +150,15 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 		trace.NewNoopTracerProvider().Tracer(""),
 	)
 
-	metastore := metastore.NewInProcessClient(l)
+	mc := metastore.NewInProcessClient(l)
 
-	mres, err := metastore.GetOrCreateMappings(ctx, &metastorepb.GetOrCreateMappingsRequest{
+	mres, err := mc.GetOrCreateMappings(ctx, &metastorepb.GetOrCreateMappingsRequest{
 		Mappings: []*metastorepb.Mapping{{Start: 1, Limit: 1, Offset: 0x1234, File: "a", BuildId: "aID"}},
 	})
 	require.NoError(t, err)
 	m := mres.Mappings[0]
 
-	fres, err := metastore.GetOrCreateFunctions(ctx, &metastorepb.GetOrCreateFunctionsRequest{
+	fres, err := mc.GetOrCreateFunctions(ctx, &metastorepb.GetOrCreateFunctionsRequest{
 		Functions: []*metastorepb.Function{
 			{Name: "1", SystemName: "1", Filename: "1", StartLine: 1},
 			{Name: "2", SystemName: "2", Filename: "2", StartLine: 2},
@@ -174,7 +174,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 	f4 := fres.Functions[3]
 	f5 := fres.Functions[4]
 
-	lres, err := metastore.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
+	lres, err := mc.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
 		Locations: []*metastorepb.Location{{
 			MappingId: m.Id,
 			Address:   0xa1,
@@ -219,7 +219,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 	l4 := lres.Locations[3]
 	l5 := lres.Locations[4]
 
-	sres, err := metastore.GetOrCreateStacktraces(ctx, &metastorepb.GetOrCreateStacktracesRequest{
+	sres, err := mc.GetOrCreateStacktraces(ctx, &metastorepb.GetOrCreateStacktracesRequest{
 		Stacktraces: []*metastorepb.Stacktrace{{
 			LocationIds: []string{l2.Id, l1.Id},
 		}, {
@@ -238,7 +238,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
-	p, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
+	p, err := parcacol.NewProfileSymbolizer(tracer, mc).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
 		Samples: []*parcaprofile.NormalizedSample{{
 			StacktraceID: s1.Id,
 			Value:        2,
@@ -349,7 +349,15 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 		},
 	}} {
 		t.Run(tc.name, func(t *testing.T) {
-			fa, cumulative, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, p, tc.aggregate, 0)
+			np, err := OldProfileToArrowProfile(p)
+			require.NoError(t, err)
+
+			np.Samples = []arrow.Record{
+				np.Samples[0].NewSlice(0, 2),
+				np.Samples[0].NewSlice(2, 4),
+			}
+
+			fa, cumulative, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, np, tc.aggregate, 0)
 			require.NoError(t, err)
 
 			require.Equal(t, tc.cumulative, cumulative)
@@ -448,10 +456,13 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false)
 	require.NoError(t, err)
 
-	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
+	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
-	record, total, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, symbolizedProfile, []string{FlamegraphFieldFunctionName}, 0)
+	newProfile, err := OldProfileToArrowProfile(symbolizedProfile)
+	require.NoError(t, err)
+
+	record, total, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, newProfile, []string{FlamegraphFieldFunctionName}, 0)
 	require.NoError(t, err)
 
 	require.Equal(t, int64(1), total)
@@ -534,7 +545,7 @@ func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
-	p, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
+	p, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
 		Samples: []*parcaprofile.NormalizedSample{{
 			StacktraceID: s1.Id,
 			Value:        2,
@@ -592,7 +603,9 @@ func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			fa, cumulative, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, p, tc.aggregate, 0)
+			np, err := OldProfileToArrowProfile(p)
+			require.NoError(t, err)
+			fa, cumulative, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, np, tc.aggregate, 0)
 			require.NoError(t, err)
 
 			require.Equal(t, tc.cumulative, cumulative)
