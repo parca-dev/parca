@@ -178,7 +178,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	}
 
 	if req.FilterQuery != nil {
-		p.Samples, filtered = FilterProfileData(ctx, q.tracer, q.mem, p.Samples, req.GetFilterQuery())
+		p.Samples, filtered, err = FilterProfileData(ctx, q.tracer, q.mem, p.Samples, req.GetFilterQuery())
 		if err != nil {
 			return nil, fmt.Errorf("filtering profile: %w", err)
 		}
@@ -205,7 +205,7 @@ func FilterProfileData(
 	pool memory.Allocator,
 	records []arrow.Record,
 	filterQuery string,
-) ([]arrow.Record, int64) {
+) ([]arrow.Record, int64, error) {
 	_, span := tracer.Start(ctx, "filterByFunction")
 	defer span.End()
 
@@ -227,13 +227,17 @@ func FilterProfileData(
 	allFiltered := int64(0)
 
 	for _, r := range records {
-		filteredRecord, valueSum, filteredSum := filterRecord(ctx, tracer, pool, r, filterQuery)
+		filteredRecord, valueSum, filteredSum, err := filterRecord(ctx, tracer, pool, r, filterQuery)
+		if err != nil {
+			return nil, 0, fmt.Errorf("filter record: %w", err)
+		}
+
 		res = append(res, filteredRecord)
 		allValues += valueSum
 		allFiltered += filteredSum
 	}
 
-	return res, allValues - allFiltered
+	return res, allValues - allFiltered, nil
 }
 
 func filterRecord(
@@ -242,7 +246,7 @@ func filterRecord(
 	pool memory.Allocator,
 	rec arrow.Record,
 	filterQuery string,
-) (arrow.Record, int64, int64) {
+) (arrow.Record, int64, int64, error) {
 	r := profile.NewRecordReader(rec)
 
 	// Builders for the result profile.
@@ -274,7 +278,9 @@ func filterRecord(
 
 			for j, label := range r.LabelColumns {
 				if label.Col.IsValid(i) {
-					w.LabelBuilders[j].Append([]byte(label.Dict.Value(label.Col.GetValueIndex(i))))
+					if err := w.LabelBuilders[j].Append([]byte(label.Dict.Value(label.Col.GetValueIndex(i)))); err != nil {
+						return nil, 0, 0, fmt.Errorf("append label: %w", err)
+					}
 				} else {
 					w.LabelBuilders[j].AppendNull()
 				}
@@ -291,8 +297,12 @@ func filterRecord(
 						w.MappingStart.Append(r.MappingStart.Value(j))
 						w.MappingLimit.Append(r.MappingLimit.Value(j))
 						w.MappingOffset.Append(r.MappingOffset.Value(j))
-						w.MappingFile.Append(r.MappingFileDict.Value(r.MappingFile.GetValueIndex(j)))
-						w.MappingBuildID.Append(r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(j)))
+						if err := w.MappingFile.Append(r.MappingFileDict.Value(r.MappingFile.GetValueIndex(j))); err != nil {
+							return nil, 0, 0, fmt.Errorf("append mapping file: %w", err)
+						}
+						if err := w.MappingBuildID.Append(r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(j))); err != nil {
+							return nil, 0, 0, fmt.Errorf("append mapping build id: %w", err)
+						}
 					} else {
 						w.Mapping.AppendNull()
 					}
@@ -307,9 +317,15 @@ func filterRecord(
 								w.Function.Append(r.LineFunction.IsValid(k))
 
 								if r.LineFunction.IsValid(k) {
-									w.FunctionName.Append(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(k)))
-									w.FunctionSystemName.Append(r.LineFunctionSystemNameDict.Value(r.LineFunctionSystemName.GetValueIndex(k)))
-									w.FunctionFilename.Append(r.LineFunctionFilenameDict.Value(r.LineFunctionFilename.GetValueIndex(k)))
+									if err := w.FunctionName.Append(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(k))); err != nil {
+										return nil, 0, 0, fmt.Errorf("append function name: %w", err)
+									}
+									if err := w.FunctionSystemName.Append(r.LineFunctionSystemNameDict.Value(r.LineFunctionSystemName.GetValueIndex(k))); err != nil {
+										return nil, 0, 0, fmt.Errorf("append function system name: %w", err)
+									}
+									if err := w.FunctionFilename.Append(r.LineFunctionFilenameDict.Value(r.LineFunctionFilename.GetValueIndex(k))); err != nil {
+										return nil, 0, 0, fmt.Errorf("append function filename: %w", err)
+									}
 									w.FunctionStartLine.Append(r.LineFunctionStartLine.Value(k))
 								}
 							}
@@ -330,7 +346,8 @@ func filterRecord(
 
 	return res,
 		math.Int64.Sum(r.Value),
-		math.Int64.Sum(filteredValue)
+		math.Int64.Sum(filteredValue),
+		nil
 }
 
 func (q *ColumnQueryAPI) renderReport(
@@ -608,17 +625,6 @@ func zeroArray(pool memory.Allocator, rows int) arrow.Array {
 	}
 
 	b.AppendValues(values, valid)
-	return b.NewArray()
-}
-
-func nullLabelColumn(pool memory.Allocator, rows int) arrow.Array {
-	b := array.NewDictionaryBuilder(pool, &arrow.DictionaryType{
-		IndexType: arrow.PrimitiveTypes.Int64,
-		ValueType: arrow.BinaryTypes.String,
-	}).(*array.BinaryDictionaryBuilder)
-	defer b.Release()
-
-	b.AppendNulls(rows)
 	return b.NewArray()
 }
 

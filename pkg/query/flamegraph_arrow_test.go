@@ -460,6 +460,8 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 	require.NoError(t, err)
 
 	newProfile, err := OldProfileToArrowProfile(symbolizedProfile)
+	require.NoError(t, err)
+
 	record, total, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, newProfile, []string{FlamegraphFieldFunctionName}, 0)
 	require.NoError(t, err)
 

@@ -322,7 +322,7 @@ func (s *ProfileSymbolizer) resolveStacktraceLocations(ctx context.Context, stac
 	return sres.Stacktraces, locations, locationIndex, nil
 }
 
-func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrace, resolvedLocations []*profile.Location, locationIndex map[string]int) arrow.Record {
+func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrace, resolvedLocations []*profile.Location, locationIndex map[string]int) (arrow.Record, error) {
 	w := profile.NewLocationsWriter(allocator)
 	defer w.RecordBuilder.Release()
 
@@ -339,8 +339,12 @@ func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrac
 				w.MappingStart.Append(loc.Mapping.Start)
 				w.MappingLimit.Append(loc.Mapping.Limit)
 				w.MappingOffset.Append(loc.Mapping.Offset)
-				w.MappingFile.Append([]byte(loc.Mapping.File))
-				w.MappingBuildID.Append([]byte(loc.Mapping.BuildId))
+				if err := w.MappingFile.Append([]byte(loc.Mapping.File)); err != nil {
+					return nil, fmt.Errorf("append mapping file: %w", err)
+				}
+				if err := w.MappingBuildID.Append([]byte(loc.Mapping.BuildId)); err != nil {
+					return nil, fmt.Errorf("append mapping build id: %w", err)
+				}
 			} else {
 				w.Mapping.AppendNull()
 			}
@@ -352,9 +356,15 @@ func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrac
 					w.LineNumber.Append(l.Line)
 					w.Function.Append(l.Function != nil)
 					if l.Function != nil {
-						w.FunctionName.Append([]byte(l.Function.Name))
-						w.FunctionSystemName.Append([]byte(l.Function.SystemName))
-						w.FunctionFilename.Append([]byte(l.Function.Filename))
+						if err := w.FunctionName.Append([]byte(l.Function.Name)); err != nil {
+							return nil, fmt.Errorf("append function name: %w", err)
+						}
+						if err := w.FunctionSystemName.Append([]byte(l.Function.SystemName)); err != nil {
+							return nil, fmt.Errorf("append function system name: %w", err)
+						}
+						if err := w.FunctionFilename.Append([]byte(l.Function.Filename)); err != nil {
+							return nil, fmt.Errorf("append function filename: %w", err)
+						}
 						w.FunctionStartLine.Append(l.Function.StartLine)
 					}
 				}
@@ -364,7 +374,7 @@ func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrac
 		}
 	}
 
-	return w.RecordBuilder.NewRecord()
+	return w.RecordBuilder.NewRecord(), nil
 }
 
 func (s *ProfileSymbolizer) getLocationsFromSerializedLocations(

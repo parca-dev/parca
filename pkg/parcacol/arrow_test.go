@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/apache/arrow/go/v13/arrow/memory"
+
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
 )

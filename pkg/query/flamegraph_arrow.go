@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"unsafe"
 
 	"github.com/apache/arrow/go/v13/arrow"
 	"github.com/apache/arrow/go/v13/arrow/array"
@@ -187,7 +186,15 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 	for _, r := range profileReader.RecordReaders {
 		// This field compares the current sample with the already added values in the builders.
-		equalField := func(fieldName string, pprofLabels map[string]string, sampleRow, locationRow, lineRow, flamegraphRow int, height int) bool {
+		equalField := func(
+			fieldName string,
+			pprofLabels map[string]string,
+			sampleRow,
+			locationRow,
+			lineRow,
+			flamegraphRow int,
+			height int,
+		) bool {
 			switch fieldName {
 			case FlamegraphFieldMappingFile:
 				if !r.Mapping.IsValid(locationRow) {
@@ -367,7 +374,6 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				}
 			}
 		}
-
 	}
 
 	// We have manually tracked the total cumulative value.
@@ -577,10 +583,6 @@ func (p *parent) Reset() { *p = -1 }
 func (p *parent) Get() int { return int(*p) }
 
 func (p *parent) Has() bool { return *p > -1 }
-
-func stringToBytes(s string) []byte {
-	return unsafe.Slice(unsafe.StringData(s), len(s))
-}
 
 func mapsIntersection(maps []map[string]string) map[string]string {
 	if len(maps) == 0 {

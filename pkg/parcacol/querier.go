@@ -830,10 +830,13 @@ func (q *Querier) SymbolizeArrowRecord(
 
 		stacktraces, locations, locationIndex, err := q.symbolizer.resolveStacktraceLocations(ctx, stacktraceIDs)
 		if err != nil {
-			return nil, fmt.Errorf("failed to resolve stacktrace locations: %w", err)
+			return nil, fmt.Errorf("resolve stacktrace locations: %w", err)
 		}
 
-		locationsRecord := BuildArrowLocations(q.pool, stacktraces, locations, locationIndex)
+		locationsRecord, err := BuildArrowLocations(q.pool, stacktraces, locations, locationIndex)
+		if err != nil {
+			return nil, fmt.Errorf("build arrow locations: %w", err)
+		}
 		defer locationsRecord.Release()
 
 		columns := make([]arrow.Array, len(profileLabels)+3) // +3 for stacktrace locations, value and diff

@@ -18,17 +18,14 @@ import (
 	"compress/gzip"
 	"context"
 	"crypto/tls"
-	"encoding/binary"
 	"io"
 	"os"
-	"strconv"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/apache/arrow/go/v13/arrow"
 	"github.com/apache/arrow/go/v13/arrow/memory"
-	"github.com/cespare/xxhash/v2"
 	"github.com/go-kit/log"
 	pprofprofile "github.com/google/pprof/profile"
 	columnstore "github.com/polarsignals/frostdb"
@@ -1321,36 +1318,4 @@ func OldProfileToArrowProfile(p profile.OldProfile) (profile.Profile, error) {
 		Meta:    p.Meta,
 		Samples: []arrow.Record{w.RecordBuilder.NewRecord()},
 	}, nil
-}
-
-// makeLocationIDWithLines returns a key for the location that uniquely
-// identifies the location. Locations are uniquely identified by their inlined
-// function callstack.
-func makeLocationIDWithLines(lines []profile.LocationLine) string {
-	size := len(lines) * 16 // 8 bytes for line number and 8 bytes for function start line number
-
-	for _, line := range lines {
-		size += len(line.Function.Name) + len(line.Function.SystemName) + len(line.Function.Filename)
-	}
-
-	buf := make([]byte, size)
-	pos := 0
-	for _, line := range lines {
-		binary.BigEndian.PutUint64(buf[pos:], uint64(line.Line))
-		pos += 8
-
-		binary.BigEndian.PutUint64(buf[pos:], uint64(line.Function.StartLine))
-		pos += 8
-
-		copy(buf[pos:], line.Function.Name)
-		pos += len(line.Function.Name)
-
-		copy(buf[pos:], line.Function.SystemName)
-		pos += len(line.Function.SystemName)
-
-		copy(buf[pos:], line.Function.Filename)
-		pos += len(line.Function.Filename)
-	}
-
-	return strconv.FormatUint(xxhash.Sum64(buf), 16)
 }

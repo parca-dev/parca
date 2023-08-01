@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/apache/arrow/go/v13/arrow"
+
 	pprofproto "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 )
