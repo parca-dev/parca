@@ -52,7 +52,7 @@ require (
 	golang.org/x/sync v0.3.0
 	google.golang.org/api v0.133.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20230717213848-3f92550aa753
-	google.golang.org/grpc v1.56.2
+	google.golang.org/grpc v1.57.0
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/dnaeon/go-vcr.v3 v3.1.2
 	gopkg.in/yaml.v3 v3.0.1
