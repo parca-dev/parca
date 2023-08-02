@@ -60,6 +60,7 @@ func GenerateFlamegraphArrow(ctx context.Context, mem memory.Allocator, tracer t
 	if err != nil {
 		return nil, 0, err
 	}
+	defer record.Release()
 
 	// TODO: Reuse buffer and potentially writers
 	var buf bytes.Buffer
@@ -67,11 +68,9 @@ func GenerateFlamegraphArrow(ctx context.Context, mem memory.Allocator, tracer t
 		ipc.WithSchema(record.Schema()),
 		ipc.WithAllocator(mem),
 	)
+	defer w.Close()
 
 	if err = w.Write(record); err != nil {
-		return nil, 0, err
-	}
-	if err := w.Close(); err != nil {
 		return nil, 0, err
 	}
 
@@ -119,6 +118,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	}, nil)
 
 	rb := builder.NewRecordBuilder(mem, schema)
+	defer rb.Release()
 	builderChildren := rb.Field(schema.FieldIndices(FlamegraphFieldChildren)[0]).(*builder.ListBuilder)
 	fb := flamegraphBuilder{
 		rb:     rb,
