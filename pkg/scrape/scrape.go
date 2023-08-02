@@ -24,6 +24,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
+	"github.com/google/pprof/profile"
 	"github.com/prometheus/client_golang/prometheus"
 	commonconfig "github.com/prometheus/common/config"
 	"github.com/prometheus/common/version"
@@ -491,6 +492,42 @@ mainLoop:
 				})
 			}
 
+			byt := buf.Bytes()
+			ks := sl.target.KeepSet()
+			if len(ks) > 0 {
+				p, err := profile.ParseData(byt)
+				if err != nil {
+					level.Error(sl.l).Log("msg", "failed to parse profile data", "err", err)
+					continue
+				}
+				keepIndexes := []int{}
+				newTypes := []*profile.ValueType{}
+				for i, st := range p.SampleType {
+					if _, ok := ks[config.SampleType{Type: st.Type, Unit: st.Unit}]; ok {
+						keepIndexes = append(keepIndexes, i)
+						newTypes = append(newTypes, st)
+					}
+				}
+				p.SampleType = newTypes
+				for _, s := range p.Sample {
+					newValues := []int64{}
+					for _, i := range keepIndexes {
+						newValues = append(newValues, s.Value[i])
+					}
+					s.Value = newValues
+				}
+				p = p.Compact()
+				newB := sl.buffers.Get(sl.lastScrapeSize).([]byte)
+				newBuf := bytes.NewBuffer(newB)
+				if err := p.Write(newBuf); err != nil {
+					level.Error(sl.l).Log("msg", "failed to write profile data", "err", err)
+					continue
+				}
+				sl.buffers.Put(b)
+				byt = newBuf.Bytes()
+				b = newB // We want to make sure we return the new buffer to the pool further below.
+			}
+
 			_, err := sl.store.WriteRaw(sl.ctx, &profilepb.WriteRawRequest{
 				Normalized: sl.normalizedAddresses,
 				Series: []*profilepb.RawProfileSeries{
@@ -498,7 +535,7 @@ mainLoop:
 						Labels: protolbls,
 						Samples: []*profilepb.RawSample{
 							{
-								RawProfile: buf.Bytes(),
+								RawProfile: byt,
 							},
 						},
 					},
