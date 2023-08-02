@@ -477,16 +477,24 @@ func (fb *flamegraphBuilder) appendRow(
 				fb.builderMappingOffset.AppendNull()
 			}
 		case FlamegraphFieldMappingFile:
-			if r.Mapping.IsValid(locationRow) && len(r.MappingFileDict.Value(r.MappingFile.GetValueIndex(locationRow))) > 0 {
-				_ = fb.builderMappingFile.Append(r.MappingFileDict.Value(r.MappingFile.GetValueIndex(locationRow)))
-			} else {
+			if r.MappingFileDict.Len() == 0 {
 				fb.builderMappingFile.AppendNull()
+			} else {
+				if r.Mapping.IsValid(locationRow) && len(r.MappingFileDict.Value(r.MappingFile.GetValueIndex(locationRow))) > 0 {
+					_ = fb.builderMappingFile.Append(r.MappingFileDict.Value(r.MappingFile.GetValueIndex(locationRow)))
+				} else {
+					fb.builderMappingFile.AppendNull()
+				}
 			}
 		case FlamegraphFieldMappingBuildID:
-			if r.Mapping.IsValid(locationRow) && len(r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(locationRow))) > 0 {
-				_ = fb.builderMappingBuildID.Append(r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(locationRow)))
-			} else {
+			if r.MappingBuildIDDict.Len() == 0 {
 				fb.builderMappingBuildID.AppendNull()
+			} else {
+				if r.Mapping.IsValid(locationRow) && len(r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(locationRow))) > 0 {
+					_ = fb.builderMappingBuildID.Append(r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(locationRow)))
+				} else {
+					fb.builderMappingBuildID.AppendNull()
+				}
 			}
 		// Location
 		case FlamegraphFieldLocationAddress:
