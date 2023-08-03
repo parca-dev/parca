@@ -299,7 +299,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 						fb.builderCumulative.Add(cr, r.Value.Value(i))
 						fb.parent.Set(cr)
-						compareRows = slices.Clone(fb.children[cr])
+						compareRows = copyChildren(fb.children[cr])
 						continue locations
 					}
 					// reset the compare rows
@@ -421,6 +421,12 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	}
 
 	return rb.NewRecord(), cumulative, maxHeight + 1, 0, nil
+}
+
+func copyChildren(children []int) []int {
+	newChildren := make([]int, len(children))
+	copy(newChildren, children)
+	return newChildren
 }
 
 type flamegraphBuilder struct {
