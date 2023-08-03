@@ -729,8 +729,8 @@ github.com/pkg/profile v1.2.1/go.mod h1:hJw3o1OdXxsrSjjVksARp5W95eeEaEfptyVZyv6J
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/polarsignals/frostdb v0.0.0-20230720151814-402d7262a77c h1:qgwGnPWRmQgChYgTolJhpNN/mW02w2kQEcAEaoo2rEQ=
-github.com/polarsignals/frostdb v0.0.0-20230720151814-402d7262a77c/go.mod h1:48YrjSFd2/qlMkBQQANV0ZkLrxu6GgWumkgAoHu6C1w=
+github.com/polarsignals/frostdb v0.0.0-20230803182517-de942d0ce46e h1:z0GLh8sWFe0pAxSO5m/RTh1uwjCs1l8KrjvDgmXRqDQ=
+github.com/polarsignals/frostdb v0.0.0-20230803182517-de942d0ce46e/go.mod h1:bSg8tVn6RPtw9t45ehCrywh7OYA3pmHbh8LhzJbZSmU=
 github.com/polarsignals/wal v0.0.0-20230509073041-6731e243de20 h1:YverywcwPHYj5iQq1/Zy/EihWVyw2F0S7j52FvGWK4w=
 github.com/polarsignals/wal v0.0.0-20230509073041-6731e243de20/go.mod h1:EVDHAAe+7GQ33A1/x+/gE+sBPN4toQ0XG5RoLD49xr8=
 github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndrE9hABlRI=
