@@ -309,10 +309,10 @@ func (s *Symbolizer) Symbolize(ctx context.Context, locations []*pb.Location) er
 	for _, liner := range s.linerCache {
 		// These are liners that didn't show up in the latest iteration.
 		if err := liner.Close(); err != nil {
-			level.Error(s.logger).Log("msg", "failed to close liner", "err", err)
+			level.Debug(s.logger).Log("msg", "failed to close liner", "err", err)
 		}
 		if err := os.Remove(liner.File()); err != nil {
-			level.Error(s.logger).Log("msg", "failed to remove liner file", "err", err)
+			level.Debug(s.logger).Log("msg", "failed to remove liner file", "err", err)
 		}
 	}
 	s.linerCache = newLinerCache
