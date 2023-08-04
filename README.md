@@ -1,11 +1,10 @@
-<p align="center">
-  <a href="#contributors-" target="_blank">
-    <img src="https://img.shields.io/github/all-contributors/parca-dev/parca?style=flat" alt="contributors">
-  </a>
-  <a href="https://discord.com/invite/ZgUpYgpzXy" target="_blank">
-    <img alt="Discord" src="https://img.shields.io/discord/877547706334199818?label=Discord">
-  </a>
-</p>
+[![Apache 2 License](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE)
+![Build](https://github.com/parca-dev/parca/actions/workflows/build-test.yml/badge.svg)
+![Container](https://github.com/parca-dev/parca/actions/workflows/container.yml/badge.svg)
+[![parca](https://snapcraft.io/parca/badge.svg)](https://snapcraft.io/parca-agent)
+![Discord](https://img.shields.io/discord/877547706334199818?label=Discord)
+![contributors](https://img.shields.io/github/all-contributors/parca-dev/parca?style=flat")
+
 <p align="center">
   <img src="ui/packages/shared/icons/src/assets/logo.svg" alt="Parca: Continuous profiling for analysis of CPU, memory usage over time, and down to the line number." height="75">
 </p>
