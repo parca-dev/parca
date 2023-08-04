@@ -15,8 +15,11 @@ package query
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
+	"io"
+	"os"
 	"testing"
 
 	"github.com/apache/arrow/go/v13/arrow"
@@ -680,4 +683,77 @@ func TestMapsIntersection(t *testing.T) {
 		{"thread": "1", "thread_name": "name"},
 		{"thread": "2", "thread_name": "name"},
 	}))
+}
+
+func BenchmarkArrowFlamegraph(b *testing.B) {
+	fileContent, err := os.ReadFile("testdata/profile-with-labels.pb.gz")
+	require.NoError(b, err)
+
+	gz, err := gzip.NewReader(bytes.NewBuffer(fileContent))
+	require.NoError(b, err)
+
+	decompressed, err := io.ReadAll(gz)
+	require.NoError(b, err)
+
+	p := &pprofpb.Profile{}
+	require.NoError(b, p.UnmarshalVT(decompressed))
+
+	pp, err := pprofprofile.ParseData(fileContent)
+	require.NoError(b, err)
+
+	np, err := PprofToSymbolizedProfile(parcaprofile.MetaFromPprof(p, "memory", 0), pp, 0)
+	require.NoError(b, err)
+
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _, err := GenerateFlamegraphArrow(
+			context.Background(),
+			memory.DefaultAllocator,
+			tracer,
+			np,
+			nil,
+			0,
+		)
+		require.NoError(b, err)
+	}
+}
+
+func TestMarshalMap(t *testing.T) {
+	m := map[string]string{
+		"test1": "something",
+		"test2": "something_else",
+	}
+
+	buf := make([]byte, 0, 1024)
+	buf = MarshalStringMap(buf, m)
+	res := string(buf)
+	expected := []string{
+		`{"test1":"something","test2":"something_else"}`,
+		`{"test2":"something_else","test1":"something"}`,
+	}
+	require.Contains(t, expected, res)
+}
+
+func BenchmarkMarshalMap(b *testing.B) {
+	m := map[string]string{
+		"test1": "something",
+		"test2": "something_else",
+	}
+
+	var err error
+	b.ResetTimer()
+	b.Run("stdlib", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, err = json.Marshal(m)
+		}
+	})
+	_ = err
+	b.Run("ours", func(b *testing.B) {
+		buf := make([]byte, 0, 1024)
+		for i := 0; i < b.N; i++ {
+			buf = MarshalStringMap(buf, m)
+		}
+	})
 }
