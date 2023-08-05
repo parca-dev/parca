@@ -27,7 +27,6 @@ import (
 	"github.com/polarsignals/frostdb/pqarrow/builder"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 
 	queryv1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
@@ -351,7 +350,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 							fb.builderCumulative.Add(cr, r.Value.Value(i))
 							// Continue with this row as the parent for the next iteration and compare to its children.
 							fb.parent.Set(cr)
-							compareRows = slices.Clone(fb.children[cr])
+							compareRows = copyChildren(fb.children[cr])
 							continue stacktraces
 						}
 						// reset the compare rows
