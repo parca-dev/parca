@@ -39,5 +39,23 @@ if [[ -z "$port" ]]; then
     snapctl set port=7070
 fi
 
+# gRPC address to send profiles and symbols to.
+remote_store="$(snapctl get remote-store-address)"
+if [[ -z "$remote_store" ]]; then
+    snapctl set remote-store-address="grpc.polarsignals.com:443"
+fi
+
+# Send gRPC requests via plaintext instead of TLS
+remote_store_insecure="$(snapctl get remote-store-insecure)"
+if [[ -z "$remote_store_insecure" ]]; then
+    snapctl set remote-store-insecure=false
+fi
+
+# Set the bearer token for the remote store
+remote_store_token="$(snapctl get remote-store-bearer-token)"
+if [[ -z "$remote_store_token" ]]; then
+    snapctl set remote-store-bearer-token=""
+fi
+
 mkdir -p "${SNAP_DATA}/profiles"
 cp -pnr "${SNAP}/usr/share/parca/example-config.yaml" "${SNAP_DATA}/parca.yaml"
