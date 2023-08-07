@@ -276,7 +276,9 @@ export const GraphTooltipContent = ({
   };
 
   const hoveringNodeCumulative = hoveringNode.cumulative;
-  const diff = hoveringNode.diff;
+  // '?? 0n' is needed because because diff is undefined in callgraph for some nodes,
+  // even though the type doesn't allow it.
+  const diff = hoveringNode.diff ?? 0n;
   const prevValue = hoveringNodeCumulative - diff;
   const diffRatio = diff !== 0n ? divide(diff, prevValue) : 0;
   const diffSign = diff > 0 ? '+' : '';
