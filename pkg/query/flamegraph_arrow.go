@@ -16,7 +16,6 @@ package query
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -399,6 +398,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			}
 		}
 	}
+	lsbytes := make([]byte, 0, 512)
 	for i := 0; i < fb.builderCumulative.Len(); i++ {
 		if lsets, hasLabels := fb.labels[i]; hasLabels {
 			inter := mapsIntersection(lsets)
@@ -407,10 +407,8 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				continue
 			}
 
-			lsbytes, err := json.Marshal(inter)
-			if err != nil {
-				return nil, 0, 0, 0, err
-			}
+			lsbytes = lsbytes[:0]
+			lsbytes = MarshalStringMap(lsbytes, inter)
 			if err := fb.builderLabels.Append(lsbytes); err != nil {
 				return nil, 0, 0, 0, err
 			}

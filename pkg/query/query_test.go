@@ -136,7 +136,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 						},
 					},
 					//nolint:staticcheck // SA1019: Fow now we want to support these APIs
-					ReportType: pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED,
+					ReportType: pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW,
 				})
 				require.NoError(b, err)
 			}
