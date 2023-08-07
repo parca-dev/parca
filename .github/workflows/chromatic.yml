@@ -62,7 +62,7 @@ jobs:
         run: yarn install --frozen-lockfile --prefer-offline && yarn build
         # 👇 Adds Chromatic as a step in the workflow
       - name: Publish to Chromatic
-        uses: chromaui/action@aaf825f3e9b340e00e6c79eef40975307ebecea3 # v1
+        uses: chromaui/action@4f2201a85e8dcbaaf39969d144e6e917da2ae327 # v1
         # Chromatic GitHub Action options
         with:
           # 👇 Chromatic projectToken, refer to the manage page to obtain it.
