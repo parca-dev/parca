@@ -98,7 +98,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		{Name: FlamegraphFieldMappingLimit, Type: arrow.PrimitiveTypes.Uint64},
 		{Name: FlamegraphFieldMappingOffset, Type: arrow.PrimitiveTypes.Uint64},
 		{Name: FlamegraphFieldMappingFile, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint16, ValueType: arrow.BinaryTypes.String}},
-		{Name: FlamegraphFieldMappingBuildID, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint16, ValueType: arrow.BinaryTypes.String}},
+		{Name: FlamegraphFieldMappingBuildID, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint16, ValueType: arrow.BinaryTypes.Binary}},
 		// Location
 		{Name: FlamegraphFieldLocationAddress, Type: arrow.PrimitiveTypes.Uint64},
 		{Name: FlamegraphFieldLocationFolded, Type: &arrow.BooleanType{}},
@@ -129,11 +129,11 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		labels:   make(map[int][]map[string]string),
 
 		// TODO: Potentially good to .Reserve() the number of samples to avoid re-allocations
-		builderMappingStart:   rb.Field(schema.FieldIndices(FlamegraphFieldMappingStart)[0]).(*array.Uint64Builder),
-		builderMappingLimit:   rb.Field(schema.FieldIndices(FlamegraphFieldMappingLimit)[0]).(*array.Uint64Builder),
-		builderMappingOffset:  rb.Field(schema.FieldIndices(FlamegraphFieldMappingOffset)[0]).(*array.Uint64Builder),
-		builderMappingFile:    rb.Field(schema.FieldIndices(FlamegraphFieldMappingFile)[0]).(*array.BinaryDictionaryBuilder),
-		builderMappingBuildID: rb.Field(schema.FieldIndices(FlamegraphFieldMappingBuildID)[0]).(*array.BinaryDictionaryBuilder),
+		builderMappingStart:          rb.Field(schema.FieldIndices(FlamegraphFieldMappingStart)[0]).(*array.Uint64Builder),
+		builderMappingLimit:          rb.Field(schema.FieldIndices(FlamegraphFieldMappingLimit)[0]).(*array.Uint64Builder),
+		builderMappingOffset:         rb.Field(schema.FieldIndices(FlamegraphFieldMappingOffset)[0]).(*array.Uint64Builder),
+		builderMappingFile:           rb.Field(schema.FieldIndices(FlamegraphFieldMappingFile)[0]).(*array.BinaryDictionaryBuilder),
+		builderMappingBuildIDIndices: array.NewInt32Builder(mem),
 
 		builderLocationAddress: rb.Field(schema.FieldIndices(FlamegraphFieldLocationAddress)[0]).(*array.Uint64Builder),
 		builderLocationFolded:  rb.Field(schema.FieldIndices(FlamegraphFieldLocationFolded)[0]).(*builder.OptBooleanBuilder),
@@ -150,6 +150,11 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		builderCumulative:     rb.Field(schema.FieldIndices(FlamegraphFieldCumulative)[0]).(*builder.OptInt64Builder),
 		builderDiff:           rb.Field(schema.FieldIndices(FlamegraphFieldDiff)[0]).(*builder.OptInt64Builder),
 	}
+	var err error
+	fb.builderMappingBuildIDDictUnifier, err = array.NewDictionaryUnifier(mem, arrow.BinaryTypes.String)
+	if err != nil {
+		return nil, 0, 0, 0, err
+	}
 
 	// The very first row is the root row. It doesn't contain any metadata.
 	// It only contains the root cumulative value and list of children (which are actual roots).
@@ -157,7 +162,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	fb.builderMappingLimit.AppendNull()
 	fb.builderMappingOffset.AppendNull()
 	fb.builderMappingFile.AppendNull()
-	fb.builderMappingBuildID.AppendNull()
+	fb.builderMappingBuildIDIndices.AppendNull()
 	fb.builderLocationAddress.AppendNull()
 	fb.builderLocationFolded.AppendNull()
 	fb.builderLocationLine.AppendNull()
@@ -183,6 +188,22 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	compareRows := []int{}
 
 	for _, r := range profileReader.RecordReaders {
+		transposedMappingIDIndicesBuffer, err := fb.builderMappingBuildIDDictUnifier.UnifyAndTranspose(r.MappingBuildIDDict)
+		if err != nil {
+			return nil, 0, 0, 0, err
+		}
+		transposedMappingIDIndicesData := array.NewData(
+			arrow.PrimitiveTypes.Int32,
+			r.MappingBuildIDDict.Len(),
+			[]*memory.Buffer{nil, transposedMappingIDIndicesBuffer}, // what a quirky API ...
+			nil,
+			0,
+			0,
+		)
+		defer transposedMappingIDIndicesData.Release()
+		transposedMappingIDIndices := array.NewInt32Data(transposedMappingIDIndicesData)
+		defer transposedMappingIDIndices.Release()
+
 		// This field compares the current sample with the already added values in the builders.
 		equalField := func(
 			fieldName string,
@@ -200,7 +221,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				}
 				rowMappingFile := fb.builderMappingFile.Value(fb.builderMappingFile.GetValueIndex(flamegraphRow))
 				// rather than comparing the strings, we compare bytes to avoid allocations.
-				return bytes.Equal(r.MappingFileDict.Value(r.MappingFile.GetValueIndex(locationRow)), rowMappingFile)
+				return bytes.Equal([]byte(r.MappingFileDict.Value(r.MappingFile.GetValueIndex(locationRow))), rowMappingFile)
 			case FlamegraphFieldLocationAddress:
 				// TODO: do we need to check for null?
 				rowLocationAddress := fb.builderLocationAddress.Value(flamegraphRow)
@@ -210,7 +231,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				if !isNull {
 					rowFunctionName := fb.builderFunctionName.Value(fb.builderFunctionName.GetValueIndex(flamegraphRow))
 					// rather than comparing the strings, we compare bytes to avoid allocations.
-					return bytes.Equal(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow)), rowFunctionName)
+					return bytes.Equal([]byte(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow))), rowFunctionName)
 				}
 				// isNull
 				if !r.LineFunction.IsValid(lineRow) || len(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow))) == 0 {
@@ -309,7 +330,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						rootsRow = append(rootsRow, row)
 					}
 
-					err := fb.appendRow(r, sampleLabels, i, j, -1, row)
+					err := fb.appendRow(r, transposedMappingIDIndices, sampleLabels, i, j, -1, row)
 					if err != nil {
 						return nil, 0, 0, 0, err
 					}
@@ -362,7 +383,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						rootsRow = append(rootsRow, row)
 					}
 
-					err := fb.appendRow(r, sampleLabels, i, j, k, row)
+					err := fb.appendRow(r, transposedMappingIDIndices, sampleLabels, i, j, k, row)
 					if err != nil {
 						return nil, 0, 0, 0, err
 					}
@@ -417,7 +438,57 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		}
 	}
 
-	return rb.NewRecord(), cumulative, maxHeight + 1, 0, nil
+	mappingBuildIDIndices := fb.builderMappingBuildIDIndices.NewArray()
+	typ, mappingBuildIDDict, err := fb.builderMappingBuildIDDictUnifier.GetResult()
+	if err != nil {
+		return nil, 0, 0, 0, err
+	}
+	mappingBuildID := array.NewDictionaryArray(typ, mappingBuildIDIndices, mappingBuildIDDict)
+	numRows := fb.builderCumulative.Len()
+
+	r := array.NewRecord(
+		arrow.NewSchema([]arrow.Field{
+			{Name: FlamegraphFieldMappingStart, Type: arrow.PrimitiveTypes.Uint64},
+			{Name: FlamegraphFieldMappingLimit, Type: arrow.PrimitiveTypes.Uint64},
+			{Name: FlamegraphFieldMappingOffset, Type: arrow.PrimitiveTypes.Uint64},
+			{Name: FlamegraphFieldMappingFile, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint16, ValueType: arrow.BinaryTypes.String}},
+			{Name: FlamegraphFieldMappingBuildID, Type: typ},
+			// Location
+			{Name: FlamegraphFieldLocationAddress, Type: arrow.PrimitiveTypes.Uint64},
+			{Name: FlamegraphFieldLocationFolded, Type: &arrow.BooleanType{}},
+			{Name: FlamegraphFieldLocationLine, Type: arrow.PrimitiveTypes.Int64},
+			// Function
+			{Name: FlamegraphFieldFunctionStartLine, Type: arrow.PrimitiveTypes.Int64},
+			{Name: FlamegraphFieldFunctionName, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.String}},
+			{Name: FlamegraphFieldFunctionSystemName, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint16, ValueType: arrow.BinaryTypes.String}},
+			{Name: FlamegraphFieldFunctionFileName, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.String}},
+			// Values
+			{Name: FlamegraphFieldLabels, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.String}},
+			{Name: FlamegraphFieldChildren, Type: arrow.ListOf(arrow.PrimitiveTypes.Uint32)},
+			{Name: FlamegraphFieldCumulative, Type: arrow.PrimitiveTypes.Int64},
+			{Name: FlamegraphFieldDiff, Type: arrow.PrimitiveTypes.Int64, Nullable: true},
+		}, nil),
+		[]arrow.Array{
+			fb.builderMappingStart.NewArray(),
+			fb.builderMappingLimit.NewArray(),
+			fb.builderMappingOffset.NewArray(),
+			fb.builderMappingFile.NewArray(),
+			mappingBuildID,
+			fb.builderLocationAddress.NewArray(),
+			fb.builderLocationFolded.NewArray(),
+			fb.builderLocationLine.NewArray(),
+			fb.builderFunctionStartLine.NewArray(),
+			fb.builderFunctionName.NewArray(),
+			fb.builderFunctionSystemName.NewArray(),
+			fb.builderFunctionFileName.NewArray(),
+			fb.builderLabels.NewArray(),
+			fb.builderChildren.NewArray(),
+			fb.builderCumulative.NewArray(),
+			fb.builderDiff.NewArray(),
+		},
+		int64(numRows),
+	)
+	return r, cumulative, maxHeight + 1, 0, nil
 }
 
 func copyChildren(children []int) []int {
@@ -433,27 +504,29 @@ type flamegraphBuilder struct {
 	children [][]int
 	labels   map[int][]map[string]string
 
-	builderMappingStart       *array.Uint64Builder
-	builderMappingLimit       *array.Uint64Builder
-	builderMappingOffset      *array.Uint64Builder
-	builderMappingFile        *array.BinaryDictionaryBuilder
-	builderMappingBuildID     *array.BinaryDictionaryBuilder
-	builderLocationAddress    *array.Uint64Builder
-	builderLocationFolded     *builder.OptBooleanBuilder
-	builderLocationLine       *builder.OptInt64Builder
-	builderFunctionStartLine  *builder.OptInt64Builder
-	builderFunctionName       *array.BinaryDictionaryBuilder
-	builderFunctionSystemName *array.BinaryDictionaryBuilder
-	builderFunctionFileName   *array.BinaryDictionaryBuilder
-	builderLabels             *array.BinaryDictionaryBuilder
-	builderChildren           *builder.ListBuilder
-	builderChildrenValues     *array.Uint32Builder
-	builderCumulative         *builder.OptInt64Builder
-	builderDiff               *builder.OptInt64Builder
+	builderMappingStart              *array.Uint64Builder
+	builderMappingLimit              *array.Uint64Builder
+	builderMappingOffset             *array.Uint64Builder
+	builderMappingFile               *array.BinaryDictionaryBuilder
+	builderMappingBuildIDIndices     *array.Int32Builder
+	builderMappingBuildIDDictUnifier array.DictionaryUnifier
+	builderLocationAddress           *array.Uint64Builder
+	builderLocationFolded            *builder.OptBooleanBuilder
+	builderLocationLine              *builder.OptInt64Builder
+	builderFunctionStartLine         *builder.OptInt64Builder
+	builderFunctionName              *array.BinaryDictionaryBuilder
+	builderFunctionSystemName        *array.BinaryDictionaryBuilder
+	builderFunctionFileName          *array.BinaryDictionaryBuilder
+	builderLabels                    *array.BinaryDictionaryBuilder
+	builderChildren                  *builder.ListBuilder
+	builderChildrenValues            *array.Uint32Builder
+	builderCumulative                *builder.OptInt64Builder
+	builderDiff                      *builder.OptInt64Builder
 }
 
 func (fb *flamegraphBuilder) appendRow(
 	r profile.RecordReader,
+	transposedMappingIDs *array.Int32,
 	labels map[string]string,
 	sampleRow, locationRow, lineRow int,
 	row int,
@@ -484,19 +557,19 @@ func (fb *flamegraphBuilder) appendRow(
 				fb.builderMappingFile.AppendNull()
 			} else {
 				if r.Mapping.IsValid(locationRow) && len(r.MappingFileDict.Value(r.MappingFile.GetValueIndex(locationRow))) > 0 {
-					_ = fb.builderMappingFile.Append(r.MappingFileDict.Value(r.MappingFile.GetValueIndex(locationRow)))
+					_ = fb.builderMappingFile.Append([]byte(r.MappingFileDict.Value(r.MappingFile.GetValueIndex(locationRow))))
 				} else {
 					fb.builderMappingFile.AppendNull()
 				}
 			}
 		case FlamegraphFieldMappingBuildID:
 			if r.MappingBuildIDDict.Len() == 0 {
-				fb.builderMappingBuildID.AppendNull()
+				fb.builderMappingBuildIDIndices.AppendNull()
 			} else {
-				if r.Mapping.IsValid(locationRow) && len(r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(locationRow))) > 0 {
-					_ = fb.builderMappingBuildID.Append(r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(locationRow)))
+				if r.Mapping.IsValid(locationRow) {
+					fb.builderMappingBuildIDIndices.Append(transposedMappingIDs.Value(r.MappingBuildID.GetValueIndex(locationRow)))
 				} else {
-					fb.builderMappingBuildID.AppendNull()
+					fb.builderMappingBuildIDIndices.AppendNull()
 				}
 			}
 		// Location
@@ -521,19 +594,19 @@ func (fb *flamegraphBuilder) appendRow(
 			}
 		case FlamegraphFieldFunctionName:
 			if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && len(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow))) > 0 {
-				_ = fb.builderFunctionName.Append(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow)))
+				_ = fb.builderFunctionName.Append([]byte(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow))))
 			} else {
 				fb.builderFunctionName.AppendNull()
 			}
 		case FlamegraphFieldFunctionSystemName:
 			if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && len(r.LineFunctionSystemNameDict.Value(r.LineFunctionSystemName.GetValueIndex(lineRow))) > 0 {
-				_ = fb.builderFunctionSystemName.Append(r.LineFunctionSystemNameDict.Value(r.LineFunctionSystemName.GetValueIndex(lineRow)))
+				_ = fb.builderFunctionSystemName.Append([]byte(r.LineFunctionSystemNameDict.Value(r.LineFunctionSystemName.GetValueIndex(lineRow))))
 			} else {
 				fb.builderFunctionSystemName.AppendNull()
 			}
 		case FlamegraphFieldFunctionFileName:
 			if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && len(r.LineFunctionFilenameDict.Value(r.LineFunctionFilename.GetValueIndex(lineRow))) > 0 {
-				_ = fb.builderFunctionFileName.Append(r.LineFunctionFilenameDict.Value(r.LineFunctionFilename.GetValueIndex(lineRow)))
+				_ = fb.builderFunctionFileName.Append([]byte(r.LineFunctionFilenameDict.Value(r.LineFunctionFilename.GetValueIndex(lineRow))))
 			} else {
 				fb.builderFunctionFileName.AppendNull()
 			}

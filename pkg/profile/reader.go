@@ -44,19 +44,19 @@ type RecordReader struct {
 	MappingLimit               *array.Uint64
 	MappingOffset              *array.Uint64
 	MappingFile                *array.Dictionary
-	MappingFileDict            *array.Binary
+	MappingFileDict            *array.String
 	MappingBuildID             *array.Dictionary
-	MappingBuildIDDict         *array.Binary
+	MappingBuildIDDict         *array.String
 	Lines                      *array.List
 	Line                       *array.Struct
 	LineNumber                 *array.Int64
 	LineFunction               *array.Struct
 	LineFunctionName           *array.Dictionary
-	LineFunctionNameDict       *array.Binary
+	LineFunctionNameDict       *array.String
 	LineFunctionSystemName     *array.Dictionary
-	LineFunctionSystemNameDict *array.Binary
+	LineFunctionSystemNameDict *array.String
 	LineFunctionFilename       *array.Dictionary
-	LineFunctionFilenameDict   *array.Binary
+	LineFunctionFilenameDict   *array.String
 	LineFunctionStartLine      *array.Int64
 
 	Value *array.Int64
@@ -103,19 +103,19 @@ func NewRecordReader(ar arrow.Record) RecordReader {
 	mappingLimit := mapping.Field(1).(*array.Uint64)
 	mappingOffset := mapping.Field(2).(*array.Uint64)
 	mappingFile := mapping.Field(3).(*array.Dictionary)
-	mappingFileDict := mappingFile.Dictionary().(*array.Binary)
+	mappingFileDict := mappingFile.Dictionary().(*array.String)
 	mappingBuildID := mapping.Field(4).(*array.Dictionary)
-	mappingBuildIDDict := mappingBuildID.Dictionary().(*array.Binary)
+	mappingBuildIDDict := mappingBuildID.Dictionary().(*array.String)
 	lines := location.Field(2).(*array.List)
 	line := lines.ListValues().(*array.Struct)
 	lineNumber := line.Field(0).(*array.Int64)
 	lineFunction := line.Field(1).(*array.Struct)
 	lineFunctionName := lineFunction.Field(0).(*array.Dictionary)
-	lineFunctionNameDict := lineFunctionName.Dictionary().(*array.Binary)
+	lineFunctionNameDict := lineFunctionName.Dictionary().(*array.String)
 	lineFunctionSystemName := lineFunction.Field(1).(*array.Dictionary)
-	lineFunctionSystemNameDict := lineFunctionSystemName.Dictionary().(*array.Binary)
+	lineFunctionSystemNameDict := lineFunctionSystemName.Dictionary().(*array.String)
 	lineFunctionFilename := lineFunction.Field(2).(*array.Dictionary)
-	lineFunctionFilenameDict := lineFunctionFilename.Dictionary().(*array.Binary)
+	lineFunctionFilenameDict := lineFunctionFilename.Dictionary().(*array.String)
 	lineFunctionStartLine := lineFunction.Field(3).(*array.Int64)
 	valueColumn := ar.Column(labelNum + 1).(*array.Int64)
 	diffColumn := ar.Column(labelNum + 2).(*array.Int64)

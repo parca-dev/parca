@@ -265,7 +265,7 @@ func filterRecord(
 			llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
 
 			for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
-				if r.LineFunction.IsValid(k) && bytes.Contains(bytes.ToLower(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(k))), []byte(filterQuery)) {
+				if r.LineFunction.IsValid(k) && strings.Contains(strings.ToLower(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(k))), filterQuery) {
 					keepRow = true
 					break
 				}
@@ -300,14 +300,14 @@ func filterRecord(
 						if r.MappingFileDict.Len() == 0 {
 							w.MappingFile.AppendNull()
 						} else {
-							if err := w.MappingFile.Append(r.MappingFileDict.Value(r.MappingFile.GetValueIndex(j))); err != nil {
+							if err := w.MappingFile.Append([]byte(r.MappingFileDict.Value(r.MappingFile.GetValueIndex(j)))); err != nil {
 								return nil, 0, 0, fmt.Errorf("append mapping file: %w", err)
 							}
 						}
 						if r.MappingBuildIDDict.Len() == 0 {
 							w.MappingBuildID.AppendNull()
 						} else {
-							if err := w.MappingBuildID.Append(r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(j))); err != nil {
+							if err := w.MappingBuildID.Append([]byte(r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(j)))); err != nil {
 								return nil, 0, 0, fmt.Errorf("append mapping build id: %w", err)
 							}
 						}
@@ -328,21 +328,21 @@ func filterRecord(
 									if r.LineFunctionNameDict.Len() == 0 {
 										w.FunctionName.AppendNull()
 									} else {
-										if err := w.FunctionName.Append(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(k))); err != nil {
+										if err := w.FunctionName.Append([]byte(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(k)))); err != nil {
 											return nil, 0, 0, fmt.Errorf("append function name: %w", err)
 										}
 									}
 									if r.LineFunctionSystemNameDict.Len() == 0 {
 										w.FunctionSystemName.AppendNull()
 									} else {
-										if err := w.FunctionSystemName.Append(r.LineFunctionSystemNameDict.Value(r.LineFunctionSystemName.GetValueIndex(k))); err != nil {
+										if err := w.FunctionSystemName.Append([]byte(r.LineFunctionSystemNameDict.Value(r.LineFunctionSystemName.GetValueIndex(k)))); err != nil {
 											return nil, 0, 0, fmt.Errorf("append function system name: %w", err)
 										}
 									}
 									if r.LineFunctionFilenameDict.Len() == 0 {
 										w.FunctionFilename.AppendNull()
 									} else {
-										if err := w.FunctionFilename.Append(r.LineFunctionFilenameDict.Value(r.LineFunctionFilename.GetValueIndex(k))); err != nil {
+										if err := w.FunctionFilename.Append([]byte(r.LineFunctionFilenameDict.Value(r.LineFunctionFilename.GetValueIndex(k)))); err != nil {
 											return nil, 0, 0, fmt.Errorf("append function filename: %w", err)
 										}
 									}

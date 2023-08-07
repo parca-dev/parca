@@ -45,10 +45,10 @@ var LocationsField = arrow.Field{
 			Type: arrow.PrimitiveTypes.Uint64,
 		}, {
 			Name: "file",
-			Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
+			Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.String},
 		}, {
 			Name: "build_id",
-			Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
+			Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.String},
 		}}...),
 	}, {
 		Name: "lines",
@@ -59,13 +59,13 @@ var LocationsField = arrow.Field{
 			Name: "function",
 			Type: arrow.StructOf([]arrow.Field{{
 				Name: "name",
-				Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
+				Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.String},
 			}, {
 				Name: "system_name",
-				Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
+				Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.String},
 			}, {
 				Name: "filename",
-				Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
+				Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.String},
 			}, {
 				Name: "start_line",
 				Type: arrow.PrimitiveTypes.Int64,
