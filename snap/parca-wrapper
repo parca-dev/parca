@@ -22,7 +22,7 @@ set -euo pipefail
 storage_active_memory="$(snapctl get storage-active-memory)"
 log_level="$(snapctl get log-level)"
 storage_persist="$(snapctl get enable-persistence)"
-port="$(snapctl get port)"
+http_address="$(snapctl get http-address)"
 
 store="$(snapctl get remote-store-address)"
 insecure="$(snapctl get remote-store-insecure)"
@@ -32,7 +32,7 @@ token="$(snapctl get remote-store-bearer-token)"
 opts=(
     "--config-path=${SNAP_DATA}/parca.yaml"
     "--log-level=${log_level}"
-    "--port=:${port}"
+    "--http-address=${http_address}"
 )
 
 # If there is a token set for a store, then enable sending profiles to a remote store.
@@ -46,7 +46,7 @@ if [[ -n "${token}" ]]; then
     )
 else
     # Only configure persistence and storage if we're not sending to a remote store.
-    
+
     # Switch out command line options depending on whether the user has
     # specified storage-persist=true
     if [[ "${storage_persist}" == "true" ]]; then

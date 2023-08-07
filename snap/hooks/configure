@@ -34,9 +34,17 @@ if [[ -z "$storage_persist" ]]; then
     snapctl set enable-persistence=false
 fi
 
-port="$(snapctl get port)"
-if [[ -z "$port" ]]; then
-    snapctl set port=7070
+# Address to bind HTTP server to.
+http_address="$(snapctl get http-address)"
+if [[ -z "$http_address" ]]; then
+    # Older versions of the snap exposed the port option.
+    # Migrate that to http-address if it was set.
+    port="$(snapctl get port)"
+    if [[ -n "${port}" ]]; then
+        snapctl set http-address=":${port}"
+    else
+        snapctl set http-address=":7070"
+    fi
 fi
 
 # gRPC address to send profiles and symbols to.
