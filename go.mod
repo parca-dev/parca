@@ -34,7 +34,7 @@ require (
 	github.com/prometheus/common v0.44.0
 	github.com/prometheus/prometheus v0.46.0
 	github.com/stretchr/testify v1.8.4
-	github.com/thanos-io/objstore v0.0.0-20230721074820-89475d4508df
+	github.com/thanos-io/objstore v0.0.0-20230804084840-c042a6a16c58
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.42.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.42.0
 	go.opentelemetry.io/otel v1.16.0
@@ -195,7 +195,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
-	github.com/oracle/oci-go-sdk/v65 v65.13.0 // indirect
+	github.com/oracle/oci-go-sdk/v65 v65.41.1 // indirect
 	github.com/ovh/go-ovh v1.4.1 // indirect
 	github.com/pierrec/lz4/v4 v4.1.18 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
