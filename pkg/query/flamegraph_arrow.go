@@ -86,6 +86,11 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	for _, f := range aggregate {
 		aggregateFields[f] = struct{}{}
 	}
+	// this is a helper as it's frequently accessed below
+	aggregateLabels := false
+	if _, found := aggregateFields[FlamegraphFieldLabels]; found {
+		aggregateLabels = true
+	}
 
 	totalRows := int64(0)
 	for _, r := range p.Samples {
@@ -264,26 +269,24 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				}
 			}
 
-			sampleLabelsKey := ""
 			if _, aggregateLabels := aggregateFields[FlamegraphFieldLabels]; aggregateLabels && len(sampleLabels) > 0 {
 				lsbytes = lsbytes[:0]
 				lsbytes = MarshalStringMap(lsbytes, sampleLabels)
-				sampleLabelsKey = bytesToString(lsbytes)
 
 				sampleLabelRow := row
-				if _, ok := rootsRow[sampleLabelsKey]; ok {
-					sampleLabelRow = rootsRow[sampleLabelsKey][0]
+				if _, ok := rootsRow[unsafeString(lsbytes)]; ok {
+					sampleLabelRow = rootsRow[unsafeString(lsbytes)][0]
 					compareRows = compareRows[:0] //  reset the compare rows
 					// We want to compare against this found label root's children.
-					rootRow := rootsRow[sampleLabelsKey][0]
+					rootRow := rootsRow[unsafeString(lsbytes)][0]
 					compareRows = append(compareRows, fb.children[rootRow]...)
 					fb.addRowValues(r, sampleLabelRow, i) // adds the cumulative and diff values to the existing row
 				} else {
-					err := fb.AppendLabelRow(r, sampleLabelRow, sampleLabelsKey, sampleLabels, i)
+					err := fb.AppendLabelRow(r, sampleLabelRow, unsafeString(lsbytes), sampleLabels, i)
 					if err != nil {
 						return nil, 0, 0, 0, fmt.Errorf("failed to inject label row: %w", err)
 					}
-					rootsRow[sampleLabelsKey] = []int{sampleLabelRow}
+					rootsRow[unsafeString(lsbytes)] = []int{sampleLabelRow}
 				}
 				fb.parent.Set(sampleLabelRow)
 				row = fb.builderCumulative.Len()
@@ -295,19 +298,24 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			for j := int(end - 1); j >= int(beg); j-- {
 				// If the location has no lines, it's not symbolized.
 				// We work with the location address instead.
-				isRoot := isRoot(int(end), j)
 
-				if isLeaf(int(beg), j) {
+				// This returns whether this location is a root of a stacktrace.
+				isLocationRoot := isLocationRoot(int(end), j)
+				// Depending on whether we aggregate the labels (and thus inject node labels), we either compare the rows or not.
+				isRoot := isLocationRoot && !(aggregateLabels && len(sampleLabels) > 0)
+
+				if isLocationLeaf(int(beg), j) {
 					cumulative += r.Value.Value(i)
 				}
 
 				llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
 				if !r.Lines.IsValid(j) || llOffsetEnd-llOffsetStart <= 0 {
+					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
 					if isRoot {
 						compareRows = compareRows[:0] //  reset the compare rows
-						compareRows = append(compareRows, rootsRow[sampleLabelsKey]...)
+						compareRows = append(compareRows, rootsRow[unsafeString(lsbytes)]...)
 						// append this row afterward to not compare to itself
-						// fb.parent.Reset()
+						fb.parent.Reset()
 					}
 
 					// We compare the location address to the existing rows.
@@ -334,7 +342,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 					if isRoot {
 						// We aren't merging this root, so we'll keep track of it as a new one.
-						rootsRow[sampleLabelsKey] = append(rootsRow[sampleLabelsKey], row)
+						rootsRow[unsafeString(lsbytes)] = append(rootsRow[unsafeString(lsbytes)], row)
 					}
 
 					err := fb.appendRow(r, sampleLabels, i, j, -1, row)
@@ -350,9 +358,10 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			stacktraces:
 				// just like locations, pprof stores lines in reverse order.
 				for k := int(llOffsetEnd - 1); k >= int(llOffsetStart); k-- {
-					if isRoot && sampleLabelsKey == "" {
+					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
+					if isRoot {
 						compareRows = compareRows[:0] //  reset the compare rows
-						compareRows = append(compareRows, rootsRow[sampleLabelsKey]...)
+						compareRows = append(compareRows, rootsRow[unsafeString(lsbytes)]...)
 						// append this row afterward to not compare to itself
 						fb.parent.Reset()
 					}
@@ -386,9 +395,9 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						compareRows = compareRows[:0]
 					}
 
-					if isRoot && sampleLabelsKey == "" {
+					if isRoot {
 						// We aren't merging this root, so we'll keep track of it as a new one.
-						rootsRow[sampleLabelsKey] = append(rootsRow[sampleLabelsKey], row)
+						rootsRow[unsafeString(lsbytes)] = append(rootsRow[unsafeString(lsbytes)], row)
 					}
 
 					err := fb.appendRow(r, sampleLabels, i, j, k, row)
@@ -653,11 +662,11 @@ func (fb *flamegraphBuilder) addRowValues(r profile.RecordReader, row, sampleRow
 	}
 }
 
-func isRoot(end, i int) bool {
+func isLocationRoot(end, i int) bool {
 	return i == end-1
 }
 
-func isLeaf(beg, i int) bool {
+func isLocationLeaf(beg, i int) bool {
 	return i == beg
 }
 
@@ -700,7 +709,7 @@ keys:
 	return intersection
 }
 
-func bytesToString(b []byte) string {
+func unsafeString(b []byte) string {
 	if len(b) == 0 {
 		return ""
 	}
