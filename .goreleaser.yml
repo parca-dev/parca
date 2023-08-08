@@ -78,6 +78,9 @@ snapcrafts:
           - network
           - home
           - etc-parca
+    layout:
+      /var/lib/parca:
+        bind: $SNAP_DATA/var/lib/parca
     plugs:
       etc-parca:
         interface: system-files
