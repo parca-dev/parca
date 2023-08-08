@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"unsafe"
 
 	"github.com/apache/arrow/go/v13/arrow"
 	"github.com/apache/arrow/go/v13/arrow/array"
@@ -173,9 +174,10 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	cumulative := int64(0)
 	// This keeps track of the max depth of our flame graph.
 	maxHeight := int32(0)
-	// This keeps track of the root rows.
+	// This keeps track of the root rows indexed by the labels string.
+	// If the stack trace has no labels, we use the empty string as the key.
 	// This will be the root row's children, which is always our row 0 in flame graphs.
-	rootsRow := []int{}
+	rootsRow := map[string][]int{}
 
 	// these change with every iteration below
 	row := fb.builderCumulative.Len()
@@ -240,6 +242,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			}
 		}
 
+		lsbytes := make([]byte, 0, 512)
 		for i := 0; i < int(r.Record.NumRows()); i++ {
 			beg, end := r.Locations.ValueOffsets(i)
 
@@ -261,6 +264,31 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				}
 			}
 
+			sampleLabelsKey := ""
+			if _, aggregateLabels := aggregateFields[FlamegraphFieldLabels]; aggregateLabels && len(sampleLabels) > 0 {
+				lsbytes = lsbytes[:0]
+				lsbytes = MarshalStringMap(lsbytes, sampleLabels)
+				sampleLabelsKey = bytesToString(lsbytes)
+
+				sampleLabelRow := row
+				if _, ok := rootsRow[sampleLabelsKey]; ok {
+					sampleLabelRow = rootsRow[sampleLabelsKey][0]
+					compareRows = compareRows[:0] //  reset the compare rows
+					// We want to compare against this found label root's children.
+					rootRow := rootsRow[sampleLabelsKey][0]
+					compareRows = append(compareRows, fb.children[rootRow]...)
+					fb.addRowValues(r, sampleLabelRow, i) // adds the cumulative and diff values to the existing row
+				} else {
+					err := fb.AppendLabelRow(r, sampleLabelRow, sampleLabelsKey, sampleLabels, i)
+					if err != nil {
+						return nil, 0, 0, 0, fmt.Errorf("failed to inject label row: %w", err)
+					}
+					rootsRow[sampleLabelsKey] = []int{sampleLabelRow}
+				}
+				fb.parent.Set(sampleLabelRow)
+				row = fb.builderCumulative.Len()
+			}
+
 			// every new sample resets the childRow to -1 indicating that we start with a leaf again.
 			// pprof stores locations in reverse order, thus we loop over locations in reverse order.
 		locations:
@@ -277,9 +305,9 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				if !r.Lines.IsValid(j) || llOffsetEnd-llOffsetStart <= 0 {
 					if isRoot {
 						compareRows = compareRows[:0] //  reset the compare rows
-						compareRows = append(compareRows, rootsRow...)
+						compareRows = append(compareRows, rootsRow[sampleLabelsKey]...)
 						// append this row afterward to not compare to itself
-						fb.parent.Reset()
+						// fb.parent.Reset()
 					}
 
 					// We compare the location address to the existing rows.
@@ -306,7 +334,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 					if isRoot {
 						// We aren't merging this root, so we'll keep track of it as a new one.
-						rootsRow = append(rootsRow, row)
+						rootsRow[sampleLabelsKey] = append(rootsRow[sampleLabelsKey], row)
 					}
 
 					err := fb.appendRow(r, sampleLabels, i, j, -1, row)
@@ -322,9 +350,9 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			stacktraces:
 				// just like locations, pprof stores lines in reverse order.
 				for k := int(llOffsetEnd - 1); k >= int(llOffsetStart); k-- {
-					if isRoot {
+					if isRoot && sampleLabelsKey == "" {
 						compareRows = compareRows[:0] //  reset the compare rows
-						compareRows = append(compareRows, rootsRow...)
+						compareRows = append(compareRows, rootsRow[sampleLabelsKey]...)
 						// append this row afterward to not compare to itself
 						fb.parent.Reset()
 					}
@@ -345,6 +373,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 								fb.labels[cr] = append(fb.labels[cr], sampleLabels)
 							}
 
+							// TODO: Use fb.addRowValues() here
 							// All fields match, so we can aggregate this new row with the existing one.
 							fb.builderCumulative.Add(cr, r.Value.Value(i))
 							// Continue with this row as the parent for the next iteration and compare to its children.
@@ -357,9 +386,9 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						compareRows = compareRows[:0]
 					}
 
-					if isRoot {
+					if isRoot && sampleLabelsKey == "" {
 						// We aren't merging this root, so we'll keep track of it as a new one.
-						rootsRow = append(rootsRow, row)
+						rootsRow[sampleLabelsKey] = append(rootsRow[sampleLabelsKey], row)
 					}
 
 					err := fb.appendRow(r, sampleLabels, i, j, k, row)
@@ -384,8 +413,10 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	for i := 0; i < fb.builderCumulative.Len(); i++ {
 		if i == 0 {
 			builderChildren.Append(true)
-			for _, child := range rootsRow {
-				fb.builderChildrenValues.Append(uint32(child))
+			for _, sampleLabelChildren := range rootsRow {
+				for _, child := range sampleLabelChildren {
+					fb.builderChildrenValues.Append(uint32(child))
+				}
 			}
 			continue
 		}
@@ -576,6 +607,52 @@ func (fb *flamegraphBuilder) appendRow(
 	return nil
 }
 
+func (fb *flamegraphBuilder) AppendLabelRow(r profile.RecordReader, row int, labelKey string, labels map[string]string, sampleRow int) error {
+	fb.labels[row] = []map[string]string{labels}
+
+	if len(fb.children) == row {
+		// We need to grow the children slice, so we'll do that here.
+		// We'll double the capacity of the slice.
+		newChildren := make([][]int, len(fb.children)*2)
+		copy(newChildren, fb.children)
+		fb.children = newChildren
+	}
+	// Add this label row to the root row's children.
+	fb.children[0] = append(fb.children[0], row)
+	//// Add the next row as child of this label row.
+	//fb.children[row] = append(fb.children[row], row+1)
+
+	fb.builderMappingStart.AppendNull()
+	fb.builderMappingLimit.AppendNull()
+	fb.builderMappingOffset.AppendNull()
+	fb.builderMappingFile.AppendNull()
+	fb.builderMappingBuildID.AppendNull()
+	fb.builderLocationAddress.AppendNull()
+	fb.builderLocationFolded.AppendNull()
+	fb.builderLocationLine.AppendNull()
+	fb.builderFunctionStartLine.AppendNull()
+
+	_ = fb.builderFunctionName.AppendString(labelKey)
+
+	fb.builderFunctionSystemName.AppendNull()
+	fb.builderFunctionFileName.AppendNull()
+
+	// Append both cumulative and diff values and overwrite them below.
+	fb.builderCumulative.Append(0)
+	fb.builderDiff.AppendNull()
+	fb.addRowValues(r, row, sampleRow)
+
+	return nil
+}
+
+// addRowValues updates the existing row's values and potentially adding existing values on top.
+func (fb *flamegraphBuilder) addRowValues(r profile.RecordReader, row, sampleRow int) {
+	fb.builderCumulative.Add(row, r.Value.Value(sampleRow))
+	if r.Diff.Value(sampleRow) != 0 {
+		fb.builderDiff.Add(row, r.Diff.Value(sampleRow))
+	}
+}
+
 func isRoot(end, i int) bool {
 	return i == end-1
 }
@@ -621,4 +698,11 @@ keys:
 	}
 
 	return intersection
+}
+
+func bytesToString(b []byte) string {
+	if len(b) == 0 {
+		return ""
+	}
+	return unsafe.String(unsafe.SliceData(b), len(b))
 }
