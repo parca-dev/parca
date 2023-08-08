@@ -520,22 +520,34 @@ func (fb *flamegraphBuilder) appendRow(
 				fb.builderFunctionStartLine.AppendNull()
 			}
 		case FlamegraphFieldFunctionName:
-			if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && len(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow))) > 0 {
-				_ = fb.builderFunctionName.Append(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow)))
-			} else {
+			if r.LineFunctionNameDict.Len() == 0 {
 				fb.builderFunctionName.AppendNull()
+			} else {
+				if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && len(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow))) > 0 {
+					_ = fb.builderFunctionName.Append(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow)))
+				} else {
+					fb.builderFunctionName.AppendNull()
+				}
 			}
 		case FlamegraphFieldFunctionSystemName:
-			if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && len(r.LineFunctionSystemNameDict.Value(r.LineFunctionSystemName.GetValueIndex(lineRow))) > 0 {
-				_ = fb.builderFunctionSystemName.Append(r.LineFunctionSystemNameDict.Value(r.LineFunctionSystemName.GetValueIndex(lineRow)))
-			} else {
+			if r.LineFunctionSystemNameDict.Len() == 0 {
 				fb.builderFunctionSystemName.AppendNull()
+			} else {
+				if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && len(r.LineFunctionSystemNameDict.Value(r.LineFunctionSystemName.GetValueIndex(lineRow))) > 0 {
+					_ = fb.builderFunctionSystemName.Append(r.LineFunctionSystemNameDict.Value(r.LineFunctionSystemName.GetValueIndex(lineRow)))
+				} else {
+					fb.builderFunctionSystemName.AppendNull()
+				}
 			}
 		case FlamegraphFieldFunctionFileName:
-			if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && len(r.LineFunctionFilenameDict.Value(r.LineFunctionFilename.GetValueIndex(lineRow))) > 0 {
-				_ = fb.builderFunctionFileName.Append(r.LineFunctionFilenameDict.Value(r.LineFunctionFilename.GetValueIndex(lineRow)))
-			} else {
+			if r.LineFunctionFilenameDict.Len() == 0 {
 				fb.builderFunctionFileName.AppendNull()
+			} else {
+				if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && len(r.LineFunctionFilenameDict.Value(r.LineFunctionFilename.GetValueIndex(lineRow))) > 0 {
+					_ = fb.builderFunctionFileName.Append(r.LineFunctionFilenameDict.Value(r.LineFunctionFilename.GetValueIndex(lineRow)))
+				} else {
+					fb.builderFunctionFileName.AppendNull()
+				}
 			}
 		// Values
 		case FlamegraphFieldLabels:
