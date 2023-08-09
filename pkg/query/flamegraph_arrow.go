@@ -134,7 +134,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 			if aggregateLabels && len(sampleLabels) > 0 {
 				lsbytes = lsbytes[:0]
-				lsbytes = MarshalStringMap(lsbytes, sampleLabels)
+				lsbytes = MarshalStringMapSorted(lsbytes, sampleLabels)
 
 				sampleLabelRow := row
 				if _, ok := fb.rootsRow[unsafeString(lsbytes)]; ok {
@@ -145,11 +145,12 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					fb.compareRows = append(fb.compareRows, fb.children[rootRow]...)
 					fb.addRowValues(r, sampleLabelRow, i) // adds the cumulative and diff values to the existing row
 				} else {
-					err := fb.AppendLabelRow(r, sampleLabelRow, unsafeString(lsbytes), sampleLabels, i)
+					lsstring := string(lsbytes) // we want to cast the bytes to a string and thus copy them.
+					err := fb.AppendLabelRow(r, sampleLabelRow, lsstring, sampleLabels, i)
 					if err != nil {
 						return nil, 0, 0, 0, fmt.Errorf("failed to inject label row: %w", err)
 					}
-					fb.rootsRow[unsafeString(lsbytes)] = []int{sampleLabelRow}
+					fb.rootsRow[lsstring] = []int{sampleLabelRow}
 				}
 				fb.parent.Set(sampleLabelRow)
 				row = fb.builderCumulative.Len()
@@ -196,7 +197,8 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 					if isRoot {
 						// We aren't merging this root, so we'll keep track of it as a new one.
-						fb.rootsRow[unsafeString(lsbytes)] = append(fb.rootsRow[unsafeString(lsbytes)], row)
+						lsstring := string(lsbytes) // we want to cast the bytes to a string and thus copy them.
+						fb.rootsRow[lsstring] = append(fb.rootsRow[lsstring], row)
 					}
 
 					err = fb.appendRow(r, sampleLabels, i, j, -1, row)
@@ -230,7 +232,8 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 					if isRoot {
 						// We aren't merging this root, so we'll keep track of it as a new one.
-						fb.rootsRow[unsafeString(lsbytes)] = append(fb.rootsRow[unsafeString(lsbytes)], row)
+						lsstring := string(lsbytes) // we want to cast the bytes to a string and thus copy them.
+						fb.rootsRow[lsstring] = append(fb.rootsRow[lsstring], row)
 					}
 
 					err = fb.appendRow(r, sampleLabels, i, j, k, row)
