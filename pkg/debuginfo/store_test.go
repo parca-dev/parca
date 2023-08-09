@@ -189,7 +189,7 @@ func TestStore(t *testing.T) {
 	// If asynchronously we figured out the debuginfo was not a valid ELF file,
 	// we should allow uploading something else. Don't test the whole upload
 	// flow again, just the ShouldInitiateUpload part.
-	require.NoError(t, metadata.SetQuality(ctx, "abcd", &debuginfopb.DebuginfoQuality{NotValidElf: true}))
+	require.NoError(t, metadata.SetQuality(ctx, "abcd", debuginfopb.DebuginfoType_DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED, &debuginfopb.DebuginfoQuality{NotValidElf: true}))
 	shouldInitiateResp, err = debuginfoClient.ShouldInitiateUpload(ctx, &debuginfopb.ShouldInitiateUploadRequest{BuildId: "abcd"})
 	require.NoError(t, err)
 	require.Equal(t, ReasonDebuginfoInvalid, shouldInitiateResp.Reason)
@@ -234,7 +234,7 @@ func TestStore(t *testing.T) {
 	require.False(t, shouldInitiateResp.ShouldInitiateUpload)
 
 	// If we mark the debuginfo as invalid, we should allow uploading.
-	require.NoError(t, metadata.SetQuality(ctx, "deadbeef", &debuginfopb.DebuginfoQuality{NotValidElf: true}))
+	require.NoError(t, metadata.SetQuality(ctx, "deadbeef", debuginfopb.DebuginfoType_DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED, &debuginfopb.DebuginfoQuality{NotValidElf: true}))
 
 	shouldInitiateResp, err = debuginfoClient.ShouldInitiateUpload(ctx, &debuginfopb.ShouldInitiateUploadRequest{BuildId: "deadbeef"})
 	require.NoError(t, err)

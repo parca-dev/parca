@@ -37,6 +37,12 @@ export interface ShouldInitiateUploadRequest {
      * @generated from protobuf field: bool force = 3;
      */
     force: boolean;
+    /**
+     * Type of debuginfo to propose uploading.
+     *
+     * @generated from protobuf field: parca.debuginfo.v1alpha1.DebuginfoType type = 4;
+     */
+    type: DebuginfoType;
 }
 /**
  * ShouldInitiateUploadResponse is the response for ShouldInitiateUpload.
@@ -87,6 +93,12 @@ export interface InitiateUploadRequest {
      * @generated from protobuf field: bool force = 4;
      */
     force: boolean;
+    /**
+     * Type of debuginfo to propose uploading.
+     *
+     * @generated from protobuf field: parca.debuginfo.v1alpha1.DebuginfoType type = 5;
+     */
+    type: DebuginfoType;
 }
 /**
  * InitiateUploadResponse is the response to an InitiateUploadRequest.
@@ -132,6 +144,12 @@ export interface UploadInstructions {
      * @generated from protobuf field: string signed_url = 4;
      */
     signedUrl: string;
+    /**
+     * Type of debuginfo the upload instructions are for.
+     *
+     * @generated from protobuf field: parca.debuginfo.v1alpha1.DebuginfoType type = 5;
+     */
+    type: DebuginfoType;
 }
 /**
  * The strategy to use for uploading.
@@ -176,6 +194,12 @@ export interface MarkUploadFinishedRequest {
      * @generated from protobuf field: string upload_id = 2;
      */
     uploadId: string;
+    /**
+     * The type of debuginfo upload to mark as finished.
+     *
+     * @generated from protobuf field: parca.debuginfo.v1alpha1.DebuginfoType type = 3;
+     */
+    type: DebuginfoType;
 }
 /**
  * MarkUploadFinishedResponse is the response to a MarkUploadFinishedRequest.
@@ -231,6 +255,12 @@ export interface UploadInfo {
      * @generated from protobuf field: string upload_id = 2;
      */
     uploadId: string;
+    /**
+     * the type of debuginfo that's being uploaded
+     *
+     * @generated from protobuf field: parca.debuginfo.v1alpha1.DebuginfoType type = 3;
+     */
+    type: DebuginfoType;
 }
 /**
  * UploadResponse returns the build_id and the size of the uploaded debug info
@@ -288,6 +318,12 @@ export interface Debuginfo {
      * @generated from protobuf field: repeated string debuginfod_servers = 5;
      */
     debuginfodServers: string[];
+    /**
+     * The type of debuginfo.
+     *
+     * @generated from protobuf field: parca.debuginfo.v1alpha1.DebuginfoType type = 6;
+     */
+    type: DebuginfoType;
 }
 /**
  * Source is the source of the debuginfo.
@@ -413,17 +449,47 @@ export interface DebuginfoQuality {
      */
     hasDynsym: boolean;
 }
+/**
+ * Types of debuginfo.
+ *
+ * @generated from protobuf enum parca.debuginfo.v1alpha1.DebuginfoType
+ */
+export enum DebuginfoType {
+    /**
+     * The default type that the API always supported. This type is expected to
+     * contain debuginfos for symbolizaton purposes.
+     *
+     * @generated from protobuf enum value: DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED = 0;
+     */
+    DEBUGINFO_UNSPECIFIED = 0,
+    /**
+     * The type to identify executables. This is meant to be used for
+     * disassembling so it is expected to contain executable `.text` section.
+     *
+     * @generated from protobuf enum value: DEBUGINFO_TYPE_EXECUTABLE = 1;
+     */
+    EXECUTABLE = 1,
+    /**
+     * The type to identify a source tarball. This is expected to contain
+     * multiple source files that debuginfo references. It is meant to show code
+     * with profiling data inline.
+     *
+     * @generated from protobuf enum value: DEBUGINFO_TYPE_SOURCES = 2;
+     */
+    SOURCES = 2
+}
 // @generated message type with reflection information, may provide speed optimized methods
 class ShouldInitiateUploadRequest$Type extends MessageType<ShouldInitiateUploadRequest> {
     constructor() {
         super("parca.debuginfo.v1alpha1.ShouldInitiateUploadRequest", [
             { no: 1, name: "build_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "hash", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 3, name: "force", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 3, name: "force", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 4, name: "type", kind: "enum", T: () => ["parca.debuginfo.v1alpha1.DebuginfoType", DebuginfoType, "DEBUGINFO_TYPE_"] }
         ]);
     }
     create(value?: PartialMessage<ShouldInitiateUploadRequest>): ShouldInitiateUploadRequest {
-        const message = { buildId: "", hash: "", force: false };
+        const message = { buildId: "", hash: "", force: false, type: 0 };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<ShouldInitiateUploadRequest>(this, message, value);
@@ -442,6 +508,9 @@ class ShouldInitiateUploadRequest$Type extends MessageType<ShouldInitiateUploadR
                     break;
                 case /* bool force */ 3:
                     message.force = reader.bool();
+                    break;
+                case /* parca.debuginfo.v1alpha1.DebuginfoType type */ 4:
+                    message.type = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -464,6 +533,9 @@ class ShouldInitiateUploadRequest$Type extends MessageType<ShouldInitiateUploadR
         /* bool force = 3; */
         if (message.force !== false)
             writer.tag(3, WireType.Varint).bool(message.force);
+        /* parca.debuginfo.v1alpha1.DebuginfoType type = 4; */
+        if (message.type !== 0)
+            writer.tag(4, WireType.Varint).int32(message.type);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -535,11 +607,12 @@ class InitiateUploadRequest$Type extends MessageType<InitiateUploadRequest> {
             { no: 1, name: "build_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "size", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ },
             { no: 3, name: "hash", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 4, name: "force", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 4, name: "force", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 5, name: "type", kind: "enum", T: () => ["parca.debuginfo.v1alpha1.DebuginfoType", DebuginfoType, "DEBUGINFO_TYPE_"] }
         ]);
     }
     create(value?: PartialMessage<InitiateUploadRequest>): InitiateUploadRequest {
-        const message = { buildId: "", size: 0n, hash: "", force: false };
+        const message = { buildId: "", size: 0n, hash: "", force: false, type: 0 };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<InitiateUploadRequest>(this, message, value);
@@ -561,6 +634,9 @@ class InitiateUploadRequest$Type extends MessageType<InitiateUploadRequest> {
                     break;
                 case /* bool force */ 4:
                     message.force = reader.bool();
+                    break;
+                case /* parca.debuginfo.v1alpha1.DebuginfoType type */ 5:
+                    message.type = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -586,6 +662,9 @@ class InitiateUploadRequest$Type extends MessageType<InitiateUploadRequest> {
         /* bool force = 4; */
         if (message.force !== false)
             writer.tag(4, WireType.Varint).bool(message.force);
+        /* parca.debuginfo.v1alpha1.DebuginfoType type = 5; */
+        if (message.type !== 0)
+            writer.tag(5, WireType.Varint).int32(message.type);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -650,11 +729,12 @@ class UploadInstructions$Type extends MessageType<UploadInstructions> {
             { no: 1, name: "build_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "upload_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 3, name: "upload_strategy", kind: "enum", T: () => ["parca.debuginfo.v1alpha1.UploadInstructions.UploadStrategy", UploadInstructions_UploadStrategy, "UPLOAD_STRATEGY_"] },
-            { no: 4, name: "signed_url", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 4, name: "signed_url", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "type", kind: "enum", T: () => ["parca.debuginfo.v1alpha1.DebuginfoType", DebuginfoType, "DEBUGINFO_TYPE_"] }
         ]);
     }
     create(value?: PartialMessage<UploadInstructions>): UploadInstructions {
-        const message = { buildId: "", uploadId: "", uploadStrategy: 0, signedUrl: "" };
+        const message = { buildId: "", uploadId: "", uploadStrategy: 0, signedUrl: "", type: 0 };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<UploadInstructions>(this, message, value);
@@ -676,6 +756,9 @@ class UploadInstructions$Type extends MessageType<UploadInstructions> {
                     break;
                 case /* string signed_url */ 4:
                     message.signedUrl = reader.string();
+                    break;
+                case /* parca.debuginfo.v1alpha1.DebuginfoType type */ 5:
+                    message.type = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -701,6 +784,9 @@ class UploadInstructions$Type extends MessageType<UploadInstructions> {
         /* string signed_url = 4; */
         if (message.signedUrl !== "")
             writer.tag(4, WireType.LengthDelimited).string(message.signedUrl);
+        /* parca.debuginfo.v1alpha1.DebuginfoType type = 5; */
+        if (message.type !== 0)
+            writer.tag(5, WireType.Varint).int32(message.type);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -716,11 +802,12 @@ class MarkUploadFinishedRequest$Type extends MessageType<MarkUploadFinishedReque
     constructor() {
         super("parca.debuginfo.v1alpha1.MarkUploadFinishedRequest", [
             { no: 1, name: "build_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "upload_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 2, name: "upload_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "type", kind: "enum", T: () => ["parca.debuginfo.v1alpha1.DebuginfoType", DebuginfoType, "DEBUGINFO_TYPE_"] }
         ]);
     }
     create(value?: PartialMessage<MarkUploadFinishedRequest>): MarkUploadFinishedRequest {
-        const message = { buildId: "", uploadId: "" };
+        const message = { buildId: "", uploadId: "", type: 0 };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<MarkUploadFinishedRequest>(this, message, value);
@@ -736,6 +823,9 @@ class MarkUploadFinishedRequest$Type extends MessageType<MarkUploadFinishedReque
                     break;
                 case /* string upload_id */ 2:
                     message.uploadId = reader.string();
+                    break;
+                case /* parca.debuginfo.v1alpha1.DebuginfoType type */ 3:
+                    message.type = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -755,6 +845,9 @@ class MarkUploadFinishedRequest$Type extends MessageType<MarkUploadFinishedReque
         /* string upload_id = 2; */
         if (message.uploadId !== "")
             writer.tag(2, WireType.LengthDelimited).string(message.uploadId);
+        /* parca.debuginfo.v1alpha1.DebuginfoType type = 3; */
+        if (message.type !== 0)
+            writer.tag(3, WireType.Varint).int32(message.type);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -856,11 +949,12 @@ class UploadInfo$Type extends MessageType<UploadInfo> {
     constructor() {
         super("parca.debuginfo.v1alpha1.UploadInfo", [
             { no: 1, name: "build_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "upload_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 2, name: "upload_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "type", kind: "enum", T: () => ["parca.debuginfo.v1alpha1.DebuginfoType", DebuginfoType, "DEBUGINFO_TYPE_"] }
         ]);
     }
     create(value?: PartialMessage<UploadInfo>): UploadInfo {
-        const message = { buildId: "", uploadId: "" };
+        const message = { buildId: "", uploadId: "", type: 0 };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<UploadInfo>(this, message, value);
@@ -876,6 +970,9 @@ class UploadInfo$Type extends MessageType<UploadInfo> {
                     break;
                 case /* string upload_id */ 2:
                     message.uploadId = reader.string();
+                    break;
+                case /* parca.debuginfo.v1alpha1.DebuginfoType type */ 3:
+                    message.type = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -895,6 +992,9 @@ class UploadInfo$Type extends MessageType<UploadInfo> {
         /* string upload_id = 2; */
         if (message.uploadId !== "")
             writer.tag(2, WireType.LengthDelimited).string(message.uploadId);
+        /* parca.debuginfo.v1alpha1.DebuginfoType type = 3; */
+        if (message.type !== 0)
+            writer.tag(3, WireType.Varint).int32(message.type);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -967,11 +1067,12 @@ class Debuginfo$Type extends MessageType<Debuginfo> {
             { no: 2, name: "source", kind: "enum", T: () => ["parca.debuginfo.v1alpha1.Debuginfo.Source", Debuginfo_Source, "SOURCE_"] },
             { no: 3, name: "upload", kind: "message", T: () => DebuginfoUpload },
             { no: 4, name: "quality", kind: "message", T: () => DebuginfoQuality },
-            { no: 5, name: "debuginfod_servers", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+            { no: 5, name: "debuginfod_servers", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 6, name: "type", kind: "enum", T: () => ["parca.debuginfo.v1alpha1.DebuginfoType", DebuginfoType, "DEBUGINFO_TYPE_"] }
         ]);
     }
     create(value?: PartialMessage<Debuginfo>): Debuginfo {
-        const message = { buildId: "", source: 0, debuginfodServers: [] };
+        const message = { buildId: "", source: 0, debuginfodServers: [], type: 0 };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Debuginfo>(this, message, value);
@@ -996,6 +1097,9 @@ class Debuginfo$Type extends MessageType<Debuginfo> {
                     break;
                 case /* repeated string debuginfod_servers */ 5:
                     message.debuginfodServers.push(reader.string());
+                    break;
+                case /* parca.debuginfo.v1alpha1.DebuginfoType type */ 6:
+                    message.type = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1024,6 +1128,9 @@ class Debuginfo$Type extends MessageType<Debuginfo> {
         /* repeated string debuginfod_servers = 5; */
         for (let i = 0; i < message.debuginfodServers.length; i++)
             writer.tag(5, WireType.LengthDelimited).string(message.debuginfodServers[i]);
+        /* parca.debuginfo.v1alpha1.DebuginfoType type = 6; */
+        if (message.type !== 0)
+            writer.tag(6, WireType.Varint).int32(message.type);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
