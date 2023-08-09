@@ -19,9 +19,20 @@ import {getLastItem} from '@parca/utilities';
 import {hexifyAddress} from '../../utils';
 import {FIELD_FUNCTION_NAME, FIELD_LOCATION_ADDRESS, FIELD_MAPPING_FILE} from './index';
 
-export function nodeLabel(table: Table<any>, row: number, showBinaryName: boolean): string {
+export function nodeLabel(
+  table: Table<any>,
+  row: number,
+  level: number,
+  showBinaryName: boolean
+): string {
   const functionName: string | null = table.getChild(FIELD_FUNCTION_NAME)?.get(row);
   if (functionName !== null && functionName !== '') {
+    if (level === 1 && functionName.startsWith('{') && functionName.endsWith('}')) {
+      return Object.entries(JSON.parse(functionName))
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([k, v]) => `${k}="${v as string}"`)
+        .join(', ');
+    }
     return functionName;
   }
 
