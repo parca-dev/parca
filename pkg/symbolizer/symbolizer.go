@@ -46,8 +46,8 @@ var (
 )
 
 type DebuginfoMetadata interface {
-	SetQuality(ctx context.Context, buildID string, quality *debuginfopb.DebuginfoQuality) error
-	Fetch(ctx context.Context, buildID string) (*debuginfopb.Debuginfo, error)
+	SetQuality(ctx context.Context, buildID string, typ debuginfopb.DebuginfoType, quality *debuginfopb.DebuginfoQuality) error
+	Fetch(ctx context.Context, buildID string, typ debuginfopb.DebuginfoType) (*debuginfopb.Debuginfo, error)
 }
 
 // liner is the interface implemented by symbolizers
@@ -390,7 +390,7 @@ func (s *Symbolizer) Symbolize(ctx context.Context, locations []*pb.Location) er
 // symbolizeLocationsForMapping fetches the debug info for a given build ID and symbolizes it the
 // given location.
 func (s *Symbolizer) symbolizeLocationsForMapping(ctx context.Context, m *pb.Mapping, locations []*pb.Location) ([][]profile.LocationLine, liner, error) {
-	dbginfo, err := s.metadata.Fetch(ctx, m.BuildId)
+	dbginfo, err := s.metadata.Fetch(ctx, m.BuildId, debuginfopb.DebuginfoType_DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED)
 	if err != nil {
 		return nil, nil, fmt.Errorf("fetching metadata: %w", err)
 	}
@@ -456,7 +456,7 @@ func (s *Symbolizer) symbolizeLocationsForMapping(ctx context.Context, m *pb.Map
 
 		e, err := elf.Open(f.Name())
 		if err != nil {
-			if merr := s.metadata.SetQuality(ctx, m.BuildId, &debuginfopb.DebuginfoQuality{
+			if merr := s.metadata.SetQuality(ctx, m.BuildId, debuginfopb.DebuginfoType_DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED, &debuginfopb.DebuginfoQuality{
 				NotValidElf: true,
 			}); merr != nil {
 				level.Error(s.logger).Log("msg", "failed to set metadata quality", "err", merr)
@@ -477,7 +477,7 @@ func (s *Symbolizer) symbolizeLocationsForMapping(ctx context.Context, m *pb.Map
 				HasSymtab:    elfutils.HasSymtab(e),
 				HasDynsym:    elfutils.HasDynsym(e),
 			}
-			if err := s.metadata.SetQuality(ctx, m.BuildId, dbginfo.Quality); err != nil {
+			if err := s.metadata.SetQuality(ctx, m.BuildId, debuginfopb.DebuginfoType_DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED, dbginfo.Quality); err != nil {
 				return nil, nil, fmt.Errorf("set quality: %w", err)
 			}
 			if !dbginfo.Quality.HasDwarf && !dbginfo.Quality.HasGoPclntab && !(dbginfo.Quality.HasSymtab || dbginfo.Quality.HasDynsym) {

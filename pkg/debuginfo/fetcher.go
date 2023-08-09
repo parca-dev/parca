@@ -55,7 +55,7 @@ func (f *Fetcher) FetchDebuginfo(ctx context.Context, dbginfo *debuginfopb.Debug
 }
 
 func (f *Fetcher) fetchFromBucket(ctx context.Context, dbginfo *debuginfopb.Debuginfo) (io.ReadCloser, error) {
-	return f.bucket.Get(ctx, objectPath(dbginfo.BuildId))
+	return f.bucket.Get(ctx, objectPath(dbginfo.BuildId, dbginfo.Type))
 }
 
 func (f *Fetcher) fetchFromDebuginfod(ctx context.Context, dbginfo *debuginfopb.Debuginfo) (io.ReadCloser, error) {
