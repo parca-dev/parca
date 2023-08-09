@@ -50,22 +50,27 @@ export const VisualizationPanel = React.memo(function VisualizationPanel({
 
   return (
     <>
-      <div className="flex w-full justify-end gap-2 pb-2">
+      <div className="flex w-full items-start justify-end gap-2 pb-2">
         <div className="flex w-full items-center justify-between">
-          <div className="flex">
+          <div className="flex items-start">
             <div
               className={cx(isMultiPanelView ? 'visible' : 'invisible', 'flex items-center')}
               {...dragHandleProps}
             >
               <Icon className="text-xl" icon="material-symbols:drag-indicator" />
             </div>
-            <>{actionButtons}</>
+            <div>{actionButtons}</div>
           </div>
-          <ViewSelector defaultValue={dashboardItem} navigateTo={navigateTo} position={index} />
+          <div className="mr-1 mt-3">
+            <ViewSelector defaultValue={dashboardItem} navigateTo={navigateTo} position={index} />
+          </div>
         </div>
-
         {isMultiPanelView && (
-          <IconButton onClick={() => handleClosePanel(dashboardItem)} icon={<CloseIcon />} />
+          <IconButton
+            className="py-0"
+            onClick={() => handleClosePanel(dashboardItem)}
+            icon={<CloseIcon />}
+          />
         )}
       </div>
       {getDashboardItemByType({

@@ -198,59 +198,69 @@ const ProfileSelector = ({
 
   const compareDisabled = selectedProfileName === '' || querySelection.expression === undefined;
 
-  return (
-    <Card className="overflow-visible">
-      <Card.Header className="flex !items-center space-x-2">
-        <div className="flex w-full flex-wrap items-center justify-start space-x-2 space-y-1">
-          <div className="ml-2 mt-1">
-            <ProfileTypeSelector
-              profileTypesData={profileTypesData}
-              loading={profileTypesLoading}
-              selectedKey={selectedProfileName}
-              onSelection={setProfileName}
-              error={error}
-            />
-          </div>
-          <div className="w-full flex-1">
-            <MatchersInput
-              queryClient={queryClient}
-              setMatchersString={setMatchersString}
-              runQuery={setQueryExpression}
-              currentQuery={query}
-            />
-          </div>
+  const Header = (): JSX.Element => (
+    <div className="mb-2 flex">
+      <div className="flex w-full flex-wrap content-start items-end justify-between gap-2">
+        <div>
+          <label className="text-sm">Profile type</label>
+          <ProfileTypeSelector
+            profileTypesData={profileTypesData}
+            loading={profileTypesLoading}
+            selectedKey={selectedProfileName}
+            onSelection={setProfileName}
+            error={error}
+          />
+        </div>
+
+        <div className="w-full flex-1">
+          <label className="text-sm">Query</label>
+          <MatchersInput
+            queryClient={queryClient}
+            setMatchersString={setMatchersString}
+            runQuery={setQueryExpression}
+            currentQuery={query}
+          />
+        </div>
+        <div>
+          <label className="text-sm">Period</label>
           <DateTimeRangePicker
             onRangeSelection={setTimeRangeSelection}
             range={timeRangeSelection}
           />
-          <ButtonGroup>
-            {!searchDisabled && (
-              <>
-                {!comparing && (
-                  <CompareButton disabled={compareDisabled} onClick={handleCompareClick} />
-                )}
-              </>
-            )}
-            <Button
-              disabled={searchDisabled}
-              onClick={(e: React.MouseEvent<HTMLElement>) => {
-                e.preventDefault();
-                setQueryExpression();
-              }}
-            >
-              Search
-            </Button>
-          </ButtonGroup>
         </div>
-        <div>{comparing && <IconButton onClick={() => closeProfile()} icon={<CloseIcon />} />}</div>
-      </Card.Header>
-      {
-        <Card.Body>
-          <div style={{height: heightStyle}}>
-            {querySelection.expression !== undefined &&
-            querySelection.expression.length > 0 &&
-            querySelection.from !== undefined &&
-            querySelection.to !== undefined ? (
+        <ButtonGroup>
+          {!searchDisabled && (
+            <>
+              {!comparing && (
+                <CompareButton disabled={compareDisabled} onClick={handleCompareClick} />
+              )}
+            </>
+          )}
+          <Button
+            disabled={searchDisabled}
+            onClick={(e: React.MouseEvent<HTMLElement>) => {
+              e.preventDefault();
+              setQueryExpression();
+            }}
+          >
+            Search
+          </Button>
+        </ButtonGroup>
+      </div>
+      <div>{comparing && <IconButton onClick={() => closeProfile()} icon={<CloseIcon />} />}</div>
+    </div>
+  );
+
+  return (
+    <div className="p-2">
+      <Header />
+      <div className="rounded border border-gray-300 bg-white dark:border-gray-500 dark:bg-gray-700">
+        <div style={{height: heightStyle}}>
+          {querySelection.expression !== undefined &&
+          querySelection.expression.length > 0 &&
+          querySelection.from !== undefined &&
+          querySelection.to !== undefined ? (
+            <div className="p-2">
               <ProfileMetricsGraph
                 queryClient={queryClient}
                 queryExpression={querySelection.expression}
@@ -294,19 +304,21 @@ const ProfileSelector = ({
                   selectProfile(new MergedProfileSelection(mergeFrom, mergeTo, query));
                 }}
               />
-            ) : (
-              <>
-                {profileSelection == null ? (
+            </div>
+          ) : (
+            <>
+              {profileSelection == null ? (
+                <div className="p-2">
                   <ProfileMetricsEmptyState
                     message={`Please select a profile type and click "Search" to begin.`}
                   />
-                ) : null}
-              </>
-            )}
-          </div>
-        </Card.Body>
-      }
-    </Card>
+                </div>
+              ) : null}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 

@@ -314,101 +314,95 @@ export const ProfileView = ({
 
   return (
     <KeyDownProvider>
-      <div className="py-3">
-        <Card>
-          <Card.Body>
-            <div className="flex w-full py-3">
-              <div className="flex space-x-4 lg:w-1/2">
-                <div className="flex space-x-1">
-                  {profileSource !== undefined && queryClient !== undefined ? (
-                    <ProfileShareButton
-                      queryRequest={profileSource.QueryRequest()}
-                      queryClient={queryClient}
-                    />
-                  ) : null}
+      <div className="flex w-full pb-3">
+        <div className="flex space-x-4 lg:w-1/2">
+          <div className="flex space-x-1">
+            {profileSource !== undefined && queryClient !== undefined ? (
+              <ProfileShareButton
+                queryRequest={profileSource.QueryRequest()}
+                queryClient={queryClient}
+              />
+            ) : null}
 
-                  <Button
-                    color="neutral"
-                    onClick={e => {
-                      e.preventDefault();
-                      onDownloadPProf();
-                    }}
-                    disabled={pprofDownloading}
-                  >
-                    {pprofDownloading != null && pprofDownloading
-                      ? 'Downloading'
-                      : 'Download pprof'}
-                  </Button>
-                </div>
-                <FilterByFunctionButton navigateTo={navigateTo} />
-              </div>
+            <Button
+              color="neutral"
+              onClick={e => {
+                e.preventDefault();
+                onDownloadPProf();
+              }}
+              disabled={pprofDownloading}
+            >
+              {pprofDownloading != null && pprofDownloading ? 'Downloading' : 'Download pprof'}
+            </Button>
+          </div>
+          <FilterByFunctionButton navigateTo={navigateTo} />
+        </div>
 
-              <div className="ml-auto flex gap-2">
-                <ViewSelector
-                  defaultValue=""
-                  navigateTo={navigateTo}
-                  position={-1}
-                  placeholderText="Add panel..."
-                  primary
-                  addView={true}
-                  disabled={isMultiPanelView || dashboardItems.length < 1}
-                />
-              </div>
-            </div>
+        <div className="ml-auto flex gap-2">
+          <ViewSelector
+            defaultValue=""
+            navigateTo={navigateTo}
+            position={-1}
+            placeholderText="Add panel..."
+            primary
+            addView={true}
+            disabled={isMultiPanelView || dashboardItems.length < 1}
+          />
+        </div>
+      </div>
 
-            <div className="w-full" ref={ref}>
-              {isLoaderVisible ? (
-                <>{loader}</>
-              ) : (
-                <DragDropContext onDragEnd={onDragEnd}>
-                  <Droppable droppableId="droppable" direction="horizontal">
-                    {provided => (
-                      <div
-                        ref={provided.innerRef}
-                        className="flex w-full justify-between space-x-4"
-                        {...provided.droppableProps}
+      <div className="w-full" ref={ref}>
+        {isLoaderVisible ? (
+          <>{loader}</>
+        ) : (
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="droppable" direction="horizontal">
+              {provided => (
+                <div
+                  ref={provided.innerRef}
+                  className={cx(
+                    'grid w-full grid-cols-2 gap-2',
+                    isMultiPanelView ? 'grid-cols-2' : 'grid-cols-1'
+                  )}
+                  {...provided.droppableProps}
+                >
+                  {dashboardItems.map((dashboardItem, index) => {
+                    return (
+                      <Draggable
+                        key={dashboardItem}
+                        draggableId={dashboardItem}
+                        index={index}
+                        isDragDisabled={!isMultiPanelView}
                       >
-                        {dashboardItems.map((dashboardItem, index) => {
-                          return (
-                            <Draggable
-                              key={dashboardItem}
-                              draggableId={dashboardItem}
+                        {(provided, snapshot: {isDragging: boolean}) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            key={dashboardItem}
+                            className={cx(
+                              'w-full rounded border border-gray-300 p-2 dark:border-gray-500 dark:bg-gray-700',
+                              snapshot.isDragging ? 'bg-gray-200' : 'bg-white'
+                            )}
+                          >
+                            <VisualizationPanel
+                              handleClosePanel={handleClosePanel}
+                              isMultiPanelView={isMultiPanelView}
+                              dashboardItem={dashboardItem}
+                              getDashboardItemByType={getDashboardItemByType}
+                              dragHandleProps={provided.dragHandleProps}
+                              navigateTo={navigateTo}
                               index={index}
-                              isDragDisabled={!isMultiPanelView}
-                            >
-                              {(provided, snapshot: {isDragging: boolean}) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  key={dashboardItem}
-                                  className={cx(
-                                    'rounded border border-gray-300 p-3 dark:border-gray-500 dark:bg-gray-700',
-                                    isMultiPanelView ? 'w-1/2' : 'w-full',
-                                    snapshot.isDragging ? 'bg-gray-200' : 'bg-white'
-                                  )}
-                                >
-                                  <VisualizationPanel
-                                    handleClosePanel={handleClosePanel}
-                                    isMultiPanelView={isMultiPanelView}
-                                    dashboardItem={dashboardItem}
-                                    getDashboardItemByType={getDashboardItemByType}
-                                    dragHandleProps={provided.dragHandleProps}
-                                    navigateTo={navigateTo}
-                                    index={index}
-                                  />
-                                </div>
-                              )}
-                            </Draggable>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </Droppable>
-                </DragDropContext>
+                            />
+                          </div>
+                        )}
+                      </Draggable>
+                    );
+                  })}
+                </div>
               )}
-            </div>
-          </Card.Body>
-        </Card>
+            </Droppable>
+          </DragDropContext>
+        )}
       </div>
     </KeyDownProvider>
   );

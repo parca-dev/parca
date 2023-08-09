@@ -199,15 +199,17 @@ export const TopTable = React.memo(function TopTable({
     }
     setActionButtons(
       dashboardItems.length > 1 ? (
-        <Button
-          color="neutral"
-          onClick={clearSelection}
-          className="w-auto"
-          variant="neutral"
-          disabled={currentSearchString === undefined || currentSearchString.length === 0}
-        >
-          Clear selection
-        </Button>
+        <div className="ml-2 mt-3">
+          <Button
+            color="neutral"
+            onClick={clearSelection}
+            className="w-auto"
+            variant="neutral"
+            disabled={currentSearchString === undefined || currentSearchString.length === 0}
+          >
+            Clear selection
+          </Button>
+        </div>
       ) : (
         <></>
       )

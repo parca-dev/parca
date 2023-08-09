@@ -175,7 +175,7 @@ const ProfileTypeSelector = ({
       items={profileLabels}
       selectedKey={selectedKey}
       onSelection={onSelection}
-      placeholder="Select profile..."
+      placeholder="Select profile type..."
       loading={loading}
     />
   );
