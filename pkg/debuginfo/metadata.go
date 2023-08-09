@@ -47,8 +47,8 @@ func NewObjectStoreMetadata(logger log.Logger, bucket objstore.Bucket) *ObjectSt
 	return &ObjectStoreMetadata{logger: log.With(logger, "component", "debuginfo-metadata"), bucket: bucket}
 }
 
-func (m *ObjectStoreMetadata) SetQuality(ctx context.Context, buildID string, quality *debuginfopb.DebuginfoQuality) error {
-	dbginfo, err := m.Fetch(ctx, buildID)
+func (m *ObjectStoreMetadata) SetQuality(ctx context.Context, buildID string, typ debuginfopb.DebuginfoType, quality *debuginfopb.DebuginfoQuality) error {
+	dbginfo, err := m.Fetch(ctx, buildID, typ)
 	if err != nil {
 		return err
 	}
@@ -62,15 +62,16 @@ func (m *ObjectStoreMetadata) SetQuality(ctx context.Context, buildID string, qu
 	return nil
 }
 
-func (m *ObjectStoreMetadata) MarkAsDebuginfodSource(ctx context.Context, servers []string, buildID string) error {
+func (m *ObjectStoreMetadata) MarkAsDebuginfodSource(ctx context.Context, servers []string, buildID string, typ debuginfopb.DebuginfoType) error {
 	return m.write(ctx, &debuginfopb.Debuginfo{
 		BuildId:           buildID,
 		DebuginfodServers: servers,
 		Source:            debuginfopb.Debuginfo_SOURCE_DEBUGINFOD,
+		Type:              typ,
 	})
 }
 
-func (m *ObjectStoreMetadata) MarkAsUploading(ctx context.Context, buildID, uploadID, hash string, startedAt *timestamppb.Timestamp) error {
+func (m *ObjectStoreMetadata) MarkAsUploading(ctx context.Context, buildID, uploadID, hash string, typ debuginfopb.DebuginfoType, startedAt *timestamppb.Timestamp) error {
 	return m.write(ctx, &debuginfopb.Debuginfo{
 		BuildId: buildID,
 		Source:  debuginfopb.Debuginfo_SOURCE_UPLOAD,
@@ -80,11 +81,12 @@ func (m *ObjectStoreMetadata) MarkAsUploading(ctx context.Context, buildID, uplo
 			State:     debuginfopb.DebuginfoUpload_STATE_UPLOADING,
 			StartedAt: startedAt,
 		},
+		Type: typ,
 	})
 }
 
-func (m *ObjectStoreMetadata) MarkAsUploaded(ctx context.Context, buildID, uploadID string, finishedAt *timestamppb.Timestamp) error {
-	dbginfo, err := m.Fetch(ctx, buildID)
+func (m *ObjectStoreMetadata) MarkAsUploaded(ctx context.Context, buildID, uploadID string, typ debuginfopb.DebuginfoType, finishedAt *timestamppb.Timestamp) error {
+	dbginfo, err := m.Fetch(ctx, buildID, typ)
 	if err != nil {
 		return err
 	}
@@ -103,8 +105,9 @@ func (m *ObjectStoreMetadata) MarkAsUploaded(ctx context.Context, buildID, uploa
 	return m.write(ctx, dbginfo)
 }
 
-func (m *ObjectStoreMetadata) Fetch(ctx context.Context, buildID string) (*debuginfopb.Debuginfo, error) {
-	r, err := m.bucket.Get(ctx, metadataObjectPath(buildID))
+func (m *ObjectStoreMetadata) Fetch(ctx context.Context, buildID string, typ debuginfopb.DebuginfoType) (*debuginfopb.Debuginfo, error) {
+	path := metadataObjectPath(buildID, typ)
+	r, err := m.bucket.Get(ctx, path)
 	if err != nil {
 		if m.bucket.IsObjNotFoundErr(err) {
 			return nil, ErrMetadataNotFound
@@ -137,12 +140,19 @@ func (m *ObjectStoreMetadata) write(ctx context.Context, dbginfo *debuginfopb.De
 	}
 
 	r := bytes.NewReader(debuginfoJSON)
-	if err := m.bucket.Upload(ctx, metadataObjectPath(dbginfo.BuildId), r); err != nil {
+	if err := m.bucket.Upload(ctx, metadataObjectPath(dbginfo.BuildId, dbginfo.Type), r); err != nil {
 		return fmt.Errorf("write debuginfo metadata to object storage: %w", err)
 	}
 	return nil
 }
 
-func metadataObjectPath(buildID string) string {
-	return path.Join(buildID, "metadata")
+func metadataObjectPath(buildID string, typ debuginfopb.DebuginfoType) string {
+	switch typ {
+	case debuginfopb.DebuginfoType_DEBUGINFO_TYPE_EXECUTABLE:
+		return path.Join(buildID, "executable.metadata")
+	case debuginfopb.DebuginfoType_DEBUGINFO_TYPE_SOURCES:
+		return path.Join(buildID, "sources.metadata")
+	default:
+		return path.Join(buildID, "metadata")
+	}
 }

@@ -296,6 +296,11 @@ func (m *ShouldInitiateUploadRequest) MarshalToSizedBufferVT(dAtA []byte) (int, 
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.Type != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.Type))
+		i--
+		dAtA[i] = 0x20
+	}
 	if m.Force {
 		i--
 		if m.Force {
@@ -403,6 +408,11 @@ func (m *InitiateUploadRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.Type != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.Type))
+		i--
+		dAtA[i] = 0x28
+	}
 	if m.Force {
 		i--
 		if m.Force {
@@ -508,6 +518,11 @@ func (m *UploadInstructions) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.Type != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.Type))
+		i--
+		dAtA[i] = 0x28
+	}
 	if len(m.SignedUrl) > 0 {
 		i -= len(m.SignedUrl)
 		copy(dAtA[i:], m.SignedUrl)
@@ -566,6 +581,11 @@ func (m *MarkUploadFinishedRequest) MarshalToSizedBufferVT(dAtA []byte) (int, er
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Type != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.Type))
+		i--
+		dAtA[i] = 0x18
 	}
 	if len(m.UploadId) > 0 {
 		i -= len(m.UploadId)
@@ -722,6 +742,11 @@ func (m *UploadInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.Type != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.Type))
+		i--
+		dAtA[i] = 0x18
+	}
 	if len(m.UploadId) > 0 {
 		i -= len(m.UploadId)
 		copy(dAtA[i:], m.UploadId)
@@ -813,6 +838,11 @@ func (m *Debuginfo) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Type != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.Type))
+		i--
+		dAtA[i] = 0x30
 	}
 	if len(m.DebuginfodServers) > 0 {
 		for iNdEx := len(m.DebuginfodServers) - 1; iNdEx >= 0; iNdEx-- {
@@ -1065,6 +1095,9 @@ func (m *ShouldInitiateUploadRequest) SizeVT() (n int) {
 	if m.Force {
 		n += 2
 	}
+	if m.Type != 0 {
+		n += 1 + sov(uint64(m.Type))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -1106,6 +1139,9 @@ func (m *InitiateUploadRequest) SizeVT() (n int) {
 	if m.Force {
 		n += 2
 	}
+	if m.Type != 0 {
+		n += 1 + sov(uint64(m.Type))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -1145,6 +1181,9 @@ func (m *UploadInstructions) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
 	}
+	if m.Type != 0 {
+		n += 1 + sov(uint64(m.Type))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -1162,6 +1201,9 @@ func (m *MarkUploadFinishedRequest) SizeVT() (n int) {
 	l = len(m.UploadId)
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
+	}
+	if m.Type != 0 {
+		n += 1 + sov(uint64(m.Type))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1226,6 +1268,9 @@ func (m *UploadInfo) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
 	}
+	if m.Type != 0 {
+		n += 1 + sov(uint64(m.Type))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -1273,6 +1318,9 @@ func (m *Debuginfo) SizeVT() (n int) {
 			l = len(s)
 			n += 1 + l + sov(uint64(l))
 		}
+	}
+	if m.Type != 0 {
+		n += 1 + sov(uint64(m.Type))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1463,6 +1511,25 @@ func (m *ShouldInitiateUploadRequest) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.Force = bool(v != 0)
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			m.Type = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Type |= DebuginfoType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])
@@ -1720,6 +1787,25 @@ func (m *InitiateUploadRequest) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.Force = bool(v != 0)
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			m.Type = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Type |= DebuginfoType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])
@@ -1973,6 +2059,25 @@ func (m *UploadInstructions) UnmarshalVT(dAtA []byte) error {
 			}
 			m.SignedUrl = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			m.Type = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Type |= DebuginfoType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])
@@ -2088,6 +2193,25 @@ func (m *MarkUploadFinishedRequest) UnmarshalVT(dAtA []byte) error {
 			}
 			m.UploadId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			m.Type = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Type |= DebuginfoType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])
@@ -2379,6 +2503,25 @@ func (m *UploadInfo) UnmarshalVT(dAtA []byte) error {
 			}
 			m.UploadId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			m.Type = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Type |= DebuginfoType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])
@@ -2687,6 +2830,25 @@ func (m *Debuginfo) UnmarshalVT(dAtA []byte) error {
 			}
 			m.DebuginfodServers = append(m.DebuginfodServers, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			m.Type = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Type |= DebuginfoType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])
