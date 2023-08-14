@@ -65,6 +65,7 @@ func (c *GrpcUploadClient) grpcUpload(ctx context.Context, uploadInstructions *d
 			Info: &debuginfopb.UploadInfo{
 				UploadId: uploadInstructions.UploadId,
 				BuildId:  uploadInstructions.BuildId,
+				Type:     uploadInstructions.Type,
 			},
 		},
 	})

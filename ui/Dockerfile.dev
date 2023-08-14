@@ -1,5 +1,5 @@
 # vim: ft=dockerfile
-FROM docker.io/node:16.20.1-alpine@sha256:6dbe540727117440e42b673a94883309ec9606c0fca054df314466dc55973203
+FROM docker.io/node:16.20.2-alpine@sha256:a1f9d027912b58a7c75be7716c97cfbc6d3099f3a97ed84aa490be9dee20e787
 WORKDIR /app
 
 COPY package.json yarn.lock ./

@@ -16,6 +16,7 @@ package query
 import (
 	"math/bits"
 	"reflect"
+	"sort"
 	"unsafe"
 )
 
@@ -27,6 +28,28 @@ func MarshalStringMap(buf []byte, m map[string]string) []byte {
 		buf = appendString(buf, k)
 		buf = append(buf, ':')
 		buf = appendString(buf, v)
+		buf = append(buf, ',')
+	}
+
+	buf[len(buf)-1] = '}'
+	return buf
+}
+
+// MarshalStringMapSorted guarantees that the result is in the same order.
+func MarshalStringMapSorted(buf []byte, m map[string]string) []byte {
+	buf = buf[:0]
+	buf = append(buf, '{')
+
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		buf = appendString(buf, k)
+		buf = append(buf, ':')
+		buf = appendString(buf, m[k])
 		buf = append(buf, ',')
 	}
 

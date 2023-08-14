@@ -53,6 +53,11 @@
       "description": "Disable tailwindcss upgrades",
       "matchPackageNames": ["tailwindcss"],
       "enabled": false
+    },
+    {
+      "description": "Disable eslint upgrades",
+      "matchPackageNames": ["eslint"],
+      "enabled": false
     }
   ],
   "regexManagers": [

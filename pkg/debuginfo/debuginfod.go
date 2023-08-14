@@ -36,6 +36,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/net/context"
 
+	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	"github.com/parca-dev/parca/pkg/cache"
 )
 
@@ -224,7 +225,7 @@ func NewDebuginfodClientWithObjectStorageCache(
 
 // Get returns debuginfo for given buildid while caching it in object storage.
 func (c *DebuginfodClientObjectStorageCache) Get(ctx context.Context, buildID string) (io.ReadCloser, error) {
-	rc, err := c.bucket.Get(ctx, objectPath(buildID))
+	rc, err := c.bucket.Get(ctx, objectPath(buildID, debuginfopb.DebuginfoType_DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED))
 	if err != nil {
 		if c.bucket.IsObjNotFoundErr(err) {
 			return c.getAndCache(ctx, buildID)
@@ -243,11 +244,11 @@ func (c *DebuginfodClientObjectStorageCache) getAndCache(ctx context.Context, bu
 	}
 	defer r.Close()
 
-	if err := c.bucket.Upload(ctx, objectPath(buildID), r); err != nil {
+	if err := c.bucket.Upload(ctx, objectPath(buildID, debuginfopb.DebuginfoType_DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED), r); err != nil {
 		level.Error(c.logger).Log("msg", "failed to upload downloaded debuginfod file", "err", err, "build_id", buildID)
 	}
 
-	r, err = c.bucket.Get(ctx, objectPath(buildID))
+	r, err = c.bucket.Get(ctx, objectPath(buildID, debuginfopb.DebuginfoType_DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED))
 	if err != nil {
 		return nil, err
 	}
@@ -257,7 +258,7 @@ func (c *DebuginfodClientObjectStorageCache) getAndCache(ctx context.Context, bu
 
 // Exists returns true if debuginfo for given buildid exists.
 func (c *DebuginfodClientObjectStorageCache) Exists(ctx context.Context, buildID string) (bool, error) {
-	exists, err := c.bucket.Exists(ctx, objectPath(buildID))
+	exists, err := c.bucket.Exists(ctx, objectPath(buildID, debuginfopb.DebuginfoType_DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED))
 	if err != nil {
 		return false, err
 	}
