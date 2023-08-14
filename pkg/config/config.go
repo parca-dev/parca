@@ -290,9 +290,15 @@ func checkStaticTargets(configs discovery.Configs) error {
 }
 
 type PprofProfilingConfig struct {
-	Enabled *bool  `yaml:"enabled,omitempty"`
-	Path    string `yaml:"path,omitempty"`
-	Delta   bool   `yaml:"delta,omitempty"`
+	Enabled        *bool        `yaml:"enabled,omitempty"`
+	Path           string       `yaml:"path,omitempty"`
+	Delta          bool         `yaml:"delta,omitempty"`
+	KeepSampleType []SampleType `yaml:"keep_sample_type,omitempty"`
+}
+
+type SampleType struct {
+	Type string `yaml:"type,omitempty"`
+	Unit string `yaml:"unit,omitempty"`
 }
 
 // CheckTargetAddress checks if target address is valid.

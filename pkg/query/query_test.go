@@ -36,6 +36,7 @@ import (
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/metastoretest"
 	"github.com/parca-dev/parca/pkg/parcacol"
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/profilestore"
 )
 
@@ -52,15 +53,15 @@ func Benchmark_Query_Merge(b *testing.B) {
 			colDB, err := col.DB(context.Background(), "parca")
 			require.NoError(b, err)
 
-			schema, err := parcacol.Schema()
+			schema, err := profile.Schema()
 			require.NoError(b, err)
 
 			table, err := colDB.Table(
 				"stacktraces",
-				columnstore.NewTableConfig(parcacol.SchemaDefinition()),
+				columnstore.NewTableConfig(profile.SchemaDefinition()),
 			)
 			require.NoError(b, err)
-			metastore := metastore.NewInProcessClient(metastoretest.NewTestMetastore(
+			mc := metastore.NewInProcessClient(metastoretest.NewTestMetastore(
 				b,
 				logger,
 				reg,
@@ -73,7 +74,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 			store := profilestore.NewProfileColumnStore(
 				logger,
 				tracer,
-				metastore,
+				mc,
 				table,
 				schema,
 				true,
@@ -116,9 +117,11 @@ func Benchmark_Query_Merge(b *testing.B) {
 						colDB.TableProvider(),
 					),
 					"stacktraces",
-					metastore,
+					parcacol.NewProfileSymbolizer(tracer, mc),
+					memory.DefaultAllocator,
 				),
 				memory.DefaultAllocator,
+				parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 			)
 			b.ResetTimer()
 
@@ -133,7 +136,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 						},
 					},
 					//nolint:staticcheck // SA1019: Fow now we want to support these APIs
-					ReportType: pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED,
+					ReportType: pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW,
 				})
 				require.NoError(b, err)
 			}
@@ -184,9 +187,11 @@ func Benchmark_ProfileTypes(b *testing.B) {
 				colDB.TableProvider(),
 			),
 			"stacktraces",
-			m,
+			parcacol.NewProfileSymbolizer(tracer, m),
+			memory.DefaultAllocator,
 		),
 		memory.DefaultAllocator,
+		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 	)
 	b.ResetTimer()
 

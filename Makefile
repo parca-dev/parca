@@ -79,7 +79,7 @@ go/fmt: gofumpt
 	$(GOFUMPT) -l -w $(shell go list -f {{.Dir}} ./... | grep -v gen/proto)
 
 .PHONY: go/lint
-go/lint: go/deps-check
+go/lint:
 	golangci-lint run
 
 .PHONY: check-license

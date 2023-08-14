@@ -4,12 +4,34 @@ object_storage:
     config:
       directory: "./data"
 
-scrape_configs:
-  - job_name: "default"
-    scrape_interval: "3s"
-    static_configs:
-      - targets: [ '127.0.0.1:7070' ]
+    # Optionally configure targets to be scraped. It is recommended to start
+    # with just Parca Agent CPU profiling and add scraping where valuable.
+    # Scraping tends to produce a lot more data than Parca Agent CPU which
+    # results in memory usage by the server.
+    #
+    # scrape_configs:
+    #   - job_name: "default"
+    #     scrape_interval: "3s"
+    #     static_configs:
+    #       - targets: [ '127.0.0.1:7070' ]
 
+    # Nested under the job config:
+    #
+    # Only keep a certain type of profile from a scrape. For example the Go
+    # runtime memory profiles contain memory inuse-space bytes and objects as
+    # well as allocated space and objects. Often times inuse-space bytes is
+    # the one that is most interest to extract from the Go runtime.
+    #
+    # profiling_config:
+    #   pprof_config:
+    #     memory:
+    #       keep_sample_type:
+    #       - type: inuse_space
+    #         unit: bytes
+    #
+
+    # Nested under the job config:
+    #
     # Custom scrape endpoints can be added like just like the example below.
     # The profile name will be `fgprof`, and it will be scraped from the given
     # path and since it is a delta profile, a query parameter
@@ -21,3 +43,4 @@ scrape_configs:
     #       enabled: true
     #       path: /debug/pprof/fgprof
     #       delta: true
+    #

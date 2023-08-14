@@ -16,7 +16,7 @@ concurrency:
 
 env:
   # renovate: datasource=go depName=github.com/goreleaser/goreleaser
-  GORELEASER_VERSION: v1.19.2
+  GORELEASER_VERSION: v1.20.0
 
 jobs:
   skip-check:
@@ -61,7 +61,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
+        uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
         with:
           go-version-file: .go-version
 
@@ -80,7 +80,7 @@ jobs:
         run: echo "GITHUB_BRANCH_NAME=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
 
       - name: Build binaries
-        uses: goreleaser/goreleaser-action@336e29918d653399e599bfca99fadc1d7ffbc9f7 # v4.3.0
+        uses: goreleaser/goreleaser-action@3fa32b8bb5620a2c1afe798654bbad59f9da4906 # v4.4.0
         with:
           distribution: goreleaser
           version: ${{ env.GORELEASER_VERSION }}
@@ -106,7 +106,7 @@ jobs:
       # https://github.com/containers/podman/tree/main/contrib/podmanimage
       # Specifying SHA repeatedly fails:
       # @sha256:421ac576cebff98e90c531e7b9ce4482370ecc7cee59abc2341714031bfb5f43
-      image: quay.io/containers/podman:v4.5.1
+      image: quay.io/containers/podman:v4.6.0@sha256:470131e17cc78f57798626bf6118e8560da93b5225f69ba457b0d8e160136d83
       options: >-
         --device /dev/fuse:rw
         --privileged

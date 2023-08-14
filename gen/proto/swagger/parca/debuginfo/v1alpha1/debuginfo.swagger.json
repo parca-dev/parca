@@ -70,6 +70,16 @@
         }
       }
     },
+    "v1alpha1DebuginfoType": {
+      "type": "string",
+      "enum": [
+        "DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED",
+        "DEBUGINFO_TYPE_EXECUTABLE",
+        "DEBUGINFO_TYPE_SOURCES"
+      ],
+      "default": "DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED",
+      "description": "Types of debuginfo.\n\n - DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED: The default type that the API always supported. This type is expected to\ncontain debuginfos for symbolizaton purposes.\n - DEBUGINFO_TYPE_EXECUTABLE: The type to identify executables. This is meant to be used for\ndisassembling so it is expected to contain executable `.text` section.\n - DEBUGINFO_TYPE_SOURCES: The type to identify a source tarball. This is expected to contain\nmultiple source files that debuginfo references. It is meant to show code\nwith profiling data inline."
+    },
     "v1alpha1InitiateUploadResponse": {
       "type": "object",
       "properties": {
@@ -108,6 +118,10 @@
         "uploadId": {
           "type": "string",
           "title": "upload_id is a unique identifier for the upload"
+        },
+        "type": {
+          "$ref": "#/definitions/v1alpha1DebuginfoType",
+          "title": "the type of debuginfo that's being uploaded"
         }
       },
       "title": "UploadInfo contains the build_id and other metadata for the debug data"
@@ -130,6 +144,10 @@
         "signedUrl": {
           "type": "string",
           "description": "The signed url to use for uploading using a PUT request when the upload\nstrategy is SIGNED_STRATEGY_URL."
+        },
+        "type": {
+          "$ref": "#/definitions/v1alpha1DebuginfoType",
+          "description": "Type of debuginfo the upload instructions are for."
         }
       },
       "description": "UploadInstructions contains the instructions for the client to upload debuginfo."

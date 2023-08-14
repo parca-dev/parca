@@ -22,7 +22,6 @@ import {
   FIELD_CUMULATIVE,
   FIELD_DIFF,
   FIELD_FUNCTION_FILE_NAME,
-  FIELD_FUNCTION_NAME,
   FIELD_FUNCTION_START_LINE,
   FIELD_LABELS,
   FIELD_LOCATION_ADDRESS,
@@ -30,6 +29,7 @@ import {
   FIELD_MAPPING_BUILD_ID,
   FIELD_MAPPING_FILE,
 } from '../ProfileIcicleGraph/IcicleGraphArrow';
+import {nodeLabel} from '../ProfileIcicleGraph/IcicleGraphArrow/utils';
 import {hexifyAddress, truncateString, truncateStringReverse} from '../utils';
 import {ExpandOnHover} from './ExpandOnHoverValue';
 
@@ -41,6 +41,7 @@ interface GraphTooltipArrowContentProps {
   total: bigint;
   totalUnfiltered: bigint;
   row: number | null;
+  level: number;
   isFixed: boolean;
 }
 
@@ -54,6 +55,7 @@ const GraphTooltipArrowContent = ({
   total,
   totalUnfiltered,
   row,
+  level,
   isFixed,
 }: GraphTooltipArrowContentProps): React.JSX.Element => {
   const [isCopied, setIsCopied] = useState<boolean>(false);
@@ -63,7 +65,6 @@ const GraphTooltipArrowContent = ({
   }
 
   const locationAddress: bigint = table.getChild(FIELD_LOCATION_ADDRESS)?.get(row) ?? 0n;
-  const functionName: string = table.getChild(FIELD_FUNCTION_NAME)?.get(row) ?? '';
   const cumulative: bigint = table.getChild(FIELD_CUMULATIVE)?.get(row) ?? 0n;
   const diff: bigint = table.getChild(FIELD_DIFF)?.get(row) ?? 0n;
 
@@ -82,6 +83,9 @@ const GraphTooltipArrowContent = ({
   const diffValueText = diffSign + valueFormatter(diff, unit, 1);
   const diffPercentageText = diffSign + (diffRatio * 100).toFixed(2) + '%';
   const diffText = `${diffValueText} (${diffPercentageText})`;
+
+  const name = nodeLabel(table, row, level, false);
+  console.log(level, row, name);
 
   const getTextForCumulative = (hoveringNodeCumulative: bigint): string => {
     const filtered =
@@ -103,9 +107,9 @@ const GraphTooltipArrowContent = ({
                   <p>root</p>
                 ) : (
                   <>
-                    {functionName !== '' ? (
-                      <CopyToClipboard onCopy={onCopy} text={functionName}>
-                        <button className="cursor-pointer text-left">{functionName}</button>
+                    {name !== '' ? (
+                      <CopyToClipboard onCopy={onCopy} text={name}>
+                        <button className="cursor-pointer text-left">{name}</button>
                       </CopyToClipboard>
                     ) : (
                       <>

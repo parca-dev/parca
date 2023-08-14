@@ -39,7 +39,7 @@ import (
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/metastoretest"
-	"github.com/parca-dev/parca/pkg/parcacol"
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/profilestore"
 )
 
@@ -418,12 +418,12 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := parcacol.Schema()
+	schema, err := profile.Schema()
 	require.NoError(t, err)
 
 	table, err := colDB.Table(
 		"stacktraces",
-		frostdb.NewTableConfig(parcacol.SchemaDefinition()),
+		frostdb.NewTableConfig(profile.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 

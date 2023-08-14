@@ -51,7 +51,7 @@ func TestGenerateTopTable(t *testing.T) {
 	require.NoError(t, err)
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
+	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
 	res, cummulative, err := GenerateTopTable(ctx, symbolizedProfile)
@@ -140,7 +140,7 @@ func TestGenerateTopTableAggregateFlat(t *testing.T) {
 	st2 := sres.Stacktraces[1]
 	st3 := sres.Stacktraces[2]
 
-	p, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &profile.NormalizedProfile{
+	p, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, &profile.NormalizedProfile{
 		Samples: []*profile.NormalizedSample{{
 			StacktraceID: st1.Id,
 			Value:        1,
@@ -208,7 +208,7 @@ func TestGenerateDiffTopTable(t *testing.T) {
 	require.Truef(t, found, "expected to find the specific sample")
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	p, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
+	p, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
 	res, _, err := GenerateTopTable(ctx, p)

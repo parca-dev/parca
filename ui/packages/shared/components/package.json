@@ -1,6 +1,6 @@
 {
   "name": "@parca/components",
-  "version": "0.16.173",
+  "version": "0.16.177",
   "description": "A component library for Parca",
   "main": "dist/index.js",
   "scripts": {
@@ -12,13 +12,13 @@
   "dependencies": {
     "@headlessui/react": "^1.4.3",
     "@iconify/react": "^4.0.0",
-    "@parca/client": "^0.16.81",
+    "@parca/client": "^0.16.82",
     "@parca/dynamicsize": "^0.16.54",
-    "@parca/hooks": "^0.0.16",
+    "@parca/hooks": "^0.0.17",
     "@parca/icons": "^0.16.54",
     "@parca/parser": "^0.16.55",
-    "@parca/store": "^0.16.94",
-    "@parca/utilities": "^0.0.23",
+    "@parca/store": "^0.16.95",
+    "@parca/utilities": "^0.0.24",
     "@protobuf-ts/grpcweb-transport": "^2.5.0",
     "@tanstack/react-table": "^8.7.0",
     "classnames": "^2.3.1",
@@ -26,13 +26,13 @@
     "d3-selection": "3.0.0",
     "graphviz-wasm": "3.0.0",
     "react-datepicker": "4.16.0",
-    "react-tooltip": "5.18.1",
+    "react-tooltip": "5.20.0",
     "react-use": "^17.3.2",
     "react-virtual": "^2.10.4",
     "tailwind-merge": "^1.10.0"
   },
   "devDependencies": {
-    "@types/react-datepicker": "4.11.2",
+    "@types/react-datepicker": "4.15.0",
     "react": "18.2.0",
     "react-dom": "18.2.0"
   },

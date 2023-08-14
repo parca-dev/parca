@@ -25,7 +25,7 @@ import (
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
-func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p *profile.Profile, nodeTrimFraction float32, pool *sync.Pool) (*querypb.Flamegraph, error) {
+func GenerateFlamegraphTable(ctx context.Context, tracer trace.Tracer, p profile.OldProfile, nodeTrimFraction float32, pool *sync.Pool) (*querypb.Flamegraph, error) {
 	ctx, span := tracer.Start(ctx, "GenerateFlamegraphTable")
 	defer span.End()
 	rootNode := &querypb.FlamegraphNode{}

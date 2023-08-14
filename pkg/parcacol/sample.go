@@ -46,39 +46,39 @@ func SampleToParquetRow(
 	columnIndex := 0
 	for _, column := range schema.Columns() {
 		switch column.Name {
-		case ColumnDuration:
+		case profile.ColumnDuration:
 			row = append(row, parquet.ValueOf(meta.Duration).Level(0, 0, columnIndex))
 			columnIndex++
-		case ColumnName:
+		case profile.ColumnName:
 			row = append(row, parquet.ValueOf(meta.Name).Level(0, 0, columnIndex))
 			columnIndex++
-		case ColumnPeriod:
+		case profile.ColumnPeriod:
 			row = append(row, parquet.ValueOf(meta.Period).Level(0, 0, columnIndex))
 			columnIndex++
-		case ColumnPeriodType:
+		case profile.ColumnPeriodType:
 			row = append(row, parquet.ValueOf(meta.PeriodType.Type).Level(0, 0, columnIndex))
 			columnIndex++
-		case ColumnPeriodUnit:
+		case profile.ColumnPeriodUnit:
 			row = append(row, parquet.ValueOf(meta.PeriodType.Unit).Level(0, 0, columnIndex))
 			columnIndex++
-		case ColumnSampleType:
+		case profile.ColumnSampleType:
 			row = append(row, parquet.ValueOf(meta.SampleType.Type).Level(0, 0, columnIndex))
 			columnIndex++
-		case ColumnSampleUnit:
+		case profile.ColumnSampleUnit:
 			row = append(row, parquet.ValueOf(meta.SampleType.Unit).Level(0, 0, columnIndex))
 			columnIndex++
-		case ColumnStacktrace:
+		case profile.ColumnStacktrace:
 			row = append(row, parquet.ValueOf(s.StacktraceID).Level(0, 0, columnIndex))
 			columnIndex++
-		case ColumnTimestamp:
+		case profile.ColumnTimestamp:
 			row = append(row, parquet.ValueOf(meta.Timestamp).Level(0, 0, columnIndex))
 			columnIndex++
-		case ColumnValue:
+		case profile.ColumnValue:
 			row = append(row, parquet.ValueOf(s.Value).Level(0, 0, columnIndex))
 			columnIndex++
 
 		// All remaining cases take care of dynamic columns
-		case ColumnLabels:
+		case profile.ColumnLabels:
 			for _, name := range labelNames {
 				if value, ok := lset[name]; ok {
 					row = append(row, parquet.ValueOf(value).Level(0, 1, columnIndex))
@@ -87,7 +87,7 @@ func SampleToParquetRow(
 				}
 				columnIndex++
 			}
-		case ColumnPprofLabels:
+		case profile.ColumnPprofLabels:
 			for _, name := range profileLabelNames {
 				if value, ok := s.Label[name]; ok {
 					row = append(row, parquet.ValueOf(value).Level(0, 1, columnIndex))
@@ -96,7 +96,7 @@ func SampleToParquetRow(
 				}
 				columnIndex++
 			}
-		case ColumnPprofNumLabels:
+		case profile.ColumnPprofNumLabels:
 			for _, name := range profileNumLabelNames {
 				if value, ok := s.NumLabel[name]; ok {
 					row = append(row, parquet.ValueOf(value).Level(0, 1, columnIndex))
@@ -119,9 +119,9 @@ func SeriesToArrowRecord(
 	labelNames, profileLabelNames, profileNumLabelNames []string,
 ) (arrow.Record, error) {
 	ps, err := schema.GetDynamicParquetSchema(map[string][]string{
-		ColumnLabels:         labelNames,
-		ColumnPprofLabels:    profileLabelNames,
-		ColumnPprofNumLabels: profileNumLabelNames,
+		profile.ColumnLabels:         labelNames,
+		profile.ColumnPprofLabels:    profileLabelNames,
+		profile.ColumnPprofNumLabels: profileNumLabelNames,
 	})
 	if err != nil {
 		return nil, err
@@ -148,37 +148,37 @@ func SeriesToArrowRecord(
 					i := 0
 					for _, col := range schema.Columns() {
 						switch col.Name {
-						case ColumnDuration:
+						case profile.ColumnDuration:
 							bldr.Field(i).(*array.Int64Builder).Append(p.Meta.Duration)
 							i++
-						case ColumnName:
+						case profile.ColumnName:
 							err = bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(p.Meta.Name)
 							i++
-						case ColumnPeriod:
+						case profile.ColumnPeriod:
 							bldr.Field(i).(*array.Int64Builder).Append(p.Meta.Period)
 							i++
-						case ColumnPeriodType:
+						case profile.ColumnPeriodType:
 							err = bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(p.Meta.PeriodType.Type)
 							i++
-						case ColumnPeriodUnit:
+						case profile.ColumnPeriodUnit:
 							err = bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(p.Meta.PeriodType.Unit)
 							i++
-						case ColumnSampleType:
+						case profile.ColumnSampleType:
 							err = bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(p.Meta.SampleType.Type)
 							i++
-						case ColumnSampleUnit:
+						case profile.ColumnSampleUnit:
 							err = bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(p.Meta.SampleType.Unit)
 							i++
-						case ColumnStacktrace:
+						case profile.ColumnStacktrace:
 							bldr.Field(i).(*array.BinaryBuilder).AppendString(sample.StacktraceID)
 							i++
-						case ColumnTimestamp:
+						case profile.ColumnTimestamp:
 							bldr.Field(i).(*array.Int64Builder).Append(p.Meta.Timestamp)
 							i++
-						case ColumnValue:
+						case profile.ColumnValue:
 							bldr.Field(i).(*array.Int64Builder).Append(sample.Value)
 							i++
-						case ColumnLabels:
+						case profile.ColumnLabels:
 							for _, name := range labelNames {
 								if value, ok := s.Labels[name]; ok {
 									if err := bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(value); err != nil {
@@ -189,7 +189,7 @@ func SeriesToArrowRecord(
 								}
 								i++
 							}
-						case ColumnPprofLabels:
+						case profile.ColumnPprofLabels:
 							for _, name := range profileLabelNames {
 								if value, ok := sample.Label[name]; ok {
 									if err := bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(value); err != nil {
@@ -200,7 +200,7 @@ func SeriesToArrowRecord(
 								}
 								i++
 							}
-						case ColumnPprofNumLabels:
+						case profile.ColumnPprofNumLabels:
 							for _, name := range profileNumLabelNames {
 								if value, ok := sample.NumLabel[name]; ok {
 									bldr.Field(i).(*array.Int64Builder).Append(value)
@@ -257,39 +257,39 @@ func ParquetBufToArrowRecord(ctx context.Context, buf *dynparquet.Buffer, rowsPe
 		for _, r := range rowBuf[:n] {
 			for i := range r {
 				switch as.Field(i).Name {
-				case ColumnName:
+				case profile.ColumnName:
 					fallthrough
-				case ColumnPeriodType:
+				case profile.ColumnPeriodType:
 					fallthrough
-				case ColumnPeriodUnit:
+				case profile.ColumnPeriodUnit:
 					fallthrough
-				case ColumnSampleType:
+				case profile.ColumnSampleType:
 					fallthrough
-				case ColumnSampleUnit:
+				case profile.ColumnSampleUnit:
 					if err := bldr.Field(i).(*array.BinaryDictionaryBuilder).AppendString(r[i].String()); err != nil {
 						return nil, err
 					}
-				case ColumnStacktrace:
+				case profile.ColumnStacktrace:
 					bldr.Field(i).(*array.BinaryBuilder).AppendString(r[i].String())
-				case ColumnDuration:
+				case profile.ColumnDuration:
 					fallthrough
-				case ColumnPeriod:
+				case profile.ColumnPeriod:
 					fallthrough
-				case ColumnTimestamp:
+				case profile.ColumnTimestamp:
 					fallthrough
-				case ColumnValue:
+				case profile.ColumnValue:
 					bldr.Field(i).(*array.Int64Builder).Append(r[i].Int64())
 				default:
 					switch {
-					case strings.HasPrefix(as.Field(i).Name, ColumnPprofNumLabels):
+					case strings.HasPrefix(as.Field(i).Name, profile.ColumnPprofNumLabels):
 						if r[i].IsNull() {
 							bldr.Field(i).AppendNull()
 						} else {
 							bldr.Field(i).(*array.Int64Builder).Append(r[i].Int64())
 						}
-					case strings.HasPrefix(as.Field(i).Name, ColumnPprofLabels):
+					case strings.HasPrefix(as.Field(i).Name, profile.ColumnPprofLabels):
 						fallthrough
-					case strings.HasPrefix(as.Field(i).Name, ColumnLabels):
+					case strings.HasPrefix(as.Field(i).Name, profile.ColumnLabels):
 						if r[i].IsNull() {
 							bldr.Field(i).AppendNull()
 						} else {
