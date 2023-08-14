@@ -6,7 +6,7 @@ on:
     - main
     - release-*
   merge_group:
-    branches: 
+    branches:
     - main
 
 concurrency:

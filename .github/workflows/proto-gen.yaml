@@ -3,7 +3,7 @@ name: proto-gen
 on:
   pull_request:
   merge_group:
-    branches: 
+    branches:
     - main
 
 concurrency:
