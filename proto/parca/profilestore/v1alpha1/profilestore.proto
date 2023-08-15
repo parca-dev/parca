@@ -60,6 +60,27 @@ message LabelSet {
 message RawSample {
   // raw_profile is the set of bytes of the pprof profile
   bytes raw_profile = 1;
+  // information about the executable and executable section for normalizaton
+  // purposes.
+  repeated ExecutableInfo executable_info = 2;
+}
+
+// ExecutableInfo is the information about the executable and executable
+// section for normalizaton purposes before symbolization.
+message ExecutableInfo {
+  // elf_type is the type of the elf executable. Technically the elf type is a
+  // 16 bit integer, but protobuf's smallest unsigned integer is 32 bits.
+  uint32 elf_type = 1;
+  // load_segment is the load segment of the executable.
+  LoadSegment load_segment = 2;
+}
+
+// LoadSegment is the load segment of the executable
+message LoadSegment {
+  // The offset from the beginning of the file at which the first byte of the segment resides.
+  uint64 offset = 1;
+  // The virtual address at which the first byte of the segment resides in memory.
+  uint64 vaddr = 2;
 }
 
 // AgentsService maintains the agents
