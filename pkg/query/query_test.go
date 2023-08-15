@@ -123,6 +123,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 				),
 				memory.DefaultAllocator,
 				parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+				nil,
 			)
 			b.ResetTimer()
 
@@ -193,6 +194,7 @@ func Benchmark_ProfileTypes(b *testing.B) {
 		),
 		memory.DefaultAllocator,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+		nil,
 	)
 	b.ResetTimer()
 

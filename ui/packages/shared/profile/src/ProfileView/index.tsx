@@ -25,7 +25,7 @@ import {
   type DropResult,
 } from 'react-beautiful-dnd';
 
-import {Callgraph as CallgraphType, Flamegraph, QueryServiceClient, Top} from '@parca/client';
+import {Callgraph as CallgraphType, Flamegraph, Source, QueryServiceClient, Top} from '@parca/client';
 import {
   Button,
   Card,
@@ -43,6 +43,7 @@ import {jsonToDot} from '../Callgraph/utils';
 import ProfileIcicleGraph from '../ProfileIcicleGraph';
 import {ProfileSource} from '../ProfileSource';
 import {TopTable} from '../TopTable';
+import {SourceView} from '../SourceView';
 import ProfileShareButton from '../components/ProfileShareButton';
 import useDelayedLoader from '../useDelayedLoader';
 import FilterByFunctionButton from './FilterByFunctionButton';
@@ -76,12 +77,19 @@ interface CallgraphData {
   error?: any;
 }
 
+interface SourceData {
+  loading: boolean;
+  data?: Source;
+  error?: any;
+}
+
 export interface ProfileViewProps {
   total: bigint;
   filtered: bigint;
   flamegraphData?: FlamegraphData;
   topTableData?: TopTableData;
   callgraphData?: CallgraphData;
+  sourceData?: SourceData;
   sampleUnit: string;
   profileSource?: ProfileSource;
   queryClient?: QueryServiceClient;
@@ -106,6 +114,7 @@ export const ProfileView = ({
   flamegraphData,
   topTableData,
   callgraphData,
+  sourceData,
   sampleUnit,
   profileSource,
   queryClient,
@@ -158,12 +167,16 @@ export const ProfileView = ({
     if (dashboardItems.includes('table')) {
       return Boolean(topTableData?.loading);
     }
+    if (dashboardItems.includes('source')) {
+      return Boolean(sourceData?.loading);
+    }
     return false;
   }, [
     dashboardItems,
     callgraphData?.loading,
     flamegraphData?.loading,
     topTableData?.loading,
+    sourceData?.loading,
     callgraphSVG,
   ]);
 
@@ -281,6 +294,18 @@ export const ProfileView = ({
             navigateTo={navigateTo}
             setActionButtons={setActionButtons}
             currentSearchString={currentSearchString as string}
+          />
+        ) : (
+          <></>
+        );
+      }
+      case 'source': {
+        return sourceData != null ? (
+          <SourceView
+            loading={sourceData.loading}
+            data={sourceData.data}
+            total={total}
+            filtered={filtered}
           />
         ) : (
           <></>

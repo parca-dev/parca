@@ -16,6 +16,7 @@ package query
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -48,6 +49,13 @@ type Querier interface {
 	QueryMerge(ctx context.Context, query string, start, end time.Time) (profile.Profile, error)
 }
 
+var ErrSourceNotFound = errors.New("Source file not found. Either profiling metadata is wrong, or the referenced file was not included in the uploaded sources.")
+var ErrNoSourceForBuildID = errors.New("No sources for this build id have been uploaded.")
+
+type SourceFinder interface {
+	FindSource(ctx context.Context, ref *pb.SourceReference) (string, error)
+}
+
 // ColumnQueryAPI is the read api interface for parca
 // It implements the proto/query/query.proto APIServer interface.
 type ColumnQueryAPI struct {
@@ -61,6 +69,8 @@ type ColumnQueryAPI struct {
 	tableConverterPool *sync.Pool
 	mem                memory.Allocator
 	converter          *parcacol.ArrowToProfileConverter
+
+	sourceFinder SourceFinder
 }
 
 func NewColumnQueryAPI(
@@ -70,6 +80,7 @@ func NewColumnQueryAPI(
 	querier Querier,
 	mem memory.Allocator,
 	converter *parcacol.ArrowToProfileConverter,
+	sourceFinder SourceFinder,
 ) *ColumnQueryAPI {
 	return &ColumnQueryAPI{
 		logger:             logger,
@@ -79,6 +90,7 @@ func NewColumnQueryAPI(
 		tableConverterPool: NewTableConverterPool(),
 		mem:                mem,
 		converter:          converter,
+		sourceFinder:       sourceFinder,
 	}
 }
 
@@ -151,6 +163,10 @@ func (q *ColumnQueryAPI) ProfileTypes(ctx context.Context, req *pb.ProfileTypesR
 	}, nil
 }
 
+func (q *ColumnQueryAPI) getSource(ctx context.Context, ref *pb.SourceReference) (string, error) {
+	return q.sourceFinder.FindSource(ctx, ref)
+}
+
 // Query issues an instant query against the storage.
 func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryResponse, error) {
 	if err := req.Validate(); err != nil {
@@ -158,9 +174,32 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	}
 
 	var (
+		source string
+		err    error
+	)
+	if req.SourceReference != nil {
+		source, err = q.getSource(ctx, req.SourceReference)
+		if err != nil {
+			if errors.Is(err, ErrSourceNotFound) || errors.Is(err, ErrNoSourceForBuildID) {
+				return nil, status.Error(codes.NotFound, err.Error())
+			}
+			return nil, err
+		}
+
+		if req.SourceReference.SourceOnly {
+			return &pb.QueryResponse{
+				Report: &pb.QueryResponse_Source{
+					Source: &pb.Source{
+						Source: source,
+					},
+				},
+			}, nil
+		}
+	}
+
+	var (
 		p        profile.Profile
 		filtered int64
-		err      error
 	)
 
 	switch req.Mode {
@@ -196,6 +235,8 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		req.GetNodeTrimThreshold(),
 		filtered,
 		req.GetGroupBy().GetFields(),
+		req.GetSourceReference(),
+		source,
 	)
 }
 
@@ -377,8 +418,23 @@ func (q *ColumnQueryAPI) renderReport(
 	nodeTrimThreshold float32,
 	filtered int64,
 	groupBy []string,
+	sourceReference *pb.SourceReference,
+	source string,
 ) (*pb.QueryResponse, error) {
-	return RenderReport(ctx, q.tracer, p, typ, nodeTrimThreshold, filtered, groupBy, q.tableConverterPool, q.mem, q.converter)
+	return RenderReport(
+		ctx,
+		q.tracer,
+		p,
+		typ,
+		nodeTrimThreshold,
+		filtered,
+		groupBy,
+		q.tableConverterPool,
+		q.mem,
+		q.converter,
+		sourceReference,
+		source,
+	)
 }
 
 func RenderReport(
@@ -392,6 +448,8 @@ func RenderReport(
 	pool *sync.Pool,
 	mem memory.Allocator,
 	converter *parcacol.ArrowToProfileConverter,
+	sourceReference *pb.SourceReference,
+	source string,
 ) (*pb.QueryResponse, error) {
 	ctx, span := tracer.Start(ctx, "renderReport")
 	span.SetAttributes(attribute.String("reportType", typ.String()))
@@ -460,6 +518,26 @@ func RenderReport(
 			Filtered: filtered,
 			Report: &pb.QueryResponse_FlamegraphArrow{
 				FlamegraphArrow: fa,
+			},
+		}, nil
+	case pb.QueryRequest_REPORT_TYPE_SOURCE:
+		s, total, err := GenerateSourceReport(
+			ctx,
+			mem,
+			tracer,
+			p,
+			sourceReference,
+			source,
+		)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to generate arrow flamegraph: %v", err.Error())
+		}
+
+		return &pb.QueryResponse{
+			Total:    total,
+			Filtered: filtered,
+			Report: &pb.QueryResponse_Source{
+				Source: s,
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_PPROF:

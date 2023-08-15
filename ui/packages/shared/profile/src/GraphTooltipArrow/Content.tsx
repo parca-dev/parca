@@ -15,8 +15,9 @@ import React, {useState} from 'react';
 
 import {Table} from 'apache-arrow';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
+import {useURLState, Button} from '@parca/components';
 
-import {divide, getLastItem, valueFormatter} from '@parca/utilities';
+import {divide, getLastItem, valueFormatter, type NavigateFunction} from '@parca/utilities';
 
 import {
   FIELD_CUMULATIVE,
@@ -43,6 +44,7 @@ interface GraphTooltipArrowContentProps {
   row: number | null;
   level: number;
   isFixed: boolean;
+  navigateTo: NavigateFunction;
 }
 
 const NoData = (): React.JSX.Element => {
@@ -57,6 +59,7 @@ const GraphTooltipArrowContent = ({
   row,
   level,
   isFixed,
+  navigateTo,
 }: GraphTooltipArrowContentProps): React.JSX.Element => {
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
@@ -150,7 +153,7 @@ const GraphTooltipArrowContent = ({
                       </td>
                     </tr>
                   )}
-                  <TooltipMetaInfo table={table} row={row} onCopy={onCopy} />
+                  <TooltipMetaInfo table={table} row={row} onCopy={onCopy} navigateTo={navigateTo} />
                 </tbody>
               </table>
             </div>
@@ -170,10 +173,12 @@ const TooltipMetaInfo = ({
   // totalUnfiltered,
   onCopy,
   row,
+  navigateTo,
 }: {
   table: Table<any>;
   row: number;
   onCopy: () => void;
+  navigateTo: NavigateFunction;
 }): React.JSX.Element => {
   const mappingFile: string = table.getChild(FIELD_MAPPING_FILE)?.get(row) ?? '';
   const mappingBuildID: string = table.getChild(FIELD_MAPPING_BUILD_ID)?.get(row) ?? '';
@@ -209,6 +214,36 @@ const TooltipMetaInfo = ({
       )
     );
 
+  const [dashboardItems, setDashboardItems] = useURLState({
+    param: 'dashboard_items',
+    navigateTo,
+  });
+
+  // eslint-disable-line @typescript-eslint/no-unused-vars
+  const [unusedBuildId, setSourceBuildId] = useURLState({
+    param: 'source_buildid',
+    navigateTo,
+  });
+
+  // eslint-disable-line @typescript-eslint/no-unused-vars
+  const [unusedFilename, setSourceFilename] = useURLState({
+    param: 'source_filename',
+    navigateTo,
+  });
+
+  // eslint-disable-line @typescript-eslint/no-unused-vars
+  const [unusedLine, setSourceLine] = useURLState({
+    param: 'source_line',
+    navigateTo,
+  });
+
+  const openFile = (): void => {
+    setDashboardItems([dashboardItems[0], "source"]);
+    setSourceBuildId(mappingBuildID);
+    setSourceFilename(functionFilename);
+    setSourceLine(locationLine.toString());
+  };
+
   return (
     <>
       <tr>
@@ -217,11 +252,14 @@ const TooltipMetaInfo = ({
           {functionFilename === '' ? (
             <NoData />
           ) : (
-            <CopyToClipboard onCopy={onCopy} text={file}>
-              <button className="cursor-pointer whitespace-nowrap text-left">
-                <ExpandOnHover value={file} displayValue={truncateStringReverse(file, 40)} />
-              </button>
-            </CopyToClipboard>
+            <>
+              <CopyToClipboard onCopy={onCopy} text={file}>
+                <button className="cursor-pointer whitespace-nowrap text-left">
+                  <ExpandOnHover value={file} displayValue={truncateStringReverse(file, 40)} />
+                </button>
+              </CopyToClipboard>
+              <Button variant={'neutral'} onClick={() => openFile()}>open</Button>
+            </>
           )}
         </td>
       </tr>

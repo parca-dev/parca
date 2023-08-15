@@ -377,6 +377,12 @@ export interface QueryRequest {
      * @generated from protobuf field: optional parca.query.v1alpha1.GroupBy group_by = 8;
      */
     groupBy?: GroupBy;
+    /**
+     * source information about the source requested, required if source report is requested
+     *
+     * @generated from protobuf field: optional parca.query.v1alpha1.SourceReference source_reference = 9;
+     */
+    sourceReference?: SourceReference;
 }
 /**
  * Mode is the type of query request
@@ -445,7 +451,38 @@ export enum QueryRequest_ReportType {
      *
      * @generated from protobuf enum value: REPORT_TYPE_FLAMEGRAPH_ARROW = 5;
      */
-    FLAMEGRAPH_ARROW = 5
+    FLAMEGRAPH_ARROW = 5,
+    /**
+     * REPORT_TYPE_SOURCE contains source code annotated with profiling information
+     *
+     * @generated from protobuf enum value: REPORT_TYPE_SOURCE = 6;
+     */
+    SOURCE = 6
+}
+/**
+ * SourceReference contains a reference to source code.
+ *
+ * @generated from protobuf message parca.query.v1alpha1.SourceReference
+ */
+export interface SourceReference {
+    /**
+     * The build ID to request the source of.
+     *
+     * @generated from protobuf field: string build_id = 1;
+     */
+    buildId: string;
+    /**
+     * The filename requested.
+     *
+     * @generated from protobuf field: string filename = 2;
+     */
+    filename: string;
+    /**
+     * Whether to perform a full query or just retrieve the source.
+     *
+     * @generated from protobuf field: bool source_only = 3;
+     */
+    sourceOnly: boolean;
 }
 /**
  * GroupBy encapsulates the repeated fields to group by
@@ -657,6 +694,25 @@ export interface FlamegraphArrow {
      * @generated from protobuf field: int64 trimmed = 4;
      */
     trimmed: bigint;
+}
+/**
+ * Source is the result of the source report type.
+ *
+ * @generated from protobuf message parca.query.v1alpha1.Source
+ */
+export interface Source {
+    /**
+     * An arrow record that contains a row per source code line with value and diff columns for flat and cumulative.
+     *
+     * @generated from protobuf field: bytes record = 1;
+     */
+    record: Uint8Array;
+    /**
+     * The actual source file content.
+     *
+     * @generated from protobuf field: string source = 2;
+     */
+    source: string;
 }
 /**
  * FlamegraphRootNode is a root node of a flame graph
@@ -932,6 +988,14 @@ export interface QueryResponse {
          * @generated from protobuf field: parca.query.v1alpha1.FlamegraphArrow flamegraph_arrow = 11;
          */
         flamegraphArrow: FlamegraphArrow;
+    } | {
+        oneofKind: "source";
+        /**
+         * source is the source report type result
+         *
+         * @generated from protobuf field: parca.query.v1alpha1.Source source = 12;
+         */
+        source: Source;
     } | {
         oneofKind: undefined;
     };
@@ -1785,7 +1849,8 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
             { no: 5, name: "report_type", kind: "enum", T: () => ["parca.query.v1alpha1.QueryRequest.ReportType", QueryRequest_ReportType, "REPORT_TYPE_"] },
             { no: 6, name: "filter_query", kind: "scalar", opt: true, T: 9 /*ScalarType.STRING*/ },
             { no: 7, name: "node_trim_threshold", kind: "scalar", opt: true, T: 2 /*ScalarType.FLOAT*/ },
-            { no: 8, name: "group_by", kind: "message", T: () => GroupBy }
+            { no: 8, name: "group_by", kind: "message", T: () => GroupBy },
+            { no: 9, name: "source_reference", kind: "message", T: () => SourceReference }
         ]);
     }
     create(value?: PartialMessage<QueryRequest>): QueryRequest {
@@ -1833,6 +1898,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
                 case /* optional parca.query.v1alpha1.GroupBy group_by */ 8:
                     message.groupBy = GroupBy.internalBinaryRead(reader, reader.uint32(), options, message.groupBy);
                     break;
+                case /* optional parca.query.v1alpha1.SourceReference source_reference */ 9:
+                    message.sourceReference = SourceReference.internalBinaryRead(reader, reader.uint32(), options, message.sourceReference);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1869,6 +1937,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         /* optional parca.query.v1alpha1.GroupBy group_by = 8; */
         if (message.groupBy)
             GroupBy.internalBinaryWrite(message.groupBy, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* optional parca.query.v1alpha1.SourceReference source_reference = 9; */
+        if (message.sourceReference)
+            SourceReference.internalBinaryWrite(message.sourceReference, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1879,6 +1950,67 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
  * @generated MessageType for protobuf message parca.query.v1alpha1.QueryRequest
  */
 export const QueryRequest = new QueryRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SourceReference$Type extends MessageType<SourceReference> {
+    constructor() {
+        super("parca.query.v1alpha1.SourceReference", [
+            { no: 1, name: "build_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "filename", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "source_only", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<SourceReference>): SourceReference {
+        const message = { buildId: "", filename: "", sourceOnly: false };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<SourceReference>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SourceReference): SourceReference {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string build_id */ 1:
+                    message.buildId = reader.string();
+                    break;
+                case /* string filename */ 2:
+                    message.filename = reader.string();
+                    break;
+                case /* bool source_only */ 3:
+                    message.sourceOnly = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SourceReference, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string build_id = 1; */
+        if (message.buildId !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.buildId);
+        /* string filename = 2; */
+        if (message.filename !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.filename);
+        /* bool source_only = 3; */
+        if (message.sourceOnly !== false)
+            writer.tag(3, WireType.Varint).bool(message.sourceOnly);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.query.v1alpha1.SourceReference
+ */
+export const SourceReference = new SourceReference$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class GroupBy$Type extends MessageType<GroupBy> {
     constructor() {
@@ -2308,6 +2440,60 @@ class FlamegraphArrow$Type extends MessageType<FlamegraphArrow> {
  * @generated MessageType for protobuf message parca.query.v1alpha1.FlamegraphArrow
  */
 export const FlamegraphArrow = new FlamegraphArrow$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Source$Type extends MessageType<Source> {
+    constructor() {
+        super("parca.query.v1alpha1.Source", [
+            { no: 1, name: "record", kind: "scalar", T: 12 /*ScalarType.BYTES*/ },
+            { no: 2, name: "source", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Source>): Source {
+        const message = { record: new Uint8Array(0), source: "" };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<Source>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Source): Source {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bytes record */ 1:
+                    message.record = reader.bytes();
+                    break;
+                case /* string source */ 2:
+                    message.source = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Source, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bytes record = 1; */
+        if (message.record.length)
+            writer.tag(1, WireType.LengthDelimited).bytes(message.record);
+        /* string source = 2; */
+        if (message.source !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.source);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.query.v1alpha1.Source
+ */
+export const Source = new Source$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class FlamegraphRootNode$Type extends MessageType<FlamegraphRootNode> {
     constructor() {
@@ -2800,6 +2986,7 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
             { no: 7, name: "top", kind: "message", oneof: "report", T: () => Top },
             { no: 8, name: "callgraph", kind: "message", oneof: "report", T: () => Callgraph },
             { no: 11, name: "flamegraph_arrow", kind: "message", oneof: "report", T: () => FlamegraphArrow },
+            { no: 12, name: "source", kind: "message", oneof: "report", T: () => Source },
             { no: 9, name: "total", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ },
             { no: 10, name: "filtered", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ }
         ]);
@@ -2846,6 +3033,12 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
                         flamegraphArrow: FlamegraphArrow.internalBinaryRead(reader, reader.uint32(), options, (message.report as any).flamegraphArrow)
                     };
                     break;
+                case /* parca.query.v1alpha1.Source source */ 12:
+                    message.report = {
+                        oneofKind: "source",
+                        source: Source.internalBinaryRead(reader, reader.uint32(), options, (message.report as any).source)
+                    };
+                    break;
                 case /* int64 total */ 9:
                     message.total = reader.int64().toBigInt();
                     break;
@@ -2879,6 +3072,9 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
         /* parca.query.v1alpha1.FlamegraphArrow flamegraph_arrow = 11; */
         if (message.report.oneofKind === "flamegraphArrow")
             FlamegraphArrow.internalBinaryWrite(message.report.flamegraphArrow, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* parca.query.v1alpha1.Source source = 12; */
+        if (message.report.oneofKind === "source")
+            Source.internalBinaryWrite(message.report.source, writer.tag(12, WireType.LengthDelimited).fork(), options).join();
         /* int64 total = 9; */
         if (message.total !== 0n)
             writer.tag(9, WireType.Varint).int64(message.total);

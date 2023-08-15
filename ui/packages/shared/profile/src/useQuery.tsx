@@ -29,6 +29,8 @@ interface UseQueryOptions {
   skip?: boolean;
   nodeTrimThreshold?: number;
   groupBy?: string[];
+  sourceBuildID?: string;
+  sourceFilename?: string;
 }
 
 export const useQuery = (
@@ -40,7 +42,7 @@ export const useQuery = (
   const {skip = false} = options ?? {};
   const metadata = useGrpcMetadata();
   const {data, isLoading, error} = useGrpcQuery<QueryResponse | undefined>({
-    key: ['query', profileSource, reportType, options?.nodeTrimThreshold, options?.groupBy],
+      key: ['query', profileSource, reportType, options?.nodeTrimThreshold, options?.groupBy, options?.sourceBuildID, options?.sourceFilename],
     queryFn: async () => {
       const req = profileSource.QueryRequest();
       req.reportType = reportType;
@@ -48,6 +50,13 @@ export const useQuery = (
       req.groupBy = {
         fields: options?.groupBy ?? [],
       };
+      if (options?.sourceBuildID !== undefined && options?.sourceFilename !== undefined) {
+        req.sourceReference = {
+          buildId: options?.sourceBuildID ?? "",
+          filename: options?.sourceFilename ?? "",
+          sourceOnly: false,
+        };
+      }
 
       const {response} = await client.query(req, {meta: metadata});
       return response;
