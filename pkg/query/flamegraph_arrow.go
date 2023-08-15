@@ -170,6 +170,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 				if isLocationLeaf(int(beg), j) {
 					fb.cumulative += r.Value.Value(i)
+					fb.diff += r.Diff.Value(i)
 				}
 
 				llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
@@ -387,6 +388,8 @@ type flamegraphBuilder struct {
 	schema *arrow.Schema
 	// This keeps track of the total cumulative value so that we can set the first row's cumulative value at the end.
 	cumulative int64
+	// This keeps track of the total diff values so that we can set the irst row's diff value at the end.
+	diff int64
 	// parent keeps track of the parent of a row. This is used to build the children array.
 	parent parent
 	// This keeps track of a row's children and will be converted to an arrow array of lists at the end.
@@ -498,7 +501,7 @@ func newFlamegraphBuilder(mem memory.Allocator, rows int64) *flamegraphBuilder {
 
 	// The cumulative values is calculated and at the end set to the correct value.
 	fb.builderCumulative.Append(0)
-	fb.builderDiff.AppendNull()
+	fb.builderDiff.Append(0)
 
 	return fb
 }
@@ -510,6 +513,7 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	// We have manually tracked the total cumulative value.
 	// Now we set/overwrite the cumulative value for the root row (which is always the 0 row in our flame graphs).
 	fb.builderCumulative.Set(0, fb.cumulative)
+	fb.builderDiff.Set(0, fb.diff)
 
 	// We have manually tracked each row's children.
 	// So now we need to iterate over all rows in the record and append their children.
@@ -730,7 +734,7 @@ func (fb *flamegraphBuilder) AppendLabelRow(r profile.RecordReader, row int, lab
 
 	// Append both cumulative and diff values and overwrite them below.
 	fb.builderCumulative.Append(0)
-	fb.builderDiff.AppendNull()
+	fb.builderDiff.Append(0)
 	fb.addRowValues(r, row, sampleRow)
 
 	return nil
