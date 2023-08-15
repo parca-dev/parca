@@ -56,6 +56,7 @@ type flamegraphRow struct {
 	Labels             map[string]string
 	Children           []uint32
 	Cumulative         int64
+	Diff               int64
 }
 
 type flamegraphColumns struct {
@@ -74,6 +75,7 @@ type flamegraphColumns struct {
 	labels              []map[string]string
 	children            [][]uint32
 	cumulative          []int64
+	diff                []int64
 }
 
 func rowsToColumn(rows []flamegraphRow) flamegraphColumns {
@@ -94,6 +96,7 @@ func rowsToColumn(rows []flamegraphRow) flamegraphColumns {
 		columns.labels = append(columns.labels, row.Labels)
 		columns.children = append(columns.children, row.Children)
 		columns.cumulative = append(columns.cumulative, row.Cumulative)
+		columns.diff = append(columns.diff, row.Diff)
 	}
 	return columns
 }
@@ -394,6 +397,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 			requireColumnDict(t, fa, FlamegraphFieldFunctionSystemName, columns.functionSystemNames)
 			requireColumnDict(t, fa, FlamegraphFieldFunctionFileName, columns.functionFileNames)
 			requireColumn(t, fa, FlamegraphFieldCumulative, columns.cumulative)
+			requireColumn(t, fa, FlamegraphFieldDiff, columns.diff)
 			requireColumnChildren(t, fa, columns.children)
 
 			labelsDict := fa.Column(fa.Schema().FieldIndices(FlamegraphFieldLabels)[0]).(*array.Dictionary)
@@ -409,11 +413,6 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 				pprofLabels[i] = ls
 			}
 			require.Equal(t, columns.labels, pprofLabels)
-
-			require.Equal(t,
-				len(tc.rows),
-				fa.Column(fa.Schema().FieldIndices(FlamegraphFieldDiff)[0]).(*array.Int64).NullN(),
-			)
 		})
 	}
 }
