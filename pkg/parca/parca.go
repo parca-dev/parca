@@ -332,6 +332,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 	s := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracerProvider.Tracer("profilestore"),
 		mc,

@@ -410,6 +410,7 @@ func ingest(t *testing.T, conn *grpc.ClientConn, path string) error {
 func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symbolizer) {
 	t.Helper()
 
+	reg := prometheus.NewRegistry()
 	logger := log.NewNopLogger()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	col, err := frostdb.New()
@@ -468,6 +469,7 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 	metastore := metastore.NewInProcessClient(mStr)
 
 	pStr := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		metastore,

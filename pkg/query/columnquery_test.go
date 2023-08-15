@@ -172,6 +172,7 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 
 	mc := metastore.NewInProcessClient(m)
 	store := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		mc,
@@ -268,6 +269,7 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 
 	mc := metastore.NewInProcessClient(m)
 	store := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		mc,
@@ -405,6 +407,7 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 
 	mc := metastore.NewInProcessClient(m)
 	store := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		mc,
@@ -493,6 +496,7 @@ func TestColumnQueryAPIQueryCumulative(t *testing.T) {
 
 	mc := metastore.NewInProcessClient(m)
 	store := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		mc,
@@ -903,6 +907,7 @@ func TestColumnQueryAPITypes(t *testing.T) {
 
 	mc := metastore.NewInProcessClient(m)
 	store := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		mc,
@@ -1000,6 +1005,7 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 
 	mc := metastore.NewInProcessClient(m)
 	store := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		mc,
@@ -1087,6 +1093,7 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 
 	mc := metastore.NewInProcessClient(m)
 	store := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		mc,

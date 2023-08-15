@@ -15,15 +15,18 @@ package parcacol
 
 import (
 	"context"
+	"debug/elf"
 	"fmt"
 	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
+	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -36,16 +39,30 @@ type MetastoreNormalizer struct {
 	// isAddrNormEnabled indicates whether the metastore normalizer has to
 	// normalize sampled addresses for PIC/PIE (position independent code/executable).
 	isAddrNormEnabled bool
+
+	addressNormalizationFailed prometheus.Counter
 }
 
-func NewNormalizer(metastore pb.MetastoreServiceClient, enableAddressNormalization bool) *MetastoreNormalizer {
+func NewNormalizer(
+	metastore pb.MetastoreServiceClient,
+	enableAddressNormalization bool,
+	addressNormalizationFailed prometheus.Counter,
+) *MetastoreNormalizer {
 	return &MetastoreNormalizer{
-		metastore:         metastore,
-		isAddrNormEnabled: enableAddressNormalization,
+		metastore:                  metastore,
+		isAddrNormEnabled:          enableAddressNormalization,
+		addressNormalizationFailed: addressNormalizationFailed,
 	}
 }
 
-func (n *MetastoreNormalizer) NormalizePprof(ctx context.Context, name string, takenLabelNames map[string]string, p *pprofpb.Profile, normalizedAddress bool) ([]*profile.NormalizedProfile, error) {
+func (n *MetastoreNormalizer) NormalizePprof(
+	ctx context.Context,
+	name string,
+	takenLabelNames map[string]string,
+	p *pprofpb.Profile,
+	normalizedAddress bool,
+	executableInfo []*profilestorepb.ExecutableInfo,
+) ([]*profile.NormalizedProfile, error) {
 	mappings, err := n.NormalizeMappings(ctx, p.Mapping, p.StringTable)
 	if err != nil {
 		return nil, fmt.Errorf("normalize mappings: %w", err)
@@ -60,9 +77,11 @@ func (n *MetastoreNormalizer) NormalizePprof(ctx context.Context, name string, t
 		ctx,
 		p.Location,
 		mappings,
+		p.Mapping,
 		functions,
 		normalizedAddress,
 		p.StringTable,
+		executableInfo,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("normalize locations: %w", err)
@@ -296,14 +315,20 @@ func (n *MetastoreNormalizer) NormalizeFunctions(ctx context.Context, functions 
 func (n *MetastoreNormalizer) NormalizeLocations(
 	ctx context.Context,
 	locations []*pprofpb.Location,
-	mappings []mappingNormalizationInfo,
+	mappingsInfo []mappingNormalizationInfo,
+	mappings []*pprofpb.Mapping,
 	functions []*pb.Function,
 	normalizedAddress bool,
 	stringTable []string,
+	executableInfo []*profilestorepb.ExecutableInfo,
 ) ([]*pb.Location, error) {
+	var err error
+
 	req := &pb.GetOrCreateLocationsRequest{
 		Locations: make([]*pb.Location, 0, len(locations)),
 	}
+
+	normalizeWithBaseAddress := len(executableInfo) > 0
 
 	for _, location := range locations {
 		if location.MappingId == 0 && len(location.Line) == 0 {
@@ -320,8 +345,19 @@ func (n *MetastoreNormalizer) NormalizeLocations(
 		mappingId := ""
 		if location.MappingId != 0 {
 			mappingIndex := location.MappingId - 1
-			mappingNormalizationInfo := mappings[mappingIndex]
+			mappingNormalizationInfo := mappingsInfo[mappingIndex]
 
+			if normalizeWithBaseAddress {
+				m := mappings[mappingIndex]
+				addr, err = NormalizeAddress(addr, executableInfo[mappingIndex], m.MemoryStart, m.MemoryLimit, m.FileOffset)
+				if err != nil {
+					// This should never happen, since we already checked that
+					// in the agent, but other clients might not. If debugging
+					// this is a problem in the futute we should attach this to
+					// the distributed trace.
+					n.addressNormalizationFailed.Inc()
+				}
+			}
 			if n.isAddrNormEnabled && !normalizedAddress {
 				addr = uint64(int64(addr) + mappingNormalizationInfo.offset)
 			}
@@ -355,6 +391,67 @@ func (n *MetastoreNormalizer) NormalizeLocations(
 	}
 
 	return res.Locations, nil
+}
+
+func NormalizeAddress(addr uint64, ei *profilestorepb.ExecutableInfo, start, limit, offset uint64) (uint64, error) {
+	base, err := CalculateBase(ei, start, limit, offset)
+	if err != nil {
+		return addr, fmt.Errorf("calculate base: %w", err)
+	}
+
+	return addr - base, nil
+}
+
+// Base determines the base address to subtract from virtual
+// address to get symbol table address. For an executable, the base
+// is 0. Otherwise, it's a shared library, and the base is the
+// address where the mapping starts. The kernel needs special handling.
+func CalculateBase(ei *profilestorepb.ExecutableInfo, start, limit, offset uint64) (uint64, error) {
+	if ei == nil {
+		return 0, nil
+	}
+
+	if start == 0 && offset == 0 && (limit == ^uint64(0) || limit == 0) {
+		// Some tools may introduce a fake mapping that spans the entire
+		// address space. Assume that the address has already been
+		// adjusted, so no additional base adjustment is necessary.
+		return 0, nil
+	}
+
+	//nolint:exhaustive
+	switch elf.Type(ei.ElfType) {
+	case elf.ET_EXEC:
+		if ei.LoadSegment == nil {
+			// Assume fixed-address executable and so no adjustment.
+			return 0, nil
+		}
+		return start - offset + ei.LoadSegment.Offset - ei.LoadSegment.Vaddr, nil
+	case elf.ET_REL:
+		if offset != 0 {
+			return 0, fmt.Errorf("don't know how to handle mapping.Offset")
+		}
+		return start, nil
+	case elf.ET_DYN:
+		// The process mapping information, start = start of virtual address range,
+		// and offset = offset in the executable file of the start address, tells us
+		// that a runtime virtual address x maps to a file offset
+		// fx = x - start + offset.
+		if ei.LoadSegment == nil {
+			return start - offset, nil
+		}
+
+		// The program header, if not nil, indicates the offset in the file where
+		// the executable segment is located (loadSegment.Off), and the base virtual
+		// address where the first byte of the segment is loaded
+		// (loadSegment.Vaddr). A file offset fx maps to a virtual (symbol) address
+		// sx = fx - loadSegment.Off + loadSegment.Vaddr.
+		//
+		// Thus, a runtime virtual address x maps to a symbol address
+		// sx = x - start + offset - loadSegment.Off + loadSegment.Vaddr.
+		return start - offset + ei.LoadSegment.Offset - ei.LoadSegment.Vaddr, nil
+	}
+
+	return 0, fmt.Errorf("don't know how to handle FileHeader.Type %v", elf.Type(ei.ElfType))
 }
 
 func (n *MetastoreNormalizer) NormalizeStacktraces(ctx context.Context, samples []*pprofpb.Sample, locations []*pb.Location) ([]*pb.Stacktrace, error) {

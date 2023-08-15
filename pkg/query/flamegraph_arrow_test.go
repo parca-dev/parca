@@ -29,6 +29,7 @@ import (
 	"github.com/go-kit/log"
 	pprofprofile "github.com/google/pprof/profile"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 
@@ -424,6 +425,10 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 	mem := memory.NewGoAllocator()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
+	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
+		Name: "parca_test_counter",
+		Help: "parca_test_counter",
+	})
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
 	store := metastoretest.NewTestMetastore(t, logger, reg, tracer)
@@ -463,8 +468,8 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 	require.NoError(t, err)
 
 	metastore := metastore.NewInProcessClient(store)
-	normalizer := parcacol.NewNormalizer(metastore, true)
-	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false)
+	normalizer := parcacol.NewNormalizer(metastore, true, counter)
+	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false, nil)
 	require.NoError(t, err)
 
 	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])

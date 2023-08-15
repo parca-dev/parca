@@ -213,6 +213,7 @@ func TestConsistency(t *testing.T) {
 	require.NoError(t, err)
 
 	store := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		mc,
@@ -324,6 +325,7 @@ func TestPGOE2e(t *testing.T) {
 	require.NoError(t, err)
 
 	store := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		mc,
@@ -425,6 +427,7 @@ func TestLabels(t *testing.T) {
 	require.NoError(t, err)
 
 	store := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		mc,

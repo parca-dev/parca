@@ -156,6 +156,21 @@
       },
       "title": "AgentsResponse is the request to retrieve a list of agents"
     },
+    "v1alpha1ExecutableInfo": {
+      "type": "object",
+      "properties": {
+        "elfType": {
+          "type": "integer",
+          "format": "int64",
+          "description": "elf_type is the type of the elf executable. Technically the elf type is a\n16 bit integer, but protobuf's smallest unsigned integer is 32 bits."
+        },
+        "loadSegment": {
+          "$ref": "#/definitions/v1alpha1LoadSegment",
+          "description": "load_segment is the load segment of the executable."
+        }
+      },
+      "description": "ExecutableInfo is the information about the executable and executable\nsection for normalizaton purposes before symbolization."
+    },
     "v1alpha1LabelSet": {
       "type": "object",
       "properties": {
@@ -169,6 +184,22 @@
         }
       },
       "title": "LabelSet is a group of labels"
+    },
+    "v1alpha1LoadSegment": {
+      "type": "object",
+      "properties": {
+        "offset": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The offset from the beginning of the file at which the first byte of the segment resides."
+        },
+        "vaddr": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The virtual address at which the first byte of the segment resides in memory."
+        }
+      },
+      "title": "LoadSegment is the load segment of the executable"
     },
     "v1alpha1RawProfileSeries": {
       "type": "object",
@@ -195,6 +226,14 @@
           "type": "string",
           "format": "byte",
           "title": "raw_profile is the set of bytes of the pprof profile"
+        },
+        "executableInfo": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1alpha1ExecutableInfo"
+          },
+          "description": "information about the executable and executable section for normalizaton\npurposes."
         }
       },
       "title": "RawSample is the set of bytes that correspond to a pprof profile"

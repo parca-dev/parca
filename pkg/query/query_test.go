@@ -72,6 +72,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 			require.NoError(b, err)
 
 			store := profilestore.NewProfileColumnStore(
+				reg,
 				logger,
 				tracer,
 				mc,

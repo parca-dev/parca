@@ -110,6 +110,53 @@ export interface RawSample {
      * @generated from protobuf field: bytes raw_profile = 1;
      */
     rawProfile: Uint8Array;
+    /**
+     * information about the executable and executable section for normalizaton
+     * purposes.
+     *
+     * @generated from protobuf field: repeated parca.profilestore.v1alpha1.ExecutableInfo executable_info = 2;
+     */
+    executableInfo: ExecutableInfo[];
+}
+/**
+ * ExecutableInfo is the information about the executable and executable
+ * section for normalizaton purposes before symbolization.
+ *
+ * @generated from protobuf message parca.profilestore.v1alpha1.ExecutableInfo
+ */
+export interface ExecutableInfo {
+    /**
+     * elf_type is the type of the elf executable. Technically the elf type is a
+     * 16 bit integer, but protobuf's smallest unsigned integer is 32 bits.
+     *
+     * @generated from protobuf field: uint32 elf_type = 1;
+     */
+    elfType: number;
+    /**
+     * load_segment is the load segment of the executable.
+     *
+     * @generated from protobuf field: parca.profilestore.v1alpha1.LoadSegment load_segment = 2;
+     */
+    loadSegment?: LoadSegment;
+}
+/**
+ * LoadSegment is the load segment of the executable
+ *
+ * @generated from protobuf message parca.profilestore.v1alpha1.LoadSegment
+ */
+export interface LoadSegment {
+    /**
+     * The offset from the beginning of the file at which the first byte of the segment resides.
+     *
+     * @generated from protobuf field: uint64 offset = 1;
+     */
+    offset: bigint;
+    /**
+     * The virtual address at which the first byte of the segment resides in memory.
+     *
+     * @generated from protobuf field: uint64 vaddr = 2;
+     */
+    vaddr: bigint;
 }
 /**
  * AgentsRequest is the request to retrieve a list of agents
@@ -409,11 +456,12 @@ export const LabelSet = new LabelSet$Type();
 class RawSample$Type extends MessageType<RawSample> {
     constructor() {
         super("parca.profilestore.v1alpha1.RawSample", [
-            { no: 1, name: "raw_profile", kind: "scalar", T: 12 /*ScalarType.BYTES*/ }
+            { no: 1, name: "raw_profile", kind: "scalar", T: 12 /*ScalarType.BYTES*/ },
+            { no: 2, name: "executable_info", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => ExecutableInfo }
         ]);
     }
     create(value?: PartialMessage<RawSample>): RawSample {
-        const message = { rawProfile: new Uint8Array(0) };
+        const message = { rawProfile: new Uint8Array(0), executableInfo: [] };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<RawSample>(this, message, value);
@@ -426,6 +474,9 @@ class RawSample$Type extends MessageType<RawSample> {
             switch (fieldNo) {
                 case /* bytes raw_profile */ 1:
                     message.rawProfile = reader.bytes();
+                    break;
+                case /* repeated parca.profilestore.v1alpha1.ExecutableInfo executable_info */ 2:
+                    message.executableInfo.push(ExecutableInfo.internalBinaryRead(reader, reader.uint32(), options));
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -442,6 +493,9 @@ class RawSample$Type extends MessageType<RawSample> {
         /* bytes raw_profile = 1; */
         if (message.rawProfile.length)
             writer.tag(1, WireType.LengthDelimited).bytes(message.rawProfile);
+        /* repeated parca.profilestore.v1alpha1.ExecutableInfo executable_info = 2; */
+        for (let i = 0; i < message.executableInfo.length; i++)
+            ExecutableInfo.internalBinaryWrite(message.executableInfo[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -452,6 +506,114 @@ class RawSample$Type extends MessageType<RawSample> {
  * @generated MessageType for protobuf message parca.profilestore.v1alpha1.RawSample
  */
 export const RawSample = new RawSample$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ExecutableInfo$Type extends MessageType<ExecutableInfo> {
+    constructor() {
+        super("parca.profilestore.v1alpha1.ExecutableInfo", [
+            { no: 1, name: "elf_type", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 2, name: "load_segment", kind: "message", T: () => LoadSegment }
+        ]);
+    }
+    create(value?: PartialMessage<ExecutableInfo>): ExecutableInfo {
+        const message = { elfType: 0 };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<ExecutableInfo>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ExecutableInfo): ExecutableInfo {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* uint32 elf_type */ 1:
+                    message.elfType = reader.uint32();
+                    break;
+                case /* parca.profilestore.v1alpha1.LoadSegment load_segment */ 2:
+                    message.loadSegment = LoadSegment.internalBinaryRead(reader, reader.uint32(), options, message.loadSegment);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ExecutableInfo, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* uint32 elf_type = 1; */
+        if (message.elfType !== 0)
+            writer.tag(1, WireType.Varint).uint32(message.elfType);
+        /* parca.profilestore.v1alpha1.LoadSegment load_segment = 2; */
+        if (message.loadSegment)
+            LoadSegment.internalBinaryWrite(message.loadSegment, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.profilestore.v1alpha1.ExecutableInfo
+ */
+export const ExecutableInfo = new ExecutableInfo$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class LoadSegment$Type extends MessageType<LoadSegment> {
+    constructor() {
+        super("parca.profilestore.v1alpha1.LoadSegment", [
+            { no: 1, name: "offset", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ },
+            { no: 2, name: "vaddr", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ }
+        ]);
+    }
+    create(value?: PartialMessage<LoadSegment>): LoadSegment {
+        const message = { offset: 0n, vaddr: 0n };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<LoadSegment>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: LoadSegment): LoadSegment {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* uint64 offset */ 1:
+                    message.offset = reader.uint64().toBigInt();
+                    break;
+                case /* uint64 vaddr */ 2:
+                    message.vaddr = reader.uint64().toBigInt();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: LoadSegment, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* uint64 offset = 1; */
+        if (message.offset !== 0n)
+            writer.tag(1, WireType.Varint).uint64(message.offset);
+        /* uint64 vaddr = 2; */
+        if (message.vaddr !== 0n)
+            writer.tag(2, WireType.Varint).uint64(message.vaddr);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.profilestore.v1alpha1.LoadSegment
+ */
+export const LoadSegment = new LoadSegment$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class AgentsRequest$Type extends MessageType<AgentsRequest> {
     constructor() {
