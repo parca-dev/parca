@@ -326,7 +326,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 		aggregate: []string{FlamegraphFieldLabels},
 		// expectations
 		cumulative: 10,
-		height:     5, // TODO 6
+		height:     6,
 		trimmed:    0, // TODO
 		rows: []flamegraphRow{
 			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0, LocationFolded: false, LocationLine: 0, FunctionStartLine: 0, FunctionName: `{"goroutine":"1"}`, FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 10, Labels: nil, Children: []uint32{1, 6, 10}}, // 0
@@ -482,7 +482,7 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, int64(1), total)
-	require.Equal(t, int32(4), height)
+	require.Equal(t, int32(5), height)
 	require.Equal(t, int64(0), trimmed)
 
 	require.Equal(t, int64(16), record.NumCols())
