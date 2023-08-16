@@ -32,7 +32,7 @@ export const NoDataPrompt = (): JSX.Element => {
       <div className="mt-6 flex h-96 flex-col items-center justify-center gap-6 rounded-lg bg-white px-12 text-sm shadow dark:bg-gray-700">
         <Icon icon="material-symbols:info-outline" width={40} height={40} />
         <p className="max-w-[560px] text-center">
-          <span className="text-xl">The Parca server hasn&apos;t recieved any data yet!</span>{' '}
+          <span className="text-xl">The Parca server hasn&apos;t received any data yet!</span>{' '}
           <br />
           <br />
           Please check the{' '}
