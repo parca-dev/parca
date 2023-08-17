@@ -1,6 +1,6 @@
 {
   "name": "@parca/grafana-datasource",
-  "version": "0.0.184",
+  "version": "0.0.185",
   "description": "A Grafana datasource plugin for Parca",
   "scripts": {
     "build": "grafana-toolkit plugin:build",
