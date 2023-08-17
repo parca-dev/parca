@@ -256,7 +256,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		}
 	}
 
-	ctx, spanNewRecord := tracer.Start(ctx, "NewRecord")
+	_, spanNewRecord := tracer.Start(ctx, "NewRecord")
 	defer spanNewRecord.End()
 
 	record, err := fb.NewRecord()
