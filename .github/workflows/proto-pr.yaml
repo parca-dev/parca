@@ -45,7 +45,7 @@ jobs:
     steps:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
-      - uses: bufbuild/buf-setup-action@9a634c3d819d174dd3c6abfd05dd399ed687b2ce # v1.26.0
+      - uses: bufbuild/buf-setup-action@eb60cd0de4f14f1f57cf346916b8cd69a9e7ed0b # v1.26.1
 
       - name: version
         run: buf --version
