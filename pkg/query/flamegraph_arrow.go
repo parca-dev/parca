@@ -25,6 +25,7 @@ import (
 	"github.com/apache/arrow/go/v13/arrow/ipc"
 	"github.com/apache/arrow/go/v13/arrow/memory"
 	"github.com/polarsignals/frostdb/pqarrow/builder"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/exp/maps"
 
@@ -55,6 +56,9 @@ const (
 )
 
 func GenerateFlamegraphArrow(ctx context.Context, mem memory.Allocator, tracer trace.Tracer, p profile.Profile, aggregate []string, trimFraction float32) (*queryv1alpha1.FlamegraphArrow, int64, error) {
+	ctx, span := tracer.Start(ctx, "GenerateFlamegraphArrow")
+	defer span.End()
+
 	record, cumulative, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, p, aggregate, trimFraction)
 	if err != nil {
 		return nil, 0, err
@@ -82,6 +86,9 @@ func GenerateFlamegraphArrow(ctx context.Context, mem memory.Allocator, tracer t
 }
 
 func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tracer trace.Tracer, p profile.Profile, aggregate []string, trimFraction float32) (arrow.Record, int64, int32, int64, error) {
+	ctx, span := tracer.Start(ctx, "generateFlamegraphArrowRecord")
+	defer span.End()
+
 	aggregateFields := make(map[string]struct{}, len(aggregate))
 	for _, f := range aggregate {
 		aggregateFields[f] = struct{}{}
@@ -249,10 +256,14 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		}
 	}
 
+	_, spanNewRecord := tracer.Start(ctx, "NewRecord")
+	defer spanNewRecord.End()
+
 	record, err := fb.NewRecord()
 	if err != nil {
 		return nil, 0, 0, 0, err
 	}
+	spanNewRecord.SetAttributes(attribute.Int64("rows", record.NumRows()))
 
 	return record, fb.cumulative, maxHeight + 1, 0, nil
 }
