@@ -107,9 +107,6 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	fb := newFlamegraphBuilder(mem, totalRows)
 	defer fb.Release()
 
-	// This keeps track of the max depth of our flame graph.
-	maxHeight := int32(0)
-
 	// these change with every iteration below
 	row := fb.builderCumulative.Len()
 
@@ -120,12 +117,6 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		lsbytes := make([]byte, 0, 512)
 		for i := 0; i < int(r.Record.NumRows()); i++ {
 			beg, end := r.Locations.ValueOffsets(i)
-
-			// TODO: This height is only an estimation, inlined functions are not taken into account.
-			numLocations := int32(end - beg)
-			if numLocations > maxHeight {
-				maxHeight = numLocations
-			}
 
 			var sampleLabels map[string]string
 			for j, labelColumn := range r.LabelColumns {
@@ -159,6 +150,9 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					}
 					fb.rootsRow[lsstring] = []int{sampleLabelRow}
 				}
+				fb.maxHeight = max(fb.maxHeight, fb.height)
+				fb.height = 1
+
 				fb.parent.Set(sampleLabelRow)
 				row = fb.builderCumulative.Len()
 			}
@@ -188,6 +182,8 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						fb.compareRows = append(fb.compareRows, fb.rootsRow[unsafeString(lsbytes)]...)
 						// append this row afterward to not compare to itself
 						fb.parent.Reset()
+						fb.maxHeight = max(fb.maxHeight, fb.height)
+						fb.height = 0
 					}
 
 					merged, err := fb.mergeUnsymbolizedRows(
@@ -200,6 +196,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						return nil, 0, 0, 0, err
 					}
 					if merged {
+						fb.height++
 						continue locations
 					}
 
@@ -228,6 +225,8 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						fb.compareRows = append(fb.compareRows, fb.rootsRow[unsafeString(lsbytes)]...)
 						// append this row afterward to not compare to itself
 						fb.parent.Reset()
+						fb.maxHeight = max(fb.maxHeight, fb.height)
+						fb.height = 0
 					}
 
 					merged, err := fb.mergeSymbolizedRows(r, aggregateFields, sampleLabels, i, j, k, int(end))
@@ -235,6 +234,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						return nil, 0, 0, 0, err
 					}
 					if merged {
+						fb.height++
 						continue stacktraces
 					}
 
@@ -255,6 +255,8 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			}
 		}
 	}
+	// the last row can also have the most height.
+	fb.maxHeight = max(fb.maxHeight, fb.height)
 
 	_, spanNewRecord := tracer.Start(ctx, "NewRecord")
 	defer spanNewRecord.End()
@@ -265,7 +267,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	}
 	spanNewRecord.SetAttributes(attribute.Int64("rows", record.NumRows()))
 
-	return record, fb.cumulative, maxHeight + 1, 0, nil
+	return record, fb.cumulative, fb.maxHeight + 1, 0, nil
 }
 
 // mergeSymbolizedRows compares the symbolized fields by function name and labels and merges them if they equal.
@@ -401,6 +403,8 @@ type flamegraphBuilder struct {
 	cumulative int64
 	// This keeps track of the total diff values so that we can set the irst row's diff value at the end.
 	diff int64
+	// This keeps track of the max height of the flame graph.
+	maxHeight int32
 	// parent keeps track of the parent of a row. This is used to build the children array.
 	parent parent
 	// This keeps track of a row's children and will be converted to an arrow array of lists at the end.
@@ -416,6 +420,8 @@ type flamegraphBuilder struct {
 	rootsRow map[string][]int
 	// compareRows are the rows that we compare to the current location against and potentially merge.
 	compareRows []int
+	// height keeps track of the current stack trace's height of the flame graph.
+	height int32
 
 	builderMappingStart       *array.Uint64Builder
 	builderMappingLimit       *array.Uint64Builder
@@ -580,6 +586,7 @@ func (fb *flamegraphBuilder) appendRow(
 	sampleRow, locationRow, lineRow int,
 	row int,
 ) error {
+	fb.height++
 	for j := range fb.rb.Fields() {
 		switch fb.schema.Field(j).Name {
 		// Mapping
@@ -722,8 +729,6 @@ func (fb *flamegraphBuilder) AppendLabelRow(r profile.RecordReader, row int, lab
 	}
 	// Add this label row to the root row's children.
 	fb.children[0] = append(fb.children[0], row)
-	//// Add the next row as child of this label row.
-	//fb.children[row] = append(fb.children[row], row+1)
 
 	fb.builderMappingStart.AppendNull()
 	fb.builderMappingLimit.AppendNull()
