@@ -592,6 +592,18 @@ func RenderReport(
 			Filtered: filtered,
 			Report:   &pb.QueryResponse_Top{Top: top},
 		}, nil
+	case pb.QueryRequest_REPORT_TYPE_TABLE_ARROW:
+		table, cumulative, err := GenerateTable(ctx, mem, tracer, p)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to generate table: %v", err.Error())
+		}
+
+		return &pb.QueryResponse{
+			Total:    cumulative,
+			Filtered: filtered,
+			Report:   &pb.QueryResponse_TableArrow{TableArrow: table},
+		}, nil
+
 	case pb.QueryRequest_REPORT_TYPE_CALLGRAPH:
 		op, err := converter.Convert(ctx, p)
 		if err != nil {

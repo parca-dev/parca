@@ -13,7 +13,7 @@
 
 import {Profiler, ProfilerProps, useEffect, useMemo, useState} from 'react';
 
-import {Table} from 'apache-arrow';
+import {Table as ArrowTable} from 'apache-arrow';
 import cx from 'classnames';
 import {scaleLinear} from 'd3';
 import graphviz from 'graphviz-wasm';
@@ -30,7 +30,7 @@ import {
   Flamegraph,
   QueryServiceClient,
   Source,
-  Top,
+  TableArrow,
 } from '@parca/client';
 import {
   Button,
@@ -49,7 +49,7 @@ import {jsonToDot} from '../Callgraph/utils';
 import ProfileIcicleGraph from '../ProfileIcicleGraph';
 import {ProfileSource} from '../ProfileSource';
 import {SourceView} from '../SourceView';
-import {TopTable} from '../TopTable';
+import Table from '../Table';
 import ProfileShareButton from '../components/ProfileShareButton';
 import useDelayedLoader from '../useDelayedLoader';
 import FilterByFunctionButton from './FilterByFunctionButton';
@@ -62,7 +62,7 @@ type NavigateFunction = (path: string, queryParams: any, options?: {replace?: bo
 export interface FlamegraphData {
   loading: boolean;
   data?: Flamegraph;
-  table?: Table<any>;
+  table?: ArrowTable<any>;
   total?: bigint;
   filtered?: bigint;
   error?: any;
@@ -70,7 +70,7 @@ export interface FlamegraphData {
 
 export interface TopTableData {
   loading: boolean;
-  data?: Top;
+  data?: TableArrow;
   total?: bigint;
   filtered?: bigint;
   error?: any;
@@ -294,9 +294,9 @@ export const ProfileView = ({
       }
       case 'table': {
         return topTableData != null ? (
-          <TopTable
+          <Table
             loading={topTableData.loading}
-            data={topTableData.data}
+            data={topTableData.data?.record}
             sampleUnit={sampleUnit}
             navigateTo={navigateTo}
             setActionButtons={setActionButtons}

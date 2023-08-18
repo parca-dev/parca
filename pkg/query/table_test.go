@@ -1,0 +1,122 @@
+package query
+
+import (
+	"context"
+	"testing"
+
+	"github.com/apache/arrow/go/v13/arrow/array"
+	"github.com/apache/arrow/go/v13/arrow/memory"
+	"github.com/go-kit/log"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
+
+	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
+	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/metastoretest"
+	"github.com/parca-dev/parca/pkg/parcacol"
+)
+
+func TestGenerateTable(t *testing.T) {
+	ctx := context.Background()
+	mem := memory.NewGoAllocator()
+
+	reg := prometheus.NewRegistry()
+	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
+		Name: "parca_test_counter",
+		Help: "parca_test_counter",
+	})
+
+	fileContent := MustReadAllGzip(t, "testdata/alloc_objects.pb.gz")
+	p := &pprofpb.Profile{}
+	require.NoError(t, p.UnmarshalVT(fileContent))
+
+	l := metastoretest.NewTestMetastore(
+		t,
+		log.NewNopLogger(),
+		prometheus.NewRegistry(),
+		trace.NewNoopTracerProvider().Tracer(""),
+	)
+	metastore := metastore.NewInProcessClient(l)
+	normalizer := parcacol.NewNormalizer(metastore, true, counter)
+	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false, nil)
+	require.NoError(t, err)
+
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
+	require.NoError(t, err)
+
+	np, err := OldProfileToArrowProfile(symbolizedProfile)
+	require.NoError(t, err)
+
+	rec, cumulative, err := generateTableArrowRecord(ctx, mem, tracer, np)
+	require.NoError(t, err)
+
+	require.NotNil(t, rec)
+	require.NotNil(t, cumulative)
+
+	require.Equal(t, int64(310797348), cumulative)
+	// require.Equal(t, 899, rec.NumRows())
+
+	mappingStartColumn := rec.Column(rec.Schema().FieldIndices(TableFieldMappingStart)[0]).(*array.Uint64)
+	mappingLimitColumn := rec.Column(rec.Schema().FieldIndices(TableFieldMappingLimit)[0]).(*array.Uint64)
+	mappingOffsetColumn := rec.Column(rec.Schema().FieldIndices(TableFieldMappingOffset)[0]).(*array.Uint64)
+	mappingFileColumn := rec.Column(rec.Schema().FieldIndices(TableFieldMappingFile)[0]).(*array.Dictionary)
+	mappingFileColumnDict := mappingFileColumn.Dictionary().(*array.String)
+	mappingBuildIDColumn := rec.Column(rec.Schema().FieldIndices(TableFieldMappingBuildID)[0]).(*array.Dictionary)
+	locationAddressColumn := rec.Column(rec.Schema().FieldIndices(TableFieldLocationAddress)[0]).(*array.Uint64)
+	locationFolded := rec.Column(rec.Schema().FieldIndices(TableFieldLocationFolded)[0]).(*array.Boolean)
+	locationLineColumn := rec.Column(rec.Schema().FieldIndices(TableFieldLocationLine)[0]).(*array.Int64)
+	functionStartLineColumn := rec.Column(rec.Schema().FieldIndices(TableFieldFunctionStartLine)[0]).(*array.Int64)
+	functionNameColumn := rec.Column(rec.Schema().FieldIndices(TableFieldFunctionName)[0]).(*array.Dictionary)
+	functionNameColumnDict := functionNameColumn.Dictionary().(*array.String)
+	functionSystemNameColumn := rec.Column(rec.Schema().FieldIndices(TableFieldFunctionSystemName)[0]).(*array.Dictionary)
+	functionSystemNameColumnDict := functionSystemNameColumn.Dictionary().(*array.String)
+	functionFileNameColumn := rec.Column(rec.Schema().FieldIndices(TableFieldFunctionFileName)[0]).(*array.Dictionary)
+	functionFileNameColumnDict := functionFileNameColumn.Dictionary().(*array.String)
+	cumulativeColumn := rec.Column(rec.Schema().FieldIndices(TableFieldCumulative)[0]).(*array.Int64)
+	cumulativeDiffColumn := rec.Column(rec.Schema().FieldIndices(TableFieldCumulativeDiff)[0]).(*array.Int64)
+	flatColumn := rec.Column(rec.Schema().FieldIndices(TableFieldFlat)[0]).(*array.Int64)
+	flatDiffColumn := rec.Column(rec.Schema().FieldIndices(TableFieldFlatDiff)[0]).(*array.Int64)
+
+	found := false
+	for i := 0; i < int(rec.NumRows()); i++ {
+		if locationAddressColumn.Value(i) == uint64(7578561) {
+			// mapping
+			require.Equal(t, uint64(4194304), mappingStartColumn.Value(i))
+			require.Equal(t, uint64(23252992), mappingLimitColumn.Value(i))
+			require.Equal(t, uint64(0), mappingOffsetColumn.Value(i))
+			require.Equal(t, "/bin/operator", mappingFileColumnDict.Value(mappingFileColumn.GetValueIndex(i)))
+			require.True(t, mappingBuildIDColumn.IsNull(i))
+			// location
+			// address is already checked above
+			require.False(t, locationFolded.Value(i))
+			require.Equal(t, int64(107), locationLineColumn.Value(i))
+			// function
+			require.Equal(t, int64(0), functionStartLineColumn.Value(i))
+			require.Equal(t,
+				"encoding/json.Unmarshal",
+				functionNameColumnDict.Value(functionNameColumn.GetValueIndex(i)),
+			)
+			require.Equal(t,
+				"encoding/json.Unmarshal",
+				functionSystemNameColumnDict.Value(functionSystemNameColumn.GetValueIndex(i)),
+			)
+			require.Equal(t,
+				"/opt/hostedtoolcache/go/1.14.10/x64/src/encoding/json/decode.go",
+				functionFileNameColumnDict.Value(functionFileNameColumn.GetValueIndex(i)),
+			)
+			// values
+			require.Equal(t, int64(3135531), cumulativeColumn.Value(i))
+			require.Equal(t, int64(32768), flatColumn.Value(i))
+			// diff
+			require.Equal(t, int64(0), cumulativeDiffColumn.Value(i))
+			require.Equal(t, int64(0), flatDiffColumn.Value(i))
+
+			found = true
+			break
+		}
+	}
+	require.Truef(t, found, "expected to find the specific function")
+}
