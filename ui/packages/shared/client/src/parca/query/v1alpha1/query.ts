@@ -457,7 +457,13 @@ export enum QueryRequest_ReportType {
      *
      * @generated from protobuf enum value: REPORT_TYPE_SOURCE = 6;
      */
-    SOURCE = 6
+    SOURCE = 6,
+    /**
+     * REPORT_TYPE_TABLE_ARROW unspecified
+     *
+     * @generated from protobuf enum value: REPORT_TYPE_TABLE_ARROW = 7;
+     */
+    TABLE_ARROW = 7
 }
 /**
  * SourceReference contains a reference to source code.
@@ -997,6 +1003,14 @@ export interface QueryResponse {
          */
         source: Source;
     } | {
+        oneofKind: "tableArrow";
+        /**
+         * table_arrow is a table encoded as a arrow record
+         *
+         * @generated from protobuf field: parca.query.v1alpha1.TableArrow table_arrow = 13;
+         */
+        tableArrow: TableArrow;
+    } | {
         oneofKind: undefined;
     };
     /**
@@ -1188,6 +1202,25 @@ export interface ShareProfileResponse {
      * @generated from protobuf field: string link = 1;
      */
     link: string;
+}
+/**
+ * TableArrow has the table encoded as a arrow record
+ *
+ * @generated from protobuf message parca.query.v1alpha1.TableArrow
+ */
+export interface TableArrow {
+    /**
+     * record is the arrow record containing the actual table data
+     *
+     * @generated from protobuf field: bytes record = 1;
+     */
+    record: Uint8Array;
+    /**
+     * unit is the unit represented by the flame graph
+     *
+     * @generated from protobuf field: string unit = 2;
+     */
+    unit: string;
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class ProfileTypesRequest$Type extends MessageType<ProfileTypesRequest> {
@@ -2987,6 +3020,7 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
             { no: 8, name: "callgraph", kind: "message", oneof: "report", T: () => Callgraph },
             { no: 11, name: "flamegraph_arrow", kind: "message", oneof: "report", T: () => FlamegraphArrow },
             { no: 12, name: "source", kind: "message", oneof: "report", T: () => Source },
+            { no: 13, name: "table_arrow", kind: "message", oneof: "report", T: () => TableArrow },
             { no: 9, name: "total", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ },
             { no: 10, name: "filtered", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ }
         ]);
@@ -3039,6 +3073,12 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
                         source: Source.internalBinaryRead(reader, reader.uint32(), options, (message.report as any).source)
                     };
                     break;
+                case /* parca.query.v1alpha1.TableArrow table_arrow */ 13:
+                    message.report = {
+                        oneofKind: "tableArrow",
+                        tableArrow: TableArrow.internalBinaryRead(reader, reader.uint32(), options, (message.report as any).tableArrow)
+                    };
+                    break;
                 case /* int64 total */ 9:
                     message.total = reader.int64().toBigInt();
                     break;
@@ -3075,6 +3115,9 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
         /* parca.query.v1alpha1.Source source = 12; */
         if (message.report.oneofKind === "source")
             Source.internalBinaryWrite(message.report.source, writer.tag(12, WireType.LengthDelimited).fork(), options).join();
+        /* parca.query.v1alpha1.TableArrow table_arrow = 13; */
+        if (message.report.oneofKind === "tableArrow")
+            TableArrow.internalBinaryWrite(message.report.tableArrow, writer.tag(13, WireType.LengthDelimited).fork(), options).join();
         /* int64 total = 9; */
         if (message.total !== 0n)
             writer.tag(9, WireType.Varint).int64(message.total);
@@ -3570,6 +3613,60 @@ class ShareProfileResponse$Type extends MessageType<ShareProfileResponse> {
  * @generated MessageType for protobuf message parca.query.v1alpha1.ShareProfileResponse
  */
 export const ShareProfileResponse = new ShareProfileResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class TableArrow$Type extends MessageType<TableArrow> {
+    constructor() {
+        super("parca.query.v1alpha1.TableArrow", [
+            { no: 1, name: "record", kind: "scalar", T: 12 /*ScalarType.BYTES*/ },
+            { no: 2, name: "unit", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<TableArrow>): TableArrow {
+        const message = { record: new Uint8Array(0), unit: "" };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<TableArrow>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: TableArrow): TableArrow {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bytes record */ 1:
+                    message.record = reader.bytes();
+                    break;
+                case /* string unit */ 2:
+                    message.unit = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: TableArrow, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bytes record = 1; */
+        if (message.record.length)
+            writer.tag(1, WireType.LengthDelimited).bytes(message.record);
+        /* string unit = 2; */
+        if (message.unit !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.unit);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.query.v1alpha1.TableArrow
+ */
+export const TableArrow = new TableArrow$Type();
 /**
  * @generated ServiceType for protobuf service parca.query.v1alpha1.QueryService
  */
