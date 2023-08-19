@@ -397,6 +397,10 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 
 			// If we don't group by the labels, we add all labels to the row and later on intersect the values before adding them to the flame graph.
 			if _, groupBy := aggregateFields[FlamegraphFieldLabels]; !groupBy {
+				for len(fb.labels) < cr+1 {
+					fb.labels = append(fb.labels, nil)
+				}
+
 				fb.labels[cr] = append(fb.labels[cr], sampleLabels)
 			}
 
@@ -429,6 +433,9 @@ func (fb *flamegraphBuilder) mergeUnsymbolizedRows(
 
 		// If we don't group by the labels, we add all labels to the row and later on intersect the values before adding them to the flame graph.
 		if !aggregateLabels {
+			for len(fb.labels) < cr+1 {
+				fb.labels = append(fb.labels, nil)
+			}
 			fb.labels[cr] = append(fb.labels[cr], sampleLabels)
 		}
 
@@ -521,7 +528,7 @@ type flamegraphBuilder struct {
 	children [][]int
 	// labels keeps track of all labels for each row.
 	// In the end we intersect all labels for each row and add them to the labels column.
-	labels map[int][]map[string]string
+	labels [][]map[string]string
 
 	// This keeps track of the root rows indexed by the labels string.
 	// If the stack trace has no labels, we use the empty string as the key.
@@ -587,7 +594,7 @@ func newFlamegraphBuilder(pool memory.Allocator, rows int64) (*flamegraphBuilder
 	fb := &flamegraphBuilder{
 		parent:      parent(-1),
 		children:    make([][]int, rows),
-		labels:      make(map[int][]map[string]string),
+		labels:      [][]map[string]string{},
 		rootsRow:    make(map[string][]int),
 		compareRows: []int{},
 
@@ -678,17 +685,21 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	}
 	lsbytes := make([]byte, 0, 512)
 	for i := 0; i < fb.builderCumulative.Len(); i++ {
-		if lsets, hasLabels := fb.labels[i]; hasLabels {
-			inter := mapsIntersection(lsets)
-			if len(inter) == 0 {
-				fb.builderLabels.AppendNull()
-				continue
-			}
+		if len(fb.labels) > i {
+			if lsets := fb.labels[i]; lsets != nil {
+				inter := mapsIntersection(lsets)
+				if len(inter) == 0 {
+					fb.builderLabels.AppendNull()
+					continue
+				}
 
-			lsbytes = lsbytes[:0]
-			lsbytes = MarshalStringMap(lsbytes, inter)
-			if err := fb.builderLabels.Append(lsbytes); err != nil {
-				return nil, err
+				lsbytes = lsbytes[:0]
+				lsbytes = MarshalStringMap(lsbytes, inter)
+				if err := fb.builderLabels.Append(lsbytes); err != nil {
+					return nil, err
+				}
+			} else {
+				fb.builderLabels.AppendNull()
 			}
 		} else {
 			fb.builderLabels.AppendNull()
@@ -876,6 +887,9 @@ func (fb *flamegraphBuilder) appendRow(
 
 	if len(labels) > 0 {
 		// We add the labels to the potential labels for this row.
+		for len(fb.labels) < row+1 {
+			fb.labels = append(fb.labels, nil)
+		}
 		fb.labels[row] = append(fb.labels[row], labels)
 	}
 
@@ -909,6 +923,10 @@ func (fb *flamegraphBuilder) appendRow(
 }
 
 func (fb *flamegraphBuilder) AppendLabelRow(r profile.RecordReader, row int, labelKey string, labels map[string]string, sampleRow int) error {
+	for len(fb.labels) < row+1 {
+		fb.labels = append(fb.labels, nil)
+	}
+
 	fb.labels[row] = []map[string]string{labels}
 
 	if len(fb.children) == row {
