@@ -5,7 +5,7 @@ go 1.21
 require (
 	cloud.google.com/go/storage v1.31.0
 	github.com/alecthomas/kong v0.8.0
-	github.com/apache/arrow/go/v13 v13.0.0-20230812205620-757e0d5cca11
+	github.com/apache/arrow/go/v13 v13.0.0-20230820205410-6357c9f2419d
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
