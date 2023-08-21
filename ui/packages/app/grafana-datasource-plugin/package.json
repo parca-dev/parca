@@ -1,6 +1,6 @@
 {
   "name": "@parca/grafana-datasource",
-  "version": "0.0.185",
+  "version": "0.0.186",
   "description": "A Grafana datasource plugin for Parca",
   "scripts": {
     "build": "grafana-toolkit plugin:build",
@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@parca/client": "^0.16.84",
-    "@parca/profile": "^0.16.226",
+    "@parca/profile": "^0.16.227",
     "@protobuf-ts/grpcweb-transport": "2.9.1"
   },
   "private": true
