@@ -289,7 +289,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 }
 
 func (fb *flamegraphBuilder) labelsEqual(
-	r profile.RecordReader,
+	r *profile.RecordReader,
 	t *transpositions,
 	recordLabelIndex map[string]int,
 	sampleIndex int,
@@ -305,7 +305,7 @@ func (fb *flamegraphBuilder) labelsEqual(
 }
 
 func (fb *flamegraphBuilder) labelEqual(
-	r profile.RecordReader,
+	r *profile.RecordReader,
 	t *transpositions,
 	recordLabelIndex map[string]int,
 	sampleIndex int,
@@ -376,7 +376,7 @@ func (t *transpositions) Release() {
 	}
 }
 
-func (fb *flamegraphBuilder) newTranspositions(r profile.RecordReader) (*transpositions, error) {
+func (fb *flamegraphBuilder) newTranspositions(r *profile.RecordReader) (*transpositions, error) {
 	mappingIDIndicesData, mappingIDIndices, err := transpositionFromDict(fb.builderMappingBuildIDDictUnifier, r.MappingBuildIDDict)
 	if err != nil {
 		return nil, fmt.Errorf("unify and transpose mapping build id dict: %w", err)
@@ -504,7 +504,7 @@ func (fb *flamegraphBuilder) labelExists(labelFieldName string) bool {
 
 // mergeSymbolizedRows compares the symbolized fields by function name and labels and merges them if they equal.
 func (fb *flamegraphBuilder) mergeSymbolizedRows(
-	r profile.RecordReader,
+	r *profile.RecordReader,
 	t *transpositions,
 	recordLabelIndex map[string]int,
 	aggregateFields map[string]struct{},
@@ -541,7 +541,7 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 
 // mergeUnsymbolizedRows compares the addresses only and ignores potential function names as they are not available.
 func (fb *flamegraphBuilder) mergeUnsymbolizedRows(
-	r profile.RecordReader,
+	r *profile.RecordReader,
 	t *transpositions,
 	aggregateLabels bool,
 	recordLabelIndex map[string]int,
@@ -569,7 +569,7 @@ func (fb *flamegraphBuilder) mergeUnsymbolizedRows(
 }
 
 func (fb *flamegraphBuilder) intersectLabels(
-	r profile.RecordReader,
+	r *profile.RecordReader,
 	t *transpositions,
 	recordLabelIndex map[string]int,
 	sampleIndex int,
@@ -585,7 +585,7 @@ func (fb *flamegraphBuilder) intersectLabels(
 }
 
 func (fb *flamegraphBuilder) equalField(
-	r profile.RecordReader,
+	r *profile.RecordReader,
 	t *transpositions,
 	recordLabelIndex map[string]int,
 	fieldName string,
@@ -953,7 +953,7 @@ func (fb *flamegraphBuilder) Release() {
 }
 
 func (fb *flamegraphBuilder) appendRow(
-	r profile.RecordReader,
+	r *profile.RecordReader,
 	t *transpositions,
 	recordLabelIndex map[string]int,
 	sampleRow, locationRow, lineRow int,
@@ -1057,7 +1057,7 @@ func (fb *flamegraphBuilder) appendRow(
 }
 
 func (fb *flamegraphBuilder) AppendLabelRow(
-	r profile.RecordReader,
+	r *profile.RecordReader,
 	t *transpositions,
 	recordLabelIndex map[string]int,
 	row int,
@@ -1110,7 +1110,7 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 }
 
 // addRowValues updates the existing row's values and potentially adding existing values on top.
-func (fb *flamegraphBuilder) addRowValues(r profile.RecordReader, row, sampleRow int) {
+func (fb *flamegraphBuilder) addRowValues(r *profile.RecordReader, row, sampleRow int) {
 	fb.builderCumulative.Add(row, r.Value.Value(sampleRow))
 	if r.Diff.Value(sampleRow) != 0 {
 		fb.builderDiff.Add(row, r.Diff.Value(sampleRow))
