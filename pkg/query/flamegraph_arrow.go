@@ -90,14 +90,11 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	ctx, span := tracer.Start(ctx, "generateFlamegraphArrowRecord")
 	defer span.End()
 
-	aggregateFields := make(map[string]struct{}, len(aggregate))
-	for _, f := range aggregate {
-		aggregateFields[f] = struct{}{}
-	}
-	// this is a helper as it's frequently accessed below
 	aggregateLabels := false
-	if _, found := aggregateFields[FlamegraphFieldLabels]; found {
-		aggregateLabels = true
+	for _, f := range aggregate {
+		if f == FlamegraphFieldLabels {
+			aggregateLabels = true
+		}
 	}
 
 	totalRows := int64(0)
@@ -105,7 +102,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		totalRows += r.NumRows()
 	}
 
-	fb, err := newFlamegraphBuilder(mem, totalRows)
+	fb, err := newFlamegraphBuilder(mem, totalRows, aggregate, aggregateLabels)
 	if err != nil {
 		return nil, 0, 0, 0, fmt.Errorf("create flamegraph builder: %w", err)
 	}
@@ -247,7 +244,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						fb.height = 0
 					}
 
-					merged, err := fb.mergeSymbolizedRows(r, t, recordLabelIndex, aggregateFields, i, j, k, int(end))
+					merged, err := fb.mergeSymbolizedRows(r, t, recordLabelIndex, i, j, k, int(end))
 					if err != nil {
 						return nil, 0, 0, 0, err
 					}
@@ -507,13 +504,12 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 	r *profile.RecordReader,
 	t *transpositions,
 	recordLabelIndex map[string]int,
-	aggregateFields map[string]struct{},
 	sampleIndex, locationIndex, lineIndex, end int,
 ) (bool, error) {
-	if len(aggregateFields) > 0 {
+	if len(fb.aggregateFields) > 0 {
 	compareRows:
 		for _, cr := range fb.compareRows {
-			for f := range aggregateFields {
+			for _, f := range fb.aggregateFields {
 				if !fb.equalField(r, t, recordLabelIndex, f, sampleIndex, locationIndex, lineIndex, cr, end-1-locationIndex) {
 					// If a field doesn't match, we can't aggregate this row with the existing one.
 					continue compareRows
@@ -521,7 +517,7 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 			}
 
 			// If we don't group by the labels, we intersect the values before adding them to the flame graph.
-			if _, groupBy := aggregateFields[FlamegraphFieldLabels]; !groupBy {
+			if !fb.aggregateLabels {
 				fb.intersectLabels(r, t, recordLabelIndex, sampleIndex, cr)
 			}
 
@@ -597,29 +593,11 @@ func (fb *flamegraphBuilder) equalField(
 ) bool {
 	switch fieldName {
 	case FlamegraphFieldMappingFile:
-		if !r.Mapping.IsValid(locationRow) {
-			return true
-		}
-		rowMappingFileIndex := fb.builderMappingFileIndices.Value(flamegraphRow)
-		translatedMappingFileIndex := t.mappingFile.indices.Value(r.MappingFile.GetValueIndex(locationRow))
-
-		return rowMappingFileIndex == translatedMappingFileIndex
+		return fb.equalMappingFile(r, t, locationRow, flamegraphRow)
 	case FlamegraphFieldLocationAddress:
-		// TODO: do we need to check for null?
-		rowLocationAddress := fb.builderLocationAddress.Value(flamegraphRow)
-		return r.Address.Value(locationRow) == rowLocationAddress
+		return fb.equalLocationAddress(r, locationRow, flamegraphRow)
 	case FlamegraphFieldFunctionName:
-		isNull := fb.builderFunctionNameIndices.IsNull(flamegraphRow)
-		if !isNull {
-			rowFunctionNameIndex := fb.builderFunctionNameIndices.Value(flamegraphRow)
-			translatedFunctionNameIndex := t.functionName.indices.Value(r.LineFunctionName.GetValueIndex(lineRow))
-			return rowFunctionNameIndex == translatedFunctionNameIndex
-		}
-		// isNull
-		if !r.LineFunction.IsValid(lineRow) || len(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow))) == 0 {
-			return true
-		}
-		return false
+		return fb.equalFunctionName(r, t, lineRow, flamegraphRow)
 	case FlamegraphFieldLabels:
 		// We only compare the labels of roots of stacktraces.
 		if height > 0 {
@@ -632,6 +610,48 @@ func (fb *flamegraphBuilder) equalField(
 	}
 }
 
+func (fb *flamegraphBuilder) equalMappingFile(
+	r *profile.RecordReader,
+	t *transpositions,
+	locationRow,
+	flamegraphRow int,
+) bool {
+	if !r.Mapping.IsValid(locationRow) {
+		return true
+	}
+	rowMappingFileIndex := fb.builderMappingFileIndices.Value(flamegraphRow)
+	translatedMappingFileIndex := t.mappingFile.indices.Value(r.MappingFile.GetValueIndex(locationRow))
+
+	return rowMappingFileIndex == translatedMappingFileIndex
+}
+
+func (fb *flamegraphBuilder) equalLocationAddress(
+	r *profile.RecordReader,
+	locationRow,
+	flamegraphRow int,
+) bool {
+	return r.Address.Value(locationRow) == fb.builderLocationAddress.Value(flamegraphRow)
+}
+
+func (fb *flamegraphBuilder) equalFunctionName(
+	r *profile.RecordReader,
+	t *transpositions,
+	lineRow,
+	flamegraphRow int,
+) bool {
+	isNull := fb.builderFunctionNameIndices.IsNull(flamegraphRow)
+	if !isNull {
+		rowFunctionNameIndex := fb.builderFunctionNameIndices.Value(flamegraphRow)
+		translatedFunctionNameIndex := t.functionName.indices.Value(r.LineFunctionName.GetValueIndex(lineRow))
+		return rowFunctionNameIndex == translatedFunctionNameIndex
+	}
+	// isNull
+	if !r.LineFunction.IsValid(lineRow) || len(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow))) == 0 {
+		return true
+	}
+	return false
+}
+
 func copyChildren(children []int) []int {
 	newChildren := make([]int, len(children))
 	copy(newChildren, children)
@@ -640,6 +660,9 @@ func copyChildren(children []int) []int {
 
 type flamegraphBuilder struct {
 	pool memory.Allocator
+
+	aggregateFields []string
+	aggregateLabels bool
 
 	// This keeps track of the total cumulative value so that we can set the first row's cumulative value at the end.
 	cumulative int64
@@ -691,7 +714,12 @@ type flamegraphBuilder struct {
 	labelNameIndex map[string]int
 }
 
-func newFlamegraphBuilder(pool memory.Allocator, rows int64) (*flamegraphBuilder, error) {
+func newFlamegraphBuilder(
+	pool memory.Allocator,
+	rows int64,
+	aggregateFields []string,
+	aggregateLabels bool,
+) (*flamegraphBuilder, error) {
 	builderMappingBuildIDDictUnifier, err := array.NewDictionaryUnifier(pool, arrow.BinaryTypes.Binary)
 	if err != nil {
 		return nil, fmt.Errorf("create mapping build id dictionary unifier: %w", err)
@@ -720,6 +748,9 @@ func newFlamegraphBuilder(pool memory.Allocator, rows int64) (*flamegraphBuilder
 	builderChildren := builder.NewListBuilder(pool, arrow.PrimitiveTypes.Uint32)
 	fb := &flamegraphBuilder{
 		pool: pool,
+
+		aggregateFields: aggregateFields,
+		aggregateLabels: aggregateLabels,
 
 		parent:         parent(-1),
 		children:       make([][]int, rows),
