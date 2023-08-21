@@ -571,13 +571,43 @@ func (fb *flamegraphBuilder) intersectLabels(
 	sampleIndex int,
 	flamegraphRow int,
 ) {
-	for i := range fb.builderLabelFields {
-		// if the labels are equal we don't do anything, only when they are
-		// diffetent do we have to remove it
-		if !fb.labelEqual(r, t, recordLabelIndex, sampleIndex, flamegraphRow, i) {
-			fb.builderLabels[i].SetNull(flamegraphRow)
-		}
+	if fb.builderLabelCount.Value(flamegraphRow) == 0 {
+		// No need to intersect if there are no labels yet.
+		return
 	}
+
+	labelCount := int32(0)
+	for i, labelColumn := range fb.builderLabels {
+		if !labelColumn.IsValid(flamegraphRow) {
+			// Intersecting with a null value is a no-op.
+			continue
+		}
+
+		labelName := fb.builderLabelFields[i].Name
+		fieldIndex := recordLabelIndex[labelName]
+		recordLabelColumn := r.LabelColumns[fieldIndex]
+
+		if !recordLabelColumn.Col.IsValid(sampleIndex) {
+			// At this point we know that the flamegraph row is valid, so
+			// intersecting with a null value results in null, so we need to
+			// reset it.
+			labelColumn.SetNull(flamegraphRow)
+
+			continue
+		}
+
+		// if the labels are equal we don't do anything, only when they are
+		// different do we have to remove it
+		transposedLabelIndex := t.labels[fieldIndex].indices.Value(recordLabelColumn.Col.GetValueIndex(sampleIndex))
+		if transposedLabelIndex != labelColumn.Value(flamegraphRow) {
+			labelColumn.SetNull(flamegraphRow)
+			continue
+		}
+
+		// If we get here the labels are equal meaning we have to keep it.
+		labelCount++
+	}
+	fb.builderLabelCount.Set(flamegraphRow, labelCount)
 }
 
 func (fb *flamegraphBuilder) equalField(
@@ -704,6 +734,7 @@ type flamegraphBuilder struct {
 	builderFunctionFilenameIndices       *array.Int32Builder
 	builderFunctionFilenameDictUnifier   array.DictionaryUnifier
 	builderLabelFields                   []arrow.Field
+	builderLabelCount                    *builder.OptInt32Builder
 	builderLabels                        []*builder.OptInt32Builder
 	builderLabelsDictUnifiers            []array.DictionaryUnifier
 	builderChildren                      *builder.ListBuilder
@@ -759,6 +790,7 @@ func newFlamegraphBuilder(
 		compareRows:    []int{},
 
 		builderLabelsOnly: array.NewBooleanBuilder(pool),
+		builderLabelCount: builder.NewOptInt32Builder(arrow.PrimitiveTypes.Int32),
 
 		builderMappingStart:              array.NewUint64Builder(pool),
 		builderMappingLimit:              array.NewUint64Builder(pool),
@@ -788,6 +820,7 @@ func newFlamegraphBuilder(
 
 	// The very first row is the root row. It doesn't contain any metadata.
 	// It only contains the root cumulative value and list of children (which are actual roots).
+	fb.builderLabelCount.AppendNull()
 	fb.builderLabelsOnly.AppendNull()
 	fb.builderMappingStart.AppendNull()
 	fb.builderMappingLimit.AppendNull()
@@ -1044,12 +1077,14 @@ func (fb *flamegraphBuilder) appendRow(
 
 	// Values
 
+	labelCount := int32(0)
 	for i, labelField := range fb.builderLabelFields {
 		if recordIndex, ok := recordLabelIndex[labelField.Name]; ok {
 			lc := r.LabelColumns[recordIndex]
 			if lc.Col.IsValid(sampleRow) && len(lc.Dict.Value(lc.Col.GetValueIndex(sampleRow))) > 0 {
 				transposedIndex := t.labels[i].indices.Value(lc.Col.GetValueIndex(sampleRow))
 				fb.builderLabels[i].Append(transposedIndex)
+				labelCount++
 			} else {
 				fb.builderLabels[i].AppendNull()
 			}
@@ -1057,6 +1092,7 @@ func (fb *flamegraphBuilder) appendRow(
 			fb.builderLabels[i].AppendNull()
 		}
 	}
+	fb.builderLabelCount.Append(labelCount)
 
 	if len(fb.children) == row {
 		// We need to grow the children slice, so we'll do that here.
@@ -1094,12 +1130,14 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 	row int,
 	sampleRow int,
 ) error {
+	labelCount := int32(0)
 	for i, labelField := range fb.builderLabelFields {
 		if recordIndex, ok := recordLabelIndex[labelField.Name]; ok {
 			lc := r.LabelColumns[recordIndex]
 			if lc.Col.IsValid(sampleRow) && len(lc.Dict.Value(lc.Col.GetValueIndex(sampleRow))) > 0 {
 				transposedIndex := t.labels[i].indices.Value(lc.Col.GetValueIndex(sampleRow))
 				fb.builderLabels[i].Append(transposedIndex)
+				labelCount++
 			} else {
 				fb.builderLabels[i].AppendNull()
 			}
@@ -1107,6 +1145,7 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 			fb.builderLabels[i].AppendNull()
 		}
 	}
+	fb.builderLabelCount.Append(labelCount)
 
 	if len(fb.children) == row {
 		// We need to grow the children slice, so we'll do that here.
