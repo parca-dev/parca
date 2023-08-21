@@ -181,7 +181,10 @@ const TooltipMetaInfo = ({
   const locationLine: bigint = table.getChild(FIELD_LOCATION_LINE)?.get(row) ?? 0n;
   const functionFilename: string = table.getChild(FIELD_FUNCTION_FILE_NAME)?.get(row) ?? '';
   const functionStartLine: bigint = table.getChild(FIELD_FUNCTION_START_LINE)?.get(row) ?? 0n;
-  const labelsString: string = table.getChild(FIELD_LABELS)?.get(row) ?? '{}';
+  const pprofLabelPrefix = 'pprof_labels.';
+  const labelColumnNames = table.schema.fields.filter(field =>
+    field.name.startsWith(pprofLabelPrefix)
+  );
 
   const getTextForFile = (): string => {
     if (functionFilename === '') return '<unknown>';
@@ -194,20 +197,22 @@ const TooltipMetaInfo = ({
   };
   const file = getTextForFile();
 
-  const labels = Object.entries(JSON.parse(labelsString))
-    .sort((a, b) => {
-      return a[0].localeCompare(b[0]);
-    })
-    .map(
-      (l): React.JSX.Element => (
-        <span
-          key={l[0]}
-          className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
-        >
-          {`${l[0]}="${l[1] as string}"`}
-        </span>
-      )
-    );
+  const labelPairs = labelColumnNames
+    .map((field, i) => [
+      labelColumnNames[i].name.slice(pprofLabelPrefix.length),
+      table.getChild(field.name)?.get(row) ?? '',
+    ])
+    .filter(value => value[1] !== '');
+  const labels = labelPairs.map(
+    (l): React.JSX.Element => (
+      <span
+        key={l[0]}
+        className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+      >
+        {`${l[0] as string}="${l[1] as string}"`}
+      </span>
+    )
+  );
 
   return (
     <>
@@ -263,7 +268,7 @@ const TooltipMetaInfo = ({
           )}
         </td>
       </tr>
-      {labelsString !== '{}' && (
+      {labelPairs.length > 0 && (
         <tr>
           <td className="w-1/4">Labels</td>
           <td className="w-3/4 break-all">{labels}</td>

@@ -29,7 +29,7 @@ require (
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
 	github.com/parquet-go/parquet-go v0.17.0
-	github.com/polarsignals/frostdb v0.0.0-20230803182517-de942d0ce46e
+	github.com/polarsignals/frostdb v0.0.0-20230821093112-02bf1156bc12
 	github.com/prometheus/client_golang v1.16.0
 	github.com/prometheus/common v0.44.0
 	github.com/prometheus/prometheus v0.46.0
@@ -201,7 +201,7 @@ require (
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/polarsignals/wal v0.0.0-20230509073041-6731e243de20 // indirect
+	github.com/polarsignals/wal v0.0.0-20230809145250-99ef415c5a6c // indirect
 	github.com/prometheus/client_model v0.4.0 // indirect
 	github.com/prometheus/procfs v0.11.0 // indirect
 	github.com/rivo/uniseg v0.3.4 // indirect
