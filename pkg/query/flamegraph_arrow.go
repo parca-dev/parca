@@ -27,7 +27,6 @@ import (
 	"github.com/polarsignals/frostdb/pqarrow/builder"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
-	"golang.org/x/exp/maps"
 
 	queryv1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
@@ -117,6 +116,15 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 	profileReader := profile.NewReader(p)
 	for _, r := range profileReader.RecordReaders {
+		if err := fb.ensureLabelColumns(r.LabelFields); err != nil {
+			return nil, 0, 0, 0, fmt.Errorf("ensure label columns: %w", err)
+		}
+
+		recordLabelIndex := make(map[string]int, len(r.LabelFields))
+		for i, f := range r.LabelFields {
+			recordLabelIndex[f.Name] = i
+		}
+
 		t, err := fb.newTranspositions(r)
 		if err != nil {
 			return nil, 0, 0, 0, fmt.Errorf("create transpositions: %w", err)
@@ -134,7 +142,6 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					if sampleLabels == nil {
 						sampleLabels = map[string]string{}
 					}
-
 					labelName := strings.TrimPrefix(r.LabelFields[j].Name, profile.ColumnPprofLabelsPrefix)
 					sampleLabels[labelName] = string(labelColumn.Dict.Value(labelColumn.Col.GetValueIndex(i)))
 				}
@@ -154,7 +161,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					fb.addRowValues(r, sampleLabelRow, i) // adds the cumulative and diff values to the existing row
 				} else {
 					lsstring := string(lsbytes) // we want to cast the bytes to a string and thus copy them.
-					err := fb.AppendLabelRow(r, sampleLabelRow, lsstring, sampleLabels, i)
+					err := fb.AppendLabelRow(r, t, recordLabelIndex, sampleLabelRow, i)
 					if err != nil {
 						return nil, 0, 0, 0, fmt.Errorf("failed to inject label row: %w", err)
 					}
@@ -200,7 +207,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						r,
 						t,
 						aggregateLabels,
-						sampleLabels,
+						recordLabelIndex,
 						i, j, int(end),
 					)
 					if err != nil {
@@ -217,7 +224,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						fb.rootsRow[lsstring] = append(fb.rootsRow[lsstring], row)
 					}
 
-					err = fb.appendRow(r, t, sampleLabels, i, j, -1, row)
+					err = fb.appendRow(r, t, recordLabelIndex, i, j, -1, row)
 					if err != nil {
 						return nil, 0, 0, 0, err
 					}
@@ -240,7 +247,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						fb.height = 0
 					}
 
-					merged, err := fb.mergeSymbolizedRows(r, t, aggregateFields, sampleLabels, i, j, k, int(end))
+					merged, err := fb.mergeSymbolizedRows(r, t, recordLabelIndex, aggregateFields, i, j, k, int(end))
 					if err != nil {
 						return nil, 0, 0, 0, err
 					}
@@ -255,7 +262,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						fb.rootsRow[lsstring] = append(fb.rootsRow[lsstring], row)
 					}
 
-					err = fb.appendRow(r, t, sampleLabels, i, j, k, row)
+					err = fb.appendRow(r, t, recordLabelIndex, i, j, k, row)
 					if err != nil {
 						return nil, 0, 0, 0, err
 					}
@@ -281,6 +288,60 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	return record, fb.cumulative, fb.maxHeight + 1, 0, nil
 }
 
+func (fb *flamegraphBuilder) labelsEqual(
+	r profile.RecordReader,
+	t *transpositions,
+	recordLabelIndex map[string]int,
+	sampleIndex int,
+	flamegraphRow int,
+) bool {
+	for i := range fb.builderLabelFields {
+		if !fb.labelEqual(r, t, recordLabelIndex, sampleIndex, flamegraphRow, i) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (fb *flamegraphBuilder) labelEqual(
+	r profile.RecordReader,
+	t *transpositions,
+	recordLabelIndex map[string]int,
+	sampleIndex int,
+	flamegraphRow int,
+	labelFieldIndex int,
+) bool {
+	labelField := fb.builderLabelFields[labelFieldIndex]
+	labelColumn := fb.builderLabels[labelFieldIndex]
+	fieldIndex := recordLabelIndex[labelField.Name]
+	recordLabelColumn := r.LabelColumns[fieldIndex]
+	dict := r.LabelColumns[fieldIndex].Dict
+
+	sampleHasNonEmptyLabel := false
+	sampleLabelValueValueIndex := -1
+	var sampleLabelValue []byte
+	if recordLabelColumn.Col.IsValid(sampleIndex) {
+		sampleLabelValueValueIndex = recordLabelColumn.Col.GetValueIndex(sampleIndex)
+		sampleLabelValue = dict.Value(sampleLabelValueValueIndex)
+		sampleHasNonEmptyLabel = len(sampleLabelValue) > 0
+	}
+	flamegraphRowHasNonEmptyLabel := labelColumn.IsValid(flamegraphRow)
+
+	if !sampleHasNonEmptyLabel && !flamegraphRowHasNonEmptyLabel {
+		return true
+	}
+	if flamegraphRowHasNonEmptyLabel && !sampleHasNonEmptyLabel {
+		return false
+	}
+	if !flamegraphRowHasNonEmptyLabel && sampleHasNonEmptyLabel {
+		return false
+	}
+
+	transposedIndex := t.labelTranspositions[fieldIndex].Value(sampleLabelValueValueIndex)
+	return labelColumn.Value(flamegraphRow) == transposedIndex
+}
+
 type transpositions struct {
 	mappingIDIndicesData *array.Data
 	mappingIDIndices     *array.Int32
@@ -296,6 +357,9 @@ type transpositions struct {
 
 	functionFilenameIndicesData *array.Data
 	functionFilenameIndices     *array.Int32
+
+	labelTranspositionDatas []*array.Data
+	labelTranspositions     []*array.Int32
 }
 
 func (t *transpositions) Release() {
@@ -313,6 +377,13 @@ func (t *transpositions) Release() {
 
 	t.functionFilenameIndicesData.Release()
 	t.functionFilenameIndices.Release()
+
+	for _, labelTranspositionData := range t.labelTranspositionDatas {
+		labelTranspositionData.Release()
+	}
+	for _, labelTransposition := range t.labelTranspositions {
+		labelTransposition.Release()
+	}
 }
 
 func (fb *flamegraphBuilder) newTranspositions(r profile.RecordReader) (*transpositions, error) {
@@ -341,6 +412,19 @@ func (fb *flamegraphBuilder) newTranspositions(r profile.RecordReader) (*transpo
 		return nil, fmt.Errorf("unify and transpose function filename dict: %w", err)
 	}
 
+	labelTranspositionDatas := make([]*array.Data, 0, len(r.LabelColumns))
+	labelTranspositions := make([]*array.Int32, 0, len(r.LabelColumns))
+	for i, labelField := range r.LabelFields {
+		builderIndex := fb.labelNameIndex[labelField.Name]
+		labelColumn := r.LabelColumns[i]
+		labelTranspositionData, labelTransposition, err := transpositionFromDict(fb.builderLabelsDictUnifiers[builderIndex], labelColumn.Dict)
+		if err != nil {
+			return nil, fmt.Errorf("unify and transpose label dict %q: %w", labelField.Name, err)
+		}
+		labelTranspositionDatas = append(labelTranspositionDatas, labelTranspositionData)
+		labelTranspositions = append(labelTranspositions, labelTransposition)
+	}
+
 	return &transpositions{
 		mappingIDIndicesData: mappingIDIndicesData,
 		mappingIDIndices:     mappingIDIndices,
@@ -356,6 +440,9 @@ func (fb *flamegraphBuilder) newTranspositions(r profile.RecordReader) (*transpo
 
 		functionFilenameIndicesData: functionFilenameIndicesData,
 		functionFilenameIndices:     functionFilenameIndices,
+
+		labelTranspositionDatas: labelTranspositionDatas,
+		labelTranspositions:     labelTranspositions,
 	}, nil
 }
 
@@ -377,31 +464,70 @@ func transpositionFromDict(unifier array.DictionaryUnifier, dict *array.Binary) 
 	return data, indices, nil
 }
 
+func (fb *flamegraphBuilder) ensureLabelColumns(fields []arrow.Field) error {
+	for _, field := range fields {
+		if fb.labelExists(field.Name) {
+			continue
+		}
+
+		if err := fb.addLabelColumn(field); err != nil {
+			return fmt.Errorf("add label column %q: %w", field.Name, err)
+		}
+	}
+
+	fb.ensureLabelColumnsComplete()
+	return nil
+}
+
+func (fb *flamegraphBuilder) ensureLabelColumnsComplete() {
+	numRows := fb.builderCumulative.Len()
+	for _, column := range fb.builderLabels {
+		if column.Len() < numRows {
+			column.AppendNulls(numRows - column.Len())
+		}
+	}
+}
+
+func (fb *flamegraphBuilder) addLabelColumn(field arrow.Field) error {
+	labelDictUnifier, err := array.NewDictionaryUnifier(fb.pool, arrow.BinaryTypes.Binary)
+	if err != nil {
+		return fmt.Errorf("create label dict unifier: %w", err)
+	}
+
+	fb.builderLabelsDictUnifiers = append(fb.builderLabelsDictUnifiers, labelDictUnifier)
+	fb.builderLabels = append(fb.builderLabels, builder.NewOptInt32Builder(arrow.PrimitiveTypes.Int32))
+	fb.builderLabelFields = append(fb.builderLabelFields, field)
+	fb.labelNameIndex[field.Name] = len(fb.builderLabels) - 1
+
+	return nil
+}
+
+func (fb *flamegraphBuilder) labelExists(labelFieldName string) bool {
+	_, ok := fb.labelNameIndex[labelFieldName]
+	return ok
+}
+
 // mergeSymbolizedRows compares the symbolized fields by function name and labels and merges them if they equal.
 func (fb *flamegraphBuilder) mergeSymbolizedRows(
 	r profile.RecordReader,
 	t *transpositions,
+	recordLabelIndex map[string]int,
 	aggregateFields map[string]struct{},
-	sampleLabels map[string]string,
 	sampleIndex, locationIndex, lineIndex, end int,
 ) (bool, error) {
 	if len(aggregateFields) > 0 {
 	compareRows:
 		for _, cr := range fb.compareRows {
 			for f := range aggregateFields {
-				if !fb.equalField(r, t, f, sampleLabels, locationIndex, lineIndex, cr, end-1-locationIndex) {
+				if !fb.equalField(r, t, recordLabelIndex, f, sampleIndex, locationIndex, lineIndex, cr, end-1-locationIndex) {
 					// If a field doesn't match, we can't aggregate this row with the existing one.
 					continue compareRows
 				}
 			}
 
-			// If we don't group by the labels, we add all labels to the row and later on intersect the values before adding them to the flame graph.
+			// If we don't group by the labels, we intersect the values before adding them to the flame graph.
 			if _, groupBy := aggregateFields[FlamegraphFieldLabels]; !groupBy {
-				for len(fb.labels) < cr+1 {
-					fb.labels = append(fb.labels, nil)
-				}
-
-				fb.labels[cr] = append(fb.labels[cr], sampleLabels)
+				fb.intersectLabels(r, t, recordLabelIndex, sampleIndex, cr)
 			}
 
 			// All fields match, so we can aggregate this new row with the existing one.
@@ -423,20 +549,17 @@ func (fb *flamegraphBuilder) mergeUnsymbolizedRows(
 	r profile.RecordReader,
 	t *transpositions,
 	aggregateLabels bool,
-	sampleLabels map[string]string,
+	recordLabelIndex map[string]int,
 	sampleIndex, locationIndex, end int,
 ) (bool, error) {
 	for _, cr := range fb.compareRows {
-		if !fb.equalField(r, t, FlamegraphFieldLocationAddress, sampleLabels, locationIndex, 0, cr, int(end)-1-locationIndex) {
+		if !fb.equalField(r, t, recordLabelIndex, FlamegraphFieldLocationAddress, sampleIndex, locationIndex, 0, cr, int(end)-1-locationIndex) {
 			continue
 		}
 
-		// If we don't group by the labels, we add all labels to the row and later on intersect the values before adding them to the flame graph.
+		// If we don't group by the labels, we only keep those labels that are identical.
 		if !aggregateLabels {
-			for len(fb.labels) < cr+1 {
-				fb.labels = append(fb.labels, nil)
-			}
-			fb.labels[cr] = append(fb.labels[cr], sampleLabels)
+			fb.intersectLabels(r, t, recordLabelIndex, sampleIndex, cr)
 		}
 
 		fb.builderCumulative.Add(cr, r.Value.Value(sampleIndex))
@@ -450,11 +573,28 @@ func (fb *flamegraphBuilder) mergeUnsymbolizedRows(
 	return false, nil
 }
 
+func (fb *flamegraphBuilder) intersectLabels(
+	r profile.RecordReader,
+	t *transpositions,
+	recordLabelIndex map[string]int,
+	sampleIndex int,
+	flamegraphRow int,
+) {
+	for i := range fb.builderLabelFields {
+		// if the labels are equal we don't do anything, only when they are
+		// diffetent do we have to remove it
+		if !fb.labelEqual(r, t, recordLabelIndex, sampleIndex, flamegraphRow, i) {
+			fb.builderLabels[i].SetNull(flamegraphRow)
+		}
+	}
+}
+
 func (fb *flamegraphBuilder) equalField(
 	r profile.RecordReader,
 	t *transpositions,
+	recordLabelIndex map[string]int,
 	fieldName string,
-	pprofLabels map[string]string,
+	sampleIndex,
 	locationRow,
 	lineRow,
 	flamegraphRow int,
@@ -490,19 +630,8 @@ func (fb *flamegraphBuilder) equalField(
 		if height > 0 {
 			return true
 		}
-		if len(pprofLabels) == 0 && fb.labels[flamegraphRow] == nil {
-			return true
-		}
-		if len(pprofLabels) > 0 && fb.labels[flamegraphRow] == nil {
-			return false
-		}
-		if len(pprofLabels) == 0 && fb.labels[flamegraphRow] != nil {
-			return false
-		}
-		if len(pprofLabels) != len(fb.labels[flamegraphRow][0]) {
-			return false
-		}
-		return maps.Equal(pprofLabels, fb.labels[flamegraphRow][0])
+
+		return fb.labelsEqual(r, t, recordLabelIndex, sampleIndex, flamegraphRow)
 	default:
 		return false
 	}
@@ -515,6 +644,8 @@ func copyChildren(children []int) []int {
 }
 
 type flamegraphBuilder struct {
+	pool memory.Allocator
+
 	// This keeps track of the total cumulative value so that we can set the first row's cumulative value at the end.
 	cumulative int64
 	// This keeps track of the total diff values so that we can set the irst row's diff value at the end.
@@ -557,11 +688,15 @@ type flamegraphBuilder struct {
 	builderFunctionSystemNameDictUnifier array.DictionaryUnifier
 	builderFunctionFilenameIndices       *array.Int32Builder
 	builderFunctionFilenameDictUnifier   array.DictionaryUnifier
-	builderLabels                        *array.BinaryDictionaryBuilder
+	builderLabelFields                   []arrow.Field
+	builderLabels                        []*builder.OptInt32Builder
+	builderLabelsDictUnifiers            []array.DictionaryUnifier
 	builderChildren                      *builder.ListBuilder
 	builderChildrenValues                *array.Uint32Builder
 	builderCumulative                    *builder.OptInt64Builder
 	builderDiff                          *builder.OptInt64Builder
+
+	labelNameIndex map[string]int
 }
 
 func newFlamegraphBuilder(pool memory.Allocator, rows int64) (*flamegraphBuilder, error) {
@@ -592,11 +727,13 @@ func newFlamegraphBuilder(pool memory.Allocator, rows int64) (*flamegraphBuilder
 
 	builderChildren := builder.NewListBuilder(pool, arrow.PrimitiveTypes.Uint32)
 	fb := &flamegraphBuilder{
-		parent:      parent(-1),
-		children:    make([][]int, rows),
-		labels:      [][]map[string]string{},
-		rootsRow:    make(map[string][]int),
-		compareRows: []int{},
+		pool: pool,
+
+		parent:         parent(-1),
+		children:       make([][]int, rows),
+		rootsRow:       map[string][]int{},
+		labelNameIndex: map[string]int{},
+		compareRows:    []int{},
 
 		builderLabelsOnly: array.NewBooleanBuilder(pool),
 
@@ -620,7 +757,6 @@ func newFlamegraphBuilder(pool memory.Allocator, rows int64) (*flamegraphBuilder
 		builderFunctionFilenameIndices:       array.NewInt32Builder(pool),
 		builderFunctionFilenameDictUnifier:   builderFunctionFilenameDictUnifier,
 
-		builderLabels:         array.NewDictionaryBuilder(pool, &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.String}).(*array.BinaryDictionaryBuilder),
 		builderChildren:       builderChildren,
 		builderChildrenValues: builderChildren.ValueBuilder().(*array.Uint32Builder),
 		builderCumulative:     builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
@@ -683,28 +819,7 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 			}
 		}
 	}
-	lsbytes := make([]byte, 0, 512)
-	for i := 0; i < fb.builderCumulative.Len(); i++ {
-		if len(fb.labels) > i {
-			if lsets := fb.labels[i]; lsets != nil {
-				inter := mapsIntersection(lsets)
-				if len(inter) == 0 {
-					fb.builderLabels.AppendNull()
-					continue
-				}
-
-				lsbytes = lsbytes[:0]
-				lsbytes = MarshalStringMap(lsbytes, inter)
-				if err := fb.builderLabels.Append(lsbytes); err != nil {
-					return nil, err
-				}
-			} else {
-				fb.builderLabels.AppendNull()
-			}
-		} else {
-			fb.builderLabels.AppendNull()
-		}
-	}
+	fb.ensureLabelColumnsComplete()
 
 	mappingBuildIDIndices := fb.builderMappingBuildIDIndices.NewArray()
 	mappingBuildIDDict, err := fb.builderMappingBuildIDDictUnifier.GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
@@ -750,48 +865,65 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	// the builder is reset.
 	numRows := fb.builderCumulative.Len()
 
+	fields := []arrow.Field{
+		{Name: FlamegraphFieldLabelsOnly, Type: arrow.FixedWidthTypes.Boolean},
+		{Name: FlamegraphFieldMappingStart, Type: arrow.PrimitiveTypes.Uint64},
+		{Name: FlamegraphFieldMappingLimit, Type: arrow.PrimitiveTypes.Uint64},
+		{Name: FlamegraphFieldMappingOffset, Type: arrow.PrimitiveTypes.Uint64},
+		{Name: FlamegraphFieldMappingFile, Type: mappingFileType},
+		{Name: FlamegraphFieldMappingBuildID, Type: mappingBuildIDType},
+		// Location
+		{Name: FlamegraphFieldLocationAddress, Type: arrow.PrimitiveTypes.Uint64},
+		{Name: FlamegraphFieldLocationFolded, Type: &arrow.BooleanType{}},
+		{Name: FlamegraphFieldLocationLine, Type: arrow.PrimitiveTypes.Int64},
+		// Function
+		{Name: FlamegraphFieldFunctionStartLine, Type: arrow.PrimitiveTypes.Int64},
+		{Name: FlamegraphFieldFunctionName, Type: functionNameType},
+		{Name: FlamegraphFieldFunctionSystemName, Type: functionSystemNameType},
+		{Name: FlamegraphFieldFunctionFileName, Type: functionFilenameType},
+		// Values
+		{Name: FlamegraphFieldChildren, Type: arrow.ListOf(arrow.PrimitiveTypes.Uint32)},
+		{Name: FlamegraphFieldCumulative, Type: arrow.PrimitiveTypes.Int64},
+		{Name: FlamegraphFieldDiff, Type: arrow.PrimitiveTypes.Int64, Nullable: true},
+	}
+
+	arrays := []arrow.Array{
+		fb.builderLabelsOnly.NewArray(),
+		fb.builderMappingStart.NewArray(),
+		fb.builderMappingLimit.NewArray(),
+		fb.builderMappingOffset.NewArray(),
+		mappingFile,
+		mappingBuildID,
+		fb.builderLocationAddress.NewArray(),
+		fb.builderLocationFolded.NewArray(),
+		fb.builderLocationLine.NewArray(),
+		fb.builderFunctionStartLine.NewArray(),
+		functionName,
+		functionSystemName,
+		functionFilename,
+		fb.builderChildren.NewArray(),
+		fb.builderCumulative.NewArray(),
+		fb.builderDiff.NewArray(),
+	}
+
+	for i := range fb.builderLabelFields {
+		typ := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.String}
+		fields = append(fields, arrow.Field{
+			Name: fb.builderLabelFields[i].Name,
+			Type: typ,
+		})
+		indices := fb.builderLabels[i].NewArray()
+		dict, err := fb.builderLabelsDictUnifiers[i].GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
+		if err != nil {
+			return nil, err
+		}
+		arrays = append(arrays, array.NewDictionaryArray(typ, indices, dict))
+	}
+
 	return array.NewRecord(
-		arrow.NewSchema([]arrow.Field{
-			{Name: FlamegraphFieldLabelsOnly, Type: arrow.FixedWidthTypes.Boolean},
-			{Name: FlamegraphFieldMappingStart, Type: arrow.PrimitiveTypes.Uint64},
-			{Name: FlamegraphFieldMappingLimit, Type: arrow.PrimitiveTypes.Uint64},
-			{Name: FlamegraphFieldMappingOffset, Type: arrow.PrimitiveTypes.Uint64},
-			{Name: FlamegraphFieldMappingFile, Type: mappingFileType},
-			{Name: FlamegraphFieldMappingBuildID, Type: mappingBuildIDType},
-			// Location
-			{Name: FlamegraphFieldLocationAddress, Type: arrow.PrimitiveTypes.Uint64},
-			{Name: FlamegraphFieldLocationFolded, Type: &arrow.BooleanType{}},
-			{Name: FlamegraphFieldLocationLine, Type: arrow.PrimitiveTypes.Int64},
-			// Function
-			{Name: FlamegraphFieldFunctionStartLine, Type: arrow.PrimitiveTypes.Int64},
-			{Name: FlamegraphFieldFunctionName, Type: functionNameType},
-			{Name: FlamegraphFieldFunctionSystemName, Type: functionSystemNameType},
-			{Name: FlamegraphFieldFunctionFileName, Type: functionFilenameType},
-			// Values
-			{Name: FlamegraphFieldLabels, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.String}},
-			{Name: FlamegraphFieldChildren, Type: arrow.ListOf(arrow.PrimitiveTypes.Uint32)},
-			{Name: FlamegraphFieldCumulative, Type: arrow.PrimitiveTypes.Int64},
-			{Name: FlamegraphFieldDiff, Type: arrow.PrimitiveTypes.Int64, Nullable: true},
-		}, nil),
-		[]arrow.Array{
-			fb.builderLabelsOnly.NewArray(),
-			fb.builderMappingStart.NewArray(),
-			fb.builderMappingLimit.NewArray(),
-			fb.builderMappingOffset.NewArray(),
-			mappingFile,
-			mappingBuildID,
-			fb.builderLocationAddress.NewArray(),
-			fb.builderLocationFolded.NewArray(),
-			fb.builderLocationLine.NewArray(),
-			fb.builderFunctionStartLine.NewArray(),
-			functionName,
-			functionSystemName,
-			functionFilename,
-			fb.builderLabels.NewArray(),
-			fb.builderChildren.NewArray(),
-			fb.builderCumulative.NewArray(),
-			fb.builderDiff.NewArray(),
-		}, int64(numRows)), nil
+		arrow.NewSchema(fields, nil),
+		arrays,
+		int64(numRows)), nil
 }
 
 func (fb *flamegraphBuilder) Release() {
@@ -817,17 +949,21 @@ func (fb *flamegraphBuilder) Release() {
 	fb.builderFunctionFilenameIndices.Release()
 	fb.builderFunctionFilenameDictUnifier.Release()
 
-	fb.builderLabels.Release()
 	fb.builderChildren.Release()
 	fb.builderChildrenValues.Release()
 	fb.builderCumulative.Release()
 	fb.builderDiff.Release()
+
+	for i := range fb.builderLabelFields {
+		fb.builderLabels[i].Release()
+		fb.builderLabelsDictUnifiers[i].Release()
+	}
 }
 
 func (fb *flamegraphBuilder) appendRow(
 	r profile.RecordReader,
 	t *transpositions,
-	labels map[string]string,
+	recordLabelIndex map[string]int,
 	sampleRow, locationRow, lineRow int,
 	row int,
 ) error {
@@ -885,12 +1021,18 @@ func (fb *flamegraphBuilder) appendRow(
 
 	// Values
 
-	if len(labels) > 0 {
-		// We add the labels to the potential labels for this row.
-		for len(fb.labels) < row+1 {
-			fb.labels = append(fb.labels, nil)
+	for i, labelField := range fb.builderLabelFields {
+		if recordIndex, ok := recordLabelIndex[labelField.Name]; ok {
+			lc := r.LabelColumns[recordIndex]
+			if lc.Col.IsValid(sampleRow) && len(lc.Dict.Value(lc.Col.GetValueIndex(sampleRow))) > 0 {
+				transposedIndex := t.labelTranspositions[i].Value(lc.Col.GetValueIndex(sampleRow))
+				fb.builderLabels[i].Append(transposedIndex)
+			} else {
+				fb.builderLabels[i].AppendNull()
+			}
+		} else {
+			fb.builderLabels[i].AppendNull()
 		}
-		fb.labels[row] = append(fb.labels[row], labels)
 	}
 
 	if len(fb.children) == row {
@@ -922,12 +1064,26 @@ func (fb *flamegraphBuilder) appendRow(
 	return nil
 }
 
-func (fb *flamegraphBuilder) AppendLabelRow(r profile.RecordReader, row int, labelKey string, labels map[string]string, sampleRow int) error {
-	for len(fb.labels) < row+1 {
-		fb.labels = append(fb.labels, nil)
+func (fb *flamegraphBuilder) AppendLabelRow(
+	r profile.RecordReader,
+	t *transpositions,
+	recordLabelIndex map[string]int,
+	row int,
+	sampleRow int,
+) error {
+	for i, labelField := range fb.builderLabelFields {
+		if recordIndex, ok := recordLabelIndex[labelField.Name]; ok {
+			lc := r.LabelColumns[recordIndex]
+			if lc.Col.IsValid(sampleRow) && len(lc.Dict.Value(lc.Col.GetValueIndex(sampleRow))) > 0 {
+				transposedIndex := t.labelTranspositions[i].Value(lc.Col.GetValueIndex(sampleRow))
+				fb.builderLabels[i].Append(transposedIndex)
+			} else {
+				fb.builderLabels[i].AppendNull()
+			}
+		} else {
+			fb.builderLabels[i].AppendNull()
+		}
 	}
-
-	fb.labels[row] = []map[string]string{labels}
 
 	if len(fb.children) == row {
 		// We need to grow the children slice, so we'll do that here.

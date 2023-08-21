@@ -21,6 +21,7 @@ import (
 	"io"
 	"os"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/apache/arrow/go/v13/arrow"
@@ -38,6 +39,7 @@ import (
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/metastoretest"
 	"github.com/parca-dev/parca/pkg/parcacol"
+	"github.com/parca-dev/parca/pkg/profile"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -384,7 +386,6 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 			require.Equal(t, tc.cumulative, cumulative)
 			require.Equal(t, tc.height, height)
 			require.Equal(t, tc.trimmed, trimmed)
-			require.Equal(t, int64(len(tc.rows)), fa.NumRows())
 			require.Equal(t, int64(17), fa.NumCols())
 
 			// Convert the numRows to columns for easier access when testing below.
@@ -406,17 +407,22 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 			requireColumn(t, fa, FlamegraphFieldDiff, columns.diff)
 			requireColumnChildren(t, fa, columns.children)
 
-			labelsDict := fa.Column(fa.Schema().FieldIndices(FlamegraphFieldLabels)[0]).(*array.Dictionary)
-			labelsString := labelsDict.Dictionary().(*array.String)
 			pprofLabels := make([]map[string]string, fa.NumRows())
 			for i := 0; i < int(fa.NumRows()); i++ {
-				if labelsDict.IsNull(i) {
-					continue
+				sampleLabels := map[string]string{}
+				for j, f := range fa.Schema().Fields() {
+					if strings.HasPrefix(f.Name, profile.ColumnPprofLabelsPrefix) && fa.Column(j).IsValid(i) {
+						col := fa.Column(fa.Schema().FieldIndices(f.Name)[0]).(*array.Dictionary)
+						dict := col.Dictionary().(*array.Binary)
+
+						labelName := strings.TrimPrefix(f.Name, profile.ColumnPprofLabelsPrefix)
+						sampleLabels[labelName] = string(dict.Value(col.GetValueIndex(i)))
+					}
 				}
-				ls := map[string]string{}
-				err := json.Unmarshal([]byte(labelsString.Value(labelsDict.GetValueIndex(i))), &ls)
-				require.NoError(t, err)
-				pprofLabels[i] = ls
+
+				if len(sampleLabels) > 0 {
+					pprofLabels[i] = sampleLabels
+				}
 			}
 			require.Equal(t, columns.labels, pprofLabels)
 		})
@@ -490,7 +496,7 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 	require.Equal(t, int32(5), height)
 	require.Equal(t, int64(0), trimmed)
 
-	require.Equal(t, int64(17), record.NumCols())
+	require.Equal(t, int64(16), record.NumCols())
 	require.Equal(t, int64(5), record.NumRows())
 
 	rows := []flamegraphRow{
@@ -633,7 +639,7 @@ func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 			require.Equal(t, tc.height, height)
 			require.Equal(t, tc.trimmed, trimmed)
 			require.Equal(t, int64(len(tc.rows)), fa.NumRows())
-			require.Equal(t, int64(17), fa.NumCols())
+			require.Equal(t, int64(16), fa.NumCols())
 
 			// Convert the numRows to columns for easier access when testing below.
 			columns := rowsToColumn(tc.rows)
