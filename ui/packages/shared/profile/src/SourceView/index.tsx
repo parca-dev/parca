@@ -11,10 +11,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React from 'react';
-import {Source} from '@parca/client';
-import hljs from "highlight.js";
+import React, {useMemo} from 'react';
+
 import {tableFromIPC} from 'apache-arrow';
+import hljs from 'highlight.js';
+
+import {Source} from '@parca/client';
+import {useURLState} from '@parca/components';
+
+import {LineNo} from './LineNo';
 
 interface SourceViewProps {
   loading: boolean;
@@ -28,17 +33,16 @@ interface HighlighterProps {
   language?: string;
 }
 
-function Highlighter({
-  content,
-  language,
-}: HighlighterProps): JSX.Element {
-  const highlighted = language !== undefined && language !== null
-    ? hljs.highlight(language, content)
-    : hljs.highlightAuto(content);
+function Highlighter({content, language}: HighlighterProps): JSX.Element {
+  const highlighted = useMemo(() => {
+    return language !== undefined && language !== null
+      ? hljs.highlight(language, content)
+      : hljs.highlightAuto(content);
+  }, [content, language]);
 
   return (
-    <pre className='hljs'>
-      <code dangerouslySetInnerHTML={{ __html: highlighted.value }} />
+    <pre className="hljs">
+      <code dangerouslySetInnerHTML={{__html: highlighted.value}} />
     </pre>
   );
 }
@@ -49,24 +53,26 @@ export const SourceView = React.memo(function SourceView({
   total,
   filtered,
 }: SourceViewProps): JSX.Element {
+  const [sourceLine] = useURLState({param: 'source_line', navigateTo: () => {}});
   if (loading || data === undefined) return <>Profile has no samples</>;
 
   const table = tableFromIPC(data.record);
   const cumulative = table.getChild('cumulative');
   const flat = table.getChild('flat');
-  const lines = Array.from({length: flat?.length ?? 0}, (_, i) => i + 1).join('\n');
+  const lines = Array.from({length: flat?.length ?? 0}, (_, i) => i + 1);
 
   let cumulativeValues = '';
-  for (let i = -1, n = cumulative?.length ?? 0; ++i < n;) {
+  for (let i = -1, n = cumulative?.length ?? 0; ++i < n; ) {
     const row = cumulative?.get(i) ?? 0;
     if (row > 0) {
       if (filtered > 0) {
-        const unfilteredPercent = ((Number(row)/Number(total+filtered))*100).toFixed(2);
-        const filteredPercent = ((Number(row)/Number(total))*100).toFixed(2);
-        cumulativeValues += row.toString() + ' (' + unfilteredPercent + '% / ' + filteredPercent + '%)\n';
+        const unfilteredPercent = ((Number(row) / Number(total + filtered)) * 100).toFixed(2);
+        const filteredPercent = ((Number(row) / Number(total)) * 100).toFixed(2);
+        cumulativeValues +=
+          row.toString() + '(' + unfilteredPercent + '% / ' + filteredPercent + '%)\n';
       } else {
-        const percent = ((Number(row)/Number(total))*100).toFixed(2);
-        cumulativeValues += row.toString() + ' (' + percent + '%)\n';
+        const percent = ((Number(row) / Number(total)) * 100).toFixed(2);
+        cumulativeValues += row.toString() + '(' + percent + '%)\n';
       }
     } else {
       cumulativeValues += '\n';
@@ -74,16 +80,16 @@ export const SourceView = React.memo(function SourceView({
   }
 
   let flatValues = '';
-  for (let i = -1, n = flat?.length ?? 0; ++i < n;) {
+  for (let i = -1, n = flat?.length ?? 0; ++i < n; ) {
     const row = flat?.get(i) ?? 0;
     if (row > 0) {
       if (filtered > 0) {
-        const unfilteredPercent = ((Number(row)/Number(total+filtered))*100).toFixed(2);
-        const filteredPercent = ((Number(row)/Number(total))*100).toFixed(2);
-        flatValues += row.toString() + ' (' + unfilteredPercent + '% / ' + filteredPercent + '%)\n';
+        const unfilteredPercent = ((Number(row) / Number(total + filtered)) * 100).toFixed(2);
+        const filteredPercent = ((Number(row) / Number(total)) * 100).toFixed(2);
+        flatValues += row.toString() + '(' + unfilteredPercent + '% / ' + filteredPercent + '%)\n';
       } else {
-        const percent = ((Number(row)/Number(total))*100).toFixed(2);
-        flatValues += row.toString() + ' (' + percent + '%)\n';
+        const percent = ((Number(row) / Number(total)) * 100).toFixed(2);
+        flatValues += row.toString() + '(' + percent + '%)\n';
       }
     } else {
       flatValues += '\n';
@@ -91,36 +97,28 @@ export const SourceView = React.memo(function SourceView({
   }
 
   return (
-    <table style={{ fontSize: '12px' }}>
-      <thead>
-        <td>Line</td>
-        <td>Cumulative</td>
-        <td>Flat</td>
-        <td>Source Code</td>
-      </thead>
-      <tbody>
-        <tr>
-          {lines !== null && (
-            <td>
-              <pre><code style={{color: 'rgb(110, 119, 129)'}}>{lines}</code></pre>
-            </td>
-          )}
-          {cumulative !== null && (
-            <td>
-              <pre><code style={{color: 'rgb(36, 41, 46)'}}>{cumulativeValues}</code></pre>
-            </td>
-          )}
-          {flat !== null && (
-            <td>
-              <pre><code style={{color: 'rgb(36, 41, 46)'}}>{flatValues}</code></pre>
-            </td>
-          )}
-          <td>
-            <Highlighter content={data.source} />
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div className="h-[80vh] overflow-y-auto text-xs dark:bg-[#22272e] dark:text-[#adbac7]">
+      <div className="flex gap-2">
+        <pre>
+          <code>
+            Line{'\n'}
+            {lines.map(line => (
+              <LineNo value={line} key={line} isCurrent={sourceLine === line.toString()} />
+            ))}
+          </code>
+        </pre>
+        <pre>
+          <code>{'Cummulative\n' + cumulativeValues}</code>
+        </pre>
+        <pre>
+          <code>{'Flat\n' + flatValues}</code>
+        </pre>
+        <div className="overflow-x-auto">
+          <pre>{'Source Code\n'}</pre>
+          <Highlighter content={data.source} />
+        </div>
+      </div>
+    </div>
   );
 });
 

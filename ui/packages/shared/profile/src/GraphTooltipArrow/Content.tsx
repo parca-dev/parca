@@ -194,7 +194,7 @@ const TooltipMetaInfo = ({
     return `${functionFilename} ${
       locationLine !== 0n
         ? ` +${locationLine.toString()}`
-        : `${functionStartLine !== 0n ? ` +${functionStartLine}` : ''}`
+        : `${functionStartLine !== 0n ? `:${functionStartLine}` : ''}`
     }`;
   };
   const file = getTextForFile();
@@ -251,16 +251,16 @@ const TooltipMetaInfo = ({
         <td className="w-3/4 break-all">
           {functionFilename === '' ? (
             <NoData />
-          ) : (
-            <>
+          ) :
+            (<div className='flex gap-4'>
               <CopyToClipboard onCopy={onCopy} text={file}>
                 <button className="cursor-pointer whitespace-nowrap text-left">
-                  <ExpandOnHover value={file} displayValue={truncateStringReverse(file, 40)} />
+                  <ExpandOnHover value={file} displayValue={truncateStringReverse(file, 30)} />
                 </button>
               </CopyToClipboard>
-              <Button variant={'neutral'} onClick={() => openFile()}>open</Button>
-            </>
-          )}
+              <Button variant={'neutral'} onClick={() => openFile()} className='shrink-0'>open</Button>
+            </div>
+            )}
         </td>
       </tr>
       <tr>
