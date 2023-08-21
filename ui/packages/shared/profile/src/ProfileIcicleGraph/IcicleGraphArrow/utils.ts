@@ -34,14 +34,20 @@ export function nodeLabel(
   const functionName: string | null = table.getChild(FIELD_FUNCTION_NAME)?.get(row);
   const labelsOnly: boolean | null = table.getChild(FIELD_LABELS_ONLY)?.get(row);
   const pprofLabelPrefix = 'pprof_labels.';
-  const labelColumnNames = table.schema.fields.filter((field) => field.name.startsWith(pprofLabelPrefix));
+  const labelColumnNames = table.schema.fields.filter(field =>
+    field.name.startsWith(pprofLabelPrefix)
+  );
   if (functionName !== null && functionName !== '') {
     return functionName;
   }
 
   if (level === 1 && labelsOnly !== null && labelsOnly) {
-    return labelColumnNames.map((field, i) => [labelColumnNames[i].name.slice(pprofLabelPrefix.length), table.getChild(field.name)?.get(row) ?? '']).filter((value) => value[1] !== '')
-      .sort(([a], [b]) => a.localeCompare(b))
+    return labelColumnNames
+      .map((field, i) => [
+        labelColumnNames[i].name.slice(pprofLabelPrefix.length),
+        table.getChild(field.name)?.get(row) ?? '',
+      ])
+      .filter(value => value[1] !== '')
       .map(([k, v]) => `${k as string}="${v as string}"`)
       .join(', ');
   }

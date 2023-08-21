@@ -338,51 +338,41 @@ func (fb *flamegraphBuilder) labelEqual(
 		return false
 	}
 
-	transposedIndex := t.labelTranspositions[fieldIndex].Value(sampleLabelValueValueIndex)
+	transposedIndex := t.labels[fieldIndex].indices.Value(sampleLabelValueValueIndex)
 	return labelColumn.Value(flamegraphRow) == transposedIndex
 }
 
+type transposition struct {
+	data    *array.Data
+	indices *array.Int32
+}
+
+func (t transposition) Release() {
+	t.data.Release()
+	t.indices.Release()
+}
+
 type transpositions struct {
-	mappingIDIndicesData *array.Data
-	mappingIDIndices     *array.Int32
+	mappingBuildID transposition
+	mappingFile    transposition
 
-	mappingFileIndicesData *array.Data
-	mappingFileIndices     *array.Int32
+	functionName       transposition
+	functionSystemName transposition
+	functionFilename   transposition
 
-	functionNameIndicesData *array.Data
-	functionNameIndices     *array.Int32
-
-	functionSystemNameIndicesData *array.Data
-	functionSystemNameIndices     *array.Int32
-
-	functionFilenameIndicesData *array.Data
-	functionFilenameIndices     *array.Int32
-
-	labelTranspositionDatas []*array.Data
-	labelTranspositions     []*array.Int32
+	labels []transposition
 }
 
 func (t *transpositions) Release() {
-	t.mappingIDIndicesData.Release()
-	t.mappingIDIndices.Release()
+	t.mappingBuildID.Release()
+	t.mappingFile.Release()
 
-	t.mappingFileIndicesData.Release()
-	t.mappingFileIndices.Release()
+	t.functionName.Release()
+	t.functionSystemName.Release()
+	t.functionFilename.Release()
 
-	t.functionNameIndicesData.Release()
-	t.functionNameIndices.Release()
-
-	t.functionSystemNameIndicesData.Release()
-	t.functionSystemNameIndices.Release()
-
-	t.functionFilenameIndicesData.Release()
-	t.functionFilenameIndices.Release()
-
-	for _, labelTranspositionData := range t.labelTranspositionDatas {
-		labelTranspositionData.Release()
-	}
-	for _, labelTransposition := range t.labelTranspositions {
-		labelTransposition.Release()
+	for i := range t.labels {
+		t.labels[i].Release()
 	}
 }
 
@@ -412,8 +402,7 @@ func (fb *flamegraphBuilder) newTranspositions(r profile.RecordReader) (*transpo
 		return nil, fmt.Errorf("unify and transpose function filename dict: %w", err)
 	}
 
-	labelTranspositionDatas := make([]*array.Data, 0, len(r.LabelColumns))
-	labelTranspositions := make([]*array.Int32, 0, len(r.LabelColumns))
+	labels := make([]transposition, len(fb.builderLabelFields))
 	for i, labelField := range r.LabelFields {
 		builderIndex := fb.labelNameIndex[labelField.Name]
 		labelColumn := r.LabelColumns[i]
@@ -421,28 +410,34 @@ func (fb *flamegraphBuilder) newTranspositions(r profile.RecordReader) (*transpo
 		if err != nil {
 			return nil, fmt.Errorf("unify and transpose label dict %q: %w", labelField.Name, err)
 		}
-		labelTranspositionDatas = append(labelTranspositionDatas, labelTranspositionData)
-		labelTranspositions = append(labelTranspositions, labelTransposition)
+		labels[i] = transposition{
+			data:    labelTranspositionData,
+			indices: labelTransposition,
+		}
 	}
 
 	return &transpositions{
-		mappingIDIndicesData: mappingIDIndicesData,
-		mappingIDIndices:     mappingIDIndices,
-
-		mappingFileIndicesData: mappingFileIndicesData,
-		mappingFileIndices:     mappingFileIndices,
-
-		functionNameIndicesData: functionNameIndicesData,
-		functionNameIndices:     functionNameIndices,
-
-		functionSystemNameIndicesData: functionSystemNameIndicesData,
-		functionSystemNameIndices:     functionSystemNameIndices,
-
-		functionFilenameIndicesData: functionFilenameIndicesData,
-		functionFilenameIndices:     functionFilenameIndices,
-
-		labelTranspositionDatas: labelTranspositionDatas,
-		labelTranspositions:     labelTranspositions,
+		mappingBuildID: transposition{
+			data:    mappingIDIndicesData,
+			indices: mappingIDIndices,
+		},
+		mappingFile: transposition{
+			data:    mappingFileIndicesData,
+			indices: mappingFileIndices,
+		},
+		functionName: transposition{
+			data:    functionNameIndicesData,
+			indices: functionNameIndices,
+		},
+		functionSystemName: transposition{
+			data:    functionSystemNameIndicesData,
+			indices: functionSystemNameIndices,
+		},
+		functionFilename: transposition{
+			data:    functionFilenameIndicesData,
+			indices: functionFilenameIndices,
+		},
+		labels: labels,
 	}, nil
 }
 
@@ -606,7 +601,7 @@ func (fb *flamegraphBuilder) equalField(
 			return true
 		}
 		rowMappingFileIndex := fb.builderMappingFileIndices.Value(flamegraphRow)
-		translatedMappingFileIndex := t.mappingFileIndices.Value(r.MappingFile.GetValueIndex(locationRow))
+		translatedMappingFileIndex := t.mappingFile.indices.Value(r.MappingFile.GetValueIndex(locationRow))
 
 		return rowMappingFileIndex == translatedMappingFileIndex
 	case FlamegraphFieldLocationAddress:
@@ -617,7 +612,7 @@ func (fb *flamegraphBuilder) equalField(
 		isNull := fb.builderFunctionNameIndices.IsNull(flamegraphRow)
 		if !isNull {
 			rowFunctionNameIndex := fb.builderFunctionNameIndices.Value(flamegraphRow)
-			translatedFunctionNameIndex := t.functionNameIndices.Value(r.LineFunctionName.GetValueIndex(lineRow))
+			translatedFunctionNameIndex := t.functionName.indices.Value(r.LineFunctionName.GetValueIndex(lineRow))
 			return rowFunctionNameIndex == translatedFunctionNameIndex
 		}
 		// isNull
@@ -657,9 +652,6 @@ type flamegraphBuilder struct {
 	// This keeps track of a row's children and will be converted to an arrow array of lists at the end.
 	// Allocating for an average of 8 children per stacktrace upfront.
 	children [][]int
-	// labels keeps track of all labels for each row.
-	// In the end we intersect all labels for each row and add them to the labels column.
-	labels [][]map[string]string
 
 	// This keeps track of the root rows indexed by the labels string.
 	// If the stack trace has no labels, we use the empty string as the key.
@@ -976,8 +968,8 @@ func (fb *flamegraphBuilder) appendRow(
 		fb.builderMappingStart.Append(r.MappingStart.Value(locationRow))
 		fb.builderMappingLimit.Append(r.MappingLimit.Value(locationRow))
 		fb.builderMappingOffset.Append(r.MappingOffset.Value(locationRow))
-		fb.builderMappingFileIndices.Append(t.mappingFileIndices.Value(r.MappingFile.GetValueIndex(locationRow)))
-		fb.builderMappingBuildIDIndices.Append(t.mappingIDIndices.Value(r.MappingBuildID.GetValueIndex(locationRow)))
+		fb.builderMappingFileIndices.Append(t.mappingFile.indices.Value(r.MappingFile.GetValueIndex(locationRow)))
+		fb.builderMappingBuildIDIndices.Append(t.mappingBuildID.indices.Value(r.MappingBuildID.GetValueIndex(locationRow)))
 	} else {
 		fb.builderMappingStart.AppendNull()
 		fb.builderMappingLimit.AppendNull()
@@ -1004,19 +996,19 @@ func (fb *flamegraphBuilder) appendRow(
 	if r.LineFunctionNameDict.Len() == 0 || lineRow < 0 || !r.LineFunction.IsValid(lineRow) {
 		fb.builderFunctionNameIndices.AppendNull()
 	} else {
-		fb.builderFunctionNameIndices.Append(t.functionNameIndices.Value(r.LineFunctionName.GetValueIndex(lineRow)))
+		fb.builderFunctionNameIndices.Append(t.functionName.indices.Value(r.LineFunctionName.GetValueIndex(lineRow)))
 	}
 
 	if r.LineFunctionSystemNameDict.Len() == 0 || lineRow < 0 || !r.LineFunction.IsValid(lineRow) {
 		fb.builderFunctionSystemNameIndices.AppendNull()
 	} else {
-		fb.builderFunctionSystemNameIndices.Append(t.functionSystemNameIndices.Value(r.LineFunctionSystemName.GetValueIndex(lineRow)))
+		fb.builderFunctionSystemNameIndices.Append(t.functionSystemName.indices.Value(r.LineFunctionSystemName.GetValueIndex(lineRow)))
 	}
 
 	if r.LineFunctionFilenameDict.Len() == 0 || lineRow < 0 || !r.LineFunction.IsValid(lineRow) {
 		fb.builderFunctionFilenameIndices.AppendNull()
 	} else {
-		fb.builderFunctionFilenameIndices.Append(t.functionFilenameIndices.Value(r.LineFunctionFilename.GetValueIndex(lineRow)))
+		fb.builderFunctionFilenameIndices.Append(t.functionFilename.indices.Value(r.LineFunctionFilename.GetValueIndex(lineRow)))
 	}
 
 	// Values
@@ -1025,7 +1017,7 @@ func (fb *flamegraphBuilder) appendRow(
 		if recordIndex, ok := recordLabelIndex[labelField.Name]; ok {
 			lc := r.LabelColumns[recordIndex]
 			if lc.Col.IsValid(sampleRow) && len(lc.Dict.Value(lc.Col.GetValueIndex(sampleRow))) > 0 {
-				transposedIndex := t.labelTranspositions[i].Value(lc.Col.GetValueIndex(sampleRow))
+				transposedIndex := t.labels[i].indices.Value(lc.Col.GetValueIndex(sampleRow))
 				fb.builderLabels[i].Append(transposedIndex)
 			} else {
 				fb.builderLabels[i].AppendNull()
@@ -1075,7 +1067,7 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 		if recordIndex, ok := recordLabelIndex[labelField.Name]; ok {
 			lc := r.LabelColumns[recordIndex]
 			if lc.Col.IsValid(sampleRow) && len(lc.Dict.Value(lc.Col.GetValueIndex(sampleRow))) > 0 {
-				transposedIndex := t.labelTranspositions[i].Value(lc.Col.GetValueIndex(sampleRow))
+				transposedIndex := t.labels[i].indices.Value(lc.Col.GetValueIndex(sampleRow))
 				fb.builderLabels[i].Append(transposedIndex)
 			} else {
 				fb.builderLabels[i].AppendNull()
