@@ -106,6 +106,8 @@ func generateTableArrowRecord(
 		for sampleRow := 0; sampleRow < int(r.Record.NumRows()); sampleRow++ {
 			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(sampleRow)
 			for locationRow := int(lOffsetStart); locationRow < int(lOffsetEnd); locationRow++ {
+				isLeaf := locationRow == int(lOffsetEnd)-1
+
 				if r.Lines.IsNull(locationRow) {
 					var buildID []byte
 					if r.MappingBuildIDDict.IsValid(locationRow) {
@@ -117,7 +119,7 @@ func generateTableArrowRecord(
 					// If not, we add it as a new row and add the address to the mapping to keep track of it.
 					// If we have seen the address before, we merge the address with the existing row by summing the values.
 					if cr, ok := tb.addresses[unsafeString(buildID)][addr]; !ok {
-						if err := tb.appendRow(r, sampleRow, locationRow, -1); err != nil {
+						if err := tb.appendRow(r, sampleRow, locationRow, -1, isLeaf); err != nil {
 							return nil, 0, err
 						}
 
@@ -137,7 +139,7 @@ func generateTableArrowRecord(
 					if r.Line.IsValid(lineRow) && r.LineFunction.IsValid(lineRow) {
 						fn := r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow))
 						if cr, ok := tb.functions[unsafeString(fn)]; !ok {
-							if err := tb.appendRow(r, sampleRow, locationRow, lineRow); err != nil {
+							if err := tb.appendRow(r, sampleRow, locationRow, lineRow, isLeaf); err != nil {
 								return nil, 0, err
 							}
 							tb.functions[string(fn)] = row
@@ -258,6 +260,7 @@ func (tb *tableBuilder) Release() {
 func (tb *tableBuilder) appendRow(
 	r profile.RecordReader,
 	sampleRow, locationRow, lineRow int,
+	leaf bool,
 ) error {
 	for j := range tb.rb.Fields() {
 		switch tb.schema.Field(j).Name {
@@ -360,9 +363,19 @@ func (tb *tableBuilder) appendRow(
 				tb.builderCumulativeDiff.AppendNull()
 			}
 		case TableFieldFlat:
-			tb.builderFlat.Append(r.Value.Value(sampleRow))
+			if leaf {
+				tb.builderFlat.Append(r.Value.Value(sampleRow))
+			} else {
+				// don't set null as it might also just be merged into a bigger number.
+				tb.builderFlat.Append(0)
+			}
 		case TableFieldFlatDiff:
-			tb.builderFlatDiff.Append(r.Diff.Value(sampleRow))
+			if leaf {
+				tb.builderFlatDiff.Append(r.Diff.Value(sampleRow))
+			} else {
+				// don't set null as it might also just be merged into a bigger number.
+				tb.builderFlatDiff.Append(0)
+			}
 		default:
 			panic(fmt.Sprintf("unknown field %s", tb.schema.Field(j).Name))
 		}

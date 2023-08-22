@@ -239,6 +239,6 @@ func TestGenerateTableAggregateFlat(t *testing.T) {
 
 	requireColumn(t, rec, TableFieldCumulative, []int64{3, 1, 1, 1})
 	requireColumn(t, rec, TableFieldCumulativeDiff, []int64{0, 0, 0, 0})
-	// requireColumn(t, rec, TableFieldFlat, []int64{3, 0, 0, 0}) // TODO
+	requireColumn(t, rec, TableFieldFlat, []int64{0, 1, 1, 1})
 	requireColumn(t, rec, TableFieldFlatDiff, []int64{0, 0, 0, 0})
 }
