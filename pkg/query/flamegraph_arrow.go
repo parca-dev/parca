@@ -151,10 +151,9 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				sampleLabelRow := row
 				if _, ok := fb.rootsRow[unsafeString(lsbytes)]; ok {
 					sampleLabelRow = fb.rootsRow[unsafeString(lsbytes)][0]
-					fb.compareRows = fb.compareRows[:0] //  reset the compare rows
 					// We want to compare against this found label root's children.
 					rootRow := fb.rootsRow[unsafeString(lsbytes)][0]
-					fb.compareRows = append(fb.compareRows, fb.children[rootRow]...)
+					fb.compareRows = copyChildren(fb.compareRows, fb.children[rootRow])
 					fb.addRowValues(r, sampleLabelRow, i) // adds the cumulative and diff values to the existing row
 				} else {
 					lsstring := string(lsbytes) // we want to cast the bytes to a string and thus copy them.
@@ -192,8 +191,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				if !r.Lines.IsValid(j) || llOffsetEnd-llOffsetStart <= 0 {
 					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
 					if isRoot {
-						fb.compareRows = fb.compareRows[:0] //  reset the compare rows
-						fb.compareRows = append(fb.compareRows, fb.rootsRow[unsafeString(lsbytes)]...)
+						fb.compareRows = copyChildren(fb.compareRows, fb.rootsRow[unsafeString(lsbytes)])
 						// append this row afterward to not compare to itself
 						fb.parent.Reset()
 						fb.maxHeight = max(fb.maxHeight, fb.height)
@@ -236,8 +234,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				for k := int(llOffsetEnd - 1); k >= int(llOffsetStart); k-- {
 					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
 					if isRoot {
-						fb.compareRows = fb.compareRows[:0] //  reset the compare rows
-						fb.compareRows = append(fb.compareRows, fb.rootsRow[unsafeString(lsbytes)]...)
+						fb.compareRows = copyChildren(fb.compareRows, fb.rootsRow[unsafeString(lsbytes)])
 						// append this row afterward to not compare to itself
 						fb.parent.Reset()
 						fb.maxHeight = max(fb.maxHeight, fb.height)
@@ -525,7 +522,7 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 			fb.addRowValues(r, cr, sampleIndex)
 			// Continue with this row as the parent for the next iteration and compare to its children.
 			fb.parent.Set(cr)
-			fb.compareRows = copyChildren(fb.children[cr])
+			fb.compareRows = copyChildren(fb.compareRows, fb.children[cr])
 			return true, nil
 		}
 		// reset the compare rows
@@ -555,7 +552,7 @@ func (fb *flamegraphBuilder) mergeUnsymbolizedRows(
 
 		fb.builderCumulative.Add(cr, r.Value.Value(sampleIndex))
 		fb.parent.Set(cr)
-		fb.compareRows = copyChildren(fb.children[cr])
+		fb.compareRows = copyChildren(fb.compareRows, fb.children[cr])
 		return true, nil
 	}
 	// reset the compare rows
@@ -682,10 +679,15 @@ func (fb *flamegraphBuilder) equalFunctionName(
 	return false
 }
 
-func copyChildren(children []int) []int {
-	newChildren := make([]int, len(children))
-	copy(newChildren, children)
-	return newChildren
+func copyChildren(compareRows, children []int) []int {
+	if cap(compareRows) < len(children) {
+		compareRows = make([]int, len(children))
+	} else {
+		compareRows = compareRows[:len(children)]
+	}
+
+	copy(compareRows, children)
+	return compareRows
 }
 
 type flamegraphBuilder struct {
@@ -787,7 +789,7 @@ func newFlamegraphBuilder(
 		children:       make([][]int, rows),
 		rootsRow:       map[string][]int{},
 		labelNameIndex: map[string]int{},
-		compareRows:    []int{},
+		compareRows:    make([]int, 0, 32),
 
 		builderLabelsOnly: array.NewBooleanBuilder(pool),
 		builderLabelCount: builder.NewOptInt32Builder(arrow.PrimitiveTypes.Int32),
