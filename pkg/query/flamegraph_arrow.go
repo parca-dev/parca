@@ -459,9 +459,7 @@ func (fb *flamegraphBuilder) ensureLabelColumns(fields []arrow.Field) error {
 			continue
 		}
 
-		if err := fb.addLabelColumn(field); err != nil {
-			return fmt.Errorf("add label column %q: %w", field.Name, err)
-		}
+		fb.addLabelColumn(field)
 	}
 
 	fb.ensureLabelColumnsComplete()
@@ -477,18 +475,11 @@ func (fb *flamegraphBuilder) ensureLabelColumnsComplete() {
 	}
 }
 
-func (fb *flamegraphBuilder) addLabelColumn(field arrow.Field) error {
-	labelDictUnifier, err := array.NewDictionaryUnifier(fb.pool, arrow.BinaryTypes.Binary)
-	if err != nil {
-		return fmt.Errorf("create label dict unifier: %w", err)
-	}
-
-	fb.builderLabelsDictUnifiers = append(fb.builderLabelsDictUnifiers, labelDictUnifier)
+func (fb *flamegraphBuilder) addLabelColumn(field arrow.Field) {
+	fb.builderLabelsDictUnifiers = append(fb.builderLabelsDictUnifiers, array.NewBinaryDictionaryUnifier(fb.pool))
 	fb.builderLabels = append(fb.builderLabels, builder.NewOptInt32Builder(arrow.PrimitiveTypes.Int32))
 	fb.builderLabelFields = append(fb.builderLabelFields, field)
 	fb.labelNameIndex[field.Name] = len(fb.builderLabels) - 1
-
-	return nil
 }
 
 func (fb *flamegraphBuilder) labelExists(labelFieldName string) bool {
@@ -753,31 +744,6 @@ func newFlamegraphBuilder(
 	aggregateFields []string,
 	aggregateLabels bool,
 ) (*flamegraphBuilder, error) {
-	builderMappingBuildIDDictUnifier, err := array.NewDictionaryUnifier(pool, arrow.BinaryTypes.Binary)
-	if err != nil {
-		return nil, fmt.Errorf("create mapping build id dictionary unifier: %w", err)
-	}
-
-	builderMappingFileDictUnifier, err := array.NewDictionaryUnifier(pool, arrow.BinaryTypes.Binary)
-	if err != nil {
-		return nil, fmt.Errorf("create mapping build id dictionary unifier: %w", err)
-	}
-
-	builderFunctionNameDictUnifier, err := array.NewDictionaryUnifier(pool, arrow.BinaryTypes.Binary)
-	if err != nil {
-		return nil, fmt.Errorf("create function name dictionary unifier: %w", err)
-	}
-
-	builderFunctionSystemNameDictUnifier, err := array.NewDictionaryUnifier(pool, arrow.BinaryTypes.Binary)
-	if err != nil {
-		return nil, fmt.Errorf("create function system name dictionary unifier: %w", err)
-	}
-
-	builderFunctionFilenameDictUnifier, err := array.NewDictionaryUnifier(pool, arrow.BinaryTypes.Binary)
-	if err != nil {
-		return nil, fmt.Errorf("create function filename dictionary unifier: %w", err)
-	}
-
 	builderChildren := builder.NewListBuilder(pool, arrow.PrimitiveTypes.Uint32)
 	fb := &flamegraphBuilder{
 		pool: pool,
@@ -798,9 +764,9 @@ func newFlamegraphBuilder(
 		builderMappingLimit:              array.NewUint64Builder(pool),
 		builderMappingOffset:             array.NewUint64Builder(pool),
 		builderMappingFileIndices:        array.NewInt32Builder(pool),
-		builderMappingFileDictUnifier:    builderMappingFileDictUnifier,
+		builderMappingFileDictUnifier:    array.NewBinaryDictionaryUnifier(pool),
 		builderMappingBuildIDIndices:     array.NewInt32Builder(pool),
-		builderMappingBuildIDDictUnifier: builderMappingBuildIDDictUnifier,
+		builderMappingBuildIDDictUnifier: array.NewBinaryDictionaryUnifier(pool),
 
 		builderLocationAddress: array.NewUint64Builder(pool),
 		builderLocationFolded:  builder.NewOptBooleanBuilder(arrow.FixedWidthTypes.Boolean),
@@ -808,11 +774,11 @@ func newFlamegraphBuilder(
 
 		builderFunctionStartLine:             builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
 		builderFunctionNameIndices:           array.NewInt32Builder(pool),
-		builderFunctionNameDictUnifier:       builderFunctionNameDictUnifier,
+		builderFunctionNameDictUnifier:       array.NewBinaryDictionaryUnifier(pool),
 		builderFunctionSystemNameIndices:     array.NewInt32Builder(pool),
-		builderFunctionSystemNameDictUnifier: builderFunctionSystemNameDictUnifier,
+		builderFunctionSystemNameDictUnifier: array.NewBinaryDictionaryUnifier(pool),
 		builderFunctionFilenameIndices:       array.NewInt32Builder(pool),
-		builderFunctionFilenameDictUnifier:   builderFunctionFilenameDictUnifier,
+		builderFunctionFilenameDictUnifier:   array.NewBinaryDictionaryUnifier(pool),
 
 		builderChildren:       builderChildren,
 		builderChildrenValues: builderChildren.ValueBuilder().(*array.Uint32Builder),
