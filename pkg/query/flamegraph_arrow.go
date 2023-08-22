@@ -116,11 +116,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		if err := fb.ensureLabelColumns(r.LabelFields); err != nil {
 			return nil, 0, 0, 0, fmt.Errorf("ensure label columns: %w", err)
 		}
-
-		recordLabelIndex := make(map[string]int, len(r.LabelFields))
-		for i, f := range r.LabelFields {
-			recordLabelIndex[f.Name] = i
-		}
+		recordLabelIndex, builderToRecordIndexMapping := fb.labelIndexMappings(r.LabelFields)
 
 		t, err := fb.newTranspositions(r)
 		if err != nil {
@@ -219,7 +215,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						fb.rootsRow[lsstring] = append(fb.rootsRow[lsstring], row)
 					}
 
-					err = fb.appendRow(r, t, recordLabelIndex, i, j, -1, row)
+					err = fb.appendRow(r, t, builderToRecordIndexMapping, i, j, -1, row)
 					if err != nil {
 						return nil, 0, 0, 0, err
 					}
@@ -285,7 +281,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 func (fb *flamegraphBuilder) labelsEqual(
 	r *profile.RecordReader,
 	t *transpositions,
-	recordLabelIndex map[string]int,
+	recordLabelIndex []int,
 	sampleIndex int,
 	flamegraphRow int,
 ) bool {
@@ -301,14 +297,13 @@ func (fb *flamegraphBuilder) labelsEqual(
 func (fb *flamegraphBuilder) labelEqual(
 	r *profile.RecordReader,
 	t *transpositions,
-	recordLabelIndex map[string]int,
+	recordLabelIndex []int,
 	sampleIndex int,
 	flamegraphRow int,
 	labelFieldIndex int,
 ) bool {
-	labelField := fb.builderLabelFields[labelFieldIndex]
 	labelColumn := fb.builderLabels[labelFieldIndex]
-	fieldIndex := recordLabelIndex[labelField.Name]
+	fieldIndex := recordLabelIndex[labelFieldIndex]
 	recordLabelColumn := r.LabelColumns[fieldIndex]
 	dict := r.LabelColumns[fieldIndex].Dict
 
@@ -368,6 +363,22 @@ func (t *transpositions) Release() {
 	for i := range t.labels {
 		t.labels[i].Release()
 	}
+}
+
+func (fb *flamegraphBuilder) labelIndexMappings(fields []arrow.Field) ([]int, []int) {
+	builderToRecord := make([]int, len(fb.builderLabelFields))
+	for i := range fb.builderLabelFields {
+		builderToRecord[i] = -1
+	}
+
+	recordToBuilder := make([]int, len(fields))
+	for i := range fields {
+		idx := fb.labelNameIndex[fields[i].Name]
+		recordToBuilder[i] = idx
+		builderToRecord[idx] = i
+	}
+
+	return recordToBuilder, builderToRecord
 }
 
 func (fb *flamegraphBuilder) newTranspositions(r *profile.RecordReader) (*transpositions, error) {
@@ -491,7 +502,7 @@ func (fb *flamegraphBuilder) labelExists(labelFieldName string) bool {
 func (fb *flamegraphBuilder) mergeSymbolizedRows(
 	r *profile.RecordReader,
 	t *transpositions,
-	recordLabelIndex map[string]int,
+	recordLabelIndex []int,
 	sampleIndex, locationIndex, lineIndex, end int,
 ) (bool, error) {
 	if len(fb.aggregateFields) > 0 {
@@ -528,7 +539,7 @@ func (fb *flamegraphBuilder) mergeUnsymbolizedRows(
 	r *profile.RecordReader,
 	t *transpositions,
 	aggregateLabels bool,
-	recordLabelIndex map[string]int,
+	recordLabelIndex []int,
 	sampleIndex, locationIndex, end int,
 ) (bool, error) {
 	for _, cr := range fb.compareRows {
@@ -555,7 +566,7 @@ func (fb *flamegraphBuilder) mergeUnsymbolizedRows(
 func (fb *flamegraphBuilder) intersectLabels(
 	r *profile.RecordReader,
 	t *transpositions,
-	recordLabelIndex map[string]int,
+	recordLabelIndex []int,
 	sampleIndex int,
 	flamegraphRow int,
 ) {
@@ -571,8 +582,7 @@ func (fb *flamegraphBuilder) intersectLabels(
 			continue
 		}
 
-		labelName := fb.builderLabelFields[i].Name
-		fieldIndex := recordLabelIndex[labelName]
+		fieldIndex := recordLabelIndex[i]
 		recordLabelColumn := r.LabelColumns[fieldIndex]
 
 		if !recordLabelColumn.Col.IsValid(sampleIndex) {
@@ -601,7 +611,7 @@ func (fb *flamegraphBuilder) intersectLabels(
 func (fb *flamegraphBuilder) equalField(
 	r *profile.RecordReader,
 	t *transpositions,
-	recordLabelIndex map[string]int,
+	recordLabelIndex []int,
 	fieldName string,
 	sampleIndex,
 	locationRow,
@@ -987,7 +997,7 @@ func (fb *flamegraphBuilder) Release() {
 func (fb *flamegraphBuilder) appendRow(
 	r *profile.RecordReader,
 	t *transpositions,
-	recordLabelIndex map[string]int,
+	builderToRecordIndexMapping []int,
 	sampleRow, locationRow, lineRow int,
 	row int,
 ) error {
@@ -1046,18 +1056,18 @@ func (fb *flamegraphBuilder) appendRow(
 	// Values
 
 	labelCount := int32(0)
-	for i, labelField := range fb.builderLabelFields {
-		if recordIndex, ok := recordLabelIndex[labelField.Name]; ok {
+	for i, builderLabel := range fb.builderLabels {
+		if recordIndex := builderToRecordIndexMapping[i]; recordIndex != -1 {
 			lc := r.LabelColumns[recordIndex]
 			if lc.Col.IsValid(sampleRow) && len(lc.Dict.Value(lc.Col.GetValueIndex(sampleRow))) > 0 {
 				transposedIndex := t.labels[i].indices.Value(lc.Col.GetValueIndex(sampleRow))
-				fb.builderLabels[i].Append(transposedIndex)
+				builderLabel.Append(transposedIndex)
 				labelCount++
 			} else {
-				fb.builderLabels[i].AppendNull()
+				builderLabel.AppendNull()
 			}
 		} else {
-			fb.builderLabels[i].AppendNull()
+			builderLabel.AppendNull()
 		}
 	}
 	fb.builderLabelCount.Append(labelCount)
@@ -1094,23 +1104,23 @@ func (fb *flamegraphBuilder) appendRow(
 func (fb *flamegraphBuilder) AppendLabelRow(
 	r *profile.RecordReader,
 	t *transpositions,
-	recordLabelIndex map[string]int,
+	builderToRecordIndexMapping []int,
 	row int,
 	sampleRow int,
 ) error {
 	labelCount := int32(0)
-	for i, labelField := range fb.builderLabelFields {
-		if recordIndex, ok := recordLabelIndex[labelField.Name]; ok {
+	for i, labelColumn := range fb.builderLabels {
+		if recordIndex := builderToRecordIndexMapping[i]; recordIndex != -1 {
 			lc := r.LabelColumns[recordIndex]
 			if lc.Col.IsValid(sampleRow) && len(lc.Dict.Value(lc.Col.GetValueIndex(sampleRow))) > 0 {
 				transposedIndex := t.labels[i].indices.Value(lc.Col.GetValueIndex(sampleRow))
-				fb.builderLabels[i].Append(transposedIndex)
+				labelColumn.Append(transposedIndex)
 				labelCount++
 			} else {
-				fb.builderLabels[i].AppendNull()
+				labelColumn.AppendNull()
 			}
 		} else {
-			fb.builderLabels[i].AppendNull()
+			labelColumn.AppendNull()
 		}
 	}
 	fb.builderLabelCount.Append(labelCount)
