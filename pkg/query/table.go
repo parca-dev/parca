@@ -46,7 +46,6 @@ const (
 	TableFieldFunctionSystemName = "function_system_name"
 	TableFieldFunctionFileName   = "function_file_name"
 
-	// TableFieldLabels         = "labels"
 	TableFieldCumulative     = "cumulative"
 	TableFieldCumulativeDiff = "cumulative_diff"
 	TableFieldFlat           = "flat"
@@ -92,7 +91,7 @@ func generateTableArrowRecord(
 	tracer trace.Tracer,
 	p profile.Profile,
 ) (arrow.Record, int64, error) {
-	ctx, span := tracer.Start(ctx, "generateTableArrowRecord")
+	_, span := tracer.Start(ctx, "generateTableArrowRecord")
 	defer span.End()
 
 	tb := newTableBuilder(mem)
@@ -107,18 +106,44 @@ func generateTableArrowRecord(
 		for sampleRow := 0; sampleRow < int(r.Record.NumRows()); sampleRow++ {
 			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(sampleRow)
 			for locationRow := int(lOffsetStart); locationRow < int(lOffsetEnd); locationRow++ {
+				if r.Lines.IsNull(locationRow) {
+					var buildID []byte
+					if r.MappingBuildIDDict.IsValid(locationRow) {
+						buildID = r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(locationRow))
+					}
+					addr := r.Address.Value(locationRow)
+
+					// Check if we've seen the address for the mapping before.
+					// If not, we add it as a new row and add the address to the mapping to keep track of it.
+					// If we have seen the address before, we merge the address with the existing row by summing the values.
+					if cr, ok := tb.addresses[unsafeString(buildID)][addr]; !ok {
+						if err := tb.appendRow(r, sampleRow, locationRow, -1); err != nil {
+							return nil, 0, err
+						}
+
+						if _, ok := tb.addresses[unsafeString(buildID)]; !ok {
+							tb.addresses[string(buildID)] = map[uint64]int{addr: row}
+						} else {
+							tb.addresses[string(buildID)][addr] = row
+						}
+						row++
+					} else {
+						tb.mergeRow(r, cr, sampleRow)
+					}
+				}
+
 				llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(locationRow)
 				for lineRow := int(llOffsetStart); lineRow < int(llOffsetEnd); lineRow++ {
 					if r.Line.IsValid(lineRow) && r.LineFunction.IsValid(lineRow) {
 						fn := r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow))
-						if cr, ok := tb.functions[string(fn)]; !ok {
-							if err := tb.appendFunctionRow(r, sampleRow, locationRow, lineRow); err != nil {
+						if cr, ok := tb.functions[unsafeString(fn)]; !ok {
+							if err := tb.appendRow(r, sampleRow, locationRow, lineRow); err != nil {
 								return nil, 0, err
 							}
 							tb.functions[string(fn)] = row
 							row++
 						} else {
-							tb.mergeFunctionRow(r, cr, sampleRow)
+							tb.mergeRow(r, cr, sampleRow)
 						}
 					}
 				}
@@ -216,7 +241,7 @@ func newTableBuilder(mem memory.Allocator) *tableBuilder {
 func (tb *tableBuilder) NewRecord() (arrow.Record, error) {
 	// TODO: Is this how we want to handle empty data?
 	if tb.builderCumulative.Len() == 0 {
-		return nil, nil
+		return tb.rb.NewRecord(), nil
 	}
 
 	// We have manually tracked the total cumulative value.
@@ -230,7 +255,7 @@ func (tb *tableBuilder) Release() {
 	tb.rb.Release()
 }
 
-func (tb *tableBuilder) appendFunctionRow(
+func (tb *tableBuilder) appendRow(
 	r profile.RecordReader,
 	sampleRow, locationRow, lineRow int,
 ) error {
@@ -296,7 +321,7 @@ func (tb *tableBuilder) appendFunctionRow(
 				tb.builderFunctionStartLine.AppendNull()
 			}
 		case TableFieldFunctionName:
-			if r.LineFunctionNameDict.Len() == 0 {
+			if r.LineFunctionNameDict.Len() == 0 || lineRow == -1 {
 				tb.builderFunctionName.AppendNull()
 			} else {
 				if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && len(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow))) > 0 {
@@ -306,7 +331,7 @@ func (tb *tableBuilder) appendFunctionRow(
 				}
 			}
 		case TableFieldFunctionSystemName:
-			if r.LineFunctionSystemNameDict.Len() == 0 {
+			if r.LineFunctionSystemNameDict.Len() == 0 || lineRow == -1 {
 				tb.builderFunctionSystemName.AppendNull()
 			} else {
 				if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && len(r.LineFunctionSystemNameDict.Value(r.LineFunctionSystemName.GetValueIndex(lineRow))) > 0 {
@@ -316,7 +341,7 @@ func (tb *tableBuilder) appendFunctionRow(
 				}
 			}
 		case TableFieldFunctionFileName:
-			if r.LineFunctionFilenameDict.Len() == 0 {
+			if r.LineFunctionFilenameDict.Len() == 0 || lineRow == -1 {
 				tb.builderFunctionFileName.AppendNull()
 			} else {
 				if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && len(r.LineFunctionFilenameDict.Value(r.LineFunctionFilename.GetValueIndex(lineRow))) > 0 {
@@ -345,7 +370,7 @@ func (tb *tableBuilder) appendFunctionRow(
 	return nil
 }
 
-func (tb *tableBuilder) mergeFunctionRow(r profile.RecordReader, mergeRow, sampleRow int) {
+func (tb *tableBuilder) mergeRow(r profile.RecordReader, mergeRow, sampleRow int) {
 	tb.builderCumulative.Add(mergeRow, r.Value.Value(sampleRow))
 	if r.Diff.Value(sampleRow) != 0 {
 		tb.builderCumulativeDiff.Add(mergeRow, r.Diff.Value(sampleRow))

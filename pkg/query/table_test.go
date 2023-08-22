@@ -26,9 +26,11 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
+	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/metastoretest"
 	"github.com/parca-dev/parca/pkg/parcacol"
+	"github.com/parca-dev/parca/pkg/profile"
 )
 
 func TestGenerateTable(t *testing.T) {
@@ -132,4 +134,125 @@ func TestGenerateTable(t *testing.T) {
 		}
 	}
 	require.Truef(t, found, "expected to find the specific function")
+}
+
+func TestGenerateTableAggregateFlat(t *testing.T) {
+	ctx := context.Background()
+	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	mem := memory.NewGoAllocator()
+
+	metastore := metastore.NewInProcessClient(metastoretest.NewTestMetastore(
+		t,
+		logger,
+		reg,
+		tracer,
+	))
+
+	mres, err := metastore.GetOrCreateMappings(ctx, &metastorepb.GetOrCreateMappingsRequest{
+		Mappings: []*metastorepb.Mapping{{
+			Id:      "1",
+			Start:   1,
+			Limit:   1,
+			Offset:  1,
+			File:    "1",
+			BuildId: "1",
+		}},
+	})
+	require.NoError(t, err)
+
+	lres, err := metastore.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
+		Locations: []*metastorepb.Location{{
+			Address:   0x1,
+			MappingId: mres.Mappings[0].Id,
+		}, {
+			Address:   0x2,
+			MappingId: mres.Mappings[0].Id,
+		}, {
+			Address:   0x3,
+			MappingId: mres.Mappings[0].Id,
+		}, {
+			Address:   0x4,
+			MappingId: mres.Mappings[0].Id,
+		}},
+	})
+	require.NoError(t, err)
+	require.Equal(t, 4, len(lres.Locations))
+	l1 := lres.Locations[0]
+	l2 := lres.Locations[1]
+	l3 := lres.Locations[2]
+	l4 := lres.Locations[3]
+
+	sres, err := metastore.GetOrCreateStacktraces(ctx, &metastorepb.GetOrCreateStacktracesRequest{
+		Stacktraces: []*metastorepb.Stacktrace{{
+			LocationIds: []string{l1.Id, l2.Id},
+		}, {
+			LocationIds: []string{l1.Id, l3.Id},
+		}, {
+			LocationIds: []string{l1.Id, l4.Id},
+		}},
+	})
+	require.NoError(t, err)
+	require.Equal(t, 3, len(sres.Stacktraces))
+	st1 := sres.Stacktraces[0]
+	st2 := sres.Stacktraces[1]
+	st3 := sres.Stacktraces[2]
+
+	p, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, &profile.NormalizedProfile{
+		Samples: []*profile.NormalizedSample{{
+			StacktraceID: st1.Id,
+			Value:        1,
+		}, {
+			StacktraceID: st2.Id,
+			Value:        1,
+		}, {
+			StacktraceID: st3.Id,
+			Value:        1,
+		}},
+	})
+	require.NoError(t, err)
+
+	np, err := OldProfileToArrowProfile(p)
+	require.NoError(t, err)
+
+	rec, cumulative, err := generateTableArrowRecord(ctx, mem, tracer, np)
+	require.NoError(t, err)
+
+	require.Equal(t, int64(4), rec.NumRows())
+	require.Equal(t, int64(3), cumulative)
+
+	requireColumn(t, rec, TableFieldMappingStart, []uint64{1, 1, 1, 1})
+	requireColumn(t, rec, TableFieldMappingLimit, []uint64{1, 1, 1, 1})
+	requireColumn(t, rec, TableFieldMappingOffset, []uint64{1, 1, 1, 1})
+	requireColumnDict(t, rec, TableFieldMappingFile, []string{"1", "1", "1", "1"})
+	requireColumnDict(t, rec, TableFieldMappingBuildID, []string{"1", "1", "1", "1"})
+
+	requireColumn(t, rec, TableFieldLocationAddress, []uint64{1, 2, 3, 4})
+	requireColumn(t, rec, TableFieldLocationFolded, []bool{false, false, false, false})
+	requireColumn(t, rec, TableFieldLocationLine, []int64{0, 0, 0, 0})
+
+	requireColumn(t, rec, TableFieldFunctionStartLine, []int64{0, 0, 0, 0})
+	requireColumnDict(t, rec, TableFieldFunctionName, []string{"(null)", "(null)", "(null)", "(null)"})
+	requireColumnDict(t, rec, TableFieldFunctionSystemName, []string{"(null)", "(null)", "(null)", "(null)"})
+	requireColumnDict(t, rec, TableFieldFunctionFileName, []string{"(null)", "(null)", "(null)", "(null)"})
+
+	requireColumn(t, rec, TableFieldCumulative, []int64{3, 1, 1, 1})
+	requireColumn(t, rec, TableFieldCumulativeDiff, []int64{0, 0, 0, 0})
+	// requireColumn(t, rec, TableFieldFlat, []int64{3, 0, 0, 0}) // TODO
+	requireColumn(t, rec, TableFieldFlatDiff, []int64{0, 0, 0, 0})
+
+	// require.Equal(t, 4, len(top.List))
+	// require.Equal(t, uint64(0x1), top.List[0].Meta.Location.Address)
+	// require.Equal(t, int64(3), top.List[0].Cumulative)
+	// require.Equal(t, int64(3), top.List[0].Flat)
+	// require.Equal(t, uint64(0x2), top.List[1].Meta.Location.Address)
+	// require.Equal(t, int64(1), top.List[1].Cumulative)
+	// require.Equal(t, int64(0), top.List[1].Flat)
+	// require.Equal(t, uint64(0x3), top.List[2].Meta.Location.Address)
+	// require.Equal(t, int64(1), top.List[2].Cumulative)
+	// require.Equal(t, int64(0), top.List[2].Flat)
+	// require.Equal(t, uint64(0x4), top.List[3].Meta.Location.Address)
+	// require.Equal(t, int64(1), top.List[3].Cumulative)
+	// require.Equal(t, int64(0), top.List[3].Flat)
 }
