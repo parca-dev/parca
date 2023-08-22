@@ -194,7 +194,7 @@ export const ProfileViewWithData = ({
       }}
       topTableData={{
         loading: tableLoading,
-        data:
+        arrow:
           tableResponse?.report.oneofKind === 'tableArrow'
             ? tableResponse.report.tableArrow
             : undefined,

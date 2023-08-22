@@ -31,6 +31,7 @@ import {
   QueryServiceClient,
   Source,
   TableArrow,
+  Top,
 } from '@parca/client';
 import {
   Button,
@@ -70,7 +71,8 @@ export interface FlamegraphData {
 
 export interface TopTableData {
   loading: boolean;
-  data?: TableArrow;
+  arrow?: TableArrow;
+  data?: Top; // TODO: Remove this once we only have arrow support
   total?: bigint;
   filtered?: bigint;
   error?: any;
@@ -296,7 +298,7 @@ export const ProfileView = ({
         return topTableData != null ? (
           <Table
             loading={topTableData.loading}
-            data={topTableData.data?.record}
+            data={topTableData.arrow?.record}
             sampleUnit={sampleUnit}
             navigateTo={navigateTo}
             setActionButtons={setActionButtons}
