@@ -60,6 +60,7 @@ func Test_LabelName_Error(t *testing.T) {
 	)
 
 	api := NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		metastore.NewInProcessClient(m),
@@ -140,6 +141,7 @@ func BenchmarkProfileColumnStoreWriteSeries(b *testing.B) {
 	)
 
 	api := NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		metastore.NewInProcessClient(m),

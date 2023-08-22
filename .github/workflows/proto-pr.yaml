@@ -2,6 +2,9 @@ name: proto-pr
 
 on:
   pull_request:
+  merge_group:
+    branches:
+    - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
@@ -42,7 +45,7 @@ jobs:
     steps:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
-      - uses: bufbuild/buf-setup-action@c9fa470ff8561150a2f7ce2cf52a11026c44db72 # v1.25.0
+      - uses: bufbuild/buf-setup-action@eb60cd0de4f14f1f57cf346916b8cd69a9e7ed0b # v1.26.1
 
       - name: version
         run: buf --version

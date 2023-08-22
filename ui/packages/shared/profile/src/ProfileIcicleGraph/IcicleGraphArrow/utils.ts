@@ -17,7 +17,13 @@ import {EVERYTHING_ELSE, FEATURE_TYPES, type Feature} from '@parca/store';
 import {getLastItem} from '@parca/utilities';
 
 import {hexifyAddress} from '../../utils';
-import {FIELD_FUNCTION_NAME, FIELD_LOCATION_ADDRESS, FIELD_MAPPING_FILE} from './index';
+import {
+  FIELD_FUNCTION_NAME,
+  FIELD_LABELS,
+  FIELD_LABELS_ONLY,
+  FIELD_LOCATION_ADDRESS,
+  FIELD_MAPPING_FILE,
+} from './index';
 
 export function nodeLabel(
   table: Table<any>,
@@ -26,14 +32,24 @@ export function nodeLabel(
   showBinaryName: boolean
 ): string {
   const functionName: string | null = table.getChild(FIELD_FUNCTION_NAME)?.get(row);
+  const labelsOnly: boolean | null = table.getChild(FIELD_LABELS_ONLY)?.get(row);
+  const pprofLabelPrefix = 'pprof_labels.';
+  const labelColumnNames = table.schema.fields.filter(field =>
+    field.name.startsWith(pprofLabelPrefix)
+  );
   if (functionName !== null && functionName !== '') {
-    if (level === 1 && functionName.startsWith('{') && functionName.endsWith('}')) {
-      return Object.entries(JSON.parse(functionName))
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([k, v]) => `${k}="${v as string}"`)
-        .join(', ');
-    }
     return functionName;
+  }
+
+  if (level === 1 && labelsOnly !== null && labelsOnly) {
+    return labelColumnNames
+      .map((field, i) => [
+        labelColumnNames[i].name.slice(pprofLabelPrefix.length),
+        table.getChild(field.name)?.get(row) ?? '',
+      ])
+      .filter(value => value[1] !== '')
+      .map(([k, v]) => `${k as string}="${v as string}"`)
+      .join(', ');
   }
 
   let mappingString = '';

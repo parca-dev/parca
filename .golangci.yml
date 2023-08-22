@@ -1,7 +1,7 @@
 run:
-  deadline: 7m
-  timeout: 5m
-  go: '1.18'
+  deadline: 12m
+  timeout: 10m
+  go: '1.21'
 
 linters:
   enable:

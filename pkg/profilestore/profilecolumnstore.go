@@ -23,6 +23,8 @@ import (
 	"github.com/go-kit/log"
 	"github.com/polarsignals/frostdb"
 	"github.com/polarsignals/frostdb/dynparquet"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -44,6 +46,7 @@ type ProfileColumnStore struct {
 	profilestorepb.UnimplementedProfileStoreServiceServer
 	profilestorepb.UnimplementedAgentsServiceServer
 
+	reg       prometheus.Registerer
 	logger    log.Logger
 	tracer    trace.Tracer
 	metastore metastorepb.MetastoreServiceClient
@@ -59,11 +62,14 @@ type ProfileColumnStore struct {
 	agents map[string]agent
 
 	bufferPool *sync.Pool
+
+	addressNormalizationFailed prometheus.Counter
 }
 
 var _ profilestorepb.ProfileStoreServiceServer = &ProfileColumnStore{}
 
 func NewProfileColumnStore(
+	reg prometheus.Registerer,
 	logger log.Logger,
 	tracer trace.Tracer,
 	metastore metastorepb.MetastoreServiceClient,
@@ -72,6 +78,7 @@ func NewProfileColumnStore(
 	enableAddressNormalization bool,
 ) *ProfileColumnStore {
 	return &ProfileColumnStore{
+		reg:               reg,
 		logger:            logger,
 		tracer:            tracer,
 		metastore:         metastore,
@@ -84,11 +91,25 @@ func NewProfileColumnStore(
 				return new(bytes.Buffer)
 			},
 		},
+		addressNormalizationFailed: promauto.With(reg).NewCounter(prometheus.CounterOpts{
+			Name: "parca_collector_address_normalization_failed_total",
+			Help: "Total number of address normalization failures.",
+		}),
 	}
 }
 
 func (s *ProfileColumnStore) writeSeries(ctx context.Context, req *profilestorepb.WriteRawRequest) error {
-	return parcacol.NormalizedIngest(ctx, req, s.logger, s.table, s.schema, s.metastore, s.bufferPool, s.isAddrNormEnabled)
+	return parcacol.NormalizedIngest(
+		ctx,
+		s.addressNormalizationFailed,
+		req,
+		s.logger,
+		s.table,
+		s.schema,
+		s.metastore,
+		s.bufferPool,
+		s.isAddrNormEnabled,
+	)
 }
 
 func (s *ProfileColumnStore) updateAgents(nodeNameAndIP string, ag agent) {

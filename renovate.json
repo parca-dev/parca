@@ -50,7 +50,7 @@
     },
     {
       "description": "Disable tailwindcss upgrades",
-      "matchPackageNames": ["tailwindcss"],
+      "matchPackageNames": ["tailwindcss", "prettier-plugin-tailwindcss"],
       "enabled": false
     },
     {

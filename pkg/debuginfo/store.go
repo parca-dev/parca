@@ -429,7 +429,7 @@ func objectPath(buildID string, typ debuginfopb.DebuginfoType) string {
 	case debuginfopb.DebuginfoType_DEBUGINFO_TYPE_EXECUTABLE:
 		return path.Join(buildID, "executable")
 	case debuginfopb.DebuginfoType_DEBUGINFO_TYPE_SOURCES:
-		return path.Join(buildID, "sources.tar.gz")
+		return path.Join(buildID, "sources")
 	default:
 		return path.Join(buildID, "debuginfo")
 	}
