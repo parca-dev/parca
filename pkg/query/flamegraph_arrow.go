@@ -1023,34 +1023,28 @@ func (fb *flamegraphBuilder) appendRow(
 	fb.builderLocationAddress.Append(r.Address.Value(locationRow))
 	fb.builderLocationFolded.AppendSingle(false)
 
-	if lineRow >= 0 && r.Line.IsValid(lineRow) {
-		fb.builderLocationLine.Append(r.LineNumber.Value(lineRow))
-	} else {
+	if lineRow == -1 {
 		fb.builderLocationLine.AppendNull()
-	}
-
-	if lineRow >= 0 && r.LineFunction.IsValid(lineRow) {
-		fb.builderFunctionStartLine.Append(r.LineFunctionStartLine.Value(lineRow))
-	} else {
 		fb.builderFunctionStartLine.AppendNull()
-	}
-
-	if r.LineFunctionNameDict.Len() == 0 || lineRow < 0 || !r.LineFunction.IsValid(lineRow) {
 		fb.builderFunctionNameIndices.AppendNull()
-	} else {
-		fb.builderFunctionNameIndices.Append(t.functionName.indices.Value(r.LineFunctionName.GetValueIndex(lineRow)))
-	}
-
-	if r.LineFunctionSystemNameDict.Len() == 0 || lineRow < 0 || !r.LineFunction.IsValid(lineRow) {
 		fb.builderFunctionSystemNameIndices.AppendNull()
-	} else {
-		fb.builderFunctionSystemNameIndices.Append(t.functionSystemName.indices.Value(r.LineFunctionSystemName.GetValueIndex(lineRow)))
-	}
-
-	if r.LineFunctionFilenameDict.Len() == 0 || lineRow < 0 || !r.LineFunction.IsValid(lineRow) {
 		fb.builderFunctionFilenameIndices.AppendNull()
 	} else {
-		fb.builderFunctionFilenameIndices.Append(t.functionFilename.indices.Value(r.LineFunctionFilename.GetValueIndex(lineRow)))
+		// A non -1 lineRow means that the line is definitely valid, otherwise
+		// something has already gone terribly wrong.
+		fb.builderLocationLine.Append(r.LineNumber.Value(lineRow))
+
+		if r.LineFunction.IsValid(lineRow) {
+			fb.builderFunctionStartLine.Append(r.LineFunctionStartLine.Value(lineRow))
+			fb.builderFunctionNameIndices.Append(t.functionName.indices.Value(r.LineFunctionName.GetValueIndex(lineRow)))
+			fb.builderFunctionSystemNameIndices.Append(t.functionSystemName.indices.Value(r.LineFunctionSystemName.GetValueIndex(lineRow)))
+			fb.builderFunctionFilenameIndices.Append(t.functionFilename.indices.Value(r.LineFunctionFilename.GetValueIndex(lineRow)))
+		} else {
+			fb.builderFunctionStartLine.AppendNull()
+			fb.builderFunctionNameIndices.AppendNull()
+			fb.builderFunctionSystemNameIndices.AppendNull()
+			fb.builderFunctionFilenameIndices.AppendNull()
+		}
 	}
 
 	// Values
@@ -1160,9 +1154,7 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 // addRowValues updates the existing row's values and potentially adding existing values on top.
 func (fb *flamegraphBuilder) addRowValues(r *profile.RecordReader, row, sampleRow int) {
 	fb.builderCumulative.Add(row, r.Value.Value(sampleRow))
-	if r.Diff.Value(sampleRow) != 0 {
-		fb.builderDiff.Add(row, r.Diff.Value(sampleRow))
-	}
+	fb.builderDiff.Add(row, r.Diff.Value(sampleRow))
 }
 
 func isLocationRoot(end, i int) bool {
