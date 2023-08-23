@@ -29,7 +29,7 @@ require (
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
 	github.com/parquet-go/parquet-go v0.17.0
-	github.com/polarsignals/frostdb v0.0.0-20230821093112-02bf1156bc12
+	github.com/polarsignals/frostdb v0.0.0-20230822164836-f16400a97239
 	github.com/prometheus/client_golang v1.16.0
 	github.com/prometheus/common v0.44.0
 	github.com/prometheus/prometheus v0.46.0
@@ -247,3 +247,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.3.0 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
+
+replace github.com/apache/arrow/go/v13 => github.com/brancz/arrow/go/v13 v13.0.0-20230822143732-dc4d10fb562d
