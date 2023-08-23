@@ -82,10 +82,10 @@ export const ProfileViewWithData = ({
   const {perf} = useParcaContext();
 
   const {
-    isLoading: topTableLoading,
-    response: topTableResponse,
-    error: topTableError,
-  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.TOP, {
+    isLoading: tableLoading,
+    response: tableResponse,
+    error: tableError,
+  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.TABLE_ARROW, {
     skip: !dashboardItems.includes('table'),
   });
 
@@ -115,8 +115,8 @@ export const ProfileViewWithData = ({
       perf?.markInteraction('Flamegraph render', flamegraphResponse.total);
     }
 
-    if (!topTableLoading && topTableResponse?.report.oneofKind === 'top') {
-      perf?.markInteraction('Top table render', topTableResponse.total);
+    if (!tableLoading && tableResponse?.report.oneofKind === 'tableArrow') {
+      perf?.markInteraction('table render', tableResponse.total);
     }
 
     if (!callgraphLoading && callgraphResponse?.report.oneofKind === 'callgraph') {
@@ -131,8 +131,8 @@ export const ProfileViewWithData = ({
     flamegraphResponse,
     callgraphResponse,
     callgraphLoading,
-    topTableLoading,
-    topTableResponse,
+    tableLoading,
+    tableResponse,
     sourceLoading,
     sourceResponse,
     perf,
@@ -163,9 +163,9 @@ export const ProfileViewWithData = ({
   if (flamegraphResponse !== null) {
     total = BigInt(flamegraphResponse.total);
     filtered = BigInt(flamegraphResponse.filtered);
-  } else if (topTableResponse !== null) {
-    total = BigInt(topTableResponse.total);
-    filtered = BigInt(topTableResponse.filtered);
+  } else if (tableResponse !== null) {
+    total = BigInt(tableResponse.total);
+    filtered = BigInt(tableResponse.filtered);
   } else if (callgraphResponse !== null) {
     total = BigInt(callgraphResponse.total);
     filtered = BigInt(callgraphResponse.filtered);
@@ -193,10 +193,12 @@ export const ProfileViewWithData = ({
         error: flamegraphError,
       }}
       topTableData={{
-        loading: topTableLoading,
-        data:
-          topTableResponse?.report.oneofKind === 'top' ? topTableResponse.report.top : undefined,
-        error: topTableError,
+        loading: tableLoading,
+        arrow:
+          tableResponse?.report.oneofKind === 'tableArrow'
+            ? tableResponse.report.tableArrow
+            : undefined,
+        error: tableError,
       }}
       callgraphData={{
         loading: callgraphLoading,

@@ -21,6 +21,7 @@ import {
   useReactTable,
   type ColumnDef,
   type SortingState,
+  type VisibilityState,
 } from '@tanstack/react-table';
 import cx from 'classnames';
 import {useVirtual} from 'react-virtual';
@@ -36,6 +37,7 @@ interface Props<TData> {
   data: TData[];
   columns: Array<ColumnDef<TData>>;
   initialSorting?: SortingState;
+  columnVisibility?: VisibilityState;
   onRowClick?: (row: TData) => void;
   enableHighlighting?: boolean;
   shouldHighlightRow?: (row: TData) => boolean;
@@ -46,6 +48,7 @@ const Table = <T,>({
   data,
   columns,
   initialSorting = [],
+  columnVisibility = {},
   onRowClick,
   enableHighlighting = false,
   usePointerCursor = true,
@@ -60,6 +63,7 @@ const Table = <T,>({
     getSortedRowModel: getSortedRowModel(),
     state: {
       sorting,
+      columnVisibility,
     },
     onSortingChange: setSorting,
     enableColumnResizing: true,

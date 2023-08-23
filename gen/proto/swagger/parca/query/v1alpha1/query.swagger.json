@@ -299,7 +299,7 @@
           },
           {
             "name": "reportType",
-            "description": "report_type is the type of report to return\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified\n - REPORT_TYPE_SOURCE: REPORT_TYPE_SOURCE contains source code annotated with profiling information",
+            "description": "report_type is the type of report to return\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified\n - REPORT_TYPE_SOURCE: REPORT_TYPE_SOURCE contains source code annotated with profiling information\n - REPORT_TYPE_TABLE_ARROW: REPORT_TYPE_TABLE_ARROW unspecified",
             "in": "query",
             "required": false,
             "type": "string",
@@ -310,7 +310,8 @@
               "REPORT_TYPE_CALLGRAPH",
               "REPORT_TYPE_FLAMEGRAPH_TABLE",
               "REPORT_TYPE_FLAMEGRAPH_ARROW",
-              "REPORT_TYPE_SOURCE"
+              "REPORT_TYPE_SOURCE",
+              "REPORT_TYPE_TABLE_ARROW"
             ],
             "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED"
           },
@@ -549,10 +550,11 @@
         "REPORT_TYPE_CALLGRAPH",
         "REPORT_TYPE_FLAMEGRAPH_TABLE",
         "REPORT_TYPE_FLAMEGRAPH_ARROW",
-        "REPORT_TYPE_SOURCE"
+        "REPORT_TYPE_SOURCE",
+        "REPORT_TYPE_TABLE_ARROW"
       ],
       "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
-      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified\n - REPORT_TYPE_SOURCE: REPORT_TYPE_SOURCE contains source code annotated with profiling information",
+      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified\n - REPORT_TYPE_SOURCE: REPORT_TYPE_SOURCE contains source code annotated with profiling information\n - REPORT_TYPE_TABLE_ARROW: REPORT_TYPE_TABLE_ARROW unspecified",
       "title": "ReportType is the type of report to return"
     },
     "metastorev1alpha1Function": {
@@ -796,6 +798,10 @@
         "source": {
           "$ref": "#/definitions/queryv1alpha1Source",
           "title": "source is the source report type result"
+        },
+        "tableArrow": {
+          "$ref": "#/definitions/v1alpha1TableArrow",
+          "title": "table_arrow is a table encoded as a arrow record"
         },
         "total": {
           "type": "string",
@@ -1431,6 +1437,21 @@
         }
       },
       "description": "SourceReference contains a reference to source code."
+    },
+    "v1alpha1TableArrow": {
+      "type": "object",
+      "properties": {
+        "record": {
+          "type": "string",
+          "format": "byte",
+          "title": "record is the arrow record containing the actual table data"
+        },
+        "unit": {
+          "type": "string",
+          "title": "unit is the unit represented by the flame graph"
+        }
+      },
+      "title": "TableArrow has the table encoded as a arrow record"
     },
     "v1alpha1Top": {
       "type": "object",
