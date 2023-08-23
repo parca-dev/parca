@@ -54,6 +54,7 @@ var ErrNoSourceForBuildID = errors.New("No sources for this build id have been u
 
 type SourceFinder interface {
 	FindSource(ctx context.Context, ref *pb.SourceReference) (string, error)
+	SourceExists(ctx context.Context, ref *pb.SourceReference) (bool, error)
 }
 
 // ColumnQueryAPI is the read api interface for parca
@@ -167,6 +168,10 @@ func (q *ColumnQueryAPI) getSource(ctx context.Context, ref *pb.SourceReference)
 	return q.sourceFinder.FindSource(ctx, ref)
 }
 
+func (q *ColumnQueryAPI) sourceUploadExistsForBuildID(ctx context.Context, ref *pb.SourceReference) (bool, error) {
+	return q.sourceFinder.SourceExists(ctx, ref)
+}
+
 // Query issues an instant query against the storage.
 func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryResponse, error) {
 	if err := req.Validate(); err != nil {
@@ -178,22 +183,31 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		err    error
 	)
 	if req.SourceReference != nil {
-		source, err = q.getSource(ctx, req.SourceReference)
+		exists, err := q.sourceUploadExistsForBuildID(ctx, req.SourceReference)
 		if err != nil {
-			if errors.Is(err, ErrSourceNotFound) || errors.Is(err, ErrNoSourceForBuildID) {
+			if errors.Is(err, ErrNoSourceForBuildID) {
 				return nil, status.Error(codes.NotFound, err.Error())
 			}
 			return nil, err
 		}
 
 		if req.SourceReference.SourceOnly {
+			if !exists {
+				return nil, status.Error(codes.NotFound, ErrNoSourceForBuildID.Error())
+			}
 			return &pb.QueryResponse{
 				Report: &pb.QueryResponse_Source{
-					Source: &pb.Source{
-						Source: source,
-					},
+					Source: &pb.Source{},
 				},
 			}, nil
+		}
+
+		source, err = q.getSource(ctx, req.SourceReference)
+		if err != nil {
+			if errors.Is(err, ErrSourceNotFound) || errors.Is(err, ErrNoSourceForBuildID) {
+				return nil, status.Error(codes.NotFound, err.Error())
+			}
+			return nil, err
 		}
 	}
 
