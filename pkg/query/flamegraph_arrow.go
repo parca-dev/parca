@@ -451,6 +451,7 @@ func transpositionFromDict(unifier array.DictionaryUnifier, dict *array.Binary) 
 	if err != nil {
 		return nil, nil, err
 	}
+	defer buffer.Release()
 	data := array.NewData(
 		arrow.PrimitiveTypes.Int32,
 		dict.Len(),
@@ -459,6 +460,7 @@ func transpositionFromDict(unifier array.DictionaryUnifier, dict *array.Binary) 
 		0,
 		0,
 	)
+	defer data.Release()
 	indices := array.NewInt32Data(data)
 
 	return data, indices, nil
