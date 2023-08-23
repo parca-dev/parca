@@ -16,7 +16,8 @@ import React, {useState} from 'react';
 import {Table} from 'apache-arrow';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 
-import {Button, useURLState} from '@parca/components';
+import {QueryRequest_ReportType} from '@parca/client';
+import {Button, useParcaContext, useURLState} from '@parca/components';
 import {divide, getLastItem, valueFormatter, type NavigateFunction} from '@parca/utilities';
 
 import {
@@ -31,6 +32,9 @@ import {
   FIELD_MAPPING_FILE,
 } from '../ProfileIcicleGraph/IcicleGraphArrow';
 import {nodeLabel} from '../ProfileIcicleGraph/IcicleGraphArrow/utils';
+import {ProfileSource} from '../ProfileSource';
+import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
+import {useQuery} from '../useQuery';
 import {hexifyAddress, truncateString, truncateStringReverse} from '../utils';
 import {ExpandOnHover} from './ExpandOnHoverValue';
 
@@ -192,6 +196,23 @@ const TooltipMetaInfo = ({
   const functionStartLine: bigint = table.getChild(FIELD_FUNCTION_START_LINE)?.get(row) ?? 0n;
   const labelsString: string = table.getChild(FIELD_LABELS)?.get(row) ?? '{}';
 
+  const {queryServiceClient} = useParcaContext();
+  const {profileSource} = useProfileViewContext();
+
+  const {isLoading: sourceLoading, response: sourceResponse} = useQuery(
+    queryServiceClient,
+    profileSource as ProfileSource,
+    QueryRequest_ReportType.SOURCE,
+    {
+      skip: profileSource === undefined,
+      sourceBuildID: mappingBuildID,
+      sourceFilename: functionFilename,
+      sourceOnly: true,
+    }
+  );
+
+  const isSourceAvailable = !sourceLoading && sourceResponse != null;
+
   const getTextForFile = (): string => {
     if (functionFilename === '') return '<unknown>';
 
@@ -262,9 +283,16 @@ const TooltipMetaInfo = ({
                   <ExpandOnHover value={file} displayValue={truncateStringReverse(file, 30)} />
                 </button>
               </CopyToClipboard>
-              <Button variant={'neutral'} onClick={() => openFile()} className="shrink-0">
-                open
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant={'neutral'}
+                  onClick={() => openFile()}
+                  className="shrink-0"
+                  disabled={!isSourceAvailable}
+                >
+                  open
+                </Button>
+              </div>
             </div>
           )}
         </td>
