@@ -119,6 +119,7 @@ func generateTableArrowRecord(
 					// Check if we've seen the address for the mapping before.
 					// If not, we add it as a new row and add the address to the mapping to keep track of it.
 					// If we have seen the address before, we merge the address with the existing row by summing the values.
+					// Note for Go developers: This won't panic. Tests have shown that if the first check fails, the second check won't be run.
 					if cr, ok := tb.addresses[unsafeString(buildID)][addr]; !ok {
 						if err := tb.appendRow(r, sampleRow, locationRow, -1, isLeaf); err != nil {
 							return nil, 0, err

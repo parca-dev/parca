@@ -15,7 +15,6 @@ package query
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/apache/arrow/go/v13/arrow/array"
@@ -62,8 +61,6 @@ func TestGenerateTable(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
-
-	fmt.Println(profiles[0].Meta)
 
 	np, err := OldProfileToArrowProfile(symbolizedProfile)
 	require.NoError(t, err)
