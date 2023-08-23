@@ -70,9 +70,6 @@ func (f *BucketSourceFinder) FindSource(ctx context.Context, ref *pb.SourceRefer
 func (f *BucketSourceFinder) SourceExists(ctx context.Context, ref *pb.SourceReference) (bool, error) {
 	exists, err := f.bucket.Exists(ctx, path.Join(ref.BuildId, "sources"))
 	if err != nil {
-		if f.bucket.IsObjNotFoundErr(err) {
-			return false, ErrNoSourceForBuildID
-		}
 		return false, err
 	}
 

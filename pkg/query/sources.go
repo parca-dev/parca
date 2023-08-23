@@ -23,9 +23,10 @@ import (
 	"github.com/apache/arrow/go/v13/arrow/ipc"
 	"github.com/apache/arrow/go/v13/arrow/math"
 	"github.com/apache/arrow/go/v13/arrow/memory"
+	"go.opentelemetry.io/otel/trace"
+
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
-	"go.opentelemetry.io/otel/trace"
 )
 
 func GenerateSourceReport(
@@ -64,16 +65,13 @@ func GenerateSourceReport(
 }
 
 func generateSourceReportRecord(
-	ctx context.Context,
+	_ context.Context,
 	pool memory.Allocator,
 	tracer trace.Tracer,
 	p profile.Profile,
 	ref *pb.SourceReference,
 	source string,
 ) (arrow.Record, int64) {
-	ctx, span := tracer.Start(ctx, "generateSourceReportRecord")
-	defer span.End()
-
 	b := newSourceReportBuilder(pool, ref, int64(strings.Count(source, "\n")))
 	for _, record := range p.Samples {
 		b.addRecord(record)

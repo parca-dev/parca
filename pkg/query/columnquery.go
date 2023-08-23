@@ -49,8 +49,10 @@ type Querier interface {
 	QueryMerge(ctx context.Context, query string, start, end time.Time) (profile.Profile, error)
 }
 
-var ErrSourceNotFound = errors.New("Source file not found. Either profiling metadata is wrong, or the referenced file was not included in the uploaded sources.")
-var ErrNoSourceForBuildID = errors.New("No sources for this build id have been uploaded.")
+var (
+	ErrSourceNotFound     = errors.New("Source file not found. Either profiling metadata is wrong, or the referenced file was not included in the uploaded sources.")
+	ErrNoSourceForBuildID = errors.New("No sources for this build id have been uploaded.")
+)
 
 type SourceFinder interface {
 	FindSource(ctx context.Context, ref *pb.SourceReference) (string, error)
@@ -183,18 +185,16 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		err    error
 	)
 	if req.SourceReference != nil {
-		exists, err := q.sourceUploadExistsForBuildID(ctx, req.SourceReference)
-		if err != nil {
-			if errors.Is(err, ErrNoSourceForBuildID) {
-				return nil, status.Error(codes.NotFound, err.Error())
-			}
-			return nil, err
-		}
-
 		if req.SourceReference.SourceOnly {
+			exists, err := q.sourceUploadExistsForBuildID(ctx, req.SourceReference)
+			if err != nil {
+				return nil, err
+			}
+
 			if !exists {
 				return nil, status.Error(codes.NotFound, ErrNoSourceForBuildID.Error())
 			}
+
 			return &pb.QueryResponse{
 				Report: &pb.QueryResponse_Source{
 					Source: &pb.Source{},
