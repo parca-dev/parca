@@ -15,8 +15,8 @@ import React, {useState} from 'react';
 
 import {Table} from 'apache-arrow';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
-import {useURLState, Button} from '@parca/components';
 
+import {Button, useURLState} from '@parca/components';
 import {divide, getLastItem, valueFormatter, type NavigateFunction} from '@parca/utilities';
 
 import {
@@ -88,7 +88,6 @@ const GraphTooltipArrowContent = ({
   const diffText = `${diffValueText} (${diffPercentageText})`;
 
   const name = nodeLabel(table, row, level, false);
-  console.log(level, row, name);
 
   const getTextForCumulative = (hoveringNodeCumulative: bigint): string => {
     const filtered =
@@ -153,7 +152,12 @@ const GraphTooltipArrowContent = ({
                       </td>
                     </tr>
                   )}
-                  <TooltipMetaInfo table={table} row={row} onCopy={onCopy} navigateTo={navigateTo} />
+                  <TooltipMetaInfo
+                    table={table}
+                    row={row}
+                    onCopy={onCopy}
+                    navigateTo={navigateTo}
+                  />
                 </tbody>
               </table>
             </div>
@@ -219,26 +223,26 @@ const TooltipMetaInfo = ({
     navigateTo,
   });
 
-  // eslint-disable-line @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [unusedBuildId, setSourceBuildId] = useURLState({
     param: 'source_buildid',
     navigateTo,
   });
 
-  // eslint-disable-line @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [unusedFilename, setSourceFilename] = useURLState({
     param: 'source_filename',
     navigateTo,
   });
 
-  // eslint-disable-line @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [unusedLine, setSourceLine] = useURLState({
     param: 'source_line',
     navigateTo,
   });
 
   const openFile = (): void => {
-    setDashboardItems([dashboardItems[0], "source"]);
+    setDashboardItems([dashboardItems[0], 'source']);
     setSourceBuildId(mappingBuildID);
     setSourceFilename(functionFilename);
     setSourceLine(locationLine.toString());
@@ -251,16 +255,18 @@ const TooltipMetaInfo = ({
         <td className="w-3/4 break-all">
           {functionFilename === '' ? (
             <NoData />
-          ) :
-            (<div className='flex gap-4'>
+          ) : (
+            <div className="flex gap-4">
               <CopyToClipboard onCopy={onCopy} text={file}>
                 <button className="cursor-pointer whitespace-nowrap text-left">
                   <ExpandOnHover value={file} displayValue={truncateStringReverse(file, 30)} />
                 </button>
               </CopyToClipboard>
-              <Button variant={'neutral'} onClick={() => openFile()} className='shrink-0'>open</Button>
+              <Button variant={'neutral'} onClick={() => openFile()} className="shrink-0">
+                open
+              </Button>
             </div>
-            )}
+          )}
         </td>
       </tr>
       <tr>

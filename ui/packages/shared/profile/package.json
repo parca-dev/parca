@@ -17,18 +17,19 @@
     "d3-scale": "^4.0.2",
     "d3-selection": "3.0.0",
     "graphviz-wasm": "3.0.0",
-    "highlight.js": "^11.8.0",
     "react-beautiful-dnd": "^13.1.1",
     "react-copy-to-clipboard": "^5.1.0",
     "react-flame-graph": "^1.4.0",
     "react-inlinesvg": "^3.0.2",
     "react-map-interaction": "^2.1.0",
+    "react-syntax-highlighter": "^15.5.0",
     "react-textarea-autosize": "^8.4.0",
     "with-alpha-hex": "^1.0.6"
   },
   "devDependencies": {
     "@types/d3": "7.4.0",
-    "@types/react-copy-to-clipboard": "5.0.4"
+    "@types/react-copy-to-clipboard": "5.0.4",
+    "@types/react-syntax-highlighter": "^15.5.7"
   },
   "resolutions": {
     "konva": "8.4.3"

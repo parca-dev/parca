@@ -25,7 +25,13 @@ import {
   type DropResult,
 } from 'react-beautiful-dnd';
 
-import {Callgraph as CallgraphType, Flamegraph, Source, QueryServiceClient, Top} from '@parca/client';
+import {
+  Callgraph as CallgraphType,
+  Flamegraph,
+  QueryServiceClient,
+  Source,
+  Top,
+} from '@parca/client';
 import {
   Button,
   Card,
@@ -42,8 +48,8 @@ import {Callgraph} from '../';
 import {jsonToDot} from '../Callgraph/utils';
 import ProfileIcicleGraph from '../ProfileIcicleGraph';
 import {ProfileSource} from '../ProfileSource';
-import {TopTable} from '../TopTable';
 import {SourceView} from '../SourceView';
+import {TopTable} from '../TopTable';
 import ProfileShareButton from '../components/ProfileShareButton';
 import useDelayedLoader from '../useDelayedLoader';
 import FilterByFunctionButton from './FilterByFunctionButton';
@@ -306,6 +312,7 @@ export const ProfileView = ({
             data={sourceData.data}
             total={total}
             filtered={filtered}
+            setActionButtons={setActionButtons}
           />
         ) : (
           <></>

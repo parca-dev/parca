@@ -11,40 +11,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useMemo} from 'react';
+import React, {useEffect} from 'react';
 
 import {tableFromIPC} from 'apache-arrow';
-import hljs from 'highlight.js';
 
 import {Source} from '@parca/client';
 import {useURLState} from '@parca/components';
 
-import {LineNo} from './LineNo';
+import {ExpandOnHover} from '../GraphTooltipArrow/ExpandOnHoverValue';
+import {truncateStringReverse} from '../utils';
+import {Highlighter, profileAwareRenderer} from './Highlighter';
 
 interface SourceViewProps {
   loading: boolean;
   data?: Source;
   total: bigint;
   filtered: bigint;
-}
-
-interface HighlighterProps {
-  content: string;
-  language?: string;
-}
-
-function Highlighter({content, language}: HighlighterProps): JSX.Element {
-  const highlighted = useMemo(() => {
-    return language !== undefined && language !== null
-      ? hljs.highlight(language, content)
-      : hljs.highlightAuto(content);
-  }, [content, language]);
-
-  return (
-    <pre className="hljs">
-      <code dangerouslySetInnerHTML={{__html: highlighted.value}} />
-    </pre>
-  );
+  setActionButtons?: (buttons: JSX.Element) => void;
 }
 
 export const SourceView = React.memo(function SourceView({
@@ -52,73 +35,32 @@ export const SourceView = React.memo(function SourceView({
   loading,
   total,
   filtered,
+  setActionButtons,
 }: SourceViewProps): JSX.Element {
-  const [sourceLine] = useURLState({param: 'source_line', navigateTo: () => {}});
+  const [sourceFileName] = useURLState({param: 'source_filename', navigateTo: () => {}});
+
+  useEffect(() => {
+    setActionButtons?.(
+      <div className="px-2">
+        <ExpandOnHover
+          value={sourceFileName as string}
+          displayValue={truncateStringReverse(sourceFileName as string, 50)}
+        />
+      </div>
+    );
+  }, [sourceFileName, setActionButtons]);
+
   if (loading || data === undefined) return <>Profile has no samples</>;
 
   const table = tableFromIPC(data.record);
   const cumulative = table.getChild('cumulative');
   const flat = table.getChild('flat');
-  const lines = Array.from({length: flat?.length ?? 0}, (_, i) => i + 1);
-
-  let cumulativeValues = '';
-  for (let i = -1, n = cumulative?.length ?? 0; ++i < n; ) {
-    const row = cumulative?.get(i) ?? 0;
-    if (row > 0) {
-      if (filtered > 0) {
-        const unfilteredPercent = ((Number(row) / Number(total + filtered)) * 100).toFixed(2);
-        const filteredPercent = ((Number(row) / Number(total)) * 100).toFixed(2);
-        cumulativeValues +=
-          row.toString() + '(' + unfilteredPercent + '% / ' + filteredPercent + '%)\n';
-      } else {
-        const percent = ((Number(row) / Number(total)) * 100).toFixed(2);
-        cumulativeValues += row.toString() + '(' + percent + '%)\n';
-      }
-    } else {
-      cumulativeValues += '\n';
-    }
-  }
-
-  let flatValues = '';
-  for (let i = -1, n = flat?.length ?? 0; ++i < n; ) {
-    const row = flat?.get(i) ?? 0;
-    if (row > 0) {
-      if (filtered > 0) {
-        const unfilteredPercent = ((Number(row) / Number(total + filtered)) * 100).toFixed(2);
-        const filteredPercent = ((Number(row) / Number(total)) * 100).toFixed(2);
-        flatValues += row.toString() + '(' + unfilteredPercent + '% / ' + filteredPercent + '%)\n';
-      } else {
-        const percent = ((Number(row) / Number(total)) * 100).toFixed(2);
-        flatValues += row.toString() + '(' + percent + '%)\n';
-      }
-    } else {
-      flatValues += '\n';
-    }
-  }
 
   return (
-    <div className="h-[80vh] overflow-y-auto text-xs dark:bg-[#22272e] dark:text-[#adbac7]">
-      <div className="flex gap-2">
-        <pre>
-          <code>
-            Line{'\n'}
-            {lines.map(line => (
-              <LineNo value={line} key={line} isCurrent={sourceLine === line.toString()} />
-            ))}
-          </code>
-        </pre>
-        <pre>
-          <code>{'Cummulative\n' + cumulativeValues}</code>
-        </pre>
-        <pre>
-          <code>{'Flat\n' + flatValues}</code>
-        </pre>
-        <div className="overflow-x-auto">
-          <pre>{'Source Code\n'}</pre>
-          <Highlighter content={data.source} />
-        </div>
-      </div>
-    </div>
+    <Highlighter
+      content={data.source}
+      renderer={profileAwareRenderer(cumulative, flat, total, filtered)}
+    />
   );
 });
 
