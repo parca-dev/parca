@@ -409,6 +409,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 
 			fa, cumulative, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, np, tc.aggregate, 0)
 			require.NoError(t, err)
+			defer fa.Release()
 
 			require.Equal(t, tc.cumulative, cumulative)
 			require.Equal(t, tc.height, height)
@@ -520,6 +521,7 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 
 	record, total, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, newProfile, []string{FlamegraphFieldFunctionName}, 0)
 	require.NoError(t, err)
+	defer record.Release()
 
 	require.Equal(t, int64(1), total)
 	require.Equal(t, int32(5), height)
@@ -664,6 +666,7 @@ func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 			require.NoError(t, err)
 			fa, cumulative, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, np, tc.aggregate, 0)
 			require.NoError(t, err)
+			defer fa.Release()
 
 			require.Equal(t, tc.cumulative, cumulative)
 			require.Equal(t, tc.height, height)
