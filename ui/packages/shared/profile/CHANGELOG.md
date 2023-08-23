@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.228](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.227...@parca/profile@0.16.228) (2023-08-23)
+
+**Note:** Version bump only for package @parca/profile
+
 ## [0.16.227](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.225...@parca/profile@0.16.227) (2023-08-21)
 
 **Note:** Version bump only for package @parca/profile
