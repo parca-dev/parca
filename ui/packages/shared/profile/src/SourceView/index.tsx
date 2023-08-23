@@ -16,7 +16,7 @@ import React, {useEffect} from 'react';
 import {tableFromIPC} from 'apache-arrow';
 
 import {Source} from '@parca/client';
-import {useURLState} from '@parca/components';
+import {useParcaContext, useURLState} from '@parca/components';
 
 import {ExpandOnHover} from '../GraphTooltipArrow/ExpandOnHoverValue';
 import {truncateStringReverse} from '../utils';
@@ -38,6 +38,7 @@ export const SourceView = React.memo(function SourceView({
   setActionButtons,
 }: SourceViewProps): JSX.Element {
   const [sourceFileName] = useURLState({param: 'source_filename', navigateTo: () => {}});
+  const {loader} = useParcaContext();
 
   useEffect(() => {
     setActionButtons?.(
@@ -50,7 +51,13 @@ export const SourceView = React.memo(function SourceView({
     );
   }, [sourceFileName, setActionButtons]);
 
-  if (loading || data === undefined) return <>Profile has no samples</>;
+  if (loading) {
+    return <>{loader}</>;
+  }
+
+  if (data === undefined) {
+    return <>Source code not uploaded for this build.</>;
+  }
 
   const table = tableFromIPC(data.record);
   const cumulative = table.getChild('cumulative');

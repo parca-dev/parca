@@ -169,11 +169,17 @@ export const Highlighter = ({content, language, renderer}: HighlighterProps): JS
 
   return (
     <div className="relative">
-      <div className="flex gap-4 text-xs">
-        <div>Line</div>
-        <div>Cumulative</div>
-        <div>Flat</div>
-        <div>Source</div>
+      <div className="flex gap-2 text-xs">
+        <div
+          className={cx('text-right', charsToWidth(content.split('\n').length.toString().length))}
+        >
+          Line
+        </div>
+        <div className="flex gap-3">
+          <div>Cumulative</div>
+          <div>Flat</div>
+          <div>Source</div>
+        </div>
       </div>
       <div className="h-[80vh] overflow-y-auto text-xs">
         <SyntaxHighlighter
