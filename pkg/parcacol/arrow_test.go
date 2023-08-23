@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/apache/arrow/go/v13/arrow/memory"
+	"github.com/stretchr/testify/require"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
@@ -54,5 +55,7 @@ func TestBuildArrowLocations(t *testing.T) {
 
 	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
 	defer mem.AssertSize(t, 0)
-	BuildArrowLocations(mem, stacktraces, locations, locationIndex)
+	r, err := BuildArrowLocations(mem, stacktraces, locations, locationIndex)
+	require.NoError(t, err)
+	defer r.Release()
 }
