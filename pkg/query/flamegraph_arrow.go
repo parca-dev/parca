@@ -861,44 +861,59 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	fb.ensureLabelColumnsComplete()
 
 	mappingBuildIDIndices := fb.builderMappingBuildIDIndices.NewArray()
+	defer mappingBuildIDIndices.Release()
 	mappingBuildIDDict, err := fb.builderMappingBuildIDDictUnifier.GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
 	if err != nil {
 		return nil, err
 	}
+	defer mappingBuildIDDict.Release()
 	mappingBuildIDType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.String}
 	mappingBuildID := array.NewDictionaryArray(mappingBuildIDType, mappingBuildIDIndices, mappingBuildIDDict)
+	defer mappingBuildID.Release()
 
 	mappingFileIndices := fb.builderMappingFileIndices.NewArray()
+	defer mappingFileIndices.Release()
 	mappingFileDict, err := fb.builderMappingFileDictUnifier.GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
 	if err != nil {
 		return nil, err
 	}
+	defer mappingFileDict.Release()
 	mappingFileType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.String}
 	mappingFile := array.NewDictionaryArray(mappingFileType, mappingFileIndices, mappingFileDict)
+	defer mappingFile.Release()
 
 	functionNameIndices := fb.builderFunctionNameIndices.NewArray()
+	defer functionNameIndices.Release()
 	functionNameDict, err := fb.builderFunctionNameDictUnifier.GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
 	if err != nil {
 		return nil, err
 	}
+	defer functionNameDict.Release()
 	functionNameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.String}
 	functionName := array.NewDictionaryArray(functionNameType, functionNameIndices, functionNameDict)
+	defer functionName.Release()
 
 	functionSystemNameIndices := fb.builderFunctionSystemNameIndices.NewArray()
+	defer functionSystemNameIndices.Release()
 	functionSystemNameDict, err := fb.builderFunctionSystemNameDictUnifier.GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
 	if err != nil {
 		return nil, err
 	}
+	defer functionSystemNameDict.Release()
 	functionSystemNameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.String}
 	functionSystemName := array.NewDictionaryArray(functionSystemNameType, functionSystemNameIndices, functionSystemNameDict)
+	defer functionSystemName.Release()
 
 	functionFilenameIndices := fb.builderFunctionFilenameIndices.NewArray()
+	defer functionFilenameIndices.Release()
 	functionFilenameDict, err := fb.builderFunctionFilenameDictUnifier.GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
 	if err != nil {
 		return nil, err
 	}
+	defer functionFilenameDict.Release()
 	functionFilenameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.String}
 	functionFilename := array.NewDictionaryArray(functionFilenameType, functionFilenameIndices, functionFilenameDict)
+	defer functionFilename.Release()
 
 	// This has to be here, because after calling .NewArray() on the builder,
 	// the builder is reset.
@@ -944,19 +959,36 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 		fb.builderCumulative.NewArray(),
 		fb.builderDiff.NewArray(),
 	}
+	defer func() {
+		for i, arr := range arrays {
+			switch i {
+			case 4, 5, 10, 11, 12:
+				// These arrays have already been defered release above where they were created.
+			default:
+				arr.Release()
+			}
+		}
+	}()
 
 	for i := range fb.builderLabelFields {
-		typ := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.String}
-		fields = append(fields, arrow.Field{
-			Name: fb.builderLabelFields[i].Name,
-			Type: typ,
-		})
-		indices := fb.builderLabels[i].NewArray()
-		dict, err := fb.builderLabelsDictUnifiers[i].GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
-		if err != nil {
+		if err := func() error {
+			typ := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.String}
+			fields = append(fields, arrow.Field{
+				Name: fb.builderLabelFields[i].Name,
+				Type: typ,
+			})
+			indices := fb.builderLabels[i].NewArray()
+			defer indices.Release()
+			dict, err := fb.builderLabelsDictUnifiers[i].GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
+			if err != nil {
+				return err
+			}
+			defer dict.Release()
+			arrays = append(arrays, array.NewDictionaryArray(typ, indices, dict))
+			return nil
+		}(); err != nil {
 			return nil, err
 		}
-		arrays = append(arrays, array.NewDictionaryArray(typ, indices, dict))
 	}
 
 	return array.NewRecord(
