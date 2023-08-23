@@ -662,6 +662,11 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile) (pro
 
 	g, ctx := errgroup.WithContext(ctx)
 	var base profile.Profile
+	defer func() {
+		for _, r := range base.Samples {
+			r.Release()
+		}
+	}()
 	g.Go(func() error {
 		var err error
 		base, err = q.selectProfileForDiff(ctx, d.A)
@@ -672,6 +677,11 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile) (pro
 	})
 
 	var compare profile.Profile
+	defer func() {
+		for _, r := range compare.Samples {
+			r.Release()
+		}
+	}()
 	g.Go(func() error {
 		var err error
 		compare, err = q.selectProfileForDiff(ctx, d.B)
@@ -700,7 +710,6 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile) (pro
 			columns,
 			r.NumRows(),
 		))
-		r.Release()
 	}
 
 	for _, r := range base.Samples {
@@ -714,7 +723,6 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile) (pro
 			columns,
 			r.NumRows(),
 		))
-		r.Release()
 	}
 
 	return profile.Profile{
