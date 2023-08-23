@@ -15,8 +15,10 @@ import React, {useState} from 'react';
 
 import {Table} from 'apache-arrow';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
-import {useURLState, Button} from '@parca/components';
+import {Tooltip} from 'react-tooltip';
 
+import {QueryRequest_ReportType} from '@parca/client';
+import {Button, useParcaContext, useURLState} from '@parca/components';
 import {divide, getLastItem, valueFormatter, type NavigateFunction} from '@parca/utilities';
 
 import {
@@ -31,6 +33,9 @@ import {
   FIELD_MAPPING_FILE,
 } from '../ProfileIcicleGraph/IcicleGraphArrow';
 import {nodeLabel} from '../ProfileIcicleGraph/IcicleGraphArrow/utils';
+import {ProfileSource} from '../ProfileSource';
+import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
+import {useQuery} from '../useQuery';
 import {hexifyAddress, truncateString, truncateStringReverse} from '../utils';
 import {ExpandOnHover} from './ExpandOnHoverValue';
 
@@ -88,7 +93,6 @@ const GraphTooltipArrowContent = ({
   const diffText = `${diffValueText} (${diffPercentageText})`;
 
   const name = nodeLabel(table, row, level, false);
-  console.log(level, row, name);
 
   const getTextForCumulative = (hoveringNodeCumulative: bigint): string => {
     const filtered =
@@ -153,7 +157,12 @@ const GraphTooltipArrowContent = ({
                       </td>
                     </tr>
                   )}
-                  <TooltipMetaInfo table={table} row={row} onCopy={onCopy} navigateTo={navigateTo} />
+                  <TooltipMetaInfo
+                    table={table}
+                    row={row}
+                    onCopy={onCopy}
+                    navigateTo={navigateTo}
+                  />
                 </tbody>
               </table>
             </div>
@@ -188,13 +197,30 @@ const TooltipMetaInfo = ({
   const functionStartLine: bigint = table.getChild(FIELD_FUNCTION_START_LINE)?.get(row) ?? 0n;
   const labelsString: string = table.getChild(FIELD_LABELS)?.get(row) ?? '{}';
 
+  const {queryServiceClient} = useParcaContext();
+  const {profileSource} = useProfileViewContext();
+
+  const {isLoading: sourceLoading, response: sourceResponse} = useQuery(
+    queryServiceClient,
+    profileSource as ProfileSource,
+    QueryRequest_ReportType.SOURCE,
+    {
+      skip: profileSource === undefined,
+      sourceBuildID: mappingBuildID,
+      sourceFilename: functionFilename,
+      sourceOnly: true,
+    }
+  );
+
+  const isSourceAvailable = !sourceLoading && sourceResponse != null;
+
   const getTextForFile = (): string => {
     if (functionFilename === '') return '<unknown>';
 
     return `${functionFilename} ${
       locationLine !== 0n
         ? ` +${locationLine.toString()}`
-        : `${functionStartLine !== 0n ? ` +${functionStartLine}` : ''}`
+        : `${functionStartLine !== 0n ? `:${functionStartLine}` : ''}`
     }`;
   };
   const file = getTextForFile();
@@ -219,26 +245,26 @@ const TooltipMetaInfo = ({
     navigateTo,
   });
 
-  // eslint-disable-line @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [unusedBuildId, setSourceBuildId] = useURLState({
     param: 'source_buildid',
     navigateTo,
   });
 
-  // eslint-disable-line @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [unusedFilename, setSourceFilename] = useURLState({
     param: 'source_filename',
     navigateTo,
   });
 
-  // eslint-disable-line @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [unusedLine, setSourceLine] = useURLState({
     param: 'source_line',
     navigateTo,
   });
 
   const openFile = (): void => {
-    setDashboardItems([dashboardItems[0], "source"]);
+    setDashboardItems([dashboardItems[0], 'source']);
     setSourceBuildId(mappingBuildID);
     setSourceFilename(functionFilename);
     setSourceLine(locationLine.toString());
@@ -252,14 +278,29 @@ const TooltipMetaInfo = ({
           {functionFilename === '' ? (
             <NoData />
           ) : (
-            <>
+            <div className="flex gap-4">
               <CopyToClipboard onCopy={onCopy} text={file}>
                 <button className="cursor-pointer whitespace-nowrap text-left">
-                  <ExpandOnHover value={file} displayValue={truncateStringReverse(file, 40)} />
+                  <ExpandOnHover value={file} displayValue={truncateStringReverse(file, 30)} />
                 </button>
               </CopyToClipboard>
-              <Button variant={'neutral'} onClick={() => openFile()}>open</Button>
-            </>
+              <div className="flex gap-2">
+                <div
+                  data-tooltip-id="open-source-button-help"
+                  data-tooltip-content="There is no source code uploaded for this build"
+                >
+                  <Button
+                    variant={'neutral'}
+                    onClick={() => openFile()}
+                    className="shrink-0"
+                    disabled={!isSourceAvailable}
+                  >
+                    open
+                  </Button>
+                </div>
+                {!isSourceAvailable ? <Tooltip id="open-source-button-help" /> : null}
+              </div>
+            </div>
           )}
         </td>
       </tr>

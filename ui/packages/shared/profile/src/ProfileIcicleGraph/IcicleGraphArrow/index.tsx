@@ -235,7 +235,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           total={total}
           totalUnfiltered={total + filtered}
           unit={sampleUnit}
-          navigateTo={navigateTo}
+          navigateTo={navigateTo as NavigateFunction}
         />
       </GraphTooltipArrow>
       {root}

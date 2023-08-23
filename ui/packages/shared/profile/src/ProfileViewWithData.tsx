@@ -40,8 +40,10 @@ export const ProfileViewWithData = ({
 }: ProfileViewWithDataProps): JSX.Element => {
   const metadata = useGrpcMetadata();
   const [dashboardItems = ['icicle']] = useURLState({param: 'dashboard_items', navigateTo});
-  const [sourceBuildID] = useURLState({param: 'source_buildid', navigateTo});
-  const [sourceFilename] = useURLState({param: 'source_filename', navigateTo});
+  const [sourceBuildID] = useURLState({param: 'source_buildid', navigateTo}) as unknown as [string];
+  const [sourceFilename] = useURLState({param: 'source_filename', navigateTo}) as unknown as [
+    string
+  ];
   const [groupBy = [FIELD_FUNCTION_NAME]] = useURLState({param: 'group_by', navigateTo});
 
   const [enableTrimming] = useUserPreference<boolean>(USER_PREFERENCES.ENABLE_GRAPH_TRIMMING.key);
@@ -206,7 +208,10 @@ export const ProfileViewWithData = ({
       }}
       sourceData={{
         loading: sourceLoading,
-        data: sourceResponse?.report.oneofKind === 'source' ? sourceResponse?.report?.source : undefined,
+        data:
+          sourceResponse?.report.oneofKind === 'source'
+            ? sourceResponse?.report?.source
+            : undefined,
         error: sourceError,
       }}
       sampleUnit={sampleUnit}

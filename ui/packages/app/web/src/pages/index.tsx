@@ -17,6 +17,7 @@ import {GrpcWebFetchTransport} from '@protobuf-ts/grpcweb-transport';
 import {useLocation, useNavigate} from 'react-router-dom';
 
 import {QueryServiceClient} from '@parca/client';
+import {ParcaContextProvider} from '@parca/components';
 import {ProfileExplorer} from '@parca/profile';
 import {convertToQueryParams, parseParams} from '@parca/utilities';
 
@@ -48,7 +49,18 @@ const Profiles = () => {
   const queryParams = parseParams(location.search);
 
   return (
-    <ProfileExplorer queryClient={queryClient} queryParams={queryParams} navigateTo={navigateTo} />
+    <ParcaContextProvider
+      value={{
+        queryServiceClient: queryClient,
+        navigateTo,
+      }}
+    >
+      <ProfileExplorer
+        queryClient={queryClient}
+        queryParams={queryParams}
+        navigateTo={navigateTo}
+      />
+    </ParcaContextProvider>
   );
 };
 
