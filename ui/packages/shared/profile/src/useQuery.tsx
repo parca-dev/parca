@@ -51,6 +51,7 @@ export const useQuery = (
       options?.groupBy,
       options?.sourceBuildID,
       options?.sourceFilename,
+      options?.sourceOnly,
     ],
     queryFn: async () => {
       const req = profileSource.QueryRequest();
