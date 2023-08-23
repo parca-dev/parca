@@ -133,7 +133,6 @@ func TestGenerateTable(t *testing.T) {
 			require.Equal(t, int64(0), flatDiffColumn.Value(i))
 
 			found = true
-
 		}
 	}
 

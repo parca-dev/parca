@@ -252,7 +252,7 @@ func (tb *tableBuilder) Release() {
 }
 
 func (tb *tableBuilder) appendRow(
-	r profile.RecordReader,
+	r *profile.RecordReader,
 	sampleRow, locationRow, lineRow int,
 	leaf bool,
 ) error {
@@ -377,7 +377,7 @@ func (tb *tableBuilder) appendRow(
 	return nil
 }
 
-func (tb *tableBuilder) mergeRow(r profile.RecordReader, mergeRow, sampleRow int, isLeaf bool) {
+func (tb *tableBuilder) mergeRow(r *profile.RecordReader, mergeRow, sampleRow int, isLeaf bool) {
 	tb.builderCumulative.Add(mergeRow, r.Value.Value(sampleRow))
 	if r.Diff.Value(sampleRow) != 0 {
 		tb.builderCumulativeDiff.Add(mergeRow, r.Diff.Value(sampleRow))
