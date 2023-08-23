@@ -68,6 +68,7 @@ func TestGenerateTable(t *testing.T) {
 
 	rec, cumulative, err := generateTableArrowRecord(ctx, mem, tracer, np)
 	require.NoError(t, err)
+	defer rec.Release()
 
 	require.NotNil(t, rec)
 	require.NotNil(t, cumulative)
@@ -222,6 +223,7 @@ func TestGenerateTableAggregateFlat(t *testing.T) {
 
 	rec, cumulative, err := generateTableArrowRecord(ctx, mem, tracer, np)
 	require.NoError(t, err)
+	defer rec.Release()
 
 	require.Equal(t, int64(4), rec.NumRows())
 	require.Equal(t, int64(10), cumulative)
