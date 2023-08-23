@@ -23,6 +23,7 @@ import {Tooltip} from 'react-tooltip';
 import {useURLState} from '@parca/components';
 import {selectDarkMode, useAppSelector} from '@parca/store';
 
+import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
 import {LineNo} from './LineNo';
 
 interface RendererProps {
@@ -71,13 +72,15 @@ const LineProfileMetadata = ({
 }): JSX.Element => {
   const commonClasses = 'w-[52px] shrink-0';
   const id = useId();
+  const {sampleUnit} = useProfileViewContext();
   if (value === 0n) {
     return <div className={cx(commonClasses)} />;
   }
   const unfilteredPercent = (Number(value) / Number(total + filtered)) * 100;
   const filteredPercent = (Number(value) / Number(total)) * 100;
 
-  const valueString = `${value.toString()}${'ns'}`;
+  const valueString = value.toString();
+  const valueWithUnit = `${valueString}${sampleUnit}`;
 
   return (
     <>
@@ -88,7 +91,7 @@ const LineProfileMetadata = ({
         )}
         style={{backgroundColor: `rgba(236, 151, 6, ${intensityScale(unfilteredPercent)})`}}
         data-tooltip-id={id}
-        data-tooltip-content={`${valueString} (${unfilteredPercent.toFixed(2)}%${
+        data-tooltip-content={`${valueWithUnit} (${unfilteredPercent.toFixed(2)}%${
           filtered > 0n ? ` / ${filteredPercent.toFixed(2)}%` : ''
         })`}
       >
