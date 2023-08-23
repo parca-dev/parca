@@ -32,8 +32,9 @@ const columnHelper = createColumnHelper<row>();
 interface row {
   name: string;
   flat: bigint;
+  flatDiff: bigint;
   cumulative: bigint;
-  diff: bigint;
+  cumulativeDiff: bigint;
 }
 
 interface TableProps {
@@ -68,19 +69,19 @@ export const Table = React.memo(function Table({
 
   const columns = useMemo(() => {
     const cols: Array<ColumnDef<row, any>> = [
-      columnHelper.accessor('name', {
-        header: () => <span className="text-left">Name</span>,
-        cell: info => info.getValue(),
-        // sortingFn: (a, b) => {
-        //   const aName = RowLabel(a.original.meta);
-        //   const bName = RowLabel(b.original.meta);
-        //   return aName.localeCompare(bName);
-        // },
-      }),
       columnHelper.accessor('flat', {
         header: () => 'Flat',
         cell: info => valueFormatter(info.getValue(), unit, 2),
-        size: 150,
+        size: 80,
+        meta: {
+          align: 'right',
+        },
+        invertSorting: true,
+      }),
+      columnHelper.accessor('flatDiff', {
+        header: () => 'Flat Diff',
+        cell: info => addPlusSign(valueFormatter(info.getValue(), unit, 2)),
+        size: 120,
         meta: {
           align: 'right',
         },
@@ -89,28 +90,28 @@ export const Table = React.memo(function Table({
       columnHelper.accessor('cumulative', {
         header: () => 'Cumulative',
         cell: info => valueFormatter(info.getValue(), unit, 2),
-        size: 150,
+        size: 130,
         meta: {
           align: 'right',
         },
         invertSorting: true,
       }),
+      columnHelper.accessor('cumulativeDiff', {
+        header: () => 'Cumulative Diff',
+        cell: info => addPlusSign(valueFormatter(info.getValue(), unit, 2)),
+        size: 170,
+        meta: {
+          align: 'right',
+        },
+        invertSorting: true,
+      }),
+      columnHelper.accessor('name', {
+        header: () => <span className="text-left">Name</span>,
+        cell: info => info.getValue(),
+      }),
     ];
-    if (compareMode) {
-      cols.push(
-        columnHelper.accessor('diff', {
-          header: () => 'Diff',
-          cell: info => addPlusSign(valueFormatter(info.getValue(), unit, 2)),
-          size: 150,
-          meta: {
-            align: 'right',
-          },
-          invertSorting: true,
-        })
-      );
-    }
     return cols;
-  }, [unit, compareMode]);
+  }, [unit]);
 
   const selectSpan = useCallback(
     (span: string): void => {
@@ -188,10 +189,21 @@ export const Table = React.memo(function Table({
   const initialSorting = useMemo(() => {
     return [
       {
-        id: compareMode ? 'diff' : 'cumulative',
+        id: compareMode ? 'flatDiff' : 'flat',
         desc: false, // columns sorting are inverted - so this is actually descending
       },
     ];
+  }, [compareMode]);
+
+  const columnVisibility = useMemo(() => {
+    // TODO: Make this configurable via the UI and add more columns.
+    return {
+      flat: true,
+      flatDiff: compareMode,
+      cumulative: true,
+      cumulativeDiff: compareMode,
+      name: true,
+    };
   }, [compareMode]);
 
   if (loading) return <>Loading...</>;
@@ -199,6 +211,7 @@ export const Table = React.memo(function Table({
 
   const table = tableFromIPC(data);
   const flatColumn = table.getChild('flat');
+  const flatDiffColumn = table.getChild('flat_diff');
   const cumulativeColumn = table.getChild('cumulative');
   const cumulativeDiffColumn = table.getChild('cumulative_diff');
 
@@ -208,13 +221,15 @@ export const Table = React.memo(function Table({
   // TODO: Figure out how to only read the data of the columns we need for the virtualized table
   for (let i = 0; i < table.numRows; i++) {
     const flat: bigint = flatColumn?.get(i) ?? 0n;
+    const flatDiff: bigint = flatDiffColumn?.get(i) ?? 0n;
     const cumulative: bigint = cumulativeColumn?.get(i) ?? 0n;
     const cumulativeDiff: bigint = cumulativeDiffColumn?.get(i) ?? 0n;
     rows.push({
       name: RowName(table, i),
       flat,
+      flatDiff,
       cumulative,
-      diff: cumulativeDiff,
+      cumulativeDiff,
     });
   }
 
@@ -225,6 +240,7 @@ export const Table = React.memo(function Table({
           data={rows}
           columns={columns}
           initialSorting={initialSorting}
+          columnVisibility={columnVisibility}
           onRowClick={onRowClick}
           enableHighlighting={enableHighlighting}
           shouldHighlightRow={shouldHighlightRow}
