@@ -11,20 +11,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {useEffect, useRef} from 'react';
+
 interface Props {
-  value: string | number | undefined;
-  displayValue?: string | number | undefined;
+  value: number;
+  isCurrent?: boolean;
 }
 
-export const ExpandOnHover = ({value, displayValue}: Props): JSX.Element => {
-  return (
-    <div className="group relative w-full">
-      <div className="w-full overflow-hidden text-ellipsis whitespace-nowrap">
-        {displayValue ?? value}
-      </div>
-      <div className="absolute -inset-2 hidden h-fit max-w-[500px] whitespace-normal break-all rounded bg-gray-50 p-2 shadow-[0_0_10px_2px_rgba(0,0,0,0.3)] group-hover:flex dark:bg-gray-900 z-10">
-        {value}
-      </div>
-    </div>
-  );
+export const LineNo = ({value, isCurrent = false}: Props): JSX.Element => {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isCurrent) {
+      ref.current?.scrollIntoView({behavior: 'smooth', block: 'center'});
+    }
+  }, [isCurrent]);
+
+  return <code ref={ref}>{value.toString() + '\n'}</code>;
 };

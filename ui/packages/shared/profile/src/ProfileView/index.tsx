@@ -25,7 +25,13 @@ import {
   type DropResult,
 } from 'react-beautiful-dnd';
 
-import {Callgraph as CallgraphType, Flamegraph, QueryServiceClient, Top} from '@parca/client';
+import {
+  Callgraph as CallgraphType,
+  Flamegraph,
+  QueryServiceClient,
+  Source,
+  Top,
+} from '@parca/client';
 import {
   Button,
   Card,
@@ -42,10 +48,12 @@ import {Callgraph} from '../';
 import {jsonToDot} from '../Callgraph/utils';
 import ProfileIcicleGraph from '../ProfileIcicleGraph';
 import {ProfileSource} from '../ProfileSource';
+import {SourceView} from '../SourceView';
 import {TopTable} from '../TopTable';
 import ProfileShareButton from '../components/ProfileShareButton';
 import useDelayedLoader from '../useDelayedLoader';
 import FilterByFunctionButton from './FilterByFunctionButton';
+import {ProfileViewContextProvider} from './ProfileViewContext';
 import ViewSelector from './ViewSelector';
 import {VisualizationPanel} from './VisualizationPanel';
 
@@ -76,12 +84,19 @@ interface CallgraphData {
   error?: any;
 }
 
+interface SourceData {
+  loading: boolean;
+  data?: Source;
+  error?: any;
+}
+
 export interface ProfileViewProps {
   total: bigint;
   filtered: bigint;
   flamegraphData?: FlamegraphData;
   topTableData?: TopTableData;
   callgraphData?: CallgraphData;
+  sourceData?: SourceData;
   sampleUnit: string;
   profileSource?: ProfileSource;
   queryClient?: QueryServiceClient;
@@ -106,6 +121,7 @@ export const ProfileView = ({
   flamegraphData,
   topTableData,
   callgraphData,
+  sourceData,
   sampleUnit,
   profileSource,
   queryClient,
@@ -158,12 +174,16 @@ export const ProfileView = ({
     if (dashboardItems.includes('table')) {
       return Boolean(topTableData?.loading);
     }
+    if (dashboardItems.includes('source')) {
+      return Boolean(sourceData?.loading);
+    }
     return false;
   }, [
     dashboardItems,
     callgraphData?.loading,
     flamegraphData?.loading,
     topTableData?.loading,
+    sourceData?.loading,
     callgraphSVG,
   ]);
 
@@ -286,6 +306,19 @@ export const ProfileView = ({
           <></>
         );
       }
+      case 'source': {
+        return sourceData != null ? (
+          <SourceView
+            loading={sourceData.loading}
+            data={sourceData.data}
+            total={total}
+            filtered={filtered}
+            setActionButtons={setActionButtons}
+          />
+        ) : (
+          <></>
+        );
+      }
       default: {
         return <></>;
       }
@@ -314,102 +347,104 @@ export const ProfileView = ({
 
   return (
     <KeyDownProvider>
-      <div className="py-3">
-        <Card>
-          <Card.Body>
-            <div className="flex w-full py-3">
-              <div className="flex space-x-4 lg:w-1/2">
-                <div className="flex space-x-1">
-                  {profileSource !== undefined && queryClient !== undefined ? (
-                    <ProfileShareButton
-                      queryRequest={profileSource.QueryRequest()}
-                      queryClient={queryClient}
-                    />
-                  ) : null}
+      <ProfileViewContextProvider value={{profileSource, sampleUnit}}>
+        <div className="py-3">
+          <Card>
+            <Card.Body>
+              <div className="flex w-full py-3">
+                <div className="flex space-x-4 lg:w-1/2">
+                  <div className="flex space-x-1">
+                    {profileSource !== undefined && queryClient !== undefined ? (
+                      <ProfileShareButton
+                        queryRequest={profileSource.QueryRequest()}
+                        queryClient={queryClient}
+                      />
+                    ) : null}
 
-                  <Button
-                    color="neutral"
-                    onClick={e => {
-                      e.preventDefault();
-                      onDownloadPProf();
-                    }}
-                    disabled={pprofDownloading}
-                  >
-                    {pprofDownloading != null && pprofDownloading
-                      ? 'Downloading'
-                      : 'Download pprof'}
-                  </Button>
+                    <Button
+                      color="neutral"
+                      onClick={e => {
+                        e.preventDefault();
+                        onDownloadPProf();
+                      }}
+                      disabled={pprofDownloading}
+                    >
+                      {pprofDownloading != null && pprofDownloading
+                        ? 'Downloading'
+                        : 'Download pprof'}
+                    </Button>
+                  </div>
+                  <FilterByFunctionButton navigateTo={navigateTo} />
                 </div>
-                <FilterByFunctionButton navigateTo={navigateTo} />
+
+                <div className="ml-auto flex gap-2">
+                  <ViewSelector
+                    defaultValue=""
+                    navigateTo={navigateTo}
+                    position={-1}
+                    placeholderText="Add panel..."
+                    primary
+                    addView={true}
+                    disabled={isMultiPanelView || dashboardItems.length < 1}
+                  />
+                </div>
               </div>
 
-              <div className="ml-auto flex gap-2">
-                <ViewSelector
-                  defaultValue=""
-                  navigateTo={navigateTo}
-                  position={-1}
-                  placeholderText="Add panel..."
-                  primary
-                  addView={true}
-                  disabled={isMultiPanelView || dashboardItems.length < 1}
-                />
+              <div className="w-full" ref={ref}>
+                {isLoaderVisible ? (
+                  <>{loader}</>
+                ) : (
+                  <DragDropContext onDragEnd={onDragEnd}>
+                    <Droppable droppableId="droppable" direction="horizontal">
+                      {provided => (
+                        <div
+                          ref={provided.innerRef}
+                          className="flex w-full justify-between space-x-4"
+                          {...provided.droppableProps}
+                        >
+                          {dashboardItems.map((dashboardItem, index) => {
+                            return (
+                              <Draggable
+                                key={dashboardItem}
+                                draggableId={dashboardItem}
+                                index={index}
+                                isDragDisabled={!isMultiPanelView}
+                              >
+                                {(provided, snapshot: {isDragging: boolean}) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    key={dashboardItem}
+                                    className={cx(
+                                      'rounded border border-gray-300 p-3 dark:border-gray-500 dark:bg-gray-700',
+                                      isMultiPanelView ? 'w-1/2' : 'w-full',
+                                      snapshot.isDragging ? 'bg-gray-200' : 'bg-white'
+                                    )}
+                                  >
+                                    <VisualizationPanel
+                                      handleClosePanel={handleClosePanel}
+                                      isMultiPanelView={isMultiPanelView}
+                                      dashboardItem={dashboardItem}
+                                      getDashboardItemByType={getDashboardItemByType}
+                                      dragHandleProps={provided.dragHandleProps}
+                                      navigateTo={navigateTo}
+                                      index={index}
+                                    />
+                                  </div>
+                                )}
+                              </Draggable>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
+                )}
               </div>
-            </div>
-
-            <div className="w-full" ref={ref}>
-              {isLoaderVisible ? (
-                <>{loader}</>
-              ) : (
-                <DragDropContext onDragEnd={onDragEnd}>
-                  <Droppable droppableId="droppable" direction="horizontal">
-                    {provided => (
-                      <div
-                        ref={provided.innerRef}
-                        className="flex w-full justify-between space-x-4"
-                        {...provided.droppableProps}
-                      >
-                        {dashboardItems.map((dashboardItem, index) => {
-                          return (
-                            <Draggable
-                              key={dashboardItem}
-                              draggableId={dashboardItem}
-                              index={index}
-                              isDragDisabled={!isMultiPanelView}
-                            >
-                              {(provided, snapshot: {isDragging: boolean}) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  key={dashboardItem}
-                                  className={cx(
-                                    'rounded border border-gray-300 p-3 dark:border-gray-500 dark:bg-gray-700',
-                                    isMultiPanelView ? 'w-1/2' : 'w-full',
-                                    snapshot.isDragging ? 'bg-gray-200' : 'bg-white'
-                                  )}
-                                >
-                                  <VisualizationPanel
-                                    handleClosePanel={handleClosePanel}
-                                    isMultiPanelView={isMultiPanelView}
-                                    dashboardItem={dashboardItem}
-                                    getDashboardItemByType={getDashboardItemByType}
-                                    dragHandleProps={provided.dragHandleProps}
-                                    navigateTo={navigateTo}
-                                    index={index}
-                                  />
-                                </div>
-                              )}
-                            </Draggable>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </Droppable>
-                </DragDropContext>
-              )}
-            </div>
-          </Card.Body>
-        </Card>
-      </div>
+            </Card.Body>
+          </Card>
+        </div>
+      </ProfileViewContextProvider>
     </KeyDownProvider>
   );
 };

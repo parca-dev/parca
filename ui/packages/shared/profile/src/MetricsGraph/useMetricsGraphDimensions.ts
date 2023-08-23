@@ -29,6 +29,15 @@ const margin = 50;
 export const useMetricsGraphDimensions = (comparing: boolean): MetricsGraphDimensions => {
   let {width} = useWindowSize();
   const {profileExplorer} = useParcaContext();
+  if (profileExplorer == null) {
+    return {
+      width: 0,
+      height: 0,
+      heightStyle: '0',
+      margin: 0,
+      marginRight: 0,
+    };
+  }
   width = width - profileExplorer.PaddingX;
   if (comparing) {
     width = width / 2 - 32;
