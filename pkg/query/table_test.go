@@ -15,6 +15,7 @@ package query
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/apache/arrow/go/v13/arrow/array"
@@ -61,6 +62,8 @@ func TestGenerateTable(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
+
+	fmt.Println(profiles[0].Meta)
 
 	np, err := OldProfileToArrowProfile(symbolizedProfile)
 	require.NoError(t, err)
@@ -124,15 +127,16 @@ func TestGenerateTable(t *testing.T) {
 			)
 			// values
 			require.Equal(t, int64(3135531), cumulativeColumn.Value(i))
-			require.Equal(t, int64(32768), flatColumn.Value(i))
+			require.Equal(t, int64(1251322), flatColumn.Value(i))
 			// diff
 			require.Equal(t, int64(0), cumulativeDiffColumn.Value(i))
 			require.Equal(t, int64(0), flatDiffColumn.Value(i))
 
 			found = true
-			break
+
 		}
 	}
+
 	require.Truef(t, found, "expected to find the specific function")
 }
 
@@ -179,36 +183,38 @@ func TestGenerateTableAggregateFlat(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Equal(t, 4, len(lres.Locations))
-	l1 := lres.Locations[0]
-	l2 := lres.Locations[1]
-	l3 := lres.Locations[2]
-	l4 := lres.Locations[3]
+	l0 := lres.Locations[0]
+	l1 := lres.Locations[1]
+	l2 := lres.Locations[2]
+	l3 := lres.Locations[3]
 
 	sres, err := metastore.GetOrCreateStacktraces(ctx, &metastorepb.GetOrCreateStacktracesRequest{
 		Stacktraces: []*metastorepb.Stacktrace{{
-			LocationIds: []string{l1.Id, l2.Id},
+			LocationIds: []string{l1.Id, l0.Id},
 		}, {
-			LocationIds: []string{l1.Id, l3.Id},
+			LocationIds: []string{l2.Id, l0.Id},
 		}, {
-			LocationIds: []string{l1.Id, l4.Id},
+			LocationIds: []string{l3.Id, l0.Id},
+		}, {
+			LocationIds: []string{l0.Id},
 		}},
 	})
 	require.NoError(t, err)
-	require.Equal(t, 3, len(sres.Stacktraces))
-	st1 := sres.Stacktraces[0]
-	st2 := sres.Stacktraces[1]
-	st3 := sres.Stacktraces[2]
+	require.Equal(t, 4, len(sres.Stacktraces))
 
 	p, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, &profile.NormalizedProfile{
 		Samples: []*profile.NormalizedSample{{
-			StacktraceID: st1.Id,
+			StacktraceID: sres.Stacktraces[0].Id,
 			Value:        1,
 		}, {
-			StacktraceID: st2.Id,
-			Value:        1,
+			StacktraceID: sres.Stacktraces[1].Id,
+			Value:        2,
 		}, {
-			StacktraceID: st3.Id,
-			Value:        1,
+			StacktraceID: sres.Stacktraces[2].Id,
+			Value:        3,
+		}, {
+			StacktraceID: sres.Stacktraces[3].Id,
+			Value:        4,
 		}},
 	})
 	require.NoError(t, err)
@@ -220,7 +226,7 @@ func TestGenerateTableAggregateFlat(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, int64(4), rec.NumRows())
-	require.Equal(t, int64(3), cumulative)
+	require.Equal(t, int64(10), cumulative)
 
 	requireColumn(t, rec, TableFieldMappingStart, []uint64{1, 1, 1, 1})
 	requireColumn(t, rec, TableFieldMappingLimit, []uint64{1, 1, 1, 1})
@@ -228,7 +234,7 @@ func TestGenerateTableAggregateFlat(t *testing.T) {
 	requireColumnBinaryDict(t, rec, TableFieldMappingFile, []string{"1", "1", "1", "1"})
 	requireColumnBinaryDict(t, rec, TableFieldMappingBuildID, []string{"1", "1", "1", "1"})
 
-	requireColumn(t, rec, TableFieldLocationAddress, []uint64{1, 2, 3, 4})
+	requireColumn(t, rec, TableFieldLocationAddress, []uint64{2, 1, 3, 4})
 	requireColumn(t, rec, TableFieldLocationFolded, []bool{false, false, false, false})
 	requireColumn(t, rec, TableFieldLocationLine, []int64{0, 0, 0, 0})
 
@@ -237,8 +243,8 @@ func TestGenerateTableAggregateFlat(t *testing.T) {
 	requireColumnBinaryDict(t, rec, TableFieldFunctionSystemName, []string{"(null)", "(null)", "(null)", "(null)"})
 	requireColumnBinaryDict(t, rec, TableFieldFunctionFileName, []string{"(null)", "(null)", "(null)", "(null)"})
 
-	requireColumn(t, rec, TableFieldCumulative, []int64{3, 1, 1, 1})
+	requireColumn(t, rec, TableFieldCumulative, []int64{1, 10, 2, 3})
 	requireColumn(t, rec, TableFieldCumulativeDiff, []int64{0, 0, 0, 0})
-	requireColumn(t, rec, TableFieldFlat, []int64{0, 1, 1, 1})
+	requireColumn(t, rec, TableFieldFlat, []int64{1, 4, 2, 3})
 	requireColumn(t, rec, TableFieldFlatDiff, []int64{0, 0, 0, 0})
 }

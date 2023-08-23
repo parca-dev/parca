@@ -106,9 +106,10 @@ func generateTableArrowRecord(
 		for sampleRow := 0; sampleRow < int(r.Record.NumRows()); sampleRow++ {
 			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(sampleRow)
 			for locationRow := int(lOffsetStart); locationRow < int(lOffsetEnd); locationRow++ {
-				isLeaf := locationRow == int(lOffsetEnd)-1
-
 				if r.Lines.IsNull(locationRow) {
+					// The location has no lines, we therefore compare its address.
+
+					isLeaf := locationRow == int(lOffsetStart)
 					var buildID []byte
 					if r.MappingBuildIDDict.IsValid(locationRow) {
 						buildID = r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(locationRow))
@@ -130,22 +131,26 @@ func generateTableArrowRecord(
 						}
 						row++
 					} else {
-						tb.mergeRow(r, cr, sampleRow)
+						tb.mergeRow(r, cr, sampleRow, isLeaf)
 					}
-				}
+				} else {
+					// The location has lines, we therefore compare its function names.
 
-				llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(locationRow)
-				for lineRow := int(llOffsetStart); lineRow < int(llOffsetEnd); lineRow++ {
-					if r.Line.IsValid(lineRow) && r.LineFunction.IsValid(lineRow) {
-						fn := r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow))
-						if cr, ok := tb.functions[unsafeString(fn)]; !ok {
-							if err := tb.appendRow(r, sampleRow, locationRow, lineRow, isLeaf); err != nil {
-								return nil, 0, err
+					llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(locationRow)
+					for lineRow := int(llOffsetStart); lineRow < int(llOffsetEnd); lineRow++ {
+						isLeaf := locationRow == int(lOffsetStart) && lineRow == int(llOffsetStart)
+
+						if r.Line.IsValid(lineRow) && r.LineFunction.IsValid(lineRow) {
+							fn := r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow))
+							if cr, ok := tb.functions[unsafeString(fn)]; !ok {
+								if err := tb.appendRow(r, sampleRow, locationRow, lineRow, isLeaf); err != nil {
+									return nil, 0, err
+								}
+								tb.functions[string(fn)] = row
+								row++
+							} else {
+								tb.mergeRow(r, cr, sampleRow, isLeaf)
 							}
-							tb.functions[string(fn)] = row
-							row++
-						} else {
-							tb.mergeRow(r, cr, sampleRow)
 						}
 					}
 				}
@@ -238,18 +243,7 @@ func newTableBuilder(mem memory.Allocator) *tableBuilder {
 }
 
 // NewRecord returns a new record from the builders.
-// It adds the children to the children column and the labels intersection to the labels column.
-// Finally, it assembles all columns from the builders into an arrow record.
 func (tb *tableBuilder) NewRecord() (arrow.Record, error) {
-	// TODO: Is this how we want to handle empty data?
-	if tb.builderCumulative.Len() == 0 {
-		return tb.rb.NewRecord(), nil
-	}
-
-	// We have manually tracked the total cumulative value.
-	// Now we set/overwrite the cumulative value for the root row (which is always the 0 row in our flame graphs).
-	tb.builderCumulative.Set(0, tb.cumulative)
-
 	return tb.rb.NewRecord(), nil
 }
 
@@ -383,9 +377,16 @@ func (tb *tableBuilder) appendRow(
 	return nil
 }
 
-func (tb *tableBuilder) mergeRow(r profile.RecordReader, mergeRow, sampleRow int) {
+func (tb *tableBuilder) mergeRow(r profile.RecordReader, mergeRow, sampleRow int, isLeaf bool) {
 	tb.builderCumulative.Add(mergeRow, r.Value.Value(sampleRow))
 	if r.Diff.Value(sampleRow) != 0 {
 		tb.builderCumulativeDiff.Add(mergeRow, r.Diff.Value(sampleRow))
+	}
+
+	if isLeaf {
+		tb.builderFlat.Add(mergeRow, r.Value.Value(sampleRow))
+		if r.Diff.Value(sampleRow) != 0 {
+			tb.builderFlatDiff.Add(mergeRow, r.Diff.Value(sampleRow))
+		}
 	}
 }
