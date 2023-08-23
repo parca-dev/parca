@@ -15,6 +15,7 @@ import React, {useState} from 'react';
 
 import {Table} from 'apache-arrow';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
+import {Tooltip} from 'react-tooltip';
 
 import {QueryRequest_ReportType} from '@parca/client';
 import {Button, useParcaContext, useURLState} from '@parca/components';
@@ -284,14 +285,20 @@ const TooltipMetaInfo = ({
                 </button>
               </CopyToClipboard>
               <div className="flex gap-2">
-                <Button
-                  variant={'neutral'}
-                  onClick={() => openFile()}
-                  className="shrink-0"
-                  disabled={!isSourceAvailable}
+                <div
+                  data-tooltip-id="open-source-button-help"
+                  data-tooltip-content="There is no source code uploaded for this build"
                 >
-                  open
-                </Button>
+                  <Button
+                    variant={'neutral'}
+                    onClick={() => openFile()}
+                    className="shrink-0"
+                    disabled={!isSourceAvailable}
+                  >
+                    open
+                  </Button>
+                </div>
+                {!isSourceAvailable ? <Tooltip id="open-source-button-help" /> : null}
               </div>
             </div>
           )}
