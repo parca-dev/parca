@@ -1015,7 +1015,12 @@ func (fb *flamegraphBuilder) appendRow(
 		fb.builderMappingLimit.Append(r.MappingLimit.Value(locationRow))
 		fb.builderMappingOffset.Append(r.MappingOffset.Value(locationRow))
 		fb.builderMappingFileIndices.Append(t.mappingFile.indices.Value(r.MappingFile.GetValueIndex(locationRow)))
-		fb.builderMappingBuildIDIndices.Append(t.mappingBuildID.indices.Value(r.MappingBuildID.GetValueIndex(locationRow)))
+		// Even if there's a mapping the buildID can still be null.
+		if r.MappingBuildID.IsValid(locationRow) {
+			fb.builderMappingBuildIDIndices.Append(t.mappingBuildID.indices.Value(r.MappingBuildID.GetValueIndex(locationRow)))
+		} else {
+			fb.builderMappingBuildIDIndices.AppendNull()
+		}
 	} else {
 		fb.builderMappingStart.AppendNull()
 		fb.builderMappingLimit.AppendNull()
