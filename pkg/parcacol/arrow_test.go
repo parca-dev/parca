@@ -52,5 +52,7 @@ func TestBuildArrowLocations(t *testing.T) {
 	}}
 	locationIndex := map[string]int{"1": 0, "2": 1}
 
-	BuildArrowLocations(memory.DefaultAllocator, stacktraces, locations, locationIndex)
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
+	BuildArrowLocations(mem, stacktraces, locations, locationIndex)
 }

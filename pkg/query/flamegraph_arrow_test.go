@@ -187,7 +187,8 @@ func requireColumnChildren(t *testing.T, record arrow.Record, expected [][]uint3
 
 func TestGenerateFlamegraphArrow(t *testing.T) {
 	ctx := context.Background()
-	mem := memory.NewGoAllocator()
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	var err error
 
 	l := metastoretest.NewTestMetastore(
@@ -460,7 +461,8 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	mem := memory.NewGoAllocator()
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
@@ -549,7 +551,8 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 
 func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 	ctx := context.Background()
-	mem := memory.NewGoAllocator()
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	var err error
 
 	l := metastoretest.NewTestMetastore(

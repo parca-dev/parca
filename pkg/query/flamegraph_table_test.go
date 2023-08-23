@@ -1222,7 +1222,9 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 	require.NoError(t, err)
 
 	var filtered int64
-	newProfile.Samples, filtered, err = FilterProfileData(ctx, tracer, memory.DefaultAllocator, newProfile.Samples, "b") // querying for "b" should filter out the "5.c" function.
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
+	newProfile.Samples, filtered, err = FilterProfileData(ctx, tracer, mem, newProfile.Samples, "b") // querying for "b" should filter out the "5.c" function.
 	require.NoError(t, err)
 
 	p, err = parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()).Convert(ctx, newProfile)

@@ -243,6 +243,8 @@ func TestConsistency(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	require.NoError(t, table.EnsureCompaction())
 	api := queryservice.NewColumnQueryAPI(
 		logger,
@@ -252,14 +254,14 @@ func TestConsistency(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
 			parcacol.NewProfileSymbolizer(tracer, mc),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 		nil,
 	)
@@ -356,6 +358,8 @@ func TestPGOE2e(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	require.NoError(t, table.EnsureCompaction())
 	api := queryservice.NewColumnQueryAPI(
 		logger,
@@ -365,14 +369,14 @@ func TestPGOE2e(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
 			parcacol.NewProfileSymbolizer(tracer, mc),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 		nil,
 	)
@@ -459,6 +463,8 @@ func TestLabels(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	require.NoError(t, table.EnsureCompaction())
 	api := queryservice.NewColumnQueryAPI(
 		logger,
@@ -468,14 +474,14 @@ func TestLabels(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"labels",
 			parcacol.NewProfileSymbolizer(tracer, mc),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 		nil,
 	)
