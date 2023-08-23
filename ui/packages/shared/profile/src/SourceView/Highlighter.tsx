@@ -11,11 +11,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {useId} from 'react';
+
 import {Vector} from 'apache-arrow';
 import cx from 'classnames';
 import {scaleLinear} from 'd3-scale';
 import SyntaxHighlighter, {createElement, type createElementProps} from 'react-syntax-highlighter';
 import {atomOneDark, atomOneLight} from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import {Tooltip} from 'react-tooltip';
 
 import {useURLState} from '@parca/components';
 import {selectDarkMode, useAppSelector} from '@parca/store';
@@ -67,25 +70,32 @@ const LineProfileMetadata = ({
   filtered: bigint;
 }): JSX.Element => {
   const commonClasses = 'w-[52px] shrink-0';
+  const id = useId();
   if (value === 0n) {
     return <div className={cx(commonClasses)} />;
   }
   const unfilteredPercent = (Number(value) / Number(total + filtered)) * 100;
   const filteredPercent = (Number(value) / Number(total)) * 100;
 
+  const valueString = `${value.toString()}${'ns'}`;
+
   return (
-    <p
-      className={cx(
-        'w- flex justify-end overflow-hidden text-ellipsis whitespace-nowrap',
-        commonClasses
-      )}
-      style={{backgroundColor: `rgba(236, 151, 6, ${intensityScale(unfilteredPercent)})`}}
-    >
-      {value.toString()}ns
-      <span className="hidden text-[10px]">
-        ({unfilteredPercent.toFixed(2)}%{filtered > 0n ? `/ ${filteredPercent.toFixed(2)}%` : null})
-      </span>
-    </p>
+    <>
+      <p
+        className={cx(
+          'w- flex justify-end overflow-hidden text-ellipsis whitespace-nowrap',
+          commonClasses
+        )}
+        style={{backgroundColor: `rgba(236, 151, 6, ${intensityScale(unfilteredPercent)})`}}
+        data-tooltip-id={id}
+        data-tooltip-content={`${valueString} (${unfilteredPercent.toFixed(2)}%${
+          filtered > 0n ? ` / ${filteredPercent.toFixed(2)}%` : ''
+        })`}
+      >
+        {valueString}
+      </p>
+      <Tooltip id={id} />
+    </>
   );
 };
 
