@@ -362,6 +362,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return fmt.Errorf("failed to create gRPC connection to ProfileShareServer: %s, %w", flags.ProfileShareServer, err)
 	}
 
+	debuginfoBucket := objstore.NewPrefixedBucket(bucket, "debuginfo")
 	q := queryservice.NewColumnQueryAPI(
 		logger,
 		tracerProvider.Tracer("query-service"),
@@ -386,6 +387,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			tracerProvider.Tracer("arrow_to_profile_converter"),
 			metastore.NewKeyMaker(),
 		),
+		queryservice.NewBucketSourceFinder(debuginfoBucket),
 	)
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -414,7 +416,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		)
 	}
 
-	debuginfoBucket := objstore.NewPrefixedBucket(bucket, "debuginfo")
 	prefixedSignedRequestsClient := signedrequests.NewPrefixedClient(signedRequestsClient, "debuginfo")
 	debuginfoMetadata := debuginfo.NewObjectStoreMetadata(logger, debuginfoBucket)
 	dbginfo, err := debuginfo.NewStore(

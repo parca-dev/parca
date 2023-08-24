@@ -28,6 +28,22 @@ interface Props {
   withURLUpdate?: boolean;
 }
 
+const isEqual = (a: string | string[] | undefined, b: string | string[] | undefined): boolean => {
+  if (typeof a === 'string' && typeof b === 'string') {
+    return a === b;
+  }
+  if (Array.isArray(a) && Array.isArray(b)) {
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) return false;
+    }
+    return true;
+  }
+  if (a === undefined && b === undefined) {
+    return true;
+  }
+  return false;
+};
+
 export const useURLState = ({
   param,
   navigateTo,
@@ -56,7 +72,7 @@ export const useURLState = ({
       val === undefined || val == null || val === '';
 
     if (withURLUpdate && navigateTo !== undefined) {
-      if (router[param] !== value) {
+      if (!isEqual(router[param], value)) {
         const searchParams = router;
         searchParams[param] = value;
 

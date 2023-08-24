@@ -22,7 +22,7 @@ export const ExpandOnHover = ({value, displayValue}: Props): JSX.Element => {
       <div className="w-full overflow-hidden text-ellipsis whitespace-nowrap">
         {displayValue ?? value}
       </div>
-      <div className="absolute -inset-2 hidden h-fit max-w-[500px] whitespace-normal break-all rounded bg-gray-50 p-2 shadow-[0_0_10px_2px_rgba(0,0,0,0.3)] group-hover:flex dark:bg-gray-900">
+      <div className="absolute -inset-2 hidden h-fit max-w-[500px] whitespace-normal break-all rounded bg-gray-50 p-2 shadow-[0_0_10px_2px_rgba(0,0,0,0.3)] group-hover:flex dark:bg-gray-900 z-10">
         {value}
       </div>
     </div>

@@ -95,12 +95,19 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]profile.LocationLine, error)
 	if !ok {
 		name = ""
 	}
+
+	declLine, ok := tr.Entry.Val(dwarf.AttrDeclLine).(int64)
+	if !ok {
+		declLine = 0
+	}
+
 	file, line := findLineInfo(f.lineEntries[cu.Offset], tr.Ranges)
 	lines = append(lines, profile.LocationLine{
 		Line: line,
 		Function: f.demangler.Demangle(&pb.Function{
-			Name:     name,
-			Filename: file,
+			Name:      name,
+			Filename:  file,
+			StartLine: declLine,
 		}),
 	})
 
@@ -114,12 +121,18 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]profile.LocationLine, error)
 			name = getFunctionName(abstractOrigin)
 		}
 
+		declLine, ok := ch.Entry.Val(dwarf.AttrDeclLine).(int64)
+		if !ok {
+			declLine = 0
+		}
+
 		file, line := findLineInfo(f.lineEntries[cu.Offset], ch.Ranges)
 		lines = append(lines, profile.LocationLine{
 			Line: line,
 			Function: f.demangler.Demangle(&pb.Function{
-				Name:     name,
-				Filename: file,
+				Name:      name,
+				Filename:  file,
+				StartLine: declLine,
 			}),
 		})
 	}

@@ -14,7 +14,7 @@
 import {Profiler, ProfilerProps, useEffect, useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
-import {Table} from 'apache-arrow';
+import {Table as ArrowTable} from 'apache-arrow';
 import cx from 'classnames';
 import {scaleLinear} from 'd3';
 import graphviz from 'graphviz-wasm';
@@ -26,7 +26,14 @@ import {
   type DropResult,
 } from 'react-beautiful-dnd';
 
-import {Callgraph as CallgraphType, Flamegraph, QueryServiceClient, Top} from '@parca/client';
+import {
+  Callgraph as CallgraphType,
+  Flamegraph,
+  QueryServiceClient,
+  Source,
+  TableArrow,
+  Top,
+} from '@parca/client';
 import {
   Button,
   ConditionalWrapper,
@@ -43,10 +50,12 @@ import {Callgraph} from '../';
 import {jsonToDot} from '../Callgraph/utils';
 import ProfileIcicleGraph from '../ProfileIcicleGraph';
 import {ProfileSource} from '../ProfileSource';
-import {TopTable} from '../TopTable';
+import {SourceView} from '../SourceView';
+import Table from '../Table';
 import ProfileShareButton from '../components/ProfileShareButton';
 import useDelayedLoader from '../useDelayedLoader';
 import FilterByFunctionButton from './FilterByFunctionButton';
+import {ProfileViewContextProvider} from './ProfileViewContext';
 import ViewSelector from './ViewSelector';
 import {VisualizationPanel} from './VisualizationPanel';
 
@@ -55,7 +64,7 @@ type NavigateFunction = (path: string, queryParams: any, options?: {replace?: bo
 export interface FlamegraphData {
   loading: boolean;
   data?: Flamegraph;
-  table?: Table<any>;
+  table?: ArrowTable<any>;
   total?: bigint;
   filtered?: bigint;
   error?: any;
@@ -63,7 +72,8 @@ export interface FlamegraphData {
 
 export interface TopTableData {
   loading: boolean;
-  data?: Top;
+  arrow?: TableArrow;
+  data?: Top; // TODO: Remove this once we only have arrow support
   total?: bigint;
   filtered?: bigint;
   error?: any;
@@ -77,12 +87,19 @@ interface CallgraphData {
   error?: any;
 }
 
+interface SourceData {
+  loading: boolean;
+  data?: Source;
+  error?: any;
+}
+
 export interface ProfileViewProps {
   total: bigint;
   filtered: bigint;
   flamegraphData?: FlamegraphData;
   topTableData?: TopTableData;
   callgraphData?: CallgraphData;
+  sourceData?: SourceData;
   sampleUnit: string;
   profileSource?: ProfileSource;
   queryClient?: QueryServiceClient;
@@ -107,6 +124,7 @@ export const ProfileView = ({
   flamegraphData,
   topTableData,
   callgraphData,
+  sourceData,
   sampleUnit,
   profileSource,
   queryClient,
@@ -159,12 +177,16 @@ export const ProfileView = ({
     if (dashboardItems.includes('table')) {
       return Boolean(topTableData?.loading);
     }
+    if (dashboardItems.includes('source')) {
+      return Boolean(sourceData?.loading);
+    }
     return false;
   }, [
     dashboardItems,
     callgraphData?.loading,
     flamegraphData?.loading,
     topTableData?.loading,
+    sourceData?.loading,
     callgraphSVG,
   ]);
 
@@ -275,13 +297,26 @@ export const ProfileView = ({
       }
       case 'table': {
         return topTableData != null ? (
-          <TopTable
+          <Table
             loading={topTableData.loading}
-            data={topTableData.data}
+            data={topTableData.arrow?.record}
             sampleUnit={sampleUnit}
             navigateTo={navigateTo}
             setActionButtons={setActionButtons}
             currentSearchString={currentSearchString as string}
+          />
+        ) : (
+          <></>
+        );
+      }
+      case 'source': {
+        return sourceData != null ? (
+          <SourceView
+            loading={sourceData.loading}
+            data={sourceData.data}
+            total={total}
+            filtered={filtered}
+            setActionButtons={setActionButtons}
           />
         ) : (
           <></>
@@ -319,105 +354,107 @@ export const ProfileView = ({
 
   return (
     <KeyDownProvider>
-      <div className="mb-4 flex w-full items-center justify-between">
-        <div className="max-w-[500px]">
-          <div className="text-sm font-medium capitalize">{headerParts[0].replace(/"/g, '')}</div>
-          <div className="text-xs">{headerParts[headerParts.length - 1].replace(/"/g, '')}</div>
-        </div>
+      <ProfileViewContextProvider value={{profileSource, sampleUnit}}>
+        <div className="mb-4 flex w-full items-center justify-between">
+          <div className="max-w-[500px]">
+            <div className="text-sm font-medium capitalize">{headerParts[0].replace(/"/g, '')}</div>
+            <div className="text-xs">{headerParts[headerParts.length - 1].replace(/"/g, '')}</div>
+          </div>
 
-        <div className="flex items-center justify-end gap-x-2">
-          <FilterByFunctionButton navigateTo={navigateTo} />
-          <UserPreferences
-            customButton={
-              <Button className="gap-2" variant="neutral">
-                Preferences
-                <Icon icon="pajamas:preferences" width={20} />
-              </Button>
-            }
-          />
-          {profileSource !== undefined && queryClient !== undefined ? (
-            <ProfileShareButton
-              queryRequest={profileSource.QueryRequest()}
-              queryClient={queryClient}
+          <div className="flex items-center justify-end gap-x-2">
+            <FilterByFunctionButton navigateTo={navigateTo} />
+            <UserPreferences
+              customButton={
+                <Button className="gap-2" variant="neutral">
+                  Preferences
+                  <Icon icon="pajamas:preferences" width={20} />
+                </Button>
+              }
             />
-          ) : null}
-          <Button
-            className="gap-2"
-            variant="neutral"
-            onClick={e => {
-              e.preventDefault();
-              onDownloadPProf();
-            }}
-            disabled={pprofDownloading}
-          >
-            {pprofDownloading != null && pprofDownloading ? 'Downloading...' : 'Download pprof'}
-            <Icon icon="material-symbols:download" width={20} />
-          </Button>
-          <ViewSelector
-            defaultValue=""
-            navigateTo={navigateTo}
-            position={-1}
-            placeholderText="Add panel"
-            icon={<Icon icon="material-symbols:add" width={20} />}
-            addView={true}
-            disabled={isMultiPanelView || dashboardItems.length < 1}
-          />
+            {profileSource !== undefined && queryClient !== undefined ? (
+              <ProfileShareButton
+                queryRequest={profileSource.QueryRequest()}
+                queryClient={queryClient}
+              />
+            ) : null}
+            <Button
+              className="gap-2"
+              variant="neutral"
+              onClick={e => {
+                e.preventDefault();
+                onDownloadPProf();
+              }}
+              disabled={pprofDownloading}
+            >
+              {pprofDownloading != null && pprofDownloading ? 'Downloading...' : 'Download pprof'}
+              <Icon icon="material-symbols:download" width={20} />
+            </Button>
+            <ViewSelector
+              defaultValue=""
+              navigateTo={navigateTo}
+              position={-1}
+              placeholderText="Add panel"
+              icon={<Icon icon="material-symbols:add" width={20} />}
+              addView={true}
+              disabled={isMultiPanelView || dashboardItems.length < 1}
+            />
+          </div>
         </div>
-      </div>
 
-      <div className="w-full" ref={ref}>
-        {isLoaderVisible ? (
-          <>{loader}</>
-        ) : (
-          <DragDropContext onDragEnd={onDragEnd}>
-            <Droppable droppableId="droppable" direction="horizontal">
-              {provided => (
-                <div
-                  ref={provided.innerRef}
-                  className={cx(
-                    'grid w-full gap-2',
-                    isMultiPanelView ? 'grid-cols-2' : 'grid-cols-1'
-                  )}
-                  {...provided.droppableProps}
-                >
-                  {dashboardItems.map((dashboardItem, index) => {
-                    return (
-                      <Draggable
-                        key={dashboardItem}
-                        draggableId={dashboardItem}
-                        index={index}
-                        isDragDisabled={!isMultiPanelView}
-                      >
-                        {(provided, snapshot: {isDragging: boolean}) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            key={dashboardItem}
-                            className={cx(
-                              'w-full rounded p-2 shadow dark:border-gray-500 dark:bg-gray-700',
-                              snapshot.isDragging ? 'bg-gray-200' : 'bg-white'
-                            )}
-                          >
-                            <VisualizationPanel
-                              handleClosePanel={handleClosePanel}
-                              isMultiPanelView={isMultiPanelView}
-                              dashboardItem={dashboardItem}
-                              getDashboardItemByType={getDashboardItemByType}
-                              dragHandleProps={provided.dragHandleProps}
-                              navigateTo={navigateTo}
-                              index={index}
-                            />
-                          </div>
-                        )}
-                      </Draggable>
-                    );
-                  })}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
-        )}
-      </div>
+        <div className="w-full" ref={ref}>
+          {isLoaderVisible ? (
+            <>{loader}</>
+          ) : (
+            <DragDropContext onDragEnd={onDragEnd}>
+              <Droppable droppableId="droppable" direction="horizontal">
+                {provided => (
+                  <div
+                    ref={provided.innerRef}
+                    className={cx(
+                      'grid w-full gap-2',
+                      isMultiPanelView ? 'grid-cols-2' : 'grid-cols-1'
+                    )}
+                    {...provided.droppableProps}
+                  >
+                    {dashboardItems.map((dashboardItem, index) => {
+                      return (
+                        <Draggable
+                          key={dashboardItem}
+                          draggableId={dashboardItem}
+                          index={index}
+                          isDragDisabled={!isMultiPanelView}
+                        >
+                          {(provided, snapshot: {isDragging: boolean}) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              key={dashboardItem}
+                              className={cx(
+                                'w-full rounded p-2 shadow dark:border-gray-500 dark:bg-gray-700',
+                                snapshot.isDragging ? 'bg-gray-200' : 'bg-white'
+                              )}
+                            >
+                              <VisualizationPanel
+                                handleClosePanel={handleClosePanel}
+                                isMultiPanelView={isMultiPanelView}
+                                dashboardItem={dashboardItem}
+                                getDashboardItemByType={getDashboardItemByType}
+                                dragHandleProps={provided.dragHandleProps}
+                                navigateTo={navigateTo}
+                                index={index}
+                              />
+                            </div>
+                          )}
+                        </Draggable>
+                      );
+                    })}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+          )}
+        </div>
+      </ProfileViewContextProvider>
     </KeyDownProvider>
   );
 };

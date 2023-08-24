@@ -29,6 +29,9 @@ interface UseQueryOptions {
   skip?: boolean;
   nodeTrimThreshold?: number;
   groupBy?: string[];
+  sourceBuildID?: string;
+  sourceFilename?: string;
+  sourceOnly?: boolean;
 }
 
 export const useQuery = (
@@ -40,7 +43,16 @@ export const useQuery = (
   const {skip = false} = options ?? {};
   const metadata = useGrpcMetadata();
   const {data, isLoading, error} = useGrpcQuery<QueryResponse | undefined>({
-    key: ['query', profileSource, reportType, options?.nodeTrimThreshold, options?.groupBy],
+    key: [
+      'query',
+      profileSource,
+      reportType,
+      options?.nodeTrimThreshold,
+      options?.groupBy,
+      options?.sourceBuildID,
+      options?.sourceFilename,
+      options?.sourceOnly,
+    ],
     queryFn: async () => {
       const req = profileSource.QueryRequest();
       req.reportType = reportType;
@@ -48,9 +60,24 @@ export const useQuery = (
       req.groupBy = {
         fields: options?.groupBy ?? [],
       };
+      if (options?.sourceBuildID !== undefined && options?.sourceFilename !== undefined) {
+        req.sourceReference = {
+          buildId: options?.sourceBuildID ?? '',
+          filename: options?.sourceFilename ?? '',
+          sourceOnly: options?.sourceOnly ?? false,
+        };
+      }
 
-      const {response} = await client.query(req, {meta: metadata});
-      return response;
+      try {
+        const {response} = await client.query(req, {meta: metadata});
+        return response;
+      } catch (e) {
+        if (options?.sourceOnly === true) {
+          // ignore
+          return {} as unknown as QueryResponse;
+        }
+        throw e;
+      }
     },
     options: {
       retry: false,
