@@ -229,6 +229,11 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		for _, r := range p.Samples {
+			r.Release()
+		}
+	}()
 
 	if req.FilterQuery != nil {
 		p.Samples, filtered, err = FilterProfileData(ctx, q.tracer, q.mem, p.Samples, req.GetFilterQuery())
@@ -236,11 +241,6 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 			return nil, fmt.Errorf("filtering profile: %w", err)
 		}
 	}
-	defer func() {
-		for _, r := range p.Samples {
-			r.Release()
-		}
-	}()
 
 	return q.renderReport(
 		ctx,
