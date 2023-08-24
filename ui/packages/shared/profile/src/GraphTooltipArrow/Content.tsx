@@ -209,14 +209,20 @@ const TooltipMetaInfo = ({
     profileSource as ProfileSource,
     QueryRequest_ReportType.SOURCE,
     {
-      skip: enableSourcesView === false || profileSource === undefined,
+      skip:
+        enableSourcesView === false ||
+        profileSource === undefined ||
+        // eslint-disable-next-line no-extra-boolean-cast
+        !Boolean(mappingBuildID) ||
+        // eslint-disable-next-line no-extra-boolean-cast
+        !Boolean(functionFilename),
       sourceBuildID: mappingBuildID,
       sourceFilename: functionFilename,
       sourceOnly: true,
     }
   );
 
-  const isSourceAvailable = !sourceLoading && sourceResponse != null;
+  const isSourceAvailable = !sourceLoading && sourceResponse?.report != null;
 
   const getTextForFile = (): string => {
     if (functionFilename === '') return '<unknown>';
