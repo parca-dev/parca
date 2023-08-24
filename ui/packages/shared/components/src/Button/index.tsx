@@ -36,7 +36,7 @@ const BUTTON_VARIANT_CONFIG = {
   },
   neutral: {
     text: 'text-gray-600 dark:text-gray-100 justify-center',
-    bg: 'bg-gray-50 dark:bg-gray-900',
+    bg: 'bg-white dark:bg-gray-900',
     border: 'border border-gray-200 dark:border-gray-600',
     fontWeight: 'font-normal',
     hover: '',
