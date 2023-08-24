@@ -13,6 +13,7 @@
 
 import {Profiler, ProfilerProps, useEffect, useMemo, useState} from 'react';
 
+import {Icon} from '@iconify/react';
 import {Table} from 'apache-arrow';
 import cx from 'classnames';
 import {scaleLinear} from 'd3';
@@ -312,19 +313,26 @@ export const ProfileView = ({
     }
   };
 
+  // TODO: this is just a placeholder, we need to replace with an actually informative and accurate title (cc @metalmatze)
+  const profileSourceString = profileSource?.toString();
+  const headerParts = profileSourceString?.split('"') ?? [];
+  const profileViewHeader = [headerParts[0], headerParts[headerParts.length - 1]].join('"');
+
   return (
     <KeyDownProvider>
       <div className="flex w-full pb-3">
-        <div className="flex space-x-4 lg:w-1/2">
-          <div className="flex space-x-1">
+        <div className="flex w-full items-center justify-between">
+          <div className="text-sm font-medium capitalize">{profileViewHeader ?? ''}</div>
+          <div className="flex items-center justify-end gap-x-2">
+            <FilterByFunctionButton navigateTo={navigateTo} />
             {profileSource !== undefined && queryClient !== undefined ? (
               <ProfileShareButton
                 queryRequest={profileSource.QueryRequest()}
                 queryClient={queryClient}
               />
             ) : null}
-
             <Button
+              className="gap-2"
               color="neutral"
               onClick={e => {
                 e.preventDefault();
@@ -332,22 +340,20 @@ export const ProfileView = ({
               }}
               disabled={pprofDownloading}
             >
-              {pprofDownloading != null && pprofDownloading ? 'Downloading' : 'Download pprof'}
+              {pprofDownloading != null && pprofDownloading ? 'Downloading...' : 'Download pprof'}
+              <Icon icon="material-symbols:download" width={22} />
             </Button>
+            <ViewSelector
+              defaultValue=""
+              navigateTo={navigateTo}
+              position={-1}
+              placeholderText="Add panel"
+              icon={<Icon icon="material-symbols:add" width={22} />}
+              primary
+              addView={true}
+              disabled={isMultiPanelView || dashboardItems.length < 1}
+            />
           </div>
-          <FilterByFunctionButton navigateTo={navigateTo} />
-        </div>
-
-        <div className="ml-auto flex gap-2">
-          <ViewSelector
-            defaultValue=""
-            navigateTo={navigateTo}
-            position={-1}
-            placeholderText="Add panel..."
-            primary
-            addView={true}
-            disabled={isMultiPanelView || dashboardItems.length < 1}
-          />
         </div>
       </div>
 

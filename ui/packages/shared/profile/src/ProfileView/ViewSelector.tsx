@@ -23,6 +23,7 @@ interface Props {
   primary?: boolean;
   addView?: boolean;
   disabled?: boolean;
+  icon?: JSX.Element;
 }
 
 const ViewSelector = ({
@@ -33,6 +34,7 @@ const ViewSelector = ({
   primary = false,
   addView = false,
   disabled = false,
+  icon,
 }: Props): JSX.Element => {
   const [callgraphEnabled] = useUIFeatureFlag('callgraph');
   const [dashboardItems = ['icicle'], setDashboardItems] = useURLState({
@@ -110,6 +112,7 @@ const ViewSelector = ({
       placeholder={placeholderText ?? 'Select view type...'}
       primary={primary}
       disabled={disabled}
+      icon={icon}
     />
   );
 };
