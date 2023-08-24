@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Select, useURLState, type SelectElement} from '@parca/components';
+import {Select, useParcaContext, useURLState, type SelectElement} from '@parca/components';
 import {useUIFeatureFlag} from '@parca/hooks';
 import type {NavigateFunction} from '@parca/utilities';
 
@@ -39,12 +39,15 @@ const ViewSelector = ({
     param: 'dashboard_items',
     navigateTo,
   });
+  const {enableSourcesView} = useParcaContext();
 
   const allItems: Array<{key: string; canBeSelected: boolean; supportingText?: string}> = [
     {key: 'table', canBeSelected: !dashboardItems.includes('table')},
     {key: 'icicle', canBeSelected: !dashboardItems.includes('icicle')},
-    {key: 'source', canBeSelected: false},
   ];
+  if (enableSourcesView === true) {
+    allItems.push({key: 'source', canBeSelected: false});
+  }
   if (callgraphEnabled) {
     allItems.push({
       key: 'callgraph',

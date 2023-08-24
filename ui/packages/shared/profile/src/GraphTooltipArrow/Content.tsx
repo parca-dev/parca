@@ -14,6 +14,7 @@
 import React, {useState} from 'react';
 
 import {Table} from 'apache-arrow';
+import cx from 'classnames';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {Tooltip} from 'react-tooltip';
 
@@ -200,7 +201,7 @@ const TooltipMetaInfo = ({
     field.name.startsWith(pprofLabelPrefix)
   );
 
-  const {queryServiceClient} = useParcaContext();
+  const {queryServiceClient, enableSourcesView} = useParcaContext();
   const {profileSource} = useProfileViewContext();
 
   const {isLoading: sourceLoading, response: sourceResponse} = useQuery(
@@ -208,7 +209,7 @@ const TooltipMetaInfo = ({
     profileSource as ProfileSource,
     QueryRequest_ReportType.SOURCE,
     {
-      skip: profileSource === undefined,
+      skip: enableSourcesView === false || profileSource === undefined,
       sourceBuildID: mappingBuildID,
       sourceFilename: functionFilename,
       sourceOnly: true,
@@ -289,7 +290,7 @@ const TooltipMetaInfo = ({
                   <ExpandOnHover value={file} displayValue={truncateStringReverse(file, 30)} />
                 </button>
               </CopyToClipboard>
-              <div className="flex gap-2">
+              <div className={cx('flex gap-2', {hidden: enableSourcesView === false})}>
                 <div
                   data-tooltip-id="open-source-button-help"
                   data-tooltip-content="There is no source code uploaded for this build"

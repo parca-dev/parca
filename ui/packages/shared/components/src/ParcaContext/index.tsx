@@ -40,6 +40,7 @@ interface Props {
   onError?: (error: RpcError, originatingFeature: string) => void;
   queryServiceClient: QueryServiceClient;
   navigateTo: NavigateFunction;
+  enableSourcesView?: boolean;
 }
 
 export const defaultValue: Props = {
@@ -60,6 +61,7 @@ export const defaultValue: Props = {
   },
   queryServiceClient: {} as unknown as QueryServiceClient,
   navigateTo: () => {},
+  enableSourcesView: false,
 };
 
 const ParcaContext = createContext<Props>(defaultValue);
