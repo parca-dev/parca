@@ -202,7 +202,7 @@ const ProfileSelector = ({
     <div className="mb-2 flex">
       <div className="flex w-full flex-wrap content-start items-end justify-between gap-2">
         <div>
-          <label className="text-sm">Profile type</label>
+          <label className="text-xs">Profile type</label>
           <ProfileTypeSelector
             profileTypesData={profileTypesData}
             loading={profileTypesLoading}
@@ -213,7 +213,7 @@ const ProfileSelector = ({
         </div>
 
         <div className="w-full flex-1">
-          <label className="text-sm">Query</label>
+          <label className="text-xs">Query</label>
           <MatchersInput
             queryClient={queryClient}
             setMatchersString={setMatchersString}
@@ -222,7 +222,7 @@ const ProfileSelector = ({
           />
         </div>
         <div>
-          <label className="text-sm">Period</label>
+          <label className="text-xs">Period</label>
           <DateTimeRangePicker
             onRangeSelection={setTimeRangeSelection}
             range={timeRangeSelection}

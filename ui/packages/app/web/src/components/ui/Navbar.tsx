@@ -100,8 +100,8 @@ const Navbar = () => {
                             target: item.external ? '_blank' : undefined,
                             className: cx(
                               isCurrentPage(item)
-                                ? 'border-indigo-500 text-indigo-600 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium'
-                                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium'
+                                ? 'border-indigo-500 dark:border-gray-100 text-indigo-600 dark:text-gray-100 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium'
+                                : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 hover:text-gray-700 dark:hover:text-gray-100 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium'
                             ),
                             rel: item.external ? 'noreferrer' : undefined,
                           };
@@ -124,21 +124,21 @@ const Navbar = () => {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="text-gray-500 hover:border-gray-300 hover:text-gray-700 text-sm font-medium">
+                <div className="text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-300">
                   <ReleaseNotesViewer version={window.APP_VERSION} />
                 </div>
                 <div className="hidden md:flex">
                   <GitHubStarButton />
                 </div>
-                <div className="text-gray-500 hover:border-gray-300 hover:text-gray-700 text-sm font-medium">
+                <div className="text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-300">
                   <a target="_blank" href="https://github.com/parca-dev/parca" rel="noreferrer">
                     GitHub
                   </a>
                 </div>
-                <div className="text-gray-500 hover:border-gray-300 hover:text-gray-700 text-sm font-medium">
+                <div className="text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
                   <UserPreferences />
                 </div>
-                <div className="text-gray-500 hover:border-gray-300 hover:text-gray-700 text-sm font-medium">
+                <div className="text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
                   <ThemeToggle />
                 </div>
               </div>

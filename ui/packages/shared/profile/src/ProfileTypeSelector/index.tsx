@@ -177,6 +177,7 @@ const ProfileTypeSelector = ({
       onSelection={onSelection}
       placeholder="Select profile type..."
       loading={loading}
+      className="bg-white"
     />
   );
 };

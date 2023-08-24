@@ -19,9 +19,17 @@ import {twMerge} from 'tailwind-merge';
 
 const BUTTON_VARIANT_CONFIG = {
   primary: {
-    text: 'text-gray-100 dark-gray-900 justify-center',
-    bg: 'bg-indigo-600',
-    border: 'border border-indigo-500',
+    text: 'text-gray-100 dark:text-white justify-center',
+    bg: 'bg-indigo-600 dark:bg-indigo-500',
+    border: 'border border-indigo-500 dark:border-indigo-500',
+    fontWeight: 'font-medium',
+    hover: '',
+    padding: 'py-2 px-4',
+  },
+  secondary: {
+    text: 'text-indigo-700 dark:text-white justify-center',
+    bg: 'bg-indigo-50 dark:bg-gray-600',
+    border: 'border border-indigo-100 dark:border-gray-600',
     fontWeight: 'font-medium',
     hover: '',
     padding: 'py-2 px-4',

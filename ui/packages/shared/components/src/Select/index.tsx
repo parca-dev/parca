@@ -67,7 +67,7 @@ const Select = ({
     'relative border rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-sm';
   const defaultStyles = 'bg-gray-50 dark:bg-gray-900 dark:border-gray-600';
   const primaryStyles =
-    'text-gray-100 dark-gray-900 bg-indigo-600 border-indigo-500 font-medium py-2 px-4';
+    'text-gray-100 dark:gray-900 bg-indigo-600 border-indigo-500 font-medium py-2 px-4';
 
   return (
     <Listbox value={selectedKey} onChange={onSelection}>
