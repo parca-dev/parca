@@ -185,13 +185,13 @@ export const Highlighter = ({content, language, renderer}: HighlighterProps): JS
           <div>Source</div>
         </div>
       </div>
-      <div className="h-[80vh] overflow-y-auto text-xs">
+      <div className="text-xs">
         <SyntaxHighlighter
           language={language}
           style={isDarkMode ? atomOneDark : atomOneLight}
           showLineNumbers
           renderer={renderer}
-          customStyle={{padding: 0}}
+          customStyle={{padding: 0, height: '80vh'}}
         >
           {content}
         </SyntaxHighlighter>
