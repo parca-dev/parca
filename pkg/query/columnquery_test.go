@@ -210,7 +210,7 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	// TODO: this should used a checked allocator but there is a bug in Frostdb that causes it to leak allocations.
+	// TODO: this should used a checked allocator but there is a bug in Frostdb(https://github.com/polarsignals/frostdb/issues/499) that causes it to leak allocations.
 	mem := memory.DefaultAllocator
 	api := NewColumnQueryAPI(
 		logger,
@@ -446,7 +446,7 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// TODO: this should used a checked allocator but there is a bug in Frostdb that causes it to leak allocations.
+	// TODO: this should used a checked allocator but there is a bug in Frostdb(https://github.com/polarsignals/frostdb/issues/499) that causes it to leak allocations.
 	mem := memory.DefaultAllocator
 	api := NewColumnQueryAPI(
 		logger,
@@ -769,7 +769,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// TODO: this should used a checked allocator but there is a bug in Frostdb that causes it to leak allocations.
+	// TODO: this should used a checked allocator but there is a bug in Frostdb(https://github.com/polarsignals/frostdb/issues/499) that causes it to leak allocations.
 	mem := memory.DefaultAllocator
 	api := NewColumnQueryAPI(
 		logger,
