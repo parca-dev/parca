@@ -88,6 +88,10 @@ Flags:
       --mode="all"              Scraper only runs a scraper that sends to a
                                 remote gRPC endpoint. All runs all components.
       --http-address=":7070"    Address to bind HTTP server to.
+      --http-read-timeout=5s    Timeout duration for HTTP server to read
+                                request body.
+      --http-write-timeout=1m   Timeout duration for HTTP server to write
+                                response body.
       --port=""                 (DEPRECATED) Use http-address instead.
       --log-level="info"        Log level.
       --log-format="logfmt"     Configure if structured logging as JSON or as
