@@ -17,7 +17,6 @@ import cx from 'classnames';
 import GitHubButton from 'react-github-btn';
 import {Link, LinkProps, useLocation} from 'react-router-dom';
 
-import {UserPreferences} from '@parca/components';
 import {Parca, ParcaSmall} from '@parca/icons';
 import {selectDarkMode, useAppSelector} from '@parca/store';
 
@@ -134,9 +133,6 @@ const Navbar = () => {
                   <a target="_blank" href="https://github.com/parca-dev/parca" rel="noreferrer">
                     GitHub
                   </a>
-                </div>
-                <div className="text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
-                  <UserPreferences />
                 </div>
                 <div className="text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
                   <ThemeToggle />

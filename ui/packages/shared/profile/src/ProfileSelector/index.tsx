@@ -252,9 +252,9 @@ const ProfileSelector = ({
   );
 
   return (
-    <div className="p-2">
+    <>
       <Header />
-      <div className="rounded border border-gray-300 bg-white dark:border-gray-500 dark:bg-gray-700">
+      <div className="rounded bg-white shadow dark:border-gray-500 dark:bg-gray-700">
         <div style={{height: heightStyle}}>
           {querySelection.expression !== undefined &&
           querySelection.expression.length > 0 &&
@@ -318,7 +318,7 @@ const ProfileSelector = ({
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

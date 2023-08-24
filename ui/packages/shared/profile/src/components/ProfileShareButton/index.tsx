@@ -127,9 +127,14 @@ const ProfileShareButton = ({queryRequest, queryClient, disabled = false}: Props
 
   return (
     <>
-      <Button color="neutral" onClick={() => setIsOpen(true)} disabled={disabled} className="gap-2">
+      <Button
+        variant="neutral"
+        onClick={() => setIsOpen(true)}
+        disabled={disabled}
+        className="gap-2"
+      >
         Share profile
-        <Icon icon="material-symbols:share" width={22} />
+        <Icon icon="material-symbols:share" width={20} />
       </Button>
       <ProfileShareModal
         isOpen={isOpen}

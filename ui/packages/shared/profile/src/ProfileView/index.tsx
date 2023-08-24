@@ -29,9 +29,9 @@ import {
 import {Callgraph as CallgraphType, Flamegraph, QueryServiceClient, Top} from '@parca/client';
 import {
   Button,
-  Card,
   ConditionalWrapper,
   KeyDownProvider,
+  UserPreferences,
   useParcaContext,
   useURLState,
 } from '@parca/components';
@@ -316,44 +316,52 @@ export const ProfileView = ({
   // TODO: this is just a placeholder, we need to replace with an actually informative and accurate title (cc @metalmatze)
   const profileSourceString = profileSource?.toString();
   const headerParts = profileSourceString?.split('"') ?? [];
-  const profileViewHeader = [headerParts[0], headerParts[headerParts.length - 1]].join('"');
 
   return (
     <KeyDownProvider>
-      <div className="flex w-full pb-3">
-        <div className="flex w-full items-center justify-between">
-          <div className="text-sm font-medium capitalize">{profileViewHeader ?? ''}</div>
-          <div className="flex items-center justify-end gap-x-2">
-            <FilterByFunctionButton navigateTo={navigateTo} />
-            {profileSource !== undefined && queryClient !== undefined ? (
-              <ProfileShareButton
-                queryRequest={profileSource.QueryRequest()}
-                queryClient={queryClient}
-              />
-            ) : null}
-            <Button
-              className="gap-2"
-              color="neutral"
-              onClick={e => {
-                e.preventDefault();
-                onDownloadPProf();
-              }}
-              disabled={pprofDownloading}
-            >
-              {pprofDownloading != null && pprofDownloading ? 'Downloading...' : 'Download pprof'}
-              <Icon icon="material-symbols:download" width={22} />
-            </Button>
-            <ViewSelector
-              defaultValue=""
-              navigateTo={navigateTo}
-              position={-1}
-              placeholderText="Add panel"
-              icon={<Icon icon="material-symbols:add" width={22} />}
-              primary
-              addView={true}
-              disabled={isMultiPanelView || dashboardItems.length < 1}
+      <div className="mb-4 flex w-full items-center justify-between">
+        <div className="max-w-[500px]">
+          <div className="text-sm font-medium capitalize">{headerParts[0].replace(/"/g, '')}</div>
+          <div className="text-xs">{headerParts[headerParts.length - 1].replace(/"/g, '')}</div>
+        </div>
+
+        <div className="flex items-center justify-end gap-x-2">
+          <FilterByFunctionButton navigateTo={navigateTo} />
+          <UserPreferences
+            customButton={
+              <Button className="gap-2" variant="neutral">
+                Preferences
+                <Icon icon="pajamas:preferences" width={20} />
+              </Button>
+            }
+          />
+          {profileSource !== undefined && queryClient !== undefined ? (
+            <ProfileShareButton
+              queryRequest={profileSource.QueryRequest()}
+              queryClient={queryClient}
             />
-          </div>
+          ) : null}
+          <Button
+            className="gap-2"
+            variant="neutral"
+            onClick={e => {
+              e.preventDefault();
+              onDownloadPProf();
+            }}
+            disabled={pprofDownloading}
+          >
+            {pprofDownloading != null && pprofDownloading ? 'Downloading...' : 'Download pprof'}
+            <Icon icon="material-symbols:download" width={20} />
+          </Button>
+          <ViewSelector
+            defaultValue=""
+            navigateTo={navigateTo}
+            position={-1}
+            placeholderText="Add panel"
+            icon={<Icon icon="material-symbols:add" width={20} />}
+            addView={true}
+            disabled={isMultiPanelView || dashboardItems.length < 1}
+          />
         </div>
       </div>
 
@@ -367,7 +375,7 @@ export const ProfileView = ({
                 <div
                   ref={provided.innerRef}
                   className={cx(
-                    'grid w-full grid-cols-2 gap-2',
+                    'grid w-full gap-2',
                     isMultiPanelView ? 'grid-cols-2' : 'grid-cols-1'
                   )}
                   {...provided.droppableProps}
@@ -386,7 +394,7 @@ export const ProfileView = ({
                             {...provided.draggableProps}
                             key={dashboardItem}
                             className={cx(
-                              'w-full rounded border border-gray-300 p-2 dark:border-gray-500 dark:bg-gray-700',
+                              'w-full rounded p-2 shadow dark:border-gray-500 dark:bg-gray-700',
                               snapshot.isDragging ? 'bg-gray-200' : 'bg-white'
                             )}
                           >
