@@ -233,6 +233,9 @@ message QueryRequest {
 
     // REPORT_TYPE_SOURCE contains source code annotated with profiling information
     REPORT_TYPE_SOURCE = 6;
+
+    // REPORT_TYPE_TABLE_ARROW unspecified
+    REPORT_TYPE_TABLE_ARROW = 7;
   }
 
   // report_type is the type of report to return
@@ -502,6 +505,9 @@ message QueryResponse {
 
     // source is the source report type result
     Source source = 12;
+
+    // table_arrow is a table encoded as a arrow record
+    TableArrow table_arrow = 13;
   }
 
   // total is the total number of samples shown in the report.
@@ -593,4 +599,13 @@ message ShareProfileRequest {
 message ShareProfileResponse {
   // link to access the profile
   string link = 1;
+}
+
+// TableArrow has the table encoded as a arrow record
+message TableArrow {
+  // record is the arrow record containing the actual table data
+  bytes record = 1;
+
+  // unit is the unit represented by the flame graph
+  string unit = 2;
 }
