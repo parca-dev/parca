@@ -13,19 +13,40 @@
 
 import {useEffect, useRef} from 'react';
 
+import cx from 'classnames';
+
 interface Props {
   value: number;
   isCurrent?: boolean;
+  setCurrentLine?: () => void;
 }
 
-export const LineNo = ({value, isCurrent = false}: Props): JSX.Element => {
+export const LineNo = ({value, isCurrent = false, setCurrentLine}: Props): JSX.Element => {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isCurrent) {
-      ref.current?.scrollIntoView({behavior: 'smooth', block: 'center'});
+    if (isCurrent && ref.current !== null) {
+      const bounds = ref.current.getBoundingClientRect();
+      if (
+        bounds.top > 0 &&
+        bounds.bottom < (window.innerHeight ?? document.documentElement.clientHeight)
+      ) {
+        // already in view, so don't make the unnecessary scroll to center it
+        return;
+      }
+      ref.current.scrollIntoView({behavior: 'smooth', block: 'center'});
     }
   }, [isCurrent]);
 
-  return <code ref={ref}>{value.toString() + '\n'}</code>;
+  return (
+    <code
+      ref={ref}
+      onClick={setCurrentLine}
+      className={cx('cursor-pointer px-1', {
+        'border-l border-l-amber-900 bg-yellow-200 dark:bg-yellow-700': isCurrent,
+      })}
+    >
+      {value.toString() + '\n'}
+    </code>
+  );
 };
