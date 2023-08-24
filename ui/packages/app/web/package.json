@@ -21,7 +21,7 @@
   "license": "ISC",
   "dependencies": {
     "@alwaysmeticulous/recorder-loader": "^2.63.0",
-    "@headlessui/react": "1.7.16",
+    "@headlessui/react": "1.7.17",
     "@parca/client": "^0.16.86",
     "@parca/components": "^0.16.184",
     "@parca/dynamicsize": "^0.16.54",
