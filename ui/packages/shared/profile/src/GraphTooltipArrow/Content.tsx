@@ -196,6 +196,8 @@ const TooltipMetaInfo = ({
   const locationLine: bigint = table.getChild(FIELD_LOCATION_LINE)?.get(row) ?? 0n;
   const functionFilename: string = table.getChild(FIELD_FUNCTION_FILE_NAME)?.get(row) ?? '';
   const functionStartLine: bigint = table.getChild(FIELD_FUNCTION_START_LINE)?.get(row) ?? 0n;
+  const lineNumber =
+    locationLine !== 0n ? locationLine : functionStartLine !== 0n ? functionStartLine : undefined;
   const pprofLabelPrefix = 'pprof_labels.';
   const labelColumnNames = table.schema.fields.filter(field =>
     field.name.startsWith(pprofLabelPrefix)
@@ -209,23 +211,25 @@ const TooltipMetaInfo = ({
     profileSource as ProfileSource,
     QueryRequest_ReportType.SOURCE,
     {
-      skip: enableSourcesView === false || profileSource === undefined,
+      skip:
+        enableSourcesView === false ||
+        profileSource === undefined ||
+        // eslint-disable-next-line no-extra-boolean-cast
+        !Boolean(mappingBuildID) ||
+        // eslint-disable-next-line no-extra-boolean-cast
+        !Boolean(functionFilename),
       sourceBuildID: mappingBuildID,
       sourceFilename: functionFilename,
       sourceOnly: true,
     }
   );
 
-  const isSourceAvailable = !sourceLoading && sourceResponse != null;
+  const isSourceAvailable = !sourceLoading && sourceResponse?.report != null;
 
   const getTextForFile = (): string => {
     if (functionFilename === '') return '<unknown>';
 
-    return `${functionFilename} ${
-      locationLine !== 0n
-        ? ` +${locationLine.toString()}`
-        : `${functionStartLine !== 0n ? `:${functionStartLine}` : ''}`
-    }`;
+    return `${functionFilename} ${lineNumber !== undefined ? ` +${lineNumber.toString()}` : ''}`;
   };
   const file = getTextForFile();
 
@@ -273,7 +277,9 @@ const TooltipMetaInfo = ({
     setDashboardItems([dashboardItems[0], 'source']);
     setSourceBuildId(mappingBuildID);
     setSourceFilename(functionFilename);
-    setSourceLine(locationLine.toString());
+    if (lineNumber !== undefined) {
+      setSourceLine(lineNumber.toString());
+    }
   };
 
   return (

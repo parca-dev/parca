@@ -68,8 +68,16 @@ export const useQuery = (
         };
       }
 
-      const {response} = await client.query(req, {meta: metadata});
-      return response;
+      try {
+        const {response} = await client.query(req, {meta: metadata});
+        return response;
+      } catch (e) {
+        if (options?.sourceOnly === true) {
+          // ignore
+          return {} as unknown as QueryResponse;
+        }
+        throw e;
+      }
     },
     options: {
       retry: false,

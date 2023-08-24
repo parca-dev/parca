@@ -118,7 +118,7 @@ export const profileAwareRenderer = (
     useInlineStyles,
   }: RendererProps): JSX.Element {
     const lineNumberWidth = charsToWidth(rows.length.toString().length);
-    const [sourceLine] = useURLState({param: 'source_line', navigateTo: () => {}});
+    const [sourceLine, setSourceLine] = useURLState({param: 'source_line', navigateTo: () => {}});
     return (
       <>
         {rows.map((node, i) => {
@@ -129,11 +129,15 @@ export const profileAwareRenderer = (
             <div className="flex gap-1" key={`${i}`}>
               <div
                 className={cx(
-                  'shrink-0 border-r border-gray-200 pr-1 text-right dark:border-gray-700',
+                  'shrink-0 overflow-hidden border-r border-r-gray-200 text-right dark:border-r-gray-700',
                   lineNumberWidth
                 )}
               >
-                <LineNo value={lineNumber} isCurrent={isCurrentLine} />
+                <LineNo
+                  value={lineNumber}
+                  isCurrent={isCurrentLine}
+                  setCurrentLine={() => setSourceLine(lineNumber.toString())}
+                />
               </div>
               <LineProfileMetadata
                 value={cumulative?.get(i) ?? 0n}
@@ -181,12 +185,13 @@ export const Highlighter = ({content, language, renderer}: HighlighterProps): JS
           <div>Source</div>
         </div>
       </div>
-      <div className="h-[80vh] overflow-y-auto text-xs">
+      <div className="text-xs">
         <SyntaxHighlighter
           language={language}
           style={isDarkMode ? atomOneDark : atomOneLight}
           showLineNumbers
           renderer={renderer}
+          customStyle={{padding: 0, height: '80vh'}}
         >
           {content}
         </SyntaxHighlighter>
