@@ -831,6 +831,12 @@ func newFlamegraphBuilder(
 // It adds the children to the children column and the labels intersection to the labels column.
 // Finally, it assembles all columns from the builders into an arrow record.
 func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
+	arrs := make([]arrow.Array, 0, 26+(2*len(fb.builderLabelFields)))
+	defer func() {
+		for _, arr := range arrs {
+			arr.Release()
+		}
+	}()
 	// We have manually tracked the total cumulative value.
 	// Now we set/overwrite the cumulative value for the root row (which is always the 0 row in our flame graphs).
 	fb.builderCumulative.Set(0, fb.cumulative)
@@ -861,59 +867,59 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	fb.ensureLabelColumnsComplete()
 
 	mappingBuildIDIndices := fb.builderMappingBuildIDIndices.NewArray()
-	defer mappingBuildIDIndices.Release()
+	arrs = append(arrs, mappingBuildIDIndices)
 	mappingBuildIDDict, err := fb.builderMappingBuildIDDictUnifier.GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
 	if err != nil {
 		return nil, err
 	}
-	defer mappingBuildIDDict.Release()
+	arrs = append(arrs, mappingBuildIDDict)
 	mappingBuildIDType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.String}
 	mappingBuildID := array.NewDictionaryArray(mappingBuildIDType, mappingBuildIDIndices, mappingBuildIDDict)
-	defer mappingBuildID.Release()
+	arrs = append(arrs, mappingBuildID)
 
 	mappingFileIndices := fb.builderMappingFileIndices.NewArray()
-	defer mappingFileIndices.Release()
+	arrs = append(arrs, mappingFileIndices)
 	mappingFileDict, err := fb.builderMappingFileDictUnifier.GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
 	if err != nil {
 		return nil, err
 	}
-	defer mappingFileDict.Release()
+	arrs = append(arrs, mappingFileDict)
 	mappingFileType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.String}
 	mappingFile := array.NewDictionaryArray(mappingFileType, mappingFileIndices, mappingFileDict)
-	defer mappingFile.Release()
+	arrs = append(arrs, mappingFile)
 
 	functionNameIndices := fb.builderFunctionNameIndices.NewArray()
-	defer functionNameIndices.Release()
+	arrs = append(arrs, functionNameIndices)
 	functionNameDict, err := fb.builderFunctionNameDictUnifier.GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
 	if err != nil {
 		return nil, err
 	}
-	defer functionNameDict.Release()
+	arrs = append(arrs, functionNameDict)
 	functionNameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.String}
 	functionName := array.NewDictionaryArray(functionNameType, functionNameIndices, functionNameDict)
-	defer functionName.Release()
+	arrs = append(arrs, functionName)
 
 	functionSystemNameIndices := fb.builderFunctionSystemNameIndices.NewArray()
-	defer functionSystemNameIndices.Release()
+	arrs = append(arrs, functionSystemNameIndices)
 	functionSystemNameDict, err := fb.builderFunctionSystemNameDictUnifier.GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
 	if err != nil {
 		return nil, err
 	}
-	defer functionSystemNameDict.Release()
+	arrs = append(arrs, functionSystemNameDict)
 	functionSystemNameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.String}
 	functionSystemName := array.NewDictionaryArray(functionSystemNameType, functionSystemNameIndices, functionSystemNameDict)
-	defer functionSystemName.Release()
+	arrs = append(arrs, functionSystemName)
 
 	functionFilenameIndices := fb.builderFunctionFilenameIndices.NewArray()
-	defer functionFilenameIndices.Release()
+	arrs = append(arrs, functionFilenameIndices)
 	functionFilenameDict, err := fb.builderFunctionFilenameDictUnifier.GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
 	if err != nil {
 		return nil, err
 	}
-	defer functionFilenameDict.Release()
+	arrs = append(arrs, functionFilenameDict)
 	functionFilenameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.String}
 	functionFilename := array.NewDictionaryArray(functionFilenameType, functionFilenameIndices, functionFilenameDict)
-	defer functionFilename.Release()
+	arrs = append(arrs, functionFilename)
 
 	// This has to be here, because after calling .NewArray() on the builder,
 	// the builder is reset.
@@ -941,34 +947,34 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 		{Name: FlamegraphFieldDiff, Type: arrow.PrimitiveTypes.Int64, Nullable: true},
 	}
 
-	arrays := []arrow.Array{
-		fb.builderLabelsOnly.NewArray(),
-		fb.builderMappingStart.NewArray(),
-		fb.builderMappingLimit.NewArray(),
-		fb.builderMappingOffset.NewArray(),
-		mappingFile,
-		mappingBuildID,
-		fb.builderLocationAddress.NewArray(),
-		fb.builderLocationFolded.NewArray(),
-		fb.builderLocationLine.NewArray(),
-		fb.builderFunctionStartLine.NewArray(),
-		functionName,
-		functionSystemName,
-		functionFilename,
-		fb.builderChildren.NewArray(),
-		fb.builderCumulative.NewArray(),
-		fb.builderDiff.NewArray(),
-	}
-	defer func() {
-		for i, arr := range arrays {
-			switch i {
-			case 4, 5, 10, 11, 12:
-				// These arrays have already been defered release above where they were created.
-			default:
-				arr.Release()
-			}
-		}
-	}()
+	arrays := make([]arrow.Array, 16)
+	arrays[0] = fb.builderLabelsOnly.NewArray()
+	arrs = append(arrs, arrays[0])
+	arrays[1] = fb.builderMappingStart.NewArray()
+	arrs = append(arrs, arrays[1])
+	arrays[2] = fb.builderMappingLimit.NewArray()
+	arrs = append(arrs, arrays[2])
+	arrays[3] = fb.builderMappingOffset.NewArray()
+	arrs = append(arrs, arrays[3])
+	arrays[4] = mappingFile
+	arrays[5] = mappingBuildID
+	arrays[6] = fb.builderLocationAddress.NewArray()
+	arrs = append(arrs, arrays[6])
+	arrays[7] = fb.builderLocationFolded.NewArray()
+	arrs = append(arrs, arrays[7])
+	arrays[8] = fb.builderLocationLine.NewArray()
+	arrs = append(arrs, arrays[8])
+	arrays[9] = fb.builderFunctionStartLine.NewArray()
+	arrs = append(arrs, arrays[9])
+	arrays[10] = functionName
+	arrays[11] = functionSystemName
+	arrays[12] = functionFilename
+	arrays[13] = fb.builderChildren.NewArray()
+	arrs = append(arrs, arrays[13])
+	arrays[14] = fb.builderCumulative.NewArray()
+	arrs = append(arrs, arrays[14])
+	arrays[15] = fb.builderDiff.NewArray()
+	arrs = append(arrs, arrays[15])
 
 	for i := range fb.builderLabelFields {
 		if err := func() error {
@@ -978,13 +984,15 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 				Type: typ,
 			})
 			indices := fb.builderLabels[i].NewArray()
-			defer indices.Release()
+			arrs = append(arrs, indices)
 			dict, err := fb.builderLabelsDictUnifiers[i].GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
 			if err != nil {
 				return err
 			}
-			defer dict.Release()
-			arrays = append(arrays, array.NewDictionaryArray(typ, indices, dict))
+			arrs = append(arrs, dict)
+			dictarray := array.NewDictionaryArray(typ, indices, dict)
+			arrs = append(arrs, dictarray)
+			arrays = append(arrays, dictarray)
 			return nil
 		}(); err != nil {
 			return nil, err
