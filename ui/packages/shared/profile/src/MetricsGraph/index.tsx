@@ -43,7 +43,6 @@ interface Props {
   width?: number;
   height?: number;
   margin?: number;
-  marginRight?: number;
 }
 
 export interface HighlightedSeries {
@@ -75,7 +74,6 @@ const MetricsGraph = ({
   width = 0,
   height = 0,
   margin = 0,
-  marginRight = 0,
 }: Props): JSX.Element => {
   return (
     <RawMetricsGraph
@@ -90,7 +88,6 @@ const MetricsGraph = ({
       width={width}
       height={height}
       margin={margin}
-      marginRight={marginRight}
     />
   );
 };
@@ -118,7 +115,6 @@ export const RawMetricsGraph = ({
   width,
   height = 50,
   margin = 0,
-  marginRight = 0,
   sampleUnit,
 }: Props): JSX.Element => {
   const graph = useRef(null);
@@ -174,13 +170,14 @@ export const RawMetricsGraph = ({
   const xScale = d3
     .scaleUtc()
     .domain([from, to])
-    .range([0, width - margin - marginRight]);
+    .range([0, width - 2 * margin]);
 
   const yScale = d3
     .scaleLinear()
     // tslint:disable-next-line
     .domain([minY, maxY] as Iterable<d3.NumberValue>)
-    .range([height - margin, 0]);
+    .range([height - margin, 0])
+    .nice();
 
   const color = d3.scaleOrdinal(d3.schemeCategory10);
 
@@ -388,7 +385,7 @@ export const RawMetricsGraph = ({
         onMouseLeave={() => setHovering(false)}
       >
         <svg
-          width={`${width - margin}px`}
+          width={`${width}px`}
           height={`${height + margin}px`}
           onMouseDown={onMouseDown}
           onMouseUp={onMouseUp}
@@ -409,6 +406,85 @@ export const RawMetricsGraph = ({
             )}
           </g>
           <g transform={`translate(${margin}, ${margin})`}>
+            <g className="y axis" textAnchor="end" fontSize="10" fill="none">
+              {yScale.ticks(5).map((d, i) => (
+                <>
+                  <g
+                    key={`tick-${i}`}
+                    className="tick"
+                    /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
+                    transform={`translate(0, ${yScale(d)})`}
+                  >
+                    <line className="stroke-gray-300 dark:stroke-gray-500" x2={-6} />
+                    <text fill="currentColor" x={-9} dy={'0.32em'}>
+                      {valueFormatter(d, sampleUnit, 1)}
+                    </text>
+                  </g>
+                  <g key={`grid-${i}`}>
+                    <line
+                      className="stroke-gray-300 dark:stroke-gray-500"
+                      x1={xScale(from)}
+                      x2={xScale(to)}
+                      y1={yScale(d)}
+                      y2={yScale(d)}
+                    />
+                  </g>
+                </>
+              ))}
+              <line
+                className="stroke-gray-300 dark:stroke-gray-500"
+                x1={0}
+                x2={0}
+                y1={0}
+                y2={height - margin}
+              />
+              <line
+                className="stroke-gray-300 dark:stroke-gray-500"
+                x1={xScale(to)}
+                x2={xScale(to)}
+                y1={0}
+                y2={height - margin}
+              />
+            </g>
+            <g
+              className="x axis"
+              fill="none"
+              fontSize="10"
+              textAnchor="middle"
+              transform={`translate(0,${height - margin})`}
+            >
+              {xScale.ticks(5).map((d, i) => (
+                <>
+                  <g
+                    key={`tick-${i}`}
+                    className="tick"
+                    /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
+                    transform={`translate(${xScale(d)}, 0)`}
+                  >
+                    <line y2={6} className="stroke-gray-300 dark:stroke-gray-500" />
+                    <text fill="currentColor" dy=".71em" y={9}>
+                      {formatDate(d, formatForTimespan(from, to))}
+                    </text>
+                  </g>
+                  <g key={`grid-${i}`}>
+                    <line
+                      className="stroke-gray-300 dark:stroke-gray-500"
+                      x1={xScale(d)}
+                      x2={xScale(d)}
+                      y1={0}
+                      y2={-height + margin}
+                    />
+                  </g>
+                </>
+              ))}
+              <line
+                className="stroke-gray-300 dark:stroke-gray-500"
+                x1={xScale(from)}
+                x2={xScale(to)}
+                y1={0}
+                y2={0}
+              />
+            </g>
             <g className="lines fill-transparent">
               {series.map((s, i) => (
                 <g key={i} className="line">
@@ -448,44 +524,6 @@ export const RawMetricsGraph = ({
                 <MetricsCircle cx={selected.x} cy={selected.y} radius={5} />
               </g>
             )}
-            <g
-              className="x axis"
-              fill="none"
-              fontSize="10"
-              textAnchor="middle"
-              transform={`translate(0,${height - margin})`}
-            >
-              <line y1={0} y2={0} x1={xScale(from)} x2={xScale(to)} stroke="currentColor" />
-              {xScale.ticks(6).map((d, i) => (
-                <g
-                  key={i}
-                  className="tick"
-                  /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
-                  transform={`translate(${xScale(d)}, 0)`}
-                >
-                  <line y2={6} stroke="currentColor" />
-                  <text fill="currentColor" dy=".71em" y={9}>
-                    {formatDate(d, formatForTimespan(from, to))}
-                  </text>
-                </g>
-              ))}
-            </g>
-            <g className="y axis" textAnchor="end" fontSize="10" fill="none">
-              <line y1={0} y2={height - margin} x1={0} x2={0} stroke="currentColor" />
-              {yScale.ticks(6).map((d, i) => (
-                <g
-                  key={i}
-                  className="tick"
-                  /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
-                  transform={`translate(0, ${yScale(d)})`}
-                >
-                  <line stroke="currentColor" x2={-6} />
-                  <text fill="currentColor" x={-9} dy={'0.32em'}>
-                    {valueFormatter(d, sampleUnit, 1)}
-                  </text>
-                </g>
-              ))}
-            </g>
           </g>
         </svg>
       </div>

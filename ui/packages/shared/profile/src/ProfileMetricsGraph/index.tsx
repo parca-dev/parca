@@ -115,7 +115,7 @@ const ProfileMetricsGraph = ({
   const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to);
   const isLoaderVisible = useDelayedLoader(isLoading);
   const {loader, onError, perf} = useParcaContext();
-  const {width, height, margin, marginRight} = useMetricsGraphDimensions(comparing);
+  const {width, height, margin} = useMetricsGraphDimensions(comparing);
 
   useEffect(() => {
     if (error !== null) {
@@ -169,7 +169,6 @@ const ProfileMetricsGraph = ({
           height={height}
           width={width}
           margin={margin}
-          marginRight={marginRight}
         />
       </div>
     );
