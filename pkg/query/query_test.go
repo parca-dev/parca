@@ -106,6 +106,8 @@ func Benchmark_Query_Merge(b *testing.B) {
 
 			require.NoError(b, table.EnsureCompaction())
 
+			mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+			defer mem.AssertSize(b, 0)
 			api := NewColumnQueryAPI(
 				logger,
 				tracer,
@@ -114,14 +116,14 @@ func Benchmark_Query_Merge(b *testing.B) {
 					logger,
 					tracer,
 					query.NewEngine(
-						memory.DefaultAllocator,
+						mem,
 						colDB.TableProvider(),
 					),
 					"stacktraces",
 					parcacol.NewProfileSymbolizer(tracer, mc),
-					memory.DefaultAllocator,
+					mem,
 				),
-				memory.DefaultAllocator,
+				mem,
 				parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 				nil,
 			)
@@ -177,6 +179,8 @@ func Benchmark_ProfileTypes(b *testing.B) {
 		tracer,
 	))
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(b, 0)
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -185,14 +189,14 @@ func Benchmark_ProfileTypes(b *testing.B) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
 			parcacol.NewProfileSymbolizer(tracer, m),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 		nil,
 	)

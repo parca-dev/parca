@@ -35,7 +35,8 @@ import (
 
 func TestGenerateTable(t *testing.T) {
 	ctx := context.Background()
-	mem := memory.NewGoAllocator()
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 
 	reg := prometheus.NewRegistry()
 	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
@@ -67,6 +68,7 @@ func TestGenerateTable(t *testing.T) {
 
 	rec, cumulative, err := generateTableArrowRecord(ctx, mem, tracer, np)
 	require.NoError(t, err)
+	defer rec.Release()
 
 	require.NotNil(t, rec)
 	require.NotNil(t, cumulative)
@@ -141,7 +143,8 @@ func TestGenerateTableAggregateFlat(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	mem := memory.NewGoAllocator()
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 
 	metastore := metastore.NewInProcessClient(metastoretest.NewTestMetastore(
 		t,
@@ -220,6 +223,7 @@ func TestGenerateTableAggregateFlat(t *testing.T) {
 
 	rec, cumulative, err := generateTableArrowRecord(ctx, mem, tracer, np)
 	require.NoError(t, err)
+	defer rec.Release()
 
 	require.Equal(t, int64(4), rec.NumRows())
 	require.Equal(t, int64(10), cumulative)

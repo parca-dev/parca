@@ -54,7 +54,7 @@ jobs:
       run:
         working-directory: ./ui
     steps:
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           fetch-depth: 0 # Required to retrieve git history
       - name: Set up Node.js
@@ -66,7 +66,7 @@ jobs:
         run: yarn install --frozen-lockfile --prefer-offline && yarn build
         # 👇 Adds Chromatic as a step in the workflow
       - name: Publish to Chromatic
-        uses: chromaui/action@355e2a05a179e9e89c2b237dcd55adbeb89e577e # v1
+        uses: chromaui/action@d55d7b64ac899b457e0f8f745b67eda8a74f8cf1 # v1
         # Chromatic GitHub Action options
         with:
           # 👇 Chromatic projectToken, refer to the manage page to obtain it.
