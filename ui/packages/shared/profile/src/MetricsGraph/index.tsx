@@ -360,6 +360,7 @@ export const RawMetricsGraph = ({
   };
 
   const selected = findSelectedProfile();
+
   return (
     <>
       {highlighted != null && hovering && !dragging && pos[0] !== 0 && pos[1] !== 0 && (
@@ -387,7 +388,7 @@ export const RawMetricsGraph = ({
         onMouseLeave={() => setHovering(false)}
       >
         <svg
-          width={`${width}px`}
+          width={`${width - margin}px`}
           height={`${height + margin}px`}
           onMouseDown={onMouseDown}
           onMouseUp={onMouseUp}
@@ -454,7 +455,8 @@ export const RawMetricsGraph = ({
               textAnchor="middle"
               transform={`translate(0,${height - margin})`}
             >
-              {xScale.ticks(5).map((d, i) => (
+              <line y1={0} y2={0} x1={xScale(from)} x2={xScale(to)} stroke="currentColor" />
+              {xScale.ticks(6).map((d, i) => (
                 <g
                   key={i}
                   className="tick"
@@ -469,7 +471,8 @@ export const RawMetricsGraph = ({
               ))}
             </g>
             <g className="y axis" textAnchor="end" fontSize="10" fill="none">
-              {yScale.ticks(3).map((d, i) => (
+              <line y1={0} y2={height - margin} x1={0} x2={0} stroke="currentColor" />
+              {yScale.ticks(6).map((d, i) => (
                 <g
                   key={i}
                   className="tick"
