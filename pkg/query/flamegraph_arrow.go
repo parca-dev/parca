@@ -56,7 +56,14 @@ const (
 	FlamegraphFieldDiff       = "diff"
 )
 
-func GenerateFlamegraphArrow(ctx context.Context, mem memory.Allocator, tracer trace.Tracer, p profile.Profile, aggregate []string, trimFraction float32) (*queryv1alpha1.FlamegraphArrow, int64, error) {
+func GenerateFlamegraphArrow(
+	ctx context.Context,
+	mem memory.Allocator,
+	tracer trace.Tracer,
+	p profile.Profile,
+	aggregate []string,
+	trimFraction float32,
+) (*queryv1alpha1.FlamegraphArrow, int64, error) {
 	ctx, span := tracer.Start(ctx, "GenerateFlamegraphArrow")
 	defer span.End()
 
@@ -168,7 +175,6 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 			// every new sample resets the childRow to -1 indicating that we start with a leaf again.
 			// pprof stores locations in reverse order, thus we loop over locations in reverse order.
-		locations:
 			for j := int(end - 1); j >= int(beg); j-- {
 				// If the location has no lines, it's not symbolized.
 				// We work with the location address instead.
@@ -206,7 +212,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					}
 					if merged {
 						fb.height++
-						continue locations
+						continue
 					}
 
 					if isRoot {
@@ -222,12 +228,13 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 					fb.parent.Set(row)
 					row = fb.builderCumulative.Len()
+					continue
 				}
 
-				llOffsetStart, llOffsetEnd = r.Lines.ValueOffsets(j)
-			stacktraces:
 				// just like locations, pprof stores lines in reverse order.
 				for k := int(llOffsetEnd - 1); k >= int(llOffsetStart); k-- {
+					isRoot = isLocationRoot && !(aggregateLabels && len(sampleLabels) > 0) && k == int(llOffsetEnd-1)
+
 					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
 					if isRoot {
 						fb.compareRows = copyChildren(fb.compareRows, fb.rootsRow[unsafeString(lsbytes)])
@@ -243,7 +250,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					}
 					if merged {
 						fb.height++
-						continue stacktraces
+						continue
 					}
 
 					if isRoot {
@@ -672,17 +679,19 @@ func (fb *flamegraphBuilder) equalFunctionName(
 	lineRow,
 	flamegraphRow int,
 ) bool {
-	isNull := fb.builderFunctionNameIndices.IsNull(flamegraphRow)
-	if !isNull {
-		rowFunctionNameIndex := fb.builderFunctionNameIndices.Value(flamegraphRow)
-		translatedFunctionNameIndex := t.functionName.indices.Value(r.LineFunctionName.GetValueIndex(lineRow))
-		return rowFunctionNameIndex == translatedFunctionNameIndex
+	fgRowFunctionIsNull := fb.builderFunctionNameIndices.IsNull(flamegraphRow)
+	lineRowFunctionIsNull := r.LineFunctionName.IsNull(lineRow)
+
+	if fgRowFunctionIsNull != lineRowFunctionIsNull {
+		return false
 	}
-	// isNull
-	if !r.LineFunction.IsValid(lineRow) || len(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow))) == 0 {
+	if fgRowFunctionIsNull && lineRowFunctionIsNull {
 		return true
 	}
-	return false
+
+	rowFunctionNameIndex := fb.builderFunctionNameIndices.Value(flamegraphRow)
+	translatedFunctionNameIndex := t.functionName.indices.Value(r.LineFunctionName.GetValueIndex(lineRow))
+	return rowFunctionNameIndex == translatedFunctionNameIndex
 }
 
 func copyChildren(compareRows, children []int) []int {

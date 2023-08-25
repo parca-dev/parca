@@ -158,10 +158,9 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     }
     setActionButtons(
       <div className="flex w-full justify-end gap-2 pb-2">
-        <div className="flex w-full items-center justify-between space-x-2">
+        <div className="ml-2 flex w-full items-end justify-between gap-2">
           {table !== undefined && <GroupAndSortActionButtons navigateTo={navigateTo} />}
           <div>
-            <label className="inline-block"></label>
             <Button
               color="neutral"
               onClick={() => setNewCurPath([])}
