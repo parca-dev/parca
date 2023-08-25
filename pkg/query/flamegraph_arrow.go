@@ -228,6 +228,8 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			stacktraces:
 				// just like locations, pprof stores lines in reverse order.
 				for k := int(llOffsetEnd - 1); k >= int(llOffsetStart); k-- {
+					isRoot = isLocationRoot && !(aggregateLabels && len(sampleLabels) > 0) && k == int(llOffsetEnd-1)
+
 					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
 					if isRoot {
 						fb.compareRows = copyChildren(fb.compareRows, fb.rootsRow[unsafeString(lsbytes)])
