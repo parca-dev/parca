@@ -12,6 +12,7 @@
 // limitations under the License.
 
 import {QueryServiceClient} from '@parca/client';
+import {Card} from '@parca/components';
 import {Query} from '@parca/parser';
 import type {NavigateFunction} from '@parca/utilities';
 
@@ -57,8 +58,8 @@ const ProfileExplorerCompare = ({
 
   return (
     <>
-      <div className="grid grid-cols-2">
-        <div className="pr-2">
+      <div className="flex justify-between gap-2">
+        <Card className="p-2">
           <ProfileSelector
             queryClient={queryClient}
             querySelection={queryA}
@@ -70,8 +71,8 @@ const ProfileExplorerCompare = ({
             comparing={true}
             onCompareProfile={() => {}}
           />
-        </div>
-        <div className="pl-2">
+        </Card>
+        <Card className="p-2">
           <ProfileSelector
             queryClient={queryClient}
             querySelection={queryB}
@@ -83,17 +84,21 @@ const ProfileExplorerCompare = ({
             comparing={true}
             onCompareProfile={() => {}}
           />
-        </div>
+        </Card>
       </div>
       <div className="grid grid-cols-1">
         {profileA != null && profileB != null ? (
-          <ProfileViewWithData
-            navigateTo={navigateTo}
-            queryClient={queryClient}
-            profileSource={
-              new ProfileDiffSource(profileA.ProfileSource(), profileB.ProfileSource())
-            }
-          />
+          <div className="mt-2">
+            <Card className="px-6 py-4">
+              <ProfileViewWithData
+                navigateTo={navigateTo}
+                queryClient={queryClient}
+                profileSource={
+                  new ProfileDiffSource(profileA.ProfileSource(), profileB.ProfileSource())
+                }
+              />
+            </Card>
+          </div>
         ) : (
           <div>
             <div className="my-20 text-center">
