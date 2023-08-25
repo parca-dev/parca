@@ -19,7 +19,6 @@ import {ProfileTypesResponse, QueryServiceClient} from '@parca/client';
 import {
   Button,
   ButtonGroup,
-  Card,
   DateTimeRange,
   DateTimeRangePicker,
   IconButton,

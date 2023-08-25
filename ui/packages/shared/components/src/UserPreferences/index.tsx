@@ -47,7 +47,7 @@ const UserPreferences = ({customButton}: {customButton?: JSX.Element}): JSX.Elem
 
   return (
     <div>
-      {customButton ? (
+      {customButton != null ? (
         cloneElement(customButton, {
           onClick: () => setIsOpen(!isOpen),
         })

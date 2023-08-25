@@ -84,10 +84,10 @@ const Select = ({
               {[className]: className.length > 0}
             )}
           >
-            <div className={cx(icon ? '' : 'block overflow-x-hidden text-ellipsis')}>
+            <div className={cx(icon != null ? '' : 'block overflow-x-hidden text-ellipsis')}>
               {selection?.key !== '' ? selection.element.active : placeholder}
             </div>
-            <div className={cx(icon ? '' : 'pointer-events-none text-gray-400')}>
+            <div className={cx(icon != null ? '' : 'pointer-events-none text-gray-400')}>
               {icon ?? <Icon icon="heroicons:chevron-up-down-20-solid" aria-hidden="true" />}
             </div>
           </Listbox.Button>
