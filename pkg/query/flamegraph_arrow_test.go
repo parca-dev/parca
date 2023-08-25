@@ -187,7 +187,8 @@ func requireColumnChildren(t *testing.T, record arrow.Record, expected [][]uint3
 
 func TestGenerateFlamegraphArrow(t *testing.T) {
 	ctx := context.Background()
-	mem := memory.NewGoAllocator()
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	var err error
 
 	l := metastoretest.NewTestMetastore(
@@ -408,6 +409,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 
 			fa, cumulative, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, np, tc.aggregate, 0)
 			require.NoError(t, err)
+			defer fa.Release()
 
 			require.Equal(t, tc.cumulative, cumulative)
 			require.Equal(t, tc.height, height)
@@ -460,7 +462,8 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	mem := memory.NewGoAllocator()
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
@@ -518,6 +521,7 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 
 	record, total, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, newProfile, []string{FlamegraphFieldFunctionName}, 0)
 	require.NoError(t, err)
+	defer record.Release()
 
 	require.Equal(t, int64(1), total)
 	require.Equal(t, int32(5), height)
@@ -549,7 +553,8 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 
 func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 	ctx := context.Background()
-	mem := memory.NewGoAllocator()
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	var err error
 
 	l := metastoretest.NewTestMetastore(
@@ -661,6 +666,7 @@ func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 			require.NoError(t, err)
 			fa, cumulative, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, np, tc.aggregate, 0)
 			require.NoError(t, err)
+			defer fa.Release()
 
 			require.Equal(t, tc.cumulative, cumulative)
 			require.Equal(t, tc.height, height)

@@ -81,6 +81,8 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 	)
 	mc := metastore.NewInProcessClient(m)
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -89,14 +91,14 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
 			parcacol.NewProfileSymbolizer(tracer, mc),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 		nil,
 	)
@@ -208,6 +210,8 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 		require.NoError(t, err)
 	}
 
+	// TODO: this should used a checked allocator but there is a bug in Frostdb(https://github.com/polarsignals/frostdb/issues/499) that causes it to leak allocations.
+	mem := memory.DefaultAllocator
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -216,14 +220,14 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
 			parcacol.NewProfileSymbolizer(tracer, mc),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 		nil,
 	)
@@ -307,6 +311,8 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -315,14 +321,14 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
 			parcacol.NewProfileSymbolizer(tracer, mc),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 		nil,
 	)
@@ -440,6 +446,8 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	// TODO: this should used a checked allocator but there is a bug in Frostdb(https://github.com/polarsignals/frostdb/issues/499) that causes it to leak allocations.
+	mem := memory.DefaultAllocator
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -448,14 +456,14 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
 			parcacol.NewProfileSymbolizer(tracer, mc),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 		nil,
 	)
@@ -546,6 +554,8 @@ func TestColumnQueryAPIQueryCumulative(t *testing.T) {
 		require.NoError(t, err)
 	}
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -554,14 +564,14 @@ func TestColumnQueryAPIQueryCumulative(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
 			parcacol.NewProfileSymbolizer(tracer, mc),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 		nil,
 	)
@@ -759,6 +769,8 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	// TODO: this should used a checked allocator but there is a bug in Frostdb(https://github.com/polarsignals/frostdb/issues/499) that causes it to leak allocations.
+	mem := memory.DefaultAllocator
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -767,14 +779,14 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
 			parcacol.NewProfileSymbolizer(tracer, mc),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 		nil,
 	)
@@ -945,6 +957,8 @@ func TestColumnQueryAPITypes(t *testing.T) {
 
 	require.NoError(t, table.EnsureCompaction())
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -953,14 +967,14 @@ func TestColumnQueryAPITypes(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
 			parcacol.NewProfileSymbolizer(tracer, mc),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 		nil,
 	)
@@ -1042,6 +1056,8 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -1050,14 +1066,14 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
 			parcacol.NewProfileSymbolizer(tracer, mc),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 		nil,
 	)
@@ -1131,6 +1147,8 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -1139,14 +1157,14 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
 			parcacol.NewProfileSymbolizer(tracer, mc),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 		nil,
 	)
@@ -1176,6 +1194,8 @@ func BenchmarkQuery(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(b, 0)
 	for i := 0; i < b.N; i++ {
 		_, _ = RenderReport(
 			ctx,
@@ -1186,7 +1206,7 @@ func BenchmarkQuery(b *testing.B) {
 			0,
 			[]string{FlamegraphFieldFunctionName},
 			NewTableConverterPool(),
-			memory.DefaultAllocator,
+			mem,
 			parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 			nil,
 			"",
