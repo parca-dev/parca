@@ -17,6 +17,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sort"
 	"unsafe"
 
 	"github.com/apache/arrow/go/v14/arrow"
@@ -272,6 +273,17 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	// the last row can also have the most height.
 	fb.maxHeight = max(fb.maxHeight, fb.height)
 
+	// We need to set the first row's cumulative and diff values.
+	// We unify the dictionaries unifiers and indices into actual dictionaries.
+	// These are need for trimming and compaction later on.
+	if err := fb.prepareNewRecord(); err != nil {
+		return nil, 0, 0, 0, fmt.Errorf("failed to prepare the new record: %w", err)
+	}
+
+	if err := fb.trim(ctx, tracer, trimFraction); err != nil {
+		return nil, 0, 0, 0, fmt.Errorf("failed to trim flame graph: %w", err)
+	}
+
 	_, spanNewRecord := tracer.Start(ctx, "NewRecord")
 	defer spanNewRecord.End()
 
@@ -281,7 +293,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	}
 	spanNewRecord.SetAttributes(attribute.Int64("rows", record.NumRows()))
 
-	return record, fb.cumulative, fb.maxHeight + 1, 0, nil
+	return record, fb.cumulative, fb.maxHeight + 1, fb.trimmed, nil
 }
 
 func (fb *flamegraphBuilder) labelsEqual(
@@ -494,6 +506,8 @@ func (fb *flamegraphBuilder) ensureLabelColumnsComplete() {
 }
 
 func (fb *flamegraphBuilder) addLabelColumn(field arrow.Field) {
+	// We need to make sure the field has an int32 index for now.
+	field.Type = &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
 	fb.builderLabelsDictUnifiers = append(fb.builderLabelsDictUnifiers, array.NewBinaryDictionaryUnifier(fb.pool))
 	fb.builderLabels = append(fb.builderLabels, builder.NewOptInt32Builder(arrow.PrimitiveTypes.Int32))
 	fb.builderLabelFields = append(fb.builderLabelFields, field)
@@ -713,6 +727,8 @@ type flamegraphBuilder struct {
 	diff int64
 	// This keeps track of the max height of the flame graph.
 	maxHeight int32
+	// trimmed keeps track of the values that were trimmed from the flame graph.
+	trimmed int64
 	// parent keeps track of the parent of a row. This is used to build the children array.
 	parent parent
 	// This keeps track of a row's children and will be converted to an arrow array of lists at the end.
@@ -754,6 +770,15 @@ type flamegraphBuilder struct {
 	builderChildrenValues                *array.Uint32Builder
 	builderCumulative                    *builder.OptInt64Builder
 	builderDiff                          *builder.OptInt64Builder
+
+	// Only at the last step when preparing the new record these are populated.
+	// They are also used to create compacted dictionaries and after that replaced by them.
+	mappingBuildID     *array.Dictionary
+	mappingFile        *array.Dictionary
+	functionName       *array.Dictionary
+	functionSystemName *array.Dictionary
+	functionFilename   *array.Dictionary
+	labels             []*array.Dictionary
 
 	labelNameIndex map[string]int
 }
@@ -832,34 +857,124 @@ func newFlamegraphBuilder(
 	return fb, nil
 }
 
-// NewRecord returns a new record from the builders.
-// It adds the children to the children column and the labels intersection to the labels column.
-// Finally, it assembles all columns from the builders into an arrow record.
-func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
-	cleanupArrs := make([]arrow.Array, 0, 26+(2*len(fb.builderLabelFields)))
+func (fb *flamegraphBuilder) prepareNewRecord() error {
+	// TODO: Do we want to clean up the builders too?
+	cleanupArrs := make([]releasable, 0, 10)
 	defer func() {
 		for _, arr := range cleanupArrs {
 			arr.Release()
 		}
 	}()
+
 	// We have manually tracked the total cumulative value.
 	// Now we set/overwrite the cumulative value for the root row (which is always the 0 row in our flame graphs).
 	fb.builderCumulative.Set(0, fb.cumulative)
 	fb.builderDiff.Set(0, fb.diff)
 
+	// At this point we don't care for the individual label roots anymore.
+	// We have grouped by them and their metadata before.
+	// We can combine all of them into the final children root
+	// making our lives easier later on when trimming and then creating the arrow array.
+	fb.children[0] = nil
+
+	// TODO: This shouldn't be here. Either the new hashing is stable or it should be fixed in the tests.
+	rootsRowKeys := make([]uint64, 0, len(fb.rootsRow))
+	for k := range fb.rootsRow {
+		rootsRowKeys = append(rootsRowKeys, k)
+	}
+	sort.Slice(rootsRowKeys, func(i, j int) bool { return rootsRowKeys[i] < rootsRowKeys[j] })
+
+	for _, key := range rootsRowKeys {
+		for _, child := range fb.rootsRow[key] {
+			fb.children[0] = append(fb.children[0], child)
+		}
+	}
+
+	// We want to unify the dictionaries after having created the flame graph now.
+	// They are going to be trimmed and compacted in the next step.
+
+	mappingBuildIDIndices := fb.builderMappingBuildIDIndices.NewArray()
+	cleanupArrs = append(cleanupArrs, mappingBuildIDIndices)
+	mappingBuildIDDict, err := fb.builderMappingBuildIDDictUnifier.GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
+	if err != nil {
+		return err
+	}
+	cleanupArrs = append(cleanupArrs, mappingBuildIDDict)
+	mappingBuildIDType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
+	fb.mappingBuildID = array.NewDictionaryArray(mappingBuildIDType, mappingBuildIDIndices, mappingBuildIDDict)
+
+	mappingFileIndices := fb.builderMappingFileIndices.NewArray()
+	cleanupArrs = append(cleanupArrs, mappingFileIndices)
+	mappingFileDict, err := fb.builderMappingFileDictUnifier.GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
+	if err != nil {
+		return err
+	}
+	cleanupArrs = append(cleanupArrs, mappingFileDict)
+	mappingFileType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
+	fb.mappingFile = array.NewDictionaryArray(mappingFileType, mappingFileIndices, mappingFileDict)
+
+	functionNameIndices := fb.builderFunctionNameIndices.NewArray()
+	cleanupArrs = append(cleanupArrs, functionNameIndices)
+	functionNameDict, err := fb.builderFunctionNameDictUnifier.GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
+	if err != nil {
+		return err
+	}
+	cleanupArrs = append(cleanupArrs, functionNameDict)
+	functionNameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
+	fb.functionName = array.NewDictionaryArray(functionNameType, functionNameIndices, functionNameDict)
+
+	functionSystemNameIndices := fb.builderFunctionSystemNameIndices.NewArray()
+	cleanupArrs = append(cleanupArrs, functionSystemNameIndices)
+	functionSystemNameDict, err := fb.builderFunctionSystemNameDictUnifier.GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
+	if err != nil {
+		return err
+	}
+	cleanupArrs = append(cleanupArrs, functionSystemNameDict)
+	functionSystemNameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
+	fb.functionSystemName = array.NewDictionaryArray(functionSystemNameType, functionSystemNameIndices, functionSystemNameDict)
+
+	functionFilenameIndices := fb.builderFunctionFilenameIndices.NewArray()
+	cleanupArrs = append(cleanupArrs, functionFilenameIndices)
+	functionFilenameDict, err := fb.builderFunctionFilenameDictUnifier.GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
+	if err != nil {
+		return err
+	}
+	cleanupArrs = append(cleanupArrs, functionFilenameDict)
+	functionFilenameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
+	fb.functionFilename = array.NewDictionaryArray(functionFilenameType, functionFilenameIndices, functionFilenameDict)
+
+	fb.ensureLabelColumnsComplete()
+
+	for i := range fb.builderLabels {
+		indices := fb.builderLabels[i].NewArray()
+		cleanupArrs = append(cleanupArrs, indices)
+		dict, err := fb.builderLabelsDictUnifiers[i].GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
+		if err != nil {
+			return err
+		}
+		cleanupArrs = append(cleanupArrs, dict)
+		typ := &arrow.DictionaryType{IndexType: indices.DataType(), ValueType: dict.DataType()}
+		fb.labels = append(fb.labels, array.NewDictionaryArray(typ, indices, dict))
+	}
+
+	return nil
+}
+
+// NewRecord returns a new record from the builders.
+// It adds the children to the children column and the labels intersection to the labels column.
+// Finally, it assembles all columns from the builders into an arrow record.
+func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
+	cleanupArrs := make([]arrow.Array, 0, 16+(2*len(fb.builderLabelFields)))
+	defer func() {
+		for _, arr := range cleanupArrs {
+			arr.Release()
+		}
+	}()
+
 	// We have manually tracked each row's children.
 	// So now we need to iterate over all rows in the record and append their children.
 	// We cannot do this while building the rows as we need to append the children while iterating over the rows.
 	for i := 0; i < fb.builderCumulative.Len(); i++ {
-		if i == 0 {
-			fb.builderChildren.Append(true)
-			for _, sampleLabelChildren := range fb.rootsRow {
-				for _, child := range sampleLabelChildren {
-					fb.builderChildrenValues.Append(uint32(child))
-				}
-			}
-			continue
-		}
 		if len(fb.children[i]) == 0 {
 			fb.builderChildren.AppendNull() // leaf
 		} else {
@@ -869,62 +984,6 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 			}
 		}
 	}
-	fb.ensureLabelColumnsComplete()
-
-	mappingBuildIDIndices := fb.builderMappingBuildIDIndices.NewArray()
-	cleanupArrs = append(cleanupArrs, mappingBuildIDIndices)
-	mappingBuildIDDict, err := fb.builderMappingBuildIDDictUnifier.GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
-	if err != nil {
-		return nil, err
-	}
-	cleanupArrs = append(cleanupArrs, mappingBuildIDDict)
-	mappingBuildIDType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
-	mappingBuildID := array.NewDictionaryArray(mappingBuildIDType, mappingBuildIDIndices, mappingBuildIDDict)
-	cleanupArrs = append(cleanupArrs, mappingBuildID)
-
-	mappingFileIndices := fb.builderMappingFileIndices.NewArray()
-	cleanupArrs = append(cleanupArrs, mappingFileIndices)
-	mappingFileDict, err := fb.builderMappingFileDictUnifier.GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
-	if err != nil {
-		return nil, err
-	}
-	cleanupArrs = append(cleanupArrs, mappingFileDict)
-	mappingFileType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
-	mappingFile := array.NewDictionaryArray(mappingFileType, mappingFileIndices, mappingFileDict)
-	cleanupArrs = append(cleanupArrs, mappingFile)
-
-	functionNameIndices := fb.builderFunctionNameIndices.NewArray()
-	cleanupArrs = append(cleanupArrs, functionNameIndices)
-	functionNameDict, err := fb.builderFunctionNameDictUnifier.GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
-	if err != nil {
-		return nil, err
-	}
-	cleanupArrs = append(cleanupArrs, functionNameDict)
-	functionNameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
-	functionName := array.NewDictionaryArray(functionNameType, functionNameIndices, functionNameDict)
-	cleanupArrs = append(cleanupArrs, functionName)
-
-	functionSystemNameIndices := fb.builderFunctionSystemNameIndices.NewArray()
-	cleanupArrs = append(cleanupArrs, functionSystemNameIndices)
-	functionSystemNameDict, err := fb.builderFunctionSystemNameDictUnifier.GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
-	if err != nil {
-		return nil, err
-	}
-	cleanupArrs = append(cleanupArrs, functionSystemNameDict)
-	functionSystemNameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
-	functionSystemName := array.NewDictionaryArray(functionSystemNameType, functionSystemNameIndices, functionSystemNameDict)
-	cleanupArrs = append(cleanupArrs, functionSystemName)
-
-	functionFilenameIndices := fb.builderFunctionFilenameIndices.NewArray()
-	cleanupArrs = append(cleanupArrs, functionFilenameIndices)
-	functionFilenameDict, err := fb.builderFunctionFilenameDictUnifier.GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
-	if err != nil {
-		return nil, err
-	}
-	cleanupArrs = append(cleanupArrs, functionFilenameDict)
-	functionFilenameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
-	functionFilename := array.NewDictionaryArray(functionFilenameType, functionFilenameIndices, functionFilenameDict)
-	cleanupArrs = append(cleanupArrs, functionFilename)
 
 	// This has to be here, because after calling .NewArray() on the builder,
 	// the builder is reset.
@@ -935,24 +994,24 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 		{Name: FlamegraphFieldMappingStart, Type: arrow.PrimitiveTypes.Uint64},
 		{Name: FlamegraphFieldMappingLimit, Type: arrow.PrimitiveTypes.Uint64},
 		{Name: FlamegraphFieldMappingOffset, Type: arrow.PrimitiveTypes.Uint64},
-		{Name: FlamegraphFieldMappingFile, Type: mappingFileType},
-		{Name: FlamegraphFieldMappingBuildID, Type: mappingBuildIDType},
+		{Name: FlamegraphFieldMappingFile, Type: fb.mappingFile.DataType()},
+		{Name: FlamegraphFieldMappingBuildID, Type: fb.mappingBuildID.DataType()},
 		// Location
 		{Name: FlamegraphFieldLocationAddress, Type: arrow.PrimitiveTypes.Uint64},
 		{Name: FlamegraphFieldLocationFolded, Type: arrow.FixedWidthTypes.Boolean},
 		{Name: FlamegraphFieldLocationLine, Type: arrow.PrimitiveTypes.Int64},
 		// Function
 		{Name: FlamegraphFieldFunctionStartLine, Type: arrow.PrimitiveTypes.Int64},
-		{Name: FlamegraphFieldFunctionName, Type: functionNameType},
-		{Name: FlamegraphFieldFunctionSystemName, Type: functionSystemNameType},
-		{Name: FlamegraphFieldFunctionFileName, Type: functionFilenameType},
+		{Name: FlamegraphFieldFunctionName, Type: fb.functionName.DataType()},
+		{Name: FlamegraphFieldFunctionSystemName, Type: fb.functionSystemName.DataType()},
+		{Name: FlamegraphFieldFunctionFileName, Type: fb.functionFilename.DataType()},
 		// Values
 		{Name: FlamegraphFieldChildren, Type: arrow.ListOf(arrow.PrimitiveTypes.Uint32)},
 		{Name: FlamegraphFieldCumulative, Type: arrow.PrimitiveTypes.Int64},
 		{Name: FlamegraphFieldDiff, Type: arrow.PrimitiveTypes.Int64, Nullable: true},
 	}
 
-	arrays := make([]arrow.Array, 16)
+	arrays := make([]arrow.Array, 16+len(fb.labels))
 	arrays[0] = fb.builderLabelsOnly.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[0])
 	arrays[1] = fb.builderMappingStart.NewArray()
@@ -961,8 +1020,8 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	cleanupArrs = append(cleanupArrs, arrays[2])
 	arrays[3] = fb.builderMappingOffset.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[3])
-	arrays[4] = mappingFile
-	arrays[5] = mappingBuildID
+	arrays[4] = fb.mappingFile
+	arrays[5] = fb.mappingBuildID
 	arrays[6] = fb.builderLocationAddress.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[6])
 	arrays[7] = fb.builderLocationFolded.NewArray()
@@ -971,9 +1030,9 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	cleanupArrs = append(cleanupArrs, arrays[8])
 	arrays[9] = fb.builderFunctionStartLine.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[9])
-	arrays[10] = functionName
-	arrays[11] = functionSystemName
-	arrays[12] = functionFilename
+	arrays[10] = fb.functionName
+	arrays[11] = fb.functionSystemName
+	arrays[12] = fb.functionFilename
 	arrays[13] = fb.builderChildren.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[13])
 	arrays[14] = fb.builderCumulative.NewArray()
@@ -981,33 +1040,16 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	arrays[15] = fb.builderDiff.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[15])
 
-	for i := range fb.builderLabelFields {
-		if err := func() error {
-			typ := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
-			fields = append(fields, arrow.Field{
-				Name: fb.builderLabelFields[i].Name,
-				Type: typ,
-			})
-			indices := fb.builderLabels[i].NewArray()
-			cleanupArrs = append(cleanupArrs, indices)
-			dict, err := fb.builderLabelsDictUnifiers[i].GetResultWithIndexType(arrow.PrimitiveTypes.Int32)
-			if err != nil {
-				return err
-			}
-			cleanupArrs = append(cleanupArrs, dict)
-			dictarray := array.NewDictionaryArray(typ, indices, dict)
-			cleanupArrs = append(cleanupArrs, dictarray)
-			arrays = append(arrays, dictarray)
-			return nil
-		}(); err != nil {
-			return nil, err
-		}
+	for i, field := range fb.builderLabelFields {
+		fields = append(fields, field)
+		arrays[16+i] = fb.labels[i]
 	}
 
 	return array.NewRecord(
 		arrow.NewSchema(fields, nil),
 		arrays,
-		int64(numRows)), nil
+		int64(numRows),
+	), nil
 }
 
 func (fb *flamegraphBuilder) Release() {
@@ -1176,8 +1218,6 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 		copy(newChildren, fb.children)
 		fb.children = newChildren
 	}
-	// Add this label row to the root row's children.
-	fb.children[0] = append(fb.children[0], row)
 
 	fb.builderLabelsOnly.Append(true)
 	fb.builderMappingStart.AppendNull()
@@ -1207,6 +1247,234 @@ func (fb *flamegraphBuilder) addRowValues(r *profile.RecordReader, row, sampleRo
 	fb.builderDiff.Add(row, r.Diff.Value(sampleRow))
 }
 
+func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, threshold float32) error {
+	_, span := tracer.Start(ctx, "trim")
+	defer span.End()
+
+	releasers := make([]releasable, 0, 3)
+	defer func() {
+		for _, r := range releasers {
+			r.Release()
+		}
+	}()
+
+	trimmedLabelsOnly := array.NewBooleanBuilder(fb.pool)
+	trimmedLabelsExist := builder.NewOptBooleanBuilder(arrow.FixedWidthTypes.Boolean)
+	trimmedMappingStart := array.NewUint64Builder(fb.pool)
+	trimmedMappingLimit := array.NewUint64Builder(fb.pool)
+	trimmedMappingOffset := array.NewUint64Builder(fb.pool)
+	trimmedMappingFileIndices := array.NewInt32Builder(fb.pool)
+	trimmedMappingBuildIDIndices := array.NewInt32Builder(fb.pool)
+	trimmedLocationAddress := array.NewUint64Builder(fb.pool)
+	trimmedLocationFolded := builder.NewOptBooleanBuilder(arrow.FixedWidthTypes.Boolean)
+	trimmedLocationLine := builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
+	trimmedFunctionStartLine := builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
+	trimmedFunctionNameIndices := array.NewInt32Builder(fb.pool)
+	trimmedFunctionSystemNameIndices := array.NewInt32Builder(fb.pool)
+	trimmedFunctionFilenameIndices := array.NewInt32Builder(fb.pool)
+	trimmedCumulative := builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
+	trimmedDiff := builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
+
+	releasers = append(releasers,
+		trimmedMappingFileIndices,
+		trimmedMappingBuildIDIndices,
+		trimmedFunctionNameIndices,
+		trimmedFunctionSystemNameIndices,
+		trimmedFunctionFilenameIndices,
+	)
+
+	var trimmedLabelsIndices []*array.Int32Builder
+	for range fb.labels {
+		ib := array.NewInt32Builder(fb.pool)
+		trimmedLabelsIndices = append(trimmedLabelsIndices, ib)
+		releasers = append(releasers, ib)
+	}
+
+	trimmedChildren := make([][]int, len(fb.children))
+
+	// initialize the queue with the root rows' children. It usually has the most amount of children.
+	trimmingQueue := queue{elements: make([]trimmingElement, 0, len(fb.children[0]))}
+	trimmingQueue.push(trimmingElement{row: 0})
+
+	// keep processing new elements until the queue is empty
+	for trimmingQueue.len() > 0 {
+		// pop the first item from the queue
+		te := trimmingQueue.pop()
+
+		copyBoolBuilderValue(fb.builderLabelsOnly, trimmedLabelsOnly, te.row)
+		copyOptBooleanBuilderValue(fb.builderLabelsExist, trimmedLabelsExist, te.row)
+		copyUint64BuilderValue(fb.builderMappingStart, trimmedMappingStart, te.row)
+		copyUint64BuilderValue(fb.builderMappingLimit, trimmedMappingLimit, te.row)
+		copyUint64BuilderValue(fb.builderMappingOffset, trimmedMappingOffset, te.row)
+		appendDictionaryIndex(fb.mappingFile, trimmedMappingFileIndices, te.row)
+		appendDictionaryIndex(fb.mappingBuildID, trimmedMappingBuildIDIndices, te.row)
+		copyUint64BuilderValue(fb.builderLocationAddress, trimmedLocationAddress, te.row)
+		copyOptBooleanBuilderValue(fb.builderLocationFolded, trimmedLocationFolded, te.row)
+		copyOptInt64BuilderValue(fb.builderLocationLine, trimmedLocationLine, te.row)
+		copyOptInt64BuilderValue(fb.builderFunctionStartLine, trimmedFunctionStartLine, te.row)
+		appendDictionaryIndex(fb.functionName, trimmedFunctionNameIndices, te.row)
+		appendDictionaryIndex(fb.functionSystemName, trimmedFunctionSystemNameIndices, te.row)
+		appendDictionaryIndex(fb.functionFilename, trimmedFunctionFilenameIndices, te.row)
+		for i := range fb.labels {
+			appendDictionaryIndex(fb.labels[i], trimmedLabelsIndices[i], te.row)
+		}
+
+		// The following two will never be null.
+		cum := fb.builderCumulative.Value(te.row)
+		trimmedCumulative.Append(cum)
+		trimmedDiff.Append(fb.builderDiff.Value(te.row))
+
+		// This gets the newly inserted row's index.
+		// It is used further down as the children's parent value when added to the trimmingQueue.
+		row := trimmedCumulative.Len() - 1
+
+		// Add this new row as child to its parent if not the root row (index 0).
+		if row != 0 {
+			if len(trimmedChildren[te.parent]) == 0 {
+				trimmedChildren[te.parent] = []int{row}
+			} else {
+				trimmedChildren[te.parent] = append(trimmedChildren[te.parent], row)
+			}
+		}
+
+		cumThreshold := float32(cum) * threshold
+		for _, cr := range fb.children[te.row] {
+			if v := fb.builderCumulative.Value(cr); v > int64(cumThreshold) {
+				// this row is above the threshold, so we need to keep it
+				// add this row to the queue to check its children.
+				trimmingQueue.push(trimmingElement{row: cr, parent: row})
+			} else {
+				// this row is below the threshold, so we need to trim it
+				fb.trimmed += v
+			}
+		}
+	}
+
+	// Next we just keep the values in the dictionaries that we need after trimming.
+	var err error
+	trimmedMappingBuildIDIndicesArray := trimmedMappingBuildIDIndices.NewArray()
+	releasers = append(releasers, trimmedMappingBuildIDIndicesArray)
+	fb.mappingBuildID, err = compactDictionary(fb.pool, array.NewDictionaryArray(
+		&arrow.DictionaryType{IndexType: trimmedMappingBuildIDIndicesArray.DataType(), ValueType: fb.mappingBuildID.DataType()},
+		trimmedMappingBuildIDIndicesArray,
+		fb.mappingBuildID.Dictionary(),
+	))
+	if err != nil {
+		return err
+	}
+	trimmedMappingFileIndicesArray := trimmedMappingFileIndices.NewArray()
+	releasers = append(releasers, trimmedMappingFileIndicesArray)
+	fb.mappingFile, err = compactDictionary(fb.pool, array.NewDictionaryArray(
+		&arrow.DictionaryType{IndexType: trimmedMappingFileIndicesArray.DataType(), ValueType: fb.mappingFile.DataType()},
+		trimmedMappingFileIndicesArray,
+		fb.mappingFile.Dictionary(),
+	))
+	if err != nil {
+		return err
+	}
+	trimmedFunctionNameIndicesArray := trimmedFunctionNameIndices.NewArray()
+	releasers = append(releasers, trimmedFunctionNameIndicesArray)
+	fb.functionName, err = compactDictionary(fb.pool, array.NewDictionaryArray(
+		&arrow.DictionaryType{IndexType: trimmedFunctionNameIndices.Type(), ValueType: fb.functionName.DataType()},
+		trimmedFunctionNameIndicesArray,
+		fb.functionName.Dictionary(),
+	))
+	if err != nil {
+		return err
+	}
+	trimmedFunctionSystemNameIndicesArray := trimmedFunctionSystemNameIndices.NewArray()
+	releasers = append(releasers, trimmedFunctionSystemNameIndicesArray)
+	fb.functionSystemName, err = compactDictionary(fb.pool, array.NewDictionaryArray(
+		&arrow.DictionaryType{IndexType: trimmedFunctionSystemNameIndices.Type(), ValueType: fb.functionSystemName.DataType()},
+		trimmedFunctionSystemNameIndicesArray,
+		fb.functionSystemName.Dictionary(),
+	))
+	if err != nil {
+		return err
+	}
+	trimmedFunctionFilenameIndicesArray := trimmedFunctionFilenameIndices.NewArray()
+	releasers = append(releasers, trimmedFunctionFilenameIndicesArray)
+	fb.functionFilename, err = compactDictionary(fb.pool, array.NewDictionaryArray(
+		&arrow.DictionaryType{IndexType: trimmedFunctionFilenameIndices.Type(), ValueType: fb.functionFilename.DataType()},
+		trimmedFunctionFilenameIndicesArray,
+		fb.functionFilename.Dictionary(),
+	))
+	if err != nil {
+		return err
+	}
+
+	trimmedLabels := make([]*array.Dictionary, 0, len(fb.labels))
+	for i, index := range trimmedLabelsIndices {
+		trimmedIndexArray := index.NewArray()
+		releasers = append(releasers, trimmedIndexArray)
+		tl, err := compactDictionary(fb.pool, array.NewDictionaryArray(
+			&arrow.DictionaryType{IndexType: trimmedIndexArray.DataType(), ValueType: fb.labels[i].Dictionary().DataType()},
+			trimmedIndexArray,
+			fb.labels[i].Dictionary(),
+		))
+		if err != nil {
+			return err
+		}
+		trimmedLabels = append(trimmedLabels, tl)
+	}
+	fb.labels = trimmedLabels
+
+	fb.builderLabelsOnly = trimmedLabelsOnly
+	fb.builderLabelsExist = trimmedLabelsExist
+	fb.builderMappingStart = trimmedMappingStart
+	fb.builderMappingLimit = trimmedMappingLimit
+	fb.builderMappingOffset = trimmedMappingOffset
+	fb.builderLocationAddress = trimmedLocationAddress
+	fb.builderLocationFolded = trimmedLocationFolded
+	fb.builderLocationLine = trimmedLocationLine
+	fb.builderFunctionStartLine = trimmedFunctionStartLine
+	fb.builderCumulative = trimmedCumulative
+	fb.builderDiff = trimmedDiff
+	fb.children = trimmedChildren
+
+	return nil
+}
+
+func copyOptInt64BuilderValue(old, new *builder.OptInt64Builder, row int) {
+	if old.IsNull(row) {
+		new.AppendNull()
+		return
+	}
+	new.Append(old.Value(row))
+}
+
+func copyUint64BuilderValue(old, new *array.Uint64Builder, row int) {
+	if old.IsNull(row) {
+		new.AppendNull()
+		return
+	}
+	new.Append(old.Value(row))
+}
+
+func copyOptBooleanBuilderValue(old, new *builder.OptBooleanBuilder, row int) {
+	if old.IsNull(row) {
+		new.AppendNull()
+		return
+	}
+	new.AppendSingle(old.Value(row))
+}
+
+func copyBoolBuilderValue(old, new *array.BooleanBuilder, row int) {
+	if old.IsNull(row) {
+		new.AppendNull()
+		return
+	}
+	new.Append(old.Value(row))
+}
+
+func appendDictionaryIndex(dict *array.Dictionary, index *array.Int32Builder, row int) {
+	if dict.IsNull(row) {
+		index.AppendNull()
+		return
+	}
+	index.Append(int32(dict.GetValueIndex(row)))
+}
+
 func isLocationRoot(end, i int) bool {
 	return i == end-1
 }
@@ -1225,6 +1493,25 @@ func (p *parent) Reset() { *p = -1 }
 func (p *parent) Get() int { return int(*p) }
 
 func (p *parent) Has() bool { return *p > -1 }
+
+type trimmingElement struct {
+	row    int
+	parent int
+}
+
+// queue is a small wrapper around a []trimmingElement used as queue
+type queue struct{ elements []trimmingElement }
+
+func (q *queue) len() int { return len(q.elements) }
+
+func (q *queue) push(i trimmingElement) { q.elements = append(q.elements, i) }
+
+// pops the first element from the queue
+func (q *queue) pop() trimmingElement {
+	v := q.elements[0]
+	q.elements = q.elements[1:]
+	return v
+}
 
 func mapsIntersection(maps []map[string]string) map[string]string {
 	if len(maps) == 0 {
@@ -1259,4 +1546,91 @@ func unsafeString(b []byte) string {
 		return ""
 	}
 	return unsafe.String(unsafe.SliceData(b), len(b))
+}
+
+type releasable interface {
+	Release()
+}
+
+// compactDictionary copies only the needed values from the old dictionary to the new dictionary.
+// Once all needed values are copied, it updates the indices referencing those values in their new place.
+func compactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dictionary, error) {
+	releasers := make([]releasable, 0, 3)
+	releasers = append(releasers, arr)
+	defer func() {
+		for _, r := range releasers {
+			r.Release()
+		}
+	}()
+
+	newLen := 0
+	keepValues := make([]int, arr.Dictionary().Len())
+	for i := 0; i < arr.Indices().Len(); i++ {
+		if arr.IsValid(i) {
+			if keepValues[arr.GetValueIndex(i)] == 0 {
+				// keep track of how many values we need to keep to reserve the space upfront
+				newLen++
+			}
+			keepValues[arr.GetValueIndex(i)]++
+		}
+	}
+
+	// This maps the previous index (at the key/index in this slice) to the new index (at the value of the slice).
+	newValueIndices := make([]int, arr.Dictionary().Len())
+
+	var valueBuilder array.Builder
+	switch dict := arr.Dictionary().(type) {
+	case *array.String:
+		stringBuilder := array.NewStringBuilder(mem)
+		stringBuilder.Reserve(newLen)
+		for i, count := range keepValues {
+			if count == 0 {
+				continue
+			}
+			newValueIndices[i] = stringBuilder.Len()
+			stringBuilder.Append(dict.Value(i))
+		}
+		valueBuilder = stringBuilder
+		releasers = append(releasers, stringBuilder)
+	case *array.Binary:
+		binaryBuilder := array.NewBinaryBuilder(mem, arrow.BinaryTypes.Binary)
+		binaryBuilder.Reserve(newLen)
+		for i, count := range keepValues {
+			if count == 0 {
+				continue
+			}
+			newValueIndices[i] = binaryBuilder.Len()
+			binaryBuilder.Append(dict.Value(i))
+		}
+		valueBuilder = binaryBuilder
+		releasers = append(releasers, binaryBuilder)
+	default:
+		return nil, fmt.Errorf("unsupported dictionary type %T", arr.Dictionary())
+	}
+
+	// we know how many values we need to keep, so we can reserve the space upfront
+	indexBuilder := array.NewInt32Builder(mem)
+	indexBuilder.Reserve(arr.Indices().Len())
+	releasers = append(releasers, indexBuilder)
+
+	for i := 0; i < arr.Indices().Len(); i++ {
+		if arr.IsNull(i) {
+			indexBuilder.AppendNull()
+			continue
+		}
+		oldValueIndex := arr.GetValueIndex(i)
+		newValueIndex := newValueIndices[oldValueIndex]
+		indexBuilder.Append(int32(newValueIndex))
+	}
+
+	index := indexBuilder.NewArray()
+	values := valueBuilder.NewArray()
+
+	releasers = append(releasers, index, values)
+
+	return array.NewDictionaryArray(
+		&arrow.DictionaryType{IndexType: index.DataType(), ValueType: valueBuilder.Type()},
+		index,
+		values,
+	), nil
 }
