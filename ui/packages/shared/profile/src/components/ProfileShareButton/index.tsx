@@ -85,7 +85,7 @@ const ProfileShareModal = ({
         </p>
         {!isShared || error?.length > 0 ? (
           <>
-            <p className="mt-3 mb-2 text-sm text-gray-500 dark:text-gray-300">
+            <p className="mb-2 mt-3 text-sm text-gray-500 dark:text-gray-300">
               Enter a description (optional)
             </p>
             <textarea
@@ -94,6 +94,7 @@ const ProfileShareModal = ({
               onChange={e => setDescription(e.target.value)}
             ></textarea>
             <Button
+              variant="primary"
               className="mt-4"
               onClick={e => {
                 e.preventDefault();
@@ -126,8 +127,14 @@ const ProfileShareButton = ({queryRequest, queryClient, disabled = false}: Props
 
   return (
     <>
-      <Button color="neutral" onClick={() => setIsOpen(true)} disabled={disabled}>
-        <Icon icon="ei:share-apple" width={20} />
+      <Button
+        variant="neutral"
+        onClick={() => setIsOpen(true)}
+        disabled={disabled}
+        className="gap-2"
+      >
+        Share profile
+        <Icon icon="material-symbols:share" width={20} />
       </Button>
       <ProfileShareModal
         isOpen={isOpen}
