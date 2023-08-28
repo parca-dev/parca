@@ -197,62 +197,58 @@ const ProfileSelector = ({
 
   const compareDisabled = selectedProfileName === '' || querySelection.expression === undefined;
 
-  const Header = (): JSX.Element => (
-    <div className="mb-2 flex">
-      <div className="flex w-full flex-wrap content-start items-end justify-between gap-2">
-        <div>
-          <label className="text-xs">Profile type</label>
-          <ProfileTypeSelector
-            profileTypesData={profileTypesData}
-            loading={profileTypesLoading}
-            selectedKey={selectedProfileName}
-            onSelection={setProfileName}
-            error={error}
-          />
-        </div>
-
-        <div className="w-full flex-1">
-          <label className="text-xs">Query</label>
-          <MatchersInput
-            queryClient={queryClient}
-            setMatchersString={setMatchersString}
-            runQuery={setQueryExpression}
-            currentQuery={query}
-          />
-        </div>
-        <div>
-          <label className="text-xs">Period</label>
-          <DateTimeRangePicker
-            onRangeSelection={setTimeRangeSelection}
-            range={timeRangeSelection}
-          />
-        </div>
-        <ButtonGroup>
-          {!searchDisabled && (
-            <>
-              {!comparing && (
-                <CompareButton disabled={compareDisabled} onClick={handleCompareClick} />
-              )}
-            </>
-          )}
-          <Button
-            disabled={searchDisabled}
-            onClick={(e: React.MouseEvent<HTMLElement>) => {
-              e.preventDefault();
-              setQueryExpression();
-            }}
-          >
-            Search
-          </Button>
-        </ButtonGroup>
-      </div>
-      <div>{comparing && <IconButton onClick={() => closeProfile()} icon={<CloseIcon />} />}</div>
-    </div>
-  );
-
   return (
     <>
-      <Header />
+      <div className="mb-2 flex">
+        <div className="flex w-full flex-wrap content-start items-end justify-between gap-2">
+          <div>
+            <label className="text-xs">Profile type</label>
+            <ProfileTypeSelector
+              profileTypesData={profileTypesData}
+              loading={profileTypesLoading}
+              selectedKey={selectedProfileName}
+              onSelection={setProfileName}
+              error={error}
+            />
+          </div>
+
+          <div className="w-full flex-1">
+            <label className="text-xs">Query</label>
+            <MatchersInput
+              queryClient={queryClient}
+              setMatchersString={setMatchersString}
+              runQuery={setQueryExpression}
+              currentQuery={query}
+            />
+          </div>
+          <div>
+            <label className="text-xs">Period</label>
+            <DateTimeRangePicker
+              onRangeSelection={setTimeRangeSelection}
+              range={timeRangeSelection}
+            />
+          </div>
+          <ButtonGroup>
+            {!searchDisabled && (
+              <>
+                {!comparing && (
+                  <CompareButton disabled={compareDisabled} onClick={handleCompareClick} />
+                )}
+              </>
+            )}
+            <Button
+              disabled={searchDisabled}
+              onClick={(e: React.MouseEvent<HTMLElement>) => {
+                e.preventDefault();
+                setQueryExpression();
+              }}
+            >
+              Search
+            </Button>
+          </ButtonGroup>
+        </div>
+        <div>{comparing && <IconButton onClick={() => closeProfile()} icon={<CloseIcon />} />}</div>
+      </div>
       <div className="rounded bg-white shadow dark:border-gray-500 dark:bg-gray-700">
         <div style={{height: heightStyle}}>
           {querySelection.expression !== undefined &&
