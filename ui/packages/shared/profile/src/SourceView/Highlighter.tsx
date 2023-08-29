@@ -147,7 +147,7 @@ export const profileAwareRenderer = (
               <LineProfileMetadata value={flat?.get(i) ?? 0n} total={total} filtered={filtered} />
               <div
                 className={cx(
-                  'w-11/12 flex-grow-0 border-l border-gray-200 pl-1 dark:border-gray-700',
+                  'w-full flex-grow-0 border-l border-gray-200 pl-1 dark:border-gray-700',
                   {
                     'bg-yellow-200 dark:bg-yellow-700': isCurrentLine,
                   }
