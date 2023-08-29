@@ -56,7 +56,7 @@ const Input = ({
       <input
         {...props}
         className={cx(
-          'rounded-md border border-gray-200 bg-gray-50 p-2 dark:border-gray-600 dark:bg-gray-900',
+          'rounded-md border border-gray-200 bg-white p-2 dark:border-gray-600 dark:bg-gray-900',
           {
             [className]: className.length > 0,
             'pr-10': onAction != null,
@@ -70,8 +70,9 @@ const Input = ({
       />
       {onAction != null ? (
         <Button
+          variant="secondary"
           onClick={onAction}
-          className="!absolute inset-y-0 right-0 !w-auto rounded-tl-none rounded-bl-none !px-2"
+          className="!absolute inset-y-0 right-0 !w-auto rounded-bl-none rounded-tl-none !px-2"
         >
           {actionIcon}
         </Button>

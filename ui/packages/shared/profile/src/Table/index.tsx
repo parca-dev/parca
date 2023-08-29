@@ -273,7 +273,7 @@ export const RowName = (table: ArrowTable, row: number): string => {
     mapping = `[${getLastItem(mappingFile) ?? ''}]`;
   }
   const functionName: string | null = table.getChild('function_name')?.get(row) ?? '';
-  if (functionName !== null) {
+  if (functionName !== null && functionName !== '') {
     return `${mapping} ${functionName}`;
   }
 

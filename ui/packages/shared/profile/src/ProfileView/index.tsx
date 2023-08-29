@@ -13,6 +13,7 @@
 
 import {Profiler, ProfilerProps, useEffect, useMemo, useState} from 'react';
 
+import {Icon} from '@iconify/react';
 import {Table as ArrowTable} from 'apache-arrow';
 import cx from 'classnames';
 import {scaleLinear} from 'd3';
@@ -35,9 +36,9 @@ import {
 } from '@parca/client';
 import {
   Button,
-  Card,
   ConditionalWrapper,
   KeyDownProvider,
+  UserPreferences,
   useParcaContext,
   useURLState,
 } from '@parca/components';
@@ -347,104 +348,125 @@ export const ProfileView = ({
     }
   };
 
+  // TODO: this is just a placeholder, we need to replace with an actually informative and accurate title (cc @metalmatze)
+  const profileSourceString = profileSource?.toString();
+  const hasProfileSource = profileSource !== undefined && profileSourceString !== '';
+  const headerParts = profileSourceString?.split('"') ?? [];
+
   return (
     <KeyDownProvider>
       <ProfileViewContextProvider value={{profileSource, sampleUnit}}>
-        <div className="py-3">
-          <Card>
-            <Card.Body>
-              <div className="flex w-full py-3">
-                <div className="flex space-x-4 lg:w-1/2">
-                  <div className="flex space-x-1">
-                    {profileSource !== undefined && queryClient !== undefined ? (
-                      <ProfileShareButton
-                        queryRequest={profileSource.QueryRequest()}
-                        queryClient={queryClient}
-                      />
-                    ) : null}
-
-                    <Button
-                      color="neutral"
-                      onClick={e => {
-                        e.preventDefault();
-                        onDownloadPProf();
-                      }}
-                      disabled={pprofDownloading}
-                    >
-                      {pprofDownloading != null && pprofDownloading
-                        ? 'Downloading'
-                        : 'Download pprof'}
-                    </Button>
-                  </div>
-                  <FilterByFunctionButton navigateTo={navigateTo} />
-                </div>
-
-                <div className="ml-auto flex gap-2">
-                  <ViewSelector
-                    defaultValue=""
-                    navigateTo={navigateTo}
-                    position={-1}
-                    placeholderText="Add panel..."
-                    primary
-                    addView={true}
-                    disabled={isMultiPanelView || dashboardItems.length < 1}
-                  />
-                </div>
+        <div
+          className={cx(
+            'mb-4 flex w-full items-center',
+            hasProfileSource ? 'justify-between' : 'justify-end'
+          )}
+        >
+          {hasProfileSource && (
+            <div className="max-w-[300px]">
+              <div className="text-sm font-medium capitalize">
+                {headerParts.length > 0 ? headerParts[0].replace(/"/g, '') : ''}
               </div>
+              <div className="text-xs">
+                {headerParts.length > 1
+                  ? headerParts[headerParts.length - 1].replace(/"/g, '')
+                  : ''}
+              </div>
+            </div>
+          )}
 
-              <div className="w-full" ref={ref}>
-                {isLoaderVisible ? (
-                  <>{loader}</>
-                ) : (
-                  <DragDropContext onDragEnd={onDragEnd}>
-                    <Droppable droppableId="droppable" direction="horizontal">
-                      {provided => (
-                        <div
-                          ref={provided.innerRef}
-                          className="flex w-full justify-between space-x-4"
-                          {...provided.droppableProps}
+          <div className="flex items-center justify-end gap-x-2">
+            <FilterByFunctionButton navigateTo={navigateTo} />
+            <UserPreferences
+              customButton={
+                <Button className="gap-2" variant="neutral">
+                  Preferences
+                  <Icon icon="pajamas:preferences" width={20} />
+                </Button>
+              }
+            />
+            {profileSource !== undefined && queryClient !== undefined ? (
+              <ProfileShareButton
+                queryRequest={profileSource.QueryRequest()}
+                queryClient={queryClient}
+              />
+            ) : null}
+            <Button
+              className="gap-2"
+              variant="neutral"
+              onClick={e => {
+                e.preventDefault();
+                onDownloadPProf();
+              }}
+              disabled={pprofDownloading}
+            >
+              {pprofDownloading != null && pprofDownloading ? 'Downloading...' : 'Download pprof'}
+              <Icon icon="material-symbols:download" width={20} />
+            </Button>
+            <ViewSelector
+              defaultValue=""
+              navigateTo={navigateTo}
+              position={-1}
+              placeholderText="Add panel"
+              icon={<Icon icon="material-symbols:add" width={20} />}
+              addView={true}
+              disabled={isMultiPanelView || dashboardItems.length < 1}
+            />
+          </div>
+        </div>
+
+        <div className="w-full" ref={ref}>
+          {isLoaderVisible ? (
+            <>{loader}</>
+          ) : (
+            <DragDropContext onDragEnd={onDragEnd}>
+              <Droppable droppableId="droppable" direction="horizontal">
+                {provided => (
+                  <div
+                    ref={provided.innerRef}
+                    className={cx(
+                      'grid w-full gap-2',
+                      isMultiPanelView ? 'grid-cols-2' : 'grid-cols-1'
+                    )}
+                    {...provided.droppableProps}
+                  >
+                    {dashboardItems.map((dashboardItem, index) => {
+                      return (
+                        <Draggable
+                          key={dashboardItem}
+                          draggableId={dashboardItem}
+                          index={index}
+                          isDragDisabled={!isMultiPanelView}
                         >
-                          {dashboardItems.map((dashboardItem, index) => {
-                            return (
-                              <Draggable
-                                key={dashboardItem}
-                                draggableId={dashboardItem}
+                          {(provided, snapshot: {isDragging: boolean}) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              key={dashboardItem}
+                              className={cx(
+                                'w-full rounded p-2 shadow dark:border-gray-500 dark:bg-gray-700',
+                                snapshot.isDragging ? 'bg-gray-200' : 'bg-white'
+                              )}
+                            >
+                              <VisualizationPanel
+                                handleClosePanel={handleClosePanel}
+                                isMultiPanelView={isMultiPanelView}
+                                dashboardItem={dashboardItem}
+                                getDashboardItemByType={getDashboardItemByType}
+                                dragHandleProps={provided.dragHandleProps}
+                                navigateTo={navigateTo}
                                 index={index}
-                                isDragDisabled={!isMultiPanelView}
-                              >
-                                {(provided, snapshot: {isDragging: boolean}) => (
-                                  <div
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    key={dashboardItem}
-                                    className={cx(
-                                      'rounded border border-gray-300 p-3 dark:border-gray-500 dark:bg-gray-700',
-                                      isMultiPanelView ? 'w-1/2' : 'w-full',
-                                      snapshot.isDragging ? 'bg-gray-200' : 'bg-white'
-                                    )}
-                                  >
-                                    <VisualizationPanel
-                                      handleClosePanel={handleClosePanel}
-                                      isMultiPanelView={isMultiPanelView}
-                                      dashboardItem={dashboardItem}
-                                      getDashboardItemByType={getDashboardItemByType}
-                                      dragHandleProps={provided.dragHandleProps}
-                                      navigateTo={navigateTo}
-                                      index={index}
-                                    />
-                                  </div>
-                                )}
-                              </Draggable>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </Droppable>
-                  </DragDropContext>
+                              />
+                            </div>
+                          )}
+                        </Draggable>
+                      );
+                    })}
+                  </div>
                 )}
-              </div>
-            </Card.Body>
-          </Card>
+              </Droppable>
+            </DragDropContext>
+          )}
         </div>
       </ProfileViewContextProvider>
     </KeyDownProvider>
