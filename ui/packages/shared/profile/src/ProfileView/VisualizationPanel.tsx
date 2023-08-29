@@ -54,7 +54,7 @@ export const VisualizationPanel = React.memo(function VisualizationPanel({
         <div className="flex w-full items-start justify-between">
           <div className="flex items-start">
             <div
-              className={cx(isMultiPanelView ? 'visible' : 'invisible', 'flex items-center')}
+              className={cx(isMultiPanelView ? '' : 'hidden', 'flex items-center')}
               {...dragHandleProps}
             >
               <Icon className="text-xl" icon="material-symbols:drag-indicator" />
