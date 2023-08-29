@@ -350,16 +350,30 @@ export const ProfileView = ({
 
   // TODO: this is just a placeholder, we need to replace with an actually informative and accurate title (cc @metalmatze)
   const profileSourceString = profileSource?.toString();
+  const hasProfileSource = profileSource !== undefined && profileSourceString !== '';
   const headerParts = profileSourceString?.split('"') ?? [];
 
   return (
     <KeyDownProvider>
       <ProfileViewContextProvider value={{profileSource, sampleUnit}}>
-        <div className="mb-4 flex w-full items-center justify-between">
-          <div className="max-w-[500px]">
-            <div className="text-sm font-medium capitalize">{headerParts[0].replace(/"/g, '')}</div>
-            <div className="text-xs">{headerParts[headerParts.length - 1].replace(/"/g, '')}</div>
-          </div>
+        <div
+          className={cx(
+            'mb-4 flex w-full items-center',
+            hasProfileSource ? 'justify-between' : 'justify-end'
+          )}
+        >
+          {hasProfileSource && (
+            <div className="max-w-[300px]">
+              <div className="text-sm font-medium capitalize">
+                {headerParts.length > 0 ? headerParts[0].replace(/"/g, '') : ''}
+              </div>
+              <div className="text-xs">
+                {headerParts.length > 1
+                  ? headerParts[headerParts.length - 1].replace(/"/g, '')
+                  : ''}
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center justify-end gap-x-2">
             <FilterByFunctionButton navigateTo={navigateTo} />
