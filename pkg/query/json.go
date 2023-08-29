@@ -188,8 +188,8 @@ ESCAPE_END:
 }
 
 func stringToUint64Slice(s string) []uint64 {
-	return *(*[]uint64)(unsafe.Pointer(&reflect.SliceHeader{ //nolint:govet
-		Data: ((*reflect.StringHeader)(unsafe.Pointer(&s))).Data,
+	return *(*[]uint64)(unsafe.Pointer(&reflect.SliceHeader{ //nolint:govet,staticcheck
+		Data: ((*reflect.StringHeader)(unsafe.Pointer(&s))).Data, //nolint:staticcheck
 		Len:  len(s) / 8,
 		Cap:  len(s) / 8,
 	}))
