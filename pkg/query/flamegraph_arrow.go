@@ -479,7 +479,6 @@ func transpositionFromDict(unifier array.DictionaryUnifier, dict *array.Binary) 
 		0,
 	)
 	indices := array.NewInt32Data(data)
-
 	return data, indices, nil
 }
 
@@ -1363,8 +1362,9 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	var err error
 	trimmedMappingBuildIDIndicesArray := trimmedMappingBuildIDIndices.NewArray()
 	releasers = append(releasers, trimmedMappingBuildIDIndicesArray)
+
 	fb.mappingBuildID, err = compactDictionary(fb.pool, array.NewDictionaryArray(
-		&arrow.DictionaryType{IndexType: trimmedMappingBuildIDIndicesArray.DataType(), ValueType: fb.mappingBuildID.DataType()},
+		fb.mappingBuildID.DataType(),
 		trimmedMappingBuildIDIndicesArray,
 		fb.mappingBuildID.Dictionary(),
 	))
@@ -1374,7 +1374,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedMappingFileIndicesArray := trimmedMappingFileIndices.NewArray()
 	releasers = append(releasers, trimmedMappingFileIndicesArray)
 	fb.mappingFile, err = compactDictionary(fb.pool, array.NewDictionaryArray(
-		&arrow.DictionaryType{IndexType: trimmedMappingFileIndicesArray.DataType(), ValueType: fb.mappingFile.DataType()},
+		fb.mappingFile.DataType(),
 		trimmedMappingFileIndicesArray,
 		fb.mappingFile.Dictionary(),
 	))
@@ -1384,7 +1384,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedFunctionNameIndicesArray := trimmedFunctionNameIndices.NewArray()
 	releasers = append(releasers, trimmedFunctionNameIndicesArray)
 	fb.functionName, err = compactDictionary(fb.pool, array.NewDictionaryArray(
-		&arrow.DictionaryType{IndexType: trimmedFunctionNameIndices.Type(), ValueType: fb.functionName.DataType()},
+		fb.functionName.DataType(),
 		trimmedFunctionNameIndicesArray,
 		fb.functionName.Dictionary(),
 	))
@@ -1394,7 +1394,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedFunctionSystemNameIndicesArray := trimmedFunctionSystemNameIndices.NewArray()
 	releasers = append(releasers, trimmedFunctionSystemNameIndicesArray)
 	fb.functionSystemName, err = compactDictionary(fb.pool, array.NewDictionaryArray(
-		&arrow.DictionaryType{IndexType: trimmedFunctionSystemNameIndices.Type(), ValueType: fb.functionSystemName.DataType()},
+		fb.functionSystemName.DataType(),
 		trimmedFunctionSystemNameIndicesArray,
 		fb.functionSystemName.Dictionary(),
 	))
@@ -1404,7 +1404,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedFunctionFilenameIndicesArray := trimmedFunctionFilenameIndices.NewArray()
 	releasers = append(releasers, trimmedFunctionFilenameIndicesArray)
 	fb.functionFilename, err = compactDictionary(fb.pool, array.NewDictionaryArray(
-		&arrow.DictionaryType{IndexType: trimmedFunctionFilenameIndices.Type(), ValueType: fb.functionFilename.DataType()},
+		fb.functionFilename.DataType(),
 		trimmedFunctionFilenameIndicesArray,
 		fb.functionFilename.Dictionary(),
 	))
