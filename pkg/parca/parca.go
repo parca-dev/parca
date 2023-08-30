@@ -82,8 +82,8 @@ type Flags struct {
 	ConfigPath       string        `default:"parca.yaml" help:"Path to config file."`
 	Mode             string        `default:"all" enum:"all,scraper-only" help:"Scraper only runs a scraper that sends to a remote gRPC endpoint. All runs all components."`
 	HTTPAddress      string        `default:":7070" help:"Address to bind HTTP server to."`
-	HTTPReadTimeout  time.Duration `default:"5s" help:"Timeout duration for HTTP server to read request body. Defaults to 5s"`
-	HTTPWriteTimeout time.Duration `default:"1m" help:"Timeout duration for HTTP server to write response body. Defaults to 1m"`
+	HTTPReadTimeout  time.Duration `default:"5s" help:"Timeout duration for HTTP server to read request body."`
+	HTTPWriteTimeout time.Duration `default:"1m" help:"Timeout duration for HTTP server to write response body."`
 	Port             string        `default:"" help:"(DEPRECATED) Use http-address instead."`
 
 	Logs FlagsLogs `embed:"" prefix:"log-"`
