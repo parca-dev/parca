@@ -34,6 +34,7 @@ const Input = ({
   ...props
 }: Props): JSX.Element => {
   const ref = useRef<HTMLInputElement>(null);
+  const hasAction = onAction != null;
   return (
     <div
       className="relative"
@@ -56,19 +57,19 @@ const Input = ({
       <input
         {...props}
         className={cx(
-          'rounded-md border border-gray-200 bg-white p-2 dark:border-gray-600 dark:bg-gray-900',
+          'relative rounded-md border border-gray-200 bg-white p-2 dark:border-gray-600 dark:bg-gray-900 focus:outline-none focus:ring-1 focus:z-10',
           {
             [className]: className.length > 0,
-            'pr-10': onAction != null,
+            'mr-8 rounded-r-none': hasAction,
           }
         )}
         onKeyDown={e => {
-          if (e.key === 'Enter' && onAction != null) {
+          if (e.key === 'Enter' && hasAction) {
             onAction();
           }
         }}
       />
-      {onAction != null ? (
+      {hasAction ? (
         <Button
           variant="secondary"
           onClick={onAction}

@@ -109,7 +109,7 @@ jobs:
       # https://github.com/containers/podman/tree/main/contrib/podmanimage
       # Specifying SHA repeatedly fails:
       # @sha256:421ac576cebff98e90c531e7b9ce4482370ecc7cee59abc2341714031bfb5f43
-      image: quay.io/containers/podman:v4.6.0@sha256:470131e17cc78f57798626bf6118e8560da93b5225f69ba457b0d8e160136d83
+      image: quay.io/containers/podman:v4.6.1@sha256:dabb1648acafafbc8c5ad794efb8ceafa398c7b83df2122373e8313e1bfbdf13
       options: >-
         --device /dev/fuse:rw
         --privileged

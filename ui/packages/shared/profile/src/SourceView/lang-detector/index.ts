@@ -11,6 +11,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-declare module '*.svg';
-declare module 'react-map-interaction';
-declare module 'react-syntax-highlighter/dist/esm/languages/hljs';
+import * as hljsLangs from 'react-syntax-highlighter/dist/esm/languages/hljs';
+
+import _extLangMap from './ext-to-lang.json';
+
+const extLangMap = _extLangMap as Record<string, string[]>;
+
+export const langaugeFromFile = (file: string): string => {
+  const extension = file.split('.').pop() ?? '';
+  if (extLangMap[extension] == null) {
+    return 'text';
+  }
+  const langs: string[] = extLangMap[extension];
+  for (const lang of langs) {
+    // eslint-disable-next-line import/namespace
+    if (hljsLangs[lang] != null) {
+      return lang;
+    }
+  }
+  return 'text';
+};

@@ -65,6 +65,7 @@ export const SourceView = React.memo(function SourceView({
 
   return (
     <Highlighter
+      file={sourceFileName as string}
       content={data.source}
       renderer={profileAwareRenderer(cumulative, flat, total, filtered)}
     />
