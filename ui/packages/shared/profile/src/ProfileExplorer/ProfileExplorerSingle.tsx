@@ -39,7 +39,7 @@ const ProfileExplorerSingle = ({
 }: ProfileExplorerSingleProps): JSX.Element => {
   return (
     <>
-      <Card className="px-6 py-4">
+      <Card className="mt-2 px-6 py-4">
         <ProfileSelector
           queryClient={queryClient}
           querySelection={query}
@@ -53,15 +53,13 @@ const ProfileExplorerSingle = ({
         />
       </Card>
       {profile != null ? (
-        <div className="mt-2">
-          <Card className="px-6 py-4">
-            <ProfileViewWithData
-              queryClient={queryClient}
-              profileSource={profile.ProfileSource()}
-              navigateTo={navigateTo}
-            />
-          </Card>
-        </div>
+        <Card className="mt-2 px-6 py-4">
+          <ProfileViewWithData
+            queryClient={queryClient}
+            profileSource={profile.ProfileSource()}
+            navigateTo={navigateTo}
+          />
+        </Card>
       ) : (
         <></>
       )}
