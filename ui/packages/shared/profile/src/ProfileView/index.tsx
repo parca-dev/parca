@@ -96,7 +96,7 @@ interface SourceData {
 export interface ProfileViewProps {
   total: bigint;
   filtered: bigint;
-  flamegraphData: FlamegraphData;
+  flamegraphData?: FlamegraphData;
   topTableData?: TopTableData;
   callgraphData?: CallgraphData;
   sourceData?: SourceData;
@@ -229,6 +229,15 @@ export const ProfileView = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [graphvizLoaded, callgraphData?.data]);
 
+  if (flamegraphData?.error !== null) {
+    console.error('Error: ', flamegraphData?.error);
+    return (
+      <div className="flex justify-center p-10">
+        An error occurred: {flamegraphData?.error.message}
+      </div>
+    );
+  }
+
   const setNewCurPath = (path: string[]): void => {
     if (!arrayEquals(curPath, path)) {
       setCurPath(path);
@@ -246,7 +255,7 @@ export const ProfileView = ({
   }): JSX.Element => {
     switch (type) {
       case 'icicle': {
-        return (
+        return flamegraphData?.table !== undefined || flamegraphData.data !== undefined ? (
           <ConditionalWrapper<ProfilerProps>
             condition={perf?.onRender != null}
             WrapperComponent={Profiler}
@@ -258,8 +267,8 @@ export const ProfileView = ({
             <ProfileIcicleGraph
               curPath={curPath}
               setNewCurPath={setNewCurPath}
-              table={flamegraphData?.table}
-              graph={flamegraphData?.data}
+              table={flamegraphData.table}
+              graph={flamegraphData.data}
               total={total}
               filtered={filtered}
               sampleUnit={sampleUnit}
@@ -269,6 +278,8 @@ export const ProfileView = ({
               error={flamegraphData.error}
             />
           </ConditionalWrapper>
+        ) : (
+          <></>
         );
       }
       case 'callgraph': {

@@ -47,7 +47,6 @@ interface ProfileIcicleGraphProps {
   navigateTo?: NavigateFunction;
   loading: boolean;
   setActionButtons?: (buttons: React.JSX.Element) => void;
-  error?: any;
 }
 
 const GroupAndSortActionButtons = ({navigateTo}: {navigateTo?: NavigateFunction}): JSX.Element => {
@@ -112,7 +111,6 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   navigateTo,
   loading,
   setActionButtons,
-  error,
 }: ProfileIcicleGraphProps): JSX.Element {
   const compareMode: boolean =
     selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
@@ -176,11 +174,6 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
       </div>
     );
   }, [navigateTo, table, curPath, setNewCurPath, setActionButtons]);
-
-  if (error != null) {
-    console.error('Error: ', error);
-    return <div className="flex justify-center p-10">An error occurred: {error.message}</div>;
-  }
 
   if (graph === undefined && table === undefined)
     return <div className="mx-auto text-center">no data...</div>;
