@@ -175,9 +175,11 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     );
   }, [navigateTo, table, curPath, setNewCurPath, setActionButtons]);
 
-  if (graph === undefined && table === undefined) return <div>no data...</div>;
+  if (graph === undefined && table === undefined)
+    return <div className="mx-auto text-center">no data...</div>;
 
-  if (total === 0n && !loading) return <>Profile has no samples</>;
+  if (total === 0n && !loading)
+    return <div className="mx-auto text-center">Profile has no samples</div>;
 
   if (isTrimmed) {
     console.info(`Trimmed ${trimmedFormatted} (${trimmedPercentage}%) too small values.`);

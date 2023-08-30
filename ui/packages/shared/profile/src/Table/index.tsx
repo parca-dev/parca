@@ -206,8 +206,8 @@ export const Table = React.memo(function Table({
     };
   }, [compareMode]);
 
-  if (loading) return <>Loading...</>;
-  if (data === undefined) return <>Profile has no samples</>;
+  if (loading) return <div className="mx-auto text-center">Loading...</div>;
+  if (data === undefined) return <div className="mx-auto text-center">Profile has no samples</div>;
 
   const table = tableFromIPC(data);
   const flatColumn = table.getChild('flat');
@@ -215,7 +215,7 @@ export const Table = React.memo(function Table({
   const cumulativeColumn = table.getChild('cumulative');
   const cumulativeDiffColumn = table.getChild('cumulative_diff');
 
-  if (table.numRows === 0) return <>Profile has no samples</>;
+  if (table.numRows === 0) return <div className="mx-auto text-center">Profile has no samples</div>;
 
   const rows: row[] = [];
   // TODO: Figure out how to only read the data of the columns we need for the virtualized table
