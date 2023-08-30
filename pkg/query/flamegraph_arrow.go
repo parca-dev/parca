@@ -137,26 +137,27 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			beg, end := r.Locations.ValueOffsets(i)
 
 			var sampleLabels map[string]string
+			hasLabels := false
 			for j, labelColumn := range r.LabelColumns {
 				if labelColumn.Col.IsValid(i) {
 					if sampleLabels == nil {
 						sampleLabels = map[string]string{}
 					}
+					hasLabels = true
 					labelName := strings.TrimPrefix(r.LabelFields[j].Name, profile.ColumnPprofLabelsPrefix)
 					sampleLabels[labelName] = string(labelColumn.Dict.Value(labelColumn.Col.GetValueIndex(i)))
 				}
 			}
 
-			if aggregateLabels && len(sampleLabels) > 0 {
+			if aggregateLabels && hasLabels {
 				lsbytes = lsbytes[:0]
 				lsbytes = MarshalStringMapSorted(lsbytes, sampleLabels)
 
 				sampleLabelRow := row
-				if _, ok := fb.rootsRow[unsafeString(lsbytes)]; ok {
-					sampleLabelRow = fb.rootsRow[unsafeString(lsbytes)][0]
+				if rows, ok := fb.rootsRow[unsafeString(lsbytes)]; ok {
+					sampleLabelRow = rows[0]
 					// We want to compare against this found label root's children.
-					rootRow := fb.rootsRow[unsafeString(lsbytes)][0]
-					fb.copyChildren(fb.children[rootRow])
+					fb.copyChildren(fb.children[sampleLabelRow])
 					fb.addRowValues(r, sampleLabelRow, i) // adds the cumulative and diff values to the existing row
 				} else {
 					lsstring := string(lsbytes) // we want to cast the bytes to a string and thus copy them.
@@ -182,7 +183,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				// This returns whether this location is a root of a stacktrace.
 				isLocationRoot := isLocationRoot(int(end), j)
 				// Depending on whether we aggregate the labels (and thus inject node labels), we either compare the rows or not.
-				isRoot := isLocationRoot && !(aggregateLabels && len(sampleLabels) > 0)
+				isRoot := isLocationRoot && !(aggregateLabels && hasLabels)
 
 				if isLocationLeaf(int(beg), j) {
 					fb.cumulative += r.Value.Value(i)
@@ -233,7 +234,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 				// just like locations, pprof stores lines in reverse order.
 				for k := int(llOffsetEnd - 1); k >= int(llOffsetStart); k-- {
-					isRoot = isLocationRoot && !(aggregateLabels && len(sampleLabels) > 0) && k == int(llOffsetEnd-1)
+					isRoot = isLocationRoot && !(aggregateLabels && hasLabels) && k == int(llOffsetEnd-1)
 
 					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
 					if isRoot {
