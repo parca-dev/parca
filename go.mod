@@ -5,7 +5,7 @@ go 1.21
 require (
 	cloud.google.com/go/storage v1.32.0
 	github.com/alecthomas/kong v0.8.0
-	github.com/apache/arrow/go/v13 v13.0.0-20230820205410-6357c9f2419d
+	github.com/apache/arrow/go/v14 v14.0.0-20230829105931-29819425f428
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
@@ -29,7 +29,7 @@ require (
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
 	github.com/parquet-go/parquet-go v0.17.0
-	github.com/polarsignals/frostdb v0.0.0-20230822164836-f16400a97239
+	github.com/polarsignals/frostdb v0.0.0-20230829125747-7904f27b7240
 	github.com/prometheus/client_golang v1.16.0
 	github.com/prometheus/common v0.44.0
 	github.com/prometheus/prometheus v0.46.0
@@ -247,5 +247,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.3.0 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
-
-replace github.com/apache/arrow/go/v13 => github.com/brancz/arrow/go/v13 v13.0.0-20230822143732-dc4d10fb562d
