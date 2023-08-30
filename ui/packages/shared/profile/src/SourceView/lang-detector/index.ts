@@ -13,7 +13,9 @@
 
 import * as hljsLangs from 'react-syntax-highlighter/dist/esm/languages/hljs';
 
-import extLangMap from './ext-to-lang.json';
+import _extLangMap from './ext-to-lang.json';
+
+const extLangMap = _extLangMap as Record<string, string[]>;
 
 export const langaugeFromFile = (file: string): string => {
   const extension = file.split('.').pop() ?? '';
