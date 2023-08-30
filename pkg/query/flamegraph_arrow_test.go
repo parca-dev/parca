@@ -17,7 +17,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"encoding/json"
 	"io"
 	"os"
 	"sort"
@@ -775,42 +774,4 @@ func BenchmarkArrowFlamegraph(b *testing.B) {
 		)
 		require.NoError(b, err)
 	}
-}
-
-func TestMarshalMap(t *testing.T) {
-	m := map[string]string{
-		"test1": "something",
-		"test2": "something_else",
-	}
-
-	buf := make([]byte, 0, 1024)
-	buf = MarshalStringMap(buf, m)
-	res := string(buf)
-	expected := []string{
-		`{"test1":"something","test2":"something_else"}`,
-		`{"test2":"something_else","test1":"something"}`,
-	}
-	require.Contains(t, expected, res)
-}
-
-func BenchmarkMarshalMap(b *testing.B) {
-	m := map[string]string{
-		"test1": "something",
-		"test2": "something_else",
-	}
-
-	var err error
-	b.ResetTimer()
-	b.Run("stdlib", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			_, err = json.Marshal(m)
-		}
-	})
-	_ = err
-	b.Run("ours", func(b *testing.B) {
-		buf := make([]byte, 0, 1024)
-		for i := 0; i < b.N; i++ {
-			buf = MarshalStringMap(buf, m)
-		}
-	})
 }

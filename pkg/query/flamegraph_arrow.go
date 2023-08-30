@@ -17,7 +17,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"strings"
 	"unsafe"
 
 	"github.com/apache/arrow/go/v14/arrow"
@@ -25,6 +24,7 @@ import (
 	"github.com/apache/arrow/go/v14/arrow/ipc"
 	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/polarsignals/frostdb/pqarrow/builder"
+	"github.com/zeebo/xxh3"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
@@ -119,6 +119,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	row := fb.builderCumulative.Len()
 
 	profileReader := profile.NewReader(p)
+	labelHasher := xxh3.New()
 	for _, r := range profileReader.RecordReaders {
 		if err := fb.ensureLabelColumns(r.LabelFields); err != nil {
 			return nil, 0, 0, 0, fmt.Errorf("ensure label columns: %w", err)
@@ -132,40 +133,39 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		defer t.Release()
 
 		// This field compares the current sample with the already added values in the builders.
-		lsbytes := make([]byte, 0, 512)
 		for i := 0; i < int(r.Record.NumRows()); i++ {
 			beg, end := r.Locations.ValueOffsets(i)
 
-			var sampleLabels map[string]string
 			hasLabels := false
-			for j, labelColumn := range r.LabelColumns {
+			labelHash := uint64(0)
+			for _, labelColumn := range r.LabelColumns {
 				if labelColumn.Col.IsValid(i) {
-					if sampleLabels == nil {
-						sampleLabels = map[string]string{}
-					}
 					hasLabels = true
-					labelName := strings.TrimPrefix(r.LabelFields[j].Name, profile.ColumnPprofLabelsPrefix)
-					sampleLabels[labelName] = string(labelColumn.Dict.Value(labelColumn.Col.GetValueIndex(i)))
+					break
 				}
 			}
 
 			if aggregateLabels && hasLabels {
-				lsbytes = lsbytes[:0]
-				lsbytes = MarshalStringMapSorted(lsbytes, sampleLabels)
-
+				labelHasher.Reset()
+				for j, labelColumn := range r.LabelColumns {
+					if labelColumn.Col.IsValid(i) {
+						_, _ = labelHasher.WriteString(r.LabelFields[j].Name)
+						_, _ = labelHasher.Write(labelColumn.Dict.Value(labelColumn.Col.GetValueIndex(i)))
+					}
+				}
+				labelHash = labelHasher.Sum64()
 				sampleLabelRow := row
-				if rows, ok := fb.rootsRow[unsafeString(lsbytes)]; ok {
+				if rows, ok := fb.rootsRow[labelHash]; ok {
 					sampleLabelRow = rows[0]
 					// We want to compare against this found label root's children.
 					fb.copyChildren(fb.children[sampleLabelRow])
 					fb.addRowValues(r, sampleLabelRow, i) // adds the cumulative and diff values to the existing row
 				} else {
-					lsstring := string(lsbytes) // we want to cast the bytes to a string and thus copy them.
 					err := fb.AppendLabelRow(r, t, recordLabelIndex, sampleLabelRow, i)
 					if err != nil {
 						return nil, 0, 0, 0, fmt.Errorf("failed to inject label row: %w", err)
 					}
-					fb.rootsRow[lsstring] = []int{sampleLabelRow}
+					fb.rootsRow[labelHash] = []int{sampleLabelRow}
 				}
 				fb.maxHeight = max(fb.maxHeight, fb.height)
 				fb.height = 1
@@ -194,7 +194,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				if !r.Lines.IsValid(j) || llOffsetEnd-llOffsetStart <= 0 {
 					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
 					if isRoot {
-						fb.copyChildren(fb.rootsRow[unsafeString(lsbytes)])
+						fb.copyChildren(fb.rootsRow[labelHash])
 						// append this row afterward to not compare to itself
 						fb.parent.Reset()
 						fb.maxHeight = max(fb.maxHeight, fb.height)
@@ -218,8 +218,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 					if isRoot {
 						// We aren't merging this root, so we'll keep track of it as a new one.
-						lsstring := string(lsbytes) // we want to cast the bytes to a string and thus copy them.
-						fb.rootsRow[lsstring] = append(fb.rootsRow[lsstring], row)
+						fb.rootsRow[labelHash] = append(fb.rootsRow[labelHash], row)
 					}
 
 					err = fb.appendRow(r, t, builderToRecordIndexMapping, i, j, -1, row)
@@ -238,7 +237,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
 					if isRoot {
-						fb.copyChildren(fb.rootsRow[unsafeString(lsbytes)])
+						fb.copyChildren(fb.rootsRow[labelHash])
 						// append this row afterward to not compare to itself
 						fb.parent.Reset()
 						fb.maxHeight = max(fb.maxHeight, fb.height)
@@ -256,8 +255,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 					if isRoot {
 						// We aren't merging this root, so we'll keep track of it as a new one.
-						lsstring := string(lsbytes) // we want to cast the bytes to a string and thus copy them.
-						fb.rootsRow[lsstring] = append(fb.rootsRow[lsstring], row)
+						fb.rootsRow[labelHash] = append(fb.rootsRow[labelHash], row)
 					}
 
 					err = fb.appendRow(r, t, recordLabelIndex, i, j, k, row)
@@ -725,7 +723,7 @@ type flamegraphBuilder struct {
 	// This keeps track of the root rows indexed by the labels string.
 	// If the stack trace has no labels, we use the empty string as the key.
 	// This will be the root row's children, which is always our row 0 in flame graphs.
-	rootsRow map[string][]int
+	rootsRow map[uint64][]int
 	// compareRows are the rows that we compare to the current location against and potentially merge.
 	compareRows []int
 	// height keeps track of the current stack trace's height of the flame graph.
@@ -776,7 +774,7 @@ func newFlamegraphBuilder(
 
 		parent:         parent(-1),
 		children:       make([][]int, rows),
-		rootsRow:       map[string][]int{},
+		rootsRow:       map[uint64][]int{},
 		labelNameIndex: map[string]int{},
 		compareRows:    make([]int, 0, 32),
 
