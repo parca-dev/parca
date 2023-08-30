@@ -1084,6 +1084,15 @@ func (fb *flamegraphBuilder) Release() {
 		fb.builderLabels[i].Release()
 		fb.builderLabelsDictUnifiers[i].Release()
 	}
+
+	fb.mappingBuildID.Release()
+	fb.mappingFile.Release()
+	fb.functionName.Release()
+	fb.functionSystemName.Release()
+	fb.functionFilename.Release()
+	for _, r := range fb.labels {
+		r.Release()
+	}
 }
 
 func (fb *flamegraphBuilder) appendRow(
