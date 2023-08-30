@@ -349,6 +349,15 @@ func (fb *flamegraphBuilder) labelEqual(
 	return labelColumn.Value(flamegraphRow) == transposedIndex
 }
 
+func NewTransposition(data *array.Data, indices *array.Int32) transposition {
+	data.Retain()
+	indices.Retain()
+	return transposition{
+		data:    data,
+		indices: indices,
+	}
+}
+
 type transposition struct {
 	data    *array.Data
 	indices *array.Int32
@@ -433,34 +442,16 @@ func (fb *flamegraphBuilder) newTranspositions(r *profile.RecordReader) (*transp
 		if err != nil {
 			return nil, fmt.Errorf("unify and transpose label dict %q: %w", labelField.Name, err)
 		}
-		labels[i] = transposition{
-			data:    labelTranspositionData,
-			indices: labelTransposition,
-		}
+		labels[i] = NewTransposition(labelTranspositionData, labelTransposition)
 	}
 
 	return &transpositions{
-		mappingBuildID: transposition{
-			data:    mappingIDIndicesData,
-			indices: mappingIDIndices,
-		},
-		mappingFile: transposition{
-			data:    mappingFileIndicesData,
-			indices: mappingFileIndices,
-		},
-		functionName: transposition{
-			data:    functionNameIndicesData,
-			indices: functionNameIndices,
-		},
-		functionSystemName: transposition{
-			data:    functionSystemNameIndicesData,
-			indices: functionSystemNameIndices,
-		},
-		functionFilename: transposition{
-			data:    functionFilenameIndicesData,
-			indices: functionFilenameIndices,
-		},
-		labels: labels,
+		mappingBuildID:     NewTransposition(mappingIDIndicesData, mappingIDIndices),
+		mappingFile:        NewTransposition(mappingFileIndicesData, mappingFileIndices),
+		functionName:       NewTransposition(functionNameIndicesData, functionNameIndices),
+		functionSystemName: NewTransposition(functionSystemNameIndicesData, functionSystemNameIndices),
+		functionFilename:   NewTransposition(functionFilenameIndicesData, functionFilenameIndices),
+		labels:             labels,
 	}, nil
 }
 
@@ -772,12 +763,18 @@ type flamegraphBuilder struct {
 
 	// Only at the last step when preparing the new record these are populated.
 	// They are also used to create compacted dictionaries and after that replaced by them.
-	mappingBuildID     *array.Dictionary
-	mappingFile        *array.Dictionary
-	functionName       *array.Dictionary
-	functionSystemName *array.Dictionary
-	functionFilename   *array.Dictionary
-	labels             []*array.Dictionary
+	preparedMappingBuildID     *array.Dictionary
+	mappingBuildID             *array.Dictionary
+	preparedMappingFile        *array.Dictionary
+	mappingFile                *array.Dictionary
+	preparedFunctionName       *array.Dictionary
+	functionName               *array.Dictionary
+	preparedFunctionSystemName *array.Dictionary
+	functionSystemName         *array.Dictionary
+	preparedFunctionFilename   *array.Dictionary
+	functionFilename           *array.Dictionary
+	preparedLabels             []*array.Dictionary
+	labels                     []*array.Dictionary
 
 	labelNameIndex map[string]int
 }
@@ -900,7 +897,7 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 	}
 	cleanupArrs = append(cleanupArrs, mappingBuildIDDict)
 	mappingBuildIDType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
-	fb.mappingBuildID = array.NewDictionaryArray(mappingBuildIDType, mappingBuildIDIndices, mappingBuildIDDict)
+	fb.preparedMappingBuildID = array.NewDictionaryArray(mappingBuildIDType, mappingBuildIDIndices, mappingBuildIDDict)
 
 	mappingFileIndices := fb.builderMappingFileIndices.NewArray()
 	cleanupArrs = append(cleanupArrs, mappingFileIndices)
@@ -910,7 +907,7 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 	}
 	cleanupArrs = append(cleanupArrs, mappingFileDict)
 	mappingFileType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
-	fb.mappingFile = array.NewDictionaryArray(mappingFileType, mappingFileIndices, mappingFileDict)
+	fb.preparedMappingFile = array.NewDictionaryArray(mappingFileType, mappingFileIndices, mappingFileDict)
 
 	functionNameIndices := fb.builderFunctionNameIndices.NewArray()
 	cleanupArrs = append(cleanupArrs, functionNameIndices)
@@ -920,7 +917,7 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 	}
 	cleanupArrs = append(cleanupArrs, functionNameDict)
 	functionNameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
-	fb.functionName = array.NewDictionaryArray(functionNameType, functionNameIndices, functionNameDict)
+	fb.preparedFunctionName = array.NewDictionaryArray(functionNameType, functionNameIndices, functionNameDict)
 
 	functionSystemNameIndices := fb.builderFunctionSystemNameIndices.NewArray()
 	cleanupArrs = append(cleanupArrs, functionSystemNameIndices)
@@ -930,7 +927,7 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 	}
 	cleanupArrs = append(cleanupArrs, functionSystemNameDict)
 	functionSystemNameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
-	fb.functionSystemName = array.NewDictionaryArray(functionSystemNameType, functionSystemNameIndices, functionSystemNameDict)
+	fb.preparedFunctionSystemName = array.NewDictionaryArray(functionSystemNameType, functionSystemNameIndices, functionSystemNameDict)
 
 	functionFilenameIndices := fb.builderFunctionFilenameIndices.NewArray()
 	cleanupArrs = append(cleanupArrs, functionFilenameIndices)
@@ -940,7 +937,7 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 	}
 	cleanupArrs = append(cleanupArrs, functionFilenameDict)
 	functionFilenameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
-	fb.functionFilename = array.NewDictionaryArray(functionFilenameType, functionFilenameIndices, functionFilenameDict)
+	fb.preparedFunctionFilename = array.NewDictionaryArray(functionFilenameType, functionFilenameIndices, functionFilenameDict)
 
 	fb.ensureLabelColumnsComplete()
 
@@ -953,7 +950,7 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 		}
 		cleanupArrs = append(cleanupArrs, dict)
 		typ := &arrow.DictionaryType{IndexType: indices.DataType(), ValueType: dict.DataType()}
-		fb.labels = append(fb.labels, array.NewDictionaryArray(typ, indices, dict))
+		fb.preparedLabels = append(fb.preparedLabels, array.NewDictionaryArray(typ, indices, dict))
 	}
 
 	return nil
@@ -1080,18 +1077,45 @@ func (fb *flamegraphBuilder) Release() {
 	fb.builderCumulative.Release()
 	fb.builderDiff.Release()
 
+	if fb.mappingBuildID != nil {
+		fb.mappingBuildID.Release()
+	}
+	fb.preparedMappingBuildID.Release()
+	fb.mappingFile.Release()
+	fb.preparedMappingFile.Release()
+	fb.functionName.Release()
+	fb.preparedFunctionName.Release()
+	fb.functionSystemName.Release()
+	fb.preparedFunctionSystemName.Release()
+	fb.functionFilename.Release()
+	fb.preparedFunctionFilename.Release()
+
 	for i := range fb.builderLabelFields {
-		fb.builderLabels[i].Release()
-		fb.builderLabelsDictUnifiers[i].Release()
+		if fb.builderLabels[i] != nil {
+			fb.builderLabels[i].Release()
+		}
+		if fb.builderLabelsDictUnifiers[i] != nil {
+			fb.builderLabelsDictUnifiers[i].Release()
+		}
 	}
 
-	fb.mappingBuildID.Release()
-	fb.mappingFile.Release()
-	fb.functionName.Release()
-	fb.functionSystemName.Release()
-	fb.functionFilename.Release()
+	for _, r := range fb.preparedLabels {
+		if r != nil {
+			r.Release()
+		}
+	}
 	for _, r := range fb.labels {
-		r.Release()
+		if r != nil {
+			r.Release()
+		}
+	}
+}
+
+func release(r ...releasable) {
+	for _, r := range r {
+		if r != nil {
+			r.Release()
+		}
 	}
 }
 
@@ -1293,7 +1317,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	)
 
 	var trimmedLabelsIndices []*array.Int32Builder
-	for range fb.labels {
+	for range fb.preparedLabels {
 		ib := array.NewInt32Builder(fb.pool)
 		trimmedLabelsIndices = append(trimmedLabelsIndices, ib)
 		releasers = append(releasers, ib)
@@ -1315,17 +1339,17 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 		copyUint64BuilderValue(fb.builderMappingStart, trimmedMappingStart, te.row)
 		copyUint64BuilderValue(fb.builderMappingLimit, trimmedMappingLimit, te.row)
 		copyUint64BuilderValue(fb.builderMappingOffset, trimmedMappingOffset, te.row)
-		appendDictionaryIndex(fb.mappingFile, trimmedMappingFileIndices, te.row)
-		appendDictionaryIndex(fb.mappingBuildID, trimmedMappingBuildIDIndices, te.row)
+		appendDictionaryIndex(fb.preparedMappingFile, trimmedMappingFileIndices, te.row)
+		appendDictionaryIndex(fb.preparedMappingBuildID, trimmedMappingBuildIDIndices, te.row)
 		copyUint64BuilderValue(fb.builderLocationAddress, trimmedLocationAddress, te.row)
 		copyOptBooleanBuilderValue(fb.builderLocationFolded, trimmedLocationFolded, te.row)
 		copyOptInt64BuilderValue(fb.builderLocationLine, trimmedLocationLine, te.row)
 		copyOptInt64BuilderValue(fb.builderFunctionStartLine, trimmedFunctionStartLine, te.row)
-		appendDictionaryIndex(fb.functionName, trimmedFunctionNameIndices, te.row)
-		appendDictionaryIndex(fb.functionSystemName, trimmedFunctionSystemNameIndices, te.row)
-		appendDictionaryIndex(fb.functionFilename, trimmedFunctionFilenameIndices, te.row)
-		for i := range fb.labels {
-			appendDictionaryIndex(fb.labels[i], trimmedLabelsIndices[i], te.row)
+		appendDictionaryIndex(fb.preparedFunctionName, trimmedFunctionNameIndices, te.row)
+		appendDictionaryIndex(fb.preparedFunctionSystemName, trimmedFunctionSystemNameIndices, te.row)
+		appendDictionaryIndex(fb.preparedFunctionFilename, trimmedFunctionFilenameIndices, te.row)
+		for i := range fb.preparedLabels {
+			appendDictionaryIndex(fb.preparedLabels[i], trimmedLabelsIndices[i], te.row)
 		}
 
 		// The following two will never be null.
@@ -1363,21 +1387,21 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	var err error
 	trimmedMappingBuildIDIndicesArray := trimmedMappingBuildIDIndices.NewArray()
 	releasers = append(releasers, trimmedMappingBuildIDIndicesArray)
-
-	fb.mappingBuildID, err = compactDictionary(fb.pool, array.NewDictionaryArray(
+	buildID, err := compactDictionary(fb.pool, array.NewDictionaryArray(
 		fb.mappingBuildID.DataType(),
 		trimmedMappingBuildIDIndicesArray,
-		fb.mappingBuildID.Dictionary(),
+		fb.preparedMappingBuildID.Dictionary(),
 	))
 	if err != nil {
 		return err
 	}
+	fb.mappingBuildID = buildID
 	trimmedMappingFileIndicesArray := trimmedMappingFileIndices.NewArray()
 	releasers = append(releasers, trimmedMappingFileIndicesArray)
 	fb.mappingFile, err = compactDictionary(fb.pool, array.NewDictionaryArray(
 		fb.mappingFile.DataType(),
 		trimmedMappingFileIndicesArray,
-		fb.mappingFile.Dictionary(),
+		fb.preparedMappingFile.Dictionary(),
 	))
 	if err != nil {
 		return err
@@ -1387,7 +1411,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	fb.functionName, err = compactDictionary(fb.pool, array.NewDictionaryArray(
 		fb.functionName.DataType(),
 		trimmedFunctionNameIndicesArray,
-		fb.functionName.Dictionary(),
+		fb.preparedFunctionName.Dictionary(),
 	))
 	if err != nil {
 		return err
@@ -1397,7 +1421,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	fb.functionSystemName, err = compactDictionary(fb.pool, array.NewDictionaryArray(
 		fb.functionSystemName.DataType(),
 		trimmedFunctionSystemNameIndicesArray,
-		fb.functionSystemName.Dictionary(),
+		fb.preparedFunctionSystemName.Dictionary(),
 	))
 	if err != nil {
 		return err
@@ -1407,20 +1431,20 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	fb.functionFilename, err = compactDictionary(fb.pool, array.NewDictionaryArray(
 		fb.functionFilename.DataType(),
 		trimmedFunctionFilenameIndicesArray,
-		fb.functionFilename.Dictionary(),
+		fb.preparedFunctionFilename.Dictionary(),
 	))
 	if err != nil {
 		return err
 	}
 
-	trimmedLabels := make([]*array.Dictionary, 0, len(fb.labels))
+	trimmedLabels := make([]*array.Dictionary, 0, len(fb.preparedLabels))
 	for i, index := range trimmedLabelsIndices {
 		trimmedIndexArray := index.NewArray()
 		releasers = append(releasers, trimmedIndexArray)
 		tl, err := compactDictionary(fb.pool, array.NewDictionaryArray(
-			&arrow.DictionaryType{IndexType: trimmedIndexArray.DataType(), ValueType: fb.labels[i].Dictionary().DataType()},
+			&arrow.DictionaryType{IndexType: trimmedIndexArray.DataType(), ValueType: fb.preparedLabels[i].Dictionary().DataType()},
 			trimmedIndexArray,
-			fb.labels[i].Dictionary(),
+			fb.preparedLabels[i].Dictionary(),
 		))
 		if err != nil {
 			return err
@@ -1429,16 +1453,49 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	}
 	fb.labels = trimmedLabels
 
+	if fb.builderLabelsOnly != nil {
+		fb.builderLabelsOnly.Release()
+	}
 	fb.builderLabelsOnly = trimmedLabelsOnly
+	if fb.builderLabelsExist != nil {
+		fb.builderLabelsExist.Release()
+	}
 	fb.builderLabelsExist = trimmedLabelsExist
+	if fb.builderMappingStart != nil {
+		fb.builderMappingStart.Release()
+	}
 	fb.builderMappingStart = trimmedMappingStart
+	if fb.builderMappingLimit != nil {
+		fb.builderMappingLimit.Release()
+	}
 	fb.builderMappingLimit = trimmedMappingLimit
+	if fb.builderMappingOffset != nil {
+		fb.builderMappingOffset.Release()
+	}
 	fb.builderMappingOffset = trimmedMappingOffset
+	if fb.builderLocationAddress != nil {
+		fb.builderLocationAddress.Release()
+	}
 	fb.builderLocationAddress = trimmedLocationAddress
+	if fb.builderLocationFolded != nil {
+		fb.builderLocationFolded.Release()
+	}
 	fb.builderLocationFolded = trimmedLocationFolded
+	if fb.builderLocationLine != nil {
+		fb.builderLocationLine.Release()
+	}
 	fb.builderLocationLine = trimmedLocationLine
+	if fb.builderFunctionStartLine != nil {
+		fb.builderFunctionStartLine.Release()
+	}
 	fb.builderFunctionStartLine = trimmedFunctionStartLine
+	if fb.builderCumulative != nil {
+		fb.builderCumulative.Release()
+	}
 	fb.builderCumulative = trimmedCumulative
+	if fb.builderDiff != nil {
+		fb.builderDiff.Release()
+	}
 	fb.builderDiff = trimmedDiff
 	fb.children = trimmedChildren
 
