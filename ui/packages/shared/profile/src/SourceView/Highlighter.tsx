@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useId} from 'react';
+import {useId, useMemo} from 'react';
 
 import {Vector} from 'apache-arrow';
 import cx from 'classnames';
@@ -25,6 +25,7 @@ import {selectDarkMode, useAppSelector} from '@parca/store';
 
 import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
 import {LineNo} from './LineNo';
+import {langaugeFromFile} from './lang-detector';
 
 interface RendererProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -36,8 +37,8 @@ interface RendererProps {
 type Renderer = ({rows, stylesheet, useInlineStyles}: RendererProps) => JSX.Element;
 
 interface HighlighterProps {
+  file: string;
   content: string;
-  language?: string;
   renderer?: Renderer;
 }
 
@@ -168,14 +169,25 @@ export const profileAwareRenderer = (
   };
 };
 
-export const Highlighter = ({content, language, renderer}: HighlighterProps): JSX.Element => {
+export const Highlighter = ({file, content, renderer}: HighlighterProps): JSX.Element => {
   const isDarkMode = useAppSelector(selectDarkMode);
+  const language = useMemo(() => langaugeFromFile(file), [file]);
 
   return (
     <div className="relative">
       <div className="flex gap-2 text-xs">
         <div
-          className={cx('text-right', charsToWidth(content.split('\n').length.toString().length))}
+          className={cx(
+            'text-right',
+            charsToWidth(
+              content
+                .split(
+                  // prettier-ignore
+                  '\n'
+                )
+                .length.toString().length
+            )
+          )}
         >
           Line
         </div>
