@@ -143,8 +143,8 @@ const TargetsPage = (): JSX.Element => {
           >
             <>
               {agents.length > 0 ? (
-                <div className="overflow-hidden border-b border-gray-200 shadow sm:rounded-lg">
-                  <div className="my-2 border-b-2 p-2">
+                <div className="mt-2 overflow-hidden border-b border-gray-200 bg-white shadow dark:border-gray-800 dark:bg-gray-800 sm:rounded-lg">
+                  <div className="p-2">
                     <div className="my-2">
                       <span className="text-xl font-semibold">Parca Agents</span>
                     </div>
@@ -155,7 +155,7 @@ const TargetsPage = (): JSX.Element => {
                 <></>
               )}
               {Object.keys(targets ?? {}).length > 0 ? (
-                <div className="overflow-hidden border-b border-gray-200 dark:border-gray-700 shadow sm:rounded-lg">
+                <div className="mt-2 overflow-hidden border-b border-gray-200 bg-white shadow dark:border-gray-800 dark:bg-gray-800 sm:rounded-lg">
                   {sortTargets(targetNamespaces)?.map(namespace => {
                     const name = Object.keys(namespace)[0];
                     const targets = namespace[name].sort((a: Target, b: Target) => {

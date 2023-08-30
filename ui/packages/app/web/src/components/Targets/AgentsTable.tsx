@@ -85,7 +85,7 @@ const AgentsTable = ({agents}: {agents: Agent[]}) => {
 
   return (
     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-      <thead className="bg-gray-50 dark:bg-gray-800">
+      <thead className="bg-gray-200 dark:bg-gray-700">
         <tr>
           {headers.map(header => (
             <th
@@ -98,7 +98,7 @@ const AgentsTable = ({agents}: {agents: Agent[]}) => {
           ))}
         </tr>
       </thead>
-      <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
+      <tbody className="divide-y divide-gray-200 bg-gray-50 dark:divide-gray-700 dark:bg-gray-900">
         {agents.map((agent: Agent) => {
           return (
             <tr key={agent.id}>

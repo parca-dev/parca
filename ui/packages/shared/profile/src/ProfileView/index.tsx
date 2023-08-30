@@ -434,8 +434,10 @@ export const ProfileView = ({
                               {...provided.draggableProps}
                               key={dashboardItem}
                               className={cx(
-                                'w-full rounded p-2 shadow dark:border-gray-500 dark:bg-gray-700',
-                                snapshot.isDragging ? 'bg-gray-200' : 'bg-white'
+                                'min-h-[200px] w-full rounded p-2 shadow dark:border dark:border-gray-700 dark:bg-gray-700',
+                                snapshot.isDragging
+                                  ? 'bg-gray-200 dark:bg-gray-500'
+                                  : 'bg-white dark:bg-gray-700'
                               )}
                             >
                               <VisualizationPanel
