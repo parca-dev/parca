@@ -20,10 +20,10 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/apache/arrow/go/v13/arrow"
-	"github.com/apache/arrow/go/v13/arrow/array"
-	"github.com/apache/arrow/go/v13/arrow/ipc"
-	"github.com/apache/arrow/go/v13/arrow/memory"
+	"github.com/apache/arrow/go/v14/arrow"
+	"github.com/apache/arrow/go/v14/arrow/array"
+	"github.com/apache/arrow/go/v14/arrow/ipc"
+	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/polarsignals/frostdb/pqarrow/builder"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -56,7 +56,14 @@ const (
 	FlamegraphFieldDiff       = "diff"
 )
 
-func GenerateFlamegraphArrow(ctx context.Context, mem memory.Allocator, tracer trace.Tracer, p profile.Profile, aggregate []string, trimFraction float32) (*queryv1alpha1.FlamegraphArrow, int64, error) {
+func GenerateFlamegraphArrow(
+	ctx context.Context,
+	mem memory.Allocator,
+	tracer trace.Tracer,
+	p profile.Profile,
+	aggregate []string,
+	trimFraction float32,
+) (*queryv1alpha1.FlamegraphArrow, int64, error) {
 	ctx, span := tracer.Start(ctx, "GenerateFlamegraphArrow")
 	defer span.End()
 
@@ -149,7 +156,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					sampleLabelRow = fb.rootsRow[unsafeString(lsbytes)][0]
 					// We want to compare against this found label root's children.
 					rootRow := fb.rootsRow[unsafeString(lsbytes)][0]
-					fb.compareRows = copyChildren(fb.compareRows, fb.children[rootRow])
+					fb.copyChildren(fb.children[rootRow])
 					fb.addRowValues(r, sampleLabelRow, i) // adds the cumulative and diff values to the existing row
 				} else {
 					lsstring := string(lsbytes) // we want to cast the bytes to a string and thus copy them.
@@ -168,7 +175,6 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 			// every new sample resets the childRow to -1 indicating that we start with a leaf again.
 			// pprof stores locations in reverse order, thus we loop over locations in reverse order.
-		locations:
 			for j := int(end - 1); j >= int(beg); j-- {
 				// If the location has no lines, it's not symbolized.
 				// We work with the location address instead.
@@ -187,7 +193,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				if !r.Lines.IsValid(j) || llOffsetEnd-llOffsetStart <= 0 {
 					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
 					if isRoot {
-						fb.compareRows = copyChildren(fb.compareRows, fb.rootsRow[unsafeString(lsbytes)])
+						fb.copyChildren(fb.rootsRow[unsafeString(lsbytes)])
 						// append this row afterward to not compare to itself
 						fb.parent.Reset()
 						fb.maxHeight = max(fb.maxHeight, fb.height)
@@ -206,7 +212,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					}
 					if merged {
 						fb.height++
-						continue locations
+						continue
 					}
 
 					if isRoot {
@@ -222,17 +228,16 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 					fb.parent.Set(row)
 					row = fb.builderCumulative.Len()
+					continue
 				}
 
-				llOffsetStart, llOffsetEnd = r.Lines.ValueOffsets(j)
-			stacktraces:
 				// just like locations, pprof stores lines in reverse order.
 				for k := int(llOffsetEnd - 1); k >= int(llOffsetStart); k-- {
 					isRoot = isLocationRoot && !(aggregateLabels && len(sampleLabels) > 0) && k == int(llOffsetEnd-1)
 
 					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
 					if isRoot {
-						fb.compareRows = copyChildren(fb.compareRows, fb.rootsRow[unsafeString(lsbytes)])
+						fb.copyChildren(fb.rootsRow[unsafeString(lsbytes)])
 						// append this row afterward to not compare to itself
 						fb.parent.Reset()
 						fb.maxHeight = max(fb.maxHeight, fb.height)
@@ -245,7 +250,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					}
 					if merged {
 						fb.height++
-						continue stacktraces
+						continue
 					}
 
 					if isRoot {
@@ -528,7 +533,7 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 			fb.addRowValues(r, cr, sampleIndex)
 			// Continue with this row as the parent for the next iteration and compare to its children.
 			fb.parent.Set(cr)
-			fb.compareRows = copyChildren(fb.compareRows, fb.children[cr])
+			fb.copyChildren(fb.children[cr])
 			return true, nil
 		}
 		// reset the compare rows
@@ -558,7 +563,7 @@ func (fb *flamegraphBuilder) mergeUnsymbolizedRows(
 
 		fb.builderCumulative.Add(cr, r.Value.Value(sampleIndex))
 		fb.parent.Set(cr)
-		fb.compareRows = copyChildren(fb.compareRows, fb.children[cr])
+		fb.copyChildren(fb.children[cr])
 		return true, nil
 	}
 	// reset the compare rows
@@ -674,28 +679,28 @@ func (fb *flamegraphBuilder) equalFunctionName(
 	lineRow,
 	flamegraphRow int,
 ) bool {
-	isNull := fb.builderFunctionNameIndices.IsNull(flamegraphRow)
-	if !isNull {
-		rowFunctionNameIndex := fb.builderFunctionNameIndices.Value(flamegraphRow)
-		translatedFunctionNameIndex := t.functionName.indices.Value(r.LineFunctionName.GetValueIndex(lineRow))
-		return rowFunctionNameIndex == translatedFunctionNameIndex
+	fgRowFunctionIsNull := fb.builderFunctionNameIndices.IsNull(flamegraphRow)
+	lineRowFunctionIsNull := r.LineFunctionName.IsNull(lineRow)
+
+	if fgRowFunctionIsNull != lineRowFunctionIsNull {
+		return false
 	}
-	// isNull
-	if !r.LineFunction.IsValid(lineRow) || len(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow))) == 0 {
+	if fgRowFunctionIsNull && lineRowFunctionIsNull {
 		return true
 	}
-	return false
+
+	rowFunctionNameIndex := fb.builderFunctionNameIndices.Value(flamegraphRow)
+	translatedFunctionNameIndex := t.functionName.indices.Value(r.LineFunctionName.GetValueIndex(lineRow))
+	return rowFunctionNameIndex == translatedFunctionNameIndex
 }
 
-func copyChildren(compareRows, children []int) []int {
-	if cap(compareRows) < len(children) {
-		compareRows = make([]int, len(children))
-	} else {
-		compareRows = compareRows[:len(children)]
+func (fb *flamegraphBuilder) copyChildren(children []int) {
+	if cap(fb.compareRows) < len(children) {
+		fb.compareRows = make([]int, len(children))
 	}
 
-	copy(compareRows, children)
-	return compareRows
+	fb.compareRows = fb.compareRows[:len(children)]
+	copy(fb.compareRows, children)
 }
 
 type flamegraphBuilder struct {

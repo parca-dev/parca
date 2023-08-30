@@ -47,6 +47,7 @@ const Select = ({
   loading,
   primary = false,
   disabled = false,
+  icon,
 }: {
   items: SelectItem[];
   selectedKey: string | undefined;
@@ -57,6 +58,7 @@ const Select = ({
   loading?: boolean;
   primary?: boolean;
   disabled?: boolean;
+  icon?: JSX.Element;
 }): JSX.Element => {
   const selection = items.find(v => v.key === selectedKey) ?? {
     key: selectedKey,
@@ -64,10 +66,10 @@ const Select = ({
   };
   const {loader} = useParcaContext();
   const styles =
-    'relative border rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-sm';
-  const defaultStyles = 'bg-gray-50 dark:bg-gray-900 dark:border-gray-600';
+    'relative border rounded-md shadow-sm px-4 py-2 text-left cursor-default focus:outline-none focus:ring-1 items-center focus:ring-indigo-500 focus:border-indigo-500 text-sm flex gap-2';
+  const defaultStyles = 'bg-white dark:bg-gray-900 dark:border-gray-600';
   const primaryStyles =
-    'text-gray-100 dark-gray-900 bg-indigo-600 border-indigo-500 font-medium py-2 px-4';
+    'text-gray-100 dark:gray-900 bg-indigo-600 border-indigo-500 font-medium py-2 px-4';
 
   return (
     <Listbox value={selectedKey} onChange={onSelection}>
@@ -82,12 +84,12 @@ const Select = ({
               {[className]: className.length > 0}
             )}
           >
-            <span className="ml-3 block overflow-x-hidden text-ellipsis">
+            <div className={cx(icon != null ? '' : 'block overflow-x-hidden text-ellipsis')}>
               {selection?.key !== '' ? selection.element.active : placeholder}
-            </span>
-            <span className="pointer-events-none absolute inset-y-0 right-0 ml-3 flex items-center pr-2 text-gray-400">
-              <Icon icon="heroicons:chevron-up-down-20-solid" aria-hidden="true" />
-            </span>
+            </div>
+            <div className={cx(icon != null ? '' : 'pointer-events-none text-gray-400')}>
+              {icon ?? <Icon icon="heroicons:chevron-up-down-20-solid" aria-hidden="true" />}
+            </div>
           </Listbox.Button>
 
           <Transition

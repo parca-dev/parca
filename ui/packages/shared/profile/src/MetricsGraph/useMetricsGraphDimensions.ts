@@ -20,7 +20,6 @@ interface MetricsGraphDimensions {
   height: number;
   heightStyle: string;
   margin: number;
-  marginRight: number;
 }
 
 const maxHeight = 402;
@@ -35,7 +34,6 @@ export const useMetricsGraphDimensions = (comparing: boolean): MetricsGraphDimen
       height: 0,
       heightStyle: '0',
       margin: 0,
-      marginRight: 0,
     };
   }
   width = width - profileExplorer.PaddingX;
@@ -43,7 +41,6 @@ export const useMetricsGraphDimensions = (comparing: boolean): MetricsGraphDimen
     width = width / 2 - 32;
   }
   const height = Math.min(width / 2.5, maxHeight);
-  const marginRight = 20;
   const heightStyle = `min(${maxHeight + margin}px, ${
     comparing
       ? profileExplorer.metricsGraph.maxHeightStyle.compareMode
@@ -54,6 +51,5 @@ export const useMetricsGraphDimensions = (comparing: boolean): MetricsGraphDimen
     height,
     heightStyle,
     margin,
-    marginRight,
   };
 };

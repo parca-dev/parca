@@ -12,6 +12,7 @@
 // limitations under the License.
 
 import {QueryServiceClient} from '@parca/client';
+import {Card} from '@parca/components';
 import type {NavigateFunction} from '@parca/utilities';
 
 import {ProfileSelection, ProfileViewWithData} from '..';
@@ -38,34 +39,32 @@ const ProfileExplorerSingle = ({
 }: ProfileExplorerSingleProps): JSX.Element => {
   return (
     <>
-      <div className="grid grid-cols-1">
-        <div>
-          <ProfileSelector
-            queryClient={queryClient}
-            querySelection={query}
-            selectQuery={selectQuery}
-            selectProfile={selectProfile}
-            closeProfile={() => {}} // eslint-disable-line @typescript-eslint/no-empty-function
-            profileSelection={profile}
-            comparing={false}
-            onCompareProfile={compareProfile}
-            enforcedProfileName={''} // TODO
-          />
-        </div>
-      </div>
-      <div className="grid grid-cols-1">
-        <div>
-          {profile != null ? (
+      <Card className="px-6 py-4">
+        <ProfileSelector
+          queryClient={queryClient}
+          querySelection={query}
+          selectQuery={selectQuery}
+          selectProfile={selectProfile}
+          closeProfile={() => {}} // eslint-disable-line @typescript-eslint/no-empty-function
+          profileSelection={profile}
+          comparing={false}
+          onCompareProfile={compareProfile}
+          enforcedProfileName={''} // TODO
+        />
+      </Card>
+      {profile != null ? (
+        <div className="mt-2">
+          <Card className="px-6 py-4">
             <ProfileViewWithData
               queryClient={queryClient}
               profileSource={profile.ProfileSource()}
               navigateTo={navigateTo}
             />
-          ) : (
-            <></>
-          )}
+          </Card>
         </div>
-      </div>
+      ) : (
+        <></>
+      )}
     </>
   );
 };
