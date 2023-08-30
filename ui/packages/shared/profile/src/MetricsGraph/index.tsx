@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useRef, useState} from 'react';
+import React, {Fragment, useRef, useState} from 'react';
 
 import * as d3 from 'd3';
 import {pointer} from 'd3-selection';
@@ -408,7 +408,7 @@ export const RawMetricsGraph = ({
           <g transform={`translate(${margin}, ${margin})`}>
             <g className="y axis" textAnchor="end" fontSize="10" fill="none">
               {yScale.ticks(5).map((d, i) => (
-                <>
+                <Fragment key={`${i.toString()}-${d.toString()}`}>
                   <g
                     key={`tick-${i}`}
                     className="tick"
@@ -429,7 +429,7 @@ export const RawMetricsGraph = ({
                       y2={yScale(d)}
                     />
                   </g>
-                </>
+                </Fragment>
               ))}
               <line
                 className="stroke-gray-300 dark:stroke-gray-500"
@@ -454,7 +454,7 @@ export const RawMetricsGraph = ({
               transform={`translate(0,${height - margin})`}
             >
               {xScale.ticks(5).map((d, i) => (
-                <>
+                <Fragment key={`${i.toString()}-${d.toString()}`}>
                   <g
                     key={`tick-${i}`}
                     className="tick"
@@ -475,7 +475,7 @@ export const RawMetricsGraph = ({
                       y2={-height + margin}
                     />
                   </g>
-                </>
+                </Fragment>
               ))}
               <line
                 className="stroke-gray-300 dark:stroke-gray-500"
