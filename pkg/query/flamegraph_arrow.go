@@ -1020,9 +1020,7 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	arrays[3] = fb.builderMappingOffset.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[3])
 	arrays[4] = fb.mappingFile
-	cleanupArrs = append(cleanupArrs, arrays[4])
 	arrays[5] = fb.mappingBuildID
-	cleanupArrs = append(cleanupArrs, arrays[5])
 	arrays[6] = fb.builderLocationAddress.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[6])
 	arrays[7] = fb.builderLocationFolded.NewArray()
@@ -1032,11 +1030,8 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	arrays[9] = fb.builderFunctionStartLine.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[9])
 	arrays[10] = fb.functionName
-	cleanupArrs = append(cleanupArrs, arrays[10])
 	arrays[11] = fb.functionSystemName
-	cleanupArrs = append(cleanupArrs, arrays[11])
 	arrays[12] = fb.functionFilename
-	cleanupArrs = append(cleanupArrs, arrays[12])
 	arrays[13] = fb.builderChildren.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[13])
 	arrays[14] = fb.builderCumulative.NewArray()
@@ -1454,22 +1449,19 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	}
 	fb.functionFilename = functionFilename
 
-	trimmedLabels := make([]*array.Dictionary, 0, len(fb.labels))
+	trimmedLabels := make([]*array.Dictionary, 0, len(trimmedLabelsIndices))
 	for i, index := range trimmedLabelsIndices {
 		trimmedIndexArray := index.NewArray()
 		releasers = append(releasers, trimmedIndexArray)
 		tl, err := compactDictionary(fb.pool, array.NewDictionaryArray(
-			&arrow.DictionaryType{IndexType: trimmedIndexArray.DataType(), ValueType: fb.labels[i].Dictionary().DataType()},
+			&arrow.DictionaryType{IndexType: trimmedIndexArray.DataType(), ValueType: fb.preparedLabels[i].Dictionary().DataType()},
 			trimmedIndexArray,
-			fb.labels[i].Dictionary(),
+			fb.preparedLabels[i].Dictionary(),
 		))
 		if err != nil {
 			return err
 		}
 		trimmedLabels = append(trimmedLabels, tl)
-	}
-	for i := range fb.labels {
-		fb.labels[i].Release()
 	}
 	fb.labels = trimmedLabels
 
