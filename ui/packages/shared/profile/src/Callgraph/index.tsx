@@ -115,7 +115,8 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [svgWrapper.current, svgWrapperLoaded]);
 
-  if (data.nodes.length < 1) return <>Profile has no samples</>;
+  if (data.nodes.length < 1)
+    return <div className="mx-auto text-center">Profile has no samples</div>;
 
   const resetView = (): void => setView(originalView);
 

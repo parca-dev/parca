@@ -27,7 +27,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/apache/arrow/go/v13/arrow/memory"
+	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -332,6 +332,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 	s := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracerProvider.Tracer("profilestore"),
 		mc,
@@ -361,6 +362,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return fmt.Errorf("failed to create gRPC connection to ProfileShareServer: %s, %w", flags.ProfileShareServer, err)
 	}
 
+	debuginfoBucket := objstore.NewPrefixedBucket(bucket, "debuginfo")
 	q := queryservice.NewColumnQueryAPI(
 		logger,
 		tracerProvider.Tracer("query-service"),
@@ -385,6 +387,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			tracerProvider.Tracer("arrow_to_profile_converter"),
 			metastore.NewKeyMaker(),
 		),
+		queryservice.NewBucketSourceFinder(debuginfoBucket),
 	)
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -413,7 +416,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		)
 	}
 
-	debuginfoBucket := objstore.NewPrefixedBucket(bucket, "debuginfo")
 	prefixedSignedRequestsClient := signedrequests.NewPrefixedClient(signedRequestsClient, "debuginfo")
 	debuginfoMetadata := debuginfo.NewObjectStoreMetadata(logger, debuginfoBucket)
 	dbginfo, err := debuginfo.NewStore(

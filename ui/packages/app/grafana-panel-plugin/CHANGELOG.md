@@ -3,6 +3,74 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.0.194](https://github.com/parca-dev/parca/compare/@parca/grafana-panel@0.0.193...@parca/grafana-panel@0.0.194) (2023-08-30)
+
+**Note:** Version bump only for package @parca/grafana-panel
+
+## [0.0.193](https://github.com/parca-dev/parca/compare/@parca/grafana-panel@0.0.192...@parca/grafana-panel@0.0.193) (2023-08-30)
+
+**Note:** Version bump only for package @parca/grafana-panel
+
+## [0.0.192](https://github.com/parca-dev/parca/compare/@parca/grafana-panel@0.0.191...@parca/grafana-panel@0.0.192) (2023-08-30)
+
+**Note:** Version bump only for package @parca/grafana-panel
+
+## 0.0.191 (2023-08-29)
+
+**Note:** Version bump only for package @parca/grafana-panel
+
+## [0.0.190](https://github.com/parca-dev/parca/compare/@parca/grafana-panel@0.0.189...@parca/grafana-panel@0.0.190) (2023-08-28)
+
+**Note:** Version bump only for package @parca/grafana-panel
+
+## [0.0.189](https://github.com/parca-dev/parca/compare/@parca/grafana-panel@0.0.188...@parca/grafana-panel@0.0.189) (2023-08-28)
+
+**Note:** Version bump only for package @parca/grafana-panel
+
+## [0.0.188](https://github.com/parca-dev/parca/compare/@parca/grafana-panel@0.0.187...@parca/grafana-panel@0.0.188) (2023-08-25)
+
+**Note:** Version bump only for package @parca/grafana-panel
+
+## 0.0.187 (2023-08-25)
+
+**Note:** Version bump only for package @parca/grafana-panel
+
+## [0.0.186](https://github.com/parca-dev/parca/compare/@parca/grafana-panel@0.0.185...@parca/grafana-panel@0.0.186) (2023-08-24)
+
+**Note:** Version bump only for package @parca/grafana-panel
+
+## [0.0.185](https://github.com/parca-dev/parca/compare/@parca/grafana-panel@0.0.184...@parca/grafana-panel@0.0.185) (2023-08-24)
+
+**Note:** Version bump only for package @parca/grafana-panel
+
+## [0.0.184](https://github.com/parca-dev/parca/compare/@parca/grafana-panel@0.0.183...@parca/grafana-panel@0.0.184) (2023-08-23)
+
+**Note:** Version bump only for package @parca/grafana-panel
+
+## [0.0.183](https://github.com/parca-dev/parca/compare/@parca/grafana-panel@0.0.182...@parca/grafana-panel@0.0.183) (2023-08-23)
+
+**Note:** Version bump only for package @parca/grafana-panel
+
+## [0.0.182](https://github.com/parca-dev/parca/compare/@parca/grafana-panel@0.0.180...@parca/grafana-panel@0.0.182) (2023-08-21)
+
+**Note:** Version bump only for package @parca/grafana-panel
+
+## [0.0.181](https://github.com/parca-dev/parca/compare/@parca/grafana-panel@0.0.180...@parca/grafana-panel@0.0.181) (2023-08-16)
+
+**Note:** Version bump only for package @parca/grafana-panel
+
+## [0.0.180](https://github.com/parca-dev/parca/compare/@parca/grafana-panel@0.0.179...@parca/grafana-panel@0.0.180) (2023-08-16)
+
+**Note:** Version bump only for package @parca/grafana-panel
+
+## [0.0.179](https://github.com/parca-dev/parca/compare/@parca/grafana-panel@0.0.178...@parca/grafana-panel@0.0.179) (2023-08-15)
+
+**Note:** Version bump only for package @parca/grafana-panel
+
+## [0.0.178](https://github.com/parca-dev/parca/compare/@parca/grafana-panel@0.0.177...@parca/grafana-panel@0.0.178) (2023-08-15)
+
+**Note:** Version bump only for package @parca/grafana-panel
+
 ## 0.0.177 (2023-08-10)
 
 **Note:** Version bump only for package @parca/grafana-panel

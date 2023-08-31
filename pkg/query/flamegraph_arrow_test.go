@@ -17,18 +17,19 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"encoding/json"
 	"io"
 	"os"
 	"sort"
+	"strings"
 	"testing"
 
-	"github.com/apache/arrow/go/v13/arrow"
-	"github.com/apache/arrow/go/v13/arrow/array"
-	"github.com/apache/arrow/go/v13/arrow/memory"
+	"github.com/apache/arrow/go/v14/arrow"
+	"github.com/apache/arrow/go/v14/arrow/array"
+	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/go-kit/log"
 	pprofprofile "github.com/google/pprof/profile"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 
@@ -37,10 +38,12 @@ import (
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/metastoretest"
 	"github.com/parca-dev/parca/pkg/parcacol"
+	"github.com/parca-dev/parca/pkg/profile"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
 type flamegraphRow struct {
+	LabelsOnly         bool
 	MappingStart       uint64
 	MappingLimit       uint64
 	MappingOffset      uint64
@@ -56,9 +59,11 @@ type flamegraphRow struct {
 	Labels             map[string]string
 	Children           []uint32
 	Cumulative         int64
+	Diff               int64
 }
 
 type flamegraphColumns struct {
+	labelsOnly          []bool
 	mappingStart        []uint64
 	mappingLimit        []uint64
 	mappingOffset       []uint64
@@ -74,11 +79,13 @@ type flamegraphColumns struct {
 	labels              []map[string]string
 	children            [][]uint32
 	cumulative          []int64
+	diff                []int64
 }
 
 func rowsToColumn(rows []flamegraphRow) flamegraphColumns {
 	columns := flamegraphColumns{}
 	for _, row := range rows {
+		columns.labelsOnly = append(columns.labelsOnly, row.LabelsOnly)
 		columns.mappingStart = append(columns.mappingStart, row.MappingStart)
 		columns.mappingLimit = append(columns.mappingLimit, row.MappingLimit)
 		columns.mappingOffset = append(columns.mappingOffset, row.MappingOffset)
@@ -94,6 +101,7 @@ func rowsToColumn(rows []flamegraphRow) flamegraphColumns {
 		columns.labels = append(columns.labels, row.Labels)
 		columns.children = append(columns.children, row.Children)
 		columns.cumulative = append(columns.cumulative, row.Cumulative)
+		columns.diff = append(columns.diff, row.Diff)
 	}
 	return columns
 }
@@ -110,20 +118,48 @@ func requireColumn(t *testing.T, r arrow.Record, field string, expected any) {
 			expected,
 			r.Column(r.Schema().FieldIndices(field)[0]).(*array.Uint64).Uint64Values(),
 		)
+	case []bool:
+		actual := make([]bool, r.NumRows())
+		col := r.Column(r.Schema().FieldIndices(field)[0]).(*array.Boolean)
+		for i := 0; i < int(r.NumRows()); i++ {
+			actual[i] = col.Value(i)
+		}
+		require.Equal(t, expected, actual)
+
+	default:
+		require.Fail(t, "unsupported type")
 	}
 }
 
-func requireColumnDict(t *testing.T, r arrow.Record, field string, expected any) {
+func requireColumnBinaryDict(t *testing.T, r arrow.Record, field string, expected any) {
 	dict := r.Column(r.Schema().FieldIndices(field)[0]).(*array.Dictionary)
 
 	switch expected.(type) {
 	case []string:
-		mappingFilesString := dict.Dictionary().(*array.String)
-		mappingFiles := make([]string, r.NumRows())
-		for i := 0; i < int(r.NumRows()); i++ {
-			mappingFiles[i] = mappingFilesString.Value(dict.GetValueIndex(i))
+		if dictStringsBytes, ok := dict.Dictionary().(*array.Binary); ok {
+			actual := make([]string, r.NumRows())
+			for i := 0; i < int(r.NumRows()); i++ {
+				if dict.IsValid(i) {
+					actual[i] = string(dictStringsBytes.Value(dict.GetValueIndex(i)))
+				} else {
+					actual[i] = "(null)"
+				}
+			}
+			require.Equal(t, expected, actual)
 		}
-		require.Equal(t, expected, mappingFiles)
+		if dictStrings, ok := dict.Dictionary().(*array.String); ok {
+			actual := make([]string, r.NumRows())
+			for i := 0; i < int(r.NumRows()); i++ {
+				if dict.IsValid(i) {
+					actual[i] = dictStrings.Value(dict.GetValueIndex(i))
+				} else {
+					actual[i] = "(null)"
+				}
+			}
+			require.Equal(t, expected, actual)
+		}
+	default:
+		require.Fail(t, "unsupported type")
 	}
 }
 
@@ -150,7 +186,8 @@ func requireColumnChildren(t *testing.T, record arrow.Record, expected [][]uint3
 
 func TestGenerateFlamegraphArrow(t *testing.T) {
 	ctx := context.Background()
-	mem := memory.NewGoAllocator()
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	var err error
 
 	l := metastoretest.NewTestMetastore(
@@ -286,7 +323,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 		height:     5,
 		trimmed:    0, // TODO
 		rows: []flamegraphRow{
-			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0, LocationFolded: false, LocationLine: 0, FunctionStartLine: 0, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 10, Labels: nil, Children: []uint32{1, 3, 7, 11}},                               // 0
+			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "(null)", MappingBuildID: "(null)", LocationAddress: 0, LocationFolded: false, LocationLine: 0, FunctionStartLine: 0, FunctionName: "(null)", FunctionSystemName: "(null)", FunctionFilename: "(null)", Cumulative: 10, Labels: nil, Children: []uint32{1, 3, 7, 11}},        // 0
 			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, FunctionStartLine: 1, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 2, Labels: map[string]string{"goroutine": "1"}, Children: []uint32{2}},  // 1
 			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 2, FunctionStartLine: 2, FunctionName: "2", FunctionSystemName: "2", FunctionFilename: "2", Cumulative: 2, Labels: map[string]string{"goroutine": "1"}, Children: nil},          // 2
 			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, FunctionStartLine: 1, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 1, Labels: map[string]string{"goroutine": "1"}, Children: []uint32{4}},  // 3
@@ -310,39 +347,39 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 		height:     5,
 		trimmed:    0, // TODO
 		rows: []flamegraphRow{
-			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0, LocationFolded: false, LocationLine: 0, FunctionStartLine: 0, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 10, Labels: nil, Children: []uint32{1}},           // 0
-			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, FunctionStartLine: 1, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 10, Labels: nil, Children: []uint32{2}},   // 1
-			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 2, FunctionStartLine: 2, FunctionName: "2", FunctionSystemName: "2", FunctionFilename: "2", Cumulative: 10, Labels: nil, Children: []uint32{3}},   // 2
-			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa3, LocationFolded: false, LocationLine: 3, FunctionStartLine: 3, FunctionName: "3", FunctionSystemName: "3", FunctionFilename: "3", Cumulative: 8, Labels: nil, Children: []uint32{4, 5}}, // 3
-			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa5, LocationFolded: false, LocationLine: 5, FunctionStartLine: 5, FunctionName: "5", FunctionSystemName: "5", FunctionFilename: "5", Cumulative: 5, Labels: nil, Children: nil},            // 4
-			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa4, LocationFolded: false, LocationLine: 4, FunctionStartLine: 4, FunctionName: "4", FunctionSystemName: "4", FunctionFilename: "4", Cumulative: 3, Labels: nil, Children: nil},            // 5
+			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "(null)", MappingBuildID: "(null)", LocationAddress: 0, LocationFolded: false, LocationLine: 0, FunctionStartLine: 0, FunctionName: "(null)", FunctionSystemName: "(null)", FunctionFilename: "(null)", Cumulative: 10, Labels: nil, Children: []uint32{1}}, // 0
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, FunctionStartLine: 1, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 10, Labels: nil, Children: []uint32{2}},                // 1
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 2, FunctionStartLine: 2, FunctionName: "2", FunctionSystemName: "2", FunctionFilename: "2", Cumulative: 10, Labels: nil, Children: []uint32{3}},                // 2
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa3, LocationFolded: false, LocationLine: 3, FunctionStartLine: 3, FunctionName: "3", FunctionSystemName: "3", FunctionFilename: "3", Cumulative: 8, Labels: nil, Children: []uint32{4, 5}},              // 3
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa5, LocationFolded: false, LocationLine: 5, FunctionStartLine: 5, FunctionName: "5", FunctionSystemName: "5", FunctionFilename: "5", Cumulative: 5, Labels: nil, Children: nil},                         // 4
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa4, LocationFolded: false, LocationLine: 4, FunctionStartLine: 4, FunctionName: "4", FunctionSystemName: "4", FunctionFilename: "4", Cumulative: 3, Labels: nil, Children: nil},                         // 5
 		},
 	}, {
 		name:      "aggregate-pprof-labels",
 		aggregate: []string{FlamegraphFieldLabels},
 		// expectations
 		cumulative: 10,
-		height:     5, // TODO 6
+		height:     6,
 		trimmed:    0, // TODO
 		rows: []flamegraphRow{
-			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0, LocationFolded: false, LocationLine: 0, FunctionStartLine: 0, FunctionName: `{"goroutine":"1"}`, FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 10, Labels: nil, Children: []uint32{1, 6, 10}}, // 0
+			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "(null)", MappingBuildID: "(null)", LocationAddress: 0, LocationFolded: false, LocationLine: 0, FunctionStartLine: 0, FunctionName: `(null)`, FunctionSystemName: "(null)", FunctionFilename: "(null)", Cumulative: 10, Labels: nil, Children: []uint32{1, 6, 10}}, // 0
 			// all of these have the same labels, so they are aggregated
-			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0, LocationFolded: false, LocationLine: 0, FunctionStartLine: 0, FunctionName: `{"goroutine":"1"}`, FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 3, Labels: map[string]string{"goroutine": "1"}, Children: []uint32{2}}, // 1
-			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, FunctionStartLine: 1, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 3, Labels: map[string]string{"goroutine": "1"}, Children: []uint32{3}},         // 2
-			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 2, FunctionStartLine: 2, FunctionName: "2", FunctionSystemName: "2", FunctionFilename: "2", Cumulative: 3, Labels: map[string]string{"goroutine": "1"}, Children: []uint32{4}},         // 3
-			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa3, LocationFolded: false, LocationLine: 3, FunctionStartLine: 3, FunctionName: "3", FunctionSystemName: "3", FunctionFilename: "3", Cumulative: 1, Labels: map[string]string{"goroutine": "1"}, Children: []uint32{5}},         // 4
-			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa5, LocationFolded: false, LocationLine: 5, FunctionStartLine: 5, FunctionName: "5", FunctionSystemName: "5", FunctionFilename: "5", Cumulative: 1, Labels: map[string]string{"goroutine": "1"}, Children: nil},                 // 5
+			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "(null)", MappingBuildID: "(null)", LocationAddress: 0, LocationFolded: false, LocationLine: 0, FunctionStartLine: 0, FunctionName: `(null)`, FunctionSystemName: "(null)", FunctionFilename: "(null)", Cumulative: 3, Labels: map[string]string{"goroutine": "1"}, Children: []uint32{2}, LabelsOnly: true}, // 1
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, FunctionStartLine: 1, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 3, Labels: map[string]string{"goroutine": "1"}, Children: []uint32{3}},                                  // 2
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 2, FunctionStartLine: 2, FunctionName: "2", FunctionSystemName: "2", FunctionFilename: "2", Cumulative: 3, Labels: map[string]string{"goroutine": "1"}, Children: []uint32{4}},                                  // 3
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa3, LocationFolded: false, LocationLine: 3, FunctionStartLine: 3, FunctionName: "3", FunctionSystemName: "3", FunctionFilename: "3", Cumulative: 1, Labels: map[string]string{"goroutine": "1"}, Children: []uint32{5}},                                  // 4
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa5, LocationFolded: false, LocationLine: 5, FunctionStartLine: 5, FunctionName: "5", FunctionSystemName: "5", FunctionFilename: "5", Cumulative: 1, Labels: map[string]string{"goroutine": "1"}, Children: nil},                                          // 5
 			// all of these have no labels, so they are kept separate
 			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, FunctionStartLine: 1, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 3, Labels: nil, Children: []uint32{7}}, // 6
 			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 2, FunctionStartLine: 2, FunctionName: "2", FunctionSystemName: "2", FunctionFilename: "2", Cumulative: 3, Labels: nil, Children: []uint32{8}}, // 7
 			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa3, LocationFolded: false, LocationLine: 3, FunctionStartLine: 3, FunctionName: "3", FunctionSystemName: "3", FunctionFilename: "3", Cumulative: 3, Labels: nil, Children: []uint32{9}}, // 8
 			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa4, LocationFolded: false, LocationLine: 4, FunctionStartLine: 4, FunctionName: "4", FunctionSystemName: "4", FunctionFilename: "4", Cumulative: 3, Labels: nil, Children: nil},         // 9
 			// the same stack as the second stack, but a different pprof label
-			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0, LocationFolded: false, LocationLine: 0, FunctionStartLine: 0, FunctionName: `{"goroutine":"2"}`, FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 4, Labels: map[string]string{"goroutine": "2"}, Children: []uint32{11}}, // 10
-			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, FunctionStartLine: 1, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 4, Labels: map[string]string{"goroutine": "2"}, Children: []uint32{12}},         // 11
-			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 2, FunctionStartLine: 2, FunctionName: "2", FunctionSystemName: "2", FunctionFilename: "2", Cumulative: 4, Labels: map[string]string{"goroutine": "2"}, Children: []uint32{13}},         // 12
-			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa3, LocationFolded: false, LocationLine: 3, FunctionStartLine: 3, FunctionName: "3", FunctionSystemName: "3", FunctionFilename: "3", Cumulative: 4, Labels: map[string]string{"goroutine": "2"}, Children: []uint32{14}},         // 13
-			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa5, LocationFolded: false, LocationLine: 5, FunctionStartLine: 5, FunctionName: "5", FunctionSystemName: "5", FunctionFilename: "5", Cumulative: 4, Labels: map[string]string{"goroutine": "2"}, Children: nil},                  // 14
+			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "(null)", MappingBuildID: "(null)", LocationAddress: 0, LocationFolded: false, LocationLine: 0, FunctionStartLine: 0, FunctionName: `(null)`, FunctionSystemName: "(null)", FunctionFilename: "(null)", Cumulative: 4, Labels: map[string]string{"goroutine": "2"}, Children: []uint32{11}, LabelsOnly: true}, // 10
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, FunctionStartLine: 1, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 4, Labels: map[string]string{"goroutine": "2"}, Children: []uint32{12}},                                  // 11
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 2, FunctionStartLine: 2, FunctionName: "2", FunctionSystemName: "2", FunctionFilename: "2", Cumulative: 4, Labels: map[string]string{"goroutine": "2"}, Children: []uint32{13}},                                  // 12
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa3, LocationFolded: false, LocationLine: 3, FunctionStartLine: 3, FunctionName: "3", FunctionSystemName: "3", FunctionFilename: "3", Cumulative: 4, Labels: map[string]string{"goroutine": "2"}, Children: []uint32{14}},                                  // 13
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa5, LocationFolded: false, LocationLine: 5, FunctionStartLine: 5, FunctionName: "5", FunctionSystemName: "5", FunctionFilename: "5", Cumulative: 4, Labels: map[string]string{"goroutine": "2"}, Children: nil},                                           // 14
 		},
 	}, {
 		name:      "aggregate-mapping-file",
@@ -353,11 +390,11 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 		trimmed:    0, // TODO
 		rows: []flamegraphRow{
 			// This aggregates all the rows with the same mapping file, meaning that we only keep one flamegraphRow per stack depth in this example.
-			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0, LocationFolded: false, LocationLine: 0, FunctionStartLine: 0, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 10, Labels: nil, Children: []uint32{1}},         // 0
-			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, FunctionStartLine: 1, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 10, Labels: nil, Children: []uint32{2}}, // 1
-			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 2, FunctionStartLine: 2, FunctionName: "2", FunctionSystemName: "2", FunctionFilename: "2", Cumulative: 10, Labels: nil, Children: []uint32{3}}, // 2
-			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa3, LocationFolded: false, LocationLine: 3, FunctionStartLine: 3, FunctionName: "3", FunctionSystemName: "3", FunctionFilename: "3", Cumulative: 8, Labels: nil, Children: []uint32{4}},  // 3
-			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa5, LocationFolded: false, LocationLine: 5, FunctionStartLine: 5, FunctionName: "5", FunctionSystemName: "5", FunctionFilename: "5", Cumulative: 8, Labels: nil, Children: nil},          // 4
+			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "(null)", MappingBuildID: "(null)", LocationAddress: 0, LocationFolded: false, LocationLine: 0, FunctionStartLine: 0, FunctionName: "(null)", FunctionSystemName: "(null)", FunctionFilename: "(null)", Cumulative: 10, Labels: nil, Children: []uint32{1}}, // 0
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, FunctionStartLine: 1, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 10, Labels: nil, Children: []uint32{2}},                // 1
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 2, FunctionStartLine: 2, FunctionName: "2", FunctionSystemName: "2", FunctionFilename: "2", Cumulative: 10, Labels: nil, Children: []uint32{3}},                // 2
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa3, LocationFolded: false, LocationLine: 3, FunctionStartLine: 3, FunctionName: "3", FunctionSystemName: "3", FunctionFilename: "3", Cumulative: 8, Labels: nil, Children: []uint32{4}},                 // 3
+			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa5, LocationFolded: false, LocationLine: 5, FunctionStartLine: 5, FunctionName: "5", FunctionSystemName: "5", FunctionFilename: "5", Cumulative: 8, Labels: nil, Children: nil},                         // 4
 		},
 	}} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -371,49 +408,51 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 
 			fa, cumulative, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, np, tc.aggregate, 0)
 			require.NoError(t, err)
+			defer fa.Release()
 
 			require.Equal(t, tc.cumulative, cumulative)
 			require.Equal(t, tc.height, height)
 			require.Equal(t, tc.trimmed, trimmed)
-			require.Equal(t, int64(len(tc.rows)), fa.NumRows())
-			require.Equal(t, int64(16), fa.NumCols())
+			require.Equal(t, int64(17), fa.NumCols())
 
 			// Convert the numRows to columns for easier access when testing below.
 			columns := rowsToColumn(tc.rows)
 
+			requireColumn(t, fa, FlamegraphFieldLabelsOnly, columns.labelsOnly)
 			requireColumn(t, fa, FlamegraphFieldMappingStart, columns.mappingStart)
 			requireColumn(t, fa, FlamegraphFieldMappingLimit, columns.mappingLimit)
 			requireColumn(t, fa, FlamegraphFieldMappingOffset, columns.mappingOffset)
-			requireColumnDict(t, fa, FlamegraphFieldMappingFile, columns.mappingFiles)
-			requireColumnDict(t, fa, FlamegraphFieldMappingBuildID, columns.mappingBuildIDs)
+			requireColumnBinaryDict(t, fa, FlamegraphFieldMappingFile, columns.mappingFiles)
+			requireColumnBinaryDict(t, fa, FlamegraphFieldMappingBuildID, columns.mappingBuildIDs)
 			requireColumn(t, fa, FlamegraphFieldLocationAddress, columns.locationAddresses)
 			requireColumn(t, fa, FlamegraphFieldLocationFolded, columns.locationFolded)
 			requireColumn(t, fa, FlamegraphFieldLocationLine, columns.locationLines)
 			requireColumn(t, fa, FlamegraphFieldFunctionStartLine, columns.functionStartLines)
-			requireColumnDict(t, fa, FlamegraphFieldFunctionName, columns.functionNames)
-			requireColumnDict(t, fa, FlamegraphFieldFunctionSystemName, columns.functionSystemNames)
-			requireColumnDict(t, fa, FlamegraphFieldFunctionFileName, columns.functionFileNames)
+			requireColumnBinaryDict(t, fa, FlamegraphFieldFunctionName, columns.functionNames)
+			requireColumnBinaryDict(t, fa, FlamegraphFieldFunctionSystemName, columns.functionSystemNames)
+			requireColumnBinaryDict(t, fa, FlamegraphFieldFunctionFileName, columns.functionFileNames)
 			requireColumn(t, fa, FlamegraphFieldCumulative, columns.cumulative)
+			requireColumn(t, fa, FlamegraphFieldDiff, columns.diff)
 			requireColumnChildren(t, fa, columns.children)
 
-			labelsDict := fa.Column(fa.Schema().FieldIndices(FlamegraphFieldLabels)[0]).(*array.Dictionary)
-			labelsString := labelsDict.Dictionary().(*array.String)
 			pprofLabels := make([]map[string]string, fa.NumRows())
 			for i := 0; i < int(fa.NumRows()); i++ {
-				if labelsDict.IsNull(i) {
-					continue
+				sampleLabels := map[string]string{}
+				for j, f := range fa.Schema().Fields() {
+					if strings.HasPrefix(f.Name, profile.ColumnPprofLabelsPrefix) && fa.Column(j).IsValid(i) {
+						col := fa.Column(fa.Schema().FieldIndices(f.Name)[0]).(*array.Dictionary)
+						dict := col.Dictionary().(*array.Binary)
+
+						labelName := strings.TrimPrefix(f.Name, profile.ColumnPprofLabelsPrefix)
+						sampleLabels[labelName] = string(dict.Value(col.GetValueIndex(i)))
+					}
 				}
-				ls := map[string]string{}
-				err := json.Unmarshal([]byte(labelsString.Value(labelsDict.GetValueIndex(i))), &ls)
-				require.NoError(t, err)
-				pprofLabels[i] = ls
+
+				if len(sampleLabels) > 0 {
+					pprofLabels[i] = sampleLabels
+				}
 			}
 			require.Equal(t, columns.labels, pprofLabels)
-
-			require.Equal(t,
-				len(tc.rows),
-				fa.Column(fa.Schema().FieldIndices(FlamegraphFieldDiff)[0]).(*array.Int64).NullN(),
-			)
 		})
 	}
 }
@@ -422,9 +461,14 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	mem := memory.NewGoAllocator()
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
+	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
+		Name: "parca_test_counter",
+		Help: "parca_test_counter",
+	})
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
 	store := metastoretest.NewTestMetastore(t, logger, reg, tracer)
@@ -464,8 +508,8 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 	require.NoError(t, err)
 
 	metastore := metastore.NewInProcessClient(store)
-	normalizer := parcacol.NewNormalizer(metastore, true)
-	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false)
+	normalizer := parcacol.NewNormalizer(metastore, true, counter)
+	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false, nil)
 	require.NoError(t, err)
 
 	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
@@ -476,16 +520,17 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 
 	record, total, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, newProfile, []string{FlamegraphFieldFunctionName}, 0)
 	require.NoError(t, err)
+	defer record.Release()
 
 	require.Equal(t, int64(1), total)
-	require.Equal(t, int32(4), height)
+	require.Equal(t, int32(5), height)
 	require.Equal(t, int64(0), trimmed)
 
 	require.Equal(t, int64(16), record.NumCols())
 	require.Equal(t, int64(5), record.NumRows())
 
 	rows := []flamegraphRow{
-		{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0, LocationFolded: false, LocationLine: 0, FunctionStartLine: 0, FunctionName: "net.(*netFD).accept", FunctionSystemName: "net.(*netFD).accept", FunctionFilename: "net/fd_unix.go", Cumulative: 1, Labels: nil, Children: []uint32{1}},                                                           // 0
+		{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0, LocationFolded: false, LocationLine: 0, FunctionStartLine: 0, FunctionName: "(null)", FunctionSystemName: "(null)", FunctionFilename: "(null)", Cumulative: 1, Labels: nil, Children: []uint32{1}},                                                                                             // 0
 		{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 173, FunctionStartLine: 0, FunctionName: "net.(*netFD).accept", FunctionSystemName: "net.(*netFD).accept", FunctionFilename: "net/fd_unix.go", Cumulative: 1, Labels: map[string]string{"goroutine": "1"}, Children: []uint32{2}},                 // 1
 		{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 402, FunctionStartLine: 0, FunctionName: "internal/poll.(*pollDesc).waitRead", FunctionSystemName: "internal/poll.(*pollDesc).waitRead", FunctionFilename: "internal/poll/fd_poll_runtime.go", Cumulative: 1, Labels: nil, Children: []uint32{3}}, // 2
 		{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 89, FunctionStartLine: 0, FunctionName: "internal/poll.(*FD).Accept", FunctionSystemName: "internal/poll.(*FD).Accept", FunctionFilename: "internal/poll/fd_unix.go", Cumulative: 1, Labels: nil, Children: []uint32{4}},                          // 3
@@ -498,16 +543,17 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 	requireColumn(t, record, FlamegraphFieldLocationFolded, columns.locationFolded)
 	requireColumn(t, record, FlamegraphFieldLocationLine, columns.locationLines)
 	requireColumn(t, record, FlamegraphFieldFunctionStartLine, columns.functionStartLines)
-	requireColumnDict(t, record, FlamegraphFieldFunctionName, columns.functionNames)
-	requireColumnDict(t, record, FlamegraphFieldFunctionSystemName, columns.functionSystemNames)
-	requireColumnDict(t, record, FlamegraphFieldFunctionFileName, columns.functionFileNames)
+	requireColumnBinaryDict(t, record, FlamegraphFieldFunctionName, columns.functionNames)
+	requireColumnBinaryDict(t, record, FlamegraphFieldFunctionSystemName, columns.functionSystemNames)
+	requireColumnBinaryDict(t, record, FlamegraphFieldFunctionFileName, columns.functionFileNames)
 	requireColumn(t, record, FlamegraphFieldCumulative, columns.cumulative)
 	requireColumnChildren(t, record, columns.children)
 }
 
 func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 	ctx := context.Background()
-	mem := memory.NewGoAllocator()
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	var err error
 
 	l := metastoretest.NewTestMetastore(
@@ -589,7 +635,7 @@ func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 			height:     5,
 			trimmed:    0, // TODO
 			rows: []flamegraphRow{
-				{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0, LocationFolded: false, LocationLine: 0, Cumulative: 6, Children: []uint32{1}},            // 0
+				{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "(null)", MappingBuildID: "(null)", LocationAddress: 0, LocationFolded: false, LocationLine: 0, Cumulative: 6, Children: []uint32{1}},    // 0
 				{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, Cumulative: 6, Children: []uint32{2}},    // 1
 				{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 2, Cumulative: 6, Children: []uint32{3}},    // 2
 				{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa3, LocationFolded: false, LocationLine: 3, Cumulative: 4, Children: []uint32{4, 5}}, // 3
@@ -605,7 +651,7 @@ func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 			height:     5,
 			trimmed:    0, // TODO
 			rows: []flamegraphRow{
-				{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0, LocationFolded: false, LocationLine: 0, Cumulative: 6, Children: []uint32{1}},            // 0
+				{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: "(null)", MappingBuildID: "(null)", LocationAddress: 0, LocationFolded: false, LocationLine: 0, Cumulative: 6, Children: []uint32{1}},    // 0
 				{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationFolded: false, LocationLine: 1, Cumulative: 6, Children: []uint32{2}},    // 1
 				{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, LocationFolded: false, LocationLine: 2, Cumulative: 6, Children: []uint32{3}},    // 2
 				{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa3, LocationFolded: false, LocationLine: 3, Cumulative: 4, Children: []uint32{4, 5}}, // 3
@@ -619,6 +665,7 @@ func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 			require.NoError(t, err)
 			fa, cumulative, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, np, tc.aggregate, 0)
 			require.NoError(t, err)
+			defer fa.Release()
 
 			require.Equal(t, tc.cumulative, cumulative)
 			require.Equal(t, tc.height, height)
@@ -632,8 +679,8 @@ func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 			requireColumn(t, fa, FlamegraphFieldMappingStart, columns.mappingStart)
 			requireColumn(t, fa, FlamegraphFieldMappingLimit, columns.mappingLimit)
 			requireColumn(t, fa, FlamegraphFieldMappingOffset, columns.mappingOffset)
-			requireColumnDict(t, fa, FlamegraphFieldMappingFile, columns.mappingFiles)
-			requireColumnDict(t, fa, FlamegraphFieldMappingBuildID, columns.mappingBuildIDs)
+			requireColumnBinaryDict(t, fa, FlamegraphFieldMappingFile, columns.mappingFiles)
+			requireColumnBinaryDict(t, fa, FlamegraphFieldMappingBuildID, columns.mappingBuildIDs)
 			requireColumn(t, fa, FlamegraphFieldLocationAddress, columns.locationAddresses)
 			requireColumn(t, fa, FlamegraphFieldLocationFolded, columns.locationFolded)
 			requireColumn(t, fa, FlamegraphFieldCumulative, columns.cumulative)
@@ -727,42 +774,4 @@ func BenchmarkArrowFlamegraph(b *testing.B) {
 		)
 		require.NoError(b, err)
 	}
-}
-
-func TestMarshalMap(t *testing.T) {
-	m := map[string]string{
-		"test1": "something",
-		"test2": "something_else",
-	}
-
-	buf := make([]byte, 0, 1024)
-	buf = MarshalStringMap(buf, m)
-	res := string(buf)
-	expected := []string{
-		`{"test1":"something","test2":"something_else"}`,
-		`{"test2":"something_else","test1":"something"}`,
-	}
-	require.Contains(t, expected, res)
-}
-
-func BenchmarkMarshalMap(b *testing.B) {
-	m := map[string]string{
-		"test1": "something",
-		"test2": "something_else",
-	}
-
-	var err error
-	b.ResetTimer()
-	b.Run("stdlib", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			_, err = json.Marshal(m)
-		}
-	})
-	_ = err
-	b.Run("ours", func(b *testing.B) {
-		buf := make([]byte, 0, 1024)
-		for i := 0; i < b.N; i++ {
-			buf = MarshalStringMap(buf, m)
-		}
-	})
 }

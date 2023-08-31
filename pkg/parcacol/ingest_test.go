@@ -23,11 +23,12 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/apache/arrow/go/v13/arrow"
+	"github.com/apache/arrow/go/v14/arrow"
 	"github.com/go-kit/log"
 	"github.com/parquet-go/parquet-go"
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 
@@ -76,6 +77,10 @@ func TestPprofToParquet(t *testing.T) {
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	ctx := context.Background()
+	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
+		Name: "parca_test_counter",
+		Help: "parca_test_counter",
+	})
 
 	schema, err := profile.Schema()
 	require.NoError(t, err)
@@ -131,6 +136,7 @@ func TestPprofToParquet(t *testing.T) {
 			}
 			err := NormalizedIngest(
 				ctx,
+				counter,
 				req,
 				logger,
 				table,
@@ -173,6 +179,10 @@ func TestUncompressedPprofToParquet(t *testing.T) {
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	ctx := context.Background()
+	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
+		Name: "parca_test_counter",
+		Help: "parca_test_counter",
+	})
 
 	schema, err := profile.Schema()
 	require.NoError(t, err)
@@ -235,6 +245,7 @@ func TestUncompressedPprofToParquet(t *testing.T) {
 			}
 			err := NormalizedIngest(
 				ctx,
+				counter,
 				req,
 				logger,
 				table,
@@ -277,6 +288,10 @@ func BenchmarkNormalizeWriteRawRequest(b *testing.B) {
 	reg := prometheus.NewRegistry()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	ctx := context.Background()
+	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
+		Name: "parca_test_counter",
+		Help: "parca_test_counter",
+	})
 
 	m := metastoretest.NewTestMetastore(
 		b,
@@ -289,7 +304,7 @@ func BenchmarkNormalizeWriteRawRequest(b *testing.B) {
 	fileContent, err := os.ReadFile("../query/testdata/alloc_objects.pb.gz")
 	require.NoError(b, err)
 
-	normalizer := NewNormalizer(metastore, true)
+	normalizer := NewNormalizer(metastore, true, counter)
 	req := &profilestorepb.WriteRawRequest{
 		Series: []*profilestorepb.RawProfileSeries{{
 			Labels: &profilestorepb.LabelSet{

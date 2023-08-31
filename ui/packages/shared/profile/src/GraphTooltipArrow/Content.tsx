@@ -14,9 +14,13 @@
 import React, {useState} from 'react';
 
 import {Table} from 'apache-arrow';
+import cx from 'classnames';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
+import {Tooltip} from 'react-tooltip';
 
-import {divide, getLastItem, valueFormatter} from '@parca/utilities';
+import {QueryRequest_ReportType} from '@parca/client';
+import {Button, useParcaContext, useURLState} from '@parca/components';
+import {divide, getLastItem, valueFormatter, type NavigateFunction} from '@parca/utilities';
 
 import {
   FIELD_CUMULATIVE,
@@ -30,6 +34,9 @@ import {
   FIELD_MAPPING_FILE,
 } from '../ProfileIcicleGraph/IcicleGraphArrow';
 import {nodeLabel} from '../ProfileIcicleGraph/IcicleGraphArrow/utils';
+import {ProfileSource} from '../ProfileSource';
+import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
+import {useQuery} from '../useQuery';
 import {hexifyAddress, truncateString, truncateStringReverse} from '../utils';
 import {ExpandOnHover} from './ExpandOnHoverValue';
 
@@ -43,6 +50,7 @@ interface GraphTooltipArrowContentProps {
   row: number | null;
   level: number;
   isFixed: boolean;
+  navigateTo: NavigateFunction;
 }
 
 const NoData = (): React.JSX.Element => {
@@ -57,6 +65,7 @@ const GraphTooltipArrowContent = ({
   row,
   level,
   isFixed,
+  navigateTo,
 }: GraphTooltipArrowContentProps): React.JSX.Element => {
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
@@ -85,7 +94,6 @@ const GraphTooltipArrowContent = ({
   const diffText = `${diffValueText} (${diffPercentageText})`;
 
   const name = nodeLabel(table, row, level, false);
-  console.log(level, row, name);
 
   const getTextForCumulative = (hoveringNodeCumulative: bigint): string => {
     const filtered =
@@ -150,7 +158,12 @@ const GraphTooltipArrowContent = ({
                       </td>
                     </tr>
                   )}
-                  <TooltipMetaInfo table={table} row={row} onCopy={onCopy} />
+                  <TooltipMetaInfo
+                    table={table}
+                    row={row}
+                    onCopy={onCopy}
+                    navigateTo={navigateTo}
+                  />
                 </tbody>
               </table>
             </div>
@@ -170,10 +183,12 @@ const TooltipMetaInfo = ({
   // totalUnfiltered,
   onCopy,
   row,
+  navigateTo,
 }: {
   table: Table<any>;
   row: number;
   onCopy: () => void;
+  navigateTo: NavigateFunction;
 }): React.JSX.Element => {
   const mappingFile: string = table.getChild(FIELD_MAPPING_FILE)?.get(row) ?? '';
   const mappingBuildID: string = table.getChild(FIELD_MAPPING_BUILD_ID)?.get(row) ?? '';
@@ -181,33 +196,91 @@ const TooltipMetaInfo = ({
   const locationLine: bigint = table.getChild(FIELD_LOCATION_LINE)?.get(row) ?? 0n;
   const functionFilename: string = table.getChild(FIELD_FUNCTION_FILE_NAME)?.get(row) ?? '';
   const functionStartLine: bigint = table.getChild(FIELD_FUNCTION_START_LINE)?.get(row) ?? 0n;
-  const labelsString: string = table.getChild(FIELD_LABELS)?.get(row) ?? '{}';
+  const lineNumber =
+    locationLine !== 0n ? locationLine : functionStartLine !== 0n ? functionStartLine : undefined;
+  const pprofLabelPrefix = 'pprof_labels.';
+  const labelColumnNames = table.schema.fields.filter(field =>
+    field.name.startsWith(pprofLabelPrefix)
+  );
+
+  const {queryServiceClient, enableSourcesView} = useParcaContext();
+  const {profileSource} = useProfileViewContext();
+
+  const {isLoading: sourceLoading, response: sourceResponse} = useQuery(
+    queryServiceClient,
+    profileSource as ProfileSource,
+    QueryRequest_ReportType.SOURCE,
+    {
+      skip:
+        enableSourcesView === false ||
+        profileSource === undefined ||
+        // eslint-disable-next-line no-extra-boolean-cast
+        !Boolean(mappingBuildID) ||
+        // eslint-disable-next-line no-extra-boolean-cast
+        !Boolean(functionFilename),
+      sourceBuildID: mappingBuildID,
+      sourceFilename: functionFilename,
+      sourceOnly: true,
+    }
+  );
+
+  const isSourceAvailable = !sourceLoading && sourceResponse?.report != null;
 
   const getTextForFile = (): string => {
     if (functionFilename === '') return '<unknown>';
 
-    return `${functionFilename} ${
-      locationLine !== 0n
-        ? ` +${locationLine.toString()}`
-        : `${functionStartLine !== 0n ? ` +${functionStartLine}` : ''}`
-    }`;
+    return `${functionFilename} ${lineNumber !== undefined ? ` +${lineNumber.toString()}` : ''}`;
   };
   const file = getTextForFile();
 
-  const labels = Object.entries(JSON.parse(labelsString))
-    .sort((a, b) => {
-      return a[0].localeCompare(b[0]);
-    })
-    .map(
-      (l): React.JSX.Element => (
-        <span
-          key={l[0]}
-          className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
-        >
-          {`${l[0]}="${l[1] as string}"`}
-        </span>
-      )
-    );
+  const labelPairs = labelColumnNames
+    .map((field, i) => [
+      labelColumnNames[i].name.slice(pprofLabelPrefix.length),
+      table.getChild(field.name)?.get(row) ?? '',
+    ])
+    .filter(value => value[1] !== '');
+  const labels = labelPairs.map(
+    (l): React.JSX.Element => (
+      <span
+        key={l[0]}
+        className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+      >
+        {`${l[0] as string}="${l[1] as string}"`}
+      </span>
+    )
+  );
+
+  const [dashboardItems, setDashboardItems] = useURLState({
+    param: 'dashboard_items',
+    navigateTo,
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [unusedBuildId, setSourceBuildId] = useURLState({
+    param: 'source_buildid',
+    navigateTo,
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [unusedFilename, setSourceFilename] = useURLState({
+    param: 'source_filename',
+    navigateTo,
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [unusedLine, setSourceLine] = useURLState({
+    param: 'source_line',
+    navigateTo,
+  });
+
+  const openFile = (): void => {
+    setDashboardItems([dashboardItems[0], 'source']);
+    setSourceBuildId(mappingBuildID);
+    setSourceFilename(functionFilename);
+    if (lineNumber !== undefined) {
+      setSourceLine(lineNumber.toString());
+    }
+  };
 
   return (
     <>
@@ -217,11 +290,29 @@ const TooltipMetaInfo = ({
           {functionFilename === '' ? (
             <NoData />
           ) : (
-            <CopyToClipboard onCopy={onCopy} text={file}>
-              <button className="cursor-pointer whitespace-nowrap text-left">
-                <ExpandOnHover value={file} displayValue={truncateStringReverse(file, 40)} />
-              </button>
-            </CopyToClipboard>
+            <div className="flex gap-4">
+              <CopyToClipboard onCopy={onCopy} text={file}>
+                <button className="cursor-pointer whitespace-nowrap text-left">
+                  <ExpandOnHover value={file} displayValue={truncateStringReverse(file, 30)} />
+                </button>
+              </CopyToClipboard>
+              <div className={cx('flex gap-2', {hidden: enableSourcesView === false})}>
+                <div
+                  data-tooltip-id="open-source-button-help"
+                  data-tooltip-content="There is no source code uploaded for this build"
+                >
+                  <Button
+                    variant={'neutral'}
+                    onClick={() => openFile()}
+                    className="shrink-0"
+                    disabled={!isSourceAvailable}
+                  >
+                    open
+                  </Button>
+                </div>
+                {!isSourceAvailable ? <Tooltip id="open-source-button-help" /> : null}
+              </div>
+            </div>
           )}
         </td>
       </tr>
@@ -263,7 +354,7 @@ const TooltipMetaInfo = ({
           )}
         </td>
       </tr>
-      {labelsString !== '{}' && (
+      {labelPairs.length > 0 && (
         <tr>
           <td className="w-1/4">Labels</td>
           <td className="w-3/4 break-all">{labels}</td>

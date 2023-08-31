@@ -16,15 +16,16 @@ package query
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/apache/arrow/go/v13/arrow"
-	"github.com/apache/arrow/go/v13/arrow/array"
-	"github.com/apache/arrow/go/v13/arrow/math"
-	"github.com/apache/arrow/go/v13/arrow/memory"
+	"github.com/apache/arrow/go/v14/arrow"
+	"github.com/apache/arrow/go/v14/arrow/array"
+	"github.com/apache/arrow/go/v14/arrow/math"
+	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/go-kit/log"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -48,6 +49,16 @@ type Querier interface {
 	QueryMerge(ctx context.Context, query string, start, end time.Time) (profile.Profile, error)
 }
 
+var (
+	ErrSourceNotFound     = errors.New("Source file not found. Either profiling metadata is wrong, or the referenced file was not included in the uploaded sources.")
+	ErrNoSourceForBuildID = errors.New("No sources for this build id have been uploaded.")
+)
+
+type SourceFinder interface {
+	FindSource(ctx context.Context, ref *pb.SourceReference) (string, error)
+	SourceExists(ctx context.Context, ref *pb.SourceReference) (bool, error)
+}
+
 // ColumnQueryAPI is the read api interface for parca
 // It implements the proto/query/query.proto APIServer interface.
 type ColumnQueryAPI struct {
@@ -61,6 +72,8 @@ type ColumnQueryAPI struct {
 	tableConverterPool *sync.Pool
 	mem                memory.Allocator
 	converter          *parcacol.ArrowToProfileConverter
+
+	sourceFinder SourceFinder
 }
 
 func NewColumnQueryAPI(
@@ -70,6 +83,7 @@ func NewColumnQueryAPI(
 	querier Querier,
 	mem memory.Allocator,
 	converter *parcacol.ArrowToProfileConverter,
+	sourceFinder SourceFinder,
 ) *ColumnQueryAPI {
 	return &ColumnQueryAPI{
 		logger:             logger,
@@ -79,6 +93,7 @@ func NewColumnQueryAPI(
 		tableConverterPool: NewTableConverterPool(),
 		mem:                mem,
 		converter:          converter,
+		sourceFinder:       sourceFinder,
 	}
 }
 
@@ -151,6 +166,14 @@ func (q *ColumnQueryAPI) ProfileTypes(ctx context.Context, req *pb.ProfileTypesR
 	}, nil
 }
 
+func (q *ColumnQueryAPI) getSource(ctx context.Context, ref *pb.SourceReference) (string, error) {
+	return q.sourceFinder.FindSource(ctx, ref)
+}
+
+func (q *ColumnQueryAPI) sourceUploadExistsForBuildID(ctx context.Context, ref *pb.SourceReference) (bool, error) {
+	return q.sourceFinder.SourceExists(ctx, ref)
+}
+
 // Query issues an instant query against the storage.
 func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryResponse, error) {
 	if err := req.Validate(); err != nil {
@@ -158,9 +181,39 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	}
 
 	var (
+		source string
+		err    error
+	)
+	if req.SourceReference != nil {
+		if req.SourceReference.SourceOnly {
+			exists, err := q.sourceUploadExistsForBuildID(ctx, req.SourceReference)
+			if err != nil {
+				return nil, err
+			}
+
+			if !exists {
+				return nil, status.Error(codes.NotFound, ErrNoSourceForBuildID.Error())
+			}
+
+			return &pb.QueryResponse{
+				Report: &pb.QueryResponse_Source{
+					Source: &pb.Source{},
+				},
+			}, nil
+		}
+
+		source, err = q.getSource(ctx, req.SourceReference)
+		if err != nil {
+			if errors.Is(err, ErrSourceNotFound) || errors.Is(err, ErrNoSourceForBuildID) {
+				return nil, status.Error(codes.NotFound, err.Error())
+			}
+			return nil, err
+		}
+	}
+
+	var (
 		p        profile.Profile
 		filtered int64
-		err      error
 	)
 
 	switch req.Mode {
@@ -176,6 +229,11 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		for _, r := range p.Samples {
+			r.Release()
+		}
+	}()
 
 	if req.FilterQuery != nil {
 		p.Samples, filtered, err = FilterProfileData(ctx, q.tracer, q.mem, p.Samples, req.GetFilterQuery())
@@ -183,11 +241,6 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 			return nil, fmt.Errorf("filtering profile: %w", err)
 		}
 	}
-	defer func() {
-		for _, r := range p.Samples {
-			r.Release()
-		}
-	}()
 
 	return q.renderReport(
 		ctx,
@@ -196,6 +249,8 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		req.GetNodeTrimThreshold(),
 		filtered,
 		req.GetGroupBy().GetFields(),
+		req.GetSourceReference(),
+		source,
 	)
 }
 
@@ -377,8 +432,23 @@ func (q *ColumnQueryAPI) renderReport(
 	nodeTrimThreshold float32,
 	filtered int64,
 	groupBy []string,
+	sourceReference *pb.SourceReference,
+	source string,
 ) (*pb.QueryResponse, error) {
-	return RenderReport(ctx, q.tracer, p, typ, nodeTrimThreshold, filtered, groupBy, q.tableConverterPool, q.mem, q.converter)
+	return RenderReport(
+		ctx,
+		q.tracer,
+		p,
+		typ,
+		nodeTrimThreshold,
+		filtered,
+		groupBy,
+		q.tableConverterPool,
+		q.mem,
+		q.converter,
+		sourceReference,
+		source,
+	)
 }
 
 func RenderReport(
@@ -392,6 +462,8 @@ func RenderReport(
 	pool *sync.Pool,
 	mem memory.Allocator,
 	converter *parcacol.ArrowToProfileConverter,
+	sourceReference *pb.SourceReference,
+	source string,
 ) (*pb.QueryResponse, error) {
 	ctx, span := tracer.Start(ctx, "renderReport")
 	span.SetAttributes(attribute.String("reportType", typ.String()))
@@ -462,6 +534,26 @@ func RenderReport(
 				FlamegraphArrow: fa,
 			},
 		}, nil
+	case pb.QueryRequest_REPORT_TYPE_SOURCE:
+		s, total, err := GenerateSourceReport(
+			ctx,
+			mem,
+			tracer,
+			p,
+			sourceReference,
+			source,
+		)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to generate arrow flamegraph: %v", err.Error())
+		}
+
+		return &pb.QueryResponse{
+			Total:    total,
+			Filtered: filtered,
+			Report: &pb.QueryResponse_Source{
+				Source: s,
+			},
+		}, nil
 	case pb.QueryRequest_REPORT_TYPE_PPROF:
 		op, err := converter.Convert(ctx, p)
 		if err != nil {
@@ -500,6 +592,18 @@ func RenderReport(
 			Filtered: filtered,
 			Report:   &pb.QueryResponse_Top{Top: top},
 		}, nil
+	case pb.QueryRequest_REPORT_TYPE_TABLE_ARROW:
+		table, cumulative, err := GenerateTable(ctx, mem, tracer, p)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to generate table: %v", err.Error())
+		}
+
+		return &pb.QueryResponse{
+			Total:    cumulative,
+			Filtered: filtered,
+			Report:   &pb.QueryResponse_TableArrow{TableArrow: table},
+		}, nil
+
 	case pb.QueryRequest_REPORT_TYPE_CALLGRAPH:
 		op, err := converter.Convert(ctx, p)
 		if err != nil {
@@ -558,6 +662,11 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile) (pro
 
 	g, ctx := errgroup.WithContext(ctx)
 	var base profile.Profile
+	defer func() {
+		for _, r := range base.Samples {
+			r.Release()
+		}
+	}()
 	g.Go(func() error {
 		var err error
 		base, err = q.selectProfileForDiff(ctx, d.A)
@@ -568,6 +677,11 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile) (pro
 	})
 
 	var compare profile.Profile
+	defer func() {
+		for _, r := range compare.Samples {
+			r.Release()
+		}
+	}()
 	g.Go(func() error {
 		var err error
 		compare, err = q.selectProfileForDiff(ctx, d.B)
@@ -585,32 +699,36 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile) (pro
 
 	for _, r := range compare.Samples {
 		columns := r.Columns()
+		cols := make([]arrow.Array, len(columns))
+		copy(cols, columns)
 		// This is intentional, the diff value of the `compare` profile is the same
 		// as the value of the `compare` profile, because what we're actually doing
 		// is subtracting the `base` profile, but the actual calculation happens
 		// when building the visualizations. We should eventually have this be done
 		// directly by the query engine.
-		columns[len(columns)-1] = columns[len(columns)-2]
+		cols[len(cols)-1] = cols[len(cols)-2]
 		records = append(records, array.NewRecord(
 			r.Schema(),
-			columns,
+			cols,
 			r.NumRows(),
 		))
-		r.Release()
 	}
 
 	for _, r := range base.Samples {
-		columns := r.Columns()
-		// This has to be this order as we're overriding the value column (-2)
-		// in the next line.
-		columns[len(columns)-1] = multiplyInt64By(q.mem, columns[len(columns)-2].(*array.Int64), -1)
-		columns[len(columns)-2] = zeroArray(q.mem, int(r.NumRows()))
-		records = append(records, array.NewRecord(
-			r.Schema(),
-			columns,
-			r.NumRows(),
-		))
-		r.Release()
+		func() {
+			columns := r.Columns()
+			cols := make([]arrow.Array, len(columns))
+			copy(cols, columns)
+			mult := multiplyInt64By(q.mem, columns[len(columns)-2].(*array.Int64), -1)
+			defer mult.Release()
+			zero := zeroArray(q.mem, int(r.NumRows()))
+			defer zero.Release()
+			records = append(records, array.NewRecord(
+				r.Schema(),
+				append(cols[:len(cols)-2], zero, mult),
+				r.NumRows(),
+			))
+		}()
 	}
 
 	return profile.Profile{

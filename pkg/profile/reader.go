@@ -16,8 +16,8 @@ package profile
 import (
 	"strings"
 
-	"github.com/apache/arrow/go/v13/arrow"
-	"github.com/apache/arrow/go/v13/arrow/array"
+	"github.com/apache/arrow/go/v14/arrow"
+	"github.com/apache/arrow/go/v14/arrow/array"
 )
 
 type LabelColumn struct {
@@ -27,7 +27,7 @@ type LabelColumn struct {
 
 type Reader struct {
 	Profile       Profile
-	RecordReaders []RecordReader
+	RecordReaders []*RecordReader
 }
 
 type RecordReader struct {
@@ -74,7 +74,7 @@ func NewReader(p Profile) Reader {
 	return r
 }
 
-func NewRecordReader(ar arrow.Record) RecordReader {
+func NewRecordReader(ar arrow.Record) *RecordReader {
 	schema := ar.Schema()
 
 	labelFields := make([]arrow.Field, 0, schema.NumFields())
@@ -120,7 +120,7 @@ func NewRecordReader(ar arrow.Record) RecordReader {
 	valueColumn := ar.Column(labelNum + 1).(*array.Int64)
 	diffColumn := ar.Column(labelNum + 2).(*array.Int64)
 
-	return RecordReader{
+	return &RecordReader{
 		Record:                     ar,
 		LabelFields:                labelFields,
 		LabelColumns:               labelColumns,

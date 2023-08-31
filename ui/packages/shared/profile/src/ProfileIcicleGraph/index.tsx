@@ -47,6 +47,7 @@ interface ProfileIcicleGraphProps {
   navigateTo?: NavigateFunction;
   loading: boolean;
   setActionButtons?: (buttons: React.JSX.Element) => void;
+  error?: any;
 }
 
 const GroupAndSortActionButtons = ({navigateTo}: {navigateTo?: NavigateFunction}): JSX.Element => {
@@ -111,6 +112,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   navigateTo,
   loading,
   setActionButtons,
+  error,
 }: ProfileIcicleGraphProps): JSX.Element {
   const compareMode: boolean =
     selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
@@ -158,10 +160,9 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     }
     setActionButtons(
       <div className="flex w-full justify-end gap-2 pb-2">
-        <div className="flex w-full items-center justify-between space-x-2">
+        <div className="ml-2 flex w-full items-end justify-between gap-2">
           {table !== undefined && <GroupAndSortActionButtons navigateTo={navigateTo} />}
           <div>
-            <label className="inline-block"></label>
             <Button
               color="neutral"
               onClick={() => setNewCurPath([])}
@@ -176,9 +177,16 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     );
   }, [navigateTo, table, curPath, setNewCurPath, setActionButtons]);
 
-  if (graph === undefined && table === undefined) return <div>no data...</div>;
+  if (error != null) {
+    console.error('Error: ', error);
+    return <div className="flex justify-center p-10">An error occurred: {error.message}</div>;
+  }
 
-  if (total === 0n && !loading) return <>Profile has no samples</>;
+  if (graph === undefined && table === undefined)
+    return <div className="mx-auto text-center">no data...</div>;
+
+  if (total === 0n && !loading)
+    return <div className="mx-auto text-center">Profile has no samples</div>;
 
   if (isTrimmed) {
     console.info(`Trimmed ${trimmedFormatted} (${trimmedPercentage}%) too small values.`);

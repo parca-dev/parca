@@ -13,3 +13,4 @@
 
 declare module '*.svg';
 declare module 'react-map-interaction';
+declare module 'react-syntax-highlighter/dist/esm/languages/hljs';

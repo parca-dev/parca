@@ -26,7 +26,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apache/arrow/go/v13/arrow/memory"
+	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
@@ -213,6 +213,7 @@ func TestConsistency(t *testing.T) {
 	require.NoError(t, err)
 
 	store := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		mc,
@@ -242,6 +243,8 @@ func TestConsistency(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	require.NoError(t, table.EnsureCompaction())
 	api := queryservice.NewColumnQueryAPI(
 		logger,
@@ -251,15 +254,16 @@ func TestConsistency(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
 			parcacol.NewProfileSymbolizer(tracer, mc),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+		nil,
 	)
 
 	ts := timestamppb.New(timestamp.Time(1608199718549)) // time_nanos of the profile divided by 1e6
@@ -324,6 +328,7 @@ func TestPGOE2e(t *testing.T) {
 	require.NoError(t, err)
 
 	store := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		mc,
@@ -353,6 +358,8 @@ func TestPGOE2e(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	require.NoError(t, table.EnsureCompaction())
 	api := queryservice.NewColumnQueryAPI(
 		logger,
@@ -362,15 +369,16 @@ func TestPGOE2e(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
 			parcacol.NewProfileSymbolizer(tracer, mc),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+		nil,
 	)
 
 	res, err := api.Query(ctx, &querypb.QueryRequest{
@@ -425,6 +433,7 @@ func TestLabels(t *testing.T) {
 	require.NoError(t, err)
 
 	store := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		mc,
@@ -454,6 +463,8 @@ func TestLabels(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	require.NoError(t, table.EnsureCompaction())
 	api := queryservice.NewColumnQueryAPI(
 		logger,
@@ -463,15 +474,16 @@ func TestLabels(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"labels",
 			parcacol.NewProfileSymbolizer(tracer, mc),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+		nil,
 	)
 
 	ts := timestamppb.New(timestamp.Time(1677488315039)) // time_nanos of the profile divided by 1e6

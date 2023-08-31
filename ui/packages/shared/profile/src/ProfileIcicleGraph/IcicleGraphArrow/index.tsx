@@ -37,6 +37,7 @@ import ColorStackLegend from './ColorStackLegend';
 import {IcicleNode, RowHeight, mappingColors} from './IcicleGraphNodes';
 import {extractFeature} from './utils';
 
+export const FIELD_LABELS_ONLY = 'labels_only';
 export const FIELD_MAPPING_FILE = 'mapping_file';
 export const FIELD_MAPPING_BUILD_ID = 'mapping_build_id';
 export const FIELD_LOCATION_ADDRESS = 'location_address';
@@ -235,6 +236,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           total={total}
           totalUnfiltered={total + filtered}
           unit={sampleUnit}
+          navigateTo={navigateTo as NavigateFunction}
         />
       </GraphTooltipArrow>
       {root}

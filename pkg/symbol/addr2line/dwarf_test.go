@@ -45,7 +45,8 @@ func TestDwarfSymbolizer(t *testing.T) {
 	}
 
 	require.Equal(t, &metastorev1alpha1.Function{
-		Name:     "top2",
-		Filename: "src/basic-cpp.cpp",
+		Name:      "top2",
+		Filename:  "src/basic-cpp.cpp",
+		StartLine: 8,
 	}, gotLines[0].Function)
 }

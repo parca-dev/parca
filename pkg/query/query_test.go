@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apache/arrow/go/v13/arrow/memory"
+	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/go-kit/log"
 	"github.com/polarsignals/frostdb"
 	columnstore "github.com/polarsignals/frostdb"
@@ -72,6 +72,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 			require.NoError(b, err)
 
 			store := profilestore.NewProfileColumnStore(
+				reg,
 				logger,
 				tracer,
 				mc,
@@ -105,6 +106,8 @@ func Benchmark_Query_Merge(b *testing.B) {
 
 			require.NoError(b, table.EnsureCompaction())
 
+			mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+			defer mem.AssertSize(b, 0)
 			api := NewColumnQueryAPI(
 				logger,
 				tracer,
@@ -113,15 +116,16 @@ func Benchmark_Query_Merge(b *testing.B) {
 					logger,
 					tracer,
 					query.NewEngine(
-						memory.DefaultAllocator,
+						mem,
 						colDB.TableProvider(),
 					),
 					"stacktraces",
 					parcacol.NewProfileSymbolizer(tracer, mc),
-					memory.DefaultAllocator,
+					mem,
 				),
-				memory.DefaultAllocator,
+				mem,
 				parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+				nil,
 			)
 			b.ResetTimer()
 
@@ -175,6 +179,8 @@ func Benchmark_ProfileTypes(b *testing.B) {
 		tracer,
 	))
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(b, 0)
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -183,15 +189,16 @@ func Benchmark_ProfileTypes(b *testing.B) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
 			parcacol.NewProfileSymbolizer(tracer, m),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+		nil,
 	)
 	b.ResetTimer()
 

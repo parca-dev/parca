@@ -22,12 +22,13 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/apache/arrow/go/v13/arrow"
+	"github.com/apache/arrow/go/v14/arrow"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/klauspost/compress/gzip"
 	"github.com/parquet-go/parquet-go"
 	"github.com/polarsignals/frostdb/dynparquet"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/labels"
 	"golang.org/x/exp/maps"
@@ -176,6 +177,7 @@ func (ing NormalizedIngester) Ingest(ctx context.Context, series []Series) error
 // it doesn't necessarily mean address normalization (PIE).
 func NormalizedIngest(
 	ctx context.Context,
+	addressNormalizationFailed prometheus.Counter,
 	req *profilestorepb.WriteRawRequest,
 	logger log.Logger,
 	table Table,
@@ -184,7 +186,7 @@ func NormalizedIngest(
 	bufferPool *sync.Pool,
 	enableAddressNormalization bool,
 ) error {
-	normalizer := NewNormalizer(metastore, enableAddressNormalization)
+	normalizer := NewNormalizer(metastore, enableAddressNormalization, addressNormalizationFailed)
 	normalizedRequest, err := NormalizeWriteRawRequest(ctx, normalizer, req)
 	if err != nil {
 		return err
@@ -213,7 +215,14 @@ type NormalizedWriteRawRequest struct {
 }
 
 type Normalizer interface {
-	NormalizePprof(ctx context.Context, name string, takenLabelNames map[string]string, p *pprofpb.Profile, normalizedAddress bool) ([]*profile.NormalizedProfile, error)
+	NormalizePprof(
+		ctx context.Context,
+		name string,
+		takenLabelNames map[string]string,
+		p *pprofpb.Profile,
+		normalizedAddress bool,
+		executableInfo []*profilestorepb.ExecutableInfo,
+	) ([]*profile.NormalizedProfile, error)
 }
 
 // NormalizeWriteRawRequest normalizes the profiles
@@ -272,7 +281,7 @@ func NormalizeWriteRawRequest(ctx context.Context, normalizer Normalizer, req *p
 				return NormalizedWriteRawRequest{}, status.Errorf(codes.InvalidArgument, "failed to parse profile: %v", err)
 			}
 
-			if err := ValidatePprofProfile(p); err != nil {
+			if err := ValidatePprofProfile(p, sample.ExecutableInfo); err != nil {
 				return NormalizedWriteRawRequest{}, status.Errorf(codes.InvalidArgument, "invalid profile: %v", err)
 			}
 
@@ -284,7 +293,7 @@ func NormalizeWriteRawRequest(ctx context.Context, normalizer Normalizer, req *p
 				allPprofNumLabelNames,
 			)
 
-			normalizedProfiles, err := normalizer.NormalizePprof(ctx, name, ls, p, req.Normalized)
+			normalizedProfiles, err := normalizer.NormalizePprof(ctx, name, ls, p, req.Normalized, sample.ExecutableInfo)
 			if err != nil {
 				return NormalizedWriteRawRequest{}, fmt.Errorf("normalize profile: %w", err)
 			}

@@ -24,8 +24,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apache/arrow/go/v13/arrow"
-	"github.com/apache/arrow/go/v13/arrow/memory"
+	"github.com/apache/arrow/go/v14/arrow"
+	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/go-kit/log"
 	pprofprofile "github.com/google/pprof/profile"
 	columnstore "github.com/polarsignals/frostdb"
@@ -81,6 +81,8 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 	)
 	mc := metastore.NewInProcessClient(m)
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -89,15 +91,16 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
 			parcacol.NewProfileSymbolizer(tracer, mc),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+		nil,
 	)
 	_, err = api.QueryRange(ctx, &pb.QueryRangeRequest{
 		Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
@@ -172,6 +175,7 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 
 	mc := metastore.NewInProcessClient(m)
 	store := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		mc,
@@ -206,6 +210,8 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 		require.NoError(t, err)
 	}
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -214,15 +220,16 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
 			parcacol.NewProfileSymbolizer(tracer, mc),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+		nil,
 	)
 	res, err := api.QueryRange(ctx, &pb.QueryRangeRequest{
 		Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
@@ -268,6 +275,7 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 
 	mc := metastore.NewInProcessClient(m)
 	store := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		mc,
@@ -303,6 +311,8 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -311,15 +321,16 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
 			parcacol.NewProfileSymbolizer(tracer, mc),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+		nil,
 	)
 	ts := timestamppb.New(timestamp.Time(p.TimeNanos / time.Millisecond.Nanoseconds()))
 	res, err := api.Query(ctx, &pb.QueryRequest{
@@ -405,6 +416,7 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 
 	mc := metastore.NewInProcessClient(m)
 	store := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		mc,
@@ -434,6 +446,8 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -442,15 +456,16 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
 			parcacol.NewProfileSymbolizer(tracer, mc),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+		nil,
 	)
 
 	res, err := api.QueryRange(ctx, &pb.QueryRangeRequest{
@@ -493,6 +508,7 @@ func TestColumnQueryAPIQueryCumulative(t *testing.T) {
 
 	mc := metastore.NewInProcessClient(m)
 	store := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		mc,
@@ -538,6 +554,8 @@ func TestColumnQueryAPIQueryCumulative(t *testing.T) {
 		require.NoError(t, err)
 	}
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -546,15 +564,16 @@ func TestColumnQueryAPIQueryCumulative(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
 			parcacol.NewProfileSymbolizer(tracer, mc),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+		nil,
 	)
 
 	// These have been extracted from the profiles above.
@@ -750,6 +769,8 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -758,15 +779,16 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
 			parcacol.NewProfileSymbolizer(tracer, mc),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+		nil,
 	)
 
 	res, err := api.Query(ctx, &pb.QueryRequest{
@@ -903,6 +925,7 @@ func TestColumnQueryAPITypes(t *testing.T) {
 
 	mc := metastore.NewInProcessClient(m)
 	store := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		mc,
@@ -934,6 +957,8 @@ func TestColumnQueryAPITypes(t *testing.T) {
 
 	require.NoError(t, table.EnsureCompaction())
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -942,15 +967,16 @@ func TestColumnQueryAPITypes(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
 			parcacol.NewProfileSymbolizer(tracer, mc),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+		nil,
 	)
 	res, err := api.ProfileTypes(ctx, &pb.ProfileTypesRequest{})
 	require.NoError(t, err)
@@ -1000,6 +1026,7 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 
 	mc := metastore.NewInProcessClient(m)
 	store := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		mc,
@@ -1029,6 +1056,8 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -1037,15 +1066,16 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
 			parcacol.NewProfileSymbolizer(tracer, mc),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+		nil,
 	)
 	res, err := api.Labels(ctx, &pb.LabelsRequest{})
 	require.NoError(t, err)
@@ -1087,6 +1117,7 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 
 	mc := metastore.NewInProcessClient(m)
 	store := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		mc,
@@ -1116,6 +1147,8 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -1124,15 +1157,16 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
 			parcacol.NewProfileSymbolizer(tracer, mc),
-			memory.DefaultAllocator,
+			mem,
 		),
-		memory.DefaultAllocator,
+		mem,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+		nil,
 	)
 	res, err := api.Values(ctx, &pb.ValuesRequest{
 		LabelName: "job",
@@ -1160,6 +1194,8 @@ func BenchmarkQuery(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(b, 0)
 	for i := 0; i < b.N; i++ {
 		_, _ = RenderReport(
 			ctx,
@@ -1170,8 +1206,10 @@ func BenchmarkQuery(b *testing.B) {
 			0,
 			[]string{FlamegraphFieldFunctionName},
 			NewTableConverterPool(),
-			memory.DefaultAllocator,
+			mem,
 			parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+			nil,
+			"",
 		)
 	}
 }
