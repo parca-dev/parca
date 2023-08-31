@@ -1251,7 +1251,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	_, span := tracer.Start(ctx, "trim")
 	defer span.End()
 
-	releasers := make([]releasable, 0, 3)
+	releasers := make([]releasable, 0, 10+2*len(fb.labels))
 	defer func() {
 		for _, r := range releasers {
 			r.Release()
