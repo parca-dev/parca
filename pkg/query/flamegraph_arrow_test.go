@@ -187,7 +187,7 @@ func requireColumnChildren(t *testing.T, record arrow.Record, expected [][]uint3
 func TestGenerateFlamegraphArrow(t *testing.T) {
 	ctx := context.Background()
 	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
-	// defer mem.AssertSize(t, 0)
+	defer mem.AssertSize(t, 0)
 
 	l := metastoretest.NewTestMetastore(
 		t,
@@ -469,7 +469,7 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 
 	ctx := context.Background()
 	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
-	// defer mem.AssertSize(t, 0)
+	defer mem.AssertSize(t, 0)
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
@@ -560,7 +560,7 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 	ctx := context.Background()
 	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
-	// defer mem.AssertSize(t, 0)
+	defer mem.AssertSize(t, 0)
 	var err error
 
 	l := metastoretest.NewTestMetastore(
@@ -698,7 +698,9 @@ func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 
 func TestGenerateFlamegraphArrowTrimming(t *testing.T) {
 	ctx := context.Background()
-	mem := memory.NewGoAllocator()
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
+
 	var err error
 
 	l := metastoretest.NewTestMetastore(
@@ -914,7 +916,7 @@ func BenchmarkArrowFlamegraph(b *testing.B) {
 
 func TestCompactDictionary(t *testing.T) {
 	mem := memory.NewCheckedAllocator(memory.NewGoAllocator())
-	// defer mem.AssertSize(t, 0)
+	defer mem.AssertSize(t, 0)
 
 	builder := array.NewStringBuilder(mem)
 	builder.AppendValues([]string{"a", "b", "c"}, nil)
