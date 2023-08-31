@@ -1432,6 +1432,9 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 		}
 		trimmedLabels = append(trimmedLabels, tl)
 	}
+	for _, r := range fb.labels {
+		r.Release()
+	}
 	fb.labels = trimmedLabels
 
 	release(
