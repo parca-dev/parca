@@ -466,7 +466,6 @@ func transpositionFromDict(unifier array.DictionaryUnifier, dict *array.Binary) 
 		0,
 		0,
 	)
-	defer data.Release()
 	indices := array.NewInt32Data(data)
 
 	return data, indices, nil
@@ -1036,7 +1035,6 @@ func (fb *flamegraphBuilder) Release() {
 	fb.builderFunctionFilenameDictUnifier.Release()
 
 	fb.builderChildren.Release()
-	fb.builderChildrenValues.Release()
 	fb.builderCumulative.Release()
 	fb.builderDiff.Release()
 
