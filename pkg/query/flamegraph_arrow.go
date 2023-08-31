@@ -873,12 +873,12 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 	// We have grouped by them and their metadata before.
 	// We can combine all of them into the final children root
 	// making our lives easier later on when trimming and then creating the arrow array.
-	fb.children[0] = nil
+	if len(fb.children) > 0 {
+		fb.children[0] = nil
+	}
 
 	for _, key := range fb.rootsRow {
-		for _, child := range key {
-			fb.children[0] = append(fb.children[0], child)
-		}
+		fb.children[0] = append(fb.children[0], key...)
 	}
 
 	// We want to unify the dictionaries after having created the flame graph now.
@@ -1530,14 +1530,14 @@ type trimmingElement struct {
 	parent int
 }
 
-// queue is a small wrapper around a []trimmingElement used as queue
+// queue is a small wrapper around a []trimmingElement used as queue.
 type queue struct{ elements []trimmingElement }
 
 func (q *queue) len() int { return len(q.elements) }
 
 func (q *queue) push(i trimmingElement) { q.elements = append(q.elements, i) }
 
-// pops the first element from the queue
+// pops the first element from the queue.
 func (q *queue) pop() trimmingElement {
 	v := q.elements[0]
 	q.elements = q.elements[1:]
