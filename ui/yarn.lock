@@ -11647,7 +11647,7 @@ decimal.js@^10.2.1, decimal.js@^10.4.2:
   resolved "https://registry.yarnpkg.com/decimal.js/-/decimal.js-10.4.3.tgz#1044092884d245d1b7f65725fa4ad4c6f781cc23"
   integrity sha512-VBBaLc1MgL5XpzgIP7ny5Z6Nx3UrRkIViUkPUdtl9aya5amy3De1gsUUSB1g3+3sExYNjCAsAznmukyxCb1GRA==
 
-decode-base64@^3.0.0:
+decode-base64@^3.0.1:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/decode-base64/-/decode-base64-3.0.1.tgz#31ef2681d0fd6b000a694525ffa7df94480efb9c"
   integrity sha512-IWgiXlMAdm9c4RrOnvkFxYpfZRlOys4Wxnc/QT72hVLUZKCr7RPkfamgn2GXysCo06Zd4TGZyKaPHO4soBgSAg==
@@ -14246,6 +14246,11 @@ function-bind@^1.1.1:
   resolved "https://registry.yarnpkg.com/function-bind/-/function-bind-1.1.1.tgz#a56899d3ea3c9bab874bb9773b7c5ede92f4895d"
   integrity sha512-yIovAzMX49sF8Yl58fSCWJ5svSLuaibPxXQJFLmBObTuCr0Mf1KiPopGM9NiFjiYBCbfaa2Fh6breQ6ANVTI0A==
 
+function-once@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/function-once/-/function-once-3.0.0.tgz#91bcf26cdad943feb1fa6cebd04c7e2837ab6c53"
+  integrity sha512-WEhgu9PE55sHFf+SBg3lI8+CWpsqReLcsp3g12XhwSJJgnodpSpHk6StvpeVcKuHAFCAdttLrslJRFDSdLDf4g==
+
 function.prototype.name@^1.1.5:
   version "1.1.5"
   resolved "https://registry.yarnpkg.com/function.prototype.name/-/function.prototype.name-1.1.5.tgz#cce0505fe1ffb80503e6f9e46cc64e46a12a9621"
@@ -14834,13 +14839,13 @@ graphemer@^1.4.0:
   resolved "https://registry.yarnpkg.com/graphemer/-/graphemer-1.4.0.tgz#fb2f1d55e0e3a1849aeffc90c4fa0dd53a0e66c6"
   integrity sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==
 
-graphviz-wasm@3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/graphviz-wasm/-/graphviz-wasm-3.0.0.tgz#3535c1e58562595b536f19fb0c1ef1e37e8573c7"
-  integrity sha512-WJZIQKRh+fLmdMIbG1+7KIFjCx3ccMOeOA9U25xf6DbAHyHxn6pu+vsHhn0EwVU8SmQWAwNwqT7doju6seIGFw==
+graphviz-wasm@3.0.1:
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/graphviz-wasm/-/graphviz-wasm-3.0.1.tgz#89b625a2c9def0f9936270a8f375c093933d850e"
+  integrity sha512-RaN6vGdtyPU0N8oCOSofhMILlTfNr/fs0mP9+iAa5OL80/JVIvuzEMHJm8XFwiIN/RpfYfy7hhrZGv/VwLSuHA==
   dependencies:
-    decode-base64 "^3.0.0"
-    once "npm:@fabiospampinato/once@2.0.0"
+    decode-base64 "^3.0.1"
+    function-once "^3.0.0"
 
 gunzip-maybe@^1.4.2:
   version "1.4.2"
@@ -21162,11 +21167,6 @@ once@^1.3.0, once@^1.3.1, once@^1.4.0, once@~1.4.0:
   integrity sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==
   dependencies:
     wrappy "1"
-
-"once@npm:@fabiospampinato/once@2.0.0":
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/@fabiospampinato/once/-/once-2.0.0.tgz#e76b79d51ea4ebc6214dd469e6a78773b7a587bd"
-  integrity sha512-VJmruLTCTvb1+yYlGLupECCGAsz7bwB1ZRzx6AxdVpJ9YfXkWIRnoIWl4c3aWvPOWcgUQI2cqunTHjLCAZTrSA==
 
 onetime@^5.1.0, onetime@^5.1.2:
   version "5.1.2"
