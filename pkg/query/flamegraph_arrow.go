@@ -1428,6 +1428,19 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	}
 	fb.labels = trimmedLabels
 
+	release(
+		fb.builderLabelsOnly,
+		fb.builderLabelsExist,
+		fb.builderMappingStart,
+		fb.builderMappingLimit,
+		fb.builderMappingOffset,
+		fb.builderLocationAddress,
+		fb.builderLocationFolded,
+		fb.builderLocationLine,
+		fb.builderFunctionStartLine,
+		fb.builderCumulative,
+		fb.builderDiff,
+	)
 	fb.builderLabelsOnly = trimmedLabelsOnly
 	fb.builderLabelsExist = trimmedLabelsExist
 	fb.builderMappingStart = trimmedMappingStart
@@ -1642,4 +1655,12 @@ func compactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dict
 		index,
 		values,
 	), nil
+}
+
+func release(releasers ...releasable) {
+	for _, r := range releasers {
+		if r != nil {
+			r.Release()
+		}
+	}
 }
