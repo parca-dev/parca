@@ -164,7 +164,7 @@ export const Table = React.memo(function Table({
         {replace: true}
       );
     }
-  }, [navigateTo, router]);
+  }, [navigateTo, router, filterByFunctionInput]);
 
   useEffect(() => {
     if (setActionButtons === undefined) {
