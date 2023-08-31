@@ -469,7 +469,7 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 
 	ctx := context.Background()
 	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
-	// defer mem.AssertSize(t, 0)
+	defer mem.AssertSize(t, 0)
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{

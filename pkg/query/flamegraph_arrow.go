@@ -1363,7 +1363,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedMappingBuildIDIndicesArray := trimmedMappingBuildIDIndices.NewArray()
 	releasers = append(releasers, trimmedMappingBuildIDIndicesArray)
 
-	fb.mappingBuildID, err = compactDictionary(fb.pool, array.NewDictionaryArray(
+	mbid, err := compactDictionary(fb.pool, array.NewDictionaryArray(
 		fb.mappingBuildID.DataType(),
 		trimmedMappingBuildIDIndicesArray,
 		fb.mappingBuildID.Dictionary(),
@@ -1371,9 +1371,12 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	if err != nil {
 		return err
 	}
+	release(fb.mappingBuildID)
+	fb.mappingBuildID = mbid
+
 	trimmedMappingFileIndicesArray := trimmedMappingFileIndices.NewArray()
 	releasers = append(releasers, trimmedMappingFileIndicesArray)
-	fb.mappingFile, err = compactDictionary(fb.pool, array.NewDictionaryArray(
+	mf, err := compactDictionary(fb.pool, array.NewDictionaryArray(
 		fb.mappingFile.DataType(),
 		trimmedMappingFileIndicesArray,
 		fb.mappingFile.Dictionary(),
@@ -1381,9 +1384,12 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	if err != nil {
 		return err
 	}
+	release(fb.mappingFile)
+	fb.mappingFile = mf
+
 	trimmedFunctionNameIndicesArray := trimmedFunctionNameIndices.NewArray()
 	releasers = append(releasers, trimmedFunctionNameIndicesArray)
-	fb.functionName, err = compactDictionary(fb.pool, array.NewDictionaryArray(
+	fn, err := compactDictionary(fb.pool, array.NewDictionaryArray(
 		fb.functionName.DataType(),
 		trimmedFunctionNameIndicesArray,
 		fb.functionName.Dictionary(),
@@ -1391,9 +1397,12 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	if err != nil {
 		return err
 	}
+	release(fb.functionName)
+	fb.functionName = fn
+
 	trimmedFunctionSystemNameIndicesArray := trimmedFunctionSystemNameIndices.NewArray()
 	releasers = append(releasers, trimmedFunctionSystemNameIndicesArray)
-	fb.functionSystemName, err = compactDictionary(fb.pool, array.NewDictionaryArray(
+	sn, err := compactDictionary(fb.pool, array.NewDictionaryArray(
 		fb.functionSystemName.DataType(),
 		trimmedFunctionSystemNameIndicesArray,
 		fb.functionSystemName.Dictionary(),
@@ -1401,9 +1410,12 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	if err != nil {
 		return err
 	}
+	release(fb.functionSystemName)
+	fb.functionSystemName = sn
+
 	trimmedFunctionFilenameIndicesArray := trimmedFunctionFilenameIndices.NewArray()
 	releasers = append(releasers, trimmedFunctionFilenameIndicesArray)
-	fb.functionFilename, err = compactDictionary(fb.pool, array.NewDictionaryArray(
+	ffn, err := compactDictionary(fb.pool, array.NewDictionaryArray(
 		fb.functionFilename.DataType(),
 		trimmedFunctionFilenameIndicesArray,
 		fb.functionFilename.Dictionary(),
@@ -1411,6 +1423,8 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	if err != nil {
 		return err
 	}
+	release(fb.functionFilename)
+	fb.functionFilename = ffn
 
 	trimmedLabels := make([]*array.Dictionary, 0, len(fb.labels))
 	for i, index := range trimmedLabelsIndices {
