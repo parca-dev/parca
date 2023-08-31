@@ -18,7 +18,7 @@ import {Icon} from '@iconify/react';
 import {Table} from 'apache-arrow';
 
 import {Flamegraph} from '@parca/client';
-import {Button, Select, useURLState} from '@parca/components';
+import {Button, Select, useParcaContext, useURLState} from '@parca/components';
 import {useContainerDimensions} from '@parca/hooks';
 import {divide, selectQueryParam, type NavigateFunction} from '@parca/utilities';
 
@@ -114,6 +114,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   setActionButtons,
   error,
 }: ProfileIcicleGraphProps): JSX.Element {
+  const {loader} = useParcaContext();
   const compareMode: boolean =
     selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
   const {ref, dimensions} = useContainerDimensions();
@@ -176,6 +177,10 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
       </div>
     );
   }, [navigateTo, table, curPath, setNewCurPath, setActionButtons]);
+
+  if (loading) {
+    return <div className="h-96">{loader}</div>;
+  }
 
   if (error != null) {
     console.error('Error: ', error);

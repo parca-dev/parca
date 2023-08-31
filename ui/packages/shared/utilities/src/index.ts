@@ -98,7 +98,7 @@ export const isDevMode = (): boolean => {
   return process.env.NODE_ENV === 'development';
 };
 
-export const getLastItem = (thePath: string | undefined): string | undefined => {
+export const getLastItem = (thePath: string | undefined | null): string | undefined => {
   if (thePath === undefined || thePath === null || thePath === '') return;
 
   const index = thePath.lastIndexOf('/');
