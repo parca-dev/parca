@@ -348,6 +348,11 @@ const (
 
 func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration, sampleTypeUnit string) ([]*pb.MetricsSeries, error) {
 	records := []arrow.Record{}
+	defer func() {
+		for _, r := range records {
+			r.Release()
+		}
+	}()
 	rows := 0
 	err := q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
