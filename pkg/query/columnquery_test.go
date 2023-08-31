@@ -769,8 +769,8 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// TODO: this should used a checked allocator but there is a bug in Frostdb(https://github.com/polarsignals/frostdb/issues/499) that causes it to leak allocations.
-	mem := memory.DefaultAllocator
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
