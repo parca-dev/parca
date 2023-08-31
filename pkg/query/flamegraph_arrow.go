@@ -466,7 +466,6 @@ func transpositionFromDict(unifier array.DictionaryUnifier, dict *array.Binary) 
 		0,
 		0,
 	)
-	defer data.Release()
 	indices := array.NewInt32Data(data)
 
 	return data, indices, nil
@@ -879,7 +878,7 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 		return nil, err
 	}
 	cleanupArrs = append(cleanupArrs, mappingBuildIDDict)
-	mappingBuildIDType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.String}
+	mappingBuildIDType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
 	mappingBuildID := array.NewDictionaryArray(mappingBuildIDType, mappingBuildIDIndices, mappingBuildIDDict)
 	cleanupArrs = append(cleanupArrs, mappingBuildID)
 
@@ -890,7 +889,7 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 		return nil, err
 	}
 	cleanupArrs = append(cleanupArrs, mappingFileDict)
-	mappingFileType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.String}
+	mappingFileType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
 	mappingFile := array.NewDictionaryArray(mappingFileType, mappingFileIndices, mappingFileDict)
 	cleanupArrs = append(cleanupArrs, mappingFile)
 
@@ -901,7 +900,7 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 		return nil, err
 	}
 	cleanupArrs = append(cleanupArrs, functionNameDict)
-	functionNameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.String}
+	functionNameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
 	functionName := array.NewDictionaryArray(functionNameType, functionNameIndices, functionNameDict)
 	cleanupArrs = append(cleanupArrs, functionName)
 
@@ -912,7 +911,7 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 		return nil, err
 	}
 	cleanupArrs = append(cleanupArrs, functionSystemNameDict)
-	functionSystemNameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.String}
+	functionSystemNameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
 	functionSystemName := array.NewDictionaryArray(functionSystemNameType, functionSystemNameIndices, functionSystemNameDict)
 	cleanupArrs = append(cleanupArrs, functionSystemName)
 
@@ -923,7 +922,7 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 		return nil, err
 	}
 	cleanupArrs = append(cleanupArrs, functionFilenameDict)
-	functionFilenameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.String}
+	functionFilenameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
 	functionFilename := array.NewDictionaryArray(functionFilenameType, functionFilenameIndices, functionFilenameDict)
 	cleanupArrs = append(cleanupArrs, functionFilename)
 
@@ -984,7 +983,7 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 
 	for i := range fb.builderLabelFields {
 		if err := func() error {
-			typ := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.String}
+			typ := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
 			fields = append(fields, arrow.Field{
 				Name: fb.builderLabelFields[i].Name,
 				Type: typ,
@@ -1036,7 +1035,6 @@ func (fb *flamegraphBuilder) Release() {
 	fb.builderFunctionFilenameDictUnifier.Release()
 
 	fb.builderChildren.Release()
-	fb.builderChildrenValues.Release()
 	fb.builderCumulative.Release()
 	fb.builderDiff.Release()
 
