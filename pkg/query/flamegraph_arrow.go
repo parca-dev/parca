@@ -17,7 +17,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"sort"
 	"unsafe"
 
 	"github.com/apache/arrow/go/v14/arrow"
@@ -876,15 +875,8 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 	// making our lives easier later on when trimming and then creating the arrow array.
 	fb.children[0] = nil
 
-	// TODO: This shouldn't be here. Either the new hashing is stable or it should be fixed in the tests.
-	rootsRowKeys := make([]uint64, 0, len(fb.rootsRow))
-	for k := range fb.rootsRow {
-		rootsRowKeys = append(rootsRowKeys, k)
-	}
-	sort.Slice(rootsRowKeys, func(i, j int) bool { return rootsRowKeys[i] < rootsRowKeys[j] })
-
-	for _, key := range rootsRowKeys {
-		for _, child := range fb.rootsRow[key] {
+	for _, key := range fb.rootsRow {
+		for _, child := range key {
 			fb.children[0] = append(fb.children[0], child)
 		}
 	}
