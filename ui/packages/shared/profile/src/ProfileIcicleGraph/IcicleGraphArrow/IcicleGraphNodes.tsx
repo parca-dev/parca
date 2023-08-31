@@ -28,7 +28,7 @@ import {
   FIELD_MAPPING_FILE,
 } from './index';
 import useNodeColor from './useNodeColor';
-import {nodeLabel} from './utils';
+import {arrowToString, nodeLabel} from './utils';
 
 export const RowHeight = 26;
 
@@ -188,8 +188,8 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const cumulativeColumn = table.getChild(FIELD_CUMULATIVE);
   const diffColumn = table.getChild(FIELD_DIFF);
   // get the actual values from the columns
-  const mappingFile: string | null = mappingColumn?.get(row);
-  const functionName: string | null = functionNameColumn?.get(row);
+  const mappingFile: string | null = arrowToString(mappingColumn?.get(row));
+  const functionName: string | null = arrowToString(functionNameColumn?.get(row));
   const cumulative: bigint = cumulativeColumn?.get(row);
   const diff: bigint | null = diffColumn?.get(row);
   const childRows: number[] = Array.from(table.getChild(FIELD_CHILDREN)?.get(row) ?? []);
@@ -199,8 +199,8 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     case FIELD_FUNCTION_NAME:
       childRows.sort((a, b) => {
         // TODO: Support fallthrough to comparing addresses or something
-        const afn: string | null = functionNameColumn?.get(a);
-        const bfn: string | null = functionNameColumn?.get(b);
+        const afn: string | null = arrowToString(functionNameColumn?.get(a));
+        const bfn: string | null = arrowToString(functionNameColumn?.get(b));
         if (afn !== null && bfn !== null) {
           return afn.localeCompare(bfn);
         }

@@ -31,7 +31,7 @@ export function nodeLabel(
   level: number,
   showBinaryName: boolean
 ): string {
-  const functionName: string | null = table.getChild(FIELD_FUNCTION_NAME)?.get(row);
+  const functionName: string | null = arrowToString(table.getChild(FIELD_FUNCTION_NAME)?.get(row));
   const labelsOnly: boolean | null = table.getChild(FIELD_LABELS_ONLY)?.get(row);
   const pprofLabelPrefix = 'pprof_labels.';
   const labelColumnNames = table.schema.fields.filter(field =>
@@ -75,4 +75,14 @@ export const extractFeature = (mapping: string): Feature => {
   }
 
   return {name: EVERYTHING_ELSE, type: FEATURE_TYPES.Misc};
+};
+
+export const arrowToString = (buffer: any): string | null => {
+  if (buffer == null || typeof buffer === 'string') {
+    return buffer;
+  }
+  if (ArrayBuffer.isView(buffer)) {
+    return String.fromCharCode.apply(null, buffer);
+  }
+  return '';
 };

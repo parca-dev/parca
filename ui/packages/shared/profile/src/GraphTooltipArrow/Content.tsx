@@ -33,7 +33,7 @@ import {
   FIELD_MAPPING_BUILD_ID,
   FIELD_MAPPING_FILE,
 } from '../ProfileIcicleGraph/IcicleGraphArrow';
-import {nodeLabel} from '../ProfileIcicleGraph/IcicleGraphArrow/utils';
+import {arrowToString, nodeLabel} from '../ProfileIcicleGraph/IcicleGraphArrow/utils';
 import {ProfileSource} from '../ProfileSource';
 import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
 import {useQuery} from '../useQuery';
@@ -190,11 +190,13 @@ const TooltipMetaInfo = ({
   onCopy: () => void;
   navigateTo: NavigateFunction;
 }): React.JSX.Element => {
-  const mappingFile: string = table.getChild(FIELD_MAPPING_FILE)?.get(row) ?? '';
-  const mappingBuildID: string = table.getChild(FIELD_MAPPING_BUILD_ID)?.get(row) ?? '';
+  const mappingFile: string = arrowToString(table.getChild(FIELD_MAPPING_FILE)?.get(row)) ?? '';
+  const mappingBuildID: string =
+    arrowToString(table.getChild(FIELD_MAPPING_BUILD_ID)?.get(row)) ?? '';
   const locationAddress: bigint = table.getChild(FIELD_LOCATION_ADDRESS)?.get(row) ?? 0n;
   const locationLine: bigint = table.getChild(FIELD_LOCATION_LINE)?.get(row) ?? 0n;
-  const functionFilename: string = table.getChild(FIELD_FUNCTION_FILE_NAME)?.get(row) ?? '';
+  const functionFilename: string =
+    arrowToString(table.getChild(FIELD_FUNCTION_FILE_NAME)?.get(row)) ?? '';
   const functionStartLine: bigint = table.getChild(FIELD_FUNCTION_START_LINE)?.get(row) ?? 0n;
   const lineNumber =
     locationLine !== 0n ? locationLine : functionStartLine !== 0n ? functionStartLine : undefined;
