@@ -1020,7 +1020,9 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	arrays[3] = fb.builderMappingOffset.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[3])
 	arrays[4] = fb.mappingFile
+	cleanupArrs = append(cleanupArrs, arrays[4])
 	arrays[5] = fb.mappingBuildID
+	cleanupArrs = append(cleanupArrs, arrays[5])
 	arrays[6] = fb.builderLocationAddress.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[6])
 	arrays[7] = fb.builderLocationFolded.NewArray()
@@ -1030,8 +1032,11 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	arrays[9] = fb.builderFunctionStartLine.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[9])
 	arrays[10] = fb.functionName
+	cleanupArrs = append(cleanupArrs, arrays[10])
 	arrays[11] = fb.functionSystemName
+	cleanupArrs = append(cleanupArrs, arrays[11])
 	arrays[12] = fb.functionFilename
+	cleanupArrs = append(cleanupArrs, arrays[12])
 	arrays[13] = fb.builderChildren.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[13])
 	arrays[14] = fb.builderCumulative.NewArray()
@@ -1076,13 +1081,16 @@ func (fb *flamegraphBuilder) Release() {
 	fb.builderFunctionFilenameDictUnifier.Release()
 
 	fb.builderChildren.Release()
-	// fb.builderChildrenValues.Release()
+	// fb.builderChildrenValues is released with the above
 	fb.builderCumulative.Release()
 	fb.builderDiff.Release()
 
-	if fb.mappingBuildID != nil {
-		fb.mappingBuildID.Release()
-	}
+	fb.mappingBuildID.Release()
+	fb.mappingFile.Release()
+	fb.functionName.Release()
+	fb.functionSystemName.Release()
+	fb.functionFilename.Release()
+
 	fb.preparedMappingBuildID.Release()
 	fb.preparedMappingFile.Release()
 	fb.preparedFunctionName.Release()
@@ -1474,6 +1482,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 		fb.builderLabelsExist.Release()
 	}
 	fb.builderLabelsExist = trimmedLabelsExist
+	fb.builderLabelsExist.Retain()
 
 	if fb.builderMappingStart != nil {
 		fb.builderMappingStart.Release()
@@ -1499,26 +1508,31 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 		fb.builderLocationFolded.Release()
 	}
 	fb.builderLocationFolded = trimmedLocationFolded
+	fb.builderLocationFolded.Retain()
 
 	if fb.builderLocationLine != nil {
 		fb.builderLocationLine.Release()
 	}
 	fb.builderLocationLine = trimmedLocationLine
+	fb.builderLocationLine.Retain()
 
 	if fb.builderFunctionStartLine != nil {
 		fb.builderFunctionStartLine.Release()
 	}
 	fb.builderFunctionStartLine = trimmedFunctionStartLine
+	fb.builderFunctionStartLine.Retain()
 
 	if fb.builderCumulative != nil {
 		fb.builderCumulative.Release()
 	}
 	fb.builderCumulative = trimmedCumulative
+	fb.builderCumulative.Retain()
 
 	if fb.builderDiff != nil {
 		fb.builderDiff.Release()
 	}
 	fb.builderDiff = trimmedDiff
+	fb.builderDiff.Retain()
 
 	fb.children = trimmedChildren
 
