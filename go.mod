@@ -2,13 +2,10 @@ module github.com/parca-dev/parca
 
 go 1.21
 
-// replace no longer necessary after https://github.com/apache/arrow/pull/37459 is merged
-replace github.com/apache/arrow/go/v14 => github.com/metalmatze/arrow/go/v14 v14.0.0-20230830094619-efecb6fadf81
-
 require (
 	cloud.google.com/go/storage v1.32.0
 	github.com/alecthomas/kong v0.8.0
-	github.com/apache/arrow/go/v14 v14.0.0-20230829105931-29819425f428
+	github.com/apache/arrow/go/v14 v14.0.0-20230831153504-d7b4d2d5f749
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
