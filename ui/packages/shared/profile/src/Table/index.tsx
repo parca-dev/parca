@@ -57,6 +57,7 @@ export const Table = React.memo(function Table({
   const router = parseParams(window?.location.search);
   const [rawDashboardItems] = useURLState({param: 'dashboard_items'});
   const [rawcompareMode] = useURLState({param: 'compare_a'});
+  const [filterByFunctionInput] = useURLState({param: 'filter_by_function'});
 
   const compareMode: boolean = rawcompareMode === undefined ? false : rawcompareMode === 'true';
 
@@ -158,12 +159,12 @@ export const Table = React.memo(function Table({
         '/',
         {
           ...router,
-          ...{search_string: ''},
+          ...{search_string: filterByFunctionInput ?? ''},
         },
         {replace: true}
       );
     }
-  }, [navigateTo, router]);
+  }, [navigateTo, router, filterByFunctionInput]);
 
   useEffect(() => {
     if (setActionButtons === undefined) {
