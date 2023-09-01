@@ -267,6 +267,13 @@ export const ProfileView = ({
               loading={flamegraphData.loading}
               setActionButtons={setActionButtons}
               error={flamegraphData.error}
+              width={
+                dimensions?.width !== undefined
+                  ? isHalfScreen
+                    ? (dimensions.width - 40) / 2
+                    : dimensions.width - 16
+                  : 0
+              }
             />
           </ConditionalWrapper>
         );

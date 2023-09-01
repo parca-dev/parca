@@ -19,7 +19,6 @@ import {Table} from 'apache-arrow';
 
 import {Flamegraph} from '@parca/client';
 import {Button, Select, useParcaContext, useURLState} from '@parca/components';
-import {useContainerDimensions} from '@parca/hooks';
 import {divide, selectQueryParam, type NavigateFunction} from '@parca/utilities';
 
 import DiffLegend from '../components/DiffLegend';
@@ -36,7 +35,7 @@ const numberFormatter = new Intl.NumberFormat('en-US');
 export type ResizeHandler = (width: number, height: number) => void;
 
 interface ProfileIcicleGraphProps {
-  width?: number;
+  width: number;
   graph?: Flamegraph;
   table?: Table<any>;
   total: bigint;
@@ -113,11 +112,11 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   loading,
   setActionButtons,
   error,
+  width,
 }: ProfileIcicleGraphProps): JSX.Element {
   const {loader} = useParcaContext();
   const compareMode: boolean =
     selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
-  const {ref, dimensions} = useContainerDimensions();
 
   const [storeSortBy = FIELD_FUNCTION_NAME] = useURLState({
     param: 'sort_by',
@@ -200,10 +199,10 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   return (
     <div className="relative">
       {compareMode && <DiffLegend />}
-      <div ref={ref} className="min-h-48">
+      <div className="min-h-48">
         {graph !== undefined && (
           <IcicleGraph
-            width={dimensions?.width}
+            width={width}
             graph={graph}
             total={total}
             filtered={filtered}
@@ -215,7 +214,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
         )}
         {table !== undefined && (
           <IcicleGraphArrow
-            width={dimensions?.width}
+            width={width}
             table={table}
             total={total}
             filtered={filtered}
