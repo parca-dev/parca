@@ -67,6 +67,7 @@ jobs:
       with:
         node-version-file: .node-version
         cache: 'yarn'
+        cache-dependency-path: ui/yarn.lock
 
     - name: Build
       if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}
