@@ -188,7 +188,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   }
 
   if (graph === undefined && table === undefined)
-    return <div className="mx-auto text-center">no data...</div>;
+    return <div className="mx-auto text-center">No data...</div>;
 
   if (total === 0n && !loading)
     return <div className="mx-auto text-center">Profile has no samples</div>;

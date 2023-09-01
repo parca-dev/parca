@@ -120,6 +120,11 @@ func (b *sourceReportBuilder) finish() (arrow.Record, int64) {
 	flat.AppendValues(b.flatValues, nil)
 	cumu.AppendValues(b.cumulativeValues, nil)
 
+	cumarr := cumu.NewInt64Array()
+	defer cumarr.Release()
+	flatarr := flat.NewInt64Array()
+	defer flatarr.Release()
+
 	return array.NewRecord(
 		arrow.NewSchema(
 			[]arrow.Field{
@@ -129,8 +134,8 @@ func (b *sourceReportBuilder) finish() (arrow.Record, int64) {
 			nil,
 		),
 		[]arrow.Array{
-			cumu.NewInt64Array(),
-			flat.NewInt64Array(),
+			cumarr,
+			flatarr,
 		},
 		int64(len(b.flatValues)),
 	), b.cumulative
