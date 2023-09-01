@@ -238,7 +238,7 @@ const TooltipMetaInfo = ({
   const labelPairs = labelColumnNames
     .map((field, i) => [
       labelColumnNames[i].name.slice(pprofLabelPrefix.length),
-      table.getChild(field.name)?.get(row) ?? '',
+      arrowToString(table.getChild(field.name)?.get(row)) ?? '',
     ])
     .filter(value => value[1] !== '');
   const labels = labelPairs.map(
@@ -247,7 +247,7 @@ const TooltipMetaInfo = ({
         key={l[0]}
         className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
       >
-        {`${l[0] as string}="${l[1] as string}"`}
+        {`${l[0]}="${l[1]}"`}
       </span>
     )
   );

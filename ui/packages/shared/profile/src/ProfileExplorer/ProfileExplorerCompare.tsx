@@ -88,15 +88,17 @@ const ProfileExplorerCompare = ({
       </div>
       <div className="grid grid-cols-1">
         {profileA != null && profileB != null ? (
-          <Card className="mt-2 px-6 py-4">
-            <ProfileViewWithData
-              navigateTo={navigateTo}
-              queryClient={queryClient}
-              profileSource={
-                new ProfileDiffSource(profileA.ProfileSource(), profileB.ProfileSource())
-              }
-            />
-          </Card>
+          <div>
+            <Card className="mt-2 px-6 py-4">
+              <ProfileViewWithData
+                navigateTo={navigateTo}
+                queryClient={queryClient}
+                profileSource={
+                  new ProfileDiffSource(profileA.ProfileSource(), profileB.ProfileSource())
+                }
+              />
+            </Card>
+          </div>
         ) : (
           <div>
             <div className="my-20 text-center">
