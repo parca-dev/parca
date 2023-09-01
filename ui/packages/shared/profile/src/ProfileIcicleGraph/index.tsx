@@ -15,9 +15,8 @@ import React, {Fragment, useCallback, useEffect, useMemo} from 'react';
 
 import {Menu, Transition} from '@headlessui/react';
 import {Icon} from '@iconify/react';
-import {Table} from 'apache-arrow';
 
-import {Flamegraph} from '@parca/client';
+import {Flamegraph, FlamegraphArrow} from '@parca/client';
 import {Button, Select, useParcaContext, useURLState} from '@parca/components';
 import {divide, selectQueryParam, type NavigateFunction} from '@parca/utilities';
 
@@ -37,7 +36,7 @@ export type ResizeHandler = (width: number, height: number) => void;
 interface ProfileIcicleGraphProps {
   width: number;
   graph?: Flamegraph;
-  table?: Table<any>;
+  arrow?: FlamegraphArrow;
   total: bigint;
   filtered: bigint;
   sampleUnit: string;
@@ -102,7 +101,7 @@ const GroupAndSortActionButtons = ({navigateTo}: {navigateTo?: NavigateFunction}
 
 const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   graph,
-  table,
+  arrow,
   total,
   filtered,
   curPath,
@@ -132,12 +131,11 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     isFiltered,
     filteredPercentage,
   ] = useMemo(() => {
-    if (graph === undefined) {
+    if (graph === undefined && arrow === undefined) {
       return ['0', '0', false, '0', '0', false, '0', '0'];
     }
 
-    // const trimmed = graph.trimmed;
-    const trimmed = 0n;
+    const trimmed: bigint = graph?.trimmed ?? arrow?.trimmed ?? 0n;
 
     const totalUnfiltered = total + filtered;
     // safeguard against division by zero
@@ -152,7 +150,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
       filtered > 0,
       numberFormatter.format(divide(total * 100n, totalUnfilteredDivisor)),
     ];
-  }, [graph, filtered, total]);
+  }, [graph, arrow, filtered, total]);
 
   useEffect(() => {
     if (setActionButtons === undefined) {
@@ -161,7 +159,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     setActionButtons(
       <div className="flex w-full justify-end gap-2 pb-2">
         <div className="ml-2 flex w-full items-end justify-between gap-2">
-          {table !== undefined && <GroupAndSortActionButtons navigateTo={navigateTo} />}
+          {arrow !== undefined && <GroupAndSortActionButtons navigateTo={navigateTo} />}
           <div>
             <Button
               color="neutral"
@@ -175,7 +173,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
         </div>
       </div>
     );
-  }, [navigateTo, table, curPath, setNewCurPath, setActionButtons]);
+  }, [navigateTo, arrow, curPath, setNewCurPath, setActionButtons]);
 
   if (loading) {
     return <div className="h-96">{loader}</div>;
@@ -186,7 +184,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     return <div className="flex justify-center p-10">An error occurred: {error.message}</div>;
   }
 
-  if (graph === undefined && table === undefined)
+  if (graph === undefined && arrow === undefined)
     return <div className="mx-auto text-center">No data...</div>;
 
   if (total === 0n && !loading)
@@ -212,10 +210,10 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
             navigateTo={navigateTo}
           />
         )}
-        {table !== undefined && (
+        {arrow !== undefined && (
           <IcicleGraphArrow
             width={width}
-            table={table}
+            arrow={arrow}
             total={total}
             filtered={filtered}
             curPath={curPath}

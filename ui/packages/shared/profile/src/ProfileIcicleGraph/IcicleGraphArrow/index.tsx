@@ -13,8 +13,9 @@
 
 import React, {memo, useEffect, useMemo, useRef, useState} from 'react';
 
-import {Dictionary, Table, Vector} from 'apache-arrow';
+import {Dictionary, Table, Vector, tableFromIPC} from 'apache-arrow';
 
+import {FlamegraphArrow} from '@parca/client';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {
   getColorForFeature,
@@ -51,7 +52,7 @@ export const FIELD_CUMULATIVE = 'cumulative';
 export const FIELD_DIFF = 'diff';
 
 interface IcicleGraphArrowProps {
-  table: Table<any>;
+  arrow: FlamegraphArrow;
   total: bigint;
   filtered: bigint;
   sampleUnit: string;
@@ -63,7 +64,7 @@ interface IcicleGraphArrowProps {
 }
 
 export const IcicleGraphArrow = memo(function IcicleGraphArrow({
-  table,
+  arrow,
   total,
   filtered,
   width,
@@ -78,6 +79,10 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
   const isDarkMode = useAppSelector(selectDarkMode);
+
+  const table: Table<any> = useMemo(() => {
+    return tableFromIPC(arrow.record);
+  }, [arrow]);
 
   const [height, setHeight] = useState(0);
   const [hoveringRow, setHoveringRow] = useState<number | null>(null);
