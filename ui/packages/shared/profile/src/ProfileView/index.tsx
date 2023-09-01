@@ -14,7 +14,6 @@
 import {Profiler, ProfilerProps, useEffect, useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
-import {Table as ArrowTable} from 'apache-arrow';
 import cx from 'classnames';
 import {scaleLinear} from 'd3';
 import graphviz from 'graphviz-wasm';
@@ -29,6 +28,7 @@ import {
 import {
   Callgraph as CallgraphType,
   Flamegraph,
+  FlamegraphArrow,
   QueryServiceClient,
   Source,
   TableArrow,
@@ -64,7 +64,7 @@ type NavigateFunction = (path: string, queryParams: any, options?: {replace?: bo
 export interface FlamegraphData {
   loading: boolean;
   data?: Flamegraph;
-  table?: ArrowTable<any>;
+  arrow?: FlamegraphArrow;
   total?: bigint;
   filtered?: bigint;
   error?: any;
@@ -258,7 +258,7 @@ export const ProfileView = ({
             <ProfileIcicleGraph
               curPath={curPath}
               setNewCurPath={setNewCurPath}
-              table={flamegraphData?.table}
+              arrow={flamegraphData?.arrow}
               graph={flamegraphData?.data}
               total={total}
               filtered={filtered}
