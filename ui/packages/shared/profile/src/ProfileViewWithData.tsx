@@ -13,8 +13,6 @@
 
 import {useEffect, useMemo, useState} from 'react';
 
-import {tableFromIPC} from 'apache-arrow';
-
 import {QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata, useParcaContext, useURLState} from '@parca/components';
 import {USER_PREFERENCES, useUIFeatureFlag, useUserPreference} from '@parca/hooks';
