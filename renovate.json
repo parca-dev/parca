@@ -1,7 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["github>parca-dev/.github"],
-  "schedule": ["after 12am", "before 4am"],
+  "schedule": [
+    "after 8pm every weekday",
+    "before 4am every weekday",
+    "every weekend"
+  ],
   "packageRules": [
     {
       "description": "One week stability period for Buf packages",
