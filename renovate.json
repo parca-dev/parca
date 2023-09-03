@@ -5,13 +5,13 @@
   "packageRules": [
     {
       "description": "One week stability period for Buf packages",
-      "matchPaths": ["buf.gen.yaml"],
-      "stabilityDays": 7
+      "matchFileNames": ["buf.gen.yaml"],
+      "minimumReleaseAge": "7 days"
     },
     {
       "description": "Group buf packages",
       "matchPackageNames": ["bufbuild/buf", "bufbuild/buf-setup-action"],
-      "stabilityDays": 7,
+      "minimumReleaseAge": "7 days",
       "groupName": "buf"
     },
     {
@@ -26,7 +26,9 @@
     },
     {
       "description": "Group grpc-health-probe packages",
-      "matchSourceUrls": ["https://github.com/grpc-ecosystem/grpc-health-probe"],
+      "matchSourceUrls": [
+        "https://github.com/grpc-ecosystem/grpc-health-probe"
+      ],
       "groupName": "grpc-health-probe"
     },
     {
@@ -62,6 +64,7 @@
   ],
   "regexManagers": [
     {
+      "customType": "regex",
       "description": "Update Buf plugins",
       "fileMatch": ["(^|/)buf\\.gen\\.yaml$"],
       "matchStrings": [
