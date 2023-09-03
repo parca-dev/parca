@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apache/arrow/go/v13/arrow/memory"
+	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/go-kit/log"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/objstore"
@@ -43,6 +43,8 @@ func TestSourcesOnlyRequest(t *testing.T) {
 	bucket := objstore.NewInMemBucket()
 	require.NoError(t, bucket.Upload(ctx, "test/sources", f))
 
+	allocator := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer allocator.AssertSize(t, 0)
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -53,9 +55,9 @@ func TestSourcesOnlyRequest(t *testing.T) {
 			nil,
 			"stacktraces",
 			nil,
-			memory.DefaultAllocator,
+			allocator,
 		),
-		memory.DefaultAllocator,
+		allocator,
 		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 		NewBucketSourceFinder(bucket),
 	)

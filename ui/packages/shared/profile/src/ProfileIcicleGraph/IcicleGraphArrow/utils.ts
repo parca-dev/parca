@@ -31,7 +31,7 @@ export function nodeLabel(
   level: number,
   showBinaryName: boolean
 ): string {
-  const functionName: string | null = table.getChild(FIELD_FUNCTION_NAME)?.get(row);
+  const functionName: string | null = arrowToString(table.getChild(FIELD_FUNCTION_NAME)?.get(row));
   const labelsOnly: boolean | null = table.getChild(FIELD_LABELS_ONLY)?.get(row);
   const pprofLabelPrefix = 'pprof_labels.';
   const labelColumnNames = table.schema.fields.filter(field =>
@@ -89,4 +89,14 @@ export const getTextForCumulative = (
       : '';
   return `${valueFormatter(hoveringNodeCumulative, unit, 2)}
     (${(100 * divide(hoveringNodeCumulative, totalUnfiltered)).toFixed(2)}%${filtered})`;
+};
+
+export const arrowToString = (buffer: any): string | null => {
+  if (buffer == null || typeof buffer === 'string') {
+    return buffer;
+  }
+  if (ArrayBuffer.isView(buffer)) {
+    return String.fromCharCode.apply(null, buffer as unknown as number[]);
+  }
+  return '';
 };

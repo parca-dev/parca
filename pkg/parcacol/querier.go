@@ -21,10 +21,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apache/arrow/go/v13/arrow"
-	"github.com/apache/arrow/go/v13/arrow/array"
-	"github.com/apache/arrow/go/v13/arrow/memory"
-	"github.com/apache/arrow/go/v13/arrow/scalar"
+	"github.com/apache/arrow/go/v14/arrow"
+	"github.com/apache/arrow/go/v14/arrow/array"
+	"github.com/apache/arrow/go/v14/arrow/memory"
+	"github.com/apache/arrow/go/v14/arrow/scalar"
 	"github.com/go-kit/log"
 	"github.com/polarsignals/frostdb/query"
 	"github.com/polarsignals/frostdb/query/logicalplan"
@@ -348,6 +348,11 @@ const (
 
 func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration, sampleTypeUnit string) ([]*pb.MetricsSeries, error) {
 	records := []arrow.Record{}
+	defer func() {
+		for _, r := range records {
+			r.Release()
+		}
+	}()
 	rows := 0
 	err := q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
@@ -516,6 +521,11 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 
 func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration) ([]*pb.MetricsSeries, error) {
 	records := []arrow.Record{}
+	defer func() {
+		for _, r := range records {
+			r.Release()
+		}
+	}()
 	rows := 0
 	err := q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).

@@ -17,8 +17,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/apache/arrow/go/v13/arrow/array"
-	"github.com/apache/arrow/go/v13/arrow/memory"
+	"github.com/apache/arrow/go/v14/arrow"
+	"github.com/apache/arrow/go/v14/arrow/array"
+	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/go-kit/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -228,23 +229,65 @@ func TestGenerateTableAggregateFlat(t *testing.T) {
 	require.Equal(t, int64(4), rec.NumRows())
 	require.Equal(t, int64(10), cumulative)
 
-	requireColumn(t, rec, TableFieldMappingStart, []uint64{1, 1, 1, 1})
-	requireColumn(t, rec, TableFieldMappingLimit, []uint64{1, 1, 1, 1})
-	requireColumn(t, rec, TableFieldMappingOffset, []uint64{1, 1, 1, 1})
-	requireColumnBinaryDict(t, rec, TableFieldMappingFile, []string{"1", "1", "1", "1"})
-	requireColumnBinaryDict(t, rec, TableFieldMappingBuildID, []string{"1", "1", "1", "1"})
+	expectedColumns := tableColumns{
+		mappingStart:       []uint64{1, 1, 1, 1},
+		mappingLimit:       []uint64{1, 1, 1, 1},
+		mappingOffset:      []uint64{1, 1, 1, 1},
+		mappingFile:        []string{"1", "1", "1", "1"},
+		mappingBuildID:     []string{"1", "1", "1", "1"},
+		locationAddress:    []uint64{2, 1, 3, 4},
+		locationFolded:     []bool{false, false, false, false},
+		locationLine:       []int64{0, 0, 0, 0},
+		functionStartLine:  []int64{0, 0, 0, 0},
+		functionName:       []string{"(null)", "(null)", "(null)", "(null)"},
+		functionSystemName: []string{"(null)", "(null)", "(null)", "(null)"},
+		functionFileName:   []string{"(null)", "(null)", "(null)", "(null)"},
+		cumulative:         []int64{1, 10, 2, 3},
+		cumulativeDiff:     []int64{0, 0, 0, 0},
+		flat:               []int64{1, 4, 2, 3},
+		flatDiff:           []int64{0, 0, 0, 0},
+	}
+	actualColumns := tableRecordToColumns(t, rec)
 
-	requireColumn(t, rec, TableFieldLocationAddress, []uint64{2, 1, 3, 4})
-	requireColumn(t, rec, TableFieldLocationFolded, []bool{false, false, false, false})
-	requireColumn(t, rec, TableFieldLocationLine, []int64{0, 0, 0, 0})
+	require.Equal(t, expectedColumns, actualColumns)
+}
 
-	requireColumn(t, rec, TableFieldFunctionStartLine, []int64{0, 0, 0, 0})
-	requireColumnBinaryDict(t, rec, TableFieldFunctionName, []string{"(null)", "(null)", "(null)", "(null)"})
-	requireColumnBinaryDict(t, rec, TableFieldFunctionSystemName, []string{"(null)", "(null)", "(null)", "(null)"})
-	requireColumnBinaryDict(t, rec, TableFieldFunctionFileName, []string{"(null)", "(null)", "(null)", "(null)"})
+type tableColumns struct {
+	mappingStart       []uint64
+	mappingLimit       []uint64
+	mappingOffset      []uint64
+	mappingFile        []string
+	mappingBuildID     []string
+	locationAddress    []uint64
+	locationFolded     []bool
+	locationLine       []int64
+	functionStartLine  []int64
+	functionName       []string
+	functionSystemName []string
+	functionFileName   []string
+	cumulative         []int64
+	cumulativeDiff     []int64
+	flat               []int64
+	flatDiff           []int64
+}
 
-	requireColumn(t, rec, TableFieldCumulative, []int64{1, 10, 2, 3})
-	requireColumn(t, rec, TableFieldCumulativeDiff, []int64{0, 0, 0, 0})
-	requireColumn(t, rec, TableFieldFlat, []int64{1, 4, 2, 3})
-	requireColumn(t, rec, TableFieldFlatDiff, []int64{0, 0, 0, 0})
+func tableRecordToColumns(t *testing.T, r arrow.Record) tableColumns {
+	return tableColumns{
+		mappingStart:       extractColumn(t, r, TableFieldMappingStart).([]uint64),
+		mappingLimit:       extractColumn(t, r, TableFieldMappingLimit).([]uint64),
+		mappingOffset:      extractColumn(t, r, TableFieldMappingOffset).([]uint64),
+		mappingFile:        extractColumn(t, r, TableFieldMappingFile).([]string),
+		mappingBuildID:     extractColumn(t, r, TableFieldMappingBuildID).([]string),
+		locationAddress:    extractColumn(t, r, TableFieldLocationAddress).([]uint64),
+		locationFolded:     extractColumn(t, r, TableFieldLocationFolded).([]bool),
+		locationLine:       extractColumn(t, r, TableFieldLocationLine).([]int64),
+		functionStartLine:  extractColumn(t, r, TableFieldFunctionStartLine).([]int64),
+		functionName:       extractColumn(t, r, TableFieldFunctionName).([]string),
+		functionSystemName: extractColumn(t, r, TableFieldFunctionSystemName).([]string),
+		functionFileName:   extractColumn(t, r, TableFieldFunctionFileName).([]string),
+		cumulative:         extractColumn(t, r, TableFieldCumulative).([]int64),
+		cumulativeDiff:     extractColumn(t, r, TableFieldCumulativeDiff).([]int64),
+		flat:               extractColumn(t, r, TableFieldFlat).([]int64),
+		flatDiff:           extractColumn(t, r, TableFieldFlatDiff).([]int64),
+	}
 }

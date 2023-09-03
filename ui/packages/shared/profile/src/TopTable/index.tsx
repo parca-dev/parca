@@ -199,15 +199,17 @@ export const TopTable = React.memo(function TopTable({
     }
     setActionButtons(
       dashboardItems.length > 1 ? (
-        <Button
-          color="neutral"
-          onClick={clearSelection}
-          className="w-auto"
-          variant="neutral"
-          disabled={currentSearchString === undefined || currentSearchString.length === 0}
-        >
-          Clear selection
-        </Button>
+        <div className="ml-2">
+          <Button
+            color="neutral"
+            onClick={clearSelection}
+            className="w-auto"
+            variant="neutral"
+            disabled={currentSearchString === undefined || currentSearchString.length === 0}
+          >
+            Clear selection
+          </Button>
+        </div>
       ) : (
         <></>
       )
@@ -220,7 +222,8 @@ export const TopTable = React.memo(function TopTable({
 
   const total = top != null ? top.list.length : 0;
 
-  if (total === 0 && !loading) return <>Profile has no samples</>;
+  if (total === 0 && !loading)
+    return <div className="mx-auto text-center">Profile has no samples</div>;
 
   return (
     <div className="relative">

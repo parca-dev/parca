@@ -13,8 +13,9 @@
 
 import React, {memo, useEffect, useMemo, useRef, useState} from 'react';
 
-import {Dictionary, Table, Vector} from 'apache-arrow';
+import {Dictionary, Table, Vector, tableFromIPC} from 'apache-arrow';
 
+import {FlamegraphArrow} from '@parca/client';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {
   getColorForFeature,
@@ -36,7 +37,7 @@ import GraphTooltipArrowContent from '../../GraphTooltipArrow/Content';
 import {DockedGraphTooltip} from '../../GraphTooltipArrow/DockedGraphTooltip';
 import ColorStackLegend from './ColorStackLegend';
 import {IcicleNode, RowHeight, mappingColors} from './IcicleGraphNodes';
-import {extractFeature} from './utils';
+import {arrowToString, extractFeature} from './utils';
 
 export const FIELD_LABELS_ONLY = 'labels_only';
 export const FIELD_MAPPING_FILE = 'mapping_file';
@@ -52,7 +53,7 @@ export const FIELD_CUMULATIVE = 'cumulative';
 export const FIELD_DIFF = 'diff';
 
 interface IcicleGraphArrowProps {
-  table: Table<any>;
+  arrow: FlamegraphArrow;
   total: bigint;
   filtered: bigint;
   sampleUnit: string;
@@ -64,7 +65,7 @@ interface IcicleGraphArrowProps {
 }
 
 export const IcicleGraphArrow = memo(function IcicleGraphArrow({
-  table,
+  arrow,
   total,
   filtered,
   width,
@@ -80,6 +81,10 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   );
   const [dockedMetainfo] = useUserPreference<boolean>(USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key);
   const isDarkMode = useAppSelector(selectDarkMode);
+
+  const table: Table<any> = useMemo(() => {
+    return tableFromIPC(arrow.record);
+  }, [arrow]);
 
   const [height, setHeight] = useState(0);
   const [hoveringRow, setHoveringRow] = useState<number | null>(null);
@@ -105,7 +110,8 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           const len = mapping.dictionary.length;
           const entries: string[] = [];
           for (let i = 0; i < len; i++) {
-            entries.push(getLastItem(mapping.dictionary.get(i)) ?? '');
+            const fn = arrowToString(mapping.dictionary.get(i));
+            entries.push(getLastItem(fn) ?? '');
           }
           return entries;
         })
@@ -124,7 +130,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
       }
       const len = fn.dictionary.length;
       for (let i = 0; i < len; i++) {
-        const fn: string | null = functionNamesDict?.get(i);
+        const fn: string | null = arrowToString(functionNamesDict?.get(i));
         if (fn?.startsWith('runtime') === true) {
           mappings.push('runtime');
           break;

@@ -22,10 +22,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/apache/arrow/go/v13/arrow"
-	"github.com/apache/arrow/go/v13/arrow/array"
-	"github.com/apache/arrow/go/v13/arrow/math"
-	"github.com/apache/arrow/go/v13/arrow/memory"
+	"github.com/apache/arrow/go/v14/arrow"
+	"github.com/apache/arrow/go/v14/arrow/array"
+	"github.com/apache/arrow/go/v14/arrow/math"
+	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/go-kit/log"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -699,30 +699,36 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile) (pro
 
 	for _, r := range compare.Samples {
 		columns := r.Columns()
+		cols := make([]arrow.Array, len(columns))
+		copy(cols, columns)
 		// This is intentional, the diff value of the `compare` profile is the same
 		// as the value of the `compare` profile, because what we're actually doing
 		// is subtracting the `base` profile, but the actual calculation happens
 		// when building the visualizations. We should eventually have this be done
 		// directly by the query engine.
-		columns[len(columns)-1] = columns[len(columns)-2]
+		cols[len(cols)-1] = cols[len(cols)-2]
 		records = append(records, array.NewRecord(
 			r.Schema(),
-			columns,
+			cols,
 			r.NumRows(),
 		))
 	}
 
 	for _, r := range base.Samples {
-		columns := r.Columns()
-		// This has to be this order as we're overriding the value column (-2)
-		// in the next line.
-		columns[len(columns)-1] = multiplyInt64By(q.mem, columns[len(columns)-2].(*array.Int64), -1)
-		columns[len(columns)-2] = zeroArray(q.mem, int(r.NumRows()))
-		records = append(records, array.NewRecord(
-			r.Schema(),
-			columns,
-			r.NumRows(),
-		))
+		func() {
+			columns := r.Columns()
+			cols := make([]arrow.Array, len(columns))
+			copy(cols, columns)
+			mult := multiplyInt64By(q.mem, columns[len(columns)-2].(*array.Int64), -1)
+			defer mult.Release()
+			zero := zeroArray(q.mem, int(r.NumRows()))
+			defer zero.Release()
+			records = append(records, array.NewRecord(
+				r.Schema(),
+				append(cols[:len(cols)-2], zero, mult),
+				r.NumRows(),
+			))
+		}()
 	}
 
 	return profile.Profile{

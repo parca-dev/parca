@@ -12,6 +12,7 @@
 // limitations under the License.
 
 import {QueryServiceClient} from '@parca/client';
+import {Card} from '@parca/components';
 import type {NavigateFunction} from '@parca/utilities';
 
 import {ProfileSelection, ProfileViewWithData} from '..';
@@ -38,34 +39,30 @@ const ProfileExplorerSingle = ({
 }: ProfileExplorerSingleProps): JSX.Element => {
   return (
     <>
-      <div className="grid grid-cols-1">
-        <div>
-          <ProfileSelector
+      <Card className="mt-2 px-6 py-4">
+        <ProfileSelector
+          queryClient={queryClient}
+          querySelection={query}
+          selectQuery={selectQuery}
+          selectProfile={selectProfile}
+          closeProfile={() => {}} // eslint-disable-line @typescript-eslint/no-empty-function
+          profileSelection={profile}
+          comparing={false}
+          onCompareProfile={compareProfile}
+          enforcedProfileName={''} // TODO
+        />
+      </Card>
+      {profile != null ? (
+        <Card className="mt-2 px-6 py-4">
+          <ProfileViewWithData
             queryClient={queryClient}
-            querySelection={query}
-            selectQuery={selectQuery}
-            selectProfile={selectProfile}
-            closeProfile={() => {}} // eslint-disable-line @typescript-eslint/no-empty-function
-            profileSelection={profile}
-            comparing={false}
-            onCompareProfile={compareProfile}
-            enforcedProfileName={''} // TODO
+            profileSource={profile.ProfileSource()}
+            navigateTo={navigateTo}
           />
-        </div>
-      </div>
-      <div className="grid grid-cols-1">
-        <div>
-          {profile != null ? (
-            <ProfileViewWithData
-              queryClient={queryClient}
-              profileSource={profile.ProfileSource()}
-              navigateTo={navigateTo}
-            />
-          ) : (
-            <></>
-          )}
-        </div>
-      </div>
+        </Card>
+      ) : (
+        <></>
+      )}
     </>
   );
 };

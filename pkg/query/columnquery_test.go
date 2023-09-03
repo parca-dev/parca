@@ -24,8 +24,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apache/arrow/go/v13/arrow"
-	"github.com/apache/arrow/go/v13/arrow/memory"
+	"github.com/apache/arrow/go/v14/arrow"
+	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/go-kit/log"
 	pprofprofile "github.com/google/pprof/profile"
 	columnstore "github.com/polarsignals/frostdb"
@@ -210,8 +210,8 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	// TODO: this should used a checked allocator but there is a bug in Frostdb(https://github.com/polarsignals/frostdb/issues/499) that causes it to leak allocations.
-	mem := memory.DefaultAllocator
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -446,8 +446,8 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// TODO: this should used a checked allocator but there is a bug in Frostdb(https://github.com/polarsignals/frostdb/issues/499) that causes it to leak allocations.
-	mem := memory.DefaultAllocator
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -769,8 +769,8 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// TODO: this should used a checked allocator but there is a bug in Frostdb(https://github.com/polarsignals/frostdb/issues/499) that causes it to leak allocations.
-	mem := memory.DefaultAllocator
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
