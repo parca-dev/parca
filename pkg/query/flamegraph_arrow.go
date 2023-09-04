@@ -42,7 +42,6 @@ const (
 	FlamegraphFieldMappingBuildID = "mapping_build_id"
 
 	FlamegraphFieldLocationAddress = "location_address"
-	FlamegraphFieldLocationFolded  = "location_folded"
 	FlamegraphFieldLocationLine    = "location_line"
 
 	FlamegraphFieldFunctionStartLine  = "function_startline"
@@ -622,7 +621,6 @@ type flamegraphBuilder struct {
 	builderMappingBuildIDIndices         *array.Int32Builder
 	builderMappingBuildIDDictUnifier     array.DictionaryUnifier
 	builderLocationAddress               *array.Uint64Builder
-	builderLocationFolded                *builder.OptBooleanBuilder
 	builderLocationLine                  *builder.OptInt64Builder
 	builderFunctionStartLine             *builder.OptInt64Builder
 	builderFunctionNameIndices           *array.Int32Builder
@@ -692,7 +690,6 @@ func newFlamegraphBuilder(
 		builderMappingBuildIDDictUnifier: array.NewBinaryDictionaryUnifier(pool),
 
 		builderLocationAddress: array.NewUint64Builder(pool),
-		builderLocationFolded:  builder.NewOptBooleanBuilder(arrow.FixedWidthTypes.Boolean),
 		builderLocationLine:    builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
 
 		builderFunctionStartLine:             builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
@@ -733,7 +730,6 @@ func newFlamegraphBuilder(
 	fb.builderMappingBuildIDIndices.AppendNull()
 
 	fb.builderLocationAddress.AppendNull()
-	fb.builderLocationFolded.AppendNull()
 	fb.builderLocationLine.AppendNull()
 
 	fb.builderFunctionStartLine.AppendNull()
@@ -875,7 +871,6 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 		{Name: FlamegraphFieldMappingBuildID, Type: fb.mappingBuildID.DataType()},
 		// Location
 		{Name: FlamegraphFieldLocationAddress, Type: arrow.PrimitiveTypes.Uint64},
-		{Name: FlamegraphFieldLocationFolded, Type: arrow.FixedWidthTypes.Boolean},
 		{Name: FlamegraphFieldLocationLine, Type: arrow.PrimitiveTypes.Int64},
 		// Function
 		{Name: FlamegraphFieldFunctionStartLine, Type: arrow.PrimitiveTypes.Int64},
@@ -888,7 +883,7 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 		{Name: FlamegraphFieldDiff, Type: arrow.PrimitiveTypes.Int64, Nullable: true},
 	}
 
-	arrays := make([]arrow.Array, 16+len(fb.labels))
+	arrays := make([]arrow.Array, 15+len(fb.labels))
 	arrays[0] = fb.builderLabelsOnly.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[0])
 	arrays[1] = fb.builderMappingStart.NewArray()
@@ -901,25 +896,23 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	arrays[5] = fb.mappingBuildID
 	arrays[6] = fb.builderLocationAddress.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[6])
-	arrays[7] = fb.builderLocationFolded.NewArray()
+	arrays[7] = fb.builderLocationLine.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[7])
-	arrays[8] = fb.builderLocationLine.NewArray()
+	arrays[8] = fb.builderFunctionStartLine.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[8])
-	arrays[9] = fb.builderFunctionStartLine.NewArray()
-	cleanupArrs = append(cleanupArrs, arrays[9])
-	arrays[10] = fb.functionName
-	arrays[11] = fb.functionSystemName
-	arrays[12] = fb.functionFilename
-	arrays[13] = fb.builderChildren.NewArray()
+	arrays[9] = fb.functionName
+	arrays[10] = fb.functionSystemName
+	arrays[11] = fb.functionFilename
+	arrays[12] = fb.builderChildren.NewArray()
+	cleanupArrs = append(cleanupArrs, arrays[12])
+	arrays[13] = fb.builderCumulative.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[13])
-	arrays[14] = fb.builderCumulative.NewArray()
+	arrays[14] = fb.builderDiff.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[14])
-	arrays[15] = fb.builderDiff.NewArray()
-	cleanupArrs = append(cleanupArrs, arrays[15])
 
 	for i, field := range fb.builderLabelFields {
 		fields = append(fields, field)
-		arrays[16+i] = fb.labels[i]
+		arrays[15+i] = fb.labels[i]
 	}
 
 	return array.NewRecord(
@@ -942,7 +935,6 @@ func (fb *flamegraphBuilder) Release() {
 	fb.builderMappingBuildIDDictUnifier.Release()
 
 	fb.builderLocationAddress.Release()
-	fb.builderLocationFolded.Release()
 	fb.builderLocationLine.Release()
 
 	fb.builderFunctionStartLine.Release()
@@ -1000,7 +992,6 @@ func (fb *flamegraphBuilder) appendRow(
 	}
 
 	fb.builderLocationAddress.Append(r.Address.Value(locationRow))
-	fb.builderLocationFolded.AppendSingle(false)
 
 	if lineRow == -1 {
 		fb.builderLocationLine.AppendNull()
@@ -1115,7 +1106,6 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 	fb.builderMappingFileIndices.AppendNull()
 	fb.builderMappingBuildIDIndices.AppendNull()
 	fb.builderLocationAddress.AppendNull()
-	fb.builderLocationFolded.AppendNull()
 	fb.builderLocationLine.AppendNull()
 	fb.builderFunctionStartLine.AppendNull()
 	fb.builderFunctionNameIndices.AppendNull()
@@ -1155,7 +1145,6 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedMappingFileIndices := array.NewInt32Builder(fb.pool)
 	trimmedMappingBuildIDIndices := array.NewInt32Builder(fb.pool)
 	trimmedLocationAddress := array.NewUint64Builder(fb.pool)
-	trimmedLocationFolded := builder.NewOptBooleanBuilder(arrow.FixedWidthTypes.Boolean)
 	trimmedLocationLine := builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
 	trimmedFunctionStartLine := builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
 	trimmedFunctionNameIndices := array.NewInt32Builder(fb.pool)
@@ -1198,7 +1187,6 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 		appendDictionaryIndex(fb.mappingFile, trimmedMappingFileIndices, te.row)
 		appendDictionaryIndex(fb.mappingBuildID, trimmedMappingBuildIDIndices, te.row)
 		copyUint64BuilderValue(fb.builderLocationAddress, trimmedLocationAddress, te.row)
-		copyOptBooleanBuilderValue(fb.builderLocationFolded, trimmedLocationFolded, te.row)
 		copyOptInt64BuilderValue(fb.builderLocationLine, trimmedLocationLine, te.row)
 		copyOptInt64BuilderValue(fb.builderFunctionStartLine, trimmedFunctionStartLine, te.row)
 		appendDictionaryIndex(fb.functionName, trimmedFunctionNameIndices, te.row)
@@ -1334,7 +1322,6 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 		fb.builderMappingLimit,
 		fb.builderMappingOffset,
 		fb.builderLocationAddress,
-		fb.builderLocationFolded,
 		fb.builderLocationLine,
 		fb.builderFunctionStartLine,
 		fb.builderCumulative,
@@ -1346,7 +1333,6 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	fb.builderMappingLimit = trimmedMappingLimit
 	fb.builderMappingOffset = trimmedMappingOffset
 	fb.builderLocationAddress = trimmedLocationAddress
-	fb.builderLocationFolded = trimmedLocationFolded
 	fb.builderLocationLine = trimmedLocationLine
 	fb.builderFunctionStartLine = trimmedFunctionStartLine
 	fb.builderCumulative = trimmedCumulative
