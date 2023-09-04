@@ -1255,13 +1255,18 @@ func PprofToSymbolizedProfile(meta profile.Meta, prof *pprofprofile.Profile, ind
 				w.Locations.Append(true)
 				w.Addresses.Append(loc.Address)
 
-				w.Mapping.Append(loc.Mapping != nil)
 				if loc.Mapping != nil {
 					w.MappingStart.Append(loc.Mapping.Start)
 					w.MappingLimit.Append(loc.Mapping.Limit)
 					w.MappingOffset.Append(loc.Mapping.Offset)
 					w.MappingFile.Append([]byte(loc.Mapping.File))
 					w.MappingBuildID.Append([]byte(loc.Mapping.BuildID))
+				} else {
+					w.MappingStart.AppendNull()
+					w.MappingLimit.AppendNull()
+					w.MappingOffset.AppendNull()
+					w.MappingFile.AppendNull()
+					w.MappingBuildID.AppendNull()
 				}
 
 				w.Lines.Append(len(loc.Line) > 0)
@@ -1269,12 +1274,16 @@ func PprofToSymbolizedProfile(meta profile.Meta, prof *pprofprofile.Profile, ind
 					for _, line := range loc.Line {
 						w.Line.Append(true)
 						w.LineNumber.Append(line.Line)
-						w.Function.Append(line.Function != nil)
 						if line.Function != nil {
 							w.FunctionName.Append([]byte(line.Function.Name))
 							w.FunctionSystemName.Append([]byte(line.Function.SystemName))
 							w.FunctionFilename.Append([]byte(line.Function.Filename))
 							w.FunctionStartLine.Append(line.Function.StartLine)
+						} else {
+							w.FunctionName.AppendNull()
+							w.FunctionSystemName.AppendNull()
+							w.FunctionFilename.AppendNull()
+							w.FunctionStartLine.AppendNull()
 						}
 					}
 				}
@@ -1325,13 +1334,18 @@ func OldProfileToArrowProfile(p profile.OldProfile) (profile.Profile, error) {
 				w.Locations.Append(true)
 				w.Addresses.Append(loc.Address)
 
-				w.Mapping.Append(loc.Mapping != nil)
 				if loc.Mapping != nil {
 					w.MappingStart.Append(loc.Mapping.Start)
 					w.MappingLimit.Append(loc.Mapping.Limit)
 					w.MappingOffset.Append(loc.Mapping.Offset)
 					w.MappingFile.Append([]byte(loc.Mapping.File))
 					w.MappingBuildID.Append([]byte(loc.Mapping.BuildId))
+				} else {
+					w.MappingStart.AppendNull()
+					w.MappingLimit.AppendNull()
+					w.MappingOffset.AppendNull()
+					w.MappingFile.AppendNull()
+					w.MappingBuildID.AppendNull()
 				}
 
 				w.Lines.Append(len(loc.Lines) > 0)
@@ -1339,12 +1353,16 @@ func OldProfileToArrowProfile(p profile.OldProfile) (profile.Profile, error) {
 					for _, line := range loc.Lines {
 						w.Line.Append(true)
 						w.LineNumber.Append(line.Line)
-						w.Function.Append(line.Function != nil)
 						if line.Function != nil {
 							w.FunctionName.Append([]byte(line.Function.Name))
 							w.FunctionSystemName.Append([]byte(line.Function.SystemName))
 							w.FunctionFilename.Append([]byte(line.Function.Filename))
 							w.FunctionStartLine.Append(line.Function.StartLine)
+						} else {
+							w.FunctionName.AppendNull()
+							w.FunctionSystemName.AppendNull()
+							w.FunctionFilename.AppendNull()
+							w.FunctionStartLine.AppendNull()
 						}
 					}
 				}

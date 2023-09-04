@@ -148,12 +148,12 @@ func (b *sourceReportBuilder) addRecord(rec arrow.Record) {
 	for i := 0; i < int(rec.NumRows()); i++ {
 		lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 		for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
-			if r.Mapping.IsValid(j) && bytes.Equal(r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(j)), b.buildID) {
+			if r.MappingStart.IsValid(j) && bytes.Equal(r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(j)), b.buildID) {
 				llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
 
 				for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
 					if r.Line.IsValid(k) && r.LineNumber.Value(k) <= b.numLines &&
-						r.LineFunction.IsValid(k) && bytes.Equal(r.LineFunctionFilenameDict.Value(r.LineFunctionFilename.GetValueIndex(k)), b.filename) {
+						r.LineFunctionName.IsValid(k) && bytes.Equal(r.LineFunctionFilenameDict.Value(r.LineFunctionFilename.GetValueIndex(k)), b.filename) {
 						b.cumulativeValues[r.LineNumber.Value(k)-1] += r.Value.Value(i)
 
 						isLeaf := j == int(lOffsetStart) && k == int(llOffsetStart)

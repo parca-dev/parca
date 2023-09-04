@@ -39,7 +39,6 @@ type RecordReader struct {
 	Locations                  *array.List
 	Location                   *array.Struct
 	Address                    *array.Uint64
-	Mapping                    *array.Struct
 	MappingStart               *array.Uint64
 	MappingLimit               *array.Uint64
 	MappingOffset              *array.Uint64
@@ -50,7 +49,6 @@ type RecordReader struct {
 	Lines                      *array.List
 	Line                       *array.Struct
 	LineNumber                 *array.Int64
-	LineFunction               *array.Struct
 	LineFunctionName           *array.Dictionary
 	LineFunctionNameDict       *array.Binary
 	LineFunctionSystemName     *array.Dictionary
@@ -98,25 +96,23 @@ func NewRecordReader(ar arrow.Record) *RecordReader {
 	locations := ar.Column(labelNum).(*array.List)
 	location := locations.ListValues().(*array.Struct)
 	address := location.Field(0).(*array.Uint64)
-	mapping := location.Field(1).(*array.Struct)
-	mappingStart := mapping.Field(0).(*array.Uint64)
-	mappingLimit := mapping.Field(1).(*array.Uint64)
-	mappingOffset := mapping.Field(2).(*array.Uint64)
-	mappingFile := mapping.Field(3).(*array.Dictionary)
+	mappingStart := location.Field(1).(*array.Uint64)
+	mappingLimit := location.Field(2).(*array.Uint64)
+	mappingOffset := location.Field(3).(*array.Uint64)
+	mappingFile := location.Field(4).(*array.Dictionary)
 	mappingFileDict := mappingFile.Dictionary().(*array.Binary)
-	mappingBuildID := mapping.Field(4).(*array.Dictionary)
+	mappingBuildID := location.Field(5).(*array.Dictionary)
 	mappingBuildIDDict := mappingBuildID.Dictionary().(*array.Binary)
-	lines := location.Field(2).(*array.List)
+	lines := location.Field(6).(*array.List)
 	line := lines.ListValues().(*array.Struct)
 	lineNumber := line.Field(0).(*array.Int64)
-	lineFunction := line.Field(1).(*array.Struct)
-	lineFunctionName := lineFunction.Field(0).(*array.Dictionary)
+	lineFunctionName := line.Field(1).(*array.Dictionary)
 	lineFunctionNameDict := lineFunctionName.Dictionary().(*array.Binary)
-	lineFunctionSystemName := lineFunction.Field(1).(*array.Dictionary)
+	lineFunctionSystemName := line.Field(2).(*array.Dictionary)
 	lineFunctionSystemNameDict := lineFunctionSystemName.Dictionary().(*array.Binary)
-	lineFunctionFilename := lineFunction.Field(2).(*array.Dictionary)
+	lineFunctionFilename := line.Field(3).(*array.Dictionary)
 	lineFunctionFilenameDict := lineFunctionFilename.Dictionary().(*array.Binary)
-	lineFunctionStartLine := lineFunction.Field(3).(*array.Int64)
+	lineFunctionStartLine := line.Field(4).(*array.Int64)
 	valueColumn := ar.Column(labelNum + 1).(*array.Int64)
 	diffColumn := ar.Column(labelNum + 2).(*array.Int64)
 
@@ -127,7 +123,6 @@ func NewRecordReader(ar arrow.Record) *RecordReader {
 		Locations:                  locations,
 		Location:                   location,
 		Address:                    address,
-		Mapping:                    mapping,
 		MappingStart:               mappingStart,
 		MappingLimit:               mappingLimit,
 		MappingOffset:              mappingOffset,
@@ -138,7 +133,6 @@ func NewRecordReader(ar arrow.Record) *RecordReader {
 		Lines:                      lines,
 		Line:                       line,
 		LineNumber:                 lineNumber,
-		LineFunction:               lineFunction,
 		LineFunctionName:           lineFunctionName,
 		LineFunctionNameDict:       lineFunctionNameDict,
 		LineFunctionSystemName:     lineFunctionSystemName,
