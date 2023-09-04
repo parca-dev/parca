@@ -549,7 +549,7 @@ func TestGenerateFlamegraphArrowEmpty(t *testing.T) {
 	require.Equal(t, int64(0), total)
 	require.Equal(t, int32(1), height)
 	require.Equal(t, int64(0), trimmed)
-	require.Equal(t, int64(16), record.NumCols())
+	require.Equal(t, int64(15), record.NumCols())
 	require.Equal(t, int64(1), record.NumRows())
 }
 
