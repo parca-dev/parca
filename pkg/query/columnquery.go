@@ -320,7 +320,7 @@ func filterRecord(
 			llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
 
 			for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
-				if r.LineFunction.IsValid(k) && bytes.Contains(bytes.ToLower(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(k))), []byte(filterQuery)) {
+				if r.LineFunctionName.IsValid(k) && bytes.Contains(bytes.ToLower(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(k))), []byte(filterQuery)) {
 					keepRow = true
 					break
 				}
@@ -347,8 +347,7 @@ func filterRecord(
 					w.Locations.Append(true)
 					w.Addresses.Append(r.Address.Value(j))
 
-					if r.Mapping.IsValid(j) {
-						w.Mapping.Append(true)
+					if r.MappingStart.IsValid(j) {
 						w.MappingStart.Append(r.MappingStart.Value(j))
 						w.MappingLimit.Append(r.MappingLimit.Value(j))
 						w.MappingOffset.Append(r.MappingOffset.Value(j))
@@ -367,7 +366,11 @@ func filterRecord(
 							}
 						}
 					} else {
-						w.Mapping.AppendNull()
+						w.MappingStart.AppendNull()
+						w.MappingLimit.AppendNull()
+						w.MappingOffset.AppendNull()
+						w.MappingFile.AppendNull()
+						w.MappingBuildID.AppendNull()
 					}
 
 					if r.Lines.IsValid(j) {
@@ -377,9 +380,8 @@ func filterRecord(
 							for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
 								w.Line.Append(true)
 								w.LineNumber.Append(r.LineNumber.Value(k))
-								w.Function.Append(r.LineFunction.IsValid(k))
 
-								if r.LineFunction.IsValid(k) {
+								if r.LineFunctionName.IsValid(k) {
 									if r.LineFunctionNameDict.Len() == 0 {
 										w.FunctionName.AppendNull()
 									} else {
@@ -402,6 +404,11 @@ func filterRecord(
 										}
 									}
 									w.FunctionStartLine.Append(r.LineFunctionStartLine.Value(k))
+								} else {
+									w.FunctionName.AppendNull()
+									w.FunctionSystemName.AppendNull()
+									w.FunctionFilename.AppendNull()
+									w.FunctionStartLine.AppendNull()
 								}
 							}
 							continue

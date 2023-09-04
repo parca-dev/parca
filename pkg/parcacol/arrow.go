@@ -73,26 +73,24 @@ func (c *ArrowToProfileConverter) Convert(
 		locationOffsets := locations.Offsets()
 		location := locations.ListValues().(*array.Struct)
 		address := location.Field(0).(*array.Uint64)
-		mapping := location.Field(1).(*array.Struct)
-		mappingStart := mapping.Field(0).(*array.Uint64)
-		mappingLimit := mapping.Field(1).(*array.Uint64)
-		mappingOffset := mapping.Field(2).(*array.Uint64)
-		mappingFile := mapping.Field(3).(*array.Dictionary)
+		mappingStart := location.Field(1).(*array.Uint64)
+		mappingLimit := location.Field(2).(*array.Uint64)
+		mappingOffset := location.Field(3).(*array.Uint64)
+		mappingFile := location.Field(4).(*array.Dictionary)
 		mappingFileDict := mappingFile.Dictionary().(*array.Binary)
-		mappingBuildID := mapping.Field(4).(*array.Dictionary)
+		mappingBuildID := location.Field(5).(*array.Dictionary)
 		mappingBuildIDDict := mappingBuildID.Dictionary().(*array.Binary)
-		lines := location.Field(2).(*array.List)
+		lines := location.Field(6).(*array.List)
 		lineOffsets := lines.Offsets()
 		line := lines.ListValues().(*array.Struct)
 		lineNumber := line.Field(0).(*array.Int64)
-		lineFunction := line.Field(1).(*array.Struct)
-		lineFunctionName := lineFunction.Field(0).(*array.Dictionary)
+		lineFunctionName := line.Field(1).(*array.Dictionary)
 		lineFunctionNameDict := lineFunctionName.Dictionary().(*array.Binary)
-		lineFunctionSystemName := lineFunction.Field(1).(*array.Dictionary)
+		lineFunctionSystemName := line.Field(2).(*array.Dictionary)
 		lineFunctionSystemNameDict := lineFunctionSystemName.Dictionary().(*array.Binary)
-		lineFunctionFilename := lineFunction.Field(2).(*array.Dictionary)
+		lineFunctionFilename := line.Field(3).(*array.Dictionary)
 		lineFunctionFilenameDict := lineFunctionFilename.Dictionary().(*array.Binary)
-		lineFunctionStartLine := lineFunction.Field(3).(*array.Int64)
+		lineFunctionStartLine := line.Field(4).(*array.Int64)
 
 		indices = schema.FieldIndices("value")
 		if len(indices) != 1 {
@@ -135,24 +133,24 @@ func (c *ArrowToProfileConverter) Convert(
 				lines := make([]profile.LocationLine, 0, llOffsetEnd-llOffsetStart)
 
 				for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
+					name := ""
+					if lineFunctionName.IsValid(k) {
+						name = string(lineFunctionNameDict.Value(lineFunctionName.GetValueIndex(k)))
+					}
+					systemName := ""
+					if lineFunctionSystemName.IsValid(k) {
+						systemName = string(lineFunctionSystemNameDict.Value(lineFunctionSystemName.GetValueIndex(k)))
+					}
+					filename := ""
+					if lineFunctionFilename.IsValid(k) {
+						filename = string(lineFunctionFilenameDict.Value(lineFunctionFilename.GetValueIndex(k)))
+					}
+					startLine := int64(0)
+					if lineFunctionStartLine.IsValid(k) {
+						startLine = int64(lineFunctionStartLine.Value(k))
+					}
 					var f *pb.Function
-					if lineFunction.IsValid(k) {
-						name := ""
-						if lineFunctionName.IsValid(k) {
-							name = string(lineFunctionNameDict.Value(lineFunctionName.GetValueIndex(k)))
-						}
-						systemName := ""
-						if lineFunctionSystemName.IsValid(k) {
-							systemName = string(lineFunctionSystemNameDict.Value(lineFunctionSystemName.GetValueIndex(k)))
-						}
-						filename := ""
-						if lineFunctionFilename.IsValid(k) {
-							filename = string(lineFunctionFilenameDict.Value(lineFunctionFilename.GetValueIndex(k)))
-						}
-						startLine := int64(0)
-						if lineFunctionStartLine.IsValid(k) {
-							startLine = int64(lineFunctionStartLine.Value(k))
-						}
+					if name != "" || systemName != "" || filename != "" || startLine != 0 {
 						f = &pb.Function{
 							Name:       name,
 							SystemName: systemName,
@@ -167,20 +165,23 @@ func (c *ArrowToProfileConverter) Convert(
 					})
 				}
 
+				start := mappingStart.Value(j)
+				limit := mappingLimit.Value(j)
+				offset := mappingOffset.Value(j)
+				buildID := ""
+				if mappingBuildID.IsValid(j) {
+					buildID = string(mappingBuildIDDict.Value(mappingBuildID.GetValueIndex(j)))
+				}
+				file := ""
+				if mappingFile.IsValid(j) {
+					file = string(mappingFileDict.Value(mappingFile.GetValueIndex(j)))
+				}
 				var m *pb.Mapping
-				if !mapping.IsNull(j) {
-					buildID := ""
-					if mappingBuildID.IsValid(j) {
-						buildID = string(mappingBuildIDDict.Value(mappingBuildID.GetValueIndex(j)))
-					}
-					file := ""
-					if mappingFile.IsValid(j) {
-						file = string(mappingFileDict.Value(mappingFile.GetValueIndex(j)))
-					}
+				if start != 0 || limit != 0 || offset != 0 || buildID != "" || file != "" {
 					m = &pb.Mapping{
-						Start:   mappingStart.Value(j),
-						Limit:   mappingLimit.Value(j),
-						Offset:  mappingOffset.Value(j),
+						Start:   start,
+						Limit:   limit,
+						Offset:  offset,
 						File:    file,
 						BuildId: buildID,
 					}
@@ -335,7 +336,6 @@ func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrac
 			w.Addresses.Append(loc.Address)
 
 			if loc.Mapping != nil {
-				w.Mapping.Append(true)
 				w.MappingStart.Append(loc.Mapping.Start)
 				w.MappingLimit.Append(loc.Mapping.Limit)
 				w.MappingOffset.Append(loc.Mapping.Offset)
@@ -346,7 +346,11 @@ func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrac
 					return nil, fmt.Errorf("append mapping build id: %w", err)
 				}
 			} else {
-				w.Mapping.AppendNull()
+				w.MappingStart.AppendNull()
+				w.MappingLimit.AppendNull()
+				w.MappingOffset.AppendNull()
+				w.MappingFile.AppendNull()
+				w.MappingBuildID.AppendNull()
 			}
 
 			if loc.Lines != nil && len(loc.Lines) > 0 {
@@ -354,7 +358,6 @@ func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrac
 				for _, l := range loc.Lines {
 					w.Line.Append(true)
 					w.LineNumber.Append(l.Line)
-					w.Function.Append(l.Function != nil)
 					if l.Function != nil {
 						if err := w.FunctionName.Append([]byte(l.Function.Name)); err != nil {
 							return nil, fmt.Errorf("append function name: %w", err)
@@ -366,6 +369,11 @@ func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrac
 							return nil, fmt.Errorf("append function filename: %w", err)
 						}
 						w.FunctionStartLine.Append(l.Function.StartLine)
+					} else {
+						w.FunctionName.AppendNull()
+						w.FunctionSystemName.AppendNull()
+						w.FunctionFilename.AppendNull()
+						w.FunctionStartLine.AppendNull()
 					}
 				}
 			} else {

@@ -977,7 +977,7 @@ func (fb *flamegraphBuilder) appendRow(
 	fb.builderLabelsOnly.Append(false)
 
 	// Mapping
-	if r.Mapping.IsValid(locationRow) {
+	if r.MappingStart.IsValid(locationRow) {
 		fb.builderMappingStart.Append(r.MappingStart.Value(locationRow))
 		fb.builderMappingLimit.Append(r.MappingLimit.Value(locationRow))
 		fb.builderMappingOffset.Append(r.MappingOffset.Value(locationRow))
@@ -1004,7 +1004,7 @@ func (fb *flamegraphBuilder) appendRow(
 		// something has already gone terribly wrong.
 		fb.builderLocationLine.Append(r.LineNumber.Value(lineRow))
 
-		if r.LineFunction.IsValid(lineRow) {
+		if r.LineFunctionName.IsValid(lineRow) {
 			fb.builderFunctionStartLine.Append(r.LineFunctionStartLine.Value(lineRow))
 			fb.builderFunctionNameIndices.Append(t.functionName.indices.Value(r.LineFunctionName.GetValueIndex(lineRow)))
 			fb.builderFunctionSystemNameIndices.Append(t.functionSystemName.indices.Value(r.LineFunctionSystemName.GetValueIndex(lineRow)))
