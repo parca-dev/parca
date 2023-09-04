@@ -79,7 +79,7 @@ const GraphTooltipArrowContent = ({
     timeoutHandle = setTimeout(() => setIsCopied(false), 3000);
   };
 
-  const {name, locationAddress, cumulativeText, diffText, diff, row: rowNo} = graphTooltipData;
+  const {name, locationAddress, cumulativeText, diffText, diff, row: rowNumber} = graphTooltipData;
 
   return (
     <div className={`flex text-sm ${isFixed ? 'w-full' : ''}`}>
@@ -140,7 +140,7 @@ const GraphTooltipArrowContent = ({
                   )}
                   <TooltipMetaInfo
                     table={table}
-                    row={rowNo}
+                    row={rowNumber}
                     onCopy={onCopy}
                     navigateTo={navigateTo}
                   />
