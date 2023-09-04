@@ -538,6 +538,28 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 	}
 }
 
+func TestGenerateFlamegraphArrowEmpty(t *testing.T) {
+	ctx := context.Background()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
+
+	// empty profile
+	// basically the same as querying a time range with no data.
+	p := profile.Profile{}
+
+	record, total, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, p, []string{FlamegraphFieldFunctionName}, 0)
+	require.NoError(t, err)
+	defer record.Release()
+
+	require.Equal(t, int64(0), total)
+	require.Equal(t, int32(1), height)
+	require.Equal(t, int64(0), trimmed)
+	require.Equal(t, int64(16), record.NumCols())
+	require.Equal(t, int64(1), record.NumRows())
+}
+
 func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 	t.Parallel()
 

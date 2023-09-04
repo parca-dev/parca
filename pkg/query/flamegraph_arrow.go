@@ -291,8 +291,11 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		return nil, 0, 0, 0, fmt.Errorf("failed to prepare the new record: %w", err)
 	}
 
-	if err := fb.trim(ctx, tracer, trimFraction); err != nil {
-		return nil, 0, 0, 0, fmt.Errorf("failed to trim flame graph: %w", err)
+	// Trim only if we have more rows than the root row.
+	if fb.builderCumulative.Len() > 1 {
+		if err := fb.trim(ctx, tracer, trimFraction); err != nil {
+			return nil, 0, 0, 0, fmt.Errorf("failed to trim flame graph: %w", err)
+		}
 	}
 
 	_, spanNewRecord := tracer.Start(ctx, "NewRecord")
@@ -599,8 +602,7 @@ type flamegraphBuilder struct {
 	parent parent
 	// This keeps track of a row's children and will be converted to an arrow array of lists at the end.
 	// Allocating for an average of 8 children per stacktrace upfront.
-	children        []map[uint64]int
-	trimmedChildren [][]int
+	children []map[uint64]int
 
 	// This keeps track of the root rows indexed by the labels string.
 	// If the stack trace has no labels, we use the empty string as the key.
@@ -646,6 +648,7 @@ type flamegraphBuilder struct {
 	functionSystemName *array.Dictionary
 	functionFilename   *array.Dictionary
 	labels             []*array.Dictionary
+	trimmedChildren    [][]int
 
 	labelNameIndex map[string]int
 }
@@ -759,19 +762,6 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 	fb.builderCumulative.Set(0, fb.cumulative)
 	fb.builderDiff.Set(0, fb.diff)
 
-	// TODO(brancz): We probably don't need this anymore.
-	// At this point we don't care for the individual label roots anymore.
-	// We have grouped by them and their metadata before.
-	// We can combine all of them into the final children root
-	// making our lives easier later on when trimming and then creating the arrow array.
-	//if len(fb.children) > 0 {
-	//	fb.children[0] = nil
-	//}
-
-	//for _, key := range fb.rootsRow {
-	//	fb.children[0] = append(fb.children[0], key...)
-	//}
-
 	// We want to unify the dictionaries after having created the flame graph now.
 	// They are going to be trimmed and compacted in the next step.
 
@@ -837,6 +827,11 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 		cleanupArrs = append(cleanupArrs, dict)
 		typ := &arrow.DictionaryType{IndexType: indices.DataType(), ValueType: dict.DataType()}
 		fb.labels = append(fb.labels, array.NewDictionaryArray(typ, indices, dict))
+	}
+
+	// If there is only one root row, we need to populate the trimmedChildren to not panic when building the NewRecord.
+	if len(fb.children) == 1 {
+		fb.trimmedChildren = make([][]int, 1)
 	}
 
 	return nil
