@@ -6,6 +6,7 @@
     "before 4am every weekday",
     "every weekend"
   ],
+  "updateNotScheduled": false,
   "packageRules": [
     {
       "description": "One week stability period for Buf packages",
