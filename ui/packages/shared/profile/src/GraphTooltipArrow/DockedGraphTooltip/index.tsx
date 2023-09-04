@@ -13,7 +13,6 @@
 
 import {useState} from 'react';
 
-import {Icon} from '@iconify/react';
 import {Table} from 'apache-arrow';
 import cx from 'classnames';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
