@@ -25,6 +25,7 @@ import {
   FIELD_MAPPING_BUILD_ID,
   FIELD_MAPPING_FILE,
 } from '../../ProfileIcicleGraph/IcicleGraphArrow';
+import {arrowToString} from '../../ProfileIcicleGraph/IcicleGraphArrow/utils';
 import {ProfileSource} from '../../ProfileSource';
 import {useProfileViewContext} from '../../ProfileView/ProfileViewContext';
 import {useQuery} from '../../useQuery';
@@ -51,11 +52,14 @@ export const useGraphTooltipMetaInfo = ({
   row,
   navigateTo,
 }: Props): GraphTooltipMetaInfoData => {
-  const mappingFile: string = table.getChild(FIELD_MAPPING_FILE)?.get(row);
-  const mappingBuildID: string = table.getChild(FIELD_MAPPING_BUILD_ID)?.get(row);
+  const mappingFile: string | null = arrowToString(table.getChild(FIELD_MAPPING_FILE)?.get(row));
+  const mappingBuildID: string | null = arrowToString(
+    table.getChild(FIELD_MAPPING_BUILD_ID)?.get(row)
+  );
   const locationAddress: bigint = table.getChild(FIELD_LOCATION_ADDRESS)?.get(row) ?? 0n;
   const locationLine: bigint = table.getChild(FIELD_LOCATION_LINE)?.get(row) ?? 0n;
-  const functionFilename: string = table.getChild(FIELD_FUNCTION_FILE_NAME)?.get(row) ?? '';
+  const functionFilename: string =
+    arrowToString(table.getChild(FIELD_FUNCTION_FILE_NAME)?.get(row)) ?? '';
   const functionStartLine: bigint = table.getChild(FIELD_FUNCTION_START_LINE)?.get(row) ?? 0n;
   const lineNumber =
     locationLine !== 0n ? locationLine : functionStartLine !== 0n ? functionStartLine : undefined;
@@ -79,7 +83,7 @@ export const useGraphTooltipMetaInfo = ({
         !Boolean(mappingBuildID) ||
         // eslint-disable-next-line no-extra-boolean-cast
         !Boolean(functionFilename),
-      sourceBuildID: mappingBuildID,
+      sourceBuildID: mappingBuildID !== null ? mappingBuildID : undefined,
       sourceFilename: functionFilename,
       sourceOnly: true,
     }
@@ -126,7 +130,10 @@ export const useGraphTooltipMetaInfo = ({
 
   const openFile = (): void => {
     setDashboardItems([dashboardItems[0], 'source']);
-    setSourceBuildId(mappingBuildID);
+    if (mappingBuildID != null) {
+      setSourceBuildId(mappingBuildID);
+    }
+
     setSourceFilename(functionFilename);
     if (lineNumber !== undefined) {
       setSourceLine(lineNumber.toString());

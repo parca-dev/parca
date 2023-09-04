@@ -18,7 +18,8 @@ import cx from 'classnames';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {Tooltip} from 'react-tooltip';
 
-import {Button, useParcaContext} from '@parca/components';
+import {Button, IconButton, useParcaContext} from '@parca/components';
+import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {getLastItem, type NavigateFunction} from '@parca/utilities';
 
 import {hexifyAddress, truncateString, truncateStringReverse} from '../utils';
@@ -63,6 +64,7 @@ const GraphTooltipArrowContent = ({
     row,
     level,
   });
+  const [_, setIsDocked] = useUserPreference(USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key);
 
   if (graphTooltipData === null) {
     return <></>;
@@ -85,7 +87,7 @@ const GraphTooltipArrowContent = ({
         <div className="min-h-52 flex w-[500px] flex-col justify-between rounded-lg border border-gray-300 bg-gray-50 p-3 shadow-lg dark:border-gray-500 dark:bg-gray-900">
           <div className="flex flex-row">
             <div className="mx-2">
-              <div className="flex h-10 items-center break-all font-semibold">
+              <div className="flex h-10 items-start justify-between gap-4 break-all font-semibold">
                 {row === 0 ? (
                   <p>root</p>
                 ) : (
@@ -109,6 +111,11 @@ const GraphTooltipArrowContent = ({
                     )}
                   </>
                 )}
+                <IconButton
+                  onClick={() => setIsDocked(true)}
+                  icon="mdi:dock-bottom"
+                  title="Dock MetaInfo Panel"
+                />
               </div>
               <table className="my-2 w-full table-fixed pr-0 text-gray-700 dark:text-gray-300">
                 <tbody>

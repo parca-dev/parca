@@ -13,13 +13,15 @@
 
 import {useState} from 'react';
 
+import {Icon} from '@iconify/react';
 import {Table} from 'apache-arrow';
 import cx from 'classnames';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {Tooltip} from 'react-tooltip';
 import {useWindowSize} from 'react-use';
 
-import {Button, useParcaContext} from '@parca/components';
+import {Button, IconButton, useParcaContext} from '@parca/components';
+import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {getLastItem} from '@parca/utilities';
 
 import {hexifyAddress, truncateString, truncateStringReverse} from '../../utils';
@@ -106,6 +108,8 @@ export const DockedGraphTooltip = ({
     mappingBuildID,
   } = useGraphTooltipMetaInfo({table, row: row ?? 0, navigateTo});
 
+  const [_, setIsDocked] = useUserPreference(USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key);
+
   if (graphTooltipData === null) {
     return <></>;
   }
@@ -132,7 +136,7 @@ export const DockedGraphTooltip = ({
       style={{width}}
     >
       <div className="flex flex-col gap-4">
-        <div>
+        <div className="flex justify-between gap-4">
           {row === 0 ? (
             <p>root</p>
           ) : (
@@ -156,6 +160,11 @@ export const DockedGraphTooltip = ({
               )}
             </>
           )}
+          <IconButton
+            onClick={() => setIsDocked(false)}
+            icon="mdi:dock-window"
+            title="Undock MetaInfo Panel"
+          />
         </div>
         <div className="flex justify-between gap-3">
           <InfoSection
@@ -224,11 +233,7 @@ export const DockedGraphTooltip = ({
           />
           <InfoSection
             title="Build ID"
-            value={
-              mappingBuildID != null
-                ? truncateString(getLastItem(mappingBuildID) as string, 28)
-                : 'Not available'
-            }
+            value={truncateString(getLastItem(mappingBuildID) ?? 'Not available', 28)}
             onCopy={onCopy}
             copyText={mappingBuildID ?? 'Not available'}
           />
