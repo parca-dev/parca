@@ -68,6 +68,7 @@ jobs:
         with:
           node-version-file: .node-version
           cache: 'yarn'
+          cache-dependency-path: ui/yarn.lock
 
       - name: Build UI
         run: make ui/build
