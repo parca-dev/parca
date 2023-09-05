@@ -101,7 +101,7 @@ export const useGraphTooltipMetaInfo = ({
   const labelPairs: Array<[string, string]> = labelColumnNames
     .map((field, i) => [
       labelColumnNames[i].name.slice(pprofLabelPrefix.length),
-      table.getChild(field.name)?.get(row) ?? '',
+      arrowToString(table.getChild(field.name)?.get(row)) ?? '',
     ])
     .filter(value => value[1] !== '') as Array<[string, string]>;
 
