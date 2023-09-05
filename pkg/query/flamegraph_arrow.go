@@ -265,8 +265,8 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					}
 
 					if isRoot {
-						// We aren't merging this root, so we'll keep track of it as a new one.
-						fb.children[fb.rootsRow[labelHash]][key] = row
+						rootRow := fb.rootsRow[labelHash]
+						fb.children[rootRow][key] = row
 					}
 
 					err = fb.appendRow(r, t, recordLabelIndex, i, j, k, row, key)
