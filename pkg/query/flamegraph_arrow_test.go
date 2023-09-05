@@ -82,46 +82,6 @@ type flamegraphColumns struct {
 	diff                []int64
 }
 
-func (c flamegraphColumns) slice(start, end int) flamegraphColumns {
-	return flamegraphColumns{
-		labelsOnly:          c.labelsOnly[start:end],
-		mappingStart:        c.mappingStart[start:end],
-		mappingLimit:        c.mappingLimit[start:end],
-		mappingOffset:       c.mappingOffset[start:end],
-		mappingFiles:        c.mappingFiles[start:end],
-		mappingBuildIDs:     c.mappingBuildIDs[start:end],
-		locationAddresses:   c.locationAddresses[start:end],
-		locationLines:       c.locationLines[start:end],
-		functionStartLines:  c.functionStartLines[start:end],
-		functionNames:       c.functionNames[start:end],
-		functionSystemNames: c.functionSystemNames[start:end],
-		functionFileNames:   c.functionFileNames[start:end],
-		labels:              c.labels[start:end],
-		children:            c.children[start:end],
-		cumulative:          c.cumulative[start:end],
-		diff:                c.diff[start:end],
-	}
-}
-
-func (c flamegraphColumns) swap(i, j int) {
-	c.labelsOnly[i], c.labelsOnly[j] = c.labelsOnly[j], c.labelsOnly[i]
-	c.mappingStart[i], c.mappingStart[j] = c.mappingStart[j], c.mappingStart[i]
-	c.mappingLimit[i], c.mappingLimit[j] = c.mappingLimit[j], c.mappingLimit[i]
-	c.mappingOffset[i], c.mappingOffset[j] = c.mappingOffset[j], c.mappingOffset[i]
-	c.mappingFiles[i], c.mappingFiles[j] = c.mappingFiles[j], c.mappingFiles[i]
-	c.mappingBuildIDs[i], c.mappingBuildIDs[j] = c.mappingBuildIDs[j], c.mappingBuildIDs[i]
-	c.locationAddresses[i], c.locationAddresses[j] = c.locationAddresses[j], c.locationAddresses[i]
-	c.locationLines[i], c.locationLines[j] = c.locationLines[j], c.locationLines[i]
-	c.functionStartLines[i], c.functionStartLines[j] = c.functionStartLines[j], c.functionStartLines[i]
-	c.functionNames[i], c.functionNames[j] = c.functionNames[j], c.functionNames[i]
-	c.functionSystemNames[i], c.functionSystemNames[j] = c.functionSystemNames[j], c.functionSystemNames[i]
-	c.functionFileNames[i], c.functionFileNames[j] = c.functionFileNames[j], c.functionFileNames[i]
-	c.labels[i], c.labels[j] = c.labels[j], c.labels[i]
-	c.children[i], c.children[j] = c.children[j], c.children[i]
-	c.cumulative[i], c.cumulative[j] = c.cumulative[j], c.cumulative[i]
-	c.diff[i], c.diff[j] = c.diff[j], c.diff[i]
-}
-
 func rowsToColumn(rows []flamegraphRow) flamegraphColumns {
 	columns := flamegraphColumns{}
 	for _, row := range rows {
@@ -143,27 +103,6 @@ func rowsToColumn(rows []flamegraphRow) flamegraphColumns {
 		columns.diff = append(columns.diff, row.Diff)
 	}
 	return columns
-}
-
-func fgRecordToColumns(t *testing.T, r arrow.Record) flamegraphColumns {
-	return flamegraphColumns{
-		labelsOnly:          extractColumn(t, r, FlamegraphFieldLabelsOnly).([]bool),
-		mappingStart:        extractColumn(t, r, FlamegraphFieldMappingStart).([]uint64),
-		mappingLimit:        extractColumn(t, r, FlamegraphFieldMappingLimit).([]uint64),
-		mappingOffset:       extractColumn(t, r, FlamegraphFieldMappingOffset).([]uint64),
-		mappingFiles:        extractColumn(t, r, FlamegraphFieldMappingFile).([]string),
-		mappingBuildIDs:     extractColumn(t, r, FlamegraphFieldMappingBuildID).([]string),
-		locationAddresses:   extractColumn(t, r, FlamegraphFieldLocationAddress).([]uint64),
-		locationLines:       extractColumn(t, r, FlamegraphFieldLocationLine).([]int64),
-		functionStartLines:  extractColumn(t, r, FlamegraphFieldFunctionStartLine).([]int64),
-		functionNames:       extractColumn(t, r, FlamegraphFieldFunctionName).([]string),
-		functionSystemNames: extractColumn(t, r, FlamegraphFieldFunctionSystemName).([]string),
-		functionFileNames:   extractColumn(t, r, FlamegraphFieldFunctionFileName).([]string),
-		labels:              extractLabelColumns(t, r),
-		children:            extractChildrenColumn(t, r),
-		cumulative:          extractColumn(t, r, FlamegraphFieldCumulative).([]int64),
-		diff:                extractColumn(t, r, FlamegraphFieldDiff).([]int64),
-	}
 }
 
 func extractLabelColumns(t *testing.T, r arrow.Record) []map[string]string {
