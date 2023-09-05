@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.246](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.245...@parca/profile@0.16.246) (2023-09-04)
+
+### Bug Fixes
+
+- **ui:** remove unused tableFromIPC import ([#3746](https://github.com/parca-dev/parca/issues/3746)) ([b8845c9](https://github.com/parca-dev/parca/commit/b8845c9bbae6a287140350795127e5804703b2a9))
+
 ## [0.16.245](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.244...@parca/profile@0.16.245) (2023-09-01)
 
 **Note:** Version bump only for package @parca/profile

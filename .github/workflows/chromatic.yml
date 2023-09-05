@@ -61,12 +61,12 @@ jobs:
         uses: actions/setup-node@5e21ff4d9bc1a8cf6de233a3057d20ec6b3fb69d # v3.8.1
         with:
           node-version-file: .node-version
-          cache: yarn
+          cache: 'yarn'
       - name: Install dependencies and build app
         run: yarn install --frozen-lockfile --prefer-offline && yarn build
         # 👇 Adds Chromatic as a step in the workflow
       - name: Publish to Chromatic
-        uses: chromaui/action@48ebd055a3613e6a5a8b73f053d4aabd9f3530fa # v1
+        uses: chromaui/action@ebe6961baace1e0d9cc098eb14ae41ab96394958 # v1
         # Chromatic GitHub Action options
         with:
           # 👇 Chromatic projectToken, refer to the manage page to obtain it.

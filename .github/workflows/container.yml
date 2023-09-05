@@ -73,6 +73,7 @@ jobs:
         with:
           node-version-file: .node-version
           cache: 'yarn'
+          cache-dependency-path: ui/yarn.lock
 
       - name: Set Tag
         run: |

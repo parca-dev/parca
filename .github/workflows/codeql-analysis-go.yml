@@ -73,7 +73,8 @@ jobs:
         uses: actions/setup-node@5e21ff4d9bc1a8cf6de233a3057d20ec6b3fb69d # v3.8.1
         with:
           node-version-file: .node-version
-          cache: yarn
+          cache: 'yarn'
+          cache-dependency-path: ui/yarn.lock
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@00e563ead9f72a8461b24876bee2d0c2e8bd2ee8 # v2.21.5

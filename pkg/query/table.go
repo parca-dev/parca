@@ -141,7 +141,7 @@ func generateTableArrowRecord(
 					for lineRow := int(llOffsetStart); lineRow < int(llOffsetEnd); lineRow++ {
 						isLeaf := locationRow == int(lOffsetStart) && lineRow == int(llOffsetStart)
 
-						if r.Line.IsValid(lineRow) && r.LineFunction.IsValid(lineRow) {
+						if r.Line.IsValid(lineRow) && r.LineFunctionName.IsValid(lineRow) {
 							fn := r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow))
 							if cr, ok := tb.functions[unsafeString(fn)]; !ok {
 								if err := tb.appendRow(r, sampleRow, locationRow, lineRow, isLeaf); err != nil {
@@ -261,19 +261,19 @@ func (tb *tableBuilder) appendRow(
 		switch tb.schema.Field(j).Name {
 		// Mapping
 		case TableFieldMappingStart:
-			if r.Mapping.IsValid(locationRow) && r.MappingStart.Value(locationRow) > 0 {
+			if r.MappingStart.IsValid(locationRow) {
 				tb.builderMappingStart.Append(r.MappingStart.Value(locationRow))
 			} else {
 				tb.builderMappingStart.AppendNull()
 			}
 		case TableFieldMappingLimit:
-			if r.Mapping.IsValid(locationRow) && r.MappingLimit.Value(locationRow) > 0 {
+			if r.MappingLimit.IsValid(locationRow) {
 				tb.builderMappingLimit.Append(r.MappingLimit.Value(locationRow))
 			} else {
 				tb.builderMappingLimit.AppendNull()
 			}
 		case TableFieldMappingOffset:
-			if r.Mapping.IsValid(locationRow) && r.MappingOffset.Value(locationRow) > 0 {
+			if r.MappingOffset.IsValid(locationRow) {
 				tb.builderMappingOffset.Append(r.MappingOffset.Value(locationRow))
 			} else {
 				tb.builderMappingOffset.AppendNull()
@@ -282,7 +282,7 @@ func (tb *tableBuilder) appendRow(
 			if r.MappingFileDict.Len() == 0 {
 				tb.builderMappingFile.AppendNull()
 			} else {
-				if r.Mapping.IsValid(locationRow) && len(r.MappingFileDict.Value(r.MappingFile.GetValueIndex(locationRow))) > 0 {
+				if r.MappingFile.IsValid(locationRow) {
 					_ = tb.builderMappingFile.Append(r.MappingFileDict.Value(r.MappingFile.GetValueIndex(locationRow)))
 				} else {
 					tb.builderMappingFile.AppendNull()
@@ -292,7 +292,7 @@ func (tb *tableBuilder) appendRow(
 			if r.MappingBuildIDDict.Len() == 0 {
 				tb.builderMappingBuildID.AppendNull()
 			} else {
-				if r.Mapping.IsValid(locationRow) && len(r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(locationRow))) > 0 {
+				if r.MappingBuildID.IsValid(locationRow) {
 					_ = tb.builderMappingBuildID.Append(r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(locationRow)))
 				} else {
 					tb.builderMappingBuildID.AppendNull()
@@ -313,7 +313,7 @@ func (tb *tableBuilder) appendRow(
 			}
 		// Function
 		case TableFieldFunctionStartLine:
-			if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && r.LineFunctionStartLine.Value(lineRow) > 0 {
+			if lineRow >= 0 && r.LineFunctionStartLine.Value(lineRow) > 0 {
 				tb.builderFunctionStartLine.Append(r.LineFunctionStartLine.Value(lineRow))
 			} else {
 				tb.builderFunctionStartLine.AppendNull()
@@ -322,7 +322,7 @@ func (tb *tableBuilder) appendRow(
 			if r.LineFunctionNameDict.Len() == 0 || lineRow == -1 {
 				tb.builderFunctionName.AppendNull()
 			} else {
-				if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && len(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow))) > 0 {
+				if lineRow >= 0 && r.LineFunctionName.IsValid(lineRow) {
 					_ = tb.builderFunctionName.Append(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow)))
 				} else {
 					tb.builderFunctionName.AppendNull()
@@ -332,7 +332,7 @@ func (tb *tableBuilder) appendRow(
 			if r.LineFunctionSystemNameDict.Len() == 0 || lineRow == -1 {
 				tb.builderFunctionSystemName.AppendNull()
 			} else {
-				if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && len(r.LineFunctionSystemNameDict.Value(r.LineFunctionSystemName.GetValueIndex(lineRow))) > 0 {
+				if lineRow >= 0 && r.LineFunctionSystemName.IsValid(lineRow) {
 					_ = tb.builderFunctionSystemName.Append(r.LineFunctionSystemNameDict.Value(r.LineFunctionSystemName.GetValueIndex(lineRow)))
 				} else {
 					tb.builderFunctionSystemName.AppendNull()
@@ -342,7 +342,7 @@ func (tb *tableBuilder) appendRow(
 			if r.LineFunctionFilenameDict.Len() == 0 || lineRow == -1 {
 				tb.builderFunctionFileName.AppendNull()
 			} else {
-				if lineRow >= 0 && r.LineFunction.IsValid(lineRow) && len(r.LineFunctionFilenameDict.Value(r.LineFunctionFilename.GetValueIndex(lineRow))) > 0 {
+				if lineRow >= 0 && r.LineFunctionFilename.IsValid(lineRow) {
 					_ = tb.builderFunctionFileName.Append(r.LineFunctionFilenameDict.Value(r.LineFunctionFilename.GetValueIndex(lineRow)))
 				} else {
 					tb.builderFunctionFileName.AppendNull()

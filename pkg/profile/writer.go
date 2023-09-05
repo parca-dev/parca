@@ -26,7 +26,6 @@ type Writer struct {
 	LocationsList      *array.ListBuilder
 	Locations          *array.StructBuilder
 	Addresses          *array.Uint64Builder
-	Mapping            *array.StructBuilder
 	MappingStart       *array.Uint64Builder
 	MappingLimit       *array.Uint64Builder
 	MappingOffset      *array.Uint64Builder
@@ -35,7 +34,6 @@ type Writer struct {
 	Lines              *array.ListBuilder
 	Line               *array.StructBuilder
 	LineNumber         *array.Int64Builder
-	Function           *array.StructBuilder
 	FunctionName       *array.BinaryDictionaryBuilder
 	FunctionSystemName *array.BinaryDictionaryBuilder
 	FunctionFilename   *array.BinaryDictionaryBuilder
@@ -69,21 +67,19 @@ func NewWriter(pool memory.Allocator, labelNames []string) Writer {
 
 	addresses := locations.FieldBuilder(0).(*array.Uint64Builder)
 
-	mapping := locations.FieldBuilder(1).(*array.StructBuilder)
-	mappingStart := mapping.FieldBuilder(0).(*array.Uint64Builder)
-	mappingLimit := mapping.FieldBuilder(1).(*array.Uint64Builder)
-	mappingOffset := mapping.FieldBuilder(2).(*array.Uint64Builder)
-	mappingFile := mapping.FieldBuilder(3).(*array.BinaryDictionaryBuilder)
-	mappingBuildID := mapping.FieldBuilder(4).(*array.BinaryDictionaryBuilder)
+	mappingStart := locations.FieldBuilder(1).(*array.Uint64Builder)
+	mappingLimit := locations.FieldBuilder(2).(*array.Uint64Builder)
+	mappingOffset := locations.FieldBuilder(3).(*array.Uint64Builder)
+	mappingFile := locations.FieldBuilder(4).(*array.BinaryDictionaryBuilder)
+	mappingBuildID := locations.FieldBuilder(5).(*array.BinaryDictionaryBuilder)
 
-	lines := locations.FieldBuilder(2).(*array.ListBuilder)
+	lines := locations.FieldBuilder(6).(*array.ListBuilder)
 	line := lines.ValueBuilder().(*array.StructBuilder)
 	lineNumber := line.FieldBuilder(0).(*array.Int64Builder)
-	function := line.FieldBuilder(1).(*array.StructBuilder)
-	functionName := function.FieldBuilder(0).(*array.BinaryDictionaryBuilder)
-	functionSystemName := function.FieldBuilder(1).(*array.BinaryDictionaryBuilder)
-	functionFilename := function.FieldBuilder(2).(*array.BinaryDictionaryBuilder)
-	functionStartLine := function.FieldBuilder(3).(*array.Int64Builder)
+	functionName := line.FieldBuilder(1).(*array.BinaryDictionaryBuilder)
+	functionSystemName := line.FieldBuilder(2).(*array.BinaryDictionaryBuilder)
+	functionFilename := line.FieldBuilder(3).(*array.BinaryDictionaryBuilder)
+	functionStartLine := line.FieldBuilder(4).(*array.Int64Builder)
 
 	value := b.Field(labelNum + 1).(*array.Int64Builder)
 	diff := b.Field(labelNum + 2).(*array.Int64Builder)
@@ -95,7 +91,6 @@ func NewWriter(pool memory.Allocator, labelNames []string) Writer {
 		LocationsList:      locationsList,
 		Locations:          locations,
 		Addresses:          addresses,
-		Mapping:            mapping,
 		MappingStart:       mappingStart,
 		MappingLimit:       mappingLimit,
 		MappingOffset:      mappingOffset,
@@ -104,7 +99,6 @@ func NewWriter(pool memory.Allocator, labelNames []string) Writer {
 		Lines:              lines,
 		Line:               line,
 		LineNumber:         lineNumber,
-		Function:           function,
 		FunctionName:       functionName,
 		FunctionSystemName: functionSystemName,
 		FunctionFilename:   functionFilename,
@@ -121,7 +115,6 @@ type LocationsWriter struct {
 	LocationsList      *array.ListBuilder
 	Locations          *array.StructBuilder
 	Addresses          *array.Uint64Builder
-	Mapping            *array.StructBuilder
 	MappingStart       *array.Uint64Builder
 	MappingLimit       *array.Uint64Builder
 	MappingOffset      *array.Uint64Builder
@@ -130,7 +123,6 @@ type LocationsWriter struct {
 	Lines              *array.ListBuilder
 	Line               *array.StructBuilder
 	LineNumber         *array.Int64Builder
-	Function           *array.StructBuilder
 	FunctionName       *array.BinaryDictionaryBuilder
 	FunctionSystemName *array.BinaryDictionaryBuilder
 	FunctionFilename   *array.BinaryDictionaryBuilder
@@ -147,28 +139,25 @@ func NewLocationsWriter(pool memory.Allocator) LocationsWriter {
 
 	addresses := locations.FieldBuilder(0).(*array.Uint64Builder)
 
-	mapping := locations.FieldBuilder(1).(*array.StructBuilder)
-	mappingStart := mapping.FieldBuilder(0).(*array.Uint64Builder)
-	mappingLimit := mapping.FieldBuilder(1).(*array.Uint64Builder)
-	mappingOffset := mapping.FieldBuilder(2).(*array.Uint64Builder)
-	mappingFile := mapping.FieldBuilder(3).(*array.BinaryDictionaryBuilder)
-	mappingBuildID := mapping.FieldBuilder(4).(*array.BinaryDictionaryBuilder)
+	mappingStart := locations.FieldBuilder(1).(*array.Uint64Builder)
+	mappingLimit := locations.FieldBuilder(2).(*array.Uint64Builder)
+	mappingOffset := locations.FieldBuilder(3).(*array.Uint64Builder)
+	mappingFile := locations.FieldBuilder(4).(*array.BinaryDictionaryBuilder)
+	mappingBuildID := locations.FieldBuilder(5).(*array.BinaryDictionaryBuilder)
 
-	lines := locations.FieldBuilder(2).(*array.ListBuilder)
+	lines := locations.FieldBuilder(6).(*array.ListBuilder)
 	line := lines.ValueBuilder().(*array.StructBuilder)
 	lineNumber := line.FieldBuilder(0).(*array.Int64Builder)
-	function := line.FieldBuilder(1).(*array.StructBuilder)
-	functionName := function.FieldBuilder(0).(*array.BinaryDictionaryBuilder)
-	functionSystemName := function.FieldBuilder(1).(*array.BinaryDictionaryBuilder)
-	functionFilename := function.FieldBuilder(2).(*array.BinaryDictionaryBuilder)
-	functionStartLine := function.FieldBuilder(3).(*array.Int64Builder)
+	functionName := line.FieldBuilder(1).(*array.BinaryDictionaryBuilder)
+	functionSystemName := line.FieldBuilder(2).(*array.BinaryDictionaryBuilder)
+	functionFilename := line.FieldBuilder(3).(*array.BinaryDictionaryBuilder)
+	functionStartLine := line.FieldBuilder(4).(*array.Int64Builder)
 
 	return LocationsWriter{
 		RecordBuilder:      b,
 		LocationsList:      locationsList,
 		Locations:          locations,
 		Addresses:          addresses,
-		Mapping:            mapping,
 		MappingStart:       mappingStart,
 		MappingLimit:       mappingLimit,
 		MappingOffset:      mappingOffset,
@@ -177,7 +166,6 @@ func NewLocationsWriter(pool memory.Allocator) LocationsWriter {
 		Lines:              lines,
 		Line:               line,
 		LineNumber:         lineNumber,
-		Function:           function,
 		FunctionName:       functionName,
 		FunctionSystemName: functionSystemName,
 		FunctionFilename:   functionFilename,
