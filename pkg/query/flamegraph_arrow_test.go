@@ -538,16 +538,18 @@ func (c *flamegraphComparer) compare(expected flamegraphColumns) {
 			if labelsOnlyA && labelsOnlyB {
 				labelsA := labels.FromMap(c.actual.labels[children[a]]).String()
 				labelsB := labels.FromMap(c.actual.labels[children[b]]).String()
-				if labelsA < labelsB {
-					return true
-				}
-				return false
+				return labelsA < labelsB
 			}
 			if labelsOnlyA && !labelsOnlyB {
 				return true
 			}
 			if c.actual.functionNames[children[a]] < c.actual.functionNames[children[b]] {
 				return true
+			}
+			if c.actual.functionNames[children[a]] != "" && c.actual.functionNames[children[b]] != "" {
+				addrA := c.actual.locationAddresses[children[a]]
+				addrB := c.actual.locationAddresses[children[b]]
+				return addrA < addrB
 			}
 
 			return false
@@ -805,8 +807,8 @@ func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 				{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, FunctionName: array.NullValueStr, FunctionSystemName: array.NullValueStr, FunctionFilename: array.NullValueStr, Cumulative: 6, Children: []uint32{2}},    // 1
 				{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa2, FunctionName: array.NullValueStr, FunctionSystemName: array.NullValueStr, FunctionFilename: array.NullValueStr, Cumulative: 6, Children: []uint32{3}},    // 2
 				{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa3, FunctionName: array.NullValueStr, FunctionSystemName: array.NullValueStr, FunctionFilename: array.NullValueStr, Cumulative: 4, Children: []uint32{4, 5}}, // 3
-				{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa5, FunctionName: array.NullValueStr, FunctionSystemName: array.NullValueStr, FunctionFilename: array.NullValueStr, Cumulative: 1, Children: nil},            // 4
-				{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa4, FunctionName: array.NullValueStr, FunctionSystemName: array.NullValueStr, FunctionFilename: array.NullValueStr, Cumulative: 3, Children: nil},            // 5
+				{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa4, FunctionName: array.NullValueStr, FunctionSystemName: array.NullValueStr, FunctionFilename: array.NullValueStr, Cumulative: 3, Children: nil},            // 4
+				{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa5, FunctionName: array.NullValueStr, FunctionSystemName: array.NullValueStr, FunctionFilename: array.NullValueStr, Cumulative: 1, Children: nil},            // 5
 			},
 		},
 	} {
