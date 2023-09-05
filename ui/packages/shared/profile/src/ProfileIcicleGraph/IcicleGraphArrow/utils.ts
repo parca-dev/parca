@@ -45,10 +45,10 @@ export function nodeLabel(
     return labelColumnNames
       .map((field, i) => [
         labelColumnNames[i].name.slice(pprofLabelPrefix.length),
-        table.getChild(field.name)?.get(row) ?? '',
+        arrowToString(table.getChild(field.name)?.get(row)) ?? '',
       ])
       .filter(value => value[1] !== '')
-      .map(([k, v]) => `${k as string}="${v as string}"`)
+      .map(([k, v]) => `${k}="${v}"`)
       .join(', ');
   }
 
