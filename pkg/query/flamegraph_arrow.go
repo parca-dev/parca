@@ -141,6 +141,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				}
 			}
 
+			rootRowChildren := fb.children[0]
 			if fb.aggregationConfig.aggregateByLabels && hasLabels {
 				labelHasher.Reset()
 				for j, labelColumn := range r.LabelColumns {
@@ -153,10 +154,20 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				sampleLabelRow := row
 				if row, ok := fb.rootsRow[labelHash]; ok {
 					// We want to compare against this found label root's children.
-					fb.compareRows = fb.children[row]
+					rootRowChildren = fb.children[row]
+					fb.compareRows = rootRowChildren
 					fb.addRowValues(r, row, i) // adds the cumulative and diff values to the existing row
 				} else {
-					err := fb.AppendLabelRow(r, t, recordLabelIndex, sampleLabelRow, i, labelHash)
+					rootRowChildren = map[uint64]int{}
+					err := fb.AppendLabelRow(
+						r,
+						t,
+						recordLabelIndex,
+						sampleLabelRow,
+						i,
+						labelHash,
+						rootRowChildren,
+					)
 					if err != nil {
 						return nil, 0, 0, 0, fmt.Errorf("failed to inject label row: %w", err)
 					}
@@ -183,7 +194,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				if !r.Lines.IsValid(j) || llOffsetEnd-llOffsetStart <= 0 {
 					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
 					if isRoot {
-						fb.compareRows = fb.children[fb.rootsRow[labelHash]]
+						fb.compareRows = rootRowChildren
 						// append this row afterward to not compare to itself
 						fb.parent.Reset()
 						fb.maxHeight = max(fb.maxHeight, fb.height)
@@ -208,7 +219,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 					if isRoot {
 						// We aren't merging this root, so we'll keep track of it as a new one.
-						fb.children[fb.rootsRow[labelHash]][key] = row
+						rootRowChildren[key] = row
 					}
 
 					err = fb.appendRow(r, t, builderToRecordIndexMapping, i, j, -1, row, key)
@@ -227,7 +238,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
 					if isRoot {
-						fb.compareRows = fb.children[fb.rootsRow[labelHash]]
+						fb.compareRows = rootRowChildren
 						// append this row afterward to not compare to itself
 						fb.parent.Reset()
 						fb.maxHeight = max(fb.maxHeight, fb.height)
@@ -265,7 +276,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 					if isRoot {
 						// We aren't merging this root, so we'll keep track of it as a new one.
-						fb.children[fb.rootsRow[labelHash]][key] = row
+						rootRowChildren[key] = row
 					}
 
 					err = fb.appendRow(r, t, recordLabelIndex, i, j, k, row, key)
@@ -1071,6 +1082,7 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 	row int,
 	sampleRow int,
 	labelHash uint64,
+	children map[uint64]int,
 ) error {
 	labelsExist := false
 	for i, labelColumn := range fb.builderLabels {
@@ -1097,6 +1109,7 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 		fb.children = newChildren
 	}
 	fb.rootsRow[labelHash] = row
+	fb.children[row] = children
 
 	fb.builderLabelsOnly.Append(true)
 	fb.builderMappingStart.AppendNull()
