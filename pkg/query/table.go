@@ -112,7 +112,7 @@ func generateTableArrowRecord(
 					isLeaf := locationRow == int(lOffsetStart)
 					var buildID []byte
 					if r.MappingBuildIDDict.IsValid(locationRow) {
-						buildID = r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(locationRow))
+						buildID = r.MappingBuildIDDict.Value(int(r.MappingBuildIDIndices.Value(locationRow)))
 					}
 					addr := r.Address.Value(locationRow)
 
@@ -141,8 +141,8 @@ func generateTableArrowRecord(
 					for lineRow := int(llOffsetStart); lineRow < int(llOffsetEnd); lineRow++ {
 						isLeaf := locationRow == int(lOffsetStart) && lineRow == int(llOffsetStart)
 
-						if r.Line.IsValid(lineRow) && r.LineFunctionName.IsValid(lineRow) {
-							fn := r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow))
+						if r.Line.IsValid(lineRow) && r.LineFunctionNameIndices.IsValid(lineRow) {
+							fn := r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(lineRow)))
 							if cr, ok := tb.functions[unsafeString(fn)]; !ok {
 								if err := tb.appendRow(r, sampleRow, locationRow, lineRow, isLeaf); err != nil {
 									return nil, 0, err
@@ -282,8 +282,8 @@ func (tb *tableBuilder) appendRow(
 			if r.MappingFileDict.Len() == 0 {
 				tb.builderMappingFile.AppendNull()
 			} else {
-				if r.MappingFile.IsValid(locationRow) {
-					_ = tb.builderMappingFile.Append(r.MappingFileDict.Value(r.MappingFile.GetValueIndex(locationRow)))
+				if r.MappingFileIndices.IsValid(locationRow) {
+					_ = tb.builderMappingFile.Append(r.MappingFileDict.Value(int(r.MappingFileIndices.Value(locationRow))))
 				} else {
 					tb.builderMappingFile.AppendNull()
 				}
@@ -292,8 +292,8 @@ func (tb *tableBuilder) appendRow(
 			if r.MappingBuildIDDict.Len() == 0 {
 				tb.builderMappingBuildID.AppendNull()
 			} else {
-				if r.MappingBuildID.IsValid(locationRow) {
-					_ = tb.builderMappingBuildID.Append(r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(locationRow)))
+				if r.MappingBuildIDIndices.IsValid(locationRow) {
+					_ = tb.builderMappingBuildID.Append(r.MappingBuildIDDict.Value(int(r.MappingBuildIDIndices.Value(locationRow))))
 				} else {
 					tb.builderMappingBuildID.AppendNull()
 				}
@@ -322,8 +322,8 @@ func (tb *tableBuilder) appendRow(
 			if r.LineFunctionNameDict.Len() == 0 || lineRow == -1 {
 				tb.builderFunctionName.AppendNull()
 			} else {
-				if lineRow >= 0 && r.LineFunctionName.IsValid(lineRow) {
-					_ = tb.builderFunctionName.Append(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow)))
+				if lineRow >= 0 && r.LineFunctionNameIndices.IsValid(lineRow) {
+					_ = tb.builderFunctionName.Append(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(lineRow))))
 				} else {
 					tb.builderFunctionName.AppendNull()
 				}
@@ -332,8 +332,8 @@ func (tb *tableBuilder) appendRow(
 			if r.LineFunctionSystemNameDict.Len() == 0 || lineRow == -1 {
 				tb.builderFunctionSystemName.AppendNull()
 			} else {
-				if lineRow >= 0 && r.LineFunctionSystemName.IsValid(lineRow) {
-					_ = tb.builderFunctionSystemName.Append(r.LineFunctionSystemNameDict.Value(r.LineFunctionSystemName.GetValueIndex(lineRow)))
+				if lineRow >= 0 && r.LineFunctionSystemNameIndices.IsValid(lineRow) {
+					_ = tb.builderFunctionSystemName.Append(r.LineFunctionSystemNameDict.Value(int(r.LineFunctionSystemNameIndices.Value(lineRow))))
 				} else {
 					tb.builderFunctionSystemName.AppendNull()
 				}
@@ -342,8 +342,8 @@ func (tb *tableBuilder) appendRow(
 			if r.LineFunctionFilenameDict.Len() == 0 || lineRow == -1 {
 				tb.builderFunctionFileName.AppendNull()
 			} else {
-				if lineRow >= 0 && r.LineFunctionFilename.IsValid(lineRow) {
-					_ = tb.builderFunctionFileName.Append(r.LineFunctionFilenameDict.Value(r.LineFunctionFilename.GetValueIndex(lineRow)))
+				if lineRow >= 0 && r.LineFunctionFilenameIndices.IsValid(lineRow) {
+					_ = tb.builderFunctionFileName.Append(r.LineFunctionFilenameDict.Value(int(r.LineFunctionFilenameIndices.Value(lineRow))))
 				} else {
 					tb.builderFunctionFileName.AppendNull()
 				}

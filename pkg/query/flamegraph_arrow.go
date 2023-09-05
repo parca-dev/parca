@@ -245,14 +245,14 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						fb.height = 0
 					}
 
-					translatedFunctionNameIndex := t.functionName.indices.Value(r.LineFunctionName.GetValueIndex(k))
+					translatedFunctionNameIndex := t.functionName.indices.Value(int(r.LineFunctionNameIndices.Value(k)))
 					key := uint64(translatedFunctionNameIndex)
 
 					if fb.aggregationConfig.aggregateByLabels {
 						key = hashCombine(key, labelHash)
 					}
 					if fb.aggregationConfig.aggregateByMappingFile {
-						translatedMappingFileIndex := t.mappingFile.indices.Value(r.MappingFile.GetValueIndex(j))
+						translatedMappingFileIndex := t.mappingFile.indices.Value(int(r.MappingFileIndices.Value(j)))
 						key = hashCombine(key, uint64(translatedMappingFileIndex))
 					}
 
@@ -650,13 +650,18 @@ type flamegraphBuilder struct {
 
 	// Only at the last step when preparing the new record these are populated.
 	// They are also used to create compacted dictionaries and after that replaced by them.
-	mappingBuildID     *array.Dictionary
-	mappingFile        *array.Dictionary
-	functionName       *array.Dictionary
-	functionSystemName *array.Dictionary
-	functionFilename   *array.Dictionary
-	labels             []*array.Dictionary
-	trimmedChildren    [][]int
+	mappingBuildID            *array.Dictionary
+	mappingBuildIDIndices     *array.Int32
+	mappingFile               *array.Dictionary
+	mappingFileIndices        *array.Int32
+	functionName              *array.Dictionary
+	functionNameIndices       *array.Int32
+	functionSystemName        *array.Dictionary
+	functionSystemNameIndices *array.Int32
+	functionFilename          *array.Dictionary
+	functionFilenameIndices   *array.Int32
+	labels                    []*array.Dictionary
+	trimmedChildren           [][]int
 
 	labelNameIndex map[string]int
 }
@@ -780,6 +785,7 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 	cleanupArrs = append(cleanupArrs, mappingBuildIDDict)
 	mappingBuildIDType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
 	fb.mappingBuildID = array.NewDictionaryArray(mappingBuildIDType, mappingBuildIDIndices, mappingBuildIDDict)
+	fb.mappingBuildIDIndices = fb.mappingBuildID.Indices().(*array.Int32)
 
 	mappingFileIndices := fb.builderMappingFileIndices.NewArray()
 	cleanupArrs = append(cleanupArrs, mappingFileIndices)
@@ -790,6 +796,7 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 	cleanupArrs = append(cleanupArrs, mappingFileDict)
 	mappingFileType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
 	fb.mappingFile = array.NewDictionaryArray(mappingFileType, mappingFileIndices, mappingFileDict)
+	fb.mappingFileIndices = fb.mappingFile.Indices().(*array.Int32)
 
 	functionNameIndices := fb.builderFunctionNameIndices.NewArray()
 	cleanupArrs = append(cleanupArrs, functionNameIndices)
@@ -800,6 +807,7 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 	cleanupArrs = append(cleanupArrs, functionNameDict)
 	functionNameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
 	fb.functionName = array.NewDictionaryArray(functionNameType, functionNameIndices, functionNameDict)
+	fb.functionNameIndices = fb.functionName.Indices().(*array.Int32)
 
 	functionSystemNameIndices := fb.builderFunctionSystemNameIndices.NewArray()
 	cleanupArrs = append(cleanupArrs, functionSystemNameIndices)
@@ -810,6 +818,7 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 	cleanupArrs = append(cleanupArrs, functionSystemNameDict)
 	functionSystemNameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
 	fb.functionSystemName = array.NewDictionaryArray(functionSystemNameType, functionSystemNameIndices, functionSystemNameDict)
+	fb.functionSystemNameIndices = fb.functionSystemName.Indices().(*array.Int32)
 
 	functionFilenameIndices := fb.builderFunctionFilenameIndices.NewArray()
 	cleanupArrs = append(cleanupArrs, functionFilenameIndices)
@@ -820,6 +829,7 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 	cleanupArrs = append(cleanupArrs, functionFilenameDict)
 	functionFilenameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
 	fb.functionFilename = array.NewDictionaryArray(functionFilenameType, functionFilenameIndices, functionFilenameDict)
+	fb.functionFilenameIndices = fb.functionFilename.Indices().(*array.Int32)
 
 	fb.ensureLabelColumnsComplete()
 
@@ -991,8 +1001,8 @@ func (fb *flamegraphBuilder) appendRow(
 		fb.builderMappingStart.Append(r.MappingStart.Value(locationRow))
 		fb.builderMappingLimit.Append(r.MappingLimit.Value(locationRow))
 		fb.builderMappingOffset.Append(r.MappingOffset.Value(locationRow))
-		fb.builderMappingFileIndices.Append(t.mappingFile.indices.Value(r.MappingFile.GetValueIndex(locationRow)))
-		fb.builderMappingBuildIDIndices.Append(t.mappingBuildID.indices.Value(r.MappingBuildID.GetValueIndex(locationRow)))
+		fb.builderMappingFileIndices.Append(t.mappingFile.indices.Value(int(r.MappingFileIndices.Value(locationRow))))
+		fb.builderMappingBuildIDIndices.Append(t.mappingBuildID.indices.Value(int(r.MappingBuildIDIndices.Value(locationRow))))
 	} else {
 		fb.builderMappingStart.AppendNull()
 		fb.builderMappingLimit.AppendNull()
@@ -1014,11 +1024,11 @@ func (fb *flamegraphBuilder) appendRow(
 		// something has already gone terribly wrong.
 		fb.builderLocationLine.Append(r.LineNumber.Value(lineRow))
 
-		if r.LineFunctionName.IsValid(lineRow) {
+		if r.LineFunctionNameIndices.IsValid(lineRow) {
 			fb.builderFunctionStartLine.Append(r.LineFunctionStartLine.Value(lineRow))
-			fb.builderFunctionNameIndices.Append(t.functionName.indices.Value(r.LineFunctionName.GetValueIndex(lineRow)))
-			fb.builderFunctionSystemNameIndices.Append(t.functionSystemName.indices.Value(r.LineFunctionSystemName.GetValueIndex(lineRow)))
-			fb.builderFunctionFilenameIndices.Append(t.functionFilename.indices.Value(r.LineFunctionFilename.GetValueIndex(lineRow)))
+			fb.builderFunctionNameIndices.Append(t.functionName.indices.Value(int(r.LineFunctionNameIndices.Value(lineRow))))
+			fb.builderFunctionSystemNameIndices.Append(t.functionSystemName.indices.Value(int(r.LineFunctionSystemNameIndices.Value(lineRow))))
+			fb.builderFunctionFilenameIndices.Append(t.functionFilename.indices.Value(int(r.LineFunctionFilenameIndices.Value(lineRow))))
 		} else {
 			fb.builderFunctionStartLine.AppendNull()
 			fb.builderFunctionNameIndices.AppendNull()
@@ -1196,14 +1206,14 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 		copyUint64BuilderValue(fb.builderMappingStart, trimmedMappingStart, te.row)
 		copyUint64BuilderValue(fb.builderMappingLimit, trimmedMappingLimit, te.row)
 		copyUint64BuilderValue(fb.builderMappingOffset, trimmedMappingOffset, te.row)
-		appendDictionaryIndex(fb.mappingFile, trimmedMappingFileIndices, te.row)
-		appendDictionaryIndex(fb.mappingBuildID, trimmedMappingBuildIDIndices, te.row)
+		appendDictionaryIndexInt32(fb.mappingFileIndices, trimmedMappingFileIndices, te.row)
+		appendDictionaryIndexInt32(fb.mappingBuildIDIndices, trimmedMappingBuildIDIndices, te.row)
 		copyUint64BuilderValue(fb.builderLocationAddress, trimmedLocationAddress, te.row)
 		copyOptInt64BuilderValue(fb.builderLocationLine, trimmedLocationLine, te.row)
 		copyOptInt64BuilderValue(fb.builderFunctionStartLine, trimmedFunctionStartLine, te.row)
-		appendDictionaryIndex(fb.functionName, trimmedFunctionNameIndices, te.row)
-		appendDictionaryIndex(fb.functionSystemName, trimmedFunctionSystemNameIndices, te.row)
-		appendDictionaryIndex(fb.functionFilename, trimmedFunctionFilenameIndices, te.row)
+		appendDictionaryIndexInt32(fb.functionNameIndices, trimmedFunctionNameIndices, te.row)
+		appendDictionaryIndexInt32(fb.functionSystemNameIndices, trimmedFunctionSystemNameIndices, te.row)
+		appendDictionaryIndexInt32(fb.functionFilenameIndices, trimmedFunctionFilenameIndices, te.row)
 		for i := range fb.labels {
 			appendDictionaryIndex(fb.labels[i], trimmedLabelsIndices[i], te.row)
 		}
@@ -1394,6 +1404,14 @@ func appendDictionaryIndex(dict *array.Dictionary, index *array.Int32Builder, ro
 	index.Append(int32(dict.GetValueIndex(row)))
 }
 
+func appendDictionaryIndexInt32(dict *array.Int32, index *array.Int32Builder, row int) {
+	if dict.IsNull(row) {
+		index.AppendNull()
+		return
+	}
+	index.Append(dict.Value(row))
+}
+
 func isLocationRoot(end, i int) bool {
 	return i == end-1
 }
@@ -1470,6 +1488,7 @@ type releasable interface {
 // compactDictionary copies only the needed values from the old dictionary to the new dictionary.
 // Once all needed values are copied, it updates the indices referencing those values in their new place.
 func compactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dictionary, error) {
+	indices := arr.Indices().(*array.Int32)
 	releasers := make([]releasable, 0, 3)
 	releasers = append(releasers, arr)
 	defer func() {
@@ -1480,13 +1499,13 @@ func compactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dict
 
 	newLen := 0
 	keepValues := make([]int, arr.Dictionary().Len())
-	for i := 0; i < arr.Indices().Len(); i++ {
+	for i := 0; i < indices.Len(); i++ {
 		if arr.IsValid(i) {
-			if keepValues[arr.GetValueIndex(i)] == 0 {
+			if keepValues[indices.Value(i)] == 0 {
 				// keep track of how many values we need to keep to reserve the space upfront
 				newLen++
 			}
-			keepValues[arr.GetValueIndex(i)]++
+			keepValues[indices.Value(i)]++
 		}
 	}
 
@@ -1533,7 +1552,7 @@ func compactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dict
 			indexBuilder.AppendNull()
 			continue
 		}
-		oldValueIndex := arr.GetValueIndex(i)
+		oldValueIndex := indices.Value(i)
 		newValueIndex := newValueIndices[oldValueIndex]
 		indexBuilder.Append(int32(newValueIndex))
 	}
