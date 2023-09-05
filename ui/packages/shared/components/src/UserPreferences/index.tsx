@@ -67,12 +67,10 @@ const UserPreferences = ({customButton}: {customButton?: JSX.Element}): JSX.Elem
       >
         <div className="min-h-40 mt-8">
           <UserPreferenceItem userPreferenceDetails={USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING} />
-          <UserPreferenceItem userPreferenceDetails={USER_PREFERENCES.ENABLE_GRAPH_TRIMMING} />
           <FlamegraphColorProfileSelector />
           <div className="min-w-96 mt-10">
             <h4 className="mb-2 font-medium">Experimental Features</h4>
             <FlagToggle name="Enable Callgraph" id="callgraph" />
-            <FlagToggle name="Enable Arrow Flamegraph" id="flamegraph-arrow" />
           </div>
         </div>
         <div className="flex justify-end">

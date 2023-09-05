@@ -15,7 +15,6 @@ import {useEffect, useMemo, useState} from 'react';
 
 import {QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata, useParcaContext, useURLState} from '@parca/components';
-import {USER_PREFERENCES, useUIFeatureFlag, useUserPreference} from '@parca/hooks';
 import {saveAsBlob, type NavigateFunction} from '@parca/utilities';
 
 import {FIELD_FUNCTION_NAME} from './ProfileIcicleGraph/IcicleGraphArrow';
@@ -44,26 +43,16 @@ export const ProfileViewWithData = ({
   ];
   const [groupBy = [FIELD_FUNCTION_NAME]] = useURLState({param: 'group_by', navigateTo});
 
-  const [enableTrimming] = useUserPreference<boolean>(USER_PREFERENCES.ENABLE_GRAPH_TRIMMING.key);
-  const [arrowFlamegraphEnabled] = useUIFeatureFlag('flamegraph-arrow');
   const [pprofDownloading, setPprofDownloading] = useState<boolean>(false);
 
   const nodeTrimThreshold = useMemo(() => {
-    if (!enableTrimming) {
-      return 0;
-    }
-
     let width =
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
     // subtract the padding
     width = width - 12 - 16 - 12;
     return (1 / width) * 100;
-  }, [enableTrimming]);
-
-  const reportType = arrowFlamegraphEnabled
-    ? QueryRequest_ReportType.FLAMEGRAPH_ARROW
-    : QueryRequest_ReportType.FLAMEGRAPH_TABLE;
+  }, []);
 
   // make sure we get a string[]
   const groupByParam: string[] = typeof groupBy === 'string' ? [groupBy] : groupBy;
@@ -72,7 +61,7 @@ export const ProfileViewWithData = ({
     isLoading: flamegraphLoading,
     response: flamegraphResponse,
     error: flamegraphError,
-  } = useQuery(queryClient, profileSource, reportType, {
+  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMEGRAPH_ARROW, {
     skip: !dashboardItems.includes('icicle'),
     nodeTrimThreshold,
     groupBy: groupByParam,
