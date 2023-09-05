@@ -22,6 +22,7 @@ import (
 	"github.com/apache/arrow/go/v14/arrow"
 	"github.com/apache/arrow/go/v14/arrow/array"
 	"github.com/apache/arrow/go/v14/arrow/ipc"
+	"github.com/apache/arrow/go/v14/arrow/math"
 	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/polarsignals/frostdb/pqarrow/builder"
 	"github.com/zeebo/xxh3"
@@ -113,6 +114,9 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	profileReader := profile.NewReader(p)
 	labelHasher := xxh3.New()
 	for _, r := range profileReader.RecordReaders {
+		fb.cumulative += math.Int64.Sum(r.Value)
+		fb.diff += math.Int64.Sum(r.Diff)
+
 		if err := fb.ensureLabelColumns(r.LabelFields); err != nil {
 			return nil, 0, 0, 0, fmt.Errorf("ensure label columns: %w", err)
 		}
@@ -137,6 +141,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				}
 			}
 
+			rootRowChildren := fb.children[0]
 			if fb.aggregationConfig.aggregateByLabels && hasLabels {
 				labelHasher.Reset()
 				for j, labelColumn := range r.LabelColumns {
@@ -149,10 +154,20 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				sampleLabelRow := row
 				if row, ok := fb.rootsRow[labelHash]; ok {
 					// We want to compare against this found label root's children.
-					fb.compareRows = fb.children[row]
+					rootRowChildren = fb.children[row]
+					fb.compareRows = rootRowChildren
 					fb.addRowValues(r, row, i) // adds the cumulative and diff values to the existing row
 				} else {
-					err := fb.AppendLabelRow(r, t, recordLabelIndex, sampleLabelRow, i, labelHash)
+					rootRowChildren = map[uint64]int{}
+					err := fb.AppendLabelRow(
+						r,
+						t,
+						recordLabelIndex,
+						sampleLabelRow,
+						i,
+						labelHash,
+						rootRowChildren,
+					)
 					if err != nil {
 						return nil, 0, 0, 0, fmt.Errorf("failed to inject label row: %w", err)
 					}
@@ -175,16 +190,11 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				// Depending on whether we aggregate the labels (and thus inject node labels), we either compare the rows or not.
 				isRoot := isLocationRoot && !(fb.aggregationConfig.aggregateByLabels && hasLabels)
 
-				if isLocationLeaf(int(beg), j) {
-					fb.cumulative += r.Value.Value(i)
-					fb.diff += r.Diff.Value(i)
-				}
-
 				llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
 				if !r.Lines.IsValid(j) || llOffsetEnd-llOffsetStart <= 0 {
 					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
 					if isRoot {
-						fb.compareRows = fb.children[fb.rootsRow[labelHash]]
+						fb.compareRows = rootRowChildren
 						// append this row afterward to not compare to itself
 						fb.parent.Reset()
 						fb.maxHeight = max(fb.maxHeight, fb.height)
@@ -209,7 +219,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 					if isRoot {
 						// We aren't merging this root, so we'll keep track of it as a new one.
-						fb.children[fb.rootsRow[labelHash]][key] = row
+						rootRowChildren[key] = row
 					}
 
 					err = fb.appendRow(r, t, builderToRecordIndexMapping, i, j, -1, row, key)
@@ -228,7 +238,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
 					if isRoot {
-						fb.compareRows = fb.children[fb.rootsRow[labelHash]]
+						fb.compareRows = rootRowChildren
 						// append this row afterward to not compare to itself
 						fb.parent.Reset()
 						fb.maxHeight = max(fb.maxHeight, fb.height)
@@ -266,7 +276,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 					if isRoot {
 						// We aren't merging this root, so we'll keep track of it as a new one.
-						fb.children[fb.rootsRow[labelHash]][key] = row
+						rootRowChildren[key] = row
 					}
 
 					err = fb.appendRow(r, t, recordLabelIndex, i, j, k, row, key)
@@ -1072,6 +1082,7 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 	row int,
 	sampleRow int,
 	labelHash uint64,
+	children map[uint64]int,
 ) error {
 	labelsExist := false
 	for i, labelColumn := range fb.builderLabels {
@@ -1098,6 +1109,7 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 		fb.children = newChildren
 	}
 	fb.rootsRow[labelHash] = row
+	fb.children[row] = children
 
 	fb.builderLabelsOnly.Append(true)
 	fb.builderMappingStart.AppendNull()
@@ -1384,10 +1396,6 @@ func appendDictionaryIndex(dict *array.Dictionary, index *array.Int32Builder, ro
 
 func isLocationRoot(end, i int) bool {
 	return i == end-1
-}
-
-func isLocationLeaf(beg, i int) bool {
-	return i == beg
 }
 
 // parent stores the parent's row number of a stack.
