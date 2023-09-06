@@ -38,7 +38,6 @@ repos:
       rev: master
       hooks:
         - id: go-mod-tidy
-        - id: go-fumpt
   - repo: https://github.com/bufbuild/buf
     rev: v1.26.1
     hooks:
