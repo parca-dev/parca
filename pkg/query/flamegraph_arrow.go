@@ -1521,6 +1521,14 @@ func compactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dict
 	case *array.String:
 		stringBuilder := array.NewStringBuilder(mem)
 		stringBuilder.Reserve(newLen)
+		numBytes := 0
+		for i, count := range keepValues {
+			if count == 0 {
+				continue
+			}
+			numBytes += len(dict.Value(i))
+		}
+		stringBuilder.ReserveData(numBytes)
 		for i, count := range keepValues {
 			if count == 0 {
 				continue
@@ -1533,6 +1541,14 @@ func compactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dict
 	case *array.Binary:
 		binaryBuilder := array.NewBinaryBuilder(mem, arrow.BinaryTypes.Binary)
 		binaryBuilder.Reserve(newLen)
+		numBytes := 0
+		for i, count := range keepValues {
+			if count == 0 {
+				continue
+			}
+			numBytes += dict.ValueLen(i)
+		}
+		binaryBuilder.ReserveData(numBytes)
 		for i, count := range keepValues {
 			if count == 0 {
 				continue
