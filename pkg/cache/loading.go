@@ -29,6 +29,8 @@ type LoadingLRUCacheWithTTL[K comparable, V any] struct {
 	lru    *LRUCacheWithTTL[K, V]
 	loader LoaderFunc[K, V]
 	closer func() error
+
+	sfg *singleflight.Group
 }
 
 func NewLoadingLRUCacheWithTTL[K comparable, V any](reg prometheus.Registerer, maxEntries int, ttl time.Duration, loader LoaderFunc[K, V]) *LoadingLRUCacheWithTTL[K, V] {
@@ -71,7 +73,7 @@ func NewLoadingLRUCacheWithTTL[K comparable, V any](reg prometheus.Registerer, m
 	}
 }
 
-func (c *LoadingLRUCacheWithTTL[K, V]) Get(key K) (V, error) {
+func (c *LoadingLRUCacheWithTTL[K, V]) getOrLoad(key K) (V, error) {
 	v, ok := c.lru.Get(key)
 	if ok {
 		return v, nil
@@ -84,6 +86,25 @@ func (c *LoadingLRUCacheWithTTL[K, V]) Get(key K) (V, error) {
 
 	c.lru.Add(key, v)
 	return v, nil
+}
+
+func (c *LoadingLRUCacheWithTTL[K, V]) Get(key K) (V, error) {
+	// sfg is only used when loading once must be guaranteed
+	if c.sfg == nil {
+		return c.getOrLoad(key)
+	}
+
+	// singleflight.Group memoizes the return value of the first call and returns it.
+	// The 3rd return value is true if multiple calls happens simultaneously,
+	// and the caller received the value from the first call.
+	val, err, _ := c.sfg.Do(fmt.Sprintf("%v", key), func() (interface{}, error) {
+		return c.getOrLoad(key)
+	})
+	if err != nil {
+		var zero V
+		return zero, err
+	}
+	return val.(V), nil //nolint:forcetypeassert
 }
 
 func (c *LoadingLRUCacheWithTTL[K, V]) Close() error {
@@ -101,21 +122,7 @@ func (c *LoadingLRUCacheWithTTL[K, V]) Close() error {
 // to prevent redundant loading of data on cache misses when multiple concurrent
 // requests are made for the same key.
 func NewLoadingOnceCache[K comparable, V any](reg prometheus.Registerer, maxEntries int, ttl time.Duration, loader LoaderFunc[K, V]) *LoadingLRUCacheWithTTL[K, V] {
-	sfg := &singleflight.Group{}
-	onceLoader := func(k K) (V, error) {
-		// Singleflight key must be string.
-		key := fmt.Sprintf("%v", k)
-		// singleflight.Group memoizes the return value of the first call and returns it.
-		// The 3rd return value is true if multiple calls happens simultaneously,
-		// and the caller received the value from the first call.
-		val, err, _ := sfg.Do(key, func() (interface{}, error) {
-			return loader(k)
-		})
-		if err != nil {
-			var zero V
-			return zero, err
-		}
-		return val.(V), nil //nolint:forcetypeassert
-	}
-	return NewLoadingLRUCacheWithTTL[K, V](reg, maxEntries, ttl, onceLoader)
+	c := NewLoadingLRUCacheWithTTL(reg, maxEntries, ttl, loader)
+	c.sfg = &singleflight.Group{}
+	return c
 }
