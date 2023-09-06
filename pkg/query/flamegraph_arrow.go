@@ -17,6 +17,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	stdmath "math"
+	"strconv"
+	"strings"
 	"unsafe"
 
 	"github.com/apache/arrow/go/v14/arrow"
@@ -24,6 +27,7 @@ import (
 	"github.com/apache/arrow/go/v14/arrow/ipc"
 	"github.com/apache/arrow/go/v14/arrow/math"
 	"github.com/apache/arrow/go/v14/arrow/memory"
+	"github.com/olekukonko/tablewriter"
 	"github.com/polarsignals/frostdb/pqarrow/builder"
 	"github.com/zeebo/xxh3"
 	"go.opentelemetry.io/otel/attribute"
@@ -921,6 +925,7 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	cleanupArrs = append(cleanupArrs, arrays[14])
 
 	for i, field := range fb.builderLabelFields {
+		field.Type = fb.labels[i].DataType() // overwrite for variable length uint types
 		fields = append(fields, field)
 		arrays[15+i] = fb.labels[i]
 	}
@@ -1524,7 +1529,17 @@ func compactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dict
 	}
 
 	// we know how many values we need to keep, so we can reserve the space upfront
-	indexBuilder := array.NewInt32Builder(mem)
+
+	var indexBuilder array.Builder
+	if newLen < stdmath.MaxUint8 {
+		indexBuilder = array.NewUint8Builder(mem)
+	} else if newLen < stdmath.MaxUint16 {
+		indexBuilder = array.NewUint16Builder(mem)
+	} else if newLen < stdmath.MaxUint32 {
+		indexBuilder = array.NewUint32Builder(mem)
+	} else {
+		indexBuilder = array.NewUint64Builder(mem)
+	}
 	indexBuilder.Reserve(arr.Indices().Len())
 	releasers = append(releasers, indexBuilder)
 
@@ -1535,7 +1550,17 @@ func compactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dict
 		}
 		oldValueIndex := arr.GetValueIndex(i)
 		newValueIndex := newValueIndices[oldValueIndex]
-		indexBuilder.Append(int32(newValueIndex))
+
+		switch b := indexBuilder.(type) {
+		case *array.Uint8Builder:
+			b.Append(uint8(newValueIndex))
+		case *array.Uint16Builder:
+			b.Append(uint16(newValueIndex))
+		case *array.Uint32Builder:
+			b.Append(uint32(newValueIndex))
+		case *array.Uint64Builder:
+			b.Append(uint64(newValueIndex))
+		}
 	}
 
 	index := indexBuilder.NewArray()
