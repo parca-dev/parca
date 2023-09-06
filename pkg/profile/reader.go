@@ -21,7 +21,7 @@ import (
 )
 
 type LabelColumn struct {
-	Col  *array.Dictionary
+	Col  *array.Uint16
 	Dict *array.Binary
 }
 
@@ -86,7 +86,7 @@ func NewRecordReader(ar arrow.Record) *RecordReader {
 	for i := range labelFields {
 		col := ar.Column(i).(*array.Dictionary)
 		labelColumns[i] = LabelColumn{
-			Col:  col,
+			Col:  col.Indices().(*array.Uint16),
 			Dict: col.Dictionary().(*array.Binary),
 		}
 	}

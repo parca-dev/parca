@@ -156,7 +156,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				for j, labelColumn := range r.LabelColumns {
 					if labelColumn.Col.IsValid(i) {
 						_, _ = labelHasher.WriteString(r.LabelFields[j].Name)
-						_, _ = labelHasher.Write(labelColumn.Dict.Value(labelColumn.Col.GetValueIndex(i)))
+						_, _ = labelHasher.Write(labelColumn.Dict.Value(int(labelColumn.Col.Value(i))))
 					}
 				}
 				labelHash = labelHasher.Sum64()
@@ -588,7 +588,7 @@ func (fb *flamegraphBuilder) intersectLabels(
 
 		// if the labels are equal we don't do anything, only when they are
 		// different do we have to remove it
-		transposedLabelIndex := t.labels[fieldIndex].indices.Value(recordLabelColumn.Col.GetValueIndex(sampleIndex))
+		transposedLabelIndex := t.labels[fieldIndex].indices.Value(int(recordLabelColumn.Col.Value(sampleIndex)))
 		if transposedLabelIndex != labelColumn.Value(flamegraphRow) {
 			labelColumn.SetNull(flamegraphRow)
 			continue
@@ -670,6 +670,7 @@ type flamegraphBuilder struct {
 	functionFilename          *array.Dictionary
 	functionFilenameIndices   *array.Int32
 	labels                    []*array.Dictionary
+	labelsIndices             []*array.Int32
 	trimmedChildren           [][]int
 
 	labelNameIndex map[string]int
@@ -852,6 +853,7 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 		cleanupArrs = append(cleanupArrs, dict)
 		typ := &arrow.DictionaryType{IndexType: indices.DataType(), ValueType: dict.DataType()}
 		fb.labels = append(fb.labels, array.NewDictionaryArray(typ, indices, dict))
+		fb.labelsIndices = append(fb.labelsIndices, fb.labels[i].Indices().(*array.Int32))
 	}
 
 	// If there is only one root row, we need to populate the trimmedChildren to not panic when building the NewRecord.
@@ -1053,8 +1055,8 @@ func (fb *flamegraphBuilder) appendRow(
 	for i, builderLabel := range fb.builderLabels {
 		if recordIndex := builderToRecordIndexMapping[i]; recordIndex != -1 {
 			lc := r.LabelColumns[recordIndex]
-			if lc.Col.IsValid(sampleRow) && len(lc.Dict.Value(lc.Col.GetValueIndex(sampleRow))) > 0 {
-				transposedIndex := t.labels[i].indices.Value(lc.Col.GetValueIndex(sampleRow))
+			if lc.Col.IsValid(sampleRow) && len(lc.Dict.Value(int(lc.Col.Value(sampleRow)))) > 0 {
+				transposedIndex := t.labels[i].indices.Value(int(lc.Col.Value(sampleRow)))
 				builderLabel.Append(transposedIndex)
 				labelsExist = true
 			} else {
@@ -1108,8 +1110,8 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 	for i, labelColumn := range fb.builderLabels {
 		if recordIndex := builderToRecordIndexMapping[i]; recordIndex != -1 {
 			lc := r.LabelColumns[recordIndex]
-			if lc.Col.IsValid(sampleRow) && len(lc.Dict.Value(lc.Col.GetValueIndex(sampleRow))) > 0 {
-				transposedIndex := t.labels[i].indices.Value(lc.Col.GetValueIndex(sampleRow))
+			if lc.Col.IsValid(sampleRow) && len(lc.Dict.Value(int(lc.Col.Value(sampleRow)))) > 0 {
+				transposedIndex := t.labels[i].indices.Value(int(lc.Col.Value(sampleRow)))
 				labelColumn.Append(transposedIndex)
 				labelsExist = true
 			} else {
@@ -1225,7 +1227,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 		appendDictionaryIndexInt32(fb.functionSystemNameIndices, trimmedFunctionSystemNameIndices, te.row)
 		appendDictionaryIndexInt32(fb.functionFilenameIndices, trimmedFunctionFilenameIndices, te.row)
 		for i := range fb.labels {
-			appendDictionaryIndex(fb.labels[i], trimmedLabelsIndices[i], te.row)
+			appendDictionaryIndexInt32(fb.labelsIndices[i], trimmedLabelsIndices[i], te.row)
 		}
 
 		// The following two will never be null.
@@ -1406,14 +1408,6 @@ func copyBoolBuilderValue(old, new *array.BooleanBuilder, row int) {
 	new.Append(old.Value(row))
 }
 
-func appendDictionaryIndex(dict *array.Dictionary, index *array.Int32Builder, row int) {
-	if dict.IsNull(row) {
-		index.AppendNull()
-		return
-	}
-	index.Append(int32(dict.GetValueIndex(row)))
-}
-
 func appendDictionaryIndexInt32(dict *array.Int32, index *array.Int32Builder, row int) {
 	if dict.IsNull(row) {
 		index.AppendNull()
@@ -1553,7 +1547,6 @@ func compactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dict
 	}
 
 	// we know how many values we need to keep, so we can reserve the space upfront
-
 	var indexBuilder array.Builder
 	if newLen < stdmath.MaxUint8 {
 		indexBuilder = array.NewUint8Builder(mem)
@@ -1564,10 +1557,10 @@ func compactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dict
 	} else {
 		indexBuilder = array.NewUint64Builder(mem)
 	}
-	indexBuilder.Reserve(arr.Indices().Len())
+	indexBuilder.Reserve(indices.Len())
 	releasers = append(releasers, indexBuilder)
 
-	for i := 0; i < arr.Indices().Len(); i++ {
+	for i := 0; i < indices.Len(); i++ {
 		if arr.IsNull(i) {
 			indexBuilder.AppendNull()
 			continue

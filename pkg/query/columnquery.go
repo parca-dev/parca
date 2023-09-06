@@ -333,7 +333,7 @@ func filterRecord(
 
 			for j, label := range r.LabelColumns {
 				if label.Col.IsValid(i) {
-					if err := w.LabelBuilders[j].Append([]byte(label.Dict.Value(label.Col.GetValueIndex(i)))); err != nil {
+					if err := w.LabelBuilders[j].Append([]byte(label.Dict.Value(int(label.Col.Value(i))))); err != nil {
 						return nil, 0, 0, fmt.Errorf("append label: %w", err)
 					}
 				} else {
