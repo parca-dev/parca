@@ -151,12 +151,13 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			}
 
 			rootRowChildren := fb.children[0]
+			rootRow := 0
 			if fb.aggregationConfig.aggregateByLabels && hasLabels {
 				labelHasher.Reset()
 				for j, labelColumn := range r.LabelColumns {
 					if labelColumn.Col.IsValid(i) {
 						_, _ = labelHasher.WriteString(r.LabelFields[j].Name)
-						_, _ = labelHasher.Write(labelColumn.Dict.Value(labelColumn.Col.GetValueIndex(i)))
+						_, _ = labelHasher.Write(labelColumn.Dict.Value(int(labelColumn.Col.Value(i))))
 					}
 				}
 				labelHash = labelHasher.Sum64()
@@ -164,6 +165,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				if row, ok := fb.rootsRow[labelHash]; ok {
 					// We want to compare against this found label root's children.
 					rootRowChildren = fb.children[row]
+					rootRow = row
 					fb.compareRows = rootRowChildren
 					fb.addRowValues(r, row, i) // adds the cumulative and diff values to the existing row
 				} else {
@@ -180,6 +182,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					if err != nil {
 						return nil, 0, 0, 0, fmt.Errorf("failed to inject label row: %w", err)
 					}
+					rootRow = sampleLabelRow
 				}
 				fb.maxHeight = max(fb.maxHeight, fb.height)
 				fb.height = 1
@@ -229,6 +232,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					if isRoot {
 						// We aren't merging this root, so we'll keep track of it as a new one.
 						rootRowChildren[key] = row
+						fb.childrenList[rootRow] = append(fb.childrenList[rootRow], row)
 					}
 
 					err = fb.appendRow(r, t, builderToRecordIndexMapping, i, j, -1, row, key)
@@ -286,6 +290,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					if isRoot {
 						// We aren't merging this root, so we'll keep track of it as a new one.
 						rootRowChildren[key] = row
+						fb.childrenList[rootRow] = append(fb.childrenList[rootRow], row)
 					}
 
 					err = fb.appendRow(r, t, recordLabelIndex, i, j, k, row, key)
@@ -588,7 +593,7 @@ func (fb *flamegraphBuilder) intersectLabels(
 
 		// if the labels are equal we don't do anything, only when they are
 		// different do we have to remove it
-		transposedLabelIndex := t.labels[fieldIndex].indices.Value(recordLabelColumn.Col.GetValueIndex(sampleIndex))
+		transposedLabelIndex := t.labels[fieldIndex].indices.Value(int(recordLabelColumn.Col.Value(sampleIndex)))
 		if transposedLabelIndex != labelColumn.Value(flamegraphRow) {
 			labelColumn.SetNull(flamegraphRow)
 			continue
@@ -620,7 +625,8 @@ type flamegraphBuilder struct {
 	parent parent
 	// This keeps track of a row's children and will be converted to an arrow array of lists at the end.
 	// Allocating for an average of 8 children per stacktrace upfront.
-	children []map[uint64]int
+	children     []map[uint64]int
+	childrenList [][]int
 
 	// This keeps track of the root rows indexed by the labels string.
 	// If the stack trace has no labels, we use the empty string as the key.
@@ -670,6 +676,7 @@ type flamegraphBuilder struct {
 	functionFilename          *array.Dictionary
 	functionFilenameIndices   *array.Int32
 	labels                    []*array.Dictionary
+	labelsIndices             []*array.Int32
 	trimmedChildren           [][]int
 
 	labelNameIndex map[string]int
@@ -700,6 +707,7 @@ func newFlamegraphBuilder(
 
 		// ensuring that we always have space to set the first row below
 		children:       make([]map[uint64]int, maxInt64(rows, 1)),
+		childrenList:   make([][]int, maxInt64(rows, 1)),
 		labelNameIndex: map[string]int{},
 
 		builderLabelsOnly:  array.NewBooleanBuilder(pool),
@@ -852,6 +860,7 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 		cleanupArrs = append(cleanupArrs, dict)
 		typ := &arrow.DictionaryType{IndexType: indices.DataType(), ValueType: dict.DataType()}
 		fb.labels = append(fb.labels, array.NewDictionaryArray(typ, indices, dict))
+		fb.labelsIndices = append(fb.labelsIndices, fb.labels[i].Indices().(*array.Int32))
 	}
 
 	// If there is only one root row, we need to populate the trimmedChildren to not panic when building the NewRecord.
@@ -1053,8 +1062,8 @@ func (fb *flamegraphBuilder) appendRow(
 	for i, builderLabel := range fb.builderLabels {
 		if recordIndex := builderToRecordIndexMapping[i]; recordIndex != -1 {
 			lc := r.LabelColumns[recordIndex]
-			if lc.Col.IsValid(sampleRow) && len(lc.Dict.Value(lc.Col.GetValueIndex(sampleRow))) > 0 {
-				transposedIndex := t.labels[i].indices.Value(lc.Col.GetValueIndex(sampleRow))
+			if lc.Col.IsValid(sampleRow) && len(lc.Dict.Value(int(lc.Col.Value(sampleRow)))) > 0 {
+				transposedIndex := t.labels[i].indices.Value(int(lc.Col.Value(sampleRow)))
 				builderLabel.Append(transposedIndex)
 				labelsExist = true
 			} else {
@@ -1070,17 +1079,22 @@ func (fb *flamegraphBuilder) appendRow(
 		// We need to grow the children slice, so we'll do that here.
 		// We'll double the capacity of the slice.
 		newChildren := make([]map[uint64]int, len(fb.children)*2)
+		newChildrenList := make([][]int, len(fb.children)*2)
 		copy(newChildren, fb.children)
+		copy(newChildrenList, fb.childrenList)
 		fb.children = newChildren
+		fb.childrenList = newChildrenList
 	}
 	// If there is a parent for this stack the parent is not -1 but the parent's row number.
 	if fb.parent.Has() {
 		// this is the first time we see this parent have a child, so we need to initialize the slice
 		if fb.children[fb.parent.Get()] == nil {
 			fb.children[fb.parent.Get()] = map[uint64]int{key: row}
+			fb.childrenList[fb.parent.Get()] = []int{row}
 		} else {
 			// otherwise we can just append this row's number to the parent's slice
 			fb.children[fb.parent.Get()][key] = row
+			fb.childrenList[fb.parent.Get()] = append(fb.childrenList[fb.parent.Get()], row)
 		}
 	}
 
@@ -1108,8 +1122,8 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 	for i, labelColumn := range fb.builderLabels {
 		if recordIndex := builderToRecordIndexMapping[i]; recordIndex != -1 {
 			lc := r.LabelColumns[recordIndex]
-			if lc.Col.IsValid(sampleRow) && len(lc.Dict.Value(lc.Col.GetValueIndex(sampleRow))) > 0 {
-				transposedIndex := t.labels[i].indices.Value(lc.Col.GetValueIndex(sampleRow))
+			if lc.Col.IsValid(sampleRow) && len(lc.Dict.Value(int(lc.Col.Value(sampleRow)))) > 0 {
+				transposedIndex := t.labels[i].indices.Value(int(lc.Col.Value(sampleRow)))
 				labelColumn.Append(transposedIndex)
 				labelsExist = true
 			} else {
@@ -1125,10 +1139,14 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 		// We need to grow the children slice, so we'll do that here.
 		// We'll double the capacity of the slice.
 		newChildren := make([]map[uint64]int, len(fb.children)*2)
+		newChildrenList := make([][]int, len(fb.children)*2)
 		copy(newChildren, fb.children)
+		copy(newChildrenList, fb.childrenList)
 		fb.children = newChildren
+		fb.childrenList = newChildrenList
 	}
 	fb.rootsRow[labelHash] = row
+	fb.childrenList[0] = append(fb.childrenList[0], row)
 	fb.children[row] = children
 
 	fb.builderLabelsOnly.Append(true)
@@ -1206,6 +1224,48 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmingQueue := queue{elements: make([]trimmingElement, 0, len(fb.children[0]))}
 	trimmingQueue.push(trimmingElement{row: 0})
 
+	row := -1
+	for trimmingQueue.len() > 0 {
+		// pop the first item from the queue
+		te := trimmingQueue.pop()
+		row++
+
+		// The following two will never be null.
+		cum := fb.builderCumulative.Value(te.row)
+		cumThreshold := float32(cum) * threshold
+
+		for _, cr := range fb.childrenList[te.row] {
+			if v := fb.builderCumulative.Value(cr); v > int64(cumThreshold) {
+				// this row is above the threshold, so we need to keep it
+				// add this row to the queue to check its children.
+				trimmingQueue.push(trimmingElement{row: cr, parent: row})
+			}
+		}
+	}
+
+	trimmedLabelsOnly.Reserve(row)
+	trimmedLabelsExist.Reserve(row)
+	trimmedMappingStart.Reserve(row)
+	trimmedMappingLimit.Reserve(row)
+	trimmedMappingOffset.Reserve(row)
+	trimmedMappingFileIndices.Reserve(row)
+	trimmedMappingBuildIDIndices.Reserve(row)
+	trimmedLocationAddress.Reserve(row)
+	trimmedLocationLine.Reserve(row)
+	trimmedFunctionStartLine.Reserve(row)
+	trimmedFunctionNameIndices.Reserve(row)
+	trimmedFunctionSystemNameIndices.Reserve(row)
+	trimmedFunctionFilenameIndices.Reserve(row)
+	trimmedCumulative.Reserve(row)
+	trimmedDiff.Reserve(row)
+
+	for _, l := range trimmedLabelsIndices {
+		l.Reserve(row)
+	}
+
+	trimmingQueue.elements = trimmingQueue.elements[:0]
+	trimmingQueue.push(trimmingElement{row: 0})
+
 	// keep processing new elements until the queue is empty
 	for trimmingQueue.len() > 0 {
 		// pop the first item from the queue
@@ -1225,7 +1285,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 		appendDictionaryIndexInt32(fb.functionSystemNameIndices, trimmedFunctionSystemNameIndices, te.row)
 		appendDictionaryIndexInt32(fb.functionFilenameIndices, trimmedFunctionFilenameIndices, te.row)
 		for i := range fb.labels {
-			appendDictionaryIndex(fb.labels[i], trimmedLabelsIndices[i], te.row)
+			appendDictionaryIndexInt32(fb.labelsIndices[i], trimmedLabelsIndices[i], te.row)
 		}
 
 		// The following two will never be null.
@@ -1248,7 +1308,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 
 		cumThreshold := float32(cum) * threshold
 
-		for _, cr := range fb.children[te.row] {
+		for _, cr := range fb.childrenList[te.row] {
 			if v := fb.builderCumulative.Value(cr); v > int64(cumThreshold) {
 				// this row is above the threshold, so we need to keep it
 				// add this row to the queue to check its children.
@@ -1406,14 +1466,6 @@ func copyBoolBuilderValue(old, new *array.BooleanBuilder, row int) {
 	new.Append(old.Value(row))
 }
 
-func appendDictionaryIndex(dict *array.Dictionary, index *array.Int32Builder, row int) {
-	if dict.IsNull(row) {
-		index.AppendNull()
-		return
-	}
-	index.Append(int32(dict.GetValueIndex(row)))
-}
-
 func appendDictionaryIndexInt32(dict *array.Int32, index *array.Int32Builder, row int) {
 	if dict.IsNull(row) {
 		index.AppendNull()
@@ -1527,6 +1579,14 @@ func compactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dict
 	case *array.String:
 		stringBuilder := array.NewStringBuilder(mem)
 		stringBuilder.Reserve(newLen)
+		numBytes := 0
+		for i, count := range keepValues {
+			if count == 0 {
+				continue
+			}
+			numBytes += len(dict.Value(i))
+		}
+		stringBuilder.ReserveData(numBytes)
 		for i, count := range keepValues {
 			if count == 0 {
 				continue
@@ -1539,6 +1599,14 @@ func compactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dict
 	case *array.Binary:
 		binaryBuilder := array.NewBinaryBuilder(mem, arrow.BinaryTypes.Binary)
 		binaryBuilder.Reserve(newLen)
+		numBytes := 0
+		for i, count := range keepValues {
+			if count == 0 {
+				continue
+			}
+			numBytes += dict.ValueLen(i)
+		}
+		binaryBuilder.ReserveData(numBytes)
 		for i, count := range keepValues {
 			if count == 0 {
 				continue
@@ -1553,7 +1621,6 @@ func compactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dict
 	}
 
 	// we know how many values we need to keep, so we can reserve the space upfront
-
 	var indexBuilder array.Builder
 	if newLen < stdmath.MaxUint8 {
 		indexBuilder = array.NewUint8Builder(mem)
@@ -1564,10 +1631,10 @@ func compactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dict
 	} else {
 		indexBuilder = array.NewUint64Builder(mem)
 	}
-	indexBuilder.Reserve(arr.Indices().Len())
+	indexBuilder.Reserve(indices.Len())
 	releasers = append(releasers, indexBuilder)
 
-	for i := 0; i < arr.Indices().Len(); i++ {
+	for i := 0; i < indices.Len(); i++ {
 		if arr.IsNull(i) {
 			indexBuilder.AppendNull()
 			continue
