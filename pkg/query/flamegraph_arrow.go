@@ -89,6 +89,11 @@ func GenerateFlamegraphArrow(
 		return nil, 0, err
 	}
 
+	if buf.Len() > 1<<24 { // 16MiB
+		span.SetAttributes(attribute.Int("record_size", buf.Len()))
+		span.SetAttributes(attribute.String("record_stats", recordStats(record)))
+	}
+
 	return &queryv1alpha1.FlamegraphArrow{
 		Record:  buf.Bytes(),
 		Unit:    p.Meta.SampleType.Unit,
@@ -1581,4 +1586,108 @@ func release(releasers ...releasable) {
 			r.Release()
 		}
 	}
+}
+
+func recordStats(r arrow.Record) string {
+	b := &strings.Builder{}
+	_, _ = fmt.Fprintf(b, "Cols: %d\n", r.NumCols())
+	_, _ = fmt.Fprintf(b, "Rows: %d\n", r.NumRows())
+
+	table := tablewriter.NewWriter(b)
+	table.SetAutoWrapText(false)
+	table.SetColumnAlignment([]int{
+		tablewriter.ALIGN_DEFAULT,
+		tablewriter.ALIGN_RIGHT,
+		tablewriter.ALIGN_RIGHT,
+		tablewriter.ALIGN_RIGHT,
+		tablewriter.ALIGN_DEFAULT,
+	})
+	table.SetHeader([]string{
+		"Name",
+		"Bytes",
+		"Bitmap Bytes",
+		"Count",
+		"Type",
+	})
+
+	fields := r.Schema().Fields()
+	for i, f := range fields {
+		var byteSize int
+		var indexSize int
+		var bitmapSize int
+		var countValues int
+		var countIndex int
+		switch f.Type.(type) {
+		case *arrow.BooleanType, *arrow.Int64Type, *arrow.Uint64Type:
+			data := r.Column(i).Data()
+			countValues = data.Len()
+			bufs := data.Buffers()
+			for j, buf := range bufs {
+				if j == 0 {
+					bitmapSize += buf.Len()
+					continue
+				}
+				byteSize += buf.Len()
+			}
+		case *arrow.DictionaryType:
+			data := r.Column(i).Data()
+			countIndex = data.Len()
+			for j, buf := range data.Buffers() {
+				if j == 0 {
+					bitmapSize += buf.Len()
+					continue
+				}
+				indexSize += buf.Len()
+			}
+			dict := r.Column(i).Data().Dictionary()
+			countValues += dict.Len()
+			for j, buf := range dict.Buffers() {
+				if j == 0 {
+					bitmapSize += buf.Len()
+					continue
+				}
+				byteSize += buf.Len()
+			}
+		case *arrow.ListType:
+			data := r.Column(i).Data()
+			countIndex = data.Len()
+			for j, buf := range data.Buffers() {
+				if j == 0 {
+					bitmapSize += buf.Len()
+					continue
+				}
+				indexSize += buf.Len()
+			}
+			for _, child := range data.Children() {
+				countValues += child.Len()
+				for j, buf := range child.Buffers() {
+					if j == 0 {
+						bitmapSize += buf.Len()
+						continue
+					}
+					byteSize += buf.Len()
+				}
+			}
+		}
+
+		size := strconv.Itoa(byteSize)
+		if indexSize > 0 {
+			size = size + ", " + strconv.Itoa(indexSize)
+		}
+		count := strconv.Itoa(countValues)
+		if countIndex > 0 {
+			count = count + ", " + strconv.Itoa(countIndex)
+		}
+
+		table.Append([]string{
+			f.Name,
+			size,
+			strconv.Itoa(bitmapSize),
+			count,
+			f.Type.String(),
+		})
+	}
+	table.Render()
+
+	return b.String()
 }

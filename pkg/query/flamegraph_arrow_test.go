@@ -17,6 +17,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"slices"
@@ -26,6 +27,7 @@ import (
 
 	"github.com/apache/arrow/go/v14/arrow"
 	"github.com/apache/arrow/go/v14/arrow/array"
+	"github.com/apache/arrow/go/v14/arrow/ipc"
 	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/go-kit/log"
 	pprofprofile "github.com/google/pprof/profile"
@@ -1053,4 +1055,53 @@ func TestCompactDictionary(t *testing.T) {
 	index3Builder.Release()
 	index3.Release()
 	compArr.Release()
+}
+
+func TestRecordStats(t *testing.T) {
+	mem := memory.NewCheckedAllocator(memory.NewGoAllocator())
+	defer mem.AssertSize(t, 0)
+
+	fileContent, err := os.ReadFile("testdata/alloc_objects.pb.gz")
+	require.NoError(t, err)
+
+	gz, err := gzip.NewReader(bytes.NewBuffer(fileContent))
+	require.NoError(t, err)
+
+	decompressed, err := io.ReadAll(gz)
+	require.NoError(t, err)
+
+	p := &pprofpb.Profile{}
+	require.NoError(t, p.UnmarshalVT(decompressed))
+
+	pp, err := pprofprofile.ParseData(fileContent)
+	require.NoError(t, err)
+
+	np, err := PprofToSymbolizedProfile(parcaprofile.MetaFromPprof(p, "memory", 0), pp, 0)
+	require.NoError(t, err)
+
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+
+	record, _, _, _, err := generateFlamegraphArrowRecord(
+		context.Background(),
+		mem,
+		tracer,
+		np,
+		nil,
+		0,
+	)
+	require.NoError(t, err)
+	defer record.Release()
+
+	var buf bytes.Buffer
+	w := ipc.NewWriter(&buf,
+		ipc.WithSchema(record.Schema()),
+		ipc.WithAllocator(mem),
+	)
+	defer w.Close()
+
+	err = w.Write(record)
+	require.NoError(t, err)
+
+	fmt.Println("Encoded:", buf.Len())
+	fmt.Println(recordStats(record))
 }
