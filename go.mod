@@ -27,6 +27,7 @@ require (
 	github.com/klauspost/compress v1.16.7
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
+	github.com/olekukonko/tablewriter v0.0.5
 	github.com/parquet-go/parquet-go v0.18.0
 	github.com/polarsignals/frostdb v0.0.0-20230829125747-7904f27b7240
 	github.com/prometheus/client_golang v1.16.0
@@ -192,7 +193,6 @@ require (
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
 	github.com/ncw/swift v1.0.53 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
-	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/oracle/oci-go-sdk/v65 v65.41.1 // indirect
