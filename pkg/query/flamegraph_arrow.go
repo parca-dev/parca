@@ -316,6 +316,11 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		if err := fb.trim(ctx, tracer, trimFraction); err != nil {
 			return nil, 0, 0, 0, fmt.Errorf("failed to trim flame graph: %w", err)
 		}
+	} else {
+		fb.trimmedLocationLine = array.NewUint8Builder(fb.pool)
+		fb.trimmedLocationLine.AppendNull()
+		fb.trimmedFunctionStartLine = array.NewUint8Builder(fb.pool)
+		fb.trimmedFunctionStartLine.AppendNull()
 	}
 
 	_, spanNewRecord := tracer.Start(ctx, "NewRecord")
@@ -674,6 +679,9 @@ type flamegraphBuilder struct {
 	trimmedChildren           [][]int
 
 	labelNameIndex map[string]int
+
+	trimmedLocationLine      array.Builder
+	trimmedFunctionStartLine array.Builder
 }
 
 type aggregationConfig struct {
@@ -894,9 +902,9 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 		{Name: FlamegraphFieldMappingBuildID, Type: fb.mappingBuildID.DataType()},
 		// Location
 		{Name: FlamegraphFieldLocationAddress, Type: arrow.PrimitiveTypes.Uint64},
-		{Name: FlamegraphFieldLocationLine, Type: arrow.PrimitiveTypes.Int64},
+		{Name: FlamegraphFieldLocationLine, Type: fb.trimmedLocationLine.Type()},
 		// Function
-		{Name: FlamegraphFieldFunctionStartLine, Type: arrow.PrimitiveTypes.Int64},
+		{Name: FlamegraphFieldFunctionStartLine, Type: fb.trimmedFunctionStartLine.Type()},
 		{Name: FlamegraphFieldFunctionName, Type: fb.functionName.DataType()},
 		{Name: FlamegraphFieldFunctionSystemName, Type: fb.functionSystemName.DataType()},
 		{Name: FlamegraphFieldFunctionFileName, Type: fb.functionFilename.DataType()},
@@ -913,9 +921,9 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	arrays[2] = fb.mappingBuildID
 	arrays[3] = fb.builderLocationAddress.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[3])
-	arrays[4] = fb.builderLocationLine.NewArray()
+	arrays[4] = fb.trimmedLocationLine.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[4])
-	arrays[5] = fb.builderFunctionStartLine.NewArray()
+	arrays[5] = fb.trimmedFunctionStartLine.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[5])
 	arrays[6] = fb.functionName
 	arrays[7] = fb.functionSystemName
@@ -1154,13 +1162,48 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 		}
 	}()
 
+	// initialize the queue with the root rows' children. It usually has the most amount of children.
+	trimmingQueue := queue{elements: make([]trimmingElement, 0, len(fb.children[0]))}
+	trimmingQueue.push(trimmingElement{row: 0})
+
+	row := -1
+	largestLocationLine := uint64(0)
+	largestFunctionStartLine := uint64(0)
+	for trimmingQueue.len() > 0 {
+		// pop the first item from the queue
+		te := trimmingQueue.pop()
+		row++
+
+		// The following two will never be null.
+		locationLine := uint64(fb.builderLocationLine.Value(te.row))
+		if locationLine > largestLocationLine {
+			largestLocationLine = locationLine
+		}
+		functionStartLine := uint64(fb.builderFunctionStartLine.Value(te.row))
+		if functionStartLine > largestFunctionStartLine {
+			largestFunctionStartLine = functionStartLine
+		}
+		cum := fb.builderCumulative.Value(te.row)
+		cumThreshold := float32(cum) * threshold
+
+		for _, cr := range fb.childrenList[te.row] {
+			if v := fb.builderCumulative.Value(cr); v > int64(cumThreshold) {
+				// this row is above the threshold, so we need to keep it
+				// add this row to the queue to check its children.
+				trimmingQueue.push(trimmingElement{row: cr, parent: row})
+			}
+		}
+	}
+
 	trimmedLabelsOnly := array.NewBooleanBuilder(fb.pool)
 	trimmedLabelsExist := builder.NewOptBooleanBuilder(arrow.FixedWidthTypes.Boolean)
 	trimmedMappingFileIndices := array.NewInt32Builder(fb.pool)
 	trimmedMappingBuildIDIndices := array.NewInt32Builder(fb.pool)
 	trimmedLocationAddress := array.NewUint64Builder(fb.pool)
-	trimmedLocationLine := builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
-	trimmedFunctionStartLine := builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
+	trimmedLocationLineType := smallestUnsignedTypeFor(largestLocationLine)
+	trimmedLocationLine := array.NewBuilder(fb.pool, trimmedLocationLineType)
+	trimmedFunctionStartLineType := smallestUnsignedTypeFor(largestFunctionStartLine)
+	trimmedFunctionStartLine := array.NewBuilder(fb.pool, trimmedFunctionStartLineType)
 	trimmedFunctionNameIndices := array.NewInt32Builder(fb.pool)
 	trimmedFunctionSystemNameIndices := array.NewInt32Builder(fb.pool)
 	trimmedFunctionFilenameIndices := array.NewInt32Builder(fb.pool)
@@ -1183,29 +1226,6 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	}
 
 	trimmedChildren := make([][]int, len(fb.children))
-
-	// initialize the queue with the root rows' children. It usually has the most amount of children.
-	trimmingQueue := queue{elements: make([]trimmingElement, 0, len(fb.children[0]))}
-	trimmingQueue.push(trimmingElement{row: 0})
-
-	row := -1
-	for trimmingQueue.len() > 0 {
-		// pop the first item from the queue
-		te := trimmingQueue.pop()
-		row++
-
-		// The following two will never be null.
-		cum := fb.builderCumulative.Value(te.row)
-		cumThreshold := float32(cum) * threshold
-
-		for _, cr := range fb.childrenList[te.row] {
-			if v := fb.builderCumulative.Value(cr); v > int64(cumThreshold) {
-				// this row is above the threshold, so we need to keep it
-				// add this row to the queue to check its children.
-				trimmingQueue.push(trimmingElement{row: cr, parent: row})
-			}
-		}
-	}
 
 	trimmedLabelsOnly.Reserve(row)
 	trimmedLabelsExist.Reserve(row)
@@ -1237,8 +1257,8 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 		appendDictionaryIndexInt32(fb.mappingFileIndices, trimmedMappingFileIndices, te.row)
 		appendDictionaryIndexInt32(fb.mappingBuildIDIndices, trimmedMappingBuildIDIndices, te.row)
 		copyUint64BuilderValue(fb.builderLocationAddress, trimmedLocationAddress, te.row)
-		copyOptInt64BuilderValue(fb.builderLocationLine, trimmedLocationLine, te.row)
-		copyOptInt64BuilderValue(fb.builderFunctionStartLine, trimmedFunctionStartLine, te.row)
+		copyInt64BuilderValueToUnknownUnsigned(fb.builderLocationLine, trimmedLocationLine, te.row)
+		copyInt64BuilderValueToUnknownUnsigned(fb.builderFunctionStartLine, trimmedFunctionStartLine, te.row)
 		appendDictionaryIndexInt32(fb.functionNameIndices, trimmedFunctionNameIndices, te.row)
 		appendDictionaryIndexInt32(fb.functionSystemNameIndices, trimmedFunctionSystemNameIndices, te.row)
 		appendDictionaryIndexInt32(fb.functionFilenameIndices, trimmedFunctionFilenameIndices, te.row)
@@ -1373,17 +1393,31 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 		fb.builderFunctionStartLine,
 		fb.builderCumulative,
 		fb.builderDiff,
+		fb.builderLocationLine,
+		fb.builderFunctionStartLine,
 	)
 	fb.builderLabelsOnly = trimmedLabelsOnly
 	fb.builderLabelsExist = trimmedLabelsExist
 	fb.builderLocationAddress = trimmedLocationAddress
-	fb.builderLocationLine = trimmedLocationLine
-	fb.builderFunctionStartLine = trimmedFunctionStartLine
+	fb.trimmedLocationLine = trimmedLocationLine
+	fb.trimmedFunctionStartLine = trimmedFunctionStartLine
 	fb.builderCumulative = trimmedCumulative
 	fb.builderDiff = trimmedDiff
 	fb.trimmedChildren = trimmedChildren
 
 	return nil
+}
+
+func smallestUnsignedTypeFor(largestValue uint64) arrow.DataType {
+	if largestValue < stdmath.MaxUint8 {
+		return arrow.PrimitiveTypes.Uint8
+	} else if largestValue < stdmath.MaxUint16 {
+		return arrow.PrimitiveTypes.Uint16
+	} else if largestValue < stdmath.MaxUint32 {
+		return arrow.PrimitiveTypes.Uint32
+	} else {
+		return arrow.PrimitiveTypes.Uint64
+	}
 }
 
 func copyOptInt64BuilderValue(old, new *builder.OptInt64Builder, row int) {
@@ -1392,6 +1426,25 @@ func copyOptInt64BuilderValue(old, new *builder.OptInt64Builder, row int) {
 		return
 	}
 	new.Append(old.Value(row))
+}
+
+func copyInt64BuilderValueToUnknownUnsigned(old *builder.OptInt64Builder, new array.Builder, row int) {
+	if old.IsNull(row) {
+		new.AppendNull()
+		return
+	}
+	switch b := new.(type) {
+	case *array.Uint8Builder:
+		b.Append(uint8(old.Value(row)))
+	case *array.Uint16Builder:
+		b.Append(uint16(old.Value(row)))
+	case *array.Uint32Builder:
+		b.Append(uint32(old.Value(row)))
+	case *array.Uint64Builder:
+		b.Append(uint64(old.Value(row)))
+	default:
+		panic(fmt.Errorf("unknown builder type %T", new))
+	}
 }
 
 func copyUint64BuilderValue(old, new *array.Uint64Builder, row int) {
@@ -1640,7 +1693,7 @@ func recordStats(r arrow.Record) string {
 	fields := r.Schema().Fields()
 	for i, f := range fields {
 		switch f.Type.(type) {
-		case *arrow.BooleanType, *arrow.Int64Type, *arrow.Uint64Type:
+		case *arrow.BooleanType, *arrow.Int64Type, *arrow.Uint64Type, *arrow.Uint8Type, *arrow.Uint16Type:
 			data := r.Column(i).Data()
 			fieldStats[i].countValues = data.Len()
 			totalBytes += data.Len()
