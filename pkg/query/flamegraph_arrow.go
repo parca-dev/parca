@@ -151,6 +151,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			}
 
 			rootRowChildren := fb.children[0]
+			rootRow := 0
 			if fb.aggregationConfig.aggregateByLabels && hasLabels {
 				labelHasher.Reset()
 				for j, labelColumn := range r.LabelColumns {
@@ -164,6 +165,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				if row, ok := fb.rootsRow[labelHash]; ok {
 					// We want to compare against this found label root's children.
 					rootRowChildren = fb.children[row]
+					rootRow = row
 					fb.compareRows = rootRowChildren
 					fb.addRowValues(r, row, i) // adds the cumulative and diff values to the existing row
 				} else {
@@ -180,6 +182,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					if err != nil {
 						return nil, 0, 0, 0, fmt.Errorf("failed to inject label row: %w", err)
 					}
+					rootRow = sampleLabelRow
 				}
 				fb.maxHeight = max(fb.maxHeight, fb.height)
 				fb.height = 1
@@ -229,6 +232,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					if isRoot {
 						// We aren't merging this root, so we'll keep track of it as a new one.
 						rootRowChildren[key] = row
+						fb.childrenList[rootRow] = append(fb.childrenList[rootRow], row)
 					}
 
 					err = fb.appendRow(r, t, builderToRecordIndexMapping, i, j, -1, row, key)
@@ -286,6 +290,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					if isRoot {
 						// We aren't merging this root, so we'll keep track of it as a new one.
 						rootRowChildren[key] = row
+						fb.childrenList[rootRow] = append(fb.childrenList[rootRow], row)
 					}
 
 					err = fb.appendRow(r, t, recordLabelIndex, i, j, k, row, key)
@@ -620,7 +625,8 @@ type flamegraphBuilder struct {
 	parent parent
 	// This keeps track of a row's children and will be converted to an arrow array of lists at the end.
 	// Allocating for an average of 8 children per stacktrace upfront.
-	children []map[uint64]int
+	children     []map[uint64]int
+	childrenList [][]int
 
 	// This keeps track of the root rows indexed by the labels string.
 	// If the stack trace has no labels, we use the empty string as the key.
@@ -701,6 +707,7 @@ func newFlamegraphBuilder(
 
 		// ensuring that we always have space to set the first row below
 		children:       make([]map[uint64]int, maxInt64(rows, 1)),
+		childrenList:   make([][]int, maxInt64(rows, 1)),
 		labelNameIndex: map[string]int{},
 
 		builderLabelsOnly:  array.NewBooleanBuilder(pool),
@@ -1072,17 +1079,22 @@ func (fb *flamegraphBuilder) appendRow(
 		// We need to grow the children slice, so we'll do that here.
 		// We'll double the capacity of the slice.
 		newChildren := make([]map[uint64]int, len(fb.children)*2)
+		newChildrenList := make([][]int, len(fb.children)*2)
 		copy(newChildren, fb.children)
+		copy(newChildrenList, fb.childrenList)
 		fb.children = newChildren
+		fb.childrenList = newChildrenList
 	}
 	// If there is a parent for this stack the parent is not -1 but the parent's row number.
 	if fb.parent.Has() {
 		// this is the first time we see this parent have a child, so we need to initialize the slice
 		if fb.children[fb.parent.Get()] == nil {
 			fb.children[fb.parent.Get()] = map[uint64]int{key: row}
+			fb.childrenList[fb.parent.Get()] = []int{row}
 		} else {
 			// otherwise we can just append this row's number to the parent's slice
 			fb.children[fb.parent.Get()][key] = row
+			fb.childrenList[fb.parent.Get()] = append(fb.childrenList[fb.parent.Get()], row)
 		}
 	}
 
@@ -1127,10 +1139,14 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 		// We need to grow the children slice, so we'll do that here.
 		// We'll double the capacity of the slice.
 		newChildren := make([]map[uint64]int, len(fb.children)*2)
+		newChildrenList := make([][]int, len(fb.children)*2)
 		copy(newChildren, fb.children)
+		copy(newChildrenList, fb.childrenList)
 		fb.children = newChildren
+		fb.childrenList = newChildrenList
 	}
 	fb.rootsRow[labelHash] = row
+	fb.childrenList[0] = append(fb.childrenList[0], row)
 	fb.children[row] = children
 
 	fb.builderLabelsOnly.Append(true)
@@ -1208,6 +1224,48 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmingQueue := queue{elements: make([]trimmingElement, 0, len(fb.children[0]))}
 	trimmingQueue.push(trimmingElement{row: 0})
 
+	row := -1
+	for trimmingQueue.len() > 0 {
+		// pop the first item from the queue
+		te := trimmingQueue.pop()
+		row++
+
+		// The following two will never be null.
+		cum := fb.builderCumulative.Value(te.row)
+		cumThreshold := float32(cum) * threshold
+
+		for _, cr := range fb.childrenList[te.row] {
+			if v := fb.builderCumulative.Value(cr); v > int64(cumThreshold) {
+				// this row is above the threshold, so we need to keep it
+				// add this row to the queue to check its children.
+				trimmingQueue.push(trimmingElement{row: cr, parent: row})
+			}
+		}
+	}
+
+	trimmedLabelsOnly.Reserve(row)
+	trimmedLabelsExist.Reserve(row)
+	trimmedMappingStart.Reserve(row)
+	trimmedMappingLimit.Reserve(row)
+	trimmedMappingOffset.Reserve(row)
+	trimmedMappingFileIndices.Reserve(row)
+	trimmedMappingBuildIDIndices.Reserve(row)
+	trimmedLocationAddress.Reserve(row)
+	trimmedLocationLine.Reserve(row)
+	trimmedFunctionStartLine.Reserve(row)
+	trimmedFunctionNameIndices.Reserve(row)
+	trimmedFunctionSystemNameIndices.Reserve(row)
+	trimmedFunctionFilenameIndices.Reserve(row)
+	trimmedCumulative.Reserve(row)
+	trimmedDiff.Reserve(row)
+
+	for _, l := range trimmedLabelsIndices {
+		l.Reserve(row)
+	}
+
+	trimmingQueue.elements = trimmingQueue.elements[:0]
+	trimmingQueue.push(trimmingElement{row: 0})
+
 	// keep processing new elements until the queue is empty
 	for trimmingQueue.len() > 0 {
 		// pop the first item from the queue
@@ -1250,7 +1308,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 
 		cumThreshold := float32(cum) * threshold
 
-		for _, cr := range fb.children[te.row] {
+		for _, cr := range fb.childrenList[te.row] {
 			if v := fb.builderCumulative.Value(cr); v > int64(cumThreshold) {
 				// this row is above the threshold, so we need to keep it
 				// add this row to the queue to check its children.
