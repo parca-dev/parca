@@ -1209,9 +1209,6 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 
 	trimmedLabelsOnly.Reserve(row)
 	trimmedLabelsExist.Reserve(row)
-	trimmedMappingStart.Reserve(row)
-	trimmedMappingLimit.Reserve(row)
-	trimmedMappingOffset.Reserve(row)
 	trimmedMappingFileIndices.Reserve(row)
 	trimmedMappingBuildIDIndices.Reserve(row)
 	trimmedLocationAddress.Reserve(row)
