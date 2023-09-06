@@ -40,9 +40,6 @@ import (
 const (
 	FlamegraphFieldLabelsOnly = "labels_only"
 
-	FlamegraphFieldMappingStart   = "mapping_start"
-	FlamegraphFieldMappingLimit   = "mapping_limit"
-	FlamegraphFieldMappingOffset  = "mapping_offset"
 	FlamegraphFieldMappingFile    = "mapping_file"
 	FlamegraphFieldMappingBuildID = "mapping_build_id"
 
@@ -638,9 +635,6 @@ type flamegraphBuilder struct {
 	height int32
 
 	builderLabelsOnly                    *array.BooleanBuilder
-	builderMappingStart                  *array.Uint64Builder
-	builderMappingLimit                  *array.Uint64Builder
-	builderMappingOffset                 *array.Uint64Builder
 	builderMappingFileIndices            *array.Int32Builder
 	builderMappingFileDictUnifier        array.DictionaryUnifier
 	builderMappingBuildIDIndices         *array.Int32Builder
@@ -713,9 +707,6 @@ func newFlamegraphBuilder(
 		builderLabelsOnly:  array.NewBooleanBuilder(pool),
 		builderLabelsExist: builder.NewOptBooleanBuilder(arrow.FixedWidthTypes.Boolean),
 
-		builderMappingStart:              array.NewUint64Builder(pool),
-		builderMappingLimit:              array.NewUint64Builder(pool),
-		builderMappingOffset:             array.NewUint64Builder(pool),
 		builderMappingFileIndices:        array.NewInt32Builder(pool),
 		builderMappingFileDictUnifier:    array.NewBinaryDictionaryUnifier(pool),
 		builderMappingBuildIDIndices:     array.NewInt32Builder(pool),
@@ -755,9 +746,6 @@ func newFlamegraphBuilder(
 	// It only contains the root cumulative value and list of children (which are actual roots).
 	fb.builderLabelsExist.AppendSingle(false)
 	fb.builderLabelsOnly.AppendNull()
-	fb.builderMappingStart.AppendNull()
-	fb.builderMappingLimit.AppendNull()
-	fb.builderMappingOffset.AppendNull()
 	fb.builderMappingFileIndices.AppendNull()
 	fb.builderMappingBuildIDIndices.AppendNull()
 
@@ -902,9 +890,6 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 
 	fields := []arrow.Field{
 		{Name: FlamegraphFieldLabelsOnly, Type: arrow.FixedWidthTypes.Boolean},
-		{Name: FlamegraphFieldMappingStart, Type: arrow.PrimitiveTypes.Uint64},
-		{Name: FlamegraphFieldMappingLimit, Type: arrow.PrimitiveTypes.Uint64},
-		{Name: FlamegraphFieldMappingOffset, Type: arrow.PrimitiveTypes.Uint64},
 		{Name: FlamegraphFieldMappingFile, Type: fb.mappingFile.DataType()},
 		{Name: FlamegraphFieldMappingBuildID, Type: fb.mappingBuildID.DataType()},
 		// Location
@@ -921,37 +906,31 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 		{Name: FlamegraphFieldDiff, Type: arrow.PrimitiveTypes.Int64, Nullable: true},
 	}
 
-	arrays := make([]arrow.Array, 15+len(fb.labels))
+	arrays := make([]arrow.Array, 12+len(fb.labels))
 	arrays[0] = fb.builderLabelsOnly.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[0])
-	arrays[1] = fb.builderMappingStart.NewArray()
-	cleanupArrs = append(cleanupArrs, arrays[1])
-	arrays[2] = fb.builderMappingLimit.NewArray()
-	cleanupArrs = append(cleanupArrs, arrays[2])
-	arrays[3] = fb.builderMappingOffset.NewArray()
+	arrays[1] = fb.mappingFile
+	arrays[2] = fb.mappingBuildID
+	arrays[3] = fb.builderLocationAddress.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[3])
-	arrays[4] = fb.mappingFile
-	arrays[5] = fb.mappingBuildID
-	arrays[6] = fb.builderLocationAddress.NewArray()
-	cleanupArrs = append(cleanupArrs, arrays[6])
-	arrays[7] = fb.builderLocationLine.NewArray()
-	cleanupArrs = append(cleanupArrs, arrays[7])
-	arrays[8] = fb.builderFunctionStartLine.NewArray()
-	cleanupArrs = append(cleanupArrs, arrays[8])
-	arrays[9] = fb.functionName
-	arrays[10] = fb.functionSystemName
-	arrays[11] = fb.functionFilename
-	arrays[12] = fb.builderChildren.NewArray()
-	cleanupArrs = append(cleanupArrs, arrays[12])
-	arrays[13] = fb.builderCumulative.NewArray()
-	cleanupArrs = append(cleanupArrs, arrays[13])
-	arrays[14] = fb.builderDiff.NewArray()
-	cleanupArrs = append(cleanupArrs, arrays[14])
+	arrays[4] = fb.builderLocationLine.NewArray()
+	cleanupArrs = append(cleanupArrs, arrays[4])
+	arrays[5] = fb.builderFunctionStartLine.NewArray()
+	cleanupArrs = append(cleanupArrs, arrays[5])
+	arrays[6] = fb.functionName
+	arrays[7] = fb.functionSystemName
+	arrays[8] = fb.functionFilename
+	arrays[9] = fb.builderChildren.NewArray()
+	cleanupArrs = append(cleanupArrs, arrays[9])
+	arrays[10] = fb.builderCumulative.NewArray()
+	cleanupArrs = append(cleanupArrs, arrays[10])
+	arrays[11] = fb.builderDiff.NewArray()
+	cleanupArrs = append(cleanupArrs, arrays[11])
 
 	for i, field := range fb.builderLabelFields {
 		field.Type = fb.labels[i].DataType() // overwrite for variable length uint types
 		fields = append(fields, field)
-		arrays[15+i] = fb.labels[i]
+		arrays[12+i] = fb.labels[i]
 	}
 
 	return array.NewRecord(
@@ -965,9 +944,6 @@ func (fb *flamegraphBuilder) Release() {
 	fb.builderLabelsOnly.Release()
 	fb.builderLabelsExist.Release()
 
-	fb.builderMappingStart.Release()
-	fb.builderMappingLimit.Release()
-	fb.builderMappingOffset.Release()
 	fb.builderMappingFileIndices.Release()
 	fb.builderMappingFileDictUnifier.Release()
 	fb.builderMappingBuildIDIndices.Release()
@@ -1017,15 +993,9 @@ func (fb *flamegraphBuilder) appendRow(
 
 	// Mapping
 	if r.MappingStart.IsValid(locationRow) {
-		fb.builderMappingStart.Append(r.MappingStart.Value(locationRow))
-		fb.builderMappingLimit.Append(r.MappingLimit.Value(locationRow))
-		fb.builderMappingOffset.Append(r.MappingOffset.Value(locationRow))
 		fb.builderMappingFileIndices.Append(t.mappingFile.indices.Value(int(r.MappingFileIndices.Value(locationRow))))
 		fb.builderMappingBuildIDIndices.Append(t.mappingBuildID.indices.Value(int(r.MappingBuildIDIndices.Value(locationRow))))
 	} else {
-		fb.builderMappingStart.AppendNull()
-		fb.builderMappingLimit.AppendNull()
-		fb.builderMappingOffset.AppendNull()
 		fb.builderMappingFileIndices.AppendNull()
 		fb.builderMappingBuildIDIndices.AppendNull()
 	}
@@ -1150,9 +1120,6 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 	fb.children[row] = children
 
 	fb.builderLabelsOnly.Append(true)
-	fb.builderMappingStart.AppendNull()
-	fb.builderMappingLimit.AppendNull()
-	fb.builderMappingOffset.AppendNull()
 	fb.builderMappingFileIndices.AppendNull()
 	fb.builderMappingBuildIDIndices.AppendNull()
 	fb.builderLocationAddress.AppendNull()
@@ -1189,9 +1156,6 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 
 	trimmedLabelsOnly := array.NewBooleanBuilder(fb.pool)
 	trimmedLabelsExist := builder.NewOptBooleanBuilder(arrow.FixedWidthTypes.Boolean)
-	trimmedMappingStart := array.NewUint64Builder(fb.pool)
-	trimmedMappingLimit := array.NewUint64Builder(fb.pool)
-	trimmedMappingOffset := array.NewUint64Builder(fb.pool)
 	trimmedMappingFileIndices := array.NewInt32Builder(fb.pool)
 	trimmedMappingBuildIDIndices := array.NewInt32Builder(fb.pool)
 	trimmedLocationAddress := array.NewUint64Builder(fb.pool)
@@ -1245,9 +1209,6 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 
 	trimmedLabelsOnly.Reserve(row)
 	trimmedLabelsExist.Reserve(row)
-	trimmedMappingStart.Reserve(row)
-	trimmedMappingLimit.Reserve(row)
-	trimmedMappingOffset.Reserve(row)
 	trimmedMappingFileIndices.Reserve(row)
 	trimmedMappingBuildIDIndices.Reserve(row)
 	trimmedLocationAddress.Reserve(row)
@@ -1273,9 +1234,6 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 
 		copyBoolBuilderValue(fb.builderLabelsOnly, trimmedLabelsOnly, te.row)
 		copyOptBooleanBuilderValue(fb.builderLabelsExist, trimmedLabelsExist, te.row)
-		copyUint64BuilderValue(fb.builderMappingStart, trimmedMappingStart, te.row)
-		copyUint64BuilderValue(fb.builderMappingLimit, trimmedMappingLimit, te.row)
-		copyUint64BuilderValue(fb.builderMappingOffset, trimmedMappingOffset, te.row)
 		appendDictionaryIndexInt32(fb.mappingFileIndices, trimmedMappingFileIndices, te.row)
 		appendDictionaryIndexInt32(fb.mappingBuildIDIndices, trimmedMappingBuildIDIndices, te.row)
 		copyUint64BuilderValue(fb.builderLocationAddress, trimmedLocationAddress, te.row)
@@ -1410,9 +1368,6 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	release(
 		fb.builderLabelsOnly,
 		fb.builderLabelsExist,
-		fb.builderMappingStart,
-		fb.builderMappingLimit,
-		fb.builderMappingOffset,
 		fb.builderLocationAddress,
 		fb.builderLocationLine,
 		fb.builderFunctionStartLine,
@@ -1421,9 +1376,6 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	)
 	fb.builderLabelsOnly = trimmedLabelsOnly
 	fb.builderLabelsExist = trimmedLabelsExist
-	fb.builderMappingStart = trimmedMappingStart
-	fb.builderMappingLimit = trimmedMappingLimit
-	fb.builderMappingOffset = trimmedMappingOffset
 	fb.builderLocationAddress = trimmedLocationAddress
 	fb.builderLocationLine = trimmedLocationLine
 	fb.builderFunctionStartLine = trimmedFunctionStartLine
