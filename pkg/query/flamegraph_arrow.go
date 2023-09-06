@@ -1608,14 +1608,93 @@ func release(releasers ...releasable) {
 }
 
 func recordStats(r arrow.Record) string {
-	b := &strings.Builder{}
-	_, _ = fmt.Fprintf(b, "Cols: %d\n", r.NumCols())
-	_, _ = fmt.Fprintf(b, "Rows: %d\n", r.NumRows())
+	var totalBytes int
+	type fieldStat struct {
+		valueBytes  int
+		indexBytes  int
+		bitmapBytes int
+		countValues int
+		countIndex  int
+	}
+	fieldStats := make([]fieldStat, r.NumCols())
 
+	fields := r.Schema().Fields()
+	for i, f := range fields {
+		switch f.Type.(type) {
+		case *arrow.BooleanType, *arrow.Int64Type, *arrow.Uint64Type:
+			data := r.Column(i).Data()
+			fieldStats[i].countValues = data.Len()
+			totalBytes += data.Len()
+			bufs := data.Buffers()
+			for j, buf := range bufs {
+				if j == 0 {
+					fieldStats[i].bitmapBytes += buf.Len()
+					totalBytes += buf.Len()
+					continue
+				}
+				fieldStats[i].valueBytes += buf.Len()
+				totalBytes += buf.Len()
+			}
+		case *arrow.DictionaryType:
+			data := r.Column(i).Data()
+			fieldStats[i].countIndex = data.Len()
+			totalBytes += data.Len()
+			for j, buf := range data.Buffers() {
+				if j == 0 {
+					fieldStats[i].bitmapBytes += buf.Len()
+					totalBytes += buf.Len()
+					continue
+				}
+				fieldStats[i].indexBytes += buf.Len()
+				totalBytes += buf.Len()
+			}
+			dict := r.Column(i).Data().Dictionary()
+			fieldStats[i].countValues += dict.Len()
+			totalBytes += dict.Len()
+			for j, buf := range dict.Buffers() {
+				if j == 0 {
+					fieldStats[i].bitmapBytes += buf.Len()
+					totalBytes += buf.Len()
+					continue
+				}
+				fieldStats[i].valueBytes += buf.Len()
+				totalBytes += buf.Len()
+			}
+		case *arrow.ListType:
+			data := r.Column(i).Data()
+			fieldStats[i].countIndex = data.Len()
+			totalBytes += data.Len()
+			for j, buf := range data.Buffers() {
+				if j == 0 {
+					fieldStats[i].bitmapBytes += buf.Len()
+					totalBytes += buf.Len()
+					continue
+				}
+				fieldStats[i].indexBytes += buf.Len()
+				totalBytes += buf.Len()
+			}
+			for _, child := range data.Children() {
+				fieldStats[i].countValues += child.Len()
+				totalBytes += child.Len()
+				for j, buf := range child.Buffers() {
+					if j == 0 {
+						fieldStats[i].bitmapBytes += buf.Len()
+						totalBytes += buf.Len()
+						continue
+					}
+					fieldStats[i].valueBytes += buf.Len()
+					totalBytes += buf.Len()
+				}
+			}
+		}
+	}
+
+	b := &strings.Builder{}
 	table := tablewriter.NewWriter(b)
 	table.SetAutoWrapText(false)
 	table.SetColumnAlignment([]int{
 		tablewriter.ALIGN_DEFAULT,
+		tablewriter.ALIGN_RIGHT,
 		tablewriter.ALIGN_RIGHT,
 		tablewriter.ALIGN_RIGHT,
 		tablewriter.ALIGN_RIGHT,
@@ -1625,87 +1704,37 @@ func recordStats(r arrow.Record) string {
 		"Name",
 		"Bytes",
 		"Bitmap Bytes",
+		"Bytes Percent",
 		"Count",
 		"Type",
 	})
 
-	fields := r.Schema().Fields()
-	for i, f := range fields {
-		var byteSize int
-		var indexSize int
-		var bitmapSize int
-		var countValues int
-		var countIndex int
-		switch f.Type.(type) {
-		case *arrow.BooleanType, *arrow.Int64Type, *arrow.Uint64Type:
-			data := r.Column(i).Data()
-			countValues = data.Len()
-			bufs := data.Buffers()
-			for j, buf := range bufs {
-				if j == 0 {
-					bitmapSize += buf.Len()
-					continue
-				}
-				byteSize += buf.Len()
-			}
-		case *arrow.DictionaryType:
-			data := r.Column(i).Data()
-			countIndex = data.Len()
-			for j, buf := range data.Buffers() {
-				if j == 0 {
-					bitmapSize += buf.Len()
-					continue
-				}
-				indexSize += buf.Len()
-			}
-			dict := r.Column(i).Data().Dictionary()
-			countValues += dict.Len()
-			for j, buf := range dict.Buffers() {
-				if j == 0 {
-					bitmapSize += buf.Len()
-					continue
-				}
-				byteSize += buf.Len()
-			}
-		case *arrow.ListType:
-			data := r.Column(i).Data()
-			countIndex = data.Len()
-			for j, buf := range data.Buffers() {
-				if j == 0 {
-					bitmapSize += buf.Len()
-					continue
-				}
-				indexSize += buf.Len()
-			}
-			for _, child := range data.Children() {
-				countValues += child.Len()
-				for j, buf := range child.Buffers() {
-					if j == 0 {
-						bitmapSize += buf.Len()
-						continue
-					}
-					byteSize += buf.Len()
-				}
-			}
+	for i, s := range fieldStats {
+		size := strconv.Itoa(s.valueBytes)
+		if s.indexBytes > 0 {
+			size = size + ", " + strconv.Itoa(s.indexBytes)
 		}
-
-		size := strconv.Itoa(byteSize)
-		if indexSize > 0 {
-			size = size + ", " + strconv.Itoa(indexSize)
-		}
-		count := strconv.Itoa(countValues)
-		if countIndex > 0 {
-			count = count + ", " + strconv.Itoa(countIndex)
+		bytesPercent := fmt.Sprintf("%.2f%%",
+			(100*float64(s.valueBytes+s.indexBytes+s.bitmapBytes))/float64(totalBytes),
+		)
+		count := strconv.Itoa(s.countValues)
+		if s.countIndex > 0 {
+			count = count + ", " + strconv.Itoa(s.countIndex)
 		}
 
 		table.Append([]string{
-			f.Name,
+			fields[i].Name,
 			size,
-			strconv.Itoa(bitmapSize),
+			strconv.Itoa(s.bitmapBytes),
+			bytesPercent,
 			count,
-			f.Type.String(),
+			fields[i].Type.String(),
 		})
 	}
+
+	_, _ = fmt.Fprintf(b, "Bytes: %d\n", totalBytes)
+	_, _ = fmt.Fprintf(b, "Cols: %d\n", r.NumCols())
+	_, _ = fmt.Fprintf(b, "Rows: %d\n", r.NumRows())
 	table.Render()
 
 	return b.String()
