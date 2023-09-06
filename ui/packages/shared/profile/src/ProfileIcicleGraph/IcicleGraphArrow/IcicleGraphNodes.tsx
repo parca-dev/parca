@@ -88,8 +88,8 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
   let childrenCumulative = BigInt(0);
   const childrenElements: ReactNode[] = [];
   childRows.forEach((child, i) => {
-    const xStart = Math.floor(xScale(childrenCumulative));
-    const c: bigint = cumulatives?.get(child);
+    const xStart = Math.floor(xScale(BigInt(childrenCumulative)));
+    const c = BigInt(cumulatives?.get(child));
     childrenCumulative += c;
 
     childrenElements.push(
@@ -190,8 +190,8 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   // get the actual values from the columns
   const mappingFile: string | null = arrowToString(mappingColumn?.get(row));
   const functionName: string | null = arrowToString(functionNameColumn?.get(row));
-  const cumulative: bigint = cumulativeColumn?.get(row);
-  const diff: bigint | null = diffColumn?.get(row);
+  const cumulative = BigInt(cumulativeColumn?.get(row));
+  const diff: bigint | null = BigInt(diffColumn?.get(row));
   const childRows: number[] = Array.from(table.getChild(FIELD_CHILDREN)?.get(row) ?? []);
 
   // TODO: Maybe it's better to pass down the sorter function as prop instead of figuring this out here.
@@ -260,13 +260,13 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const nextCurPath = curPath.length === 0 ? [] : curPath.slice(1);
   const newXScale =
     nextCurPath.length === 0 && curPath.length === 1
-      ? scaleLinear([0n, cumulative], [0, totalWidth])
+      ? scaleLinear([0n, BigInt(cumulative)], [0, totalWidth])
       : xScale;
 
   const width: number =
     nextCurPath.length > 0 || (nextCurPath.length === 0 && curPath.length === 1)
       ? totalWidth
-      : xScale(cumulative);
+      : xScale(BigInt(cumulative));
 
   const {isHighlightEnabled = false, isHighlighted = false} = useMemo(() => {
     if (searchString === undefined || searchString === '') {
