@@ -61,8 +61,8 @@ type flamegraphRow struct {
 	FunctionFilename   string
 	Labels             map[string]string
 	Children           []uint32
-	Cumulative         int64
-	Diff               int64
+	Cumulative         uint8
+	Diff               int8
 }
 
 type flamegraphColumns struct {
@@ -77,8 +77,8 @@ type flamegraphColumns struct {
 	functionFileNames   []string
 	labels              []map[string]string
 	children            [][]uint32
-	cumulative          []int64
-	diff                []int64
+	cumulative          []uint8
+	diff                []int8
 }
 
 func rowsToColumn(rows []flamegraphRow) flamegraphColumns {
@@ -164,6 +164,8 @@ func extractColumn(t *testing.T, r arrow.Record, field string) any {
 		return vals
 	case *array.Uint8:
 		return arr.Uint8Values()
+	case *array.Int8:
+		return arr.Int8Values()
 	case *array.Dictionary:
 		dict := arr.Dictionary()
 		switch dict := dict.(type) {
@@ -444,8 +446,8 @@ func (c *flamegraphComparer) convert(r arrow.Record) {
 		functionFileNames:   extractColumn(c.t, r, FlamegraphFieldFunctionFileName).([]string),
 		labels:              extractLabelColumns(c.t, r),
 		children:            extractChildrenColumn(c.t, r),
-		cumulative:          extractColumn(c.t, r, FlamegraphFieldCumulative).([]int64),
-		diff:                extractColumn(c.t, r, FlamegraphFieldDiff).([]int64),
+		cumulative:          extractColumn(c.t, r, FlamegraphFieldCumulative).([]uint8),
+		diff:                extractColumn(c.t, r, FlamegraphFieldDiff).([]int8),
 	}
 }
 

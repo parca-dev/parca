@@ -321,6 +321,10 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		fb.trimmedLocationLine.AppendNull()
 		fb.trimmedFunctionStartLine = array.NewUint8Builder(fb.pool)
 		fb.trimmedFunctionStartLine.AppendNull()
+		fb.trimmedCumulative = array.NewUint8Builder(fb.pool)
+		fb.trimmedCumulative.AppendNull()
+		fb.trimmedDiff = array.NewUint8Builder(fb.pool)
+		fb.trimmedDiff.AppendNull()
 	}
 
 	_, spanNewRecord := tracer.Start(ctx, "NewRecord")
@@ -682,6 +686,8 @@ type flamegraphBuilder struct {
 
 	trimmedLocationLine      array.Builder
 	trimmedFunctionStartLine array.Builder
+	trimmedCumulative        array.Builder
+	trimmedDiff              array.Builder
 }
 
 type aggregationConfig struct {
@@ -881,7 +887,7 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	// We have manually tracked each row's children.
 	// So now we need to iterate over all rows in the record and append their children.
 	// We cannot do this while building the rows as we need to append the children while iterating over the rows.
-	for i := 0; i < fb.builderCumulative.Len(); i++ {
+	for i := 0; i < fb.trimmedCumulative.Len(); i++ {
 		if len(fb.trimmedChildren[i]) == 0 {
 			fb.builderChildren.AppendNull() // leaf
 		} else {
@@ -894,7 +900,7 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 
 	// This has to be here, because after calling .NewArray() on the builder,
 	// the builder is reset.
-	numRows := fb.builderCumulative.Len()
+	numRows := fb.trimmedCumulative.Len()
 
 	fields := []arrow.Field{
 		{Name: FlamegraphFieldLabelsOnly, Type: arrow.FixedWidthTypes.Boolean},
@@ -910,8 +916,8 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 		{Name: FlamegraphFieldFunctionFileName, Type: fb.functionFilename.DataType()},
 		// Values
 		{Name: FlamegraphFieldChildren, Type: arrow.ListOf(arrow.PrimitiveTypes.Uint32)},
-		{Name: FlamegraphFieldCumulative, Type: arrow.PrimitiveTypes.Int64},
-		{Name: FlamegraphFieldDiff, Type: arrow.PrimitiveTypes.Int64, Nullable: true},
+		{Name: FlamegraphFieldCumulative, Type: fb.trimmedCumulative.Type()},
+		{Name: FlamegraphFieldDiff, Type: fb.trimmedDiff.Type()},
 	}
 
 	arrays := make([]arrow.Array, 12+len(fb.labels))
@@ -930,9 +936,9 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	arrays[8] = fb.functionFilename
 	arrays[9] = fb.builderChildren.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[9])
-	arrays[10] = fb.builderCumulative.NewArray()
+	arrays[10] = fb.trimmedCumulative.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[10])
-	arrays[11] = fb.builderDiff.NewArray()
+	arrays[11] = fb.trimmedDiff.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[11])
 
 	for i, field := range fb.builderLabelFields {
@@ -971,6 +977,11 @@ func (fb *flamegraphBuilder) Release() {
 	fb.builderChildren.Release()
 	fb.builderCumulative.Release()
 	fb.builderDiff.Release()
+
+	fb.trimmedLocationLine.Release()
+	fb.trimmedFunctionStartLine.Release()
+	fb.trimmedCumulative.Release()
+	fb.trimmedDiff.Release()
 
 	for i := range fb.builderLabelFields {
 		fb.builderLabels[i].Release()
@@ -1169,6 +1180,9 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	row := -1
 	largestLocationLine := uint64(0)
 	largestFunctionStartLine := uint64(0)
+	largestCumulativeValue := uint64(0)
+	largestDiffValue := int64(0)
+	smallestDiffValue := int64(0)
 	for trimmingQueue.len() > 0 {
 		// pop the first item from the queue
 		te := trimmingQueue.pop()
@@ -1183,7 +1197,18 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 		if functionStartLine > largestFunctionStartLine {
 			largestFunctionStartLine = functionStartLine
 		}
-		cum := fb.builderCumulative.Value(te.row)
+		cum := uint64(fb.builderCumulative.Value(te.row))
+		if cum > largestCumulativeValue {
+			largestCumulativeValue = cum
+		}
+		diff := fb.builderDiff.Value(te.row)
+		if diff > largestDiffValue {
+			largestDiffValue = diff
+		}
+		if diff < smallestDiffValue {
+			smallestDiffValue = diff
+		}
+
 		cumThreshold := float32(cum) * threshold
 
 		for _, cr := range fb.childrenList[te.row] {
@@ -1207,8 +1232,10 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedFunctionNameIndices := array.NewInt32Builder(fb.pool)
 	trimmedFunctionSystemNameIndices := array.NewInt32Builder(fb.pool)
 	trimmedFunctionFilenameIndices := array.NewInt32Builder(fb.pool)
-	trimmedCumulative := builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
-	trimmedDiff := builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
+	trimmedCumulativeType := smallestUnsignedTypeFor(largestCumulativeValue)
+	trimmedCumulative := array.NewBuilder(fb.pool, trimmedCumulativeType)
+	trimmedDiffType := smallestSignedTypeFor(smallestDiffValue, largestDiffValue)
+	trimmedDiff := array.NewBuilder(fb.pool, trimmedDiffType)
 
 	releasers = append(releasers,
 		trimmedMappingFileIndices,
@@ -1268,8 +1295,31 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 
 		// The following two will never be null.
 		cum := fb.builderCumulative.Value(te.row)
-		trimmedCumulative.Append(cum)
-		trimmedDiff.Append(fb.builderDiff.Value(te.row))
+		switch b := trimmedCumulative.(type) {
+		case *array.Uint64Builder:
+			b.Append(uint64(cum))
+		case *array.Uint32Builder:
+			b.Append(uint32(cum))
+		case *array.Uint16Builder:
+			b.Append(uint16(cum))
+		case *array.Uint8Builder:
+			b.Append(uint8(cum))
+		default:
+			panic(fmt.Errorf("unsupported type %T", b))
+		}
+
+		switch b := trimmedDiff.(type) {
+		case *array.Int64Builder:
+			b.Append(fb.builderDiff.Value(te.row))
+		case *array.Int32Builder:
+			b.Append(int32(fb.builderDiff.Value(te.row)))
+		case *array.Int16Builder:
+			b.Append(int16(fb.builderDiff.Value(te.row)))
+		case *array.Int8Builder:
+			b.Append(int8(fb.builderDiff.Value(te.row)))
+		default:
+			panic(fmt.Errorf("unsupported type %T", b))
+		}
 
 		// This gets the newly inserted row's index.
 		// It is used further down as the children's parent value when added to the trimmingQueue.
@@ -1401,8 +1451,8 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	fb.builderLocationAddress = trimmedLocationAddress
 	fb.trimmedLocationLine = trimmedLocationLine
 	fb.trimmedFunctionStartLine = trimmedFunctionStartLine
-	fb.builderCumulative = trimmedCumulative
-	fb.builderDiff = trimmedDiff
+	fb.trimmedCumulative = trimmedCumulative
+	fb.trimmedDiff = trimmedDiff
 	fb.trimmedChildren = trimmedChildren
 
 	return nil
@@ -1420,12 +1470,16 @@ func smallestUnsignedTypeFor(largestValue uint64) arrow.DataType {
 	}
 }
 
-func copyOptInt64BuilderValue(old, new *builder.OptInt64Builder, row int) {
-	if old.IsNull(row) {
-		new.AppendNull()
-		return
+func smallestSignedTypeFor(min, max int64) arrow.DataType {
+	if max < stdmath.MaxInt8 && min > stdmath.MinInt8 {
+		return arrow.PrimitiveTypes.Int8
+	} else if max < stdmath.MaxInt16 && min > stdmath.MinInt16 {
+		return arrow.PrimitiveTypes.Int16
+	} else if max < stdmath.MaxInt32 && min > stdmath.MinInt32 {
+		return arrow.PrimitiveTypes.Int32
+	} else {
+		return arrow.PrimitiveTypes.Int64
 	}
-	new.Append(old.Value(row))
 }
 
 func copyInt64BuilderValueToUnknownUnsigned(old *builder.OptInt64Builder, new array.Builder, row int) {
@@ -1693,7 +1747,7 @@ func recordStats(r arrow.Record) string {
 	fields := r.Schema().Fields()
 	for i, f := range fields {
 		switch f.Type.(type) {
-		case *arrow.BooleanType, *arrow.Int64Type, *arrow.Uint64Type, *arrow.Uint8Type, *arrow.Uint16Type:
+		case *arrow.BooleanType, *arrow.Int64Type, *arrow.Uint64Type, *arrow.Int32Type, *arrow.Uint32Type, *arrow.Int16Type, *arrow.Uint16Type, *arrow.Uint8Type, *arrow.Int8Type:
 			data := r.Column(i).Data()
 			fieldStats[i].countValues = data.Len()
 			totalBytes += data.Len()
