@@ -77,14 +77,10 @@ func TestGenerateTable(t *testing.T) {
 	require.Equal(t, int64(310797348), cumulative)
 	// require.Equal(t, 899, rec.NumRows())
 
-	mappingStartColumn := rec.Column(rec.Schema().FieldIndices(TableFieldMappingStart)[0]).(*array.Uint64)
-	mappingLimitColumn := rec.Column(rec.Schema().FieldIndices(TableFieldMappingLimit)[0]).(*array.Uint64)
-	mappingOffsetColumn := rec.Column(rec.Schema().FieldIndices(TableFieldMappingOffset)[0]).(*array.Uint64)
 	mappingFileColumn := rec.Column(rec.Schema().FieldIndices(TableFieldMappingFile)[0]).(*array.Dictionary)
 	mappingFileColumnDict := mappingFileColumn.Dictionary().(*array.String)
 	mappingBuildIDColumn := rec.Column(rec.Schema().FieldIndices(TableFieldMappingBuildID)[0]).(*array.Dictionary)
 	locationAddressColumn := rec.Column(rec.Schema().FieldIndices(TableFieldLocationAddress)[0]).(*array.Uint64)
-	locationFolded := rec.Column(rec.Schema().FieldIndices(TableFieldLocationFolded)[0]).(*array.Boolean)
 	locationLineColumn := rec.Column(rec.Schema().FieldIndices(TableFieldLocationLine)[0]).(*array.Int64)
 	functionStartLineColumn := rec.Column(rec.Schema().FieldIndices(TableFieldFunctionStartLine)[0]).(*array.Int64)
 	functionNameColumn := rec.Column(rec.Schema().FieldIndices(TableFieldFunctionName)[0]).(*array.Dictionary)
@@ -102,14 +98,10 @@ func TestGenerateTable(t *testing.T) {
 	for i := 0; i < int(rec.NumRows()); i++ {
 		if locationAddressColumn.Value(i) == uint64(7578561) {
 			// mapping
-			require.Equal(t, uint64(4194304), mappingStartColumn.Value(i))
-			require.Equal(t, uint64(23252992), mappingLimitColumn.Value(i))
-			require.Equal(t, uint64(0), mappingOffsetColumn.Value(i))
 			require.Equal(t, "/bin/operator", mappingFileColumnDict.Value(mappingFileColumn.GetValueIndex(i)))
 			require.True(t, mappingBuildIDColumn.IsNull(i))
 			// location
 			// address is already checked above
-			require.False(t, locationFolded.Value(i))
 			require.Equal(t, int64(107), locationLineColumn.Value(i))
 			// function
 			require.Equal(t, int64(0), functionStartLineColumn.Value(i))
@@ -230,13 +222,9 @@ func TestGenerateTableAggregateFlat(t *testing.T) {
 	require.Equal(t, int64(10), cumulative)
 
 	expectedColumns := tableColumns{
-		mappingStart:       []uint64{1, 1, 1, 1},
-		mappingLimit:       []uint64{1, 1, 1, 1},
-		mappingOffset:      []uint64{1, 1, 1, 1},
 		mappingFile:        []string{"1", "1", "1", "1"},
 		mappingBuildID:     []string{"1", "1", "1", "1"},
 		locationAddress:    []uint64{2, 1, 3, 4},
-		locationFolded:     []bool{false, false, false, false},
 		locationLine:       []int64{0, 0, 0, 0},
 		functionStartLine:  []int64{0, 0, 0, 0},
 		functionName:       []string{"(null)", "(null)", "(null)", "(null)"},
@@ -253,13 +241,9 @@ func TestGenerateTableAggregateFlat(t *testing.T) {
 }
 
 type tableColumns struct {
-	mappingStart       []uint64
-	mappingLimit       []uint64
-	mappingOffset      []uint64
 	mappingFile        []string
 	mappingBuildID     []string
 	locationAddress    []uint64
-	locationFolded     []bool
 	locationLine       []int64
 	functionStartLine  []int64
 	functionName       []string
@@ -273,13 +257,9 @@ type tableColumns struct {
 
 func tableRecordToColumns(t *testing.T, r arrow.Record) tableColumns {
 	return tableColumns{
-		mappingStart:       extractColumn(t, r, TableFieldMappingStart).([]uint64),
-		mappingLimit:       extractColumn(t, r, TableFieldMappingLimit).([]uint64),
-		mappingOffset:      extractColumn(t, r, TableFieldMappingOffset).([]uint64),
 		mappingFile:        extractColumn(t, r, TableFieldMappingFile).([]string),
 		mappingBuildID:     extractColumn(t, r, TableFieldMappingBuildID).([]string),
 		locationAddress:    extractColumn(t, r, TableFieldLocationAddress).([]uint64),
-		locationFolded:     extractColumn(t, r, TableFieldLocationFolded).([]bool),
 		locationLine:       extractColumn(t, r, TableFieldLocationLine).([]int64),
 		functionStartLine:  extractColumn(t, r, TableFieldFunctionStartLine).([]int64),
 		functionName:       extractColumn(t, r, TableFieldFunctionName).([]string),
