@@ -244,11 +244,13 @@ const groupByOptions = [
     value: FIELD_FUNCTION_NAME,
     label: 'Function Name',
     description: 'Stacktraces are grouped by function names.',
+    disabled: true,
   },
   {
     value: FIELD_LABELS,
     label: 'Labels',
     description: 'Stacktraces are grouped by pprof labels.',
+    disabled: false,
   },
 ];
 
@@ -271,7 +273,7 @@ const GroupByDropdown = ({
       <label className="text-sm">Group</label>
       <Menu as="div" className="relative text-left">
         <div>
-          <Menu.Button className="relative w-full cursor-default rounded-md border bg-gray-50 py-2 pl-3 pr-10 text-left text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 sm:text-sm">
+          <Menu.Button className="relative w-full cursor-default rounded-md border bg-white py-2 pl-3 pr-10 text-left text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 sm:text-sm">
             <span className="ml-3 block overflow-x-hidden text-ellipsis">{label}</span>
             <span className="pointer-events-none absolute inset-y-0 right-0 ml-3 flex items-center pr-2 text-gray-400">
               <Icon icon="heroicons:chevron-down-20-solid" aria-hidden="true" />
@@ -289,18 +291,17 @@ const GroupByDropdown = ({
             <div className="p-4">
               <fieldset>
                 <div className="space-y-5">
-                  {groupByOptions.map(({value, label, description}) => (
+                  {groupByOptions.map(({value, label, description, disabled}) => (
                     <div key={value} className="relative flex items-start">
                       <div className="flex h-6 items-center">
                         <input
                           id={value}
                           name={value}
                           type="checkbox"
+                          disabled={disabled}
                           className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
                           checked={groupBy.includes(value)}
-                          onChange={() => {
-                            toggleGroupBy(value);
-                          }}
+                          onChange={() => toggleGroupBy(value)}
                         />
                       </div>
                       <div className="ml-3 text-sm leading-6">
