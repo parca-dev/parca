@@ -24,6 +24,7 @@ import (
 	"github.com/apache/arrow/go/v14/arrow/math"
 	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/polarsignals/frostdb/pqarrow/builder"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
 	queryv1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
@@ -31,14 +32,10 @@ import (
 )
 
 const (
-	TableFieldMappingStart   = "mapping_start"
-	TableFieldMappingLimit   = "mapping_limit"
-	TableFieldMappingOffset  = "mapping_offset"
 	TableFieldMappingFile    = "mapping_file"
 	TableFieldMappingBuildID = "mapping_build_id"
 
 	TableFieldLocationAddress = "location_address"
-	TableFieldLocationFolded  = "location_folded"
 	TableFieldLocationLine    = "location_line"
 
 	TableFieldFunctionStartLine  = "function_startline"
@@ -77,6 +74,11 @@ func GenerateTable(
 
 	if err = w.Write(record); err != nil {
 		return nil, 0, err
+	}
+
+	span.SetAttributes(attribute.Int("record_size", buf.Len()))
+	if buf.Len() > 1<<22 { // 4MiB
+		span.SetAttributes(attribute.String("record_stats", recordStats(record)))
 	}
 
 	return &queryv1alpha1.TableArrow{
@@ -172,13 +174,9 @@ type tableBuilder struct {
 	rb     *builder.RecordBuilder
 	schema *arrow.Schema
 
-	builderMappingStart       *array.Uint64Builder
-	builderMappingLimit       *array.Uint64Builder
-	builderMappingOffset      *array.Uint64Builder
 	builderMappingFile        *array.BinaryDictionaryBuilder
 	builderMappingBuildID     *array.BinaryDictionaryBuilder
 	builderLocationAddress    *array.Uint64Builder
-	builderLocationFolded     *builder.OptBooleanBuilder
 	builderLocationLine       *builder.OptInt64Builder
 	builderFunctionStartLine  *builder.OptInt64Builder
 	builderFunctionName       *array.BinaryDictionaryBuilder
@@ -192,14 +190,10 @@ type tableBuilder struct {
 
 func newTableBuilder(mem memory.Allocator) *tableBuilder {
 	schema := arrow.NewSchema([]arrow.Field{
-		{Name: TableFieldMappingStart, Type: arrow.PrimitiveTypes.Uint64},
-		{Name: TableFieldMappingLimit, Type: arrow.PrimitiveTypes.Uint64},
-		{Name: TableFieldMappingOffset, Type: arrow.PrimitiveTypes.Uint64},
 		{Name: TableFieldMappingFile, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint16, ValueType: arrow.BinaryTypes.String}},
 		{Name: TableFieldMappingBuildID, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint16, ValueType: arrow.BinaryTypes.String}},
 		// Location
 		{Name: TableFieldLocationAddress, Type: arrow.PrimitiveTypes.Uint64},
-		{Name: TableFieldLocationFolded, Type: &arrow.BooleanType{}},
 		{Name: TableFieldLocationLine, Type: arrow.PrimitiveTypes.Int64},
 		// Function
 		{Name: TableFieldFunctionStartLine, Type: arrow.PrimitiveTypes.Int64},
@@ -222,13 +216,9 @@ func newTableBuilder(mem memory.Allocator) *tableBuilder {
 
 		rb:                        rb,
 		schema:                    schema,
-		builderMappingStart:       rb.Field(schema.FieldIndices(TableFieldMappingStart)[0]).(*array.Uint64Builder),
-		builderMappingLimit:       rb.Field(schema.FieldIndices(TableFieldMappingLimit)[0]).(*array.Uint64Builder),
-		builderMappingOffset:      rb.Field(schema.FieldIndices(TableFieldMappingOffset)[0]).(*array.Uint64Builder),
 		builderMappingFile:        rb.Field(schema.FieldIndices(TableFieldMappingFile)[0]).(*array.BinaryDictionaryBuilder),
 		builderMappingBuildID:     rb.Field(schema.FieldIndices(TableFieldMappingBuildID)[0]).(*array.BinaryDictionaryBuilder),
 		builderLocationAddress:    rb.Field(schema.FieldIndices(TableFieldLocationAddress)[0]).(*array.Uint64Builder),
-		builderLocationFolded:     rb.Field(schema.FieldIndices(TableFieldLocationFolded)[0]).(*builder.OptBooleanBuilder),
 		builderLocationLine:       rb.Field(schema.FieldIndices(TableFieldLocationLine)[0]).(*builder.OptInt64Builder),
 		builderFunctionStartLine:  rb.Field(schema.FieldIndices(TableFieldFunctionStartLine)[0]).(*builder.OptInt64Builder),
 		builderFunctionName:       rb.Field(schema.FieldIndices(TableFieldFunctionName)[0]).(*array.BinaryDictionaryBuilder),
@@ -260,24 +250,6 @@ func (tb *tableBuilder) appendRow(
 	for j := range tb.rb.Fields() {
 		switch tb.schema.Field(j).Name {
 		// Mapping
-		case TableFieldMappingStart:
-			if r.MappingStart.IsValid(locationRow) {
-				tb.builderMappingStart.Append(r.MappingStart.Value(locationRow))
-			} else {
-				tb.builderMappingStart.AppendNull()
-			}
-		case TableFieldMappingLimit:
-			if r.MappingLimit.IsValid(locationRow) {
-				tb.builderMappingLimit.Append(r.MappingLimit.Value(locationRow))
-			} else {
-				tb.builderMappingLimit.AppendNull()
-			}
-		case TableFieldMappingOffset:
-			if r.MappingOffset.IsValid(locationRow) {
-				tb.builderMappingOffset.Append(r.MappingOffset.Value(locationRow))
-			} else {
-				tb.builderMappingOffset.AppendNull()
-			}
 		case TableFieldMappingFile:
 			if r.MappingFileDict.Len() == 0 {
 				tb.builderMappingFile.AppendNull()
@@ -303,8 +275,6 @@ func (tb *tableBuilder) appendRow(
 			tb.builderLocationAddress.Append(r.Address.Value(locationRow))
 
 		// TODO: Location isFolded we should remove this until we actually support folded functions.
-		case TableFieldLocationFolded:
-			tb.builderLocationFolded.AppendSingle(false)
 		case TableFieldLocationLine:
 			if lineRow >= 0 && r.Line.IsValid(lineRow) {
 				tb.builderLocationLine.Append(r.LineNumber.Value(lineRow))

@@ -27,6 +27,14 @@ import {
 
 import {hexifyAddress} from '../utils';
 
+const FIELD_MAPPING_FILE = 'mapping_file';
+const FIELD_LOCATION_ADDRESS = 'location_address';
+const FIELD_FUNCTION_NAME = 'function_name';
+const FIELD_FLAT = 'flat';
+const FIELD_FLAT_DIFF = 'flat_diff';
+const FIELD_CUMULATIVE = 'cumulative';
+const FIELD_CUMULATIVE_DIFF = 'cumulative_diff';
+
 const columnHelper = createColumnHelper<row>();
 
 interface row {
@@ -211,10 +219,10 @@ export const Table = React.memo(function Table({
   if (data === undefined) return <div className="mx-auto text-center">Profile has no samples</div>;
 
   const table = tableFromIPC(data);
-  const flatColumn = table.getChild('flat');
-  const flatDiffColumn = table.getChild('flat_diff');
-  const cumulativeColumn = table.getChild('cumulative');
-  const cumulativeDiffColumn = table.getChild('cumulative_diff');
+  const flatColumn = table.getChild(FIELD_FLAT);
+  const flatDiffColumn = table.getChild(FIELD_FLAT_DIFF);
+  const cumulativeColumn = table.getChild(FIELD_CUMULATIVE);
+  const cumulativeDiffColumn = table.getChild(FIELD_CUMULATIVE_DIFF);
 
   if (table.numRows === 0) return <div className="mx-auto text-center">Profile has no samples</div>;
 
@@ -261,7 +269,7 @@ const addPlusSign = (num: string): string => {
 };
 
 export const RowName = (table: ArrowTable, row: number): string => {
-  const mappingFileColumn = table.getChild('mapping_file');
+  const mappingFileColumn = table.getChild(FIELD_MAPPING_FILE);
   if (mappingFileColumn === null) {
     console.error('mapping_file column not found');
     return '';
@@ -273,12 +281,12 @@ export const RowName = (table: ArrowTable, row: number): string => {
   if (mappingFile != null && mappingFileColumn.data.length > 1) {
     mapping = `[${getLastItem(mappingFile) ?? ''}]`;
   }
-  const functionName: string | null = table.getChild('function_name')?.get(row) ?? '';
+  const functionName: string | null = table.getChild(FIELD_FUNCTION_NAME)?.get(row) ?? '';
   if (functionName !== null && functionName !== '') {
     return `${mapping} ${functionName}`;
   }
 
-  const address: bigint = table.getChild('location_address')?.get(row) ?? 0;
+  const address: bigint = table.getChild(FIELD_LOCATION_ADDRESS)?.get(row) ?? 0;
 
   return hexifyAddress(address);
 };

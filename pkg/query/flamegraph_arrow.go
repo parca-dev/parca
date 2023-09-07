@@ -86,8 +86,8 @@ func GenerateFlamegraphArrow(
 		return nil, 0, err
 	}
 
+	span.SetAttributes(attribute.Int("record_size", buf.Len()))
 	if buf.Len() > 1<<24 { // 16MiB
-		span.SetAttributes(attribute.Int("record_size", buf.Len()))
 		span.SetAttributes(attribute.String("record_stats", recordStats(record)))
 	}
 
@@ -1744,6 +1744,13 @@ func recordStats(r arrow.Record) string {
 	}
 	fieldStats := make([]fieldStat, r.NumCols())
 
+	if r.NumRows() == 0 {
+		b := &strings.Builder{}
+		_, _ = fmt.Fprintf(b, "Cols: %d\n", r.NumCols())
+		_, _ = fmt.Fprintf(b, "Rows: %d\n", r.NumRows())
+		return b.String()
+	}
+
 	fields := r.Schema().Fields()
 	for i, f := range fields {
 		switch f.Type.(type) {
@@ -1766,6 +1773,9 @@ func recordStats(r arrow.Record) string {
 			fieldStats[i].countIndex = data.Len()
 			totalBytes += data.Len()
 			for j, buf := range data.Buffers() {
+				if buf == nil {
+					continue
+				}
 				if j == 0 {
 					fieldStats[i].bitmapBytes += buf.Len()
 					totalBytes += buf.Len()
@@ -1778,6 +1788,9 @@ func recordStats(r arrow.Record) string {
 			fieldStats[i].countValues += dict.Len()
 			totalBytes += dict.Len()
 			for j, buf := range dict.Buffers() {
+				if buf == nil {
+					continue
+				}
 				if j == 0 {
 					fieldStats[i].bitmapBytes += buf.Len()
 					totalBytes += buf.Len()
