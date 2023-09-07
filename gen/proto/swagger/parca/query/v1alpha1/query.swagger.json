@@ -299,7 +299,7 @@
           },
           {
             "name": "reportType",
-            "description": "report_type is the type of report to return\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified",
+            "description": "report_type is the type of report to return\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified\n - REPORT_TYPE_SOURCE: REPORT_TYPE_SOURCE contains source code annotated with profiling information\n - REPORT_TYPE_TABLE_ARROW: REPORT_TYPE_TABLE_ARROW unspecified",
             "in": "query",
             "required": false,
             "type": "string",
@@ -309,7 +309,9 @@
               "REPORT_TYPE_TOP",
               "REPORT_TYPE_CALLGRAPH",
               "REPORT_TYPE_FLAMEGRAPH_TABLE",
-              "REPORT_TYPE_FLAMEGRAPH_ARROW"
+              "REPORT_TYPE_FLAMEGRAPH_ARROW",
+              "REPORT_TYPE_SOURCE",
+              "REPORT_TYPE_TABLE_ARROW"
             ],
             "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED"
           },
@@ -327,6 +329,38 @@
             "required": false,
             "type": "number",
             "format": "float"
+          },
+          {
+            "name": "groupBy.fields",
+            "description": "the names of the fields to group by.\nspecial fields are the ones prefixed with \"labels.\" which are grouping by pprof labels.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "sourceReference.buildId",
+            "description": "The build ID to request the source of.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "sourceReference.filename",
+            "description": "The filename requested.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "sourceReference.sourceOnly",
+            "description": "Whether to perform a full query or just retrieve the source.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -515,10 +549,12 @@
         "REPORT_TYPE_TOP",
         "REPORT_TYPE_CALLGRAPH",
         "REPORT_TYPE_FLAMEGRAPH_TABLE",
-        "REPORT_TYPE_FLAMEGRAPH_ARROW"
+        "REPORT_TYPE_FLAMEGRAPH_ARROW",
+        "REPORT_TYPE_SOURCE",
+        "REPORT_TYPE_TABLE_ARROW"
       ],
       "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
-      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified",
+      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified\n - REPORT_TYPE_SOURCE: REPORT_TYPE_SOURCE contains source code annotated with profiling information\n - REPORT_TYPE_TABLE_ARROW: REPORT_TYPE_TABLE_ARROW unspecified",
       "title": "ReportType is the type of report to return"
     },
     "metastorev1alpha1Function": {
@@ -723,6 +759,14 @@
           "type": "number",
           "format": "float",
           "title": "node_trim_threshold is the threshold % where the nodes with Value less than this will be removed from the report"
+        },
+        "groupBy": {
+          "$ref": "#/definitions/v1alpha1GroupBy",
+          "title": "group_by indicates the fields to group by"
+        },
+        "sourceReference": {
+          "$ref": "#/definitions/v1alpha1SourceReference",
+          "title": "source information about the source requested, required if source report is requested"
         }
       },
       "title": "QueryRequest is a request for a profile query"
@@ -750,6 +794,14 @@
         "flamegraphArrow": {
           "$ref": "#/definitions/v1alpha1FlamegraphArrow",
           "title": "flamegraph_arrow is a flamegraph encoded as a arrow record"
+        },
+        "source": {
+          "$ref": "#/definitions/queryv1alpha1Source",
+          "title": "source is the source report type result"
+        },
+        "tableArrow": {
+          "$ref": "#/definitions/v1alpha1TableArrow",
+          "title": "table_arrow is a table encoded as a arrow record"
         },
         "total": {
           "type": "string",
@@ -786,6 +838,21 @@
         }
       },
       "additionalProperties": {}
+    },
+    "queryv1alpha1Source": {
+      "type": "object",
+      "properties": {
+        "record": {
+          "type": "string",
+          "format": "byte",
+          "description": "An arrow record that contains a row per source code line with value and diff columns for flat and cumulative."
+        },
+        "source": {
+          "type": "string",
+          "description": "The actual source file content."
+        }
+      },
+      "description": "Source is the result of the source report type."
     },
     "queryv1alpha1ValueType": {
       "type": "object",
@@ -1108,6 +1175,19 @@
       },
       "title": "FlamegraphRootNode is a root node of a flame graph"
     },
+    "v1alpha1GroupBy": {
+      "type": "object",
+      "properties": {
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "the names of the fields to group by.\nspecial fields are the ones prefixed with \"labels.\" which are grouping by pprof labels."
+        }
+      },
+      "title": "GroupBy encapsulates the repeated fields to group by"
+    },
     "v1alpha1LabelSet": {
       "type": "object",
       "properties": {
@@ -1339,6 +1419,39 @@
         }
       },
       "title": "SingleProfile contains parameters for a single profile query request"
+    },
+    "v1alpha1SourceReference": {
+      "type": "object",
+      "properties": {
+        "buildId": {
+          "type": "string",
+          "description": "The build ID to request the source of."
+        },
+        "filename": {
+          "type": "string",
+          "description": "The filename requested."
+        },
+        "sourceOnly": {
+          "type": "boolean",
+          "description": "Whether to perform a full query or just retrieve the source."
+        }
+      },
+      "description": "SourceReference contains a reference to source code."
+    },
+    "v1alpha1TableArrow": {
+      "type": "object",
+      "properties": {
+        "record": {
+          "type": "string",
+          "format": "byte",
+          "title": "record is the arrow record containing the actual table data"
+        },
+        "unit": {
+          "type": "string",
+          "title": "unit is the unit represented by the flame graph"
+        }
+      },
+      "title": "TableArrow has the table encoded as a arrow record"
     },
     "v1alpha1Top": {
       "type": "object",

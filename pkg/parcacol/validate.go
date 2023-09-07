@@ -17,9 +17,10 @@ import (
 	"fmt"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
+	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 )
 
-func ValidatePprofProfile(p *pprofpb.Profile) error {
+func ValidatePprofProfile(p *pprofpb.Profile, ei []*profilestorepb.ExecutableInfo) error {
 	stringTableLen := int64(len(p.StringTable))
 
 	if stringTableLen > 0 && p.StringTable[0] != "" {
@@ -42,6 +43,10 @@ func ValidatePprofProfile(p *pprofpb.Profile) error {
 		if m.BuildId != 0 && m.BuildId > stringTableLen {
 			return fmt.Errorf("mapping (id: %d) has invalid buildid index %d", m.Id, m.Filename)
 		}
+	}
+
+	if ei != nil && len(ei) != len(p.Mapping) {
+		return fmt.Errorf("profile has %d mappings but %d executable infos", len(p.Mapping), len(ei))
 	}
 
 	functionsNum := uint64(len(p.Function))

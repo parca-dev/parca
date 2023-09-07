@@ -15,16 +15,22 @@ import {ProfilerOnRenderCallback, ReactNode, createContext, useContext} from 're
 
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 
+import {QueryServiceClient} from '@parca/client';
+import type {NavigateFunction} from '@parca/utilities';
+
 import {NoDataPrompt} from '../NoDataPrompt';
 import Spinner from '../Spinner';
 
 interface Props {
-  loader: ReactNode;
-  noDataPrompt: ReactNode;
-  profileExplorer: {
+  loader?: ReactNode;
+  noDataPrompt?: ReactNode;
+  profileExplorer?: {
     PaddingX: number;
     metricsGraph: {
-      maxHeightStyle: string;
+      maxHeightStyle: {
+        default: string;
+        compareMode: string;
+      };
     };
   };
   perf?: {
@@ -32,6 +38,9 @@ interface Props {
     markInteraction: (interactionName: string, sampleCount: number | string | bigint) => void;
   };
   onError?: (error: RpcError, originatingFeature: string) => void;
+  queryServiceClient: QueryServiceClient;
+  navigateTo: NavigateFunction;
+  enableSourcesView?: boolean;
 }
 
 export const defaultValue: Props = {
@@ -40,13 +49,19 @@ export const defaultValue: Props = {
   profileExplorer: {
     PaddingX: 58,
     metricsGraph: {
-      maxHeightStyle: 'calc(47vw - 24px)',
+      maxHeightStyle: {
+        default: 'calc(47vw - 24px)',
+        compareMode: 'calc(23.5vw - 24px)',
+      },
     },
   },
   perf: {
     onRender: () => {},
     markInteraction: () => {},
   },
+  queryServiceClient: {} as unknown as QueryServiceClient,
+  navigateTo: () => {},
+  enableSourcesView: false,
 };
 
 const ParcaContext = createContext<Props>(defaultValue);
@@ -58,7 +73,11 @@ export const ParcaContextProvider = ({
   children: ReactNode;
   value?: Props;
 }): JSX.Element => {
-  return <ParcaContext.Provider value={value ?? defaultValue}>{children}</ParcaContext.Provider>;
+  return (
+    <ParcaContext.Provider value={{...defaultValue, ...(value ?? {})}}>
+      {children}
+    </ParcaContext.Provider>
+  );
 };
 
 export const useParcaContext = (): Props => {

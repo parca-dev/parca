@@ -39,7 +39,7 @@ import (
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/metastoretest"
-	"github.com/parca-dev/parca/pkg/parcacol"
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/profilestore"
 )
 
@@ -410,6 +410,7 @@ func ingest(t *testing.T, conn *grpc.ClientConn, path string) error {
 func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symbolizer) {
 	t.Helper()
 
+	reg := prometheus.NewRegistry()
 	logger := log.NewNopLogger()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	col, err := frostdb.New()
@@ -418,12 +419,12 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := parcacol.Schema()
+	schema, err := profile.Schema()
 	require.NoError(t, err)
 
 	table, err := colDB.Table(
 		"stacktraces",
-		frostdb.NewTableConfig(parcacol.SchemaDefinition()),
+		frostdb.NewTableConfig(profile.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 
@@ -441,7 +442,7 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 	})
 	require.NoError(t, err)
 
-	bucket, err := client.NewBucket(logger, cfg, prometheus.NewRegistry(), "parca/store")
+	bucket, err := client.NewBucket(logger, cfg, "parca/store")
 	require.NoError(t, err)
 
 	metadata := debuginfo.NewObjectStoreMetadata(logger, bucket)
@@ -468,6 +469,7 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 	metastore := metastore.NewInProcessClient(mStr)
 
 	pStr := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		metastore,

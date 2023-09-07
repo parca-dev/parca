@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apache/arrow/go/v13/arrow/memory"
+	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/go-kit/log"
 	"github.com/polarsignals/frostdb"
 	columnstore "github.com/polarsignals/frostdb"
@@ -36,6 +36,7 @@ import (
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/metastoretest"
 	"github.com/parca-dev/parca/pkg/parcacol"
+	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/profilestore"
 )
 
@@ -52,15 +53,15 @@ func Benchmark_Query_Merge(b *testing.B) {
 			colDB, err := col.DB(context.Background(), "parca")
 			require.NoError(b, err)
 
-			schema, err := parcacol.Schema()
+			schema, err := profile.Schema()
 			require.NoError(b, err)
 
 			table, err := colDB.Table(
 				"stacktraces",
-				columnstore.NewTableConfig(parcacol.SchemaDefinition()),
+				columnstore.NewTableConfig(profile.SchemaDefinition()),
 			)
 			require.NoError(b, err)
-			metastore := metastore.NewInProcessClient(metastoretest.NewTestMetastore(
+			mc := metastore.NewInProcessClient(metastoretest.NewTestMetastore(
 				b,
 				logger,
 				reg,
@@ -71,9 +72,10 @@ func Benchmark_Query_Merge(b *testing.B) {
 			require.NoError(b, err)
 
 			store := profilestore.NewProfileColumnStore(
+				reg,
 				logger,
 				tracer,
-				metastore,
+				mc,
 				table,
 				schema,
 				true,
@@ -104,6 +106,8 @@ func Benchmark_Query_Merge(b *testing.B) {
 
 			require.NoError(b, table.EnsureCompaction())
 
+			mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+			defer mem.AssertSize(b, 0)
 			api := NewColumnQueryAPI(
 				logger,
 				tracer,
@@ -112,12 +116,16 @@ func Benchmark_Query_Merge(b *testing.B) {
 					logger,
 					tracer,
 					query.NewEngine(
-						memory.DefaultAllocator,
+						mem,
 						colDB.TableProvider(),
 					),
 					"stacktraces",
-					metastore,
+					parcacol.NewProfileSymbolizer(tracer, mc),
+					mem,
 				),
+				mem,
+				parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+				nil,
 			)
 			b.ResetTimer()
 
@@ -132,7 +140,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 						},
 					},
 					//nolint:staticcheck // SA1019: Fow now we want to support these APIs
-					ReportType: pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED,
+					ReportType: pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW,
 				})
 				require.NoError(b, err)
 			}
@@ -171,6 +179,8 @@ func Benchmark_ProfileTypes(b *testing.B) {
 		tracer,
 	))
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(b, 0)
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -179,12 +189,16 @@ func Benchmark_ProfileTypes(b *testing.B) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
-			m,
+			parcacol.NewProfileSymbolizer(tracer, m),
+			mem,
 		),
+		mem,
+		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+		nil,
 	)
 	b.ResetTimer()
 

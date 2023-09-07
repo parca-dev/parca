@@ -20,10 +20,12 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
 	pprofprofile "github.com/google/pprof/profile"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/proto"
@@ -130,7 +132,7 @@ func TestGenerateFlamegraphTable(t *testing.T) {
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
-	p, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
+	p, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
 		Samples: []*parcaprofile.NormalizedSample{{
 			StacktraceID: s1.Id,
 			Value:        2,
@@ -292,7 +294,7 @@ func TestGenerateFlamegraphTableTrimming(t *testing.T) {
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
-	p, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
+	p, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
 		Samples: []*parcaprofile.NormalizedSample{{
 			StacktraceID: s1.Id,
 			Value:        10,
@@ -436,7 +438,7 @@ func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
-	p, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
+	p, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
 		Samples: []*parcaprofile.NormalizedSample{{
 			StacktraceID: s1.Id,
 			Value:        2,
@@ -549,17 +551,22 @@ func TestGenerateFlamegraphTableFromProfile(t *testing.T) {
 func testGenerateFlamegraphTableFromProfile(t Testing, l metastorepb.MetastoreServiceClient) *pb.Flamegraph {
 	ctx := context.Background()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
+	reg := prometheus.NewRegistry()
+	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
+		Name: "parca_test_counter",
+		Help: "parca_test_counter",
+	})
 
 	fileContent := MustReadAllGzip(t, "./testdata/profile1.pb.gz")
 	p := &pprofpb.Profile{}
 	err := p.UnmarshalVT(fileContent)
 	require.NoError(t, err)
 
-	normalizer := parcacol.NewNormalizer(l, true)
-	profiles, err := normalizer.NormalizePprof(ctx, "test", map[string]string{}, p, false)
+	normalizer := parcacol.NewNormalizer(l, true, counter)
+	profiles, err := normalizer.NormalizePprof(ctx, "test", map[string]string{}, p, false, nil)
 	require.NoError(t, err)
 
-	sp, err := parcacol.NewArrowToProfileConverter(tracer, l).SymbolizeNormalizedProfile(ctx, profiles[0])
+	sp, err := parcacol.NewProfileSymbolizer(tracer, l).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
 	fg, err := GenerateFlamegraphTable(ctx, tracer, sp, float32(0), NewTableConverterPool())
@@ -569,10 +576,15 @@ func testGenerateFlamegraphTableFromProfile(t Testing, l metastorepb.MetastoreSe
 }
 
 func Benchmark_GenerateFlamegraphTable_FromProfile(b *testing.B) {
+	reg := prometheus.NewRegistry()
+	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
+		Name: "parca_test_counter",
+		Help: "parca_test_counter",
+	})
 	l := metastoretest.NewTestMetastore(
 		b,
 		log.NewNopLogger(),
-		prometheus.NewRegistry(),
+		reg,
 		trace.NewNoopTracerProvider().Tracer(""),
 	)
 
@@ -584,8 +596,8 @@ func Benchmark_GenerateFlamegraphTable_FromProfile(b *testing.B) {
 	ctx := context.Background()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	lc := metastore.NewInProcessClient(l)
-	normalizer := parcacol.NewNormalizer(lc, true)
-	profiles, err := normalizer.NormalizePprof(ctx, "test", map[string]string{}, p, false)
+	normalizer := parcacol.NewNormalizer(lc, true, counter)
+	profiles, err := normalizer.NormalizePprof(ctx, "test", map[string]string{}, p, false, nil)
 	require.NoError(b, err)
 
 	pool := NewTableConverterPool()
@@ -593,7 +605,7 @@ func Benchmark_GenerateFlamegraphTable_FromProfile(b *testing.B) {
 	var dontOptimise *querypb.Flamegraph
 	for i := 0; i < b.N; i++ {
 		ctx, cancel := context.WithCancel(ctx)
-		sp, err := parcacol.NewArrowToProfileConverter(tracer, lc).SymbolizeNormalizedProfile(ctx, profiles[0])
+		sp, err := parcacol.NewProfileSymbolizer(tracer, lc).SymbolizeNormalizedProfile(ctx, profiles[0])
 		require.NoError(b, err)
 		dontOptimise, err = GenerateFlamegraphTable(ctx, tracer, sp, float32(0), pool)
 		require.NoError(b, err)
@@ -608,6 +620,10 @@ func TestGenerateFlamegraphTableWithInlined(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
+	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
+		Name: "parca_test_counter",
+		Help: "parca_test_counter",
+	})
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
 	store := metastoretest.NewTestMetastore(t, logger, reg, tracer)
@@ -647,11 +663,11 @@ func TestGenerateFlamegraphTableWithInlined(t *testing.T) {
 	require.NoError(t, err)
 
 	metastore := metastore.NewInProcessClient(store)
-	normalizer := parcacol.NewNormalizer(metastore, true)
-	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false)
+	normalizer := parcacol.NewNormalizer(metastore, true, counter)
+	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false, nil)
 	require.NoError(t, err)
 
-	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
+	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
 	fg, err := GenerateFlamegraphTable(ctx, tracer, symbolizedProfile, float32(0), NewTableConverterPool())
@@ -758,6 +774,10 @@ func TestGenerateFlamegraphTableWithInlinedExisting(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
+	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
+		Name: "parca_test_counter",
+		Help: "parca_test_counter",
+	})
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
 	store := metastoretest.NewTestMetastore(t, logger, reg, tracer)
@@ -801,11 +821,11 @@ func TestGenerateFlamegraphTableWithInlinedExisting(t *testing.T) {
 	err = p.UnmarshalVT(MustDecompressGzip(t, b.Bytes()))
 	require.NoError(t, err)
 
-	normalizer := parcacol.NewNormalizer(metastore, true)
-	profiles, err := normalizer.NormalizePprof(ctx, "", map[string]string{}, p, false)
+	normalizer := parcacol.NewNormalizer(metastore, true, counter)
+	profiles, err := normalizer.NormalizePprof(ctx, "", map[string]string{}, p, false, nil)
 	require.NoError(t, err)
 
-	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
+	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
 	fg, err := GenerateFlamegraphTable(ctx, tracer, symbolizedProfile, float32(0), NewTableConverterPool())
@@ -1086,9 +1106,9 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 		trace.NewNoopTracerProvider().Tracer(""),
 	)
 
-	metastore := metastore.NewInProcessClient(l)
+	mc := metastore.NewInProcessClient(l)
 
-	mres, err := metastore.GetOrCreateMappings(ctx, &metastorepb.GetOrCreateMappingsRequest{
+	mres, err := mc.GetOrCreateMappings(ctx, &metastorepb.GetOrCreateMappingsRequest{
 		Mappings: []*metastorepb.Mapping{{
 			File: "a",
 		}},
@@ -1096,7 +1116,7 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 	require.NoError(t, err)
 	m := mres.Mappings[0]
 
-	fres, err := metastore.GetOrCreateFunctions(ctx, &metastorepb.GetOrCreateFunctionsRequest{
+	fres, err := mc.GetOrCreateFunctions(ctx, &metastorepb.GetOrCreateFunctionsRequest{
 		Functions: []*metastorepb.Function{{
 			Name: "1.a",
 		}, {
@@ -1119,7 +1139,7 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 	f5 := fres.Functions[4]
 	f6 := fres.Functions[5]
 
-	lres, err := metastore.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
+	lres, err := mc.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
 		Locations: []*metastorepb.Location{{
 			MappingId: m.Id,
 			Lines: []*metastorepb.Line{{
@@ -1160,7 +1180,7 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 	l5 := lres.Locations[4]
 	l6 := lres.Locations[5]
 
-	sres, err := metastore.GetOrCreateStacktraces(ctx, &metastorepb.GetOrCreateStacktracesRequest{
+	sres, err := mc.GetOrCreateStacktraces(ctx, &metastorepb.GetOrCreateStacktracesRequest{
 		Stacktraces: []*metastorepb.Stacktrace{{
 			LocationIds: []string{l2.Id, l1.Id},
 		}, {
@@ -1179,7 +1199,7 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 
-	p, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
+	p, err := parcacol.NewProfileSymbolizer(tracer, mc).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
 		Samples: []*parcaprofile.NormalizedSample{{
 			StacktraceID: s1.Id,
 			Value:        2,
@@ -1198,7 +1218,22 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	p, filtered := FilterProfileData(ctx, tracer, p, "b") // querying for "b" should filter out the "5.c" function.
+	newProfile, err := OldProfileToArrowProfile(p)
+	require.NoError(t, err)
+
+	var filtered int64
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
+	newProfile.Samples, filtered, err = FilterProfileData(ctx, tracer, mem, newProfile.Samples, "b") // querying for "b" should filter out the "5.c" function.
+	require.NoError(t, err)
+	defer func() {
+		for _, s := range newProfile.Samples {
+			s.Release()
+		}
+	}()
+
+	p, err = parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()).Convert(ctx, newProfile)
+	require.NoError(t, err)
 
 	fg, err := GenerateFlamegraphTable(ctx, tracer, p, float32(0.5), NewTableConverterPool()) // 50% threshold
 	require.NoError(t, err)

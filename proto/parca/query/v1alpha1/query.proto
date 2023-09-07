@@ -230,6 +230,12 @@ message QueryRequest {
 
     // REPORT_TYPE_FLAMEGRAPH_ARROW unspecified
     REPORT_TYPE_FLAMEGRAPH_ARROW = 5;
+
+    // REPORT_TYPE_SOURCE contains source code annotated with profiling information
+    REPORT_TYPE_SOURCE = 6;
+
+    // REPORT_TYPE_TABLE_ARROW unspecified
+    REPORT_TYPE_TABLE_ARROW = 7;
   }
 
   // report_type is the type of report to return
@@ -240,6 +246,29 @@ message QueryRequest {
 
   // node_trim_threshold is the threshold % where the nodes with Value less than this will be removed from the report
   optional float node_trim_threshold = 7;
+
+  // group_by indicates the fields to group by
+  optional GroupBy group_by = 8;
+
+  // source information about the source requested, required if source report is requested
+  optional SourceReference source_reference = 9;
+}
+
+// SourceReference contains a reference to source code.
+message SourceReference {
+  // The build ID to request the source of.
+  string build_id = 1;
+  // The filename requested.
+  string filename = 2;
+  // Whether to perform a full query or just retrieve the source.
+  bool source_only = 3;
+}
+
+// GroupBy encapsulates the repeated fields to group by
+message GroupBy {
+  // the names of the fields to group by.
+  // special fields are the ones prefixed with "labels." which are grouping by pprof labels.
+  repeated string fields = 1;
 }
 
 // Top is the top report type
@@ -336,6 +365,14 @@ message FlamegraphArrow {
 
   // trimmed is the amount of cumulative value trimmed from the flame graph.
   int64 trimmed = 4;
+}
+
+// Source is the result of the source report type.
+message Source {
+  // An arrow record that contains a row per source code line with value and diff columns for flat and cumulative.
+  bytes record = 1;
+  // The actual source file content.
+  string source = 2;
 }
 
 // FlamegraphRootNode is a root node of a flame graph
@@ -465,6 +502,12 @@ message QueryResponse {
 
     // flamegraph_arrow is a flamegraph encoded as a arrow record
     FlamegraphArrow flamegraph_arrow = 11;
+
+    // source is the source report type result
+    Source source = 12;
+
+    // table_arrow is a table encoded as a arrow record
+    TableArrow table_arrow = 13;
   }
 
   // total is the total number of samples shown in the report.
@@ -556,4 +599,13 @@ message ShareProfileRequest {
 message ShareProfileResponse {
   // link to access the profile
   string link = 1;
+}
+
+// TableArrow has the table encoded as a arrow record
+message TableArrow {
+  // record is the arrow record containing the actual table data
+  bytes record = 1;
+
+  // unit is the unit represented by the flame graph
+  string unit = 2;
 }

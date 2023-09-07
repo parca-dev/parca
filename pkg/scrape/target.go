@@ -56,15 +56,18 @@ type Target struct {
 	lastScrape         time.Time
 	lastScrapeDuration time.Duration
 	health             TargetHealth
+
+	keepSet map[config.SampleType]struct{}
 }
 
 // NewTarget creates a reasonably configured target for querying.
-func NewTarget(labels, discoveredLabels labels.Labels, params url.Values) *Target {
+func NewTarget(labels, discoveredLabels labels.Labels, params url.Values, keepSet map[config.SampleType]struct{}) *Target {
 	return &Target{
 		labels:           labels,
 		discoveredLabels: discoveredLabels,
 		params:           params,
 		health:           HealthUnknown,
+		keepSet:          keepSet,
 	}
 }
 
@@ -106,6 +109,15 @@ func (t *Target) Params() url.Values {
 	return q
 }
 
+// KeepSet returns a copy of the set of all keep labels of the target.
+func (t *Target) KeepSet() map[config.SampleType]struct{} {
+	s := make(map[config.SampleType]struct{}, len(t.keepSet))
+	for k, v := range t.keepSet {
+		s[k] = v
+	}
+	return s
+}
+
 // Labels returns a copy of the set of all public labels of the target.
 func (t *Target) Labels() labels.Labels {
 	b := labels.NewScratchBuilder(t.labels.Len())
@@ -139,6 +151,7 @@ func (t *Target) Clone() *Target {
 		t.Labels(),
 		t.DiscoveredLabels(),
 		t.Params(),
+		t.KeepSet(),
 	)
 }
 
@@ -211,8 +224,9 @@ func (t *Target) Health() TargetHealth {
 }
 
 // LabelsByProfiles returns the labels for a given ProfilingConfig.
-func LabelsByProfiles(lb *labels.Builder, c *config.ProfilingConfig) []labels.Labels {
+func LabelsByProfiles(lb *labels.Builder, c *config.ProfilingConfig) ([]labels.Labels, []map[config.SampleType]struct{}) {
 	res := []labels.Labels{}
+	keepSets := []map[config.SampleType]struct{}{}
 
 	if len(c.PprofConfig) > 0 {
 		for profilingType, profilingConfig := range c.PprofConfig {
@@ -220,11 +234,16 @@ func LabelsByProfiles(lb *labels.Builder, c *config.ProfilingConfig) []labels.La
 				lb.Set(ProfilePath, profilingConfig.Path)
 				lb.Set(ProfileName, profilingType)
 				res = append(res, lb.Labels())
+				keepSet := map[config.SampleType]struct{}{}
+				for _, keep := range profilingConfig.KeepSampleType {
+					keepSet[keep] = struct{}{}
+				}
+				keepSets = append(keepSets, keepSet)
 			}
 		}
 	}
 
-	return res
+	return res, keepSets
 }
 
 // Targets is a sortable list of targets.
@@ -336,7 +355,7 @@ func populateLabels(lb *labels.Builder, cfg *config.ScrapeConfig) (res, orig lab
 func targetsFromGroup(tg *targetgroup.Group, cfg *config.ScrapeConfig, targets []*Target, lb *labels.Builder) ([]*Target, error) {
 	targets = targets[:0]
 
-	for i, tlset := range tg.Targets {
+	for _, tlset := range tg.Targets {
 		lb.Reset(labels.EmptyLabels())
 
 		for ln, lv := range tlset {
@@ -348,9 +367,9 @@ func targetsFromGroup(tg *targetgroup.Group, cfg *config.ScrapeConfig, targets [
 			}
 		}
 
-		lsets := LabelsByProfiles(lb, cfg.ProfilingConfig)
+		lsets, keepSets := LabelsByProfiles(lb, cfg.ProfilingConfig)
 
-		for _, lset := range lsets {
+		for i, lset := range lsets {
 			lb.Reset(lset)
 			var profType string
 			lb.Range(func(l labels.Label) {
@@ -372,7 +391,7 @@ func targetsFromGroup(tg *targetgroup.Group, cfg *config.ScrapeConfig, targets [
 					params.Add("seconds", strconv.Itoa(int(time.Duration(cfg.ScrapeInterval)/time.Second)))
 				}
 
-				targets = append(targets, NewTarget(lset, origLabels, params))
+				targets = append(targets, NewTarget(lset, origLabels, params, keepSets[i]))
 			}
 		}
 	}

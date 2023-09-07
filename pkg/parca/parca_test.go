@@ -26,7 +26,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apache/arrow/go/v13/arrow/memory"
+	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
@@ -49,6 +49,7 @@ import (
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/metastoretest"
 	"github.com/parca-dev/parca/pkg/parcacol"
+	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/profilestore"
 	queryservice "github.com/parca-dev/parca/pkg/query"
 )
@@ -184,12 +185,12 @@ func TestConsistency(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := parcacol.Schema()
+	schema, err := parcaprofile.Schema()
 	require.NoError(t, err)
 
 	table, err := colDB.Table(
 		"stacktraces",
-		frostdb.NewTableConfig(parcacol.SchemaDefinition()),
+		frostdb.NewTableConfig(parcaprofile.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -199,7 +200,7 @@ func TestConsistency(t *testing.T) {
 		tracer,
 	)
 
-	metastore := metastore.NewInProcessClient(m)
+	mc := metastore.NewInProcessClient(m)
 
 	f, err := os.Open("../query/testdata/alloc_objects.pb.gz")
 	require.NoError(t, err)
@@ -212,9 +213,10 @@ func TestConsistency(t *testing.T) {
 	require.NoError(t, err)
 
 	store := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
-		metastore,
+		mc,
 		table,
 		schema,
 		true,
@@ -241,22 +243,27 @@ func TestConsistency(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	require.NoError(t, table.EnsureCompaction())
 	api := queryservice.NewColumnQueryAPI(
 		logger,
 		tracer,
 		getShareServerConn(t),
 		parcacol.NewQuerier(
-
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
-			metastore,
+			parcacol.NewProfileSymbolizer(tracer, mc),
+			mem,
 		),
+		mem,
+		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+		nil,
 	)
 
 	ts := timestamppb.New(timestamp.Time(1608199718549)) // time_nanos of the profile divided by 1e6
@@ -300,12 +307,12 @@ func TestPGOE2e(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := parcacol.Schema()
+	schema, err := parcaprofile.Schema()
 	require.NoError(t, err)
 
 	table, err := colDB.Table(
 		"stacktraces",
-		frostdb.NewTableConfig(parcacol.SchemaDefinition()),
+		frostdb.NewTableConfig(parcaprofile.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -315,15 +322,16 @@ func TestPGOE2e(t *testing.T) {
 		tracer,
 	)
 
-	metastore := metastore.NewInProcessClient(m)
+	mc := metastore.NewInProcessClient(m)
 
 	fileContent, err := os.ReadFile("./testdata/pgotest.prof")
 	require.NoError(t, err)
 
 	store := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
-		metastore,
+		mc,
 		table,
 		schema,
 		true,
@@ -350,22 +358,27 @@ func TestPGOE2e(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	require.NoError(t, table.EnsureCompaction())
 	api := queryservice.NewColumnQueryAPI(
 		logger,
 		tracer,
 		getShareServerConn(t),
 		parcacol.NewQuerier(
-
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"stacktraces",
-			metastore,
+			parcacol.NewProfileSymbolizer(tracer, mc),
+			mem,
 		),
+		mem,
+		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+		nil,
 	)
 
 	res, err := api.Query(ctx, &querypb.QueryRequest{
@@ -399,12 +412,12 @@ func TestLabels(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := parcacol.Schema()
+	schema, err := parcaprofile.Schema()
 	require.NoError(t, err)
 
 	table, err := colDB.Table(
 		"labels",
-		frostdb.NewTableConfig(parcacol.SchemaDefinition()),
+		frostdb.NewTableConfig(parcaprofile.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -414,15 +427,16 @@ func TestLabels(t *testing.T) {
 		tracer,
 	)
 
-	metastore := metastore.NewInProcessClient(m)
+	mc := metastore.NewInProcessClient(m)
 
 	fileContent, err := os.ReadFile("testdata/labels.pb.gz")
 	require.NoError(t, err)
 
 	store := profilestore.NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
-		metastore,
+		mc,
 		table,
 		schema,
 		true,
@@ -449,6 +463,8 @@ func TestLabels(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	require.NoError(t, table.EnsureCompaction())
 	api := queryservice.NewColumnQueryAPI(
 		logger,
@@ -458,12 +474,16 @@ func TestLabels(t *testing.T) {
 			logger,
 			tracer,
 			query.NewEngine(
-				memory.DefaultAllocator,
+				mem,
 				colDB.TableProvider(),
 			),
 			"labels",
-			metastore,
+			parcacol.NewProfileSymbolizer(tracer, mc),
+			mem,
 		),
+		mem,
+		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+		nil,
 	)
 
 	ts := timestamppb.New(timestamp.Time(1677488315039)) // time_nanos of the profile divided by 1e6

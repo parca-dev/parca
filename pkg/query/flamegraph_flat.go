@@ -23,7 +23,7 @@ import (
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
-func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, p *profile.Profile) (*pb.Flamegraph, error) {
+func GenerateFlamegraphFlat(ctx context.Context, tracer trace.Tracer, p profile.OldProfile) (*pb.Flamegraph, error) {
 	rootNode := &pb.FlamegraphNode{}
 	current := rootNode
 

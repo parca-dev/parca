@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useState} from 'react';
+import {cloneElement, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 
@@ -42,14 +42,21 @@ const FlagToggle = ({name, id}: FlagToggleProps): JSX.Element => {
   );
 };
 
-const UserPreferences = (): JSX.Element => {
+const UserPreferences = ({customButton}: {customButton?: JSX.Element}): JSX.Element => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
+
   return (
     <div>
-      <IconButton
-        onClick={() => setIsOpen(!isOpen)}
-        icon={<Icon icon="material-symbols:settings-outline-rounded" fontSize={20} />}
-      />
+      {customButton != null ? (
+        cloneElement(customButton, {
+          onClick: () => setIsOpen(!isOpen),
+        })
+      ) : (
+        <IconButton
+          onClick={() => setIsOpen(!isOpen)}
+          icon={<Icon icon="material-symbols:settings-outline-rounded" fontSize={20} />}
+        />
+      )}
       <Modal
         isOpen={isOpen}
         closeModal={() => {
@@ -60,12 +67,10 @@ const UserPreferences = (): JSX.Element => {
       >
         <div className="min-h-40 mt-8">
           <UserPreferenceItem userPreferenceDetails={USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING} />
-          <UserPreferenceItem userPreferenceDetails={USER_PREFERENCES.ENABLE_GRAPH_TRIMMING} />
           <FlamegraphColorProfileSelector />
           <div className="min-w-96 mt-10">
             <h4 className="mb-2 font-medium">Experimental Features</h4>
             <FlagToggle name="Enable Callgraph" id="callgraph" />
-            <FlagToggle name="Enable Arrow Flamegraph" id="flamegraph-arrow" />
           </div>
         </div>
         <div className="flex justify-end">

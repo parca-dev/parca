@@ -3,6 +3,46 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 0.16.100 (2023-08-31)
+
+**Note:** Version bump only for package @parca/store
+
+## [0.16.99](https://github.com/parca-dev/parca/compare/@parca/store@0.16.98...@parca/store@0.16.99) (2023-08-23)
+
+**Note:** Version bump only for package @parca/store
+
+## [0.16.98](https://github.com/parca-dev/parca/compare/@parca/store@0.16.97...@parca/store@0.16.98) (2023-08-23)
+
+**Note:** Version bump only for package @parca/store
+
+## [0.16.97](https://github.com/parca-dev/parca/compare/@parca/store@0.16.96...@parca/store@0.16.97) (2023-08-16)
+
+**Note:** Version bump only for package @parca/store
+
+## 0.16.96 (2023-08-15)
+
+**Note:** Version bump only for package @parca/store
+
+## 0.16.95 (2023-08-09)
+
+**Note:** Version bump only for package @parca/store
+
+## [0.16.94](https://github.com/parca-dev/parca/compare/@parca/store@0.16.93...@parca/store@0.16.94) (2023-07-20)
+
+**Note:** Version bump only for package @parca/store
+
+## 0.16.93 (2023-07-20)
+
+**Note:** Version bump only for package @parca/store
+
+## 0.16.92 (2023-07-18)
+
+**Note:** Version bump only for package @parca/store
+
+## 0.16.91 (2023-07-14)
+
+**Note:** Version bump only for package @parca/store
+
 ## [0.16.90](https://github.com/parca-dev/parca/compare/@parca/store@0.16.89...@parca/store@0.16.90) (2023-07-08)
 
 **Note:** Version bump only for package @parca/store

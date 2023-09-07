@@ -13,13 +13,11 @@
 
 import {useEffect, useMemo, useState} from 'react';
 
-import {tableFromIPC} from 'apache-arrow';
-
 import {QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata, useParcaContext, useURLState} from '@parca/components';
-import {USER_PREFERENCES, useUIFeatureFlag, useUserPreference} from '@parca/hooks';
 import {saveAsBlob, type NavigateFunction} from '@parca/utilities';
 
+import {FIELD_FUNCTION_NAME} from './ProfileIcicleGraph/IcicleGraphArrow';
 import {ProfileSource} from './ProfileSource';
 import {ProfileView} from './ProfileView';
 import {useQuery} from './useQuery';
@@ -39,43 +37,42 @@ export const ProfileViewWithData = ({
 }: ProfileViewWithDataProps): JSX.Element => {
   const metadata = useGrpcMetadata();
   const [dashboardItems = ['icicle']] = useURLState({param: 'dashboard_items', navigateTo});
+  const [sourceBuildID] = useURLState({param: 'source_buildid', navigateTo}) as unknown as [string];
+  const [sourceFilename] = useURLState({param: 'source_filename', navigateTo}) as unknown as [
+    string
+  ];
+  const [groupBy = [FIELD_FUNCTION_NAME]] = useURLState({param: 'group_by', navigateTo});
 
-  const [enableTrimming] = useUserPreference<boolean>(USER_PREFERENCES.ENABLE_GRAPH_TRIMMING.key);
-  const [arrowFlamegraphEnabled] = useUIFeatureFlag('flamegraph-arrow');
   const [pprofDownloading, setPprofDownloading] = useState<boolean>(false);
 
   const nodeTrimThreshold = useMemo(() => {
-    if (!enableTrimming) {
-      return 0;
-    }
-
     let width =
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
     // subtract the padding
     width = width - 12 - 16 - 12;
     return (1 / width) * 100;
-  }, [enableTrimming]);
+  }, []);
 
-  const reportType = arrowFlamegraphEnabled
-    ? QueryRequest_ReportType.FLAMEGRAPH_ARROW
-    : QueryRequest_ReportType.FLAMEGRAPH_TABLE;
+  // make sure we get a string[]
+  const groupByParam: string[] = typeof groupBy === 'string' ? [groupBy] : groupBy;
 
   const {
     isLoading: flamegraphLoading,
     response: flamegraphResponse,
     error: flamegraphError,
-  } = useQuery(queryClient, profileSource, reportType, {
+  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMEGRAPH_ARROW, {
     skip: !dashboardItems.includes('icicle'),
     nodeTrimThreshold,
+    groupBy: groupByParam,
   });
   const {perf} = useParcaContext();
 
   const {
-    isLoading: topTableLoading,
-    response: topTableResponse,
-    error: topTableError,
-  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.TOP, {
+    isLoading: tableLoading,
+    response: tableResponse,
+    error: tableError,
+  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.TABLE_ARROW, {
     skip: !dashboardItems.includes('table'),
   });
 
@@ -87,6 +84,16 @@ export const ProfileViewWithData = ({
     skip: !dashboardItems.includes('callgraph'),
   });
 
+  const {
+    isLoading: sourceLoading,
+    response: sourceResponse,
+    error: sourceError,
+  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.SOURCE, {
+    skip: !dashboardItems.includes('source'),
+    sourceBuildID,
+    sourceFilename,
+  });
+
   useEffect(() => {
     if (
       (!flamegraphLoading && flamegraphResponse?.report.oneofKind === 'flamegraph') ||
@@ -95,20 +102,26 @@ export const ProfileViewWithData = ({
       perf?.markInteraction('Flamegraph render', flamegraphResponse.total);
     }
 
-    if (!topTableLoading && topTableResponse?.report.oneofKind === 'top') {
-      perf?.markInteraction('Top table render', topTableResponse.total);
+    if (!tableLoading && tableResponse?.report.oneofKind === 'tableArrow') {
+      perf?.markInteraction('table render', tableResponse.total);
     }
 
     if (!callgraphLoading && callgraphResponse?.report.oneofKind === 'callgraph') {
       perf?.markInteraction('Callgraph render', callgraphResponse.total);
+    }
+
+    if (!sourceLoading && sourceResponse?.report.oneofKind === 'source') {
+      perf?.markInteraction('Source render', sourceResponse.total);
     }
   }, [
     flamegraphLoading,
     flamegraphResponse,
     callgraphResponse,
     callgraphLoading,
-    topTableLoading,
-    topTableResponse,
+    tableLoading,
+    tableResponse,
+    sourceLoading,
+    sourceResponse,
     perf,
   ]);
 
@@ -137,12 +150,15 @@ export const ProfileViewWithData = ({
   if (flamegraphResponse !== null) {
     total = BigInt(flamegraphResponse.total);
     filtered = BigInt(flamegraphResponse.filtered);
-  } else if (topTableResponse !== null) {
-    total = BigInt(topTableResponse.total);
-    filtered = BigInt(topTableResponse.filtered);
+  } else if (tableResponse !== null) {
+    total = BigInt(tableResponse.total);
+    filtered = BigInt(tableResponse.filtered);
   } else if (callgraphResponse !== null) {
     total = BigInt(callgraphResponse.total);
     filtered = BigInt(callgraphResponse.filtered);
+  } else if (sourceResponse !== null) {
+    total = BigInt(sourceResponse.total);
+    filtered = BigInt(sourceResponse.filtered);
   }
 
   return (
@@ -155,19 +171,21 @@ export const ProfileViewWithData = ({
           flamegraphResponse?.report.oneofKind === 'flamegraph'
             ? flamegraphResponse?.report?.flamegraph
             : undefined,
-        table:
+        arrow:
           flamegraphResponse?.report.oneofKind === 'flamegraphArrow'
-            ? tableFromIPC(flamegraphResponse?.report?.flamegraphArrow.record)
+            ? flamegraphResponse?.report?.flamegraphArrow
             : undefined,
         total: BigInt(flamegraphResponse?.total ?? '0'),
         filtered: BigInt(flamegraphResponse?.filtered ?? '0'),
         error: flamegraphError,
       }}
       topTableData={{
-        loading: topTableLoading,
-        data:
-          topTableResponse?.report.oneofKind === 'top' ? topTableResponse.report.top : undefined,
-        error: topTableError,
+        loading: tableLoading,
+        arrow:
+          tableResponse?.report.oneofKind === 'tableArrow'
+            ? tableResponse.report.tableArrow
+            : undefined,
+        error: tableError,
       }}
       callgraphData={{
         loading: callgraphLoading,
@@ -176,6 +194,14 @@ export const ProfileViewWithData = ({
             ? callgraphResponse?.report?.callgraph
             : undefined,
         error: callgraphError,
+      }}
+      sourceData={{
+        loading: sourceLoading,
+        data:
+          sourceResponse?.report.oneofKind === 'source'
+            ? sourceResponse?.report?.source
+            : undefined,
+        error: sourceError,
       }}
       sampleUnit={sampleUnit}
       profileSource={profileSource}

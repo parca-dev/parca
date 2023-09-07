@@ -18,11 +18,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/apache/arrow/go/v13/arrow"
-	"github.com/apache/arrow/go/v13/arrow/array"
+	"github.com/apache/arrow/go/v14/arrow"
+	"github.com/apache/arrow/go/v14/arrow/array"
+	"github.com/apache/arrow/go/v14/arrow/memory"
 	"go.opentelemetry.io/otel/trace"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
+	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -37,66 +39,79 @@ func (e ErrMissingColumn) Error() string {
 
 type ArrowToProfileConverter struct {
 	tracer trace.Tracer
-	m      pb.MetastoreServiceClient
+	key    *metastore.KeyMaker
 }
 
 func NewArrowToProfileConverter(
 	tracer trace.Tracer,
-	m pb.MetastoreServiceClient,
+	keyMaker *metastore.KeyMaker,
 ) *ArrowToProfileConverter {
 	return &ArrowToProfileConverter{
 		tracer: tracer,
-		m:      m,
+		key:    keyMaker,
 	}
 }
 
 func (c *ArrowToProfileConverter) Convert(
 	ctx context.Context,
-	records []arrow.Record,
-	valueColumnName string,
-	meta profile.Meta,
-) (*profile.Profile, error) {
-	ctx, span := c.tracer.Start(ctx, "convert-arrow-record-to-profile")
-	defer span.End()
-
-	rows := 0
-	for _, ar := range records {
-		rows += int(ar.NumRows())
+	p profile.Profile,
+) (profile.OldProfile, error) {
+	sampleNum := int64(0)
+	for _, r := range p.Samples {
+		sampleNum += r.NumRows()
 	}
-	samples := make([]*profile.SymbolizedSample, 0, rows)
-	for _, ar := range records {
-		schema := ar.Schema()
-		indices := schema.FieldIndices("stacktrace")
-		if len(indices) != 1 {
-			return nil, ErrMissingColumn{Column: "stacktrace", Columns: len(indices)}
-		}
-		stacktraceColumn := ar.Column(indices[0]).(*array.Binary)
 
-		indices = schema.FieldIndices("sum(value)")
+	samples := make([]*profile.SymbolizedSample, 0, sampleNum)
+
+	for _, ar := range p.Samples {
+		schema := ar.Schema()
+		indices := schema.FieldIndices("locations")
 		if len(indices) != 1 {
-			return nil, ErrMissingColumn{Column: "value", Columns: len(indices)}
+			return profile.OldProfile{}, ErrMissingColumn{Column: "locations", Columns: len(indices)}
+		}
+		locations := ar.Column(indices[0]).(*array.List)
+		locationOffsets := locations.Offsets()
+		location := locations.ListValues().(*array.Struct)
+		address := location.Field(0).(*array.Uint64)
+		mappingStart := location.Field(1).(*array.Uint64)
+		mappingLimit := location.Field(2).(*array.Uint64)
+		mappingOffset := location.Field(3).(*array.Uint64)
+		mappingFile := location.Field(4).(*array.Dictionary)
+		mappingFileDict := mappingFile.Dictionary().(*array.Binary)
+		mappingBuildID := location.Field(5).(*array.Dictionary)
+		mappingBuildIDDict := mappingBuildID.Dictionary().(*array.Binary)
+		lines := location.Field(6).(*array.List)
+		lineOffsets := lines.Offsets()
+		line := lines.ListValues().(*array.Struct)
+		lineNumber := line.Field(0).(*array.Int64)
+		lineFunctionName := line.Field(1).(*array.Dictionary)
+		lineFunctionNameDict := lineFunctionName.Dictionary().(*array.Binary)
+		lineFunctionSystemName := line.Field(2).(*array.Dictionary)
+		lineFunctionSystemNameDict := lineFunctionSystemName.Dictionary().(*array.Binary)
+		lineFunctionFilename := line.Field(3).(*array.Dictionary)
+		lineFunctionFilenameDict := lineFunctionFilename.Dictionary().(*array.Binary)
+		lineFunctionStartLine := line.Field(4).(*array.Int64)
+
+		indices = schema.FieldIndices("value")
+		if len(indices) != 1 {
+			return profile.OldProfile{}, ErrMissingColumn{Column: "value", Columns: len(indices)}
 		}
 		valueColumn := ar.Column(indices[0]).(*array.Int64)
 
-		rows := int(ar.NumRows())
-		stacktraceIDs := make([]string, rows)
-		for i := 0; i < rows; i++ {
-			stacktraceIDs[i] = string(stacktraceColumn.Value(i))
+		indices = schema.FieldIndices("diff")
+		if len(indices) != 1 {
+			return profile.OldProfile{}, ErrMissingColumn{Column: "diff", Columns: len(indices)}
 		}
-
-		stacktraceLocations, err := c.resolveStacktraces(ctx, stacktraceIDs)
-		if err != nil {
-			return nil, fmt.Errorf("read stacktrace metadata: %w", err)
-		}
+		diffColumn := ar.Column(indices[0]).(*array.Int64)
 
 		labelIndexes := make(map[string]int)
 		for i, field := range schema.Fields() {
-			if strings.HasPrefix(field.Name, ColumnPprofLabels+".") {
-				labelIndexes[strings.TrimPrefix(field.Name, ColumnPprofLabels+".")] = i
+			if strings.HasPrefix(field.Name, profile.ColumnPprofLabelsPrefix) {
+				labelIndexes[strings.TrimPrefix(field.Name, profile.ColumnPprofLabelsPrefix)] = i
 			}
 		}
 
-		for i := 0; i < rows; i++ {
+		for i := 0; i < int(ar.NumRows()); i++ {
 			labels := make(map[string]string, len(labelIndexes))
 			for name, index := range labelIndexes {
 				c := ar.Column(index).(*array.Dictionary)
@@ -109,29 +124,118 @@ func (c *ArrowToProfileConverter) Convert(
 				}
 			}
 
+			lOffsetStart := locationOffsets[i]
+			lOffsetEnd := locationOffsets[i+1]
+			stacktrace := make([]*profile.Location, 0, lOffsetEnd-lOffsetStart)
+			for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
+				llOffsetStart := lineOffsets[j]
+				llOffsetEnd := lineOffsets[j+1]
+				lines := make([]profile.LocationLine, 0, llOffsetEnd-llOffsetStart)
+
+				for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
+					name := ""
+					if lineFunctionName.IsValid(k) {
+						name = string(lineFunctionNameDict.Value(lineFunctionName.GetValueIndex(k)))
+					}
+					systemName := ""
+					if lineFunctionSystemName.IsValid(k) {
+						systemName = string(lineFunctionSystemNameDict.Value(lineFunctionSystemName.GetValueIndex(k)))
+					}
+					filename := ""
+					if lineFunctionFilename.IsValid(k) {
+						filename = string(lineFunctionFilenameDict.Value(lineFunctionFilename.GetValueIndex(k)))
+					}
+					startLine := int64(0)
+					if lineFunctionStartLine.IsValid(k) {
+						startLine = int64(lineFunctionStartLine.Value(k))
+					}
+					var f *pb.Function
+					if name != "" || systemName != "" || filename != "" || startLine != 0 {
+						f = &pb.Function{
+							Name:       name,
+							SystemName: systemName,
+							Filename:   filename,
+							StartLine:  startLine,
+						}
+						f.Id = c.key.MakeFunctionID(f)
+					}
+					lines = append(lines, profile.LocationLine{
+						Line:     int64(lineNumber.Value(k)),
+						Function: f,
+					})
+				}
+
+				start := mappingStart.Value(j)
+				limit := mappingLimit.Value(j)
+				offset := mappingOffset.Value(j)
+				buildID := ""
+				if mappingBuildID.IsValid(j) {
+					buildID = string(mappingBuildIDDict.Value(mappingBuildID.GetValueIndex(j)))
+				}
+				file := ""
+				if mappingFile.IsValid(j) {
+					file = string(mappingFileDict.Value(mappingFile.GetValueIndex(j)))
+				}
+				var m *pb.Mapping
+				if start != 0 || limit != 0 || offset != 0 || buildID != "" || file != "" {
+					m = &pb.Mapping{
+						Start:   start,
+						Limit:   limit,
+						Offset:  offset,
+						File:    file,
+						BuildId: buildID,
+					}
+					m.Id = c.key.MakeMappingID(m)
+				}
+
+				loc := &profile.Location{
+					Address: address.Value(j),
+					Mapping: m,
+					Lines:   lines,
+				}
+				loc.ID = c.key.MakeProfileLocationID(loc)
+				stacktrace = append(stacktrace, loc)
+			}
+
 			samples = append(samples, &profile.SymbolizedSample{
 				Value:     valueColumn.Value(i),
-				Locations: stacktraceLocations[i],
+				DiffValue: diffColumn.Value(i),
+				Locations: stacktrace,
 				Label:     labels,
 			})
 		}
 	}
 
-	return &profile.Profile{
+	return profile.OldProfile{
 		Samples: samples,
-		Meta:    meta,
+		Meta:    p.Meta,
 	}, nil
 }
 
-func (c *ArrowToProfileConverter) SymbolizeNormalizedProfile(ctx context.Context, p *profile.NormalizedProfile) (*profile.Profile, error) {
+type ProfileSymbolizer struct {
+	tracer trace.Tracer
+	m      pb.MetastoreServiceClient
+}
+
+func NewProfileSymbolizer(
+	tracer trace.Tracer,
+	m pb.MetastoreServiceClient,
+) *ProfileSymbolizer {
+	return &ProfileSymbolizer{
+		tracer: tracer,
+		m:      m,
+	}
+}
+
+func (s *ProfileSymbolizer) SymbolizeNormalizedProfile(ctx context.Context, p *profile.NormalizedProfile) (profile.OldProfile, error) {
 	stacktraceIDs := make([]string, len(p.Samples))
 	for i, sample := range p.Samples {
 		stacktraceIDs[i] = sample.StacktraceID
 	}
 
-	stacktraceLocations, err := c.resolveStacktraces(ctx, stacktraceIDs)
+	stacktraceLocations, err := s.resolveStacktraces(ctx, stacktraceIDs)
 	if err != nil {
-		return nil, fmt.Errorf("read stacktrace metadata: %w", err)
+		return profile.OldProfile{}, fmt.Errorf("read stacktrace metadata: %w", err)
 	}
 
 	samples := make([]*profile.SymbolizedSample, len(p.Samples))
@@ -145,24 +249,49 @@ func (c *ArrowToProfileConverter) SymbolizeNormalizedProfile(ctx context.Context
 		}
 	}
 
-	return &profile.Profile{
+	return profile.OldProfile{
 		Samples: samples,
 		Meta:    p.Meta,
 	}, nil
 }
 
-func (c *ArrowToProfileConverter) resolveStacktraces(ctx context.Context, stacktraceIDs []string) (
+func (s *ProfileSymbolizer) resolveStacktraces(ctx context.Context, stacktraceIDs []string) (
 	[][]*profile.Location,
 	error,
 ) {
-	ctx, span := c.tracer.Start(ctx, "resolve-stacktraces")
+	ctx, span := s.tracer.Start(ctx, "resolve-stacktraces")
 	defer span.End()
 
-	sres, err := c.m.Stacktraces(ctx, &pb.StacktracesRequest{
+	stacktraces, locations, locationIndex, err := s.resolveStacktraceLocations(ctx, stacktraceIDs)
+	if err != nil {
+		return nil, fmt.Errorf("resolve stacktrace locations: %w", err)
+	}
+
+	stacktraceLocations := make([][]*profile.Location, len(stacktraces))
+	for i, stacktrace := range stacktraces {
+		stacktraceLocations[i] = make([]*profile.Location, len(stacktrace.LocationIds))
+		for j, id := range stacktrace.LocationIds {
+			stacktraceLocations[i][j] = locations[locationIndex[id]]
+		}
+	}
+
+	return stacktraceLocations, nil
+}
+
+func (s *ProfileSymbolizer) resolveStacktraceLocations(ctx context.Context, stacktraceIDs []string) (
+	[]*pb.Stacktrace,
+	[]*profile.Location,
+	map[string]int,
+	error,
+) {
+	ctx, span := s.tracer.Start(ctx, "resolve-stacktraces")
+	defer span.End()
+
+	sres, err := s.m.Stacktraces(ctx, &pb.StacktracesRequest{
 		StacktraceIds: stacktraceIDs,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("read stacktraces: %w", err)
+		return nil, nil, nil, fmt.Errorf("read stacktraces: %w", err)
 	}
 
 	locationNum := 0
@@ -181,28 +310,82 @@ func (c *ArrowToProfileConverter) resolveStacktraces(ctx context.Context, stackt
 		}
 	}
 
-	lres, err := c.m.Locations(ctx, &pb.LocationsRequest{LocationIds: locationIDs})
+	lres, err := s.m.Locations(ctx, &pb.LocationsRequest{LocationIds: locationIDs})
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
-	locations, err := c.getLocationsFromSerializedLocations(ctx, locationIDs, lres.Locations)
+	locations, err := s.getLocationsFromSerializedLocations(ctx, locationIDs, lres.Locations)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
-	stacktraceLocations := make([][]*profile.Location, len(sres.Stacktraces))
-	for i, stacktrace := range sres.Stacktraces {
-		stacktraceLocations[i] = make([]*profile.Location, len(stacktrace.LocationIds))
-		for j, id := range stacktrace.LocationIds {
-			stacktraceLocations[i][j] = locations[locationIndex[id]]
+	return sres.Stacktraces, locations, locationIndex, nil
+}
+
+func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrace, resolvedLocations []*profile.Location, locationIndex map[string]int) (arrow.Record, error) {
+	w := profile.NewLocationsWriter(allocator)
+	defer w.RecordBuilder.Release()
+
+	for _, stacktrace := range stacktraces {
+		w.LocationsList.Append(true)
+		for _, id := range stacktrace.LocationIds {
+			w.Locations.Append(true)
+			loc := resolvedLocations[locationIndex[id]]
+
+			w.Addresses.Append(loc.Address)
+
+			if loc.Mapping != nil {
+				w.MappingStart.Append(loc.Mapping.Start)
+				w.MappingLimit.Append(loc.Mapping.Limit)
+				w.MappingOffset.Append(loc.Mapping.Offset)
+				if err := w.MappingFile.Append([]byte(loc.Mapping.File)); err != nil {
+					return nil, fmt.Errorf("append mapping file: %w", err)
+				}
+				if err := w.MappingBuildID.Append([]byte(loc.Mapping.BuildId)); err != nil {
+					return nil, fmt.Errorf("append mapping build id: %w", err)
+				}
+			} else {
+				w.MappingStart.AppendNull()
+				w.MappingLimit.AppendNull()
+				w.MappingOffset.AppendNull()
+				w.MappingFile.AppendNull()
+				w.MappingBuildID.AppendNull()
+			}
+
+			if loc.Lines != nil && len(loc.Lines) > 0 {
+				w.Lines.Append(true)
+				for _, l := range loc.Lines {
+					w.Line.Append(true)
+					w.LineNumber.Append(l.Line)
+					if l.Function != nil {
+						if err := w.FunctionName.Append([]byte(l.Function.Name)); err != nil {
+							return nil, fmt.Errorf("append function name: %w", err)
+						}
+						if err := w.FunctionSystemName.Append([]byte(l.Function.SystemName)); err != nil {
+							return nil, fmt.Errorf("append function system name: %w", err)
+						}
+						if err := w.FunctionFilename.Append([]byte(l.Function.Filename)); err != nil {
+							return nil, fmt.Errorf("append function filename: %w", err)
+						}
+						w.FunctionStartLine.Append(l.Function.StartLine)
+					} else {
+						w.FunctionName.AppendNull()
+						w.FunctionSystemName.AppendNull()
+						w.FunctionFilename.AppendNull()
+						w.FunctionStartLine.AppendNull()
+					}
+				}
+			} else {
+				w.Lines.AppendNull()
+			}
 		}
 	}
 
-	return stacktraceLocations, nil
+	return w.RecordBuilder.NewRecord(), nil
 }
 
-func (c *ArrowToProfileConverter) getLocationsFromSerializedLocations(
+func (s *ProfileSymbolizer) getLocationsFromSerializedLocations(
 	ctx context.Context,
 	locationIds []string,
 	locations []*pb.Location,
@@ -225,7 +408,7 @@ func (c *ArrowToProfileConverter) getLocationsFromSerializedLocations(
 
 	var mappings []*pb.Mapping
 	if len(mappingIDs) > 0 {
-		mres, err := c.m.Mappings(ctx, &pb.MappingsRequest{
+		mres, err := s.m.Mappings(ctx, &pb.MappingsRequest{
 			MappingIds: mappingIDs,
 		})
 		if err != nil {
@@ -248,7 +431,7 @@ func (c *ArrowToProfileConverter) getLocationsFromSerializedLocations(
 		}
 	}
 
-	fres, err := c.m.Functions(ctx, &pb.FunctionsRequest{
+	fres, err := s.m.Functions(ctx, &pb.FunctionsRequest{
 		FunctionIds: functionIDs,
 	})
 	if err != nil {

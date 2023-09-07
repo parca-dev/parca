@@ -23,6 +23,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 
@@ -39,6 +40,11 @@ func TestGenerateFlatPprof(t *testing.T) {
 
 	ctx := context.Background()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
+	reg := prometheus.NewRegistry()
+	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
+		Name: "parca_test_counter",
+		Help: "parca_test_counter",
+	})
 
 	pf, err := os.Open("testdata/alloc_objects.pb.gz")
 	require.NoError(t, err)
@@ -58,11 +64,11 @@ func TestGenerateFlatPprof(t *testing.T) {
 		tracer,
 	)
 	metastore := metastore.NewInProcessClient(l)
-	normalizer := parcacol.NewNormalizer(metastore, true)
-	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false)
+	normalizer := parcacol.NewNormalizer(metastore, true, counter)
+	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false, nil)
 	require.NoError(t, err)
 
-	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
+	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
 	res, err := GenerateFlatPprof(ctx, symbolizedProfile)
@@ -164,7 +170,7 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 	s := sres.Stacktraces[0]
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
+	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
 		Samples: []*parcaprofile.NormalizedSample{{
 			StacktraceID: s.Id,
 			Value:        1,

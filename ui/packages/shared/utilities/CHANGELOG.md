@@ -3,6 +3,46 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 0.0.29 (2023-08-31)
+
+**Note:** Version bump only for package @parca/utilities
+
+## [0.0.28](https://github.com/parca-dev/parca/compare/@parca/utilities@0.0.27...@parca/utilities@0.0.28) (2023-08-23)
+
+**Note:** Version bump only for package @parca/utilities
+
+## [0.0.27](https://github.com/parca-dev/parca/compare/@parca/utilities@0.0.26...@parca/utilities@0.0.27) (2023-08-23)
+
+**Note:** Version bump only for package @parca/utilities
+
+## [0.0.26](https://github.com/parca-dev/parca/compare/@parca/utilities@0.0.25...@parca/utilities@0.0.26) (2023-08-16)
+
+**Note:** Version bump only for package @parca/utilities
+
+## 0.0.25 (2023-08-15)
+
+**Note:** Version bump only for package @parca/utilities
+
+## 0.0.24 (2023-08-09)
+
+**Note:** Version bump only for package @parca/utilities
+
+## [0.0.23](https://github.com/parca-dev/parca/compare/@parca/utilities@0.0.22...@parca/utilities@0.0.23) (2023-07-20)
+
+**Note:** Version bump only for package @parca/utilities
+
+## 0.0.22 (2023-07-20)
+
+**Note:** Version bump only for package @parca/utilities
+
+## 0.0.21 (2023-07-18)
+
+**Note:** Version bump only for package @parca/utilities
+
+## 0.0.20 (2023-07-14)
+
+**Note:** Version bump only for package @parca/utilities
+
 ## [0.0.19](https://github.com/parca-dev/parca/compare/@parca/utilities@0.0.18...@parca/utilities@0.0.19) (2023-07-08)
 
 **Note:** Version bump only for package @parca/utilities

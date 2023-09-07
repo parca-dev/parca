@@ -29,7 +29,7 @@ import (
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/metastoretest"
-	"github.com/parca-dev/parca/pkg/parcacol"
+	"github.com/parca-dev/parca/pkg/profile"
 )
 
 func Test_LabelName_Error(t *testing.T) {
@@ -44,12 +44,12 @@ func Test_LabelName_Error(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := parcacol.Schema()
+	schema, err := profile.Schema()
 	require.NoError(t, err)
 
 	table, err := colDB.Table(
 		"stacktraces",
-		frostdb.NewTableConfig(parcacol.SchemaDefinition()),
+		frostdb.NewTableConfig(profile.SchemaDefinition()),
 	)
 	require.NoError(t, err)
 	m := metastoretest.NewTestMetastore(
@@ -60,6 +60,7 @@ func Test_LabelName_Error(t *testing.T) {
 	)
 
 	api := NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		metastore.NewInProcessClient(m),
@@ -124,12 +125,12 @@ func BenchmarkProfileColumnStoreWriteSeries(b *testing.B) {
 	colDB, err := col.DB(ctx, "parca")
 	require.NoError(b, err)
 
-	schema, err := parcacol.Schema()
+	schema, err := profile.Schema()
 	require.NoError(b, err)
 
 	table, err := colDB.Table(
 		"stacktraces",
-		frostdb.NewTableConfig(parcacol.SchemaDefinition()),
+		frostdb.NewTableConfig(profile.SchemaDefinition()),
 	)
 	require.NoError(b, err)
 	m := metastoretest.NewTestMetastore(
@@ -140,6 +141,7 @@ func BenchmarkProfileColumnStoreWriteSeries(b *testing.B) {
 	)
 
 	api := NewProfileColumnStore(
+		reg,
 		logger,
 		tracer,
 		metastore.NewInProcessClient(m),

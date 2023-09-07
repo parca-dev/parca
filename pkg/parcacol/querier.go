@@ -21,9 +21,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apache/arrow/go/v13/arrow"
-	"github.com/apache/arrow/go/v13/arrow/array"
-	"github.com/apache/arrow/go/v13/arrow/scalar"
+	"github.com/apache/arrow/go/v14/arrow"
+	"github.com/apache/arrow/go/v14/arrow/array"
+	"github.com/apache/arrow/go/v14/arrow/memory"
+	"github.com/apache/arrow/go/v14/arrow/scalar"
 	"github.com/go-kit/log"
 	"github.com/polarsignals/frostdb/query"
 	"github.com/polarsignals/frostdb/query/logicalplan"
@@ -36,7 +37,6 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
@@ -52,32 +52,27 @@ func NewQuerier(
 	tracer trace.Tracer,
 	engine Engine,
 	tableName string,
-	metastore metastorepb.MetastoreServiceClient,
+	symbolizer *ProfileSymbolizer,
+	pool memory.Allocator,
 ) *Querier {
 	return &Querier{
-		logger:    logger,
-		tracer:    tracer,
-		engine:    engine,
-		tableName: tableName,
-		converter: NewArrowToProfileConverter(
-			tracer,
-			metastore,
-		),
+		logger:     logger,
+		tracer:     tracer,
+		engine:     engine,
+		tableName:  tableName,
+		symbolizer: symbolizer,
+		pool:       pool,
 	}
 }
 
 type Querier struct {
-	logger    log.Logger
-	engine    Engine
-	tableName string
-	converter *ArrowToProfileConverter
-	tracer    trace.Tracer
+	logger     log.Logger
+	engine     Engine
+	tableName  string
+	symbolizer *ProfileSymbolizer
+	tracer     trace.Tracer
+	pool       memory.Allocator
 }
-
-const (
-	ColumnLabelsPrefix      = ColumnLabels + "."
-	ColumnPprofLabelsPrefix = ColumnPprofLabels + "."
-)
 
 func (q *Querier) Labels(
 	ctx context.Context,
@@ -174,12 +169,12 @@ func (q *Querier) Values(
 }
 
 func MatcherToBooleanExpression(matcher *labels.Matcher) (logicalplan.Expr, error) {
-	label := logicalplan.Col(ColumnLabelsPrefix + matcher.Name)
+	label := logicalplan.Col(profile.ColumnLabelsPrefix + matcher.Name)
 	labelExpr, err := matcherToBinaryExpression(matcher, label)
 	if err != nil {
 		return nil, err
 	}
-	pprofLabel := logicalplan.Col(ColumnPprofLabelsPrefix + matcher.Name)
+	pprofLabel := logicalplan.Col(profile.ColumnPprofLabelsPrefix + matcher.Name)
 	pprofLabelExpr, err := matcherToBinaryExpression(matcher, pprofLabel)
 	if err != nil {
 		return nil, err
@@ -240,16 +235,16 @@ func QueryToFilterExprs(query string) (QueryParts, []logicalplan.Expr, error) {
 	}
 
 	exprs := append([]logicalplan.Expr{
-		logicalplan.Col(ColumnName).Eq(logicalplan.Literal(qp.Meta.Name)),
-		logicalplan.Col(ColumnSampleType).Eq(logicalplan.Literal(qp.Meta.SampleType.Type)),
-		logicalplan.Col(ColumnSampleUnit).Eq(logicalplan.Literal(qp.Meta.SampleType.Unit)),
-		logicalplan.Col(ColumnPeriodType).Eq(logicalplan.Literal(qp.Meta.PeriodType.Type)),
-		logicalplan.Col(ColumnPeriodUnit).Eq(logicalplan.Literal(qp.Meta.PeriodType.Unit)),
+		logicalplan.Col(profile.ColumnName).Eq(logicalplan.Literal(qp.Meta.Name)),
+		logicalplan.Col(profile.ColumnSampleType).Eq(logicalplan.Literal(qp.Meta.SampleType.Type)),
+		logicalplan.Col(profile.ColumnSampleUnit).Eq(logicalplan.Literal(qp.Meta.SampleType.Unit)),
+		logicalplan.Col(profile.ColumnPeriodType).Eq(logicalplan.Literal(qp.Meta.PeriodType.Type)),
+		logicalplan.Col(profile.ColumnPeriodUnit).Eq(logicalplan.Literal(qp.Meta.PeriodType.Unit)),
 	}, labelFilterExpressions...)
 
-	deltaPlan := logicalplan.Col(ColumnDuration).Eq(logicalplan.Literal(0))
+	deltaPlan := logicalplan.Col(profile.ColumnDuration).Eq(logicalplan.Literal(0))
 	if qp.Delta {
-		deltaPlan = logicalplan.Col(ColumnDuration).NotEq(logicalplan.Literal(0))
+		deltaPlan = logicalplan.Col(profile.ColumnDuration).NotEq(logicalplan.Literal(0))
 	}
 
 	exprs = append(exprs, deltaPlan)
@@ -331,8 +326,8 @@ func (q *Querier) QueryRange(
 
 	exprs := append(
 		selectorExprs,
-		logicalplan.Col(ColumnTimestamp).Gt(logicalplan.Literal(start)),
-		logicalplan.Col(ColumnTimestamp).Lt(logicalplan.Literal(end)),
+		logicalplan.Col(profile.ColumnTimestamp).Gt(logicalplan.Literal(start)),
+		logicalplan.Col(profile.ColumnTimestamp).Lt(logicalplan.Literal(end)),
 	)
 
 	filterExpr := logicalplan.And(exprs...)
@@ -345,26 +340,31 @@ func (q *Querier) QueryRange(
 }
 
 const (
-	ColumnDurationSum = "sum(" + ColumnDuration + ")"
-	ColumnPeriodSum   = "sum(" + ColumnPeriod + ")"
-	ColumnValueCount  = "count(" + ColumnValue + ")"
-	ColumnValueSum    = "sum(" + ColumnValue + ")"
+	ColumnDurationSum = "sum(" + profile.ColumnDuration + ")"
+	ColumnPeriodSum   = "sum(" + profile.ColumnPeriod + ")"
+	ColumnValueCount  = "count(" + profile.ColumnValue + ")"
+	ColumnValueSum    = "sum(" + profile.ColumnValue + ")"
 )
 
 func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration, sampleTypeUnit string) ([]*pb.MetricsSeries, error) {
 	records := []arrow.Record{}
+	defer func() {
+		for _, r := range records {
+			r.Release()
+		}
+	}()
 	rows := 0
 	err := q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Aggregate(
 			[]logicalplan.Expr{
-				logicalplan.Sum(logicalplan.Col(ColumnDuration)),
-				logicalplan.Sum(logicalplan.Col(ColumnPeriod)),
-				logicalplan.Sum(logicalplan.Col(ColumnValue)),
-				logicalplan.Count(logicalplan.Col(ColumnValue)),
+				logicalplan.Sum(logicalplan.Col(profile.ColumnDuration)),
+				logicalplan.Sum(logicalplan.Col(profile.ColumnPeriod)),
+				logicalplan.Sum(logicalplan.Col(profile.ColumnValue)),
+				logicalplan.Count(logicalplan.Col(profile.ColumnValue)),
 			},
 			[]logicalplan.Expr{
-				logicalplan.DynCol(ColumnLabels),
+				logicalplan.DynCol(profile.ColumnLabels),
 				logicalplan.Duration(step),
 			},
 		).
@@ -414,7 +414,7 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 			case ColumnPeriodSum:
 				columnIndices.PeriodSum = i
 				continue
-			case ColumnTimestamp:
+			case profile.ColumnTimestamp:
 				columnIndices.Timestamp = i
 				continue
 			case ColumnValueCount:
@@ -521,16 +521,21 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 
 func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration) ([]*pb.MetricsSeries, error) {
 	records := []arrow.Record{}
+	defer func() {
+		for _, r := range records {
+			r.Release()
+		}
+	}()
 	rows := 0
 	err := q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Aggregate(
 			[]logicalplan.Expr{
-				logicalplan.Sum(logicalplan.Col(ColumnValue)),
+				logicalplan.Sum(logicalplan.Col(profile.ColumnValue)),
 			},
 			[]logicalplan.Expr{
-				logicalplan.DynCol(ColumnLabels),
-				logicalplan.Col(ColumnTimestamp),
+				logicalplan.DynCol(profile.ColumnLabels),
+				logicalplan.Col(profile.ColumnTimestamp),
 			},
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
@@ -555,8 +560,8 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 	}
 	// Add necessary columns and their found value is false by default.
 	columnIndices := map[string]columnIndex{
-		ColumnTimestamp: {},
-		ColumnValueSum:  {},
+		profile.ColumnTimestamp: {},
+		ColumnValueSum:          {},
 	}
 	labelColumnIndices := []int{}
 	labelSet := labels.Labels{}
@@ -617,7 +622,7 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 				resSeriesBuckets[index] = map[int64]struct{}{}
 			}
 
-			ts := ar.Column(columnIndices[ColumnTimestamp].index).(*array.Int64).Value(i)
+			ts := ar.Column(columnIndices[profile.ColumnTimestamp].index).(*array.Int64).Value(i)
 			value := ar.Column(columnIndices[ColumnValueSum].index).(*array.Int64).Value(i)
 
 			// Each step bucket will only return one of the timestamps and its value.
@@ -664,39 +669,39 @@ func (q *Querier) ProfileTypes(
 
 	err := q.engine.ScanTable(q.tableName).
 		Distinct(
-			logicalplan.Col(ColumnName),
-			logicalplan.Col(ColumnSampleType),
-			logicalplan.Col(ColumnSampleUnit),
-			logicalplan.Col(ColumnPeriodType),
-			logicalplan.Col(ColumnPeriodUnit),
-			logicalplan.Col(ColumnDuration).Gt(logicalplan.Literal(0)),
+			logicalplan.Col(profile.ColumnName),
+			logicalplan.Col(profile.ColumnSampleType),
+			logicalplan.Col(profile.ColumnSampleUnit),
+			logicalplan.Col(profile.ColumnPeriodType),
+			logicalplan.Col(profile.ColumnPeriodUnit),
+			logicalplan.Col(profile.ColumnDuration).Gt(logicalplan.Literal(0)),
 		).
 		Execute(ctx, func(ctx context.Context, ar arrow.Record) error {
 			if ar.NumCols() != 6 {
 				return fmt.Errorf("expected 6 column, got %d", ar.NumCols())
 			}
 
-			nameColumn, err := DictionaryFromRecord(ar, ColumnName)
+			nameColumn, err := DictionaryFromRecord(ar, profile.ColumnName)
 			if err != nil {
 				return err
 			}
 
-			sampleTypeColumn, err := DictionaryFromRecord(ar, ColumnSampleType)
+			sampleTypeColumn, err := DictionaryFromRecord(ar, profile.ColumnSampleType)
 			if err != nil {
 				return err
 			}
 
-			sampleUnitColumn, err := DictionaryFromRecord(ar, ColumnSampleUnit)
+			sampleUnitColumn, err := DictionaryFromRecord(ar, profile.ColumnSampleUnit)
 			if err != nil {
 				return err
 			}
 
-			periodTypeColumn, err := DictionaryFromRecord(ar, ColumnPeriodType)
+			periodTypeColumn, err := DictionaryFromRecord(ar, profile.ColumnPeriodType)
 			if err != nil {
 				return err
 			}
 
-			periodUnitColumn, err := DictionaryFromRecord(ar, ColumnPeriodUnit)
+			periodUnitColumn, err := DictionaryFromRecord(ar, profile.ColumnPeriodUnit)
 			if err != nil {
 				return err
 			}
@@ -796,55 +801,130 @@ func BooleanFieldFromRecord(ar arrow.Record, name string) (*array.Boolean, error
 	return col, nil
 }
 
-func (q *Querier) arrowRecordToProfile(
+func (q *Querier) SymbolizeArrowRecord(
 	ctx context.Context,
 	records []arrow.Record,
-	valueColumn string,
-	meta profile.Meta,
-) (*profile.Profile, error) {
-	ctx, span := q.tracer.Start(ctx, "Querier/arrowRecordToProfile")
-	defer span.End()
-	return q.converter.Convert(
-		ctx,
-		records,
-		valueColumn,
-		meta,
-	)
+	valueColumnName string,
+) ([]arrow.Record, error) {
+	res := make([]arrow.Record, len(records))
+
+	for i, r := range records {
+		schema := r.Schema()
+
+		indices := schema.FieldIndices("stacktrace")
+		if len(indices) != 1 {
+			return nil, ErrMissingColumn{Column: "stacktrace", Columns: len(indices)}
+		}
+		stacktraceColumn := r.Column(indices[0]).(*array.Binary)
+
+		rows := int(r.NumRows())
+		stacktraceIDs := make([]string, rows)
+		for i := 0; i < rows; i++ {
+			stacktraceIDs[i] = string(stacktraceColumn.Value(i))
+		}
+
+		indices = schema.FieldIndices(valueColumnName)
+		if len(indices) != 1 {
+			return nil, ErrMissingColumn{Column: "value", Columns: len(indices)}
+		}
+		valueColumn := r.Column(indices[0]).(*array.Int64)
+
+		profileLabels := []arrow.Field{}
+		profileLabelColumns := []arrow.Array{}
+		for i, field := range schema.Fields() {
+			if strings.HasPrefix(field.Name, profile.ColumnPprofLabelsPrefix) {
+				profileLabels = append(profileLabels, field)
+				profileLabelColumns = append(profileLabelColumns, r.Column(i))
+			}
+		}
+
+		stacktraces, locations, locationIndex, err := q.symbolizer.resolveStacktraceLocations(ctx, stacktraceIDs)
+		if err != nil {
+			return nil, fmt.Errorf("resolve stacktrace locations: %w", err)
+		}
+
+		locationsRecord, err := BuildArrowLocations(q.pool, stacktraces, locations, locationIndex)
+		if err != nil {
+			return nil, fmt.Errorf("build arrow locations: %w", err)
+		}
+		defer locationsRecord.Release()
+
+		columns := make([]arrow.Array, len(profileLabels)+3) // +3 for stacktrace locations, value and diff
+		copy(columns, profileLabelColumns)
+		columns[len(columns)-3] = locationsRecord.Column(0)
+		columns[len(columns)-2] = valueColumn
+
+		diffColumn := CreateDiffColumn(q.pool, rows)
+		defer diffColumn.Release()
+		columns[len(columns)-1] = diffColumn
+
+		res[i] = array.NewRecord(profile.ArrowSchema(profileLabels), columns, r.NumRows())
+	}
+
+	return res, nil
+}
+
+func CreateDiffColumn(pool memory.Allocator, rows int) arrow.Array {
+	b := array.NewInt64Builder(pool)
+	defer b.Release()
+
+	values := make([]int64, 0, rows)
+	valid := make([]bool, 0, rows)
+	for i := 0; i < rows; i++ {
+		values = append(values, 0)
+		valid = append(valid, true)
+	}
+	b.AppendValues(values, valid)
+	arr := b.NewInt64Array()
+
+	return arr
 }
 
 func (q *Querier) QuerySingle(
 	ctx context.Context,
 	query string,
 	time time.Time,
-) (*profile.Profile, error) {
+) (profile.Profile, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/QuerySingle")
 	defer span.End()
 
-	ar, valueColumn, meta, err := q.findSingle(ctx, query, time)
+	records, valueColumn, meta, err := q.findSingle(ctx, query, time)
 	if err != nil {
-		return nil, err
+		return profile.Profile{}, err
 	}
+	defer func() {
+		for _, r := range records {
+			r.Release()
+		}
+	}()
 
-	p, err := q.arrowRecordToProfile(
+	symbolizedRecords, err := q.SymbolizeArrowRecord(
 		ctx,
-		ar,
+		records,
 		valueColumn,
-		meta,
 	)
 	if err != nil {
 		// if the column cannot be found the timestamp is too far in the past and we don't have data
 		var colErr ErrMissingColumn
 		if errors.As(err, &colErr) {
-			return nil, status.Error(codes.NotFound, "could not find profile at requested time and selectors")
+			return profile.Profile{}, status.Error(codes.NotFound, "could not find profile at requested time and selectors")
 		}
-		return nil, err
+		return profile.Profile{}, err
 	}
 
-	if p == nil {
-		return nil, status.Error(codes.NotFound, "could not find profile at requested time and selectors")
+	totalRows := int64(0)
+	for _, r := range symbolizedRecords {
+		totalRows += r.NumRows()
 	}
 
-	return p, nil
+	if totalRows == 0 {
+		return profile.Profile{}, status.Error(codes.NotFound, "could not find profile at requested time and selectors")
+	}
+
+	return profile.Profile{
+		Meta:    meta,
+		Samples: symbolizedRecords,
+	}, nil
 }
 
 func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]arrow.Record, string, profile.Meta, error) {
@@ -872,12 +952,12 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]
 		Filter(filterExpr).
 		Aggregate(
 			[]logicalplan.Expr{
-				logicalplan.Sum(logicalplan.Col(ColumnValue)),
+				logicalplan.Sum(logicalplan.Col(profile.ColumnValue)),
 			},
 			[]logicalplan.Expr{
-				logicalplan.Col(ColumnStacktrace),
-				logicalplan.DynCol(ColumnPprofLabels),
-				logicalplan.DynCol(ColumnPprofNumLabels),
+				logicalplan.Col(profile.ColumnStacktrace),
+				logicalplan.DynCol(profile.ColumnPprofLabels),
+				logicalplan.DynCol(profile.ColumnPprofNumLabels),
 			},
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
@@ -900,13 +980,13 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]
 		nil
 }
 
-func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.Time) (*profile.Profile, error) {
+func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.Time) (profile.Profile, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/QueryMerge")
 	defer span.End()
 
 	records, valueColumn, meta, err := q.selectMerge(ctx, query, start, end)
 	if err != nil {
-		return nil, err
+		return profile.Profile{}, err
 	}
 	defer func() {
 		for _, r := range records {
@@ -914,17 +994,19 @@ func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.
 		}
 	}()
 
-	p, err := q.arrowRecordToProfile(
+	symbolizedRecords, err := q.SymbolizeArrowRecord(
 		ctx,
 		records,
 		valueColumn,
-		meta,
 	)
 	if err != nil {
-		return nil, err
+		return profile.Profile{}, err
 	}
 
-	return p, nil
+	return profile.Profile{
+		Meta:    meta,
+		Samples: symbolizedRecords,
+	}, nil
 }
 
 func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endTime time.Time) ([]arrow.Record, string, profile.Meta, error) {
@@ -942,8 +1024,8 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 	filterExpr := logicalplan.And(
 		append(
 			selectorExprs,
-			logicalplan.Col(ColumnTimestamp).GtEq(logicalplan.Literal(start)),
-			logicalplan.Col(ColumnTimestamp).LtEq(logicalplan.Literal(end)),
+			logicalplan.Col(profile.ColumnTimestamp).GtEq(logicalplan.Literal(start)),
+			logicalplan.Col(profile.ColumnTimestamp).LtEq(logicalplan.Literal(end)),
 		)...,
 	)
 
@@ -952,12 +1034,12 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 		Filter(filterExpr).
 		Aggregate(
 			[]logicalplan.Expr{
-				logicalplan.Sum(logicalplan.Col(ColumnValue)),
+				logicalplan.Sum(logicalplan.Col(profile.ColumnValue)),
 			},
 			[]logicalplan.Expr{
-				logicalplan.Col(ColumnStacktrace),
-				logicalplan.DynCol(ColumnPprofLabels),
-				logicalplan.DynCol(ColumnPprofNumLabels),
+				logicalplan.Col(profile.ColumnStacktrace),
+				logicalplan.DynCol(profile.ColumnPprofLabels),
+				logicalplan.DynCol(profile.ColumnPprofNumLabels),
 			},
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {

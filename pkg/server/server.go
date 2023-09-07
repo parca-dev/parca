@@ -29,7 +29,6 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	grpc_logging "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -78,7 +77,16 @@ func NewServer(reg *prometheus.Registry, version string) *Server {
 }
 
 // ListenAndServe starts the http grpc gateway server.
-func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, addr string, allowedCORSOrigins []string, pathPrefix string, registerables ...Registerable) error {
+func (s *Server) ListenAndServe(
+	ctx context.Context,
+	logger log.Logger,
+	addr string,
+	readTimeout time.Duration,
+	writeTimeout time.Duration,
+	allowedCORSOrigins []string,
+	pathPrefix string,
+	registerables ...Registerable,
+) error {
 	level.Info(logger).Log("msg", "starting server", "addr", addr)
 
 	logOpts := []grpc_logging.Option{
@@ -100,18 +108,15 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, addr str
 		// It is increased to 32MB to account for large protobuf messages (debug information uploads and downloads).
 		grpc.MaxSendMsgSize(debuginfo.MaxMsgSize),
 		grpc.MaxRecvMsgSize(debuginfo.MaxMsgSize),
-		grpc.StreamInterceptor(
-			grpc_middleware.ChainStreamServer(
-				otelgrpc.StreamServerInterceptor(),
-				met.StreamServerInterceptor(),
-				grpc_logging.StreamServerInterceptor(InterceptorLogger(logger), logOpts...),
-			)),
-		grpc.UnaryInterceptor(
-			grpc_middleware.ChainUnaryServer(
-				otelgrpc.UnaryServerInterceptor(),
-				met.UnaryServerInterceptor(),
-				grpc_logging.UnaryServerInterceptor(InterceptorLogger(logger), logOpts...),
-			),
+		grpc.ChainStreamInterceptor(
+			otelgrpc.StreamServerInterceptor(),
+			met.StreamServerInterceptor(),
+			grpc_logging.StreamServerInterceptor(InterceptorLogger(logger), logOpts...),
+		),
+		grpc.ChainUnaryInterceptor(
+			otelgrpc.UnaryServerInterceptor(),
+			met.UnaryServerInterceptor(),
+			grpc_logging.UnaryServerInterceptor(InterceptorLogger(logger), logOpts...),
 		),
 	)
 
@@ -159,8 +164,8 @@ func (s *Server) ListenAndServe(ctx context.Context, logger log.Logger, addr str
 			fallbackNotFound(internalMux, uiHandler),
 			allowedCORSOrigins,
 		),
-		ReadTimeout:  5 * time.Second, // TODO make config option
-		WriteTimeout: time.Minute,     // TODO make config option
+		ReadTimeout:  readTimeout,
+		WriteTimeout: writeTimeout,
 	}
 
 	met.InitializeMetrics(srv)

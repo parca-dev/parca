@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Select, useURLState, type SelectElement} from '@parca/components';
+import {Select, useParcaContext, useURLState, type SelectElement} from '@parca/components';
 import {useUIFeatureFlag} from '@parca/hooks';
 import type {NavigateFunction} from '@parca/utilities';
 
@@ -23,6 +23,7 @@ interface Props {
   primary?: boolean;
   addView?: boolean;
   disabled?: boolean;
+  icon?: JSX.Element;
 }
 
 const ViewSelector = ({
@@ -33,17 +34,22 @@ const ViewSelector = ({
   primary = false,
   addView = false,
   disabled = false,
+  icon,
 }: Props): JSX.Element => {
   const [callgraphEnabled] = useUIFeatureFlag('callgraph');
   const [dashboardItems = ['icicle'], setDashboardItems] = useURLState({
     param: 'dashboard_items',
     navigateTo,
   });
+  const {enableSourcesView} = useParcaContext();
 
   const allItems: Array<{key: string; canBeSelected: boolean; supportingText?: string}> = [
     {key: 'table', canBeSelected: !dashboardItems.includes('table')},
     {key: 'icicle', canBeSelected: !dashboardItems.includes('icicle')},
   ];
+  if (enableSourcesView === true) {
+    allItems.push({key: 'source', canBeSelected: false});
+  }
   if (callgraphEnabled) {
     allItems.push({
       key: 'callgraph',
@@ -110,6 +116,7 @@ const ViewSelector = ({
       placeholder={placeholderText ?? 'Select view type...'}
       primary={primary}
       disabled={disabled}
+      icon={icon}
     />
   );
 };

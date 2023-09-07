@@ -17,12 +17,39 @@ import {EVERYTHING_ELSE, FEATURE_TYPES, type Feature} from '@parca/store';
 import {getLastItem} from '@parca/utilities';
 
 import {hexifyAddress} from '../../utils';
-import {FIELD_FUNCTION_NAME, FIELD_LOCATION_ADDRESS, FIELD_MAPPING_FILE} from './index';
+import {
+  FIELD_FUNCTION_NAME,
+  FIELD_LABELS,
+  FIELD_LABELS_ONLY,
+  FIELD_LOCATION_ADDRESS,
+  FIELD_MAPPING_FILE,
+} from './index';
 
-export function nodeLabel(table: Table<any>, row: number, showBinaryName: boolean): string {
-  const functionName: string | null = table.getChild(FIELD_FUNCTION_NAME)?.get(row);
+export function nodeLabel(
+  table: Table<any>,
+  row: number,
+  level: number,
+  showBinaryName: boolean
+): string {
+  const functionName: string | null = arrowToString(table.getChild(FIELD_FUNCTION_NAME)?.get(row));
+  const labelsOnly: boolean | null = table.getChild(FIELD_LABELS_ONLY)?.get(row);
+  const pprofLabelPrefix = 'pprof_labels.';
+  const labelColumnNames = table.schema.fields.filter(field =>
+    field.name.startsWith(pprofLabelPrefix)
+  );
   if (functionName !== null && functionName !== '') {
     return functionName;
+  }
+
+  if (level === 1 && labelsOnly !== null && labelsOnly) {
+    return labelColumnNames
+      .map((field, i) => [
+        labelColumnNames[i].name.slice(pprofLabelPrefix.length),
+        arrowToString(table.getChild(field.name)?.get(row)) ?? '',
+      ])
+      .filter(value => value[1] !== '')
+      .map(([k, v]) => `${k}="${v}"`)
+      .join(', ');
   }
 
   let mappingString = '';
@@ -48,4 +75,14 @@ export const extractFeature = (mapping: string): Feature => {
   }
 
   return {name: EVERYTHING_ELSE, type: FEATURE_TYPES.Misc};
+};
+
+export const arrowToString = (buffer: any): string | null => {
+  if (buffer == null || typeof buffer === 'string') {
+    return buffer;
+  }
+  if (ArrayBuffer.isView(buffer)) {
+    return String.fromCharCode.apply(null, buffer as unknown as number[]);
+  }
+  return '';
 };

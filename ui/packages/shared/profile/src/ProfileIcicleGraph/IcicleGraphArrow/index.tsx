@@ -13,8 +13,9 @@
 
 import React, {memo, useEffect, useMemo, useRef, useState} from 'react';
 
-import {Dictionary, Table, Vector} from 'apache-arrow';
+import {Dictionary, Table, Vector, tableFromIPC} from 'apache-arrow';
 
+import {FlamegraphArrow} from '@parca/client';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {
   getColorForFeature,
@@ -32,21 +33,26 @@ import {
 } from '@parca/utilities';
 
 import GraphTooltipArrow from '../../GraphTooltipArrow';
+import GraphTooltipArrowContent from '../../GraphTooltipArrow/Content';
 import ColorStackLegend from './ColorStackLegend';
 import {IcicleNode, RowHeight, mappingColors} from './IcicleGraphNodes';
-import {extractFeature} from './utils';
+import {arrowToString, extractFeature} from './utils';
 
+export const FIELD_LABELS_ONLY = 'labels_only';
 export const FIELD_MAPPING_FILE = 'mapping_file';
 export const FIELD_MAPPING_BUILD_ID = 'mapping_build_id';
 export const FIELD_LOCATION_ADDRESS = 'location_address';
+export const FIELD_LOCATION_LINE = 'location_line';
 export const FIELD_FUNCTION_NAME = 'function_name';
 export const FIELD_FUNCTION_FILE_NAME = 'function_file_name';
+export const FIELD_FUNCTION_START_LINE = 'function_startline';
 export const FIELD_CHILDREN = 'children';
+export const FIELD_LABELS = 'labels';
 export const FIELD_CUMULATIVE = 'cumulative';
 export const FIELD_DIFF = 'diff';
 
 interface IcicleGraphArrowProps {
-  table: Table<any>;
+  arrow: FlamegraphArrow;
   total: bigint;
   filtered: bigint;
   sampleUnit: string;
@@ -54,10 +60,11 @@ interface IcicleGraphArrowProps {
   curPath: string[];
   setCurPath: (path: string[]) => void;
   navigateTo?: NavigateFunction;
+  sortBy: string;
 }
 
 export const IcicleGraphArrow = memo(function IcicleGraphArrow({
-  table,
+  arrow,
   total,
   filtered,
   width,
@@ -65,6 +72,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   curPath,
   sampleUnit,
   navigateTo,
+  sortBy,
 }: IcicleGraphArrowProps): React.JSX.Element {
   const dispatch = useAppDispatch();
   const [colorProfile] = useUserPreference<ColorProfileName>(
@@ -72,8 +80,13 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   );
   const isDarkMode = useAppSelector(selectDarkMode);
 
+  const table: Table<any> = useMemo(() => {
+    return tableFromIPC(arrow.record);
+  }, [arrow]);
+
   const [height, setHeight] = useState(0);
-  const sortBy = FIELD_FUNCTION_NAME; // TODO: make this configurable via UI
+  const [hoveringRow, setHoveringRow] = useState<number | null>(null);
+  const [hoveringLevel, setHoveringLevel] = useState<number | null>(null);
   const svg = useRef(null);
   const ref = useRef<SVGGElement>(null);
 
@@ -95,7 +108,8 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           const len = mapping.dictionary.length;
           const entries: string[] = [];
           for (let i = 0; i < len; i++) {
-            entries.push(getLastItem(mapping.dictionary.get(i)) ?? '');
+            const fn = arrowToString(mapping.dictionary.get(i));
+            entries.push(getLastItem(fn) ?? '');
           }
           return entries;
         })
@@ -114,7 +128,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
       }
       const len = fn.dictionary.length;
       for (let i = 0; i < len; i++) {
-        const fn: string | null = functionNamesDict?.get(i);
+        const fn: string | null = arrowToString(functionNamesDict?.get(i));
         if (fn?.startsWith('runtime') === true) {
           mappings.push('runtime');
           break;
@@ -155,24 +169,9 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     return scaleLinear([0n, total], [0, width]);
   }, [total, width]);
 
-  if (table.numRows === 0 || width === undefined) {
-    return <></>;
-  }
-
-  return (
-    <div onMouseLeave={() => dispatch(setHoveringNode(undefined))}>
-      <ColorStackLegend
-        mappingColors={mappingColors}
-        navigateTo={navigateTo}
-        compareMode={compareMode}
-      />
-      <GraphTooltipArrow
-        table={table}
-        unit={sampleUnit}
-        total={total}
-        totalUnfiltered={total + filtered}
-        contextElement={svg.current}
-      />
+  // useMemo for the root graph as it otherwise renders the whole graph if the hoveringRow changes.
+  const root = useMemo(() => {
+    return (
       <svg
         className="font-robotoMono"
         width={width}
@@ -188,7 +187,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               mappingColors={mappingColors}
               x={0}
               y={0}
-              totalWidth={width}
+              totalWidth={width ?? 1}
               height={RowHeight}
               setCurPath={setCurPath}
               curPath={curPath}
@@ -198,6 +197,8 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               level={0}
               isRoot={true}
               searchString={currentSearchString}
+              setHoveringRow={setHoveringRow}
+              setHoveringLevel={setHoveringLevel}
               sortBy={sortBy}
               darkMode={isDarkMode}
               compareMode={compareMode}
@@ -205,6 +206,46 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           </g>
         </g>
       </svg>
+    );
+  }, [
+    compareMode,
+    curPath,
+    currentSearchString,
+    height,
+    isDarkMode,
+    mappingColors,
+    setCurPath,
+    sortBy,
+    table,
+    total,
+    width,
+    xScale,
+  ]);
+
+  if (table.numRows === 0 || width === undefined) {
+    return <></>;
+  }
+
+  return (
+    <div onMouseLeave={() => dispatch(setHoveringNode(undefined))}>
+      <ColorStackLegend
+        mappingColors={mappingColors}
+        navigateTo={navigateTo}
+        compareMode={compareMode}
+      />
+      <GraphTooltipArrow contextElement={svg.current}>
+        <GraphTooltipArrowContent
+          table={table}
+          row={hoveringRow}
+          level={hoveringLevel ?? 0}
+          isFixed={false}
+          total={total}
+          totalUnfiltered={total + filtered}
+          unit={sampleUnit}
+          navigateTo={navigateTo as NavigateFunction}
+        />
+      </GraphTooltipArrow>
+      {root}
     </div>
   );
 });

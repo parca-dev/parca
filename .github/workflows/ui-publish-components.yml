@@ -41,7 +41,7 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GH_PAT_UI }}
     steps:
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           fetch-depth: "0"
           token: ${{ secrets.GH_PAT_UI }}
@@ -53,9 +53,11 @@ jobs:
           git checkout main
 
       - name: Set up Node.js
-        uses: actions/setup-node@e33196f7422957bea03ed53f6fbb155025ffc7b8 # v3.7.0
+        uses: actions/setup-node@5e21ff4d9bc1a8cf6de233a3057d20ec6b3fb69d # v3.8.1
         with:
           node-version-file: .node-version
+          cache: 'yarn'
+          cache-dependency-path: ui/yarn.lock
 
       - name: Ensure access
         working-directory: ui

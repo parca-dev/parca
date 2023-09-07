@@ -13,6 +13,10 @@ on:
     branches:
     - main
     - release-*
+  merge_group:
+    branches:
+    - main
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
   cancel-in-progress: true
@@ -50,19 +54,19 @@ jobs:
       run:
         working-directory: ./ui
     steps:
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           fetch-depth: 0 # Required to retrieve git history
       - name: Set up Node.js
-        uses: actions/setup-node@e33196f7422957bea03ed53f6fbb155025ffc7b8 # v3.7.0
+        uses: actions/setup-node@5e21ff4d9bc1a8cf6de233a3057d20ec6b3fb69d # v3.8.1
         with:
           node-version-file: .node-version
-          cache: yarn
+          cache: 'yarn'
       - name: Install dependencies and build app
         run: yarn install --frozen-lockfile --prefer-offline && yarn build
         # 👇 Adds Chromatic as a step in the workflow
       - name: Publish to Chromatic
-        uses: chromaui/action@44caff7e88d584b04f79f04e31e819f9a95d4d8f # v1
+        uses: chromaui/action@ebe6961baace1e0d9cc098eb14ae41ab96394958 # v1
         # Chromatic GitHub Action options
         with:
           # 👇 Chromatic projectToken, refer to the manage page to obtain it.

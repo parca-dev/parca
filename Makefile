@@ -50,6 +50,13 @@ clean:
 go/deps:
 	go mod tidy
 
+.PHONY: go/deps-check
+go/deps-check:
+	govulncheck ./...
+
+.PHONY: go/build
+go/build: go/bin
+
 .PHONY: go/bin
 go/bin: go/deps
 	mkdir -p ./bin
@@ -81,7 +88,7 @@ check-license:
 
 .PHONY: go/test
 go/test:
-	go test $(SANITIZERS) -v `go list ./...`
+	go test $(SANITIZERS) -tags assert -v `go list ./...`
 
 .PHONY: go/bench
 go/bench:

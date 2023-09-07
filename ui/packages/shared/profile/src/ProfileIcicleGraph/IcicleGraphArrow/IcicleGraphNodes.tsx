@@ -17,7 +17,7 @@ import {Table} from 'apache-arrow';
 import cx from 'classnames';
 
 import {useKeyDown} from '@parca/components';
-import {selectBinaries, setHoveringRow, useAppDispatch, useAppSelector} from '@parca/store';
+import {selectBinaries, useAppSelector} from '@parca/store';
 import {isSearchMatch, scaleLinear} from '@parca/utilities';
 
 import {
@@ -28,7 +28,7 @@ import {
   FIELD_MAPPING_FILE,
 } from './index';
 import useNodeColor from './useNodeColor';
-import {nodeLabel} from './utils';
+import {arrowToString, nodeLabel} from './utils';
 
 export const RowHeight = 26;
 
@@ -44,6 +44,8 @@ interface IcicleGraphNodesProps {
   level: number;
   curPath: string[];
   setCurPath: (path: string[]) => void;
+  setHoveringRow: (row: number | null) => void;
+  setHoveringLevel: (level: number | null) => void;
   path: string[];
   xScale: (value: bigint) => number;
   searchString?: string;
@@ -64,6 +66,8 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
   level,
   path,
   setCurPath,
+  setHoveringRow,
+  setHoveringLevel,
   curPath,
   sortBy,
   searchString,
@@ -79,13 +83,13 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
   childRows =
     curPath.length === 0
       ? childRows
-      : childRows.filter(c => nodeLabel(table, c, false) === curPath[0]);
+      : childRows.filter(c => nodeLabel(table, c, level, false) === curPath[0]);
 
   let childrenCumulative = BigInt(0);
   const childrenElements: ReactNode[] = [];
   childRows.forEach((child, i) => {
-    const xStart = Math.floor(xScale(childrenCumulative));
-    const c: bigint = cumulatives?.get(child);
+    const xStart = Math.floor(xScale(BigInt(childrenCumulative)));
+    const c = BigInt(cumulatives?.get(child));
     childrenCumulative += c;
 
     childrenElements.push(
@@ -100,6 +104,8 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
         height={RowHeight}
         path={path}
         setCurPath={setCurPath}
+        setHoveringRow={setHoveringRow}
+        setHoveringLevel={setHoveringLevel}
         level={level}
         curPath={curPath}
         total={total}
@@ -132,6 +138,8 @@ interface IcicleNodeProps {
   path: string[];
   total: bigint;
   setCurPath: (path: string[]) => void;
+  setHoveringRow: (row: number | null) => void;
+  setHoveringLevel: (level: number | null) => void;
   xScale: (value: bigint) => number;
   isRoot?: boolean;
   searchString?: string;
@@ -166,12 +174,13 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   xScale,
   isRoot = false,
   searchString,
+  setHoveringRow,
+  setHoveringLevel,
   sortBy,
   darkMode,
   compareMode,
 }: IcicleNodeProps): React.JSX.Element {
   const {isShiftDown} = useKeyDown();
-  const dispatch = useAppDispatch();
 
   // get the columns to read from
   const mappingColumn = table.getChild(FIELD_MAPPING_FILE);
@@ -179,10 +188,10 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const cumulativeColumn = table.getChild(FIELD_CUMULATIVE);
   const diffColumn = table.getChild(FIELD_DIFF);
   // get the actual values from the columns
-  const mappingFile: string | null = mappingColumn?.get(row);
-  const functionName: string | null = functionNameColumn?.get(row);
-  const cumulative: bigint = cumulativeColumn?.get(row);
-  const diff: bigint | null = diffColumn?.get(row);
+  const mappingFile: string | null = arrowToString(mappingColumn?.get(row));
+  const functionName: string | null = arrowToString(functionNameColumn?.get(row));
+  const cumulative = BigInt(cumulativeColumn?.get(row));
+  const diff: bigint | null = BigInt(diffColumn?.get(row));
   const childRows: number[] = Array.from(table.getChild(FIELD_CHILDREN)?.get(row) ?? []);
 
   // TODO: Maybe it's better to pass down the sorter function as prop instead of figuring this out here.
@@ -190,8 +199,8 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     case FIELD_FUNCTION_NAME:
       childRows.sort((a, b) => {
         // TODO: Support fallthrough to comparing addresses or something
-        const afn: string | null = functionNameColumn?.get(a);
-        const bfn: string | null = functionNameColumn?.get(b);
+        const afn: string | null = arrowToString(functionNameColumn?.get(a));
+        const bfn: string | null = arrowToString(functionNameColumn?.get(b));
         if (afn !== null && bfn !== null) {
           return afn.localeCompare(bfn);
         }
@@ -242,8 +251,8 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     functionName,
   });
   const name = useMemo(() => {
-    return isRoot ? 'root' : nodeLabel(table, row, binaries.length > 1);
-  }, [table, row, isRoot, binaries]);
+    return isRoot ? 'root' : nodeLabel(table, row, level, binaries.length > 1);
+  }, [table, row, level, isRoot, binaries]);
   const nextPath = path.concat([name]);
   const isFaded = curPath.length > 0 && name !== curPath[curPath.length - 1];
   const styles = isFaded ? fadedIcicleRectStyles : icicleRectStyles;
@@ -251,13 +260,13 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const nextCurPath = curPath.length === 0 ? [] : curPath.slice(1);
   const newXScale =
     nextCurPath.length === 0 && curPath.length === 1
-      ? scaleLinear([0n, cumulative], [0, totalWidth])
+      ? scaleLinear([0n, BigInt(cumulative)], [0, totalWidth])
       : xScale;
 
   const width: number =
     nextCurPath.length > 0 || (nextCurPath.length === 0 && curPath.length === 1)
       ? totalWidth
-      : xScale(cumulative);
+      : xScale(BigInt(cumulative));
 
   const {isHighlightEnabled = false, isHighlighted = false} = useMemo(() => {
     if (searchString === undefined || searchString === '') {
@@ -272,12 +281,14 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
 
   const onMouseEnter = (): void => {
     if (isShiftDown) return;
-    dispatch(setHoveringRow({row}));
+    setHoveringRow(row);
+    setHoveringLevel(level);
   };
 
   const onMouseLeave = (): void => {
     if (isShiftDown) return;
-    dispatch(setHoveringRow(undefined));
+    setHoveringRow(null);
+    setHoveringLevel(null);
   };
 
   return (
@@ -326,6 +337,8 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
           path={nextPath}
           curPath={nextCurPath}
           setCurPath={setCurPath}
+          setHoveringRow={setHoveringRow}
+          setHoveringLevel={setHoveringLevel}
           searchString={searchString}
           sortBy={sortBy}
           darkMode={darkMode}

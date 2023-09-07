@@ -19,7 +19,6 @@ import {ProfileTypesResponse, QueryServiceClient} from '@parca/client';
 import {
   Button,
   ButtonGroup,
-  Card,
   DateTimeRange,
   DateTimeRangePicker,
   IconButton,
@@ -100,7 +99,7 @@ const ProfileSelector = ({
     data: profileTypesData,
     error,
   } = useProfileTypes(queryClient);
-  const {heightStyle} = useMetricsGraphDimensions();
+  const {heightStyle} = useMetricsGraphDimensions(comparing);
 
   const [timeRangeSelection, setTimeRangeSelection] = useState(
     DateTimeRange.fromRangeKey(querySelection.timeSelection)
@@ -199,10 +198,11 @@ const ProfileSelector = ({
   const compareDisabled = selectedProfileName === '' || querySelection.expression === undefined;
 
   return (
-    <Card className="overflow-visible">
-      <Card.Header className="flex !items-center space-x-2">
-        <div className="flex w-full flex-wrap items-center justify-start space-x-2 space-y-1">
-          <div className="ml-2 mt-1">
+    <>
+      <div className="mb-2 flex gap-2">
+        <div className="flex w-full flex-wrap content-start items-end justify-between gap-2">
+          <div>
+            <label className="text-xs">Profile type</label>
             <ProfileTypeSelector
               profileTypesData={profileTypesData}
               loading={profileTypesLoading}
@@ -211,7 +211,9 @@ const ProfileSelector = ({
               error={error}
             />
           </div>
+
           <div className="w-full flex-1">
+            <label className="text-xs">Query</label>
             <MatchersInput
               queryClient={queryClient}
               setMatchersString={setMatchersString}
@@ -219,10 +221,13 @@ const ProfileSelector = ({
               currentQuery={query}
             />
           </div>
-          <DateTimeRangePicker
-            onRangeSelection={setTimeRangeSelection}
-            range={timeRangeSelection}
-          />
+          <div>
+            <label className="text-xs">Period</label>
+            <DateTimeRangePicker
+              onRangeSelection={setTimeRangeSelection}
+              range={timeRangeSelection}
+            />
+          </div>
           <ButtonGroup>
             {!searchDisabled && (
               <>
@@ -243,20 +248,21 @@ const ProfileSelector = ({
           </ButtonGroup>
         </div>
         <div>{comparing && <IconButton onClick={() => closeProfile()} icon={<CloseIcon />} />}</div>
-      </Card.Header>
-      {
-        <Card.Body>
-          <div style={{height: heightStyle}}>
-            {querySelection.expression !== undefined &&
-            querySelection.expression.length > 0 &&
-            querySelection.from !== undefined &&
-            querySelection.to !== undefined ? (
+      </div>
+      <div className="rounded bg-white shadow dark:border-gray-500 dark:bg-gray-700">
+        <div style={{height: heightStyle}}>
+          {querySelection.expression !== undefined &&
+          querySelection.expression.length > 0 &&
+          querySelection.from !== undefined &&
+          querySelection.to !== undefined ? (
+            <div className="p-2">
               <ProfileMetricsGraph
                 queryClient={queryClient}
                 queryExpression={querySelection.expression}
                 from={querySelection.from}
                 to={querySelection.to}
                 profile={profileSelection}
+                comparing={comparing}
                 setTimeRange={(range: DateTimeRange) => {
                   const from = range.getFromMs();
                   const to = range.getToMs();
@@ -293,19 +299,21 @@ const ProfileSelector = ({
                   selectProfile(new MergedProfileSelection(mergeFrom, mergeTo, query));
                 }}
               />
-            ) : (
-              <>
-                {profileSelection == null ? (
+            </div>
+          ) : (
+            <>
+              {profileSelection == null ? (
+                <div className="p-2">
                   <ProfileMetricsEmptyState
                     message={`Please select a profile type and click "Search" to begin.`}
                   />
-                ) : null}
-              </>
-            )}
-          </div>
-        </Card.Body>
-      }
-    </Card>
+                </div>
+              ) : null}
+            </>
+          )}
+        </div>
+      </div>
+    </>
   );
 };
 

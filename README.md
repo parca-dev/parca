@@ -1,11 +1,10 @@
-<p align="center">
-  <a href="#contributors-" target="_blank">
-    <img src="https://img.shields.io/github/all-contributors/parca-dev/parca?style=flat" alt="contributors">
-  </a>
-  <a href="https://discord.com/invite/ZgUpYgpzXy" target="_blank">
-    <img alt="Discord" src="https://img.shields.io/discord/877547706334199818?label=Discord">
-  </a>
-</p>
+[![Apache 2 License](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE)
+![Build](https://github.com/parca-dev/parca/actions/workflows/build-test.yml/badge.svg)
+![Container](https://github.com/parca-dev/parca/actions/workflows/container.yml/badge.svg)
+[![parca](https://snapcraft.io/parca/badge.svg)](https://snapcraft.io/parca-agent)
+![Discord](https://img.shields.io/discord/877547706334199818?label=Discord)
+![contributors](https://img.shields.io/github/all-contributors/parca-dev/parca?style=flat")
+
 <p align="center">
   <img src="ui/packages/shared/icons/src/assets/logo.svg" alt="Parca: Continuous profiling for analysis of CPU, memory usage over time, and down to the line number." height="75">
 </p>
@@ -83,81 +82,87 @@ Flags:
 Usage: parca
 
 Flags:
-  -h, --help                    Show context-sensitive help.
+  -h, --help                     Show context-sensitive help.
       --config-path="parca.yaml"
-                                Path to config file.
-      --mode="all"              Scraper only runs a scraper that sends to a
-                                remote gRPC endpoint. All runs all components.
-      --http-address=":7070"    Address to bind HTTP server to.
-      --port=""                 (DEPRECATED) Use http-address instead.
-      --log-level="info"        Log level.
-      --log-format="logfmt"     Configure if structured logging as JSON or as
-                                logfmt
+                                 Path to config file.
+      --mode="all"               Scraper only runs a scraper that sends to a
+                                 remote gRPC endpoint. All runs all components.
+      --http-address=":7070"     Address to bind HTTP server to.
+      --http-read-timeout=5s     Timeout duration for HTTP server to read
+                                 request body.
+      --http-write-timeout=1m    Timeout duration for HTTP server to write
+                                 response body.
+      --port=""                  (DEPRECATED) Use http-address instead.
+      --log-level="info"         Log level.
+      --log-format="logfmt"      Configure if structured logging as JSON or as
+                                 logfmt
+      --otlp-address=STRING      The endpoint to send OTLP traces to.
+      --otlp-exporter="grpc"     The OTLP exporter to use.
       --cors-allowed-origins=CORS-ALLOWED-ORIGINS,...
-                                Allowed CORS origins.
-      --otlp-address=STRING     OpenTelemetry collector address to send traces
-                                to.
-      --version                 Show application version.
-      --path-prefix=""          Path prefix for the UI
+                                 Allowed CORS origins.
+      --version                  Show application version.
+      --path-prefix=""           Path prefix for the UI
       --mutex-profile-fraction=0
-                                Fraction of mutex profile samples to collect.
-      --block-profile-rate=0    Sample rate for block profile.
-      --enable-persistence      Turn on persistent storage for the metastore and
-                                profile storage.
+                                 Fraction of mutex profile samples to collect.
+      --block-profile-rate=0     Sample rate for block profile.
+      --enable-persistence       Turn on persistent storage for the metastore
+                                 and profile storage.
       --storage-granule-size=26265625
-                                Granule size in bytes for storage.
+                                 Granule size in bytes for storage.
       --storage-active-memory=536870912
-                                Amount of memory to use for active storage.
-                                Defaults to 512MB.
-      --storage-path="data"     Path to storage directory.
-      --storage-enable-wal      Enables write ahead log for profile storage.
+                                 Amount of memory to use for active storage.
+                                 Defaults to 512MB.
+      --storage-path="data"      Path to storage directory.
+      --storage-enable-wal       Enables write ahead log for profile storage.
       --storage-snapshot-trigger-size=134217728
-                                Number of bytes to trigger a snapshot. Defaults
-                                to 1/4 of active memory. This is only used if
-                                enable-wal is set.
+                                 Number of bytes to trigger a snapshot. Defaults
+                                 to 1/4 of active memory. This is only used if
+                                 enable-wal is set.
       --storage-row-group-size=8192
-                                Number of rows in each row group during
-                                compaction and persistence. Setting to <= 0
-                                results in a single row group per file.
+                                 Number of rows in each row group during
+                                 compaction and persistence. Setting to <= 0
+                                 results in a single row group per file.
       --symbolizer-demangle-mode="simple"
-                                Mode to demangle C++ symbols. Default mode
-                                is simplified: no parameters, no templates,
-                                no return type
+                                 Mode to demangle C++ symbols. Default mode
+                                 is simplified: no parameters, no templates,
+                                 no return type
       --symbolizer-number-of-tries=3
-                                Number of tries to attempt to symbolize an
-                                unsybolized location
+                                 Number of tries to attempt to symbolize an
+                                 unsybolized location
       --debuginfo-cache-dir="/tmp"
-                                Path to directory where debuginfo is cached.
+                                 Path to directory where debuginfo is cached.
       --debuginfo-upload-max-size=1000000000
-                                Maximum size of debuginfo upload in bytes.
+                                 Maximum size of debuginfo upload in bytes.
       --debuginfo-upload-max-duration=15m
-                                Maximum duration of debuginfo upload.
+                                 Maximum duration of debuginfo upload.
       --debuginfo-uploads-signed-url
-                                Whether to use signed URLs for debuginfo
-                                uploads.
+                                 Whether to use signed URLs for debuginfo
+                                 uploads.
       --debuginfod-upstream-servers=debuginfod.elfutils.org,...
-                                Upstream debuginfod servers. Defaults to
-                                debuginfod.elfutils.org. It is an ordered
-                                list of servers to try. Learn more at
-                                https://sourceware.org/elfutils/Debuginfod.html
+                                 Upstream debuginfod servers. Defaults to
+                                 debuginfod.elfutils.org. It is an ordered
+                                 list of servers to try. Learn more at
+                                 https://sourceware.org/elfutils/Debuginfod.html
       --debuginfod-http-request-timeout=5m
-                                Timeout duration for HTTP request to upstream
-                                debuginfod server. Defaults to 5m
-      --metastore="badger"      Which metastore implementation to use
+                                 Timeout duration for HTTP request to upstream
+                                 debuginfod server. Defaults to 5m
+      --metastore="badger"       Which metastore implementation to use
       --profile-share-server="api.pprof.me:443"
-                                gRPC address to send share profile requests to.
-      --store-address=STRING    gRPC address to send profiles and symbols to.
-      --bearer-token=STRING     Bearer token to authenticate with store.
+                                 gRPC address to send share profile requests to.
+      --store-address=STRING     gRPC address to send profiles and symbols to.
+      --bearer-token=STRING      Bearer token to authenticate with store.
       --bearer-token-file=STRING
-                                File to read bearer token from to authenticate
-                                with store.
-      --insecure                Send gRPC requests via plaintext instead of TLS.
-      --insecure-skip-verify    Skip TLS certificate verification.
+                                 File to read bearer token from to authenticate
+                                 with store.
+      --insecure                 Send gRPC requests via plaintext instead of
+                                 TLS.
+      --insecure-skip-verify     Skip TLS certificate verification.
       --external-label=KEY=VALUE;...
-                                Label(s) to attach to all profiles in
-                                scraper-only mode.
-      --experimental-arrow      EXPERIMENTAL: Enables Arrow ingestion, this will
-                                reduce CPU usage but will increase memory usage.
+                                 Label(s) to attach to all profiles in
+                                 scraper-only mode.
+      --experimental-arrow       EXPERIMENTAL: Enables Arrow ingestion, this
+                                 will reduce CPU usage but will increase memory
+                                 usage.
 ```
 <!-- prettier-ignore-end -->
 

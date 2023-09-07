@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/go-kit/log"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/objstore/client"
 	"github.com/thanos-io/objstore/providers/filesystem"
@@ -52,7 +51,7 @@ func TestMetadata(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	bucket, err := client.NewBucket(logger, cfg, prometheus.NewRegistry(), "parca/store")
+	bucket, err := client.NewBucket(logger, cfg, "parca/store")
 	require.NoError(t, err)
 
 	store, err := NewStore(
@@ -70,15 +69,15 @@ func TestMetadata(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test that the initial state should be empty.
-	_, err = store.metadata.Fetch(ctx, "fake-build-id")
+	_, err = store.metadata.Fetch(ctx, "fake-build-id", debuginfopb.DebuginfoType_DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED)
 	require.ErrorIs(t, err, ErrMetadataNotFound)
 
 	// Updating the state should be written to blob storage.
 	time := time.Now()
-	err = store.metadata.MarkAsUploading(ctx, "fake-build-id", "fake-upload-id", "fake-hash", timestamppb.New(time))
+	err = store.metadata.MarkAsUploading(ctx, "fake-build-id", "fake-upload-id", "fake-hash", debuginfopb.DebuginfoType_DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED, timestamppb.New(time))
 	require.NoError(t, err)
 
-	dbginfo, err := store.metadata.Fetch(ctx, "fake-build-id")
+	dbginfo, err := store.metadata.Fetch(ctx, "fake-build-id", debuginfopb.DebuginfoType_DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED)
 	require.NoError(t, err)
 	require.Equal(t, "fake-build-id", dbginfo.BuildId)
 	require.Equal(t, "fake-upload-id", dbginfo.Upload.Id)

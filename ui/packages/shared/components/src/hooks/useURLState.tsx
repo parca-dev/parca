@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect} from 'react';
+import {useCallback, useEffect} from 'react';
 
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks/';
 import {
@@ -28,6 +28,22 @@ interface Props {
   withURLUpdate?: boolean;
 }
 
+const isEqual = (a: string | string[] | undefined, b: string | string[] | undefined): boolean => {
+  if (typeof a === 'string' && typeof b === 'string') {
+    return a === b;
+  }
+  if (Array.isArray(a) && Array.isArray(b)) {
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) return false;
+    }
+    return true;
+  }
+  if (a === undefined && b === undefined) {
+    return true;
+  }
+  return false;
+};
+
 export const useURLState = ({
   param,
   navigateTo,
@@ -41,10 +57,14 @@ export const useURLState = ({
 
   // 1. set initial value to the store value or URL value
   const value = useAppSelector(selectProfileStateValue(param)) ?? router[param];
-  const setValue = (
-    value: string | string[]
-  ): {payload: {key: string; value?: string | string[]}; type: string} =>
-    dispatch(setProfileStateValue({key: param, value}));
+  const setValue = useCallback(
+    (
+      value: string | string[]
+    ): {payload: {key: string; value?: string | string[]}; type: string} => {
+      return dispatch(setProfileStateValue({key: param, value}));
+    },
+    [dispatch, param]
+  );
 
   // whenever the store value changes, (optionally) update the URL
   useEffect(() => {
@@ -52,7 +72,7 @@ export const useURLState = ({
       val === undefined || val == null || val === '';
 
     if (withURLUpdate && navigateTo !== undefined) {
-      if (router[param] !== value) {
+      if (!isEqual(router[param], value)) {
         const searchParams = router;
         searchParams[param] = value;
 

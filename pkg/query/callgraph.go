@@ -29,7 +29,7 @@ const (
 	NodeCutOffFraction = float32(0.005)
 )
 
-func GenerateCallgraph(ctx context.Context, p *profile.Profile) (*querypb.Callgraph, error) {
+func GenerateCallgraph(ctx context.Context, p profile.OldProfile) (*querypb.Callgraph, error) {
 	nodesMap := make(map[string]*querypb.CallgraphNode)
 	nodes := make([]*querypb.CallgraphNode, 0)
 	edges := make([]*querypb.CallgraphEdge, 0)

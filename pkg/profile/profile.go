@@ -16,9 +16,82 @@ package profile
 import (
 	"time"
 
+	"github.com/apache/arrow/go/v14/arrow"
+
 	pprofproto "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 )
+
+const (
+	ColumnLabelsPrefix      = ColumnLabels + "."
+	ColumnPprofLabelsPrefix = ColumnPprofLabels + "."
+)
+
+var LocationsField = arrow.Field{
+	Name: "locations",
+	Type: arrow.ListOf(arrow.StructOf([]arrow.Field{{
+		Name: "address",
+		Type: arrow.PrimitiveTypes.Uint64,
+	}, {
+		Name: "mapping_start",
+		Type: arrow.PrimitiveTypes.Uint64,
+	}, {
+		Name: "mapping_limit",
+		Type: arrow.PrimitiveTypes.Uint64,
+	}, {
+		Name: "mapping_offset",
+		Type: arrow.PrimitiveTypes.Uint64,
+	}, {
+		Name: "mapping_file",
+		Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
+	}, {
+		Name: "mapping_build_id",
+		Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
+	}, {
+		Name: "lines",
+		Type: arrow.ListOf(arrow.StructOf([]arrow.Field{{
+			Name: "line",
+			Type: arrow.PrimitiveTypes.Int64,
+		}, {
+			Name: "function_name",
+			Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
+		}, {
+			Name: "function_system_name",
+			Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
+		}, {
+			Name: "function_filename",
+			Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
+		}, {
+			Name: "function_start_line",
+			Type: arrow.PrimitiveTypes.Int64,
+		}}...)),
+	}}...)),
+}
+
+func LocationsArrowSchema() *arrow.Schema {
+	return arrow.NewSchema([]arrow.Field{LocationsField}, nil)
+}
+
+func ArrowSamplesField(profileLabelFields []arrow.Field) []arrow.Field {
+	numFields := len(profileLabelFields) + 3 // +3 for stacktraces, value and diff
+	fields := make([]arrow.Field, numFields)
+	copy(fields, profileLabelFields)
+	fields[numFields-3] = LocationsField
+	fields[numFields-2] = arrow.Field{
+		Name: "value",
+		Type: arrow.PrimitiveTypes.Int64,
+	}
+	fields[numFields-1] = arrow.Field{
+		Name: "diff",
+		Type: arrow.PrimitiveTypes.Int64,
+	}
+
+	return fields
+}
+
+func ArrowSchema(profileLabelFields []arrow.Field) *arrow.Schema {
+	return arrow.NewSchema(ArrowSamplesField(profileLabelFields), nil)
+}
 
 type LocationLine struct {
 	Line     int64
@@ -60,8 +133,13 @@ type NormalizedSample struct {
 }
 
 type Profile struct {
-	Samples []*SymbolizedSample
+	Samples []arrow.Record
 	Meta    Meta
+}
+
+type OldProfile struct {
+	Meta    Meta
+	Samples []*SymbolizedSample
 }
 
 type NormalizedProfile struct {

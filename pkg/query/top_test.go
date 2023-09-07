@@ -19,6 +19,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 
@@ -35,6 +36,12 @@ import (
 func TestGenerateTopTable(t *testing.T) {
 	ctx := context.Background()
 
+	reg := prometheus.NewRegistry()
+	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
+		Name: "parca_test_counter",
+		Help: "parca_test_counter",
+	})
+
 	fileContent := MustReadAllGzip(t, "testdata/alloc_objects.pb.gz")
 	p := &pprofpb.Profile{}
 	require.NoError(t, p.UnmarshalVT(fileContent))
@@ -46,12 +53,12 @@ func TestGenerateTopTable(t *testing.T) {
 		trace.NewNoopTracerProvider().Tracer(""),
 	)
 	metastore := metastore.NewInProcessClient(l)
-	normalizer := parcacol.NewNormalizer(metastore, true)
-	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false)
+	normalizer := parcacol.NewNormalizer(metastore, true, counter)
+	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false, nil)
 	require.NoError(t, err)
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	symbolizedProfile, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
+	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
 	res, cummulative, err := GenerateTopTable(ctx, symbolizedProfile)
@@ -140,7 +147,7 @@ func TestGenerateTopTableAggregateFlat(t *testing.T) {
 	st2 := sres.Stacktraces[1]
 	st3 := sres.Stacktraces[2]
 
-	p, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, &profile.NormalizedProfile{
+	p, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, &profile.NormalizedProfile{
 		Samples: []*profile.NormalizedSample{{
 			StacktraceID: st1.Id,
 			Value:        1,
@@ -176,6 +183,11 @@ func TestGenerateDiffTopTable(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
+	reg := prometheus.NewRegistry()
+	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
+		Name: "parca_test_counter",
+		Help: "parca_test_counter",
+	})
 
 	p1 := &pprofpb.Profile{}
 	fileContent := MustReadAllGzip(t, "testdata/alloc_objects.pb.gz")
@@ -188,8 +200,8 @@ func TestGenerateDiffTopTable(t *testing.T) {
 		trace.NewNoopTracerProvider().Tracer(""),
 	)
 	metastore := metastore.NewInProcessClient(l)
-	normalizer := parcacol.NewNormalizer(metastore, true)
-	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p1, false)
+	normalizer := parcacol.NewNormalizer(metastore, true, counter)
+	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p1, false, nil)
 	require.NoError(t, err)
 
 	p2 := profiles[0]
@@ -208,7 +220,7 @@ func TestGenerateDiffTopTable(t *testing.T) {
 	require.Truef(t, found, "expected to find the specific sample")
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
-	p, err := parcacol.NewArrowToProfileConverter(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
+	p, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
 	res, _, err := GenerateTopTable(ctx, p)
