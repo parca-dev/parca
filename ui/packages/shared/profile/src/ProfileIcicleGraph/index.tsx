@@ -244,11 +244,13 @@ const groupByOptions = [
     value: FIELD_FUNCTION_NAME,
     label: 'Function Name',
     description: 'Stacktraces are grouped by function names.',
+    disabled: true,
   },
   {
     value: FIELD_LABELS,
     label: 'Labels',
     description: 'Stacktraces are grouped by pprof labels.',
+    disabled: false,
   },
 ];
 
@@ -289,18 +291,17 @@ const GroupByDropdown = ({
             <div className="p-4">
               <fieldset>
                 <div className="space-y-5">
-                  {groupByOptions.map(({value, label, description}) => (
+                  {groupByOptions.map(({value, label, description, disabled}) => (
                     <div key={value} className="relative flex items-start">
                       <div className="flex h-6 items-center">
                         <input
                           id={value}
                           name={value}
                           type="checkbox"
+                          disabled={disabled}
                           className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
                           checked={groupBy.includes(value)}
-                          onChange={() => {
-                            toggleGroupBy(value);
-                          }}
+                          onChange={() => toggleGroupBy(value)}
                         />
                       </div>
                       <div className="ml-3 text-sm leading-6">
