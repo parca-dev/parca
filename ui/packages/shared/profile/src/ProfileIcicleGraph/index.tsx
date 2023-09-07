@@ -271,7 +271,7 @@ const GroupByDropdown = ({
       <label className="text-sm">Group</label>
       <Menu as="div" className="relative text-left">
         <div>
-          <Menu.Button className="relative w-full cursor-default rounded-md border bg-gray-50 py-2 pl-3 pr-10 text-left text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 sm:text-sm">
+          <Menu.Button className="relative w-full cursor-default rounded-md border bg-white py-2 pl-3 pr-10 text-left text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 sm:text-sm">
             <span className="ml-3 block overflow-x-hidden text-ellipsis">{label}</span>
             <span className="pointer-events-none absolute inset-y-0 right-0 ml-3 flex items-center pr-2 text-gray-400">
               <Icon icon="heroicons:chevron-down-20-solid" aria-hidden="true" />
