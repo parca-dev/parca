@@ -17,6 +17,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"slices"
@@ -26,6 +27,7 @@ import (
 
 	"github.com/apache/arrow/go/v14/arrow"
 	"github.com/apache/arrow/go/v14/arrow/array"
+	"github.com/apache/arrow/go/v14/arrow/ipc"
 	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/go-kit/log"
 	pprofprofile "github.com/google/pprof/profile"
@@ -52,43 +54,37 @@ type flamegraphRow struct {
 	MappingFile        string
 	MappingBuildID     string
 	LocationAddress    uint64
-	LocationLine       int64
-	FunctionStartLine  int64
+	LocationLine       uint8
+	FunctionStartLine  uint8
 	FunctionName       string
 	FunctionSystemName string
 	FunctionFilename   string
 	Labels             map[string]string
 	Children           []uint32
-	Cumulative         int64
-	Diff               int64
+	Cumulative         uint8
+	Diff               int8
 }
 
 type flamegraphColumns struct {
 	labelsOnly          []bool
-	mappingStart        []uint64
-	mappingLimit        []uint64
-	mappingOffset       []uint64
 	mappingFiles        []string
 	mappingBuildIDs     []string
 	locationAddresses   []uint64
-	locationLines       []int64
-	functionStartLines  []int64
+	locationLines       []uint8
+	functionStartLines  []uint8
 	functionNames       []string
 	functionSystemNames []string
 	functionFileNames   []string
 	labels              []map[string]string
 	children            [][]uint32
-	cumulative          []int64
-	diff                []int64
+	cumulative          []uint8
+	diff                []int8
 }
 
 func rowsToColumn(rows []flamegraphRow) flamegraphColumns {
 	columns := flamegraphColumns{}
 	for _, row := range rows {
 		columns.labelsOnly = append(columns.labelsOnly, row.LabelsOnly)
-		columns.mappingStart = append(columns.mappingStart, row.MappingStart)
-		columns.mappingLimit = append(columns.mappingLimit, row.MappingLimit)
-		columns.mappingOffset = append(columns.mappingOffset, row.MappingOffset)
 		columns.mappingFiles = append(columns.mappingFiles, row.MappingFile)
 		columns.mappingBuildIDs = append(columns.mappingBuildIDs, row.MappingBuildID)
 		columns.locationAddresses = append(columns.locationAddresses, row.LocationAddress)
@@ -166,6 +162,10 @@ func extractColumn(t *testing.T, r arrow.Record, field string) any {
 		}
 
 		return vals
+	case *array.Uint8:
+		return arr.Uint8Values()
+	case *array.Int8:
+		return arr.Int8Values()
 	case *array.Dictionary:
 		dict := arr.Dictionary()
 		switch dict := dict.(type) {
@@ -407,7 +407,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 			require.Equal(t, tc.cumulative, cumulative)
 			require.Equal(t, tc.height, height)
 			require.Equal(t, tc.trimmed, trimmed)
-			require.Equal(t, int64(16), fa.NumCols())
+			require.Equal(t, int64(13), fa.NumCols())
 
 			// Convert the numRows to columns for easier access when testing below.
 			expectedColumns := rowsToColumn(tc.rows)
@@ -436,21 +436,18 @@ func (c *flamegraphComparer) convert(r arrow.Record) {
 	c.t.Helper()
 	c.actual = flamegraphColumns{
 		labelsOnly:          extractColumn(c.t, r, FlamegraphFieldLabelsOnly).([]bool),
-		mappingStart:        extractColumn(c.t, r, FlamegraphFieldMappingStart).([]uint64),
-		mappingLimit:        extractColumn(c.t, r, FlamegraphFieldMappingLimit).([]uint64),
-		mappingOffset:       extractColumn(c.t, r, FlamegraphFieldMappingOffset).([]uint64),
 		mappingFiles:        extractColumn(c.t, r, FlamegraphFieldMappingFile).([]string),
 		mappingBuildIDs:     extractColumn(c.t, r, FlamegraphFieldMappingBuildID).([]string),
 		locationAddresses:   extractColumn(c.t, r, FlamegraphFieldLocationAddress).([]uint64),
-		locationLines:       extractColumn(c.t, r, FlamegraphFieldLocationLine).([]int64),
-		functionStartLines:  extractColumn(c.t, r, FlamegraphFieldFunctionStartLine).([]int64),
+		locationLines:       extractColumn(c.t, r, FlamegraphFieldLocationLine).([]uint8),
+		functionStartLines:  extractColumn(c.t, r, FlamegraphFieldFunctionStartLine).([]uint8),
 		functionNames:       extractColumn(c.t, r, FlamegraphFieldFunctionName).([]string),
 		functionSystemNames: extractColumn(c.t, r, FlamegraphFieldFunctionSystemName).([]string),
 		functionFileNames:   extractColumn(c.t, r, FlamegraphFieldFunctionFileName).([]string),
 		labels:              extractLabelColumns(c.t, r),
 		children:            extractChildrenColumn(c.t, r),
-		cumulative:          extractColumn(c.t, r, FlamegraphFieldCumulative).([]int64),
-		diff:                extractColumn(c.t, r, FlamegraphFieldDiff).([]int64),
+		cumulative:          extractColumn(c.t, r, FlamegraphFieldCumulative).([]uint8),
+		diff:                extractColumn(c.t, r, FlamegraphFieldDiff).([]int8),
 	}
 }
 
@@ -502,9 +499,6 @@ func (c *flamegraphComparer) compare(expected flamegraphColumns) {
 	}
 
 	require.Equal(c.t, expected.labelsOnly, reorder(c.actual.labelsOnly, order))
-	require.Equal(c.t, expected.mappingStart, reorder(c.actual.mappingStart, order))
-	require.Equal(c.t, expected.mappingLimit, reorder(c.actual.mappingLimit, order))
-	require.Equal(c.t, expected.mappingOffset, reorder(c.actual.mappingOffset, order))
 	require.Equal(c.t, expected.mappingFiles, reorder(c.actual.mappingFiles, order))
 	require.Equal(c.t, expected.mappingBuildIDs, reorder(c.actual.mappingBuildIDs, order))
 	require.Equal(c.t, expected.locationAddresses, reorder(c.actual.locationAddresses, order))
@@ -568,7 +562,7 @@ func TestGenerateFlamegraphArrowEmpty(t *testing.T) {
 	require.Equal(t, int64(0), total)
 	require.Equal(t, int32(1), height)
 	require.Equal(t, int64(0), trimmed)
-	require.Equal(t, int64(15), record.NumCols())
+	require.Equal(t, int64(12), record.NumCols())
 	require.Equal(t, int64(1), record.NumRows())
 }
 
@@ -598,7 +592,7 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 		{ID: 1, Address: 0xa1, Line: []pprofprofile.Line{{Line: 173, Function: functions[0]}}},
 		{ID: 2, Address: 0xa2, Line: []pprofprofile.Line{
 			{Line: 89, Function: functions[1]},
-			{Line: 402, Function: functions[2]},
+			{Line: 200, Function: functions[2]},
 		}},
 		{ID: 3, Address: 0xa3, Line: []pprofprofile.Line{{Line: 84, Function: functions[3]}}},
 	}
@@ -641,13 +635,13 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 	require.Equal(t, int32(5), height)
 	require.Equal(t, int64(0), trimmed)
 
-	require.Equal(t, int64(15), record.NumCols())
+	require.Equal(t, int64(12), record.NumCols())
 	require.Equal(t, int64(5), record.NumRows())
 
 	rows := []flamegraphRow{
 		{MappingFile: array.NullValueStr, MappingBuildID: array.NullValueStr, LocationAddress: 0, LocationLine: 0, FunctionStartLine: 0, FunctionName: "(null)", FunctionSystemName: "(null)", FunctionFilename: "(null)", Cumulative: 1, Labels: nil, Children: []uint32{1}},                                                                                        // 0
 		{MappingFile: array.NullValueStr, MappingBuildID: array.NullValueStr, LocationAddress: 0xa1, LocationLine: 173, FunctionStartLine: 0, FunctionName: "net.(*netFD).accept", FunctionSystemName: "net.(*netFD).accept", FunctionFilename: "net/fd_unix.go", Cumulative: 1, Labels: nil, Children: []uint32{2}},                                                 // 1
-		{MappingFile: array.NullValueStr, MappingBuildID: array.NullValueStr, LocationAddress: 0xa2, LocationLine: 402, FunctionStartLine: 0, FunctionName: "internal/poll.(*pollDesc).waitRead", FunctionSystemName: "internal/poll.(*pollDesc).waitRead", FunctionFilename: "internal/poll/fd_poll_runtime.go", Cumulative: 1, Labels: nil, Children: []uint32{3}}, // 2
+		{MappingFile: array.NullValueStr, MappingBuildID: array.NullValueStr, LocationAddress: 0xa2, LocationLine: 200, FunctionStartLine: 0, FunctionName: "internal/poll.(*pollDesc).waitRead", FunctionSystemName: "internal/poll.(*pollDesc).waitRead", FunctionFilename: "internal/poll/fd_poll_runtime.go", Cumulative: 1, Labels: nil, Children: []uint32{3}}, // 2
 		{MappingFile: array.NullValueStr, MappingBuildID: array.NullValueStr, LocationAddress: 0xa2, LocationLine: 89, FunctionStartLine: 0, FunctionName: "internal/poll.(*FD).Accept", FunctionSystemName: "internal/poll.(*FD).Accept", FunctionFilename: "internal/poll/fd_unix.go", Cumulative: 1, Labels: nil, Children: []uint32{4}},                          // 3
 		{MappingFile: array.NullValueStr, MappingBuildID: array.NullValueStr, LocationAddress: 0xa3, LocationLine: 84, FunctionStartLine: 0, FunctionName: "internal/poll.(*pollDesc).wait", FunctionSystemName: "internal/poll.(*pollDesc).wait", FunctionFilename: "internal/poll/fd_poll_runtime.go", Cumulative: 1, Labels: nil, Children: nil},                  // 4
 	}
@@ -762,7 +756,7 @@ func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 			require.Equal(t, tc.height, height)
 			require.Equal(t, tc.trimmed, trimmed)
 			require.Equal(t, int64(len(tc.rows)), fa.NumRows())
-			require.Equal(t, int64(15), fa.NumCols())
+			require.Equal(t, int64(12), fa.NumCols())
 
 			// Convert the numRows to columns for easier access when testing below.
 			expectedColumns := rowsToColumn(tc.rows)
@@ -888,7 +882,7 @@ func TestGenerateFlamegraphArrowTrimming(t *testing.T) {
 	require.Equal(t, int32(5), height)
 	require.Equal(t, int64(4), trimmed)
 	require.Equal(t, int64(3), fa.NumRows())
-	require.Equal(t, int64(15), fa.NumCols())
+	require.Equal(t, int64(12), fa.NumCols())
 
 	// TODO: MappingBuildID and FunctionSystemNames shouldn't be "" but null?
 	rows := []flamegraphRow{
@@ -1053,4 +1047,53 @@ func TestCompactDictionary(t *testing.T) {
 	index3Builder.Release()
 	index3.Release()
 	compArr.Release()
+}
+
+func TestRecordStats(t *testing.T) {
+	mem := memory.NewCheckedAllocator(memory.NewGoAllocator())
+	defer mem.AssertSize(t, 0)
+
+	fileContent, err := os.ReadFile("testdata/alloc_objects.pb.gz")
+	require.NoError(t, err)
+
+	gz, err := gzip.NewReader(bytes.NewBuffer(fileContent))
+	require.NoError(t, err)
+
+	decompressed, err := io.ReadAll(gz)
+	require.NoError(t, err)
+
+	p := &pprofpb.Profile{}
+	require.NoError(t, p.UnmarshalVT(decompressed))
+
+	pp, err := pprofprofile.ParseData(fileContent)
+	require.NoError(t, err)
+
+	np, err := PprofToSymbolizedProfile(parcaprofile.MetaFromPprof(p, "memory", 0), pp, 0)
+	require.NoError(t, err)
+
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+
+	record, _, _, _, err := generateFlamegraphArrowRecord(
+		context.Background(),
+		mem,
+		tracer,
+		np,
+		nil,
+		0,
+	)
+	require.NoError(t, err)
+	defer record.Release()
+
+	var buf bytes.Buffer
+	w := ipc.NewWriter(&buf,
+		ipc.WithSchema(record.Schema()),
+		ipc.WithAllocator(mem),
+	)
+	defer w.Close()
+
+	err = w.Write(record)
+	require.NoError(t, err)
+
+	fmt.Println("Encoded:", buf.Len())
+	fmt.Println(recordStats(record))
 }
