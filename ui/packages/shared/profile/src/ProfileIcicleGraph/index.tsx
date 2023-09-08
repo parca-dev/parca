@@ -18,6 +18,7 @@ import {Icon} from '@iconify/react';
 
 import {Flamegraph, FlamegraphArrow} from '@parca/client';
 import {Button, Select, useParcaContext, useURLState} from '@parca/components';
+import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {divide, selectQueryParam, type NavigateFunction} from '@parca/utilities';
 
 import DiffLegend from '../components/DiffLegend';
@@ -54,7 +55,14 @@ const ShowHideLegendButton = ({navigateTo}: {navigateTo?: NavigateFunction}): JS
     navigateTo,
   });
 
+  const compareMode: boolean =
+    selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
+
   const isColorStackLegendEnabled = colorStackLegend === 'true';
+
+  const [colorProfileName] = useUserPreference<string>(
+    USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
+  );
 
   const setColorStackLegend = useCallback(
     (value: string): void => {
@@ -64,14 +72,18 @@ const ShowHideLegendButton = ({navigateTo}: {navigateTo?: NavigateFunction}): JS
   );
 
   return (
-    <Button
-      className="gap-2"
-      variant="neutral"
-      onClick={() => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true')}
-    >
-      {isColorStackLegendEnabled ? 'Hide legend' : 'Show legend'}
-      <Icon icon={isColorStackLegendEnabled ? 'ph:eye-closed' : 'ph:eye'} width={20} />
-    </Button>
+    <>
+      {colorProfileName === 'default' || compareMode ? null : (
+        <Button
+          className="gap-2"
+          variant="neutral"
+          onClick={() => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true')}
+        >
+          {isColorStackLegendEnabled ? 'Hide legend' : 'Show legend'}
+          <Icon icon={isColorStackLegendEnabled ? 'ph:eye-closed' : 'ph:eye'} width={20} />
+        </Button>
+      )}
+    </>
   );
 };
 
