@@ -552,7 +552,6 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 			r.Retain()
 			records = append(records, r)
 			rows += int(r.NumRows())
-			fmt.Printf("%v\n", r)
 			return nil
 		})
 	if err != nil {
