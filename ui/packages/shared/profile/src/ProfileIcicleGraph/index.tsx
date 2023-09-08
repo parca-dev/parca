@@ -48,6 +48,33 @@ interface ProfileIcicleGraphProps {
   error?: any;
 }
 
+const ShowHideLegendButton = ({navigateTo}: {navigateTo?: NavigateFunction}): JSX.Element => {
+  const [colorStackLegend, setStoreColorStackLegend] = useURLState({
+    param: 'color_stack_legend',
+    navigateTo,
+  });
+
+  const isColorStackLegendEnabled = colorStackLegend === 'true';
+
+  const setColorStackLegend = useCallback(
+    (value: string): void => {
+      setStoreColorStackLegend(value);
+    },
+    [setStoreColorStackLegend]
+  );
+
+  return (
+    <Button
+      className="gap-2"
+      variant="neutral"
+      onClick={() => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true')}
+    >
+      {isColorStackLegendEnabled ? 'Hide legend' : 'Show legend'}
+      <Icon icon={isColorStackLegendEnabled ? 'ph:eye-closed' : 'ph:eye'} width={20} />
+    </Button>
+  );
+};
+
 const GroupAndSortActionButtons = ({navigateTo}: {navigateTo?: NavigateFunction}): JSX.Element => {
   const [storeSortBy = FIELD_FUNCTION_NAME, setStoreSortBy] = useURLState({
     param: 'sort_by',
@@ -160,16 +187,14 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
       <div className="flex w-full justify-end gap-2 pb-2">
         <div className="ml-2 flex w-full items-end justify-between gap-2">
           {arrow !== undefined && <GroupAndSortActionButtons navigateTo={navigateTo} />}
-          <div>
-            <Button
-              color="neutral"
-              onClick={() => setNewCurPath([])}
-              disabled={curPath.length === 0}
-              variant="neutral"
-            >
-              Reset View
-            </Button>
-          </div>
+          <ShowHideLegendButton navigateTo={navigateTo} />
+          <Button
+            variant="neutral"
+            onClick={() => setNewCurPath([])}
+            disabled={curPath.length === 0}
+          >
+            Reset View
+          </Button>
         </div>
       </div>
     );
