@@ -1010,12 +1010,14 @@ func (fb *flamegraphBuilder) appendRow(
 
 	fb.builderLabelsOnly.Append(false)
 
-	// Mapping
-	if r.MappingStart.IsValid(locationRow) {
+	if r.MappingFileIndices.IsValid(locationRow) {
 		fb.builderMappingFileIndices.Append(t.mappingFile.indices.Value(int(r.MappingFileIndices.Value(locationRow))))
-		fb.builderMappingBuildIDIndices.Append(t.mappingBuildID.indices.Value(int(r.MappingBuildIDIndices.Value(locationRow))))
 	} else {
 		fb.builderMappingFileIndices.AppendNull()
+	}
+	if r.MappingBuildIDIndices.IsValid(locationRow) {
+		fb.builderMappingBuildIDIndices.Append(t.mappingBuildID.indices.Value(int(r.MappingBuildIDIndices.Value(locationRow))))
+	} else {
 		fb.builderMappingBuildIDIndices.AppendNull()
 	}
 
