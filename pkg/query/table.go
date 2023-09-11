@@ -24,6 +24,7 @@ import (
 	"github.com/apache/arrow/go/v14/arrow/math"
 	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/polarsignals/frostdb/pqarrow/builder"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
 	queryv1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
@@ -31,14 +32,10 @@ import (
 )
 
 const (
-	TableFieldMappingStart   = "mapping_start"
-	TableFieldMappingLimit   = "mapping_limit"
-	TableFieldMappingOffset  = "mapping_offset"
 	TableFieldMappingFile    = "mapping_file"
 	TableFieldMappingBuildID = "mapping_build_id"
 
 	TableFieldLocationAddress = "location_address"
-	TableFieldLocationFolded  = "location_folded"
 	TableFieldLocationLine    = "location_line"
 
 	TableFieldFunctionStartLine  = "function_startline"
@@ -79,6 +76,11 @@ func GenerateTable(
 		return nil, 0, err
 	}
 
+	span.SetAttributes(attribute.Int("record_size", buf.Len()))
+	if buf.Len() > 1<<22 { // 4MiB
+		span.SetAttributes(attribute.String("record_stats", recordStats(record)))
+	}
+
 	return &queryv1alpha1.TableArrow{
 		Record: buf.Bytes(),
 		Unit:   p.Meta.SampleType.Unit,
@@ -112,7 +114,7 @@ func generateTableArrowRecord(
 					isLeaf := locationRow == int(lOffsetStart)
 					var buildID []byte
 					if r.MappingBuildIDDict.IsValid(locationRow) {
-						buildID = r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(locationRow))
+						buildID = r.MappingBuildIDDict.Value(int(r.MappingBuildIDIndices.Value(locationRow)))
 					}
 					addr := r.Address.Value(locationRow)
 
@@ -141,8 +143,8 @@ func generateTableArrowRecord(
 					for lineRow := int(llOffsetStart); lineRow < int(llOffsetEnd); lineRow++ {
 						isLeaf := locationRow == int(lOffsetStart) && lineRow == int(llOffsetStart)
 
-						if r.Line.IsValid(lineRow) && r.LineFunctionName.IsValid(lineRow) {
-							fn := r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow))
+						if r.Line.IsValid(lineRow) && r.LineFunctionNameIndices.IsValid(lineRow) {
+							fn := r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(lineRow)))
 							if cr, ok := tb.functions[unsafeString(fn)]; !ok {
 								if err := tb.appendRow(r, sampleRow, locationRow, lineRow, isLeaf); err != nil {
 									return nil, 0, err
@@ -172,13 +174,9 @@ type tableBuilder struct {
 	rb     *builder.RecordBuilder
 	schema *arrow.Schema
 
-	builderMappingStart       *array.Uint64Builder
-	builderMappingLimit       *array.Uint64Builder
-	builderMappingOffset      *array.Uint64Builder
 	builderMappingFile        *array.BinaryDictionaryBuilder
 	builderMappingBuildID     *array.BinaryDictionaryBuilder
 	builderLocationAddress    *array.Uint64Builder
-	builderLocationFolded     *builder.OptBooleanBuilder
 	builderLocationLine       *builder.OptInt64Builder
 	builderFunctionStartLine  *builder.OptInt64Builder
 	builderFunctionName       *array.BinaryDictionaryBuilder
@@ -192,14 +190,10 @@ type tableBuilder struct {
 
 func newTableBuilder(mem memory.Allocator) *tableBuilder {
 	schema := arrow.NewSchema([]arrow.Field{
-		{Name: TableFieldMappingStart, Type: arrow.PrimitiveTypes.Uint64},
-		{Name: TableFieldMappingLimit, Type: arrow.PrimitiveTypes.Uint64},
-		{Name: TableFieldMappingOffset, Type: arrow.PrimitiveTypes.Uint64},
 		{Name: TableFieldMappingFile, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint16, ValueType: arrow.BinaryTypes.String}},
 		{Name: TableFieldMappingBuildID, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint16, ValueType: arrow.BinaryTypes.String}},
 		// Location
 		{Name: TableFieldLocationAddress, Type: arrow.PrimitiveTypes.Uint64},
-		{Name: TableFieldLocationFolded, Type: &arrow.BooleanType{}},
 		{Name: TableFieldLocationLine, Type: arrow.PrimitiveTypes.Int64},
 		// Function
 		{Name: TableFieldFunctionStartLine, Type: arrow.PrimitiveTypes.Int64},
@@ -222,13 +216,9 @@ func newTableBuilder(mem memory.Allocator) *tableBuilder {
 
 		rb:                        rb,
 		schema:                    schema,
-		builderMappingStart:       rb.Field(schema.FieldIndices(TableFieldMappingStart)[0]).(*array.Uint64Builder),
-		builderMappingLimit:       rb.Field(schema.FieldIndices(TableFieldMappingLimit)[0]).(*array.Uint64Builder),
-		builderMappingOffset:      rb.Field(schema.FieldIndices(TableFieldMappingOffset)[0]).(*array.Uint64Builder),
 		builderMappingFile:        rb.Field(schema.FieldIndices(TableFieldMappingFile)[0]).(*array.BinaryDictionaryBuilder),
 		builderMappingBuildID:     rb.Field(schema.FieldIndices(TableFieldMappingBuildID)[0]).(*array.BinaryDictionaryBuilder),
 		builderLocationAddress:    rb.Field(schema.FieldIndices(TableFieldLocationAddress)[0]).(*array.Uint64Builder),
-		builderLocationFolded:     rb.Field(schema.FieldIndices(TableFieldLocationFolded)[0]).(*builder.OptBooleanBuilder),
 		builderLocationLine:       rb.Field(schema.FieldIndices(TableFieldLocationLine)[0]).(*builder.OptInt64Builder),
 		builderFunctionStartLine:  rb.Field(schema.FieldIndices(TableFieldFunctionStartLine)[0]).(*builder.OptInt64Builder),
 		builderFunctionName:       rb.Field(schema.FieldIndices(TableFieldFunctionName)[0]).(*array.BinaryDictionaryBuilder),
@@ -260,30 +250,12 @@ func (tb *tableBuilder) appendRow(
 	for j := range tb.rb.Fields() {
 		switch tb.schema.Field(j).Name {
 		// Mapping
-		case TableFieldMappingStart:
-			if r.MappingStart.IsValid(locationRow) {
-				tb.builderMappingStart.Append(r.MappingStart.Value(locationRow))
-			} else {
-				tb.builderMappingStart.AppendNull()
-			}
-		case TableFieldMappingLimit:
-			if r.MappingLimit.IsValid(locationRow) {
-				tb.builderMappingLimit.Append(r.MappingLimit.Value(locationRow))
-			} else {
-				tb.builderMappingLimit.AppendNull()
-			}
-		case TableFieldMappingOffset:
-			if r.MappingOffset.IsValid(locationRow) {
-				tb.builderMappingOffset.Append(r.MappingOffset.Value(locationRow))
-			} else {
-				tb.builderMappingOffset.AppendNull()
-			}
 		case TableFieldMappingFile:
 			if r.MappingFileDict.Len() == 0 {
 				tb.builderMappingFile.AppendNull()
 			} else {
-				if r.MappingFile.IsValid(locationRow) {
-					_ = tb.builderMappingFile.Append(r.MappingFileDict.Value(r.MappingFile.GetValueIndex(locationRow)))
+				if r.MappingFileIndices.IsValid(locationRow) {
+					_ = tb.builderMappingFile.Append(r.MappingFileDict.Value(int(r.MappingFileIndices.Value(locationRow))))
 				} else {
 					tb.builderMappingFile.AppendNull()
 				}
@@ -292,8 +264,8 @@ func (tb *tableBuilder) appendRow(
 			if r.MappingBuildIDDict.Len() == 0 {
 				tb.builderMappingBuildID.AppendNull()
 			} else {
-				if r.MappingBuildID.IsValid(locationRow) {
-					_ = tb.builderMappingBuildID.Append(r.MappingBuildIDDict.Value(r.MappingBuildID.GetValueIndex(locationRow)))
+				if r.MappingBuildIDIndices.IsValid(locationRow) {
+					_ = tb.builderMappingBuildID.Append(r.MappingBuildIDDict.Value(int(r.MappingBuildIDIndices.Value(locationRow))))
 				} else {
 					tb.builderMappingBuildID.AppendNull()
 				}
@@ -303,8 +275,6 @@ func (tb *tableBuilder) appendRow(
 			tb.builderLocationAddress.Append(r.Address.Value(locationRow))
 
 		// TODO: Location isFolded we should remove this until we actually support folded functions.
-		case TableFieldLocationFolded:
-			tb.builderLocationFolded.AppendSingle(false)
 		case TableFieldLocationLine:
 			if lineRow >= 0 && r.Line.IsValid(lineRow) {
 				tb.builderLocationLine.Append(r.LineNumber.Value(lineRow))
@@ -322,8 +292,8 @@ func (tb *tableBuilder) appendRow(
 			if r.LineFunctionNameDict.Len() == 0 || lineRow == -1 {
 				tb.builderFunctionName.AppendNull()
 			} else {
-				if lineRow >= 0 && r.LineFunctionName.IsValid(lineRow) {
-					_ = tb.builderFunctionName.Append(r.LineFunctionNameDict.Value(r.LineFunctionName.GetValueIndex(lineRow)))
+				if lineRow >= 0 && r.LineFunctionNameIndices.IsValid(lineRow) {
+					_ = tb.builderFunctionName.Append(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(lineRow))))
 				} else {
 					tb.builderFunctionName.AppendNull()
 				}
@@ -332,8 +302,8 @@ func (tb *tableBuilder) appendRow(
 			if r.LineFunctionSystemNameDict.Len() == 0 || lineRow == -1 {
 				tb.builderFunctionSystemName.AppendNull()
 			} else {
-				if lineRow >= 0 && r.LineFunctionSystemName.IsValid(lineRow) {
-					_ = tb.builderFunctionSystemName.Append(r.LineFunctionSystemNameDict.Value(r.LineFunctionSystemName.GetValueIndex(lineRow)))
+				if lineRow >= 0 && r.LineFunctionSystemNameIndices.IsValid(lineRow) {
+					_ = tb.builderFunctionSystemName.Append(r.LineFunctionSystemNameDict.Value(int(r.LineFunctionSystemNameIndices.Value(lineRow))))
 				} else {
 					tb.builderFunctionSystemName.AppendNull()
 				}
@@ -342,8 +312,8 @@ func (tb *tableBuilder) appendRow(
 			if r.LineFunctionFilenameDict.Len() == 0 || lineRow == -1 {
 				tb.builderFunctionFileName.AppendNull()
 			} else {
-				if lineRow >= 0 && r.LineFunctionFilename.IsValid(lineRow) {
-					_ = tb.builderFunctionFileName.Append(r.LineFunctionFilenameDict.Value(r.LineFunctionFilename.GetValueIndex(lineRow)))
+				if lineRow >= 0 && r.LineFunctionFilenameIndices.IsValid(lineRow) {
+					_ = tb.builderFunctionFileName.Append(r.LineFunctionFilenameDict.Value(int(r.LineFunctionFilenameIndices.Value(lineRow))))
 				} else {
 					tb.builderFunctionFileName.AppendNull()
 				}

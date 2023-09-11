@@ -108,7 +108,9 @@ func (m *KeyMaker) MakeProfileLocationID(l *profile.Location) string {
 	// address there is no potential for asynchronously symbolizing.
 	if l.Address == 0 {
 		for _, line := range l.Lines {
-			hbuf.WriteString(line.Function.Id)
+			if line.Function != nil {
+				hbuf.WriteString(line.Function.Id)
+			}
 
 			binary.BigEndian.PutUint64(ibuf, uint64(line.Line))
 			hbuf.Write(ibuf)

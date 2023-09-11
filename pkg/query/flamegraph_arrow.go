@@ -17,12 +17,17 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	stdmath "math"
+	"strconv"
+	"strings"
 	"unsafe"
 
 	"github.com/apache/arrow/go/v14/arrow"
 	"github.com/apache/arrow/go/v14/arrow/array"
 	"github.com/apache/arrow/go/v14/arrow/ipc"
+	"github.com/apache/arrow/go/v14/arrow/math"
 	"github.com/apache/arrow/go/v14/arrow/memory"
+	"github.com/olekukonko/tablewriter"
 	"github.com/polarsignals/frostdb/pqarrow/builder"
 	"github.com/zeebo/xxh3"
 	"go.opentelemetry.io/otel/attribute"
@@ -35,9 +40,6 @@ import (
 const (
 	FlamegraphFieldLabelsOnly = "labels_only"
 
-	FlamegraphFieldMappingStart   = "mapping_start"
-	FlamegraphFieldMappingLimit   = "mapping_limit"
-	FlamegraphFieldMappingOffset  = "mapping_offset"
 	FlamegraphFieldMappingFile    = "mapping_file"
 	FlamegraphFieldMappingBuildID = "mapping_build_id"
 
@@ -84,6 +86,11 @@ func GenerateFlamegraphArrow(
 		return nil, 0, err
 	}
 
+	span.SetAttributes(attribute.Int("record_size", buf.Len()))
+	if buf.Len() > 1<<24 { // 16MiB
+		span.SetAttributes(attribute.String("record_stats", recordStats(record)))
+	}
+
 	return &queryv1alpha1.FlamegraphArrow{
 		Record:  buf.Bytes(),
 		Unit:    p.Meta.SampleType.Unit,
@@ -113,6 +120,9 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	profileReader := profile.NewReader(p)
 	labelHasher := xxh3.New()
 	for _, r := range profileReader.RecordReaders {
+		fb.cumulative += math.Int64.Sum(r.Value)
+		fb.diff += math.Int64.Sum(r.Diff)
+
 		if err := fb.ensureLabelColumns(r.LabelFields); err != nil {
 			return nil, 0, 0, 0, fmt.Errorf("ensure label columns: %w", err)
 		}
@@ -137,25 +147,39 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				}
 			}
 
+			rootRowChildren := fb.children[0]
+			rootRow := 0
 			if fb.aggregationConfig.aggregateByLabels && hasLabels {
 				labelHasher.Reset()
 				for j, labelColumn := range r.LabelColumns {
 					if labelColumn.Col.IsValid(i) {
 						_, _ = labelHasher.WriteString(r.LabelFields[j].Name)
-						_, _ = labelHasher.Write(labelColumn.Dict.Value(labelColumn.Col.GetValueIndex(i)))
+						_, _ = labelHasher.Write(labelColumn.Dict.Value(int(labelColumn.Col.Value(i))))
 					}
 				}
 				labelHash = labelHasher.Sum64()
 				sampleLabelRow := row
 				if row, ok := fb.rootsRow[labelHash]; ok {
 					// We want to compare against this found label root's children.
-					fb.compareRows = fb.children[row]
+					rootRowChildren = fb.children[row]
+					rootRow = row
+					fb.compareRows = rootRowChildren
 					fb.addRowValues(r, row, i) // adds the cumulative and diff values to the existing row
 				} else {
-					err := fb.AppendLabelRow(r, t, recordLabelIndex, sampleLabelRow, i, labelHash)
+					rootRowChildren = map[uint64]int{}
+					err := fb.AppendLabelRow(
+						r,
+						t,
+						recordLabelIndex,
+						sampleLabelRow,
+						i,
+						labelHash,
+						rootRowChildren,
+					)
 					if err != nil {
 						return nil, 0, 0, 0, fmt.Errorf("failed to inject label row: %w", err)
 					}
+					rootRow = sampleLabelRow
 				}
 				fb.maxHeight = max(fb.maxHeight, fb.height)
 				fb.height = 1
@@ -175,16 +199,11 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				// Depending on whether we aggregate the labels (and thus inject node labels), we either compare the rows or not.
 				isRoot := isLocationRoot && !(fb.aggregationConfig.aggregateByLabels && hasLabels)
 
-				if isLocationLeaf(int(beg), j) {
-					fb.cumulative += r.Value.Value(i)
-					fb.diff += r.Diff.Value(i)
-				}
-
 				llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
 				if !r.Lines.IsValid(j) || llOffsetEnd-llOffsetStart <= 0 {
 					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
 					if isRoot {
-						fb.compareRows = fb.children[fb.rootsRow[labelHash]]
+						fb.compareRows = rootRowChildren
 						// append this row afterward to not compare to itself
 						fb.parent.Reset()
 						fb.maxHeight = max(fb.maxHeight, fb.height)
@@ -209,7 +228,8 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 					if isRoot {
 						// We aren't merging this root, so we'll keep track of it as a new one.
-						fb.children[fb.rootsRow[labelHash]][key] = row
+						rootRowChildren[key] = row
+						fb.childrenList[rootRow] = append(fb.childrenList[rootRow], row)
 					}
 
 					err = fb.appendRow(r, t, builderToRecordIndexMapping, i, j, -1, row, key)
@@ -228,21 +248,21 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
 					if isRoot {
-						fb.compareRows = fb.children[fb.rootsRow[labelHash]]
+						fb.compareRows = rootRowChildren
 						// append this row afterward to not compare to itself
 						fb.parent.Reset()
 						fb.maxHeight = max(fb.maxHeight, fb.height)
 						fb.height = 0
 					}
 
-					translatedFunctionNameIndex := t.functionName.indices.Value(r.LineFunctionName.GetValueIndex(k))
+					translatedFunctionNameIndex := t.functionName.indices.Value(int(r.LineFunctionNameIndices.Value(k)))
 					key := uint64(translatedFunctionNameIndex)
 
 					if fb.aggregationConfig.aggregateByLabels {
 						key = hashCombine(key, labelHash)
 					}
 					if fb.aggregationConfig.aggregateByMappingFile {
-						translatedMappingFileIndex := t.mappingFile.indices.Value(r.MappingFile.GetValueIndex(j))
+						translatedMappingFileIndex := t.mappingFile.indices.Value(int(r.MappingFileIndices.Value(j)))
 						key = hashCombine(key, uint64(translatedMappingFileIndex))
 					}
 
@@ -266,7 +286,8 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 					if isRoot {
 						// We aren't merging this root, so we'll keep track of it as a new one.
-						fb.children[fb.rootsRow[labelHash]][key] = row
+						rootRowChildren[key] = row
+						fb.childrenList[rootRow] = append(fb.childrenList[rootRow], row)
 					}
 
 					err = fb.appendRow(r, t, recordLabelIndex, i, j, k, row, key)
@@ -295,6 +316,15 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		if err := fb.trim(ctx, tracer, trimFraction); err != nil {
 			return nil, 0, 0, 0, fmt.Errorf("failed to trim flame graph: %w", err)
 		}
+	} else {
+		fb.trimmedLocationLine = array.NewUint8Builder(fb.pool)
+		fb.trimmedLocationLine.AppendNull()
+		fb.trimmedFunctionStartLine = array.NewUint8Builder(fb.pool)
+		fb.trimmedFunctionStartLine.AppendNull()
+		fb.trimmedCumulative = array.NewUint8Builder(fb.pool)
+		fb.trimmedCumulative.AppendNull()
+		fb.trimmedDiff = array.NewUint8Builder(fb.pool)
+		fb.trimmedDiff.AppendNull()
 	}
 
 	_, spanNewRecord := tracer.Start(ctx, "NewRecord")
@@ -569,7 +599,7 @@ func (fb *flamegraphBuilder) intersectLabels(
 
 		// if the labels are equal we don't do anything, only when they are
 		// different do we have to remove it
-		transposedLabelIndex := t.labels[fieldIndex].indices.Value(recordLabelColumn.Col.GetValueIndex(sampleIndex))
+		transposedLabelIndex := t.labels[fieldIndex].indices.Value(int(recordLabelColumn.Col.Value(sampleIndex)))
 		if transposedLabelIndex != labelColumn.Value(flamegraphRow) {
 			labelColumn.SetNull(flamegraphRow)
 			continue
@@ -601,7 +631,8 @@ type flamegraphBuilder struct {
 	parent parent
 	// This keeps track of a row's children and will be converted to an arrow array of lists at the end.
 	// Allocating for an average of 8 children per stacktrace upfront.
-	children []map[uint64]int
+	children     []map[uint64]int
+	childrenList [][]int
 
 	// This keeps track of the root rows indexed by the labels string.
 	// If the stack trace has no labels, we use the empty string as the key.
@@ -613,9 +644,6 @@ type flamegraphBuilder struct {
 	height int32
 
 	builderLabelsOnly                    *array.BooleanBuilder
-	builderMappingStart                  *array.Uint64Builder
-	builderMappingLimit                  *array.Uint64Builder
-	builderMappingOffset                 *array.Uint64Builder
 	builderMappingFileIndices            *array.Int32Builder
 	builderMappingFileDictUnifier        array.DictionaryUnifier
 	builderMappingBuildIDIndices         *array.Int32Builder
@@ -640,15 +668,26 @@ type flamegraphBuilder struct {
 
 	// Only at the last step when preparing the new record these are populated.
 	// They are also used to create compacted dictionaries and after that replaced by them.
-	mappingBuildID     *array.Dictionary
-	mappingFile        *array.Dictionary
-	functionName       *array.Dictionary
-	functionSystemName *array.Dictionary
-	functionFilename   *array.Dictionary
-	labels             []*array.Dictionary
-	trimmedChildren    [][]int
+	mappingBuildID            *array.Dictionary
+	mappingBuildIDIndices     *array.Int32
+	mappingFile               *array.Dictionary
+	mappingFileIndices        *array.Int32
+	functionName              *array.Dictionary
+	functionNameIndices       *array.Int32
+	functionSystemName        *array.Dictionary
+	functionSystemNameIndices *array.Int32
+	functionFilename          *array.Dictionary
+	functionFilenameIndices   *array.Int32
+	labels                    []*array.Dictionary
+	labelsIndices             []*array.Int32
+	trimmedChildren           [][]int
 
 	labelNameIndex map[string]int
+
+	trimmedLocationLine      array.Builder
+	trimmedFunctionStartLine array.Builder
+	trimmedCumulative        array.Builder
+	trimmedDiff              array.Builder
 }
 
 type aggregationConfig struct {
@@ -676,14 +715,12 @@ func newFlamegraphBuilder(
 
 		// ensuring that we always have space to set the first row below
 		children:       make([]map[uint64]int, maxInt64(rows, 1)),
+		childrenList:   make([][]int, maxInt64(rows, 1)),
 		labelNameIndex: map[string]int{},
 
 		builderLabelsOnly:  array.NewBooleanBuilder(pool),
 		builderLabelsExist: builder.NewOptBooleanBuilder(arrow.FixedWidthTypes.Boolean),
 
-		builderMappingStart:              array.NewUint64Builder(pool),
-		builderMappingLimit:              array.NewUint64Builder(pool),
-		builderMappingOffset:             array.NewUint64Builder(pool),
 		builderMappingFileIndices:        array.NewInt32Builder(pool),
 		builderMappingFileDictUnifier:    array.NewBinaryDictionaryUnifier(pool),
 		builderMappingBuildIDIndices:     array.NewInt32Builder(pool),
@@ -723,9 +760,6 @@ func newFlamegraphBuilder(
 	// It only contains the root cumulative value and list of children (which are actual roots).
 	fb.builderLabelsExist.AppendSingle(false)
 	fb.builderLabelsOnly.AppendNull()
-	fb.builderMappingStart.AppendNull()
-	fb.builderMappingLimit.AppendNull()
-	fb.builderMappingOffset.AppendNull()
 	fb.builderMappingFileIndices.AppendNull()
 	fb.builderMappingBuildIDIndices.AppendNull()
 
@@ -770,6 +804,7 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 	cleanupArrs = append(cleanupArrs, mappingBuildIDDict)
 	mappingBuildIDType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
 	fb.mappingBuildID = array.NewDictionaryArray(mappingBuildIDType, mappingBuildIDIndices, mappingBuildIDDict)
+	fb.mappingBuildIDIndices = fb.mappingBuildID.Indices().(*array.Int32)
 
 	mappingFileIndices := fb.builderMappingFileIndices.NewArray()
 	cleanupArrs = append(cleanupArrs, mappingFileIndices)
@@ -780,6 +815,7 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 	cleanupArrs = append(cleanupArrs, mappingFileDict)
 	mappingFileType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
 	fb.mappingFile = array.NewDictionaryArray(mappingFileType, mappingFileIndices, mappingFileDict)
+	fb.mappingFileIndices = fb.mappingFile.Indices().(*array.Int32)
 
 	functionNameIndices := fb.builderFunctionNameIndices.NewArray()
 	cleanupArrs = append(cleanupArrs, functionNameIndices)
@@ -790,6 +826,7 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 	cleanupArrs = append(cleanupArrs, functionNameDict)
 	functionNameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
 	fb.functionName = array.NewDictionaryArray(functionNameType, functionNameIndices, functionNameDict)
+	fb.functionNameIndices = fb.functionName.Indices().(*array.Int32)
 
 	functionSystemNameIndices := fb.builderFunctionSystemNameIndices.NewArray()
 	cleanupArrs = append(cleanupArrs, functionSystemNameIndices)
@@ -800,6 +837,7 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 	cleanupArrs = append(cleanupArrs, functionSystemNameDict)
 	functionSystemNameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
 	fb.functionSystemName = array.NewDictionaryArray(functionSystemNameType, functionSystemNameIndices, functionSystemNameDict)
+	fb.functionSystemNameIndices = fb.functionSystemName.Indices().(*array.Int32)
 
 	functionFilenameIndices := fb.builderFunctionFilenameIndices.NewArray()
 	cleanupArrs = append(cleanupArrs, functionFilenameIndices)
@@ -810,6 +848,7 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 	cleanupArrs = append(cleanupArrs, functionFilenameDict)
 	functionFilenameType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.Binary}
 	fb.functionFilename = array.NewDictionaryArray(functionFilenameType, functionFilenameIndices, functionFilenameDict)
+	fb.functionFilenameIndices = fb.functionFilename.Indices().(*array.Int32)
 
 	fb.ensureLabelColumnsComplete()
 
@@ -823,6 +862,7 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 		cleanupArrs = append(cleanupArrs, dict)
 		typ := &arrow.DictionaryType{IndexType: indices.DataType(), ValueType: dict.DataType()}
 		fb.labels = append(fb.labels, array.NewDictionaryArray(typ, indices, dict))
+		fb.labelsIndices = append(fb.labelsIndices, fb.labels[i].Indices().(*array.Int32))
 	}
 
 	// If there is only one root row, we need to populate the trimmedChildren to not panic when building the NewRecord.
@@ -847,7 +887,7 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	// We have manually tracked each row's children.
 	// So now we need to iterate over all rows in the record and append their children.
 	// We cannot do this while building the rows as we need to append the children while iterating over the rows.
-	for i := 0; i < fb.builderCumulative.Len(); i++ {
+	for i := 0; i < fb.trimmedCumulative.Len(); i++ {
 		if len(fb.trimmedChildren[i]) == 0 {
 			fb.builderChildren.AppendNull() // leaf
 		} else {
@@ -860,59 +900,51 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 
 	// This has to be here, because after calling .NewArray() on the builder,
 	// the builder is reset.
-	numRows := fb.builderCumulative.Len()
+	numRows := fb.trimmedCumulative.Len()
 
 	fields := []arrow.Field{
 		{Name: FlamegraphFieldLabelsOnly, Type: arrow.FixedWidthTypes.Boolean},
-		{Name: FlamegraphFieldMappingStart, Type: arrow.PrimitiveTypes.Uint64},
-		{Name: FlamegraphFieldMappingLimit, Type: arrow.PrimitiveTypes.Uint64},
-		{Name: FlamegraphFieldMappingOffset, Type: arrow.PrimitiveTypes.Uint64},
 		{Name: FlamegraphFieldMappingFile, Type: fb.mappingFile.DataType()},
 		{Name: FlamegraphFieldMappingBuildID, Type: fb.mappingBuildID.DataType()},
 		// Location
 		{Name: FlamegraphFieldLocationAddress, Type: arrow.PrimitiveTypes.Uint64},
-		{Name: FlamegraphFieldLocationLine, Type: arrow.PrimitiveTypes.Int64},
+		{Name: FlamegraphFieldLocationLine, Type: fb.trimmedLocationLine.Type()},
 		// Function
-		{Name: FlamegraphFieldFunctionStartLine, Type: arrow.PrimitiveTypes.Int64},
+		{Name: FlamegraphFieldFunctionStartLine, Type: fb.trimmedFunctionStartLine.Type()},
 		{Name: FlamegraphFieldFunctionName, Type: fb.functionName.DataType()},
 		{Name: FlamegraphFieldFunctionSystemName, Type: fb.functionSystemName.DataType()},
 		{Name: FlamegraphFieldFunctionFileName, Type: fb.functionFilename.DataType()},
 		// Values
 		{Name: FlamegraphFieldChildren, Type: arrow.ListOf(arrow.PrimitiveTypes.Uint32)},
-		{Name: FlamegraphFieldCumulative, Type: arrow.PrimitiveTypes.Int64},
-		{Name: FlamegraphFieldDiff, Type: arrow.PrimitiveTypes.Int64, Nullable: true},
+		{Name: FlamegraphFieldCumulative, Type: fb.trimmedCumulative.Type()},
+		{Name: FlamegraphFieldDiff, Type: fb.trimmedDiff.Type()},
 	}
 
-	arrays := make([]arrow.Array, 15+len(fb.labels))
+	arrays := make([]arrow.Array, 12+len(fb.labels))
 	arrays[0] = fb.builderLabelsOnly.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[0])
-	arrays[1] = fb.builderMappingStart.NewArray()
-	cleanupArrs = append(cleanupArrs, arrays[1])
-	arrays[2] = fb.builderMappingLimit.NewArray()
-	cleanupArrs = append(cleanupArrs, arrays[2])
-	arrays[3] = fb.builderMappingOffset.NewArray()
+	arrays[1] = fb.mappingFile
+	arrays[2] = fb.mappingBuildID
+	arrays[3] = fb.builderLocationAddress.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[3])
-	arrays[4] = fb.mappingFile
-	arrays[5] = fb.mappingBuildID
-	arrays[6] = fb.builderLocationAddress.NewArray()
-	cleanupArrs = append(cleanupArrs, arrays[6])
-	arrays[7] = fb.builderLocationLine.NewArray()
-	cleanupArrs = append(cleanupArrs, arrays[7])
-	arrays[8] = fb.builderFunctionStartLine.NewArray()
-	cleanupArrs = append(cleanupArrs, arrays[8])
-	arrays[9] = fb.functionName
-	arrays[10] = fb.functionSystemName
-	arrays[11] = fb.functionFilename
-	arrays[12] = fb.builderChildren.NewArray()
-	cleanupArrs = append(cleanupArrs, arrays[12])
-	arrays[13] = fb.builderCumulative.NewArray()
-	cleanupArrs = append(cleanupArrs, arrays[13])
-	arrays[14] = fb.builderDiff.NewArray()
-	cleanupArrs = append(cleanupArrs, arrays[14])
+	arrays[4] = fb.trimmedLocationLine.NewArray()
+	cleanupArrs = append(cleanupArrs, arrays[4])
+	arrays[5] = fb.trimmedFunctionStartLine.NewArray()
+	cleanupArrs = append(cleanupArrs, arrays[5])
+	arrays[6] = fb.functionName
+	arrays[7] = fb.functionSystemName
+	arrays[8] = fb.functionFilename
+	arrays[9] = fb.builderChildren.NewArray()
+	cleanupArrs = append(cleanupArrs, arrays[9])
+	arrays[10] = fb.trimmedCumulative.NewArray()
+	cleanupArrs = append(cleanupArrs, arrays[10])
+	arrays[11] = fb.trimmedDiff.NewArray()
+	cleanupArrs = append(cleanupArrs, arrays[11])
 
 	for i, field := range fb.builderLabelFields {
+		field.Type = fb.labels[i].DataType() // overwrite for variable length uint types
 		fields = append(fields, field)
-		arrays[15+i] = fb.labels[i]
+		arrays[12+i] = fb.labels[i]
 	}
 
 	return array.NewRecord(
@@ -926,9 +958,6 @@ func (fb *flamegraphBuilder) Release() {
 	fb.builderLabelsOnly.Release()
 	fb.builderLabelsExist.Release()
 
-	fb.builderMappingStart.Release()
-	fb.builderMappingLimit.Release()
-	fb.builderMappingOffset.Release()
 	fb.builderMappingFileIndices.Release()
 	fb.builderMappingFileDictUnifier.Release()
 	fb.builderMappingBuildIDIndices.Release()
@@ -948,6 +977,11 @@ func (fb *flamegraphBuilder) Release() {
 	fb.builderChildren.Release()
 	fb.builderCumulative.Release()
 	fb.builderDiff.Release()
+
+	fb.trimmedLocationLine.Release()
+	fb.trimmedFunctionStartLine.Release()
+	fb.trimmedCumulative.Release()
+	fb.trimmedDiff.Release()
 
 	for i := range fb.builderLabelFields {
 		fb.builderLabels[i].Release()
@@ -978,15 +1012,9 @@ func (fb *flamegraphBuilder) appendRow(
 
 	// Mapping
 	if r.MappingStart.IsValid(locationRow) {
-		fb.builderMappingStart.Append(r.MappingStart.Value(locationRow))
-		fb.builderMappingLimit.Append(r.MappingLimit.Value(locationRow))
-		fb.builderMappingOffset.Append(r.MappingOffset.Value(locationRow))
-		fb.builderMappingFileIndices.Append(t.mappingFile.indices.Value(r.MappingFile.GetValueIndex(locationRow)))
-		fb.builderMappingBuildIDIndices.Append(t.mappingBuildID.indices.Value(r.MappingBuildID.GetValueIndex(locationRow)))
+		fb.builderMappingFileIndices.Append(t.mappingFile.indices.Value(int(r.MappingFileIndices.Value(locationRow))))
+		fb.builderMappingBuildIDIndices.Append(t.mappingBuildID.indices.Value(int(r.MappingBuildIDIndices.Value(locationRow))))
 	} else {
-		fb.builderMappingStart.AppendNull()
-		fb.builderMappingLimit.AppendNull()
-		fb.builderMappingOffset.AppendNull()
 		fb.builderMappingFileIndices.AppendNull()
 		fb.builderMappingBuildIDIndices.AppendNull()
 	}
@@ -1004,11 +1032,11 @@ func (fb *flamegraphBuilder) appendRow(
 		// something has already gone terribly wrong.
 		fb.builderLocationLine.Append(r.LineNumber.Value(lineRow))
 
-		if r.LineFunctionName.IsValid(lineRow) {
+		if r.LineFunctionNameIndices.IsValid(lineRow) {
 			fb.builderFunctionStartLine.Append(r.LineFunctionStartLine.Value(lineRow))
-			fb.builderFunctionNameIndices.Append(t.functionName.indices.Value(r.LineFunctionName.GetValueIndex(lineRow)))
-			fb.builderFunctionSystemNameIndices.Append(t.functionSystemName.indices.Value(r.LineFunctionSystemName.GetValueIndex(lineRow)))
-			fb.builderFunctionFilenameIndices.Append(t.functionFilename.indices.Value(r.LineFunctionFilename.GetValueIndex(lineRow)))
+			fb.builderFunctionNameIndices.Append(t.functionName.indices.Value(int(r.LineFunctionNameIndices.Value(lineRow))))
+			fb.builderFunctionSystemNameIndices.Append(t.functionSystemName.indices.Value(int(r.LineFunctionSystemNameIndices.Value(lineRow))))
+			fb.builderFunctionFilenameIndices.Append(t.functionFilename.indices.Value(int(r.LineFunctionFilenameIndices.Value(lineRow))))
 		} else {
 			fb.builderFunctionStartLine.AppendNull()
 			fb.builderFunctionNameIndices.AppendNull()
@@ -1023,8 +1051,8 @@ func (fb *flamegraphBuilder) appendRow(
 	for i, builderLabel := range fb.builderLabels {
 		if recordIndex := builderToRecordIndexMapping[i]; recordIndex != -1 {
 			lc := r.LabelColumns[recordIndex]
-			if lc.Col.IsValid(sampleRow) && len(lc.Dict.Value(lc.Col.GetValueIndex(sampleRow))) > 0 {
-				transposedIndex := t.labels[i].indices.Value(lc.Col.GetValueIndex(sampleRow))
+			if lc.Col.IsValid(sampleRow) && len(lc.Dict.Value(int(lc.Col.Value(sampleRow)))) > 0 {
+				transposedIndex := t.labels[i].indices.Value(int(lc.Col.Value(sampleRow)))
 				builderLabel.Append(transposedIndex)
 				labelsExist = true
 			} else {
@@ -1040,17 +1068,22 @@ func (fb *flamegraphBuilder) appendRow(
 		// We need to grow the children slice, so we'll do that here.
 		// We'll double the capacity of the slice.
 		newChildren := make([]map[uint64]int, len(fb.children)*2)
+		newChildrenList := make([][]int, len(fb.children)*2)
 		copy(newChildren, fb.children)
+		copy(newChildrenList, fb.childrenList)
 		fb.children = newChildren
+		fb.childrenList = newChildrenList
 	}
 	// If there is a parent for this stack the parent is not -1 but the parent's row number.
 	if fb.parent.Has() {
 		// this is the first time we see this parent have a child, so we need to initialize the slice
 		if fb.children[fb.parent.Get()] == nil {
 			fb.children[fb.parent.Get()] = map[uint64]int{key: row}
+			fb.childrenList[fb.parent.Get()] = []int{row}
 		} else {
 			// otherwise we can just append this row's number to the parent's slice
 			fb.children[fb.parent.Get()][key] = row
+			fb.childrenList[fb.parent.Get()] = append(fb.childrenList[fb.parent.Get()], row)
 		}
 	}
 
@@ -1072,13 +1105,14 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 	row int,
 	sampleRow int,
 	labelHash uint64,
+	children map[uint64]int,
 ) error {
 	labelsExist := false
 	for i, labelColumn := range fb.builderLabels {
 		if recordIndex := builderToRecordIndexMapping[i]; recordIndex != -1 {
 			lc := r.LabelColumns[recordIndex]
-			if lc.Col.IsValid(sampleRow) && len(lc.Dict.Value(lc.Col.GetValueIndex(sampleRow))) > 0 {
-				transposedIndex := t.labels[i].indices.Value(lc.Col.GetValueIndex(sampleRow))
+			if lc.Col.IsValid(sampleRow) && len(lc.Dict.Value(int(lc.Col.Value(sampleRow)))) > 0 {
+				transposedIndex := t.labels[i].indices.Value(int(lc.Col.Value(sampleRow)))
 				labelColumn.Append(transposedIndex)
 				labelsExist = true
 			} else {
@@ -1094,15 +1128,17 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 		// We need to grow the children slice, so we'll do that here.
 		// We'll double the capacity of the slice.
 		newChildren := make([]map[uint64]int, len(fb.children)*2)
+		newChildrenList := make([][]int, len(fb.children)*2)
 		copy(newChildren, fb.children)
+		copy(newChildrenList, fb.childrenList)
 		fb.children = newChildren
+		fb.childrenList = newChildrenList
 	}
 	fb.rootsRow[labelHash] = row
+	fb.childrenList[0] = append(fb.childrenList[0], row)
+	fb.children[row] = children
 
 	fb.builderLabelsOnly.Append(true)
-	fb.builderMappingStart.AppendNull()
-	fb.builderMappingLimit.AppendNull()
-	fb.builderMappingOffset.AppendNull()
 	fb.builderMappingFileIndices.AppendNull()
 	fb.builderMappingBuildIDIndices.AppendNull()
 	fb.builderLocationAddress.AppendNull()
@@ -1137,21 +1173,69 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 		}
 	}()
 
+	// initialize the queue with the root rows' children. It usually has the most amount of children.
+	trimmingQueue := queue{elements: make([]trimmingElement, 0, len(fb.children[0]))}
+	trimmingQueue.push(trimmingElement{row: 0})
+
+	row := -1
+	largestLocationLine := uint64(0)
+	largestFunctionStartLine := uint64(0)
+	largestCumulativeValue := uint64(0)
+	largestDiffValue := int64(0)
+	smallestDiffValue := int64(0)
+	for trimmingQueue.len() > 0 {
+		// pop the first item from the queue
+		te := trimmingQueue.pop()
+		row++
+
+		// The following two will never be null.
+		locationLine := uint64(fb.builderLocationLine.Value(te.row))
+		if locationLine > largestLocationLine {
+			largestLocationLine = locationLine
+		}
+		functionStartLine := uint64(fb.builderFunctionStartLine.Value(te.row))
+		if functionStartLine > largestFunctionStartLine {
+			largestFunctionStartLine = functionStartLine
+		}
+		cum := uint64(fb.builderCumulative.Value(te.row))
+		if cum > largestCumulativeValue {
+			largestCumulativeValue = cum
+		}
+		diff := fb.builderDiff.Value(te.row)
+		if diff > largestDiffValue {
+			largestDiffValue = diff
+		}
+		if diff < smallestDiffValue {
+			smallestDiffValue = diff
+		}
+
+		cumThreshold := float32(cum) * threshold
+
+		for _, cr := range fb.childrenList[te.row] {
+			if v := fb.builderCumulative.Value(cr); v > int64(cumThreshold) {
+				// this row is above the threshold, so we need to keep it
+				// add this row to the queue to check its children.
+				trimmingQueue.push(trimmingElement{row: cr, parent: row})
+			}
+		}
+	}
+
 	trimmedLabelsOnly := array.NewBooleanBuilder(fb.pool)
 	trimmedLabelsExist := builder.NewOptBooleanBuilder(arrow.FixedWidthTypes.Boolean)
-	trimmedMappingStart := array.NewUint64Builder(fb.pool)
-	trimmedMappingLimit := array.NewUint64Builder(fb.pool)
-	trimmedMappingOffset := array.NewUint64Builder(fb.pool)
 	trimmedMappingFileIndices := array.NewInt32Builder(fb.pool)
 	trimmedMappingBuildIDIndices := array.NewInt32Builder(fb.pool)
 	trimmedLocationAddress := array.NewUint64Builder(fb.pool)
-	trimmedLocationLine := builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
-	trimmedFunctionStartLine := builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
+	trimmedLocationLineType := smallestUnsignedTypeFor(largestLocationLine)
+	trimmedLocationLine := array.NewBuilder(fb.pool, trimmedLocationLineType)
+	trimmedFunctionStartLineType := smallestUnsignedTypeFor(largestFunctionStartLine)
+	trimmedFunctionStartLine := array.NewBuilder(fb.pool, trimmedFunctionStartLineType)
 	trimmedFunctionNameIndices := array.NewInt32Builder(fb.pool)
 	trimmedFunctionSystemNameIndices := array.NewInt32Builder(fb.pool)
 	trimmedFunctionFilenameIndices := array.NewInt32Builder(fb.pool)
-	trimmedCumulative := builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
-	trimmedDiff := builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
+	trimmedCumulativeType := smallestUnsignedTypeFor(largestCumulativeValue)
+	trimmedCumulative := array.NewBuilder(fb.pool, trimmedCumulativeType)
+	trimmedDiffType := smallestSignedTypeFor(smallestDiffValue, largestDiffValue)
+	trimmedDiff := array.NewBuilder(fb.pool, trimmedDiffType)
 
 	releasers = append(releasers,
 		trimmedMappingFileIndices,
@@ -1170,8 +1254,24 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 
 	trimmedChildren := make([][]int, len(fb.children))
 
-	// initialize the queue with the root rows' children. It usually has the most amount of children.
-	trimmingQueue := queue{elements: make([]trimmingElement, 0, len(fb.children[0]))}
+	trimmedLabelsOnly.Reserve(row)
+	trimmedLabelsExist.Reserve(row)
+	trimmedMappingFileIndices.Reserve(row)
+	trimmedMappingBuildIDIndices.Reserve(row)
+	trimmedLocationAddress.Reserve(row)
+	trimmedLocationLine.Reserve(row)
+	trimmedFunctionStartLine.Reserve(row)
+	trimmedFunctionNameIndices.Reserve(row)
+	trimmedFunctionSystemNameIndices.Reserve(row)
+	trimmedFunctionFilenameIndices.Reserve(row)
+	trimmedCumulative.Reserve(row)
+	trimmedDiff.Reserve(row)
+
+	for _, l := range trimmedLabelsIndices {
+		l.Reserve(row)
+	}
+
+	trimmingQueue.elements = trimmingQueue.elements[:0]
 	trimmingQueue.push(trimmingElement{row: 0})
 
 	// keep processing new elements until the queue is empty
@@ -1181,25 +1281,45 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 
 		copyBoolBuilderValue(fb.builderLabelsOnly, trimmedLabelsOnly, te.row)
 		copyOptBooleanBuilderValue(fb.builderLabelsExist, trimmedLabelsExist, te.row)
-		copyUint64BuilderValue(fb.builderMappingStart, trimmedMappingStart, te.row)
-		copyUint64BuilderValue(fb.builderMappingLimit, trimmedMappingLimit, te.row)
-		copyUint64BuilderValue(fb.builderMappingOffset, trimmedMappingOffset, te.row)
-		appendDictionaryIndex(fb.mappingFile, trimmedMappingFileIndices, te.row)
-		appendDictionaryIndex(fb.mappingBuildID, trimmedMappingBuildIDIndices, te.row)
+		appendDictionaryIndexInt32(fb.mappingFileIndices, trimmedMappingFileIndices, te.row)
+		appendDictionaryIndexInt32(fb.mappingBuildIDIndices, trimmedMappingBuildIDIndices, te.row)
 		copyUint64BuilderValue(fb.builderLocationAddress, trimmedLocationAddress, te.row)
-		copyOptInt64BuilderValue(fb.builderLocationLine, trimmedLocationLine, te.row)
-		copyOptInt64BuilderValue(fb.builderFunctionStartLine, trimmedFunctionStartLine, te.row)
-		appendDictionaryIndex(fb.functionName, trimmedFunctionNameIndices, te.row)
-		appendDictionaryIndex(fb.functionSystemName, trimmedFunctionSystemNameIndices, te.row)
-		appendDictionaryIndex(fb.functionFilename, trimmedFunctionFilenameIndices, te.row)
+		copyInt64BuilderValueToUnknownUnsigned(fb.builderLocationLine, trimmedLocationLine, te.row)
+		copyInt64BuilderValueToUnknownUnsigned(fb.builderFunctionStartLine, trimmedFunctionStartLine, te.row)
+		appendDictionaryIndexInt32(fb.functionNameIndices, trimmedFunctionNameIndices, te.row)
+		appendDictionaryIndexInt32(fb.functionSystemNameIndices, trimmedFunctionSystemNameIndices, te.row)
+		appendDictionaryIndexInt32(fb.functionFilenameIndices, trimmedFunctionFilenameIndices, te.row)
 		for i := range fb.labels {
-			appendDictionaryIndex(fb.labels[i], trimmedLabelsIndices[i], te.row)
+			appendDictionaryIndexInt32(fb.labelsIndices[i], trimmedLabelsIndices[i], te.row)
 		}
 
 		// The following two will never be null.
 		cum := fb.builderCumulative.Value(te.row)
-		trimmedCumulative.Append(cum)
-		trimmedDiff.Append(fb.builderDiff.Value(te.row))
+		switch b := trimmedCumulative.(type) {
+		case *array.Uint64Builder:
+			b.Append(uint64(cum))
+		case *array.Uint32Builder:
+			b.Append(uint32(cum))
+		case *array.Uint16Builder:
+			b.Append(uint16(cum))
+		case *array.Uint8Builder:
+			b.Append(uint8(cum))
+		default:
+			panic(fmt.Errorf("unsupported type %T", b))
+		}
+
+		switch b := trimmedDiff.(type) {
+		case *array.Int64Builder:
+			b.Append(fb.builderDiff.Value(te.row))
+		case *array.Int32Builder:
+			b.Append(int32(fb.builderDiff.Value(te.row)))
+		case *array.Int16Builder:
+			b.Append(int16(fb.builderDiff.Value(te.row)))
+		case *array.Int8Builder:
+			b.Append(int8(fb.builderDiff.Value(te.row)))
+		default:
+			panic(fmt.Errorf("unsupported type %T", b))
+		}
 
 		// This gets the newly inserted row's index.
 		// It is used further down as the children's parent value when added to the trimmingQueue.
@@ -1216,7 +1336,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 
 		cumThreshold := float32(cum) * threshold
 
-		for _, cr := range fb.children[te.row] {
+		for _, cr := range fb.childrenList[te.row] {
 			if v := fb.builderCumulative.Value(cr); v > int64(cumThreshold) {
 				// this row is above the threshold, so we need to keep it
 				// add this row to the queue to check its children.
@@ -1318,36 +1438,67 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	release(
 		fb.builderLabelsOnly,
 		fb.builderLabelsExist,
-		fb.builderMappingStart,
-		fb.builderMappingLimit,
-		fb.builderMappingOffset,
 		fb.builderLocationAddress,
 		fb.builderLocationLine,
 		fb.builderFunctionStartLine,
 		fb.builderCumulative,
 		fb.builderDiff,
+		fb.builderLocationLine,
+		fb.builderFunctionStartLine,
 	)
 	fb.builderLabelsOnly = trimmedLabelsOnly
 	fb.builderLabelsExist = trimmedLabelsExist
-	fb.builderMappingStart = trimmedMappingStart
-	fb.builderMappingLimit = trimmedMappingLimit
-	fb.builderMappingOffset = trimmedMappingOffset
 	fb.builderLocationAddress = trimmedLocationAddress
-	fb.builderLocationLine = trimmedLocationLine
-	fb.builderFunctionStartLine = trimmedFunctionStartLine
-	fb.builderCumulative = trimmedCumulative
-	fb.builderDiff = trimmedDiff
+	fb.trimmedLocationLine = trimmedLocationLine
+	fb.trimmedFunctionStartLine = trimmedFunctionStartLine
+	fb.trimmedCumulative = trimmedCumulative
+	fb.trimmedDiff = trimmedDiff
 	fb.trimmedChildren = trimmedChildren
 
 	return nil
 }
 
-func copyOptInt64BuilderValue(old, new *builder.OptInt64Builder, row int) {
+func smallestUnsignedTypeFor(largestValue uint64) arrow.DataType {
+	if largestValue < stdmath.MaxUint8 {
+		return arrow.PrimitiveTypes.Uint8
+	} else if largestValue < stdmath.MaxUint16 {
+		return arrow.PrimitiveTypes.Uint16
+	} else if largestValue < stdmath.MaxUint32 {
+		return arrow.PrimitiveTypes.Uint32
+	} else {
+		return arrow.PrimitiveTypes.Uint64
+	}
+}
+
+func smallestSignedTypeFor(min, max int64) arrow.DataType {
+	if max < stdmath.MaxInt8 && min > stdmath.MinInt8 {
+		return arrow.PrimitiveTypes.Int8
+	} else if max < stdmath.MaxInt16 && min > stdmath.MinInt16 {
+		return arrow.PrimitiveTypes.Int16
+	} else if max < stdmath.MaxInt32 && min > stdmath.MinInt32 {
+		return arrow.PrimitiveTypes.Int32
+	} else {
+		return arrow.PrimitiveTypes.Int64
+	}
+}
+
+func copyInt64BuilderValueToUnknownUnsigned(old *builder.OptInt64Builder, new array.Builder, row int) {
 	if old.IsNull(row) {
 		new.AppendNull()
 		return
 	}
-	new.Append(old.Value(row))
+	switch b := new.(type) {
+	case *array.Uint8Builder:
+		b.Append(uint8(old.Value(row)))
+	case *array.Uint16Builder:
+		b.Append(uint16(old.Value(row)))
+	case *array.Uint32Builder:
+		b.Append(uint32(old.Value(row)))
+	case *array.Uint64Builder:
+		b.Append(uint64(old.Value(row)))
+	default:
+		panic(fmt.Errorf("unknown builder type %T", new))
+	}
 }
 
 func copyUint64BuilderValue(old, new *array.Uint64Builder, row int) {
@@ -1374,20 +1525,16 @@ func copyBoolBuilderValue(old, new *array.BooleanBuilder, row int) {
 	new.Append(old.Value(row))
 }
 
-func appendDictionaryIndex(dict *array.Dictionary, index *array.Int32Builder, row int) {
+func appendDictionaryIndexInt32(dict *array.Int32, index *array.Int32Builder, row int) {
 	if dict.IsNull(row) {
 		index.AppendNull()
 		return
 	}
-	index.Append(int32(dict.GetValueIndex(row)))
+	index.Append(dict.Value(row))
 }
 
 func isLocationRoot(end, i int) bool {
 	return i == end-1
-}
-
-func isLocationLeaf(beg, i int) bool {
-	return i == beg
 }
 
 // parent stores the parent's row number of a stack.
@@ -1462,6 +1609,7 @@ type releasable interface {
 // compactDictionary copies only the needed values from the old dictionary to the new dictionary.
 // Once all needed values are copied, it updates the indices referencing those values in their new place.
 func compactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dictionary, error) {
+	indices := arr.Indices().(*array.Int32)
 	releasers := make([]releasable, 0, 3)
 	releasers = append(releasers, arr)
 	defer func() {
@@ -1472,13 +1620,13 @@ func compactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dict
 
 	newLen := 0
 	keepValues := make([]int, arr.Dictionary().Len())
-	for i := 0; i < arr.Indices().Len(); i++ {
+	for i := 0; i < indices.Len(); i++ {
 		if arr.IsValid(i) {
-			if keepValues[arr.GetValueIndex(i)] == 0 {
+			if keepValues[indices.Value(i)] == 0 {
 				// keep track of how many values we need to keep to reserve the space upfront
 				newLen++
 			}
-			keepValues[arr.GetValueIndex(i)]++
+			keepValues[indices.Value(i)]++
 		}
 	}
 
@@ -1490,6 +1638,14 @@ func compactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dict
 	case *array.String:
 		stringBuilder := array.NewStringBuilder(mem)
 		stringBuilder.Reserve(newLen)
+		numBytes := 0
+		for i, count := range keepValues {
+			if count == 0 {
+				continue
+			}
+			numBytes += len(dict.Value(i))
+		}
+		stringBuilder.ReserveData(numBytes)
 		for i, count := range keepValues {
 			if count == 0 {
 				continue
@@ -1502,6 +1658,14 @@ func compactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dict
 	case *array.Binary:
 		binaryBuilder := array.NewBinaryBuilder(mem, arrow.BinaryTypes.Binary)
 		binaryBuilder.Reserve(newLen)
+		numBytes := 0
+		for i, count := range keepValues {
+			if count == 0 {
+				continue
+			}
+			numBytes += dict.ValueLen(i)
+		}
+		binaryBuilder.ReserveData(numBytes)
 		for i, count := range keepValues {
 			if count == 0 {
 				continue
@@ -1516,18 +1680,37 @@ func compactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dict
 	}
 
 	// we know how many values we need to keep, so we can reserve the space upfront
-	indexBuilder := array.NewInt32Builder(mem)
-	indexBuilder.Reserve(arr.Indices().Len())
+	var indexBuilder array.Builder
+	if newLen < stdmath.MaxUint8 {
+		indexBuilder = array.NewUint8Builder(mem)
+	} else if newLen < stdmath.MaxUint16 {
+		indexBuilder = array.NewUint16Builder(mem)
+	} else if newLen < stdmath.MaxUint32 {
+		indexBuilder = array.NewUint32Builder(mem)
+	} else {
+		indexBuilder = array.NewUint64Builder(mem)
+	}
+	indexBuilder.Reserve(indices.Len())
 	releasers = append(releasers, indexBuilder)
 
-	for i := 0; i < arr.Indices().Len(); i++ {
+	for i := 0; i < indices.Len(); i++ {
 		if arr.IsNull(i) {
 			indexBuilder.AppendNull()
 			continue
 		}
-		oldValueIndex := arr.GetValueIndex(i)
+		oldValueIndex := indices.Value(i)
 		newValueIndex := newValueIndices[oldValueIndex]
-		indexBuilder.Append(int32(newValueIndex))
+
+		switch b := indexBuilder.(type) {
+		case *array.Uint8Builder:
+			b.Append(uint8(newValueIndex))
+		case *array.Uint16Builder:
+			b.Append(uint16(newValueIndex))
+		case *array.Uint32Builder:
+			b.Append(uint32(newValueIndex))
+		case *array.Uint64Builder:
+			b.Append(uint64(newValueIndex))
+		}
 	}
 
 	index := indexBuilder.NewArray()
@@ -1548,4 +1731,150 @@ func release(releasers ...releasable) {
 			r.Release()
 		}
 	}
+}
+
+func recordStats(r arrow.Record) string {
+	var totalBytes int
+	type fieldStat struct {
+		valueBytes  int
+		indexBytes  int
+		bitmapBytes int
+		countValues int
+		countIndex  int
+	}
+	fieldStats := make([]fieldStat, r.NumCols())
+
+	if r.NumRows() == 0 {
+		b := &strings.Builder{}
+		_, _ = fmt.Fprintf(b, "Cols: %d\n", r.NumCols())
+		_, _ = fmt.Fprintf(b, "Rows: %d\n", r.NumRows())
+		return b.String()
+	}
+
+	fields := r.Schema().Fields()
+	for i, f := range fields {
+		switch f.Type.(type) {
+		case *arrow.BooleanType, *arrow.Int64Type, *arrow.Uint64Type, *arrow.Int32Type, *arrow.Uint32Type, *arrow.Int16Type, *arrow.Uint16Type, *arrow.Uint8Type, *arrow.Int8Type:
+			data := r.Column(i).Data()
+			fieldStats[i].countValues = data.Len()
+			totalBytes += data.Len()
+			bufs := data.Buffers()
+			for j, buf := range bufs {
+				if j == 0 {
+					fieldStats[i].bitmapBytes += buf.Len()
+					totalBytes += buf.Len()
+					continue
+				}
+				fieldStats[i].valueBytes += buf.Len()
+				totalBytes += buf.Len()
+			}
+		case *arrow.DictionaryType:
+			data := r.Column(i).Data()
+			fieldStats[i].countIndex = data.Len()
+			totalBytes += data.Len()
+			for j, buf := range data.Buffers() {
+				if buf == nil {
+					continue
+				}
+				if j == 0 {
+					fieldStats[i].bitmapBytes += buf.Len()
+					totalBytes += buf.Len()
+					continue
+				}
+				fieldStats[i].indexBytes += buf.Len()
+				totalBytes += buf.Len()
+			}
+			dict := r.Column(i).Data().Dictionary()
+			fieldStats[i].countValues += dict.Len()
+			totalBytes += dict.Len()
+			for j, buf := range dict.Buffers() {
+				if buf == nil {
+					continue
+				}
+				if j == 0 {
+					fieldStats[i].bitmapBytes += buf.Len()
+					totalBytes += buf.Len()
+					continue
+				}
+				fieldStats[i].valueBytes += buf.Len()
+				totalBytes += buf.Len()
+			}
+		case *arrow.ListType:
+			data := r.Column(i).Data()
+			fieldStats[i].countIndex = data.Len()
+			totalBytes += data.Len()
+			for j, buf := range data.Buffers() {
+				if j == 0 {
+					fieldStats[i].bitmapBytes += buf.Len()
+					totalBytes += buf.Len()
+					continue
+				}
+				fieldStats[i].indexBytes += buf.Len()
+				totalBytes += buf.Len()
+			}
+			for _, child := range data.Children() {
+				fieldStats[i].countValues += child.Len()
+				totalBytes += child.Len()
+				for j, buf := range child.Buffers() {
+					if j == 0 {
+						fieldStats[i].bitmapBytes += buf.Len()
+						totalBytes += buf.Len()
+						continue
+					}
+					fieldStats[i].valueBytes += buf.Len()
+					totalBytes += buf.Len()
+				}
+			}
+		}
+	}
+
+	b := &strings.Builder{}
+	table := tablewriter.NewWriter(b)
+	table.SetAutoWrapText(false)
+	table.SetColumnAlignment([]int{
+		tablewriter.ALIGN_DEFAULT,
+		tablewriter.ALIGN_RIGHT,
+		tablewriter.ALIGN_RIGHT,
+		tablewriter.ALIGN_RIGHT,
+		tablewriter.ALIGN_RIGHT,
+		tablewriter.ALIGN_DEFAULT,
+	})
+	table.SetHeader([]string{
+		"Name",
+		"Bytes",
+		"Bitmap Bytes",
+		"Bytes Percent",
+		"Count",
+		"Type",
+	})
+
+	for i, s := range fieldStats {
+		size := strconv.Itoa(s.valueBytes)
+		if s.indexBytes > 0 {
+			size = size + ", " + strconv.Itoa(s.indexBytes)
+		}
+		bytesPercent := fmt.Sprintf("%.2f%%",
+			(100*float64(s.valueBytes+s.indexBytes+s.bitmapBytes))/float64(totalBytes),
+		)
+		count := strconv.Itoa(s.countValues)
+		if s.countIndex > 0 {
+			count = count + ", " + strconv.Itoa(s.countIndex)
+		}
+
+		table.Append([]string{
+			fields[i].Name,
+			size,
+			strconv.Itoa(s.bitmapBytes),
+			bytesPercent,
+			count,
+			fields[i].Type.String(),
+		})
+	}
+
+	_, _ = fmt.Fprintf(b, "Bytes: %d\n", totalBytes)
+	_, _ = fmt.Fprintf(b, "Cols: %d\n", r.NumCols())
+	_, _ = fmt.Fprintf(b, "Rows: %d\n", r.NumRows())
+	table.Render()
+
+	return b.String()
 }

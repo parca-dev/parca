@@ -34,6 +34,10 @@ repos:
           - --fuzzy-match-generates-todo
         files: \.tsx?$
         exclude: ^ui/packages/shared/client/
+  -   repo: https://github.com/tekwizely/pre-commit-golang
+      rev: master
+      hooks:
+        - id: go-mod-tidy
   - repo: https://github.com/bufbuild/buf
     rev: v1.26.1
     hooks:

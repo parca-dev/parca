@@ -53,8 +53,8 @@ export const useGraphTooltip = ({
   }
 
   const locationAddress: bigint = table.getChild(FIELD_LOCATION_ADDRESS)?.get(row) ?? 0n;
-  const cumulative: bigint = table.getChild(FIELD_CUMULATIVE)?.get(row) ?? 0n;
-  const diff: bigint = table.getChild(FIELD_DIFF)?.get(row) ?? 0n;
+  const cumulative: bigint = BigInt(table.getChild(FIELD_CUMULATIVE)?.get(row)) ?? 0n;
+  const diff: bigint = BigInt(table.getChild(FIELD_DIFF)?.get(row)) ?? 0n;
 
   const prevValue = cumulative - diff;
   const diffRatio = diff !== 0n ? divide(diff, prevValue) : 0;
