@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 0.16.101 (2023-09-11)
+
+**Note:** Version bump only for package @parca/store
+
 ## 0.16.100 (2023-08-31)
 
 **Note:** Version bump only for package @parca/store

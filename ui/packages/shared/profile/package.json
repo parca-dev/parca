@@ -1,14 +1,14 @@
 {
   "name": "@parca/profile",
-  "version": "0.16.251",
+  "version": "0.16.252",
   "description": "Profile viewing libraries",
   "dependencies": {
     "@parca/client": "^0.16.86",
-    "@parca/components": "^0.16.189",
+    "@parca/components": "^0.16.190",
     "@parca/dynamicsize": "^0.16.54",
-    "@parca/hooks": "^0.0.21",
+    "@parca/hooks": "^0.0.22",
     "@parca/parser": "^0.16.55",
-    "@parca/store": "^0.16.100",
+    "@parca/store": "^0.16.101",
     "@parca/utilities": "^0.0.29",
     "@tanstack/react-query": "^4.0.5",
     "@types/react-beautiful-dnd": "^13.1.3",
