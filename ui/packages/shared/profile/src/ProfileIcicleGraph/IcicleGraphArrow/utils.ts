@@ -14,7 +14,7 @@
 import {Table} from 'apache-arrow';
 
 import {EVERYTHING_ELSE, FEATURE_TYPES, type Feature} from '@parca/store';
-import {getLastItem} from '@parca/utilities';
+import {divide, getLastItem, valueFormatter} from '@parca/utilities';
 
 import {hexifyAddress} from '../../utils';
 import {
@@ -75,6 +75,20 @@ export const extractFeature = (mapping: string): Feature => {
   }
 
   return {name: EVERYTHING_ELSE, type: FEATURE_TYPES.Misc};
+};
+
+export const getTextForCumulative = (
+  hoveringNodeCumulative: bigint,
+  totalUnfiltered: bigint,
+  total: bigint,
+  unit: string
+): string => {
+  const filtered =
+    totalUnfiltered > total
+      ? ` / ${(100 * divide(hoveringNodeCumulative, total)).toFixed(2)}% of filtered`
+      : '';
+  return `${valueFormatter(hoveringNodeCumulative, unit, 2)}
+    (${(100 * divide(hoveringNodeCumulative, totalUnfiltered)).toFixed(2)}%${filtered})`;
 };
 
 export const arrowToString = (buffer: any): string | null => {

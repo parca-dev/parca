@@ -34,6 +34,7 @@ import {
 
 import GraphTooltipArrow from '../../GraphTooltipArrow';
 import GraphTooltipArrowContent from '../../GraphTooltipArrow/Content';
+import {DockedGraphTooltip} from '../../GraphTooltipArrow/DockedGraphTooltip';
 import ColorStackLegend from './ColorStackLegend';
 import {IcicleNode, RowHeight, mappingColors} from './IcicleGraphNodes';
 import {arrowToString, extractFeature} from './utils';
@@ -78,6 +79,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const [colorProfile] = useUserPreference<ColorProfileName>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
+  const [dockedMetainfo] = useUserPreference<boolean>(USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key);
   const isDarkMode = useAppSelector(selectDarkMode);
 
   const table: Table<any> = useMemo(() => {
@@ -233,18 +235,29 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
         navigateTo={navigateTo}
         compareMode={compareMode}
       />
-      <GraphTooltipArrow contextElement={svg.current}>
-        <GraphTooltipArrowContent
+      {dockedMetainfo ? (
+        <DockedGraphTooltip
           table={table}
           row={hoveringRow}
           level={hoveringLevel ?? 0}
-          isFixed={false}
           total={total}
           totalUnfiltered={total + filtered}
           unit={sampleUnit}
-          navigateTo={navigateTo as NavigateFunction}
         />
-      </GraphTooltipArrow>
+      ) : (
+        <GraphTooltipArrow contextElement={svg.current}>
+          <GraphTooltipArrowContent
+            table={table}
+            row={hoveringRow}
+            level={hoveringLevel ?? 0}
+            isFixed={false}
+            total={total}
+            totalUnfiltered={total + filtered}
+            unit={sampleUnit}
+            navigateTo={navigateTo as NavigateFunction}
+          />
+        </GraphTooltipArrow>
+      )}
       {root}
     </div>
   );
