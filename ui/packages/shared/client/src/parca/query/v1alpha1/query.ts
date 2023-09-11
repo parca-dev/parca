@@ -383,6 +383,12 @@ export interface QueryRequest {
      * @generated from protobuf field: optional parca.query.v1alpha1.SourceReference source_reference = 9;
      */
     sourceReference?: SourceReference;
+    /**
+     * stack prefix that all samples must have to be considered as a candidiate for the query
+     *
+     * @generated from protobuf field: optional parca.query.v1alpha1.StackPrefix stack_prefix = 10;
+     */
+    stackPrefix?: StackPrefix;
 }
 /**
  * Mode is the type of query request
@@ -464,6 +470,71 @@ export enum QueryRequest_ReportType {
      * @generated from protobuf enum value: REPORT_TYPE_TABLE_ARROW = 7;
      */
     TABLE_ARROW = 7
+}
+/**
+ * StackPrefix represents a subset of stack frames that must be present at the start of each stack.
+ *
+ * @generated from protobuf message parca.query.v1alpha1.StackPrefix
+ */
+export interface StackPrefix {
+    /**
+     * StackFrames are the list of frames that represent the prefix.
+     *
+     * @generated from protobuf field: repeated parca.query.v1alpha1.StackFrame stack_frames = 1;
+     */
+    stackFrames: StackFrame[];
+}
+/**
+ * StackFrame represents a single frame in a stack. If a field has its null
+ * value, then that means not to compare the values. That's because a stack
+ * prefix may be generated from an existing report, where frames may have been
+ * merged causing some detail to be lost.
+ *
+ * @generated from protobuf message parca.query.v1alpha1.StackFrame
+ */
+export interface StackFrame {
+    /**
+     * The address in the stack frame.
+     *
+     * @generated from protobuf field: uint64 address = 1;
+     */
+    address: bigint;
+    /**
+     * The build id in the stack frame.
+     *
+     * @generated from protobuf field: string build_id = 2;
+     */
+    buildId: string;
+    /**
+     * The file specified in the memory mapping.
+     *
+     * @generated from protobuf field: string mapping_file = 3;
+     */
+    mappingFile: string;
+    /**
+     * The function name of in the stack frame.
+     *
+     * @generated from protobuf field: string function_name = 4;
+     */
+    functionName: string;
+    /**
+     * The filename in the stack frame.
+     *
+     * @generated from protobuf field: string filename = 5;
+     */
+    filename: string;
+    /**
+     * The line number in the stack frame.
+     *
+     * @generated from protobuf field: int64 line_number = 6;
+     */
+    lineNumber: bigint;
+    /**
+     * The starting line number of the function in the specified file.
+     *
+     * @generated from protobuf field: int64 start_line_number = 7;
+     */
+    startLineNumber: bigint;
 }
 /**
  * SourceReference contains a reference to source code.
@@ -1883,7 +1954,8 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
             { no: 6, name: "filter_query", kind: "scalar", opt: true, T: 9 /*ScalarType.STRING*/ },
             { no: 7, name: "node_trim_threshold", kind: "scalar", opt: true, T: 2 /*ScalarType.FLOAT*/ },
             { no: 8, name: "group_by", kind: "message", T: () => GroupBy },
-            { no: 9, name: "source_reference", kind: "message", T: () => SourceReference }
+            { no: 9, name: "source_reference", kind: "message", T: () => SourceReference },
+            { no: 10, name: "stack_prefix", kind: "message", T: () => StackPrefix }
         ]);
     }
     create(value?: PartialMessage<QueryRequest>): QueryRequest {
@@ -1934,6 +2006,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
                 case /* optional parca.query.v1alpha1.SourceReference source_reference */ 9:
                     message.sourceReference = SourceReference.internalBinaryRead(reader, reader.uint32(), options, message.sourceReference);
                     break;
+                case /* optional parca.query.v1alpha1.StackPrefix stack_prefix */ 10:
+                    message.stackPrefix = StackPrefix.internalBinaryRead(reader, reader.uint32(), options, message.stackPrefix);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1973,6 +2048,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         /* optional parca.query.v1alpha1.SourceReference source_reference = 9; */
         if (message.sourceReference)
             SourceReference.internalBinaryWrite(message.sourceReference, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* optional parca.query.v1alpha1.StackPrefix stack_prefix = 10; */
+        if (message.stackPrefix)
+            StackPrefix.internalBinaryWrite(message.stackPrefix, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1983,6 +2061,142 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
  * @generated MessageType for protobuf message parca.query.v1alpha1.QueryRequest
  */
 export const QueryRequest = new QueryRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class StackPrefix$Type extends MessageType<StackPrefix> {
+    constructor() {
+        super("parca.query.v1alpha1.StackPrefix", [
+            { no: 1, name: "stack_frames", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => StackFrame }
+        ]);
+    }
+    create(value?: PartialMessage<StackPrefix>): StackPrefix {
+        const message = { stackFrames: [] };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<StackPrefix>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: StackPrefix): StackPrefix {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated parca.query.v1alpha1.StackFrame stack_frames */ 1:
+                    message.stackFrames.push(StackFrame.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: StackPrefix, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated parca.query.v1alpha1.StackFrame stack_frames = 1; */
+        for (let i = 0; i < message.stackFrames.length; i++)
+            StackFrame.internalBinaryWrite(message.stackFrames[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.query.v1alpha1.StackPrefix
+ */
+export const StackPrefix = new StackPrefix$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class StackFrame$Type extends MessageType<StackFrame> {
+    constructor() {
+        super("parca.query.v1alpha1.StackFrame", [
+            { no: 1, name: "address", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 0 /*LongType.BIGINT*/ },
+            { no: 2, name: "build_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "mapping_file", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "function_name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "filename", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 6, name: "line_number", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ },
+            { no: 7, name: "start_line_number", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ }
+        ]);
+    }
+    create(value?: PartialMessage<StackFrame>): StackFrame {
+        const message = { address: 0n, buildId: "", mappingFile: "", functionName: "", filename: "", lineNumber: 0n, startLineNumber: 0n };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<StackFrame>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: StackFrame): StackFrame {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* uint64 address */ 1:
+                    message.address = reader.uint64().toBigInt();
+                    break;
+                case /* string build_id */ 2:
+                    message.buildId = reader.string();
+                    break;
+                case /* string mapping_file */ 3:
+                    message.mappingFile = reader.string();
+                    break;
+                case /* string function_name */ 4:
+                    message.functionName = reader.string();
+                    break;
+                case /* string filename */ 5:
+                    message.filename = reader.string();
+                    break;
+                case /* int64 line_number */ 6:
+                    message.lineNumber = reader.int64().toBigInt();
+                    break;
+                case /* int64 start_line_number */ 7:
+                    message.startLineNumber = reader.int64().toBigInt();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: StackFrame, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* uint64 address = 1; */
+        if (message.address !== 0n)
+            writer.tag(1, WireType.Varint).uint64(message.address);
+        /* string build_id = 2; */
+        if (message.buildId !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.buildId);
+        /* string mapping_file = 3; */
+        if (message.mappingFile !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.mappingFile);
+        /* string function_name = 4; */
+        if (message.functionName !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.functionName);
+        /* string filename = 5; */
+        if (message.filename !== "")
+            writer.tag(5, WireType.LengthDelimited).string(message.filename);
+        /* int64 line_number = 6; */
+        if (message.lineNumber !== 0n)
+            writer.tag(6, WireType.Varint).int64(message.lineNumber);
+        /* int64 start_line_number = 7; */
+        if (message.startLineNumber !== 0n)
+            writer.tag(7, WireType.Varint).int64(message.startLineNumber);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.query.v1alpha1.StackFrame
+ */
+export const StackFrame = new StackFrame$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class SourceReference$Type extends MessageType<SourceReference> {
     constructor() {

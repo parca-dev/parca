@@ -252,6 +252,36 @@ message QueryRequest {
 
   // source information about the source requested, required if source report is requested
   optional SourceReference source_reference = 9;
+
+  // stack prefix that all samples must have to be considered as a candidiate for the query
+  optional StackPrefix stack_prefix = 10;
+}
+
+// StackPrefix represents a subset of stack frames that must be present at the start of each stack.
+message StackPrefix {
+  // StackFrames are the list of frames that represent the prefix.
+  repeated StackFrame stack_frames = 1;
+}
+
+// StackFrame represents a single frame in a stack. If a field has its null
+// value, then that means not to compare the values. That's because a stack
+// prefix may be generated from an existing report, where frames may have been
+// merged causing some detail to be lost.
+message StackFrame {
+  // The address in the stack frame.
+  uint64 address = 1;
+  // The build id in the stack frame.
+  string build_id = 2;
+  // The file specified in the memory mapping.
+  string mapping_file = 3;
+  // The function name of in the stack frame.
+  string function_name = 4;
+  // The filename in the stack frame.
+  string filename = 5;
+  // The line number in the stack frame.
+  int64 line_number = 6;
+  // The starting line number of the function in the specified file.
+  int64 start_line_number = 7;
 }
 
 // SourceReference contains a reference to source code.

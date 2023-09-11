@@ -767,6 +767,10 @@
         "sourceReference": {
           "$ref": "#/definitions/v1alpha1SourceReference",
           "title": "source information about the source requested, required if source report is requested"
+        },
+        "stackPrefix": {
+          "$ref": "#/definitions/v1alpha1StackPrefix",
+          "title": "stack prefix that all samples must have to be considered as a candidiate for the query"
         }
       },
       "title": "QueryRequest is a request for a profile query"
@@ -1437,6 +1441,57 @@
         }
       },
       "description": "SourceReference contains a reference to source code."
+    },
+    "v1alpha1StackFrame": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The address in the stack frame."
+        },
+        "buildId": {
+          "type": "string",
+          "description": "The build id in the stack frame."
+        },
+        "mappingFile": {
+          "type": "string",
+          "description": "The file specified in the memory mapping."
+        },
+        "functionName": {
+          "type": "string",
+          "description": "The function name of in the stack frame."
+        },
+        "filename": {
+          "type": "string",
+          "description": "The filename in the stack frame."
+        },
+        "lineNumber": {
+          "type": "string",
+          "format": "int64",
+          "description": "The line number in the stack frame."
+        },
+        "startLineNumber": {
+          "type": "string",
+          "format": "int64",
+          "description": "The starting line number of the function in the specified file."
+        }
+      },
+      "description": "StackFrame represents a single frame in a stack. If a field has its null\nvalue, then that means not to compare the values. That's because a stack\nprefix may be generated from an existing report, where frames may have been\nmerged causing some detail to be lost."
+    },
+    "v1alpha1StackPrefix": {
+      "type": "object",
+      "properties": {
+        "stackFrames": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1alpha1StackFrame"
+          },
+          "description": "StackFrames are the list of frames that represent the prefix."
+        }
+      },
+      "description": "StackPrefix represents a subset of stack frames that must be present at the start of each stack."
     },
     "v1alpha1TableArrow": {
       "type": "object",

@@ -21,6 +21,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unsafe"
 
 	"github.com/apache/arrow/go/v14/arrow"
 	"github.com/apache/arrow/go/v14/arrow/array"
@@ -236,7 +237,14 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	}()
 
 	if req.FilterQuery != nil {
-		p.Samples, filtered, err = FilterProfileData(ctx, q.tracer, q.mem, p.Samples, req.GetFilterQuery())
+		p.Samples, filtered, err = FilterProfileData(
+			ctx,
+			q.tracer,
+			q.mem,
+			p.Samples,
+			req.GetFilterQuery(),
+			req.GetStackPrefix(),
+		)
 		if err != nil {
 			return nil, fmt.Errorf("filtering profile: %w", err)
 		}
@@ -260,6 +268,7 @@ func FilterProfileData(
 	pool memory.Allocator,
 	records []arrow.Record,
 	filterQuery string,
+	stackPrefix *pb.StackPrefix,
 ) ([]arrow.Record, int64, error) {
 	_, span := tracer.Start(ctx, "filterByFunction")
 	defer span.End()
@@ -282,7 +291,14 @@ func FilterProfileData(
 	allFiltered := int64(0)
 
 	for _, r := range records {
-		filteredRecord, valueSum, filteredSum, err := filterRecord(ctx, tracer, pool, r, filterQuery)
+		filteredRecord, valueSum, filteredSum, err := filterRecord(
+			ctx,
+			tracer,
+			pool,
+			r,
+			filterQuery,
+			stackPrefix,
+		)
 		if err != nil {
 			return nil, 0, fmt.Errorf("filter record: %w", err)
 		}
@@ -301,6 +317,7 @@ func filterRecord(
 	pool memory.Allocator,
 	rec arrow.Record,
 	filterQuery string,
+	stackPrefix *pb.StackPrefix,
 ) (arrow.Record, int64, int64, error) {
 	r := profile.NewRecordReader(rec)
 
@@ -313,16 +330,91 @@ func filterRecord(
 	w := profile.NewWriter(pool, labelNames)
 	defer w.RecordBuilder.Release()
 
+	filterQueryBytes := []byte(filterQuery)
 	for i := 0; i < int(rec.NumRows()); i++ {
 		lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 		keepRow := false
-		for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
-			llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
 
-			for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
-				if r.LineFunctionNameIndices.IsValid(k) && bytes.Contains(bytes.ToLower(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(k)))), []byte(filterQuery)) {
-					keepRow = true
-					break
+		if len(filterQueryBytes) > 0 {
+			for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
+				llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
+
+				for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
+					if r.LineFunctionNameIndices.IsValid(k) && bytes.Contains(bytes.ToLower(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(k)))), filterQueryBytes) {
+						keepRow = true
+						break
+					}
+				}
+			}
+		} else {
+			keepRow = true
+		}
+
+		if keepRow && stackPrefix != nil && len(stackPrefix.StackFrames) > 0 {
+			stackFrameIndex := 0
+			for j := int(lOffsetEnd - 1); keepRow && j >= int(lOffsetStart) && stackFrameIndex < len(stackPrefix.StackFrames); j-- {
+				llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
+
+				if llOffsetEnd-llOffsetStart == 0 {
+					stackFrame := stackPrefix.StackFrames[stackFrameIndex]
+					// If there are no symbolized lines, then the address must match.
+					if stackFrame.Address != 0 &&
+						(!r.Address.IsValid(j) || r.Address.Value(j) != stackPrefix.StackFrames[stackFrameIndex].Address) {
+						keepRow = false
+					}
+					if len(stackFrame.BuildId) != 0 &&
+						(!r.MappingBuildIDIndices.IsValid(j) || !bytes.Equal(r.MappingBuildIDDict.Value(int(r.MappingBuildIDIndices.Value(j))), stringToBytes(stackFrame.BuildId))) {
+						keepRow = false
+						break
+					}
+					if len(stackFrame.MappingFile) != 0 &&
+						(!r.MappingFileIndices.IsValid(j) || !bytes.Equal(r.MappingFileDict.Value(int(r.MappingFileIndices.Value(j))), stringToBytes(stackFrame.MappingFile))) {
+						keepRow = false
+						break
+					}
+					stackFrameIndex++
+					continue
+				}
+
+				for k := int(llOffsetEnd - 1); k >= int(llOffsetStart) && stackFrameIndex < len(stackPrefix.StackFrames); k-- {
+					stackFrame := stackPrefix.StackFrames[stackFrameIndex]
+					if stackFrame.Address != 0 &&
+						(!r.Address.IsValid(j) || r.Address.Value(j) != stackFrame.Address) {
+						keepRow = false
+						break
+					}
+					if len(stackFrame.BuildId) != 0 &&
+						(!r.MappingBuildIDIndices.IsValid(j) || !bytes.Equal(r.MappingBuildIDDict.Value(int(r.MappingBuildIDIndices.Value(j))), stringToBytes(stackFrame.BuildId))) {
+						keepRow = false
+						break
+					}
+					if len(stackFrame.MappingFile) != 0 &&
+						(!r.MappingFileIndices.IsValid(j) || !bytes.Equal(r.MappingFileDict.Value(int(r.MappingFileIndices.Value(j))), stringToBytes(stackFrame.MappingFile))) {
+						keepRow = false
+						break
+					}
+					if len(stackFrame.FunctionName) != 0 &&
+						(!r.LineFunctionNameIndices.IsValid(k) || !bytes.Equal(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(k))), stringToBytes(stackFrame.FunctionName))) {
+						keepRow = false
+						break
+					}
+					if len(stackFrame.Filename) != 0 &&
+						(!r.LineFunctionFilenameIndices.IsValid(k) || !bytes.Equal(r.LineFunctionFilenameDict.Value(int(r.LineFunctionFilenameIndices.Value(k))), stringToBytes(stackFrame.Filename))) {
+						keepRow = false
+						break
+					}
+					if stackFrame.LineNumber != 0 &&
+						(!r.LineNumber.IsValid(k) || r.LineNumber.Value(k) != stackFrame.LineNumber) {
+						keepRow = false
+						break
+					}
+					if stackFrame.StartLineNumber != 0 &&
+						(!r.LineFunctionStartLine.IsValid(k) || r.LineFunctionStartLine.Value(k) != stackFrame.StartLineNumber) {
+						keepRow = false
+						break
+					}
+
+					stackFrameIndex++
 				}
 			}
 		}
@@ -333,7 +425,7 @@ func filterRecord(
 
 			for j, label := range r.LabelColumns {
 				if label.Col.IsValid(i) {
-					if err := w.LabelBuilders[j].Append([]byte(label.Dict.Value(int(label.Col.Value(i))))); err != nil {
+					if err := w.LabelBuilders[j].Append(label.Dict.Value(int(label.Col.Value(i)))); err != nil {
 						return nil, 0, 0, fmt.Errorf("append label: %w", err)
 					}
 				} else {
@@ -430,6 +522,10 @@ func filterRecord(
 		math.Int64.Sum(r.Value),
 		math.Int64.Sum(filteredValue),
 		nil
+}
+
+func stringToBytes(s string) []byte {
+	return unsafe.Slice(unsafe.StringData(s), len(s))
 }
 
 func (q *ColumnQueryAPI) renderReport(

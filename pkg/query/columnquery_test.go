@@ -1375,3 +1375,60 @@ func OldProfileToArrowProfile(p profile.OldProfile) (profile.Profile, error) {
 		Samples: []arrow.Record{w.RecordBuilder.NewRecord()},
 	}, nil
 }
+
+func TestFilterStackPrefix(t *testing.T) {
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	w := profile.NewWriter(mem, nil)
+
+	w.LocationsList.Append(true)
+	w.Locations.Append(true)
+	w.Addresses.Append(0x1234)
+	w.MappingStart.Append(0x1000)
+	w.MappingLimit.Append(0x2000)
+	w.MappingOffset.Append(0x0)
+	w.MappingFile.Append([]byte("test"))
+	w.MappingBuildID.Append([]byte("test"))
+	w.Lines.Append(true)
+	w.Line.Append(true)
+	w.LineNumber.Append(1)
+	w.FunctionName.Append([]byte("test"))
+	w.FunctionSystemName.Append([]byte("test"))
+	w.FunctionFilename.Append([]byte("test"))
+	w.FunctionStartLine.Append(1)
+	w.Value.Append(1)
+	w.Diff.Append(0)
+
+	w.LocationsList.Append(true)
+	w.Locations.Append(true)
+	w.Addresses.Append(0x1234)
+	w.MappingStart.Append(0x1000)
+	w.MappingLimit.Append(0x2000)
+	w.MappingOffset.Append(0x0)
+	w.MappingFile.Append([]byte("test"))
+	w.MappingBuildID.Append([]byte("test"))
+	w.Lines.Append(true)
+	w.Line.Append(true)
+	w.LineNumber.Append(1)
+	w.FunctionName.Append([]byte("test1"))
+	w.FunctionSystemName.Append([]byte("test"))
+	w.FunctionFilename.Append([]byte("test"))
+	w.FunctionStartLine.Append(1)
+	w.Value.Append(1)
+	w.Diff.Append(0)
+
+	originalRecord := w.RecordBuilder.NewRecord()
+	r, _, _, err := filterRecord(
+		context.Background(),
+		trace.NewNoopTracerProvider().Tracer(""),
+		mem,
+		originalRecord,
+		"",
+		&pb.StackPrefix{
+			StackFrames: []*pb.StackFrame{{
+				FunctionName: "test1",
+			}},
+		},
+	)
+	require.NoError(t, err)
+	require.Equal(t, int64(1), r.NumRows())
+}
