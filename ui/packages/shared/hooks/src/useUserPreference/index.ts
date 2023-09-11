@@ -41,6 +41,12 @@ export const USER_PREFERENCES: {[key: string]: UserPreferenceDetails} = {
     type: 'string',
     default: 'ocean',
   },
+  GRAPH_METAINFO_DOCKED: {
+    name: 'Dock Graph MetaInfo',
+    key: 'GRAPH_METAINFO_DOCKED',
+    type: 'boolean',
+    default: false,
+  },
 } as const;
 
 export type UserPreference = keyof typeof USER_PREFERENCES;
