@@ -27,7 +27,7 @@ const FlamegraphColorProfileSelector = (): JSX.Element => {
       <div className="flex flex-col gap-3 pl-4 text-sm">
         {(Object.keys(COLOR_PROFILES) as ColorProfileName[]).map(profile => {
           const isSelected = profile === colorProfileName;
-          let displayName = profile;
+          let displayName: string = profile;
           if (profile === 'default') {
             displayName = 'neutral';
           }
