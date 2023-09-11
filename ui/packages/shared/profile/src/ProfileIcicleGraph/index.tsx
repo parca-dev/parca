@@ -18,6 +18,7 @@ import {Icon} from '@iconify/react';
 
 import {Flamegraph, FlamegraphArrow} from '@parca/client';
 import {Button, Select, useParcaContext, useURLState} from '@parca/components';
+import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {divide, selectQueryParam, type NavigateFunction} from '@parca/utilities';
 
 import DiffLegend from '../components/DiffLegend';
@@ -47,6 +48,44 @@ interface ProfileIcicleGraphProps {
   setActionButtons?: (buttons: React.JSX.Element) => void;
   error?: any;
 }
+
+const ShowHideLegendButton = ({navigateTo}: {navigateTo?: NavigateFunction}): JSX.Element => {
+  const [colorStackLegend, setStoreColorStackLegend] = useURLState({
+    param: 'color_stack_legend',
+    navigateTo,
+  });
+
+  const compareMode: boolean =
+    selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
+
+  const isColorStackLegendEnabled = colorStackLegend === 'true';
+
+  const [colorProfileName] = useUserPreference<string>(
+    USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
+  );
+
+  const setColorStackLegend = useCallback(
+    (value: string): void => {
+      setStoreColorStackLegend(value);
+    },
+    [setStoreColorStackLegend]
+  );
+
+  return (
+    <>
+      {colorProfileName === 'default' || compareMode ? null : (
+        <Button
+          className="gap-2"
+          variant="neutral"
+          onClick={() => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true')}
+        >
+          {isColorStackLegendEnabled ? 'Hide legend' : 'Show legend'}
+          <Icon icon={isColorStackLegendEnabled ? 'ph:eye-closed' : 'ph:eye'} width={20} />
+        </Button>
+      )}
+    </>
+  );
+};
 
 const GroupAndSortActionButtons = ({navigateTo}: {navigateTo?: NavigateFunction}): JSX.Element => {
   const [storeSortBy = FIELD_FUNCTION_NAME, setStoreSortBy] = useURLState({
@@ -160,16 +199,14 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
       <div className="flex w-full justify-end gap-2 pb-2">
         <div className="ml-2 flex w-full items-end justify-between gap-2">
           {arrow !== undefined && <GroupAndSortActionButtons navigateTo={navigateTo} />}
-          <div>
-            <Button
-              color="neutral"
-              onClick={() => setNewCurPath([])}
-              disabled={curPath.length === 0}
-              variant="neutral"
-            >
-              Reset View
-            </Button>
-          </div>
+          <ShowHideLegendButton navigateTo={navigateTo} />
+          <Button
+            variant="neutral"
+            onClick={() => setNewCurPath([])}
+            disabled={curPath.length === 0}
+          >
+            Reset View
+          </Button>
         </div>
       </div>
     );

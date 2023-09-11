@@ -64,17 +64,20 @@ const ColorStackLegend = ({
   }
 
   return (
-    <div className="my-6 flex flex-wrap justify-center gap-2">
+    <div className="my-4 flex w-full flex-wrap justify-start">
       {stackColorArray.map(([feature, color]) => {
         const filteringAllowed = feature !== EVERYTHING_ELSE;
         const isHighlighted = currentSearchString === feature;
         return (
           <div
             key={feature}
-            className={cx('flex items-center justify-between gap-1 text-ellipsis p-1 pr-2', {
-              'cursor-pointer': filteringAllowed,
-              'bg-gray-200 dark:bg-gray-800': isHighlighted,
-            })}
+            className={cx(
+              'flex-no-wrap mb-1 flex w-1/5 items-center justify-between text-ellipsis p-1',
+              {
+                'cursor-pointer': filteringAllowed,
+                'bg-gray-200 dark:bg-gray-800': isHighlighted,
+              }
+            )}
             onClick={() => {
               if (!filteringAllowed) {
                 return;
@@ -86,19 +89,25 @@ const ColorStackLegend = ({
               setSearchString(feature);
             }}
           >
-            <div className="flex items-center">
-              <div className="mr-1 inline-block h-4 w-4" style={{backgroundColor: color}} />
-              <span className="text-sm">{feature}</span>
+            <div className="flex w-11/12 items-center justify-start">
+              <div className="flex w-5 items-center">
+                <div className="mr-1 inline-block h-4 w-4" style={{backgroundColor: color}} />
+              </div>
+              <div className="shrink overflow-hidden text-ellipsis whitespace-nowrap text-sm hover:whitespace-normal">
+                {feature}
+              </div>
             </div>
-            {isHighlighted ? (
-              <Icon
-                icon="radix-icons:cross-circled"
-                onClick={e => {
-                  setSearchString('');
-                  e.stopPropagation();
-                }}
-              />
-            ) : null}
+            <div className="flex w-1/12 justify-end">
+              {isHighlighted && (
+                <Icon
+                  icon="radix-icons:cross-circled"
+                  onClick={e => {
+                    setSearchString('');
+                    e.stopPropagation();
+                  }}
+                />
+              )}
+            </div>
           </div>
         );
       })}

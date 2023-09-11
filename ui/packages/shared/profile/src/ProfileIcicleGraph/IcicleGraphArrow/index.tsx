@@ -95,6 +95,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
   const compareMode: boolean =
     selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
+  const isColorStackLegendEnabled = selectQueryParam('color_stack_legend') === 'true';
 
   const mappings = useMemo(() => {
     // Read the mappings from the dictionary that contains all mapping strings.
@@ -230,11 +231,13 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   return (
     <div onMouseLeave={() => dispatch(setHoveringNode(undefined))}>
-      <ColorStackLegend
-        mappingColors={mappingColors}
-        navigateTo={navigateTo}
-        compareMode={compareMode}
-      />
+      {isColorStackLegendEnabled && (
+        <ColorStackLegend
+          mappingColors={mappingColors}
+          navigateTo={navigateTo}
+          compareMode={compareMode}
+        />
+      )}
       {dockedMetainfo ? (
         <DockedGraphTooltip
           table={table}
