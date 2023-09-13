@@ -18,7 +18,7 @@ import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {Duration, Label, QueryRangeResponse, QueryServiceClient, Timestamp} from '@parca/client';
 import {DateTimeRange, useGrpcMetadata, useParcaContext} from '@parca/components';
 import {Query} from '@parca/parser';
-import {getStepDuration} from '@parca/utilities';
+import {capitalizeOnlyFirstLetter, getStepDuration} from '@parca/utilities';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
 import MetricsGraph from '../MetricsGraph';
@@ -144,8 +144,7 @@ const ProfileMetricsGraph = ({
         className="relative rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700"
         role="alert"
       >
-        <strong className="font-bold">Error! </strong>
-        <span className="block sm:inline">{error.message}</span>
+        <span className="block sm:inline">{capitalizeOnlyFirstLetter(error.message)}</span>
       </div>
     );
   }

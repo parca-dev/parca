@@ -37,6 +37,10 @@ export const capitalize = (a: string): string =>
     .map(p => p[0].toUpperCase() + p.substring(1).toLocaleLowerCase())
     .join(' ');
 
+export const capitalizeOnlyFirstLetter = (a: string): string => {
+  return a[0].toUpperCase() + a.substring(1).toLocaleLowerCase();
+};
+
 interface Unit {
   multiplier: number;
   symbol: string;

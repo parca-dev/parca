@@ -18,7 +18,7 @@ import {Provider} from 'react-redux';
 import {QueryServiceClient} from '@parca/client';
 import {DateTimeRange, KeyDownProvider, useParcaContext} from '@parca/components';
 import {store} from '@parca/store';
-import type {NavigateFunction} from '@parca/utilities';
+import {capitalizeOnlyFirstLetter, type NavigateFunction} from '@parca/utilities';
 
 import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
 import {QuerySelection, useProfileTypes} from '../ProfileSelector';
@@ -171,8 +171,9 @@ const ProfileExplorerApp = ({
         className="relative rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700"
         role="alert"
       >
-        <strong className="font-bold">Error! </strong>
-        <span className="block sm:inline">{profileTypesError.message}</span>
+        <span className="block sm:inline">
+          {capitalizeOnlyFirstLetter(profileTypesError.message)}
+        </span>
       </div>
     );
   }
