@@ -528,6 +528,60 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 			fb.intersectLabels(r, t, recordLabelIndex, sampleIndex, cr)
 		}
 
+		// Compare the existing row's metadata values with the one we're merging.
+		// If these values differ we need to set the row's metadata column to null.
+		{
+			a := t.mappingFile.indices.Value(int(r.MappingFileIndices.Value(locationIndex)))
+			b := fb.builderMappingFileIndices.Value(cr)
+			if a != b {
+				fb.builderMappingFileIndices.SetNull(cr)
+			}
+		}
+		{
+			a := t.mappingBuildID.indices.Value(int(r.MappingBuildIDIndices.Value(locationIndex)))
+			b := fb.builderMappingBuildIDIndices.Value(cr)
+			if a != b {
+				fb.builderMappingBuildIDIndices.SetNull(cr)
+			}
+		}
+		{
+			a := fb.builderLocationAddress.Value(cr)
+			b := r.Address.Value(locationIndex)
+			if a != b {
+				fb.builderLocationAddress.SetNull(cr)
+			}
+		}
+		{
+			a := fb.builderLocationLine.Value(cr)
+			b := r.LineNumber.Value(lineIndex)
+			if a != b {
+				fb.builderLocationLine.SetNull(cr)
+			}
+		}
+		{
+			if fb.builderFunctionStartLine.IsValid(cr) && r.LineFunctionStartLine.IsValid(lineIndex) {
+				a := fb.builderFunctionStartLine.Value(cr)
+				b := r.LineFunctionStartLine.Value(lineIndex)
+				if a != b {
+					fb.builderFunctionStartLine.SetNull(cr)
+				}
+			}
+		}
+		{
+			a := t.functionSystemName.indices.Value(int(r.LineFunctionSystemNameIndices.Value(lineIndex)))
+			b := fb.builderFunctionSystemNameIndices.Value(cr)
+			if a != b {
+				fb.builderFunctionSystemNameIndices.SetNull(cr)
+			}
+		}
+		{
+			a := t.functionFilename.indices.Value(int(r.LineFunctionFilenameIndices.Value(lineIndex)))
+			b := fb.builderFunctionFilenameIndices.Value(cr)
+			if a != b {
+				fb.builderFunctionFilenameIndices.SetNull(cr)
+			}
+		}
+
 		// All fields match, so we can aggregate this new row with the existing one.
 		fb.addRowValues(r, cr, sampleIndex)
 		// Continue with this row as the parent for the next iteration and compare to its children.
