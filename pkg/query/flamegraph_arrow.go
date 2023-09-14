@@ -528,6 +528,104 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 			fb.intersectLabels(r, t, recordLabelIndex, sampleIndex, cr)
 		}
 
+		// Compare the existing row's metadata values with the one we're merging.
+		// If these values differ we need to set the row's metadata column to null.
+		{
+			if !fb.builderMappingFileIndices.IsNull(cr) {
+				oldIndex := int(r.MappingFileIndices.Value(locationIndex))
+				if t.mappingFile.indices.IsNull(oldIndex) {
+					fb.builderMappingFileIndices.SetNull(cr)
+				} else {
+					a := fb.builderMappingFileIndices.Value(cr)
+					b := t.mappingFile.indices.Value(oldIndex)
+					if a != b {
+						fb.builderMappingFileIndices.SetNull(cr)
+					}
+				}
+			}
+		}
+		{
+			if !fb.builderMappingBuildIDIndices.IsNull(cr) {
+				oldIndex := int(r.MappingBuildIDIndices.Value(locationIndex))
+				if t.mappingBuildID.indices.IsNull(oldIndex) {
+					fb.builderMappingBuildIDIndices.SetNull(cr)
+				} else {
+					a := fb.builderMappingBuildIDIndices.Value(cr)
+					b := t.mappingBuildID.indices.Value(oldIndex)
+					if a != b {
+						fb.builderMappingBuildIDIndices.SetNull(cr)
+					}
+				}
+			}
+		}
+		{
+			if !fb.builderLocationAddress.IsNull(cr) {
+				if r.Address.IsNull(locationIndex) {
+					fb.builderLocationAddress.SetNull(cr)
+				} else {
+					a := fb.builderLocationAddress.Value(cr)
+					b := r.Address.Value(locationIndex)
+					if a != b {
+						fb.builderLocationAddress.SetNull(cr)
+					}
+				}
+			}
+		}
+		{
+			if fb.builderLocationLine.IsValid(cr) {
+				if r.LineNumber.IsNull(lineIndex) {
+					fb.builderLocationLine.SetNull(cr)
+				} else {
+					a := fb.builderLocationLine.Value(cr)
+					b := r.LineNumber.Value(lineIndex)
+					if a != b {
+						fb.builderLocationLine.SetNull(cr)
+					}
+				}
+			}
+		}
+		{
+			if fb.builderFunctionStartLine.IsValid(cr) {
+				if r.LineFunctionStartLine.IsNull(lineIndex) {
+					fb.builderFunctionStartLine.SetNull(cr)
+				} else {
+					a := fb.builderFunctionStartLine.Value(cr)
+					b := r.LineFunctionStartLine.Value(lineIndex)
+					if a != b {
+						fb.builderFunctionStartLine.SetNull(cr)
+					}
+				}
+			}
+		}
+		{
+			if !fb.builderFunctionSystemNameIndices.IsNull(cr) {
+				oldIndex := int(r.LineFunctionSystemNameIndices.Value(lineIndex))
+				if t.functionSystemName.indices.IsNull(oldIndex) {
+					fb.builderFunctionSystemNameIndices.SetNull(cr)
+				} else {
+					a := fb.builderFunctionSystemNameIndices.Value(cr)
+					b := t.functionSystemName.indices.Value(oldIndex)
+					if a != b {
+						fb.builderFunctionSystemNameIndices.SetNull(cr)
+					}
+				}
+			}
+		}
+		{
+			if !fb.builderFunctionFilenameIndices.IsNull(cr) {
+				oldIndex := int(r.LineFunctionFilenameIndices.Value(lineIndex))
+				if t.functionFilename.indices.IsNull(oldIndex) {
+					fb.builderFunctionFilenameIndices.SetNull(cr)
+				} else {
+					a := fb.builderFunctionFilenameIndices.Value(cr)
+					b := t.functionFilename.indices.Value(oldIndex)
+					if a != b {
+						fb.builderFunctionFilenameIndices.SetNull(cr)
+					}
+				}
+			}
+		}
+
 		// All fields match, so we can aggregate this new row with the existing one.
 		fb.addRowValues(r, cr, sampleIndex)
 		// Continue with this row as the parent for the next iteration and compare to its children.
