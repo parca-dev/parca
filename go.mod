@@ -5,7 +5,7 @@ go 1.21
 require (
 	cloud.google.com/go/storage v1.32.0
 	github.com/alecthomas/kong v0.8.0
-	github.com/apache/arrow/go/v14 v14.0.0-20230913092417-4fac528e2ee9
+	github.com/apache/arrow/go/v14 v14.0.0-20230914171257-670cf3b820ad
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
@@ -245,8 +245,6 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.3.0 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
-
-replace github.com/apache/arrow/go/v14 => github.com/metalmatze/arrow/go/v14 v14.0.0-20230913161324-f9c4298df838
 
 // Remove when https://github.com/prometheus/prometheus/pull/12650 is available in a release
 replace golang.org/x/exp => golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1
