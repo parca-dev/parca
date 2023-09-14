@@ -248,5 +248,5 @@ require (
 
 replace github.com/apache/arrow/go/v14 => github.com/metalmatze/arrow/go/v14 v14.0.0-20230913161324-f9c4298df838
 
-// Remove when https://github.com/prometheus/prometheus/pull/12850 is available in a release
+// Remove when https://github.com/prometheus/prometheus/pull/12650 is available in a release
 replace golang.org/x/exp => golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1

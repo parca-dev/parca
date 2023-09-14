@@ -531,54 +531,70 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 		// Compare the existing row's metadata values with the one we're merging.
 		// If these values differ we need to set the row's metadata column to null.
 		{
-			a := t.mappingFile.indices.Value(int(r.MappingFileIndices.Value(locationIndex)))
-			b := fb.builderMappingFileIndices.Value(cr)
-			if a != b {
-				fb.builderMappingFileIndices.SetNull(cr)
+			if !fb.builderMappingFileIndices.IsNull(cr) {
+				oldIndex := int(r.MappingFileIndices.Value(locationIndex))
+				a := fb.builderMappingFileIndices.Value(cr)
+				b := t.mappingFile.indices.Value(oldIndex)
+				if t.mappingFile.indices.IsNull(oldIndex) || a != b {
+					fb.builderMappingFileIndices.SetNull(cr)
+				}
 			}
 		}
 		{
-			a := t.mappingBuildID.indices.Value(int(r.MappingBuildIDIndices.Value(locationIndex)))
-			b := fb.builderMappingBuildIDIndices.Value(cr)
-			if a != b {
-				fb.builderMappingBuildIDIndices.SetNull(cr)
+			if !fb.builderMappingBuildIDIndices.IsNull(cr) {
+				oldIndex := int(r.MappingBuildIDIndices.Value(locationIndex))
+				a := fb.builderMappingBuildIDIndices.Value(cr)
+				b := t.mappingBuildID.indices.Value(oldIndex)
+				if t.mappingBuildID.indices.IsNull(oldIndex) || a != b {
+					fb.builderMappingBuildIDIndices.SetNull(cr)
+				}
 			}
 		}
 		{
-			a := fb.builderLocationAddress.Value(cr)
-			b := r.Address.Value(locationIndex)
-			if a != b {
-				fb.builderLocationAddress.SetNull(cr)
+			if !fb.builderLocationAddress.IsNull(cr) {
+				a := fb.builderLocationAddress.Value(cr)
+				b := r.Address.Value(locationIndex)
+				if r.Address.IsNull(locationIndex) || a != b {
+					fb.builderLocationAddress.SetNull(cr)
+				}
 			}
 		}
 		{
-			a := fb.builderLocationLine.Value(cr)
-			b := r.LineNumber.Value(lineIndex)
-			if a != b {
-				fb.builderLocationLine.SetNull(cr)
+			if fb.builderLocationLine.IsValid(cr) {
+				a := fb.builderLocationLine.Value(cr)
+				b := r.LineNumber.Value(lineIndex)
+				if r.LineNumber.IsNull(lineIndex) || a != b {
+					fb.builderLocationLine.SetNull(cr)
+				}
 			}
 		}
 		{
-			if fb.builderFunctionStartLine.IsValid(cr) && r.LineFunctionStartLine.IsValid(lineIndex) {
+			if fb.builderFunctionStartLine.IsValid(cr) {
 				a := fb.builderFunctionStartLine.Value(cr)
 				b := r.LineFunctionStartLine.Value(lineIndex)
-				if a != b {
+				if r.LineFunctionStartLine.IsNull(lineIndex) || a != b {
 					fb.builderFunctionStartLine.SetNull(cr)
 				}
 			}
 		}
 		{
-			a := t.functionSystemName.indices.Value(int(r.LineFunctionSystemNameIndices.Value(lineIndex)))
-			b := fb.builderFunctionSystemNameIndices.Value(cr)
-			if a != b {
-				fb.builderFunctionSystemNameIndices.SetNull(cr)
+			if !fb.builderFunctionSystemNameIndices.IsNull(cr) {
+				oldIndex := int(r.LineFunctionSystemNameIndices.Value(lineIndex))
+				a := fb.builderFunctionSystemNameIndices.Value(cr)
+				b := t.functionSystemName.indices.Value(oldIndex)
+				if t.functionSystemName.indices.IsNull(oldIndex) || a != b {
+					fb.builderFunctionSystemNameIndices.SetNull(cr)
+				}
 			}
 		}
 		{
-			a := t.functionFilename.indices.Value(int(r.LineFunctionFilenameIndices.Value(lineIndex)))
-			b := fb.builderFunctionFilenameIndices.Value(cr)
-			if a != b {
-				fb.builderFunctionFilenameIndices.SetNull(cr)
+			if !fb.builderFunctionFilenameIndices.IsNull(cr) {
+				oldIndex := int(r.LineFunctionFilenameIndices.Value(lineIndex))
+				a := fb.builderFunctionFilenameIndices.Value(cr)
+				b := t.functionFilename.indices.Value(oldIndex)
+				if t.functionFilename.indices.IsNull(oldIndex) || a != b {
+					fb.builderFunctionFilenameIndices.SetNull(cr)
+				}
 			}
 		}
 
