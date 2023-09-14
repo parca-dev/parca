@@ -18,7 +18,7 @@ import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {Duration, Label, QueryRangeResponse, QueryServiceClient, Timestamp} from '@parca/client';
 import {DateTimeRange, useGrpcMetadata, useParcaContext} from '@parca/components';
 import {Query} from '@parca/parser';
-import {getStepDuration} from '@parca/utilities';
+import {capitalizeOnlyFirstLetter, getStepDuration} from '@parca/utilities';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
 import MetricsGraph from '../MetricsGraph';
@@ -28,6 +28,17 @@ import useDelayedLoader from '../useDelayedLoader';
 interface ProfileMetricsEmptyStateProps {
   message: string;
 }
+
+const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
+  return (
+    <div
+      className="relative rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700"
+      role="alert"
+    >
+      <span className="block sm:inline">{errorMessage}</span>
+    </div>
+  );
+};
 
 export const ProfileMetricsEmptyState = ({message}: ProfileMetricsEmptyStateProps): JSX.Element => {
   return (
@@ -114,12 +125,12 @@ const ProfileMetricsGraph = ({
 }: ProfileMetricsGraphProps): JSX.Element => {
   const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to);
   const isLoaderVisible = useDelayedLoader(isLoading);
-  const {loader, onError, perf} = useParcaContext();
+  const {loader, onError, perf, authenticationErrorMessage} = useParcaContext();
   const {width, height, margin} = useMetricsGraphDimensions(comparing);
 
   useEffect(() => {
     if (error !== null) {
-      onError?.(error, 'metricsGraph');
+      onError?.(error);
     }
   }, [error, onError]);
 
@@ -139,15 +150,11 @@ const ProfileMetricsGraph = ({
   }
 
   if (error !== null) {
-    return (
-      <div
-        className="relative rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700"
-        role="alert"
-      >
-        <strong className="font-bold">Error! </strong>
-        <span className="block sm:inline">{error.message}</span>
-      </div>
-    );
+    if (authenticationErrorMessage !== undefined && error.code === 'UNAUTHENTICATED') {
+      return <ErrorContent errorMessage={authenticationErrorMessage} />;
+    }
+
+    return <ErrorContent errorMessage={capitalizeOnlyFirstLetter(error.message)} />;
   }
 
   if (dataAvailable) {

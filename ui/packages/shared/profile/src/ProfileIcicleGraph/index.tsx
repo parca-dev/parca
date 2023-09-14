@@ -19,7 +19,12 @@ import {Icon} from '@iconify/react';
 import {Flamegraph, FlamegraphArrow} from '@parca/client';
 import {Button, Select, useParcaContext, useURLState} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
-import {divide, selectQueryParam, type NavigateFunction} from '@parca/utilities';
+import {
+  capitalizeOnlyFirstLetter,
+  divide,
+  selectQueryParam,
+  type NavigateFunction,
+} from '@parca/utilities';
 
 import DiffLegend from '../components/DiffLegend';
 import IcicleGraph from './IcicleGraph';
@@ -48,6 +53,10 @@ interface ProfileIcicleGraphProps {
   setActionButtons?: (buttons: React.JSX.Element) => void;
   error?: any;
 }
+
+const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
+  return <div className="flex justify-center p-10">{errorMessage}</div>;
+};
 
 const ShowHideLegendButton = ({navigateTo}: {navigateTo?: NavigateFunction}): JSX.Element => {
   const [colorStackLegend, setStoreColorStackLegend] = useURLState({
@@ -152,7 +161,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   error,
   width,
 }: ProfileIcicleGraphProps): JSX.Element {
-  const {loader} = useParcaContext();
+  const {loader, onError, authenticationErrorMessage} = useParcaContext();
   const compareMode: boolean =
     selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
 
@@ -217,8 +226,13 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   }
 
   if (error != null) {
-    console.error('Error: ', error);
-    return <div className="flex justify-center p-10">An error occurred: {error.message}</div>;
+    onError?.(error);
+
+    if (authenticationErrorMessage !== undefined && error.code === 'UNAUTHENTICATED') {
+      return <ErrorContent errorMessage={authenticationErrorMessage} />;
+    }
+
+    return <ErrorContent errorMessage={capitalizeOnlyFirstLetter(error.message)} />;
   }
 
   if (graph === undefined && arrow === undefined)
