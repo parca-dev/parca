@@ -29,6 +29,17 @@ interface ProfileMetricsEmptyStateProps {
   message: string;
 }
 
+const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
+  return (
+    <div
+      className="relative rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700"
+      role="alert"
+    >
+      <span className="block sm:inline">{errorMessage}</span>
+    </div>
+  );
+};
+
 export const ProfileMetricsEmptyState = ({message}: ProfileMetricsEmptyStateProps): JSX.Element => {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center">
@@ -114,12 +125,12 @@ const ProfileMetricsGraph = ({
 }: ProfileMetricsGraphProps): JSX.Element => {
   const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to);
   const isLoaderVisible = useDelayedLoader(isLoading);
-  const {loader, onError, perf} = useParcaContext();
+  const {loader, onError, perf, authenticationErrorMessage} = useParcaContext();
   const {width, height, margin} = useMetricsGraphDimensions(comparing);
 
   useEffect(() => {
     if (error !== null) {
-      onError?.(error, 'metricsGraph');
+      onError?.(error);
     }
   }, [error, onError]);
 
@@ -139,14 +150,11 @@ const ProfileMetricsGraph = ({
   }
 
   if (error !== null) {
-    return (
-      <div
-        className="relative rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700"
-        role="alert"
-      >
-        <span className="block sm:inline">{capitalizeOnlyFirstLetter(error.message)}</span>
-      </div>
-    );
+    if (authenticationErrorMessage !== undefined && error.code === 'UNAUTHENTICATED') {
+      return <ErrorContent errorMessage={authenticationErrorMessage} />;
+    }
+
+    return <ErrorContent errorMessage={capitalizeOnlyFirstLetter(error.message)} />;
   }
 
   if (dataAvailable) {

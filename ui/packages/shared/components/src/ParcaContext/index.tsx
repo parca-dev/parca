@@ -37,10 +37,11 @@ interface Props {
     onRender?: ProfilerOnRenderCallback;
     markInteraction: (interactionName: string, sampleCount: number | string | bigint) => void;
   };
-  onError?: (error: RpcError, originatingFeature: string) => void;
+  onError?: (error: RpcError) => void;
   queryServiceClient: QueryServiceClient;
   navigateTo: NavigateFunction;
   enableSourcesView?: boolean;
+  authenticationErrorMessage?: string;
 }
 
 export const defaultValue: Props = {

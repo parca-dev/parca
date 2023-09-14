@@ -54,6 +54,10 @@ interface ProfileIcicleGraphProps {
   error?: any;
 }
 
+const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
+  return <div className="flex justify-center p-10">{errorMessage}</div>;
+};
+
 const ShowHideLegendButton = ({navigateTo}: {navigateTo?: NavigateFunction}): JSX.Element => {
   const [colorStackLegend, setStoreColorStackLegend] = useURLState({
     param: 'color_stack_legend',
@@ -157,7 +161,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   error,
   width,
 }: ProfileIcicleGraphProps): JSX.Element {
-  const {loader, onError} = useParcaContext();
+  const {loader, onError, authenticationErrorMessage} = useParcaContext();
   const compareMode: boolean =
     selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
 
@@ -222,12 +226,13 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   }
 
   if (error != null) {
-    onError?.(error, 'ProfileExplorer');
-    return (
-      <div className="flex justify-center p-10">
-        An error occurred: {capitalizeOnlyFirstLetter(error.message)}
-      </div>
-    );
+    onError?.(error);
+
+    if (authenticationErrorMessage !== undefined && error.code === 'UNAUTHENTICATED') {
+      return <ErrorContent errorMessage={authenticationErrorMessage} />;
+    }
+
+    return <ErrorContent errorMessage={capitalizeOnlyFirstLetter(error.message)} />;
   }
 
   if (graph === undefined && arrow === undefined)
