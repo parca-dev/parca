@@ -254,7 +254,7 @@ const TooltipMetaInfo = ({
       <tr>
         <td className="w-1/4">Build Id</td>
         <td className="w-3/4 break-all">
-          {mappingBuildID === null ? (
+          {!mappingBuildID ? (
             <NoData />
           ) : (
             <CopyToClipboard onCopy={onCopy} text={mappingBuildID}>
