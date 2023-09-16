@@ -214,6 +214,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	var (
 		p        profile.Profile
 		filtered int64
+		isDiff   bool
 	)
 
 	switch req.Mode {
@@ -222,6 +223,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	case pb.QueryRequest_MODE_MERGE:
 		p, err = q.selectMerge(ctx, req.GetMerge())
 	case pb.QueryRequest_MODE_DIFF:
+		isDiff = true
 		p, err = q.selectDiff(ctx, req.GetDiff())
 	default:
 		return nil, status.Error(codes.InvalidArgument, "unknown query mode")
@@ -251,6 +253,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		req.GetGroupBy().GetFields(),
 		req.GetSourceReference(),
 		source,
+		isDiff,
 	)
 }
 
@@ -441,6 +444,7 @@ func (q *ColumnQueryAPI) renderReport(
 	groupBy []string,
 	sourceReference *pb.SourceReference,
 	source string,
+	isDiff bool,
 ) (*pb.QueryResponse, error) {
 	return RenderReport(
 		ctx,
@@ -455,6 +459,7 @@ func (q *ColumnQueryAPI) renderReport(
 		q.converter,
 		sourceReference,
 		source,
+		isDiff,
 	)
 }
 
@@ -471,6 +476,7 @@ func RenderReport(
 	converter *parcacol.ArrowToProfileConverter,
 	sourceReference *pb.SourceReference,
 	source string,
+	isDiff bool,
 ) (*pb.QueryResponse, error) {
 	ctx, span := tracer.Start(ctx, "renderReport")
 	span.SetAttributes(attribute.String("reportType", typ.String()))
@@ -562,25 +568,20 @@ func RenderReport(
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_PPROF:
-		op, err := converter.Convert(ctx, p)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to convert profile: %v", err.Error())
-		}
-
-		pp, err := GenerateFlatPprof(ctx, op)
+		pp, err := GenerateFlatPprof(ctx, isDiff, p)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
 		}
 
-		var buf bytes.Buffer
-		if err := pp.Write(&buf); err != nil {
+		buf, err := SerializePprof(pp)
+		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
 		}
 
 		return &pb.QueryResponse{
 			Total:    0, // TODO: Figure out how to get total for pprof
 			Filtered: filtered,
-			Report:   &pb.QueryResponse_Pprof{Pprof: buf.Bytes()},
+			Report:   &pb.QueryResponse_Pprof{Pprof: buf},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_TOP:
 		op, err := converter.Convert(ctx, p)

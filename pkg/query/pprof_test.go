@@ -71,7 +71,16 @@ func TestGenerateFlatPprof(t *testing.T) {
 	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
-	res, err := GenerateFlatPprof(ctx, symbolizedProfile)
+	prof, err := OldProfileToArrowProfile(symbolizedProfile)
+	require.NoError(t, err)
+
+	resProfile, err := GenerateFlatPprof(ctx, false, prof)
+	require.NoError(t, err)
+
+	data, err := resProfile.MarshalVT()
+	require.NoError(t, err)
+
+	res, err := profile.ParseData(data)
 	require.NoError(t, err)
 
 	require.Equal(t, &profile.ValueType{Type: "space", Unit: "bytes"}, res.PeriodType)
@@ -100,7 +109,10 @@ func TestGenerateFlatPprof(t *testing.T) {
 	tmpfile, err := os.CreateTemp("", "pprof")
 	defer os.Remove(tmpfile.Name())
 	require.NoError(t, err)
-	require.NoError(t, res.Write(tmpfile))
+	data, err = SerializePprof(resProfile)
+	require.NoError(t, err)
+	_, err = tmpfile.Write(data)
+	require.NoError(t, err)
 	require.NoError(t, tmpfile.Close())
 
 	f, err := os.Open(tmpfile.Name())
@@ -178,13 +190,19 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	res, err := GenerateFlatPprof(ctx, symbolizedProfile)
+	prof, err := OldProfileToArrowProfile(symbolizedProfile)
+	require.NoError(t, err)
+
+	res, err := GenerateFlatPprof(ctx, false, prof)
 	require.NoError(t, err)
 
 	tmpfile, err := os.CreateTemp("", "pprof")
 	defer os.Remove(tmpfile.Name())
 	require.NoError(t, err)
-	require.NoError(t, res.Write(tmpfile))
+	data, err := SerializePprof(res)
+	require.NoError(t, err)
+	_, err = tmpfile.Write(data)
+	require.NoError(t, err)
 	require.NoError(t, tmpfile.Close())
 
 	f, err := os.Open(tmpfile.Name())
