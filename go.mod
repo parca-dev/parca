@@ -32,7 +32,7 @@ require (
 	github.com/polarsignals/frostdb v0.0.0-20230913161601-5b173f20ed72
 	github.com/prometheus/client_golang v1.16.0
 	github.com/prometheus/common v0.44.0
-	github.com/prometheus/prometheus v0.46.0
+	github.com/prometheus/prometheus v0.47.0
 	github.com/stretchr/testify v1.8.4
 	github.com/thanos-io/objstore v0.0.0-20230913122821-eb06103887ab
 	github.com/zeebo/xxh3 v1.0.2
@@ -207,7 +207,7 @@ require (
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/rs/cors v1.8.0 // indirect
 	github.com/rs/xid v1.5.0 // indirect
-	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.19 // indirect
+	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.20 // indirect
 	github.com/segmentio/encoding v0.3.6 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/sony/gobreaker v0.5.0 // indirect
@@ -218,7 +218,6 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/otel/metric v1.18.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.0.0 // indirect
-	go.uber.org/goleak v1.2.1 // indirect
 	golang.org/x/crypto v0.13.0 // indirect
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/sys v0.12.0 // indirect
