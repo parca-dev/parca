@@ -199,7 +199,7 @@ export const Highlighter = ({file, content, renderer}: HighlighterProps): JSX.El
       <div className="text-xs">
         <SyntaxHighlighter
           language={language}
-          style={isDarkMode === true ? atomOneDark : atomOneLight}
+          style={isDarkMode ? atomOneDark : atomOneLight}
           showLineNumbers
           renderer={renderer}
           customStyle={{padding: 0, height: '90vh'}}
