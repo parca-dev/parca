@@ -29,3 +29,7 @@ go install "github.com/golangci/golangci-lint/cmd/golangci-lint@${GOLANGCI_LINT_
 # renovate: datasource=go depName=golang.org/x/vuln
 GOVULNCHECK_VERSION='v1.0.1'
 go install "golang.org/x/vuln/cmd/govulncheck@${GOVULNCHECK_VERSION}"
+
+# renovate: datasource=go depName=github.com/bufbuild/buf
+BUF_VERSION='v1.26.1'
+go install "github.com/bufbuild/buf/cmd/buf@${BUF_VERSION}"
