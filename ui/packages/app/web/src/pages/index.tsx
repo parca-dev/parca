@@ -19,6 +19,7 @@ import {useLocation, useNavigate} from 'react-router-dom';
 import {QueryServiceClient} from '@parca/client';
 import {ParcaContextProvider} from '@parca/components';
 import {ProfileExplorer} from '@parca/profile';
+import {selectDarkMode, useAppSelector} from '@parca/store';
 import {convertToQueryParams, parseParams} from '@parca/utilities';
 
 const apiEndpoint = process.env.REACT_APP_PUBLIC_API_ENDPOINT;
@@ -32,6 +33,7 @@ const queryClient = new QueryServiceClient(
 const Profiles = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const isDarkMode = useAppSelector(selectDarkMode);
 
   const navigateTo = useCallback(
     (path: string, queryParams: any, options?: {replace?: boolean}) => {
@@ -53,6 +55,7 @@ const Profiles = () => {
       value={{
         queryServiceClient: queryClient,
         navigateTo,
+        isDarkMode,
       }}
     >
       <ProfileExplorer
