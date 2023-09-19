@@ -50,8 +50,8 @@ export const useQuery = (
       options?.nodeTrimThreshold,
       options?.groupBy,
       options?.sourceBuildID,
-      options?.sourceFilename,
       options?.sourceOnly,
+      options?.sourceOnly === true ? '' : options?.sourceFilename,
     ],
     queryFn: async () => {
       const req = profileSource.QueryRequest();
