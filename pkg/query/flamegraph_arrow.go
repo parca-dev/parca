@@ -1076,10 +1076,21 @@ func (fb *flamegraphBuilder) Release() {
 	fb.builderCumulative.Release()
 	fb.builderDiff.Release()
 
-	fb.trimmedLocationLine.Release()
-	fb.trimmedFunctionStartLine.Release()
-	fb.trimmedCumulative.Release()
-	fb.trimmedDiff.Release()
+	if fb.trimmedLocationLine != nil {
+		fb.trimmedLocationLine.Release()
+	}
+
+	if fb.trimmedFunctionStartLine != nil {
+		fb.trimmedFunctionStartLine.Release()
+	}
+
+	if fb.trimmedCumulative != nil {
+		fb.trimmedCumulative.Release()
+	}
+
+	if fb.trimmedDiff != nil {
+		fb.trimmedDiff.Release()
+	}
 
 	for i := range fb.builderLabelFields {
 		fb.builderLabels[i].Release()
