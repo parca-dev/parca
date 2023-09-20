@@ -1097,11 +1097,26 @@ func (fb *flamegraphBuilder) Release() {
 		fb.builderLabelsDictUnifiers[i].Release()
 	}
 
-	fb.mappingBuildID.Release()
-	fb.mappingFile.Release()
-	fb.functionName.Release()
-	fb.functionSystemName.Release()
-	fb.functionFilename.Release()
+	if fb.mappingBuildID != nil {
+		fb.mappingBuildID.Release()
+	}
+
+	if fb.mappingFile != nil {
+		fb.mappingFile.Release()
+	}
+
+	if fb.functionName != nil {
+		fb.functionName.Release()
+	}
+
+	if fb.functionSystemName != nil {
+		fb.functionSystemName.Release()
+	}
+
+	if fb.functionFilename != nil {
+		fb.functionFilename.Release()
+	}
+
 	for _, r := range fb.labels {
 		r.Release()
 	}
@@ -1119,12 +1134,23 @@ func (fb *flamegraphBuilder) appendRow(
 
 	fb.builderLabelsOnly.Append(false)
 
-	// Mapping
-	if r.MappingStart.IsValid(locationRow) {
-		fb.builderMappingFileIndices.Append(t.mappingFile.indices.Value(int(r.MappingFileIndices.Value(locationRow))))
-		fb.builderMappingBuildIDIndices.Append(t.mappingBuildID.indices.Value(int(r.MappingBuildIDIndices.Value(locationRow))))
+	if r.MappingFileIndices.IsValid(locationRow) {
+		fb.builderMappingFileIndices.Append(
+			t.mappingFile.indices.Value(
+				int(r.MappingFileIndices.Value(locationRow)),
+			),
+		)
 	} else {
 		fb.builderMappingFileIndices.AppendNull()
+	}
+
+	if r.MappingBuildIDIndices.IsValid(locationRow) {
+		fb.builderMappingBuildIDIndices.Append(
+			t.mappingBuildID.indices.Value(
+				int(r.MappingBuildIDIndices.Value(locationRow)),
+			),
+		)
+	} else {
 		fb.builderMappingBuildIDIndices.AppendNull()
 	}
 
