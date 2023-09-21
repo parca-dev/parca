@@ -279,13 +279,13 @@ func FilterProfileData(
 
 	// We want to filter by function name case-insensitive, so we need to lowercase the query.
 	// We lower case the query here, so we don't have to do it for every sample.
-	filterQuery = strings.ToLower(filterQuery)
+	filterQueryBytes := []byte(strings.ToLower(filterQuery))
 	res := make([]arrow.Record, 0, len(records))
 	allValues := int64(0)
 	allFiltered := int64(0)
 
 	for _, r := range records {
-		filteredRecord, valueSum, filteredSum, err := filterRecord(ctx, tracer, pool, r, filterQuery)
+		filteredRecord, valueSum, filteredSum, err := filterRecord(ctx, tracer, pool, r, filterQueryBytes)
 		if err != nil {
 			return nil, 0, fmt.Errorf("filter record: %w", err)
 		}
@@ -303,7 +303,7 @@ func filterRecord(
 	tracer trace.Tracer,
 	pool memory.Allocator,
 	rec arrow.Record,
-	filterQuery string,
+	filterQueryBytes []byte,
 ) (arrow.Record, int64, int64, error) {
 	r := profile.NewRecordReader(rec)
 
@@ -316,16 +316,29 @@ func filterRecord(
 	w := profile.NewWriter(pool, labelNames)
 	defer w.RecordBuilder.Release()
 
+	indexMatches := map[uint32]struct{}{}
+	for i := 0; i < r.LineFunctionNameDict.Len(); i++ {
+		if bytes.Contains(bytes.ToLower(r.LineFunctionNameDict.Value(i)), filterQueryBytes) {
+			indexMatches[uint32(i)] = struct{}{}
+		}
+	}
+
+	if len(indexMatches) == 0 {
+		return w.RecordBuilder.NewRecord(), math.Int64.Sum(r.Value), 0, nil
+	}
+
 	for i := 0; i < int(rec.NumRows()); i++ {
 		lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 		keepRow := false
-		for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
-			llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
-
-			for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
-				if r.LineFunctionNameIndices.IsValid(k) && bytes.Contains(bytes.ToLower(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(k)))), []byte(filterQuery)) {
-					keepRow = true
-					break
+		if lOffsetStart < lOffsetEnd {
+			firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
+			_, lastEnd := r.Lines.ValueOffsets(int(lOffsetEnd - 1))
+			for k := int(firstStart); k < int(lastEnd); k++ {
+				if r.LineFunctionNameIndices.IsValid(k) {
+					if _, ok := indexMatches[r.LineFunctionNameIndices.Value(k)]; ok {
+						keepRow = true
+						break
+					}
 				}
 			}
 		}
