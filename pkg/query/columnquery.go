@@ -354,17 +354,25 @@ func filterRecord(
 						w.MappingStart.Append(r.MappingStart.Value(j))
 						w.MappingLimit.Append(r.MappingLimit.Value(j))
 						w.MappingOffset.Append(r.MappingOffset.Value(j))
-						if r.MappingFileDict.Len() == 0 {
-							w.MappingFile.AppendNull()
+
+						mappingFile := r.MappingFileDict.Value(int(r.MappingFileIndices.Value(j)))
+						if len(mappingFile) > 0 {
+							if err := w.MappingFile.Append(mappingFile); err != nil {
+								return nil, 0, 0, fmt.Errorf("append mapping file: %w", err)
+							}
 						} else {
-							if err := w.MappingFile.Append(r.MappingFileDict.Value(int(r.MappingFileIndices.Value(j)))); err != nil {
+							if err := w.MappingFile.Append([]byte{}); err != nil {
 								return nil, 0, 0, fmt.Errorf("append mapping file: %w", err)
 							}
 						}
-						if r.MappingBuildIDDict.Len() == 0 {
-							w.MappingBuildID.AppendNull()
+
+						mappingBuildID := r.MappingBuildIDDict.Value(int(r.MappingBuildIDIndices.Value(j)))
+						if len(mappingBuildID) > 0 {
+							if err := w.MappingBuildID.Append(mappingBuildID); err != nil {
+								return nil, 0, 0, fmt.Errorf("append mapping build id: %w", err)
+							}
 						} else {
-							if err := w.MappingBuildID.Append(r.MappingBuildIDDict.Value(int(r.MappingBuildIDIndices.Value(j)))); err != nil {
+							if err := w.MappingBuildID.Append([]byte{}); err != nil {
 								return nil, 0, 0, fmt.Errorf("append mapping build id: %w", err)
 							}
 						}
@@ -384,35 +392,40 @@ func filterRecord(
 								w.Line.Append(true)
 								w.LineNumber.Append(r.LineNumber.Value(k))
 
-								if r.LineFunctionNameIndices.IsValid(k) {
-									if r.LineFunctionNameDict.Len() == 0 {
-										w.FunctionName.AppendNull()
-									} else {
-										if err := w.FunctionName.Append(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(k)))); err != nil {
-											return nil, 0, 0, fmt.Errorf("append function name: %w", err)
-										}
+								functionName := r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(k)))
+								if len(functionName) > 0 {
+									if err := w.FunctionName.Append(functionName); err != nil {
+										return nil, 0, 0, fmt.Errorf("append function name: %w", err)
 									}
-									if r.LineFunctionSystemNameDict.Len() == 0 {
-										w.FunctionSystemName.AppendNull()
-									} else {
-										if err := w.FunctionSystemName.Append(r.LineFunctionSystemNameDict.Value(int(r.LineFunctionSystemNameIndices.Value(k)))); err != nil {
-											return nil, 0, 0, fmt.Errorf("append function system name: %w", err)
-										}
-									}
-									if r.LineFunctionFilenameDict.Len() == 0 {
-										w.FunctionFilename.AppendNull()
-									} else {
-										if err := w.FunctionFilename.Append(r.LineFunctionFilenameDict.Value(int(r.LineFunctionFilenameIndices.Value(k)))); err != nil {
-											return nil, 0, 0, fmt.Errorf("append function filename: %w", err)
-										}
-									}
-									w.FunctionStartLine.Append(r.LineFunctionStartLine.Value(k))
 								} else {
-									w.FunctionName.AppendNull()
-									w.FunctionSystemName.AppendNull()
-									w.FunctionFilename.AppendNull()
-									w.FunctionStartLine.AppendNull()
+									if err := w.FunctionName.Append(functionName); err != nil {
+										return nil, 0, 0, fmt.Errorf("append function name: %w", err)
+									}
 								}
+
+								functionSystemName := r.LineFunctionSystemNameDict.Value(int(r.LineFunctionSystemNameIndices.Value(k)))
+								if len(functionSystemName) > 0 {
+									if err := w.FunctionSystemName.Append(functionSystemName); err != nil {
+										return nil, 0, 0, fmt.Errorf("append function system name: %w", err)
+									}
+								} else {
+									if err := w.FunctionSystemName.Append([]byte{}); err != nil {
+										return nil, 0, 0, fmt.Errorf("append function system name: %w", err)
+									}
+								}
+
+								functionFilename := r.LineFunctionFilenameDict.Value(int(r.LineFunctionFilenameIndices.Value(k)))
+								if len(functionFilename) > 0 {
+									if err := w.FunctionFilename.Append(functionFilename); err != nil {
+										return nil, 0, 0, fmt.Errorf("append function filename: %w", err)
+									}
+								} else {
+									if err := w.FunctionFilename.Append([]byte{}); err != nil {
+										return nil, 0, 0, fmt.Errorf("append function filename: %w", err)
+									}
+								}
+
+								w.FunctionStartLine.Append(r.LineFunctionStartLine.Value(k))
 							}
 							continue
 						}
