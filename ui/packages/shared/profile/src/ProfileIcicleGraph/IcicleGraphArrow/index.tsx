@@ -14,6 +14,7 @@
 import React, {memo, useEffect, useMemo, useRef, useState} from 'react';
 
 import {Dictionary, Table, Vector, tableFromIPC} from 'apache-arrow';
+import {useContextMenu} from 'react-contexify';
 
 import {FlamegraphArrow} from '@parca/client';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
@@ -36,6 +37,7 @@ import GraphTooltipArrow from '../../GraphTooltipArrow';
 import GraphTooltipArrowContent from '../../GraphTooltipArrow/Content';
 import {DockedGraphTooltip} from '../../GraphTooltipArrow/DockedGraphTooltip';
 import ColorStackLegend from './ColorStackLegend';
+import ContextMenu from './ContextMenu';
 import {IcicleNode, RowHeight, mappingColors} from './IcicleGraphNodes';
 import {arrowToString, extractFeature} from './utils';
 
@@ -75,6 +77,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   navigateTo,
   sortBy,
 }: IcicleGraphArrowProps): React.JSX.Element {
+  const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
   const dispatch = useAppDispatch();
   const [colorProfile] = useUserPreference<ColorProfileName>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
@@ -172,6 +175,21 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     return scaleLinear([0n, total], [0, width]);
   }, [total, width]);
 
+  const MENU_ID = 'icicle-graph-context-menu';
+  const {show} = useContextMenu({
+    id: MENU_ID,
+  });
+  const displayMenu = (e: React.MouseEvent) => {
+    show({
+      event: e,
+    });
+  };
+
+  const trackVisibility = (isVisible: boolean) => {
+    setIsContextMenuOpen(isVisible);
+    console.log(isVisible);
+  };
+
   // useMemo for the root graph as it otherwise renders the whole graph if the hoveringRow changes.
   const root = useMemo(() => {
     return (
@@ -181,6 +199,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
         height={height}
         preserveAspectRatio="xMinYMid"
         ref={svg}
+        onContextMenu={displayMenu}
       >
         <g ref={ref}>
           <g transform={'translate(0, 0)'}>
@@ -205,6 +224,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               sortBy={sortBy}
               darkMode={isDarkMode}
               compareMode={compareMode}
+              isContextMenuOpen={isContextMenuOpen}
             />
           </g>
         </g>
@@ -223,6 +243,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     total,
     width,
     xScale,
+    isContextMenuOpen,
   ]);
 
   if (table.numRows === 0 || width === undefined) {
@@ -230,39 +251,54 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   }
 
   return (
-    <div onMouseLeave={() => dispatch(setHoveringNode(undefined))}>
-      {isColorStackLegendEnabled && (
-        <ColorStackLegend
-          mappingColors={mappingColors}
-          navigateTo={navigateTo}
-          compareMode={compareMode}
-        />
-      )}
-      {dockedMetainfo ? (
-        <DockedGraphTooltip
+    <>
+      <div onMouseLeave={() => dispatch(setHoveringNode(undefined))}>
+        <ContextMenu
+          menuId={MENU_ID}
           table={table}
           row={hoveringRow}
           level={hoveringLevel ?? 0}
           total={total}
           totalUnfiltered={total + filtered}
           unit={sampleUnit}
+          navigateTo={navigateTo as NavigateFunction}
+          trackVisibility={trackVisibility}
         />
-      ) : (
-        <GraphTooltipArrow contextElement={svg.current}>
-          <GraphTooltipArrowContent
-            table={table}
-            row={hoveringRow}
-            level={hoveringLevel ?? 0}
-            isFixed={false}
-            total={total}
-            totalUnfiltered={total + filtered}
-            unit={sampleUnit}
-            navigateTo={navigateTo as NavigateFunction}
+        {isColorStackLegendEnabled && (
+          <ColorStackLegend
+            mappingColors={mappingColors}
+            navigateTo={navigateTo}
+            compareMode={compareMode}
           />
-        </GraphTooltipArrow>
-      )}
-      {root}
-    </div>
+        )}
+        {dockedMetainfo
+          ? !isContextMenuOpen && (
+              <DockedGraphTooltip
+                table={table}
+                row={hoveringRow}
+                level={hoveringLevel ?? 0}
+                total={total}
+                totalUnfiltered={total + filtered}
+                unit={sampleUnit}
+              />
+            )
+          : !isContextMenuOpen && (
+              <GraphTooltipArrow contextElement={svg.current} isContextMenuOpen={isContextMenuOpen}>
+                <GraphTooltipArrowContent
+                  table={table}
+                  row={hoveringRow}
+                  level={hoveringLevel ?? 0}
+                  isFixed={false}
+                  total={total}
+                  totalUnfiltered={total + filtered}
+                  unit={sampleUnit}
+                  navigateTo={navigateTo as NavigateFunction}
+                />
+              </GraphTooltipArrow>
+            )}
+        {root}
+      </div>
+    </>
   );
 });
 

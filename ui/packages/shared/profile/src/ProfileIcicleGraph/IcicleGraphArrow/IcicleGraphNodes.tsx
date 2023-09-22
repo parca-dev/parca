@@ -20,6 +20,8 @@ import {useKeyDown} from '@parca/components';
 import {selectBinaries, useAppSelector} from '@parca/store';
 import {isSearchMatch, scaleLinear} from '@parca/utilities';
 
+import 'react-contexify/dist/ReactContexify.css';
+
 import {
   FIELD_CHILDREN,
   FIELD_CUMULATIVE,
@@ -52,6 +54,7 @@ interface IcicleGraphNodesProps {
   sortBy: string;
   darkMode: boolean;
   compareMode: boolean;
+  isContextMenuOpen: boolean;
 }
 
 export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
@@ -73,6 +76,7 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
   searchString,
   darkMode,
   compareMode,
+  isContextMenuOpen,
 }: IcicleGraphNodesProps): React.JSX.Element {
   const cumulatives = table.getChild(FIELD_CUMULATIVE);
 
@@ -114,6 +118,7 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
         searchString={searchString}
         darkMode={darkMode}
         compareMode={compareMode}
+        isContextMenuOpen={isContextMenuOpen}
       />
     );
   });
@@ -146,6 +151,7 @@ interface IcicleNodeProps {
   sortBy: string;
   darkMode: boolean;
   compareMode: boolean;
+  isContextMenuOpen: boolean;
 }
 
 const icicleRectStyles = {
@@ -179,6 +185,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   sortBy,
   darkMode,
   compareMode,
+  isContextMenuOpen,
 }: IcicleNodeProps): React.JSX.Element {
   const {isShiftDown} = useKeyDown();
 
@@ -280,12 +287,14 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   }
 
   const onMouseEnter = (): void => {
+    if (isContextMenuOpen) return;
     if (isShiftDown) return;
     setHoveringRow(row);
     setHoveringLevel(level);
   };
 
   const onMouseLeave = (): void => {
+    if (isContextMenuOpen) return;
     if (isShiftDown) return;
     setHoveringRow(null);
     setHoveringLevel(null);
@@ -343,6 +352,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
           sortBy={sortBy}
           darkMode={darkMode}
           compareMode={compareMode}
+          isContextMenuOpen={isContextMenuOpen}
         />
       )}
     </>

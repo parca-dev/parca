@@ -25,6 +25,7 @@ interface GraphTooltipProps {
   contextElement: Element | null;
   isFixed?: boolean;
   virtualContextElement?: boolean;
+  isContextMenuOpen?: boolean;
 }
 
 const virtualElement = {
@@ -61,6 +62,7 @@ const GraphTooltip = ({
   contextElement,
   isFixed = false,
   virtualContextElement = true,
+  isContextMenuOpen = false,
 }: GraphTooltipProps): React.JSX.Element => {
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
 
@@ -93,6 +95,10 @@ const GraphTooltip = ({
   useEffect(() => {
     if (contextElement === null) return;
     const onMouseMove: EventListenerOrEventListenerObject = (e: Event) => {
+      if (isContextMenuOpen) {
+        return;
+      }
+
       if (isShiftDown) {
         return;
       }
