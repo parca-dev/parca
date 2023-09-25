@@ -187,7 +187,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   const trackVisibility = (isVisible: boolean) => {
     setIsContextMenuOpen(isVisible);
-    console.log(isVisible);
   };
 
   // useMemo for the root graph as it otherwise renders the whole graph if the hoveringRow changes.
@@ -263,6 +262,8 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           unit={sampleUnit}
           navigateTo={navigateTo as NavigateFunction}
           trackVisibility={trackVisibility}
+          curPath={curPath}
+          setCurPath={setCurPath}
         />
         {isColorStackLegendEnabled && (
           <ColorStackLegend

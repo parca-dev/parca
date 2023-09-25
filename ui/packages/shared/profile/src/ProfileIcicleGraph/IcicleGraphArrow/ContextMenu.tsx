@@ -14,7 +14,6 @@
 import {Icon} from '@iconify/react';
 import {Table} from 'apache-arrow';
 import {Item, Menu, Separator, Submenu} from 'react-contexify';
-import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {Tooltip} from 'react-tooltip';
 
 import {useParcaContext} from '@parca/components';
@@ -35,6 +34,8 @@ interface ContextMenuProps {
   level: number;
   navigateTo: NavigateFunction;
   trackVisibility: (isVisible: boolean) => void;
+  curPath: string[];
+  setCurPath: (path: string[]) => void;
 }
 
 const ContextMenu = ({
@@ -47,6 +48,8 @@ const ContextMenu = ({
   level,
   navigateTo,
   trackVisibility,
+  curPath,
+  setCurPath,
 }: ContextMenuProps) => {
   const contextMenuData = useGraphTooltip({
     table,
@@ -73,14 +76,18 @@ const ContextMenu = ({
   } = useGraphTooltipMetaInfo({table, row: rowNumber, navigateTo});
   const isMappingBuildIDAvailable = mappingBuildID !== null && mappingBuildID !== '';
   const {enableSourcesView} = useParcaContext();
-  const [_, setIsDocked] = useUserPreference(USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key);
+  const [isGraphTooltipDocked, setIsDocked] = useUserPreference(
+    USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key
+  );
 
   const handleViewSourceFile = () => {
     () => openFile();
   };
-  const handleResetView = () => {};
+  const handleResetView = () => {
+    setCurPath([]);
+  };
   const handleDockTooltip = () => {
-    () => setIsDocked(true);
+    return isGraphTooltipDocked ? setIsDocked(false) : setIsDocked(true);
   };
   const handleCopyItem = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -126,14 +133,27 @@ const ContextMenu = ({
           data-tooltip-id="view-source-file-help"
           data-tooltip-content="There is no source code uploaded for this build"
         >
-          View source file
+          <div className="flex w-full items-center gap-2">
+            <Icon icon="wpf:view-file" />
+            <div>View source file</div>
+          </div>
         </div>
         {!isSourceAvailable ? <Tooltip id="view-source-file-help" /> : null}
       </Item>
-      <Item id="reset-view" onClick={handleResetView}>
-        Reset view
+      <Item id="reset-view" onClick={handleResetView} disabled={curPath.length === 0}>
+        <div className="flex w-full items-center gap-2">
+          <Icon icon="system-uicons:reset" />
+          <div>Reset view</div>
+        </div>
       </Item>
-      <Submenu label="Copy">
+      <Submenu
+        label={
+          <div className="flex w-full items-center gap-2">
+            <Icon icon="ph:copy" />
+            <div>Copy</div>
+          </div>
+        }
+      >
         {nonEmptyValuesToCopy.map(({id, value}: {id: string; value: string}) => (
           <Item key={id} id={id} onClick={() => handleCopyItem(value)}>
             {id}: {truncateString(value, 10)}
@@ -142,8 +162,10 @@ const ContextMenu = ({
       </Submenu>
       <Separator />
       <Item id="dock-tooltip" onClick={handleDockTooltip}>
-        <Icon icon="mdi:dock-bottom" />
-        Dock tooltip
+        <div className="flex w-full items-center gap-2">
+          <Icon icon="bx:dock-bottom" />
+          {isGraphTooltipDocked ? 'Undock tooltip' : 'Dock tooltip'}
+        </div>
       </Item>
     </Menu>
   );
