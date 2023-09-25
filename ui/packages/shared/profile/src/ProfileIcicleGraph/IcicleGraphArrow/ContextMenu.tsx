@@ -136,7 +136,7 @@ const ContextMenu = ({
       <Submenu label="Copy">
         {nonEmptyValuesToCopy.map(({id, value}: {id: string; value: string}) => (
           <Item key={id} id={id} onClick={() => handleCopyItem(value)}>
-            {id}
+            {id}: {truncateString(value, 10)}
           </Item>
         ))}
       </Submenu>
