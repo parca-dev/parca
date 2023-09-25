@@ -36,6 +36,7 @@ interface ContextMenuProps {
   trackVisibility: (isVisible: boolean) => void;
   curPath: string[];
   setCurPath: (path: string[]) => void;
+  hideMenu: () => void;
 }
 
 const ContextMenu = ({
@@ -50,6 +51,7 @@ const ContextMenu = ({
   trackVisibility,
   curPath,
   setCurPath,
+  hideMenu,
 }: ContextMenuProps) => {
   const contextMenuData = useGraphTooltip({
     table,
@@ -85,6 +87,7 @@ const ContextMenu = ({
   };
   const handleResetView = () => {
     setCurPath([]);
+    return hideMenu();
   };
   const handleDockTooltip = () => {
     return isGraphTooltipDocked ? setIsDocked(false) : setIsDocked(true);

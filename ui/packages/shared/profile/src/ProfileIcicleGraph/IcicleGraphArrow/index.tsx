@@ -176,7 +176,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   }, [total, width]);
 
   const MENU_ID = 'icicle-graph-context-menu';
-  const {show} = useContextMenu({
+  const {show, hideAll} = useContextMenu({
     id: MENU_ID,
   });
   const displayMenu = (e: React.MouseEvent) => {
@@ -264,6 +264,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           trackVisibility={trackVisibility}
           curPath={curPath}
           setCurPath={setCurPath}
+          hideMenu={hideAll}
         />
         {isColorStackLegendEnabled && (
           <ColorStackLegend

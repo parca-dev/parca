@@ -16,7 +16,6 @@ import React, {ReactNode, useMemo} from 'react';
 import {Table} from 'apache-arrow';
 import cx from 'classnames';
 
-import {useKeyDown} from '@parca/components';
 import {selectBinaries, useAppSelector} from '@parca/store';
 import {isSearchMatch, scaleLinear} from '@parca/utilities';
 
@@ -187,8 +186,6 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   compareMode,
   isContextMenuOpen,
 }: IcicleNodeProps): React.JSX.Element {
-  const {isShiftDown} = useKeyDown();
-
   // get the columns to read from
   const mappingColumn = table.getChild(FIELD_MAPPING_FILE);
   const functionNameColumn = table.getChild(FIELD_FUNCTION_NAME);
@@ -288,14 +285,12 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
 
   const onMouseEnter = (): void => {
     if (isContextMenuOpen) return;
-    if (isShiftDown) return;
     setHoveringRow(row);
     setHoveringLevel(level);
   };
 
   const onMouseLeave = (): void => {
     if (isContextMenuOpen) return;
-    if (isShiftDown) return;
     setHoveringRow(null);
     setHoveringLevel(null);
   };

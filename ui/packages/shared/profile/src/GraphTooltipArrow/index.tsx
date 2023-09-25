@@ -16,8 +16,6 @@ import React, {useEffect, useState} from 'react';
 import {pointer} from 'd3-selection';
 import {usePopper} from 'react-popper';
 
-import {useKeyDown} from '@parca/components';
-
 interface GraphTooltipProps {
   children: React.ReactNode;
   x?: number;
@@ -90,16 +88,10 @@ const GraphTooltip = ({
     }
   );
 
-  const {isShiftDown} = useKeyDown();
-
   useEffect(() => {
     if (contextElement === null) return;
     const onMouseMove: EventListenerOrEventListenerObject = (e: Event) => {
       if (isContextMenuOpen) {
-        return;
-      }
-
-      if (isShiftDown) {
         return;
       }
 
@@ -123,7 +115,7 @@ const GraphTooltip = ({
     return () => {
       contextElement.removeEventListener('mousemove', onMouseMove);
     };
-  }, [contextElement, popperProps, isShiftDown, x, y]);
+  }, [contextElement, popperProps, x, y]);
 
   return isFixed ? (
     <>{children}</>
