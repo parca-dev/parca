@@ -63,6 +63,8 @@ interface ColumnDef {
 
 interface TableProps {
   data?: Uint8Array;
+  total: bigint;
+  filtered: bigint;
   sampleUnit: string;
   navigateTo?: NavigateFunction;
   loading: boolean;
@@ -72,6 +74,8 @@ interface TableProps {
 
 export const Table = React.memo(function Table({
   data,
+  total,
+  filtered,
   sampleUnit: unit,
   navigateTo,
   loading,
@@ -91,6 +95,25 @@ export const Table = React.memo(function Table({
     }
     return ['icicle'];
   }, [rawDashboardItems]);
+
+  const ratioString = (value: bigint | number): string => {
+    if (filtered === 0n) {
+      return ` (${percentageString(value, total)})`;
+    }
+
+    return ` (${percentageString(value, total)} / ${percentageString(value, filtered)})`;
+  };
+
+  const percentageString = (value: bigint | number, total: bigint | number): string => {
+    if (total === 0n) {
+      return '0%';
+    }
+
+    const percentage = (Number(value) / Number(total)) * 100;
+    return `${percentage.toFixed(2)}%`;
+  };
+
+  // TODO: add columns for flat, flatDiff, cumulative, cumulativeDiff percentages
 
   const columns = useMemo<ColumnDef[]>(() => {
     return [
