@@ -295,6 +295,8 @@ export const ProfileView = ({
       case 'table': {
         return topTableData != null ? (
           <Table
+            total={total}
+            filtered={filtered}
             loading={topTableData.loading}
             data={topTableData.arrow?.record}
             sampleUnit={sampleUnit}

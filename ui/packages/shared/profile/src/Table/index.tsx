@@ -47,6 +47,8 @@ interface row {
 
 interface TableProps {
   data?: Uint8Array;
+  total: bigint;
+  filtered: bigint;
   sampleUnit: string;
   navigateTo?: NavigateFunction;
   loading: boolean;
@@ -56,6 +58,8 @@ interface TableProps {
 
 export const Table = React.memo(function Table({
   data,
+  total,
+  filtered,
   sampleUnit: unit,
   navigateTo,
   loading,
@@ -76,11 +80,28 @@ export const Table = React.memo(function Table({
     return ['icicle'];
   }, [rawDashboardItems]);
 
+  const ratioString = (value: bigint | number):string => {
+    if (filtered === 0n) {
+      return ` (${percentageString(value, total)})`
+    }
+
+    return ` (${percentageString(value, total)} / ${percentageString(value, filtered)})`
+  };
+
+  const percentageString = (value: bigint | number, total: bigint | number):string => {
+    if (total === 0n) {
+      return '0%';
+    }
+
+    const percentage = Number(value) / Number(total) * 100;
+    return `${percentage.toFixed(2)}%`;
+  };
+
   const columns = useMemo(() => {
     const cols: Array<ColumnDef<row, any>> = [
       columnHelper.accessor('flat', {
         header: () => 'Flat',
-        cell: info => valueFormatter(info.getValue(), unit, 2),
+        cell: info => valueFormatter(info.getValue(), unit, 2) + ratioString(info.getValue()),
         size: 80,
         meta: {
           align: 'right',
@@ -89,7 +110,7 @@ export const Table = React.memo(function Table({
       }),
       columnHelper.accessor('flatDiff', {
         header: () => 'Flat Diff',
-        cell: info => addPlusSign(valueFormatter(info.getValue(), unit, 2)),
+        cell: info => addPlusSign(valueFormatter(info.getValue(), unit, 2)) + ratioString(info.getValue()),
         size: 120,
         meta: {
           align: 'right',
@@ -98,7 +119,7 @@ export const Table = React.memo(function Table({
       }),
       columnHelper.accessor('cumulative', {
         header: () => 'Cumulative',
-        cell: info => valueFormatter(info.getValue(), unit, 2),
+        cell: info => valueFormatter(info.getValue(), unit, 2) + ratioString(info.getValue()),
         size: 130,
         meta: {
           align: 'right',
@@ -107,7 +128,7 @@ export const Table = React.memo(function Table({
       }),
       columnHelper.accessor('cumulativeDiff', {
         header: () => 'Cumulative Diff',
-        cell: info => addPlusSign(valueFormatter(info.getValue(), unit, 2)),
+        cell: info => addPlusSign(valueFormatter(info.getValue(), unit, 2)) + ratioString(info.getValue()),
         size: 170,
         meta: {
           align: 'right',
