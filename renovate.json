@@ -67,7 +67,7 @@
       "enabled": false
     }
   ],
-  "regexManagers": [
+  "customManagers": [
     {
       "customType": "regex",
       "description": "Update Buf plugins",
