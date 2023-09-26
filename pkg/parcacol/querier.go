@@ -980,11 +980,11 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]
 		nil
 }
 
-func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.Time) (profile.Profile, error) {
+func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.Time, aggregateByLabels bool) (profile.Profile, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/QueryMerge")
 	defer span.End()
 
-	records, valueColumn, meta, err := q.selectMerge(ctx, query, start, end)
+	records, valueColumn, meta, err := q.selectMerge(ctx, query, start, end, aggregateByLabels)
 	if err != nil {
 		return profile.Profile{}, err
 	}
@@ -1009,7 +1009,13 @@ func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.
 	}, nil
 }
 
-func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endTime time.Time) ([]arrow.Record, string, profile.Meta, error) {
+func (q *Querier) selectMerge(
+	ctx context.Context,
+	query string,
+	startTime,
+	endTime time.Time,
+	aggregateByLabels bool,
+) ([]arrow.Record, string, profile.Meta, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/selectMerge")
 	defer span.End()
 
@@ -1029,6 +1035,18 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 		)...,
 	)
 
+	aggrCols := []logicalplan.Expr{
+		logicalplan.Col(profile.ColumnStacktrace),
+	}
+
+	if aggregateByLabels {
+		aggrCols = append(
+			aggrCols,
+			logicalplan.DynCol(profile.ColumnPprofLabels),
+			logicalplan.DynCol(profile.ColumnPprofNumLabels),
+		)
+	}
+
 	records := []arrow.Record{}
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
@@ -1036,11 +1054,7 @@ func (q *Querier) selectMerge(ctx context.Context, query string, startTime, endT
 			[]logicalplan.Expr{
 				logicalplan.Sum(logicalplan.Col(profile.ColumnValue)),
 			},
-			[]logicalplan.Expr{
-				logicalplan.Col(profile.ColumnStacktrace),
-				logicalplan.DynCol(profile.ColumnPprofLabels),
-				logicalplan.DynCol(profile.ColumnPprofNumLabels),
-			},
+			aggrCols,
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
