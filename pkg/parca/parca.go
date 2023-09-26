@@ -119,8 +119,6 @@ type Flags struct {
 	InsecureSkipVerify bool              `kong:"help='Skip TLS certificate verification.'"`
 	ExternalLabel      map[string]string `kong:"help='Label(s) to attach to all profiles in scraper-only mode.'"`
 
-	ExperimentalArrow bool `default:"false" help:"EXPERIMENTAL: Enables Arrow ingestion, this will reduce CPU usage but will increase memory usage."`
-
 	Hidden FlagsHidden `embed:"" prefix:""`
 }
 
@@ -191,9 +189,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			level.Error(logger).Log("msg", "failed to create tracing provider", "err", err)
 		}
 	}
-
-	// Enable arrow ingestion
-	parcacol.ExperimentalArrow = flags.ExperimentalArrow
 
 	if flags.Port != "" {
 		level.Warn(logger).Log("msg", "flag --port is deprecated, use --http-address instead")
