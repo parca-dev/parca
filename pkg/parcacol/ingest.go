@@ -24,13 +24,10 @@ import (
 
 	"github.com/apache/arrow/go/v14/arrow"
 	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/klauspost/compress/gzip"
-	"github.com/parquet-go/parquet-go"
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
-	"github.com/prometheus/prometheus/model/labels"
 	"golang.org/x/exp/maps"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -86,68 +83,22 @@ type Series struct {
 }
 
 func (ing NormalizedIngester) Ingest(ctx context.Context, series []Series) error {
-	pBuf, err := ing.schema.GetBuffer(map[string][]string{
-		profile.ColumnLabels:         ing.allLabelNames,
-		profile.ColumnPprofLabels:    ing.allPprofLabelNames,
-		profile.ColumnPprofNumLabels: ing.allPprofNumLabelNames,
-	})
+	r, err := SeriesToArrowRecord(
+		ing.schema,
+		series,
+		ing.allLabelNames,
+		ing.allPprofLabelNames,
+		ing.allPprofNumLabelNames,
+	)
 	if err != nil {
 		return err
 	}
-	defer ing.schema.PutBuffer(pBuf)
+	defer r.Release()
 
-	var r parquet.Row
-	for _, s := range series {
-		for _, normalizedProfiles := range s.Samples {
-			for _, p := range normalizedProfiles {
-				if len(p.Samples) == 0 {
-					ls := labels.FromMap(s.Labels)
-					level.Debug(ing.logger).Log("msg", "no samples found in profile, dropping it", "name", p.Meta.Name, "sample_type", p.Meta.SampleType.Type, "sample_unit", p.Meta.SampleType.Unit, "labels", ls)
-					continue
-				}
-
-				for _, profileSample := range p.Samples {
-					r = SampleToParquetRow(
-						ing.schema,
-						r[:0],
-						ing.allLabelNames,
-						ing.allPprofLabelNames,
-						ing.allPprofNumLabelNames,
-						s.Labels,
-						p.Meta,
-						profileSample,
-					)
-					_, err := pBuf.WriteRows([]parquet.Row{r})
-					if err != nil {
-						return err
-					}
-				}
-			}
-		}
-	}
-
-	pBuf.Sort()
-
-	// Read sorted rows into an arrow record
-	records, err := ParquetBufToArrowRecord(ctx, pBuf.Buffer, 0)
-	if err != nil {
+	if _, err := ing.table.InsertRecord(ctx, r); err != nil {
 		return err
 	}
-	defer func() {
-		for _, record := range records {
-			record.Release()
-		}
-	}()
 
-	for _, record := range records {
-		if record.NumRows() == 0 {
-			return nil
-		}
-
-		if _, err := ing.table.InsertRecord(ctx, record); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
