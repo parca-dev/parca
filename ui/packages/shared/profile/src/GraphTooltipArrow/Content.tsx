@@ -13,9 +13,9 @@
 
 import React from 'react';
 
+import {Icon} from '@iconify/react';
 import {Table} from 'apache-arrow';
 
-import {useParcaContext} from '@parca/components';
 import {getLastItem, type NavigateFunction} from '@parca/utilities';
 
 import {hexifyAddress, truncateString, truncateStringReverse} from '../utils';
@@ -103,6 +103,10 @@ const GraphTooltipArrowContent = ({
                 </tbody>
               </table>
             </div>
+          </div>
+          <div className="flex w-full items-center gap-2 text-xs text-gray-500">
+            <Icon icon="material-symbols:right-click" />
+            <div>Right click to show context menu</div>
           </div>
         </div>
       </div>
