@@ -46,7 +46,7 @@ type Querier interface {
 	QueryRange(ctx context.Context, query string, startTime, endTime time.Time, step time.Duration, limit uint32) ([]*pb.MetricsSeries, error)
 	ProfileTypes(ctx context.Context) ([]*pb.ProfileType, error)
 	QuerySingle(ctx context.Context, query string, time time.Time) (profile.Profile, error)
-	QueryMerge(ctx context.Context, query string, start, end time.Time) (profile.Profile, error)
+	QueryMerge(ctx context.Context, query string, start, end time.Time, aggregateByLabels bool) (profile.Profile, error)
 }
 
 var (
@@ -217,14 +217,37 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		isDiff   bool
 	)
 
+	groupBy := req.GetGroupBy().GetFields()
+	allowedGroupBy := map[string]struct{}{
+		FlamegraphFieldFunctionName: {},
+		FlamegraphFieldLabels:       {},
+	}
+	groupByLabels := false
+	for _, f := range groupBy {
+		if f == FlamegraphFieldLabels {
+			groupByLabels = true
+		}
+		if _, allowed := allowedGroupBy[f]; !allowed {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid group by field: %s", f)
+		}
+	}
+
 	switch req.Mode {
 	case pb.QueryRequest_MODE_SINGLE_UNSPECIFIED:
 		p, err = q.selectSingle(ctx, req.GetSingle())
 	case pb.QueryRequest_MODE_MERGE:
-		p, err = q.selectMerge(ctx, req.GetMerge())
+		p, err = q.selectMerge(
+			ctx,
+			req.GetMerge(),
+			groupByLabels,
+		)
 	case pb.QueryRequest_MODE_DIFF:
 		isDiff = true
-		p, err = q.selectDiff(ctx, req.GetDiff())
+		p, err = q.selectDiff(
+			ctx,
+			req.GetDiff(),
+			groupByLabels,
+		)
 	default:
 		return nil, status.Error(codes.InvalidArgument, "unknown query mode")
 	}
@@ -250,7 +273,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		req.GetReportType(),
 		req.GetNodeTrimThreshold(),
 		filtered,
-		req.GetGroupBy().GetFields(),
+		groupBy,
 		req.GetSourceReference(),
 		source,
 		isDiff,
@@ -279,13 +302,13 @@ func FilterProfileData(
 
 	// We want to filter by function name case-insensitive, so we need to lowercase the query.
 	// We lower case the query here, so we don't have to do it for every sample.
-	filterQuery = strings.ToLower(filterQuery)
+	filterQueryBytes := []byte(strings.ToLower(filterQuery))
 	res := make([]arrow.Record, 0, len(records))
 	allValues := int64(0)
 	allFiltered := int64(0)
 
 	for _, r := range records {
-		filteredRecord, valueSum, filteredSum, err := filterRecord(ctx, tracer, pool, r, filterQuery)
+		filteredRecord, valueSum, filteredSum, err := filterRecord(ctx, tracer, pool, r, filterQueryBytes)
 		if err != nil {
 			return nil, 0, fmt.Errorf("filter record: %w", err)
 		}
@@ -303,7 +326,7 @@ func filterRecord(
 	tracer trace.Tracer,
 	pool memory.Allocator,
 	rec arrow.Record,
-	filterQuery string,
+	filterQueryBytes []byte,
 ) (arrow.Record, int64, int64, error) {
 	r := profile.NewRecordReader(rec)
 
@@ -316,16 +339,29 @@ func filterRecord(
 	w := profile.NewWriter(pool, labelNames)
 	defer w.RecordBuilder.Release()
 
+	indexMatches := map[uint32]struct{}{}
+	for i := 0; i < r.LineFunctionNameDict.Len(); i++ {
+		if bytes.Contains(bytes.ToLower(r.LineFunctionNameDict.Value(i)), filterQueryBytes) {
+			indexMatches[uint32(i)] = struct{}{}
+		}
+	}
+
+	if len(indexMatches) == 0 {
+		return w.RecordBuilder.NewRecord(), math.Int64.Sum(r.Value), 0, nil
+	}
+
 	for i := 0; i < int(rec.NumRows()); i++ {
 		lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 		keepRow := false
-		for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
-			llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
-
-			for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
-				if r.LineFunctionNameIndices.IsValid(k) && bytes.Contains(bytes.ToLower(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(k)))), []byte(filterQuery)) {
-					keepRow = true
-					break
+		if lOffsetStart < lOffsetEnd {
+			firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
+			_, lastEnd := r.Lines.ValueOffsets(int(lOffsetEnd - 1))
+			for k := int(firstStart); k < int(lastEnd); k++ {
+				if r.LineFunctionNameIndices.IsValid(k) {
+					if _, ok := indexMatches[r.LineFunctionNameIndices.Value(k)]; ok {
+						keepRow = true
+						break
+					}
 				}
 			}
 		}
@@ -538,15 +574,6 @@ func RenderReport(
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW:
-		allowedGroupBy := map[string]struct{}{
-			FlamegraphFieldFunctionName: {},
-			FlamegraphFieldLabels:       {},
-		}
-		for _, f := range groupBy {
-			if _, allowed := allowedGroupBy[f]; !allowed {
-				return nil, status.Errorf(codes.InvalidArgument, "invalid group by field: %s", f)
-			}
-		}
 
 		fa, total, err := GenerateFlamegraphArrow(ctx, mem, tracer, p, groupBy, nodeTrimFraction)
 		if err != nil {
@@ -659,12 +686,17 @@ func (q *ColumnQueryAPI) selectSingle(ctx context.Context, s *pb.SingleProfile) 
 	return p, nil
 }
 
-func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (profile.Profile, error) {
+func (q *ColumnQueryAPI) selectMerge(
+	ctx context.Context,
+	m *pb.MergeProfile,
+	aggregateByLabels bool,
+) (profile.Profile, error) {
 	p, err := q.querier.QueryMerge(
 		ctx,
 		m.Query,
 		m.Start.AsTime(),
 		m.End.AsTime(),
+		aggregateByLabels,
 	)
 	if err != nil {
 		return profile.Profile{}, err
@@ -673,7 +705,7 @@ func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (p
 	return p, nil
 }
 
-func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile) (profile.Profile, error) {
+func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile, aggregateByLabels bool) (profile.Profile, error) {
 	ctx, span := q.tracer.Start(ctx, "diffRequest")
 	defer span.End()
 
@@ -690,7 +722,7 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile) (pro
 	}()
 	g.Go(func() error {
 		var err error
-		base, err = q.selectProfileForDiff(ctx, d.A)
+		base, err = q.selectProfileForDiff(ctx, d.A, aggregateByLabels)
 		if err != nil {
 			return fmt.Errorf("reading base profile: %w", err)
 		}
@@ -705,7 +737,7 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile) (pro
 	}()
 	g.Go(func() error {
 		var err error
-		compare, err = q.selectProfileForDiff(ctx, d.B)
+		compare, err = q.selectProfileForDiff(ctx, d.B, aggregateByLabels)
 		if err != nil {
 			return fmt.Errorf("reading compared profile: %w", err)
 		}
@@ -787,12 +819,12 @@ func zeroArray(pool memory.Allocator, rows int) arrow.Array {
 	return b.NewArray()
 }
 
-func (q *ColumnQueryAPI) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelection) (profile.Profile, error) {
+func (q *ColumnQueryAPI) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelection, aggregateByLabels bool) (profile.Profile, error) {
 	switch s.Mode {
 	case pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED:
 		return q.selectSingle(ctx, s.GetSingle())
 	case pb.ProfileDiffSelection_MODE_MERGE:
-		return q.selectMerge(ctx, s.GetMerge())
+		return q.selectMerge(ctx, s.GetMerge(), aggregateByLabels)
 	default:
 		return profile.Profile{}, status.Error(codes.InvalidArgument, "unknown mode for diff profile selection")
 	}

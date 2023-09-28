@@ -41,13 +41,10 @@ import (
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
-var ExperimentalArrow bool
-
 var ErrMissingNameLabel = errors.New("missing __name__ label")
 
 type Table interface {
 	Schema() *dynparquet.Schema
-	Insert(context.Context, []byte) (tx uint64, err error)
 	InsertRecord(context.Context, arrow.Record) (tx uint64, err error)
 }
 
@@ -131,43 +128,26 @@ func (ing NormalizedIngester) Ingest(ctx context.Context, series []Series) error
 
 	pBuf.Sort()
 
-	// Experimental feature that ingests profiles as arrow records.
-	if ExperimentalArrow {
-		// Read sorted rows into an arrow record
-		records, err := ParquetBufToArrowRecord(ctx, pBuf.Buffer, 0)
-		if err != nil {
+	// Read sorted rows into an arrow record
+	records, err := ParquetBufToArrowRecord(ctx, pBuf.Buffer, 0)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		for _, record := range records {
+			record.Release()
+		}
+	}()
+
+	for _, record := range records {
+		if record.NumRows() == 0 {
+			return nil
+		}
+
+		if _, err := ing.table.InsertRecord(ctx, record); err != nil {
 			return err
 		}
-		defer func() {
-			for _, record := range records {
-				record.Release()
-			}
-		}()
-
-		for _, record := range records {
-			if record.NumRows() == 0 {
-				return nil
-			}
-
-			if _, err := ing.table.InsertRecord(ctx, record); err != nil {
-				return err
-			}
-		}
-		return nil
 	}
-
-	buf := ing.bufferPool.Get().(*bytes.Buffer)
-	buf.Reset()
-	defer ing.bufferPool.Put(buf)
-
-	if err := ing.schema.SerializeBuffer(buf, pBuf.Buffer); err != nil {
-		return err
-	}
-
-	if _, err := ing.table.Insert(ctx, buf.Bytes()); err != nil {
-		return err
-	}
-
 	return nil
 }
 

@@ -160,9 +160,6 @@ Flags:
       --external-label=KEY=VALUE;...
                                  Label(s) to attach to all profiles in
                                  scraper-only mode.
-      --experimental-arrow       EXPERIMENTAL: Enables Arrow ingestion, this
-                                 will reduce CPU usage but will increase memory
-                                 usage.
 ```
 <!-- prettier-ignore-end -->
 
