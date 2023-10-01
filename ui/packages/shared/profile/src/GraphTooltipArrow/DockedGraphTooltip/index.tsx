@@ -127,7 +127,7 @@ export const DockedGraphTooltip = ({
     )
   );
 
-  const inlinedText = inlined === null ? 'merged' : (inlined ? 'yes' : 'no');
+  const inlinedText = inlined === null ? 'merged' : inlined ? 'yes' : 'no';
   const addressText = locationAddress !== 0n ? hexifyAddress(locationAddress) : 'unknown';
   const fileText = functionFilename !== '' ? file : 'Not available';
 

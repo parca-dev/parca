@@ -20,11 +20,11 @@ import type {NavigateFunction} from '@parca/utilities';
 import {
   FIELD_FUNCTION_FILE_NAME,
   FIELD_FUNCTION_START_LINE,
+  FIELD_INLINED,
   FIELD_LOCATION_ADDRESS,
   FIELD_LOCATION_LINE,
   FIELD_MAPPING_BUILD_ID,
   FIELD_MAPPING_FILE,
-  FIELD_INLINED,
 } from '../../ProfileIcicleGraph/IcicleGraphArrow';
 import {arrowToString} from '../../ProfileIcicleGraph/IcicleGraphArrow/utils';
 import {ProfileSource} from '../../ProfileSource';

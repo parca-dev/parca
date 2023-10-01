@@ -195,7 +195,7 @@ const TooltipMetaInfo = ({
   );
 
   const isMappingBuildIDAvailable = mappingBuildID !== null && mappingBuildID !== '';
-  const inlinedText = inlined === null ? 'merged' : (inlined ? 'yes' : 'no');
+  const inlinedText = inlined === null ? 'merged' : inlined ? 'yes' : 'no';
 
   return (
     <>
