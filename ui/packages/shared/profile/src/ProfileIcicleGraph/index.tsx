@@ -32,6 +32,9 @@ import IcicleGraphArrow, {
   FIELD_CUMULATIVE,
   FIELD_DIFF,
   FIELD_FUNCTION_NAME,
+  FIELD_MAPPING_FILE,
+  FIELD_LOCATION_ADDRESS,
+  FIELD_FUNCTION_FILE_NAME,
   FIELD_LABELS,
 } from './IcicleGraphArrow';
 
@@ -303,6 +306,24 @@ const groupByOptions = [
     description: 'Stacktraces are grouped by pprof labels.',
     disabled: false,
   },
+  {
+    value: FIELD_FUNCTION_FILE_NAME,
+    label: 'Filename',
+    description: 'Stacktraces are grouped by filenames.',
+    disabled: false,
+  },
+  {
+    value: FIELD_LOCATION_ADDRESS,
+    label: 'Address',
+    description: 'Stacktraces are grouped by addresses.',
+    disabled: false,
+  },
+  {
+    value: FIELD_MAPPING_FILE,
+    label: 'Binary',
+    description: 'Stacktraces are grouped by binaries.',
+    disabled: false,
+  }
 ];
 
 const GroupByDropdown = ({

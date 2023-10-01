@@ -265,6 +265,13 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						translatedMappingFileIndex := t.mappingFile.indices.Value(int(r.MappingFileIndices.Value(j)))
 						key = hashCombine(key, uint64(translatedMappingFileIndex))
 					}
+					if fb.aggregationConfig.aggregateByLocationAddress {
+						key = hashCombine(key, r.Address.Value(j))
+					}
+					if fb.aggregationConfig.aggregateByFunctionFilename {
+						translatedFunctionFilenameIndex := t.functionFilename.indices.Value(int(r.LineFunctionFilenameIndices.Value(k)))
+						key = hashCombine(key, uint64(translatedFunctionFilenameIndex))
+					}
 
 					merged, err := fb.mergeSymbolizedRows(
 						r,
@@ -789,8 +796,10 @@ type flamegraphBuilder struct {
 }
 
 type aggregationConfig struct {
-	aggregateByLabels      bool
-	aggregateByMappingFile bool
+	aggregateByLabels           bool
+	aggregateByMappingFile      bool
+	aggregateByLocationAddress  bool
+	aggregateByFunctionFilename bool
 }
 
 func maxInt64(a, b int64) int64 {
@@ -847,6 +856,12 @@ func newFlamegraphBuilder(
 		}
 		if f == FlamegraphFieldMappingFile {
 			fb.aggregationConfig.aggregateByMappingFile = true
+		}
+		if f == FlamegraphFieldLocationAddress {
+			fb.aggregationConfig.aggregateByLocationAddress = true
+		}
+		if f == FlamegraphFieldFunctionFileName {
+			fb.aggregationConfig.aggregateByFunctionFilename = true
 		}
 	}
 
