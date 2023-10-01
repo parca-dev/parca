@@ -54,6 +54,7 @@ type flamegraphRow struct {
 	MappingFile        string
 	MappingBuildID     string
 	LocationAddress    uint64
+	Inlined            bool
 	LocationLine       uint8
 	FunctionStartLine  uint8
 	FunctionName       string
@@ -70,6 +71,7 @@ type flamegraphColumns struct {
 	mappingFiles        []string
 	mappingBuildIDs     []string
 	locationAddresses   []uint64
+	inlined             []bool
 	locationLines       []uint8
 	functionStartLines  []uint8
 	functionNames       []string
@@ -89,6 +91,7 @@ func rowsToColumn(rows []flamegraphRow) flamegraphColumns {
 		columns.mappingBuildIDs = append(columns.mappingBuildIDs, row.MappingBuildID)
 		columns.locationAddresses = append(columns.locationAddresses, row.LocationAddress)
 		columns.locationLines = append(columns.locationLines, row.LocationLine)
+		columns.inlined = append(columns.inlined, row.Inlined)
 		columns.functionStartLines = append(columns.functionStartLines, row.FunctionStartLine)
 		columns.functionNames = append(columns.functionNames, row.FunctionName)
 		columns.functionSystemNames = append(columns.functionSystemNames, row.FunctionSystemName)
@@ -429,7 +432,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 			require.Equal(t, tc.cumulative, cumulative)
 			require.Equal(t, tc.height, height)
 			require.Equal(t, tc.trimmed, trimmed)
-			require.Equal(t, int64(13), fa.NumCols())
+			require.Equal(t, int64(14), fa.NumCols())
 
 			// Convert the numRows to columns for easier access when testing below.
 			expectedColumns := rowsToColumn(tc.rows)
@@ -461,6 +464,7 @@ func (c *flamegraphComparer) convert(r arrow.Record) {
 		mappingFiles:        extractColumn(c.t, r, FlamegraphFieldMappingFile).([]string),
 		mappingBuildIDs:     extractColumn(c.t, r, FlamegraphFieldMappingBuildID).([]string),
 		locationAddresses:   extractColumn(c.t, r, FlamegraphFieldLocationAddress).([]uint64),
+		inlined:             extractColumn(c.t, r, FlamegraphFieldInlined).([]bool),
 		locationLines:       extractColumn(c.t, r, FlamegraphFieldLocationLine).([]uint8),
 		functionStartLines:  extractColumn(c.t, r, FlamegraphFieldFunctionStartLine).([]uint8),
 		functionNames:       extractColumn(c.t, r, FlamegraphFieldFunctionName).([]string),
@@ -524,6 +528,7 @@ func (c *flamegraphComparer) compare(expected flamegraphColumns) {
 	require.Equal(c.t, expected.mappingFiles, reorder(c.actual.mappingFiles, order))
 	require.Equal(c.t, expected.mappingBuildIDs, reorder(c.actual.mappingBuildIDs, order))
 	require.Equal(c.t, expected.locationAddresses, reorder(c.actual.locationAddresses, order))
+	require.Equal(c.t, expected.inlined, reorder(c.actual.inlined, order))
 	require.Equal(c.t, expected.locationLines, reorder(c.actual.locationLines, order))
 	require.Equal(c.t, expected.functionStartLines, reorder(c.actual.functionStartLines, order))
 	require.Equal(c.t, expected.functionNames, reorder(c.actual.functionNames, order))
@@ -584,7 +589,7 @@ func TestGenerateFlamegraphArrowEmpty(t *testing.T) {
 	require.Equal(t, int64(0), total)
 	require.Equal(t, int32(1), height)
 	require.Equal(t, int64(0), trimmed)
-	require.Equal(t, int64(12), record.NumCols())
+	require.Equal(t, int64(13), record.NumCols())
 	require.Equal(t, int64(1), record.NumRows())
 }
 
@@ -653,18 +658,20 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 	require.NoError(t, err)
 	defer record.Release()
 
+	fmt.Println(record)
+
 	require.Equal(t, int64(1), total)
 	require.Equal(t, int32(5), height)
 	require.Equal(t, int64(0), trimmed)
 
-	require.Equal(t, int64(12), record.NumCols())
+	require.Equal(t, int64(13), record.NumCols())
 	require.Equal(t, int64(5), record.NumRows())
 
 	rows := []flamegraphRow{
 		{MappingFile: array.NullValueStr, MappingBuildID: array.NullValueStr, LocationAddress: 0, LocationLine: 0, FunctionStartLine: 0, FunctionName: "(null)", FunctionSystemName: "(null)", FunctionFilename: "(null)", Cumulative: 1, Labels: nil, Children: []uint32{1}},                                                                                        // 0
 		{MappingFile: array.NullValueStr, MappingBuildID: array.NullValueStr, LocationAddress: 0xa1, LocationLine: 173, FunctionStartLine: 0, FunctionName: "net.(*netFD).accept", FunctionSystemName: "net.(*netFD).accept", FunctionFilename: "net/fd_unix.go", Cumulative: 1, Labels: nil, Children: []uint32{2}},                                                 // 1
 		{MappingFile: array.NullValueStr, MappingBuildID: array.NullValueStr, LocationAddress: 0xa2, LocationLine: 200, FunctionStartLine: 0, FunctionName: "internal/poll.(*pollDesc).waitRead", FunctionSystemName: "internal/poll.(*pollDesc).waitRead", FunctionFilename: "internal/poll/fd_poll_runtime.go", Cumulative: 1, Labels: nil, Children: []uint32{3}}, // 2
-		{MappingFile: array.NullValueStr, MappingBuildID: array.NullValueStr, LocationAddress: 0xa2, LocationLine: 89, FunctionStartLine: 0, FunctionName: "internal/poll.(*FD).Accept", FunctionSystemName: "internal/poll.(*FD).Accept", FunctionFilename: "internal/poll/fd_unix.go", Cumulative: 1, Labels: nil, Children: []uint32{4}},                          // 3
+		{MappingFile: array.NullValueStr, MappingBuildID: array.NullValueStr, LocationAddress: 0xa2, LocationLine: 89, FunctionStartLine: 0, FunctionName: "internal/poll.(*FD).Accept", FunctionSystemName: "internal/poll.(*FD).Accept", FunctionFilename: "internal/poll/fd_unix.go", Cumulative: 1, Labels: nil, Children: []uint32{4}, Inlined: true},           // 3
 		{MappingFile: array.NullValueStr, MappingBuildID: array.NullValueStr, LocationAddress: 0xa3, LocationLine: 84, FunctionStartLine: 0, FunctionName: "internal/poll.(*pollDesc).wait", FunctionSystemName: "internal/poll.(*pollDesc).wait", FunctionFilename: "internal/poll/fd_poll_runtime.go", Cumulative: 1, Labels: nil, Children: nil},                  // 4
 	}
 	expectedColumns := rowsToColumn(rows)
@@ -778,7 +785,7 @@ func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 			require.Equal(t, tc.height, height)
 			require.Equal(t, tc.trimmed, trimmed)
 			require.Equal(t, int64(len(tc.rows)), fa.NumRows())
-			require.Equal(t, int64(12), fa.NumCols())
+			require.Equal(t, int64(13), fa.NumCols())
 
 			// Convert the numRows to columns for easier access when testing below.
 			expectedColumns := rowsToColumn(tc.rows)
@@ -904,7 +911,7 @@ func TestGenerateFlamegraphArrowTrimming(t *testing.T) {
 	require.Equal(t, int32(5), height)
 	require.Equal(t, int64(4), trimmed)
 	require.Equal(t, int64(3), fa.NumRows())
-	require.Equal(t, int64(12), fa.NumCols())
+	require.Equal(t, int64(13), fa.NumCols())
 
 	// TODO: MappingBuildID and FunctionSystemNames shouldn't be "" but null?
 	rows := []flamegraphRow{
