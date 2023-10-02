@@ -15,7 +15,7 @@ import React, {Fragment, ReactNode, useCallback, useEffect, useMemo, useState} f
 
 import {Menu, Transition} from '@headlessui/react';
 import {Icon} from '@iconify/react';
-import {createColumnHelper, type ColumnDef, type VisibilityState} from '@tanstack/react-table';
+import {createColumnHelper, type VisibilityState} from '@tanstack/react-table';
 import {Vector, tableFromIPC} from 'apache-arrow';
 
 import {Button, Table as TableComponent, useURLState} from '@parca/components';
@@ -52,6 +52,17 @@ interface row {
   functionFileName: string;
 }
 
+interface ColumnDef {
+  id: string;
+  header: string;
+  accessorKey: string;
+  footer?: string;
+  cell?: (info) => string | number;
+  meta?: {align: 'right' | 'left'};
+  invertSorting?: boolean;
+  size?: number;
+}
+
 interface TableProps {
   data?: Uint8Array;
   sampleUnit: string;
@@ -83,11 +94,11 @@ export const Table = React.memo(function Table({
     return ['icicle'];
   }, [rawDashboardItems]);
 
-  const columns = useMemo(() => {
-    // Note: in order to bypass TS errors, 'header' must be a string value
+  const columns = useMemo<ColumnDef[]>(() => {
     return [
-      columnHelper.accessor('flat', {
+      {
         id: 'flat',
+        accessorKey: 'flat',
         header: 'Flat',
         cell: info => valueFormatter(info.getValue(), unit, 2),
         size: 80,
@@ -95,9 +106,10 @@ export const Table = React.memo(function Table({
           align: 'right',
         },
         invertSorting: true,
-      }),
-      columnHelper.accessor('flatDiff', {
+      },
+      {
         id: 'flatDiff',
+        accessorKey: 'flatDiff',
         header: 'Flat Diff',
         cell: info => addPlusSign(valueFormatter(info.getValue(), unit, 2)),
         size: 120,
@@ -105,9 +117,10 @@ export const Table = React.memo(function Table({
           align: 'right',
         },
         invertSorting: true,
-      }),
-      columnHelper.accessor('cumulative', {
+      },
+      {
         id: 'cumulative',
+        accessorKey: 'cumulative',
         header: 'Cumulative',
         cell: info => valueFormatter(info.getValue(), unit, 2),
         size: 130,
@@ -115,9 +128,10 @@ export const Table = React.memo(function Table({
           align: 'right',
         },
         invertSorting: true,
-      }),
-      columnHelper.accessor('cumulativeDiff', {
+      },
+      {
         id: 'cumulativeDiff',
+        accessorKey: 'cumulativeDiff',
         header: 'Cumulative Diff',
         cell: info => addPlusSign(valueFormatter(info.getValue(), unit, 2)),
         size: 170,
@@ -125,24 +139,28 @@ export const Table = React.memo(function Table({
           align: 'right',
         },
         invertSorting: true,
-      }),
-      columnHelper.accessor('name', {
+      },
+      {
         id: 'name',
+        accessorKey: 'name',
         header: 'Name',
         cell: info => info.getValue(),
-      }),
-      columnHelper.accessor('functionSystemName', {
+      },
+      {
         id: 'functionSystemName',
+        accessorKey: 'functionSystemName',
         header: 'Function System Name',
-      }),
-      columnHelper.accessor('functionFileName', {
+      },
+      {
         id: 'functionFileName',
+        accessorKey: 'functionFileName',
         header: 'Function File Name',
-      }),
-      columnHelper.accessor('mappingFile', {
+      },
+      {
         id: 'mappingFile',
+        accessorKey: 'mappingFile',
         header: 'Mapping File',
-      }),
+      },
     ];
   }, [unit]);
 
@@ -316,7 +334,7 @@ const ColumnsVisibility = ({
   visibility,
   setVisibility,
 }: {
-  columns: Array<ColumnDef<row, bigint>>;
+  columns: ColumnDef[];
   visibility: VisibilityState;
   setVisibility: (id: string, visible: boolean) => void;
 }): React.JSX.Element => {
@@ -358,7 +376,7 @@ const ColumnsVisibility = ({
                       </div>
                       <div className="ml-3 text-sm leading-6">
                         <label htmlFor={col.id} className="font-medium text-gray-900">
-                          {col.header as ReactNode}
+                          {col.header}
                         </label>
                       </div>
                     </div>
