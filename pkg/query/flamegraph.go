@@ -324,7 +324,7 @@ func lineToTreeNode(
 	if mapping != nil {
 		mappingID = mapping.Id
 	}
-	return &querypb.FlamegraphNode{
+	node := &querypb.FlamegraphNode{
 		Meta: &querypb.FlamegraphNodeMeta{
 			Location: &pb.Location{
 				Id:        location.ID,
@@ -332,13 +332,18 @@ func lineToTreeNode(
 				Address:   location.Address,
 				IsFolded:  location.IsFolded,
 			},
-			Function: line.Function,
 			Line: &pb.Line{
-				FunctionId: line.Function.Id,
-				Line:       line.Line,
+				Line: line.Line,
 			},
 			Mapping: mapping,
 		},
 		Children: children,
 	}
+
+	if line.Function != nil {
+		node.Meta.Function = line.Function
+		node.Meta.Line.FunctionId = line.Function.Id
+	}
+
+	return node
 }

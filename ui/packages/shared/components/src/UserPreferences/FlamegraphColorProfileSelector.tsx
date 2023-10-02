@@ -27,6 +27,13 @@ const FlamegraphColorProfileSelector = (): JSX.Element => {
       <div className="flex flex-col gap-3 pl-4 text-sm">
         {(Object.keys(COLOR_PROFILES) as ColorProfileName[]).map(profile => {
           const isSelected = profile === colorProfileName;
+          let displayName: string = profile;
+          if (profile === 'default') {
+            displayName = 'neutral';
+          }
+          if (profile === 'ocean') {
+            displayName = 'cool';
+          }
           return (
             <div className="flex items-center" key={profile}>
               <label key={profile} className="flex w-24 items-center gap-1 capitalize">
@@ -41,7 +48,7 @@ const FlamegraphColorProfileSelector = (): JSX.Element => {
                     }
                   }}
                 />
-                <span>{profile}</span>
+                <span>{displayName}</span>
               </label>
               <div className="flex w-72 gap-2 overflow-auto">
                 {COLOR_PROFILES[profile].colors.map((color: ColorsDuo) => (

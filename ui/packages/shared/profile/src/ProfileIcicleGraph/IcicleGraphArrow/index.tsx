@@ -34,6 +34,7 @@ import {
 
 import GraphTooltipArrow from '../../GraphTooltipArrow';
 import GraphTooltipArrowContent from '../../GraphTooltipArrow/Content';
+import {DockedGraphTooltip} from '../../GraphTooltipArrow/DockedGraphTooltip';
 import ColorStackLegend from './ColorStackLegend';
 import {IcicleNode, RowHeight, mappingColors} from './IcicleGraphNodes';
 import {arrowToString, extractFeature} from './utils';
@@ -43,6 +44,7 @@ export const FIELD_MAPPING_FILE = 'mapping_file';
 export const FIELD_MAPPING_BUILD_ID = 'mapping_build_id';
 export const FIELD_LOCATION_ADDRESS = 'location_address';
 export const FIELD_LOCATION_LINE = 'location_line';
+export const FIELD_INLINED = 'inlined';
 export const FIELD_FUNCTION_NAME = 'function_name';
 export const FIELD_FUNCTION_FILE_NAME = 'function_file_name';
 export const FIELD_FUNCTION_START_LINE = 'function_startline';
@@ -78,6 +80,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const [colorProfile] = useUserPreference<ColorProfileName>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
+  const [dockedMetainfo] = useUserPreference<boolean>(USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key);
   const isDarkMode = useAppSelector(selectDarkMode);
 
   const table: Table<any> = useMemo(() => {
@@ -93,6 +96,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
   const compareMode: boolean =
     selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
+  const isColorStackLegendEnabled = selectQueryParam('color_stack_legend') === 'true';
 
   const mappings = useMemo(() => {
     // Read the mappings from the dictionary that contains all mapping strings.
@@ -228,23 +232,36 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   return (
     <div onMouseLeave={() => dispatch(setHoveringNode(undefined))}>
-      <ColorStackLegend
-        mappingColors={mappingColors}
-        navigateTo={navigateTo}
-        compareMode={compareMode}
-      />
-      <GraphTooltipArrow contextElement={svg.current}>
-        <GraphTooltipArrowContent
+      {isColorStackLegendEnabled && (
+        <ColorStackLegend
+          mappingColors={mappingColors}
+          navigateTo={navigateTo}
+          compareMode={compareMode}
+        />
+      )}
+      {dockedMetainfo ? (
+        <DockedGraphTooltip
           table={table}
           row={hoveringRow}
           level={hoveringLevel ?? 0}
-          isFixed={false}
           total={total}
           totalUnfiltered={total + filtered}
           unit={sampleUnit}
-          navigateTo={navigateTo as NavigateFunction}
         />
-      </GraphTooltipArrow>
+      ) : (
+        <GraphTooltipArrow contextElement={svg.current}>
+          <GraphTooltipArrowContent
+            table={table}
+            row={hoveringRow}
+            level={hoveringLevel ?? 0}
+            isFixed={false}
+            total={total}
+            totalUnfiltered={total + filtered}
+            unit={sampleUnit}
+            navigateTo={navigateTo as NavigateFunction}
+          />
+        </GraphTooltipArrow>
+      )}
       {root}
     </div>
   );

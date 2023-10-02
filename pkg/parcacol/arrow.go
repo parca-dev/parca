@@ -17,6 +17,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"unsafe"
 
 	"github.com/apache/arrow/go/v14/arrow"
 	"github.com/apache/arrow/go/v14/arrow/array"
@@ -339,11 +340,25 @@ func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrac
 				w.MappingStart.Append(loc.Mapping.Start)
 				w.MappingLimit.Append(loc.Mapping.Limit)
 				w.MappingOffset.Append(loc.Mapping.Offset)
-				if err := w.MappingFile.Append([]byte(loc.Mapping.File)); err != nil {
-					return nil, fmt.Errorf("append mapping file: %w", err)
+
+				if len(loc.Mapping.File) > 0 {
+					if err := w.MappingFile.Append(stringToBytes(loc.Mapping.File)); err != nil {
+						return nil, fmt.Errorf("append mapping file: %w", err)
+					}
+				} else {
+					if err := w.MappingFile.Append([]byte{}); err != nil {
+						return nil, fmt.Errorf("append mapping file: %w", err)
+					}
 				}
-				if err := w.MappingBuildID.Append([]byte(loc.Mapping.BuildId)); err != nil {
-					return nil, fmt.Errorf("append mapping build id: %w", err)
+
+				if len(loc.Mapping.BuildId) > 0 {
+					if err := w.MappingBuildID.Append(stringToBytes(loc.Mapping.BuildId)); err != nil {
+						return nil, fmt.Errorf("append mapping build id: %w", err)
+					}
+				} else {
+					if err := w.MappingBuildID.Append([]byte{}); err != nil {
+						return nil, fmt.Errorf("append mapping build id: %w", err)
+					}
 				}
 			} else {
 				w.MappingStart.AppendNull()
@@ -359,21 +374,47 @@ func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrac
 					w.Line.Append(true)
 					w.LineNumber.Append(l.Line)
 					if l.Function != nil {
-						if err := w.FunctionName.Append([]byte(l.Function.Name)); err != nil {
-							return nil, fmt.Errorf("append function name: %w", err)
+						if len(l.Function.Name) > 0 {
+							if err := w.FunctionName.Append(stringToBytes(l.Function.Name)); err != nil {
+								return nil, fmt.Errorf("append function name: %w", err)
+							}
+						} else {
+							if err := w.FunctionName.Append([]byte{}); err != nil {
+								return nil, fmt.Errorf("append function name: %w", err)
+							}
 						}
-						if err := w.FunctionSystemName.Append([]byte(l.Function.SystemName)); err != nil {
-							return nil, fmt.Errorf("append function system name: %w", err)
+
+						if len(l.Function.SystemName) > 0 {
+							if err := w.FunctionSystemName.Append(stringToBytes(l.Function.SystemName)); err != nil {
+								return nil, fmt.Errorf("append function system name: %w", err)
+							}
+						} else {
+							if err := w.FunctionSystemName.Append([]byte{}); err != nil {
+								return nil, fmt.Errorf("append function name: %w", err)
+							}
 						}
-						if err := w.FunctionFilename.Append([]byte(l.Function.Filename)); err != nil {
-							return nil, fmt.Errorf("append function filename: %w", err)
+
+						if len(l.Function.Filename) > 0 {
+							if err := w.FunctionFilename.Append(stringToBytes(l.Function.Filename)); err != nil {
+								return nil, fmt.Errorf("append function filename: %w", err)
+							}
+						} else {
+							if err := w.FunctionFilename.Append([]byte{}); err != nil {
+								return nil, fmt.Errorf("append function filename: %w", err)
+							}
 						}
 						w.FunctionStartLine.Append(l.Function.StartLine)
 					} else {
-						w.FunctionName.AppendNull()
-						w.FunctionSystemName.AppendNull()
-						w.FunctionFilename.AppendNull()
-						w.FunctionStartLine.AppendNull()
+						if err := w.FunctionName.Append([]byte{}); err != nil {
+							return nil, fmt.Errorf("append function name: %w", err)
+						}
+						if err := w.FunctionSystemName.Append([]byte{}); err != nil {
+							return nil, fmt.Errorf("append function system name: %w", err)
+						}
+						if err := w.FunctionFilename.Append([]byte{}); err != nil {
+							return nil, fmt.Errorf("append function filename: %w", err)
+						}
+						w.FunctionStartLine.Append(0)
 					}
 				}
 			} else {
@@ -383,6 +424,10 @@ func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrac
 	}
 
 	return w.RecordBuilder.NewRecord(), nil
+}
+
+func stringToBytes(s string) []byte {
+	return unsafe.Slice(unsafe.StringData(s), len(s))
 }
 
 func (s *ProfileSymbolizer) getLocationsFromSerializedLocations(

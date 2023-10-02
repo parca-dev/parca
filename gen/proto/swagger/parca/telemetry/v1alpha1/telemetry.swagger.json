@@ -1,0 +1,105 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "parca/telemetry/v1alpha1/telemetry.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "TelemetryService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/telemetry/panic": {
+      "post": {
+        "summary": "ReportPanic receives information from an Agent that panic'ed.",
+        "operationId": "TelemetryService_ReportPanic",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1ReportPanicResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "ReportPanicRequest contained the info about a panic.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1alpha1ReportPanicRequest"
+            }
+          }
+        ],
+        "tags": [
+          "TelemetryService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v1alpha1ReportPanicRequest": {
+      "type": "object",
+      "properties": {
+        "stderr": {
+          "type": "string",
+          "description": "Stderr from the agent that exited with an error."
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Agent metadata."
+        }
+      },
+      "description": "ReportPanicRequest contained the info about a panic."
+    },
+    "v1alpha1ReportPanicResponse": {
+      "type": "object",
+      "description": "ReportPanicResponse contains the response for a ReportPanicRequest.\n\n"
+    }
+  }
+}

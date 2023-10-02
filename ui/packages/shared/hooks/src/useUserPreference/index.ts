@@ -39,7 +39,13 @@ export const USER_PREFERENCES: {[key: string]: UserPreferenceDetails} = {
     name: 'Flamegraph color profile',
     key: 'FLAMEGRAPH_COLOR_PROFILE',
     type: 'string',
-    default: 'default',
+    default: 'ocean',
+  },
+  GRAPH_METAINFO_DOCKED: {
+    name: 'Dock Graph MetaInfo',
+    key: 'GRAPH_METAINFO_DOCKED',
+    type: 'boolean',
+    default: false,
   },
 } as const;
 

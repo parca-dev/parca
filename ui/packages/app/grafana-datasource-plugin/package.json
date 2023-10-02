@@ -1,6 +1,6 @@
 {
   "name": "@parca/grafana-datasource",
-  "version": "0.0.209",
+  "version": "0.0.229",
   "description": "A Grafana datasource plugin for Parca",
   "scripts": {
     "build": "grafana-toolkit plugin:build",
@@ -14,20 +14,20 @@
   "author": "Parca Contributors",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@grafana/data": "9.5.7",
-    "@grafana/runtime": "9.5.7",
-    "@grafana/toolkit": "9.5.7",
-    "@grafana/ui": "9.5.7",
+    "@grafana/data": "9.5.10",
+    "@grafana/runtime": "9.5.10",
+    "@grafana/toolkit": "9.5.10",
+    "@grafana/ui": "9.5.10",
     "@testing-library/jest-dom": "5.17.0",
     "@testing-library/react": "13.4.0",
-    "@types/lodash": "4.14.197"
+    "@types/lodash": "4.14.198"
   },
   "engines": {
     "node": ">=14"
   },
   "dependencies": {
-    "@parca/client": "^0.16.86",
-    "@parca/profile": "^0.16.250",
+    "@parca/client": "^0.16.89",
+    "@parca/profile": "^0.16.268",
     "@protobuf-ts/grpcweb-transport": "2.9.1"
   },
   "private": true

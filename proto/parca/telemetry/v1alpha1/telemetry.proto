@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package parca.telemetry.v1alpha1;
+
+import "google/api/annotations.proto";
+
+// TelemetryService is the service that provides APIs to send information about the
+// Agents, such as unhandled panics and other relevant runtime data.
+service TelemetryService {
+  // ReportPanic receives information from an Agent that panic'ed.
+  rpc ReportPanic(ReportPanicRequest) returns (ReportPanicResponse) {
+    option (google.api.http) = {
+      post: "/telemetry/panic"
+      body: "*"
+    };
+  }
+}
+
+// ReportPanicRequest contained the info about a panic.
+message ReportPanicRequest {
+  // Stderr from the agent that exited with an error.
+  string stderr = 1;
+  // Agent metadata.
+  map<string, string> metadata = 2;
+}
+
+// ReportPanicResponse contains the response for a ReportPanicRequest.
+message ReportPanicResponse {
+  //
+}

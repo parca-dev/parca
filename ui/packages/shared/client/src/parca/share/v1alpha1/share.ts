@@ -12,6 +12,9 @@ import type { PartialMessage } from "@protobuf-ts/runtime";
 import { reflectionMergePartial } from "@protobuf-ts/runtime";
 import { MESSAGE_TYPE } from "@protobuf-ts/runtime";
 import { MessageType } from "@protobuf-ts/runtime";
+import { TableArrow } from "../../query/v1alpha1/query";
+import { Source } from "../../query/v1alpha1/query";
+import { FlamegraphArrow } from "../../query/v1alpha1/query";
 import { Callgraph } from "../../query/v1alpha1/query";
 import { Top } from "../../query/v1alpha1/query";
 import { Flamegraph } from "../../query/v1alpha1/query";
@@ -165,6 +168,30 @@ export interface QueryResponse {
          * @generated from protobuf field: parca.query.v1alpha1.Callgraph callgraph = 4;
          */
         callgraph: Callgraph;
+    } | {
+        oneofKind: "flamegraphArrow";
+        /**
+         * flamegraph_arrow is a flamegraph encoded as a arrow record
+         *
+         * @generated from protobuf field: parca.query.v1alpha1.FlamegraphArrow flamegraph_arrow = 7;
+         */
+        flamegraphArrow: FlamegraphArrow;
+    } | {
+        oneofKind: "source";
+        /**
+         * source is the source report type result
+         *
+         * @generated from protobuf field: parca.query.v1alpha1.Source source = 8;
+         */
+        source: Source;
+    } | {
+        oneofKind: "tableArrow";
+        /**
+         * table_arrow is a table encoded as a arrow record
+         *
+         * @generated from protobuf field: parca.query.v1alpha1.TableArrow table_arrow = 9;
+         */
+        tableArrow: TableArrow;
     } | {
         oneofKind: undefined;
     };
@@ -473,6 +500,9 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
             { no: 2, name: "pprof", kind: "scalar", oneof: "report", T: 12 /*ScalarType.BYTES*/ },
             { no: 3, name: "top", kind: "message", oneof: "report", T: () => Top },
             { no: 4, name: "callgraph", kind: "message", oneof: "report", T: () => Callgraph },
+            { no: 7, name: "flamegraph_arrow", kind: "message", oneof: "report", T: () => FlamegraphArrow },
+            { no: 8, name: "source", kind: "message", oneof: "report", T: () => Source },
+            { no: 9, name: "table_arrow", kind: "message", oneof: "report", T: () => TableArrow },
             { no: 5, name: "total", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ },
             { no: 6, name: "filtered", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ }
         ]);
@@ -513,6 +543,24 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
                         callgraph: Callgraph.internalBinaryRead(reader, reader.uint32(), options, (message.report as any).callgraph)
                     };
                     break;
+                case /* parca.query.v1alpha1.FlamegraphArrow flamegraph_arrow */ 7:
+                    message.report = {
+                        oneofKind: "flamegraphArrow",
+                        flamegraphArrow: FlamegraphArrow.internalBinaryRead(reader, reader.uint32(), options, (message.report as any).flamegraphArrow)
+                    };
+                    break;
+                case /* parca.query.v1alpha1.Source source */ 8:
+                    message.report = {
+                        oneofKind: "source",
+                        source: Source.internalBinaryRead(reader, reader.uint32(), options, (message.report as any).source)
+                    };
+                    break;
+                case /* parca.query.v1alpha1.TableArrow table_arrow */ 9:
+                    message.report = {
+                        oneofKind: "tableArrow",
+                        tableArrow: TableArrow.internalBinaryRead(reader, reader.uint32(), options, (message.report as any).tableArrow)
+                    };
+                    break;
                 case /* int64 total */ 5:
                     message.total = reader.int64().toBigInt();
                     break;
@@ -543,6 +591,15 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
         /* parca.query.v1alpha1.Callgraph callgraph = 4; */
         if (message.report.oneofKind === "callgraph")
             Callgraph.internalBinaryWrite(message.report.callgraph, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* parca.query.v1alpha1.FlamegraphArrow flamegraph_arrow = 7; */
+        if (message.report.oneofKind === "flamegraphArrow")
+            FlamegraphArrow.internalBinaryWrite(message.report.flamegraphArrow, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* parca.query.v1alpha1.Source source = 8; */
+        if (message.report.oneofKind === "source")
+            Source.internalBinaryWrite(message.report.source, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* parca.query.v1alpha1.TableArrow table_arrow = 9; */
+        if (message.report.oneofKind === "tableArrow")
+            TableArrow.internalBinaryWrite(message.report.tableArrow, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
         /* int64 total = 5; */
         if (message.total !== 0n)
             writer.tag(5, WireType.Varint).int64(message.total);

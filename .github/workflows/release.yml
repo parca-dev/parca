@@ -24,7 +24,7 @@ jobs:
       DOCKER_CLI_EXPERIMENTAL: "enabled"
     steps:
       - name: Checkout
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
         with:
           fetch-depth: 0
 
@@ -72,7 +72,7 @@ jobs:
     timeout-minutes: 30
     needs: release
     steps:
-      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
 
       - name: Set up Go
         uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
@@ -106,7 +106,7 @@ jobs:
     timeout-minutes: 30
     needs: manifests
     steps:
-      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
 
       - name: Publish Netlify
         uses: netlify/actions/build@master
@@ -127,7 +127,7 @@ jobs:
       # https://github.com/containers/podman/tree/main/contrib/podmanimage
       # Specifying SHA repeatedly fails:
       # @sha256:421ac576cebff98e90c531e7b9ce4482370ecc7cee59abc2341714031bfb5f43
-      image: quay.io/containers/podman:v4.6.1@sha256:dabb1648acafafbc8c5ad794efb8ceafa398c7b83df2122373e8313e1bfbdf13
+      image: quay.io/containers/podman:v4.6.2@sha256:e0cef628e369cf466979d08bda2c25d861e2b90e6236e99b817235b612c511b3
       options: >-
         --device /dev/fuse:rw
         --privileged
@@ -143,7 +143,7 @@ jobs:
         run: dnf install --assumeyes --repo fedora git make jq
 
       - name: Check out code into the Go module directory
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
 
       # The checkout action is supposed to take care of it, but it is not enough :/
       - name: Add repository directory to the git global config as a safe directory

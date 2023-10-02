@@ -37,6 +37,10 @@ export const capitalize = (a: string): string =>
     .map(p => p[0].toUpperCase() + p.substring(1).toLocaleLowerCase())
     .join(' ');
 
+export const capitalizeOnlyFirstLetter = (a: string): string => {
+  return a[0].toUpperCase() + a.substring(1).toLocaleLowerCase();
+};
+
 interface Unit {
   multiplier: number;
   symbol: string;
@@ -190,18 +194,6 @@ export type ColorProfileName = 'default' | 'subtle' | 'ocean' | 'warm' | 'rainbo
 export type ColorsDuo = [string, string];
 
 export const COLOR_PROFILES: {[key in ColorProfileName]: {colors: ColorsDuo[]}} = {
-  default: {colors: [['#929FEB', '#B3BAE1']]},
-  subtle: {
-    colors: [
-      [colors.slate['200'], colors.slate['200']],
-      [colors.orange['200'], colors.orange['200']],
-      [colors.yellow['200'], colors.yellow['200']],
-      [colors.green['100'], colors.green['100']],
-      [colors.emerald['200'], colors.emerald['200']],
-      [colors.indigo['200'], colors.indigo['200']],
-      [colors.pink['200'], colors.pink['200']],
-    ],
-  },
   ocean: {
     colors: [
       [colors.green['300'], colors.green['300']],
@@ -226,6 +218,17 @@ export const COLOR_PROFILES: {[key in ColorProfileName]: {colors: ColorsDuo[]}} 
       [colors.emerald['300'], colors.emerald['300']],
     ],
   },
+  subtle: {
+    colors: [
+      [colors.slate['200'], colors.slate['200']],
+      [colors.orange['200'], colors.orange['200']],
+      [colors.yellow['200'], colors.yellow['200']],
+      [colors.green['100'], colors.green['100']],
+      [colors.emerald['200'], colors.emerald['200']],
+      [colors.indigo['200'], colors.indigo['200']],
+      [colors.pink['200'], colors.pink['200']],
+    ],
+  },
   rainbow: {
     colors: [
       [colors.red['300'], colors.red['300']],
@@ -247,6 +250,7 @@ export const COLOR_PROFILES: {[key in ColorProfileName]: {colors: ColorsDuo[]}} 
       [colors.rose['300'], colors.rose['300']],
     ],
   },
+  default: {colors: [['#929FEB', '#B3BAE1']]},
 };
 
 export const getNewSpanColor = (isDarkMode: boolean): string => {

@@ -67,6 +67,7 @@ const UserPreferences = ({customButton}: {customButton?: JSX.Element}): JSX.Elem
       >
         <div className="min-h-40 mt-8">
           <UserPreferenceItem userPreferenceDetails={USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING} />
+          <UserPreferenceItem userPreferenceDetails={USER_PREFERENCES.GRAPH_METAINFO_DOCKED} />
           <FlamegraphColorProfileSelector />
           <div className="min-w-96 mt-10">
             <h4 className="mb-2 font-medium">Experimental Features</h4>

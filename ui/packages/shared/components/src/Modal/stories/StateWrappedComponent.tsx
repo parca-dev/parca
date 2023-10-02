@@ -22,7 +22,7 @@ const StateWrappedComponent = (): JSX.Element => {
 
   return (
     <>
-      <Button color="neutral" onClick={() => setIsOpen(true)}>
+      <Button variant="neutral" onClick={() => setIsOpen(true)}>
         Open Modal
       </Button>
 
@@ -38,7 +38,7 @@ const StateWrappedComponent = (): JSX.Element => {
             your organisation.
           </p>
           <>
-            <p className="mt-3 mb-2 text-sm text-gray-500 dark:text-gray-300">
+            <p className="mb-2 mt-3 text-sm text-gray-500 dark:text-gray-300">
               Enter a description (optional)
             </p>
             <textarea

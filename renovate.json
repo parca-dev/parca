@@ -52,11 +52,6 @@
       "groupName": "protobuf-go"
     },
     {
-      "description": "Group vtprotobuf packages",
-      "matchSourceUrls": ["https://github.com/planetscale/vtprotobuf"],
-      "groupName": "vtprotobuf"
-    },
-    {
       "description": "Disable tailwindcss upgrades",
       "matchPackageNames": ["tailwindcss", "prettier-plugin-tailwindcss"],
       "enabled": false
@@ -67,7 +62,7 @@
       "enabled": false
     }
   ],
-  "regexManagers": [
+  "customManagers": [
     {
       "customType": "regex",
       "description": "Update Buf plugins",

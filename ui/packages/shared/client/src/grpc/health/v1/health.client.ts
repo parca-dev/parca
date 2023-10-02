@@ -30,12 +30,23 @@ import type { HealthCheckRequest } from "./health";
 import type { UnaryCall } from "@protobuf-ts/runtime-rpc";
 import type { RpcOptions } from "@protobuf-ts/runtime-rpc";
 /**
+ * Health is gRPC's mechanism for checking whether a server is able to handle
+ * RPCs. Its semantics are documented in
+ * https://github.com/grpc/grpc/blob/master/doc/health-checking.md.
+ *
  * @generated from protobuf service grpc.health.v1.Health
  */
 export interface IHealthClient {
     /**
-     * If the requested service is unknown, the call will fail with status
-     * NOT_FOUND.
+     * Check gets the health of the specified service. If the requested service
+     * is unknown, the call will fail with status NOT_FOUND. If the caller does
+     * not specify a service name, the server should respond with its overall
+     * health status.
+     *
+     * Clients should set a deadline when calling Check, and can declare the
+     * server unhealthy if they do not receive a timely response.
+     *
+     * Check implementations should be idempotent and side effect free.
      *
      * @generated from protobuf rpc: Check(grpc.health.v1.HealthCheckRequest) returns (grpc.health.v1.HealthCheckResponse);
      */
@@ -62,6 +73,10 @@ export interface IHealthClient {
     watch(input: HealthCheckRequest, options?: RpcOptions): ServerStreamingCall<HealthCheckRequest, HealthCheckResponse>;
 }
 /**
+ * Health is gRPC's mechanism for checking whether a server is able to handle
+ * RPCs. Its semantics are documented in
+ * https://github.com/grpc/grpc/blob/master/doc/health-checking.md.
+ *
  * @generated from protobuf service grpc.health.v1.Health
  */
 export class HealthClient implements IHealthClient, ServiceInfo {
@@ -71,8 +86,15 @@ export class HealthClient implements IHealthClient, ServiceInfo {
     constructor(private readonly _transport: RpcTransport) {
     }
     /**
-     * If the requested service is unknown, the call will fail with status
-     * NOT_FOUND.
+     * Check gets the health of the specified service. If the requested service
+     * is unknown, the call will fail with status NOT_FOUND. If the caller does
+     * not specify a service name, the server should respond with its overall
+     * health status.
+     *
+     * Clients should set a deadline when calling Check, and can declare the
+     * server unhealthy if they do not receive a timely response.
+     *
+     * Check implementations should be idempotent and side effect free.
      *
      * @generated from protobuf rpc: Check(grpc.health.v1.HealthCheckRequest) returns (grpc.health.v1.HealthCheckResponse);
      */

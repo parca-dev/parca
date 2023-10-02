@@ -3,6 +3,64 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.203](https://github.com/parca-dev/parca/compare/@parca/components@0.16.202...@parca/components@0.16.203) (2023-09-24)
+
+**Note:** Version bump only for package @parca/components
+
+## 0.16.202 (2023-09-23)
+
+**Note:** Version bump only for package @parca/components
+
+## 0.16.201 (2023-09-22)
+
+# 0.19.0 (2023-09-21)
+
+**Note:** Version bump only for package @parca/components
+
+## [0.16.200](https://github.com/parca-dev/parca/compare/@parca/components@0.16.199...@parca/components@0.16.200) (2023-09-20)
+
+**Note:** Version bump only for package @parca/components
+
+## [0.16.199](https://github.com/parca-dev/parca/compare/@parca/components@0.16.198...@parca/components@0.16.199) (2023-09-19)
+
+**Note:** Version bump only for package @parca/components
+
+## [0.16.198](https://github.com/parca-dev/parca/compare/@parca/components@0.16.197...@parca/components@0.16.198) (2023-09-19)
+
+**Note:** Version bump only for package @parca/components
+
+## 0.16.197 (2023-09-18)
+
+**Note:** Version bump only for package @parca/components
+
+## [0.16.196](https://github.com/parca-dev/parca/compare/@parca/components@0.16.195...@parca/components@0.16.196) (2023-09-16)
+
+**Note:** Version bump only for package @parca/components
+
+## 0.16.195 (2023-09-16)
+
+**Note:** Version bump only for package @parca/components
+
+## [0.16.194](https://github.com/parca-dev/parca/compare/@parca/components@0.16.193...@parca/components@0.16.194) (2023-09-14)
+
+**Note:** Version bump only for package @parca/components
+
+## 0.16.193 (2023-09-14)
+
+**Note:** Version bump only for package @parca/components
+
+## 0.16.192 (2023-09-14)
+
+**Note:** Version bump only for package @parca/components
+
+## [0.16.191](https://github.com/parca-dev/parca/compare/@parca/components@0.16.190...@parca/components@0.16.191) (2023-09-11)
+
+**Note:** Version bump only for package @parca/components
+
+## 0.16.190 (2023-09-11)
+
+**Note:** Version bump only for package @parca/components
+
 ## 0.16.189 (2023-09-05)
 
 **Note:** Version bump only for package @parca/components

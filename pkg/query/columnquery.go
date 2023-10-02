@@ -46,7 +46,7 @@ type Querier interface {
 	QueryRange(ctx context.Context, query string, startTime, endTime time.Time, step time.Duration, limit uint32) ([]*pb.MetricsSeries, error)
 	ProfileTypes(ctx context.Context) ([]*pb.ProfileType, error)
 	QuerySingle(ctx context.Context, query string, time time.Time) (profile.Profile, error)
-	QueryMerge(ctx context.Context, query string, start, end time.Time) (profile.Profile, error)
+	QueryMerge(ctx context.Context, query string, start, end time.Time, aggregateByLabels bool) (profile.Profile, error)
 }
 
 var (
@@ -214,15 +214,43 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	var (
 		p        profile.Profile
 		filtered int64
+		isDiff   bool
 	)
+
+	groupBy := req.GetGroupBy().GetFields()
+	allowedGroupBy := map[string]struct{}{
+		FlamegraphFieldFunctionName:     {},
+		FlamegraphFieldLabels:           {},
+		FlamegraphFieldLocationAddress:  {},
+		FlamegraphFieldMappingFile:      {},
+		FlamegraphFieldFunctionFileName: {},
+	}
+	groupByLabels := false
+	for _, f := range groupBy {
+		if f == FlamegraphFieldLabels {
+			groupByLabels = true
+		}
+		if _, allowed := allowedGroupBy[f]; !allowed {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid group by field: %s", f)
+		}
+	}
 
 	switch req.Mode {
 	case pb.QueryRequest_MODE_SINGLE_UNSPECIFIED:
 		p, err = q.selectSingle(ctx, req.GetSingle())
 	case pb.QueryRequest_MODE_MERGE:
-		p, err = q.selectMerge(ctx, req.GetMerge())
+		p, err = q.selectMerge(
+			ctx,
+			req.GetMerge(),
+			groupByLabels,
+		)
 	case pb.QueryRequest_MODE_DIFF:
-		p, err = q.selectDiff(ctx, req.GetDiff())
+		isDiff = true
+		p, err = q.selectDiff(
+			ctx,
+			req.GetDiff(),
+			groupByLabels,
+		)
 	default:
 		return nil, status.Error(codes.InvalidArgument, "unknown query mode")
 	}
@@ -248,9 +276,10 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		req.GetReportType(),
 		req.GetNodeTrimThreshold(),
 		filtered,
-		req.GetGroupBy().GetFields(),
+		groupBy,
 		req.GetSourceReference(),
 		source,
+		isDiff,
 	)
 }
 
@@ -276,13 +305,13 @@ func FilterProfileData(
 
 	// We want to filter by function name case-insensitive, so we need to lowercase the query.
 	// We lower case the query here, so we don't have to do it for every sample.
-	filterQuery = strings.ToLower(filterQuery)
+	filterQueryBytes := []byte(strings.ToLower(filterQuery))
 	res := make([]arrow.Record, 0, len(records))
 	allValues := int64(0)
 	allFiltered := int64(0)
 
 	for _, r := range records {
-		filteredRecord, valueSum, filteredSum, err := filterRecord(ctx, tracer, pool, r, filterQuery)
+		filteredRecord, valueSum, filteredSum, err := filterRecord(ctx, tracer, pool, r, filterQueryBytes)
 		if err != nil {
 			return nil, 0, fmt.Errorf("filter record: %w", err)
 		}
@@ -300,7 +329,7 @@ func filterRecord(
 	tracer trace.Tracer,
 	pool memory.Allocator,
 	rec arrow.Record,
-	filterQuery string,
+	filterQueryBytes []byte,
 ) (arrow.Record, int64, int64, error) {
 	r := profile.NewRecordReader(rec)
 
@@ -313,16 +342,29 @@ func filterRecord(
 	w := profile.NewWriter(pool, labelNames)
 	defer w.RecordBuilder.Release()
 
+	indexMatches := map[uint32]struct{}{}
+	for i := 0; i < r.LineFunctionNameDict.Len(); i++ {
+		if bytes.Contains(bytes.ToLower(r.LineFunctionNameDict.Value(i)), filterQueryBytes) {
+			indexMatches[uint32(i)] = struct{}{}
+		}
+	}
+
+	if len(indexMatches) == 0 {
+		return w.RecordBuilder.NewRecord(), math.Int64.Sum(r.Value), 0, nil
+	}
+
 	for i := 0; i < int(rec.NumRows()); i++ {
 		lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 		keepRow := false
-		for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
-			llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
-
-			for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
-				if r.LineFunctionNameIndices.IsValid(k) && bytes.Contains(bytes.ToLower(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(k)))), []byte(filterQuery)) {
-					keepRow = true
-					break
+		if lOffsetStart < lOffsetEnd {
+			firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
+			_, lastEnd := r.Lines.ValueOffsets(int(lOffsetEnd - 1))
+			for k := int(firstStart); k < int(lastEnd); k++ {
+				if r.LineFunctionNameIndices.IsValid(k) {
+					if _, ok := indexMatches[r.LineFunctionNameIndices.Value(k)]; ok {
+						keepRow = true
+						break
+					}
 				}
 			}
 		}
@@ -351,17 +393,25 @@ func filterRecord(
 						w.MappingStart.Append(r.MappingStart.Value(j))
 						w.MappingLimit.Append(r.MappingLimit.Value(j))
 						w.MappingOffset.Append(r.MappingOffset.Value(j))
-						if r.MappingFileDict.Len() == 0 {
-							w.MappingFile.AppendNull()
+
+						mappingFile := r.MappingFileDict.Value(int(r.MappingFileIndices.Value(j)))
+						if len(mappingFile) > 0 {
+							if err := w.MappingFile.Append(mappingFile); err != nil {
+								return nil, 0, 0, fmt.Errorf("append mapping file: %w", err)
+							}
 						} else {
-							if err := w.MappingFile.Append(r.MappingFileDict.Value(int(r.MappingFileIndices.Value(j)))); err != nil {
+							if err := w.MappingFile.Append([]byte{}); err != nil {
 								return nil, 0, 0, fmt.Errorf("append mapping file: %w", err)
 							}
 						}
-						if r.MappingBuildIDDict.Len() == 0 {
-							w.MappingBuildID.AppendNull()
+
+						mappingBuildID := r.MappingBuildIDDict.Value(int(r.MappingBuildIDIndices.Value(j)))
+						if len(mappingBuildID) > 0 {
+							if err := w.MappingBuildID.Append(mappingBuildID); err != nil {
+								return nil, 0, 0, fmt.Errorf("append mapping build id: %w", err)
+							}
 						} else {
-							if err := w.MappingBuildID.Append(r.MappingBuildIDDict.Value(int(r.MappingBuildIDIndices.Value(j)))); err != nil {
+							if err := w.MappingBuildID.Append([]byte{}); err != nil {
 								return nil, 0, 0, fmt.Errorf("append mapping build id: %w", err)
 							}
 						}
@@ -381,35 +431,40 @@ func filterRecord(
 								w.Line.Append(true)
 								w.LineNumber.Append(r.LineNumber.Value(k))
 
-								if r.LineFunctionNameIndices.IsValid(k) {
-									if r.LineFunctionNameDict.Len() == 0 {
-										w.FunctionName.AppendNull()
-									} else {
-										if err := w.FunctionName.Append(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(k)))); err != nil {
-											return nil, 0, 0, fmt.Errorf("append function name: %w", err)
-										}
+								functionName := r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(k)))
+								if len(functionName) > 0 {
+									if err := w.FunctionName.Append(functionName); err != nil {
+										return nil, 0, 0, fmt.Errorf("append function name: %w", err)
 									}
-									if r.LineFunctionSystemNameDict.Len() == 0 {
-										w.FunctionSystemName.AppendNull()
-									} else {
-										if err := w.FunctionSystemName.Append(r.LineFunctionSystemNameDict.Value(int(r.LineFunctionSystemNameIndices.Value(k)))); err != nil {
-											return nil, 0, 0, fmt.Errorf("append function system name: %w", err)
-										}
-									}
-									if r.LineFunctionFilenameDict.Len() == 0 {
-										w.FunctionFilename.AppendNull()
-									} else {
-										if err := w.FunctionFilename.Append(r.LineFunctionFilenameDict.Value(int(r.LineFunctionFilenameIndices.Value(k)))); err != nil {
-											return nil, 0, 0, fmt.Errorf("append function filename: %w", err)
-										}
-									}
-									w.FunctionStartLine.Append(r.LineFunctionStartLine.Value(k))
 								} else {
-									w.FunctionName.AppendNull()
-									w.FunctionSystemName.AppendNull()
-									w.FunctionFilename.AppendNull()
-									w.FunctionStartLine.AppendNull()
+									if err := w.FunctionName.Append(functionName); err != nil {
+										return nil, 0, 0, fmt.Errorf("append function name: %w", err)
+									}
 								}
+
+								functionSystemName := r.LineFunctionSystemNameDict.Value(int(r.LineFunctionSystemNameIndices.Value(k)))
+								if len(functionSystemName) > 0 {
+									if err := w.FunctionSystemName.Append(functionSystemName); err != nil {
+										return nil, 0, 0, fmt.Errorf("append function system name: %w", err)
+									}
+								} else {
+									if err := w.FunctionSystemName.Append([]byte{}); err != nil {
+										return nil, 0, 0, fmt.Errorf("append function system name: %w", err)
+									}
+								}
+
+								functionFilename := r.LineFunctionFilenameDict.Value(int(r.LineFunctionFilenameIndices.Value(k)))
+								if len(functionFilename) > 0 {
+									if err := w.FunctionFilename.Append(functionFilename); err != nil {
+										return nil, 0, 0, fmt.Errorf("append function filename: %w", err)
+									}
+								} else {
+									if err := w.FunctionFilename.Append([]byte{}); err != nil {
+										return nil, 0, 0, fmt.Errorf("append function filename: %w", err)
+									}
+								}
+
+								w.FunctionStartLine.Append(r.LineFunctionStartLine.Value(k))
 							}
 							continue
 						}
@@ -441,6 +496,7 @@ func (q *ColumnQueryAPI) renderReport(
 	groupBy []string,
 	sourceReference *pb.SourceReference,
 	source string,
+	isDiff bool,
 ) (*pb.QueryResponse, error) {
 	return RenderReport(
 		ctx,
@@ -455,6 +511,7 @@ func (q *ColumnQueryAPI) renderReport(
 		q.converter,
 		sourceReference,
 		source,
+		isDiff,
 	)
 }
 
@@ -471,6 +528,7 @@ func RenderReport(
 	converter *parcacol.ArrowToProfileConverter,
 	sourceReference *pb.SourceReference,
 	source string,
+	isDiff bool,
 ) (*pb.QueryResponse, error) {
 	ctx, span := tracer.Start(ctx, "renderReport")
 	span.SetAttributes(attribute.String("reportType", typ.String()))
@@ -519,15 +577,6 @@ func RenderReport(
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW:
-		allowedGroupBy := map[string]struct{}{
-			FlamegraphFieldFunctionName: {},
-			FlamegraphFieldLabels:       {},
-		}
-		for _, f := range groupBy {
-			if _, allowed := allowedGroupBy[f]; !allowed {
-				return nil, status.Errorf(codes.InvalidArgument, "invalid group by field: %s", f)
-			}
-		}
 
 		fa, total, err := GenerateFlamegraphArrow(ctx, mem, tracer, p, groupBy, nodeTrimFraction)
 		if err != nil {
@@ -562,25 +611,20 @@ func RenderReport(
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_PPROF:
-		op, err := converter.Convert(ctx, p)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to convert profile: %v", err.Error())
-		}
-
-		pp, err := GenerateFlatPprof(ctx, op)
+		pp, err := GenerateFlatPprof(ctx, isDiff, p)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
 		}
 
-		var buf bytes.Buffer
-		if err := pp.Write(&buf); err != nil {
+		buf, err := SerializePprof(pp)
+		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
 		}
 
 		return &pb.QueryResponse{
 			Total:    0, // TODO: Figure out how to get total for pprof
 			Filtered: filtered,
-			Report:   &pb.QueryResponse_Pprof{Pprof: buf.Bytes()},
+			Report:   &pb.QueryResponse_Pprof{Pprof: buf},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_TOP:
 		op, err := converter.Convert(ctx, p)
@@ -645,12 +689,17 @@ func (q *ColumnQueryAPI) selectSingle(ctx context.Context, s *pb.SingleProfile) 
 	return p, nil
 }
 
-func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (profile.Profile, error) {
+func (q *ColumnQueryAPI) selectMerge(
+	ctx context.Context,
+	m *pb.MergeProfile,
+	aggregateByLabels bool,
+) (profile.Profile, error) {
 	p, err := q.querier.QueryMerge(
 		ctx,
 		m.Query,
 		m.Start.AsTime(),
 		m.End.AsTime(),
+		aggregateByLabels,
 	)
 	if err != nil {
 		return profile.Profile{}, err
@@ -659,7 +708,7 @@ func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile) (p
 	return p, nil
 }
 
-func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile) (profile.Profile, error) {
+func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile, aggregateByLabels bool) (profile.Profile, error) {
 	ctx, span := q.tracer.Start(ctx, "diffRequest")
 	defer span.End()
 
@@ -676,7 +725,7 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile) (pro
 	}()
 	g.Go(func() error {
 		var err error
-		base, err = q.selectProfileForDiff(ctx, d.A)
+		base, err = q.selectProfileForDiff(ctx, d.A, aggregateByLabels)
 		if err != nil {
 			return fmt.Errorf("reading base profile: %w", err)
 		}
@@ -691,7 +740,7 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile) (pro
 	}()
 	g.Go(func() error {
 		var err error
-		compare, err = q.selectProfileForDiff(ctx, d.B)
+		compare, err = q.selectProfileForDiff(ctx, d.B, aggregateByLabels)
 		if err != nil {
 			return fmt.Errorf("reading compared profile: %w", err)
 		}
@@ -773,12 +822,12 @@ func zeroArray(pool memory.Allocator, rows int) arrow.Array {
 	return b.NewArray()
 }
 
-func (q *ColumnQueryAPI) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelection) (profile.Profile, error) {
+func (q *ColumnQueryAPI) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelection, aggregateByLabels bool) (profile.Profile, error) {
 	switch s.Mode {
 	case pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED:
 		return q.selectSingle(ctx, s.GetSingle())
 	case pb.ProfileDiffSelection_MODE_MERGE:
-		return q.selectMerge(ctx, s.GetMerge())
+		return q.selectMerge(ctx, s.GetMerge(), aggregateByLabels)
 	default:
 		return profile.Profile{}, status.Error(codes.InvalidArgument, "unknown mode for diff profile selection")
 	}

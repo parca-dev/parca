@@ -82,6 +82,15 @@ message QueryResponse {
 
     // callgraph is a callgraph nodes and edges representation of the report
     parca.query.v1alpha1.Callgraph callgraph = 4;
+
+    // flamegraph_arrow is a flamegraph encoded as a arrow record
+    parca.query.v1alpha1.FlamegraphArrow flamegraph_arrow = 7;
+
+    // source is the source report type result
+    parca.query.v1alpha1.Source source = 8;
+
+    // table_arrow is a table encoded as a arrow record
+    parca.query.v1alpha1.TableArrow table_arrow = 9;
   }
 
   // total is the total number of samples shown in the report.

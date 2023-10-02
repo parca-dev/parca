@@ -18,27 +18,14 @@ import cx from 'classnames';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {Tooltip} from 'react-tooltip';
 
-import {QueryRequest_ReportType} from '@parca/client';
-import {Button, useParcaContext, useURLState} from '@parca/components';
-import {divide, getLastItem, valueFormatter, type NavigateFunction} from '@parca/utilities';
+import {Button, IconButton, useParcaContext} from '@parca/components';
+import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
+import {getLastItem, type NavigateFunction} from '@parca/utilities';
 
-import {
-  FIELD_CUMULATIVE,
-  FIELD_DIFF,
-  FIELD_FUNCTION_FILE_NAME,
-  FIELD_FUNCTION_START_LINE,
-  FIELD_LABELS,
-  FIELD_LOCATION_ADDRESS,
-  FIELD_LOCATION_LINE,
-  FIELD_MAPPING_BUILD_ID,
-  FIELD_MAPPING_FILE,
-} from '../ProfileIcicleGraph/IcicleGraphArrow';
-import {arrowToString, nodeLabel} from '../ProfileIcicleGraph/IcicleGraphArrow/utils';
-import {ProfileSource} from '../ProfileSource';
-import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
-import {useQuery} from '../useQuery';
 import {hexifyAddress, truncateString, truncateStringReverse} from '../utils';
 import {ExpandOnHover} from './ExpandOnHoverValue';
+import {useGraphTooltip} from './useGraphTooltip';
+import {useGraphTooltipMetaInfo} from './useGraphTooltipMetaInfo';
 
 let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
@@ -69,13 +56,19 @@ const GraphTooltipArrowContent = ({
 }: GraphTooltipArrowContentProps): React.JSX.Element => {
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
-  if (row === null) {
+  const graphTooltipData = useGraphTooltip({
+    table,
+    unit,
+    total,
+    totalUnfiltered,
+    row,
+    level,
+  });
+  const [_, setIsDocked] = useUserPreference(USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key);
+
+  if (graphTooltipData === null) {
     return <></>;
   }
-
-  const locationAddress: bigint = table.getChild(FIELD_LOCATION_ADDRESS)?.get(row) ?? 0n;
-  const cumulative: bigint = BigInt(table.getChild(FIELD_CUMULATIVE)?.get(row)) ?? 0n;
-  const diff: bigint = BigInt(table.getChild(FIELD_DIFF)?.get(row)) ?? 0n;
 
   const onCopy = (): void => {
     setIsCopied(true);
@@ -86,23 +79,7 @@ const GraphTooltipArrowContent = ({
     timeoutHandle = setTimeout(() => setIsCopied(false), 3000);
   };
 
-  const prevValue = cumulative - diff;
-  const diffRatio = diff !== 0n ? divide(diff, prevValue) : 0;
-  const diffSign = diff > 0 ? '+' : '';
-  const diffValueText = diffSign + valueFormatter(diff, unit, 1);
-  const diffPercentageText = diffSign + (diffRatio * 100).toFixed(2) + '%';
-  const diffText = `${diffValueText} (${diffPercentageText})`;
-
-  const name = nodeLabel(table, row, level, false);
-
-  const getTextForCumulative = (hoveringNodeCumulative: bigint): string => {
-    const filtered =
-      totalUnfiltered > total
-        ? ` / ${(100 * divide(hoveringNodeCumulative, total)).toFixed(2)}% of filtered`
-        : '';
-    return `${valueFormatter(hoveringNodeCumulative, unit, 2)}
-    (${(100 * divide(hoveringNodeCumulative, totalUnfiltered)).toFixed(2)}%${filtered})`;
-  };
+  const {name, locationAddress, cumulativeText, diffText, diff, row: rowNumber} = graphTooltipData;
 
   return (
     <div className={`flex text-sm ${isFixed ? 'w-full' : ''}`}>
@@ -110,7 +87,7 @@ const GraphTooltipArrowContent = ({
         <div className="min-h-52 flex w-[500px] flex-col justify-between rounded-lg border border-gray-300 bg-gray-50 p-3 shadow-lg dark:border-gray-500 dark:bg-gray-900">
           <div className="flex flex-row">
             <div className="mx-2">
-              <div className="flex h-10 items-center break-all font-semibold">
+              <div className="flex h-10 items-start justify-between gap-4 break-all font-semibold">
                 {row === 0 ? (
                   <p>root</p>
                 ) : (
@@ -134,6 +111,11 @@ const GraphTooltipArrowContent = ({
                     )}
                   </>
                 )}
+                <IconButton
+                  onClick={() => setIsDocked(true)}
+                  icon="mdi:dock-bottom"
+                  title="Dock MetaInfo Panel"
+                />
               </div>
               <table className="my-2 w-full table-fixed pr-0 text-gray-700 dark:text-gray-300">
                 <tbody>
@@ -141,10 +123,8 @@ const GraphTooltipArrowContent = ({
                     <td className="w-1/4">Cumulative</td>
 
                     <td className="w-3/4">
-                      <CopyToClipboard onCopy={onCopy} text={getTextForCumulative(cumulative)}>
-                        <button className="cursor-pointer">
-                          {getTextForCumulative(cumulative)}
-                        </button>
+                      <CopyToClipboard onCopy={onCopy} text={cumulativeText}>
+                        <button className="cursor-pointer">{cumulativeText}</button>
                       </CopyToClipboard>
                     </td>
                   </tr>
@@ -160,7 +140,7 @@ const GraphTooltipArrowContent = ({
                   )}
                   <TooltipMetaInfo
                     table={table}
-                    row={row}
+                    row={rowNumber}
                     onCopy={onCopy}
                     navigateTo={navigateTo}
                   />
@@ -190,57 +170,19 @@ const TooltipMetaInfo = ({
   onCopy: () => void;
   navigateTo: NavigateFunction;
 }): React.JSX.Element => {
-  const mappingFile: string = arrowToString(table.getChild(FIELD_MAPPING_FILE)?.get(row)) ?? '';
-  const mappingBuildID: string =
-    arrowToString(table.getChild(FIELD_MAPPING_BUILD_ID)?.get(row)) ?? '';
-  const locationAddress: bigint = table.getChild(FIELD_LOCATION_ADDRESS)?.get(row) ?? 0n;
-  const locationLine: bigint = table.getChild(FIELD_LOCATION_LINE)?.get(row) ?? 0n;
-  const functionFilename: string =
-    arrowToString(table.getChild(FIELD_FUNCTION_FILE_NAME)?.get(row)) ?? '';
-  const functionStartLine: bigint = table.getChild(FIELD_FUNCTION_START_LINE)?.get(row) ?? 0n;
-  const lineNumber =
-    locationLine !== 0n ? locationLine : functionStartLine !== 0n ? functionStartLine : undefined;
-  const pprofLabelPrefix = 'pprof_labels.';
-  const labelColumnNames = table.schema.fields.filter(field =>
-    field.name.startsWith(pprofLabelPrefix)
-  );
+  const {
+    labelPairs,
+    functionFilename,
+    file,
+    openFile,
+    isSourceAvailable,
+    locationAddress,
+    mappingFile,
+    mappingBuildID,
+    inlined,
+  } = useGraphTooltipMetaInfo({table, row, navigateTo});
+  const {enableSourcesView} = useParcaContext();
 
-  const {queryServiceClient, enableSourcesView} = useParcaContext();
-  const {profileSource} = useProfileViewContext();
-
-  const {isLoading: sourceLoading, response: sourceResponse} = useQuery(
-    queryServiceClient,
-    profileSource as ProfileSource,
-    QueryRequest_ReportType.SOURCE,
-    {
-      skip:
-        enableSourcesView === false ||
-        profileSource === undefined ||
-        // eslint-disable-next-line no-extra-boolean-cast
-        !Boolean(mappingBuildID) ||
-        // eslint-disable-next-line no-extra-boolean-cast
-        !Boolean(functionFilename),
-      sourceBuildID: mappingBuildID,
-      sourceFilename: functionFilename,
-      sourceOnly: true,
-    }
-  );
-
-  const isSourceAvailable = !sourceLoading && sourceResponse?.report != null;
-
-  const getTextForFile = (): string => {
-    if (functionFilename === '') return '<unknown>';
-
-    return `${functionFilename} ${lineNumber !== undefined ? ` +${lineNumber.toString()}` : ''}`;
-  };
-  const file = getTextForFile();
-
-  const labelPairs = labelColumnNames
-    .map((field, i) => [
-      labelColumnNames[i].name.slice(pprofLabelPrefix.length),
-      arrowToString(table.getChild(field.name)?.get(row)) ?? '',
-    ])
-    .filter(value => value[1] !== '');
   const labels = labelPairs.map(
     (l): React.JSX.Element => (
       <span
@@ -252,37 +194,8 @@ const TooltipMetaInfo = ({
     )
   );
 
-  const [dashboardItems, setDashboardItems] = useURLState({
-    param: 'dashboard_items',
-    navigateTo,
-  });
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [unusedBuildId, setSourceBuildId] = useURLState({
-    param: 'source_buildid',
-    navigateTo,
-  });
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [unusedFilename, setSourceFilename] = useURLState({
-    param: 'source_filename',
-    navigateTo,
-  });
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [unusedLine, setSourceLine] = useURLState({
-    param: 'source_line',
-    navigateTo,
-  });
-
-  const openFile = (): void => {
-    setDashboardItems([dashboardItems[0], 'source']);
-    setSourceBuildId(mappingBuildID);
-    setSourceFilename(functionFilename);
-    if (lineNumber !== undefined) {
-      setSourceLine(lineNumber.toString());
-    }
-  };
+  const isMappingBuildIDAvailable = mappingBuildID !== null && mappingBuildID !== '';
+  const inlinedText = inlined === null ? 'merged' : inlined ? 'yes' : 'no';
 
   return (
     <>
@@ -331,9 +244,17 @@ const TooltipMetaInfo = ({
         </td>
       </tr>
       <tr>
+        <td className="w-1/4">Inlined</td>
+        <td className="w-3/4 break-all">
+          <CopyToClipboard onCopy={onCopy} text={inlinedText}>
+            <button className="cursor-pointer">{inlinedText}</button>
+          </CopyToClipboard>
+        </td>
+      </tr>
+      <tr>
         <td className="w-1/4">Binary</td>
         <td className="w-3/4 break-all">
-          {mappingFile === '' ? (
+          {mappingFile === null ? (
             <NoData />
           ) : (
             <CopyToClipboard onCopy={onCopy} text={mappingFile}>
@@ -345,7 +266,7 @@ const TooltipMetaInfo = ({
       <tr>
         <td className="w-1/4">Build Id</td>
         <td className="w-3/4 break-all">
-          {mappingBuildID === '' ? (
+          {!isMappingBuildIDAvailable ? (
             <NoData />
           ) : (
             <CopyToClipboard onCopy={onCopy} text={mappingBuildID}>

@@ -58,6 +58,8 @@ import (
 	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	scrapepb "github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1"
 	sharepb "github.com/parca-dev/parca/gen/proto/go/parca/share/v1alpha1"
+	telemetry "github.com/parca-dev/parca/gen/proto/go/parca/telemetry/v1alpha1"
+
 	"github.com/parca-dev/parca/pkg/config"
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/metastore"
@@ -69,6 +71,7 @@ import (
 	"github.com/parca-dev/parca/pkg/server"
 	"github.com/parca-dev/parca/pkg/signedrequests"
 	"github.com/parca-dev/parca/pkg/symbolizer"
+	telemetryservice "github.com/parca-dev/parca/pkg/telemetry"
 	"github.com/parca-dev/parca/pkg/tracer"
 )
 
@@ -115,8 +118,6 @@ type Flags struct {
 	Insecure           bool              `kong:"help='Send gRPC requests via plaintext instead of TLS.'"`
 	InsecureSkipVerify bool              `kong:"help='Skip TLS certificate verification.'"`
 	ExternalLabel      map[string]string `kong:"help='Label(s) to attach to all profiles in scraper-only mode.'"`
-
-	ExperimentalArrow bool `default:"false" help:"EXPERIMENTAL: Enables Arrow ingestion, this will reduce CPU usage but will increase memory usage."`
 
 	Hidden FlagsHidden `embed:"" prefix:""`
 }
@@ -188,9 +189,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			level.Error(logger).Log("msg", "failed to create tracing provider", "err", err)
 		}
 	}
-
-	// Enable arrow ingestion
-	parcacol.ExperimentalArrow = flags.ExperimentalArrow
 
 	if flags.Port != "" {
 		level.Warn(logger).Log("msg", "flag --port is deprecated, use --http-address instead")
@@ -392,6 +390,10 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		queryservice.NewBucketSourceFinder(debuginfoBucket),
 	)
 
+	t := telemetryservice.NewTelemetry(
+		logger,
+	)
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	discoveryManager := discovery.NewManager(ctx, logger)
@@ -578,6 +580,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 						profilestorepb.RegisterAgentsServiceServer(srv, s)
 						querypb.RegisterQueryServiceServer(srv, q)
 						scrapepb.RegisterScrapeServiceServer(srv, m)
+						telemetry.RegisterTelemetryServiceServer(srv, t)
 
 						if err := debuginfopb.RegisterDebuginfoServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
 							return err
@@ -596,6 +599,10 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 						}
 
 						if err := scrapepb.RegisterScrapeServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+							return err
+						}
+
+						if err := telemetry.RegisterTelemetryServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
 							return err
 						}
 

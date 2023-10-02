@@ -18,7 +18,7 @@ import {Provider} from 'react-redux';
 import {QueryServiceClient} from '@parca/client';
 import {DateTimeRange, KeyDownProvider, useParcaContext} from '@parca/components';
 import {store} from '@parca/store';
-import type {NavigateFunction} from '@parca/utilities';
+import {capitalizeOnlyFirstLetter, type NavigateFunction} from '@parca/utilities';
 
 import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
 import {QuerySelection, useProfileTypes} from '../ProfileSelector';
@@ -30,6 +30,17 @@ interface ProfileExplorerProps {
   queryParams: any;
   navigateTo: NavigateFunction;
 }
+
+const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
+  return (
+    <div
+      className="relative rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700"
+      role="alert"
+    >
+      <span className="block sm:inline">{errorMessage}</span>
+    </div>
+  );
+};
 
 const getExpressionAsAString = (expression: string | []): string => {
   const x = Array.isArray(expression) ? expression.join() : expression;
@@ -81,11 +92,11 @@ const ProfileExplorerApp = ({
     error: profileTypesError,
   } = useProfileTypes(queryClient);
 
-  const {loader, noDataPrompt, onError} = useParcaContext();
+  const {loader, noDataPrompt, onError, authenticationErrorMessage} = useParcaContext();
 
   useEffect(() => {
     if (profileTypesError !== undefined && profileTypesError !== null) {
-      onError?.(profileTypesError, 'ProfileExplorer');
+      onError?.(profileTypesError);
     }
   }, [profileTypesError, onError]);
 
@@ -166,15 +177,11 @@ const ProfileExplorerApp = ({
   }
 
   if (profileTypesError !== undefined && profileTypesError !== null) {
-    return (
-      <div
-        className="relative rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700"
-        role="alert"
-      >
-        <strong className="font-bold">Error! </strong>
-        <span className="block sm:inline">{profileTypesError.message}</span>
-      </div>
-    );
+    if (authenticationErrorMessage !== undefined && profileTypesError.code === 'UNAUTHENTICATED') {
+      return <ErrorContent errorMessage={authenticationErrorMessage} />;
+    }
+
+    return <ErrorContent errorMessage={capitalizeOnlyFirstLetter(profileTypesError.message)} />;
   }
 
   const sanitizedRange = sanitizeDateRange(time_selection_a, from_a, to_a);

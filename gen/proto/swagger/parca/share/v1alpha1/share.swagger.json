@@ -228,6 +228,18 @@
           "$ref": "#/definitions/v1alpha1Callgraph",
           "title": "callgraph is a callgraph nodes and edges representation of the report"
         },
+        "flamegraphArrow": {
+          "$ref": "#/definitions/v1alpha1FlamegraphArrow",
+          "title": "flamegraph_arrow is a flamegraph encoded as a arrow record"
+        },
+        "source": {
+          "$ref": "#/definitions/queryv1alpha1Source",
+          "title": "source is the source report type result"
+        },
+        "tableArrow": {
+          "$ref": "#/definitions/v1alpha1TableArrow",
+          "title": "table_arrow is a table encoded as a arrow record"
+        },
         "total": {
           "type": "string",
           "format": "int64",
@@ -263,6 +275,21 @@
         }
       },
       "additionalProperties": {}
+    },
+    "queryv1alpha1Source": {
+      "type": "object",
+      "properties": {
+        "record": {
+          "type": "string",
+          "format": "byte",
+          "description": "An arrow record that contains a row per source code line with value and diff columns for flat and cumulative."
+        },
+        "source": {
+          "type": "string",
+          "description": "The actual source file content."
+        }
+      },
+      "description": "Source is the result of the source report type."
     },
     "rpcStatus": {
       "type": "object",
@@ -448,6 +475,31 @@
       },
       "title": "Flamegraph is the flame graph report type"
     },
+    "v1alpha1FlamegraphArrow": {
+      "type": "object",
+      "properties": {
+        "record": {
+          "type": "string",
+          "format": "byte",
+          "title": "record is the arrow record containing the actual flamegraph data"
+        },
+        "unit": {
+          "type": "string",
+          "title": "unit is the unit represented by the flame graph"
+        },
+        "height": {
+          "type": "integer",
+          "format": "int32",
+          "title": "height is the max height of the graph"
+        },
+        "trimmed": {
+          "type": "string",
+          "format": "int64",
+          "description": "trimmed is the amount of cumulative value trimmed from the flame graph."
+        }
+      },
+      "title": "Flamegraph is the flame graph report type"
+    },
     "v1alpha1FlamegraphNode": {
       "type": "object",
       "properties": {
@@ -561,6 +613,21 @@
         }
       },
       "description": "ProfileType is the type of a profile as well as the units the profile type is available in."
+    },
+    "v1alpha1TableArrow": {
+      "type": "object",
+      "properties": {
+        "record": {
+          "type": "string",
+          "format": "byte",
+          "title": "record is the arrow record containing the actual table data"
+        },
+        "unit": {
+          "type": "string",
+          "title": "unit is the unit represented by the flame graph"
+        }
+      },
+      "title": "TableArrow has the table encoded as a arrow record"
     },
     "v1alpha1Top": {
       "type": "object",

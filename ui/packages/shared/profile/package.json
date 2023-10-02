@@ -1,15 +1,15 @@
 {
   "name": "@parca/profile",
-  "version": "0.16.250",
+  "version": "0.16.268",
   "description": "Profile viewing libraries",
   "dependencies": {
-    "@parca/client": "^0.16.86",
-    "@parca/components": "^0.16.189",
-    "@parca/dynamicsize": "^0.16.54",
-    "@parca/hooks": "^0.0.21",
-    "@parca/parser": "^0.16.55",
-    "@parca/store": "^0.16.100",
-    "@parca/utilities": "^0.0.29",
+    "@parca/client": "^0.16.89",
+    "@parca/components": "^0.16.203",
+    "@parca/dynamicsize": "^0.16.55",
+    "@parca/hooks": "^0.0.26",
+    "@parca/parser": "^0.16.58",
+    "@parca/store": "^0.16.106",
+    "@parca/utilities": "^0.0.34",
     "@tanstack/react-query": "^4.0.5",
     "@types/react-beautiful-dnd": "^13.1.3",
     "apache-arrow": "^12.0.0",
@@ -29,7 +29,7 @@
   "devDependencies": {
     "@types/d3": "7.4.0",
     "@types/react-copy-to-clipboard": "5.0.4",
-    "@types/react-syntax-highlighter": "^15.5.7"
+    "@types/react-syntax-highlighter": "15.5.7"
   },
   "resolutions": {
     "konva": "8.4.3"

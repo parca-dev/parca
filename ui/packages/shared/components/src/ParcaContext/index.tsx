@@ -37,10 +37,12 @@ interface Props {
     onRender?: ProfilerOnRenderCallback;
     markInteraction: (interactionName: string, sampleCount: number | string | bigint) => void;
   };
-  onError?: (error: RpcError, originatingFeature: string) => void;
+  onError?: (error: RpcError) => void;
   queryServiceClient: QueryServiceClient;
   navigateTo: NavigateFunction;
   enableSourcesView?: boolean;
+  authenticationErrorMessage?: string;
+  isDarkMode: boolean;
 }
 
 export const defaultValue: Props = {
@@ -62,6 +64,7 @@ export const defaultValue: Props = {
   queryServiceClient: {} as unknown as QueryServiceClient,
   navigateTo: () => {},
   enableSourcesView: false,
+  isDarkMode: false,
 };
 
 const ParcaContext = createContext<Props>(defaultValue);

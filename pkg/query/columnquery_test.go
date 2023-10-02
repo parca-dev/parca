@@ -1210,6 +1210,7 @@ func BenchmarkQuery(b *testing.B) {
 			parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
 			nil,
 			"",
+			false,
 		)
 	}
 }
@@ -1351,18 +1352,15 @@ func OldProfileToArrowProfile(p profile.OldProfile) (profile.Profile, error) {
 				w.Lines.Append(len(loc.Lines) > 0)
 				if len(loc.Lines) > 0 {
 					for _, line := range loc.Lines {
-						w.Line.Append(true)
-						w.LineNumber.Append(line.Line)
 						if line.Function != nil {
+							w.Line.Append(true)
+							w.LineNumber.Append(line.Line)
 							w.FunctionName.Append([]byte(line.Function.Name))
 							w.FunctionSystemName.Append([]byte(line.Function.SystemName))
 							w.FunctionFilename.Append([]byte(line.Function.Filename))
 							w.FunctionStartLine.Append(line.Function.StartLine)
 						} else {
-							w.FunctionName.AppendNull()
-							w.FunctionSystemName.AppendNull()
-							w.FunctionFilename.AppendNull()
-							w.FunctionStartLine.AppendNull()
+							w.Line.AppendNull()
 						}
 					}
 				}

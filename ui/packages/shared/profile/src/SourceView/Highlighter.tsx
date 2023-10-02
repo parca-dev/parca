@@ -20,8 +20,7 @@ import SyntaxHighlighter, {createElement, type createElementProps} from 'react-s
 import {atomOneDark, atomOneLight} from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import {Tooltip} from 'react-tooltip';
 
-import {useURLState} from '@parca/components';
-import {selectDarkMode, useAppSelector} from '@parca/store';
+import {useParcaContext, useURLState} from '@parca/components';
 
 import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
 import {LineNo} from './LineNo';
@@ -170,7 +169,7 @@ export const profileAwareRenderer = (
 };
 
 export const Highlighter = ({file, content, renderer}: HighlighterProps): JSX.Element => {
-  const isDarkMode = useAppSelector(selectDarkMode);
+  const {isDarkMode} = useParcaContext();
   const language = useMemo(() => langaugeFromFile(file), [file]);
 
   return (
@@ -203,7 +202,7 @@ export const Highlighter = ({file, content, renderer}: HighlighterProps): JSX.El
           style={isDarkMode ? atomOneDark : atomOneLight}
           showLineNumbers
           renderer={renderer}
-          customStyle={{padding: 0, height: '80vh'}}
+          customStyle={{padding: 0, height: '90vh'}}
         >
           {content}
         </SyntaxHighlighter>

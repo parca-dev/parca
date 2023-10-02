@@ -9,5 +9,5 @@ deps:
   - remote: buf.build
     owner: grpc-ecosystem
     repository: grpc-gateway
-    commit: f460f71081c14a80b66cc72526e0b322
-    digest: shake256:122def85e91fc3ef4ab351680060b8f70e9d09a7ae6d1412aeb2bddfeee5c4d3fc8819da33fef56192cec0a817ac0c3e6d49bb2acf02eb5c9e9131739a60ddfc
+    commit: 048ae6ff94ca4476b3225904b1078fad
+    digest: shake256:e5250bf2d999516c02206d757502b902e406f35c099d0e869dc3e4f923f6870fe0805a9974c27df0695462937eae90cd4d9db90bb9a03489412560baa74a87b6

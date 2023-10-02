@@ -40,7 +40,7 @@ const CompareButton = ({
   return (
     <div ref={setComparePopperReferenceElement}>
       <Button
-        color="neutral"
+        variant="neutral"
         disabled={disabled}
         onClick={onClick}
         onMouseEnter={() => setCompareHover(true)}
@@ -60,7 +60,7 @@ const CompareButton = ({
               <svg className="left-0 h-1 w-full text-black" x="0px" y="0px" viewBox="0 0 255 127.5">
                 <polygon className="fill-current" points="0,127.5 127.5,0 255,127.5" />
               </svg>
-              <div className="right-0 w-40 rounded bg-black py-2 px-3 text-xs text-white">
+              <div className="right-0 w-40 rounded bg-black px-3 py-2 text-xs text-white">
                 {compareExplanation}
               </div>
             </div>
