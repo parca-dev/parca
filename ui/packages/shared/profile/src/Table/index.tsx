@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
+import React, {Fragment, ReactNode, useCallback, useEffect, useMemo, useState} from 'react';
 
 import {Menu, Transition} from '@headlessui/react';
 import {Icon} from '@iconify/react';
@@ -84,10 +84,11 @@ export const Table = React.memo(function Table({
   }, [rawDashboardItems]);
 
   const columns = useMemo(() => {
+    // Note: in order to bypass TS errors, 'header' must be a string value
     return [
       columnHelper.accessor('flat', {
         id: 'flat',
-        header: () => 'Flat',
+        header: 'Flat',
         cell: info => valueFormatter(info.getValue(), unit, 2),
         size: 80,
         meta: {
@@ -97,7 +98,7 @@ export const Table = React.memo(function Table({
       }),
       columnHelper.accessor('flatDiff', {
         id: 'flatDiff',
-        header: () => 'Flat Diff',
+        header: 'Flat Diff',
         cell: info => addPlusSign(valueFormatter(info.getValue(), unit, 2)),
         size: 120,
         meta: {
@@ -107,7 +108,7 @@ export const Table = React.memo(function Table({
       }),
       columnHelper.accessor('cumulative', {
         id: 'cumulative',
-        header: () => 'Cumulative',
+        header: 'Cumulative',
         cell: info => valueFormatter(info.getValue(), unit, 2),
         size: 130,
         meta: {
@@ -117,7 +118,7 @@ export const Table = React.memo(function Table({
       }),
       columnHelper.accessor('cumulativeDiff', {
         id: 'cumulativeDiff',
-        header: () => 'Cumulative Diff',
+        header: 'Cumulative Diff',
         cell: info => addPlusSign(valueFormatter(info.getValue(), unit, 2)),
         size: 170,
         meta: {
@@ -127,20 +128,20 @@ export const Table = React.memo(function Table({
       }),
       columnHelper.accessor('name', {
         id: 'name',
-        header: () => <span className="text-left">Name</span>,
+        header: 'Name',
         cell: info => info.getValue(),
       }),
       columnHelper.accessor('functionSystemName', {
         id: 'functionSystemName',
-        header: () => 'Function System Name',
+        header: 'Function System Name',
       }),
       columnHelper.accessor('functionFileName', {
         id: 'functionFileName',
-        header: () => 'Function File Name',
+        header: 'Function File Name',
       }),
       columnHelper.accessor('mappingFile', {
         id: 'mappingFile',
-        header: () => 'Mapping File',
+        header: 'Mapping File',
       }),
     ];
   }, [unit]);
@@ -357,7 +358,7 @@ const ColumnsVisibility = ({
                       </div>
                       <div className="ml-3 text-sm leading-6">
                         <label htmlFor={col.id} className="font-medium text-gray-900">
-                          {col.header()}
+                          {col.header as ReactNode}
                         </label>
                       </div>
                     </div>
