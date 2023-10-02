@@ -55,7 +55,7 @@ interface ColumnDef {
   header: string;
   accessorKey: string;
   footer?: string;
-  cell?: (info) => string | number;
+  cell?: (info: any) => string | number;
   meta?: {align: 'right' | 'left'};
   invertSorting?: boolean;
   size?: number;
