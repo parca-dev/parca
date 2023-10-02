@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {Fragment, ReactNode, useCallback, useEffect, useMemo, useState} from 'react';
+import React, {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
 
 import {Menu, Transition} from '@headlessui/react';
 import {Icon} from '@iconify/react';
@@ -38,8 +38,6 @@ const FIELD_FLAT = 'flat';
 const FIELD_FLAT_DIFF = 'flat_diff';
 const FIELD_CUMULATIVE = 'cumulative';
 const FIELD_CUMULATIVE_DIFF = 'cumulative_diff';
-
-const columnHelper = createColumnHelper<row>();
 
 interface row {
   name: string;
