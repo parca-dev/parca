@@ -15,7 +15,7 @@ import React, {Fragment, useCallback, useEffect, useMemo, useState} from 'react'
 
 import {Menu, Transition} from '@headlessui/react';
 import {Icon} from '@iconify/react';
-import {createColumnHelper, type VisibilityState} from '@tanstack/react-table';
+import {type VisibilityState} from '@tanstack/react-table';
 import {Vector, tableFromIPC} from 'apache-arrow';
 
 import {Button, Table as TableComponent, useURLState} from '@parca/components';
