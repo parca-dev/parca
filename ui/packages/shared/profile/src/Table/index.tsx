@@ -96,14 +96,6 @@ export const Table = React.memo(function Table({
     return ['icicle'];
   }, [rawDashboardItems]);
 
-  const ratioString = (value: bigint | number): string => {
-    if (filtered === 0n) {
-      return ` (${percentageString(value, total)})`;
-    }
-
-    return ` (${percentageString(value, total)} / ${percentageString(value, filtered)})`;
-  };
-
   const percentageString = (value: bigint | number, total: bigint | number): string => {
     if (total === 0n) {
       return '0%';
@@ -113,7 +105,13 @@ export const Table = React.memo(function Table({
     return `${percentage.toFixed(2)}%`;
   };
 
-  // TODO: add columns for flat, flatDiff, cumulative, cumulativeDiff percentages
+  const ratioString = (value: bigint | number): string => {
+    if (filtered === 0n) {
+      return ` ${percentageString(value, total)}`;
+    }
+
+    return `${percentageString(value, total)} / ${percentageString(value, filtered)}`;
+  };
 
   const columns = useMemo<ColumnDef[]>(() => {
     return [
@@ -123,6 +121,17 @@ export const Table = React.memo(function Table({
         header: 'Flat',
         cell: info => valueFormatter(info.getValue(), unit, 2),
         size: 80,
+        meta: {
+          align: 'right',
+        },
+        invertSorting: true,
+      },
+      {
+        id: 'flatPercentage',
+        accessorKey: 'flat',
+        header: 'Flat (% of total)',
+        cell: info => ratioString(info.getValue()),
+        size: 120,
         meta: {
           align: 'right',
         },
@@ -140,11 +149,33 @@ export const Table = React.memo(function Table({
         invertSorting: true,
       },
       {
+        id: 'flatDiffPercentage',
+        accessorKey: 'flatDiff',
+        header: 'Flat Diff (% of total)',
+        cell: info => ratioString(info.getValue()),
+        size: 120,
+        meta: {
+          align: 'right',
+        },
+        invertSorting: true,
+      },
+      {
         id: 'cumulative',
         accessorKey: 'cumulative',
         header: 'Cumulative',
         cell: info => valueFormatter(info.getValue(), unit, 2),
-        size: 130,
+        size: 150,
+        meta: {
+          align: 'right',
+        },
+        invertSorting: true,
+      },
+      {
+        id: 'cumulativePercentage',
+        accessorKey: 'cumulative',
+        header: 'Cumulative (% of total)',
+        cell: info => ratioString(info.getValue()),
+        size: 150,
         meta: {
           align: 'right',
         },
@@ -155,6 +186,17 @@ export const Table = React.memo(function Table({
         accessorKey: 'cumulativeDiff',
         header: 'Cumulative Diff',
         cell: info => addPlusSign(valueFormatter(info.getValue(), unit, 2)),
+        size: 170,
+        meta: {
+          align: 'right',
+        },
+        invertSorting: true,
+      },
+      {
+        id: 'cumulativeDiffPercentage',
+        accessorKey: 'cumulativeDiff',
+        header: 'Cumulative Diff (% of total)',
+        cell: info => ratioString(info.getValue()),
         size: 170,
         meta: {
           align: 'right',
@@ -188,9 +230,13 @@ export const Table = React.memo(function Table({
   const [columnVisibility, setColumnVisibility] = useState(() => {
     return {
       flat: true,
+      flatPercentage: false,
       flatDiff: compareMode,
+      flatDiffPercentage: false,
       cumulative: true,
+      cumulativePercentage: false,
       cumulativeDiff: compareMode,
+      cumulativeDiffPercentage: false,
       name: true,
       functionSystemName: false,
       functionFileName: false,
