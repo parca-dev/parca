@@ -225,6 +225,7 @@ export const Table = React.memo(function Table({
         header: 'Mapping File',
       },
     ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unit]);
 
   const [columnVisibility, setColumnVisibility] = useState(() => {
