@@ -13,6 +13,7 @@
 
 import {useEffect, useState} from 'react';
 
+import {Icon} from '@iconify/react';
 import type {VirtualElement} from '@popperjs/core';
 import {usePopper} from 'react-popper';
 
@@ -167,9 +168,10 @@ const MetricsTooltip = ({
                       );
                     })}
                 </span>
-                <span className="block text-xs text-gray-500">
-                  Hold shift and click label to add to query.
-                </span>
+                <div className="flex w-full items-center gap-1 text-xs text-gray-500">
+                  <Icon icon="iconoir:mouse-button-right" />
+                  <div>Right click to add labels to query.</div>
+                </div>
               </div>
             </div>
           </div>
