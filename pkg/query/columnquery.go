@@ -219,8 +219,11 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 
 	groupBy := req.GetGroupBy().GetFields()
 	allowedGroupBy := map[string]struct{}{
-		FlamegraphFieldFunctionName: {},
-		FlamegraphFieldLabels:       {},
+		FlamegraphFieldFunctionName:     {},
+		FlamegraphFieldLabels:           {},
+		FlamegraphFieldLocationAddress:  {},
+		FlamegraphFieldMappingFile:      {},
+		FlamegraphFieldFunctionFileName: {},
 	}
 	groupByLabels := false
 	for _, f := range groupBy {

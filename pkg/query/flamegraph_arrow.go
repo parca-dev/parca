@@ -46,6 +46,7 @@ const (
 	FlamegraphFieldLocationAddress = "location_address"
 	FlamegraphFieldLocationLine    = "location_line"
 
+	FlamegraphFieldInlined            = "inlined"
 	FlamegraphFieldFunctionStartLine  = "function_startline"
 	FlamegraphFieldFunctionName       = "function_name"
 	FlamegraphFieldFunctionSystemName = "function_system_name"
@@ -232,7 +233,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						fb.childrenList[rootRow] = append(fb.childrenList[rootRow], row)
 					}
 
-					err = fb.appendRow(r, t, builderToRecordIndexMapping, i, j, -1, row, key)
+					err = fb.appendRow(r, t, builderToRecordIndexMapping, i, j, -1, row, key, false)
 					if err != nil {
 						return nil, 0, 0, 0, err
 					}
@@ -244,8 +245,10 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 				// just like locations, pprof stores lines in reverse order.
 				for k := int(llOffsetEnd - 1); k >= int(llOffsetStart); k-- {
-					isRoot = isLocationRoot && !(fb.aggregationConfig.aggregateByLabels && hasLabels) && k == int(llOffsetEnd-1)
+					isInlineRoot := k == int(llOffsetEnd-1)
+					isInlined := !isInlineRoot
 
+					isRoot = isLocationRoot && !(fb.aggregationConfig.aggregateByLabels && hasLabels) && isInlineRoot
 					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
 					if isRoot {
 						fb.compareRows = rootRowChildren
@@ -265,6 +268,13 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						translatedMappingFileIndex := t.mappingFile.indices.Value(int(r.MappingFileIndices.Value(j)))
 						key = hashCombine(key, uint64(translatedMappingFileIndex))
 					}
+					if fb.aggregationConfig.aggregateByLocationAddress {
+						key = hashCombine(key, r.Address.Value(j))
+					}
+					if fb.aggregationConfig.aggregateByFunctionFilename {
+						translatedFunctionFilenameIndex := t.functionFilename.indices.Value(int(r.LineFunctionFilenameIndices.Value(k)))
+						key = hashCombine(key, uint64(translatedFunctionFilenameIndex))
+					}
 
 					merged, err := fb.mergeSymbolizedRows(
 						r,
@@ -275,6 +285,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						k,
 						int(end),
 						key,
+						isInlined,
 					)
 					if err != nil {
 						return nil, 0, 0, 0, err
@@ -290,7 +301,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						fb.childrenList[rootRow] = append(fb.childrenList[rootRow], row)
 					}
 
-					err = fb.appendRow(r, t, recordLabelIndex, i, j, k, row, key)
+					err = fb.appendRow(r, t, recordLabelIndex, i, j, k, row, key, isInlined)
 					if err != nil {
 						return nil, 0, 0, 0, err
 					}
@@ -521,6 +532,7 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 	recordLabelIndex []int,
 	sampleIndex, locationIndex, lineIndex, end int,
 	key uint64,
+	inlined bool,
 ) (bool, error) {
 	if cr, found := fb.compareRows[key]; found {
 		// If we don't group by the labels, we intersect the values before adding them to the flame graph.
@@ -569,6 +581,11 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 						fb.builderLocationAddress.SetNull(cr)
 					}
 				}
+			}
+		}
+		{
+			if fb.builderInlined.IsValid(cr) && fb.builderInlined.Value(cr) != inlined {
+				fb.builderInlined.SetNull(cr)
 			}
 		}
 		{
@@ -748,6 +765,7 @@ type flamegraphBuilder struct {
 	builderMappingBuildIDDictUnifier     array.DictionaryUnifier
 	builderLocationAddress               *array.Uint64Builder
 	builderLocationLine                  *builder.OptInt64Builder
+	builderInlined                       *builder.OptBooleanBuilder
 	builderFunctionStartLine             *builder.OptInt64Builder
 	builderFunctionNameIndices           *array.Int32Builder
 	builderFunctionNameDictUnifier       array.DictionaryUnifier
@@ -789,8 +807,10 @@ type flamegraphBuilder struct {
 }
 
 type aggregationConfig struct {
-	aggregateByLabels      bool
-	aggregateByMappingFile bool
+	aggregateByLabels           bool
+	aggregateByMappingFile      bool
+	aggregateByLocationAddress  bool
+	aggregateByFunctionFilename bool
 }
 
 func maxInt64(a, b int64) int64 {
@@ -827,6 +847,7 @@ func newFlamegraphBuilder(
 		builderLocationAddress: array.NewUint64Builder(pool),
 		builderLocationLine:    builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
 
+		builderInlined:                       builder.NewOptBooleanBuilder(arrow.FixedWidthTypes.Boolean),
 		builderFunctionStartLine:             builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
 		builderFunctionNameIndices:           array.NewInt32Builder(pool),
 		builderFunctionNameDictUnifier:       array.NewBinaryDictionaryUnifier(pool),
@@ -848,6 +869,12 @@ func newFlamegraphBuilder(
 		if f == FlamegraphFieldMappingFile {
 			fb.aggregationConfig.aggregateByMappingFile = true
 		}
+		if f == FlamegraphFieldLocationAddress {
+			fb.aggregationConfig.aggregateByLocationAddress = true
+		}
+		if f == FlamegraphFieldFunctionFileName {
+			fb.aggregationConfig.aggregateByFunctionFilename = true
+		}
 	}
 
 	rootRow := map[uint64]int{}
@@ -864,6 +891,7 @@ func newFlamegraphBuilder(
 	fb.builderLocationAddress.AppendNull()
 	fb.builderLocationLine.AppendNull()
 
+	fb.builderInlined.AppendSingle(false)
 	fb.builderFunctionStartLine.AppendNull()
 	fb.builderFunctionNameIndices.AppendNull()
 	fb.builderFunctionSystemNameIndices.AppendNull()
@@ -975,7 +1003,7 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 // It adds the children to the children column and the labels intersection to the labels column.
 // Finally, it assembles all columns from the builders into an arrow record.
 func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
-	cleanupArrs := make([]arrow.Array, 0, 16+(2*len(fb.builderLabelFields)))
+	cleanupArrs := make([]arrow.Array, 0, 17+(2*len(fb.builderLabelFields)))
 	defer func() {
 		for _, arr := range cleanupArrs {
 			arr.Release()
@@ -1001,13 +1029,14 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	numRows := fb.trimmedCumulative.Len()
 
 	fields := []arrow.Field{
+		// Location
 		{Name: FlamegraphFieldLabelsOnly, Type: arrow.FixedWidthTypes.Boolean},
+		{Name: FlamegraphFieldLocationAddress, Type: arrow.PrimitiveTypes.Uint64},
 		{Name: FlamegraphFieldMappingFile, Type: fb.mappingFile.DataType()},
 		{Name: FlamegraphFieldMappingBuildID, Type: fb.mappingBuildID.DataType()},
-		// Location
-		{Name: FlamegraphFieldLocationAddress, Type: arrow.PrimitiveTypes.Uint64},
-		{Name: FlamegraphFieldLocationLine, Type: fb.trimmedLocationLine.Type()},
 		// Function
+		{Name: FlamegraphFieldLocationLine, Type: fb.trimmedLocationLine.Type()},
+		{Name: FlamegraphFieldInlined, Type: arrow.FixedWidthTypes.Boolean, Nullable: true},
 		{Name: FlamegraphFieldFunctionStartLine, Type: fb.trimmedFunctionStartLine.Type()},
 		{Name: FlamegraphFieldFunctionName, Type: fb.functionName.DataType()},
 		{Name: FlamegraphFieldFunctionSystemName, Type: fb.functionSystemName.DataType()},
@@ -1018,31 +1047,33 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 		{Name: FlamegraphFieldDiff, Type: fb.trimmedDiff.Type()},
 	}
 
-	arrays := make([]arrow.Array, 12+len(fb.labels))
+	arrays := make([]arrow.Array, 13+len(fb.labels))
 	arrays[0] = fb.builderLabelsOnly.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[0])
-	arrays[1] = fb.mappingFile
-	arrays[2] = fb.mappingBuildID
-	arrays[3] = fb.builderLocationAddress.NewArray()
-	cleanupArrs = append(cleanupArrs, arrays[3])
+	arrays[1] = fb.builderLocationAddress.NewArray()
+	cleanupArrs = append(cleanupArrs, arrays[1])
+	arrays[2] = fb.mappingFile
+	arrays[3] = fb.mappingBuildID
 	arrays[4] = fb.trimmedLocationLine.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[4])
-	arrays[5] = fb.trimmedFunctionStartLine.NewArray()
+	arrays[5] = fb.builderInlined.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[5])
-	arrays[6] = fb.functionName
-	arrays[7] = fb.functionSystemName
-	arrays[8] = fb.functionFilename
-	arrays[9] = fb.builderChildren.NewArray()
-	cleanupArrs = append(cleanupArrs, arrays[9])
-	arrays[10] = fb.trimmedCumulative.NewArray()
+	arrays[6] = fb.trimmedFunctionStartLine.NewArray()
+	cleanupArrs = append(cleanupArrs, arrays[6])
+	arrays[7] = fb.functionName
+	arrays[8] = fb.functionSystemName
+	arrays[9] = fb.functionFilename
+	arrays[10] = fb.builderChildren.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[10])
-	arrays[11] = fb.trimmedDiff.NewArray()
+	arrays[11] = fb.trimmedCumulative.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[11])
+	arrays[12] = fb.trimmedDiff.NewArray()
+	cleanupArrs = append(cleanupArrs, arrays[12])
 
 	for i, field := range fb.builderLabelFields {
 		field.Type = fb.labels[i].DataType() // overwrite for variable length uint types
 		fields = append(fields, field)
-		arrays[12+i] = fb.labels[i]
+		arrays[13+i] = fb.labels[i]
 	}
 
 	return array.NewRecord(
@@ -1063,6 +1094,7 @@ func (fb *flamegraphBuilder) Release() {
 
 	fb.builderLocationAddress.Release()
 	fb.builderLocationLine.Release()
+	fb.builderInlined.Release()
 
 	fb.builderFunctionStartLine.Release()
 	fb.builderFunctionNameIndices.Release()
@@ -1129,6 +1161,7 @@ func (fb *flamegraphBuilder) appendRow(
 	sampleRow, locationRow, lineRow int,
 	row int,
 	key uint64,
+	inlined bool,
 ) error {
 	fb.height++
 
@@ -1155,6 +1188,7 @@ func (fb *flamegraphBuilder) appendRow(
 	}
 
 	fb.builderLocationAddress.Append(r.Address.Value(locationRow))
+	fb.builderInlined.AppendSingle(inlined)
 
 	if lineRow == -1 {
 		fb.builderLocationLine.AppendNull()
@@ -1277,6 +1311,7 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 	fb.builderMappingFileIndices.AppendNull()
 	fb.builderMappingBuildIDIndices.AppendNull()
 	fb.builderLocationAddress.AppendNull()
+	fb.builderInlined.AppendNull()
 	fb.builderLocationLine.AppendNull()
 	fb.builderFunctionStartLine.AppendNull()
 	fb.builderFunctionNameIndices.AppendNull()
@@ -1362,6 +1397,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedLocationAddress := array.NewUint64Builder(fb.pool)
 	trimmedLocationLineType := smallestUnsignedTypeFor(largestLocationLine)
 	trimmedLocationLine := array.NewBuilder(fb.pool, trimmedLocationLineType)
+	trimmedInlined := builder.NewOptBooleanBuilder(arrow.FixedWidthTypes.Boolean)
 	trimmedFunctionStartLineType := smallestUnsignedTypeFor(largestFunctionStartLine)
 	trimmedFunctionStartLine := array.NewBuilder(fb.pool, trimmedFunctionStartLineType)
 	trimmedFunctionNameIndices := array.NewInt32Builder(fb.pool)
@@ -1395,6 +1431,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedMappingBuildIDIndices.Reserve(row)
 	trimmedLocationAddress.Reserve(row)
 	trimmedLocationLine.Reserve(row)
+	trimmedInlined.Reserve(row)
 	trimmedFunctionStartLine.Reserve(row)
 	trimmedFunctionNameIndices.Reserve(row)
 	trimmedFunctionSystemNameIndices.Reserve(row)
@@ -1419,6 +1456,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 		appendDictionaryIndexInt32(fb.mappingFileIndices, trimmedMappingFileIndices, te.row)
 		appendDictionaryIndexInt32(fb.mappingBuildIDIndices, trimmedMappingBuildIDIndices, te.row)
 		copyUint64BuilderValue(fb.builderLocationAddress, trimmedLocationAddress, te.row)
+		copyOptBooleanBuilderValue(fb.builderInlined, trimmedInlined, te.row)
 		copyInt64BuilderValueToUnknownUnsigned(fb.builderLocationLine, trimmedLocationLine, te.row)
 		copyInt64BuilderValueToUnknownUnsigned(fb.builderFunctionStartLine, trimmedFunctionStartLine, te.row)
 		appendDictionaryIndexInt32(fb.functionNameIndices, trimmedFunctionNameIndices, te.row)
@@ -1574,6 +1612,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 		fb.builderLabelsOnly,
 		fb.builderLabelsExist,
 		fb.builderLocationAddress,
+		fb.builderInlined,
 		fb.builderLocationLine,
 		fb.builderFunctionStartLine,
 		fb.builderCumulative,
@@ -1584,6 +1623,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	fb.builderLabelsOnly = trimmedLabelsOnly
 	fb.builderLabelsExist = trimmedLabelsExist
 	fb.builderLocationAddress = trimmedLocationAddress
+	fb.builderInlined = trimmedInlined
 	fb.trimmedLocationLine = trimmedLocationLine
 	fb.trimmedFunctionStartLine = trimmedFunctionStartLine
 	fb.trimmedCumulative = trimmedCumulative

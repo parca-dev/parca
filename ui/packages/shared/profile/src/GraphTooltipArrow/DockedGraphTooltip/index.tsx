@@ -94,6 +94,7 @@ export const DockedGraphTooltip = ({
     locationAddress,
     mappingFile,
     mappingBuildID,
+    inlined,
   } = useGraphTooltipMetaInfo({table, row: row ?? 0, navigateTo});
 
   const [_, setIsDocked] = useUserPreference(USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key);
@@ -115,6 +116,7 @@ export const DockedGraphTooltip = ({
     )
   );
 
+  const inlinedText = inlined === null ? 'merged' : inlined ? 'yes' : 'no';
   const addressText = locationAddress !== 0n ? hexifyAddress(locationAddress) : 'unknown';
   const fileText = functionFilename !== '' ? file : 'Not available';
 
@@ -146,6 +148,13 @@ export const DockedGraphTooltip = ({
             minWidth={'w-[460px]'}
           />
           <InfoSection title="Address" value={addressText} minWidth="w-44" />
+          <InfoSection
+            title="Inlined"
+            value={inlinedText}
+            onCopy={onCopy}
+            copyText={inlinedText}
+            minWidth="w-44"
+          />
           <InfoSection
             title="Binary"
             value={(mappingFile != null ? getLastItem(mappingFile) : null) ?? 'Not available'}

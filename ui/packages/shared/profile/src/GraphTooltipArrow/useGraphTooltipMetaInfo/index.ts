@@ -20,6 +20,7 @@ import type {NavigateFunction} from '@parca/utilities';
 import {
   FIELD_FUNCTION_FILE_NAME,
   FIELD_FUNCTION_START_LINE,
+  FIELD_INLINED,
   FIELD_LOCATION_ADDRESS,
   FIELD_LOCATION_LINE,
   FIELD_MAPPING_BUILD_ID,
@@ -45,6 +46,7 @@ interface GraphTooltipMetaInfoData {
   locationAddress: bigint;
   mappingFile: string | null;
   mappingBuildID: string | null;
+  inlined: boolean | null;
 }
 
 export const useGraphTooltipMetaInfo = ({
@@ -57,6 +59,7 @@ export const useGraphTooltipMetaInfo = ({
     table.getChild(FIELD_MAPPING_BUILD_ID)?.get(row)
   );
   const locationAddress: bigint = table.getChild(FIELD_LOCATION_ADDRESS)?.get(row) ?? 0n;
+  const inlined: boolean | null = table.getChild(FIELD_INLINED)?.get(row);
   const locationLine: bigint = table.getChild(FIELD_LOCATION_LINE)?.get(row) ?? 0n;
   const functionFilename: string =
     arrowToString(table.getChild(FIELD_FUNCTION_FILE_NAME)?.get(row)) ?? '';
@@ -149,5 +152,6 @@ export const useGraphTooltipMetaInfo = ({
     locationAddress,
     mappingBuildID,
     mappingFile,
+    inlined,
   };
 };

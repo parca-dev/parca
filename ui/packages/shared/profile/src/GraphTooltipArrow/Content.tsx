@@ -131,6 +131,7 @@ const TooltipMetaInfo = ({
     locationAddress,
     mappingFile,
     mappingBuildID,
+    inlined,
   } = useGraphTooltipMetaInfo({table, row, navigateTo});
 
   const labels = labelPairs.map(
@@ -145,6 +146,7 @@ const TooltipMetaInfo = ({
   );
 
   const isMappingBuildIDAvailable = mappingBuildID !== null && mappingBuildID !== '';
+  const inlinedText = inlined === null ? 'merged' : inlined ? 'yes' : 'no';
 
   return (
     <>
@@ -166,6 +168,14 @@ const TooltipMetaInfo = ({
         <td className="w-1/4">Address</td>
         <td className="w-3/4 break-all">
           {locationAddress === 0n ? <NoData /> : <div>{hexifyAddress(locationAddress)}</div>}
+        </td>
+      </tr>
+      <tr>
+        <td className="w-1/4">Inlined</td>
+        <td className="w-3/4 break-all">
+          <CopyToClipboard onCopy={onCopy} text={inlinedText}>
+            <button className="cursor-pointer">{inlinedText}</button>
+          </CopyToClipboard>
         </td>
       </tr>
       <tr>

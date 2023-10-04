@@ -90,7 +90,7 @@ const Table = <T,>({
   return (
     <div ref={tableContainerRef} className="h-full overflow-scroll pr-2">
       <table className="w-full">
-        <thead className="bg-gray-50 text-sm dark:bg-gray-800 sticky top-0">
+        <thead className="sticky top-0 bg-gray-50 text-sm dark:bg-gray-800">
           {table.getHeaderGroups().map(headerGroup => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map(header => {
