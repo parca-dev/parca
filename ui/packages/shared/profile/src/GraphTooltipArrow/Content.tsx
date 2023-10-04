@@ -104,8 +104,8 @@ const GraphTooltipArrowContent = ({
               </table>
             </div>
           </div>
-          <div className="flex w-full items-center gap-2 text-xs text-gray-500">
-            <Icon icon="material-symbols:right-click" />
+          <div className="flex w-full items-center gap-1 text-xs text-gray-500">
+            <Icon icon="iconoir:mouse-button-right" />
             <div>Right click to show context menu</div>
           </div>
         </div>
@@ -127,7 +127,6 @@ const TooltipMetaInfo = ({
     labelPairs,
     functionFilename,
     file,
-    openFile,
     locationAddress,
     mappingFile,
     mappingBuildID,
@@ -172,25 +171,21 @@ const TooltipMetaInfo = ({
       </tr>
       <tr>
         <td className="w-1/4">Inlined</td>
-        <td className="w-3/4 break-all">
-          <CopyToClipboard onCopy={onCopy} text={inlinedText}>
-            <button className="cursor-pointer">{inlinedText}</button>
-          </CopyToClipboard>
-        </td>
+        <td className="w-3/4 break-all">{inlinedText}</td>
       </tr>
       <tr>
         <td className="w-1/4">Binary</td>
         <td className="w-3/4 break-all">
-          {mappingFile === null ? <NoData /> : <div>{getLastItem(mappingFile)}</div>}
+          {(mappingFile != null ? getLastItem(mappingFile) : null) ?? <NoData />}
         </td>
       </tr>
       <tr>
         <td className="w-1/4">Build Id</td>
         <td className="w-3/4 break-all">
-          {!isMappingBuildIDAvailable ? (
-            <NoData />
-          ) : (
+          {isMappingBuildIDAvailable ? (
             <div>{truncateString(getLastItem(mappingBuildID) as string, 28)}</div>
+          ) : (
+            <NoData />
           )}
         </td>
       </tr>

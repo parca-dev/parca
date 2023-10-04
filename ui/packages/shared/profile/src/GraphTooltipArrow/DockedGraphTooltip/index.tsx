@@ -11,21 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useState} from 'react';
-
+import {Icon} from '@iconify/react';
 import {Table} from 'apache-arrow';
 import cx from 'classnames';
 import {useWindowSize} from 'react-use';
 
 import {useParcaContext} from '@parca/components';
-import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {getLastItem} from '@parca/utilities';
 
 import {hexifyAddress, truncateString, truncateStringReverse} from '../../utils';
 import {useGraphTooltip} from '../useGraphTooltip';
 import {useGraphTooltipMetaInfo} from '../useGraphTooltipMetaInfo';
-
-let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
 interface Props {
   table: Table<any>;
@@ -53,6 +49,10 @@ const InfoSection = ({
   );
 };
 
+const NoData = (): React.JSX.Element => {
+  return <span className="rounded bg-gray-200 px-2 dark:bg-gray-800">Not available</span>;
+};
+
 export const DockedGraphTooltip = ({
   table,
   unit,
@@ -65,16 +65,6 @@ export const DockedGraphTooltip = ({
   const {profileExplorer, navigateTo, enableSourcesView} = useParcaContext();
   const {PaddingX} = profileExplorer ?? {PaddingX: 0};
   width = width - PaddingX - 24;
-  const [isCopied, setIsCopied] = useState<boolean>(false);
-
-  const onCopy = (): void => {
-    setIsCopied(true);
-
-    if (timeoutHandle !== null) {
-      clearTimeout(timeoutHandle);
-    }
-    timeoutHandle = setTimeout(() => setIsCopied(false), 3000);
-  };
 
   const graphTooltipData = useGraphTooltip({
     table,
@@ -89,15 +79,11 @@ export const DockedGraphTooltip = ({
     labelPairs,
     functionFilename,
     file,
-    openFile,
-    isSourceAvailable,
     locationAddress,
     mappingFile,
     mappingBuildID,
     inlined,
   } = useGraphTooltipMetaInfo({table, row: row ?? 0, navigateTo});
-
-  const [_, setIsDocked] = useUserPreference(USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key);
 
   if (graphTooltipData === null) {
     return <></>;
@@ -116,9 +102,9 @@ export const DockedGraphTooltip = ({
     )
   );
 
+  const isMappingBuildIDAvailable = mappingBuildID !== null && mappingBuildID !== '';
   const inlinedText = inlined === null ? 'merged' : inlined ? 'yes' : 'no';
-  const addressText = locationAddress !== 0n ? hexifyAddress(locationAddress) : 'unknown';
-  const fileText = functionFilename !== '' ? file : 'Not available';
+  const addressText = locationAddress !== 0n ? hexifyAddress(locationAddress) : <NoData />;
 
   return (
     <div
@@ -144,30 +130,34 @@ export const DockedGraphTooltip = ({
           {diff !== 0n ? <InfoSection title="Diff" value={diffText} minWidth="w-44" /> : null}
           <InfoSection
             title="File"
-            value={truncateStringReverse(fileText, 45)}
+            value={functionFilename !== '' ? truncateStringReverse(file, 45) : <NoData />}
             minWidth={'w-[460px]'}
           />
           <InfoSection title="Address" value={addressText} minWidth="w-44" />
-          <InfoSection
-            title="Inlined"
-            value={inlinedText}
-            onCopy={onCopy}
-            copyText={inlinedText}
-            minWidth="w-44"
-          />
+          <InfoSection title="Inlined" value={inlinedText} minWidth="w-44" />
           <InfoSection
             title="Binary"
-            value={(mappingFile != null ? getLastItem(mappingFile) : null) ?? 'Not available'}
+            value={(mappingFile != null ? getLastItem(mappingFile) : null) ?? <NoData />}
             minWidth="w-44"
           />
           <InfoSection
             title="Build ID"
-            value={truncateString(getLastItem(mappingBuildID) ?? 'Not available', 28)}
+            value={
+              isMappingBuildIDAvailable ? (
+                <div>{truncateString(getLastItem(mappingBuildID) as string, 28)}</div>
+              ) : (
+                <NoData />
+              )
+            }
           />
         </div>
         <div>
           <div className="flex h-5 gap-1">{labels}</div>
         </div>
+      </div>
+      <div className="flex w-full items-center gap-1 text-xs text-gray-500">
+        <Icon icon="iconoir:mouse-button-right" />
+        <div>Right click to show context menu</div>
       </div>
     </div>
   );

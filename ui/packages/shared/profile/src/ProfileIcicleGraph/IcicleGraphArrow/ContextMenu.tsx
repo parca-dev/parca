@@ -18,11 +18,11 @@ import {Tooltip} from 'react-tooltip';
 
 import {useParcaContext} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
-import {getLastItem, type NavigateFunction} from '@parca/utilities';
+import {type NavigateFunction} from '@parca/utilities';
 
 import {useGraphTooltip} from '../../GraphTooltipArrow/useGraphTooltip';
 import {useGraphTooltipMetaInfo} from '../../GraphTooltipArrow/useGraphTooltipMetaInfo';
-import {hexifyAddress, truncateString, truncateStringReverse} from '../../utils';
+import {hexifyAddress, truncateString} from '../../utils';
 
 interface ContextMenuProps {
   menuId: string;
@@ -75,6 +75,7 @@ const ContextMenu = ({
     locationAddress,
     mappingFile,
     mappingBuildID,
+    inlined,
   } = useGraphTooltipMetaInfo({table, row: rowNumber, navigateTo});
   const isMappingBuildIDAvailable = mappingBuildID !== null && mappingBuildID !== '';
   const {enableSourcesView} = useParcaContext();
@@ -105,7 +106,8 @@ const ContextMenu = ({
       ? hexifyAddress(locationAddress)
       : '';
 
-  const buildIdValue = !isMappingBuildIDAvailable ? '' : mappingBuildID;
+  const buildIdText = !isMappingBuildIDAvailable ? '' : mappingBuildID;
+  const inlinedText = inlined === null ? 'merged' : inlined ? 'yes' : 'no';
 
   const valuesToCopy = [
     {id: 'Function name', value: functionName},
@@ -116,11 +118,9 @@ const ContextMenu = ({
       value: functionFilename === '' ? functionFilename : file,
     },
     {id: 'Address', value: locationAddress === 0n ? '' : hexifyAddress(locationAddress)},
+    {id: 'Inlined', value: inlinedText},
     {id: 'Binary', value: mappingFile || ''},
-    {
-      id: 'Build Id',
-      value: buildIdValue,
-    },
+    {id: 'Build Id', value: buildIdText},
   ];
 
   const nonEmptyValuesToCopy = valuesToCopy.filter(({value}) => value !== '');
