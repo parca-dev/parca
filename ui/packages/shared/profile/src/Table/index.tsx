@@ -129,7 +129,7 @@ export const Table = React.memo(function Table({
       {
         id: 'flatPercentage',
         accessorKey: 'flat',
-        header: 'Flat (% of total)',
+        header: 'Flat (%)',
         cell: info => ratioString(info.getValue()),
         size: 120,
         meta: {
@@ -151,7 +151,7 @@ export const Table = React.memo(function Table({
       {
         id: 'flatDiffPercentage',
         accessorKey: 'flatDiff',
-        header: 'Flat Diff (% of total)',
+        header: 'Flat Diff (%)',
         cell: info => ratioString(info.getValue()),
         size: 120,
         meta: {
@@ -173,7 +173,7 @@ export const Table = React.memo(function Table({
       {
         id: 'cumulativePercentage',
         accessorKey: 'cumulative',
-        header: 'Cumulative (% of total)',
+        header: 'Cumulative (%)',
         cell: info => ratioString(info.getValue()),
         size: 150,
         meta: {
@@ -195,7 +195,7 @@ export const Table = React.memo(function Table({
       {
         id: 'cumulativeDiffPercentage',
         accessorKey: 'cumulativeDiff',
-        header: 'Cumulative Diff (% of total)',
+        header: 'Cumulative Diff (%)',
         cell: info => ratioString(info.getValue()),
         size: 170,
         meta: {
