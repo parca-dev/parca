@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {memo, useEffect, useMemo, useRef, useState} from 'react';
+import React, {memo, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {Dictionary, Table, Vector, tableFromIPC} from 'apache-arrow';
 import {useContextMenu} from 'react-contexify';
@@ -180,13 +180,16 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const {show, hideAll} = useContextMenu({
     id: MENU_ID,
   });
-  const displayMenu = (e: React.MouseEvent) => {
-    show({
-      event: e,
-    });
-  };
+  const displayMenu = useCallback(
+    (e: React.MouseEvent): void => {
+      show({
+        event: e,
+      });
+    },
+    [show]
+  );
 
-  const trackVisibility = (isVisible: boolean) => {
+  const trackVisibility = (isVisible: boolean): void => {
     setIsContextMenuOpen(isVisible);
   };
 
@@ -244,6 +247,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     width,
     xScale,
     isContextMenuOpen,
+    displayMenu,
   ]);
 
   if (table.numRows === 0 || width === undefined) {
@@ -256,7 +260,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
         <ContextMenu
           menuId={MENU_ID}
           table={table}
-          row={hoveringRow}
+          row={hoveringRow ?? 0}
           level={hoveringLevel ?? 0}
           total={total}
           totalUnfiltered={total + filtered}

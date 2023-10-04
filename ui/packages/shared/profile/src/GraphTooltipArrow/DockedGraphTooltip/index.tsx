@@ -62,7 +62,7 @@ export const DockedGraphTooltip = ({
   level,
 }: Props): JSX.Element => {
   let {width} = useWindowSize();
-  const {profileExplorer, navigateTo, enableSourcesView} = useParcaContext();
+  const {profileExplorer, navigateTo} = useParcaContext();
   const {PaddingX} = profileExplorer ?? {PaddingX: 0};
   width = width - PaddingX - 24;
 

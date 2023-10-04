@@ -30,7 +30,7 @@ interface ContextMenuProps {
   unit: string;
   total: bigint;
   totalUnfiltered: bigint;
-  row: number | null;
+  row: number;
   level: number;
   navigateTo: NavigateFunction;
   trackVisibility: (isVisible: boolean) => void;
@@ -52,7 +52,11 @@ const ContextMenu = ({
   curPath,
   setCurPath,
   hideMenu,
-}: ContextMenuProps) => {
+}: ContextMenuProps): JSX.Element => {
+  const {enableSourcesView} = useParcaContext();
+  const [isGraphTooltipDocked, setIsDocked] = useUserPreference<boolean>(
+    USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key
+  );
   const contextMenuData = useGraphTooltip({
     table,
     unit,
@@ -62,11 +66,6 @@ const ContextMenu = ({
     level,
   });
 
-  if (contextMenuData === null) {
-    return <></>;
-  }
-
-  const {name, cumulativeText, diffText, diff, row: rowNumber} = contextMenuData;
   const {
     functionFilename,
     file,
@@ -76,25 +75,27 @@ const ContextMenu = ({
     mappingFile,
     mappingBuildID,
     inlined,
-  } = useGraphTooltipMetaInfo({table, row: rowNumber, navigateTo});
-  const isMappingBuildIDAvailable = mappingBuildID !== null && mappingBuildID !== '';
-  const {enableSourcesView} = useParcaContext();
-  const [isGraphTooltipDocked, setIsDocked] = useUserPreference(
-    USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key
-  );
+  } = useGraphTooltipMetaInfo({table, row, navigateTo});
 
-  const handleViewSourceFile = () => {
-    () => openFile();
-  };
-  const handleResetView = () => {
+  if (contextMenuData === null) {
+    return <></>;
+  }
+
+  const {name, cumulativeText, diffText, diff} = contextMenuData;
+
+  const isMappingBuildIDAvailable = mappingBuildID !== null && mappingBuildID !== '';
+
+  const handleViewSourceFile = (): void => openFile();
+
+  const handleResetView = (): void => {
     setCurPath([]);
     return hideMenu();
   };
-  const handleDockTooltip = () => {
+  const handleDockTooltip = (): void => {
     return isGraphTooltipDocked ? setIsDocked(false) : setIsDocked(true);
   };
-  const handleCopyItem = (text: string) => {
-    navigator.clipboard.writeText(text);
+  const handleCopyItem = (text: string): void => {
+    void navigator.clipboard.writeText(text);
   };
 
   const functionName =
@@ -111,7 +112,7 @@ const ContextMenu = ({
 
   const valuesToCopy = [
     {id: 'Function name', value: functionName},
-    {id: 'Cumulative', value: cumulativeText || ''},
+    {id: 'Cumulative', value: cumulativeText ?? ''},
     {id: 'Diff', value: diff !== 0n ? diffText : ''},
     {
       id: 'File',
@@ -119,7 +120,7 @@ const ContextMenu = ({
     },
     {id: 'Address', value: locationAddress === 0n ? '' : hexifyAddress(locationAddress)},
     {id: 'Inlined', value: inlinedText},
-    {id: 'Binary', value: mappingFile || ''},
+    {id: 'Binary', value: mappingFile ?? ''},
     {id: 'Build Id', value: buildIdText},
   ];
 

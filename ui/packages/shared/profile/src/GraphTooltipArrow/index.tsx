@@ -115,7 +115,7 @@ const GraphTooltip = ({
     return () => {
       contextElement.removeEventListener('mousemove', onMouseMove);
     };
-  }, [contextElement, popperProps, x, y]);
+  }, [contextElement, popperProps, x, y, isContextMenuOpen]);
 
   return isFixed ? (
     <>{children}</>
