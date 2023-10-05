@@ -24,12 +24,14 @@ interface MetricsContextMenuProps {
     labels: {key: string; value: string} | Array<{key: string; value: string}>
   ) => void;
   highlighted: HighlightedSeries | null;
+  trackVisibility: (isVisible: boolean) => void;
 }
 
 const MetricsContextMenu = ({
   menuId,
   onAddLabelMatcher,
   highlighted,
+  trackVisibility,
 }: MetricsContextMenuProps): JSX.Element => {
   const labels = highlighted?.labels.filter((label: Label) => label.name !== '__name__');
 
@@ -43,7 +45,7 @@ const MetricsContextMenu = ({
   };
 
   return (
-    <Menu id={menuId}>
+    <Menu id={menuId} onVisibilityChange={trackVisibility}>
       <Item id="focus-on-single-series" onClick={handleFocusOnSingleSeries}>
         <div className="flex w-full items-center gap-2">
           <Icon icon="ph:star" />

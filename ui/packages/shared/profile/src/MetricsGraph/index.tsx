@@ -126,6 +126,7 @@ export const RawMetricsGraph = ({
   const [hovering, setHovering] = useState(false);
   const [relPos, setRelPos] = useState(-1);
   const [pos, setPos] = useState([0, 0]);
+  const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
   const metricPointRef = useRef(null);
 
   // the time of the selected point is the start of the merge window
@@ -287,6 +288,10 @@ export const RawMetricsGraph = ({
   const throttledSetPos = throttle(setPos, 20);
 
   const onMouseMove = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement, MouseEvent>): void => {
+    if (isContextMenuOpen) {
+      return;
+    }
+
     // X/Y coordinate array relative to svg
     const rel = pointer(e);
 
@@ -362,12 +367,17 @@ export const RawMetricsGraph = ({
     [show]
   );
 
+  const trackVisibility = (isVisible: boolean): void => {
+    setIsContextMenuOpen(isVisible);
+  };
+
   return (
     <>
       <MetricsContextMenu
         onAddLabelMatcher={addLabelMatcher}
         menuId={MENU_ID}
         highlighted={highlighted}
+        trackVisibility={trackVisibility}
       />
       {highlighted != null && hovering && !dragging && pos[0] !== 0 && pos[1] !== 0 && (
         <div
@@ -375,14 +385,16 @@ export const RawMetricsGraph = ({
           onMouseEnter={() => setHovering(true)}
           onMouseLeave={() => setHovering(false)}
         >
-          <MetricsTooltip
-            x={pos[0] + margin}
-            y={pos[1] + margin}
-            highlighted={highlighted}
-            contextElement={graph.current}
-            sampleUnit={sampleUnit}
-            delta={profile !== null ? profile?.query.profType.delta : false}
-          />
+          {!isContextMenuOpen && (
+            <MetricsTooltip
+              x={pos[0] + margin}
+              y={pos[1] + margin}
+              highlighted={highlighted}
+              contextElement={graph.current}
+              sampleUnit={sampleUnit}
+              delta={profile !== null ? profile?.query.profType.delta : false}
+            />
+          )}
         </div>
       )}
       <div
