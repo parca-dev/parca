@@ -20,24 +20,31 @@ import {HighlightedSeries} from '../';
 
 interface MetricsContextMenuProps {
   menuId: string;
-  onLabelClick: (key: string, value: string) => void;
+  onAddLabelMatcher: (
+    labels: {key: string; value: string} | Array<{key: string; value: string}>
+  ) => void;
   highlighted: HighlightedSeries | null;
 }
 
 const MetricsContextMenu = ({
   menuId,
-  onLabelClick,
+  onAddLabelMatcher,
   highlighted,
 }: MetricsContextMenuProps): JSX.Element => {
-  const handleFocusOnSingleSeries = (): void => {};
-
   const labels = highlighted?.labels.filter((label: Label) => label.name !== '__name__');
 
-  // TODO: MAKE FOCUS ON THIS SERIES OPTION WORK and then enable that option in the menu
+  const handleFocusOnSingleSeries = (): void => {
+    const labelsToAdd = labels?.map((label: Label) => ({
+      key: label.name,
+      value: label.value,
+    }));
+
+    labelsToAdd !== undefined && onAddLabelMatcher(labelsToAdd);
+  };
 
   return (
     <Menu id={menuId}>
-      <Item id="focus-on-single-series" onClick={handleFocusOnSingleSeries} disabled={true}>
+      <Item id="focus-on-single-series" onClick={handleFocusOnSingleSeries}>
         <div className="flex w-full items-center gap-2">
           <Icon icon="ph:star" />
           <div>Focus only on this series</div>
@@ -55,7 +62,7 @@ const MetricsContextMenu = ({
           <Item
             key={label.name}
             id={label.name}
-            onClick={() => onLabelClick(label.name, label.value)}
+            onClick={() => onAddLabelMatcher({key: label.name, value: label.value})}
           >
             <div className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400">
               {`${label.name}="${label.value}"`}

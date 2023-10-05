@@ -28,7 +28,6 @@ interface Props {
   x: number;
   y: number;
   highlighted: HighlightedSeries;
-  onLabelClick: (labelName: string, labelValue: string) => void;
   contextElement: Element | null;
   sampleUnit: string;
   delta: boolean;
@@ -66,7 +65,6 @@ const MetricsTooltip = ({
   x,
   y,
   highlighted,
-  onLabelClick,
   contextElement,
   sampleUnit,
   delta,
@@ -151,22 +149,18 @@ const MetricsTooltip = ({
                 <span className="my-2 block text-gray-500">
                   {highlighted.labels
                     .filter((label: Label) => label.name !== '__name__')
-                    .map(function (label: Label) {
-                      return (
-                        <button
-                          key={label.name}
-                          type="button"
-                          className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
-                          onClick={() => onLabelClick(label.name, label.value)}
-                        >
-                          <TextWithTooltip
-                            text={`${label.name}="${label.value}"`}
-                            maxTextLength={37}
-                            id={`tooltip-${label.name}-${label.value}`}
-                          />
-                        </button>
-                      );
-                    })}
+                    .map((label: Label) => (
+                      <div
+                        key={label.name}
+                        className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+                      >
+                        <TextWithTooltip
+                          text={`${label.name}="${label.value}"`}
+                          maxTextLength={37}
+                          id={`tooltip-${label.name}-${label.value}`}
+                        />
+                      </div>
+                    ))}
                 </span>
                 <div className="flex w-full items-center gap-1 text-xs text-gray-500">
                   <Icon icon="iconoir:mouse-button-right" />

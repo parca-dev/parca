@@ -39,7 +39,9 @@ interface Props {
   to: number;
   profile: MergedProfileSelection | null;
   onSampleClick: (timestamp: number, value: number, labels: Label[]) => void;
-  onLabelClick: (labelName: string, labelValue: string) => void;
+  addLabelMatcher: (
+    labels: {key: string; value: string} | Array<{key: string; value: string}>
+  ) => void;
   setTimeRange: (range: DateTimeRange) => void;
   sampleUnit: string;
   width?: number;
@@ -70,7 +72,7 @@ const MetricsGraph = ({
   to,
   profile,
   onSampleClick,
-  onLabelClick,
+  addLabelMatcher,
   setTimeRange,
   sampleUnit,
   width = 0,
@@ -84,7 +86,7 @@ const MetricsGraph = ({
       to={to}
       profile={profile}
       onSampleClick={onSampleClick}
-      onLabelClick={onLabelClick}
+      addLabelMatcher={addLabelMatcher}
       setTimeRange={setTimeRange}
       sampleUnit={sampleUnit}
       width={width}
@@ -112,7 +114,7 @@ export const RawMetricsGraph = ({
   to,
   profile,
   onSampleClick,
-  onLabelClick,
+  addLabelMatcher,
   setTimeRange,
   width,
   height = 50,
@@ -362,7 +364,11 @@ export const RawMetricsGraph = ({
 
   return (
     <>
-      <MetricsContextMenu onLabelClick={onLabelClick} menuId={MENU_ID} highlighted={highlighted} />
+      <MetricsContextMenu
+        onAddLabelMatcher={addLabelMatcher}
+        menuId={MENU_ID}
+        highlighted={highlighted}
+      />
       {highlighted != null && hovering && !dragging && pos[0] !== 0 && pos[1] !== 0 && (
         <div
           onMouseMove={onMouseMove}
@@ -373,7 +379,6 @@ export const RawMetricsGraph = ({
             x={pos[0] + margin}
             y={pos[1] + margin}
             highlighted={highlighted}
-            onLabelClick={onLabelClick}
             contextElement={graph.current}
             sampleUnit={sampleUnit}
             delta={profile !== null ? profile?.query.profType.delta : false}
