@@ -160,7 +160,10 @@ const ContextMenu = ({
       >
         {nonEmptyValuesToCopy.map(({id, value}: {id: string; value: string}) => (
           <Item key={id} id={id} onClick={() => handleCopyItem(value)}>
-            {id}: {truncateString(value, 10)}
+            <div className="flex flex-col">
+              <div className="text-md">{id}</div>
+              <div className="text-xs">{truncateString(value, 30)}</div>
+            </div>
           </Item>
         ))}
       </Submenu>
