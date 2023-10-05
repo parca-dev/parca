@@ -278,31 +278,31 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
             compareMode={compareMode}
           />
         )}
-        {dockedMetainfo
-          ? !isContextMenuOpen && (
-              <DockedGraphTooltip
+        {dockedMetainfo ? (
+          <DockedGraphTooltip
+            table={table}
+            row={hoveringRow}
+            level={hoveringLevel ?? 0}
+            total={total}
+            totalUnfiltered={total + filtered}
+            unit={sampleUnit}
+          />
+        ) : (
+          !isContextMenuOpen && (
+            <GraphTooltipArrow contextElement={svg.current} isContextMenuOpen={isContextMenuOpen}>
+              <GraphTooltipArrowContent
                 table={table}
                 row={hoveringRow}
                 level={hoveringLevel ?? 0}
+                isFixed={false}
                 total={total}
                 totalUnfiltered={total + filtered}
                 unit={sampleUnit}
+                navigateTo={navigateTo as NavigateFunction}
               />
-            )
-          : !isContextMenuOpen && (
-              <GraphTooltipArrow contextElement={svg.current} isContextMenuOpen={isContextMenuOpen}>
-                <GraphTooltipArrowContent
-                  table={table}
-                  row={hoveringRow}
-                  level={hoveringLevel ?? 0}
-                  isFixed={false}
-                  total={total}
-                  totalUnfiltered={total + filtered}
-                  unit={sampleUnit}
-                  navigateTo={navigateTo as NavigateFunction}
-                />
-              </GraphTooltipArrow>
-            )}
+            </GraphTooltipArrow>
+          )
+        )}
         {root}
       </div>
     </>
