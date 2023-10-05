@@ -58,7 +58,7 @@ const MetricsContextMenu = ({
             onClick={() => onLabelClick(label.name, label.value)}
           >
             <div className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400">
-              {label.name}="{label.value}"
+              {`${label.name}="${label.value}"`}
             </div>
           </Item>
         ))}
