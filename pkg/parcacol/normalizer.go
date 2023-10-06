@@ -63,6 +63,11 @@ func (n *MetastoreNormalizer) NormalizePprof(
 	normalizedAddress bool,
 	executableInfo []*profilestorepb.ExecutableInfo,
 ) ([]*profile.NormalizedProfile, error) {
+	// Normalize Location addresses before processing them further. We do this
+	// here because otherwise it's very easy to accidentally normalize
+	// addresses "multiple" times.
+	n.normalizeLocationAddresses(p.Location, p.Mapping, normalizedAddress, executableInfo)
+
 	mappings, err := n.NormalizeMappings(ctx, p.Mapping, p.StringTable)
 	if err != nil {
 		return nil, fmt.Errorf("normalize mappings: %w", err)
@@ -79,7 +84,7 @@ func (n *MetastoreNormalizer) NormalizePprof(
 		mappings,
 		p.Mapping,
 		functions,
-		normalizedAddress,
+		len(executableInfo) == len(p.Mapping),
 		p.StringTable,
 		executableInfo,
 	)
@@ -328,8 +333,6 @@ func (n *MetastoreNormalizer) NormalizeLocations(
 		Locations: make([]*pb.Location, 0, len(locations)),
 	}
 
-	normalizeWithBaseAddress := len(executableInfo) > 0
-
 	for _, location := range locations {
 		if location.MappingId == 0 && len(location.Line) == 0 {
 			req.Locations = append(req.Locations, &pb.Location{
@@ -347,17 +350,6 @@ func (n *MetastoreNormalizer) NormalizeLocations(
 			mappingIndex := location.MappingId - 1
 			mappingNormalizationInfo := mappingsInfo[mappingIndex]
 
-			if normalizeWithBaseAddress {
-				m := mappings[mappingIndex]
-				addr, err = NormalizeAddress(addr, executableInfo[mappingIndex], m.MemoryStart, m.MemoryLimit, m.FileOffset)
-				if err != nil {
-					// This should never happen, since we already checked that
-					// in the agent, but other clients might not. If debugging
-					// this is a problem in the futute we should attach this to
-					// the distributed trace.
-					n.addressNormalizationFailed.Inc()
-				}
-			}
 			if n.isAddrNormEnabled && !normalizedAddress {
 				addr = uint64(int64(addr) + mappingNormalizationInfo.offset)
 			}
@@ -391,6 +383,39 @@ func (n *MetastoreNormalizer) NormalizeLocations(
 	}
 
 	return res.Locations, nil
+}
+
+func (n *MetastoreNormalizer) normalizeLocationAddresses(
+	locations []*pprofpb.Location,
+	mappings []*pprofpb.Mapping,
+	normalizedAddress bool,
+	executableInfo []*profilestorepb.ExecutableInfo,
+) {
+	var err error
+	for _, location := range locations {
+		var m *pprofpb.Mapping
+		if location.MappingId != 0 {
+			mappingIndex := location.MappingId - 1
+			m = mappings[mappingIndex]
+
+			if !normalizedAddress {
+				if uint64(len(executableInfo)) > mappingIndex && executableInfo[mappingIndex] != nil {
+					ei := executableInfo[mappingIndex]
+					location.Address, err = NormalizeAddress(location.Address, ei, m.MemoryStart, m.MemoryLimit, m.FileOffset)
+					if err != nil {
+						// This should never happen, since we already checked that
+						// in the agent, but other clients might not. If debugging
+						// this is a problem in the futute we should attach this to
+						// the distributed trace.
+						n.addressNormalizationFailed.Inc()
+					}
+				} else {
+					// This is just best effort and will only work for main executables.
+					location.Address = location.Address - m.MemoryStart + m.FileOffset
+				}
+			}
+		}
+	}
 }
 
 func NormalizeAddress(addr uint64, ei *profilestorepb.ExecutableInfo, start, limit, offset uint64) (uint64, error) {

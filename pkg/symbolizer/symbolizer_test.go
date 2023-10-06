@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/go-kit/log"
+	pprofprofile "github.com/google/pprof/profile"
 	"github.com/polarsignals/frostdb"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
@@ -395,12 +396,15 @@ func mustReadAll(t require.TestingT, filename string) []byte {
 
 func ingest(t *testing.T, conn *grpc.ClientConn, path string) error {
 	fileContent := mustReadAll(t, path)
+	p, err := pprofprofile.ParseData(fileContent)
+	require.NoError(t, err)
 	wc := profilestorepb.NewProfileStoreServiceClient(conn)
-	_, err := wc.WriteRaw(context.Background(), &profilestorepb.WriteRawRequest{
+	_, err = wc.WriteRaw(context.Background(), &profilestorepb.WriteRawRequest{
 		Series: []*profilestorepb.RawProfileSeries{{
 			Labels: &profilestorepb.LabelSet{Labels: []*profilestorepb.Label{{Name: "__name__", Value: "process_cpu"}}},
 			Samples: []*profilestorepb.RawSample{{
-				RawProfile: fileContent,
+				RawProfile:     fileContent,
+				ExecutableInfo: make([]*profilestorepb.ExecutableInfo, len(p.Mapping)),
 			}},
 		}},
 	})
