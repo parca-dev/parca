@@ -57,7 +57,7 @@ func TestGenerateTable(t *testing.T) {
 	)
 	metastore := metastore.NewInProcessClient(l)
 	normalizer := parcacol.NewNormalizer(metastore, true, counter)
-	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false, nil)
+	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, true, nil)
 	require.NoError(t, err)
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
