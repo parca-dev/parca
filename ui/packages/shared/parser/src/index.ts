@@ -400,6 +400,16 @@ export class Query {
     return [new Query(this.profType, this.matchers.concat([matcher]), ''), true];
   }
 
+  setMultipleMatchers(matchers: Array<{key: string; value: string}>): [Query, boolean] {
+    const newMatchers: Matcher[] = [];
+    matchers.forEach(({key, value}: {key: string; value: string}) => {
+      const newMatcher = new Matcher(key, MatcherTypes.MatchEqual, value);
+      newMatchers.push(newMatcher);
+    });
+
+    return [new Query(this.profType, newMatchers, ''), true];
+  }
+
   setProfileName(name: string): [Query, boolean] {
     const profileType = ProfileType.fromString(name);
     if (this.inputMatcherString !== undefined && this.inputMatcherString.length > 0) {

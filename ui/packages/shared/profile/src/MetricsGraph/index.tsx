@@ -11,14 +11,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {Fragment, useRef, useState} from 'react';
+import React, {Fragment, useCallback, useRef, useState} from 'react';
 
 import * as d3 from 'd3';
 import {pointer} from 'd3-selection';
 import throttle from 'lodash.throttle';
+import {useContextMenu} from 'react-contexify';
 
 import {Label, MetricsSample, MetricsSeries as MetricsSeriesPb} from '@parca/client';
-import {DateTimeRange, useKeyDown} from '@parca/components';
+import {DateTimeRange} from '@parca/components';
 import {
   formatDate,
   formatForTimespan,
@@ -29,6 +30,7 @@ import {
 import {MergedProfileSelection} from '..';
 import MetricsCircle from '../MetricsCircle';
 import MetricsSeries from '../MetricsSeries';
+import MetricsContextMenu from './MetricsContextMenu';
 import MetricsTooltip from './MetricsTooltip';
 
 interface Props {
@@ -37,7 +39,9 @@ interface Props {
   to: number;
   profile: MergedProfileSelection | null;
   onSampleClick: (timestamp: number, value: number, labels: Label[]) => void;
-  onLabelClick: (labelName: string, labelValue: string) => void;
+  addLabelMatcher: (
+    labels: {key: string; value: string} | Array<{key: string; value: string}>
+  ) => void;
   setTimeRange: (range: DateTimeRange) => void;
   sampleUnit: string;
   width?: number;
@@ -68,7 +72,7 @@ const MetricsGraph = ({
   to,
   profile,
   onSampleClick,
-  onLabelClick,
+  addLabelMatcher,
   setTimeRange,
   sampleUnit,
   width = 0,
@@ -82,7 +86,7 @@ const MetricsGraph = ({
       to={to}
       profile={profile}
       onSampleClick={onSampleClick}
-      onLabelClick={onLabelClick}
+      addLabelMatcher={addLabelMatcher}
       setTimeRange={setTimeRange}
       sampleUnit={sampleUnit}
       width={width}
@@ -110,7 +114,7 @@ export const RawMetricsGraph = ({
   to,
   profile,
   onSampleClick,
-  onLabelClick,
+  addLabelMatcher,
   setTimeRange,
   width,
   height = 50,
@@ -122,8 +126,8 @@ export const RawMetricsGraph = ({
   const [hovering, setHovering] = useState(false);
   const [relPos, setRelPos] = useState(-1);
   const [pos, setPos] = useState([0, 0]);
+  const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
   const metricPointRef = useRef(null);
-  const {isShiftDown} = useKeyDown();
 
   // the time of the selected point is the start of the merge window
   const time: number = parseFloat(profile?.HistoryParams().merge_from);
@@ -222,11 +226,6 @@ export const RawMetricsGraph = ({
   const highlighted = getClosest();
 
   const onMouseDown = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement, MouseEvent>): void => {
-    // if shift is down, disable mouse behavior
-    if (isShiftDown) {
-      return;
-    }
-
     // only left mouse button
     if (e.button !== 0) {
       return;
@@ -257,10 +256,6 @@ export const RawMetricsGraph = ({
   };
 
   const onMouseUp = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement, MouseEvent>): void => {
-    if (isShiftDown) {
-      return;
-    }
-
     setDragging(false);
 
     if (relPos === -1) {
@@ -293,8 +288,7 @@ export const RawMetricsGraph = ({
   const throttledSetPos = throttle(setPos, 20);
 
   const onMouseMove = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement, MouseEvent>): void => {
-    // do not update position if shift is down because this means the user is locking the tooltip
-    if (isShiftDown) {
+    if (isContextMenuOpen) {
       return;
     }
 
@@ -358,23 +352,49 @@ export const RawMetricsGraph = ({
 
   const selected = findSelectedProfile();
 
+  const MENU_ID = 'metrics-context-menu';
+
+  const {show} = useContextMenu({
+    id: MENU_ID,
+  });
+
+  const displayMenu = useCallback(
+    (e: React.MouseEvent): void => {
+      show({
+        event: e,
+      });
+    },
+    [show]
+  );
+
+  const trackVisibility = (isVisible: boolean): void => {
+    setIsContextMenuOpen(isVisible);
+  };
+
   return (
     <>
+      <MetricsContextMenu
+        onAddLabelMatcher={addLabelMatcher}
+        menuId={MENU_ID}
+        highlighted={highlighted}
+        trackVisibility={trackVisibility}
+      />
       {highlighted != null && hovering && !dragging && pos[0] !== 0 && pos[1] !== 0 && (
         <div
           onMouseMove={onMouseMove}
           onMouseEnter={() => setHovering(true)}
           onMouseLeave={() => setHovering(false)}
         >
-          <MetricsTooltip
-            x={pos[0] + margin}
-            y={pos[1] + margin}
-            highlighted={highlighted}
-            onLabelClick={onLabelClick}
-            contextElement={graph.current}
-            sampleUnit={sampleUnit}
-            delta={profile !== null ? profile?.query.profType.delta : false}
-          />
+          {!isContextMenuOpen && (
+            <MetricsTooltip
+              x={pos[0] + margin}
+              y={pos[1] + margin}
+              highlighted={highlighted}
+              contextElement={graph.current}
+              sampleUnit={sampleUnit}
+              delta={profile !== null ? profile?.query.profType.delta : false}
+            />
+          )}
         </div>
       )}
       <div
@@ -383,6 +403,7 @@ export const RawMetricsGraph = ({
           setHovering(true);
         }}
         onMouseLeave={() => setHovering(false)}
+        onContextMenu={displayMenu}
       >
         <svg
           width={`${width}px`}

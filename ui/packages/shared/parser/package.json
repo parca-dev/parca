@@ -5,7 +5,8 @@
   "main": "src/index.ts",
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
-    "gen": "nearleyc -g -o ./src/selector.js ./src/selector.ne"
+    "gen": "nearleyc -g -o ./src/selector.js ./src/selector.ne",
+    "watch": "tsc-watch"
   },
   "keywords": [],
   "author": "",

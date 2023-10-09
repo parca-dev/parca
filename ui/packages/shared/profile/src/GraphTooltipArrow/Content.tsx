@@ -11,23 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useState} from 'react';
+import React from 'react';
 
+import {Icon} from '@iconify/react';
 import {Table} from 'apache-arrow';
-import cx from 'classnames';
-import {CopyToClipboard} from 'react-copy-to-clipboard';
-import {Tooltip} from 'react-tooltip';
 
-import {Button, IconButton, useParcaContext} from '@parca/components';
-import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {getLastItem, type NavigateFunction} from '@parca/utilities';
 
 import {hexifyAddress, truncateString, truncateStringReverse} from '../utils';
 import {ExpandOnHover} from './ExpandOnHoverValue';
 import {useGraphTooltip} from './useGraphTooltip';
 import {useGraphTooltipMetaInfo} from './useGraphTooltipMetaInfo';
-
-let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
 interface GraphTooltipArrowContentProps {
   table: Table<any>;
@@ -54,8 +48,6 @@ const GraphTooltipArrowContent = ({
   isFixed,
   navigateTo,
 }: GraphTooltipArrowContentProps): React.JSX.Element => {
-  const [isCopied, setIsCopied] = useState<boolean>(false);
-
   const graphTooltipData = useGraphTooltip({
     table,
     unit,
@@ -64,20 +56,10 @@ const GraphTooltipArrowContent = ({
     row,
     level,
   });
-  const [_, setIsDocked] = useUserPreference(USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key);
 
   if (graphTooltipData === null) {
     return <></>;
   }
-
-  const onCopy = (): void => {
-    setIsCopied(true);
-
-    if (timeoutHandle !== null) {
-      clearTimeout(timeoutHandle);
-    }
-    timeoutHandle = setTimeout(() => setIsCopied(false), 3000);
-  };
 
   const {name, locationAddress, cumulativeText, diffText, diff, row: rowNumber} = graphTooltipData;
 
@@ -91,31 +73,14 @@ const GraphTooltipArrowContent = ({
                 {row === 0 ? (
                   <p>root</p>
                 ) : (
-                  <>
-                    {name !== '' ? (
-                      <CopyToClipboard onCopy={onCopy} text={name}>
-                        <button className="cursor-pointer text-left">{name}</button>
-                      </CopyToClipboard>
-                    ) : (
-                      <>
-                        {locationAddress !== 0n ? (
-                          <CopyToClipboard onCopy={onCopy} text={hexifyAddress(locationAddress)}>
-                            <button className="cursor-pointer text-left">
-                              {hexifyAddress(locationAddress)}
-                            </button>
-                          </CopyToClipboard>
-                        ) : (
-                          <p>unknown</p>
-                        )}
-                      </>
-                    )}
-                  </>
+                  <p>
+                    {name !== ''
+                      ? name
+                      : locationAddress !== 0n
+                      ? hexifyAddress(locationAddress)
+                      : 'unknown'}
+                  </p>
                 )}
-                <IconButton
-                  onClick={() => setIsDocked(true)}
-                  icon="mdi:dock-bottom"
-                  title="Dock MetaInfo Panel"
-                />
               </div>
               <table className="my-2 w-full table-fixed pr-0 text-gray-700 dark:text-gray-300">
                 <tbody>
@@ -123,34 +88,26 @@ const GraphTooltipArrowContent = ({
                     <td className="w-1/4">Cumulative</td>
 
                     <td className="w-3/4">
-                      <CopyToClipboard onCopy={onCopy} text={cumulativeText}>
-                        <button className="cursor-pointer">{cumulativeText}</button>
-                      </CopyToClipboard>
+                      <div>{cumulativeText}</div>
                     </td>
                   </tr>
                   {diff !== 0n && (
                     <tr>
                       <td className="w-1/4">Diff</td>
                       <td className="w-3/4">
-                        <CopyToClipboard onCopy={onCopy} text={diffText}>
-                          <button className="cursor-pointer">{diffText}</button>
-                        </CopyToClipboard>
+                        <div>{diffText}</div>
                       </td>
                     </tr>
                   )}
-                  <TooltipMetaInfo
-                    table={table}
-                    row={rowNumber}
-                    onCopy={onCopy}
-                    navigateTo={navigateTo}
-                  />
+                  <TooltipMetaInfo table={table} row={rowNumber} navigateTo={navigateTo} />
                 </tbody>
               </table>
             </div>
           </div>
-          <span className="mx-2 block text-xs text-gray-500">
-            {isCopied ? 'Copied!' : 'Hold shift and click on a value to copy.'}
-          </span>
+          <div className="flex w-full items-center gap-1 text-xs text-gray-500">
+            <Icon icon="iconoir:mouse-button-right" />
+            <div>Right click to show context menu</div>
+          </div>
         </div>
       </div>
     </div>
@@ -159,29 +116,22 @@ const GraphTooltipArrowContent = ({
 
 const TooltipMetaInfo = ({
   table,
-  // total,
-  // totalUnfiltered,
-  onCopy,
   row,
   navigateTo,
 }: {
   table: Table<any>;
   row: number;
-  onCopy: () => void;
   navigateTo: NavigateFunction;
 }): React.JSX.Element => {
   const {
     labelPairs,
     functionFilename,
     file,
-    openFile,
-    isSourceAvailable,
     locationAddress,
     mappingFile,
     mappingBuildID,
     inlined,
   } = useGraphTooltipMetaInfo({table, row, navigateTo});
-  const {enableSourcesView} = useParcaContext();
 
   const labels = labelPairs.map(
     (l): React.JSX.Element => (
@@ -206,26 +156,8 @@ const TooltipMetaInfo = ({
             <NoData />
           ) : (
             <div className="flex gap-4">
-              <CopyToClipboard onCopy={onCopy} text={file}>
-                <button className="cursor-pointer whitespace-nowrap text-left">
-                  <ExpandOnHover value={file} displayValue={truncateStringReverse(file, 30)} />
-                </button>
-              </CopyToClipboard>
-              <div className={cx('flex gap-2', {hidden: enableSourcesView === false})}>
-                <div
-                  data-tooltip-id="open-source-button-help"
-                  data-tooltip-content="There is no source code uploaded for this build"
-                >
-                  <Button
-                    variant={'neutral'}
-                    onClick={() => openFile()}
-                    className="shrink-0"
-                    disabled={!isSourceAvailable}
-                  >
-                    open
-                  </Button>
-                </div>
-                {!isSourceAvailable ? <Tooltip id="open-source-button-help" /> : null}
+              <div className="whitespace-nowrap text-left">
+                <ExpandOnHover value={file} displayValue={truncateStringReverse(file, 30)} />
               </div>
             </div>
           )}
@@ -234,46 +166,26 @@ const TooltipMetaInfo = ({
       <tr>
         <td className="w-1/4">Address</td>
         <td className="w-3/4 break-all">
-          {locationAddress === 0n ? (
-            <NoData />
-          ) : (
-            <CopyToClipboard onCopy={onCopy} text={hexifyAddress(locationAddress)}>
-              <button className="cursor-pointer">{hexifyAddress(locationAddress)}</button>
-            </CopyToClipboard>
-          )}
+          {locationAddress === 0n ? <NoData /> : <div>{hexifyAddress(locationAddress)}</div>}
         </td>
       </tr>
       <tr>
         <td className="w-1/4">Inlined</td>
-        <td className="w-3/4 break-all">
-          <CopyToClipboard onCopy={onCopy} text={inlinedText}>
-            <button className="cursor-pointer">{inlinedText}</button>
-          </CopyToClipboard>
-        </td>
+        <td className="w-3/4 break-all">{inlinedText}</td>
       </tr>
       <tr>
         <td className="w-1/4">Binary</td>
         <td className="w-3/4 break-all">
-          {mappingFile === null ? (
-            <NoData />
-          ) : (
-            <CopyToClipboard onCopy={onCopy} text={mappingFile}>
-              <button className="cursor-pointer">{getLastItem(mappingFile)}</button>
-            </CopyToClipboard>
-          )}
+          {(mappingFile != null ? getLastItem(mappingFile) : null) ?? <NoData />}
         </td>
       </tr>
       <tr>
         <td className="w-1/4">Build Id</td>
         <td className="w-3/4 break-all">
-          {!isMappingBuildIDAvailable ? (
-            <NoData />
+          {isMappingBuildIDAvailable ? (
+            <div>{truncateString(getLastItem(mappingBuildID) as string, 28)}</div>
           ) : (
-            <CopyToClipboard onCopy={onCopy} text={mappingBuildID}>
-              <button className="cursor-pointer">
-                {truncateString(getLastItem(mappingBuildID) as string, 28)}
-              </button>
-            </CopyToClipboard>
+            <NoData />
           )}
         </td>
       </tr>

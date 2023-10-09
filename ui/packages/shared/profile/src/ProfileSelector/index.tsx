@@ -154,12 +154,35 @@ const ProfileSelector = ({
     setNewQueryExpression(query.toString());
   };
 
-  const addLabelMatcher = (key: string, value: string): void => {
+  const addLabelMatcher = (
+    labels: {key: string; value: string} | Array<{key: string; value: string}>
+  ): void => {
     // When a user clicks on a label on the metrics graph tooltip,
     // replace single `\` in the `value` string with doubles `\\` if available.
-    const newValue = value.includes('\\') ? value.replaceAll('\\', '\\\\') : value;
-    const [newQuery, changed] = Query.parse(queryExpressionString).setMatcher(key, newValue);
-    if (changed) {
+    const replaceBackslash = (value: string): string => {
+      return value.includes('\\') ? value.replaceAll('\\', '\\\\') : value;
+    };
+
+    let newQuery: Query;
+    let hasChanged: boolean;
+
+    if (Array.isArray(labels)) {
+      const newLabels = labels.map(({key, value}) => {
+        const newValue = replaceBackslash(value);
+        return {key, value: newValue};
+      });
+      const [query, changed] = Query.parse(queryExpressionString).setMultipleMatchers(newLabels);
+      hasChanged = changed;
+      newQuery = query;
+    } else {
+      const {key, value} = labels;
+      const newValue = replaceBackslash(value);
+      const [query, changed] = Query.parse(queryExpressionString).setMatcher(key, newValue);
+      hasChanged = changed;
+      newQuery = query;
+    }
+
+    if (hasChanged) {
       // TODO: Change this to store the query object
       setNewQueryExpression(newQuery.toString());
     }

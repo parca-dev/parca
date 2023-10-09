@@ -55,7 +55,9 @@ interface ProfileMetricsGraphProps {
   from: number;
   to: number;
   setTimeRange: (range: DateTimeRange) => void;
-  addLabelMatcher: (key: string, value: string) => void;
+  addLabelMatcher: (
+    labels: {key: string; value: string} | Array<{key: string; value: string}>
+  ) => void;
   onPointClick: (timestamp: number, labels: Label[], queryExpression: string) => void;
   comparing?: boolean;
 }
@@ -171,7 +173,7 @@ const ProfileMetricsGraph = ({
           profile={profile as MergedProfileSelection}
           setTimeRange={setTimeRange}
           onSampleClick={handleSampleClick}
-          onLabelClick={addLabelMatcher}
+          addLabelMatcher={addLabelMatcher}
           sampleUnit={Query.parse(queryExpression).profileType().sampleUnit}
           height={height}
           width={width}

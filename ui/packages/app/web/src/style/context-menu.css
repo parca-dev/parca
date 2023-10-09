@@ -1,0 +1,21 @@
+:root {
+  --contexify-zIndex: 666;
+  --contexify-menu-minWidth: 220px;
+  --contexify-menu-padding: 6px;
+  --contexify-menu-radius: 6px;
+  --contexify-menu-bgColor: rgb(249 250 251) !important;
+  --contexify-menu-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.2) !important;
+  --contexify-menu-negatePadding: var(--contexify-menu-padding);
+
+  --contexify-separator-color: rgba(0, 0, 0, 0.2);
+  --contexify-separator-margin: 5px;
+  --contexify-itemContent-padding: 6px;
+  --contexify-activeItem-radius: 4px;
+  --contexify-item-color: rgb(31 41 55);
+  --contexify-activeItem-color: #fff;
+  --contexify-activeItem-bgColor: rgb(79 70 229) !important;
+  --contexify-rightSlot-color: #6f6e77;
+  --contexify-activeRightSlot-color: #fff;
+  --contexify-arrow-color: #6f6e77;
+  --contexify-activeArrow-color: #fff;
+}

@@ -11,24 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useState} from 'react';
-
+import {Icon} from '@iconify/react';
 import {Table} from 'apache-arrow';
 import cx from 'classnames';
-import {CopyToClipboard} from 'react-copy-to-clipboard';
-import {Tooltip} from 'react-tooltip';
 import {useWindowSize} from 'react-use';
 
-import {Button, IconButton, useParcaContext} from '@parca/components';
-import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
+import {useParcaContext} from '@parca/components';
 import {getLastItem} from '@parca/utilities';
 
 import {hexifyAddress, truncateString, truncateStringReverse} from '../../utils';
-import {ExpandOnHover} from '../ExpandOnHoverValue';
 import {useGraphTooltip} from '../useGraphTooltip';
 import {useGraphTooltipMetaInfo} from '../useGraphTooltipMetaInfo';
-
-let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
 interface Props {
   table: Table<any>;
@@ -42,26 +35,22 @@ interface Props {
 const InfoSection = ({
   title,
   value,
-  onCopy,
-  copyText,
   minWidth = '',
 }: {
   title: string;
   value: string | JSX.Element;
-  copyText: string;
-  onCopy: () => void;
   minWidth?: string;
 }): JSX.Element => {
   return (
     <div className={cx('flex shrink-0 flex-col gap-1 p-2', {[minWidth]: minWidth != null})}>
       <p className="text-sm font-medium leading-5 text-gray-500 dark:text-gray-400">{title}</p>
-      <div className="text-lg font-normal text-gray-900 dark:text-gray-50">
-        <CopyToClipboard onCopy={onCopy} text={copyText}>
-          <button>{value}</button>
-        </CopyToClipboard>
-      </div>
+      <div className="text-lg font-normal text-gray-900 dark:text-gray-50">{value}</div>
     </div>
   );
+};
+
+const NoData = (): React.JSX.Element => {
+  return <span className="rounded bg-gray-200 px-2 dark:bg-gray-800">Not available</span>;
 };
 
 export const DockedGraphTooltip = ({
@@ -73,19 +62,9 @@ export const DockedGraphTooltip = ({
   level,
 }: Props): JSX.Element => {
   let {width} = useWindowSize();
-  const {profileExplorer, navigateTo, enableSourcesView} = useParcaContext();
+  const {profileExplorer, navigateTo} = useParcaContext();
   const {PaddingX} = profileExplorer ?? {PaddingX: 0};
   width = width - PaddingX - 24;
-  const [isCopied, setIsCopied] = useState<boolean>(false);
-
-  const onCopy = (): void => {
-    setIsCopied(true);
-
-    if (timeoutHandle !== null) {
-      clearTimeout(timeoutHandle);
-    }
-    timeoutHandle = setTimeout(() => setIsCopied(false), 3000);
-  };
 
   const graphTooltipData = useGraphTooltip({
     table,
@@ -100,15 +79,11 @@ export const DockedGraphTooltip = ({
     labelPairs,
     functionFilename,
     file,
-    openFile,
-    isSourceAvailable,
     locationAddress,
     mappingFile,
     mappingBuildID,
     inlined,
   } = useGraphTooltipMetaInfo({table, row: row ?? 0, navigateTo});
-
-  const [_, setIsDocked] = useUserPreference(USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key);
 
   if (graphTooltipData === null) {
     return <></>;
@@ -127,9 +102,9 @@ export const DockedGraphTooltip = ({
     )
   );
 
+  const isMappingBuildIDAvailable = mappingBuildID !== null && mappingBuildID !== '';
   const inlinedText = inlined === null ? 'merged' : inlined ? 'yes' : 'no';
-  const addressText = locationAddress !== 0n ? hexifyAddress(locationAddress) : 'unknown';
-  const fileText = functionFilename !== '' ? file : 'Not available';
+  const addressText = locationAddress !== 0n ? hexifyAddress(locationAddress) : <NoData />;
 
   return (
     <div
@@ -141,117 +116,48 @@ export const DockedGraphTooltip = ({
           {row === 0 ? (
             <p>root</p>
           ) : (
-            <>
-              {name !== '' ? (
-                <CopyToClipboard onCopy={onCopy} text={name}>
-                  <button className="cursor-pointer text-left">{name}</button>
-                </CopyToClipboard>
-              ) : (
-                <>
-                  {locationAddress !== 0n ? (
-                    <CopyToClipboard onCopy={onCopy} text={hexifyAddress(locationAddress)}>
-                      <button className="cursor-pointer text-left">
-                        {hexifyAddress(locationAddress)}
-                      </button>
-                    </CopyToClipboard>
-                  ) : (
-                    <p>unknown</p>
-                  )}
-                </>
-              )}
-            </>
+            <p>
+              {name !== ''
+                ? name
+                : locationAddress !== 0n
+                ? hexifyAddress(locationAddress)
+                : 'unknown'}
+            </p>
           )}
-          <IconButton
-            onClick={() => setIsDocked(false)}
-            icon="mdi:dock-window"
-            title="Undock MetaInfo Panel"
-          />
         </div>
         <div className="flex justify-between gap-3">
-          <InfoSection
-            title="Cumulative"
-            value={cumulativeText}
-            onCopy={onCopy}
-            copyText={cumulativeText}
-            minWidth="w-44"
-          />
-          {diff !== 0n ? (
-            <InfoSection
-              title="Diff"
-              value={diffText}
-              onCopy={onCopy}
-              copyText={diffText}
-              minWidth="w-44"
-            />
-          ) : null}
+          <InfoSection title="Cumulative" value={cumulativeText} minWidth="w-44" />
+          {diff !== 0n ? <InfoSection title="Diff" value={diffText} minWidth="w-44" /> : null}
           <InfoSection
             title="File"
-            value={
-              <div className="flex gap-2">
-                <ExpandOnHover
-                  value={fileText}
-                  displayValue={truncateStringReverse(fileText, 45)}
-                />
-                <div
-                  className={cx('flex items-center gap-2', {
-                    hidden: enableSourcesView === false || functionFilename === '',
-                  })}
-                >
-                  <div
-                    data-tooltip-id="open-source-button-help"
-                    data-tooltip-content="There is no source code uploaded for this build"
-                  >
-                    <Button
-                      variant={'neutral'}
-                      onClick={() => openFile()}
-                      className="shrink-0"
-                      disabled={!isSourceAvailable}
-                    >
-                      open
-                    </Button>
-                  </div>
-                  {!isSourceAvailable ? <Tooltip id="open-source-button-help" /> : null}
-                </div>
-              </div>
-            }
-            onCopy={onCopy}
-            copyText={file}
+            value={functionFilename !== '' ? truncateStringReverse(file, 45) : <NoData />}
             minWidth={'w-[460px]'}
           />
-          <InfoSection
-            title="Address"
-            value={addressText}
-            onCopy={onCopy}
-            copyText={addressText}
-            minWidth="w-44"
-          />
-          <InfoSection
-            title="Inlined"
-            value={inlinedText}
-            onCopy={onCopy}
-            copyText={inlinedText}
-            minWidth="w-44"
-          />
+          <InfoSection title="Address" value={addressText} minWidth="w-44" />
+          <InfoSection title="Inlined" value={inlinedText} minWidth="w-44" />
           <InfoSection
             title="Binary"
-            value={(mappingFile != null ? getLastItem(mappingFile) : null) ?? 'Not available'}
-            onCopy={onCopy}
-            copyText={mappingFile ?? 'Not available'}
+            value={(mappingFile != null ? getLastItem(mappingFile) : null) ?? <NoData />}
             minWidth="w-44"
           />
           <InfoSection
             title="Build ID"
-            value={truncateString(getLastItem(mappingBuildID) ?? 'Not available', 28)}
-            onCopy={onCopy}
-            copyText={mappingBuildID ?? 'Not available'}
+            value={
+              isMappingBuildIDAvailable ? (
+                <div>{truncateString(getLastItem(mappingBuildID) as string, 28)}</div>
+              ) : (
+                <NoData />
+              )
+            }
           />
         </div>
         <div>
           <div className="flex h-5 gap-1">{labels}</div>
         </div>
-        <span className="mx-2 block text-xs text-gray-500">
-          {isCopied ? 'Copied!' : 'Hold shift and click on a value to copy.'}
-        </span>
+      </div>
+      <div className="flex w-full items-center gap-1 text-xs text-gray-500">
+        <Icon icon="iconoir:mouse-button-right" />
+        <div>Right click to show context menu</div>
       </div>
     </div>
   );
