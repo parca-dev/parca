@@ -1,6 +1,6 @@
 {
   "name": "@parca/client",
-  "version": "0.16.91",
+  "version": "0.16.92",
   "description": "Parca API Client",
   "main": "dist/index.js",
   "scripts": {
@@ -22,5 +22,6 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
-  }
+  },
+  "gitHead": "e1b72089094c2e016f26afe82c630c15ecf12b76"
 }

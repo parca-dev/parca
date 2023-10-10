@@ -1,6 +1,6 @@
 {
   "name": "@parca/icons",
-  "version": "0.16.57",
+  "version": "0.16.58",
   "description": "Parca commonly used icons",
   "main": "src/index.tsx",
   "scripts": {
@@ -12,5 +12,6 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
-  }
+  },
+  "gitHead": "e1b72089094c2e016f26afe82c630c15ecf12b76"
 }
