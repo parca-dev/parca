@@ -1,6 +1,6 @@
 {
   "name": "@parca/components",
-  "version": "0.16.204",
+  "version": "0.16.205",
   "description": "A component library for Parca",
   "main": "dist/index.js",
   "scripts": {
@@ -16,7 +16,7 @@
     "@parca/dynamicsize": "^0.16.55",
     "@parca/hooks": "^0.0.26",
     "@parca/icons": "^0.16.55",
-    "@parca/parser": "^0.16.58",
+    "@parca/parser": "^0.16.59",
     "@parca/store": "^0.16.106",
     "@parca/utilities": "^0.0.34",
     "@protobuf-ts/grpcweb-transport": "^2.5.0",
