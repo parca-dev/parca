@@ -1,6 +1,6 @@
 {
   "name": "@parca/icons",
-  "version": "0.16.56",
+  "version": "0.16.57",
   "description": "Parca commonly used icons",
   "main": "src/index.tsx",
   "scripts": {
