@@ -1,6 +1,6 @@
 {
   "name": "@parca/hooks",
-  "version": "0.0.29",
+  "version": "0.0.30",
   "description": "A library containing React hooks used in the Parca UI",
   "main": "dist/index.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "watch": "tsc-watch"
   },
   "dependencies": {
-    "@parca/client": "^0.16.92",
+    "@parca/client": "^0.16.93",
     "@rehooks/local-storage": "^2.4.4"
   },
   "keywords": [],
@@ -20,5 +20,5 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
-  "gitHead": "e1b72089094c2e016f26afe82c630c15ecf12b76"
+  "gitHead": "3f23a55309bf37b6c7bab85e60fed98865693029"
 }
