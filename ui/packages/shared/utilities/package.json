@@ -1,6 +1,6 @@
 {
   "name": "@parca/utilities",
-  "version": "0.0.34",
+  "version": "0.0.35",
   "description": "A set of reusable functions for Parca",
   "main": "dist/index.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "watch": "tsc-watch"
   },
   "dependencies": {
-    "@parca/client": "^0.16.89",
+    "@parca/client": "^0.16.90",
     "@rehooks/local-storage": "^2.4.4",
     "tailwindcss": "3.2.4"
   },
