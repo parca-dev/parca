@@ -59,12 +59,14 @@ const MetricsContextMenu = ({
             <div>Add to query</div>
           </div>
         }
+        style={{maxHeight: '300px', overflow: 'scroll'}}
       >
         {labels?.map((label: Label) => (
           <Item
             key={label.name}
             id={label.name}
             onClick={() => onAddLabelMatcher({key: label.name, value: label.value})}
+            style={{maxWidth: '400px', overflow: 'hidden'}}
           >
             <div className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400">
               {`${label.name}="${label.value}"`}
