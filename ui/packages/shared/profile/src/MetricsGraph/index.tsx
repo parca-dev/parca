@@ -82,7 +82,7 @@ const MetricsGraph = ({
 }: Props): JSX.Element => {
   const [isInfoPanelOpen, setIsInfoPanelOpen] = useState<boolean>(false);
   return (
-    <div className="relative" onClick={() => isInfoPanelOpen === true && setIsInfoPanelOpen(false)}>
+    <div className="relative" onClick={() => isInfoPanelOpen && setIsInfoPanelOpen(false)}>
       <div className="absolute right-0 top-0">
         <MetricsInfoPanel
           isInfoPanelOpen={isInfoPanelOpen}

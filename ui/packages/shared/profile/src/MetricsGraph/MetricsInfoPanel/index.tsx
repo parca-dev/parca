@@ -13,7 +13,15 @@
 
 import {Icon} from '@iconify/react';
 
-const MetricsInfoPanel = ({isInfoPanelOpen, onInfoIconClick}): JSX.Element => {
+interface MetricsInfoPanelProps {
+  isInfoPanelOpen: boolean;
+  onInfoIconClick: () => void;
+}
+
+const MetricsInfoPanel = ({
+  isInfoPanelOpen,
+  onInfoIconClick,
+}: MetricsInfoPanelProps): JSX.Element => {
   return (
     <div>
       {isInfoPanelOpen ? (
