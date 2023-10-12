@@ -48,17 +48,17 @@ const MetricsInfoPanel = ({
             icon="material-symbols:info"
             width={25}
             height={25}
-            className="cursor-pointer text-gray-500"
+            className="cursor-pointer text-gray-600"
           />
-          <div className="flex h-[300px] w-[400px] flex-col gap-2 rounded-md border bg-gray-100 shadow-md">
+          <div className="items-space-around flex flex-col justify-start gap-4 rounded-md border bg-gray-50 p-4 shadow-md">
             {items.map(({header, description, icon}) => (
-              <div className="flex gap-2" key={header}>
+              <div className="flex items-center gap-2" key={header}>
                 <div>
-                  <Icon icon={icon} width={25} height={25} className="text-gray-500" />
+                  <Icon icon={icon} width={30} height={30} className="text-indigo-600" />
                 </div>
-                <div>
-                  <div>{header}</div>
-                  <div>{description}</div>
+                <div className="flex flex-col items-start">
+                  <div className="text-md font-medium">{header}</div>
+                  <div className="text-sm text-gray-600">{description}</div>
                 </div>
               </div>
             ))}
