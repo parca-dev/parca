@@ -17,7 +17,7 @@ import {Icon} from '@iconify/react';
 import cx from 'classnames';
 import type {DraggableProvidedDragHandleProps} from 'react-beautiful-dnd';
 
-import {IconButton} from '@parca/components';
+import {IconButton, useParcaContext} from '@parca/components';
 import {CloseIcon} from '@parca/icons';
 import type {NavigateFunction} from '@parca/utilities';
 
@@ -47,6 +47,7 @@ export const VisualizationPanel = React.memo(function VisualizationPanel({
   getDashboardItemByType,
 }: Props): JSX.Element {
   const [actionButtons, setActionButtons] = useState<JSX.Element>(<></>);
+  const {flamegraphHint} = useParcaContext();
 
   return (
     <>
@@ -61,7 +62,12 @@ export const VisualizationPanel = React.memo(function VisualizationPanel({
             </div>
             <div>{actionButtons}</div>
           </div>
-          <ViewSelector defaultValue={dashboardItem} navigateTo={navigateTo} position={index} />
+          <div className="flex flex-col items-end gap-4">
+            <ViewSelector defaultValue={dashboardItem} navigateTo={navigateTo} position={index} />
+            <div className="px-2">
+              {dashboardItem === 'icicle' && flamegraphHint != null ? flamegraphHint : null}
+            </div>
+          </div>
         </div>
         {isMultiPanelView && (
           <IconButton

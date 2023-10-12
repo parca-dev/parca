@@ -43,6 +43,7 @@ interface Props {
   enableSourcesView?: boolean;
   authenticationErrorMessage?: string;
   isDarkMode: boolean;
+  flamegraphHint?: ReactNode;
 }
 
 export const defaultValue: Props = {
