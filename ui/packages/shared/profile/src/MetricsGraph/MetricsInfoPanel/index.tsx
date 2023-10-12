@@ -22,6 +22,24 @@ const MetricsInfoPanel = ({
   isInfoPanelOpen,
   onInfoIconClick,
 }: MetricsInfoPanelProps): JSX.Element => {
+  const items: Array<{header: string; description: string; icon: string}> = [
+    {
+      header: 'Click',
+      description: 'To select a profile at a specific point in time',
+      icon: 'iconoir:mouse-button-left',
+    },
+    {
+      header: 'Click & drag',
+      description: 'To select profile samples over a period of time',
+      icon: 'bi:arrows',
+    },
+    {
+      header: 'Right click',
+      description: 'To easily add labels to the query',
+      icon: 'iconoir:mouse-button-right',
+    },
+  ];
+
   return (
     <div>
       {isInfoPanelOpen ? (
@@ -32,11 +50,18 @@ const MetricsInfoPanel = ({
             height={25}
             className="cursor-pointer text-gray-500"
           />
-          <div className="shadow-allSideOuter h-[300px] w-[400px] rounded-md border bg-gray-100">
-            <div className="flex w-full items-center gap-1">
-              <Icon icon="iconoir:mouse-button-left" />
-              <div>Placeholder text</div>
-            </div>
+          <div className="flex h-[300px] w-[400px] flex-col gap-2 rounded-md border bg-gray-100 shadow-md">
+            {items.map(({header, description, icon}) => (
+              <div className="flex gap-2" key={header}>
+                <div>
+                  <Icon icon={icon} width={25} height={25} className="text-gray-500" />
+                </div>
+                <div>
+                  <div>{header}</div>
+                  <div>{description}</div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       ) : (
