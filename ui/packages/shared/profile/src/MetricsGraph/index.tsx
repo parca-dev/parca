@@ -31,6 +31,7 @@ import {MergedProfileSelection} from '..';
 import MetricsCircle from '../MetricsCircle';
 import MetricsSeries from '../MetricsSeries';
 import MetricsContextMenu from './MetricsContextMenu';
+import MetricsInfoPanel from './MetricsInfoPanel';
 import MetricsTooltip from './MetricsTooltip';
 
 interface Props {
@@ -79,20 +80,29 @@ const MetricsGraph = ({
   height = 0,
   margin = 0,
 }: Props): JSX.Element => {
+  const [isInfoPanelOpen, setIsInfoPanelOpen] = useState<boolean>(false);
   return (
-    <RawMetricsGraph
-      data={data}
-      from={from}
-      to={to}
-      profile={profile}
-      onSampleClick={onSampleClick}
-      addLabelMatcher={addLabelMatcher}
-      setTimeRange={setTimeRange}
-      sampleUnit={sampleUnit}
-      width={width}
-      height={height}
-      margin={margin}
-    />
+    <div className="relative" onClick={() => isInfoPanelOpen === true && setIsInfoPanelOpen(false)}>
+      <div className="absolute right-0 top-0">
+        <MetricsInfoPanel
+          isInfoPanelOpen={isInfoPanelOpen}
+          onInfoIconClick={() => setIsInfoPanelOpen(true)}
+        />
+      </div>
+      <RawMetricsGraph
+        data={data}
+        from={from}
+        to={to}
+        profile={profile}
+        onSampleClick={onSampleClick}
+        addLabelMatcher={addLabelMatcher}
+        setTimeRange={setTimeRange}
+        sampleUnit={sampleUnit}
+        width={width}
+        height={height}
+        margin={margin}
+      />
+    </div>
   );
 };
 
@@ -426,7 +436,7 @@ export const RawMetricsGraph = ({
               </g>
             )}
           </g>
-          <g transform={`translate(${margin}, ${margin})`}>
+          <g transform={`translate(${margin}, ${margin / 1.5})`}>
             <g className="y axis" textAnchor="end" fontSize="10" fill="none">
               {yScale.ticks(5).map((d, i) => (
                 <Fragment key={`${i.toString()}-${d.toString()}`}>
