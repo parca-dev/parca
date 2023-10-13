@@ -48,17 +48,22 @@ const MetricsInfoPanel = ({
             icon="material-symbols:info"
             width={25}
             height={25}
-            className="cursor-pointer text-gray-600"
+            className="cursor-pointer text-gray-400"
           />
-          <div className="items-space-around flex flex-col justify-start gap-4 rounded-md border bg-gray-50 p-4 shadow-md">
+          <div className="items-space-around flex flex-col justify-start gap-4 rounded-md border border-gray-200 bg-gray-50 p-4 shadow-md dark:border-gray-500 dark:bg-gray-800">
             {items.map(({header, description, icon}) => (
               <div className="flex items-center gap-2" key={header}>
                 <div>
-                  <Icon icon={icon} width={30} height={30} className="text-indigo-600" />
+                  <Icon
+                    icon={icon}
+                    width={30}
+                    height={30}
+                    className="text-indigo-600 dark:text-indigo-500"
+                  />
                 </div>
                 <div className="flex flex-col items-start">
-                  <div className="text-md font-medium">{header}</div>
-                  <div className="text-sm text-gray-600">{description}</div>
+                  <div className="text-md font-medium dark:text-gray-300">{header}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">{description}</div>
                 </div>
               </div>
             ))}
@@ -70,7 +75,7 @@ const MetricsInfoPanel = ({
           width={25}
           height={25}
           onClick={onInfoIconClick}
-          className="cursor-pointer text-gray-500"
+          className="cursor-pointer text-gray-400"
         />
       )}
     </div>
