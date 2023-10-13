@@ -18,6 +18,7 @@ import {Tooltip} from 'react-tooltip';
 
 import {useParcaContext} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
+import {selectDarkMode, useAppSelector} from '@parca/store';
 import {type NavigateFunction} from '@parca/utilities';
 
 import {useGraphTooltip} from '../../GraphTooltipArrow/useGraphTooltip';
@@ -53,6 +54,7 @@ const ContextMenu = ({
   setCurPath,
   hideMenu,
 }: ContextMenuProps): JSX.Element => {
+  const isDarkMode = useAppSelector(selectDarkMode);
   const {enableSourcesView} = useParcaContext();
   const [isGraphTooltipDocked, setIsDocked] = useUserPreference<boolean>(
     USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key
@@ -127,40 +129,52 @@ const ContextMenu = ({
   const nonEmptyValuesToCopy = valuesToCopy.filter(({value}) => value !== '');
 
   return (
-    <Menu id={menuId} onVisibilityChange={trackVisibility}>
+    <Menu id={menuId} onVisibilityChange={trackVisibility} className="dark:bg-gray-800">
       <Item
         id="view-source-file"
         onClick={handleViewSourceFile}
         disabled={enableSourcesView === false || !isSourceAvailable}
+        className="dark:bg-gray-800"
       >
         <div
           data-tooltip-id="view-source-file-help"
           data-tooltip-content="There is no source code uploaded for this build"
         >
-          <div className="flex w-full items-center gap-2">
+          <div className="flex w-full items-center gap-2 dark:text-gray-300 hover:dark:text-gray-100">
             <Icon icon="wpf:view-file" />
             <div>View source file</div>
           </div>
         </div>
         {!isSourceAvailable ? <Tooltip id="view-source-file-help" /> : null}
       </Item>
-      <Item id="reset-view" onClick={handleResetView} disabled={curPath.length === 0}>
-        <div className="flex w-full items-center gap-2">
+      <Item
+        id="reset-view"
+        onClick={handleResetView}
+        disabled={curPath.length === 0}
+        className="dark:bg-gray-800"
+      >
+        <div className="flex w-full items-center gap-2 dark:text-gray-300 hover:dark:text-gray-100">
           <Icon icon="system-uicons:reset" />
           <div>Reset view</div>
         </div>
       </Item>
       <Submenu
         label={
-          <div className="flex w-full items-center gap-2">
+          <div className="flex w-full items-center gap-2 dark:text-gray-300 hover:dark:text-gray-100">
             <Icon icon="ph:copy" />
             <div>Copy</div>
           </div>
         }
+        // Note: Submenu className prop does not change styles, so need to use style prop instead
+        style={{
+          maxHeight: '300px',
+          overflow: 'scroll',
+          backgroundColor: isDarkMode ? 'rgb(31 41 55)' : 'rgb(249 250 251)',
+        }}
       >
         {nonEmptyValuesToCopy.map(({id, value}: {id: string; value: string}) => (
-          <Item key={id} id={id} onClick={() => handleCopyItem(value)}>
-            <div className="flex flex-col">
+          <Item key={id} id={id} onClick={() => handleCopyItem(value)} className="dark:bg-gray-800">
+            <div className="flex flex-col dark:text-gray-300 hover:dark:text-gray-100">
               <div className="text-sm">{id}</div>
               <div className="text-xs">{truncateString(value, 30)}</div>
             </div>
@@ -168,8 +182,8 @@ const ContextMenu = ({
         ))}
       </Submenu>
       <Separator />
-      <Item id="dock-tooltip" onClick={handleDockTooltip}>
-        <div className="flex w-full items-center gap-2">
+      <Item id="dock-tooltip" onClick={handleDockTooltip} className="dark:bg-gray-800">
+        <div className="flex w-full items-center gap-2 dark:text-gray-300 hover:dark:text-gray-100">
           <Icon icon="bx:dock-bottom" />
           {isGraphTooltipDocked ? 'Undock tooltip' : 'Dock tooltip'}
         </div>

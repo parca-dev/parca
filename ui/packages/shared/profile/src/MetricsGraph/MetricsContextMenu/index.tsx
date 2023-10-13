@@ -15,6 +15,7 @@ import {Icon} from '@iconify/react';
 import {Item, Menu, Submenu} from 'react-contexify';
 
 import {Label} from '@parca/client';
+import {selectDarkMode, useAppSelector} from '@parca/store';
 
 import {HighlightedSeries} from '../';
 
@@ -33,6 +34,7 @@ const MetricsContextMenu = ({
   highlighted,
   trackVisibility,
 }: MetricsContextMenuProps): JSX.Element => {
+  const isDarkMode = useAppSelector(selectDarkMode);
   const labels = highlighted?.labels.filter((label: Label) => label.name !== '__name__');
 
   const handleFocusOnSingleSeries = (): void => {
@@ -45,30 +47,39 @@ const MetricsContextMenu = ({
   };
 
   return (
-    <Menu id={menuId} onVisibilityChange={trackVisibility}>
-      <Item id="focus-on-single-series" onClick={handleFocusOnSingleSeries}>
-        <div className="flex w-full items-center gap-2">
+    <Menu id={menuId} onVisibilityChange={trackVisibility} className="dark:bg-gray-800">
+      <Item
+        id="focus-on-single-series"
+        onClick={handleFocusOnSingleSeries}
+        className="dark:bg-gray-800"
+      >
+        <div className="flex w-full items-center gap-2 dark:text-gray-300 hover:dark:text-gray-100">
           <Icon icon="ph:star" />
           <div>Focus only on this series</div>
         </div>
       </Item>
       <Submenu
         label={
-          <div className="flex w-full items-center gap-2">
+          <div className="flex w-full items-center gap-2 dark:text-gray-300 hover:dark:text-gray-100">
             <Icon icon="material-symbols:add" />
             <div>Add to query</div>
           </div>
         }
-        style={{maxHeight: '300px', overflow: 'scroll'}}
+        // Note: Submenu className prop does not change styles, so need to use style prop instead
+        style={{
+          maxHeight: '300px',
+          overflow: 'scroll',
+          backgroundColor: isDarkMode ? 'rgb(31 41 55)' : 'rgb(249 250 251)',
+        }}
       >
         {labels?.map((label: Label) => (
           <Item
             key={label.name}
             id={label.name}
             onClick={() => onAddLabelMatcher({key: label.name, value: label.value})}
-            style={{maxWidth: '400px', overflow: 'hidden'}}
+            className="max-w-[400px] overflow-hidden dark:bg-gray-800 dark:text-gray-300 hover:dark:text-gray-100"
           >
-            <div className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400">
+            <div className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-300">
               {`${label.name}="${label.value}"`}
             </div>
           </Item>
