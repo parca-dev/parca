@@ -16,9 +16,12 @@ package scrape
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -493,13 +496,27 @@ mainLoop:
 			}
 
 			byt := buf.Bytes()
+			p, err := profile.ParseData(byt)
+			if err != nil {
+				level.Error(sl.l).Log("msg", "failed to parse profile data", "err", err)
+				continue
+			}
+
+			executableInfo := []*profilepb.ExecutableInfo{}
+			for _, comment := range p.Comments {
+				if strings.HasPrefix(comment, "executableInfo=") {
+					ei, err := parseExecutableInfo(comment)
+					if err != nil {
+						level.Error(sl.l).Log("msg", "failed to parse executableInfo", "err", err)
+						continue
+					}
+
+					executableInfo = append(executableInfo, ei)
+				}
+			}
+
 			ks := sl.target.KeepSet()
 			if len(ks) > 0 {
-				p, err := profile.ParseData(byt)
-				if err != nil {
-					level.Error(sl.l).Log("msg", "failed to parse profile data", "err", err)
-					continue
-				}
 				keepIndexes := []int{}
 				newTypes := []*profile.ValueType{}
 				for i, st := range p.SampleType {
@@ -528,14 +545,15 @@ mainLoop:
 				b = newB // We want to make sure we return the new buffer to the pool further below.
 			}
 
-			_, err := sl.store.WriteRaw(sl.ctx, &profilepb.WriteRawRequest{
+			_, err = sl.store.WriteRaw(sl.ctx, &profilepb.WriteRawRequest{
 				Normalized: sl.normalizedAddresses,
 				Series: []*profilepb.RawProfileSeries{
 					{
 						Labels: protolbls,
 						Samples: []*profilepb.RawSample{
 							{
-								RawProfile: byt,
+								RawProfile:     byt,
+								ExecutableInfo: executableInfo,
 							},
 						},
 					},
@@ -580,6 +598,44 @@ mainLoop:
 	}
 
 	close(sl.stopped)
+}
+
+// parseExecutableInfo parses the executableInfo string from the comment. It is in the format of: "executableInfo=elfType;offset;vaddr".
+func parseExecutableInfo(comment string) (*profilepb.ExecutableInfo, error) {
+	eiString := strings.TrimPrefix(comment, "executableInfo=")
+	eiParts := strings.Split(eiString, ";")
+	if len(eiParts) == 0 {
+		return nil, errors.New("executableInfo string is empty")
+	}
+
+	var (
+		res = &profilepb.ExecutableInfo{}
+		err error
+	)
+
+	if len(eiParts) >= 1 {
+		elfType, err := strconv.ParseUint(strings.TrimPrefix(eiParts[0], "0x"), 16, 32)
+		if err != nil {
+			return nil, fmt.Errorf("parse elfType: %w", err)
+		}
+
+		res.ElfType = uint32(elfType)
+	}
+
+	if len(eiParts) == 3 {
+		res.LoadSegment = &profilepb.LoadSegment{}
+		res.LoadSegment.Offset, err = strconv.ParseUint(strings.TrimPrefix(eiParts[1], "0x"), 16, 64)
+		if err != nil {
+			return nil, fmt.Errorf("parse load segment offset: %w", err)
+		}
+
+		res.LoadSegment.Vaddr, err = strconv.ParseUint(strings.TrimPrefix(eiParts[2], "0x"), 16, 64)
+		if err != nil {
+			return nil, fmt.Errorf("parse load segment vaddr: %w", err)
+		}
+	}
+
+	return res, nil
 }
 
 // Stop the scraping. May still write data and stale markers after it has
