@@ -162,13 +162,8 @@ const ContextMenu = ({
       >
         <div className="max-h-[300px] overflow-scroll">
           {nonEmptyValuesToCopy.map(({id, value}: {id: string; value: string}) => (
-            <Item
-              key={id}
-              id={id}
-              onClick={() => handleCopyItem(value)}
-              className="dark:bg-gray-800"
-            >
-              <div className="flex flex-col dark:text-gray-300 hover:dark:text-gray-100">
+            <Item key={id} id={id} onClick={() => handleCopyItem(value)}>
+              <div className="flex flex-col">
                 <div className="text-sm">{id}</div>
                 <div className="text-xs">{truncateString(value, 30)}</div>
               </div>
