@@ -184,7 +184,7 @@ export const RawMetricsGraph = ({
   const xScale = d3
     .scaleUtc()
     .domain([from, to])
-    .range([0, width - 2 * margin]);
+    .range([0, width - 2.5 * margin]);
 
   const yScale = d3
     .scaleLinear()
@@ -381,6 +381,18 @@ export const RawMetricsGraph = ({
     setIsContextMenuOpen(isVisible);
   };
 
+  const isDeltaType = profile !== null ? profile?.query.profType.delta : false;
+
+  let yAxisLabel = sampleUnit;
+  if (isDeltaType) {
+    if (profile?.query.profType.periodType === 'cpu' && sampleUnit === 'count') {
+      yAxisLabel = 'CPU Cores';
+    }
+    if (sampleUnit === 'bytes') {
+      yAxisLabel = 'Bytes per Second';
+    }
+  }
+
   return (
     <>
       <MetricsContextMenu
@@ -402,7 +414,7 @@ export const RawMetricsGraph = ({
               highlighted={highlighted}
               contextElement={graph.current}
               sampleUnit={sampleUnit}
-              delta={profile !== null ? profile?.query.profType.delta : false}
+              delta={isDeltaType}
             />
           )}
         </div>
@@ -436,7 +448,7 @@ export const RawMetricsGraph = ({
               </g>
             )}
           </g>
-          <g transform={`translate(${margin}, ${margin / 1.5})`}>
+          <g transform={`translate(${margin * 1.5}, ${margin / 1.5})`}>
             <g className="y axis" textAnchor="end" fontSize="10" fill="none">
               {yScale.ticks(5).map((d, i) => (
                 <Fragment key={`${i.toString()}-${d.toString()}`}>
@@ -476,6 +488,16 @@ export const RawMetricsGraph = ({
                 y1={0}
                 y2={height - margin}
               />
+              <g transform={`translate(${-margin}, ${(height - margin) / 2}) rotate(270)`}>
+                <text
+                  fill="currentColor"
+                  dy="-0.7em"
+                  className="text-sm capitalize"
+                  textAnchor="middle"
+                >
+                  {yAxisLabel}
+                </text>
+              </g>
             </g>
             <g
               className="x axis"
@@ -515,6 +537,11 @@ export const RawMetricsGraph = ({
                 y1={0}
                 y2={0}
               />
+              <g transform={`translate(${(width - 2.5 * margin) / 2}, ${margin / 2})`}>
+                <text fill="currentColor" dy=".71em" y={5} className="text-sm">
+                  Time
+                </text>
+              </g>
             </g>
             <g className="lines fill-transparent">
               {series.map((s, i) => (
