@@ -515,6 +515,11 @@ export const RawMetricsGraph = ({
                 y1={0}
                 y2={0}
               />
+              <g transform={`translate(${(width - margin) / 2}, ${margin / 2})`}>
+                <text fill="currentColor" dy=".71em" y={5} className="text-sm">
+                  Time
+                </text>
+              </g>
             </g>
             <g className="lines fill-transparent">
               {series.map((s, i) => (
