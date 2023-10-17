@@ -127,8 +127,6 @@ const ContextMenu = ({
 
   const nonEmptyValuesToCopy = valuesToCopy.filter(({value}) => value !== '');
 
-  console.log('contexify isDarkMode', isDarkMode, 'theme', isDarkMode ? 'dark' : '');
-
   return (
     <Menu id={menuId} onVisibilityChange={trackVisibility} theme={isDarkMode ? 'dark' : ''}>
       <Item
