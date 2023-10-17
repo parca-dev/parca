@@ -381,6 +381,15 @@ export const RawMetricsGraph = ({
     setIsContextMenuOpen(isVisible);
   };
 
+  // For the y-axis, when it's not a delta type:
+
+  // the label it's whatever the sample unit is
+  // For the y-axis, when it is a delta type:
+
+  // and it's cpu sample count, then the y-axis is actually the "CPU Cores"
+  // and it's memory space bytes, then the y-axis is bytes per second
+  const yAxisLabel = 'Y Axis Label';
+
   return (
     <>
       <MetricsContextMenu
@@ -476,6 +485,11 @@ export const RawMetricsGraph = ({
                 y1={0}
                 y2={height - margin}
               />
+              <g transform={`translate(${-margin / 2}, ${(height - margin) / 2}) rotate(270)`}>
+                <text fill="currentColor" dy="-0.71em" className="text-sm" textAnchor="middle">
+                  {yAxisLabel}
+                </text>
+              </g>
             </g>
             <g
               className="x axis"
