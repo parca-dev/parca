@@ -84,10 +84,13 @@ export const Button = ({
     if (classes.length > classesMerged.length) {
       const classesTokens = classes.split(' ');
       const classesMergedTokens = classesMerged.split(' ');
-      console.warn(
-        'Button: Conflicting classes found in `className` prop, please use/create an appropriate variant instead. Conflicting classes:',
-        classesTokens.filter(token => !classesMergedTokens.includes(token))
-      );
+      const diff = classesTokens.filter(token => !classesMergedTokens.includes(token));
+      if (diff.length > 0) {
+        console.warn(
+          'Button: Conflicting classes found in `className` prop, please use/create an appropriate variant instead. Conflicting classes:',
+          diff
+        );
+      }
     }
 
     return classesMerged;

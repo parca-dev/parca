@@ -15,7 +15,7 @@ import {Icon} from '@iconify/react';
 import {Item, Menu, Submenu} from 'react-contexify';
 
 import {Label} from '@parca/client';
-import {selectDarkMode, useAppSelector} from '@parca/store';
+import {useParcaContext} from '@parca/components';
 
 import {HighlightedSeries} from '../';
 
@@ -34,7 +34,7 @@ const MetricsContextMenu = ({
   highlighted,
   trackVisibility,
 }: MetricsContextMenuProps): JSX.Element => {
-  const isDarkMode = useAppSelector(selectDarkMode);
+  const {isDarkMode} = useParcaContext();
   const labels = highlighted?.labels.filter((label: Label) => label.name !== '__name__');
 
   const handleFocusOnSingleSeries = (): void => {
