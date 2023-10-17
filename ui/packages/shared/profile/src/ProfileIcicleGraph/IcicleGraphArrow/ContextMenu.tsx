@@ -18,7 +18,6 @@ import {Tooltip} from 'react-tooltip';
 
 import {useParcaContext} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
-import {selectDarkMode, useAppSelector} from '@parca/store';
 import {type NavigateFunction} from '@parca/utilities';
 
 import {useGraphTooltip} from '../../GraphTooltipArrow/useGraphTooltip';
@@ -54,7 +53,7 @@ const ContextMenu = ({
   setCurPath,
   hideMenu,
 }: ContextMenuProps): JSX.Element => {
-  const isDarkMode = useAppSelector(selectDarkMode);
+  const {isDarkMode} = useParcaContext();
   const {enableSourcesView} = useParcaContext();
   const [isGraphTooltipDocked, setIsDocked] = useUserPreference<boolean>(
     USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key
@@ -127,6 +126,8 @@ const ContextMenu = ({
   ];
 
   const nonEmptyValuesToCopy = valuesToCopy.filter(({value}) => value !== '');
+
+  console.log('contexify isDarkMode', isDarkMode, 'theme', isDarkMode ? 'dark' : '');
 
   return (
     <Menu id={menuId} onVisibilityChange={trackVisibility} theme={isDarkMode ? 'dark' : ''}>
