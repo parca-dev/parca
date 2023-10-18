@@ -58,6 +58,8 @@ jobs:
     timeout-minutes: 45
     if: ${{ needs.skip-check.outputs.should_skip != 'true' }}
     steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
       - name: Remove unnecessary files
         run: |
           du . -h
