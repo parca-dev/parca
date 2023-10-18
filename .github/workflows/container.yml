@@ -58,6 +58,12 @@ jobs:
     timeout-minutes: 45
     if: ${{ needs.skip-check.outputs.should_skip != 'true' }}
     steps:
+      - name: Remove unnecessary files
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
       - name: Check out code into the Go module directory
         uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
         with:
@@ -108,9 +114,7 @@ jobs:
     timeout-minutes: 30
     container:
       # https://github.com/containers/podman/tree/main/contrib/podmanimage
-      # Specifying SHA repeatedly fails:
-      # @sha256:421ac576cebff98e90c531e7b9ce4482370ecc7cee59abc2341714031bfb5f43
-      image: quay.io/containers/podman:v4.7.0@sha256:2c807522b6d66c61a64cf93de24ea5155e8995c3dd8bfedafb4702dff317b35d
+      image: quay.io/containers/podman:v4.7.0
       options: >-
         --device /dev/fuse:rw
         --privileged
