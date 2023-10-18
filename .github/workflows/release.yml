@@ -123,16 +123,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: release
-    container:
-      # https://github.com/containers/podman/tree/main/contrib/podmanimage
-      # Specifying SHA repeatedly fails:
-      # @sha256:421ac576cebff98e90c531e7b9ce4482370ecc7cee59abc2341714031bfb5f43
-      image: quay.io/containers/podman:v4.7.0@sha256:2c807522b6d66c61a64cf93de24ea5155e8995c3dd8bfedafb4702dff317b35d
-      options: >-
-        --device /dev/fuse:rw
-        --privileged
-        --security-opt label=disable
-        --security-opt seccomp=unconfined
     permissions:
       id-token: write
       packages: write
