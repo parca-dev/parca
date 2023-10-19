@@ -69,6 +69,7 @@ export const useAutoQuerySelector = ({
     dispatch,
     setQueryExpression,
     setProfileName,
+    profileTypeInURL,
   ]);
 
   useEffect(() => {
