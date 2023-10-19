@@ -730,8 +730,8 @@ github.com/oracle/oci-go-sdk/v65 v65.41.1/go.mod h1:MXMLMzHnnd9wlpgadPkdlkZ9YrwQ
 github.com/ovh/go-ovh v1.4.1 h1:VBGa5wMyQtTP7Zb+w97zRCh9sLtM/2YKRyy+MEJmWaM=
 github.com/ovh/go-ovh v1.4.1/go.mod h1:6bL6pPyUT7tBfI0pqOegJgRjgjuO+mOo+MyXd1EEC0M=
 github.com/pact-foundation/pact-go v1.0.4/go.mod h1:uExwJY4kCzNPcHRj+hCR/HBbOOIwwtUjcrb0b5/5kLM=
-github.com/parquet-go/parquet-go v0.18.0 h1:tKWzKhgmwT24Yc45RLTbEOtUT8jfTzLTWrIUX4yG7/E=
-github.com/parquet-go/parquet-go v0.18.0/go.mod h1:6pu/Ca02WRyWyF6jbY1KceESGBZMsRMSijjLbajXaG8=
+github.com/parquet-go/parquet-go v0.18.1-0.20231004061202-cde8189c4c26 h1:46gJLpBloArJ3oU2AZpeBQgZmgLzE+iDCOgxz78cwgk=
+github.com/parquet-go/parquet-go v0.18.1-0.20231004061202-cde8189c4c26/go.mod h1:6pu/Ca02WRyWyF6jbY1KceESGBZMsRMSijjLbajXaG8=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pascaldekloe/goe v0.1.0 h1:cBOtyMzM9HTpWjXfbbunk26uA6nG3a8n06Wieeh0MwY=
 github.com/pascaldekloe/goe v0.1.0/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
@@ -755,8 +755,8 @@ github.com/pkg/profile v1.2.1/go.mod h1:hJw3o1OdXxsrSjjVksARp5W95eeEaEfptyVZyv6J
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/polarsignals/frostdb v0.0.0-20230926084601-c9100f2ac9c7 h1:w1H1GpnYgbk5WddP7IljZajFlwOIHqUShNXz0IDMGXI=
-github.com/polarsignals/frostdb v0.0.0-20230926084601-c9100f2ac9c7/go.mod h1:fT7khtHWo/cEHSi1PgAnBJFMoBwB4T2NG6YCqVY0T1s=
+github.com/polarsignals/frostdb v0.0.0-20231019114304-92877c708395 h1:IPbXQ+7Z1jOBUdUJqSWcPehCc/N0gRP4TbGc8ZjlrSc=
+github.com/polarsignals/frostdb v0.0.0-20231019114304-92877c708395/go.mod h1:fNl6Ak4njGP3H7PPu5vHuzLdnZIvRE8qy5vKC/slJYw=
 github.com/polarsignals/wal v0.0.0-20230809151629-4d4e3eac6d40 h1:3kD5F5BBrnv2SAnBV7LGrXAhhAL+pZRkk++D4wrAH2c=
 github.com/polarsignals/wal v0.0.0-20230809151629-4d4e3eac6d40/go.mod h1:EVDHAAe+7GQ33A1/x+/gE+sBPN4toQ0XG5RoLD49xr8=
 github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndrE9hABlRI=
