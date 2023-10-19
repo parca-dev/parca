@@ -24,10 +24,9 @@ const Card = ({children, className = ''}: CardProps): JSX.Element => {
   return (
     <div className="mx-auto">
       <div
-        className={cx(
-          'flex-column flex-1 overflow-hidden bg-white shadow dark:bg-gray-800 sm:rounded-lg',
-          {[className]: className.length}
-        )}
+        className={cx('flex-column flex-1 bg-white shadow dark:bg-gray-800 sm:rounded-lg', {
+          [className]: className.length,
+        })}
       >
         {children}
       </div>
