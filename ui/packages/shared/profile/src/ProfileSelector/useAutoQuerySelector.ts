@@ -14,7 +14,9 @@
 import {useEffect} from 'react';
 
 import {ProfileTypesResponse} from '@parca/client';
+import {useURLState} from '@parca/components';
 import {selectAutoQuery, setAutoQuery, useAppDispatch, useAppSelector} from '@parca/store';
+import {type NavigateFunction} from '@parca/utilities';
 
 import {constructProfileName} from '../ProfileTypeSelector';
 
@@ -23,6 +25,7 @@ interface Props {
   profileTypesData: ProfileTypesResponse | undefined;
   setProfileName: (name: string) => void;
   setQueryExpression: () => void;
+  navigateTo: NavigateFunction;
 }
 
 export const useAutoQuerySelector = ({
@@ -30,9 +33,14 @@ export const useAutoQuerySelector = ({
   profileTypesData,
   setProfileName,
   setQueryExpression,
+  navigateTo,
 }: Props): void => {
   const autoQuery = useAppSelector(selectAutoQuery);
   const dispatch = useAppDispatch();
+  const [profileTypeInURL] = useURLState({
+    param: 'profile_type',
+    navigateTo,
+  });
 
   // Effect to load some initial data on load when is no selection
   useEffect(() => {
@@ -48,7 +56,7 @@ export const useAutoQuerySelector = ({
         return;
       }
       dispatch(setAutoQuery('true'));
-      let profileType = profileTypesData.types.find(type => type.name === 'parca_agent_cpu');
+      let profileType = profileTypesData.types.find(type => type.name === profileTypeInURL);
       if (profileType == null) {
         profileType = profileTypesData.types[0];
       }

@@ -23,10 +23,15 @@ import {
   DateTimeRangePicker,
   IconButton,
   useGrpcMetadata,
+  useURLState,
 } from '@parca/components';
 import {CloseIcon} from '@parca/icons';
 import {Query} from '@parca/parser';
-import {getStepDuration, getStepDurationInMilliseconds} from '@parca/utilities';
+import {
+  getStepDuration,
+  getStepDurationInMilliseconds,
+  type NavigateFunction,
+} from '@parca/utilities';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
 import MatchersInput from '../MatchersInput/index';
@@ -55,6 +60,7 @@ interface ProfileSelectorProps {
   profileSelection: ProfileSelection | null;
   comparing: boolean;
   onCompareProfile: () => void;
+  navigateTo: NavigateFunction;
 }
 
 export interface IProfileTypesResult {
@@ -93,6 +99,7 @@ const ProfileSelector = ({
   profileSelection,
   comparing,
   onCompareProfile,
+  navigateTo,
 }: ProfileSelectorProps): JSX.Element => {
   const {
     loading: profileTypesLoading,
@@ -100,6 +107,11 @@ const ProfileSelector = ({
     error,
   } = useProfileTypes(queryClient);
   const {heightStyle} = useMetricsGraphDimensions(comparing);
+
+  const [_, setProfileTypeInURL] = useURLState({
+    param: 'profile_type',
+    navigateTo,
+  });
 
   const [timeRangeSelection, setTimeRangeSelection] = useState(
     DateTimeRange.fromRangeKey(querySelection.timeSelection)
@@ -201,6 +213,7 @@ const ProfileSelector = ({
     if (changed) {
       const q = newQuery.toString();
       setQueryExpressionString(q);
+      setProfileTypeInURL(profileName);
     }
   };
 
@@ -209,6 +222,7 @@ const ProfileSelector = ({
     profileTypesData,
     setProfileName,
     setQueryExpression,
+    navigateTo,
   });
 
   const handleCompareClick = (): void => onCompareProfile();
