@@ -502,7 +502,7 @@ mainLoop:
 				continue
 			}
 
-			executableInfo := []*profilepb.ExecutableInfo{}
+			var executableInfo []*profilepb.ExecutableInfo
 			for _, comment := range p.Comments {
 				if strings.HasPrefix(comment, "executableInfo=") {
 					ei, err := parseExecutableInfo(comment)
