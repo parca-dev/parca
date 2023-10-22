@@ -24,7 +24,7 @@ jobs:
       DOCKER_CLI_EXPERIMENTAL: "enabled"
     steps:
       - name: Checkout
-        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
           fetch-depth: 0
 
@@ -72,7 +72,7 @@ jobs:
     timeout-minutes: 30
     needs: release
     steps:
-      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Set up Go
         uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
@@ -106,7 +106,7 @@ jobs:
     timeout-minutes: 30
     needs: manifests
     steps:
-      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Publish Netlify
         uses: netlify/actions/build@master
@@ -141,7 +141,7 @@ jobs:
         run: dnf install --assumeyes --repo fedora git make jq
 
       - name: Check out code into the Go module directory
-        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       # The checkout action is supposed to take care of it, but it is not enough :/
       - name: Add repository directory to the git global config as a safe directory
