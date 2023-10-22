@@ -7145,10 +7145,10 @@
     hoist-non-react-statics "^3.3.0"
     redux "^4.0.0"
 
-"@types/react-syntax-highlighter@15.5.7":
-  version "15.5.7"
-  resolved "https://registry.yarnpkg.com/@types/react-syntax-highlighter/-/react-syntax-highlighter-15.5.7.tgz#bd29020ccb118543d88779848f99059b64b02d0f"
-  integrity sha512-bo5fEO5toQeyCp0zVHBeggclqf5SQ/Z5blfFmjwO5dkMVGPgmiwZsJh9nu/Bo5L7IHTuGWrja6LxJVE2uB5ZrQ==
+"@types/react-syntax-highlighter@15.5.8":
+  version "15.5.8"
+  resolved "https://registry.yarnpkg.com/@types/react-syntax-highlighter/-/react-syntax-highlighter-15.5.8.tgz#4cfd56cb812c7f84093337ac95cc8a111b02d64b"
+  integrity sha512-GT1PLGzhF3ilGaQiCHFDShxDBb014s01MQi0nWfXJ23efjWfUrZ2i0g4tH1JGdfnIGBtQDge/k3ON3fLoAuU/w==
   dependencies:
     "@types/react" "*"
 

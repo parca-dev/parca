@@ -30,7 +30,7 @@
   "devDependencies": {
     "@types/d3": "7.4.2",
     "@types/react-copy-to-clipboard": "5.0.6",
-    "@types/react-syntax-highlighter": "15.5.7"
+    "@types/react-syntax-highlighter": "15.5.8"
   },
   "resolutions": {
     "konva": "8.4.3"
