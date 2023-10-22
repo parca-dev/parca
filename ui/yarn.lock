@@ -6995,10 +6995,10 @@
   resolved "https://registry.yarnpkg.com/@types/ms/-/ms-0.7.31.tgz#31b7ca6407128a3d2bbc27fe2d21b345397f6197"
   integrity sha512-iiUgKzV9AuaEkZqkOLDIvlQiL6ltuZd9tGcW3gwpnX8JbuiuhFlEGmmFXEXkN50Cvq7Os88IY2v0dkDqXYWVgA==
 
-"@types/nearley@2.11.2":
-  version "2.11.2"
-  resolved "https://registry.yarnpkg.com/@types/nearley/-/nearley-2.11.2.tgz#ddd716fa4b9ab15acec51d39b7524709d4dd5cc8"
-  integrity sha512-jeyIDNBxxyWyEk6HemDC+t32b4fxthVsgWDxf88qD2WpX0QpOyY8JvA80AElPTBGRUsO0EKnr6OeVOjK3ZDdnA==
+"@types/nearley@2.11.3":
+  version "2.11.3"
+  resolved "https://registry.yarnpkg.com/@types/nearley/-/nearley-2.11.3.tgz#bece8a399ba0357409b2b3176ce2604c0a758a92"
+  integrity sha512-iHPzMiOd0R0eKNW+JvWySis9xdRt8LMUeMQl44Bpd4wXT99roE+aP3D/fhvIuPqvOS5q7JscZtUry+QAGLf04w==
 
 "@types/node-fetch@^2.6.4":
   version "2.6.4"
