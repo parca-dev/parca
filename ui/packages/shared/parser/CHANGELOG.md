@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 0.16.65 (2023-10-22)
+
+**Note:** Version bump only for package @parca/parser
+
 ## 0.16.64 (2023-10-20)
 
 # 0.20.0 (2023-10-20)
