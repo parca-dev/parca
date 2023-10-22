@@ -16,7 +16,7 @@
     "nearley": "2.20.1"
   },
   "devDependencies": {
-    "@types/nearley": "2.11.2",
+    "@types/nearley": "2.11.3",
     "jest-environment-jsdom": "29.7.0"
   },
   "publishConfig": {
