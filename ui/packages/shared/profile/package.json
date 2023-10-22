@@ -28,7 +28,7 @@
     "with-alpha-hex": "^1.0.6"
   },
   "devDependencies": {
-    "@types/d3": "7.4.0",
+    "@types/d3": "7.4.1",
     "@types/react-copy-to-clipboard": "5.0.4",
     "@types/react-syntax-highlighter": "15.5.7"
   },
