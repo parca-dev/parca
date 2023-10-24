@@ -95,7 +95,7 @@
     "eslint-plugin-react": "7.33.2",
     "eslint-plugin-react-hooks": "4.6.0",
     "eslint-plugin-standard": "5.0.0",
-    "eslint-plugin-storybook": "0.6.13",
+    "eslint-plugin-storybook": "0.6.15",
     "eslint-plugin-typescript-enum": "2.1.0",
     "execa": "6.1.0",
     "fs-extra": "10.1.0",
