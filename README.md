@@ -239,6 +239,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     </tr>
     <tr>
       <td align="center" valign="top" width="20%"><a href="https://github.com/themohammadsa"><img src="https://avatars.githubusercontent.com/u/59393936?v=4?s=100" width="100px;" alt="Mohammad S"/><br /><sub><b>Mohammad S</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=themohammadsa" title="Code">💻</a></td>
+      <td align="center" valign="top" width="20%"><a href="https://github.com/susarlanikhilesh"><img src="https://avatars.githubusercontent.com/u/4359080?v=4?s=100" width="100px;" alt="Nikhilesh Susarla"/><br /><sub><b>Nikhilesh Susarla</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=susarlanikhilesh" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
