@@ -252,7 +252,3 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
-
-# Tested by Meticulous
-
-[<img src="https://meticulous.ai/assets/images/new_logo.svg" width="400">](https://meticulous.ai/?utm_source=parca&utm_campaign=oss)
