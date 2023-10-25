@@ -235,6 +235,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="20%"><a href="https://github.com/fabxc"><img src="https://avatars.githubusercontent.com/u/4948210?v=4?s=100" width="100px;" alt="Fabian Reinartz"/><br /><sub><b>Fabian Reinartz</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=fabxc" title="Code">💻</a></td>
       <td align="center" valign="top" width="20%"><a href="https://github.com/karthick3018"><img src="https://avatars.githubusercontent.com/u/47154512?v=4?s=100" width="100px;" alt="Karthick Raja"/><br /><sub><b>Karthick Raja</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=karthick3018" title="Code">💻</a></td>
       <td align="center" valign="top" width="20%"><a href="https://github.com/quite4work"><img src="https://avatars.githubusercontent.com/u/58137382?v=4?s=100" width="100px;" alt="quite4work"/><br /><sub><b>quite4work</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=quite4work" title="Code">💻</a></td>
+      <td align="center" valign="top" width="20%"><a href="https://albertlockett.ca"><img src="https://avatars.githubusercontent.com/u/5846846?v=4?s=100" width="100px;" alt="Bert"/><br /><sub><b>Bert</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=albertlockett" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
