@@ -19,7 +19,7 @@ RUN yarn install --frozen-lockfile --prefer-offline && yarn build
 FROM docker.io/golang:1.21.3-alpine@sha256:926f7f7e1ab8509b4e91d5ec6d5916ebb45155b0c8920291ba9f361d65385806 AS builder
 
 # renovate: datasource=go depName=github.com/go-delve/delve
-ARG DLV_VERSION=v1.21.0
+ARG DLV_VERSION=v1.21.1
 
 # renovate: datasource=go depName=github.com/grpc-ecosystem/grpc-health-probe
 ARG GRPC_HEALTH_PROBE_VERSION=v0.4.21
