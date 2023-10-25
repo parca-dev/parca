@@ -411,6 +411,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "ilpianista",
+      "name": "Andrea Scarpino",
+      "avatar_url": "https://avatars.githubusercontent.com/u/529436?v=4",
+      "profile": "https://scarpino.dev",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 5,
