@@ -357,8 +357,18 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "karthick3018",
+      "name": "Karthick Raja",
+      "avatar_url": "https://avatars.githubusercontent.com/u/47154512?v=4",
+      "profile": "https://github.com/karthick3018",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 5,
-  "skipCi": true
+  "skipCi": true,
+  "commitType": "docs"
 }
