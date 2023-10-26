@@ -15,6 +15,8 @@ package config
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/thanos-io/objstore/client"
@@ -52,4 +54,38 @@ func (r BucketRule) Validate(value interface{}) error {
 		validation.Field(&b.Type, validation.Required),
 		validation.Field(&b.Config, validation.Required),
 	)
+}
+
+// ScrapeConfigsValid is the ValidRule.
+var ScrapeConfigsValid = ScrapeConfigsValidRule{}
+
+// ScrapeConfigsValidRule is a validation rule for the Config. It implements the validation.Rule interface.
+type ScrapeConfigsValidRule struct{}
+
+// ScrapeConfigsValidate returns an error if the config is not valid.
+func (v ScrapeConfigsValidRule) Validate(value interface{}) error {
+	sc, ok := value.([]*ScrapeConfig)
+	if !ok {
+		return errors.New("ScrapeConfigs array is invalid")
+	}
+
+	uniqueJobNames := map[string]int{}
+	for _, c := range sc {
+		if c != nil {
+			uniqueJobNames[c.JobName]++
+		}
+	}
+
+	duplicateJobNames := make([]string, 0)
+	for jobName, count := range uniqueJobNames {
+		if count > 1 {
+			duplicateJobNames = append(duplicateJobNames, jobName)
+		}
+	}
+
+	if len(duplicateJobNames) > 0 {
+		return fmt.Errorf("duplicate job_name found in scrape configs: %s", strings.Join(duplicateJobNames, ", "))
+	}
+
+	return nil
 }

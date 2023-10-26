@@ -234,3 +234,31 @@ func Test_Config_Validation(t *testing.T) {
 		})
 	}
 }
+
+func TestLoadDuplicateJobs(t *testing.T) {
+	t.Parallel()
+
+	complexYAML := `
+object_storage:
+  bucket:
+    type: "FILESYSTEM"
+    config:
+      directory: "./data"
+scrape_configs:
+  - job_name: 'parca'
+    scrape_interval: 5s
+    static_configs:
+      - targets: [ 'localhost:10902' ]
+  - job_name: 'parca'
+    scrape_interval: 5s
+    static_configs:
+      - targets: [ 'localhost:10903' ]
+`
+
+	config, err := Load(complexYAML)
+	require.NoError(t, err)
+
+	err = config.Validate()
+	require.Error(t, err)
+	require.Equal(t, "ScrapeConfigs: duplicate job_name found in scrape configs: parca.", err.Error())
+}
