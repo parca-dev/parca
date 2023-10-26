@@ -25,6 +25,7 @@ async function startApp() {
     // Note: all errors are caught and logged, so no need to surround with try/catch
     await tryLoadAndStartRecorder({
       projectId: 'lgBUqjZEtPYwCUmwxdv0IEiMsaPwDJWo9AJHvbzX',
+      isProduction: false,
     });
   }
 
