@@ -25,7 +25,7 @@
   resolved "https://registry.yarnpkg.com/@alloc/quick-lru/-/quick-lru-5.2.0.tgz#7bf68b20c0a350f936915fcae06f58e32007ce30"
   integrity sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==
 
-"@alwaysmeticulous/recorder-loader@^2.63.0":
+"@alwaysmeticulous/recorder-loader@^2.19.0":
   version "2.79.0"
   resolved "https://registry.yarnpkg.com/@alwaysmeticulous/recorder-loader/-/recorder-loader-2.79.0.tgz#c33c8bfd184667525a52029a9885b7b586af8384"
   integrity sha512-fq/Ax8c1twEVkAcXjlHuctgdFxOq7sQL4KzsUp366D5jtUCnquzI2KVu9OvwYEjntt7Ljbv3CH4NSV2ZPdFg9A==
