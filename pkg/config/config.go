@@ -56,7 +56,7 @@ type ObjectStorage struct {
 func (c *Config) Validate() error {
 	if err := validation.ValidateStruct(c,
 		validation.Field(&c.ObjectStorage, validation.Required, ObjectStorageValid),
-		validation.Field(&c.ScrapeConfigs, validation.Required, ScrapeConfigsValid),
+		validation.Field(&c.ScrapeConfigs, ScrapeConfigsValid),
 	); err != nil {
 		return err
 	}
