@@ -31,5 +31,5 @@ GOVULNCHECK_VERSION='v1.0.1'
 go install "golang.org/x/vuln/cmd/govulncheck@${GOVULNCHECK_VERSION}"
 
 # renovate: datasource=go depName=github.com/bufbuild/buf
-BUF_VERSION='v1.26.1'
+BUF_VERSION='v1.27.1'
 go install "github.com/bufbuild/buf/cmd/buf@${BUF_VERSION}"
