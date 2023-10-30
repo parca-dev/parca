@@ -242,6 +242,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="20%"><a href="https://github.com/susarlanikhilesh"><img src="https://avatars.githubusercontent.com/u/4359080?v=4?s=100" width="100px;" alt="Nikhilesh Susarla"/><br /><sub><b>Nikhilesh Susarla</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=susarlanikhilesh" title="Code">💻</a></td>
       <td align="center" valign="top" width="20%"><a href="https://github.com/Franqsanz"><img src="https://avatars.githubusercontent.com/u/44296203?v=4?s=100" width="100px;" alt="Franco Sánchez"/><br /><sub><b>Franco Sánchez</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=Franqsanz" title="Code">💻</a></td>
       <td align="center" valign="top" width="20%"><a href="https://scarpino.dev"><img src="https://avatars.githubusercontent.com/u/529436?v=4?s=100" width="100px;" alt="Andrea Scarpino"/><br /><sub><b>Andrea Scarpino</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=ilpianista" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="20%"><a href="https://github.com/nabokihms"><img src="https://avatars.githubusercontent.com/u/32434187?v=4?s=100" width="100px;" alt="Maksim Nabokikh"/><br /><sub><b>Maksim Nabokikh</b></sub></a><br /><a href="https://github.com/parca-dev/parca/commits?author=nabokihms" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
