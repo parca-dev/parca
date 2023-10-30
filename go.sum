@@ -75,8 +75,8 @@ github.com/aliyun/aliyun-oss-go-sdk v2.2.2+incompatible/go.mod h1:T/Aws4fEfogEE9
 github.com/andybalholm/brotli v1.0.5 h1:8uQZIdzKmjc/iuPu7O2ioW48L81FgatrcpfFmiq/cCs=
 github.com/andybalholm/brotli v1.0.5/go.mod h1:fO7iG3H7G2nSZ7m0zPUDn85XEX2GTukHGRSepvi9Eig=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
-github.com/apache/arrow/go/v14 v14.0.0-20231024132201-e3d6b9beac69 h1:LWInlMIGZIeMQqe7jm0mMoIepa0KoHeG7yltfe1/ax4=
-github.com/apache/arrow/go/v14 v14.0.0-20231024132201-e3d6b9beac69/go.mod h1:u3fgh3EdgN/YQ8cVQRguVW3R+seMybFg8QBQ5LU+eBY=
+github.com/apache/arrow/go/v14 v14.0.0-20231028060402-7ef517e31ec3 h1:nWoqKXllUSOAkPSgyME0sxJsmTI/nXHAaVio7wuOgKI=
+github.com/apache/arrow/go/v14 v14.0.0-20231028060402-7ef517e31ec3/go.mod h1:TqWp9yvMb9yZSxFNiij6cmZefm+1jw3oZU0L0w9lT7E=
 github.com/apache/thrift v0.12.0/go.mod h1:cp2SuWMxlEZw2r+iP2GNCdIi4C1qmUzdZFSVb+bacwQ=
 github.com/apache/thrift v0.13.0/go.mod h1:cp2SuWMxlEZw2r+iP2GNCdIi4C1qmUzdZFSVb+bacwQ=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e/go.mod h1:3U/XgcO3hCbHZ8TKRvWD2dDTCfh9M9ya+I9JpbB7O8o=
