@@ -20,6 +20,7 @@ import type {NavigateFunction} from '@parca/utilities';
 import {
   FIELD_FUNCTION_FILE_NAME,
   FIELD_FUNCTION_START_LINE,
+  FIELD_FUNCTION_SYSTEM_NAME,
   FIELD_INLINED,
   FIELD_LOCATION_ADDRESS,
   FIELD_LOCATION_LINE,
@@ -40,6 +41,7 @@ interface Props {
 interface GraphTooltipMetaInfoData {
   labelPairs: Array<[string, string]>;
   functionFilename: string;
+  functionSystemName: string;
   file: string;
   openFile: () => void;
   isSourceAvailable: boolean;
@@ -63,6 +65,8 @@ export const useGraphTooltipMetaInfo = ({
   const locationLine: bigint = table.getChild(FIELD_LOCATION_LINE)?.get(row) ?? 0n;
   const functionFilename: string =
     arrowToString(table.getChild(FIELD_FUNCTION_FILE_NAME)?.get(row)) ?? '';
+  const functionSystemName: string =
+    arrowToString(table.getChild(FIELD_FUNCTION_SYSTEM_NAME)?.get(row)) ?? '';
   const functionStartLine: bigint = table.getChild(FIELD_FUNCTION_START_LINE)?.get(row) ?? 0n;
   const lineNumber =
     locationLine !== 0n ? locationLine : functionStartLine !== 0n ? functionStartLine : undefined;
@@ -146,6 +150,7 @@ export const useGraphTooltipMetaInfo = ({
   return {
     labelPairs,
     functionFilename,
+    functionSystemName,
     file,
     openFile,
     isSourceAvailable,
