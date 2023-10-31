@@ -1,6 +1,6 @@
 {
   "name": "@parca/profile",
-  "version": "0.16.291",
+  "version": "0.16.292",
   "description": "Profile viewing libraries",
   "dependencies": {
     "@parca/client": "^0.16.94",
