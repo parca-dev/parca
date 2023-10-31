@@ -114,7 +114,10 @@ const ContextMenu = ({
 
   const valuesToCopy = [
     {id: 'Function name', value: functionName},
-    {id: 'Function system name', value: functionSystemName === functionName ? '' : functionSystemName}, // an empty string will be filtered out below
+    {
+      id: 'Function system name',
+      value: functionSystemName === functionName ? '' : functionSystemName,
+    }, // an empty string will be filtered out below
     {id: 'Cumulative', value: cumulativeText ?? ''},
     {id: 'Diff', value: diff !== 0n ? diffText : ''},
     {
