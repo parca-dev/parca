@@ -50,7 +50,7 @@ export const useURLState = ({
   withURLUpdate = true,
 }: Props): [string | string[], (val: string | string[]) => void] => {
   const dispatch = useAppDispatch();
-  const router = parseParams(window?.location.search);
+  const router = typeof window !== 'undefined' ? parseParams(window?.location.search) : {};
   const [highlightAfterFilteringEnabled] = useUserPreference<boolean>(
     USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING.key
   );
