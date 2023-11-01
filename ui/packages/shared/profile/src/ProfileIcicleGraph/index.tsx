@@ -209,7 +209,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     }
     setActionButtons(
       <div className="flex w-full justify-end gap-2 pb-2">
-        <div className="ml-2 flex w-full items-end justify-between gap-2">
+        <div className="ml-2 flex w-full flex-col items-start justify-between gap-2 md:flex-row md:items-end">
           {arrow !== undefined && <GroupAndSortActionButtons navigateTo={navigateTo} />}
           <ShowHideLegendButton navigateTo={navigateTo} />
           <Button
