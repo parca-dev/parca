@@ -374,7 +374,7 @@ export const ProfileView = ({
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-x-2">
+          <div className="flex items-center md:justify-end gap-2 flex-wrap">
             <FilterByFunctionButton navigateTo={navigateTo} />
             <UserPreferences
               customButton={
