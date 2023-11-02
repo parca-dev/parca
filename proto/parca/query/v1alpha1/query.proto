@@ -252,6 +252,17 @@ message QueryRequest {
 
   // source information about the source requested, required if source report is requested
   optional SourceReference source_reference = 9;
+
+  // which runtime frames to filter out, often interpreter frames like python or ruby are not super useful by default
+  optional RuntimeFilter runtime_filter = 10;
+}
+
+// RuntimeFilter configures which runtimes to filter frames out for.
+message RuntimeFilter {
+  // Whether to show frames of the python runtime.
+  bool show_python = 1;
+  // Whether to show frames of the ruby runtime.
+  bool show_ruby = 2;
 }
 
 // SourceReference contains a reference to source code.
