@@ -489,6 +489,12 @@ export interface RuntimeFilter {
      * @generated from protobuf field: bool show_ruby = 2;
      */
     showRuby: boolean;
+    /**
+     * Whether to only show interpreted frames.
+     *
+     * @generated from protobuf field: bool show_interpreted_only = 3;
+     */
+    showInterpretedOnly: boolean;
 }
 /**
  * SourceReference contains a reference to source code.
@@ -2020,11 +2026,12 @@ class RuntimeFilter$Type extends MessageType<RuntimeFilter> {
     constructor() {
         super("parca.query.v1alpha1.RuntimeFilter", [
             { no: 1, name: "show_python", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
-            { no: 2, name: "show_ruby", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 2, name: "show_ruby", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 3, name: "show_interpreted_only", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<RuntimeFilter>): RuntimeFilter {
-        const message = { showPython: false, showRuby: false };
+        const message = { showPython: false, showRuby: false, showInterpretedOnly: false };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<RuntimeFilter>(this, message, value);
@@ -2040,6 +2047,9 @@ class RuntimeFilter$Type extends MessageType<RuntimeFilter> {
                     break;
                 case /* bool show_ruby */ 2:
                     message.showRuby = reader.bool();
+                    break;
+                case /* bool show_interpreted_only */ 3:
+                    message.showInterpretedOnly = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2059,6 +2069,9 @@ class RuntimeFilter$Type extends MessageType<RuntimeFilter> {
         /* bool show_ruby = 2; */
         if (message.showRuby !== false)
             writer.tag(2, WireType.Varint).bool(message.showRuby);
+        /* bool show_interpreted_only = 3; */
+        if (message.showInterpretedOnly !== false)
+            writer.tag(3, WireType.Varint).bool(message.showInterpretedOnly);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

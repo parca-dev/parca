@@ -322,15 +322,15 @@ func FilterProfileData(
 
 	binariesToExclude := [][]byte{}
 
+	interpretedOnly := false
 	if runtimeFilter != nil {
 		if !runtimeFilter.ShowPython {
-			binariesToExclude = append(binariesToExclude, []byte("python"))
 			binariesToExclude = append(binariesToExclude, []byte("libpython"))
 		}
 		if !runtimeFilter.ShowRuby {
-			binariesToExclude = append(binariesToExclude, []byte("ruby"))
 			binariesToExclude = append(binariesToExclude, []byte("libruby"))
 		}
+		interpretedOnly = runtimeFilter.ShowInterpretedOnly
 	}
 
 	for _, r := range records {
@@ -341,6 +341,7 @@ func FilterProfileData(
 			r,
 			filterQueryBytes,
 			binariesToExclude,
+			interpretedOnly,
 		)
 		if err != nil {
 			return nil, 0, fmt.Errorf("filter record: %w", err)
@@ -361,6 +362,7 @@ func filterRecord(
 	rec arrow.Record,
 	filterQueryBytes []byte,
 	binariesToExclude [][]byte,
+	showInterpretedOnly bool,
 ) (arrow.Record, int64, int64, error) {
 	r := profile.NewRecordReader(rec)
 
@@ -426,9 +428,14 @@ func filterRecord(
 					skipLocation := false
 					if validMappingStart {
 						mappingFile = r.MappingFileDict.Value(int(r.MappingFileIndices.Value(j)))
-						if len(mappingFile) > 0 {
+						lastSlash := bytes.LastIndex(mappingFile, []byte("/"))
+						mappingFileBase := mappingFile
+						if lastSlash >= 0 {
+							mappingFileBase = mappingFile[lastSlash+1:]
+						}
+						if len(mappingFileBase) > 0 {
 							for _, binaryToExclude := range binariesToExclude {
-								if bytes.Contains(mappingFile, binaryToExclude) {
+								if bytes.HasPrefix(mappingFileBase, binaryToExclude) {
 									skipLocation = true
 									break
 								}
@@ -436,6 +443,9 @@ func filterRecord(
 						}
 					}
 					if skipLocation {
+						continue
+					}
+					if showInterpretedOnly && !bytes.Equal(mappingFile, []byte("interpreter")) {
 						continue
 					}
 					w.Locations.Append(true)

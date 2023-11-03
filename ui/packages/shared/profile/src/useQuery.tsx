@@ -32,6 +32,9 @@ interface UseQueryOptions {
   sourceBuildID?: string;
   sourceFilename?: string;
   sourceOnly?: boolean;
+  showRuntimeRuby?: boolean;
+  showRuntimePython?: boolean;
+  showInterpretedOnly?: boolean;
 }
 
 export const useQuery = (
@@ -52,6 +55,9 @@ export const useQuery = (
       options?.sourceBuildID,
       options?.sourceOnly,
       options?.sourceOnly === true ? '' : options?.sourceFilename,
+      options?.showRuntimeRuby ?? false,
+      options?.showRuntimePython ?? false,
+      options?.showInterpretedOnly ?? false,
     ],
     queryFn: async () => {
       const req = profileSource.QueryRequest();
@@ -67,6 +73,11 @@ export const useQuery = (
           sourceOnly: options?.sourceOnly ?? false,
         };
       }
+      req.runtimeFilter = {
+        showRuby: options?.showRuntimeRuby ?? false,
+        showPython: options?.showRuntimePython ?? false,
+        showInterpretedOnly: options?.showInterpretedOnly ?? false,
+      };
 
       try {
         const {response} = await client.query(req, {meta: metadata});

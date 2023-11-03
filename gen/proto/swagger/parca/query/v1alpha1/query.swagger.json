@@ -375,6 +375,13 @@
             "in": "query",
             "required": false,
             "type": "boolean"
+          },
+          {
+            "name": "runtimeFilter.showInterpretedOnly",
+            "description": "Whether to only show interpreted frames.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -1405,6 +1412,10 @@
         "showRuby": {
           "type": "boolean",
           "description": "Whether to show frames of the ruby runtime."
+        },
+        "showInterpretedOnly": {
+          "type": "boolean",
+          "description": "Whether to only show interpreted frames."
         }
       },
       "description": "RuntimeFilter configures which runtimes to filter frames out for."
