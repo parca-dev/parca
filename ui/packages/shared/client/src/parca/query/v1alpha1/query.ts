@@ -383,6 +383,12 @@ export interface QueryRequest {
      * @generated from protobuf field: optional parca.query.v1alpha1.SourceReference source_reference = 9;
      */
     sourceReference?: SourceReference;
+    /**
+     * which runtime frames to filter out, often interpreter frames like python or ruby are not super useful by default
+     *
+     * @generated from protobuf field: optional parca.query.v1alpha1.RuntimeFilter runtime_filter = 10;
+     */
+    runtimeFilter?: RuntimeFilter;
 }
 /**
  * Mode is the type of query request
@@ -464,6 +470,25 @@ export enum QueryRequest_ReportType {
      * @generated from protobuf enum value: REPORT_TYPE_TABLE_ARROW = 7;
      */
     TABLE_ARROW = 7
+}
+/**
+ * RuntimeFilter configures which runtimes to filter frames out for.
+ *
+ * @generated from protobuf message parca.query.v1alpha1.RuntimeFilter
+ */
+export interface RuntimeFilter {
+    /**
+     * Whether to show frames of the python runtime.
+     *
+     * @generated from protobuf field: bool show_python = 1;
+     */
+    showPython: boolean;
+    /**
+     * Whether to show frames of the ruby runtime.
+     *
+     * @generated from protobuf field: bool show_ruby = 2;
+     */
+    showRuby: boolean;
 }
 /**
  * SourceReference contains a reference to source code.
@@ -1883,7 +1908,8 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
             { no: 6, name: "filter_query", kind: "scalar", opt: true, T: 9 /*ScalarType.STRING*/ },
             { no: 7, name: "node_trim_threshold", kind: "scalar", opt: true, T: 2 /*ScalarType.FLOAT*/ },
             { no: 8, name: "group_by", kind: "message", T: () => GroupBy },
-            { no: 9, name: "source_reference", kind: "message", T: () => SourceReference }
+            { no: 9, name: "source_reference", kind: "message", T: () => SourceReference },
+            { no: 10, name: "runtime_filter", kind: "message", T: () => RuntimeFilter }
         ]);
     }
     create(value?: PartialMessage<QueryRequest>): QueryRequest {
@@ -1934,6 +1960,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
                 case /* optional parca.query.v1alpha1.SourceReference source_reference */ 9:
                     message.sourceReference = SourceReference.internalBinaryRead(reader, reader.uint32(), options, message.sourceReference);
                     break;
+                case /* optional parca.query.v1alpha1.RuntimeFilter runtime_filter */ 10:
+                    message.runtimeFilter = RuntimeFilter.internalBinaryRead(reader, reader.uint32(), options, message.runtimeFilter);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1973,6 +2002,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         /* optional parca.query.v1alpha1.SourceReference source_reference = 9; */
         if (message.sourceReference)
             SourceReference.internalBinaryWrite(message.sourceReference, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* optional parca.query.v1alpha1.RuntimeFilter runtime_filter = 10; */
+        if (message.runtimeFilter)
+            RuntimeFilter.internalBinaryWrite(message.runtimeFilter, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1983,6 +2015,60 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
  * @generated MessageType for protobuf message parca.query.v1alpha1.QueryRequest
  */
 export const QueryRequest = new QueryRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class RuntimeFilter$Type extends MessageType<RuntimeFilter> {
+    constructor() {
+        super("parca.query.v1alpha1.RuntimeFilter", [
+            { no: 1, name: "show_python", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 2, name: "show_ruby", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<RuntimeFilter>): RuntimeFilter {
+        const message = { showPython: false, showRuby: false };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<RuntimeFilter>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: RuntimeFilter): RuntimeFilter {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool show_python */ 1:
+                    message.showPython = reader.bool();
+                    break;
+                case /* bool show_ruby */ 2:
+                    message.showRuby = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: RuntimeFilter, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool show_python = 1; */
+        if (message.showPython !== false)
+            writer.tag(1, WireType.Varint).bool(message.showPython);
+        /* bool show_ruby = 2; */
+        if (message.showRuby !== false)
+            writer.tag(2, WireType.Varint).bool(message.showRuby);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.query.v1alpha1.RuntimeFilter
+ */
+export const RuntimeFilter = new RuntimeFilter$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class SourceReference$Type extends MessageType<SourceReference> {
     constructor() {

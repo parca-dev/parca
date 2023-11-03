@@ -361,6 +361,20 @@
             "in": "query",
             "required": false,
             "type": "boolean"
+          },
+          {
+            "name": "runtimeFilter.showPython",
+            "description": "Whether to show frames of the python runtime.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "runtimeFilter.showRuby",
+            "description": "Whether to show frames of the ruby runtime.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -767,6 +781,10 @@
         "sourceReference": {
           "$ref": "#/definitions/v1alpha1SourceReference",
           "title": "source information about the source requested, required if source report is requested"
+        },
+        "runtimeFilter": {
+          "$ref": "#/definitions/v1alpha1RuntimeFilter",
+          "title": "which runtime frames to filter out, often interpreter frames like python or ruby are not super useful by default"
         }
       },
       "title": "QueryRequest is a request for a profile query"
@@ -1376,6 +1394,20 @@
       "default": "MODE_SINGLE_UNSPECIFIED",
       "description": "- MODE_SINGLE_UNSPECIFIED: MODE_SINGLE_UNSPECIFIED query unspecified\n - MODE_DIFF: MODE_DIFF is a diff query\n - MODE_MERGE: MODE_MERGE is a merge query",
       "title": "Mode is the type of query request"
+    },
+    "v1alpha1RuntimeFilter": {
+      "type": "object",
+      "properties": {
+        "showPython": {
+          "type": "boolean",
+          "description": "Whether to show frames of the python runtime."
+        },
+        "showRuby": {
+          "type": "boolean",
+          "description": "Whether to show frames of the ruby runtime."
+        }
+      },
+      "description": "RuntimeFilter configures which runtimes to filter frames out for."
     },
     "v1alpha1SeriesResponse": {
       "type": "object",
