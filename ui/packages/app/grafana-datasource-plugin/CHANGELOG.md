@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.0.262](https://github.com/parca-dev/parca/compare/@parca/grafana-datasource@0.0.261...@parca/grafana-datasource@0.0.262) (2023-11-03)
+
+**Note:** Version bump only for package @parca/grafana-datasource
+
 ## 0.0.261 (2023-11-03)
 
 **Note:** Version bump only for package @parca/grafana-datasource
