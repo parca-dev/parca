@@ -1274,6 +1274,16 @@ func (m *RuntimeFilter) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.ShowInterpretedOnly {
+		i--
+		if m.ShowInterpretedOnly {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x18
+	}
 	if m.ShowRuby {
 		i--
 		if m.ShowRuby {
@@ -3429,6 +3439,9 @@ func (m *RuntimeFilter) SizeVT() (n int) {
 		n += 2
 	}
 	if m.ShowRuby {
+		n += 2
+	}
+	if m.ShowInterpretedOnly {
 		n += 2
 	}
 	n += len(m.unknownFields)
@@ -6197,6 +6210,26 @@ func (m *RuntimeFilter) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.ShowRuby = bool(v != 0)
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ShowInterpretedOnly", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.ShowInterpretedOnly = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])

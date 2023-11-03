@@ -43,6 +43,13 @@ export const ProfileViewWithData = ({
   ];
   const [groupBy = [FIELD_FUNCTION_NAME]] = useURLState({param: 'group_by', navigateTo});
 
+  const [showRuntimeRubyStr] = useURLState({param: 'show_runtime_ruby', navigateTo});
+  const showRuntimeRuby = showRuntimeRubyStr === 'true';
+  const [showRuntimePythonStr] = useURLState({param: 'show_runtime_python', navigateTo});
+  const showRuntimePython = showRuntimePythonStr === 'true';
+  const [showInterpretedOnlyStr] = useURLState({param: 'show_interpreted_only', navigateTo});
+  const showInterpretedOnly = showInterpretedOnlyStr === 'true';
+
   const [pprofDownloading, setPprofDownloading] = useState<boolean>(false);
 
   const nodeTrimThreshold = useMemo(() => {
@@ -65,6 +72,9 @@ export const ProfileViewWithData = ({
     skip: !dashboardItems.includes('icicle'),
     nodeTrimThreshold,
     groupBy: groupByParam,
+    showRuntimeRuby,
+    showRuntimePython,
+    showInterpretedOnly,
   });
   const {perf} = useParcaContext();
 
