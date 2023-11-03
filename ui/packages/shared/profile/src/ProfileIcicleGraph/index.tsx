@@ -163,11 +163,17 @@ const GroupAndSortActionButtons = ({navigateTo}: {navigateTo?: NavigateFunction}
       />
       <RuntimeFilterDropdown
         showRuntimeRuby={showRuntimeRubyStr === 'true'}
-        toggleShowRuntimeRuby={() => setShowRuntimeRuby(showRuntimeRubyStr === 'true' ? 'false' : 'true')}
+        toggleShowRuntimeRuby={() =>
+          setShowRuntimeRuby(showRuntimeRubyStr === 'true' ? 'false' : 'true')
+        }
         showRuntimePython={showRuntimePythonStr === 'true'}
-        toggleShowRuntimePython={() => setShowRuntimePython(showRuntimePythonStr === 'true' ? 'false' : 'true')}
+        toggleShowRuntimePython={() =>
+          setShowRuntimePython(showRuntimePythonStr === 'true' ? 'false' : 'true')
+        }
         showInterpretedOnly={showInterpretedOnlyStr === 'true'}
-        toggleShowInterpretedOnly={() => setShowInterpretedOnly(showInterpretedOnlyStr === 'true' ? 'false' : 'true')}
+        toggleShowInterpretedOnly={() =>
+          setShowInterpretedOnly(showInterpretedOnlyStr === 'true' ? 'false' : 'true')
+        }
       />
     </>
   );
@@ -205,8 +211,8 @@ const RuntimeToggle = ({
         <p className="text-gray-500">{description}</p>
       </div>
     </div>
-  )
-}
+  );
+};
 
 const RuntimeFilterDropdown = ({
   showRuntimeRuby,

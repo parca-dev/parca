@@ -77,7 +77,7 @@ export const useQuery = (
         showRuby: options?.showRuntimeRuby ?? false,
         showPython: options?.showRuntimePython ?? false,
         showInterpretedOnly: options?.showInterpretedOnly ?? false,
-      }
+      };
 
       try {
         const {response} = await client.query(req, {meta: metadata});
