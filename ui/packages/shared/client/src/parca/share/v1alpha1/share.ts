@@ -19,6 +19,7 @@ import { Callgraph } from "../../query/v1alpha1/query";
 import { Top } from "../../query/v1alpha1/query";
 import { Flamegraph } from "../../query/v1alpha1/query";
 import { ProfileType } from "../../query/v1alpha1/query";
+import { RuntimeFilter } from "../../query/v1alpha1/query";
 import { QueryRequest_ReportType } from "../../query/v1alpha1/query";
 /**
  * UploadRequest represents the request with profile bytes and description.
@@ -94,6 +95,12 @@ export interface QueryRequest {
      * @generated from protobuf field: optional float node_trim_threshold = 5;
      */
     nodeTrimThreshold?: number;
+    /**
+     * which runtime frames to filter out, often interpreter frames like python or ruby are not super useful by default
+     *
+     * @generated from protobuf field: optional parca.query.v1alpha1.RuntimeFilter runtime_filter = 6;
+     */
+    runtimeFilter?: RuntimeFilter;
 }
 /**
  * ProfileTypesRequest represents the profile types request with the id of the profile to be queried.
@@ -324,7 +331,8 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
             { no: 2, name: "profile_type", kind: "scalar", opt: true, T: 9 /*ScalarType.STRING*/ },
             { no: 3, name: "report_type", kind: "enum", T: () => ["parca.query.v1alpha1.QueryRequest.ReportType", QueryRequest_ReportType, "REPORT_TYPE_"] },
             { no: 4, name: "filter_query", kind: "scalar", opt: true, T: 9 /*ScalarType.STRING*/ },
-            { no: 5, name: "node_trim_threshold", kind: "scalar", opt: true, T: 2 /*ScalarType.FLOAT*/ }
+            { no: 5, name: "node_trim_threshold", kind: "scalar", opt: true, T: 2 /*ScalarType.FLOAT*/ },
+            { no: 6, name: "runtime_filter", kind: "message", T: () => RuntimeFilter }
         ]);
     }
     create(value?: PartialMessage<QueryRequest>): QueryRequest {
@@ -354,6 +362,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
                 case /* optional float node_trim_threshold */ 5:
                     message.nodeTrimThreshold = reader.float();
                     break;
+                case /* optional parca.query.v1alpha1.RuntimeFilter runtime_filter */ 6:
+                    message.runtimeFilter = RuntimeFilter.internalBinaryRead(reader, reader.uint32(), options, message.runtimeFilter);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -381,6 +392,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         /* optional float node_trim_threshold = 5; */
         if (message.nodeTrimThreshold !== undefined)
             writer.tag(5, WireType.Bit32).float(message.nodeTrimThreshold);
+        /* optional parca.query.v1alpha1.RuntimeFilter runtime_filter = 6; */
+        if (message.runtimeFilter)
+            RuntimeFilter.internalBinaryWrite(message.runtimeFilter, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

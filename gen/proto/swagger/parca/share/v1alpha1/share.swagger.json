@@ -614,6 +614,24 @@
       },
       "description": "ProfileType is the type of a profile as well as the units the profile type is available in."
     },
+    "v1alpha1RuntimeFilter": {
+      "type": "object",
+      "properties": {
+        "showPython": {
+          "type": "boolean",
+          "description": "Whether to show frames of the python runtime."
+        },
+        "showRuby": {
+          "type": "boolean",
+          "description": "Whether to show frames of the ruby runtime."
+        },
+        "showInterpretedOnly": {
+          "type": "boolean",
+          "description": "Whether to only show interpreted frames."
+        }
+      },
+      "description": "RuntimeFilter configures which runtimes to filter frames out for."
+    },
     "v1alpha1TableArrow": {
       "type": "object",
       "properties": {
