@@ -318,6 +318,16 @@ func (m *QueryRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.RuntimeFilter != nil {
+		size, err := m.RuntimeFilter.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x32
+	}
 	if m.NodeTrimThreshold != nil {
 		i -= 4
 		binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(*m.NodeTrimThreshold))))
@@ -695,6 +705,10 @@ func (m *QueryRequest) SizeVT() (n int) {
 	}
 	if m.NodeTrimThreshold != nil {
 		n += 5
+	}
+	if m.RuntimeFilter != nil {
+		l = m.RuntimeFilter.SizeVT()
+		n += 1 + l + sov(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1232,6 +1246,42 @@ func (m *QueryRequest) UnmarshalVT(dAtA []byte) error {
 			iNdEx += 4
 			v2 := float32(math.Float32frombits(v))
 			m.NodeTrimThreshold = &v2
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RuntimeFilter", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.RuntimeFilter == nil {
+				m.RuntimeFilter = &v1alpha1.RuntimeFilter{}
+			}
+			if err := m.RuntimeFilter.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])

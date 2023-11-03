@@ -50,6 +50,9 @@ message QueryRequest {
 
   // node_trim_threshold is the threshold % where the nodes with Value less than this will be removed from the report
   optional float node_trim_threshold = 5;
+
+  // which runtime frames to filter out, often interpreter frames like python or ruby are not super useful by default
+  optional parca.query.v1alpha1.RuntimeFilter runtime_filter = 6;
 }
 
 // ProfileTypesRequest represents the profile types request with the id of the profile to be queried.
