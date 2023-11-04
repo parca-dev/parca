@@ -28,7 +28,7 @@ require (
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/parquet-go/parquet-go v0.18.1-0.20231004061202-cde8189c4c26
+	github.com/parquet-go/parquet-go v0.19.0
 	github.com/polarsignals/frostdb v0.0.0-20231019114304-92877c708395
 	github.com/prometheus/client_golang v1.17.0
 	github.com/prometheus/common v0.45.0
