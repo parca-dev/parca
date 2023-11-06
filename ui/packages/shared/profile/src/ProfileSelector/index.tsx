@@ -238,11 +238,11 @@ const ProfileSelector = ({
           </div>
 
           <div className="w-full flex-1">
-            <div className="flex items-center justify-between">
+            <div className="mb-[2px] flex items-center justify-between">
               <label className="text-xs">Query</label>
 
-              {query.matchers.length > 0 && (
-                <div>{viewComponent && viewComponent(query.matchersString())}</div>
+              {query.matchers.length > 0 && viewComponent !== undefined && (
+                <div>{viewComponent(query.matchersString())}</div>
               )}
             </div>
 
