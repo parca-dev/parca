@@ -23,6 +23,7 @@ import {
   DateTimeRangePicker,
   IconButton,
   useGrpcMetadata,
+  useParcaContext,
 } from '@parca/components';
 import {CloseIcon} from '@parca/icons';
 import {Query} from '@parca/parser';
@@ -100,6 +101,7 @@ const ProfileSelector = ({
     error,
   } = useProfileTypes(queryClient);
   const {heightStyle} = useMetricsGraphDimensions(comparing);
+  const {viewComponent} = useParcaContext();
 
   const [timeRangeSelection, setTimeRangeSelection] = useState(
     DateTimeRange.fromRangeKey(querySelection.timeSelection)
@@ -236,7 +238,10 @@ const ProfileSelector = ({
           </div>
 
           <div className="w-full flex-1">
-            <label className="text-xs">Query</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs">Query</label>
+              <div>{viewComponent && viewComponent(query.matchersString())}</div>
+            </div>
             <MatchersInput
               queryClient={queryClient}
               setMatchersString={setMatchersString}
@@ -265,6 +270,7 @@ const ProfileSelector = ({
                 e.preventDefault();
                 setQueryExpression();
               }}
+              id="matcher-search-button"
             >
               Search
             </Button>
