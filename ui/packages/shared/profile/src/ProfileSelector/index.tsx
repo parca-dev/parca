@@ -240,8 +240,12 @@ const ProfileSelector = ({
           <div className="w-full flex-1">
             <div className="flex items-center justify-between">
               <label className="text-xs">Query</label>
-              <div>{viewComponent && viewComponent(query.matchersString())}</div>
+
+              {query.matchers.length > 0 && (
+                <div>{viewComponent && viewComponent(query.matchersString())}</div>
+              )}
             </div>
+
             <MatchersInput
               queryClient={queryClient}
               setMatchersString={setMatchersString}
