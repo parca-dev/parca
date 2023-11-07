@@ -215,6 +215,7 @@ const MatchersInput = ({
             ? 'Select a profile first to enter a filter...'
             : 'filter profiles... eg. node="test"'
         }
+        id="matchers-input"
       />
       <SuggestionsList
         isLabelNamesLoading={labelNamesLoading}
