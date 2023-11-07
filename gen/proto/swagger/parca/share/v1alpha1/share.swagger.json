@@ -584,6 +584,19 @@
       },
       "title": "FlamegraphRootNode is a root node of a flame graph"
     },
+    "v1alpha1GroupBy": {
+      "type": "object",
+      "properties": {
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "the names of the fields to group by.\nspecial fields are the ones prefixed with \"labels.\" which are grouping by pprof labels."
+        }
+      },
+      "title": "GroupBy encapsulates the repeated fields to group by"
+    },
     "v1alpha1ProfileType": {
       "type": "object",
       "properties": {
