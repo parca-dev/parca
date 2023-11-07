@@ -1224,7 +1224,7 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 	var filtered int64
 	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
 	defer mem.AssertSize(t, 0)
-	newProfile.Samples, filtered, err = FilterProfileData(ctx, tracer, mem, newProfile.Samples, "b") // querying for "b" should filter out the "5.c" function.
+	newProfile.Samples, filtered, err = FilterProfileData(ctx, tracer, mem, newProfile.Samples, "b", nil) // querying for "b" should filter out the "5.c" function.
 	require.NoError(t, err)
 	defer func() {
 		for _, s := range newProfile.Samples {

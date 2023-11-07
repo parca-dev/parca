@@ -52,7 +52,7 @@ export const VisualizationPanel = React.memo(function VisualizationPanel({
   return (
     <>
       <div className="flex w-full items-start justify-end gap-2 pb-2">
-        <div className="flex w-full items-start justify-between">
+        <div className="flex w-full items-start justify-between flex-col-reverse md:flex-row">
           <div className="flex items-start">
             <div
               className={cx(isMultiPanelView ? '' : 'hidden', 'flex items-center')}

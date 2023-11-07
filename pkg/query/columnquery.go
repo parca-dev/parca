@@ -263,11 +263,16 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		}
 	}()
 
-	if req.FilterQuery != nil {
-		p.Samples, filtered, err = FilterProfileData(ctx, q.tracer, q.mem, p.Samples, req.GetFilterQuery())
-		if err != nil {
-			return nil, fmt.Errorf("filtering profile: %w", err)
-		}
+	p.Samples, filtered, err = FilterProfileData(
+		ctx,
+		q.tracer,
+		q.mem,
+		p.Samples,
+		req.GetFilterQuery(),
+		req.GetRuntimeFilter(),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("filtering profile: %w", err)
 	}
 
 	return q.renderReport(
@@ -289,6 +294,7 @@ func FilterProfileData(
 	pool memory.Allocator,
 	records []arrow.Record,
 	filterQuery string,
+	runtimeFilter *pb.RuntimeFilter,
 ) ([]arrow.Record, int64, error) {
 	_, span := tracer.Start(ctx, "filterByFunction")
 	defer span.End()
@@ -310,8 +316,33 @@ func FilterProfileData(
 	allValues := int64(0)
 	allFiltered := int64(0)
 
+	if runtimeFilter == nil {
+		runtimeFilter = &pb.RuntimeFilter{}
+	}
+
+	binariesToExclude := [][]byte{}
+
+	interpretedOnly := false
+	if runtimeFilter != nil {
+		if !runtimeFilter.ShowPython {
+			binariesToExclude = append(binariesToExclude, []byte("libpython"))
+		}
+		if !runtimeFilter.ShowRuby {
+			binariesToExclude = append(binariesToExclude, []byte("libruby"))
+		}
+		interpretedOnly = runtimeFilter.ShowInterpretedOnly
+	}
+
 	for _, r := range records {
-		filteredRecord, valueSum, filteredSum, err := filterRecord(ctx, tracer, pool, r, filterQueryBytes)
+		filteredRecord, valueSum, filteredSum, err := filterRecord(
+			ctx,
+			tracer,
+			pool,
+			r,
+			filterQueryBytes,
+			binariesToExclude,
+			interpretedOnly,
+		)
 		if err != nil {
 			return nil, 0, fmt.Errorf("filter record: %w", err)
 		}
@@ -330,6 +361,8 @@ func filterRecord(
 	pool memory.Allocator,
 	rec arrow.Record,
 	filterQueryBytes []byte,
+	binariesToExclude [][]byte,
+	showInterpretedOnly bool,
 ) (arrow.Record, int64, int64, error) {
 	r := profile.NewRecordReader(rec)
 
@@ -356,17 +389,21 @@ func filterRecord(
 	for i := 0; i < int(rec.NumRows()); i++ {
 		lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 		keepRow := false
-		if lOffsetStart < lOffsetEnd {
-			firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
-			_, lastEnd := r.Lines.ValueOffsets(int(lOffsetEnd - 1))
-			for k := int(firstStart); k < int(lastEnd); k++ {
-				if r.LineFunctionNameIndices.IsValid(k) {
-					if _, ok := indexMatches[r.LineFunctionNameIndices.Value(k)]; ok {
-						keepRow = true
-						break
+		if len(filterQueryBytes) > 0 {
+			if lOffsetStart < lOffsetEnd {
+				firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
+				_, lastEnd := r.Lines.ValueOffsets(int(lOffsetEnd - 1))
+				for k := int(firstStart); k < int(lastEnd); k++ {
+					if r.LineFunctionNameIndices.IsValid(k) {
+						if _, ok := indexMatches[r.LineFunctionNameIndices.Value(k)]; ok {
+							keepRow = true
+							break
+						}
 					}
 				}
 			}
+		} else {
+			keepRow = true
 		}
 
 		if keepRow {
@@ -386,15 +423,39 @@ func filterRecord(
 			if lOffsetEnd-lOffsetStart > 0 {
 				w.LocationsList.Append(true)
 				for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
+					validMappingStart := r.MappingStart.IsValid(j)
+					var mappingFile []byte
+					skipLocation := false
+					if validMappingStart {
+						mappingFile = r.MappingFileDict.Value(int(r.MappingFileIndices.Value(j)))
+						lastSlash := bytes.LastIndex(mappingFile, []byte("/"))
+						mappingFileBase := mappingFile
+						if lastSlash >= 0 {
+							mappingFileBase = mappingFile[lastSlash+1:]
+						}
+						if len(mappingFileBase) > 0 {
+							for _, binaryToExclude := range binariesToExclude {
+								if bytes.HasPrefix(mappingFileBase, binaryToExclude) {
+									skipLocation = true
+									break
+								}
+							}
+						}
+					}
+					if skipLocation {
+						continue
+					}
+					if showInterpretedOnly && !bytes.Equal(mappingFile, []byte("interpreter")) {
+						continue
+					}
 					w.Locations.Append(true)
 					w.Addresses.Append(r.Address.Value(j))
 
-					if r.MappingStart.IsValid(j) {
+					if validMappingStart {
 						w.MappingStart.Append(r.MappingStart.Value(j))
 						w.MappingLimit.Append(r.MappingLimit.Value(j))
 						w.MappingOffset.Append(r.MappingOffset.Value(j))
 
-						mappingFile := r.MappingFileDict.Value(int(r.MappingFileIndices.Value(j)))
 						if len(mappingFile) > 0 {
 							if err := w.MappingFile.Append(mappingFile); err != nil {
 								return nil, 0, 0, fmt.Errorf("append mapping file: %w", err)
