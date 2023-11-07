@@ -19,6 +19,7 @@ import { Callgraph } from "../../query/v1alpha1/query";
 import { Top } from "../../query/v1alpha1/query";
 import { Flamegraph } from "../../query/v1alpha1/query";
 import { ProfileType } from "../../query/v1alpha1/query";
+import { GroupBy } from "../../query/v1alpha1/query";
 import { RuntimeFilter } from "../../query/v1alpha1/query";
 import { QueryRequest_ReportType } from "../../query/v1alpha1/query";
 /**
@@ -101,6 +102,12 @@ export interface QueryRequest {
      * @generated from protobuf field: optional parca.query.v1alpha1.RuntimeFilter runtime_filter = 6;
      */
     runtimeFilter?: RuntimeFilter;
+    /**
+     * group_by indicates the fields to group by
+     *
+     * @generated from protobuf field: optional parca.query.v1alpha1.GroupBy group_by = 7;
+     */
+    groupBy?: GroupBy;
 }
 /**
  * ProfileTypesRequest represents the profile types request with the id of the profile to be queried.
@@ -332,7 +339,8 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
             { no: 3, name: "report_type", kind: "enum", T: () => ["parca.query.v1alpha1.QueryRequest.ReportType", QueryRequest_ReportType, "REPORT_TYPE_"] },
             { no: 4, name: "filter_query", kind: "scalar", opt: true, T: 9 /*ScalarType.STRING*/ },
             { no: 5, name: "node_trim_threshold", kind: "scalar", opt: true, T: 2 /*ScalarType.FLOAT*/ },
-            { no: 6, name: "runtime_filter", kind: "message", T: () => RuntimeFilter }
+            { no: 6, name: "runtime_filter", kind: "message", T: () => RuntimeFilter },
+            { no: 7, name: "group_by", kind: "message", T: () => GroupBy }
         ]);
     }
     create(value?: PartialMessage<QueryRequest>): QueryRequest {
@@ -365,6 +373,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
                 case /* optional parca.query.v1alpha1.RuntimeFilter runtime_filter */ 6:
                     message.runtimeFilter = RuntimeFilter.internalBinaryRead(reader, reader.uint32(), options, message.runtimeFilter);
                     break;
+                case /* optional parca.query.v1alpha1.GroupBy group_by */ 7:
+                    message.groupBy = GroupBy.internalBinaryRead(reader, reader.uint32(), options, message.groupBy);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -395,6 +406,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         /* optional parca.query.v1alpha1.RuntimeFilter runtime_filter = 6; */
         if (message.runtimeFilter)
             RuntimeFilter.internalBinaryWrite(message.runtimeFilter, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* optional parca.query.v1alpha1.GroupBy group_by = 7; */
+        if (message.groupBy)
+            GroupBy.internalBinaryWrite(message.groupBy, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
