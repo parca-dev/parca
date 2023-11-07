@@ -812,6 +812,13 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile, aggr
 		return profile.Profile{}, err
 	}
 
+	return ComputeDiff(ctx, q.tracer, base, compare, q.mem)
+}
+
+func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile.Profile, mem memory.Allocator) (profile.Profile, error) {
+	_, span := tracer.Start(ctx, "ComputeDiff")
+	defer span.End()
+
 	records := make([]arrow.Record, 0, len(compare.Samples)+len(base.Samples))
 
 	for _, r := range compare.Samples {
@@ -836,9 +843,9 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile, aggr
 			columns := r.Columns()
 			cols := make([]arrow.Array, len(columns))
 			copy(cols, columns)
-			mult := multiplyInt64By(q.mem, columns[len(columns)-2].(*array.Int64), -1)
+			mult := multiplyInt64By(mem, columns[len(columns)-2].(*array.Int64), -1)
 			defer mult.Release()
-			zero := zeroArray(q.mem, int(r.NumRows()))
+			zero := zeroArray(mem, int(r.NumRows()))
 			defer zero.Release()
 			records = append(records, array.NewRecord(
 				r.Schema(),
