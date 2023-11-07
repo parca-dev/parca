@@ -443,7 +443,10 @@ const ColumnsVisibility = ({
                         />
                       </div>
                       <div className="ml-3 text-sm leading-6">
-                        <label htmlFor={col.id} className="font-medium text-gray-900">
+                        <label
+                          htmlFor={col.id}
+                          className="font-medium text-gray-900 dark:text-gray-200"
+                        >
                           {col.header}
                         </label>
                       </div>

@@ -205,10 +205,10 @@ const RuntimeToggle = ({
         />
       </div>
       <div className="ml-3 text-sm leading-6">
-        <label htmlFor={id} className="font-medium text-gray-900">
+        <label htmlFor={id} className="font-medium text-gray-900 dark:text-gray-200">
           {label}
         </label>
-        <p className="text-gray-500">{description}</p>
+        <p className="text-gray-500 dark:text-gray-400">{description}</p>
       </div>
     </div>
   );
@@ -510,10 +510,13 @@ const GroupByDropdown = ({
                         />
                       </div>
                       <div className="ml-3 text-sm leading-6">
-                        <label htmlFor={value} className="font-medium text-gray-900">
+                        <label
+                          htmlFor={value}
+                          className="font-medium text-gray-900 dark:text-gray-200"
+                        >
                           {label}
                         </label>
-                        <p className="text-gray-500">{description}</p>
+                        <p className="text-gray-500 dark:text-gray-400">{description}</p>
                       </div>
                     </div>
                   ))}
