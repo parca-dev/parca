@@ -4,6 +4,8 @@ package parca.telemetry.v1alpha1;
 
 import "google/api/annotations.proto";
 
+option go_package = "github.com/parca-dev/parca/gen/go/telemetry";
+
 // TelemetryService is the service that provides APIs to send information about the
 // Agents, such as unhandled panics and other relevant runtime data.
 service TelemetryService {

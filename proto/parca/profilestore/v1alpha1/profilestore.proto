@@ -6,6 +6,8 @@ import "google/api/annotations.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
+option go_package = "github.com/parca-dev/parca/gen/go/profilestore";
+
 // ProfileStoreService is the service the accepts pprof writes
 service ProfileStoreService {
   // WriteRaw accepts a raw set of bytes of a pprof file

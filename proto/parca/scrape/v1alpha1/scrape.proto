@@ -7,6 +7,8 @@ import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "parca/profilestore/v1alpha1/profilestore.proto";
 
+option go_package = "github.com/parca-dev/parca/gen/go/scrape";
+
 // ScrapeService maintains the set of scrape targets
 service ScrapeService {
   // Targets returns the set of scrape targets that are configured

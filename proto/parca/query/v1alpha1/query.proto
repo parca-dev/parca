@@ -8,6 +8,8 @@ import "google/protobuf/timestamp.proto";
 import "parca/metastore/v1alpha1/metastore.proto";
 import "parca/profilestore/v1alpha1/profilestore.proto";
 
+option go_package = "github.com/parca-dev/parca/gen/go/query";
+
 // QueryService is the service that provides APIs to retrieve and inspect profiles
 service QueryService {
   // QueryRange performs a profile query over a time range
