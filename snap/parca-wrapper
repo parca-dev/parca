@@ -23,6 +23,8 @@ storage_active_memory="$(snapctl get storage-active-memory)"
 log_level="$(snapctl get log-level)"
 storage_persist="$(snapctl get enable-persistence)"
 http_address="$(snapctl get http-address)"
+http_path_prefix="$(snapctl get http-path-prefix)"
+debuginfod_upstream_servers="$(snapctl get debuginfod-upstream-server)"
 
 store="$(snapctl get remote-store-address)"
 insecure="$(snapctl get remote-store-insecure)"
@@ -34,6 +36,14 @@ opts=(
     "--log-level=${log_level}"
     "--http-address=${http_address}"
 )
+
+if [ -n "$http_path_prefix" ]; then
+    opts+=("--path-prefix=${http_path_prefix}")
+fi
+
+if [ -n "$debuginfod_upstream_servers" ]; then
+    opts+=("--debuginfod-upstream-servers")
+fi
 
 # If there is a token set for a store, then enable sending profiles to a remote store.
 # Ensure we set the mode to scraper only in this instance.
