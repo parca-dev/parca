@@ -4,6 +4,8 @@ package parca.share.v1alpha1;
 
 import "parca/query/v1alpha1/query.proto";
 
+option go_package = "github.com/parca-dev/parca/gen/go/share";
+
 // Service that exposes APIs for sharing profiles.
 service ShareService {
   // Uploads the profile and returns the link that can be used to access it.

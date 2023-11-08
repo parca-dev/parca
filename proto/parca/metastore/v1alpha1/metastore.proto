@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package parca.metastore.v1alpha1;
 
+option go_package = "github.com/parca-dev/parca/gen/go/metastore";
+
 // MetastoreService
 service MetastoreService {
   // GetOrCreateMappings checks if the mappings in the request are already
