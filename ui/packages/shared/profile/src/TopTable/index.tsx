@@ -25,6 +25,7 @@ import {
   type NavigateFunction,
 } from '@parca/utilities';
 
+import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
 import {hexifyAddress} from '../utils';
 
 interface TopTableProps {
@@ -72,9 +73,8 @@ export const TopTable = React.memo(function TopTable({
 }: TopTableProps): JSX.Element {
   const router = parseParams(window?.location.search);
   const [rawDashboardItems] = useURLState({param: 'dashboard_items'});
-  const [rawcompareMode] = useURLState({param: 'compare_a'});
 
-  const compareMode: boolean = rawcompareMode === undefined ? false : rawcompareMode === 'true';
+  const {compareMode} = useProfileViewContext();
 
   const dashboardItems = useMemo(() => {
     if (rawDashboardItems !== undefined) {

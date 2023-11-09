@@ -19,13 +19,9 @@ import {Icon} from '@iconify/react';
 import {Flamegraph, FlamegraphArrow} from '@parca/client';
 import {Button, Select, useParcaContext, useURLState} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
-import {
-  capitalizeOnlyFirstLetter,
-  divide,
-  selectQueryParam,
-  type NavigateFunction,
-} from '@parca/utilities';
+import {capitalizeOnlyFirstLetter, divide, type NavigateFunction} from '@parca/utilities';
 
+import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
 import DiffLegend from '../components/DiffLegend';
 import IcicleGraph from './IcicleGraph';
 import IcicleGraphArrow, {
@@ -67,8 +63,7 @@ const ShowHideLegendButton = ({navigateTo}: {navigateTo?: NavigateFunction}): JS
     navigateTo,
   });
 
-  const compareMode: boolean =
-    selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
+  const {compareMode} = useProfileViewContext();
 
   const isColorStackLegendEnabled = colorStackLegend === 'true';
 
@@ -104,8 +99,7 @@ const GroupAndSortActionButtons = ({navigateTo}: {navigateTo?: NavigateFunction}
     param: 'sort_by',
     navigateTo,
   });
-  const compareMode: boolean =
-    selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
+  const {compareMode} = useProfileViewContext();
 
   const [storeGroupBy = [FIELD_FUNCTION_NAME], setStoreGroupBy] = useURLState({
     param: 'group_by',
@@ -298,8 +292,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   width,
 }: ProfileIcicleGraphProps): JSX.Element {
   const {loader, onError, authenticationErrorMessage} = useParcaContext();
-  const compareMode: boolean =
-    selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
+  const {compareMode} = useProfileViewContext();
 
   const [storeSortBy = FIELD_FUNCTION_NAME] = useURLState({
     param: 'sort_by',
@@ -383,7 +376,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
 
   return (
     <div className="relative">
-      {compareMode && <DiffLegend />}
+      {compareMode ? <DiffLegend /> : null}
       <div className="min-h-48">
         {graph !== undefined && (
           <IcicleGraph

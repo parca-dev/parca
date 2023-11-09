@@ -44,7 +44,7 @@ import {
 } from '@parca/components';
 import {useContainerDimensions} from '@parca/hooks';
 import {selectDarkMode, useAppSelector} from '@parca/store';
-import {getNewSpanColor} from '@parca/utilities';
+import {getNewSpanColor, selectQueryParam} from '@parca/utilities';
 
 import {Callgraph} from '../';
 import {jsonToDot} from '../Callgraph/utils';
@@ -131,6 +131,7 @@ export const ProfileView = ({
   navigateTo,
   onDownloadPProf,
   pprofDownloading,
+  compare,
 }: ProfileViewProps): JSX.Element => {
   const {ref, dimensions} = useContainerDimensions();
   const [curPath, setCurPath] = useState<string[]>([]);
@@ -352,9 +353,13 @@ export const ProfileView = ({
   const hasProfileSource = profileSource !== undefined && profileSourceString !== '';
   const headerParts = profileSourceString?.split('"') ?? [];
 
+  const compareMode =
+    compare === true ||
+    (selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true');
+
   return (
     <KeyDownProvider>
-      <ProfileViewContextProvider value={{profileSource, sampleUnit}}>
+      <ProfileViewContextProvider value={{profileSource, sampleUnit, compareMode}}>
         <div
           className={cx(
             'mb-4 flex w-full items-center',
@@ -374,7 +379,7 @@ export const ProfileView = ({
             </div>
           )}
 
-          <div className="flex items-center md:justify-end gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2 md:justify-end">
             <FilterByFunctionButton navigateTo={navigateTo} />
             <UserPreferences
               customButton={

@@ -27,6 +27,7 @@ import {
   type NavigateFunction,
 } from '@parca/utilities';
 
+import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
 import {hexifyAddress} from '../utils';
 
 const FIELD_MAPPING_FILE = 'mapping_file';
@@ -84,10 +85,9 @@ export const Table = React.memo(function Table({
 }: TableProps): React.JSX.Element {
   const router = parseParams(window?.location.search);
   const [rawDashboardItems] = useURLState({param: 'dashboard_items'});
-  const [rawcompareMode] = useURLState({param: 'compare_a'});
   const [filterByFunctionInput] = useURLState({param: 'filter_by_function'});
 
-  const compareMode: boolean = rawcompareMode === undefined ? false : rawcompareMode === 'true';
+  const {compareMode} = useProfileViewContext();
 
   const dashboardItems = useMemo(() => {
     if (rawDashboardItems !== undefined) {
