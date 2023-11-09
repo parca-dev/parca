@@ -72,6 +72,16 @@ const knownValueFormatters = {
   count: unitsInCount,
 };
 
+export const roundToDecimals = (n: number, decimals: number): number => {
+  const log10 = Math.floor(Math.log10(n));
+  const div = log10 < 0 ? Math.pow(10, decimals - log10 - 1) : Math.pow(10, decimals);
+
+  return Math.round(n * div) / div;
+};
+
+export const getPrecision = (value: number): number =>
+  String(roundToDecimals(value, 2)).replace('.', '').length - value.toFixed().length;
+
 export const valueFormatter = (num: bigint | number, unit: string, digits: number): string => {
   const isBigInt = typeof num === 'bigint';
   const absoluteNum = isBigInt ? abs(num) : Math.abs(num);
@@ -91,7 +101,7 @@ export const valueFormatter = (num: bigint | number, unit: string, digits: numbe
   const multiplier = format[i].multiplier;
   return `${(isBigInt ? divide(num, BigInt(multiplier)) : num / multiplier)
     .toFixed(digits)
-    .replace(rx, '$1')}${format[i].symbol}`;
+    .replace(rx, '$1')} ${format[i].symbol}`;
 };
 
 export const isDevModeOrPreview = (): boolean => {

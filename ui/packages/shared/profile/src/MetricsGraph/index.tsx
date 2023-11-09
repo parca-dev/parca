@@ -23,6 +23,7 @@ import {DateTimeRange} from '@parca/components';
 import {
   formatDate,
   formatForTimespan,
+  getPrecision,
   sanitizeHighlightedValues,
   valueFormatter,
 } from '@parca/utilities';
@@ -450,30 +451,40 @@ export const RawMetricsGraph = ({
           </g>
           <g transform={`translate(${margin * 1.5}, ${margin / 1.5})`}>
             <g className="y axis" textAnchor="end" fontSize="10" fill="none">
-              {yScale.ticks(5).map((d, i) => (
-                <Fragment key={`${i.toString()}-${d.toString()}`}>
-                  <g
-                    key={`tick-${i}`}
-                    className="tick"
-                    /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
-                    transform={`translate(0, ${yScale(d)})`}
-                  >
-                    <line className="stroke-gray-300 dark:stroke-gray-500" x2={-6} />
-                    <text fill="currentColor" x={-9} dy={'0.32em'}>
-                      {valueFormatter(d, sampleUnit, 1)}
-                    </text>
-                  </g>
-                  <g key={`grid-${i}`}>
-                    <line
-                      className="stroke-gray-300 dark:stroke-gray-500"
-                      x1={xScale(from)}
-                      x2={xScale(to)}
-                      y1={yScale(d)}
-                      y2={yScale(d)}
-                    />
-                  </g>
-                </Fragment>
-              ))}
+              {yScale.ticks(5).map((d, i, allTicks) => {
+                let decimals = 2;
+                const intervalBetweenTicks = allTicks[1] - allTicks[0];
+
+                if (intervalBetweenTicks < 1) {
+                  const precision = getPrecision(intervalBetweenTicks);
+                  decimals = precision;
+                }
+
+                return (
+                  <Fragment key={`${i.toString()}-${d.toString()}`}>
+                    <g
+                      key={`tick-${i}`}
+                      className="tick"
+                      /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
+                      transform={`translate(0, ${yScale(d)})`}
+                    >
+                      <line className="stroke-gray-300 dark:stroke-gray-500" x2={-6} />
+                      <text fill="currentColor" x={-9} dy={'0.32em'}>
+                        {valueFormatter(d, sampleUnit, decimals)}
+                      </text>
+                    </g>
+                    <g key={`grid-${i}`}>
+                      <line
+                        className="stroke-gray-300 dark:stroke-gray-500"
+                        x1={xScale(from)}
+                        x2={xScale(to)}
+                        y1={yScale(d)}
+                        y2={yScale(d)}
+                      />
+                    </g>
+                  </Fragment>
+                );
+              })}
               <line
                 className="stroke-gray-300 dark:stroke-gray-500"
                 x1={0}

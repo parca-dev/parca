@@ -28,19 +28,19 @@ describe('capitalize', () => {
 
 describe('valueFormatter', () => {
   it('formats the value passed in count', () => {
-    expect(valueFormatter(987654321n, 'count', 1)).toBe('987.7M');
+    expect(valueFormatter(987654321n, 'count', 1)).toBe('987.7 M');
   });
 
   it('formats the value passed in time', () => {
-    expect(valueFormatter(9654321n, 'nanoseconds', 1)).toBe('9.7ms');
+    expect(valueFormatter(9654321n, 'nanoseconds', 1)).toBe('9.7 ms');
   });
 
   it('formats the value passed in bytes', () => {
-    expect(valueFormatter(9654321n, 'bytes', 1)).toBe('9.7MB');
+    expect(valueFormatter(9654321n, 'bytes', 1)).toBe('9.7 MB');
   });
 
   it('formats a negative value passed correctly', () => {
-    expect(valueFormatter(-987654321n, 'bytes', 1)).toBe('-987.7MB');
+    expect(valueFormatter(-987654321n, 'bytes', 1)).toBe('-987.7 MB');
   });
 });
 
