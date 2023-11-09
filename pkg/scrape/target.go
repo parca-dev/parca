@@ -230,7 +230,7 @@ func LabelsByProfiles(lb *labels.Builder, c *config.ProfilingConfig) ([]labels.L
 
 	if len(c.PprofConfig) > 0 {
 		for profilingType, profilingConfig := range c.PprofConfig {
-			if *profilingConfig.Enabled {
+			if profilingConfig.Enabled != nil && *profilingConfig.Enabled {
 				lb.Set(ProfilePath, profilingConfig.Path)
 				lb.Set(ProfileName, profilingType)
 				res = append(res, lb.Labels())
