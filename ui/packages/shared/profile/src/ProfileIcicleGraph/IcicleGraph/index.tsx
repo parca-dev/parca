@@ -18,6 +18,7 @@ import {setHoveringNode, useAppDispatch} from '@parca/store';
 import {scaleLinear, selectQueryParam, type NavigateFunction} from '@parca/utilities';
 
 import GraphTooltip from '../../GraphTooltip';
+import {useProfileViewContext} from '../../ProfileView/ProfileViewContext';
 import ColorStackLegend from './ColorStackLegend';
 import {IcicleNode, RowHeight} from './IcicleGraphNodes';
 import useColoredGraph from './useColoredGraph';
@@ -50,8 +51,7 @@ export const IcicleGraph = memo(function IcicleGraph({
 
   const coloredGraph = useColoredGraph(graph);
   const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
-  const compareMode: boolean =
-    selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
+  const {compareMode} = useProfileViewContext();
   const isColorStackLegendEnabled = selectQueryParam('color_stack_legend') === 'true';
 
   useEffect(() => {
