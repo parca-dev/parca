@@ -18,11 +18,13 @@ import {ProfileSource} from '../ProfileSource';
 interface Props {
   profileSource?: ProfileSource;
   sampleUnit: string;
+  compareMode: boolean;
 }
 
 export const defaultValue: Props = {
   profileSource: undefined,
   sampleUnit: 'bytes',
+  compareMode: false,
 };
 
 const ProfileViewContext = createContext<Props>(defaultValue);

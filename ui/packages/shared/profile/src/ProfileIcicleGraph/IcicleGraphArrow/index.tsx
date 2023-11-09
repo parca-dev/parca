@@ -36,6 +36,7 @@ import {
 import GraphTooltipArrow from '../../GraphTooltipArrow';
 import GraphTooltipArrowContent from '../../GraphTooltipArrow/Content';
 import {DockedGraphTooltip} from '../../GraphTooltipArrow/DockedGraphTooltip';
+import {useProfileViewContext} from '../../ProfileView/ProfileViewContext';
 import ColorStackLegend from './ColorStackLegend';
 import ContextMenu from './ContextMenu';
 import {IcicleNode, RowHeight, mappingColors} from './IcicleGraphNodes';
@@ -98,8 +99,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const ref = useRef<SVGGElement>(null);
 
   const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
-  const compareMode: boolean =
-    selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true';
+  const {compareMode} = useProfileViewContext();
   const isColorStackLegendEnabled = selectQueryParam('color_stack_legend') === 'true';
 
   const mappings = useMemo(() => {
