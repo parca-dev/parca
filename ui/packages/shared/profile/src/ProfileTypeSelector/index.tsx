@@ -94,7 +94,7 @@ export const wellKnownProfiles: WellKnownProfiles = {
   },
 };
 
-function flexibleWellKnownProfileMatching(name: string): WellKnownProfile | undefined {
+export function flexibleWellKnownProfileMatching(name: string): WellKnownProfile | undefined {
   const prefixExcludedName = name.split(':').slice(1).join(':');
   const deltaExcludedName = prefixExcludedName.replace(/:delta$/, '');
   const requiredKey = Object.keys(wellKnownProfiles).find(key => {
