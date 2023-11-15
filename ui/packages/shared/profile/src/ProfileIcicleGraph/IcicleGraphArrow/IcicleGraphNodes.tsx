@@ -194,8 +194,8 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   // get the actual values from the columns
   const mappingFile: string | null = arrowToString(mappingColumn?.get(row));
   const functionName: string | null = arrowToString(functionNameColumn?.get(row));
-  const cumulative = BigInt(cumulativeColumn?.get(row));
-  const diff: bigint | null = BigInt(diffColumn?.get(row));
+  const cumulative = cumulativeColumn?.get(row) !== null ? BigInt(cumulativeColumn?.get(row)) : 0n;
+  const diff: bigint | null = diffColumn?.get(row) !== null ? BigInt(diffColumn?.get(row)) : null;
   const childRows: number[] = Array.from(table.getChild(FIELD_CHILDREN)?.get(row) ?? []);
 
   // TODO: Maybe it's better to pass down the sorter function as prop instead of figuring this out here.

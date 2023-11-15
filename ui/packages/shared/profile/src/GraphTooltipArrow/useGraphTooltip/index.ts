@@ -48,7 +48,7 @@ export const useGraphTooltip = ({
   row,
   level,
 }: Props): GraphTooltipData | null => {
-  if (row === null) {
+  if (row === null || row === 0) {
     return null;
   }
 
