@@ -6526,10 +6526,10 @@
   resolved "https://registry.yarnpkg.com/@types/command-line-args/-/command-line-args-5.2.0.tgz#adbb77980a1cc376bb208e3f4142e907410430f6"
   integrity sha512-UuKzKpJJ/Ief6ufIaIzr3A/0XnluX7RvFgwkV89Yzvm77wCh1kFaFmqN8XEnGcN62EuHdedQjEMb8mYxFLGPyA==
 
-"@types/command-line-args@5.2.2":
-  version "5.2.2"
-  resolved "https://registry.yarnpkg.com/@types/command-line-args/-/command-line-args-5.2.2.tgz#ca93ae7045305a2b7c60936bfcb1ebc897b42270"
-  integrity sha512-9aZ7KzLDOBYyqH5J2bvB9edvsMXusX+H/aS8idAJOpWNmscZG5RqO1CVJPFa4Q0/1xKgvxcweXunFVx2l/dYFA==
+"@types/command-line-args@5.2.3":
+  version "5.2.3"
+  resolved "https://registry.yarnpkg.com/@types/command-line-args/-/command-line-args-5.2.3.tgz#553ce2fd5acf160b448d307649b38ffc60d39639"
+  integrity sha512-uv0aG6R0Y8WHZLTamZwtfsDLVRnOa+n+n5rEvFWL5Na5gZ8V2Teab/duDPFzIIIhs9qizDpcavCusCLJZu62Kw==
 
 "@types/command-line-usage@5.0.2":
   version "5.0.2"
