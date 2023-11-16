@@ -39,6 +39,7 @@ import (
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
+	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/metastoretest"
 	"github.com/parca-dev/parca/pkg/parcacol"
@@ -1125,4 +1126,66 @@ func TestRecordStats(t *testing.T) {
 
 	fmt.Println("Encoded:", buf.Len())
 	fmt.Println(recordStats(record))
+}
+
+func TestAllFramesFiltered(t *testing.T) {
+	ctx := context.Background()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+
+	mem := memory.NewCheckedAllocator(memory.NewGoAllocator())
+	defer mem.AssertSize(t, 0)
+
+	fileContent, err := os.ReadFile("testdata/no-python.pb.gz")
+	require.NoError(t, err)
+
+	gz, err := gzip.NewReader(bytes.NewBuffer(fileContent))
+	require.NoError(t, err)
+
+	decompressed, err := io.ReadAll(gz)
+	require.NoError(t, err)
+
+	p := &pprofpb.Profile{}
+	require.NoError(t, p.UnmarshalVT(decompressed))
+
+	pp, err := pprofprofile.ParseData(fileContent)
+	require.NoError(t, err)
+
+	np, err := PprofToSymbolizedProfile(parcaprofile.MetaFromPprof(p, "cpu", 0), pp, 0)
+	require.NoError(t, err)
+
+	// This is a regression test, what we want to achieve here is the input
+	// data being multiple samples, but all frames are filtered out. What
+	// happened is the input data contains no python frames, but only python
+	// frames were requested.
+	np.Samples, _, err = FilterProfileData(ctx, tracer, mem, np.Samples, "", &pb.RuntimeFilter{
+		ShowInterpretedOnly: true,
+	})
+	require.NoError(t, err)
+
+	defer func() {
+		for _, r := range np.Samples {
+			r.Release()
+		}
+	}()
+
+	record, _, _, _, err := generateFlamegraphArrowRecord(
+		ctx,
+		mem,
+		tracer,
+		np,
+		nil,
+		0,
+	)
+	require.NoError(t, err)
+	defer record.Release()
+
+	var buf bytes.Buffer
+	w := ipc.NewWriter(&buf,
+		ipc.WithSchema(record.Schema()),
+		ipc.WithAllocator(mem),
+	)
+	defer w.Close()
+
+	err = w.Write(record)
+	require.NoError(t, err)
 }

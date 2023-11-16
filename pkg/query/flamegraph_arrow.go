@@ -991,8 +991,11 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 		fb.labelsIndices = append(fb.labelsIndices, fb.labels[i].Indices().(*array.Int32))
 	}
 
-	// If there is only one root row, we need to populate the trimmedChildren to not panic when building the NewRecord.
-	if len(fb.children) == 1 {
+	// If there is only one root row, we need to populate the trimmedChildren
+	// to not panic when building the NewRecord. Using cumulative here as the
+	// children's array is preallocated, so it doesn't reflect the true number
+	// of rows in the result.
+	if fb.builderCumulative.Len() == 1 {
 		fb.trimmedChildren = make([][]int, 1)
 	}
 
