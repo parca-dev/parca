@@ -47,7 +47,6 @@ import (
 
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/prober"
-	"github.com/parca-dev/parca/ui"
 )
 
 type Registerable interface {
@@ -80,6 +79,7 @@ func NewServer(reg *prometheus.Registry, version string) *Server {
 func (s *Server) ListenAndServe(
 	ctx context.Context,
 	logger log.Logger,
+	uiFS fs.FS,
 	addr string,
 	readTimeout time.Duration,
 	writeTimeout time.Duration,
@@ -145,12 +145,6 @@ func (s *Server) ListenAndServe(
 		r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 		r.HandleFunc("/debug/pprof/trace", pprof.Trace)
 	})
-
-	// Strip the subpath
-	uiFS, err := fs.Sub(ui.FS, "packages/app/web/build")
-	if err != nil {
-		return fmt.Errorf("failed to initialize UI filesystem: %w", err)
-	}
 
 	uiHandler, err := s.uiHandler(uiFS, pathPrefix)
 	if err != nil {
