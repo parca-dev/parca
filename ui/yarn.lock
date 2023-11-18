@@ -6945,10 +6945,10 @@
     "@types/fined" "*"
     "@types/node" "*"
 
-"@types/lodash.throttle@4.1.8":
-  version "4.1.8"
-  resolved "https://registry.yarnpkg.com/@types/lodash.throttle/-/lodash.throttle-4.1.8.tgz#9d1a630d6e413a32030be1dda040ab913b80d57a"
-  integrity sha512-EJT8Wg9HLcrsaTlFJ+wmolrGMCC/WBmqOISNi1y9hukgp15cYnfO435X1ReUl0VTIAYnRailHqSZEmzLJb5fiQ==
+"@types/lodash.throttle@4.1.9":
+  version "4.1.9"
+  resolved "https://registry.yarnpkg.com/@types/lodash.throttle/-/lodash.throttle-4.1.9.tgz#f17a6ae084f7c0117bd7df145b379537bc9615c5"
+  integrity sha512-PCPVfpfueguWZQB7pJQK890F2scYKoDUL3iM522AptHWn7d5NQmeS/LTEHIcLr5PaTzl3dK2Z0xSUHHTHwaL5g==
   dependencies:
     "@types/lodash" "*"
 
