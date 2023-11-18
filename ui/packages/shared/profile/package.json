@@ -29,7 +29,7 @@
   },
   "devDependencies": {
     "@types/d3": "7.4.3",
-    "@types/react-copy-to-clipboard": "5.0.6",
+    "@types/react-copy-to-clipboard": "5.0.7",
     "@types/react-syntax-highlighter": "15.5.9"
   },
   "resolutions": {
