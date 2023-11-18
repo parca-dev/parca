@@ -7009,10 +7009,10 @@
   resolved "https://registry.yarnpkg.com/@types/ms/-/ms-0.7.34.tgz#10964ba0dee6ac4cd462e2795b6bebd407303433"
   integrity sha512-nG96G3Wp6acyAgJqGasjODb+acrI7KltPiRxzHPXnP3NgI28bpQDRv53olbqGXbfcgF5aiiHmO3xpwEpS5Ld9g==
 
-"@types/nearley@2.11.4":
-  version "2.11.4"
-  resolved "https://registry.yarnpkg.com/@types/nearley/-/nearley-2.11.4.tgz#c86b9e269425323ffdff28b0df1c0e3d66785016"
-  integrity sha512-w3F6sGIGGnscQkPtsbfiTl6xdy4icOI46M8au0STb3fhIlCs83fTCHJafvv9iHH9MTLVlJCdCN+oEdB35ZZRMg==
+"@types/nearley@2.11.5":
+  version "2.11.5"
+  resolved "https://registry.yarnpkg.com/@types/nearley/-/nearley-2.11.5.tgz#9087e1634e1c90efb25d661390702381789685cb"
+  integrity sha512-dM7TrN0bVxGGXTYGx4YhGear8ysLO5SOuouAWM9oltjQ3m9oYa13qi8Z1DJp5zxVMPukvQdsrnZmgzpeuTSEQA==
 
 "@types/node-fetch@^2.6.4":
   version "2.6.9"
