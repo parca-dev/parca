@@ -14,7 +14,8 @@
 
 set -euo pipefail
 
-BIN_DIR=${BIN_DIR:-/usr/local/bin}
+BIN_DIR="$(go env GOBIN)"
+BIN_DIR="${BIN_DIR:-$(go env GOPATH)/bin}"
 
 # renovate: datasource=github-releases depName=bufbuild/buf
 BUF_VERSION='v1.28.0'
