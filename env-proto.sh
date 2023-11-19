@@ -17,7 +17,7 @@ set -euo pipefail
 BIN_DIR=${BIN_DIR:-/usr/local/bin}
 
 # renovate: datasource=github-releases depName=bufbuild/buf
-BUF_VERSION='v1.27.2'
+BUF_VERSION='v1.28.0'
 
 # Substitute BINARY_NAME for "buf", "protoc-gen-buf-breaking", or "protoc-gen-buf-lint".
 BINARY_NAME="buf"
