@@ -75,7 +75,7 @@ scrape_configs:
 			{
 				JobName:        "parca",
 				ScrapeInterval: model.Duration(5 * time.Second),
-				ScrapeTimeout:  model.Duration(8 * time.Second),
+				ScrapeTimeout:  model.Duration(2 * time.Second),
 				Scheme:         "http",
 				ProfilingConfig: &ProfilingConfig{
 					PprofConfig: PprofConfig{
@@ -115,14 +115,14 @@ scrape_configs:
 			{
 				JobName:         "empty-profiling-config",
 				ScrapeInterval:  model.Duration(10 * time.Second),
-				ScrapeTimeout:   model.Duration(13 * time.Second),
+				ScrapeTimeout:   model.Duration(7 * time.Second),
 				Scheme:          "http",
 				ProfilingConfig: DefaultScrapeConfig().ProfilingConfig,
 			},
 			{
 				JobName:        "path-prefix",
 				ScrapeInterval: model.Duration(10 * time.Second),
-				ScrapeTimeout:  model.Duration(13 * time.Second),
+				ScrapeTimeout:  model.Duration(7 * time.Second),
 				Scheme:         "http",
 				ProfilingConfig: &ProfilingConfig{
 					PprofPrefix: "/test/prefix",
@@ -158,7 +158,7 @@ scrape_configs:
 			{
 				JobName:        "path-prefix-with-defaults",
 				ScrapeInterval: model.Duration(10 * time.Second),
-				ScrapeTimeout:  model.Duration(13 * time.Second),
+				ScrapeTimeout:  model.Duration(7 * time.Second),
 				Scheme:         "http",
 				ProfilingConfig: &ProfilingConfig{
 					PprofPrefix: "/test/prefix",

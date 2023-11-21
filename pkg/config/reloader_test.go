@@ -88,7 +88,7 @@ func TestReloadValid(t *testing.T) {
 	f, reloadConfig := setupReloader(ctx, t)
 	defer f.Close()
 
-	config := `    scrape_timeout: "4s"
+	config := `    scrape_timeout: "2s"
 `
 
 	if _, err := f.WriteString(config); err != nil {
@@ -97,7 +97,7 @@ func TestReloadValid(t *testing.T) {
 
 	select {
 	case cfg := <-reloadConfig:
-		require.Equal(t, model.Duration(time.Second*4), cfg.ScrapeConfigs[0].ScrapeTimeout)
+		require.Equal(t, model.Duration(time.Second*2), cfg.ScrapeConfigs[0].ScrapeTimeout)
 	case <-ctx.Done():
 		t.Error("configuration reload timed out")
 	}
@@ -167,7 +167,7 @@ scrape_configs:
 		t.Errorf("failed to create symlink to old config file: %v", err)
 	}
 
-	config += `    scrape_timeout: "4s"
+	config += `    scrape_timeout: "2s"
 `
 
 	// Create new config file
@@ -219,7 +219,7 @@ scrape_configs:
 	// Wait for reload
 	select {
 	case cfg := <-reloadConfig:
-		require.Equal(t, model.Duration(time.Second*4), cfg.ScrapeConfigs[0].ScrapeTimeout)
+		require.Equal(t, model.Duration(time.Second*2), cfg.ScrapeConfigs[0].ScrapeTimeout)
 	case <-ctx.Done():
 		t.Error("configuration reload timed out")
 	}

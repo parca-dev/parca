@@ -258,7 +258,7 @@ func (c *ScrapeConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	// Validate the scrape and timeout internal configuration. When /debug/pprof/profile scraping
 	// is enabled we need to make sure there is enough time to complete the scrape.
 	if c.ScrapeTimeout == 0 {
-		c.ScrapeTimeout = c.ScrapeInterval + model.Duration(3*time.Second)
+		c.ScrapeTimeout = c.ScrapeInterval - model.Duration(3*time.Second)
 	}
 	if c.ScrapeTimeout >= c.ScrapeInterval {
 		return fmt.Errorf("scrape timeout must be less than the interval: %v", c.JobName)
