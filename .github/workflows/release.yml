@@ -11,7 +11,7 @@ concurrency:
 
 env:
   # renovate: datasource=go depName=github.com/goreleaser/goreleaser
-  GORELEASER_VERSION: v1.21.2
+  GORELEASER_VERSION: v1.22.1
 
 permissions:
   contents: write
@@ -125,7 +125,7 @@ jobs:
     needs: release
     container:
       # https://github.com/containers/podman/tree/main/contrib/podmanimage
-      image: quay.io/containers/podman:v4.7.2@sha256:15a3734034751edd5615f6324e10029c04089bdcb9d161c35e9fd20b08aa9748
+      image: quay.io/containers/podman:v4.7.2@sha256:eda7f1814f6bcf12dfe6873ffd5be894201ae1647c96d8507e9abbaa90957c29
       options: >-
         --device /dev/fuse:rw
         --privileged

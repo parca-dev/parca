@@ -241,9 +241,8 @@ const ProfileSelector = ({
             <div className="mb-[2px] flex items-center justify-between">
               <label className="text-xs">Query</label>
 
-              {query.matchers.length > 0 && viewComponent !== undefined && (
-                <div>{viewComponent(query.matchersString())}</div>
-              )}
+              {(query.matchers.length > 0 || query.inputMatcherString.length > 0) &&
+                viewComponent !== undefined && <div>{viewComponent(query.toString())}</div>}
             </div>
 
             <MatchersInput

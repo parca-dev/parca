@@ -14,6 +14,8 @@
 
 set -euo pipefail
 
+ROOT_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # renovate: datasource=go depName=github.com/campoy/embedmd
 EMBEDMD_VERSION='v2.0.0'
 go install "github.com/campoy/embedmd/v2@${EMBEDMD_VERSION}"
@@ -30,6 +32,4 @@ go install "github.com/golangci/golangci-lint/cmd/golangci-lint@${GOLANGCI_LINT_
 GOVULNCHECK_VERSION='v1.0.1'
 go install "golang.org/x/vuln/cmd/govulncheck@${GOVULNCHECK_VERSION}"
 
-# renovate: datasource=go depName=github.com/bufbuild/buf
-BUF_VERSION='v1.27.2'
-go install "github.com/bufbuild/buf/cmd/buf@${BUF_VERSION}"
+"${ROOT_DIR}/env-proto.sh"
