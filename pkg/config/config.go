@@ -260,8 +260,8 @@ func (c *ScrapeConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if c.ScrapeTimeout == 0 {
 		c.ScrapeTimeout = c.ScrapeInterval + model.Duration(3*time.Second)
 	}
-	if c.ScrapeTimeout <= c.ScrapeInterval {
-		return fmt.Errorf("scrape timeout must be greater than the interval: %v", c.JobName)
+	if c.ScrapeTimeout >= c.ScrapeInterval {
+		return fmt.Errorf("scrape timeout must be less than the interval: %v", c.JobName)
 	}
 
 	if cfg, ok := c.ProfilingConfig.PprofConfig[pprofProcessCPU]; ok {
