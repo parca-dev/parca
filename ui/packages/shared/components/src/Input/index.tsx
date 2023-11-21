@@ -57,7 +57,7 @@ const Input = ({
       <input
         {...props}
         className={cx(
-          'relative rounded-md border border-gray-200 bg-white p-2 dark:border-gray-600 dark:bg-gray-900 focus:outline-none focus:ring-1 focus:z-10',
+          'relative rounded-md border border-gray-200 bg-white p-2 focus:outline-none focus:ring-1 dark:border-gray-600 dark:bg-gray-900',
           {
             [className]: className.length > 0,
             'mr-8 rounded-r-none': hasAction,

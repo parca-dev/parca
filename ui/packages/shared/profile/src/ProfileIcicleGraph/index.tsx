@@ -298,6 +298,15 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     param: 'sort_by',
     navigateTo,
   });
+  const [currentSearchString, setCurrentSearchString] = useURLState({
+    param: 'search_string',
+    navigateTo,
+  });
+
+  const resetView = (): void => {
+    setNewCurPath([]);
+    setCurrentSearchString('');
+  };
 
   const [
     totalFormatted,
@@ -340,8 +349,8 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
           <ShowHideLegendButton navigateTo={navigateTo} />
           <Button
             variant="neutral"
-            onClick={() => setNewCurPath([])}
-            disabled={curPath.length === 0}
+            onClick={() => resetView()}
+            disabled={curPath.length === 0 && currentSearchString.length === 0}
           >
             Reset View
           </Button>
