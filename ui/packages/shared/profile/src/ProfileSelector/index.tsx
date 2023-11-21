@@ -236,15 +236,12 @@ const ProfileSelector = ({
               error={error}
             />
           </div>
-
           <div className="w-full flex-1">
             <div className="mb-[2px] flex items-center justify-between">
               <label className="text-xs">Query</label>
-
               {(query.matchers.length > 0 || query.inputMatcherString.length > 0) &&
                 viewComponent !== undefined && <div>{viewComponent(query.toString())}</div>}
             </div>
-
             <MatchersInput
               queryClient={queryClient}
               setMatchersString={setMatchersString}
@@ -253,7 +250,6 @@ const ProfileSelector = ({
             />
           </div>
           <div>
-            <label className="text-xs">Period</label>
             <DateTimeRangePicker
               onRangeSelection={setTimeRangeSelection}
               range={timeRangeSelection}

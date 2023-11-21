@@ -13,6 +13,7 @@
 
 import CloseIcon from './CloseIcon';
 import {ReactComponent as ArrowForward} from './assets/arrow-forward.svg';
+import {ReactComponent as Calendar} from './assets/calendar.svg';
 import {ReactComponent as Checkmark} from './assets/checkmark.svg';
 import {ReactComponent as CompareArrows} from './assets/compare-arrows.svg';
 import {ReactComponent as GitHub} from './assets/github.svg';
@@ -33,4 +34,5 @@ export {
   LinkedIn,
   Twitter,
   ArrowForward,
+  Calendar,
 };

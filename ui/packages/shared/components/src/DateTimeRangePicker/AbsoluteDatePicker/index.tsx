@@ -11,15 +11,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 
-import {Button} from '../../../Button';
-import {UTCDateTimePicker} from '../../../DateTimePicker';
-import {AbsoluteDate, DateTimeRange, getDateHoursAgo} from '../../utils';
+import {UTCDateTimePicker} from '../../DateTimePicker';
+import {AbsoluteDate, DateTimeRange, RelativeDate, UNITS, getDateHoursAgo} from '../utils';
 
 interface AbsoluteDatePickerProps {
   range: DateTimeRange;
-  onChange?: (from: AbsoluteDate, to: AbsoluteDate) => void;
+  onChange?: (from: AbsoluteDate | RelativeDate, to: AbsoluteDate | RelativeDate) => void;
 }
 
 const AbsoluteDatePicker = ({
@@ -32,39 +31,33 @@ const AbsoluteDatePicker = ({
   const [to, setTo] = useState<Date>(
     range.to.isRelative() ? getDateHoursAgo(0) : (range.to as AbsoluteDate).value
   );
+
+  useEffect(() => {
+    onChange(new AbsoluteDate(from), new AbsoluteDate(to));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [from, to]);
+
   return (
-    <div className="p-4">
-      <div className="mb-2 hidden">
-        <span className="text-xs uppercase">Absolute Range</span>
-      </div>
-      <div className="flex flex-col justify-center">
-        <div className="mb-2">
-          <div className="mb-2">
-            <span className="text-xs uppercase">From:</span>
-          </div>
+    <div className="flex flex-col">
+      <div className="flex justify-center">
+        <div>
+          <div className="text-xs">Start</div>
           <UTCDateTimePicker selected={from} onChange={date => date != null && setFrom(date)} />
         </div>
-        <div className="mb-1">
-          <div className="mb-2">
-            <span className="text-xs uppercase">To:</span>
-          </div>
+        <div>
+          <div className="text-xs">End</div>
           <UTCDateTimePicker selected={to} onChange={date => date != null && setTo(date)} />
         </div>
       </div>
-      <div className="mt-4 flex">
-        <div className="mx-auto">
-          <Button
-            onClick={() => {
-              onChange(new AbsoluteDate(from), new AbsoluteDate(to));
-            }}
-          >
-            Apply
-          </Button>
-        </div>
-      </div>
-      <p className="m-4 text-center text-xs italic text-gray-500">
-        Note: All date and time values are in UTC.
-      </p>
+      <button
+        type="button"
+        className="flex"
+        onClick={() => {
+          onChange(new RelativeDate(UNITS.HOUR, 6), new RelativeDate(UNITS.HOUR, 0));
+        }}
+      >
+        <p className="text-xs text-gray-500">Use relative range instead</p>
+      </button>
     </div>
   );
 };
