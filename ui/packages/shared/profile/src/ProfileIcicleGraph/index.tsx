@@ -350,14 +350,15 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
           <Button
             variant="neutral"
             onClick={() => resetView()}
-            disabled={curPath.length === 0 && currentSearchString.length === 0}
+            disabled={curPath.length === 0 && currentSearchString?.length === 0}
           >
             Reset View
           </Button>
         </div>
       </div>
     );
-  }, [navigateTo, arrow, curPath, setNewCurPath, setActionButtons]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigateTo, arrow, curPath, setNewCurPath, setActionButtons, currentSearchString]);
 
   if (loading) {
     return <div className="h-96">{loader}</div>;

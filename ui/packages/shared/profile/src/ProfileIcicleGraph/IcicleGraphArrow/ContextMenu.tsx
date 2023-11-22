@@ -160,7 +160,7 @@ const ContextMenu = ({
       <Item
         id="reset-view"
         onClick={handleResetView}
-        disabled={curPath.length === 0 && currentSearchString.length === 0}
+        disabled={curPath.length === 0 && currentSearchString?.length === 0}
       >
         <div className="flex w-full items-center gap-2">
           <Icon icon="system-uicons:reset" />
