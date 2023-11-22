@@ -225,8 +225,8 @@ const ProfileSelector = ({
   return (
     <>
       <div className="mb-2 flex gap-2">
-        <div className="flex w-full flex-wrap content-start items-end justify-between gap-2">
-          <div>
+        <div className="flex w-full flex-wrap content-start items-center justify-between gap-2">
+          <div className="pb-6">
             <label className="text-xs">Profile type</label>
             <ProfileTypeSelector
               profileTypesData={profileTypesData}
@@ -236,8 +236,8 @@ const ProfileSelector = ({
               error={error}
             />
           </div>
-          <div className="w-full flex-1">
-            <div className="mb-[2px] flex items-center justify-between">
+          <div className="w-full flex-1 pb-6">
+            <div className="mb-0.5 mt-1.5 flex items-center justify-between">
               <label className="text-xs">Query</label>
               {(query.matchers.length > 0 || query.inputMatcherString.length > 0) &&
                 viewComponent !== undefined && <div>{viewComponent(query.toString())}</div>}
@@ -249,12 +249,10 @@ const ProfileSelector = ({
               currentQuery={query}
             />
           </div>
-          <div>
-            <DateTimeRangePicker
-              onRangeSelection={setTimeRangeSelection}
-              range={timeRangeSelection}
-            />
-          </div>
+          <DateTimeRangePicker
+            onRangeSelection={setTimeRangeSelection}
+            range={timeRangeSelection}
+          />
           <ButtonGroup>
             {!searchDisabled && (
               <>

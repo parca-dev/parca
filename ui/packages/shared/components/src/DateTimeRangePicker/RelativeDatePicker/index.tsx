@@ -80,11 +80,11 @@ const RelativeDatePicker = ({
       <label htmlFor="range" className="text-xs">
         Range
       </label>
-      <div className="flex rounded-md shadow-sm">
+      <div className="flex h-[38px] rounded-md shadow-sm">
         <button
           type="button"
           disabled={currentRangeIndex === 0}
-          className="rounded-l-md border border-r-0 border-gray-300 bg-gray-100 p-3 text-sm font-semibold text-gray-900 hover:bg-gray-200 disabled:bg-white disabled:text-gray-400"
+          className="rounded-l-md border border-r-0 bg-gray-100 p-3 text-sm font-semibold text-gray-900 hover:bg-gray-200 disabled:bg-white disabled:text-gray-400 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-700"
           onClick={() => {
             if (currentRangeIndex === -1) {
               return;
@@ -96,34 +96,34 @@ const RelativeDatePicker = ({
         >
           <Icon icon="heroicons:minus-20-solid" />
         </button>
-        <div className="flex flex-grow items-stretch focus-within:z-10">
-          <input
-            type="text"
-            name="range"
-            id="range"
-            className="flex w-full text-center text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-            placeholder="6h"
-            value={rangeInputString}
-            onBlur={() => {
-              // parse the input value and check whether it is valid
-              // if it is valid, set the range
-              // if it is not valid, set the range to the previous value
+        <input
+          type="text"
+          name="range"
+          id="range"
+          className="flex w-full flex-grow items-stretch border text-center text-gray-900 placeholder:text-gray-400 focus-within:z-10 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 sm:text-sm sm:leading-6"
+          placeholder="6h"
+          value={rangeInputString}
+          onChange={e => {
+            setRangeInputString(e.target.value);
+          }}
+          onBlur={() => {
+            const parsedInput = parseInput(rangeInputString);
 
-              const parsedInput = parseInput(rangeInputString);
+            // if parsed input is not valid, set input to the previous valid value
+            if (parsedInput === null) {
+              setRangeInputString(`${validRange.value}${unitShort[validRange.unit]}`);
+              return;
+            }
 
-              if (parsedInput === null) {
-                setRangeInputString(`${validRange.value}${unitShort[validRange.unit]}`);
-                return;
-              }
-              const {value, unit} = parsedInput;
-              setValidRange({value, unit});
-            }}
-          />
-        </div>
+            // if parsed input is valid, set valid range state
+            const {value, unit} = parsedInput;
+            setValidRange({value, unit});
+          }}
+        />
         <button
           type="button"
           disabled={currentRangeIndex === presetRanges.length - 1}
-          className="rounded-r-md border border-l-0 border-gray-300 bg-gray-100 p-3 text-sm font-semibold text-gray-900 hover:bg-gray-200 disabled:bg-white disabled:text-gray-400"
+          className="rounded-r-md border border-l-0 bg-gray-100 p-3 text-sm font-semibold text-gray-900 hover:bg-gray-200 disabled:bg-white disabled:text-gray-400 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-700"
           onClick={() => {
             if (currentRangeIndex === -1) {
               return;
@@ -146,7 +146,9 @@ const RelativeDatePicker = ({
           );
         }}
       >
-        <p className="text-center text-xs text-gray-500">Use absolute start time instead</p>
+        <p className="my-1 ml-1 text-center text-xs text-gray-500 hover:text-indigo-600 dark:text-gray-400">
+          Use absolute start time instead
+        </p>
       </button>
     </div>
   );

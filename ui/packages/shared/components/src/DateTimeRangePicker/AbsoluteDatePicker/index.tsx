@@ -39,13 +39,13 @@ const AbsoluteDatePicker = ({
 
   return (
     <div className="flex flex-col">
-      <div className="flex justify-center">
+      <div className="flex justify-center gap-x-2">
         <div>
-          <div className="text-xs">Start</div>
+          <div className="mb-0.5 mt-1.5 text-xs">Start</div>
           <UTCDateTimePicker selected={from} onChange={date => date != null && setFrom(date)} />
         </div>
         <div>
-          <div className="text-xs">End</div>
+          <div className="mb-0.5 mt-1.5 text-xs">End</div>
           <UTCDateTimePicker selected={to} onChange={date => date != null && setTo(date)} />
         </div>
       </div>
@@ -56,7 +56,9 @@ const AbsoluteDatePicker = ({
           onChange(new RelativeDate(UNITS.HOUR, 6), new RelativeDate(UNITS.HOUR, 0));
         }}
       >
-        <p className="text-xs text-gray-500">Use relative range instead</p>
+        <p className="my-1 ml-1 text-xs text-gray-500 hover:text-indigo-600 dark:text-gray-400">
+          Use relative range instead
+        </p>
       </button>
     </div>
   );
