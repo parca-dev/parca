@@ -27,6 +27,7 @@ import cx from 'classnames';
 import {useVirtual} from 'react-virtual';
 
 declare module '@tanstack/table-core' {
+  // @ts-expect-error
   interface ColumnMeta {
     align: 'left' | 'right';
   }
