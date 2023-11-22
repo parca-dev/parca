@@ -111,12 +111,13 @@ const ProfileSelector = ({
 
   useEffect(() => {
     setIsDataLoading(true);
-    const handleNewTimeRange = async () => {
+    const handleNewTimeRange = async (): Promise<void> => {
       await setQueryExpression();
       await setIsDataLoading(false);
     };
 
-    handleNewTimeRange();
+    void handleNewTimeRange();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeRangeSelection]);
 
   useEffect(() => {
@@ -288,7 +289,7 @@ const ProfileSelector = ({
       </div>
       <div className="rounded bg-white shadow dark:border-gray-500 dark:bg-gray-700">
         <div style={{height: heightStyle}}>
-          {isDataLoading !== true &&
+          {!isDataLoading &&
           querySelection.expression !== undefined &&
           querySelection.expression.length > 0 &&
           querySelection.from !== undefined &&

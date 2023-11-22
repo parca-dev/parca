@@ -15,7 +15,14 @@ import {useEffect, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 
-import {AbsoluteDate, DateTimeRange, RelativeDate, UNITS, getHistoricalDate} from '../utils';
+import {
+  AbsoluteDate,
+  DateTimeRange,
+  RelativeDate,
+  UNITS,
+  UNIT_TYPE,
+  getHistoricalDate,
+} from '../utils';
 
 interface RelativeDatePickerProps {
   range: DateTimeRange;
@@ -71,7 +78,7 @@ const RelativeDatePicker = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [validRange]);
 
-  const getMultiplyFactor = unit => {
+  const getMultiplyFactor = (unit: UNIT_TYPE): number => {
     switch (unit) {
       case UNITS.HOUR:
         return 60;
@@ -83,7 +90,7 @@ const RelativeDatePicker = ({
     }
   };
 
-  const getClosestPresetIndex = () => {
+  const getClosestPresetIndex = (): number => {
     const currentPresetIndex = presetRanges.findIndex(
       ({value, unit}) => value === date.value && unit === date.unit
     );
