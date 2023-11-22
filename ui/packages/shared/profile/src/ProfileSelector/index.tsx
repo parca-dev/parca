@@ -119,8 +119,6 @@ const ProfileSelector = ({
     handleNewTimeRange();
   }, [timeRangeSelection]);
 
-  console.log(isDataLoading);
-
   useEffect(() => {
     if (enforcedProfileName !== '') {
       const [q, changed] = Query.parse(querySelection.expression).setProfileName(

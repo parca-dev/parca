@@ -45,7 +45,7 @@ const presetRanges = [
 const NOW = new RelativeDate(UNITS.MINUTE, 0);
 
 const parseInput = (input: string): {value: number; unit: string} | null => {
-  const match = input.match(/(\d+)([smhdwMy])/);
+  const match = input.match(/(\d+)([mhd])/);
   if (match == null) {
     return null;
   }
@@ -71,9 +71,46 @@ const RelativeDatePicker = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [validRange]);
 
-  const currentRangeIndex = presetRanges.findIndex(
-    ({value, unit}) => value === date.value && unit === date.unit
-  );
+  const getMultiplyFactor = unit => {
+    switch (unit) {
+      case UNITS.HOUR:
+        return 60;
+      case UNITS.DAY:
+        return 1440;
+      case UNITS.MINUTE:
+      default:
+        return 1;
+    }
+  };
+
+  const getClosestPresetIndex = () => {
+    const currentPresetIndex = presetRanges.findIndex(
+      ({value, unit}) => value === date.value && unit === date.unit
+    );
+
+    if (currentPresetIndex !== -1) {
+      return currentPresetIndex;
+    }
+
+    const presetRangesTotalMinutes = presetRanges.map(({value, unit}) => {
+      const multiplyFactor = getMultiplyFactor(unit);
+      return value * multiplyFactor;
+    });
+
+    const currentTotalMinutes = getMultiplyFactor(date.unit) * date.value;
+    const closestPresetIndex =
+      [...presetRangesTotalMinutes, currentTotalMinutes]
+        .sort((a, b) => a - b)
+        .findIndex(totalMinutes => {
+          return totalMinutes === currentTotalMinutes;
+        }) - 1;
+
+    return closestPresetIndex;
+  };
+
+  const currentPresetIndex = getClosestPresetIndex();
+
+  console.log(currentPresetIndex, presetRanges[currentPresetIndex]);
 
   return (
     <div>
@@ -83,13 +120,10 @@ const RelativeDatePicker = ({
       <div className="flex h-[38px] rounded-md shadow-sm">
         <button
           type="button"
-          disabled={currentRangeIndex === 0}
+          disabled={currentPresetIndex === 0}
           className="rounded-l-md border border-r-0 bg-gray-100 p-3 text-sm font-semibold text-gray-900 hover:bg-gray-200 disabled:bg-white disabled:text-gray-400 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-700"
           onClick={() => {
-            if (currentRangeIndex === -1) {
-              return;
-            }
-            const previousRangeIndex = currentRangeIndex - 1;
+            const previousRangeIndex = currentPresetIndex - 1;
             const previousRange = presetRanges[previousRangeIndex];
             setValidRange(previousRange);
           }}
@@ -122,15 +156,12 @@ const RelativeDatePicker = ({
         />
         <button
           type="button"
-          disabled={currentRangeIndex === presetRanges.length - 1}
+          disabled={currentPresetIndex === presetRanges.length - 1}
           className="rounded-r-md border border-l-0 bg-gray-100 p-3 text-sm font-semibold text-gray-900 hover:bg-gray-200 disabled:bg-white disabled:text-gray-400 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-700"
           onClick={() => {
-            if (currentRangeIndex === -1) {
-              return;
-            }
-            const nextRangeIndex = currentRangeIndex + 1;
-            const nextRange = presetRanges[nextRangeIndex];
-            setValidRange(nextRange);
+            const previousRangeIndex = currentPresetIndex + 1;
+            const previousRange = presetRanges[previousRangeIndex];
+            setValidRange(previousRange);
           }}
         >
           <Icon icon="heroicons:plus-20-solid" />

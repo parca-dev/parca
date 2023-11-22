@@ -114,13 +114,40 @@ export const formatDate = (date: number | Date, timeFormat: string): string => {
 
 export const formatForTimespan = (from: number, to: number): string => {
   const duration = intervalToDuration({start: from, end: to});
-  if (duration <= {minutes: 61}) {
+  const getTotalSeconds = ({
+    seconds,
+    minutes,
+    hours,
+    days,
+    weeks,
+  }: {
+    seconds?: number;
+    minutes?: number;
+    hours?: number;
+    days?: number;
+    weeks?: number;
+  }): number => {
+    return (
+      (seconds ?? 0) +
+      (minutes ?? 0) * 60 +
+      (hours ?? 0) * 60 * 60 +
+      (days ?? 0) * 24 * 60 * 60 +
+      (weeks ?? 0) * 7 * 24 * 60 * 60
+    );
+  };
+
+  const durationInSeconds = getTotalSeconds(duration);
+
+  if (durationInSeconds <= getTotalSeconds({minutes: 4})) {
+    return 'H:mm:ss';
+  }
+  if (durationInSeconds <= getTotalSeconds({minutes: 61})) {
     return 'H:mm';
   }
-  if (duration <= {hours: 13}) {
+  if (durationInSeconds <= getTotalSeconds({hours: 13})) {
     return 'H';
   }
-  if (duration <= {hours: 25}) {
+  if (durationInSeconds <= getTotalSeconds({hours: 25})) {
     return 'H:mm d/M';
   }
   return 'd/M';
