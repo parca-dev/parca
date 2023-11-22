@@ -44,7 +44,10 @@ interface Props {
   authenticationErrorMessage?: string;
   isDarkMode: boolean;
   flamegraphHint?: ReactNode;
-  viewComponent?: (query: string) => JSX.Element;
+  viewComponent?: {
+    emitQuery: (query: string) => void;
+    createViewComponent?: ReactNode;
+  };
 }
 
 export const defaultValue: Props = {
