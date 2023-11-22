@@ -26,9 +26,9 @@
   integrity sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==
 
 "@alwaysmeticulous/recorder-loader@^2.19.0":
-  version "2.87.0"
-  resolved "https://registry.yarnpkg.com/@alwaysmeticulous/recorder-loader/-/recorder-loader-2.87.0.tgz#513d8877bc18dc7e4ba05a797cf580bf13c72ba8"
-  integrity sha512-VQczPMnJX8XWvWrfuDnAkCZSV4TLSbcYUta8gaHPilMHt/h4JoNMwpQyaI7oP8IvGb6GWjxqzeb4s1+mJFTVNg==
+  version "2.89.0"
+  resolved "https://registry.yarnpkg.com/@alwaysmeticulous/recorder-loader/-/recorder-loader-2.89.0.tgz#96fe6bde64c002fe9672f6923c0ff7c8f202c2c2"
+  integrity sha512-n5FKy4+SCqdUZJ/kDJu1VWanlh4FFZZSX5+b07WU3So4AZ100uIoJGylp7pecr0LENke5cVVbmR7y0kOGrao9g==
 
 "@ampproject/remapping@^2.1.0", "@ampproject/remapping@^2.2.0":
   version "2.2.1"
