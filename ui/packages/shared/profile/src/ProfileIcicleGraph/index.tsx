@@ -350,7 +350,10 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
           <Button
             variant="neutral"
             onClick={() => resetView()}
-            disabled={curPath.length === 0 && currentSearchString?.length === 0}
+            disabled={
+              curPath.length === 0 &&
+              (currentSearchString === undefined || currentSearchString?.length === 0)
+            }
           >
             Reset View
           </Button>
