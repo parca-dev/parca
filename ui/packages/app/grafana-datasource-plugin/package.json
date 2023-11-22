@@ -14,10 +14,10 @@
   "author": "Parca Contributors",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@grafana/data": "9.5.13",
-    "@grafana/runtime": "9.5.13",
-    "@grafana/toolkit": "9.5.13",
-    "@grafana/ui": "9.5.13",
+    "@grafana/data": "9.5.14",
+    "@grafana/runtime": "9.5.14",
+    "@grafana/toolkit": "9.5.14",
+    "@grafana/ui": "9.5.14",
     "@testing-library/jest-dom": "5.17.0",
     "@testing-library/react": "13.4.0",
     "@types/lodash": "4.14.201"
