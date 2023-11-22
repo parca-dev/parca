@@ -100,6 +100,7 @@ const ProfileSelector = ({
     data: profileTypesData,
     error,
   } = useProfileTypes(queryClient);
+  const [isDataLoading, setIsDataLoading] = useState<boolean>(false);
   const {heightStyle} = useMetricsGraphDimensions(comparing);
   const {viewComponent} = useParcaContext();
 
@@ -107,6 +108,18 @@ const ProfileSelector = ({
     DateTimeRange.fromRangeKey(querySelection.timeSelection)
   );
   const [queryExpressionString, setQueryExpressionString] = useState(querySelection.expression);
+
+  useEffect(() => {
+    setIsDataLoading(true);
+    const handleNewTimeRange = async () => {
+      await setQueryExpression();
+      await setIsDataLoading(false);
+    };
+
+    handleNewTimeRange();
+  }, [timeRangeSelection]);
+
+  console.log(isDataLoading);
 
   useEffect(() => {
     if (enforcedProfileName !== '') {
@@ -277,7 +290,8 @@ const ProfileSelector = ({
       </div>
       <div className="rounded bg-white shadow dark:border-gray-500 dark:bg-gray-700">
         <div style={{height: heightStyle}}>
-          {querySelection.expression !== undefined &&
+          {isDataLoading !== true &&
+          querySelection.expression !== undefined &&
           querySelection.expression.length > 0 &&
           querySelection.from !== undefined &&
           querySelection.to !== undefined ? (
