@@ -66,7 +66,7 @@ export function nodeLabel(
 }
 
 export const extractFeature = (mapping: string): Feature => {
-  if (mapping.startsWith('runtime') || mapping === 'root') {
+  if (mapping === 'runtime' || mapping === 'root') {
     return {name: 'runtime', type: FEATURE_TYPES.Runtime};
   }
 

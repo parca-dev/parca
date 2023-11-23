@@ -125,7 +125,7 @@ jobs:
     needs: release
     container:
       # https://github.com/containers/podman/tree/main/contrib/podmanimage
-      image: quay.io/containers/podman:v4.7.2@sha256:eda7f1814f6bcf12dfe6873ffd5be894201ae1647c96d8507e9abbaa90957c29
+      image: quay.io/containers/podman:v4.7.2@sha256:b8e5f13e0be22448efefff7006a9e6789191fa2a893a6e59d892a04b6b0e6cb5
       options: >-
         --device /dev/fuse:rw
         --privileged

@@ -3,6 +3,26 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.0.276](https://github.com/parca-dev/parca/compare/@parca/grafana-panel@0.0.275...@parca/grafana-panel@0.0.276) (2023-11-23)
+
+**Note:** Version bump only for package @parca/grafana-panel
+
+## [0.0.275](https://github.com/parca-dev/parca/compare/@parca/grafana-panel@0.0.274...@parca/grafana-panel@0.0.275) (2023-11-23)
+
+**Note:** Version bump only for package @parca/grafana-panel
+
+## [0.0.274](https://github.com/parca-dev/parca/compare/@parca/grafana-panel@0.0.273...@parca/grafana-panel@0.0.274) (2023-11-22)
+
+**Note:** Version bump only for package @parca/grafana-panel
+
+## [0.0.273](https://github.com/parca-dev/parca/compare/@parca/grafana-panel@0.0.272...@parca/grafana-panel@0.0.273) (2023-11-22)
+
+**Note:** Version bump only for package @parca/grafana-panel
+
+## [0.0.272](https://github.com/parca-dev/parca/compare/@parca/grafana-panel@0.0.271...@parca/grafana-panel@0.0.272) (2023-11-22)
+
+**Note:** Version bump only for package @parca/grafana-panel
+
 ## [0.0.271](https://github.com/parca-dev/parca/compare/@parca/grafana-panel@0.0.270...@parca/grafana-panel@0.0.271) (2023-11-21)
 
 **Note:** Version bump only for package @parca/grafana-panel

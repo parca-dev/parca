@@ -206,6 +206,12 @@ const ProfileSelector = ({
     }
   };
 
+  useEffect(() => {
+    if (viewComponent !== undefined) {
+      viewComponent.emitQuery(query.toString());
+    }
+  }, [query, viewComponent]);
+
   useAutoQuerySelector({
     selectedProfileName,
     profileTypesData,
@@ -242,7 +248,7 @@ const ProfileSelector = ({
               <label className="text-xs">Query</label>
 
               {(query.matchers.length > 0 || query.inputMatcherString.length > 0) &&
-                viewComponent !== undefined && <div>{viewComponent(query.toString())}</div>}
+                viewComponent !== undefined && <div>{viewComponent?.createViewComponent}</div>}
             </div>
 
             <MatchersInput
