@@ -1,6 +1,6 @@
 {
   "name": "@parca/components",
-  "version": "0.16.232",
+  "version": "0.16.234",
   "description": "A component library for Parca",
   "main": "dist/index.js",
   "scripts": {
@@ -26,7 +26,7 @@
     "d3-selection": "3.0.0",
     "graphviz-wasm": "3.0.1",
     "react-datepicker": "4.21.0",
-    "react-tooltip": "5.22.0",
+    "react-tooltip": "5.24.0",
     "react-use": "^17.3.2",
     "react-virtual": "^2.10.4",
     "tailwind-merge": "^1.10.0"

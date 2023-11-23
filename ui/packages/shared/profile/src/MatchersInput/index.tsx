@@ -169,7 +169,19 @@ const MatchersInput = ({
   };
 
   const complete = (suggestion: Suggestion): string => {
-    return value.slice(0, value.length - suggestion.typeahead.length) + suggestion.value;
+    let newValue = value.slice(0, value.length - suggestion.typeahead.length) + suggestion.value;
+
+    // Add a starting quote if we're completing a operator literal
+    if (suggestion.type === 'literal' && suggestion.value !== ',') {
+      newValue += '"';
+    }
+
+    // Add a closing quote if we're completing a label value
+    if (suggestion.type === 'labelValue') {
+      newValue += '"';
+    }
+
+    return newValue;
   };
 
   const applySuggestion = (suggestion: Suggestion): void => {
