@@ -117,8 +117,6 @@ const RelativeDatePicker = ({
 
   const currentPresetIndex = getClosestPresetIndex();
 
-  console.log(currentPresetIndex, presetRanges[currentPresetIndex]);
-
   return (
     <div>
       <label htmlFor="range" className="text-xs">
