@@ -16,7 +16,14 @@ import React, {ReactNode, useMemo} from 'react';
 import {Table} from 'apache-arrow';
 import cx from 'classnames';
 
-import {selectBinaries, useAppSelector} from '@parca/store';
+import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
+import {
+  selectBinaries,
+  selectHighlightSimilarStacksNode,
+  setHighlightSimilarStacksNode,
+  useAppDispatch,
+  useAppSelector,
+} from '@parca/store';
 import {isSearchMatch, scaleLinear} from '@parca/utilities';
 
 import 'react-contexify/dist/ReactContexify.css';
@@ -186,6 +193,8 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   compareMode,
   isContextMenuOpen,
 }: IcicleNodeProps): React.JSX.Element {
+  const dispatch = useAppDispatch();
+
   // get the columns to read from
   const mappingColumn = table.getChild(FIELD_MAPPING_FILE);
   const functionNameColumn = table.getChild(FIELD_FUNCTION_NAME);
@@ -197,6 +206,13 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const cumulative = cumulativeColumn?.get(row) !== null ? BigInt(cumulativeColumn?.get(row)) : 0n;
   const diff: bigint | null = diffColumn?.get(row) !== null ? BigInt(diffColumn?.get(row)) : null;
   const childRows: number[] = Array.from(table.getChild(FIELD_CHILDREN)?.get(row) ?? []);
+  const highlightedSimilarStacksNode = useAppSelector(selectHighlightSimilarStacksNode);
+  const [highlightSimilarStacks] = useUserPreference<boolean>(
+    USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS.key
+  );
+  const [currentColorPalette] = useUserPreference<string>(
+    USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
+  );
 
   // TODO: Maybe it's better to pass down the sorter function as prop instead of figuring this out here.
   switch (sortBy) {
@@ -287,6 +303,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     if (isContextMenuOpen) return;
     setHoveringRow(row);
     setHoveringLevel(level);
+    if (highlightSimilarStacks) dispatch(setHighlightSimilarStacksNode({name, row: row ?? 0}));
   };
 
   const onMouseLeave = (): void => {
@@ -294,6 +311,14 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     setHoveringRow(null);
     setHoveringLevel(null);
   };
+
+  const shouldBeHighlightedIfSimilarStacks = useMemo(() => {
+    return (
+      highlightSimilarStacks &&
+      functionName === highlightedSimilarStacksNode?.name &&
+      row !== highlightedSimilarStacksNode.row
+    );
+  }, [highlightSimilarStacks, functionName, highlightedSimilarStacksNode]);
 
   return (
     <>
@@ -316,6 +341,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
           }}
           className={cx('stroke-white dark:stroke-gray-700', {
             'opacity-50': isHighlightEnabled && !isHighlighted,
+            'stroke-blue-700 stroke-2 [stroke-dasharray:2]': shouldBeHighlightedIfSimilarStacks,
           })}
         />
         {width > 5 && (

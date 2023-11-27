@@ -21,6 +21,7 @@ import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {
   getColorForFeature,
   selectDarkMode,
+  setHighlightSimilarStacksNode,
   setHoveringNode,
   useAppDispatch,
   useAppSelector,
@@ -257,7 +258,12 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   return (
     <>
-      <div onMouseLeave={() => dispatch(setHoveringNode(undefined))}>
+      <div
+        onMouseLeave={() => {
+          dispatch(setHoveringNode(undefined));
+          dispatch(setHighlightSimilarStacksNode(undefined));
+        }}
+      >
         <ContextMenu
           menuId={MENU_ID}
           table={table}

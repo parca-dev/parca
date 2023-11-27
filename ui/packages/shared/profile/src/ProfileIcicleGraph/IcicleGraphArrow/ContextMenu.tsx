@@ -16,7 +16,7 @@ import {Table} from 'apache-arrow';
 import {Item, Menu, Separator, Submenu} from 'react-contexify';
 import {Tooltip} from 'react-tooltip';
 
-import {useParcaContext, useURLState} from '@parca/components';
+import {useParcaContext} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {type NavigateFunction} from '@parca/utilities';
 
@@ -78,7 +78,6 @@ const ContextMenu = ({
     mappingBuildID,
     inlined,
   } = useGraphTooltipMetaInfo({table, row, navigateTo});
-  const [currentSearchString, setSearchString] = useURLState({param: 'search_string', navigateTo});
 
   if (contextMenuData === null) {
     return <></>;
@@ -92,7 +91,6 @@ const ContextMenu = ({
 
   const handleResetView = (): void => {
     setCurPath([]);
-    setSearchString('');
     return hideMenu();
   };
   const handleDockTooltip = (): void => {
@@ -134,11 +132,6 @@ const ContextMenu = ({
 
   const nonEmptyValuesToCopy = valuesToCopy.filter(({value}) => value !== '');
 
-  const highlightSimilarStacks = (stackName: string): void => {
-    setSearchString(stackName);
-    return hideMenu();
-  };
-
   return (
     <Menu id={menuId} onVisibilityChange={trackVisibility} theme={isDarkMode ? 'dark' : ''}>
       <Item
@@ -157,23 +150,10 @@ const ContextMenu = ({
         </div>
         {!isSourceAvailable ? <Tooltip id="view-source-file-help" /> : null}
       </Item>
-      <Item
-        id="reset-view"
-        onClick={handleResetView}
-        disabled={
-          curPath.length === 0 &&
-          (currentSearchString === undefined || currentSearchString?.length === 0)
-        }
-      >
+      <Item id="reset-view" onClick={handleResetView} disabled={curPath.length === 0}>
         <div className="flex w-full items-center gap-2">
           <Icon icon="system-uicons:reset" />
           <div>Reset view</div>
-        </div>
-      </Item>
-      <Item id="highlight-similar-stacks" onClick={() => highlightSimilarStacks(functionName)}>
-        <div className="flex w-full items-center gap-2">
-          <Icon icon="tdesign:highlight" />
-          <div>Highlight similar stacks</div>
         </div>
       </Item>
       <Submenu

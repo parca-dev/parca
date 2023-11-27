@@ -48,6 +48,12 @@ export interface ColorsState {
   binaries: string[];
   hoveringNode: HoveringNode | undefined;
   hoveringRow: HoveringRow | undefined;
+  highlightSimilarStacksNode:
+    | {
+        name: string;
+        row: number;
+      }
+    | undefined;
 }
 
 // Define the initial state using that type
@@ -56,6 +62,7 @@ const initialState: ColorsState = {
   binaries: [],
   hoveringNode: undefined,
   hoveringRow: undefined,
+  highlightSimilarStacksNode: undefined,
 };
 
 export interface StackColor {
@@ -161,11 +168,23 @@ export const colorsSlice = createSlice({
     resetColors: state => {
       state.colors = {};
     },
+    setHighlightSimilarStacksNode: (
+      state,
+      action: PayloadAction<{name: string; row: number} | undefined>
+    ) => {
+      state.highlightSimilarStacksNode = action.payload;
+    },
   },
 });
 
-export const {addColor, resetColors, setFeatures, setHoveringNode, setHoveringRow} =
-  colorsSlice.actions;
+export const {
+  addColor,
+  resetColors,
+  setFeatures,
+  setHoveringNode,
+  setHoveringRow,
+  setHighlightSimilarStacksNode,
+} = colorsSlice.actions;
 
 // Other code such as selectors can use the imported `RootState` type
 export const selectStackColors = (state: RootState): StackColorMap => state.colors.colors;
@@ -177,5 +196,9 @@ export const selectHoveringNode = (state: RootState): HoveringNode | undefined =
 
 export const selectHoveringRow = (state: RootState): HoveringRow | undefined =>
   state.colors.hoveringRow;
+
+export const selectHighlightSimilarStacksNode = (
+  state: RootState
+): {name: string; row: number} | undefined => state.colors.highlightSimilarStacksNode;
 
 export default colorsSlice.reducer;
