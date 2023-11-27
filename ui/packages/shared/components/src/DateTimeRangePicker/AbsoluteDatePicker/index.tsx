@@ -14,7 +14,14 @@
 import {useEffect, useState} from 'react';
 
 import {UTCDateTimePicker} from '../../DateTimePicker';
-import {AbsoluteDate, DateTimeRange, RelativeDate, UNITS, getDateHoursAgo} from '../utils';
+import {
+  AbsoluteDate,
+  DateTimeRange,
+  RelativeDate,
+  UNITS,
+  UNIT_TYPE,
+  getDateHoursAgo,
+} from '../utils';
 
 interface AbsoluteDatePickerProps {
   range: DateTimeRange;
@@ -53,8 +60,10 @@ const AbsoluteDatePicker = ({
         type="button"
         className="flex"
         onClick={() => {
-          const getRelativeTimeRangeBetweenDates = (timeRange: number) => {
-            const roundToHundredth = value => {
+          const getRelativeTimeRangeBetweenDates = (
+            timeRange: number
+          ): {unit: UNIT_TYPE; value: number} => {
+            const roundToHundredth = (value: number): number => {
               return Number(value.toFixed(2));
             };
 
@@ -71,6 +80,7 @@ const AbsoluteDatePicker = ({
           };
 
           const {unit, value} = getRelativeTimeRangeBetweenDates(to.getTime() - from.getTime());
+
           onChange(new RelativeDate(unit, value), new RelativeDate(unit, 0));
         }}
       >
