@@ -158,6 +158,12 @@ const RelativeDatePicker = ({
             const {value, unit} = parsedInput;
             setValidRange({value, unit});
           }}
+          onKeyDown={e => {
+            // if enter key is pressed, blur the input
+            if (e.key === 'Enter') {
+              e.currentTarget.blur();
+            }
+          }}
         />
         <button
           type="button"
