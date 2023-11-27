@@ -53,7 +53,25 @@ const AbsoluteDatePicker = ({
         type="button"
         className="flex"
         onClick={() => {
-          onChange(new RelativeDate(UNITS.HOUR, 6), new RelativeDate(UNITS.HOUR, 0));
+          const getRelativeTimeRangeBetweenDates = (timeRange: number) => {
+            const roundToHundredth = value => {
+              return Number(value.toFixed(2));
+            };
+
+            if (timeRange < 1000 * 60 * 60) {
+              const timeRangeToMinutes = timeRange / 1000 / 60;
+              return {unit: UNITS.MINUTE, value: roundToHundredth(timeRangeToMinutes)};
+            }
+            if (timeRange < 1000 * 60 * 60 * 24) {
+              const timeRangeToHours = timeRange / 1000 / 60 / 60;
+              return {unit: UNITS.HOUR, value: roundToHundredth(timeRangeToHours)};
+            }
+            const timeRangeToDays = timeRange / 1000 / 60 / 60 / 24;
+            return {unit: UNITS.DAY, value: roundToHundredth(timeRangeToDays)};
+          };
+
+          const {unit, value} = getRelativeTimeRangeBetweenDates(to.getTime() - from.getTime());
+          onChange(new RelativeDate(unit, value), new RelativeDate(unit, 0));
         }}
       >
         <p className="my-1 ml-1 text-xs text-gray-500 hover:text-indigo-600 dark:text-gray-400">
