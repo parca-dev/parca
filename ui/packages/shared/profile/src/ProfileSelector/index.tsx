@@ -100,6 +100,7 @@ const ProfileSelector = ({
     data: profileTypesData,
     error,
   } = useProfileTypes(queryClient);
+  const [isDataLoading, setIsDataLoading] = useState<boolean>(false);
   const {heightStyle} = useMetricsGraphDimensions(comparing);
   const {viewComponent} = useParcaContext();
 
@@ -107,6 +108,17 @@ const ProfileSelector = ({
     DateTimeRange.fromRangeKey(querySelection.timeSelection)
   );
   const [queryExpressionString, setQueryExpressionString] = useState(querySelection.expression);
+
+  useEffect(() => {
+    setIsDataLoading(true);
+    const handleNewTimeRange = async (): Promise<void> => {
+      await setQueryExpression();
+      await setIsDataLoading(false);
+    };
+
+    void handleNewTimeRange();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeRangeSelection]);
 
   useEffect(() => {
     if (enforcedProfileName !== '') {
@@ -231,8 +243,8 @@ const ProfileSelector = ({
   return (
     <>
       <div className="mb-2 flex gap-2">
-        <div className="flex w-full flex-wrap content-start items-end justify-between gap-2">
-          <div>
+        <div className="flex w-full flex-wrap content-start items-center justify-between gap-2">
+          <div className="pb-6">
             <label className="text-xs">Profile type</label>
             <ProfileTypeSelector
               profileTypesData={profileTypesData}
@@ -242,15 +254,12 @@ const ProfileSelector = ({
               error={error}
             />
           </div>
-
-          <div className="w-full flex-1">
-            <div className="mb-[2px] flex items-center justify-between">
+          <div className="w-full flex-1 pb-6">
+            <div className="mb-0.5 mt-1.5 flex items-center justify-between">
               <label className="text-xs">Query</label>
-
               {(query.matchers.length > 0 || query.inputMatcherString.length > 0) &&
                 viewComponent !== undefined && <div>{viewComponent?.createViewComponent}</div>}
             </div>
-
             <MatchersInput
               queryClient={queryClient}
               setMatchersString={setMatchersString}
@@ -258,13 +267,10 @@ const ProfileSelector = ({
               currentQuery={query}
             />
           </div>
-          <div>
-            <label className="text-xs">Period</label>
-            <DateTimeRangePicker
-              onRangeSelection={setTimeRangeSelection}
-              range={timeRangeSelection}
-            />
-          </div>
+          <DateTimeRangePicker
+            onRangeSelection={setTimeRangeSelection}
+            range={timeRangeSelection}
+          />
           <ButtonGroup>
             {!searchDisabled && (
               <>
@@ -289,7 +295,8 @@ const ProfileSelector = ({
       </div>
       <div className="rounded bg-white shadow dark:border-gray-500 dark:bg-gray-700">
         <div style={{height: heightStyle}}>
-          {querySelection.expression !== undefined &&
+          {!isDataLoading &&
+          querySelection.expression !== undefined &&
           querySelection.expression.length > 0 &&
           querySelection.from !== undefined &&
           querySelection.to !== undefined ? (

@@ -4,7 +4,8 @@
   "description": "Parca commonly used icons",
   "main": "src/index.tsx",
   "scripts": {
-    "test": "jest --coverage --config ../../../jest.config.js ./src/*"
+    "test": "jest --coverage --config ../../../jest.config.js ./src/*",
+    "watch": "tsc-watch --onSuccess 'tailwindcss -o dist/styles.css --minify'"
   },
   "keywords": [],
   "author": "",
