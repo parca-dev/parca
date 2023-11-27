@@ -21,7 +21,6 @@ import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {
   getColorForFeature,
   selectDarkMode,
-  setHighlightSimilarStacksNode,
   setHoveringNode,
   useAppDispatch,
   useAppSelector,
@@ -96,6 +95,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const [height, setHeight] = useState(0);
   const [hoveringRow, setHoveringRow] = useState<number | null>(null);
   const [hoveringLevel, setHoveringLevel] = useState<number | null>(null);
+  const [hoveringName, setHoveringName] = useState<string | null>(null);
   const svg = useRef(null);
   const ref = useRef<SVGGElement>(null);
 
@@ -230,6 +230,9 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               darkMode={isDarkMode}
               compareMode={compareMode}
               isContextMenuOpen={isContextMenuOpen}
+              setHoveringName={setHoveringName}
+              hoveringName={hoveringName}
+              hoveringRow={hoveringRow}
             />
           </g>
         </g>
@@ -250,6 +253,8 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     xScale,
     isContextMenuOpen,
     displayMenu,
+    hoveringName,
+    hoveringRow,
   ]);
 
   if (table.numRows === 0 || width === undefined) {
@@ -261,7 +266,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
       <div
         onMouseLeave={() => {
           dispatch(setHoveringNode(undefined));
-          dispatch(setHighlightSimilarStacksNode(undefined));
+          setHoveringName(null);
         }}
       >
         <ContextMenu

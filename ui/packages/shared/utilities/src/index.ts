@@ -203,7 +203,9 @@ export function convertLocalToUTCDate(date: Date): Date {
 export type ColorProfileName = 'default' | 'subtle' | 'ocean' | 'warm' | 'rainbow';
 export type ColorsDuo = [string, string];
 
-export const COLOR_PROFILES: {[key in ColorProfileName]: {colors: ColorsDuo[]}} = {
+export const COLOR_PROFILES: {
+  [key in ColorProfileName]: {colors: ColorsDuo[]; colorForSimilarNodes: string};
+} = {
   ocean: {
     colors: [
       [colors.green['300'], colors.green['300']],
@@ -216,6 +218,7 @@ export const COLOR_PROFILES: {[key in ColorProfileName]: {colors: ColorsDuo[]}} 
       [colors.violet['300'], colors.violet['300']],
       [colors.purple['300'], colors.purple['300']],
     ],
+    colorForSimilarNodes: 'stroke-indigo-600 dark:stroke-sky-100',
   },
   warm: {
     colors: [
@@ -227,6 +230,7 @@ export const COLOR_PROFILES: {[key in ColorProfileName]: {colors: ColorsDuo[]}} 
       [colors.green['300'], colors.green['300']],
       [colors.emerald['300'], colors.emerald['300']],
     ],
+    colorForSimilarNodes: 'stroke-blue-700 dark:stroke-neutral-50',
   },
   subtle: {
     colors: [
@@ -238,6 +242,7 @@ export const COLOR_PROFILES: {[key in ColorProfileName]: {colors: ColorsDuo[]}} 
       [colors.indigo['200'], colors.indigo['200']],
       [colors.pink['200'], colors.pink['200']],
     ],
+    colorForSimilarNodes: 'stroke-blue-700 dark:stroke-gray-50',
   },
   rainbow: {
     colors: [
@@ -259,8 +264,12 @@ export const COLOR_PROFILES: {[key in ColorProfileName]: {colors: ColorsDuo[]}} 
       [colors.pink['300'], colors.pink['300']],
       [colors.rose['300'], colors.rose['300']],
     ],
+    colorForSimilarNodes: 'stroke-blue-700 dark:stroke-neutral-50',
   },
-  default: {colors: [['#929FEB', '#B3BAE1']]},
+  default: {
+    colors: [['#929FEB', '#B3BAE1']],
+    colorForSimilarNodes: 'stroke-sky-400 dark:stroke-neutral-50',
+  },
 };
 
 export const getNewSpanColor = (isDarkMode: boolean): string => {

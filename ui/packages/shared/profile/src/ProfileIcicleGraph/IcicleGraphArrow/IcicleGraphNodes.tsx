@@ -17,13 +17,7 @@ import {Table} from 'apache-arrow';
 import cx from 'classnames';
 
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
-import {
-  selectBinaries,
-  selectHighlightSimilarStacksNode,
-  setHighlightSimilarStacksNode,
-  useAppDispatch,
-  useAppSelector,
-} from '@parca/store';
+import {getColorForSimilarNodes, selectBinaries, useAppSelector} from '@parca/store';
 import {isSearchMatch, scaleLinear} from '@parca/utilities';
 
 import 'react-contexify/dist/ReactContexify.css';
@@ -61,6 +55,9 @@ interface IcicleGraphNodesProps {
   darkMode: boolean;
   compareMode: boolean;
   isContextMenuOpen: boolean;
+  setHoveringName: (name: string | null) => void;
+  hoveringName: string | null;
+  hoveringRow: number | null;
 }
 
 export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
@@ -83,6 +80,9 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
   darkMode,
   compareMode,
   isContextMenuOpen,
+  setHoveringName,
+  hoveringName,
+  hoveringRow,
 }: IcicleGraphNodesProps): React.JSX.Element {
   const cumulatives = table.getChild(FIELD_CUMULATIVE);
 
@@ -125,6 +125,9 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
         darkMode={darkMode}
         compareMode={compareMode}
         isContextMenuOpen={isContextMenuOpen}
+        setHoveringName={setHoveringName}
+        hoveringName={hoveringName}
+        hoveringRow={hoveringRow}
       />
     );
   });
@@ -158,6 +161,9 @@ interface IcicleNodeProps {
   darkMode: boolean;
   compareMode: boolean;
   isContextMenuOpen: boolean;
+  setHoveringName: (name: string | null) => void;
+  hoveringName: string | null;
+  hoveringRow: number | null;
 }
 
 const icicleRectStyles = {
@@ -192,9 +198,10 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   darkMode,
   compareMode,
   isContextMenuOpen,
+  setHoveringName,
+  hoveringName,
+  hoveringRow,
 }: IcicleNodeProps): React.JSX.Element {
-  const dispatch = useAppDispatch();
-
   // get the columns to read from
   const mappingColumn = table.getChild(FIELD_MAPPING_FILE);
   const functionNameColumn = table.getChild(FIELD_FUNCTION_NAME);
@@ -206,13 +213,23 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const cumulative = cumulativeColumn?.get(row) !== null ? BigInt(cumulativeColumn?.get(row)) : 0n;
   const diff: bigint | null = diffColumn?.get(row) !== null ? BigInt(diffColumn?.get(row)) : null;
   const childRows: number[] = Array.from(table.getChild(FIELD_CHILDREN)?.get(row) ?? []);
-  const highlightedSimilarStacksNode = useAppSelector(selectHighlightSimilarStacksNode);
-  const [highlightSimilarStacks] = useUserPreference<boolean>(
+  const [highlightSimilarStacksPreference] = useUserPreference<boolean>(
     USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS.key
   );
   const [currentColorPalette] = useUserPreference<string>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
+
+  const shouldBeHighlightedIfSimilarStacks = useMemo(() => {
+    return (
+      highlightSimilarStacksPreference &&
+      functionName != null &&
+      functionName === hoveringName &&
+      row !== hoveringRow
+    );
+  }, [highlightSimilarStacksPreference, functionName, row, hoveringName, hoveringRow]);
+
+  // const memoizedHighlightedSimilarStacksNode = useMemo(() => {}, [highlightedSimilarStacksNode]);
 
   // TODO: Maybe it's better to pass down the sorter function as prop instead of figuring this out here.
   switch (sortBy) {
@@ -303,7 +320,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     if (isContextMenuOpen) return;
     setHoveringRow(row);
     setHoveringLevel(level);
-    if (highlightSimilarStacks) dispatch(setHighlightSimilarStacksNode({name, row: row ?? 0}));
+    setHoveringName(name);
   };
 
   const onMouseLeave = (): void => {
@@ -312,13 +329,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     setHoveringLevel(null);
   };
 
-  const shouldBeHighlightedIfSimilarStacks = useMemo(() => {
-    return (
-      highlightSimilarStacks &&
-      functionName === highlightedSimilarStacksNode?.name &&
-      row !== highlightedSimilarStacksNode.row
-    );
-  }, [highlightSimilarStacks, functionName, highlightedSimilarStacksNode]);
+  const colorForSimilarNodes = getColorForSimilarNodes(currentColorPalette);
 
   return (
     <>
@@ -339,10 +350,14 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
           style={{
             fill: colorResult,
           }}
-          className={cx('stroke-white dark:stroke-gray-700', {
-            'opacity-50': isHighlightEnabled && !isHighlighted,
-            'stroke-blue-700 stroke-2 [stroke-dasharray:2]': shouldBeHighlightedIfSimilarStacks,
-          })}
+          className={cx(
+            'stroke-white dark:stroke-gray-700',
+            {
+              'opacity-50': isHighlightEnabled && !isHighlighted,
+            },
+            shouldBeHighlightedIfSimilarStacks &&
+              `${colorForSimilarNodes} stroke-2 [stroke-dasharray:2]`
+          )}
         />
         {width > 5 && (
           <svg width={width - 5} height={height}>
@@ -374,6 +389,9 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
           darkMode={darkMode}
           compareMode={compareMode}
           isContextMenuOpen={isContextMenuOpen}
+          setHoveringName={setHoveringName}
+          hoveringName={hoveringName}
+          hoveringRow={hoveringRow}
         />
       )}
     </>
