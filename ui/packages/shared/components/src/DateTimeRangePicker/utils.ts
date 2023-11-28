@@ -175,6 +175,23 @@ export const getDateHoursAgo = (hours = 1): Date => {
   return now;
 };
 
+export const getHistoricalDate = ({value, unit}: {value: number; unit: string}): Date => {
+  const now = new Date();
+  switch (unit) {
+    case UNITS.MINUTE:
+      now.setMinutes(now.getMinutes() - value);
+      return now;
+    case UNITS.HOUR:
+      now.setHours(now.getHours() - value);
+      return now;
+    case UNITS.DAY:
+      now.setDate(now.getDate() - value);
+      return now;
+    default:
+      return now;
+  }
+};
+
 const getRelativeDateMs = (date: RelativeDate): number => {
   const now = new Date().getTime();
   const {unit, value} = date;

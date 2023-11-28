@@ -26,7 +26,7 @@ const DateTimePicker = ({selected, onChange}: Props): JSX.Element => (
     onChange={onChange}
     showTimeInput
     dateFormat="yyyy-MM-dd HH:mm:ss"
-    className="w-full rounded-md border border-gray-200  bg-gray-50 p-2 text-sm dark:border-gray-600 dark:bg-gray-900"
+    className="h-[38px] w-full rounded-md border border-gray-200 p-2 text-center text-sm dark:border-gray-600 dark:bg-gray-900"
   />
 );
 
@@ -36,7 +36,7 @@ export const UTCDateTimePicker = ({selected, onChange}: Props): JSX.Element => (
     onChange={date => onChange(date != null ? convertLocalToUTCDate(date) : null)}
     showTimeInput
     dateFormat="yyyy-MM-dd HH:mm:ss"
-    className="w-full rounded-md border border-gray-200  bg-gray-50 p-2 text-sm dark:border-gray-600 dark:bg-gray-900"
+    className="flex h-[38px] w-full rounded-md border border-gray-200 p-2 text-center text-sm dark:border-gray-600 dark:bg-gray-900"
   />
 );
 
