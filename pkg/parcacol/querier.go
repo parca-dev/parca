@@ -1053,6 +1053,9 @@ func (q *Querier) selectMerge(
 		Aggregate(
 			[]logicalplan.Expr{
 				logicalplan.Sum(logicalplan.Col(profile.ColumnValue)),
+				logicalplan.Sum(logicalplan.Col(profile.ColumnDuration)),
+				logicalplan.Min(logicalplan.Col(profile.ColumnPeriod)),
+				logicalplan.Min(logicalplan.Col(profile.ColumnTimestamp)),
 			},
 			aggrCols,
 		).
@@ -1065,11 +1068,53 @@ func (q *Querier) selectMerge(
 		return nil, "", profile.Meta{}, err
 	}
 
+	duration, err := sumByTimestamp(ColumnDurationSum, records)
+	if err != nil {
+		return nil, "", profile.Meta{}, err
+	}
+
+	period, err := sumByTimestamp("min("+profile.ColumnPeriod+")", records)
+	if err != nil {
+		return nil, "", profile.Meta{}, err
+	}
+
 	meta := profile.Meta{
 		Name:       queryParts.Meta.Name,
-		SampleType: queryParts.Meta.SampleType,
 		PeriodType: queryParts.Meta.PeriodType,
+		SampleType: queryParts.Meta.SampleType,
 		Timestamp:  start,
+		Duration:   duration,
+		Period:     period,
 	}
-	return records, "sum(value)", meta, nil
+	return records, ColumnValueSum, meta, nil
+}
+
+func sumByTimestamp(column string, records []arrow.Record) (int64, error) {
+	// There might be a more "arrow" way of doing this. But this works for now.
+	var sum int64
+	timestampValue := map[int64]int64{}
+	for _, r := range records {
+		timestampIndices := r.Schema().FieldIndices("min(" + profile.ColumnTimestamp + ")")
+		if len(timestampIndices) != 1 {
+			return 0, fmt.Errorf("expected column %q to exist", profile.ColumnTimestamp)
+		}
+		valueIndices := r.Schema().FieldIndices(column)
+		if len(valueIndices) != 1 {
+			return 0, fmt.Errorf("expected column %q to exist", column)
+		}
+
+		timestampColumn := r.Column(timestampIndices[0]).(*array.Int64)
+		valueColumn := r.Column(valueIndices[0]).(*array.Int64)
+
+		for i := 0; i < int(r.NumRows()); i++ {
+			timestamp := timestampColumn.Value(i)
+			if timestampValue[timestamp] == 0 {
+				value := valueColumn.Value(i)
+				timestampValue[timestamp] = value
+				sum += value
+			}
+		}
+	}
+
+	return sum, nil
 }
