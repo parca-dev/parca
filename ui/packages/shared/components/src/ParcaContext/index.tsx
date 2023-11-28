@@ -48,6 +48,8 @@ interface Props {
     emitQuery: (query: string) => void;
     createViewComponent?: ReactNode;
   };
+  profileViewExternalMainActions?: ReactNode;
+  profileViewExternalSubActions?: ReactNode;
 }
 
 export const defaultValue: Props = {
