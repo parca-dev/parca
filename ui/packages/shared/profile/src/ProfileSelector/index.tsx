@@ -107,18 +107,21 @@ const ProfileSelector = ({
   const [timeRangeSelection, setTimeRangeSelection] = useState(
     DateTimeRange.fromRangeKey(querySelection.timeSelection)
   );
+
   const [queryExpressionString, setQueryExpressionString] = useState(querySelection.expression);
 
   useEffect(() => {
-    setIsDataLoading(true);
-    const handleNewTimeRange = async (): Promise<void> => {
-      await setQueryExpression();
-      await setIsDataLoading(false);
-    };
+    if (querySelection.expression === undefined) {
+      return;
+    }
 
-    void handleNewTimeRange();
+    setIsDataLoading(true);
+
+    setQueryExpression();
+    setIsDataLoading(false);
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeRangeSelection]);
+  }, [timeRangeSelection, querySelection.expression]);
 
   useEffect(() => {
     if (enforcedProfileName !== '') {
