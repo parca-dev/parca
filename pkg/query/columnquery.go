@@ -819,18 +819,37 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile
 	_, span := tracer.Start(ctx, "ComputeDiff")
 	defer span.End()
 
+	baseRatio := 1.0
+	compareRatio := 1.0
+	if base.Meta.Duration != compare.Meta.Duration {
+		if base.Meta.Duration < compare.Meta.Duration {
+			baseRatio = float64(compare.Meta.Duration) / float64(base.Meta.Duration)
+		} else {
+			compareRatio = float64(base.Meta.Duration) / float64(compare.Meta.Duration)
+		}
+	}
+
 	records := make([]arrow.Record, 0, len(compare.Samples)+len(base.Samples))
 
 	for _, r := range compare.Samples {
 		columns := r.Columns()
 		cols := make([]arrow.Array, len(columns))
 		copy(cols, columns)
-		// This is intentional, the diff value of the `compare` profile is the same
-		// as the value of the `compare` profile, because what we're actually doing
-		// is subtracting the `base` profile, but the actual calculation happens
-		// when building the visualizations. We should eventually have this be done
-		// directly by the query engine.
-		cols[len(cols)-1] = cols[len(cols)-2]
+		if baseRatio == 1.0 {
+			// This is intentional, the diff value of the `compare` profile is the same
+			// as the value of the `compare` profile, because what we're actually doing
+			// is subtracting the `base` profile, but the actual calculation happens
+			// when building the visualizations. We should eventually have this be done
+			// directly by the query engine.
+			cols[len(cols)-1] = cols[len(cols)-2]
+		} else {
+			values := multiplyInt64By(mem, columns[len(columns)-2].(*array.Int64), baseRatio)
+			defer values.Release()
+			cols[len(cols)-2] = values
+			diffs := multiplyInt64By(mem, columns[len(columns)-2].(*array.Int64), baseRatio)
+			defer diffs.Release()
+			cols[len(cols)-1] = diffs
+		}
 		records = append(records, array.NewRecord(
 			r.Schema(),
 			cols,
@@ -843,7 +862,7 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile
 			columns := r.Columns()
 			cols := make([]arrow.Array, len(columns))
 			copy(cols, columns)
-			mult := multiplyInt64By(mem, columns[len(columns)-2].(*array.Int64), -1)
+			mult := multiplyInt64By(mem, columns[len(columns)-2].(*array.Int64), -1*compareRatio)
 			defer mult.Release()
 			zero := zeroArray(mem, int(r.NumRows()))
 			defer zero.Release()
@@ -861,14 +880,18 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile
 	}, nil
 }
 
-func multiplyInt64By(pool memory.Allocator, arr *array.Int64, factor int64) arrow.Array {
+func multiplyInt64By(pool memory.Allocator, arr *array.Int64, factor float64) arrow.Array {
 	b := array.NewInt64Builder(pool)
 	defer b.Release()
 
 	values := arr.Int64Values()
 	valid := make([]bool, len(values))
 	for i := range values {
-		values[i] *= factor
+		// converting the value to float64 to multiply it by the factor
+		// afterward we convert it back to int64
+		v := float64(values[i])
+		v = v * factor
+		values[i] = int64(v)
 		valid[i] = true
 	}
 
