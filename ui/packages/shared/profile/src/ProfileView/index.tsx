@@ -153,7 +153,8 @@ export const ProfileView = ({
   const isDarkMode = useAppSelector(selectDarkMode);
   const isMultiPanelView = dashboardItems.length > 1;
 
-  const {loader, perf} = useParcaContext();
+  const {loader, perf, profileViewExternalMainActions, profileViewExternalSubActions} =
+    useParcaContext();
 
   useEffect(() => {
     // Reset the current path when the profile source changes
@@ -362,25 +363,36 @@ export const ProfileView = ({
       <ProfileViewContextProvider value={{profileSource, sampleUnit, compareMode}}>
         <div
           className={cx(
-            'mb-4 flex w-full items-center',
-            hasProfileSource ? 'justify-between' : 'justify-end'
+            'mb-4 flex w-full',
+            hasProfileSource || profileViewExternalMainActions != null
+              ? 'justify-between'
+              : 'justify-end',
+            {
+              'items-end': !hasProfileSource && profileViewExternalMainActions != null,
+              'items-center': hasProfileSource,
+            }
           )}
         >
-          {hasProfileSource && (
-            <div className="max-w-[300px]">
-              <div className="text-sm font-medium capitalize">
-                {headerParts.length > 0 ? headerParts[0].replace(/"/g, '') : ''}
+          <div>
+            {hasProfileSource && (
+              <div className="max-w-[300px]">
+                <div className="text-sm font-medium capitalize">
+                  {headerParts.length > 0 ? headerParts[0].replace(/"/g, '') : ''}
+                </div>
+                <div className="text-xs">
+                  {headerParts.length > 1
+                    ? headerParts[headerParts.length - 1].replace(/"/g, '')
+                    : ''}
+                </div>
               </div>
-              <div className="text-xs">
-                {headerParts.length > 1
-                  ? headerParts[headerParts.length - 1].replace(/"/g, '')
-                  : ''}
-              </div>
-            </div>
-          )}
+            )}
+
+            {profileViewExternalMainActions != null ? profileViewExternalMainActions : null}
+          </div>
 
           <div className="flex flex-wrap items-center gap-2 md:justify-end">
             <FilterByFunctionButton navigateTo={navigateTo} />
+            {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
             <UserPreferences
               customButton={
                 <Button className="gap-2" variant="neutral">
