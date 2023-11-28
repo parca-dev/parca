@@ -110,7 +110,7 @@ export const getColorForFeature = (
   return !isDarkMode ? color[0] : color[1];
 };
 
-export const getColorForSimilarNodes = (currentColorPalette: string): string => {
+export const getColorForSimilarNodes = (currentColorPalette: ColorProfileName): string => {
   return COLOR_PROFILES[currentColorPalette].colorForSimilarNodes;
 };
 

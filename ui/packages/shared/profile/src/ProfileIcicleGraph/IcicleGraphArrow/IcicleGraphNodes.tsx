@@ -18,7 +18,7 @@ import cx from 'classnames';
 
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {getColorForSimilarNodes, selectBinaries, useAppSelector} from '@parca/store';
-import {isSearchMatch, scaleLinear} from '@parca/utilities';
+import {isSearchMatch, scaleLinear, type ColorProfileName} from '@parca/utilities';
 
 import 'react-contexify/dist/ReactContexify.css';
 
@@ -329,7 +329,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     setHoveringLevel(null);
   };
 
-  const colorForSimilarNodes = getColorForSimilarNodes(currentColorPalette);
+  const colorForSimilarNodes = getColorForSimilarNodes(currentColorPalette as ColorProfileName);
 
   return (
     <>
