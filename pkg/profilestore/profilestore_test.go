@@ -22,7 +22,7 @@ import (
 	"github.com/polarsignals/frostdb"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -38,7 +38,7 @@ func Test_LabelName_Error(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	col, err := frostdb.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
@@ -119,7 +119,7 @@ func BenchmarkProfileColumnStoreWriteSeries(b *testing.B) {
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	col, err := frostdb.New()
 	require.NoError(b, err)
 	colDB, err := col.DB(ctx, "parca")

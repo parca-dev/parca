@@ -33,7 +33,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/model/timestamp"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -65,7 +65,7 @@ func TestColumnQueryAPIQueryRangeEmpty(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	col, err := columnstore.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
@@ -148,7 +148,7 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	col, err := columnstore.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
@@ -252,7 +252,7 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	col, err := columnstore.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
@@ -390,7 +390,7 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	col, err := columnstore.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
@@ -485,7 +485,7 @@ func TestColumnQueryAPIQueryCumulative(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	col, err := columnstore.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
@@ -633,7 +633,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	col, err := columnstore.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
@@ -899,7 +899,7 @@ func TestColumnQueryAPITypes(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	col, err := columnstore.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
@@ -1000,7 +1000,7 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	col, err := columnstore.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
@@ -1091,7 +1091,7 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	col, err := columnstore.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
@@ -1180,7 +1180,7 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 
 func BenchmarkQuery(b *testing.B) {
 	ctx := context.Background()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 
 	fileContent, err := os.ReadFile("testdata/alloc_objects.pb.gz")
 	require.NoError(b, err)
@@ -1429,7 +1429,7 @@ func TestFilterData(t *testing.T) {
 	originalRecord := w.RecordBuilder.NewRecord()
 	recs, _, err := FilterProfileData(
 		context.Background(),
-		trace.NewNoopTracerProvider().Tracer(""),
+		noop.NewTracerProvider().Tracer(""),
 		mem,
 		[]arrow.Record{originalRecord},
 		"",
@@ -1499,7 +1499,7 @@ func TestFilterDataWithPath(t *testing.T) {
 	originalRecord := w.RecordBuilder.NewRecord()
 	recs, _, err := FilterProfileData(
 		context.Background(),
-		trace.NewNoopTracerProvider().Tracer(""),
+		noop.NewTracerProvider().Tracer(""),
 		mem,
 		[]arrow.Record{originalRecord},
 		"",
@@ -1567,7 +1567,7 @@ func TestFilterDataInterpretedOnly(t *testing.T) {
 	originalRecord := w.RecordBuilder.NewRecord()
 	recs, _, err := FilterProfileData(
 		context.Background(),
-		trace.NewNoopTracerProvider().Tracer(""),
+		noop.NewTracerProvider().Tracer(""),
 		mem,
 		[]arrow.Record{originalRecord},
 		"",

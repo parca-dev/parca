@@ -24,7 +24,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
@@ -53,14 +53,14 @@ func TestGenerateTable(t *testing.T) {
 		t,
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
-		trace.NewNoopTracerProvider().Tracer(""),
+		noop.NewTracerProvider().Tracer(""),
 	)
 	metastore := metastore.NewInProcessClient(l)
 	normalizer := parcacol.NewNormalizer(metastore, true, counter)
 	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, true, nil)
 	require.NoError(t, err)
 
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
 	require.NoError(t, err)
 
@@ -135,7 +135,7 @@ func TestGenerateTableAggregateFlat(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
 	defer mem.AssertSize(t, 0)
 

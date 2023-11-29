@@ -35,7 +35,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
@@ -214,7 +214,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 		t,
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
-		trace.NewNoopTracerProvider().Tracer(""),
+		noop.NewTracerProvider().Tracer(""),
 	)
 
 	mc := metastore.NewInProcessClient(l)
@@ -320,7 +320,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 	s4 := sres.Stacktraces[3]
 	s5 := sres.Stacktraces[4]
 
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 
 	p, err := parcacol.NewProfileSymbolizer(tracer, mc).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
 		Samples: []*parcaprofile.NormalizedSample{{
@@ -574,7 +574,7 @@ func (s *flamegraphComparerStack) Len() int {
 
 func TestGenerateFlamegraphArrowEmpty(t *testing.T) {
 	ctx := context.Background()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 
 	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
 	defer mem.AssertSize(t, 0)
@@ -606,7 +606,7 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 		Name: "parca_test_counter",
 		Help: "parca_test_counter",
 	})
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 
 	store := metastoretest.NewTestMetastore(t, logger, reg, tracer)
 
@@ -692,7 +692,7 @@ func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 		t,
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
-		trace.NewNoopTracerProvider().Tracer(""),
+		noop.NewTracerProvider().Tracer(""),
 	)
 
 	metastore := metastore.NewInProcessClient(l)
@@ -733,7 +733,7 @@ func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 	s2 := sres.Stacktraces[1]
 	s3 := sres.Stacktraces[2]
 
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 
 	p, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
 		Samples: []*parcaprofile.NormalizedSample{{
@@ -807,7 +807,7 @@ func TestGenerateFlamegraphArrowTrimming(t *testing.T) {
 		t,
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
-		trace.NewNoopTracerProvider().Tracer(""),
+		noop.NewTracerProvider().Tracer(""),
 	)
 
 	metastore := metastore.NewInProcessClient(l)
@@ -885,7 +885,7 @@ func TestGenerateFlamegraphArrowTrimming(t *testing.T) {
 	s2 := sres.Stacktraces[1]
 	s3 := sres.Stacktraces[2]
 
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 
 	p, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
 		Samples: []*parcaprofile.NormalizedSample{{
@@ -998,7 +998,7 @@ func BenchmarkArrowFlamegraph(b *testing.B) {
 	np, err := PprofToSymbolizedProfile(parcaprofile.MetaFromPprof(p, "memory", 0), pp, 0)
 	require.NoError(b, err)
 
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -1101,7 +1101,7 @@ func TestRecordStats(t *testing.T) {
 	np, err := PprofToSymbolizedProfile(parcaprofile.MetaFromPprof(p, "memory", 0), pp, 0)
 	require.NoError(t, err)
 
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 
 	record, _, _, _, err := generateFlamegraphArrowRecord(
 		context.Background(),
@@ -1130,7 +1130,7 @@ func TestRecordStats(t *testing.T) {
 
 func TestAllFramesFiltered(t *testing.T) {
 	ctx := context.Background()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 
 	mem := memory.NewCheckedAllocator(memory.NewGoAllocator())
 	defer mem.AssertSize(t, 0)

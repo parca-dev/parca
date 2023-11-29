@@ -22,7 +22,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
@@ -42,7 +42,7 @@ func TestGenerateCallgraph(t *testing.T) {
 	fileContent := MustReadAllGzip(t, "testdata/alloc_objects.pb.gz")
 	p := &pprofpb.Profile{}
 	require.NoError(t, p.UnmarshalVT(fileContent))
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 
 	l := metastoretest.NewTestMetastore(
 		t,

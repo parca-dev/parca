@@ -28,7 +28,7 @@ import (
 	"github.com/polarsignals/frostdb/query"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
@@ -47,7 +47,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 			ctx := context.Background()
 			logger := log.NewNopLogger()
 			reg := prometheus.NewRegistry()
-			tracer := trace.NewNoopTracerProvider().Tracer("")
+			tracer := noop.NewTracerProvider().Tracer("")
 			col, err := columnstore.New()
 			require.NoError(b, err)
 			colDB, err := col.DB(context.Background(), "parca")
@@ -157,7 +157,7 @@ func Benchmark_ProfileTypes(b *testing.B) {
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	col, err := columnstore.New(
 		frostdb.WithWAL(),
 		frostdb.WithStoragePath("../../data"),

@@ -23,7 +23,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/objstore"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
@@ -34,7 +34,7 @@ import (
 func TestSourcesOnlyRequest(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewNopLogger()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 
 	f, err := os.Open("testdata/source.tar.zstd")
 	require.NoError(t, err)

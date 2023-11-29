@@ -25,7 +25,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
@@ -39,7 +39,7 @@ func TestGenerateFlatPprof(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	reg := prometheus.NewRegistry()
 	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
 		Name: "parca_test_counter",
@@ -140,7 +140,7 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 		t,
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
-		trace.NewNoopTracerProvider().Tracer(""),
+		noop.NewTracerProvider().Tracer(""),
 	)
 	metastore := metastore.NewInProcessClient(l)
 
@@ -181,7 +181,7 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 	require.Equal(t, 1, len(sres.Stacktraces))
 	s := sres.Stacktraces[0]
 
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
 		Samples: []*parcaprofile.NormalizedSample{{
 			StacktraceID: s.Id,

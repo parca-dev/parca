@@ -30,7 +30,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
@@ -75,7 +75,7 @@ func (t *fakeTable) Insert(ctx context.Context, data []byte) (uint64, error) {
 func TestPprofToParquet(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	ctx := context.Background()
 	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
 		Name: "parca_test_counter",
@@ -159,7 +159,7 @@ func TestPprofToParquet(t *testing.T) {
 func TestUncompressedPprofToParquet(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	ctx := context.Background()
 	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
 		Name: "parca_test_counter",
@@ -250,7 +250,7 @@ func TestUncompressedPprofToParquet(t *testing.T) {
 func BenchmarkNormalizeWriteRawRequest(b *testing.B) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	ctx := context.Background()
 	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
 		Name: "parca_test_counter",
