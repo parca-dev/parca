@@ -230,7 +230,7 @@ export const COLOR_PROFILES: {
       [colors.green['300'], colors.green['300']],
       [colors.emerald['300'], colors.emerald['300']],
     ],
-    colorForSimilarNodes: 'stroke-blue-700 dark:stroke-neutral-50',
+    colorForSimilarNodes: 'stroke-blue-700 dark:stroke-sky-100',
   },
   subtle: {
     colors: [
@@ -242,7 +242,7 @@ export const COLOR_PROFILES: {
       [colors.indigo['200'], colors.indigo['200']],
       [colors.pink['200'], colors.pink['200']],
     ],
-    colorForSimilarNodes: 'stroke-blue-700 dark:stroke-gray-50',
+    colorForSimilarNodes: 'stroke-blue-700 dark:stroke-indigo-600',
   },
   rainbow: {
     colors: [
@@ -264,11 +264,11 @@ export const COLOR_PROFILES: {
       [colors.pink['300'], colors.pink['300']],
       [colors.rose['300'], colors.rose['300']],
     ],
-    colorForSimilarNodes: 'stroke-blue-700 dark:stroke-neutral-50',
+    colorForSimilarNodes: 'stroke-blue-700 dark:stroke-sky-50',
   },
   default: {
     colors: [['#929FEB', '#B3BAE1']],
-    colorForSimilarNodes: 'stroke-sky-400 dark:stroke-neutral-50',
+    colorForSimilarNodes: 'stroke-sky-400 dark:stroke-sky-50',
   },
 };
 

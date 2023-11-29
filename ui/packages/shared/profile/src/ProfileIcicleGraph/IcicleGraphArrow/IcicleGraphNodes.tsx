@@ -15,6 +15,7 @@ import React, {ReactNode, useMemo} from 'react';
 
 import {Table} from 'apache-arrow';
 import cx from 'classnames';
+import {debounce} from 'lodash';
 
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {getColorForSimilarNodes, selectBinaries, useAppSelector} from '@parca/store';
@@ -220,16 +221,16 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
 
-  const shouldBeHighlightedIfSimilarStacks = useMemo(() => {
-    return (
-      highlightSimilarStacksPreference &&
-      functionName != null &&
-      functionName === hoveringName &&
-      row !== hoveringRow
-    );
-  }, [highlightSimilarStacksPreference, functionName, row, hoveringName, hoveringRow]);
+  const highlightedNodes = useMemo(() => {
+    if (highlightSimilarStacksPreference && functionName != null && functionName === hoveringName) {
+      return {functionName, row: hoveringRow};
+    }
+    return null; // Nothing to highlight
+  }, [highlightSimilarStacksPreference, functionName, hoveringName, hoveringRow]);
 
-  // const memoizedHighlightedSimilarStacksNode = useMemo(() => {}, [highlightedSimilarStacksNode]);
+  const shouldBeHighlightedIfSimilarStacks = useMemo(() => {
+    return highlightedNodes != null && row !== highlightedNodes.row;
+  }, [row, highlightedNodes]);
 
   // TODO: Maybe it's better to pass down the sorter function as prop instead of figuring this out here.
   switch (sortBy) {
@@ -327,7 +328,11 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     if (isContextMenuOpen) return;
     setHoveringRow(null);
     setHoveringLevel(null);
+    setHoveringName(null);
   };
+
+  // const debouncedMouseEnter = debounce(onMouseEnter, 100);
+  // const debouncedMouseLeave = debounce(onMouseLeave, 100);
 
   const colorForSimilarNodes = getColorForSimilarNodes(currentColorPalette as ColorProfileName);
 
@@ -351,12 +356,12 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
             fill: colorResult,
           }}
           className={cx(
-            'stroke-white dark:stroke-gray-700',
             {
               'opacity-50': isHighlightEnabled && !isHighlighted,
             },
-            shouldBeHighlightedIfSimilarStacks &&
-              `${colorForSimilarNodes} stroke-2 [stroke-dasharray:2]`
+            shouldBeHighlightedIfSimilarStacks
+              ? `${colorForSimilarNodes} stroke-2 [stroke-dasharray:2]`
+              : 'stroke-white dark:stroke-gray-700'
           )}
         />
         {width > 5 && (
