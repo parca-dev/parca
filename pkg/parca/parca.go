@@ -63,7 +63,6 @@ import (
 
 	"github.com/parca-dev/parca/pkg/config"
 	"github.com/parca-dev/parca/pkg/debuginfo"
-	"github.com/parca-dev/parca/pkg/ingester"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profile"
@@ -81,7 +80,6 @@ const (
 	symbolizationInterval = 10 * time.Second
 	flagModeScraperOnly   = "scraper-only"
 	metaStoreBadger       = "badger"
-	profileStoreFrostdb   = "frostdb"
 )
 
 type Flags struct {
@@ -111,8 +109,7 @@ type Flags struct {
 	Debuginfo  FlagsDebuginfo  `embed:"" prefix:"debuginfo-"`
 	Debuginfod FlagsDebuginfod `embed:"" prefix:"debuginfod-"`
 
-	Metastore    string `default:"badger" help:"Which metastore implementation to use" enum:"badger"`
-	Profilestore string `default:"frostdb" help:"Which profilestore implementation to use" enum:"frostdb"`
+	Metastore string `default:"badger" help:"Which metastore implementation to use" enum:"badger"`
 
 	ProfileShareServer string `default:"api.pprof.me:443" help:"gRPC address to send share profile requests to."`
 
@@ -281,91 +278,77 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 
 	mc := metastore.NewInProcessClient(mStr)
 
-	var (
-		ingester ingester.Ingester
-		querier  queryservice.Querier
+	frostdbOptions := []frostdb.Option{
+		frostdb.WithActiveMemorySize(flags.Storage.ActiveMemory),
+		frostdb.WithLogger(logger),
+		frostdb.WithRegistry(reg),
+		frostdb.WithTracer(tracerProvider.Tracer("frostdb")),
+		frostdb.WithGranuleSizeBytes(flags.Storage.GranuleSize),
+	}
 
-		col *frostdb.ColumnStore
-	)
-	switch flags.Profilestore {
-	case profileStoreFrostdb:
-		frostdbOptions := []frostdb.Option{
-			frostdb.WithActiveMemorySize(flags.Storage.ActiveMemory),
-			frostdb.WithLogger(logger),
-			frostdb.WithRegistry(reg),
-			frostdb.WithTracer(tracerProvider.Tracer("frostdb")),
-			frostdb.WithGranuleSizeBytes(flags.Storage.GranuleSize),
-		}
-
-		if flags.EnablePersistence {
-			frostdbOptions = append(
-				frostdbOptions,
-				frostdb.WithReadWriteStorage(
-					frostdb.NewDefaultObjstoreBucket(objstore.NewPrefixedBucket(bucket, "blocks")),
-				),
-			)
-		}
-
-		if flags.Storage.EnableWAL {
-			frostdbOptions = append(
-				frostdbOptions,
-				frostdb.WithWAL(),
-				frostdb.WithStoragePath(flags.Storage.Path),
-				frostdb.WithSnapshotTriggerSize(flags.Storage.SnapshotTriggerSize),
-			)
-		}
-
-		col, err := frostdb.New(frostdbOptions...)
-		if err != nil {
-			level.Error(logger).Log("msg", "failed to initialize storage", "err", err)
-			return err
-		}
-
-		colDB, err := col.DB(ctx, "parca")
-		if err != nil {
-			level.Error(logger).Log("msg", "failed to load database", "err", err)
-			return err
-		}
-
-		def := profile.SchemaDefinition()
-		table, err := colDB.Table("stacktraces",
-			frostdb.NewTableConfig(
-				def,
-				frostdb.WithRowGroupSize(flags.Storage.RowGroupSize),
+	if flags.EnablePersistence {
+		frostdbOptions = append(
+			frostdbOptions,
+			frostdb.WithReadWriteStorage(
+				frostdb.NewDefaultObjstoreBucket(objstore.NewPrefixedBucket(bucket, "blocks")),
 			),
 		)
-		if err != nil {
-			level.Error(logger).Log("msg", "create table", "err", err)
-			return err
-		}
-		schema, err := dynparquet.SchemaFromDefinition(def)
-		if err != nil {
-			level.Error(logger).Log("msg", "schema from definition", "err", err)
-			return err
-		}
+	}
 
-		ingester = parcacol.NewIngester(logger, table, schema)
-		querier = parcacol.NewQuerier(
-			logger,
-			tracerProvider.Tracer("querier"),
-			query.NewEngine(
-				memory.DefaultAllocator,
-				colDB.TableProvider(),
-				query.WithTracer(tracerProvider.Tracer("query-engine")),
-			),
-			"stacktraces",
-			parcacol.NewProfileSymbolizer(
-				tracerProvider.Tracer("profile-symbolizer"),
-				mc,
-			),
-			memory.DefaultAllocator,
+	if flags.Storage.EnableWAL {
+		frostdbOptions = append(
+			frostdbOptions,
+			frostdb.WithWAL(),
+			frostdb.WithStoragePath(flags.Storage.Path),
+			frostdb.WithSnapshotTriggerSize(flags.Storage.SnapshotTriggerSize),
 		)
+	}
 
-	default:
-		err := fmt.Errorf("unknown profilestore implementation: %s", flags.Profilestore)
-		level.Error(logger).Log("msg", "failed to initialize profilestore", "err", err)
+	col, err := frostdb.New(frostdbOptions...)
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to initialize storage", "err", err)
 		return err
 	}
+
+	colDB, err := col.DB(ctx, "parca")
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to load database", "err", err)
+		return err
+	}
+
+	def := profile.SchemaDefinition()
+	table, err := colDB.Table("stacktraces",
+		frostdb.NewTableConfig(
+			def,
+			frostdb.WithRowGroupSize(flags.Storage.RowGroupSize),
+		),
+	)
+	if err != nil {
+		level.Error(logger).Log("msg", "create table", "err", err)
+		return err
+	}
+	schema, err := dynparquet.SchemaFromDefinition(def)
+	if err != nil {
+		level.Error(logger).Log("msg", "schema from definition", "err", err)
+		return err
+	}
+
+	ingester := parcacol.NewIngester(logger, table, schema)
+	querier := parcacol.NewQuerier(
+		logger,
+		tracerProvider.Tracer("querier"),
+		query.NewEngine(
+			memory.DefaultAllocator,
+			colDB.TableProvider(),
+			query.WithTracer(tracerProvider.Tracer("query-engine")),
+		),
+		"stacktraces",
+		parcacol.NewProfileSymbolizer(
+			tracerProvider.Tracer("profile-symbolizer"),
+			mc,
+		),
+		memory.DefaultAllocator,
+	)
 
 	s := profilestore.NewProfileColumnStore(
 		reg,
