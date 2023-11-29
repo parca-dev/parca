@@ -14,15 +14,12 @@
 package profilestore
 
 import (
-	"bytes"
 	"context"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/go-kit/log"
-	"github.com/polarsignals/frostdb"
-	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/trace"
@@ -30,9 +27,10 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
+	metastorev1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
-	"github.com/parca-dev/parca/pkg/parcacol"
+	"github.com/parca-dev/parca/pkg/ingester"
+	"github.com/parca-dev/parca/pkg/normalizer"
 )
 
 type agent struct {
@@ -46,24 +44,15 @@ type ProfileColumnStore struct {
 	profilestorepb.UnimplementedProfileStoreServiceServer
 	profilestorepb.UnimplementedAgentsServiceServer
 
-	reg       prometheus.Registerer
-	logger    log.Logger
-	tracer    trace.Tracer
-	metastore metastorepb.MetastoreServiceClient
+	logger log.Logger
+	tracer trace.Tracer
 
-	table  *frostdb.Table
-	schema *dynparquet.Schema
-	// isAddrNormEnabled indicates whether the ingester has to
-	// normalize sampled addresses for PIC/PIE (position independent code/executable).
-	isAddrNormEnabled bool
+	normalizer normalizer.Normalizer
+	ingester   ingester.Ingester
 
 	mtx sync.Mutex
 	// ip as the key
 	agents map[string]agent
-
-	bufferPool *sync.Pool
-
-	addressNormalizationFailed prometheus.Counter
 }
 
 var _ profilestorepb.ProfileStoreServiceServer = &ProfileColumnStore{}
@@ -72,44 +61,29 @@ func NewProfileColumnStore(
 	reg prometheus.Registerer,
 	logger log.Logger,
 	tracer trace.Tracer,
-	metastore metastorepb.MetastoreServiceClient,
-	table *frostdb.Table,
-	schema *dynparquet.Schema,
+	metastore metastorev1alpha1.MetastoreServiceClient,
+	ingester ingester.Ingester,
 	enableAddressNormalization bool,
 ) *ProfileColumnStore {
+	normalizer := normalizer.NewNormalizer(metastore, enableAddressNormalization, promauto.With(reg).NewCounter(prometheus.CounterOpts{
+		Name: "parca_collector_address_normalization_failed_total",
+		Help: "Total number of address normalization failures.",
+	}))
 	return &ProfileColumnStore{
-		reg:               reg,
-		logger:            logger,
-		tracer:            tracer,
-		metastore:         metastore,
-		table:             table,
-		schema:            schema,
-		isAddrNormEnabled: enableAddressNormalization,
-		agents:            make(map[string]agent),
-		bufferPool: &sync.Pool{
-			New: func() any {
-				return new(bytes.Buffer)
-			},
-		},
-		addressNormalizationFailed: promauto.With(reg).NewCounter(prometheus.CounterOpts{
-			Name: "parca_collector_address_normalization_failed_total",
-			Help: "Total number of address normalization failures.",
-		}),
+		logger:     logger,
+		tracer:     tracer,
+		ingester:   ingester,
+		normalizer: normalizer,
+		agents:     make(map[string]agent),
 	}
 }
 
 func (s *ProfileColumnStore) writeSeries(ctx context.Context, req *profilestorepb.WriteRawRequest) error {
-	return parcacol.NormalizedIngest(
-		ctx,
-		s.addressNormalizationFailed,
-		req,
-		s.logger,
-		s.table,
-		s.schema,
-		s.metastore,
-		s.bufferPool,
-		s.isAddrNormEnabled,
-	)
+	normalizeredReq, err := s.normalizer.NormalizeWriteRawRequest(ctx, req)
+	if err != nil {
+		return err
+	}
+	return s.ingester.Ingest(ctx, normalizeredReq)
 }
 
 func (s *ProfileColumnStore) updateAgents(nodeNameAndIP string, ag agent) {

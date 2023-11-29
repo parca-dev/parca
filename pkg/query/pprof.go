@@ -25,7 +25,6 @@ import (
 	"github.com/apache/arrow/go/v14/arrow/array"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
-	"github.com/parca-dev/parca/pkg/profile"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -108,7 +107,7 @@ func (w *PprofWriter) byteString(s []byte) int64 {
 }
 
 func NewPprofWriter(
-	meta profile.Meta,
+	meta parcaprofile.Meta,
 	isDiff bool,
 ) *PprofWriter {
 	w := &PprofWriter{
@@ -143,7 +142,7 @@ func (w *PprofWriter) getBuf(capacity int) []byte {
 }
 
 func (w *PprofWriter) WriteRecord(rec arrow.Record) {
-	r := profile.NewRecordReader(rec)
+	r := parcaprofile.NewRecordReader(rec)
 	t := w.transpose(r)
 
 	for i := 0; i < int(rec.NumRows()); i++ {
@@ -152,7 +151,7 @@ func (w *PprofWriter) WriteRecord(rec arrow.Record) {
 }
 
 func (w *PprofWriter) sample(
-	r *profile.RecordReader,
+	r *parcaprofile.RecordReader,
 	t *pprofTranspositions,
 	i int,
 ) {
@@ -205,7 +204,7 @@ func (w *PprofWriter) sample(
 }
 
 func (w *PprofWriter) sampleKey(
-	r *profile.RecordReader,
+	r *parcaprofile.RecordReader,
 	t *pprofTranspositions,
 	i int,
 	s *pprofpb.Sample,
@@ -236,7 +235,7 @@ func (w *PprofWriter) sampleKey(
 }
 
 func (w *PprofWriter) mapping(
-	r *profile.RecordReader,
+	r *parcaprofile.RecordReader,
 	t *pprofTranspositions,
 	j int,
 ) uint64 {
@@ -267,7 +266,7 @@ func (w *PprofWriter) mapping(
 }
 
 func (w *PprofWriter) location(
-	r *profile.RecordReader,
+	r *parcaprofile.RecordReader,
 	t *pprofTranspositions,
 	j int,
 ) uint64 {
@@ -304,7 +303,7 @@ func (w *PprofWriter) location(
 }
 
 func (w *PprofWriter) function(
-	r *profile.RecordReader,
+	r *parcaprofile.RecordReader,
 	t *pprofTranspositions,
 	k int,
 ) uint64 {
@@ -362,7 +361,7 @@ func (t *pprofTranspositions) functionFilename(prevIdx uint32) int64 {
 	return t.functionFilenameTransposition[prevIdx]
 }
 
-func (w *PprofWriter) transpose(r *profile.RecordReader) *pprofTranspositions {
+func (w *PprofWriter) transpose(r *parcaprofile.RecordReader) *pprofTranspositions {
 	t := &pprofTranspositions{
 		mappingFileTransposition:        w.transposeBinaryArray(r.MappingFileDict),
 		mappingBuildIdTransposition:     w.transposeBinaryArray(r.MappingBuildIDDict),

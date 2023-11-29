@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"sync"
 	"testing"
 
 	"github.com/apache/arrow/go/v14/arrow"
@@ -30,11 +29,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/metastoretest"
+	"github.com/parca-dev/parca/pkg/normalizer"
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -75,7 +75,7 @@ func (t *fakeTable) Insert(ctx context.Context, data []byte) (uint64, error) {
 func TestPprofToParquet(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	ctx := context.Background()
 	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
 		Name: "parca_test_counter",
@@ -118,21 +118,11 @@ func TestPprofToParquet(t *testing.T) {
 			}},
 		}},
 	}
-	err = NormalizedIngest(
-		ctx,
-		counter,
-		req,
-		logger,
-		table,
-		schema,
-		metastore,
-		&sync.Pool{
-			New: func() interface{} {
-				return bytes.NewBuffer(nil)
-			},
-		},
-		true,
-	)
+	normalizer := normalizer.NewNormalizer(metastore, true, counter)
+	normalizedReq, err := normalizer.NormalizeWriteRawRequest(ctx, req)
+	require.NoError(t, err)
+	ingester := NewIngester(logger, table, schema)
+	err = ingester.Ingest(ctx, normalizedReq)
 	require.NoError(t, err)
 
 	for i, insert := range table.inserts {
@@ -159,7 +149,7 @@ func TestPprofToParquet(t *testing.T) {
 func TestUncompressedPprofToParquet(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	ctx := context.Background()
 	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
 		Name: "parca_test_counter",
@@ -209,21 +199,11 @@ func TestUncompressedPprofToParquet(t *testing.T) {
 			}},
 		}},
 	}
-	err = NormalizedIngest(
-		ctx,
-		counter,
-		req,
-		logger,
-		table,
-		schema,
-		metastore,
-		&sync.Pool{
-			New: func() interface{} {
-				return bytes.NewBuffer(nil)
-			},
-		},
-		true,
-	)
+	normalizer := normalizer.NewNormalizer(metastore, true, counter)
+	normalizedReq, err := normalizer.NormalizeWriteRawRequest(ctx, req)
+	require.NoError(t, err)
+	ingester := NewIngester(logger, table, schema)
+	err = ingester.Ingest(ctx, normalizedReq)
 	require.NoError(t, err)
 
 	for i, insert := range table.inserts {
@@ -250,7 +230,7 @@ func TestUncompressedPprofToParquet(t *testing.T) {
 func BenchmarkNormalizeWriteRawRequest(b *testing.B) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	ctx := context.Background()
 	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
 		Name: "parca_test_counter",
@@ -268,7 +248,7 @@ func BenchmarkNormalizeWriteRawRequest(b *testing.B) {
 	fileContent, err := os.ReadFile("../query/testdata/alloc_objects.pb.gz")
 	require.NoError(b, err)
 
-	normalizer := NewNormalizer(metastore, true, counter)
+	normalizer := normalizer.NewNormalizer(metastore, true, counter)
 	req := &profilestorepb.WriteRawRequest{
 		Series: []*profilestorepb.RawProfileSeries{{
 			Labels: &profilestorepb.LabelSet{
@@ -291,7 +271,7 @@ func BenchmarkNormalizeWriteRawRequest(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err = NormalizeWriteRawRequest(ctx, normalizer, req)
+		_, err = normalizer.NormalizeWriteRawRequest(ctx, req)
 		if err != nil {
 			b.Fatal(err)
 		}

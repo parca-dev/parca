@@ -25,6 +25,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/protobuf/proto"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
@@ -32,6 +33,7 @@ import (
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/metastoretest"
+	"github.com/parca-dev/parca/pkg/normalizer"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
@@ -128,7 +130,7 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 	s2 := sres.Stacktraces[1]
 	s3 := sres.Stacktraces[2]
 
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 
 	p, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
 		Samples: []*parcaprofile.NormalizedSample{{
@@ -199,7 +201,7 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 func TestGenerateFlamegraphFromProfile(t *testing.T) {
 	t.Parallel()
 
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	reg := prometheus.NewRegistry()
 
 	l := metastoretest.NewTestMetastore(
@@ -214,7 +216,7 @@ func TestGenerateFlamegraphFromProfile(t *testing.T) {
 
 func testGenerateFlamegraphFromProfile(t *testing.T, l metastorepb.MetastoreServiceClient, nodeTrimFraction float32) *pb.Flamegraph {
 	ctx := context.Background()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	reg := prometheus.NewRegistry()
 	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
 		Name: "parca_test_counter",
@@ -226,7 +228,7 @@ func testGenerateFlamegraphFromProfile(t *testing.T, l metastorepb.MetastoreServ
 	err := p.UnmarshalVT(fileContent)
 	require.NoError(t, err)
 
-	normalizer := parcacol.NewNormalizer(l, true, counter)
+	normalizer := normalizer.NewNormalizer(l, true, counter)
 	profiles, err := normalizer.NormalizePprof(ctx, "test", map[string]string{}, p, false, nil)
 	require.NoError(t, err)
 
@@ -249,7 +251,7 @@ func TestGenerateFlamegraphWithInlined(t *testing.T) {
 		Name: "parca_test_counter",
 		Help: "parca_test_counter",
 	})
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 
 	store := metastoretest.NewTestMetastore(t, logger, reg, tracer)
 
@@ -288,7 +290,7 @@ func TestGenerateFlamegraphWithInlined(t *testing.T) {
 	require.NoError(t, err)
 
 	metastore := metastore.NewInProcessClient(store)
-	normalizer := parcacol.NewNormalizer(metastore, true, counter)
+	normalizer := normalizer.NewNormalizer(metastore, true, counter)
 	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false, nil)
 	require.NoError(t, err)
 
@@ -397,7 +399,7 @@ func TestGenerateFlamegraphWithInlinedExisting(t *testing.T) {
 		Name: "parca_test_counter",
 		Help: "parca_test_counter",
 	})
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 
 	store := metastoretest.NewTestMetastore(t, logger, reg, tracer)
 	metastore := metastore.NewInProcessClient(store)
@@ -440,7 +442,7 @@ func TestGenerateFlamegraphWithInlinedExisting(t *testing.T) {
 	err = p.UnmarshalVT(MustDecompressGzip(t, b.Bytes()))
 	require.NoError(t, err)
 
-	normalizer := parcacol.NewNormalizer(metastore, true, counter)
+	normalizer := normalizer.NewNormalizer(metastore, true, counter)
 	profiles, err := normalizer.NormalizePprof(ctx, "", map[string]string{}, p, false, nil)
 	require.NoError(t, err)
 

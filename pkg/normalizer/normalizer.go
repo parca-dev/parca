@@ -11,18 +11,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package parcacol
+package normalizer
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"debug/elf"
+	"errors"
 	"fmt"
+	"io"
 	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/gogo/status"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
+	"golang.org/x/exp/maps"
+	"google.golang.org/grpc/codes"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
@@ -33,6 +40,8 @@ import (
 const (
 	UnsymolizableLocationAddress = 0x0
 )
+
+var ErrMissingNameLabel = errors.New("missing __name__ label")
 
 type MetastoreNormalizer struct {
 	metastore pb.MetastoreServiceClient
@@ -502,4 +511,127 @@ func (n *MetastoreNormalizer) NormalizeStacktraces(ctx context.Context, samples 
 	}
 
 	return res.Stacktraces, nil
+}
+
+type Series struct {
+	Labels  map[string]string
+	Samples [][]*profile.NormalizedProfile
+}
+type NormalizedWriteRawRequest struct {
+	Series                []Series
+	AllLabelNames         []string
+	AllPprofLabelNames    []string
+	AllPprofNumLabelNames []string
+}
+
+type Normalizer interface {
+	NormalizePprof(
+		ctx context.Context,
+		name string,
+		takenLabelNames map[string]string,
+		p *pprofpb.Profile,
+		normalizedAddress bool,
+		executableInfo []*profilestorepb.ExecutableInfo,
+	) ([]*profile.NormalizedProfile, error)
+	NormalizeWriteRawRequest(ctx context.Context, req *profilestorepb.WriteRawRequest) (NormalizedWriteRawRequest, error)
+}
+
+// NormalizeWriteRawRequest normalizes the profiles
+// (mappings, functions, locations, stack traces) to prepare for ingestion.
+// It also validates label names of profiles' series,
+// decompresses the samples, unmarshals and validates them.
+func (n *MetastoreNormalizer) NormalizeWriteRawRequest(ctx context.Context, req *profilestorepb.WriteRawRequest) (NormalizedWriteRawRequest, error) {
+	allLabelNames := make(map[string]struct{})
+	allPprofLabelNames := make(map[string]struct{})
+	allPprofNumLabelNames := make(map[string]struct{})
+
+	series := make([]Series, 0, len(req.Series))
+	for _, rawSeries := range req.Series {
+		ls := make(map[string]string, len(rawSeries.Labels.Labels))
+		name := ""
+		for _, l := range rawSeries.Labels.Labels {
+			if l.Name == model.MetricNameLabel {
+				name = l.Value
+				continue
+			}
+
+			if valid := model.LabelName(l.Name).IsValid(); !valid {
+				return NormalizedWriteRawRequest{}, status.Errorf(codes.InvalidArgument, "invalid label name: %v", l.Name)
+			}
+
+			if _, ok := ls[l.Name]; ok {
+				return NormalizedWriteRawRequest{}, status.Errorf(codes.InvalidArgument, "duplicate label name: %v", l.Name)
+			}
+
+			ls[l.Name] = l.Value
+			allLabelNames[l.Name] = struct{}{}
+		}
+
+		if name == "" {
+			return NormalizedWriteRawRequest{}, status.Error(codes.InvalidArgument, ErrMissingNameLabel.Error())
+		}
+
+		samples := make([][]*profile.NormalizedProfile, 0, len(rawSeries.Samples))
+		for _, sample := range rawSeries.Samples {
+			if len(sample.RawProfile) >= 2 && sample.RawProfile[0] == 0x1f && sample.RawProfile[1] == 0x8b {
+				gz, err := gzip.NewReader(bytes.NewBuffer(sample.RawProfile))
+				if err == nil {
+					sample.RawProfile, err = io.ReadAll(gz)
+				}
+				if err != nil {
+					return NormalizedWriteRawRequest{}, fmt.Errorf("decompressing profile: %v", err)
+				}
+
+				if err := gz.Close(); err != nil {
+					return NormalizedWriteRawRequest{}, fmt.Errorf("close gzip reader: %v", err)
+				}
+			}
+
+			p := &pprofpb.Profile{}
+			if err := p.UnmarshalVT(sample.RawProfile); err != nil {
+				return NormalizedWriteRawRequest{}, status.Errorf(codes.InvalidArgument, "failed to parse profile: %v", err)
+			}
+
+			if err := ValidatePprofProfile(p, sample.ExecutableInfo); err != nil {
+				return NormalizedWriteRawRequest{}, status.Errorf(codes.InvalidArgument, "invalid profile: %v", err)
+			}
+
+			LabelNamesFromSamples(
+				ls,
+				p.StringTable,
+				p.Sample,
+				allPprofLabelNames,
+				allPprofNumLabelNames,
+			)
+
+			normalizedProfiles, err := n.NormalizePprof(ctx, name, ls, p, req.Normalized, sample.ExecutableInfo)
+			if err != nil {
+				return NormalizedWriteRawRequest{}, fmt.Errorf("normalize profile: %w", err)
+			}
+
+			samples = append(samples, normalizedProfiles)
+		}
+
+		series = append(series, Series{
+			Labels:  ls,
+			Samples: samples,
+		})
+	}
+
+	return NormalizedWriteRawRequest{
+		Series:                series,
+		AllLabelNames:         sortedKeys(allLabelNames),
+		AllPprofLabelNames:    sortedKeys(allPprofLabelNames),
+		AllPprofNumLabelNames: sortedKeys(allPprofNumLabelNames),
+	}, nil
+}
+
+func sortedKeys(m map[string]struct{}) []string {
+	if len(m) == 0 {
+		return nil
+	}
+
+	out := maps.Keys(m)
+	sort.Strings(out)
+	return out
 }

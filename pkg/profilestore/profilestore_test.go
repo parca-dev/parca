@@ -22,13 +22,14 @@ import (
 	"github.com/polarsignals/frostdb"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/metastoretest"
+	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -38,7 +39,7 @@ func Test_LabelName_Error(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	col, err := frostdb.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
@@ -64,8 +65,11 @@ func Test_LabelName_Error(t *testing.T) {
 		logger,
 		tracer,
 		metastore.NewInProcessClient(m),
-		table,
-		schema,
+		parcacol.NewIngester(
+			logger,
+			table,
+			schema,
+		),
 		true,
 	)
 
@@ -119,7 +123,7 @@ func BenchmarkProfileColumnStoreWriteSeries(b *testing.B) {
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	col, err := frostdb.New()
 	require.NoError(b, err)
 	colDB, err := col.DB(ctx, "parca")
@@ -145,8 +149,11 @@ func BenchmarkProfileColumnStoreWriteSeries(b *testing.B) {
 		logger,
 		tracer,
 		metastore.NewInProcessClient(m),
-		table,
-		schema,
+		parcacol.NewIngester(
+			logger,
+			table,
+			schema,
+		),
 		true,
 	)
 

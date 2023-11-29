@@ -27,6 +27,7 @@ import (
 	"github.com/polarsignals/frostdb/pqarrow"
 	"github.com/polarsignals/frostdb/query/logicalplan"
 
+	"github.com/parca-dev/parca/pkg/normalizer"
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -115,7 +116,7 @@ func SampleToParquetRow(
 
 func SeriesToArrowRecord(
 	schema *dynparquet.Schema,
-	series []Series,
+	series []normalizer.Series,
 	labelNames, profileLabelNames, profileNumLabelNames []string,
 ) (arrow.Record, error) {
 	ps, err := schema.GetDynamicParquetSchema(map[string][]string{
