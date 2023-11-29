@@ -24,7 +24,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/protobuf/proto"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
@@ -46,7 +46,7 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 		t,
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
-		trace.NewNoopTracerProvider().Tracer(""),
+		noop.NewTracerProvider().Tracer(""),
 	)
 
 	metastore := metastore.NewInProcessClient(l)
@@ -128,7 +128,7 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 	s2 := sres.Stacktraces[1]
 	s3 := sres.Stacktraces[2]
 
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 
 	p, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
 		Samples: []*parcaprofile.NormalizedSample{{
@@ -199,7 +199,7 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 func TestGenerateFlamegraphFromProfile(t *testing.T) {
 	t.Parallel()
 
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	reg := prometheus.NewRegistry()
 
 	l := metastoretest.NewTestMetastore(
@@ -214,7 +214,7 @@ func TestGenerateFlamegraphFromProfile(t *testing.T) {
 
 func testGenerateFlamegraphFromProfile(t *testing.T, l metastorepb.MetastoreServiceClient, nodeTrimFraction float32) *pb.Flamegraph {
 	ctx := context.Background()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	reg := prometheus.NewRegistry()
 	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
 		Name: "parca_test_counter",
@@ -249,7 +249,7 @@ func TestGenerateFlamegraphWithInlined(t *testing.T) {
 		Name: "parca_test_counter",
 		Help: "parca_test_counter",
 	})
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 
 	store := metastoretest.NewTestMetastore(t, logger, reg, tracer)
 
@@ -397,7 +397,7 @@ func TestGenerateFlamegraphWithInlinedExisting(t *testing.T) {
 		Name: "parca_test_counter",
 		Help: "parca_test_counter",
 	})
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 
 	store := metastoretest.NewTestMetastore(t, logger, reg, tracer)
 	metastore := metastore.NewInProcessClient(store)

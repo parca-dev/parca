@@ -25,7 +25,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/objstore"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -68,7 +68,7 @@ func newFakeDebuginfodClientsWithItems(items map[string]io.ReadCloser) *fakeDebu
 
 func TestStore(t *testing.T) {
 	ctx := context.Background()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 
 	logger := log.NewNopLogger()
 	bucket := objstore.NewInMemBucket()

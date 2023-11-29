@@ -36,7 +36,7 @@ import (
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/timestamp"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -179,7 +179,7 @@ func TestConsistency(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	col, err := frostdb.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
@@ -301,7 +301,7 @@ func TestPGOE2e(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	col, err := frostdb.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
@@ -406,7 +406,7 @@ func TestLabels(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	col, err := frostdb.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")
