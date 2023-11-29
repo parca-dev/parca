@@ -24,7 +24,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/protobuf/proto"
 
@@ -48,7 +47,7 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 		t,
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
-		trace.NewNoopTracerProvider().Tracer(""),
+		noop.NewTracerProvider().Tracer(""),
 	)
 
 	metastore := metastore.NewInProcessClient(l)

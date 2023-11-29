@@ -27,7 +27,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/protobuf/proto"
 
@@ -50,7 +49,7 @@ func TestGenerateFlamegraphTable(t *testing.T) {
 		t,
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
-		trace.NewNoopTracerProvider().Tracer(""),
+		noop.NewTracerProvider().Tracer(""),
 	)
 
 	metastore := metastore.NewInProcessClient(l)
@@ -212,7 +211,7 @@ func TestGenerateFlamegraphTableTrimming(t *testing.T) {
 		t,
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
-		trace.NewNoopTracerProvider().Tracer(""),
+		noop.NewTracerProvider().Tracer(""),
 	)
 
 	metastore := metastore.NewInProcessClient(l)
@@ -364,7 +363,7 @@ func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 		t,
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
-		trace.NewNoopTracerProvider().Tracer(""),
+		noop.NewTracerProvider().Tracer(""),
 	)
 
 	metastore := metastore.NewInProcessClient(l)
@@ -587,7 +586,7 @@ func Benchmark_GenerateFlamegraphTable_FromProfile(b *testing.B) {
 		b,
 		log.NewNopLogger(),
 		reg,
-		trace.NewNoopTracerProvider().Tracer(""),
+		noop.NewTracerProvider().Tracer(""),
 	)
 
 	fileContent := MustReadAllGzip(b, "./testdata/profile1.pb.gz")
@@ -988,7 +987,7 @@ func TestFlamegraphTrimming(t *testing.T) {
 		},
 	}
 	// trim all children that have less than 10% cumulative value of the parent.
-	trimmedGraph := TrimFlamegraph(context.Background(), trace.NewNoopTracerProvider().Tracer(""), fullGraph, 0.1)
+	trimmedGraph := TrimFlamegraph(context.Background(), noop.NewTracerProvider().Tracer(""), fullGraph, 0.1)
 	require.Equal(t, &pb.Flamegraph{
 		Total:          102,
 		Trimmed:        4,
@@ -1048,7 +1047,7 @@ func TestFlamegraphTrimmingSingleNodeGraph(t *testing.T) {
 			}},
 		},
 	}
-	trimmedGraph := TrimFlamegraph(context.Background(), trace.NewNoopTracerProvider().Tracer(""), fullGraph, float32(0.02))
+	trimmedGraph := TrimFlamegraph(context.Background(), noop.NewTracerProvider().Tracer(""), fullGraph, float32(0.02))
 	require.Equal(t, &pb.Flamegraph{
 		Total:          100,
 		UntrimmedTotal: 100,
@@ -1077,7 +1076,7 @@ func TestFlamegraphTrimmingNodeWithFlatValues(t *testing.T) {
 			}},
 		},
 	}
-	trimmedGraph := TrimFlamegraph(context.Background(), trace.NewNoopTracerProvider().Tracer(""), fullGraph, float32(0.02))
+	trimmedGraph := TrimFlamegraph(context.Background(), noop.NewTracerProvider().Tracer(""), fullGraph, float32(0.02))
 	require.Equal(t, &pb.Flamegraph{
 		Total:          151,
 		UntrimmedTotal: 151,
@@ -1105,7 +1104,7 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 		t,
 		log.NewNopLogger(),
 		prometheus.NewRegistry(),
-		trace.NewNoopTracerProvider().Tracer(""),
+		noop.NewTracerProvider().Tracer(""),
 	)
 
 	mc := metastore.NewInProcessClient(l)

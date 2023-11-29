@@ -178,6 +178,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		tracerProvider trace.TracerProvider
 	)
 	tracerProvider = noop.NewTracerProvider()
+
 	if flags.OTLP.Address != "" {
 		var err error
 
