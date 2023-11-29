@@ -43,6 +43,33 @@ const (
 
 var ErrMissingNameLabel = errors.New("missing __name__ label")
 
+type Series struct {
+	Labels  map[string]string
+	Samples [][]*profile.NormalizedProfile
+}
+
+type NormalizedWriteRawRequest struct {
+	Series                []Series
+	AllLabelNames         []string
+	AllPprofLabelNames    []string
+	AllPprofNumLabelNames []string
+}
+
+type Normalizer interface {
+	NormalizePprof(
+		ctx context.Context,
+		name string,
+		takenLabelNames map[string]string,
+		p *pprofpb.Profile,
+		normalizedAddress bool,
+		executableInfo []*profilestorepb.ExecutableInfo,
+	) ([]*profile.NormalizedProfile, error)
+	NormalizeWriteRawRequest(
+		ctx context.Context,
+		req *profilestorepb.WriteRawRequest,
+	) (NormalizedWriteRawRequest, error)
+}
+
 type MetastoreNormalizer struct {
 	metastore pb.MetastoreServiceClient
 	// isAddrNormEnabled indicates whether the metastore normalizer has to
@@ -511,29 +538,6 @@ func (n *MetastoreNormalizer) NormalizeStacktraces(ctx context.Context, samples 
 	}
 
 	return res.Stacktraces, nil
-}
-
-type Series struct {
-	Labels  map[string]string
-	Samples [][]*profile.NormalizedProfile
-}
-type NormalizedWriteRawRequest struct {
-	Series                []Series
-	AllLabelNames         []string
-	AllPprofLabelNames    []string
-	AllPprofNumLabelNames []string
-}
-
-type Normalizer interface {
-	NormalizePprof(
-		ctx context.Context,
-		name string,
-		takenLabelNames map[string]string,
-		p *pprofpb.Profile,
-		normalizedAddress bool,
-		executableInfo []*profilestorepb.ExecutableInfo,
-	) ([]*profile.NormalizedProfile, error)
-	NormalizeWriteRawRequest(ctx context.Context, req *profilestorepb.WriteRawRequest) (NormalizedWriteRawRequest, error)
 }
 
 // NormalizeWriteRawRequest normalizes the profiles
