@@ -222,6 +222,9 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   );
 
   const highlightedNodes = useMemo(() => {
+    if (!highlightSimilarStacksPreference) {
+      return;
+    }
     if (highlightSimilarStacksPreference && functionName != null && functionName === hoveringName) {
       return {functionName, row: hoveringRow};
     }
@@ -229,6 +232,9 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   }, [highlightSimilarStacksPreference, functionName, hoveringName, hoveringRow]);
 
   const shouldBeHighlightedIfSimilarStacks = useMemo(() => {
+    if (!highlightSimilarStacksPreference) {
+      return;
+    }
     return highlightedNodes != null && row !== highlightedNodes.row;
   }, [row, highlightedNodes]);
 
