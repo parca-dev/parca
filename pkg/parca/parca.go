@@ -47,6 +47,7 @@ import (
 	tracing "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -176,6 +177,8 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		exporter       tracer.Exporter
 		tracerProvider trace.TracerProvider
 	)
+	tracerProvider = noop.NewTracerProvider()
+
 	if flags.OTLP.Address != "" {
 		var err error
 
