@@ -54,6 +54,9 @@ interface IcicleGraphNodesProps {
   darkMode: boolean;
   compareMode: boolean;
   isContextMenuOpen: boolean;
+  hoveringName: string | null;
+  setHoveringName: (name: string | null) => void;
+  hoveringRow: number | null;
 }
 
 export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
@@ -76,6 +79,9 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
   darkMode,
   compareMode,
   isContextMenuOpen,
+  hoveringName,
+  setHoveringName,
+  hoveringRow,
 }: IcicleGraphNodesProps): React.JSX.Element {
   const cumulatives = table.getChild(FIELD_CUMULATIVE);
 
@@ -118,6 +124,9 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
         darkMode={darkMode}
         compareMode={compareMode}
         isContextMenuOpen={isContextMenuOpen}
+        hoveringName={hoveringName}
+        setHoveringName={setHoveringName}
+        hoveringRow={hoveringRow}
       />
     );
   });
@@ -151,6 +160,9 @@ interface IcicleNodeProps {
   darkMode: boolean;
   compareMode: boolean;
   isContextMenuOpen: boolean;
+  hoveringName: string | null;
+  setHoveringName: (name: string | null) => void;
+  hoveringRow: number | null;
 }
 
 const icicleRectStyles = {
@@ -185,6 +197,9 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   darkMode,
   compareMode,
   isContextMenuOpen,
+  hoveringName,
+  setHoveringName,
+  hoveringRow,
 }: IcicleNodeProps): React.JSX.Element {
   // get the columns to read from
   const mappingColumn = table.getChild(FIELD_MAPPING_FILE);
@@ -287,12 +302,14 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     if (isContextMenuOpen) return;
     setHoveringRow(row);
     setHoveringLevel(level);
+    setHoveringName(name);
   };
 
   const onMouseLeave = (): void => {
     if (isContextMenuOpen) return;
     setHoveringRow(null);
     setHoveringLevel(null);
+    setHoveringName(null);
   };
 
   return (
@@ -348,6 +365,9 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
           darkMode={darkMode}
           compareMode={compareMode}
           isContextMenuOpen={isContextMenuOpen}
+          hoveringName={hoveringName}
+          setHoveringName={setHoveringName}
+          hoveringRow={hoveringRow}
         />
       )}
     </>

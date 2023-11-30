@@ -95,6 +95,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const [height, setHeight] = useState(0);
   const [hoveringRow, setHoveringRow] = useState<number | null>(null);
   const [hoveringLevel, setHoveringLevel] = useState<number | null>(null);
+  const [hoveringName, setHoveringName] = useState<string | null>(null);
   const svg = useRef(null);
   const ref = useRef<SVGGElement>(null);
 
@@ -229,6 +230,9 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               darkMode={isDarkMode}
               compareMode={compareMode}
               isContextMenuOpen={isContextMenuOpen}
+              hoveringName={hoveringName}
+              setHoveringName={setHoveringName}
+              hoveringRow={hoveringRow}
             />
           </g>
         </g>
