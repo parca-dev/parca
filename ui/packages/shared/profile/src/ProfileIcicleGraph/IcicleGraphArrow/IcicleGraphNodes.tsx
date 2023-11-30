@@ -358,7 +358,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
           }}
           className={cx(
             shouldBeHighlightedIfSimilarStacks
-              ? `${colorForSimilarNodes} stroke-2 [stroke-dasharray:2]`
+              ? `${colorForSimilarNodes} stroke-[3] [stroke-dasharray:6,4] [stroke-linecap:round] [stroke-linejoin:round] h-6`
               : 'stroke-white dark:stroke-gray-700',
             {
               'opacity-50': isHighlightEnabled && !isHighlighted,
