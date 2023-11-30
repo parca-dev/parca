@@ -169,7 +169,7 @@ const RelativeDatePicker = ({
         />
         <button
           type="button"
-          disabled={currentPresetIndex === presetRanges.length - 1}
+          disabled={currentPresetIndex >= presetRanges.length - 1}
           className="rounded-r-md border border-l-0 bg-gray-100 p-3 text-sm font-semibold text-gray-900 hover:bg-gray-200 disabled:bg-white disabled:text-gray-400 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-700"
           onClick={() => {
             const previousRangeIndex = currentPresetIndex + 1;
