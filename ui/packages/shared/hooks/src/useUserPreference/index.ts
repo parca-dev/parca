@@ -47,6 +47,12 @@ export const USER_PREFERENCES: {[key: string]: UserPreferenceDetails} = {
     type: 'boolean',
     default: false,
   },
+  HIGHLIGHT_SIMILAR_STACKS: {
+    name: 'Highlight similar stacks when hovering over a node',
+    key: 'HIGHLIGHT_SIMILAR_STACKS',
+    type: 'boolean',
+    default: false,
+  },
 } as const;
 
 export type UserPreference = keyof typeof USER_PREFERENCES;
