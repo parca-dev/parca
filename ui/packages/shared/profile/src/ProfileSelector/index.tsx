@@ -121,7 +121,7 @@ const ProfileSelector = ({
     setIsDataLoading(false);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeRangeSelection, querySelection.expression]);
+  }, [timeRangeSelection]);
 
   useEffect(() => {
     if (enforcedProfileName !== '') {
