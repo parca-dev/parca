@@ -106,7 +106,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
   const {compareMode} = useProfileViewContext();
   const isColorStackLegendEnabled = selectQueryParam('color_stack_legend') === 'true';
-  const colorForSimilarNodes = getColorForSimilarNodes(colorProfile as ColorProfileName);
+  const colorForSimilarNodes = getColorForSimilarNodes(colorProfile);
 
   const mappings = useMemo(() => {
     // Read the mappings from the dictionary that contains all mapping strings.
@@ -260,6 +260,10 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     xScale,
     isContextMenuOpen,
     displayMenu,
+    colorForSimilarNodes,
+    highlightSimilarStacksPreference,
+    hoveringName,
+    hoveringRow,
   ]);
 
   if (table.numRows === 0 || width === undefined) {

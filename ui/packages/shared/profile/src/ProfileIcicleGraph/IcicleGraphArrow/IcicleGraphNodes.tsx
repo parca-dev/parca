@@ -21,8 +21,6 @@ import {isSearchMatch, scaleLinear} from '@parca/utilities';
 
 import 'react-contexify/dist/ReactContexify.css';
 
-import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
-
 import {
   FIELD_CHILDREN,
   FIELD_CUMULATIVE,
@@ -234,7 +232,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
       return {functionName, row: hoveringRow};
     }
     return null; // Nothing to highlight
-  }, [functionName, hoveringName, hoveringRow]);
+  }, [functionName, hoveringName, hoveringRow, highlightSimilarStacksPreference]);
 
   const shouldBeHighlightedIfSimilarStacks = useMemo(() => {
     return highlightedNodes !== null && row !== highlightedNodes.row;
