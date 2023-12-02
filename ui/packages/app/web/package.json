@@ -44,7 +44,7 @@
     "postcss": "8.4.31",
     "postcss-flexbugs-fixes": "5.0.2",
     "postcss-preset-env": "8.5.1",
-    "react-datepicker": "4.23.0",
+    "react-datepicker": "4.24.0",
     "react-dom": "18.2.0",
     "react-github-btn": "^1.4.0",
     "react-markdown": "^8.0.4",
