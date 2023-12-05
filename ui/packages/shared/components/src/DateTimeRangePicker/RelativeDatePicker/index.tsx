@@ -52,11 +52,14 @@ const presetRanges = [
 const NOW = new RelativeDate(UNITS.MINUTE, 0);
 
 const parseInput = (input: string): {value: number; unit: string} | null => {
+  const value = parseFloat(input);
   const match = input.match(/(\d+)([mhd])/);
-  if (match == null) {
+
+  // handle parseFloat edge cases and non-valid input
+  if (Number.isNaN(value) || input.includes('Infinity') || input.includes('e') || match == null) {
     return null;
   }
-  const value = parseInt(match[1], 10);
+
   const unit = match[2];
   return {value, unit: unitLong[unit]};
 };
@@ -105,12 +108,11 @@ const RelativeDatePicker = ({
     });
 
     const currentTotalMinutes = getMultiplyFactor(date.unit) * date.value;
-    const closestPresetIndex =
-      [...presetRangesTotalMinutes, currentTotalMinutes]
-        .sort((a, b) => a - b)
-        .findIndex(totalMinutes => {
-          return totalMinutes === currentTotalMinutes;
-        }) - 1;
+    const closestPresetIndex = [...presetRangesTotalMinutes, currentTotalMinutes]
+      .sort((a, b) => a - b)
+      .findIndex(totalMinutes => {
+        return totalMinutes === currentTotalMinutes;
+      });
 
     return closestPresetIndex;
   };
@@ -167,7 +169,7 @@ const RelativeDatePicker = ({
         />
         <button
           type="button"
-          disabled={currentPresetIndex === presetRanges.length - 1}
+          disabled={currentPresetIndex >= presetRanges.length - 1}
           className="rounded-r-md border border-l-0 bg-gray-100 p-3 text-sm font-semibold text-gray-900 hover:bg-gray-200 disabled:bg-white disabled:text-gray-400 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-700"
           onClick={() => {
             const previousRangeIndex = currentPresetIndex + 1;
