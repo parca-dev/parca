@@ -20,6 +20,7 @@ import {FlamegraphArrow} from '@parca/client';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {
   getColorForFeature,
+  getColorForSimilarNodes,
   selectDarkMode,
   setHoveringNode,
   useAppDispatch,
@@ -85,6 +86,9 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const [colorProfile] = useUserPreference<ColorProfileName>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
+  const [highlightSimilarStacksPreference] = useUserPreference<boolean>(
+    USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS.key
+  );
   const [dockedMetainfo] = useUserPreference<boolean>(USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key);
   const isDarkMode = useAppSelector(selectDarkMode);
 
@@ -95,12 +99,14 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const [height, setHeight] = useState(0);
   const [hoveringRow, setHoveringRow] = useState<number | null>(null);
   const [hoveringLevel, setHoveringLevel] = useState<number | null>(null);
+  const [hoveringName, setHoveringName] = useState<string | null>(null);
   const svg = useRef(null);
   const ref = useRef<SVGGElement>(null);
 
   const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
   const {compareMode} = useProfileViewContext();
   const isColorStackLegendEnabled = selectQueryParam('color_stack_legend') === 'true';
+  const colorForSimilarNodes = getColorForSimilarNodes(colorProfile);
 
   const mappings = useMemo(() => {
     // Read the mappings from the dictionary that contains all mapping strings.
@@ -229,6 +235,11 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               darkMode={isDarkMode}
               compareMode={compareMode}
               isContextMenuOpen={isContextMenuOpen}
+              hoveringName={hoveringName}
+              setHoveringName={setHoveringName}
+              hoveringRow={hoveringRow}
+              colorForSimilarNodes={colorForSimilarNodes}
+              highlightSimilarStacksPreference={highlightSimilarStacksPreference}
             />
           </g>
         </g>
@@ -249,6 +260,10 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     xScale,
     isContextMenuOpen,
     displayMenu,
+    colorForSimilarNodes,
+    highlightSimilarStacksPreference,
+    hoveringName,
+    hoveringRow,
   ]);
 
   if (table.numRows === 0 || width === undefined) {
