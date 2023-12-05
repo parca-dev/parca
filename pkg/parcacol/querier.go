@@ -804,7 +804,7 @@ func BooleanFieldFromRecord(ar arrow.Record, name string) (*array.Boolean, error
 func (q *Querier) SymbolizeArrowRecord(
 	ctx context.Context,
 	records []arrow.Record,
-	valueColumnName string,
+	columns []string,
 ) ([]arrow.Record, error) {
 	res := make([]arrow.Record, len(records))
 
@@ -823,11 +823,42 @@ func (q *Querier) SymbolizeArrowRecord(
 			stacktraceIDs[i] = string(stacktraceColumn.Value(i))
 		}
 
-		indices = schema.FieldIndices(valueColumnName)
-		if len(indices) != 1 {
-			return nil, ErrMissingColumn{Column: "value", Columns: len(indices)}
+		var valueSumColumn *array.Int64
+		var valueCountColumn *array.Int64
+		var durationColumn *array.Int64
+		var periodColumn *array.Int64
+
+		if len(columns) == 1 {
+			indices = schema.FieldIndices(columns[0])
+			if len(indices) != 1 {
+				return nil, ErrMissingColumn{Column: columns[0], Columns: len(indices)}
+			}
+			valueSumColumn = r.Column(indices[0]).(*array.Int64)
+		} else if len(columns) == 4 { // diffs
+			indices = schema.FieldIndices(ColumnValueSum)
+			if len(indices) != 1 {
+				return nil, ErrMissingColumn{Column: columns[0], Columns: len(indices)}
+			}
+			valueSumColumn = r.Column(indices[0]).(*array.Int64)
+
+			indices = schema.FieldIndices(ColumnValueCount)
+			if len(indices) != 1 {
+				return nil, ErrMissingColumn{Column: ColumnValueCount, Columns: len(indices)}
+			}
+			valueCountColumn = r.Column(indices[0]).(*array.Int64)
+
+			indices = schema.FieldIndices(ColumnDurationSum)
+			if len(indices) != 1 {
+				return nil, ErrMissingColumn{Column: ColumnDurationSum, Columns: len(indices)}
+			}
+			durationColumn = r.Column(indices[0]).(*array.Int64)
+
+			indices = schema.FieldIndices(ColumnPeriodSum)
+			if len(indices) != 1 {
+				return nil, ErrMissingColumn{Column: "period", Columns: len(indices)}
+			}
+			periodColumn = r.Column(indices[0]).(*array.Int64)
 		}
-		valueColumn := r.Column(indices[0]).(*array.Int64)
 
 		profileLabels := []arrow.Field{}
 		profileLabelColumns := []arrow.Array{}
@@ -849,16 +880,30 @@ func (q *Querier) SymbolizeArrowRecord(
 		}
 		defer locationsRecord.Release()
 
-		columns := make([]arrow.Array, len(profileLabels)+3) // +3 for stacktrace locations, value and diff
-		copy(columns, profileLabelColumns)
-		columns[len(columns)-3] = locationsRecord.Column(0)
-		columns[len(columns)-2] = valueColumn
+		if len(columns) == 1 {
+			columns := make([]arrow.Array, len(profileLabels)+3) // +3 for stacktrace locations, value and diff
+			copy(columns, profileLabelColumns)
+			columns[len(columns)-3] = locationsRecord.Column(0)
+			columns[len(columns)-2] = valueSumColumn
+			diffColumn := CreateDiffColumn(q.pool, rows)
+			defer diffColumn.Release()
+			columns[len(columns)-1] = diffColumn
+			res[i] = array.NewRecord(profile.ArrowSchema(profileLabels), columns, r.NumRows())
+		} else if len(columns) == 4 { // diffs
+			columns := make([]arrow.Array, len(profileLabels)+6) // +3 for stacktrace locations, value, diff, duration and period
+			copy(columns, profileLabelColumns)
+			columns[len(columns)-6] = locationsRecord.Column(0)
+			columns[len(columns)-5] = valueSumColumn
+			columns[len(columns)-4] = valueCountColumn
+			columns[len(columns)-3] = durationColumn
+			columns[len(columns)-2] = periodColumn
 
-		diffColumn := CreateDiffColumn(q.pool, rows)
-		defer diffColumn.Release()
-		columns[len(columns)-1] = diffColumn
+			diffColumn := CreateDiffColumn(q.pool, rows)
+			defer diffColumn.Release()
+			columns[len(columns)-1] = diffColumn
 
-		res[i] = array.NewRecord(profile.ArrowSchema(profileLabels), columns, r.NumRows())
+			res[i] = array.NewRecord(profile.ArrowDiffSchema(profileLabels), columns, r.NumRows())
+		}
 	}
 
 	return res, nil
@@ -901,7 +946,7 @@ func (q *Querier) QuerySingle(
 	symbolizedRecords, err := q.SymbolizeArrowRecord(
 		ctx,
 		records,
-		valueColumn,
+		[]string{valueColumn},
 	)
 	if err != nil {
 		// if the column cannot be found the timestamp is too far in the past and we don't have data
@@ -997,7 +1042,7 @@ func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.
 	symbolizedRecords, err := q.SymbolizeArrowRecord(
 		ctx,
 		records,
-		valueColumn,
+		[]string{valueColumn, ColumnValueCount, ColumnDurationSum, ColumnPeriodSum},
 	)
 	if err != nil {
 		return profile.Profile{}, err
@@ -1053,8 +1098,9 @@ func (q *Querier) selectMerge(
 		Aggregate(
 			[]logicalplan.Expr{
 				logicalplan.Sum(logicalplan.Col(profile.ColumnValue)),
+				logicalplan.Count(logicalplan.Col(profile.ColumnValue)),
 				logicalplan.Sum(logicalplan.Col(profile.ColumnDuration)),
-				logicalplan.Min(logicalplan.Col(profile.ColumnPeriod)),
+				logicalplan.Sum(logicalplan.Col(profile.ColumnPeriod)),
 				logicalplan.Min(logicalplan.Col(profile.ColumnTimestamp)),
 			},
 			aggrCols,
@@ -1073,7 +1119,7 @@ func (q *Querier) selectMerge(
 		return nil, "", profile.Meta{}, err
 	}
 
-	period, err := sumByTimestamp("min("+profile.ColumnPeriod+")", records)
+	period, err := sumByTimestamp(ColumnPeriodSum, records)
 	if err != nil {
 		return nil, "", profile.Meta{}, err
 	}

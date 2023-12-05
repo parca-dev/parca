@@ -819,65 +819,229 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile
 	_, span := tracer.Start(ctx, "ComputeDiff")
 	defer span.End()
 
-	baseRatio := 1.0
-	compareRatio := 1.0
-	if base.Meta.Duration != compare.Meta.Duration {
-		if base.Meta.Duration < compare.Meta.Duration {
-			baseRatio = float64(compare.Meta.Duration) / float64(base.Meta.Duration)
-		} else {
-			compareRatio = float64(base.Meta.Duration) / float64(compare.Meta.Duration)
-		}
+	// If both durations are > 0 then it's basically comparing delta profiles.
+	// Does this need to work for comparing two profiles with different periods even if are non-delta?
+	if base.Meta.Duration > 0 && compare.Meta.Duration > 0 &&
+		base.Meta.Period != compare.Meta.Period {
+		return computeDiffPeriods(ctx, tracer, base, compare, mem)
 	}
+
+	return computeDiff(ctx, tracer, base, compare, mem)
+}
+
+func computeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile.Profile, mem memory.Allocator) (profile.Profile, error) {
+	_, span := tracer.Start(ctx, "computeDiff")
+	defer span.End()
 
 	records := make([]arrow.Record, 0, len(compare.Samples)+len(base.Samples))
 
+	// single profile requests have 3 columns: locations, value, diff
+	// merge profile requests have 6 columns: locations, sum(value), count(value), duration, period, diff
+	// for this function we only need to care about the locations, value or sum(value) and diff columns
+
 	for _, r := range compare.Samples {
-		columns := r.Columns()
-		cols := make([]arrow.Array, len(columns))
-		copy(cols, columns)
-		if baseRatio == 1.0 {
-			// This is intentional, the diff value of the `compare` profile is the same
-			// as the value of the `compare` profile, because what we're actually doing
-			// is subtracting the `base` profile, but the actual calculation happens
-			// when building the visualizations. We should eventually have this be done
-			// directly by the query engine.
-			cols[len(cols)-1] = cols[len(cols)-2]
-		} else {
-			values := multiplyInt64By(mem, columns[len(columns)-2].(*array.Int64), baseRatio)
-			defer values.Release()
-			cols[len(cols)-2] = values
-			diffs := multiplyInt64By(mem, columns[len(columns)-2].(*array.Int64), baseRatio)
-			defer diffs.Release()
-			cols[len(cols)-1] = diffs
+		schema := r.Schema()
+
+		profileLabels := []arrow.Field{}
+		profileLabelColumns := []arrow.Array{}
+		for i, field := range schema.Fields() {
+			if strings.HasPrefix(field.Name, profile.ColumnPprofLabelsPrefix) {
+				profileLabels = append(profileLabels, field)
+				profileLabelColumns = append(profileLabelColumns, r.Column(i))
+			}
 		}
+
+		cols := make([]arrow.Array, len(profileLabels)+3) // locations, value, diff
+		copy(cols, profileLabelColumns)
+
+		cols[len(cols)-3] = r.Column(r.Schema().FieldIndices("locations")[0])
+
+		valueIndex, err := findValueColumnIndex(schema)
+		if err != nil {
+			return profile.Profile{}, err
+		}
+
+		// This is intentional, the diff value of the `compare` profile is the same
+		// as the value of the `compare` profile, because what we're actually doing
+		// is subtracting the `base` profile, but the actual calculation happens
+		// when building the visualizations. We should eventually have this be done
+		// directly by the query engine.
+		cols[len(cols)-2] = r.Column(valueIndex)
+		cols[len(cols)-1] = r.Column(valueIndex)
 		records = append(records, array.NewRecord(
-			r.Schema(),
+			profile.ArrowSchema(profileLabels),
 			cols,
 			r.NumRows(),
 		))
 	}
 
 	for _, r := range base.Samples {
-		func() {
-			columns := r.Columns()
-			cols := make([]arrow.Array, len(columns))
-			copy(cols, columns)
-			mult := multiplyInt64By(mem, columns[len(columns)-2].(*array.Int64), -1*compareRatio)
+		err := func() error {
+			schema := r.Schema()
+			profileLabels := []arrow.Field{}
+			profileLabelColumns := []arrow.Array{}
+			for i, field := range schema.Fields() {
+				if strings.HasPrefix(field.Name, profile.ColumnPprofLabelsPrefix) {
+					profileLabels = append(profileLabels, field)
+					profileLabelColumns = append(profileLabelColumns, r.Column(i))
+				}
+			}
+
+			cols := make([]arrow.Array, len(profileLabels)+3) // locations, value, diff
+			copy(cols, profileLabelColumns)
+
+			cols[len(cols)-3] = r.Column(r.Schema().FieldIndices("locations")[0])
+
+			valueIndex, err := findValueColumnIndex(r.Schema())
+			if err != nil {
+				return err
+			}
+
+			arr := r.Columns()[valueIndex].(*array.Int64)
+			mult := multiplyInt64By(mem, arr, -1)
 			defer mult.Release()
 			zero := zeroArray(mem, int(r.NumRows()))
 			defer zero.Release()
+			cols[len(cols)-2] = zero
+			cols[len(cols)-1] = mult
 			records = append(records, array.NewRecord(
-				r.Schema(),
-				append(cols[:len(cols)-2], zero, mult),
+				profile.ArrowSchema(profileLabels),
+				cols,
 				r.NumRows(),
 			))
+			return nil
 		}()
+		if err != nil {
+			return profile.Profile{}, err
+		}
 	}
 
 	return profile.Profile{
 		Meta:    compare.Meta,
 		Samples: records,
 	}, nil
+}
+
+// findValueColumnIndex finds the "value" column index for single profiles and
+// the "sum(value)" column index for merged profiles.
+func findValueColumnIndex(schema *arrow.Schema) (int, error) {
+	if indices := schema.FieldIndices(profile.ColumnValue); len(indices) == 1 {
+		return indices[0], nil
+	}
+	if indices := schema.FieldIndices(profile.ColumnValueSum); len(indices) == 1 {
+		return indices[0], nil
+	}
+	return 0, fmt.Errorf("could not find value column in profile")
+}
+
+func computeDiffPeriods(ctx context.Context, tracer trace.Tracer, base, compare profile.Profile, mem memory.Allocator) (profile.Profile, error) {
+	// We scale the smaller profile up to the bigger one.
+	// Therefore, we should use the bigger period to scale each stack trace's value accordingly.
+	totalPeriod := max(base.Meta.Period, compare.Meta.Period)
+
+	records := make([]arrow.Record, 0, len(compare.Samples)+len(base.Samples))
+
+	// We need to normalize the values of the profiles to the same period.
+	// For that reason we get ArrowDiffSamples schema with at least 6 columns: locations, sum(value), count(value), duration, period, diff.
+	// Once we have normalized each stack trace's value, we return ArrowSchema with 3 columns: locations, value, diff.
+
+	for _, r := range compare.Samples {
+		func() {
+			schema := r.Schema()
+
+			profileLabels := []arrow.Field{}
+			profileLabelColumns := []arrow.Array{}
+			for i, field := range schema.Fields() {
+				if strings.HasPrefix(field.Name, profile.ColumnPprofLabelsPrefix) {
+					profileLabels = append(profileLabels, field)
+					profileLabelColumns = append(profileLabelColumns, r.Column(i))
+				}
+			}
+
+			cols := make([]arrow.Array, len(profileLabels)+3) // locations, value, diff
+			copy(cols, profileLabelColumns)
+
+			cols[len(cols)-3] = r.Column(schema.FieldIndices("locations")[0])
+			cols[len(cols)-2] = normalizeForDiff(mem, r, totalPeriod, 1)
+
+			// This is intentional, the diff value of the `compare` profile is the same
+			// as the value of the `compare` profile, because what we're actually doing
+			// is subtracting the `base` profile, but the actual calculation happens
+			// when building the visualizations. We should eventually have this be done
+			// directly by the query engine.
+			cols[len(cols)-1] = cols[len(cols)-2]
+
+			records = append(records, array.NewRecord(
+				profile.ArrowSchema(profileLabels),
+				cols,
+				r.NumRows(),
+			))
+		}()
+	}
+
+	for _, r := range base.Samples {
+		func() {
+			schema := r.Schema()
+			profileLabels := []arrow.Field{}
+			profileLabelColumns := []arrow.Array{}
+			for i, field := range schema.Fields() {
+				if strings.HasPrefix(field.Name, profile.ColumnPprofLabelsPrefix) {
+					profileLabels = append(profileLabels, field)
+					profileLabelColumns = append(profileLabelColumns, r.Column(i))
+				}
+			}
+
+			cols := make([]arrow.Array, len(profileLabels)+3) // locations, value, diff
+			copy(cols, profileLabelColumns)
+
+			cols[len(cols)-3] = r.Column(schema.FieldIndices("locations")[0])
+			cols[len(cols)-2] = zeroArray(mem, int(r.NumRows()))
+			cols[len(cols)-1] = normalizeForDiff(mem, r, totalPeriod, -1)
+
+			records = append(records, array.NewRecord(
+				profile.ArrowSchema(profileLabels),
+				cols,
+				r.NumRows(),
+			))
+		}()
+	}
+
+	// We scale the smaller profile up to the bigger one. Therefore, we should use the bigger duration and period.
+	compare.Meta.Period = max(base.Meta.Period, compare.Meta.Period)
+	compare.Meta.Duration = max(base.Meta.Duration, compare.Meta.Duration)
+	compare.Meta.Timestamp = min(base.Meta.Timestamp, compare.Meta.Timestamp)
+
+	return profile.Profile{
+		Meta:    compare.Meta,
+		Samples: records,
+	}, nil
+}
+
+func normalizeForDiff(mem memory.Allocator, r arrow.Record, totalPeriod, factor int64) *array.Int64 {
+	b := array.NewInt64Builder(mem)
+	defer b.Release()
+
+	valueSum := r.Column(r.Schema().FieldIndices(profile.ColumnValueSum)[0]).(*array.Int64)
+	valueCount := r.Column(r.Schema().FieldIndices(profile.ColumnValueCount)[0]).(*array.Int64)
+	period := r.Column(r.Schema().FieldIndices(profile.ColumnPeriod)[0]).(*array.Int64)
+
+	for i := 0; i < valueSum.Len(); i++ {
+		if valueSum.IsValid(i) && period.IsValid(i) {
+			vs := valueSum.Value(i)
+			vc := valueCount.Value(i)
+			p := period.Value(i)
+
+			normValue := factor * (vs / vc)
+			normPeriod := float64(totalPeriod) / float64(p)
+
+			v := float64(normValue) * normPeriod
+			b.Append(int64(v))
+		} else {
+			b.AppendNull()
+		}
+	}
+
+	return b.NewArray().(*array.Int64)
 }
 
 func multiplyInt64By(pool memory.Allocator, arr *array.Int64, factor float64) arrow.Array {

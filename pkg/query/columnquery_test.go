@@ -893,6 +893,247 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	require.Equal(t, []int64{-1}, testProf.Sample[1].Value)
 }
 
+func TestColumnQueryAPIQueryMergeDiff(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	col, err := columnstore.New()
+	require.NoError(t, err)
+	colDB, err := col.DB(context.Background(), "parca")
+	require.NoError(t, err)
+
+	schema, err := profile.Schema()
+	require.NoError(t, err)
+
+	table, err := colDB.Table(
+		"stacktraces",
+		columnstore.NewTableConfig(profile.SchemaDefinition()),
+	)
+	require.NoError(t, err)
+	m := metastoretest.NewTestMetastore(
+		t,
+		logger,
+		reg,
+		tracer,
+	)
+	mc := metastore.NewInProcessClient(m)
+
+	fres, err := m.GetOrCreateFunctions(ctx, &metastorepb.GetOrCreateFunctionsRequest{
+		Functions: []*metastorepb.Function{{
+			Name: "testFunc",
+		}},
+	})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(fres.Functions))
+	f1 := fres.Functions[0]
+
+	fres, err = m.GetOrCreateFunctions(ctx, &metastorepb.GetOrCreateFunctionsRequest{
+		Functions: []*metastorepb.Function{{
+			// Intentionally doing this again using the same name as f1 to simulate
+			// what would happen when the two profiles are written separately.
+			Name: "testFunc",
+		}},
+	})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(fres.Functions))
+	f2 := fres.Functions[0]
+
+	lres, err := m.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
+		Locations: []*metastorepb.Location{{
+			Address: 0x1,
+			Lines: []*metastorepb.Line{{
+				Line:       1,
+				FunctionId: f1.Id,
+			}},
+		}},
+	})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(lres.Locations))
+	loc1 := lres.Locations[0]
+
+	sres, err := m.GetOrCreateStacktraces(ctx, &metastorepb.GetOrCreateStacktracesRequest{
+		Stacktraces: []*metastorepb.Stacktrace{{
+			LocationIds: []string{loc1.Id},
+		}},
+	})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(sres.Stacktraces))
+	st1 := sres.Stacktraces[0]
+
+	lres, err = m.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
+		Locations: []*metastorepb.Location{{
+			Address: 0x2,
+			Lines: []*metastorepb.Line{{
+				Line:       2,
+				FunctionId: f2.Id,
+			}},
+		}},
+	})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(lres.Locations))
+	loc2 := lres.Locations[0]
+
+	sres, err = m.GetOrCreateStacktraces(ctx, &metastorepb.GetOrCreateStacktracesRequest{
+		Stacktraces: []*metastorepb.Stacktrace{{
+			LocationIds: []string{loc2.Id},
+		}},
+	})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(sres.Stacktraces))
+	st2 := sres.Stacktraces[0]
+
+	ingester := parcacol.NewNormalizedIngester(
+		logger,
+		table,
+		schema,
+		&sync.Pool{
+			New: func() any {
+				return new(bytes.Buffer)
+			},
+		},
+		[]string{"job"},
+		nil, nil,
+	)
+
+	require.NoError(t, ingester.Ingest(ctx, []parcacol.Series{{
+		Labels: map[string]string{"job": "default"},
+		Samples: [][]*profile.NormalizedProfile{{{
+			Meta: profile.Meta{
+				Name:       "parca_agent_cpu",
+				PeriodType: profile.ValueType{Type: "cpu", Unit: "nanoseconds"},
+				SampleType: profile.ValueType{Type: "samples", Unit: "count"},
+				Timestamp:  1,
+				Duration:   time.Second.Nanoseconds(),
+				Period:     (10 * time.Millisecond).Nanoseconds(),
+			},
+			Samples: []*profile.NormalizedSample{{
+				StacktraceID: st1.Id,
+				Value:        1,
+			}},
+		}}},
+	}}))
+
+	require.NoError(t, ingester.Ingest(ctx, []parcacol.Series{{
+		Labels: map[string]string{"job": "default"},
+		Samples: [][]*profile.NormalizedProfile{{{
+			Meta: profile.Meta{
+				Name:       "parca_agent_cpu",
+				PeriodType: profile.ValueType{Type: "cpu", Unit: "nanoseconds"},
+				SampleType: profile.ValueType{Type: "samples", Unit: "count"},
+				Timestamp:  2,
+				Duration:   time.Second.Nanoseconds(),
+				Period:     (20 * time.Millisecond).Nanoseconds(),
+			},
+			Samples: []*profile.NormalizedSample{{
+				StacktraceID: st2.Id,
+				Value:        2,
+			}},
+		}}},
+	}}))
+
+	_, err = m.Stacktraces(ctx, &metastorepb.StacktracesRequest{
+		StacktraceIds: []string{st1.Id, st2.Id},
+	})
+	require.NoError(t, err)
+
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
+	api := NewColumnQueryAPI(
+		logger,
+		tracer,
+		getShareServerConn(t),
+		parcacol.NewQuerier(
+			logger,
+			tracer,
+			query.NewEngine(
+				mem,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			parcacol.NewProfileSymbolizer(tracer, mc),
+			mem,
+		),
+		mem,
+		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+		nil,
+	)
+
+	res, err := api.Query(ctx, &pb.QueryRequest{
+		Mode: pb.QueryRequest_MODE_DIFF,
+		Options: &pb.QueryRequest_Diff{
+			Diff: &pb.DiffProfile{
+				A: &pb.ProfileDiffSelection{
+					Mode: pb.ProfileDiffSelection_MODE_MERGE,
+					Options: &pb.ProfileDiffSelection_Merge{
+						Merge: &pb.MergeProfile{
+							Query: `parca_agent_cpu:samples:count:cpu:nanoseconds:delta{job="default"}`,
+							Start: timestamppb.New(timestamp.Time(2)),
+							End:   timestamppb.New(timestamp.Time(2)),
+						},
+					},
+				},
+				B: &pb.ProfileDiffSelection{
+					Mode: pb.ProfileDiffSelection_MODE_MERGE,
+					Options: &pb.ProfileDiffSelection_Merge{
+						Merge: &pb.MergeProfile{
+							Query: `parca_agent_cpu:samples:count:cpu:nanoseconds:delta{job="default"}`,
+							Start: timestamppb.New(timestamp.Time(1)),
+							End:   timestamppb.New(timestamp.Time(1)),
+						},
+					},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	fg := res.Report.(*pb.QueryResponse_Flamegraph).Flamegraph
+	require.Equal(t, int32(2), fg.Height)
+	require.Equal(t, 1, len(fg.Root.Children))
+	require.Equal(t, int64(2), fg.Root.Children[0].Cumulative)
+	require.Equal(t, int64(0), fg.Root.Children[0].Diff)
+
+	// the other way around
+
+	res, err = api.Query(ctx, &pb.QueryRequest{
+		Mode: pb.QueryRequest_MODE_DIFF,
+		Options: &pb.QueryRequest_Diff{
+			Diff: &pb.DiffProfile{
+				A: &pb.ProfileDiffSelection{
+					Mode: pb.ProfileDiffSelection_MODE_MERGE,
+					Options: &pb.ProfileDiffSelection_Merge{
+						Merge: &pb.MergeProfile{
+							Query: `parca_agent_cpu:samples:count:cpu:nanoseconds:delta{job="default"}`,
+							Start: timestamppb.New(timestamp.Time(1)),
+							End:   timestamppb.New(timestamp.Time(1)),
+						},
+					},
+				},
+				B: &pb.ProfileDiffSelection{
+					Mode: pb.ProfileDiffSelection_MODE_MERGE,
+					Options: &pb.ProfileDiffSelection_Merge{
+						Merge: &pb.MergeProfile{
+							Query: `parca_agent_cpu:samples:count:cpu:nanoseconds:delta{job="default"}`,
+							Start: timestamppb.New(timestamp.Time(2)),
+							End:   timestamppb.New(timestamp.Time(2)),
+						},
+					},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	fg = res.Report.(*pb.QueryResponse_Flamegraph).Flamegraph
+	require.Equal(t, int32(2), fg.Height)
+	require.Equal(t, 1, len(fg.Root.Children))
+	require.Equal(t, int64(2), fg.Root.Children[0].Cumulative)
+	require.Equal(t, int64(0), fg.Root.Children[0].Diff)
+}
+
 func TestColumnQueryAPITypes(t *testing.T) {
 	t.Parallel()
 
