@@ -340,10 +340,11 @@ func (q *Querier) QueryRange(
 }
 
 const (
-	ColumnDurationSum = "sum(" + profile.ColumnDuration + ")"
-	ColumnPeriodSum   = "sum(" + profile.ColumnPeriod + ")"
-	ColumnValueCount  = "count(" + profile.ColumnValue + ")"
-	ColumnValueSum    = "sum(" + profile.ColumnValue + ")"
+	ColumnDurationSum  = "sum(" + profile.ColumnDuration + ")"
+	ColumnPeriodSum    = "sum(" + profile.ColumnPeriod + ")"
+	ColumnValueCount   = "count(" + profile.ColumnValue + ")"
+	ColumnValueSum     = "sum(" + profile.ColumnValue + ")"
+	ColumnTimestampMin = "min(" + profile.ColumnTimestamp + ")"
 )
 
 func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration, sampleTypeUnit string) ([]*pb.MetricsSeries, error) {
@@ -804,7 +805,7 @@ func BooleanFieldFromRecord(ar arrow.Record, name string) (*array.Boolean, error
 func (q *Querier) SymbolizeArrowRecord(
 	ctx context.Context,
 	records []arrow.Record,
-	columns []string,
+	valueColumnName string,
 ) ([]arrow.Record, error) {
 	res := make([]arrow.Record, len(records))
 
@@ -823,42 +824,11 @@ func (q *Querier) SymbolizeArrowRecord(
 			stacktraceIDs[i] = string(stacktraceColumn.Value(i))
 		}
 
-		var valueSumColumn *array.Int64
-		var valueCountColumn *array.Int64
-		var durationColumn *array.Int64
-		var periodColumn *array.Int64
-
-		if len(columns) == 1 {
-			indices = schema.FieldIndices(columns[0])
-			if len(indices) != 1 {
-				return nil, ErrMissingColumn{Column: columns[0], Columns: len(indices)}
-			}
-			valueSumColumn = r.Column(indices[0]).(*array.Int64)
-		} else if len(columns) == 4 { // diffs
-			indices = schema.FieldIndices(ColumnValueSum)
-			if len(indices) != 1 {
-				return nil, ErrMissingColumn{Column: columns[0], Columns: len(indices)}
-			}
-			valueSumColumn = r.Column(indices[0]).(*array.Int64)
-
-			indices = schema.FieldIndices(ColumnValueCount)
-			if len(indices) != 1 {
-				return nil, ErrMissingColumn{Column: ColumnValueCount, Columns: len(indices)}
-			}
-			valueCountColumn = r.Column(indices[0]).(*array.Int64)
-
-			indices = schema.FieldIndices(ColumnDurationSum)
-			if len(indices) != 1 {
-				return nil, ErrMissingColumn{Column: ColumnDurationSum, Columns: len(indices)}
-			}
-			durationColumn = r.Column(indices[0]).(*array.Int64)
-
-			indices = schema.FieldIndices(ColumnPeriodSum)
-			if len(indices) != 1 {
-				return nil, ErrMissingColumn{Column: "period", Columns: len(indices)}
-			}
-			periodColumn = r.Column(indices[0]).(*array.Int64)
+		indices = schema.FieldIndices(valueColumnName)
+		if len(indices) != 1 {
+			return nil, ErrMissingColumn{Column: "value", Columns: len(indices)}
 		}
+		valueColumn := r.Column(indices[0]).(*array.Int64)
 
 		profileLabels := []arrow.Field{}
 		profileLabelColumns := []arrow.Array{}
@@ -880,30 +850,16 @@ func (q *Querier) SymbolizeArrowRecord(
 		}
 		defer locationsRecord.Release()
 
-		if len(columns) == 1 {
-			columns := make([]arrow.Array, len(profileLabels)+3) // +3 for stacktrace locations, value and diff
-			copy(columns, profileLabelColumns)
-			columns[len(columns)-3] = locationsRecord.Column(0)
-			columns[len(columns)-2] = valueSumColumn
-			diffColumn := CreateDiffColumn(q.pool, rows)
-			defer diffColumn.Release()
-			columns[len(columns)-1] = diffColumn
-			res[i] = array.NewRecord(profile.ArrowSchema(profileLabels), columns, r.NumRows())
-		} else if len(columns) == 4 { // diffs
-			columns := make([]arrow.Array, len(profileLabels)+6) // +3 for stacktrace locations, value, diff, duration and period
-			copy(columns, profileLabelColumns)
-			columns[len(columns)-6] = locationsRecord.Column(0)
-			columns[len(columns)-5] = valueSumColumn
-			columns[len(columns)-4] = valueCountColumn
-			columns[len(columns)-3] = durationColumn
-			columns[len(columns)-2] = periodColumn
+		columns := make([]arrow.Array, len(profileLabels)+3) // +3 for stacktrace locations, value and diff
+		copy(columns, profileLabelColumns)
+		columns[len(columns)-3] = locationsRecord.Column(0)
+		columns[len(columns)-2] = valueColumn
 
-			diffColumn := CreateDiffColumn(q.pool, rows)
-			defer diffColumn.Release()
-			columns[len(columns)-1] = diffColumn
+		diffColumn := CreateDiffColumn(q.pool, rows)
+		defer diffColumn.Release()
+		columns[len(columns)-1] = diffColumn
 
-			res[i] = array.NewRecord(profile.ArrowDiffSchema(profileLabels), columns, r.NumRows())
-		}
+		res[i] = array.NewRecord(profile.ArrowSchema(profileLabels), columns, r.NumRows())
 	}
 
 	return res, nil
@@ -946,7 +902,7 @@ func (q *Querier) QuerySingle(
 	symbolizedRecords, err := q.SymbolizeArrowRecord(
 		ctx,
 		records,
-		[]string{valueColumn},
+		valueColumn,
 	)
 	if err != nil {
 		// if the column cannot be found the timestamp is too far in the past and we don't have data
@@ -1042,7 +998,7 @@ func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.
 	symbolizedRecords, err := q.SymbolizeArrowRecord(
 		ctx,
 		records,
-		[]string{valueColumn, ColumnValueCount, ColumnDurationSum, ColumnPeriodSum},
+		valueColumn,
 	)
 	if err != nil {
 		return profile.Profile{}, err
@@ -1124,6 +1080,26 @@ func (q *Querier) selectMerge(
 		return nil, "", profile.Meta{}, err
 	}
 
+	trimmedRecords := make([]arrow.Record, len(records))
+	for i, r := range records {
+		oldFields := r.Schema().Fields()
+		fields := make([]arrow.Field, len(oldFields)-4)
+		columns := make([]arrow.Array, len(oldFields)-4)
+
+		for j, f := range oldFields {
+			if f.Name != ColumnValueCount && f.Name != ColumnDurationSum && f.Name != ColumnPeriodSum && f.Name != ColumnTimestampMin {
+				if f.Name == ColumnValueSum {
+					f.Name = profile.ColumnValue // rename ColumnValueSum to ColumnValue
+				}
+				fields[j] = f
+				columns[j] = r.Column(j)
+			}
+		}
+
+		trimmedRecords[i] = array.NewRecord(arrow.NewSchema(fields, nil), columns, r.NumRows())
+		r.Release() // we don't care about this record anymore, release it.
+	}
+
 	meta := profile.Meta{
 		Name:       queryParts.Meta.Name,
 		PeriodType: queryParts.Meta.PeriodType,
@@ -1132,7 +1108,7 @@ func (q *Querier) selectMerge(
 		Duration:   duration,
 		Period:     period,
 	}
-	return records, ColumnValueSum, meta, nil
+	return trimmedRecords, profile.ColumnValue, meta, nil
 }
 
 func sumByTimestamp(column string, records []arrow.Record) (int64, error) {
@@ -1140,24 +1116,31 @@ func sumByTimestamp(column string, records []arrow.Record) (int64, error) {
 	var sum int64
 	timestampValue := map[int64]int64{}
 	for _, r := range records {
-		timestampIndices := r.Schema().FieldIndices("min(" + profile.ColumnTimestamp + ")")
+		timestampIndices := r.Schema().FieldIndices(ColumnTimestampMin)
 		if len(timestampIndices) != 1 {
-			return 0, fmt.Errorf("expected column %q to exist", profile.ColumnTimestamp)
+			return 0, fmt.Errorf("expected column %q to exist", ColumnTimestampMin)
 		}
 		valueIndices := r.Schema().FieldIndices(column)
 		if len(valueIndices) != 1 {
 			return 0, fmt.Errorf("expected column %q to exist", column)
 		}
+		countIndices := r.Schema().FieldIndices(ColumnValueCount)
+		if len(countIndices) != 1 {
+			return 0, fmt.Errorf("expected column %q to exist", ColumnValueCount)
+		}
 
 		timestampColumn := r.Column(timestampIndices[0]).(*array.Int64)
 		valueColumn := r.Column(valueIndices[0]).(*array.Int64)
+		countColumn := r.Column(countIndices[0]).(*array.Int64)
 
 		for i := 0; i < int(r.NumRows()); i++ {
 			timestamp := timestampColumn.Value(i)
 			if timestampValue[timestamp] == 0 {
 				value := valueColumn.Value(i)
-				timestampValue[timestamp] = value
-				sum += value
+				count := countColumn.Value(i)
+				v := value / count // we don't expect fractional values as value is always a multiple of count
+				timestampValue[timestamp] = v
+				sum += v
 			}
 		}
 	}

@@ -899,7 +899,7 @@ func TestColumnQueryAPIQueryMergeDiff(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	col, err := columnstore.New()
 	require.NoError(t, err)
 	colDB, err := col.DB(context.Background(), "parca")

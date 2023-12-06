@@ -14,6 +14,7 @@
 package profile
 
 import (
+	"strings"
 	"time"
 
 	"github.com/apache/arrow/go/v14/arrow"
@@ -89,41 +90,18 @@ func ArrowSamplesField(profileLabelFields []arrow.Field) []arrow.Field {
 	return fields
 }
 
-func ArrowDiffSamplesField(profileLabelFields []arrow.Field) []arrow.Field {
-	numFields := len(profileLabelFields) + 6 // +3 for stacktraces, value, diff, duration and period
-	fields := make([]arrow.Field, numFields)
-	copy(fields, profileLabelFields)
-	fields[numFields-6] = LocationsField
-	fields[numFields-5] = arrow.Field{
-		Name: ColumnValueSum,
-		Type: arrow.PrimitiveTypes.Int64,
-	}
-	fields[numFields-4] = arrow.Field{
-		Name: ColumnValueCount,
-		Type: arrow.PrimitiveTypes.Int64,
-	}
-	fields[numFields-3] = arrow.Field{
-		Name: ColumnDuration,
-		Type: arrow.PrimitiveTypes.Int64,
-	}
-	fields[numFields-2] = arrow.Field{
-		Name: ColumnPeriod,
-		Type: arrow.PrimitiveTypes.Int64,
-	}
-	fields[numFields-1] = arrow.Field{
-		Name: ColumnDiff,
-		Type: arrow.PrimitiveTypes.Int64,
-	}
-
-	return fields
-}
-
 func ArrowSchema(profileLabelFields []arrow.Field) *arrow.Schema {
 	return arrow.NewSchema(ArrowSamplesField(profileLabelFields), nil)
 }
 
-func ArrowDiffSchema(profileLabelFields []arrow.Field) *arrow.Schema {
-	return arrow.NewSchema(ArrowDiffSamplesField(profileLabelFields), nil)
+func ArrowSchemaLabelFields(schema *arrow.Schema) []arrow.Field {
+	profileLabels := []arrow.Field{}
+	for _, field := range schema.Fields() {
+		if strings.HasPrefix(field.Name, ColumnPprofLabelsPrefix) {
+			profileLabels = append(profileLabels, field)
+		}
+	}
+	return profileLabels
 }
 
 type LocationLine struct {
