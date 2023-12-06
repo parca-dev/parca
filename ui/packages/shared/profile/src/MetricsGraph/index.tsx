@@ -185,7 +185,7 @@ export const RawMetricsGraph = ({
   const xScale = d3
     .scaleUtc()
     .domain([from, to])
-    .range([20, width - 2.5 * margin]);
+    .range([0, width - 2.5 * margin]);
 
   const yScale = d3
     .scaleLinear()
