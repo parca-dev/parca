@@ -390,7 +390,7 @@ export const ProfileView = ({
             {profileViewExternalMainActions != null ? profileViewExternalMainActions : null}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 md:justify-end">
+          <div className="lg:flex flex-wrap items-center gap-2 md:justify-end hidden">
             <FilterByFunctionButton navigateTo={navigateTo} />
             {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
             <UserPreferences
