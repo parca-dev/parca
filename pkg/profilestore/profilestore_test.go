@@ -29,6 +29,7 @@ import (
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/metastoretest"
+	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -64,8 +65,11 @@ func Test_LabelName_Error(t *testing.T) {
 		logger,
 		tracer,
 		metastore.NewInProcessClient(m),
-		table,
-		schema,
+		parcacol.NewIngester(
+			logger,
+			table,
+			schema,
+		),
 		true,
 	)
 
@@ -145,8 +149,11 @@ func BenchmarkProfileColumnStoreWriteSeries(b *testing.B) {
 		logger,
 		tracer,
 		metastore.NewInProcessClient(m),
-		table,
-		schema,
+		parcacol.NewIngester(
+			logger,
+			table,
+			schema,
+		),
 		true,
 	)
 

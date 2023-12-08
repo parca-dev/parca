@@ -30,6 +30,7 @@ import (
 	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/metastoretest"
+	"github.com/parca-dev/parca/pkg/normalizer"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profile"
 )
@@ -56,7 +57,7 @@ func TestGenerateTable(t *testing.T) {
 		noop.NewTracerProvider().Tracer(""),
 	)
 	metastore := metastore.NewInProcessClient(l)
-	normalizer := parcacol.NewNormalizer(metastore, true, counter)
+	normalizer := normalizer.NewNormalizer(metastore, true, counter)
 	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, true, nil)
 	require.NoError(t, err)
 

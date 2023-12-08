@@ -328,19 +328,35 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		level.Error(logger).Log("msg", "create table", "err", err)
 		return err
 	}
-
 	schema, err := dynparquet.SchemaFromDefinition(def)
 	if err != nil {
 		level.Error(logger).Log("msg", "schema from definition", "err", err)
 		return err
 	}
+
+	ingester := parcacol.NewIngester(logger, table, schema)
+	querier := parcacol.NewQuerier(
+		logger,
+		tracerProvider.Tracer("querier"),
+		query.NewEngine(
+			memory.DefaultAllocator,
+			colDB.TableProvider(),
+			query.WithTracer(tracerProvider.Tracer("query-engine")),
+		),
+		"stacktraces",
+		parcacol.NewProfileSymbolizer(
+			tracerProvider.Tracer("profile-symbolizer"),
+			mc,
+		),
+		memory.DefaultAllocator,
+	)
+
 	s := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
 		tracerProvider.Tracer("profilestore"),
 		mc,
-		table,
-		schema,
+		ingester,
 		flags.Hidden.DebugNormalizeAddresses,
 	)
 
@@ -370,21 +386,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		logger,
 		tracerProvider.Tracer("query-service"),
 		sharepb.NewShareServiceClient(conn),
-		parcacol.NewQuerier(
-			logger,
-			tracerProvider.Tracer("querier"),
-			query.NewEngine(
-				memory.DefaultAllocator,
-				colDB.TableProvider(),
-				query.WithTracer(tracerProvider.Tracer("query-engine")),
-			),
-			"stacktraces",
-			parcacol.NewProfileSymbolizer(
-				tracerProvider.Tracer("profile-symbolizer"),
-				mc,
-			),
-			memory.DefaultAllocator,
-		),
+		querier,
 		memory.DefaultAllocator,
 		parcacol.NewArrowToProfileConverter(
 			tracerProvider.Tracer("arrow_to_profile_converter"),
@@ -627,8 +629,11 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			}
 
 			// Close the columnstore after the parcaserver has shutdown to ensure no more writes occur against it.
-			if err := col.Close(); err != nil {
-				level.Error(logger).Log("msg", "error closing columnstore", "err", err)
+
+			if col != nil {
+				if err := col.Close(); err != nil {
+					level.Error(logger).Log("msg", "error closing columnstore", "err", err)
+				}
 			}
 		},
 	)

@@ -20,7 +20,6 @@ import (
 	"crypto/tls"
 	"io"
 	"os"
-	"sync"
 	"testing"
 	"time"
 
@@ -48,6 +47,7 @@ import (
 	sharepb "github.com/parca-dev/parca/gen/proto/go/parca/share/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/metastoretest"
+	"github.com/parca-dev/parca/pkg/normalizer"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/profilestore"
@@ -174,13 +174,17 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 	require.NoError(t, err)
 
 	mc := metastore.NewInProcessClient(m)
+	ingester := parcacol.NewIngester(
+		logger,
+		table,
+		schema,
+	)
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
 		mc,
-		table,
-		schema,
+		ingester,
 		true,
 	)
 
@@ -274,13 +278,17 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 	)
 
 	mc := metastore.NewInProcessClient(m)
+	ingester := parcacol.NewIngester(
+		logger,
+		table,
+		schema,
+	)
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
 		mc,
-		table,
-		schema,
+		ingester,
 		true,
 	)
 
@@ -415,13 +423,18 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 	require.NoError(t, err)
 
 	mc := metastore.NewInProcessClient(m)
+	ingester := parcacol.NewIngester(
+		logger,
+		table,
+		schema,
+	)
+
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
 		mc,
-		table,
-		schema,
+		ingester,
 		true,
 	)
 
@@ -507,13 +520,17 @@ func TestColumnQueryAPIQueryCumulative(t *testing.T) {
 	)
 
 	mc := metastore.NewInProcessClient(m)
+	ingester := parcacol.NewIngester(
+		logger,
+		table,
+		schema,
+	)
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
 		mc,
-		table,
-		schema,
+		ingester,
 		true,
 	)
 
@@ -719,50 +736,55 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	require.Equal(t, 1, len(sres.Stacktraces))
 	st2 := sres.Stacktraces[0]
 
-	ingester := parcacol.NewNormalizedIngester(
+	ingester := parcacol.NewIngester(
 		logger,
 		table,
 		schema,
-		&sync.Pool{
-			New: func() any {
-				return new(bytes.Buffer)
-			},
-		},
-		[]string{"job"},
-		nil, nil,
 	)
 
-	require.NoError(t, ingester.Ingest(ctx, []parcacol.Series{{
-		Labels: map[string]string{"job": "default"},
-		Samples: [][]*profile.NormalizedProfile{{{
-			Meta: profile.Meta{
-				Name:       "memory",
-				PeriodType: profile.ValueType{Type: "space", Unit: "bytes"},
-				SampleType: profile.ValueType{Type: "alloc_objects", Unit: "count"},
-				Timestamp:  1,
+	require.NoError(t, ingester.Ingest(ctx, normalizer.NormalizedWriteRawRequest{
+		AllLabelNames: []string{"job"},
+		Series: []normalizer.Series{
+			{
+				Labels: map[string]string{"job": "default"},
+				Samples: [][]*profile.NormalizedProfile{{{
+					Meta: profile.Meta{
+						Name:       "memory",
+						PeriodType: profile.ValueType{Type: "space", Unit: "bytes"},
+						SampleType: profile.ValueType{Type: "alloc_objects", Unit: "count"},
+						Timestamp:  1,
+					},
+					Samples: []*profile.NormalizedSample{{
+						StacktraceID: st1.Id,
+						Value:        1,
+					}},
+				}}},
 			},
-			Samples: []*profile.NormalizedSample{{
-				StacktraceID: st1.Id,
-				Value:        1,
-			}},
-		}}},
-	}}))
+		},
+	},
+	))
 
-	require.NoError(t, ingester.Ingest(ctx, []parcacol.Series{{
-		Labels: map[string]string{"job": "default"},
-		Samples: [][]*profile.NormalizedProfile{{{
-			Meta: profile.Meta{
-				Name:       "memory",
-				PeriodType: profile.ValueType{Type: "space", Unit: "bytes"},
-				SampleType: profile.ValueType{Type: "alloc_objects", Unit: "count"},
-				Timestamp:  2,
+	require.NoError(t, ingester.Ingest(ctx, normalizer.NormalizedWriteRawRequest{
+		AllLabelNames: []string{"job"},
+		Series: []normalizer.Series{
+			{
+				Labels: map[string]string{"job": "default"},
+				Samples: [][]*profile.NormalizedProfile{{{
+					Meta: profile.Meta{
+						Name:       "memory",
+						PeriodType: profile.ValueType{Type: "space", Unit: "bytes"},
+						SampleType: profile.ValueType{Type: "alloc_objects", Unit: "count"},
+						Timestamp:  2,
+					},
+					Samples: []*profile.NormalizedSample{{
+						StacktraceID: st2.Id,
+						Value:        2,
+					}},
+				}}},
 			},
-			Samples: []*profile.NormalizedSample{{
-				StacktraceID: st2.Id,
-				Value:        2,
-			}},
-		}}},
-	}}))
+		},
+	},
+	))
 
 	_, err = m.Stacktraces(ctx, &metastorepb.StacktracesRequest{
 		StacktraceIds: []string{st1.Id, st2.Id},
@@ -924,13 +946,18 @@ func TestColumnQueryAPITypes(t *testing.T) {
 	require.NoError(t, err)
 
 	mc := metastore.NewInProcessClient(m)
+	ingester := parcacol.NewIngester(
+		logger,
+		table,
+		schema,
+	)
+
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
 		mc,
-		table,
-		schema,
+		ingester,
 		true,
 	)
 
@@ -1025,13 +1052,18 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 	require.NoError(t, err)
 
 	mc := metastore.NewInProcessClient(m)
+	ingester := parcacol.NewIngester(
+		logger,
+		table,
+		schema,
+	)
+
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
 		mc,
-		table,
-		schema,
+		ingester,
 		true,
 	)
 
@@ -1116,13 +1148,17 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 	require.NoError(t, err)
 
 	mc := metastore.NewInProcessClient(m)
+	ingester := parcacol.NewIngester(
+		logger,
+		table,
+		schema,
+	)
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
 		mc,
-		table,
-		schema,
+		ingester,
 		true,
 	)
 

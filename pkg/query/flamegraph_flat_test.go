@@ -32,6 +32,7 @@ import (
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/metastoretest"
+	"github.com/parca-dev/parca/pkg/normalizer"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
@@ -226,7 +227,7 @@ func testGenerateFlamegraphFromProfile(t *testing.T, l metastorepb.MetastoreServ
 	err := p.UnmarshalVT(fileContent)
 	require.NoError(t, err)
 
-	normalizer := parcacol.NewNormalizer(l, true, counter)
+	normalizer := normalizer.NewNormalizer(l, true, counter)
 	profiles, err := normalizer.NormalizePprof(ctx, "test", map[string]string{}, p, false, nil)
 	require.NoError(t, err)
 
@@ -288,7 +289,7 @@ func TestGenerateFlamegraphWithInlined(t *testing.T) {
 	require.NoError(t, err)
 
 	metastore := metastore.NewInProcessClient(store)
-	normalizer := parcacol.NewNormalizer(metastore, true, counter)
+	normalizer := normalizer.NewNormalizer(metastore, true, counter)
 	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false, nil)
 	require.NoError(t, err)
 
@@ -440,7 +441,7 @@ func TestGenerateFlamegraphWithInlinedExisting(t *testing.T) {
 	err = p.UnmarshalVT(MustDecompressGzip(t, b.Bytes()))
 	require.NoError(t, err)
 
-	normalizer := parcacol.NewNormalizer(metastore, true, counter)
+	normalizer := normalizer.NewNormalizer(metastore, true, counter)
 	profiles, err := normalizer.NormalizePprof(ctx, "", map[string]string{}, p, false, nil)
 	require.NoError(t, err)
 

@@ -42,7 +42,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	sharepb "github.com/parca-dev/parca/gen/proto/go/parca/share/v1alpha1"
@@ -60,7 +59,7 @@ func getShareServerConn(t Testing) sharepb.ShareServiceClient {
 	return sharepb.NewShareServiceClient(conn)
 }
 
-func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceClient, <-chan struct{}) {
+func benchmarkSetup(ctx context.Context, b *testing.B) (profilestorepb.ProfileStoreServiceClient, <-chan struct{}) {
 	addr := "127.0.0.1:7077"
 
 	logger := log.NewNopLogger()
@@ -95,8 +94,8 @@ func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceCl
 			return err
 		}
 
-		client := pb.NewProfileStoreServiceClient(conn)
-		_, err = client.WriteRaw(ctx, &pb.WriteRawRequest{})
+		client := profilestorepb.NewProfileStoreServiceClient(conn)
+		_, err = client.WriteRaw(ctx, &profilestorepb.WriteRawRequest{})
 		if err != nil {
 			// b.Logf("failed to connect to write raw profile: %v", err)
 			return err
@@ -105,7 +104,7 @@ func benchmarkSetup(ctx context.Context, b *testing.B) (pb.ProfileStoreServiceCl
 	}, backoff.NewConstantBackOff(time.Second))
 	require.NoError(b, err)
 
-	client := pb.NewProfileStoreServiceClient(conn)
+	client := profilestorepb.NewProfileStoreServiceClient(conn)
 	return client, done
 }
 
@@ -124,11 +123,11 @@ func Benchmark_WriteRaw(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := client.WriteRaw(ctx, &pb.WriteRawRequest{
-			Series: []*pb.RawProfileSeries{
+		_, err := client.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
+			Series: []*profilestorepb.RawProfileSeries{
 				{
-					Labels: &pb.LabelSet{
-						Labels: []*pb.Label{
+					Labels: &profilestorepb.LabelSet{
+						Labels: []*profilestorepb.Label{
 							{
 								Name:  labels.MetricName,
 								Value: "allocs",
@@ -139,7 +138,7 @@ func Benchmark_WriteRaw(b *testing.B) {
 							},
 						},
 					},
-					Samples: []*pb.RawSample{
+					Samples: []*profilestorepb.RawSample{
 						{
 							RawProfile: f,
 						},
@@ -212,13 +211,13 @@ func TestConsistency(t *testing.T) {
 	fileContent, err := os.ReadFile("../query/testdata/alloc_objects.pb.gz")
 	require.NoError(t, err)
 
+	ingester := parcacol.NewIngester(logger, table, schema)
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
 		mc,
-		table,
-		schema,
+		ingester,
 		true,
 	)
 
@@ -327,13 +326,13 @@ func TestPGOE2e(t *testing.T) {
 	fileContent, err := os.ReadFile("./testdata/pgotest.prof")
 	require.NoError(t, err)
 
+	ingester := parcacol.NewIngester(logger, table, schema)
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
 		mc,
-		table,
-		schema,
+		ingester,
 		true,
 	)
 
@@ -432,16 +431,15 @@ func TestLabels(t *testing.T) {
 	fileContent, err := os.ReadFile("testdata/labels.pb.gz")
 	require.NoError(t, err)
 
+	ingester := parcacol.NewIngester(logger, table, schema)
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
 		mc,
-		table,
-		schema,
+		ingester,
 		true,
 	)
-
 	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
 		Series: []*profilestorepb.RawProfileSeries{{
 			Labels: &profilestorepb.LabelSet{

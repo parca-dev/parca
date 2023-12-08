@@ -40,6 +40,7 @@ import (
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/metastore"
 	"github.com/parca-dev/parca/pkg/metastoretest"
+	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/profilestore"
 )
@@ -477,8 +478,11 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 		logger,
 		tracer,
 		metastore,
-		table,
-		schema,
+		parcacol.NewIngester(
+			logger,
+			table,
+			schema,
+		),
 		true,
 	)
 
