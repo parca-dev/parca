@@ -1,6 +1,6 @@
 # vim: ft=dockerfile
 # Designed to only used by Tilt to iterate faster on the API.
-FROM docker.io/golang:1.21.5-alpine@sha256:5c1cabd9a3c6851a3e18735a2c133fbd8f67fe37eb3203318b7af2ffd2547095 AS builder
+FROM docker.io/golang:1.21.5-alpine@sha256:b0568957c7387631237d0636e5d6ee05f348c9366021cd7edf5c314416f3c581 AS builder
 
 # renovate: datasource=go depName=github.com/go-delve/delve
 ARG DLV_VERSION=v1.21.2
@@ -36,7 +36,7 @@ COPY ./gen /app/gen
 # goreleaser build --single-target
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -gcflags="all=-N -l" -o parca ./cmd/parca
 
-FROM docker.io/golang:1.21.5-alpine@sha256:5c1cabd9a3c6851a3e18735a2c133fbd8f67fe37eb3203318b7af2ffd2547095
+FROM docker.io/golang:1.21.5-alpine@sha256:b0568957c7387631237d0636e5d6ee05f348c9366021cd7edf5c314416f3c581
 
 COPY --from=builder /go/bin/dlv /
 COPY --from=builder /go/bin/grpc-health-probe /
