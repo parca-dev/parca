@@ -111,7 +111,7 @@
     "ora": "6.3.1",
     "plop": "3.1.2",
     "pm2": "5.3.0",
-    "postcss": "8.4.31",
+    "postcss": "8.4.32",
     "prettier": "3.1.0",
     "prettier-plugin-tailwindcss": "^0.4.0",
     "react-is": "18.2.0",
