@@ -141,11 +141,8 @@ export const formatForTimespan = (from: number, to: number): string => {
   if (durationInSeconds <= getTotalSeconds({minutes: 4})) {
     return 'H:mm:ss';
   }
-  if (durationInSeconds <= getTotalSeconds({minutes: 61})) {
-    return 'H:mm';
-  }
   if (durationInSeconds <= getTotalSeconds({hours: 13})) {
-    return 'H';
+    return 'H:mm';
   }
   if (durationInSeconds <= getTotalSeconds({hours: 25})) {
     return 'H:mm d/M';
