@@ -282,14 +282,22 @@ export const RawMetricsGraph = ({
       return;
     }
 
-    const firstTime = xScale.invert(relPos).valueOf();
-    const secondTime = xScale.invert(pos[0]).valueOf();
+    let startPos = relPos;
+    let endPos = pos[0];
 
-    if (firstTime > secondTime) {
-      setTimeRange(DateTimeRange.fromAbsoluteDates(secondTime, firstTime));
-    } else {
-      setTimeRange(DateTimeRange.fromAbsoluteDates(firstTime, secondTime));
+    if (startPos > endPos) {
+      startPos = pos[0];
+      endPos = relPos;
     }
+
+    const startCorrection = 10;
+    const endCorrection = 30;
+
+    const firstTime = xScale.invert(startPos - startCorrection).valueOf();
+    const secondTime = xScale.invert(endPos - endCorrection).valueOf();
+
+    setTimeRange(DateTimeRange.fromAbsoluteDates(firstTime, secondTime));
+
     setRelPos(-1);
 
     e.stopPropagation();

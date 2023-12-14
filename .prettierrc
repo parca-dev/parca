@@ -11,6 +11,7 @@
     "",
     "^[./]"
   ],
+  "trailingComma": "es5",
   "importOrderSeparation": true,
   "importOrderSortSpecifiers": true,
   "importOrderMergeDuplicateImports": true,
