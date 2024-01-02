@@ -27,6 +27,11 @@ const DateTimePicker = ({selected, onChange}: Props): JSX.Element => (
     showTimeInput
     dateFormat="yyyy-MM-dd HH:mm:ss"
     className="h-[38px] w-full rounded-md border border-gray-200 p-2 text-center text-sm dark:border-gray-600 dark:bg-gray-900"
+    onChangeRaw={event => {
+      if (event.target.value === 'now') {
+        onChange(new Date());
+      }
+    }}
   />
 );
 
@@ -37,6 +42,11 @@ export const UTCDateTimePicker = ({selected, onChange}: Props): JSX.Element => (
     showTimeInput
     dateFormat="yyyy-MM-dd HH:mm:ss"
     className="flex h-[38px] w-full rounded-md border border-gray-200 p-2 text-center text-sm dark:border-gray-600 dark:bg-gray-900"
+    onChangeRaw={event => {
+      if (event.target.value === 'now') {
+        onChange(new Date());
+      }
+    }}
   />
 );
 
