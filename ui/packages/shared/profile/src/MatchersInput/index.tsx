@@ -205,7 +205,7 @@ const MatchersInput = ({
   const profileSelected = currentQuery.profileName() === '';
 
   return (
-    <div className="w-full min-w-[300px] flex-1 font-mono">
+    <div className="w-full min-w-[300px] flex-1 font-mono relative">
       <TextareaAutosize
         ref={inputRef}
         className={cx(
