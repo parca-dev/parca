@@ -11,6 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {AbsoluteDateValue} from 'DateTimePicker';
 import moment from 'moment-timezone';
 
 export const UNITS = {
@@ -43,9 +44,25 @@ export class RelativeDate implements BaseDate {
 
 export class AbsoluteDate implements BaseDate {
   isRelative = (): boolean => false;
-  value: Date;
-  constructor(value?: Date) {
+  value: AbsoluteDateValue;
+  constructor(value?: AbsoluteDateValue) {
     this.value = value ?? getDateHoursAgo(1);
+  }
+
+  getTime(): Date {
+    if (typeof this.value === 'string') {
+      if (this.value === 'now') {
+        return new Date();
+      }
+    }
+    return this.value;
+  }
+
+  getUIString(): string {
+    if (typeof this.value === 'string') {
+      return this.value;
+    }
+    return getUtcStringForDate(this);
   }
 }
 

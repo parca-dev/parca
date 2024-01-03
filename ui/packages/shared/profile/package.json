@@ -40,7 +40,7 @@
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
     "prepublish": "yarn build",
     "build": "tsc && yarn compile:styles",
-    "watch": "tsc-watch --onSuccess 'yarn compile:styles'",
+    "watch": "tsc-watch --onCompilationComplete 'yarn compile:styles'",
     "compile:styles": "tailwindcss -o dist/styles.css --minify"
   },
   "keywords": [],
