@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {Fragment, useCallback, useRef, useState} from 'react';
+import React, {Fragment, useCallback, useMemo, useRef, useState} from 'react';
 
 import * as d3 from 'd3';
 import {pointer} from 'd3-selection';
@@ -201,11 +201,13 @@ export const RawMetricsGraph = ({
     d => yScale(d[1])
   );
 
-  const getClosest = (): HighlightedSeries | null => {
+  const highlighted = useMemo(() => {
+    // Return the closest point as the highlighted point
+
     const closestPointPerSeries = series.map(function (s) {
       const distances = s.values.map(d => {
-        const x = xScale(d[0]);
-        const y = yScale(d[1]);
+        const x = xScale(d[0]) + margin / 2;
+        const y = yScale(d[1]) - margin / 3;
 
         return Math.sqrt(Math.pow(pos[0] - x, 2) + Math.pow(pos[1] - y, 2));
       });
@@ -221,7 +223,6 @@ export const RawMetricsGraph = ({
     const closestSeriesIndex = d3.minIndex(closestPointPerSeries, s => s.distance);
     const pointIndex = closestPointPerSeries[closestSeriesIndex].pointIndex;
     const point = series[closestSeriesIndex].values[pointIndex];
-
     return {
       seriesIndex: closestSeriesIndex,
       labels: series[closestSeriesIndex].metric,
@@ -232,9 +233,7 @@ export const RawMetricsGraph = ({
       x: xScale(point[0]),
       y: yScale(point[1]),
     };
-  };
-
-  const highlighted = getClosest();
+  }, [pos, series, xScale, yScale, margin]);
 
   const onMouseDown = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement, MouseEvent>): void => {
     // only left mouse button
