@@ -73,7 +73,6 @@ export const useAutoQuerySelector = ({
       ) {
         return;
       }
-      console.log('Resetting autoquery');
       setQueryExpression();
       dispatch(setAutoQuery('false'));
     })();
