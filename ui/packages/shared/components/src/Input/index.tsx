@@ -62,7 +62,7 @@ const Input = ({
           'relative rounded-md border border-gray-200 bg-white p-2 dark:border-gray-600 dark:bg-gray-900 focus:outline-none focus:ring-1 focus:z-10',
           {
             [className]: className.length > 0,
-            '!pr-8 rounded-r-none': hasAction,
+            '!pr-8': hasAction,
           }
         )}
         onKeyDown={e => {
@@ -80,7 +80,7 @@ const Input = ({
           {actionButton != null ? (
             actionButton
           ) : (
-            <Button variant="secondary" onClick={onAction} className={cx(' !px-2')}>
+            <Button variant="secondary" onClick={onAction} className={cx('h-full !px-2')}>
               {actionIcon}
             </Button>
           )}

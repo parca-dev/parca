@@ -116,7 +116,6 @@ const ProfileSelector = ({
     }
 
     setIsDataLoading(true);
-
     setQueryExpression();
     setIsDataLoading(false);
 
@@ -146,11 +145,11 @@ const ProfileSelector = ({
     enforcedProfileName !== '' ? enforcedProfileNameQuery() : Query.parse(queryExpressionString);
   const selectedProfileName = query.profileName();
 
-  const setNewQueryExpression = (expr: string): void => {
+  const setNewQueryExpression = (expr: string, updateTs = false): void => {
     const query = enforcedProfileName !== '' ? enforcedProfileNameQuery() : Query.parse(expr);
     const delta = query.profileType().delta;
-    const from = timeRangeSelection.getFromMs();
-    const to = timeRangeSelection.getToMs();
+    const from = updateTs ? timeRangeSelection.getFromMs() : querySelection.from;
+    const to = updateTs ? timeRangeSelection.getToMs() : querySelection.to;
     const mergeParams = delta
       ? {
           mergeFrom: from,
@@ -167,8 +166,8 @@ const ProfileSelector = ({
     });
   };
 
-  const setQueryExpression = (): void => {
-    setNewQueryExpression(query.toString());
+  const setQueryExpression = (updateTs = false): void => {
+    setNewQueryExpression(query.toString(), updateTs);
   };
 
   const addLabelMatcher = (
@@ -286,7 +285,7 @@ const ProfileSelector = ({
               disabled={searchDisabled}
               onClick={(e: React.MouseEvent<HTMLElement>) => {
                 e.preventDefault();
-                setQueryExpression();
+                setQueryExpression(true);
               }}
               id="matcher-search-button"
             >

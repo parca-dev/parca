@@ -11,9 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import format from 'date-fns/format';
 import moment from 'moment-timezone';
 
-import {AbsoluteDateValue} from '../DateTimePicker';
+import {ABSOLUTE_TIME_ALIASES, AbsoluteDateValue, DATE_FORMAT} from '../DateTimePicker';
 
 export const UNITS = {
   MINUTE: 'minute',
@@ -63,7 +64,14 @@ export class AbsoluteDate implements BaseDate {
     if (typeof this.value === 'string') {
       return this.value;
     }
-    return getUtcStringForDate(this);
+    return format(this.value, DATE_FORMAT);
+  }
+
+  getKey(): string {
+    if (typeof this.value === 'string') {
+      return this.value;
+    }
+    return this.getTime().getTime().toString();
   }
 }
 
@@ -126,7 +134,7 @@ export class DateTimeRange {
       return `${relativeDate.unit}|${relativeDate.value}`;
     }
     const absoluteDate = date as AbsoluteDate;
-    return `${absoluteDate.getTime().getTime()}`;
+    return absoluteDate.getKey();
   }
 
   getFromDateStringKey(): string {
@@ -160,8 +168,8 @@ export class DateTimeRange {
       if (rangeType === 'absolute') {
         const [fromKey, toKey] = rangeValueKey.split('-');
         return new DateTimeRange(
-          new AbsoluteDate(new Date(parseInt(fromKey, 10))),
-          new AbsoluteDate(new Date(parseInt(toKey, 10)))
+          parseAbsoluteDateExpression(fromKey),
+          parseAbsoluteDateExpression(toKey)
         );
       }
       throw new Error('Invalid range key');
@@ -175,6 +183,21 @@ export class DateTimeRange {
     return new DateTimeRange(new AbsoluteDate(new Date(from)), new AbsoluteDate(new Date(to)));
   }
 }
+
+const parseAbsoluteDateExpression = (expression: string): AbsoluteDate | undefined => {
+  if (expression === ABSOLUTE_TIME_ALIASES.NOW) {
+    return new AbsoluteDate(expression);
+  }
+  try {
+    const date = new Date(parseInt(expression, 10));
+    if (isNaN(date.getTime())) {
+      return undefined;
+    }
+    return new AbsoluteDate(date);
+  } catch (err) {
+    return undefined;
+  }
+};
 
 export const formatDateStringForUI: (dateString: DateUnion) => string = dateString => {
   if (dateString.isRelative()) {

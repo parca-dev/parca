@@ -24,6 +24,8 @@ import {convertLocalToUTCDate, convertUTCToLocalDate} from '@parca/utilities';
 import {AbsoluteDate} from '../DateTimeRangePicker/utils';
 import Input from '../Input';
 
+export const DATE_FORMAT = 'yyyy-MM-dd HH:mm:ss';
+
 const NOW = 'now';
 
 export type ABSOLUTE_TIME_ALIASES_TYPE = typeof NOW;
@@ -91,7 +93,12 @@ export const DateTimePicker = ({selected, onChange}: Props): JSX.Element => {
             }}
           />
 
-          <Popover.Panel ref={setPopperElement} style={styles.popper} {...attributes.popper}>
+          <Popover.Panel
+            ref={setPopperElement}
+            style={styles.popper}
+            {...attributes.popper}
+            className="z-10"
+          >
             <ReactDatePicker
               selected={convertUTCToLocalDate(selected.getTime())}
               onChange={date => {
@@ -102,7 +109,7 @@ export const DateTimePicker = ({selected, onChange}: Props): JSX.Element => {
                 setIsTextInputDirty(false);
               }}
               showTimeInput
-              dateFormat="yyyy-MM-dd HH:mm:ss"
+              dateFormat={DATE_FORMAT}
               className="h-[38px] w-full rounded-md border border-gray-200 p-2 text-center text-sm dark:border-gray-600 dark:bg-gray-900"
               inline
             />
