@@ -11,7 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import format from 'date-fns/format';
 import moment from 'moment-timezone';
 
 import {ABSOLUTE_TIME_ALIASES, AbsoluteDateValue, DATE_FORMAT} from '../DateTimePicker';
