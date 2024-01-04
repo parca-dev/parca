@@ -11,17 +11,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {AbsoluteDate, DateTimeRange, getDateHoursAgo} from '../../DateTimeRangePicker/utils';
 import DateTimeRangePicker from './StateWrappedComponent';
-
-const ComponentStory = (): JSX.Element => (
-  <div className="ml-8">
-    <DateTimeRangePicker key={''} value={undefined} />
-  </div>
-);
 
 export default {
   title: 'Components/DateTimeRangePicker ',
-  component: ComponentStory,
+  component: DateTimeRangePicker,
 };
 
-export const Default = ComponentStory.bind({});
+export const Default = {args: {}};
+
+export const Last1HWithAlias = {
+  args: {
+    range: new DateTimeRange(new AbsoluteDate(getDateHoursAgo(1)), new AbsoluteDate('now')),
+  },
+};
