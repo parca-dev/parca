@@ -13,7 +13,7 @@
 
 import {useEffect, useState} from 'react';
 
-import {UTCDateTimePicker} from '../../DateTimePicker';
+import {DateTimePicker} from '../../DateTimePicker';
 import {
   AbsoluteDate,
   DateTimeRange,
@@ -32,15 +32,15 @@ const AbsoluteDatePicker = ({
   range,
   onChange = () => null,
 }: AbsoluteDatePickerProps): JSX.Element => {
-  const [from, setFrom] = useState<Date>(
-    range.from.isRelative() ? getDateHoursAgo(1) : (range.from as AbsoluteDate).value
+  const [from, setFrom] = useState<AbsoluteDate>(
+    range.from.isRelative() ? new AbsoluteDate(getDateHoursAgo(1)) : (range.from as AbsoluteDate)
   );
-  const [to, setTo] = useState<Date>(
-    range.to.isRelative() ? getDateHoursAgo(0) : (range.to as AbsoluteDate).value
+  const [to, setTo] = useState<AbsoluteDate>(
+    range.to.isRelative() ? new AbsoluteDate(getDateHoursAgo(0)) : (range.to as AbsoluteDate)
   );
 
   useEffect(() => {
-    onChange(new AbsoluteDate(from), new AbsoluteDate(to));
+    onChange(from, to);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [from, to]);
 
@@ -49,11 +49,11 @@ const AbsoluteDatePicker = ({
       <div className="flex justify-center gap-x-2">
         <div>
           <div className="mb-0.5 mt-1.5 text-xs">Start</div>
-          <UTCDateTimePicker selected={from} onChange={date => date != null && setFrom(date)} />
+          <DateTimePicker selected={from} onChange={date => date != null && setFrom(date)} />
         </div>
         <div>
           <div className="mb-0.5 mt-1.5 text-xs">End</div>
-          <UTCDateTimePicker selected={to} onChange={date => date != null && setTo(date)} />
+          <DateTimePicker selected={to} onChange={date => date != null && setTo(date)} />
         </div>
       </div>
       <button
@@ -79,7 +79,9 @@ const AbsoluteDatePicker = ({
             return {unit: UNITS.DAY, value: roundToHundredth(timeRangeToDays)};
           };
 
-          const {unit, value} = getRelativeTimeRangeBetweenDates(to.getTime() - from.getTime());
+          const {unit, value} = getRelativeTimeRangeBetweenDates(
+            to.getTime().getTime() - from.getTime().getTime()
+          );
 
           onChange(new RelativeDate(unit, value), new RelativeDate(unit, 0));
         }}

@@ -22,6 +22,7 @@ interface SelfProps {
   className?: string;
   onAction?: () => void;
   actionIcon?: JSX.Element;
+  actionButton?: JSX.Element;
 }
 
 export type Props = React.InputHTMLAttributes<HTMLInputElement> & SelfProps;
@@ -30,6 +31,7 @@ const Input = ({
   className = '',
   onAction,
   actionIcon = <Icon icon="ep:arrow-right" />,
+  actionButton,
   onBlur,
   ...props
 }: Props): JSX.Element => {
@@ -60,7 +62,7 @@ const Input = ({
           'relative rounded-md border border-gray-200 bg-white p-2 dark:border-gray-600 dark:bg-gray-900 focus:outline-none focus:ring-1 focus:z-10',
           {
             [className]: className.length > 0,
-            'mr-8 rounded-r-none': hasAction,
+            '!pr-8 rounded-r-none': hasAction,
           }
         )}
         onKeyDown={e => {
@@ -70,13 +72,19 @@ const Input = ({
         }}
       />
       {hasAction ? (
-        <Button
-          variant="secondary"
-          onClick={onAction}
-          className="!absolute inset-y-0 right-0 !w-auto rounded-bl-none rounded-tl-none !px-2"
+        <div
+          className={cx(
+            '!absolute inset-y-[1px] right-[1px] rounded-bl-none rounded-tl-none rounded-md w-8 z-10'
+          )}
         >
-          {actionIcon}
-        </Button>
+          {actionButton != null ? (
+            actionButton
+          ) : (
+            <Button variant="secondary" onClick={onAction} className={cx(' !px-2')}>
+              {actionIcon}
+            </Button>
+          )}
+        </div>
       ) : null}
     </div>
   );

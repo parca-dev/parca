@@ -11,8 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {AbsoluteDateValue} from 'DateTimePicker';
 import moment from 'moment-timezone';
+
+import {AbsoluteDateValue} from '../DateTimePicker';
 
 export const UNITS = {
   MINUTE: 'minute',
@@ -108,7 +109,7 @@ export class DateTimeRange {
     if (date.isRelative()) {
       return getRelativeDateMs(date as RelativeDate);
     }
-    return (date as AbsoluteDate).value.getTime();
+    return (date as AbsoluteDate).getTime().getTime();
   }
 
   getFromMs(): number {
@@ -125,7 +126,7 @@ export class DateTimeRange {
       return `${relativeDate.unit}|${relativeDate.value}`;
     }
     const absoluteDate = date as AbsoluteDate;
-    return `${absoluteDate.value.getTime()}`;
+    return `${absoluteDate.getTime().getTime()}`;
   }
 
   getFromDateStringKey(): string {
@@ -226,7 +227,7 @@ const getRelativeDateMs = (date: RelativeDate): number => {
 
 export const getUtcStringForDate = (date: AbsoluteDate, format = 'lll'): string => {
   return moment
-    .tz(date.value.toISOString(), Intl.DateTimeFormat().resolvedOptions().timeZone)
+    .tz(date.getTime().toISOString(), Intl.DateTimeFormat().resolvedOptions().timeZone)
     .utc()
     .format(format);
 };

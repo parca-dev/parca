@@ -15,7 +15,7 @@ import {Button, IconButton} from './Button';
 import ButtonGroup from './ButtonGroup';
 import Card from './Card';
 import {ConditionalWrapper} from './ConditionalWrapper';
-import DateTimePicker from './DateTimePicker';
+import {DateTimePicker} from './DateTimePicker';
 import DateTimeRangePicker, {DateTimeRange} from './DateTimeRangePicker';
 import Dropdown from './Dropdown';
 import EmptyState from './EmptyState';
