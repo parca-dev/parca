@@ -64,7 +64,7 @@ export class AbsoluteDate implements BaseDate {
     if (typeof this.value === 'string') {
       return this.value;
     }
-    return format(this.value, DATE_FORMAT);
+    return getUtcStringForDate(this, DATE_FORMAT);
   }
 
   getKey(): string {

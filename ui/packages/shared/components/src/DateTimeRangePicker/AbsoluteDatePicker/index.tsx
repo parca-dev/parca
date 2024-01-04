@@ -58,7 +58,7 @@ const AbsoluteDatePicker = ({
       </div>
       <button
         type="button"
-        className="flex"
+        className="flex w-fit"
         onClick={() => {
           const getRelativeTimeRangeBetweenDates = (
             timeRange: number

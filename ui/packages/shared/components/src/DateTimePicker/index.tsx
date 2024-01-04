@@ -24,7 +24,7 @@ import {convertLocalToUTCDate, convertUTCToLocalDate} from '@parca/utilities';
 import {AbsoluteDate} from '../DateTimeRangePicker/utils';
 import Input from '../Input';
 
-export const DATE_FORMAT = 'yyyy-MM-dd HH:mm:ss';
+export const DATE_FORMAT = 'yyyy-MM-DD HH:mm:ss';
 
 const NOW = 'now';
 
@@ -76,6 +76,7 @@ export const DateTimePicker = ({selected, onChange}: Props): JSX.Element => {
               if (!isTextInputDirty) {
                 return;
               }
+              setIsTextInputDirty(false);
               if (textInput === NOW) {
                 onChange(new AbsoluteDate(textInput));
                 return;
@@ -85,7 +86,7 @@ export const DateTimePicker = ({selected, onChange}: Props): JSX.Element => {
                 setTextInput(selected.getUIString());
                 return;
               }
-              onChange(new AbsoluteDate(date));
+              onChange(new AbsoluteDate(convertLocalToUTCDate(date)));
             }}
             onChange={e => {
               setTextInput(e.target.value);

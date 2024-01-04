@@ -182,7 +182,7 @@ const RelativeDatePicker = ({
       </div>
       <button
         type="button"
-        className="flex"
+        className="flex w-fit"
         onClick={() => {
           onChange(
             new AbsoluteDate(getHistoricalDate(validRange)),
