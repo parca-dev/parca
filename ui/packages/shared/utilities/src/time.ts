@@ -139,15 +139,15 @@ export const formatForTimespan = (from: number, to: number): string => {
   const durationInSeconds = getTotalSeconds(duration);
 
   if (durationInSeconds <= getTotalSeconds({minutes: 4})) {
-    return 'H:mm:ss';
+    return 'HH:mm:ss';
   }
   if (durationInSeconds <= getTotalSeconds({hours: 13})) {
-    return 'H:mm';
+    return 'HH:mm';
   }
   if (durationInSeconds <= getTotalSeconds({hours: 25})) {
-    return 'H:mm d/M';
+    return 'HH:mm M/d';
   }
-  return 'd/M';
+  return 'M/d';
 };
 
 export const getStepDuration = (start: number, end: number, stepCount = 1000): Duration => {
