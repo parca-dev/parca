@@ -26,7 +26,6 @@ import (
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 
@@ -117,7 +116,7 @@ func TestPprofToArrow(t *testing.T) {
 	ingester := NewIngester(logger, table, schema)
 	err = ingester.Ingest(ctx, normalizedReq)
 	require.NoError(t, err)
-	assert.Equal(t, 1, len(table.inserts))
+	require.Equal(t, 1, len(table.inserts))
 	got, err := table.inserts[0].MarshalJSON()
 	require.NoError(t, err)
 	want, err := os.ReadFile("testdata/ingest_arrow.json")
@@ -184,7 +183,7 @@ func TestUncompressedPprofToArrow(t *testing.T) {
 	ingester := NewIngester(logger, table, schema)
 	err = ingester.Ingest(ctx, normalizedReq)
 	require.NoError(t, err)
-	assert.Equal(t, 1, len(table.inserts))
+	require.Equal(t, 1, len(table.inserts))
 	got, err := table.inserts[0].MarshalJSON()
 	require.NoError(t, err)
 	want, err := os.ReadFile("testdata/ingest_uncompressed_arrow.json")
