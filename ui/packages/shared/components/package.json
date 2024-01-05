@@ -1,6 +1,6 @@
 {
   "name": "@parca/components",
-  "version": "0.16.241",
+  "version": "0.16.242",
   "description": "A component library for Parca",
   "main": "dist/index.js",
   "scripts": {
@@ -15,7 +15,7 @@
     "@parca/client": "^0.16.100",
     "@parca/dynamicsize": "^0.16.60",
     "@parca/hooks": "^0.0.38",
-    "@parca/icons": "^0.16.61",
+    "@parca/icons": "^0.16.62",
     "@parca/parser": "^0.16.68",
     "@parca/store": "^0.16.122",
     "@parca/utilities": "^0.0.50",
