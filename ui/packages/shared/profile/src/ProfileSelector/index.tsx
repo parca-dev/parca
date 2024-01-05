@@ -105,12 +105,7 @@ const ProfileSelector = ({
   const {viewComponent} = useParcaContext();
 
   const [timeRangeSelection, setTimeRangeSelection] = useState(
-    DateTimeRange.fromRangeKey(
-      querySelection.timeSelection,
-      querySelection.from,
-      querySelection.to,
-      'ProfileSelector constructor'
-    )
+    DateTimeRange.fromRangeKey(querySelection.timeSelection, querySelection.from, querySelection.to)
   );
 
   const [queryExpressionString, setQueryExpressionString] = useState(querySelection.expression);
