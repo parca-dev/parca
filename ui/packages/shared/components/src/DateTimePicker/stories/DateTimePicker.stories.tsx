@@ -11,18 +11,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {AbsoluteDate, DateTimeRange, getDateHoursAgo} from '../../DateTimeRangePicker/utils';
-import DateTimeRangePicker from './StateWrappedComponent';
+import DateTimePicker from './StateWrappedComponent';
+
+import 'react-datepicker/dist/react-datepicker.css';
 
 export default {
-  title: 'Components/DateTimeRangePicker ',
-  component: DateTimeRangePicker,
+  title: 'Components/DateTimePicker ',
+  component: DateTimePicker,
 };
 
 export const Default = {args: {}};
 
-export const Last1HWithAlias = {
-  args: {
-    range: new DateTimeRange(new AbsoluteDate(getDateHoursAgo(1)), new AbsoluteDate('now')),
-  },
-};
+export const Now = {args: {value: 'now'}};

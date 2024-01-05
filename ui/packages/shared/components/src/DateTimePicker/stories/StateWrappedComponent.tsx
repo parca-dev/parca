@@ -11,18 +11,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {AbsoluteDate, DateTimeRange, getDateHoursAgo} from '../../DateTimeRangePicker/utils';
-import DateTimeRangePicker from './StateWrappedComponent';
+import {useState} from 'react';
 
-export default {
-  title: 'Components/DateTimeRangePicker ',
-  component: DateTimeRangePicker,
+import {AbsoluteDate} from '../../DateTimeRangePicker/utils';
+import {AbsoluteDateValue, DateTimePicker} from '../index';
+
+const StateWrappedComponent = (props: {value: AbsoluteDateValue}): JSX.Element => {
+  const [time, setTime] = useState<AbsoluteDate>(new AbsoluteDate(props.value ?? new Date()));
+
+  return (
+    <div className="flex flex-col gap-4">
+      <DateTimePicker selected={time} onChange={val => setTime(val)} />
+      <span>Evaluated value: {time.getTime().toISOString()}</span>
+    </div>
+  );
 };
 
-export const Default = {args: {}};
-
-export const Last1HWithAlias = {
-  args: {
-    range: new DateTimeRange(new AbsoluteDate(getDateHoursAgo(1)), new AbsoluteDate('now')),
-  },
-};
+export default StateWrappedComponent;

@@ -55,7 +55,7 @@ const sanitizeDateRange = (
   from_a: number,
   to_a: number
 ): {time_selection_a: string; from_a: number; to_a: number} => {
-  const range = DateTimeRange.fromRangeKey(time_selection_a);
+  const range = DateTimeRange.fromRangeKey(time_selection_a, from_a, to_a);
   if (from_a == null && to_a == null) {
     from_a = range.getFromMs();
     to_a = range.getToMs();

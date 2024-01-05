@@ -5,7 +5,7 @@
   "main": "src/index.tsx",
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
-    "watch": "tsc-watch --onSuccess 'tailwindcss -o dist/styles.css --minify'"
+    "watch": "tsc-watch --onCompilationComplete 'tailwindcss -o dist/styles.css'"
   },
   "keywords": [],
   "author": "",

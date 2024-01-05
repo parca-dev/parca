@@ -14,11 +14,26 @@
 import {useState} from 'react';
 
 import DateTimeRangePicker from '../index';
-import {DateTimeRange} from '../utils';
+import {AbsoluteDate, DateTimeRange, DateUnion, RelativeDate} from '../utils';
+
+const toString = (date: DateUnion): string => {
+  return date.isRelative()
+    ? date.value.toString() + ' ' + (date as RelativeDate).unit
+    : (date as AbsoluteDate).getTime().toISOString();
+};
 
 const StateWrappedComponent = (props: {key: string; value: any}): JSX.Element => {
   const [range, setRange] = useState(new DateTimeRange());
-  return <DateTimeRangePicker range={range} onRangeSelection={setRange} {...props} />;
+  return (
+    <div className="flex flex-col gap-4 w-fit">
+      <DateTimeRangePicker range={range} onRangeSelection={setRange} {...props} />
+      <div className="flex flex-col gap-1 border-t-2 text-sm pt-1 mt-4">
+        Evaluated values:
+        <span>from: {toString(range.from)}</span>
+        <span>to: {toString(range.to)}</span>
+      </div>
+    </div>
+  );
 };
 
 export default StateWrappedComponent;

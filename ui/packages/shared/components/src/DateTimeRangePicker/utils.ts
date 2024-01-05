@@ -13,6 +13,8 @@
 
 import moment from 'moment-timezone';
 
+import {ABSOLUTE_TIME_ALIASES, AbsoluteDateValue, DATE_FORMAT} from '../DateTimePicker';
+
 export const UNITS = {
   MINUTE: 'minute',
   HOUR: 'hour',
@@ -29,23 +31,66 @@ export type POSITION_TYPE = (typeof POSITIONS)[keyof typeof POSITIONS];
 
 interface BaseDate {
   isRelative: () => boolean;
+  lastEvaluated: number;
+  getMs: (forceEvaluate?: boolean) => number;
 }
 export class RelativeDate implements BaseDate {
   isRelative = (): boolean => true;
+  lastEvaluated = 0;
   unit: UNIT_TYPE;
   value: number;
 
-  constructor(unit: UNIT_TYPE, value: number) {
+  constructor(unit: UNIT_TYPE, value: number, lastEvaluated = 0) {
     this.unit = unit;
     this.value = value;
+    this.lastEvaluated = lastEvaluated;
+  }
+
+  getMs(forceEvaluate = false): number {
+    if (forceEvaluate || this.lastEvaluated === 0) {
+      this.lastEvaluated = getRelativeDateMs(this);
+    }
+    return this.lastEvaluated;
   }
 }
 
 export class AbsoluteDate implements BaseDate {
   isRelative = (): boolean => false;
-  value: Date;
-  constructor(value?: Date) {
+  lastEvaluated = 0;
+  value: AbsoluteDateValue;
+  constructor(value?: AbsoluteDateValue, lastEvaluated = 0) {
     this.value = value ?? getDateHoursAgo(1);
+    this.lastEvaluated = lastEvaluated;
+  }
+
+  getTime(): Date {
+    if (typeof this.value === 'string') {
+      if (this.value === 'now') {
+        return new Date();
+      }
+    }
+    return this.value;
+  }
+
+  getUIString(): string {
+    if (typeof this.value === 'string') {
+      return this.value;
+    }
+    return getUtcStringForDate(this, DATE_FORMAT);
+  }
+
+  getKey(): string {
+    if (typeof this.value === 'string') {
+      return this.value;
+    }
+    return this.getTime().getTime().toString();
+  }
+
+  getMs(forceEvaluate = false): number {
+    if (forceEvaluate || this.lastEvaluated === 0) {
+      this.lastEvaluated = this.getTime().getTime();
+    }
+    return this.lastEvaluated;
   }
 }
 
@@ -87,19 +132,12 @@ export class DateTimeRange {
     }
   }
 
-  getMs(date: DateUnion): number {
-    if (date.isRelative()) {
-      return getRelativeDateMs(date as RelativeDate);
-    }
-    return (date as AbsoluteDate).value.getTime();
+  getFromMs(forceEvaluate = false): number {
+    return this.from.getMs(forceEvaluate);
   }
 
-  getFromMs(): number {
-    return this.getMs(this.from);
-  }
-
-  getToMs(): number {
-    return this.getMs(this.to);
+  getToMs(forceEvaluate = false): number {
+    return this.to.getMs(forceEvaluate);
   }
 
   getDateStringKey(date: DateUnion): string {
@@ -108,7 +146,7 @@ export class DateTimeRange {
       return `${relativeDate.unit}|${relativeDate.value}`;
     }
     const absoluteDate = date as AbsoluteDate;
-    return `${absoluteDate.value.getTime()}`;
+    return absoluteDate.getKey();
   }
 
   getFromDateStringKey(): string {
@@ -126,7 +164,11 @@ export class DateTimeRange {
     return `absolute:${this.getFromDateStringKey()}-${this.getToDateStringKey()}`;
   }
 
-  static fromRangeKey(rangeKey: string | undefined): DateTimeRange {
+  static fromRangeKey(
+    rangeKey: string | undefined,
+    evaluatedFrom?: number | undefined,
+    evaluatedTo?: number | undefined
+  ): DateTimeRange {
     if (rangeKey === undefined) {
       return new DateTimeRange();
     }
@@ -135,16 +177,21 @@ export class DateTimeRange {
       if (rangeType === 'relative') {
         const [unit, value] = rangeValueKey.split('|');
         return new DateTimeRange(
-          new RelativeDate(unit, parseInt(value, 10)),
-          new RelativeDate(UNITS.MINUTE, 0)
+          new RelativeDate(unit, parseInt(value, 10), evaluatedFrom),
+          new RelativeDate(UNITS.MINUTE, 0, evaluatedTo)
         );
       }
       if (rangeType === 'absolute') {
         const [fromKey, toKey] = rangeValueKey.split('-');
-        return new DateTimeRange(
-          new AbsoluteDate(new Date(parseInt(fromKey, 10))),
-          new AbsoluteDate(new Date(parseInt(toKey, 10)))
-        );
+        const from = parseAbsoluteDateExpression(fromKey);
+        if (from != null) {
+          from.lastEvaluated = evaluatedFrom ?? 0;
+        }
+        const to = parseAbsoluteDateExpression(toKey);
+        if (to != null) {
+          to.lastEvaluated = evaluatedTo ?? 0;
+        }
+        return new DateTimeRange(from, to);
       }
       throw new Error('Invalid range key');
     } catch (err) {
@@ -157,6 +204,21 @@ export class DateTimeRange {
     return new DateTimeRange(new AbsoluteDate(new Date(from)), new AbsoluteDate(new Date(to)));
   }
 }
+
+const parseAbsoluteDateExpression = (expression: string): AbsoluteDate | undefined => {
+  if (expression === ABSOLUTE_TIME_ALIASES.NOW) {
+    return new AbsoluteDate(expression);
+  }
+  try {
+    const date = new Date(parseInt(expression, 10));
+    if (isNaN(date.getTime())) {
+      return undefined;
+    }
+    return new AbsoluteDate(date);
+  } catch (err) {
+    return undefined;
+  }
+};
 
 export const formatDateStringForUI: (dateString: DateUnion) => string = dateString => {
   if (dateString.isRelative()) {
@@ -209,7 +271,7 @@ const getRelativeDateMs = (date: RelativeDate): number => {
 
 export const getUtcStringForDate = (date: AbsoluteDate, format = 'lll'): string => {
   return moment
-    .tz(date.value.toISOString(), Intl.DateTimeFormat().resolvedOptions().timeZone)
+    .tz(date.getTime().toISOString(), Intl.DateTimeFormat().resolvedOptions().timeZone)
     .utc()
     .format(format);
 };
