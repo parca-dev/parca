@@ -17,17 +17,16 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"testing"
 
 	"github.com/apache/arrow/go/v14/arrow"
 	"github.com/go-kit/log"
-	"github.com/parquet-go/parquet-go"
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 
@@ -53,7 +52,7 @@ func MustReadAllGzip(t require.TestingT, filename string) []byte {
 type fakeTable struct {
 	schema *dynparquet.Schema
 
-	inserts [][]byte
+	inserts []arrow.Record
 }
 
 func (t *fakeTable) Schema() *dynparquet.Schema {
@@ -61,18 +60,12 @@ func (t *fakeTable) Schema() *dynparquet.Schema {
 }
 
 func (t *fakeTable) InsertRecord(ctx context.Context, record arrow.Record) (uint64, error) {
+	record.Retain()
+	t.inserts = append(t.inserts, record)
 	return 0, nil
 }
 
-func (t *fakeTable) Insert(ctx context.Context, data []byte) (uint64, error) {
-	cpy := make([]byte, len(data))
-	copy(cpy, data)
-	t.inserts = append(t.inserts, cpy)
-
-	return 0, nil
-}
-
-func TestPprofToParquet(t *testing.T) {
+func TestPprofToArrow(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := noop.NewTracerProvider().Tracer("")
@@ -124,29 +117,15 @@ func TestPprofToParquet(t *testing.T) {
 	ingester := NewIngester(logger, table, schema)
 	err = ingester.Ingest(ctx, normalizedReq)
 	require.NoError(t, err)
-
-	for i, insert := range table.inserts {
-		serBuf, err := dynparquet.ReaderFromBytes(insert)
-		require.NoError(t, err)
-
-		rows := serBuf.Reader()
-		rowBuf := []parquet.Row{{}}
-		for {
-			_, err := rows.ReadRows(rowBuf)
-			if err == io.EOF {
-				break
-			}
-			if err != io.EOF {
-				if err != nil {
-					require.NoError(t, os.WriteFile(fmt.Sprintf("test-%d.parquet", i), insert, 0o777))
-				}
-				require.NoError(t, err)
-			}
-		}
-	}
+	assert.Equal(t, 1, len(table.inserts))
+	got, err := table.inserts[0].MarshalJSON()
+	require.NoError(t, err)
+	want, err := os.ReadFile("testdata/ingest_arrow.json")
+	require.NoError(t, err)
+	require.JSONEq(t, string(want), string(got))
 }
 
-func TestUncompressedPprofToParquet(t *testing.T) {
+func TestUncompressedPprofToArrow(t *testing.T) {
 	logger := log.NewNopLogger()
 	reg := prometheus.NewRegistry()
 	tracer := noop.NewTracerProvider().Tracer("")
@@ -205,26 +184,12 @@ func TestUncompressedPprofToParquet(t *testing.T) {
 	ingester := NewIngester(logger, table, schema)
 	err = ingester.Ingest(ctx, normalizedReq)
 	require.NoError(t, err)
-
-	for i, insert := range table.inserts {
-		serBuf, err := dynparquet.ReaderFromBytes(insert)
-		require.NoError(t, err)
-
-		rows := serBuf.Reader()
-		rowBuf := []parquet.Row{{}}
-		for {
-			_, err := rows.ReadRows(rowBuf)
-			if err == io.EOF {
-				break
-			}
-			if err != io.EOF {
-				if err != nil {
-					require.NoError(t, os.WriteFile(fmt.Sprintf("test-%d.parquet", i), insert, 0o777))
-				}
-				require.NoError(t, err)
-			}
-		}
-	}
+	assert.Equal(t, 1, len(table.inserts))
+	got, err := table.inserts[0].MarshalJSON()
+	require.NoError(t, err)
+	want, err := os.ReadFile("testdata/ingest_uncompressed_arrow.json")
+	require.NoError(t, err)
+	require.JSONEq(t, string(want), string(got))
 }
 
 func BenchmarkNormalizeWriteRawRequest(b *testing.B) {
