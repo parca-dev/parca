@@ -69,13 +69,21 @@ const RelativeDatePicker = ({
   onChange = () => null,
 }: RelativeDatePickerProps): JSX.Element => {
   const date = range.from as RelativeDate;
-  const [rangeInputString, setRangeInputString] = useState<string>(`${date.value}${date.unit}`);
-  const [validRange, setValidRange] = useState<{value: number; unit: string}>({
+  const [rangeInputString, setRangeInputString] = useState<string>(
+    `${date.value}${unitShort[date.unit]}`
+  );
+  const [validRange, setValidRange] = useState<{
+    value: number;
+    unit: string;
+  }>({
     value: date.value,
     unit: date.unit,
   });
 
   useEffect(() => {
+    if (date.value === validRange.value && date.unit === validRange.unit) {
+      return;
+    }
     setRangeInputString(`${validRange.value}${unitShort[validRange.unit]}`);
     onChange(new RelativeDate(validRange.unit, validRange.value), NOW);
     // eslint-disable-next-line react-hooks/exhaustive-deps

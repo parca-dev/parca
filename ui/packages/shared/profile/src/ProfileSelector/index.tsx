@@ -105,7 +105,12 @@ const ProfileSelector = ({
   const {viewComponent} = useParcaContext();
 
   const [timeRangeSelection, setTimeRangeSelection] = useState(
-    DateTimeRange.fromRangeKey(querySelection.timeSelection)
+    DateTimeRange.fromRangeKey(
+      querySelection.timeSelection,
+      querySelection.from,
+      querySelection.to,
+      'ProfileSelector constructor'
+    )
   );
 
   const [queryExpressionString, setQueryExpressionString] = useState(querySelection.expression);
@@ -148,8 +153,8 @@ const ProfileSelector = ({
   const setNewQueryExpression = (expr: string, updateTs = false): void => {
     const query = enforcedProfileName !== '' ? enforcedProfileNameQuery() : Query.parse(expr);
     const delta = query.profileType().delta;
-    const from = updateTs ? timeRangeSelection.getFromMs() : querySelection.from;
-    const to = updateTs ? timeRangeSelection.getToMs() : querySelection.to;
+    const from = timeRangeSelection.getFromMs(updateTs);
+    const to = timeRangeSelection.getToMs(updateTs);
     const mergeParams = delta
       ? {
           mergeFrom: from,
