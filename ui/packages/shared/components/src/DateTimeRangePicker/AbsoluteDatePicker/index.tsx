@@ -44,6 +44,15 @@ const AbsoluteDatePicker = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [from, to]);
 
+  useEffect(() => {
+    setFrom(
+      range.from.isRelative() ? new AbsoluteDate(getDateHoursAgo(1)) : (range.from as AbsoluteDate)
+    );
+    setTo(
+      range.to.isRelative() ? new AbsoluteDate(getDateHoursAgo(0)) : (range.to as AbsoluteDate)
+    );
+  }, [range]);
+
   return (
     <div className="flex flex-col">
       <div className="flex justify-center gap-x-2">
