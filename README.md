@@ -258,4 +258,4 @@ This project follows the [all-contributors](https://github.com/all-contributors/
 
 We use Meticulous to automatically test our UI for any unwanted changes.
 
-[<img src="https://meticulous.ai/assets/images/new_logo.svg" width="300">](https://meticulous.ai/?utm_source=parca&utm_campaign=oss)
+[<img src="https://github.com/parca-dev/parca/assets/9016992/480911fe-52d7-4cf1-965d-59ea88550bc0" width="300">](https://meticulous.ai/?utm_source=parca&utm_campaign=oss)
