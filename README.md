@@ -258,4 +258,4 @@ This project follows the [all-contributors](https://github.com/all-contributors/
 
 We use Meticulous to automatically test our UI for any unwanted changes.
 
-[<img src="https://assets-global.website-files.com/65310f49fd3cda9049c4e065/6531226a672d4c126ffe4ca1_meticulous.svg" width="300">](https://meticulous.ai/?utm_source=parca&utm_campaign=oss)
+[<div style="padding:10px; background-color:#ccc; width:fit-content;"><img src="https://assets-global.website-files.com/65310f49fd3cda9049c4e065/6531226a672d4c126ffe4ca1_meticulous.svg" width="300"></div>](https://meticulous.ai/?utm_source=parca&utm_campaign=oss)
