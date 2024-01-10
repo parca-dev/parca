@@ -73,7 +73,7 @@
     "@testing-library/react": "13.4.0",
     "@types/command-line-args": "5.2.3",
     "@types/jest": "29.5.10",
-    "@types/node": "18.19.4",
+    "@types/node": "18.19.6",
     "@types/react": "18.2.41",
     "@types/react-dom": "18.2.17",
     "@typescript-eslint/eslint-plugin": "5.62.0",
