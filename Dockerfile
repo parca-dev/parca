@@ -41,6 +41,7 @@ LABEL \
     org.opencontainers.image.description="Continuous profiling for analysis of CPU and memory usage, down to the line number and throughout time. Saving infrastructure cost, improving performance, and increasing reliability." \
     org.opencontainers.image.licenses="Apache-2.0"
 
+RUN mkdir /data && chown nobody /data
 USER nobody
 
 COPY --chown=0:0 --from=builder /bin/grpc_health_probe /
