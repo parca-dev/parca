@@ -72,7 +72,7 @@
     "@testing-library/jest-dom": "5.17.0",
     "@testing-library/react": "13.4.0",
     "@types/command-line-args": "5.2.3",
-    "@types/jest": "29.5.10",
+    "@types/jest": "29.5.11",
     "@types/node": "18.19.6",
     "@types/react": "18.2.46",
     "@types/react-dom": "18.2.18",
