@@ -124,7 +124,7 @@
     "storybook-dark-mode": "2.1.1",
     "style-loader": "3.3.3",
     "ts-jest": "29.1.1",
-    "ts-node": "10.9.1",
+    "ts-node": "10.9.2",
     "tsc-watch": "6.0.4",
     "typescript": "4.9.5",
     "webpack": "5.89.0"
