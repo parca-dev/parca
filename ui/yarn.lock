@@ -2301,13 +2301,13 @@
   dependencies:
     tslib "^2.4.0"
 
-"@grafana/data@9.5.14":
-  version "9.5.14"
-  resolved "https://registry.yarnpkg.com/@grafana/data/-/data-9.5.14.tgz#379bbc8b033fdde5ad2b0c136f2739ebce8e2abb"
-  integrity sha512-+AuogdRjmmHfazltEvuInMaH+wqvvpkhUAQXr92rharA59Lb++JIGp/iqOLdUMJSLBMag0bbK1azA8kmcPtiJQ==
+"@grafana/data@9.5.15":
+  version "9.5.15"
+  resolved "https://registry.yarnpkg.com/@grafana/data/-/data-9.5.15.tgz#842ba5cd2ac750be4c9174c47254f4f8de3fe722"
+  integrity sha512-zeVV2dgU1c1TnlshA5mFR5pZDv3KM544V+866LQ4QkL6Ii5GV6UsnuSSGFPEVqwCTQbdu4u6hn3F+blZIItD3A==
   dependencies:
     "@braintree/sanitize-url" "6.0.2"
-    "@grafana/schema" "9.5.14"
+    "@grafana/schema" "9.5.15"
     "@types/d3-interpolate" "^3.0.0"
     d3-interpolate "3.0.1"
     date-fns "2.29.3"
@@ -2329,10 +2329,10 @@
     uplot "1.6.24"
     xss "^1.0.14"
 
-"@grafana/e2e-selectors@9.5.14":
-  version "9.5.14"
-  resolved "https://registry.yarnpkg.com/@grafana/e2e-selectors/-/e2e-selectors-9.5.14.tgz#c97f2884757097c2579aac3e0dc1356558967b59"
-  integrity sha512-IcVSWq6F13I6/ub0yr7hWsfCwlg8FzJ/wPrnf6mGUprC6j/vVJihqWLHgXXdqVIWJ8zJC34u/sHDgCtmKoBgfQ==
+"@grafana/e2e-selectors@9.5.15":
+  version "9.5.15"
+  resolved "https://registry.yarnpkg.com/@grafana/e2e-selectors/-/e2e-selectors-9.5.15.tgz#9986906d744225485c7f5382e60824794818216d"
+  integrity sha512-EGCjNsFzyyv8BDZ9lxif/AlazMmsXiOvvIu9+7ONSv4Wd03a4AM8ARosM3FLPHD4dqPc1+wF6ozssENv0aQsUw==
   dependencies:
     "@grafana/tsconfig" "^1.2.0-rc1"
     tslib "2.5.0"
@@ -2371,15 +2371,15 @@
     ua-parser-js "^1.0.32"
     web-vitals "^3.1.1"
 
-"@grafana/runtime@9.5.14":
-  version "9.5.14"
-  resolved "https://registry.yarnpkg.com/@grafana/runtime/-/runtime-9.5.14.tgz#c085acfa153b694e6fcd3077efda2396b1941865"
-  integrity sha512-H01nhzR+89kjVZIC4zgNCtwdeed6WplJdZ3ARJiLXwhqBIbLAd+3lHoeaxqgJnEwMrd2o/KO3y6Qkg3mrbEYxg==
+"@grafana/runtime@9.5.15":
+  version "9.5.15"
+  resolved "https://registry.yarnpkg.com/@grafana/runtime/-/runtime-9.5.15.tgz#71cbce20101c656d3e070d8b2496e8def6df18ef"
+  integrity sha512-fka8Pfiq4c+8QIElPXC5YbNbD/L1I6hWDeBAAelIUoKgNyVti+HWyP1jDpJTuT+gBkjPlMa7RKStyYCzQXhNOw==
   dependencies:
-    "@grafana/data" "9.5.14"
-    "@grafana/e2e-selectors" "9.5.14"
+    "@grafana/data" "9.5.15"
+    "@grafana/e2e-selectors" "9.5.15"
     "@grafana/faro-web-sdk" "1.0.2"
-    "@grafana/ui" "9.5.14"
+    "@grafana/ui" "9.5.15"
     "@sentry/browser" "6.19.7"
     history "4.10.1"
     lodash "4.17.21"
@@ -2387,17 +2387,17 @@
     systemjs "0.20.19"
     tslib "2.5.0"
 
-"@grafana/schema@9.5.14":
-  version "9.5.14"
-  resolved "https://registry.yarnpkg.com/@grafana/schema/-/schema-9.5.14.tgz#25de21a57aa0c7a856e6f78d2258817ab759626b"
-  integrity sha512-CuntAhellcdR5VHDrrMgSLcNS10nQOySBCPHeaJVgiLdwCFovGrniV+dNtGXyutCEDzXo/SwK5iK9aWU38k0jA==
+"@grafana/schema@9.5.15":
+  version "9.5.15"
+  resolved "https://registry.yarnpkg.com/@grafana/schema/-/schema-9.5.15.tgz#767aa57cc9e1eaa7d6540ece1ca1a27acb4a38df"
+  integrity sha512-uq32n4P1bKoI37KTfNgiNvDCW9TbLbEEVh2LjBRzhhwUeZ7qRus9hX0q1gVN0KqgLpt2cR61wCHIXpGCUc7Zmw==
   dependencies:
     tslib "2.5.0"
 
-"@grafana/toolkit@9.5.14":
-  version "9.5.14"
-  resolved "https://registry.yarnpkg.com/@grafana/toolkit/-/toolkit-9.5.14.tgz#9c4fc70d172a8c7d8511b59a273a01725515b646"
-  integrity sha512-4lfjr+rVvwtJC4TlZ0Tw1uxPYMwCFy+5eag3gfi19P9BZAHxoYb6li7QEjgtjUBpYBbcRg4JQ0QUWl/fc70c9A==
+"@grafana/toolkit@9.5.15":
+  version "9.5.15"
+  resolved "https://registry.yarnpkg.com/@grafana/toolkit/-/toolkit-9.5.15.tgz#ef47f71f34491155ee4780be7ce6fe284406c91e"
+  integrity sha512-ui5shX3I8nudgr+LgWulSAtIDuuIeySG8Wqbivm6iuxaJOlbpSjzFw61ZJN+WK26qbTec/ddsj0v2AzGv03MXQ==
   dependencies:
     "@babel/core" "7.18.9"
     "@babel/plugin-proposal-class-properties" "7.18.6"
@@ -2411,10 +2411,10 @@
     "@babel/preset-env" "7.18.9"
     "@babel/preset-react" "7.18.6"
     "@babel/preset-typescript" "7.18.6"
-    "@grafana/data" "9.5.14"
+    "@grafana/data" "9.5.15"
     "@grafana/eslint-config" "5.1.0"
     "@grafana/tsconfig" "^1.2.0-rc1"
-    "@grafana/ui" "9.5.14"
+    "@grafana/ui" "9.5.15"
     "@jest/core" "27.5.1"
     "@types/command-exists" "^1.2.0"
     "@types/eslint" "8.4.1"
@@ -2489,17 +2489,17 @@
   resolved "https://registry.yarnpkg.com/@grafana/tsconfig/-/tsconfig-1.2.0-rc1.tgz#10973c978ec95b0ea637511254b5f478bce04de7"
   integrity sha512-+SgQeBQ1pT6D/E3/dEdADqTrlgdIGuexUZ8EU+8KxQFKUeFeU7/3z/ayI2q/wpJ/Kr6WxBBNlrST6aOKia19Ag==
 
-"@grafana/ui@9.5.14":
-  version "9.5.14"
-  resolved "https://registry.yarnpkg.com/@grafana/ui/-/ui-9.5.14.tgz#5a95159167b21f7b19807416c86bbd70ec40a531"
-  integrity sha512-q6VsLqM32rAiQ2cfnuIu5DuY/7Foisf7rz9UyeXa2H04ik/gS84WbG/m+p7oHy7TsmZZEo5UJQdWHQ5T+2/WNQ==
+"@grafana/ui@9.5.15":
+  version "9.5.15"
+  resolved "https://registry.yarnpkg.com/@grafana/ui/-/ui-9.5.15.tgz#7899141ff8162fe1e791add937aa50c9bd34a512"
+  integrity sha512-rp+QuRrvvOUXbOJvfsl1j68nHafz/8fArT0EvnGVf86GKE9SbdhYcyZZ1gwgeSMLgTeLE+7D9rw3znAl3DDH5A==
   dependencies:
     "@emotion/css" "11.10.6"
     "@emotion/react" "11.10.6"
-    "@grafana/data" "9.5.14"
-    "@grafana/e2e-selectors" "9.5.14"
+    "@grafana/data" "9.5.15"
+    "@grafana/e2e-selectors" "9.5.15"
     "@grafana/faro-web-sdk" "1.0.2"
-    "@grafana/schema" "9.5.14"
+    "@grafana/schema" "9.5.15"
     "@leeoniya/ufuzzy" "1.0.6"
     "@monaco-editor/react" "4.4.6"
     "@popperjs/core" "2.11.6"
