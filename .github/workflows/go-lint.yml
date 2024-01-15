@@ -80,7 +80,7 @@ jobs:
         run: make go/build
 
       - name: Format
-        run: make go/fmt && git diff --exit-code
+        run: make go/fmt && git diff --exit-code ':!ui/packages/app/web/build'
 
       - name: Lint
         run: make go/lint
