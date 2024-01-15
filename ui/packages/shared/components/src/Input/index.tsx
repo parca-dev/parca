@@ -59,7 +59,7 @@ const Input = ({
       <input
         {...props}
         className={cx(
-          'relative rounded-md border border-gray-200 bg-white p-2 dark:border-gray-600 dark:bg-gray-900 focus:outline-none focus:ring-1 focus:z-10',
+          'relative rounded-md border border-gray-200 bg-white p-2 dark:border-gray-600 dark:bg-gray-900 focus:outline-none focus:ring-1 focus:z-2',
           {
             [className]: className.length > 0,
             '!pr-8': hasAction,
@@ -74,7 +74,7 @@ const Input = ({
       {hasAction ? (
         <div
           className={cx(
-            '!absolute inset-y-[1px] right-[1px] rounded-bl-none rounded-tl-none rounded-md w-8 z-10'
+            '!absolute inset-y-[1px] right-[1px] rounded-bl-none rounded-tl-none rounded-md w-8 z-4'
           )}
         >
           {actionButton != null ? (

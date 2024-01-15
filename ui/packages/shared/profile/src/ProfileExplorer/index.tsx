@@ -68,7 +68,19 @@ const filterSuffix = (
   o: {[key: string]: string | string[] | undefined},
   suffix: string
 ): {[key: string]: string | string[] | undefined} =>
-  Object.fromEntries(Object.entries(o).filter(([key]) => !key.endsWith(suffix)));
+  Object.fromEntries(
+    Object.entries(o)
+      .filter(([key]) => !key.endsWith(suffix))
+      .map(([key, value]) => {
+        if (typeof value === 'string') {
+          return [key, encodeURIComponent(value)];
+        }
+        if (Array.isArray(value)) {
+          return [key, value.map(v => encodeURIComponent(v))];
+        }
+        return [key, value];
+      })
+  );
 
 const swapQueryParameters = (o: {
   [key: string]: string | string[] | undefined;
