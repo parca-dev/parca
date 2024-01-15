@@ -123,12 +123,18 @@ export const getLastItem = (thePath: string | undefined | null): string | undefi
 
 const transformToArray = (params: string): string[] => params.split(',');
 
-export const parseParams = (querystring: string): Record<string, string | string[] | undefined> => {
+export const parseParams = (
+  querystring: string,
+  encodeValues?: boolean
+): Record<string, string | string[] | undefined> => {
   const params = new URLSearchParams(querystring);
 
   const obj: Record<string, string | string[]> = {};
   for (const key of Array.from(params.keys())) {
-    const values = params.getAll(key);
+    const values =
+      encodeValues === true
+        ? params.getAll(key).map(value => encodeURIComponent(value))
+        : params.getAll(key);
     if (values.length > 1) {
       obj[key] = values;
     } else {
