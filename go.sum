@@ -36,6 +36,8 @@ github.com/AzureAD/microsoft-authentication-library-for-go v1.1.1/go.mod h1:wP83
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/DataDog/datadog-go v3.2.0+incompatible/go.mod h1:LButxg5PwREeZtORoXG3tL4fMGNddJ+vMq1mwgfaqoQ=
+github.com/JohnCGriffin/overflow v0.0.0-20211019200055-46fa312c352c h1:RGWPOewvKIROun94nF7v2cua9qP+thov/7M50KEoeSU=
+github.com/JohnCGriffin/overflow v0.0.0-20211019200055-46fa312c352c/go.mod h1:X0CRv0ky0k6m906ixxpzmDRLvX58TFUKS2eePweuyxk=
 github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible/go.mod h1:r7JcOSlj0wfOMncg0iLm8Leh48TZaKVeNIfJntJ2wa0=
 github.com/Microsoft/go-winio v0.6.1 h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migciow=
 github.com/Microsoft/go-winio v0.6.1/go.mod h1:LRdKpFKfdobln8UmuiYcKPot9D2v6svN5+sAH+4kjUM=
@@ -666,8 +668,8 @@ github.com/oracle/oci-go-sdk/v65 v65.41.1/go.mod h1:MXMLMzHnnd9wlpgadPkdlkZ9YrwQ
 github.com/ovh/go-ovh v1.4.3 h1:Gs3V823zwTFpzgGLZNI6ILS4rmxZgJwJCz54Er9LwD0=
 github.com/ovh/go-ovh v1.4.3/go.mod h1:AkPXVtgwB6xlKblMjRKJJmjRp+ogrE7fz2lVgcQY8SY=
 github.com/pact-foundation/pact-go v1.0.4/go.mod h1:uExwJY4kCzNPcHRj+hCR/HBbOOIwwtUjcrb0b5/5kLM=
-github.com/parquet-go/parquet-go v0.19.0 h1:xtHOBIE0/8CRhmf06V1GJ7q3qARY2/kXiSweFlscwUQ=
-github.com/parquet-go/parquet-go v0.19.0/go.mod h1:6pu/Ca02WRyWyF6jbY1KceESGBZMsRMSijjLbajXaG8=
+github.com/parquet-go/parquet-go v0.20.0 h1:a6tV5XudF893P1FMuyp01zSReXbBelquKQgRxBgJ29w=
+github.com/parquet-go/parquet-go v0.20.0/go.mod h1:4YfUo8TkoGoqwzhA/joZKZ8f77wSMShOLHESY4Ys0bY=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pascaldekloe/goe v0.1.0 h1:cBOtyMzM9HTpWjXfbbunk26uA6nG3a8n06Wieeh0MwY=
 github.com/pascaldekloe/goe v0.1.0/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
@@ -689,10 +691,10 @@ github.com/pkg/profile v1.2.1/go.mod h1:hJw3o1OdXxsrSjjVksARp5W95eeEaEfptyVZyv6J
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/polarsignals/frostdb v0.0.0-20231019114304-92877c708395 h1:IPbXQ+7Z1jOBUdUJqSWcPehCc/N0gRP4TbGc8ZjlrSc=
-github.com/polarsignals/frostdb v0.0.0-20231019114304-92877c708395/go.mod h1:fNl6Ak4njGP3H7PPu5vHuzLdnZIvRE8qy5vKC/slJYw=
-github.com/polarsignals/wal v0.0.0-20230809151629-4d4e3eac6d40 h1:3kD5F5BBrnv2SAnBV7LGrXAhhAL+pZRkk++D4wrAH2c=
-github.com/polarsignals/wal v0.0.0-20230809151629-4d4e3eac6d40/go.mod h1:EVDHAAe+7GQ33A1/x+/gE+sBPN4toQ0XG5RoLD49xr8=
+github.com/polarsignals/frostdb v0.0.0-20240115104533-3f511d352fd6 h1:im8pXIVUZoe6YYsU8x71Cl2aH7maaU908/WKr9KJSbs=
+github.com/polarsignals/frostdb v0.0.0-20240115104533-3f511d352fd6/go.mod h1:KhSyuvdkUSBH1hDoSqDQTvo7mObJ8AY3ydnttX3QrXc=
+github.com/polarsignals/wal v0.0.0-20231123092250-5d233119cfc9 h1:SwUso/MRikI7aLlEelX4k6N107fT4uTAzmtyMTfjr44=
+github.com/polarsignals/wal v0.0.0-20231123092250-5d233119cfc9/go.mod h1:EVDHAAe+7GQ33A1/x+/gE+sBPN4toQ0XG5RoLD49xr8=
 github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndrE9hABlRI=
 github.com/posener/complete v1.2.3/go.mod h1:WZIdtGGp+qx0sLrYKtIRAruyNpv6hFCicSgv7Sy7s/s=
 github.com/prashantv/gostub v1.1.0 h1:BTyx3RfQjRHnUWaGF9oQos79AlQ5k8WNktv7VGvVH4g=
