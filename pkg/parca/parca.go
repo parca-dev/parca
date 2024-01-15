@@ -137,7 +137,6 @@ type FlagsOTLP struct {
 }
 
 type FlagsStorage struct {
-	GranuleSize         int64  `default:"26265625" help:"Granule size in bytes for storage."`
 	ActiveMemory        int64  `default:"536870912" help:"Amount of memory to use for active storage. Defaults to 512MB."`
 	Path                string `default:"data" help:"Path to storage directory."`
 	EnableWAL           bool   `default:"false" help:"Enables write ahead log for profile storage."`
@@ -292,7 +291,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		frostdb.WithLogger(logger),
 		frostdb.WithRegistry(reg),
 		frostdb.WithTracer(tracerProvider.Tracer("frostdb")),
-		frostdb.WithGranuleSizeBytes(flags.Storage.GranuleSize),
 	}
 
 	if flags.EnablePersistence {

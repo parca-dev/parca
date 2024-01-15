@@ -1,4 +1,4 @@
-// Copyright 2022-2023 The Parca Authors
+// Copyright 2022-2024 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -72,7 +72,6 @@ func benchmarkSetup(ctx context.Context, b *testing.B) (profilestorepb.ProfileSt
 			Port:       addr,
 			Metastore:  metaStoreBadger,
 			Storage: FlagsStorage{
-				GranuleSize:  8 * 1024,
 				ActiveMemory: 512 * 1024 * 1024,
 			},
 			ProfileShareServer: "api.pprof.dummy:443",
