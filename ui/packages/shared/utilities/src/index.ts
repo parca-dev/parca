@@ -131,10 +131,11 @@ export const parseParams = (
 
   const obj: Record<string, string | string[]> = {};
   for (const key of Array.from(params.keys())) {
-    const values =
-      encodeValues === true
-        ? params.getAll(key).map(value => encodeURIComponent(value))
-        : params.getAll(key);
+    let values = params.getAll(key);
+    if (encodeValues === true && (key === 'expression_a' || key === 'expression_b')) {
+      values = values.map(value => encodeURIComponent(value));
+    }
+
     if (values.length > 1) {
       obj[key] = values;
     } else {
