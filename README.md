@@ -107,8 +107,6 @@ Flags:
       --block-profile-rate=0     Sample rate for block profile.
       --enable-persistence       Turn on persistent storage for the metastore
                                  and profile storage.
-      --storage-granule-size=26265625
-                                 Granule size in bytes for storage.
       --storage-active-memory=536870912
                                  Amount of memory to use for active storage.
                                  Defaults to 512MB.
