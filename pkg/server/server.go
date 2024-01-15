@@ -1,4 +1,4 @@
-// Copyright 2022-2023 The Parca Authors
+// Copyright 2022-2024 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -47,7 +47,6 @@ import (
 
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/prober"
-	"github.com/parca-dev/parca/ui"
 )
 
 type Registerable interface {
@@ -80,6 +79,7 @@ func NewServer(reg *prometheus.Registry, version string) *Server {
 func (s *Server) ListenAndServe(
 	ctx context.Context,
 	logger log.Logger,
+	uiFS fs.FS,
 	addr string,
 	readTimeout time.Duration,
 	writeTimeout time.Duration,
@@ -145,12 +145,6 @@ func (s *Server) ListenAndServe(
 		r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 		r.HandleFunc("/debug/pprof/trace", pprof.Trace)
 	})
-
-	// Strip the subpath
-	uiFS, err := fs.Sub(ui.FS, "packages/app/web/build")
-	if err != nil {
-		return fmt.Errorf("failed to initialize UI filesystem: %w", err)
-	}
 
 	uiHandler, err := s.uiHandler(uiFS, pathPrefix)
 	if err != nil {

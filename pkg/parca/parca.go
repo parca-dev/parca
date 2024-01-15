@@ -1,4 +1,4 @@
-// Copyright 2022-2023 The Parca Authors
+// Copyright 2022-2024 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -18,6 +18,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -60,6 +61,7 @@ import (
 	scrapepb "github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1"
 	sharepb "github.com/parca-dev/parca/gen/proto/go/parca/share/v1alpha1"
 	telemetry "github.com/parca-dev/parca/gen/proto/go/parca/telemetry/v1alpha1"
+	"github.com/parca-dev/parca/ui"
 
 	"github.com/parca-dev/parca/pkg/config"
 	"github.com/parca-dev/parca/pkg/debuginfo"
@@ -209,12 +211,18 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
+	// Strip the subpath
+	uiFS, err := fs.Sub(ui.FS, "packages/app/web/build")
+	if err != nil {
+		return fmt.Errorf("failed to initialize UI filesystem: %w", err)
+	}
+
 	if flags.StoreAddress != "" && flags.Mode != flagModeScraperOnly {
 		return fmt.Errorf("the mode should be set as `--mode=scraper-only`, if `StoreAddress` is set")
 	}
 
 	if flags.Mode == flagModeScraperOnly {
-		return runScraper(ctx, logger, reg, tracerProvider, flags, version, cfg)
+		return runScraper(ctx, logger, reg, tracerProvider, uiFS, flags, version, cfg)
 	}
 
 	bucketCfg, err := yaml.Marshal(cfg.ObjectStorage.Bucket)
@@ -574,6 +582,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 				err = parcaserver.ListenAndServe(
 					ctx,
 					logger,
+					uiFS,
 					flags.HTTPAddress,
 					flags.HTTPReadTimeout,
 					flags.HTTPWriteTimeout,
@@ -653,6 +662,7 @@ func runScraper(
 	logger log.Logger,
 	reg *prometheus.Registry,
 	tracer trace.TracerProvider,
+	uiFS fs.FS,
 	flags *Flags,
 	version string,
 	cfg *config.Config,
@@ -796,6 +806,7 @@ func runScraper(
 				return parcaserver.ListenAndServe(
 					serveCtx,
 					logger,
+					uiFS,
 					flags.HTTPAddress,
 					flags.HTTPReadTimeout,
 					flags.HTTPWriteTimeout,
