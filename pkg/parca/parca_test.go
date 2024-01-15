@@ -72,7 +72,6 @@ func benchmarkSetup(ctx context.Context, b *testing.B) (profilestorepb.ProfileSt
 			Port:       addr,
 			Metastore:  metaStoreBadger,
 			Storage: FlagsStorage{
-				GranuleSize:  8 * 1024,
 				ActiveMemory: 512 * 1024 * 1024,
 			},
 			ProfileShareServer: "api.pprof.dummy:443",
