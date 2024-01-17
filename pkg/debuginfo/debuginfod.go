@@ -81,6 +81,7 @@ type ParallelDebuginfodClients struct {
 }
 
 func NewDebuginfodClients(
+	logger log.Logger,
 	reg prometheus.Registerer,
 	tracerProvider trace.TracerProvider,
 	upstreamServerHosts []string,
@@ -98,6 +99,7 @@ func NewDebuginfodClients(
 					prometheus.WrapRegistererWith(prometheus.Labels{"cache": "debuginfod_exists", "debuginfod_host": host}, reg),
 					8*1024,
 					NewDebuginfodClientWithObjectStorageCache(
+						logger,
 						objstore.NewPrefixedBucket(bucket, host),
 						NewHTTPDebuginfodClient(
 							tracerProvider,
@@ -214,12 +216,14 @@ func NewHTTPDebuginfodClient(
 
 // NewDebuginfodClientWithObjectStorageCache creates a new DebuginfodClient that caches the debug information in the object storage.
 func NewDebuginfodClientWithObjectStorageCache(
+	logger log.Logger,
 	bucket objstore.Bucket,
 	client DebuginfodClient,
 ) DebuginfodClient {
 	return &DebuginfodClientObjectStorageCache{
 		client: client,
 		bucket: bucket,
+		logger: logger,
 	}
 }
 
