@@ -28,6 +28,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-kit/log"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/objstore"
 	"go.opentelemetry.io/otel/trace/noop"
@@ -197,6 +198,7 @@ func TestHTTPDebugInfodCache(t *testing.T) {
 	}
 
 	cache := NewDebuginfodClientWithObjectStorageCache(
+		log.NewNopLogger(),
 		objstore.NewInMemBucket(),
 		c,
 	)
