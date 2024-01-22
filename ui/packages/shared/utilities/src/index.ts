@@ -133,7 +133,7 @@ export const parseParams = (
   for (const key of Array.from(params.keys())) {
     let values = params.getAll(key);
     if (encodeValues === true && (key === 'expression_a' || key === 'expression_b')) {
-      values = values.map(value => encodeURIComponent(value));
+      values = values.map(value => (isUrlEncoded(value) ? value : encodeURIComponent(value)));
     }
 
     if (values.length > 1) {
@@ -337,3 +337,11 @@ export const sanitizeHighlightedValues = (labels: Label[]): Label[] =>
       value: v.value.includes('\\') ? v.value.replaceAll('\\', '\\\\') : v.value,
     };
   });
+
+export const isUrlEncoded = (str: string): boolean => {
+  try {
+    return decodeURIComponent(str) !== str;
+  } catch (e) {
+    return false; // Invalid encoding
+  }
+};
