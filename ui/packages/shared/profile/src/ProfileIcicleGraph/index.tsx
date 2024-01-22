@@ -17,7 +17,7 @@ import {Menu, Transition} from '@headlessui/react';
 import {Icon} from '@iconify/react';
 
 import {Flamegraph, FlamegraphArrow} from '@parca/client';
-import {Button, Select, useParcaContext, useURLState} from '@parca/components';
+import {Button, IS, Select, useParcaContext, useURLState} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {capitalizeOnlyFirstLetter, divide, type NavigateFunction} from '@parca/utilities';
 
@@ -229,7 +229,7 @@ const RuntimeFilterDropdown = ({
       <Menu as="div" className="relative text-left">
         <div>
           <Menu.Button className="relative w-full cursor-default rounded-md border bg-white py-2 pl-3 pr-10 text-left text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 sm:text-sm">
-            <span className="ml-3 block overflow-x-hidden text-ellipsis">Runtimes</span>
+            <span className="block overflow-x-hidden text-ellipsis">Runtimes</span>
             <span className="pointer-events-none absolute inset-y-0 right-0 ml-3 flex items-center pr-2 text-gray-400">
               <Icon icon="heroicons:chevron-down-20-solid" aria-hidden="true" />
             </span>
@@ -330,9 +330,14 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   }, [graph, arrow, filtered, total]);
 
   useEffect(() => {
+    if (loading) {
+      return;
+    }
+
     if (setActionButtons === undefined) {
       return;
     }
+
     setActionButtons(
       <div className="flex w-full justify-end gap-2 pb-2">
         <div className="ml-2 flex w-full flex-col items-start justify-between gap-2 md:flex-row md:items-end">
@@ -348,10 +353,10 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
         </div>
       </div>
     );
-  }, [navigateTo, arrow, curPath, setNewCurPath, setActionButtons]);
+  }, [navigateTo, arrow, curPath, setNewCurPath, setActionButtons, loading]);
 
   if (loading) {
-    return <div className="h-96">{loader}</div>;
+    return <div className="h-auto">{<IS />}</div>;
   }
 
   if (error != null) {
@@ -472,7 +477,7 @@ const GroupByDropdown = ({
       <Menu as="div" className="relative text-left">
         <div>
           <Menu.Button className="relative w-full cursor-default rounded-md border bg-white py-2 pl-3 pr-10 text-left text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 sm:text-sm">
-            <span className="ml-3 block overflow-x-hidden text-ellipsis">{label}</span>
+            <span className="block overflow-x-hidden text-ellipsis">{label}</span>
             <span className="pointer-events-none absolute inset-y-0 right-0 ml-3 flex items-center pr-2 text-gray-400">
               <Icon icon="heroicons:chevron-down-20-solid" aria-hidden="true" />
             </span>

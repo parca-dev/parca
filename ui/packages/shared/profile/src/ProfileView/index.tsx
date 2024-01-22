@@ -37,7 +37,9 @@ import {
 import {
   Button,
   ConditionalWrapper,
+  IS,
   KeyDownProvider,
+  TS,
   UserPreferences,
   useParcaContext,
   useURLState,
@@ -170,6 +172,8 @@ export const ProfileView = ({
   }, []);
 
   const isLoading = useMemo(() => {
+    // return true;
+
     if (dashboardItems.includes('icicle')) {
       return Boolean(flamegraphData?.loading);
     }
@@ -182,6 +186,7 @@ export const ProfileView = ({
     if (dashboardItems.includes('source')) {
       return Boolean(sourceData?.loading);
     }
+
     return false;
   }, [
     dashboardItems,
@@ -432,59 +437,55 @@ export const ProfileView = ({
         </div>
 
         <div className="w-full" ref={ref}>
-          {isLoaderVisible ? (
-            <>{loader}</>
-          ) : (
-            <DragDropContext onDragEnd={onDragEnd}>
-              <Droppable droppableId="droppable" direction="horizontal">
-                {provided => (
-                  <div
-                    ref={provided.innerRef}
-                    className={cx(
-                      'grid w-full gap-2',
-                      isMultiPanelView ? 'grid-cols-2' : 'grid-cols-1'
-                    )}
-                    {...provided.droppableProps}
-                  >
-                    {dashboardItems.map((dashboardItem, index) => {
-                      return (
-                        <Draggable
-                          key={dashboardItem}
-                          draggableId={dashboardItem}
-                          index={index}
-                          isDragDisabled={!isMultiPanelView}
-                        >
-                          {(provided, snapshot: {isDragging: boolean}) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              key={dashboardItem}
-                              className={cx(
-                                'min-h-[200px] w-full rounded p-2 shadow dark:border dark:border-gray-700 dark:bg-gray-700',
-                                snapshot.isDragging
-                                  ? 'bg-gray-200 dark:bg-gray-500'
-                                  : 'bg-white dark:bg-gray-700'
-                              )}
-                            >
-                              <VisualizationPanel
-                                handleClosePanel={handleClosePanel}
-                                isMultiPanelView={isMultiPanelView}
-                                dashboardItem={dashboardItem}
-                                getDashboardItemByType={getDashboardItemByType}
-                                dragHandleProps={provided.dragHandleProps}
-                                navigateTo={navigateTo}
-                                index={index}
-                              />
-                            </div>
-                          )}
-                        </Draggable>
-                      );
-                    })}
-                  </div>
-                )}
-              </Droppable>
-            </DragDropContext>
-          )}
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="droppable" direction="horizontal">
+              {provided => (
+                <div
+                  ref={provided.innerRef}
+                  className={cx(
+                    'grid w-full gap-2',
+                    isMultiPanelView ? 'grid-cols-2' : 'grid-cols-1'
+                  )}
+                  {...provided.droppableProps}
+                >
+                  {dashboardItems.map((dashboardItem, index) => {
+                    return (
+                      <Draggable
+                        key={dashboardItem}
+                        draggableId={dashboardItem}
+                        index={index}
+                        isDragDisabled={!isMultiPanelView}
+                      >
+                        {(provided, snapshot: {isDragging: boolean}) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            key={dashboardItem}
+                            className={cx(
+                              'w-full rounded p-2 shadow dark:border dark:border-gray-700 dark:bg-gray-700 min-h-96',
+                              snapshot.isDragging
+                                ? 'bg-gray-200 dark:bg-gray-500'
+                                : 'bg-white dark:bg-gray-700'
+                            )}
+                          >
+                            <VisualizationPanel
+                              handleClosePanel={handleClosePanel}
+                              isMultiPanelView={isMultiPanelView}
+                              dashboardItem={dashboardItem}
+                              getDashboardItemByType={getDashboardItemByType}
+                              dragHandleProps={provided.dragHandleProps}
+                              navigateTo={navigateTo}
+                              index={index}
+                            />
+                          </div>
+                        )}
+                      </Draggable>
+                    );
+                  })}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
         </div>
       </ProfileViewContextProvider>
     </KeyDownProvider>

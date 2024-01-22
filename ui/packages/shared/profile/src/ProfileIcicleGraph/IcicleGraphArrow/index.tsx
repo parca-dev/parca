@@ -17,6 +17,7 @@ import {Dictionary, Table, Vector, tableFromIPC} from 'apache-arrow';
 import {useContextMenu} from 'react-contexify';
 
 import {FlamegraphArrow} from '@parca/client';
+import {Button, IS, Select, useParcaContext, useURLState} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {
   getColorForFeature,
@@ -200,6 +201,10 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     setIsContextMenuOpen(isVisible);
   };
 
+  // if (height === 0) {
+  //   return <>show me</>;
+  // }
+
   // useMemo for the root graph as it otherwise renders the whole graph if the hoveringRow changes.
   const root = useMemo(() => {
     return (
@@ -267,6 +272,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   ]);
 
   if (table.numRows === 0 || width === undefined) {
+    console.log('no rows');
     return <></>;
   }
 

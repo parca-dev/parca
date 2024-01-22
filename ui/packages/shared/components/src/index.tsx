@@ -28,7 +28,7 @@ import ParcaContext, {ParcaContextProvider, defaultValue, useParcaContext} from 
 import Pill, {PillVariant} from './Pill';
 import ResponsiveSvg from './ResponsiveSvg';
 import Select, {type SelectElement} from './Select';
-import Spinner from './Spinner';
+import Spinner, {IS, MS, TS} from './Spinner';
 import Tab from './Tab';
 import Table from './Table';
 import TextWithTooltip from './TextWithTooltip';
@@ -59,6 +59,9 @@ export {
   Pill,
   ResponsiveSvg,
   Select,
+  IS,
+  MS,
+  TS,
   Spinner,
   Tab,
   Table,

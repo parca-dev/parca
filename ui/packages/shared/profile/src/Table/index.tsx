@@ -17,8 +17,9 @@ import {Menu, Transition} from '@headlessui/react';
 import {Icon} from '@iconify/react';
 import {type VisibilityState} from '@tanstack/react-table';
 import {Vector, tableFromIPC} from 'apache-arrow';
+import {AnimatePresence, motion} from 'framer-motion';
 
-import {Button, Table as TableComponent, useURLState} from '@parca/components';
+import {Button, TS, Table as TableComponent, useURLState} from '@parca/components';
 import {
   getLastItem,
   isSearchMatch,
@@ -341,7 +342,12 @@ export const Table = React.memo(function Table({
     ];
   }, [compareMode]);
 
-  if (loading) return <div className="mx-auto text-center">Loading...</div>;
+  if (loading) return <TS />;
+  // return (
+  //   <div className="h-auto">
+  //     <TS />
+  //   </div>
+  // );
   if (data === undefined) return <div className="mx-auto text-center">Profile has no samples</div>;
 
   const table = tableFromIPC(data);
@@ -380,20 +386,30 @@ export const Table = React.memo(function Table({
   }
 
   return (
-    <div className="relative">
-      <div className="font-robotoMono h-[80vh] w-full">
-        <TableComponent
-          data={rows}
-          columns={columns}
-          initialSorting={initialSorting}
-          columnVisibility={columnVisibility}
-          onRowClick={onRowClick}
-          enableHighlighting={enableHighlighting}
-          shouldHighlightRow={shouldHighlightRow}
-          usePointerCursor={dashboardItems.length > 1}
-        />
-      </div>
-    </div>
+    <AnimatePresence>
+      <motion.div
+        className="h-full w-full"
+        key="metrics-graph-loaded"
+        initial={{display: 'none', opacity: 0}}
+        animate={{display: 'block', opacity: 1}}
+        transition={{duration: 0.5}}
+      >
+        <div className="relative">
+          <div className="font-robotoMono h-[80vh] w-full">
+            <TableComponent
+              data={rows}
+              columns={columns}
+              initialSorting={initialSorting}
+              columnVisibility={columnVisibility}
+              onRowClick={onRowClick}
+              enableHighlighting={enableHighlighting}
+              shouldHighlightRow={shouldHighlightRow}
+              usePointerCursor={dashboardItems.length > 1}
+            />
+          </div>
+        </div>
+      </motion.div>
+    </AnimatePresence>
   );
 });
 
