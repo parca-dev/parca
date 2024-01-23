@@ -15,6 +15,7 @@ import React, {Fragment, useCallback, useEffect, useMemo} from 'react';
 
 import {Menu, Transition} from '@headlessui/react';
 import {Icon} from '@iconify/react';
+import {AnimatePresence, motion} from 'framer-motion';
 
 import {Flamegraph, FlamegraphArrow} from '@parca/client';
 import {Button, IS, Select, useParcaContext, useURLState} from '@parca/components';
@@ -330,10 +331,6 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   }, [graph, arrow, filtered, total]);
 
   useEffect(() => {
-    if (loading) {
-      return;
-    }
-
     if (setActionButtons === undefined) {
       return;
     }
@@ -380,47 +377,55 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   }
 
   return (
-    <div className="relative">
-      {compareMode ? <DiffLegend /> : null}
-      <div className="min-h-48">
-        {graph !== undefined && (
-          <IcicleGraph
-            width={width}
-            graph={graph}
-            total={total}
-            filtered={filtered}
-            curPath={curPath}
-            setCurPath={setNewCurPath}
-            sampleUnit={sampleUnit}
-            navigateTo={navigateTo}
-          />
-        )}
-        {arrow !== undefined && (
-          <IcicleGraphArrow
-            width={width}
-            arrow={arrow}
-            total={total}
-            filtered={filtered}
-            curPath={curPath}
-            setCurPath={setNewCurPath}
-            sampleUnit={sampleUnit}
-            navigateTo={navigateTo}
-            sortBy={storeSortBy as string}
-          />
-        )}
-      </div>
-      <p className="my-2 text-xs">
-        Showing {totalFormatted}{' '}
-        {isFiltered ? (
-          <span>
-            ({filteredPercentage}%) filtered of {totalUnfilteredFormatted}{' '}
-          </span>
-        ) : (
-          <></>
-        )}
-        values.{' '}
-      </p>
-    </div>
+    <AnimatePresence>
+      <motion.div
+        className="relative"
+        key="icicle-graph-loaded"
+        initial={{opacity: 0}}
+        animate={{opacity: 1}}
+        transition={{duration: 0.5}}
+      >
+        {compareMode ? <DiffLegend /> : null}
+        <div className="min-h-48">
+          {graph !== undefined && (
+            <IcicleGraph
+              width={width}
+              graph={graph}
+              total={total}
+              filtered={filtered}
+              curPath={curPath}
+              setCurPath={setNewCurPath}
+              sampleUnit={sampleUnit}
+              navigateTo={navigateTo}
+            />
+          )}
+          {arrow !== undefined && (
+            <IcicleGraphArrow
+              width={width}
+              arrow={arrow}
+              total={total}
+              filtered={filtered}
+              curPath={curPath}
+              setCurPath={setNewCurPath}
+              sampleUnit={sampleUnit}
+              navigateTo={navigateTo}
+              sortBy={storeSortBy as string}
+            />
+          )}
+        </div>
+        <p className="my-2 text-xs">
+          Showing {totalFormatted}{' '}
+          {isFiltered ? (
+            <span>
+              ({filteredPercentage}%) filtered of {totalUnfilteredFormatted}{' '}
+            </span>
+          ) : (
+            <></>
+          )}
+          values.{' '}
+        </p>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 
