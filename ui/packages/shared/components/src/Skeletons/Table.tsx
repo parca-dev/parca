@@ -11,12 +11,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const TableSkeleton = () => (
+interface Props {
+  isHalfScreen: boolean;
+}
+
+export const TableActionButtonPlaceholder = () => {
+  return (
+    <div className="ml-2 flex w-full flex-col items-start justify-between gap-2 md:flex-row md:items-end">
+      <div className="h-[38px] bg-[#f3f3f3] animate-pulse w-[152px]"></div>
+      <div className="h-[38px] bg-[#f3f3f3] animate-pulse w-[110px]"></div>
+    </div>
+  );
+};
+
+const TableSkeleton = ({isHalfScreen}) => (
   <svg
     fill="none"
     height="100%"
     viewBox="0 0 1415 658"
-    width="100%"
+    width={isHalfScreen ? '1455px' : '100%'}
     xmlns="http://www.w3.org/2000/svg"
   >
     <defs>

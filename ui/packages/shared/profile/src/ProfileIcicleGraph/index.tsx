@@ -11,13 +11,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {Fragment, useCallback, useEffect, useMemo} from 'react';
+import React, {useCallback, useEffect, useMemo} from 'react';
 
 import {Icon} from '@iconify/react';
 import {AnimatePresence, motion} from 'framer-motion';
 
 import {Flamegraph, FlamegraphArrow} from '@parca/client';
-import {Button, IcicleGraphSkeleton, Select, useParcaContext, useURLState} from '@parca/components';
+import {
+  Button,
+  IcicleActionButtonPlaceholder,
+  IcicleGraphSkeleton,
+  useParcaContext,
+  useURLState,
+} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {capitalizeOnlyFirstLetter, divide, type NavigateFunction} from '@parca/utilities';
 
@@ -46,6 +52,7 @@ interface ProfileIcicleGraphProps {
   loading: boolean;
   setActionButtons?: (buttons: React.JSX.Element) => void;
   error?: any;
+  isHalfScreen: boolean;
 }
 
 const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
@@ -181,6 +188,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   setActionButtons,
   error,
   width,
+  isHalfScreen,
 }: ProfileIcicleGraphProps): JSX.Element {
   const {onError, authenticationErrorMessage} = useParcaContext();
   const {compareMode} = useProfileViewContext();
@@ -221,6 +229,11 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   }, [graph, arrow, filtered, total]);
 
   useEffect(() => {
+    if (loading && setActionButtons !== undefined) {
+      setActionButtons(<IcicleActionButtonPlaceholder />);
+      return;
+    }
+
     if (setActionButtons === undefined) {
       return;
     }
@@ -244,7 +257,11 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   }, [navigateTo, arrow, curPath, setNewCurPath, setActionButtons, loading]);
 
   if (loading) {
-    return <div className="h-auto">{<IcicleGraphSkeleton />}</div>;
+    return (
+      <div className="h-auto overflow-clip">
+        <IcicleGraphSkeleton isHalfScreen={isHalfScreen} />
+      </div>
+    );
   }
 
   if (error != null) {

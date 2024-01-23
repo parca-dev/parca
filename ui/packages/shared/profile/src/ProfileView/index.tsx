@@ -272,6 +272,7 @@ export const ProfileView = ({
               loading={flamegraphData.loading}
               setActionButtons={setActionButtons}
               error={flamegraphData.error}
+              isHalfScreen={isHalfScreen}
               width={
                 dimensions?.width !== undefined
                   ? isHalfScreen
@@ -308,6 +309,7 @@ export const ProfileView = ({
             navigateTo={navigateTo}
             setActionButtons={setActionButtons}
             currentSearchString={currentSearchString as string}
+            isHalfScreen={isHalfScreen}
           />
         ) : (
           <></>

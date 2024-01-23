@@ -28,9 +28,9 @@ import ParcaContext, {ParcaContextProvider, defaultValue, useParcaContext} from 
 import Pill, {PillVariant} from './Pill';
 import ResponsiveSvg from './ResponsiveSvg';
 import Select, {type SelectElement} from './Select';
-import IcicleGraphSkeleton from './Skeletons/IcicleGraph';
+import IcicleGraphSkeleton, {IcicleActionButtonPlaceholder} from './Skeletons/IcicleGraph';
 import MetricsGraphSkeleton from './Skeletons/MetricsGraph';
-import TableSkeleton from './Skeletons/Table';
+import TableSkeleton, {TableActionButtonPlaceholder} from './Skeletons/Table';
 import Spinner from './Spinner';
 import Tab from './Tab';
 import Table from './Table';
@@ -51,6 +51,7 @@ export {
   Dropdown,
   GrpcMetadataContext,
   GrpcMetadataProvider,
+  IcicleActionButtonPlaceholder,
   IcicleGraphSkeleton,
   IconButton,
   Input,
@@ -67,6 +68,7 @@ export {
   Spinner,
   Tab,
   Table,
+  TableActionButtonPlaceholder,
   TableSkeleton,
   TextWithTooltip,
   EmptyState,
