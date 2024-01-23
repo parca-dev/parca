@@ -19,7 +19,7 @@ import {type VisibilityState} from '@tanstack/react-table';
 import {Vector, tableFromIPC} from 'apache-arrow';
 import {AnimatePresence, motion} from 'framer-motion';
 
-import {Button, TS, Table as TableComponent, useURLState} from '@parca/components';
+import {Button, Table as TableComponent, TableSkeleton, useURLState} from '@parca/components';
 import {
   getLastItem,
   isSearchMatch,
@@ -342,10 +342,15 @@ export const Table = React.memo(function Table({
     ];
   }, [compareMode]);
 
-  if (loading) return <TS />;
+  if (loading)
+    return (
+      <div className="h-auto">
+        <TableSkeleton />
+      </div>
+    );
   // return (
   //   <div className="h-auto">
-  //     <TS />
+  //     <TableSkeleton />
   //   </div>
   // );
   if (data === undefined) return <div className="mx-auto text-center">Profile has no samples</div>;

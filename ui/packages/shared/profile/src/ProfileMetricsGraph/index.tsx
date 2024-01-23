@@ -17,7 +17,12 @@ import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {AnimatePresence, motion} from 'framer-motion';
 
 import {Duration, Label, QueryRangeResponse, QueryServiceClient, Timestamp} from '@parca/client';
-import {DateTimeRange, MS, useGrpcMetadata, useParcaContext} from '@parca/components';
+import {
+  DateTimeRange,
+  MetricsGraphSkeleton,
+  useGrpcMetadata,
+  useParcaContext,
+} from '@parca/components';
 import {Query} from '@parca/parser';
 import {capitalizeOnlyFirstLetter, getStepDuration} from '@parca/utilities';
 
@@ -128,7 +133,7 @@ const ProfileMetricsGraph = ({
 }: ProfileMetricsGraphProps): JSX.Element => {
   const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to);
   const isLoaderVisible = useDelayedLoader(isLoading);
-  const {loader, onError, perf, authenticationErrorMessage} = useParcaContext();
+  const {onError, perf, authenticationErrorMessage} = useParcaContext();
   const {width, height, margin} = useMetricsGraphDimensions(comparing);
 
   useEffect(() => {
@@ -151,7 +156,7 @@ const ProfileMetricsGraph = ({
   const metricsGraphLoading = isLoaderVisible || (isLoading && !dataAvailable);
 
   if (metricsGraphLoading) {
-    return <MS />;
+    return <MetricsGraphSkeleton />;
   }
 
   if (!metricsGraphLoading && error !== null) {
