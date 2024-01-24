@@ -1,6 +1,6 @@
 {
   "name": "@parca/components",
-  "version": "0.16.244",
+  "version": "0.16.245",
   "description": "A component library for Parca",
   "main": "dist/index.js",
   "scripts": {
@@ -17,8 +17,8 @@
     "@parca/hooks": "^0.0.38",
     "@parca/icons": "^0.16.62",
     "@parca/parser": "^0.16.68",
-    "@parca/store": "^0.16.123",
-    "@parca/utilities": "^0.0.51",
+    "@parca/store": "^0.16.124",
+    "@parca/utilities": "^0.0.52",
     "@protobuf-ts/grpcweb-transport": "^2.5.0",
     "@tanstack/react-table": "^8.7.0",
     "classnames": "^2.3.1",
