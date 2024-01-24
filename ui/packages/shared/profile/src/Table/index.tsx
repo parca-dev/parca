@@ -21,6 +21,7 @@ import {
   TableActionButtonPlaceholder,
   Table as TableComponent,
   TableSkeleton,
+  useParcaContext,
   useURLState,
 } from '@parca/components';
 import {
@@ -93,6 +94,7 @@ export const Table = React.memo(function Table({
   const router = parseParams(window?.location.search);
   const [rawDashboardItems] = useURLState({param: 'dashboard_items'});
   const [filterByFunctionInput] = useURLState({param: 'filter_by_function'});
+  const {isDarkMode} = useParcaContext();
 
   const {compareMode} = useProfileViewContext();
 
@@ -357,7 +359,7 @@ export const Table = React.memo(function Table({
   if (loading)
     return (
       <div className="h-auto overflow-clip">
-        <TableSkeleton isHalfScreen={isHalfScreen} />
+        <TableSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
       </div>
     );
 

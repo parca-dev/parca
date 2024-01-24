@@ -10,9 +10,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+import cx from 'classnames';
 
 interface Props {
   isHalfScreen: boolean;
+  isDarkMode: boolean;
 }
 
 export const IcicleActionButtonPlaceholder = () => {
@@ -20,24 +22,24 @@ export const IcicleActionButtonPlaceholder = () => {
     <div className="ml-2 flex w-full flex-col items-start justify-between gap-2 md:flex-row md:items-end">
       <div>
         <label className="text-sm">Group</label>
-        <div className="h-[38px] bg-[#f3f3f3] animate-pulse w-[172px]"></div>
+        <div className="h-[38px] bg-[#f3f3f3] dark:bg-gray-900 animate-pulse w-[172px]"></div>
       </div>
       <div>
         <label className="text-sm">Sort</label>
-        <div className="h-[38px] bg-[#f3f3f3] animate-pulse w-[116px]"></div>
+        <div className="h-[38px] bg-[#f3f3f3] dark:bg-gray-900 animate-pulse w-[116px]"></div>
       </div>
       <div>
         <label className="text-sm">Runtimes</label>
-        <div className="h-[38px] bg-[#f3f3f3] animate-pulse w-[131px]"></div>
+        <div className="h-[38px] bg-[#f3f3f3] dark:bg-gray-900 animate-pulse w-[131px]"></div>
       </div>
 
-      <div className="h-[38px] bg-[#f3f3f3] animate-pulse w-[152px]"></div>
-      <div className="h-[38px] bg-[#f3f3f3] animate-pulse w-[110px]"></div>
+      <div className="h-[38px] bg-[#f3f3f3] dark:bg-gray-900 animate-pulse w-[152px]"></div>
+      <div className="h-[38px] bg-[#f3f3f3] dark:bg-gray-900 animate-pulse w-[110px]"></div>
     </div>
   );
 };
 
-const IcicleGraphSkeleton = ({isHalfScreen}: Props) => {
+const IcicleGraphSkeleton = ({isHalfScreen, isDarkMode}: Props) => {
   return (
     <svg
       fill="none"
@@ -48,7 +50,11 @@ const IcicleGraphSkeleton = ({isHalfScreen}: Props) => {
     >
       <defs>
         <linearGradient id="shimmer" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0.599964" stop-color="#f3f3f3" stop-opacity="1">
+          <stop
+            offset="0.599964"
+            stop-color={cx(isDarkMode ? '#111827' : '#f3f3f3')}
+            stop-opacity="1"
+          >
             <animate
               attributeName="offset"
               values="-2; -2; 1"
@@ -57,7 +63,11 @@ const IcicleGraphSkeleton = ({isHalfScreen}: Props) => {
               repeatCount="indefinite"
             ></animate>
           </stop>
-          <stop offset="1.59996" stop-color="#ecebeb" stop-opacity="1">
+          <stop
+            offset="1.59996"
+            stop-color={cx(isDarkMode ? '#1f2937' : '#ecebeb')}
+            stop-opacity="1"
+          >
             <animate
               attributeName="offset"
               values="-1; -1; 2"
@@ -66,7 +76,11 @@ const IcicleGraphSkeleton = ({isHalfScreen}: Props) => {
               repeatCount="indefinite"
             ></animate>
           </stop>
-          <stop offset="2.59996" stop-color="#f3f3f3" stop-opacity="1">
+          <stop
+            offset="2.59996"
+            stop-color={cx(isDarkMode ? '#111827' : '#f3f3f3')}
+            stop-opacity="1"
+          >
             <animate
               attributeName="offset"
               values="0; 0; 3"

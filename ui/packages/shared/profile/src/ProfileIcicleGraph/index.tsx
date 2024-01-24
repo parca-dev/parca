@@ -190,7 +190,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   width,
   isHalfScreen,
 }: ProfileIcicleGraphProps): JSX.Element {
-  const {onError, authenticationErrorMessage} = useParcaContext();
+  const {onError, authenticationErrorMessage, isDarkMode} = useParcaContext();
   const {compareMode} = useProfileViewContext();
 
   const [storeSortBy = FIELD_FUNCTION_NAME] = useURLState({
@@ -259,7 +259,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   if (loading) {
     return (
       <div className="h-auto overflow-clip">
-        <IcicleGraphSkeleton isHalfScreen={isHalfScreen} />
+        <IcicleGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
       </div>
     );
   }

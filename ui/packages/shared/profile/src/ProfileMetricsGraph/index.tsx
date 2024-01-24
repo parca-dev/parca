@@ -133,8 +133,8 @@ const ProfileMetricsGraph = ({
 }: ProfileMetricsGraphProps): JSX.Element => {
   const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to);
   const isLoaderVisible = useDelayedLoader(isLoading);
-  const {onError, perf, authenticationErrorMessage} = useParcaContext();
-  const {width, height, margin} = useMetricsGraphDimensions(comparing);
+  const {onError, perf, authenticationErrorMessage, isDarkMode} = useParcaContext();
+  const {width, height, margin, heightStyle} = useMetricsGraphDimensions(comparing);
 
   useEffect(() => {
     if (error !== null) {
@@ -156,7 +156,7 @@ const ProfileMetricsGraph = ({
   const metricsGraphLoading = isLoaderVisible || (isLoading && !dataAvailable);
 
   if (metricsGraphLoading) {
-    return <MetricsGraphSkeleton />;
+    return <MetricsGraphSkeleton heightStyle={heightStyle} isDarkMode={isDarkMode} />;
   }
 
   if (!metricsGraphLoading && error !== null) {
