@@ -114,7 +114,7 @@ const MetricsGraphSkeleton = ({heightStyle, isDarkMode}: Props) => (
 
       <path d="m3.5 146h19v111h-19z" fill="url(#y-chart-shimmer)" />
 
-      <g stroke="#ececec">
+      <g stroke={cx(isDarkMode ? '#6b7280' : '#ececec')}>
         <path d="m53 19h1378v365h-1378z" />
         <path d="m52.5 139.039h1379" />
         <path d="m52.5 79.8652h1379" />
@@ -131,74 +131,6 @@ const MetricsGraphSkeleton = ({heightStyle, isDarkMode}: Props) => (
       <path d="m635 413.5h165v19h-165z" fill="url(#x-chart-shimmer)" />
     </svg>
   </div>
-  // <svg
-  //   fill="none"
-  //   height="452"
-  //   viewBox="0 0 1435 452"
-  //   width="100%"
-  //   xmlns="http://www.w3.org/2000/svg"
-  // >
-  //   <defs>
-  //     <linearGradient id="y-chart-shimmer" x1="0%" y1="0%" x2="0%" y2="100%">
-  //       <stop offset="0%" style={{stopColor: '#ebebeb', stopOpacity: 1}} />
-  //       <stop offset="50%" style={{stopColor: '#F6F6F6', stopOpacity: 1}}>
-  //         <animate
-  //           attributeName="offset"
-  //           values="-2; -2; 1"
-  //           keyTimes="0; 0.25; 1"
-  //           dur="2s"
-  //           repeatCount="indefinite"
-  //         ></animate>
-  //       </stop>
-  //       <stop offset="100%" style={{stopColor: '#ebebeb', stopOpacity: 1}} />
-  //     </linearGradient>
-  //     <linearGradient id="x-chart-shimmer" x1="0%" y1="0%" x2="100%" y2="0%">
-  //       <stop offset="0.599964" stop-color="#f3f3f3" stop-opacity="1">
-  //         <animate
-  //           attributeName="offset"
-  //           values="-2; -2; 1"
-  //           keyTimes="0; 0.25; 1"
-  //           dur="2s"
-  //           repeatCount="indefinite"
-  //         ></animate>
-  //       </stop>
-  //       <stop offset="1.59996" stop-color="#ecebeb" stop-opacity="1">
-  //         <animate
-  //           attributeName="offset"
-  //           values="-1; -1; 2"
-  //           keyTimes="0; 0.25; 1"
-  //           dur="2s"
-  //           repeatCount="indefinite"
-  //         ></animate>
-  //       </stop>
-  //       <stop offset="2.59996" stop-color="#f3f3f3" stop-opacity="1">
-  //         <animate
-  //           attributeName="offset"
-  //           values="0; 0; 3"
-  //           keyTimes="0; 0.25; 1"
-  //           dur="2s"
-  //           repeatCount="indefinite"
-  //         ></animate>
-  //       </stop>
-  //     </linearGradient>
-  //   </defs>
-
-  //   <path d="m3.5 146h19v111h-19z" fill="url(#y-chart-shimmer)" />
-  //   <g stroke="#ececec">
-  //     <path d="m53 19h1378v365h-1378z" />
-  //     <path d="m52.5 139.039h1379" />
-  //     <path d="m52.5 79.8652h1379" />
-  //     <path d="m52.5 198.213h1379" />
-  //     <path d="m52.5 257.387h1379" />
-  //     <path d="m52.5 316.561h1379" />
-  //     <path d="m284.412 18.5v366" />
-  //     <path d="m512.765 18.5v366" />
-  //     <path d="m739.322 18.5v366" />
-  //     <path d="m967.669 18.5v366" />
-  //     <path d="m1196.01 18.5v366" />
-  //   </g>
-  //   <path d="m635 413.5h165v19h-165z" fill="url(#x-chart-shimmer)" />
-  // </svg>
 );
 
 export default MetricsGraphSkeleton;
