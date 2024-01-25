@@ -11,8 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Fragment} from 'react';
-
 import {Menu, Transition} from '@headlessui/react';
 import {Icon} from '@iconify/react';
 
@@ -75,15 +73,15 @@ const GroupByDropdown = ({
     <div className="relative">
       <label className="text-sm">Group</label>
       <Menu as="div" className="relative text-left">
-        <Menu.Button className="relative w-max cursor-default rounded-md border bg-white py-2 pl-3 pr-10 text-left text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 sm:text-sm">
+        <Menu.Button className="relative w-max cursor-default rounded-md border bg-white py-2 pl-3 pr-[1.7rem] text-left text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 sm:text-sm">
           <span className="block overflow-x-hidden text-ellipsis">{label}</span>
-          <span className="pointer-events-none absolute inset-y-0 right-0 ml-3 flex items-center pr-2 text-gray-400">
+          <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-400">
             <Icon icon="heroicons:chevron-down-20-solid" aria-hidden="true" />
           </span>
         </Menu.Button>
 
         <Transition
-          as={Fragment}
+          as="div"
           leave="transition ease-in duration-100"
           leaveFrom="opacity-100"
           leaveTo="opacity-0"

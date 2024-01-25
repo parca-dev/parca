@@ -114,7 +114,7 @@ const MetricsGraphSkeleton = ({heightStyle, isDarkMode}: Props) => (
 
       <path d="m3.5 146h19v111h-19z" fill="url(#y-chart-shimmer)" />
 
-      <g stroke={cx(isDarkMode ? '#6b7280' : '#ececec')}>
+      <g stroke={cx(isDarkMode ? '#6b7280' : '#d1d5db')}>
         <path d="m53 19h1378v365h-1378z" />
         <path d="m52.5 139.039h1379" />
         <path d="m52.5 79.8652h1379" />

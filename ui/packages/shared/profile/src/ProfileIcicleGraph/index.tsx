@@ -21,6 +21,7 @@ import {
   Button,
   IcicleActionButtonPlaceholder,
   IcicleGraphSkeleton,
+  IconButton,
   useParcaContext,
   useURLState,
 } from '@parca/components';
@@ -59,7 +60,13 @@ const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
   return <div className="flex justify-center p-10">{errorMessage}</div>;
 };
 
-const ShowHideLegendButton = ({navigateTo}: {navigateTo?: NavigateFunction}): JSX.Element => {
+const ShowHideLegendButton = ({
+  navigateTo,
+  isHalfScreen,
+}: {
+  navigateTo?: NavigateFunction;
+  isHalfScreen: boolean;
+}): JSX.Element => {
   const [colorStackLegend, setStoreColorStackLegend] = useURLState({
     param: 'color_stack_legend',
     navigateTo,
@@ -83,14 +90,25 @@ const ShowHideLegendButton = ({navigateTo}: {navigateTo?: NavigateFunction}): JS
   return (
     <>
       {colorProfileName === 'default' || compareMode ? null : (
-        <Button
-          className="gap-2 w-max"
-          variant="neutral"
-          onClick={() => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true')}
-        >
-          {isColorStackLegendEnabled ? 'Hide legend' : 'Show legend'}
-          <Icon icon={isColorStackLegendEnabled ? 'ph:eye-closed' : 'ph:eye'} width={20} />
-        </Button>
+        <>
+          {isHalfScreen ? (
+            <div className="rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 items-center flex border border-gray-200 dark:border-gray-600 text-gray-100 dark:text-white justify-center py-2 px-3">
+              <IconButton
+                icon={isColorStackLegendEnabled ? 'ph:eye-closed' : 'ph:eye'}
+                onClick={() => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true')}
+              />
+            </div>
+          ) : (
+            <Button
+              className="gap-2 w-max"
+              variant="neutral"
+              onClick={() => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true')}
+            >
+              {isColorStackLegendEnabled ? 'Hide legend' : 'Show legend'}
+              <Icon icon={isColorStackLegendEnabled ? 'ph:eye-closed' : 'ph:eye'} width={20} />
+            </Button>
+          )}
+        </>
       )}
     </>
   );
@@ -242,7 +260,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
       <div className="flex w-full justify-end gap-2 pb-2">
         <div className="ml-2 flex w-full flex-col items-start justify-between gap-2 md:flex-row md:items-end">
           {arrow !== undefined && <GroupAndSortActionButtons navigateTo={navigateTo} />}
-          <ShowHideLegendButton navigateTo={navigateTo} />
+          <ShowHideLegendButton isHalfScreen={isHalfScreen} navigateTo={navigateTo} />
           <Button
             variant="neutral"
             className="w-max"

@@ -28,6 +28,7 @@ const SortBySelect = ({
     <div>
       <label className="text-sm">Sort</label>
       <Select
+        className="!px-3"
         items={[
           {
             key: FIELD_FUNCTION_NAME,

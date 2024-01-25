@@ -55,9 +55,7 @@ export const VisualizationPanel = React.memo(function VisualizationPanel({
         <div
           className={cx(
             'flex w-full justify-between flex-col-reverse md:flex-row',
-            isMultiPanelView && dashboardItem === 'icicle'
-              ? 'overflow-x-scroll items-end gap-x-2'
-              : 'items-center'
+            isMultiPanelView && dashboardItem === 'icicle' ? 'items-end gap-x-2' : 'items-end'
           )}
         >
           <div className="flex items-center">
@@ -71,8 +69,8 @@ export const VisualizationPanel = React.memo(function VisualizationPanel({
           </div>
           <div
             className={cx(
-              'flex flex-col items-end gap-4',
-              isMultiPanelView && dashboardItem === 'icicle' && 'pb-2'
+              'flex flex-row items-center gap-4',
+              isMultiPanelView && dashboardItem === 'icicle' && 'pb-[10px]'
             )}
           >
             <ViewSelector defaultValue={dashboardItem} navigateTo={navigateTo} position={index} />
