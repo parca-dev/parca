@@ -404,7 +404,7 @@ export const Table = React.memo(function Table({
     <AnimatePresence>
       <motion.div
         className="h-full w-full"
-        key="metrics-graph-loaded"
+        key="table-loaded"
         initial={{display: 'none', opacity: 0}}
         animate={{display: 'block', opacity: 1}}
         transition={{duration: 0.5}}

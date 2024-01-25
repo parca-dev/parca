@@ -30,6 +30,7 @@ import ResponsiveSvg from './ResponsiveSvg';
 import Select, {type SelectElement} from './Select';
 import IcicleGraphSkeleton, {IcicleActionButtonPlaceholder} from './Skeletons/IcicleGraphSkeleton';
 import MetricsGraphSkeleton from './Skeletons/MetricsGraphSkeleton';
+import SourceSkeleton from './Skeletons/SourceSkeleton';
 import TableSkeleton, {TableActionButtonPlaceholder} from './Skeletons/TableSkeleton';
 import Spinner from './Spinner';
 import Tab from './Tab';
@@ -65,6 +66,7 @@ export {
   Pill,
   ResponsiveSvg,
   Select,
+  SourceSkeleton,
   Spinner,
   Tab,
   Table,
