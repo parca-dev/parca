@@ -1027,6 +1027,10 @@ func (q *Querier) selectMerge(
 	start := timestamp.FromTime(startTime)
 	end := timestamp.FromTime(endTime)
 
+	if !queryParts.Delta && !startTime.Equal(endTime) {
+		return nil, "", profile.Meta{}, status.Error(codes.InvalidArgument, "merge queries with different timestamps are only supported for delta profiles")
+	}
+
 	filterExpr := logicalplan.And(
 		append(
 			selectorExprs,
