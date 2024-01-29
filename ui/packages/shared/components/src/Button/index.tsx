@@ -120,7 +120,7 @@ export const IconButton = ({icon, toolTipText, ...props}: IconButtonProps): JSX.
     >
       {typeof icon === 'string' ? <Icon icon={icon} /> : icon}
       <span className="sr-only">{toolTipText}</span>
-      {toolTipText && <Tooltip id="iconButton-tooltip-text" />}
+      {toolTipText !== '' && <Tooltip id="iconButton-tooltip-text" />}
     </Button>
   );
 };

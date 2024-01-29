@@ -17,7 +17,7 @@ interface Props {
   isDarkMode: boolean;
 }
 
-const MetricsGraphSkeleton = ({heightStyle, isDarkMode}: Props) => (
+const MetricsGraphSkeleton = ({heightStyle, isDarkMode}: Props): JSX.Element => (
   <div className="relative overflow-hidden" style={{height: heightStyle}}>
     <div className="absolute top-0 left-0 w-full h-full bg-shimmer-gradient dark:bg-shimmer-gradient-dark animate-shimmer"></div>
     <svg
@@ -32,8 +32,8 @@ const MetricsGraphSkeleton = ({heightStyle, isDarkMode}: Props) => (
         <linearGradient id="y-chart-shimmer" x1="0%" y1="0%" x2="0%" y2="100%">
           <stop
             offset="0.599964"
-            stop-opacity="1"
-            stop-color={cx(isDarkMode ? '#1f2937' : '#ebebeb')}
+            stopOpacity="1"
+            stopColor={cx(isDarkMode ? '#1f2937' : '#ebebeb')}
           >
             <animate
               attributeName="offset"
@@ -43,11 +43,7 @@ const MetricsGraphSkeleton = ({heightStyle, isDarkMode}: Props) => (
               repeatCount="indefinite"
             ></animate>
           </stop>
-          <stop
-            offset="1.59996"
-            stop-opacity="1"
-            stop-color={cx(isDarkMode ? '#374151' : '#F6F6F6')}
-          >
+          <stop offset="1.59996" stopOpacity="1" stopColor={cx(isDarkMode ? '#374151' : '#F6F6F6')}>
             <animate
               attributeName="offset"
               values="-1; -1; 2"
@@ -56,11 +52,7 @@ const MetricsGraphSkeleton = ({heightStyle, isDarkMode}: Props) => (
               repeatCount="indefinite"
             ></animate>
           </stop>
-          <stop
-            offset="2.59996"
-            stop-opacity="1"
-            stop-color={cx(isDarkMode ? '#1f2937' : '#ebebeb')}
-          >
+          <stop offset="2.59996" stopOpacity="1" stopColor={cx(isDarkMode ? '#1f2937' : '#ebebeb')}>
             <animate
               attributeName="offset"
               values="0; 0; 3"
@@ -73,8 +65,8 @@ const MetricsGraphSkeleton = ({heightStyle, isDarkMode}: Props) => (
         <linearGradient id="x-chart-shimmer" x1="0%" y1="0%" x2="100%" y2="0%">
           <stop
             offset="0.599964"
-            stop-color={cx(isDarkMode ? '#1f2937' : '#f3f3f3')}
-            stop-opacity="1"
+            stopColor={cx(isDarkMode ? '#1f2937' : '#f3f3f3')}
+            stopOpacity="1"
           >
             <animate
               attributeName="offset"
@@ -84,11 +76,7 @@ const MetricsGraphSkeleton = ({heightStyle, isDarkMode}: Props) => (
               repeatCount="indefinite"
             ></animate>
           </stop>
-          <stop
-            offset="1.59996"
-            stop-color={cx(isDarkMode ? '#374151' : '#ecebeb')}
-            stop-opacity="1"
-          >
+          <stop offset="1.59996" stopColor={cx(isDarkMode ? '#374151' : '#ecebeb')} stopOpacity="1">
             <animate
               attributeName="offset"
               values="-1; -1; 2"
@@ -97,11 +85,7 @@ const MetricsGraphSkeleton = ({heightStyle, isDarkMode}: Props) => (
               repeatCount="indefinite"
             ></animate>
           </stop>
-          <stop
-            offset="2.59996"
-            stop-color={cx(isDarkMode ? '#1f2937' : '#f3f3f3')}
-            stop-opacity="1"
-          >
+          <stop offset="2.59996" stopColor={cx(isDarkMode ? '#1f2937' : '#f3f3f3')} stopOpacity="1">
             <animate
               attributeName="offset"
               values="0; 0; 3"

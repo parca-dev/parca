@@ -55,7 +55,7 @@ export const SourceView = React.memo(function SourceView({
   if (loading) {
     return (
       <div className="h-auto overflow-clip">
-        <SourceSkeleton isDarkMode={isDarkMode} isHalfScreen={true} />
+        <SourceSkeleton isDarkMode={isDarkMode} />
       </div>
     );
   }

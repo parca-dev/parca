@@ -283,7 +283,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
         </div>
       </div>
     );
-  }, [navigateTo, arrow, curPath, setNewCurPath, setActionButtons, loading]);
+  }, [navigateTo, arrow, curPath, setNewCurPath, setActionButtons, loading, isHalfScreen]);
 
   if (loading) {
     return (

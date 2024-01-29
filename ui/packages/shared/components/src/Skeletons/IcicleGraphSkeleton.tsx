@@ -17,7 +17,11 @@ interface Props {
   isDarkMode: boolean;
 }
 
-export const IcicleActionButtonPlaceholder = ({isHalfScreen}: {isHalfScreen: boolean}) => {
+export const IcicleActionButtonPlaceholder = ({
+  isHalfScreen,
+}: {
+  isHalfScreen: boolean;
+}): JSX.Element => {
   return (
     <div className="ml-2 flex w-full flex-col items-start justify-between gap-2 md:flex-row md:items-end">
       <div>
@@ -43,7 +47,7 @@ export const IcicleActionButtonPlaceholder = ({isHalfScreen}: {isHalfScreen: boo
   );
 };
 
-const IcicleGraphSkeleton = ({isHalfScreen, isDarkMode}: Props) => {
+const IcicleGraphSkeleton = ({isHalfScreen, isDarkMode}: Props): JSX.Element => {
   return (
     <svg
       fill="none"
@@ -56,8 +60,8 @@ const IcicleGraphSkeleton = ({isHalfScreen, isDarkMode}: Props) => {
         <linearGradient id="shimmer" x1="0%" y1="0%" x2="100%" y2="0%">
           <stop
             offset="0.599964"
-            stop-color={cx(isDarkMode ? '#111827' : '#f3f3f3')}
-            stop-opacity="1"
+            stopColor={cx(isDarkMode ? '#111827' : '#f3f3f3')}
+            stopOpacity="1"
           >
             <animate
               attributeName="offset"
@@ -67,11 +71,7 @@ const IcicleGraphSkeleton = ({isHalfScreen, isDarkMode}: Props) => {
               repeatCount="indefinite"
             ></animate>
           </stop>
-          <stop
-            offset="1.59996"
-            stop-color={cx(isDarkMode ? '#1f2937' : '#ecebeb')}
-            stop-opacity="1"
-          >
+          <stop offset="1.59996" stopColor={cx(isDarkMode ? '#1f2937' : '#ecebeb')} stopOpacity="1">
             <animate
               attributeName="offset"
               values="-1; -1; 2"
@@ -80,11 +80,7 @@ const IcicleGraphSkeleton = ({isHalfScreen, isDarkMode}: Props) => {
               repeatCount="indefinite"
             ></animate>
           </stop>
-          <stop
-            offset="2.59996"
-            stop-color={cx(isDarkMode ? '#111827' : '#f3f3f3')}
-            stop-opacity="1"
-          >
+          <stop offset="2.59996" stopColor={cx(isDarkMode ? '#111827' : '#f3f3f3')} stopOpacity="1">
             <animate
               attributeName="offset"
               values="0; 0; 3"

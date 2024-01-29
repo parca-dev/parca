@@ -17,7 +17,7 @@ interface Props {
   isDarkMode: boolean;
 }
 
-export const TableActionButtonPlaceholder = () => {
+export const TableActionButtonPlaceholder = (): JSX.Element => {
   return (
     <div className="ml-2 flex w-full flex-col items-start justify-between gap-2 md:flex-row md:items-end">
       <div className="h-[38px] bg-[#f3f3f3] dark:bg-gray-900 animate-pulse w-[152px]"></div>
@@ -26,7 +26,7 @@ export const TableActionButtonPlaceholder = () => {
   );
 };
 
-const TableSkeleton = ({isHalfScreen, isDarkMode}: Props) => (
+const TableSkeleton = ({isHalfScreen, isDarkMode}: Props): JSX.Element => (
   <svg
     fill="none"
     height="100%"
@@ -36,11 +36,7 @@ const TableSkeleton = ({isHalfScreen, isDarkMode}: Props) => (
   >
     <defs>
       <linearGradient id="table-data" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop
-          offset="0.599964"
-          stop-color={cx(isDarkMode ? '#111827' : '#f3f3f3')}
-          stop-opacity="1"
-        >
+        <stop offset="0.599964" stopColor={cx(isDarkMode ? '#111827' : '#f3f3f3')} stopOpacity="1">
           <animate
             attributeName="offset"
             values="-2; -2; 1"
@@ -49,7 +45,7 @@ const TableSkeleton = ({isHalfScreen, isDarkMode}: Props) => (
             repeatCount="indefinite"
           ></animate>
         </stop>
-        <stop offset="1.59996" stop-color={cx(isDarkMode ? '#1f2937' : '#ecebeb')} stop-opacity="1">
+        <stop offset="1.59996" stopColor={cx(isDarkMode ? '#1f2937' : '#ecebeb')} stopOpacity="1">
           <animate
             attributeName="offset"
             values="-1; -1; 2"
@@ -58,7 +54,7 @@ const TableSkeleton = ({isHalfScreen, isDarkMode}: Props) => (
             repeatCount="indefinite"
           ></animate>
         </stop>
-        <stop offset="2.59996" stop-color={cx(isDarkMode ? '#111827' : '#f3f3f3')} stop-opacity="1">
+        <stop offset="2.59996" stopColor={cx(isDarkMode ? '#111827' : '#f3f3f3')} stopOpacity="1">
           <animate
             attributeName="offset"
             values="0; 0; 3"

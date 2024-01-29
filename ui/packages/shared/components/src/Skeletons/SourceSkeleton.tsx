@@ -14,26 +14,20 @@
 import cx from 'classnames';
 
 interface Props {
-  isHalfScreen: boolean;
   isDarkMode: boolean;
 }
 
-const SourceSkeleton = ({isHalfScreen, isDarkMode}: Props) => (
+const SourceSkeleton = ({isDarkMode}: Props): JSX.Element => (
   <svg
     fill="none"
     height="100%"
     viewBox="0 0 720 603"
-    // width={isHalfScreen ? '1455px' : '100%'}
     width="100%"
     xmlns="http://www.w3.org/2000/svg"
   >
     <defs>
       <linearGradient id="source" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop
-          offset="0.599964"
-          stop-color={cx(isDarkMode ? '#111827' : '#f3f3f3')}
-          stop-opacity="1"
-        >
+        <stop offset="0.599964" stopColor={cx(isDarkMode ? '#111827' : '#f3f3f3')} stopOpacity="1">
           <animate
             attributeName="offset"
             values="-2; -2; 1"
@@ -42,7 +36,7 @@ const SourceSkeleton = ({isHalfScreen, isDarkMode}: Props) => (
             repeatCount="indefinite"
           ></animate>
         </stop>
-        <stop offset="1.59996" stop-color={cx(isDarkMode ? '#1f2937' : '#ecebeb')} stop-opacity="1">
+        <stop offset="1.59996" stopColor={cx(isDarkMode ? '#1f2937' : '#ecebeb')} stopOpacity="1">
           <animate
             attributeName="offset"
             values="-1; -1; 2"
@@ -51,7 +45,7 @@ const SourceSkeleton = ({isHalfScreen, isDarkMode}: Props) => (
             repeatCount="indefinite"
           ></animate>
         </stop>
-        <stop offset="2.59996" stop-color={cx(isDarkMode ? '#111827' : '#f3f3f3')} stop-opacity="1">
+        <stop offset="2.59996" stopColor={cx(isDarkMode ? '#111827' : '#f3f3f3')} stopOpacity="1">
           <animate
             attributeName="offset"
             values="0; 0; 3"

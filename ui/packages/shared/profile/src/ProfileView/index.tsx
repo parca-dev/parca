@@ -53,7 +53,6 @@ import {ProfileSource} from '../ProfileSource';
 import {SourceView} from '../SourceView';
 import Table from '../Table';
 import ProfileShareButton from '../components/ProfileShareButton';
-import useDelayedLoader from '../useDelayedLoader';
 import FilterByFunctionButton from './FilterByFunctionButton';
 import {ProfileViewContextProvider} from './ProfileViewContext';
 import ViewSelector from './ViewSelector';
