@@ -17,7 +17,7 @@ interface Props {
   isDarkMode: boolean;
 }
 
-export const IcicleActionButtonPlaceholder = () => {
+export const IcicleActionButtonPlaceholder = ({isHalfScreen}: {isHalfScreen: boolean}) => {
   return (
     <div className="ml-2 flex w-full flex-col items-start justify-between gap-2 md:flex-row md:items-end">
       <div>
@@ -33,8 +33,12 @@ export const IcicleActionButtonPlaceholder = () => {
         <div className="h-[38px] bg-[#f3f3f3] dark:bg-gray-900 animate-pulse w-[131px]"></div>
       </div>
 
-      <div className="h-[38px] bg-[#f3f3f3] dark:bg-gray-900 animate-pulse w-[152px]"></div>
-      <div className="h-[38px] bg-[#f3f3f3] dark:bg-gray-900 animate-pulse w-[110px]"></div>
+      {!isHalfScreen && (
+        <>
+          <div className="h-[38px] bg-[#f3f3f3] dark:bg-gray-900 animate-pulse w-[152px]"></div>
+          <div className="h-[38px] bg-[#f3f3f3] dark:bg-gray-900 animate-pulse w-[110px]"></div>
+        </>
+      )}
     </div>
   );
 };

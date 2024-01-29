@@ -92,12 +92,12 @@ const ShowHideLegendButton = ({
       {colorProfileName === 'default' || compareMode ? null : (
         <>
           {isHalfScreen ? (
-            <div className="rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 items-center flex border border-gray-200 dark:border-gray-600 text-gray-100 dark:text-white justify-center py-2 px-3">
-              <IconButton
-                icon={isColorStackLegendEnabled ? 'ph:eye-closed' : 'ph:eye'}
-                onClick={() => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true')}
-              />
-            </div>
+            <IconButton
+              className="rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 items-center flex border border-gray-200 dark:border-gray-600 dark:text-white justify-center !py-2 !px-3 cursor-pointer min-h-[38px]"
+              icon={isColorStackLegendEnabled ? 'ph:eye-closed' : 'ph:eye'}
+              toolTipText={isColorStackLegendEnabled ? 'Hide legend' : 'Show legend'}
+              onClick={() => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true')}
+            />
           ) : (
             <Button
               className="gap-2 w-max"
@@ -248,7 +248,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
 
   useEffect(() => {
     if (loading && setActionButtons !== undefined) {
-      setActionButtons(<IcicleActionButtonPlaceholder />);
+      setActionButtons(<IcicleActionButtonPlaceholder isHalfScreen={isHalfScreen} />);
       return;
     }
 
@@ -261,14 +261,25 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
         <div className="ml-2 flex w-full flex-col items-start justify-between gap-2 md:flex-row md:items-end">
           {arrow !== undefined && <GroupAndSortActionButtons navigateTo={navigateTo} />}
           <ShowHideLegendButton isHalfScreen={isHalfScreen} navigateTo={navigateTo} />
-          <Button
-            variant="neutral"
-            className="w-max"
-            onClick={() => setNewCurPath([])}
-            disabled={curPath.length === 0}
-          >
-            Reset View
-          </Button>
+          {isHalfScreen ? (
+            <IconButton
+              icon="system-uicons:reset"
+              disabled={curPath.length === 0}
+              toolTipText="Reset View"
+              onClick={() => setNewCurPath([])}
+              className="rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 items-center flex border border-gray-200 dark:border-gray-600 dark:text-white justify-center py-2 px-3 cursor-pointer min-h-[38px]"
+            />
+          ) : (
+            <Button
+              variant="neutral"
+              className="gap-2 w-max"
+              onClick={() => setNewCurPath([])}
+              disabled={curPath.length === 0}
+            >
+              Reset View
+              <Icon icon="system-uicons:reset" width={20} />
+            </Button>
+          )}
         </div>
       </div>
     );

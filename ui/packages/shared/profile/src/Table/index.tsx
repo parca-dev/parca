@@ -345,6 +345,7 @@ export const Table = React.memo(function Table({
     setActionButtons,
     columns,
     columnVisibility,
+    loading,
   ]);
 
   const initialSorting = useMemo(() => {

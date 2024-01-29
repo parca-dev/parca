@@ -26,6 +26,7 @@ const MetricsGraphSkeleton = ({heightStyle, isDarkMode}: Props) => (
       width="100%"
       xmlns="http://www.w3.org/2000/svg"
       className="absolute top-0 left-0 z-[1]"
+      height="100%"
     >
       <defs>
         <linearGradient id="y-chart-shimmer" x1="0%" y1="0%" x2="0%" y2="100%">

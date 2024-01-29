@@ -153,8 +153,7 @@ export const ProfileView = ({
   const isDarkMode = useAppSelector(selectDarkMode);
   const isMultiPanelView = dashboardItems.length > 1;
 
-  const {loader, perf, profileViewExternalMainActions, profileViewExternalSubActions} =
-    useParcaContext();
+  const {perf, profileViewExternalMainActions, profileViewExternalSubActions} = useParcaContext();
 
   useEffect(() => {
     // Reset the current path when the profile source changes
@@ -168,34 +167,6 @@ export const ProfileView = ({
     }
     void loadGraphviz();
   }, []);
-
-  const isLoading = useMemo(() => {
-    // return true;
-
-    if (dashboardItems.includes('icicle')) {
-      return Boolean(flamegraphData?.loading);
-    }
-    if (dashboardItems.includes('callgraph')) {
-      return Boolean(callgraphData?.loading) || Boolean(callgraphSVG === undefined);
-    }
-    if (dashboardItems.includes('table')) {
-      return Boolean(topTableData?.loading);
-    }
-    if (dashboardItems.includes('source')) {
-      return Boolean(sourceData?.loading);
-    }
-
-    return false;
-  }, [
-    dashboardItems,
-    callgraphData?.loading,
-    flamegraphData?.loading,
-    topTableData?.loading,
-    sourceData?.loading,
-    callgraphSVG,
-  ]);
-
-  const isLoaderVisible = useDelayedLoader(isLoading);
 
   const maxColor: string = getNewSpanColor(isDarkMode);
   const minColor: string = scaleLinear([isDarkMode ? 'black' : 'white', maxColor])(0.3);
