@@ -316,7 +316,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   return (
     <AnimatePresence>
       <motion.div
-        className="relative"
+        className="relative h-full w-full"
         key="icicle-graph-loaded"
         initial={{opacity: 0}}
         animate={{opacity: 1}}

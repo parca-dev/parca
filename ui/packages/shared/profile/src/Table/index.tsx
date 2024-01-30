@@ -359,7 +359,7 @@ export const Table = React.memo(function Table({
 
   if (loading)
     return (
-      <div className="h-auto overflow-clip">
+      <div className="overflow-clip h-[700px] min-h-[700px]">
         <TableSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
       </div>
     );
