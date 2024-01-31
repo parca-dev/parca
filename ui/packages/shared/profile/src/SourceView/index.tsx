@@ -14,9 +14,10 @@
 import React, {useEffect} from 'react';
 
 import {tableFromIPC} from 'apache-arrow';
+import {AnimatePresence, motion} from 'framer-motion';
 
 import {Source} from '@parca/client';
-import {useParcaContext, useURLState} from '@parca/components';
+import {SourceSkeleton, useParcaContext, useURLState} from '@parca/components';
 
 import {ExpandOnHover} from '../GraphTooltipArrow/ExpandOnHoverValue';
 import {truncateStringReverse} from '../utils';
@@ -38,7 +39,7 @@ export const SourceView = React.memo(function SourceView({
   setActionButtons,
 }: SourceViewProps): JSX.Element {
   const [sourceFileName] = useURLState({param: 'source_filename', navigateTo: () => {}});
-  const {loader} = useParcaContext();
+  const {isDarkMode} = useParcaContext();
 
   useEffect(() => {
     setActionButtons?.(
@@ -52,7 +53,11 @@ export const SourceView = React.memo(function SourceView({
   }, [sourceFileName, setActionButtons]);
 
   if (loading) {
-    return <div className="h-96">{loader}</div>;
+    return (
+      <div className="h-auto overflow-clip">
+        <SourceSkeleton isDarkMode={isDarkMode} />
+      </div>
+    );
   }
 
   if (data === undefined) {
@@ -64,11 +69,21 @@ export const SourceView = React.memo(function SourceView({
   const flat = table.getChild('flat');
 
   return (
-    <Highlighter
-      file={sourceFileName as string}
-      content={data.source}
-      renderer={profileAwareRenderer(cumulative, flat, total, filtered)}
-    />
+    <AnimatePresence>
+      <motion.div
+        className="h-full w-full"
+        key="source-view-loaded"
+        initial={{display: 'none', opacity: 0}}
+        animate={{display: 'block', opacity: 1}}
+        transition={{duration: 0.5}}
+      >
+        <Highlighter
+          file={sourceFileName as string}
+          content={data.source}
+          renderer={profileAwareRenderer(cumulative, flat, total, filtered)}
+        />
+      </motion.div>
+    </AnimatePresence>
   );
 });
 

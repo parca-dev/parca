@@ -51,22 +51,33 @@ export const VisualizationPanel = React.memo(function VisualizationPanel({
 
   return (
     <>
-      <div className="flex w-full items-start justify-end gap-2 pb-2">
-        <div className="flex w-full items-start justify-between flex-col-reverse md:flex-row">
-          <div className="flex items-start">
+      <div className="flex w-full items-center justify-end gap-2 pb-2 min-h-[78px]">
+        <div
+          className={cx(
+            'flex w-full justify-between flex-col-reverse md:flex-row',
+            isMultiPanelView && dashboardItem === 'icicle' ? 'items-end gap-x-2' : 'items-end'
+          )}
+        >
+          <div className="flex items-center">
             <div
               className={cx(isMultiPanelView ? '' : 'hidden', 'flex items-center')}
               {...dragHandleProps}
             >
               <Icon className="text-xl" icon="material-symbols:drag-indicator" />
             </div>
-            <div>{actionButtons}</div>
+            <div className="flex gap-2">{actionButtons}</div>
           </div>
-          <div className="flex flex-col items-end gap-4">
+          <div
+            className={cx(
+              'flex flex-row items-center gap-4',
+              isMultiPanelView && dashboardItem === 'icicle' && 'pb-[10px]'
+            )}
+          >
             <ViewSelector defaultValue={dashboardItem} navigateTo={navigateTo} position={index} />
-            <div className="px-2">
-              {dashboardItem === 'icicle' && flamegraphHint != null ? flamegraphHint : null}
-            </div>
+
+            {dashboardItem === 'icicle' && flamegraphHint != null ? (
+              <div className="px-2">{flamegraphHint}</div>
+            ) : null}
           </div>
         </div>
         {isMultiPanelView && (

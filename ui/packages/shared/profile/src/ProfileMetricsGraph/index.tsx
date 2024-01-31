@@ -14,9 +14,15 @@
 import {useEffect, useState} from 'react';
 
 import {RpcError} from '@protobuf-ts/runtime-rpc';
+import {AnimatePresence, motion} from 'framer-motion';
 
 import {Duration, Label, QueryRangeResponse, QueryServiceClient, Timestamp} from '@parca/client';
-import {DateTimeRange, useGrpcMetadata, useParcaContext} from '@parca/components';
+import {
+  DateTimeRange,
+  MetricsGraphSkeleton,
+  useGrpcMetadata,
+  useParcaContext,
+} from '@parca/components';
 import {Query} from '@parca/parser';
 import {capitalizeOnlyFirstLetter, getStepDuration} from '@parca/utilities';
 
@@ -127,8 +133,8 @@ const ProfileMetricsGraph = ({
 }: ProfileMetricsGraphProps): JSX.Element => {
   const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to);
   const isLoaderVisible = useDelayedLoader(isLoading);
-  const {loader, onError, perf, authenticationErrorMessage} = useParcaContext();
-  const {width, height, margin} = useMetricsGraphDimensions(comparing);
+  const {onError, perf, authenticationErrorMessage, isDarkMode} = useParcaContext();
+  const {width, height, margin, heightStyle} = useMetricsGraphDimensions(comparing);
 
   useEffect(() => {
     if (error !== null) {
@@ -147,11 +153,13 @@ const ProfileMetricsGraph = ({
   const series = response?.series;
   const dataAvailable = series !== null && series !== undefined && series?.length > 0;
 
-  if (isLoaderVisible || (isLoading && !dataAvailable)) {
-    return <>{loader}</>;
+  const metricsGraphLoading = isLoaderVisible || (isLoading && !dataAvailable);
+
+  if (metricsGraphLoading) {
+    return <MetricsGraphSkeleton heightStyle={heightStyle} isDarkMode={isDarkMode} />;
   }
 
-  if (error !== null) {
+  if (!metricsGraphLoading && error !== null) {
     if (authenticationErrorMessage !== undefined && error.code === 'UNAUTHENTICATED') {
       return <ErrorContent errorMessage={authenticationErrorMessage} />;
     }
@@ -165,21 +173,29 @@ const ProfileMetricsGraph = ({
     };
 
     return (
-      <div className="h-full w-full">
-        <MetricsGraph
-          data={series}
-          from={from}
-          to={to}
-          profile={profile as MergedProfileSelection}
-          setTimeRange={setTimeRange}
-          onSampleClick={handleSampleClick}
-          addLabelMatcher={addLabelMatcher}
-          sampleUnit={Query.parse(queryExpression).profileType().sampleUnit}
-          height={height}
-          width={width}
-          margin={margin}
-        />
-      </div>
+      <AnimatePresence>
+        <motion.div
+          className="h-full w-full"
+          key="metrics-graph-loaded"
+          initial={{display: 'none', opacity: 0}}
+          animate={{display: 'block', opacity: 1}}
+          transition={{duration: 0.5}}
+        >
+          <MetricsGraph
+            data={series}
+            from={from}
+            to={to}
+            profile={profile as MergedProfileSelection}
+            setTimeRange={setTimeRange}
+            onSampleClick={handleSampleClick}
+            addLabelMatcher={addLabelMatcher}
+            sampleUnit={Query.parse(queryExpression).profileType().sampleUnit}
+            height={height}
+            width={width}
+            margin={margin}
+          />
+        </motion.div>
+      </AnimatePresence>
     );
   }
 

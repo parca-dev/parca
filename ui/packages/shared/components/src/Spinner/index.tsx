@@ -45,6 +45,7 @@ const Spinner = (): JSX.Element => {
       </svg>
       <span>Loading...</span>
     </div>
+    // <IS />
   );
 };
 
