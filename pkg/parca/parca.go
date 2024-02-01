@@ -422,6 +422,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	var debuginfodClients debuginfo.DebuginfodClients = debuginfo.NopDebuginfodClients{}
 	if len(flags.Debuginfod.UpstreamServers) > 0 {
 		debuginfodClients = debuginfo.NewDebuginfodClients(
+			logger,
 			reg,
 			tracerProvider,
 			flags.Debuginfod.UpstreamServers,
