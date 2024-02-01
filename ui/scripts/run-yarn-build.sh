@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 # Copyright 2024 The Parca Authors
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,18 +16,24 @@
 
 # this is done to prevent the yarn build command from removing the keep.go file
 # Create a temporary directory to store the keep.go file
+echo "Creating temporary directory"
 mkdir -p tmp/ui-keep
 
 # Copy the keep.go file to the temporary directory
+echo "Copying keep.go to temporary directory"
 cp packages/app/web/build/keep.go tmp/ui-keep/keep.go
 
 # Run the yarn build command
-command yarn run build
+echo "Running yarn build-lerna command"
+yarn build-lerna
 
 # Copy the keep.go file back to its original location
-cp tmp/ui-keep/keep.go ui/packages/app/web/build/keep.go
+echo "Copying keep.go back to original location"
+cp tmp/ui-keep/keep.go packages/app/web/build/keep.go
 
 # Remove the temporary directory
+echo "Removing temporary directory"
 rm -rf tmp/ui-keep
 
+echo "Done"
 exit 0
