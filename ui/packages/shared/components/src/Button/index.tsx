@@ -15,6 +15,7 @@ import {useMemo} from 'react';
 
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
+import {Tooltip} from 'react-tooltip';
 import {twMerge} from 'tailwind-merge';
 
 const BUTTON_VARIANT_CONFIG = {
@@ -104,12 +105,22 @@ type IconButtonProps = {
    * Can be a string (icon name from @iconify/react) or a ReactNode (e.g. an SVG)
    */
   icon: string | React.ReactNode;
+  toolTipText?: string;
 } & Omit<Props, 'variant' | 'children'>;
 
-export const IconButton = ({icon, ...props}: IconButtonProps): JSX.Element => {
+export const IconButton = ({icon, toolTipText, ...props}: IconButtonProps): JSX.Element => {
   return (
-    <Button {...props} variant="link">
+    <Button
+      id="icon-tooltip-text"
+      data-tooltip-content={toolTipText}
+      data-tooltip-id="iconButton-tooltip-text"
+      data-tooltip-place="top"
+      {...props}
+      variant="link"
+    >
       {typeof icon === 'string' ? <Icon icon={icon} /> : icon}
+      <span className="sr-only">{toolTipText}</span>
+      {toolTipText !== '' && <Tooltip id="iconButton-tooltip-text" />}
     </Button>
   );
 };

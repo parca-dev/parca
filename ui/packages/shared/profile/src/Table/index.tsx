@@ -11,14 +11,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 
-import {Menu, Transition} from '@headlessui/react';
-import {Icon} from '@iconify/react';
-import {type VisibilityState} from '@tanstack/react-table';
 import {Vector, tableFromIPC} from 'apache-arrow';
+import {AnimatePresence, motion} from 'framer-motion';
 
-import {Button, Table as TableComponent, useURLState} from '@parca/components';
+import {
+  Button,
+  TableActionButtonPlaceholder,
+  Table as TableComponent,
+  TableSkeleton,
+  useParcaContext,
+  useURLState,
+} from '@parca/components';
 import {
   getLastItem,
   isSearchMatch,
@@ -29,6 +34,7 @@ import {
 
 import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
 import {hexifyAddress} from '../utils';
+import ColumnsVisibility from './ColumnsVisibility';
 
 const FIELD_MAPPING_FILE = 'mapping_file';
 const FIELD_LOCATION_ADDRESS = 'location_address';
@@ -51,7 +57,7 @@ interface row {
   functionFileName: string;
 }
 
-interface ColumnDef {
+export interface ColumnDef {
   id: string;
   header: string;
   accessorKey: string;
@@ -71,6 +77,7 @@ interface TableProps {
   loading: boolean;
   currentSearchString?: string;
   setActionButtons?: (buttons: React.JSX.Element) => void;
+  isHalfScreen: boolean;
 }
 
 export const Table = React.memo(function Table({
@@ -82,10 +89,12 @@ export const Table = React.memo(function Table({
   loading,
   currentSearchString,
   setActionButtons,
+  isHalfScreen,
 }: TableProps): React.JSX.Element {
   const router = parseParams(window?.location.search);
   const [rawDashboardItems] = useURLState({param: 'dashboard_items'});
   const [filterByFunctionInput] = useURLState({param: 'filter_by_function'});
+  const {isDarkMode} = useParcaContext();
 
   const {compareMode} = useProfileViewContext();
 
@@ -298,9 +307,15 @@ export const Table = React.memo(function Table({
   }, [navigateTo, router, filterByFunctionInput]);
 
   useEffect(() => {
+    if (loading && setActionButtons !== undefined) {
+      setActionButtons(<TableActionButtonPlaceholder />);
+      return;
+    }
+
     if (setActionButtons === undefined) {
       return;
     }
+
     setActionButtons(
       <>
         <ColumnsVisibility
@@ -330,6 +345,7 @@ export const Table = React.memo(function Table({
     setActionButtons,
     columns,
     columnVisibility,
+    loading,
   ]);
 
   const initialSorting = useMemo(() => {
@@ -341,7 +357,13 @@ export const Table = React.memo(function Table({
     ];
   }, [compareMode]);
 
-  if (loading) return <div className="mx-auto text-center">Loading...</div>;
+  if (loading)
+    return (
+      <div className="overflow-clip h-[700px] min-h-[700px]">
+        <TableSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
+      </div>
+    );
+
   if (data === undefined) return <div className="mx-auto text-center">Profile has no samples</div>;
 
   const table = tableFromIPC(data);
@@ -380,87 +402,32 @@ export const Table = React.memo(function Table({
   }
 
   return (
-    <div className="relative">
-      <div className="font-robotoMono h-[80vh] w-full">
-        <TableComponent
-          data={rows}
-          columns={columns}
-          initialSorting={initialSorting}
-          columnVisibility={columnVisibility}
-          onRowClick={onRowClick}
-          enableHighlighting={enableHighlighting}
-          shouldHighlightRow={shouldHighlightRow}
-          usePointerCursor={dashboardItems.length > 1}
-        />
-      </div>
-    </div>
+    <AnimatePresence>
+      <motion.div
+        className="h-full w-full"
+        key="table-loaded"
+        initial={{display: 'none', opacity: 0}}
+        animate={{display: 'block', opacity: 1}}
+        transition={{duration: 0.5}}
+      >
+        <div className="relative">
+          <div className="font-robotoMono h-[80vh] w-full">
+            <TableComponent
+              data={rows}
+              columns={columns}
+              initialSorting={initialSorting}
+              columnVisibility={columnVisibility}
+              onRowClick={onRowClick}
+              enableHighlighting={enableHighlighting}
+              shouldHighlightRow={shouldHighlightRow}
+              usePointerCursor={dashboardItems.length > 1}
+            />
+          </div>
+        </div>
+      </motion.div>
+    </AnimatePresence>
   );
 });
-
-const ColumnsVisibility = ({
-  columns,
-  visibility,
-  setVisibility,
-}: {
-  columns: ColumnDef[];
-  visibility: VisibilityState;
-  setVisibility: (id: string, visible: boolean) => void;
-}): React.JSX.Element => {
-  return (
-    <div>
-      <Menu as="div" className="relative text-left">
-        <div>
-          <Menu.Button className="relative w-full cursor-default rounded-md border bg-white py-2 pl-3 pr-10 text-left text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 sm:text-sm">
-            <span className="ml-3 block overflow-x-hidden text-ellipsis">Columns</span>
-            <span className="pointer-events-none absolute inset-y-0 right-0 ml-3 flex items-center pr-2 text-gray-400">
-              <Icon icon="heroicons:chevron-down-20-solid" aria-hidden="true" />
-            </span>
-          </Menu.Button>
-        </div>
-
-        <Transition
-          as={Fragment}
-          leave="transition ease-in duration-100"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <Menu.Items className="absolute left-0 z-10 mt-1 min-w-[400px] overflow-auto rounded-md bg-gray-50 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:ring-white dark:ring-opacity-20 sm:text-sm">
-            <div className="p-4">
-              <fieldset>
-                <div className="space-y-5">
-                  {columns.map(col => (
-                    <div key={col.id} className="relative flex items-start">
-                      <div className="flex h-6 items-center">
-                        <input
-                          id={col.id}
-                          name={col.id}
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-                          checked={visibility[col.id ?? ''] ?? false}
-                          onChange={() => {
-                            setVisibility(col.id ?? '', !visibility[col.id ?? '']);
-                          }}
-                        />
-                      </div>
-                      <div className="ml-3 text-sm leading-6">
-                        <label
-                          htmlFor={col.id}
-                          className="font-medium text-gray-900 dark:text-gray-200"
-                        >
-                          {col.header}
-                        </label>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </fieldset>
-            </div>
-          </Menu.Items>
-        </Transition>
-      </Menu>
-    </div>
-  );
-};
 
 const addPlusSign = (num: string): string => {
   if (num.charAt(0) === '0' || num.charAt(0) === '-') {

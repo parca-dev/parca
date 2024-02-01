@@ -53,7 +53,6 @@ import {ProfileSource} from '../ProfileSource';
 import {SourceView} from '../SourceView';
 import Table from '../Table';
 import ProfileShareButton from '../components/ProfileShareButton';
-import useDelayedLoader from '../useDelayedLoader';
 import FilterByFunctionButton from './FilterByFunctionButton';
 import {ProfileViewContextProvider} from './ProfileViewContext';
 import ViewSelector from './ViewSelector';
@@ -153,8 +152,7 @@ export const ProfileView = ({
   const isDarkMode = useAppSelector(selectDarkMode);
   const isMultiPanelView = dashboardItems.length > 1;
 
-  const {loader, perf, profileViewExternalMainActions, profileViewExternalSubActions} =
-    useParcaContext();
+  const {perf, profileViewExternalMainActions, profileViewExternalSubActions} = useParcaContext();
 
   useEffect(() => {
     // Reset the current path when the profile source changes
@@ -168,31 +166,6 @@ export const ProfileView = ({
     }
     void loadGraphviz();
   }, []);
-
-  const isLoading = useMemo(() => {
-    if (dashboardItems.includes('icicle')) {
-      return Boolean(flamegraphData?.loading);
-    }
-    if (dashboardItems.includes('callgraph')) {
-      return Boolean(callgraphData?.loading) || Boolean(callgraphSVG === undefined);
-    }
-    if (dashboardItems.includes('table')) {
-      return Boolean(topTableData?.loading);
-    }
-    if (dashboardItems.includes('source')) {
-      return Boolean(sourceData?.loading);
-    }
-    return false;
-  }, [
-    dashboardItems,
-    callgraphData?.loading,
-    flamegraphData?.loading,
-    topTableData?.loading,
-    sourceData?.loading,
-    callgraphSVG,
-  ]);
-
-  const isLoaderVisible = useDelayedLoader(isLoading);
 
   const maxColor: string = getNewSpanColor(isDarkMode);
   const minColor: string = scaleLinear([isDarkMode ? 'black' : 'white', maxColor])(0.3);
@@ -269,6 +242,7 @@ export const ProfileView = ({
               loading={flamegraphData.loading}
               setActionButtons={setActionButtons}
               error={flamegraphData.error}
+              isHalfScreen={isHalfScreen}
               width={
                 dimensions?.width !== undefined
                   ? isHalfScreen
@@ -305,6 +279,7 @@ export const ProfileView = ({
             navigateTo={navigateTo}
             setActionButtons={setActionButtons}
             currentSearchString={currentSearchString as string}
+            isHalfScreen={isHalfScreen}
           />
         ) : (
           <></>
@@ -432,59 +407,55 @@ export const ProfileView = ({
         </div>
 
         <div className="w-full" ref={ref}>
-          {isLoaderVisible ? (
-            <>{loader}</>
-          ) : (
-            <DragDropContext onDragEnd={onDragEnd}>
-              <Droppable droppableId="droppable" direction="horizontal">
-                {provided => (
-                  <div
-                    ref={provided.innerRef}
-                    className={cx(
-                      'grid w-full gap-2',
-                      isMultiPanelView ? 'grid-cols-2' : 'grid-cols-1'
-                    )}
-                    {...provided.droppableProps}
-                  >
-                    {dashboardItems.map((dashboardItem, index) => {
-                      return (
-                        <Draggable
-                          key={dashboardItem}
-                          draggableId={dashboardItem}
-                          index={index}
-                          isDragDisabled={!isMultiPanelView}
-                        >
-                          {(provided, snapshot: {isDragging: boolean}) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              key={dashboardItem}
-                              className={cx(
-                                'min-h-[200px] w-full rounded p-2 shadow dark:border dark:border-gray-700 dark:bg-gray-700',
-                                snapshot.isDragging
-                                  ? 'bg-gray-200 dark:bg-gray-500'
-                                  : 'bg-white dark:bg-gray-700'
-                              )}
-                            >
-                              <VisualizationPanel
-                                handleClosePanel={handleClosePanel}
-                                isMultiPanelView={isMultiPanelView}
-                                dashboardItem={dashboardItem}
-                                getDashboardItemByType={getDashboardItemByType}
-                                dragHandleProps={provided.dragHandleProps}
-                                navigateTo={navigateTo}
-                                index={index}
-                              />
-                            </div>
-                          )}
-                        </Draggable>
-                      );
-                    })}
-                  </div>
-                )}
-              </Droppable>
-            </DragDropContext>
-          )}
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="droppable" direction="horizontal">
+              {provided => (
+                <div
+                  ref={provided.innerRef}
+                  className={cx(
+                    'grid w-full gap-2',
+                    isMultiPanelView ? 'grid-cols-2' : 'grid-cols-1'
+                  )}
+                  {...provided.droppableProps}
+                >
+                  {dashboardItems.map((dashboardItem, index) => {
+                    return (
+                      <Draggable
+                        key={dashboardItem}
+                        draggableId={dashboardItem}
+                        index={index}
+                        isDragDisabled={!isMultiPanelView}
+                      >
+                        {(provided, snapshot: {isDragging: boolean}) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            key={dashboardItem}
+                            className={cx(
+                              'w-full rounded p-2 shadow dark:border dark:border-gray-700 dark:bg-gray-700 min-h-96',
+                              snapshot.isDragging
+                                ? 'bg-gray-200 dark:bg-gray-500'
+                                : 'bg-white dark:bg-gray-700'
+                            )}
+                          >
+                            <VisualizationPanel
+                              handleClosePanel={handleClosePanel}
+                              isMultiPanelView={isMultiPanelView}
+                              dashboardItem={dashboardItem}
+                              getDashboardItemByType={getDashboardItemByType}
+                              dragHandleProps={provided.dragHandleProps}
+                              navigateTo={navigateTo}
+                              index={index}
+                            />
+                          </div>
+                        )}
+                      </Draggable>
+                    );
+                  })}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
         </div>
       </ProfileViewContextProvider>
     </KeyDownProvider>
