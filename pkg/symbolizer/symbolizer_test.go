@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/go-kit/log"
 	pprofprofile "github.com/google/pprof/profile"
 	"github.com/polarsignals/frostdb"
@@ -480,6 +481,7 @@ func setup(t *testing.T) (*grpc.ClientConn, pb.MetastoreServiceClient, *Symboliz
 		metastore,
 		parcacol.NewIngester(
 			logger,
+			memory.DefaultAllocator,
 			table,
 			schema,
 		),

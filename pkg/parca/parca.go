@@ -340,7 +340,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	ingester := parcacol.NewIngester(logger, table, schema)
+	ingester := parcacol.NewIngester(logger, memory.DefaultAllocator, table, schema)
 	querier := parcacol.NewQuerier(
 		logger,
 		tracerProvider.Tracer("querier"),

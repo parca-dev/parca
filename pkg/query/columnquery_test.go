@@ -176,6 +176,7 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 	mc := metastore.NewInProcessClient(m)
 	ingester := parcacol.NewIngester(
 		logger,
+		memory.DefaultAllocator,
 		table,
 		schema,
 	)
@@ -280,6 +281,7 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 	mc := metastore.NewInProcessClient(m)
 	ingester := parcacol.NewIngester(
 		logger,
+		memory.DefaultAllocator,
 		table,
 		schema,
 	)
@@ -425,6 +427,7 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 	mc := metastore.NewInProcessClient(m)
 	ingester := parcacol.NewIngester(
 		logger,
+		memory.DefaultAllocator,
 		table,
 		schema,
 	)
@@ -522,6 +525,7 @@ func TestColumnQueryAPIQueryCumulative(t *testing.T) {
 	mc := metastore.NewInProcessClient(m)
 	ingester := parcacol.NewIngester(
 		logger,
+		memory.DefaultAllocator,
 		table,
 		schema,
 	)
@@ -738,6 +742,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 
 	ingester := parcacol.NewIngester(
 		logger,
+		memory.DefaultAllocator,
 		table,
 		schema,
 	)
@@ -948,6 +953,7 @@ func TestColumnQueryAPITypes(t *testing.T) {
 	mc := metastore.NewInProcessClient(m)
 	ingester := parcacol.NewIngester(
 		logger,
+		memory.DefaultAllocator,
 		table,
 		schema,
 	)
@@ -1054,6 +1060,7 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 	mc := metastore.NewInProcessClient(m)
 	ingester := parcacol.NewIngester(
 		logger,
+		memory.DefaultAllocator,
 		table,
 		schema,
 	)
@@ -1150,6 +1157,7 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 	mc := metastore.NewInProcessClient(m)
 	ingester := parcacol.NewIngester(
 		logger,
+		memory.DefaultAllocator,
 		table,
 		schema,
 	)

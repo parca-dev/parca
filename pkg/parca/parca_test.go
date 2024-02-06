@@ -210,7 +210,7 @@ func TestConsistency(t *testing.T) {
 	fileContent, err := os.ReadFile("../query/testdata/alloc_objects.pb.gz")
 	require.NoError(t, err)
 
-	ingester := parcacol.NewIngester(logger, table, schema)
+	ingester := parcacol.NewIngester(logger, memory.DefaultAllocator, table, schema)
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
@@ -325,7 +325,7 @@ func TestPGOE2e(t *testing.T) {
 	fileContent, err := os.ReadFile("./testdata/pgotest.prof")
 	require.NoError(t, err)
 
-	ingester := parcacol.NewIngester(logger, table, schema)
+	ingester := parcacol.NewIngester(logger, memory.DefaultAllocator, table, schema)
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
@@ -430,7 +430,7 @@ func TestLabels(t *testing.T) {
 	fileContent, err := os.ReadFile("testdata/labels.pb.gz")
 	require.NoError(t, err)
 
-	ingester := parcacol.NewIngester(logger, table, schema)
+	ingester := parcacol.NewIngester(logger, memory.DefaultAllocator, table, schema)
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,

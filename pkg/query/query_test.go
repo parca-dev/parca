@@ -78,6 +78,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 				mc,
 				parcacol.NewIngester(
 					logger,
+					memory.DefaultAllocator,
 					table,
 					schema,
 				),

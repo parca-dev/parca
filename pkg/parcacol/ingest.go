@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"github.com/apache/arrow/go/v14/arrow"
+	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/parquet-go/parquet-go"
@@ -36,6 +37,7 @@ type Table interface {
 
 type Ingester struct {
 	logger     log.Logger
+	mem        memory.Allocator
 	table      Table
 	schema     *dynparquet.Schema
 	bufferPool *sync.Pool
@@ -43,11 +45,13 @@ type Ingester struct {
 
 func NewIngester(
 	logger log.Logger,
+	mem memory.Allocator,
 	table Table,
 	schema *dynparquet.Schema,
 ) Ingester {
 	return Ingester{
 		logger: logger,
+		mem:    mem,
 		table:  table,
 		schema: schema,
 		bufferPool: &sync.Pool{
@@ -104,7 +108,7 @@ func (ing Ingester) Ingest(ctx context.Context, req normalizer.NormalizedWriteRa
 	pBuf.Sort()
 
 	// Read sorted rows into an arrow record
-	records, err := ParquetBufToArrowRecord(ctx, pBuf.Buffer, 0)
+	records, err := ParquetBufToArrowRecord(ctx, ing.mem, pBuf.Buffer, ing.schema, 0)
 	if err != nil {
 		return err
 	}

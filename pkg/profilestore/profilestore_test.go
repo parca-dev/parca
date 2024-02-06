@@ -18,6 +18,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/go-kit/log"
 	"github.com/polarsignals/frostdb"
 	"github.com/prometheus/client_golang/prometheus"
@@ -67,6 +68,7 @@ func Test_LabelName_Error(t *testing.T) {
 		metastore.NewInProcessClient(m),
 		parcacol.NewIngester(
 			logger,
+			memory.DefaultAllocator,
 			table,
 			schema,
 		),
@@ -151,6 +153,7 @@ func BenchmarkProfileColumnStoreWriteSeries(b *testing.B) {
 		metastore.NewInProcessClient(m),
 		parcacol.NewIngester(
 			logger,
+			memory.DefaultAllocator,
 			table,
 			schema,
 		),
