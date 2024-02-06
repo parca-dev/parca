@@ -295,18 +295,20 @@ export const getReducedSpanColor = (transparency: number, isDarkMode: boolean): 
     : `rgba(164, 214, 153, ${transparency})`;
 };
 
+const DIFF_RATIO_THRESHOLD = 0.001;
+
 export const diffColor = (diff: bigint, cumulative: bigint, isDarkMode: boolean): string => {
   const prevValue = cumulative - diff;
   const diffRatio = prevValue > 0 ? (diff !== 0n ? divide(diff, prevValue) : 0) : 1.0;
+  const hasDiff = Math.abs(diffRatio) > DIFF_RATIO_THRESHOLD;
 
-  const diffTransparency = diff !== 0n ? Math.min((Math.abs(diffRatio) / 2 + 0.5) * 0.8, 0.8) : 0;
+  const diffTransparency = hasDiff ? Math.min((Math.abs(diffRatio) / 2 + 0.5) * 0.8, 0.8) : 0;
 
   const newSpanColor = getNewSpanColor(isDarkMode);
   const increasedSpanColor = getIncreasedSpanColor(diffTransparency, isDarkMode);
   const reducedSpanColor = getReducedSpanColor(diffTransparency, isDarkMode);
 
-  const color: string =
-    diff === 0n ? newSpanColor : diff > 0n ? increasedSpanColor : reducedSpanColor;
+  const color: string = !hasDiff ? newSpanColor : diff > 0n ? increasedSpanColor : reducedSpanColor;
 
   return color;
 };
