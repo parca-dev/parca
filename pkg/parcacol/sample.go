@@ -1,4 +1,4 @@
-// Copyright 2022-2023 The Parca Authors
+// Copyright 2022-2024 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -115,6 +115,7 @@ func SampleToParquetRow(
 }
 
 func SeriesToArrowRecord(
+	mem memory.Allocator,
 	schema *dynparquet.Schema,
 	series []normalizer.Series,
 	labelNames, profileLabelNames, profileNumLabelNames []string,
@@ -130,12 +131,12 @@ func SeriesToArrowRecord(
 	defer schema.PutPooledParquetSchema(ps)
 
 	ctx := context.Background()
-	as, err := pqarrow.ParquetSchemaToArrowSchema(ctx, ps.Schema, logicalplan.IterOptions{})
+	as, err := pqarrow.ParquetSchemaToArrowSchema(ctx, ps.Schema, schema, logicalplan.IterOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	bldr := array.NewRecordBuilder(memory.NewGoAllocator(), as)
+	bldr := array.NewRecordBuilder(mem, as)
 	defer bldr.Release()
 
 	for _, s := range series {
@@ -227,13 +228,13 @@ func SeriesToArrowRecord(
 }
 
 // ParquetBufToArrowRecord converts a parquet buffer to an arrow record. If rowsPerRecord is 0, then the entire buffer is converted to a single record.
-func ParquetBufToArrowRecord(ctx context.Context, buf *dynparquet.Buffer, rowsPerRecord uint) ([]arrow.Record, error) {
-	as, err := pqarrow.ParquetSchemaToArrowSchema(ctx, buf.Schema(), logicalplan.IterOptions{})
+func ParquetBufToArrowRecord(ctx context.Context, mem memory.Allocator, buf *dynparquet.Buffer, s *dynparquet.Schema, rowsPerRecord uint) ([]arrow.Record, error) {
+	as, err := pqarrow.ParquetSchemaToArrowSchema(ctx, buf.Schema(), s, logicalplan.IterOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	bldr := array.NewRecordBuilder(memory.NewGoAllocator(), as)
+	bldr := array.NewRecordBuilder(mem, as)
 	defer bldr.Release()
 
 	rows := buf.Rows()

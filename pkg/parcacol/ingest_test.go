@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/apache/arrow/go/v14/arrow"
+	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/go-kit/log"
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/prometheus/client_golang/prometheus"
@@ -113,7 +114,7 @@ func TestPprofToArrow(t *testing.T) {
 	normalizer := normalizer.NewNormalizer(metastore, true, counter)
 	normalizedReq, err := normalizer.NormalizeWriteRawRequest(ctx, req)
 	require.NoError(t, err)
-	ingester := NewIngester(logger, table, schema)
+	ingester := NewIngester(logger, memory.DefaultAllocator, table, schema)
 	err = ingester.Ingest(ctx, normalizedReq)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(table.inserts))
@@ -180,7 +181,7 @@ func TestUncompressedPprofToArrow(t *testing.T) {
 	normalizer := normalizer.NewNormalizer(metastore, true, counter)
 	normalizedReq, err := normalizer.NormalizeWriteRawRequest(ctx, req)
 	require.NoError(t, err)
-	ingester := NewIngester(logger, table, schema)
+	ingester := NewIngester(logger, memory.DefaultAllocator, table, schema)
 	err = ingester.Ingest(ctx, normalizedReq)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(table.inserts))

@@ -1,4 +1,4 @@
-// Copyright 2022-2023 The Parca Authors
+// Copyright 2022-2024 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -357,7 +357,7 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 	err := q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Aggregate(
-			[]logicalplan.Expr{
+			[]*logicalplan.AggregationFunction{
 				logicalplan.Sum(logicalplan.Col(profile.ColumnDuration)),
 				logicalplan.Sum(logicalplan.Col(profile.ColumnPeriod)),
 				logicalplan.Sum(logicalplan.Col(profile.ColumnValue)),
@@ -530,7 +530,7 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 	err := q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Aggregate(
-			[]logicalplan.Expr{
+			[]*logicalplan.AggregationFunction{
 				logicalplan.Sum(logicalplan.Col(profile.ColumnValue)),
 			},
 			[]logicalplan.Expr{
@@ -951,7 +951,7 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Aggregate(
-			[]logicalplan.Expr{
+			[]*logicalplan.AggregationFunction{
 				logicalplan.Sum(logicalplan.Col(profile.ColumnValue)),
 			},
 			[]logicalplan.Expr{
@@ -1051,7 +1051,7 @@ func (q *Querier) selectMerge(
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Aggregate(
-			[]logicalplan.Expr{
+			[]*logicalplan.AggregationFunction{
 				logicalplan.Sum(logicalplan.Col(profile.ColumnValue)),
 			},
 			aggrCols,
