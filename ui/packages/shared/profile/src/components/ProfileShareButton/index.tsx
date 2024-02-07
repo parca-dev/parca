@@ -132,6 +132,7 @@ const ProfileShareButton = ({queryRequest, queryClient, disabled = false}: Props
         onClick={() => setIsOpen(true)}
         disabled={disabled}
         className="gap-2"
+        id="h-share-profile-button"
       >
         Share profile
         <Icon icon="material-symbols:share" width={20} />

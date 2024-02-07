@@ -97,12 +97,14 @@ const ShowHideLegendButton = ({
               icon={isColorStackLegendEnabled ? 'ph:eye-closed' : 'ph:eye'}
               toolTipText={isColorStackLegendEnabled ? 'Hide legend' : 'Show legend'}
               onClick={() => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true')}
+              id="h-show-legend-button"
             />
           ) : (
             <Button
               className="gap-2 w-max"
               variant="neutral"
               onClick={() => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true')}
+              id="h-show-legend-button"
             >
               {isColorStackLegendEnabled ? 'Hide legend' : 'Show legend'}
               <Icon icon={isColorStackLegendEnabled ? 'ph:eye-closed' : 'ph:eye'} width={20} />

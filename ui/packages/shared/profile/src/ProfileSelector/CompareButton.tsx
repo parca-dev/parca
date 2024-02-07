@@ -45,6 +45,7 @@ const CompareButton = ({
         onClick={onClick}
         onMouseEnter={() => setCompareHover(true)}
         onMouseLeave={() => setCompareHover(false)}
+        id="h-compare-button"
       >
         Compare
       </Button>

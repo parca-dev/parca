@@ -287,7 +287,7 @@ const ProfileSelector = ({
                 e.preventDefault();
                 setQueryExpression(true);
               }}
-              id="matcher-search-button"
+              id="h-matcher-search-button"
             >
               Search
             </Button>

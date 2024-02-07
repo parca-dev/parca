@@ -48,6 +48,7 @@ const Select = ({
   primary = false,
   disabled = false,
   icon,
+  id = '',
 }: {
   items: SelectItem[];
   selectedKey: string | undefined;
@@ -59,6 +60,7 @@ const Select = ({
   primary?: boolean;
   disabled?: boolean;
   icon?: JSX.Element;
+  id?: string;
 }): JSX.Element => {
   const selection = items.find(v => v.key === selectedKey) ?? {
     key: selectedKey,
@@ -83,6 +85,7 @@ const Select = ({
               primary ? primaryStyles : defaultStyles,
               {[className]: className.length > 0}
             )}
+            id={id}
           >
             <div className={cx(icon != null ? '' : 'block overflow-x-hidden text-ellipsis')}>
               {selection?.key !== '' ? selection.element.active : placeholder}
@@ -106,6 +109,7 @@ const Select = ({
                 items.length > 0 &&
                 items.map(option => (
                   <Listbox.Option
+                    id={`h-select-option-${option.key}`}
                     key={option.key}
                     disabled={option.disabled ?? false}
                     className={({active, disabled}) =>

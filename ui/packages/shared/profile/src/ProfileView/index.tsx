@@ -370,7 +370,7 @@ export const ProfileView = ({
             {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
             <UserPreferences
               customButton={
-                <Button className="gap-2" variant="neutral">
+                <Button className="gap-2" variant="neutral" id="h-viz-preferences">
                   Preferences
                   <Icon icon="pajamas:preferences" width={20} />
                 </Button>
@@ -383,6 +383,7 @@ export const ProfileView = ({
               />
             ) : null}
             <Button
+              id="h-download-pprof"
               className="gap-2"
               variant="neutral"
               onClick={e => {

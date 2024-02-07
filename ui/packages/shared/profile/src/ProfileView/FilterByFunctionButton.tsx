@@ -42,6 +42,7 @@ const FilterByFunctionButton = ({
   return (
     <Input
       placeholder="Filter by function"
+      id="h-filter-by-function"
       className="text-sm"
       onAction={onAction}
       onChange={e => setLocalValue(e.target.value)}
