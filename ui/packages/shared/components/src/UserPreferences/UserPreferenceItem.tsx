@@ -64,6 +64,7 @@ interface UserPreferenceItemProps {
   labelToLeft?: boolean;
   disabled?: boolean;
   inputSuffix?: string;
+  id?: string;
 }
 
 function UserPreferenceItem<T>({
@@ -72,6 +73,7 @@ function UserPreferenceItem<T>({
   labelToLeft = false,
   disabled = false,
   inputSuffix = '',
+  id = '',
 }: UserPreferenceItemProps): JSX.Element {
   const [enabledTrimming, setEnabledTrimming] = useUserPreference<T>(userPreferenceDetails.key);
 
@@ -86,7 +88,7 @@ function UserPreferenceItem<T>({
         <label htmlFor={userPreferenceDetails.key}>{userPreferenceDetails.name}</label>
       ) : null}
       <GenericInput
-        id={userPreferenceDetails.key}
+        id={id ?? userPreferenceDetails.key}
         value={enabledTrimming}
         onChange={setEnabledTrimming}
         type={userPreferenceDetails.type}
