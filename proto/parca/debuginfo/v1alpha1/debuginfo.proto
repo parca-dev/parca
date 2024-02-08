@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package parca.debuginfo.v1alpha1;
 
+import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/parca-dev/parca/gen/go/debuginfo";
@@ -9,16 +10,33 @@ option go_package = "github.com/parca-dev/parca/gen/go/debuginfo";
 // DebuginfoService is a service that allows storage of debug info
 service DebuginfoService {
   // Upload ingests debug info for a given build_id
-  rpc Upload(stream UploadRequest) returns (UploadResponse) {}
+  rpc Upload(stream UploadRequest) returns (UploadResponse) {
+    option (google.api.http) = {
+      post: "/debuginfo/upload"
+      body: "*"
+    };
+  }
 
   // ShouldInitiateUpload returns whether an upload for a given build_id should be initiated or not.
-  rpc ShouldInitiateUpload(ShouldInitiateUploadRequest) returns (ShouldInitiateUploadResponse) {}
+  rpc ShouldInitiateUpload(ShouldInitiateUploadRequest) returns (ShouldInitiateUploadResponse) {
+    option (google.api.http) = {get: "/debuginfo/shouldinitiateupload"};
+  }
 
   // InitiateUpload returns a strategy and information to upload debug info for a given build_id.
-  rpc InitiateUpload(InitiateUploadRequest) returns (InitiateUploadResponse) {}
+  rpc InitiateUpload(InitiateUploadRequest) returns (InitiateUploadResponse) {
+    option (google.api.http) = {
+      post: "/debuginfo/initiateupload"
+      body: "*"
+    };
+  }
 
   // MarkUploadFinished marks the upload as finished for a given build_id.
-  rpc MarkUploadFinished(MarkUploadFinishedRequest) returns (MarkUploadFinishedResponse) {}
+  rpc MarkUploadFinished(MarkUploadFinishedRequest) returns (MarkUploadFinishedResponse) {
+    option (google.api.http) = {
+      post: "/debuginfo/markuploadfinished"
+      body: "*"
+    };
+  }
 }
 
 // Types of debuginfo.

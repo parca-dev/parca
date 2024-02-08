@@ -15,7 +15,169 @@
   "produces": [
     "application/json"
   ],
-  "paths": {},
+  "paths": {
+    "/debuginfo/initiateupload": {
+      "post": {
+        "summary": "InitiateUpload returns a strategy and information to upload debug info for a given build_id.",
+        "operationId": "DebuginfoService_InitiateUpload",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1InitiateUploadResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "InitiateUploadRequest is the request to initiate an upload.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1alpha1InitiateUploadRequest"
+            }
+          }
+        ],
+        "tags": [
+          "DebuginfoService"
+        ]
+      }
+    },
+    "/debuginfo/markuploadfinished": {
+      "post": {
+        "summary": "MarkUploadFinished marks the upload as finished for a given build_id.",
+        "operationId": "DebuginfoService_MarkUploadFinished",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1MarkUploadFinishedResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "MarkUploadFinishedRequest is the request to mark an upload as finished.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1alpha1MarkUploadFinishedRequest"
+            }
+          }
+        ],
+        "tags": [
+          "DebuginfoService"
+        ]
+      }
+    },
+    "/debuginfo/shouldinitiateupload": {
+      "get": {
+        "summary": "ShouldInitiateUpload returns whether an upload for a given build_id should be initiated or not.",
+        "operationId": "DebuginfoService_ShouldInitiateUpload",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1ShouldInitiateUploadResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "buildId",
+            "description": "The build_id of the debuginfo.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "hash",
+            "description": "Hash of the debuginfo to upload.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "force",
+            "description": "Force uploading even if valid debuginfos are already available.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "type",
+            "description": "Type of debuginfo to propose uploading.\n\n - DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED: The default type that the API always supported. This type is expected to\ncontain debuginfos for symbolizaton purposes.\n - DEBUGINFO_TYPE_EXECUTABLE: The type to identify executables. This is meant to be used for\ndisassembling so it is expected to contain executable `.text` section.\n - DEBUGINFO_TYPE_SOURCES: The type to identify a source tarball. This is expected to contain\nmultiple source files that debuginfo references. It is meant to show code\nwith profiling data inline.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED",
+              "DEBUGINFO_TYPE_EXECUTABLE",
+              "DEBUGINFO_TYPE_SOURCES"
+            ],
+            "default": "DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED"
+          }
+        ],
+        "tags": [
+          "DebuginfoService"
+        ]
+      }
+    },
+    "/debuginfo/upload": {
+      "post": {
+        "summary": "Upload ingests debug info for a given build_id",
+        "operationId": "DebuginfoService_Upload",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/parcadebuginfov1alpha1UploadResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": " (streaming inputs)",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/parcadebuginfov1alpha1UploadRequest"
+            }
+          }
+        ],
+        "tags": [
+          "DebuginfoService"
+        ]
+      }
+    }
+  },
   "definitions": {
     "UploadInstructionsUploadStrategy": {
       "type": "string",
@@ -26,6 +188,21 @@
       ],
       "default": "UPLOAD_STRATEGY_UNSPECIFIED",
       "description": "The strategy to use for uploading.\n\n - UPLOAD_STRATEGY_UNSPECIFIED: The upload is not allowed.\n - UPLOAD_STRATEGY_GRPC: The upload is allowed and should be done via the Upload RPC.\n - UPLOAD_STRATEGY_SIGNED_URL: The upload is allowed and should be done via a returned signed URL."
+    },
+    "parcadebuginfov1alpha1UploadRequest": {
+      "type": "object",
+      "properties": {
+        "info": {
+          "$ref": "#/definitions/v1alpha1UploadInfo",
+          "title": "info is the metadata for the debug info"
+        },
+        "chunkData": {
+          "type": "string",
+          "format": "byte",
+          "title": "chunk_data is the raw bytes of the debug info"
+        }
+      },
+      "title": "UploadRequest upload debug info"
     },
     "parcadebuginfov1alpha1UploadResponse": {
       "type": "object",
@@ -80,6 +257,33 @@
       "default": "DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED",
       "description": "Types of debuginfo.\n\n - DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED: The default type that the API always supported. This type is expected to\ncontain debuginfos for symbolizaton purposes.\n - DEBUGINFO_TYPE_EXECUTABLE: The type to identify executables. This is meant to be used for\ndisassembling so it is expected to contain executable `.text` section.\n - DEBUGINFO_TYPE_SOURCES: The type to identify a source tarball. This is expected to contain\nmultiple source files that debuginfo references. It is meant to show code\nwith profiling data inline."
     },
+    "v1alpha1InitiateUploadRequest": {
+      "type": "object",
+      "properties": {
+        "buildId": {
+          "type": "string",
+          "description": "The build_id of the debug info to upload."
+        },
+        "size": {
+          "type": "string",
+          "format": "int64",
+          "description": "The size of the debug info to upload."
+        },
+        "hash": {
+          "type": "string",
+          "description": "Hash of the debuginfo to upload."
+        },
+        "force": {
+          "type": "boolean",
+          "description": "Force uploading even if valid debuginfos are already available."
+        },
+        "type": {
+          "$ref": "#/definitions/v1alpha1DebuginfoType",
+          "description": "Type of debuginfo to propose uploading."
+        }
+      },
+      "description": "InitiateUploadRequest is the request to initiate an upload."
+    },
     "v1alpha1InitiateUploadResponse": {
       "type": "object",
       "properties": {
@@ -89,6 +293,24 @@
         }
       },
       "description": "InitiateUploadResponse is the response to an InitiateUploadRequest."
+    },
+    "v1alpha1MarkUploadFinishedRequest": {
+      "type": "object",
+      "properties": {
+        "buildId": {
+          "type": "string",
+          "description": "The build_id of the debug info to mark as finished."
+        },
+        "uploadId": {
+          "type": "string",
+          "description": "The upload_id of the debug info to mark as finished."
+        },
+        "type": {
+          "$ref": "#/definitions/v1alpha1DebuginfoType",
+          "description": "The type of debuginfo upload to mark as finished."
+        }
+      },
+      "description": "MarkUploadFinishedRequest is the request to mark an upload as finished."
     },
     "v1alpha1MarkUploadFinishedResponse": {
       "type": "object",
