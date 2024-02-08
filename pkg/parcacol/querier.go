@@ -340,10 +340,11 @@ func (q *Querier) QueryRange(
 }
 
 const (
-	ColumnDurationSum = "sum(" + profile.ColumnDuration + ")"
-	ColumnPeriodSum   = "sum(" + profile.ColumnPeriod + ")"
-	ColumnValueCount  = "count(" + profile.ColumnValue + ")"
-	ColumnValueSum    = "sum(" + profile.ColumnValue + ")"
+	ColumnDurationSum  = "sum(" + profile.ColumnDuration + ")"
+	ColumnPeriodSum    = "sum(" + profile.ColumnPeriod + ")"
+	ColumnValueCount   = "count(" + profile.ColumnValue + ")"
+	ColumnValueSum     = "sum(" + profile.ColumnValue + ")"
+	ColumnTimestampMin = "min(" + profile.ColumnTimestamp + ")"
 )
 
 func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration, sampleTypeUnit string) ([]*pb.MetricsSeries, error) {
@@ -1053,6 +1054,10 @@ func (q *Querier) selectMerge(
 		Aggregate(
 			[]*logicalplan.AggregationFunction{
 				logicalplan.Sum(logicalplan.Col(profile.ColumnValue)),
+				logicalplan.Count(logicalplan.Col(profile.ColumnValue)),
+				logicalplan.Sum(logicalplan.Col(profile.ColumnDuration)),
+				logicalplan.Sum(logicalplan.Col(profile.ColumnPeriod)),
+				logicalplan.Min(logicalplan.Col(profile.ColumnTimestamp)),
 			},
 			aggrCols,
 		).
@@ -1065,11 +1070,80 @@ func (q *Querier) selectMerge(
 		return nil, "", profile.Meta{}, err
 	}
 
+	duration, err := sumByTimestamp(ColumnDurationSum, records)
+	if err != nil {
+		return nil, "", profile.Meta{}, err
+	}
+
+	period, err := sumByTimestamp(ColumnPeriodSum, records)
+	if err != nil {
+		return nil, "", profile.Meta{}, err
+	}
+
+	trimmedRecords := make([]arrow.Record, len(records))
+	for i, r := range records {
+		oldFields := r.Schema().Fields()
+		fields := make([]arrow.Field, len(oldFields)-4)
+		columns := make([]arrow.Array, len(oldFields)-4)
+
+		for j, f := range oldFields {
+			if f.Name != ColumnValueCount && f.Name != ColumnDurationSum && f.Name != ColumnPeriodSum && f.Name != ColumnTimestampMin {
+				if f.Name == ColumnValueSum {
+					f.Name = profile.ColumnValue // rename ColumnValueSum to ColumnValue
+				}
+				fields[j] = f
+				columns[j] = r.Column(j)
+			}
+		}
+
+		trimmedRecords[i] = array.NewRecord(arrow.NewSchema(fields, nil), columns, r.NumRows())
+		r.Release() // we don't care about this record anymore, release it.
+	}
+
 	meta := profile.Meta{
 		Name:       queryParts.Meta.Name,
-		SampleType: queryParts.Meta.SampleType,
 		PeriodType: queryParts.Meta.PeriodType,
+		SampleType: queryParts.Meta.SampleType,
 		Timestamp:  start,
+		Duration:   duration,
+		Period:     period,
 	}
-	return records, "sum(value)", meta, nil
+	return trimmedRecords, profile.ColumnValue, meta, nil
+}
+
+func sumByTimestamp(column string, records []arrow.Record) (int64, error) {
+	// There might be a more "arrow" way of doing this. But this works for now.
+	var sum int64
+	timestampValue := map[int64]int64{}
+	for _, r := range records {
+		timestampIndices := r.Schema().FieldIndices(ColumnTimestampMin)
+		if len(timestampIndices) != 1 {
+			return 0, fmt.Errorf("expected column %q to exist", ColumnTimestampMin)
+		}
+		valueIndices := r.Schema().FieldIndices(column)
+		if len(valueIndices) != 1 {
+			return 0, fmt.Errorf("expected column %q to exist", column)
+		}
+		countIndices := r.Schema().FieldIndices(ColumnValueCount)
+		if len(countIndices) != 1 {
+			return 0, fmt.Errorf("expected column %q to exist", ColumnValueCount)
+		}
+
+		timestampColumn := r.Column(timestampIndices[0]).(*array.Int64)
+		valueColumn := r.Column(valueIndices[0]).(*array.Int64)
+		countColumn := r.Column(countIndices[0]).(*array.Int64)
+
+		for i := 0; i < int(r.NumRows()); i++ {
+			timestamp := timestampColumn.Value(i)
+			if timestampValue[timestamp] == 0 {
+				value := valueColumn.Value(i)
+				count := countColumn.Value(i)
+				v := value / count // we don't expect fractional values as value is always a multiple of count
+				timestampValue[timestamp] = v
+				sum += v
+			}
+		}
+	}
+
+	return sum, nil
 }

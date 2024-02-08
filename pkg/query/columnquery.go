@@ -819,41 +819,54 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile
 	_, span := tracer.Start(ctx, "ComputeDiff")
 	defer span.End()
 
+	compareRatio := 1.0
+	baseRatio := 1.0
+	if compare.Meta.Period > base.Meta.Period {
+		baseRatio = float64(compare.Meta.Period) / float64(base.Meta.Period)
+	}
+	if base.Meta.Period > compare.Meta.Period {
+		compareRatio = float64(base.Meta.Period) / float64(compare.Meta.Period)
+	}
+
+	// If the difference is less than 10% we don't scale the values and compare the raw values.
+	if baseRatio < 1.1 {
+		baseRatio = 1.0
+	}
+	if compareRatio < 1.1 {
+		compareRatio = 1.0
+	}
+
 	records := make([]arrow.Record, 0, len(compare.Samples)+len(base.Samples))
 
+	// If there is no difference between both profile periods,
+	// we only multiply the values of the base profile by -1 for diffing.
+
+	// If however, there is a difference between both profile periods,
+	// we multiply the values of the shorter (less period) profile's values by the ratio of the longer (more period) profile.
+	// Example: If the base profile has a period of 10ms and the compare profile has a period of 20ms,
+	// the base profile's values will be multiplied by 2.0, so that the diffed profile will have a period of 20ms.
+
 	for _, r := range compare.Samples {
-		columns := r.Columns()
-		cols := make([]arrow.Array, len(columns))
-		copy(cols, columns)
-		// This is intentional, the diff value of the `compare` profile is the same
-		// as the value of the `compare` profile, because what we're actually doing
-		// is subtracting the `base` profile, but the actual calculation happens
-		// when building the visualizations. We should eventually have this be done
-		// directly by the query engine.
-		cols[len(cols)-1] = cols[len(cols)-2]
-		records = append(records, array.NewRecord(
-			r.Schema(),
-			cols,
-			r.NumRows(),
-		))
+		nr, err := scaleRecord(mem, r, compareRatio, false)
+		if err != nil {
+			return profile.Profile{}, err
+		}
+		records = append(records, nr)
 	}
 
 	for _, r := range base.Samples {
-		func() {
-			columns := r.Columns()
-			cols := make([]arrow.Array, len(columns))
-			copy(cols, columns)
-			mult := multiplyInt64By(mem, columns[len(columns)-2].(*array.Int64), -1)
-			defer mult.Release()
-			zero := zeroArray(mem, int(r.NumRows()))
-			defer zero.Release()
-			records = append(records, array.NewRecord(
-				r.Schema(),
-				append(cols[:len(cols)-2], zero, mult),
-				r.NumRows(),
-			))
-		}()
+		// The base profile's values are irrelevant for the diffed profile and thus set to all zeros.
+		// The base profiles' diff values are multiplied by -1 to subtract them from the compare profile's values.
+		nr, err := scaleRecord(mem, r, -1*baseRatio, true)
+		if err != nil {
+			return profile.Profile{}, err
+		}
+		records = append(records, nr)
 	}
+
+	compare.Meta.Period = max(compare.Meta.Period, base.Meta.Period)
+	compare.Meta.Duration = max(compare.Meta.Duration, base.Meta.Duration)
+	compare.Meta.Timestamp = min(compare.Meta.Timestamp, base.Meta.Timestamp)
 
 	return profile.Profile{
 		Meta:    compare.Meta,
@@ -861,14 +874,63 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile
 	}, nil
 }
 
-func multiplyInt64By(pool memory.Allocator, arr *array.Int64, factor int64) arrow.Array {
+func scaleRecord(mem memory.Allocator, r arrow.Record, factor float64, zero bool) (arrow.Record, error) {
+	schema := r.Schema()
+	profileLabels := profile.ArrowSchemaLabelFields(schema)
+
+	cols := make([]arrow.Array, len(profileLabels)+3) // locations, value, diff
+	copy(cols, r.Columns()[:len(profileLabels)+1])    // profileLabels and locations
+
+	valueIndex := schema.FieldIndices(profile.ColumnValue)[0]
+
+	if factor != 1.0 {
+		mult := multiplyInt64By(mem, r.Column(valueIndex).(*array.Int64), factor)
+		defer mult.Release()
+
+		if zero {
+			zeros := zeroArray(mem, r.NumRows())
+			defer zeros.Release()
+			cols[len(cols)-2] = zeros
+		} else {
+			cols[len(cols)-2] = mult
+		}
+
+		cols[len(cols)-1] = mult
+	} else {
+		// This is intentional, the diff value of the `compare` profile is the same
+		// as the value of the `compare` profile, because what we're actually doing
+		// is subtracting the `base` profile, but the actual calculation happens
+		// when building the visualizations. We should eventually have this be done
+		// directly by the query engine.
+		if zero {
+			zeros := zeroArray(mem, r.NumRows())
+			defer zeros.Release()
+			cols[len(cols)-2] = zeros
+		} else {
+			cols[len(cols)-2] = r.Column(valueIndex)
+		}
+		cols[len(cols)-1] = r.Column(valueIndex)
+	}
+
+	return array.NewRecord(
+		schema,
+		cols,
+		r.NumRows(),
+	), nil
+}
+
+func multiplyInt64By(pool memory.Allocator, arr *array.Int64, factor float64) arrow.Array {
 	b := array.NewInt64Builder(pool)
 	defer b.Release()
 
 	values := arr.Int64Values()
 	valid := make([]bool, len(values))
 	for i := range values {
-		values[i] *= factor
+		// converting the value to float64 to multiply it by the factor
+		// afterward we convert it back to int64
+		v := float64(values[i])
+		v = v * factor
+		values[i] = int64(v)
 		valid[i] = true
 	}
 
@@ -876,7 +938,7 @@ func multiplyInt64By(pool memory.Allocator, arr *array.Int64, factor int64) arro
 	return b.NewArray()
 }
 
-func zeroArray(pool memory.Allocator, rows int) arrow.Array {
+func zeroArray(pool memory.Allocator, rows int64) arrow.Array {
 	b := array.NewInt64Builder(pool)
 	defer b.Release()
 

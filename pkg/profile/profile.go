@@ -14,6 +14,7 @@
 package profile
 
 import (
+	"strings"
 	"time"
 
 	"github.com/apache/arrow/go/v14/arrow"
@@ -78,11 +79,11 @@ func ArrowSamplesField(profileLabelFields []arrow.Field) []arrow.Field {
 	copy(fields, profileLabelFields)
 	fields[numFields-3] = LocationsField
 	fields[numFields-2] = arrow.Field{
-		Name: "value",
+		Name: ColumnValue,
 		Type: arrow.PrimitiveTypes.Int64,
 	}
 	fields[numFields-1] = arrow.Field{
-		Name: "diff",
+		Name: ColumnDiff,
 		Type: arrow.PrimitiveTypes.Int64,
 	}
 
@@ -91,6 +92,16 @@ func ArrowSamplesField(profileLabelFields []arrow.Field) []arrow.Field {
 
 func ArrowSchema(profileLabelFields []arrow.Field) *arrow.Schema {
 	return arrow.NewSchema(ArrowSamplesField(profileLabelFields), nil)
+}
+
+func ArrowSchemaLabelFields(schema *arrow.Schema) []arrow.Field {
+	profileLabels := []arrow.Field{}
+	for _, field := range schema.Fields() {
+		if strings.HasPrefix(field.Name, ColumnPprofLabelsPrefix) {
+			profileLabels = append(profileLabels, field)
+		}
+	}
+	return profileLabels
 }
 
 type LocationLine struct {

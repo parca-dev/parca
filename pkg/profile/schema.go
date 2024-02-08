@@ -34,6 +34,9 @@ const (
 	ColumnStacktrace     = "stacktrace"
 	ColumnTimestamp      = "timestamp"
 	ColumnValue          = "value"
+	ColumnValueSum       = "sum(value)"
+	ColumnValueCount     = "count(value)"
+	ColumnDiff           = "diff"
 )
 
 func SchemaDefinition() *schemapb.Schema {
