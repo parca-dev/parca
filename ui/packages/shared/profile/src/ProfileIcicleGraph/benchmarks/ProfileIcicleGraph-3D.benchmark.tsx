@@ -12,23 +12,24 @@
 // limitations under the License.
 
 import React from 'react';
-import ProfileIcicleGraph from '../';
+import ProfileIcicleGraph from '..';
 import {Provider} from 'react-redux';
 import {store} from '@parca/store';
+import parcaGraphData from './benchdata/parca-3d.json';
 import {Flamegraph} from '@parca/client';
-import parca1mGraphData from './benchdata/parca-1m.json';
 
 const {store: reduxStore} = store();
 
-const parca1mGraph = parca1mGraphData as Flamegraph;
+const parcaGraph = parcaGraphData as Flamegraph;
 
 export default function ({callback = () => {}}): React.ReactElement {
   return (
     <div ref={callback}>
       <Provider store={reduxStore}>
         <ProfileIcicleGraph
-          graph={parca1mGraph}
-          sampleUnit={parca1mGraph.unit}
+          loading={false}
+          graph={parcaGraph}
+          sampleUnit={parcaGraph.unit}
           curPath={[]}
           setNewCurPath={() => {}}
         />

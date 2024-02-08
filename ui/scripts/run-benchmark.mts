@@ -34,6 +34,7 @@ const optionDefinitions = [
   {name: 'debug', alias: 'd', type: Boolean},
   {name: 'compare', alias: 'c', type: String},
   {name: 'pattern', alias: 'p', type: String, defaultValue: '*'},
+  {name: 'apiEndpoint', type: String},
 ];
 const options = commandLineArgs(optionDefinitions);
 const IS_DEBUG = process.env.DEBUG === 'true' || options.debug === true;
@@ -163,11 +164,15 @@ const populateBenchmarkData = async (): Promise<void> => {
     try {
       stopwatch.start();
       spinner.start(`Running data population script: ${file}`);
-      const {stdout} = await execa('babel-node', [
-        '--config-file',
-        path.join(DIR_NAME, '../babel.config.cjs'),
-        path.join(DIR_NAME, `../${file}`),
-      ]);
+      const {stdout} = await execa(
+        'babel-node',
+        [
+          '--config-file',
+          path.join(DIR_NAME, '../babel.config.cjs'),
+          path.join(DIR_NAME, `../${file}`),
+          options.apiEndpoint != null ? `--apiEndpoint=${options.apiEndpoint}` : '',
+        ].filter(Boolean)
+      );
       console.log('stdout', stdout);
       spinner.succeed(`Data population script: ${file} completed ${stopwatch.stopAndReset()}ms`);
     } catch (error) {
