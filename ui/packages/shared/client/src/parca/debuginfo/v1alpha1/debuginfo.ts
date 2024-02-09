@@ -1295,8 +1295,8 @@ export const DebuginfoQuality = new DebuginfoQuality$Type();
  * @generated ServiceType for protobuf service parca.debuginfo.v1alpha1.DebuginfoService
  */
 export const DebuginfoService = new ServiceType("parca.debuginfo.v1alpha1.DebuginfoService", [
-    { name: "Upload", clientStreaming: true, options: {}, I: UploadRequest, O: UploadResponse },
-    { name: "ShouldInitiateUpload", options: {}, I: ShouldInitiateUploadRequest, O: ShouldInitiateUploadResponse },
-    { name: "InitiateUpload", options: {}, I: InitiateUploadRequest, O: InitiateUploadResponse },
-    { name: "MarkUploadFinished", options: {}, I: MarkUploadFinishedRequest, O: MarkUploadFinishedResponse }
+    { name: "Upload", clientStreaming: true, options: { "google.api.http": { post: "/debuginfo/upload", body: "*" } }, I: UploadRequest, O: UploadResponse },
+    { name: "ShouldInitiateUpload", options: { "google.api.http": { get: "/debuginfo/shouldinitiateupload" } }, I: ShouldInitiateUploadRequest, O: ShouldInitiateUploadResponse },
+    { name: "InitiateUpload", options: { "google.api.http": { post: "/debuginfo/initiateupload", body: "*" } }, I: InitiateUploadRequest, O: InitiateUploadResponse },
+    { name: "MarkUploadFinished", options: { "google.api.http": { post: "/debuginfo/markuploadfinished", body: "*" } }, I: MarkUploadFinishedRequest, O: MarkUploadFinishedResponse }
 ]);
