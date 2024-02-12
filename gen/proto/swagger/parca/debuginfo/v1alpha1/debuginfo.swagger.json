@@ -16,7 +16,7 @@
     "application/json"
   ],
   "paths": {
-    "/debuginfo/initiateupload": {
+    "/initiateupload": {
       "post": {
         "summary": "InitiateUpload returns a strategy and information to upload debug info for a given build_id.",
         "operationId": "DebuginfoService_InitiateUpload",
@@ -50,7 +50,7 @@
         ]
       }
     },
-    "/debuginfo/markuploadfinished": {
+    "/markuploadfinished": {
       "post": {
         "summary": "MarkUploadFinished marks the upload as finished for a given build_id.",
         "operationId": "DebuginfoService_MarkUploadFinished",
@@ -84,7 +84,7 @@
         ]
       }
     },
-    "/debuginfo/shouldinitiateupload": {
+    "/shouldinitiateupload": {
       "get": {
         "summary": "ShouldInitiateUpload returns whether an upload for a given build_id should be initiated or not.",
         "operationId": "DebuginfoService_ShouldInitiateUpload",
@@ -143,7 +143,7 @@
         ]
       }
     },
-    "/debuginfo/upload": {
+    "/upload": {
       "post": {
         "summary": "Upload ingests debug info for a given build_id",
         "operationId": "DebuginfoService_Upload",

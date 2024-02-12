@@ -12,20 +12,20 @@ service DebuginfoService {
   // Upload ingests debug info for a given build_id
   rpc Upload(stream UploadRequest) returns (UploadResponse) {
     option (google.api.http) = {
-      post: "/debuginfo/upload"
+      post: "/upload"
       body: "*"
     };
   }
 
   // ShouldInitiateUpload returns whether an upload for a given build_id should be initiated or not.
   rpc ShouldInitiateUpload(ShouldInitiateUploadRequest) returns (ShouldInitiateUploadResponse) {
-    option (google.api.http) = {get: "/debuginfo/shouldinitiateupload"};
+    option (google.api.http) = {get: "/shouldinitiateupload"};
   }
 
   // InitiateUpload returns a strategy and information to upload debug info for a given build_id.
   rpc InitiateUpload(InitiateUploadRequest) returns (InitiateUploadResponse) {
     option (google.api.http) = {
-      post: "/debuginfo/initiateupload"
+      post: "/initiateupload"
       body: "*"
     };
   }
@@ -33,7 +33,7 @@ service DebuginfoService {
   // MarkUploadFinished marks the upload as finished for a given build_id.
   rpc MarkUploadFinished(MarkUploadFinishedRequest) returns (MarkUploadFinishedResponse) {
     option (google.api.http) = {
-      post: "/debuginfo/markuploadfinished"
+      post: "/markuploadfinished"
       body: "*"
     };
   }
