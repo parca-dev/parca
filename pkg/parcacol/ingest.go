@@ -21,13 +21,9 @@ import (
 	"github.com/apache/arrow/go/v14/arrow"
 	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
-	"github.com/parquet-go/parquet-go"
 	"github.com/polarsignals/frostdb/dynparquet"
-	"github.com/prometheus/prometheus/model/labels"
 
 	"github.com/parca-dev/parca/pkg/normalizer"
-	"github.com/parca-dev/parca/pkg/profile"
 )
 
 type Table interface {
@@ -65,67 +61,21 @@ func NewIngester(
 func (ing Ingester) Close() error { return nil }
 
 func (ing Ingester) Ingest(ctx context.Context, req normalizer.NormalizedWriteRawRequest) error {
-	pBuf, err := ing.schema.GetBuffer(map[string][]string{
-		profile.ColumnLabels:         req.AllLabelNames,
-		profile.ColumnPprofLabels:    req.AllPprofLabelNames,
-		profile.ColumnPprofNumLabels: req.AllPprofNumLabelNames,
-	})
+	r, err := SeriesToArrowRecord(
+		ing.mem,
+		ing.schema,
+		req.Series,
+		req.AllLabelNames,
+		req.AllPprofLabelNames,
+		req.AllPprofNumLabelNames,
+	)
 	if err != nil {
 		return err
 	}
-	defer ing.schema.PutBuffer(pBuf)
+	defer r.Release()
 
-	var r parquet.Row
-	for _, s := range req.Series {
-		for _, normalizedProfiles := range s.Samples {
-			for _, p := range normalizedProfiles {
-				if len(p.Samples) == 0 {
-					ls := labels.FromMap(s.Labels)
-					level.Debug(ing.logger).Log("msg", "no samples found in profile, dropping it", "name", p.Meta.Name, "sample_type", p.Meta.SampleType.Type, "sample_unit", p.Meta.SampleType.Unit, "labels", ls)
-					continue
-				}
-
-				for _, profileSample := range p.Samples {
-					r = SampleToParquetRow(
-						ing.schema,
-						r[:0],
-						req.AllLabelNames,
-						req.AllPprofLabelNames,
-						req.AllPprofNumLabelNames,
-						s.Labels,
-						p.Meta,
-						profileSample,
-					)
-					_, err := pBuf.WriteRows([]parquet.Row{r})
-					if err != nil {
-						return err
-					}
-				}
-			}
-		}
-	}
-
-	pBuf.Sort()
-
-	// Read sorted rows into an arrow record
-	records, err := ParquetBufToArrowRecord(ctx, ing.mem, pBuf.Buffer, ing.schema, 0)
-	if err != nil {
+	if _, err := ing.table.InsertRecord(ctx, r); err != nil {
 		return err
-	}
-	defer func() {
-		for _, record := range records {
-			record.Release()
-		}
-	}()
-
-	for _, record := range records {
-		if record.NumRows() == 0 {
-			return nil
-		}
-
-		if _, err := ing.table.InsertRecord(ctx, record); err != nil {
-			return err
-		}
 	}
 	return nil
 }
