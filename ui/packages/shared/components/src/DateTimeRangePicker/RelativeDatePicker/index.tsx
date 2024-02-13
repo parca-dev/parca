@@ -33,8 +33,20 @@ interface UnitsMap {
   [key: string]: string;
 }
 
-const unitLong: UnitsMap = {m: UNITS.MINUTE, h: UNITS.HOUR, d: UNITS.DAY};
-const unitShort: UnitsMap = {[UNITS.MINUTE]: 'm', [UNITS.HOUR]: 'h', [UNITS.DAY]: 'd'};
+const unitLong: UnitsMap = {
+  m: UNITS.MINUTE,
+  h: UNITS.HOUR,
+  d: UNITS.DAY,
+  w: UNITS.WEEK,
+  y: UNITS.YEAR
+};
+const unitShort: UnitsMap = {
+  [UNITS.MINUTE]: 'm',
+  [UNITS.HOUR]: 'h',
+  [UNITS.DAY]: 'd',
+  [UNITS.WEEK]: 'w',
+  [UNITS.YEAR]: 'y'
+};
 
 const presetRanges = [
   {value: 1, unit: UNITS.MINUTE},
@@ -47,6 +59,14 @@ const presetRanges = [
   {value: 12, unit: UNITS.HOUR},
   {value: 1, unit: UNITS.DAY},
   {value: 2, unit: UNITS.DAY},
+  {value: 1, unit: UNITS.WEEK},
+  {value: 2, unit: UNITS.WEEK},
+  {value: 4, unit: UNITS.WEEK},
+  {value: 8, unit: UNITS.WEEK},
+  {value: 16, unit: UNITS.WEEK},
+  {value: 26, unit: UNITS.WEEK},
+  {value: 1, unit: UNITS.YEAR},
+  {value: 2, unit: UNITS.YEAR},
 ];
 
 const NOW = new RelativeDate(UNITS.MINUTE, 0);
@@ -94,7 +114,11 @@ const RelativeDatePicker = ({
       case UNITS.HOUR:
         return 60;
       case UNITS.DAY:
-        return 1440;
+        return 24 * 60;
+      case UNITS.WEEK:
+        return 7 * 24 * 60;
+      case UNITS.YEAR:
+        return 365 * 24 * 60;
       case UNITS.MINUTE:
       default:
         return 1;

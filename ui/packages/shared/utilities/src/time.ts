@@ -36,6 +36,8 @@ export const TimeUnits = {
   Minutes: 'minutes',
   Hours: 'hours',
   Days: 'days',
+  Weeks: 'weeks',
+  Years: 'years',
 } as const;
 
 export type TimeUnit = (typeof TimeUnits)[keyof typeof TimeUnits];
@@ -47,7 +49,9 @@ export const unitsInTime = {
   [TimeUnits.Seconds]: {multiplier: 1e9, symbol: 's'},
   [TimeUnits.Minutes]: {multiplier: 6 * 1e10, symbol: 'm'},
   [TimeUnits.Hours]: {multiplier: 60 * 60 * 1e9, symbol: 'h'},
-  [TimeUnits.Days]: {multiplier: 60 * 60 * 24 * 1e9, symbol: 'd'},
+  [TimeUnits.Days]: {multiplier: 24 * 60 * 60 * 1e9, symbol: 'd'},
+  [TimeUnits.Weeks]: {multiplier: 7 * 24 * 60 * 60 * 1e9, symbol: 'w'},
+  [TimeUnits.Years]: {multiplier: 365 * 24 * 60 * 60 * 1e9, symbol: 'y'},
 };
 
 export const convertTime = (value: number, from: TimeUnit, to: TimeUnit): number => {
@@ -120,19 +124,22 @@ export const formatForTimespan = (from: number, to: number): string => {
     hours,
     days,
     weeks,
+    years,
   }: {
     seconds?: number;
     minutes?: number;
     hours?: number;
     days?: number;
     weeks?: number;
+    years?: number;
   }): number => {
     return (
       (seconds ?? 0) +
       (minutes ?? 0) * 60 +
       (hours ?? 0) * 60 * 60 +
       (days ?? 0) * 24 * 60 * 60 +
-      (weeks ?? 0) * 7 * 24 * 60 * 60
+      (weeks ?? 0) * 7 * 24 * 60 * 60 +
+      (years ?? 0) * 365 * 24 * 60 * 60
     );
   };
 
@@ -144,10 +151,7 @@ export const formatForTimespan = (from: number, to: number): string => {
   if (durationInSeconds <= getTotalSeconds({hours: 13})) {
     return 'HH:mm';
   }
-  if (durationInSeconds <= getTotalSeconds({hours: 25})) {
-    return 'HH:mm M/d';
-  }
-  return 'M/d';
+  return 'yyyy-MM-dd HH:mm';
 };
 
 export const getStepDuration = (start: number, end: number, stepCount = 1000): Duration => {
