@@ -38,7 +38,7 @@ export interface ProfileSelection {
   Type: () => string;
 }
 
-export const timeFormat = "MMM d, 'at' HH:mm:ss '(UTC)'";
+export const timeFormat = "yyyy-MM-dd HH:mm:ss '(UTC)'";
 
 export function ParamsString(params: {[key: string]: string}): string {
   return Object.keys(params)
