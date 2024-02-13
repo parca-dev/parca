@@ -268,7 +268,7 @@ const getRelativeDateMs = (date: RelativeDate): number => {
       return now - value * 24 * 60 * 60 * 1000;
     case UNITS.WEEK:
       return now - value * 7 * 24 * 60 * 60 * 1000;
-    case UNITS.YEAR :
+    case UNITS.YEAR:
       return now - value * 365 * 24 * 60 * 60 * 1000;
     default:
       return now;

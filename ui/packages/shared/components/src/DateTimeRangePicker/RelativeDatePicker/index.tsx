@@ -38,14 +38,14 @@ const unitLong: UnitsMap = {
   h: UNITS.HOUR,
   d: UNITS.DAY,
   w: UNITS.WEEK,
-  y: UNITS.YEAR
+  y: UNITS.YEAR,
 };
 const unitShort: UnitsMap = {
   [UNITS.MINUTE]: 'm',
   [UNITS.HOUR]: 'h',
   [UNITS.DAY]: 'd',
   [UNITS.WEEK]: 'w',
-  [UNITS.YEAR]: 'y'
+  [UNITS.YEAR]: 'y',
 };
 
 const presetRanges = [
