@@ -333,20 +333,29 @@ func (q *Querier) QueryRange(
 	filterExpr := logicalplan.And(exprs...)
 
 	if queryParts.Delta {
-		return q.queryRangeDelta(ctx, filterExpr, step, queryParts.Meta.SampleType.Unit)
+		return q.queryRangeDelta(
+			ctx,
+			filterExpr,
+			step,
+			queryParts.Meta,
+		)
 	}
 
 	return q.queryRangeNonDelta(ctx, filterExpr, step)
 }
 
 const (
-	ColumnDurationSum = "sum(" + profile.ColumnDuration + ")"
-	ColumnPeriodSum   = "sum(" + profile.ColumnPeriod + ")"
-	ColumnValueCount  = "count(" + profile.ColumnValue + ")"
-	ColumnValueSum    = "sum(" + profile.ColumnValue + ")"
+	ValuePerSecond = "value_per_second"
 )
 
-func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration, sampleTypeUnit string) ([]*pb.MetricsSeries, error) {
+func (q *Querier) queryRangeDelta(
+	ctx context.Context,
+	filterExpr logicalplan.Expr,
+	step time.Duration,
+	m profile.Meta,
+) ([]*pb.MetricsSeries, error) {
+	resultType := m.SampleType
+
 	records := []arrow.Record{}
 	defer func() {
 		for _, r := range records {
@@ -354,19 +363,59 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 		}
 	}()
 	rows := 0
+	preProjection := []logicalplan.Expr{
+		logicalplan.Mul(logicalplan.Div(logicalplan.Col(profile.ColumnTimestamp), logicalplan.Literal(step.Milliseconds())), logicalplan.Literal(step.Milliseconds())).Alias(profile.ColumnTimestamp),
+		logicalplan.DynCol(profile.ColumnLabels),
+		logicalplan.Col(profile.ColumnDuration),
+	}
+
+	if m.SampleType.Type == "samples" && m.SampleType.Unit == "count" {
+		// 1 CPU sample is equivalent to whatever the period is. Therefore the
+		// value * period is the total CPU time spent over the duration.
+		preProjection = append(
+			preProjection,
+			logicalplan.Mul(logicalplan.Col(profile.ColumnValue), logicalplan.Col(profile.ColumnPeriod)).Alias(profile.ColumnValue),
+		)
+
+		resultType = m.PeriodType
+	} else {
+		preProjection = append(
+			preProjection,
+			logicalplan.Col(profile.ColumnValue),
+		)
+	}
+
+	totalSum := logicalplan.Sum(logicalplan.Col(profile.ColumnValue))
+	totalSumColumn := totalSum.Name()
+	durationSum := logicalplan.Sum(logicalplan.Col(profile.ColumnDuration))
+
 	err := q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
+		Project(preProjection...).
 		Aggregate(
 			[]*logicalplan.AggregationFunction{
-				logicalplan.Sum(logicalplan.Col(profile.ColumnDuration)),
-				logicalplan.Sum(logicalplan.Col(profile.ColumnPeriod)),
-				logicalplan.Sum(logicalplan.Col(profile.ColumnValue)),
-				logicalplan.Count(logicalplan.Col(profile.ColumnValue)),
+				// We need the duration sum, so we can calculate the per-second
+				// value at the step-level timestamp.
+				durationSum,
+				totalSum,
 			},
 			[]logicalplan.Expr{
 				logicalplan.DynCol(profile.ColumnLabels),
-				logicalplan.Duration(step),
+				logicalplan.Col(profile.ColumnTimestamp),
 			},
+		).
+		Project(
+			// The per second value is the sum of all values at the step-level
+			// timestamp, divided by the duration sum. The duration sum is
+			// necessary so if multiple timestamps fall into the same step, we
+			// account for the total duration within that step.
+			logicalplan.Div(
+				logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
+				logicalplan.Convert(durationSum, arrow.PrimitiveTypes.Float64),
+			).Alias(ValuePerSecond),
+			totalSum,
+			logicalplan.DynCol(profile.ColumnLabels),
+			logicalplan.Col(profile.ColumnTimestamp),
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
@@ -386,17 +435,13 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 
 	// Add necessary columns and their found value is false by default.
 	columnIndices := struct {
-		DurationSum int
-		PeriodSum   int
-		Timestamp   int
-		ValueCount  int
-		ValueSum    int
+		Timestamp      int
+		PerSecondValue int
+		ValueSum       int
 	}{
-		DurationSum: -1,
-		PeriodSum:   -1,
-		Timestamp:   -1,
-		ValueCount:  -1,
-		ValueSum:    -1,
+		Timestamp:      -1,
+		PerSecondValue: -1,
+		ValueSum:       -1,
 	}
 
 	labelColumnIndices := []int{}
@@ -408,19 +453,13 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 		fields := ar.Schema().Fields()
 		for i, field := range fields {
 			switch field.Name {
-			case ColumnDurationSum:
-				columnIndices.DurationSum = i
-				continue
-			case ColumnPeriodSum:
-				columnIndices.PeriodSum = i
-				continue
 			case profile.ColumnTimestamp:
 				columnIndices.Timestamp = i
 				continue
-			case ColumnValueCount:
-				columnIndices.ValueCount = i
+			case ValuePerSecond:
+				columnIndices.PerSecondValue = i
 				continue
-			case ColumnValueSum:
+			case totalSumColumn:
 				columnIndices.ValueSum = i
 				continue
 			}
@@ -430,17 +469,11 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 			}
 		}
 
-		if columnIndices.DurationSum == -1 {
-			return nil, errors.New("sum(duration) column not found")
-		}
-		if columnIndices.PeriodSum == -1 {
-			return nil, errors.New("sum(period) column not found")
-		}
 		if columnIndices.Timestamp == -1 {
 			return nil, errors.New("timestamp column not found")
 		}
-		if columnIndices.ValueCount == -1 {
-			return nil, errors.New("count(value) column not found")
+		if columnIndices.PerSecondValue == -1 {
+			return nil, errors.New("sum(value_per_second) column not found")
 		}
 		if columnIndices.ValueSum == -1 {
 			return nil, errors.New("sum(value) column not found")
@@ -471,40 +504,31 @@ func (q *Querier) queryRangeDelta(ctx context.Context, filterExpr logicalplan.Ex
 						Value: l.Value,
 					})
 				}
-				resSeries = append(resSeries, &pb.MetricsSeries{Labelset: &profilestorepb.LabelSet{Labels: pbLabelSet}})
+				resSeries = append(resSeries, &pb.MetricsSeries{
+					Labelset: &profilestorepb.LabelSet{Labels: pbLabelSet},
+					PeriodType: &pb.ValueType{
+						Type: m.PeriodType.Type,
+						Unit: m.PeriodType.Unit,
+					},
+					SampleType: &pb.ValueType{
+						Type: resultType.Type,
+						Unit: resultType.Unit,
+					},
+				})
 				index = len(resSeries) - 1
 				labelsetToIndex[s] = index
 			}
 
 			ts := ar.Column(columnIndices.Timestamp).(*array.Int64).Value(i)
-			durationSum := ar.Column(columnIndices.DurationSum).(*array.Int64).Value(i)
-			periodSum := ar.Column(columnIndices.PeriodSum).(*array.Int64).Value(i)
 			valueSum := ar.Column(columnIndices.ValueSum).(*array.Int64).Value(i)
-			valueCount := ar.Column(columnIndices.ValueCount).(*array.Int64).Value(i)
-
-			// TODO: We should do these period and duration calculations in frostDB,
-			// so that we can push these down as projections.
-
-			// Because we store the period with each sample yet query for the sum(period) we need to normalize by the amount of values (rows in a database).
-			period := periodSum / valueCount
-			// Because we store the duration with each sample yet query for the sum(duration) we need to normalize by the amount of values (rows in a database).
-			duration := durationSum / valueCount
-
-			// If we have a CPU samples value type we make sure we always do the next calculation with cpu nanoseconds.
-			// If we already have CPU nanoseconds we don't need to multiply by the period.
-			valuePerSecondSum := valueSum
-			if sampleTypeUnit != "nanoseconds" {
-				valuePerSecondSum = valueSum * period
-			}
-
-			valuePerSecond := float64(valuePerSecondSum) / float64(duration)
+			valuePerSecond := ar.Column(columnIndices.PerSecondValue).(*array.Float64).Value(i)
 
 			series := resSeries[index]
 			series.Samples = append(series.Samples, &pb.MetricsSample{
 				Timestamp:      timestamppb.New(timestamp.Time(ts)),
 				Value:          valueSum,
 				ValuePerSecond: valuePerSecond,
-				Duration:       duration,
+				Duration:       step.Nanoseconds(),
 			})
 		}
 	}
@@ -527,11 +551,14 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 		}
 	}()
 	rows := 0
+
+	valueSum := logicalplan.Sum(logicalplan.Col(profile.ColumnValue))
+	valueSumColumn := valueSum.Name()
 	err := q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Aggregate(
 			[]*logicalplan.AggregationFunction{
-				logicalplan.Sum(logicalplan.Col(profile.ColumnValue)),
+				valueSum,
 			},
 			[]logicalplan.Expr{
 				logicalplan.DynCol(profile.ColumnLabels),
@@ -561,7 +588,7 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 	// Add necessary columns and their found value is false by default.
 	columnIndices := map[string]columnIndex{
 		profile.ColumnTimestamp: {},
-		ColumnValueSum:          {},
+		valueSumColumn:          {},
 	}
 	labelColumnIndices := []int{}
 	labelSet := labels.Labels{}
@@ -623,7 +650,7 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 			}
 
 			ts := ar.Column(columnIndices[profile.ColumnTimestamp].index).(*array.Int64).Value(i)
-			value := ar.Column(columnIndices[ColumnValueSum].index).(*array.Int64).Value(i)
+			value := ar.Column(columnIndices[valueSumColumn].index).(*array.Int64).Value(i)
 
 			// Each step bucket will only return one of the timestamps and its value.
 			// For this reason we'll take each timestamp and divide it by the step seconds.
@@ -1026,6 +1053,7 @@ func (q *Querier) selectMerge(
 
 	start := timestamp.FromTime(startTime)
 	end := timestamp.FromTime(endTime)
+	resultType := queryParts.Meta.SampleType
 
 	filterExpr := logicalplan.And(
 		append(
@@ -1047,9 +1075,18 @@ func (q *Querier) selectMerge(
 		)
 	}
 
+	var valueCol logicalplan.Expr = logicalplan.Col(profile.ColumnValue)
+	if resultType.Type == "samples" && resultType.Unit == "count" {
+		valueCol = logicalplan.Mul(logicalplan.Col(profile.ColumnValue), logicalplan.Col(profile.ColumnPeriod)).Alias(profile.ColumnValue)
+		resultType = queryParts.Meta.PeriodType
+	}
+
 	records := []arrow.Record{}
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
+		Project(
+			append(aggrCols, valueCol)...,
+		).
 		Aggregate(
 			[]*logicalplan.AggregationFunction{
 				logicalplan.Sum(logicalplan.Col(profile.ColumnValue)),
@@ -1067,7 +1104,7 @@ func (q *Querier) selectMerge(
 
 	meta := profile.Meta{
 		Name:       queryParts.Meta.Name,
-		SampleType: queryParts.Meta.SampleType,
+		SampleType: resultType,
 		PeriodType: queryParts.Meta.PeriodType,
 		Timestamp:  start,
 	}

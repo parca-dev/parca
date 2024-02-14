@@ -750,6 +750,12 @@ export interface Source {
      * @generated from protobuf field: string source = 2;
      */
     source: string;
+    /**
+     * The unit of the values in the record.
+     *
+     * @generated from protobuf field: string unit = 3;
+     */
+    unit: string;
 }
 /**
  * FlamegraphRootNode is a root node of a flame graph
@@ -2577,11 +2583,12 @@ class Source$Type extends MessageType<Source> {
     constructor() {
         super("parca.query.v1alpha1.Source", [
             { no: 1, name: "record", kind: "scalar", T: 12 /*ScalarType.BYTES*/ },
-            { no: 2, name: "source", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 2, name: "source", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "unit", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<Source>): Source {
-        const message = { record: new Uint8Array(0), source: "" };
+        const message = { record: new Uint8Array(0), source: "", unit: "" };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Source>(this, message, value);
@@ -2597,6 +2604,9 @@ class Source$Type extends MessageType<Source> {
                     break;
                 case /* string source */ 2:
                     message.source = reader.string();
+                    break;
+                case /* string unit */ 3:
+                    message.unit = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2616,6 +2626,9 @@ class Source$Type extends MessageType<Source> {
         /* string source = 2; */
         if (message.source !== "")
             writer.tag(2, WireType.LengthDelimited).string(message.source);
+        /* string unit = 3; */
+        if (message.unit !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.unit);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

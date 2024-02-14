@@ -875,6 +875,10 @@
         "source": {
           "type": "string",
           "description": "The actual source file content."
+        },
+        "unit": {
+          "type": "string",
+          "description": "The unit of the values in the record."
         }
       },
       "description": "Source is the result of the source report type."

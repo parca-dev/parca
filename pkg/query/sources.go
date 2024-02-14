@@ -61,6 +61,7 @@ func GenerateSourceReport(
 	return &pb.Source{
 		Record: buf.Bytes(),
 		Source: source,
+		Unit:   p.Meta.SampleType.Unit,
 	}, cumulative, nil
 }
 

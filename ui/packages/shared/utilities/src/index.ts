@@ -66,10 +66,21 @@ const unitsInCount = {
   exa: {multiplier: 1e18, symbol: 'E'},
 };
 
+const unitsInCores = {
+  unit: {multiplier: 1, symbol: 'cores'},
+  kilo: {multiplier: 1e3, symbol: 'k'},
+  mega: {multiplier: 1e6, symbol: 'M'},
+  giga: {multiplier: 1e9, symbol: 'G'},
+  tera: {multiplier: 1e12, symbol: 'T'},
+  peta: {multiplier: 1e15, symbol: 'P'},
+  exa: {multiplier: 1e18, symbol: 'E'},
+};
+
 const knownValueFormatters = {
   bytes: unitsInBytes,
   nanoseconds: unitsInTime,
   count: unitsInCount,
+  "CPU Cores": unitsInCores,
 };
 
 export const roundToDecimals = (n: number, decimals: number): number => {
