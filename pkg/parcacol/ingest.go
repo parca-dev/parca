@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"github.com/apache/arrow/go/v14/arrow"
+	"github.com/apache/arrow/go/v14/arrow/array"
 	"github.com/apache/arrow/go/v14/arrow/memory"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -121,6 +122,19 @@ func (ing Ingester) Ingest(ctx context.Context, req normalizer.NormalizedWriteRa
 	for _, record := range records {
 		if record.NumRows() == 0 {
 			return nil
+		}
+
+		for _, col := range record.Columns() {
+			switch col := col.(type) {
+			case *array.Dictionary:
+				// Dictionaries are lazily initialized, we need to do this here
+				// to make them concurrency safe. This should be solved
+				// upstream, but for now this is a fix to avoid data races with
+				// what we have.
+				col.Dictionary()
+			default:
+				// Do nothing
+			}
 		}
 
 		if _, err := ing.table.InsertRecord(ctx, record); err != nil {
