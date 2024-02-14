@@ -392,9 +392,11 @@ export const RawMetricsGraph = ({
   const isDeltaType = profile !== null ? profile?.query.profType.delta : false;
 
   let yAxisLabel = sampleUnit;
+  let yAxisUnit = sampleUnit;
   if (isDeltaType) {
-    if (profile?.query.profType.periodType === 'cpu' && sampleUnit === 'count') {
+    if (sampleUnit === 'nanoseconds') {
       yAxisLabel = 'CPU Cores';
+      yAxisUnit = '';
     }
     if (sampleUnit === 'bytes') {
       yAxisLabel = 'Bytes per Second';
@@ -477,7 +479,7 @@ export const RawMetricsGraph = ({
                     >
                       <line className="stroke-gray-300 dark:stroke-gray-500" x2={-6} />
                       <text fill="currentColor" x={-9} dy={'0.32em'}>
-                        {valueFormatter(d, sampleUnit, decimals)}
+                        {valueFormatter(d, yAxisUnit, decimals)}
                       </text>
                     </g>
                     <g key={`grid-${i}`}>

@@ -135,7 +135,18 @@ export const ProfileViewWithData = ({
     perf,
   ]);
 
-  const sampleUnit = profileSource.ProfileType().sampleUnit;
+  // Default to the unit of the selected profile type. This is a heuristic, and
+  // only a fallback, the unit should be returned by the backend.
+  let sampleUnit = profileSource.ProfileType().sampleUnit;
+  if (flamegraphResponse?.report.oneofKind === 'flamegraphArrow') {
+    sampleUnit = flamegraphResponse.report.flamegraphArrow.unit;
+  }
+  if (tableResponse?.report.oneofKind === 'tableArrow') {
+    sampleUnit = tableResponse.report.tableArrow.unit;
+  }
+  if (sourceResponse?.report.oneofKind === 'source') {
+    sampleUnit = sourceResponse.report.source.unit;
+  }
 
   const downloadPProfClick = async (): Promise<void> => {
     if (profileSource == null || queryClient == null) {

@@ -172,6 +172,14 @@ const ProfileMetricsGraph = ({
       onPointClick(timestamp, labels, queryExpression);
     };
 
+    let sampleUnit = '';
+    if (series.every((val, i, arr) => val?.sampleType?.unit === arr[0]?.sampleType?.unit)) {
+      sampleUnit = series[0]?.sampleType?.unit ?? '';
+    }
+    if (sampleUnit === '') {
+      sampleUnit = Query.parse(queryExpression).profileType().sampleUnit;
+    }
+
     return (
       <AnimatePresence>
         <motion.div
@@ -189,7 +197,7 @@ const ProfileMetricsGraph = ({
             setTimeRange={setTimeRange}
             onSampleClick={handleSampleClick}
             addLabelMatcher={addLabelMatcher}
-            sampleUnit={Query.parse(queryExpression).profileType().sampleUnit}
+            sampleUnit={sampleUnit}
             height={height}
             width={width}
             margin={margin}

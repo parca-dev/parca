@@ -1,4 +1,4 @@
-// Copyright 2023 The Parca Authors
+// Copyright 2023-2024 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -61,6 +61,7 @@ func GenerateSourceReport(
 	return &pb.Source{
 		Record: buf.Bytes(),
 		Source: source,
+		Unit:   p.Meta.SampleType.Unit,
 	}, cumulative, nil
 }
 

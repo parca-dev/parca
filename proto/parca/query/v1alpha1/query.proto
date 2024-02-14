@@ -388,6 +388,8 @@ message Source {
   bytes record = 1;
   // The actual source file content.
   string source = 2;
+  // The unit of the values in the record.
+  string unit = 3;
 }
 
 // FlamegraphRootNode is a root node of a flame graph
