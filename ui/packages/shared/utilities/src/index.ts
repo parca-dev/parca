@@ -80,7 +80,7 @@ const knownValueFormatters = {
   bytes: unitsInBytes,
   nanoseconds: unitsInTime,
   count: unitsInCount,
-  "CPU Cores": unitsInCores,
+  'CPU Cores': unitsInCores,
 };
 
 export const roundToDecimals = (n: number, decimals: number): number => {

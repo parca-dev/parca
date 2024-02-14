@@ -172,11 +172,11 @@ const ProfileMetricsGraph = ({
       onPointClick(timestamp, labels, queryExpression);
     };
 
-    let sampleUnit = "";
-    if (series.every( (val, i, arr) => val?.sampleType?.unit === arr[0]?.sampleType?.unit)) {
-      sampleUnit = series[0]?.sampleType?.unit ?? "";
+    let sampleUnit = '';
+    if (series.every((val, i, arr) => val?.sampleType?.unit === arr[0]?.sampleType?.unit)) {
+      sampleUnit = series[0]?.sampleType?.unit ?? '';
     }
-    if (sampleUnit === "") {
+    if (sampleUnit === '') {
       sampleUnit = Query.parse(queryExpression).profileType().sampleUnit;
     }
 

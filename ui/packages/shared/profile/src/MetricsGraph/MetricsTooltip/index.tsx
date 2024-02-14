@@ -122,7 +122,11 @@ const MetricsTooltip = ({
                           <tr>
                             <td className="w-1/4">Per Second</td>
                             <td className="w-3/4">
-                              {valueFormatter(highlighted.valuePerSecond, sampleUnit === "nanoseconds" ? "CPU Cores" : sampleUnit, 5)}
+                              {valueFormatter(
+                                highlighted.valuePerSecond,
+                                sampleUnit === 'nanoseconds' ? 'CPU Cores' : sampleUnit,
+                                5
+                              )}
                             </td>
                           </tr>
                           <tr>
