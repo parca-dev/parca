@@ -20,6 +20,7 @@ import (
 	"runtime/debug"
 
 	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 
 	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/symbol/demangle"
@@ -104,7 +105,7 @@ func (dl *DwarfLiner) PCRange() ([2]uint64, error) {
 func (dl *DwarfLiner) PCToLines(addr uint64) (lines []profile.LocationLine, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("recovered stack trace:\n", string(debug.Stack()))
+			level.Debug(dl.logger).Log("msg", "recovered stack trace", "trace", string(debug.Stack()))
 			err = fmt.Errorf("recovering from panic in DWARF add2line: %v", r)
 		}
 	}()
