@@ -24,6 +24,7 @@ interface Props {
   addView?: boolean;
   disabled?: boolean;
   icon?: JSX.Element;
+  id?: string;
 }
 
 const ViewSelector = ({
@@ -35,6 +36,7 @@ const ViewSelector = ({
   addView = false,
   disabled = false,
   icon,
+  id,
 }: Props): JSX.Element => {
   const [callgraphEnabled] = useUIFeatureFlag('callgraph');
   const [dashboardItems = ['icicle'], setDashboardItems] = useURLState({
@@ -110,6 +112,7 @@ const ViewSelector = ({
 
   return (
     <Select
+      className="h-view-selector"
       items={items}
       selectedKey={defaultValue}
       onSelection={onSelection}
@@ -117,6 +120,7 @@ const ViewSelector = ({
       primary={primary}
       disabled={disabled}
       icon={icon}
+      id={id}
     />
   );
 };

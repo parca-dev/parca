@@ -28,7 +28,6 @@ const SortBySelect = ({
     <div>
       <label className="text-sm">Sort</label>
       <Select
-        id="h-sort-by-filter"
         className="!px-3"
         items={[
           {
@@ -73,6 +72,7 @@ const SortBySelect = ({
         placeholder={'Sort By'}
         primary={false}
         disabled={false}
+        id="h-sort-by-filter"
       />
     </div>
   );
