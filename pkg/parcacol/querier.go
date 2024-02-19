@@ -345,7 +345,8 @@ func (q *Querier) QueryRange(
 }
 
 const (
-	ValuePerSecond = "value_per_second"
+	ValuePerSecond  = "value_per_second"
+	TimestampBucket = "timestamp_bucket"
 )
 
 func (q *Querier) queryRangeDelta(
@@ -364,7 +365,8 @@ func (q *Querier) queryRangeDelta(
 	}()
 	rows := 0
 	preProjection := []logicalplan.Expr{
-		logicalplan.Mul(logicalplan.Div(logicalplan.Col(profile.ColumnTimestamp), logicalplan.Literal(step.Milliseconds())), logicalplan.Literal(step.Milliseconds())).Alias(profile.ColumnTimestamp),
+		logicalplan.Mul(logicalplan.Div(logicalplan.Col(profile.ColumnTimestamp), logicalplan.Literal(step.Milliseconds())), logicalplan.Literal(step.Milliseconds())).Alias(TimestampBucket),
+		logicalplan.Col(profile.ColumnTimestamp),
 		logicalplan.DynCol(profile.ColumnLabels),
 		logicalplan.Col(profile.ColumnDuration),
 	}
@@ -387,7 +389,8 @@ func (q *Querier) queryRangeDelta(
 
 	totalSum := logicalplan.Sum(logicalplan.Col(profile.ColumnValue))
 	totalSumColumn := totalSum.Name()
-	durationSum := logicalplan.Sum(logicalplan.Col(profile.ColumnDuration))
+	durationMin := logicalplan.Min(logicalplan.Col(profile.ColumnDuration))
+	timestampUnique := logicalplan.Unique(logicalplan.Col(profile.ColumnTimestamp))
 
 	err := q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
@@ -396,12 +399,13 @@ func (q *Querier) queryRangeDelta(
 			[]*logicalplan.AggregationFunction{
 				// We need the duration sum, so we can calculate the per-second
 				// value at the step-level timestamp.
-				durationSum,
+				durationMin,
+				timestampUnique,
 				totalSum,
 			},
 			[]logicalplan.Expr{
 				logicalplan.DynCol(profile.ColumnLabels),
-				logicalplan.Col(profile.ColumnTimestamp),
+				logicalplan.Col(TimestampBucket),
 			},
 		).
 		Project(
@@ -411,11 +415,15 @@ func (q *Querier) queryRangeDelta(
 			// account for the total duration within that step.
 			logicalplan.Div(
 				logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
-				logicalplan.Convert(durationSum, arrow.PrimitiveTypes.Float64),
+				logicalplan.Div(
+					logicalplan.Convert(logicalplan.If(logicalplan.IsNull(timestampUnique), logicalplan.Literal(step.Nanoseconds()), durationMin), arrow.PrimitiveTypes.Float64),
+					logicalplan.Literal(float64(time.Second.Nanoseconds())),
+				),
 			).Alias(ValuePerSecond),
+			logicalplan.If(logicalplan.IsNull(timestampUnique), logicalplan.Literal(step.Nanoseconds()), durationMin).Alias(profile.ColumnDuration),
 			totalSum,
 			logicalplan.DynCol(profile.ColumnLabels),
-			logicalplan.Col(profile.ColumnTimestamp),
+			logicalplan.Col(TimestampBucket),
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
@@ -453,7 +461,7 @@ func (q *Querier) queryRangeDelta(
 		fields := ar.Schema().Fields()
 		for i, field := range fields {
 			switch field.Name {
-			case profile.ColumnTimestamp:
+			case TimestampBucket:
 				columnIndices.Timestamp = i
 				continue
 			case ValuePerSecond:
