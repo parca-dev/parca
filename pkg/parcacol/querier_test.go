@@ -21,13 +21,14 @@ import (
 	"github.com/apache/arrow/go/v15/arrow"
 	"github.com/apache/arrow/go/v15/arrow/memory"
 	"github.com/go-kit/log"
-	"github.com/parca-dev/parca/pkg/normalizer"
-	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/polarsignals/frostdb/query"
 	"github.com/polarsignals/frostdb/query/logicalplan"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
+
+	"github.com/parca-dev/parca/pkg/normalizer"
+	"github.com/parca-dev/parca/pkg/profile"
 )
 
 func TestQueryDeltaRange(t *testing.T) {
@@ -74,6 +75,8 @@ func TestQueryDeltaRange(t *testing.T) {
 		}},
 		[]string{"test"}, nil, nil,
 	)
+	require.NoError(t, err)
+
 	r2, err := SeriesToArrowRecord(
 		mem,
 		schema,
@@ -95,6 +98,8 @@ func TestQueryDeltaRange(t *testing.T) {
 		}},
 		[]string{"test"}, nil, nil,
 	)
+	require.NoError(t, err)
+
 	r3, err := SeriesToArrowRecord(
 		mem,
 		schema,
@@ -116,6 +121,7 @@ func TestQueryDeltaRange(t *testing.T) {
 		}},
 		[]string{"test"}, nil, nil,
 	)
+	require.NoError(t, err)
 
 	q := NewQuerier(
 		log.NewNopLogger(),
