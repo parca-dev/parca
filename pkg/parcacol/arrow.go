@@ -113,6 +113,9 @@ func (c *ArrowToProfileConverter) Convert(
 		}
 
 		for i := 0; i < int(ar.NumRows()); i++ {
+			if locations.IsNull(i) { // Skip null rows
+				continue
+			}
 			labels := make(map[string]string, len(labelIndexes))
 			for name, index := range labelIndexes {
 				c := ar.Column(index).(*array.Dictionary)

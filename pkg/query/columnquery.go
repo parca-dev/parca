@@ -24,6 +24,7 @@ import (
 
 	"github.com/apache/arrow/go/v15/arrow"
 	"github.com/apache/arrow/go/v15/arrow/array"
+	"github.com/apache/arrow/go/v15/arrow/bitutil"
 	"github.com/apache/arrow/go/v15/arrow/math"
 	"github.com/apache/arrow/go/v15/arrow/memory"
 	"github.com/go-kit/log"
@@ -299,16 +300,6 @@ func FilterProfileData(
 	_, span := tracer.Start(ctx, "filterByFunction")
 	defer span.End()
 
-	// TODO: This is a bit inefficient because it completely rebuilds the
-	// profile, we should only ever rebuild dictionaries once at the very end
-	// before we send a result to the user. Because we are rebuilding the
-	// records whe need to release the previous ones.
-	defer func() {
-		for _, r := range records {
-			r.Release()
-		}
-	}()
-
 	// We want to filter by function name case-insensitive, so we need to lowercase the query.
 	// We lower case the query here, so we don't have to do it for every sample.
 	filterQueryBytes := []byte(strings.ToLower(filterQuery))
@@ -372,9 +363,6 @@ func filterRecord(
 		labelNames = append(labelNames, strings.TrimPrefix(lf.Name, profile.ColumnPprofLabelsPrefix))
 	}
 
-	w := profile.NewWriter(pool, labelNames)
-	defer w.RecordBuilder.Release()
-
 	indexMatches := map[uint32]struct{}{}
 	for i := 0; i < r.LineFunctionNameDict.Len(); i++ {
 		if bytes.Contains(bytes.ToLower(r.LineFunctionNameDict.Value(i)), filterQueryBytes) {
@@ -383,7 +371,7 @@ func filterRecord(
 	}
 
 	if len(indexMatches) == 0 {
-		return w.RecordBuilder.NewRecord(), math.Int64.Sum(r.Value), 0, nil
+		return nil, math.Int64.Sum(r.Value), 0, nil
 	}
 
 	for i := 0; i < int(rec.NumRows()); i++ {
@@ -406,22 +394,14 @@ func filterRecord(
 			keepRow = true
 		}
 
-		if keepRow {
-			w.Value.Append(r.Value.Value(i))
-			w.Diff.Append(r.Diff.Value(i))
-
-			for j, label := range r.LabelColumns {
-				if label.Col.IsValid(i) {
-					if err := w.LabelBuilders[j].Append([]byte(label.Dict.Value(int(label.Col.Value(i))))); err != nil {
-						return nil, 0, 0, fmt.Errorf("append label: %w", err)
-					}
-				} else {
-					w.LabelBuilders[j].AppendNull()
-				}
+		if !keepRow { // Mark the row is null in each array
+			for _, col := range rec.Columns() {
+				bitutil.ClearBit(col.NullBitmapBytes(), i)
 			}
+		}
 
+		if keepRow {
 			if lOffsetEnd-lOffsetStart > 0 {
-				w.LocationsList.Append(true)
 				for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
 					validMappingStart := r.MappingStart.IsValid(j)
 					var mappingFile []byte
@@ -443,108 +423,28 @@ func filterRecord(
 						}
 					}
 					if skipLocation {
+						bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
 						continue
 					}
 					if showInterpretedOnly && !bytes.Equal(mappingFile, []byte("interpreter")) {
+						bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
 						continue
 					}
-					w.Locations.Append(true)
-					w.Addresses.Append(r.Address.Value(j))
-
-					if validMappingStart {
-						w.MappingStart.Append(r.MappingStart.Value(j))
-						w.MappingLimit.Append(r.MappingLimit.Value(j))
-						w.MappingOffset.Append(r.MappingOffset.Value(j))
-
-						if len(mappingFile) > 0 {
-							if err := w.MappingFile.Append(mappingFile); err != nil {
-								return nil, 0, 0, fmt.Errorf("append mapping file: %w", err)
-							}
-						} else {
-							if err := w.MappingFile.Append([]byte{}); err != nil {
-								return nil, 0, 0, fmt.Errorf("append mapping file: %w", err)
-							}
-						}
-
-						mappingBuildID := r.MappingBuildIDDict.Value(int(r.MappingBuildIDIndices.Value(j)))
-						if len(mappingBuildID) > 0 {
-							if err := w.MappingBuildID.Append(mappingBuildID); err != nil {
-								return nil, 0, 0, fmt.Errorf("append mapping build id: %w", err)
-							}
-						} else {
-							if err := w.MappingBuildID.Append([]byte{}); err != nil {
-								return nil, 0, 0, fmt.Errorf("append mapping build id: %w", err)
-							}
-						}
-					} else {
-						w.MappingStart.AppendNull()
-						w.MappingLimit.AppendNull()
-						w.MappingOffset.AppendNull()
-						w.MappingFile.AppendNull()
-						w.MappingBuildID.AppendNull()
-					}
-
-					if r.Lines.IsValid(j) {
-						llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
-						if llOffsetEnd-llOffsetStart > 0 {
-							w.Lines.Append(true)
-							for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
-								w.Line.Append(true)
-								w.LineNumber.Append(r.LineNumber.Value(k))
-
-								functionName := r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(k)))
-								if len(functionName) > 0 {
-									if err := w.FunctionName.Append(functionName); err != nil {
-										return nil, 0, 0, fmt.Errorf("append function name: %w", err)
-									}
-								} else {
-									if err := w.FunctionName.Append(functionName); err != nil {
-										return nil, 0, 0, fmt.Errorf("append function name: %w", err)
-									}
-								}
-
-								functionSystemName := r.LineFunctionSystemNameDict.Value(int(r.LineFunctionSystemNameIndices.Value(k)))
-								if len(functionSystemName) > 0 {
-									if err := w.FunctionSystemName.Append(functionSystemName); err != nil {
-										return nil, 0, 0, fmt.Errorf("append function system name: %w", err)
-									}
-								} else {
-									if err := w.FunctionSystemName.Append([]byte{}); err != nil {
-										return nil, 0, 0, fmt.Errorf("append function system name: %w", err)
-									}
-								}
-
-								functionFilename := r.LineFunctionFilenameDict.Value(int(r.LineFunctionFilenameIndices.Value(k)))
-								if len(functionFilename) > 0 {
-									if err := w.FunctionFilename.Append(functionFilename); err != nil {
-										return nil, 0, 0, fmt.Errorf("append function filename: %w", err)
-									}
-								} else {
-									if err := w.FunctionFilename.Append([]byte{}); err != nil {
-										return nil, 0, 0, fmt.Errorf("append function filename: %w", err)
-									}
-								}
-
-								w.FunctionStartLine.Append(r.LineFunctionStartLine.Value(k))
-							}
-							continue
-						}
-					}
-					w.Lines.AppendNull()
 				}
-			} else {
-				w.LocationsList.Append(false)
 			}
 		}
 	}
 
-	res := w.RecordBuilder.NewRecord()
-	numFields := res.Schema().NumFields()
-	filteredValue := res.Column(numFields - 2).(*array.Int64)
+	filtered := int64(0)
+	for i := 0; i < r.Value.Len(); i++ { // We can't use the sum function after filtering because it doesn't respect nulls.
+		if r.Value.IsValid(i) {
+			filtered += r.Value.Value(i)
+		}
+	}
 
-	return res,
+	return rec,
 		math.Int64.Sum(r.Value),
-		math.Int64.Sum(filteredValue),
+		filtered,
 		nil
 }
 
