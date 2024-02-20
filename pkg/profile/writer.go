@@ -44,26 +44,6 @@ type Writer struct {
 
 func (w *Writer) Release() {
 	w.RecordBuilder.Release()
-	for _, b := range w.LabelBuilders {
-		b.Release()
-	}
-	w.LocationsList.Release()
-	w.Locations.Release()
-	w.Addresses.Release()
-	w.MappingStart.Release()
-	w.MappingLimit.Release()
-	w.MappingOffset.Release()
-	w.MappingFile.Release()
-	w.MappingBuildID.Release()
-	w.Lines.Release()
-	w.Line.Release()
-	w.LineNumber.Release()
-	w.FunctionName.Release()
-	w.FunctionSystemName.Release()
-	w.FunctionFilename.Release()
-	w.FunctionStartLine.Release()
-	w.Value.Release()
-	w.Diff.Release()
 }
 
 func NewWriter(pool memory.Allocator, labelNames []string) Writer {
