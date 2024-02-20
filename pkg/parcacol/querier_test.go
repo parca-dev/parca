@@ -131,8 +131,8 @@ func TestQueryDeltaRange(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, res, 1)
 	require.Len(t, res[0].Samples, 2)
-	require.Equal(t, int64(19999999640), res[0].Samples[0].Value)      // Rounding mistakes are expected
-	require.Equal(t, 9.99999982e+08, res[0].Samples[0].ValuePerSecond) // This uses the step for calculating per-second, because there are multiple samples in the step
-	require.Equal(t, int64(4999999910), res[0].Samples[1].Value)       // Rounding mistakes are expected
-	require.Equal(t, 4.99999991e+08, res[0].Samples[1].ValuePerSecond) // This uses the duration for calculating per-second, because there is only one sample in the step
+	require.Equal(t, int64(19999999640), res[0].Samples[0].Value)   // Rounding mistakes are expected
+	require.Equal(t, 0.999999982, res[0].Samples[0].ValuePerSecond) // This uses the step for calculating per-second, because there are multiple samples in the step
+	require.Equal(t, int64(4999999910), res[0].Samples[1].Value)    // Rounding mistakes are expected
+	require.Equal(t, 0.499999991, res[0].Samples[1].ValuePerSecond) // This uses the duration for calculating per-second, because there is only one sample in the step
 }

@@ -364,6 +364,12 @@ func (q *Querier) queryRangeDelta(
 		}
 	}()
 	rows := 0
+
+	totalSum := logicalplan.Sum(logicalplan.Col(profile.ColumnValue))
+	totalSumColumn := totalSum.Name()
+	durationMin := logicalplan.Min(logicalplan.Col(profile.ColumnDuration))
+	timestampUnique := logicalplan.Unique(logicalplan.Col(profile.ColumnTimestamp))
+
 	preProjection := []logicalplan.Expr{
 		logicalplan.Mul(logicalplan.Div(logicalplan.Col(profile.ColumnTimestamp), logicalplan.Literal(step.Milliseconds())), logicalplan.Literal(step.Milliseconds())).Alias(TimestampBucket),
 		logicalplan.Col(profile.ColumnTimestamp),
@@ -387,10 +393,21 @@ func (q *Querier) queryRangeDelta(
 		)
 	}
 
-	totalSum := logicalplan.Sum(logicalplan.Col(profile.ColumnValue))
-	totalSumColumn := totalSum.Name()
-	durationMin := logicalplan.Min(logicalplan.Col(profile.ColumnDuration))
-	timestampUnique := logicalplan.Unique(logicalplan.Col(profile.ColumnTimestamp))
+	var perSecondExpr logicalplan.Expr
+	if resultType.Type == "cpu" && resultType.Unit == "nanoseconds" {
+		perSecondExpr = logicalplan.Div(
+			logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
+			logicalplan.Convert(logicalplan.If(logicalplan.IsNull(timestampUnique), logicalplan.Literal(step.Nanoseconds()), durationMin), arrow.PrimitiveTypes.Float64),
+		).Alias(ValuePerSecond)
+	} else {
+		perSecondExpr = logicalplan.Div(
+			logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
+			logicalplan.Div(
+				logicalplan.Convert(logicalplan.If(logicalplan.IsNull(timestampUnique), logicalplan.Literal(step.Nanoseconds()), durationMin), arrow.PrimitiveTypes.Float64),
+				logicalplan.Literal(float64(time.Second.Nanoseconds())),
+			),
+		).Alias(ValuePerSecond)
+	}
 
 	err := q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
@@ -409,17 +426,7 @@ func (q *Querier) queryRangeDelta(
 			},
 		).
 		Project(
-			// The per second value is the sum of all values at the step-level
-			// timestamp, divided by the duration sum. The duration sum is
-			// necessary so if multiple timestamps fall into the same step, we
-			// account for the total duration within that step.
-			logicalplan.Div(
-				logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
-				logicalplan.Div(
-					logicalplan.Convert(logicalplan.If(logicalplan.IsNull(timestampUnique), logicalplan.Literal(step.Nanoseconds()), durationMin), arrow.PrimitiveTypes.Float64),
-					logicalplan.Literal(float64(time.Second.Nanoseconds())),
-				),
-			).Alias(ValuePerSecond),
+			perSecondExpr,
 			logicalplan.If(logicalplan.IsNull(timestampUnique), logicalplan.Literal(step.Nanoseconds()), durationMin).Alias(profile.ColumnDuration),
 			totalSum,
 			logicalplan.DynCol(profile.ColumnLabels),
@@ -446,10 +453,12 @@ func (q *Querier) queryRangeDelta(
 		Timestamp      int
 		PerSecondValue int
 		ValueSum       int
+		Duration       int
 	}{
 		Timestamp:      -1,
 		PerSecondValue: -1,
 		ValueSum:       -1,
+		Duration:       -1,
 	}
 
 	labelColumnIndices := []int{}
@@ -470,6 +479,8 @@ func (q *Querier) queryRangeDelta(
 			case totalSumColumn:
 				columnIndices.ValueSum = i
 				continue
+			case profile.ColumnDuration:
+				columnIndices.Duration = i
 			}
 
 			if strings.HasPrefix(field.Name, "labels.") {
@@ -485,6 +496,9 @@ func (q *Querier) queryRangeDelta(
 		}
 		if columnIndices.ValueSum == -1 {
 			return nil, errors.New("sum(value) column not found")
+		}
+		if columnIndices.Duration == -1 {
+			return nil, errors.New("duration column not found")
 		}
 
 		for i := 0; i < int(ar.NumRows()); i++ {
@@ -530,13 +544,14 @@ func (q *Querier) queryRangeDelta(
 			ts := ar.Column(columnIndices.Timestamp).(*array.Int64).Value(i)
 			valueSum := ar.Column(columnIndices.ValueSum).(*array.Int64).Value(i)
 			valuePerSecond := ar.Column(columnIndices.PerSecondValue).(*array.Float64).Value(i)
+			duration := ar.Column(columnIndices.Duration).(*array.Int64).Value(i)
 
 			series := resSeries[index]
 			series.Samples = append(series.Samples, &pb.MetricsSample{
 				Timestamp:      timestamppb.New(timestamp.Time(ts)),
 				Value:          valueSum,
 				ValuePerSecond: valuePerSecond,
-				Duration:       step.Nanoseconds(),
+				Duration:       duration,
 			})
 		}
 	}
