@@ -74,7 +74,7 @@ const DiffLegend = (): JSX.Element => {
   };
 
   return (
-    <div className="mt-1 mb-2 hidden md:block">
+    <div className="mt-1 mb-2 hidden md:block" id="h-diff-legend">
       <div ref={setReferenceElement} className="flex items-center justify-center">
         <span>Better</span>
         <DiffLegendBar onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
