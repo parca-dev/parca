@@ -338,7 +338,9 @@ func FilterProfileData(
 			return nil, 0, fmt.Errorf("filter record: %w", err)
 		}
 
-		res = append(res, filteredRecord)
+		if filteredRecord != nil {
+			res = append(res, filteredRecord)
+		}
 		allValues += valueSum
 		allFiltered += filteredSum
 	}
@@ -356,12 +358,6 @@ func filterRecord(
 	showInterpretedOnly bool,
 ) (arrow.Record, int64, int64, error) {
 	r := profile.NewRecordReader(rec)
-
-	// Builders for the result profile.
-	labelNames := make([]string, 0, len(r.LabelFields))
-	for _, lf := range r.LabelFields {
-		labelNames = append(labelNames, strings.TrimPrefix(lf.Name, profile.ColumnPprofLabelsPrefix))
-	}
 
 	indexMatches := map[uint32]struct{}{}
 	for i := 0; i < r.LineFunctionNameDict.Len(); i++ {
