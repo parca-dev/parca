@@ -20,7 +20,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/apache/arrow/go/v14/arrow/memory"
+	"github.com/apache/arrow/go/v15/arrow/memory"
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
 	pprofprofile "github.com/google/pprof/profile"

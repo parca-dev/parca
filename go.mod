@@ -59,6 +59,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
+require github.com/apache/arrow/go/v15 v15.0.0 // indirect
+
 require (
 	cloud.google.com/go v0.110.10 // indirect
 	cloud.google.com/go/compute v1.23.3 // indirect
@@ -241,3 +243,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.3.0 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
+
+replace github.com/polarsignals/frostdb => ../../polarsignals/frostdb
