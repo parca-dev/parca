@@ -1,4 +1,4 @@
-// Copyright 2023 The Parca Authors
+// Copyright 2023-2024 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -22,11 +22,11 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/apache/arrow/go/v14/arrow"
-	"github.com/apache/arrow/go/v14/arrow/array"
-	"github.com/apache/arrow/go/v14/arrow/ipc"
-	"github.com/apache/arrow/go/v14/arrow/math"
-	"github.com/apache/arrow/go/v14/arrow/memory"
+	"github.com/apache/arrow/go/v15/arrow"
+	"github.com/apache/arrow/go/v15/arrow/array"
+	"github.com/apache/arrow/go/v15/arrow/ipc"
+	"github.com/apache/arrow/go/v15/arrow/math"
+	"github.com/apache/arrow/go/v15/arrow/memory"
 	"github.com/olekukonko/tablewriter"
 	"github.com/polarsignals/frostdb/pqarrow/builder"
 	"github.com/zeebo/xxh3"
