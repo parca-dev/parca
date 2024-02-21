@@ -15,7 +15,7 @@ import React, {useEffect, useState} from 'react';
 
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 
-import {ProfileTypesResponse, QueryServiceClient} from '@parca/client';
+import {Label, ProfileTypesResponse, QueryServiceClient} from '@parca/client';
 import {
   Button,
   ButtonGroup,
@@ -27,7 +27,6 @@ import {
 } from '@parca/components';
 import {CloseIcon} from '@parca/icons';
 import {Query} from '@parca/parser';
-import {getStepDuration, getStepDurationInMilliseconds} from '@parca/utilities';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
 import MatchersInput from '../MatchersInput/index';
@@ -327,7 +326,12 @@ const ProfileSelector = ({
                   });
                 }}
                 addLabelMatcher={addLabelMatcher}
-                onPointClick={(timestamp, labels, queryExpression) => {
+                onPointClick={(
+                  timestamp: number,
+                  labels: Label[],
+                  queryExpression: string,
+                  duration: number
+                ) => {
                   // TODO: Pass the query object via click rather than queryExpression
                   let query = Query.parse(queryExpression);
                   labels.forEach(l => {
@@ -337,11 +341,10 @@ const ProfileSelector = ({
                     }
                   });
 
-                  const stepDuration = getStepDuration(querySelection.from, querySelection.to);
-                  const stepDurationInMilliseconds = getStepDurationInMilliseconds(stepDuration);
+                  const durationInMilliseconds = duration / 1000000; // duration is in nanoseconds
                   const mergeFrom = timestamp;
                   const mergeTo = query.profileType().delta
-                    ? mergeFrom + stepDurationInMilliseconds
+                    ? mergeFrom + durationInMilliseconds
                     : mergeFrom;
                   selectProfile(new MergedProfileSelection(mergeFrom, mergeTo, query));
                 }}
