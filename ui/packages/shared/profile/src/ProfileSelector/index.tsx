@@ -326,7 +326,12 @@ const ProfileSelector = ({
                   });
                 }}
                 addLabelMatcher={addLabelMatcher}
-                onPointClick={(timestamp: number, labels: Label[], queryExpression: string, duration: number) => {
+                onPointClick={(
+                  timestamp: number,
+                  labels: Label[],
+                  queryExpression: string,
+                  duration: number
+                ) => {
                   // TODO: Pass the query object via click rather than queryExpression
                   let query = Query.parse(queryExpression);
                   labels.forEach(l => {
