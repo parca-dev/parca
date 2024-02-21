@@ -40,7 +40,7 @@ interface Props {
   from: number;
   to: number;
   profile: MergedProfileSelection | null;
-  onSampleClick: (timestamp: number, value: number, labels: Label[]) => void;
+  onSampleClick: (timestamp: number, value: number, labels: Label[], duration: number) => void;
   addLabelMatcher: (
     labels: {key: string; value: string} | Array<{key: string; value: string}>
   ) => void;
@@ -260,7 +260,8 @@ export const RawMetricsGraph = ({
       onSampleClick(
         Math.round(highlighted.timestamp),
         highlighted.value,
-        sanitizeHighlightedValues(highlighted.labels) // When a user clicks on any sample in the graph, replace single `\` in the `labelValues` string with doubles `\\` if available.
+        sanitizeHighlightedValues(highlighted.labels), // When a user clicks on any sample in the graph, replace single `\` in the `labelValues` string with doubles `\\` if available.
+        highlighted.duration
       );
     }
   };
