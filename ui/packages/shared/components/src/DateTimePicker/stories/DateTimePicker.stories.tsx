@@ -15,6 +15,18 @@ import DateTimePicker from './StateWrappedComponent';
 
 import 'react-datepicker/dist/react-datepicker.css';
 
+// Mock Date to always return the same date
+// Warning this will affect all stories
+window.Date = new Proxy(window.Date, {
+  construct(target, args) {
+    if (args.length === 0) {
+      return new Date(1708514847145);
+    }
+    /* @ts-expect-error */ // eslint-disable-next-line new-cap
+    return new target(...args);
+  },
+});
+
 export default {
   title: 'Components/DateTimePicker ',
   component: DateTimePicker,
