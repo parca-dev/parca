@@ -6,9 +6,9 @@
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
     "watch": "tsc-watch --onCompilationComplete 'yarn compileStaticFiles'",
-    "build-swc": "swc ./src -d dist && yarn compileStaticFiles",
+    "build-swc": "swc ./src -d dist --copy-files && yarn compileStaticFiles",
     "build": "tsc && yarn compileStaticFiles",
-    "compileStaticFiles": "tailwindcss -o dist/styles.css && mkdir -p ./dist/assets && cp ./src/assets/* ./dist/assets/"
+    "compileStaticFiles": "tailwindcss -o dist/styles.css"
   },
   "keywords": [],
   "author": "",

@@ -7,7 +7,7 @@
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
     "prepublish": "yarn build",
     "build": "tsc",
-    "build-swc": "swc ./src -d dist",
+    "build-swc": "swc ./src -d dist --copy-files",
     "watch": "tsc-watch"
   },
   "dependencies": {
