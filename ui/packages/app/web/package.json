@@ -10,6 +10,7 @@
     "test": "jest --coverage --config ../../../jest.config.js ./src/**/* ./__tests__/**/*",
     "dev": "craco start",
     "build": "craco build",
+    "build-swc": "craco build",
     "eject": "craco eject"
   },
   "config": {

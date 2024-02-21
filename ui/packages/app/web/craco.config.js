@@ -1,7 +1,7 @@
 const path = require('path');
-const {getLoader, loaderByName} = require('@craco/craco');
+const {loaderByName, addAfterLoader, removeLoaders} = require('@craco/craco');
 
-const packages = [];
+const packages = [__dirname];
 packages.push(path.join(__dirname, '../../shared/client'));
 packages.push(path.join(__dirname, '../../shared/components'));
 packages.push(path.join(__dirname, '../../shared/dynamicsize'));
@@ -16,14 +16,14 @@ packages.push(path.join(__dirname, '../../shared/utilities'));
 module.exports = {
   webpack: {
     configure: (webpackConfig, arg) => {
-      const {isFound, match} = getLoader(webpackConfig, loaderByName('babel-loader'));
-      if (isFound) {
-        const include = Array.isArray(match.loader.include)
-          ? match.loader.include
-          : [match.loader.include];
+      addAfterLoader(webpackConfig, loaderByName('babel-loader'), {
+        test: /\.(js|mjs|jsx|ts|tsx)$/,
+        include: packages,
+        loader: require.resolve('swc-loader'),
+      });
 
-        match.loader.include = include.concat(packages);
-      }
+      removeLoaders(webpackConfig, loaderByName('babel-loader'));
+
       return webpackConfig;
     },
   },

@@ -10,6 +10,7 @@
     "test": "jest --coverage --config jest.config.cjs",
     "build": "./scripts/run-yarn-build.sh",
     "build-lerna": "lerna run build",
+    "build-swc-lerna": "lerna run build-swc",
     "watch": "lerna run --parallel watch",
     "watch-parca-dev": "lerna run --parallel --include-dependencies --scope @parca/web watch",
     "publish:ci": "lerna publish --yes --no-verify-access",
