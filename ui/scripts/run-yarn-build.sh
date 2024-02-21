@@ -25,7 +25,7 @@ cp packages/app/web/build/keep.go tmp/ui-keep/keep.go
 
 # Run the yarn build command
 echo "Running yarn build-swc-lerna command"
-yarn build-swc-lerna
+yarn build-lerna
 
 # Copy the keep.go file back to its original location
 echo "Copying keep.go back to original location"

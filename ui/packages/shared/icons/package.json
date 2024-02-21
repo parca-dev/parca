@@ -8,7 +8,7 @@
     "watch": "tsc-watch --onCompilationComplete 'yarn compileStaticFiles'",
     "build-swc": "swc ./src -d dist --copy-files && yarn compileStaticFiles",
     "build": "tsc && yarn compileStaticFiles",
-    "compileStaticFiles": "tailwindcss -o dist/styles.css"
+    "compileStaticFiles": "tailwindcss -o dist/styles.css && mkdir -p ./dist/assets && cp ./src/assets/* ./dist/assets/"
   },
   "keywords": [],
   "author": "",
