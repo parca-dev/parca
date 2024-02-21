@@ -61,15 +61,15 @@ jobs:
         run: yarn install --frozen-lockfile --prefer-offline
         working-directory: ui
 
+      - name: Run ESLint
+        working-directory: ui
+        run: yarn run lint
+
       - run: yarn build
         working-directory: ui
 
       - run: yarn test
         working-directory: ui
-
-      - name: Run ESLint
-        working-directory: ui
-        run: yarn run lint
 
       - name: Check typing
         working-directory: ui
