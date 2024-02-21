@@ -55,6 +55,7 @@ jobs:
         with:
           node-version-file: .node-version
           cache: 'yarn'
+          cache-dependency-path: ui/yarn.lock
 
       - name: Install project dependencies
         run: yarn install --frozen-lockfile --prefer-offline
