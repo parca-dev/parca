@@ -48,7 +48,7 @@ const Select = ({
   primary = false,
   disabled = false,
   icon,
-  id = '',
+  id,
 }: {
   items: SelectItem[];
   selectedKey: string | undefined;
@@ -77,23 +77,24 @@ const Select = ({
     <Listbox value={selectedKey} onChange={onSelection}>
       {({open}) => (
         <div className="relative">
-          <Listbox.Button
-            className={cx(
-              styles,
-              width !== undefined ? `w-${width}` : 'w-full',
-              disabled ? 'cursor-not-allowed opacity-50' : '',
-              primary ? primaryStyles : defaultStyles,
-              {[className]: className.length > 0}
-            )}
-            id={id}
-          >
-            <div className={cx(icon != null ? '' : 'block overflow-x-hidden text-ellipsis')}>
-              {selection?.key !== '' ? selection.element.active : placeholder}
-            </div>
-            <div className={cx(icon != null ? '' : 'pointer-events-none text-gray-400')}>
-              {icon ?? <Icon icon="heroicons:chevron-up-down-20-solid" aria-hidden="true" />}
-            </div>
-          </Listbox.Button>
+          <div id={id}>
+            <Listbox.Button
+              className={cx(
+                styles,
+                width !== undefined ? `w-${width}` : 'w-full',
+                disabled ? 'cursor-not-allowed opacity-50' : '',
+                primary ? primaryStyles : defaultStyles,
+                {[className]: className.length > 0}
+              )}
+            >
+              <div className={cx(icon != null ? '' : 'block overflow-x-hidden text-ellipsis')}>
+                {selection?.key !== '' ? selection.element.active : placeholder}
+              </div>
+              <div className={cx(icon != null ? '' : 'pointer-events-none text-gray-400')}>
+                {icon ?? <Icon icon="heroicons:chevron-up-down-20-solid" aria-hidden="true" />}
+              </div>
+            </Listbox.Button>
+          </div>
 
           <Transition
             show={open}
