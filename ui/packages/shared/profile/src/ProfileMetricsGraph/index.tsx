@@ -64,7 +64,7 @@ interface ProfileMetricsGraphProps {
   addLabelMatcher: (
     labels: {key: string; value: string} | Array<{key: string; value: string}>
   ) => void;
-  onPointClick: (timestamp: number, labels: Label[], queryExpression: string) => void;
+  onPointClick: (timestamp: number, labels: Label[], queryExpression: string, duration: number) => void;
   comparing?: boolean;
 }
 
@@ -168,8 +168,8 @@ const ProfileMetricsGraph = ({
   }
 
   if (dataAvailable) {
-    const handleSampleClick = (timestamp: number, _value: number, labels: Label[]): void => {
-      onPointClick(timestamp, labels, queryExpression);
+    const handleSampleClick = (timestamp: number, _value: number, labels: Label[], duration: number): void => {
+      onPointClick(timestamp, labels, queryExpression, duration);
     };
 
     let sampleUnit = '';
