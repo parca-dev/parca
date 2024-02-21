@@ -383,7 +383,6 @@ export const ProfileView = ({
               />
             ) : null}
             <Button
-              id="h-download-pprof"
               className="gap-2"
               variant="neutral"
               onClick={e => {
@@ -391,6 +390,7 @@ export const ProfileView = ({
                 onDownloadPProf();
               }}
               disabled={pprofDownloading}
+              id="h-download-pprof"
             >
               {pprofDownloading != null && pprofDownloading ? 'Downloading...' : 'Download pprof'}
               <Icon icon="material-symbols:download" width={20} />
@@ -403,6 +403,7 @@ export const ProfileView = ({
               icon={<Icon icon="material-symbols:add" width={20} />}
               addView={true}
               disabled={isMultiPanelView || dashboardItems.length < 1}
+              id="h-add-panel"
             />
           </div>
         </div>

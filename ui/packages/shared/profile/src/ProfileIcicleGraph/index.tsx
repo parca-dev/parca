@@ -325,7 +325,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
         transition={{duration: 0.5}}
       >
         {compareMode ? <DiffLegend /> : null}
-        <div className="min-h-48">
+        <div className="min-h-48" id="h-icicle-graph">
           {graph !== undefined && (
             <IcicleGraph
               width={width}

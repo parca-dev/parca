@@ -42,13 +42,13 @@ const FilterByFunctionButton = ({
   return (
     <Input
       placeholder="Filter by function"
-      id="h-filter-by-function"
       className="text-sm"
       onAction={onAction}
       onChange={e => setLocalValue(e.target.value)}
       value={localValue ?? ''}
       onBlur={() => setLocalValue(storeValue as string)}
       actionIcon={isClearAction ? <Icon icon="ep:circle-close" /> : <Icon icon="ep:arrow-right" />}
+      id="h-filter-by-function"
     />
   );
 };
