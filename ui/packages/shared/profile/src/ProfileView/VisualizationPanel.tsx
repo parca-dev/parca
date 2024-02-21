@@ -73,7 +73,12 @@ export const VisualizationPanel = React.memo(function VisualizationPanel({
               isMultiPanelView && dashboardItem === 'icicle' && 'pb-[10px]'
             )}
           >
-            <ViewSelector defaultValue={dashboardItem} navigateTo={navigateTo} position={index} />
+            <ViewSelector
+              id="h-switch-viz"
+              defaultValue={dashboardItem}
+              navigateTo={navigateTo}
+              position={index}
+            />
 
             {dashboardItem === 'icicle' && flamegraphHint != null ? (
               <div className="px-2">{flamegraphHint}</div>

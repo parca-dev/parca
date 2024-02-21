@@ -5,7 +5,6 @@ go 1.21
 require (
 	cloud.google.com/go/storage v1.35.1
 	github.com/alecthomas/kong v0.8.1
-	github.com/apache/arrow/go/v14 v14.0.0-20231024132201-e3d6b9beac69
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
@@ -29,7 +28,7 @@ require (
 	github.com/oklog/run v1.1.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/parquet-go/parquet-go v0.20.0
-	github.com/polarsignals/frostdb v0.0.0-20240215144140-87f924cf5baf
+	github.com/polarsignals/frostdb v0.0.0-20240220123139-b61efff40bad
 	github.com/prometheus/client_golang v1.17.0
 	github.com/prometheus/common v0.45.0
 	github.com/prometheus/prometheus v0.48.1
@@ -58,6 +57,8 @@ require (
 	gopkg.in/dnaeon/go-vcr.v3 v3.1.2
 	gopkg.in/yaml.v3 v3.0.1
 )
+
+require github.com/apache/arrow/go/v15 v15.0.0
 
 require (
 	cloud.google.com/go v0.110.10 // indirect

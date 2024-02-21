@@ -177,7 +177,7 @@ const ProfileTypeSelector = ({
       onSelection={onSelection}
       placeholder="Select profile type..."
       loading={loading}
-      className="bg-white"
+      className="bg-white h-profile-type-dropdown"
     />
   );
 };

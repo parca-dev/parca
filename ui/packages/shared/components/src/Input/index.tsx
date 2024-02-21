@@ -23,6 +23,7 @@ interface SelfProps {
   onAction?: () => void;
   actionIcon?: JSX.Element;
   actionButton?: JSX.Element;
+  id?: string;
 }
 
 export type Props = React.InputHTMLAttributes<HTMLInputElement> & SelfProps;
@@ -33,6 +34,7 @@ const Input = ({
   actionIcon = <Icon icon="ep:arrow-right" />,
   actionButton,
   onBlur,
+  id = '',
   ...props
 }: Props): JSX.Element => {
   const ref = useRef<HTMLInputElement>(null);
@@ -70,6 +72,7 @@ const Input = ({
             onAction();
           }
         }}
+        id={id}
       />
       {hasAction ? (
         <div

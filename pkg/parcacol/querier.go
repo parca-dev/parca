@@ -21,10 +21,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apache/arrow/go/v14/arrow"
-	"github.com/apache/arrow/go/v14/arrow/array"
-	"github.com/apache/arrow/go/v14/arrow/memory"
-	"github.com/apache/arrow/go/v14/arrow/scalar"
+	"github.com/apache/arrow/go/v15/arrow"
+	"github.com/apache/arrow/go/v15/arrow/array"
+	"github.com/apache/arrow/go/v15/arrow/memory"
+	"github.com/apache/arrow/go/v15/arrow/scalar"
 	"github.com/go-kit/log"
 	"github.com/polarsignals/frostdb/query"
 	"github.com/polarsignals/frostdb/query/logicalplan"
@@ -345,7 +345,8 @@ func (q *Querier) QueryRange(
 }
 
 const (
-	ValuePerSecond = "value_per_second"
+	ValuePerSecond  = "value_per_second"
+	TimestampBucket = "timestamp_bucket"
 )
 
 func (q *Querier) queryRangeDelta(
@@ -363,8 +364,15 @@ func (q *Querier) queryRangeDelta(
 		}
 	}()
 	rows := 0
+
+	totalSum := logicalplan.Sum(logicalplan.Col(profile.ColumnValue))
+	totalSumColumn := totalSum.Name()
+	durationMin := logicalplan.Min(logicalplan.Col(profile.ColumnDuration))
+	timestampUnique := logicalplan.Unique(logicalplan.Col(profile.ColumnTimestamp))
+
 	preProjection := []logicalplan.Expr{
-		logicalplan.Mul(logicalplan.Div(logicalplan.Col(profile.ColumnTimestamp), logicalplan.Literal(step.Milliseconds())), logicalplan.Literal(step.Milliseconds())).Alias(profile.ColumnTimestamp),
+		logicalplan.Mul(logicalplan.Div(logicalplan.Col(profile.ColumnTimestamp), logicalplan.Literal(step.Milliseconds())), logicalplan.Literal(step.Milliseconds())).Alias(TimestampBucket),
+		logicalplan.Col(profile.ColumnTimestamp),
 		logicalplan.DynCol(profile.ColumnLabels),
 		logicalplan.Col(profile.ColumnDuration),
 	}
@@ -385,9 +393,21 @@ func (q *Querier) queryRangeDelta(
 		)
 	}
 
-	totalSum := logicalplan.Sum(logicalplan.Col(profile.ColumnValue))
-	totalSumColumn := totalSum.Name()
-	durationSum := logicalplan.Sum(logicalplan.Col(profile.ColumnDuration))
+	var perSecondExpr logicalplan.Expr
+	if resultType.Type == "cpu" && resultType.Unit == "nanoseconds" {
+		perSecondExpr = logicalplan.Div(
+			logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
+			logicalplan.Convert(logicalplan.If(logicalplan.IsNull(timestampUnique), logicalplan.Literal(step.Nanoseconds()), durationMin), arrow.PrimitiveTypes.Float64),
+		).Alias(ValuePerSecond)
+	} else {
+		perSecondExpr = logicalplan.Div(
+			logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
+			logicalplan.Div(
+				logicalplan.Convert(logicalplan.If(logicalplan.IsNull(timestampUnique), logicalplan.Literal(step.Nanoseconds()), durationMin), arrow.PrimitiveTypes.Float64),
+				logicalplan.Literal(float64(time.Second.Nanoseconds())),
+			),
+		).Alias(ValuePerSecond)
+	}
 
 	err := q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
@@ -396,26 +416,21 @@ func (q *Querier) queryRangeDelta(
 			[]*logicalplan.AggregationFunction{
 				// We need the duration sum, so we can calculate the per-second
 				// value at the step-level timestamp.
-				durationSum,
+				durationMin,
+				timestampUnique,
 				totalSum,
 			},
 			[]logicalplan.Expr{
 				logicalplan.DynCol(profile.ColumnLabels),
-				logicalplan.Col(profile.ColumnTimestamp),
+				logicalplan.Col(TimestampBucket),
 			},
 		).
 		Project(
-			// The per second value is the sum of all values at the step-level
-			// timestamp, divided by the duration sum. The duration sum is
-			// necessary so if multiple timestamps fall into the same step, we
-			// account for the total duration within that step.
-			logicalplan.Div(
-				logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
-				logicalplan.Convert(durationSum, arrow.PrimitiveTypes.Float64),
-			).Alias(ValuePerSecond),
+			perSecondExpr,
+			logicalplan.If(logicalplan.IsNull(timestampUnique), logicalplan.Literal(step.Nanoseconds()), durationMin).Alias(profile.ColumnDuration),
 			totalSum,
 			logicalplan.DynCol(profile.ColumnLabels),
-			logicalplan.Col(profile.ColumnTimestamp),
+			logicalplan.Col(TimestampBucket),
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
@@ -438,10 +453,12 @@ func (q *Querier) queryRangeDelta(
 		Timestamp      int
 		PerSecondValue int
 		ValueSum       int
+		Duration       int
 	}{
 		Timestamp:      -1,
 		PerSecondValue: -1,
 		ValueSum:       -1,
+		Duration:       -1,
 	}
 
 	labelColumnIndices := []int{}
@@ -453,7 +470,7 @@ func (q *Querier) queryRangeDelta(
 		fields := ar.Schema().Fields()
 		for i, field := range fields {
 			switch field.Name {
-			case profile.ColumnTimestamp:
+			case TimestampBucket:
 				columnIndices.Timestamp = i
 				continue
 			case ValuePerSecond:
@@ -462,6 +479,8 @@ func (q *Querier) queryRangeDelta(
 			case totalSumColumn:
 				columnIndices.ValueSum = i
 				continue
+			case profile.ColumnDuration:
+				columnIndices.Duration = i
 			}
 
 			if strings.HasPrefix(field.Name, "labels.") {
@@ -477,6 +496,9 @@ func (q *Querier) queryRangeDelta(
 		}
 		if columnIndices.ValueSum == -1 {
 			return nil, errors.New("sum(value) column not found")
+		}
+		if columnIndices.Duration == -1 {
+			return nil, errors.New("duration column not found")
 		}
 
 		for i := 0; i < int(ar.NumRows()); i++ {
@@ -522,13 +544,14 @@ func (q *Querier) queryRangeDelta(
 			ts := ar.Column(columnIndices.Timestamp).(*array.Int64).Value(i)
 			valueSum := ar.Column(columnIndices.ValueSum).(*array.Int64).Value(i)
 			valuePerSecond := ar.Column(columnIndices.PerSecondValue).(*array.Float64).Value(i)
+			duration := ar.Column(columnIndices.Duration).(*array.Int64).Value(i)
 
 			series := resSeries[index]
 			series.Samples = append(series.Samples, &pb.MetricsSample{
 				Timestamp:      timestamppb.New(timestamp.Time(ts)),
 				Value:          valueSum,
 				ValuePerSecond: valuePerSecond,
-				Duration:       step.Nanoseconds(),
+				Duration:       duration,
 			})
 		}
 	}

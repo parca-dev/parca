@@ -63,12 +63,14 @@ type Props = {
   variant?: ButtonVariant;
   className?: string;
   children: React.ReactNode;
+  id?: string;
 } & JSX.IntrinsicElements['button'];
 
 export const Button = ({
   variant = 'primary',
   disabled = false,
   className = '',
+  id = '',
   ...props
 }: Props): JSX.Element => {
   const classes = useMemo<string>(() => {
@@ -97,7 +99,7 @@ export const Button = ({
     return classesMerged;
   }, [className, disabled, variant]);
 
-  return <button {...props} disabled={disabled} className={classes} />;
+  return <button {...props} disabled={disabled} className={classes} id={id} />;
 };
 
 type IconButtonProps = {
