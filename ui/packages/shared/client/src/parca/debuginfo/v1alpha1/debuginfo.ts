@@ -1296,7 +1296,7 @@ export const DebuginfoQuality = new DebuginfoQuality$Type();
  */
 export const DebuginfoService = new ServiceType("parca.debuginfo.v1alpha1.DebuginfoService", [
     { name: "Upload", clientStreaming: true, options: { "google.api.http": { post: "/upload", body: "*" } }, I: UploadRequest, O: UploadResponse },
-    { name: "ShouldInitiateUpload", options: { "google.api.http": { get: "/shouldinitiateupload" } }, I: ShouldInitiateUploadRequest, O: ShouldInitiateUploadResponse },
+    { name: "ShouldInitiateUpload", options: { "google.api.http": { post: "/shouldinitiateupload", body: "*" } }, I: ShouldInitiateUploadRequest, O: ShouldInitiateUploadResponse },
     { name: "InitiateUpload", options: { "google.api.http": { post: "/initiateupload", body: "*" } }, I: InitiateUploadRequest, O: InitiateUploadResponse },
     { name: "MarkUploadFinished", options: { "google.api.http": { post: "/markuploadfinished", body: "*" } }, I: MarkUploadFinishedRequest, O: MarkUploadFinishedResponse }
 ]);

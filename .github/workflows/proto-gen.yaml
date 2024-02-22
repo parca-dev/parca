@@ -49,4 +49,4 @@ jobs:
 
       - name: Generate
         run:
-          make proto/generate && git diff --exit-code ':!ui/packages/app/web/build/keep.go'
+          make proto/generate && git diff --exit-code ':!ui/packages/app/web/public/keep.go'

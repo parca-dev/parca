@@ -85,7 +85,7 @@
       }
     },
     "/shouldinitiateupload": {
-      "get": {
+      "post": {
         "summary": "ShouldInitiateUpload returns whether an upload for a given build_id should be initiated or not.",
         "operationId": "DebuginfoService_ShouldInitiateUpload",
         "responses": {
@@ -104,38 +104,13 @@
         },
         "parameters": [
           {
-            "name": "buildId",
-            "description": "The build_id of the debuginfo.",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "hash",
-            "description": "Hash of the debuginfo to upload.",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "force",
-            "description": "Force uploading even if valid debuginfos are already available.",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
-          },
-          {
-            "name": "type",
-            "description": "Type of debuginfo to propose uploading.\n\n - DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED: The default type that the API always supported. This type is expected to\ncontain debuginfos for symbolizaton purposes.\n - DEBUGINFO_TYPE_EXECUTABLE: The type to identify executables. This is meant to be used for\ndisassembling so it is expected to contain executable `.text` section.\n - DEBUGINFO_TYPE_SOURCES: The type to identify a source tarball. This is expected to contain\nmultiple source files that debuginfo references. It is meant to show code\nwith profiling data inline.",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "enum": [
-              "DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED",
-              "DEBUGINFO_TYPE_EXECUTABLE",
-              "DEBUGINFO_TYPE_SOURCES"
-            ],
-            "default": "DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED"
+            "name": "body",
+            "description": "ShouldInitiateUploadRequest is the request for ShouldInitiateUpload.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1alpha1ShouldInitiateUploadRequest"
+            }
           }
         ],
         "tags": [
@@ -315,6 +290,28 @@
     "v1alpha1MarkUploadFinishedResponse": {
       "type": "object",
       "description": "MarkUploadFinishedResponse is the response to a MarkUploadFinishedRequest."
+    },
+    "v1alpha1ShouldInitiateUploadRequest": {
+      "type": "object",
+      "properties": {
+        "buildId": {
+          "type": "string",
+          "description": "The build_id of the debuginfo."
+        },
+        "hash": {
+          "type": "string",
+          "description": "Hash of the debuginfo to upload."
+        },
+        "force": {
+          "type": "boolean",
+          "description": "Force uploading even if valid debuginfos are already available."
+        },
+        "type": {
+          "$ref": "#/definitions/v1alpha1DebuginfoType",
+          "description": "Type of debuginfo to propose uploading."
+        }
+      },
+      "description": "ShouldInitiateUploadRequest is the request for ShouldInitiateUpload."
     },
     "v1alpha1ShouldInitiateUploadResponse": {
       "type": "object",
