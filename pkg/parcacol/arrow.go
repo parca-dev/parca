@@ -113,9 +113,6 @@ func (c *ArrowToProfileConverter) Convert(
 		}
 
 		for i := 0; i < int(ar.NumRows()); i++ {
-			if locations.IsNull(i) { // Skip null rows
-				continue
-			}
 			labels := make(map[string]string, len(labelIndexes))
 			for name, index := range labelIndexes {
 				c := ar.Column(index).(*array.Dictionary)
@@ -128,8 +125,8 @@ func (c *ArrowToProfileConverter) Convert(
 				}
 			}
 
-			lOffsetStart := locationOffsets[i]
-			lOffsetEnd := locationOffsets[i+1]
+			lOffsetStart := locationOffsets[i+locations.Offset()]
+			lOffsetEnd := locationOffsets[i+1+locations.Offset()]
 			stacktrace := make([]*profile.Location, 0, lOffsetEnd-lOffsetStart)
 			for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
 				llOffsetStart := lineOffsets[j]
