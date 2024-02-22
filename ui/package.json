@@ -76,8 +76,8 @@
     "@types/command-line-args": "5.2.3",
     "@types/jest": "29.5.11",
     "@types/node": "18.19.6",
-    "@types/react": "18.2.47",
-    "@types/react-dom": "18.2.18",
+    "@types/react": "^18.2.57",
+    "@types/react-dom": "^18.2.19",
     "@typescript-eslint/eslint-plugin": "5.62.0",
     "@typescript-eslint/parser": "5.62.0",
     "arg": "5.0.2",
@@ -128,7 +128,7 @@
     "ts-jest": "29.1.1",
     "ts-node": "10.9.2",
     "tsc-watch": "6.0.4",
-    "typescript": "4.9.5",
+    "typescript": "^5.3.3",
     "webpack": "5.89.0"
   },
   "eslintConfig": {

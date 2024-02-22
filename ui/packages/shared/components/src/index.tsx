@@ -41,6 +41,8 @@ import {useURLState} from './hooks/useURLState';
 
 export type {PillVariant, SelectElement};
 
+export * from './CopyToClipboard';
+
 export {
   Button,
   ButtonGroup,
