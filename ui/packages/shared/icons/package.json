@@ -2,10 +2,13 @@
   "name": "@parca/icons",
   "version": "0.16.62",
   "description": "Parca commonly used icons",
-  "main": "src/index.tsx",
+  "main": "dist/index.js",
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
-    "watch": "tsc-watch --onCompilationComplete 'tailwindcss -o dist/styles.css'"
+    "watch": "tsc-watch --onCompilationComplete 'yarn compileStaticFiles'",
+    "build-swc": "swc ./src -d dist --copy-files && yarn compileStaticFiles",
+    "build": "tsc && yarn compileStaticFiles",
+    "compileStaticFiles": "tailwindcss -o dist/styles.css && mkdir -p ./dist/assets && cp ./src/assets/* ./dist/assets/"
   },
   "keywords": [],
   "author": "",
