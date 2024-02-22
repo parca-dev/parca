@@ -129,6 +129,10 @@ func (c *ArrowToProfileConverter) Convert(
 			lOffsetEnd := locationOffsets[i+1]
 			stacktrace := make([]*profile.Location, 0, lOffsetEnd-lOffsetStart)
 			for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
+				if locations.ListValues().IsNull(j) { // Ignore null locations; they have been filtered out.
+					continue
+				}
+
 				llOffsetStart := lineOffsets[j]
 				llOffsetEnd := lineOffsets[j+1]
 				lines := make([]profile.LocationLine, 0, llOffsetEnd-llOffsetStart)
