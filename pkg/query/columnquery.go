@@ -275,6 +275,11 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	if err != nil {
 		return nil, fmt.Errorf("filtering profile: %w", err)
 	}
+	defer func() {
+		for _, r := range p.Samples {
+			r.Release()
+		}
+	}()
 
 	return q.renderReport(
 		ctx,
@@ -325,7 +330,7 @@ func FilterProfileData(
 	}
 
 	for _, r := range records {
-		filteredRecord, valueSum, filteredSum, err := filterRecord(
+		filteredRecords, valueSum, filteredSum, err := filterRecord(
 			ctx,
 			tracer,
 			pool,
@@ -338,8 +343,8 @@ func FilterProfileData(
 			return nil, 0, fmt.Errorf("filter record: %w", err)
 		}
 
-		if filteredRecord != nil {
-			res = append(res, filteredRecord)
+		if len(filteredRecords) != 0 {
+			res = append(res, filteredRecords...)
 		}
 		allValues += valueSum
 		allFiltered += filteredSum
@@ -356,7 +361,7 @@ func filterRecord(
 	filterQueryBytes []byte,
 	binariesToExclude [][]byte,
 	showInterpretedOnly bool,
-) (arrow.Record, int64, int64, error) {
+) ([]arrow.Record, int64, int64, error) {
 	r := profile.NewRecordReader(rec)
 
 	indexMatches := map[uint32]struct{}{}
@@ -370,6 +375,7 @@ func filterRecord(
 		return nil, math.Int64.Sum(r.Value), 0, nil
 	}
 
+	rowsToKeep := make([]int64, 0, int(rec.NumRows()))
 	for i := 0; i < int(rec.NumRows()); i++ {
 		lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 		keepRow := false
@@ -390,55 +396,53 @@ func filterRecord(
 			keepRow = true
 		}
 
-		if !keepRow { // Mark the row is null in each array
-			for _, col := range rec.Columns() {
-				bitutil.ClearBit(col.NullBitmapBytes(), i)
-			}
+		if !keepRow {
+			continue
 		}
 
-		if keepRow {
-			if lOffsetEnd-lOffsetStart > 0 {
-				for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
-					validMappingStart := r.MappingStart.IsValid(j)
-					var mappingFile []byte
-					skipLocation := false
-					if validMappingStart {
-						mappingFile = r.MappingFileDict.Value(int(r.MappingFileIndices.Value(j)))
-						lastSlash := bytes.LastIndex(mappingFile, []byte("/"))
-						mappingFileBase := mappingFile
-						if lastSlash >= 0 {
-							mappingFileBase = mappingFile[lastSlash+1:]
-						}
-						if len(mappingFileBase) > 0 {
-							for _, binaryToExclude := range binariesToExclude {
-								if bytes.HasPrefix(mappingFileBase, binaryToExclude) {
-									skipLocation = true
-									break
-								}
+		rowsToKeep = append(rowsToKeep, int64(i))
+		if lOffsetEnd-lOffsetStart > 0 {
+			for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
+				validMappingStart := r.MappingStart.IsValid(j)
+				var mappingFile []byte
+				skipLocation := false
+				if validMappingStart {
+					mappingFile = r.MappingFileDict.Value(int(r.MappingFileIndices.Value(j)))
+					lastSlash := bytes.LastIndex(mappingFile, []byte("/"))
+					mappingFileBase := mappingFile
+					if lastSlash >= 0 {
+						mappingFileBase = mappingFile[lastSlash+1:]
+					}
+					if len(mappingFileBase) > 0 {
+						for _, binaryToExclude := range binariesToExclude {
+							if bytes.HasPrefix(mappingFileBase, binaryToExclude) {
+								skipLocation = true
+								break
 							}
 						}
 					}
-					if skipLocation {
-						bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
-						continue
-					}
-					if showInterpretedOnly && !bytes.Equal(mappingFile, []byte("interpreter")) {
-						bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
-						continue
-					}
+				}
+				if skipLocation {
+					bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
+					continue
+				}
+				if showInterpretedOnly && !bytes.Equal(mappingFile, []byte("interpreter")) {
+					bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
+					continue
 				}
 			}
 		}
 	}
 
+	// Split the record into slices based on the rowsToKeep.
+	recs := sliceRecord(rec, rowsToKeep)
+
 	filtered := int64(0)
-	for i := 0; i < r.Value.Len(); i++ { // We can't use the sum function after filtering because it doesn't respect nulls.
-		if r.Value.IsValid(i) {
-			filtered += r.Value.Value(i)
-		}
+	for _, r := range recs {
+		filtered += math.Int64.Sum(profile.NewRecordReader(r).Value)
 	}
 
-	return rec,
+	return recs,
 		math.Int64.Sum(r.Value),
 		filtered,
 		nil
@@ -534,7 +538,6 @@ func RenderReport(
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW:
-
 		fa, total, err := GenerateFlamegraphArrow(ctx, mem, tracer, p, groupBy, nodeTrimFraction)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate arrow flamegraph: %v", err.Error())
@@ -813,4 +816,38 @@ func (q *ColumnQueryAPI) ShareProfile(ctx context.Context, req *pb.ShareProfileR
 	return &pb.ShareProfileResponse{
 		Link: uploadResp.Link,
 	}, nil
+}
+
+type IndexRange struct {
+	Start int64
+	End   int64
+}
+
+// sliceRecord returns a set of continguous index ranges from the given indicies
+// ex: [1,2,7,8,9] would return two records of [{Start:1, End:3},{Start:7,End:10}]
+func sliceRecord(r arrow.Record, indices []int64) []arrow.Record {
+	if len(indices) == 0 {
+		return []arrow.Record{}
+	}
+
+	slices := []arrow.Record{}
+	cur := IndexRange{
+		Start: indices[0],
+		End:   indices[0] + 1,
+	}
+
+	for _, i := range indices[1:] {
+		if i == cur.End {
+			cur.End++
+		} else {
+			slices = append(slices, r.NewSlice(cur.Start, cur.End))
+			cur = IndexRange{
+				Start: i,
+				End:   i + 1,
+			}
+		}
+	}
+
+	slices = append(slices, r.NewSlice(cur.Start, cur.End))
+	return slices
 }
