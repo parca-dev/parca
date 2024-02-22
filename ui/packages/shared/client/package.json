@@ -1,12 +1,13 @@
 {
   "name": "@parca/client",
-  "version": "0.16.103",
+  "version": "0.16.104",
   "description": "Parca API Client",
   "main": "dist/index.js",
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
     "prepublish": "yarn build",
     "build": "tsc",
+    "build-swc": "swc ./src -d dist --copy-files",
     "watch": "tsc-watch"
   },
   "dependencies": {

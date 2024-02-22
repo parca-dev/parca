@@ -1,7 +1,7 @@
 {
   "name": "@parca/web",
   "private": true,
-  "version": "0.16.612",
+  "version": "0.16.614",
   "description": "Parca Web Interface",
   "scripts": {
     "lint": "eslint --no-error-on-unmatched-pattern --ext .ts,.tsx,.js src/*",
@@ -10,6 +10,7 @@
     "test": "jest --coverage --config ../../../jest.config.js ./src/**/* ./__tests__/**/*",
     "dev": "craco start",
     "build": "craco build",
+    "build-swc": "craco build",
     "eject": "craco eject"
   },
   "config": {
@@ -22,15 +23,15 @@
   "dependencies": {
     "@alwaysmeticulous/recorder-loader": "^2.19.0",
     "@headlessui/react": "1.7.17",
-    "@parca/client": "^0.16.103",
-    "@parca/components": "^0.16.253",
+    "@parca/client": "^0.16.104",
+    "@parca/components": "^0.16.255",
     "@parca/dynamicsize": "^0.16.60",
-    "@parca/hooks": "^0.0.41",
-    "@parca/icons": "^0.16.62",
+    "@parca/hooks": "^0.0.42",
+    "@parca/icons": "^0.16.63",
     "@parca/parser": "^0.16.68",
-    "@parca/profile": "^0.16.344",
-    "@parca/store": "^0.16.129",
-    "@parca/utilities": "^0.0.57",
+    "@parca/profile": "^0.16.346",
+    "@parca/store": "^0.16.130",
+    "@parca/utilities": "^0.0.58",
     "@svgr/webpack": "6.5.1",
     "@tailwindcss/typography": "^0.5.8",
     "@testing-library/jest-dom": "5.17.0",

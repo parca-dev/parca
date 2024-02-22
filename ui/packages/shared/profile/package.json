@@ -1,17 +1,17 @@
 {
   "name": "@parca/profile",
-  "version": "0.16.344",
+  "version": "0.16.346",
   "description": "Profile viewing libraries",
   "dependencies": {
-    "@parca/client": "^0.16.103",
-    "@parca/components": "^0.16.253",
+    "@parca/client": "^0.16.104",
+    "@parca/components": "^0.16.255",
     "@parca/dynamicsize": "^0.16.60",
-    "@parca/hooks": "^0.0.41",
+    "@parca/hooks": "^0.0.42",
     "@parca/parser": "^0.16.68",
-    "@parca/store": "^0.16.129",
-    "@parca/utilities": "^0.0.57",
+    "@parca/store": "^0.16.130",
+    "@parca/utilities": "^0.0.58",
     "@tanstack/react-query": "^4.0.5",
-    "@types/react-beautiful-dnd": "^13.1.3",
+    "@types/react-beautiful-dnd": "^13.1.8",
     "apache-arrow": "^12.0.0",
     "d3": "7.8.5",
     "d3-scale": "^4.0.2",
@@ -20,7 +20,6 @@
     "graphviz-wasm": "3.0.1",
     "react-beautiful-dnd": "^13.1.1",
     "react-contexify": "^6.0.0",
-    "react-copy-to-clipboard": "^5.1.0",
     "react-flame-graph": "^1.4.0",
     "react-inlinesvg": "^3.0.2",
     "react-map-interaction": "^2.1.0",
@@ -30,7 +29,6 @@
   },
   "devDependencies": {
     "@types/d3": "7.4.3",
-    "@types/react-copy-to-clipboard": "5.0.7",
     "@types/react-syntax-highlighter": "15.5.11"
   },
   "resolutions": {
@@ -41,6 +39,7 @@
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
     "prepublish": "yarn build",
     "build": "tsc && yarn compile:styles",
+    "build-swc": "swc ./src -d dist --copy-files && yarn compile:styles",
     "watch": "tsc-watch --onCompilationComplete 'yarn compile:styles'",
     "compile:styles": "tailwindcss -o dist/styles.css --minify"
   },
