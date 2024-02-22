@@ -19,7 +19,10 @@ service DebuginfoService {
 
   // ShouldInitiateUpload returns whether an upload for a given build_id should be initiated or not.
   rpc ShouldInitiateUpload(ShouldInitiateUploadRequest) returns (ShouldInitiateUploadResponse) {
-    option (google.api.http) = {get: "/shouldinitiateupload"};
+    option (google.api.http) = {
+      post: "/shouldinitiateupload"
+      body: "*"
+    };
   }
 
   // InitiateUpload returns a strategy and information to upload debug info for a given build_id.
