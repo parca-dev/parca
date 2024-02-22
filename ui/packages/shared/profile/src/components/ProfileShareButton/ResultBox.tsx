@@ -15,9 +15,8 @@ import {useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
-import {CopyToClipboard} from 'react-copy-to-clipboard';
 
-import {Button} from '@parca/components';
+import {Button, CopyToClipboard} from '@parca/components';
 
 interface Props {
   value: string;

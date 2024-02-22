@@ -14,7 +14,6 @@
 import {useEffect, useMemo, useState} from 'react';
 
 import {pointer} from 'd3-selection';
-import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {usePopper} from 'react-popper';
 
 import {
@@ -29,7 +28,7 @@ import {
   Mapping,
   Function as ParcaFunction,
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
-import {useKeyDown} from '@parca/components';
+import {CopyToClipboard, useKeyDown} from '@parca/components';
 import {selectHoveringNode, useAppSelector} from '@parca/store';
 import {divide, getLastItem, valueFormatter} from '@parca/utilities';
 
