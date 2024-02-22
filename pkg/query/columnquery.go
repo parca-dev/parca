@@ -275,11 +275,6 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	if err != nil {
 		return nil, fmt.Errorf("filtering profile: %w", err)
 	}
-	defer func() {
-		for _, r := range p.Samples {
-			r.Release()
-		}
-	}()
 
 	return q.renderReport(
 		ctx,
@@ -304,6 +299,12 @@ func FilterProfileData(
 ) ([]arrow.Record, int64, error) {
 	_, span := tracer.Start(ctx, "filterByFunction")
 	defer span.End()
+
+	defer func() {
+		for _, r := range records {
+			r.Release()
+		}
+	}()
 
 	// We want to filter by function name case-insensitive, so we need to lowercase the query.
 	// We lower case the query here, so we don't have to do it for every sample.

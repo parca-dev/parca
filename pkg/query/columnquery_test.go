@@ -1473,7 +1473,6 @@ func TestFilterData(t *testing.T) {
 	w.Diff.Append(0)
 
 	originalRecord := w.RecordBuilder.NewRecord()
-	defer originalRecord.Release()
 	recs, _, err := FilterProfileData(
 		context.Background(),
 		noop.NewTracerProvider().Tracer(""),
@@ -1485,6 +1484,11 @@ func TestFilterData(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
+	defer func() {
+		for _, r := range recs {
+			r.Release()
+		}
+	}()
 	r := profile.NewRecordReader(recs[0])
 	valid := 0
 	for i := 0; i < r.Location.Len(); i++ {
@@ -1552,7 +1556,6 @@ func TestFilterDataWithPath(t *testing.T) {
 	w.Diff.Append(0)
 
 	originalRecord := w.RecordBuilder.NewRecord()
-	defer originalRecord.Release()
 	recs, _, err := FilterProfileData(
 		context.Background(),
 		noop.NewTracerProvider().Tracer(""),
@@ -1562,6 +1565,11 @@ func TestFilterDataWithPath(t *testing.T) {
 		nil,
 	)
 	require.NoError(t, err)
+	defer func() {
+		for _, r := range recs {
+			r.Release()
+		}
+	}()
 	r := profile.NewRecordReader(recs[0])
 	valid := 0
 	for i := 0; i < r.Location.Len(); i++ {
@@ -1629,7 +1637,6 @@ func TestFilterDataInterpretedOnly(t *testing.T) {
 	w.Diff.Append(0)
 
 	originalRecord := w.RecordBuilder.NewRecord()
-	defer originalRecord.Release()
 	recs, _, err := FilterProfileData(
 		context.Background(),
 		noop.NewTracerProvider().Tracer(""),
@@ -1641,6 +1648,11 @@ func TestFilterDataInterpretedOnly(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
+	defer func() {
+		for _, r := range recs {
+			r.Release()
+		}
+	}()
 	r := profile.NewRecordReader(recs[0])
 	valid := 0
 	for i := 0; i < r.Location.Len(); i++ {
@@ -1710,9 +1722,9 @@ func BenchmarkFilterData(t *testing.B) {
 
 	originalRecord := w.RecordBuilder.NewRecord()
 	defer originalRecord.Release()
-
 	for i := 0; i < t.N; i++ {
-		_, _, err := FilterProfileData(
+		originalRecord.Retain() // retain each time since FilterProfileData will release it
+		recs, _, err := FilterProfileData(
 			context.Background(),
 			noop.NewTracerProvider().Tracer(""),
 			mem,
@@ -1723,5 +1735,8 @@ func BenchmarkFilterData(t *testing.B) {
 			},
 		)
 		require.NoError(t, err)
+		for _, r := range recs {
+			r.Release()
+		}
 	}
 }
