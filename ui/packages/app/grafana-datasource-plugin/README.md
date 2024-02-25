@@ -11,6 +11,6 @@
 6. Click on the `Save & Test` button. If the connection is successful, you should see a green `Data source is working` message.
 7. Now you can use the Parca datasource in your panels.
 
-## Screeenshot
+## Screenshot
 
 ![Parca Datasource Plugin](https://raw.githubusercontent.com/parca-dev/parca/main/ui/packages/app/grafana-datasource-plugin/src/img/screenshots/datasource-config.png)
