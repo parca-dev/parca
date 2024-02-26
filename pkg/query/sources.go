@@ -160,7 +160,7 @@ func (b *sourceReportBuilder) addRecord(rec arrow.Record) {
 						r.LineFunctionNameIndices.IsValid(k) && bytes.Equal(r.LineFunctionFilenameDict.Value(int(r.LineFunctionFilenameIndices.Value(k))), b.filename) {
 						b.cumulativeValues[r.LineNumber.Value(k)-1] += r.Value.Value(i)
 
-						isLeaf := j == int(lOffsetStart) && k == int(llOffsetStart)
+						isLeaf := isFirstNonNil(i, j, r.Locations) && isFirstNonNil(j, k, r.Lines)
 						if isLeaf {
 							b.flatValues[r.LineNumber.Value(k)-1] += r.Value.Value(i)
 						}
