@@ -199,7 +199,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				// We work with the location address instead.
 
 				// This returns whether this location is a root of a stacktrace.
-				isLocationRoot := isLocationRoot(int(end), j)
+				isLocationRoot := isLocationRoot(beg, end, int64(j), r.Locations)
 				// Depending on whether we aggregate the labels (and thus inject node labels), we either compare the rows or not.
 				isRoot := isLocationRoot && !(fb.aggregationConfig.aggregateByLabels && hasLabels)
 
@@ -1714,8 +1714,13 @@ func appendDictionaryIndexInt32(dict *array.Int32, index *array.Int32Builder, ro
 	index.Append(dict.Value(row))
 }
 
-func isLocationRoot(end, i int) bool {
-	return i == end-1
+func isLocationRoot(beg, end, i int64, list *array.List) bool {
+	for j := end - 1; j >= beg; j-- {
+		if !list.ListValues().IsNull(int(j)) {
+			return j == i
+		}
+	}
+	return false
 }
 
 // parent stores the parent's row number of a stack.
