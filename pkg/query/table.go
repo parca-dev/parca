@@ -108,6 +108,9 @@ func generateTableArrowRecord(
 		for sampleRow := 0; sampleRow < int(r.Record.NumRows()); sampleRow++ {
 			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(sampleRow)
 			for locationRow := int(lOffsetStart); locationRow < int(lOffsetEnd); locationRow++ {
+				if r.Locations.ListValues().IsNull(locationRow) {
+					continue // Skip null locations; they have been filtered out.
+				}
 				if r.Lines.IsNull(locationRow) {
 					// The location has no lines, we therefore compare its address.
 

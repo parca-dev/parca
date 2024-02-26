@@ -71,7 +71,7 @@ func (c *ArrowToProfileConverter) Convert(
 			return profile.OldProfile{}, ErrMissingColumn{Column: "locations", Columns: len(indices)}
 		}
 		locations := ar.Column(indices[0]).(*array.List)
-		locationOffsets := locations.Offsets()
+		locationOffsets := locations.Offsets()[locations.Offset() : locations.Offset()+1+locations.Len()] // Adjust offsets by the data offset. This happens if this list is a slice of a larger list.
 		location := locations.ListValues().(*array.Struct)
 		address := location.Field(0).(*array.Uint64)
 		mappingStart := location.Field(1).(*array.Uint64)
@@ -82,7 +82,7 @@ func (c *ArrowToProfileConverter) Convert(
 		mappingBuildID := location.Field(5).(*array.Dictionary)
 		mappingBuildIDDict := mappingBuildID.Dictionary().(*array.Binary)
 		lines := location.Field(6).(*array.List)
-		lineOffsets := lines.Offsets()
+		lineOffsets := lines.Offsets()[lines.Offset() : lines.Offset()+1+lines.Len()] // Adjust offsets by the data offset. This happens if this list is a slice of a larger list.
 		line := lines.ListValues().(*array.Struct)
 		lineNumber := line.Field(0).(*array.Int64)
 		lineFunctionName := line.Field(1).(*array.Dictionary)
@@ -129,6 +129,10 @@ func (c *ArrowToProfileConverter) Convert(
 			lOffsetEnd := locationOffsets[i+1]
 			stacktrace := make([]*profile.Location, 0, lOffsetEnd-lOffsetStart)
 			for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
+				if locations.ListValues().IsNull(j) { // Ignore null locations; they have been filtered out.
+					continue
+				}
+
 				llOffsetStart := lineOffsets[j]
 				llOffsetEnd := lineOffsets[j+1]
 				lines := make([]profile.LocationLine, 0, llOffsetEnd-llOffsetStart)

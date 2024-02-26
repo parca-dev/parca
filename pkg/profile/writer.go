@@ -42,6 +42,10 @@ type Writer struct {
 	Diff               *array.Int64Builder
 }
 
+func (w *Writer) Release() {
+	w.RecordBuilder.Release()
+}
+
 func NewWriter(pool memory.Allocator, labelNames []string) Writer {
 	labelFields := make([]arrow.Field, len(labelNames))
 	for i, name := range labelNames {

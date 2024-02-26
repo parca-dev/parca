@@ -192,6 +192,9 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			// every new sample resets the childRow to -1 indicating that we start with a leaf again.
 			// pprof stores locations in reverse order, thus we loop over locations in reverse order.
 			for j := int(end - 1); j >= int(beg); j-- {
+				if r.Locations.ListValues().IsNull(j) {
+					continue // skip null values; these have been filtered out.
+				}
 				// If the location has no lines, it's not symbolized.
 				// We work with the location address instead.
 

@@ -1420,7 +1420,9 @@ func OldProfileToArrowProfile(p profile.OldProfile) (profile.Profile, error) {
 
 func TestFilterData(t *testing.T) {
 	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	w := profile.NewWriter(mem, nil)
+	defer w.Release()
 
 	w.LocationsList.Append(true)
 	w.Locations.Append(true)
@@ -1482,15 +1484,28 @@ func TestFilterData(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
+	defer func() {
+		for _, r := range recs {
+			r.Release()
+		}
+	}()
 	r := profile.NewRecordReader(recs[0])
-	require.Equal(t, 2, r.Location.Len())
+	valid := 0
+	for i := 0; i < r.Location.Len(); i++ {
+		if r.Location.IsValid(i) {
+			valid++
+		}
+	}
+	require.Equal(t, 2, valid)
 	require.Equal(t, "test", string(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(0)))))
 	require.Equal(t, "test1", string(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(1)))))
 }
 
 func TestFilterDataWithPath(t *testing.T) {
 	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	w := profile.NewWriter(mem, nil)
+	defer w.Release()
 
 	w.LocationsList.Append(true)
 	w.Locations.Append(true)
@@ -1550,15 +1565,28 @@ func TestFilterDataWithPath(t *testing.T) {
 		nil,
 	)
 	require.NoError(t, err)
+	defer func() {
+		for _, r := range recs {
+			r.Release()
+		}
+	}()
 	r := profile.NewRecordReader(recs[0])
-	require.Equal(t, 2, r.Location.Len())
+	valid := 0
+	for i := 0; i < r.Location.Len(); i++ {
+		if r.Location.IsValid(i) {
+			valid++
+		}
+	}
+	require.Equal(t, 2, valid)
 	require.Equal(t, "__libc_start_main", string(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(0)))))
-	require.Equal(t, "test", string(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(1)))))
+	require.Equal(t, "test", string(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(2)))))
 }
 
 func TestFilterDataInterpretedOnly(t *testing.T) {
 	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 	w := profile.NewWriter(mem, nil)
+	defer w.Release()
 
 	w.LocationsList.Append(true)
 	w.Locations.Append(true)
@@ -1620,7 +1648,95 @@ func TestFilterDataInterpretedOnly(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
+	defer func() {
+		for _, r := range recs {
+			r.Release()
+		}
+	}()
 	r := profile.NewRecordReader(recs[0])
-	require.Equal(t, 1, r.Location.Len())
-	require.Equal(t, "test", string(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(0)))))
+	valid := 0
+	for i := 0; i < r.Location.Len(); i++ {
+		if r.Location.IsValid(i) {
+			valid++
+		}
+	}
+	require.Equal(t, 1, valid)
+	require.Equal(t, "test", string(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(2)))))
+}
+
+func BenchmarkFilterData(t *testing.B) {
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
+	w := profile.NewWriter(mem, nil)
+	defer w.Release()
+
+	for i := 0; i < 10000; i++ {
+		w.LocationsList.Append(true)
+		w.Locations.Append(true)
+		w.Addresses.Append(0x1234)
+		w.MappingStart.Append(0x1000)
+		w.MappingLimit.Append(0x2000)
+		w.MappingOffset.Append(0x0)
+		w.MappingFile.Append([]byte("test"))
+		w.MappingBuildID.Append([]byte("test"))
+		w.Lines.Append(true)
+		w.Line.Append(true)
+		w.LineNumber.Append(1)
+		w.FunctionName.Append([]byte("test"))
+		w.FunctionSystemName.Append([]byte("test"))
+		w.FunctionFilename.Append([]byte("test"))
+		w.FunctionStartLine.Append(1)
+
+		w.Locations.Append(true)
+		w.Addresses.Append(0x1234)
+		w.MappingStart.Append(0x1000)
+		w.MappingLimit.Append(0x2000)
+		w.MappingOffset.Append(0x0)
+		w.MappingFile.Append([]byte("libpython3.11.so.1.0"))
+		w.MappingBuildID.Append([]byte("test"))
+		w.Lines.Append(true)
+		w.Line.Append(true)
+		w.LineNumber.Append(1)
+		w.FunctionName.Append([]byte("test1"))
+		w.FunctionSystemName.Append([]byte("test"))
+		w.FunctionFilename.Append([]byte("test"))
+		w.FunctionStartLine.Append(1)
+
+		w.Locations.Append(true)
+		w.Addresses.Append(0x1234)
+		w.MappingStart.Append(0x1000)
+		w.MappingLimit.Append(0x2000)
+		w.MappingOffset.Append(0x0)
+		w.MappingFile.Append([]byte("test"))
+		w.MappingBuildID.Append([]byte("test"))
+		w.Lines.Append(true)
+		w.Line.Append(true)
+		w.LineNumber.Append(1)
+		w.FunctionName.Append([]byte("test1"))
+		w.FunctionSystemName.Append([]byte("test"))
+		w.FunctionFilename.Append([]byte("test"))
+		w.FunctionStartLine.Append(1)
+		w.Value.Append(1)
+		w.Diff.Append(0)
+	}
+
+	originalRecord := w.RecordBuilder.NewRecord()
+	defer originalRecord.Release()
+	for i := 0; i < t.N; i++ {
+		originalRecord.Retain() // retain each time since FilterProfileData will release it
+		recs, _, err := FilterProfileData(
+			context.Background(),
+			noop.NewTracerProvider().Tracer(""),
+			mem,
+			[]arrow.Record{originalRecord},
+			"",
+			&pb.RuntimeFilter{
+				ShowPython: false,
+			},
+		)
+		require.NoError(t, err)
+		for _, r := range recs {
+			r.Release()
+		}
+	}
 }

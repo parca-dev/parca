@@ -149,6 +149,9 @@ func (b *sourceReportBuilder) addRecord(rec arrow.Record) {
 	for i := 0; i < int(rec.NumRows()); i++ {
 		lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 		for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
+			if !r.Locations.ListValues().IsValid(j) {
+				continue // Skip null locations; they have been filtered out
+			}
 			if r.MappingStart.IsValid(j) && bytes.Equal(r.MappingBuildIDDict.Value(int(r.MappingBuildIDIndices.Value(j))), b.buildID) {
 				llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
 

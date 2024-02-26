@@ -162,6 +162,9 @@ func (w *PprofWriter) sample(
 		}
 
 		for j := int(locStart); j < int(locEnd); j++ {
+			if !r.Locations.ListValues().IsValid(j) {
+				continue
+			}
 			l := w.location(r, t, j)
 			if l != 0 {
 				s.LocationId = append(s.LocationId, l)
