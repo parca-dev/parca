@@ -24,7 +24,7 @@ import Spinner from '../Spinner';
 interface SourceViewContextMenuItem {
   id: string;
   label: string;
-  action: (selectedCode) => void;
+  action: (selectedCode: string) => void;
 }
 
 interface Props {
