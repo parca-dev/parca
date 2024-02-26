@@ -95,7 +95,7 @@ export const SourceView = React.memo(function SourceView({
     return <>Source code not uploaded for this build.</>;
   }
 
-  const onContextMenu = (event): void => {
+  const onContextMenu = (event: MouseEvent): void => {
     show({
       event,
     });
