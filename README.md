@@ -120,6 +120,9 @@ Flags:
                                  Number of rows in each row group during
                                  compaction and persistence. Setting to <= 0
                                  results in a single row group per file.
+      --storage-index-on-disk    Whether to store the index on disk instead
+                                 of in memory. Useful to reduce the memory
+                                 footprint of the store.
       --symbolizer-demangle-mode="simple"
                                  Mode to demangle C++ symbols. Default mode
                                  is simplified: no parameters, no templates,
