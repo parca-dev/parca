@@ -87,6 +87,17 @@ func GenerateTable(
 	}, cumulative, nil
 }
 
+// isFirstNonNil returns true if the row is the first non-nil value in the list found at the given row.
+func isFirstNonNil(row, listRow int, list *array.List) bool {
+	start, end := list.ValueOffsets(row)
+	for i := int(start); i < int(end); i++ {
+		if !list.ListValues().IsNull(i) {
+			return i == listRow
+		}
+	}
+	return false
+}
+
 func generateTableArrowRecord(
 	ctx context.Context,
 	mem memory.Allocator,
@@ -114,7 +125,7 @@ func generateTableArrowRecord(
 				if r.Lines.IsNull(locationRow) {
 					// The location has no lines, we therefore compare its address.
 
-					isLeaf := locationRow == int(lOffsetStart)
+					isLeaf := isFirstNonNil(sampleRow, locationRow, r.Locations)
 					var buildID []byte
 					if r.MappingBuildIDDict.IsValid(locationRow) {
 						buildID = r.MappingBuildIDDict.Value(int(r.MappingBuildIDIndices.Value(locationRow)))
@@ -144,7 +155,7 @@ func generateTableArrowRecord(
 
 					llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(locationRow)
 					for lineRow := int(llOffsetStart); lineRow < int(llOffsetEnd); lineRow++ {
-						isLeaf := locationRow == int(lOffsetStart) && lineRow == int(llOffsetStart)
+						isLeaf := isFirstNonNil(sampleRow, locationRow, r.Locations) && isFirstNonNil(locationRow, lineRow, r.Lines)
 
 						if r.Line.IsValid(lineRow) && r.LineFunctionNameIndices.IsValid(lineRow) {
 							fn := r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(lineRow)))
