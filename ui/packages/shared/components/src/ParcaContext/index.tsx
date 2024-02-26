@@ -21,6 +21,12 @@ import type {NavigateFunction} from '@parca/utilities';
 import {NoDataPrompt} from '../NoDataPrompt';
 import Spinner from '../Spinner';
 
+interface SourceViewContextMenuItem {
+  id: string;
+  label: string;
+  action: (selectedCode) => void;
+}
+
 interface Props {
   loader?: ReactNode;
   noDataPrompt?: ReactNode;
@@ -50,6 +56,7 @@ interface Props {
   };
   profileViewExternalMainActions?: ReactNode;
   profileViewExternalSubActions?: ReactNode;
+  sourceViewContextMenuItems?: SourceViewContextMenuItem[];
 }
 
 export const defaultValue: Props = {
