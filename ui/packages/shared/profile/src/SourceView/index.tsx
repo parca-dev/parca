@@ -120,13 +120,15 @@ export const SourceView = React.memo(function SourceView({
           content={data.source}
           renderer={profileAwareRenderer(cumulative, flat, total, filtered, onContextMenu)}
         />
-        <Menu id={MENU_ID}>
-          {sourceViewContextMenuItems.map(item => (
-            <Item key={item.id} onClick={() => item.action(selectedCode)}>
-              {item.label}
-            </Item>
-          ))}
-        </Menu>
+        {sourceViewContextMenuItems.length > 0 ? (
+          <Menu id={MENU_ID}>
+            {sourceViewContextMenuItems.map(item => (
+              <Item key={item.id} onClick={() => item.action(selectedCode)}>
+                {item.label}
+              </Item>
+            ))}
+          </Menu>
+        ) : null}
       </motion.div>
     </AnimatePresence>
   );
