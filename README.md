@@ -23,7 +23,7 @@
 ## Why?
 
 - **Save Money**: Many organizations have 20-30% of resources wasted with easily optimized code paths. The Parca Agent aims to lower the entry bar by requiring 0 instrumentation for the whole infrastructure. Deploy in your infrastructure and get started!
-- **Improve Performance**: Using profiling data collected over time, Parca can with confidence and statistical significance determine hot paths to optimize. Additionally it can show differences between any label dimension, such as deploys, versions, and regions.
+- **Improve Performance**: Using profiling data collected over time, Parca can with confidence and statistical significance determine hot paths to optimize. Additionally, it can show differences between any label dimension, such as deploys, versions, and regions.
 - **Understand Incidents**: Profiling data provides unique insight and depth into what a process executed over time. Memory leaks, but also momentary spikes in CPU or I/O causing unexpected behavior, is traditionally difficult to troubleshoot are a breeze with continuous profiling.
 
 ## Feedback & Support
@@ -69,7 +69,7 @@ The binary was compiled to `bin/parca` .
 
 Now Parca is running locally and its web UI is available on http://localhost:7070/.
 
-By default Parca is scraping it's own pprof endpoints and you should see profiles show up over time.
+By default, Parca is scraping it's own pprof endpoints and you should see profiles show up over time.
 The scrape configuration can be changed in the `parca.yaml` in the root of the repository.
 
 ### Configuration
