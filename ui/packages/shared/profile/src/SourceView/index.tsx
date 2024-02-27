@@ -11,11 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {MouseEvent, useEffect, useMemo} from 'react';
+import React, {useEffect, useMemo} from 'react';
 
 import {tableFromIPC} from 'apache-arrow';
 import {AnimatePresence, motion} from 'framer-motion';
-import {Item, Menu, TriggerEvent, useContextMenu} from 'react-contexify';
+import {Item, Menu, useContextMenu} from 'react-contexify';
 
 import {Source} from '@parca/client';
 import {SourceSkeleton, useParcaContext, useURLState} from '@parca/components';
