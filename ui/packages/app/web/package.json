@@ -1,7 +1,7 @@
 {
   "name": "@parca/web",
   "private": true,
-  "version": "0.16.616",
+  "version": "0.16.617",
   "description": "Parca Web Interface",
   "scripts": {
     "lint": "eslint --no-error-on-unmatched-pattern --ext .ts,.tsx,.js src/*",
@@ -29,7 +29,7 @@
     "@parca/hooks": "^0.0.43",
     "@parca/icons": "^0.16.63",
     "@parca/parser": "^0.16.68",
-    "@parca/profile": "^0.16.348",
+    "@parca/profile": "^0.16.349",
     "@parca/store": "^0.16.131",
     "@parca/utilities": "^0.0.59",
     "@svgr/webpack": "6.5.1",
