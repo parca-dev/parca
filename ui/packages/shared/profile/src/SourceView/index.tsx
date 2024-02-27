@@ -11,10 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useEffect} from 'react';
+import React, {useEffect, useMemo} from 'react';
 
 import {tableFromIPC} from 'apache-arrow';
 import {AnimatePresence, motion} from 'framer-motion';
+import {Item, Menu, useContextMenu} from 'react-contexify';
 
 import {Source} from '@parca/client';
 import {SourceSkeleton, useParcaContext, useURLState} from '@parca/components';
@@ -22,6 +23,7 @@ import {SourceSkeleton, useParcaContext, useURLState} from '@parca/components';
 import {ExpandOnHover} from '../GraphTooltipArrow/ExpandOnHoverValue';
 import {truncateStringReverse} from '../utils';
 import {Highlighter, profileAwareRenderer} from './Highlighter';
+import useLineRange from './useSelectedLineRange';
 
 interface SourceViewProps {
   loading: boolean;
@@ -31,6 +33,8 @@ interface SourceViewProps {
   setActionButtons?: (buttons: JSX.Element) => void;
 }
 
+const MENU_ID = 'source-view-context-menu';
+
 export const SourceView = React.memo(function SourceView({
   data,
   loading,
@@ -39,7 +43,34 @@ export const SourceView = React.memo(function SourceView({
   setActionButtons,
 }: SourceViewProps): JSX.Element {
   const [sourceFileName] = useURLState({param: 'source_filename', navigateTo: () => {}});
-  const {isDarkMode} = useParcaContext();
+  const {isDarkMode, sourceViewContextMenuItems = []} = useParcaContext();
+
+  const sourceCode = useMemo(() => {
+    if (data === undefined) {
+      return [''];
+    }
+    return data.source.split('\n');
+  }, [data]);
+
+  const {show} = useContextMenu({
+    id: MENU_ID,
+  });
+
+  const {startLine, endLine} = useLineRange();
+
+  const selectedCode = useMemo(() => {
+    if (startLine === -1 && endLine === -1) {
+      return '';
+    }
+    if (startLine === endLine) {
+      return sourceCode[startLine - 1];
+    }
+    let code = '';
+    for (let i = startLine - 1; i < endLine; i++) {
+      code += sourceCode[i] + '\n';
+    }
+    return code;
+  }, [startLine, endLine, sourceCode]);
 
   useEffect(() => {
     setActionButtons?.(
@@ -64,6 +95,13 @@ export const SourceView = React.memo(function SourceView({
     return <>Source code not uploaded for this build.</>;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onContextMenu = (event: any): void => {
+    show({
+      event,
+    });
+  };
+
   const table = tableFromIPC(data.record);
   const cumulative = table.getChild('cumulative');
   const flat = table.getChild('flat');
@@ -80,8 +118,15 @@ export const SourceView = React.memo(function SourceView({
         <Highlighter
           file={sourceFileName as string}
           content={data.source}
-          renderer={profileAwareRenderer(cumulative, flat, total, filtered)}
+          renderer={profileAwareRenderer(cumulative, flat, total, filtered, onContextMenu)}
         />
+        <Menu id={MENU_ID}>
+          {sourceViewContextMenuItems.map(item => (
+            <Item key={item.id} onClick={() => item.action(selectedCode)}>
+              {item.label}
+            </Item>
+          ))}
+        </Menu>
       </motion.div>
     </AnimatePresence>
   );
