@@ -11,11 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useEffect, useMemo} from 'react';
+import React, {MouseEvent, useEffect, useMemo} from 'react';
 
 import {tableFromIPC} from 'apache-arrow';
 import {AnimatePresence, motion} from 'framer-motion';
-import {Item, Menu, useContextMenu} from 'react-contexify';
+import {Item, Menu, TriggerEvent, useContextMenu} from 'react-contexify';
 
 import {Source} from '@parca/client';
 import {SourceSkeleton, useParcaContext, useURLState} from '@parca/components';
@@ -95,7 +95,8 @@ export const SourceView = React.memo(function SourceView({
     return <>Source code not uploaded for this build.</>;
   }
 
-  const onContextMenu = (event: MouseEvent): void => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onContextMenu = (event: any): void => {
     show({
       event,
     });
