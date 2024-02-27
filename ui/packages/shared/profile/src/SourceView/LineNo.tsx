@@ -18,10 +18,10 @@ import cx from 'classnames';
 interface Props {
   value: number;
   isCurrent?: boolean;
-  setCurrentLine?: () => void;
+  selectLine?: (isShiftDown?: boolean) => void;
 }
 
-export const LineNo = ({value, isCurrent = false, setCurrentLine}: Props): JSX.Element => {
+export const LineNo = ({value, isCurrent = false, selectLine}: Props): JSX.Element => {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,8 +41,8 @@ export const LineNo = ({value, isCurrent = false, setCurrentLine}: Props): JSX.E
   return (
     <code
       ref={ref}
-      onClick={setCurrentLine}
-      className={cx('cursor-pointer px-1', {
+      onClick={e => typeof selectLine === 'function' && selectLine(e.shiftKey)}
+      className={cx('cursor-pointer px-1 select-none', {
         'border-l border-l-amber-900 bg-yellow-200 dark:bg-yellow-700': isCurrent,
       })}
     >

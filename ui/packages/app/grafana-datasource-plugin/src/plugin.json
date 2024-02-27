@@ -10,7 +10,7 @@
       "name": "Parca",
       "url": "https://github.com/parca-dev/parca/"
     },
-    "keywords": ["continous profiling", "profiling", "parca"],
+    "keywords": ["continuous profiling", "profiling", "parca"],
     "logos": {
       "small": "img/parca.svg",
       "large": "img/parca.svg"
