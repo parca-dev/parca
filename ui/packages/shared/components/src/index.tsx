@@ -24,7 +24,7 @@ import Input from './Input';
 import {KeyDownProvider, useKeyDown} from './KeyDownContext';
 import Modal from './Modal';
 import {NoDataPrompt} from './NoDataPrompt';
-import ParcaContext, {ParcaContextProvider, defaultValue, useParcaContext} from './ParcaContext';
+import ParcaContext from './ParcaContext';
 import Pill, {PillVariant} from './Pill';
 import ResponsiveSvg from './ResponsiveSvg';
 import Select, {type SelectElement} from './Select';
@@ -42,6 +42,7 @@ import {useURLState} from './hooks/useURLState';
 export type {PillVariant, SelectElement};
 
 export * from './CopyToClipboard';
+export * from './ParcaContext';
 
 export {
   Button,
@@ -63,8 +64,6 @@ export {
   Modal,
   NoDataPrompt,
   ParcaContext,
-  defaultValue as parcaContextDefaultValue,
-  ParcaContextProvider,
   Pill,
   ResponsiveSvg,
   Select,
@@ -78,7 +77,6 @@ export {
   EmptyState,
   useGrpcMetadata,
   useKeyDown,
-  useParcaContext,
   useURLState,
   UserPreferences,
 };

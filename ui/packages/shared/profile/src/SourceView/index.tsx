@@ -18,24 +18,12 @@ import {AnimatePresence, motion} from 'framer-motion';
 import {Item, Menu, useContextMenu} from 'react-contexify';
 
 import {Source} from '@parca/client';
-import {SourceSkeleton, useParcaContext, useURLState} from '@parca/components';
+import {SourceSkeleton, useParcaContext, useURLState, type ProfileData} from '@parca/components';
 
 import {ExpandOnHover} from '../GraphTooltipArrow/ExpandOnHoverValue';
 import {truncateStringReverse} from '../utils';
 import {Highlighter, profileAwareRenderer} from './Highlighter';
 import useLineRange from './useSelectedLineRange';
-
-export interface ProfileData {
-  line: number;
-  cumulative: number;
-  flat: number;
-}
-
-export interface SourceViewContextMenuItem {
-  id: string;
-  label: string;
-  action: (selectedCode: string, profileData: ProfileData[]) => void;
-}
 
 interface SourceViewProps {
   loading: boolean;
