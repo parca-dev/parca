@@ -81,7 +81,7 @@ const LineProfileMetadata = ({
   const unfilteredPercent = (Number(value) / Number(total + filtered)) * 100;
   const filteredPercent = (Number(value) / Number(total)) * 100;
 
-  const valueWithUnit = valueFormatter(value, sampleUnit, 2);
+  const valueWithUnit = valueFormatter(value, sampleUnit, 1, true);
 
   return (
     <>
