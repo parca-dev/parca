@@ -25,6 +25,7 @@ export * from './ProfileView';
 export * from './ProfileViewWithData';
 export * from './utils';
 export * from './ProfileTypeSelector';
+export * from './SourceView';
 export {default as Callgraph} from './Callgraph';
 
 export type {CallgraphProps};
