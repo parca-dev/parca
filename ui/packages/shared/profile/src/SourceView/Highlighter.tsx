@@ -21,6 +21,7 @@ import {atomOneDark, atomOneLight} from 'react-syntax-highlighter/dist/esm/style
 import {Tooltip} from 'react-tooltip';
 
 import {useParcaContext} from '@parca/components';
+import {valueFormatter} from '@parca/utilities';
 
 import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
 import {LineNo} from './LineNo';
@@ -80,8 +81,7 @@ const LineProfileMetadata = ({
   const unfilteredPercent = (Number(value) / Number(total + filtered)) * 100;
   const filteredPercent = (Number(value) / Number(total)) * 100;
 
-  const valueString = value.toString();
-  const valueWithUnit = `${valueString}${sampleUnit}`;
+  const valueWithUnit = valueFormatter(value, sampleUnit, 1, true);
 
   return (
     <>
@@ -96,7 +96,7 @@ const LineProfileMetadata = ({
           filtered > 0n ? ` / ${filteredPercent.toFixed(2)}%` : ''
         })`}
       >
-        {valueString}
+        {valueWithUnit}
       </p>
       <Tooltip id={id} />
     </>
