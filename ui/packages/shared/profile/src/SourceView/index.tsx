@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useEffect, useMemo} from 'react';
+import React, {useCallback, useEffect, useMemo} from 'react';
 
 import {tableFromIPC} from 'apache-arrow';
 import {AnimatePresence, motion} from 'framer-motion';
@@ -24,6 +24,18 @@ import {ExpandOnHover} from '../GraphTooltipArrow/ExpandOnHoverValue';
 import {truncateStringReverse} from '../utils';
 import {Highlighter, profileAwareRenderer} from './Highlighter';
 import useLineRange from './useSelectedLineRange';
+
+export interface ProfileData {
+  line: number;
+  cumulative: number;
+  flat: number;
+}
+
+export interface SourceViewContextMenuItem {
+  id: string;
+  label: string;
+  action: (selectedCode: string, profileData: ProfileData[]) => void;
+}
 
 interface SourceViewProps {
   loading: boolean;
@@ -49,7 +61,8 @@ export const SourceView = React.memo(function SourceView({
     if (data === undefined) {
       return [''];
     }
-    return data.source.split('\n');
+    // To use the array index as line number
+    return ['', ...data.source.split('\n')];
   }, [data]);
 
   const {show} = useContextMenu({
@@ -58,19 +71,59 @@ export const SourceView = React.memo(function SourceView({
 
   const {startLine, endLine} = useLineRange();
 
-  const selectedCode = useMemo(() => {
+  const [cumulative, flat] = useMemo(() => {
+    if (data === undefined) {
+      return [null, null];
+    }
+    const table = tableFromIPC(data.record);
+    const cumulative = table.getChild('cumulative');
+    const flat = table.getChild('flat');
+    return [cumulative, flat];
+  }, [data]);
+
+  const getProfileDataForLine = useCallback(
+    (line: number, newLine: number): ProfileData | undefined => {
+      if (cumulative == null && flat == null) {
+        return undefined;
+      }
+      if (cumulative?.get(line - 1) === 0n && flat?.get(line - 1) === 0n) {
+        return undefined;
+      }
+      return {
+        line: newLine,
+        cumulative: Number(cumulative?.get(line - 1) ?? 0),
+        flat: Number(flat?.get(line - 1) ?? 0),
+      };
+    },
+    [cumulative, flat]
+  );
+
+  const [selectedCode, profileData] = useMemo(() => {
     if (startLine === -1 && endLine === -1) {
-      return '';
+      return ['', []];
     }
     if (startLine === endLine) {
-      return sourceCode[startLine - 1];
+      const profileData: ProfileData[] = [];
+      const profileDataForLine = getProfileDataForLine(startLine, 1);
+      if (profileDataForLine != null) {
+        profileData.push(profileDataForLine);
+      }
+
+      return [sourceCode[startLine - 1], profileData];
     }
     let code = '';
-    for (let i = startLine - 1; i < endLine; i++) {
+    let line = 1;
+    const profileData: ProfileData[] = [];
+    for (let i = startLine; i <= endLine; i++) {
       code += sourceCode[i] + '\n';
+      const profileDataForLine = getProfileDataForLine(i, line);
+      if (profileDataForLine != null) {
+        profileData.push(profileDataForLine);
+      }
+      line++;
     }
-    return code;
-  }, [startLine, endLine, sourceCode]);
+    return [code, profileData];
+  }, [startLine, endLine, sourceCode, getProfileDataForLine]);
 
   useEffect(() => {
     setActionButtons?.(
@@ -102,10 +155,6 @@ export const SourceView = React.memo(function SourceView({
     });
   };
 
-  const table = tableFromIPC(data.record);
-  const cumulative = table.getChild('cumulative');
-  const flat = table.getChild('flat');
-
   return (
     <AnimatePresence>
       <motion.div
@@ -123,7 +172,7 @@ export const SourceView = React.memo(function SourceView({
         {sourceViewContextMenuItems.length > 0 ? (
           <Menu id={MENU_ID}>
             {sourceViewContextMenuItems.map(item => (
-              <Item key={item.id} onClick={() => item.action(selectedCode)}>
+              <Item key={item.id} onClick={() => item.action(selectedCode, profileData)}>
                 {item.label}
               </Item>
             ))}

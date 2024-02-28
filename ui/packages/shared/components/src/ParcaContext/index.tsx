@@ -16,16 +16,11 @@ import {ProfilerOnRenderCallback, ReactNode, createContext, useContext} from 're
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 
 import {QueryServiceClient} from '@parca/client';
+import type {SourceViewContextMenuItem} from '@parca/profile/dist/SourceView';
 import type {NavigateFunction} from '@parca/utilities';
 
 import {NoDataPrompt} from '../NoDataPrompt';
 import Spinner from '../Spinner';
-
-interface SourceViewContextMenuItem {
-  id: string;
-  label: string;
-  action: (selectedCode: string) => void;
-}
 
 interface Props {
   loader?: ReactNode;
