@@ -149,6 +149,9 @@ func (b *sourceReportBuilder) addRecord(rec arrow.Record) {
 	for i := 0; i < int(rec.NumRows()); i++ {
 		lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 		for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
+			if !r.Locations.ListValues().IsValid(j) {
+				continue // Skip null locations; they have been filtered out
+			}
 			if r.MappingStart.IsValid(j) && bytes.Equal(r.MappingBuildIDDict.Value(int(r.MappingBuildIDIndices.Value(j))), b.buildID) {
 				llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
 
@@ -157,7 +160,7 @@ func (b *sourceReportBuilder) addRecord(rec arrow.Record) {
 						r.LineFunctionNameIndices.IsValid(k) && bytes.Equal(r.LineFunctionFilenameDict.Value(int(r.LineFunctionFilenameIndices.Value(k))), b.filename) {
 						b.cumulativeValues[r.LineNumber.Value(k)-1] += r.Value.Value(i)
 
-						isLeaf := j == int(lOffsetStart) && k == int(llOffsetStart)
+						isLeaf := isFirstNonNil(i, j, r.Locations) && isFirstNonNil(j, k, r.Lines)
 						if isLeaf {
 							b.flatValues[r.LineNumber.Value(k)-1] += r.Value.Value(i)
 						}

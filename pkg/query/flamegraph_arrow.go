@@ -192,13 +192,16 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 			// every new sample resets the childRow to -1 indicating that we start with a leaf again.
 			// pprof stores locations in reverse order, thus we loop over locations in reverse order.
 			for j := int(end - 1); j >= int(beg); j-- {
+				if r.Locations.ListValues().IsNull(j) {
+					continue // skip null values; these have been filtered out.
+				}
 				// If the location has no lines, it's not symbolized.
 				// We work with the location address instead.
 
 				// This returns whether this location is a root of a stacktrace.
-				isLocationRoot := isLocationRoot(int(end), j)
+				locationRoot := isLocationRoot(beg, end, int64(j), r.Locations)
 				// Depending on whether we aggregate the labels (and thus inject node labels), we either compare the rows or not.
-				isRoot := isLocationRoot && !(fb.aggregationConfig.aggregateByLabels && hasLabels)
+				isRoot := locationRoot && !(fb.aggregationConfig.aggregateByLabels && hasLabels)
 
 				llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
 				if !r.Lines.IsValid(j) || llOffsetEnd-llOffsetStart <= 0 {
@@ -245,10 +248,10 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 				// just like locations, pprof stores lines in reverse order.
 				for k := int(llOffsetEnd - 1); k >= int(llOffsetStart); k-- {
-					isInlineRoot := k == int(llOffsetEnd-1)
+					isInlineRoot := isLocationRoot(llOffsetStart, llOffsetEnd, int64(k), r.Lines)
 					isInlined := !isInlineRoot
 
-					isRoot = isLocationRoot && !(fb.aggregationConfig.aggregateByLabels && hasLabels) && isInlineRoot
+					isRoot = locationRoot && !(fb.aggregationConfig.aggregateByLabels && hasLabels) && isInlineRoot
 					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
 					if isRoot {
 						fb.compareRows = rootRowChildren
@@ -1711,8 +1714,13 @@ func appendDictionaryIndexInt32(dict *array.Int32, index *array.Int32Builder, ro
 	index.Append(dict.Value(row))
 }
 
-func isLocationRoot(end, i int) bool {
-	return i == end-1
+func isLocationRoot(beg, end, i int64, list *array.List) bool {
+	for j := end - 1; j >= beg; j-- {
+		if !list.ListValues().IsNull(int(j)) {
+			return j == i
+		}
+	}
+	return false
 }
 
 // parent stores the parent's row number of a stack.

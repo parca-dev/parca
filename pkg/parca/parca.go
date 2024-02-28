@@ -37,6 +37,7 @@ import (
 	"github.com/oklog/run"
 	"github.com/polarsignals/frostdb"
 	"github.com/polarsignals/frostdb/dynparquet"
+	"github.com/polarsignals/frostdb/index"
 	"github.com/polarsignals/frostdb/query"
 	"github.com/prometheus/client_golang/prometheus"
 	promconfig "github.com/prometheus/common/config"
@@ -142,6 +143,7 @@ type FlagsStorage struct {
 	EnableWAL           bool   `default:"false" help:"Enables write ahead log for profile storage."`
 	SnapshotTriggerSize int64  `default:"134217728" help:"Number of bytes to trigger a snapshot. Defaults to 1/4 of active memory. This is only used if enable-wal is set."`
 	RowGroupSize        int    `default:"8192" help:"Number of rows in each row group during compaction and persistence. Setting to <= 0 results in a single row group per file."`
+	IndexOnDisk         bool   `default:"false" help:"Whether to store the index on disk instead of in memory. Useful to reduce the memory footprint of the store."`
 }
 
 type FlagsSymbolizer struct {
@@ -309,6 +311,15 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			frostdb.WithStoragePath(flags.Storage.Path),
 			frostdb.WithSnapshotTriggerSize(flags.Storage.SnapshotTriggerSize),
 		)
+
+		if flags.Storage.IndexOnDisk {
+			frostdbOptions = append(frostdbOptions, frostdb.WithIndexConfig(
+				[]*index.LevelConfig{
+					{Level: index.L0, MaxSize: 1024 * 1024 * 15, Type: index.CompactionTypeParquetDisk},
+					{Level: index.L1, MaxSize: 1024 * 1024 * 128, Type: index.CompactionTypeParquetDisk},
+					{Level: index.L2, MaxSize: 1024 * 1024 * 512},
+				}))
+		}
 	}
 
 	col, err := frostdb.New(frostdbOptions...)

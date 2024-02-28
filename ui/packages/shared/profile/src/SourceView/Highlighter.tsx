@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useId, useMemo} from 'react';
+import {MouseEventHandler, useId, useMemo} from 'react';
 
 import {Vector} from 'apache-arrow';
 import cx from 'classnames';
@@ -20,11 +20,12 @@ import SyntaxHighlighter, {createElement, type createElementProps} from 'react-s
 import {atomOneDark, atomOneLight} from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import {Tooltip} from 'react-tooltip';
 
-import {useParcaContext, useURLState} from '@parca/components';
+import {useParcaContext} from '@parca/components';
 
 import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
 import {LineNo} from './LineNo';
 import {langaugeFromFile} from './lang-detector';
+import useLineRange from './useSelectedLineRange';
 
 interface RendererProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -110,7 +111,8 @@ export const profileAwareRenderer = (
   cumulative: Vector | null,
   flat: Vector | null,
   total: bigint,
-  filtered: bigint
+  filtered: bigint,
+  onContextMenu: MouseEventHandler<HTMLDivElement>
 ): Renderer => {
   return function ProfileAwareRenderer({
     rows,
@@ -118,12 +120,13 @@ export const profileAwareRenderer = (
     useInlineStyles,
   }: RendererProps): JSX.Element {
     const lineNumberWidth = charsToWidth(rows.length.toString().length);
-    const [sourceLine, setSourceLine] = useURLState({param: 'source_line', navigateTo: () => {}});
+    const {startLine, endLine, setLineRange} = useLineRange();
+
     return (
       <>
         {rows.map((node, i) => {
           const lineNumber: number = node.children[0].children[0].value as number;
-          const isCurrentLine = sourceLine === lineNumber.toString();
+          const isCurrentLine = lineNumber >= startLine && lineNumber <= endLine;
           node.children = node.children.slice(1);
           return (
             <div className="flex gap-1" key={`${i}`}>
@@ -136,7 +139,18 @@ export const profileAwareRenderer = (
                 <LineNo
                   value={lineNumber}
                   isCurrent={isCurrentLine}
-                  setCurrentLine={() => setSourceLine(lineNumber.toString())}
+                  selectLine={(isShiftDown = false) => {
+                    if (!isShiftDown) {
+                      setLineRange(lineNumber, lineNumber);
+                    }
+                    if (isShiftDown && startLine != null) {
+                      if (startLine > lineNumber) {
+                        setLineRange(lineNumber, startLine);
+                      } else {
+                        setLineRange(startLine, lineNumber);
+                      }
+                    }
+                  }}
                 />
               </div>
               <LineProfileMetadata
@@ -152,6 +166,7 @@ export const profileAwareRenderer = (
                     'bg-yellow-200 dark:bg-yellow-700': isCurrentLine,
                   }
                 )}
+                onContextMenu={onContextMenu}
               >
                 {createElement({
                   key: `source-line-${i}`,
