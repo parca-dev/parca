@@ -81,8 +81,7 @@ const LineProfileMetadata = ({
   const unfilteredPercent = (Number(value) / Number(total + filtered)) * 100;
   const filteredPercent = (Number(value) / Number(total)) * 100;
 
-  const valueString = value.toString();
-  const valueWithUnit = valueFormatter(value, sampleUnit, 1);
+  const valueWithUnit = valueFormatter(value, sampleUnit, 2);
 
   return (
     <>
@@ -97,7 +96,7 @@ const LineProfileMetadata = ({
           filtered > 0n ? ` / ${filteredPercent.toFixed(2)}%` : ''
         })`}
       >
-        {valueString}
+        {valueWithUnit}
       </p>
       <Tooltip id={id} />
     </>

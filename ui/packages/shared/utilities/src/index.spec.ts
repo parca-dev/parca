@@ -35,6 +35,10 @@ describe('valueFormatter', () => {
     expect(valueFormatter(9654321n, 'nanoseconds', 1)).toBe('9.7 ms');
   });
 
+  it('formats the value passed in time with 2 digits', () => {
+    expect(valueFormatter(9654321n, 'nanoseconds', 2)).toBe('9.65 ms');
+  });
+
   it('formats the value passed in bytes', () => {
     expect(valueFormatter(9654321n, 'bytes', 1)).toBe('9.7 MB');
   });
