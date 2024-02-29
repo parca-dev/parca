@@ -93,7 +93,12 @@ export const roundToDecimals = (n: number, decimals: number): number => {
 export const getPrecision = (value: number): number =>
   String(roundToDecimals(value, 2)).replace('.', '').length - value.toFixed().length;
 
-export const valueFormatter = (num: bigint | number, unit: string, digits: number): string => {
+export const valueFormatter = (
+  num: bigint | number,
+  unit: string,
+  digits: number,
+  renderTight = false
+): string => {
   const isBigInt = typeof num === 'bigint';
   const absoluteNum = isBigInt ? abs(num) : Math.abs(num);
   const formatter = knownValueFormatters[unit as keyof typeof knownValueFormatters];
@@ -112,7 +117,7 @@ export const valueFormatter = (num: bigint | number, unit: string, digits: numbe
   const multiplier = format[i].multiplier;
   return `${(isBigInt ? divide(num, BigInt(multiplier)) : num / multiplier)
     .toFixed(digits)
-    .replace(rx, '$1')} ${format[i].symbol}`;
+    .replace(rx, '$1')}${renderTight ? '' : ' '}${format[i].symbol}`;
 };
 
 export const isDevModeOrPreview = (): boolean => {

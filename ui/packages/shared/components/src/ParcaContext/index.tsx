@@ -21,10 +21,16 @@ import type {NavigateFunction} from '@parca/utilities';
 import {NoDataPrompt} from '../NoDataPrompt';
 import Spinner from '../Spinner';
 
-interface SourceViewContextMenuItem {
+export interface ProfileData {
+  line: number;
+  cumulative: number;
+  flat: number;
+}
+
+export interface SourceViewContextMenuItem {
   id: string;
   label: string;
-  action: (selectedCode: string) => void;
+  action: (selectedCode: string, profileData: ProfileData[]) => void;
 }
 
 interface Props {
