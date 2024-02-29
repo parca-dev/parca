@@ -13,8 +13,14 @@
 
 import {useMemo} from 'react';
 
-import {EVERYTHING_ELSE, selectDarkMode, selectStackColors, useAppSelector} from '@parca/store';
-import {COLOR_PROFILES, diffColor} from '@parca/utilities';
+import {
+  EVERYTHING_ELSE,
+  selectColorProfiles,
+  selectDarkMode,
+  selectStackColors,
+  useAppSelector,
+} from '@parca/store';
+import {diffColor} from '@parca/utilities';
 
 import type {ColoredFlamegraphNode} from './useColoredGraph';
 
@@ -26,6 +32,7 @@ interface Props {
 const useNodeColor = ({data, compareMode}: Props): string => {
   const colors = useAppSelector(selectStackColors);
   const isDarkMode = useAppSelector(selectDarkMode);
+  const colorProfiles = useAppSelector(selectColorProfiles);
 
   const color: string = useMemo(() => {
     if (compareMode) {
@@ -36,10 +43,10 @@ const useNodeColor = ({data, compareMode}: Props): string => {
 
     const color =
       colors[data.feature ?? EVERYTHING_ELSE] ??
-      (!isDarkMode ? COLOR_PROFILES.default.colors[0][0] : COLOR_PROFILES.default.colors[0][1]);
+      (!isDarkMode ? colorProfiles.default.colors[0][0] : colorProfiles.default.colors[0][1]);
 
     return color;
-  }, [data, colors, isDarkMode, compareMode]);
+  }, [data, colors, isDarkMode, compareMode, colorProfiles]);
 
   return color;
 };

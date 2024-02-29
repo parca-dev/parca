@@ -11,23 +11,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React from 'react';
-import TopTable from '..';
-import {Provider} from 'react-redux';
-import {createStore} from '@parca/store';
-import parca10mGraphData from './benchdata/parca-toptable-10m.json';
-import {Top} from '@parca/client';
+import {selectColorProfiles, useAppSelector} from '@parca/store';
+import type {ColorConfig, ColorProfileName} from '@parca/utilities';
 
-const {store: reduxStore} = createStore();
+import useUserPreference, {USER_PREFERENCES} from '../useUserPreference';
 
-const parca10mGraph = parca10mGraphData as Top;
-
-export default function ({callback = () => {}}): React.ReactElement {
-  return (
-    <div ref={callback}>
-      <Provider store={reduxStore}>
-        <TopTable data={parca10mGraph} sampleUnit={parca10mGraph.unit} />
-      </Provider>
-    </div>
+const useCurrentColorProfile = (): ColorConfig => {
+  const colorProfiles = useAppSelector(selectColorProfiles);
+  const [colorProfile] = useUserPreference<ColorProfileName>(
+    USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
-}
+
+  return colorProfiles[colorProfile] ?? colorProfiles.ocean;
+};
+
+export default useCurrentColorProfile;

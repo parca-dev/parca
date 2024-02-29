@@ -26,7 +26,9 @@ import {
 } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 
-import colorsReducer from './slices/colorsSlice';
+import {type ColorConfig} from '@parca/utilities';
+
+import colorsReducer, {initialColorState} from './slices/colorsSlice';
 import profileReducer from './slices/profileSlice';
 import uiReducer from './slices/uiSlice';
 
@@ -40,8 +42,6 @@ const slicesToPersist = ['ui'];
 
 // Infer the `RootState` and `AppDispatch` types from the store itself
 export type RootState = ReturnType<typeof rootReducer>;
-// Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}
-export type AppDispatch = typeof store.dispatch;
 
 const persistConfig = {
   key: 'root',
@@ -52,33 +52,43 @@ const persistConfig = {
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
-const store = configureStore({
-  reducer: persistedReducer,
-  devTools: process.env.NODE_ENV !== 'production',
-  middleware: getDefaultMiddleware =>
-    getDefaultMiddleware({
-      serializableCheck: {
-        ignoredActions: [
-          FLUSH,
-          REHYDRATE,
-          PAUSE,
-          PERSIST,
-          PURGE,
-          REGISTER,
-          'colors/setHoveringNode',
-        ],
-        ignoredPaths: ['colors.hoveringNode'],
+export const createStore = (
+  additionalColorProfiles: Record<string, ColorConfig> = {}
+): {store: Store; persistor: Persistor} => {
+  const store = configureStore({
+    reducer: persistedReducer,
+    devTools: process.env.NODE_ENV !== 'production',
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({
+        serializableCheck: {
+          ignoredActions: [
+            FLUSH,
+            REHYDRATE,
+            PAUSE,
+            PERSIST,
+            PURGE,
+            REGISTER,
+            'colors/setHoveringNode',
+          ],
+          ignoredPaths: ['colors.hoveringNode'],
+        },
+      }),
+    preloadedState: {
+      colors: {
+        ...initialColorState,
+        colorProfiles: {...initialColorState.colorProfiles, ...additionalColorProfiles},
       },
-    }),
-});
+    },
+  });
 
-const defaultExports = (): {store: Store; persistor: Persistor} => {
   const persistor = persistStore(store);
   return {store, persistor};
 };
 
+type StoreAndPersistor = ReturnType<typeof createStore>;
+type AppStore = StoreAndPersistor['store'];
+export type AppDispatch = AppStore['dispatch'];
+
 export * from './slices/uiSlice';
 export * from './slices/profileSlice';
 export * from './slices/colorsSlice';
-
-export default defaultExports;

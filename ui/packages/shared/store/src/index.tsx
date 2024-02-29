@@ -12,10 +12,10 @@
 // limitations under the License.
 
 import {useAppDispatch, useAppSelector} from './hooks';
-import store from './store';
+import {createStore} from './store';
 
 export * from './slices/uiSlice';
 export * from './slices/profileSlice';
 export * from './slices/colorsSlice';
 
-export {store, useAppDispatch, useAppSelector};
+export {createStore, useAppDispatch, useAppSelector};

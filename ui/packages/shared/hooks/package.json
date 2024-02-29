@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@parca/client": "^0.16.106",
+    "@parca/store": "^0.16.133",
     "@rehooks/local-storage": "^2.4.4"
   },
   "keywords": [],

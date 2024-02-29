@@ -12,6 +12,7 @@
 // limitations under the License.
 
 import useContainerDimensions from './useContainerDimensions';
+import useCurrentColorProfile from './useCurrentColorProfile';
 import useUIFeatureFlag from './useUIFeatureFlag';
 import useUserPreference, {
   USER_PREFERENCES,
@@ -23,6 +24,7 @@ export {
   useContainerDimensions,
   useUIFeatureFlag,
   useUserPreference,
+  useCurrentColorProfile,
   USER_PREFERENCES,
   type UserPreference,
   type UserPreferenceDetails,

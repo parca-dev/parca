@@ -14,11 +14,11 @@
 import React from 'react';
 import TopTable from '..';
 import {Provider} from 'react-redux';
-import {store} from '@parca/store';
+import {createStore} from '@parca/store';
 import {Top} from '@parca/client';
 import parca1mGraphData from './benchdata/parca-toptable-1m.json';
 
-const {store: reduxStore} = store();
+const {store: reduxStore} = createStore();
 
 const parca1mGraph = parca1mGraphData as Top;
 

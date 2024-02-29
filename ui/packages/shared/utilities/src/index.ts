@@ -226,8 +226,13 @@ export function convertLocalToUTCDate(date: Date): Date {
 export type ColorProfileName = 'default' | 'subtle' | 'ocean' | 'warm' | 'rainbow';
 export type ColorsDuo = [string, string];
 
+export interface ColorConfig {
+  colors: ColorsDuo[];
+  colorForSimilarNodes: string;
+}
+
 export const COLOR_PROFILES: {
-  [key in ColorProfileName]: {colors: ColorsDuo[]; colorForSimilarNodes: string};
+  [key in ColorProfileName]: ColorConfig;
 } = {
   ocean: {
     colors: [

@@ -17,7 +17,7 @@ import {Provider} from 'react-redux';
 
 import {QueryServiceClient} from '@parca/client';
 import {DateTimeRange, KeyDownProvider, useParcaContext} from '@parca/components';
-import {store} from '@parca/store';
+import {createStore} from '@parca/store';
 import {capitalizeOnlyFirstLetter, type NavigateFunction} from '@parca/utilities';
 
 import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
@@ -406,7 +406,8 @@ const ProfileExplorer = ({
   queryParams,
   navigateTo,
 }: ProfileExplorerProps): JSX.Element => {
-  const {store: reduxStore} = store();
+  const {additionalFlamegraphColorProfiles} = useParcaContext();
+  const {store: reduxStore} = createStore(additionalFlamegraphColorProfiles);
 
   return (
     <Provider store={reduxStore}>

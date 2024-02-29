@@ -14,11 +14,11 @@
 import React from 'react';
 import ProfileIcicleGraph from '..';
 import {Provider} from 'react-redux';
-import {store} from '@parca/store';
+import {createStore} from '@parca/store';
 import parca20mGraphData from './benchdata/parca-20m.json';
 import {Flamegraph} from '@parca/client';
 
-const {store: reduxStore} = store();
+const {store: reduxStore} = createStore();
 
 const parca20mGraph = parca20mGraphData as Flamegraph;
 
