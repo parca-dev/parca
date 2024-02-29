@@ -17,14 +17,14 @@ import { PanelProps } from '@grafana/data';
 import { css, cx } from 'emotion';
 import { stylesFactory } from '@grafana/ui';
 import { ProfileView, GrafanaParcaData, MergedProfileSource } from '@parca/profile';
-import { store } from '@parca/store';
+import { createStore } from '@parca/store';
 
 import '@parca/profile/dist/styles.css';
 import '@parca/components/dist/styles.css';
 
 interface Props extends PanelProps<{}> {}
 
-const { store: parcaStore } = store();
+const { store: parcaStore } = createStore();
 
 function extractData<T>(data: any): T {
   return data.series[0].fields[0].values.get(0);
