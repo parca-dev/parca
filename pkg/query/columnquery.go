@@ -372,7 +372,7 @@ func filterRecord(
 		}
 	}
 
-	if len(indexMatches) == 0 {
+	if r.LineFunctionNameDict.Len() > 0 && len(indexMatches) == 0 {
 		return nil, math.Int64.Sum(r.Value), 0, nil
 	}
 
