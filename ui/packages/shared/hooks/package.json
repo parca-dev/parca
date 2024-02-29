@@ -1,6 +1,6 @@
 {
   "name": "@parca/hooks",
-  "version": "0.0.44",
+  "version": "0.0.45",
   "description": "A library containing React hooks used in the Parca UI",
   "main": "dist/index.js",
   "scripts": {
@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@parca/client": "^0.16.106",
-    "@parca/store": "^0.16.133",
+    "@parca/store": "^0.16.134",
     "@rehooks/local-storage": "^2.4.4"
   },
   "keywords": [],
