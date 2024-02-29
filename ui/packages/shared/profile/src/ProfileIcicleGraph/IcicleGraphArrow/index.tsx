@@ -17,22 +17,15 @@ import {Dictionary, Table, Vector, tableFromIPC} from 'apache-arrow';
 import {useContextMenu} from 'react-contexify';
 
 import {FlamegraphArrow} from '@parca/client';
-import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
+import {USER_PREFERENCES, useCurrentColorProfile, useUserPreference} from '@parca/hooks';
 import {
   getColorForFeature,
-  getColorForSimilarNodes,
   selectDarkMode,
   setHoveringNode,
   useAppDispatch,
   useAppSelector,
 } from '@parca/store';
-import {
-  getLastItem,
-  scaleLinear,
-  selectQueryParam,
-  type ColorProfileName,
-  type NavigateFunction,
-} from '@parca/utilities';
+import {getLastItem, scaleLinear, selectQueryParam, type NavigateFunction} from '@parca/utilities';
 
 import GraphTooltipArrow from '../../GraphTooltipArrow';
 import GraphTooltipArrowContent from '../../GraphTooltipArrow/Content';
@@ -83,9 +76,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 }: IcicleGraphArrowProps): React.JSX.Element {
   const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
   const dispatch = useAppDispatch();
-  const [colorProfile] = useUserPreference<ColorProfileName>(
-    USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
-  );
   const [highlightSimilarStacksPreference] = useUserPreference<boolean>(
     USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS.key
   );
@@ -106,7 +96,8 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
   const {compareMode} = useProfileViewContext();
   const isColorStackLegendEnabled = selectQueryParam('color_stack_legend') === 'true';
-  const colorForSimilarNodes = getColorForSimilarNodes(colorProfile);
+  const currentColorProfile = useCurrentColorProfile();
+  const colorForSimilarNodes = currentColorProfile.colorForSimilarNodes;
 
   const mappings = useMemo(() => {
     // Read the mappings from the dictionary that contains all mapping strings.
@@ -165,10 +156,14 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const mappingColors = useMemo(() => {
     const colors: mappingColors = {};
     Object.entries(mappingFeatures).forEach(([_, feature]) => {
-      colors[feature.name] = getColorForFeature(feature.name, isDarkMode, colorProfile);
+      colors[feature.name] = getColorForFeature(
+        feature.name,
+        isDarkMode,
+        currentColorProfile.colors
+      );
     });
     return colors;
-  }, [colorProfile, isDarkMode, mappingFeatures]);
+  }, [isDarkMode, mappingFeatures, currentColorProfile]);
 
   useEffect(() => {
     if (ref.current != null) {

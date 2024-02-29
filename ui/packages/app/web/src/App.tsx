@@ -14,8 +14,6 @@
 import {BrowserRouter, Navigate, Route, Routes} from 'react-router-dom';
 import {PersistGate} from 'redux-persist/integration/react';
 
-import {store} from '@parca/store';
-
 import 'tailwindcss/tailwind.css';
 import './style/file-input.css';
 import './style/metrics.css';
@@ -27,6 +25,8 @@ import 'react-datepicker/dist/react-datepicker.css';
 
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {Provider} from 'react-redux';
+
+import {createStore} from '@parca/store';
 
 import HomePage from './pages/index';
 import Component404 from './pages/layouts/Component404';
@@ -59,7 +59,7 @@ const queryClient = new QueryClient({
   },
 });
 
-const {store: reduxStore, persistor} = store();
+const {store: reduxStore, persistor} = createStore();
 
 const App = () => {
   return (

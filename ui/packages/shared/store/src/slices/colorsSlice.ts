@@ -20,7 +20,12 @@ import {
   FlamegraphNodeMeta,
   FlamegraphRootNode,
 } from '@parca/client';
-import {COLOR_PROFILES, type ColorProfileName, type ColorsDuo} from '@parca/utilities';
+import {
+  COLOR_PROFILES,
+  type ColorConfig,
+  type ColorProfileName,
+  type ColorsDuo,
+} from '@parca/utilities';
 
 import type {RootState} from '../store';
 
@@ -48,14 +53,16 @@ export interface ColorsState {
   binaries: string[];
   hoveringNode: HoveringNode | undefined;
   hoveringRow: HoveringRow | undefined;
+  colorProfiles: Record<string, ColorConfig>;
 }
 
 // Define the initial state using that type
-const initialState: ColorsState = {
+export const initialColorState: ColorsState = {
   colors: {},
   binaries: [],
   hoveringNode: undefined,
   hoveringRow: undefined,
+  colorProfiles: COLOR_PROFILES,
 };
 
 export interface StackColor {
@@ -90,10 +97,8 @@ const findAColor = (colorIndex: number, colors: ColorsDuo[]): ColorsDuo => {
 export const getColorForFeature = (
   feature: string,
   isDarkMode: boolean,
-  colorProfileName: ColorProfileName
+  colors: ColorsDuo[]
 ): string => {
-  const colors: ColorsDuo[] = COLOR_PROFILES[colorProfileName].colors;
-
   // Add characters in the feature name to the color map
   const colorIndex =
     feature === EVERYTHING_ELSE
@@ -110,10 +115,6 @@ export const getColorForFeature = (
   return !isDarkMode ? color[0] : color[1];
 };
 
-export const getColorForSimilarNodes = (currentColorPalette: ColorProfileName): string => {
-  return COLOR_PROFILES[currentColorPalette].colorForSimilarNodes;
-};
-
 export interface SetFeaturesRequest {
   features: FeaturesMap;
   colorProfileName: ColorProfileName;
@@ -122,7 +123,7 @@ export interface SetFeaturesRequest {
 
 export const colorsSlice = createSlice({
   name: 'colors',
-  initialState,
+  initialState: initialColorState,
   reducers: {
     // Use the PayloadAction type to declare the contents of `action.payload`
     addColor: (state, action: PayloadAction<StackColor>) => {
@@ -132,6 +133,7 @@ export const colorsSlice = createSlice({
       };
     },
     setFeatures: (state, action: PayloadAction<SetFeaturesRequest>) => {
+      const currentProfileColors = state.colorProfiles[action.payload.colorProfileName].colors;
       state.binaries = Object.keys(action.payload.features).filter(name => {
         return action.payload.features[name] === FEATURE_TYPES.Binary;
       });
@@ -139,7 +141,7 @@ export const colorsSlice = createSlice({
         .map(feature => {
           return [
             feature,
-            getColorForFeature(feature, action.payload.isDarkMode, action.payload.colorProfileName),
+            getColorForFeature(feature, action.payload.isDarkMode, currentProfileColors),
           ];
         })
         .reduce(
@@ -151,7 +153,7 @@ export const colorsSlice = createSlice({
             [EVERYTHING_ELSE]: getColorForFeature(
               EVERYTHING_ELSE,
               action.payload.isDarkMode,
-              action.payload.colorProfileName
+              currentProfileColors
             ),
           }
         );
@@ -181,5 +183,8 @@ export const selectHoveringNode = (state: RootState): HoveringNode | undefined =
 
 export const selectHoveringRow = (state: RootState): HoveringRow | undefined =>
   state.colors.hoveringRow;
+
+export const selectColorProfiles = (state: RootState): Record<string, ColorConfig> =>
+  state.colors.colorProfiles;
 
 export default colorsSlice.reducer;

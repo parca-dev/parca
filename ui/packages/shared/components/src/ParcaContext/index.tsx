@@ -16,7 +16,7 @@ import {ProfilerOnRenderCallback, ReactNode, createContext, useContext} from 're
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 
 import {QueryServiceClient} from '@parca/client';
-import type {NavigateFunction} from '@parca/utilities';
+import type {ColorConfig, NavigateFunction} from '@parca/utilities';
 
 import {NoDataPrompt} from '../NoDataPrompt';
 import Spinner from '../Spinner';
@@ -63,6 +63,7 @@ interface Props {
   profileViewExternalMainActions?: ReactNode;
   profileViewExternalSubActions?: ReactNode;
   sourceViewContextMenuItems?: SourceViewContextMenuItem[];
+  additionalFlamegraphColorProfiles?: Record<string, ColorConfig>;
 }
 
 export const defaultValue: Props = {

@@ -11,21 +11,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {useEffect} from 'react';
+
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
-import {selectDarkMode, useAppSelector} from '@parca/store';
-import {COLOR_PROFILES, type ColorProfileName, type ColorsDuo} from '@parca/utilities';
+import {selectColorProfiles, selectDarkMode, useAppSelector} from '@parca/store';
+import {type ColorProfileName, type ColorsDuo} from '@parca/utilities';
 
 const FlamegraphColorProfileSelector = (): JSX.Element => {
   const [colorProfileName, setColorProfileName] = useUserPreference<string>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
   const isDarkMode = useAppSelector(selectDarkMode);
+  const colorProfiles = useAppSelector(selectColorProfiles);
+
+  useEffect(() => {
+    if (colorProfiles[colorProfileName] === undefined) {
+      // If the color profile is not found, set it to the default color profile
+      setColorProfileName('ocean');
+    }
+  }, [colorProfiles, colorProfileName, setColorProfileName]);
 
   return (
     <fieldset className={'mt-2 flex items-center gap-2'}>
       <legend className="mb-1">Flamegraph Color Profile</legend>
       <div className="flex flex-col gap-3 pl-4 text-sm">
-        {(Object.keys(COLOR_PROFILES) as ColorProfileName[]).map(profile => {
+        {(Object.keys(colorProfiles) as ColorProfileName[]).map(profile => {
           const isSelected = profile === colorProfileName;
           let displayName: string = profile;
           if (profile === 'default') {
@@ -35,8 +45,8 @@ const FlamegraphColorProfileSelector = (): JSX.Element => {
             displayName = 'cool';
           }
           return (
-            <div className="flex items-center" key={profile}>
-              <label key={profile} className="flex w-24 items-center gap-1 capitalize">
+            <div className="flex items-center gap-3" key={profile}>
+              <label key={profile} className="flex items-center gap-1 capitalize">
                 <input
                   type="radio"
                   name="colorProfile"
@@ -48,10 +58,10 @@ const FlamegraphColorProfileSelector = (): JSX.Element => {
                     }
                   }}
                 />
-                <span>{displayName}</span>
+                <span className="whitespace-nowrap">{displayName}</span>
               </label>
               <div className="flex w-72 gap-2 overflow-auto">
-                {COLOR_PROFILES[profile].colors.map((color: ColorsDuo) => (
+                {colorProfiles[profile].colors.map((color: ColorsDuo) => (
                   <div
                     key={`${color[0]}-${color[1]}`}
                     className="h-4 w-3 flex-shrink-0 rounded-full"

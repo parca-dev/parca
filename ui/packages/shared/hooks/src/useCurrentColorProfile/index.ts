@@ -11,21 +11,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import useContainerDimensions from './useContainerDimensions';
-import useCurrentColorProfile from './useCurrentColorProfile';
-import useUIFeatureFlag from './useUIFeatureFlag';
-import useUserPreference, {
-  USER_PREFERENCES,
-  type UserPreference,
-  type UserPreferenceDetails,
-} from './useUserPreference';
+import {selectColorProfiles, useAppSelector} from '@parca/store';
+import type {ColorConfig, ColorProfileName} from '@parca/utilities';
 
-export {
-  useContainerDimensions,
-  useUIFeatureFlag,
-  useUserPreference,
-  useCurrentColorProfile,
-  USER_PREFERENCES,
-  type UserPreference,
-  type UserPreferenceDetails,
+import useUserPreference, {USER_PREFERENCES} from '../useUserPreference';
+
+const useCurrentColorProfile = (): ColorConfig => {
+  const colorProfiles = useAppSelector(selectColorProfiles);
+  const [colorProfile] = useUserPreference<ColorProfileName>(
+    USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
+  );
+
+  return colorProfiles[colorProfile] ?? colorProfiles.ocean;
 };
+
+export default useCurrentColorProfile;
