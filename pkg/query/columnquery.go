@@ -365,15 +365,18 @@ func filterRecord(
 ) ([]arrow.Record, int64, int64, error) {
 	r := profile.NewRecordReader(rec)
 
-	indexMatches := map[uint32]struct{}{}
-	for i := 0; i < r.LineFunctionNameDict.Len(); i++ {
-		if bytes.Contains(bytes.ToLower(r.LineFunctionNameDict.Value(i)), filterQueryBytes) {
-			indexMatches[uint32(i)] = struct{}{}
+	var indexMatches map[uint32]struct{}
+	if len(filterQueryBytes) > 0 {
+		indexMatches = map[uint32]struct{}{}
+		for i := 0; i < r.LineFunctionNameDict.Len(); i++ {
+			if bytes.Contains(bytes.ToLower(r.LineFunctionNameDict.Value(i)), filterQueryBytes) {
+				indexMatches[uint32(i)] = struct{}{}
+			}
 		}
-	}
 
-	if len(indexMatches) == 0 {
-		return nil, math.Int64.Sum(r.Value), 0, nil
+		if len(indexMatches) == 0 {
+			return nil, math.Int64.Sum(r.Value), 0, nil
+		}
 	}
 
 	rowsToKeep := make([]int64, 0, int(rec.NumRows()))
