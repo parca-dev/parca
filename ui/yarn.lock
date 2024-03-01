@@ -3166,10 +3166,10 @@
   resolved "https://registry.yarnpkg.com/@juggle/resize-observer/-/resize-observer-3.4.0.tgz#08d6c5e20cf7e4cc02fd181c4b0c225cd31dbb60"
   integrity sha512-dfLbk+PwWvFzSxwk3n5ySL0hfBog779o8h68wK/7/APo/7cgyWp5jcXockbxdk5kFRkbeXWm4Fbi9FrdN381sA==
 
-"@koa/cors@^3.4.3":
-  version "3.4.3"
-  resolved "https://registry.yarnpkg.com/@koa/cors/-/cors-3.4.3.tgz#d669ee6e8d6e4f0ec4a7a7b0a17e7a3ed3752ebb"
-  integrity sha512-WPXQUaAeAMVaLTEFpoq3T2O1C+FstkjJnDQqy95Ck1UdILajsRhu6mhJ8H2f4NFPRBoCNN+qywTJfq/gGki5mw==
+"@koa/cors@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/@koa/cors/-/cors-5.0.0.tgz#0029b5f057fa0d0ae0e37dd2c89ece315a0daffd"
+  integrity sha512-x/iUDjcS90W69PryLDIMgFyV21YLTnG9zOpPXS7Bkt2b8AsY3zZsIpOLBkYr9fBcF3HbkKaER5hOBZLfpLgYNw==
   dependencies:
     vary "^1.1.2"
 
@@ -10676,7 +10676,7 @@ culvert@^0.1.2:
   resolved "https://registry.yarnpkg.com/culvert/-/culvert-0.1.2.tgz#9502f5f0154a2d5a22a023e79f71cc936fa6ef6f"
   integrity sha512-yi1x3EAWKjQTreYWeSd98431AV+IEE0qoDyOoaHJ7KJ21gv6HtBXHVLX74opVSGqcR8/AbjJBHAHpcOy2bj5Gg==
 
-current-module-paths@^1.1.0:
+current-module-paths@^1.1.0, current-module-paths@^1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/current-module-paths/-/current-module-paths-1.1.1.tgz#f0ee3298cd1a6839503b46796aac9e19add3f9e6"
   integrity sha512-8Ga5T8oMXBaSsHq9Gj+bddX7kHSaJKsl2vaAd3ep51eQLkr4W18eFEmEZM5bLo1zrz8tt3jE1U8QK9QGhaLR4g==
@@ -17696,19 +17696,19 @@ loader-utils@^3.2.0:
   resolved "https://registry.yarnpkg.com/loader-utils/-/loader-utils-3.2.1.tgz#4fb104b599daafd82ef3e1a41fb9265f87e1f576"
   integrity sha512-ZvFw1KWS3GVyYBYb7qkmRM/WwL2TQQBxgCK62rlvm4WpVQ23Nb4tYjApUlfjrEGvOs7KHEsmyUn75OHZrJMWPw==
 
-local-web-server@5.3.0:
-  version "5.3.0"
-  resolved "https://registry.yarnpkg.com/local-web-server/-/local-web-server-5.3.0.tgz#09907521f03efa60519521496e1538f7fca627ce"
-  integrity sha512-TGZ/+4eQ+1HtmoDalTspX1Cnn9oopxkIji7nGwIfn9ae1pT83VCwifnoxDu0bYleLSpqodsboUFUq/hgWvEzDw==
+local-web-server@5.3.1:
+  version "5.3.1"
+  resolved "https://registry.yarnpkg.com/local-web-server/-/local-web-server-5.3.1.tgz#9c7d09f3b42b211d777db08aeb17b1d2f1bdd81d"
+  integrity sha512-SYMIyQsyIGSlhZ+px0NgMumIzK69KCifweF24FApdNcRzMs/+ENlvesiGamBzEO6njljOvCbBuNQK/7hWMoCCA==
   dependencies:
-    current-module-paths "^1.1.0"
+    current-module-paths "^1.1.1"
     lws "^4.1.2"
     lws-basic-auth "^2.0.0"
     lws-blacklist "^3.0.0"
     lws-body-parser "^3.0.0"
     lws-compress "^3.1.0"
     lws-conditional-get "^2.0.0"
-    lws-cors "^4.2.0"
+    lws-cors "^4.2.1"
     lws-index "^3.1.1"
     lws-json "^2.0.0"
     lws-log "^2.0.0"
@@ -18007,12 +18007,12 @@ lws-conditional-get@^2.0.0:
     koa-conditional-get "^2.0.0"
     koa-etag "^3.0.0"
 
-lws-cors@^4.2.0:
-  version "4.2.0"
-  resolved "https://registry.yarnpkg.com/lws-cors/-/lws-cors-4.2.0.tgz#49fe2cb00575ea32746596f4c651997eb2160c45"
-  integrity sha512-s0j1Ui5w8jLhicjcnjUvcC0Dd3VgJZNwHbYNo6aSZPddbszpJJEUeLe6//tdc7dA6kx6iZ60Bc9ih4ty93yzbg==
+lws-cors@^4.2.1:
+  version "4.2.1"
+  resolved "https://registry.yarnpkg.com/lws-cors/-/lws-cors-4.2.1.tgz#97b0c4ca31fa11b9eb6b67052cdc3f4d5f31230d"
+  integrity sha512-KXsAn0Wn8n0riJ3SDHQzEAuzTrdeQZDJIxPHWEupsImW2hnQuBZVW5zqsmfzxD8SkCDDnQyFNuQZjSlBZmexKg==
   dependencies:
-    "@koa/cors" "^3.4.3"
+    "@koa/cors" "^5.0.0"
 
 lws-index@^3.1.1:
   version "3.1.1"
