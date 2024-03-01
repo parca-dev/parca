@@ -1501,6 +1501,52 @@ func TestFilterData(t *testing.T) {
 	require.Equal(t, "test1", string(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(1)))))
 }
 
+func TestFilterUnsymbolized(t *testing.T) {
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
+	w := profile.NewWriter(mem, nil)
+	defer w.Release()
+
+	w.LocationsList.Append(true)
+	w.Locations.Append(true)
+	w.Addresses.Append(0x1234)
+	w.MappingStart.Append(0x1000)
+	w.MappingLimit.Append(0x2000)
+	w.MappingOffset.Append(0x0)
+	w.MappingFile.Append([]byte("test"))
+	w.MappingBuildID.Append([]byte("test"))
+	w.Lines.Append(false)
+	w.Value.Append(1)
+	w.Diff.Append(0)
+
+	originalRecord := w.RecordBuilder.NewRecord()
+	recs, _, err := FilterProfileData(
+		context.Background(),
+		noop.NewTracerProvider().Tracer(""),
+		mem,
+		[]arrow.Record{originalRecord},
+		"",
+		&pb.RuntimeFilter{
+			ShowPython: false,
+		},
+	)
+	require.NoError(t, err)
+	require.Len(t, recs, 1)
+	defer func() {
+		for _, r := range recs {
+			r.Release()
+		}
+	}()
+	r := profile.NewRecordReader(recs[0])
+	valid := 0
+	for i := 0; i < r.Location.Len(); i++ {
+		if r.Location.IsValid(i) {
+			valid++
+		}
+	}
+	require.Equal(t, 1, valid)
+}
+
 func TestFilterDataWithPath(t *testing.T) {
 	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
 	defer mem.AssertSize(t, 0)
