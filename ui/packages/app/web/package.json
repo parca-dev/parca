@@ -36,7 +36,7 @@
     "@tailwindcss/typography": "^0.5.8",
     "@testing-library/jest-dom": "5.17.0",
     "@testing-library/react": "13.4.0",
-    "autoprefixer": "10.4.16",
+    "autoprefixer": "10.4.17",
     "immer": "9.0.21",
     "isomorphic-unfetch": "3.1.0",
     "lodash.debounce": "4.0.8",
