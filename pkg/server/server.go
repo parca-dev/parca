@@ -235,7 +235,7 @@ func (s *Server) uiHandler(uiFS fs.FS, pathPrefix string) (*http.ServeMux, error
 		paths := []string{fmt.Sprintf("/%s", path)}
 
 		if paths[0] == "/index.html" {
-			paths = append(paths, "/", "/*")
+			paths = append(paths, "/")
 		}
 
 		if paths[0] == "/targets/index.html" {
