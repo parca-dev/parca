@@ -479,8 +479,8 @@ github.com/huaweicloud/huaweicloud-sdk-go-obs v3.23.3+incompatible h1:tKTaPHNVwi
 github.com/huaweicloud/huaweicloud-sdk-go-obs v3.23.3+incompatible/go.mod h1:l7VUhRbTKCzdOacdT4oWCwATKyvZqUOlOqr0Ous3k4s=
 github.com/hudl/fargo v1.3.0/go.mod h1:y3CKSmjA+wD2gak7sUSXTAoopbhU08POFhmITJgmKTg=
 github.com/ianlancetaylor/demangle v0.0.0-20210905161508-09a460cdf81d/go.mod h1:aYm2/VgdVmcIU8iMfdMvDMsRAQjcfZSKFby6HOFvi/w=
-github.com/ianlancetaylor/demangle v0.0.0-20231023195312-e2daf7ba7156 h1:XaXfcSUnkTV/iujizC1//N5IrJA1v6KQHwMDbsZesoM=
-github.com/ianlancetaylor/demangle v0.0.0-20231023195312-e2daf7ba7156/go.mod h1:gx7rwoVhcfuVKG5uya9Hs3Sxj7EIvldVofAWIUtGouw=
+github.com/ianlancetaylor/demangle v0.0.0-20240205174729-1f824a1a9b87 h1:IG+58MeF0K/wSXknV4FMOABt6B4VZCguRDxYSCJqWb4=
+github.com/ianlancetaylor/demangle v0.0.0-20240205174729-1f824a1a9b87/go.mod h1:gx7rwoVhcfuVKG5uya9Hs3Sxj7EIvldVofAWIUtGouw=
 github.com/imdario/mergo v0.3.16 h1:wwQJbIsHYGMUyLSPrEq1CT16AhnhNJQ51+4fdHUnCl4=
 github.com/imdario/mergo v0.3.16/go.mod h1:WBLT9ZmE3lPoWsEzCh9LPo3TiwVN+ZKEjmz+hD27ysY=
 github.com/improbable-eng/grpc-web v0.15.0 h1:BN+7z6uNXZ1tQGcNAuaU1YjsLTApzkjt2tzCixLaUPQ=
