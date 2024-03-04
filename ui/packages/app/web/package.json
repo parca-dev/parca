@@ -66,7 +66,7 @@
     "eslint-plugin-import": "2.29.1",
     "jest": "29.7.0",
     "jest-runtime": "29.7.0",
-    "pm2": "5.3.0",
+    "pm2": "5.3.1",
     "react-scripts": "5.0.1",
     "sass": "1.69.7",
     "sass-loader": "13.3.3",
