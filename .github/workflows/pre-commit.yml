@@ -19,7 +19,7 @@ concurrency:
 
 env:
   # renovate: datasource=pypi depName=pre-commit versioning=pep440
-  PRE_COMMIT_VERSION: ==3.6.0
+  PRE_COMMIT_VERSION: ==3.6.2
 
 jobs:
   pre-commit:
