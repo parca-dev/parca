@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as hljsLangs from 'react-syntax-highlighter/dist/esm/languages/hljs';
+import * as hljsLangs from 'react-syntax-highlighter/dist/cjs/languages/hljs';
 
 import _extLangMap from './ext-to-lang.json';
 

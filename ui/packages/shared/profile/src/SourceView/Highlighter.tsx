@@ -16,8 +16,11 @@ import {MouseEventHandler, useId, useMemo} from 'react';
 import {Vector} from 'apache-arrow';
 import cx from 'classnames';
 import {scaleLinear} from 'd3-scale';
-import SyntaxHighlighter, {createElement, type createElementProps} from 'react-syntax-highlighter';
-import {atomOneDark, atomOneLight} from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import SyntaxHighlighter, {
+  createElement,
+  type createElementProps,
+} from 'react-syntax-highlighter/dist/cjs';
+import {atomOneDark, atomOneLight} from 'react-syntax-highlighter/dist/cjs/styles/hljs';
 import {Tooltip} from 'react-tooltip';
 
 import {useParcaContext} from '@parca/components';
