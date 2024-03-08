@@ -58,7 +58,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-require github.com/apache/arrow/go/v15 v15.0.0
+require github.com/apache/arrow/go/v15 v15.0.1
 
 require (
 	cloud.google.com/go v0.110.10 // indirect
