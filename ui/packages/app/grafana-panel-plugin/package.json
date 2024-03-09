@@ -14,9 +14,9 @@
   "author": "Parca Contributors",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@grafana/data": "9.5.15",
-    "@grafana/toolkit": "9.5.15",
-    "@grafana/ui": "9.5.15",
+    "@grafana/data": "9.5.16",
+    "@grafana/toolkit": "9.5.16",
+    "@grafana/ui": "9.5.16",
     "emotion": "10.0.27"
   },
   "engines": {
