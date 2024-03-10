@@ -41,11 +41,11 @@
     "tailwindcss": "3.2.4"
   },
   "devDependencies": {
-    "@babel/core": "7.23.9",
+    "@babel/core": "7.24.0",
     "@babel/node": "7.23.9",
     "@babel/plugin-proposal-export-default-from": "7.23.3",
     "@babel/plugin-proposal-private-property-in-object": "7.21.11",
-    "@babel/preset-env": "7.23.9",
+    "@babel/preset-env": "7.24.0",
     "@ianvs/prettier-plugin-sort-imports": "3.7.2",
     "@mdx-js/loader": "2.3.0",
     "@next/bundle-analyzer": "12.3.4",
