@@ -23046,10 +23046,10 @@ react-use@17.4.0:
     ts-easing "^0.2.0"
     tslib "^2.1.0"
 
-react-use@17.4.2, react-use@^17.3.2:
-  version "17.4.2"
-  resolved "https://registry.yarnpkg.com/react-use/-/react-use-17.4.2.tgz#26d43c774ccb733a17a87be62e12fbcbc5654173"
-  integrity sha512-1jPtmWLD8OJJNYCdYLJEH/HM+bPDfJuyGwCYeJFgPmWY8ttwpgZnW5QnzgM55CYUByUiTjHxsGOnEpLl6yQaoQ==
+react-use@17.5.0, react-use@^17.3.2:
+  version "17.5.0"
+  resolved "https://registry.yarnpkg.com/react-use/-/react-use-17.5.0.tgz#1fae45638828a338291efa0f0c61862db7ee6442"
+  integrity sha512-PbfwSPMwp/hoL847rLnm/qkjg3sTRCvn6YhUZiHaUa3FA6/aNoFX79ul5Xt70O1rK+9GxSVqkY0eTwMdsR/bWg==
   dependencies:
     "@types/js-cookie" "^2.2.6"
     "@xobotyi/scrollbar-width" "^1.9.5"
