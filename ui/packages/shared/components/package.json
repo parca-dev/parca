@@ -26,14 +26,14 @@
     "d3": "7.8.5",
     "d3-selection": "3.0.0",
     "graphviz-wasm": "3.0.1",
-    "react-datepicker": "4.24.0",
+    "react-datepicker": "4.25.0",
     "react-tooltip": "^5.26.3",
     "react-use": "^17.3.2",
     "react-virtual": "^2.10.4",
     "tailwind-merge": "^1.10.0"
   },
   "devDependencies": {
-    "@types/react-datepicker": "4.19.3",
+    "@types/react-datepicker": "4.19.6",
     "react": "18.2.0",
     "react-dom": "18.2.0"
   },

@@ -6996,10 +6996,10 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-datepicker@4.19.3":
-  version "4.19.3"
-  resolved "https://registry.yarnpkg.com/@types/react-datepicker/-/react-datepicker-4.19.3.tgz#0a58e42d820adf12337617bd72289766643775db"
-  integrity sha512-85F9eKWu9fGiD9r4KVVMPYAdkJJswR3Wci9PvqplmB6T+D+VbUqPeKtifg96NZ4nEhufjehW+SX4JLrEWVplWw==
+"@types/react-datepicker@4.19.6":
+  version "4.19.6"
+  resolved "https://registry.yarnpkg.com/@types/react-datepicker/-/react-datepicker-4.19.6.tgz#3095fb3c4b38b598c7e3104d73d246c9b4eddb19"
+  integrity sha512-uH5fzxt9eXxnc+hDCy/iRSFqU2+9lR/q2lAmaG4WILMai1o3IOdpcV+VSypzBFJLTEC2jrfeDXcdol0CJVMq4g==
   dependencies:
     "@popperjs/core" "^2.9.2"
     "@types/react" "*"
@@ -22541,10 +22541,10 @@ react-custom-scrollbars-2@4.5.0:
     prop-types "^15.5.10"
     raf "^3.1.0"
 
-react-datepicker@4.24.0:
-  version "4.24.0"
-  resolved "https://registry.yarnpkg.com/react-datepicker/-/react-datepicker-4.24.0.tgz#dfb12e277993f1ae2d350b7ba4dd6bba7d21bfb1"
-  integrity sha512-2QUC2pP+x4v3Jp06gnFllxKsJR0yoT/K6y86ItxEsveTXUpsx+NBkChWXjU0JsGx/PL8EQnsxN0wHl4zdA1m/g==
+react-datepicker@4.25.0:
+  version "4.25.0"
+  resolved "https://registry.yarnpkg.com/react-datepicker/-/react-datepicker-4.25.0.tgz#86b3ee8ac764bad1650046d0cf9280837bf6d845"
+  integrity sha512-zB7CSi44SJ0sqo8hUQ3BF1saE/knn7u25qEMTO1CQGofY1VAKahO8k9drZtp0cfW1DMfoYLR3uSY1/uMvbEzbg==
   dependencies:
     "@popperjs/core" "^2.11.8"
     classnames "^2.2.6"
