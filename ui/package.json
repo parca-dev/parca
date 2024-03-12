@@ -76,7 +76,7 @@
     "@types/command-line-args": "5.2.3",
     "@types/jest": "29.5.12",
     "@types/node": "18.19.21",
-    "@types/react": "18.2.61",
+    "@types/react": "18.2.62",
     "@types/react-dom": "18.2.19",
     "@typescript-eslint/eslint-plugin": "5.62.0",
     "@typescript-eslint/parser": "5.62.0",
