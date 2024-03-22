@@ -108,13 +108,12 @@ func (s *Server) ListenAndServe(
 		// It is increased to 32MB to account for large protobuf messages (debug information uploads and downloads).
 		grpc.MaxSendMsgSize(debuginfo.MaxMsgSize),
 		grpc.MaxRecvMsgSize(debuginfo.MaxMsgSize),
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.ChainStreamInterceptor(
-			otelgrpc.StreamServerInterceptor(),
 			met.StreamServerInterceptor(),
 			grpc_logging.StreamServerInterceptor(InterceptorLogger(logger), logOpts...),
 		),
 		grpc.ChainUnaryInterceptor(
-			otelgrpc.UnaryServerInterceptor(),
 			met.UnaryServerInterceptor(),
 			grpc_logging.UnaryServerInterceptor(InterceptorLogger(logger), logOpts...),
 		),
@@ -235,7 +234,7 @@ func (s *Server) uiHandler(uiFS fs.FS, pathPrefix string) (*http.ServeMux, error
 		paths := []string{fmt.Sprintf("/%s", path)}
 
 		if paths[0] == "/index.html" {
-			paths = append(paths, "/", "/*")
+			paths = append(paths, "/")
 		}
 
 		if paths[0] == "/targets/index.html" {

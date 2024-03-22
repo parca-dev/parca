@@ -46,6 +46,7 @@ import (
 	"github.com/thanos-io/objstore"
 	"github.com/thanos-io/objstore/client"
 	objstoretracing "github.com/thanos-io/objstore/tracing/opentelemetry"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	tracing "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
@@ -380,18 +381,10 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	propagators := propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
 	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})),
-		grpc.WithChainUnaryInterceptor(
-			tracing.UnaryClientInterceptor(
-				tracing.WithTracerProvider(tracerProvider),
-				tracing.WithPropagators(propagators),
-			),
-		),
-		grpc.WithChainStreamInterceptor(
-			tracing.StreamClientInterceptor(
-				tracing.WithTracerProvider(tracerProvider),
-				tracing.WithPropagators(propagators),
-			),
-		),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler(
+			otelgrpc.WithTracerProvider(tracerProvider),
+			otelgrpc.WithPropagators(propagators),
+		)),
 	}
 	conn, err := grpc.Dial(flags.ProfileShareServer, opts...)
 	if err != nil {
@@ -693,19 +686,15 @@ func runScraper(
 	propagators := propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
 
 	opts := []grpc.DialOption{
+		grpc.WithStatsHandler(otelgrpc.NewServerHandler(
+			tracing.WithTracerProvider(tracer),
+			tracing.WithPropagators(propagators),
+		)),
 		grpc.WithChainUnaryInterceptor(
 			metrics.UnaryClientInterceptor(),
-			tracing.UnaryClientInterceptor(
-				tracing.WithTracerProvider(tracer),
-				tracing.WithPropagators(propagators),
-			),
 		),
 		grpc.WithChainStreamInterceptor(
 			metrics.StreamClientInterceptor(),
-			tracing.StreamClientInterceptor(
-				tracing.WithTracerProvider(tracer),
-				tracing.WithPropagators(propagators),
-			),
 		),
 	}
 	if flags.Insecure {
