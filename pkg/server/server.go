@@ -108,13 +108,12 @@ func (s *Server) ListenAndServe(
 		// It is increased to 32MB to account for large protobuf messages (debug information uploads and downloads).
 		grpc.MaxSendMsgSize(debuginfo.MaxMsgSize),
 		grpc.MaxRecvMsgSize(debuginfo.MaxMsgSize),
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.ChainStreamInterceptor(
-			otelgrpc.StreamServerInterceptor(),
 			met.StreamServerInterceptor(),
 			grpc_logging.StreamServerInterceptor(InterceptorLogger(logger), logOpts...),
 		),
 		grpc.ChainUnaryInterceptor(
-			otelgrpc.UnaryServerInterceptor(),
 			met.UnaryServerInterceptor(),
 			grpc_logging.UnaryServerInterceptor(InterceptorLogger(logger), logOpts...),
 		),
