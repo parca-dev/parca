@@ -30,8 +30,19 @@ interface Props {
 
 const isEqual = (a: string | string[] | undefined, b: string | string[] | undefined): boolean => {
   if (typeof a === 'string' && typeof b === 'string') {
-    return a === b;
+    return decodeURIComponent(a) === decodeURIComponent(b);
   }
+
+  // ['icicle'] === 'icicle'
+  if (Array.isArray(a) && a.length === 1 && typeof b === 'string') {
+    return decodeURIComponent(a[0]) === decodeURIComponent(b);
+  }
+
+  // 'icicle' === ['icicle']
+  if (Array.isArray(b) && b.length === 1 && typeof a === 'string') {
+    return decodeURIComponent(b[0]) === decodeURIComponent(a);
+  }
+
   if (Array.isArray(a) && Array.isArray(b)) {
     for (let i = 0; i < a.length; i++) {
       if (a[i] !== b[i]) return false;
