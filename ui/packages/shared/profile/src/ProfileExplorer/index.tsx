@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 
 import {Provider} from 'react-redux';
 
@@ -407,7 +407,10 @@ const ProfileExplorer = ({
   navigateTo,
 }: ProfileExplorerProps): JSX.Element => {
   const {additionalFlamegraphColorProfiles} = useParcaContext();
-  const {store: reduxStore} = createStore(additionalFlamegraphColorProfiles);
+
+  const {store: reduxStore} = useMemo(() => {
+    return createStore(additionalFlamegraphColorProfiles);
+  }, [additionalFlamegraphColorProfiles]);
 
   return (
     <Provider store={reduxStore}>
