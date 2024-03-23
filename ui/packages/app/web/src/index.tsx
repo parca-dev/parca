@@ -29,7 +29,7 @@ async function startApp() {
     });
   }
 
-  // Initalise app after the Meticulous recorder is ready: Meticulous needs to be initialised first,
+  // Initialise app after the Meticulous recorder is ready: Meticulous needs to be initialised first,
   // so it can capture the initial network requests
   const container = document.getElementById('root');
   const root = createRoot(container!);

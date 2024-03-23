@@ -293,7 +293,7 @@ func linesToTreeNodes(
 
 	// Same as locations, lines are in order from deepest to highest in the
 	// stack. Therefore we start with the innermost, and work ourselves
-	// outwards. We want the result to be from higest to deepest to be inserted
+	// outwards. We want the result to be from highest to deepest to be inserted
 	// into our flamegraph at our "current" position that's calling
 	// linesToTreeNodes.
 	for i := 0; i < len(lines); i++ {
