@@ -58,7 +58,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-require github.com/apache/arrow/go/v15 v15.0.1
+require github.com/apache/arrow/go/v15 v15.0.2
 
 require (
 	github.com/felixge/httpsnoop v1.0.4 // indirect
