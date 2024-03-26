@@ -79,7 +79,7 @@ Flags:
 <!-- prettier-ignore-start -->
 [embedmd]:# (tmp/help.txt)
 ```txt
-Usage: parca
+Usage: parca [flags]
 
 Flags:
   -h, --help                     Show context-sensitive help.
