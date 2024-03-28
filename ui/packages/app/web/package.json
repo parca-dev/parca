@@ -1,7 +1,7 @@
 {
   "name": "@parca/web",
   "private": true,
-  "version": "0.16.637",
+  "version": "0.16.638",
   "description": "Parca Web Interface",
   "scripts": {
     "lint": "eslint --no-error-on-unmatched-pattern --ext .ts,.tsx,.js src/*",
@@ -24,12 +24,12 @@
     "@alwaysmeticulous/recorder-loader": "^2.19.0",
     "@headlessui/react": "1.7.18",
     "@parca/client": "^0.16.106",
-    "@parca/components": "^0.16.262",
+    "@parca/components": "^0.16.263",
     "@parca/dynamicsize": "^0.16.61",
     "@parca/hooks": "^0.0.45",
     "@parca/icons": "^0.16.64",
     "@parca/parser": "^0.16.69",
-    "@parca/profile": "^0.16.355",
+    "@parca/profile": "^0.16.356",
     "@parca/store": "^0.16.134",
     "@parca/utilities": "^0.0.62",
     "@svgr/webpack": "6.5.1",
