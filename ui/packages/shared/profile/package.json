@@ -13,7 +13,7 @@
     "@tanstack/react-query": "^4.0.5",
     "@types/react-beautiful-dnd": "^13.1.8",
     "apache-arrow": "^12.0.0",
-    "d3": "7.8.5",
+    "d3": "7.9.0",
     "d3-scale": "^4.0.2",
     "d3-selection": "3.0.0",
     "framer-motion": "^10.18.0",

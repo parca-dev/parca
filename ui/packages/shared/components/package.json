@@ -23,7 +23,7 @@
     "@protobuf-ts/grpcweb-transport": "^2.5.0",
     "@tanstack/react-table": "^8.7.0",
     "classnames": "^2.3.1",
-    "d3": "7.8.5",
+    "d3": "7.9.0",
     "d3-selection": "3.0.0",
     "graphviz-wasm": "3.0.1",
     "react-datepicker": "4.25.0",
