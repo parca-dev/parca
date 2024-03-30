@@ -20,7 +20,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.0
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.1
 	github.com/ianlancetaylor/demangle v0.0.0-20240205174729-1f824a1a9b87
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/klauspost/compress v1.17.7
