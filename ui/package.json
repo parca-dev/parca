@@ -68,7 +68,7 @@
     "@storybook/react-webpack5": "7.6.17",
     "@storybook/testing-library": "0.2.2",
     "@svgr/webpack": "6.5.1",
-    "@swc/cli": "0.1.63",
+    "@swc/cli": "0.3.10",
     "@swc/core": "1.3.102",
     "@swc/jest": "0.2.29",
     "@testing-library/jest-dom": "5.17.0",
