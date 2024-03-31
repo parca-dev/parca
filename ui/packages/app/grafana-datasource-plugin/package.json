@@ -28,7 +28,7 @@
   "dependencies": {
     "@parca/client": "^0.16.106",
     "@parca/profile": "^0.16.356",
-    "@protobuf-ts/grpcweb-transport": "2.9.1"
+    "@protobuf-ts/grpcweb-transport": "2.9.4"
   },
   "private": true
 }
