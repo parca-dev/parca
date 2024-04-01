@@ -16,12 +16,12 @@ require (
 	github.com/go-delve/delve v1.22.1
 	github.com/go-kit/log v0.2.1
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
-	github.com/google/pprof v0.0.0-20240227163752-401108e1b7e7
+	github.com/google/pprof v0.0.0-20240327155427-868f304927ed
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.1
-	github.com/ianlancetaylor/demangle v0.0.0-20240205174729-1f824a1a9b87
+	github.com/ianlancetaylor/demangle v0.0.0-20240312041847-bd984b5ce465
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/klauspost/compress v1.17.7
 	github.com/nanmu42/limitio v1.0.0
