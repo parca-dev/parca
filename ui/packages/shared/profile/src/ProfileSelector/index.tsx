@@ -110,18 +110,6 @@ const ProfileSelector = ({
   const [queryExpressionString, setQueryExpressionString] = useState(querySelection.expression);
 
   useEffect(() => {
-    if (querySelection.expression === undefined) {
-      return;
-    }
-
-    setIsDataLoading(true);
-    setQueryExpression();
-    setIsDataLoading(false);
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeRangeSelection]);
-
-  useEffect(() => {
     if (enforcedProfileName !== '') {
       const [q, changed] = Query.parse(querySelection.expression).setProfileName(
         enforcedProfileName
