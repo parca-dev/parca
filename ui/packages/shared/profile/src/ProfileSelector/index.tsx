@@ -99,7 +99,6 @@ const ProfileSelector = ({
     data: profileTypesData,
     error,
   } = useProfileTypes(queryClient);
-  const [isDataLoading, setIsDataLoading] = useState<boolean>(false);
   const {heightStyle} = useMetricsGraphDimensions(comparing);
   const {viewComponent} = useParcaContext();
 
@@ -284,8 +283,7 @@ const ProfileSelector = ({
       </div>
       <div className="rounded bg-white shadow dark:border-gray-500 dark:bg-gray-700">
         <div style={{height: heightStyle}}>
-          {!isDataLoading &&
-          querySelection.expression !== undefined &&
+          {querySelection.expression !== undefined &&
           querySelection.expression.length > 0 &&
           querySelection.from !== undefined &&
           querySelection.to !== undefined ? (
