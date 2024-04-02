@@ -129,7 +129,7 @@ jobs:
     needs: release
     container:
       # https://github.com/containers/podman/tree/main/contrib/podmanimage
-      image: quay.io/containers/podman:v4.8.3
+      image: quay.io/containers/podman:v4.9.3
       options: >-
         --device /dev/fuse:rw
         --privileged
