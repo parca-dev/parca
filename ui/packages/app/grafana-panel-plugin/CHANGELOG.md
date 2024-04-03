@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 0.0.327 (2024-04-03)
+
+**Note:** Version bump only for package @parca/grafana-panel
+
 ## 0.0.326 (2024-04-02)
 
 **Note:** Version bump only for package @parca/grafana-panel
