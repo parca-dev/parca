@@ -5912,10 +5912,10 @@
     "@svgr/plugin-svgo" "^5.5.0"
     loader-utils "^2.0.0"
 
-"@swc/cli@0.3.10":
-  version "0.3.10"
-  resolved "https://registry.yarnpkg.com/@swc/cli/-/cli-0.3.10.tgz#ab84894e54762e1fafc51b1e66a75ad3319a479a"
-  integrity sha512-YWfYo9kXdbmIuGwIPth9geKgb0KssCMTdZa44zAN5KoqcuCP2rTW9s60heQDSRNpbtCmUr7BKF1VivsoHXrvrQ==
+"@swc/cli@0.3.12":
+  version "0.3.12"
+  resolved "https://registry.yarnpkg.com/@swc/cli/-/cli-0.3.12.tgz#0c083946989d55c83a5bffdb73273a1756f7fd4b"
+  integrity sha512-h7bvxT+4+UDrLWJLFHt6V+vNAcUNii2G4aGSSotKz1ECEk4MyEh5CWxmeSscwuz5K3i+4DWTgm4+4EyMCQKn+g==
   dependencies:
     "@mole-inc/bin-wrapper" "^8.0.1"
     "@swc/counter" "^0.1.3"
