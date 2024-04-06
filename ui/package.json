@@ -127,7 +127,7 @@
     "style-loader": "3.3.4",
     "ts-jest": "29.1.2",
     "ts-node": "10.9.2",
-    "tsc-watch": "6.0.4",
+    "tsc-watch": "6.2.0",
     "typescript": "5.4.3",
     "webpack": "5.91.0"
   },
