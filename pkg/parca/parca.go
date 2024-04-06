@@ -248,7 +248,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			context.Background(),
 			cfg.ObjectStorage.Bucket,
 		)
-
 		if err != nil {
 			level.Error(logger).Log("msg", "failed to initialize signed upload client", "err", err)
 			return err
