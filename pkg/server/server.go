@@ -218,7 +218,6 @@ func (s *Server) uiHandler(uiFS fs.FS, pathPrefix string) (*http.ServeMux, error
 				s.version,
 				pathPrefix,
 			})
-
 			if err != nil {
 				return fmt.Errorf("failed to execute ui file %s: %w", path, err)
 			}
