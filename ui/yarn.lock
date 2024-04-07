@@ -17404,10 +17404,10 @@ loader-utils@^3.2.0:
   resolved "https://registry.yarnpkg.com/loader-utils/-/loader-utils-3.2.1.tgz#4fb104b599daafd82ef3e1a41fb9265f87e1f576"
   integrity sha512-ZvFw1KWS3GVyYBYb7qkmRM/WwL2TQQBxgCK62rlvm4WpVQ23Nb4tYjApUlfjrEGvOs7KHEsmyUn75OHZrJMWPw==
 
-local-web-server@5.3.1:
-  version "5.3.1"
-  resolved "https://registry.yarnpkg.com/local-web-server/-/local-web-server-5.3.1.tgz#9c7d09f3b42b211d777db08aeb17b1d2f1bdd81d"
-  integrity sha512-SYMIyQsyIGSlhZ+px0NgMumIzK69KCifweF24FApdNcRzMs/+ENlvesiGamBzEO6njljOvCbBuNQK/7hWMoCCA==
+local-web-server@5.3.3:
+  version "5.3.3"
+  resolved "https://registry.yarnpkg.com/local-web-server/-/local-web-server-5.3.3.tgz#f2aad6440f98ca7fcb7e186e7fda5fdb7c503f01"
+  integrity sha512-toU0Mz/OskG/HKDtmjTiwDWDRnzFY4aQH2zPZIX7+hebBJKGr5HXuOyx/noI20I/wemkbBDontBnBch5VTgjlg==
   dependencies:
     current-module-paths "^1.1.1"
     lws "^4.1.2"
