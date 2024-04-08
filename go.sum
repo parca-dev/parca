@@ -698,8 +698,8 @@ github.com/planetscale/vtprotobuf v0.6.0/go.mod h1:t/avpk3KcrXxUnYOhZhMXJlSEyie6
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/polarsignals/frostdb v0.0.0-20240328182752-7a53786863ab h1:vJGNPmlhMXK+i3q5QaZw3TJagU+9NV61DVHtXZM2e4g=
-github.com/polarsignals/frostdb v0.0.0-20240328182752-7a53786863ab/go.mod h1:E4quqqOIew+65+IDClirYNf7jGg9F3b2G/cAXqYMmSQ=
+github.com/polarsignals/frostdb v0.0.0-20240404124443-fcd703dab67f h1:kc50HNnm7yHfPdsQU2UhE1jqR1WvNGBpExrEl3VCopg=
+github.com/polarsignals/frostdb v0.0.0-20240404124443-fcd703dab67f/go.mod h1:E1/TEQwPhWpo3I0RNQxQpzVokCZkNtLhx/8feuDSINs=
 github.com/polarsignals/wal v0.0.0-20231123092250-5d233119cfc9 h1:SwUso/MRikI7aLlEelX4k6N107fT4uTAzmtyMTfjr44=
 github.com/polarsignals/wal v0.0.0-20231123092250-5d233119cfc9/go.mod h1:EVDHAAe+7GQ33A1/x+/gE+sBPN4toQ0XG5RoLD49xr8=
 github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndrE9hABlRI=
