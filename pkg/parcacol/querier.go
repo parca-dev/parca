@@ -397,13 +397,27 @@ func (q *Querier) queryRangeDelta(
 	if resultType.Type == "cpu" && resultType.Unit == "nanoseconds" {
 		perSecondExpr = logicalplan.Div(
 			logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
-			logicalplan.Convert(logicalplan.If(logicalplan.IsNull(timestampUnique), logicalplan.Literal(step.Nanoseconds()), durationMin), arrow.PrimitiveTypes.Float64),
+			logicalplan.Convert(
+				logicalplan.If(
+					logicalplan.IsNull(timestampUnique),
+					logicalplan.Literal(step.Nanoseconds()),
+					durationMin,
+				),
+				arrow.PrimitiveTypes.Float64,
+			),
 		).Alias(ValuePerSecond)
 	} else {
 		perSecondExpr = logicalplan.Div(
 			logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
 			logicalplan.Div(
-				logicalplan.Convert(logicalplan.If(logicalplan.IsNull(timestampUnique), logicalplan.Literal(step.Nanoseconds()), durationMin), arrow.PrimitiveTypes.Float64),
+				logicalplan.Convert(
+					logicalplan.If(
+						logicalplan.IsNull(timestampUnique),
+						logicalplan.Literal(step.Nanoseconds()),
+						durationMin,
+					),
+					arrow.PrimitiveTypes.Float64,
+				),
 				logicalplan.Literal(float64(time.Second.Nanoseconds())),
 			),
 		).Alias(ValuePerSecond)
@@ -427,7 +441,11 @@ func (q *Querier) queryRangeDelta(
 		).
 		Project(
 			perSecondExpr,
-			logicalplan.If(logicalplan.IsNull(timestampUnique), logicalplan.Literal(step.Nanoseconds()), durationMin).Alias(profile.ColumnDuration),
+			logicalplan.If(
+				logicalplan.IsNull(timestampUnique),
+				logicalplan.Literal(step.Nanoseconds()),
+				durationMin,
+			).Alias(profile.ColumnDuration),
 			totalSum,
 			logicalplan.DynCol(profile.ColumnLabels),
 			logicalplan.Col(TimestampBucket),
