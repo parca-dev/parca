@@ -408,9 +408,15 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		logger,
 	)
 
+	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(reg)
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to register service discovery metrics", "err", err)
+		return err
+	}
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	discoveryManager := discovery.NewManager(ctx, logger)
+	discoveryManager := discovery.NewManager(ctx, logger, reg, sdMetrics)
 	if err := discoveryManager.ApplyConfig(getDiscoveryConfigs(cfg.ScrapeConfigs)); err != nil {
 		level.Error(logger).Log("msg", "failed to apply discovery configs", "err", err)
 		return err
@@ -729,9 +735,15 @@ func runScraper(
 
 	store := profilestore.NewGRPCForwarder(conn, logger)
 
+	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(reg)
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to register service discovery metrics", "err", err)
+		return err
+	}
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	discoveryManager := discovery.NewManager(ctx, logger)
+	discoveryManager := discovery.NewManager(ctx, logger, reg, sdMetrics)
 	if err := discoveryManager.ApplyConfig(getDiscoveryConfigs(cfg.ScrapeConfigs)); err != nil {
 		level.Error(logger).Log("msg", "failed to apply discovery configs", "err", err)
 		return err
