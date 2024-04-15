@@ -25,7 +25,7 @@
     "classnames": "^2.3.1",
     "d3": "7.9.0",
     "d3-selection": "3.0.0",
-    "graphviz-wasm": "3.0.1",
+    "graphviz-wasm": "3.0.2",
     "react-datepicker": "4.25.0",
     "react-tooltip": "^5.26.3",
     "react-use": "^17.3.2",
