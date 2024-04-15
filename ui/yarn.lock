@@ -14103,10 +14103,10 @@ graphemer@^1.4.0:
   resolved "https://registry.yarnpkg.com/graphemer/-/graphemer-1.4.0.tgz#fb2f1d55e0e3a1849aeffc90c4fa0dd53a0e66c6"
   integrity sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==
 
-graphviz-wasm@3.0.1:
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/graphviz-wasm/-/graphviz-wasm-3.0.1.tgz#89b625a2c9def0f9936270a8f375c093933d850e"
-  integrity sha512-RaN6vGdtyPU0N8oCOSofhMILlTfNr/fs0mP9+iAa5OL80/JVIvuzEMHJm8XFwiIN/RpfYfy7hhrZGv/VwLSuHA==
+graphviz-wasm@3.0.2:
+  version "3.0.2"
+  resolved "https://registry.yarnpkg.com/graphviz-wasm/-/graphviz-wasm-3.0.2.tgz#7e5737d727a41700cdebd38a3f35d5e49fd6a708"
+  integrity sha512-aaO9dxQ7LTk9zvelCajRRSdSB+ZLniL5DNSkuLXAfIAbVvYCqlLmxz4zWC2LBbNNT+w6vp8Du8SvAVxH1bSVBQ==
   dependencies:
     decode-base64 "^3.0.1"
     function-once "^3.0.0"
