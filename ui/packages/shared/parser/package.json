@@ -2,11 +2,12 @@
   "name": "@parca/parser",
   "version": "0.16.69",
   "description": "JavaScript parser implementation for the continuous profiling language",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
     "gen": "nearleyc -g -o ./src/selector.js ./src/selector.ne",
-    "watch": "tsc-watch"
+    "watch": "tsc-watch",
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
