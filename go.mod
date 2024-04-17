@@ -7,7 +7,7 @@ require (
 	github.com/alecthomas/kong v0.9.0
 	github.com/apache/arrow/go/v15 v15.0.2
 	github.com/cenkalti/backoff/v4 v4.3.0
-	github.com/cespare/xxhash/v2 v2.2.0
+	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/dgraph-io/badger/v4 v4.2.0
 	github.com/felixge/fgprof v0.9.4
