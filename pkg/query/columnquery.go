@@ -733,7 +733,8 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile
 		// is subtracting the `base` profile, but the actual calculation happens
 		// when building the visualizations. We should eventually have this be done
 		// directly by the query engine.
-		cols[len(cols)-1] = cols[len(cols)-2]
+		cols[len(cols)-2] = cols[len(cols)-4] // value as diff
+		cols[len(cols)-1] = cols[len(cols)-3] // value_per_second as diff_per_second
 		records = append(records, array.NewRecord(
 			r.Schema(),
 			cols,
@@ -746,13 +747,23 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile
 			columns := r.Columns()
 			cols := make([]arrow.Array, len(columns))
 			copy(cols, columns)
-			mult := multiplyInt64By(mem, columns[len(columns)-2].(*array.Int64), -1)
-			defer mult.Release()
-			zero := zeroArray(mem, int(r.NumRows()))
-			defer zero.Release()
+			diff := multiplyInt64By(mem, columns[len(columns)-4].(*array.Int64), -1)
+			defer diff.Release()
+			diffPerSecond := multiplyFloat64By(mem, columns[len(columns)-3].(*array.Float64), -1)
+			defer diffPerSecond.Release()
+			value := zeroInt64Array(mem, int(r.NumRows()))
+			defer value.Release()
+			valuePerSecond := zeroFloat64Array(mem, int(r.NumRows()))
+			defer valuePerSecond.Release()
 			records = append(records, array.NewRecord(
 				r.Schema(),
-				append(cols[:len(cols)-2], zero, mult),
+				append(
+					cols[:len(cols)-4], // all other columns like locations
+					value,
+					valuePerSecond,
+					diff,
+					diffPerSecond,
+				),
 				r.NumRows(),
 			))
 		}()
@@ -779,11 +790,40 @@ func multiplyInt64By(pool memory.Allocator, arr *array.Int64, factor int64) arro
 	return b.NewArray()
 }
 
-func zeroArray(pool memory.Allocator, rows int) arrow.Array {
+func multiplyFloat64By(pool memory.Allocator, arr *array.Float64, factor float64) arrow.Array {
+	b := array.NewFloat64Builder(pool)
+	defer b.Release()
+
+	values := arr.Float64Values()
+	valid := make([]bool, len(values))
+	for i := range values {
+		values[i] *= factor
+		valid[i] = true
+	}
+
+	b.AppendValues(values, valid)
+	return b.NewArray()
+}
+
+func zeroInt64Array(pool memory.Allocator, rows int) arrow.Array {
 	b := array.NewInt64Builder(pool)
 	defer b.Release()
 
 	values := make([]int64, rows)
+	valid := make([]bool, len(values))
+	for i := range values {
+		valid[i] = true
+	}
+
+	b.AppendValues(values, valid)
+	return b.NewArray()
+}
+
+func zeroFloat64Array(pool memory.Allocator, rows int) arrow.Array {
+	b := array.NewFloat64Builder(pool)
+	defer b.Release()
+
+	values := make([]float64, rows)
 	valid := make([]bool, len(values))
 	for i := range values {
 		valid[i] = true

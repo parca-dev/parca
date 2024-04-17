@@ -49,7 +49,9 @@ export const FIELD_FUNCTION_START_LINE = 'function_startline';
 export const FIELD_CHILDREN = 'children';
 export const FIELD_LABELS = 'labels';
 export const FIELD_CUMULATIVE = 'cumulative';
+export const FIELD_CUMULATIVE_PER_SECOND = 'cumulative_per_second';
 export const FIELD_DIFF = 'diff';
+export const FIELD_DIFF_PER_SECOND = 'diff_per_second';
 
 interface IcicleGraphArrowProps {
   arrow: FlamegraphArrow;
@@ -229,6 +231,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               sortBy={sortBy}
               darkMode={isDarkMode}
               compareMode={compareMode}
+              delta={sampleUnit === 'nanoseconds'}
               isContextMenuOpen={isContextMenuOpen}
               hoveringName={hoveringName}
               setHoveringName={setHoveringName}
@@ -246,6 +249,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     currentSearchString,
     height,
     isDarkMode,
+    sampleUnit,
     mappingColors,
     setCurPath,
     sortBy,

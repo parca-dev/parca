@@ -1279,7 +1279,9 @@ func PprofToSymbolizedProfile(meta profile.Meta, prof *pprofprofile.Profile, ind
 		}
 
 		w.Value.Append(prof.Sample[i].Value[index])
+		w.ValuePerSecond.Append(0)
 		w.Diff.Append(0)
+		w.DiffPerSecond.Append(0)
 
 		for labelName, labelBuilder := range w.LabelBuildersMap {
 			if prof.Sample[i].Label == nil {
@@ -1358,7 +1360,9 @@ func OldProfileToArrowProfile(p profile.OldProfile) (profile.Profile, error) {
 	defer w.RecordBuilder.Release()
 	for i := range p.Samples {
 		w.Value.Append(p.Samples[i].Value)
+		w.ValuePerSecond.Append(float64(p.Samples[i].Value))
 		w.Diff.Append(p.Samples[i].DiffValue)
+		w.DiffPerSecond.Append(float64(p.Samples[i].DiffValue))
 
 		for labelName, labelBuilder := range w.LabelBuildersMap {
 			if p.Samples[i].Label == nil {
@@ -1470,7 +1474,9 @@ func TestFilterData(t *testing.T) {
 	w.FunctionFilename.Append([]byte("test"))
 	w.FunctionStartLine.Append(1)
 	w.Value.Append(1)
+	w.ValuePerSecond.Append(1)
 	w.Diff.Append(0)
+	w.DiffPerSecond.Append(0)
 
 	originalRecord := w.RecordBuilder.NewRecord()
 	recs, _, err := FilterProfileData(
@@ -1517,7 +1523,9 @@ func TestFilterUnsymbolized(t *testing.T) {
 	w.MappingBuildID.Append([]byte("test"))
 	w.Lines.Append(false)
 	w.Value.Append(1)
+	w.ValuePerSecond.Append(1)
 	w.Diff.Append(0)
+	w.DiffPerSecond.Append(0)
 
 	originalRecord := w.RecordBuilder.NewRecord()
 	recs, _, err := FilterProfileData(
@@ -1599,7 +1607,9 @@ func TestFilterDataWithPath(t *testing.T) {
 	w.FunctionFilename.Append([]byte("test.py"))
 	w.FunctionStartLine.Append(0)
 	w.Value.Append(1)
+	w.ValuePerSecond.Append(1)
 	w.Diff.Append(0)
+	w.DiffPerSecond.Append(0)
 
 	originalRecord := w.RecordBuilder.NewRecord()
 	recs, _, err := FilterProfileData(
@@ -1680,7 +1690,9 @@ func TestFilterDataInterpretedOnly(t *testing.T) {
 	w.FunctionFilename.Append([]byte("test.py"))
 	w.FunctionStartLine.Append(0)
 	w.Value.Append(1)
+	w.ValuePerSecond.Append(1)
 	w.Diff.Append(0)
+	w.DiffPerSecond.Append(0)
 
 	originalRecord := w.RecordBuilder.NewRecord()
 	recs, _, err := FilterProfileData(
@@ -1763,7 +1775,9 @@ func BenchmarkFilterData(t *testing.B) {
 		w.FunctionFilename.Append([]byte("test"))
 		w.FunctionStartLine.Append(1)
 		w.Value.Append(1)
+		w.ValuePerSecond.Append(1)
 		w.Diff.Append(0)
+		w.DiffPerSecond.Append(0)
 	}
 
 	originalRecord := w.RecordBuilder.NewRecord()
