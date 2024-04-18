@@ -83,12 +83,13 @@ import (
 const (
 	symbolizationInterval = 10 * time.Second
 	flagModeScraperOnly   = "scraper-only"
+	flagModeForwarder     = "forwarder"
 	metaStoreBadger       = "badger"
 )
 
 type Flags struct {
 	ConfigPath       string        `default:"parca.yaml" help:"Path to config file."`
-	Mode             string        `default:"all" enum:"all,scraper-only" help:"Scraper only runs a scraper that sends to a remote gRPC endpoint. All runs all components."`
+	Mode             string        `default:"all" enum:"all,scraper-only,forwarder" help:"Scraper only runs a scraper that sends to a remote gRPC endpoint. All runs all components."`
 	HTTPAddress      string        `default:":7070" help:"Address to bind HTTP server to."`
 	HTTPReadTimeout  time.Duration `default:"5s" help:"Timeout duration for HTTP server to read request body."`
 	HTTPWriteTimeout time.Duration `default:"1m" help:"Timeout duration for HTTP server to write response body."`
@@ -223,8 +224,8 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return fmt.Errorf("the mode should be set as `--mode=scraper-only`, if `StoreAddress` is set")
 	}
 
-	if flags.Mode == flagModeScraperOnly {
-		return runScraper(ctx, logger, reg, tracerProvider, uiFS, flags, version, cfg)
+	if flags.Mode == flagModeScraperOnly || flags.Mode == flagModeForwarder {
+		return runForwarder(ctx, logger, reg, tracerProvider, uiFS, flags, version, cfg)
 	}
 
 	bucketCfg, err := yaml.Marshal(cfg.ObjectStorage.Bucket)
@@ -665,7 +666,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	return nil
 }
 
-func runScraper(
+func runForwarder(
 	ctx context.Context,
 	logger log.Logger,
 	reg *prometheus.Registry,
@@ -733,6 +734,7 @@ func runScraper(
 		return fmt.Errorf("failed to create gRPC connection: %w", err)
 	}
 
+	dbginfo := debuginfo.NewGRPCForwarder(debuginfopb.NewDebuginfoServiceClient(conn))
 	store := profilestore.NewGRPCForwarder(conn, logger)
 
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(reg)
@@ -824,7 +826,18 @@ func runScraper(
 					flags.PathPrefix,
 					server.RegisterableFunc(func(ctx context.Context, srv *grpc.Server, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
 						scrapepb.RegisterScrapeServiceServer(srv, m)
+						profilestorepb.RegisterProfileStoreServiceServer(srv, store)
+						debuginfopb.RegisterDebuginfoServiceServer(srv, dbginfo)
+
+						if err := debuginfopb.RegisterDebuginfoServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+							return err
+						}
+
 						if err := scrapepb.RegisterScrapeServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+							return err
+						}
+
+						if err := profilestorepb.RegisterProfileStoreServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
 							return err
 						}
 						return nil
