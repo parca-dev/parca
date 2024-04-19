@@ -17,19 +17,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-kit/log"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	pprofprofile "github.com/google/pprof/profile"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace/noop"
 
-	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
-	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	metastorev1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
-	"github.com/parca-dev/parca/pkg/metastoretest"
-	"github.com/parca-dev/parca/pkg/normalizer"
+	"github.com/parca-dev/parca/pkg/kv"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profile"
 )
@@ -37,32 +30,21 @@ import (
 func TestGenerateTopTable(t *testing.T) {
 	ctx := context.Background()
 
-	reg := prometheus.NewRegistry()
-	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
-		Name: "parca_test_counter",
-		Help: "parca_test_counter",
-	})
-
 	fileContent := MustReadAllGzip(t, "testdata/alloc_objects.pb.gz")
-	p := &pprofpb.Profile{}
-	require.NoError(t, p.UnmarshalVT(fileContent))
+	pp, err := pprofprofile.ParseData(fileContent)
+	require.NoError(t, err)
 
-	l := metastoretest.NewTestMetastore(
-		t,
-		log.NewNopLogger(),
-		prometheus.NewRegistry(),
-		noop.NewTracerProvider().Tracer(""),
+	p, err := PprofToSymbolizedProfile(
+		profile.Meta{},
+		pp,
+		0,
 	)
-	metastore := metastore.NewInProcessClient(l)
-	normalizer := normalizer.NewNormalizer(metastore, true, counter)
-	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false, nil)
 	require.NoError(t, err)
 
-	tracer := noop.NewTracerProvider().Tracer("")
-	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
+	op, err := parcacol.NewArrowToProfileConverter(nil, kv.NewKeyMaker()).Convert(ctx, p)
 	require.NoError(t, err)
 
-	res, cummulative, err := GenerateTopTable(ctx, symbolizedProfile)
+	res, cummulative, err := GenerateTopTable(ctx, op)
 	require.NoError(t, err)
 
 	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
@@ -86,7 +68,7 @@ func TestGenerateTopTable(t *testing.T) {
 			require.Equal(t, uint64(0), node.GetMeta().GetMapping().GetOffset())
 			require.Equal(t, "/bin/operator", node.GetMeta().GetMapping().GetFile())
 			require.Equal(t, "", node.GetMeta().GetMapping().GetBuildId())
-			require.Equal(t, true, node.GetMeta().GetMapping().GetHasFunctions())
+			require.Equal(t, false, node.GetMeta().GetMapping().GetHasFunctions())
 			require.Equal(t, false, node.GetMeta().GetMapping().GetHasFilenames())
 			require.Equal(t, false, node.GetMeta().GetMapping().GetHasLineNumbers())
 			require.Equal(t, false, node.GetMeta().GetMapping().GetHasInlineFrames())
@@ -104,65 +86,40 @@ func TestGenerateTopTable(t *testing.T) {
 
 func TestGenerateTopTableAggregateFlat(t *testing.T) {
 	ctx := context.Background()
-	logger := log.NewNopLogger()
-	reg := prometheus.NewRegistry()
-	tracer := noop.NewTracerProvider().Tracer("")
 
-	metastore := metastore.NewInProcessClient(metastoretest.NewTestMetastore(
-		t,
-		logger,
-		reg,
-		tracer,
-	))
+	locations := []*pprofprofile.Location{{
+		Address: 0x1,
+	}, {
+		Address: 0x2,
+	}, {
+		Address: 0x3,
+	}, {
+		Address: 0x4,
+	}}
 
-	lres, err := metastore.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
-		Locations: []*metastorepb.Location{{
-			Address: 0x1,
-		}, {
-			Address: 0x2,
-		}, {
-			Address: 0x3,
-		}, {
-			Address: 0x4,
-		}},
-	})
-	require.NoError(t, err)
-	require.Equal(t, 4, len(lres.Locations))
-	l1 := lres.Locations[0]
-	l2 := lres.Locations[1]
-	l3 := lres.Locations[2]
-	l4 := lres.Locations[3]
-
-	sres, err := metastore.GetOrCreateStacktraces(ctx, &metastorepb.GetOrCreateStacktracesRequest{
-		Stacktraces: []*metastorepb.Stacktrace{{
-			LocationIds: []string{l1.Id, l2.Id},
-		}, {
-			LocationIds: []string{l1.Id, l3.Id},
-		}, {
-			LocationIds: []string{l1.Id, l4.Id},
-		}},
-	})
-	require.NoError(t, err)
-	require.Equal(t, 3, len(sres.Stacktraces))
-	st1 := sres.Stacktraces[0]
-	st2 := sres.Stacktraces[1]
-	st3 := sres.Stacktraces[2]
-
-	p, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, &profile.NormalizedProfile{
-		Samples: []*profile.NormalizedSample{{
-			StacktraceID: st1.Id,
-			Value:        1,
-		}, {
-			StacktraceID: st2.Id,
-			Value:        1,
-		}, {
-			StacktraceID: st3.Id,
-			Value:        1,
-		}},
-	})
+	p, err := PprofToSymbolizedProfile(
+		profile.Meta{},
+		&pprofprofile.Profile{
+			Location: locations,
+			Sample: []*pprofprofile.Sample{{
+				Location: []*pprofprofile.Location{locations[0], locations[1]},
+				Value:    []int64{1},
+			}, {
+				Location: []*pprofprofile.Location{locations[0], locations[2]},
+				Value:    []int64{1},
+			}, {
+				Location: []*pprofprofile.Location{locations[0], locations[3]},
+				Value:    []int64{1},
+			}},
+		},
+		0,
+	)
 	require.NoError(t, err)
 
-	top, _, err := GenerateTopTable(ctx, p)
+	op, err := parcacol.NewArrowToProfileConverter(nil, kv.NewKeyMaker()).Convert(ctx, p)
+	require.NoError(t, err)
+
+	top, _, err := GenerateTopTable(ctx, op)
 	require.NoError(t, err)
 
 	require.Equal(t, 4, len(top.List))
@@ -178,62 +135,6 @@ func TestGenerateTopTableAggregateFlat(t *testing.T) {
 	require.Equal(t, uint64(0x4), top.List[3].Meta.Location.Address)
 	require.Equal(t, int64(1), top.List[3].Cumulative)
 	require.Equal(t, int64(0), top.List[3].Flat)
-}
-
-func TestGenerateDiffTopTable(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-	reg := prometheus.NewRegistry()
-	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
-		Name: "parca_test_counter",
-		Help: "parca_test_counter",
-	})
-
-	p1 := &pprofpb.Profile{}
-	fileContent := MustReadAllGzip(t, "testdata/alloc_objects.pb.gz")
-	require.NoError(t, p1.UnmarshalVT(fileContent))
-
-	l := metastoretest.NewTestMetastore(
-		t,
-		log.NewNopLogger(),
-		prometheus.NewRegistry(),
-		noop.NewTracerProvider().Tracer(""),
-	)
-	metastore := metastore.NewInProcessClient(l)
-	normalizer := normalizer.NewNormalizer(metastore, true, counter)
-	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p1, false, nil)
-	require.NoError(t, err)
-
-	p2 := profiles[0]
-
-	// The highest unique sample value is 31024846
-	// which we use for testing with a unique sample
-	const testValue = 31024846
-
-	found := false
-	for _, sample := range p2.Samples {
-		if sample.Value == testValue {
-			sample.DiffValue = -testValue
-			found = true
-		}
-	}
-	require.Truef(t, found, "expected to find the specific sample")
-
-	tracer := noop.NewTracerProvider().Tracer("")
-	p, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
-	require.NoError(t, err)
-
-	res, _, err := GenerateTopTable(ctx, p)
-	require.NoError(t, err)
-
-	found = false
-	for _, node := range res.List {
-		if node.Diff == -testValue {
-			found = true
-		}
-	}
-	require.Truef(t, found, "Expected to find our test diff value in top nodes")
 }
 
 func TestAggregateTopByFunction(t *testing.T) {

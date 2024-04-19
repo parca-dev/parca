@@ -14,26 +14,19 @@
 package query
 
 import (
-	"bytes"
 	"context"
 	"testing"
 
-	"github.com/go-kit/log"
-	"github.com/google/pprof/profile"
 	pprofprofile "github.com/google/pprof/profile"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/protobuf/proto"
 
-	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
-	"github.com/parca-dev/parca/pkg/metastoretest"
-	"github.com/parca-dev/parca/pkg/normalizer"
+	"github.com/parca-dev/parca/pkg/kv"
 	"github.com/parca-dev/parca/pkg/parcacol"
+	"github.com/parca-dev/parca/pkg/profile"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -43,151 +36,126 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 	ctx := context.Background()
 	var err error
 
-	l := metastoretest.NewTestMetastore(
-		t,
-		log.NewNopLogger(),
-		prometheus.NewRegistry(),
-		noop.NewTracerProvider().Tracer(""),
+	mappings := []*pprofprofile.Mapping{{
+		ID:   1,
+		File: "a",
+	}}
+	functions := []*pprofprofile.Function{{
+		ID:   1,
+		Name: "1",
+	}, {
+		ID:   2,
+		Name: "2",
+	}, {
+		ID:   3,
+		Name: "3",
+	}, {
+		ID:   4,
+		Name: "4",
+	}, {
+		ID:   5,
+		Name: "5",
+	}}
+	locations := []*pprofprofile.Location{{
+		ID:      1,
+		Mapping: mappings[0],
+		Line: []pprofprofile.Line{{
+			Function: functions[0],
+		}},
+	}, {
+		ID:      2,
+		Mapping: mappings[0],
+		Line: []pprofprofile.Line{{
+			Function: functions[1],
+		}},
+	}, {
+		ID:      3,
+		Mapping: mappings[0],
+		Line: []pprofprofile.Line{{
+			Function: functions[2],
+		}},
+	}, {
+		ID:      4,
+		Mapping: mappings[0],
+		Line: []pprofprofile.Line{{
+			Function: functions[3],
+		}},
+	}, {
+		ID:      5,
+		Mapping: mappings[0],
+		Line: []pprofprofile.Line{{
+			Function: functions[4],
+		}},
+	}}
+
+	p, err := PprofToSymbolizedProfile(
+		parcaprofile.Meta{},
+		&pprofprofile.Profile{
+			Mapping:  mappings,
+			Function: functions,
+			Location: locations,
+			Sample: []*pprofprofile.Sample{{
+				Location: []*pprofprofile.Location{locations[1], locations[0]},
+				Value:    []int64{2},
+			}, {
+				Location: []*pprofprofile.Location{locations[4], locations[2], locations[1], locations[0]},
+				Value:    []int64{1},
+			}, {
+				Location: []*pprofprofile.Location{locations[3], locations[2], locations[1], locations[0]},
+				Value:    []int64{3},
+			}},
+		},
+		0,
 	)
-
-	metastore := metastore.NewInProcessClient(l)
-
-	mres, err := metastore.GetOrCreateMappings(ctx, &metastorepb.GetOrCreateMappingsRequest{
-		Mappings: []*metastorepb.Mapping{{
-			File: "a",
-		}},
-	})
 	require.NoError(t, err)
-	m := mres.Mappings[0]
 
-	fres, err := metastore.GetOrCreateFunctions(ctx, &metastorepb.GetOrCreateFunctionsRequest{
-		Functions: []*metastorepb.Function{{
-			Name: "1",
-		}, {
-			Name: "2",
-		}, {
-			Name: "3",
-		}, {
-			Name: "4",
-		}, {
-			Name: "5",
-		}},
-	})
+	op, err := parcacol.NewArrowToProfileConverter(nil, kv.NewKeyMaker()).Convert(ctx, p)
 	require.NoError(t, err)
-	f1 := fres.Functions[0]
-	f2 := fres.Functions[1]
-	f3 := fres.Functions[2]
-	f4 := fres.Functions[3]
-	f5 := fres.Functions[4]
-
-	lres, err := metastore.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
-		Locations: []*metastorepb.Location{{
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f1.Id,
-			}},
-		}, {
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f2.Id,
-			}},
-		}, {
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f3.Id,
-			}},
-		}, {
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f4.Id,
-			}},
-		}, {
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f5.Id,
-			}},
-		}},
-	})
-	require.NoError(t, err)
-	l1 := lres.Locations[0]
-	l2 := lres.Locations[1]
-	l3 := lres.Locations[2]
-	l4 := lres.Locations[3]
-	l5 := lres.Locations[4]
-
-	sres, err := metastore.GetOrCreateStacktraces(ctx, &metastorepb.GetOrCreateStacktracesRequest{
-		Stacktraces: []*metastorepb.Stacktrace{{
-			LocationIds: []string{l2.Id, l1.Id},
-		}, {
-			LocationIds: []string{l5.Id, l3.Id, l2.Id, l1.Id},
-		}, {
-			LocationIds: []string{l4.Id, l3.Id, l2.Id, l1.Id},
-		}},
-	})
-	require.NoError(t, err)
-	s1 := sres.Stacktraces[0]
-	s2 := sres.Stacktraces[1]
-	s3 := sres.Stacktraces[2]
 
 	tracer := noop.NewTracerProvider().Tracer("")
-
-	p, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
-		Samples: []*parcaprofile.NormalizedSample{{
-			StacktraceID: s1.Id,
-			Value:        2,
-		}, {
-			StacktraceID: s2.Id,
-			Value:        1,
-		}, {
-			StacktraceID: s3.Id,
-			Value:        3,
-		}},
-	})
-	require.NoError(t, err)
-
-	fg, err := GenerateFlamegraphFlat(ctx, tracer, p)
+	fg, err := GenerateFlamegraphFlat(ctx, tracer, op)
 	require.NoError(t, err)
 
 	require.True(t, proto.Equal(&pb.Flamegraph{Height: 5, Total: 6, Root: &pb.FlamegraphRootNode{
 		Cumulative: 6,
 		Children: []*pb.FlamegraphNode{{
 			Meta: &pb.FlamegraphNodeMeta{
-				Function: &metastorepb.Function{Id: f1.Id, Name: "1"},
-				Line:     &metastorepb.Line{FunctionId: f1.Id},
-				Location: &metastorepb.Location{Id: l1.Id, MappingId: m.Id},
-				Mapping:  &metastorepb.Mapping{Id: m.Id, File: "a"},
+				Function: &metastorepb.Function{Id: "unknown-filename/7qd6hvHIBYXdQJ7V9xewooDjrmdIR_zZ0Jveuutjpyg=", Name: "1"},
+				Line:     &metastorepb.Line{FunctionId: "unknown-filename/7qd6hvHIBYXdQJ7V9xewooDjrmdIR_zZ0Jveuutjpyg="},
+				Location: &metastorepb.Location{Id: "9eZsDnwt8q-4ctrD1sXhPf2PILaD5V5-iXIfxEN_77A=/mq717xceAZPk_DwjoEV9l4Zea2W6gCPeVQE6xhupIyA=", MappingId: "9eZsDnwt8q-4ctrD1sXhPf2PILaD5V5-iXIfxEN_77A="},
+				Mapping:  &metastorepb.Mapping{Id: "9eZsDnwt8q-4ctrD1sXhPf2PILaD5V5-iXIfxEN_77A=", File: "a"},
 			},
 			Cumulative: 6,
 			Children: []*pb.FlamegraphNode{{
 				Meta: &pb.FlamegraphNodeMeta{
-					Function: &metastorepb.Function{Id: f2.Id, Name: "2"},
-					Line:     &metastorepb.Line{FunctionId: f2.Id},
-					Location: &metastorepb.Location{Id: l2.Id, MappingId: m.Id},
-					Mapping:  &metastorepb.Mapping{Id: m.Id, File: "a"},
+					Function: &metastorepb.Function{Id: "unknown-filename/iba2LWuPfiWoW-U7bfl8Y_zmXJV0N22DMycYfD944AA=", Name: "2"},
+					Line:     &metastorepb.Line{FunctionId: "unknown-filename/iba2LWuPfiWoW-U7bfl8Y_zmXJV0N22DMycYfD944AA="},
+					Location: &metastorepb.Location{Id: "9eZsDnwt8q-4ctrD1sXhPf2PILaD5V5-iXIfxEN_77A=/nywr5cWVdwJb1cAWbrm2oKprBJKYoVpjEHbtKenHaGg=", MappingId: "9eZsDnwt8q-4ctrD1sXhPf2PILaD5V5-iXIfxEN_77A="},
+					Mapping:  &metastorepb.Mapping{Id: "9eZsDnwt8q-4ctrD1sXhPf2PILaD5V5-iXIfxEN_77A=", File: "a"},
 				},
 				Cumulative: 6,
 				Children: []*pb.FlamegraphNode{{
 					Meta: &pb.FlamegraphNodeMeta{
-						Function: &metastorepb.Function{Id: f3.Id, Name: "3"},
-						Line:     &metastorepb.Line{FunctionId: f3.Id},
-						Location: &metastorepb.Location{Id: l3.Id, MappingId: m.Id},
-						Mapping:  &metastorepb.Mapping{Id: m.Id, File: "a"},
+						Function: &metastorepb.Function{Id: "unknown-filename/4CNM2O_LHZCLNRVCXHnlyun6GwI-Sv6rwgMbR7EaJQ4=", Name: "3"},
+						Line:     &metastorepb.Line{FunctionId: "unknown-filename/4CNM2O_LHZCLNRVCXHnlyun6GwI-Sv6rwgMbR7EaJQ4="},
+						Location: &metastorepb.Location{Id: "9eZsDnwt8q-4ctrD1sXhPf2PILaD5V5-iXIfxEN_77A=/Ykzo9tYbar2yhdULf19Jp20SZmCJLn1c5TLXLumKSKc=", MappingId: "9eZsDnwt8q-4ctrD1sXhPf2PILaD5V5-iXIfxEN_77A="},
+						Mapping:  &metastorepb.Mapping{Id: "9eZsDnwt8q-4ctrD1sXhPf2PILaD5V5-iXIfxEN_77A=", File: "a"},
 					},
 					Cumulative: 4,
 					Children: []*pb.FlamegraphNode{{
 						Meta: &pb.FlamegraphNodeMeta{
-							Function: &metastorepb.Function{Id: f4.Id, Name: "4"},
-							Line:     &metastorepb.Line{FunctionId: f4.Id},
-							Location: &metastorepb.Location{Id: l4.Id, MappingId: m.Id},
-							Mapping:  &metastorepb.Mapping{Id: m.Id, File: "a"},
+							Function: &metastorepb.Function{Id: "unknown-filename/tIwpxw9EeOUPRuqj2MDOrI3yyqNRmHZPT_zpLCp5yhs=", Name: "4"},
+							Line:     &metastorepb.Line{FunctionId: "unknown-filename/tIwpxw9EeOUPRuqj2MDOrI3yyqNRmHZPT_zpLCp5yhs="},
+							Location: &metastorepb.Location{Id: "9eZsDnwt8q-4ctrD1sXhPf2PILaD5V5-iXIfxEN_77A=/cukmn1qTXWLpu2SG5ox8x8A2hZqNjS55baOmijXi3co=", MappingId: "9eZsDnwt8q-4ctrD1sXhPf2PILaD5V5-iXIfxEN_77A="},
+							Mapping:  &metastorepb.Mapping{Id: "9eZsDnwt8q-4ctrD1sXhPf2PILaD5V5-iXIfxEN_77A=", File: "a"},
 						},
 						Cumulative: 3,
 					}, {
 						Meta: &pb.FlamegraphNodeMeta{
-							Function: &metastorepb.Function{Id: f5.Id, Name: "5"},
-							Line:     &metastorepb.Line{FunctionId: f5.Id},
-							Location: &metastorepb.Location{Id: l5.Id, MappingId: m.Id},
-							Mapping:  &metastorepb.Mapping{Id: m.Id, File: "a"},
+							Function: &metastorepb.Function{Id: "unknown-filename/PwksWp7MLSZfdiTUSy4aP-r0Bjr_O_3-9VEJ0SE_4Yc=", Name: "5"},
+							Line:     &metastorepb.Line{FunctionId: "unknown-filename/PwksWp7MLSZfdiTUSy4aP-r0Bjr_O_3-9VEJ0SE_4Yc="},
+							Location: &metastorepb.Location{Id: "9eZsDnwt8q-4ctrD1sXhPf2PILaD5V5-iXIfxEN_77A=/FyW1Ts_USzmLVTuEbWNGW3bLt3vEf8Gn15goyXywkQw=", MappingId: "9eZsDnwt8q-4ctrD1sXhPf2PILaD5V5-iXIfxEN_77A="},
+							Mapping:  &metastorepb.Mapping{Id: "9eZsDnwt8q-4ctrD1sXhPf2PILaD5V5-iXIfxEN_77A=", File: "a"},
 						},
 						Cumulative: 1,
 					}},
@@ -200,59 +168,28 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 func TestGenerateFlamegraphFromProfile(t *testing.T) {
 	t.Parallel()
 
-	tracer := noop.NewTracerProvider().Tracer("")
-	reg := prometheus.NewRegistry()
-
-	l := metastoretest.NewTestMetastore(
-		t,
-		log.NewNopLogger(),
-		reg,
-		tracer,
-	)
-
-	testGenerateFlamegraphFromProfile(t, metastore.NewInProcessClient(l), 0)
-}
-
-func testGenerateFlamegraphFromProfile(t *testing.T, l metastorepb.MetastoreServiceClient, nodeTrimFraction float32) *pb.Flamegraph {
+	nodeTrimFraction := float32(0)
 	ctx := context.Background()
 	tracer := noop.NewTracerProvider().Tracer("")
-	reg := prometheus.NewRegistry()
-	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
-		Name: "parca_test_counter",
-		Help: "parca_test_counter",
-	})
 
 	fileContent := MustReadAllGzip(t, "./testdata/profile1.pb.gz")
-	p := &pprofpb.Profile{}
-	err := p.UnmarshalVT(fileContent)
+	p, err := pprofprofile.ParseData(fileContent)
 	require.NoError(t, err)
 
-	normalizer := normalizer.NewNormalizer(l, true, counter)
-	profiles, err := normalizer.NormalizePprof(ctx, "test", map[string]string{}, p, false, nil)
+	pp, err := PprofToSymbolizedProfile(profile.Meta{}, p, 0)
 	require.NoError(t, err)
 
-	sp, err := parcacol.NewProfileSymbolizer(tracer, l).SymbolizeNormalizedProfile(ctx, profiles[0])
+	sp, err := parcacol.NewArrowToProfileConverter(nil, kv.NewKeyMaker()).Convert(ctx, pp)
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphTable(ctx, tracer, sp, nodeTrimFraction, NewTableConverterPool())
+	_, err = GenerateFlamegraphTable(ctx, tracer, sp, nodeTrimFraction, NewTableConverterPool())
 	require.NoError(t, err)
-
-	return fg
 }
 
 func TestGenerateFlamegraphWithInlined(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	logger := log.NewNopLogger()
-	reg := prometheus.NewRegistry()
-	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
-		Name: "parca_test_counter",
-		Help: "parca_test_counter",
-	})
-	tracer := noop.NewTracerProvider().Tracer("")
-
-	store := metastoretest.NewTestMetastore(t, logger, reg, tracer)
 
 	functions := []*pprofprofile.Function{
 		{ID: 1, Name: "net.(*netFD).accept", SystemName: "net.(*netFD).accept", Filename: "net/fd_unix.go"},
@@ -274,29 +211,35 @@ func TestGenerateFlamegraphWithInlined(t *testing.T) {
 			Value:    []int64{1},
 		},
 	}
-	b := bytes.NewBuffer(nil)
-	err := (&pprofprofile.Profile{
-		SampleType: []*profile.ValueType{{Type: "alloc_space", Unit: "bytes"}},
-		PeriodType: &profile.ValueType{Type: "space", Unit: "bytes"},
-		Sample:     samples,
-		Location:   locations,
-		Function:   functions,
-	}).Write(b)
+
+	p, err := PprofToSymbolizedProfile(
+		parcaprofile.Meta{
+			Name: "memory",
+			SampleType: profile.ValueType{
+				Type: "alloc_space",
+				Unit: "bytes",
+			},
+			PeriodType: profile.ValueType{
+				Type: "space",
+				Unit: "bytes",
+			},
+		},
+		&pprofprofile.Profile{
+			SampleType: []*pprofprofile.ValueType{{Type: "alloc_space", Unit: "bytes"}},
+			PeriodType: &pprofprofile.ValueType{Type: "space", Unit: "bytes"},
+			Sample:     samples,
+			Location:   locations,
+			Function:   functions,
+		},
+		0,
+	)
 	require.NoError(t, err)
 
-	p := &pprofpb.Profile{}
-	err = p.UnmarshalVT(MustDecompressGzip(t, b.Bytes()))
+	op, err := parcacol.NewArrowToProfileConverter(nil, kv.NewKeyMaker()).Convert(ctx, p)
 	require.NoError(t, err)
 
-	metastore := metastore.NewInProcessClient(store)
-	normalizer := normalizer.NewNormalizer(metastore, true, counter)
-	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false, nil)
-	require.NoError(t, err)
-
-	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
-	require.NoError(t, err)
-
-	fg, err := GenerateFlamegraphFlat(ctx, tracer, symbolizedProfile)
+	tracer := noop.NewTracerProvider().Tracer("")
+	fg, err := GenerateFlamegraphFlat(ctx, tracer, op)
 	require.NoError(t, err)
 
 	require.Equal(t, &pb.Flamegraph{
@@ -392,16 +335,7 @@ func TestGenerateFlamegraphWithInlinedExisting(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	logger := log.NewNopLogger()
-	reg := prometheus.NewRegistry()
-	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
-		Name: "parca_test_counter",
-		Help: "parca_test_counter",
-	})
 	tracer := noop.NewTracerProvider().Tracer("")
-
-	store := metastoretest.NewTestMetastore(t, logger, reg, tracer)
-	metastore := metastore.NewInProcessClient(store)
 
 	functions := []*pprofprofile.Function{
 		{ID: 1, Name: "net.(*netFD).accept", SystemName: "net.(*netFD).accept", Filename: "net/fd_unix.go"},
@@ -415,7 +349,7 @@ func TestGenerateFlamegraphWithInlinedExisting(t *testing.T) {
 			{Line: 89, Function: functions[1]},
 			{Line: 402, Function: functions[2]},
 		}},
-		{ID: 3, Address: 94658718597969, Line: []profile.Line{{Line: 84, Function: functions[3]}}},
+		{ID: 3, Address: 94658718597969, Line: []pprofprofile.Line{{Line: 84, Function: functions[3]}}},
 	}
 	samples := []*pprofprofile.Sample{
 		{
@@ -427,28 +361,23 @@ func TestGenerateFlamegraphWithInlinedExisting(t *testing.T) {
 			Value:    []int64{2},
 		},
 	}
-	b := bytes.NewBuffer(nil)
-	err := (&pprofprofile.Profile{
-		SampleType: []*profile.ValueType{{Type: "", Unit: ""}},
-		PeriodType: &profile.ValueType{Type: "", Unit: ""},
-		Sample:     samples,
-		Location:   locations,
-		Function:   functions,
-	}).Write(b)
+	p, err := PprofToSymbolizedProfile(
+		parcaprofile.Meta{},
+		&pprofprofile.Profile{
+			SampleType: []*pprofprofile.ValueType{{Type: "", Unit: ""}},
+			PeriodType: &pprofprofile.ValueType{Type: "", Unit: ""},
+			Sample:     samples,
+			Location:   locations,
+			Function:   functions,
+		},
+		0,
+	)
 	require.NoError(t, err)
 
-	p := &pprofpb.Profile{}
-	err = p.UnmarshalVT(MustDecompressGzip(t, b.Bytes()))
+	op, err := parcacol.NewArrowToProfileConverter(nil, kv.NewKeyMaker()).Convert(ctx, p)
 	require.NoError(t, err)
 
-	normalizer := normalizer.NewNormalizer(metastore, true, counter)
-	profiles, err := normalizer.NormalizePprof(ctx, "", map[string]string{}, p, false, nil)
-	require.NoError(t, err)
-
-	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
-	require.NoError(t, err)
-
-	fg, err := GenerateFlamegraphFlat(ctx, tracer, symbolizedProfile)
+	fg, err := GenerateFlamegraphFlat(ctx, tracer, op)
 	require.NoError(t, err)
 
 	expected := &pb.Flamegraph{

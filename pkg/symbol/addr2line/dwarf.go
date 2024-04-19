@@ -14,6 +14,7 @@
 package addr2line
 
 import (
+	"context"
 	"debug/dwarf"
 	"debug/elf"
 	"fmt"
@@ -102,7 +103,7 @@ func (dl *DwarfLiner) PCRange() ([2]uint64, error) {
 }
 
 // PCToLines returns the resolved source lines for a program counter (memory address).
-func (dl *DwarfLiner) PCToLines(addr uint64) (lines []profile.LocationLine, err error) {
+func (dl *DwarfLiner) PCToLines(ctx context.Context, addr uint64) (lines []profile.LocationLine, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			level.Debug(dl.logger).Log("msg", "recovered stack trace", "trace", string(debug.Stack()))
