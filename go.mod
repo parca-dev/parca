@@ -38,7 +38,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/thanos-io/objstore v0.0.0-20240309075357-e8336a5fd5f3
 	github.com/zeebo/xxh3 v1.0.2
-	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.49.0
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.50.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.49.0
 	go.opentelemetry.io/otel v1.25.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.25.0
