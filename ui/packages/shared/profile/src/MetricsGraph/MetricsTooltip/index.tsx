@@ -18,11 +18,10 @@ import type {VirtualElement} from '@popperjs/core';
 import {usePopper} from 'react-popper';
 
 import {Label} from '@parca/client';
-import {TextWithTooltip} from '@parca/components';
-import {formatDate, valueFormatter} from '@parca/utilities';
+import {TextWithTooltip, useParcaContext} from '@parca/components';
+import {formatDate, timeFormat, valueFormatter} from '@parca/utilities';
 
 import {HighlightedSeries} from '../';
-import {timeFormat} from '../../';
 
 interface Props {
   x: number;
@@ -69,6 +68,8 @@ const MetricsTooltip = ({
   sampleUnit,
   delta,
 }: Props): JSX.Element => {
+  const {timezone} = useParcaContext();
+
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
 
   const {styles, attributes, ...popperProps} = usePopper(virtualElement, popperElement, {
@@ -154,7 +155,13 @@ const MetricsTooltip = ({
                       )}
                       <tr>
                         <td className="w-1/4">At</td>
-                        <td className="w-3/4">{formatDate(highlighted.timestamp, timeFormat)}</td>
+                        <td className="w-3/4">
+                          {formatDate(
+                            highlighted.timestamp,
+                            timeFormat(timezone as string),
+                            timezone
+                          )}
+                        </td>
                       </tr>
                     </tbody>
                   </table>

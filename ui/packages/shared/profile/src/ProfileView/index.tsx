@@ -132,6 +132,7 @@ export const ProfileView = ({
   pprofDownloading,
   compare,
 }: ProfileViewProps): JSX.Element => {
+  const {timezone} = useParcaContext();
   const {ref, dimensions} = useContainerDimensions();
   const [curPath, setCurPath] = useState<string[]>([]);
   const [rawDashboardItems = ['icicle'], setDashboardItems] = useURLState({
@@ -325,7 +326,7 @@ export const ProfileView = ({
   };
 
   // TODO: this is just a placeholder, we need to replace with an actually informative and accurate title (cc @metalmatze)
-  const profileSourceString = profileSource?.toString();
+  const profileSourceString = profileSource?.toString(timezone);
   const hasProfileSource = profileSource !== undefined && profileSourceString !== '';
   const headerParts = profileSourceString?.split('"') ?? [];
 
