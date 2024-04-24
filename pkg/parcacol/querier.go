@@ -384,7 +384,7 @@ func (q *Querier) queryRangeDelta(
 		logicalplan.Col(profile.ColumnDuration),
 	}
 
-	if m.SampleType.Type == "samples" && m.SampleType.Unit == "count" {
+	if isSamplesCount(m.SampleType) {
 		// 1 CPU sample is equivalent to whatever the period is. Therefore the
 		// value * period is the total CPU time spent over the duration.
 		preProjection = append(
@@ -404,7 +404,7 @@ func (q *Querier) queryRangeDelta(
 	}
 
 	var perSecondExpr logicalplan.Expr
-	if resultType.Type == "cpu" && resultType.Unit == "nanoseconds" {
+	if isDelta(resultType) {
 		perSecondExpr = logicalplan.Div(
 			logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
 			logicalplan.Convert(
@@ -909,7 +909,7 @@ func (q *Querier) SymbolizeArrowRecord(
 		valueColumn := r.Column(indices[0]).(*array.Int64)
 
 		var valuePerSecondColumn arrow.Array
-		if meta.PeriodType.Type == "cpu" && meta.PeriodType.Unit == "nanoseconds" {
+		if isDelta(meta.PeriodType) {
 			indices = schema.FieldIndices(ValuePerSecond)
 			if len(indices) != 1 {
 				return nil, ErrMissingColumn{Column: ValuePerSecond, Columns: len(indices)}
@@ -1065,12 +1065,9 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]
 
 	aggrCols := []logicalplan.Expr{
 		logicalplan.Col(profile.ColumnStacktrace),
-	}
-	aggrCols = append(
-		aggrCols,
 		logicalplan.DynCol(profile.ColumnPprofLabels),
 		logicalplan.DynCol(profile.ColumnPprofNumLabels),
-	)
+	}
 
 	totalSum := logicalplan.Sum(logicalplan.Col(profile.ColumnValue))
 	durationSum := logicalplan.Sum(logicalplan.Col(profile.ColumnDuration))
@@ -1082,7 +1079,7 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]
 		logicalplan.Sum(logicalplan.Col(profile.ColumnValue)),
 	}
 
-	if queryParts.Meta.PeriodType.Type == "cpu" && queryParts.Meta.PeriodType.Unit == "nanoseconds" {
+	if isDelta(queryParts.Meta.PeriodType) {
 		// Only for cpu and nanoseconds do we first project the ColumnDuration.
 		// We then use the aggregation function to sum(duration) for each stacktraces.
 		// The final project then takes the sum(value) / sum(duration) to get to the per second value.
@@ -1200,7 +1197,7 @@ func (q *Querier) selectMerge(
 	}
 
 	var valueCol logicalplan.Expr = logicalplan.Col(profile.ColumnValue)
-	if resultType.Type == "samples" && resultType.Unit == "count" {
+	if isSamplesCount(resultType) {
 		valueCol = logicalplan.Mul(
 			logicalplan.Col(profile.ColumnValue),
 			logicalplan.Col(profile.ColumnPeriod),
@@ -1214,7 +1211,7 @@ func (q *Querier) selectMerge(
 		totalSum,
 	}
 
-	if resultType.Type == "cpu" && resultType.Unit == "nanoseconds" {
+	if isDelta(resultType) {
 		// Only for cpu and nanoseconds do we first project the ColumnDuration.
 		// We then use the aggregation function to sum(duration) for each stacktraces.
 		// The final project then takes the sum(value) / sum(duration) to get to the per second value.
@@ -1255,4 +1252,13 @@ func (q *Querier) selectMerge(
 		Timestamp:  start,
 	}
 	return records, "sum(value)", meta, nil
+}
+
+// isDelta returns true if the profile type is collected over time.
+func isDelta(period profile.ValueType) bool {
+	return period.Type == "cpu" && period.Unit == "nanoseconds"
+}
+
+func isSamplesCount(st profile.ValueType) bool {
+	return st.Type == "samples" && st.Unit == "count"
 }
