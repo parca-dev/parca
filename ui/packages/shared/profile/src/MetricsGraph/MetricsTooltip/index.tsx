@@ -19,7 +19,7 @@ import {usePopper} from 'react-popper';
 
 import {Label} from '@parca/client';
 import {TextWithTooltip, useParcaContext} from '@parca/components';
-import {formatDate, timeFormat, valueFormatter} from '@parca/utilities';
+import {formatDate, timePattern, valueFormatter} from '@parca/utilities';
 
 import {HighlightedSeries} from '../';
 
@@ -158,7 +158,7 @@ const MetricsTooltip = ({
                         <td className="w-3/4">
                           {formatDate(
                             highlighted.timestamp,
-                            timeFormat(timezone as string),
+                            timePattern(timezone as string),
                             timezone
                           )}
                         </td>

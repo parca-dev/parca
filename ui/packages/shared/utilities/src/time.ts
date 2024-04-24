@@ -11,14 +11,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as DateFns from 'date-fns';
 import {toZonedTime} from 'date-fns-tz';
-import format from 'date-fns/format';
 import intervalToDuration from 'date-fns/intervalToDuration';
 
 import {Duration} from '@parca/client';
 
-export const timeFormat = (timezone?: string): string => {
-  if (timezone != null) {
+export const timePattern = (timezone?: string): string => {
+  if (timezone !== undefined) {
     return 'yyyy-MM-dd HH:mm:ss';
   }
 
@@ -123,12 +123,12 @@ export const formatDate = (date: number | Date, timeFormat: string, timezone?: s
 
   const ISOString = date.toISOString().slice(0, -1);
 
-  if (timezone != null) {
+  if (timezone !== undefined) {
     const zonedDate = toZonedTime(date, timezone);
-    return format(zonedDate, timeFormat);
+    return DateFns.format(zonedDate, timeFormat);
   }
 
-  return format(new Date(ISOString), timeFormat);
+  return DateFns.format(new Date(ISOString), timeFormat);
 };
 
 export const formatForTimespan = (from: number, to: number): string => {

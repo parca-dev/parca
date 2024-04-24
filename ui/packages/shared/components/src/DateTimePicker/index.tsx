@@ -88,7 +88,9 @@ export const DateTimePicker = ({selected, onChange}: Props): JSX.Element => {
                 setTextInput(selected.getUIString(timezone));
                 return;
               }
-              onChange(new AbsoluteDate(timezone != null ? date : convertLocalToUTCDate(date)));
+              onChange(
+                new AbsoluteDate(timezone !== undefined ? date : convertLocalToUTCDate(date))
+              );
             }}
             onChange={e => {
               setTextInput(e.target.value);
@@ -104,13 +106,17 @@ export const DateTimePicker = ({selected, onChange}: Props): JSX.Element => {
           >
             <ReactDatePicker
               selected={
-                timezone != null ? selected.getTime() : convertUTCToLocalDate(selected.getTime())
+                timezone !== undefined
+                  ? selected.getTime()
+                  : convertUTCToLocalDate(selected.getTime())
               }
               onChange={date => {
                 if (date == null) {
                   return;
                 }
-                onChange(new AbsoluteDate(timezone != null ? date : convertLocalToUTCDate(date)));
+                onChange(
+                  new AbsoluteDate(timezone !== undefined ? date : convertLocalToUTCDate(date))
+                );
                 setIsTextInputDirty(false);
               }}
               showTimeInput

@@ -79,7 +79,7 @@ export class AbsoluteDate implements BaseDate {
       return this.value;
     }
 
-    if (timezone != null) {
+    if (timezone !== undefined) {
       return getStringForDateInTimezone(this, timezone, DATE_FORMAT);
     }
 

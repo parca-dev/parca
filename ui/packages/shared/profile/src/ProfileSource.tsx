@@ -37,7 +37,7 @@ export interface ProfileSelection {
   Type: () => string;
 }
 const timeFormat = (timezone?: string): string => {
-  if (timezone != null) {
+  if (timezone !== undefined) {
     return 'yyyy-MM-dd HH:mm:ss';
   }
 
