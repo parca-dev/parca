@@ -308,9 +308,6 @@ func FilterProfileData(
 		}
 	}()
 
-	fmt.Println((runtimeFilter))
-	fmt.Println((filterQuery))
-
 	// We want to filter by function name case-insensitive, so we need to lowercase the query.
 	// We lower case the query here, so we don't have to do it for every sample.
 	filterQueryBytes := []byte(strings.ToLower(filterQuery))
@@ -411,21 +408,6 @@ func filterRecord(
 			continue
 		}
 
-		fmt.Println("binaryToFilterBy", binaryToFilterBy)
-
-		// Check if the binary of the current row matches the binaryToFilterBy
-		if binaryToFilterBy != "" {
-			mappingFile := r.MappingFileDict.Value(int(r.MappingFileIndices.Value(i)))
-			lastSlash := bytes.LastIndex(mappingFile, []byte("/"))
-			mappingFileBase := mappingFile
-			if lastSlash >= 0 {
-				mappingFileBase = mappingFile[lastSlash+1:]
-			}
-			if !bytes.Equal(mappingFileBase, []byte(binaryToFilterBy)) {
-				continue
-			}
-		}
-
 		rowsToKeep = append(rowsToKeep, int64(i))
 		if lOffsetEnd-lOffsetStart > 0 {
 			for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
@@ -453,6 +435,10 @@ func filterRecord(
 					continue
 				}
 				if showInterpretedOnly && !bytes.Equal(mappingFile, []byte("interpreter")) {
+					bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
+					continue
+				}
+				if binaryToFilterBy != "" && !bytes.Contains(mappingFile, []byte(binaryToFilterBy)) {
 					bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
 					continue
 				}
