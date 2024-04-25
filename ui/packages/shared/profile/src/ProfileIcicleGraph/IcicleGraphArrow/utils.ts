@@ -66,10 +66,6 @@ export function nodeLabel(
 }
 
 export const extractFeature = (mapping: string): Feature => {
-  if (mapping === 'runtime' || mapping === 'root') {
-    return {name: 'runtime', type: FEATURE_TYPES.Runtime};
-  }
-
   if (mapping != null && mapping !== '') {
     return {name: mapping, type: FEATURE_TYPES.Binary};
   }

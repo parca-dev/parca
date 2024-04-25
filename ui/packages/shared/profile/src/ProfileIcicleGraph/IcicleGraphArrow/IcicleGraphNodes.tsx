@@ -292,7 +292,6 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     diff,
     mappingColors,
     mappingFile,
-    functionName,
   });
   const name = useMemo(() => {
     return isRoot ? 'root' : nodeLabel(table, row, level, binaries.length > 1);
