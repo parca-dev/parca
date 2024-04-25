@@ -271,6 +271,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		p.Samples,
 		req.GetFilterQuery(),
 		req.GetRuntimeFilter(),
+		req.GetBinaryFilter(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("filtering profile: %w", err)
@@ -296,6 +297,7 @@ func FilterProfileData(
 	records []arrow.Record,
 	filterQuery string,
 	runtimeFilter *pb.RuntimeFilter,
+	binaryToFilterBy string,
 ) ([]arrow.Record, int64, error) {
 	_, span := tracer.Start(ctx, "filterByFunction")
 	defer span.End()
@@ -333,11 +335,7 @@ func FilterProfileData(
 		interpretedOnly = runtimeFilter.ShowInterpretedOnly
 	}
 
-	fmt.Println("Filtering by function name")
-
 	for _, r := range records {
-		// binaryToFilterBy := "runtime"
-
 		filteredRecords, valueSum, filteredSum, err := filterRecord(
 			ctx,
 			tracer,
@@ -346,8 +344,7 @@ func FilterProfileData(
 			filterQueryBytes,
 			binariesToExclude,
 			interpretedOnly,
-			// &binaryToFilterBy,
-			nil,
+			binaryToFilterBy,
 		)
 		if err != nil {
 			return nil, 0, fmt.Errorf("filter record: %w", err)
@@ -371,7 +368,7 @@ func filterRecord(
 	filterQueryBytes []byte,
 	binariesToExclude [][]byte,
 	showInterpretedOnly bool,
-	binaryToFilterBy *string, // modified parameter type to pointer
+	binaryToFilterBy string,
 ) ([]arrow.Record, int64, int64, error) {
 	r := profile.NewRecordReader(rec)
 
@@ -414,15 +411,17 @@ func filterRecord(
 			continue
 		}
 
+		fmt.Println("binaryToFilterBy", binaryToFilterBy)
+
 		// Check if the binary of the current row matches the binaryToFilterBy
-		if binaryToFilterBy != nil {
+		if binaryToFilterBy != "" {
 			mappingFile := r.MappingFileDict.Value(int(r.MappingFileIndices.Value(i)))
 			lastSlash := bytes.LastIndex(mappingFile, []byte("/"))
 			mappingFileBase := mappingFile
 			if lastSlash >= 0 {
 				mappingFileBase = mappingFile[lastSlash+1:]
 			}
-			if !bytes.Equal(mappingFileBase, []byte(*binaryToFilterBy)) {
+			if !bytes.Equal(mappingFileBase, []byte(binaryToFilterBy)) {
 				continue
 			}
 		}

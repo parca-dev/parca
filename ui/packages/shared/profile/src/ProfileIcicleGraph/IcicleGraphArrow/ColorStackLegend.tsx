@@ -37,7 +37,7 @@ const ColorStackLegend = ({
   const [colorProfileName] = useUserPreference<string>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
-  const [currentSearchString, setSearchString] = useURLState({param: 'search_string', navigateTo});
+  const [currentSearchString, setSearchString] = useURLState({param: 'binary_filter', navigateTo});
 
   const stackColorArray = useMemo(() => {
     return Object.entries(mappingColors).sort(([featureA], [featureB]) => {
