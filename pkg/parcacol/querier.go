@@ -403,35 +403,17 @@ func (q *Querier) queryRangeDelta(
 		)
 	}
 
-	var perSecondExpr logicalplan.Expr
-	if isDelta(resultType) {
-		perSecondExpr = logicalplan.Div(
-			logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
-			logicalplan.Convert(
-				logicalplan.If(
-					logicalplan.IsNull(timestampUnique),
-					logicalplan.Literal(step.Nanoseconds()),
-					durationMin,
-				),
-				arrow.PrimitiveTypes.Float64,
+	perSecondExpr := logicalplan.Div(
+		logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
+		logicalplan.Convert(
+			logicalplan.If(
+				logicalplan.IsNull(timestampUnique),
+				logicalplan.Literal(step.Nanoseconds()),
+				durationMin,
 			),
-		).Alias(ValuePerSecond)
-	} else {
-		perSecondExpr = logicalplan.Div(
-			logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
-			logicalplan.Div(
-				logicalplan.Convert(
-					logicalplan.If(
-						logicalplan.IsNull(timestampUnique),
-						logicalplan.Literal(step.Nanoseconds()),
-						durationMin,
-					),
-					arrow.PrimitiveTypes.Float64,
-				),
-				logicalplan.Literal(float64(time.Second.Nanoseconds())),
-			),
-		).Alias(ValuePerSecond)
-	}
+			arrow.PrimitiveTypes.Float64,
+		),
+	).Alias(ValuePerSecond)
 
 	err := q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
@@ -883,7 +865,7 @@ func (q *Querier) SymbolizeArrowRecord(
 	ctx context.Context,
 	records []arrow.Record,
 	valueColumnName string,
-	meta profile.Meta,
+	queryParts QueryParts,
 ) ([]arrow.Record, error) {
 	res := make([]arrow.Record, len(records))
 
@@ -909,7 +891,7 @@ func (q *Querier) SymbolizeArrowRecord(
 		valueColumn := r.Column(indices[0]).(*array.Int64)
 
 		var valuePerSecondColumn arrow.Array
-		if isDelta(meta.PeriodType) {
+		if queryParts.Delta {
 			indices = schema.FieldIndices(ValuePerSecond)
 			if len(indices) != 1 {
 				return nil, ErrMissingColumn{Column: ValuePerSecond, Columns: len(indices)}
@@ -1004,7 +986,7 @@ func (q *Querier) QuerySingle(
 	ctx, span := q.tracer.Start(ctx, "Querier/QuerySingle")
 	defer span.End()
 
-	records, valueColumn, meta, err := q.findSingle(ctx, query, time)
+	records, valueColumn, queryParts, err := q.findSingle(ctx, query, time)
 	if err != nil {
 		return profile.Profile{}, err
 	}
@@ -1018,7 +1000,7 @@ func (q *Querier) QuerySingle(
 		ctx,
 		records,
 		valueColumn,
-		meta,
+		queryParts,
 	)
 	if err != nil {
 		// if the column cannot be found the timestamp is too far in the past and we don't have data
@@ -1039,12 +1021,12 @@ func (q *Querier) QuerySingle(
 	}
 
 	return profile.Profile{
-		Meta:    meta,
+		Meta:    queryParts.Meta,
 		Samples: symbolizedRecords,
 	}, nil
 }
 
-func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]arrow.Record, string, profile.Meta, error) {
+func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]arrow.Record, string, QueryParts, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/findSingle")
 	span.SetAttributes(attribute.String("query", query))
 	span.SetAttributes(attribute.Int64("time", t.Unix()))
@@ -1052,7 +1034,7 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]
 
 	queryParts, selectorExprs, err := QueryToFilterExprs(query)
 	if err != nil {
-		return nil, "", profile.Meta{}, err
+		return nil, "", queryParts, err
 	}
 
 	requestedTime := timestamp.FromTime(t)
@@ -1079,7 +1061,7 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]
 		logicalplan.Sum(logicalplan.Col(profile.ColumnValue)),
 	}
 
-	if isDelta(queryParts.Meta.PeriodType) {
+	if queryParts.Delta {
 		// Only for cpu and nanoseconds do we first project the ColumnDuration.
 		// We then use the aggregation function to sum(duration) for each stacktraces.
 		// The final project then takes the sum(value) / sum(duration) to get to the per second value.
@@ -1110,17 +1092,14 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]
 			return nil
 		})
 	if err != nil {
-		return nil, "", profile.Meta{}, fmt.Errorf("execute query: %w", err)
+		return nil, "", queryParts, fmt.Errorf("execute query: %w", err)
 	}
+
+	queryParts.Meta.Timestamp = requestedTime
 
 	return records,
 		"sum(value)",
-		profile.Meta{
-			Name:       queryParts.Meta.Name,
-			SampleType: queryParts.Meta.SampleType,
-			PeriodType: queryParts.Meta.PeriodType,
-			Timestamp:  requestedTime,
-		},
+		queryParts,
 		nil
 }
 
@@ -1128,7 +1107,7 @@ func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.
 	ctx, span := q.tracer.Start(ctx, "Querier/QueryMerge")
 	defer span.End()
 
-	records, valueColumn, meta, err := q.selectMerge(ctx, query, start, end, aggregateByLabels)
+	records, valueColumn, queryParts, err := q.selectMerge(ctx, query, start, end, aggregateByLabels)
 	if err != nil {
 		return profile.Profile{}, err
 	}
@@ -1142,14 +1121,14 @@ func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.
 		ctx,
 		records,
 		valueColumn,
-		meta,
+		queryParts,
 	)
 	if err != nil {
 		return profile.Profile{}, err
 	}
 
 	return profile.Profile{
-		Meta:    meta,
+		Meta:    queryParts.Meta,
 		Samples: symbolizedRecords,
 	}, nil
 }
@@ -1160,19 +1139,17 @@ func (q *Querier) selectMerge(
 	startTime,
 	endTime time.Time,
 	aggregateByLabels bool,
-) ([]arrow.Record, string, profile.Meta, error) {
+) ([]arrow.Record, string, QueryParts, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/selectMerge")
 	defer span.End()
 
 	queryParts, selectorExprs, err := QueryToFilterExprs(query)
 	if err != nil {
-		return nil, "", profile.Meta{}, err
+		return nil, "", queryParts, err
 	}
 
 	start := timestamp.FromTime(startTime)
 	end := timestamp.FromTime(endTime)
-	resultType := queryParts.Meta.SampleType
-
 	filterExpr := logicalplan.And(
 		append(
 			selectorExprs,
@@ -1197,12 +1174,11 @@ func (q *Querier) selectMerge(
 	}
 
 	var valueCol logicalplan.Expr = logicalplan.Col(profile.ColumnValue)
-	if isSamplesCount(resultType) {
+	if isSamplesCount(queryParts.Meta.SampleType) {
 		valueCol = logicalplan.Mul(
 			logicalplan.Col(profile.ColumnValue),
 			logicalplan.Col(profile.ColumnPeriod),
 		).Alias(profile.ColumnValue)
-		resultType = queryParts.Meta.PeriodType
 	}
 
 	firstProject := append(aggrCols, valueCol)
@@ -1211,7 +1187,7 @@ func (q *Querier) selectMerge(
 		totalSum,
 	}
 
-	if isDelta(resultType) {
+	if queryParts.Delta {
 		// Only for cpu and nanoseconds do we first project the ColumnDuration.
 		// We then use the aggregation function to sum(duration) for each stacktraces.
 		// The final project then takes the sum(value) / sum(duration) to get to the per second value.
@@ -1242,21 +1218,12 @@ func (q *Querier) selectMerge(
 			return nil
 		})
 	if err != nil {
-		return nil, "", profile.Meta{}, err
+		return nil, "", queryParts, err
 	}
 
-	meta := profile.Meta{
-		Name:       queryParts.Meta.Name,
-		SampleType: resultType,
-		PeriodType: queryParts.Meta.PeriodType,
-		Timestamp:  start,
-	}
-	return records, "sum(value)", meta, nil
-}
+	queryParts.Meta.Timestamp = start
 
-// isDelta returns true if the profile type is collected over time.
-func isDelta(period profile.ValueType) bool {
-	return period.Type == "cpu" && period.Unit == "nanoseconds"
+	return records, "sum(value)", queryParts, nil
 }
 
 func isSamplesCount(st profile.ValueType) bool {
