@@ -382,6 +382,13 @@
             "in": "query",
             "required": false,
             "type": "boolean"
+          },
+          {
+            "name": "binaryFilter",
+            "description": "which binary to filter by",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -792,6 +799,10 @@
         "runtimeFilter": {
           "$ref": "#/definitions/v1alpha1RuntimeFilter",
           "title": "which runtime frames to filter out, often interpreter frames like python or ruby are not super useful by default"
+        },
+        "binaryFilter": {
+          "type": "string",
+          "title": "which binary to filter by"
         }
       },
       "title": "QueryRequest is a request for a profile query"

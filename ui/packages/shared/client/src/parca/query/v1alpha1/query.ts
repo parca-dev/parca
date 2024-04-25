@@ -388,6 +388,12 @@ export interface QueryRequest {
      * @generated from protobuf field: optional parca.query.v1alpha1.RuntimeFilter runtime_filter = 10;
      */
     runtimeFilter?: RuntimeFilter;
+    /**
+     * which binary to filter by
+     *
+     * @generated from protobuf field: optional string binary_filter = 11;
+     */
+    binaryFilter?: string;
 }
 /**
  * Mode is the type of query request
@@ -1927,7 +1933,8 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
             { no: 7, name: "node_trim_threshold", kind: "scalar", opt: true, T: 2 /*ScalarType.FLOAT*/ },
             { no: 8, name: "group_by", kind: "message", T: () => GroupBy },
             { no: 9, name: "source_reference", kind: "message", T: () => SourceReference },
-            { no: 10, name: "runtime_filter", kind: "message", T: () => RuntimeFilter }
+            { no: 10, name: "runtime_filter", kind: "message", T: () => RuntimeFilter },
+            { no: 11, name: "binary_filter", kind: "scalar", opt: true, T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<QueryRequest>): QueryRequest {
@@ -1983,6 +1990,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
                 case /* optional parca.query.v1alpha1.RuntimeFilter runtime_filter */ 10:
                     message.runtimeFilter = RuntimeFilter.internalBinaryRead(reader, reader.uint32(), options, message.runtimeFilter);
                     break;
+                case /* optional string binary_filter */ 11:
+                    message.binaryFilter = reader.string();
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -2025,6 +2035,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         /* optional parca.query.v1alpha1.RuntimeFilter runtime_filter = 10; */
         if (message.runtimeFilter)
             RuntimeFilter.internalBinaryWrite(message.runtimeFilter, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* optional string binary_filter = 11; */
+        if (message.binaryFilter !== undefined)
+            writer.tag(11, WireType.LengthDelimited).string(message.binaryFilter);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

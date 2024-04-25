@@ -257,6 +257,9 @@ message QueryRequest {
 
   // which runtime frames to filter out, often interpreter frames like python or ruby are not super useful by default
   optional RuntimeFilter runtime_filter = 10;
+
+  // which binary to filter by
+  optional string binary_filter = 11;
 }
 
 // RuntimeFilter configures which runtimes to filter frames out for.

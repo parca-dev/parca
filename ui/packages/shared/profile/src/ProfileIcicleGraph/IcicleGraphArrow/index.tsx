@@ -123,24 +123,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     // We add a EVERYTHING ELSE mapping to the list.
     mappings.push('');
 
-    // We look through the function names to find out if there's a runtime function.
-    // Again, we only read through the dictionary, which is much faster than reading through all the rows.
-    // We stop as soon as we find a runtime function.
-    const functionNamesDict: Vector<Dictionary> | null = table.getChild(FIELD_FUNCTION_NAME);
-    functionNamesDict?.data.forEach(fn => {
-      if (fn.dictionary == null) {
-        return;
-      }
-      const len = fn.dictionary.length;
-      for (let i = 0; i < len; i++) {
-        const fn: string | null = arrowToString(functionNamesDict?.get(i));
-        if (fn?.startsWith('runtime') === true) {
-          mappings.push('runtime');
-          break;
-        }
-      }
-    });
-
     // We sort the mappings alphabetically to make sure that the order is always the same.
     mappings.sort((a, b) => a.localeCompare(b));
     return mappings;

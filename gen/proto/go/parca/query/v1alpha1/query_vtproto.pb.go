@@ -1048,6 +1048,13 @@ func (m *QueryRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 		i -= size
 	}
+	if m.BinaryFilter != nil {
+		i -= len(*m.BinaryFilter)
+		copy(dAtA[i:], *m.BinaryFilter)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(*m.BinaryFilter)))
+		i--
+		dAtA[i] = 0x5a
+	}
 	if m.RuntimeFilter != nil {
 		size, err := m.RuntimeFilter.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
@@ -3186,6 +3193,10 @@ func (m *QueryRequest) SizeVT() (n int) {
 	}
 	if m.RuntimeFilter != nil {
 		l = m.RuntimeFilter.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.BinaryFilter != nil {
+		l = len(*m.BinaryFilter)
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -5823,6 +5834,39 @@ func (m *QueryRequest) UnmarshalVT(dAtA []byte) error {
 			if err := m.RuntimeFilter.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 11:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BinaryFilter", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.BinaryFilter = &s
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

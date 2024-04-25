@@ -24,7 +24,6 @@ interface Props {
   cumulative: bigint;
   diff: bigint | null;
   mappingColors: mappingColors;
-  functionName: string | null;
   mappingFile: string | null;
 }
 
@@ -34,19 +33,13 @@ const useNodeColor = ({
   cumulative,
   diff,
   mappingColors,
-  functionName,
   mappingFile,
 }: Props): string => {
   if (compareMode) {
     return diffColor(diff ?? 0n, cumulative, isDarkMode);
   }
 
-  // To get the color we first check if the function name starts with 'runtime'.
-  // If it does, we color it as runtime. Otherwise, we check the mapping file.
-  // If there is no mapping file, we color it as 'everything else'.
-  return functionName?.startsWith('runtime') === true
-    ? mappingColors.runtime
-    : mappingColors[getLastItem(mappingFile ?? '') ?? EVERYTHING_ELSE];
+  return mappingColors[getLastItem(mappingFile ?? '') ?? EVERYTHING_ELSE];
 };
 
 export default useNodeColor;

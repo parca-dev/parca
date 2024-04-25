@@ -306,6 +306,9 @@ func FilterProfileData(
 		}
 	}()
 
+	fmt.Println((runtimeFilter))
+	fmt.Println((filterQuery))
+
 	// We want to filter by function name case-insensitive, so we need to lowercase the query.
 	// We lower case the query here, so we don't have to do it for every sample.
 	filterQueryBytes := []byte(strings.ToLower(filterQuery))
@@ -330,7 +333,11 @@ func FilterProfileData(
 		interpretedOnly = runtimeFilter.ShowInterpretedOnly
 	}
 
+	fmt.Println("Filtering by function name")
+
 	for _, r := range records {
+		// binaryToFilterBy := "runtime"
+
 		filteredRecords, valueSum, filteredSum, err := filterRecord(
 			ctx,
 			tracer,
@@ -339,6 +346,8 @@ func FilterProfileData(
 			filterQueryBytes,
 			binariesToExclude,
 			interpretedOnly,
+			// &binaryToFilterBy,
+			nil,
 		)
 		if err != nil {
 			return nil, 0, fmt.Errorf("filter record: %w", err)
@@ -362,6 +371,7 @@ func filterRecord(
 	filterQueryBytes []byte,
 	binariesToExclude [][]byte,
 	showInterpretedOnly bool,
+	binaryToFilterBy *string, // modified parameter type to pointer
 ) ([]arrow.Record, int64, int64, error) {
 	r := profile.NewRecordReader(rec)
 
@@ -402,6 +412,19 @@ func filterRecord(
 
 		if !keepRow {
 			continue
+		}
+
+		// Check if the binary of the current row matches the binaryToFilterBy
+		if binaryToFilterBy != nil {
+			mappingFile := r.MappingFileDict.Value(int(r.MappingFileIndices.Value(i)))
+			lastSlash := bytes.LastIndex(mappingFile, []byte("/"))
+			mappingFileBase := mappingFile
+			if lastSlash >= 0 {
+				mappingFileBase = mappingFile[lastSlash+1:]
+			}
+			if !bytes.Equal(mappingFileBase, []byte(*binaryToFilterBy)) {
+				continue
+			}
 		}
 
 		rowsToKeep = append(rowsToKeep, int64(i))
