@@ -74,10 +74,15 @@ export class AbsoluteDate implements BaseDate {
     return this.value;
   }
 
-  getUIString(): string {
+  getUIString(timezone?: string): string {
     if (typeof this.value === 'string') {
       return this.value;
     }
+
+    if (timezone !== undefined) {
+      return getStringForDateInTimezone(this, timezone, DATE_FORMAT);
+    }
+
     return getUtcStringForDate(this, DATE_FORMAT);
   }
 
@@ -280,4 +285,12 @@ export const getUtcStringForDate = (date: AbsoluteDate, format = 'lll'): string 
     .tz(date.getTime().toISOString(), Intl.DateTimeFormat().resolvedOptions().timeZone)
     .utc()
     .format(format);
+};
+
+export const getStringForDateInTimezone = (
+  date: AbsoluteDate,
+  timezone: string,
+  format = 'lll'
+): string => {
+  return moment.tz(date.getTime().toISOString(), timezone).format(format);
 };

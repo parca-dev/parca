@@ -34,7 +34,7 @@
   "dependencies": {
     "@parca/react-benchmark": "^5.3.0",
     "command-line-args": "^5.2.1",
-    "date-fns": "2.30.0",
+    "date-fns": "3.6.0",
     "not-a-log": "^1.0.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",

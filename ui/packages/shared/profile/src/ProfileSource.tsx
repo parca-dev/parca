@@ -27,8 +27,7 @@ export interface ProfileSource {
   QueryRequest: () => QueryRequest;
   ProfileType: () => ProfileType;
   DiffSelection: () => ProfileDiffSelection;
-  Describe: () => JSX.Element;
-  toString: () => string;
+  toString: (timezone?: string) => string;
 }
 
 export interface ProfileSelection {
@@ -37,8 +36,13 @@ export interface ProfileSelection {
   ProfileSource: () => ProfileSource;
   Type: () => string;
 }
+const timeFormat = (timezone?: string): string => {
+  if (timezone !== undefined) {
+    return 'yyyy-MM-dd HH:mm:ss';
+  }
 
-export const timeFormat = "yyyy-MM-dd HH:mm:ss '(UTC)'";
+  return "yyyy-MM-dd HH:mm:ss '(UTC)'";
+};
 
 export function ParamsString(params: {[key: string]: string}): string {
   return Object.keys(params)
@@ -229,25 +233,17 @@ export class MergedProfileSource implements ProfileSource {
     return ProfileType.fromString(Query.parse(this.query.toString()).profileName());
   }
 
-  Describe(): JSX.Element {
-    return (
-      <a>
-        Merge of &quot;{this.query.toString()}&quot; from {formatDate(this.mergeFrom, timeFormat)}{' '}
-        to {formatDate(this.mergeTo, timeFormat)}
-      </a>
-    );
-  }
-
   stringMatchers(): string[] {
     return this.query.matchers
       .filter((m: Matcher) => m.key !== '__name__')
       .map((m: Matcher) => `${m.key}=${m.value}`);
   }
 
-  toString(): string {
+  toString(timezone?: string): string {
     return `merged profiles of query "${this.query.toString()}" from ${formatDate(
       this.mergeFrom,
-      timeFormat
-    )} to ${formatDate(this.mergeTo, timeFormat)}`;
+      timeFormat(timezone),
+      timezone
+    )} to ${formatDate(this.mergeTo, timeFormat(timezone), timezone)}`;
   }
 }

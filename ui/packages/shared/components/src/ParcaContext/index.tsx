@@ -64,6 +64,7 @@ interface Props {
   profileViewExternalSubActions?: ReactNode;
   sourceViewContextMenuItems?: SourceViewContextMenuItem[];
   additionalFlamegraphColorProfiles?: Record<string, ColorConfig>;
+  timezone?: string;
 }
 
 export const defaultValue: Props = {
