@@ -33,7 +33,7 @@ require (
 	github.com/planetscale/vtprotobuf v0.6.0
 	github.com/polarsignals/frostdb v0.0.0-20240418145630-1fad9e69a7f8
 	github.com/prometheus/client_golang v1.19.0
-	github.com/prometheus/common v0.52.3
+	github.com/prometheus/common v0.53.0
 	github.com/prometheus/prometheus v0.51.2
 	github.com/stretchr/testify v1.9.0
 	github.com/thanos-io/objstore v0.0.0-20240418104850-a1e58aa3bed5
