@@ -13,6 +13,7 @@
 
 import {Table} from 'apache-arrow';
 
+import {ProfileType} from '@parca/parser';
 import {divide, valueFormatter} from '@parca/utilities';
 
 import {
@@ -30,7 +31,7 @@ import {
 
 interface Props {
   table: Table<any>;
-  unit: string;
+  profileType?: ProfileType;
   total: bigint;
   totalUnfiltered: bigint;
   row: number | null;
@@ -49,13 +50,13 @@ interface GraphTooltipData {
 
 export const useGraphTooltip = ({
   table,
-  unit,
+  profileType,
   total,
   totalUnfiltered,
   row,
   level,
 }: Props): GraphTooltipData | null => {
-  if (row === null) {
+  if (row === null || profileType === undefined) {
     return null;
   }
 
@@ -78,10 +79,8 @@ export const useGraphTooltip = ({
       ? table.getChild(FIELD_DIFF_PER_SECOND)?.get(row)
       : 0;
 
-  const delta = unit === 'nanoseconds';
-
   let diffText = '';
-  if (delta) {
+  if (profileType?.delta ?? false) {
     const prevValue = cumulativePerSecond - diffPerSecond;
     const diffRatio = diffPerSecond !== 0 ? diffPerSecond / prevValue : 0;
     const diffSign = diffPerSecond > 0 ? '+' : '';
@@ -92,7 +91,7 @@ export const useGraphTooltip = ({
     const prevValue = cumulative - diff;
     const diffRatio = diff !== 0n ? divide(diff, prevValue) : 0;
     const diffSign = diff > 0 ? '+' : '';
-    const diffValueText = diffSign + valueFormatter(diff, unit, 1);
+    const diffValueText = diffSign + valueFormatter(diff, profileType?.sampleUnit ?? '', 1);
     const diffPercentageText = diffSign + (diffRatio * 100).toFixed(2) + '%';
     diffText = `${diffValueText} (${diffPercentageText})`;
   }
@@ -102,8 +101,16 @@ export const useGraphTooltip = ({
   return {
     name,
     locationAddress,
-    cumulativeText: getTextForCumulative(cumulative, totalUnfiltered, total, unit),
-    cumulativePerSecondText: getTextForCumulativePerSecond(cumulativePerSecond, unit),
+    cumulativeText: getTextForCumulative(
+      cumulative,
+      totalUnfiltered,
+      total,
+      profileType?.periodUnit ?? ''
+    ),
+    cumulativePerSecondText: getTextForCumulativePerSecond(
+      cumulativePerSecond,
+      profileType?.periodUnit ?? 'CPU Cores'
+    ),
     diffText,
     diff,
     row,

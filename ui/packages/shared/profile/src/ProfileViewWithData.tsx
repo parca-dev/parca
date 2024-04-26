@@ -39,7 +39,7 @@ export const ProfileViewWithData = ({
   const [dashboardItems = ['icicle']] = useURLState({param: 'dashboard_items', navigateTo});
   const [sourceBuildID] = useURLState({param: 'source_buildid', navigateTo}) as unknown as [string];
   const [sourceFilename] = useURLState({param: 'source_filename', navigateTo}) as unknown as [
-    string
+    string,
   ];
   const [groupBy = [FIELD_FUNCTION_NAME]] = useURLState({param: 'group_by', navigateTo});
 
@@ -135,19 +135,6 @@ export const ProfileViewWithData = ({
     perf,
   ]);
 
-  // Default to the unit of the selected profile type. This is a heuristic, and
-  // only a fallback, the unit should be returned by the backend.
-  let sampleUnit = profileSource.ProfileType().sampleUnit;
-  if (flamegraphResponse?.report.oneofKind === 'flamegraphArrow') {
-    sampleUnit = flamegraphResponse.report.flamegraphArrow.unit;
-  }
-  if (tableResponse?.report.oneofKind === 'tableArrow') {
-    sampleUnit = tableResponse.report.tableArrow.unit;
-  }
-  if (sourceResponse?.report.oneofKind === 'source') {
-    sampleUnit = sourceResponse.report.source.unit;
-  }
-
   const downloadPProfClick = async (): Promise<void> => {
     if (profileSource == null || queryClient == null) {
       return;
@@ -224,7 +211,6 @@ export const ProfileViewWithData = ({
             : undefined,
         error: sourceError,
       }}
-      sampleUnit={sampleUnit}
       profileSource={profileSource}
       queryClient={queryClient}
       navigateTo={navigateTo}

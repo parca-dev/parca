@@ -76,14 +76,19 @@ const LineProfileMetadata = ({
 }): JSX.Element => {
   const commonClasses = 'w-[52px] shrink-0';
   const id = useId();
-  const {sampleUnit} = useProfileViewContext();
+  const {profileSource} = useProfileViewContext();
   if (value === 0n) {
     return <div className={cx(commonClasses)} />;
   }
   const unfilteredPercent = (Number(value) / Number(total + filtered)) * 100;
   const filteredPercent = (Number(value) / Number(total)) * 100;
 
-  const valueWithUnit = valueFormatter(value, sampleUnit, 1, true);
+  const valueWithUnit = valueFormatter(
+    value,
+    profileSource?.ProfileType().sampleUnit ?? '',
+    1,
+    true
+  );
 
   return (
     <>

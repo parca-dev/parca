@@ -18,6 +18,7 @@ import {Tooltip} from 'react-tooltip';
 
 import {useParcaContext} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
+import {ProfileType} from '@parca/parser';
 import {type NavigateFunction} from '@parca/utilities';
 
 import {useGraphTooltip} from '../../GraphTooltipArrow/useGraphTooltip';
@@ -27,7 +28,7 @@ import {hexifyAddress, truncateString} from '../../utils';
 interface ContextMenuProps {
   menuId: string;
   table: Table<any>;
-  unit: string;
+  profileType?: ProfileType;
   total: bigint;
   totalUnfiltered: bigint;
   row: number;
@@ -42,7 +43,6 @@ interface ContextMenuProps {
 const ContextMenu = ({
   menuId,
   table,
-  unit,
   total,
   totalUnfiltered,
   row,
@@ -52,6 +52,7 @@ const ContextMenu = ({
   curPath,
   setCurPath,
   hideMenu,
+  profileType,
 }: ContextMenuProps): JSX.Element => {
   const {isDarkMode} = useParcaContext();
   const {enableSourcesView} = useParcaContext();
@@ -60,7 +61,7 @@ const ContextMenu = ({
   );
   const contextMenuData = useGraphTooltip({
     table,
-    unit,
+    profileType,
     total,
     totalUnfiltered,
     row,
@@ -104,10 +105,10 @@ const ContextMenu = ({
     row === 0
       ? ''
       : name !== ''
-      ? name
-      : locationAddress !== 0n
-      ? hexifyAddress(locationAddress)
-      : '';
+        ? name
+        : locationAddress !== 0n
+          ? hexifyAddress(locationAddress)
+          : '';
 
   const buildIdText = !isMappingBuildIDAvailable ? '' : mappingBuildID;
   const inlinedText = inlined === null ? 'merged' : inlined ? 'yes' : 'no';

@@ -20,6 +20,7 @@ import {MapInteractionCSS} from 'react-map-interaction';
 
 import {CallgraphEdge, Callgraph as CallgraphType} from '@parca/client';
 import {Button, useKeyDown, useURLState} from '@parca/components';
+import {ProfileType} from '@parca/parser';
 import {selectDarkMode, setHoveringNode, useAppDispatch, useAppSelector} from '@parca/store';
 import {getNewSpanColor} from '@parca/utilities';
 
@@ -28,7 +29,7 @@ import GraphTooltip from '../GraphTooltip';
 export interface Props {
   data: CallgraphType;
   svgString: string;
-  sampleUnit: string;
+  profileType: ProfileType | undefined;
   width: number;
 }
 
@@ -37,7 +38,7 @@ interface View {
   translation: {x: number; y: number};
 }
 
-const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => {
+const Callgraph = ({data, svgString, profileType, width}: Props): JSX.Element => {
   const originalView = {
     scale: 1,
     translation: {x: 0, y: 0},
@@ -147,7 +148,7 @@ const Callgraph = ({data, svgString, sampleUnit, width}: Props): JSX.Element => 
         {svgRef.current !== null && (
           <GraphTooltip
             type="callgraph"
-            unit={sampleUnit}
+            unit={profileType?.sampleUnit ?? ''}
             total={data.cumulative}
             totalUnfiltered={data.cumulative}
             contextElement={containerRef.current}

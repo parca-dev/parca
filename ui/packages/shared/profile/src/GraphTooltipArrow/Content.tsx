@@ -16,6 +16,7 @@ import React from 'react';
 import {Icon} from '@iconify/react';
 import {Table} from 'apache-arrow';
 
+import {ProfileType} from '@parca/parser';
 import {getLastItem, type NavigateFunction} from '@parca/utilities';
 
 import {hexifyAddress, truncateString, truncateStringReverse} from '../utils';
@@ -25,7 +26,7 @@ import {useGraphTooltipMetaInfo} from './useGraphTooltipMetaInfo';
 
 interface GraphTooltipArrowContentProps {
   table: Table<any>;
-  unit: string;
+  profileType?: ProfileType;
   total: bigint;
   totalUnfiltered: bigint;
   row: number | null;
@@ -40,7 +41,7 @@ const NoData = (): React.JSX.Element => {
 
 const GraphTooltipArrowContent = ({
   table,
-  unit,
+  profileType,
   total,
   totalUnfiltered,
   row,
@@ -50,7 +51,7 @@ const GraphTooltipArrowContent = ({
 }: GraphTooltipArrowContentProps): React.JSX.Element => {
   const graphTooltipData = useGraphTooltip({
     table,
-    unit,
+    profileType,
     total,
     totalUnfiltered,
     row,
@@ -71,8 +72,6 @@ const GraphTooltipArrowContent = ({
     row: rowNumber,
   } = graphTooltipData;
 
-  const delta = unit === 'nanoseconds';
-
   return (
     <div className={`flex text-sm ${isFixed ? 'w-full' : ''}`}>
       <div className={`m-auto w-full ${isFixed ? 'w-full' : ''}`}>
@@ -87,14 +86,14 @@ const GraphTooltipArrowContent = ({
                     {name !== ''
                       ? name
                       : locationAddress !== 0n
-                      ? hexifyAddress(locationAddress)
-                      : 'unknown'}
+                        ? hexifyAddress(locationAddress)
+                        : 'unknown'}
                   </p>
                 )}
               </div>
               <table className="my-2 w-full table-fixed pr-0 text-gray-700 dark:text-gray-300">
                 <tbody>
-                  {delta ? (
+                  {profileType?.delta ?? false ? (
                     <tr>
                       <td className="w-1/4">Per Second</td>
                       <td className="w-3/4">
