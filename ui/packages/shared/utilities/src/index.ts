@@ -323,13 +323,33 @@ export const diffColor = (diff: bigint, cumulative: bigint, isDarkMode: boolean)
   const diffRatio = prevValue > 0 ? (diff !== 0n ? divide(diff, prevValue) : 0) : 1.0;
   const hasDiff = Math.abs(diffRatio) > DIFF_RATIO_THRESHOLD;
 
+  return diffColorRatio(hasDiff, diffRatio, isDarkMode);
+};
+
+export const diffColorPerSecond = (
+  diff: number,
+  cumulative: number,
+  isDarkMode: boolean
+): string => {
+  const prevValue = cumulative - diff;
+  const diffRatio = prevValue > 0 ? (diff !== 0 ? diff / prevValue : 0) : 1.0;
+  const hasDiff = Math.abs(diffRatio) > DIFF_RATIO_THRESHOLD;
+
+  return diffColorRatio(hasDiff, diffRatio, isDarkMode);
+};
+
+const diffColorRatio = (hasDiff: boolean, diffRatio: number, isDarkMode: boolean): string => {
   const diffTransparency = hasDiff ? Math.min((Math.abs(diffRatio) / 2 + 0.5) * 0.8, 0.8) : 0;
 
   const newSpanColor = getNewSpanColor(isDarkMode);
   const increasedSpanColor = getIncreasedSpanColor(diffTransparency, isDarkMode);
   const reducedSpanColor = getReducedSpanColor(diffTransparency, isDarkMode);
 
-  const color: string = !hasDiff ? newSpanColor : diff > 0n ? increasedSpanColor : reducedSpanColor;
+  const color: string = !hasDiff
+    ? newSpanColor
+    : diffRatio > 0
+    ? increasedSpanColor
+    : reducedSpanColor;
 
   return color;
 };

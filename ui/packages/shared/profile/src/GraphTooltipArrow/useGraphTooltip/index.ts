@@ -17,10 +17,16 @@ import {divide, valueFormatter} from '@parca/utilities';
 
 import {
   FIELD_CUMULATIVE,
+  FIELD_CUMULATIVE_PER_SECOND,
   FIELD_DIFF,
+  FIELD_DIFF_PER_SECOND,
   FIELD_LOCATION_ADDRESS,
 } from '../../ProfileIcicleGraph/IcicleGraphArrow';
-import {getTextForCumulative, nodeLabel} from '../../ProfileIcicleGraph/IcicleGraphArrow/utils';
+import {
+  getTextForCumulative,
+  getTextForCumulativePerSecond,
+  nodeLabel,
+} from '../../ProfileIcicleGraph/IcicleGraphArrow/utils';
 
 interface Props {
   table: Table<any>;
@@ -35,6 +41,7 @@ interface GraphTooltipData {
   name: string;
   locationAddress: bigint;
   cumulativeText: string;
+  cumulativePerSecondText: string;
   diffText: string;
   diff: bigint;
   row: number;
@@ -58,17 +65,37 @@ export const useGraphTooltip = ({
     table.getChild(FIELD_CUMULATIVE)?.get(row) !== null
       ? BigInt(table.getChild(FIELD_CUMULATIVE)?.get(row))
       : 0n;
+  const cumulativePerSecond: number =
+    table.getChild(FIELD_CUMULATIVE_PER_SECOND)?.get(row) !== null
+      ? table.getChild(FIELD_CUMULATIVE_PER_SECOND)?.get(row)
+      : 0;
   const diff: bigint =
     table.getChild(FIELD_DIFF)?.get(row) !== null
       ? BigInt(table.getChild(FIELD_DIFF)?.get(row))
       : 0n;
+  const diffPerSecond: number =
+    table.getChild(FIELD_DIFF_PER_SECOND)?.get(row) !== null
+      ? table.getChild(FIELD_DIFF_PER_SECOND)?.get(row)
+      : 0;
 
-  const prevValue = cumulative - diff;
-  const diffRatio = diff !== 0n ? divide(diff, prevValue) : 0;
-  const diffSign = diff > 0 ? '+' : '';
-  const diffValueText = diffSign + valueFormatter(diff, unit, 1);
-  const diffPercentageText = diffSign + (diffRatio * 100).toFixed(2) + '%';
-  const diffText = `${diffValueText} (${diffPercentageText})`;
+  const delta = unit === 'nanoseconds';
+
+  let diffText = '';
+  if (delta) {
+    const prevValue = cumulativePerSecond - diffPerSecond;
+    const diffRatio = diffPerSecond !== 0 ? diffPerSecond / prevValue : 0;
+    const diffSign = diffPerSecond > 0 ? '+' : '';
+    const diffValueText = diffSign + valueFormatter(diffPerSecond, 'CPU Cores', 5);
+    const diffPercentageText = diffSign + (diffRatio * 100).toFixed(2) + '%';
+    diffText = `${diffValueText} (${diffPercentageText})`;
+  } else {
+    const prevValue = cumulative - diff;
+    const diffRatio = diff !== 0n ? divide(diff, prevValue) : 0;
+    const diffSign = diff > 0 ? '+' : '';
+    const diffValueText = diffSign + valueFormatter(diff, unit, 1);
+    const diffPercentageText = diffSign + (diffRatio * 100).toFixed(2) + '%';
+    diffText = `${diffValueText} (${diffPercentageText})`;
+  }
 
   const name = nodeLabel(table, row, level, false);
 
@@ -76,6 +103,7 @@ export const useGraphTooltip = ({
     name,
     locationAddress,
     cumulativeText: getTextForCumulative(cumulative, totalUnfiltered, total, unit),
+    cumulativePerSecondText: getTextForCumulativePerSecond(cumulativePerSecond, unit),
     diffText,
     diff,
     row,

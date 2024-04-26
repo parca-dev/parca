@@ -73,17 +73,25 @@ func LocationsArrowSchema() *arrow.Schema {
 }
 
 func ArrowSamplesField(profileLabelFields []arrow.Field) []arrow.Field {
-	numFields := len(profileLabelFields) + 3 // +3 for stacktraces, value and diff
+	numFields := len(profileLabelFields) + 5 // +5 for stacktraces, value, value_per_second, diff and diff_per_second
 	fields := make([]arrow.Field, numFields)
 	copy(fields, profileLabelFields)
-	fields[numFields-3] = LocationsField
-	fields[numFields-2] = arrow.Field{
+	fields[numFields-5] = LocationsField
+	fields[numFields-4] = arrow.Field{
 		Name: "value",
 		Type: arrow.PrimitiveTypes.Int64,
 	}
-	fields[numFields-1] = arrow.Field{
+	fields[numFields-3] = arrow.Field{
+		Name: "value_per_second",
+		Type: arrow.PrimitiveTypes.Float64,
+	}
+	fields[numFields-2] = arrow.Field{
 		Name: "diff",
 		Type: arrow.PrimitiveTypes.Int64,
+	}
+	fields[numFields-1] = arrow.Field{
+		Name: "diff_per_second",
+		Type: arrow.PrimitiveTypes.Float64,
 	}
 
 	return fields
