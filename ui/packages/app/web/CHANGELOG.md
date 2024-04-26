@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.657](https://github.com/parca-dev/parca/compare/@parca/web@0.16.656...@parca/web@0.16.657) (2024-04-26)
+
+**Note:** Version bump only for package @parca/web
+
 ## [0.16.656](https://github.com/parca-dev/parca/compare/@parca/web@0.16.655...@parca/web@0.16.656) (2024-04-25)
 
 **Note:** Version bump only for package @parca/web
