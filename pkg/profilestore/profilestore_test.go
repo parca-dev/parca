@@ -28,9 +28,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
-	"github.com/parca-dev/parca/pkg/metastoretest"
-	"github.com/parca-dev/parca/pkg/parcacol"
+	"github.com/parca-dev/parca/pkg/ingester"
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -54,19 +52,12 @@ func Test_LabelName_Error(t *testing.T) {
 		frostdb.NewTableConfig(profile.SchemaDefinition()),
 	)
 	require.NoError(t, err)
-	m := metastoretest.NewTestMetastore(
-		t,
-		logger,
-		reg,
-		tracer,
-	)
 
 	api := NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
-		metastore.NewInProcessClient(m),
-		parcacol.NewIngester(
+		ingester.NewIngester(
 			logger,
 			memory.DefaultAllocator,
 			table,
@@ -139,19 +130,12 @@ func BenchmarkProfileColumnStoreWriteSeries(b *testing.B) {
 		frostdb.NewTableConfig(profile.SchemaDefinition()),
 	)
 	require.NoError(b, err)
-	m := metastoretest.NewTestMetastore(
-		b,
-		logger,
-		reg,
-		tracer,
-	)
 
 	api := NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
-		metastore.NewInProcessClient(m),
-		parcacol.NewIngester(
+		ingester.NewIngester(
 			logger,
 			memory.DefaultAllocator,
 			table,

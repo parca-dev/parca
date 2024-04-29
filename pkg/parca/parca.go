@@ -57,7 +57,6 @@ import (
 	"gopkg.in/yaml.v3"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
-	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	scrapepb "github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1"
@@ -65,9 +64,11 @@ import (
 	telemetry "github.com/parca-dev/parca/gen/proto/go/parca/telemetry/v1alpha1"
 	"github.com/parca-dev/parca/ui"
 
+	"github.com/parca-dev/parca/pkg/badgerlogger"
 	"github.com/parca-dev/parca/pkg/config"
 	"github.com/parca-dev/parca/pkg/debuginfo"
-	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/ingester"
+	"github.com/parca-dev/parca/pkg/kv"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/profilestore"
@@ -113,8 +114,6 @@ type Flags struct {
 
 	Debuginfo  FlagsDebuginfo  `embed:"" prefix:"debuginfo-"`
 	Debuginfod FlagsDebuginfod `embed:"" prefix:"debuginfod-"`
-
-	Metastore string `default:"badger" help:"Which metastore implementation to use" enum:"badger"`
 
 	ProfileShareServer string `default:"api.pprof.me:443" help:"gRPC address to send share profile requests to."`
 
@@ -257,37 +256,20 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		defer signedRequestsClient.Close()
 	}
 
-	var mStr metastorepb.MetastoreServiceServer
-	switch flags.Metastore {
-	case metaStoreBadger:
-		var badgerOptions badger.Options
-		switch flags.EnablePersistence {
-		case true:
-			badgerOptions = badger.DefaultOptions(filepath.Join(flags.Storage.Path, "metastore"))
-		default:
-			badgerOptions = badger.DefaultOptions("").WithInMemory(true)
-		}
-
-		badgerOptions = badgerOptions.WithLogger(&metastore.BadgerLogger{Logger: logger})
-		db, err := badger.Open(badgerOptions)
-		if err != nil {
-			level.Error(logger).Log("msg", "failed to open badger database for metastore", "err", err)
-			return err
-		}
-
-		mStr = metastore.NewBadgerMetastore(
-			logger,
-			reg,
-			tracerProvider.Tracer(metaStoreBadger),
-			db,
-		)
+	var badgerOptions badger.Options
+	switch flags.EnablePersistence {
+	case true:
+		badgerOptions = badger.DefaultOptions(filepath.Join(flags.Storage.Path, "metastore"))
 	default:
-		err := fmt.Errorf("unknown metastore implementation: %s", flags.Metastore)
-		level.Error(logger).Log("msg", "failed to initialize metastore", "err", err)
-		return err
+		badgerOptions = badger.DefaultOptions("").WithInMemory(true)
 	}
 
-	mc := metastore.NewInProcessClient(mStr)
+	badgerOptions = badgerOptions.WithLogger(&badgerlogger.BadgerLogger{Logger: logger})
+	db, err := badger.Open(badgerOptions)
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to open badger database for metastore", "err", err)
+		return err
+	}
 
 	frostdbOptions := []frostdb.Option{
 		frostdb.WithActiveMemorySize(flags.Storage.ActiveMemory),
@@ -352,7 +334,41 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	ingester := parcacol.NewIngester(logger, memory.DefaultAllocator, table, schema)
+	var debuginfodClients debuginfo.DebuginfodClients = debuginfo.NopDebuginfodClients{}
+	if len(flags.Debuginfod.UpstreamServers) > 0 {
+		debuginfodClients = debuginfo.NewDebuginfodClients(
+			logger,
+			reg,
+			tracerProvider,
+			flags.Debuginfod.UpstreamServers,
+			promconfig.NewUserAgentRoundTripper(fmt.Sprintf("parca.dev/debuginfod-client/%s", version), http.DefaultTransport),
+			flags.Debuginfod.HTTPRequestTimeout,
+			objstore.NewPrefixedBucket(bucket, "debuginfod-cache"),
+		)
+	}
+
+	debuginfoBucket := objstore.NewPrefixedBucket(bucket, "debuginfo")
+	prefixedSignedRequestsClient := signedrequests.NewPrefixedClient(signedRequestsClient, "debuginfo")
+	debuginfoMetadata := debuginfo.NewObjectStoreMetadata(logger, debuginfoBucket)
+	dbginfo, err := debuginfo.NewStore(
+		tracerProvider.Tracer("debuginfo"),
+		logger,
+		debuginfoMetadata,
+		debuginfoBucket,
+		debuginfodClients,
+		debuginfo.SignedUpload{
+			Enabled: flags.Debuginfo.UploadsSignedURL,
+			Client:  prefixedSignedRequestsClient,
+		},
+		flags.Debuginfo.UploadMaxDuration,
+		flags.Debuginfo.UploadMaxSize,
+	)
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to initialize debug info store", "err", err)
+		return err
+	}
+
+	ingester := ingester.NewIngester(logger, memory.DefaultAllocator, table, schema)
 	querier := parcacol.NewQuerier(
 		logger,
 		tracerProvider.Tracer("querier"),
@@ -362,9 +378,13 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			query.WithTracer(tracerProvider.Tracer("query-engine")),
 		),
 		"stacktraces",
-		parcacol.NewProfileSymbolizer(
-			tracerProvider.Tracer("profile-symbolizer"),
-			mc,
+		symbolizer.New(
+			logger,
+			debuginfoMetadata,
+			symbolizer.NewBadgerCache(db),
+			debuginfo.NewFetcher(debuginfodClients, debuginfoBucket),
+			flags.Debuginfo.CacheDir,
+			symbolizer.WithDemangleMode(flags.Symbolizer.DemangleMode),
 		),
 		memory.DefaultAllocator,
 	)
@@ -373,7 +393,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		reg,
 		logger,
 		tracerProvider.Tracer("profilestore"),
-		mc,
 		ingester,
 		flags.Hidden.DebugNormalizeAddresses,
 	)
@@ -391,7 +410,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return fmt.Errorf("failed to create gRPC connection to ProfileShareServer: %s, %w", flags.ProfileShareServer, err)
 	}
 
-	debuginfoBucket := objstore.NewPrefixedBucket(bucket, "debuginfo")
 	q := queryservice.NewColumnQueryAPI(
 		logger,
 		tracerProvider.Tracer("query-service"),
@@ -400,7 +418,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		memory.DefaultAllocator,
 		parcacol.NewArrowToProfileConverter(
 			tracerProvider.Tracer("arrow_to_profile_converter"),
-			metastore.NewKeyMaker(),
+			kv.NewKeyMaker(),
 		),
 		queryservice.NewBucketSourceFinder(debuginfoBucket),
 	)
@@ -426,39 +444,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	m := scrape.NewManager(logger, reg, s, cfg.ScrapeConfigs, labels.Labels{})
 	if err := m.ApplyConfig(cfg.ScrapeConfigs); err != nil {
 		level.Error(logger).Log("msg", "failed to apply scrape configs", "err", err)
-		return err
-	}
-
-	var debuginfodClients debuginfo.DebuginfodClients = debuginfo.NopDebuginfodClients{}
-	if len(flags.Debuginfod.UpstreamServers) > 0 {
-		debuginfodClients = debuginfo.NewDebuginfodClients(
-			logger,
-			reg,
-			tracerProvider,
-			flags.Debuginfod.UpstreamServers,
-			promconfig.NewUserAgentRoundTripper(fmt.Sprintf("parca.dev/debuginfod-client/%s", version), http.DefaultTransport),
-			flags.Debuginfod.HTTPRequestTimeout,
-			objstore.NewPrefixedBucket(bucket, "debuginfod-cache"),
-		)
-	}
-
-	prefixedSignedRequestsClient := signedrequests.NewPrefixedClient(signedRequestsClient, "debuginfo")
-	debuginfoMetadata := debuginfo.NewObjectStoreMetadata(logger, debuginfoBucket)
-	dbginfo, err := debuginfo.NewStore(
-		tracerProvider.Tracer("debuginfo"),
-		logger,
-		debuginfoMetadata,
-		debuginfoBucket,
-		debuginfodClients,
-		debuginfo.SignedUpload{
-			Enabled: flags.Debuginfo.UploadsSignedURL,
-			Client:  prefixedSignedRequestsClient,
-		},
-		flags.Debuginfo.UploadMaxDuration,
-		flags.Debuginfo.UploadMaxSize,
-	)
-	if err != nil {
-		level.Error(logger).Log("msg", "failed to initialize debug info store", "err", err)
 		return err
 	}
 
@@ -509,34 +494,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		})
 	}
 
-	{
-		s := symbolizer.New(
-			logger,
-			reg,
-			debuginfoMetadata,
-			mc,
-			debuginfo.NewFetcher(debuginfodClients, debuginfoBucket),
-			flags.Debuginfo.CacheDir,
-			0,
-			symbolizer.WithDemangleMode(flags.Symbolizer.DemangleMode),
-			symbolizer.WithAttemptThreshold(flags.Symbolizer.NumberOfTries),
-		)
-		ctx, cancel := context.WithCancel(ctx)
-		gr.Add(
-			func() error {
-				var err error
-
-				pprof.Do(ctx, pprof.Labels("parca_component", "symbolizer"), func(ctx context.Context) {
-					err = s.Run(ctx, symbolizationInterval)
-				})
-
-				return err
-			},
-			func(_ error) {
-				level.Debug(logger).Log("msg", "symbolizer server shutting down")
-				cancel()
-			})
-	}
 	gr.Add(
 		func() error {
 			var err error

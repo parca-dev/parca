@@ -20,18 +20,10 @@ import (
 	"github.com/apache/arrow/go/v15/arrow"
 	"github.com/apache/arrow/go/v15/arrow/array"
 	"github.com/apache/arrow/go/v15/arrow/memory"
-	"github.com/go-kit/log"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	pprofprofile "github.com/google/pprof/profile"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 
-	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
-	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
-	"github.com/parca-dev/parca/pkg/metastoretest"
-	"github.com/parca-dev/parca/pkg/normalizer"
-	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -40,35 +32,19 @@ func TestGenerateTable(t *testing.T) {
 	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
 	defer mem.AssertSize(t, 0)
 
-	reg := prometheus.NewRegistry()
-	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
-		Name: "parca_test_counter",
-		Help: "parca_test_counter",
-	})
-
 	fileContent := MustReadAllGzip(t, "testdata/alloc_objects.pb.gz")
-	p := &pprofpb.Profile{}
-	require.NoError(t, p.UnmarshalVT(fileContent))
+	pp, err := pprofprofile.ParseData(fileContent)
+	require.NoError(t, err)
 
-	l := metastoretest.NewTestMetastore(
-		t,
-		log.NewNopLogger(),
-		prometheus.NewRegistry(),
-		noop.NewTracerProvider().Tracer(""),
+	p, err := PprofToSymbolizedProfile(
+		profile.Meta{},
+		pp,
+		0,
 	)
-	metastore := metastore.NewInProcessClient(l)
-	normalizer := normalizer.NewNormalizer(metastore, true, counter)
-	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, true, nil)
 	require.NoError(t, err)
 
 	tracer := noop.NewTracerProvider().Tracer("")
-	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
-	require.NoError(t, err)
-
-	np, err := OldProfileToArrowProfile(symbolizedProfile)
-	require.NoError(t, err)
-
-	rec, cumulative, err := generateTableArrowRecord(ctx, mem, tracer, np)
+	rec, cumulative, err := generateTableArrowRecord(ctx, mem, tracer, p)
 	require.NoError(t, err)
 	defer rec.Release()
 
@@ -134,88 +110,59 @@ func TestGenerateTable(t *testing.T) {
 
 func TestGenerateTableAggregateFlat(t *testing.T) {
 	ctx := context.Background()
-	logger := log.NewNopLogger()
-	reg := prometheus.NewRegistry()
 	tracer := noop.NewTracerProvider().Tracer("")
 	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
 	defer mem.AssertSize(t, 0)
 
-	metastore := metastore.NewInProcessClient(metastoretest.NewTestMetastore(
-		t,
-		logger,
-		reg,
-		tracer,
-	))
+	mappings := []*pprofprofile.Mapping{{
+		ID:      1,
+		Start:   1,
+		Limit:   1,
+		Offset:  1,
+		File:    "1",
+		BuildID: "1",
+	}}
 
-	mres, err := metastore.GetOrCreateMappings(ctx, &metastorepb.GetOrCreateMappingsRequest{
-		Mappings: []*metastorepb.Mapping{{
-			Id:      "1",
-			Start:   1,
-			Limit:   1,
-			Offset:  1,
-			File:    "1",
-			BuildId: "1",
-		}},
-	})
+	locations := []*pprofprofile.Location{{
+		ID:      1,
+		Mapping: mappings[0],
+		Address: 0x1,
+	}, {
+		ID:      2,
+		Mapping: mappings[0],
+		Address: 0x2,
+	}, {
+		ID:      3,
+		Mapping: mappings[0],
+		Address: 0x3,
+	}, {
+		ID:      4,
+		Mapping: mappings[0],
+		Address: 0x4,
+	}}
+
+	p, err := PprofToSymbolizedProfile(
+		profile.Meta{},
+		&pprofprofile.Profile{
+			Sample: []*pprofprofile.Sample{{
+				Location: []*pprofprofile.Location{locations[1], locations[0]},
+				Value:    []int64{1},
+			}, {
+				Location: []*pprofprofile.Location{locations[2], locations[0]},
+				Value:    []int64{2},
+			}, {
+				Location: []*pprofprofile.Location{locations[3], locations[0]},
+				Value:    []int64{3},
+			}, {
+				Location: []*pprofprofile.Location{locations[0]},
+				Value:    []int64{4},
+			}},
+		},
+		0,
+	)
 	require.NoError(t, err)
 
-	lres, err := metastore.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
-		Locations: []*metastorepb.Location{{
-			Address:   0x1,
-			MappingId: mres.Mappings[0].Id,
-		}, {
-			Address:   0x2,
-			MappingId: mres.Mappings[0].Id,
-		}, {
-			Address:   0x3,
-			MappingId: mres.Mappings[0].Id,
-		}, {
-			Address:   0x4,
-			MappingId: mres.Mappings[0].Id,
-		}},
-	})
-	require.NoError(t, err)
-	require.Equal(t, 4, len(lres.Locations))
-	l0 := lres.Locations[0]
-	l1 := lres.Locations[1]
-	l2 := lres.Locations[2]
-	l3 := lres.Locations[3]
-
-	sres, err := metastore.GetOrCreateStacktraces(ctx, &metastorepb.GetOrCreateStacktracesRequest{
-		Stacktraces: []*metastorepb.Stacktrace{{
-			LocationIds: []string{l1.Id, l0.Id},
-		}, {
-			LocationIds: []string{l2.Id, l0.Id},
-		}, {
-			LocationIds: []string{l3.Id, l0.Id},
-		}, {
-			LocationIds: []string{l0.Id},
-		}},
-	})
-	require.NoError(t, err)
-	require.Equal(t, 4, len(sres.Stacktraces))
-
-	p, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, &profile.NormalizedProfile{
-		Samples: []*profile.NormalizedSample{{
-			StacktraceID: sres.Stacktraces[0].Id,
-			Value:        1,
-		}, {
-			StacktraceID: sres.Stacktraces[1].Id,
-			Value:        2,
-		}, {
-			StacktraceID: sres.Stacktraces[2].Id,
-			Value:        3,
-		}, {
-			StacktraceID: sres.Stacktraces[3].Id,
-			Value:        4,
-		}},
-	})
-	require.NoError(t, err)
-
-	np, err := OldProfileToArrowProfile(p)
-	require.NoError(t, err)
-
-	rec, cumulative, err := generateTableArrowRecord(ctx, mem, tracer, np)
+	rec, cumulative, err := generateTableArrowRecord(ctx, mem, tracer, p)
 	require.NoError(t, err)
 	defer rec.Release()
 

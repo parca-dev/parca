@@ -147,7 +147,6 @@ Flags:
       --debuginfod-http-request-timeout=5m
                                  Timeout duration for HTTP request to upstream
                                  debuginfod server. Defaults to 5m
-      --metastore="badger"       Which metastore implementation to use
       --profile-share-server="api.pprof.me:443"
                                  gRPC address to send share profile requests to.
       --store-address=STRING     gRPC address to send profiles and symbols to.

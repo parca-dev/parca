@@ -116,11 +116,11 @@ func SchemaDefinition() *schemapb.Schema {
 			}, {
 				Name: ColumnStacktrace,
 				StorageLayout: &schemapb.StorageLayout{
-					Type: schemapb.StorageLayout_TYPE_STRING,
-					// NOTE: using RLE dictionary causes compaction to explode
-					// in memory due to high cardinality of the dictionaries.
-					Encoding:    schemapb.StorageLayout_ENCODING_PLAIN_UNSPECIFIED,
+					Type:        schemapb.StorageLayout_TYPE_STRING,
+					Encoding:    schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
 					Compression: schemapb.StorageLayout_COMPRESSION_LZ4_RAW,
+					Repeated:    true,
+					Nullable:    true,
 				},
 				Dynamic: false,
 			}, {
@@ -158,24 +158,8 @@ func SchemaDefinition() *schemapb.Schema {
 				Name:      ColumnPeriodUnit,
 				Direction: schemapb.SortingColumn_DIRECTION_ASCENDING,
 			}, {
-				Name:       ColumnLabels,
-				Direction:  schemapb.SortingColumn_DIRECTION_ASCENDING,
-				NullsFirst: true,
-			}, {
 				Name:      ColumnTimestamp,
 				Direction: schemapb.SortingColumn_DIRECTION_ASCENDING,
-			}, {
-				Name:       ColumnStacktrace,
-				Direction:  schemapb.SortingColumn_DIRECTION_ASCENDING,
-				NullsFirst: true,
-			}, {
-				Name:       ColumnPprofLabels,
-				Direction:  schemapb.SortingColumn_DIRECTION_ASCENDING,
-				NullsFirst: true,
-			}, {
-				Name:       ColumnPprofNumLabels,
-				Direction:  schemapb.SortingColumn_DIRECTION_ASCENDING,
-				NullsFirst: true,
 			},
 		},
 	}

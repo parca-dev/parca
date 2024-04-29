@@ -18,48 +18,43 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/go-kit/log"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	pprofprofile "github.com/google/pprof/profile"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace/noop"
 
-	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
-	"github.com/parca-dev/parca/pkg/metastoretest"
-	"github.com/parca-dev/parca/pkg/normalizer"
+	"github.com/parca-dev/parca/pkg/kv"
 	"github.com/parca-dev/parca/pkg/parcacol"
+	"github.com/parca-dev/parca/pkg/profile"
 )
 
 func TestGenerateCallgraph(t *testing.T) {
 	ctx := context.Background()
-	reg := prometheus.NewRegistry()
-	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
-		Name: "parca_test_counter",
-		Help: "parca_test_counter",
-	})
 
 	fileContent := MustReadAllGzip(t, "testdata/alloc_objects.pb.gz")
-	p := &pprofpb.Profile{}
-	require.NoError(t, p.UnmarshalVT(fileContent))
-	tracer := noop.NewTracerProvider().Tracer("")
+	prof, err := pprofprofile.ParseData(fileContent)
+	require.NoError(t, err)
 
-	l := metastoretest.NewTestMetastore(
-		t,
-		log.NewNopLogger(),
-		prometheus.NewRegistry(),
-		tracer,
+	p, err := PprofToSymbolizedProfile(
+		profile.Meta{
+			Name: "memory",
+			SampleType: profile.ValueType{
+				Type: "alloc_objects",
+				Unit: "count",
+			},
+			PeriodType: profile.ValueType{
+				Type: "alloc_space",
+				Unit: "bytes",
+			},
+		},
+		prof,
+		0,
 	)
-	metastore := metastore.NewInProcessClient(l)
-	normalizer := normalizer.NewNormalizer(metastore, true, counter)
-	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false, nil)
 	require.NoError(t, err)
 
-	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
+	op, err := parcacol.NewArrowToProfileConverter(nil, kv.NewKeyMaker()).Convert(ctx, p)
 	require.NoError(t, err)
 
-	res, err := GenerateCallgraph(ctx, symbolizedProfile)
+	res, err := GenerateCallgraph(ctx, op)
 	require.NoError(t, err)
 	require.NotNil(t, res)
 

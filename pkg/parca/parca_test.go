@@ -45,8 +45,8 @@ import (
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	sharepb "github.com/parca-dev/parca/gen/proto/go/parca/share/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
-	"github.com/parca-dev/parca/pkg/metastoretest"
+	"github.com/parca-dev/parca/pkg/ingester"
+	"github.com/parca-dev/parca/pkg/kv"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/profilestore"
@@ -70,7 +70,6 @@ func benchmarkSetup(ctx context.Context, b *testing.B) (profilestorepb.ProfileSt
 		err := Run(ctx, logger, reg, &Flags{
 			ConfigPath: "testdata/parca.yaml",
 			Port:       addr,
-			Metastore:  metaStoreBadger,
 			Storage: FlagsStorage{
 				ActiveMemory: 512 * 1024 * 1024,
 			},
@@ -191,14 +190,6 @@ func TestConsistency(t *testing.T) {
 		frostdb.NewTableConfig(parcaprofile.SchemaDefinition()),
 	)
 	require.NoError(t, err)
-	m := metastoretest.NewTestMetastore(
-		t,
-		logger,
-		reg,
-		tracer,
-	)
-
-	mc := metastore.NewInProcessClient(m)
 
 	f, err := os.Open("../query/testdata/alloc_objects.pb.gz")
 	require.NoError(t, err)
@@ -210,12 +201,11 @@ func TestConsistency(t *testing.T) {
 	fileContent, err := os.ReadFile("../query/testdata/alloc_objects.pb.gz")
 	require.NoError(t, err)
 
-	ingester := parcacol.NewIngester(logger, memory.DefaultAllocator, table, schema)
+	ingester := ingester.NewIngester(logger, memory.DefaultAllocator, table, schema)
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
-		mc,
 		ingester,
 		true,
 	)
@@ -256,11 +246,11 @@ func TestConsistency(t *testing.T) {
 				colDB.TableProvider(),
 			),
 			"stacktraces",
-			parcacol.NewProfileSymbolizer(tracer, mc),
+			nil,
 			mem,
 		),
 		mem,
-		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+		parcacol.NewArrowToProfileConverter(tracer, kv.NewKeyMaker()),
 		nil,
 	)
 
@@ -313,24 +303,15 @@ func TestPGOE2e(t *testing.T) {
 		frostdb.NewTableConfig(parcaprofile.SchemaDefinition()),
 	)
 	require.NoError(t, err)
-	m := metastoretest.NewTestMetastore(
-		t,
-		logger,
-		reg,
-		tracer,
-	)
-
-	mc := metastore.NewInProcessClient(m)
 
 	fileContent, err := os.ReadFile("./testdata/pgotest.prof")
 	require.NoError(t, err)
 
-	ingester := parcacol.NewIngester(logger, memory.DefaultAllocator, table, schema)
+	ingester := ingester.NewIngester(logger, memory.DefaultAllocator, table, schema)
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
-		mc,
 		ingester,
 		true,
 	)
@@ -371,11 +352,11 @@ func TestPGOE2e(t *testing.T) {
 				colDB.TableProvider(),
 			),
 			"stacktraces",
-			parcacol.NewProfileSymbolizer(tracer, mc),
+			nil,
 			mem,
 		),
 		mem,
-		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+		parcacol.NewArrowToProfileConverter(tracer, kv.NewKeyMaker()),
 		nil,
 	)
 
@@ -418,24 +399,15 @@ func TestLabels(t *testing.T) {
 		frostdb.NewTableConfig(parcaprofile.SchemaDefinition()),
 	)
 	require.NoError(t, err)
-	m := metastoretest.NewTestMetastore(
-		t,
-		logger,
-		reg,
-		tracer,
-	)
-
-	mc := metastore.NewInProcessClient(m)
 
 	fileContent, err := os.ReadFile("testdata/labels.pb.gz")
 	require.NoError(t, err)
 
-	ingester := parcacol.NewIngester(logger, memory.DefaultAllocator, table, schema)
+	ingester := ingester.NewIngester(logger, memory.DefaultAllocator, table, schema)
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
-		mc,
 		ingester,
 		true,
 	)
@@ -475,11 +447,11 @@ func TestLabels(t *testing.T) {
 				colDB.TableProvider(),
 			),
 			"labels",
-			parcacol.NewProfileSymbolizer(tracer, mc),
+			nil,
 			mem,
 		),
 		mem,
-		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+		parcacol.NewArrowToProfileConverter(tracer, kv.NewKeyMaker()),
 		nil,
 	)
 

@@ -14,9 +14,9 @@
 package addr2line
 
 import (
+	"context"
 	"debug/elf"
 	"debug/gosym"
-	"errors"
 	"fmt"
 	"runtime/debug"
 
@@ -40,7 +40,7 @@ type GoLiner struct {
 func Go(logger log.Logger, filename string, f *elf.File) (*GoLiner, error) {
 	tab, err := gosymtab(f)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create go symbtab: %w", err)
+		return nil, fmt.Errorf("failed to create go symtab: %w", err)
 	}
 
 	return &GoLiner{
@@ -77,7 +77,7 @@ func (gl *GoLiner) PCRange() ([2]uint64, error) {
 }
 
 // PCToLines looks up the line number information for a program counter (memory address).
-func (gl *GoLiner) PCToLines(addr uint64) (lines []profile.LocationLine, err error) {
+func (gl *GoLiner) PCToLines(ctx context.Context, addr uint64) (lines []profile.LocationLine, err error) {
 	defer func() {
 		// PCToLine panics with "invalid memory address or nil pointer dereference",
 		//	- when it refers to an address that doesn't actually exist.
@@ -107,39 +107,103 @@ func (gl *GoLiner) PCToLines(addr uint64) (lines []profile.LocationLine, err err
 }
 
 // gosymtab returns the Go symbol table (.gosymtab section) decoded from the ELF file.
-func gosymtab(objFile *elf.File) (*gosym.Table, error) {
-	// The .gopclntab section contains tables and meta data required for symbolization,
-	// see https://github.com/DataDog/go-profiler-notes/blob/main/stack-traces.md#gopclntab.
-	var err error
-	var pclntab []byte
-	if sec := objFile.Section(".gopclntab"); sec != nil {
-		if sec.Type == elf.SHT_NOBITS {
-			return nil, errors.New(".gopclntab section has no bits")
+func gosymtab(f *elf.File) (*gosym.Table, error) {
+	var (
+		textStart = uint64(0)
+
+		symtab  []byte
+		pclntab []byte
+		err     error
+	)
+	if sect := f.Section(".text"); sect != nil {
+		textStart = sect.Addr
+	}
+
+	sectionName := ".gosymtab"
+	sect := f.Section(".gosymtab")
+	if sect == nil {
+		// try .data.rel.ro.gosymtab, for PIE binaries
+		sectionName = ".data.rel.ro.gosymtab"
+		sect = f.Section(".data.rel.ro.gosymtab")
+	}
+	if sect != nil {
+		if symtab, err = sect.Data(); err != nil {
+			return nil, fmt.Errorf("read %s section: %w", sectionName, err)
 		}
+	} else {
+		// if both sections failed, try the symbol
+		symtab = symbolData(f, "runtime.symtab", "runtime.esymtab")
+	}
 
-		pclntab, err = sec.Data()
-		if err != nil {
-			return nil, fmt.Errorf("could not find .gopclntab section: %w", err)
+	sectionName = ".gopclntab"
+	sect = f.Section(".gopclntab")
+	if sect == nil {
+		// try .data.rel.ro.gopclntab, for PIE binaries
+		sectionName = ".data.rel.ro.gopclntab"
+		sect = f.Section(".data.rel.ro.gopclntab")
+	}
+	if sect != nil {
+		if pclntab, err = sect.Data(); err != nil {
+			return nil, fmt.Errorf("read %s section: %w", sectionName, err)
 		}
+	} else {
+		// if both sections failed, try the symbol
+		pclntab = symbolData(f, "runtime.pclntab", "runtime.epclntab")
 	}
 
-	if len(pclntab) <= 0 {
-		return nil, errors.New(".gopclntab section has no bits")
+	runtimeTextAddr, ok := runtimeTextAddr(f)
+	if ok {
+		textStart = runtimeTextAddr
 	}
 
-	var symtab []byte
-	if sec := objFile.Section(".gosymtab"); sec != nil {
-		symtab, _ = sec.Data()
-	}
+	return gosym.NewTable(symtab, gosym.NewLineTable(pclntab, textStart))
+}
 
-	var text uint64
-	if sec := objFile.Section(".text"); sec != nil {
-		text = sec.Addr
-	}
-
-	table, err := gosym.NewTable(symtab, gosym.NewLineTable(pclntab, text))
+func symbolData(f *elf.File, start, end string) []byte {
+	elfSyms, err := f.Symbols()
 	if err != nil {
-		return nil, fmt.Errorf("failed to build symtab or pclinetab: %w", err)
+		return nil
 	}
-	return table, nil
+	var addr, eaddr uint64
+	for _, s := range elfSyms {
+		if s.Name == start {
+			addr = s.Value
+		} else if s.Name == end {
+			eaddr = s.Value
+		}
+		if addr != 0 && eaddr != 0 {
+			break
+		}
+	}
+	if addr == 0 || eaddr < addr {
+		return nil
+	}
+	size := eaddr - addr
+	data := make([]byte, size)
+	for _, prog := range f.Progs {
+		if prog.Vaddr <= addr && addr+size-1 <= prog.Vaddr+prog.Filesz-1 {
+			if _, err := prog.ReadAt(data, int64(addr-prog.Vaddr)); err != nil {
+				return nil
+			}
+			return data
+		}
+	}
+	return nil
+}
+
+func runtimeTextAddr(f *elf.File) (uint64, bool) {
+	elfSyms, err := f.Symbols()
+	if err != nil {
+		return 0, false
+	}
+
+	for _, s := range elfSyms {
+		if s.Name != "runtime.text" {
+			continue
+		}
+
+		return s.Value, true
+	}
+
+	return 0, false
 }
