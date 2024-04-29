@@ -19,7 +19,7 @@ import throttle from 'lodash.throttle';
 import {useContextMenu} from 'react-contexify';
 
 import {Label, MetricsSample, MetricsSeries as MetricsSeriesPb} from '@parca/client';
-import {DateTimeRange} from '@parca/components';
+import {DateTimeRange, useParcaContext} from '@parca/components';
 import {
   formatDate,
   formatForTimespan,
@@ -132,6 +132,7 @@ export const RawMetricsGraph = ({
   margin = 0,
   sampleUnit,
 }: Props): JSX.Element => {
+  const {timezone} = useParcaContext();
   const graph = useRef(null);
   const [dragging, setDragging] = useState(false);
   const [hovering, setHovering] = useState(false);
@@ -537,7 +538,7 @@ export const RawMetricsGraph = ({
                   >
                     <line y2={6} className="stroke-gray-300 dark:stroke-gray-500" />
                     <text fill="currentColor" dy=".71em" y={9}>
-                      {formatDate(d, formatForTimespan(from, to))}
+                      {formatDate(d, formatForTimespan(from, to), timezone)}
                     </text>
                   </g>
                   <g key={`grid-${i}`}>

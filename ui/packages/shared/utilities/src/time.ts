@@ -11,10 +11,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import format from 'date-fns/format';
+import * as DateFns from 'date-fns';
+import {toZonedTime} from 'date-fns-tz';
 import intervalToDuration from 'date-fns/intervalToDuration';
 
 import {Duration} from '@parca/client';
+
+export const timePattern = (timezone?: string): string => {
+  if (timezone !== undefined) {
+    return 'yyyy-MM-dd HH:mm:ss';
+  }
+
+  return "yyyy-MM-dd HH:mm:ss '(UTC)'";
+};
 
 export interface TimeObject {
   nanos?: number;
@@ -107,13 +116,19 @@ export const formatDuration = (timeObject: TimeObject, to?: number): string => {
   return values.join(' ');
 };
 
-export const formatDate = (date: number | Date, timeFormat: string): string => {
+export const formatDate = (date: number | Date, timeFormat: string, timezone?: string): string => {
   if (typeof date === 'number') {
     date = new Date(date);
   }
 
   const ISOString = date.toISOString().slice(0, -1);
-  return format(new Date(ISOString), timeFormat);
+
+  if (timezone !== undefined) {
+    const zonedDate = toZonedTime(date, timezone);
+    return DateFns.format(zonedDate, timeFormat);
+  }
+
+  return DateFns.format(new Date(ISOString), timeFormat);
 };
 
 export const formatForTimespan = (from: number, to: number): string => {

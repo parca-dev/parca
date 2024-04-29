@@ -23,6 +23,7 @@ import {convertLocalToUTCDate, convertUTCToLocalDate} from '@parca/utilities';
 
 import {AbsoluteDate} from '../DateTimeRangePicker/utils';
 import Input from '../Input';
+import {useParcaContext} from '../ParcaContext';
 
 export const DATE_FORMAT = 'yyyy-MM-DD HH:mm:ss';
 
@@ -42,18 +43,19 @@ interface Props {
 }
 
 export const DateTimePicker = ({selected, onChange}: Props): JSX.Element => {
+  const {timezone} = useParcaContext();
   const [referenceElement, setReferenceElement] = useState<HTMLDivElement | null>();
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>();
   const {styles, attributes} = usePopper(referenceElement, popperElement, {
     placement: 'bottom-end',
     strategy: 'absolute',
   });
-  const [textInput, setTextInput] = useState<string>(selected.getUIString());
+  const [textInput, setTextInput] = useState<string>(selected.getUIString(timezone));
   const [isTextInputDirty, setIsTextInputDirty] = useState<boolean>(false);
 
   useEffect(() => {
-    setTextInput(selected.getUIString());
-  }, [selected]);
+    setTextInput(selected.getUIString(timezone));
+  }, [selected, timezone]);
 
   return (
     <Popover>
@@ -83,10 +85,12 @@ export const DateTimePicker = ({selected, onChange}: Props): JSX.Element => {
               }
               const date = new Date(textInput);
               if (isNaN(date.getTime())) {
-                setTextInput(selected.getUIString());
+                setTextInput(selected.getUIString(timezone));
                 return;
               }
-              onChange(new AbsoluteDate(convertLocalToUTCDate(date)));
+              onChange(
+                new AbsoluteDate(timezone !== undefined ? date : convertLocalToUTCDate(date))
+              );
             }}
             onChange={e => {
               setTextInput(e.target.value);
@@ -101,12 +105,18 @@ export const DateTimePicker = ({selected, onChange}: Props): JSX.Element => {
             className="z-10"
           >
             <ReactDatePicker
-              selected={convertUTCToLocalDate(selected.getTime())}
+              selected={
+                timezone !== undefined
+                  ? selected.getTime()
+                  : convertUTCToLocalDate(selected.getTime())
+              }
               onChange={date => {
                 if (date == null) {
                   return;
                 }
-                onChange(new AbsoluteDate(convertLocalToUTCDate(date)));
+                onChange(
+                  new AbsoluteDate(timezone !== undefined ? date : convertLocalToUTCDate(date))
+                );
                 setIsTextInputDirty(false);
               }}
               showTimeInput

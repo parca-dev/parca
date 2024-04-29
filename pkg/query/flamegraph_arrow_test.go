@@ -49,23 +49,24 @@ import (
 )
 
 type flamegraphRow struct {
-	LabelsOnly         bool
-	MappingStart       uint64
-	MappingLimit       uint64
-	MappingOffset      uint64
-	MappingFile        string
-	MappingBuildID     string
-	LocationAddress    uint64
-	Inlined            bool
-	LocationLine       uint8
-	FunctionStartLine  uint8
-	FunctionName       string
-	FunctionSystemName string
-	FunctionFilename   string
-	Labels             map[string]string
-	Children           []uint32
-	Cumulative         uint8
-	Diff               int8
+	LabelsOnly          bool
+	MappingStart        uint64
+	MappingLimit        uint64
+	MappingOffset       uint64
+	MappingFile         string
+	MappingBuildID      string
+	LocationAddress     uint64
+	Inlined             bool
+	LocationLine        uint8
+	FunctionStartLine   uint8
+	FunctionName        string
+	FunctionSystemName  string
+	FunctionFilename    string
+	Labels              map[string]string
+	Children            []uint32
+	Cumulative          uint8
+	CumulativePerSecond uint8
+	Diff                int8
 }
 
 type flamegraphColumns struct {
@@ -82,6 +83,7 @@ type flamegraphColumns struct {
 	labels              []map[string]string
 	children            [][]uint32
 	cumulative          []uint8
+	cumulativePerSecond []uint8
 	diff                []int8
 }
 
@@ -101,6 +103,7 @@ func rowsToColumn(rows []flamegraphRow) flamegraphColumns {
 		columns.labels = append(columns.labels, row.Labels)
 		columns.children = append(columns.children, row.Children)
 		columns.cumulative = append(columns.cumulative, row.Cumulative)
+		columns.cumulativePerSecond = append(columns.cumulativePerSecond, row.CumulativePerSecond)
 		columns.diff = append(columns.diff, row.Diff)
 	}
 	return columns
@@ -434,7 +437,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 			require.Equal(t, tc.cumulative, cumulative)
 			require.Equal(t, tc.height, height)
 			require.Equal(t, tc.trimmed, trimmed)
-			require.Equal(t, int64(14), fa.NumCols())
+			require.Equal(t, int64(16), fa.NumCols())
 
 			// Convert the numRows to columns for easier access when testing below.
 			expectedColumns := rowsToColumn(tc.rows)
@@ -591,7 +594,7 @@ func TestGenerateFlamegraphArrowEmpty(t *testing.T) {
 	require.Equal(t, int64(0), total)
 	require.Equal(t, int32(1), height)
 	require.Equal(t, int64(0), trimmed)
-	require.Equal(t, int64(13), record.NumCols())
+	require.Equal(t, int64(15), record.NumCols())
 	require.Equal(t, int64(1), record.NumRows())
 }
 
@@ -666,7 +669,7 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 	require.Equal(t, int32(5), height)
 	require.Equal(t, int64(0), trimmed)
 
-	require.Equal(t, int64(13), record.NumCols())
+	require.Equal(t, int64(15), record.NumCols())
 	require.Equal(t, int64(5), record.NumRows())
 
 	rows := []flamegraphRow{
@@ -787,7 +790,7 @@ func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 			require.Equal(t, tc.height, height)
 			require.Equal(t, tc.trimmed, trimmed)
 			require.Equal(t, int64(len(tc.rows)), fa.NumRows())
-			require.Equal(t, int64(13), fa.NumCols())
+			require.Equal(t, int64(15), fa.NumCols())
 
 			// Convert the numRows to columns for easier access when testing below.
 			expectedColumns := rowsToColumn(tc.rows)
@@ -913,7 +916,7 @@ func TestGenerateFlamegraphArrowTrimming(t *testing.T) {
 	require.Equal(t, int32(5), height)
 	require.Equal(t, int64(4), trimmed)
 	require.Equal(t, int64(3), fa.NumRows())
-	require.Equal(t, int64(13), fa.NumCols())
+	require.Equal(t, int64(15), fa.NumCols())
 
 	// TODO: MappingBuildID and FunctionSystemNames shouldn't be "" but null?
 	rows := []flamegraphRow{
