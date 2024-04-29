@@ -18,6 +18,7 @@ import {useContextMenu} from 'react-contexify';
 
 import {FlamegraphArrow} from '@parca/client';
 import {USER_PREFERENCES, useCurrentColorProfile, useUserPreference} from '@parca/hooks';
+import {ProfileType} from '@parca/parser';
 import {
   getColorForFeature,
   selectDarkMode,
@@ -57,7 +58,7 @@ interface IcicleGraphArrowProps {
   arrow: FlamegraphArrow;
   total: bigint;
   filtered: bigint;
-  sampleUnit: string;
+  profileType?: ProfileType;
   width?: number;
   curPath: string[];
   setCurPath: (path: string[]) => void;
@@ -72,7 +73,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   width,
   setCurPath,
   curPath,
-  sampleUnit,
+  profileType,
   navigateTo,
   sortBy,
 }: IcicleGraphArrowProps): React.JSX.Element {
@@ -231,7 +232,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               sortBy={sortBy}
               darkMode={isDarkMode}
               compareMode={compareMode}
-              delta={sampleUnit === 'nanoseconds'}
+              profileType={profileType}
               isContextMenuOpen={isContextMenuOpen}
               hoveringName={hoveringName}
               setHoveringName={setHoveringName}
@@ -249,7 +250,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     currentSearchString,
     height,
     isDarkMode,
-    sampleUnit,
+    profileType,
     mappingColors,
     setCurPath,
     sortBy,
@@ -279,7 +280,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           level={hoveringLevel ?? 0}
           total={total}
           totalUnfiltered={total + filtered}
-          unit={sampleUnit}
+          profileType={profileType}
           navigateTo={navigateTo as NavigateFunction}
           trackVisibility={trackVisibility}
           curPath={curPath}
@@ -300,7 +301,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
             level={hoveringLevel ?? 0}
             total={total}
             totalUnfiltered={total + filtered}
-            unit={sampleUnit}
+            profileType={profileType}
           />
         ) : (
           !isContextMenuOpen && (
@@ -312,7 +313,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
                 isFixed={false}
                 total={total}
                 totalUnfiltered={total + filtered}
-                unit={sampleUnit}
+                profileType={profileType}
                 navigateTo={navigateTo as NavigateFunction}
               />
             </GraphTooltipArrow>

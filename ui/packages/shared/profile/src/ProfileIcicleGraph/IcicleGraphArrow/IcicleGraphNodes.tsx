@@ -21,6 +21,8 @@ import {isSearchMatch, scaleLinear} from '@parca/utilities';
 
 import 'react-contexify/dist/ReactContexify.css';
 
+import {ProfileType} from '@parca/parser';
+
 import {
   FIELD_CHILDREN,
   FIELD_CUMULATIVE,
@@ -55,7 +57,7 @@ interface IcicleGraphNodesProps {
   sortBy: string;
   darkMode: boolean;
   compareMode: boolean;
-  delta: boolean;
+  profileType?: ProfileType;
   isContextMenuOpen: boolean;
   hoveringName: string | null;
   setHoveringName: (name: string | null) => void;
@@ -83,7 +85,7 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
   searchString,
   darkMode,
   compareMode,
-  delta,
+  profileType,
   isContextMenuOpen,
   hoveringName,
   setHoveringName,
@@ -131,7 +133,7 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
         searchString={searchString}
         darkMode={darkMode}
         compareMode={compareMode}
-        delta={delta}
+        profileType={profileType}
         isContextMenuOpen={isContextMenuOpen}
         hoveringName={hoveringName}
         setHoveringName={setHoveringName}
@@ -170,7 +172,7 @@ interface IcicleNodeProps {
   sortBy: string;
   darkMode: boolean;
   compareMode: boolean;
-  delta: boolean;
+  profileType?: ProfileType;
   isContextMenuOpen: boolean;
   hoveringName: string | null;
   setHoveringName: (name: string | null) => void;
@@ -210,7 +212,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   sortBy,
   darkMode,
   compareMode,
-  delta,
+  profileType,
   isContextMenuOpen,
   hoveringName,
   setHoveringName,
@@ -272,7 +274,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
       });
       break;
     case FIELD_CUMULATIVE:
-      if (delta) {
+      if (profileType?.delta ?? false) {
         childRows.sort((a, b) => {
           const aCumulativePerSecond = cumulativePerSecondColumn?.get(a);
           const bCumulativePerSecond = cumulativePerSecondColumn?.get(b);
@@ -289,7 +291,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
       break;
     case FIELD_DIFF:
       childRows.sort((a, b) => {
-        if (delta) {
+        if (profileType?.delta ?? false) {
           let aRatio: number | null = null;
           let bRatio: number | null = null;
 
@@ -461,7 +463,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
           searchString={searchString}
           sortBy={sortBy}
           darkMode={darkMode}
-          delta={delta}
+          profileType={profileType}
           compareMode={compareMode}
           isContextMenuOpen={isContextMenuOpen}
           hoveringName={hoveringName}

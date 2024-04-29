@@ -71,13 +71,12 @@ export const ParcaPanel: React.FC<Props> = ({ data, width, height }) => {
           filtered={BigInt(0)}
           flamegraphData={flamegraphData}
           topTableData={topTableData}
-          sampleUnit={flamegraphData.data?.unit ?? 'bytes'}
           onDownloadPProf={actions.downloadPprof}
           profileSource={
             new MergedProfileSource(
               data.timeRange.from.valueOf(),
               data.timeRange.to.valueOf(),
-              (data.request?.targets[0] as any).parcaQuery,
+              (data.request?.targets[0] as any).parcaQuery
             )
           }
           queryClient={actions.getQueryClient()}
