@@ -12,8 +12,8 @@
 // limitations under the License.
 
 import {QueryServiceClient} from '@parca/client';
-import type {Props as CallgraphProps} from '@parca/profile/src/Callgraph';
 
+import type {Props as CallgraphProps} from './Callgraph';
 import ProfileExplorer from './ProfileExplorer';
 import ProfileTypeSelector from './ProfileTypeSelector';
 import type {FlamegraphData, TopTableData} from './ProfileView';

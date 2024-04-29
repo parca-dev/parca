@@ -26,13 +26,6 @@ import {
 import cx from 'classnames';
 import {useVirtual} from 'react-virtual';
 
-declare module '@tanstack/table-core' {
-  // @ts-expect-error
-  interface ColumnMeta {
-    align: 'left' | 'right';
-  }
-}
-
 interface Props<TData> {
   data: TData[];
   columns: Array<ColumnDef<TData>>;
@@ -112,7 +105,9 @@ const Table = <T,>({
                   >
                     <span
                       className={cx('flex items-center gap-2', {
+                        /* @ts-expect-error */
                         'justify-start': header.column.columnDef.meta?.align === 'left',
+                        /* @ts-expect-error */
                         'justify-end': header.column.columnDef.meta?.align === 'right',
                       })}
                     >
@@ -165,7 +160,9 @@ const Table = <T,>({
                     <td
                       key={cell.id}
                       className={cx('p-1.5', {
+                        /* @ts-expect-error */
                         'text-right': cell.column.columnDef.meta?.align === 'right',
+                        /* @ts-expect-error */
                         'text-left': cell.column.columnDef.meta?.align === 'left',
                       })}
                     >

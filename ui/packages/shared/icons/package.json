@@ -17,5 +17,9 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
-  "gitHead": "3f23a55309bf37b6c7bab85e60fed98865693029"
+  "gitHead": "3f23a55309bf37b6c7bab85e60fed98865693029",
+  "dependencies": {
+    "tailwindcss": "3.2.4",
+    "tsc-watch": "6.2.0"
+  }
 }
