@@ -39,7 +39,7 @@ export const ProfileViewWithData = ({
   const [dashboardItems = ['icicle']] = useURLState({param: 'dashboard_items', navigateTo});
   const [sourceBuildID] = useURLState({param: 'source_buildid', navigateTo}) as unknown as [string];
   const [sourceFilename] = useURLState({param: 'source_filename', navigateTo}) as unknown as [
-    string,
+    string
   ];
   const [groupBy = [FIELD_FUNCTION_NAME]] = useURLState({param: 'group_by', navigateTo});
 
