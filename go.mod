@@ -32,7 +32,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/parquet-go/parquet-go v0.20.1
 	github.com/planetscale/vtprotobuf v0.6.0
-	github.com/polarsignals/frostdb v0.0.0-20240418145630-1fad9e69a7f8
+	github.com/polarsignals/frostdb v0.0.0-20240425170350-d0d91b6bdc4b
 	github.com/prometheus/client_golang v1.19.0
 	github.com/prometheus/common v0.53.0
 	github.com/prometheus/prometheus v0.51.2
@@ -78,10 +78,9 @@ require (
 	github.com/Code-Hex/go-generics-cache v1.3.1 // indirect
 	github.com/JohnCGriffin/overflow v0.0.0-20211019200055-46fa312c352c // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
-	github.com/RoaringBitmap/roaring v1.9.2 // indirect
+	github.com/RoaringBitmap/roaring v1.9.3 // indirect
 	github.com/aliyun/aliyun-oss-go-sdk v2.2.2+incompatible // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
-	github.com/apache/arrow/go/v15 v15.0.2 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/aws/aws-sdk-go v1.50.32 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.16.0 // indirect
@@ -149,6 +148,7 @@ require (
 	github.com/gophercloud/gophercloud v1.8.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/grafana/regexp v0.0.0-20221122212121-6b5c0a4cb7fd // indirect
+	github.com/hamba/avro/v2 v2.20.1 // indirect
 	github.com/hashicorp/consul/api v1.28.2 // indirect
 	github.com/hashicorp/cronexpr v1.1.2 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -191,6 +191,7 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
 	github.com/ncw/swift v1.0.53 // indirect
+	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/oklog/ulid/v2 v2.1.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc4 // indirect
@@ -200,6 +201,7 @@ require (
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
+	github.com/polarsignals/iceberg-go v0.0.0-20240425142915-8b8ebf99abbd // indirect
 	github.com/polarsignals/wal v0.0.0-20231123092250-5d233119cfc9 // indirect
 	github.com/prometheus/client_model v0.6.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
