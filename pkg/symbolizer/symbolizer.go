@@ -158,16 +158,20 @@ func (s *Symbolizer) symbolize(
 
 	for _, mapping := range req.Mappings {
 		for _, loc := range mapping.Locations {
-			normalizedAddr, err := NormalizeAddress(loc.Address, ei, profile.Mapping{
-				StartAddr: loc.Mapping.Start,
-				EndAddr:   loc.Mapping.Limit,
-				Offset:    loc.Mapping.Offset,
-			})
-			if err != nil {
-				return fmt.Errorf("normalize address: %w", err)
+			addr := loc.Address
+
+			if !loc.AddressIsStabilized {
+				addr, err = NormalizeAddress(loc.Address, ei, profile.Mapping{
+					StartAddr: loc.Mapping.Start,
+					EndAddr:   loc.Mapping.Limit,
+					Offset:    loc.Mapping.Offset,
+				})
+				if err != nil {
+					return fmt.Errorf("normalize address: %w", err)
+				}
 			}
 
-			loc.Lines, err = l.PCToLines(ctx, normalizedAddr)
+			loc.Lines, err = l.PCToLines(ctx, addr)
 			if err != nil {
 				level.Debug(s.logger).Log("msg", "failed to get lines", "err", err)
 			}

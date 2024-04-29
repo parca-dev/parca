@@ -60,6 +60,13 @@ func (t *fakeTable) InsertRecord(ctx context.Context, record arrow.Record) (uint
 	return 0, nil
 }
 
+func (t *fakeTable) Close() error {
+	for _, r := range t.inserts {
+		r.Release()
+	}
+	return nil
+}
+
 func TestPprofToArrow(t *testing.T) {
 	logger := log.NewNopLogger()
 	ctx := context.Background()
@@ -70,9 +77,13 @@ func TestPprofToArrow(t *testing.T) {
 	fileContent, err := os.ReadFile("../query/testdata/alloc_objects.pb.gz")
 	require.NoError(t, err)
 
+	mem := memory.NewCheckedAllocator(memory.NewGoAllocator())
+	defer mem.AssertSize(t, 0)
+
 	table := &fakeTable{
 		schema: schema,
 	}
+	defer table.Close()
 	req := &profilestorepb.WriteRawRequest{
 		Series: []*profilestorepb.RawProfileSeries{{
 			Labels: &profilestorepb.LabelSet{
@@ -92,18 +103,21 @@ func TestPprofToArrow(t *testing.T) {
 			}},
 		}},
 	}
-	normalizedReq, err := normalizer.NormalizeWriteRawRequest(ctx, normalizer.New(), req)
+
+	r, err := normalizer.WriteRawRequestToArrowRecord(ctx, mem, req, schema)
 	require.NoError(t, err)
-	ingester := NewIngester(logger, memory.DefaultAllocator, table, schema)
-	err = ingester.Ingest(ctx, normalizedReq)
+	defer r.Release()
+	ingester := NewIngester(logger, table)
+	err = ingester.Ingest(ctx, r)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(table.inserts))
 	got, err := table.inserts[0].MarshalJSON()
 	require.NoError(t, err)
+	got = append(got, '\n')
 
 	want, err := os.ReadFile("testdata/ingest_arrow.json")
 	require.NoError(t, err)
-	require.JSONEq(t, string(want), string(got))
+	require.Equal(t, string(want), string(got))
 }
 
 func TestUncompressedPprofToArrow(t *testing.T) {
@@ -123,9 +137,13 @@ func TestUncompressedPprofToArrow(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, r.Close())
 
+	mem := memory.NewCheckedAllocator(memory.NewGoAllocator())
+	defer mem.AssertSize(t, 0)
+
 	table := &fakeTable{
 		schema: schema,
 	}
+	defer table.Close()
 	req := &profilestorepb.WriteRawRequest{
 		Series: []*profilestorepb.RawProfileSeries{{
 			Labels: &profilestorepb.LabelSet{
@@ -145,27 +163,32 @@ func TestUncompressedPprofToArrow(t *testing.T) {
 			}},
 		}},
 	}
-	normalizedReq, err := normalizer.NormalizeWriteRawRequest(ctx, normalizer.New(), req)
+
+	rec, err := normalizer.WriteRawRequestToArrowRecord(ctx, mem, req, schema)
 	require.NoError(t, err)
-	ingester := NewIngester(logger, memory.DefaultAllocator, table, schema)
-	err = ingester.Ingest(ctx, normalizedReq)
+	defer rec.Release()
+	ingester := NewIngester(logger, table)
+	err = ingester.Ingest(ctx, rec)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(table.inserts))
 	got, err := table.inserts[0].MarshalJSON()
 	require.NoError(t, err)
+	got = append(got, '\n')
 
 	want, err := os.ReadFile("testdata/ingest_uncompressed_arrow.json")
 	require.NoError(t, err)
-	require.JSONEq(t, string(want), string(got))
+	require.Equal(t, string(want), string(got))
 }
 
 func BenchmarkNormalizeWriteRawRequest(b *testing.B) {
 	ctx := context.Background()
 
+	schema, err := profile.Schema()
+	require.NoError(b, err)
+
 	fileContent, err := os.ReadFile("../query/testdata/alloc_objects.pb.gz")
 	require.NoError(b, err)
 
-	n := normalizer.New()
 	req := &profilestorepb.WriteRawRequest{
 		Series: []*profilestorepb.RawProfileSeries{{
 			Labels: &profilestorepb.LabelSet{
@@ -186,11 +209,15 @@ func BenchmarkNormalizeWriteRawRequest(b *testing.B) {
 		}},
 	}
 
+	mem := memory.NewCheckedAllocator(memory.NewGoAllocator())
+	defer mem.AssertSize(b, 0)
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err = normalizer.NormalizeWriteRawRequest(ctx, n, req)
+		r, err := normalizer.WriteRawRequestToArrowRecord(ctx, mem, req, schema)
 		if err != nil {
 			b.Fatal(err)
 		}
+		r.Release()
 	}
 }

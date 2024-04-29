@@ -42,12 +42,11 @@ func MustReadAllGzip(t testing.TB, filename string) []byte {
 func Test_Normalizer(t *testing.T) {
 	ctx := context.Background()
 
-	n := New()
 	fileContent := MustReadAllGzip(t, "./profile.pb.gz")
 
 	p := &pprofpb.Profile{}
 	require.NoError(t, p.UnmarshalVT(fileContent))
 
-	_, err := n.NormalizePprof(ctx, t.Name(), nil, p, true, nil)
+	_, err := NormalizePprof(ctx, t.Name(), nil, p, true, nil)
 	require.NoError(t, err)
 }

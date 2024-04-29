@@ -1,0 +1,726 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "opentelemetry/proto/collector/profiles/v1/profiles_service.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "ProfilesService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {},
+  "definitions": {
+    "alternativespprofextendedFunction": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Unique nonzero id for the function. [deprecated]"
+        },
+        "name": {
+          "type": "string",
+          "format": "int64",
+          "description": "Name of the function, in human-readable form if available.\n\nIndex into string table"
+        },
+        "systemName": {
+          "type": "string",
+          "format": "int64",
+          "description": "Name of the function, as identified by the system.\nFor instance, it can be a C++ mangled name.\n\nIndex into string table"
+        },
+        "filename": {
+          "type": "string",
+          "format": "int64",
+          "description": "Source file containing the function.\n\nIndex into string table"
+        },
+        "startLine": {
+          "type": "string",
+          "format": "int64",
+          "description": "Line number in source file."
+        }
+      },
+      "description": "Describes a function, including its human-readable name, system name,\nsource file, and starting line number in the source."
+    },
+    "alternativespprofextendedLabel": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "format": "int64",
+          "title": "Index into string table"
+        },
+        "str": {
+          "type": "string",
+          "format": "int64",
+          "description": "Index into string table",
+          "title": "At most one of the following must be present"
+        },
+        "num": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numUnit": {
+          "type": "string",
+          "format": "int64",
+          "description": "Should only be present when num is present.\nSpecifies the units of num.\nUse arbitrary string (for example, \"requests\") as a custom count unit.\nIf no unit is specified, consumer may apply heuristic to deduce the unit.\nConsumers may also  interpret units like \"bytes\" and \"kilobytes\" as memory\nunits and units like \"seconds\" and \"nanoseconds\" as time units,\nand apply appropriate unit conversions to these.\n\nIndex into string table"
+        }
+      },
+      "title": "Provides additional context for a sample,\nsuch as thread ID or allocation size, with optional units. [deprecated]"
+    },
+    "alternativespprofextendedLine": {
+      "type": "object",
+      "properties": {
+        "functionIndex": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The index of the corresponding profile.Function for this line."
+        },
+        "line": {
+          "type": "string",
+          "format": "int64",
+          "description": "Line number in source code."
+        },
+        "column": {
+          "type": "string",
+          "format": "int64",
+          "description": "Column number in source code."
+        }
+      },
+      "description": "Details a specific line in a source code, linked to a function."
+    },
+    "alternativespprofextendedLocation": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Unique nonzero id for the location.  A profile could use\ninstruction addresses or any integer sequence as ids. [deprecated]"
+        },
+        "mappingIndex": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The index of the corresponding profile.Mapping for this location.\nIt can be unset if the mapping is unknown or not applicable for\nthis profile type."
+        },
+        "address": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The instruction address for this location, if available.  It\nshould be within [Mapping.memory_start...Mapping.memory_limit]\nfor the corresponding mapping. A non-leaf address may be in the\nmiddle of a call instruction. It is up to display tools to find\nthe beginning of the instruction if necessary."
+        },
+        "line": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/alternativespprofextendedLine"
+          },
+          "description": "Multiple line indicates this location has inlined functions,\nwhere the last entry represents the caller into which the\npreceding entries were inlined.\n\nE.g., if memcpy() is inlined into printf:\n   line[0].function_name == \"memcpy\"\n   line[1].function_name == \"printf\""
+        },
+        "isFolded": {
+          "type": "boolean",
+          "description": "Provides an indication that multiple symbols map to this location's\naddress, for example due to identical code folding by the linker. In that\ncase the line information above represents one of the multiple\nsymbols. This field must be recomputed when the symbolization state of the\nprofile changes."
+        },
+        "typeIndex": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Type of frame (e.g. kernel, native, python, hotspot, php). Index into string table."
+        },
+        "attributes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uint64"
+          },
+          "title": "References to attributes in Profile.attribute_table. [optional]"
+        }
+      },
+      "description": "Describes function and line table debug information."
+    },
+    "alternativespprofextendedMapping": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Unique nonzero id for the mapping. [deprecated]"
+        },
+        "memoryStart": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Address at which the binary (or DLL) is loaded into memory."
+        },
+        "memoryLimit": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The limit of the address range occupied by this mapping."
+        },
+        "fileOffset": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Offset in the binary that corresponds to the first mapped address."
+        },
+        "filename": {
+          "type": "string",
+          "format": "int64",
+          "description": "The object this entry is loaded from.  This can be a filename on\ndisk for the main binary and shared libraries, or virtual\nabstractions like \"[vdso]\".\n\nIndex into string table"
+        },
+        "buildId": {
+          "type": "string",
+          "format": "int64",
+          "description": "A string that uniquely identifies a particular program version\nwith high probability. E.g., for binaries generated by GNU tools,\nit could be the contents of the .note.gnu.build-id field.\n\nIndex into string table"
+        },
+        "buildIdKind": {
+          "$ref": "#/definitions/pprofextendedBuildIdKind",
+          "title": "Specifies the kind of build id. See BuildIdKind enum for more details [optional]"
+        },
+        "attributes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uint64"
+          },
+          "title": "References to attributes in Profile.attribute_table. [optional]"
+        },
+        "hasFunctions": {
+          "type": "boolean",
+          "description": "The following fields indicate the resolution of symbolic info."
+        },
+        "hasFilenames": {
+          "type": "boolean"
+        },
+        "hasLineNumbers": {
+          "type": "boolean"
+        },
+        "hasInlineFrames": {
+          "type": "boolean"
+        }
+      },
+      "title": "Describes the mapping of a binary in memory, including its address range,\nfile offset, and metadata like build ID"
+    },
+    "alternativespprofextendedProfile": {
+      "type": "object",
+      "properties": {
+        "sampleType": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/alternativespprofextendedValueType"
+          },
+          "description": "A description of the samples associated with each Sample.value.\nFor a cpu profile this might be:\n  [[\"cpu\",\"nanoseconds\"]] or [[\"wall\",\"seconds\"]] or [[\"syscall\",\"count\"]]\nFor a heap profile, this might be:\n  [[\"allocations\",\"count\"], [\"space\",\"bytes\"]],\nIf one of the values represents the number of events represented\nby the sample, by convention it should be at index 0 and use\nsample_type.unit == \"count\"."
+        },
+        "sample": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/alternativespprofextendedSample"
+          },
+          "description": "The set of samples recorded in this profile."
+        },
+        "mapping": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/alternativespprofextendedMapping"
+          },
+          "description": "Mapping from address ranges to the image/binary/library mapped\ninto that address range.  mapping[0] will be the main binary."
+        },
+        "location": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/alternativespprofextendedLocation"
+          },
+          "description": "Locations referenced by samples via location_indices."
+        },
+        "locationIndices": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          },
+          "description": "Array of locations referenced by samples."
+        },
+        "function": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/alternativespprofextendedFunction"
+          },
+          "description": "Functions referenced by locations."
+        },
+        "attributeTable": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1KeyValue"
+          },
+          "description": "Lookup table for attributes."
+        },
+        "attributeUnits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/pprofextendedAttributeUnit"
+          },
+          "description": "Represents a mapping between Attribute Keys and Units."
+        },
+        "linkTable": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/pprofextendedLink"
+          },
+          "description": "Lookup table for links."
+        },
+        "stringTable": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "A common table for strings referenced by various messages.\nstring_table[0] must always be \"\"."
+        },
+        "dropFrames": {
+          "type": "string",
+          "format": "int64",
+          "description": "frames with Function.function_name fully matching the following\nregexp will be dropped from the samples, along with their successors.\n\nIndex into string table."
+        },
+        "keepFrames": {
+          "type": "string",
+          "format": "int64",
+          "description": "frames with Function.function_name fully matching the following\nregexp will be kept, even if it matches drop_frames.\n\nIndex into string table."
+        },
+        "timeNanos": {
+          "type": "string",
+          "format": "int64",
+          "description": "The following fields are informational, do not affect\ninterpretation of results.\nTime of collection (UTC) represented as nanoseconds past the epoch."
+        },
+        "durationNanos": {
+          "type": "string",
+          "format": "int64",
+          "description": "Duration of the profile, if a duration makes sense."
+        },
+        "periodType": {
+          "$ref": "#/definitions/alternativespprofextendedValueType",
+          "title": "The kind of events between sampled occurrences.\ne.g [ \"cpu\",\"cycles\" ] or [ \"heap\",\"bytes\" ]"
+        },
+        "period": {
+          "type": "string",
+          "format": "int64",
+          "description": "The number of events between sampled occurrences."
+        },
+        "comment": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          },
+          "description": "Free-form text associated with the profile. The text is displayed as is\nto the user by the tools that read profiles (e.g. by pprof). This field\nshould not be used to store any machine-readable information, it is only\nfor human-friendly content. The profile must stay functional if this field\nis cleaned.\n\nIndices into string table."
+        },
+        "defaultSampleType": {
+          "type": "string",
+          "format": "int64",
+          "description": "Index into the string table of the type of the preferred sample\nvalue. If unset, clients should default to the last sample value."
+        }
+      },
+      "description": "Represents a complete profile, including sample types, samples,\nmappings to binaries, locations, functions, string table, and additional metadata."
+    },
+    "alternativespprofextendedSample": {
+      "type": "object",
+      "properties": {
+        "locationIndex": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uint64"
+          },
+          "title": "The indices recorded here correspond to locations in Profile.location.\nThe leaf is at location_index[0]. [deprecated, superseded by locations_start_index / locations_length]"
+        },
+        "locationsStartIndex": {
+          "type": "string",
+          "format": "uint64",
+          "description": "locations_start_index along with locations_length refers to to a slice of locations in Profile.location.\nSupersedes location_index."
+        },
+        "locationsLength": {
+          "type": "string",
+          "format": "uint64",
+          "description": "locations_length along with locations_start_index refers to a slice of locations in Profile.location.\nSupersedes location_index."
+        },
+        "stacktraceIdIndex": {
+          "type": "integer",
+          "format": "int64",
+          "title": "A 128bit id that uniquely identifies this stacktrace, globally. Index into string table. [optional]"
+        },
+        "value": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          },
+          "description": "The type and unit of each value is defined by the corresponding\nentry in Profile.sample_type. All samples must have the same\nnumber of values, the same as the length of Profile.sample_type.\nWhen aggregating multiple samples into a single sample, the\nresult has a list of values that is the element-wise sum of the\nlists of the originals."
+        },
+        "label": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/alternativespprofextendedLabel"
+          },
+          "description": "label includes additional context for this sample. It can include\nthings like a thread id, allocation size, etc.\n\nNOTE: While possible, having multiple values for the same label key is\nstrongly discouraged and should never be used. Most tools (e.g. pprof) do\nnot have good (or any) support for multi-value labels. And an even more\ndiscouraged case is having a string label and a numeric label of the same\nname on a sample.  Again, possible to express, but should not be used.\n[deprecated, superseded by attributes]"
+        },
+        "attributes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uint64"
+          },
+          "title": "References to attributes in Profile.attribute_table. [optional]"
+        },
+        "link": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Reference to link in Profile.link_table. [optional]"
+        },
+        "timestamps": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uint64"
+          },
+          "title": "Timestamps associated with Sample represented in ms. These timestamps are expected\nto fall within the Profile's time range. [optional]"
+        }
+      },
+      "description": "Each Sample records values encountered in some program\ncontext. The program context is typically a stack trace, perhaps\naugmented with auxiliary information like the thread-id, some\nindicator of a higher level request being handled etc."
+    },
+    "alternativespprofextendedValueType": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "format": "int64",
+          "description": "Index into string table."
+        },
+        "unit": {
+          "type": "string",
+          "format": "int64",
+          "description": "Index into string table."
+        },
+        "aggregationTemporality": {
+          "$ref": "#/definitions/pprofextendedAggregationTemporality"
+        }
+      },
+      "description": "ValueType describes the type and units of a value, with an optional aggregation temporality."
+    },
+    "pprofextendedAggregationTemporality": {
+      "type": "string",
+      "enum": [
+        "AGGREGATION_TEMPORALITY_UNSPECIFIED",
+        "AGGREGATION_TEMPORALITY_DELTA",
+        "AGGREGATION_TEMPORALITY_CUMULATIVE"
+      ],
+      "default": "AGGREGATION_TEMPORALITY_UNSPECIFIED",
+      "description": "Specifies the method of aggregating metric values, either DELTA (change since last report)\nor CUMULATIVE (total since a fixed start time).\n\n - AGGREGATION_TEMPORALITY_UNSPECIFIED: UNSPECIFIED is the default AggregationTemporality, it MUST not be used.\n - AGGREGATION_TEMPORALITY_DELTA: * DELTA is an AggregationTemporality for a profiler which reports\nchanges since last report time. Successive metrics contain aggregation of\nvalues from continuous and non-overlapping intervals.\nThe values for a DELTA metric are based only on the time interval\nassociated with one measurement cycle. There is no dependency on\nprevious measurements like is the case for CUMULATIVE metrics.\nFor example, consider a system measuring the number of requests that\nit receives and reports the sum of these requests every second as a\nDELTA metric:\n1. The system starts receiving at time=t_0.\n2. A request is received, the system measures 1 request.\n3. A request is received, the system measures 1 request.\n4. A request is received, the system measures 1 request.\n5. The 1 second collection cycle ends. A metric is exported for the\nnumber of requests received over the interval of time t_0 to\nt_0+1 with a value of 3.\n6. A request is received, the system measures 1 request.\n7. A request is received, the system measures 1 request.\n8. The 1 second collection cycle ends. A metric is exported for the\nnumber of requests received over the interval of time t_0+1 to\nt_0+2 with a value of 2.\n - AGGREGATION_TEMPORALITY_CUMULATIVE: * CUMULATIVE is an AggregationTemporality for a profiler which\nreports changes since a fixed start time. This means that current values\nof a CUMULATIVE metric depend on all previous measurements since the\nstart time. Because of this, the sender is required to retain this state\nin some form. If this state is lost or invalidated, the CUMULATIVE metric\nvalues MUST be reset and a new fixed start time following the last\nreported measurement time sent MUST be used.\nFor example, consider a system measuring the number of requests that\nit receives and reports the sum of these requests every second as a\nCUMULATIVE metric:\n1. The system starts receiving at time=t_0.\n2. A request is received, the system measures 1 request.\n3. A request is received, the system measures 1 request.\n4. A request is received, the system measures 1 request.\n5. The 1 second collection cycle ends. A metric is exported for the\nnumber of requests received over the interval of time t_0 to\nt_0+1 with a value of 3.\n6. A request is received, the system measures 1 request.\n7. A request is received, the system measures 1 request.\n8. The 1 second collection cycle ends. A metric is exported for the\nnumber of requests received over the interval of time t_0 to\nt_0+2 with a value of 5.\n9. The system experiences a fault and loses state.\n10. The system recovers and resumes receiving at time=t_1.\n11. A request is received, the system measures 1 request.\n12. The 1 second collection cycle ends. A metric is exported for the\nnumber of requests received over the interval of time t_1 to\nt_0+1 with a value of 1.\nNote: Even though, when reporting changes since last report time, using\nCUMULATIVE is valid, it is not recommended."
+    },
+    "pprofextendedAttributeUnit": {
+      "type": "object",
+      "properties": {
+        "attributeKey": {
+          "type": "string",
+          "format": "int64",
+          "description": "Index into string table."
+        },
+        "unit": {
+          "type": "string",
+          "format": "int64",
+          "description": "Index into string table."
+        }
+      },
+      "description": "Represents a mapping between Attribute Keys and Units."
+    },
+    "pprofextendedBuildIdKind": {
+      "type": "string",
+      "enum": [
+        "BUILD_ID_LINKER",
+        "BUILD_ID_BINARY_HASH"
+      ],
+      "default": "BUILD_ID_LINKER",
+      "description": "Indicates the semantics of the build_id field.\n\n - BUILD_ID_LINKER: Linker-generated build ID, stored in the ELF binary notes.\n - BUILD_ID_BINARY_HASH: Build ID based on the content hash of the binary. Currently no particular\nhashing approach is standardized, so a given producer needs to define it\nthemselves and thus unlike BUILD_ID_LINKER this kind of hash is producer-specific.\nWe may choose to provide a standardized stable hash recommendation later."
+    },
+    "pprofextendedLink": {
+      "type": "object",
+      "properties": {
+        "traceId": {
+          "type": "string",
+          "format": "byte",
+          "description": "A unique identifier of a trace that this linked span is part of. The ID is a\n16-byte array."
+        },
+        "spanId": {
+          "type": "string",
+          "format": "byte",
+          "description": "A unique identifier for the linked span. The ID is an 8-byte array."
+        }
+      },
+      "description": "A pointer from a profile Sample to a trace Span.\nConnects a profile sample to a trace span, identified by unique trace and span IDs."
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v1AnyValue": {
+      "type": "object",
+      "properties": {
+        "stringValue": {
+          "type": "string"
+        },
+        "boolValue": {
+          "type": "boolean"
+        },
+        "intValue": {
+          "type": "string",
+          "format": "int64"
+        },
+        "doubleValue": {
+          "type": "number",
+          "format": "double"
+        },
+        "arrayValue": {
+          "$ref": "#/definitions/v1ArrayValue"
+        },
+        "kvlistValue": {
+          "$ref": "#/definitions/v1KeyValueList"
+        },
+        "bytesValue": {
+          "type": "string",
+          "format": "byte"
+        }
+      },
+      "description": "AnyValue is used to represent any type of attribute value. AnyValue may contain a\nprimitive value such as a string or integer or it may contain an arbitrary nested\nobject containing arrays, key-value lists and primitives."
+    },
+    "v1ArrayValue": {
+      "type": "object",
+      "properties": {
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1AnyValue"
+          },
+          "description": "Array of values. The array may be empty (contain 0 elements)."
+        }
+      },
+      "description": "ArrayValue is a list of AnyValue messages. We need ArrayValue as a message\nsince oneof in AnyValue does not allow repeated fields."
+    },
+    "v1ExportProfilesPartialSuccess": {
+      "type": "object",
+      "properties": {
+        "rejectedProfiles": {
+          "type": "string",
+          "format": "int64",
+          "description": "The number of rejected profiles.\n\nA `rejected_\u003csignal\u003e` field holding a `0` value indicates that the\nrequest was fully accepted."
+        },
+        "errorMessage": {
+          "type": "string",
+          "description": "A developer-facing human-readable message in English. It should be used\neither to explain why the server rejected parts of the data during a partial\nsuccess or to convey warnings/suggestions during a full success. The message\nshould offer guidance on how users can address such issues.\n\nerror_message is an optional field. An error_message with an empty value\nis equivalent to it not being set."
+        }
+      }
+    },
+    "v1ExportProfilesServiceResponse": {
+      "type": "object",
+      "properties": {
+        "partialSuccess": {
+          "$ref": "#/definitions/v1ExportProfilesPartialSuccess",
+          "description": "The details of a partially successful export request.\n\nIf the request is only partially accepted\n(i.e. when the server accepts only parts of the data and rejects the rest)\nthe server MUST initialize the `partial_success` field and MUST\nset the `rejected_\u003csignal\u003e` with the number of items it rejected.\n\nServers MAY also make use of the `partial_success` field to convey\nwarnings/suggestions to senders even when the request was fully accepted.\nIn such cases, the `rejected_\u003csignal\u003e` MUST have a value of `0` and\nthe `error_message` MUST be non-empty.\n\nA `partial_success` message with an empty value (rejected_\u003csignal\u003e = 0 and\n`error_message` = \"\") is equivalent to it not being set/present. Senders\nSHOULD interpret it the same way as in the full success case."
+        }
+      }
+    },
+    "v1InstrumentationScope": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "An empty instrumentation scope name means the name is unknown."
+        },
+        "version": {
+          "type": "string"
+        },
+        "attributes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1KeyValue"
+          },
+          "description": "Additional attributes that describe the scope. [Optional].\nAttribute keys MUST be unique (it is not allowed to have more than one\nattribute with the same key)."
+        },
+        "droppedAttributesCount": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "description": "InstrumentationScope is a message representing the instrumentation scope information\nsuch as the fully qualified name and version."
+    },
+    "v1KeyValue": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/definitions/v1AnyValue"
+        }
+      },
+      "description": "KeyValue is a key-value pair that is used to store Span attributes, Link\nattributes, etc."
+    },
+    "v1KeyValueList": {
+      "type": "object",
+      "properties": {
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1KeyValue"
+          },
+          "description": "A collection of key/value pairs of key-value pairs. The list may be empty (may\ncontain 0 elements).\nThe keys MUST be unique (it is not allowed to have more than one\nvalue with the same key)."
+        }
+      },
+      "description": "KeyValueList is a list of KeyValue messages. We need KeyValueList as a message\nsince `oneof` in AnyValue does not allow repeated fields. Everywhere else where we need\na list of KeyValue messages (e.g. in Span) we use `repeated KeyValue` directly to\navoid unnecessary extra wrapping (which slows down the protocol). The 2 approaches\nare semantically equivalent."
+    },
+    "v1ProfileContainer": {
+      "type": "object",
+      "properties": {
+        "profileId": {
+          "type": "string",
+          "format": "byte",
+          "description": "A unique identifier for a profile. The ID is a 16-byte array. An ID with\nall zeroes is considered invalid.\n\nThis field is required."
+        },
+        "startTimeUnixNano": {
+          "type": "string",
+          "format": "uint64",
+          "description": "start_time_unix_nano is the start time of the profile.\nValue is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January 1970.\n\nThis field is semantically required and it is expected that end_time \u003e= start_time."
+        },
+        "endTimeUnixNano": {
+          "type": "string",
+          "format": "uint64",
+          "description": "end_time_unix_nano is the end time of the profile.\nValue is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January 1970.\n\nThis field is semantically required and it is expected that end_time \u003e= start_time."
+        },
+        "attributes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1KeyValue"
+          },
+          "description": "\"/http/user_agent\": \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36\"\n    \"/http/server_latency\": 300\n    \"abc.com/myattribute\": true\n    \"abc.com/score\": 10.239\n\nThe OpenTelemetry API specification further restricts the allowed value types:\nhttps://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/common/README.md#attribute\nAttribute keys MUST be unique (it is not allowed to have more than one\nattribute with the same key).",
+          "title": "attributes is a collection of key/value pairs. Note, global attributes\nlike server name can be set using the resource API. Examples of attributes:"
+        },
+        "droppedAttributesCount": {
+          "type": "integer",
+          "format": "int64",
+          "description": "dropped_attributes_count is the number of attributes that were discarded. Attributes\ncan be discarded because their keys are too long or because there are too many\nattributes. If this value is 0, then no attributes were dropped."
+        },
+        "originalPayloadFormat": {
+          "type": "string",
+          "title": "Specifies format of the original payload. Common values are defined in semantic conventions. [required if original_payload is present]"
+        },
+        "originalPayload": {
+          "type": "string",
+          "format": "byte",
+          "description": "Original payload can be stored in this field. This can be useful for users who want to get the original payload.\nFormats such as JFR are highly extensible and can contain more information than what is defined in this spec.\nInclusion of original payload should be configurable by the user. Default behavior should be to not include the original payload.\nIf the original payload is in pprof format, it SHOULD not be included in this field.\nThe field is optional, however if it is present `profile` MUST be present and contain the same profiling information."
+        },
+        "profile": {
+          "$ref": "#/definitions/alternativespprofextendedProfile",
+          "description": "This is a reference to a pprof profile. Required, even when original_payload is present."
+        }
+      },
+      "description": "A ProfileContainer represents a single profile. It wraps pprof profile with OpenTelemetry specific metadata."
+    },
+    "v1Resource": {
+      "type": "object",
+      "properties": {
+        "attributes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1KeyValue"
+          },
+          "description": "Set of attributes that describe the resource.\nAttribute keys MUST be unique (it is not allowed to have more than one\nattribute with the same key)."
+        },
+        "droppedAttributesCount": {
+          "type": "integer",
+          "format": "int64",
+          "description": "dropped_attributes_count is the number of dropped attributes. If the value is 0, then\nno attributes were dropped."
+        }
+      },
+      "description": "Resource information."
+    },
+    "v1ResourceProfiles": {
+      "type": "object",
+      "properties": {
+        "resource": {
+          "$ref": "#/definitions/v1Resource",
+          "description": "The resource for the profiles in this message.\nIf this field is not set then no resource info is known."
+        },
+        "scopeProfiles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ScopeProfiles"
+          },
+          "description": "A list of ScopeProfiles that originate from a resource."
+        },
+        "schemaUrl": {
+          "type": "string",
+          "description": "This schema_url applies to the data in the \"resource\" field. It does not apply\nto the data in the \"scope_profiles\" field which have their own schema_url field."
+        }
+      },
+      "description": "A collection of ScopeProfiles from a Resource."
+    },
+    "v1ScopeProfiles": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "$ref": "#/definitions/v1InstrumentationScope",
+          "description": "The instrumentation scope information for the profiles in this message.\nSemantically when InstrumentationScope isn't set, it is equivalent with\nan empty instrumentation scope name (unknown)."
+        },
+        "profiles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ProfileContainer"
+          },
+          "description": "A list of ProfileContainers that originate from an instrumentation scope."
+        },
+        "schemaUrl": {
+          "type": "string",
+          "description": "This schema_url applies to all profiles and profile events in the \"profiles\" field."
+        }
+      },
+      "description": "A collection of Profiles produced by an InstrumentationScope."
+    }
+  }
+}

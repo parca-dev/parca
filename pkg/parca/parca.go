@@ -59,14 +59,13 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"gopkg.in/yaml.v3"
 
+	otelgrpcprofilingpb "github.com/parca-dev/parca/gen/proto/go/opentelemetry/proto/collector/profiles/v1"
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	scrapepb "github.com/parca-dev/parca/gen/proto/go/parca/scrape/v1alpha1"
 	sharepb "github.com/parca-dev/parca/gen/proto/go/parca/share/v1alpha1"
 	telemetry "github.com/parca-dev/parca/gen/proto/go/parca/telemetry/v1alpha1"
-	"github.com/parca-dev/parca/ui"
-
 	"github.com/parca-dev/parca/pkg/badgerlogger"
 	"github.com/parca-dev/parca/pkg/config"
 	"github.com/parca-dev/parca/pkg/debuginfo"
@@ -82,6 +81,7 @@ import (
 	"github.com/parca-dev/parca/pkg/symbolizer"
 	telemetryservice "github.com/parca-dev/parca/pkg/telemetry"
 	"github.com/parca-dev/parca/pkg/tracer"
+	"github.com/parca-dev/parca/ui"
 )
 
 const (
@@ -399,7 +399,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	ingester := ingester.NewIngester(logger, memory.DefaultAllocator, table, schema)
+	ingester := ingester.NewIngester(logger, table)
 	querier := parcacol.NewQuerier(
 		logger,
 		tracerProvider.Tracer("querier"),
@@ -425,7 +425,8 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		logger,
 		tracerProvider.Tracer("profilestore"),
 		ingester,
-		flags.Hidden.DebugNormalizeAddresses,
+		schema,
+		memory.DefaultAllocator,
 	)
 
 	propagators := propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
@@ -592,6 +593,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 						debuginfopb.RegisterDebuginfoServiceServer(srv, dbginfo)
 						profilestorepb.RegisterProfileStoreServiceServer(srv, s)
 						profilestorepb.RegisterAgentsServiceServer(srv, s)
+						otelgrpcprofilingpb.RegisterProfilesServiceServer(srv, s)
 						querypb.RegisterQueryServiceServer(srv, q)
 						scrapepb.RegisterScrapeServiceServer(srv, m)
 						telemetry.RegisterTelemetryServiceServer(srv, t)

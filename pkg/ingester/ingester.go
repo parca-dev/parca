@@ -14,69 +14,37 @@
 package ingester
 
 import (
-	"bytes"
 	"context"
-	"sync"
 
 	"github.com/apache/arrow/go/v16/arrow"
 	"github.com/apache/arrow/go/v16/arrow/array"
-	"github.com/apache/arrow/go/v16/arrow/memory"
 	"github.com/go-kit/log"
-	"github.com/polarsignals/frostdb/dynparquet"
-
-	"github.com/parca-dev/parca/pkg/normalizer"
 )
 
 type Ingester interface {
-	Ingest(ctx context.Context, req normalizer.NormalizedWriteRawRequest) error
-	Close() error
+	Ingest(ctx context.Context, record arrow.Record) error
 }
 
 type Table interface {
-	Schema() *dynparquet.Schema
 	InsertRecord(context.Context, arrow.Record) (tx uint64, err error)
 }
 
 type TableIngester struct {
-	logger     log.Logger
-	mem        memory.Allocator
-	table      Table
-	schema     *dynparquet.Schema
-	bufferPool *sync.Pool
+	logger log.Logger
+	table  Table
 }
 
 func NewIngester(
 	logger log.Logger,
-	mem memory.Allocator,
 	table Table,
-	schema *dynparquet.Schema,
 ) Ingester {
 	return TableIngester{
 		logger: logger,
-		mem:    mem,
 		table:  table,
-		schema: schema,
-		bufferPool: &sync.Pool{
-			New: func() any {
-				return new(bytes.Buffer)
-			},
-		},
 	}
 }
 
-func (ing TableIngester) Close() error { return nil }
-
-func (ing TableIngester) Ingest(ctx context.Context, req normalizer.NormalizedWriteRawRequest) error {
-	// Read sorted rows into an arrow record
-	record, err := normalizer.ParquetBufToArrowRecord(ctx, ing.mem, ing.schema, req)
-	if err != nil {
-		return err
-	}
-	if record == nil {
-		return nil
-	}
-	defer record.Release()
-
+func (ing TableIngester) Ingest(ctx context.Context, record arrow.Record) error {
 	if record.NumRows() == 0 {
 		return nil
 	}

@@ -77,7 +77,7 @@ func ParquetBufToArrowRecord(ctx context.Context, mem memory.Allocator, s *dynpa
 	buffer.Sort()
 
 	// Convert the sorted buffer to an arrow record.
-	converter := pqarrow.NewParquetConverter(memory.NewGoAllocator(), logicalplan.IterOptions{})
+	converter := pqarrow.NewParquetConverter(mem, logicalplan.IterOptions{})
 	defer converter.Close()
 
 	if err := converter.Convert(ctx, buffer, s); err != nil {

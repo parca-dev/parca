@@ -201,13 +201,17 @@ func TestConsistency(t *testing.T) {
 	fileContent, err := os.ReadFile("../query/testdata/alloc_objects.pb.gz")
 	require.NoError(t, err)
 
-	ingester := ingester.NewIngester(logger, memory.DefaultAllocator, table, schema)
+	ingester := ingester.NewIngester(
+		logger,
+		table,
+	)
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
 		ingester,
-		true,
+		schema,
+		memory.DefaultAllocator,
 	)
 
 	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
@@ -307,13 +311,17 @@ func TestPGOE2e(t *testing.T) {
 	fileContent, err := os.ReadFile("./testdata/pgotest.prof")
 	require.NoError(t, err)
 
-	ingester := ingester.NewIngester(logger, memory.DefaultAllocator, table, schema)
+	ingester := ingester.NewIngester(
+		logger,
+		table,
+	)
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
 		ingester,
-		true,
+		schema,
+		memory.DefaultAllocator,
 	)
 
 	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
@@ -403,13 +411,17 @@ func TestLabels(t *testing.T) {
 	fileContent, err := os.ReadFile("testdata/labels.pb.gz")
 	require.NoError(t, err)
 
-	ingester := ingester.NewIngester(logger, memory.DefaultAllocator, table, schema)
+	ingester := ingester.NewIngester(
+		logger,
+		table,
+	)
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
 		ingester,
-		true,
+		schema,
+		memory.DefaultAllocator,
 	)
 	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
 		Series: []*profilestorepb.RawProfileSeries{{

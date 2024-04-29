@@ -53,17 +53,18 @@ func Test_LabelName_Error(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	ingester := ingester.NewIngester(
+		logger,
+		table,
+	)
+
 	api := NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
-		ingester.NewIngester(
-			logger,
-			memory.DefaultAllocator,
-			table,
-			schema,
-		),
-		true,
+		ingester,
+		schema,
+		memory.DefaultAllocator,
 	)
 
 	cases := []struct {
@@ -131,17 +132,18 @@ func BenchmarkProfileColumnStoreWriteSeries(b *testing.B) {
 	)
 	require.NoError(b, err)
 
+	ingester := ingester.NewIngester(
+		logger,
+		table,
+	)
+
 	api := NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
-		ingester.NewIngester(
-			logger,
-			memory.DefaultAllocator,
-			table,
-			schema,
-		),
-		true,
+		ingester,
+		schema,
+		memory.DefaultAllocator,
 	)
 
 	content, err := os.ReadFile("../query/testdata/alloc_objects.pb.gz")
