@@ -11,7 +11,7 @@
     "watch": "tsc-watch --onCompilationComplete 'tailwindcss -o dist/styles.css'"
   },
   "dependencies": {
-    "@headlessui/react": "^1.4.3",
+    "@headlessui/react": "^1.7.19",
     "@iconify/react": "^4.0.0",
     "@parca/client": "workspace:^",
     "@parca/dynamicsize": "^0.16.61",
@@ -42,11 +42,11 @@
   },
   "devDependencies": {
     "@types/react-datepicker": "4.19.6",
-    "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
   },
   "peerDependencies": {
-    "react": "^18.2.0",
+    "react": "18.3.1",
     "react-dom": "^18.2.0"
   },
   "keywords": [],

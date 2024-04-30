@@ -23,9 +23,11 @@
     "d3": "7.9.0",
     "d3-scale": "^4.0.2",
     "d3-selection": "3.0.0",
-    "framer-motion": "^10.18.0",
+    "framer-motion": "6.3.3",
     "graphviz-wasm": "3.0.2",
     "lodash.throttle": "^4.1.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
     "react-beautiful-dnd": "^13.1.1",
     "react-contexify": "^6.0.0",
     "react-flame-graph": "^1.4.0",
@@ -44,9 +46,6 @@
   "devDependencies": {
     "@types/d3": "7.4.3",
     "@types/react-syntax-highlighter": "15.5.11"
-  },
-  "resolutions": {
-    "konva": "8.4.3"
   },
   "main": "dist/index.js",
   "scripts": {
