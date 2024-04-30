@@ -87,6 +87,17 @@ export const getTextForCumulative = (
     (${(100 * divide(hoveringNodeCumulative, totalUnfiltered)).toFixed(2)}%${filtered})`;
 };
 
+export const getTextForCumulativePerSecond = (
+  hoveringNodeCumulative: number,
+  unit: string
+): string => {
+  return `${valueFormatter(
+    hoveringNodeCumulative,
+    unit === 'nanoseconds' ? 'CPU Cores' : unit,
+    5
+  )}`;
+};
+
 export const arrowToString = (buffer: any): string | null => {
   if (buffer == null || typeof buffer === 'string') {
     return buffer;

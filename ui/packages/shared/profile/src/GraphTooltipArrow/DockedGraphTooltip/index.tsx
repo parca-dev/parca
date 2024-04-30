@@ -17,6 +17,7 @@ import cx from 'classnames';
 import {useWindowSize} from 'react-use';
 
 import {useParcaContext} from '@parca/components';
+import {ProfileType} from '@parca/parser';
 import {getLastItem} from '@parca/utilities';
 
 import {hexifyAddress, truncateString, truncateStringReverse} from '../../utils';
@@ -25,11 +26,11 @@ import {useGraphTooltipMetaInfo} from '../useGraphTooltipMetaInfo';
 
 interface Props {
   table: Table<any>;
-  unit: string;
   total: bigint;
   totalUnfiltered: bigint;
   row: number | null;
   level: number;
+  profileType?: ProfileType;
 }
 
 const InfoSection = ({
@@ -55,11 +56,11 @@ const NoData = (): React.JSX.Element => {
 
 export const DockedGraphTooltip = ({
   table,
-  unit,
   total,
   totalUnfiltered,
   row,
   level,
+  profileType,
 }: Props): JSX.Element => {
   let {width} = useWindowSize();
   const {profileExplorer, navigateTo} = useParcaContext();
@@ -68,7 +69,7 @@ export const DockedGraphTooltip = ({
 
   const graphTooltipData = useGraphTooltip({
     table,
-    unit,
+    profileType,
     total,
     totalUnfiltered,
     row,

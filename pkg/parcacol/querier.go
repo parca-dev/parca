@@ -21,11 +21,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apache/arrow/go/v15/arrow"
-	"github.com/apache/arrow/go/v15/arrow/array"
-	"github.com/apache/arrow/go/v15/arrow/memory"
-	"github.com/apache/arrow/go/v15/arrow/scalar"
+	"github.com/apache/arrow/go/v16/arrow"
+	"github.com/apache/arrow/go/v16/arrow/array"
+	"github.com/apache/arrow/go/v16/arrow/memory"
+	"github.com/apache/arrow/go/v16/arrow/scalar"
 	"github.com/go-kit/log"
+	"github.com/polarsignals/frostdb/pqarrow/arrowutils"
 	"github.com/polarsignals/frostdb/query"
 	"github.com/polarsignals/frostdb/query/logicalplan"
 	"github.com/prometheus/prometheus/model/labels"
@@ -37,9 +38,11 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	metapb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
+	"github.com/parca-dev/parca/pkg/symbolizer"
 )
 
 type Engine interface {
@@ -47,12 +50,19 @@ type Engine interface {
 	ScanSchema(name string) query.Builder
 }
 
+type Symbolizer interface {
+	Symbolize(
+		ctx context.Context,
+		req symbolizer.SymbolizationRequest,
+	) error
+}
+
 func NewQuerier(
 	logger log.Logger,
 	tracer trace.Tracer,
 	engine Engine,
 	tableName string,
-	symbolizer *ProfileSymbolizer,
+	symbolizer Symbolizer,
 	pool memory.Allocator,
 ) *Querier {
 	return &Querier{
@@ -69,7 +79,7 @@ type Querier struct {
 	logger     log.Logger
 	engine     Engine
 	tableName  string
-	symbolizer *ProfileSymbolizer
+	symbolizer Symbolizer
 	tracer     trace.Tracer
 	pool       memory.Allocator
 }
@@ -371,18 +381,27 @@ func (q *Querier) queryRangeDelta(
 	timestampUnique := logicalplan.Unique(logicalplan.Col(profile.ColumnTimestamp))
 
 	preProjection := []logicalplan.Expr{
-		logicalplan.Mul(logicalplan.Div(logicalplan.Col(profile.ColumnTimestamp), logicalplan.Literal(step.Milliseconds())), logicalplan.Literal(step.Milliseconds())).Alias(TimestampBucket),
+		logicalplan.Mul(
+			logicalplan.Div(
+				logicalplan.Col(profile.ColumnTimestamp),
+				logicalplan.Literal(step.Milliseconds()),
+			),
+			logicalplan.Literal(step.Milliseconds()),
+		).Alias(TimestampBucket),
 		logicalplan.Col(profile.ColumnTimestamp),
 		logicalplan.DynCol(profile.ColumnLabels),
 		logicalplan.Col(profile.ColumnDuration),
 	}
 
-	if m.SampleType.Type == "samples" && m.SampleType.Unit == "count" {
+	if isSamplesCount(m.SampleType) {
 		// 1 CPU sample is equivalent to whatever the period is. Therefore the
 		// value * period is the total CPU time spent over the duration.
 		preProjection = append(
 			preProjection,
-			logicalplan.Mul(logicalplan.Col(profile.ColumnValue), logicalplan.Col(profile.ColumnPeriod)).Alias(profile.ColumnValue),
+			logicalplan.Mul(
+				logicalplan.Col(profile.ColumnValue),
+				logicalplan.Col(profile.ColumnPeriod),
+			).Alias(profile.ColumnValue),
 		)
 
 		resultType = m.PeriodType
@@ -393,35 +412,17 @@ func (q *Querier) queryRangeDelta(
 		)
 	}
 
-	var perSecondExpr logicalplan.Expr
-	if resultType.Type == "cpu" && resultType.Unit == "nanoseconds" {
-		perSecondExpr = logicalplan.Div(
-			logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
-			logicalplan.Convert(
-				logicalplan.If(
-					logicalplan.IsNull(timestampUnique),
-					logicalplan.Literal(step.Nanoseconds()),
-					durationMin,
-				),
-				arrow.PrimitiveTypes.Float64,
+	perSecondExpr := logicalplan.Div(
+		logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
+		logicalplan.Convert(
+			logicalplan.If(
+				logicalplan.IsNull(timestampUnique),
+				logicalplan.Literal(step.Nanoseconds()),
+				durationMin,
 			),
-		).Alias(ValuePerSecond)
-	} else {
-		perSecondExpr = logicalplan.Div(
-			logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
-			logicalplan.Div(
-				logicalplan.Convert(
-					logicalplan.If(
-						logicalplan.IsNull(timestampUnique),
-						logicalplan.Literal(step.Nanoseconds()),
-						durationMin,
-					),
-					arrow.PrimitiveTypes.Float64,
-				),
-				logicalplan.Literal(float64(time.Second.Nanoseconds())),
-			),
-		).Alias(ValuePerSecond)
-	}
+			arrow.PrimitiveTypes.Float64,
+		),
+	).Alias(ValuePerSecond)
 
 	err := q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
@@ -873,29 +874,42 @@ func (q *Querier) SymbolizeArrowRecord(
 	ctx context.Context,
 	records []arrow.Record,
 	valueColumnName string,
+	queryParts QueryParts,
 ) ([]arrow.Record, error) {
 	res := make([]arrow.Record, len(records))
 
 	for i, r := range records {
 		schema := r.Schema()
 
-		indices := schema.FieldIndices("stacktrace")
+		indices := schema.FieldIndices(profile.ColumnStacktrace)
 		if len(indices) != 1 {
-			return nil, ErrMissingColumn{Column: "stacktrace", Columns: len(indices)}
+			return nil, ErrMissingColumn{Column: profile.ColumnStacktrace, Columns: len(indices)}
 		}
-		stacktraceColumn := r.Column(indices[0]).(*array.Binary)
-
-		rows := int(r.NumRows())
-		stacktraceIDs := make([]string, rows)
-		for i := 0; i < rows; i++ {
-			stacktraceIDs[i] = string(stacktraceColumn.Value(i))
-		}
+		stacktraceColumn := r.Column(indices[0]).(*array.List)
 
 		indices = schema.FieldIndices(valueColumnName)
 		if len(indices) != 1 {
 			return nil, ErrMissingColumn{Column: "value", Columns: len(indices)}
 		}
 		valueColumn := r.Column(indices[0]).(*array.Int64)
+
+		var valuePerSecondColumn arrow.Array
+		if queryParts.Delta {
+			indices = schema.FieldIndices(ValuePerSecond)
+			if len(indices) != 1 {
+				return nil, ErrMissingColumn{Column: ValuePerSecond, Columns: len(indices)}
+			}
+			valuePerSecondColumn = r.Column(indices[0]).(*array.Float64)
+		} else {
+			// For all other PeriodTypes, we don't have per second values.
+			// Instead, we generate an array full of NULLs.
+			valuePerSecondColumn = arrowutils.MakeNullArray(
+				q.pool,
+				arrow.PrimitiveTypes.Float64,
+				valueColumn.Len(),
+			)
+			defer valuePerSecondColumn.Release()
+		}
 
 		profileLabels := []arrow.Field{}
 		profileLabelColumns := []arrow.Array{}
@@ -906,27 +920,220 @@ func (q *Querier) SymbolizeArrowRecord(
 			}
 		}
 
-		stacktraces, locations, locationIndex, err := q.symbolizer.resolveStacktraceLocations(ctx, stacktraceIDs)
+		locationsRecord, err := q.resolveStacks(ctx, stacktraceColumn)
 		if err != nil {
-			return nil, fmt.Errorf("resolve stacktrace locations: %w", err)
-		}
-
-		locationsRecord, err := BuildArrowLocations(q.pool, stacktraces, locations, locationIndex)
-		if err != nil {
-			return nil, fmt.Errorf("build arrow locations: %w", err)
+			return nil, err
 		}
 		defer locationsRecord.Release()
 
-		columns := make([]arrow.Array, len(profileLabels)+3) // +3 for stacktrace locations, value and diff
+		columns := make([]arrow.Array, len(profileLabels)+5) // +5 for stacktrace locations, value, value_per_second, diff and diff_per_second
 		copy(columns, profileLabelColumns)
-		columns[len(columns)-3] = locationsRecord.Column(0)
-		columns[len(columns)-2] = valueColumn
+		columns[len(columns)-5] = locationsRecord.Column(0)
+		columns[len(columns)-4] = valueColumn
+		columns[len(columns)-3] = valuePerSecondColumn
 
-		diffColumn := CreateDiffColumn(q.pool, rows)
+		diffColumn := CreateDiffColumn(q.pool, int(r.NumRows()))
 		defer diffColumn.Release()
-		columns[len(columns)-1] = diffColumn
+		columns[len(columns)-2] = diffColumn
+
+		diffPerSecondColumn := CreateDiffPerSecondColumn(q.pool, int(r.NumRows()))
+		defer diffPerSecondColumn.Release()
+		columns[len(columns)-1] = diffPerSecondColumn
 
 		res[i] = array.NewRecord(profile.ArrowSchema(profileLabels), columns, r.NumRows())
+	}
+
+	return res, nil
+}
+
+func (q *Querier) resolveStacks(
+	ctx context.Context,
+	stacktraceColumn *array.List,
+) (arrow.Record, error) {
+	w := profile.NewLocationsWriter(q.pool)
+	defer w.RecordBuilder.Release()
+
+	values := stacktraceColumn.ListValues().(*array.Dictionary)
+	valueDict := values.Dictionary().(*array.Binary)
+	symbolizedLocations, err := q.symbolizeLocations(ctx, valueDict)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < stacktraceColumn.Len(); i++ {
+		if stacktraceColumn.IsNull(i) {
+			w.LocationsList.AppendNull()
+			continue
+		}
+		w.LocationsList.Append(true)
+
+		start, end := stacktraceColumn.ValueOffsets(i)
+		for j := int(start); j < int(end); j++ {
+			w.Locations.Append(true)
+			idx := values.GetValueIndex(j)
+
+			if symbolizedLocations[idx] != nil {
+				// We symbolized the location successfully, so we'll use the symbolized location.
+				w.Addresses.Append(symbolizedLocations[idx].Address)
+				if len(symbolizedLocations[idx].Mapping.BuildId) > 0 {
+					if err := w.MappingBuildID.Append(stringToBytes(symbolizedLocations[idx].Mapping.BuildId)); err != nil {
+						return nil, fmt.Errorf("failed to append mapping build id: %w", err)
+					}
+				} else {
+					if err := w.MappingBuildID.Append([]byte{}); err != nil {
+						return nil, fmt.Errorf("failed to append empty mapping build id: %w", err)
+					}
+				}
+				if len(symbolizedLocations[idx].Mapping.File) > 0 {
+					if err := w.MappingFile.Append(stringToBytes(symbolizedLocations[idx].Mapping.File)); err != nil {
+						return nil, fmt.Errorf("failed to append mapping file: %w", err)
+					}
+				} else {
+					if err := w.MappingFile.Append([]byte{}); err != nil {
+						return nil, fmt.Errorf("failed to append empty mapping file: %w", err)
+					}
+				}
+				w.MappingStart.Append(symbolizedLocations[idx].Mapping.Start)
+				w.MappingLimit.Append(symbolizedLocations[idx].Mapping.Limit)
+				w.MappingOffset.Append(symbolizedLocations[idx].Mapping.Offset)
+
+				if len(symbolizedLocations[idx].Lines) > 0 {
+					w.Lines.Append(true)
+					for _, line := range symbolizedLocations[idx].Lines {
+						w.Line.Append(true)
+						w.LineNumber.Append(line.Line)
+						if len(line.Function.Name) > 0 {
+							if err := w.FunctionName.Append(stringToBytes(line.Function.Name)); err != nil {
+								return nil, fmt.Errorf("failed to append function name: %w", err)
+							}
+						} else {
+							if err := w.FunctionName.Append([]byte{}); err != nil {
+								return nil, fmt.Errorf("failed to append empty function name: %w", err)
+							}
+						}
+						if len(line.Function.SystemName) > 0 {
+							if err := w.FunctionSystemName.Append(stringToBytes(line.Function.SystemName)); err != nil {
+								return nil, fmt.Errorf("failed to append function system name: %w", err)
+							}
+						} else {
+							if err := w.FunctionSystemName.Append([]byte{}); err != nil {
+								return nil, fmt.Errorf("failed to append empty function system name: %w", err)
+							}
+						}
+						if len(line.Function.Filename) > 0 {
+							if err := w.FunctionFilename.Append(stringToBytes(line.Function.Filename)); err != nil {
+								return nil, fmt.Errorf("failed to append function filename: %w", err)
+							}
+						} else {
+							if err := w.FunctionFilename.Append([]byte{}); err != nil {
+								return nil, fmt.Errorf("failed to append empty function filename: %w", err)
+							}
+						}
+						w.FunctionStartLine.Append(line.Function.StartLine)
+					}
+				} else {
+					w.Lines.Append(false)
+				}
+				continue
+			}
+
+			encodedLocation := valueDict.Value(idx)
+			res, err := profile.DecodeInto(w, encodedLocation)
+			if err != nil {
+				return nil, err
+			}
+			if res.WroteLines {
+				w.Addresses.Append(res.Addr)
+				continue
+			}
+			if res.Addr == 0 || len(res.BuildID) == 0 {
+				w.Addresses.Append(res.Addr)
+				w.Lines.AppendNull()
+				continue
+			}
+
+			// We end up here if we tried to symbolize the location but failed,
+			// and therefore fell back to using the encoded location from the
+			// valueDict.
+			w.Addresses.Append(res.Addr)
+			w.Lines.AppendNull()
+		}
+	}
+
+	return w.RecordBuilder.NewRecord(), nil
+}
+
+type MappingLocations struct {
+	Mapping   *metapb.Mapping
+	Locations map[uint64]*profile.Location
+}
+
+func (q *Querier) symbolizeLocations(
+	ctx context.Context,
+	locations *array.Binary,
+) ([]*profile.Location, error) {
+	index := map[string]map[profile.Mapping]MappingLocations{}
+	res := make([]*profile.Location, locations.Len())
+	count := 0
+	for i := 0; i < locations.Len(); i++ {
+		encodedLocation := locations.Value(i)
+		symInfo, numberOfLines := profile.DecodeSymbolizationInfo(encodedLocation)
+		if symInfo.Addr == 0 || len(symInfo.BuildID) == 0 || numberOfLines > 0 {
+			continue
+		}
+
+		if _, ok := index[string(symInfo.BuildID)]; !ok {
+			index[string(symInfo.BuildID)] = map[profile.Mapping]MappingLocations{}
+		}
+
+		if _, ok := index[string(symInfo.BuildID)][symInfo.Mapping]; !ok {
+			index[string(symInfo.BuildID)][symInfo.Mapping] = MappingLocations{
+				Mapping: &metapb.Mapping{
+					BuildId: string(symInfo.BuildID),
+					File:    symInfo.Mapping.File,
+					Start:   symInfo.Mapping.StartAddr,
+					Limit:   symInfo.Mapping.EndAddr,
+					Offset:  symInfo.Mapping.Offset,
+				},
+				Locations: map[uint64]*profile.Location{},
+			}
+		}
+
+		loc, ok := index[string(symInfo.BuildID)][symInfo.Mapping].Locations[symInfo.Addr]
+		if !ok {
+			loc = &profile.Location{
+				Address: symInfo.Addr,
+				Mapping: index[string(symInfo.BuildID)][symInfo.Mapping].Mapping,
+			}
+			count++
+			index[string(symInfo.BuildID)][symInfo.Mapping].Locations[symInfo.Addr] = loc
+		}
+
+		// If we've already seen a location with all the same values we'll
+		// assign the same location pointer. Or if it's a new location we
+		// assign the one we just created.
+		res[i] = loc
+	}
+
+	for buildID, mappingAddrIndex := range index {
+		symReq := symbolizer.SymbolizationRequest{
+			BuildID: buildID,
+		}
+		for _, mappingLocations := range mappingAddrIndex {
+			locs := make([]*profile.Location, 0, len(mappingLocations.Locations))
+			for _, loc := range mappingLocations.Locations {
+				locs = append(locs, loc)
+			}
+
+			symReq.Mappings = append(symReq.Mappings, symbolizer.SymbolizationRequestMappingAddrs{
+				Locations: locs,
+			})
+		}
+
+		err := q.symbolizer.Symbolize(ctx, symReq)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return res, nil
@@ -948,6 +1155,20 @@ func CreateDiffColumn(pool memory.Allocator, rows int) arrow.Array {
 	return arr
 }
 
+func CreateDiffPerSecondColumn(pool memory.Allocator, rows int) arrow.Array {
+	b := array.NewFloat64Builder(pool)
+	defer b.Release()
+
+	values := make([]float64, 0, rows)
+	valid := make([]bool, 0, rows)
+	for i := 0; i < rows; i++ {
+		values = append(values, 0)
+		valid = append(valid, true)
+	}
+	b.AppendValues(values, valid)
+	return b.NewFloat64Array()
+}
+
 func (q *Querier) QuerySingle(
 	ctx context.Context,
 	query string,
@@ -956,7 +1177,7 @@ func (q *Querier) QuerySingle(
 	ctx, span := q.tracer.Start(ctx, "Querier/QuerySingle")
 	defer span.End()
 
-	records, valueColumn, meta, err := q.findSingle(ctx, query, time)
+	records, valueColumn, queryParts, err := q.findSingle(ctx, query, time)
 	if err != nil {
 		return profile.Profile{}, err
 	}
@@ -970,6 +1191,7 @@ func (q *Querier) QuerySingle(
 		ctx,
 		records,
 		valueColumn,
+		queryParts,
 	)
 	if err != nil {
 		// if the column cannot be found the timestamp is too far in the past and we don't have data
@@ -990,14 +1212,12 @@ func (q *Querier) QuerySingle(
 	}
 
 	return profile.Profile{
-		Meta:    meta,
+		Meta:    queryParts.Meta,
 		Samples: symbolizedRecords,
 	}, nil
 }
 
-func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]arrow.Record, string, profile.Meta, error) {
-	requestedTime := timestamp.FromTime(t)
-
+func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]arrow.Record, string, QueryParts, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/findSingle")
 	span.SetAttributes(attribute.String("query", query))
 	span.SetAttributes(attribute.Int64("time", t.Unix()))
@@ -1005,9 +1225,10 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]
 
 	queryParts, selectorExprs, err := QueryToFilterExprs(query)
 	if err != nil {
-		return nil, "", profile.Meta{}, err
+		return nil, "", queryParts, err
 	}
 
+	requestedTime := timestamp.FromTime(t)
 	filterExpr := logicalplan.And(
 		append(
 			selectorExprs,
@@ -1015,36 +1236,61 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]
 		)...,
 	)
 
+	aggrCols := []logicalplan.Expr{
+		logicalplan.Col(profile.ColumnStacktrace),
+		logicalplan.DynCol(profile.ColumnPprofLabels),
+		logicalplan.DynCol(profile.ColumnPprofNumLabels),
+	}
+
+	totalSum := logicalplan.Sum(logicalplan.Col(profile.ColumnValue))
+	durationSum := logicalplan.Sum(logicalplan.Col(profile.ColumnDuration))
+	var valueCol logicalplan.Expr = logicalplan.Col(profile.ColumnValue)
+
+	firstProject := append(aggrCols, valueCol)
+	finalProject := append(aggrCols, totalSum)
+	aggrFunctions := []*logicalplan.AggregationFunction{
+		logicalplan.Sum(logicalplan.Col(profile.ColumnValue)),
+	}
+
+	if queryParts.Delta {
+		// Only for cpu and nanoseconds do we first project the ColumnDuration.
+		// We then use the aggregation function to sum(duration) for each stacktraces.
+		// The final project then takes the sum(value) / sum(duration) to get to the per second value.
+		firstProject = append(firstProject,
+			logicalplan.Col(profile.ColumnDuration),
+		)
+		finalProject = append(finalProject,
+			logicalplan.Div(
+				logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
+				logicalplan.Convert(durationSum, arrow.PrimitiveTypes.Float64),
+			).Alias(ValuePerSecond),
+		)
+		aggrFunctions = append(aggrFunctions, durationSum)
+	}
+
 	records := []arrow.Record{}
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
+		Project(firstProject...).
 		Aggregate(
-			[]*logicalplan.AggregationFunction{
-				logicalplan.Sum(logicalplan.Col(profile.ColumnValue)),
-			},
-			[]logicalplan.Expr{
-				logicalplan.Col(profile.ColumnStacktrace),
-				logicalplan.DynCol(profile.ColumnPprofLabels),
-				logicalplan.DynCol(profile.ColumnPprofNumLabels),
-			},
+			aggrFunctions,
+			aggrCols,
 		).
+		Project(finalProject...).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
 			records = append(records, r)
 			return nil
 		})
 	if err != nil {
-		return nil, "", profile.Meta{}, fmt.Errorf("execute query: %w", err)
+		return nil, "", queryParts, fmt.Errorf("execute query: %w", err)
 	}
+
+	queryParts.Meta.Timestamp = requestedTime
 
 	return records,
 		"sum(value)",
-		profile.Meta{
-			Name:       queryParts.Meta.Name,
-			SampleType: queryParts.Meta.SampleType,
-			PeriodType: queryParts.Meta.PeriodType,
-			Timestamp:  requestedTime,
-		},
+		queryParts,
 		nil
 }
 
@@ -1052,7 +1298,7 @@ func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.
 	ctx, span := q.tracer.Start(ctx, "Querier/QueryMerge")
 	defer span.End()
 
-	records, valueColumn, meta, err := q.selectMerge(ctx, query, start, end, aggregateByLabels)
+	records, valueColumn, queryParts, err := q.selectMerge(ctx, query, start, end, aggregateByLabels)
 	if err != nil {
 		return profile.Profile{}, err
 	}
@@ -1066,13 +1312,14 @@ func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.
 		ctx,
 		records,
 		valueColumn,
+		queryParts,
 	)
 	if err != nil {
 		return profile.Profile{}, err
 	}
 
 	return profile.Profile{
-		Meta:    meta,
+		Meta:    queryParts.Meta,
 		Samples: symbolizedRecords,
 	}, nil
 }
@@ -1083,19 +1330,17 @@ func (q *Querier) selectMerge(
 	startTime,
 	endTime time.Time,
 	aggregateByLabels bool,
-) ([]arrow.Record, string, profile.Meta, error) {
+) ([]arrow.Record, string, QueryParts, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/selectMerge")
 	defer span.End()
 
 	queryParts, selectorExprs, err := QueryToFilterExprs(query)
 	if err != nil {
-		return nil, "", profile.Meta{}, err
+		return nil, "", queryParts, err
 	}
 
 	start := timestamp.FromTime(startTime)
 	end := timestamp.FromTime(endTime)
-	resultType := queryParts.Meta.SampleType
-
 	filterExpr := logicalplan.And(
 		append(
 			selectorExprs,
@@ -1103,6 +1348,9 @@ func (q *Querier) selectMerge(
 			logicalplan.Col(profile.ColumnTimestamp).LtEq(logicalplan.Literal(end)),
 		)...,
 	)
+
+	totalSum := logicalplan.Sum(logicalplan.Col(profile.ColumnValue))
+	durationSum := logicalplan.Sum(logicalplan.Col(profile.ColumnDuration))
 
 	aggrCols := []logicalplan.Expr{
 		logicalplan.Col(profile.ColumnStacktrace),
@@ -1117,37 +1365,58 @@ func (q *Querier) selectMerge(
 	}
 
 	var valueCol logicalplan.Expr = logicalplan.Col(profile.ColumnValue)
-	if resultType.Type == "samples" && resultType.Unit == "count" {
-		valueCol = logicalplan.Mul(logicalplan.Col(profile.ColumnValue), logicalplan.Col(profile.ColumnPeriod)).Alias(profile.ColumnValue)
-		resultType = queryParts.Meta.PeriodType
+	if isSamplesCount(queryParts.Meta.SampleType) {
+		valueCol = logicalplan.Mul(
+			logicalplan.Col(profile.ColumnValue),
+			logicalplan.Col(profile.ColumnPeriod),
+		).Alias(profile.ColumnValue)
+	}
+
+	firstProject := append(aggrCols, valueCol)
+	finalProject := append(aggrCols, totalSum)
+	aggrFunctions := []*logicalplan.AggregationFunction{
+		totalSum,
+	}
+
+	if queryParts.Delta {
+		// Only for cpu and nanoseconds do we first project the ColumnDuration.
+		// We then use the aggregation function to sum(duration) for each stacktraces.
+		// The final project then takes the sum(value) / sum(duration) to get to the per second value.
+		firstProject = append(firstProject,
+			logicalplan.Col(profile.ColumnDuration),
+		)
+		finalProject = append(finalProject,
+			logicalplan.Div(
+				logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
+				logicalplan.Convert(durationSum, arrow.PrimitiveTypes.Float64),
+			).Alias(ValuePerSecond),
+		)
+		aggrFunctions = append(aggrFunctions, durationSum)
 	}
 
 	records := []arrow.Record{}
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
-		Project(
-			append(aggrCols, valueCol)...,
-		).
+		Project(firstProject...).
 		Aggregate(
-			[]*logicalplan.AggregationFunction{
-				logicalplan.Sum(logicalplan.Col(profile.ColumnValue)),
-			},
+			aggrFunctions,
 			aggrCols,
 		).
+		Project(finalProject...).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
 			records = append(records, r)
 			return nil
 		})
 	if err != nil {
-		return nil, "", profile.Meta{}, err
+		return nil, "", queryParts, err
 	}
 
-	meta := profile.Meta{
-		Name:       queryParts.Meta.Name,
-		SampleType: resultType,
-		PeriodType: queryParts.Meta.PeriodType,
-		Timestamp:  start,
-	}
-	return records, "sum(value)", meta, nil
+	queryParts.Meta.Timestamp = start
+
+	return records, "sum(value)", queryParts, nil
+}
+
+func isSamplesCount(st profile.ValueType) bool {
+	return st.Type == "samples" && st.Unit == "count"
 }

@@ -15,6 +15,7 @@
 package addr2line
 
 import (
+	"context"
 	"debug/elf"
 	"testing"
 
@@ -39,7 +40,7 @@ func TestDwarfSymbolizer(t *testing.T) {
 	if err != nil {
 		panic("failure reading DWARF file")
 	}
-	gotLines, err := dwarf.PCToLines(0x401125)
+	gotLines, err := dwarf.PCToLines(context.Background(), 0x401125)
 	if err != nil {
 		panic("failure reading lines")
 	}

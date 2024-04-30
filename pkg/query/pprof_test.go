@@ -20,77 +20,56 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-kit/log"
-	"github.com/google/pprof/profile"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	pprofprofile "github.com/google/pprof/profile"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace/noop"
 
-	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
-	"github.com/parca-dev/parca/pkg/metastoretest"
-	"github.com/parca-dev/parca/pkg/normalizer"
-	"github.com/parca-dev/parca/pkg/parcacol"
-	parcaprofile "github.com/parca-dev/parca/pkg/profile"
+	"github.com/parca-dev/parca/pkg/profile"
 )
 
 func TestGenerateFlatPprof(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	tracer := noop.NewTracerProvider().Tracer("")
-	reg := prometheus.NewRegistry()
-	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
-		Name: "parca_test_counter",
-		Help: "parca_test_counter",
-	})
-
-	pf, err := os.Open("testdata/alloc_objects.pb.gz")
-	require.NoError(t, err)
-	pprofProf, err := profile.Parse(pf)
-	require.NoError(t, err)
-	require.NoError(t, pf.Close())
-	compactedOriginalProfile := pprofProf.Compact()
 
 	fileContent := MustReadAllGzip(t, "testdata/alloc_objects.pb.gz")
-	p := &pprofpb.Profile{}
-	require.NoError(t, p.UnmarshalVT(fileContent))
+	pp, err := pprofprofile.ParseData(fileContent)
+	require.NoError(t, err)
 
-	l := metastoretest.NewTestMetastore(
-		t,
-		log.NewNopLogger(),
-		prometheus.NewRegistry(),
-		tracer,
+	p, err := PprofToSymbolizedProfile(
+		profile.Meta{
+			Name: "memory",
+			SampleType: profile.ValueType{
+				Type: "alloc_objects",
+				Unit: "count",
+			},
+			PeriodType: profile.ValueType{
+				Type: "space",
+				Unit: "bytes",
+			},
+			Timestamp: time.Date(2020, 12, 17, 10, 8, 38, 549000000, time.UTC).UnixMilli(),
+			Period:    524288,
+		},
+		pp,
+		0,
 	)
-	metastore := metastore.NewInProcessClient(l)
-	normalizer := normalizer.NewNormalizer(metastore, true, counter)
-	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false, nil)
 	require.NoError(t, err)
 
-	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
-	require.NoError(t, err)
-
-	prof, err := OldProfileToArrowProfile(symbolizedProfile)
-	require.NoError(t, err)
-
-	resProfile, err := GenerateFlatPprof(ctx, false, prof)
+	resProfile, err := GenerateFlatPprof(ctx, false, p)
 	require.NoError(t, err)
 
 	data, err := resProfile.MarshalVT()
 	require.NoError(t, err)
 
-	res, err := profile.ParseData(data)
+	res, err := pprofprofile.ParseData(data)
 	require.NoError(t, err)
 
-	require.Equal(t, &profile.ValueType{Type: "space", Unit: "bytes"}, res.PeriodType)
-	require.Equal(t, []*profile.ValueType{{Type: "alloc_objects", Unit: "count"}}, res.SampleType)
+	require.Equal(t, &pprofprofile.ValueType{Type: "space", Unit: "bytes"}, res.PeriodType)
+	require.Equal(t, []*pprofprofile.ValueType{{Type: "alloc_objects", Unit: "count"}}, res.SampleType)
 	require.Equal(t, time.Date(2020, 12, 17, 10, 8, 38, 549000000, time.UTC).UnixNano(), res.TimeNanos)
 	require.Equal(t, int64(0), res.DurationNanos)
 	require.Equal(t, int64(524288), res.Period)
 
-	require.Equal(t, []*profile.Mapping{{
+	require.Equal(t, []*pprofprofile.Mapping{{
 		ID:              1,
 		Start:           4194304,
 		Limit:           23252992,
@@ -105,7 +84,7 @@ func TestGenerateFlatPprof(t *testing.T) {
 
 	require.Equal(t, 974, len(res.Function))
 	require.Equal(t, 1886, len(res.Location))
-	require.Equal(t, len(compactedOriginalProfile.Sample), len(res.Sample))
+	require.Equal(t, 4661, len(res.Sample))
 
 	tmpfile, err := os.CreateTemp("", "pprof")
 	defer os.Remove(tmpfile.Name())
@@ -118,7 +97,7 @@ func TestGenerateFlatPprof(t *testing.T) {
 
 	f, err := os.Open(tmpfile.Name())
 	require.NoError(t, err)
-	resProf, err := profile.Parse(f)
+	resProf, err := pprofprofile.Parse(f)
 
 	for _, s := range resProf.Sample {
 		if s.Location == nil {
@@ -137,64 +116,39 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 	ctx := context.Background()
 	var err error
 
-	l := metastoretest.NewTestMetastore(
-		t,
-		log.NewNopLogger(),
-		prometheus.NewRegistry(),
-		noop.NewTracerProvider().Tracer(""),
+	functions := []*pprofprofile.Function{{
+		ID:   1,
+		Name: "1",
+	}, {
+		ID:   2,
+		Name: "2",
+	}}
+
+	locations := []*pprofprofile.Location{{
+		ID:      1,
+		Mapping: nil,
+		Line:    []pprofprofile.Line{{Function: functions[0]}},
+	}, {
+		ID:      2,
+		Mapping: nil,
+		Line:    []pprofprofile.Line{{Function: functions[1]}},
+	}}
+
+	p, err := PprofToSymbolizedProfile(
+		profile.Meta{},
+		&pprofprofile.Profile{
+			Function: functions,
+			Location: locations,
+			Sample: []*pprofprofile.Sample{{
+				Location: []*pprofprofile.Location{locations[1], locations[0]},
+				Value:    []int64{1},
+			}},
+		},
+		0,
 	)
-	metastore := metastore.NewInProcessClient(l)
-
-	fres, err := metastore.GetOrCreateFunctions(ctx, &pb.GetOrCreateFunctionsRequest{
-		Functions: []*pb.Function{{
-			Name: "1",
-		}, {
-			Name: "2",
-		}},
-	})
-	require.NoError(t, err)
-	require.Equal(t, 2, len(fres.Functions))
-	f1 := fres.Functions[0]
-	f2 := fres.Functions[1]
-
-	lres, err := metastore.GetOrCreateLocations(ctx, &pb.GetOrCreateLocationsRequest{
-		Locations: []*pb.Location{{
-			Lines: []*pb.Line{{
-				FunctionId: f1.Id,
-			}},
-		}, {
-			Lines: []*pb.Line{{
-				FunctionId: f2.Id,
-			}},
-		}},
-	})
-	require.NoError(t, err)
-	require.Equal(t, 2, len(lres.Locations))
-	l1 := lres.Locations[0]
-	l2 := lres.Locations[1]
-
-	sres, err := metastore.GetOrCreateStacktraces(ctx, &pb.GetOrCreateStacktracesRequest{
-		Stacktraces: []*pb.Stacktrace{{
-			LocationIds: []string{l2.Id, l1.Id},
-		}},
-	})
-	require.NoError(t, err)
-	require.Equal(t, 1, len(sres.Stacktraces))
-	s := sres.Stacktraces[0]
-
-	tracer := noop.NewTracerProvider().Tracer("")
-	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
-		Samples: []*parcaprofile.NormalizedSample{{
-			StacktraceID: s.Id,
-			Value:        1,
-		}},
-	})
 	require.NoError(t, err)
 
-	prof, err := OldProfileToArrowProfile(symbolizedProfile)
-	require.NoError(t, err)
-
-	res, err := GenerateFlatPprof(ctx, false, prof)
+	res, err := GenerateFlatPprof(ctx, false, p)
 	require.NoError(t, err)
 
 	tmpfile, err := os.CreateTemp("", "pprof")
@@ -208,7 +162,7 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 
 	f, err := os.Open(tmpfile.Name())
 	require.NoError(t, err)
-	resProf, err := profile.Parse(f)
+	resProf, err := pprofprofile.Parse(f)
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 	require.NoError(t, resProf.CheckValid())

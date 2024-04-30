@@ -24,6 +24,7 @@ import {
   useParcaContext,
   useURLState,
 } from '@parca/components';
+import {ProfileType} from '@parca/parser';
 import {
   getLastItem,
   isSearchMatch,
@@ -72,7 +73,7 @@ interface TableProps {
   data?: Uint8Array;
   total: bigint;
   filtered: bigint;
-  sampleUnit: string;
+  profileType?: ProfileType;
   navigateTo?: NavigateFunction;
   loading: boolean;
   currentSearchString?: string;
@@ -84,7 +85,7 @@ export const Table = React.memo(function Table({
   data,
   total,
   filtered,
-  sampleUnit: unit,
+  profileType,
   navigateTo,
   loading,
   currentSearchString,
@@ -128,7 +129,7 @@ export const Table = React.memo(function Table({
         id: 'flat',
         accessorKey: 'flat',
         header: 'Flat',
-        cell: info => valueFormatter(info.getValue(), unit, 2),
+        cell: info => valueFormatter(info.getValue(), profileType?.sampleUnit ?? '', 2),
         size: 80,
         meta: {
           align: 'right',
@@ -150,7 +151,8 @@ export const Table = React.memo(function Table({
         id: 'flatDiff',
         accessorKey: 'flatDiff',
         header: 'Flat Diff',
-        cell: info => addPlusSign(valueFormatter(info.getValue(), unit, 2)),
+        cell: info =>
+          addPlusSign(valueFormatter(info.getValue(), profileType?.sampleUnit ?? '', 2)),
         size: 120,
         meta: {
           align: 'right',
@@ -172,7 +174,7 @@ export const Table = React.memo(function Table({
         id: 'cumulative',
         accessorKey: 'cumulative',
         header: 'Cumulative',
-        cell: info => valueFormatter(info.getValue(), unit, 2),
+        cell: info => valueFormatter(info.getValue(), profileType?.sampleUnit ?? '', 2),
         size: 150,
         meta: {
           align: 'right',
@@ -194,7 +196,8 @@ export const Table = React.memo(function Table({
         id: 'cumulativeDiff',
         accessorKey: 'cumulativeDiff',
         header: 'Cumulative Diff',
-        cell: info => addPlusSign(valueFormatter(info.getValue(), unit, 2)),
+        cell: info =>
+          addPlusSign(valueFormatter(info.getValue(), profileType?.sampleUnit ?? '', 2)),
         size: 170,
         meta: {
           align: 'right',
@@ -235,7 +238,7 @@ export const Table = React.memo(function Table({
       },
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unit]);
+  }, [profileType]);
 
   const [columnVisibility, setColumnVisibility] = useState(() => {
     return {

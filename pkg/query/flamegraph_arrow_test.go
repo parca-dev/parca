@@ -25,47 +25,39 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/apache/arrow/go/v15/arrow"
-	"github.com/apache/arrow/go/v15/arrow/array"
-	"github.com/apache/arrow/go/v15/arrow/ipc"
-	"github.com/apache/arrow/go/v15/arrow/memory"
-	"github.com/go-kit/log"
+	"github.com/apache/arrow/go/v16/arrow"
+	"github.com/apache/arrow/go/v16/arrow/array"
+	"github.com/apache/arrow/go/v16/arrow/ipc"
+	"github.com/apache/arrow/go/v16/arrow/memory"
 	pprofprofile "github.com/google/pprof/profile"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
-	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
-	"github.com/parca-dev/parca/pkg/metastoretest"
-	"github.com/parca-dev/parca/pkg/normalizer"
-	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profile"
-	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
 type flamegraphRow struct {
-	LabelsOnly         bool
-	MappingStart       uint64
-	MappingLimit       uint64
-	MappingOffset      uint64
-	MappingFile        string
-	MappingBuildID     string
-	LocationAddress    uint64
-	Inlined            bool
-	LocationLine       uint8
-	FunctionStartLine  uint8
-	FunctionName       string
-	FunctionSystemName string
-	FunctionFilename   string
-	Labels             map[string]string
-	Children           []uint32
-	Cumulative         uint8
-	Diff               int8
+	LabelsOnly          bool
+	MappingStart        uint64
+	MappingLimit        uint64
+	MappingOffset       uint64
+	MappingFile         string
+	MappingBuildID      string
+	LocationAddress     uint64
+	Inlined             bool
+	LocationLine        uint8
+	FunctionStartLine   uint8
+	FunctionName        string
+	FunctionSystemName  string
+	FunctionFilename    string
+	Labels              map[string]string
+	Children            []uint32
+	Cumulative          uint8
+	CumulativePerSecond uint8
+	Diff                int8
 }
 
 type flamegraphColumns struct {
@@ -82,6 +74,7 @@ type flamegraphColumns struct {
 	labels              []map[string]string
 	children            [][]uint32
 	cumulative          []uint8
+	cumulativePerSecond []uint8
 	diff                []int8
 }
 
@@ -101,6 +94,7 @@ func rowsToColumn(rows []flamegraphRow) flamegraphColumns {
 		columns.labels = append(columns.labels, row.Labels)
 		columns.children = append(columns.children, row.Children)
 		columns.cumulative = append(columns.cumulative, row.Cumulative)
+		columns.cumulativePerSecond = append(columns.cumulativePerSecond, row.CumulativePerSecond)
 		columns.diff = append(columns.diff, row.Diff)
 	}
 	return columns
@@ -211,143 +205,143 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
 	defer mem.AssertSize(t, 0)
 
-	l := metastoretest.NewTestMetastore(
-		t,
-		log.NewNopLogger(),
-		prometheus.NewRegistry(),
-		noop.NewTracerProvider().Tracer(""),
-	)
-
-	mc := metastore.NewInProcessClient(l)
-
-	mres, err := mc.GetOrCreateMappings(ctx, &metastorepb.GetOrCreateMappingsRequest{
-		Mappings: []*metastorepb.Mapping{
-			{Start: 1, Limit: 1, Offset: 0x1234, File: "a", BuildId: "aID"},
-			{Start: 2, Limit: 2, Offset: 0x1235, File: "b", BuildId: "bID"},
-		},
-	})
-	require.NoError(t, err)
-	m1 := mres.Mappings[0]
-	m2 := mres.Mappings[1]
-
-	fres, err := mc.GetOrCreateFunctions(ctx, &metastorepb.GetOrCreateFunctionsRequest{
-		Functions: []*metastorepb.Function{
-			{Name: "1", SystemName: "1", Filename: "1", StartLine: 1},
-			{Name: "2", SystemName: "2", Filename: "2", StartLine: 2},
-			{Name: "3", SystemName: "3", Filename: "3", StartLine: 3},
-			{Name: "4", SystemName: "4", Filename: "4", StartLine: 4},
-			{Name: "5", SystemName: "5", Filename: "5", StartLine: 5},
-			{Name: "2", SystemName: "6", Filename: "6", StartLine: 6}, // gets merged with function name 2 but everything else differs.
-		},
-	})
-	require.NoError(t, err)
-	f1 := fres.Functions[0]
-	f2 := fres.Functions[1]
-	f3 := fres.Functions[2]
-	f4 := fres.Functions[3]
-	f5 := fres.Functions[4]
-	f6 := fres.Functions[5]
-
-	lres, err := mc.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
-		Locations: []*metastorepb.Location{{
-			MappingId: m1.Id,
-			Address:   0xa1,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f1.Id,
-				Line:       1,
-			}},
-		}, {
-			MappingId: m1.Id,
-			Address:   0xa2,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f2.Id,
-				Line:       2,
-			}},
-		}, {
-			MappingId: m1.Id,
-			Address:   0xa3,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f3.Id,
-				Line:       3,
-			}},
-		}, {
-			MappingId: m1.Id,
-			Address:   0xa4,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f4.Id,
-				Line:       4,
-			}},
-		}, {
-			MappingId: m1.Id,
-			Address:   0xa5,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f5.Id,
-				Line:       5,
-			}},
-		}, {
-			MappingId: m2.Id,
-			Address:   0xa6,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f6.Id,
-				Line:       6,
-			}},
+	mappings := []*pprofprofile.Mapping{{
+		ID:      1,
+		Start:   1,
+		Limit:   1,
+		Offset:  0x1234,
+		File:    "a",
+		BuildID: "aID",
+	}, {
+		ID:      2,
+		Start:   2,
+		Limit:   2,
+		Offset:  0x1235,
+		File:    "b",
+		BuildID: "bID",
+	}}
+	function := []*pprofprofile.Function{{
+		ID:         1,
+		Name:       "1",
+		SystemName: "1",
+		Filename:   "1",
+		StartLine:  1,
+	}, {
+		ID:         2,
+		Name:       "2",
+		SystemName: "2",
+		Filename:   "2",
+		StartLine:  2,
+	}, {
+		ID:         3,
+		Name:       "3",
+		SystemName: "3",
+		Filename:   "3",
+		StartLine:  3,
+	}, {
+		ID:         4,
+		Name:       "4",
+		SystemName: "4",
+		Filename:   "4",
+		StartLine:  4,
+	}, {
+		ID:         5,
+		Name:       "5",
+		SystemName: "5",
+		Filename:   "5",
+		StartLine:  5,
+	}, {
+		ID:         6,
+		Name:       "2",
+		SystemName: "6",
+		Filename:   "6",
+		StartLine:  6,
+	}}
+	locations := []*pprofprofile.Location{{
+		ID:      1,
+		Mapping: mappings[0],
+		Address: 0xa1,
+		Line: []pprofprofile.Line{{
+			Function: function[0],
+			Line:     1,
 		}},
-	})
-	require.NoError(t, err)
-	l1 := lres.Locations[0]
-	l2 := lres.Locations[1]
-	l3 := lres.Locations[2]
-	l4 := lres.Locations[3]
-	l5 := lres.Locations[4]
-	l6 := lres.Locations[5]
-
-	sres, err := mc.GetOrCreateStacktraces(ctx, &metastorepb.GetOrCreateStacktracesRequest{
-		Stacktraces: []*metastorepb.Stacktrace{{
-			LocationIds: []string{l2.Id, l1.Id},
-		}, {
-			LocationIds: []string{l5.Id, l3.Id, l2.Id, l1.Id},
-		}, {
-			LocationIds: []string{l4.Id, l3.Id, l2.Id, l1.Id},
-		}, {
-			LocationIds: []string{l5.Id, l3.Id, l2.Id, l1.Id},
-		}, {
-			LocationIds: []string{l6.Id, l1.Id},
+	}, {
+		ID:      2,
+		Mapping: mappings[0],
+		Address: 0xa2,
+		Line: []pprofprofile.Line{{
+			Function: function[1],
+			Line:     2,
 		}},
-	})
-	require.NoError(t, err)
-	s1 := sres.Stacktraces[0]
-	s2 := sres.Stacktraces[1]
-	s3 := sres.Stacktraces[2]
-	s4 := sres.Stacktraces[3]
-	s5 := sres.Stacktraces[4]
+	}, {
+		ID:      3,
+		Mapping: mappings[0],
+		Address: 0xa3,
+		Line: []pprofprofile.Line{{
+			Function: function[2],
+			Line:     3,
+		}},
+	}, {
+		ID:      4,
+		Mapping: mappings[0],
+		Address: 0xa4,
+		Line: []pprofprofile.Line{{
+			Function: function[3],
+			Line:     4,
+		}},
+	}, {
+		ID:      5,
+		Mapping: mappings[0],
+		Address: 0xa5,
+		Line: []pprofprofile.Line{{
+			Function: function[4],
+			Line:     5,
+		}},
+	}, {
+		ID:      6,
+		Mapping: mappings[1],
+		Address: 0xa6,
+		Line: []pprofprofile.Line{{
+			Function: function[5],
+			Line:     6,
+		}},
+	}}
+	loc1 := locations[0]
+	loc2 := locations[1]
+	loc3 := locations[2]
+	loc4 := locations[3]
+	loc5 := locations[4]
+	loc6 := locations[5]
 
-	tracer := noop.NewTracerProvider().Tracer("")
-
-	p, err := parcacol.NewProfileSymbolizer(tracer, mc).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
-		Samples: []*parcaprofile.NormalizedSample{{
-			StacktraceID: s1.Id,
-			Value:        2,
-			Label:        map[string]string{"goroutine": "1"},
+	p := &pprofprofile.Profile{
+		Mapping:  mappings,
+		Function: function,
+		Location: locations,
+		Sample: []*pprofprofile.Sample{{
+			Location: []*pprofprofile.Location{loc2, loc1},
+			Value:    []int64{2},
+			Label:    map[string][]string{"goroutine": {"1"}},
 		}, {
-			StacktraceID: s2.Id,
-			Value:        1,
-			Label:        map[string]string{"goroutine": "1"},
+			Location: []*pprofprofile.Location{loc5, loc3, loc2, loc1},
+			Value:    []int64{1},
+			Label:    map[string][]string{"goroutine": {"1"}},
 		}, {
-			StacktraceID: s3.Id,
-			Value:        3,
-			Label:        map[string]string{},
+			Location: []*pprofprofile.Location{loc4, loc3, loc2, loc1},
+			Value:    []int64{3},
+			Label:    map[string][]string{},
 		}, {
 			// this is the same stack as s2 but with a different label
-			StacktraceID: s4.Id,
-			Value:        4,
-			Label:        map[string]string{"goroutine": "2"},
+			Location: []*pprofprofile.Location{loc5, loc3, loc2, loc1},
+			Value:    []int64{4},
+			Label:    map[string][]string{"goroutine": {"2"}},
 		}, {
-			StacktraceID: s5.Id,
-			Value:        1,
-			Label:        map[string]string{},
+			Location: []*pprofprofile.Location{loc6, loc1},
+			Value:    []int64{1},
+			Label:    map[string][]string{},
 		}},
-	})
-	require.NoError(t, err)
+	}
+
+	tracer := noop.NewTracerProvider().Tracer("")
 
 	for _, tc := range []struct {
 		name      string
@@ -419,22 +413,22 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 		},
 	}} {
 		t.Run(tc.name, func(t *testing.T) {
-			np, err := OldProfileToArrowProfile(p)
+			sp, err := PprofToSymbolizedProfile(profile.Meta{}, p, 0)
 			require.NoError(t, err)
 
-			np.Samples = []arrow.Record{
-				np.Samples[0].NewSlice(0, 2),
-				np.Samples[0].NewSlice(2, 5),
+			sp.Samples = []arrow.Record{
+				sp.Samples[0].NewSlice(0, 2),
+				sp.Samples[0].NewSlice(2, 5),
 			}
 
-			fa, cumulative, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, np, tc.aggregate, 0)
+			fa, cumulative, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, sp, tc.aggregate, 0)
 			require.NoError(t, err)
 			defer fa.Release()
 
 			require.Equal(t, tc.cumulative, cumulative)
 			require.Equal(t, tc.height, height)
 			require.Equal(t, tc.trimmed, trimmed)
-			require.Equal(t, int64(14), fa.NumCols())
+			require.Equal(t, int64(16), fa.NumCols())
 
 			// Convert the numRows to columns for easier access when testing below.
 			expectedColumns := rowsToColumn(tc.rows)
@@ -591,7 +585,7 @@ func TestGenerateFlamegraphArrowEmpty(t *testing.T) {
 	require.Equal(t, int64(0), total)
 	require.Equal(t, int32(1), height)
 	require.Equal(t, int64(0), trimmed)
-	require.Equal(t, int64(13), record.NumCols())
+	require.Equal(t, int64(15), record.NumCols())
 	require.Equal(t, int64(1), record.NumRows())
 }
 
@@ -601,15 +595,7 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 	ctx := context.Background()
 	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
 	defer mem.AssertSize(t, 0)
-	logger := log.NewNopLogger()
-	reg := prometheus.NewRegistry()
-	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
-		Name: "parca_test_counter",
-		Help: "parca_test_counter",
-	})
 	tracer := noop.NewTracerProvider().Tracer("")
-
-	store := metastoretest.NewTestMetastore(t, logger, reg, tracer)
 
 	functions := []*pprofprofile.Function{
 		{ID: 1, Name: "net.(*netFD).accept", SystemName: "net.(*netFD).accept", Filename: "net/fd_unix.go"},
@@ -631,42 +617,25 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 			Value:    []int64{1},
 		},
 	}
-	b := bytes.NewBuffer(nil)
-	err := (&pprofprofile.Profile{
+
+	p, err := PprofToSymbolizedProfile(profile.Meta{}, &pprofprofile.Profile{
 		SampleType: []*pprofprofile.ValueType{{Type: "alloc_space", Unit: "bytes"}},
 		PeriodType: &pprofprofile.ValueType{Type: "space", Unit: "bytes"},
 		Sample:     samples,
 		Location:   locations,
 		Function:   functions,
-	}).Write(b)
+	}, 0)
 	require.NoError(t, err)
 
-	p := &pprofpb.Profile{}
-	err = p.UnmarshalVT(MustDecompressGzip(t, b.Bytes()))
-	require.NoError(t, err)
-
-	metastore := metastore.NewInProcessClient(store)
-	normalizer := normalizer.NewNormalizer(metastore, true, counter)
-	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false, nil)
-	require.NoError(t, err)
-
-	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
-	require.NoError(t, err)
-
-	newProfile, err := OldProfileToArrowProfile(symbolizedProfile)
-	require.NoError(t, err)
-
-	record, total, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, newProfile, []string{FlamegraphFieldFunctionName}, 0)
+	record, total, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, p, []string{FlamegraphFieldFunctionName}, 0)
 	require.NoError(t, err)
 	defer record.Release()
-
-	fmt.Println(record)
 
 	require.Equal(t, int64(1), total)
 	require.Equal(t, int32(5), height)
 	require.Equal(t, int64(0), trimmed)
 
-	require.Equal(t, int64(13), record.NumCols())
+	require.Equal(t, int64(15), record.NumCols())
 	require.Equal(t, int64(5), record.NumRows())
 
 	rows := []flamegraphRow{
@@ -687,68 +656,50 @@ func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 	ctx := context.Background()
 	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
 	defer mem.AssertSize(t, 0)
-	var err error
 
-	l := metastoretest.NewTestMetastore(
-		t,
-		log.NewNopLogger(),
-		prometheus.NewRegistry(),
-		noop.NewTracerProvider().Tracer(""),
-	)
+	mappings := []*pprofprofile.Mapping{
+		{ID: 1, Start: 1, Limit: 1, Offset: 0x1234, File: "a", BuildID: "aID"},
+	}
 
-	metastore := metastore.NewInProcessClient(l)
+	locations := []*pprofprofile.Location{{
+		ID:      1,
+		Mapping: mappings[0],
+		Address: 0xa1,
+	}, {
+		ID:      2,
+		Mapping: mappings[0],
+		Address: 0xa2,
+	}, {
+		ID:      3,
+		Mapping: mappings[0],
+		Address: 0xa3,
+	}, {
+		ID:      4,
+		Mapping: mappings[0],
+		Address: 0xa4,
+	}, {
+		ID:      5,
+		Mapping: mappings[0],
+		Address: 0xa5,
+	}}
 
-	mres, err := metastore.GetOrCreateMappings(ctx, &metastorepb.GetOrCreateMappingsRequest{
-		Mappings: []*metastorepb.Mapping{{Start: 1, Limit: 1, Offset: 0x1234, File: "a", BuildId: "aID"}},
-	})
-	require.NoError(t, err)
-	m := mres.Mappings[0]
-
-	lres, err := metastore.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
-		Locations: []*metastorepb.Location{
-			{MappingId: m.Id, Address: 0xa1},
-			{MappingId: m.Id, Address: 0xa2},
-			{MappingId: m.Id, Address: 0xa3},
-			{MappingId: m.Id, Address: 0xa4},
-			{MappingId: m.Id, Address: 0xa5},
-		},
-	})
-	require.NoError(t, err)
-	l1 := lres.Locations[0]
-	l2 := lres.Locations[1]
-	l3 := lres.Locations[2]
-	l4 := lres.Locations[3]
-	l5 := lres.Locations[4]
-
-	sres, err := metastore.GetOrCreateStacktraces(ctx, &metastorepb.GetOrCreateStacktracesRequest{
-		Stacktraces: []*metastorepb.Stacktrace{{
-			LocationIds: []string{l2.Id, l1.Id},
+	p, err := PprofToSymbolizedProfile(profile.Meta{}, &pprofprofile.Profile{
+		Mapping:  mappings,
+		Location: locations,
+		Sample: []*pprofprofile.Sample{{
+			Location: []*pprofprofile.Location{locations[1], locations[0]},
+			Value:    []int64{2},
 		}, {
-			LocationIds: []string{l5.Id, l3.Id, l2.Id, l1.Id},
+			Location: []*pprofprofile.Location{locations[4], locations[2], locations[1], locations[0]},
+			Value:    []int64{1},
 		}, {
-			LocationIds: []string{l4.Id, l3.Id, l2.Id, l1.Id},
+			Location: []*pprofprofile.Location{locations[3], locations[2], locations[1], locations[0]},
+			Value:    []int64{3},
 		}},
-	})
+	}, 0)
 	require.NoError(t, err)
-	s1 := sres.Stacktraces[0]
-	s2 := sres.Stacktraces[1]
-	s3 := sres.Stacktraces[2]
 
 	tracer := noop.NewTracerProvider().Tracer("")
-
-	p, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
-		Samples: []*parcaprofile.NormalizedSample{{
-			StacktraceID: s1.Id,
-			Value:        2,
-		}, {
-			StacktraceID: s2.Id,
-			Value:        1,
-		}, {
-			StacktraceID: s3.Id,
-			Value:        3,
-		}},
-	})
-	require.NoError(t, err)
 
 	for _, tc := range []struct {
 		name      string
@@ -777,9 +728,7 @@ func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			np, err := OldProfileToArrowProfile(p)
-			require.NoError(t, err)
-			fa, cumulative, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, np, tc.aggregate, 0)
+			fa, cumulative, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, p, tc.aggregate, 0)
 			require.NoError(t, err)
 			defer fa.Release()
 
@@ -787,7 +736,7 @@ func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 			require.Equal(t, tc.height, height)
 			require.Equal(t, tc.trimmed, trimmed)
 			require.Equal(t, int64(len(tc.rows)), fa.NumRows())
-			require.Equal(t, int64(13), fa.NumCols())
+			require.Equal(t, int64(15), fa.NumCols())
 
 			// Convert the numRows to columns for easier access when testing below.
 			expectedColumns := rowsToColumn(tc.rows)
@@ -804,116 +753,77 @@ func TestGenerateFlamegraphArrowTrimming(t *testing.T) {
 	mem := memory.NewGoAllocator()
 	var err error
 
-	l := metastoretest.NewTestMetastore(
-		t,
-		log.NewNopLogger(),
-		prometheus.NewRegistry(),
-		noop.NewTracerProvider().Tracer(""),
-	)
+	mappings := []*pprofprofile.Mapping{{
+		ID:   1,
+		File: "a",
+	}}
 
-	metastore := metastore.NewInProcessClient(l)
+	functions := []*pprofprofile.Function{{
+		ID:   1,
+		Name: "1",
+	}, {
+		ID:   2,
+		Name: "2",
+	}, {
+		ID:   3,
+		Name: "3",
+	}, {
+		ID:   4,
+		Name: "4",
+	}, {
+		ID:   5,
+		Name: "5",
+	}}
 
-	mres, err := metastore.GetOrCreateMappings(ctx, &metastorepb.GetOrCreateMappingsRequest{
-		Mappings: []*metastorepb.Mapping{{
-			File: "a",
-		}},
-	})
-	require.NoError(t, err)
-	m := mres.Mappings[0]
+	locations := []*pprofprofile.Location{{
+		ID:      1,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[0]}},
+	}, {
+		ID:      2,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[1]}},
+	}, {
+		ID:      3,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[2]}},
+	}, {
+		ID:      4,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[3]}},
+	}, {
+		ID:      5,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[4]}},
+	}}
 
-	fres, err := metastore.GetOrCreateFunctions(ctx, &metastorepb.GetOrCreateFunctionsRequest{
-		Functions: []*metastorepb.Function{
-			{Name: "1"},
-			{Name: "2"},
-			{Name: "3"},
-			{Name: "4"},
-			{Name: "5"},
+	p, err := PprofToSymbolizedProfile(
+		profile.Meta{},
+		&pprofprofile.Profile{
+			Sample: []*pprofprofile.Sample{{
+				Location: []*pprofprofile.Location{locations[1], locations[0]},
+				Value:    []int64{10},
+			}, {
+				Location: []*pprofprofile.Location{locations[4], locations[2], locations[1], locations[0]},
+				Value:    []int64{1},
+			}, {
+				Location: []*pprofprofile.Location{locations[3], locations[2], locations[1], locations[0]},
+				Value:    []int64{3},
+			}},
 		},
-	})
+		0,
+	)
 	require.NoError(t, err)
-	f1 := fres.Functions[0]
-	f2 := fres.Functions[1]
-	f3 := fres.Functions[2]
-	f4 := fres.Functions[3]
-	f5 := fres.Functions[4]
-
-	lres, err := metastore.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
-		Locations: []*metastorepb.Location{{
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f1.Id,
-			}},
-		}, {
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f2.Id,
-			}},
-		}, {
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f3.Id,
-			}},
-		}, {
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f4.Id,
-			}},
-		}, {
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f5.Id,
-			}},
-		}},
-	})
-	require.NoError(t, err)
-	l1 := lres.Locations[0]
-	l2 := lres.Locations[1]
-	l3 := lres.Locations[2]
-	l4 := lres.Locations[3]
-	l5 := lres.Locations[4]
-
-	sres, err := metastore.GetOrCreateStacktraces(ctx, &metastorepb.GetOrCreateStacktracesRequest{
-		Stacktraces: []*metastorepb.Stacktrace{{
-			LocationIds: []string{l2.Id, l1.Id},
-		}, {
-			LocationIds: []string{l5.Id, l3.Id, l2.Id, l1.Id},
-		}, {
-			LocationIds: []string{l4.Id, l3.Id, l2.Id, l1.Id},
-		}},
-	})
-	require.NoError(t, err)
-	s1 := sres.Stacktraces[0]
-	s2 := sres.Stacktraces[1]
-	s3 := sres.Stacktraces[2]
 
 	tracer := noop.NewTracerProvider().Tracer("")
-
-	p, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
-		Samples: []*parcaprofile.NormalizedSample{{
-			StacktraceID: s1.Id,
-			Value:        10,
-		}, {
-			// The following two samples are trimmed from the flamegraph.
-			StacktraceID: s2.Id,
-			Value:        1,
-		}, {
-			StacktraceID: s3.Id,
-			Value:        3,
-		}},
-	})
-	require.NoError(t, err)
-
-	np, err := OldProfileToArrowProfile(p)
-	require.NoError(t, err)
-
-	fa, cumulative, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, np, []string{FlamegraphFieldFunctionName}, float32(0.5))
+	fa, cumulative, height, trimmed, err := generateFlamegraphArrowRecord(ctx, mem, tracer, p, []string{FlamegraphFieldFunctionName}, float32(0.5))
 	require.NoError(t, err)
 
 	require.Equal(t, int64(14), cumulative)
 	require.Equal(t, int32(5), height)
 	require.Equal(t, int64(4), trimmed)
 	require.Equal(t, int64(3), fa.NumRows())
-	require.Equal(t, int64(13), fa.NumCols())
+	require.Equal(t, int64(15), fa.NumCols())
 
 	// TODO: MappingBuildID and FunctionSystemNames shouldn't be "" but null?
 	rows := []flamegraphRow{
@@ -996,7 +906,7 @@ func BenchmarkArrowFlamegraph(b *testing.B) {
 	pp, err := pprofprofile.ParseData(fileContent)
 	require.NoError(b, err)
 
-	np, err := PprofToSymbolizedProfile(parcaprofile.MetaFromPprof(p, "memory", 0), pp, 0)
+	np, err := PprofToSymbolizedProfile(profile.MetaFromPprof(p, "memory", 0), pp, 0)
 	require.NoError(b, err)
 
 	tracer := noop.NewTracerProvider().Tracer("")
@@ -1099,7 +1009,7 @@ func TestRecordStats(t *testing.T) {
 	pp, err := pprofprofile.ParseData(fileContent)
 	require.NoError(t, err)
 
-	np, err := PprofToSymbolizedProfile(parcaprofile.MetaFromPprof(p, "memory", 0), pp, 0)
+	np, err := PprofToSymbolizedProfile(profile.MetaFromPprof(p, "memory", 0), pp, 0)
 	require.NoError(t, err)
 
 	tracer := noop.NewTracerProvider().Tracer("")
@@ -1151,7 +1061,7 @@ func TestAllFramesFiltered(t *testing.T) {
 	pp, err := pprofprofile.ParseData(fileContent)
 	require.NoError(t, err)
 
-	np, err := PprofToSymbolizedProfile(parcaprofile.MetaFromPprof(p, "cpu", 0), pp, 0)
+	np, err := PprofToSymbolizedProfile(profile.MetaFromPprof(p, "cpu", 0), pp, 0)
 	require.NoError(t, err)
 
 	// This is a regression test, what we want to achieve here is the input

@@ -26,6 +26,7 @@ import {
   useURLState,
 } from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
+import {ProfileType} from '@parca/parser';
 import {capitalizeOnlyFirstLetter, divide, type NavigateFunction} from '@parca/utilities';
 
 import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
@@ -46,7 +47,7 @@ interface ProfileIcicleGraphProps {
   arrow?: FlamegraphArrow;
   total: bigint;
   filtered: bigint;
-  sampleUnit: string;
+  profileType?: ProfileType;
   curPath: string[] | [];
   setNewCurPath: (path: string[]) => void;
   navigateTo?: NavigateFunction;
@@ -202,7 +203,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   filtered,
   curPath,
   setNewCurPath,
-  sampleUnit,
+  profileType,
   navigateTo,
   loading,
   setActionButtons,
@@ -334,7 +335,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
               filtered={filtered}
               curPath={curPath}
               setCurPath={setNewCurPath}
-              sampleUnit={sampleUnit}
+              profileType={profileType}
               navigateTo={navigateTo}
             />
           )}
@@ -346,7 +347,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
               filtered={filtered}
               curPath={curPath}
               setCurPath={setNewCurPath}
-              sampleUnit={sampleUnit}
+              profileType={profileType}
               navigateTo={navigateTo}
               sortBy={storeSortBy as string}
             />

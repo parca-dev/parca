@@ -21,10 +21,14 @@ import {isSearchMatch, scaleLinear} from '@parca/utilities';
 
 import 'react-contexify/dist/ReactContexify.css';
 
+import {ProfileType} from '@parca/parser';
+
 import {
   FIELD_CHILDREN,
   FIELD_CUMULATIVE,
+  FIELD_CUMULATIVE_PER_SECOND,
   FIELD_DIFF,
+  FIELD_DIFF_PER_SECOND,
   FIELD_FUNCTION_NAME,
   FIELD_MAPPING_FILE,
 } from './index';
@@ -53,6 +57,7 @@ interface IcicleGraphNodesProps {
   sortBy: string;
   darkMode: boolean;
   compareMode: boolean;
+  profileType?: ProfileType;
   isContextMenuOpen: boolean;
   hoveringName: string | null;
   setHoveringName: (name: string | null) => void;
@@ -80,6 +85,7 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
   searchString,
   darkMode,
   compareMode,
+  profileType,
   isContextMenuOpen,
   hoveringName,
   setHoveringName,
@@ -127,6 +133,7 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
         searchString={searchString}
         darkMode={darkMode}
         compareMode={compareMode}
+        profileType={profileType}
         isContextMenuOpen={isContextMenuOpen}
         hoveringName={hoveringName}
         setHoveringName={setHoveringName}
@@ -165,6 +172,7 @@ interface IcicleNodeProps {
   sortBy: string;
   darkMode: boolean;
   compareMode: boolean;
+  profileType?: ProfileType;
   isContextMenuOpen: boolean;
   hoveringName: string | null;
   setHoveringName: (name: string | null) => void;
@@ -204,6 +212,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   sortBy,
   darkMode,
   compareMode,
+  profileType,
   isContextMenuOpen,
   hoveringName,
   setHoveringName,
@@ -215,12 +224,18 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const mappingColumn = table.getChild(FIELD_MAPPING_FILE);
   const functionNameColumn = table.getChild(FIELD_FUNCTION_NAME);
   const cumulativeColumn = table.getChild(FIELD_CUMULATIVE);
+  const cumulativePerSecondColumn = table.getChild(FIELD_CUMULATIVE_PER_SECOND);
   const diffColumn = table.getChild(FIELD_DIFF);
+  const diffPerSecondColumn = table.getChild(FIELD_DIFF_PER_SECOND);
   // get the actual values from the columns
   const mappingFile: string | null = arrowToString(mappingColumn?.get(row));
   const functionName: string | null = arrowToString(functionNameColumn?.get(row));
   const cumulative = cumulativeColumn?.get(row) !== null ? BigInt(cumulativeColumn?.get(row)) : 0n;
+  const cumulativePerSecond: number | null =
+    cumulativePerSecondColumn?.get(row) != null ? cumulativePerSecondColumn.get(row) : 0;
   const diff: bigint | null = diffColumn?.get(row) !== null ? BigInt(diffColumn?.get(row)) : null;
+  const diffPerSecond: number | null =
+    diffPerSecondColumn?.get(row) != null ? diffPerSecondColumn.get(row) : null;
   const childRows: number[] = Array.from(table.getChild(FIELD_CHILDREN)?.get(row) ?? []);
 
   const highlightedNodes = useMemo(() => {
@@ -259,6 +274,15 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
       });
       break;
     case FIELD_CUMULATIVE:
+      if (profileType?.delta ?? false) {
+        childRows.sort((a, b) => {
+          const aCumulativePerSecond = cumulativePerSecondColumn?.get(a);
+          const bCumulativePerSecond = cumulativePerSecondColumn?.get(b);
+          return bCumulativePerSecond - aCumulativePerSecond;
+        });
+        break;
+      }
+
       childRows.sort((a, b) => {
         const aCumulative: bigint = cumulativeColumn?.get(a);
         const bCumulative: bigint = cumulativeColumn?.get(b);
@@ -267,15 +291,59 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
       break;
     case FIELD_DIFF:
       childRows.sort((a, b) => {
-        const aDiff: bigint | null = diffColumn?.get(a);
-        const bDiff: bigint | null = diffColumn?.get(b);
-        if (aDiff !== null && bDiff !== null) {
-          return Number(bDiff - aDiff);
+        if (profileType?.delta ?? false) {
+          let aRatio: number | null = null;
+          let bRatio: number | null = null;
+
+          const aDiff: number | null = diffPerSecondColumn?.get(a);
+          if (aDiff !== null) {
+            const cumulative: number = cumulativePerSecondColumn?.get(a);
+            const prev = cumulative - aDiff;
+            aRatio = aDiff / prev;
+          }
+
+          const bDiff: number | null = diffPerSecondColumn?.get(b);
+          if (bDiff !== null) {
+            const cumulative: number = cumulativePerSecondColumn?.get(b);
+            const prev = cumulative - bDiff;
+            bRatio = bDiff / prev;
+          }
+
+          if (aRatio !== null && bRatio !== null) {
+            return bRatio - aRatio;
+          }
+          if (aRatio === null && bRatio !== null) {
+            return -1;
+          }
+          if (aRatio !== null && bRatio === null) {
+            return 1;
+          }
+          // both are null
+          return 0;
         }
-        if (aDiff === null && bDiff !== null) {
+
+        let aRatio: number | null = null;
+        const aDiff: bigint | null = diffColumn?.get(a);
+        if (aDiff !== null) {
+          const cumulative: bigint = cumulativeColumn?.get(a) ?? 0n;
+          const prev: bigint = cumulative - aDiff;
+          aRatio = Number(aDiff) / Number(prev);
+        }
+        let bRatio: number | null = null;
+        const bDiff: bigint | null = diffColumn?.get(b);
+        if (bDiff !== null) {
+          const cumulative: bigint = cumulativeColumn?.get(b) ?? 0n;
+          const prev: bigint = cumulative - bDiff;
+          bRatio = Number(bDiff) / Number(prev);
+        }
+
+        if (aRatio !== null && bRatio !== null) {
+          return bRatio - aRatio;
+        }
+        if (aRatio === null && bRatio !== null) {
           return -1;
         }
-        if (aDiff !== null && bDiff === null) {
+        if (aRatio !== null && bRatio === null) {
           return 1;
         }
         // both are null
@@ -289,7 +357,9 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     isDarkMode: darkMode,
     compareMode,
     cumulative,
+    cumulativePerSecond,
     diff,
+    diffPerSecond,
     mappingColors,
     mappingFile,
   });
@@ -392,6 +462,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
           searchString={searchString}
           sortBy={sortBy}
           darkMode={darkMode}
+          profileType={profileType}
           compareMode={compareMode}
           isContextMenuOpen={isContextMenuOpen}
           hoveringName={hoveringName}

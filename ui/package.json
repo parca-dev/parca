@@ -8,8 +8,7 @@
     "fix": "eslint --fix --ext .ts,.tsx,.js packages/*",
     "type-check": "tsc --noEmit",
     "test": "jest --coverage --config jest.config.cjs",
-    "build": "lerna run build --ignore @parca/grafana*",
-    "build-with-grafana-plugins": "lerna run build",
+    "build": "lerna run build",
     "build-swc-lerna": "lerna run build-swc",
     "watch": "lerna run --parallel watch",
     "watch-parca-dev": "lerna run --parallel --include-dependencies --scope @parca/web watch",
@@ -27,8 +26,7 @@
     ],
     "nohoist": [
       "**/d3",
-      "**/jest",
-      "**/@grafana/toolkit"
+      "**/jest"
     ]
   },
   "dependencies": {

@@ -1,4 +1,4 @@
-// Copyright 2022-2024 The Parca Authors
+// Copyright 2024 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -14,6 +14,10 @@
 package normalizer
 
 import (
+	"compress/gzip"
+	"context"
+	"io"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -21,222 +25,29 @@ import (
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 )
 
-func TestLabelNamesFromSamples(t *testing.T) {
-	cases := []struct {
-		name         string
-		takenLabels  map[string]string
-		stringTable  []string
-		samples      []*pprofpb.Sample
-		allLabels    map[string]struct{}
-		allNumLabels map[string]struct{}
-	}{
-		{
-			name: "colliding labels in descending order",
-			takenLabels: map[string]string{
-				"instance": "127.0.0.1:6060",
-			},
-			stringTable: []string{"", "instance", "17", "method", "GET"},
-			samples: []*pprofpb.Sample{
-				{
-					Label: []*pprofpb.Label{{
-						Key: 3,
-						Str: 4,
-					}, {
-						Key: 1,
-						Str: 2,
-					}},
-				},
-			},
-			allLabels: map[string]struct{}{
-				"exported_instance": {},
-				"method":            {},
-			},
-			allNumLabels: map[string]struct{}{},
-		},
-		{
-			name: "colliding labels in ascending order",
-			takenLabels: map[string]string{
-				"instance": "127.0.0.1:6060",
-			},
-			stringTable: []string{"", "instance", "17", "method", "GET"},
-			samples: []*pprofpb.Sample{
-				{
-					Label: []*pprofpb.Label{{
-						Key: 1,
-						Str: 2,
-					}, {
-						Key: 3,
-						Str: 4,
-					}},
-				},
-			},
-			allLabels: map[string]struct{}{
-				"exported_instance": {},
-				"method":            {},
-			},
-			allNumLabels: map[string]struct{}{},
-		},
-	}
+func MustReadAllGzip(t testing.TB, filename string) []byte {
+	t.Helper()
 
-	for _, c := range cases {
-		t.Run("", func(t *testing.T) {
-			allLabels := map[string]struct{}{}
-			allNumLabels := map[string]struct{}{}
-			LabelNamesFromSamples(c.takenLabels, c.stringTable, c.samples, allLabels, allNumLabels)
-			require.Equal(t, c.allLabels, allLabels)
-			require.Equal(t, c.allNumLabels, allNumLabels)
-		})
-	}
+	f, err := os.Open(filename)
+	require.NoError(t, err)
+	defer f.Close()
+
+	r, err := gzip.NewReader(f)
+	require.NoError(t, err)
+	content, err := io.ReadAll(r)
+	require.NoError(t, err)
+	return content
 }
 
-func TestLabelsFromSample(t *testing.T) {
-	cases := []struct {
-		name            string
-		takenLabels     map[string]string
-		stringTable     []string
-		labels          []*pprofpb.Label
-		resultLabels    map[string]string
-		resultNumLabels map[string]int64
-	}{
-		{
-			name: "colliding labels in descending order",
-			takenLabels: map[string]string{
-				"instance": "127.0.0.1:6060",
-			},
-			stringTable: []string{"", "instance", "17", "method", "GET"},
-			labels: []*pprofpb.Label{{
-				Key: 3,
-				Str: 4,
-			}, {
-				Key: 1,
-				Str: 2,
-			}},
-			resultLabels: map[string]string{
-				"exported_instance": "17",
-				"method":            "GET",
-			},
-			resultNumLabels: map[string]int64{},
-		},
-		{
-			name: "colliding labels in ascending order",
-			takenLabels: map[string]string{
-				"instance": "127.0.0.1:6060",
-			},
-			stringTable: []string{"", "instance", "17", "method", "GET"},
-			labels: []*pprofpb.Label{{
-				Key: 1,
-				Str: 2,
-			}, {
-				Key: 3,
-				Str: 4,
-			}},
-			resultLabels: map[string]string{
-				"exported_instance": "17",
-				"method":            "GET",
-			},
-			resultNumLabels: map[string]int64{},
-		},
-	}
+func Test_Normalizer(t *testing.T) {
+	ctx := context.Background()
 
-	for _, c := range cases {
-		t.Run("", func(t *testing.T) {
-			labels, numLabels := LabelsFromSample(c.takenLabels, c.stringTable, c.labels)
-			require.Equal(t, c.resultLabels, labels)
-			require.Equal(t, c.resultNumLabels, numLabels)
-		})
-	}
-}
+	n := New()
+	fileContent := MustReadAllGzip(t, "./profile.pb.gz")
 
-func BenchmarkLabelsFromSample(b *testing.B) {
-	var (
-		takenLabels = map[string]string{
-			"foo": "bar",
-		}
-		stringTable = []string{"", "foo", "bar", "exported_foo", "baz"}
-		samples     = []*pprofpb.Label{{
-			Key: 1,
-			Str: 2,
-		}, {
-			Key: 3,
-			Str: 4,
-		}}
-	)
-	var (
-		resultLabels = map[string]string{
-			"exported_foo":          "baz",
-			"exported_exported_foo": "bar",
-		}
-		resultNumLabels = map[string]int64{}
-	)
+	p := &pprofpb.Profile{}
+	require.NoError(t, p.UnmarshalVT(fileContent))
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		labels, numLabels := LabelsFromSample(takenLabels, stringTable, samples)
-		require.Equal(b, resultLabels, labels)
-		require.Equal(b, resultNumLabels, numLabels)
-	}
-}
-
-func TestSampleKey(t *testing.T) {
-	tests := map[string]struct {
-		stacktraceID string
-		labels       map[string]string
-		numLabels    map[string]int64
-		want         string
-	}{
-		"no labels": {
-			stacktraceID: "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/T7hXckRIomziKtDlxDk8ymfFY0eP56PwOsxoERlyGY8=/MdCcinwyzSndRZX6l3oZ5U9JEiNN1OsxiZcvjaWe434=",
-			labels:       nil,
-			numLabels:    nil,
-			want:         "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/T7hXckRIomziKtDlxDk8ymfFY0eP56PwOsxoERlyGY8=/MdCcinwyzSndRZX6l3oZ5U9JEiNN1OsxiZcvjaWe434=;;",
-		},
-		"number labels": {
-			stacktraceID: "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/T7hXckRIomziKtDlxDk8ymfFY0eP56PwOsxoERlyGY8=/MdCcinwyzSndRZX6l3oZ5U9JEiNN1OsxiZcvjaWe434=",
-			labels:       nil,
-			numLabels: map[string]int64{
-				"bytes": 98304,
-			},
-			want: "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/T7hXckRIomziKtDlxDk8ymfFY0eP56PwOsxoERlyGY8=/MdCcinwyzSndRZX6l3oZ5U9JEiNN1OsxiZcvjaWe434=;;bytes=98304;",
-		},
-		"string and number labels": {
-			stacktraceID: "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/T7hXckRIomziKtDlxDk8ymfFY0eP56PwOsxoERlyGY8=/MdCcinwyzSndRZX6l3oZ5U9JEiNN1OsxiZcvjaWe434=",
-			labels: map[string]string{
-				"fizz": "bazz",
-			},
-			numLabels: map[string]int64{
-				"bytes": 98304,
-			},
-			want: "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/T7hXckRIomziKtDlxDk8ymfFY0eP56PwOsxoERlyGY8=/MdCcinwyzSndRZX6l3oZ5U9JEiNN1OsxiZcvjaWe434=;fizz=bazz;;bytes=98304;",
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := sampleKey(tc.stacktraceID, tc.labels, tc.numLabels)
-			if tc.want != got {
-				t.Errorf("expected %q got %q", tc.want, got)
-			}
-		})
-	}
-}
-
-func BenchmarkSampleKey(b *testing.B) {
-	var (
-		stacktraceID = "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/T7hXckRIomziKtDlxDk8ymfFY0eP56PwOsxoERlyGY8=/MdCcinwyzSndRZX6l3oZ5U9JEiNN1OsxiZcvjaWe434="
-		labels       = map[string]string{
-			"fizz": "bazz",
-		}
-		numLabels = map[string]int64{
-			"bytes": 98304,
-		}
-	)
-	want := "2b-t2tYPDARtdf-_FCsqMnUDllVoG8eHx3DGY6B2zsc=/T7hXckRIomziKtDlxDk8ymfFY0eP56PwOsxoERlyGY8=/MdCcinwyzSndRZX6l3oZ5U9JEiNN1OsxiZcvjaWe434=;fizz=bazz;;bytes=98304;"
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		got := sampleKey(stacktraceID, labels, numLabels)
-		if want != got {
-			b.Errorf("expected %q got %q", want, got)
-		}
-	}
+	_, err := n.NormalizePprof(ctx, t.Name(), nil, p, true, nil)
+	require.NoError(t, err)
 }

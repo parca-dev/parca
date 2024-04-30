@@ -16,6 +16,7 @@ package addr2line
 
 import (
 	"bytes"
+	"context"
 	"debug/elf"
 	"encoding/binary"
 	"fmt"
@@ -75,7 +76,7 @@ func (lnr *SymtabLiner) PCRange() ([2]uint64, error) {
 }
 
 // PCToLines looks up the line number information for a program counter (memory address).
-func (lnr *SymtabLiner) PCToLines(addr uint64) (lines []profile.LocationLine, err error) {
+func (lnr *SymtabLiner) PCToLines(ctx context.Context, addr uint64) (lines []profile.LocationLine, err error) {
 	name, err := lnr.searcher.Search(addr)
 	if err != nil {
 		return nil, err

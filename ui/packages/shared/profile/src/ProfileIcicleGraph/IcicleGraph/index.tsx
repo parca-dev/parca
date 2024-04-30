@@ -14,6 +14,7 @@
 import {memo, useEffect, useMemo, useRef, useState} from 'react';
 
 import {Flamegraph} from '@parca/client';
+import {ProfileType} from '@parca/parser';
 import {setHoveringNode, useAppDispatch} from '@parca/store';
 import {scaleLinear, selectQueryParam, type NavigateFunction} from '@parca/utilities';
 
@@ -27,7 +28,7 @@ interface IcicleGraphProps {
   graph: Flamegraph;
   total: bigint;
   filtered: bigint;
-  sampleUnit: string;
+  profileType?: ProfileType;
   width?: number;
   curPath: string[];
   setCurPath: (path: string[]) => void;
@@ -41,7 +42,7 @@ export const IcicleGraph = memo(function IcicleGraph({
   width,
   setCurPath,
   curPath,
-  sampleUnit,
+  profileType,
   navigateTo,
 }: IcicleGraphProps): JSX.Element {
   const dispatch = useAppDispatch();
@@ -77,7 +78,7 @@ export const IcicleGraph = memo(function IcicleGraph({
         <ColorStackLegend navigateTo={navigateTo} compareMode={compareMode} />
       )}
       <GraphTooltip
-        unit={sampleUnit}
+        unit={profileType?.sampleUnit ?? ''}
         total={total}
         totalUnfiltered={total + filtered}
         contextElement={svg.current}

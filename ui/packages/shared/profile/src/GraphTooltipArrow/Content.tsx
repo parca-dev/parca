@@ -16,6 +16,7 @@ import React from 'react';
 import {Icon} from '@iconify/react';
 import {Table} from 'apache-arrow';
 
+import {ProfileType} from '@parca/parser';
 import {getLastItem, type NavigateFunction} from '@parca/utilities';
 
 import {hexifyAddress, truncateString, truncateStringReverse} from '../utils';
@@ -25,7 +26,7 @@ import {useGraphTooltipMetaInfo} from './useGraphTooltipMetaInfo';
 
 interface GraphTooltipArrowContentProps {
   table: Table<any>;
-  unit: string;
+  profileType?: ProfileType;
   total: bigint;
   totalUnfiltered: bigint;
   row: number | null;
@@ -40,7 +41,7 @@ const NoData = (): React.JSX.Element => {
 
 const GraphTooltipArrowContent = ({
   table,
-  unit,
+  profileType,
   total,
   totalUnfiltered,
   row,
@@ -50,7 +51,7 @@ const GraphTooltipArrowContent = ({
 }: GraphTooltipArrowContentProps): React.JSX.Element => {
   const graphTooltipData = useGraphTooltip({
     table,
-    unit,
+    profileType,
     total,
     totalUnfiltered,
     row,
@@ -61,7 +62,15 @@ const GraphTooltipArrowContent = ({
     return <></>;
   }
 
-  const {name, locationAddress, cumulativeText, diffText, diff, row: rowNumber} = graphTooltipData;
+  const {
+    name,
+    locationAddress,
+    cumulativeText,
+    cumulativePerSecondText,
+    diffText,
+    diff,
+    row: rowNumber,
+  } = graphTooltipData;
 
   return (
     <div className={`flex text-sm ${isFixed ? 'w-full' : ''}`}>
@@ -84,6 +93,16 @@ const GraphTooltipArrowContent = ({
               </div>
               <table className="my-2 w-full table-fixed pr-0 text-gray-700 dark:text-gray-300">
                 <tbody>
+                  {profileType?.delta ?? false ? (
+                    <tr>
+                      <td className="w-1/4">Per Second</td>
+                      <td className="w-3/4">
+                        <div>{cumulativePerSecondText}</div>
+                      </td>
+                    </tr>
+                  ) : (
+                    <></>
+                  )}
                   <tr>
                     <td className="w-1/4">Cumulative</td>
 

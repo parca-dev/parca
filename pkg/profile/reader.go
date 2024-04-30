@@ -16,8 +16,8 @@ package profile
 import (
 	"strings"
 
-	"github.com/apache/arrow/go/v15/arrow"
-	"github.com/apache/arrow/go/v15/arrow/array"
+	"github.com/apache/arrow/go/v16/arrow"
+	"github.com/apache/arrow/go/v16/arrow/array"
 )
 
 type LabelColumn struct {
@@ -57,8 +57,10 @@ type RecordReader struct {
 	LineFunctionFilenameDict      *array.Binary
 	LineFunctionStartLine         *array.Int64
 
-	Value *array.Int64
-	Diff  *array.Int64
+	Value          *array.Int64
+	ValuePerSecond *array.Float64
+	Diff           *array.Int64
+	DiffPerSecond  *array.Float64
 }
 
 func NewReader(p Profile) Reader {
@@ -119,7 +121,9 @@ func NewRecordReader(ar arrow.Record) *RecordReader {
 	lineFunctionFilenameDict := lineFunctionFilename.Dictionary().(*array.Binary)
 	lineFunctionStartLine := line.Field(4).(*array.Int64)
 	valueColumn := ar.Column(labelNum + 1).(*array.Int64)
-	diffColumn := ar.Column(labelNum + 2).(*array.Int64)
+	valuePerSecondColumn := ar.Column(labelNum + 2).(*array.Float64)
+	diffColumn := ar.Column(labelNum + 3).(*array.Int64)
+	diffPerSecondColumn := ar.Column(labelNum + 4).(*array.Float64)
 
 	return &RecordReader{
 		Record:                        ar,
@@ -146,6 +150,8 @@ func NewRecordReader(ar arrow.Record) *RecordReader {
 		LineFunctionFilenameDict:      lineFunctionFilenameDict,
 		LineFunctionStartLine:         lineFunctionStartLine,
 		Value:                         valueColumn,
+		ValuePerSecond:                valuePerSecondColumn,
 		Diff:                          diffColumn,
+		DiffPerSecond:                 diffPerSecondColumn,
 	}
 }

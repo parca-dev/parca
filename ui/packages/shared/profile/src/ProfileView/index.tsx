@@ -99,7 +99,6 @@ export interface ProfileViewProps {
   topTableData?: TopTableData;
   callgraphData?: CallgraphData;
   sourceData?: SourceData;
-  sampleUnit: string;
   profileSource?: ProfileSource;
   queryClient?: QueryServiceClient;
   navigateTo?: NavigateFunction;
@@ -124,7 +123,6 @@ export const ProfileView = ({
   topTableData,
   callgraphData,
   sourceData,
-  sampleUnit,
   profileSource,
   queryClient,
   navigateTo,
@@ -238,7 +236,7 @@ export const ProfileView = ({
               graph={flamegraphData?.data}
               total={total}
               filtered={filtered}
-              sampleUnit={sampleUnit}
+              profileType={profileSource?.ProfileType()}
               navigateTo={navigateTo}
               loading={flamegraphData.loading}
               setActionButtons={setActionButtons}
@@ -262,7 +260,7 @@ export const ProfileView = ({
           <Callgraph
             data={callgraphData.data}
             svgString={callgraphSVG}
-            sampleUnit={sampleUnit}
+            profileType={profileSource?.ProfileType()}
             width={isHalfScreen ? dimensions?.width / 2 : dimensions?.width}
           />
         ) : (
@@ -276,7 +274,7 @@ export const ProfileView = ({
             filtered={filtered}
             loading={topTableData.loading}
             data={topTableData.arrow?.record}
-            sampleUnit={sampleUnit}
+            profileType={profileSource?.ProfileType()}
             navigateTo={navigateTo}
             setActionButtons={setActionButtons}
             currentSearchString={currentSearchString as string}
@@ -336,7 +334,7 @@ export const ProfileView = ({
 
   return (
     <KeyDownProvider>
-      <ProfileViewContextProvider value={{profileSource, sampleUnit, compareMode}}>
+      <ProfileViewContextProvider value={{profileSource, compareMode}}>
         <div
           className={cx(
             'mb-4 flex w-full',

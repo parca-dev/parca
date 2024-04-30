@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apache/arrow/go/v15/arrow/memory"
+	"github.com/apache/arrow/go/v16/arrow/memory"
 	"github.com/go-kit/log"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/objstore"
@@ -27,7 +27,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/kv"
 	"github.com/parca-dev/parca/pkg/parcacol"
 )
 
@@ -58,7 +58,7 @@ func TestSourcesOnlyRequest(t *testing.T) {
 			allocator,
 		),
 		allocator,
-		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+		parcacol.NewArrowToProfileConverter(tracer, kv.NewKeyMaker()),
 		NewBucketSourceFinder(bucket),
 	)
 
