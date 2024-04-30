@@ -12,9 +12,10 @@
   },
   "dependencies": {
     "@parca/client": "^0.16.107",
-    "@parca/utilities": "^0.0.63",
     "@parca/store": "^0.16.137",
+    "@parca/utilities": "^0.0.63",
     "@rehooks/local-storage": "^2.4.4",
+    "lodash": "^4.17.21",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "tsc-watch": "6.2.0"

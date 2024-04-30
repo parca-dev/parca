@@ -29,6 +29,7 @@
     "d3": "7.9.0",
     "d3-selection": "3.0.0",
     "graphviz-wasm": "3.0.2",
+    "lodash": "^4.17.21",
     "moment-timezone": "^0.5.45",
     "react-datepicker": "4.25.0",
     "react-popper": "^2.3.0",
