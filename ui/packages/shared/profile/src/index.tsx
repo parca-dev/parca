@@ -31,20 +31,3 @@ export {default as Callgraph} from './Callgraph';
 export type {CallgraphProps};
 
 export {ProfileExplorer, ProfileTypeSelector};
-
-// Leaving this in here due to lack of a better place to put it.
-interface GrafanaParcaDataPayload {
-  flamegraphData: FlamegraphData;
-  topTableData: TopTableData;
-  actions: {
-    downloadPprof: () => void;
-    getQueryClient: () => QueryServiceClient;
-  };
-  error?: undefined;
-}
-
-interface GrafanaParcaErrorPayload {
-  error: Error;
-}
-
-export type GrafanaParcaData = GrafanaParcaErrorPayload | GrafanaParcaDataPayload;

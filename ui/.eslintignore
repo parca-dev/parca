@@ -11,5 +11,3 @@ packages/shared/client/src/grpc
 packages/shared/parser/src/selector.js
 packages/shared/profile/src/TopTable/benchmarks
 packages/shared/profile/src/ProfileIcicleGraph/benchmarks
-packages/app/grafana-datasource-plugin
-packages/app/grafana-panel-plugin
