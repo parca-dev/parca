@@ -16,10 +16,6 @@ import type {Props as CallgraphProps} from '@parca/profile/src/Callgraph';
 import ProfileExplorer from './ProfileExplorer';
 import ProfileTypeSelector from './ProfileTypeSelector';
 
-
-
-
-
 export * from './ProfileIcicleGraph/IcicleGraph';
 export * from './ProfileIcicleGraph';
 export * from './ProfileSource';
