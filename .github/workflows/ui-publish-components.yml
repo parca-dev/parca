@@ -52,12 +52,16 @@ jobs:
           git fetch origin +refs/heads/main:refs/remotes/origin/main && \
           git checkout main
 
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 8.15.6
+
       - name: Set up Node.js
         uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v3.8.2
         with:
           node-version-file: .node-version
-          cache: 'yarn'
-          cache-dependency-path: ui/yarn.lock
+          cache: 'pnpm'
+          cache-dependency-path: ui/pnpm-lock.yaml
 
       - name: Ensure access
         working-directory: ui
@@ -71,16 +75,16 @@ jobs:
           git config --global user.name "${{ github.actor }}"
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
 
-      - name: Install packages with yarn
+      - name: Install packages with pnpm
         working-directory: ui
-        run: yarn install
+        run: pnpm install
 
       - name: Build Packages
         working-directory: ui
-        run: yarn build
+        run: pnpm run build
 
       - name: Bump versions and publish packages
         working-directory: ui
-        run: yarn publish:ci
+        run: pnpm run publish:ci
         env:
           GH_TOKEN: ${{ secrets.GH_PAT_UI }}

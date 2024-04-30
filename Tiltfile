@@ -32,11 +32,11 @@ k8s_resource('parca', port_forwards=[7070])
 ## UI Only
 # docker_build(
 #     'localhost:5000/parca-ui:dev', './ui',
-#     entrypoint='yarn workspace @parca/web dev',
+#     entrypoint='pnpm --filter @parca/web dev',
 #     dockerfile='./ui/Dockerfile.dev',
 #     live_update=[
 #         sync('./ui', '/app'),
-#         run('cd /app && yarn install', trigger=['./package.json', './yarn.lock']),
+#         run('cd /app && pnpm install', trigger=['./package.json', './pnpm-lock.yaml']),
 #     ],
 # )
 # k8s_yaml('deploy/tilt/parca-ui-deployment.yaml')

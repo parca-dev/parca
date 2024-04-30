@@ -39,7 +39,7 @@ Check Parca's website for updated and in-depth installation guides and documenta
 
 ## Development
 
-You need to have [Go](https://golang.org/), [Node](https://nodejs.org/en/download/) and [Yarn](https://classic.yarnpkg.com/en/) installed.
+You need to have [Go](https://golang.org/), [Node](https://nodejs.org/en/download/) and [Pnpm](https://pnpm.io/) installed.
 
 Clone the project
 

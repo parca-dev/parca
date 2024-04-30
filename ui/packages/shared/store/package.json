@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
-    "prepublish": "yarn build",
+    "prepublish": "pnpm run build",
     "build": "tsc",
     "build-swc": "swc ./src -d dist --copy-files",
     "watch": "tsc-watch"

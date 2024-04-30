@@ -104,15 +104,15 @@ go/test-clean:
 UI_FILES ?= $(shell find ./ui -name "*" -not -path "./ui/lib/node_modules/*" -not -path "./ui/node_modules/*" -not -path "./ui/packages/app/template/node_modules/*" -not -path "./ui/packages/app/web/node_modules/*" -not -path "./ui/packages/app/web/build/*")
 .PHONY: ui/build
 ui/build: $(UI_FILES)
-	cd ui && yarn install --frozen-lockfile --prefer-offline && yarn build
+	cd ui && pnpm install --frozen-lockfile --prefer-offline && pnpm run build
 
 .PHONY: ui/test
 ui/test:
-	cd ui && yarn test
+	cd ui && pnpm run test
 
 .PHONY: ui/lint
 ui/lint:
-	cd ui && yarn run lint
+	cd ui && pnpm run lint
 
 .PHONY: proto/all
 proto/all: proto/vendor proto/format proto/lint proto/generate

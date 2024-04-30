@@ -50,27 +50,31 @@ jobs:
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 8.15.6
+
       - name: Set up Node.js
         uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v3.8.2
         with:
           node-version-file: .node-version
-          cache: 'yarn'
-          cache-dependency-path: ui/yarn.lock
+          cache: 'pnpm'
+          cache-dependency-path: ui/pnpm-lock.yaml
 
       - name: Install project dependencies
-        run: yarn install --frozen-lockfile --prefer-offline
+        run: pnpm install --frozen-lockfile --prefer-offline
         working-directory: ui
 
-      - run: yarn build
+      - run: pnpm run build
         working-directory: ui
 
-      - run: yarn test
+      - run: pnpm run test
         working-directory: ui
 
       - name: Run ESLint
         working-directory: ui
-        run: yarn run lint
+        run: pnpm run lint
 
       - name: Check typing
         working-directory: ui
-        run: yarn run type-check
+        run: pnpm run type-check

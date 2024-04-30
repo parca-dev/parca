@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
-    "prepublish": "yarn build",
+    "prepublish": "pnpm run build",
     "build": "tsc && tailwindcss -o dist/styles.css --minify",
     "build-swc": "swc ./src -d dist --copy-files && tailwindcss -o dist/styles.css --minify",
     "watch": "tsc-watch --onCompilationComplete 'tailwindcss -o dist/styles.css'"
