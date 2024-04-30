@@ -11,12 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {QueryServiceClient} from '@parca/client';
-
 import type {Props as CallgraphProps} from './Callgraph';
 import ProfileExplorer from './ProfileExplorer';
 import ProfileTypeSelector from './ProfileTypeSelector';
-import type {FlamegraphData, TopTableData} from './ProfileView';
 
 export * from './ProfileIcicleGraph/IcicleGraph';
 export * from './ProfileIcicleGraph';
@@ -31,20 +28,3 @@ export {default as Callgraph} from './Callgraph';
 export type {CallgraphProps};
 
 export {ProfileExplorer, ProfileTypeSelector};
-
-// Leaving this in here due to lack of a better place to put it.
-interface GrafanaParcaDataPayload {
-  flamegraphData: FlamegraphData;
-  topTableData: TopTableData;
-  actions: {
-    downloadPprof: () => void;
-    getQueryClient: () => QueryServiceClient;
-  };
-  error?: undefined;
-}
-
-interface GrafanaParcaErrorPayload {
-  error: Error;
-}
-
-export type GrafanaParcaData = GrafanaParcaErrorPayload | GrafanaParcaDataPayload;
