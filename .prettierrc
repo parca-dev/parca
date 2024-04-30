@@ -17,17 +17,5 @@
   "importOrderMergeDuplicateImports": true,
   "importOrderBuiltinModulesToTop": true,
   "importOrderCombineTypeAndValueImports": true,
-  "plugins": ["@ianvs/prettier-plugin-sort-imports"],
-  "overrides": [
-    {
-      "files": "ui/packages/app/grafana**/**/*",
-      "options": {
-        "trailingComma": "es5",
-        "singleQuote": true,
-        "bracketSpacing": true,
-        "arrowParens": "always",
-        "printWidth": 120
-      }
-    }
-  ]
+  "plugins": ["@ianvs/prettier-plugin-sort-imports"]
 }
