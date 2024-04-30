@@ -19,13 +19,13 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/apache/arrow/go/v15/arrow"
-	"github.com/apache/arrow/go/v15/arrow/array"
-	"github.com/apache/arrow/go/v15/arrow/memory"
+	"github.com/apache/arrow/go/v16/arrow"
+	"github.com/apache/arrow/go/v16/arrow/array"
+	"github.com/apache/arrow/go/v16/arrow/memory"
 	"go.opentelemetry.io/otel/trace"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
+	"github.com/parca-dev/parca/pkg/kv"
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -40,12 +40,12 @@ func (e ErrMissingColumn) Error() string {
 
 type ArrowToProfileConverter struct {
 	tracer trace.Tracer
-	key    *metastore.KeyMaker
+	key    *kv.KeyMaker
 }
 
 func NewArrowToProfileConverter(
 	tracer trace.Tracer,
-	keyMaker *metastore.KeyMaker,
+	keyMaker *kv.KeyMaker,
 ) *ArrowToProfileConverter {
 	return &ArrowToProfileConverter{
 		tracer: tracer,
@@ -217,117 +217,6 @@ func (c *ArrowToProfileConverter) Convert(
 	}, nil
 }
 
-type ProfileSymbolizer struct {
-	tracer trace.Tracer
-	m      pb.MetastoreServiceClient
-}
-
-func NewProfileSymbolizer(
-	tracer trace.Tracer,
-	m pb.MetastoreServiceClient,
-) *ProfileSymbolizer {
-	return &ProfileSymbolizer{
-		tracer: tracer,
-		m:      m,
-	}
-}
-
-func (s *ProfileSymbolizer) SymbolizeNormalizedProfile(ctx context.Context, p *profile.NormalizedProfile) (profile.OldProfile, error) {
-	stacktraceIDs := make([]string, len(p.Samples))
-	for i, sample := range p.Samples {
-		stacktraceIDs[i] = sample.StacktraceID
-	}
-
-	stacktraceLocations, err := s.resolveStacktraces(ctx, stacktraceIDs)
-	if err != nil {
-		return profile.OldProfile{}, fmt.Errorf("read stacktrace metadata: %w", err)
-	}
-
-	samples := make([]*profile.SymbolizedSample, len(p.Samples))
-	for i, sample := range p.Samples {
-		samples[i] = &profile.SymbolizedSample{
-			Value:     sample.Value,
-			DiffValue: sample.DiffValue,
-			Locations: stacktraceLocations[i],
-			Label:     sample.Label,
-			NumLabel:  sample.NumLabel,
-		}
-	}
-
-	return profile.OldProfile{
-		Samples: samples,
-		Meta:    p.Meta,
-	}, nil
-}
-
-func (s *ProfileSymbolizer) resolveStacktraces(ctx context.Context, stacktraceIDs []string) (
-	[][]*profile.Location,
-	error,
-) {
-	ctx, span := s.tracer.Start(ctx, "resolve-stacktraces")
-	defer span.End()
-
-	stacktraces, locations, locationIndex, err := s.resolveStacktraceLocations(ctx, stacktraceIDs)
-	if err != nil {
-		return nil, fmt.Errorf("resolve stacktrace locations: %w", err)
-	}
-
-	stacktraceLocations := make([][]*profile.Location, len(stacktraces))
-	for i, stacktrace := range stacktraces {
-		stacktraceLocations[i] = make([]*profile.Location, len(stacktrace.LocationIds))
-		for j, id := range stacktrace.LocationIds {
-			stacktraceLocations[i][j] = locations[locationIndex[id]]
-		}
-	}
-
-	return stacktraceLocations, nil
-}
-
-func (s *ProfileSymbolizer) resolveStacktraceLocations(ctx context.Context, stacktraceIDs []string) (
-	[]*pb.Stacktrace,
-	[]*profile.Location,
-	map[string]int,
-	error,
-) {
-	ctx, span := s.tracer.Start(ctx, "resolve-stacktraces")
-	defer span.End()
-
-	sres, err := s.m.Stacktraces(ctx, &pb.StacktracesRequest{
-		StacktraceIds: stacktraceIDs,
-	})
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("read stacktraces: %w", err)
-	}
-
-	locationNum := 0
-	for _, stacktrace := range sres.Stacktraces {
-		locationNum += len(stacktrace.LocationIds)
-	}
-
-	locationIndex := make(map[string]int, locationNum)
-	locationIDs := make([]string, 0, locationNum)
-	for _, s := range sres.Stacktraces {
-		for _, id := range s.LocationIds {
-			if _, seen := locationIndex[id]; !seen {
-				locationIDs = append(locationIDs, id)
-				locationIndex[id] = len(locationIDs) - 1
-			}
-		}
-	}
-
-	lres, err := s.m.Locations(ctx, &pb.LocationsRequest{LocationIds: locationIDs})
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	locations, err := s.getLocationsFromSerializedLocations(ctx, locationIDs, lres.Locations)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	return sres.Stacktraces, locations, locationIndex, nil
-}
-
 func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrace, resolvedLocations []*profile.Location, locationIndex map[string]int) (arrow.Record, error) {
 	w := profile.NewLocationsWriter(allocator)
 	defer w.RecordBuilder.Release()
@@ -432,88 +321,4 @@ func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrac
 
 func stringToBytes(s string) []byte {
 	return unsafe.Slice(unsafe.StringData(s), len(s))
-}
-
-func (s *ProfileSymbolizer) getLocationsFromSerializedLocations(
-	ctx context.Context,
-	locationIds []string,
-	locations []*pb.Location,
-) (
-	[]*profile.Location,
-	error,
-) {
-	mappingIndex := map[string]int{}
-	mappingIDs := []string{}
-	for _, location := range locations {
-		if location.MappingId == "" {
-			continue
-		}
-
-		if _, found := mappingIndex[location.MappingId]; !found {
-			mappingIDs = append(mappingIDs, location.MappingId)
-			mappingIndex[location.MappingId] = len(mappingIDs) - 1
-		}
-	}
-
-	var mappings []*pb.Mapping
-	if len(mappingIDs) > 0 {
-		mres, err := s.m.Mappings(ctx, &pb.MappingsRequest{
-			MappingIds: mappingIDs,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("get mappings by IDs: %w", err)
-		}
-		mappings = mres.Mappings
-	}
-
-	functionIndex := map[string]int{}
-	functionIDs := []string{}
-	for _, location := range locations {
-		if location.Lines == nil {
-			continue
-		}
-		for _, line := range location.Lines {
-			if _, found := functionIndex[line.FunctionId]; !found {
-				functionIDs = append(functionIDs, line.FunctionId)
-				functionIndex[line.FunctionId] = len(functionIDs) - 1
-			}
-		}
-	}
-
-	fres, err := s.m.Functions(ctx, &pb.FunctionsRequest{
-		FunctionIds: functionIDs,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("get functions by ids: %w", err)
-	}
-
-	res := make([]*profile.Location, 0, len(locations))
-	for _, location := range locations {
-		var mapping *pb.Mapping
-		if location.MappingId != "" {
-			mapping = mappings[mappingIndex[location.MappingId]]
-		}
-
-		symbolizedLines := []profile.LocationLine{}
-		if location.Lines != nil {
-			lines := location.Lines
-			symbolizedLines = make([]profile.LocationLine, 0, len(lines))
-			for _, line := range lines {
-				symbolizedLines = append(symbolizedLines, profile.LocationLine{
-					Function: fres.Functions[functionIndex[line.FunctionId]],
-					Line:     line.Line,
-				})
-			}
-		}
-
-		res = append(res, &profile.Location{
-			ID:       location.Id,
-			Address:  location.Address,
-			IsFolded: location.IsFolded,
-			Mapping:  mapping,
-			Lines:    symbolizedLines,
-		})
-	}
-
-	return res, nil
 }

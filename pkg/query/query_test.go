@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apache/arrow/go/v15/arrow/memory"
+	"github.com/apache/arrow/go/v16/arrow/memory"
 	"github.com/go-kit/log"
 	"github.com/polarsignals/frostdb"
 	columnstore "github.com/polarsignals/frostdb"
@@ -33,8 +33,8 @@ import (
 
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
-	"github.com/parca-dev/parca/pkg/metastoretest"
+	"github.com/parca-dev/parca/pkg/ingester"
+	"github.com/parca-dev/parca/pkg/kv"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/profilestore"
@@ -61,12 +61,6 @@ func Benchmark_Query_Merge(b *testing.B) {
 				columnstore.NewTableConfig(profile.SchemaDefinition()),
 			)
 			require.NoError(b, err)
-			mc := metastore.NewInProcessClient(metastoretest.NewTestMetastore(
-				b,
-				logger,
-				reg,
-				tracer,
-			))
 
 			fileContent, err := os.ReadFile("../query/testdata/alloc_objects.pb.gz")
 			require.NoError(b, err)
@@ -75,8 +69,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 				reg,
 				logger,
 				tracer,
-				mc,
-				parcacol.NewIngester(
+				ingester.NewIngester(
 					logger,
 					memory.DefaultAllocator,
 					table,
@@ -124,11 +117,11 @@ func Benchmark_Query_Merge(b *testing.B) {
 						colDB.TableProvider(),
 					),
 					"stacktraces",
-					parcacol.NewProfileSymbolizer(tracer, mc),
+					nil,
 					mem,
 				),
 				mem,
-				parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+				parcacol.NewArrowToProfileConverter(tracer, kv.NewKeyMaker()),
 				nil,
 			)
 			b.ResetTimer()
@@ -160,7 +153,6 @@ func Benchmark_ProfileTypes(b *testing.B) {
 
 	ctx := context.Background()
 	logger := log.NewNopLogger()
-	reg := prometheus.NewRegistry()
 	tracer := noop.NewTracerProvider().Tracer("")
 	col, err := columnstore.New(
 		frostdb.WithWAL(),
@@ -176,12 +168,6 @@ func Benchmark_ProfileTypes(b *testing.B) {
 	require.NoError(b, table.EnsureCompaction())
 
 	require.NoError(b, err)
-	m := metastore.NewInProcessClient(metastoretest.NewTestMetastore(
-		b,
-		logger,
-		reg,
-		tracer,
-	))
 
 	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
 	defer mem.AssertSize(b, 0)
@@ -197,11 +183,11 @@ func Benchmark_ProfileTypes(b *testing.B) {
 				colDB.TableProvider(),
 			),
 			"stacktraces",
-			parcacol.NewProfileSymbolizer(tracer, m),
+			nil,
 			mem,
 		),
 		mem,
-		parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()),
+		parcacol.NewArrowToProfileConverter(tracer, kv.NewKeyMaker()),
 		nil,
 	)
 	b.ResetTimer()

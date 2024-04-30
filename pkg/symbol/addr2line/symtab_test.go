@@ -15,6 +15,7 @@
 package addr2line
 
 import (
+	"context"
 	"debug/elf"
 	"testing"
 
@@ -225,7 +226,7 @@ func TestSymtabLiner_PCToLines(t *testing.T) {
 				searcher:  searcher,
 				demangler: demangle.NewDemangler("simple", false),
 			}
-			gotLines, err := lnr.PCToLines(tt.args.addr)
+			gotLines, err := lnr.PCToLines(context.Background(), tt.args.addr)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("PCToLines() error = %v, wantErr %v", err, tt.wantErr)
 				return

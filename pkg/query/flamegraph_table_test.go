@@ -14,140 +14,96 @@
 package query
 
 import (
-	"bytes"
 	"context"
 	"math"
 	"sort"
 	"testing"
 
-	"github.com/apache/arrow/go/v15/arrow/memory"
-	"github.com/go-kit/log"
-	"github.com/google/pprof/profile"
+	"github.com/apache/arrow/go/v16/arrow/memory"
 	pprofprofile "github.com/google/pprof/profile"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/protobuf/proto"
 
-	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	"github.com/parca-dev/parca/pkg/metastore"
-	"github.com/parca-dev/parca/pkg/metastoretest"
-	"github.com/parca-dev/parca/pkg/normalizer"
+	"github.com/parca-dev/parca/pkg/kv"
 	"github.com/parca-dev/parca/pkg/parcacol"
-	parcaprofile "github.com/parca-dev/parca/pkg/profile"
+	"github.com/parca-dev/parca/pkg/profile"
 )
 
 func TestGenerateFlamegraphTable(t *testing.T) {
 	ctx := context.Background()
 	var err error
 
-	l := metastoretest.NewTestMetastore(
-		t,
-		log.NewNopLogger(),
-		prometheus.NewRegistry(),
-		noop.NewTracerProvider().Tracer(""),
+	mappings := []*pprofprofile.Mapping{{
+		ID:   1,
+		File: "a",
+	}}
+
+	functions := []*pprofprofile.Function{{
+		ID:   1,
+		Name: "1",
+	}, {
+		ID:   2,
+		Name: "2",
+	}, {
+		ID:   3,
+		Name: "3",
+	}, {
+		ID:   4,
+		Name: "4",
+	}, {
+		ID:   5,
+		Name: "5",
+	}}
+
+	locations := []*pprofprofile.Location{{
+		ID:      1,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[0]}},
+	}, {
+		ID:      2,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[1]}},
+	}, {
+		ID:      3,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[2]}},
+	}, {
+		ID:      4,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[3]}},
+	}, {
+		ID:      5,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[4]}},
+	}}
+
+	p, err := PprofToSymbolizedProfile(
+		profile.Meta{},
+		&pprofprofile.Profile{
+			Sample: []*pprofprofile.Sample{{
+				Location: []*pprofprofile.Location{locations[1], locations[0]},
+				Value:    []int64{2},
+			}, {
+				Location: []*pprofprofile.Location{locations[4], locations[2], locations[1], locations[0]},
+				Value:    []int64{1},
+			}, {
+				Location: []*pprofprofile.Location{locations[3], locations[2], locations[1], locations[0]},
+				Value:    []int64{3},
+			}},
+		},
+		0,
 	)
-
-	metastore := metastore.NewInProcessClient(l)
-
-	mres, err := metastore.GetOrCreateMappings(ctx, &metastorepb.GetOrCreateMappingsRequest{
-		Mappings: []*metastorepb.Mapping{{
-			File: "a",
-		}},
-	})
 	require.NoError(t, err)
-	m := mres.Mappings[0]
 
-	fres, err := metastore.GetOrCreateFunctions(ctx, &metastorepb.GetOrCreateFunctionsRequest{
-		Functions: []*metastorepb.Function{{
-			Name: "1",
-		}, {
-			Name: "2",
-		}, {
-			Name: "3",
-		}, {
-			Name: "4",
-		}, {
-			Name: "5",
-		}},
-	})
+	op, err := parcacol.NewArrowToProfileConverter(nil, kv.NewKeyMaker()).Convert(ctx, p)
 	require.NoError(t, err)
-	f1 := fres.Functions[0]
-	f2 := fres.Functions[1]
-	f3 := fres.Functions[2]
-	f4 := fres.Functions[3]
-	f5 := fres.Functions[4]
-
-	lres, err := metastore.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
-		Locations: []*metastorepb.Location{{
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f1.Id,
-			}},
-		}, {
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f2.Id,
-			}},
-		}, {
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f3.Id,
-			}},
-		}, {
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f4.Id,
-			}},
-		}, {
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f5.Id,
-			}},
-		}},
-	})
-	require.NoError(t, err)
-	l1 := lres.Locations[0]
-	l2 := lres.Locations[1]
-	l3 := lres.Locations[2]
-	l4 := lres.Locations[3]
-	l5 := lres.Locations[4]
-
-	sres, err := metastore.GetOrCreateStacktraces(ctx, &metastorepb.GetOrCreateStacktracesRequest{
-		Stacktraces: []*metastorepb.Stacktrace{{
-			LocationIds: []string{l2.Id, l1.Id},
-		}, {
-			LocationIds: []string{l5.Id, l3.Id, l2.Id, l1.Id},
-		}, {
-			LocationIds: []string{l4.Id, l3.Id, l2.Id, l1.Id},
-		}},
-	})
-	require.NoError(t, err)
-	s1 := sres.Stacktraces[0]
-	s2 := sres.Stacktraces[1]
-	s3 := sres.Stacktraces[2]
 
 	tracer := noop.NewTracerProvider().Tracer("")
-
-	p, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
-		Samples: []*parcaprofile.NormalizedSample{{
-			StacktraceID: s1.Id,
-			Value:        2,
-		}, {
-			StacktraceID: s2.Id,
-			Value:        1,
-		}, {
-			StacktraceID: s3.Id,
-			Value:        3,
-		}},
-	})
-	require.NoError(t, err)
-
-	fg, err := GenerateFlamegraphTable(ctx, tracer, p, float32(0), NewTableConverterPool())
+	fg, err := GenerateFlamegraphTable(ctx, tracer, op, float32(0), NewTableConverterPool())
 	require.NoError(t, err)
 
 	require.Equal(t, int32(5), fg.Height)
@@ -207,110 +163,73 @@ func TestGenerateFlamegraphTableTrimming(t *testing.T) {
 	ctx := context.Background()
 	var err error
 
-	l := metastoretest.NewTestMetastore(
-		t,
-		log.NewNopLogger(),
-		prometheus.NewRegistry(),
-		noop.NewTracerProvider().Tracer(""),
+	mappings := []*pprofprofile.Mapping{{
+		ID:   1,
+		File: "a",
+	}}
+
+	functions := []*pprofprofile.Function{{
+		ID:   1,
+		Name: "1",
+	}, {
+		ID:   2,
+		Name: "2",
+	}, {
+		ID:   3,
+		Name: "3",
+	}, {
+		ID:   4,
+		Name: "4",
+	}, {
+		ID:   5,
+		Name: "5",
+	}}
+
+	locations := []*pprofprofile.Location{{
+		ID:      1,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[0]}},
+	}, {
+		ID:      2,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[1]}},
+	}, {
+		ID:      3,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[2]}},
+	}, {
+		ID:      4,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[3]}},
+	}, {
+		ID:      5,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[4]}},
+	}}
+
+	p, err := PprofToSymbolizedProfile(
+		profile.Meta{},
+		&pprofprofile.Profile{
+			Sample: []*pprofprofile.Sample{{
+				Location: []*pprofprofile.Location{locations[1], locations[0]},
+				Value:    []int64{10},
+			}, {
+				Location: []*pprofprofile.Location{locations[4], locations[2], locations[1], locations[0]},
+				Value:    []int64{1},
+			}, {
+				Location: []*pprofprofile.Location{locations[3], locations[2], locations[1], locations[0]},
+				Value:    []int64{3},
+			}},
+		},
+		0,
 	)
-
-	metastore := metastore.NewInProcessClient(l)
-
-	mres, err := metastore.GetOrCreateMappings(ctx, &metastorepb.GetOrCreateMappingsRequest{
-		Mappings: []*metastorepb.Mapping{{
-			File: "a",
-		}},
-	})
 	require.NoError(t, err)
-	m := mres.Mappings[0]
 
-	fres, err := metastore.GetOrCreateFunctions(ctx, &metastorepb.GetOrCreateFunctionsRequest{
-		Functions: []*metastorepb.Function{{
-			Name: "1",
-		}, {
-			Name: "2",
-		}, {
-			Name: "3",
-		}, {
-			Name: "4",
-		}, {
-			Name: "5",
-		}},
-	})
+	op, err := parcacol.NewArrowToProfileConverter(nil, kv.NewKeyMaker()).Convert(ctx, p)
 	require.NoError(t, err)
-	f1 := fres.Functions[0]
-	f2 := fres.Functions[1]
-	f3 := fres.Functions[2]
-	f4 := fres.Functions[3]
-	f5 := fres.Functions[4]
-
-	lres, err := metastore.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
-		Locations: []*metastorepb.Location{{
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f1.Id,
-			}},
-		}, {
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f2.Id,
-			}},
-		}, {
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f3.Id,
-			}},
-		}, {
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f4.Id,
-			}},
-		}, {
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f5.Id,
-			}},
-		}},
-	})
-	require.NoError(t, err)
-	l1 := lres.Locations[0]
-	l2 := lres.Locations[1]
-	l3 := lres.Locations[2]
-	l4 := lres.Locations[3]
-	l5 := lres.Locations[4]
-
-	sres, err := metastore.GetOrCreateStacktraces(ctx, &metastorepb.GetOrCreateStacktracesRequest{
-		Stacktraces: []*metastorepb.Stacktrace{{
-			LocationIds: []string{l2.Id, l1.Id},
-		}, {
-			LocationIds: []string{l5.Id, l3.Id, l2.Id, l1.Id},
-		}, {
-			LocationIds: []string{l4.Id, l3.Id, l2.Id, l1.Id},
-		}},
-	})
-	require.NoError(t, err)
-	s1 := sres.Stacktraces[0]
-	s2 := sres.Stacktraces[1]
-	s3 := sres.Stacktraces[2]
 
 	tracer := noop.NewTracerProvider().Tracer("")
-
-	p, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
-		Samples: []*parcaprofile.NormalizedSample{{
-			StacktraceID: s1.Id,
-			Value:        10,
-		}, {
-			// The following two samples are trimmed from the flamegraph.
-			StacktraceID: s2.Id,
-			Value:        1,
-		}, {
-			StacktraceID: s3.Id,
-			Value:        3,
-		}},
-	})
-	require.NoError(t, err)
-
-	fg, err := GenerateFlamegraphTable(ctx, tracer, p, float32(0.5), NewTableConverterPool())
+	fg, err := GenerateFlamegraphTable(ctx, tracer, op, float32(0.5), NewTableConverterPool())
 	require.NoError(t, err)
 
 	require.Equal(t, int32(5), fg.Height)
@@ -359,104 +278,65 @@ func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 	ctx := context.Background()
 	var err error
 
-	l := metastoretest.NewTestMetastore(
-		t,
-		log.NewNopLogger(),
-		prometheus.NewRegistry(),
-		noop.NewTracerProvider().Tracer(""),
+	mappings := []*pprofprofile.Mapping{{
+		ID:   1,
+		File: "a",
+	}, {
+		ID:   2,
+		File: "b",
+	}}
+
+	functions := []*pprofprofile.Function{{
+		ID:   1,
+		Name: "1",
+	}}
+
+	locations := []*pprofprofile.Location{{
+		ID:      1,
+		Address: 0x1,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[0]}},
+	}, {
+		ID:      2,
+		Address: 0x8,
+		Mapping: mappings[1],
+		Line:    []pprofprofile.Line{{Function: functions[0]}},
+	}, {
+		ID:      3,
+		Address: 0x5,
+		Mapping: mappings[1],
+	}, {
+		ID:      4,
+		Address: 0x7,
+		Mapping: mappings[1],
+	}}
+
+	p, err := PprofToSymbolizedProfile(
+		profile.Meta{},
+		&pprofprofile.Profile{
+			Sample: []*pprofprofile.Sample{{
+				Location: []*pprofprofile.Location{locations[0]},
+				Value:    []int64{2},
+			}, {
+				Location: []*pprofprofile.Location{locations[1]},
+				Value:    []int64{2},
+			}, {
+				Location: []*pprofprofile.Location{locations[2]},
+				Value:    []int64{2},
+			}, {
+				Location: []*pprofprofile.Location{locations[3]},
+				Value:    []int64{1},
+			}},
+		},
+		0,
 	)
-
-	metastore := metastore.NewInProcessClient(l)
-
-	mres, err := metastore.GetOrCreateMappings(ctx, &metastorepb.GetOrCreateMappingsRequest{
-		Mappings: []*metastorepb.Mapping{{
-			File: "a",
-		}},
-	})
 	require.NoError(t, err)
-	m1 := mres.Mappings[0]
 
-	mres, err = metastore.GetOrCreateMappings(ctx, &metastorepb.GetOrCreateMappingsRequest{
-		Mappings: []*metastorepb.Mapping{{
-			File: "b",
-		}},
-	})
+	op, err := parcacol.NewArrowToProfileConverter(nil, kv.NewKeyMaker()).Convert(ctx, p)
 	require.NoError(t, err)
-	m2 := mres.Mappings[0]
-
-	fres, err := metastore.GetOrCreateFunctions(ctx, &metastorepb.GetOrCreateFunctionsRequest{
-		Functions: []*metastorepb.Function{{
-			Id:   "foo",
-			Name: "1",
-		}},
-	})
-	require.NoError(t, err)
-	f1 := fres.Functions[0]
-
-	lres, err := metastore.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
-		Locations: []*metastorepb.Location{{
-			Address:   0x1,
-			MappingId: m1.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f1.Id,
-			}},
-		}, {
-			Address:   0x8,
-			MappingId: m2.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f1.Id,
-			}},
-		}, {
-			MappingId: m2.Id,
-			Address:   0x5,
-		}, {
-			MappingId: m2.Id,
-			Address:   0x7,
-		}},
-	})
-	require.NoError(t, err)
-	l1 := lres.Locations[0]
-	l2 := lres.Locations[1]
-	l3 := lres.Locations[2]
-	l4 := lres.Locations[3]
-
-	sres, err := metastore.GetOrCreateStacktraces(ctx, &metastorepb.GetOrCreateStacktracesRequest{
-		Stacktraces: []*metastorepb.Stacktrace{{
-			LocationIds: []string{l1.Id},
-		}, {
-			LocationIds: []string{l2.Id},
-		}, {
-			LocationIds: []string{l3.Id},
-		}, {
-			LocationIds: []string{l4.Id},
-		}},
-	})
-	require.NoError(t, err)
-	s1 := sres.Stacktraces[0]
-	s2 := sres.Stacktraces[1]
-	s3 := sres.Stacktraces[2]
-	s4 := sres.Stacktraces[3]
 
 	tracer := noop.NewTracerProvider().Tracer("")
-
-	p, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
-		Samples: []*parcaprofile.NormalizedSample{{
-			StacktraceID: s1.Id,
-			Value:        2,
-		}, {
-			StacktraceID: s3.Id,
-			Value:        2,
-		}, {
-			StacktraceID: s4.Id,
-			Value:        2,
-		}, {
-			StacktraceID: s2.Id,
-			Value:        1,
-		}},
-	})
-	require.NoError(t, err)
-
-	fg, err := GenerateFlamegraphTable(ctx, tracer, p, float32(0), NewTableConverterPool())
+	fg, err := GenerateFlamegraphTable(ctx, tracer, op, float32(0), NewTableConverterPool())
 	require.NoError(t, err)
 
 	require.Equal(t, int32(2), fg.Height)
@@ -473,18 +353,18 @@ func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 	require.Equal(t, uint64(0x1), fg.Locations[0].Address)
 	require.Equal(t, uint32(1), fg.Locations[0].Lines[0].FunctionIndex)
 
-	require.Equal(t, uint32(2), fg.Locations[1].MappingIndex)
-	require.Equal(t, 0, len(fg.Locations[1].Lines))
-	require.Equal(t, uint64(0x5), fg.Locations[1].Address)
+	require.Equal(t, uint32(0), fg.Locations[1].MappingIndex)
+	require.Equal(t, 1, len(fg.Locations[1].Lines))
+	require.Equal(t, uint64(0x8), fg.Locations[1].Address)
+	require.Equal(t, uint32(1), fg.Locations[1].Lines[0].FunctionIndex)
 
 	require.Equal(t, uint32(2), fg.Locations[2].MappingIndex)
 	require.Equal(t, 0, len(fg.Locations[2].Lines))
-	require.Equal(t, uint64(0x7), fg.Locations[2].Address)
+	require.Equal(t, uint64(0x5), fg.Locations[2].Address)
 
-	require.Equal(t, uint32(0), fg.Locations[3].MappingIndex)
-	require.Equal(t, 1, len(fg.Locations[3].Lines))
-	require.Equal(t, uint64(0x8), fg.Locations[3].Address)
-	require.Equal(t, uint32(1), fg.Locations[3].Lines[0].FunctionIndex)
+	require.Equal(t, uint32(2), fg.Locations[3].MappingIndex)
+	require.Equal(t, 0, len(fg.Locations[3].Lines))
+	require.Equal(t, uint64(0x7), fg.Locations[3].Address)
 
 	require.Equal(t, []*metastorepb.Mapping{
 		{BuildIdStringIndex: 0, FileStringIndex: 1},
@@ -503,17 +383,17 @@ func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 		Children: []*pb.FlamegraphNode{{
 			Cumulative: 2,
 			Meta: &pb.FlamegraphNodeMeta{
-				LocationIndex: 2,
-			},
-		}, {
-			Cumulative: 2,
-			Meta: &pb.FlamegraphNodeMeta{
 				LocationIndex: 3,
 			},
 		}, {
-			Cumulative: 3,
+			Cumulative: 1,
 			Meta: &pb.FlamegraphNodeMeta{
 				LocationIndex: 4,
+			},
+		}, {
+			Cumulative: 4,
+			Meta: &pb.FlamegraphNodeMeta{
+				LocationIndex: 2,
 				LineIndex:     0,
 			},
 		}},
@@ -522,13 +402,13 @@ func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 	require.Equal(t, 3, len(fg.Root.Children))
 
 	require.Equal(t, int64(2), fg.Root.Children[0].Cumulative)
-	require.Equal(t, uint32(2), fg.Root.Children[0].Meta.LocationIndex)
+	require.Equal(t, uint32(3), fg.Root.Children[0].Meta.LocationIndex)
 
-	require.Equal(t, int64(2), fg.Root.Children[1].Cumulative)
-	require.Equal(t, uint32(3), fg.Root.Children[1].Meta.LocationIndex)
+	require.Equal(t, int64(1), fg.Root.Children[1].Cumulative)
+	require.Equal(t, uint32(4), fg.Root.Children[1].Meta.LocationIndex)
 
-	require.Equal(t, int64(3), fg.Root.Children[2].Cumulative)
-	require.Equal(t, uint32(4), fg.Root.Children[2].Meta.LocationIndex)
+	require.Equal(t, int64(4), fg.Root.Children[2].Cumulative)
+	require.Equal(t, uint32(2), fg.Root.Children[2].Meta.LocationIndex)
 	require.Equal(t, uint32(0), fg.Root.Children[2].Meta.LineIndex)
 	require.True(t, proto.Equal(expected, fg.Root))
 }
@@ -536,79 +416,51 @@ func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 func TestGenerateFlamegraphTableFromProfile(t *testing.T) {
 	t.Parallel()
 
-	tracer := noop.NewTracerProvider().Tracer("")
-	reg := prometheus.NewRegistry()
-
-	l := metastoretest.NewTestMetastore(
-		t,
-		log.NewNopLogger(),
-		reg,
-		tracer,
-	)
-
-	testGenerateFlamegraphTableFromProfile(t, metastore.NewInProcessClient(l))
-}
-
-func testGenerateFlamegraphTableFromProfile(t Testing, l metastorepb.MetastoreServiceClient) *pb.Flamegraph {
 	ctx := context.Background()
-	tracer := noop.NewTracerProvider().Tracer("")
-	reg := prometheus.NewRegistry()
-	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
-		Name: "parca_test_counter",
-		Help: "parca_test_counter",
-	})
 
 	fileContent := MustReadAllGzip(t, "./testdata/profile1.pb.gz")
-	p := &pprofpb.Profile{}
-	err := p.UnmarshalVT(fileContent)
+	pp, err := pprofprofile.ParseData(fileContent)
 	require.NoError(t, err)
 
-	normalizer := normalizer.NewNormalizer(l, true, counter)
-	profiles, err := normalizer.NormalizePprof(ctx, "test", map[string]string{}, p, false, nil)
+	p, err := PprofToSymbolizedProfile(
+		profile.Meta{},
+		pp,
+		0,
+	)
 	require.NoError(t, err)
 
-	sp, err := parcacol.NewProfileSymbolizer(tracer, l).SymbolizeNormalizedProfile(ctx, profiles[0])
+	op, err := parcacol.NewArrowToProfileConverter(nil, kv.NewKeyMaker()).Convert(ctx, p)
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphTable(ctx, tracer, sp, float32(0), NewTableConverterPool())
+	tracer := noop.NewTracerProvider().Tracer("")
+	_, err = GenerateFlamegraphTable(ctx, tracer, op, float32(0), NewTableConverterPool())
 	require.NoError(t, err)
-
-	return fg
 }
 
 func Benchmark_GenerateFlamegraphTable_FromProfile(b *testing.B) {
-	reg := prometheus.NewRegistry()
-	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
-		Name: "parca_test_counter",
-		Help: "parca_test_counter",
-	})
-	l := metastoretest.NewTestMetastore(
-		b,
-		log.NewNopLogger(),
-		reg,
-		noop.NewTracerProvider().Tracer(""),
-	)
+	ctx := context.Background()
 
 	fileContent := MustReadAllGzip(b, "./testdata/profile1.pb.gz")
-	p := &pprofpb.Profile{}
-	err := p.UnmarshalVT(fileContent)
+	pp, err := pprofprofile.ParseData(fileContent)
 	require.NoError(b, err)
 
-	ctx := context.Background()
+	p, err := PprofToSymbolizedProfile(
+		profile.Meta{},
+		pp,
+		0,
+	)
+	require.NoError(b, err)
+
+	op, err := parcacol.NewArrowToProfileConverter(nil, kv.NewKeyMaker()).Convert(ctx, p)
+	require.NoError(b, err)
+
 	tracer := noop.NewTracerProvider().Tracer("")
-	lc := metastore.NewInProcessClient(l)
-	normalizer := normalizer.NewNormalizer(lc, true, counter)
-	profiles, err := normalizer.NormalizePprof(ctx, "test", map[string]string{}, p, false, nil)
-	require.NoError(b, err)
-
 	pool := NewTableConverterPool()
 
 	var dontOptimise *querypb.Flamegraph
 	for i := 0; i < b.N; i++ {
 		ctx, cancel := context.WithCancel(ctx)
-		sp, err := parcacol.NewProfileSymbolizer(tracer, lc).SymbolizeNormalizedProfile(ctx, profiles[0])
-		require.NoError(b, err)
-		dontOptimise, err = GenerateFlamegraphTable(ctx, tracer, sp, float32(0), pool)
+		dontOptimise, err = GenerateFlamegraphTable(ctx, tracer, op, float32(0), pool)
 		require.NoError(b, err)
 		cancel()
 	}
@@ -619,15 +471,7 @@ func TestGenerateFlamegraphTableWithInlined(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	logger := log.NewNopLogger()
-	reg := prometheus.NewRegistry()
-	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
-		Name: "parca_test_counter",
-		Help: "parca_test_counter",
-	})
 	tracer := noop.NewTracerProvider().Tracer("")
-
-	store := metastoretest.NewTestMetastore(t, logger, reg, tracer)
 
 	functions := []*pprofprofile.Function{
 		{ID: 1, Name: "net.(*netFD).accept", SystemName: "net.(*netFD).accept", Filename: "net/fd_unix.go"},
@@ -649,29 +493,34 @@ func TestGenerateFlamegraphTableWithInlined(t *testing.T) {
 			Value:    []int64{1},
 		},
 	}
-	b := bytes.NewBuffer(nil)
-	err := (&pprofprofile.Profile{
-		SampleType: []*profile.ValueType{{Type: "alloc_space", Unit: "bytes"}},
-		PeriodType: &profile.ValueType{Type: "space", Unit: "bytes"},
-		Sample:     samples,
-		Location:   locations,
-		Function:   functions,
-	}).Write(b)
+
+	p, err := PprofToSymbolizedProfile(
+		profile.Meta{
+			Name: "memory",
+			SampleType: profile.ValueType{
+				Type: "alloc_space",
+				Unit: "bytes",
+			},
+			PeriodType: profile.ValueType{
+				Type: "space",
+				Unit: "bytes",
+			},
+		},
+		&pprofprofile.Profile{
+			SampleType: []*pprofprofile.ValueType{{Type: "alloc_space", Unit: "bytes"}},
+			PeriodType: &pprofprofile.ValueType{Type: "space", Unit: "bytes"},
+			Sample:     samples,
+			Location:   locations,
+			Function:   functions,
+		},
+		0,
+	)
 	require.NoError(t, err)
 
-	p := &pprofpb.Profile{}
-	err = p.UnmarshalVT(MustDecompressGzip(t, b.Bytes()))
+	op, err := parcacol.NewArrowToProfileConverter(nil, kv.NewKeyMaker()).Convert(ctx, p)
 	require.NoError(t, err)
 
-	metastore := metastore.NewInProcessClient(store)
-	normalizer := normalizer.NewNormalizer(metastore, true, counter)
-	profiles, err := normalizer.NormalizePprof(ctx, "memory", map[string]string{}, p, false, nil)
-	require.NoError(t, err)
-
-	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
-	require.NoError(t, err)
-
-	fg, err := GenerateFlamegraphTable(ctx, tracer, symbolizedProfile, float32(0), NewTableConverterPool())
+	fg, err := GenerateFlamegraphTable(ctx, tracer, op, float32(0), NewTableConverterPool())
 	require.NoError(t, err)
 
 	require.Equal(t, []*metastorepb.Mapping{}, fg.GetMapping())
@@ -773,16 +622,6 @@ func TestGenerateFlamegraphTableWithInlinedExisting(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	logger := log.NewNopLogger()
-	reg := prometheus.NewRegistry()
-	counter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
-		Name: "parca_test_counter",
-		Help: "parca_test_counter",
-	})
-	tracer := noop.NewTracerProvider().Tracer("")
-
-	store := metastoretest.NewTestMetastore(t, logger, reg, tracer)
-	metastore := metastore.NewInProcessClient(store)
 
 	functions := []*pprofprofile.Function{
 		{ID: 1, Name: "net.(*netFD).accept", SystemName: "net.(*netFD).accept", Filename: "net/fd_unix.go"},
@@ -796,7 +635,7 @@ func TestGenerateFlamegraphTableWithInlinedExisting(t *testing.T) {
 			{Line: 89, Function: functions[1]},
 			{Line: 402, Function: functions[2]},
 		}},
-		{ID: 3, Address: 94658718597969, Line: []profile.Line{{Line: 84, Function: functions[3]}}},
+		{ID: 3, Address: 94658718597969, Line: []pprofprofile.Line{{Line: 84, Function: functions[3]}}},
 	}
 	samples := []*pprofprofile.Sample{
 		{
@@ -808,28 +647,24 @@ func TestGenerateFlamegraphTableWithInlinedExisting(t *testing.T) {
 			Value:    []int64{2},
 		},
 	}
-	b := bytes.NewBuffer(nil)
-	err := (&pprofprofile.Profile{
-		SampleType: []*profile.ValueType{{Type: "", Unit: ""}},
-		PeriodType: &profile.ValueType{Type: "", Unit: ""},
-		Sample:     samples,
-		Location:   locations,
-		Function:   functions,
-	}).Write(b)
+	p, err := PprofToSymbolizedProfile(
+		profile.Meta{},
+		&pprofprofile.Profile{
+			SampleType: []*pprofprofile.ValueType{{Type: "", Unit: ""}},
+			PeriodType: &pprofprofile.ValueType{Type: "", Unit: ""},
+			Sample:     samples,
+			Location:   locations,
+			Function:   functions,
+		},
+		0,
+	)
 	require.NoError(t, err)
 
-	p := &pprofpb.Profile{}
-	err = p.UnmarshalVT(MustDecompressGzip(t, b.Bytes()))
+	op, err := parcacol.NewArrowToProfileConverter(nil, kv.NewKeyMaker()).Convert(ctx, p)
 	require.NoError(t, err)
 
-	normalizer := normalizer.NewNormalizer(metastore, true, counter)
-	profiles, err := normalizer.NormalizePprof(ctx, "", map[string]string{}, p, false, nil)
-	require.NoError(t, err)
-
-	symbolizedProfile, err := parcacol.NewProfileSymbolizer(tracer, metastore).SymbolizeNormalizedProfile(ctx, profiles[0])
-	require.NoError(t, err)
-
-	fg, err := GenerateFlamegraphTable(ctx, tracer, symbolizedProfile, float32(0), NewTableConverterPool())
+	tracer := noop.NewTracerProvider().Tracer("")
+	fg, err := GenerateFlamegraphTable(ctx, tracer, op, float32(0), NewTableConverterPool())
 	require.NoError(t, err)
 
 	require.Equal(t, []*metastorepb.Mapping{}, fg.GetMapping())
@@ -1100,143 +935,100 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 	ctx := context.Background()
 	var err error
 
-	l := metastoretest.NewTestMetastore(
-		t,
-		log.NewNopLogger(),
-		prometheus.NewRegistry(),
-		noop.NewTracerProvider().Tracer(""),
+	mappings := []*pprofprofile.Mapping{{
+		ID:   1,
+		File: "a",
+	}}
+
+	functions := []*pprofprofile.Function{{
+		ID:   1,
+		Name: "1.a",
+	}, {
+		ID:   2,
+		Name: "2.a",
+	}, {
+		ID:   3,
+		Name: "3.a",
+	}, {
+		ID:   4,
+		Name: "4.b",
+	}, {
+		ID:   5,
+		Name: "5.c",
+	}, {
+		ID:   6,
+		Name: "6.b",
+	}}
+
+	locations := []*pprofprofile.Location{{
+		ID:      1,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[0]}},
+	}, {
+		ID:      2,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[1]}},
+	}, {
+		ID:      3,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[2]}},
+	}, {
+		ID:      4,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[3]}},
+	}, {
+		ID:      5,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[4]}},
+	}, {
+		ID:      6,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[5]}},
+	}}
+
+	p, err := PprofToSymbolizedProfile(
+		profile.Meta{},
+		&pprofprofile.Profile{
+			Mapping:  mappings,
+			Function: functions,
+			Location: locations,
+			Sample: []*pprofprofile.Sample{{
+				Location: []*pprofprofile.Location{locations[1], locations[0]},
+				Value:    []int64{2},
+			}, {
+				Location: []*pprofprofile.Location{locations[4], locations[2], locations[1], locations[0]},
+				Value:    []int64{1},
+			}, {
+				// Only this sample will be in the final flamegraph.
+				// The two above will be filtered and the last one will be trimmed.
+				Location: []*pprofprofile.Location{locations[3], locations[2], locations[1], locations[0]},
+				Value:    []int64{12},
+			}, {
+				Location: []*pprofprofile.Location{locations[5], locations[3], locations[2], locations[1], locations[0]},
+				Value:    []int64{3},
+			}},
+		},
+		0,
 	)
-
-	mc := metastore.NewInProcessClient(l)
-
-	mres, err := mc.GetOrCreateMappings(ctx, &metastorepb.GetOrCreateMappingsRequest{
-		Mappings: []*metastorepb.Mapping{{
-			File: "a",
-		}},
-	})
-	require.NoError(t, err)
-	m := mres.Mappings[0]
-
-	fres, err := mc.GetOrCreateFunctions(ctx, &metastorepb.GetOrCreateFunctionsRequest{
-		Functions: []*metastorepb.Function{{
-			Name: "1.a",
-		}, {
-			Name: "2.a",
-		}, {
-			Name: "3.a",
-		}, {
-			Name: "4.b",
-		}, {
-			Name: "5.c",
-		}, {
-			Name: "6.b",
-		}},
-	})
-	require.NoError(t, err)
-	f1 := fres.Functions[0]
-	f2 := fres.Functions[1]
-	f3 := fres.Functions[2]
-	f4 := fres.Functions[3]
-	f5 := fres.Functions[4]
-	f6 := fres.Functions[5]
-
-	lres, err := mc.GetOrCreateLocations(ctx, &metastorepb.GetOrCreateLocationsRequest{
-		Locations: []*metastorepb.Location{{
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f1.Id,
-			}},
-		}, {
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f2.Id,
-			}},
-		}, {
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f3.Id,
-			}},
-		}, {
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f4.Id,
-			}},
-		}, {
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f5.Id,
-			}},
-		}, {
-			MappingId: m.Id,
-			Lines: []*metastorepb.Line{{
-				FunctionId: f6.Id,
-			}},
-		}},
-	})
-	require.NoError(t, err)
-	l1 := lres.Locations[0]
-	l2 := lres.Locations[1]
-	l3 := lres.Locations[2]
-	l4 := lres.Locations[3]
-	l5 := lres.Locations[4]
-	l6 := lres.Locations[5]
-
-	sres, err := mc.GetOrCreateStacktraces(ctx, &metastorepb.GetOrCreateStacktracesRequest{
-		Stacktraces: []*metastorepb.Stacktrace{{
-			LocationIds: []string{l2.Id, l1.Id},
-		}, {
-			LocationIds: []string{l5.Id, l3.Id, l2.Id, l1.Id},
-		}, {
-			LocationIds: []string{l4.Id, l3.Id, l2.Id, l1.Id},
-		}, {
-			LocationIds: []string{l6.Id, l4.Id, l3.Id, l2.Id, l1.Id},
-		}},
-	})
-	require.NoError(t, err)
-	s1 := sres.Stacktraces[0]
-	s2 := sres.Stacktraces[1]
-	s3 := sres.Stacktraces[2]
-	s4 := sres.Stacktraces[3]
-
-	tracer := noop.NewTracerProvider().Tracer("")
-
-	p, err := parcacol.NewProfileSymbolizer(tracer, mc).SymbolizeNormalizedProfile(ctx, &parcaprofile.NormalizedProfile{
-		Samples: []*parcaprofile.NormalizedSample{{
-			StacktraceID: s1.Id,
-			Value:        2,
-		}, {
-			StacktraceID: s2.Id,
-			Value:        1,
-		}, {
-			// Only this sample will be in the final flamegraph.
-			// The two above will be filtered and the last one will be trimmed.
-			StacktraceID: s3.Id,
-			Value:        12,
-		}, {
-			StacktraceID: s4.Id,
-			Value:        3,
-		}},
-	})
-	require.NoError(t, err)
-
-	newProfile, err := OldProfileToArrowProfile(p)
 	require.NoError(t, err)
 
 	var filtered int64
 	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
 	defer mem.AssertSize(t, 0)
-	newProfile.Samples, filtered, err = FilterProfileData(ctx, tracer, mem, newProfile.Samples, "b", nil) // querying for "b" should filter out the "5.c" function.
+
+	tracer := noop.NewTracerProvider().Tracer("")
+	p.Samples, filtered, err = FilterProfileData(ctx, tracer, mem, p.Samples, "b", nil) // querying for "b" should filter out the "5.c" function.
 	require.NoError(t, err)
 	defer func() {
-		for _, s := range newProfile.Samples {
+		for _, s := range p.Samples {
 			s.Release()
 		}
 	}()
 
-	p, err = parcacol.NewArrowToProfileConverter(tracer, metastore.NewKeyMaker()).Convert(ctx, newProfile)
+	op, err := parcacol.NewArrowToProfileConverter(tracer, kv.NewKeyMaker()).Convert(ctx, p)
 	require.NoError(t, err)
 
-	fg, err := GenerateFlamegraphTable(ctx, tracer, p, float32(0.5), NewTableConverterPool()) // 50% threshold
+	fg, err := GenerateFlamegraphTable(ctx, tracer, op, float32(0.5), NewTableConverterPool()) // 50% threshold
 	require.NoError(t, err)
 
 	require.Equal(t, int32(6), fg.Height)
@@ -1354,14 +1146,10 @@ func TestAddGetString(t *testing.T) {
 }
 
 func TestGenerateFlamegraphTrimmingStringTablesCompare(t *testing.T) {
-	tracer := noop.NewTracerProvider().Tracer("")
-	reg := prometheus.NewRegistry()
-
-	l := metastoretest.NewTestMetastore(t, log.NewNopLogger(), reg, tracer)
 	// Generate a flamegraph with a threshold of 0. This disables trimming.
-	original := testGenerateFlamegraphFromProfile(t, metastore.NewInProcessClient(l), 0)
+	original := testGenerateFlamegraphFromProfile(t, 0)
 	// Generate a flamegraph with a threshold that enables trimming but so small it doesn't actually trim anything.
-	trimmed := testGenerateFlamegraphFromProfile(t, metastore.NewInProcessClient(l), math.SmallestNonzeroFloat32)
+	trimmed := testGenerateFlamegraphFromProfile(t, math.SmallestNonzeroFloat32)
 
 	//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 	require.Equal(t, original.Total, trimmed.Total)
@@ -1381,4 +1169,26 @@ func TestGenerateFlamegraphTrimmingStringTablesCompare(t *testing.T) {
 	require.Equal(t, original.StringTable, trimmed.StringTable)
 
 	require.Equal(t, original.Root.Cumulative, trimmed.Root.Cumulative)
+}
+
+func testGenerateFlamegraphFromProfile(t *testing.T, nodeTrimFraction float32) *pb.Flamegraph {
+	t.Helper()
+
+	ctx := context.Background()
+	tracer := noop.NewTracerProvider().Tracer("")
+
+	fileContent := MustReadAllGzip(t, "./testdata/profile1.pb.gz")
+	p, err := pprofprofile.ParseData(fileContent)
+	require.NoError(t, err)
+
+	pp, err := PprofToSymbolizedProfile(profile.Meta{}, p, 0)
+	require.NoError(t, err)
+
+	sp, err := parcacol.NewArrowToProfileConverter(nil, kv.NewKeyMaker()).Convert(ctx, pp)
+	require.NoError(t, err)
+
+	fg, err := GenerateFlamegraphTable(ctx, tracer, sp, nodeTrimFraction, NewTableConverterPool())
+	require.NoError(t, err)
+
+	return fg
 }
