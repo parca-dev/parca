@@ -65,6 +65,18 @@ const ColorStackLegend = ({
 
   return (
     <div className="my-4 flex w-full flex-wrap justify-start">
+      {stackColorArray.length === 1 && (
+        <div
+          className="text-sm  mb-1 flex items-center p-1 cursor-pointer"
+          onClick={e => {
+            setSearchString('');
+            e.stopPropagation();
+          }}
+        >
+          <span>Reset Legend</span>
+          <Icon className="ml-1" icon="system-uicons:reset" />
+        </div>
+      )}
       {stackColorArray.map(([feature, color]) => {
         const filteringAllowed = feature !== EVERYTHING_ELSE;
         const isHighlighted = currentSearchString === feature;

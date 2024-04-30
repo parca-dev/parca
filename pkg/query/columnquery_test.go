@@ -1482,6 +1482,7 @@ func TestFilterData(t *testing.T) {
 		&pb.RuntimeFilter{
 			ShowPython: false,
 		},
+		"",
 	)
 	require.NoError(t, err)
 	defer func() {
@@ -1529,6 +1530,7 @@ func TestFilterUnsymbolized(t *testing.T) {
 		&pb.RuntimeFilter{
 			ShowPython: false,
 		},
+		"",
 	)
 	require.NoError(t, err)
 	require.Len(t, recs, 1)
@@ -1609,6 +1611,7 @@ func TestFilterDataWithPath(t *testing.T) {
 		[]arrow.Record{originalRecord},
 		"",
 		nil,
+		"",
 	)
 	require.NoError(t, err)
 	defer func() {
@@ -1692,6 +1695,7 @@ func TestFilterDataInterpretedOnly(t *testing.T) {
 		&pb.RuntimeFilter{
 			ShowInterpretedOnly: true,
 		},
+		"",
 	)
 	require.NoError(t, err)
 	defer func() {
@@ -1779,6 +1783,7 @@ func BenchmarkFilterData(t *testing.B) {
 			&pb.RuntimeFilter{
 				ShowPython: false,
 			},
+			"",
 		)
 		require.NoError(t, err)
 		for _, r := range recs {
