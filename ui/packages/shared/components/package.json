@@ -26,6 +26,7 @@
     "d3": "7.9.0",
     "d3-selection": "3.0.0",
     "graphviz-wasm": "3.0.2",
+    "moment-timezone": "^0.5.45",
     "react-datepicker": "4.25.0",
     "react-tooltip": "^5.26.3",
     "react-use": "^17.3.2",
