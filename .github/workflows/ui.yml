@@ -17,6 +17,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
   cancel-in-progress: true
 
+env:
+  # renovate: datasource=npm depName=pnpm versioning=npm
+  PNPM_VERSION: '9.0.6'
+
 jobs:
   skip-check:
     name: Skip check
@@ -50,27 +54,31 @@ jobs:
     steps:
       - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
 
+      - uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
       - name: Set up Node.js
         uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v3.8.2
         with:
           node-version-file: .node-version
-          cache: 'yarn'
-          cache-dependency-path: ui/yarn.lock
+          cache: 'pnpm'
+          cache-dependency-path: ui/pnpm-lock.yaml
 
       - name: Install project dependencies
-        run: yarn install --frozen-lockfile --prefer-offline
+        run: pnpm install --frozen-lockfile --prefer-offline
         working-directory: ui
 
-      - run: yarn build
+      - run: pnpm run build
         working-directory: ui
 
-      - run: yarn test
+      - run: pnpm run test
         working-directory: ui
-
-      - name: Run ESLint
-        working-directory: ui
-        run: yarn run lint
 
       - name: Check typing
         working-directory: ui
-        run: yarn run type-check
+        run: pnpm run type-check
+
+      - name: Run ESLint
+        working-directory: ui
+        run: pnpm run lint

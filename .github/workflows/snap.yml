@@ -20,6 +20,8 @@ concurrency:
 env:
   # renovate: datasource=go depName=github.com/goreleaser/goreleaser
   GORELEASER_VERSION: v1.25.1
+  # renovate: datasource=npm depName=pnpm versioning=npm
+  PNPM_VERSION: '9.0.6'
 
 permissions:
   contents: write
@@ -84,12 +86,16 @@ jobs:
           check-latest: true
           cache: true
 
+      - uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
       - name: Set up Node.js
         uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v3.8.2
         with:
           node-version-file: .node-version
-          cache: 'yarn'
-          cache-dependency-path: ui/yarn.lock
+          cache: 'pnpm'
+          cache-dependency-path: ui/pnpm-lock.yaml
 
       - name: Set up Snapcraft
         run: |

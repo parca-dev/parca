@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
-    "prepublish": "yarn build",
+    "prepublish": "pnpm run build",
     "build": "tsc",
     "build-swc": "swc ./src -d dist --copy-files",
     "watch": "tsc-watch"
@@ -15,11 +15,13 @@
   "license": "ISC",
   "dependencies": {
     "@parca/client": "^0.16.107",
-    "@parca/hooks": "^0.0.48",
     "@parca/utilities": "^0.0.65",
     "@reduxjs/toolkit": "^1.7.2",
+    "immer": "9.0.21",
     "react-redux": "^8.0.2",
-    "redux-persist": "^6.0.0"
+    "redux": "^5.0.1",
+    "redux-persist": "^6.0.0",
+    "tsc-watch": "6.2.0"
   },
   "publishConfig": {
     "access": "public",

@@ -21,13 +21,13 @@ Now the Parca backend will be running and available at `localhost:7070`.
 Because we fetch the transpiled Typescript code from the shared `@parca` packages in the `shared/*` folder, we need to run one more command before we run the development for the React app. This command runs `tsc` in watch mode and also compiles Tailwind CSS for the affected packages.
 
 ```shell
-yarn run watch
+pnpm run watch-parca-dev
 ```
 
 Finally, run the development server for the React app:
 
 ```shell
-yarn workspace @parca/web dev
+pnpm --filter @parca/web dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
@@ -41,7 +41,7 @@ To build the UI, you can use `Makefile` at the root of the project to run the fo
 Run the following command to generate a production build of the React app:
 
 ```shell
-make ui/build # yarn install && yarn build
+make ui/build # pnpm install && pnpm build
 ```
 
 We embed the artifacts (the production build and its static assets) into the final binary distribution.

@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-yarn build
+pnpm run build
 mkdir PATH_PREFIX_VAR
 cp -r ./build/* ./PATH_PREFIX_VAR/
 mv ./PATH_PREFIX_VAR ./build/

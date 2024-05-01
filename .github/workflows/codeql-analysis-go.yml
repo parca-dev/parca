@@ -19,6 +19,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
   cancel-in-progress: true
 
+env:
+  # renovate: datasource=npm depName=pnpm versioning=npm
+  PNPM_VERSION: '9.0.6'
+
 jobs:
   skip-check:
     name: Skip check
@@ -69,12 +73,16 @@ jobs:
         with:
           go-version-file: .go-version
 
+      - uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
       - name: Set up Node.js
         uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v3.8.2
         with:
           node-version-file: .node-version
-          cache: 'yarn'
-          cache-dependency-path: ui/yarn.lock
+          cache: 'pnpm'
+          cache-dependency-path: ui/pnpm-lock.yaml
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@d39d31e687223d841ef683f52467bd88e9b21c14 # v3.25.3

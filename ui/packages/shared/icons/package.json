@@ -5,9 +5,9 @@
   "main": "dist/index.js",
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
-    "watch": "tsc-watch --onCompilationComplete 'yarn compileStaticFiles'",
-    "build-swc": "swc ./src -d dist --copy-files && yarn compileStaticFiles",
-    "build": "tsc && yarn compileStaticFiles",
+    "watch": "tsc-watch --onCompilationComplete 'pnpm run compileStaticFiles'",
+    "build-swc": "swc ./src -d dist --copy-files && pnpm run compileStaticFiles",
+    "build": "tsc && pnpm run compileStaticFiles",
     "compileStaticFiles": "tailwindcss -o dist/styles.css && mkdir -p ./dist/assets && cp ./src/assets/* ./dist/assets/"
   },
   "keywords": [],
@@ -17,5 +17,11 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
-  "gitHead": "3f23a55309bf37b6c7bab85e60fed98865693029"
+  "gitHead": "3f23a55309bf37b6c7bab85e60fed98865693029",
+  "dependencies": {
+    "tailwindcss": "3.2.4",
+    "tsc-watch": "6.2.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  }
 }
