@@ -791,7 +791,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	require.Equal(t, int32(2), fg.Height)
 	require.Equal(t, 1, len(fg.Root.Children))
 	require.Equal(t, int64(2), fg.Root.Children[0].Cumulative)
-	require.Equal(t, int64(1), fg.Root.Children[0].Diff)
+	require.Equal(t, int64(0), fg.Root.Children[0].Diff)
 
 	res, err = api.Query(ctx, &pb.QueryRequest{
 		Mode:       pb.QueryRequest_MODE_DIFF,
@@ -824,7 +824,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	topList := res.Report.(*pb.QueryResponse_Top).Top.List
 	require.Equal(t, 1, len(topList))
 	require.Equal(t, int64(2), topList[0].Cumulative)
-	require.Equal(t, int64(1), topList[0].Diff)
+	require.Equal(t, int64(0), topList[0].Diff)
 
 	res, err = api.Query(ctx, &pb.QueryRequest{
 		Mode:       pb.QueryRequest_MODE_DIFF,
@@ -859,7 +859,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 2, len(testProf.Sample))
 	require.Equal(t, []int64{2}, testProf.Sample[0].Value)
-	require.Equal(t, []int64{-1}, testProf.Sample[1].Value)
+	require.Equal(t, []int64{-2}, testProf.Sample[1].Value)
 }
 
 func TestColumnQueryAPITypes(t *testing.T) {
