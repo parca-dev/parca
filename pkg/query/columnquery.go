@@ -213,13 +213,11 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	}
 
 	var (
-		p          profile.Profile
-		filtered   int64
-		isDiff     bool
-		isInverted bool
+		p        profile.Profile
+		filtered int64
+		isDiff   bool
 	)
 
-	isInverted = req.ReportType == pb.QueryRequest_REPORT_TYPE_INVERTED_FLAMEGRAPH_ARROW
 	groupBy := req.GetGroupBy().GetFields()
 	allowedGroupBy := map[string]struct{}{
 		FlamegraphFieldFunctionName:     {},
@@ -240,13 +238,13 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 
 	switch req.Mode {
 	case pb.QueryRequest_MODE_SINGLE_UNSPECIFIED:
-		p, err = q.selectSingle(ctx, req.GetSingle(), isInverted)
+		p, err = q.selectSingle(ctx, req.GetSingle(), *req.InvertCallStack)
 	case pb.QueryRequest_MODE_MERGE:
 		p, err = q.selectMerge(
 			ctx,
 			req.GetMerge(),
 			groupByLabels,
-			isInverted,
+			*req.InvertCallStack,
 		)
 	case pb.QueryRequest_MODE_DIFF:
 		isDiff = true
@@ -254,7 +252,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 			ctx,
 			req.GetDiff(),
 			groupByLabels,
-			isInverted,
+			*req.InvertCallStack,
 		)
 	default:
 		return nil, status.Error(codes.InvalidArgument, "unknown query mode")
@@ -546,7 +544,6 @@ func RenderReport(
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW:
-	case pb.QueryRequest_REPORT_TYPE_INVERTED_FLAMEGRAPH_ARROW:
 		fa, total, err := GenerateFlamegraphArrow(ctx, mem, tracer, p, groupBy, nodeTrimFraction)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate arrow flamegraph: %v", err.Error())

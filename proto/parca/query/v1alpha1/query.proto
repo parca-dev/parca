@@ -238,9 +238,6 @@ message QueryRequest {
 
     // REPORT_TYPE_TABLE_ARROW unspecified
     REPORT_TYPE_TABLE_ARROW = 7;
-
-    // REPORT_TYPE_INVERTED_FLAMEGRAPH_ARROW contains the flamegraph with inverted call stacks
-    REPORT_TYPE_INVERTED_FLAMEGRAPH_ARROW = 8;
   }
 
   // report_type is the type of report to return
@@ -260,6 +257,9 @@ message QueryRequest {
 
   // which runtime frames to filter out, often interpreter frames like python or ruby are not super useful by default
   optional RuntimeFilter runtime_filter = 10;
+
+  // invert_call_stack inverts the call stacks in the flamegraph
+  optional bool invert_call_stack = 11;
 }
 
 // RuntimeFilter configures which runtimes to filter frames out for.

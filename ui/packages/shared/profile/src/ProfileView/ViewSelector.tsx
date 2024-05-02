@@ -48,7 +48,6 @@ const ViewSelector = ({
   const allItems: Array<{key: string; canBeSelected: boolean; supportingText?: string}> = [
     {key: 'table', canBeSelected: !dashboardItems.includes('table')},
     {key: 'icicle', canBeSelected: !dashboardItems.includes('icicle')},
-    {key: 'inverted-icicle', canBeSelected: !dashboardItems.includes('inverted-icicle')},
   ];
   if (enableSourcesView === true) {
     allItems.push({key: 'source', canBeSelected: false});

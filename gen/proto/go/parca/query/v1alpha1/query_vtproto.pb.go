@@ -1048,6 +1048,16 @@ func (m *QueryRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 		i -= size
 	}
+	if m.InvertCallStack != nil {
+		i--
+		if *m.InvertCallStack {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x58
+	}
 	if m.RuntimeFilter != nil {
 		size, err := m.RuntimeFilter.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
@@ -3187,6 +3197,9 @@ func (m *QueryRequest) SizeVT() (n int) {
 	if m.RuntimeFilter != nil {
 		l = m.RuntimeFilter.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.InvertCallStack != nil {
+		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
@@ -5824,6 +5837,27 @@ func (m *QueryRequest) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field InvertCallStack", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.InvertCallStack = &b
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

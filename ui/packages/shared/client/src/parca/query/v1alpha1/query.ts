@@ -388,6 +388,12 @@ export interface QueryRequest {
      * @generated from protobuf field: optional parca.query.v1alpha1.RuntimeFilter runtime_filter = 10;
      */
     runtimeFilter?: RuntimeFilter;
+    /**
+     * invert_call_stack inverts the call stacks in the flamegraph
+     *
+     * @generated from protobuf field: optional bool invert_call_stack = 11;
+     */
+    invertCallStack?: boolean;
 }
 /**
  * Mode is the type of query request
@@ -468,13 +474,7 @@ export enum QueryRequest_ReportType {
      *
      * @generated from protobuf enum value: REPORT_TYPE_TABLE_ARROW = 7;
      */
-    TABLE_ARROW = 7,
-    /**
-     * REPORT_TYPE_INVERTED_FLAMEGRAPH_ARROW contains the flamegraph with inverted call stacks
-     *
-     * @generated from protobuf enum value: REPORT_TYPE_INVERTED_FLAMEGRAPH_ARROW = 8;
-     */
-    INVERTED_FLAMEGRAPH_ARROW = 8
+    TABLE_ARROW = 7
 }
 /**
  * RuntimeFilter configures which runtimes to filter frames out for.
@@ -1933,7 +1933,8 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
             { no: 7, name: "node_trim_threshold", kind: "scalar", opt: true, T: 2 /*ScalarType.FLOAT*/ },
             { no: 8, name: "group_by", kind: "message", T: () => GroupBy },
             { no: 9, name: "source_reference", kind: "message", T: () => SourceReference },
-            { no: 10, name: "runtime_filter", kind: "message", T: () => RuntimeFilter }
+            { no: 10, name: "runtime_filter", kind: "message", T: () => RuntimeFilter },
+            { no: 11, name: "invert_call_stack", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<QueryRequest>): QueryRequest {
@@ -1989,6 +1990,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
                 case /* optional parca.query.v1alpha1.RuntimeFilter runtime_filter */ 10:
                     message.runtimeFilter = RuntimeFilter.internalBinaryRead(reader, reader.uint32(), options, message.runtimeFilter);
                     break;
+                case /* optional bool invert_call_stack */ 11:
+                    message.invertCallStack = reader.bool();
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -2031,6 +2035,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         /* optional parca.query.v1alpha1.RuntimeFilter runtime_filter = 10; */
         if (message.runtimeFilter)
             RuntimeFilter.internalBinaryWrite(message.runtimeFilter, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* optional bool invert_call_stack = 11; */
+        if (message.invertCallStack !== undefined)
+            writer.tag(11, WireType.Varint).bool(message.invertCallStack);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

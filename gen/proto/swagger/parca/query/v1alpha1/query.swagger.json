@@ -299,7 +299,7 @@
           },
           {
             "name": "reportType",
-            "description": "report_type is the type of report to return\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified\n - REPORT_TYPE_SOURCE: REPORT_TYPE_SOURCE contains source code annotated with profiling information\n - REPORT_TYPE_TABLE_ARROW: REPORT_TYPE_TABLE_ARROW unspecified\n - REPORT_TYPE_INVERTED_FLAMEGRAPH_ARROW: REPORT_TYPE_INVERTED_FLAMEGRAPH_ARROW contains the flamegraph with inverted call stacks",
+            "description": "report_type is the type of report to return\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified\n - REPORT_TYPE_SOURCE: REPORT_TYPE_SOURCE contains source code annotated with profiling information\n - REPORT_TYPE_TABLE_ARROW: REPORT_TYPE_TABLE_ARROW unspecified",
             "in": "query",
             "required": false,
             "type": "string",
@@ -311,8 +311,7 @@
               "REPORT_TYPE_FLAMEGRAPH_TABLE",
               "REPORT_TYPE_FLAMEGRAPH_ARROW",
               "REPORT_TYPE_SOURCE",
-              "REPORT_TYPE_TABLE_ARROW",
-              "REPORT_TYPE_INVERTED_FLAMEGRAPH_ARROW"
+              "REPORT_TYPE_TABLE_ARROW"
             ],
             "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED"
           },
@@ -380,6 +379,13 @@
           {
             "name": "runtimeFilter.showInterpretedOnly",
             "description": "Whether to only show interpreted frames.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "invertCallStack",
+            "description": "invert_call_stack inverts the call stacks in the flamegraph",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -573,11 +579,10 @@
         "REPORT_TYPE_FLAMEGRAPH_TABLE",
         "REPORT_TYPE_FLAMEGRAPH_ARROW",
         "REPORT_TYPE_SOURCE",
-        "REPORT_TYPE_TABLE_ARROW",
-        "REPORT_TYPE_INVERTED_FLAMEGRAPH_ARROW"
+        "REPORT_TYPE_TABLE_ARROW"
       ],
       "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
-      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified\n - REPORT_TYPE_SOURCE: REPORT_TYPE_SOURCE contains source code annotated with profiling information\n - REPORT_TYPE_TABLE_ARROW: REPORT_TYPE_TABLE_ARROW unspecified\n - REPORT_TYPE_INVERTED_FLAMEGRAPH_ARROW: REPORT_TYPE_INVERTED_FLAMEGRAPH_ARROW contains the flamegraph with inverted call stacks",
+      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified\n - REPORT_TYPE_SOURCE: REPORT_TYPE_SOURCE contains source code annotated with profiling information\n - REPORT_TYPE_TABLE_ARROW: REPORT_TYPE_TABLE_ARROW unspecified",
       "title": "ReportType is the type of report to return"
     },
     "metastorev1alpha1Function": {
@@ -794,6 +799,10 @@
         "runtimeFilter": {
           "$ref": "#/definitions/v1alpha1RuntimeFilter",
           "title": "which runtime frames to filter out, often interpreter frames like python or ruby are not super useful by default"
+        },
+        "invertCallStack": {
+          "type": "boolean",
+          "title": "invert_call_stack inverts the call stacks in the flamegraph"
         }
       },
       "title": "QueryRequest is a request for a profile query"

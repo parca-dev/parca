@@ -35,6 +35,7 @@ interface UseQueryOptions {
   showRuntimeRuby?: boolean;
   showRuntimePython?: boolean;
   showInterpretedOnly?: boolean;
+  invertCallStack?: boolean;
 }
 
 export const useQuery = (
@@ -58,6 +59,7 @@ export const useQuery = (
       options?.showRuntimeRuby ?? false,
       options?.showRuntimePython ?? false,
       options?.showInterpretedOnly ?? false,
+      options?.invertCallStack ?? false,
     ],
     queryFn: async () => {
       const req = profileSource.QueryRequest();
@@ -78,6 +80,7 @@ export const useQuery = (
         showPython: options?.showRuntimePython ?? false,
         showInterpretedOnly: options?.showInterpretedOnly ?? false,
       };
+      req.invertCallStack = options?.invertCallStack ?? false;
 
       try {
         const {response} = await client.query(req, {meta: metadata});

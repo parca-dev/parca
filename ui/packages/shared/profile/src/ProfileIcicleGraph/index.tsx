@@ -219,6 +219,13 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     navigateTo,
   });
 
+  const [invertStack = '', setInvertStack] = useURLState({
+    param: 'invert_call_stack',
+    navigateTo,
+  });
+
+  const isInvert = invertStack === 'true';
+
   const [
     totalFormatted,
     totalUnfilteredFormatted,
@@ -263,6 +270,23 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
       <div className="flex w-full justify-end gap-2 pb-2">
         <div className="ml-2 flex w-full flex-col items-start justify-between gap-2 md:flex-row md:items-end">
           {arrow !== undefined && <GroupAndSortActionButtons navigateTo={navigateTo} />}
+          {isHalfScreen ? (
+            <IconButton
+              icon={isInvert ? 'ph:sort-ascending' : 'ph:sort-descending'}
+              toolTipText={isInvert ? 'Original Stack' : 'Invert Stack'}
+              onClick={() => setInvertStack(isInvert ? '' : 'true')}
+              className="rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 items-center flex border border-gray-200 dark:border-gray-600 dark:text-white justify-center py-2 px-3 cursor-pointer min-h-[38px]"
+            />
+          ) : (
+            <Button
+              variant="neutral"
+              className="gap-2 w-max"
+              onClick={() => setInvertStack(isInvert ? '' : 'true')}
+            >
+              {isInvert ? 'Original Stack' : 'Invert Stack'}
+              <Icon icon={isInvert ? 'ph:sort-ascending' : 'ph:sort-descending'} width={20} />
+            </Button>
+          )}
           <ShowHideLegendButton isHalfScreen={isHalfScreen} navigateTo={navigateTo} />
           {isHalfScreen ? (
             <IconButton
@@ -286,7 +310,17 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
         </div>
       </div>
     );
-  }, [navigateTo, arrow, curPath, setNewCurPath, setActionButtons, loading, isHalfScreen]);
+  }, [
+    navigateTo,
+    isInvert,
+    setInvertStack,
+    arrow,
+    curPath,
+    setNewCurPath,
+    setActionButtons,
+    loading,
+    isHalfScreen,
+  ]);
 
   if (loading) {
     return (

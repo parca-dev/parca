@@ -49,6 +49,8 @@ export const ProfileViewWithData = ({
   const showRuntimePython = showRuntimePythonStr === 'true';
   const [showInterpretedOnlyStr] = useURLState({param: 'show_interpreted_only', navigateTo});
   const showInterpretedOnly = showInterpretedOnlyStr === 'true';
+  const [invertStack] = useURLState({param: 'invert_call_stack', navigateTo});
+  const invertCallStack = invertStack === 'true';
 
   const [pprofDownloading, setPprofDownloading] = useState<boolean>(false);
 
@@ -75,19 +77,7 @@ export const ProfileViewWithData = ({
     showRuntimeRuby,
     showRuntimePython,
     showInterpretedOnly,
-  });
-
-  const {
-    isLoading: invertedFlamegraphLoading,
-    response: invertedFlamegraphResponse,
-    error: invertedFlamegraphError,
-  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.INVERTED_FLAMEGRAPH_ARROW, {
-    skip: !dashboardItems.includes('inverted-icicle'),
-    nodeTrimThreshold,
-    groupBy: groupByParam,
-    showRuntimeRuby,
-    showRuntimePython,
-    showInterpretedOnly,
+    invertCallStack,
   });
 
   const {perf} = useParcaContext();
@@ -126,14 +116,6 @@ export const ProfileViewWithData = ({
       perf?.markInteraction('Flamegraph render', flamegraphResponse.total);
     }
 
-    if (
-      (!invertedFlamegraphLoading &&
-        invertedFlamegraphResponse?.report.oneofKind === 'flamegraph') ||
-      invertedFlamegraphResponse?.report.oneofKind === 'flamegraphArrow'
-    ) {
-      perf?.markInteraction('Inverted Flamegraph render', invertedFlamegraphResponse.total);
-    }
-
     if (!tableLoading && tableResponse?.report.oneofKind === 'tableArrow') {
       perf?.markInteraction('table render', tableResponse.total);
     }
@@ -148,8 +130,6 @@ export const ProfileViewWithData = ({
   }, [
     flamegraphLoading,
     flamegraphResponse,
-    invertedFlamegraphLoading,
-    invertedFlamegraphResponse,
     callgraphResponse,
     callgraphLoading,
     tableLoading,
@@ -182,9 +162,6 @@ export const ProfileViewWithData = ({
   if (flamegraphResponse !== null) {
     total = BigInt(flamegraphResponse.total);
     filtered = BigInt(flamegraphResponse.filtered);
-  } else if (invertedFlamegraphResponse != null) {
-    total = BigInt(invertedFlamegraphResponse.total);
-    filtered = BigInt(invertedFlamegraphResponse.filtered);
   } else if (tableResponse !== null) {
     total = BigInt(tableResponse.total);
     filtered = BigInt(tableResponse.filtered);
@@ -213,20 +190,6 @@ export const ProfileViewWithData = ({
         total: BigInt(flamegraphResponse?.total ?? '0'),
         filtered: BigInt(flamegraphResponse?.filtered ?? '0'),
         error: flamegraphError,
-      }}
-      invertedFlamegraphData={{
-        loading: invertedFlamegraphLoading,
-        data:
-          invertedFlamegraphResponse?.report.oneofKind === 'flamegraph'
-            ? invertedFlamegraphResponse?.report?.flamegraph
-            : undefined,
-        arrow:
-          invertedFlamegraphResponse?.report.oneofKind === 'flamegraphArrow'
-            ? invertedFlamegraphResponse?.report?.flamegraphArrow
-            : undefined,
-        total: BigInt(invertedFlamegraphResponse?.total ?? '0'),
-        filtered: BigInt(invertedFlamegraphResponse?.filtered ?? '0'),
-        error: invertedFlamegraphError,
       }}
       topTableData={{
         loading: tableLoading,
