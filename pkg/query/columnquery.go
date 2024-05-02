@@ -216,7 +216,12 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		p        profile.Profile
 		filtered int64
 		isDiff   bool
+		isInvert bool
 	)
+
+	if req.InvertCallStack != nil {
+		isInvert = *req.InvertCallStack
+	}
 
 	groupBy := req.GetGroupBy().GetFields()
 	allowedGroupBy := map[string]struct{}{
@@ -238,13 +243,13 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 
 	switch req.Mode {
 	case pb.QueryRequest_MODE_SINGLE_UNSPECIFIED:
-		p, err = q.selectSingle(ctx, req.GetSingle(), *req.InvertCallStack)
+		p, err = q.selectSingle(ctx, req.GetSingle(), isInvert)
 	case pb.QueryRequest_MODE_MERGE:
 		p, err = q.selectMerge(
 			ctx,
 			req.GetMerge(),
 			groupByLabels,
-			*req.InvertCallStack,
+			isInvert,
 		)
 	case pb.QueryRequest_MODE_DIFF:
 		isDiff = true
@@ -252,7 +257,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 			ctx,
 			req.GetDiff(),
 			groupByLabels,
-			*req.InvertCallStack,
+			isInvert,
 		)
 	default:
 		return nil, status.Error(codes.InvalidArgument, "unknown query mode")
