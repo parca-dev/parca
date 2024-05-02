@@ -546,21 +546,7 @@ func RenderReport(
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW:
-		fa, total, err := GenerateFlamegraphArrow(ctx, mem, tracer, p, groupBy, nodeTrimFraction)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to generate arrow flamegraph: %v", err.Error())
-		}
-
-		return &pb.QueryResponse{
-			Total:    total,
-			Filtered: filtered,
-			Report: &pb.QueryResponse_FlamegraphArrow{
-				FlamegraphArrow: fa,
-			},
-		}, nil
 	case pb.QueryRequest_REPORT_TYPE_INVERTED_FLAMEGRAPH_ARROW:
-		// Invert the stack traces in the profile.
-		// p, err := InvertProfile(p)
 		fa, total, err := GenerateFlamegraphArrow(ctx, mem, tracer, p, groupBy, nodeTrimFraction)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate arrow flamegraph: %v", err.Error())
