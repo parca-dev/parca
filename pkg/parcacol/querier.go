@@ -875,6 +875,7 @@ func (q *Querier) SymbolizeArrowRecord(
 	records []arrow.Record,
 	valueColumnName string,
 	queryParts QueryParts,
+	invertCallStacks bool,
 ) ([]arrow.Record, error) {
 	res := make([]arrow.Record, len(records))
 
@@ -920,7 +921,7 @@ func (q *Querier) SymbolizeArrowRecord(
 			}
 		}
 
-		locationsRecord, err := q.resolveStacks(ctx, stacktraceColumn)
+		locationsRecord, err := q.resolveStacks(ctx, stacktraceColumn, invertCallStacks)
 		if err != nil {
 			return nil, err
 		}
@@ -946,9 +947,18 @@ func (q *Querier) SymbolizeArrowRecord(
 	return res, nil
 }
 
+func handleIndexInversion(isInvert bool, start, end, j int) int {
+	if !isInvert {
+		return j
+	}
+
+	return end - j - 1 + start
+}
+
 func (q *Querier) resolveStacks(
 	ctx context.Context,
 	stacktraceColumn *array.List,
+	invertCallStacks bool,
 ) (arrow.Record, error) {
 	w := profile.NewLocationsWriter(q.pool)
 	defer w.RecordBuilder.Release()
@@ -969,8 +979,9 @@ func (q *Querier) resolveStacks(
 
 		start, end := stacktraceColumn.ValueOffsets(i)
 		for j := int(start); j < int(end); j++ {
+			jWithInversion := handleIndexInversion(invertCallStacks, int(start), int(end), j)
 			w.Locations.Append(true)
-			idx := values.GetValueIndex(j)
+			idx := values.GetValueIndex(jWithInversion)
 
 			if symbolizedLocations[idx] != nil {
 				// We symbolized the location successfully, so we'll use the symbolized location.
@@ -1173,6 +1184,7 @@ func (q *Querier) QuerySingle(
 	ctx context.Context,
 	query string,
 	time time.Time,
+	invertCallStacks bool,
 ) (profile.Profile, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/QuerySingle")
 	defer span.End()
@@ -1192,6 +1204,7 @@ func (q *Querier) QuerySingle(
 		records,
 		valueColumn,
 		queryParts,
+		invertCallStacks,
 	)
 	if err != nil {
 		// if the column cannot be found the timestamp is too far in the past and we don't have data
@@ -1294,7 +1307,7 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]
 		nil
 }
 
-func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.Time, aggregateByLabels bool) (profile.Profile, error) {
+func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.Time, aggregateByLabels, invertCallStacks bool) (profile.Profile, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/QueryMerge")
 	defer span.End()
 
@@ -1313,6 +1326,7 @@ func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.
 		records,
 		valueColumn,
 		queryParts,
+		invertCallStacks,
 	)
 	if err != nil {
 		return profile.Profile{}, err

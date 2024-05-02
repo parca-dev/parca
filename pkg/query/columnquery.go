@@ -46,8 +46,8 @@ type Querier interface {
 	Values(ctx context.Context, labelName string, match []string, start, end time.Time) ([]string, error)
 	QueryRange(ctx context.Context, query string, startTime, endTime time.Time, step time.Duration, limit uint32) ([]*pb.MetricsSeries, error)
 	ProfileTypes(ctx context.Context) ([]*pb.ProfileType, error)
-	QuerySingle(ctx context.Context, query string, time time.Time) (profile.Profile, error)
-	QueryMerge(ctx context.Context, query string, start, end time.Time, aggregateByLabels bool) (profile.Profile, error)
+	QuerySingle(ctx context.Context, query string, time time.Time, invertCallStacks bool) (profile.Profile, error)
+	QueryMerge(ctx context.Context, query string, start, end time.Time, aggregateByLabels, invertCallStacks bool) (profile.Profile, error)
 }
 
 var (
@@ -213,11 +213,13 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	}
 
 	var (
-		p        profile.Profile
-		filtered int64
-		isDiff   bool
+		p          profile.Profile
+		filtered   int64
+		isDiff     bool
+		isInverted bool
 	)
 
+	isInverted = req.ReportType == pb.QueryRequest_REPORT_TYPE_INVERTED_FLAMEGRAPH_ARROW
 	groupBy := req.GetGroupBy().GetFields()
 	allowedGroupBy := map[string]struct{}{
 		FlamegraphFieldFunctionName:     {},
@@ -238,12 +240,13 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 
 	switch req.Mode {
 	case pb.QueryRequest_MODE_SINGLE_UNSPECIFIED:
-		p, err = q.selectSingle(ctx, req.GetSingle())
+		p, err = q.selectSingle(ctx, req.GetSingle(), isInverted)
 	case pb.QueryRequest_MODE_MERGE:
 		p, err = q.selectMerge(
 			ctx,
 			req.GetMerge(),
 			groupByLabels,
+			isInverted,
 		)
 	case pb.QueryRequest_MODE_DIFF:
 		isDiff = true
@@ -251,6 +254,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 			ctx,
 			req.GetDiff(),
 			groupByLabels,
+			isInverted,
 		)
 	default:
 		return nil, status.Error(codes.InvalidArgument, "unknown query mode")
@@ -554,6 +558,21 @@ func RenderReport(
 				FlamegraphArrow: fa,
 			},
 		}, nil
+	case pb.QueryRequest_REPORT_TYPE_INVERTED_FLAMEGRAPH_ARROW:
+		// Invert the stack traces in the profile.
+		// p, err := InvertProfile(p)
+		fa, total, err := GenerateFlamegraphArrow(ctx, mem, tracer, p, groupBy, nodeTrimFraction)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to generate arrow flamegraph: %v", err.Error())
+		}
+
+		return &pb.QueryResponse{
+			Total:    total,
+			Filtered: filtered,
+			Report: &pb.QueryResponse_FlamegraphArrow{
+				FlamegraphArrow: fa,
+			},
+		}, nil
 	case pb.QueryRequest_REPORT_TYPE_SOURCE:
 		s, total, err := GenerateSourceReport(
 			ctx,
@@ -640,11 +659,12 @@ func RenderReport(
 	}
 }
 
-func (q *ColumnQueryAPI) selectSingle(ctx context.Context, s *pb.SingleProfile) (profile.Profile, error) {
+func (q *ColumnQueryAPI) selectSingle(ctx context.Context, s *pb.SingleProfile, isInverted bool) (profile.Profile, error) {
 	p, err := q.querier.QuerySingle(
 		ctx,
 		s.Query,
 		s.Time.AsTime(),
+		isInverted,
 	)
 	if err != nil {
 		return profile.Profile{}, err
@@ -657,6 +677,7 @@ func (q *ColumnQueryAPI) selectMerge(
 	ctx context.Context,
 	m *pb.MergeProfile,
 	aggregateByLabels bool,
+	isInverted bool,
 ) (profile.Profile, error) {
 	p, err := q.querier.QueryMerge(
 		ctx,
@@ -664,6 +685,7 @@ func (q *ColumnQueryAPI) selectMerge(
 		m.Start.AsTime(),
 		m.End.AsTime(),
 		aggregateByLabels,
+		isInverted,
 	)
 	if err != nil {
 		return profile.Profile{}, err
@@ -672,7 +694,7 @@ func (q *ColumnQueryAPI) selectMerge(
 	return p, nil
 }
 
-func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile, aggregateByLabels bool) (profile.Profile, error) {
+func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile, aggregateByLabels, isInverted bool) (profile.Profile, error) {
 	ctx, span := q.tracer.Start(ctx, "diffRequest")
 	defer span.End()
 
@@ -689,7 +711,7 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile, aggr
 	}()
 	g.Go(func() error {
 		var err error
-		base, err = q.selectProfileForDiff(ctx, d.A, aggregateByLabels)
+		base, err = q.selectProfileForDiff(ctx, d.A, aggregateByLabels, isInverted)
 		if err != nil {
 			return fmt.Errorf("reading base profile: %w", err)
 		}
@@ -704,7 +726,7 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile, aggr
 	}()
 	g.Go(func() error {
 		var err error
-		compare, err = q.selectProfileForDiff(ctx, d.B, aggregateByLabels)
+		compare, err = q.selectProfileForDiff(ctx, d.B, aggregateByLabels, isInverted)
 		if err != nil {
 			return fmt.Errorf("reading compared profile: %w", err)
 		}
@@ -833,12 +855,12 @@ func zeroFloat64Array(pool memory.Allocator, rows int) arrow.Array {
 	return b.NewArray()
 }
 
-func (q *ColumnQueryAPI) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelection, aggregateByLabels bool) (profile.Profile, error) {
+func (q *ColumnQueryAPI) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelection, aggregateByLabels, isInverted bool) (profile.Profile, error) {
 	switch s.Mode {
 	case pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED:
-		return q.selectSingle(ctx, s.GetSingle())
+		return q.selectSingle(ctx, s.GetSingle(), isInverted)
 	case pb.ProfileDiffSelection_MODE_MERGE:
-		return q.selectMerge(ctx, s.GetMerge(), aggregateByLabels)
+		return q.selectMerge(ctx, s.GetMerge(), aggregateByLabels, isInverted)
 	default:
 		return profile.Profile{}, status.Error(codes.InvalidArgument, "unknown mode for diff profile selection")
 	}

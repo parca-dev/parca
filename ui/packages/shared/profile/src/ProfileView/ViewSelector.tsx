@@ -48,6 +48,7 @@ const ViewSelector = ({
   const allItems: Array<{key: string; canBeSelected: boolean; supportingText?: string}> = [
     {key: 'table', canBeSelected: !dashboardItems.includes('table')},
     {key: 'icicle', canBeSelected: !dashboardItems.includes('icicle')},
+    {key: 'inverted-icicle', canBeSelected: !dashboardItems.includes('inverted-icicle')},
   ];
   if (enableSourcesView === true) {
     allItems.push({key: 'source', canBeSelected: false});
@@ -66,17 +67,13 @@ const ViewSelector = ({
     key: string;
     supportingText?: string;
   }): SelectElement => {
-    const capitalizeFirstLetter = (string: string): string => {
-      return `${string.charAt(0).toUpperCase()}${string.slice(1)}`;
-    };
-
-    const title = capitalizeFirstLetter(key);
+    const title = <span className="capitalize">{key.replaceAll('-', ' ')}</span>;
 
     return {
-      active: <>{title}</>,
+      active: title,
       expanded: (
         <>
-          <span>{title}</span>
+          {title}
           {supportingText !== null && <span className="text-xs">{supportingText}</span>}
         </>
       ),

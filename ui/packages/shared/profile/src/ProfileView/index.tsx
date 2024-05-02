@@ -96,6 +96,7 @@ export interface ProfileViewProps {
   total: bigint;
   filtered: bigint;
   flamegraphData: FlamegraphData;
+  invertedFlamegraphData?: FlamegraphData;
   topTableData?: TopTableData;
   callgraphData?: CallgraphData;
   sourceData?: SourceData;
@@ -120,6 +121,7 @@ export const ProfileView = ({
   total,
   filtered,
   flamegraphData,
+  invertedFlamegraphData,
   topTableData,
   callgraphData,
   sourceData,
@@ -241,6 +243,40 @@ export const ProfileView = ({
               loading={flamegraphData.loading}
               setActionButtons={setActionButtons}
               error={flamegraphData.error}
+              isHalfScreen={isHalfScreen}
+              width={
+                dimensions?.width !== undefined
+                  ? isHalfScreen
+                    ? (dimensions.width - 40) / 2
+                    : dimensions.width - 16
+                  : 0
+              }
+            />
+          </ConditionalWrapper>
+        );
+      }
+      case 'inverted-icicle': {
+        return (
+          <ConditionalWrapper<ProfilerProps>
+            condition={perf?.onRender != null}
+            WrapperComponent={Profiler}
+            wrapperProps={{
+              id: 'invertedIcicleGraph',
+              onRender: perf?.onRender as React.ProfilerOnRenderCallback,
+            }}
+          >
+            <ProfileIcicleGraph
+              curPath={curPath}
+              setNewCurPath={setNewCurPath}
+              arrow={invertedFlamegraphData?.arrow}
+              graph={invertedFlamegraphData?.data}
+              total={invertedFlamegraphData?.total ?? BigInt(0)}
+              filtered={invertedFlamegraphData?.filtered ?? BigInt(0)}
+              profileType={profileSource?.ProfileType()}
+              navigateTo={navigateTo}
+              loading={invertedFlamegraphData?.loading ?? false}
+              setActionButtons={setActionButtons}
+              error={invertedFlamegraphData?.error}
               isHalfScreen={isHalfScreen}
               width={
                 dimensions?.width !== undefined

@@ -468,7 +468,13 @@ export enum QueryRequest_ReportType {
      *
      * @generated from protobuf enum value: REPORT_TYPE_TABLE_ARROW = 7;
      */
-    TABLE_ARROW = 7
+    TABLE_ARROW = 7,
+    /**
+     * REPORT_TYPE_INVERTED_FLAMEGRAPH_ARROW contains the flamegraph with inverted call stacks
+     *
+     * @generated from protobuf enum value: REPORT_TYPE_INVERTED_FLAMEGRAPH_ARROW = 8;
+     */
+    INVERTED_FLAMEGRAPH_ARROW = 8
 }
 /**
  * RuntimeFilter configures which runtimes to filter frames out for.
