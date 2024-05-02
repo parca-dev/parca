@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	stdmath "math"
 	"strings"
 	"sync"
 	"time"
@@ -777,6 +778,12 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile
 
 	records := make([]arrow.Record, 0, len(compare.Samples)+len(base.Samples))
 
+	type compareTotal struct {
+		Cumulative          int64
+		CumulativePerSecond float64
+	}
+	compareTotals := make([]compareTotal, 0, len(compare.Samples))
+
 	for _, r := range compare.Samples {
 		columns := r.Columns()
 		cols := make([]arrow.Array, len(columns))
@@ -793,16 +800,32 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile
 			cols,
 			r.NumRows(),
 		))
+		compareTotals = append(compareTotals, compareTotal{
+			Cumulative:          math.Int64.Sum(cols[len(cols)-2].(*array.Int64)),
+			CumulativePerSecond: math.Float64.Sum(cols[len(cols)-1].(*array.Float64)),
+		})
 	}
 
-	for _, r := range base.Samples {
+	for i, r := range base.Samples {
 		func() {
 			columns := r.Columns()
+			totalCumulative := math.Int64.Sum(columns[len(columns)-4].(*array.Int64))
+			totalCumulativePerSecond := math.Float64.Sum(columns[len(columns)-3].(*array.Float64))
+
+			var cumulativeRatio, cumulativePerSecondRatio float64
+			if true { // configurable via UI
+				cumulativeRatio = float64(compareTotals[i].Cumulative) / float64(totalCumulative)
+				cumulativePerSecondRatio = compareTotals[i].CumulativePerSecond / totalCumulativePerSecond
+			} else {
+				cumulativeRatio = 1
+				cumulativePerSecondRatio = 1
+			}
+
 			cols := make([]arrow.Array, len(columns))
 			copy(cols, columns)
-			diff := multiplyInt64By(mem, columns[len(columns)-4].(*array.Int64), -1)
+			diff := multiplyInt64By(mem, columns[len(columns)-4].(*array.Int64), -1*cumulativeRatio)
 			defer diff.Release()
-			diffPerSecond := multiplyFloat64By(mem, columns[len(columns)-3].(*array.Float64), -1)
+			diffPerSecond := multiplyFloat64By(mem, columns[len(columns)-3].(*array.Float64), -1*cumulativePerSecondRatio)
 			defer diffPerSecond.Release()
 			value := zeroInt64Array(mem, int(r.NumRows()))
 			defer value.Release()
@@ -828,14 +851,15 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile
 	}, nil
 }
 
-func multiplyInt64By(pool memory.Allocator, arr *array.Int64, factor int64) arrow.Array {
+func multiplyInt64By(pool memory.Allocator, arr *array.Int64, factor float64) arrow.Array {
 	b := array.NewInt64Builder(pool)
 	defer b.Release()
 
 	values := arr.Int64Values()
 	valid := make([]bool, len(values))
 	for i := range values {
-		values[i] *= factor
+		nv := float64(values[i]) * factor
+		values[i] = int64(nv)
 		valid[i] = true
 	}
 
@@ -844,6 +868,11 @@ func multiplyInt64By(pool memory.Allocator, arr *array.Int64, factor int64) arro
 }
 
 func multiplyFloat64By(pool memory.Allocator, arr *array.Float64, factor float64) arrow.Array {
+	if stdmath.IsNaN(factor) {
+		arr.Retain()
+		return arr
+	}
+
 	b := array.NewFloat64Builder(pool)
 	defer b.Release()
 
