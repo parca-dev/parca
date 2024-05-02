@@ -273,7 +273,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
           {isHalfScreen ? (
             <IconButton
               icon={isInvert ? 'ph:sort-ascending' : 'ph:sort-descending'}
-              toolTipText={isInvert ? 'Original Stack' : 'Invert Stack'}
+              toolTipText={isInvert ? 'Original Call Stack' : 'Invert Call Stack'}
               onClick={() => setInvertStack(isInvert ? '' : 'true')}
               className="rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 items-center flex border border-gray-200 dark:border-gray-600 dark:text-white justify-center py-2 px-3 cursor-pointer min-h-[38px]"
             />
@@ -283,7 +283,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
               className="gap-2 w-max"
               onClick={() => setInvertStack(isInvert ? '' : 'true')}
             >
-              {isInvert ? 'Original Stack' : 'Invert Stack'}
+              {isInvert ? 'Original Call Stack' : 'Invert Call Stack'}
               <Icon icon={isInvert ? 'ph:sort-ascending' : 'ph:sort-descending'} width={20} />
             </Button>
           )}
