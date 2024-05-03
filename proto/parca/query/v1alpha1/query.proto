@@ -258,8 +258,32 @@ message QueryRequest {
   // which runtime frames to filter out, often interpreter frames like python or ruby are not super useful by default
   optional RuntimeFilter runtime_filter = 10;
 
-  // which binary to filter by
-  optional string binary_filter = 11;
+  // a varying set of filters to apply to the query request
+  Filters filters = 11;
+}
+
+// BinaryFilter is a filter for a single or multiple binary names
+message BinaryFilter {
+  // filter is the list of binary names to filter by
+  repeated string filter = 1;
+}
+
+// FunctionFilter is a filter for a single or multiple functions
+message FunctionFilter {
+  // filter is the list of function names to filter by
+  repeated string filter = 1;
+}
+
+// Filters is a set of filters to apply to the query request
+message Filters {
+  // filter is the set of filters to apply to the query request
+  oneof filter {
+    // binary_filter is a filter for binary names
+    BinaryFilter binary_filter = 1;
+
+    // function_filter is a filter for function names
+    FunctionFilter function_filter = 2;
+  }
 }
 
 // RuntimeFilter configures which runtimes to filter frames out for.

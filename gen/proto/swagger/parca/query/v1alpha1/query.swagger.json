@@ -384,11 +384,26 @@
             "type": "boolean"
           },
           {
-            "name": "binaryFilter",
-            "description": "which binary to filter by",
+            "name": "filters.binaryFilter.filter",
+            "description": "filter is the list of binary names to filter by",
             "in": "query",
             "required": false,
-            "type": "string"
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "filters.functionFilter.filter",
+            "description": "filter is the list of function names to filter by",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
           }
         ],
         "tags": [
@@ -800,9 +815,9 @@
           "$ref": "#/definitions/v1alpha1RuntimeFilter",
           "title": "which runtime frames to filter out, often interpreter frames like python or ruby are not super useful by default"
         },
-        "binaryFilter": {
-          "type": "string",
-          "title": "which binary to filter by"
+        "filters": {
+          "$ref": "#/definitions/v1alpha1Filters",
+          "title": "a varying set of filters to apply to the query request"
         }
       },
       "title": "QueryRequest is a request for a profile query"
@@ -927,6 +942,19 @@
         }
       }
     },
+    "v1alpha1BinaryFilter": {
+      "type": "object",
+      "properties": {
+        "filter": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "filter is the list of binary names to filter by"
+        }
+      },
+      "title": "BinaryFilter is a filter for a single or multiple binary names"
+    },
     "v1alpha1Callgraph": {
       "type": "object",
       "properties": {
@@ -1040,6 +1068,20 @@
         }
       },
       "title": "DiffProfile contains parameters for a profile diff request"
+    },
+    "v1alpha1Filters": {
+      "type": "object",
+      "properties": {
+        "binaryFilter": {
+          "$ref": "#/definitions/v1alpha1BinaryFilter",
+          "title": "binary_filter is a filter for binary names"
+        },
+        "functionFilter": {
+          "$ref": "#/definitions/v1alpha1FunctionFilter",
+          "title": "function_filter is a filter for function names"
+        }
+      },
+      "title": "Filters is a set of filters to apply to the query request"
     },
     "v1alpha1Flamegraph": {
       "type": "object",
@@ -1214,6 +1256,19 @@
         }
       },
       "title": "FlamegraphRootNode is a root node of a flame graph"
+    },
+    "v1alpha1FunctionFilter": {
+      "type": "object",
+      "properties": {
+        "filter": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "filter is the list of function names to filter by"
+        }
+      },
+      "title": "FunctionFilter is a filter for a single or multiple functions"
     },
     "v1alpha1GroupBy": {
       "type": "object",
