@@ -257,6 +257,9 @@ message QueryRequest {
 
   // which runtime frames to filter out, often interpreter frames like python or ruby are not super useful by default
   optional RuntimeFilter runtime_filter = 10;
+
+  // invert_call_stack inverts the call stacks in the flamegraph
+  optional bool invert_call_stack = 11;
 }
 
 // RuntimeFilter configures which runtimes to filter frames out for.
