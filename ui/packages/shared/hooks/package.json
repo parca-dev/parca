@@ -13,7 +13,7 @@
   "dependencies": {
     "@parca/client": "^0.16.108",
     "@parca/store": "^0.16.138",
-    "@parca/utilities": "^0.0.64",
+    "@parca/utilities": "^0.0.66",
     "@rehooks/local-storage": "^2.4.4",
     "@types/lodash": "^4.17.0",
     "lodash": "^4.17.21",
