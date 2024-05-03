@@ -21,7 +21,7 @@ require (
 	github.com/gogo/status v1.1.1
 	github.com/google/pprof v0.0.0-20240424215950-a892ee059fd6
 	github.com/google/uuid v1.6.0
-	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.0
+	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.1
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.1
 	github.com/ianlancetaylor/demangle v0.0.0-20240312041847-bd984b5ce465
