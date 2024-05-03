@@ -42,7 +42,9 @@ clean:
 	rm -rf data
 	rm -rf tmp
 	rm -rf bin
-	rm -rf ui/packages/app/web/build
+	mv ui/packages/app/web/build/keep.go /tmp/keep.go
+	rm -rf ui/packages/app/web/build/*
+	mv /tmp/keep.go ui/packages/app/web/build/keep.go
 	find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +
 	find . -name 'dist' -type d -prune -exec rm -rf '{}' +
 
