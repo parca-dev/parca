@@ -49,9 +49,9 @@ export const ProfileViewWithData = ({
   const showRuntimePython = showRuntimePythonStr === 'true';
   const [showInterpretedOnlyStr] = useURLState({param: 'show_interpreted_only', navigateTo});
   const showInterpretedOnly = showInterpretedOnlyStr === 'true';
-  const [binaryFilterStr] = useURLState({param: 'binary_filter', navigateTo});
   const [invertStack] = useURLState({param: 'invert_call_stack', navigateTo});
   const invertCallStack = invertStack === 'true';
+  const [frameFilterStr] = useURLState({param: 'frame_filter', navigateTo});
 
   const [pprofDownloading, setPprofDownloading] = useState<boolean>(false);
 
@@ -78,8 +78,8 @@ export const ProfileViewWithData = ({
     showRuntimeRuby,
     showRuntimePython,
     showInterpretedOnly,
-    binaryFilter: binaryFilterStr as string,
     invertCallStack,
+    frameFilter: frameFilterStr as string[],
   });
 
   const {perf} = useParcaContext();

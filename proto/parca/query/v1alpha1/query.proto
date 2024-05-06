@@ -265,14 +265,14 @@ message QueryRequest {
   Filters filters = 12;
 }
 
-// BinaryFilter is a filter for a single or multiple binary names
-message BinaryFilter {
+// StackFilter is a filter for a single or multiple binary names
+message StackFilter {
   // filter is the list of binary names to filter by
   repeated string filter = 1;
 }
 
-// FunctionFilter is a filter for a single or multiple functions
-message FunctionFilter {
+// FrameFilter is a filter for a single or multiple functions
+message FrameFilter {
   // filter is the list of function names to filter by
   repeated string filter = 1;
 }
@@ -281,11 +281,11 @@ message FunctionFilter {
 message Filters {
   // filter is the set of filters to apply to the query request
   oneof filter {
-    // binary_filter is a filter for binary names
-    BinaryFilter binary_filter = 1;
+    // stack_filter is a filter for binary names
+    StackFilter stack_filter = 1;
 
-    // function_filter is a filter for function names
-    FunctionFilter function_filter = 2;
+    // frame_filter is a filter for function names
+    FrameFilter frame_filter = 2;
   }
 }
 

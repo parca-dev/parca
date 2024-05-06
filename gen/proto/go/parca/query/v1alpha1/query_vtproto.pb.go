@@ -1181,7 +1181,7 @@ func (m *QueryRequest_Single) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *BinaryFilter) MarshalVT() (dAtA []byte, err error) {
+func (m *StackFilter) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -1194,12 +1194,12 @@ func (m *BinaryFilter) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *BinaryFilter) MarshalToVT(dAtA []byte) (int, error) {
+func (m *StackFilter) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *BinaryFilter) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *StackFilter) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -1223,7 +1223,7 @@ func (m *BinaryFilter) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *FunctionFilter) MarshalVT() (dAtA []byte, err error) {
+func (m *FrameFilter) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -1236,12 +1236,12 @@ func (m *FunctionFilter) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *FunctionFilter) MarshalToVT(dAtA []byte) (int, error) {
+func (m *FrameFilter) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *FunctionFilter) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *FrameFilter) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -1307,15 +1307,15 @@ func (m *Filters) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Filters_BinaryFilter) MarshalToVT(dAtA []byte) (int, error) {
+func (m *Filters_StackFilter) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *Filters_BinaryFilter) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *Filters_StackFilter) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.BinaryFilter != nil {
-		size, err := m.BinaryFilter.MarshalToSizedBufferVT(dAtA[:i])
+	if m.StackFilter != nil {
+		size, err := m.StackFilter.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -1326,15 +1326,15 @@ func (m *Filters_BinaryFilter) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Filters_FunctionFilter) MarshalToVT(dAtA []byte) (int, error) {
+func (m *Filters_FrameFilter) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *Filters_FunctionFilter) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *Filters_FrameFilter) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.FunctionFilter != nil {
-		size, err := m.FunctionFilter.MarshalToSizedBufferVT(dAtA[:i])
+	if m.FrameFilter != nil {
+		size, err := m.FrameFilter.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -3419,7 +3419,7 @@ func (m *QueryRequest_Single) SizeVT() (n int) {
 	}
 	return n
 }
-func (m *BinaryFilter) SizeVT() (n int) {
+func (m *StackFilter) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -3435,7 +3435,7 @@ func (m *BinaryFilter) SizeVT() (n int) {
 	return n
 }
 
-func (m *FunctionFilter) SizeVT() (n int) {
+func (m *FrameFilter) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -3464,26 +3464,26 @@ func (m *Filters) SizeVT() (n int) {
 	return n
 }
 
-func (m *Filters_BinaryFilter) SizeVT() (n int) {
+func (m *Filters_StackFilter) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.BinaryFilter != nil {
-		l = m.BinaryFilter.SizeVT()
+	if m.StackFilter != nil {
+		l = m.StackFilter.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
 }
-func (m *Filters_FunctionFilter) SizeVT() (n int) {
+func (m *Filters_FrameFilter) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.FunctionFilter != nil {
-		l = m.FunctionFilter.SizeVT()
+	if m.FrameFilter != nil {
+		l = m.FrameFilter.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -6163,7 +6163,7 @@ func (m *QueryRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *BinaryFilter) UnmarshalVT(dAtA []byte) error {
+func (m *StackFilter) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6186,10 +6186,10 @@ func (m *BinaryFilter) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: BinaryFilter: wiretype end group for non-group")
+			return fmt.Errorf("proto: StackFilter: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: BinaryFilter: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: StackFilter: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -6246,7 +6246,7 @@ func (m *BinaryFilter) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *FunctionFilter) UnmarshalVT(dAtA []byte) error {
+func (m *FrameFilter) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6269,10 +6269,10 @@ func (m *FunctionFilter) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: FunctionFilter: wiretype end group for non-group")
+			return fmt.Errorf("proto: FrameFilter: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: FunctionFilter: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: FrameFilter: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -6360,7 +6360,7 @@ func (m *Filters) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field BinaryFilter", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field StackFilter", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -6387,21 +6387,21 @@ func (m *Filters) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Filter.(*Filters_BinaryFilter); ok {
-				if err := oneof.BinaryFilter.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if oneof, ok := m.Filter.(*Filters_StackFilter); ok {
+				if err := oneof.StackFilter.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
-				v := &BinaryFilter{}
+				v := &StackFilter{}
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Filter = &Filters_BinaryFilter{BinaryFilter: v}
+				m.Filter = &Filters_StackFilter{StackFilter: v}
 			}
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FunctionFilter", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FrameFilter", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -6428,16 +6428,16 @@ func (m *Filters) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Filter.(*Filters_FunctionFilter); ok {
-				if err := oneof.FunctionFilter.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if oneof, ok := m.Filter.(*Filters_FrameFilter); ok {
+				if err := oneof.FrameFilter.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
-				v := &FunctionFilter{}
+				v := &FrameFilter{}
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Filter = &Filters_FunctionFilter{FunctionFilter: v}
+				m.Filter = &Filters_FrameFilter{FrameFilter: v}
 			}
 			iNdEx = postIndex
 		default:

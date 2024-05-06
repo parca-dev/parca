@@ -37,7 +37,7 @@ const ColorStackLegend = ({
   const [colorProfileName] = useUserPreference<string>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
-  const [currentSearchString, setSearchString] = useURLState({param: 'binary_filter', navigateTo});
+  const [currentSearchString, setSearchString] = useURLState({param: 'frame_filter', navigateTo});
 
   const stackColorArray = useMemo(() => {
     return Object.entries(mappingColors).sort(([featureA], [featureB]) => {
@@ -79,7 +79,7 @@ const ColorStackLegend = ({
       )}
       {stackColorArray.map(([feature, color]) => {
         const filteringAllowed = feature !== EVERYTHING_ELSE;
-        const isHighlighted = currentSearchString === feature;
+        const isHighlighted = currentSearchString.includes(feature);
         return (
           <div
             key={feature}
@@ -98,7 +98,7 @@ const ColorStackLegend = ({
                 setSearchString('');
                 return;
               }
-              setSearchString(feature);
+              setSearchString([feature]);
             }}
           >
             <div className="flex w-11/12 items-center justify-start">
@@ -114,7 +114,11 @@ const ColorStackLegend = ({
                 <Icon
                   icon="radix-icons:cross-circled"
                   onClick={e => {
-                    setSearchString('');
+                    // remove the current feature from the search string array of strings
+                    setSearchString(
+                      (currentSearchString as string[]).filter((f: string) => f !== feature)
+                    );
+                    // setSearchString(currentSearchString);
                     e.stopPropagation();
                   }}
                 />

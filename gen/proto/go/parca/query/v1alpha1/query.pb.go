@@ -1130,8 +1130,8 @@ func (*QueryRequest_Merge) isQueryRequest_Options() {}
 
 func (*QueryRequest_Single) isQueryRequest_Options() {}
 
-// BinaryFilter is a filter for a single or multiple binary names
-type BinaryFilter struct {
+// StackFilter is a filter for a single or multiple binary names
+type StackFilter struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -1140,8 +1140,8 @@ type BinaryFilter struct {
 	Filter []string `protobuf:"bytes,1,rep,name=filter,proto3" json:"filter,omitempty"`
 }
 
-func (x *BinaryFilter) Reset() {
-	*x = BinaryFilter{}
+func (x *StackFilter) Reset() {
+	*x = StackFilter{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_parca_query_v1alpha1_query_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1149,13 +1149,13 @@ func (x *BinaryFilter) Reset() {
 	}
 }
 
-func (x *BinaryFilter) String() string {
+func (x *StackFilter) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*BinaryFilter) ProtoMessage() {}
+func (*StackFilter) ProtoMessage() {}
 
-func (x *BinaryFilter) ProtoReflect() protoreflect.Message {
+func (x *StackFilter) ProtoReflect() protoreflect.Message {
 	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1167,20 +1167,20 @@ func (x *BinaryFilter) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BinaryFilter.ProtoReflect.Descriptor instead.
-func (*BinaryFilter) Descriptor() ([]byte, []int) {
+// Deprecated: Use StackFilter.ProtoReflect.Descriptor instead.
+func (*StackFilter) Descriptor() ([]byte, []int) {
 	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *BinaryFilter) GetFilter() []string {
+func (x *StackFilter) GetFilter() []string {
 	if x != nil {
 		return x.Filter
 	}
 	return nil
 }
 
-// FunctionFilter is a filter for a single or multiple functions
-type FunctionFilter struct {
+// FrameFilter is a filter for a single or multiple functions
+type FrameFilter struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -1189,8 +1189,8 @@ type FunctionFilter struct {
 	Filter []string `protobuf:"bytes,1,rep,name=filter,proto3" json:"filter,omitempty"`
 }
 
-func (x *FunctionFilter) Reset() {
-	*x = FunctionFilter{}
+func (x *FrameFilter) Reset() {
+	*x = FrameFilter{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_parca_query_v1alpha1_query_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1198,13 +1198,13 @@ func (x *FunctionFilter) Reset() {
 	}
 }
 
-func (x *FunctionFilter) String() string {
+func (x *FrameFilter) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*FunctionFilter) ProtoMessage() {}
+func (*FrameFilter) ProtoMessage() {}
 
-func (x *FunctionFilter) ProtoReflect() protoreflect.Message {
+func (x *FrameFilter) ProtoReflect() protoreflect.Message {
 	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1216,12 +1216,12 @@ func (x *FunctionFilter) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use FunctionFilter.ProtoReflect.Descriptor instead.
-func (*FunctionFilter) Descriptor() ([]byte, []int) {
+// Deprecated: Use FrameFilter.ProtoReflect.Descriptor instead.
+func (*FrameFilter) Descriptor() ([]byte, []int) {
 	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *FunctionFilter) GetFilter() []string {
+func (x *FrameFilter) GetFilter() []string {
 	if x != nil {
 		return x.Filter
 	}
@@ -1238,8 +1238,8 @@ type Filters struct {
 	//
 	// Types that are assignable to Filter:
 	//
-	//	*Filters_BinaryFilter
-	//	*Filters_FunctionFilter
+	//	*Filters_StackFilter
+	//	*Filters_FrameFilter
 	Filter isFilters_Filter `protobuf_oneof:"filter"`
 }
 
@@ -1282,16 +1282,16 @@ func (m *Filters) GetFilter() isFilters_Filter {
 	return nil
 }
 
-func (x *Filters) GetBinaryFilter() *BinaryFilter {
-	if x, ok := x.GetFilter().(*Filters_BinaryFilter); ok {
-		return x.BinaryFilter
+func (x *Filters) GetStackFilter() *StackFilter {
+	if x, ok := x.GetFilter().(*Filters_StackFilter); ok {
+		return x.StackFilter
 	}
 	return nil
 }
 
-func (x *Filters) GetFunctionFilter() *FunctionFilter {
-	if x, ok := x.GetFilter().(*Filters_FunctionFilter); ok {
-		return x.FunctionFilter
+func (x *Filters) GetFrameFilter() *FrameFilter {
+	if x, ok := x.GetFilter().(*Filters_FrameFilter); ok {
+		return x.FrameFilter
 	}
 	return nil
 }
@@ -1300,19 +1300,19 @@ type isFilters_Filter interface {
 	isFilters_Filter()
 }
 
-type Filters_BinaryFilter struct {
-	// binary_filter is a filter for binary names
-	BinaryFilter *BinaryFilter `protobuf:"bytes,1,opt,name=binary_filter,json=binaryFilter,proto3,oneof"`
+type Filters_StackFilter struct {
+	// stack_filter is a filter for binary names
+	StackFilter *StackFilter `protobuf:"bytes,1,opt,name=stack_filter,json=stackFilter,proto3,oneof"`
 }
 
-type Filters_FunctionFilter struct {
-	// function_filter is a filter for function names
-	FunctionFilter *FunctionFilter `protobuf:"bytes,2,opt,name=function_filter,json=functionFilter,proto3,oneof"`
+type Filters_FrameFilter struct {
+	// frame_filter is a filter for function names
+	FrameFilter *FrameFilter `protobuf:"bytes,2,opt,name=frame_filter,json=frameFilter,proto3,oneof"`
 }
 
-func (*Filters_BinaryFilter) isFilters_Filter() {}
+func (*Filters_StackFilter) isFilters_Filter() {}
 
-func (*Filters_FunctionFilter) isFilters_Filter() {}
+func (*Filters_FrameFilter) isFilters_Filter() {}
 
 // RuntimeFilter configures which runtimes to filter frames out for.
 type RuntimeFilter struct {
@@ -3521,22 +3521,21 @@ var file_parca_query_v1alpha1_query_proto_rawDesc = []byte{
 	0x65, 0x5f, 0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x42, 0x11, 0x0a, 0x0f, 0x5f,
 	0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x5f, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x42, 0x14,
 	0x0a, 0x12, 0x5f, 0x69, 0x6e, 0x76, 0x65, 0x72, 0x74, 0x5f, 0x63, 0x61, 0x6c, 0x6c, 0x5f, 0x73,
-	0x74, 0x61, 0x63, 0x6b, 0x22, 0x26, 0x0a, 0x0c, 0x42, 0x69, 0x6e, 0x61, 0x72, 0x79, 0x46, 0x69,
-	0x6c, 0x74, 0x65, 0x72, 0x12, 0x16, 0x0a, 0x06, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x18, 0x01,
-	0x20, 0x03, 0x28, 0x09, 0x52, 0x06, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x22, 0x28, 0x0a, 0x0e,
-	0x46, 0x75, 0x6e, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x12, 0x16,
-	0x0a, 0x06, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x06,
-	0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x22, 0xaf, 0x01, 0x0a, 0x07, 0x46, 0x69, 0x6c, 0x74, 0x65,
-	0x72, 0x73, 0x12, 0x49, 0x0a, 0x0d, 0x62, 0x69, 0x6e, 0x61, 0x72, 0x79, 0x5f, 0x66, 0x69, 0x6c,
-	0x74, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x22, 0x2e, 0x70, 0x61, 0x72, 0x63,
-	0x61, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31,
-	0x2e, 0x42, 0x69, 0x6e, 0x61, 0x72, 0x79, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x48, 0x00, 0x52,
-	0x0c, 0x62, 0x69, 0x6e, 0x61, 0x72, 0x79, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x12, 0x4f, 0x0a,
-	0x0f, 0x66, 0x75, 0x6e, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x24, 0x2e, 0x70, 0x61, 0x72, 0x63, 0x61, 0x2e, 0x71,
-	0x75, 0x65, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x46, 0x75,
-	0x6e, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x48, 0x00, 0x52, 0x0e,
-	0x66, 0x75, 0x6e, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x42, 0x08,
+	0x74, 0x61, 0x63, 0x6b, 0x22, 0x25, 0x0a, 0x0b, 0x53, 0x74, 0x61, 0x63, 0x6b, 0x46, 0x69, 0x6c,
+	0x74, 0x65, 0x72, 0x12, 0x16, 0x0a, 0x06, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x18, 0x01, 0x20,
+	0x03, 0x28, 0x09, 0x52, 0x06, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x22, 0x25, 0x0a, 0x0b, 0x46,
+	0x72, 0x61, 0x6d, 0x65, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x12, 0x16, 0x0a, 0x06, 0x66, 0x69,
+	0x6c, 0x74, 0x65, 0x72, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x06, 0x66, 0x69, 0x6c, 0x74,
+	0x65, 0x72, 0x22, 0xa3, 0x01, 0x0a, 0x07, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x73, 0x12, 0x46,
+	0x0a, 0x0c, 0x73, 0x74, 0x61, 0x63, 0x6b, 0x5f, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70, 0x61, 0x72, 0x63, 0x61, 0x2e, 0x71, 0x75, 0x65,
+	0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x53, 0x74, 0x61, 0x63,
+	0x6b, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x48, 0x00, 0x52, 0x0b, 0x73, 0x74, 0x61, 0x63, 0x6b,
+	0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x12, 0x46, 0x0a, 0x0c, 0x66, 0x72, 0x61, 0x6d, 0x65, 0x5f,
+	0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70,
+	0x61, 0x72, 0x63, 0x61, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70,
+	0x68, 0x61, 0x31, 0x2e, 0x46, 0x72, 0x61, 0x6d, 0x65, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x48,
+	0x00, 0x52, 0x0b, 0x66, 0x72, 0x61, 0x6d, 0x65, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x42, 0x08,
 	0x0a, 0x06, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x22, 0x81, 0x01, 0x0a, 0x0d, 0x52, 0x75, 0x6e,
 	0x74, 0x69, 0x6d, 0x65, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x12, 0x1f, 0x0a, 0x0b, 0x73, 0x68,
 	0x6f, 0x77, 0x5f, 0x70, 0x79, 0x74, 0x68, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52,
@@ -3905,8 +3904,8 @@ var file_parca_query_v1alpha1_query_proto_goTypes = []interface{}{
 	(*DiffProfile)(nil),            // 12: parca.query.v1alpha1.DiffProfile
 	(*ProfileDiffSelection)(nil),   // 13: parca.query.v1alpha1.ProfileDiffSelection
 	(*QueryRequest)(nil),           // 14: parca.query.v1alpha1.QueryRequest
-	(*BinaryFilter)(nil),           // 15: parca.query.v1alpha1.BinaryFilter
-	(*FunctionFilter)(nil),         // 16: parca.query.v1alpha1.FunctionFilter
+	(*StackFilter)(nil),            // 15: parca.query.v1alpha1.StackFilter
+	(*FrameFilter)(nil),            // 16: parca.query.v1alpha1.FrameFilter
 	(*Filters)(nil),                // 17: parca.query.v1alpha1.Filters
 	(*RuntimeFilter)(nil),          // 18: parca.query.v1alpha1.RuntimeFilter
 	(*SourceReference)(nil),        // 19: parca.query.v1alpha1.SourceReference
@@ -3971,8 +3970,8 @@ var file_parca_query_v1alpha1_query_proto_depIdxs = []int32{
 	19, // 24: parca.query.v1alpha1.QueryRequest.source_reference:type_name -> parca.query.v1alpha1.SourceReference
 	18, // 25: parca.query.v1alpha1.QueryRequest.runtime_filter:type_name -> parca.query.v1alpha1.RuntimeFilter
 	17, // 26: parca.query.v1alpha1.QueryRequest.filters:type_name -> parca.query.v1alpha1.Filters
-	15, // 27: parca.query.v1alpha1.Filters.binary_filter:type_name -> parca.query.v1alpha1.BinaryFilter
-	16, // 28: parca.query.v1alpha1.Filters.function_filter:type_name -> parca.query.v1alpha1.FunctionFilter
+	15, // 27: parca.query.v1alpha1.Filters.stack_filter:type_name -> parca.query.v1alpha1.StackFilter
+	16, // 28: parca.query.v1alpha1.Filters.frame_filter:type_name -> parca.query.v1alpha1.FrameFilter
 	22, // 29: parca.query.v1alpha1.Top.list:type_name -> parca.query.v1alpha1.TopNode
 	23, // 30: parca.query.v1alpha1.TopNode.meta:type_name -> parca.query.v1alpha1.TopNodeMeta
 	48, // 31: parca.query.v1alpha1.TopNodeMeta.location:type_name -> parca.metastore.v1alpha1.Location
@@ -4182,7 +4181,7 @@ func file_parca_query_v1alpha1_query_proto_init() {
 			}
 		}
 		file_parca_query_v1alpha1_query_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BinaryFilter); i {
+			switch v := v.(*StackFilter); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4194,7 +4193,7 @@ func file_parca_query_v1alpha1_query_proto_init() {
 			}
 		}
 		file_parca_query_v1alpha1_query_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*FunctionFilter); i {
+			switch v := v.(*FrameFilter); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4552,8 +4551,8 @@ func file_parca_query_v1alpha1_query_proto_init() {
 		(*QueryRequest_Single)(nil),
 	}
 	file_parca_query_v1alpha1_query_proto_msgTypes[14].OneofWrappers = []interface{}{
-		(*Filters_BinaryFilter)(nil),
-		(*Filters_FunctionFilter)(nil),
+		(*Filters_StackFilter)(nil),
+		(*Filters_FrameFilter)(nil),
 	}
 	file_parca_query_v1alpha1_query_proto_msgTypes[31].OneofWrappers = []interface{}{
 		(*QueryResponse_Flamegraph)(nil),

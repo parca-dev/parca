@@ -391,7 +391,7 @@
             "type": "boolean"
           },
           {
-            "name": "filters.binaryFilter.filter",
+            "name": "filters.stackFilter.filter",
             "description": "filter is the list of binary names to filter by",
             "in": "query",
             "required": false,
@@ -402,7 +402,7 @@
             "collectionFormat": "multi"
           },
           {
-            "name": "filters.functionFilter.filter",
+            "name": "filters.frameFilter.filter",
             "description": "filter is the list of function names to filter by",
             "in": "query",
             "required": false,
@@ -953,19 +953,6 @@
         }
       }
     },
-    "v1alpha1BinaryFilter": {
-      "type": "object",
-      "properties": {
-        "filter": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "title": "filter is the list of binary names to filter by"
-        }
-      },
-      "title": "BinaryFilter is a filter for a single or multiple binary names"
-    },
     "v1alpha1Callgraph": {
       "type": "object",
       "properties": {
@@ -1083,13 +1070,13 @@
     "v1alpha1Filters": {
       "type": "object",
       "properties": {
-        "binaryFilter": {
-          "$ref": "#/definitions/v1alpha1BinaryFilter",
-          "title": "binary_filter is a filter for binary names"
+        "stackFilter": {
+          "$ref": "#/definitions/v1alpha1StackFilter",
+          "title": "stack_filter is a filter for binary names"
         },
-        "functionFilter": {
-          "$ref": "#/definitions/v1alpha1FunctionFilter",
-          "title": "function_filter is a filter for function names"
+        "frameFilter": {
+          "$ref": "#/definitions/v1alpha1FrameFilter",
+          "title": "frame_filter is a filter for function names"
         }
       },
       "title": "Filters is a set of filters to apply to the query request"
@@ -1268,7 +1255,7 @@
       },
       "title": "FlamegraphRootNode is a root node of a flame graph"
     },
-    "v1alpha1FunctionFilter": {
+    "v1alpha1FrameFilter": {
       "type": "object",
       "properties": {
         "filter": {
@@ -1279,7 +1266,7 @@
           "title": "filter is the list of function names to filter by"
         }
       },
-      "title": "FunctionFilter is a filter for a single or multiple functions"
+      "title": "FrameFilter is a filter for a single or multiple functions"
     },
     "v1alpha1GroupBy": {
       "type": "object",
@@ -1561,6 +1548,19 @@
         }
       },
       "description": "SourceReference contains a reference to source code."
+    },
+    "v1alpha1StackFilter": {
+      "type": "object",
+      "properties": {
+        "filter": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "filter is the list of binary names to filter by"
+        }
+      },
+      "title": "StackFilter is a filter for a single or multiple binary names"
     },
     "v1alpha1TableArrow": {
       "type": "object",

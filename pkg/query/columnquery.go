@@ -278,7 +278,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		p.Samples,
 		req.GetFilterQuery(),
 		req.GetRuntimeFilter(),
-		req.GetBinaryFilter(),
+		req.GetFilters().GetFrameFilter().GetFilter(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("filtering profile: %w", err)
@@ -304,7 +304,7 @@ func FilterProfileData(
 	records []arrow.Record,
 	filterQuery string,
 	runtimeFilter *pb.RuntimeFilter,
-	binaryToFilterBy string,
+	frameFilter []string,
 ) ([]arrow.Record, int64, error) {
 	_, span := tracer.Start(ctx, "filterByFunction")
 	defer span.End()
@@ -348,7 +348,7 @@ func FilterProfileData(
 			filterQueryBytes,
 			binariesToExclude,
 			interpretedOnly,
-			binaryToFilterBy,
+			frameFilter,
 		)
 		if err != nil {
 			return nil, 0, fmt.Errorf("filter record: %w", err)
@@ -372,7 +372,7 @@ func filterRecord(
 	filterQueryBytes []byte,
 	binariesToExclude [][]byte,
 	showInterpretedOnly bool,
-	binaryToFilterBy string,
+	frameFilter []string,
 ) ([]arrow.Record, int64, int64, error) {
 	r := profile.NewRecordReader(rec)
 
@@ -445,9 +445,20 @@ func filterRecord(
 					bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
 					continue
 				}
-				if binaryToFilterBy != "" && !bytes.Contains(mappingFile, []byte(binaryToFilterBy)) {
-					bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
-					continue
+
+				// Check if any of the values from the `frameFilter` are in the mappingFile and keep them, if not clear the bit.
+				if len(frameFilter) > 0 {
+					keepLocation := false
+					for _, filter := range frameFilter {
+						if bytes.Contains(mappingFile, []byte(filter)) {
+							keepLocation = true
+							break
+						}
+					}
+
+					if !keepLocation {
+						bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
+					}
 				}
 			}
 		}
