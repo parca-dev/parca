@@ -299,7 +299,7 @@
           },
           {
             "name": "reportType",
-            "description": "report_type is the type of report to return\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified\n - REPORT_TYPE_SOURCE: REPORT_TYPE_SOURCE contains source code annotated with profiling information\n - REPORT_TYPE_TABLE_ARROW: REPORT_TYPE_TABLE_ARROW unspecified",
+            "description": "report_type is the type of report to return\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified\n - REPORT_TYPE_SOURCE: REPORT_TYPE_SOURCE contains source code annotated with profiling information\n - REPORT_TYPE_TABLE_ARROW: REPORT_TYPE_TABLE_ARROW unspecified\n - REPORT_TYPE_PROFILE_METADATA: REPORT_TYPE_PROFILE_METADATA contains metadata about the profile i.e. binaries, labels",
             "in": "query",
             "required": false,
             "type": "string",
@@ -311,7 +311,8 @@
               "REPORT_TYPE_FLAMEGRAPH_TABLE",
               "REPORT_TYPE_FLAMEGRAPH_ARROW",
               "REPORT_TYPE_SOURCE",
-              "REPORT_TYPE_TABLE_ARROW"
+              "REPORT_TYPE_TABLE_ARROW",
+              "REPORT_TYPE_PROFILE_METADATA"
             ],
             "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED"
           },
@@ -601,10 +602,11 @@
         "REPORT_TYPE_FLAMEGRAPH_TABLE",
         "REPORT_TYPE_FLAMEGRAPH_ARROW",
         "REPORT_TYPE_SOURCE",
-        "REPORT_TYPE_TABLE_ARROW"
+        "REPORT_TYPE_TABLE_ARROW",
+        "REPORT_TYPE_PROFILE_METADATA"
       ],
       "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
-      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified\n - REPORT_TYPE_SOURCE: REPORT_TYPE_SOURCE contains source code annotated with profiling information\n - REPORT_TYPE_TABLE_ARROW: REPORT_TYPE_TABLE_ARROW unspecified",
+      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified\n - REPORT_TYPE_SOURCE: REPORT_TYPE_SOURCE contains source code annotated with profiling information\n - REPORT_TYPE_TABLE_ARROW: REPORT_TYPE_TABLE_ARROW unspecified\n - REPORT_TYPE_PROFILE_METADATA: REPORT_TYPE_PROFILE_METADATA contains metadata about the profile i.e. binaries, labels",
       "title": "ReportType is the type of report to return"
     },
     "metastorev1alpha1Function": {
@@ -864,6 +866,10 @@
         "tableArrow": {
           "$ref": "#/definitions/v1alpha1TableArrow",
           "title": "table_arrow is a table encoded as a arrow record"
+        },
+        "profileMetadata": {
+          "$ref": "#/definitions/v1alpha1ProfileMetadata",
+          "title": "profile_metadata contains metadata about the profile i.e. binaries, labels"
         },
         "total": {
           "type": "string",
@@ -1414,6 +1420,26 @@
       "default": "MODE_SINGLE_UNSPECIFIED",
       "description": "- MODE_SINGLE_UNSPECIFIED: MODE_SINGLE_UNSPECIFIED default unspecified\n - MODE_MERGE: MODE_MERGE merge profile",
       "title": "Mode specifies the type of diff"
+    },
+    "v1alpha1ProfileMetadata": {
+      "type": "object",
+      "properties": {
+        "mappingFiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "mapping_files is the list of binaries in the profile"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "labels is the list of labels in the profile"
+        }
+      },
+      "title": "ProfileMetadata contains metadata about the profile i.e. binaries, labels"
     },
     "v1alpha1ProfileType": {
       "type": "object",

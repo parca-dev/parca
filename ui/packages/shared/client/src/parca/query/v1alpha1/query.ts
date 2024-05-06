@@ -480,7 +480,13 @@ export enum QueryRequest_ReportType {
      *
      * @generated from protobuf enum value: REPORT_TYPE_TABLE_ARROW = 7;
      */
-    TABLE_ARROW = 7
+    TABLE_ARROW = 7,
+    /**
+     * REPORT_TYPE_PROFILE_METADATA contains metadata about the profile i.e. binaries, labels
+     *
+     * @generated from protobuf enum value: REPORT_TYPE_PROFILE_METADATA = 8;
+     */
+    PROFILE_METADATA = 8
 }
 /**
  * StackFilter is a filter for a single or multiple binary names
@@ -1114,6 +1120,14 @@ export interface QueryResponse {
          */
         tableArrow: TableArrow;
     } | {
+        oneofKind: "profileMetadata";
+        /**
+         * profile_metadata contains metadata about the profile i.e. binaries, labels
+         *
+         * @generated from protobuf field: parca.query.v1alpha1.ProfileMetadata profile_metadata = 14;
+         */
+        profileMetadata: ProfileMetadata;
+    } | {
         oneofKind: undefined;
     };
     /**
@@ -1324,6 +1338,25 @@ export interface TableArrow {
      * @generated from protobuf field: string unit = 2;
      */
     unit: string;
+}
+/**
+ * ProfileMetadata contains metadata about the profile i.e. binaries, labels
+ *
+ * @generated from protobuf message parca.query.v1alpha1.ProfileMetadata
+ */
+export interface ProfileMetadata {
+    /**
+     * mapping_files is the list of binaries in the profile
+     *
+     * @generated from protobuf field: repeated string mapping_files = 1;
+     */
+    mappingFiles: string[];
+    /**
+     * labels is the list of labels in the profile
+     *
+     * @generated from protobuf field: repeated string labels = 2;
+     */
+    labels: string[];
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class ProfileTypesRequest$Type extends MessageType<ProfileTypesRequest> {
@@ -3409,6 +3442,7 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
             { no: 11, name: "flamegraph_arrow", kind: "message", oneof: "report", T: () => FlamegraphArrow },
             { no: 12, name: "source", kind: "message", oneof: "report", T: () => Source },
             { no: 13, name: "table_arrow", kind: "message", oneof: "report", T: () => TableArrow },
+            { no: 14, name: "profile_metadata", kind: "message", oneof: "report", T: () => ProfileMetadata },
             { no: 9, name: "total", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ },
             { no: 10, name: "filtered", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ }
         ]);
@@ -3469,6 +3503,12 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
                         tableArrow: TableArrow.internalBinaryRead(reader, reader.uint32(), options, (message.report as any).tableArrow)
                     };
                     break;
+                case /* parca.query.v1alpha1.ProfileMetadata profile_metadata */ 14:
+                    message.report = {
+                        oneofKind: "profileMetadata",
+                        profileMetadata: ProfileMetadata.internalBinaryRead(reader, reader.uint32(), options, (message.report as any).profileMetadata)
+                    };
+                    break;
                 case /* int64 total */ 9:
                     message.total = reader.int64().toBigInt();
                     break;
@@ -3508,6 +3548,9 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
         /* parca.query.v1alpha1.TableArrow table_arrow = 13; */
         if (message.report.oneofKind === "tableArrow")
             TableArrow.internalBinaryWrite(message.report.tableArrow, writer.tag(13, WireType.LengthDelimited).fork(), options).join();
+        /* parca.query.v1alpha1.ProfileMetadata profile_metadata = 14; */
+        if (message.report.oneofKind === "profileMetadata")
+            ProfileMetadata.internalBinaryWrite(message.report.profileMetadata, writer.tag(14, WireType.LengthDelimited).fork(), options).join();
         /* int64 total = 9; */
         if (message.total !== 0n)
             writer.tag(9, WireType.Varint).int64(message.total);
@@ -4060,6 +4103,61 @@ class TableArrow$Type extends MessageType<TableArrow> {
  * @generated MessageType for protobuf message parca.query.v1alpha1.TableArrow
  */
 export const TableArrow = new TableArrow$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ProfileMetadata$Type extends MessageType<ProfileMetadata> {
+    constructor() {
+        super("parca.query.v1alpha1.ProfileMetadata", [
+            { no: 1, name: "mapping_files", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "labels", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ProfileMetadata>): ProfileMetadata {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.mappingFiles = [];
+        message.labels = [];
+        if (value !== undefined)
+            reflectionMergePartial<ProfileMetadata>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ProfileMetadata): ProfileMetadata {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated string mapping_files */ 1:
+                    message.mappingFiles.push(reader.string());
+                    break;
+                case /* repeated string labels */ 2:
+                    message.labels.push(reader.string());
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ProfileMetadata, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated string mapping_files = 1; */
+        for (let i = 0; i < message.mappingFiles.length; i++)
+            writer.tag(1, WireType.LengthDelimited).string(message.mappingFiles[i]);
+        /* repeated string labels = 2; */
+        for (let i = 0; i < message.labels.length; i++)
+            writer.tag(2, WireType.LengthDelimited).string(message.labels[i]);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.query.v1alpha1.ProfileMetadata
+ */
+export const ProfileMetadata = new ProfileMetadata$Type();
 /**
  * @generated ServiceType for protobuf service parca.query.v1alpha1.QueryService
  */

@@ -238,6 +238,9 @@ message QueryRequest {
 
     // REPORT_TYPE_TABLE_ARROW unspecified
     REPORT_TYPE_TABLE_ARROW = 7;
+
+    // REPORT_TYPE_PROFILE_METADATA contains metadata about the profile i.e. binaries, labels
+    REPORT_TYPE_PROFILE_METADATA = 8;
   }
 
   // report_type is the type of report to return
@@ -555,6 +558,9 @@ message QueryResponse {
 
     // table_arrow is a table encoded as a arrow record
     TableArrow table_arrow = 13;
+
+    // profile_metadata contains metadata about the profile i.e. binaries, labels
+    ProfileMetadata profile_metadata = 14;
   }
 
   // total is the total number of samples shown in the report.
@@ -655,4 +661,13 @@ message TableArrow {
 
   // unit is the unit represented by the flame graph
   string unit = 2;
+}
+
+// ProfileMetadata contains metadata about the profile i.e. binaries, labels
+message ProfileMetadata {
+  // mapping_files is the list of binaries in the profile
+  repeated string mapping_files = 1;
+
+  // labels is the list of labels in the profile
+  repeated string labels = 2;
 }
