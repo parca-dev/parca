@@ -81,7 +81,7 @@ jobs:
 
       - name: Install packages with pnpm
         working-directory: ui
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Build Packages
         working-directory: ui
