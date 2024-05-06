@@ -11,6 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// This is needed to fix a type error referencing immer. See https://github.com/reduxjs/redux-toolkit/issues/1806#issuecomment-1709901225
+import 'immer';
+
 import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
 
 import {

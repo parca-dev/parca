@@ -2,14 +2,14 @@
 FROM docker.io/node:16.20.2-alpine@sha256:a1f9d027912b58a7c75be7716c97cfbc6d3099f3a97ed84aa490be9dee20e787
 WORKDIR /app
 
-COPY package.json yarn.lock ./
+COPY package.json pnpm-lock.yaml ./
 # hadolint ignore=DL3060
-RUN yarn install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 COPY . .
 # hadolint ignore=DL3060
-RUN yarn workspace @parca/web install
+RUN pnpm --filter @parca/web install
 
 EXPOSE 3000
 
-CMD ["yarn", "workspace", "@parca/web", "dev"]
+CMD ["pnpm", "--filter", "@parca/web", "dev"]

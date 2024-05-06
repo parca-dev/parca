@@ -1056,7 +1056,17 @@ func (m *QueryRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= size
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x5a
+		dAtA[i] = 0x62
+	}
+	if m.InvertCallStack != nil {
+		i--
+		if *m.InvertCallStack {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x58
 	}
 	if m.RuntimeFilter != nil {
 		size, err := m.RuntimeFilter.MarshalToSizedBufferVT(dAtA[:i])
@@ -3361,6 +3371,9 @@ func (m *QueryRequest) SizeVT() (n int) {
 	if m.RuntimeFilter != nil {
 		l = m.RuntimeFilter.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.InvertCallStack != nil {
+		n += 2
 	}
 	if m.Filters != nil {
 		l = m.Filters.SizeVT()
@@ -6072,6 +6085,27 @@ func (m *QueryRequest) UnmarshalVT(dAtA []byte) error {
 			}
 			iNdEx = postIndex
 		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field InvertCallStack", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.InvertCallStack = &b
+		case 12:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Filters", wireType)
 			}

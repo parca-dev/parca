@@ -42,7 +42,9 @@ clean:
 	rm -rf data
 	rm -rf tmp
 	rm -rf bin
-	rm -rf ui/packages/app/web/build
+	mv ui/packages/app/web/build/keep.go /tmp/keep.go
+	rm -rf ui/packages/app/web/build/*
+	mv /tmp/keep.go ui/packages/app/web/build/keep.go
 	find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +
 	find . -name 'dist' -type d -prune -exec rm -rf '{}' +
 
@@ -104,15 +106,15 @@ go/test-clean:
 UI_FILES ?= $(shell find ./ui -name "*" -not -path "./ui/lib/node_modules/*" -not -path "./ui/node_modules/*" -not -path "./ui/packages/app/template/node_modules/*" -not -path "./ui/packages/app/web/node_modules/*" -not -path "./ui/packages/app/web/build/*")
 .PHONY: ui/build
 ui/build: $(UI_FILES)
-	cd ui && yarn install --frozen-lockfile --prefer-offline && yarn build
+	cd ui && pnpm install --frozen-lockfile --prefer-offline && pnpm run build
 
 .PHONY: ui/test
 ui/test:
-	cd ui && yarn test
+	cd ui && pnpm run test
 
 .PHONY: ui/lint
 ui/lint:
-	cd ui && yarn run lint
+	cd ui && pnpm run lint
 
 .PHONY: proto/all
 proto/all: proto/vendor proto/format proto/lint proto/generate

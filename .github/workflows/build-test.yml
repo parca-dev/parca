@@ -22,6 +22,8 @@ env:
   QEMU_VERSION: 7.0.0-7
   # renovate: datasource=docker depName=docker.io/buildpack-deps versioning=ubuntu
   BUILDPACK_DEPS_VERSION: '22.04'
+  # renovate: datasource=npm depName=pnpm versioning=npm
+  PNPM_VERSION: '9.0.6'
 
 jobs:
   build-and-test-multi-arch:
@@ -52,7 +54,7 @@ jobs:
           ]
         skip_after_successful_duplicate: false
 
-    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       if: ${{ steps.skip-check.outputs.should_skip != 'true' }}
 
     - name: Set up Go
@@ -61,13 +63,17 @@ jobs:
       with:
         go-version-file: .go-version
 
+    - uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
+      with:
+        version: ${{ env.PNPM_VERSION }}
+
     - name: Set up Node.js
       if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}
       uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v3.8.2
       with:
         node-version-file: .node-version
-        cache: 'yarn'
-        cache-dependency-path: ui/yarn.lock
+        cache: 'pnpm'
+        cache-dependency-path: ui/pnpm-lock.yaml
 
     - name: Build
       if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}

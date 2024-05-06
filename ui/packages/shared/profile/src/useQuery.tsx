@@ -36,6 +36,7 @@ interface UseQueryOptions {
   showRuntimePython?: boolean;
   showInterpretedOnly?: boolean;
   binaryFilter?: string;
+  invertCallStack?: boolean;
 }
 
 export const useQuery = (
@@ -60,6 +61,7 @@ export const useQuery = (
       options?.showRuntimePython ?? false,
       options?.showInterpretedOnly ?? false,
       options?.binaryFilter ?? '',
+      options?.invertCallStack ?? false,
     ],
     queryFn: async () => {
       const req = profileSource.QueryRequest();
@@ -81,6 +83,7 @@ export const useQuery = (
         showInterpretedOnly: options?.showInterpretedOnly ?? false,
       };
       req.binaryFilter = options?.binaryFilter ?? '';
+      req.invertCallStack = options?.invertCallStack ?? false;
 
       try {
         const {response} = await client.query(req, {meta: metadata});

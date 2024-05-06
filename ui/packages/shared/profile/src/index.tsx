@@ -11,8 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import type {Props as CallgraphProps} from '@parca/profile/src/Callgraph';
-
+import type {Props as CallgraphProps} from './Callgraph';
 import ProfileExplorer from './ProfileExplorer';
 import ProfileTypeSelector from './ProfileTypeSelector';
 

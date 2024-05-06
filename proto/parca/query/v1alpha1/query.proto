@@ -258,8 +258,11 @@ message QueryRequest {
   // which runtime frames to filter out, often interpreter frames like python or ruby are not super useful by default
   optional RuntimeFilter runtime_filter = 10;
 
+  // invert_call_stack inverts the call stacks in the flamegraph
+  optional bool invert_call_stack = 11;
+
   // a varying set of filters to apply to the query request
-  Filters filters = 11;
+  Filters filters = 12;
 }
 
 // BinaryFilter is a filter for a single or multiple binary names

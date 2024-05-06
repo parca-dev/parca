@@ -19,7 +19,7 @@
 /pkg/symbolizer    @parca-dev/agent-maintainers
 
 package.json
-yarn.lock
+pnpm-lock.yaml
 /go.mod
 /go.sum
 Dockerfile*

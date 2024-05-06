@@ -384,6 +384,13 @@
             "type": "boolean"
           },
           {
+            "name": "invertCallStack",
+            "description": "invert_call_stack inverts the call stacks in the flamegraph",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
             "name": "filters.binaryFilter.filter",
             "description": "filter is the list of binary names to filter by",
             "in": "query",
@@ -814,6 +821,10 @@
         "runtimeFilter": {
           "$ref": "#/definitions/v1alpha1RuntimeFilter",
           "title": "which runtime frames to filter out, often interpreter frames like python or ruby are not super useful by default"
+        },
+        "invertCallStack": {
+          "type": "boolean",
+          "title": "invert_call_stack inverts the call stacks in the flamegraph"
         },
         "filters": {
           "$ref": "#/definitions/v1alpha1Filters",

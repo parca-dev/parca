@@ -1,19 +1,25 @@
 {
   "name": "@parca/hooks",
-  "version": "0.0.48",
+  "version": "0.0.50",
   "description": "A library containing React hooks used in the Parca UI",
   "main": "dist/index.js",
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
-    "prepublish": "yarn build",
+    "prepublish": "pnpm run build",
     "build": "tsc",
     "build-swc": "swc ./src -d dist --copy-files",
     "watch": "tsc-watch"
   },
   "dependencies": {
-    "@parca/client": "^0.16.107",
-    "@parca/store": "^0.16.137",
-    "@rehooks/local-storage": "^2.4.4"
+    "@parca/client": "^0.16.109",
+    "@parca/store": "^0.16.139",
+    "@parca/utilities": "^0.0.67",
+    "@rehooks/local-storage": "^2.4.4",
+    "@types/lodash": "^4.17.0",
+    "lodash": "^4.17.21",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "tsc-watch": "6.2.0"
   },
   "keywords": [],
   "author": "",

@@ -1,18 +1,19 @@
 {
   "name": "@parca/client",
-  "version": "0.16.107",
+  "version": "0.16.109",
   "description": "Parca API Client",
   "main": "dist/index.js",
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
-    "prepublish": "yarn build",
+    "prepublish": "pnpm run build",
     "build": "tsc",
     "build-swc": "swc ./src -d dist --copy-files",
     "watch": "tsc-watch"
   },
   "dependencies": {
     "@protobuf-ts/runtime": "^2.5.0",
-    "@protobuf-ts/runtime-rpc": "^2.5.0"
+    "@protobuf-ts/runtime-rpc": "^2.5.0",
+    "tsc-watch": "6.2.0"
   },
   "devDependencies": {
     "globby": "13.2.2"
