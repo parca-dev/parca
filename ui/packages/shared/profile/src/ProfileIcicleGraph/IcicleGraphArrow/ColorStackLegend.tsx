@@ -79,7 +79,8 @@ const ColorStackLegend = ({
       )}
       {stackColorArray.map(([feature, color]) => {
         const filteringAllowed = feature !== EVERYTHING_ELSE;
-        const isHighlighted = currentSearchString.includes(feature);
+        const isHighlighted =
+          currentSearchString !== undefined ? currentSearchString.includes(feature) : false;
         return (
           <div
             key={feature}

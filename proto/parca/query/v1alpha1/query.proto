@@ -666,8 +666,8 @@ message TableArrow {
 // ProfileMetadata contains metadata about the profile i.e. binaries, labels
 message ProfileMetadata {
   // mapping_files is the list of binaries in the profile
-  repeated string mapping_files = 1;
+  bytes mapping_files = 1;
 
   // labels is the list of labels in the profile
-  repeated string labels = 2;
+  bytes labels = 2;
 }

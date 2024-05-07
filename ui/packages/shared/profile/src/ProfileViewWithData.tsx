@@ -82,6 +82,26 @@ export const ProfileViewWithData = ({
     frameFilter: frameFilterStr as string[],
   });
 
+  const {
+    isLoading: profilemetalLoading,
+    response: profilemetadataResponse,
+    error: profilemetadaError,
+  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.PROFILE_METADATA, {
+    skip: !dashboardItems.includes('icicle'),
+    nodeTrimThreshold,
+    groupBy: groupByParam,
+    showRuntimeRuby,
+    showRuntimePython,
+    showInterpretedOnly,
+    invertCallStack,
+    frameFilter: frameFilterStr as string[],
+  });
+
+  console.log('🚀 ~ profilemetadaError:', profilemetadaError);
+  console.log('🚀 ~ profilemetadataResponse:', profilemetadataResponse);
+  console.log('🚀 ~ profilemetadataResponse:', flamegraphResponse);
+  console.log('🚀 ~ profilemetalLoading:', profilemetalLoading);
+
   const {perf} = useParcaContext();
 
   const {

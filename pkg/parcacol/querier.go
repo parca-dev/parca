@@ -1434,3 +1434,87 @@ func (q *Querier) selectMerge(
 func isSamplesCount(st profile.ValueType) bool {
 	return st.Type == "samples" && st.Unit == "count"
 }
+
+// query for all the mapping files for a profile query
+// need to do distinct queries on the locations column
+// to do that we first get all unique locations, and then decode the location just until the binary name.
+func (q *Querier) MappingFiles(
+	ctx context.Context,
+	query string, startTime, endTime time.Time,
+) ([]arrow.Record, error) {
+	ctx, span := q.tracer.Start(ctx, "Querier/MappingFiles")
+	defer span.End()
+
+	queryParts, selectorExprs, err := QueryToFilterExprs(query)
+	if err != nil {
+		return nil, err
+	}
+
+	start := timestamp.FromTime(startTime)
+	end := timestamp.FromTime(endTime)
+	filterExpr := logicalplan.And(
+		append(
+			selectorExprs,
+			logicalplan.Col(profile.ColumnTimestamp).GtEq(logicalplan.Literal(start)),
+			logicalplan.Col(profile.ColumnTimestamp).LtEq(logicalplan.Literal(end)),
+		)...,
+	)
+
+	totalSum := logicalplan.Sum(logicalplan.Col(profile.ColumnValue))
+	durationSum := logicalplan.Sum(logicalplan.Col(profile.ColumnDuration))
+
+	aggrCols := []logicalplan.Expr{
+		logicalplan.Col(profile.ColumnStacktrace),
+	}
+
+	var valueCol logicalplan.Expr = logicalplan.Col(profile.ColumnValue)
+	if isSamplesCount(queryParts.Meta.SampleType) {
+		valueCol = logicalplan.Mul(
+			logicalplan.Col(profile.ColumnValue),
+			logicalplan.Col(profile.ColumnPeriod),
+		).Alias(profile.ColumnValue)
+	}
+
+	firstProject := append(aggrCols, valueCol)
+	finalProject := append(aggrCols, totalSum)
+	aggrFunctions := []*logicalplan.AggregationFunction{
+		totalSum,
+	}
+
+	if queryParts.Delta {
+		// Only for cpu and nanoseconds do we first project the ColumnDuration.
+		// We then use the aggregation function to sum(duration) for each stacktraces.
+		// The final project then takes the sum(value) / sum(duration) to get to the per second value.
+		firstProject = append(firstProject,
+			logicalplan.Col(profile.ColumnDuration),
+		)
+		finalProject = append(finalProject,
+			logicalplan.Div(
+				logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
+				logicalplan.Convert(durationSum, arrow.PrimitiveTypes.Float64),
+			).Alias(ValuePerSecond),
+		)
+		aggrFunctions = append(aggrFunctions, durationSum)
+	}
+
+	records := []arrow.Record{}
+	err = q.engine.ScanTable(q.tableName).
+		Filter(filterExpr).
+		Project(firstProject...).
+		Aggregate(
+			aggrFunctions,
+			aggrCols,
+		).
+		Project(finalProject...).
+		Distinct(logicalplan.Col(profile.ColumnName)).
+		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
+			r.Retain()
+			records = append(records, r)
+			return nil
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	return records, nil
+}

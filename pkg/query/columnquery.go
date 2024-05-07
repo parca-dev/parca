@@ -48,6 +48,7 @@ type Querier interface {
 	ProfileTypes(ctx context.Context) ([]*pb.ProfileType, error)
 	QuerySingle(ctx context.Context, query string, time time.Time, invertCallStacks bool) (profile.Profile, error)
 	QueryMerge(ctx context.Context, query string, start, end time.Time, aggregateByLabels, invertCallStacks bool) (profile.Profile, error)
+	MappingFiles(ctx context.Context, query string, start, end time.Time) ([]arrow.Record, error)
 }
 
 var (
@@ -271,6 +272,24 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		}
 	}()
 
+	if req.GetReportType() == pb.QueryRequest_REPORT_TYPE_PROFILE_METADATA {
+		mappingFiles, err := q.GetMappingFiles(ctx, req.GetMerge())
+		if err != nil {
+			return nil, fmt.Errorf("getting mapping files: %w", err)
+		}
+
+		fmt.Println("mappingFiles", mappingFiles)
+		labels := []byte{}
+		return &pb.QueryResponse{
+			Total:    0,
+			Filtered: 0,
+			Report:   &pb.QueryResponse_ProfileMetadata{ProfileMetadata: &pb.ProfileMetadata{
+				MappingFiles: mappingFiles,
+				Labels:       labels,
+			}},
+		}, nil
+	}
+
 	p.Samples, filtered, err = FilterProfileData(
 		ctx,
 		q.tracer,
@@ -489,7 +508,7 @@ func (q *ColumnQueryAPI) renderReport(
 	source string,
 	isDiff bool,
 ) (*pb.QueryResponse, error) {
-	return RenderReport(
+	return q.RenderReport(
 		ctx,
 		q.tracer,
 		p,
@@ -506,7 +525,7 @@ func (q *ColumnQueryAPI) renderReport(
 	)
 }
 
-func RenderReport(
+func (q *ColumnQueryAPI) RenderReport(
 	ctx context.Context,
 	tracer trace.Tracer,
 	p profile.Profile,
@@ -923,4 +942,33 @@ func sliceRecord(r arrow.Record, indices []int64) []arrow.Record {
 
 	slices = append(slices, r.NewSlice(cur.Start, cur.End))
 	return slices
+}
+
+func (q *ColumnQueryAPI) GetMappingFiles(
+	ctx context.Context,
+	m *pb.MergeProfile,
+) ([]byte, error) {
+	p, err := q.querier.MappingFiles(
+		ctx,
+		m.Query,
+		m.Start.AsTime(),
+		m.End.AsTime(),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("p", p)
+
+	// convert the arrow records to a byte slice
+	buf := new(bytes.Buffer)
+	for _, r := range p {
+		for i := int64(0); i < r.NumRows(); i++ {
+			mappingFile := r.Column(0).(*array.Binary).Value(int(i))
+			buf.Write(mappingFile)
+			buf.WriteByte(0)
+		}
+	}
+	return buf.Bytes(), nil
 }

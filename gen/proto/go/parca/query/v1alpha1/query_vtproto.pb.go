@@ -3135,22 +3135,18 @@ func (m *ProfileMetadata) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if len(m.Labels) > 0 {
-		for iNdEx := len(m.Labels) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Labels[iNdEx])
-			copy(dAtA[i:], m.Labels[iNdEx])
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Labels[iNdEx])))
-			i--
-			dAtA[i] = 0x12
-		}
+		i -= len(m.Labels)
+		copy(dAtA[i:], m.Labels)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Labels)))
+		i--
+		dAtA[i] = 0x12
 	}
 	if len(m.MappingFiles) > 0 {
-		for iNdEx := len(m.MappingFiles) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.MappingFiles[iNdEx])
-			copy(dAtA[i:], m.MappingFiles[iNdEx])
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.MappingFiles[iNdEx])))
-			i--
-			dAtA[i] = 0xa
-		}
+		i -= len(m.MappingFiles)
+		copy(dAtA[i:], m.MappingFiles)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.MappingFiles)))
+		i--
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -4289,17 +4285,13 @@ func (m *ProfileMetadata) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	if len(m.MappingFiles) > 0 {
-		for _, s := range m.MappingFiles {
-			l = len(s)
-			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-		}
+	l = len(m.MappingFiles)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if len(m.Labels) > 0 {
-		for _, s := range m.Labels {
-			l = len(s)
-			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-		}
+	l = len(m.Labels)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -10868,7 +10860,7 @@ func (m *ProfileMetadata) UnmarshalVT(dAtA []byte) error {
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field MappingFiles", wireType)
 			}
-			var stringLen uint64
+			var byteLen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -10878,29 +10870,31 @@ func (m *ProfileMetadata) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				byteLen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if byteLen < 0 {
 				return protohelpers.ErrInvalidLength
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + byteLen
 			if postIndex < 0 {
 				return protohelpers.ErrInvalidLength
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.MappingFiles = append(m.MappingFiles, string(dAtA[iNdEx:postIndex]))
+			m.MappingFiles = append(m.MappingFiles[:0], dAtA[iNdEx:postIndex]...)
+			if m.MappingFiles == nil {
+				m.MappingFiles = []byte{}
+			}
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Labels", wireType)
 			}
-			var stringLen uint64
+			var byteLen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -10910,23 +10904,25 @@ func (m *ProfileMetadata) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				byteLen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if byteLen < 0 {
 				return protohelpers.ErrInvalidLength
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + byteLen
 			if postIndex < 0 {
 				return protohelpers.ErrInvalidLength
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Labels = append(m.Labels, string(dAtA[iNdEx:postIndex]))
+			m.Labels = append(m.Labels[:0], dAtA[iNdEx:postIndex]...)
+			if m.Labels == nil {
+				m.Labels = []byte{}
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
