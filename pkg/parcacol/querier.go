@@ -412,17 +412,35 @@ func (q *Querier) queryRangeDelta(
 		)
 	}
 
-	perSecondExpr := logicalplan.Div(
-		logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
-		logicalplan.Convert(
-			logicalplan.If(
-				logicalplan.IsNull(timestampUnique),
-				logicalplan.Literal(step.Nanoseconds()),
-				durationMin,
+	var perSecondExpr logicalplan.Expr
+	if isNanoseconds(resultType) {
+		perSecondExpr = logicalplan.Div(
+			logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
+			logicalplan.Convert(
+				logicalplan.If(
+					logicalplan.IsNull(timestampUnique),
+					logicalplan.Literal(step.Nanoseconds()),
+					durationMin,
+				),
+				arrow.PrimitiveTypes.Float64,
 			),
-			arrow.PrimitiveTypes.Float64,
-		),
-	).Alias(ValuePerSecond)
+		).Alias(ValuePerSecond)
+	} else {
+		perSecondExpr = logicalplan.Div(
+			logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
+			logicalplan.Div(
+				logicalplan.Convert(
+					logicalplan.If(
+						logicalplan.IsNull(timestampUnique),
+						logicalplan.Literal(step.Nanoseconds()),
+						durationMin,
+					),
+					arrow.PrimitiveTypes.Float64,
+				),
+				logicalplan.Literal(float64(time.Second.Nanoseconds())),
+			),
+		).Alias(ValuePerSecond)
+	}
 
 	err := q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
@@ -1355,6 +1373,8 @@ func (q *Querier) selectMerge(
 
 	start := timestamp.FromTime(startTime)
 	end := timestamp.FromTime(endTime)
+	resultType := queryParts.Meta.SampleType
+
 	filterExpr := logicalplan.And(
 		append(
 			selectorExprs,
@@ -1384,6 +1404,7 @@ func (q *Querier) selectMerge(
 			logicalplan.Col(profile.ColumnValue),
 			logicalplan.Col(profile.ColumnPeriod),
 		).Alias(profile.ColumnValue)
+		resultType = queryParts.Meta.PeriodType
 	}
 
 	firstProject := append(aggrCols, valueCol)
@@ -1427,10 +1448,15 @@ func (q *Querier) selectMerge(
 	}
 
 	queryParts.Meta.Timestamp = start
+	queryParts.Meta.SampleType = resultType
 
 	return records, "sum(value)", queryParts, nil
 }
 
 func isSamplesCount(st profile.ValueType) bool {
 	return st.Type == "samples" && st.Unit == "count"
+}
+
+func isNanoseconds(rt profile.ValueType) bool {
+	return rt.Type == "cpu" && rt.Unit == "nanoseconds"
 }
