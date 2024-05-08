@@ -383,12 +383,6 @@ export interface QueryRequest {
      */
     sourceReference?: SourceReference;
     /**
-     * which runtime frames to filter out, often interpreter frames like python or ruby are not super useful by default
-     *
-     * @generated from protobuf field: optional parca.query.v1alpha1.RuntimeFilter runtime_filter = 10;
-     */
-    runtimeFilter?: RuntimeFilter;
-    /**
      * invert_call_stack inverts the call stacks in the flamegraph
      *
      * @generated from protobuf field: optional bool invert_call_stack = 11;
@@ -2027,7 +2021,6 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
             { no: 7, name: "node_trim_threshold", kind: "scalar", opt: true, T: 2 /*ScalarType.FLOAT*/ },
             { no: 8, name: "group_by", kind: "message", T: () => GroupBy },
             { no: 9, name: "source_reference", kind: "message", T: () => SourceReference },
-            { no: 10, name: "runtime_filter", kind: "message", T: () => RuntimeFilter },
             { no: 11, name: "invert_call_stack", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
             { no: 12, name: "filters", kind: "message", T: () => Filters }
         ]);
@@ -2082,9 +2075,6 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
                 case /* optional parca.query.v1alpha1.SourceReference source_reference */ 9:
                     message.sourceReference = SourceReference.internalBinaryRead(reader, reader.uint32(), options, message.sourceReference);
                     break;
-                case /* optional parca.query.v1alpha1.RuntimeFilter runtime_filter */ 10:
-                    message.runtimeFilter = RuntimeFilter.internalBinaryRead(reader, reader.uint32(), options, message.runtimeFilter);
-                    break;
                 case /* optional bool invert_call_stack */ 11:
                     message.invertCallStack = reader.bool();
                     break;
@@ -2130,9 +2120,6 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         /* optional parca.query.v1alpha1.SourceReference source_reference = 9; */
         if (message.sourceReference)
             SourceReference.internalBinaryWrite(message.sourceReference, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
-        /* optional parca.query.v1alpha1.RuntimeFilter runtime_filter = 10; */
-        if (message.runtimeFilter)
-            RuntimeFilter.internalBinaryWrite(message.runtimeFilter, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
         /* optional bool invert_call_stack = 11; */
         if (message.invertCallStack !== undefined)
             writer.tag(11, WireType.Varint).bool(message.invertCallStack);

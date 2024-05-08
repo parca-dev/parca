@@ -32,7 +32,6 @@ import {capitalizeOnlyFirstLetter, divide, type NavigateFunction} from '@parca/u
 import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
 import DiffLegend from '../components/DiffLegend';
 import GroupByDropdown from './ActionButtons/GroupByDropdown';
-import RuntimeFilterDropdown from './ActionButtons/RuntimeFilterDropdown';
 import SortBySelect from './ActionButtons/SortBySelect';
 import IcicleGraph from './IcicleGraph';
 import IcicleGraphArrow, {FIELD_FUNCTION_NAME} from './IcicleGraphArrow';
@@ -156,21 +155,6 @@ const GroupAndSortActionButtons = ({navigateTo}: {navigateTo?: NavigateFunction}
     [groupBy, setGroupBy]
   );
 
-  const [showRuntimeRubyStr, setShowRuntimeRuby] = useURLState({
-    param: 'show_runtime_ruby',
-    navigateTo,
-  });
-
-  const [showRuntimePythonStr, setShowRuntimePython] = useURLState({
-    param: 'show_runtime_python',
-    navigateTo,
-  });
-
-  const [showInterpretedOnlyStr, setShowInterpretedOnly] = useURLState({
-    param: 'show_interpreted_only',
-    navigateTo,
-  });
-
   return (
     <>
       <GroupByDropdown groupBy={groupBy} toggleGroupBy={toggleGroupBy} />
@@ -178,20 +162,6 @@ const GroupAndSortActionButtons = ({navigateTo}: {navigateTo?: NavigateFunction}
         compareMode={compareMode}
         sortBy={storeSortBy as string}
         setSortBy={setStoreSortBy}
-      />
-      <RuntimeFilterDropdown
-        showRuntimeRuby={showRuntimeRubyStr === 'true'}
-        toggleShowRuntimeRuby={() =>
-          setShowRuntimeRuby(showRuntimeRubyStr === 'true' ? 'false' : 'true')
-        }
-        showRuntimePython={showRuntimePythonStr === 'true'}
-        toggleShowRuntimePython={() =>
-          setShowRuntimePython(showRuntimePythonStr === 'true' ? 'false' : 'true')
-        }
-        showInterpretedOnly={showInterpretedOnlyStr === 'true'}
-        toggleShowInterpretedOnly={() =>
-          setShowInterpretedOnly(showInterpretedOnlyStr === 'true' ? 'false' : 'true')
-        }
       />
     </>
   );

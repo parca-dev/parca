@@ -32,9 +32,6 @@ interface UseQueryOptions {
   sourceBuildID?: string;
   sourceFilename?: string;
   sourceOnly?: boolean;
-  showRuntimeRuby?: boolean;
-  showRuntimePython?: boolean;
-  showInterpretedOnly?: boolean;
   invertCallStack?: boolean;
   frameFilter?: string[];
 }
@@ -57,9 +54,6 @@ export const useQuery = (
       options?.sourceBuildID,
       options?.sourceOnly,
       options?.sourceOnly === true ? '' : options?.sourceFilename,
-      options?.showRuntimeRuby ?? false,
-      options?.showRuntimePython ?? false,
-      options?.showInterpretedOnly ?? false,
       options?.invertCallStack ?? false,
       options?.frameFilter ?? '',
     ],
@@ -77,11 +71,6 @@ export const useQuery = (
           sourceOnly: options?.sourceOnly ?? false,
         };
       }
-      req.runtimeFilter = {
-        showRuby: options?.showRuntimeRuby ?? false,
-        showPython: options?.showRuntimePython ?? false,
-        showInterpretedOnly: options?.showInterpretedOnly ?? false,
-      };
       req.invertCallStack = options?.invertCallStack ?? false;
       req.filters = {
         filter: {

@@ -19,7 +19,6 @@ import {divide, getLastItem, valueFormatter} from '@parca/utilities';
 import {hexifyAddress} from '../../utils';
 import {
   FIELD_FUNCTION_NAME,
-  FIELD_LABELS,
   FIELD_LABELS_ONLY,
   FIELD_LOCATION_ADDRESS,
   FIELD_MAPPING_FILE,

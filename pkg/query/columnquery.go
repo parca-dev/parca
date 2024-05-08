@@ -305,7 +305,6 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		q.mem,
 		p.Samples,
 		req.GetFilterQuery(),
-		req.GetRuntimeFilter(),
 		req.GetFilters().GetFrameFilter().GetFilter(),
 	)
 	if err != nil {
@@ -331,7 +330,6 @@ func FilterProfileData(
 	pool memory.Allocator,
 	records []arrow.Record,
 	filterQuery string,
-	runtimeFilter *pb.RuntimeFilter,
 	frameFilter []string,
 ) ([]arrow.Record, int64, error) {
 	_, span := tracer.Start(ctx, "filterByFunction")
@@ -350,23 +348,6 @@ func FilterProfileData(
 	allValues := int64(0)
 	allFiltered := int64(0)
 
-	if runtimeFilter == nil {
-		runtimeFilter = &pb.RuntimeFilter{}
-	}
-
-	binariesToExclude := [][]byte{}
-
-	interpretedOnly := false
-	if runtimeFilter != nil {
-		if !runtimeFilter.ShowPython {
-			binariesToExclude = append(binariesToExclude, []byte("libpython"))
-		}
-		if !runtimeFilter.ShowRuby {
-			binariesToExclude = append(binariesToExclude, []byte("libruby"))
-		}
-		interpretedOnly = runtimeFilter.ShowInterpretedOnly
-	}
-
 	for _, r := range records {
 		filteredRecords, valueSum, filteredSum, err := filterRecord(
 			ctx,
@@ -374,8 +355,6 @@ func FilterProfileData(
 			pool,
 			r,
 			filterQueryBytes,
-			binariesToExclude,
-			interpretedOnly,
 			frameFilter,
 		)
 		if err != nil {
@@ -398,8 +377,6 @@ func filterRecord(
 	pool memory.Allocator,
 	rec arrow.Record,
 	filterQueryBytes []byte,
-	binariesToExclude [][]byte,
-	showInterpretedOnly bool,
 	frameFilter []string,
 ) ([]arrow.Record, int64, int64, error) {
 	r := profile.NewRecordReader(rec)
@@ -448,30 +425,8 @@ func filterRecord(
 			for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
 				validMappingStart := r.MappingStart.IsValid(j)
 				var mappingFile []byte
-				skipLocation := false
 				if validMappingStart {
 					mappingFile = r.MappingFileDict.Value(int(r.MappingFileIndices.Value(j)))
-					lastSlash := bytes.LastIndex(mappingFile, []byte("/"))
-					mappingFileBase := mappingFile
-					if lastSlash >= 0 {
-						mappingFileBase = mappingFile[lastSlash+1:]
-					}
-					if len(mappingFileBase) > 0 {
-						for _, binaryToExclude := range binariesToExclude {
-							if bytes.HasPrefix(mappingFileBase, binaryToExclude) {
-								skipLocation = true
-								break
-							}
-						}
-					}
-				}
-				if skipLocation {
-					bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
-					continue
-				}
-				if showInterpretedOnly && !bytes.Equal(mappingFile, []byte("interpreter")) {
-					bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
-					continue
 				}
 
 				// Check if any of the values from the `frameFilter` are in the mappingFile and keep them, if not clear the bit.

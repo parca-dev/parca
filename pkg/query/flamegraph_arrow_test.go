@@ -35,7 +35,6 @@ import (
 	"go.opentelemetry.io/otel/trace/noop"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -1068,9 +1067,7 @@ func TestAllFramesFiltered(t *testing.T) {
 	// data being multiple samples, but all frames are filtered out. What
 	// happened is the input data contains no python frames, but only python
 	// frames were requested.
-	np.Samples, _, err = FilterProfileData(ctx, tracer, mem, np.Samples, "", &pb.RuntimeFilter{
-		ShowInterpretedOnly: true,
-	}, []string{})
+	np.Samples, _, err = FilterProfileData(ctx, tracer, mem, np.Samples, "", []string{})
 	require.NoError(t, err)
 
 	defer func() {
