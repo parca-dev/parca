@@ -67,6 +67,8 @@ export interface FlamegraphData {
   total?: bigint;
   filtered?: bigint;
   error?: any;
+  mappings?: string[];
+  mappingsLoading: boolean;
 }
 
 export interface TopTableData {
@@ -238,7 +240,7 @@ export const ProfileView = ({
               filtered={filtered}
               profileType={profileSource?.ProfileType()}
               navigateTo={navigateTo}
-              loading={flamegraphData.loading}
+              loading={flamegraphData.loading && flamegraphData.mappingsLoading}
               setActionButtons={setActionButtons}
               error={flamegraphData.error}
               isHalfScreen={isHalfScreen}
@@ -249,6 +251,7 @@ export const ProfileView = ({
                     : dimensions.width - 16
                   : 0
               }
+              mappings={flamegraphData.mappings}
             />
           </ConditionalWrapper>
         );

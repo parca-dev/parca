@@ -13,7 +13,7 @@
 
 import React, {memo, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
-import {Dictionary, Table, Vector, tableFromIPC} from 'apache-arrow';
+import {Table, tableFromIPC} from 'apache-arrow';
 import {useContextMenu} from 'react-contexify';
 
 import {FlamegraphArrow} from '@parca/client';
@@ -35,7 +35,7 @@ import {useProfileViewContext} from '../../ProfileView/ProfileViewContext';
 import ColorStackLegend from './ColorStackLegend';
 import ContextMenu from './ContextMenu';
 import {IcicleNode, RowHeight, mappingColors} from './IcicleGraphNodes';
-import {arrowToString, extractFeature} from './utils';
+import {extractFeature} from './utils';
 
 export const FIELD_LABELS_ONLY = 'labels_only';
 export const FIELD_MAPPING_FILE = 'mapping_file';
@@ -64,6 +64,7 @@ interface IcicleGraphArrowProps {
   setCurPath: (path: string[]) => void;
   navigateTo?: NavigateFunction;
   sortBy: string;
+  mappings?: string[];
 }
 
 export const IcicleGraphArrow = memo(function IcicleGraphArrow({
@@ -76,6 +77,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   profileType,
   navigateTo,
   sortBy,
+  mappings,
 }: IcicleGraphArrowProps): React.JSX.Element {
   const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
   const dispatch = useAppDispatch();
@@ -102,44 +104,28 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const currentColorProfile = useCurrentColorProfile();
   const colorForSimilarNodes = currentColorProfile.colorForSimilarNodes;
 
-  const mappings = useMemo(() => {
-    // Read the mappings from the dictionary that contains all mapping strings.
-    // This is great, as might only have a dozen or so mappings,
-    // and don't need to read through all the rows (potentially thousands).
-    const mappingsDict: Vector<Dictionary> | null = table.getChild(FIELD_MAPPING_FILE);
-    const mappings =
-      mappingsDict?.data
-        .map(mapping => {
-          if (mapping.dictionary == null) {
-            return [];
-          }
-          const len = mapping.dictionary.length;
-          const entries: string[] = [];
-          for (let i = 0; i < len; i++) {
-            const fn = arrowToString(mapping.dictionary.get(i));
-            entries.push(getLastItem(fn) ?? '');
-          }
-          return entries;
+  const mappingsList = useMemo(() => {
+    const list =
+      mappings
+        ?.map(mapping => {
+          return getLastItem(mapping) as string;
         })
         .flat() ?? [];
 
     // We add a EVERYTHING ELSE mapping to the list.
-    mappings.push('');
+    list.push('');
 
     // We sort the mappings alphabetically to make sure that the order is always the same.
-    mappings.sort((a, b) => a.localeCompare(b));
-    return mappings;
-  }, [table]);
+    list.sort((a, b) => a.localeCompare(b));
 
-  // TODO: Somehow figure out how to add runtime to this, if stacks are present.
-  // Potentially read the function name dictionary and check if it contains strings starting with runtime.
-  const mappingFeatures = useMemo(() => {
-    return mappings.map(mapping => extractFeature(mapping));
+    return list;
   }, [mappings]);
 
-  // TODO: Unify with mappingFeatures
   const mappingColors = useMemo(() => {
+    const mappingFeatures = mappingsList.map(mapping => extractFeature(mapping));
+
     const colors: mappingColors = {};
+
     Object.entries(mappingFeatures).forEach(([_, feature]) => {
       colors[feature.name] = getColorForFeature(
         feature.name,
@@ -147,8 +133,9 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
         currentColorProfile.colors
       );
     });
+
     return colors;
-  }, [isDarkMode, mappingFeatures, currentColorProfile]);
+  }, [mappingsList, isDarkMode, currentColorProfile]);
 
   useEffect(() => {
     if (ref.current != null) {

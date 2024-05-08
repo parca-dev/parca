@@ -82,25 +82,21 @@ export const ProfileViewWithData = ({
     frameFilter: frameFilterStr as string[],
   });
 
-  const {
-    isLoading: profilemetalLoading,
-    response: profilemetadataResponse,
-    error: profilemetadaError,
-  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.PROFILE_METADATA, {
-    skip: !dashboardItems.includes('icicle'),
-    nodeTrimThreshold,
-    groupBy: groupByParam,
-    showRuntimeRuby,
-    showRuntimePython,
-    showInterpretedOnly,
-    invertCallStack,
-    frameFilter: frameFilterStr as string[],
-  });
-
-  console.log('🚀 ~ profilemetadaError:', profilemetadaError);
-  console.log('🚀 ~ profilemetadataResponse:', profilemetadataResponse);
-  console.log('🚀 ~ profilemetadataResponse:', flamegraphResponse);
-  console.log('🚀 ~ profilemetalLoading:', profilemetalLoading);
+  const {isLoading: profilemetadataLoading, response: profilemetadataResponse} = useQuery(
+    queryClient,
+    profileSource,
+    QueryRequest_ReportType.PROFILE_METADATA,
+    {
+      skip: !dashboardItems.includes('icicle'),
+      nodeTrimThreshold,
+      groupBy: groupByParam,
+      showRuntimeRuby,
+      showRuntimePython,
+      showInterpretedOnly,
+      invertCallStack,
+      frameFilter: [],
+    }
+  );
 
   const {perf} = useParcaContext();
 
@@ -200,7 +196,7 @@ export const ProfileViewWithData = ({
       total={total}
       filtered={filtered}
       flamegraphData={{
-        loading: flamegraphLoading,
+        loading: flamegraphLoading && profilemetadataLoading,
         data:
           flamegraphResponse?.report.oneofKind === 'flamegraph'
             ? flamegraphResponse?.report?.flamegraph
@@ -212,6 +208,11 @@ export const ProfileViewWithData = ({
         total: BigInt(flamegraphResponse?.total ?? '0'),
         filtered: BigInt(flamegraphResponse?.filtered ?? '0'),
         error: flamegraphError,
+        mappings:
+          profilemetadataResponse?.report.oneofKind === 'profileMetadata'
+            ? profilemetadataResponse?.report?.profileMetadata?.mappingFiles
+            : undefined,
+        mappingsLoading: profilemetadataLoading,
       }}
       topTableData={{
         loading: tableLoading,

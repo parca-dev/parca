@@ -1425,13 +1425,17 @@
       "type": "object",
       "properties": {
         "mappingFiles": {
-          "type": "string",
-          "format": "byte",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
           "title": "mapping_files is the list of binaries in the profile"
         },
         "labels": {
-          "type": "string",
-          "format": "byte",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
           "title": "labels is the list of labels in the profile"
         }
       },

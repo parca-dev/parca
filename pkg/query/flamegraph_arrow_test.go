@@ -1070,7 +1070,7 @@ func TestAllFramesFiltered(t *testing.T) {
 	// frames were requested.
 	np.Samples, _, err = FilterProfileData(ctx, tracer, mem, np.Samples, "", &pb.RuntimeFilter{
 		ShowInterpretedOnly: true,
-	}, "")
+	}, []string{})
 	require.NoError(t, err)
 
 	defer func() {

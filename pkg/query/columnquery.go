@@ -48,7 +48,7 @@ type Querier interface {
 	ProfileTypes(ctx context.Context) ([]*pb.ProfileType, error)
 	QuerySingle(ctx context.Context, query string, time time.Time, invertCallStacks bool) (profile.Profile, error)
 	QueryMerge(ctx context.Context, query string, start, end time.Time, aggregateByLabels, invertCallStacks bool) (profile.Profile, error)
-	MappingFiles(ctx context.Context, query string, start, end time.Time) ([]arrow.Record, error)
+	GetProfileMetadataMappings(ctx context.Context, query string, start, end time.Time) ([]string, error)
 }
 
 var (
@@ -274,18 +274,27 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 
 	if req.GetReportType() == pb.QueryRequest_REPORT_TYPE_PROFILE_METADATA {
 		mappingFiles, err := q.GetMappingFiles(ctx, req.GetMerge())
+
+		labels, labels_err := q.Labels(ctx, &pb.LabelsRequest{
+			Match: []string{},
+			Start: req.GetMerge().Start,
+			End:   req.GetMerge().End,
+		})
+
 		if err != nil {
 			return nil, fmt.Errorf("getting mapping files: %w", err)
 		}
 
-		fmt.Println("mappingFiles", mappingFiles)
-		labels := []byte{}
+		if labels_err != nil {
+			return nil, fmt.Errorf("getting labels: %w", labels_err)
+		}
+
 		return &pb.QueryResponse{
 			Total:    0,
 			Filtered: 0,
 			Report:   &pb.QueryResponse_ProfileMetadata{ProfileMetadata: &pb.ProfileMetadata{
 				MappingFiles: mappingFiles,
-				Labels:       labels,
+				Labels:       labels.LabelNames,
 			}},
 		}, nil
 	}
@@ -508,7 +517,7 @@ func (q *ColumnQueryAPI) renderReport(
 	source string,
 	isDiff bool,
 ) (*pb.QueryResponse, error) {
-	return q.RenderReport(
+	return RenderReport(
 		ctx,
 		q.tracer,
 		p,
@@ -525,7 +534,7 @@ func (q *ColumnQueryAPI) renderReport(
 	)
 }
 
-func (q *ColumnQueryAPI) RenderReport(
+func RenderReport(
 	ctx context.Context,
 	tracer trace.Tracer,
 	p profile.Profile,
@@ -947,8 +956,8 @@ func sliceRecord(r arrow.Record, indices []int64) []arrow.Record {
 func (q *ColumnQueryAPI) GetMappingFiles(
 	ctx context.Context,
 	m *pb.MergeProfile,
-) ([]byte, error) {
-	p, err := q.querier.MappingFiles(
+) ([]string, error) {
+	p, err := q.querier.GetProfileMetadataMappings(
 		ctx,
 		m.Query,
 		m.Start.AsTime(),
@@ -959,16 +968,21 @@ func (q *ColumnQueryAPI) GetMappingFiles(
 		return nil, err
 	}
 
-	fmt.Println("p", p)
+	deduped := deduplicateStringSlice(p)
+	return deduped, nil
+}
 
-	// convert the arrow records to a byte slice
-	buf := new(bytes.Buffer)
-	for _, r := range p {
-		for i := int64(0); i < r.NumRows(); i++ {
-			mappingFile := r.Column(0).(*array.Binary).Value(int(i))
-			buf.Write(mappingFile)
-			buf.WriteByte(0)
+func deduplicateStringSlice(slice []string) []string {
+	uniqueMap := make(map[string]bool, len(slice))
+
+	deduplicated := make([]string, 0, len(slice))
+
+	for _, s := range slice {
+		if !uniqueMap[s] {
+			uniqueMap[s] = true
+			deduplicated = append(deduplicated, s)
 		}
 	}
-	return buf.Bytes(), nil
+
+	return deduplicated
 }

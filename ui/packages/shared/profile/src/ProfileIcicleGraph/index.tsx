@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useCallback, useEffect, useMemo} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import {AnimatePresence, motion} from 'framer-motion';
@@ -55,6 +55,7 @@ interface ProfileIcicleGraphProps {
   setActionButtons?: (buttons: React.JSX.Element) => void;
   error?: any;
   isHalfScreen: boolean;
+  mappings?: string[];
 }
 
 const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
@@ -210,9 +211,11 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   error,
   width,
   isHalfScreen,
+  mappings,
 }: ProfileIcicleGraphProps): JSX.Element {
   const {onError, authenticationErrorMessage, isDarkMode} = useParcaContext();
   const {compareMode} = useProfileViewContext();
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const [storeSortBy = FIELD_FUNCTION_NAME] = useURLState({
     param: 'sort_by',
@@ -322,7 +325,15 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     isHalfScreen,
   ]);
 
-  if (loading) {
+  useEffect(() => {
+    if (!loading && (arrow !== undefined || graph !== undefined)) {
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+    }
+  }, [loading, arrow, graph]);
+
+  if (isLoading) {
     return (
       <div className="h-auto overflow-clip">
         <IcicleGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
@@ -384,6 +395,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
               profileType={profileType}
               navigateTo={navigateTo}
               sortBy={storeSortBy as string}
+              mappings={mappings}
             />
           )}
         </div>

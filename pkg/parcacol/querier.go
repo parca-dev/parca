@@ -1435,17 +1435,14 @@ func isSamplesCount(st profile.ValueType) bool {
 	return st.Type == "samples" && st.Unit == "count"
 }
 
-// query for all the mapping files for a profile query
-// need to do distinct queries on the locations column
-// to do that we first get all unique locations, and then decode the location just until the binary name.
-func (q *Querier) MappingFiles(
+func (q *Querier) GetProfileMetadataMappings(
 	ctx context.Context,
 	query string, startTime, endTime time.Time,
-) ([]arrow.Record, error) {
+) ([]string, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/MappingFiles")
 	defer span.End()
 
-	queryParts, selectorExprs, err := QueryToFilterExprs(query)
+	_, selectorExprs, err := QueryToFilterExprs(query)
 	if err != nil {
 		return nil, err
 	}
@@ -1460,56 +1457,29 @@ func (q *Querier) MappingFiles(
 		)...,
 	)
 
-	totalSum := logicalplan.Sum(logicalplan.Col(profile.ColumnValue))
-	durationSum := logicalplan.Sum(logicalplan.Col(profile.ColumnDuration))
-
-	aggrCols := []logicalplan.Expr{
-		logicalplan.Col(profile.ColumnStacktrace),
-	}
-
-	var valueCol logicalplan.Expr = logicalplan.Col(profile.ColumnValue)
-	if isSamplesCount(queryParts.Meta.SampleType) {
-		valueCol = logicalplan.Mul(
-			logicalplan.Col(profile.ColumnValue),
-			logicalplan.Col(profile.ColumnPeriod),
-		).Alias(profile.ColumnValue)
-	}
-
-	firstProject := append(aggrCols, valueCol)
-	finalProject := append(aggrCols, totalSum)
-	aggrFunctions := []*logicalplan.AggregationFunction{
-		totalSum,
-	}
-
-	if queryParts.Delta {
-		// Only for cpu and nanoseconds do we first project the ColumnDuration.
-		// We then use the aggregation function to sum(duration) for each stacktraces.
-		// The final project then takes the sum(value) / sum(duration) to get to the per second value.
-		firstProject = append(firstProject,
-			logicalplan.Col(profile.ColumnDuration),
-		)
-		finalProject = append(finalProject,
-			logicalplan.Div(
-				logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
-				logicalplan.Convert(durationSum, arrow.PrimitiveTypes.Float64),
-			).Alias(ValuePerSecond),
-		)
-		aggrFunctions = append(aggrFunctions, durationSum)
-	}
-
-	records := []arrow.Record{}
+	records := []string{}
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
-		Project(firstProject...).
-		Aggregate(
-			aggrFunctions,
-			aggrCols,
-		).
-		Project(finalProject...).
-		Distinct(logicalplan.Col(profile.ColumnName)).
+		Project(logicalplan.Col("stacktrace")).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
-			records = append(records, r)
+
+			locations := r.Column(0).(*array.List)
+
+			values := locations.ListValues().(*array.Dictionary)
+			valueDict := values.Dictionary().(*array.Binary)
+			for i := 0; i < locations.Len(); i++ {
+				if locations.IsNull(i) {
+					continue
+				}
+				start, end := locations.ValueOffsets(i)
+				for j := int(start); j < int(end); j++ {
+					encodedLocation := valueDict.Value(values.GetValueIndex(j))
+					symInfo, _ := profile.DecodeSymbolizationInfo(encodedLocation)
+					records = append(records, symInfo.Mapping.File)
+				}
+			}
+
 			return nil
 		})
 	if err != nil {

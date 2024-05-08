@@ -1348,15 +1348,15 @@ export interface ProfileMetadata {
     /**
      * mapping_files is the list of binaries in the profile
      *
-     * @generated from protobuf field: bytes mapping_files = 1;
+     * @generated from protobuf field: repeated string mapping_files = 1;
      */
-    mappingFiles: Uint8Array;
+    mappingFiles: string[];
     /**
      * labels is the list of labels in the profile
      *
-     * @generated from protobuf field: bytes labels = 2;
+     * @generated from protobuf field: repeated string labels = 2;
      */
-    labels: Uint8Array;
+    labels: string[];
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class ProfileTypesRequest$Type extends MessageType<ProfileTypesRequest> {
@@ -4107,14 +4107,14 @@ export const TableArrow = new TableArrow$Type();
 class ProfileMetadata$Type extends MessageType<ProfileMetadata> {
     constructor() {
         super("parca.query.v1alpha1.ProfileMetadata", [
-            { no: 1, name: "mapping_files", kind: "scalar", T: 12 /*ScalarType.BYTES*/ },
-            { no: 2, name: "labels", kind: "scalar", T: 12 /*ScalarType.BYTES*/ }
+            { no: 1, name: "mapping_files", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "labels", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<ProfileMetadata>): ProfileMetadata {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.mappingFiles = new Uint8Array(0);
-        message.labels = new Uint8Array(0);
+        message.mappingFiles = [];
+        message.labels = [];
         if (value !== undefined)
             reflectionMergePartial<ProfileMetadata>(this, message, value);
         return message;
@@ -4124,11 +4124,11 @@ class ProfileMetadata$Type extends MessageType<ProfileMetadata> {
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* bytes mapping_files */ 1:
-                    message.mappingFiles = reader.bytes();
+                case /* repeated string mapping_files */ 1:
+                    message.mappingFiles.push(reader.string());
                     break;
-                case /* bytes labels */ 2:
-                    message.labels = reader.bytes();
+                case /* repeated string labels */ 2:
+                    message.labels.push(reader.string());
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -4142,12 +4142,12 @@ class ProfileMetadata$Type extends MessageType<ProfileMetadata> {
         return message;
     }
     internalBinaryWrite(message: ProfileMetadata, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* bytes mapping_files = 1; */
-        if (message.mappingFiles.length)
-            writer.tag(1, WireType.LengthDelimited).bytes(message.mappingFiles);
-        /* bytes labels = 2; */
-        if (message.labels.length)
-            writer.tag(2, WireType.LengthDelimited).bytes(message.labels);
+        /* repeated string mapping_files = 1; */
+        for (let i = 0; i < message.mappingFiles.length; i++)
+            writer.tag(1, WireType.LengthDelimited).string(message.mappingFiles[i]);
+        /* repeated string labels = 2; */
+        for (let i = 0; i < message.labels.length; i++)
+            writer.tag(2, WireType.LengthDelimited).string(message.labels[i]);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
