@@ -733,31 +733,31 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile
 	_, span := tracer.Start(ctx, "ComputeDiff")
 	defer span.End()
 
-	type totals struct {
-		value          int64
-		valuePerSecond float64
+	var (
+		totalCompareValue          int64
+		totalCompareValuePerSecond float64
+		totalBaseValue             int64
+		totalBaseValuePerSecond    float64
+	)
+	for _, s := range compare.Samples {
+		totalCompareValue += math.Int64.Sum(s.Column(len(s.Columns()) - 4).(*array.Int64))
+		totalCompareValuePerSecond += math.Float64.Sum(s.Column(len(s.Columns()) - 3).(*array.Float64))
 	}
-	totalsCompare := make([]totals, len(compare.Samples))
-	for i, s := range compare.Samples {
-		totalsCompare[i].value = math.Int64.Sum(s.Column(len(s.Columns()) - 4).(*array.Int64))
-		totalsCompare[i].valuePerSecond = math.Float64.Sum(s.Column(len(s.Columns()) - 3).(*array.Float64))
-	}
-	totalsBase := make([]totals, len(compare.Samples))
-	for i, s := range base.Samples {
-		totalsBase[i].value = math.Int64.Sum(s.Column(len(s.Columns()) - 4).(*array.Int64))
-		totalsBase[i].valuePerSecond = math.Float64.Sum(s.Column(len(s.Columns()) - 3).(*array.Float64))
+	for _, s := range base.Samples {
+		totalBaseValue += math.Int64.Sum(s.Column(len(s.Columns()) - 4).(*array.Int64))
+		totalBaseValuePerSecond += math.Float64.Sum(s.Column(len(s.Columns()) - 3).(*array.Float64))
 	}
 
 	records := make([]arrow.Record, 0, len(compare.Samples)+len(base.Samples))
-	for i, r := range compare.Samples {
+	for _, r := range compare.Samples {
 		var cumulativeRatio, cumulativePerSecondRatio float64
-		if totalsBase[i].value > totalsCompare[i].value {
-			cumulativeRatio = float64(totalsBase[i].value) / float64(totalsCompare[i].value)
+		if totalBaseValue > totalCompareValue {
+			cumulativeRatio = float64(totalBaseValue) / float64(totalCompareValue)
 		} else {
 			cumulativeRatio = 1 // leave unchanged
 		}
-		if totalsBase[i].valuePerSecond > totalsCompare[i].valuePerSecond {
-			cumulativePerSecondRatio = totalsBase[i].valuePerSecond / totalsCompare[i].valuePerSecond
+		if totalBaseValuePerSecond > totalCompareValuePerSecond {
+			cumulativePerSecondRatio = totalBaseValuePerSecond / totalCompareValuePerSecond
 		} else {
 			cumulativePerSecondRatio = 1 // leave unchanged
 		}
@@ -783,17 +783,17 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile
 		cols[len(cols)-1].Release()
 	}
 
-	for i, r := range base.Samples {
+	for _, r := range base.Samples {
 		func() {
 			columns := r.Columns()
 			var cumulativeRatio, cumulativePerSecondRatio float64
-			if totalsCompare[i].value > totalsBase[i].value {
-				cumulativeRatio = float64(totalsCompare[i].value) / float64(totalsBase[i].value)
+			if totalCompareValue > totalBaseValue {
+				cumulativeRatio = float64(totalCompareValue) / float64(totalBaseValue)
 			} else {
 				cumulativeRatio = 1
 			}
-			if totalsCompare[i].valuePerSecond > totalsBase[i].valuePerSecond {
-				cumulativePerSecondRatio = totalsCompare[i].valuePerSecond / totalsBase[i].valuePerSecond
+			if totalCompareValuePerSecond > totalBaseValuePerSecond {
+				cumulativePerSecondRatio = totalCompareValuePerSecond / totalBaseValuePerSecond
 			} else {
 				cumulativePerSecondRatio = 1
 			}
