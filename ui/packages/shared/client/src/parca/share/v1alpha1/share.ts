@@ -110,7 +110,7 @@ export interface QueryRequest {
     /**
      * invert_call_stack inverts the call stacks in the flamegraph
      *
-     * @generated from protobuf field: optional bool invert_call_stack = 9;
+     * @generated from protobuf field: optional bool invert_call_stack = 8;
      */
     invertCallStack?: boolean;
 }
@@ -348,7 +348,7 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
             { no: 5, name: "node_trim_threshold", kind: "scalar", opt: true, T: 2 /*ScalarType.FLOAT*/ },
             { no: 6, name: "runtime_filter", kind: "message", T: () => RuntimeFilter },
             { no: 7, name: "group_by", kind: "message", T: () => GroupBy },
-            { no: 9, name: "invert_call_stack", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ }
+            { no: 8, name: "invert_call_stack", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<QueryRequest>): QueryRequest {
@@ -385,7 +385,7 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
                 case /* optional parca.query.v1alpha1.GroupBy group_by */ 7:
                     message.groupBy = GroupBy.internalBinaryRead(reader, reader.uint32(), options, message.groupBy);
                     break;
-                case /* optional bool invert_call_stack */ 9:
+                case /* optional bool invert_call_stack */ 8:
                     message.invertCallStack = reader.bool();
                     break;
                 default:
@@ -421,9 +421,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         /* optional parca.query.v1alpha1.GroupBy group_by = 7; */
         if (message.groupBy)
             GroupBy.internalBinaryWrite(message.groupBy, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
-        /* optional bool invert_call_stack = 9; */
+        /* optional bool invert_call_stack = 8; */
         if (message.invertCallStack !== undefined)
-            writer.tag(9, WireType.Varint).bool(message.invertCallStack);
+            writer.tag(8, WireType.Varint).bool(message.invertCallStack);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

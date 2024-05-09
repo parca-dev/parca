@@ -326,7 +326,7 @@ func (m *QueryRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			dAtA[i] = 0
 		}
 		i--
-		dAtA[i] = 0x48
+		dAtA[i] = 0x40
 	}
 	if m.GroupBy != nil {
 		size, err := m.GroupBy.MarshalToSizedBufferVT(dAtA[:i])
@@ -1327,7 +1327,7 @@ func (m *QueryRequest) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 9:
+		case 8:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field InvertCallStack", wireType)
 			}
