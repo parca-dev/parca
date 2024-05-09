@@ -58,6 +58,9 @@ message QueryRequest {
 
   // group_by indicates the fields to group by
   optional parca.query.v1alpha1.GroupBy group_by = 7;
+
+  // invert_call_stack inverts the call stacks in the flamegraph
+  optional bool invert_call_stack = 8;
 }
 
 // ProfileTypesRequest represents the profile types request with the id of the profile to be queried.
