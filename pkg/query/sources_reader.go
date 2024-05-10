@@ -29,21 +29,55 @@ import (
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 )
 
-type BucketSourceFinder struct {
-	bucket objstore.BucketReader
+type DebuginfodClients interface {
+	GetSource(ctx context.Context, server, buildid, file string) (io.ReadCloser, error)
+	Exists(ctx context.Context, buildid string) ([]string, error)
 }
 
-func NewBucketSourceFinder(bucket objstore.BucketReader) *BucketSourceFinder {
+type BucketSourceFinder struct {
+	bucket     objstore.BucketReader
+	debuginfod DebuginfodClients
+}
+
+func NewBucketSourceFinder(
+	bucket objstore.BucketReader,
+	debuginfod DebuginfodClients,
+) *BucketSourceFinder {
 	return &BucketSourceFinder{
-		bucket: bucket,
+		bucket:     bucket,
+		debuginfod: debuginfod,
 	}
+}
+
+func (f *BucketSourceFinder) findDebuginfodSource(ctx context.Context, ref *pb.SourceReference) (string, error) {
+	servers, err := f.debuginfod.Exists(ctx, ref.BuildId)
+	if err != nil {
+		return "", err
+	}
+
+	for _, server := range servers {
+		r, err := f.debuginfod.GetSource(ctx, server, ref.BuildId, ref.Filename)
+		if err != nil {
+			continue
+		}
+		defer r.Close()
+
+		b, err := io.ReadAll(r)
+		if err != nil {
+			return "", err
+		}
+
+		return string(b), nil
+	}
+
+	return "", ErrNoSourceForBuildID
 }
 
 func (f *BucketSourceFinder) FindSource(ctx context.Context, ref *pb.SourceReference) (string, error) {
 	r, err := f.bucket.Get(ctx, path.Join(ref.BuildId, "sources"))
 	if err != nil {
 		if f.bucket.IsObjNotFoundErr(err) {
-			return "", ErrNoSourceForBuildID
+			return f.findDebuginfodSource(ctx, ref)
 		}
 		return "", err
 	}
@@ -73,7 +107,18 @@ func (f *BucketSourceFinder) SourceExists(ctx context.Context, ref *pb.SourceRef
 		return false, err
 	}
 
-	return exists, nil
+	if !exists {
+		servers, err := f.debuginfod.Exists(ctx, ref.BuildId)
+		if err != nil {
+			return false, err
+		}
+
+		if len(servers) == 0 {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }
 
 type SourcesReader struct {

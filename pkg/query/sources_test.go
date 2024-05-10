@@ -27,6 +27,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/kv"
 	"github.com/parca-dev/parca/pkg/parcacol"
 )
@@ -59,7 +60,7 @@ func TestSourcesOnlyRequest(t *testing.T) {
 		),
 		allocator,
 		parcacol.NewArrowToProfileConverter(tracer, kv.NewKeyMaker()),
-		NewBucketSourceFinder(bucket),
+		NewBucketSourceFinder(bucket, &debuginfo.NopDebuginfodClients{}),
 	)
 
 	_, err = api.Query(ctx, &pb.QueryRequest{
