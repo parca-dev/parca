@@ -92,7 +92,6 @@ const ColorStackLegend = ({
               }
               // if currentSearchString is not an array/undefined, make it an array and then add the current feature
               if (currentSearchString === undefined) {
-                console.log('i got here');
                 setSearchString([feature]);
                 return;
               }

@@ -49,6 +49,7 @@ type Querier interface {
 	QuerySingle(ctx context.Context, query string, time time.Time, invertCallStacks bool) (profile.Profile, error)
 	QueryMerge(ctx context.Context, query string, start, end time.Time, aggregateByLabels, invertCallStacks bool) (profile.Profile, error)
 	GetProfileMetadataMappings(ctx context.Context, query string, start, end time.Time) ([]string, error)
+	GetProfileMetadataLabels(ctx context.Context, match []string, start, end time.Time) ([]string, error)
 }
 
 var (
@@ -275,7 +276,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	if req.GetReportType() == pb.QueryRequest_REPORT_TYPE_PROFILE_METADATA {
 		mappingFiles, err := q.GetMappingFiles(ctx, req.GetMerge())
 
-		labels, labels_err := q.Labels(ctx, &pb.LabelsRequest{
+		labels, labels_err := q.GetLabels(ctx, &pb.LabelsRequest{
 			Match: []string{},
 			Start: req.GetMerge().Start,
 			End:   req.GetMerge().End,
@@ -294,7 +295,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 			Filtered: 0,
 			Report:   &pb.QueryResponse_ProfileMetadata{ProfileMetadata: &pb.ProfileMetadata{
 				MappingFiles: mappingFiles,
-				Labels:       labels.LabelNames,
+				Labels:       labels,
 			}},
 		}, nil
 	}
@@ -923,21 +924,18 @@ func (q *ColumnQueryAPI) GetMappingFiles(
 		return nil, err
 	}
 
-	deduped := deduplicateStringSlice(p)
-	return deduped, nil
+	return p, nil
 }
 
-func deduplicateStringSlice(slice []string) []string {
-	uniqueMap := make(map[string]bool, len(slice))
+func (q *ColumnQueryAPI) GetLabels(
+	ctx context.Context,
+	req *pb.LabelsRequest,
+) ([]string, error) {
+	l, err := q.querier.GetProfileMetadataLabels(ctx, req.Match, req.Start.AsTime(), req.End.AsTime())
 
-	deduplicated := make([]string, 0, len(slice))
-
-	for _, s := range slice {
-		if !uniqueMap[s] {
-			uniqueMap[s] = true
-			deduplicated = append(deduplicated, s)
-		}
+	if err != nil {
+		return nil, err
 	}
 
-	return deduplicated
+	return l, nil
 }

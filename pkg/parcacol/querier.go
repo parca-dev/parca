@@ -1457,7 +1457,7 @@ func (q *Querier) GetProfileMetadataMappings(
 		)...,
 	)
 
-	records := []string{}
+	records := make(map[string]struct{})
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Project(logicalplan.Col("stacktrace")).
@@ -1468,16 +1468,11 @@ func (q *Querier) GetProfileMetadataMappings(
 
 			values := locations.ListValues().(*array.Dictionary)
 			valueDict := values.Dictionary().(*array.Binary)
-			for i := 0; i < locations.Len(); i++ {
-				if locations.IsNull(i) {
-					continue
-				}
-				start, end := locations.ValueOffsets(i)
-				for j := int(start); j < int(end); j++ {
-					encodedLocation := valueDict.Value(values.GetValueIndex(j))
-					symInfo, _ := profile.DecodeSymbolizationInfo(encodedLocation)
-					records = append(records, symInfo.Mapping.File)
-				}
+
+			for i := 0; i < values.Len(); i++ {
+				encodedLocation := valueDict.Value(values.GetValueIndex(i))
+				symInfo, _ := profile.DecodeSymbolizationInfo(encodedLocation)
+				records[symInfo.Mapping.File] = struct{}{}
 			}
 
 			return nil
@@ -1486,5 +1481,60 @@ func (q *Querier) GetProfileMetadataMappings(
 		return nil, err
 	}
 
-	return records, nil
+	res := make([]string, 0, len(records))
+	for r := range records {
+		res = append(res, r)
+	}
+
+	return res, nil
+}
+
+func (q *Querier) GetProfileMetadataLabels(
+	ctx context.Context,
+	match []string,
+	start, end time.Time,
+) ([]string, error) {
+	ctx, span := q.tracer.Start(ctx, "Querier/Labels")
+	defer span.End()
+
+	seen := map[string]struct{}{}
+
+	err := q.engine.ScanSchema(q.tableName).
+		Distinct(logicalplan.Col("name")).
+		Filter(logicalplan.Col("name").RegexMatch("^pprof_labels\\..+$")).
+		Execute(ctx, func(ctx context.Context, ar arrow.Record) error {
+			if ar.NumCols() != 1 {
+				return fmt.Errorf("expected 1 column, got %d", ar.NumCols())
+			}
+
+			col := ar.Column(0)
+			stringCol, ok := col.(*array.String)
+			if !ok {
+				return fmt.Errorf("expected string column, got %T", col)
+			}
+
+			for i := 0; i < stringCol.Len(); i++ {
+				// This should usually not happen, but better safe than sorry.
+				if stringCol.IsNull(i) {
+					continue
+				}
+
+				val := stringCol.Value(i)
+				seen[strings.TrimPrefix(val, "labels.")] = struct{}{}
+			}
+
+			return nil
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	vals := make([]string, 0, len(seen))
+	for val := range seen {
+		vals = append(vals, val)
+	}
+
+	sort.Strings(vals)
+
+	return vals, nil
 }

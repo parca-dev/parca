@@ -230,7 +230,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   }, [graph, arrow, filtered, total]);
 
   useEffect(() => {
-    if (loading && setActionButtons !== undefined) {
+    if (isLoading && setActionButtons !== undefined) {
       setActionButtons(<IcicleActionButtonPlaceholder isHalfScreen={isHalfScreen} />);
       return;
     }
@@ -243,7 +243,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
       <div className="flex w-full justify-end gap-2 pb-2">
         <div className="ml-2 flex w-full flex-col items-start justify-between gap-2 md:flex-row md:items-end">
           {arrow !== undefined && <GroupAndSortActionButtons navigateTo={navigateTo} />}
-          {isHalfScreen ? (
+          {arrow !== undefined && isHalfScreen ? (
             <IconButton
               icon={isInvert ? 'ph:sort-ascending' : 'ph:sort-descending'}
               toolTipText={isInvert ? 'Original Call Stack' : 'Invert Call Stack'}

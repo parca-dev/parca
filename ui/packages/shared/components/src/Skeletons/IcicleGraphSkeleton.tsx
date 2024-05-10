@@ -26,21 +26,20 @@ export const IcicleActionButtonPlaceholder = ({
     <div className="ml-2 flex w-full flex-col items-start justify-between gap-2 md:flex-row md:items-end">
       <div>
         <label className="text-sm">Group</label>
-        <div className="h-[38px] bg-[#f3f3f3] dark:bg-gray-900 animate-pulse w-[172px]"></div>
+        <div className="h-[38px] bg-[#f3f3f3] dark:bg-gray-900 animate-pulse w-[147px]"></div>
       </div>
       <div>
         <label className="text-sm">Sort</label>
-        <div className="h-[38px] bg-[#f3f3f3] dark:bg-gray-900 animate-pulse w-[116px]"></div>
+        <div className="h-[38px] bg-[#f3f3f3] dark:bg-gray-900 animate-pulse w-[108px]"></div>
       </div>
       <div>
-        <label className="text-sm">Runtimes</label>
-        <div className="h-[38px] bg-[#f3f3f3] dark:bg-gray-900 animate-pulse w-[131px]"></div>
+        <div className="h-[38px] bg-[#f3f3f3] dark:bg-gray-900 animate-pulse w-[174px]"></div>
       </div>
 
       {!isHalfScreen && (
         <>
-          <div className="h-[38px] bg-[#f3f3f3] dark:bg-gray-900 animate-pulse w-[152px]"></div>
-          <div className="h-[38px] bg-[#f3f3f3] dark:bg-gray-900 animate-pulse w-[110px]"></div>
+          <div className="h-[38px] bg-[#f3f3f3] dark:bg-gray-900 animate-pulse w-[145px]"></div>
+          <div className="h-[38px] bg-[#f3f3f3] dark:bg-gray-900 animate-pulse w-[137px]"></div>
         </>
       )}
     </div>
