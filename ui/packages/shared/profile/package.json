@@ -53,7 +53,7 @@
   },
   "devDependencies": {
     "@types/lodash.throttle": "4.1.9",
-    "@types/react-syntax-highlighter": "15.5.12"
+    "@types/react-syntax-highlighter": "15.5.13"
   },
   "main": "dist/index.js",
   "scripts": {

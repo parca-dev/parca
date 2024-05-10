@@ -818,8 +818,8 @@ importers:
         specifier: 4.1.9
         version: 4.1.9
       '@types/react-syntax-highlighter':
-        specifier: 15.5.12
-        version: 15.5.12
+        specifier: 15.5.13
+        version: 15.5.13
 
   packages/shared/store:
     dependencies:
@@ -7766,8 +7766,8 @@ packages:
       redux: 4.2.1
     dev: false
 
-  /@types/react-syntax-highlighter@15.5.12:
-    resolution: {integrity: sha512-wCuk2HWXqEkHFzNMYmdMgyVRoxJEndutEBz3rKqmcrnkwGDtwT8gMtRaTPzXWPVasJ9NydQ54dbosg2sW65PCg==}
+  /@types/react-syntax-highlighter@15.5.13:
+    resolution: {integrity: sha512-uLGJ87j6Sz8UaBAooU0T6lWJ0dBmjZgN1PZTrj05TNql2/XpC6+4HhMT5syIdFUUt+FASfCeLLv4kBygNU+8qA==}
     dependencies:
       '@types/react': 18.2.79
     dev: true
