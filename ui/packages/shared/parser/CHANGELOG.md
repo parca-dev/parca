@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.72](https://github.com/parca-dev/parca/compare/@parca/parser@0.16.71...@parca/parser@0.16.72) (2024-05-09)
+
+**Note:** Version bump only for package @parca/parser
+
+## [0.16.71](https://github.com/parca-dev/parca/compare/@parca/parser@0.16.70...@parca/parser@0.16.71) (2024-05-09)
+
+**Note:** Version bump only for package @parca/parser
+
 ## [0.16.70](https://github.com/parca-dev/parca/compare/@parca/parser@0.16.69...@parca/parser@0.16.70) (2024-05-01)
 
 **Note:** Version bump only for package @parca/parser

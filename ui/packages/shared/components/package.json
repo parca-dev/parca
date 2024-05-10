@@ -1,6 +1,6 @@
 {
   "name": "@parca/components",
-  "version": "0.16.270",
+  "version": "0.16.272",
   "description": "A component library for Parca",
   "main": "dist/index.js",
   "scripts": {
@@ -13,13 +13,13 @@
   "dependencies": {
     "@headlessui/react": "^1.7.19",
     "@iconify/react": "^4.0.0",
-    "@parca/client": "workspace:^",
-    "@parca/dynamicsize": "^0.16.61",
-    "@parca/hooks": "^0.0.50",
-    "@parca/icons": "^0.16.65",
-    "@parca/parser": "^0.16.70",
-    "@parca/store": "^0.16.139",
-    "@parca/utilities": "^0.0.67",
+    "@parca/client": "^0.16.111",
+    "@parca/dynamicsize": "^0.16.63",
+    "@parca/hooks": "^0.0.52",
+    "@parca/icons": "^0.16.67",
+    "@parca/parser": "^0.16.72",
+    "@parca/store": "^0.16.141",
+    "@parca/utilities": "^0.0.69",
     "@protobuf-ts/grpcweb-transport": "^2.5.0",
     "@protobuf-ts/runtime-rpc": "^2.5.0",
     "@tanstack/react-table": "^8.16.0",
@@ -59,5 +59,5 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
-  "gitHead": "3f23a55309bf37b6c7bab85e60fed98865693029"
+  "gitHead": "feaaafad44b53ecc44f1d9e35905cd7d1243c4a3"
 }

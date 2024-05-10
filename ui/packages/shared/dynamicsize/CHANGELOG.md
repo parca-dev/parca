@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.63](https://github.com/parca-dev/parca/compare/@parca/dynamicsize@0.16.62...@parca/dynamicsize@0.16.63) (2024-05-09)
+
+**Note:** Version bump only for package @parca/dynamicsize
+
+## [0.16.62](https://github.com/parca-dev/parca/compare/@parca/dynamicsize@0.16.61...@parca/dynamicsize@0.16.62) (2024-05-09)
+
+**Note:** Version bump only for package @parca/dynamicsize
+
 ## 0.16.61 (2024-02-28)
 
 # 0.21.0 (2024-02-27)
