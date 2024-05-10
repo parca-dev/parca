@@ -85,14 +85,14 @@ func TestHTTPDebugInfodClient_request(t *testing.T) {
 					// Use make go/test-clean to remove the recorded data.
 					Transport: r,
 				},
-				url.URL{Scheme: "http", Host: "debuginfod.elfutils.org"},
+				tt.args.u,
 			)
 			ctx, cancel := context.WithTimeout(context.Background(), tt.fields.timeoutDuration)
 			t.Cleanup(cancel)
 
-			r, err := c.request(ctx, tt.args.u, tt.args.buildID)
+			r, err := c.debuginfoRequest(ctx, tt.args.buildID)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("request() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("debuginfoRequest() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			t.Cleanup(func() {
@@ -172,12 +172,17 @@ func TestHTTPDebugInfodClientRedirect(t *testing.T) {
 }
 
 type fakeDebuginfodClient struct {
-	get    func(ctx context.Context, buildID string) (io.ReadCloser, error)
-	exists func(ctx context.Context, buildID string) (bool, error)
+	get       func(ctx context.Context, buildID string) (io.ReadCloser, error)
+	getSource func(ctx context.Context, buildID string) (io.ReadCloser, error)
+	exists    func(ctx context.Context, buildID string) (bool, error)
 }
 
 func (f *fakeDebuginfodClient) Get(ctx context.Context, buildID string) (io.ReadCloser, error) {
 	return f.get(ctx, buildID)
+}
+
+func (f *fakeDebuginfodClient) GetSource(ctx context.Context, buildID, file string) (io.ReadCloser, error) {
+	return f.getSource(ctx, buildID)
 }
 
 func (f *fakeDebuginfodClient) Exists(ctx context.Context, buildID string) (bool, error) {

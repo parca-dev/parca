@@ -434,3 +434,9 @@ func objectPath(buildID string, typ debuginfopb.DebuginfoType) string {
 		return path.Join(buildID, "debuginfo")
 	}
 }
+
+// in a debuginfod server the source path is directly in the URL in the form of
+// debuginfod.example.com/buildid/<build-id>/source/<file>.
+func debuginfodSourcePath(buildID, file string) string {
+	return path.Join(buildID, "source", file)
+}

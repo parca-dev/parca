@@ -42,6 +42,7 @@ import (
 
 type DebuginfodClients interface {
 	Get(ctx context.Context, server, buildid string) (io.ReadCloser, error)
+	GetSource(ctx context.Context, server, buildid, file string) (io.ReadCloser, error)
 	Exists(ctx context.Context, buildid string) ([]string, error)
 }
 
@@ -51,18 +52,27 @@ func (NopDebuginfodClients) Get(context.Context, string, string) (io.ReadCloser,
 	return io.NopCloser(bytes.NewReader(nil)), ErrDebuginfoNotFound
 }
 
+func (NopDebuginfodClients) GetSource(context.Context, string, string, string) (io.ReadCloser, error) {
+	return io.NopCloser(bytes.NewReader(nil)), ErrDebuginfoNotFound
+}
+
 func (NopDebuginfodClients) Exists(context.Context, string) ([]string, error) {
 	return nil, nil
 }
 
 type DebuginfodClient interface {
 	Get(ctx context.Context, buildid string) (io.ReadCloser, error)
+	GetSource(ctx context.Context, buildid, file string) (io.ReadCloser, error)
 	Exists(ctx context.Context, buildid string) (bool, error)
 }
 
 type NopDebuginfodClient struct{}
 
 func (NopDebuginfodClient) Get(context.Context, string) (io.ReadCloser, error) {
+	return io.NopCloser(bytes.NewReader(nil)), ErrDebuginfoNotFound
+}
+
+func (NopDebuginfodClient) GetSource(context.Context, string, string) (io.ReadCloser, error) {
 	return io.NopCloser(bytes.NewReader(nil)), ErrDebuginfoNotFound
 }
 
@@ -146,6 +156,15 @@ func (c *ParallelDebuginfodClients) Get(ctx context.Context, server, buildid str
 	}
 
 	return client.Get(ctx, buildid)
+}
+
+func (c *ParallelDebuginfodClients) GetSource(ctx context.Context, server, buildid, file string) (io.ReadCloser, error) {
+	client, ok := c.clientsMap[server]
+	if !ok {
+		return nil, fmt.Errorf("no client for server %q", server)
+	}
+
+	return client.GetSource(ctx, buildid, file)
 }
 
 func (c *ParallelDebuginfodClients) Exists(ctx context.Context, buildid string) ([]string, error) {
@@ -241,6 +260,20 @@ func (c *DebuginfodClientObjectStorageCache) Get(ctx context.Context, buildID st
 	return rc, nil
 }
 
+// GetSource returns source file for given buildid and file while caching it in object storage.
+func (c *DebuginfodClientObjectStorageCache) GetSource(ctx context.Context, buildID, file string) (io.ReadCloser, error) {
+	rc, err := c.bucket.Get(ctx, debuginfodSourcePath(buildID, file))
+	if err != nil {
+		if c.bucket.IsObjNotFoundErr(err) {
+			return c.getSourceAndCache(ctx, buildID, file)
+		}
+
+		return nil, err
+	}
+
+	return rc, nil
+}
+
 func (c *DebuginfodClientObjectStorageCache) getAndCache(ctx context.Context, buildID string) (io.ReadCloser, error) {
 	r, err := c.client.Get(ctx, buildID)
 	if err != nil {
@@ -253,6 +286,25 @@ func (c *DebuginfodClientObjectStorageCache) getAndCache(ctx context.Context, bu
 	}
 
 	r, err = c.bucket.Get(ctx, objectPath(buildID, debuginfopb.DebuginfoType_DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED))
+	if err != nil {
+		return nil, err
+	}
+
+	return r, nil
+}
+
+func (c *DebuginfodClientObjectStorageCache) getSourceAndCache(ctx context.Context, buildID, file string) (io.ReadCloser, error) {
+	r, err := c.client.GetSource(ctx, buildID, file)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+
+	if err := c.bucket.Upload(ctx, debuginfodSourcePath(buildID, file), r); err != nil {
+		level.Error(c.logger).Log("msg", "failed to upload downloaded debuginfod file", "err", err, "build_id", buildID, "file", file)
+	}
+
+	r, err = c.bucket.Get(ctx, debuginfodSourcePath(buildID, file))
 	if err != nil {
 		return nil, err
 	}
@@ -276,19 +328,36 @@ func (c *DebuginfodClientObjectStorageCache) Exists(ctx context.Context, buildID
 
 // Get returns debug information file for given buildID by downloading it from upstream servers.
 func (c *HTTPDebuginfodClient) Get(ctx context.Context, buildID string) (io.ReadCloser, error) {
-	return c.request(ctx, c.upstreamServer, buildID)
+	return c.debuginfoRequest(ctx, buildID)
 }
 
-func (c *HTTPDebuginfodClient) request(ctx context.Context, u url.URL, buildID string) (io.ReadCloser, error) {
-	ctx = httptrace.WithClientTrace(ctx, otelhttptrace.NewClientTrace(ctx, otelhttptrace.WithTracerProvider(c.tp)))
-
+func (c *HTTPDebuginfodClient) debuginfoRequest(ctx context.Context, buildID string) (io.ReadCloser, error) {
 	// https://www.mankier.com/8/debuginfod#Webapi
 	// Endpoint: /buildid/BUILDID/debuginfo
 	// If the given buildid is known to the server,
 	// this request will result in a binary object that contains the customary .*debug_* sections.
+	u := c.upstreamServer
 	u.Path = path.Join(u.Path, "buildid", buildID, "debuginfo")
 
-	resp, err := c.doRequest(ctx, u.String())
+	return c.request(ctx, u.String())
+}
+
+// GetSource returns source file for given buildID and file by downloading it from upstream servers.
+func (c *HTTPDebuginfodClient) GetSource(ctx context.Context, buildID, file string) (io.ReadCloser, error) {
+	// https://www.mankier.com/8/debuginfod#Webapi
+	// Endpoint: /buildid/BUILDID/source/FILE
+	// If the given buildid and file combination is known to the server,
+	// this request will result in a text file that contains the source code.
+	u := c.upstreamServer
+	u.Path = path.Join(u.Path, "buildid", buildID, "source", file)
+
+	return c.request(ctx, u.String())
+}
+
+func (c *HTTPDebuginfodClient) request(ctx context.Context, fullUrl string) (io.ReadCloser, error) {
+	ctx = httptrace.WithClientTrace(ctx, otelhttptrace.NewClientTrace(ctx, otelhttptrace.WithTracerProvider(c.tp)))
+
+	resp, err := c.doRequest(ctx, fullUrl)
 	if err != nil {
 		return nil, fmt.Errorf("request failed: %w", err)
 	}
@@ -386,6 +455,10 @@ func (c *DebuginfodExistsClientCache) Get(ctx context.Context, buildID string) (
 	return c.client.Get(ctx, buildID)
 }
 
+func (c *DebuginfodExistsClientCache) GetSource(ctx context.Context, buildID, file string) (io.ReadCloser, error) {
+	return c.client.GetSource(ctx, buildID, file)
+}
+
 func (c *DebuginfodExistsClientCache) Exists(ctx context.Context, buildID string) (bool, error) {
 	if v, ok := c.lruCache.Get(buildID); ok {
 		if v.lastResponseError == nil || time.Since(v.lastResponseTime) < 10*time.Minute {
@@ -432,6 +505,16 @@ func (c *DebuginfodTracingClient) Get(ctx context.Context, buildID string) (io.R
 	span.SetAttributes(attribute.String("buildid", buildID))
 
 	return c.client.Get(ctx, buildID)
+}
+
+func (c *DebuginfodTracingClient) GetSource(ctx context.Context, buildID, file string) (io.ReadCloser, error) {
+	ctx, span := c.tracer.Start(ctx, "DebuginfodClient.GetSource")
+	defer span.End()
+
+	span.SetAttributes(attribute.String("buildid", buildID))
+	span.SetAttributes(attribute.String("file", file))
+
+	return c.client.GetSource(ctx, buildID, file)
 }
 
 func (c *DebuginfodTracingClient) Exists(ctx context.Context, buildID string) (bool, error) {
