@@ -293,7 +293,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		return &pb.QueryResponse{
 			Total:    0,
 			Filtered: 0,
-			Report:   &pb.QueryResponse_ProfileMetadata{ProfileMetadata: &pb.ProfileMetadata{
+			Report: &pb.QueryResponse_ProfileMetadata{ProfileMetadata: &pb.ProfileMetadata{
 				MappingFiles: mappingFiles,
 				Labels:       labels,
 			}},
@@ -919,7 +919,6 @@ func (q *ColumnQueryAPI) GetMappingFiles(
 		m.Start.AsTime(),
 		m.End.AsTime(),
 	)
-
 	if err != nil {
 		return nil, err
 	}
@@ -932,7 +931,6 @@ func (q *ColumnQueryAPI) GetLabels(
 	req *pb.LabelsRequest,
 ) ([]string, error) {
 	l, err := q.querier.GetProfileMetadataLabels(ctx, req.Match, req.Start.AsTime(), req.End.AsTime())
-
 	if err != nil {
 		return nil, err
 	}

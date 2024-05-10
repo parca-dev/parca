@@ -383,15 +383,22 @@ export interface QueryRequest {
      */
     sourceReference?: SourceReference;
     /**
+     * which runtime frames to filter out, often interpreter frames like python or ruby are not super useful by default
+     *
+     * @deprecated
+     * @generated from protobuf field: optional parca.query.v1alpha1.RuntimeFilter runtime_filter = 10 [deprecated = true];
+     */
+    runtimeFilter?: RuntimeFilter;
+    /**
      * invert_call_stack inverts the call stacks in the flamegraph
      *
-     * @generated from protobuf field: optional bool invert_call_stack = 10;
+     * @generated from protobuf field: optional bool invert_call_stack = 11;
      */
     invertCallStack?: boolean;
     /**
      * a varying set of filters to apply to the query request
      *
-     * @generated from protobuf field: parca.query.v1alpha1.Filters filters = 11;
+     * @generated from protobuf field: parca.query.v1alpha1.Filters filters = 12;
      */
     filters?: Filters;
 }
@@ -2021,8 +2028,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
             { no: 7, name: "node_trim_threshold", kind: "scalar", opt: true, T: 2 /*ScalarType.FLOAT*/ },
             { no: 8, name: "group_by", kind: "message", T: () => GroupBy },
             { no: 9, name: "source_reference", kind: "message", T: () => SourceReference },
-            { no: 10, name: "invert_call_stack", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
-            { no: 11, name: "filters", kind: "message", T: () => Filters }
+            { no: 10, name: "runtime_filter", kind: "message", T: () => RuntimeFilter },
+            { no: 11, name: "invert_call_stack", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
+            { no: 12, name: "filters", kind: "message", T: () => Filters }
         ]);
     }
     create(value?: PartialMessage<QueryRequest>): QueryRequest {
@@ -2075,10 +2083,13 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
                 case /* optional parca.query.v1alpha1.SourceReference source_reference */ 9:
                     message.sourceReference = SourceReference.internalBinaryRead(reader, reader.uint32(), options, message.sourceReference);
                     break;
-                case /* optional bool invert_call_stack */ 10:
+                case /* optional parca.query.v1alpha1.RuntimeFilter runtime_filter = 10 [deprecated = true];*/ 10:
+                    message.runtimeFilter = RuntimeFilter.internalBinaryRead(reader, reader.uint32(), options, message.runtimeFilter);
+                    break;
+                case /* optional bool invert_call_stack */ 11:
                     message.invertCallStack = reader.bool();
                     break;
-                case /* parca.query.v1alpha1.Filters filters */ 11:
+                case /* parca.query.v1alpha1.Filters filters */ 12:
                     message.filters = Filters.internalBinaryRead(reader, reader.uint32(), options, message.filters);
                     break;
                 default:
@@ -2120,12 +2131,15 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         /* optional parca.query.v1alpha1.SourceReference source_reference = 9; */
         if (message.sourceReference)
             SourceReference.internalBinaryWrite(message.sourceReference, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
-        /* optional bool invert_call_stack = 10; */
+        /* optional parca.query.v1alpha1.RuntimeFilter runtime_filter = 10 [deprecated = true]; */
+        if (message.runtimeFilter)
+            RuntimeFilter.internalBinaryWrite(message.runtimeFilter, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* optional bool invert_call_stack = 11; */
         if (message.invertCallStack !== undefined)
-            writer.tag(10, WireType.Varint).bool(message.invertCallStack);
-        /* parca.query.v1alpha1.Filters filters = 11; */
+            writer.tag(11, WireType.Varint).bool(message.invertCallStack);
+        /* parca.query.v1alpha1.Filters filters = 12; */
         if (message.filters)
-            Filters.internalBinaryWrite(message.filters, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+            Filters.internalBinaryWrite(message.filters, writer.tag(12, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
