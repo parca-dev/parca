@@ -1525,6 +1525,7 @@ func TestFilterDataWithPath(t *testing.T) {
 	w.Diff.Append(0)
 	w.DiffPerSecond.Append(0)
 
+	frameFilter := []string{"libpython3.11.so.1.0", "interpreter"}
 	originalRecord := w.RecordBuilder.NewRecord()
 	recs, _, err := FilterProfileData(
 		context.Background(),
@@ -1532,7 +1533,7 @@ func TestFilterDataWithPath(t *testing.T) {
 		mem,
 		[]arrow.Record{originalRecord},
 		"",
-		[]string{"test"},
+		frameFilter,
 	)
 	require.NoError(t, err)
 	defer func() {
@@ -1552,7 +1553,7 @@ func TestFilterDataWithPath(t *testing.T) {
 	require.Equal(t, "test", string(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(2)))))
 }
 
-func TestFilterDataInterpretedOnly(t *testing.T) {
+func TestFilterDataFrameFilter(t *testing.T) {
 	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
 	defer mem.AssertSize(t, 0)
 	w := profile.NewWriter(mem, nil)
@@ -1615,7 +1616,7 @@ func TestFilterDataInterpretedOnly(t *testing.T) {
 		mem,
 		[]arrow.Record{originalRecord},
 		"",
-		[]string{"test"},
+		[]string{"libc.so.6"},
 	)
 	require.NoError(t, err)
 	defer func() {

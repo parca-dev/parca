@@ -293,6 +293,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     setActionButtons,
     loading,
     isHalfScreen,
+    isLoading,
   ]);
 
   useEffect(() => {

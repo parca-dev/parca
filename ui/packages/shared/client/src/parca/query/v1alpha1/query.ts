@@ -385,13 +385,13 @@ export interface QueryRequest {
     /**
      * invert_call_stack inverts the call stacks in the flamegraph
      *
-     * @generated from protobuf field: optional bool invert_call_stack = 11;
+     * @generated from protobuf field: optional bool invert_call_stack = 10;
      */
     invertCallStack?: boolean;
     /**
      * a varying set of filters to apply to the query request
      *
-     * @generated from protobuf field: parca.query.v1alpha1.Filters filters = 12;
+     * @generated from protobuf field: parca.query.v1alpha1.Filters filters = 11;
      */
     filters?: Filters;
 }
@@ -2021,8 +2021,8 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
             { no: 7, name: "node_trim_threshold", kind: "scalar", opt: true, T: 2 /*ScalarType.FLOAT*/ },
             { no: 8, name: "group_by", kind: "message", T: () => GroupBy },
             { no: 9, name: "source_reference", kind: "message", T: () => SourceReference },
-            { no: 11, name: "invert_call_stack", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
-            { no: 12, name: "filters", kind: "message", T: () => Filters }
+            { no: 10, name: "invert_call_stack", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
+            { no: 11, name: "filters", kind: "message", T: () => Filters }
         ]);
     }
     create(value?: PartialMessage<QueryRequest>): QueryRequest {
@@ -2075,10 +2075,10 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
                 case /* optional parca.query.v1alpha1.SourceReference source_reference */ 9:
                     message.sourceReference = SourceReference.internalBinaryRead(reader, reader.uint32(), options, message.sourceReference);
                     break;
-                case /* optional bool invert_call_stack */ 11:
+                case /* optional bool invert_call_stack */ 10:
                     message.invertCallStack = reader.bool();
                     break;
-                case /* parca.query.v1alpha1.Filters filters */ 12:
+                case /* parca.query.v1alpha1.Filters filters */ 11:
                     message.filters = Filters.internalBinaryRead(reader, reader.uint32(), options, message.filters);
                     break;
                 default:
@@ -2120,12 +2120,12 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         /* optional parca.query.v1alpha1.SourceReference source_reference = 9; */
         if (message.sourceReference)
             SourceReference.internalBinaryWrite(message.sourceReference, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
-        /* optional bool invert_call_stack = 11; */
+        /* optional bool invert_call_stack = 10; */
         if (message.invertCallStack !== undefined)
-            writer.tag(11, WireType.Varint).bool(message.invertCallStack);
-        /* parca.query.v1alpha1.Filters filters = 12; */
+            writer.tag(10, WireType.Varint).bool(message.invertCallStack);
+        /* parca.query.v1alpha1.Filters filters = 11; */
         if (message.filters)
-            Filters.internalBinaryWrite(message.filters, writer.tag(12, WireType.LengthDelimited).fork(), options).join();
+            Filters.internalBinaryWrite(message.filters, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
