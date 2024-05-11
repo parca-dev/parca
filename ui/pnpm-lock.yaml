@@ -13,7 +13,7 @@ importers:
     dependencies:
       '@parca/react-benchmark':
         specifier: ^5.3.0
-        version: 5.3.0(@babel/core@7.24.5)(@babel/plugin-syntax-flow@7.24.1)(@babel/plugin-transform-react-jsx@7.23.4)(@swc/core@1.5.5)(esbuild@0.18.20)(eslint@8.45.0)(sass@1.75.0)(ts-node@10.9.2)(webpack@5.91.0)
+        version: 5.3.0(@babel/core@7.24.5)(@babel/plugin-syntax-flow@7.24.1)(@babel/plugin-transform-react-jsx@7.23.4)(@swc/core@1.5.5)(esbuild@0.18.20)(eslint@8.45.0)(sass@1.76.0)(ts-node@10.9.2)(webpack@5.91.0)
       command-line-args:
         specifier: ^5.2.1
         version: 5.2.1
@@ -271,11 +271,11 @@ importers:
         specifier: 3.0.2
         version: 3.0.2
       sass:
-        specifier: 1.75.0
-        version: 1.75.0
+        specifier: 1.76.0
+        version: 1.76.0
       sass-loader:
         specifier: 13.3.3
-        version: 13.3.3(sass@1.75.0)(webpack@5.91.0)
+        version: 13.3.3(sass@1.76.0)(webpack@5.91.0)
       storybook:
         specifier: 7.6.19
         version: 7.6.19
@@ -459,13 +459,13 @@ importers:
         version: 5.3.1
       react-scripts:
         specifier: 5.0.1
-        version: 5.0.1(@babel/plugin-syntax-flow@7.24.1)(@babel/plugin-transform-react-jsx@7.23.4)(@swc/core@1.5.5)(esbuild@0.18.20)(eslint@8.45.0)(react@18.3.1)(sass@1.75.0)(ts-node@10.9.2)(typescript@5.4.5)
+        version: 5.0.1(@babel/plugin-syntax-flow@7.24.1)(@babel/plugin-transform-react-jsx@7.23.4)(@swc/core@1.5.5)(esbuild@0.18.20)(eslint@8.45.0)(react@18.3.1)(sass@1.76.0)(ts-node@10.9.2)(typescript@5.4.5)
       sass:
-        specifier: 1.75.0
-        version: 1.75.0
+        specifier: 1.76.0
+        version: 1.76.0
       sass-loader:
         specifier: 13.3.3
-        version: 13.3.3(sass@1.75.0)(webpack@5.91.0)
+        version: 13.3.3(sass@1.76.0)(webpack@5.91.0)
       tslint:
         specifier: 6.1.3
         version: 6.1.3(typescript@5.4.5)
@@ -2351,7 +2351,7 @@ packages:
       cosmiconfig-typescript-loader: 1.0.9(@swc/core@1.5.5)(@types/node@18.19.31)(cosmiconfig@7.1.0)(typescript@5.4.5)
       cross-spawn: 7.0.3
       lodash: 4.17.21
-      react-scripts: 5.0.1(@babel/plugin-syntax-flow@7.24.1)(@babel/plugin-transform-react-jsx@7.23.4)(@swc/core@1.5.5)(esbuild@0.18.20)(eslint@8.45.0)(react@18.3.1)(sass@1.75.0)(ts-node@10.9.2)(typescript@5.4.5)
+      react-scripts: 5.0.1(@babel/plugin-syntax-flow@7.24.1)(@babel/plugin-transform-react-jsx@7.23.4)(@swc/core@1.5.5)(esbuild@0.18.20)(eslint@8.45.0)(react@18.3.1)(sass@1.76.0)(ts-node@10.9.2)(typescript@5.4.5)
       semver: 7.5.4
       webpack-merge: 5.10.0
     transitivePeerDependencies:
@@ -4320,7 +4320,7 @@ packages:
       uuid: 3.4.0
     dev: true
 
-  /@parca/react-benchmark@5.3.0(@babel/core@7.24.5)(@babel/plugin-syntax-flow@7.24.1)(@babel/plugin-transform-react-jsx@7.23.4)(@swc/core@1.5.5)(esbuild@0.18.20)(eslint@8.45.0)(sass@1.75.0)(ts-node@10.9.2)(webpack@5.91.0):
+  /@parca/react-benchmark@5.3.0(@babel/core@7.24.5)(@babel/plugin-syntax-flow@7.24.1)(@babel/plugin-transform-react-jsx@7.23.4)(@swc/core@1.5.5)(esbuild@0.18.20)(eslint@8.45.0)(sass@1.76.0)(ts-node@10.9.2)(webpack@5.91.0):
     resolution: {integrity: sha512-oOvYXo4f7NGO909Mk8CPTmlYPQZywAjVedYuZTb8GkILH0oSjRHUzBDxuMKfQs72q0YGofRNUoQs5QHuNMOMSw==}
     engines: {node: '>=14'}
     hasBin: true
@@ -4342,7 +4342,7 @@ packages:
       puppeteer: 13.7.0
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      react-scripts: 5.0.1(@babel/plugin-syntax-flow@7.24.1)(@babel/plugin-transform-react-jsx@7.23.4)(@swc/core@1.5.5)(esbuild@0.18.20)(eslint@8.45.0)(react@18.2.0)(sass@1.75.0)(ts-node@10.9.2)(typescript@4.9.5)
+      react-scripts: 5.0.1(@babel/plugin-syntax-flow@7.24.1)(@babel/plugin-transform-react-jsx@7.23.4)(@swc/core@1.5.5)(esbuild@0.18.20)(eslint@8.45.0)(react@18.2.0)(sass@1.76.0)(ts-node@10.9.2)(typescript@4.9.5)
       resolve-from: 5.0.0
       source-map-loader: 3.0.2(webpack@5.91.0)
       source-map-support: 0.5.21
@@ -5598,7 +5598,7 @@ packages:
       '@storybook/theming': 6.5.16(react-dom@18.3.1)(react@18.3.1)
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
-      sass-loader: 13.3.3(sass@1.75.0)(webpack@5.91.0)
+      sass-loader: 13.3.3(sass@1.76.0)(webpack@5.91.0)
     dev: true
 
   /@storybook/addon-toolbars@7.6.19:
@@ -6257,7 +6257,7 @@ packages:
       '@types/babel__core': 7.20.5
       '@types/semver': 7.5.5
       pnp-webpack-plugin: 1.7.0(typescript@5.4.5)
-      react-scripts: 5.0.1(@babel/plugin-syntax-flow@7.24.1)(@babel/plugin-transform-react-jsx@7.23.4)(@swc/core@1.5.5)(esbuild@0.18.20)(eslint@8.45.0)(react@18.3.1)(sass@1.75.0)(ts-node@10.9.2)(typescript@5.4.5)
+      react-scripts: 5.0.1(@babel/plugin-syntax-flow@7.24.1)(@babel/plugin-transform-react-jsx@7.23.4)(@swc/core@1.5.5)(esbuild@0.18.20)(eslint@8.45.0)(react@18.3.1)(sass@1.76.0)(ts-node@10.9.2)(typescript@5.4.5)
       semver: 7.5.4
     transitivePeerDependencies:
       - '@types/webpack'
@@ -21281,7 +21281,7 @@ packages:
       react: 18.3.1
     dev: false
 
-  /react-scripts@5.0.1(@babel/plugin-syntax-flow@7.24.1)(@babel/plugin-transform-react-jsx@7.23.4)(@swc/core@1.5.5)(esbuild@0.18.20)(eslint@8.45.0)(react@18.2.0)(sass@1.75.0)(ts-node@10.9.2)(typescript@4.9.5):
+  /react-scripts@5.0.1(@babel/plugin-syntax-flow@7.24.1)(@babel/plugin-transform-react-jsx@7.23.4)(@swc/core@1.5.5)(esbuild@0.18.20)(eslint@8.45.0)(react@18.2.0)(sass@1.76.0)(ts-node@10.9.2)(typescript@4.9.5):
     resolution: {integrity: sha512-8VAmEm/ZAwQzJ+GOMLbBsTdDKOpuZh7RPs0UymvBR2vRk4iZWCskjbFnxqjrzoIvlNNRZ3QJFx6/qDSi6zSnaQ==}
     engines: {node: '>=14.0.0'}
     hasBin: true
@@ -21331,7 +21331,7 @@ packages:
       react-refresh: 0.11.0
       resolve: 1.22.8
       resolve-url-loader: 4.0.0
-      sass-loader: 12.6.0(sass@1.75.0)(webpack@5.91.0)
+      sass-loader: 12.6.0(sass@1.76.0)(webpack@5.91.0)
       semver: 7.5.4
       source-map-loader: 3.0.2(webpack@5.91.0)
       style-loader: 3.3.4(webpack@5.91.0)
@@ -21378,7 +21378,7 @@ packages:
       - webpack-plugin-serve
     dev: false
 
-  /react-scripts@5.0.1(@babel/plugin-syntax-flow@7.24.1)(@babel/plugin-transform-react-jsx@7.23.4)(@swc/core@1.5.5)(esbuild@0.18.20)(eslint@8.45.0)(react@18.3.1)(sass@1.75.0)(ts-node@10.9.2)(typescript@5.4.5):
+  /react-scripts@5.0.1(@babel/plugin-syntax-flow@7.24.1)(@babel/plugin-transform-react-jsx@7.23.4)(@swc/core@1.5.5)(esbuild@0.18.20)(eslint@8.45.0)(react@18.3.1)(sass@1.76.0)(ts-node@10.9.2)(typescript@5.4.5):
     resolution: {integrity: sha512-8VAmEm/ZAwQzJ+GOMLbBsTdDKOpuZh7RPs0UymvBR2vRk4iZWCskjbFnxqjrzoIvlNNRZ3QJFx6/qDSi6zSnaQ==}
     engines: {node: '>=14.0.0'}
     hasBin: true
@@ -21428,7 +21428,7 @@ packages:
       react-refresh: 0.11.0
       resolve: 1.22.8
       resolve-url-loader: 4.0.0
-      sass-loader: 12.6.0(sass@1.75.0)(webpack@5.91.0)
+      sass-loader: 12.6.0(sass@1.76.0)(webpack@5.91.0)
       semver: 7.5.4
       source-map-loader: 3.0.2(webpack@5.91.0)
       style-loader: 3.3.4(webpack@5.91.0)
@@ -22229,7 +22229,7 @@ packages:
   /sanitize.css@13.0.0:
     resolution: {integrity: sha512-ZRwKbh/eQ6w9vmTjkuG0Ioi3HBwPFce0O+v//ve+aOq1oeCy7jMV2qzzAlpsNuqpqCBjjriM1lbtZbF/Q8jVyA==}
 
-  /sass-loader@12.6.0(sass@1.75.0)(webpack@5.91.0):
+  /sass-loader@12.6.0(sass@1.76.0)(webpack@5.91.0):
     resolution: {integrity: sha512-oLTaH0YCtX4cfnJZxKSLAyglED0naiYfNG1iXfU5w1LNZ+ukoA5DtyDIN5zmKVZwYNJP4KRc5Y3hkWga+7tYfA==}
     engines: {node: '>= 12.13.0'}
     peerDependencies:
@@ -22250,10 +22250,10 @@ packages:
     dependencies:
       klona: 2.0.6
       neo-async: 2.6.2
-      sass: 1.75.0
+      sass: 1.76.0
       webpack: 5.91.0(@swc/core@1.5.5)(esbuild@0.18.20)
 
-  /sass-loader@13.3.3(sass@1.75.0)(webpack@5.91.0):
+  /sass-loader@13.3.3(sass@1.76.0)(webpack@5.91.0):
     resolution: {integrity: sha512-mt5YN2F1MOZr3d/wBRcZxeFgwgkH44wVc2zohO2YF6JiOMkiXe4BYRZpSu2sO1g71mo/j16txzUhsKZlqjVGzA==}
     engines: {node: '>= 14.15.0'}
     peerDependencies:
@@ -22273,12 +22273,12 @@ packages:
         optional: true
     dependencies:
       neo-async: 2.6.2
-      sass: 1.75.0
+      sass: 1.76.0
       webpack: 5.91.0(@swc/core@1.5.5)(esbuild@0.18.20)
     dev: true
 
-  /sass@1.75.0:
-    resolution: {integrity: sha512-ShMYi3WkrDWxExyxSZPst4/okE9ts46xZmJDSawJQrnte7M1V9fScVB+uNXOVKRBt0PggHOwoZcn8mYX4trnBw==}
+  /sass@1.76.0:
+    resolution: {integrity: sha512-nc3LeqvF2FNW5xGF1zxZifdW3ffIz5aBb7I7tSvOoNu7z1RQ6pFt9MBuiPtjgaI62YWrM/txjWlOCFiGtf2xpw==}
     engines: {node: '>=14.0.0'}
     hasBin: true
     dependencies:
