@@ -748,20 +748,27 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile
 		totalBaseValuePerSecond += math.Float64.Sum(s.Column(len(s.Columns()) - 3).(*array.Float64))
 	}
 
+	// By default, we don't want to scale either side, meaning we multiply by 1.
+	var (
+		cumulativeCompareRatio          = 1.0
+		cumulativeComparePerSecondRatio = 1.0
+		cumulativeBaseRatio             = 1.0
+		cumulativeBasePerSecondRatio    = 1.0
+	)
+	// We figure out which side needs to be scaled based on each profile's total cumulative value.
+	if totalCompareValue > totalBaseValue {
+		cumulativeBaseRatio = float64(totalCompareValue) / float64(totalBaseValue)
+	} else {
+		cumulativeCompareRatio = float64(totalBaseValue) / float64(totalCompareValue)
+	}
+	if totalCompareValuePerSecond > totalBaseValuePerSecond {
+		cumulativeBasePerSecondRatio = totalCompareValuePerSecond / totalBaseValuePerSecond
+	} else {
+		cumulativeComparePerSecondRatio = totalBaseValuePerSecond / totalCompareValuePerSecond
+	}
+
 	records := make([]arrow.Record, 0, len(compare.Samples)+len(base.Samples))
 	for _, r := range compare.Samples {
-		var cumulativeRatio, cumulativePerSecondRatio float64
-		if totalBaseValue > totalCompareValue {
-			cumulativeRatio = float64(totalBaseValue) / float64(totalCompareValue)
-		} else {
-			cumulativeRatio = 1 // leave unchanged
-		}
-		if totalBaseValuePerSecond > totalCompareValuePerSecond {
-			cumulativePerSecondRatio = totalBaseValuePerSecond / totalCompareValuePerSecond
-		} else {
-			cumulativePerSecondRatio = 1 // leave unchanged
-		}
-
 		columns := r.Columns()
 		cols := make([]arrow.Array, len(columns))
 		copy(cols, columns)
@@ -770,8 +777,8 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile
 		// is subtracting the `base` profile, but the actual calculation happens
 		// when building the visualizations. We should eventually have this be done
 		// directly by the query engine.
-		cols[len(cols)-2] = multiplyInt64By(mem, cols[len(cols)-4].(*array.Int64), cumulativeRatio)              // value as diff
-		cols[len(cols)-1] = multiplyFloat64By(mem, cols[len(cols)-3].(*array.Float64), cumulativePerSecondRatio) // value_per_second as diff_per_second
+		cols[len(cols)-2] = multiplyInt64By(mem, cols[len(cols)-4].(*array.Int64), cumulativeCompareRatio)              // value as diff
+		cols[len(cols)-1] = multiplyFloat64By(mem, cols[len(cols)-3].(*array.Float64), cumulativeComparePerSecondRatio) // value_per_second as diff_per_second
 
 		records = append(records, array.NewRecord(
 			r.Schema(),
@@ -786,23 +793,11 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile
 	for _, r := range base.Samples {
 		func() {
 			columns := r.Columns()
-			var cumulativeRatio, cumulativePerSecondRatio float64
-			if totalCompareValue > totalBaseValue {
-				cumulativeRatio = float64(totalCompareValue) / float64(totalBaseValue)
-			} else {
-				cumulativeRatio = 1
-			}
-			if totalCompareValuePerSecond > totalBaseValuePerSecond {
-				cumulativePerSecondRatio = totalCompareValuePerSecond / totalBaseValuePerSecond
-			} else {
-				cumulativePerSecondRatio = 1
-			}
-
 			cols := make([]arrow.Array, len(columns))
 			copy(cols, columns)
-			diff := multiplyInt64By(mem, columns[len(columns)-4].(*array.Int64), -1*cumulativeRatio)
+			diff := multiplyInt64By(mem, columns[len(columns)-4].(*array.Int64), -1*cumulativeBaseRatio)
 			defer diff.Release()
-			diffPerSecond := multiplyFloat64By(mem, columns[len(columns)-3].(*array.Float64), -1*cumulativePerSecondRatio)
+			diffPerSecond := multiplyFloat64By(mem, columns[len(columns)-3].(*array.Float64), -1*cumulativeBasePerSecondRatio)
 			defer diffPerSecond.Release()
 			value := zeroInt64Array(mem, int(r.NumRows()))
 			defer value.Release()
