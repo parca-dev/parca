@@ -1396,6 +1396,7 @@ func TestFilterData(t *testing.T) {
 	w.Diff.Append(0)
 	w.DiffPerSecond.Append(0)
 
+	frameFilter := map[string]struct{}{"libpython3.11.so.1.0": {}}
 	originalRecord := w.RecordBuilder.NewRecord()
 	recs, _, err := FilterProfileData(
 		context.Background(),
@@ -1403,7 +1404,7 @@ func TestFilterData(t *testing.T) {
 		mem,
 		[]arrow.Record{originalRecord},
 		"",
-		map[string]struct{}{"test": {}},
+		frameFilter,
 	)
 	require.NoError(t, err)
 	defer func() {
@@ -1609,6 +1610,7 @@ func TestFilterDataFrameFilter(t *testing.T) {
 	w.Diff.Append(0)
 	w.DiffPerSecond.Append(0)
 
+	frameFilter := map[string]struct{}{"interpreter": {}}
 	originalRecord := w.RecordBuilder.NewRecord()
 	recs, _, err := FilterProfileData(
 		context.Background(),
@@ -1616,7 +1618,7 @@ func TestFilterDataFrameFilter(t *testing.T) {
 		mem,
 		[]arrow.Record{originalRecord},
 		"",
-		map[string]struct{}{"libc.so.6": {}},
+		frameFilter,
 	)
 	require.NoError(t, err)
 	defer func() {
