@@ -44,6 +44,8 @@ const isEqual = (a: string | string[] | undefined, b: string | string[] | undefi
   }
 
   if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false;
+
     for (let i = 0; i < a.length; i++) {
       if (a[i] !== b[i]) return false;
     }
@@ -79,8 +81,11 @@ export const useURLState = ({
 
   // whenever the store value changes, (optionally) update the URL
   useEffect(() => {
-    const isEmpty = (val: string | string[] | undefined): boolean =>
-      val === undefined || val == null || val === '';
+    const isEmpty = (val: string | string[] | undefined): boolean => {
+      return (
+        val === undefined || val == null || val === '' || (Array.isArray(val) && val.length === 0)
+      );
+    };
 
     if (withURLUpdate && navigateTo !== undefined) {
       if (!isEqual(router[param], value)) {

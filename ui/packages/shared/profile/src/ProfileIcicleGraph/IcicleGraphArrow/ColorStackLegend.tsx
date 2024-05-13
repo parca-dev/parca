@@ -37,7 +37,10 @@ const ColorStackLegend = ({
   const [colorProfileName] = useUserPreference<string>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
-  const [currentSearchString, setSearchString] = useURLState({param: 'frame_filter', navigateTo});
+  const [currentSearchString, setSearchString] = useURLState({
+    param: 'binary_frame_filter',
+    navigateTo,
+  });
 
   const stackColorArray = useMemo(() => {
     return Object.entries(mappingColors).sort(([featureA], [featureB]) => {
@@ -80,23 +83,19 @@ const ColorStackLegend = ({
               }
             )}
             onClick={() => {
-              if (!filteringAllowed) {
+              if (!filteringAllowed || isHighlighted) {
                 return;
               }
-              if (isHighlighted) {
-                // setSearchString('');
-                setSearchString(
-                  (currentSearchString as string[]).filter((f: string) => f !== feature)
-                );
-                return;
-              }
-              // if currentSearchString is not an array/undefined, make it an array and then add the current feature
-              if (currentSearchString === undefined) {
-                setSearchString([feature]);
-                return;
-              }
-              // add the current feature to the search string array of strings
-              setSearchString([...(currentSearchString as string[]), feature]);
+
+              // Check if the current search string is defined and an array
+              const updatedSearchString = Array.isArray(currentSearchString)
+                ? [...currentSearchString, feature] // If array, append the feature
+                : // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+                currentSearchString // If not array, preserve current value
+                ? currentSearchString.split(',') // If string, split by commas
+                : [feature]; // If undefined, initialize array with feature
+
+              setSearchString(updatedSearchString);
             }}
           >
             <div className="flex w-11/12 items-center justify-start">
@@ -112,11 +111,15 @@ const ColorStackLegend = ({
                 <Icon
                   icon="radix-icons:cross-circled"
                   onClick={e => {
+                    let searchString: string[] = [];
+                    if (typeof currentSearchString === 'string') {
+                      searchString.push(currentSearchString);
+                    } else {
+                      searchString = currentSearchString;
+                    }
+
                     // remove the current feature from the search string array of strings
-                    setSearchString(
-                      (currentSearchString as string[]).filter((f: string) => f !== feature)
-                    );
-                    // setSearchString(currentSearchString);
+                    setSearchString(searchString.filter((f: string) => f !== feature));
                     e.stopPropagation();
                   }}
                 />

@@ -393,7 +393,7 @@
           },
           {
             "name": "filters.stackFilter.filter",
-            "description": "filter is the list of binary names to filter by",
+            "description": "filter is the list of stacks to filter by",
             "in": "query",
             "required": false,
             "type": "array",
@@ -403,8 +403,8 @@
             "collectionFormat": "multi"
           },
           {
-            "name": "filters.frameFilter.filter",
-            "description": "filter is the list of function names to filter by",
+            "name": "filters.frameFilter.binaryFrameFilter.includeBinaries",
+            "description": "include_binaries is the list of binaries to filter by",
             "in": "query",
             "required": false,
             "type": "array",
@@ -959,6 +959,19 @@
         }
       }
     },
+    "v1alpha1BinaryFrameFilter": {
+      "type": "object",
+      "properties": {
+        "includeBinaries": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "include_binaries is the list of binaries to filter by"
+        }
+      },
+      "title": "BinaryFrameFilter is a filter for filtering by binary frames"
+    },
     "v1alpha1Callgraph": {
       "type": "object",
       "properties": {
@@ -1078,11 +1091,11 @@
       "properties": {
         "stackFilter": {
           "$ref": "#/definitions/v1alpha1StackFilter",
-          "title": "stack_filter is a filter for binary names"
+          "title": "stack_filter is a filter for filtering by stacks"
         },
         "frameFilter": {
           "$ref": "#/definitions/v1alpha1FrameFilter",
-          "title": "frame_filter is a filter for function names"
+          "title": "frame_filter is a filter for filtering by frames"
         }
       },
       "title": "Filters is a set of filters to apply to the query request"
@@ -1264,15 +1277,12 @@
     "v1alpha1FrameFilter": {
       "type": "object",
       "properties": {
-        "filter": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "title": "filter is the list of function names to filter by"
+        "binaryFrameFilter": {
+          "$ref": "#/definitions/v1alpha1BinaryFrameFilter",
+          "title": "binary_frame_filter is the list of binary names to filter by"
         }
       },
-      "title": "FrameFilter is a filter for a single or multiple functions"
+      "title": "FrameFilter is a filter for filtering by frames"
     },
     "v1alpha1GroupBy": {
       "type": "object",
@@ -1583,10 +1593,10 @@
           "items": {
             "type": "string"
           },
-          "title": "filter is the list of binary names to filter by"
+          "title": "filter is the list of stacks to filter by"
         }
       },
-      "title": "StackFilter is a filter for a single or multiple binary names"
+      "title": "StackFilter is a filter for filtering by stacks"
     },
     "v1alpha1TableArrow": {
       "type": "object",

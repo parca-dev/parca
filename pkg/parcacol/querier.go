@@ -1508,6 +1508,7 @@ func (q *Querier) GetProfileMetadataMappings(
 		res = append(res, r)
 	}
 
+	sort.Strings(res)
 	return res, nil
 }
 

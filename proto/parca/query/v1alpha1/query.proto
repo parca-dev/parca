@@ -268,28 +268,37 @@ message QueryRequest {
   Filters filters = 12;
 }
 
-// StackFilter is a filter for a single or multiple binary names
-message StackFilter {
-  // filter is the list of binary names to filter by
-  repeated string filter = 1;
-}
-
-// FrameFilter is a filter for a single or multiple functions
-message FrameFilter {
-  // filter is the list of function names to filter by
-  repeated string filter = 1;
-}
-
 // Filters is a set of filters to apply to the query request
 message Filters {
   // filter is the set of filters to apply to the query request
   oneof filter {
-    // stack_filter is a filter for binary names
+    // stack_filter is a filter for filtering by stacks
     StackFilter stack_filter = 1;
 
-    // frame_filter is a filter for function names
+    // frame_filter is a filter for filtering by frames
     FrameFilter frame_filter = 2;
   }
+}
+
+// StackFilter is a filter for filtering by stacks
+message StackFilter {
+  // filter is the list of stacks to filter by
+  repeated string filter = 1;
+}
+
+// FrameFilter is a filter for filtering by frames
+message FrameFilter {
+  // filter contains the different methods in which you can filter a frame
+  oneof filter {
+    // binary_frame_filter is the list of binary names to filter by
+    BinaryFrameFilter binary_frame_filter = 1;
+  }
+}
+
+// BinaryFrameFilter is a filter for filtering by binary frames
+message BinaryFrameFilter {
+  // include_binaries is the list of binaries to filter by
+  repeated string include_binaries = 1;
 }
 
 // RuntimeFilter configures which runtimes to filter frames out for.

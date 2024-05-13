@@ -1403,7 +1403,7 @@ func TestFilterData(t *testing.T) {
 		mem,
 		[]arrow.Record{originalRecord},
 		"",
-		[]string{"test"},
+		map[string]struct{}{"test": {}},
 	)
 	require.NoError(t, err)
 	defer func() {
@@ -1450,7 +1450,7 @@ func TestFilterUnsymbolized(t *testing.T) {
 		mem,
 		[]arrow.Record{originalRecord},
 		"",
-		[]string{"test"},
+		map[string]struct{}{"test": {}},
 	)
 	require.NoError(t, err)
 	require.Len(t, recs, 1)
@@ -1525,7 +1525,7 @@ func TestFilterDataWithPath(t *testing.T) {
 	w.Diff.Append(0)
 	w.DiffPerSecond.Append(0)
 
-	frameFilter := []string{"libpython3.11.so.1.0", "interpreter"}
+	frameFilter := map[string]struct{}{"libpython3.11.so.1.0": {}, "interpreter": {}}
 	originalRecord := w.RecordBuilder.NewRecord()
 	recs, _, err := FilterProfileData(
 		context.Background(),
@@ -1616,7 +1616,7 @@ func TestFilterDataFrameFilter(t *testing.T) {
 		mem,
 		[]arrow.Record{originalRecord},
 		"",
-		[]string{"libc.so.6"},
+		map[string]struct{}{"libc.so.6": {}},
 	)
 	require.NoError(t, err)
 	defer func() {
@@ -1703,7 +1703,7 @@ func BenchmarkFilterData(t *testing.B) {
 			mem,
 			[]arrow.Record{originalRecord},
 			"",
-			[]string{"test"},
+			map[string]struct{}{"test": {}},
 		)
 		require.NoError(t, err)
 		for _, r := range recs {

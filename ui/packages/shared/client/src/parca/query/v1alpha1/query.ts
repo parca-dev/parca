@@ -490,32 +490,6 @@ export enum QueryRequest_ReportType {
     PROFILE_METADATA = 8
 }
 /**
- * StackFilter is a filter for a single or multiple binary names
- *
- * @generated from protobuf message parca.query.v1alpha1.StackFilter
- */
-export interface StackFilter {
-    /**
-     * filter is the list of binary names to filter by
-     *
-     * @generated from protobuf field: repeated string filter = 1;
-     */
-    filter: string[];
-}
-/**
- * FrameFilter is a filter for a single or multiple functions
- *
- * @generated from protobuf message parca.query.v1alpha1.FrameFilter
- */
-export interface FrameFilter {
-    /**
-     * filter is the list of function names to filter by
-     *
-     * @generated from protobuf field: repeated string filter = 1;
-     */
-    filter: string[];
-}
-/**
  * Filters is a set of filters to apply to the query request
  *
  * @generated from protobuf message parca.query.v1alpha1.Filters
@@ -527,7 +501,7 @@ export interface Filters {
     filter: {
         oneofKind: "stackFilter";
         /**
-         * stack_filter is a filter for binary names
+         * stack_filter is a filter for filtering by stacks
          *
          * @generated from protobuf field: parca.query.v1alpha1.StackFilter stack_filter = 1;
          */
@@ -535,7 +509,7 @@ export interface Filters {
     } | {
         oneofKind: "frameFilter";
         /**
-         * frame_filter is a filter for function names
+         * frame_filter is a filter for filtering by frames
          *
          * @generated from protobuf field: parca.query.v1alpha1.FrameFilter frame_filter = 2;
          */
@@ -543,6 +517,53 @@ export interface Filters {
     } | {
         oneofKind: undefined;
     };
+}
+/**
+ * StackFilter is a filter for filtering by stacks
+ *
+ * @generated from protobuf message parca.query.v1alpha1.StackFilter
+ */
+export interface StackFilter {
+    /**
+     * filter is the list of stacks to filter by
+     *
+     * @generated from protobuf field: repeated string filter = 1;
+     */
+    filter: string[];
+}
+/**
+ * FrameFilter is a filter for filtering by frames
+ *
+ * @generated from protobuf message parca.query.v1alpha1.FrameFilter
+ */
+export interface FrameFilter {
+    /**
+     * @generated from protobuf oneof: filter
+     */
+    filter: {
+        oneofKind: "binaryFrameFilter";
+        /**
+         * binary_frame_filter is the list of binary names to filter by
+         *
+         * @generated from protobuf field: parca.query.v1alpha1.BinaryFrameFilter binary_frame_filter = 1;
+         */
+        binaryFrameFilter: BinaryFrameFilter;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * BinaryFrameFilter is a filter for filtering by binary frames
+ *
+ * @generated from protobuf message parca.query.v1alpha1.BinaryFrameFilter
+ */
+export interface BinaryFrameFilter {
+    /**
+     * include_binaries is the list of binaries to filter by
+     *
+     * @generated from protobuf field: repeated string include_binaries = 1;
+     */
+    includeBinaries: string[];
 }
 /**
  * RuntimeFilter configures which runtimes to filter frames out for.
@@ -2151,100 +2172,6 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
  */
 export const QueryRequest = new QueryRequest$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class StackFilter$Type extends MessageType<StackFilter> {
-    constructor() {
-        super("parca.query.v1alpha1.StackFilter", [
-            { no: 1, name: "filter", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
-        ]);
-    }
-    create(value?: PartialMessage<StackFilter>): StackFilter {
-        const message = globalThis.Object.create((this.messagePrototype!));
-        message.filter = [];
-        if (value !== undefined)
-            reflectionMergePartial<StackFilter>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: StackFilter): StackFilter {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* repeated string filter */ 1:
-                    message.filter.push(reader.string());
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: StackFilter, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* repeated string filter = 1; */
-        for (let i = 0; i < message.filter.length; i++)
-            writer.tag(1, WireType.LengthDelimited).string(message.filter[i]);
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message parca.query.v1alpha1.StackFilter
- */
-export const StackFilter = new StackFilter$Type();
-// @generated message type with reflection information, may provide speed optimized methods
-class FrameFilter$Type extends MessageType<FrameFilter> {
-    constructor() {
-        super("parca.query.v1alpha1.FrameFilter", [
-            { no: 1, name: "filter", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
-        ]);
-    }
-    create(value?: PartialMessage<FrameFilter>): FrameFilter {
-        const message = globalThis.Object.create((this.messagePrototype!));
-        message.filter = [];
-        if (value !== undefined)
-            reflectionMergePartial<FrameFilter>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: FrameFilter): FrameFilter {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* repeated string filter */ 1:
-                    message.filter.push(reader.string());
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: FrameFilter, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* repeated string filter = 1; */
-        for (let i = 0; i < message.filter.length; i++)
-            writer.tag(1, WireType.LengthDelimited).string(message.filter[i]);
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message parca.query.v1alpha1.FrameFilter
- */
-export const FrameFilter = new FrameFilter$Type();
-// @generated message type with reflection information, may provide speed optimized methods
 class Filters$Type extends MessageType<Filters> {
     constructor() {
         super("parca.query.v1alpha1.Filters", [
@@ -2304,6 +2231,150 @@ class Filters$Type extends MessageType<Filters> {
  * @generated MessageType for protobuf message parca.query.v1alpha1.Filters
  */
 export const Filters = new Filters$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class StackFilter$Type extends MessageType<StackFilter> {
+    constructor() {
+        super("parca.query.v1alpha1.StackFilter", [
+            { no: 1, name: "filter", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<StackFilter>): StackFilter {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.filter = [];
+        if (value !== undefined)
+            reflectionMergePartial<StackFilter>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: StackFilter): StackFilter {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated string filter */ 1:
+                    message.filter.push(reader.string());
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: StackFilter, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated string filter = 1; */
+        for (let i = 0; i < message.filter.length; i++)
+            writer.tag(1, WireType.LengthDelimited).string(message.filter[i]);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.query.v1alpha1.StackFilter
+ */
+export const StackFilter = new StackFilter$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class FrameFilter$Type extends MessageType<FrameFilter> {
+    constructor() {
+        super("parca.query.v1alpha1.FrameFilter", [
+            { no: 1, name: "binary_frame_filter", kind: "message", oneof: "filter", T: () => BinaryFrameFilter }
+        ]);
+    }
+    create(value?: PartialMessage<FrameFilter>): FrameFilter {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.filter = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<FrameFilter>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: FrameFilter): FrameFilter {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* parca.query.v1alpha1.BinaryFrameFilter binary_frame_filter */ 1:
+                    message.filter = {
+                        oneofKind: "binaryFrameFilter",
+                        binaryFrameFilter: BinaryFrameFilter.internalBinaryRead(reader, reader.uint32(), options, (message.filter as any).binaryFrameFilter)
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: FrameFilter, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* parca.query.v1alpha1.BinaryFrameFilter binary_frame_filter = 1; */
+        if (message.filter.oneofKind === "binaryFrameFilter")
+            BinaryFrameFilter.internalBinaryWrite(message.filter.binaryFrameFilter, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.query.v1alpha1.FrameFilter
+ */
+export const FrameFilter = new FrameFilter$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class BinaryFrameFilter$Type extends MessageType<BinaryFrameFilter> {
+    constructor() {
+        super("parca.query.v1alpha1.BinaryFrameFilter", [
+            { no: 1, name: "include_binaries", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<BinaryFrameFilter>): BinaryFrameFilter {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.includeBinaries = [];
+        if (value !== undefined)
+            reflectionMergePartial<BinaryFrameFilter>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: BinaryFrameFilter): BinaryFrameFilter {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated string include_binaries */ 1:
+                    message.includeBinaries.push(reader.string());
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: BinaryFrameFilter, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated string include_binaries = 1; */
+        for (let i = 0; i < message.includeBinaries.length; i++)
+            writer.tag(1, WireType.LengthDelimited).string(message.includeBinaries[i]);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.query.v1alpha1.BinaryFrameFilter
+ */
+export const BinaryFrameFilter = new BinaryFrameFilter$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class RuntimeFilter$Type extends MessageType<RuntimeFilter> {
     constructor() {

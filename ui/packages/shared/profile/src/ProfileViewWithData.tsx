@@ -45,7 +45,12 @@ export const ProfileViewWithData = ({
 
   const [invertStack] = useURLState({param: 'invert_call_stack', navigateTo});
   const invertCallStack = invertStack === 'true';
-  const [frameFilterStr] = useURLState({param: 'frame_filter', navigateTo});
+  const [binaryFrameFilterStr] = useURLState({param: 'binary_frame_filter', navigateTo});
+
+  const binaryFrameFilter: string[] =
+    typeof binaryFrameFilterStr === 'string'
+      ? binaryFrameFilterStr.split(',')
+      : binaryFrameFilterStr;
 
   const [pprofDownloading, setPprofDownloading] = useState<boolean>(false);
 
@@ -70,7 +75,7 @@ export const ProfileViewWithData = ({
     nodeTrimThreshold,
     groupBy: groupByParam,
     invertCallStack,
-    frameFilter: frameFilterStr as string[],
+    binaryFrameFilter,
   });
 
   const {isLoading: profilemetadataLoading, response: profilemetadataResponse} = useQuery(
@@ -82,7 +87,7 @@ export const ProfileViewWithData = ({
       nodeTrimThreshold,
       groupBy: groupByParam,
       invertCallStack,
-      frameFilter: [],
+      binaryFrameFilter: undefined,
     }
   );
 

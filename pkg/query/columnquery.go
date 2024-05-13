@@ -300,13 +300,21 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		}, nil
 	}
 
+	binaryFrameFilter := map[string]struct{}{}
+
+	if req.GetFilters().GetFrameFilter() != nil {
+		for _, filter := range req.GetFilters().GetFrameFilter().GetBinaryFrameFilter().GetIncludeBinaries() {
+			binaryFrameFilter[filter] = struct{}{}
+		}
+	}
+
 	p.Samples, filtered, err = FilterProfileData(
 		ctx,
 		q.tracer,
 		q.mem,
 		p.Samples,
 		req.GetFilterQuery(),
-		req.GetFilters().GetFrameFilter().GetFilter(),
+		binaryFrameFilter,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("filtering profile: %w", err)
@@ -331,7 +339,7 @@ func FilterProfileData(
 	pool memory.Allocator,
 	records []arrow.Record,
 	filterQuery string,
-	frameFilter []string,
+	binaryFrameFilter map[string]struct{},
 ) ([]arrow.Record, int64, error) {
 	_, span := tracer.Start(ctx, "filterByFunction")
 	defer span.End()
@@ -356,7 +364,7 @@ func FilterProfileData(
 			pool,
 			r,
 			filterQueryBytes,
-			frameFilter,
+			binaryFrameFilter,
 		)
 		if err != nil {
 			return nil, 0, fmt.Errorf("filter record: %w", err)
@@ -378,7 +386,7 @@ func filterRecord(
 	pool memory.Allocator,
 	rec arrow.Record,
 	filterQueryBytes []byte,
-	frameFilter []string,
+	binaryFrameFilter map[string]struct{},
 ) ([]arrow.Record, int64, int64, error) {
 	r := profile.NewRecordReader(rec)
 
@@ -430,16 +438,12 @@ func filterRecord(
 					mappingFile = r.MappingFileDict.Value(int(r.MappingFileIndices.Value(j)))
 				}
 
-				// Check if any of the values from the `frameFilter` are in the mappingFile and keep them, if not clear the bit.
-				if len(frameFilter) > 0 {
+				if len(binaryFrameFilter) > 0 {
 					keepLocation := false
-					for _, filter := range frameFilter {
-						if bytes.Contains(mappingFile, []byte(filter)) {
-							keepLocation = true
-							break
-						}
+					if _, ok := binaryFrameFilter[getLastPathFromString(string(mappingFile))]; ok {
+						keepLocation = true
+						break
 					}
-
 					if !keepLocation {
 						bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
 					}
@@ -936,4 +940,11 @@ func (q *ColumnQueryAPI) GetLabels(
 	}
 
 	return l, nil
+}
+
+func getLastPathFromString(path string) string {
+	slices := strings.Split(path, "/")
+
+	lastString := slices[len(slices)-1]
+	return lastString
 }
