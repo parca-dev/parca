@@ -33,12 +33,17 @@ import (
 )
 
 type fakeDebuginfodClients struct {
-	get    func(ctx context.Context, server, buildID string) (io.ReadCloser, error)
-	exists func(ctx context.Context, buildID string) ([]string, error)
+	get       func(ctx context.Context, server, buildID string) (io.ReadCloser, error)
+	getSource func(ctx context.Context, server, buildID, file string) (io.ReadCloser, error)
+	exists    func(ctx context.Context, buildID string) ([]string, error)
 }
 
 func (f *fakeDebuginfodClients) Get(ctx context.Context, server, buildID string) (io.ReadCloser, error) {
 	return f.get(ctx, server, buildID)
+}
+
+func (f *fakeDebuginfodClients) GetSource(ctx context.Context, server, buildID, file string) (io.ReadCloser, error) {
+	return f.getSource(ctx, server, buildID, file)
 }
 
 func (f *fakeDebuginfodClients) Exists(ctx context.Context, buildID string) ([]string, error) {

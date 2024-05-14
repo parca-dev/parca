@@ -13,7 +13,8 @@
 
 import * as DateFns from 'date-fns';
 import {toZonedTime} from 'date-fns-tz';
-import intervalToDuration from 'date-fns/intervalToDuration';
+// @ts-expect-error
+import {intervalToDuration} from 'date-fns/intervalToDuration';
 
 import {Duration} from '@parca/client';
 

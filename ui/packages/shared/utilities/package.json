@@ -1,6 +1,6 @@
 {
   "name": "@parca/utilities",
-  "version": "0.0.69",
+  "version": "0.0.71",
   "description": "A set of reusable functions for Parca",
   "main": "dist/index.js",
   "scripts": {
@@ -11,7 +11,7 @@
     "watch": "tsc-watch"
   },
   "dependencies": {
-    "@parca/client": "^0.16.111",
+    "@parca/client": "^0.16.113",
     "@rehooks/local-storage": "^2.4.4",
     "date-fns": "3.6.0",
     "date-fns-tz": "^3.1.3",
@@ -25,5 +25,5 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
-  "gitHead": "feaaafad44b53ecc44f1d9e35905cd7d1243c4a3"
+  "gitHead": "f92c5502bce797d27d67f57a39f8af30d0d04e1e"
 }

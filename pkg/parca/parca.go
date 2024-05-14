@@ -420,7 +420,10 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			tracerProvider.Tracer("arrow_to_profile_converter"),
 			kv.NewKeyMaker(),
 		),
-		queryservice.NewBucketSourceFinder(debuginfoBucket),
+		queryservice.NewBucketSourceFinder(
+			debuginfoBucket,
+			debuginfodClients,
+		),
 	)
 
 	t := telemetryservice.NewTelemetry(
