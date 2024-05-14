@@ -315,13 +315,13 @@ importers:
         specifier: ^0.16.113
         version: link:../../shared/client
       '@parca/components':
-        specifier: ^0.16.274
+        specifier: ^0.16.275
         version: link:../../shared/components
       '@parca/dynamicsize':
         specifier: ^0.16.64
         version: link:../../shared/dynamicsize
       '@parca/hooks':
-        specifier: ^0.0.54
+        specifier: ^0.0.55
         version: link:../../shared/hooks
       '@parca/icons':
         specifier: ^0.16.68
@@ -330,13 +330,13 @@ importers:
         specifier: ^0.16.73
         version: link:../../shared/parser
       '@parca/profile':
-        specifier: ^0.16.369
+        specifier: ^0.16.370
         version: link:../../shared/profile
       '@parca/store':
-        specifier: ^0.16.143
+        specifier: ^0.16.144
         version: link:../../shared/store
       '@parca/utilities':
-        specifier: ^0.0.71
+        specifier: ^0.0.72
         version: link:../../shared/utilities
       '@protobuf-ts/grpcweb-transport':
         specifier: ^2.9.4
@@ -512,7 +512,7 @@ importers:
         specifier: ^0.16.64
         version: link:../dynamicsize
       '@parca/hooks':
-        specifier: ^0.0.54
+        specifier: ^0.0.55
         version: link:../hooks
       '@parca/icons':
         specifier: ^0.16.68
@@ -521,10 +521,10 @@ importers:
         specifier: ^0.16.73
         version: link:../parser
       '@parca/store':
-        specifier: ^0.16.143
+        specifier: ^0.16.144
         version: link:../store
       '@parca/utilities':
-        specifier: ^0.0.71
+        specifier: ^0.0.72
         version: link:../utilities
       '@protobuf-ts/grpcweb-transport':
         specifier: ^2.5.0
@@ -611,10 +611,10 @@ importers:
         specifier: ^0.16.113
         version: link:../client
       '@parca/store':
-        specifier: ^0.16.143
+        specifier: ^0.16.144
         version: link:../store
       '@parca/utilities':
-        specifier: ^0.0.71
+        specifier: ^0.0.72
         version: link:../utilities
       '@rehooks/local-storage':
         specifier: ^2.4.4
@@ -681,13 +681,13 @@ importers:
         specifier: ^0.16.113
         version: link:../client
       '@parca/components':
-        specifier: ^0.16.274
+        specifier: ^0.16.275
         version: link:../components
       '@parca/dynamicsize':
         specifier: ^0.16.64
         version: link:../dynamicsize
       '@parca/hooks':
-        specifier: ^0.0.54
+        specifier: ^0.0.55
         version: link:../hooks
       '@parca/icons':
         specifier: ^0.16.68
@@ -696,10 +696,10 @@ importers:
         specifier: ^0.16.73
         version: link:../parser
       '@parca/store':
-        specifier: ^0.16.143
+        specifier: ^0.16.144
         version: link:../store
       '@parca/utilities':
-        specifier: ^0.0.71
+        specifier: ^0.0.72
         version: link:../utilities
       '@popperjs/core':
         specifier: ^2.11.8
@@ -826,7 +826,7 @@ importers:
         specifier: ^0.16.113
         version: link:../client
       '@parca/utilities':
-        specifier: ^0.0.71
+        specifier: ^0.0.72
         version: link:../utilities
       '@reduxjs/toolkit':
         specifier: ^1.7.2
