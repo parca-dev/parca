@@ -329,7 +329,7 @@ func FilterProfileData(
 	interpretedOnly := false
 	if runtimeFilter != nil {
 		if !runtimeFilter.ShowPython {
-			binariesToExclude = append(binariesToExclude, []byte("libpython"))
+			binariesToExclude = append(binariesToExclude, []byte("libpython"), []byte("python3"))
 		}
 		if !runtimeFilter.ShowRuby {
 			binariesToExclude = append(binariesToExclude, []byte("libruby"))
