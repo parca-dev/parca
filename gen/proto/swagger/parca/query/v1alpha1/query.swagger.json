@@ -392,8 +392,8 @@
             "type": "boolean"
           },
           {
-            "name": "filters.stackFilter.filter",
-            "description": "filter is the list of stacks to filter by",
+            "name": "filters.stackFilter.functionNameStackFilter.functionsToFilter",
+            "description": "filter is the list of function names to filter by",
             "in": "query",
             "required": false,
             "type": "array",
@@ -1284,6 +1284,19 @@
       },
       "title": "FrameFilter is a filter for filtering by frames"
     },
+    "v1alpha1FunctionNameStackFilter": {
+      "type": "object",
+      "properties": {
+        "functionsToFilter": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "filter is the list of function names to filter by"
+        }
+      },
+      "title": "FunctionNameStackFilter is a filter for filtering by function names"
+    },
     "v1alpha1GroupBy": {
       "type": "object",
       "properties": {
@@ -1588,12 +1601,9 @@
     "v1alpha1StackFilter": {
       "type": "object",
       "properties": {
-        "filter": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "title": "filter is the list of stacks to filter by"
+        "functionNameStackFilter": {
+          "$ref": "#/definitions/v1alpha1FunctionNameStackFilter",
+          "title": "function_name_stack_filter is the list of function names to filter by"
         }
       },
       "title": "StackFilter is a filter for filtering by stacks"

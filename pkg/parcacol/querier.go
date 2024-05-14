@@ -1491,8 +1491,8 @@ func (q *Querier) GetProfileMetadataMappings(
 			values := locations.ListValues().(*array.Dictionary)
 			valueDict := values.Dictionary().(*array.Binary)
 
-			for i := 0; i < values.Len(); i++ {
-				encodedLocation := valueDict.Value(values.GetValueIndex(i))
+			for i := 0; i < valueDict.Len(); i++ {
+				encodedLocation := valueDict.Value(i)
 				symInfo, _ := profile.DecodeSymbolizationInfo(encodedLocation)
 				records[symInfo.Mapping.File] = struct{}{}
 			}

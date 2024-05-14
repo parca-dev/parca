@@ -282,8 +282,17 @@ message Filters {
 
 // StackFilter is a filter for filtering by stacks
 message StackFilter {
-  // filter is the list of stacks to filter by
-  repeated string filter = 1;
+  // filter contains the different methods in which you can filter a stack
+  oneof filter {
+    // function_name_stack_filter is the list of function names to filter by
+    FunctionNameStackFilter function_name_stack_filter = 1;
+  }
+}
+
+// FunctionNameStackFilter is a filter for filtering by function names
+message FunctionNameStackFilter {
+  // filter is the list of function names to filter by
+  repeated string functions_to_filter = 1;
 }
 
 // FrameFilter is a filter for filtering by frames
