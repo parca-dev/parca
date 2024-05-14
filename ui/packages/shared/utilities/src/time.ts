@@ -13,14 +13,8 @@
 
 import * as DateFns from 'date-fns';
 import {toZonedTime} from 'date-fns-tz';
-// @ts-ignore
-import {intervalToDuration} from 'date-fns/intervalToDuration';
 
 import {Duration} from '@parca/client';
-
-
-
-
 
 export const timePattern = (timezone?: string): string => {
   if (timezone !== undefined) {
@@ -137,7 +131,7 @@ export const formatDate = (date: number | Date, timeFormat: string, timezone?: s
 };
 
 export const formatForTimespan = (from: number, to: number): string => {
-  const duration = intervalToDuration({start: from, end: to});
+  const duration = DateFns.intervalToDuration({start: from, end: to});
   const getTotalSeconds = ({
     seconds,
     minutes,

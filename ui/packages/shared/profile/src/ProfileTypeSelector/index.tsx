@@ -147,6 +147,7 @@ interface Props {
   selectedKey: string | undefined;
   flexibleKnownProfilesDetection?: boolean;
   onSelection: (value: string | undefined) => void;
+  disabled?: boolean;
 }
 
 const ProfileTypeSelector = ({
@@ -156,6 +157,7 @@ const ProfileTypeSelector = ({
   selectedKey,
   onSelection,
   flexibleKnownProfilesDetection = false,
+  disabled,
 }: Props): JSX.Element => {
   const profileNames = useMemo(() => {
     return (error === undefined || error == null) &&
@@ -178,6 +180,7 @@ const ProfileTypeSelector = ({
       placeholder="Select profile type..."
       loading={loading}
       className="bg-white h-profile-type-dropdown"
+      disabled={disabled}
     />
   );
 };

@@ -240,6 +240,7 @@ const ProfileSelector = ({
               selectedKey={selectedProfileName}
               onSelection={setProfileName}
               error={error}
+              disabled={viewComponent?.disableProfileTypesDropdown}
             />
           </div>
           <div className="w-full flex-1 pb-6">
