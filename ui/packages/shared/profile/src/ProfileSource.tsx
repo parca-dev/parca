@@ -182,6 +182,13 @@ export class ProfileDiffSource implements ProfileSource {
   }
 
   toString(): string {
+    const aDesc = this.a.toString();
+    const bDesc = this.b.toString();
+
+    if (aDesc === bDesc) {
+      return 'profile comparison';
+    }
+
     return `${this.a.toString()} compared with ${this.b.toString()}`;
   }
 }
@@ -240,10 +247,20 @@ export class MergedProfileSource implements ProfileSource {
   }
 
   toString(timezone?: string): string {
-    return `merged profiles of query "${this.query.toString()}" from ${formatDate(
-      this.mergeFrom,
-      timeFormat(timezone),
-      timezone
-    )} to ${formatDate(this.mergeTo, timeFormat(timezone), timezone)}`;
+    let queryPart = '';
+    if (this.query.toString()?.length > 0) {
+      queryPart = ` of query "${this.query.toString()}"`;
+    }
+
+    let timePart = '';
+    if (this.mergeFrom !== 0) {
+      timePart = ` from ${formatDate(
+        this.mergeFrom,
+        timeFormat(timezone),
+        timezone
+      )} to ${formatDate(this.mergeTo, timeFormat(timezone), timezone)}`;
+    }
+
+    return `merged profiles${queryPart}${timePart}`;
   }
 }
