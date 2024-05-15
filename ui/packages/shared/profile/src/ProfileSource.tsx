@@ -249,7 +249,7 @@ export class MergedProfileSource implements ProfileSource {
   toString(timezone?: string): string {
     let queryPart = '';
     if (this.query.toString()?.length > 0) {
-      queryPart = ` of query`;
+      queryPart = ` of query "${this.query.toString()}"`;
     }
 
     let timePart = '';
