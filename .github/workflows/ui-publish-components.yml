@@ -11,7 +11,7 @@ concurrency:
 
 env:
   # renovate: datasource=npm depName=pnpm versioning=npm
-  PNPM_VERSION: '9.0.6'
+  PNPM_VERSION: '8.15.8'
 
 jobs:
   skip-check:
