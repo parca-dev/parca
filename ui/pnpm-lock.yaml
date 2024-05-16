@@ -331,7 +331,7 @@ importers:
         specifier: ^0.16.73
         version: link:../../shared/parser
       '@parca/profile':
-        specifier: ^0.16.370
+        specifier: ^0.16.371
         version: link:../../shared/profile
       '@parca/store':
         specifier: ^0.16.144
