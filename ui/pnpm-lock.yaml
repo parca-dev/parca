@@ -315,7 +315,7 @@ importers:
         specifier: ^0.16.114
         version: link:../../shared/client
       '@parca/components':
-        specifier: ^0.16.276
+        specifier: ^0.16.277
         version: link:../../shared/components
       '@parca/dynamicsize':
         specifier: ^0.16.65
@@ -330,7 +330,7 @@ importers:
         specifier: ^0.16.74
         version: link:../../shared/parser
       '@parca/profile':
-        specifier: ^0.16.372
+        specifier: ^0.16.373
         version: link:../../shared/profile
       '@parca/store':
         specifier: ^0.16.145
@@ -681,7 +681,7 @@ importers:
         specifier: ^0.16.114
         version: link:../client
       '@parca/components':
-        specifier: ^0.16.276
+        specifier: ^0.16.277
         version: link:../components
       '@parca/dynamicsize':
         specifier: ^0.16.65
