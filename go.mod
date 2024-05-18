@@ -33,7 +33,7 @@ require (
 	github.com/parquet-go/parquet-go v0.21.0
 	github.com/planetscale/vtprotobuf v0.6.0
 	github.com/polarsignals/frostdb v0.0.0-20240425170350-d0d91b6bdc4b
-	github.com/prometheus/client_golang v1.19.0
+	github.com/prometheus/client_golang v1.19.1
 	github.com/prometheus/common v0.53.0
 	github.com/prometheus/prometheus v0.51.2
 	github.com/stretchr/testify v1.9.0
