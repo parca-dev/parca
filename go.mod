@@ -37,7 +37,7 @@ require (
 	github.com/prometheus/common v0.53.0
 	github.com/prometheus/prometheus v0.52.0
 	github.com/stretchr/testify v1.9.0
-	github.com/thanos-io/objstore v0.0.0-20240418104850-a1e58aa3bed5
+	github.com/thanos-io/objstore v0.0.0-20240512204237-71ef2d0cf7c4
 	github.com/zeebo/xxh3 v1.0.2
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.51.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.51.0
