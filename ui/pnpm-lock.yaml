@@ -89,7 +89,7 @@ importers:
         version: 2.0.0(webpack@5.91.0)
       '@storybook/addon-storyshots':
         specifier: 7.6.17
-        version: 7.6.17(@storybook/react@7.6.19)(jest@29.7.0)(preact@10.21.0)(react-dom@18.3.1)(react@18.3.1)
+        version: 7.6.17(@storybook/react@7.6.19)(jest@29.7.0)(preact@10.22.0)(react-dom@18.3.1)(react@18.3.1)
       '@storybook/addon-styling':
         specifier: 0.3.2
         version: 0.3.2(@storybook/addons@6.5.16)(@storybook/api@6.5.16)(@storybook/components@6.5.16)(@storybook/core-events@6.5.16)(@storybook/manager-api@7.6.19)(@storybook/theming@6.5.16)(react-dom@18.3.1)(react@18.3.1)(sass-loader@13.3.3)
@@ -535,7 +535,7 @@ importers:
         version: 2.9.4
       '@tanstack/react-table':
         specifier: ^8.16.0
-        version: 8.16.0(react-dom@18.3.1)(react@18.3.1)
+        version: 8.17.0(react-dom@18.3.1)(react@18.3.1)
       '@tanstack/table-core':
         specifier: ^8.16.0
         version: 8.16.0
@@ -713,7 +713,7 @@ importers:
         version: 4.36.1(react-dom@18.3.1)(react@18.3.1)
       '@tanstack/react-table':
         specifier: ^8.16.0
-        version: 8.16.0(react-dom@18.3.1)(react@18.3.1)
+        version: 8.17.0(react-dom@18.3.1)(react@18.3.1)
       '@tanstack/table-core':
         specifier: ^8.16.0
         version: 8.16.0
@@ -5488,7 +5488,7 @@ packages:
       - webpack
     dev: true
 
-  /@storybook/addon-storyshots@7.6.17(@storybook/react@7.6.19)(jest@29.7.0)(preact@10.21.0)(react-dom@18.3.1)(react@18.3.1):
+  /@storybook/addon-storyshots@7.6.17(@storybook/react@7.6.19)(jest@29.7.0)(preact@10.22.0)(react-dom@18.3.1)(react@18.3.1):
     resolution: {integrity: sha512-DEezPyRLbdXTUTydEPUcv/7uZSeQvUqlNuBbVVvxm71ZYam7lS725ywX2m+6vJH38JkurIEXSWiG94XM13fpBw==}
     deprecated: 'Storyshots is deprecated in favor of the Storybook test-runner. Migration guide: https://storybook.js.org/docs/writing-tests/storyshots-migration-guide'
     peerDependencies:
@@ -5553,8 +5553,8 @@ packages:
       glob: 10.3.10
       jest: 29.7.0(@types/node@18.19.33)(ts-node@10.9.2)
       jest-specific-snapshot: 8.0.0(jest@29.7.0)
-      preact: 10.21.0
-      preact-render-to-string: 5.2.6(preact@10.21.0)
+      preact: 10.22.0
+      preact-render-to-string: 5.2.6(preact@10.22.0)
       pretty-format: 29.7.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
@@ -7019,8 +7019,8 @@ packages:
       use-sync-external-store: 1.2.0(react@18.3.1)
     dev: false
 
-  /@tanstack/react-table@8.16.0(react-dom@18.3.1)(react@18.3.1):
-    resolution: {integrity: sha512-rKRjnt8ostqN2fercRVOIH/dq7MAmOENCMvVlKx6P9Iokhh6woBGnIZEkqsY/vEJf1jN3TqLOb34xQGLVRuhAg==}
+  /@tanstack/react-table@8.17.0(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-LSJxTDzlKGs8EN7/UHB1l3yLR9HUIxoHFkTbTjHaUUGL4kgYZFYhsQsdDJSIykG86qpIA/6gSWmtwNfy5Iprhw==}
     engines: {node: '>=12'}
     peerDependencies:
       react: '>=16.8'
@@ -20386,17 +20386,17 @@ packages:
       picocolors: 1.0.0
       source-map-js: 1.2.0
 
-  /preact-render-to-string@5.2.6(preact@10.21.0):
+  /preact-render-to-string@5.2.6(preact@10.22.0):
     resolution: {integrity: sha512-JyhErpYOvBV1hEPwIxc/fHWXPfnEGdRKxc8gFdAZ7XV4tlzyzG847XAyEZqoDnynP88akM4eaHcSOzNcLWFguw==}
     peerDependencies:
       preact: '>=10'
     dependencies:
-      preact: 10.21.0
+      preact: 10.22.0
       pretty-format: 3.8.0
     dev: true
 
-  /preact@10.21.0:
-    resolution: {integrity: sha512-aQAIxtzWEwH8ou+OovWVSVNlFImL7xUCwJX3YMqA3U8iKCNC34999fFOnWjYNsylgfPgMexpbk7WYOLtKr/mxg==}
+  /preact@10.22.0:
+    resolution: {integrity: sha512-RRurnSjJPj4rp5K6XoP45Ui33ncb7e4H7WiOHVpjbkvqvA3U+N8Z6Qbo0AE6leGYBV66n8EhEaFixvIu3SkxFw==}
     dev: true
 
   /prelude-ls@1.1.2:
