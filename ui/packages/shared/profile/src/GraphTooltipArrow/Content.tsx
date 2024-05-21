@@ -201,11 +201,7 @@ const TooltipMetaInfo = ({
       <tr>
         <td className="w-1/4">Build Id</td>
         <td className="w-3/4 break-all">
-          {isMappingBuildIDAvailable ? (
-            <div>{truncateString(getLastItem(mappingBuildID) as string, 28)}</div>
-          ) : (
-            <NoData />
-          )}
+          {isMappingBuildIDAvailable ? <div>{truncateString(mappingBuildID, 28)}</div> : <NoData />}
         </td>
       </tr>
       {labelPairs.length > 0 && (
