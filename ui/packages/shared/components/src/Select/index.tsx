@@ -82,7 +82,7 @@ const Select = ({
               className={cx(
                 styles,
                 width !== undefined ? `w-${width}` : 'w-full',
-                disabled ? 'cursor-not-allowed opacity-50' : '',
+                disabled ? 'cursor-not-allowed opacity-50 pointer-events-none' : '',
                 primary ? primaryStyles : defaultStyles,
                 {[className]: className.length > 0}
               )}

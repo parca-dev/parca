@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {Fragment, useCallback, useMemo, useRef, useState} from 'react';
+import React, {Fragment, useCallback, useId, useMemo, useRef, useState} from 'react';
 
 import * as d3 from 'd3';
 import {pointer} from 'd3-selection';
@@ -140,6 +140,7 @@ export const RawMetricsGraph = ({
   const [pos, setPos] = useState([0, 0]);
   const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
   const metricPointRef = useRef(null);
+  const idForContextMenu = useId();
 
   // the time of the selected point is the start of the merge window
   const time: number = parseFloat(profile?.HistoryParams().merge_from);
@@ -372,7 +373,7 @@ export const RawMetricsGraph = ({
 
   const selected = findSelectedProfile();
 
-  const MENU_ID = 'metrics-context-menu';
+  const MENU_ID = `metrics-context-menu-${idForContextMenu}`;
 
   const {show} = useContextMenu({
     id: MENU_ID,

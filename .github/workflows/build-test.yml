@@ -23,7 +23,7 @@ env:
   # renovate: datasource=docker depName=docker.io/buildpack-deps versioning=ubuntu
   BUILDPACK_DEPS_VERSION: '22.04'
   # renovate: datasource=npm depName=pnpm versioning=npm
-  PNPM_VERSION: '9.0.6'
+  PNPM_VERSION: '8.15.8'
 
 jobs:
   build-and-test-multi-arch:
@@ -54,7 +54,7 @@ jobs:
           ]
         skip_after_successful_duplicate: false
 
-    - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       if: ${{ steps.skip-check.outputs.should_skip != 'true' }}
 
     - name: Set up Go

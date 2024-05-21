@@ -23,7 +23,7 @@ concurrency:
 
 env:
   # renovate: datasource=npm depName=pnpm versioning=npm
-  PNPM_VERSION: '9.0.6'
+  PNPM_VERSION: '8.15.8'
 
 # List of jobs
 jobs:
@@ -58,7 +58,7 @@ jobs:
       run:
         working-directory: ./ui
     steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
         with:
           fetch-depth: 0 # Required to retrieve git history
       - uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
@@ -74,7 +74,7 @@ jobs:
         run: pnpm install --frozen-lockfile --prefer-offline && pnpm run build
         # 👇 Adds Chromatic as a step in the workflow
       - name: Publish to Chromatic
-        uses: chromaui/action@81dfdf89d3c77ec60bf536f3e4dd86af26cf870c # v11.3.2
+        uses: chromaui/action@a7f65ed179bcbe19fd793367d699f43e0f0540a7 # v11.3.5
         # Chromatic GitHub Action options
         with:
           # 👇 Chromatic projectToken, refer to the manage page to obtain it.
