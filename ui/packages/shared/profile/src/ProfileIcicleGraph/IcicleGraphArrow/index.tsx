@@ -17,6 +17,7 @@ import {Table, tableFromIPC} from 'apache-arrow';
 import {useContextMenu} from 'react-contexify';
 
 import {FlamegraphArrow} from '@parca/client';
+import {useURLState} from '@parca/components';
 import {USER_PREFERENCES, useCurrentColorProfile, useUserPreference} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
 import {
@@ -98,6 +99,11 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const svg = useRef(null);
   const ref = useRef<SVGGElement>(null);
 
+  const [, setBinaryFrameFilter] = useURLState({
+    param: 'binary_frame_filter',
+    navigateTo,
+  });
+
   const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
   const {compareMode} = useProfileViewContext();
   const isColorStackLegendEnabled = selectQueryParam('color_stack_legend') === 'true';
@@ -165,6 +171,12 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   const trackVisibility = (isVisible: boolean): void => {
     setIsContextMenuOpen(isVisible);
+  };
+
+  const hideBinary = (binaryToRemove: string): void => {
+    const newMappingsList = mappingsList.filter(mapping => mapping !== binaryToRemove);
+
+    setBinaryFrameFilter(newMappingsList);
   };
 
   // useMemo for the root graph as it otherwise renders the whole graph if the hoveringRow changes.
@@ -255,6 +267,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           curPath={curPath}
           setCurPath={setCurPath}
           hideMenu={hideAll}
+          hideBinary={hideBinary}
         />
         {isColorStackLegendEnabled && (
           <ColorStackLegend

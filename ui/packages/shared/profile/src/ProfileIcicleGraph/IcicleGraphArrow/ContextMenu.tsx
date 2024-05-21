@@ -19,7 +19,7 @@ import {Tooltip} from 'react-tooltip';
 import {useParcaContext} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
-import {type NavigateFunction} from '@parca/utilities';
+import {getLastItem, type NavigateFunction} from '@parca/utilities';
 
 import {useGraphTooltip} from '../../GraphTooltipArrow/useGraphTooltip';
 import {useGraphTooltipMetaInfo} from '../../GraphTooltipArrow/useGraphTooltipMetaInfo';
@@ -38,6 +38,7 @@ interface ContextMenuProps {
   curPath: string[];
   setCurPath: (path: string[]) => void;
   hideMenu: () => void;
+  hideBinary: (binaryToRemove: string) => void;
 }
 
 const ContextMenu = ({
@@ -53,6 +54,7 @@ const ContextMenu = ({
   setCurPath,
   hideMenu,
   profileType,
+  hideBinary,
 }: ContextMenuProps): JSX.Element => {
   const {isDarkMode} = useParcaContext();
   const {enableSourcesView} = useParcaContext();
@@ -156,6 +158,24 @@ const ContextMenu = ({
           <Icon icon="system-uicons:reset" />
           <div>Reset view</div>
         </div>
+      </Item>
+      <Item
+        id="hide-binary"
+        onClick={() => hideBinary(getLastItem(mappingFile) as string)}
+        disabled={mappingFile === null || mappingFile === ''}
+      >
+        <div
+          data-tooltip-id="hide-binary-help"
+          data-tooltip-content="Hide all frames for this binary"
+        >
+          <div className="flex w-full items-center gap-2">
+            <Icon icon="bx:bxs-hide" />
+            <div>
+              Hide Binary {mappingFile !== null && `(${getLastItem(mappingFile) as string})`}
+            </div>
+          </div>
+        </div>
+        <Tooltip place="left" id="hide-binary-help" />
       </Item>
       <Submenu
         label={
