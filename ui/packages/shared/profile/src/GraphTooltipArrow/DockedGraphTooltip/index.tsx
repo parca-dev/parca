@@ -145,7 +145,7 @@ export const DockedGraphTooltip = ({
             title="Build ID"
             value={
               isMappingBuildIDAvailable ? (
-                <div>{truncateString(getLastItem(mappingBuildID) as string, 28)}</div>
+                <div>{truncateString(mappingBuildID, 28)}</div>
               ) : (
                 <NoData />
               )
