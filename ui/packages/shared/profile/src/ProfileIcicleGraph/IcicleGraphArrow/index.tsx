@@ -99,7 +99,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const svg = useRef(null);
   const ref = useRef<SVGGElement>(null);
 
-  const [, setBinaryFrameFilter] = useURLState({
+  const [binaryFrameFilter, setBinaryFrameFilter] = useURLState({
     param: 'binary_frame_filter',
     navigateTo,
   });
@@ -174,8 +174,23 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   };
 
   const hideBinary = (binaryToRemove: string): void => {
-    const newMappingsList = mappingsList.filter(mapping => mapping !== binaryToRemove);
+    // second/subsequent time filtering out a binary i.e. a binary has already been filtered out
+    // and we want to filter out another binary, we need to discover what the first one was
+    // and then add more as needed
+    if (binaryFrameFilter !== undefined && binaryFrameFilter.length > 0) {
+      const binariesToExclude = mappingsList.filter(
+        mapping => !binaryFrameFilter.includes(mapping)
+      );
+      binariesToExclude.push(binaryToRemove);
 
+      const newMappingsList = mappingsList.filter(mapping => !binariesToExclude.includes(mapping));
+
+      setBinaryFrameFilter(newMappingsList);
+      return;
+    }
+
+    // first time filtering out a binary
+    const newMappingsList = mappingsList.filter(mapping => mapping !== binaryToRemove);
     setBinaryFrameFilter(newMappingsList);
   };
 

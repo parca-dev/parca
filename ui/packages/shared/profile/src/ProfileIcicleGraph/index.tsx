@@ -72,6 +72,10 @@ const ShowHideLegendButton = ({
     param: 'color_stack_legend',
     navigateTo,
   });
+  const [binaryFrameFilter, setBinaryFrameFilter] = useURLState({
+    param: 'binary_frame_filter',
+    navigateTo,
+  });
 
   const {compareMode} = useProfileViewContext();
 
@@ -88,28 +92,56 @@ const ShowHideLegendButton = ({
     [setStoreColorStackLegend]
   );
 
+  const resetLegend = (): void => {
+    setBinaryFrameFilter([]);
+  };
+
   return (
     <>
       {colorProfileName === 'default' || compareMode ? null : (
         <>
           {isHalfScreen ? (
-            <IconButton
-              className="rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 items-center flex border border-gray-200 dark:border-gray-600 dark:text-white justify-center !py-2 !px-3 cursor-pointer min-h-[38px]"
-              icon={isColorStackLegendEnabled ? 'ph:eye-closed' : 'ph:eye'}
-              toolTipText={isColorStackLegendEnabled ? 'Hide legend' : 'Show legend'}
-              onClick={() => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true')}
-              id="h-show-legend-button"
-            />
+            <>
+              <IconButton
+                className="rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 items-center flex border border-gray-200 dark:border-gray-600 dark:text-white justify-center !py-2 !px-3 cursor-pointer min-h-[38px]"
+                icon={isColorStackLegendEnabled ? 'ph:eye-closed' : 'ph:eye'}
+                toolTipText={isColorStackLegendEnabled ? 'Hide legend' : 'Show legend'}
+                onClick={() => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true')}
+                id="h-show-legend-button"
+              />
+              {binaryFrameFilter !== undefined && binaryFrameFilter.length > 0 && (
+                <IconButton
+                  className="rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 items-center flex border border-gray-200 dark:border-gray-600 dark:text-white justify-center !py-2 !px-3 cursor-pointer min-h-[38px]"
+                  icon="system-uicons:reset"
+                  toolTipText="Reset the legend selection"
+                  onClick={() => resetLegend()}
+                  id="h-reset-legend-button"
+                />
+              )}
+            </>
           ) : (
-            <Button
-              className="gap-2 w-max"
-              variant="neutral"
-              onClick={() => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true')}
-              id="h-show-legend-button"
-            >
-              {isColorStackLegendEnabled ? 'Hide legend' : 'Show legend'}
-              <Icon icon={isColorStackLegendEnabled ? 'ph:eye-closed' : 'ph:eye'} width={20} />
-            </Button>
+            <>
+              <Button
+                className="gap-2 w-max"
+                variant="neutral"
+                onClick={() => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true')}
+                id="h-show-legend-button"
+              >
+                {isColorStackLegendEnabled ? 'Hide legend' : 'Show legend'}
+                <Icon icon={isColorStackLegendEnabled ? 'ph:eye-closed' : 'ph:eye'} width={20} />
+              </Button>
+              {binaryFrameFilter !== undefined && binaryFrameFilter.length > 0 && (
+                <Button
+                  className="gap-2 w-max"
+                  variant="neutral"
+                  onClick={() => resetLegend()}
+                  id="h-reset-legend-button"
+                >
+                  Reset Legend
+                  <Icon icon="system-uicons:reset" width={20} />
+                </Button>
+              )}
+            </>
           )}
         </>
       )}
