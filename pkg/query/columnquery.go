@@ -442,7 +442,6 @@ func filterRecord(
 					keepLocation := false
 					if _, ok := binaryFrameFilter[getLastPathFromString(string(mappingFile))]; ok {
 						keepLocation = true
-						break
 					}
 					if !keepLocation {
 						bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
