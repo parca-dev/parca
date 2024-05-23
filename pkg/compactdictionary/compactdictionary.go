@@ -42,25 +42,27 @@ func CompactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dict
 
 	switch indices := arr.Indices().(type) {
 	case *array.Int32:
-		for i := 0; i < arr.Len(); i++ {
+		for i := 0; i < indices.Len(); i++ {
 			if arr.IsValid(i) {
 				if keepValues[indices.Value(i)] == 0 {
 					// keep track of how many values we need to keep to reserve the space upfront
 					newLen++
 				}
+				keepValues[indices.Value(i)]++
 			}
 		}
 	case *array.Uint32:
-		for i := 0; i < arr.Len(); i++ {
+		for i := 0; i < indices.Len(); i++ {
 			if arr.IsValid(i) {
 				if keepValues[indices.Value(i)] == 0 {
 					// keep track of how many values we need to keep to reserve the space upfront
 					newLen++
 				}
+				keepValues[indices.Value(i)]++
 			}
 		}
 	default:
-		return nil, fmt.Errorf("unsupported indices type %T", arr)
+		return nil, fmt.Errorf("unsupported indices type %T", indices)
 	}
 
 	// This maps the previous index (at the key/index in this slice) to the new index (at the value of the slice).
@@ -129,7 +131,7 @@ func CompactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dict
 
 	switch indices := arr.Indices().(type) {
 	case *array.Int32:
-		for i := 0; i < arr.Len(); i++ {
+		for i := 0; i < indices.Len(); i++ {
 			if arr.IsNull(i) {
 				indexBuilder.AppendNull()
 				continue
@@ -149,7 +151,7 @@ func CompactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dict
 			}
 		}
 	case *array.Uint32:
-		for i := 0; i < arr.Len(); i++ {
+		for i := 0; i < indices.Len(); i++ {
 			if arr.IsNull(i) {
 				indexBuilder.AppendNull()
 				continue
