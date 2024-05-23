@@ -241,6 +241,10 @@
           "$ref": "#/definitions/v1alpha1TableArrow",
           "title": "table_arrow is a table encoded as a arrow record"
         },
+        "profileMetadata": {
+          "$ref": "#/definitions/v1alpha1ProfileMetadata",
+          "title": "profile_metadata contains metadata about the profile i.e. binaries, labels"
+        },
         "total": {
           "type": "string",
           "format": "int64",
@@ -314,6 +318,19 @@
           }
         }
       }
+    },
+    "v1alpha1BinaryFrameFilter": {
+      "type": "object",
+      "properties": {
+        "includeBinaries": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "include_binaries is the list of binaries to filter by"
+        }
+      },
+      "title": "BinaryFrameFilter is a filter for filtering by binaries"
     },
     "v1alpha1Callgraph": {
       "type": "object",
@@ -414,6 +431,20 @@
         }
       },
       "title": "TopNodeMeta is the metadata for a given node"
+    },
+    "v1alpha1Filter": {
+      "type": "object",
+      "properties": {
+        "stackFilter": {
+          "$ref": "#/definitions/v1alpha1StackFilter",
+          "title": "stack_filter is a filter for filtering by stacks"
+        },
+        "frameFilter": {
+          "$ref": "#/definitions/v1alpha1FrameFilter",
+          "title": "frame_filter is a filter for filtering by frames"
+        }
+      },
+      "title": "Filter to apply to the query request"
     },
     "v1alpha1Flamegraph": {
       "type": "object",
@@ -589,6 +620,26 @@
       },
       "title": "FlamegraphRootNode is a root node of a flame graph"
     },
+    "v1alpha1FrameFilter": {
+      "type": "object",
+      "properties": {
+        "binaryFrameFilter": {
+          "$ref": "#/definitions/v1alpha1BinaryFrameFilter",
+          "title": "binary_frame_filter is the list of binary names to filter by"
+        }
+      },
+      "title": "FrameFilter is a filter for filtering by frames"
+    },
+    "v1alpha1FunctionNameStackFilter": {
+      "type": "object",
+      "properties": {
+        "functionToFilter": {
+          "type": "string",
+          "title": "function_to_filter is the function name to filter by"
+        }
+      },
+      "title": "FunctionNameStackFilter is a filter for filtering by function name"
+    },
     "v1alpha1GroupBy": {
       "type": "object",
       "properties": {
@@ -601,6 +652,26 @@
         }
       },
       "title": "GroupBy encapsulates the repeated fields to group by"
+    },
+    "v1alpha1ProfileMetadata": {
+      "type": "object",
+      "properties": {
+        "mappingFiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "mapping_files is the list of binaries in the profile"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "labels is the list of labels in the profile"
+        }
+      },
+      "title": "ProfileMetadata contains metadata about the profile i.e. binaries, labels"
     },
     "v1alpha1ProfileType": {
       "type": "object",
@@ -649,6 +720,16 @@
         }
       },
       "description": "RuntimeFilter configures which runtimes to filter frames out for."
+    },
+    "v1alpha1StackFilter": {
+      "type": "object",
+      "properties": {
+        "functionNameStackFilter": {
+          "$ref": "#/definitions/v1alpha1FunctionNameStackFilter",
+          "title": "function_name_stack_filter is the function name to filter by"
+        }
+      },
+      "title": "StackFilter is a filter for filtering by stacks"
     },
     "v1alpha1TableArrow": {
       "type": "object",

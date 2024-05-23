@@ -274,9 +274,9 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	}()
 
 	if req.GetReportType() == pb.QueryRequest_REPORT_TYPE_PROFILE_METADATA {
-		mappingFiles, err := q.GetMappingFiles(ctx, req.GetMerge())
+		mappingFiles, err := q.getMappingFiles(ctx, req.GetMerge())
 
-		labels, labels_err := q.GetLabels(ctx, &pb.LabelsRequest{
+		labels, labels_err := q.getLabels(ctx, &pb.LabelsRequest{
 			Match: []string{},
 			Start: req.GetMerge().Start,
 			End:   req.GetMerge().End,
@@ -302,9 +302,9 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 
 	binaryFrameFilter := map[string]struct{}{}
 
-	if req.GetFilters().GetFrameFilter() != nil {
-		for _, filter := range req.GetFilters().GetFrameFilter().GetBinaryFrameFilter().GetIncludeBinaries() {
-			binaryFrameFilter[filter] = struct{}{}
+	for _, filter := range req.GetFilter() {
+		for _, include := range filter.GetFrameFilter().GetBinaryFrameFilter().GetIncludeBinaries() {
+			binaryFrameFilter[include] = struct{}{}
 		}
 	}
 
@@ -918,7 +918,7 @@ func sliceRecord(r arrow.Record, indices []int64) []arrow.Record {
 	return slices
 }
 
-func (q *ColumnQueryAPI) GetMappingFiles(
+func (q *ColumnQueryAPI) getMappingFiles(
 	ctx context.Context,
 	m *pb.MergeProfile,
 ) ([]string, error) {
@@ -935,7 +935,7 @@ func (q *ColumnQueryAPI) GetMappingFiles(
 	return p, nil
 }
 
-func (q *ColumnQueryAPI) GetLabels(
+func (q *ColumnQueryAPI) getLabels(
 	ctx context.Context,
 	req *pb.LabelsRequest,
 ) ([]string, error) {

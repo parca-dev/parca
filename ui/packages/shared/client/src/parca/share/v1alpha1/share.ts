@@ -11,6 +11,7 @@ import { UnknownFieldHandler } from "@protobuf-ts/runtime";
 import type { PartialMessage } from "@protobuf-ts/runtime";
 import { reflectionMergePartial } from "@protobuf-ts/runtime";
 import { MessageType } from "@protobuf-ts/runtime";
+import { ProfileMetadata } from "../../query/v1alpha1/query";
 import { TableArrow } from "../../query/v1alpha1/query";
 import { Source } from "../../query/v1alpha1/query";
 import { FlamegraphArrow } from "../../query/v1alpha1/query";
@@ -18,6 +19,7 @@ import { Callgraph } from "../../query/v1alpha1/query";
 import { Top } from "../../query/v1alpha1/query";
 import { Flamegraph } from "../../query/v1alpha1/query";
 import { ProfileType } from "../../query/v1alpha1/query";
+import { Filter } from "../../query/v1alpha1/query";
 import { GroupBy } from "../../query/v1alpha1/query";
 import { RuntimeFilter } from "../../query/v1alpha1/query";
 import { QueryRequest_ReportType } from "../../query/v1alpha1/query";
@@ -113,6 +115,12 @@ export interface QueryRequest {
      * @generated from protobuf field: optional bool invert_call_stack = 8;
      */
     invertCallStack?: boolean;
+    /**
+     * filter is a varying set of filter to apply to the query
+     *
+     * @generated from protobuf field: repeated parca.query.v1alpha1.Filter filter = 9;
+     */
+    filter: Filter[];
 }
 /**
  * ProfileTypesRequest represents the profile types request with the id of the profile to be queried.
@@ -211,6 +219,14 @@ export interface QueryResponse {
          * @generated from protobuf field: parca.query.v1alpha1.TableArrow table_arrow = 9;
          */
         tableArrow: TableArrow;
+    } | {
+        oneofKind: "profileMetadata";
+        /**
+         * profile_metadata contains metadata about the profile i.e. binaries, labels
+         *
+         * @generated from protobuf field: parca.query.v1alpha1.ProfileMetadata profile_metadata = 10;
+         */
+        profileMetadata: ProfileMetadata;
     } | {
         oneofKind: undefined;
     };
@@ -348,13 +364,15 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
             { no: 5, name: "node_trim_threshold", kind: "scalar", opt: true, T: 2 /*ScalarType.FLOAT*/ },
             { no: 6, name: "runtime_filter", kind: "message", T: () => RuntimeFilter },
             { no: 7, name: "group_by", kind: "message", T: () => GroupBy },
-            { no: 8, name: "invert_call_stack", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ }
+            { no: 8, name: "invert_call_stack", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
+            { no: 9, name: "filter", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Filter }
         ]);
     }
     create(value?: PartialMessage<QueryRequest>): QueryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.id = "";
         message.reportType = 0;
+        message.filter = [];
         if (value !== undefined)
             reflectionMergePartial<QueryRequest>(this, message, value);
         return message;
@@ -387,6 +405,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
                     break;
                 case /* optional bool invert_call_stack */ 8:
                     message.invertCallStack = reader.bool();
+                    break;
+                case /* repeated parca.query.v1alpha1.Filter filter */ 9:
+                    message.filter.push(Filter.internalBinaryRead(reader, reader.uint32(), options));
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -424,6 +445,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         /* optional bool invert_call_stack = 8; */
         if (message.invertCallStack !== undefined)
             writer.tag(8, WireType.Varint).bool(message.invertCallStack);
+        /* repeated parca.query.v1alpha1.Filter filter = 9; */
+        for (let i = 0; i < message.filter.length; i++)
+            Filter.internalBinaryWrite(message.filter[i], writer.tag(9, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -547,6 +571,7 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
             { no: 7, name: "flamegraph_arrow", kind: "message", oneof: "report", T: () => FlamegraphArrow },
             { no: 8, name: "source", kind: "message", oneof: "report", T: () => Source },
             { no: 9, name: "table_arrow", kind: "message", oneof: "report", T: () => TableArrow },
+            { no: 10, name: "profile_metadata", kind: "message", oneof: "report", T: () => ProfileMetadata },
             { no: 5, name: "total", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ },
             { no: 6, name: "filtered", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ }
         ]);
@@ -607,6 +632,12 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
                         tableArrow: TableArrow.internalBinaryRead(reader, reader.uint32(), options, (message.report as any).tableArrow)
                     };
                     break;
+                case /* parca.query.v1alpha1.ProfileMetadata profile_metadata */ 10:
+                    message.report = {
+                        oneofKind: "profileMetadata",
+                        profileMetadata: ProfileMetadata.internalBinaryRead(reader, reader.uint32(), options, (message.report as any).profileMetadata)
+                    };
+                    break;
                 case /* int64 total */ 5:
                     message.total = reader.int64().toBigInt();
                     break;
@@ -646,6 +677,9 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
         /* parca.query.v1alpha1.TableArrow table_arrow = 9; */
         if (message.report.oneofKind === "tableArrow")
             TableArrow.internalBinaryWrite(message.report.tableArrow, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* parca.query.v1alpha1.ProfileMetadata profile_metadata = 10; */
+        if (message.report.oneofKind === "profileMetadata")
+            ProfileMetadata.internalBinaryWrite(message.report.profileMetadata, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
         /* int64 total = 5; */
         if (message.total !== 0n)
             writer.tag(5, WireType.Varint).int64(message.total);

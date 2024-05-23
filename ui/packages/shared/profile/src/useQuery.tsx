@@ -74,19 +74,23 @@ export const useQuery = (
       req.invertCallStack = options?.invertCallStack ?? false;
 
       if (options?.binaryFrameFilter !== undefined && options?.binaryFrameFilter.length > 0) {
-        req.filters = {
-          filter: {
-            oneofKind: 'frameFilter',
-            frameFilter: {
-              filter: {
-                oneofKind: 'binaryFrameFilter',
-                binaryFrameFilter: {
-                  includeBinaries: options?.binaryFrameFilter,
+        req.filter = [
+          {
+            filter: {
+              oneofKind: 'frameFilter',
+              frameFilter: {
+                filter: {
+                  oneofKind: 'binaryFrameFilter',
+                  binaryFrameFilter: {
+                    includeBinaries: options?.binaryFrameFilter ?? [],
+                  },
                 },
               },
             },
           },
-        };
+        ];
+      } else {
+        req.filter = [];
       }
 
       try {

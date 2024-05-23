@@ -1048,15 +1048,17 @@ func (m *QueryRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 		i -= size
 	}
-	if m.Filters != nil {
-		size, err := m.Filters.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+	if len(m.Filter) > 0 {
+		for iNdEx := len(m.Filter) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.Filter[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0x62
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x62
 	}
 	if m.InvertCallStack != nil {
 		i--
@@ -1181,7 +1183,7 @@ func (m *QueryRequest_Single) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Filters) MarshalVT() (dAtA []byte, err error) {
+func (m *Filter) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -1194,12 +1196,12 @@ func (m *Filters) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Filters) MarshalToVT(dAtA []byte) (int, error) {
+func (m *Filter) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *Filters) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *Filter) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -1223,12 +1225,12 @@ func (m *Filters) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Filters_StackFilter) MarshalToVT(dAtA []byte) (int, error) {
+func (m *Filter_StackFilter) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *Filters_StackFilter) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *Filter_StackFilter) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.StackFilter != nil {
 		size, err := m.StackFilter.MarshalToSizedBufferVT(dAtA[:i])
@@ -1242,12 +1244,12 @@ func (m *Filters_StackFilter) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Filters_FrameFilter) MarshalToVT(dAtA []byte) (int, error) {
+func (m *Filter_FrameFilter) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *Filters_FrameFilter) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *Filter_FrameFilter) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.FrameFilter != nil {
 		size, err := m.FrameFilter.MarshalToSizedBufferVT(dAtA[:i])
@@ -1352,14 +1354,12 @@ func (m *FunctionNameStackFilter) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.FunctionsToFilter) > 0 {
-		for iNdEx := len(m.FunctionsToFilter) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.FunctionsToFilter[iNdEx])
-			copy(dAtA[i:], m.FunctionsToFilter[iNdEx])
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.FunctionsToFilter[iNdEx])))
-			i--
-			dAtA[i] = 0xa
-		}
+	if len(m.FunctionToFilter) > 0 {
+		i -= len(m.FunctionToFilter)
+		copy(dAtA[i:], m.FunctionToFilter)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.FunctionToFilter)))
+		i--
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -3567,9 +3567,11 @@ func (m *QueryRequest) SizeVT() (n int) {
 	if m.InvertCallStack != nil {
 		n += 2
 	}
-	if m.Filters != nil {
-		l = m.Filters.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	if len(m.Filter) > 0 {
+		for _, e := range m.Filter {
+			l = e.SizeVT()
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
 	}
 	n += len(m.unknownFields)
 	return n
@@ -3611,7 +3613,7 @@ func (m *QueryRequest_Single) SizeVT() (n int) {
 	}
 	return n
 }
-func (m *Filters) SizeVT() (n int) {
+func (m *Filter) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -3624,7 +3626,7 @@ func (m *Filters) SizeVT() (n int) {
 	return n
 }
 
-func (m *Filters_StackFilter) SizeVT() (n int) {
+func (m *Filter_StackFilter) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -3636,7 +3638,7 @@ func (m *Filters_StackFilter) SizeVT() (n int) {
 	}
 	return n
 }
-func (m *Filters_FrameFilter) SizeVT() (n int) {
+func (m *Filter_FrameFilter) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -3679,11 +3681,9 @@ func (m *FunctionNameStackFilter) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	if len(m.FunctionsToFilter) > 0 {
-		for _, s := range m.FunctionsToFilter {
-			l = len(s)
-			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-		}
+	l = len(m.FunctionToFilter)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -6383,7 +6383,7 @@ func (m *QueryRequest) UnmarshalVT(dAtA []byte) error {
 			m.InvertCallStack = &b
 		case 12:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Filters", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Filter", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -6410,10 +6410,8 @@ func (m *QueryRequest) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Filters == nil {
-				m.Filters = &Filters{}
-			}
-			if err := m.Filters.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			m.Filter = append(m.Filter, &Filter{})
+			if err := m.Filter[len(m.Filter)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6439,7 +6437,7 @@ func (m *QueryRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Filters) UnmarshalVT(dAtA []byte) error {
+func (m *Filter) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6462,10 +6460,10 @@ func (m *Filters) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: Filters: wiretype end group for non-group")
+			return fmt.Errorf("proto: Filter: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Filters: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: Filter: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -6497,7 +6495,7 @@ func (m *Filters) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Filter.(*Filters_StackFilter); ok {
+			if oneof, ok := m.Filter.(*Filter_StackFilter); ok {
 				if err := oneof.StackFilter.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -6506,7 +6504,7 @@ func (m *Filters) UnmarshalVT(dAtA []byte) error {
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Filter = &Filters_StackFilter{StackFilter: v}
+				m.Filter = &Filter_StackFilter{StackFilter: v}
 			}
 			iNdEx = postIndex
 		case 2:
@@ -6538,7 +6536,7 @@ func (m *Filters) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Filter.(*Filters_FrameFilter); ok {
+			if oneof, ok := m.Filter.(*Filter_FrameFilter); ok {
 				if err := oneof.FrameFilter.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -6547,7 +6545,7 @@ func (m *Filters) UnmarshalVT(dAtA []byte) error {
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Filter = &Filters_FrameFilter{FrameFilter: v}
+				m.Filter = &Filter_FrameFilter{FrameFilter: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -6695,7 +6693,7 @@ func (m *FunctionNameStackFilter) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FunctionsToFilter", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FunctionToFilter", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -6723,7 +6721,7 @@ func (m *FunctionNameStackFilter) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.FunctionsToFilter = append(m.FunctionsToFilter, string(dAtA[iNdEx:postIndex]))
+			m.FunctionToFilter = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

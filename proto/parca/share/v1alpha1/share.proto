@@ -61,6 +61,9 @@ message QueryRequest {
 
   // invert_call_stack inverts the call stacks in the flamegraph
   optional bool invert_call_stack = 8;
+
+  // filter is a varying set of filter to apply to the query
+  repeated parca.query.v1alpha1.Filter filter = 9;
 }
 
 // ProfileTypesRequest represents the profile types request with the id of the profile to be queried.
@@ -102,6 +105,9 @@ message QueryResponse {
 
     // table_arrow is a table encoded as a arrow record
     parca.query.v1alpha1.TableArrow table_arrow = 9;
+
+    // profile_metadata contains metadata about the profile i.e. binaries, labels
+    parca.query.v1alpha1.ProfileMetadata profile_metadata = 10;
   }
 
   // total is the total number of samples shown in the report.

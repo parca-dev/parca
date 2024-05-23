@@ -390,28 +390,6 @@
             "in": "query",
             "required": false,
             "type": "boolean"
-          },
-          {
-            "name": "filters.stackFilter.functionNameStackFilter.functionsToFilter",
-            "description": "filter is the list of function names to filter by",
-            "in": "query",
-            "required": false,
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi"
-          },
-          {
-            "name": "filters.frameFilter.binaryFrameFilter.includeBinaries",
-            "description": "include_binaries is the list of binaries to filter by",
-            "in": "query",
-            "required": false,
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi"
           }
         ],
         "tags": [
@@ -828,9 +806,13 @@
           "type": "boolean",
           "title": "invert_call_stack inverts the call stacks in the flamegraph"
         },
-        "filters": {
-          "$ref": "#/definitions/v1alpha1Filters",
-          "title": "a varying set of filters to apply to the query request"
+        "filter": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1alpha1Filter"
+          },
+          "title": "a set of filter to apply to the query request"
         }
       },
       "title": "QueryRequest is a request for a profile query"
@@ -970,7 +952,7 @@
           "title": "include_binaries is the list of binaries to filter by"
         }
       },
-      "title": "BinaryFrameFilter is a filter for filtering by binary frames"
+      "title": "BinaryFrameFilter is a filter for filtering by binaries"
     },
     "v1alpha1Callgraph": {
       "type": "object",
@@ -1086,7 +1068,7 @@
       },
       "title": "DiffProfile contains parameters for a profile diff request"
     },
-    "v1alpha1Filters": {
+    "v1alpha1Filter": {
       "type": "object",
       "properties": {
         "stackFilter": {
@@ -1098,7 +1080,7 @@
           "title": "frame_filter is a filter for filtering by frames"
         }
       },
-      "title": "Filters is a set of filters to apply to the query request"
+      "title": "Filter to apply to the query request"
     },
     "v1alpha1Flamegraph": {
       "type": "object",
@@ -1287,15 +1269,12 @@
     "v1alpha1FunctionNameStackFilter": {
       "type": "object",
       "properties": {
-        "functionsToFilter": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "title": "filter is the list of function names to filter by"
+        "functionToFilter": {
+          "type": "string",
+          "title": "function_to_filter is the function name to filter by"
         }
       },
-      "title": "FunctionNameStackFilter is a filter for filtering by function names"
+      "title": "FunctionNameStackFilter is a filter for filtering by function name"
     },
     "v1alpha1GroupBy": {
       "type": "object",
@@ -1603,7 +1582,7 @@
       "properties": {
         "functionNameStackFilter": {
           "$ref": "#/definitions/v1alpha1FunctionNameStackFilter",
-          "title": "function_name_stack_filter is the list of function names to filter by"
+          "title": "function_name_stack_filter is the function name to filter by"
         }
       },
       "title": "StackFilter is a filter for filtering by stacks"

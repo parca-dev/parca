@@ -396,11 +396,11 @@ export interface QueryRequest {
      */
     invertCallStack?: boolean;
     /**
-     * a varying set of filters to apply to the query request
+     * a set of filter to apply to the query request
      *
-     * @generated from protobuf field: parca.query.v1alpha1.Filters filters = 12;
+     * @generated from protobuf field: repeated parca.query.v1alpha1.Filter filter = 12;
      */
-    filters?: Filters;
+    filter: Filter[];
 }
 /**
  * Mode is the type of query request
@@ -490,11 +490,11 @@ export enum QueryRequest_ReportType {
     PROFILE_METADATA = 8
 }
 /**
- * Filters is a set of filters to apply to the query request
+ * Filter to apply to the query request
  *
- * @generated from protobuf message parca.query.v1alpha1.Filters
+ * @generated from protobuf message parca.query.v1alpha1.Filter
  */
-export interface Filters {
+export interface Filter {
     /**
      * @generated from protobuf oneof: filter
      */
@@ -530,7 +530,7 @@ export interface StackFilter {
     filter: {
         oneofKind: "functionNameStackFilter";
         /**
-         * function_name_stack_filter is the list of function names to filter by
+         * function_name_stack_filter is the function name to filter by
          *
          * @generated from protobuf field: parca.query.v1alpha1.FunctionNameStackFilter function_name_stack_filter = 1;
          */
@@ -540,17 +540,17 @@ export interface StackFilter {
     };
 }
 /**
- * FunctionNameStackFilter is a filter for filtering by function names
+ * FunctionNameStackFilter is a filter for filtering by function name
  *
  * @generated from protobuf message parca.query.v1alpha1.FunctionNameStackFilter
  */
 export interface FunctionNameStackFilter {
     /**
-     * filter is the list of function names to filter by
+     * function_to_filter is the function name to filter by
      *
-     * @generated from protobuf field: repeated string functions_to_filter = 1;
+     * @generated from protobuf field: string function_to_filter = 1;
      */
-    functionsToFilter: string[];
+    functionToFilter: string;
 }
 /**
  * FrameFilter is a filter for filtering by frames
@@ -574,7 +574,7 @@ export interface FrameFilter {
     };
 }
 /**
- * BinaryFrameFilter is a filter for filtering by binary frames
+ * BinaryFrameFilter is a filter for filtering by binaries
  *
  * @generated from protobuf message parca.query.v1alpha1.BinaryFrameFilter
  */
@@ -2072,7 +2072,7 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
             { no: 9, name: "source_reference", kind: "message", T: () => SourceReference },
             { no: 10, name: "runtime_filter", kind: "message", T: () => RuntimeFilter },
             { no: 11, name: "invert_call_stack", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
-            { no: 12, name: "filters", kind: "message", T: () => Filters }
+            { no: 12, name: "filter", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Filter }
         ]);
     }
     create(value?: PartialMessage<QueryRequest>): QueryRequest {
@@ -2080,6 +2080,7 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         message.mode = 0;
         message.options = { oneofKind: undefined };
         message.reportType = 0;
+        message.filter = [];
         if (value !== undefined)
             reflectionMergePartial<QueryRequest>(this, message, value);
         return message;
@@ -2131,8 +2132,8 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
                 case /* optional bool invert_call_stack */ 11:
                     message.invertCallStack = reader.bool();
                     break;
-                case /* parca.query.v1alpha1.Filters filters */ 12:
-                    message.filters = Filters.internalBinaryRead(reader, reader.uint32(), options, message.filters);
+                case /* repeated parca.query.v1alpha1.Filter filter */ 12:
+                    message.filter.push(Filter.internalBinaryRead(reader, reader.uint32(), options));
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2179,9 +2180,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         /* optional bool invert_call_stack = 11; */
         if (message.invertCallStack !== undefined)
             writer.tag(11, WireType.Varint).bool(message.invertCallStack);
-        /* parca.query.v1alpha1.Filters filters = 12; */
-        if (message.filters)
-            Filters.internalBinaryWrite(message.filters, writer.tag(12, WireType.LengthDelimited).fork(), options).join();
+        /* repeated parca.query.v1alpha1.Filter filter = 12; */
+        for (let i = 0; i < message.filter.length; i++)
+            Filter.internalBinaryWrite(message.filter[i], writer.tag(12, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2193,21 +2194,21 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
  */
 export const QueryRequest = new QueryRequest$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class Filters$Type extends MessageType<Filters> {
+class Filter$Type extends MessageType<Filter> {
     constructor() {
-        super("parca.query.v1alpha1.Filters", [
+        super("parca.query.v1alpha1.Filter", [
             { no: 1, name: "stack_filter", kind: "message", oneof: "filter", T: () => StackFilter },
             { no: 2, name: "frame_filter", kind: "message", oneof: "filter", T: () => FrameFilter }
         ]);
     }
-    create(value?: PartialMessage<Filters>): Filters {
+    create(value?: PartialMessage<Filter>): Filter {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.filter = { oneofKind: undefined };
         if (value !== undefined)
-            reflectionMergePartial<Filters>(this, message, value);
+            reflectionMergePartial<Filter>(this, message, value);
         return message;
     }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Filters): Filters {
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Filter): Filter {
         let message = target ?? this.create(), end = reader.pos + length;
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
@@ -2235,7 +2236,7 @@ class Filters$Type extends MessageType<Filters> {
         }
         return message;
     }
-    internalBinaryWrite(message: Filters, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+    internalBinaryWrite(message: Filter, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
         /* parca.query.v1alpha1.StackFilter stack_filter = 1; */
         if (message.filter.oneofKind === "stackFilter")
             StackFilter.internalBinaryWrite(message.filter.stackFilter, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
@@ -2249,9 +2250,9 @@ class Filters$Type extends MessageType<Filters> {
     }
 }
 /**
- * @generated MessageType for protobuf message parca.query.v1alpha1.Filters
+ * @generated MessageType for protobuf message parca.query.v1alpha1.Filter
  */
-export const Filters = new Filters$Type();
+export const Filter = new Filter$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class StackFilter$Type extends MessageType<StackFilter> {
     constructor() {
@@ -2306,12 +2307,12 @@ export const StackFilter = new StackFilter$Type();
 class FunctionNameStackFilter$Type extends MessageType<FunctionNameStackFilter> {
     constructor() {
         super("parca.query.v1alpha1.FunctionNameStackFilter", [
-            { no: 1, name: "functions_to_filter", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+            { no: 1, name: "function_to_filter", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<FunctionNameStackFilter>): FunctionNameStackFilter {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.functionsToFilter = [];
+        message.functionToFilter = "";
         if (value !== undefined)
             reflectionMergePartial<FunctionNameStackFilter>(this, message, value);
         return message;
@@ -2321,8 +2322,8 @@ class FunctionNameStackFilter$Type extends MessageType<FunctionNameStackFilter> 
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* repeated string functions_to_filter */ 1:
-                    message.functionsToFilter.push(reader.string());
+                case /* string function_to_filter */ 1:
+                    message.functionToFilter = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2336,9 +2337,9 @@ class FunctionNameStackFilter$Type extends MessageType<FunctionNameStackFilter> 
         return message;
     }
     internalBinaryWrite(message: FunctionNameStackFilter, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* repeated string functions_to_filter = 1; */
-        for (let i = 0; i < message.functionsToFilter.length; i++)
-            writer.tag(1, WireType.LengthDelimited).string(message.functionsToFilter[i]);
+        /* string function_to_filter = 1; */
+        if (message.functionToFilter !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.functionToFilter);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
