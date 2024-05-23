@@ -1490,7 +1490,6 @@ func (q *Querier) GetProfileMetadataMappings(
 			locations := r.Column(0).(*array.List)
 
 			values := locations.ListValues().(*array.Dictionary)
-			valueDict := values.Dictionary().(*array.Binary)
 
 			compactedDict, err := compactDictionary.CompactDictionary(memory.DefaultAllocator, values)
 			if err != nil {
@@ -1501,9 +1500,8 @@ func (q *Querier) GetProfileMetadataMappings(
 
 			newValues := compactedDict.Dictionary().(*array.Binary)
 
-			for i := 0; i < valueDict.Len(); i++ {
+			for i := 0; i < newValues.Len(); i++ {
 				encodedLocation := newValues.Value(i)
-				// encodedLocation := valueDict.Value(i)
 				symInfo, _ := profile.DecodeSymbolizationInfo(encodedLocation)
 				records[symInfo.Mapping.File] = struct{}{}
 			}
@@ -1554,7 +1552,7 @@ func (q *Querier) GetProfileMetadataLabels(
 				}
 
 				val := stringCol.Value(i)
-				seen[strings.TrimPrefix(val, "labels.")] = struct{}{}
+				seen[strings.TrimPrefix(val, "pprof_labels.")] = struct{}{}
 			}
 
 			return nil

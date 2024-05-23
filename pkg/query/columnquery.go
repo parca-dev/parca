@@ -946,10 +946,3 @@ func (q *ColumnQueryAPI) GetLabels(
 
 	return l, nil
 }
-
-func getLastPathFromString(path string) string {
-	slices := strings.Split(path, "/")
-
-	lastString := slices[len(slices)-1]
-	return lastString
-}
