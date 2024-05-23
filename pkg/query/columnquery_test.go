@@ -1396,6 +1396,7 @@ func TestFilterData(t *testing.T) {
 	w.Diff.Append(0)
 	w.DiffPerSecond.Append(0)
 
+	frameFilter := map[string]struct{}{"test": {}}
 	originalRecord := w.RecordBuilder.NewRecord()
 	recs, _, err := FilterProfileData(
 		context.Background(),
@@ -1403,9 +1404,7 @@ func TestFilterData(t *testing.T) {
 		mem,
 		[]arrow.Record{originalRecord},
 		"",
-		&pb.RuntimeFilter{
-			ShowPython: false,
-		},
+		frameFilter,
 	)
 	require.NoError(t, err)
 	defer func() {
@@ -1452,9 +1451,7 @@ func TestFilterUnsymbolized(t *testing.T) {
 		mem,
 		[]arrow.Record{originalRecord},
 		"",
-		&pb.RuntimeFilter{
-			ShowPython: false,
-		},
+		map[string]struct{}{"test": {}},
 	)
 	require.NoError(t, err)
 	require.Len(t, recs, 1)
@@ -1529,6 +1526,7 @@ func TestFilterDataWithPath(t *testing.T) {
 	w.Diff.Append(0)
 	w.DiffPerSecond.Append(0)
 
+	frameFilter := map[string]struct{}{"libpython3.11.so.1.0": {}, "interpreter": {}}
 	originalRecord := w.RecordBuilder.NewRecord()
 	recs, _, err := FilterProfileData(
 		context.Background(),
@@ -1536,7 +1534,7 @@ func TestFilterDataWithPath(t *testing.T) {
 		mem,
 		[]arrow.Record{originalRecord},
 		"",
-		nil,
+		frameFilter,
 	)
 	require.NoError(t, err)
 	defer func() {
@@ -1556,7 +1554,7 @@ func TestFilterDataWithPath(t *testing.T) {
 	require.Equal(t, "test", string(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(2)))))
 }
 
-func TestFilterDataInterpretedOnly(t *testing.T) {
+func TestFilterDataFrameFilter(t *testing.T) {
 	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
 	defer mem.AssertSize(t, 0)
 	w := profile.NewWriter(mem, nil)
@@ -1612,6 +1610,7 @@ func TestFilterDataInterpretedOnly(t *testing.T) {
 	w.Diff.Append(0)
 	w.DiffPerSecond.Append(0)
 
+	frameFilter := map[string]struct{}{"interpreter": {}}
 	originalRecord := w.RecordBuilder.NewRecord()
 	recs, _, err := FilterProfileData(
 		context.Background(),
@@ -1619,9 +1618,7 @@ func TestFilterDataInterpretedOnly(t *testing.T) {
 		mem,
 		[]arrow.Record{originalRecord},
 		"",
-		&pb.RuntimeFilter{
-			ShowInterpretedOnly: true,
-		},
+		frameFilter,
 	)
 	require.NoError(t, err)
 	defer func() {
@@ -1708,9 +1705,7 @@ func BenchmarkFilterData(t *testing.B) {
 			mem,
 			[]arrow.Record{originalRecord},
 			"",
-			&pb.RuntimeFilter{
-				ShowPython: false,
-			},
+			map[string]struct{}{"test": {}},
 		)
 		require.NoError(t, err)
 		for _, r := range recs {

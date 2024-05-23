@@ -238,6 +238,9 @@ message QueryRequest {
 
     // REPORT_TYPE_TABLE_ARROW unspecified
     REPORT_TYPE_TABLE_ARROW = 7;
+
+    // REPORT_TYPE_PROFILE_METADATA contains metadata about the profile i.e. binaries, labels
+    REPORT_TYPE_PROFILE_METADATA = 8;
   }
 
   // report_type is the type of report to return
@@ -256,10 +259,55 @@ message QueryRequest {
   optional SourceReference source_reference = 9;
 
   // which runtime frames to filter out, often interpreter frames like python or ruby are not super useful by default
-  optional RuntimeFilter runtime_filter = 10;
+  optional RuntimeFilter runtime_filter = 10 [deprecated = true];
 
   // invert_call_stack inverts the call stacks in the flamegraph
   optional bool invert_call_stack = 11;
+
+  // a set of filter to apply to the query request
+  repeated Filter filter = 12;
+}
+
+// Filter to apply to the query request
+message Filter {
+  // filter is a oneof type of filter to apply to the query request
+  oneof filter {
+    // stack_filter is a filter for filtering by stacks
+    StackFilter stack_filter = 1;
+
+    // frame_filter is a filter for filtering by frames
+    FrameFilter frame_filter = 2;
+  }
+}
+
+// StackFilter is a filter for filtering by stacks
+message StackFilter {
+  // filter contains the different methods in which you can filter a stack
+  oneof filter {
+    // function_name_stack_filter is the function name to filter by
+    FunctionNameStackFilter function_name_stack_filter = 1;
+  }
+}
+
+// FunctionNameStackFilter is a filter for filtering by function name
+message FunctionNameStackFilter {
+  // function_to_filter is the function name to filter by
+  string function_to_filter = 1;
+}
+
+// FrameFilter is a filter for filtering by frames
+message FrameFilter {
+  // filter contains the different methods in which you can filter a frame
+  oneof filter {
+    // binary_frame_filter is the list of binary names to filter by
+    BinaryFrameFilter binary_frame_filter = 1;
+  }
+}
+
+// BinaryFrameFilter is a filter for filtering by binaries
+message BinaryFrameFilter {
+  // include_binaries is the list of binaries to filter by
+  repeated string include_binaries = 1;
 }
 
 // RuntimeFilter configures which runtimes to filter frames out for.
@@ -528,6 +576,9 @@ message QueryResponse {
 
     // table_arrow is a table encoded as a arrow record
     TableArrow table_arrow = 13;
+
+    // profile_metadata contains metadata about the profile i.e. binaries, labels
+    ProfileMetadata profile_metadata = 14;
   }
 
   // total is the total number of samples shown in the report.
@@ -628,4 +679,13 @@ message TableArrow {
 
   // unit is the unit represented by the flame graph
   string unit = 2;
+}
+
+// ProfileMetadata contains metadata about the profile i.e. binaries, labels
+message ProfileMetadata {
+  // mapping_files is the list of binaries in the profile
+  repeated string mapping_files = 1;
+
+  // labels is the list of labels in the profile
+  repeated string labels = 2;
 }

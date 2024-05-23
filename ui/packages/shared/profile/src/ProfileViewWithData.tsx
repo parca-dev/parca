@@ -43,14 +43,14 @@ export const ProfileViewWithData = ({
   ];
   const [groupBy = [FIELD_FUNCTION_NAME]] = useURLState({param: 'group_by', navigateTo});
 
-  const [showRuntimeRubyStr] = useURLState({param: 'show_runtime_ruby', navigateTo});
-  const showRuntimeRuby = showRuntimeRubyStr === 'true';
-  const [showRuntimePythonStr] = useURLState({param: 'show_runtime_python', navigateTo});
-  const showRuntimePython = showRuntimePythonStr === 'true';
-  const [showInterpretedOnlyStr] = useURLState({param: 'show_interpreted_only', navigateTo});
-  const showInterpretedOnly = showInterpretedOnlyStr === 'true';
   const [invertStack] = useURLState({param: 'invert_call_stack', navigateTo});
   const invertCallStack = invertStack === 'true';
+  const [binaryFrameFilterStr] = useURLState({param: 'binary_frame_filter', navigateTo});
+
+  const binaryFrameFilter: string[] =
+    typeof binaryFrameFilterStr === 'string'
+      ? binaryFrameFilterStr.split(',')
+      : binaryFrameFilterStr;
 
   const [pprofDownloading, setPprofDownloading] = useState<boolean>(false);
 
@@ -74,11 +74,22 @@ export const ProfileViewWithData = ({
     skip: !dashboardItems.includes('icicle'),
     nodeTrimThreshold,
     groupBy: groupByParam,
-    showRuntimeRuby,
-    showRuntimePython,
-    showInterpretedOnly,
     invertCallStack,
+    binaryFrameFilter,
   });
+
+  const {isLoading: profilemetadataLoading, response: profilemetadataResponse} = useQuery(
+    queryClient,
+    profileSource,
+    QueryRequest_ReportType.PROFILE_METADATA,
+    {
+      skip: !dashboardItems.includes('icicle'),
+      nodeTrimThreshold,
+      groupBy: groupByParam,
+      invertCallStack,
+      binaryFrameFilter: undefined,
+    }
+  );
 
   const {perf} = useParcaContext();
 
@@ -178,7 +189,7 @@ export const ProfileViewWithData = ({
       total={total}
       filtered={filtered}
       flamegraphData={{
-        loading: flamegraphLoading,
+        loading: flamegraphLoading && profilemetadataLoading,
         data:
           flamegraphResponse?.report.oneofKind === 'flamegraph'
             ? flamegraphResponse?.report?.flamegraph
@@ -190,6 +201,11 @@ export const ProfileViewWithData = ({
         total: BigInt(flamegraphResponse?.total ?? '0'),
         filtered: BigInt(flamegraphResponse?.filtered ?? '0'),
         error: flamegraphError,
+        mappings:
+          profilemetadataResponse?.report.oneofKind === 'profileMetadata'
+            ? profilemetadataResponse?.report?.profileMetadata?.mappingFiles
+            : undefined,
+        mappingsLoading: profilemetadataLoading,
       }}
       topTableData={{
         loading: tableLoading,

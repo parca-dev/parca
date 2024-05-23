@@ -48,6 +48,8 @@ type Querier interface {
 	ProfileTypes(ctx context.Context) ([]*pb.ProfileType, error)
 	QuerySingle(ctx context.Context, query string, time time.Time, invertCallStacks bool) (profile.Profile, error)
 	QueryMerge(ctx context.Context, query string, start, end time.Time, aggregateByLabels, invertCallStacks bool) (profile.Profile, error)
+	GetProfileMetadataMappings(ctx context.Context, query string, start, end time.Time) ([]string, error)
+	GetProfileMetadataLabels(ctx context.Context, match []string, start, end time.Time) ([]string, error)
 }
 
 var (
@@ -271,13 +273,48 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		}
 	}()
 
+	if req.GetReportType() == pb.QueryRequest_REPORT_TYPE_PROFILE_METADATA {
+		mappingFiles, err := q.getMappingFiles(ctx, req.GetMerge())
+
+		labels, labels_err := q.getLabels(ctx, &pb.LabelsRequest{
+			Match: []string{},
+			Start: req.GetMerge().Start,
+			End:   req.GetMerge().End,
+		})
+
+		if err != nil {
+			return nil, fmt.Errorf("getting mapping files: %w", err)
+		}
+
+		if labels_err != nil {
+			return nil, fmt.Errorf("getting labels: %w", labels_err)
+		}
+
+		return &pb.QueryResponse{
+			Total:    0,
+			Filtered: 0,
+			Report: &pb.QueryResponse_ProfileMetadata{ProfileMetadata: &pb.ProfileMetadata{
+				MappingFiles: mappingFiles,
+				Labels:       labels,
+			}},
+		}, nil
+	}
+
+	binaryFrameFilter := map[string]struct{}{}
+
+	for _, filter := range req.GetFilter() {
+		for _, include := range filter.GetFrameFilter().GetBinaryFrameFilter().GetIncludeBinaries() {
+			binaryFrameFilter[include] = struct{}{}
+		}
+	}
+
 	p.Samples, filtered, err = FilterProfileData(
 		ctx,
 		q.tracer,
 		q.mem,
 		p.Samples,
 		req.GetFilterQuery(),
-		req.GetRuntimeFilter(),
+		binaryFrameFilter,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("filtering profile: %w", err)
@@ -302,7 +339,7 @@ func FilterProfileData(
 	pool memory.Allocator,
 	records []arrow.Record,
 	filterQuery string,
-	runtimeFilter *pb.RuntimeFilter,
+	binaryFrameFilter map[string]struct{},
 ) ([]arrow.Record, int64, error) {
 	_, span := tracer.Start(ctx, "filterByFunction")
 	defer span.End()
@@ -320,23 +357,6 @@ func FilterProfileData(
 	allValues := int64(0)
 	allFiltered := int64(0)
 
-	if runtimeFilter == nil {
-		runtimeFilter = &pb.RuntimeFilter{}
-	}
-
-	binariesToExclude := [][]byte{}
-
-	interpretedOnly := false
-	if runtimeFilter != nil {
-		if !runtimeFilter.ShowPython {
-			binariesToExclude = append(binariesToExclude, []byte("libpython"), []byte("python3"))
-		}
-		if !runtimeFilter.ShowRuby {
-			binariesToExclude = append(binariesToExclude, []byte("libruby"))
-		}
-		interpretedOnly = runtimeFilter.ShowInterpretedOnly
-	}
-
 	for _, r := range records {
 		filteredRecords, valueSum, filteredSum, err := filterRecord(
 			ctx,
@@ -344,8 +364,7 @@ func FilterProfileData(
 			pool,
 			r,
 			filterQueryBytes,
-			binariesToExclude,
-			interpretedOnly,
+			binaryFrameFilter,
 		)
 		if err != nil {
 			return nil, 0, fmt.Errorf("filter record: %w", err)
@@ -367,8 +386,7 @@ func filterRecord(
 	pool memory.Allocator,
 	rec arrow.Record,
 	filterQueryBytes []byte,
-	binariesToExclude [][]byte,
-	showInterpretedOnly bool,
+	binaryFrameFilter map[string]struct{},
 ) ([]arrow.Record, int64, int64, error) {
 	r := profile.NewRecordReader(rec)
 
@@ -416,30 +434,24 @@ func filterRecord(
 			for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
 				validMappingStart := r.MappingStart.IsValid(j)
 				var mappingFile []byte
-				skipLocation := false
 				if validMappingStart {
 					mappingFile = r.MappingFileDict.Value(int(r.MappingFileIndices.Value(j)))
-					lastSlash := bytes.LastIndex(mappingFile, []byte("/"))
-					mappingFileBase := mappingFile
-					if lastSlash >= 0 {
-						mappingFileBase = mappingFile[lastSlash+1:]
-					}
-					if len(mappingFileBase) > 0 {
-						for _, binaryToExclude := range binariesToExclude {
-							if bytes.HasPrefix(mappingFileBase, binaryToExclude) {
-								skipLocation = true
-								break
-							}
+				}
+				lastSlash := bytes.LastIndex(mappingFile, []byte("/"))
+				mappingFileBase := mappingFile
+				if lastSlash >= 0 {
+					mappingFileBase = mappingFile[lastSlash+1:]
+				}
+				if len(mappingFileBase) > 0 {
+					if len(binaryFrameFilter) > 0 {
+						keepLocation := false
+						if _, ok := binaryFrameFilter[(string(mappingFileBase))]; ok {
+							keepLocation = true
+						}
+						if !keepLocation {
+							bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
 						}
 					}
-				}
-				if skipLocation {
-					bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
-					continue
-				}
-				if showInterpretedOnly && !bytes.Equal(mappingFile, []byte("interpreter")) {
-					bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
-					continue
 				}
 			}
 		}
@@ -904,4 +916,33 @@ func sliceRecord(r arrow.Record, indices []int64) []arrow.Record {
 
 	slices = append(slices, r.NewSlice(cur.Start, cur.End))
 	return slices
+}
+
+func (q *ColumnQueryAPI) getMappingFiles(
+	ctx context.Context,
+	m *pb.MergeProfile,
+) ([]string, error) {
+	p, err := q.querier.GetProfileMetadataMappings(
+		ctx,
+		m.Query,
+		m.Start.AsTime(),
+		m.End.AsTime(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return p, nil
+}
+
+func (q *ColumnQueryAPI) getLabels(
+	ctx context.Context,
+	req *pb.LabelsRequest,
+) ([]string, error) {
+	l, err := q.querier.GetProfileMetadataLabels(ctx, req.Match, req.Start.AsTime(), req.End.AsTime())
+	if err != nil {
+		return nil, err
+	}
+
+	return l, nil
 }

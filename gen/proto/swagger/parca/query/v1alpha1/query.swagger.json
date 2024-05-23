@@ -299,7 +299,7 @@
           },
           {
             "name": "reportType",
-            "description": "report_type is the type of report to return\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified\n - REPORT_TYPE_SOURCE: REPORT_TYPE_SOURCE contains source code annotated with profiling information\n - REPORT_TYPE_TABLE_ARROW: REPORT_TYPE_TABLE_ARROW unspecified",
+            "description": "report_type is the type of report to return\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified\n - REPORT_TYPE_SOURCE: REPORT_TYPE_SOURCE contains source code annotated with profiling information\n - REPORT_TYPE_TABLE_ARROW: REPORT_TYPE_TABLE_ARROW unspecified\n - REPORT_TYPE_PROFILE_METADATA: REPORT_TYPE_PROFILE_METADATA contains metadata about the profile i.e. binaries, labels",
             "in": "query",
             "required": false,
             "type": "string",
@@ -311,7 +311,8 @@
               "REPORT_TYPE_FLAMEGRAPH_TABLE",
               "REPORT_TYPE_FLAMEGRAPH_ARROW",
               "REPORT_TYPE_SOURCE",
-              "REPORT_TYPE_TABLE_ARROW"
+              "REPORT_TYPE_TABLE_ARROW",
+              "REPORT_TYPE_PROFILE_METADATA"
             ],
             "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED"
           },
@@ -579,10 +580,11 @@
         "REPORT_TYPE_FLAMEGRAPH_TABLE",
         "REPORT_TYPE_FLAMEGRAPH_ARROW",
         "REPORT_TYPE_SOURCE",
-        "REPORT_TYPE_TABLE_ARROW"
+        "REPORT_TYPE_TABLE_ARROW",
+        "REPORT_TYPE_PROFILE_METADATA"
       ],
       "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
-      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified\n - REPORT_TYPE_SOURCE: REPORT_TYPE_SOURCE contains source code annotated with profiling information\n - REPORT_TYPE_TABLE_ARROW: REPORT_TYPE_TABLE_ARROW unspecified",
+      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified\n - REPORT_TYPE_SOURCE: REPORT_TYPE_SOURCE contains source code annotated with profiling information\n - REPORT_TYPE_TABLE_ARROW: REPORT_TYPE_TABLE_ARROW unspecified\n - REPORT_TYPE_PROFILE_METADATA: REPORT_TYPE_PROFILE_METADATA contains metadata about the profile i.e. binaries, labels",
       "title": "ReportType is the type of report to return"
     },
     "metastorev1alpha1Function": {
@@ -803,6 +805,14 @@
         "invertCallStack": {
           "type": "boolean",
           "title": "invert_call_stack inverts the call stacks in the flamegraph"
+        },
+        "filter": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1alpha1Filter"
+          },
+          "title": "a set of filter to apply to the query request"
         }
       },
       "title": "QueryRequest is a request for a profile query"
@@ -838,6 +848,10 @@
         "tableArrow": {
           "$ref": "#/definitions/v1alpha1TableArrow",
           "title": "table_arrow is a table encoded as a arrow record"
+        },
+        "profileMetadata": {
+          "$ref": "#/definitions/v1alpha1ProfileMetadata",
+          "title": "profile_metadata contains metadata about the profile i.e. binaries, labels"
         },
         "total": {
           "type": "string",
@@ -926,6 +940,19 @@
           }
         }
       }
+    },
+    "v1alpha1BinaryFrameFilter": {
+      "type": "object",
+      "properties": {
+        "includeBinaries": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "include_binaries is the list of binaries to filter by"
+        }
+      },
+      "title": "BinaryFrameFilter is a filter for filtering by binaries"
     },
     "v1alpha1Callgraph": {
       "type": "object",
@@ -1040,6 +1067,20 @@
         }
       },
       "title": "DiffProfile contains parameters for a profile diff request"
+    },
+    "v1alpha1Filter": {
+      "type": "object",
+      "properties": {
+        "stackFilter": {
+          "$ref": "#/definitions/v1alpha1StackFilter",
+          "title": "stack_filter is a filter for filtering by stacks"
+        },
+        "frameFilter": {
+          "$ref": "#/definitions/v1alpha1FrameFilter",
+          "title": "frame_filter is a filter for filtering by frames"
+        }
+      },
+      "title": "Filter to apply to the query request"
     },
     "v1alpha1Flamegraph": {
       "type": "object",
@@ -1215,6 +1256,26 @@
       },
       "title": "FlamegraphRootNode is a root node of a flame graph"
     },
+    "v1alpha1FrameFilter": {
+      "type": "object",
+      "properties": {
+        "binaryFrameFilter": {
+          "$ref": "#/definitions/v1alpha1BinaryFrameFilter",
+          "title": "binary_frame_filter is the list of binary names to filter by"
+        }
+      },
+      "title": "FrameFilter is a filter for filtering by frames"
+    },
+    "v1alpha1FunctionNameStackFilter": {
+      "type": "object",
+      "properties": {
+        "functionToFilter": {
+          "type": "string",
+          "title": "function_to_filter is the function name to filter by"
+        }
+      },
+      "title": "FunctionNameStackFilter is a filter for filtering by function name"
+    },
     "v1alpha1GroupBy": {
       "type": "object",
       "properties": {
@@ -1362,6 +1423,26 @@
       "description": "- MODE_SINGLE_UNSPECIFIED: MODE_SINGLE_UNSPECIFIED default unspecified\n - MODE_MERGE: MODE_MERGE merge profile",
       "title": "Mode specifies the type of diff"
     },
+    "v1alpha1ProfileMetadata": {
+      "type": "object",
+      "properties": {
+        "mappingFiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "mapping_files is the list of binaries in the profile"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "labels is the list of labels in the profile"
+        }
+      },
+      "title": "ProfileMetadata contains metadata about the profile i.e. binaries, labels"
+    },
     "v1alpha1ProfileType": {
       "type": "object",
       "properties": {
@@ -1495,6 +1576,16 @@
         }
       },
       "description": "SourceReference contains a reference to source code."
+    },
+    "v1alpha1StackFilter": {
+      "type": "object",
+      "properties": {
+        "functionNameStackFilter": {
+          "$ref": "#/definitions/v1alpha1FunctionNameStackFilter",
+          "title": "function_name_stack_filter is the function name to filter by"
+        }
+      },
+      "title": "StackFilter is a filter for filtering by stacks"
     },
     "v1alpha1TableArrow": {
       "type": "object",

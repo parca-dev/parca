@@ -32,10 +32,8 @@ interface UseQueryOptions {
   sourceBuildID?: string;
   sourceFilename?: string;
   sourceOnly?: boolean;
-  showRuntimeRuby?: boolean;
-  showRuntimePython?: boolean;
-  showInterpretedOnly?: boolean;
   invertCallStack?: boolean;
+  binaryFrameFilter?: string[];
 }
 
 export const useQuery = (
@@ -56,10 +54,8 @@ export const useQuery = (
       options?.sourceBuildID,
       options?.sourceOnly,
       options?.sourceOnly === true ? '' : options?.sourceFilename,
-      options?.showRuntimeRuby ?? false,
-      options?.showRuntimePython ?? false,
-      options?.showInterpretedOnly ?? false,
       options?.invertCallStack ?? false,
+      options?.binaryFrameFilter ?? '',
     ],
     queryFn: async () => {
       const req = profileSource.QueryRequest();
@@ -75,12 +71,27 @@ export const useQuery = (
           sourceOnly: options?.sourceOnly ?? false,
         };
       }
-      req.runtimeFilter = {
-        showRuby: options?.showRuntimeRuby ?? false,
-        showPython: options?.showRuntimePython ?? false,
-        showInterpretedOnly: options?.showInterpretedOnly ?? false,
-      };
       req.invertCallStack = options?.invertCallStack ?? false;
+
+      if (options?.binaryFrameFilter !== undefined && options?.binaryFrameFilter.length > 0) {
+        req.filter = [
+          {
+            filter: {
+              oneofKind: 'frameFilter',
+              frameFilter: {
+                filter: {
+                  oneofKind: 'binaryFrameFilter',
+                  binaryFrameFilter: {
+                    includeBinaries: options?.binaryFrameFilter ?? [],
+                  },
+                },
+              },
+            },
+          },
+        ];
+      } else {
+        req.filter = [];
+      }
 
       try {
         const {response} = await client.query(req, {meta: metadata});

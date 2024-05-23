@@ -71,7 +71,7 @@ const colorNodes = (
         features
       );
     }
-    const feature = extractFeature(node, mappings, locations, strings, functions);
+    const feature = extractFeature(node, mappings, locations, strings);
     coloredNode.feature = feature.name;
     features[feature.name] = feature.type;
     return coloredNode;

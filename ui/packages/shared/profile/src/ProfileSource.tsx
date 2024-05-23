@@ -166,6 +166,7 @@ export class ProfileDiffSource implements ProfileSource {
       reportType: QueryRequest_ReportType.FLAMEGRAPH_UNSPECIFIED,
       mode: QueryRequest_Mode.DIFF,
       filterQuery: this.filterQuery,
+      filter: [],
     };
   }
 
@@ -233,6 +234,7 @@ export class MergedProfileSource implements ProfileSource {
       reportType: QueryRequest_ReportType.FLAMEGRAPH_UNSPECIFIED,
       mode: QueryRequest_Mode.MERGE,
       filterQuery: this.filterQuery,
+      filter: [],
     };
   }
 

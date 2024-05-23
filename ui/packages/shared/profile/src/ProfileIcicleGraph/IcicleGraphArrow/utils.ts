@@ -19,7 +19,6 @@ import {divide, getLastItem, valueFormatter} from '@parca/utilities';
 import {hexifyAddress} from '../../utils';
 import {
   FIELD_FUNCTION_NAME,
-  FIELD_LABELS,
   FIELD_LABELS_ONLY,
   FIELD_LOCATION_ADDRESS,
   FIELD_MAPPING_FILE,
@@ -66,10 +65,6 @@ export function nodeLabel(
 }
 
 export const extractFeature = (mapping: string): Feature => {
-  if (mapping === 'runtime' || mapping === 'root') {
-    return {name: 'runtime', type: FEATURE_TYPES.Runtime};
-  }
-
   if (mapping != null && mapping !== '') {
     return {name: mapping, type: FEATURE_TYPES.Binary};
   }

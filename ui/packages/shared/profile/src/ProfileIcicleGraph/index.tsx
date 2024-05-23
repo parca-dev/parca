@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useCallback, useEffect, useMemo} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import {AnimatePresence, motion} from 'framer-motion';
@@ -32,7 +32,6 @@ import {capitalizeOnlyFirstLetter, divide, type NavigateFunction} from '@parca/u
 import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
 import DiffLegend from '../components/DiffLegend';
 import GroupByDropdown from './ActionButtons/GroupByDropdown';
-import RuntimeFilterDropdown from './ActionButtons/RuntimeFilterDropdown';
 import SortBySelect from './ActionButtons/SortBySelect';
 import IcicleGraph from './IcicleGraph';
 import IcicleGraphArrow, {FIELD_FUNCTION_NAME} from './IcicleGraphArrow';
@@ -55,6 +54,7 @@ interface ProfileIcicleGraphProps {
   setActionButtons?: (buttons: React.JSX.Element) => void;
   error?: any;
   isHalfScreen: boolean;
+  mappings?: string[];
 }
 
 const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
@@ -70,6 +70,10 @@ const ShowHideLegendButton = ({
 }): JSX.Element => {
   const [colorStackLegend, setStoreColorStackLegend] = useURLState({
     param: 'color_stack_legend',
+    navigateTo,
+  });
+  const [binaryFrameFilter, setBinaryFrameFilter] = useURLState({
+    param: 'binary_frame_filter',
     navigateTo,
   });
 
@@ -88,28 +92,56 @@ const ShowHideLegendButton = ({
     [setStoreColorStackLegend]
   );
 
+  const resetLegend = (): void => {
+    setBinaryFrameFilter([]);
+  };
+
   return (
     <>
       {colorProfileName === 'default' || compareMode ? null : (
         <>
           {isHalfScreen ? (
-            <IconButton
-              className="rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 items-center flex border border-gray-200 dark:border-gray-600 dark:text-white justify-center !py-2 !px-3 cursor-pointer min-h-[38px]"
-              icon={isColorStackLegendEnabled ? 'ph:eye-closed' : 'ph:eye'}
-              toolTipText={isColorStackLegendEnabled ? 'Hide legend' : 'Show legend'}
-              onClick={() => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true')}
-              id="h-show-legend-button"
-            />
+            <>
+              <IconButton
+                className="rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 items-center flex border border-gray-200 dark:border-gray-600 dark:text-white justify-center !py-2 !px-3 cursor-pointer min-h-[38px]"
+                icon={isColorStackLegendEnabled ? 'ph:eye-closed' : 'ph:eye'}
+                toolTipText={isColorStackLegendEnabled ? 'Hide legend' : 'Show legend'}
+                onClick={() => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true')}
+                id="h-show-legend-button"
+              />
+              {binaryFrameFilter !== undefined && binaryFrameFilter.length > 0 && (
+                <IconButton
+                  className="rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 items-center flex border border-gray-200 dark:border-gray-600 dark:text-white justify-center !py-2 !px-3 cursor-pointer min-h-[38px]"
+                  icon="system-uicons:reset"
+                  toolTipText="Reset the legend selection"
+                  onClick={() => resetLegend()}
+                  id="h-reset-legend-button"
+                />
+              )}
+            </>
           ) : (
-            <Button
-              className="gap-2 w-max"
-              variant="neutral"
-              onClick={() => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true')}
-              id="h-show-legend-button"
-            >
-              {isColorStackLegendEnabled ? 'Hide legend' : 'Show legend'}
-              <Icon icon={isColorStackLegendEnabled ? 'ph:eye-closed' : 'ph:eye'} width={20} />
-            </Button>
+            <>
+              <Button
+                className="gap-2 w-max"
+                variant="neutral"
+                onClick={() => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true')}
+                id="h-show-legend-button"
+              >
+                {isColorStackLegendEnabled ? 'Hide legend' : 'Show legend'}
+                <Icon icon={isColorStackLegendEnabled ? 'ph:eye-closed' : 'ph:eye'} width={20} />
+              </Button>
+              {binaryFrameFilter !== undefined && binaryFrameFilter.length > 0 && (
+                <Button
+                  className="gap-2 w-max"
+                  variant="neutral"
+                  onClick={() => resetLegend()}
+                  id="h-reset-legend-button"
+                >
+                  Reset Legend
+                  <Icon icon="system-uicons:reset" width={20} />
+                </Button>
+              )}
+            </>
           )}
         </>
       )}
@@ -155,21 +187,6 @@ const GroupAndSortActionButtons = ({navigateTo}: {navigateTo?: NavigateFunction}
     [groupBy, setGroupBy]
   );
 
-  const [showRuntimeRubyStr, setShowRuntimeRuby] = useURLState({
-    param: 'show_runtime_ruby',
-    navigateTo,
-  });
-
-  const [showRuntimePythonStr, setShowRuntimePython] = useURLState({
-    param: 'show_runtime_python',
-    navigateTo,
-  });
-
-  const [showInterpretedOnlyStr, setShowInterpretedOnly] = useURLState({
-    param: 'show_interpreted_only',
-    navigateTo,
-  });
-
   return (
     <>
       <GroupByDropdown groupBy={groupBy} toggleGroupBy={toggleGroupBy} />
@@ -177,20 +194,6 @@ const GroupAndSortActionButtons = ({navigateTo}: {navigateTo?: NavigateFunction}
         compareMode={compareMode}
         sortBy={storeSortBy as string}
         setSortBy={setStoreSortBy}
-      />
-      <RuntimeFilterDropdown
-        showRuntimeRuby={showRuntimeRubyStr === 'true'}
-        toggleShowRuntimeRuby={() =>
-          setShowRuntimeRuby(showRuntimeRubyStr === 'true' ? 'false' : 'true')
-        }
-        showRuntimePython={showRuntimePythonStr === 'true'}
-        toggleShowRuntimePython={() =>
-          setShowRuntimePython(showRuntimePythonStr === 'true' ? 'false' : 'true')
-        }
-        showInterpretedOnly={showInterpretedOnlyStr === 'true'}
-        toggleShowInterpretedOnly={() =>
-          setShowInterpretedOnly(showInterpretedOnlyStr === 'true' ? 'false' : 'true')
-        }
       />
     </>
   );
@@ -210,9 +213,11 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   error,
   width,
   isHalfScreen,
+  mappings,
 }: ProfileIcicleGraphProps): JSX.Element {
   const {onError, authenticationErrorMessage, isDarkMode} = useParcaContext();
   const {compareMode} = useProfileViewContext();
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const [storeSortBy = FIELD_FUNCTION_NAME] = useURLState({
     param: 'sort_by',
@@ -257,7 +262,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   }, [graph, arrow, filtered, total]);
 
   useEffect(() => {
-    if (loading && setActionButtons !== undefined) {
+    if (isLoading && setActionButtons !== undefined) {
       setActionButtons(<IcicleActionButtonPlaceholder isHalfScreen={isHalfScreen} />);
       return;
     }
@@ -270,7 +275,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
       <div className="flex w-full justify-end gap-2 pb-2">
         <div className="ml-2 flex w-full flex-col items-start justify-between gap-2 md:flex-row md:items-end">
           {arrow !== undefined && <GroupAndSortActionButtons navigateTo={navigateTo} />}
-          {isHalfScreen ? (
+          {arrow !== undefined && isHalfScreen ? (
             <IconButton
               icon={isInvert ? 'ph:sort-ascending' : 'ph:sort-descending'}
               toolTipText={isInvert ? 'Original Call Stack' : 'Invert Call Stack'}
@@ -320,9 +325,18 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     setActionButtons,
     loading,
     isHalfScreen,
+    isLoading,
   ]);
 
-  if (loading) {
+  useEffect(() => {
+    if (!loading && (arrow !== undefined || graph !== undefined)) {
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+    }
+  }, [loading, arrow, graph]);
+
+  if (isLoading) {
     return (
       <div className="h-auto overflow-clip">
         <IcicleGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
@@ -384,6 +398,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
               profileType={profileType}
               navigateTo={navigateTo}
               sortBy={storeSortBy as string}
+              mappings={mappings}
             />
           )}
         </div>

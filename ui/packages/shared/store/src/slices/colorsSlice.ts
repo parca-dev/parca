@@ -74,7 +74,6 @@ export interface StackColor {
 }
 
 export const FEATURE_TYPES = {
-  Runtime: 'Runtime',
   Binary: 'Binary',
   Misc: 'Misc',
 } as const;

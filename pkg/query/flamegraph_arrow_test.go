@@ -35,7 +35,7 @@ import (
 	"go.opentelemetry.io/otel/trace/noop"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
-	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	compactDictionary "github.com/parca-dev/parca/pkg/compactdictionary"
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -941,7 +941,7 @@ func TestCompactDictionary(t *testing.T) {
 	index1Builder.AppendNull()
 	index1Builder.AppendValues([]int32{0, 1}, nil)
 	index1 := index1Builder.NewArray()
-	compArr, err := compactDictionary(mem, array.NewDictionaryArray(
+	compArr, err := compactDictionary.CompactDictionary(mem, array.NewDictionaryArray(
 		&arrow.DictionaryType{IndexType: index1.DataType(), ValueType: values.DataType()},
 		index1,
 		values,
@@ -961,7 +961,7 @@ func TestCompactDictionary(t *testing.T) {
 	index2Builder := array.NewInt32Builder(mem)
 	index2Builder.Append(2)
 	index2 := index2Builder.NewArray()
-	compArr, err = compactDictionary(mem, array.NewDictionaryArray(
+	compArr, err = compactDictionary.CompactDictionary(mem, array.NewDictionaryArray(
 		&arrow.DictionaryType{IndexType: index2.DataType(), ValueType: values.DataType()},
 		index2,
 		values,
@@ -977,7 +977,7 @@ func TestCompactDictionary(t *testing.T) {
 	index3Builder := array.NewInt32Builder(mem)
 	index3Builder.AppendNull()
 	index3 := index3Builder.NewArray()
-	compArr, err = compactDictionary(mem, array.NewDictionaryArray(
+	compArr, err = compactDictionary.CompactDictionary(mem, array.NewDictionaryArray(
 		&arrow.DictionaryType{IndexType: index3.DataType(), ValueType: values.DataType()},
 		index3,
 		values,
@@ -1068,9 +1068,7 @@ func TestAllFramesFiltered(t *testing.T) {
 	// data being multiple samples, but all frames are filtered out. What
 	// happened is the input data contains no python frames, but only python
 	// frames were requested.
-	np.Samples, _, err = FilterProfileData(ctx, tracer, mem, np.Samples, "", &pb.RuntimeFilter{
-		ShowInterpretedOnly: true,
-	})
+	np.Samples, _, err = FilterProfileData(ctx, tracer, mem, np.Samples, "", map[string]struct{}{})
 	require.NoError(t, err)
 
 	defer func() {

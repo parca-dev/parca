@@ -91,14 +91,8 @@ export const extractFeature = (
   data: FlamegraphNode,
   mappings: Mapping[],
   locations: Location[],
-  strings: string[],
-  functions: ParcaFunction[]
+  strings: string[]
 ): Feature => {
-  const name = nodeLabel(data, strings, mappings, locations, functions, false).trim();
-  if (name.startsWith('runtime') || name === 'root') {
-    return {name: 'runtime', type: FEATURE_TYPES.Runtime};
-  }
-
   const binaryName = getBinaryName(data, mappings, locations, strings);
   if (binaryName != null) {
     return {name: binaryName, type: FEATURE_TYPES.Binary};
