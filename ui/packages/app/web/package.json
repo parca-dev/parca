@@ -1,7 +1,7 @@
 {
   "name": "@parca/web",
   "private": true,
-  "version": "0.16.671",
+  "version": "0.16.672",
   "description": "Parca Web Interface",
   "scripts": {
     "lint": "eslint --no-error-on-unmatched-pattern --ext .ts,.tsx,.js src/*",
@@ -65,7 +65,7 @@
   "devDependencies": {
     "@craco/craco": "7.1.0",
     "@swc/cli": "0.3.12",
-    "@swc/core": "1.5.5",
+    "@swc/core": "1.5.7",
     "@swc/jest": "0.2.36",
     "@types/lodash.throttle": "4.1.9",
     "css-loader": "6.11.0",
