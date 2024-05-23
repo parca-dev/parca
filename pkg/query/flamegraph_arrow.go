@@ -230,6 +230,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						recordLabelIndex,
 						i, j, int(end),
 						key,
+						locationLeaf,
 					)
 					if err != nil {
 						return nil, 0, 0, 0, err
@@ -685,6 +686,7 @@ func (fb *flamegraphBuilder) mergeUnsymbolizedRows(
 	recordLabelIndex []int,
 	sampleIndex, locationIndex, end int,
 	key uint64,
+	leaf bool,
 ) (bool, error) {
 	if cr, found := fb.compareRows[key]; found {
 		// If we don't group by the labels, we only keep those labels that are identical.
@@ -694,8 +696,11 @@ func (fb *flamegraphBuilder) mergeUnsymbolizedRows(
 
 		fb.builderCumulative.Add(cr, r.Value.Value(sampleIndex))
 		fb.builderCumulativePerSecond.Add(cr, r.ValuePerSecond.Value(sampleIndex))
-		fb.builderFlat.Add(cr, r.Value.Value(sampleIndex))
-		fb.builderFlatPerSecond.Add(cr, r.ValuePerSecond.Value(sampleIndex))
+		if leaf {
+			fb.builderFlat.Add(cr, r.Value.Value(sampleIndex))
+			fb.builderFlatPerSecond.Add(cr, r.ValuePerSecond.Value(sampleIndex))
+		}
+
 		fb.parent.Set(cr)
 		fb.compareRows = fb.children[cr]
 		return true, nil
@@ -943,6 +948,7 @@ func newFlamegraphBuilder(
 	fb.builderCumulativePerSecond.Append(0)
 	fb.builderDiff.Append(0)
 	fb.builderDiffPerSecond.Append(0)
+	// the root will never have a flat value
 	fb.builderFlat.AppendNull()
 	fb.builderFlatPerSecond.AppendNull()
 
@@ -1098,7 +1104,7 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 		{Name: FlamegraphFieldChildren, Type: arrow.ListOf(arrow.PrimitiveTypes.Uint32)},
 		{Name: FlamegraphFieldCumulative, Type: fb.trimmedCumulative.Type()},
 		{Name: FlamegraphFieldCumulativePerSecond, Type: arrow.PrimitiveTypes.Float64},
-		{Name: FlamegraphFieldFlat, Type: fb.trimmedCumulative.Type()},
+		{Name: FlamegraphFieldFlat, Type: fb.trimmedFlat.Type()},
 		{Name: FlamegraphFieldFlatPerSecond, Type: arrow.PrimitiveTypes.Float64},
 		{Name: FlamegraphFieldDiff, Type: fb.trimmedDiff.Type()},
 		{Name: FlamegraphFieldDiffPerSecond, Type: arrow.PrimitiveTypes.Float64},
@@ -1335,12 +1341,11 @@ func (fb *flamegraphBuilder) appendRow(
 
 	if leaf { // leaf
 		fb.builderFlat.Append(r.Value.Value(sampleRow))
+		fb.builderFlatPerSecond.Append(r.ValuePerSecond.Value(sampleRow))
 	} else {
 		fb.builderFlat.AppendNull()
+		fb.builderFlatPerSecond.AppendNull()
 	}
-
-	// TODO(metalmatze): Where an how to append the flatPerSecond?
-	fb.builderFlatPerSecond.AppendNull()
 
 	if r.Diff.Value(sampleRow) > 0 {
 		fb.builderDiff.Append(r.Diff.Value(sampleRow))
@@ -1430,7 +1435,7 @@ func (fb *flamegraphBuilder) addRowValues(r *profile.RecordReader, row, sampleRo
 
 	if leaf {
 		fb.builderFlat.Add(row, r.Value.Value(sampleRow))
-		//TODO(metalmatze): Add flatPerSecond
+		fb.builderFlatPerSecond.Add(row, r.ValuePerSecond.Value(sampleRow))
 	}
 }
 
