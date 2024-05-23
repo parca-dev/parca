@@ -34,6 +34,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	queryv1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	compactDictionary "github.com/parca-dev/parca/pkg/compactdictionary"
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -930,7 +931,7 @@ func newFlamegraphBuilder(
 
 func (fb *flamegraphBuilder) prepareNewRecord() error {
 	// TODO: Do we want to clean up the builders too?
-	cleanupArrs := make([]releasable, 0, 10)
+	cleanupArrs := make([]compactDictionary.Releasable, 0, 10)
 	defer func() {
 		for _, arr := range cleanupArrs {
 			arr.Release()
@@ -1387,7 +1388,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	_, span := tracer.Start(ctx, "trim")
 	defer span.End()
 
-	releasers := make([]releasable, 0, 10+2*len(fb.labels))
+	releasers := make([]compactDictionary.Releasable, 0, 10+2*len(fb.labels))
 	defer func() {
 		for _, r := range releasers {
 			r.Release()
@@ -1584,7 +1585,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedMappingBuildIDIndicesArray := trimmedMappingBuildIDIndices.NewArray()
 	releasers = append(releasers, trimmedMappingBuildIDIndicesArray)
 
-	mbid, err := compactDictionary(fb.pool, array.NewDictionaryArray(
+	mbid, err := compactDictionary.CompactDictionary(fb.pool, array.NewDictionaryArray(
 		fb.mappingBuildID.DataType(),
 		trimmedMappingBuildIDIndicesArray,
 		fb.mappingBuildID.Dictionary(),
@@ -1597,7 +1598,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 
 	trimmedMappingFileIndicesArray := trimmedMappingFileIndices.NewArray()
 	releasers = append(releasers, trimmedMappingFileIndicesArray)
-	mf, err := compactDictionary(fb.pool, array.NewDictionaryArray(
+	mf, err := compactDictionary.CompactDictionary(fb.pool, array.NewDictionaryArray(
 		fb.mappingFile.DataType(),
 		trimmedMappingFileIndicesArray,
 		fb.mappingFile.Dictionary(),
@@ -1610,7 +1611,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 
 	trimmedFunctionNameIndicesArray := trimmedFunctionNameIndices.NewArray()
 	releasers = append(releasers, trimmedFunctionNameIndicesArray)
-	fn, err := compactDictionary(fb.pool, array.NewDictionaryArray(
+	fn, err := compactDictionary.CompactDictionary(fb.pool, array.NewDictionaryArray(
 		fb.functionName.DataType(),
 		trimmedFunctionNameIndicesArray,
 		fb.functionName.Dictionary(),
@@ -1623,7 +1624,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 
 	trimmedFunctionSystemNameIndicesArray := trimmedFunctionSystemNameIndices.NewArray()
 	releasers = append(releasers, trimmedFunctionSystemNameIndicesArray)
-	sn, err := compactDictionary(fb.pool, array.NewDictionaryArray(
+	sn, err := compactDictionary.CompactDictionary(fb.pool, array.NewDictionaryArray(
 		fb.functionSystemName.DataType(),
 		trimmedFunctionSystemNameIndicesArray,
 		fb.functionSystemName.Dictionary(),
@@ -1636,7 +1637,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 
 	trimmedFunctionFilenameIndicesArray := trimmedFunctionFilenameIndices.NewArray()
 	releasers = append(releasers, trimmedFunctionFilenameIndicesArray)
-	ffn, err := compactDictionary(fb.pool, array.NewDictionaryArray(
+	ffn, err := compactDictionary.CompactDictionary(fb.pool, array.NewDictionaryArray(
 		fb.functionFilename.DataType(),
 		trimmedFunctionFilenameIndicesArray,
 		fb.functionFilename.Dictionary(),
@@ -1651,7 +1652,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	for i, index := range trimmedLabelsIndices {
 		trimmedIndexArray := index.NewArray()
 		releasers = append(releasers, trimmedIndexArray)
-		tl, err := compactDictionary(fb.pool, array.NewDictionaryArray(
+		tl, err := compactDictionary.CompactDictionary(fb.pool, array.NewDictionaryArray(
 			&arrow.DictionaryType{IndexType: trimmedIndexArray.DataType(), ValueType: fb.labels[i].Dictionary().DataType()},
 			trimmedIndexArray,
 			fb.labels[i].Dictionary(),
@@ -1850,130 +1851,7 @@ func unsafeString(b []byte) string {
 	return unsafe.String(unsafe.SliceData(b), len(b))
 }
 
-type releasable interface {
-	Release()
-}
-
-// compactDictionary copies only the needed values from the old dictionary to the new dictionary.
-// Once all needed values are copied, it updates the indices referencing those values in their new place.
-func compactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dictionary, error) {
-	indices := arr.Indices().(*array.Int32)
-	releasers := make([]releasable, 0, 3)
-	releasers = append(releasers, arr)
-	defer func() {
-		for _, r := range releasers {
-			r.Release()
-		}
-	}()
-
-	newLen := 0
-	keepValues := make([]int, arr.Dictionary().Len())
-	for i := 0; i < indices.Len(); i++ {
-		if arr.IsValid(i) {
-			if keepValues[indices.Value(i)] == 0 {
-				// keep track of how many values we need to keep to reserve the space upfront
-				newLen++
-			}
-			keepValues[indices.Value(i)]++
-		}
-	}
-
-	// This maps the previous index (at the key/index in this slice) to the new index (at the value of the slice).
-	newValueIndices := make([]int, arr.Dictionary().Len())
-
-	var valueBuilder array.Builder
-	switch dict := arr.Dictionary().(type) {
-	case *array.String:
-		stringBuilder := array.NewStringBuilder(mem)
-		stringBuilder.Reserve(newLen)
-		numBytes := 0
-		for i, count := range keepValues {
-			if count == 0 {
-				continue
-			}
-			numBytes += len(dict.Value(i))
-		}
-		stringBuilder.ReserveData(numBytes)
-		for i, count := range keepValues {
-			if count == 0 {
-				continue
-			}
-			newValueIndices[i] = stringBuilder.Len()
-			stringBuilder.Append(dict.Value(i))
-		}
-		valueBuilder = stringBuilder
-		releasers = append(releasers, stringBuilder)
-	case *array.Binary:
-		binaryBuilder := array.NewBinaryBuilder(mem, arrow.BinaryTypes.Binary)
-		binaryBuilder.Reserve(newLen)
-		numBytes := 0
-		for i, count := range keepValues {
-			if count == 0 {
-				continue
-			}
-			numBytes += dict.ValueLen(i)
-		}
-		binaryBuilder.ReserveData(numBytes)
-		for i, count := range keepValues {
-			if count == 0 {
-				continue
-			}
-			newValueIndices[i] = binaryBuilder.Len()
-			binaryBuilder.Append(dict.Value(i))
-		}
-		valueBuilder = binaryBuilder
-		releasers = append(releasers, binaryBuilder)
-	default:
-		return nil, fmt.Errorf("unsupported dictionary type %T", arr.Dictionary())
-	}
-
-	// we know how many values we need to keep, so we can reserve the space upfront
-	var indexBuilder array.Builder
-	if newLen < stdmath.MaxUint8 {
-		indexBuilder = array.NewUint8Builder(mem)
-	} else if newLen < stdmath.MaxUint16 {
-		indexBuilder = array.NewUint16Builder(mem)
-	} else if newLen < stdmath.MaxUint32 {
-		indexBuilder = array.NewUint32Builder(mem)
-	} else {
-		indexBuilder = array.NewUint64Builder(mem)
-	}
-	indexBuilder.Reserve(indices.Len())
-	releasers = append(releasers, indexBuilder)
-
-	for i := 0; i < indices.Len(); i++ {
-		if arr.IsNull(i) {
-			indexBuilder.AppendNull()
-			continue
-		}
-		oldValueIndex := indices.Value(i)
-		newValueIndex := newValueIndices[oldValueIndex]
-
-		switch b := indexBuilder.(type) {
-		case *array.Uint8Builder:
-			b.Append(uint8(newValueIndex))
-		case *array.Uint16Builder:
-			b.Append(uint16(newValueIndex))
-		case *array.Uint32Builder:
-			b.Append(uint32(newValueIndex))
-		case *array.Uint64Builder:
-			b.Append(uint64(newValueIndex))
-		}
-	}
-
-	index := indexBuilder.NewArray()
-	values := valueBuilder.NewArray()
-
-	releasers = append(releasers, index, values)
-
-	return array.NewDictionaryArray(
-		&arrow.DictionaryType{IndexType: index.DataType(), ValueType: valueBuilder.Type()},
-		index,
-		values,
-	), nil
-}
-
-func release(releasers ...releasable) {
+func release(releasers ...compactDictionary.Releasable) {
 	for _, r := range releasers {
 		if r != nil {
 			r.Release()

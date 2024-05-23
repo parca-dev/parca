@@ -35,6 +35,7 @@ import (
 	"go.opentelemetry.io/otel/trace/noop"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
+	compactDictionary "github.com/parca-dev/parca/pkg/compactdictionary"
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -940,7 +941,7 @@ func TestCompactDictionary(t *testing.T) {
 	index1Builder.AppendNull()
 	index1Builder.AppendValues([]int32{0, 1}, nil)
 	index1 := index1Builder.NewArray()
-	compArr, err := compactDictionary(mem, array.NewDictionaryArray(
+	compArr, err := compactDictionary.CompactDictionary(mem, array.NewDictionaryArray(
 		&arrow.DictionaryType{IndexType: index1.DataType(), ValueType: values.DataType()},
 		index1,
 		values,
@@ -960,7 +961,7 @@ func TestCompactDictionary(t *testing.T) {
 	index2Builder := array.NewInt32Builder(mem)
 	index2Builder.Append(2)
 	index2 := index2Builder.NewArray()
-	compArr, err = compactDictionary(mem, array.NewDictionaryArray(
+	compArr, err = compactDictionary.CompactDictionary(mem, array.NewDictionaryArray(
 		&arrow.DictionaryType{IndexType: index2.DataType(), ValueType: values.DataType()},
 		index2,
 		values,
@@ -976,7 +977,7 @@ func TestCompactDictionary(t *testing.T) {
 	index3Builder := array.NewInt32Builder(mem)
 	index3Builder.AppendNull()
 	index3 := index3Builder.NewArray()
-	compArr, err = compactDictionary(mem, array.NewDictionaryArray(
+	compArr, err = compactDictionary.CompactDictionary(mem, array.NewDictionaryArray(
 		&arrow.DictionaryType{IndexType: index3.DataType(), ValueType: values.DataType()},
 		index3,
 		values,

@@ -1396,7 +1396,7 @@ func TestFilterData(t *testing.T) {
 	w.Diff.Append(0)
 	w.DiffPerSecond.Append(0)
 
-	frameFilter := map[string]struct{}{"libpython3.11.so.1.0": {}}
+	frameFilter := map[string]struct{}{"test": {}}
 	originalRecord := w.RecordBuilder.NewRecord()
 	recs, _, err := FilterProfileData(
 		context.Background(),

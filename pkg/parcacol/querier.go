@@ -41,6 +41,7 @@ import (
 	metapb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
+	compactDictionary "github.com/parca-dev/parca/pkg/compactdictionary"
 	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/symbolizer"
 )
@@ -1491,8 +1492,18 @@ func (q *Querier) GetProfileMetadataMappings(
 			values := locations.ListValues().(*array.Dictionary)
 			valueDict := values.Dictionary().(*array.Binary)
 
+			compactedDict, err := compactDictionary.CompactDictionary(memory.DefaultAllocator, values)
+			if err != nil {
+				fmt.Println("failed to compact dictionary", err)
+				return err
+			}
+			defer compactedDict.Release()
+
+			newValues := compactedDict.Dictionary().(*array.Binary)
+
 			for i := 0; i < valueDict.Len(); i++ {
-				encodedLocation := valueDict.Value(i)
+				encodedLocation := newValues.Value(i)
+				// encodedLocation := valueDict.Value(i)
 				symInfo, _ := profile.DecodeSymbolizationInfo(encodedLocation)
 				records[symInfo.Mapping.File] = struct{}{}
 			}

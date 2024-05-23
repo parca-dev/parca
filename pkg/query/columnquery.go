@@ -437,14 +437,20 @@ func filterRecord(
 				if validMappingStart {
 					mappingFile = r.MappingFileDict.Value(int(r.MappingFileIndices.Value(j)))
 				}
-
-				if len(binaryFrameFilter) > 0 {
-					keepLocation := false
-					if _, ok := binaryFrameFilter[getLastPathFromString(string(mappingFile))]; ok {
-						keepLocation = true
-					}
-					if !keepLocation {
-						bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
+				lastSlash := bytes.LastIndex(mappingFile, []byte("/"))
+				mappingFileBase := mappingFile
+				if lastSlash >= 0 {
+					mappingFileBase = mappingFile[lastSlash+1:]
+				}
+				if len(mappingFileBase) > 0 {
+					if len(binaryFrameFilter) > 0 {
+						keepLocation := false
+						if _, ok := binaryFrameFilter[(string(mappingFileBase))]; ok {
+							keepLocation = true
+						}
+						if !keepLocation {
+							bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
+						}
 					}
 				}
 			}
