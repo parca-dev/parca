@@ -94,7 +94,7 @@ export const getTextForCumulativePerSecond = (
     hoveringNodeCumulative,
     unit === 'nanoseconds' ? 'CPU Cores' : unit,
     5
-  )}`;
+  )}/s`;
 };
 
 export const arrowToString = (buffer: any): string | null => {

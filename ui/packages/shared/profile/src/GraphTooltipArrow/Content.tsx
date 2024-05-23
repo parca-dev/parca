@@ -67,6 +67,8 @@ const GraphTooltipArrowContent = ({
     locationAddress,
     cumulativeText,
     cumulativePerSecondText,
+    flatText,
+    flatPerSecondText,
     diffText,
     diff,
     row: rowNumber,
@@ -86,16 +88,22 @@ const GraphTooltipArrowContent = ({
                     {name !== ''
                       ? name
                       : locationAddress !== 0n
-                      ? hexifyAddress(locationAddress)
-                      : 'unknown'}
+                        ? hexifyAddress(locationAddress)
+                        : 'unknown'}
                   </p>
                 )}
               </div>
               <table className="my-2 w-full table-fixed pr-0 text-gray-700 dark:text-gray-300">
                 <tbody>
+                  <tr>
+                    <td className="w-1/4">Cumulative</td>
+                    <td className="w-3/4">
+                      <div>{cumulativeText}</div>
+                    </td>
+                  </tr>
                   {profileType?.delta ?? false ? (
                     <tr>
-                      <td className="w-1/4">Per Second</td>
+                      <td className="w-1/4"></td>
                       <td className="w-3/4">
                         <div>{cumulativePerSecondText}</div>
                       </td>
@@ -104,16 +112,25 @@ const GraphTooltipArrowContent = ({
                     <></>
                   )}
                   <tr>
-                    <td className="w-1/4">Cumulative</td>
-
-                    <td className="w-3/4">
-                      <div>{cumulativeText}</div>
+                    <td className="w-1/4 pt-2">Flat</td>
+                    <td className="w-3/4 pt-2">
+                      <div>{flatText}</div>
                     </td>
                   </tr>
+                  {profileType?.delta ?? false ? (
+                    <tr>
+                      <td className="w-1/4"></td>
+                      <td className="w-3/4">
+                        <div>{flatPerSecondText}</div>
+                      </td>
+                    </tr>
+                  ) : (
+                    <></>
+                  )}
                   {diff !== 0n && (
                     <tr>
-                      <td className="w-1/4">Diff</td>
-                      <td className="w-3/4">
+                      <td className="w-1/4 pt-2">Diff</td>
+                      <td className="w-3/4 pt-2">
                         <div>{diffText}</div>
                       </td>
                     </tr>
@@ -169,8 +186,8 @@ const TooltipMetaInfo = ({
   return (
     <>
       <tr>
-        <td className="w-1/4">File</td>
-        <td className="w-3/4 break-all">
+        <td className="w-1/4 pt-2">File</td>
+        <td className="w-3/4 pt-2 break-all">
           {functionFilename === '' ? (
             <NoData />
           ) : (

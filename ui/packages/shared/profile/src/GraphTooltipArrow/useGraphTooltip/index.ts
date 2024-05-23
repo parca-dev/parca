@@ -21,6 +21,8 @@ import {
   FIELD_CUMULATIVE_PER_SECOND,
   FIELD_DIFF,
   FIELD_DIFF_PER_SECOND,
+  FIELD_FLAT,
+  FIELD_FLAT_PER_SECOND,
   FIELD_LOCATION_ADDRESS,
 } from '../../ProfileIcicleGraph/IcicleGraphArrow';
 import {
@@ -43,6 +45,8 @@ interface GraphTooltipData {
   locationAddress: bigint;
   cumulativeText: string;
   cumulativePerSecondText: string;
+  flatText: string;
+  flatPerSecondText: string;
   diffText: string;
   diff: bigint;
   row: number;
@@ -69,6 +73,14 @@ export const useGraphTooltip = ({
   const cumulativePerSecond: number =
     table.getChild(FIELD_CUMULATIVE_PER_SECOND)?.get(row) !== null
       ? table.getChild(FIELD_CUMULATIVE_PER_SECOND)?.get(row)
+      : 0;
+  const flat: bigint =
+    table.getChild(FIELD_FLAT)?.get(row) !== null
+      ? BigInt(table.getChild(FIELD_FLAT)?.get(row))
+      : 0n;
+  const flatPerSecond: number =
+    table.getChild(FIELD_FLAT_PER_SECOND)?.get(row) !== null
+      ? table.getChild(FIELD_FLAT_PER_SECOND)?.get(row)
       : 0;
   const diff: bigint =
     table.getChild(FIELD_DIFF)?.get(row) !== null
@@ -109,6 +121,11 @@ export const useGraphTooltip = ({
     ),
     cumulativePerSecondText: getTextForCumulativePerSecond(
       cumulativePerSecond,
+      profileType?.periodUnit ?? 'CPU Cores'
+    ),
+    flatText: getTextForCumulative(flat, totalUnfiltered, total, profileType.periodUnit ?? ''),
+    flatPerSecondText: getTextForCumulativePerSecond(
+      flatPerSecond,
       profileType?.periodUnit ?? 'CPU Cores'
     ),
     diffText,
