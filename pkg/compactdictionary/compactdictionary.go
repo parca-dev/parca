@@ -29,7 +29,6 @@ type Releasable interface {
 // compactDictionary copies only the needed values from the old dictionary to the new dictionary.
 // Once all needed values are copied, it updates the indices referencing those values in their new place.
 func CompactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dictionary, error) {
-	// indices := arr.Indices().(*array.Int32)
 	releasers := make([]Releasable, 0, 3)
 	releasers = append(releasers, arr)
 	defer func() {
@@ -41,34 +40,27 @@ func CompactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dict
 	newLen := 0
 	keepValues := make([]int, arr.Dictionary().Len())
 
-	var indices interface{}
-
-	switch arr.Indices().(type) {
+	switch indices := arr.Indices().(type) {
 	case *array.Int32:
-		indices = arr.Indices().(*array.Int32)
-
-		for i := 0; i < indices.(*array.Int32).Len(); i++ {
+		for i := 0; i < arr.Len(); i++ {
 			if arr.IsValid(i) {
-				if keepValues[indices.(*array.Int32).Value(i)] == 0 {
+				if keepValues[indices.Value(i)] == 0 {
 					// keep track of how many values we need to keep to reserve the space upfront
 					newLen++
 				}
-				keepValues[indices.(*array.Int32).Value(i)]++
 			}
 		}
 	case *array.Uint32:
-		indices = arr.Indices().(*array.Uint32)
-
-		for i := 0; i < indices.(*array.Uint32).Len(); i++ {
-		if arr.IsValid(i) {
-			if keepValues[indices.(*array.Uint32).Value(i)] == 0 {
-				// keep track of how many values we need to keep to reserve the space upfront
-				newLen++
+		for i := 0; i < arr.Len(); i++ {
+			if arr.IsValid(i) {
+				if keepValues[indices.Value(i)] == 0 {
+					// keep track of how many values we need to keep to reserve the space upfront
+					newLen++
+				}
 			}
 		}
-	}
 	default:
-		return nil, fmt.Errorf("unsupported indices type %T", arr.Indices())
+		return nil, fmt.Errorf("unsupported indices type %T", arr)
 	}
 
 	// This maps the previous index (at the key/index in this slice) to the new index (at the value of the slice).
@@ -132,45 +124,17 @@ func CompactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dict
 		indexBuilder = array.NewUint64Builder(mem)
 	}
 
-	switch arr.Indices().(type) {
-	case *array.Int32:
-		indexBuilder.Reserve(indices.(*array.Int32).Len())
-	case *array.Uint32:
-		indexBuilder.Reserve(indices.(*array.Uint32).Len())
-	default:
-		return nil, fmt.Errorf("unsupported indices type %T", arr.Indices())
-	}
-
+	indexBuilder.Reserve(arr.Indices().Len())
 	releasers = append(releasers, indexBuilder)
 
-	switch arr.Indices().(type) {
+	switch indices := arr.Indices().(type) {
 	case *array.Int32:
-		for i := 0; i < indices.(*array.Int32).Len(); i++ {
-		if arr.IsNull(i) {
-			indexBuilder.AppendNull()
-			continue
-		}
-		oldValueIndex := indices.(*array.Int32).Value(i)
-		newValueIndex := newValueIndices[oldValueIndex]
-
-		switch b := indexBuilder.(type) {
-		case *array.Uint8Builder:
-			b.Append(uint8(newValueIndex))
-		case *array.Uint16Builder:
-			b.Append(uint16(newValueIndex))
-		case *array.Uint32Builder:
-			b.Append(uint32(newValueIndex))
-		case *array.Uint64Builder:
-			b.Append(uint64(newValueIndex))
-		}
-	}
-	case *array.Uint32:
-		for i := 0; i < indices.(*array.Uint32).Len(); i++ {
+		for i := 0; i < arr.Len(); i++ {
 			if arr.IsNull(i) {
 				indexBuilder.AppendNull()
 				continue
 			}
-			oldValueIndex := indices.(*array.Int32).Value(i)
+			oldValueIndex := indices.Value(i)
 			newValueIndex := newValueIndices[oldValueIndex]
 
 			switch b := indexBuilder.(type) {
@@ -185,12 +149,12 @@ func CompactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dict
 			}
 		}
 	case *array.Uint32:
-		for i := 0; i < indices.(*array.Uint32).Len(); i++ {
+		for i := 0; i < arr.Len(); i++ {
 			if arr.IsNull(i) {
 				indexBuilder.AppendNull()
 				continue
 			}
-			oldValueIndex := indices.(*array.Uint32).Value(i)
+			oldValueIndex := indices.Value(i)
 			newValueIndex := newValueIndices[oldValueIndex]
 
 			switch b := indexBuilder.(type) {
@@ -205,7 +169,7 @@ func CompactDictionary(mem memory.Allocator, arr *array.Dictionary) (*array.Dict
 			}
 		}
 	default:
-		return nil, fmt.Errorf("unsupported indices type %T", arr.Indices())
+		return nil, fmt.Errorf("unsupported indices type %T", indices)
 	}
 
 	index := indexBuilder.NewArray()
