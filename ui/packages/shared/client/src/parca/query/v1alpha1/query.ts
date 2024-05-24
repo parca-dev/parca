@@ -401,6 +401,12 @@ export interface QueryRequest {
      * @generated from protobuf field: repeated parca.query.v1alpha1.Filter filter = 12;
      */
     filter: Filter[];
+    /**
+     * the format to respond the data in for the export
+     *
+     * @generated from protobuf field: optional parca.query.v1alpha1.Format export_format = 13;
+     */
+    exportFormat?: Format;
 }
 /**
  * Mode is the type of query request
@@ -443,7 +449,8 @@ export enum QueryRequest_ReportType {
     /**
      * REPORT_TYPE_PPROF unspecified
      *
-     * @generated from protobuf enum value: REPORT_TYPE_PPROF = 1;
+     * @deprecated
+     * @generated from protobuf enum value: REPORT_TYPE_PPROF = 1 [deprecated = true];
      */
     PPROF = 1,
     /**
@@ -487,7 +494,13 @@ export enum QueryRequest_ReportType {
      *
      * @generated from protobuf enum value: REPORT_TYPE_PROFILE_METADATA = 8;
      */
-    PROFILE_METADATA = 8
+    PROFILE_METADATA = 8,
+    /**
+     * REPORT_TYPE_EXPORT contains the profile as a downloadable file
+     *
+     * @generated from protobuf enum value: REPORT_TYPE_EXPORT = 9;
+     */
+    EXPORT = 9
 }
 /**
  * Filter to apply to the query request
@@ -1171,6 +1184,14 @@ export interface QueryResponse {
          */
         profileMetadata: ProfileMetadata;
     } | {
+        oneofKind: "export";
+        /**
+         * export is the response for an export request.
+         *
+         * @generated from protobuf field: parca.query.v1alpha1.Export export = 15;
+         */
+        export: Export;
+    } | {
         oneofKind: undefined;
     };
     /**
@@ -1185,6 +1206,71 @@ export interface QueryResponse {
      * @generated from protobuf field: int64 filtered = 10;
      */
     filtered: bigint;
+}
+/**
+ * Export is the response for an export request.
+ *
+ * @generated from protobuf message parca.query.v1alpha1.Export
+ */
+export interface Export {
+    /**
+     * The format of the download.
+     *
+     * @generated from protobuf field: parca.query.v1alpha1.Format format = 1;
+     */
+    format: Format;
+    /**
+     * @generated from protobuf oneof: content
+     */
+    content: {
+        oneofKind: "inline";
+        /**
+         * InlineExport is the response for an export request where actual content
+         * is inlined in the response.
+         *
+         * @generated from protobuf field: parca.query.v1alpha1.InlineExport inline = 2;
+         */
+        inline: InlineExport;
+    } | {
+        oneofKind: "url";
+        /**
+         * URL is the response for an export request where actual content
+         * is to be downloaded from the provided URL.
+         *
+         * @generated from protobuf field: parca.query.v1alpha1.URLExport url = 3;
+         */
+        url: URLExport;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * URLExport is the response for an export request where actual content is
+ * to be downloaded from the provided URL.
+ *
+ * @generated from protobuf message parca.query.v1alpha1.URLExport
+ */
+export interface URLExport {
+    /**
+     * The URL to download the content from.
+     *
+     * @generated from protobuf field: string url = 1;
+     */
+    url: string;
+}
+/**
+ * InlineExport is the response for an export request where actual content is
+ * inlined in the response.
+ *
+ * @generated from protobuf message parca.query.v1alpha1.InlineExport
+ */
+export interface InlineExport {
+    /**
+     * Content of the export.
+     *
+     * @generated from protobuf field: bytes content = 1;
+     */
+    content: Uint8Array;
 }
 /**
  * SeriesRequest is unimplemented
@@ -1400,6 +1486,25 @@ export interface ProfileMetadata {
      * @generated from protobuf field: repeated string labels = 2;
      */
     labels: string[];
+}
+/**
+ * format is the format to offer the data in for the download
+ *
+ * @generated from protobuf enum parca.query.v1alpha1.Format
+ */
+export enum Format {
+    /**
+     * FORMAT_UNSPECIFIED unspecified
+     *
+     * @generated from protobuf enum value: FORMAT_UNSPECIFIED = 0;
+     */
+    UNSPECIFIED = 0,
+    /**
+     * DOWNLOAD_FORMAT_PPROF pprof format
+     *
+     * @generated from protobuf enum value: FORMAT_PPROF = 1;
+     */
+    PPROF = 1
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class ProfileTypesRequest$Type extends MessageType<ProfileTypesRequest> {
@@ -2072,7 +2177,8 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
             { no: 9, name: "source_reference", kind: "message", T: () => SourceReference },
             { no: 10, name: "runtime_filter", kind: "message", T: () => RuntimeFilter },
             { no: 11, name: "invert_call_stack", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
-            { no: 12, name: "filter", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Filter }
+            { no: 12, name: "filter", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Filter },
+            { no: 13, name: "export_format", kind: "enum", opt: true, T: () => ["parca.query.v1alpha1.Format", Format, "FORMAT_"] }
         ]);
     }
     create(value?: PartialMessage<QueryRequest>): QueryRequest {
@@ -2135,6 +2241,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
                 case /* repeated parca.query.v1alpha1.Filter filter */ 12:
                     message.filter.push(Filter.internalBinaryRead(reader, reader.uint32(), options));
                     break;
+                case /* optional parca.query.v1alpha1.Format export_format */ 13:
+                    message.exportFormat = reader.int32();
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -2183,6 +2292,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         /* repeated parca.query.v1alpha1.Filter filter = 12; */
         for (let i = 0; i < message.filter.length; i++)
             Filter.internalBinaryWrite(message.filter[i], writer.tag(12, WireType.LengthDelimited).fork(), options).join();
+        /* optional parca.query.v1alpha1.Format export_format = 13; */
+        if (message.exportFormat !== undefined)
+            writer.tag(13, WireType.Varint).int32(message.exportFormat);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -3587,6 +3699,7 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
             { no: 12, name: "source", kind: "message", oneof: "report", T: () => Source },
             { no: 13, name: "table_arrow", kind: "message", oneof: "report", T: () => TableArrow },
             { no: 14, name: "profile_metadata", kind: "message", oneof: "report", T: () => ProfileMetadata },
+            { no: 15, name: "export", kind: "message", oneof: "report", T: () => Export },
             { no: 9, name: "total", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ },
             { no: 10, name: "filtered", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ }
         ]);
@@ -3653,6 +3766,12 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
                         profileMetadata: ProfileMetadata.internalBinaryRead(reader, reader.uint32(), options, (message.report as any).profileMetadata)
                     };
                     break;
+                case /* parca.query.v1alpha1.Export export */ 15:
+                    message.report = {
+                        oneofKind: "export",
+                        export: Export.internalBinaryRead(reader, reader.uint32(), options, (message.report as any).export)
+                    };
+                    break;
                 case /* int64 total */ 9:
                     message.total = reader.int64().toBigInt();
                     break;
@@ -3695,6 +3814,9 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
         /* parca.query.v1alpha1.ProfileMetadata profile_metadata = 14; */
         if (message.report.oneofKind === "profileMetadata")
             ProfileMetadata.internalBinaryWrite(message.report.profileMetadata, writer.tag(14, WireType.LengthDelimited).fork(), options).join();
+        /* parca.query.v1alpha1.Export export = 15; */
+        if (message.report.oneofKind === "export")
+            Export.internalBinaryWrite(message.report.export, writer.tag(15, WireType.LengthDelimited).fork(), options).join();
         /* int64 total = 9; */
         if (message.total !== 0n)
             writer.tag(9, WireType.Varint).int64(message.total);
@@ -3711,6 +3833,168 @@ class QueryResponse$Type extends MessageType<QueryResponse> {
  * @generated MessageType for protobuf message parca.query.v1alpha1.QueryResponse
  */
 export const QueryResponse = new QueryResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Export$Type extends MessageType<Export> {
+    constructor() {
+        super("parca.query.v1alpha1.Export", [
+            { no: 1, name: "format", kind: "enum", T: () => ["parca.query.v1alpha1.Format", Format, "FORMAT_"] },
+            { no: 2, name: "inline", kind: "message", oneof: "content", T: () => InlineExport },
+            { no: 3, name: "url", kind: "message", oneof: "content", T: () => URLExport }
+        ]);
+    }
+    create(value?: PartialMessage<Export>): Export {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.format = 0;
+        message.content = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<Export>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Export): Export {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* parca.query.v1alpha1.Format format */ 1:
+                    message.format = reader.int32();
+                    break;
+                case /* parca.query.v1alpha1.InlineExport inline */ 2:
+                    message.content = {
+                        oneofKind: "inline",
+                        inline: InlineExport.internalBinaryRead(reader, reader.uint32(), options, (message.content as any).inline)
+                    };
+                    break;
+                case /* parca.query.v1alpha1.URLExport url */ 3:
+                    message.content = {
+                        oneofKind: "url",
+                        url: URLExport.internalBinaryRead(reader, reader.uint32(), options, (message.content as any).url)
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Export, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* parca.query.v1alpha1.Format format = 1; */
+        if (message.format !== 0)
+            writer.tag(1, WireType.Varint).int32(message.format);
+        /* parca.query.v1alpha1.InlineExport inline = 2; */
+        if (message.content.oneofKind === "inline")
+            InlineExport.internalBinaryWrite(message.content.inline, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* parca.query.v1alpha1.URLExport url = 3; */
+        if (message.content.oneofKind === "url")
+            URLExport.internalBinaryWrite(message.content.url, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.query.v1alpha1.Export
+ */
+export const Export = new Export$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class URLExport$Type extends MessageType<URLExport> {
+    constructor() {
+        super("parca.query.v1alpha1.URLExport", [
+            { no: 1, name: "url", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<URLExport>): URLExport {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.url = "";
+        if (value !== undefined)
+            reflectionMergePartial<URLExport>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: URLExport): URLExport {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string url */ 1:
+                    message.url = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: URLExport, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string url = 1; */
+        if (message.url !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.url);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.query.v1alpha1.URLExport
+ */
+export const URLExport = new URLExport$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class InlineExport$Type extends MessageType<InlineExport> {
+    constructor() {
+        super("parca.query.v1alpha1.InlineExport", [
+            { no: 1, name: "content", kind: "scalar", T: 12 /*ScalarType.BYTES*/ }
+        ]);
+    }
+    create(value?: PartialMessage<InlineExport>): InlineExport {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.content = new Uint8Array(0);
+        if (value !== undefined)
+            reflectionMergePartial<InlineExport>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: InlineExport): InlineExport {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bytes content */ 1:
+                    message.content = reader.bytes();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: InlineExport, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bytes content = 1; */
+        if (message.content.length)
+            writer.tag(1, WireType.LengthDelimited).bytes(message.content);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.query.v1alpha1.InlineExport
+ */
+export const InlineExport = new InlineExport$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class SeriesRequest$Type extends MessageType<SeriesRequest> {
     constructor() {

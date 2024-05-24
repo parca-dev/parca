@@ -18,6 +18,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"path"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -27,6 +30,7 @@ import (
 	"github.com/apache/arrow/go/v16/arrow/bitutil"
 	"github.com/apache/arrow/go/v16/arrow/math"
 	"github.com/apache/arrow/go/v16/arrow/memory"
+	"github.com/cespare/xxhash/v2"
 	"github.com/go-kit/log"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -62,6 +66,14 @@ type SourceFinder interface {
 	SourceExists(ctx context.Context, ref *pb.SourceReference) (bool, error)
 }
 
+type SignedGetClient interface {
+	SignedGET(ctx context.Context, objectKey string, expiry time.Time) (string, error)
+}
+
+type ObjectStoreUploadClient interface {
+	Upload(ctx context.Context, objectKey string, r io.Reader) error
+}
+
 // ColumnQueryAPI is the read api interface for parca
 // It implements the proto/query/query.proto APIServer interface.
 type ColumnQueryAPI struct {
@@ -77,6 +89,13 @@ type ColumnQueryAPI struct {
 	converter          *parcacol.ArrowToProfileConverter
 
 	sourceFinder SourceFinder
+
+	// Whether to first upload an export to object storage and returning a
+	// signed URL to the client instead of serving the export directly within
+	// the API response.
+	objectStorgeExport bool
+	signedGetClient    SignedGetClient
+	objectStore        ObjectStoreUploadClient
 }
 
 func NewColumnQueryAPI(
@@ -87,6 +106,9 @@ func NewColumnQueryAPI(
 	mem memory.Allocator,
 	converter *parcacol.ArrowToProfileConverter,
 	sourceFinder SourceFinder,
+	objectStorageExport bool,
+	signedGetClient SignedGetClient,
+	objectStore ObjectStoreUploadClient,
 ) *ColumnQueryAPI {
 	return &ColumnQueryAPI{
 		logger:             logger,
@@ -97,6 +119,9 @@ func NewColumnQueryAPI(
 		mem:                mem,
 		converter:          converter,
 		sourceFinder:       sourceFinder,
+		objectStorgeExport: objectStorageExport,
+		signedGetClient:    signedGetClient,
+		objectStore:        objectStore,
 	}
 }
 
@@ -320,9 +345,16 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		return nil, fmt.Errorf("filtering profile: %w", err)
 	}
 
+	data, err := req.MarshalVT()
+	if err != nil {
+		return nil, fmt.Errorf("marshaling request: %w", err)
+	}
+	requestKey := xxhash.Sum64(data)
+
 	return q.renderReport(
 		ctx,
 		p,
+		strconv.FormatUint(requestKey, 16),
 		req.GetReportType(),
 		req.GetNodeTrimThreshold(),
 		filtered,
@@ -330,6 +362,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		req.GetSourceReference(),
 		source,
 		isDiff,
+		req.GetExportFormat(),
 	)
 }
 
@@ -474,6 +507,7 @@ func filterRecord(
 func (q *ColumnQueryAPI) renderReport(
 	ctx context.Context,
 	p profile.Profile,
+	requestKey string,
 	typ pb.QueryRequest_ReportType,
 	nodeTrimThreshold float32,
 	filtered int64,
@@ -481,10 +515,12 @@ func (q *ColumnQueryAPI) renderReport(
 	sourceReference *pb.SourceReference,
 	source string,
 	isDiff bool,
+	exportFormat pb.Format,
 ) (*pb.QueryResponse, error) {
 	return RenderReport(
 		ctx,
 		q.tracer,
+		requestKey,
 		p,
 		typ,
 		nodeTrimThreshold,
@@ -496,12 +532,17 @@ func (q *ColumnQueryAPI) renderReport(
 		sourceReference,
 		source,
 		isDiff,
+		exportFormat,
+		q.objectStorgeExport,
+		q.signedGetClient,
+		q.objectStore,
 	)
 }
 
 func RenderReport(
 	ctx context.Context,
 	tracer trace.Tracer,
+	requestKey string,
 	p profile.Profile,
 	typ pb.QueryRequest_ReportType,
 	nodeTrimThreshold float32,
@@ -513,6 +554,10 @@ func RenderReport(
 	sourceReference *pb.SourceReference,
 	source string,
 	isDiff bool,
+	exportFormat pb.Format,
+	objectStorageExport bool,
+	signedGetClient SignedGetClient,
+	objectStore ObjectStoreUploadClient,
 ) (*pb.QueryResponse, error) {
 	ctx, span := tracer.Start(ctx, "renderReport")
 	span.SetAttributes(attribute.String("reportType", typ.String()))
@@ -608,6 +653,53 @@ func RenderReport(
 			Total:    0, // TODO: Figure out how to get total for pprof
 			Filtered: filtered,
 			Report:   &pb.QueryResponse_Pprof{Pprof: buf},
+		}, nil
+	case pb.QueryRequest_REPORT_TYPE_EXPORT:
+		var buf []byte
+
+		switch exportFormat {
+		case pb.Format_FORMAT_PPROF:
+			pp, err := GenerateFlatPprof(ctx, isDiff, p)
+			if err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
+			}
+
+			buf, err = SerializePprof(pp)
+			if err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to generate pprof: %v", err.Error())
+			}
+		default:
+			return nil, status.Errorf(codes.InvalidArgument, "requested export format does not exist")
+		}
+
+		if objectStorageExport {
+			key := path.Join(requestKey, "pprof")
+			if err := objectStore.Upload(ctx, key, bytes.NewReader(buf)); err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to upload export to object storage: %v", err.Error())
+			}
+
+			signedURL, err := signedGetClient.SignedGET(ctx, key, time.Now().Add(time.Hour))
+			if err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to generate signed URL: %v", err.Error())
+			}
+
+			return &pb.QueryResponse{
+				Report: &pb.QueryResponse_Export{
+					Export: &pb.Export{
+						Format:  exportFormat,
+						Content: &pb.Export_Url{Url: &pb.URLExport{Url: signedURL}},
+					},
+				},
+			}, nil
+		}
+
+		return &pb.QueryResponse{
+			Report: &pb.QueryResponse_Export{
+				Export: &pb.Export{
+					Format:  exportFormat,
+					Content: &pb.Export_Inline{Inline: &pb.InlineExport{Content: buf}},
+				},
+			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_TOP:
 		op, err := converter.Convert(ctx, p)

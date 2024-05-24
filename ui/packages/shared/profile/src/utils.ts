@@ -13,7 +13,7 @@
 
 import type {RpcMetadata} from '@protobuf-ts/runtime-rpc';
 
-import {QueryRequest, QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
+import {QueryRequest, QueryRequest_ReportType, Format, Export, QueryServiceClient} from '@parca/client';
 
 export const hexifyAddress = (address?: bigint): string => {
   if (address == null) {
@@ -26,22 +26,23 @@ export const downloadPprof = async (
   request: QueryRequest,
   queryClient: QueryServiceClient,
   metadata: RpcMetadata
-): Promise<Blob> => {
+): Promise<Export> => {
   const req = {
     ...request,
-    reportType: QueryRequest_ReportType.PPROF,
+    reportType: QueryRequest_ReportType.EXPORT,
+    exportFormat: Format.PPROF,
   };
 
   const {response} = await queryClient.query(req, {meta: metadata});
-  if (response.report.oneofKind !== 'pprof') {
+  if (response.report.oneofKind !== 'export') {
     throw new Error(
-      `Expected pprof report, got: ${
+      `Expected export report, got: ${
         response.report.oneofKind !== undefined ? response.report.oneofKind : 'undefined'
       }`
     );
   }
-  const blob = new Blob([response.report.pprof], {type: 'application/octet-stream'});
-  return blob;
+
+  return response.report.export;
 };
 
 export const truncateString = (str: string, num: number): string => {

@@ -367,6 +367,13 @@ export const saveAsBlob = (blob: Blob, filename: string): void => {
   link.click();
 };
 
+export const saveUrlAs = (url: string, filename: string): void => {
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+};
+
 export const sanitizeLabelValue = (labels: string[]): string[] => {
   return labels.map((value: string) =>
     value.includes('\\') ? value.replaceAll('\\', '\\\\') : value

@@ -299,7 +299,7 @@
           },
           {
             "name": "reportType",
-            "description": "report_type is the type of report to return\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified\n - REPORT_TYPE_SOURCE: REPORT_TYPE_SOURCE contains source code annotated with profiling information\n - REPORT_TYPE_TABLE_ARROW: REPORT_TYPE_TABLE_ARROW unspecified\n - REPORT_TYPE_PROFILE_METADATA: REPORT_TYPE_PROFILE_METADATA contains metadata about the profile i.e. binaries, labels",
+            "description": "report_type is the type of report to return\n\n - REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified\n - REPORT_TYPE_SOURCE: REPORT_TYPE_SOURCE contains source code annotated with profiling information\n - REPORT_TYPE_TABLE_ARROW: REPORT_TYPE_TABLE_ARROW unspecified\n - REPORT_TYPE_PROFILE_METADATA: REPORT_TYPE_PROFILE_METADATA contains metadata about the profile i.e. binaries, labels\n - REPORT_TYPE_EXPORT: REPORT_TYPE_EXPORT contains the profile as a downloadable file",
             "in": "query",
             "required": false,
             "type": "string",
@@ -312,7 +312,8 @@
               "REPORT_TYPE_FLAMEGRAPH_ARROW",
               "REPORT_TYPE_SOURCE",
               "REPORT_TYPE_TABLE_ARROW",
-              "REPORT_TYPE_PROFILE_METADATA"
+              "REPORT_TYPE_PROFILE_METADATA",
+              "REPORT_TYPE_EXPORT"
             ],
             "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED"
           },
@@ -390,6 +391,18 @@
             "in": "query",
             "required": false,
             "type": "boolean"
+          },
+          {
+            "name": "exportFormat",
+            "description": "the format to respond the data in for the export\n\n - FORMAT_UNSPECIFIED: FORMAT_UNSPECIFIED unspecified\n - FORMAT_PPROF: DOWNLOAD_FORMAT_PPROF pprof format",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "FORMAT_UNSPECIFIED",
+              "FORMAT_PPROF"
+            ],
+            "default": "FORMAT_UNSPECIFIED"
           }
         ],
         "tags": [
@@ -581,10 +594,11 @@
         "REPORT_TYPE_FLAMEGRAPH_ARROW",
         "REPORT_TYPE_SOURCE",
         "REPORT_TYPE_TABLE_ARROW",
-        "REPORT_TYPE_PROFILE_METADATA"
+        "REPORT_TYPE_PROFILE_METADATA",
+        "REPORT_TYPE_EXPORT"
       ],
       "default": "REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED",
-      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified\n - REPORT_TYPE_SOURCE: REPORT_TYPE_SOURCE contains source code annotated with profiling information\n - REPORT_TYPE_TABLE_ARROW: REPORT_TYPE_TABLE_ARROW unspecified\n - REPORT_TYPE_PROFILE_METADATA: REPORT_TYPE_PROFILE_METADATA contains metadata about the profile i.e. binaries, labels",
+      "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified\n - REPORT_TYPE_SOURCE: REPORT_TYPE_SOURCE contains source code annotated with profiling information\n - REPORT_TYPE_TABLE_ARROW: REPORT_TYPE_TABLE_ARROW unspecified\n - REPORT_TYPE_PROFILE_METADATA: REPORT_TYPE_PROFILE_METADATA contains metadata about the profile i.e. binaries, labels\n - REPORT_TYPE_EXPORT: REPORT_TYPE_EXPORT contains the profile as a downloadable file",
       "title": "ReportType is the type of report to return"
     },
     "metastorev1alpha1Function": {
@@ -813,6 +827,10 @@
             "$ref": "#/definitions/v1alpha1Filter"
           },
           "title": "a set of filter to apply to the query request"
+        },
+        "exportFormat": {
+          "$ref": "#/definitions/v1alpha1Format",
+          "title": "the format to respond the data in for the export"
         }
       },
       "title": "QueryRequest is a request for a profile query"
@@ -852,6 +870,10 @@
         "profileMetadata": {
           "$ref": "#/definitions/v1alpha1ProfileMetadata",
           "title": "profile_metadata contains metadata about the profile i.e. binaries, labels"
+        },
+        "export": {
+          "$ref": "#/definitions/v1alpha1Export",
+          "description": "export is the response for an export request."
         },
         "total": {
           "type": "string",
@@ -1068,6 +1090,24 @@
       },
       "title": "DiffProfile contains parameters for a profile diff request"
     },
+    "v1alpha1Export": {
+      "type": "object",
+      "properties": {
+        "format": {
+          "$ref": "#/definitions/v1alpha1Format",
+          "description": "The format of the download."
+        },
+        "inline": {
+          "$ref": "#/definitions/v1alpha1InlineExport",
+          "description": "InlineExport is the response for an export request where actual content\nis inlined in the response."
+        },
+        "url": {
+          "$ref": "#/definitions/v1alpha1URLExport",
+          "description": "URL is the response for an export request where actual content\nis to be downloaded from the provided URL."
+        }
+      },
+      "description": "Export is the response for an export request."
+    },
     "v1alpha1Filter": {
       "type": "object",
       "properties": {
@@ -1256,6 +1296,16 @@
       },
       "title": "FlamegraphRootNode is a root node of a flame graph"
     },
+    "v1alpha1Format": {
+      "type": "string",
+      "enum": [
+        "FORMAT_UNSPECIFIED",
+        "FORMAT_PPROF"
+      ],
+      "default": "FORMAT_UNSPECIFIED",
+      "description": "- FORMAT_UNSPECIFIED: FORMAT_UNSPECIFIED unspecified\n - FORMAT_PPROF: DOWNLOAD_FORMAT_PPROF pprof format",
+      "title": "format is the format to offer the data in for the download"
+    },
     "v1alpha1FrameFilter": {
       "type": "object",
       "properties": {
@@ -1288,6 +1338,17 @@
         }
       },
       "title": "GroupBy encapsulates the repeated fields to group by"
+    },
+    "v1alpha1InlineExport": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "string",
+          "format": "byte",
+          "description": "Content of the export."
+        }
+      },
+      "description": "InlineExport is the response for an export request where actual content is\ninlined in the response."
     },
     "v1alpha1LabelSet": {
       "type": "object",
@@ -1676,6 +1737,16 @@
         }
       },
       "title": "TopNodeMeta is the metadata for a given node"
+    },
+    "v1alpha1URLExport": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "The URL to download the content from."
+        }
+      },
+      "description": "URLExport is the response for an export request where actual content is\nto be downloaded from the provided URL."
     },
     "v1alpha1ValuesResponse": {
       "type": "object",
