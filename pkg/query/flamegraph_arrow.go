@@ -694,11 +694,14 @@ func (fb *flamegraphBuilder) mergeUnsymbolizedRows(
 			fb.intersectLabels(r, t, recordLabelIndex, sampleIndex, cr)
 		}
 
-		fb.builderCumulative.Add(cr, r.Value.Value(sampleIndex))
-		fb.builderCumulativePerSecond.Add(cr, r.ValuePerSecond.Value(sampleIndex))
+		value := r.Value.Value(sampleIndex)
+		valuePerSecond := r.ValuePerSecond.Value(sampleIndex)
+
+		fb.builderCumulative.Add(cr, value)
+		fb.builderCumulativePerSecond.Add(cr, valuePerSecond)
 		if leaf {
-			fb.builderFlat.Add(cr, r.Value.Value(sampleIndex))
-			fb.builderFlatPerSecond.Add(cr, r.ValuePerSecond.Value(sampleIndex))
+			fb.builderFlat.Add(cr, value)
+			fb.builderFlatPerSecond.Add(cr, valuePerSecond)
 		}
 
 		fb.parent.Set(cr)
@@ -949,8 +952,8 @@ func newFlamegraphBuilder(
 	fb.builderDiff.Append(0)
 	fb.builderDiffPerSecond.Append(0)
 	// the root will never have a flat value
-	fb.builderFlat.AppendNull()
-	fb.builderFlatPerSecond.AppendNull()
+	fb.builderFlat.Append(0)
+	fb.builderFlatPerSecond.Append(0)
 
 	return fb, nil
 }
@@ -1336,15 +1339,19 @@ func (fb *flamegraphBuilder) appendRow(
 		}
 	}
 
-	fb.builderCumulative.Append(r.Value.Value(sampleRow))
-	fb.builderCumulativePerSecond.Append(r.ValuePerSecond.Value(sampleRow))
+	value := r.Value.Value(sampleRow)
+	valuePerSecond := r.ValuePerSecond.Value(sampleRow)
+
+	fb.builderCumulative.Append(value)
+	fb.builderCumulativePerSecond.Append(valuePerSecond)
 
 	if leaf { // leaf
-		fb.builderFlat.Append(r.Value.Value(sampleRow))
-		fb.builderFlatPerSecond.Append(r.ValuePerSecond.Value(sampleRow))
+		fb.builderFlat.Append(value)
+		fb.builderFlatPerSecond.Append(valuePerSecond)
 	} else {
-		fb.builderFlat.AppendNull()
-		fb.builderFlatPerSecond.AppendNull()
+		// It's possible that these get merged later on and we don't want to set these to null
+		fb.builderFlat.Append(0)
+		fb.builderFlatPerSecond.Append(0)
 	}
 
 	if r.Diff.Value(sampleRow) > 0 {
@@ -1418,9 +1425,8 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 	fb.builderCumulativePerSecond.Append(0)
 	fb.builderDiff.Append(0)
 	fb.builderDiffPerSecond.Append(0)
-
-	fb.builderFlat.AppendNull()
-	fb.builderFlatPerSecond.AppendNull()
+	fb.builderFlat.Append(0)
+	fb.builderFlatPerSecond.Append(0)
 	fb.addRowValues(r, row, sampleRow, leaf)
 
 	return nil
@@ -1428,14 +1434,17 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 
 // addRowValues updates the existing row's values and potentially adding existing values on top.
 func (fb *flamegraphBuilder) addRowValues(r *profile.RecordReader, row, sampleRow int, leaf bool) {
-	fb.builderCumulative.Add(row, r.Value.Value(sampleRow))
-	fb.builderCumulativePerSecond.Add(row, r.ValuePerSecond.Value(sampleRow))
+	value := r.Value.Value(sampleRow)
+	valuePerSecond := r.ValuePerSecond.Value(sampleRow)
+
+	fb.builderCumulative.Add(row, value)
+	fb.builderCumulativePerSecond.Add(row, valuePerSecond)
 	fb.builderDiff.Add(row, r.Diff.Value(sampleRow))
 	fb.builderDiffPerSecond.Add(row, r.DiffPerSecond.Value(sampleRow))
 
 	if leaf {
-		fb.builderFlat.Add(row, r.Value.Value(sampleRow))
-		fb.builderFlatPerSecond.Add(row, r.ValuePerSecond.Value(sampleRow))
+		fb.builderFlat.Add(row, value)
+		fb.builderFlatPerSecond.Add(row, valuePerSecond)
 	}
 }
 
@@ -1547,6 +1556,8 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedFunctionFilenameIndices.Reserve(row)
 	trimmedCumulative.Reserve(row)
 	trimmedCumulativePerSecond.Reserve(row)
+	trimmedFlat.Reserve(row)
+	trimmedFlatPerSecond.Reserve(row)
 	trimmedDiff.Reserve(row)
 	trimmedDiffPerSecond.Reserve(row)
 
