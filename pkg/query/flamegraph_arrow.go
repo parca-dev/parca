@@ -208,12 +208,13 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 				// This returns whether this location is a root of a stacktrace.
 				locationRoot := isLocationRoot(beg, end, int64(j), r.Locations)
-				locationLeaf := isLocationLeaf(beg, end, int64(j), r.Locations)
 				// Depending on whether we aggregate the labels (and thus inject node labels), we either compare the rows or not.
 				isRoot := locationRoot && !(fb.aggregationConfig.aggregateByLabels && hasLabels)
 
 				llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
 				if !r.Lines.IsValid(j) || llOffsetEnd-llOffsetStart <= 0 {
+					isLeaf := isLocationLineLeaf(r.Locations, r.Lines, beg, int64(j), llOffsetStart, llOffsetEnd)
+
 					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
 					if isRoot {
 						fb.compareRows = rootRowChildren
@@ -230,7 +231,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						recordLabelIndex,
 						i, j, int(end),
 						key,
-						locationLeaf,
+						isLeaf,
 					)
 					if err != nil {
 						return nil, 0, 0, 0, err
@@ -246,7 +247,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						fb.childrenList[rootRow] = append(fb.childrenList[rootRow], row)
 					}
 
-					err = fb.appendRow(r, t, builderToRecordIndexMapping, i, j, -1, row, key, locationLeaf, false)
+					err = fb.appendRow(r, t, builderToRecordIndexMapping, i, j, -1, row, key, isLeaf, false)
 					if err != nil {
 						return nil, 0, 0, 0, err
 					}
@@ -260,6 +261,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				for k := int(llOffsetEnd - 1); k >= int(llOffsetStart); k-- {
 					isInlineRoot := isLocationRoot(llOffsetStart, llOffsetEnd, int64(k), r.Lines)
 					isInlined := !isInlineRoot
+					isInlineLeaf := isLocationLineLeaf(r.Locations, r.Lines, beg, int64(j), llOffsetStart, int64(k))
 
 					isRoot = locationRoot && !(fb.aggregationConfig.aggregateByLabels && hasLabels) && isInlineRoot
 					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
@@ -298,7 +300,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						k,
 						int(end),
 						key,
-						locationLeaf,
+						isInlineLeaf,
 						isInlined,
 					)
 					if err != nil {
@@ -315,7 +317,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						fb.childrenList[rootRow] = append(fb.childrenList[rootRow], row)
 					}
 
-					err = fb.appendRow(r, t, recordLabelIndex, i, j, k, row, key, locationLeaf, isInlined)
+					err = fb.appendRow(r, t, recordLabelIndex, i, j, k, row, key, isInlineLeaf, isInlined)
 					if err != nil {
 						return nil, 0, 0, 0, err
 					}
@@ -1868,8 +1870,11 @@ func isLocationRoot(beg, end, i int64, list *array.List) bool {
 	return false
 }
 
-func isLocationLeaf(beg, end, i int64, list *array.List) bool {
-	return i == beg
+func isLocationLineLeaf(locations, lines *array.List, locationOffset, location, lineOffset, line int64) bool {
+	if locations.ListValues().IsValid(int(location)) && lines.ListValues().IsValid(int(line)) {
+		return location == locationOffset && line == lineOffset
+	}
+	return false
 }
 
 // parent stores the parent's row number of a stack.
