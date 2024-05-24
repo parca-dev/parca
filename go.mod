@@ -32,7 +32,8 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/parquet-go/parquet-go v0.21.0
 	github.com/planetscale/vtprotobuf v0.6.0
-	github.com/polarsignals/frostdb v0.0.0-20240425170350-d0d91b6bdc4b
+	github.com/polarsignals/frostdb v0.0.0-20240520070357-13880aa44db3
+	github.com/polarsignals/iceberg-go v0.0.0-20240502213135-2ee70b71e76b
 	github.com/prometheus/client_golang v1.19.1
 	github.com/prometheus/common v0.53.0
 	github.com/prometheus/prometheus v0.52.0
@@ -202,8 +203,7 @@ require (
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/polarsignals/iceberg-go v0.0.0-20240425142915-8b8ebf99abbd // indirect
-	github.com/polarsignals/wal v0.0.0-20231123092250-5d233119cfc9 // indirect
+	github.com/polarsignals/wal v0.0.0-20240514152147-1cd4b81c9b88 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect

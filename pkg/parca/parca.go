@@ -39,6 +39,9 @@ import (
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/polarsignals/frostdb/index"
 	"github.com/polarsignals/frostdb/query"
+	"github.com/polarsignals/frostdb/storage"
+	"github.com/polarsignals/iceberg-go"
+	"github.com/polarsignals/iceberg-go/catalog"
 	"github.com/prometheus/client_golang/prometheus"
 	promconfig "github.com/prometheus/common/config"
 	"github.com/prometheus/prometheus/discovery"
@@ -166,9 +169,12 @@ type FlagsDebuginfod struct {
 	HTTPRequestTimeout time.Duration `default:"5m" help:"Timeout duration for HTTP request to upstream debuginfod server. Defaults to 5m"`
 }
 
-// FlagsHidden contains hidden flags intended only for debugging.
+// FlagsHidden contains hidden flags intended only for debugging or experimental features.
 type FlagsHidden struct {
 	DebugNormalizeAddresses bool `kong:"help='Normalize sampled addresses.',default='true',hidden=''"`
+
+	// IcebergStorage is a experimental feature that enables Apache Iceberg storage for profile storage. This can be used with the enable-persistence flag.
+	IcebergStorage bool `kong:"help='Use iceberg storage for profile storage. Requires enable-persistence flag.',default='false',hidden=''"`
 }
 
 // Run the parca server.
@@ -279,11 +285,36 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	}
 
 	if flags.EnablePersistence {
+		blocksDirectory := "blocks"
+		prefixedBucket := objstore.NewPrefixedBucket(bucket, blocksDirectory)
+		var store frostdb.DataSinkSource
+		if flags.Hidden.IcebergStorage { // Experimental Iceberg storage.
+			// Optain the bucket URI from the config
+			uri, err := BucketURIFromConfig(bucketCfg)
+			if err != nil {
+				level.Error(logger).Log("msg", "failed to get bucket URI from config", "err", err)
+				return err
+			}
+			path := filepath.Join(uri, blocksDirectory)
+			store, err = storage.NewIceberg(path, catalog.NewHDFS(path, prefixedBucket), prefixedBucket,
+				storage.WithIcebergPartitionSpec(
+					iceberg.NewPartitionSpec( // Partition the table by timestamp.
+						iceberg.PartitionField{
+							Name:      profile.ColumnTimestamp,
+							Transform: iceberg.IdentityTransform{},
+						},
+					),
+				))
+			if err != nil {
+				level.Error(logger).Log("msg", "failed to initialize iceberg", "err", err)
+				return err
+			}
+		} else {
+			store = frostdb.NewDefaultObjstoreBucket(prefixedBucket)
+		}
 		frostdbOptions = append(
 			frostdbOptions,
-			frostdb.WithReadWriteStorage(
-				frostdb.NewDefaultObjstoreBucket(objstore.NewPrefixedBucket(bucket, "blocks")),
-			),
+			frostdb.WithReadWriteStorage(store),
 		)
 	}
 
@@ -855,4 +886,52 @@ func getDiscoveryConfigs(cfgs []*config.ScrapeConfig) map[string]discovery.Confi
 		c[v.JobName] = v.ServiceDiscoveryConfigs
 	}
 	return c
+}
+
+func BucketURIFromConfig(bucketCfg []byte) (string, error) {
+	bucketConf := &client.BucketConfig{}
+	if err := yaml.Unmarshal(bucketCfg, bucketConf); err != nil {
+		return "", fmt.Errorf("failed to unmarshal bucket config: %w", err)
+	}
+
+	type Config struct {
+		Bucket string `yaml:"bucket"`
+	}
+
+	config, err := yaml.Marshal(bucketConf.Config)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal content of bucket configuration: %w", err)
+	}
+
+	switch strings.ToUpper(string(bucketConf.Type)) {
+	case string(client.GCS):
+		var cfg Config
+		if err := yaml.Unmarshal(config, &cfg); err != nil {
+			return "", err
+		}
+		return filepath.Join("gs://", cfg.Bucket, bucketConf.Prefix), nil
+	case string(client.S3):
+		var cfg Config
+		if err := yaml.Unmarshal(config, &cfg); err != nil {
+			return "", err
+		}
+		return filepath.Join("s3://", cfg.Bucket, bucketConf.Prefix), nil
+	case string(client.FILESYSTEM):
+		type Config struct {
+			Directory string `yaml:"directory"`
+		}
+
+		var cfg Config
+		if err := yaml.Unmarshal(config, &cfg); err != nil {
+			return "", err
+		}
+
+		path, err := filepath.Abs(cfg.Directory)
+		if err != nil {
+			return "", err
+		}
+		return path, nil
+	default:
+		return "", fmt.Errorf("unknown bucket type: %s", bucketConf.Type)
+	}
 }
