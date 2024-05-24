@@ -108,7 +108,7 @@
     "react-test-renderer": "18.3.1",
     "replace-in-files": "3.0.0",
     "rimraf": "3.0.2",
-    "sass": "1.77.1",
+    "sass": "1.77.2",
     "sass-loader": "13.3.3",
     "storybook": "7.6.19",
     "storybook-dark-mode": "2.1.1",
