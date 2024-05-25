@@ -305,7 +305,7 @@ importers:
     dependencies:
       '@alwaysmeticulous/recorder-loader':
         specifier: ^2.19.0
-        version: 2.127.0
+        version: 2.128.0
       '@headlessui/react':
         specifier: ^1.7.19
         version: 1.7.19(react-dom@18.3.1)(react@18.3.1)
@@ -882,8 +882,8 @@ packages:
   /@adobe/css-tools@4.3.1:
     resolution: {integrity: sha512-/62yikz7NLScCGAAST5SHdnjaDJQBDq0M2muyRTpf2VQhw6StBg2ALiu73zSJQ4fMVLA+0uBhBHAle7Wg+2kSg==}
 
-  /@alwaysmeticulous/recorder-loader@2.127.0:
-    resolution: {integrity: sha512-O71/fV/XkV71nmlcD5c9hVAzSA++e2gU4VDD4slcvJc57sjtpgX40FskQbGSqo3GwPDWYiN5qhrrm1r335DpsA==}
+  /@alwaysmeticulous/recorder-loader@2.128.0:
+    resolution: {integrity: sha512-vZRNGVEnzvywgXDUII+pXo/Lxqi5wSbXvl3lHXIH2GNT4XQbAm3ZPUefiB9cfSD4UXmaa7sfD4fPxq9H4YTlew==}
     dev: false
 
   /@ampproject/remapping@2.3.0:
