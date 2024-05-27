@@ -54,7 +54,7 @@ import (
 )
 
 func getShareServerConn(t Testing) sharepb.ShareServiceClient {
-	conn, err := grpc.Dial("api.pprof.me:443", grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
+	conn, err := grpc.NewClient("api.pprof.me:443", grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
 	require.NoError(t, err)
 	return sharepb.NewShareServiceClient(conn)
 }
@@ -86,7 +86,7 @@ func benchmarkSetup(ctx context.Context, b *testing.B) (profilestorepb.ProfileSt
 	var conn grpc.ClientConnInterface
 	err := backoff.Retry(func() error {
 		var err error
-		conn, err = grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err = grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			// b.Logf("failed to connect to parca: %v", err)
 			return err

@@ -34,7 +34,9 @@ linters-settings:
           - pkg: github.com/segmentio/parquet-go
             desc: Use github.com/parquet-go/parquet-go instead
   errcheck:
-    exclude: ./.errcheck_excludes.txt
+    exclude-functions:
+      - (github.com/go-kit/log.Logger).Log
+      - (hash.Hash).Write
   goimports:
     local-prefixes: github.com/parca-dev/parca
   gofumpt:

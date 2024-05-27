@@ -436,7 +436,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			otelgrpc.WithPropagators(propagators),
 		)),
 	}
-	conn, err := grpc.Dial(flags.ProfileShareServer, opts...)
+	conn, err := grpc.NewClient(flags.ProfileShareServer, opts...)
 	if err != nil {
 		return fmt.Errorf("failed to create gRPC connection to ProfileShareServer: %s, %w", flags.ProfileShareServer, err)
 	}
@@ -720,7 +720,7 @@ func runForwarder(
 		}))
 	}
 
-	conn, err := grpc.Dial(flags.StoreAddress, opts...)
+	conn, err := grpc.NewClient(flags.StoreAddress, opts...)
 	if err != nil {
 		return fmt.Errorf("failed to create gRPC connection: %w", err)
 	}
