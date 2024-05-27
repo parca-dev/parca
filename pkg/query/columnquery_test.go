@@ -53,7 +53,7 @@ import (
 )
 
 func getShareServerConn(t Testing) sharepb.ShareServiceClient {
-	conn, err := grpc.Dial("api.pprof.me:443", grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
+	conn, err := grpc.NewClient("api.pprof.me:443", grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
 	require.NoError(t, err)
 	return sharepb.NewShareServiceClient(conn)
 }
