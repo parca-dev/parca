@@ -32,7 +32,6 @@ import (
 	"github.com/apache/arrow/go/v16/arrow/memory"
 	pprofprofile "github.com/google/pprof/profile"
 	"github.com/prometheus/prometheus/model/labels"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 
@@ -550,14 +549,8 @@ func (c *flamegraphComparer) compare(expected flamegraphColumns) {
 	require.Equal(c.t, expected.children, sortedChildren)
 
 	// floats...
-	cumulativePerSecondActual := reorder(c.actual.cumulativePerSecond, order)
-	if !assert.InDeltaSlice(c.t, expected.cumulativePerSecond, cumulativePerSecondActual, 0.0001) {
-		c.t.Logf("expected %v but got %v", expected.cumulativePerSecond, cumulativePerSecondActual)
-	}
-	flatPerSecondActual := reorder(c.actual.flatPerSecond, order)
-	if !assert.InDeltaSlice(c.t, expected.flatPerSecond, flatPerSecondActual, 0.0001) {
-		c.t.Logf("expected %v but got %v", expected.flatPerSecond, flatPerSecondActual)
-	}
+	require.InDeltaSlice(c.t, expected.cumulativePerSecond, reorder(c.actual.cumulativePerSecond, order), 0.0001)
+	require.InDeltaSlice(c.t, expected.flatPerSecond, reorder(c.actual.flatPerSecond, order), 0.0001)
 }
 
 func reorder[T any](slice []T, order []int) []T {
