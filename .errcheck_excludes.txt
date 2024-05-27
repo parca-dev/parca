@@ -1,2 +1,0 @@
-(github.com/go-kit/log.Logger).Log
-(hash.Hash).Write
