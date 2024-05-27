@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	stdmath "math"
 	"strings"
 	"sync"
 	"time"
@@ -744,8 +745,41 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile
 	_, span := tracer.Start(ctx, "ComputeDiff")
 	defer span.End()
 
-	records := make([]arrow.Record, 0, len(compare.Samples)+len(base.Samples))
+	var (
+		totalCompareValue          int64
+		totalCompareValuePerSecond float64
+		totalBaseValue             int64
+		totalBaseValuePerSecond    float64
+	)
+	for _, s := range compare.Samples {
+		totalCompareValue += math.Int64.Sum(s.Column(len(s.Columns()) - 4).(*array.Int64))
+		totalCompareValuePerSecond += math.Float64.Sum(s.Column(len(s.Columns()) - 3).(*array.Float64))
+	}
+	for _, s := range base.Samples {
+		totalBaseValue += math.Int64.Sum(s.Column(len(s.Columns()) - 4).(*array.Int64))
+		totalBaseValuePerSecond += math.Float64.Sum(s.Column(len(s.Columns()) - 3).(*array.Float64))
+	}
 
+	// By default, we don't want to scale either side, meaning we multiply by 1.
+	var (
+		cumulativeCompareRatio          = 1.0
+		cumulativeComparePerSecondRatio = 1.0
+		cumulativeBaseRatio             = 1.0
+		cumulativeBasePerSecondRatio    = 1.0
+	)
+	// We figure out which side needs to be scaled based on each profile's total cumulative value.
+	if totalCompareValue > totalBaseValue {
+		cumulativeBaseRatio = float64(totalCompareValue) / float64(totalBaseValue)
+	} else {
+		cumulativeCompareRatio = float64(totalBaseValue) / float64(totalCompareValue)
+	}
+	if totalCompareValuePerSecond > totalBaseValuePerSecond {
+		cumulativeBasePerSecondRatio = totalCompareValuePerSecond / totalBaseValuePerSecond
+	} else {
+		cumulativeComparePerSecondRatio = totalBaseValuePerSecond / totalCompareValuePerSecond
+	}
+
+	records := make([]arrow.Record, 0, len(compare.Samples)+len(base.Samples))
 	for _, r := range compare.Samples {
 		columns := r.Columns()
 		cols := make([]arrow.Array, len(columns))
@@ -755,13 +789,17 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile
 		// is subtracting the `base` profile, but the actual calculation happens
 		// when building the visualizations. We should eventually have this be done
 		// directly by the query engine.
-		cols[len(cols)-2] = cols[len(cols)-4] // value as diff
-		cols[len(cols)-1] = cols[len(cols)-3] // value_per_second as diff_per_second
+		cols[len(cols)-2] = multiplyInt64By(mem, cols[len(cols)-4].(*array.Int64), cumulativeCompareRatio)              // value as diff
+		cols[len(cols)-1] = multiplyFloat64By(mem, cols[len(cols)-3].(*array.Float64), cumulativeComparePerSecondRatio) // value_per_second as diff_per_second
+
 		records = append(records, array.NewRecord(
 			r.Schema(),
 			cols,
 			r.NumRows(),
 		))
+
+		cols[len(cols)-2].Release()
+		cols[len(cols)-1].Release()
 	}
 
 	for _, r := range base.Samples {
@@ -769,9 +807,9 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile
 			columns := r.Columns()
 			cols := make([]arrow.Array, len(columns))
 			copy(cols, columns)
-			diff := multiplyInt64By(mem, columns[len(columns)-4].(*array.Int64), -1)
+			diff := multiplyInt64By(mem, columns[len(columns)-4].(*array.Int64), -1*cumulativeBaseRatio)
 			defer diff.Release()
-			diffPerSecond := multiplyFloat64By(mem, columns[len(columns)-3].(*array.Float64), -1)
+			diffPerSecond := multiplyFloat64By(mem, columns[len(columns)-3].(*array.Float64), -1*cumulativeBasePerSecondRatio)
 			defer diffPerSecond.Release()
 			value := zeroInt64Array(mem, int(r.NumRows()))
 			defer value.Release()
@@ -797,14 +835,15 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile
 	}, nil
 }
 
-func multiplyInt64By(pool memory.Allocator, arr *array.Int64, factor int64) arrow.Array {
+func multiplyInt64By(pool memory.Allocator, arr *array.Int64, factor float64) arrow.Array {
 	b := array.NewInt64Builder(pool)
 	defer b.Release()
 
 	values := arr.Int64Values()
 	valid := make([]bool, len(values))
 	for i := range values {
-		values[i] *= factor
+		nv := float64(values[i]) * factor
+		values[i] = int64(nv)
 		valid[i] = true
 	}
 
@@ -813,6 +852,11 @@ func multiplyInt64By(pool memory.Allocator, arr *array.Int64, factor int64) arro
 }
 
 func multiplyFloat64By(pool memory.Allocator, arr *array.Float64, factor float64) arrow.Array {
+	if stdmath.IsNaN(factor) {
+		arr.Retain()
+		return arr
+	}
+
 	b := array.NewFloat64Builder(pool)
 	defer b.Release()
 

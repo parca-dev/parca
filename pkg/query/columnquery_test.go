@@ -760,106 +760,146 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 		nil,
 	)
 
-	res, err := api.Query(ctx, &pb.QueryRequest{
-		Mode: pb.QueryRequest_MODE_DIFF,
-		Options: &pb.QueryRequest_Diff{
-			Diff: &pb.DiffProfile{
-				A: &pb.ProfileDiffSelection{
-					Mode: pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED,
-					Options: &pb.ProfileDiffSelection_Single{
-						Single: &pb.SingleProfile{
-							Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
-							Time:  timestamppb.New(timestamp.Time(1)),
+	t.Run("FlamegraphDiff", func(t *testing.T) {
+		res, err := api.Query(ctx, &pb.QueryRequest{
+			Mode: pb.QueryRequest_MODE_DIFF,
+			Options: &pb.QueryRequest_Diff{
+				Diff: &pb.DiffProfile{
+					A: &pb.ProfileDiffSelection{
+						Mode: pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED,
+						Options: &pb.ProfileDiffSelection_Single{
+							Single: &pb.SingleProfile{
+								Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
+								Time:  timestamppb.New(timestamp.Time(1)),
+							},
 						},
 					},
-				},
-				B: &pb.ProfileDiffSelection{
-					Mode: pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED,
-					Options: &pb.ProfileDiffSelection_Single{
-						Single: &pb.SingleProfile{
-							Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
-							Time:  timestamppb.New(timestamp.Time(2)),
-						},
-					},
-				},
-			},
-		},
-	})
-	require.NoError(t, err)
-
-	fg := res.Report.(*pb.QueryResponse_Flamegraph).Flamegraph
-	require.Equal(t, int32(2), fg.Height)
-	require.Equal(t, 1, len(fg.Root.Children))
-	require.Equal(t, int64(2), fg.Root.Children[0].Cumulative)
-	require.Equal(t, int64(1), fg.Root.Children[0].Diff)
-
-	res, err = api.Query(ctx, &pb.QueryRequest{
-		Mode:       pb.QueryRequest_MODE_DIFF,
-		ReportType: *pb.QueryRequest_REPORT_TYPE_TOP.Enum(),
-		Options: &pb.QueryRequest_Diff{
-			Diff: &pb.DiffProfile{
-				A: &pb.ProfileDiffSelection{
-					Mode: pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED,
-					Options: &pb.ProfileDiffSelection_Single{
-						Single: &pb.SingleProfile{
-							Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
-							Time:  timestamppb.New(timestamp.Time(1)),
-						},
-					},
-				},
-				B: &pb.ProfileDiffSelection{
-					Mode: pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED,
-					Options: &pb.ProfileDiffSelection_Single{
-						Single: &pb.SingleProfile{
-							Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
-							Time:  timestamppb.New(timestamp.Time(2)),
+					B: &pb.ProfileDiffSelection{
+						Mode: pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED,
+						Options: &pb.ProfileDiffSelection_Single{
+							Single: &pb.SingleProfile{
+								Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
+								Time:  timestamppb.New(timestamp.Time(2)),
+							},
 						},
 					},
 				},
 			},
-		},
+		})
+		require.NoError(t, err)
+
+		fg := res.Report.(*pb.QueryResponse_Flamegraph).Flamegraph
+		require.Equal(t, int32(2), fg.Height)
+		require.Equal(t, 1, len(fg.Root.Children))
+		require.Equal(t, int64(2), fg.Root.Children[0].Cumulative)
+		require.Equal(t, int64(0), fg.Root.Children[0].Diff)
 	})
-	require.NoError(t, err)
 
-	topList := res.Report.(*pb.QueryResponse_Top).Top.List
-	require.Equal(t, 1, len(topList))
-	require.Equal(t, int64(2), topList[0].Cumulative)
-	require.Equal(t, int64(1), topList[0].Diff)
-
-	res, err = api.Query(ctx, &pb.QueryRequest{
-		Mode:       pb.QueryRequest_MODE_DIFF,
-		ReportType: *pb.QueryRequest_REPORT_TYPE_PPROF.Enum(),
-		Options: &pb.QueryRequest_Diff{
-			Diff: &pb.DiffProfile{
-				A: &pb.ProfileDiffSelection{
-					Mode: pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED,
-					Options: &pb.ProfileDiffSelection_Single{
-						Single: &pb.SingleProfile{
-							Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
-							Time:  timestamppb.New(timestamp.Time(1)),
+	t.Run("FlamegraphDiffReverse", func(t *testing.T) {
+		res, err := api.Query(ctx, &pb.QueryRequest{
+			Mode: pb.QueryRequest_MODE_DIFF,
+			Options: &pb.QueryRequest_Diff{
+				Diff: &pb.DiffProfile{
+					A: &pb.ProfileDiffSelection{
+						Mode: pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED,
+						Options: &pb.ProfileDiffSelection_Single{
+							Single: &pb.SingleProfile{
+								Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
+								Time:  timestamppb.New(timestamp.Time(2)),
+							},
 						},
 					},
-				},
-				B: &pb.ProfileDiffSelection{
-					Mode: pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED,
-					Options: &pb.ProfileDiffSelection_Single{
-						Single: &pb.SingleProfile{
-							Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
-							Time:  timestamppb.New(timestamp.Time(2)),
+					B: &pb.ProfileDiffSelection{
+						Mode: pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED,
+						Options: &pb.ProfileDiffSelection_Single{
+							Single: &pb.SingleProfile{
+								Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
+								Time:  timestamppb.New(timestamp.Time(1)),
+							},
 						},
 					},
 				},
 			},
-		},
-	})
-	require.NoError(t, err)
+		})
+		require.NoError(t, err)
 
-	testProf := &pprofpb.Profile{}
-	err = testProf.UnmarshalVT(MustDecompressGzip(t, res.Report.(*pb.QueryResponse_Pprof).Pprof))
-	require.NoError(t, err)
-	require.Equal(t, 2, len(testProf.Sample))
-	require.Equal(t, []int64{2}, testProf.Sample[0].Value)
-	require.Equal(t, []int64{-1}, testProf.Sample[1].Value)
+		fg := res.Report.(*pb.QueryResponse_Flamegraph).Flamegraph
+		require.Equal(t, int32(2), fg.Height)
+		require.Equal(t, 1, len(fg.Root.Children))
+		require.Equal(t, int64(2), fg.Root.Children[0].Cumulative)
+		require.Equal(t, int64(0), fg.Root.Children[0].Diff)
+	})
+
+	t.Run("Top", func(t *testing.T) {
+		res, err := api.Query(ctx, &pb.QueryRequest{
+			Mode:       pb.QueryRequest_MODE_DIFF,
+			ReportType: *pb.QueryRequest_REPORT_TYPE_TOP.Enum(),
+			Options: &pb.QueryRequest_Diff{
+				Diff: &pb.DiffProfile{
+					A: &pb.ProfileDiffSelection{
+						Mode: pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED,
+						Options: &pb.ProfileDiffSelection_Single{
+							Single: &pb.SingleProfile{
+								Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
+								Time:  timestamppb.New(timestamp.Time(1)),
+							},
+						},
+					},
+					B: &pb.ProfileDiffSelection{
+						Mode: pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED,
+						Options: &pb.ProfileDiffSelection_Single{
+							Single: &pb.SingleProfile{
+								Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
+								Time:  timestamppb.New(timestamp.Time(2)),
+							},
+						},
+					},
+				},
+			},
+		})
+		require.NoError(t, err)
+		topList := res.Report.(*pb.QueryResponse_Top).Top.List
+		require.Equal(t, 1, len(topList))
+		require.Equal(t, int64(2), topList[0].Cumulative)
+		require.Equal(t, int64(0), topList[0].Diff)
+	})
+
+	t.Run("pprof", func(t *testing.T) {
+		res, err := api.Query(ctx, &pb.QueryRequest{
+			Mode:       pb.QueryRequest_MODE_DIFF,
+			ReportType: *pb.QueryRequest_REPORT_TYPE_PPROF.Enum(),
+			Options: &pb.QueryRequest_Diff{
+				Diff: &pb.DiffProfile{
+					A: &pb.ProfileDiffSelection{
+						Mode: pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED,
+						Options: &pb.ProfileDiffSelection_Single{
+							Single: &pb.SingleProfile{
+								Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
+								Time:  timestamppb.New(timestamp.Time(1)),
+							},
+						},
+					},
+					B: &pb.ProfileDiffSelection{
+						Mode: pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED,
+						Options: &pb.ProfileDiffSelection_Single{
+							Single: &pb.SingleProfile{
+								Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
+								Time:  timestamppb.New(timestamp.Time(2)),
+							},
+						},
+					},
+				},
+			},
+		})
+		require.NoError(t, err)
+
+		testProf := &pprofpb.Profile{}
+		err = testProf.UnmarshalVT(MustDecompressGzip(t, res.Report.(*pb.QueryResponse_Pprof).Pprof))
+		require.NoError(t, err)
+		require.Equal(t, 2, len(testProf.Sample))
+		require.Equal(t, []int64{2}, testProf.Sample[0].Value)
+		require.Equal(t, []int64{-2}, testProf.Sample[1].Value)
+	})
 }
 
 func TestColumnQueryAPITypes(t *testing.T) {
