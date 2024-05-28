@@ -30,7 +30,7 @@
     "@parca/hooks": "^0.0.57",
     "@parca/icons": "^0.16.69",
     "@parca/parser": "^0.16.74",
-    "@parca/profile": "^0.16.375",
+    "@parca/profile": "workspace:*",
     "@parca/store": "^0.16.146",
     "@parca/utilities": "^0.0.74",
     "@protobuf-ts/grpcweb-transport": "^2.9.4",

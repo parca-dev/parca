@@ -13,7 +13,7 @@
 
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 
-import {Vector, tableFromIPC} from 'apache-arrow';
+import {Int64, Type, Vector, tableFromIPC, vectorFromArray} from 'apache-arrow';
 import {AnimatePresence, motion} from 'framer-motion';
 
 import {
@@ -36,6 +36,7 @@ import {
 import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
 import {hexifyAddress} from '../utils';
 import ColumnsVisibility from './ColumnsVisibility';
+import {NameCell} from './NameCell';
 
 const FIELD_MAPPING_FILE = 'mapping_file';
 const FIELD_LOCATION_ADDRESS = 'location_address';
@@ -46,8 +47,10 @@ const FIELD_FLAT = 'flat';
 const FIELD_FLAT_DIFF = 'flat_diff';
 const FIELD_CUMULATIVE = 'cumulative';
 const FIELD_CUMULATIVE_DIFF = 'cumulative_diff';
+const FIELD_CALLERS = 'callers';
+const FIELD_CALLEES = 'callees';
 
-interface row {
+export interface RowWithoutCallView {
   name: string;
   flat: bigint;
   flatDiff: bigint;
@@ -58,12 +61,17 @@ interface row {
   functionFileName: string;
 }
 
+export interface Row extends RowWithoutCallView {
+  callers: RowWithoutCallView[];
+  callees: RowWithoutCallView[];
+}
+
 export interface ColumnDef {
   id: string;
   header: string;
   accessorKey: string;
   footer?: string;
-  cell?: (info: any) => string | number;
+  cell?: (info: any) => string | number | React.ReactNode;
   meta?: {align: 'right' | 'left'};
   invertSorting?: boolean;
   size?: number;
@@ -219,7 +227,7 @@ export const Table = React.memo(function Table({
         id: 'name',
         accessorKey: 'name',
         header: 'Name',
-        cell: info => info.getValue(),
+        cell: NameCell,
       },
       {
         id: 'functionSystemName',
@@ -274,7 +282,7 @@ export const Table = React.memo(function Table({
   );
 
   const onRowClick = useCallback(
-    (row: row) => {
+    (row: Row) => {
       // If there is only one dashboard item, we don't want to select a span
       if (dashboardItems.length <= 1) {
         return;
@@ -285,7 +293,7 @@ export const Table = React.memo(function Table({
   );
 
   const shouldHighlightRow = useCallback(
-    (row: row) => {
+    (row: Row) => {
       const name = row.name;
       return isSearchMatch(currentSearchString as string, name);
     },
@@ -381,10 +389,10 @@ export const Table = React.memo(function Table({
   const functionFileNameColumn = table.getChild(FIELD_FUNCTION_FILE_NAME);
   const mappingFileColumn = table.getChild(FIELD_MAPPING_FILE);
   const locationAddressColumn = table.getChild(FIELD_LOCATION_ADDRESS);
+  const callersColumn = table.getChild(FIELD_CALLERS);
+  const calleesColumn = table.getChild(FIELD_CALLEES);
 
-  const rows: row[] = [];
-  // TODO: Figure out how to only read the data of the columns we need for the virtualized table
-  for (let i = 0; i < table.numRows; i++) {
+  const getRowWithoutCallView = (i: number): RowWithoutCallView => {
     const flat: bigint = flatColumn?.get(i) ?? 0n;
     const flatDiff: bigint = flatDiffColumn?.get(i) ?? 0n;
     const cumulative: bigint = cumulativeColumn?.get(i) ?? 0n;
@@ -392,7 +400,8 @@ export const Table = React.memo(function Table({
     const functionSystemName: string = functionSystemNameColumn?.get(i) ?? '';
     const functionFileName: string = functionFileNameColumn?.get(i) ?? '';
     const mappingFile: string = mappingFileColumn?.get(i) ?? '';
-    rows.push({
+
+    return {
       name: RowName(mappingFileColumn, locationAddressColumn, functionNameColumn, i),
       flat,
       flatDiff,
@@ -401,6 +410,27 @@ export const Table = React.memo(function Table({
       functionSystemName,
       functionFileName,
       mappingFile,
+    };
+  };
+
+  const rows: Row[] = [];
+  // TODO: Figure out how to only read the data of the columns we need for the virtualized table
+  for (let i = 0; i < table.numRows; i++) {
+    const row = getRowWithoutCallView(i);
+    const callerIndices: Vector<Int64> = callersColumn?.get(i) ?? vectorFromArray([]);
+    const callers: RowWithoutCallView[] = Array.from(callerIndices.toArray().values()).map(row => {
+      return getRowWithoutCallView(Number(row));
+    });
+
+    const calleeIndices: Vector<Int64> = calleesColumn?.get(i) ?? vectorFromArray([]);
+    const callees: RowWithoutCallView[] = Array.from(calleeIndices.toArray().values()).map(row => {
+      return getRowWithoutCallView(Number(row));
+    });
+
+    rows.push({
+      ...row,
+      callers,
+      callees,
     });
   }
 

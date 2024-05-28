@@ -35,6 +35,9 @@ interface Props<TData> {
   enableHighlighting?: boolean;
   shouldHighlightRow?: (row: TData) => boolean;
   usePointerCursor?: boolean;
+  className?: string;
+  title?: string;
+  emptyTableMessage?: string;
 }
 
 const Table = <T,>({
@@ -46,6 +49,9 @@ const Table = <T,>({
   enableHighlighting = false,
   usePointerCursor = true,
   shouldHighlightRow,
+  className = '',
+  title = '',
+  emptyTableMessage = '',
 }: Props<T>): JSX.Element => {
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
 
@@ -81,9 +87,16 @@ const Table = <T,>({
     virtualRows.length > 0 ? totalSize - (virtualRows?.[virtualRows.length - 1]?.end ?? 0) : 0;
 
   return (
-    <div ref={tableContainerRef} className="h-full overflow-scroll pr-2">
+    <div ref={tableContainerRef} className={cx('h-full overflow-scroll pr-2', className)}>
       <table className="w-full">
         <thead className="sticky top-0 bg-gray-50 text-sm dark:bg-gray-800">
+          {title.length > 0 ? (
+            <tr>
+              <th colSpan={columns.length} className="p-2 pl-4 text-left uppercase">
+                {title}
+              </th>
+            </tr>
+          ) : null}
           {table.getHeaderGroups().map(headerGroup => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map(header => {
@@ -139,6 +152,13 @@ const Table = <T,>({
               <td style={{height: `${paddingTop}px`}} />
             </tr>
           )}
+          {rows.length === 0 && emptyTableMessage.length > 0 ? (
+            <tr>
+              <td colSpan={columns.length} className="p-2 text-center">
+                {emptyTableMessage}
+              </td>
+            </tr>
+          ) : null}
           {virtualRows.map(virtualRow => {
             const row = rows[virtualRow.index];
             return (
@@ -159,7 +179,7 @@ const Table = <T,>({
                   return (
                     <td
                       key={cell.id}
-                      className={cx('p-1.5', {
+                      className={cx('p-1.5 align-top', {
                         /* @ts-expect-error */
                         'text-right': cell.column.columnDef.meta?.align === 'right',
                         /* @ts-expect-error */

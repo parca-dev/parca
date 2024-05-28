@@ -108,12 +108,19 @@ export class MergedProfileSelection implements ProfileSelection {
   mergeTo: number;
   query: Query;
   filterQuery: string | undefined;
+  profileSource: ProfileSource;
 
   constructor(mergeFrom: number, mergeTo: number, query: Query, filterQuery?: string) {
     this.mergeFrom = mergeFrom;
     this.mergeTo = mergeTo;
     this.query = query;
     this.filterQuery = filterQuery;
+    this.profileSource = new MergedProfileSource(
+      this.mergeFrom,
+      this.mergeTo,
+      this.query,
+      this.filterQuery
+    );
   }
 
   ProfileName(): string {
@@ -135,7 +142,7 @@ export class MergedProfileSelection implements ProfileSelection {
   }
 
   ProfileSource(): ProfileSource {
-    return new MergedProfileSource(this.mergeFrom, this.mergeTo, this.query, this.filterQuery);
+    return this.profileSource;
   }
 }
 
@@ -143,11 +150,13 @@ export class ProfileDiffSource implements ProfileSource {
   a: ProfileSource;
   b: ProfileSource;
   filterQuery: string | undefined;
+  profileType: ProfileType;
 
   constructor(a: ProfileSource, b: ProfileSource, filterQuery?: string) {
     this.a = a;
     this.b = b;
     this.filterQuery = filterQuery;
+    this.profileType = a.ProfileType();
   }
 
   DiffSelection(): ProfileDiffSelection {
@@ -171,7 +180,7 @@ export class ProfileDiffSource implements ProfileSource {
   }
 
   ProfileType(): ProfileType {
-    return this.a.ProfileType();
+    return this.profileType;
   }
 
   Describe(): JSX.Element {
@@ -199,12 +208,14 @@ export class MergedProfileSource implements ProfileSource {
   mergeTo: number;
   query: Query;
   filterQuery: string | undefined;
+  profileType: ProfileType;
 
   constructor(mergeFrom: number, mergeTo: number, query: Query, filterQuery?: string) {
     this.mergeFrom = mergeFrom;
     this.mergeTo = mergeTo;
     this.query = query;
     this.filterQuery = filterQuery;
+    this.profileType = ProfileType.fromString(Query.parse(this.query.toString()).profileName());
   }
 
   DiffSelection(): ProfileDiffSelection {
@@ -239,7 +250,7 @@ export class MergedProfileSource implements ProfileSource {
   }
 
   ProfileType(): ProfileType {
-    return ProfileType.fromString(Query.parse(this.query.toString()).profileName());
+    return this.profileType;
   }
 
   stringMatchers(): string[] {
