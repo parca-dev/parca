@@ -213,7 +213,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 				llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
 				if !r.Lines.IsValid(j) || llOffsetEnd-llOffsetStart <= 0 {
-					isLeaf := isLocationLineLeaf(r.Locations, r.Lines, beg, int64(j), llOffsetStart, llOffsetEnd)
+					isLeaf := isFirstNonNil(i, j, r.Locations)
 
 					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
 					if isRoot {
@@ -261,7 +261,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				for k := int(llOffsetEnd - 1); k >= int(llOffsetStart); k-- {
 					isInlineRoot := isLocationRoot(llOffsetStart, llOffsetEnd, int64(k), r.Lines)
 					isInlined := !isInlineRoot
-					isInlineLeaf := isLocationLineLeaf(r.Locations, r.Lines, beg, int64(j), llOffsetStart, int64(k))
+					isLeaf := isFirstNonNil(i, j, r.Locations) && isFirstNonNil(j, k, r.Lines)
 
 					isRoot = locationRoot && !(fb.aggregationConfig.aggregateByLabels && hasLabels) && isInlineRoot
 					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
@@ -300,7 +300,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						k,
 						int(end),
 						key,
-						isInlineLeaf,
+						isLeaf,
 						isInlined,
 					)
 					if err != nil {
@@ -317,7 +317,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						fb.childrenList[rootRow] = append(fb.childrenList[rootRow], row)
 					}
 
-					err = fb.appendRow(r, t, recordLabelIndex, i, j, k, row, key, isInlineLeaf, isInlined)
+					err = fb.appendRow(r, t, recordLabelIndex, i, j, k, row, key, isLeaf, isInlined)
 					if err != nil {
 						return nil, 0, 0, 0, err
 					}
@@ -1866,13 +1866,6 @@ func isLocationRoot(beg, end, i int64, list *array.List) bool {
 		if !list.ListValues().IsNull(int(j)) {
 			return j == i
 		}
-	}
-	return false
-}
-
-func isLocationLineLeaf(locations, lines *array.List, locationOffset, location, lineOffset, line int64) bool {
-	if locations.ListValues().IsValid(int(location)) && lines.ListValues().IsValid(int(line)) {
-		return location == locationOffset && line == lineOffset
 	}
 	return false
 }
