@@ -412,13 +412,17 @@ func (tb *tableBuilder) appendRow(
 				tb.builderFlatDiff.Append(0)
 			}
 		case TableFieldCallers:
-			key := string(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(lineRow))))
-			caller := getCaller(r, sampleRow, locationRow, lineRow)
-			tb.addCaller(key, caller)
+			if lineRow != -1 {
+				key := string(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(lineRow))))
+				caller := getCaller(r, sampleRow, locationRow, lineRow)
+				tb.addCaller(key, caller)
+			}
 		case TableFieldCallees:
-			key := string(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(lineRow))))
-			callee := getCallee(r, sampleRow, locationRow, lineRow)
-			tb.addCallee(key, callee)
+			if lineRow != -1 {
+				key := string(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(lineRow))))
+				callee := getCallee(r, sampleRow, locationRow, lineRow)
+				tb.addCallee(key, callee)
+			}
 		default:
 			panic(fmt.Sprintf("unknown field %s", tb.schema.Field(j).Name))
 		}
