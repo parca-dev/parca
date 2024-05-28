@@ -274,29 +274,44 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	}()
 
 	if req.GetReportType() == pb.QueryRequest_REPORT_TYPE_PROFILE_METADATA {
-		mappingFiles, err := q.getMappingFiles(ctx, req.GetMerge())
+		var profileMetadata *pb.ProfileMetadata
 
-		labels, labels_err := q.getLabels(ctx, &pb.LabelsRequest{
-			Match: []string{},
-			Start: req.GetMerge().Start,
-			End:   req.GetMerge().End,
-		})
+		switch req.Mode {
+		case pb.QueryRequest_MODE_MERGE:
+			mappingFiles, labels, err := getMappingFilesAndLabels(ctx, q.querier, req.GetMerge().Query, req.GetMerge().Start.AsTime(), req.GetMerge().End.AsTime())
+			if err != nil {
+				return nil, err
+			}
 
-		if err != nil {
-			return nil, fmt.Errorf("getting mapping files: %w", err)
-		}
 
-		if labels_err != nil {
-			return nil, fmt.Errorf("getting labels: %w", labels_err)
+			profileMetadata = &pb.ProfileMetadata{
+				MappingFiles: mappingFiles,
+				Labels:       labels,
+			}
+
+		case pb.QueryRequest_MODE_DIFF:
+			mappingFiles_a, labels_a, err := getMappingFilesAndLabels(ctx, q.querier, req.GetDiff().A.GetMerge().GetQuery(), req.GetDiff().A.GetMerge().Start.AsTime(), req.GetDiff().A.GetMerge().End.AsTime())
+			if err != nil {
+				return nil, err
+			}
+
+			mappingFiles_b, labels_b, err := getMappingFilesAndLabels(ctx, q.querier, req.GetDiff().B.GetMerge().GetQuery(), req.GetDiff().B.GetMerge().Start.AsTime(), req.GetDiff().B.GetMerge().End.AsTime())
+			if err != nil {
+				return nil, err
+			}
+
+			profileMetadata = &pb.ProfileMetadata{
+				MappingFiles: append(mappingFiles_a, mappingFiles_b...),
+				Labels:       append(labels_a, labels_b...),
+			}
+		default:
+			return nil, status.Error(codes.InvalidArgument, "unknown query mode")
 		}
 
 		return &pb.QueryResponse{
 			Total:    0,
 			Filtered: 0,
-			Report: &pb.QueryResponse_ProfileMetadata{ProfileMetadata: &pb.ProfileMetadata{
-				MappingFiles: mappingFiles,
-				Labels:       labels,
-			}},
+			Report:   &pb.QueryResponse_ProfileMetadata{ProfileMetadata: profileMetadata},
 		}, nil
 	}
 
@@ -918,31 +933,21 @@ func sliceRecord(r arrow.Record, indices []int64) []arrow.Record {
 	return slices
 }
 
-func (q *ColumnQueryAPI) getMappingFiles(
+func getMappingFilesAndLabels(
 	ctx context.Context,
-	m *pb.MergeProfile,
-) ([]string, error) {
-	p, err := q.querier.GetProfileMetadataMappings(
-		ctx,
-		m.Query,
-		m.Start.AsTime(),
-		m.End.AsTime(),
-	)
+	q Querier,
+	query string,
+	startTime, endTime time.Time,
+) ([]string, []string, error) {
+	mappingFiles, err := q.GetProfileMetadataMappings(ctx, query, startTime, endTime)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return p, nil
-}
-
-func (q *ColumnQueryAPI) getLabels(
-	ctx context.Context,
-	req *pb.LabelsRequest,
-) ([]string, error) {
-	l, err := q.querier.GetProfileMetadataLabels(ctx, req.Match, req.Start.AsTime(), req.End.AsTime())
+	labels, err := q.GetProfileMetadataLabels(ctx, []string{}, startTime, endTime)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return l, nil
+	return mappingFiles, labels, nil
 }
