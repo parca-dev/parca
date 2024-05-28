@@ -922,11 +922,21 @@ func (q *ColumnQueryAPI) getMappingFiles(
 	ctx context.Context,
 	m *pb.MergeProfile,
 ) ([]string, error) {
+	start := time.Time{}
+	if m.Start != nil {
+		start = m.Start.AsTime()
+	}
+
+	end := time.Time{}
+	if m.End != nil {
+		end = m.End.AsTime()
+	}
+
 	p, err := q.querier.GetProfileMetadataMappings(
 		ctx,
 		m.Query,
-		m.Start.AsTime(),
-		m.End.AsTime(),
+		start,
+		end,
 	)
 	if err != nil {
 		return nil, err
@@ -939,7 +949,17 @@ func (q *ColumnQueryAPI) getLabels(
 	ctx context.Context,
 	req *pb.LabelsRequest,
 ) ([]string, error) {
-	l, err := q.querier.GetProfileMetadataLabels(ctx, req.Match, req.Start.AsTime(), req.End.AsTime())
+	start := time.Time{}
+	if req.Start != nil {
+		start = req.Start.AsTime()
+	}
+
+	end := time.Time{}
+	if req.End != nil {
+		end = req.End.AsTime()
+	}
+
+	l, err := q.querier.GetProfileMetadataLabels(ctx, req.Match, start, end)
 	if err != nil {
 		return nil, err
 	}
