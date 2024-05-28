@@ -13,7 +13,13 @@
 
 import type {RpcMetadata} from '@protobuf-ts/runtime-rpc';
 
-import {QueryRequest, QueryRequest_ReportType, Format, Export, QueryServiceClient} from '@parca/client';
+import {
+  Export,
+  Format,
+  QueryRequest,
+  QueryRequest_ReportType,
+  QueryServiceClient,
+} from '@parca/client';
 
 export const hexifyAddress = (address?: bigint): string => {
   if (address == null) {
