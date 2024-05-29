@@ -102,6 +102,15 @@ func isFirstNonNil(row, listRow int, list *array.List) bool {
 	return false
 }
 
+func estimateTableRows(r profile.Reader) int {
+	if len(r.RecordReaders) == 0 {
+		return 0
+	}
+
+	// The number of unique function names is a good baseline for the number of rows, so going with that.
+	return r.RecordReaders[0].LineFunctionNameDict.Len()
+}
+
 func generateTableArrowRecord(
 	ctx context.Context,
 	mem memory.Allocator,
@@ -111,12 +120,13 @@ func generateTableArrowRecord(
 	_, span := tracer.Start(ctx, "generateTableArrowRecord")
 	defer span.End()
 
-	tb := newTableBuilder(mem)
+	profileReader := profile.NewReader(p)
+
+	tb := newTableBuilder(mem, estimateTableRows(profileReader))
 	defer tb.Release()
 
 	tableRow := 0
 
-	profileReader := profile.NewReader(p)
 	for _, r := range profileReader.RecordReaders {
 		tb.cumulative += math.Int64.Sum(r.Value)
 
@@ -215,7 +225,7 @@ type tableBuilder struct {
 	builderCallees            *builder.ListBuilder
 }
 
-func newTableBuilder(mem memory.Allocator) *tableBuilder {
+func newTableBuilder(mem memory.Allocator, rowCountEstimate int) *tableBuilder {
 	schema := arrow.NewSchema([]arrow.Field{
 		{Name: TableFieldMappingFile, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint16, ValueType: arrow.BinaryTypes.String}},
 		{Name: TableFieldMappingBuildID, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint16, ValueType: arrow.BinaryTypes.String}},
@@ -244,8 +254,8 @@ func newTableBuilder(mem memory.Allocator) *tableBuilder {
 		mem:       mem,
 		addresses: map[string]map[uint64]int{},
 		functions: map[string]int{},
-		callers:   make([]map[int64]struct{}, 10),
-		callees:   make([]map[int64]struct{}, 10),
+		callers:   make([]map[int64]struct{}, rowCountEstimate),
+		callees:   make([]map[int64]struct{}, rowCountEstimate),
 
 		rb:                        rb,
 		schema:                    schema,
@@ -270,20 +280,29 @@ func newTableBuilder(mem memory.Allocator) *tableBuilder {
 
 func (tb *tableBuilder) populateCallerAndCalleeData() {
 	for i := range tb.builderFunctionName.Len() {
-		callers := maps.Keys(tb.callers[i])
-		if len(callers) == 0 {
-			tb.builderCallers.AppendNull()
+
+		if len(tb.callers) > i {
+			callers := maps.Keys(tb.callers[i])
+			if len(callers) == 0 {
+				tb.builderCallers.AppendNull()
+			} else {
+				tb.builderCallers.Append(true)
+				tb.builderCallers.ValueBuilder().(*builder.OptInt64Builder).AppendData(callers)
+			}
 		} else {
-			tb.builderCallers.Append(true)
-			tb.builderCallers.ValueBuilder().(*builder.OptInt64Builder).AppendData(callers)
+			tb.builderCallers.AppendNull()
 		}
 
-		callees := maps.Keys(tb.callees[i])
-		if len(callees) == 0 {
-			tb.builderCallees.AppendNull()
+		if len(tb.callees) > i {
+			callees := maps.Keys(tb.callees[i])
+			if len(callees) == 0 {
+				tb.builderCallees.AppendNull()
+			} else {
+				tb.builderCallees.Append(true)
+				tb.builderCallees.ValueBuilder().(*builder.OptInt64Builder).AppendData(callees)
+			}
 		} else {
-			tb.builderCallees.Append(true)
-			tb.builderCallees.ValueBuilder().(*builder.OptInt64Builder).AppendData(callees)
+			tb.builderCallees.AppendNull()
 		}
 	}
 }
@@ -429,8 +448,8 @@ func (tb *tableBuilder) addCaller(idx int, caller int64) {
 	if caller == -1 || idx == -1 {
 		return
 	}
-	if len(tb.callees) <= idx {
-		tb.callees = append(tb.callees, map[int64]struct{}{})
+	for len(tb.callers) <= idx+1 {
+		tb.callers = append(tb.callers, map[int64]struct{}{})
 	}
 	if tb.callers[idx] == nil {
 		tb.callers[idx] = map[int64]struct{}{}
@@ -442,7 +461,7 @@ func (tb *tableBuilder) addCallee(idx int, callee int64) {
 	if callee == -1 || idx == -1 {
 		return
 	}
-	if len(tb.callees) <= idx {
+	for len(tb.callees) <= idx+1 {
 		tb.callees = append(tb.callees, map[int64]struct{}{})
 	}
 	if tb.callees[idx] == nil {
