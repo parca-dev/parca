@@ -1491,7 +1491,7 @@ func (q *Querier) GetProfileMetadataMappings(
 
 			values := locations.ListValues().(*array.Dictionary)
 
-			compactedDict, err := compactDictionary.CompactDictionary(memory.DefaultAllocator, values)
+			compactedDict, err := compactDictionary.CompactDictionary(q.pool, values)
 			if err != nil {
 				fmt.Println("failed to compact dictionary", err)
 				return err
