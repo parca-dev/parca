@@ -15,7 +15,7 @@ import {useEffect, useMemo, useState} from 'react';
 
 import {QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata, useParcaContext, useURLState} from '@parca/components';
-import {saveAsBlob, type NavigateFunction} from '@parca/utilities';
+import {saveAsBlob, saveUrlAs, type NavigateFunction} from '@parca/utilities';
 
 import {FIELD_FUNCTION_NAME} from './ProfileIcicleGraph/IcicleGraphArrow';
 import {ProfileSource} from './ProfileSource';
@@ -157,9 +157,22 @@ export const ProfileViewWithData = ({
 
     try {
       setPprofDownloading(true);
-      const blob = await downloadPprof(profileSource.QueryRequest(), queryClient, metadata);
-      saveAsBlob(blob, `profile.pb.gz`);
-      setPprofDownloading(false);
+      const exp = await downloadPprof(profileSource.QueryRequest(), queryClient, metadata);
+      const filename = `profile.pb.gz`;
+
+      if (exp.content.oneofKind === 'inline') {
+        const blob = new Blob([exp.content.inline.content], {type: 'application/octet-stream'});
+        saveAsBlob(blob, filename);
+        setPprofDownloading(false);
+        return;
+      }
+
+      if (exp.content.oneofKind === 'url') {
+        const url = exp.content.url.url;
+        saveUrlAs(url, filename);
+        setPprofDownloading(false);
+        return;
+      }
     } catch (error) {
       setPprofDownloading(false);
       console.error('Error while querying', error);

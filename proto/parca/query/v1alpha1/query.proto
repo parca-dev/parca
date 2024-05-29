@@ -219,7 +219,7 @@ message QueryRequest {
     REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED = 0 [deprecated = true];
 
     // REPORT_TYPE_PPROF unspecified
-    REPORT_TYPE_PPROF = 1;
+    REPORT_TYPE_PPROF = 1 [deprecated = true];
 
     // REPORT_TYPE_TOP unspecified
     REPORT_TYPE_TOP = 2;
@@ -241,6 +241,9 @@ message QueryRequest {
 
     // REPORT_TYPE_PROFILE_METADATA contains metadata about the profile i.e. binaries, labels
     REPORT_TYPE_PROFILE_METADATA = 8;
+
+    // REPORT_TYPE_EXPORT contains the profile as a downloadable file
+    REPORT_TYPE_EXPORT = 9;
   }
 
   // report_type is the type of report to return
@@ -266,6 +269,18 @@ message QueryRequest {
 
   // a set of filter to apply to the query request
   repeated Filter filter = 12;
+
+  // the format to respond the data in for the export
+  optional Format export_format = 13;
+}
+
+// format is the format to offer the data in for the download
+enum Format {
+  // FORMAT_UNSPECIFIED unspecified
+  FORMAT_UNSPECIFIED = 0;
+
+  // DOWNLOAD_FORMAT_PPROF pprof format
+  FORMAT_PPROF = 1;
 }
 
 // Filter to apply to the query request
@@ -579,6 +594,9 @@ message QueryResponse {
 
     // profile_metadata contains metadata about the profile i.e. binaries, labels
     ProfileMetadata profile_metadata = 14;
+
+    // export is the response for an export request.
+    Export export = 15;
   }
 
   // total is the total number of samples shown in the report.
@@ -586,6 +604,37 @@ message QueryResponse {
 
   // filtered is the number of samples filtered out of the report.
   int64 filtered = 10;
+}
+
+// Export is the response for an export request.
+message Export {
+  // The format of the download.
+  Format format = 1;
+
+  // The type of download.
+  oneof content {
+    // InlineExport is the response for an export request where actual content
+    // is inlined in the response.
+    InlineExport inline = 2;
+
+    // URL is the response for an export request where actual content
+    // is to be downloaded from the provided URL.
+    URLExport url = 3;
+  }
+}
+
+// URLExport is the response for an export request where actual content is
+// to be downloaded from the provided URL.
+message URLExport {
+  // The URL to download the content from.
+  string url = 1;
+}
+
+// InlineExport is the response for an export request where actual content is
+// inlined in the response.
+message InlineExport {
+  // Content of the export.
+  bytes content = 1;
 }
 
 // SeriesRequest is unimplemented

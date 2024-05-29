@@ -113,6 +113,8 @@ type Flags struct {
 
 	Storage FlagsStorage `embed:"" prefix:"storage-"`
 
+	ObjectStorageExport bool `default:"false" help:"Export profiles to object storage first before serving them via a signed URL."`
+
 	Symbolizer FlagsSymbolizer `embed:"" prefix:"symbolizer-"`
 
 	Debuginfo  FlagsDebuginfo  `embed:"" prefix:"debuginfo-"`
@@ -455,6 +457,9 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			debuginfoBucket,
 			debuginfodClients,
 		),
+		flags.ObjectStorageExport,
+		signedRequestsClient,
+		bucket,
 	)
 
 	t := telemetryservice.NewTelemetry(
