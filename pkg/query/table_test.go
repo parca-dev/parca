@@ -15,7 +15,6 @@ package query
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/apache/arrow/go/v16/arrow"
@@ -155,30 +154,20 @@ func TestTableCallView(t *testing.T) {
 		}
 	}
 
-	fmt.Println("nodeIndex unwind failed", nodeIndex)
-	fmt.Println("child1Index ChunkNotFound", child1Index)
-	fmt.Println("child2Index PcNotCovered", child2Index)
-
 	callerValues := callersColumn.ListValues().(*array.Int64)
 	calleeValues := calleesColumn.ListValues().(*array.Int64)
 
 	beg, end := callersColumn.ValueOffsets(nodeIndex)
 
-	fmt.Println("callerValues ", callerValues.IsValid(1))
+	require.Equal(t, 0, int(end-beg))
 
-	// for i := beg; i < end; i++ {
-	// 	fmt.Println("Caller ", functionNameColumnDict.Value(functionNameColumn.GetValueIndex(int(callerValues.Value(int(i))))))
-	// }
+	beg, end = callersColumn.ValueOffsets(child1Index)
+	require.Equal(t, 1, int(end-beg))
+	require.Equal(t, "unwind failed", functionNameColumnDict.Value(functionNameColumn.GetValueIndex(int(callerValues.Value(int(beg))))))
 
-	// require.Equal(t, 0, int(end-beg))
-
-	// beg, end = callersColumn.ValueOffsets(child1Index)
-	// require.Equal(t, 1, int(end-beg))
-	// require.Equal(t, "unwind failed", functionNameColumnDict.Value(functionNameColumn.GetValueIndex(int(callerValues.Value(int(beg))))))
-
-	// beg, end = callersColumn.ValueOffsets(child2Index)
-	// require.Equal(t, 1, int(end-beg))
-	// require.Equal(t, "unwind failed", functionNameColumnDict.Value(functionNameColumn.GetValueIndex(int(callerValues.Value(int(beg))))))
+	beg, end = callersColumn.ValueOffsets(child2Index)
+	require.Equal(t, 1, int(end-beg))
+	require.Equal(t, "unwind failed", functionNameColumnDict.Value(functionNameColumn.GetValueIndex(int(callerValues.Value(int(beg))))))
 
 	beg, end = calleesColumn.ValueOffsets(nodeIndex)
 
@@ -186,7 +175,7 @@ func TestTableCallView(t *testing.T) {
 	for i := beg; i < end; i++ {
 		actualValues = append(actualValues, functionNameColumnDict.Value(functionNameColumn.GetValueIndex(int(calleeValues.Value(int(i))))))
 	}
-	fmt.Println("Callees ", actualValues)
+
 	require.Equal(t, 2, int(end-beg))
 	require.Contains(t, actualValues, "ChunkNotFound")
 	require.Contains(t, actualValues, "PcNotCovered")

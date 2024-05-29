@@ -26,6 +26,7 @@ import (
 	"github.com/polarsignals/frostdb/pqarrow/builder"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/exp/maps"
 
 	queryv1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
@@ -192,8 +193,8 @@ type tableBuilder struct {
 	cumulative int64
 	addresses  map[string]map[uint64]int
 	functions  map[string]int
-	callers    map[int]map[int]bool
-	callees    map[int]map[int]bool
+	callers    []map[int64]struct{}
+	callees    []map[int64]struct{}
 
 	rb     *builder.RecordBuilder
 	schema *arrow.Schema
@@ -243,8 +244,8 @@ func newTableBuilder(mem memory.Allocator) *tableBuilder {
 		mem:       mem,
 		addresses: map[string]map[uint64]int{},
 		functions: map[string]int{},
-		callers:   map[int]map[int]bool{},
-		callees:   map[int]map[int]bool{},
+		callers:   make([]map[int64]struct{}, 10),
+		callees:   make([]map[int64]struct{}, 10),
 
 		rb:                        rb,
 		schema:                    schema,
@@ -267,29 +268,22 @@ func newTableBuilder(mem memory.Allocator) *tableBuilder {
 	return tb
 }
 
-func getKeys(m map[int]bool) []int64 {
-	keys := make([]int64, 0, len(m))
-	for k := range m {
-		keys = append(keys, int64(k))
-	}
-	return keys
-}
-
 func (tb *tableBuilder) populateCallerAndCalleeData() {
 	for i := range tb.builderFunctionName.Len() {
-
-		if _, ok := tb.callers[i]; !ok {
+		callers := maps.Keys(tb.callers[i])
+		if len(callers) == 0 {
 			tb.builderCallers.AppendNull()
 		} else {
 			tb.builderCallers.Append(true)
-			tb.builderCallers.ValueBuilder().(*builder.OptInt64Builder).AppendData(getKeys(tb.callers[i]))
+			tb.builderCallers.ValueBuilder().(*builder.OptInt64Builder).AppendData(callers)
 		}
 
-		if _, ok := tb.callees[i]; !ok {
+		callees := maps.Keys(tb.callees[i])
+		if len(callees) == 0 {
 			tb.builderCallees.AppendNull()
 		} else {
 			tb.builderCallees.Append(true)
-			tb.builderCallees.ValueBuilder().(*builder.OptInt64Builder).AppendData(getKeys(tb.callees[i]))
+			tb.builderCallees.ValueBuilder().(*builder.OptInt64Builder).AppendData(callees)
 		}
 	}
 }
@@ -404,9 +398,9 @@ func (tb *tableBuilder) appendRow(
 				tb.builderFlatDiff.Append(0)
 			}
 		case TableFieldCallers:
-			tb.addCaller(previousTableRow, currentTableRow)
+			tb.addCaller(previousTableRow, int64(currentTableRow))
 		case TableFieldCallees:
-			tb.addCallee(currentTableRow, previousTableRow)
+			tb.addCallee(currentTableRow, int64(previousTableRow))
 		default:
 			panic(fmt.Sprintf("unknown field %s", tb.schema.Field(j).Name))
 		}
@@ -427,26 +421,32 @@ func (tb *tableBuilder) mergeRow(r *profile.RecordReader, mergeRow, sampleRow, l
 		}
 	}
 
-	tb.addCaller(previousTableRow, currentTableRow)
-	tb.addCallee(currentTableRow, previousTableRow)
+	tb.addCaller(previousTableRow, int64(currentTableRow))
+	tb.addCallee(currentTableRow, int64(previousTableRow))
 }
 
-func (tb *tableBuilder) addCaller(key, caller int) {
-	if caller == -1 || key == -1 {
+func (tb *tableBuilder) addCaller(idx int, caller int64) {
+	if caller == -1 || idx == -1 {
 		return
 	}
-	if _, ok := tb.callers[key]; !ok {
-		tb.callers[key] = map[int]bool{}
+	if len(tb.callees) <= idx {
+		tb.callees = append(tb.callees, map[int64]struct{}{})
 	}
-	tb.callers[key][caller] = true
+	if tb.callers[idx] == nil {
+		tb.callers[idx] = map[int64]struct{}{}
+	}
+	tb.callers[idx][caller] = struct{}{}
 }
 
-func (tb *tableBuilder) addCallee(key, callee int) {
-	if callee == -1 || key == -1 {
+func (tb *tableBuilder) addCallee(idx int, callee int64) {
+	if callee == -1 || idx == -1 {
 		return
 	}
-	if _, ok := tb.callees[key]; !ok {
-		tb.callees[key] = map[int]bool{}
+	if len(tb.callees) <= idx {
+		tb.callees = append(tb.callees, map[int64]struct{}{})
 	}
-	tb.callees[key][callee] = true
+	if tb.callees[idx] == nil {
+		tb.callees[idx] = map[int64]struct{}{}
+	}
+	tb.callees[idx][callee] = struct{}{}
 }
