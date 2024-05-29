@@ -1523,7 +1523,6 @@ func (q *Querier) GetProfileMetadataMappings(
 
 func (q *Querier) GetProfileMetadataLabels(
 	ctx context.Context,
-	match []string,
 	start, end time.Time,
 ) ([]string, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/Labels")

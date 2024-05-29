@@ -49,7 +49,7 @@ type Querier interface {
 	QuerySingle(ctx context.Context, query string, time time.Time, invertCallStacks bool) (profile.Profile, error)
 	QueryMerge(ctx context.Context, query string, start, end time.Time, aggregateByLabels, invertCallStacks bool) (profile.Profile, error)
 	GetProfileMetadataMappings(ctx context.Context, query string, start, end time.Time) ([]string, error)
-	GetProfileMetadataLabels(ctx context.Context, match []string, start, end time.Time) ([]string, error)
+	GetProfileMetadataLabels(ctx context.Context, start, end time.Time) ([]string, error)
 }
 
 var (
@@ -283,7 +283,6 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 				return nil, err
 			}
 
-
 			profileMetadata = &pb.ProfileMetadata{
 				MappingFiles: mappingFiles,
 				Labels:       labels,
@@ -300,9 +299,12 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 				return nil, err
 			}
 
+			mergedMappingFiles := KWayMerge(mappingFiles_a, mappingFiles_b)
+			mergedLabels := KWayMerge(labels_a, labels_b)
+
 			profileMetadata = &pb.ProfileMetadata{
-				MappingFiles: append(mappingFiles_a, mappingFiles_b...),
-				Labels:       append(labels_a, labels_b...),
+				MappingFiles: mergedMappingFiles,
+				Labels:       mergedLabels,
 			}
 		default:
 			return nil, status.Error(codes.InvalidArgument, "unknown query mode")
@@ -944,10 +946,37 @@ func getMappingFilesAndLabels(
 		return nil, nil, err
 	}
 
-	labels, err := q.GetProfileMetadataLabels(ctx, []string{}, startTime, endTime)
+	labels, err := q.GetProfileMetadataLabels(ctx, startTime, endTime)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	return mappingFiles, labels, nil
+}
+
+func KWayMerge(arr1, arr2 []string) []string {
+	merged := make([]string, 0, len(arr1)+len(arr2))
+	i, j := 0, 0
+
+	for i < len(arr1) && j < len(arr2) {
+		if arr1[i] < arr2[j] {
+			merged = append(merged, arr1[i])
+			i++
+		} else {
+			merged = append(merged, arr2[j])
+			j++
+		}
+	}
+
+	for i < len(arr1) {
+		merged = append(merged, arr1[i])
+		i++
+	}
+
+	for j < len(arr2) {
+		merged = append(merged, arr2[j])
+		j++
+	}
+
+	return merged
 }

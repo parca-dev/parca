@@ -1713,3 +1713,12 @@ func BenchmarkFilterData(t *testing.B) {
 		}
 	}
 }
+
+func TestKwayMerge(t *testing.T) {
+	arr1 := []string{"a", "c", "e"}
+	arr2 := []string{"f", "i", "m", "o", "r"}
+
+	merged := KWayMerge(arr1, arr2)
+
+	require.Equal(t, []string{"a", "c", "e", "f", "i", "m", "o", "r"}, merged)
+}
