@@ -113,13 +113,14 @@ func generateTableArrowRecord(
 	tb := newTableBuilder(mem)
 	defer tb.Release()
 
-	row := 0
+	tableRow := 0
 
 	profileReader := profile.NewReader(p)
 	for _, r := range profileReader.RecordReaders {
 		tb.cumulative += math.Int64.Sum(r.Value)
 
 		for sampleRow := 0; sampleRow < int(r.Record.NumRows()); sampleRow++ {
+			previousTableRow := -1
 			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(sampleRow)
 			for locationRow := int(lOffsetStart); locationRow < int(lOffsetEnd); locationRow++ {
 				if r.Locations.ListValues().IsNull(locationRow) {
@@ -140,18 +141,20 @@ func generateTableArrowRecord(
 					// If we have seen the address before, we merge the address with the existing row by summing the values.
 					// Note for Go developers: This won't panic. Tests have shown that if the first check fails, the second check won't be run.
 					if cr, ok := tb.addresses[unsafeString(buildID)][addr]; !ok {
-						if err := tb.appendRow(r, sampleRow, locationRow, -1, isLeaf); err != nil {
+						if err := tb.appendRow(r, sampleRow, locationRow, -1, tableRow, previousTableRow, isLeaf); err != nil {
 							return nil, 0, err
 						}
 
 						if _, ok := tb.addresses[unsafeString(buildID)]; !ok {
-							tb.addresses[string(buildID)] = map[uint64]int{addr: row}
+							tb.addresses[string(buildID)] = map[uint64]int{addr: tableRow}
 						} else {
-							tb.addresses[string(buildID)][addr] = row
+							tb.addresses[string(buildID)][addr] = tableRow
 						}
-						row++
+						previousTableRow = tableRow
+						tableRow++
 					} else {
-						tb.mergeRow(r, cr, sampleRow, locationRow, -1, isLeaf)
+						tb.mergeRow(r, cr, sampleRow, locationRow, -1, tb.addresses[unsafeString(buildID)][addr], previousTableRow, isLeaf)
+						previousTableRow = tb.addresses[unsafeString(buildID)][addr]
 					}
 				} else {
 					// The location has lines, we therefore compare its function names.
@@ -163,13 +166,15 @@ func generateTableArrowRecord(
 						if r.Line.IsValid(lineRow) && r.LineFunctionNameIndices.IsValid(lineRow) {
 							fn := r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(lineRow)))
 							if cr, ok := tb.functions[unsafeString(fn)]; !ok {
-								if err := tb.appendRow(r, sampleRow, locationRow, lineRow, isLeaf); err != nil {
+								if err := tb.appendRow(r, sampleRow, locationRow, lineRow, tableRow, previousTableRow, isLeaf); err != nil {
 									return nil, 0, err
 								}
-								tb.functions[string(fn)] = row
-								row++
+								tb.functions[string(fn)] = tableRow
+								previousTableRow = tableRow
+								tableRow++
 							} else {
-								tb.mergeRow(r, cr, sampleRow, locationRow, lineRow, isLeaf)
+								tb.mergeRow(r, cr, sampleRow, locationRow, lineRow, tb.functions[unsafeString(fn)], previousTableRow, isLeaf)
+								previousTableRow = tb.functions[unsafeString(fn)]
 							}
 						}
 					}
@@ -187,8 +192,8 @@ type tableBuilder struct {
 	cumulative int64
 	addresses  map[string]map[uint64]int
 	functions  map[string]int
-	callers    map[string]map[string]bool
-	callees    map[string]map[string]bool
+	callers    map[int]map[int]bool
+	callees    map[int]map[int]bool
 
 	rb     *builder.RecordBuilder
 	schema *arrow.Schema
@@ -238,8 +243,8 @@ func newTableBuilder(mem memory.Allocator) *tableBuilder {
 		mem:       mem,
 		addresses: map[string]map[uint64]int{},
 		functions: map[string]int{},
-		callers:   map[string]map[string]bool{},
-		callees:   map[string]map[string]bool{},
+		callers:   map[int]map[int]bool{},
+		callees:   map[int]map[int]bool{},
 
 		rb:                        rb,
 		schema:                    schema,
@@ -262,44 +267,31 @@ func newTableBuilder(mem memory.Allocator) *tableBuilder {
 	return tb
 }
 
-func (tb *tableBuilder) populateCallerAndCalleeData() {
-	reverseFunctionsMap := map[int]string{}
-	for k, v := range tb.functions {
-		reverseFunctionsMap[v] = k
+func getKeys(m map[int]bool) []int64 {
+	keys := make([]int64, 0, len(m))
+	for k := range m {
+		keys = append(keys, int64(k))
 	}
+	return keys
+}
 
+func (tb *tableBuilder) populateCallerAndCalleeData() {
 	for i := range tb.builderFunctionName.Len() {
-		funcName := reverseFunctionsMap[i]
-		if funcName == "" {
-			tb.builderCallers.AppendNull()
-			tb.builderCallees.AppendNull()
-			continue
-		}
 
-		if _, ok := tb.callers[funcName]; !ok {
+		if _, ok := tb.callers[i]; !ok {
 			tb.builderCallers.AppendNull()
 		} else {
 			tb.builderCallers.Append(true)
-			callerIndices := tb.mapFunctionNameToIndex(tb.callers[funcName])
-			tb.builderCallers.ValueBuilder().(*builder.OptInt64Builder).AppendData(callerIndices)
+			tb.builderCallers.ValueBuilder().(*builder.OptInt64Builder).AppendData(getKeys(tb.callers[i]))
 		}
 
-		if _, ok := tb.callees[funcName]; !ok {
+		if _, ok := tb.callees[i]; !ok {
 			tb.builderCallees.AppendNull()
 		} else {
 			tb.builderCallees.Append(true)
-			calleeIndices := tb.mapFunctionNameToIndex(tb.callees[funcName])
-			tb.builderCallees.ValueBuilder().(*builder.OptInt64Builder).AppendData(calleeIndices)
+			tb.builderCallees.ValueBuilder().(*builder.OptInt64Builder).AppendData(getKeys(tb.callees[i]))
 		}
 	}
-}
-
-func (tb *tableBuilder) mapFunctionNameToIndex(funcs map[string]bool) []int64 {
-	indices := []int64{}
-	for k := range funcs {
-		indices = append(indices, int64(tb.functions[k]))
-	}
-	return indices
 }
 
 // NewRecord returns a new record from the builders.
@@ -314,7 +306,7 @@ func (tb *tableBuilder) Release() {
 
 func (tb *tableBuilder) appendRow(
 	r *profile.RecordReader,
-	sampleRow, locationRow, lineRow int,
+	sampleRow, locationRow, lineRow, currentTableRow, previousTableRow int,
 	leaf bool,
 ) error {
 	for j := range tb.rb.Fields() {
@@ -412,17 +404,9 @@ func (tb *tableBuilder) appendRow(
 				tb.builderFlatDiff.Append(0)
 			}
 		case TableFieldCallers:
-			if lineRow != -1 {
-				key := string(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(lineRow))))
-				caller := getCaller(r, sampleRow, locationRow, lineRow)
-				tb.addCaller(key, caller)
-			}
+			tb.addCaller(previousTableRow, currentTableRow)
 		case TableFieldCallees:
-			if lineRow != -1 {
-				key := string(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(lineRow))))
-				callee := getCallee(r, sampleRow, locationRow, lineRow)
-				tb.addCallee(key, callee)
-			}
+			tb.addCallee(currentTableRow, previousTableRow)
 		default:
 			panic(fmt.Sprintf("unknown field %s", tb.schema.Field(j).Name))
 		}
@@ -430,63 +414,7 @@ func (tb *tableBuilder) appendRow(
 	return nil
 }
 
-func getCallee(r *profile.RecordReader, sampleRow, locationRow, lineRow int) string {
-	locOffsetStart, _ := r.Locations.ValueOffsets(sampleRow)
-	walkingLocIndex := locationRow
-	walkingLineIndex := lineRow
-
-	for walkingLocIndex >= int(locOffsetStart) {
-		lineOffsetStart, _ := r.Lines.ValueOffsets(walkingLocIndex)
-
-		if walkingLineIndex > int(lineOffsetStart) {
-			if r.LineFunctionNameIndices.IsValid(walkingLineIndex - 1) {
-				return string(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(walkingLineIndex - 1))))
-			} else {
-				return ""
-			}
-		}
-
-		if walkingLocIndex == int(locOffsetStart) {
-			break
-		}
-
-		walkingLocIndex--
-		_, newLineOffsetEnd := r.Lines.ValueOffsets(walkingLocIndex)
-		walkingLineIndex = int(newLineOffsetEnd)
-	}
-
-	return ""
-}
-
-func getCaller(r *profile.RecordReader, sampleRow, locationRow, lineRow int) string {
-	_, locOffsetEnd := r.Locations.ValueOffsets(sampleRow)
-	walkingLocIndex := locationRow
-	walkingLineIndex := lineRow
-
-	for walkingLocIndex < int(locOffsetEnd)-1 {
-		_, lineOffsetEnd := r.Lines.ValueOffsets(walkingLocIndex)
-
-		if walkingLineIndex < (int(lineOffsetEnd)) {
-			if r.LineFunctionNameIndices.IsValid(walkingLineIndex + 1) {
-				return string(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(walkingLineIndex + 1))))
-			} else {
-				return ""
-			}
-		}
-
-		if walkingLocIndex == int(locOffsetEnd) {
-			break
-		}
-
-		walkingLocIndex++
-		newLineOffsetStart, _ := r.Lines.ValueOffsets(walkingLocIndex)
-		walkingLineIndex = int(newLineOffsetStart)
-	}
-
-	return ""
-}
-
-func (tb *tableBuilder) mergeRow(r *profile.RecordReader, mergeRow, sampleRow, locationRow, lineRow int, isLeaf bool) {
+func (tb *tableBuilder) mergeRow(r *profile.RecordReader, mergeRow, sampleRow, locationRow, lineRow, currentTableRow, previousTableRow int, isLeaf bool) {
 	tb.builderCumulative.Add(mergeRow, r.Value.Value(sampleRow))
 	if r.Diff.Value(sampleRow) != 0 {
 		tb.builderCumulativeDiff.Add(mergeRow, r.Diff.Value(sampleRow))
@@ -499,29 +427,26 @@ func (tb *tableBuilder) mergeRow(r *profile.RecordReader, mergeRow, sampleRow, l
 		}
 	}
 
-	if lineRow != -1 {
-		key := string(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(lineRow))))
-		tb.addCaller(key, getCaller(r, sampleRow, locationRow, lineRow))
-		tb.addCallee(key, getCallee(r, sampleRow, locationRow, lineRow))
-	}
+	tb.addCaller(previousTableRow, currentTableRow)
+	tb.addCallee(currentTableRow, previousTableRow)
 }
 
-func (tb *tableBuilder) addCaller(key, caller string) {
-	if caller == "" {
+func (tb *tableBuilder) addCaller(key, caller int) {
+	if caller == -1 || key == -1 {
 		return
 	}
 	if _, ok := tb.callers[key]; !ok {
-		tb.callers[key] = map[string]bool{}
+		tb.callers[key] = map[int]bool{}
 	}
 	tb.callers[key][caller] = true
 }
 
-func (tb *tableBuilder) addCallee(key, callee string) {
-	if callee == "" {
+func (tb *tableBuilder) addCallee(key, callee int) {
+	if callee == -1 || key == -1 {
 		return
 	}
 	if _, ok := tb.callees[key]; !ok {
-		tb.callees[key] = map[string]bool{}
+		tb.callees[key] = map[int]bool{}
 	}
 	tb.callees[key][callee] = true
 }
