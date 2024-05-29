@@ -299,8 +299,8 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 				return nil, err
 			}
 
-			mergedMappingFiles := KWayMerge(mappingFiles_a, mappingFiles_b)
-			mergedLabels := KWayMerge(labels_a, labels_b)
+			mergedMappingFiles := MergeTwoSortedSlices(mappingFiles_a, mappingFiles_b)
+			mergedLabels := MergeTwoSortedSlices(labels_a, labels_b)
 
 			profileMetadata = &pb.ProfileMetadata{
 				MappingFiles: mergedMappingFiles,
@@ -954,27 +954,37 @@ func getMappingFilesAndLabels(
 	return mappingFiles, labels, nil
 }
 
-func KWayMerge(arr1, arr2 []string) []string {
+// This is a deduplicating k-way merge.
+// The two slices that are passed in are assumed to be sorted.
+func MergeTwoSortedSlices(arr1, arr2 []string) []string {
 	merged := make([]string, 0, len(arr1)+len(arr2))
 	i, j := 0, 0
 
 	for i < len(arr1) && j < len(arr2) {
 		if arr1[i] < arr2[j] {
-			merged = append(merged, arr1[i])
+			if len(merged) == 0 || merged[len(merged)-1] != arr1[i] {
+				merged = append(merged, arr1[i])
+			}
 			i++
 		} else {
-			merged = append(merged, arr2[j])
+			if len(merged) == 0 || merged[len(merged)-1] != arr2[j] {
+				merged = append(merged, arr2[j])
+			}
 			j++
 		}
 	}
 
 	for i < len(arr1) {
-		merged = append(merged, arr1[i])
+		if len(merged) == 0 || merged[len(merged)-1] != arr1[i] {
+			merged = append(merged, arr1[i])
+		}
 		i++
 	}
 
 	for j < len(arr2) {
-		merged = append(merged, arr2[j])
+		if len(merged) == 0 || merged[len(merged)-1] != arr2[j] {
+			merged = append(merged, arr2[j])
+		}
 		j++
 	}
 
