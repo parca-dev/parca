@@ -1491,7 +1491,7 @@ func (q *Querier) GetProfileMetadataMappings(
 
 			values := locations.ListValues().(*array.Dictionary)
 
-			compactedDict, err := compactDictionary.CompactDictionary(memory.DefaultAllocator, values)
+			compactedDict, err := compactDictionary.CompactDictionary(q.pool, values)
 			if err != nil {
 				fmt.Println("failed to compact dictionary", err)
 				return err
@@ -1523,7 +1523,6 @@ func (q *Querier) GetProfileMetadataMappings(
 
 func (q *Querier) GetProfileMetadataLabels(
 	ctx context.Context,
-	match []string,
 	start, end time.Time,
 ) ([]string, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/Labels")
