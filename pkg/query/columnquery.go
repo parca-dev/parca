@@ -946,10 +946,7 @@ func getMappingFilesAndLabels(
 		return nil, nil, err
 	}
 
-	labels, err := q.GetProfileMetadataLabels(ctx, startTime, endTime)
-	if err != nil {
-		return nil, nil, err
-	}
+	labels := []string{}
 
 	return mappingFiles, labels, nil
 }
