@@ -40,6 +40,7 @@ import SortBySelect from './ActionButtons/SortBySelect';
 import IcicleGraph from './IcicleGraph';
 import IcicleGraphArrow, {FIELD_FUNCTION_NAME} from './IcicleGraphArrow';
 import ColorStackLegend from './IcicleGraphArrow/ColorStackLegend';
+import useMappingList from './IcicleGraphArrow/useMappingList';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 
@@ -226,6 +227,8 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const isColorStackLegendEnabled = selectQueryParam('color_stack_legend') === 'true';
 
+  const mappingsList = useMappingList(mappings);
+
   const [storeSortBy = FIELD_FUNCTION_NAME] = useURLState({
     param: 'sort_by',
     navigateTo,
@@ -391,6 +394,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
           sortBy={storeSortBy as string}
           flamegraphLoading={isLoading}
           isHalfScreen={isHalfScreen}
+          mappingsListFromMetadata={mappingsList}
         />
       );
   }, [
@@ -408,6 +412,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     storeSortBy,
     isHalfScreen,
     isDarkMode,
+    mappingsList,
   ]);
 
   if (isTrimmed) {

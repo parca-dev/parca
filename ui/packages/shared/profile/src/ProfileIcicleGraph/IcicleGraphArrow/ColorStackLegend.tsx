@@ -19,9 +19,10 @@ import cx from 'classnames';
 import {useURLState} from '@parca/components';
 import {USER_PREFERENCES, useCurrentColorProfile, useUserPreference} from '@parca/hooks';
 import {EVERYTHING_ELSE, selectDarkMode, useAppSelector} from '@parca/store';
-import {getLastItem, type NavigateFunction} from '@parca/utilities';
+import {type NavigateFunction} from '@parca/utilities';
 
 import {getMappingColors} from '.';
+import useMappingList from './useMappingList';
 
 interface Props {
   mappings?: string[];
@@ -46,25 +47,7 @@ const ColorStackLegend = ({
     navigateTo,
   });
 
-  const mappingsList = useMemo(() => {
-    if (mappings === undefined) {
-      return [];
-    }
-    const list =
-      mappings
-        ?.map(mapping => {
-          return getLastItem(mapping) as string;
-        })
-        .flat() ?? [];
-
-    // We add a EVERYTHING ELSE mapping to the list.
-    list.push('');
-
-    // We sort the mappings alphabetically to make sure that the order is always the same.
-    list.sort((a, b) => a.localeCompare(b));
-
-    return list;
-  }, [mappings]);
+  const mappingsList = useMappingList(mappings);
 
   const mappingColors = useMemo(() => {
     const colors = getMappingColors(mappingsList, isDarkMode, currentColorProfile);

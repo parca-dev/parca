@@ -72,6 +72,7 @@ interface IcicleGraphArrowProps {
   sortBy: string;
   flamegraphLoading: boolean;
   isHalfScreen: boolean;
+  mappingsListFromMetadata: string[];
 }
 
 export const getMappingColors = (
@@ -99,6 +100,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   navigateTo,
   sortBy,
   flamegraphLoading,
+  mappingsListFromMetadata,
 }: IcicleGraphArrowProps): React.JSX.Element {
   const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
   const dispatch = useAppDispatch();
@@ -126,7 +128,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
   const {compareMode} = useProfileViewContext();
-  // const isColorStackLegendEnabled = selectQueryParam('color_stack_legend') === 'true';
   const currentColorProfile = useCurrentColorProfile();
   const colorForSimilarNodes = currentColorProfile.colorForSimilarNodes;
 
@@ -209,7 +210,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     }
 
     // first time hiding a binary
-    const newMappingsList = mappingsList.filter(mapping => mapping !== binaryToRemove);
+    const newMappingsList = mappingsListFromMetadata.filter(mapping => mapping !== binaryToRemove);
     setBinaryFrameFilter(newMappingsList);
   };
 
