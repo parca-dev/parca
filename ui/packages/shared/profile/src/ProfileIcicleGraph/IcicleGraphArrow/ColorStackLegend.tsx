@@ -25,7 +25,7 @@ import {getMappingColors} from '.';
 
 interface Props {
   mappings?: string[];
-  mappingsLoading?: boolean;
+  loading?: boolean;
   navigateTo?: NavigateFunction;
   compareMode?: boolean;
 }
@@ -34,7 +34,7 @@ const ColorStackLegend = ({
   mappings,
   navigateTo,
   compareMode = false,
-  mappingsLoading,
+  loading,
 }: Props): React.JSX.Element => {
   const isDarkMode = useAppSelector(selectDarkMode);
   const currentColorProfile = useCurrentColorProfile();
@@ -83,7 +83,7 @@ const ColorStackLegend = ({
     });
   }, [mappingColors]);
 
-  if (mappingColors === undefined && mappingsLoading === false) {
+  if (stackColorArray.length === 0 && loading === false) {
     return <></>;
   }
 
