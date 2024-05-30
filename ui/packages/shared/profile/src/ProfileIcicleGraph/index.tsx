@@ -40,6 +40,7 @@ import SortBySelect from './ActionButtons/SortBySelect';
 import IcicleGraph from './IcicleGraph';
 import IcicleGraphArrow, {FIELD_FUNCTION_NAME} from './IcicleGraphArrow';
 import ColorStackLegend from './IcicleGraphArrow/ColorStackLegend';
+import useMappingList from './IcicleGraphArrow/useMappingList';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 
@@ -220,12 +221,13 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   width,
   isHalfScreen,
   mappings,
-  mappingsLoading,
 }: ProfileIcicleGraphProps): JSX.Element {
   const {onError, authenticationErrorMessage, isDarkMode} = useParcaContext();
   const {compareMode} = useProfileViewContext();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const isColorStackLegendEnabled = selectQueryParam('color_stack_legend') === 'true';
+
+  const mappingsList = useMappingList(mappings);
 
   const [storeSortBy = FIELD_FUNCTION_NAME] = useURLState({
     param: 'sort_by',
@@ -327,13 +329,16 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     isLoading,
   ]);
 
+  const loadingState =
+    !loading && (arrow !== undefined || graph !== undefined) && mappings !== undefined;
+
   useEffect(() => {
-    if (!loading && (arrow !== undefined || graph !== undefined)) {
+    if (loadingState) {
       setIsLoading(false);
     } else {
       setIsLoading(true);
     }
-  }, [loading, arrow, graph]);
+  }, [loadingState]);
 
   if (error != null) {
     onError?.(error);
@@ -389,6 +394,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
           sortBy={storeSortBy as string}
           flamegraphLoading={isLoading}
           isHalfScreen={isHalfScreen}
+          mappingsListFromMetadata={mappingsList}
         />
       );
   }, [
@@ -396,16 +402,17 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     graph,
     arrow,
     total,
+    loading,
+    width,
     filtered,
     curPath,
     setNewCurPath,
     profileType,
     navigateTo,
-    width,
     storeSortBy,
     isHalfScreen,
     isDarkMode,
-    loading,
+    mappingsList,
   ]);
 
   if (isTrimmed) {
@@ -427,7 +434,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
             navigateTo={navigateTo}
             compareMode={compareMode}
             mappings={mappings}
-            mappingsLoading={mappingsLoading}
+            loading={isLoading}
           />
         )}
         <div className="min-h-48" id="h-icicle-graph">
