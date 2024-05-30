@@ -19,7 +19,6 @@ import {AnimatePresence, motion} from 'framer-motion';
 import {Flamegraph, FlamegraphArrow} from '@parca/client';
 import {
   Button,
-  IcicleActionButtonPlaceholder,
   IcicleGraphSkeleton,
   IconButton,
   useParcaContext,
@@ -27,7 +26,12 @@ import {
 } from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
-import {capitalizeOnlyFirstLetter, divide, type NavigateFunction} from '@parca/utilities';
+import {
+  capitalizeOnlyFirstLetter,
+  divide,
+  selectQueryParam,
+  type NavigateFunction,
+} from '@parca/utilities';
 
 import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
 import DiffLegend from '../components/DiffLegend';
@@ -35,6 +39,7 @@ import GroupByDropdown from './ActionButtons/GroupByDropdown';
 import SortBySelect from './ActionButtons/SortBySelect';
 import IcicleGraph from './IcicleGraph';
 import IcicleGraphArrow, {FIELD_FUNCTION_NAME} from './IcicleGraphArrow';
+import ColorStackLegend from './IcicleGraphArrow/ColorStackLegend';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 
@@ -55,6 +60,7 @@ interface ProfileIcicleGraphProps {
   error?: any;
   isHalfScreen: boolean;
   mappings?: string[];
+  mappingsLoading?: boolean;
 }
 
 const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
@@ -214,10 +220,12 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   width,
   isHalfScreen,
   mappings,
+  mappingsLoading,
 }: ProfileIcicleGraphProps): JSX.Element {
   const {onError, authenticationErrorMessage, isDarkMode} = useParcaContext();
   const {compareMode} = useProfileViewContext();
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const isColorStackLegendEnabled = selectQueryParam('color_stack_legend') === 'true';
 
   const [storeSortBy = FIELD_FUNCTION_NAME] = useURLState({
     param: 'sort_by',
@@ -262,20 +270,11 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   }, [graph, arrow, filtered, total]);
 
   useEffect(() => {
-    if (isLoading && setActionButtons !== undefined) {
-      setActionButtons(<IcicleActionButtonPlaceholder isHalfScreen={isHalfScreen} />);
-      return;
-    }
-
-    if (setActionButtons === undefined) {
-      return;
-    }
-
-    setActionButtons(
+    setActionButtons?.(
       <div className="flex w-full justify-end gap-2 pb-2">
         <div className="ml-2 flex w-full flex-col items-start justify-between gap-2 md:flex-row md:items-end">
-          {arrow !== undefined && <GroupAndSortActionButtons navigateTo={navigateTo} />}
-          {arrow !== undefined && isHalfScreen ? (
+          {<GroupAndSortActionButtons navigateTo={navigateTo} />}
+          {isHalfScreen ? (
             <IconButton
               icon={isInvert ? 'ph:sort-ascending' : 'ph:sort-descending'}
               toolTipText={isInvert ? 'Original Call Stack' : 'Invert Call Stack'}
@@ -336,14 +335,6 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     }
   }, [loading, arrow, graph]);
 
-  if (isLoading) {
-    return (
-      <div className="h-auto overflow-clip">
-        <IcicleGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
-      </div>
-    );
-  }
-
   if (error != null) {
     onError?.(error);
 
@@ -354,11 +345,68 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     return <ErrorContent errorMessage={capitalizeOnlyFirstLetter(error.message)} />;
   }
 
-  if (graph === undefined && arrow === undefined)
-    return <div className="mx-auto text-center">No data...</div>;
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const icicleGraph = useMemo(() => {
+    if (isLoading) {
+      return (
+        <div className="h-auto overflow-clip">
+          <IcicleGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
+        </div>
+      );
+    }
 
-  if (total === 0n && !loading)
-    return <div className="mx-auto text-center">Profile has no samples</div>;
+    if (graph === undefined && arrow === undefined)
+      return <div className="mx-auto text-center">No data...</div>;
+
+    if (total === 0n && !loading)
+      return <div className="mx-auto text-center">Profile has no samples</div>;
+
+    if (graph !== undefined)
+      return (
+        <IcicleGraph
+          width={width}
+          graph={graph}
+          total={total}
+          filtered={filtered}
+          curPath={curPath}
+          setCurPath={setNewCurPath}
+          profileType={profileType}
+          navigateTo={navigateTo}
+        />
+      );
+
+    if (arrow !== undefined)
+      return (
+        <IcicleGraphArrow
+          width={width}
+          arrow={arrow}
+          total={total}
+          filtered={filtered}
+          curPath={curPath}
+          setCurPath={setNewCurPath}
+          profileType={profileType}
+          navigateTo={navigateTo}
+          sortBy={storeSortBy as string}
+          flamegraphLoading={isLoading}
+          isHalfScreen={isHalfScreen}
+        />
+      );
+  }, [
+    isLoading,
+    graph,
+    arrow,
+    total,
+    filtered,
+    curPath,
+    setNewCurPath,
+    profileType,
+    navigateTo,
+    width,
+    storeSortBy,
+    isHalfScreen,
+    isDarkMode,
+    loading,
+  ]);
 
   if (isTrimmed) {
     console.info(`Trimmed ${trimmedFormatted} (${trimmedPercentage}%) too small values.`);
@@ -374,33 +422,16 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
         transition={{duration: 0.5}}
       >
         {compareMode ? <DiffLegend /> : null}
+        {isColorStackLegendEnabled && (
+          <ColorStackLegend
+            navigateTo={navigateTo}
+            compareMode={compareMode}
+            mappings={mappings}
+            mappingsLoading={mappingsLoading}
+          />
+        )}
         <div className="min-h-48" id="h-icicle-graph">
-          {graph !== undefined && (
-            <IcicleGraph
-              width={width}
-              graph={graph}
-              total={total}
-              filtered={filtered}
-              curPath={curPath}
-              setCurPath={setNewCurPath}
-              profileType={profileType}
-              navigateTo={navigateTo}
-            />
-          )}
-          {arrow !== undefined && (
-            <IcicleGraphArrow
-              width={width}
-              arrow={arrow}
-              total={total}
-              filtered={filtered}
-              curPath={curPath}
-              setCurPath={setNewCurPath}
-              profileType={profileType}
-              navigateTo={navigateTo}
-              sortBy={storeSortBy as string}
-              mappings={mappings}
-            />
-          )}
+          <>{icicleGraph}</>
         </div>
         <p className="my-2 text-xs">
           Showing {totalFormatted}{' '}

@@ -17,23 +17,27 @@ import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
 import {useURLState} from '@parca/components';
-import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
-import {EVERYTHING_ELSE} from '@parca/store';
-import type {NavigateFunction} from '@parca/utilities';
+import {USER_PREFERENCES, useCurrentColorProfile, useUserPreference} from '@parca/hooks';
+import {EVERYTHING_ELSE, selectDarkMode, useAppSelector} from '@parca/store';
+import {getLastItem, type NavigateFunction} from '@parca/utilities';
 
-import {mappingColors} from './IcicleGraphNodes';
+import {getMappingColors} from '.';
 
 interface Props {
-  mappingColors: mappingColors;
+  mappings?: string[];
+  mappingsLoading?: boolean;
   navigateTo?: NavigateFunction;
   compareMode?: boolean;
 }
 
 const ColorStackLegend = ({
-  mappingColors,
+  mappings,
   navigateTo,
   compareMode = false,
+  mappingsLoading,
 }: Props): React.JSX.Element => {
+  const isDarkMode = useAppSelector(selectDarkMode);
+  const currentColorProfile = useCurrentColorProfile();
   const [colorProfileName] = useUserPreference<string>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
@@ -41,6 +45,31 @@ const ColorStackLegend = ({
     param: 'binary_frame_filter',
     navigateTo,
   });
+
+  const mappingsList = useMemo(() => {
+    if (mappings === undefined) {
+      return [];
+    }
+    const list =
+      mappings
+        ?.map(mapping => {
+          return getLastItem(mapping) as string;
+        })
+        .flat() ?? [];
+
+    // We add a EVERYTHING ELSE mapping to the list.
+    list.push('');
+
+    // We sort the mappings alphabetically to make sure that the order is always the same.
+    list.sort((a, b) => a.localeCompare(b));
+
+    return list;
+  }, [mappings]);
+
+  const mappingColors = useMemo(() => {
+    const colors = getMappingColors(mappingsList, isDarkMode, currentColorProfile);
+    return colors;
+  }, [isDarkMode, mappingsList, currentColorProfile]);
 
   const stackColorArray = useMemo(() => {
     return Object.entries(mappingColors).sort(([featureA], [featureB]) => {
@@ -54,7 +83,7 @@ const ColorStackLegend = ({
     });
   }, [mappingColors]);
 
-  if (mappingColors === undefined) {
+  if (mappingColors === undefined && mappingsLoading === false) {
     return <></>;
   }
 
