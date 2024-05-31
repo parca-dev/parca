@@ -89,6 +89,8 @@ export const getMappingColors = (
   return colors;
 };
 
+const noop = (): void => {};
+
 export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   arrow,
   total,
@@ -214,6 +216,18 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     setBinaryFrameFilter(newMappingsList);
   };
 
+  const highlightSimilarStacksName = highlightSimilarStacksPreference ? hoveringName : null;
+  const highlightSimilarStacksSetName = useMemo(() => {
+    return highlightSimilarStacksPreference ? setHoveringName : noop;
+  }, [highlightSimilarStacksPreference]);
+  const highlightSimilarStacksSetLevel = useMemo(() => {
+    return highlightSimilarStacksPreference ? setHoveringLevel : noop;
+  }, [highlightSimilarStacksPreference]);
+  const highlightSimilarStacksRow = highlightSimilarStacksPreference ? hoveringRow : null;
+  const path = useMemo(() => {
+    return [];
+  }, []);
+
   // useMemo for the root graph as it otherwise renders the whole graph if the hoveringRow changes.
   const root = useMemo(() => {
     return (
@@ -239,20 +253,20 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               curPath={curPath}
               total={total}
               xScale={xScale}
-              path={[]}
+              path={path}
               level={0}
               isRoot={true}
               searchString={currentSearchString}
               setHoveringRow={setHoveringRow}
-              setHoveringLevel={setHoveringLevel}
+              setHoveringLevel={highlightSimilarStacksSetLevel}
               sortBy={sortBy}
               darkMode={isDarkMode}
               compareMode={compareMode}
               profileType={profileType}
               isContextMenuOpen={isContextMenuOpen}
-              hoveringName={hoveringName}
-              setHoveringName={setHoveringName}
-              hoveringRow={hoveringRow}
+              hoveringName={highlightSimilarStacksName}
+              setHoveringName={highlightSimilarStacksSetName}
+              hoveringRow={highlightSimilarStacksRow}
               colorForSimilarNodes={colorForSimilarNodes}
               highlightSimilarStacksPreference={highlightSimilarStacksPreference}
             />
@@ -276,10 +290,13 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     compareMode,
     profileType,
     isContextMenuOpen,
-    hoveringName,
-    hoveringRow,
+    highlightSimilarStacksName,
+    highlightSimilarStacksRow,
     colorForSimilarNodes,
     highlightSimilarStacksPreference,
+    path,
+    highlightSimilarStacksSetLevel,
+    highlightSimilarStacksSetName,
   ]);
 
   return (
