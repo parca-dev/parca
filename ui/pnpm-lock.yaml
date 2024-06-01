@@ -154,8 +154,8 @@ importers:
         specifier: 5.0.2
         version: 5.0.2
       chromatic:
-        specifier: 11.3.5
-        version: 11.3.5
+        specifier: 11.4.0
+        version: 11.4.0
       css-loader:
         specifier: 6.11.0
         version: 6.11.0(webpack@5.91.0)
@@ -9729,8 +9729,8 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
-  /chromatic@11.3.5:
-    resolution: {integrity: sha512-M3xCyoEIjdcsXX3NhN60joXxEthy+wxNEcsCMM0u9u8Yna7tJvwvOsJStbOJDwEBo6TdIKckARN3BbArpduFbA==}
+  /chromatic@11.4.0:
+    resolution: {integrity: sha512-/O6OwEUckqKTBGbm9KvYsR/eKCXy4s2eelO38yyfimBIJiL8+TS/pVnBqdtzUqO2hVK4GjrFiea9CnZUG9Akzw==}
     hasBin: true
     peerDependencies:
       '@chromatic-com/cypress': ^0.*.* || ^1.0.0
