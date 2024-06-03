@@ -1,7 +1,7 @@
 {
   "name": "@parca/web",
   "private": true,
-  "version": "0.16.678",
+  "version": "0.16.679",
   "description": "Parca Web Interface",
   "scripts": {
     "lint": "eslint --no-error-on-unmatched-pattern --ext .ts,.tsx,.js src/*",
@@ -30,7 +30,7 @@
     "@parca/hooks": "^0.0.57",
     "@parca/icons": "^0.16.69",
     "@parca/parser": "^0.16.74",
-    "@parca/profile": "^0.16.378",
+    "@parca/profile": "^0.16.379",
     "@parca/store": "^0.16.146",
     "@parca/utilities": "^0.0.74",
     "@protobuf-ts/grpcweb-transport": "^2.9.4",
