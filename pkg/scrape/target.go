@@ -388,6 +388,7 @@ func targetsFromGroup(tg *targetgroup.Group, cfg *config.ScrapeConfig, targets [
 				}
 
 				if pcfg, found := cfg.ProfilingConfig.PprofConfig[profType]; found && pcfg.Delta {
+					// If Seconds is NOT set on the pprof configuration explicitly, we default to ScrapeInterval.
 					seconds := int(time.Duration(cfg.ScrapeInterval) / time.Second)
 					if pcfg.Seconds > 0 {
 						seconds = pcfg.Seconds
