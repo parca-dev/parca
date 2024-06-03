@@ -11,7 +11,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Row, RowData, RowModel, Table, getMemoOptions, memo} from '@tanstack/table-core';
+import {
+  getMemoOptions,
+  memo,
+  type Row,
+  type RowData,
+  type RowModel,
+  type Table,
+} from '@tanstack/table-core';
 
 export function getTopAndBottomExpandedRowModel<TData extends RowData>(): (
   table: Table<TData>
@@ -24,11 +31,14 @@ export function getTopAndBottomExpandedRowModel<TData extends RowData>(): (
         table.options.paginateExpandedRows,
       ],
       (expanded, rowModel, paginateExpandedRows) => {
-        if (!rowModel.rows.length || (expanded !== true && !Object.keys(expanded ?? {}).length)) {
+        if (
+          rowModel.rows.length === 0 ||
+          (expanded !== true && Object.keys(expanded ?? {}).length === 0)
+        ) {
           return rowModel;
         }
 
-        if (!paginateExpandedRows) {
+        if (paginateExpandedRows !== true) {
           // Only expand rows at this point if they are being paginated
           return rowModel;
         }
@@ -39,10 +49,10 @@ export function getTopAndBottomExpandedRowModel<TData extends RowData>(): (
     );
 }
 
-export function expandRows<TData extends RowData>(rowModel: RowModel<TData>) {
-  const expandedRows: Row<TData>[] = [];
+export function expandRows<TData extends RowData>(rowModel: RowModel<TData>): RowModel<TData> {
+  const expandedRows: Array<Row<TData>> = [];
 
-  const handleRow = (row: Row<TData>) => {
+  const handleRow = (row: Row<TData>): void => {
     if (!row.getIsExpanded()) {
       expandedRows.push(row);
       return;
@@ -50,7 +60,7 @@ export function expandRows<TData extends RowData>(rowModel: RowModel<TData>) {
 
     // @ts-expect-error
     const topSubRows = (row.subRows ?? []).filter(subRow => subRow.original?.isTopSubRow);
-    if (topSubRows.length) {
+    if (topSubRows.length > 0) {
       topSubRows.forEach(handleRow);
     }
     expandedRows.push(row);
@@ -58,7 +68,7 @@ export function expandRows<TData extends RowData>(rowModel: RowModel<TData>) {
     // @ts-expect-error
     const bottomSubRows = (row.subRows ?? []).filter(subRow => subRow.original?.isBottomSubRow);
 
-    if (bottomSubRows?.length) {
+    if (bottomSubRows.length > 0) {
       // Needs to be split into dummy and non-dummy rows to ensure that the dummy rows are rendered at the bottom.
       // @ts-expect-error
       const dummyRows = bottomSubRows.filter(subRow => 'size' in subRow.original);

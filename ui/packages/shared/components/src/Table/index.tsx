@@ -15,15 +15,15 @@ import {MouseEventHandler, useCallback, useRef, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import {
-  ExpandedState,
-  Row,
-  RowModel,
   flexRender,
   getCoreRowModel,
   getExpandedRowModel,
   getSortedRowModel,
   useReactTable,
   type ColumnDef,
+  type ExpandedState,
+  type Row,
+  type RowModel,
   type SortingState,
   type Table as TableType,
   type VisibilityState,
@@ -52,14 +52,14 @@ const DefaultRowRenderer = ({
     <tr
       key={row.id}
       className={cx(
-        usePointerCursor ? 'cursor-pointer' : 'cursor-auto',
+        usePointerCursor === true ? 'cursor-pointer' : 'cursor-auto',
         'hover:bg-[#62626212] dark:hover:bg-[#ffffff12]',
         {'bg-red-500': row.getIsExpanded()}
       )}
       onClick={onRowClick != null ? () => onRowClick(row.original) : undefined}
       onDoubleClick={getOnRowDoubleClick != null ? getOnRowDoubleClick(row) : undefined}
       style={
-        !enableHighlighting || shouldHighlightRow === undefined
+        enableHighlighting !== true || shouldHighlightRow === undefined
           ? undefined
           : {opacity: shouldHighlightRow(row.original) ? 1 : 0.5}
       }

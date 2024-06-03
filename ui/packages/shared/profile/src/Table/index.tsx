@@ -14,7 +14,12 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {flexRender} from '@tanstack/react-table';
-import {CellContext, ColumnDef, ExpandedState, createColumnHelper} from '@tanstack/table-core';
+import {
+  createColumnHelper,
+  type CellContext,
+  type ColumnDef,
+  type ExpandedState,
+} from '@tanstack/table-core';
 import {Int64, Vector, tableFromIPC, vectorFromArray} from 'apache-arrow';
 import cx from 'classnames';
 import {AnimatePresence, motion} from 'framer-motion';
@@ -26,7 +31,7 @@ import {
   useParcaContext,
   useURLState,
 } from '@parca/components';
-import {RowRendererProps} from '@parca/components/dist/Table';
+import {type RowRendererProps} from '@parca/components/dist/Table';
 import {ProfileType} from '@parca/parser';
 import {
   getLastItem,
@@ -95,7 +100,7 @@ interface TableProps {
   isHalfScreen: boolean;
 }
 
-const rowBgClassNames = (isExpanded: boolean, isSubRow: boolean) => {
+const rowBgClassNames = (isExpanded: boolean, isSubRow: boolean): Record<string, boolean> => {
   return {
     'bg-indigo-100 dark:bg-gray-600': isSubRow,
     'bg-indigo-50 dark:bg-gray-700': isExpanded,
@@ -205,15 +210,20 @@ const CustomRowRenderer = ({
   return (
     <tr
       key={row.id}
-      className={cx(usePointerCursor ? 'cursor-pointer' : 'cursor-auto', 'relative', bgClassNames, {
-        'hover:bg-[#62626212] dark:hover:bg-[#ffffff12] ': !isExpanded && !isSubRow,
-        'hover:bg-indigo-200 dark:hover:bg-gray-500': !isExpanded && isSubRow,
-        'hover:bg-indigo-200 dark:bg-gray-500': isExpanded,
-      })}
+      className={cx(
+        usePointerCursor === true ? 'cursor-pointer' : 'cursor-auto',
+        'relative',
+        bgClassNames,
+        {
+          'hover:bg-[#62626212] dark:hover:bg-[#ffffff12] ': !isExpanded && !isSubRow,
+          'hover:bg-indigo-200 dark:hover:bg-gray-500': !isExpanded && isSubRow,
+          'hover:bg-indigo-200 dark:bg-gray-500': isExpanded,
+        }
+      )}
       onClick={onRowClick != null ? () => onRowClick(row.original) : undefined}
       onDoubleClick={getOnRowDoubleClick != null ? getOnRowDoubleClick(row) : undefined}
       style={
-        !enableHighlighting || shouldHighlightRow === undefined
+        enableHighlighting !== true || shouldHighlightRow === undefined
           ? undefined
           : {opacity: shouldHighlightRow(row.original) ? 1 : 0.5}
       }
@@ -330,12 +340,17 @@ export const Table = React.memo(function Table({
 
   const columnHelper = createColumnHelper<Row>();
 
-  const columns = useMemo<ColumnDef<Row>[]>(() => {
+  const columns = useMemo<Array<ColumnDef<Row>>>(() => {
     return [
       columnHelper.accessor('flat', {
         id: 'flat',
         header: 'Flat',
-        cell: info => valueFormatter(info.getValue(), profileType?.sampleUnit ?? '', 2),
+        cell: info =>
+          valueFormatter(
+            (info as CellContext<DataRow, bigint>).getValue(),
+            profileType?.sampleUnit ?? '',
+            2
+          ),
         size: 80,
         meta: {
           align: 'right',
@@ -361,7 +376,13 @@ export const Table = React.memo(function Table({
         id: 'flatDiff',
         header: 'Flat Diff',
         cell: info =>
-          addPlusSign(valueFormatter(info.getValue(), profileType?.sampleUnit ?? '', 2)),
+          addPlusSign(
+            valueFormatter(
+              (info as CellContext<DataRow, bigint>).getValue(),
+              profileType?.sampleUnit ?? '',
+              2
+            )
+          ),
         size: 120,
         meta: {
           align: 'right',
@@ -386,7 +407,12 @@ export const Table = React.memo(function Table({
       columnHelper.accessor('cumulative', {
         id: 'cumulative',
         header: 'Cumulative',
-        cell: info => valueFormatter(info.getValue(), profileType?.sampleUnit ?? '', 2),
+        cell: info =>
+          valueFormatter(
+            (info as CellContext<DataRow, bigint>).getValue(),
+            profileType?.sampleUnit ?? '',
+            2
+          ),
         size: 150,
         meta: {
           align: 'right',
@@ -412,7 +438,13 @@ export const Table = React.memo(function Table({
         id: 'cumulativeDiff',
         header: 'Cumulative Diff',
         cell: info =>
-          addPlusSign(valueFormatter(info.getValue(), profileType?.sampleUnit ?? '', 2)),
+          addPlusSign(
+            valueFormatter(
+              (info as CellContext<DataRow, bigint>).getValue(),
+              profileType?.sampleUnit ?? '',
+              2
+            )
+          ),
         size: 170,
         meta: {
           align: 'right',
@@ -584,7 +616,7 @@ export const Table = React.memo(function Table({
     return tableFromIPC(data);
   }, [data, loading]);
 
-  const rows: Array<DataRow> = useMemo(() => {
+  const rows: DataRow[] = useMemo(() => {
     if (table == null || table.numRows === 0) {
       return [];
     }
@@ -623,7 +655,7 @@ export const Table = React.memo(function Table({
       };
     };
 
-    const rows: Array<DataRow> = [];
+    const rows: DataRow[] = [];
     for (let i = 0; i < table.numRows; i++) {
       const row = getRow(i);
       const callerIndices: Vector<Int64> = callersColumn?.get(i) ?? vectorFromArray([]);

@@ -23,7 +23,7 @@
     "@protobuf-ts/grpcweb-transport": "^2.5.0",
     "@protobuf-ts/runtime-rpc": "^2.5.0",
     "@tanstack/react-table": "^8.17.3",
-    "@tanstack/table-core": "^8.16.0",
+    "@tanstack/table-core": "^8.17.3",
     "@types/d3-selection": "^3.0.10",
     "@types/lodash": "^4.17.0",
     "@types/react-datepicker": "^6.2.0",

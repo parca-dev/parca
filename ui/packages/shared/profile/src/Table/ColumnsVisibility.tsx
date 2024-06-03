@@ -15,7 +15,7 @@ import {Fragment} from 'react';
 
 import {Menu, Transition} from '@headlessui/react';
 import {Icon} from '@iconify/react';
-import {ColumnDef, type VisibilityState} from '@tanstack/react-table';
+import {type ColumnDef, type VisibilityState} from '@tanstack/react-table';
 
 import type {Row} from './';
 
@@ -24,7 +24,7 @@ const ColumnsVisibility = ({
   visibility,
   setVisibility,
 }: {
-  columns: ColumnDef<Row>[];
+  columns: Array<ColumnDef<Row>>;
   visibility: VisibilityState;
   setVisibility: (id: string, visible: boolean) => void;
 }): React.JSX.Element => {
