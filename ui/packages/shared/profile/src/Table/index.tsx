@@ -15,7 +15,7 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {flexRender} from '@tanstack/react-table';
 import {CellContext, ColumnDef, ExpandedState, createColumnHelper} from '@tanstack/table-core';
-import {Int64, Type, Vector, tableFromIPC, vectorFromArray} from 'apache-arrow';
+import {Int64, Vector, tableFromIPC, vectorFromArray} from 'apache-arrow';
 import cx from 'classnames';
 import {AnimatePresence, motion} from 'framer-motion';
 
@@ -77,7 +77,7 @@ interface DummyRow {
   isBottomSubRow?: boolean;
 }
 
-type Row = DataRow | DummyRow;
+export type Row = DataRow | DummyRow;
 
 const isDummyRow = (row: Row): row is DummyRow => {
   return 'size' in row;

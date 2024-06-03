@@ -15,16 +15,16 @@ import {Fragment} from 'react';
 
 import {Menu, Transition} from '@headlessui/react';
 import {Icon} from '@iconify/react';
-import {type VisibilityState} from '@tanstack/react-table';
+import {ColumnDef, type VisibilityState} from '@tanstack/react-table';
 
-import {ColumnDef} from '.';
+import type {Row} from './';
 
 const ColumnsVisibility = ({
   columns,
   visibility,
   setVisibility,
 }: {
-  columns: ColumnDef[];
+  columns: ColumnDef<Row>[];
   visibility: VisibilityState;
   setVisibility: (id: string, visible: boolean) => void;
 }): React.JSX.Element => {
@@ -69,7 +69,7 @@ const ColumnsVisibility = ({
                           htmlFor={col.id}
                           className="font-medium text-gray-900 dark:text-gray-200"
                         >
-                          {col.header}
+                          {col.header as string}
                         </label>
                       </div>
                     </div>
