@@ -14,14 +14,15 @@
 package scrape
 
 import (
+	"sort"
+	"testing"
+	"time"
+
 	"github.com/parca-dev/parca/pkg/config"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
-	"sort"
-	"testing"
-	"time"
 )
 
 func TestTargetsFromGroup(t *testing.T) {
