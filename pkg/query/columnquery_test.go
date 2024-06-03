@@ -1189,6 +1189,8 @@ func PprofToSymbolizedProfile(meta profile.Meta, prof *pprofprofile.Profile, ind
 		labelNames = append(labelNames, l)
 	}
 
+	durationSeconds := float64(meta.Duration) / float64(time.Second.Nanoseconds())
+
 	w := profile.NewWriter(memory.DefaultAllocator, labelNames)
 	defer w.RecordBuilder.Release()
 	for i := range prof.Sample {
@@ -1197,7 +1199,12 @@ func PprofToSymbolizedProfile(meta profile.Meta, prof *pprofprofile.Profile, ind
 		}
 
 		w.Value.Append(prof.Sample[i].Value[index])
-		w.ValuePerSecond.Append(0)
+		if meta.Duration > 0 {
+			w.ValuePerSecond.Append(float64(prof.Sample[i].Value[index]) / durationSeconds)
+		} else {
+			w.ValuePerSecond.AppendNull()
+		}
+
 		w.Diff.Append(0)
 		w.DiffPerSecond.Append(0)
 
