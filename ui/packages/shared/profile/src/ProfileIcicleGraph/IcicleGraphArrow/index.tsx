@@ -57,6 +57,8 @@ export const FIELD_CHILDREN = 'children';
 export const FIELD_LABELS = 'labels';
 export const FIELD_CUMULATIVE = 'cumulative';
 export const FIELD_CUMULATIVE_PER_SECOND = 'cumulative_per_second';
+export const FIELD_FLAT = 'flat';
+export const FIELD_FLAT_PER_SECOND = 'flat_per_second';
 export const FIELD_DIFF = 'diff';
 export const FIELD_DIFF_PER_SECOND = 'diff_per_second';
 

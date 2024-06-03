@@ -57,6 +57,8 @@ const (
 	FlamegraphFieldChildren            = "children"
 	FlamegraphFieldCumulative          = "cumulative"
 	FlamegraphFieldCumulativePerSecond = "cumulative_per_second"
+	FlamegraphFieldFlat                = "flat"
+	FlamegraphFieldFlatPerSecond       = "flat_per_second"
 	FlamegraphFieldDiff                = "diff"
 	FlamegraphFieldDiffPerSecond       = "diff_per_second"
 )
@@ -170,7 +172,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					rootRowChildren = fb.children[row]
 					rootRow = row
 					fb.compareRows = rootRowChildren
-					fb.addRowValues(r, row, i) // adds the cumulative and diff values to the existing row
+					fb.addRowValues(r, row, i, false) // adds the cumulative and diff values to the existing row
 				} else {
 					rootRowChildren = map[uint64]int{}
 					err := fb.AppendLabelRow(
@@ -181,6 +183,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						i,
 						labelHash,
 						rootRowChildren,
+						false, // labels will never actually have a flat value themselves.
 					)
 					if err != nil {
 						return nil, 0, 0, 0, fmt.Errorf("failed to inject label row: %w", err)
@@ -210,6 +213,8 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 				llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
 				if !r.Lines.IsValid(j) || llOffsetEnd-llOffsetStart <= 0 {
+					isLeaf := isFirstNonNil(i, j, r.Locations)
+
 					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
 					if isRoot {
 						fb.compareRows = rootRowChildren
@@ -226,6 +231,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						recordLabelIndex,
 						i, j, int(end),
 						key,
+						isLeaf,
 					)
 					if err != nil {
 						return nil, 0, 0, 0, err
@@ -241,7 +247,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						fb.childrenList[rootRow] = append(fb.childrenList[rootRow], row)
 					}
 
-					err = fb.appendRow(r, t, builderToRecordIndexMapping, i, j, -1, row, key, false)
+					err = fb.appendRow(r, t, builderToRecordIndexMapping, i, j, -1, row, key, isLeaf, false)
 					if err != nil {
 						return nil, 0, 0, 0, err
 					}
@@ -255,6 +261,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				for k := int(llOffsetEnd - 1); k >= int(llOffsetStart); k-- {
 					isInlineRoot := isLocationRoot(llOffsetStart, llOffsetEnd, int64(k), r.Lines)
 					isInlined := !isInlineRoot
+					isLeaf := isFirstNonNil(i, j, r.Locations) && isFirstNonNil(j, k, r.Lines)
 
 					isRoot = locationRoot && !(fb.aggregationConfig.aggregateByLabels && hasLabels) && isInlineRoot
 					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
@@ -293,6 +300,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						k,
 						int(end),
 						key,
+						isLeaf,
 						isInlined,
 					)
 					if err != nil {
@@ -309,7 +317,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						fb.childrenList[rootRow] = append(fb.childrenList[rootRow], row)
 					}
 
-					err = fb.appendRow(r, t, recordLabelIndex, i, j, k, row, key, isInlined)
+					err = fb.appendRow(r, t, recordLabelIndex, i, j, k, row, key, isLeaf, isInlined)
 					if err != nil {
 						return nil, 0, 0, 0, err
 					}
@@ -344,6 +352,10 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		fb.trimmedCumulative.AppendNull()
 		fb.trimmedCumulativePerSecond = builder.NewOptFloat64Builder(arrow.PrimitiveTypes.Float64)
 		fb.trimmedCumulativePerSecond.AppendNull()
+		fb.trimmedFlat = array.NewUint8Builder(fb.pool)
+		fb.trimmedFlat.AppendNull()
+		fb.trimmedFlatPerSecond = builder.NewOptFloat64Builder(arrow.PrimitiveTypes.Float64)
+		fb.trimmedFlatPerSecond.AppendNull()
 		fb.trimmedDiff = array.NewUint8Builder(fb.pool)
 		fb.trimmedDiff.AppendNull()
 		fb.trimmedDiffPerSecond = builder.NewOptFloat64Builder(arrow.PrimitiveTypes.Float64)
@@ -544,6 +556,7 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 	recordLabelIndex []int,
 	sampleIndex, locationIndex, lineIndex, end int,
 	key uint64,
+	leaf bool,
 	inlined bool,
 ) (bool, error) {
 	if cr, found := fb.compareRows[key]; found {
@@ -656,7 +669,7 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 		}
 
 		// All fields match, so we can aggregate this new row with the existing one.
-		fb.addRowValues(r, cr, sampleIndex)
+		fb.addRowValues(r, cr, sampleIndex, leaf)
 		// Continue with this row as the parent for the next iteration and compare to its children.
 		fb.parent.Set(cr)
 		fb.compareRows = fb.children[cr]
@@ -675,6 +688,7 @@ func (fb *flamegraphBuilder) mergeUnsymbolizedRows(
 	recordLabelIndex []int,
 	sampleIndex, locationIndex, end int,
 	key uint64,
+	leaf bool,
 ) (bool, error) {
 	if cr, found := fb.compareRows[key]; found {
 		// If we don't group by the labels, we only keep those labels that are identical.
@@ -682,8 +696,16 @@ func (fb *flamegraphBuilder) mergeUnsymbolizedRows(
 			fb.intersectLabels(r, t, recordLabelIndex, sampleIndex, cr)
 		}
 
-		fb.builderCumulative.Add(cr, r.Value.Value(sampleIndex))
-		fb.builderCumulativePerSecond.Add(cr, r.ValuePerSecond.Value(sampleIndex))
+		value := r.Value.Value(sampleIndex)
+		valuePerSecond := r.ValuePerSecond.Value(sampleIndex)
+
+		fb.builderCumulative.Add(cr, value)
+		fb.builderCumulativePerSecond.Add(cr, valuePerSecond)
+		if leaf {
+			fb.builderFlat.Add(cr, value)
+			fb.builderFlatPerSecond.Add(cr, valuePerSecond)
+		}
+
 		fb.parent.Set(cr)
 		fb.compareRows = fb.children[cr]
 		return true, nil
@@ -798,6 +820,8 @@ type flamegraphBuilder struct {
 	builderChildrenValues                *array.Uint32Builder
 	builderCumulative                    *builder.OptInt64Builder
 	builderCumulativePerSecond           *builder.OptFloat64Builder
+	builderFlat                          *builder.OptInt64Builder
+	builderFlatPerSecond                 *builder.OptFloat64Builder
 	builderDiff                          *builder.OptInt64Builder
 	builderDiffPerSecond                 *builder.OptFloat64Builder
 
@@ -823,6 +847,8 @@ type flamegraphBuilder struct {
 	trimmedFunctionStartLine   array.Builder
 	trimmedCumulative          array.Builder
 	trimmedCumulativePerSecond *builder.OptFloat64Builder
+	trimmedFlat                array.Builder
+	trimmedFlatPerSecond       *builder.OptFloat64Builder
 	trimmedDiff                array.Builder
 	trimmedDiffPerSecond       *builder.OptFloat64Builder
 }
@@ -881,6 +907,8 @@ func newFlamegraphBuilder(
 		builderChildrenValues:      builderChildren.ValueBuilder().(*array.Uint32Builder),
 		builderCumulative:          builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
 		builderCumulativePerSecond: builder.NewOptFloat64Builder(arrow.PrimitiveTypes.Float64),
+		builderFlat:                builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
+		builderFlatPerSecond:       builder.NewOptFloat64Builder(arrow.PrimitiveTypes.Float64),
 		builderDiff:                builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
 		builderDiffPerSecond:       builder.NewOptFloat64Builder(arrow.PrimitiveTypes.Float64),
 	}
@@ -925,6 +953,9 @@ func newFlamegraphBuilder(
 	fb.builderCumulativePerSecond.Append(0)
 	fb.builderDiff.Append(0)
 	fb.builderDiffPerSecond.Append(0)
+	// the root will never have a flat value
+	fb.builderFlat.Append(0)
+	fb.builderFlatPerSecond.Append(0)
 
 	return fb, nil
 }
@@ -940,6 +971,7 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 
 	// We have manually tracked the total cumulative value.
 	// Now we set/overwrite the cumulative value for the root row (which is always the 0 row in our flame graphs).
+	// We don't care about a global flat value, therefore it's omitted here.
 	fb.builderCumulative.Set(0, fb.cumulative)
 	fb.builderCumulativePerSecond.Set(0, fb.cumulativePerSecond)
 	fb.builderDiff.Set(0, fb.diff)
@@ -1033,7 +1065,9 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 // It adds the children to the children column and the labels intersection to the labels column.
 // Finally, it assembles all columns from the builders into an arrow record.
 func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
-	cleanupArrs := make([]arrow.Array, 0, 18+(2*len(fb.builderLabelFields)))
+	const numCols = 17
+
+	cleanupArrs := make([]arrow.Array, 0, numCols+1+(2*len(fb.builderLabelFields)))
 	defer func() {
 		for _, arr := range cleanupArrs {
 			arr.Release()
@@ -1075,11 +1109,13 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 		{Name: FlamegraphFieldChildren, Type: arrow.ListOf(arrow.PrimitiveTypes.Uint32)},
 		{Name: FlamegraphFieldCumulative, Type: fb.trimmedCumulative.Type()},
 		{Name: FlamegraphFieldCumulativePerSecond, Type: arrow.PrimitiveTypes.Float64},
+		{Name: FlamegraphFieldFlat, Type: fb.trimmedFlat.Type()},
+		{Name: FlamegraphFieldFlatPerSecond, Type: arrow.PrimitiveTypes.Float64},
 		{Name: FlamegraphFieldDiff, Type: fb.trimmedDiff.Type()},
 		{Name: FlamegraphFieldDiffPerSecond, Type: arrow.PrimitiveTypes.Float64},
 	}
 
-	arrays := make([]arrow.Array, 15+len(fb.labels))
+	arrays := make([]arrow.Array, numCols+len(fb.labels))
 	arrays[0] = fb.builderLabelsOnly.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[0])
 	arrays[1] = fb.builderLocationAddress.NewArray()
@@ -1101,15 +1137,19 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	cleanupArrs = append(cleanupArrs, arrays[11])
 	arrays[12] = fb.trimmedCumulativePerSecond.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[12])
-	arrays[13] = fb.trimmedDiff.NewArray()
+	arrays[13] = fb.trimmedFlat.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[13])
-	arrays[14] = fb.trimmedDiffPerSecond.NewArray()
+	arrays[14] = fb.trimmedFlatPerSecond.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[14])
+	arrays[15] = fb.trimmedDiff.NewArray()
+	cleanupArrs = append(cleanupArrs, arrays[15])
+	arrays[16] = fb.trimmedDiffPerSecond.NewArray()
+	cleanupArrs = append(cleanupArrs, arrays[16])
 
 	for i, field := range fb.builderLabelFields {
 		field.Type = fb.labels[i].DataType() // overwrite for variable length uint types
 		fields = append(fields, field)
-		arrays[15+i] = fb.labels[i]
+		arrays[numCols+i] = fb.labels[i]
 	}
 
 	return array.NewRecord(
@@ -1143,6 +1183,8 @@ func (fb *flamegraphBuilder) Release() {
 	fb.builderChildren.Release()
 	fb.builderCumulative.Release()
 	fb.builderCumulativePerSecond.Release()
+	fb.builderFlat.Release()
+	fb.builderFlatPerSecond.Release()
 	fb.builderDiff.Release()
 	fb.builderDiffPerSecond.Release()
 
@@ -1203,6 +1245,7 @@ func (fb *flamegraphBuilder) appendRow(
 	sampleRow, locationRow, lineRow int,
 	row int,
 	key uint64,
+	leaf bool,
 	inlined bool,
 ) error {
 	fb.height++
@@ -1298,8 +1341,20 @@ func (fb *flamegraphBuilder) appendRow(
 		}
 	}
 
-	fb.builderCumulative.Append(r.Value.Value(sampleRow))
-	fb.builderCumulativePerSecond.Append(r.ValuePerSecond.Value(sampleRow))
+	value := r.Value.Value(sampleRow)
+	valuePerSecond := r.ValuePerSecond.Value(sampleRow)
+
+	fb.builderCumulative.Append(value)
+	fb.builderCumulativePerSecond.Append(valuePerSecond)
+
+	if leaf { // leaf
+		fb.builderFlat.Append(value)
+		fb.builderFlatPerSecond.Append(valuePerSecond)
+	} else {
+		// It's possible that these get merged later on and we don't want to set these to null
+		fb.builderFlat.Append(0)
+		fb.builderFlatPerSecond.Append(0)
+	}
 
 	if r.Diff.Value(sampleRow) > 0 {
 		fb.builderDiff.Append(r.Diff.Value(sampleRow))
@@ -1323,6 +1378,7 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 	sampleRow int,
 	labelHash uint64,
 	children map[uint64]int,
+	leaf bool,
 ) error {
 	labelsExist := false
 	for i, labelColumn := range fb.builderLabels {
@@ -1371,17 +1427,27 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 	fb.builderCumulativePerSecond.Append(0)
 	fb.builderDiff.Append(0)
 	fb.builderDiffPerSecond.Append(0)
-	fb.addRowValues(r, row, sampleRow)
+	fb.builderFlat.Append(0)
+	fb.builderFlatPerSecond.Append(0)
+	fb.addRowValues(r, row, sampleRow, leaf)
 
 	return nil
 }
 
 // addRowValues updates the existing row's values and potentially adding existing values on top.
-func (fb *flamegraphBuilder) addRowValues(r *profile.RecordReader, row, sampleRow int) {
-	fb.builderCumulative.Add(row, r.Value.Value(sampleRow))
-	fb.builderCumulativePerSecond.Add(row, r.ValuePerSecond.Value(sampleRow))
+func (fb *flamegraphBuilder) addRowValues(r *profile.RecordReader, row, sampleRow int, leaf bool) {
+	value := r.Value.Value(sampleRow)
+	valuePerSecond := r.ValuePerSecond.Value(sampleRow)
+
+	fb.builderCumulative.Add(row, value)
+	fb.builderCumulativePerSecond.Add(row, valuePerSecond)
 	fb.builderDiff.Add(row, r.Diff.Value(sampleRow))
 	fb.builderDiffPerSecond.Add(row, r.DiffPerSecond.Value(sampleRow))
+
+	if leaf {
+		fb.builderFlat.Add(row, value)
+		fb.builderFlatPerSecond.Add(row, valuePerSecond)
+	}
 }
 
 func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, threshold float32) error {
@@ -1403,6 +1469,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	largestLocationLine := uint64(0)
 	largestFunctionStartLine := uint64(0)
 	largestCumulativeValue := uint64(0)
+	largestFlatValue := uint64(0)
 	largestDiffValue := int64(0)
 	smallestDiffValue := int64(0)
 	for trimmingQueue.len() > 0 {
@@ -1420,16 +1487,12 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 			largestFunctionStartLine = functionStartLine
 		}
 		cum := uint64(fb.builderCumulative.Value(te.row))
-		if cum > largestCumulativeValue {
-			largestCumulativeValue = cum
-		}
+
+		largestCumulativeValue = max(largestCumulativeValue, cum)
+		largestFlatValue = max(largestFlatValue, uint64(fb.builderFlat.Value(te.row)))
 		diff := fb.builderDiff.Value(te.row)
-		if diff > largestDiffValue {
-			largestDiffValue = diff
-		}
-		if diff < smallestDiffValue {
-			smallestDiffValue = diff
-		}
+		largestDiffValue = max(largestDiffValue, diff)
+		smallestDiffValue = max(smallestDiffValue, diff)
 
 		cumThreshold := float32(cum) * threshold
 
@@ -1458,6 +1521,9 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedCumulativeType := smallestUnsignedTypeFor(largestCumulativeValue)
 	trimmedCumulative := array.NewBuilder(fb.pool, trimmedCumulativeType)
 	trimmedCumulativePerSecond := builder.NewOptFloat64Builder(arrow.PrimitiveTypes.Float64)
+	trimmedFlatType := smallestUnsignedTypeFor(largestFlatValue)
+	trimmedFlat := array.NewBuilder(fb.pool, trimmedFlatType)
+	trimmedFlatPerSecond := builder.NewOptFloat64Builder(arrow.PrimitiveTypes.Float64)
 	trimmedDiffType := smallestSignedTypeFor(smallestDiffValue, largestDiffValue)
 	trimmedDiff := array.NewBuilder(fb.pool, trimmedDiffType)
 	trimmedDiffPerSecond := builder.NewOptFloat64Builder(arrow.PrimitiveTypes.Float64)
@@ -1492,6 +1558,8 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedFunctionFilenameIndices.Reserve(row)
 	trimmedCumulative.Reserve(row)
 	trimmedCumulativePerSecond.Reserve(row)
+	trimmedFlat.Reserve(row)
+	trimmedFlatPerSecond.Reserve(row)
 	trimmedDiff.Reserve(row)
 	trimmedDiffPerSecond.Reserve(row)
 
@@ -1523,6 +1591,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 		}
 
 		copyOptFloat64BuilderValue(fb.builderCumulativePerSecond, trimmedCumulativePerSecond, te.row)
+		copyOptFloat64BuilderValue(fb.builderFlatPerSecond, trimmedFlatPerSecond, te.row)
 		copyOptFloat64BuilderValue(fb.builderDiffPerSecond, trimmedDiffPerSecond, te.row)
 
 		// The following two will never be null.
@@ -1536,6 +1605,19 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 			b.Append(uint16(cum))
 		case *array.Uint8Builder:
 			b.Append(uint8(cum))
+		default:
+			panic(fmt.Errorf("unsupported type %T", b))
+		}
+
+		switch b := trimmedFlat.(type) {
+		case *array.Uint64Builder:
+			b.Append(uint64(fb.builderFlat.Value(te.row)))
+		case *array.Uint32Builder:
+			b.Append(uint32(fb.builderFlat.Value(te.row)))
+		case *array.Uint16Builder:
+			b.Append(uint16(fb.builderFlat.Value(te.row)))
+		case *array.Uint8Builder:
+			b.Append(uint8(fb.builderFlat.Value(te.row)))
 		default:
 			panic(fmt.Errorf("unsupported type %T", b))
 		}
@@ -1687,6 +1769,8 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	fb.trimmedFunctionStartLine = trimmedFunctionStartLine
 	fb.trimmedCumulative = trimmedCumulative
 	fb.trimmedCumulativePerSecond = trimmedCumulativePerSecond
+	fb.trimmedFlat = trimmedFlat
+	fb.trimmedFlatPerSecond = trimmedFlatPerSecond
 	fb.trimmedDiff = trimmedDiff
 	fb.trimmedDiffPerSecond = trimmedDiffPerSecond
 	fb.trimmedChildren = trimmedChildren
