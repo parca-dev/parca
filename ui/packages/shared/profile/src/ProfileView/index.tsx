@@ -240,7 +240,7 @@ export const ProfileView = ({
               filtered={filtered}
               profileType={profileSource?.ProfileType()}
               navigateTo={navigateTo}
-              loading={flamegraphData.loading && flamegraphData.mappingsLoading}
+              loading={flamegraphData.loading}
               setActionButtons={setActionButtons}
               error={flamegraphData.error}
               isHalfScreen={isHalfScreen}
@@ -252,6 +252,7 @@ export const ProfileView = ({
                   : 0
               }
               mappings={flamegraphData.mappings}
+              mappingsLoading={flamegraphData.mappingsLoading}
             />
           </ConditionalWrapper>
         );

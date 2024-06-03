@@ -13,7 +13,7 @@
 
 import React, {memo, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
-import {Table, tableFromIPC} from 'apache-arrow';
+import {Dictionary, Table, Vector, tableFromIPC} from 'apache-arrow';
 import {useContextMenu} from 'react-contexify';
 
 import {FlamegraphArrow} from '@parca/client';
@@ -27,16 +27,21 @@ import {
   useAppDispatch,
   useAppSelector,
 } from '@parca/store';
-import {getLastItem, scaleLinear, selectQueryParam, type NavigateFunction} from '@parca/utilities';
+import {
+  getLastItem,
+  scaleLinear,
+  selectQueryParam,
+  type ColorConfig,
+  type NavigateFunction,
+} from '@parca/utilities';
 
 import GraphTooltipArrow from '../../GraphTooltipArrow';
 import GraphTooltipArrowContent from '../../GraphTooltipArrow/Content';
 import {DockedGraphTooltip} from '../../GraphTooltipArrow/DockedGraphTooltip';
 import {useProfileViewContext} from '../../ProfileView/ProfileViewContext';
-import ColorStackLegend from './ColorStackLegend';
 import ContextMenu from './ContextMenu';
 import {IcicleNode, RowHeight, mappingColors} from './IcicleGraphNodes';
-import {extractFeature} from './utils';
+import {arrowToString, extractFeature} from './utils';
 
 export const FIELD_LABELS_ONLY = 'labels_only';
 export const FIELD_MAPPING_FILE = 'mapping_file';
@@ -65,8 +70,26 @@ interface IcicleGraphArrowProps {
   setCurPath: (path: string[]) => void;
   navigateTo?: NavigateFunction;
   sortBy: string;
-  mappings?: string[];
+  flamegraphLoading: boolean;
+  isHalfScreen: boolean;
+  mappingsListFromMetadata: string[];
 }
+
+export const getMappingColors = (
+  mappingsList: string[],
+  isDarkMode: boolean,
+  currentColorProfile: ColorConfig
+): mappingColors => {
+  const mappingFeatures = mappingsList.map(mapping => extractFeature(mapping));
+
+  const colors: mappingColors = {};
+  Object.entries(mappingFeatures).forEach(([_, feature]) => {
+    colors[feature.name] = getColorForFeature(feature.name, isDarkMode, currentColorProfile.colors);
+  });
+  return colors;
+};
+
+const noop = (): void => {};
 
 export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   arrow,
@@ -78,7 +101,8 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   profileType,
   navigateTo,
   sortBy,
-  mappings,
+  flamegraphLoading,
+  mappingsListFromMetadata,
 }: IcicleGraphArrowProps): React.JSX.Element {
   const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
   const dispatch = useAppDispatch();
@@ -106,50 +130,54 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
   const {compareMode} = useProfileViewContext();
-  const isColorStackLegendEnabled = selectQueryParam('color_stack_legend') === 'true';
   const currentColorProfile = useCurrentColorProfile();
   const colorForSimilarNodes = currentColorProfile.colorForSimilarNodes;
 
   const mappingsList = useMemo(() => {
-    const list =
-      mappings
-        ?.map(mapping => {
-          return getLastItem(mapping) as string;
+    // Read the mappings from the dictionary that contains all mapping strings.
+    // This is great, as might only have a dozen or so mappings,
+    // and don't need to read through all the rows (potentially thousands).
+    const mappingsDict: Vector<Dictionary> | null = table.getChild(FIELD_MAPPING_FILE);
+    const mappings =
+      mappingsDict?.data
+        .map(mapping => {
+          if (mapping.dictionary == null) {
+            return [];
+          }
+          const len = mapping.dictionary.length;
+          const entries: string[] = [];
+          for (let i = 0; i < len; i++) {
+            const fn = arrowToString(mapping.dictionary.get(i));
+            entries.push(getLastItem(fn) ?? '');
+          }
+          return entries;
         })
         .flat() ?? [];
 
     // We add a EVERYTHING ELSE mapping to the list.
-    list.push('');
+    mappings.push('');
 
     // We sort the mappings alphabetically to make sure that the order is always the same.
-    list.sort((a, b) => a.localeCompare(b));
-
-    return list;
-  }, [mappings]);
+    mappings.sort((a, b) => a.localeCompare(b));
+    return mappings;
+  }, [table]);
 
   const mappingColors = useMemo(() => {
-    const mappingFeatures = mappingsList.map(mapping => extractFeature(mapping));
-
-    const colors: mappingColors = {};
-
-    Object.entries(mappingFeatures).forEach(([_, feature]) => {
-      colors[feature.name] = getColorForFeature(
-        feature.name,
-        isDarkMode,
-        currentColorProfile.colors
-      );
-    });
-
+    const colors = getMappingColors(mappingsList, isDarkMode, currentColorProfile);
     return colors;
-  }, [mappingsList, isDarkMode, currentColorProfile]);
+  }, [isDarkMode, mappingsList, currentColorProfile]);
 
   useEffect(() => {
     if (ref.current != null) {
       setHeight(ref?.current.getBoundingClientRect().height);
     }
-  }, [width]);
+  }, [width, flamegraphLoading]);
 
   const xScale = useMemo(() => {
+    if (total === 0n) {
+      return () => 0;
+    }
+
     if (width === undefined) {
       return () => 0;
     }
@@ -184,9 +212,21 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     }
 
     // first time hiding a binary
-    const newMappingsList = mappingsList.filter(mapping => mapping !== binaryToRemove);
+    const newMappingsList = mappingsListFromMetadata.filter(mapping => mapping !== binaryToRemove);
     setBinaryFrameFilter(newMappingsList);
   };
+
+  const highlightSimilarStacksName = highlightSimilarStacksPreference ? hoveringName : null;
+  const highlightSimilarStacksSetName = useMemo(() => {
+    return highlightSimilarStacksPreference ? setHoveringName : noop;
+  }, [highlightSimilarStacksPreference]);
+  const highlightSimilarStacksSetLevel = useMemo(() => {
+    return highlightSimilarStacksPreference ? setHoveringLevel : noop;
+  }, [highlightSimilarStacksPreference]);
+  const highlightSimilarStacksRow = highlightSimilarStacksPreference ? hoveringRow : null;
+  const path = useMemo(() => {
+    return [];
+  }, []);
 
   // useMemo for the root graph as it otherwise renders the whole graph if the hoveringRow changes.
   const root = useMemo(() => {
@@ -213,20 +253,20 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               curPath={curPath}
               total={total}
               xScale={xScale}
-              path={[]}
+              path={path}
               level={0}
               isRoot={true}
               searchString={currentSearchString}
               setHoveringRow={setHoveringRow}
-              setHoveringLevel={setHoveringLevel}
+              setHoveringLevel={highlightSimilarStacksSetLevel}
               sortBy={sortBy}
               darkMode={isDarkMode}
               compareMode={compareMode}
               profileType={profileType}
               isContextMenuOpen={isContextMenuOpen}
-              hoveringName={hoveringName}
-              setHoveringName={setHoveringName}
-              hoveringRow={hoveringRow}
+              hoveringName={highlightSimilarStacksName}
+              setHoveringName={highlightSimilarStacksSetName}
+              hoveringRow={highlightSimilarStacksRow}
               colorForSimilarNodes={colorForSimilarNodes}
               highlightSimilarStacksPreference={highlightSimilarStacksPreference}
             />
@@ -235,30 +275,29 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
       </svg>
     );
   }, [
-    compareMode,
-    curPath,
-    currentSearchString,
+    width,
     height,
-    isDarkMode,
-    profileType,
+    displayMenu,
+    table,
     mappingColors,
     setCurPath,
-    sortBy,
-    table,
+    curPath,
     total,
-    width,
     xScale,
+    currentSearchString,
+    sortBy,
+    isDarkMode,
+    compareMode,
+    profileType,
     isContextMenuOpen,
-    displayMenu,
+    highlightSimilarStacksName,
+    highlightSimilarStacksRow,
     colorForSimilarNodes,
     highlightSimilarStacksPreference,
-    hoveringName,
-    hoveringRow,
+    path,
+    highlightSimilarStacksSetLevel,
+    highlightSimilarStacksSetName,
   ]);
-
-  if (table.numRows === 0 || width === undefined) {
-    return <></>;
-  }
 
   return (
     <>
@@ -278,13 +317,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           hideMenu={hideAll}
           hideBinary={hideBinary}
         />
-        {isColorStackLegendEnabled && (
-          <ColorStackLegend
-            mappingColors={mappingColors}
-            navigateTo={navigateTo}
-            compareMode={compareMode}
-          />
-        )}
         {dockedMetainfo ? (
           <DockedGraphTooltip
             table={table}

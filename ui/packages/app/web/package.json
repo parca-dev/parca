@@ -1,7 +1,7 @@
 {
   "name": "@parca/web",
   "private": true,
-  "version": "0.16.674",
+  "version": "0.16.678",
   "description": "Parca Web Interface",
   "scripts": {
     "lint": "eslint --no-error-on-unmatched-pattern --ext .ts,.tsx,.js src/*",
@@ -30,7 +30,7 @@
     "@parca/hooks": "^0.0.57",
     "@parca/icons": "^0.16.69",
     "@parca/parser": "^0.16.74",
-    "@parca/profile": "workspace:*",
+    "@parca/profile": "^0.16.378",
     "@parca/store": "^0.16.146",
     "@parca/utilities": "^0.0.74",
     "@protobuf-ts/grpcweb-transport": "^2.9.4",
@@ -73,7 +73,7 @@
     "eslint-plugin-import": "2.29.1",
     "jest": "29.7.0",
     "jest-runtime": "29.7.0",
-    "pm2": "5.3.1",
+    "pm2": "5.4.0",
     "react-scripts": "5.0.1",
     "sass": "1.77.2",
     "sass-loader": "13.3.3",

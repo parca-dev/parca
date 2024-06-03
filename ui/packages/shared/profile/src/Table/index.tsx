@@ -21,7 +21,6 @@ import {AnimatePresence, motion} from 'framer-motion';
 
 import {
   Button,
-  TableActionButtonPlaceholder,
   Table as TableComponent,
   TableSkeleton,
   useParcaContext,
@@ -536,16 +535,7 @@ export const Table = React.memo(function Table({
   }, [navigateTo, router, filterByFunctionInput]);
 
   useEffect(() => {
-    if (loading && setActionButtons !== undefined) {
-      setActionButtons(<TableActionButtonPlaceholder />);
-      return;
-    }
-
-    if (setActionButtons === undefined) {
-      return;
-    }
-
-    setActionButtons(
+    setActionButtons?.(
       <>
         <ColumnsVisibility
           columns={columns}
