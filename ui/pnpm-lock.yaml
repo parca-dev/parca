@@ -534,7 +534,7 @@ importers:
         specifier: ^2.5.0
         version: 2.9.4
       '@tanstack/react-table':
-        specifier: ^8.16.0
+        specifier: ^8.17.3
         version: 8.17.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tanstack/table-core':
         specifier: ^8.16.0
@@ -712,7 +712,7 @@ importers:
         specifier: ^4.0.5
         version: 4.36.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tanstack/react-table':
-        specifier: ^8.16.0
+        specifier: ^8.17.3
         version: 8.17.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tanstack/table-core':
         specifier: ^8.16.0

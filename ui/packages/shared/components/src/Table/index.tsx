@@ -11,20 +11,77 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useRef, useState} from 'react';
+import {MouseEventHandler, useCallback, useRef, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import {
+  ExpandedState,
+  Row,
+  RowModel,
   flexRender,
   getCoreRowModel,
+  getExpandedRowModel,
   getSortedRowModel,
   useReactTable,
   type ColumnDef,
   type SortingState,
+  type Table as TableType,
   type VisibilityState,
 } from '@tanstack/react-table';
 import cx from 'classnames';
 import {useVirtual} from 'react-virtual';
+
+export interface RowRendererProps<TData> {
+  row: Row<TData>;
+  usePointerCursor?: boolean;
+  onRowClick?: (row: TData) => void;
+  getOnRowDoubleClick?: (row: Row<TData>) => MouseEventHandler<HTMLTableRowElement> | undefined;
+  enableHighlighting?: boolean;
+  shouldHighlightRow?: (row: TData) => boolean;
+}
+
+const DefaultRowRenderer = ({
+  row,
+  usePointerCursor,
+  onRowClick,
+  getOnRowDoubleClick,
+  enableHighlighting,
+  shouldHighlightRow,
+}: RowRendererProps<any>): JSX.Element => {
+  return (
+    <tr
+      key={row.id}
+      className={cx(
+        usePointerCursor ? 'cursor-pointer' : 'cursor-auto',
+        'hover:bg-[#62626212] dark:hover:bg-[#ffffff12]',
+        {'bg-red-500': row.getIsExpanded()}
+      )}
+      onClick={onRowClick != null ? () => onRowClick(row.original) : undefined}
+      onDoubleClick={getOnRowDoubleClick != null ? getOnRowDoubleClick(row) : undefined}
+      style={
+        !enableHighlighting || shouldHighlightRow === undefined
+          ? undefined
+          : {opacity: shouldHighlightRow(row.original) ? 1 : 0.5}
+      }
+    >
+      {row.getVisibleCells().map(cell => {
+        return (
+          <td
+            key={cell.id}
+            className={cx('p-1.5 align-top', {
+              /* @ts-expect-error */
+              'text-right': cell.column.columnDef.meta?.align === 'right',
+              /* @ts-expect-error */
+              'text-left': cell.column.columnDef.meta?.align === 'left',
+            })}
+          >
+            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </td>
+        );
+      })}
+    </tr>
+  );
+};
 
 interface Props<TData> {
   data: TData[];
@@ -32,12 +89,18 @@ interface Props<TData> {
   initialSorting?: SortingState;
   columnVisibility?: VisibilityState;
   onRowClick?: (row: TData) => void;
+  getOnRowDoubleClick?: (row: Row<TData>) => MouseEventHandler<HTMLTableRowElement> | undefined;
   enableHighlighting?: boolean;
   shouldHighlightRow?: (row: TData) => boolean;
   usePointerCursor?: boolean;
   className?: string;
   title?: string;
   emptyTableMessage?: string;
+  getSubRows?: (originalRow: TData, index: number) => TData[];
+  getCustomExpandedRowModel?: () => (table: TableType<TData>) => () => RowModel<TData>;
+  expandedState?: ExpandedState;
+  onExpandedChange?: (expanded: ExpandedState) => void;
+  CustomRowRenderer?: React.ComponentType<RowRendererProps<TData>> | null;
 }
 
 const Table = <T,>({
@@ -46,12 +109,18 @@ const Table = <T,>({
   initialSorting = [],
   columnVisibility = {},
   onRowClick,
+  getOnRowDoubleClick,
   enableHighlighting = false,
   usePointerCursor = true,
   shouldHighlightRow,
   className = '',
   title = '',
   emptyTableMessage = '',
+  getSubRows,
+  getCustomExpandedRowModel,
+  expandedState,
+  onExpandedChange,
+  CustomRowRenderer,
 }: Props<T>): JSX.Element => {
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
 
@@ -60,16 +129,20 @@ const Table = <T,>({
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getExpandedRowModel: (getCustomExpandedRowModel ?? getExpandedRowModel)(),
     state: {
       sorting,
       columnVisibility,
+      expanded: expandedState,
     },
     onSortingChange: setSorting,
+    onExpandedChange: onExpandedChange,
     enableColumnResizing: true,
     defaultColumn: {
       // @ts-expect-error
       size: 'auto',
     },
+    getSubRows,
   });
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
@@ -89,7 +162,7 @@ const Table = <T,>({
   return (
     <div ref={tableContainerRef} className={cx('h-full overflow-scroll pr-2', className)}>
       <table className="w-full">
-        <thead className="sticky top-0 bg-gray-50 text-sm dark:bg-gray-800">
+        <thead className="sticky top-0 bg-gray-50 text-sm dark:bg-gray-800 z-10">
           {title.length > 0 ? (
             <tr>
               <th colSpan={columns.length} className="p-2 pl-4 text-left uppercase">
@@ -161,36 +234,29 @@ const Table = <T,>({
           ) : null}
           {virtualRows.map(virtualRow => {
             const row = rows[virtualRow.index];
+            if (CustomRowRenderer != null) {
+              return (
+                <CustomRowRenderer
+                  key={row.id}
+                  row={row}
+                  enableHighlighting={enableHighlighting}
+                  getOnRowDoubleClick={getOnRowDoubleClick}
+                  onRowClick={onRowClick}
+                  shouldHighlightRow={shouldHighlightRow}
+                  usePointerCursor={usePointerCursor}
+                />
+              );
+            }
             return (
-              <tr
+              <DefaultRowRenderer
                 key={row.id}
-                className={cx(
-                  usePointerCursor ? 'cursor-pointer' : 'cursor-auto',
-                  'hover:bg-[#62626212] dark:hover:bg-[#ffffff12]'
-                )}
-                onClick={onRowClick != null ? () => onRowClick(row.original) : undefined}
-                style={
-                  !enableHighlighting || shouldHighlightRow === undefined
-                    ? undefined
-                    : {opacity: shouldHighlightRow(row.original) ? 1 : 0.5}
-                }
-              >
-                {row.getVisibleCells().map(cell => {
-                  return (
-                    <td
-                      key={cell.id}
-                      className={cx('p-1.5 align-top', {
-                        /* @ts-expect-error */
-                        'text-right': cell.column.columnDef.meta?.align === 'right',
-                        /* @ts-expect-error */
-                        'text-left': cell.column.columnDef.meta?.align === 'left',
-                      })}
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  );
-                })}
-              </tr>
+                row={row}
+                enableHighlighting={enableHighlighting}
+                getOnRowDoubleClick={getOnRowDoubleClick}
+                onRowClick={onRowClick}
+                shouldHighlightRow={shouldHighlightRow}
+                usePointerCursor={usePointerCursor}
+              />
             );
           })}
           {paddingBottom > 0 && (
