@@ -14,8 +14,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@parca/client": "^0.16.115",
-    "@parca/utilities": "^0.0.74",
+    "@parca/client": "workspace:*",
+    "@parca/utilities": "workspace:*",
     "@reduxjs/toolkit": "^1.7.2",
     "immer": "9.0.21",
     "react-redux": "^8.0.2",

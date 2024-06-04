@@ -11,20 +11,81 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import {
   flexRender,
   getCoreRowModel,
+  getExpandedRowModel,
   getSortedRowModel,
   useReactTable,
   type ColumnDef,
+  type ExpandedState,
+  type OnChangeFn,
+  type Row,
+  type RowModel,
   type SortingState,
+  type Table as TableType,
   type VisibilityState,
 } from '@tanstack/react-table';
+import {useVirtualizer, type VirtualizerOptions} from '@tanstack/react-virtual';
+import {elementScroll} from '@tanstack/virtual-core';
 import cx from 'classnames';
-import {useVirtual} from 'react-virtual';
+
+export interface RowRendererProps<TData> {
+  row: Row<TData>;
+  usePointerCursor?: boolean;
+  onRowClick?: (row: TData) => void;
+  onRowDoubleClick?: (row: Row<TData>, rows: Array<Row<TData>>) => void;
+  enableHighlighting?: boolean;
+  shouldHighlightRow?: (row: TData) => boolean;
+  rows: Array<Row<TData>>;
+}
+
+const DefaultRowRenderer = ({
+  row,
+  usePointerCursor,
+  onRowClick,
+  onRowDoubleClick,
+  enableHighlighting,
+  shouldHighlightRow,
+  rows,
+}: RowRendererProps<any>): JSX.Element => {
+  return (
+    <tr
+      key={row.id}
+      className={cx(
+        usePointerCursor === true ? 'cursor-pointer' : 'cursor-auto',
+        'hover:bg-[#62626212] dark:hover:bg-[#ffffff12]',
+        {'bg-red-500': row.getIsExpanded()}
+      )}
+      onClick={onRowClick != null ? () => onRowClick(row.original) : undefined}
+      onDoubleClick={onRowDoubleClick != null ? () => onRowDoubleClick(row, rows) : undefined}
+      style={
+        enableHighlighting !== true || shouldHighlightRow === undefined
+          ? undefined
+          : {opacity: shouldHighlightRow(row.original) ? 1 : 0.5}
+      }
+    >
+      {row.getVisibleCells().map(cell => {
+        return (
+          <td
+            key={cell.id}
+            className={cx('p-1.5 align-top', {
+              /* @ts-expect-error */
+              'text-right': cell.column.columnDef.meta?.align === 'right',
+              /* @ts-expect-error */
+              'text-left': cell.column.columnDef.meta?.align === 'left',
+            })}
+          >
+            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </td>
+        );
+      })}
+    </tr>
+  );
+};
 
 interface Props<TData> {
   data: TData[];
@@ -32,9 +93,24 @@ interface Props<TData> {
   initialSorting?: SortingState;
   columnVisibility?: VisibilityState;
   onRowClick?: (row: TData) => void;
+  onRowDoubleClick?: (row: Row<TData>, rows: Array<Row<TData>>) => void;
   enableHighlighting?: boolean;
   shouldHighlightRow?: (row: TData) => boolean;
   usePointerCursor?: boolean;
+  className?: string;
+  title?: string;
+  emptyTableMessage?: string;
+  getSubRows?: (originalRow: TData, index: number) => TData[];
+  getCustomExpandedRowModel?: () => (table: TableType<TData>) => () => RowModel<TData>;
+  expandedState?: ExpandedState;
+  onExpandedChange?: OnChangeFn<ExpandedState> | undefined;
+  CustomRowRenderer?: React.ComponentType<RowRendererProps<TData>> | null;
+  scrollToIndex?: number;
+  estimatedRowHeight?: number;
+}
+
+function easeInOutQuint(t: number): number {
+  return t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t;
 }
 
 const Table = <T,>({
@@ -43,47 +119,108 @@ const Table = <T,>({
   initialSorting = [],
   columnVisibility = {},
   onRowClick,
+  onRowDoubleClick,
   enableHighlighting = false,
   usePointerCursor = true,
   shouldHighlightRow,
+  className = '',
+  title = '',
+  emptyTableMessage = '',
+  getSubRows,
+  getCustomExpandedRowModel,
+  expandedState,
+  onExpandedChange,
+  CustomRowRenderer,
+  scrollToIndex,
+  estimatedRowHeight,
 }: Props<T>): JSX.Element => {
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
+  const [lastScrolledIndex, setLastScrolledIndex] = useState<number | null>(null);
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getExpandedRowModel: (getCustomExpandedRowModel ?? getExpandedRowModel)(),
     state: {
       sorting,
       columnVisibility,
+      expanded: expandedState,
     },
     onSortingChange: setSorting,
+    onExpandedChange: onExpandedChange,
     enableColumnResizing: true,
     defaultColumn: {
       // @ts-expect-error
       size: 'auto',
     },
+    getSubRows,
   });
 
-  const tableContainerRef = useRef<HTMLDivElement>(null);
   const {rows} = table.getRowModel();
-  const rowVirtualizer = useVirtual({
-    parentRef: tableContainerRef,
-    size: rows.length,
+
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const scrollingRef = useRef<number>();
+  const scrollToFn: VirtualizerOptions<any, any>['scrollToFn'] = useCallback(
+    (offset, canSmooth, instance) => {
+      const duration = 1000;
+      const start = tableContainerRef.current?.scrollTop ?? 0;
+      const startTime = (scrollingRef.current = Date.now());
+
+      const run = (): void => {
+        if (scrollingRef.current !== startTime) return;
+        const now = Date.now();
+        const elapsed = now - startTime;
+        const progress = easeInOutQuint(Math.min(elapsed / duration, 1));
+        const interpolated = start + (offset - start) * progress;
+
+        if (elapsed < duration) {
+          elementScroll(interpolated, canSmooth, instance);
+          requestAnimationFrame(run);
+        } else {
+          elementScroll(interpolated, canSmooth, instance);
+        }
+      };
+
+      requestAnimationFrame(run);
+    },
+    []
+  );
+
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => tableContainerRef.current,
     overscan: 10,
-    estimateSize: useCallback(() => 26, []),
+    estimateSize: () => estimatedRowHeight ?? 26,
+    scrollToFn,
   });
-  const {virtualItems: virtualRows, totalSize} = rowVirtualizer;
+  const virtualRows = rowVirtualizer.getVirtualItems();
+
+  useEffect(() => {
+    if (scrollToIndex != null && scrollToIndex >= 0 && scrollToIndex !== lastScrolledIndex) {
+      rowVirtualizer.scrollToIndex(scrollToIndex);
+      setLastScrolledIndex(scrollToIndex);
+    }
+  }, [scrollToIndex, rowVirtualizer, lastScrolledIndex, setLastScrolledIndex]);
 
   const paddingTop: number = virtualRows.length > 0 ? virtualRows?.[0]?.start ?? 0 : 0;
   const paddingBottom: number =
-    virtualRows.length > 0 ? totalSize - (virtualRows?.[virtualRows.length - 1]?.end ?? 0) : 0;
+    virtualRows.length > 0
+      ? rowVirtualizer.getTotalSize() - (virtualRows?.[virtualRows.length - 1]?.end ?? 0)
+      : 0;
 
   return (
-    <div ref={tableContainerRef} className="h-full overflow-scroll pr-2">
+    <div ref={tableContainerRef} className={cx('h-full overflow-scroll pr-2', className)}>
       <table className="w-full">
-        <thead className="sticky top-0 bg-gray-50 text-sm dark:bg-gray-800">
+        <thead className="sticky top-0 bg-gray-50 text-sm dark:bg-gray-800 z-20">
+          {title.length > 0 ? (
+            <tr>
+              <th colSpan={columns.length} className="p-2 pl-4 text-left uppercase">
+                {title}
+              </th>
+            </tr>
+          ) : null}
           {table.getHeaderGroups().map(headerGroup => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map(header => {
@@ -139,38 +276,40 @@ const Table = <T,>({
               <td style={{height: `${paddingTop}px`}} />
             </tr>
           )}
+          {rows.length === 0 && emptyTableMessage.length > 0 ? (
+            <tr>
+              <td colSpan={columns.length} className="p-2 text-center">
+                {emptyTableMessage}
+              </td>
+            </tr>
+          ) : null}
           {virtualRows.map(virtualRow => {
             const row = rows[virtualRow.index];
+            if (CustomRowRenderer != null) {
+              return (
+                <CustomRowRenderer
+                  key={row.id}
+                  row={row}
+                  enableHighlighting={enableHighlighting}
+                  onRowDoubleClick={onRowDoubleClick}
+                  onRowClick={onRowClick}
+                  shouldHighlightRow={shouldHighlightRow}
+                  usePointerCursor={usePointerCursor}
+                  rows={rows}
+                />
+              );
+            }
             return (
-              <tr
+              <DefaultRowRenderer
                 key={row.id}
-                className={cx(
-                  usePointerCursor ? 'cursor-pointer' : 'cursor-auto',
-                  'hover:bg-[#62626212] dark:hover:bg-[#ffffff12]'
-                )}
-                onClick={onRowClick != null ? () => onRowClick(row.original) : undefined}
-                style={
-                  !enableHighlighting || shouldHighlightRow === undefined
-                    ? undefined
-                    : {opacity: shouldHighlightRow(row.original) ? 1 : 0.5}
-                }
-              >
-                {row.getVisibleCells().map(cell => {
-                  return (
-                    <td
-                      key={cell.id}
-                      className={cx('p-1.5', {
-                        /* @ts-expect-error */
-                        'text-right': cell.column.columnDef.meta?.align === 'right',
-                        /* @ts-expect-error */
-                        'text-left': cell.column.columnDef.meta?.align === 'left',
-                      })}
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  );
-                })}
-              </tr>
+                row={row}
+                enableHighlighting={enableHighlighting}
+                onRowDoubleClick={onRowDoubleClick}
+                onRowClick={onRowClick}
+                shouldHighlightRow={shouldHighlightRow}
+                usePointerCursor={usePointerCursor}
+                rows={rows}
+              />
             );
           })}
           {paddingBottom > 0 && (

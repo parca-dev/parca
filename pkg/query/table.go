@@ -26,6 +26,7 @@ import (
 	"github.com/polarsignals/frostdb/pqarrow/builder"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/exp/maps"
 
 	queryv1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
@@ -47,6 +48,9 @@ const (
 	TableFieldCumulativeDiff = "cumulative_diff"
 	TableFieldFlat           = "flat"
 	TableFieldFlatDiff       = "flat_diff"
+
+	TableFieldCallers = "callers"
+	TableFieldCallees = "callees"
 )
 
 func GenerateTable(
@@ -98,6 +102,15 @@ func isFirstNonNil(row, listRow int, list *array.List) bool {
 	return false
 }
 
+func estimateTableRows(r profile.Reader) int {
+	if len(r.RecordReaders) == 0 {
+		return 0
+	}
+
+	// The number of unique function names is a good baseline for the number of rows, so going with that.
+	return r.RecordReaders[0].LineFunctionNameDict.Len()
+}
+
 func generateTableArrowRecord(
 	ctx context.Context,
 	mem memory.Allocator,
@@ -107,16 +120,18 @@ func generateTableArrowRecord(
 	_, span := tracer.Start(ctx, "generateTableArrowRecord")
 	defer span.End()
 
-	tb := newTableBuilder(mem)
+	profileReader := profile.NewReader(p)
+
+	tb := newTableBuilder(mem, estimateTableRows(profileReader))
 	defer tb.Release()
 
-	row := 0
+	tableRow := 0
 
-	profileReader := profile.NewReader(p)
 	for _, r := range profileReader.RecordReaders {
 		tb.cumulative += math.Int64.Sum(r.Value)
 
 		for sampleRow := 0; sampleRow < int(r.Record.NumRows()); sampleRow++ {
+			previousTableRow := -1
 			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(sampleRow)
 			for locationRow := int(lOffsetStart); locationRow < int(lOffsetEnd); locationRow++ {
 				if r.Locations.ListValues().IsNull(locationRow) {
@@ -137,18 +152,20 @@ func generateTableArrowRecord(
 					// If we have seen the address before, we merge the address with the existing row by summing the values.
 					// Note for Go developers: This won't panic. Tests have shown that if the first check fails, the second check won't be run.
 					if cr, ok := tb.addresses[unsafeString(buildID)][addr]; !ok {
-						if err := tb.appendRow(r, sampleRow, locationRow, -1, isLeaf); err != nil {
+						if err := tb.appendRow(r, sampleRow, locationRow, -1, tableRow, previousTableRow, isLeaf); err != nil {
 							return nil, 0, err
 						}
 
 						if _, ok := tb.addresses[unsafeString(buildID)]; !ok {
-							tb.addresses[string(buildID)] = map[uint64]int{addr: row}
+							tb.addresses[string(buildID)] = map[uint64]int{addr: tableRow}
 						} else {
-							tb.addresses[string(buildID)][addr] = row
+							tb.addresses[string(buildID)][addr] = tableRow
 						}
-						row++
+						previousTableRow = tableRow
+						tableRow++
 					} else {
-						tb.mergeRow(r, cr, sampleRow, isLeaf)
+						tb.mergeRow(r, cr, sampleRow, locationRow, -1, tb.addresses[unsafeString(buildID)][addr], previousTableRow, isLeaf)
+						previousTableRow = tb.addresses[unsafeString(buildID)][addr]
 					}
 				} else {
 					// The location has lines, we therefore compare its function names.
@@ -160,13 +177,15 @@ func generateTableArrowRecord(
 						if r.Line.IsValid(lineRow) && r.LineFunctionNameIndices.IsValid(lineRow) {
 							fn := r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(lineRow)))
 							if cr, ok := tb.functions[unsafeString(fn)]; !ok {
-								if err := tb.appendRow(r, sampleRow, locationRow, lineRow, isLeaf); err != nil {
+								if err := tb.appendRow(r, sampleRow, locationRow, lineRow, tableRow, previousTableRow, isLeaf); err != nil {
 									return nil, 0, err
 								}
-								tb.functions[string(fn)] = row
-								row++
+								tb.functions[string(fn)] = tableRow
+								previousTableRow = tableRow
+								tableRow++
 							} else {
-								tb.mergeRow(r, cr, sampleRow, isLeaf)
+								tb.mergeRow(r, cr, sampleRow, locationRow, lineRow, tb.functions[unsafeString(fn)], previousTableRow, isLeaf)
+								previousTableRow = tb.functions[unsafeString(fn)]
 							}
 						}
 					}
@@ -184,6 +203,8 @@ type tableBuilder struct {
 	cumulative int64
 	addresses  map[string]map[uint64]int
 	functions  map[string]int
+	callers    []map[int64]struct{}
+	callees    []map[int64]struct{}
 
 	rb     *builder.RecordBuilder
 	schema *arrow.Schema
@@ -200,9 +221,11 @@ type tableBuilder struct {
 	builderCumulativeDiff     *builder.OptInt64Builder
 	builderFlat               *builder.OptInt64Builder
 	builderFlatDiff           *builder.OptInt64Builder
+	builderCallers            *builder.ListBuilder
+	builderCallees            *builder.ListBuilder
 }
 
-func newTableBuilder(mem memory.Allocator) *tableBuilder {
+func newTableBuilder(mem memory.Allocator, rowCountEstimate int) *tableBuilder {
 	schema := arrow.NewSchema([]arrow.Field{
 		{Name: TableFieldMappingFile, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint16, ValueType: arrow.BinaryTypes.String}},
 		{Name: TableFieldMappingBuildID, Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint16, ValueType: arrow.BinaryTypes.String}},
@@ -219,6 +242,10 @@ func newTableBuilder(mem memory.Allocator) *tableBuilder {
 		{Name: TableFieldCumulativeDiff, Type: arrow.PrimitiveTypes.Int64, Nullable: true},
 		{Name: TableFieldFlat, Type: arrow.PrimitiveTypes.Int64},
 		{Name: TableFieldFlatDiff, Type: arrow.PrimitiveTypes.Int64},
+
+		// Call View
+		{Name: TableFieldCallers, Type: arrow.ListOf(arrow.PrimitiveTypes.Int64)},
+		{Name: TableFieldCallees, Type: arrow.ListOf(arrow.PrimitiveTypes.Int64)},
 	}, nil)
 
 	rb := builder.NewRecordBuilder(mem, schema)
@@ -227,6 +254,8 @@ func newTableBuilder(mem memory.Allocator) *tableBuilder {
 		mem:       mem,
 		addresses: map[string]map[uint64]int{},
 		functions: map[string]int{},
+		callers:   make([]map[int64]struct{}, rowCountEstimate),
+		callees:   make([]map[int64]struct{}, rowCountEstimate),
 
 		rb:                        rb,
 		schema:                    schema,
@@ -242,13 +271,47 @@ func newTableBuilder(mem memory.Allocator) *tableBuilder {
 		builderCumulativeDiff:     rb.Field(schema.FieldIndices(TableFieldCumulativeDiff)[0]).(*builder.OptInt64Builder),
 		builderFlat:               rb.Field(schema.FieldIndices(TableFieldFlat)[0]).(*builder.OptInt64Builder),
 		builderFlatDiff:           rb.Field(schema.FieldIndices(TableFieldFlatDiff)[0]).(*builder.OptInt64Builder),
+		builderCallers:            rb.Field(schema.FieldIndices(TableFieldCallers)[0]).(*builder.ListBuilder),
+		builderCallees:            rb.Field(schema.FieldIndices(TableFieldCallees)[0]).(*builder.ListBuilder),
 	}
 
 	return tb
 }
 
+func (tb *tableBuilder) populateCallerAndCalleeData() {
+	for i := range tb.builderFunctionName.Len() {
+		// We need to check if the caller list exists for this index as the length of the callers maybe less than the length of the
+		// function names table due to the fact that some functions may not have any callers.
+		if len(tb.callers) > i {
+			callers := maps.Keys(tb.callers[i])
+			if len(callers) == 0 {
+				tb.builderCallers.AppendNull()
+			} else {
+				tb.builderCallers.Append(true)
+				tb.builderCallers.ValueBuilder().(*builder.OptInt64Builder).AppendData(callers)
+			}
+		} else {
+			tb.builderCallers.AppendNull()
+		}
+
+		// Same as above, we need to check if the callee list exists for this index.
+		if len(tb.callees) > i {
+			callees := maps.Keys(tb.callees[i])
+			if len(callees) == 0 {
+				tb.builderCallees.AppendNull()
+			} else {
+				tb.builderCallees.Append(true)
+				tb.builderCallees.ValueBuilder().(*builder.OptInt64Builder).AppendData(callees)
+			}
+		} else {
+			tb.builderCallees.AppendNull()
+		}
+	}
+}
+
 // NewRecord returns a new record from the builders.
 func (tb *tableBuilder) NewRecord() (arrow.Record, error) {
+	tb.populateCallerAndCalleeData()
 	return tb.rb.NewRecord(), nil
 }
 
@@ -258,7 +321,7 @@ func (tb *tableBuilder) Release() {
 
 func (tb *tableBuilder) appendRow(
 	r *profile.RecordReader,
-	sampleRow, locationRow, lineRow int,
+	sampleRow, locationRow, lineRow, currentTableRow, previousTableRow int,
 	leaf bool,
 ) error {
 	for j := range tb.rb.Fields() {
@@ -355,6 +418,10 @@ func (tb *tableBuilder) appendRow(
 				// don't set null as it might also just be merged into a bigger number.
 				tb.builderFlatDiff.Append(0)
 			}
+		case TableFieldCallers:
+			tb.addCaller(previousTableRow, int64(currentTableRow))
+		case TableFieldCallees:
+			tb.addCallee(currentTableRow, int64(previousTableRow))
 		default:
 			panic(fmt.Sprintf("unknown field %s", tb.schema.Field(j).Name))
 		}
@@ -362,7 +429,7 @@ func (tb *tableBuilder) appendRow(
 	return nil
 }
 
-func (tb *tableBuilder) mergeRow(r *profile.RecordReader, mergeRow, sampleRow int, isLeaf bool) {
+func (tb *tableBuilder) mergeRow(r *profile.RecordReader, mergeRow, sampleRow, locationRow, lineRow, currentTableRow, previousTableRow int, isLeaf bool) {
 	tb.builderCumulative.Add(mergeRow, r.Value.Value(sampleRow))
 	if r.Diff.Value(sampleRow) != 0 {
 		tb.builderCumulativeDiff.Add(mergeRow, r.Diff.Value(sampleRow))
@@ -374,4 +441,33 @@ func (tb *tableBuilder) mergeRow(r *profile.RecordReader, mergeRow, sampleRow in
 			tb.builderFlatDiff.Add(mergeRow, r.Diff.Value(sampleRow))
 		}
 	}
+
+	tb.addCaller(previousTableRow, int64(currentTableRow))
+	tb.addCallee(currentTableRow, int64(previousTableRow))
+}
+
+func (tb *tableBuilder) addCaller(idx int, caller int64) {
+	if caller == -1 || idx == -1 {
+		return
+	}
+	for len(tb.callers) <= idx+1 {
+		tb.callers = append(tb.callers, map[int64]struct{}{})
+	}
+	if tb.callers[idx] == nil {
+		tb.callers[idx] = map[int64]struct{}{}
+	}
+	tb.callers[idx][caller] = struct{}{}
+}
+
+func (tb *tableBuilder) addCallee(idx int, callee int64) {
+	if callee == -1 || idx == -1 {
+		return
+	}
+	for len(tb.callees) <= idx+1 {
+		tb.callees = append(tb.callees, map[int64]struct{}{})
+	}
+	if tb.callees[idx] == nil {
+		tb.callees[idx] = map[int64]struct{}{}
+	}
+	tb.callees[idx][callee] = struct{}{}
 }

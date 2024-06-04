@@ -108,6 +108,85 @@ func TestGenerateTable(t *testing.T) {
 	require.Truef(t, found, "expected to find the specific function")
 }
 
+func TestTableCallView(t *testing.T) {
+	ctx := context.Background()
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
+
+	fileContent := MustReadAllGzip(t, "testdata/two-stacks.pb.gz")
+	pp, err := pprofprofile.ParseData(fileContent)
+	require.NoError(t, err)
+
+	p, err := PprofToSymbolizedProfile(
+		profile.Meta{},
+		pp,
+		0,
+	)
+	require.NoError(t, err)
+
+	tracer := noop.NewTracerProvider().Tracer("")
+	rec, cumulative, err := generateTableArrowRecord(ctx, mem, tracer, p)
+	require.NoError(t, err)
+	defer rec.Release()
+
+	require.NotNil(t, rec)
+	require.NotNil(t, cumulative)
+
+	functionNameColumn := rec.Column(rec.Schema().FieldIndices(TableFieldFunctionName)[0]).(*array.Dictionary)
+	functionNameColumnDict := functionNameColumn.Dictionary().(*array.String)
+
+	callersColumn := rec.Column(rec.Schema().FieldIndices(TableFieldCallers)[0]).(*array.List)
+	calleesColumn := rec.Column(rec.Schema().FieldIndices(TableFieldCallees)[0]).(*array.List)
+
+	nodeIndex := -1
+	child1Index := -1
+	child2Index := -1
+
+	for i := 0; i < int(rec.NumRows()); i++ {
+		if functionNameColumnDict.Value(functionNameColumn.GetValueIndex(i)) == "unwind failed" {
+			nodeIndex = i
+		}
+		if functionNameColumnDict.Value(functionNameColumn.GetValueIndex(i)) == "ChunkNotFound" {
+			child1Index = i
+		}
+		if functionNameColumnDict.Value(functionNameColumn.GetValueIndex(i)) == "PcNotCovered" {
+			child2Index = i
+		}
+	}
+
+	callerValues := callersColumn.ListValues().(*array.Int64)
+	calleeValues := calleesColumn.ListValues().(*array.Int64)
+
+	beg, end := callersColumn.ValueOffsets(nodeIndex)
+
+	require.Equal(t, 0, int(end-beg))
+
+	beg, end = callersColumn.ValueOffsets(child1Index)
+	require.Equal(t, 1, int(end-beg))
+	require.Equal(t, "unwind failed", functionNameColumnDict.Value(functionNameColumn.GetValueIndex(int(callerValues.Value(int(beg))))))
+
+	beg, end = callersColumn.ValueOffsets(child2Index)
+	require.Equal(t, 1, int(end-beg))
+	require.Equal(t, "unwind failed", functionNameColumnDict.Value(functionNameColumn.GetValueIndex(int(callerValues.Value(int(beg))))))
+
+	beg, end = calleesColumn.ValueOffsets(nodeIndex)
+
+	actualValues := []string{}
+	for i := beg; i < end; i++ {
+		actualValues = append(actualValues, functionNameColumnDict.Value(functionNameColumn.GetValueIndex(int(calleeValues.Value(int(i))))))
+	}
+
+	require.Equal(t, 2, int(end-beg))
+	require.Contains(t, actualValues, "ChunkNotFound")
+	require.Contains(t, actualValues, "PcNotCovered")
+
+	beg, end = calleesColumn.ValueOffsets(child1Index)
+	require.Equal(t, 0, int(end-beg))
+
+	beg, end = calleesColumn.ValueOffsets(child2Index)
+	require.Equal(t, 0, int(end-beg))
+}
+
 func TestGenerateTableAggregateFlat(t *testing.T) {
 	ctx := context.Background()
 	tracer := noop.NewTracerProvider().Tracer("")
