@@ -19,6 +19,7 @@ import {
   type CellContext,
   type ColumnDef,
   type ExpandedState,
+  type Row as RowType,
 } from '@tanstack/table-core';
 import {Int64, Vector, tableFromIPC, vectorFromArray} from 'apache-arrow';
 import cx from 'classnames';
@@ -189,14 +190,15 @@ const CustomRowRenderer = ({
   row,
   usePointerCursor,
   onRowClick,
-  getOnRowDoubleClick,
+  onRowDoubleClick,
   enableHighlighting,
   shouldHighlightRow,
+  rows,
 }: RowRendererProps<Row>): React.JSX.Element => {
   const data = row.original;
   const isExpanded = row.getIsExpanded();
-  const isSubRow = row.original.isTopSubRow === true || row.original.isBottomSubRow === true;
-  const bgClassNames = rowBgClassNames(isExpanded, isSubRow);
+  const _isSubRow = isSubRow(data);
+  const bgClassNames = rowBgClassNames(isExpanded, _isSubRow);
   if (isDummyRow(data)) {
     return (
       <tr key={row.id} className={cx(bgClassNames)}>
@@ -215,13 +217,13 @@ const CustomRowRenderer = ({
         'relative',
         bgClassNames,
         {
-          'hover:bg-[#62626212] dark:hover:bg-[#ffffff12] ': !isExpanded && !isSubRow,
-          'hover:bg-indigo-200 dark:hover:bg-gray-500': !isExpanded && isSubRow,
+          'hover:bg-[#62626212] dark:hover:bg-[#ffffff12] ': !isExpanded && !_isSubRow,
+          'hover:bg-indigo-200 dark:hover:bg-gray-500': !isExpanded && _isSubRow,
           'hover:bg-indigo-200 dark:bg-gray-500': isExpanded,
         }
       )}
       onClick={onRowClick != null ? () => onRowClick(row.original) : undefined}
-      onDoubleClick={getOnRowDoubleClick != null ? getOnRowDoubleClick(row) : undefined}
+      onDoubleClick={onRowDoubleClick != null ? () => onRowDoubleClick(row, rows) : undefined}
       style={
         enableHighlighting !== true || shouldHighlightRow === undefined
           ? undefined
@@ -311,6 +313,7 @@ export const Table = React.memo(function Table({
   const [filterByFunctionInput] = useURLState({param: 'filter_by_function'});
   const {isDarkMode} = useParcaContext();
   const [expanded, setExpanded] = useState<ExpandedState>({});
+  const [scrollToIndex, setScrollToIndex] = useState<number | undefined>(undefined);
 
   const {compareMode} = useProfileViewContext();
 
@@ -525,7 +528,7 @@ export const Table = React.memo(function Table({
 
   const onRowClick = useCallback(
     (row: Row) => {
-      if (!('name' in row)) {
+      if (isDummyRow(row)) {
         return;
       }
 
@@ -536,6 +539,42 @@ export const Table = React.memo(function Table({
       selectSpan(row.name);
     },
     [selectSpan, dashboardItems.length]
+  );
+
+  const onRowDoubleClick = useCallback(
+    (row: RowType<Row>, rows: Array<RowType<Row>>) => {
+      if (isDummyRow(row.original)) {
+        return;
+      }
+      if (!isSubRow(row.original)) {
+        row.toggleExpanded();
+        return;
+      }
+      // find the original row for this subrow and toggle it
+      const newRow = rows.find(
+        r =>
+          !isDummyRow(r.original) &&
+          !isDummyRow(row.original) &&
+          r.original.name === row.original.name &&
+          !isSubRow(r.original)
+      );
+      const parentRow = rows.find(r => {
+        const parent = row.getParentRow()!;
+        if (isDummyRow(parent.original) || isDummyRow(r.original)) {
+          return false;
+        }
+        return r.original.name === parent.original.name;
+      });
+      if (parentRow == null || newRow == null) {
+        return;
+      }
+
+      newRow.toggleExpanded();
+
+      let scrollTarget = getScrollTargetIndex(rows, parentRow, newRow);
+      setScrollToIndex(scrollTarget);
+    },
+    [scrollToIndex]
   );
 
   const shouldHighlightRow = useCallback(
@@ -710,9 +749,7 @@ export const Table = React.memo(function Table({
               enableHighlighting={enableHighlighting}
               shouldHighlightRow={shouldHighlightRow}
               usePointerCursor={dashboardItems.length > 1}
-              getOnRowDoubleClick={row => {
-                return () => row.toggleExpanded();
-              }}
+              onRowDoubleClick={onRowDoubleClick}
               getSubRows={row => (isDummyRow(row) ? [] : row.subRows ?? [])}
               getCustomExpandedRowModel={getTopAndBottomExpandedRowModel}
               expandedState={expanded}
@@ -726,6 +763,8 @@ export const Table = React.memo(function Table({
                 setExpanded(newState);
               }}
               CustomRowRenderer={CustomRowRenderer}
+              scrollToIndex={scrollToIndex}
+              estimatedRowHeight={29}
             />
           </div>
         </div>
@@ -768,5 +807,35 @@ export const RowName = (
 
   return hexifyAddress(address);
 };
+
+const getRowsCount = (rows: RowType<Row>[]): number => {
+  if (rows.length < 6) {
+    return 6;
+  }
+
+  return rows.length;
+};
+
+function getScrollTargetIndex(rows: RowType<Row>[], parentRow: RowType<Row>, newRow: RowType<Row>) {
+  const parentIndex = rows.indexOf(parentRow);
+  const newRowIndex = rows.indexOf(newRow);
+  let targetIndex = newRowIndex;
+  if (parentIndex > newRowIndex) {
+    // Adjusting the number of subs rows to scroll to the main row after expansion.
+    targetIndex -= getRowsCount(newRow.subRows);
+  }
+  if (parentIndex < newRowIndex) {
+    // If the parent row is above the new row, we need to adjust the number of subrows of the parent.
+    targetIndex += getRowsCount(parentRow.subRows);
+  }
+  if (targetIndex < 0) {
+    targetIndex = 0;
+  }
+  return targetIndex;
+}
+
+function isSubRow(row: Row) {
+  return row.isTopSubRow === true || row.isBottomSubRow === true;
+}
 
 export default Table;
