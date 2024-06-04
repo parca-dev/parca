@@ -11,9 +11,9 @@
     "watch": "tsc-watch"
   },
   "dependencies": {
-    "@parca/client": "^0.16.115",
-    "@parca/store": "^0.16.146",
-    "@parca/utilities": "^0.0.74",
+    "@parca/client": "workspace:*",
+    "@parca/store": "workspace:*",
+    "@parca/utilities": "workspace:*",
     "@rehooks/local-storage": "^2.4.4",
     "@types/lodash": "^4.17.0",
     "lodash": "^4.17.21",

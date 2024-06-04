@@ -313,31 +313,31 @@ importers:
         specifier: ^4.0.0
         version: 4.1.1(react@18.3.1)
       '@parca/client':
-        specifier: ^0.16.115
+        specifier: workspace:*
         version: link:../../shared/client
       '@parca/components':
-        specifier: ^0.16.278
+        specifier: workspace:*
         version: link:../../shared/components
       '@parca/dynamicsize':
-        specifier: ^0.16.65
+        specifier: workspace:*
         version: link:../../shared/dynamicsize
       '@parca/hooks':
-        specifier: ^0.0.57
+        specifier: workspace:*
         version: link:../../shared/hooks
       '@parca/icons':
-        specifier: ^0.16.69
+        specifier: workspace:*
         version: link:../../shared/icons
       '@parca/parser':
-        specifier: ^0.16.74
+        specifier: workspace:*
         version: link:../../shared/parser
       '@parca/profile':
-        specifier: ^0.16.379
+        specifier: workspace:*
         version: link:../../shared/profile
       '@parca/store':
-        specifier: ^0.16.146
+        specifier: workspace:*
         version: link:../../shared/store
       '@parca/utilities':
-        specifier: ^0.0.74
+        specifier: workspace:*
         version: link:../../shared/utilities
       '@protobuf-ts/grpcweb-transport':
         specifier: ^2.9.4
@@ -507,25 +507,25 @@ importers:
         specifier: ^4.0.0
         version: 4.1.1(react@18.3.1)
       '@parca/client':
-        specifier: ^0.16.115
+        specifier: workspace:*
         version: link:../client
       '@parca/dynamicsize':
-        specifier: ^0.16.65
+        specifier: workspace:*
         version: link:../dynamicsize
       '@parca/hooks':
-        specifier: ^0.0.57
+        specifier: workspace:*
         version: link:../hooks
       '@parca/icons':
-        specifier: ^0.16.69
+        specifier: workspace:*
         version: link:../icons
       '@parca/parser':
-        specifier: ^0.16.74
+        specifier: workspace:*
         version: link:../parser
       '@parca/store':
-        specifier: ^0.16.146
+        specifier: workspace:*
         version: link:../store
       '@parca/utilities':
-        specifier: ^0.0.74
+        specifier: workspace:*
         version: link:../utilities
       '@protobuf-ts/grpcweb-transport':
         specifier: ^2.5.0
@@ -609,13 +609,13 @@ importers:
   packages/shared/hooks:
     dependencies:
       '@parca/client':
-        specifier: ^0.16.115
+        specifier: workspace:*
         version: link:../client
       '@parca/store':
-        specifier: ^0.16.146
+        specifier: workspace:*
         version: link:../store
       '@parca/utilities':
-        specifier: ^0.0.74
+        specifier: workspace:*
         version: link:../utilities
       '@rehooks/local-storage':
         specifier: ^2.4.4
@@ -679,28 +679,28 @@ importers:
         specifier: ^4.0.0
         version: 4.1.1(react@18.3.1)
       '@parca/client':
-        specifier: ^0.16.115
+        specifier: workspace:*
         version: link:../client
       '@parca/components':
         specifier: workspace:*
         version: link:../components
       '@parca/dynamicsize':
-        specifier: ^0.16.65
+        specifier: workspace:*
         version: link:../dynamicsize
       '@parca/hooks':
-        specifier: ^0.0.57
+        specifier: workspace:*
         version: link:../hooks
       '@parca/icons':
-        specifier: ^0.16.69
+        specifier: workspace:*
         version: link:../icons
       '@parca/parser':
-        specifier: ^0.16.74
+        specifier: workspace:*
         version: link:../parser
       '@parca/store':
-        specifier: ^0.16.146
+        specifier: workspace:*
         version: link:../store
       '@parca/utilities':
-        specifier: ^0.0.74
+        specifier: workspace:*
         version: link:../utilities
       '@popperjs/core':
         specifier: ^2.11.8
@@ -824,10 +824,10 @@ importers:
   packages/shared/store:
     dependencies:
       '@parca/client':
-        specifier: ^0.16.115
+        specifier: workspace:*
         version: link:../client
       '@parca/utilities':
-        specifier: ^0.0.74
+        specifier: workspace:*
         version: link:../utilities
       '@reduxjs/toolkit':
         specifier: ^1.7.2
@@ -851,7 +851,7 @@ importers:
   packages/shared/utilities:
     dependencies:
       '@parca/client':
-        specifier: ^0.16.115
+        specifier: workspace:*
         version: link:../client
       '@rehooks/local-storage':
         specifier: ^2.4.4
