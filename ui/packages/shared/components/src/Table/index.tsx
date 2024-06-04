@@ -22,6 +22,7 @@ import {
   useReactTable,
   type ColumnDef,
   type ExpandedState,
+  type OnChangeFn,
   type Row,
   type RowModel,
   type SortingState,
@@ -101,13 +102,13 @@ interface Props<TData> {
   getSubRows?: (originalRow: TData, index: number) => TData[];
   getCustomExpandedRowModel?: () => (table: TableType<TData>) => () => RowModel<TData>;
   expandedState?: ExpandedState;
-  onExpandedChange?: (expanded: ExpandedState) => void;
+  onExpandedChange?: OnChangeFn<ExpandedState> | undefined;
   CustomRowRenderer?: React.ComponentType<RowRendererProps<TData>> | null;
   scrollToIndex?: number;
   estimatedRowHeight?: number;
 }
 
-function easeInOutQuint(t) {
+function easeInOutQuint(t: number) {
   return t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t;
 }
 
