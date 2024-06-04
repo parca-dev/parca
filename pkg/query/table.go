@@ -280,7 +280,6 @@ func newTableBuilder(mem memory.Allocator, rowCountEstimate int) *tableBuilder {
 
 func (tb *tableBuilder) populateCallerAndCalleeData() {
 	for i := range tb.builderFunctionName.Len() {
-
 		if len(tb.callers) > i {
 			callers := maps.Keys(tb.callers[i])
 			if len(callers) == 0 {
