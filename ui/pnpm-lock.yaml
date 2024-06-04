@@ -542,6 +542,9 @@ importers:
       '@tanstack/table-core':
         specifier: ^8.17.3
         version: 8.17.3
+      '@tanstack/virtual-core':
+        specifier: ^3.5.0
+        version: 3.5.0
       '@types/d3-selection':
         specifier: ^3.0.10
         version: 3.0.10

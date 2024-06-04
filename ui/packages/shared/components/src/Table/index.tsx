@@ -29,17 +29,18 @@ import {
   type Table as TableType,
   type VisibilityState,
 } from '@tanstack/react-table';
-import {elementScroll, useVirtualizer, type VirtualizerOptions} from '@tanstack/react-virtual';
+import {useVirtualizer, type VirtualizerOptions} from '@tanstack/react-virtual';
+import {elementScroll} from '@tanstack/virtual-core';
 import cx from 'classnames';
 
 export interface RowRendererProps<TData> {
   row: Row<TData>;
   usePointerCursor?: boolean;
   onRowClick?: (row: TData) => void;
-  onRowDoubleClick?: (row: Row<TData>, rows: Row<TData>[]) => void;
+  onRowDoubleClick?: (row: Row<TData>, rows: Array<Row<TData>>) => void;
   enableHighlighting?: boolean;
   shouldHighlightRow?: (row: TData) => boolean;
-  rows: Row<TData>[];
+  rows: Array<Row<TData>>;
 }
 
 const DefaultRowRenderer = ({
@@ -92,7 +93,7 @@ interface Props<TData> {
   initialSorting?: SortingState;
   columnVisibility?: VisibilityState;
   onRowClick?: (row: TData) => void;
-  onRowDoubleClick?: (row: Row<TData>, rows: Row<TData>[]) => void;
+  onRowDoubleClick?: (row: Row<TData>, rows: Array<Row<TData>>) => void;
   enableHighlighting?: boolean;
   shouldHighlightRow?: (row: TData) => boolean;
   usePointerCursor?: boolean;
@@ -108,7 +109,7 @@ interface Props<TData> {
   estimatedRowHeight?: number;
 }
 
-function easeInOutQuint(t: number) {
+function easeInOutQuint(t: number): number {
   return t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t;
 }
 
@@ -167,7 +168,7 @@ const Table = <T,>({
       const start = tableContainerRef.current?.scrollTop ?? 0;
       const startTime = (scrollingRef.current = Date.now());
 
-      const run = () => {
+      const run = (): void => {
         if (scrollingRef.current !== startTime) return;
         const now = Date.now();
         const elapsed = now - startTime;

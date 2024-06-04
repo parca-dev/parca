@@ -112,19 +112,19 @@ const ROW_HEIGHT = 29;
 
 const sizeToHeightStyle = (size: number): Record<string, string> => {
   return {
-    height: size * ROW_HEIGHT + 'px',
+    height: `${size * ROW_HEIGHT}px`,
   };
 };
 
 const sizeToWidthStyle = (size: number): Record<string, string> => {
   return {
-    width: size * ROW_HEIGHT + 'px',
+    width: `${size * ROW_HEIGHT}px`,
   };
 };
 
 const sizeToTopStyle = (size: number): Record<string, string> => {
   return {
-    top: size * ROW_HEIGHT + 10 + 'px',
+    top: `${size * ROW_HEIGHT + 10}px`,
   };
 };
 
@@ -498,41 +498,37 @@ export const Table = React.memo(function Table({
     [selectSpan, dashboardItems.length]
   );
 
-  const onRowDoubleClick = useCallback(
-    (row: RowType<Row>, rows: Array<RowType<Row>>) => {
-      if (isDummyRow(row.original)) {
-        return;
+  const onRowDoubleClick = useCallback((row: RowType<Row>, rows: Array<RowType<Row>>) => {
+    if (isDummyRow(row.original)) {
+      return;
+    }
+    if (!isSubRow(row.original)) {
+      row.toggleExpanded();
+      return;
+    }
+    // find the original row for this subrow and toggle it
+    const newRow = rows.find(
+      r =>
+        !isDummyRow(r.original) &&
+        !isDummyRow(row.original) &&
+        r.original.name === row.original.name &&
+        !isSubRow(r.original)
+    );
+    const parentRow = rows.find(r => {
+      const parent = row.getParentRow()!;
+      if (isDummyRow(parent.original) || isDummyRow(r.original)) {
+        return false;
       }
-      if (!isSubRow(row.original)) {
-        row.toggleExpanded();
-        return;
-      }
-      // find the original row for this subrow and toggle it
-      const newRow = rows.find(
-        r =>
-          !isDummyRow(r.original) &&
-          !isDummyRow(row.original) &&
-          r.original.name === row.original.name &&
-          !isSubRow(r.original)
-      );
-      const parentRow = rows.find(r => {
-        const parent = row.getParentRow()!;
-        if (isDummyRow(parent.original) || isDummyRow(r.original)) {
-          return false;
-        }
-        return r.original.name === parent.original.name;
-      });
-      if (parentRow == null || newRow == null) {
-        return;
-      }
+      return r.original.name === parent.original.name;
+    });
+    if (parentRow == null || newRow == null) {
+      return;
+    }
 
-      newRow.toggleExpanded();
+    newRow.toggleExpanded();
 
-      let scrollTarget = getScrollTargetIndex(rows, parentRow, newRow);
-      setScrollToIndex(scrollTarget);
-    },
-    [scrollToIndex]
-  );
+    setScrollToIndex(getScrollTargetIndex(rows, parentRow, newRow));
+  }, []);
 
   const shouldHighlightRow = useCallback(
     (row: Row) => {
@@ -765,7 +761,7 @@ export const RowName = (
   return hexifyAddress(address);
 };
 
-const getRowsCount = (rows: RowType<Row>[]): number => {
+const getRowsCount = (rows: Array<RowType<Row>>): number => {
   if (rows.length < 6) {
     return 6;
   }
@@ -773,7 +769,11 @@ const getRowsCount = (rows: RowType<Row>[]): number => {
   return rows.length;
 };
 
-function getScrollTargetIndex(rows: RowType<Row>[], parentRow: RowType<Row>, newRow: RowType<Row>) {
+function getScrollTargetIndex(
+  rows: Array<RowType<Row>>,
+  parentRow: RowType<Row>,
+  newRow: RowType<Row>
+): number {
   const parentIndex = rows.indexOf(parentRow);
   const newRowIndex = rows.indexOf(newRow);
   let targetIndex = newRowIndex;
@@ -791,7 +791,7 @@ function getScrollTargetIndex(rows: RowType<Row>[], parentRow: RowType<Row>, new
   return targetIndex;
 }
 
-function isSubRow(row: Row) {
+function isSubRow(row: Row): boolean {
   return row.isTopSubRow === true || row.isBottomSubRow === true;
 }
 
