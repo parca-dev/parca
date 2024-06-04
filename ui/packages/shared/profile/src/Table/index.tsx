@@ -108,82 +108,42 @@ const rowBgClassNames = (isExpanded: boolean, isSubRow: boolean): Record<string,
   };
 };
 
-const sizeToHeight = ['h-[0px]', 'h-[29px]', 'h-[58px]', 'h-[87px]'];
-const sizeToWidth = [
-  'w-[0px]',
-  'w-[29px]',
-  'w-[58px]',
-  'w-[87px]',
-  'w-[116px]',
-  'w-[145px]',
-  'w-[174px]',
-  'w-[203px]',
-  'w-[232px]',
-  'w-[261px]',
-  'w-[290px]',
-  'w-[319px]',
-  'w-[348px]',
-  'w-[377px]',
-  'w-[406px]',
-  'w-[435px]',
-  'w-[464px]',
-  'w-[493px]',
-  'w-[522px]',
-  'w-[551px]',
-  'w-[580px]',
-  'w-[609px]',
-  'w-[638px]',
-  'w-[667px]',
-  'w-[696px]',
-  'w-[725px]',
-  'w-[754px]',
-];
-const sizeToTop = [
-  'top-[10px]',
-  'top-[39px]',
-  'top-[68px]',
-  'top-[97px]',
-  'top-[126px]',
-  'top-[155px]',
-  'top-[184px]',
-  'top-[213px]',
-  'top-[242px]',
-  'top-[271px]',
-  'top-[300px]',
-  'top-[329px]',
-  'top-[358px]',
-  'top-[387px]',
-  'top-[416px]',
-  'top-[445px]',
-  'top-[474px]',
-  'top-[503px]',
-  'top-[532px]',
-  'top-[561px]',
-  'top-[590px]',
-  'top-[619px]',
-  'top-[648px]',
-  'top-[677px]',
-  'top-[706px]',
-  'top-[735px]',
-  'top-[764px]',
-];
+const ROW_HEIGHT = 29;
 
-const getCallerLabelWidth = (subRows: Row[]): string => {
+const sizeToHeightStyle = (size: number): Record<string, string> => {
+  return {
+    height: size * ROW_HEIGHT + 'px',
+  };
+};
+
+const sizeToWidthStyle = (size: number): Record<string, string> => {
+  return {
+    width: size * ROW_HEIGHT + 'px',
+  };
+};
+
+const sizeToTopStyle = (size: number): Record<string, string> => {
+  return {
+    top: size * ROW_HEIGHT + 10 + 'px',
+  };
+};
+
+const getCallerLabelWidthStyle = (subRows: Row[]): Record<string, string> => {
   let callerRows = subRows.filter(row => row.isTopSubRow).length;
   if (callerRows < 3) {
     callerRows = 3;
   }
 
-  return sizeToWidth[callerRows];
+  return sizeToWidthStyle(callerRows);
 };
 
-const getCalleeLabelWidth = (subRows: Row[]): string => {
+const getCalleeLabelWidthStyle = (subRows: Row[]): Record<string, string> => {
   let calleeRows = subRows.filter(row => row.isBottomSubRow).length;
   if (calleeRows < 3) {
     calleeRows = 3;
   }
 
-  return `${sizeToWidth[calleeRows]} ${sizeToTop[calleeRows]}`;
+  return {...sizeToWidthStyle(calleeRows), ...sizeToTopStyle(calleeRows)};
 };
 
 const CustomRowRenderer = ({
@@ -202,7 +162,7 @@ const CustomRowRenderer = ({
   if (isDummyRow(data)) {
     return (
       <tr key={row.id} className={cx(bgClassNames)}>
-        <td colSpan={100} className={`text-center ${sizeToHeight[data.size]}`}>
+        <td colSpan={100} className={`text-center`} style={sizeToHeightStyle(data.size)}>
           {data.message}
         </td>
       </tr>
@@ -244,16 +204,14 @@ const CustomRowRenderer = ({
             {idx === 0 && isExpanded ? (
               <>
                 <div
-                  className={`${getCallerLabelWidth(
-                    row.originalSubRows ?? []
-                  )} absolute top-0 left-0 bg-white px-1 uppercase -rotate-90 origin-top-left z-10 text-[10px] border-l border-y border-gray-200 dark:border-gray-700 text-left`}
+                  className={`absolute top-0 left-0 bg-white px-1 uppercase -rotate-90 origin-top-left z-10 text-[10px] border-l border-y border-gray-200 dark:border-gray-700 text-left`}
+                  style={getCallerLabelWidthStyle(row.originalSubRows ?? [])}
                 >
                   Callers {'->'}
                 </div>
                 <div
-                  className={`${getCalleeLabelWidth(
-                    row.originalSubRows ?? []
-                  )} absolute left-[18px] bg-white px-1 uppercase -rotate-90 origin-bottom-left z-10 text-[10px] border-r border-y border-gray-200 dark:border-gray-700`}
+                  className={`absolute left-[18px] bg-white px-1 uppercase -rotate-90 origin-bottom-left z-10 text-[10px] border-r border-y border-gray-200 dark:border-gray-700`}
+                  style={getCalleeLabelWidthStyle(row.originalSubRows ?? [])}
                 >
                   {'<-'} Callees
                 </div>
@@ -269,7 +227,7 @@ const CustomRowRenderer = ({
 
 const getCallerRows = (callers: DataRow[]): Row[] => {
   if (callers.length === 0) {
-    return [{size: 3, message: 'No callers', isTopSubRow: true}];
+    return [{size: 3, message: 'No callers.', isTopSubRow: true}];
   }
 
   const rows = callers.map(row => {
@@ -284,7 +242,7 @@ const getCallerRows = (callers: DataRow[]): Row[] => {
 
 const getCalleeRows = (callees: DataRow[]): Row[] => {
   if (callees.length === 0) {
-    return [{size: 3, message: 'No callees', isBottomSubRow: true}];
+    return [{size: 3, message: 'No callees.', isBottomSubRow: true}];
   }
 
   const rows = callees.map(row => {
@@ -764,7 +722,7 @@ export const Table = React.memo(function Table({
               }}
               CustomRowRenderer={CustomRowRenderer}
               scrollToIndex={scrollToIndex}
-              estimatedRowHeight={29}
+              estimatedRowHeight={ROW_HEIGHT}
             />
           </div>
         </div>
