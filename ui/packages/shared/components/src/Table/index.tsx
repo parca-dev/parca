@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {MouseEventHandler, useCallback, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import {
@@ -28,25 +28,27 @@ import {
   type Table as TableType,
   type VisibilityState,
 } from '@tanstack/react-table';
+import {elementScroll, useVirtualizer, type VirtualizerOptions} from '@tanstack/react-virtual';
 import cx from 'classnames';
-import {useVirtual} from 'react-virtual';
 
 export interface RowRendererProps<TData> {
   row: Row<TData>;
   usePointerCursor?: boolean;
   onRowClick?: (row: TData) => void;
-  getOnRowDoubleClick?: (row: Row<TData>) => MouseEventHandler<HTMLTableRowElement> | undefined;
+  onRowDoubleClick?: (row: Row<TData>, rows: Row<TData>[]) => void;
   enableHighlighting?: boolean;
   shouldHighlightRow?: (row: TData) => boolean;
+  rows: Row<TData>[];
 }
 
 const DefaultRowRenderer = ({
   row,
   usePointerCursor,
   onRowClick,
-  getOnRowDoubleClick,
+  onRowDoubleClick,
   enableHighlighting,
   shouldHighlightRow,
+  rows,
 }: RowRendererProps<any>): JSX.Element => {
   return (
     <tr
@@ -57,7 +59,7 @@ const DefaultRowRenderer = ({
         {'bg-red-500': row.getIsExpanded()}
       )}
       onClick={onRowClick != null ? () => onRowClick(row.original) : undefined}
-      onDoubleClick={getOnRowDoubleClick != null ? getOnRowDoubleClick(row) : undefined}
+      onDoubleClick={onRowDoubleClick != null ? () => onRowDoubleClick(row, rows) : undefined}
       style={
         enableHighlighting !== true || shouldHighlightRow === undefined
           ? undefined
@@ -89,7 +91,7 @@ interface Props<TData> {
   initialSorting?: SortingState;
   columnVisibility?: VisibilityState;
   onRowClick?: (row: TData) => void;
-  getOnRowDoubleClick?: (row: Row<TData>) => MouseEventHandler<HTMLTableRowElement> | undefined;
+  onRowDoubleClick?: (row: Row<TData>, rows: Row<TData>[]) => void;
   enableHighlighting?: boolean;
   shouldHighlightRow?: (row: TData) => boolean;
   usePointerCursor?: boolean;
@@ -101,6 +103,12 @@ interface Props<TData> {
   expandedState?: ExpandedState;
   onExpandedChange?: (expanded: ExpandedState) => void;
   CustomRowRenderer?: React.ComponentType<RowRendererProps<TData>> | null;
+  scrollToIndex?: number;
+  estimatedRowHeight?: number;
+}
+
+function easeInOutQuint(t) {
+  return t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t;
 }
 
 const Table = <T,>({
@@ -109,7 +117,7 @@ const Table = <T,>({
   initialSorting = [],
   columnVisibility = {},
   onRowClick,
-  getOnRowDoubleClick,
+  onRowDoubleClick,
   enableHighlighting = false,
   usePointerCursor = true,
   shouldHighlightRow,
@@ -121,8 +129,11 @@ const Table = <T,>({
   expandedState,
   onExpandedChange,
   CustomRowRenderer,
+  scrollToIndex,
+  estimatedRowHeight,
 }: Props<T>): JSX.Element => {
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
+  const [lastScrolledIndex, setLastScrolledIndex] = useState<number | null>(null);
 
   const table = useReactTable({
     data,
@@ -145,24 +156,62 @@ const Table = <T,>({
     getSubRows,
   });
 
-  const tableContainerRef = useRef<HTMLDivElement>(null);
   const {rows} = table.getRowModel();
-  const rowVirtualizer = useVirtual({
-    parentRef: tableContainerRef,
-    size: rows.length,
+
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const scrollingRef = useRef<number>();
+  const scrollToFn: VirtualizerOptions<any, any>['scrollToFn'] = useCallback(
+    (offset, canSmooth, instance) => {
+      const duration = 1000;
+      const start = tableContainerRef.current?.scrollTop ?? 0;
+      const startTime = (scrollingRef.current = Date.now());
+
+      const run = () => {
+        if (scrollingRef.current !== startTime) return;
+        const now = Date.now();
+        const elapsed = now - startTime;
+        const progress = easeInOutQuint(Math.min(elapsed / duration, 1));
+        const interpolated = start + (offset - start) * progress;
+
+        if (elapsed < duration) {
+          elementScroll(interpolated, canSmooth, instance);
+          requestAnimationFrame(run);
+        } else {
+          elementScroll(interpolated, canSmooth, instance);
+        }
+      };
+
+      requestAnimationFrame(run);
+    },
+    []
+  );
+
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => tableContainerRef.current,
     overscan: 10,
-    estimateSize: useCallback(() => 26, []),
+    estimateSize: () => estimatedRowHeight ?? 26,
+    scrollToFn,
   });
-  const {virtualItems: virtualRows, totalSize} = rowVirtualizer;
+  const virtualRows = rowVirtualizer.getVirtualItems();
+
+  useEffect(() => {
+    if (scrollToIndex != null && scrollToIndex >= 0 && scrollToIndex !== lastScrolledIndex) {
+      rowVirtualizer.scrollToIndex(scrollToIndex);
+      setLastScrolledIndex(scrollToIndex);
+    }
+  }, [scrollToIndex, rowVirtualizer, lastScrolledIndex, setLastScrolledIndex]);
 
   const paddingTop: number = virtualRows.length > 0 ? virtualRows?.[0]?.start ?? 0 : 0;
   const paddingBottom: number =
-    virtualRows.length > 0 ? totalSize - (virtualRows?.[virtualRows.length - 1]?.end ?? 0) : 0;
+    virtualRows.length > 0
+      ? rowVirtualizer.getTotalSize() - (virtualRows?.[virtualRows.length - 1]?.end ?? 0)
+      : 0;
 
   return (
     <div ref={tableContainerRef} className={cx('h-full overflow-scroll pr-2', className)}>
       <table className="w-full">
-        <thead className="sticky top-0 bg-gray-50 text-sm dark:bg-gray-800 z-10">
+        <thead className="sticky top-0 bg-gray-50 text-sm dark:bg-gray-800 z-20">
           {title.length > 0 ? (
             <tr>
               <th colSpan={columns.length} className="p-2 pl-4 text-left uppercase">
@@ -240,10 +289,11 @@ const Table = <T,>({
                   key={row.id}
                   row={row}
                   enableHighlighting={enableHighlighting}
-                  getOnRowDoubleClick={getOnRowDoubleClick}
+                  onRowDoubleClick={onRowDoubleClick}
                   onRowClick={onRowClick}
                   shouldHighlightRow={shouldHighlightRow}
                   usePointerCursor={usePointerCursor}
+                  rows={rows}
                 />
               );
             }
@@ -252,10 +302,11 @@ const Table = <T,>({
                 key={row.id}
                 row={row}
                 enableHighlighting={enableHighlighting}
-                getOnRowDoubleClick={getOnRowDoubleClick}
+                onRowDoubleClick={onRowDoubleClick}
                 onRowClick={onRowClick}
                 shouldHighlightRow={shouldHighlightRow}
                 usePointerCursor={usePointerCursor}
+                rows={rows}
               />
             );
           })}

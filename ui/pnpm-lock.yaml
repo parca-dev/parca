@@ -536,6 +536,9 @@ importers:
       '@tanstack/react-table':
         specifier: ^8.17.3
         version: 8.17.3(react-dom@18.3.1)(react@18.3.1)
+      '@tanstack/react-virtual':
+        specifier: ^3.5.0
+        version: 3.5.0(react-dom@18.3.1)(react@18.3.1)
       '@tanstack/table-core':
         specifier: ^8.17.3
         version: 8.17.3
@@ -584,9 +587,6 @@ importers:
       react-use:
         specifier: ^17.3.2
         version: 17.5.0(react-dom@18.3.1)(react@18.3.1)
-      react-virtual:
-        specifier: ^2.10.4
-        version: 2.10.4(react@18.3.1)
       tailwind-merge:
         specifier: ^1.10.0
         version: 1.14.0
@@ -5073,10 +5073,6 @@ packages:
     dependencies:
       '@babel/runtime': 7.24.6
     dev: true
-
-  /@reach/observe-rect@1.2.0:
-    resolution: {integrity: sha512-Ba7HmkFgfQxZqqaeIWWkNK0rEhpxVQHIoVyW1YDSkGsGIXzcaW4deC8B0pZrNSSyLTdIk7y+5olKt5+g0GmFIQ==}
-    dev: false
 
   /@reduxjs/toolkit@1.9.7(react-redux@8.1.3)(react@18.3.1):
     resolution: {integrity: sha512-t7v8ZPxhhKgOKtU+uyJT13lu4vL7az5aFi4IdoDs/eS548edn2M8Ik9h8fxgvMjGoAUVFSt6ZC1P5cWmQ014QQ==}
@@ -12691,7 +12687,7 @@ packages:
     engines: {node: '>= 10.17.0'}
     hasBin: true
     dependencies:
-      debug: 4.3.4
+      debug: 4.3.5
       get-stream: 5.2.0
       yauzl: 2.10.0
     optionalDependencies:
@@ -20721,7 +20717,7 @@ packages:
     engines: {node: '>= 14'}
     dependencies:
       agent-base: 7.1.1
-      debug: 4.3.4
+      debug: 4.3.5
       http-proxy-agent: 7.0.2
       https-proxy-agent: 7.0.4
       lru-cache: 7.18.3
@@ -21673,15 +21669,6 @@ packages:
       throttle-debounce: 3.0.1
       ts-easing: 0.2.0
       tslib: 2.6.2
-    dev: false
-
-  /react-virtual@2.10.4(react@18.3.1):
-    resolution: {integrity: sha512-Ir6+oPQZTVHfa6+JL9M7cvMILstFZH/H3jqeYeKI4MSUX+rIruVwFC6nGVXw9wqAw8L0Kg2KvfXxI85OvYQdpQ==}
-    peerDependencies:
-      react: ^16.6.3 || ^17.0.0
-    dependencies:
-      '@reach/observe-rect': 1.2.0
-      react: 18.3.1
     dev: false
 
   /react-window@1.8.10(react-dom@18.3.1)(react@18.3.1):
