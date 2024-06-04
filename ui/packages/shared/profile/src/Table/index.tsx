@@ -178,8 +178,7 @@ const CustomRowRenderer = ({
         bgClassNames,
         {
           'hover:bg-[#62626212] dark:hover:bg-[#ffffff12] ': !isExpanded && !_isSubRow,
-          'hover:bg-indigo-200 dark:hover:bg-gray-500': !isExpanded && _isSubRow,
-          'hover:bg-indigo-200 dark:bg-gray-500': isExpanded,
+          'hover:bg-indigo-200 dark:hover:bg-indigo-500': isExpanded || _isSubRow,
         }
       )}
       onClick={onRowClick != null ? () => onRowClick(row.original) : undefined}
@@ -204,13 +203,13 @@ const CustomRowRenderer = ({
             {idx === 0 && isExpanded ? (
               <>
                 <div
-                  className={`absolute top-0 left-0 bg-white px-1 uppercase -rotate-90 origin-top-left z-10 text-[10px] border-l border-y border-gray-200 dark:border-gray-700 text-left`}
+                  className={`absolute top-0 left-0 bg-white dark:bg-indigo-500 px-1 uppercase -rotate-90 origin-top-left z-10 text-[10px] border-l border-y border-gray-200 dark:border-gray-700 text-left `}
                   style={getCallerLabelWidthStyle(row.originalSubRows ?? [])}
                 >
                   Callers {'->'}
                 </div>
                 <div
-                  className={`absolute left-[18px] bg-white px-1 uppercase -rotate-90 origin-bottom-left z-10 text-[10px] border-r border-y border-gray-200 dark:border-gray-700`}
+                  className={`absolute left-[18px] bg-white dark:bg-indigo-500 px-1 uppercase -rotate-90 origin-bottom-left z-10 text-[10px] border-r border-y border-gray-200 dark:border-gray-700 `}
                   style={getCalleeLabelWidthStyle(row.originalSubRows ?? [])}
                 >
                   {'<-'} Callees
