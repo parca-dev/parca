@@ -280,6 +280,8 @@ func newTableBuilder(mem memory.Allocator, rowCountEstimate int) *tableBuilder {
 
 func (tb *tableBuilder) populateCallerAndCalleeData() {
 	for i := range tb.builderFunctionName.Len() {
+		// We need to check if the caller list exists for this index as the length of the callers maybe less than the length of the
+		// function names table due to the fact that some functions may not have any callers.
 		if len(tb.callers) > i {
 			callers := maps.Keys(tb.callers[i])
 			if len(callers) == 0 {
@@ -292,6 +294,7 @@ func (tb *tableBuilder) populateCallerAndCalleeData() {
 			tb.builderCallers.AppendNull()
 		}
 
+		// Same as above, we need to check if the callee list exists for this index.
 		if len(tb.callees) > i {
 			callees := maps.Keys(tb.callees[i])
 			if len(callees) == 0 {
