@@ -68,6 +68,14 @@ scrape_configs:
   - job_name: 'path-prefix-with-defaults'
     profiling_config:
       path_prefix: /test/prefix
+  - job_name: 'path-prefix-and-seconds'
+    profiling_config:
+      path_prefix: /test/prefix
+      pprof_config:
+        fgprof:
+          enabled: true
+          path: /debug/fgprof
+          seconds: 3
 `
 
 	expected := &Config{
@@ -82,23 +90,6 @@ scrape_configs:
 						"memory": &PprofProfilingConfig{
 							Enabled: trueValue(),
 							Path:    "/parca/debug/pprof/allocs",
-						},
-						"block": &PprofProfilingConfig{
-							Enabled: trueValue(),
-							Path:    "/debug/pprof/block",
-						},
-						"goroutine": &PprofProfilingConfig{
-							Enabled: trueValue(),
-							Path:    "/debug/pprof/goroutine",
-						},
-						"mutex": &PprofProfilingConfig{
-							Enabled: trueValue(),
-							Path:    "/debug/pprof/mutex",
-						},
-						"process_cpu": &PprofProfilingConfig{
-							Enabled: trueValue(),
-							Delta:   true,
-							Path:    "/debug/pprof/profile",
 						},
 						"fgprof": &PprofProfilingConfig{
 							Enabled: trueValue(),
@@ -130,23 +121,6 @@ scrape_configs:
 						"memory": &PprofProfilingConfig{
 							Enabled: trueValue(),
 							Path:    "/test/prefix/parca/debug/pprof/allocs",
-						},
-						"block": &PprofProfilingConfig{
-							Enabled: trueValue(),
-							Path:    "/test/prefix/debug/pprof/block",
-						},
-						"goroutine": &PprofProfilingConfig{
-							Enabled: trueValue(),
-							Path:    "/test/prefix/debug/pprof/goroutine",
-						},
-						"mutex": &PprofProfilingConfig{
-							Enabled: trueValue(),
-							Path:    "/test/prefix/debug/pprof/mutex",
-						},
-						"process_cpu": &PprofProfilingConfig{
-							Enabled: trueValue(),
-							Delta:   true,
-							Path:    "/test/prefix/debug/pprof/profile",
 						},
 						"fgprof": &PprofProfilingConfig{
 							Enabled: trueValue(),
@@ -187,11 +161,27 @@ scrape_configs:
 					},
 				},
 			},
+			{
+				JobName:        "path-prefix-and-seconds",
+				ScrapeInterval: model.Duration(10 * time.Second),
+				ScrapeTimeout:  model.Duration(13 * time.Second),
+				Scheme:         "http",
+				ProfilingConfig: &ProfilingConfig{
+					PprofPrefix: "/test/prefix",
+					PprofConfig: PprofConfig{
+						"fgprof": &PprofProfilingConfig{
+							Enabled: trueValue(),
+							Path:    "/test/prefix/debug/fgprof",
+							Seconds: 3,
+						},
+					},
+				},
+			},
 		},
 	}
 	c, err := Load(complexYAML)
 	require.NoError(t, err)
-	require.Len(t, c.ScrapeConfigs, 4)
+	require.Len(t, c.ScrapeConfigs, 5)
 	require.Equal(t, expected, c)
 }
 
