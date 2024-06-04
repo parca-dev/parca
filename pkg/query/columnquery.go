@@ -289,6 +289,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 			}
 
 		case pb.QueryRequest_MODE_DIFF:
+			// When comparing, we only return the metadata for the profile we are rendering, which is the profile B.
 			mappingFiles, labels, err := getMappingFilesAndLabels(ctx, q.querier, req.GetDiff().B.GetMerge().GetQuery(), req.GetDiff().B.GetMerge().Start.AsTime(), req.GetDiff().B.GetMerge().End.AsTime())
 			if err != nil {
 				return nil, err
