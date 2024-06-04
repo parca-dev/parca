@@ -1,6 +1,6 @@
 {
   "name": "@parca/store",
-  "version": "0.16.146",
+  "version": "0.16.147",
   "description": "State management for Parca UI",
   "main": "dist/index.js",
   "scripts": {
