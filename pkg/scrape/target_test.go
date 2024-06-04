@@ -18,11 +18,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/parca-dev/parca/pkg/config"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
+
+	"github.com/parca-dev/parca/pkg/config"
 )
 
 func TestTargetsFromGroup(t *testing.T) {
