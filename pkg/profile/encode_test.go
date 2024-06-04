@@ -63,6 +63,7 @@ func TestEncodeDecode(t *testing.T) {
 				tc.mapping,
 				tc.functions,
 				tc.stringTable,
+				false,
 			)
 			lw := NewLocationsWriter(memory.DefaultAllocator)
 			_, err := DecodeInto(lw, buf)

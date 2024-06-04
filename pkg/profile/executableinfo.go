@@ -72,7 +72,7 @@ func findTextProgHeader(f *elf.File, phdrs []elf.ProgHeader) int16 {
 	for _, s := range f.Sections {
 		if s.Name == ".text" {
 			// Find the LOAD segment containing the .text section.
-			for i, p := range f.Progs {
+			for i, p := range phdrs {
 				// Type           Offset   VirtAddr           PhysAddr           FileSiz  MemSiz   Flg Align
 				// LOAD           0x001000 0x0000000000001000 0x0000000000001000 0x0001ed 0x0001ed R E 0x1000
 				if p.Type == elf.PT_LOAD && p.Flags&elf.PF_X != 0 && s.Addr >= p.Vaddr && s.Addr < p.Vaddr+p.Memsz {

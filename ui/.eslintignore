@@ -5,6 +5,7 @@ node_modules/
 next-env.d.ts
 packages/app/web/build
 packages/shared/client/src/google
+packages/shared/client/src/opentelemetry
 packages/shared/client/src/parca
 packages/shared/client/src/share
 packages/shared/client/src/grpc

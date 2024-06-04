@@ -19,13 +19,16 @@ import (
 	"sync"
 	"time"
 
+	"github.com/apache/arrow/go/v16/arrow/memory"
 	"github.com/go-kit/log"
+	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	otelgrpcprofilingpb "github.com/parca-dev/parca/gen/proto/go/opentelemetry/proto/collector/profiles/v1"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/ingester"
 	"github.com/parca-dev/parca/pkg/normalizer"
@@ -42,15 +45,19 @@ type ProfileColumnStore struct {
 	profilestorepb.UnimplementedProfileStoreServiceServer
 	profilestorepb.UnimplementedAgentsServiceServer
 
+	otelgrpcprofilingpb.UnimplementedProfilesServiceServer
+
 	logger log.Logger
 	tracer trace.Tracer
 
-	normalizer *normalizer.Normalizer
-	ingester   ingester.Ingester
+	ingester ingester.Ingester
 
 	mtx sync.Mutex
 	// ip as the key
 	agents map[string]agent
+
+	mem    memory.Allocator
+	schema *dynparquet.Schema
 }
 
 var _ profilestorepb.ProfileStoreServiceServer = &ProfileColumnStore{}
@@ -60,24 +67,39 @@ func NewProfileColumnStore(
 	logger log.Logger,
 	tracer trace.Tracer,
 	ingester ingester.Ingester,
-	enableAddressNormalization bool,
+	schema *dynparquet.Schema,
+	mem memory.Allocator,
 ) *ProfileColumnStore {
-	normalizer := normalizer.New()
 	return &ProfileColumnStore{
-		logger:     logger,
-		tracer:     tracer,
-		ingester:   ingester,
-		normalizer: normalizer,
-		agents:     make(map[string]agent),
+		logger:   logger,
+		tracer:   tracer,
+		ingester: ingester,
+		schema:   schema,
+		mem:      mem,
+		agents:   make(map[string]agent),
 	}
 }
 
 func (s *ProfileColumnStore) writeSeries(ctx context.Context, req *profilestorepb.WriteRawRequest) error {
-	normalizeredReq, err := normalizer.NormalizeWriteRawRequest(ctx, s.normalizer, req)
+	r, err := normalizer.WriteRawRequestToArrowRecord(
+		ctx,
+		s.mem,
+		req,
+		s.schema,
+	)
 	if err != nil {
 		return err
 	}
-	return s.ingester.Ingest(ctx, normalizeredReq)
+	if r == nil {
+		return nil
+	}
+	defer r.Release()
+
+	if r.NumRows() == 0 {
+		return nil
+	}
+
+	return s.ingester.Ingest(ctx, r)
 }
 
 func (s *ProfileColumnStore) updateAgents(nodeNameAndIP string, ag agent) {
@@ -140,6 +162,35 @@ func (s *ProfileColumnStore) WriteRaw(ctx context.Context, req *profilestorepb.W
 	}
 
 	return &profilestorepb.WriteRawResponse{}, nil
+}
+
+func (s *ProfileColumnStore) Export(ctx context.Context, req *otelgrpcprofilingpb.ExportProfilesServiceRequest) (*otelgrpcprofilingpb.ExportProfilesServiceResponse, error) {
+	ctx, span := s.tracer.Start(ctx, "otel-export")
+	defer span.End()
+
+	r, err := normalizer.OtlpRequestToArrowRecord(
+		ctx,
+		req,
+		s.schema,
+		s.mem,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if r == nil {
+		return &otelgrpcprofilingpb.ExportProfilesServiceResponse{}, nil
+	}
+	defer r.Release()
+
+	if r.NumRows() == 0 {
+		return &otelgrpcprofilingpb.ExportProfilesServiceResponse{}, nil
+	}
+
+	if err := s.ingester.Ingest(ctx, r); err != nil {
+		return nil, err
+	}
+
+	return &otelgrpcprofilingpb.ExportProfilesServiceResponse{}, nil
 }
 
 func (s *ProfileColumnStore) Agents(ctx context.Context, req *profilestorepb.AgentsRequest) (*profilestorepb.AgentsResponse, error) {

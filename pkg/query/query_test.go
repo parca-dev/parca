@@ -65,17 +65,18 @@ func Benchmark_Query_Merge(b *testing.B) {
 			fileContent, err := os.ReadFile("../query/testdata/alloc_objects.pb.gz")
 			require.NoError(b, err)
 
+			ingester := ingester.NewIngester(
+				logger,
+				table,
+			)
+
 			store := profilestore.NewProfileColumnStore(
 				reg,
 				logger,
 				tracer,
-				ingester.NewIngester(
-					logger,
-					memory.DefaultAllocator,
-					table,
-					schema,
-				),
-				true,
+				ingester,
+				schema,
+				memory.DefaultAllocator,
 			)
 
 			for j := 0; j < n; j++ {

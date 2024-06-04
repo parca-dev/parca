@@ -23,6 +23,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/apache/arrow/go/v16/arrow"
+	"github.com/apache/arrow/go/v16/arrow/memory"
 	"github.com/gogo/status"
 	"github.com/parquet-go/parquet-go"
 	"github.com/polarsignals/frostdb/dynparquet"
@@ -31,13 +33,12 @@ import (
 	"google.golang.org/grpc/codes"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
+	pprofextended "github.com/parca-dev/parca/gen/proto/go/opentelemetry/proto/profiles/v1/alternatives/pprofextended"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
 var ErrMissingNameLabel = errors.New("missing __name__ label")
-
-type Normalizer struct{}
 
 type NormalizedProfile struct {
 	Samples []*NormalizedSample
@@ -85,11 +86,55 @@ func MetaFromPprof(p *pprofpb.Profile, name string, sampleIndex int) profile.Met
 	}
 }
 
-func New() *Normalizer {
-	return &Normalizer{}
+func MetaFromOtelProfile(p *pprofextended.Profile, name string, sampleIndex int) profile.Meta {
+	periodType := profile.ValueType{}
+	if p.PeriodType != nil {
+		periodType = profile.ValueType{Type: p.StringTable[p.PeriodType.Type], Unit: p.StringTable[p.PeriodType.Unit]}
+	}
+
+	sampleType := profile.ValueType{}
+	if p.SampleType != nil {
+		sampleType = profile.ValueType{Type: p.StringTable[p.SampleType[sampleIndex].Type], Unit: p.StringTable[p.SampleType[sampleIndex].Unit]}
+	}
+
+	return profile.Meta{
+		Name:       name,
+		Timestamp:  p.TimeNanos / time.Millisecond.Nanoseconds(),
+		Duration:   p.DurationNanos,
+		Period:     p.Period,
+		PeriodType: periodType,
+		SampleType: sampleType,
+	}
 }
 
-func (n *Normalizer) NormalizePprof(
+func WriteRawRequestToArrowRecord(
+	ctx context.Context,
+	mem memory.Allocator,
+	req *profilestorepb.WriteRawRequest,
+	schema *dynparquet.Schema,
+) (arrow.Record, error) {
+	nr, err := NormalizeWriteRawRequest(
+		ctx,
+		req,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	r, err := ParquetBufToArrowRecord(
+		ctx,
+		mem,
+		schema,
+		nr,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return r, nil
+}
+
+func NormalizePprof(
 	ctx context.Context,
 	name string,
 	takenLabelNames map[string]string,
@@ -114,7 +159,7 @@ func (n *Normalizer) NormalizePprof(
 			}
 
 			profiles[j].Samples = append(profiles[j].Samples, &NormalizedSample{
-				Locations: serializeStacktrace(
+				Locations: serializePprofStacktrace(
 					sample.LocationId,
 					p.Location,
 					p.Function,
@@ -175,7 +220,7 @@ func LabelsFromSample(takenLabels map[string]string, stringTable []string, plabe
 	return resLabels, numLabels
 }
 
-func serializeStacktrace(
+func serializePprofStacktrace(
 	ids []uint64,
 	locations []*pprofpb.Location,
 	functions []*pprofpb.Function,
@@ -192,13 +237,13 @@ func serializeStacktrace(
 			m = mappings[mappingIndex]
 		}
 
-		st = append(st, profile.EncodePprofLocation(location, m, functions, stringTable))
+		st = append(st, profile.EncodePprofLocation(location, m, functions, stringTable, false))
 	}
 
 	return st
 }
 
-func NormalizeWriteRawRequest(ctx context.Context, n *Normalizer, req *profilestorepb.WriteRawRequest) (NormalizedWriteRawRequest, error) {
+func NormalizeWriteRawRequest(ctx context.Context, req *profilestorepb.WriteRawRequest) (NormalizedWriteRawRequest, error) {
 	allLabelNames := make(map[string]struct{})
 	allPprofLabelNames := make(map[string]struct{})
 	allPprofNumLabelNames := make(map[string]struct{})
@@ -262,7 +307,7 @@ func NormalizeWriteRawRequest(ctx context.Context, n *Normalizer, req *profilest
 				allPprofNumLabelNames,
 			)
 
-			normalizedProfiles, err := n.NormalizePprof(ctx, name, ls, p, req.Normalized, sample.ExecutableInfo)
+			normalizedProfiles, err := NormalizePprof(ctx, name, ls, p, req.Normalized, sample.ExecutableInfo)
 			if err != nil {
 				return NormalizedWriteRawRequest{}, fmt.Errorf("normalize profile: %w", err)
 			}

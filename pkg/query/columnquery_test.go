@@ -160,16 +160,15 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 
 	ingester := ingester.NewIngester(
 		logger,
-		memory.DefaultAllocator,
 		table,
-		schema,
 	)
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
 		ingester,
-		true,
+		schema,
+		memory.DefaultAllocator,
 	)
 
 	for _, f := range files {
@@ -256,16 +255,15 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 	require.NoError(t, err)
 	ingester := ingester.NewIngester(
 		logger,
-		memory.DefaultAllocator,
 		table,
-		schema,
 	)
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
 		ingester,
-		true,
+		schema,
+		memory.DefaultAllocator,
 	)
 
 	fileContent, err := os.ReadFile("testdata/alloc_objects.pb.gz")
@@ -394,9 +392,7 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 
 	ingester := ingester.NewIngester(
 		logger,
-		memory.DefaultAllocator,
 		table,
-		schema,
 	)
 
 	store := profilestore.NewProfileColumnStore(
@@ -404,7 +400,8 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 		logger,
 		tracer,
 		ingester,
-		true,
+		schema,
+		memory.DefaultAllocator,
 	)
 
 	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
@@ -484,16 +481,16 @@ func TestColumnQueryAPIQueryCumulative(t *testing.T) {
 
 	ingester := ingester.NewIngester(
 		logger,
-		memory.DefaultAllocator,
 		table,
-		schema,
 	)
+
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
 		ingester,
-		true,
+		schema,
+		memory.DefaultAllocator,
 	)
 
 	// Load CPU and memory profiles
@@ -684,12 +681,12 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 
 	ingester := ingester.NewIngester(
 		logger,
-		memory.DefaultAllocator,
 		table,
-		schema,
 	)
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
 
-	r, err := normalizer.NormalizeWriteRawRequest(ctx, normalizer.New(), &profilestorepb.WriteRawRequest{
+	r1, err := normalizer.WriteRawRequestToArrowRecord(ctx, mem, &profilestorepb.WriteRawRequest{
 		Series: []*profilestorepb.RawProfileSeries{{
 			Labels: &profilestorepb.LabelSet{
 				Labels: []*profilestorepb.Label{
@@ -707,16 +704,17 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 				RawProfile: MustCompressGzip(t, p),
 			}},
 		}},
-	})
+	}, schema)
 	require.NoError(t, err)
-	require.NoError(t, ingester.Ingest(ctx, r))
+	require.NoError(t, ingester.Ingest(ctx, r1))
+	r1.Release()
 
 	p.Sample = []*pprofpb.Sample{{
 		Value:      []int64{2},
 		LocationId: []uint64{2},
 	}}
 	p.TimeNanos = 2000000
-	r, err = normalizer.NormalizeWriteRawRequest(ctx, normalizer.New(), &profilestorepb.WriteRawRequest{
+	r2, err := normalizer.WriteRawRequestToArrowRecord(ctx, mem, &profilestorepb.WriteRawRequest{
 		Series: []*profilestorepb.RawProfileSeries{{
 			Labels: &profilestorepb.LabelSet{
 				Labels: []*profilestorepb.Label{
@@ -734,12 +732,11 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 				RawProfile: MustCompressGzip(t, p),
 			}},
 		}},
-	})
+	}, schema)
 	require.NoError(t, err)
-	require.NoError(t, ingester.Ingest(ctx, r))
+	require.NoError(t, ingester.Ingest(ctx, r2))
+	r2.Release()
 
-	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
-	defer mem.AssertSize(t, 0)
 	api := NewColumnQueryAPI(
 		logger,
 		tracer,
@@ -860,6 +857,10 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	require.Equal(t, 2, len(testProf.Sample))
 	require.Equal(t, []int64{2}, testProf.Sample[0].Value)
 	require.Equal(t, []int64{-1}, testProf.Sample[1].Value)
+
+	// Need to double release them because the storage will keep a reference to them.
+	r1.Release()
+	r2.Release()
 }
 
 func TestColumnQueryAPITypes(t *testing.T) {
@@ -888,17 +889,15 @@ func TestColumnQueryAPITypes(t *testing.T) {
 
 	ingester := ingester.NewIngester(
 		logger,
-		memory.DefaultAllocator,
 		table,
-		schema,
 	)
-
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
 		ingester,
-		true,
+		schema,
+		memory.DefaultAllocator,
 	)
 
 	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
@@ -987,17 +986,15 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 
 	ingester := ingester.NewIngester(
 		logger,
-		memory.DefaultAllocator,
 		table,
-		schema,
 	)
-
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
 		ingester,
-		true,
+		schema,
+		memory.DefaultAllocator,
 	)
 
 	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
@@ -1076,16 +1073,15 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 
 	ingester := ingester.NewIngester(
 		logger,
-		memory.DefaultAllocator,
 		table,
-		schema,
 	)
 	store := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
 		tracer,
 		ingester,
-		true,
+		schema,
+		memory.DefaultAllocator,
 	)
 
 	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
