@@ -340,17 +340,6 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     }
   }, [loadingState]);
 
-  if (error != null) {
-    onError?.(error);
-
-    if (authenticationErrorMessage !== undefined && error.code === 'UNAUTHENTICATED') {
-      return <ErrorContent errorMessage={authenticationErrorMessage} />;
-    }
-
-    return <ErrorContent errorMessage={capitalizeOnlyFirstLetter(error.message)} />;
-  }
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   const icicleGraph = useMemo(() => {
     if (isLoading) {
       return (
@@ -414,6 +403,16 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     isDarkMode,
     mappingsList,
   ]);
+
+  if (error != null) {
+    onError?.(error);
+
+    if (authenticationErrorMessage !== undefined && error.code === 'UNAUTHENTICATED') {
+      return <ErrorContent errorMessage={authenticationErrorMessage} />;
+    }
+
+    return <ErrorContent errorMessage={capitalizeOnlyFirstLetter(error.message)} />;
+  }
 
   if (isTrimmed) {
     console.info(`Trimmed ${trimmedFormatted} (${trimmedPercentage}%) too small values.`);
