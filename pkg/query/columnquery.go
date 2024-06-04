@@ -309,6 +309,16 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		}, nil
 	}
 
+	var functionToFilterBy string
+
+	for _, filter := range req.GetFilter() {
+		if stackFilter := filter.GetStackFilter(); stackFilter != nil {
+			if functionNameFilter := stackFilter.GetFunctionNameStackFilter(); functionNameFilter != nil {
+				functionToFilterBy = functionNameFilter.GetFunctionToFilter()
+			}
+		}
+	}
+
 	binaryFrameFilter := map[string]struct{}{}
 
 	for _, filter := range req.GetFilter() {
@@ -322,7 +332,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		q.tracer,
 		q.mem,
 		p.Samples,
-		req.GetFilterQuery(),
+		functionToFilterBy,
 		binaryFrameFilter,
 	)
 	if err != nil {
@@ -347,7 +357,7 @@ func FilterProfileData(
 	tracer trace.Tracer,
 	pool memory.Allocator,
 	records []arrow.Record,
-	filterQuery string,
+	functionStackFilter string,
 	binaryFrameFilter map[string]struct{},
 ) ([]arrow.Record, int64, error) {
 	_, span := tracer.Start(ctx, "filterByFunction")
@@ -361,7 +371,7 @@ func FilterProfileData(
 
 	// We want to filter by function name case-insensitive, so we need to lowercase the query.
 	// We lower case the query here, so we don't have to do it for every sample.
-	filterQueryBytes := []byte(strings.ToLower(filterQuery))
+	functionStackFilterBytes := []byte(strings.ToLower(functionStackFilter))
 	res := make([]arrow.Record, 0, len(records))
 	allValues := int64(0)
 	allFiltered := int64(0)
@@ -372,7 +382,7 @@ func FilterProfileData(
 			tracer,
 			pool,
 			r,
-			filterQueryBytes,
+			functionStackFilterBytes,
 			binaryFrameFilter,
 		)
 		if err != nil {
@@ -394,16 +404,16 @@ func filterRecord(
 	tracer trace.Tracer,
 	pool memory.Allocator,
 	rec arrow.Record,
-	filterQueryBytes []byte,
+	functionStackFilterBytes []byte,
 	binaryFrameFilter map[string]struct{},
 ) ([]arrow.Record, int64, int64, error) {
 	r := profile.NewRecordReader(rec)
 
 	var indexMatches map[uint32]struct{}
-	if len(filterQueryBytes) > 0 {
+	if len(functionStackFilterBytes) > 0 {
 		indexMatches = map[uint32]struct{}{}
 		for i := 0; i < r.LineFunctionNameDict.Len(); i++ {
-			if bytes.Contains(bytes.ToLower(r.LineFunctionNameDict.Value(i)), filterQueryBytes) {
+			if bytes.Contains(bytes.ToLower(r.LineFunctionNameDict.Value(i)), functionStackFilterBytes) {
 				indexMatches[uint32(i)] = struct{}{}
 			}
 		}
@@ -417,7 +427,7 @@ func filterRecord(
 	for i := 0; i < int(rec.NumRows()); i++ {
 		lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 		keepRow := false
-		if len(filterQueryBytes) > 0 {
+		if len(functionStackFilterBytes) > 0 {
 			if lOffsetStart < lOffsetEnd {
 				firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
 				_, lastEnd := r.Lines.ValueOffsets(int(lOffsetEnd - 1))

@@ -88,7 +88,8 @@ export interface QueryRequest {
     /**
      * filter_query is the query string to filter the profile samples
      *
-     * @generated from protobuf field: optional string filter_query = 4;
+     * @deprecated
+     * @generated from protobuf field: optional string filter_query = 4 [deprecated = true];
      */
     filterQuery?: string;
     /**
@@ -100,7 +101,8 @@ export interface QueryRequest {
     /**
      * which runtime frames to filter out, often interpreter frames like python or ruby are not super useful by default
      *
-     * @generated from protobuf field: optional parca.query.v1alpha1.RuntimeFilter runtime_filter = 6;
+     * @deprecated
+     * @generated from protobuf field: optional parca.query.v1alpha1.RuntimeFilter runtime_filter = 6 [deprecated = true];
      */
     runtimeFilter?: RuntimeFilter;
     /**
@@ -391,13 +393,13 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
                 case /* parca.query.v1alpha1.QueryRequest.ReportType report_type */ 3:
                     message.reportType = reader.int32();
                     break;
-                case /* optional string filter_query */ 4:
+                case /* optional string filter_query = 4 [deprecated = true];*/ 4:
                     message.filterQuery = reader.string();
                     break;
                 case /* optional float node_trim_threshold */ 5:
                     message.nodeTrimThreshold = reader.float();
                     break;
-                case /* optional parca.query.v1alpha1.RuntimeFilter runtime_filter */ 6:
+                case /* optional parca.query.v1alpha1.RuntimeFilter runtime_filter = 6 [deprecated = true];*/ 6:
                     message.runtimeFilter = RuntimeFilter.internalBinaryRead(reader, reader.uint32(), options, message.runtimeFilter);
                     break;
                 case /* optional parca.query.v1alpha1.GroupBy group_by */ 7:
@@ -430,13 +432,13 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         /* parca.query.v1alpha1.QueryRequest.ReportType report_type = 3; */
         if (message.reportType !== 0)
             writer.tag(3, WireType.Varint).int32(message.reportType);
-        /* optional string filter_query = 4; */
+        /* optional string filter_query = 4 [deprecated = true]; */
         if (message.filterQuery !== undefined)
             writer.tag(4, WireType.LengthDelimited).string(message.filterQuery);
         /* optional float node_trim_threshold = 5; */
         if (message.nodeTrimThreshold !== undefined)
             writer.tag(5, WireType.Bit32).float(message.nodeTrimThreshold);
-        /* optional parca.query.v1alpha1.RuntimeFilter runtime_filter = 6; */
+        /* optional parca.query.v1alpha1.RuntimeFilter runtime_filter = 6 [deprecated = true]; */
         if (message.runtimeFilter)
             RuntimeFilter.internalBinaryWrite(message.runtimeFilter, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
         /* optional parca.query.v1alpha1.GroupBy group_by = 7; */
