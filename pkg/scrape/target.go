@@ -388,7 +388,12 @@ func targetsFromGroup(tg *targetgroup.Group, cfg *config.ScrapeConfig, targets [
 				}
 
 				if pcfg, found := cfg.ProfilingConfig.PprofConfig[profType]; found && pcfg.Delta {
-					params.Add("seconds", strconv.Itoa(int(time.Duration(cfg.ScrapeInterval)/time.Second)))
+					// If Seconds is NOT set on the pprof configuration explicitly, we default to ScrapeInterval.
+					seconds := int(time.Duration(cfg.ScrapeInterval) / time.Second)
+					if pcfg.Seconds > 0 {
+						seconds = pcfg.Seconds
+					}
+					params.Add("seconds", strconv.Itoa(seconds))
 				}
 
 				targets = append(targets, NewTarget(lset, origLabels, params, keepSets[i]))

@@ -289,22 +289,15 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 			}
 
 		case pb.QueryRequest_MODE_DIFF:
-			mappingFiles_a, labels_a, err := getMappingFilesAndLabels(ctx, q.querier, req.GetDiff().A.GetMerge().GetQuery(), req.GetDiff().A.GetMerge().Start.AsTime(), req.GetDiff().A.GetMerge().End.AsTime())
+			// When comparing, we only return the metadata for the profile we are rendering, which is the profile B.
+			mappingFiles, labels, err := getMappingFilesAndLabels(ctx, q.querier, req.GetDiff().B.GetMerge().GetQuery(), req.GetDiff().B.GetMerge().Start.AsTime(), req.GetDiff().B.GetMerge().End.AsTime())
 			if err != nil {
 				return nil, err
 			}
-
-			mappingFiles_b, labels_b, err := getMappingFilesAndLabels(ctx, q.querier, req.GetDiff().B.GetMerge().GetQuery(), req.GetDiff().B.GetMerge().Start.AsTime(), req.GetDiff().B.GetMerge().End.AsTime())
-			if err != nil {
-				return nil, err
-			}
-
-			mergedMappingFiles := MergeTwoSortedSlices(mappingFiles_a, mappingFiles_b)
-			mergedLabels := MergeTwoSortedSlices(labels_a, labels_b)
 
 			profileMetadata = &pb.ProfileMetadata{
-				MappingFiles: mergedMappingFiles,
-				Labels:       mergedLabels,
+				MappingFiles: mappingFiles,
+				Labels:       labels,
 			}
 		default:
 			return nil, status.Error(codes.InvalidArgument, "unknown query mode")
