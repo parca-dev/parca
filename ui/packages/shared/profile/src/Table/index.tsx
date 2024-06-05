@@ -316,7 +316,7 @@ export const Table = React.memo(function Table({
         cell: info =>
           valueFormatter(
             (info as CellContext<DataRow, bigint>).getValue(),
-            profileType?.sampleUnit ?? '',
+            profileType?.periodUnit ?? '',
             2
           ),
         size: 80,
@@ -347,7 +347,7 @@ export const Table = React.memo(function Table({
           addPlusSign(
             valueFormatter(
               (info as CellContext<DataRow, bigint>).getValue(),
-              profileType?.sampleUnit ?? '',
+              profileType?.periodUnit ?? '',
               2
             )
           ),
@@ -378,7 +378,7 @@ export const Table = React.memo(function Table({
         cell: info =>
           valueFormatter(
             (info as CellContext<DataRow, bigint>).getValue(),
-            profileType?.sampleUnit ?? '',
+            profileType?.periodUnit ?? '',
             2
           ),
         size: 150,
@@ -409,7 +409,7 @@ export const Table = React.memo(function Table({
           addPlusSign(
             valueFormatter(
               (info as CellContext<DataRow, bigint>).getValue(),
-              profileType?.sampleUnit ?? '',
+              profileType?.periodUnit ?? '',
               2
             )
           ),
