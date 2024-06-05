@@ -67,7 +67,7 @@ export const useGraphTooltip = ({
   }
 
   const locationAddress: bigint = table.getChild(FIELD_LOCATION_ADDRESS)?.get(row) ?? 0n;
-  unit = unit ?? profileType.periodUnit;
+  unit = unit ?? profileType.sampleUnit;
 
   const cumulative: bigint =
     table.getChild(FIELD_CUMULATIVE)?.get(row) !== null
