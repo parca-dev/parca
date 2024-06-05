@@ -311,7 +311,10 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	}
 
 	var functionToFilterBy string
-
+	// Extract the function name to filter by from the request in the Filter field.
+	// The Filter API allows for multiple stack filters, but for now, we only support the one,
+	// which is the function name stack filter. This will be expanded in the future
+	// to support multiple filters
 	for _, filter := range req.GetFilter() {
 		if stackFilter := filter.GetStackFilter(); stackFilter != nil {
 			if functionNameFilter := stackFilter.GetFunctionNameStackFilter(); functionNameFilter != nil {
