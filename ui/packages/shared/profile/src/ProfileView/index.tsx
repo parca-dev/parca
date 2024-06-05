@@ -78,6 +78,7 @@ export interface TopTableData {
   total?: bigint;
   filtered?: bigint;
   error?: any;
+  unit?: string;
 }
 
 interface CallgraphData {
@@ -278,6 +279,7 @@ export const ProfileView = ({
             filtered={filtered}
             loading={topTableData.loading}
             data={topTableData.arrow?.record}
+            unit={topTableData.unit}
             profileType={profileSource?.ProfileType()}
             navigateTo={navigateTo}
             setActionButtons={setActionButtons}

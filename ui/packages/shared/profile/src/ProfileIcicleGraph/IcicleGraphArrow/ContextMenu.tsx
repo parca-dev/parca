@@ -29,6 +29,7 @@ interface ContextMenuProps {
   menuId: string;
   table: Table<any>;
   profileType?: ProfileType;
+  unit?: string;
   total: bigint;
   totalUnfiltered: bigint;
   row: number;
@@ -54,6 +55,7 @@ const ContextMenu = ({
   setCurPath,
   hideMenu,
   profileType,
+  unit,
   hideBinary,
 }: ContextMenuProps): JSX.Element => {
   const {isDarkMode} = useParcaContext();
@@ -64,6 +66,7 @@ const ContextMenu = ({
   const contextMenuData = useGraphTooltip({
     table,
     profileType,
+    unit,
     total,
     totalUnfiltered,
     row,

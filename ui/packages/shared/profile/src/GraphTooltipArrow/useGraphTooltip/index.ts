@@ -34,6 +34,7 @@ import {
 interface Props {
   table: Table<any>;
   profileType?: ProfileType;
+  unit?: string;
   total: bigint;
   totalUnfiltered: bigint;
   row: number | null;
@@ -55,6 +56,7 @@ interface GraphTooltipData {
 export const useGraphTooltip = ({
   table,
   profileType,
+  unit,
   total,
   totalUnfiltered,
   row,
@@ -65,6 +67,7 @@ export const useGraphTooltip = ({
   }
 
   const locationAddress: bigint = table.getChild(FIELD_LOCATION_ADDRESS)?.get(row) ?? 0n;
+  unit = unit ?? profileType.sampleUnit;
 
   const cumulative: bigint =
     table.getChild(FIELD_CUMULATIVE)?.get(row) !== null
@@ -103,7 +106,7 @@ export const useGraphTooltip = ({
     const prevValue = cumulative - diff;
     const diffRatio = diff !== 0n ? divide(diff, prevValue) : 0;
     const diffSign = diff > 0 ? '+' : '';
-    const diffValueText = diffSign + valueFormatter(diff, profileType?.sampleUnit ?? '', 1);
+    const diffValueText = diffSign + valueFormatter(diff, unit, 1);
     const diffPercentageText = diffSign + (diffRatio * 100).toFixed(2) + '%';
     diffText = `${diffValueText} (${diffPercentageText})`;
   }
@@ -113,21 +116,13 @@ export const useGraphTooltip = ({
   return {
     name,
     locationAddress,
-    cumulativeText: getTextForCumulative(
-      cumulative,
-      totalUnfiltered,
-      total,
-      profileType?.periodUnit ?? ''
-    ),
+    cumulativeText: getTextForCumulative(cumulative, totalUnfiltered, total, unit ?? ''),
     cumulativePerSecondText: getTextForCumulativePerSecond(
       cumulativePerSecond,
-      profileType?.periodUnit ?? 'CPU Cores'
+      unit ?? 'CPU Cores'
     ),
-    flatText: getTextForCumulative(flat, totalUnfiltered, total, profileType.periodUnit ?? ''),
-    flatPerSecondText: getTextForCumulativePerSecond(
-      flatPerSecond,
-      profileType?.periodUnit ?? 'CPU Cores'
-    ),
+    flatText: getTextForCumulative(flat, totalUnfiltered, total, unit ?? ''),
+    flatPerSecondText: getTextForCumulativePerSecond(flatPerSecond, unit ?? 'CPU Cores'),
     diffText,
     diff,
     row,

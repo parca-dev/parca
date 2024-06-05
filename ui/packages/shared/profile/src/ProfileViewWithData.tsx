@@ -214,6 +214,10 @@ export const ProfileViewWithData = ({
             ? tableResponse.report.tableArrow
             : undefined,
         error: tableError,
+        unit:
+          tableResponse?.report.oneofKind === 'tableArrow'
+            ? tableResponse.report.tableArrow.unit
+            : '',
       }}
       callgraphData={{
         loading: callgraphLoading,

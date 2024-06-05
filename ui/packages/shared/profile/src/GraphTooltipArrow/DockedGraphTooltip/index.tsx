@@ -31,6 +31,7 @@ interface Props {
   row: number | null;
   level: number;
   profileType?: ProfileType;
+  unit?: string;
 }
 
 const InfoSection = ({
@@ -61,6 +62,7 @@ export const DockedGraphTooltip = ({
   row,
   level,
   profileType,
+  unit,
 }: Props): JSX.Element => {
   let {width} = useWindowSize();
   const {profileExplorer, navigateTo} = useParcaContext();
@@ -70,6 +72,7 @@ export const DockedGraphTooltip = ({
   const graphTooltipData = useGraphTooltip({
     table,
     profileType,
+    unit,
     total,
     totalUnfiltered,
     row,
