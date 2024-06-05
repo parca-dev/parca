@@ -27,6 +27,7 @@ import {useGraphTooltipMetaInfo} from './useGraphTooltipMetaInfo';
 interface GraphTooltipArrowContentProps {
   table: Table<any>;
   profileType?: ProfileType;
+  unit?: string;
   total: bigint;
   totalUnfiltered: bigint;
   row: number | null;
@@ -42,6 +43,7 @@ const NoData = (): React.JSX.Element => {
 const GraphTooltipArrowContent = ({
   table,
   profileType,
+  unit,
   total,
   totalUnfiltered,
   row,
@@ -52,6 +54,7 @@ const GraphTooltipArrowContent = ({
   const graphTooltipData = useGraphTooltip({
     table,
     profileType,
+    unit,
     total,
     totalUnfiltered,
     row,

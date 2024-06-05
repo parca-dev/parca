@@ -318,6 +318,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           setCurPath={setCurPath}
           hideMenu={hideAll}
           hideBinary={hideBinary}
+          unit={arrow.unit}
         />
         {dockedMetainfo ? (
           <DockedGraphTooltip
@@ -327,6 +328,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
             total={total}
             totalUnfiltered={total + filtered}
             profileType={profileType}
+            unit={arrow.unit}
           />
         ) : (
           !isContextMenuOpen && (
@@ -340,6 +342,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
                 totalUnfiltered={total + filtered}
                 profileType={profileType}
                 navigateTo={navigateTo as NavigateFunction}
+                unit={arrow.unit}
               />
             </GraphTooltipArrow>
           )

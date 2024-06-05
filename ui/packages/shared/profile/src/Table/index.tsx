@@ -99,6 +99,7 @@ interface TableProps {
   currentSearchString?: string;
   setActionButtons?: (buttons: React.JSX.Element) => void;
   isHalfScreen: boolean;
+  unit?: string;
 }
 
 const rowBgClassNames = (isExpanded: boolean, isSubRow: boolean): Record<string, boolean> => {
@@ -184,7 +185,7 @@ const CustomRowRenderer = ({
       onClick={onRowClick != null ? () => onRowClick(row.original) : undefined}
       onDoubleClick={
         onRowDoubleClick != null
-          ? e => {
+          ? () => {
               onRowDoubleClick(row, rows);
               window.getSelection()?.removeAllRanges();
             }
@@ -272,6 +273,7 @@ export const Table = React.memo(function Table({
   currentSearchString,
   setActionButtons,
   isHalfScreen,
+  unit,
 }: TableProps): React.JSX.Element {
   const router = parseParams(window?.location.search);
   const [rawDashboardItems] = useURLState({param: 'dashboard_items'});
@@ -308,17 +310,14 @@ export const Table = React.memo(function Table({
 
   const columnHelper = createColumnHelper<Row>();
 
+  unit = useMemo(() => unit ?? profileType?.sampleUnit ?? '', [unit, profileType?.sampleUnit]);
+
   const columns = useMemo<Array<ColumnDef<Row>>>(() => {
     return [
       columnHelper.accessor('flat', {
         id: 'flat',
         header: 'Flat',
-        cell: info =>
-          valueFormatter(
-            (info as CellContext<DataRow, bigint>).getValue(),
-            profileType?.periodUnit ?? '',
-            2
-          ),
+        cell: info => valueFormatter((info as CellContext<DataRow, bigint>).getValue(), unit, 2),
         size: 80,
         meta: {
           align: 'right',
@@ -344,13 +343,7 @@ export const Table = React.memo(function Table({
         id: 'flatDiff',
         header: 'Flat Diff',
         cell: info =>
-          addPlusSign(
-            valueFormatter(
-              (info as CellContext<DataRow, bigint>).getValue(),
-              profileType?.periodUnit ?? '',
-              2
-            )
-          ),
+          addPlusSign(valueFormatter((info as CellContext<DataRow, bigint>).getValue(), unit, 2)),
         size: 120,
         meta: {
           align: 'right',
@@ -375,12 +368,7 @@ export const Table = React.memo(function Table({
       columnHelper.accessor('cumulative', {
         id: 'cumulative',
         header: 'Cumulative',
-        cell: info =>
-          valueFormatter(
-            (info as CellContext<DataRow, bigint>).getValue(),
-            profileType?.periodUnit ?? '',
-            2
-          ),
+        cell: info => valueFormatter((info as CellContext<DataRow, bigint>).getValue(), unit, 2),
         size: 150,
         meta: {
           align: 'right',
@@ -406,13 +394,7 @@ export const Table = React.memo(function Table({
         id: 'cumulativeDiff',
         header: 'Cumulative Diff',
         cell: info =>
-          addPlusSign(
-            valueFormatter(
-              (info as CellContext<DataRow, bigint>).getValue(),
-              profileType?.periodUnit ?? '',
-              2
-            )
-          ),
+          addPlusSign(valueFormatter((info as CellContext<DataRow, bigint>).getValue(), unit, 2)),
         size: 170,
         meta: {
           align: 'right',
@@ -456,7 +438,7 @@ export const Table = React.memo(function Table({
       }),
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileType]);
+  }, [profileType, unit]);
 
   const [columnVisibility, setColumnVisibility] = useState(() => {
     return {
