@@ -177,7 +177,7 @@ const MetricsTooltip = ({
                         <TextWithTooltip
                           text={`${label.name}="${label.value}"`}
                           maxTextLength={37}
-                          id={`tooltip-${label.name}-${label.value}`}
+                          id={`tooltip-${label.name}`}
                         />
                       </div>
                     ))}
