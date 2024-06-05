@@ -1,6 +1,6 @@
 {
   "name": "@parca/profile",
-  "version": "0.16.382",
+  "version": "0.16.383",
   "description": "Profile viewing libraries",
   "dependencies": {
     "@headlessui/react": "^1.7.19",
