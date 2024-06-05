@@ -182,7 +182,14 @@ const CustomRowRenderer = ({
         }
       )}
       onClick={onRowClick != null ? () => onRowClick(row.original) : undefined}
-      onDoubleClick={onRowDoubleClick != null ? () => onRowDoubleClick(row, rows) : undefined}
+      onDoubleClick={
+        onRowDoubleClick != null
+          ? e => {
+              onRowDoubleClick(row, rows);
+              window.getSelection()?.removeAllRanges();
+            }
+          : undefined
+      }
       style={
         enableHighlighting !== true || shouldHighlightRow === undefined
           ? undefined
@@ -198,7 +205,7 @@ const CustomRowRenderer = ({
               'text-right': cell.column.columnDef.meta?.align === 'right',
               /* @ts-expect-error */
               'text-left': cell.column.columnDef.meta?.align === 'left',
-              'pl-2 whitespace-nowrap': idx === 0,
+              'pl-5 whitespace-nowrap': idx === 0,
             })}
           >
             {idx === 0 && isExpanded ? (
