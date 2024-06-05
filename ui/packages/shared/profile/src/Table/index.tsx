@@ -198,6 +198,7 @@ const CustomRowRenderer = ({
               'text-right': cell.column.columnDef.meta?.align === 'right',
               /* @ts-expect-error */
               'text-left': cell.column.columnDef.meta?.align === 'left',
+              'pl-2 whitespace-nowrap': idx === 0,
             })}
           >
             {idx === 0 && isExpanded ? (
