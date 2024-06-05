@@ -289,14 +289,22 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 			}
 
 		case pb.QueryRequest_MODE_DIFF:
-			mappingFiles, labels, err := getMappingFilesAndLabels(ctx, q.querier, req.GetDiff().B.GetMerge().GetQuery(), req.GetDiff().B.GetMerge().Start.AsTime(), req.GetDiff().B.GetMerge().End.AsTime())
+			mappingFiles_a, labels_a, err := getMappingFilesAndLabels(ctx, q.querier, req.GetDiff().A.GetMerge().GetQuery(), req.GetDiff().A.GetMerge().Start.AsTime(), req.GetDiff().A.GetMerge().End.AsTime())
 			if err != nil {
 				return nil, err
 			}
 
+			mappingFiles_b, labels_b, err := getMappingFilesAndLabels(ctx, q.querier, req.GetDiff().B.GetMerge().GetQuery(), req.GetDiff().B.GetMerge().Start.AsTime(), req.GetDiff().B.GetMerge().End.AsTime())
+			if err != nil {
+				return nil, err
+			}
+
+			mergedMappingFiles := MergeTwoSortedSlices(mappingFiles_a, mappingFiles_b)
+			mergedLabels := MergeTwoSortedSlices(labels_a, labels_b)
+
 			profileMetadata = &pb.ProfileMetadata{
-				MappingFiles: mappingFiles,
-				Labels:       labels,
+				MappingFiles: mergedMappingFiles,
+				Labels:       mergedLabels,
 			}
 		default:
 			return nil, status.Error(codes.InvalidArgument, "unknown query mode")
@@ -951,4 +959,41 @@ func getMappingFilesAndLabels(
 	labels := []string{}
 
 	return mappingFiles, labels, nil
+}
+
+// This is a deduplicating k-way merge.
+// The two slices that are passed in are assumed to be sorted.
+func MergeTwoSortedSlices(arr1, arr2 []string) []string {
+	merged := make([]string, 0, len(arr1)+len(arr2))
+	i, j := 0, 0
+
+	for i < len(arr1) && j < len(arr2) {
+		if arr1[i] < arr2[j] {
+			if len(merged) == 0 || merged[len(merged)-1] != arr1[i] {
+				merged = append(merged, arr1[i])
+			}
+			i++
+		} else {
+			if len(merged) == 0 || merged[len(merged)-1] != arr2[j] {
+				merged = append(merged, arr2[j])
+			}
+			j++
+		}
+	}
+
+	for i < len(arr1) {
+		if len(merged) == 0 || merged[len(merged)-1] != arr1[i] {
+			merged = append(merged, arr1[i])
+		}
+		i++
+	}
+
+	for j < len(arr2) {
+		if len(merged) == 0 || merged[len(merged)-1] != arr2[j] {
+			merged = append(merged, arr2[j])
+		}
+		j++
+	}
+
+	return merged
 }
