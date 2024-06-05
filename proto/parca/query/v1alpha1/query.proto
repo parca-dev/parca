@@ -247,7 +247,7 @@ message QueryRequest {
   ReportType report_type = 5;
 
   // filter_query is the query string to filter the profile samples
-  optional string filter_query = 6;
+  optional string filter_query = 6 [deprecated = true];
 
   // node_trim_threshold is the threshold % where the nodes with Value less than this will be removed from the report
   optional float node_trim_threshold = 7;

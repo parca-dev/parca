@@ -48,13 +48,13 @@ message QueryRequest {
   parca.query.v1alpha1.QueryRequest.ReportType report_type = 3;
 
   // filter_query is the query string to filter the profile samples
-  optional string filter_query = 4;
+  optional string filter_query = 4 [deprecated = true];
 
   // node_trim_threshold is the threshold % where the nodes with Value less than this will be removed from the report
   optional float node_trim_threshold = 5;
 
   // which runtime frames to filter out, often interpreter frames like python or ruby are not super useful by default
-  optional parca.query.v1alpha1.RuntimeFilter runtime_filter = 6;
+  optional parca.query.v1alpha1.RuntimeFilter runtime_filter = 6 [deprecated = true];
 
   // group_by indicates the fields to group by
   optional parca.query.v1alpha1.GroupBy group_by = 7;

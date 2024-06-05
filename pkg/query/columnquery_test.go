@@ -229,10 +229,6 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 	require.Equal(t, 10, len(res.Series[0].Samples))
 }
 
-func ptrToString(s string) *string {
-	return &s
-}
-
 func TestColumnQueryAPIQuerySingle(t *testing.T) {
 	t.Parallel()
 
@@ -356,7 +352,19 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 				Time:  ts,
 			},
 		},
-		FilterQuery: ptrToString("runtime"),
+		Filter: []*pb.Filter{
+			{
+				Filter: &pb.Filter_StackFilter{
+					StackFilter: &pb.StackFilter{
+						Filter: &pb.StackFilter_FunctionNameStackFilter{
+							FunctionNameStackFilter: &pb.FunctionNameStackFilter{
+								FunctionToFilter: "runtime",
+							},
+						},
+					},
+				},
+			},
+		},
 	})
 	require.NoError(t, err)
 	require.Less(t, len(filteredRes.Report.(*pb.QueryResponse_Top).Top.List), len(unfilteredRes.Report.(*pb.QueryResponse_Top).Top.List), "filtered result should be smaller than unfiltered result")
@@ -1715,4 +1723,13 @@ func BenchmarkFilterData(t *testing.B) {
 			r.Release()
 		}
 	}
+}
+
+func TestKwayMerge(t *testing.T) {
+	arr1 := []string{"a", "c", "e"}
+	arr2 := []string{"f", "i", "m", "o", "r"}
+
+	merged := MergeTwoSortedSlices(arr1, arr2)
+
+	require.Equal(t, []string{"a", "c", "e", "f", "i", "m", "o", "r"}, merged)
 }

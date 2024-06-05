@@ -72,9 +72,29 @@ export const useQuery = (
         };
       }
       req.invertCallStack = options?.invertCallStack ?? false;
+      const functionToFilter = req.filterQuery;
+      if (functionToFilter !== undefined) {
+        req.filter = [
+          ...req.filter,
+          {
+            filter: {
+              oneofKind: 'stackFilter',
+              stackFilter: {
+                filter: {
+                  oneofKind: 'functionNameStackFilter',
+                  functionNameStackFilter: {
+                    functionToFilter,
+                  },
+                },
+              },
+            },
+          },
+        ];
+      }
 
       if (options?.binaryFrameFilter !== undefined && options?.binaryFrameFilter.length > 0) {
         req.filter = [
+          ...req.filter,
           {
             filter: {
               oneofKind: 'frameFilter',
@@ -89,8 +109,6 @@ export const useQuery = (
             },
           },
         ];
-      } else {
-        req.filter = [];
       }
 
       try {

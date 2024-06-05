@@ -361,7 +361,8 @@ export interface QueryRequest {
     /**
      * filter_query is the query string to filter the profile samples
      *
-     * @generated from protobuf field: optional string filter_query = 6;
+     * @deprecated
+     * @generated from protobuf field: optional string filter_query = 6 [deprecated = true];
      */
     filterQuery?: string;
     /**
@@ -2114,7 +2115,7 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
                 case /* parca.query.v1alpha1.QueryRequest.ReportType report_type */ 5:
                     message.reportType = reader.int32();
                     break;
-                case /* optional string filter_query */ 6:
+                case /* optional string filter_query = 6 [deprecated = true];*/ 6:
                     message.filterQuery = reader.string();
                     break;
                 case /* optional float node_trim_threshold */ 7:
@@ -2162,7 +2163,7 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         /* parca.query.v1alpha1.QueryRequest.ReportType report_type = 5; */
         if (message.reportType !== 0)
             writer.tag(5, WireType.Varint).int32(message.reportType);
-        /* optional string filter_query = 6; */
+        /* optional string filter_query = 6 [deprecated = true]; */
         if (message.filterQuery !== undefined)
             writer.tag(6, WireType.LengthDelimited).string(message.filterQuery);
         /* optional float node_trim_threshold = 7; */
