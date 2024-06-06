@@ -4,7 +4,7 @@
   "description": "JavaScript parser implementation for the continuous profiling language",
   "main": "dist/index.js",
   "scripts": {
-    "test": "jest --coverage --config ../../../jest.config.js ./src/*",
+    "test": "jest --coverage --config ../../../jest.config.cjs ./src/*",
     "gen": "nearleyc -g -o ./src/selector.js ./src/selector.ne",
     "watch": "tsc-watch",
     "build": "tsc"

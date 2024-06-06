@@ -12,7 +12,6 @@
 // limitations under the License.
 
 import {
-  Label,
   ProfileDiffSelection,
   ProfileDiffSelection_Mode,
   QueryRequest,
@@ -20,7 +19,7 @@ import {
   QueryRequest_ReportType,
   Timestamp,
 } from '@parca/client';
-import {Matcher, ProfileType, Query} from '@parca/parser';
+import {Matcher, NewParser, ProfileType, Query} from '@parca/parser';
 import {formatDate} from '@parca/utilities';
 
 export interface ProfileSource {
@@ -58,46 +57,34 @@ export function SuffixParams(params: {[key: string]: any}, suffix: string): {[ke
   );
 }
 
-export function ParseLabels(labels: string[]): Label[] {
-  return labels
-    .filter(str => str !== '')
-    .map(function (labelString): Label {
-      const parts = labelString.split('=', 2);
-      return {name: parts[0], value: parts[1]};
-    });
-}
-
 export function ProfileSelectionFromParams(
-  expression: string | undefined,
-  from: string | undefined,
-  to: string | undefined,
   mergeFrom: string | undefined,
   mergeTo: string | undefined,
-  labels: string[],
+  selection: string | undefined,
   filterQuery?: string
 ): ProfileSelection | null {
   if (
-    from !== undefined &&
-    to !== undefined &&
     mergeFrom !== undefined &&
     mergeTo !== undefined &&
-    expression !== undefined
+    selection !== undefined &&
+    selection !== ''
   ) {
-    // TODO: Refactor parsing the query and adding matchers
-    let query = Query.parse(expression);
-    if (labels !== undefined) {
-      ParseLabels(labels ?? ['']).forEach(l => {
-        const hasLabels = labels.length > 0 && labels.filter(val => val !== '').length > 0;
-        if (hasLabels) {
-          const [newQuery, changed] = query.setMatcher(l.name, l.value);
-          if (changed) {
-            query = newQuery;
-          }
-        }
-      });
+    const p = NewParser();
+    p.save();
+    const {successfulParse} = Query.tryParse(p, selection);
+
+    if (!successfulParse) {
+      console.log('Failed to parse selected query.');
+      console.log(selection);
+      return null;
     }
 
-    return new MergedProfileSelection(parseInt(mergeFrom), parseInt(mergeTo), query, filterQuery);
+    return new MergedProfileSelection(
+      parseInt(mergeFrom),
+      parseInt(mergeTo),
+      Query.parse(selection),
+      filterQuery
+    );
   }
 
   return null;
@@ -131,9 +118,7 @@ export class MergedProfileSelection implements ProfileSelection {
     return {
       merge_from: this.mergeFrom.toString(),
       merge_to: this.mergeTo.toString(),
-      query: this.query,
-      profile_name: this.ProfileName(),
-      labels: this.query.matchers.map(m => `${m.key}=${encodeURIComponent(m.value)}`),
+      selection: encodeURIComponent(this.query.toString()),
     };
   }
 

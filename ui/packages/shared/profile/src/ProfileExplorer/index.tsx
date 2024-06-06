@@ -116,16 +116,12 @@ const ProfileExplorerApp = ({
   let {
     from_a,
     to_a,
-    profile_name_a,
-    labels_a,
     merge_from_a,
     merge_to_a,
     time_selection_a,
     compare_a,
     from_b,
     to_b,
-    profile_name_b,
-    labels_b,
     merge_from_b,
     merge_to_b,
     time_selection_b,
@@ -140,6 +136,12 @@ const ProfileExplorerApp = ({
   // eslint-disable-next-line @typescript-eslint/naming-convention
   const expression_b = getExpressionAsAString(queryParams.expression_b);
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const selection_a = getExpressionAsAString(queryParams.selection_a);
+
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const selection_b = getExpressionAsAString(queryParams.selection_b);
+
   /* eslint-enable @typescript-eslint/naming-convention */
   const [profileA, setProfileA] = useState<ProfileSelection | null>(null);
   const [profileB, setProfileB] = useState<ProfileSelection | null>(null);
@@ -147,38 +149,30 @@ const ProfileExplorerApp = ({
   useEffect(() => {
     const mergeFrom = merge_from_a ?? undefined;
     const mergeTo = merge_to_a ?? undefined;
-    const labels = typeof labels_a === 'string' ? [labels_a] : (labels_a as string[]) ?? [''];
     const profileA = ProfileSelectionFromParams(
-      expression_a,
-      from_a as string,
-      to_a as string,
       mergeFrom as string,
       mergeTo as string,
-      labels,
+      selection_a,
       filter_by_function as string
     );
 
     setProfileA(profileA);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expression_a, from_a, to_a, merge_from_a, merge_to_a, labels_a, filter_by_function]);
+  }, [merge_from_a, merge_to_a, selection_a, filter_by_function]);
 
   useEffect(() => {
     const mergeFrom = merge_from_b ?? undefined;
     const mergeTo = merge_to_b ?? undefined;
-    const labels = typeof labels_b === 'string' ? [labels_b] : (labels_b as string[]) ?? [''];
     const profileB = ProfileSelectionFromParams(
-      expression_b,
-      from_b as string,
-      to_b as string,
       mergeFrom as string,
       mergeTo as string,
-      labels,
+      selection_b,
       filter_by_function as string
     );
 
     setProfileB(profileB);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expression_b, from_b, to_b, merge_from_b, merge_to_b, labels_b, filter_by_function]);
+  }, [merge_from_b, merge_to_b, selection_b, filter_by_function]);
 
   if (profileTypesLoading) {
     return <>{loader}</>;
@@ -206,7 +200,9 @@ const ProfileExplorerApp = ({
 
   const selectProfile = (p: ProfileSelection, suffix: string): void => {
     queryParams.expression_a = encodeURIComponent(queryParams.expression_a);
+    queryParams.selection_a = encodeURIComponent(queryParams.selection_a);
     queryParams.expression_b = encodeURIComponent(queryParams.expression_b);
+    queryParams.selection_b = encodeURIComponent(queryParams.selection_b);
     return navigateTo('/', {
       ...queryParams,
       ...SuffixParams(p.HistoryParams(), suffix),
@@ -227,7 +223,6 @@ const ProfileExplorerApp = ({
     from: parseInt(from_a as string),
     to: parseInt(to_a as string),
     timeSelection: time_selection_a as string,
-    profile_name: profile_name_a as string,
   };
 
   // Show the SingleProfileExplorer when not comparing
@@ -235,7 +230,11 @@ const ProfileExplorerApp = ({
     const selectQuery = (q: QuerySelection): void => {
       const mergeParams =
         q.mergeFrom !== undefined && q.mergeTo !== undefined
-          ? {merge_from_a: q.mergeFrom, merge_to_a: q.mergeTo}
+          ? {
+              merge_from_a: q.mergeFrom,
+              merge_to_a: q.mergeTo,
+              selection_a: encodeURIComponent(q.expression),
+            }
           : {};
       return navigateTo(
         '/',
@@ -271,14 +270,12 @@ const ProfileExplorerApp = ({
         from_a: queryA.from.toString(),
         to_a: queryA.to.toString(),
         time_selection_a: queryA.timeSelection,
-        profile_name_a: queryA.profile_name,
 
         compare_b: 'true',
         expression_b: encodeURIComponent(queryA.expression),
         from_b: queryA.from.toString(),
         to_b: queryA.to.toString(),
         time_selection_b: queryA.timeSelection,
-        profile_name_b: queryA.profile_name,
       };
 
       if (profileA != null) {
@@ -313,13 +310,16 @@ const ProfileExplorerApp = ({
     from: parseInt(from_b as string),
     to: parseInt(to_b as string),
     timeSelection: time_selection_b as string,
-    profile_name: profile_name_b as string,
   };
 
   const selectQueryA = (q: QuerySelection): void => {
     const mergeParams =
       q.mergeFrom !== undefined && q.mergeTo !== undefined
-        ? {merge_from_a: q.mergeFrom, merge_to_a: q.mergeTo}
+        ? {
+            merge_from_a: q.mergeFrom,
+            merge_to_a: q.mergeTo,
+            selection_a: encodeURIComponent(q.expression),
+          }
         : {};
     return navigateTo(
       '/',
@@ -331,6 +331,7 @@ const ProfileExplorerApp = ({
           compare_a: 'true',
           expression_a: encodeURIComponent(q.expression),
           expression_b: encodeURIComponent(expression_b),
+          selection_b: encodeURIComponent(selection_b),
           from_a: q.from.toString(),
           to_a: q.to.toString(),
           time_selection_a: q.timeSelection,
@@ -345,7 +346,11 @@ const ProfileExplorerApp = ({
   const selectQueryB = (q: QuerySelection): void => {
     const mergeParams =
       q.mergeFrom !== undefined && q.mergeTo !== undefined
-        ? {merge_from_b: q.mergeFrom, merge_to_b: q.mergeTo}
+        ? {
+            merge_from_b: q.mergeFrom,
+            merge_to_b: q.mergeTo,
+            selection_b: encodeURIComponent(q.expression),
+          }
         : {};
     return navigateTo(
       '/',
@@ -357,6 +362,7 @@ const ProfileExplorerApp = ({
           compare_b: 'true',
           expression_b: encodeURIComponent(q.expression),
           expression_a: encodeURIComponent(expression_a),
+          selection_a: encodeURIComponent(selection_a),
           from_b: q.from.toString(),
           to_b: q.to.toString(),
           time_selection_b: q.timeSelection,

@@ -41,6 +41,12 @@ test('Query.toString', () => {
   );
 });
 
+test('Query.toString With Comma', () => {
+  expect(Query.parse('memory:inuse_objects:count:space:bytes{instance="abc,def"}').toString()).toBe(
+    'memory:inuse_objects:count:space:bytes{instance="abc,def"}'
+  );
+});
+
 test('Partial Parsing ProfileName and rest', () => {
   [
     {

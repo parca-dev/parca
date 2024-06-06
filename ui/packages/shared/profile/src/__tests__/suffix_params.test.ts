@@ -11,14 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {ParseLabels, SuffixParams} from '../ProfileSource';
+import {SuffixParams} from '../ProfileSource';
 
 test('prefixes keys', () => {
   const input = {key: 'value'};
   expect(SuffixParams(input, '_a')).toMatchObject({key_a: 'value'});
-});
-
-test('parses labels', () => {
-  const input = ['key=value'];
-  expect(ParseLabels(input)).toMatchObject([{name: 'key', value: 'value'}]);
 });
