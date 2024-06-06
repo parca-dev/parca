@@ -16,6 +16,7 @@ package normalizer
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/apache/arrow/go/v16/arrow"
 	"github.com/apache/arrow/go/v16/arrow/memory"
@@ -23,6 +24,7 @@ import (
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/polarsignals/frostdb/pqarrow"
 	"github.com/polarsignals/frostdb/query/logicalplan"
+	"github.com/prometheus/prometheus/util/strutil"
 
 	otelgrpcprofilingpb "github.com/parca-dev/parca/gen/proto/go/opentelemetry/proto/collector/profiles/v1"
 	pprofextended "github.com/parca-dev/parca/gen/proto/go/opentelemetry/proto/profiles/v1/alternatives/pprofextended"
@@ -43,28 +45,34 @@ func OtlpRequestToArrowRecord(
 
 	for _, rp := range req.ResourceProfiles {
 		for _, attr := range rp.Resource.Attributes {
-			if attr.Value.String() != "" {
-				allLabelNames[attr.Key] = struct{}{}
+			if strings.TrimSpace(attr.Value.GetStringValue()) != "" {
+				allLabelNames[strutil.SanitizeLabelName(attr.Key)] = struct{}{}
 			}
 		}
 
 		for _, sp := range rp.ScopeProfiles {
+			for _, attr := range sp.Scope.Attributes {
+				if strings.TrimSpace(attr.Value.GetStringValue()) != "" {
+					allLabelNames[strutil.SanitizeLabelName(attr.Key)] = struct{}{}
+				}
+			}
+
 			for _, p := range sp.Profiles {
 				for _, attr := range p.Attributes {
-					if attr.Value.String() != "" {
-						allLabelNames[attr.Key] = struct{}{}
+					if strings.TrimSpace(attr.Value.GetStringValue()) != "" {
+						allLabelNames[strutil.SanitizeLabelName(attr.Key)] = struct{}{}
 					}
 				}
 
 				for _, attr := range rp.Resource.Attributes {
-					if attr.Value.String() != "" {
-						allLabelNames[attr.Key] = struct{}{}
+					if strings.TrimSpace(attr.Value.GetStringValue()) != "" {
+						allLabelNames[strutil.SanitizeLabelName(attr.Key)] = struct{}{}
 					}
 				}
 
 				for _, sample := range p.Profile.Sample {
 					for _, label := range sample.Label {
-						allLabelNames[p.Profile.StringTable[label.Key]] = struct{}{}
+						allLabelNames[strutil.SanitizeLabelName(p.Profile.StringTable[label.Key])] = struct{}{}
 					}
 				}
 			}
@@ -87,12 +95,6 @@ func OtlpRequestToArrowRecord(
 
 	row := make(parquet.Row, 0, len(schema.ParquetSchema().Fields()))
 	for _, rp := range req.ResourceProfiles {
-		for _, attr := range rp.Resource.Attributes {
-			if attr.Value.String() != "" {
-				allLabelNames[attr.Key] = struct{}{}
-			}
-		}
-
 		for _, sp := range rp.ScopeProfiles {
 			for _, p := range sp.Profiles {
 				metas := []profile.Meta{}
@@ -109,20 +111,26 @@ func OtlpRequestToArrowRecord(
 
 						ls := map[string]string{}
 
+						for _, label := range sample.Label {
+							ls[strutil.SanitizeLabelName(p.Profile.StringTable[label.Key])] = p.Profile.StringTable[label.Str]
+						}
+
 						for _, attr := range p.Attributes {
-							if attr.Value.String() != "" {
-								ls[attr.Key] = attr.Value.String()
+							if strings.TrimSpace(attr.Value.GetStringValue()) != "" {
+								ls[strutil.SanitizeLabelName(attr.Key)] = strings.TrimSpace(attr.Value.GetStringValue())
+							}
+						}
+
+						for _, attr := range sp.Scope.Attributes {
+							if strings.TrimSpace(attr.Value.GetStringValue()) != "" {
+								ls[strutil.SanitizeLabelName(attr.Key)] = strings.TrimSpace(attr.Value.GetStringValue())
 							}
 						}
 
 						for _, attr := range rp.Resource.Attributes {
-							if attr.Value.String() != "" {
-								ls[attr.Key] = attr.Value.String()
+							if strings.TrimSpace(attr.Value.GetStringValue()) != "" {
+								ls[strutil.SanitizeLabelName(attr.Key)] = strings.TrimSpace(attr.Value.GetStringValue())
 							}
-						}
-
-						for _, label := range sample.Label {
-							ls[p.Profile.StringTable[label.Key]] = p.Profile.StringTable[label.Str]
 						}
 
 						row := SampleToParquetRow(
