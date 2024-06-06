@@ -83,7 +83,7 @@ export function ProfileSelectionFromParams(
       parseInt(mergeFrom),
       parseInt(mergeTo),
       Query.parse(selection),
-      filterQuery,
+      filterQuery
     );
   }
 
