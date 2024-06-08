@@ -102,7 +102,7 @@
     "plop": "3.1.2",
     "pm2": "5.4.0",
     "postcss": "8.4.38",
-    "prettier": "3.3.0",
+    "prettier": "3.3.1",
     "prettier-plugin-tailwindcss": "^0.4.0",
     "react-is": "18.3.1",
     "react-test-renderer": "18.3.1",
