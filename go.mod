@@ -32,7 +32,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/parquet-go/parquet-go v0.22.0
 	github.com/planetscale/vtprotobuf v0.6.0
-	github.com/polarsignals/frostdb v0.0.0-20240520070357-13880aa44db3
+	github.com/polarsignals/frostdb v0.0.0-20240610080310-316067a56dde
 	github.com/polarsignals/iceberg-go v0.0.0-20240502213135-2ee70b71e76b
 	github.com/prometheus/client_golang v1.19.1
 	github.com/prometheus/common v0.53.0
@@ -52,7 +52,7 @@ require (
 	go.opentelemetry.io/proto/otlp v1.2.0
 	go.uber.org/atomic v1.11.0
 	go.uber.org/automaxprocs v1.5.3
-	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
+	golang.org/x/exp v0.0.0-20240531132922-fd00a4e0eefc
 	golang.org/x/net v0.25.0
 	golang.org/x/oauth2 v0.21.0
 	golang.org/x/sync v0.7.0
