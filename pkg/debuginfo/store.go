@@ -15,7 +15,6 @@ package debuginfo
 
 import (
 	"context"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -413,10 +412,6 @@ func (s *Store) uploadIsStale(upload *debuginfopb.DebuginfoUpload) bool {
 }
 
 func validateInput(id string) error {
-	_, err := hex.DecodeString(id)
-	if err != nil {
-		return fmt.Errorf("failed to validate input: %w", err)
-	}
 	if len(id) <= 2 {
 		return errors.New("unexpectedly short input")
 	}
