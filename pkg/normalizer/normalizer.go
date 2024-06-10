@@ -21,13 +21,19 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/apache/arrow/go/v16/arrow"
+	"github.com/apache/arrow/go/v16/arrow/array"
+	"github.com/apache/arrow/go/v16/arrow/compute"
 	"github.com/apache/arrow/go/v16/arrow/memory"
 	"github.com/gogo/status"
 	"github.com/parquet-go/parquet-go"
 	"github.com/polarsignals/frostdb/dynparquet"
+	"github.com/polarsignals/frostdb/pqarrow"
+	"github.com/polarsignals/frostdb/pqarrow/arrowutils"
+	"github.com/polarsignals/frostdb/query/logicalplan"
 	"github.com/prometheus/common/model"
 	"golang.org/x/exp/maps"
 	"google.golang.org/grpc/codes"
@@ -113,7 +119,7 @@ func WriteRawRequestToArrowRecord(
 	req *profilestorepb.WriteRawRequest,
 	schema *dynparquet.Schema,
 ) (arrow.Record, error) {
-	nr, err := NormalizeWriteRawRequest(
+	normalizedRequest, err := NormalizeWriteRawRequest(
 		ctx,
 		req,
 	)
@@ -121,17 +127,291 @@ func WriteRawRequestToArrowRecord(
 		return nil, err
 	}
 
-	r, err := ParquetBufToArrowRecord(
-		ctx,
-		mem,
-		schema,
-		nr,
-	)
+	ps, err := schema.GetDynamicParquetSchema(map[string][]string{
+		profile.ColumnLabels:         normalizedRequest.AllLabelNames,
+		profile.ColumnPprofLabels:    normalizedRequest.AllPprofLabelNames,
+		profile.ColumnPprofNumLabels: normalizedRequest.AllPprofNumLabelNames,
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer schema.PutPooledParquetSchema(ps)
+
+	arrowSchema, err := pqarrow.ParquetSchemaToArrowSchema(ctx, ps.Schema, schema, logicalplan.IterOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	return r, nil
+	b := array.NewRecordBuilder(mem, arrowSchema)
+	numRows := 0
+	for _, series := range normalizedRequest.Series {
+		for _, sample := range series.Samples {
+			for _, p := range sample {
+				numRows += len(p.Samples)
+			}
+		}
+	}
+	b.Reserve(numRows)
+	defer b.Release()
+
+	for _, col := range schema.Columns() {
+		switch col.Name {
+		case profile.ColumnDuration:
+			cBuilder := b.Field(b.Schema().FieldIndices(col.Name)[0]).(*array.Int64Builder)
+			for _, series := range normalizedRequest.Series {
+				for _, sample := range series.Samples {
+					for _, p := range sample {
+						for range p.Samples {
+							cBuilder.Append(p.Meta.Duration)
+						}
+					}
+				}
+			}
+		case profile.ColumnName:
+			cBuilder := b.Field(b.Schema().FieldIndices(col.Name)[0]).(*array.BinaryDictionaryBuilder)
+			for _, series := range normalizedRequest.Series {
+				for _, sample := range series.Samples {
+					for _, p := range sample {
+						for range p.Samples {
+							if err := cBuilder.AppendString(p.Meta.Name); err != nil {
+								return nil, err
+							}
+						}
+					}
+				}
+			}
+		case profile.ColumnPeriod:
+			cBuilder := b.Field(b.Schema().FieldIndices(col.Name)[0]).(*array.Int64Builder)
+			for _, series := range normalizedRequest.Series {
+				for _, sample := range series.Samples {
+					for _, p := range sample {
+						for range p.Samples {
+							cBuilder.Append(p.Meta.Period)
+						}
+					}
+				}
+			}
+		case profile.ColumnPeriodType:
+			cBuilder := b.Field(b.Schema().FieldIndices(col.Name)[0]).(*array.BinaryDictionaryBuilder)
+			for _, series := range normalizedRequest.Series {
+				for _, sample := range series.Samples {
+					for _, p := range sample {
+						for range p.Samples {
+							if err := cBuilder.AppendString(p.Meta.PeriodType.Type); err != nil {
+								return nil, err
+							}
+						}
+					}
+				}
+			}
+		case profile.ColumnPeriodUnit:
+			cBuilder := b.Field(b.Schema().FieldIndices(col.Name)[0]).(*array.BinaryDictionaryBuilder)
+			for _, series := range normalizedRequest.Series {
+				for _, sample := range series.Samples {
+					for _, p := range sample {
+						for range p.Samples {
+							if err := cBuilder.AppendString(p.Meta.PeriodType.Unit); err != nil {
+								return nil, err
+							}
+						}
+					}
+				}
+			}
+		case profile.ColumnSampleType:
+			cBuilder := b.Field(b.Schema().FieldIndices(col.Name)[0]).(*array.BinaryDictionaryBuilder)
+			for _, series := range normalizedRequest.Series {
+				for _, sample := range series.Samples {
+					for _, p := range sample {
+						for range p.Samples {
+							if err := cBuilder.AppendString(p.Meta.SampleType.Type); err != nil {
+								return nil, err
+							}
+						}
+					}
+				}
+			}
+		case profile.ColumnSampleUnit:
+			cBuilder := b.Field(b.Schema().FieldIndices(col.Name)[0]).(*array.BinaryDictionaryBuilder)
+			for _, series := range normalizedRequest.Series {
+				for _, sample := range series.Samples {
+					for _, p := range sample {
+						for range p.Samples {
+							if err := cBuilder.AppendString(p.Meta.SampleType.Unit); err != nil {
+								return nil, err
+							}
+						}
+					}
+				}
+			}
+		case profile.ColumnStacktrace:
+			cBuilder := b.Field(b.Schema().FieldIndices(col.Name)[0]).(*array.ListBuilder)
+			for _, series := range normalizedRequest.Series {
+				for _, sample := range series.Samples {
+					for _, p := range sample {
+						for _, ns := range p.Samples {
+							cBuilder.Append(len(ns.Locations) != 0)
+							vBuilder := cBuilder.ValueBuilder().(*array.BinaryDictionaryBuilder)
+							for _, loc := range ns.Locations {
+								if len(loc) == 0 {
+									vBuilder.AppendNull()
+									continue
+								}
+								if err := vBuilder.Append(loc); err != nil {
+									return nil, err
+								}
+							}
+						}
+					}
+				}
+			}
+		case profile.ColumnTimestamp:
+			cBuilder := b.Field(b.Schema().FieldIndices(col.Name)[0]).(*array.Int64Builder)
+			for _, series := range normalizedRequest.Series {
+				for _, sample := range series.Samples {
+					for _, p := range sample {
+						for range p.Samples {
+							cBuilder.Append(p.Meta.Timestamp)
+						}
+					}
+				}
+			}
+		case profile.ColumnValue:
+			cBuilder := b.Field(b.Schema().FieldIndices(col.Name)[0]).(*array.Int64Builder)
+			for _, series := range normalizedRequest.Series {
+				for _, sample := range series.Samples {
+					for _, p := range sample {
+						for _, ns := range p.Samples {
+							cBuilder.Append(ns.Value)
+						}
+					}
+				}
+			}
+		case profile.ColumnLabels:
+			for _, name := range normalizedRequest.AllLabelNames {
+				cBuilder := b.Field(b.Schema().FieldIndices(col.Name + "." + name)[0]).(*array.BinaryDictionaryBuilder)
+				for _, series := range normalizedRequest.Series {
+					if val, ok := series.Labels[name]; ok {
+						for _, sample := range series.Samples {
+							for _, p := range sample {
+								for range p.Samples {
+									if err := cBuilder.AppendString(val); err != nil {
+										return nil, err
+									}
+								}
+							}
+						}
+					} else {
+						for _, sample := range series.Samples {
+							for _, p := range sample {
+								cBuilder.AppendNulls(len(p.Samples))
+							}
+						}
+					}
+				}
+			}
+		case profile.ColumnPprofLabels:
+			for _, name := range normalizedRequest.AllPprofLabelNames {
+				cBuilder := b.Field(b.Schema().FieldIndices(col.Name + "." + name)[0]).(*array.BinaryDictionaryBuilder)
+				for _, series := range normalizedRequest.Series {
+					for _, sample := range series.Samples {
+						for _, p := range sample {
+							for _, ns := range p.Samples {
+								if val, ok := ns.Label[name]; ok {
+									if err := cBuilder.AppendString(val); err != nil {
+										return nil, err
+									}
+								} else {
+									cBuilder.AppendNull()
+								}
+							}
+						}
+					}
+				}
+			}
+		case profile.ColumnPprofNumLabels:
+			for _, name := range normalizedRequest.AllPprofNumLabelNames {
+				cBuilder := b.Field(b.Schema().FieldIndices(col.Name + "." + name)[0]).(*array.Int64Builder)
+				for _, series := range normalizedRequest.Series {
+					for _, sample := range series.Samples {
+						for _, p := range sample {
+							for _, ns := range p.Samples {
+								if val, ok := ns.NumLabel[name]; ok {
+									cBuilder.Append(val)
+								} else {
+									cBuilder.AppendNull()
+								}
+							}
+						}
+					}
+				}
+			}
+		default:
+			panic(fmt.Sprintf("unknown column: %s", col.Name))
+		}
+	}
+
+	record := b.NewRecord()
+	if record.NumRows() == 0 {
+		// If there are no rows in the record we simply return early.
+		record.Release()
+		return nil, nil
+	}
+
+	sortingColDefs := schema.ColumnDefinitionsForSortingColumns()
+	sortingColumns := make([]arrowutils.SortingColumn, 0, len(sortingColDefs))
+	arrowFields := arrowSchema.Fields()
+	for _, col := range schema.SortingColumns() {
+		direction := arrowutils.Ascending
+		if col.Descending() {
+			direction = arrowutils.Descending
+		}
+
+		colDef, found := schema.ColumnByName(col.ColumnName())
+		if !found {
+			return nil, fmt.Errorf("sorting column %v not found in schema", col.ColumnName())
+		}
+
+		if colDef.Dynamic {
+			for i, c := range arrowFields {
+				if strings.HasPrefix(c.Name, colDef.Name) {
+					sortingColumns = append(sortingColumns, arrowutils.SortingColumn{
+						Index:      i,
+						Direction:  direction,
+						NullsFirst: col.NullsFirst(),
+					})
+				}
+			}
+		} else {
+			indices := arrowSchema.FieldIndices(colDef.Name)
+			for _, i := range indices {
+				sortingColumns = append(sortingColumns, arrowutils.SortingColumn{
+					Index:      i,
+					Direction:  direction,
+					NullsFirst: col.NullsFirst(),
+				})
+			}
+		}
+	}
+
+	sortedIdxs, err := arrowutils.SortRecord(record, sortingColumns)
+	if err != nil {
+		return nil, fmt.Errorf("failed to sort record: %w", err)
+	}
+	isSorted := true
+	for i := 0; i < sortedIdxs.Len(); i++ {
+		if sortedIdxs.Value(i) != int32(i) {
+			isSorted = false
+			break
+		}
+	}
+
+	if isSorted {
+		return record, nil
+	}
+
+	// Release the record, since Take will allocate a new, sorted, record.
+	defer record.Release()
+	return arrowutils.Take(compute.WithAllocator(ctx, mem), record, sortedIdxs)
 }
 
 func NormalizePprof(
