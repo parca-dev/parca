@@ -62,7 +62,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 			)
 			require.NoError(b, err)
 
-			fileContent, err := os.ReadFile("../query/testdata/alloc_objects.pb.gz")
+			fileContent, err := os.ReadFile("../query/testdata/profile1.pb.gz")
 			require.NoError(b, err)
 
 			ingester := ingester.NewIngester(
@@ -86,7 +86,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 							Labels: []*profilestorepb.Label{
 								{
 									Name:  "__name__",
-									Value: "memory",
+									Value: "cpu",
 								},
 								{
 									Name:  "job",
@@ -128,11 +128,11 @@ func Benchmark_Query_Merge(b *testing.B) {
 			b.ResetTimer()
 
 			for i := 0; i < b.N; i++ {
-				_, err = api.Query(ctx, &pb.QueryRequest{
+				resp, err := api.Query(ctx, &pb.QueryRequest{
 					Mode: pb.QueryRequest_MODE_MERGE,
 					Options: &pb.QueryRequest_Merge{
 						Merge: &pb.MergeProfile{
-							Query: `{__name__="memory:alloc_objects:count:space:bytes"}`,
+							Query: `{__name__="cpu:samples:count:cpu:nanoseconds:delta"}`,
 							Start: timestamppb.New(time.Unix(0, math.MinInt64)),
 							End:   timestamppb.New(time.Unix(0, math.MaxInt64)),
 						},
@@ -140,6 +140,7 @@ func Benchmark_Query_Merge(b *testing.B) {
 					//nolint:staticcheck // SA1019: Fow now we want to support these APIs
 					ReportType: pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW,
 				})
+				require.NotEqual(b, int64(0), resp.Total)
 				require.NoError(b, err)
 			}
 		})
