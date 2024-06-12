@@ -11,9 +11,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import AbsoluteDatePicker from './AbsoluteDatePicker';
-import RelativeDatePicker from './RelativeDatePicker';
-import {DateTimeRange, DateUnion} from './utils';
+import {useRef, useState} from 'react';
+
+import {Popover} from '@headlessui/react';
+import cx from 'classnames';
+import {useClickAway} from 'react-use';
+
+import DateTimeRangePickerPanel from './DateTimeRangePickerPanel';
+import DateTimeRangePickerText from './DateTimeRangePickerText';
+import {DateTimeRange} from './utils';
 
 interface DateTimeRangePickerProps {
   onRangeSelection: (range: DateTimeRange) => void;
@@ -21,22 +27,52 @@ interface DateTimeRangePickerProps {
 }
 
 const DateTimeRangePicker = ({onRangeSelection, range}: DateTimeRangePickerProps): JSX.Element => {
-  const isRelativeRange = range.from.isRelative();
+  const [isActive, setIsActive] = useState<boolean>(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  return isRelativeRange ? (
-    <RelativeDatePicker
-      range={range}
-      onChange={(from: DateUnion, to: DateUnion) => {
-        onRangeSelection(new DateTimeRange(from, to));
-      }}
-    />
-  ) : (
-    <AbsoluteDatePicker
-      range={range}
-      onChange={(from: DateUnion, to: DateUnion) => {
-        onRangeSelection(new DateTimeRange(from, to));
-      }}
-    />
+  useClickAway(containerRef, () => {
+    setIsActive(false);
+  });
+
+  const toggleActive = (): void => {
+    setIsActive(true);
+  };
+
+  return (
+    <Popover>
+      <div ref={containerRef} className="w-fit items-center">
+        <DateTimeRangePickerText
+          range={range}
+          onClick={toggleActive}
+          isActive={isActive}
+          onRangeSelection={(range: DateTimeRange) => {
+            onRangeSelection(range);
+          }}
+        />
+
+        {isActive ? (
+          <Popover.Panel
+            className={cx(
+              'absolute z-10 mt-2 w-fit rounded border shadow-lg ring-1 ring-black ring-opacity-5 dark:border-gray-600'
+            )}
+            static
+          >
+            <DateTimeRangePickerPanel
+              range={range}
+              onRangeSelection={(range: DateTimeRange) => {
+                onRangeSelection(range);
+                setIsActive(false);
+              }}
+              toggleRangePickerPanel={toggleActive}
+              // onRangeSelection={(from: DateUnion, to: DateUnion) => {
+              //   onRangeSelection(new DateTimeRange(from, to));
+              //   setIsActive(false);
+              // }}
+            />
+          </Popover.Panel>
+        ) : null}
+      </div>
+    </Popover>
   );
 };
 

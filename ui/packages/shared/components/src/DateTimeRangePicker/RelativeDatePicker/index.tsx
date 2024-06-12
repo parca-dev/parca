@@ -27,6 +27,7 @@ import {
 interface RelativeDatePickerProps {
   range: DateTimeRange;
   onChange?: (from: RelativeDate | AbsoluteDate, to: RelativeDate | AbsoluteDate) => void;
+  toggleRangePickerPanel: () => void;
 }
 
 interface UnitsMap {
@@ -84,9 +85,69 @@ const parseInput = (input: string): {value: number; unit: string} | null => {
   return {value, unit: unitLong[unit]};
 };
 
+export const RelativeDatePickerForPanel = ({
+  onChange = () => null,
+}: {
+  onChange: (from: RelativeDate | AbsoluteDate, to: RelativeDate | AbsoluteDate) => void;
+}): JSX.Element => {
+  return (
+    <div className="flex flex-col gap-4 items-center text-sm p-4">
+      <div
+        className="cursor-pointer"
+        onClick={() => {
+          onChange(new RelativeDate(UNITS.MINUTE, 15), NOW);
+        }}
+      >
+        Last 15 minutes
+      </div>
+      <div
+        className="cursor-pointer"
+        onClick={() => {
+          onChange(new RelativeDate(UNITS.HOUR, 1), NOW);
+        }}
+      >
+        Last 1 hour
+      </div>
+      <div
+        className="cursor-pointer"
+        onClick={() => {
+          onChange(new RelativeDate(UNITS.HOUR, 3), NOW);
+        }}
+      >
+        Last 3 hours
+      </div>
+      <div
+        className="cursor-pointer"
+        onClick={() => {
+          onChange(new RelativeDate(UNITS.HOUR, 6), NOW);
+        }}
+      >
+        Last 6 hours
+      </div>
+      <div
+        className="cursor-pointer"
+        onClick={() => {
+          onChange(new RelativeDate(UNITS.HOUR, 12), NOW);
+        }}
+      >
+        Last 12 hours
+      </div>
+      <div
+        className="cursor-pointer"
+        onClick={() => {
+          onChange(new RelativeDate(UNITS.DAY, 1), NOW);
+        }}
+      >
+        Last 1 day
+      </div>
+    </div>
+  );
+};
+
 const RelativeDatePicker = ({
   range,
   onChange = () => null,
+  toggleRangePickerPanel,
 }: RelativeDatePickerProps): JSX.Element => {
   const date = range.from as RelativeDate;
   const [rangeInputString, setRangeInputString] = useState<string>(
@@ -176,6 +237,9 @@ const RelativeDatePicker = ({
           className="flex w-full flex-grow items-stretch border text-center text-gray-900 placeholder:text-gray-400 focus-within:z-10 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 sm:text-sm sm:leading-6"
           placeholder="6h"
           value={rangeInputString}
+          onClick={() => {
+            toggleRangePickerPanel();
+          }}
           onChange={e => {
             setRangeInputString(e.target.value);
           }}
