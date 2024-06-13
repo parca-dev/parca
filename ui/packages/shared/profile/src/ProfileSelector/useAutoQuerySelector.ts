@@ -48,7 +48,13 @@ export const useAutoQuerySelector = ({
         return;
       }
       dispatch(setAutoQuery('true'));
-      let profileType = profileTypesData.types.find(type => type.name === 'parca_agent_cpu');
+      let profileType = profileTypesData.types.find(type => type.name === 'otel_profiling_agent_on_cpu' && type.delta);
+      if (profileType == null) {
+        profileType = profileTypesData.types.find(type => type.name === 'parca_agent_cpu' && type.delta);
+      }
+      if (profileType == null) {
+        profileType = profileTypesData.types.find(type => type.name === 'process_cpu' && type.delta);
+      }
       if (profileType == null) {
         profileType = profileTypesData.types[0];
       }
