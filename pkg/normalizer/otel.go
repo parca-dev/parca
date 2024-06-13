@@ -16,6 +16,7 @@ package normalizer
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/apache/arrow/go/v16/arrow"
@@ -25,8 +26,11 @@ import (
 	"github.com/polarsignals/frostdb/pqarrow"
 	"github.com/polarsignals/frostdb/query/logicalplan"
 	"github.com/prometheus/prometheus/util/strutil"
+	v1 "go.opentelemetry.io/proto/otlp/common/v1"
+	"golang.org/x/exp/maps"
 
 	otelgrpcprofilingpb "github.com/parca-dev/parca/gen/proto/go/opentelemetry/proto/collector/profiles/v1"
+	otelprofilingpb "github.com/parca-dev/parca/gen/proto/go/opentelemetry/proto/profiles/v1"
 	pprofextended "github.com/parca-dev/parca/gen/proto/go/opentelemetry/proto/profiles/v1/alternatives/pprofextended"
 	"github.com/parca-dev/parca/pkg/profile"
 )
@@ -41,66 +45,190 @@ func OtlpRequestToArrowRecord(
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
-	allLabelNames := make(map[string]struct{})
+	w, err := newProfileWriter(
+		mem,
+		schema,
+		getAllLabelNames(req),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := w.writeResourceProfiles(req.ResourceProfiles); err != nil {
+		return nil, err
+	}
+
+	return w.ArrowRecord(ctx)
+}
+
+type labelNames struct {
+	labelNames map[string]struct{}
+}
+
+func newLabelNames() *labelNames {
+	return &labelNames{
+		labelNames: make(map[string]struct{}),
+	}
+}
+
+func (n *labelNames) addLabel(name string) {
+	sanitized := strutil.SanitizeLabelName(name)
+
+	// Name is a special case that we don't want to put into the label set. It
+	// represents the name which has a first class representation in the
+	// schema.
+	if sanitized == "__name__" {
+		return
+	}
+
+	n.labelNames[strutil.SanitizeLabelName(name)] = struct{}{}
+}
+
+func (n *labelNames) addOtelAttributes(attrs []*v1.KeyValue) {
+	for _, kv := range attrs {
+		if strings.TrimSpace(kv.Value.GetStringValue()) != "" {
+			n.addLabel(kv.Key)
+		}
+	}
+}
+
+func (n *labelNames) addOtelPprofExtendedLabels(stringTable []string, labels []*pprofextended.Label) {
+	for _, label := range labels {
+		if label.Str != 0 && strings.TrimSpace(stringTable[label.Str]) != "" {
+			n.addLabel(stringTable[label.Key])
+		}
+	}
+}
+
+func (n *labelNames) sorted() []string {
+	if len(n.labelNames) == 0 {
+		return nil
+	}
+
+	out := maps.Keys(n.labelNames)
+	sort.Strings(out)
+	return out
+}
+
+type labelSet struct {
+	labels map[string]string
+}
+
+func newLabelSet() *labelSet {
+	return &labelSet{
+		labels: make(map[string]string),
+	}
+}
+
+func (s *labelSet) addLabel(name, value string) {
+	if strings.TrimSpace(value) != "" {
+		sanitized := strutil.SanitizeLabelName(name)
+		// Name is a special case that we don't want to put into the label set.
+		// It represents the name which has a first class representation in the
+		// schema.
+		if sanitized == "__name__" {
+			return
+		}
+		s.labels[strutil.SanitizeLabelName(name)] = strings.TrimSpace(value)
+	}
+}
+
+func (s *labelSet) addOtelAttributes(attrs []*v1.KeyValue) {
+	for _, attr := range attrs {
+		s.addLabel(attr.Key, attr.Value.GetStringValue())
+	}
+}
+
+func (s *labelSet) addOtelPprofExtendedLabels(stringTable []string, labels []*pprofextended.Label) {
+	for _, label := range labels {
+		s.addLabel(stringTable[label.Key], stringTable[label.Str])
+	}
+}
+
+func getAllLabelNames(req *otelgrpcprofilingpb.ExportProfilesServiceRequest) []string {
+	allLabelNames := newLabelNames()
 
 	for _, rp := range req.ResourceProfiles {
-		for _, attr := range rp.Resource.Attributes {
-			if strings.TrimSpace(attr.Value.GetStringValue()) != "" {
-				allLabelNames[strutil.SanitizeLabelName(attr.Key)] = struct{}{}
-			}
-		}
+		allLabelNames.addOtelAttributes(rp.Resource.Attributes)
 
 		for _, sp := range rp.ScopeProfiles {
-			for _, attr := range sp.Scope.Attributes {
-				if strings.TrimSpace(attr.Value.GetStringValue()) != "" {
-					allLabelNames[strutil.SanitizeLabelName(attr.Key)] = struct{}{}
-				}
-			}
+			allLabelNames.addOtelAttributes(sp.Scope.Attributes)
 
 			for _, p := range sp.Profiles {
-				for _, attr := range p.Attributes {
-					if strings.TrimSpace(attr.Value.GetStringValue()) != "" {
-						allLabelNames[strutil.SanitizeLabelName(attr.Key)] = struct{}{}
-					}
-				}
-
-				for _, attr := range rp.Resource.Attributes {
-					if strings.TrimSpace(attr.Value.GetStringValue()) != "" {
-						allLabelNames[strutil.SanitizeLabelName(attr.Key)] = struct{}{}
-					}
-				}
+				allLabelNames.addOtelAttributes(p.Attributes)
 
 				for _, sample := range p.Profile.Sample {
-					for _, label := range sample.Label {
-						allLabelNames[strutil.SanitizeLabelName(p.Profile.StringTable[label.Key])] = struct{}{}
-					}
+					allLabelNames.addOtelPprofExtendedLabels(p.Profile.StringTable, sample.Label)
 				}
 			}
 		}
 	}
 
+	return allLabelNames.sorted()
+}
+
+type profileWriter struct {
+	mem memory.Allocator
+
+	labelNames []string
+	schema     *dynparquet.Schema
+	buffer     *dynparquet.Buffer
+
+	row parquet.Row
+}
+
+func newProfileWriter(
+	mem memory.Allocator,
+	schema *dynparquet.Schema,
+	labelNames []string,
+) (*profileWriter, error) {
 	// Create a buffer with all possible labels, pprof labels and pprof num labels as dynamic columns.
 	// We use NewBuffer instead of GetBuffer here since analysis showed a very
 	// low hit rate, meaning buffers were GCed faster than they could be reused.
 	// The downside of using a pool is that buffers are held around for longer.
 	// Using NewBuffer means that we pay the price of reallocating a buffer,
 	// but they get GCed a lot sooner.
-	allLabelNamesKeys := sortedKeys(allLabelNames)
 	buffer, err := schema.NewBuffer(map[string][]string{
-		profile.ColumnLabels: allLabelNamesKeys,
+		profile.ColumnLabels: labelNames,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	row := make(parquet.Row, 0, len(schema.ParquetSchema().Fields()))
-	for _, rp := range req.ResourceProfiles {
+	return &profileWriter{
+		mem: mem,
+
+		labelNames: labelNames,
+		schema:     schema,
+		buffer:     buffer,
+
+		row: make(parquet.Row, 0, len(schema.ParquetSchema().Fields())),
+	}, nil
+}
+
+func findName(attrs []*v1.KeyValue) string {
+	for _, attr := range attrs {
+		if attr.Key == "__name__" {
+			return strings.TrimSpace(attr.Value.GetStringValue())
+		}
+	}
+	return ""
+}
+
+func (w *profileWriter) writeResourceProfiles(
+	rp []*otelprofilingpb.ResourceProfiles,
+) error {
+	for _, rp := range rp {
 		for _, sp := range rp.ScopeProfiles {
 			for _, p := range sp.Profiles {
 				metas := []profile.Meta{}
-				// TODO: Validate that all sample values have the same length as sample type
 				for i := 0; i < len(p.Profile.SampleType); i++ {
-					metas = append(metas, MetaFromOtelProfile(p.Profile, string(p.ProfileId), i))
+					name := findName(rp.Resource.Attributes)
+					if name == "" {
+						return fmt.Errorf("resource profile missing __name__ attribute")
+					}
+
+					metas = append(metas, MetaFromOtelProfile(p.Profile, name, i))
 				}
 
 				for _, sample := range p.Profile.Sample {
@@ -109,35 +237,17 @@ func OtlpRequestToArrowRecord(
 							continue
 						}
 
-						ls := map[string]string{}
-
-						for _, label := range sample.Label {
-							ls[strutil.SanitizeLabelName(p.Profile.StringTable[label.Key])] = p.Profile.StringTable[label.Str]
-						}
-
-						for _, attr := range p.Attributes {
-							if strings.TrimSpace(attr.Value.GetStringValue()) != "" {
-								ls[strutil.SanitizeLabelName(attr.Key)] = strings.TrimSpace(attr.Value.GetStringValue())
-							}
-						}
-
-						for _, attr := range sp.Scope.Attributes {
-							if strings.TrimSpace(attr.Value.GetStringValue()) != "" {
-								ls[strutil.SanitizeLabelName(attr.Key)] = strings.TrimSpace(attr.Value.GetStringValue())
-							}
-						}
-
-						for _, attr := range rp.Resource.Attributes {
-							if strings.TrimSpace(attr.Value.GetStringValue()) != "" {
-								ls[strutil.SanitizeLabelName(attr.Key)] = strings.TrimSpace(attr.Value.GetStringValue())
-							}
-						}
+						ls := newLabelSet()
+						ls.addOtelPprofExtendedLabels(p.Profile.StringTable, sample.Label)
+						ls.addOtelAttributes(p.Attributes)
+						ls.addOtelAttributes(sp.Scope.Attributes)
+						ls.addOtelAttributes(rp.Resource.Attributes)
 
 						row := SampleToParquetRow(
-							schema,
-							row[:0],
-							allLabelNamesKeys, nil, nil,
-							ls,
+							w.schema,
+							w.row[:0],
+							w.labelNames, nil, nil,
+							ls.labels,
 							metas[j],
 							&NormalizedSample{
 								Locations: serializeOtelStacktrace(
@@ -151,8 +261,8 @@ func OtlpRequestToArrowRecord(
 								Value: value,
 							},
 						)
-						if _, err := buffer.WriteRows([]parquet.Row{row}); err != nil {
-							return nil, fmt.Errorf("failed to write row to buffer: %w", err)
+						if _, err := w.buffer.WriteRows([]parquet.Row{row}); err != nil {
+							return fmt.Errorf("failed to write row to buffer: %w", err)
 						}
 					}
 				}
@@ -160,20 +270,24 @@ func OtlpRequestToArrowRecord(
 		}
 	}
 
-	if buffer.NumRows() == 0 {
+	return nil
+}
+
+func (w *profileWriter) ArrowRecord(ctx context.Context) (arrow.Record, error) {
+	if w.buffer.NumRows() == 0 {
 		// If there are no rows in the buffer we simply return early
 		return nil, nil
 	}
 
 	// We need to sort the buffer so the rows are inserted in sorted order later
 	// on the storage nodes.
-	buffer.Sort()
+	w.buffer.Sort()
 
 	// Convert the sorted buffer to an arrow record.
-	converter := pqarrow.NewParquetConverter(mem, logicalplan.IterOptions{})
+	converter := pqarrow.NewParquetConverter(w.mem, logicalplan.IterOptions{})
 	defer converter.Close()
 
-	if err := converter.Convert(ctx, buffer, schema); err != nil {
+	if err := converter.Convert(ctx, w.buffer, w.schema); err != nil {
 		return nil, fmt.Errorf("failed to convert parquet to arrow: %w", err)
 	}
 
