@@ -65,7 +65,7 @@
   "devDependencies": {
     "@craco/craco": "7.1.0",
     "@swc/cli": "0.3.12",
-    "@swc/core": "1.5.25",
+    "@swc/core": "1.5.27",
     "@swc/jest": "0.2.36",
     "@types/lodash.throttle": "4.1.9",
     "css-loader": "6.11.0",
