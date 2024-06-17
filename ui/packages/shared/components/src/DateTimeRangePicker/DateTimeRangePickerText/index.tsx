@@ -11,7 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Popover} from '@headlessui/react';
 import cx from 'classnames';
 
 import RelativeDatePicker from '../RelativeDatePicker';
@@ -34,7 +33,7 @@ const DateTimeRangePickerText = ({
   const dateString = `${formatDateStringForUI(range.from)} → ${formatDateStringForUI(range.to)}`;
 
   return (
-    <>
+    <div>
       {isRelativeRange ? (
         <RelativeDatePicker
           range={range}
@@ -44,22 +43,27 @@ const DateTimeRangePickerText = ({
           toggleRangePickerPanel={onClick}
         />
       ) : (
-        <div
-          onClick={onClick}
-          className={cx(
-            'relative flex min-w-[200px] cursor-default justify-between rounded-md border px-3 py-2 text-left text-gray-600 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:text-gray-300 sm:text-sm',
-            {'bg-white dark:bg-gray-900': !isActive},
-            {'!justify-center, bg-gray-100 dark:bg-gray-800 ': isActive}
-          )}
-        >
-          <span className="w-[147px] overflow-hidden text-ellipsis whitespace-nowrap xl:w-auto">
-            {dateString}
-          </span>
+        <div>
+          <label htmlFor="range" className="text-xs">
+            Range
+          </label>
+          <div
+            onClick={onClick}
+            className={cx(
+              'relative flex min-w-[200px] cursor-default justify-between rounded-md border px-3 py-2 text-left text-gray-600 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:text-gray-300 sm:text-sm',
+              {'bg-white dark:bg-gray-900': !isActive},
+              {'!justify-center, bg-gray-100 dark:bg-gray-800 ': isActive}
+            )}
+          >
+            <span className="w-[147px] overflow-hidden text-ellipsis whitespace-nowrap xl:w-auto">
+              {dateString}
+            </span>
 
-          <span className="cursor-pointer px-2">{!isActive ? '▼' : '▲'}</span>
+            <span className="cursor-pointer px-2">{!isActive ? '▼' : '▲'}</span>
+          </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

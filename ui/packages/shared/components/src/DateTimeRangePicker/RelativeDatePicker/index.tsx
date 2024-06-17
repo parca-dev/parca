@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 
@@ -87,9 +87,65 @@ const parseInput = (input: string): {value: number; unit: string} | null => {
 
 export const RelativeDatePickerForPanel = ({
   onChange = () => null,
+  range,
 }: {
   onChange: (from: RelativeDate | AbsoluteDate, to: RelativeDate | AbsoluteDate) => void;
+  range: DateTimeRange;
 }): JSX.Element => {
+  const dateFrom = range.from as RelativeDate;
+  const dateTo = range.to as RelativeDate;
+
+  const [from] = useState<AbsoluteDate>(
+    range.from.isRelative()
+      ? new AbsoluteDate(
+          getHistoricalDate({
+            unit: dateFrom.unit,
+            value: dateFrom.value,
+          })
+        )
+      : (range.from as AbsoluteDate)
+  );
+  const [to] = useState<AbsoluteDate>(
+    range.to.isRelative()
+      ? new AbsoluteDate(
+          getHistoricalDate({
+            unit: dateTo.unit,
+            value: dateTo.value,
+          })
+        )
+      : (range.to as AbsoluteDate)
+  );
+
+  const getRelativeTimeRangeBetweenDates = (
+    timeRange: number
+  ): {unit: UNIT_TYPE; value: number} => {
+    const roundToHundredth = (value: number): number => {
+      return Number(value.toFixed(2));
+    };
+
+    if (timeRange < 1000 * 60 * 60) {
+      const timeRangeToMinutes = timeRange / 1000 / 60;
+      return {unit: UNITS.MINUTE, value: roundToHundredth(timeRangeToMinutes)};
+    }
+    if (timeRange < 1000 * 60 * 60 * 24) {
+      const timeRangeToHours = timeRange / 1000 / 60 / 60;
+      return {unit: UNITS.HOUR, value: roundToHundredth(timeRangeToHours)};
+    }
+    const timeRangeToDays = timeRange / 1000 / 60 / 60 / 24;
+    return {unit: UNITS.DAY, value: roundToHundredth(timeRangeToDays)};
+  };
+
+  const {unit, value} = useMemo(
+    () => getRelativeTimeRangeBetweenDates(to.getTime().getTime() - from.getTime().getTime()),
+    [from, to]
+  );
+
+  // TODO: add comment explaining why we need to use useEffect here
+  useEffect(() => {
+    onChange(new RelativeDate(unit, value), new RelativeDate(unit, 0));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unit, value]);
+
   return (
     <div className="flex flex-col gap-4 items-center text-sm p-4">
       <div
@@ -150,9 +206,11 @@ const RelativeDatePicker = ({
   toggleRangePickerPanel,
 }: RelativeDatePickerProps): JSX.Element => {
   const date = range.from as RelativeDate;
+
   const [rangeInputString, setRangeInputString] = useState<string>(
     `${date.value}${unitShort[date.unit]}`
   );
+
   const [validRange, setValidRange] = useState<{
     value: number;
     unit: string;
@@ -162,9 +220,11 @@ const RelativeDatePicker = ({
   });
 
   useEffect(() => {
-    if (date.value === validRange.value && date.unit === validRange.unit) {
-      return;
-    }
+    setRangeInputString(`${date.value}${unitShort[date.unit]}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [range]);
+
+  useEffect(() => {
     setRangeInputString(`${validRange.value}${unitShort[validRange.unit]}`);
     onChange(new RelativeDate(validRange.unit, validRange.value), NOW);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -276,20 +336,6 @@ const RelativeDatePicker = ({
           <Icon icon="heroicons:plus-20-solid" />
         </button>
       </div>
-      <button
-        type="button"
-        className="flex w-fit"
-        onClick={() => {
-          onChange(
-            new AbsoluteDate(getHistoricalDate(validRange)),
-            new AbsoluteDate(getHistoricalDate(NOW))
-          );
-        }}
-      >
-        <p className="my-1 ml-1 text-center text-xs text-gray-500 hover:text-indigo-600 dark:text-gray-400">
-          Use absolute start time instead
-        </p>
-      </button>
     </div>
   );
 };

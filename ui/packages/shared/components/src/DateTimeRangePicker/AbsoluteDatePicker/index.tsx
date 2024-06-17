@@ -18,31 +18,44 @@ import {
   AbsoluteDate,
   DateTimeRange,
   RelativeDate,
-  UNITS,
-  UNIT_TYPE,
   getDateHoursAgo,
+  getHistoricalDate,
 } from '../utils';
 
 interface AbsoluteDatePickerProps {
   range: DateTimeRange;
-  onChange?: (from: AbsoluteDate | RelativeDate, to: AbsoluteDate | RelativeDate) => void;
+  onChange: (from: AbsoluteDate | RelativeDate, to: AbsoluteDate | RelativeDate) => void;
 }
 
-const AbsoluteDatePicker = ({
-  range,
-  onChange = () => null,
-}: AbsoluteDatePickerProps): JSX.Element => {
+const AbsoluteDatePicker = ({range, onChange}: AbsoluteDatePickerProps): JSX.Element => {
+  const dateFrom = range.from as RelativeDate;
+  const dateTo = range.to as RelativeDate;
+
   const [from, setFrom] = useState<AbsoluteDate>(
-    range.from.isRelative() ? new AbsoluteDate(getDateHoursAgo(1)) : (range.from as AbsoluteDate)
+    range.from.isRelative()
+      ? new AbsoluteDate(
+          getHistoricalDate({
+            unit: dateFrom.unit,
+            value: dateFrom.value,
+          })
+        )
+      : (range.from as AbsoluteDate)
   );
   const [to, setTo] = useState<AbsoluteDate>(
-    range.to.isRelative() ? new AbsoluteDate(getDateHoursAgo(0)) : (range.to as AbsoluteDate)
+    range.to.isRelative()
+      ? new AbsoluteDate(
+          getHistoricalDate({
+            unit: dateTo.unit,
+            value: dateTo.value,
+          })
+        )
+      : (range.to as AbsoluteDate)
   );
 
   useEffect(() => {
     onChange(from, to);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [from, to]);
+  }, []);
 
   useEffect(() => {
     setFrom(
@@ -54,8 +67,8 @@ const AbsoluteDatePicker = ({
   }, [range]);
 
   return (
-    <div className="flex flex-col">
-      <div className="flex justify-center gap-x-2">
+    <div className="flex flex-col w-[80%] mx-auto">
+      <div className="flex flex-col justify-center gap-x-2">
         <div>
           <div className="mb-0.5 mt-1.5 text-xs">Start</div>
           <DateTimePicker selected={from} onChange={date => date != null && setFrom(date)} />
@@ -65,40 +78,6 @@ const AbsoluteDatePicker = ({
           <DateTimePicker selected={to} onChange={date => date != null && setTo(date)} />
         </div>
       </div>
-      <button
-        type="button"
-        className="flex w-fit"
-        onClick={() => {
-          const getRelativeTimeRangeBetweenDates = (
-            timeRange: number
-          ): {unit: UNIT_TYPE; value: number} => {
-            const roundToHundredth = (value: number): number => {
-              return Number(value.toFixed(2));
-            };
-
-            if (timeRange < 1000 * 60 * 60) {
-              const timeRangeToMinutes = timeRange / 1000 / 60;
-              return {unit: UNITS.MINUTE, value: roundToHundredth(timeRangeToMinutes)};
-            }
-            if (timeRange < 1000 * 60 * 60 * 24) {
-              const timeRangeToHours = timeRange / 1000 / 60 / 60;
-              return {unit: UNITS.HOUR, value: roundToHundredth(timeRangeToHours)};
-            }
-            const timeRangeToDays = timeRange / 1000 / 60 / 60 / 24;
-            return {unit: UNITS.DAY, value: roundToHundredth(timeRangeToDays)};
-          };
-
-          const {unit, value} = getRelativeTimeRangeBetweenDates(
-            to.getTime().getTime() - from.getTime().getTime()
-          );
-
-          onChange(new RelativeDate(unit, value), new RelativeDate(unit, 0));
-        }}
-      >
-        <p className="my-1 ml-1 text-xs text-gray-500 hover:text-indigo-600 dark:text-gray-400">
-          Use relative range instead
-        </p>
-      </button>
     </div>
   );
 };

@@ -13,22 +13,20 @@
 
 import Tab from '../../Tab';
 import AbsoluteDatePicker from '../AbsoluteDatePicker';
-import RelativeDatePicker, {RelativeDatePickerForPanel} from '../RelativeDatePicker';
+import {RelativeDatePickerForPanel} from '../RelativeDatePicker';
 import {DateTimeRange, DateUnion} from '../utils';
 
 interface DateTimeRangePickerProps {
   range: DateTimeRange;
   onRangeSelection: (range: DateTimeRange) => void;
-  toggleRangePickerPanel: () => void;
 }
 
 const DateTimeRangePickerPanel = ({
   range,
   onRangeSelection,
-  toggleRangePickerPanel,
 }: DateTimeRangePickerProps): JSX.Element => {
   return (
-    <div className="w-[300px] rounded bg-gray-100 pt-4 text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+    <div className="w-[300px] rounded bg-gray-100 py-4 text-gray-600 dark:bg-gray-800 dark:text-gray-300">
       <Tab
         tabs={['Relative', 'Absolute']}
         panels={[
@@ -36,11 +34,7 @@ const DateTimeRangePickerPanel = ({
             onChange={(from: DateUnion, to: DateUnion) => {
               onRangeSelection(new DateTimeRange(from, to));
             }}
-            // range={range}
-            // onChange={(from: DateUnion, to: DateUnion) => {
-            //   onRangeSelection(new DateTimeRange(from, to));
-            // }}
-            // toggleRangePickerPanel={toggleRangePickerPanel}
+            range={range}
             key={0}
           />,
           <AbsoluteDatePicker

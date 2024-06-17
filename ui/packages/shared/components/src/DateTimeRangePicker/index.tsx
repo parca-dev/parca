@@ -40,7 +40,7 @@ const DateTimeRangePicker = ({onRangeSelection, range}: DateTimeRangePickerProps
 
   return (
     <Popover>
-      <div ref={containerRef} className="w-fit items-center">
+      <div ref={containerRef} className="w-fit items-center pb-6">
         <DateTimeRangePickerText
           range={range}
           onClick={toggleActive}
@@ -61,13 +61,7 @@ const DateTimeRangePicker = ({onRangeSelection, range}: DateTimeRangePickerProps
               range={range}
               onRangeSelection={(range: DateTimeRange) => {
                 onRangeSelection(range);
-                setIsActive(false);
               }}
-              toggleRangePickerPanel={toggleActive}
-              // onRangeSelection={(from: DateUnion, to: DateUnion) => {
-              //   onRangeSelection(new DateTimeRange(from, to));
-              //   setIsActive(false);
-              // }}
             />
           </Popover.Panel>
         ) : null}
