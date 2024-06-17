@@ -107,12 +107,11 @@ type LocationLine struct {
 }
 
 type Location struct {
-	ID                  string
-	Address             uint64
-	IsFolded            bool
-	Mapping             *pb.Mapping
-	Lines               []LocationLine
-	AddressIsStabilized bool
+	ID       string
+	Address  uint64
+	IsFolded bool
+	Mapping  *pb.Mapping
+	Lines    []LocationLine
 }
 
 type Label struct {

@@ -414,7 +414,6 @@ func serializeOtelStacktrace(
 			m,
 			functions,
 			stringTable,
-			stabiliziedAddress,
 		))
 	}
 
@@ -432,7 +431,6 @@ func serializeOtelStacktrace(
 			m,
 			functions,
 			stringTable,
-			stabiliziedAddress,
 		))
 	}
 

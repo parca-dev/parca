@@ -1132,9 +1132,8 @@ func (q *Querier) symbolizeLocations(
 		loc, ok := index[string(symInfo.BuildID)][symInfo.Mapping].Locations[symInfo.Addr]
 		if !ok {
 			loc = &profile.Location{
-				Address:             symInfo.Addr,
-				AddressIsStabilized: symInfo.AddrIsStabilized,
-				Mapping:             index[string(symInfo.BuildID)][symInfo.Mapping].Mapping,
+				Address: symInfo.Addr,
+				Mapping: index[string(symInfo.BuildID)][symInfo.Mapping].Mapping,
 			}
 			count++
 			index[string(symInfo.BuildID)][symInfo.Mapping].Locations[symInfo.Addr] = loc

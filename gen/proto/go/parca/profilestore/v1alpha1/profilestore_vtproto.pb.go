@@ -37,6 +37,12 @@ const _ = grpc.SupportPackageIsVersion7
 type ProfileStoreServiceClient interface {
 	// WriteRaw accepts a raw set of bytes of a pprof file
 	WriteRaw(ctx context.Context, in *WriteRawRequest, opts ...grpc.CallOption) (*WriteRawResponse, error)
+	// Write accepts profiling data encoded as an arrow record. It's a
+	// bi-directional streaming RPC, because the first message can contain only
+	// samples without the stacktraces, and only reference stacktrace IDs. The
+	// backend can then request the full stacktrace from the client should it not
+	// know the stacktrace yet.
+	Write(ctx context.Context, opts ...grpc.CallOption) (ProfileStoreService_WriteClient, error)
 }
 
 type profileStoreServiceClient struct {
@@ -56,12 +62,49 @@ func (c *profileStoreServiceClient) WriteRaw(ctx context.Context, in *WriteRawRe
 	return out, nil
 }
 
+func (c *profileStoreServiceClient) Write(ctx context.Context, opts ...grpc.CallOption) (ProfileStoreService_WriteClient, error) {
+	stream, err := c.cc.NewStream(ctx, &ProfileStoreService_ServiceDesc.Streams[0], "/parca.profilestore.v1alpha1.ProfileStoreService/Write", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &profileStoreServiceWriteClient{stream}
+	return x, nil
+}
+
+type ProfileStoreService_WriteClient interface {
+	Send(*WriteRequest) error
+	Recv() (*WriteResponse, error)
+	grpc.ClientStream
+}
+
+type profileStoreServiceWriteClient struct {
+	grpc.ClientStream
+}
+
+func (x *profileStoreServiceWriteClient) Send(m *WriteRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *profileStoreServiceWriteClient) Recv() (*WriteResponse, error) {
+	m := new(WriteResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // ProfileStoreServiceServer is the server API for ProfileStoreService service.
 // All implementations must embed UnimplementedProfileStoreServiceServer
 // for forward compatibility
 type ProfileStoreServiceServer interface {
 	// WriteRaw accepts a raw set of bytes of a pprof file
 	WriteRaw(context.Context, *WriteRawRequest) (*WriteRawResponse, error)
+	// Write accepts profiling data encoded as an arrow record. It's a
+	// bi-directional streaming RPC, because the first message can contain only
+	// samples without the stacktraces, and only reference stacktrace IDs. The
+	// backend can then request the full stacktrace from the client should it not
+	// know the stacktrace yet.
+	Write(ProfileStoreService_WriteServer) error
 	mustEmbedUnimplementedProfileStoreServiceServer()
 }
 
@@ -71,6 +114,9 @@ type UnimplementedProfileStoreServiceServer struct {
 
 func (UnimplementedProfileStoreServiceServer) WriteRaw(context.Context, *WriteRawRequest) (*WriteRawResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method WriteRaw not implemented")
+}
+func (UnimplementedProfileStoreServiceServer) Write(ProfileStoreService_WriteServer) error {
+	return status.Errorf(codes.Unimplemented, "method Write not implemented")
 }
 func (UnimplementedProfileStoreServiceServer) mustEmbedUnimplementedProfileStoreServiceServer() {}
 
@@ -103,6 +149,32 @@ func _ProfileStoreService_WriteRaw_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProfileStoreService_Write_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(ProfileStoreServiceServer).Write(&profileStoreServiceWriteServer{stream})
+}
+
+type ProfileStoreService_WriteServer interface {
+	Send(*WriteResponse) error
+	Recv() (*WriteRequest, error)
+	grpc.ServerStream
+}
+
+type profileStoreServiceWriteServer struct {
+	grpc.ServerStream
+}
+
+func (x *profileStoreServiceWriteServer) Send(m *WriteResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *profileStoreServiceWriteServer) Recv() (*WriteRequest, error) {
+	m := new(WriteRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // ProfileStoreService_ServiceDesc is the grpc.ServiceDesc for ProfileStoreService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -115,7 +187,14 @@ var ProfileStoreService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ProfileStoreService_WriteRaw_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "Write",
+			Handler:       _ProfileStoreService_Write_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "parca/profilestore/v1alpha1/profilestore.proto",
 }
 
@@ -205,6 +284,86 @@ var AgentsService_ServiceDesc = grpc.ServiceDesc{
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "parca/profilestore/v1alpha1/profilestore.proto",
+}
+
+func (m *WriteRequest) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *WriteRequest) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *WriteRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.Record) > 0 {
+		i -= len(m.Record)
+		copy(dAtA[i:], m.Record)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Record)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *WriteResponse) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *WriteResponse) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *WriteResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.Record) > 0 {
+		i -= len(m.Record)
+		copy(dAtA[i:], m.Record)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Record)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
 }
 
 func (m *WriteRawRequest) MarshalVT() (dAtA []byte, err error) {
@@ -737,6 +896,34 @@ func (m *Agent) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *WriteRequest) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Record)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *WriteResponse) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Record)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
 func (m *WriteRawRequest) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -929,6 +1116,176 @@ func (m *Agent) SizeVT() (n int) {
 	return n
 }
 
+func (m *WriteRequest) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: WriteRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: WriteRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Record", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Record = append(m.Record[:0], dAtA[iNdEx:postIndex]...)
+			if m.Record == nil {
+				m.Record = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *WriteResponse) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: WriteResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: WriteResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Record", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Record = append(m.Record[:0], dAtA[iNdEx:postIndex]...)
+			if m.Record == nil {
+				m.Record = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *WriteRawRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0

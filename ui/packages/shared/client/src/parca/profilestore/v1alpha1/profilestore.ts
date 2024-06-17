@@ -14,6 +14,38 @@ import { MessageType } from "@protobuf-ts/runtime";
 import { Duration } from "../../../google/protobuf/duration";
 import { Timestamp } from "../../../google/protobuf/timestamp";
 /**
+ * WriteRequest may contain an apache arrow record that only contains profiling
+ * samples with a reference to a stacktrace ID, or a full stacktrace. If it
+ * only contains samples, the server may request the full stacktrace from the
+ * client should it not already know them.
+ *
+ * @generated from protobuf message parca.profilestore.v1alpha1.WriteRequest
+ */
+export interface WriteRequest {
+    /**
+     * The bytes containing the arrow record.
+     *
+     * @generated from protobuf field: bytes record = 1;
+     */
+    record: Uint8Array;
+}
+/**
+ * WriteResponse may be empty if the server doesn't need any further
+ * information, or contain an arrow record that contains the stacktrace IDs
+ * that are unknown and therefore requested by the client from the server.
+ *
+ * @generated from protobuf message parca.profilestore.v1alpha1.WriteResponse
+ */
+export interface WriteResponse {
+    /**
+     * When record is non-empty it contains the bytes of an arrow record that
+     * contains a column containing the stacktraces that are unknown.
+     *
+     * @generated from protobuf field: bytes record = 1;
+     */
+    record: Uint8Array;
+}
+/**
  * WriteRawRequest writes a pprof profile for a given tenant
  *
  * @generated from protobuf message parca.profilestore.v1alpha1.WriteRawRequest
@@ -209,6 +241,100 @@ export interface Agent {
      */
     lastPushDuration?: Duration;
 }
+// @generated message type with reflection information, may provide speed optimized methods
+class WriteRequest$Type extends MessageType<WriteRequest> {
+    constructor() {
+        super("parca.profilestore.v1alpha1.WriteRequest", [
+            { no: 1, name: "record", kind: "scalar", T: 12 /*ScalarType.BYTES*/ }
+        ]);
+    }
+    create(value?: PartialMessage<WriteRequest>): WriteRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.record = new Uint8Array(0);
+        if (value !== undefined)
+            reflectionMergePartial<WriteRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: WriteRequest): WriteRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bytes record */ 1:
+                    message.record = reader.bytes();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: WriteRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bytes record = 1; */
+        if (message.record.length)
+            writer.tag(1, WireType.LengthDelimited).bytes(message.record);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.profilestore.v1alpha1.WriteRequest
+ */
+export const WriteRequest = new WriteRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class WriteResponse$Type extends MessageType<WriteResponse> {
+    constructor() {
+        super("parca.profilestore.v1alpha1.WriteResponse", [
+            { no: 1, name: "record", kind: "scalar", T: 12 /*ScalarType.BYTES*/ }
+        ]);
+    }
+    create(value?: PartialMessage<WriteResponse>): WriteResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.record = new Uint8Array(0);
+        if (value !== undefined)
+            reflectionMergePartial<WriteResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: WriteResponse): WriteResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bytes record */ 1:
+                    message.record = reader.bytes();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: WriteResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bytes record = 1; */
+        if (message.record.length)
+            writer.tag(1, WireType.LengthDelimited).bytes(message.record);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.profilestore.v1alpha1.WriteResponse
+ */
+export const WriteResponse = new WriteResponse$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class WriteRawRequest$Type extends MessageType<WriteRawRequest> {
     constructor() {
@@ -762,7 +888,8 @@ export const Agent = new Agent$Type();
  * @generated ServiceType for protobuf service parca.profilestore.v1alpha1.ProfileStoreService
  */
 export const ProfileStoreService = new ServiceType("parca.profilestore.v1alpha1.ProfileStoreService", [
-    { name: "WriteRaw", options: { "google.api.http": { post: "/profiles/writeraw", body: "*" } }, I: WriteRawRequest, O: WriteRawResponse }
+    { name: "WriteRaw", options: { "google.api.http": { post: "/profiles/writeraw", body: "*" } }, I: WriteRawRequest, O: WriteRawResponse },
+    { name: "Write", serverStreaming: true, clientStreaming: true, options: { "google.api.http": { post: "/profiles/write", body: "*" } }, I: WriteRequest, O: WriteResponse }
 ]);
 /**
  * @generated ServiceType for protobuf service parca.profilestore.v1alpha1.AgentsService

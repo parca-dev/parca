@@ -42,6 +42,49 @@
         ]
       }
     },
+    "/profiles/write": {
+      "post": {
+        "summary": "Write accepts profiling data encoded as an arrow record. It's a\nbi-directional streaming RPC, because the first message can contain only\nsamples without the stacktraces, and only reference stacktrace IDs. The\nbackend can then request the full stacktrace from the client should it not\nknow the stacktrace yet.",
+        "operationId": "ProfileStoreService_Write",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/v1alpha1WriteResponse"
+                },
+                "error": {
+                  "$ref": "#/definitions/rpcStatus"
+                }
+              },
+              "title": "Stream result of v1alpha1WriteResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "WriteRequest may contain an apache arrow record that only contains profiling\nsamples with a reference to a stacktrace ID, or a full stacktrace. If it\nonly contains samples, the server may request the full stacktrace from the\nclient should it not already know them. (streaming inputs)",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1alpha1WriteRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ProfileStoreService"
+        ]
+      }
+    },
     "/profiles/writeraw": {
       "post": {
         "summary": "WriteRaw accepts a raw set of bytes of a pprof file",
@@ -263,6 +306,28 @@
     "v1alpha1WriteRawResponse": {
       "type": "object",
       "title": "WriteRawResponse is the empty response"
+    },
+    "v1alpha1WriteRequest": {
+      "type": "object",
+      "properties": {
+        "record": {
+          "type": "string",
+          "format": "byte",
+          "description": "The bytes containing the arrow record."
+        }
+      },
+      "description": "WriteRequest may contain an apache arrow record that only contains profiling\nsamples with a reference to a stacktrace ID, or a full stacktrace. If it\nonly contains samples, the server may request the full stacktrace from the\nclient should it not already know them."
+    },
+    "v1alpha1WriteResponse": {
+      "type": "object",
+      "properties": {
+        "record": {
+          "type": "string",
+          "format": "byte",
+          "description": "When record is non-empty it contains the bytes of an arrow record that\ncontains a column containing the stacktraces that are unknown."
+        }
+      },
+      "description": "WriteResponse may be empty if the server doesn't need any further\ninformation, or contain an arrow record that contains the stacktrace IDs\nthat are unknown and therefore requested by the client from the server."
     }
   }
 }

@@ -517,7 +517,7 @@ func serializePprofStacktrace(
 			m = mappings[mappingIndex]
 		}
 
-		st = append(st, profile.EncodePprofLocation(location, m, functions, stringTable, false))
+		st = append(st, profile.EncodePprofLocation(location, m, functions, stringTable))
 	}
 
 	return st

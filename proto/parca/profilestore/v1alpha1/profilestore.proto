@@ -17,6 +17,36 @@ service ProfileStoreService {
       body: "*"
     };
   }
+
+  // Write accepts profiling data encoded as an arrow record. It's a
+  // bi-directional streaming RPC, because the first message can contain only
+  // samples without the stacktraces, and only reference stacktrace IDs. The
+  // backend can then request the full stacktrace from the client should it not
+  // know the stacktrace yet.
+  rpc Write(stream WriteRequest) returns (stream WriteResponse) {
+    option (google.api.http) = {
+      post: "/profiles/write"
+      body: "*"
+    };
+  }
+}
+
+// WriteRequest may contain an apache arrow record that only contains profiling
+// samples with a reference to a stacktrace ID, or a full stacktrace. If it
+// only contains samples, the server may request the full stacktrace from the
+// client should it not already know them.
+message WriteRequest {
+  // The bytes containing the arrow record.
+  bytes record = 1;
+}
+
+// WriteResponse may be empty if the server doesn't need any further
+// information, or contain an arrow record that contains the stacktrace IDs
+// that are unknown and therefore requested by the client from the server.
+message WriteResponse {
+  // When record is non-empty it contains the bytes of an arrow record that
+  // contains a column containing the stacktraces that are unknown.
+  bytes record = 1;
 }
 
 // WriteRawRequest writes a pprof profile for a given tenant

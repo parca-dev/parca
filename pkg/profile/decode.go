@@ -24,19 +24,15 @@ type Demangler interface {
 }
 
 type SymbolizationInfo struct {
-	Addr             uint64
-	AddrIsStabilized bool
-	BuildID          []byte
-	Mapping          Mapping
+	Addr    uint64
+	BuildID []byte
+	Mapping Mapping
 }
 
 func DecodeSymbolizationInfo(data []byte) (SymbolizationInfo, uint64) {
 	offset := 0
 	addr, n := varint.Uvarint(data) // we need to know the address size to read the build ID
 	offset += n
-
-	addrIsStabilized := data[offset] == 0x1
-	offset++
 
 	numberOfLines, n := varint.Uvarint(data[offset:])
 	offset += n
@@ -60,9 +56,8 @@ func DecodeSymbolizationInfo(data []byte) (SymbolizationInfo, uint64) {
 		mappingOffset, _ := varint.Uvarint(data[offset:])
 
 		return SymbolizationInfo{
-			Addr:             addr,
-			AddrIsStabilized: addrIsStabilized,
-			BuildID:          buildID,
+			Addr:    addr,
+			BuildID: buildID,
 			Mapping: Mapping{
 				StartAddr: memoryStart,
 				EndAddr:   memoryStart + memoryLength,
@@ -78,11 +73,10 @@ func DecodeSymbolizationInfo(data []byte) (SymbolizationInfo, uint64) {
 }
 
 type DecodeResult struct {
-	WroteLines       bool
-	BuildID          []byte
-	Addr             uint64
-	AddrIsStabilized bool
-	Mapping          Mapping
+	WroteLines bool
+	BuildID    []byte
+	Addr       uint64
+	Mapping    Mapping
 }
 
 func DecodeInto(lw LocationsWriter, data []byte) (DecodeResult, error) {
@@ -95,9 +89,6 @@ func DecodeInto(lw LocationsWriter, data []byte) (DecodeResult, error) {
 	)
 
 	addr, offset := varint.Uvarint(data)
-
-	addrIsStabilized := data[offset] == 0x1
-	offset++
 
 	lineNumber, n := varint.Uvarint(data[offset:])
 	offset += n
@@ -194,10 +185,9 @@ func DecodeInto(lw LocationsWriter, data []byte) (DecodeResult, error) {
 		}, nil
 	} else {
 		return DecodeResult{
-			WroteLines:       false,
-			BuildID:          buildID,
-			Addr:             addr,
-			AddrIsStabilized: addrIsStabilized,
+			WroteLines: false,
+			BuildID:    buildID,
+			Addr:       addr,
 			Mapping: Mapping{
 				StartAddr: memoryStart,
 				EndAddr:   memoryStart + memoryLength,
