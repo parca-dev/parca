@@ -19,11 +19,13 @@ import {DateTimeRange, DateUnion} from '../utils';
 interface DateTimeRangePickerProps {
   range: DateTimeRange;
   onRangeSelection: (range: DateTimeRange) => void;
+  togglePopoverMenu: () => void;
 }
 
 const DateTimeRangePickerPanel = ({
   range,
   onRangeSelection,
+  togglePopoverMenu,
 }: DateTimeRangePickerProps): JSX.Element => {
   return (
     <div className="w-[300px] rounded bg-gray-100 py-4 text-gray-600 dark:bg-gray-800 dark:text-gray-300">
@@ -36,6 +38,7 @@ const DateTimeRangePickerPanel = ({
             }}
             range={range}
             key={0}
+            hidePopoverMenu={togglePopoverMenu}
           />,
           <AbsoluteDatePicker
             range={range}

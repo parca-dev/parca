@@ -14,6 +14,7 @@
 import {useEffect, useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
+import cx from 'classnames';
 
 import {
   AbsoluteDate,
@@ -88,19 +89,21 @@ const parseInput = (input: string): {value: number; unit: string} | null => {
 export const RelativeDatePickerForPanel = ({
   onChange = () => null,
   range,
+  hidePopoverMenu,
 }: {
   onChange: (from: RelativeDate | AbsoluteDate, to: RelativeDate | AbsoluteDate) => void;
   range: DateTimeRange;
+  hidePopoverMenu: () => void;
 }): JSX.Element => {
-  const dateFrom = range.from as RelativeDate;
-  const dateTo = range.to as RelativeDate;
+  const dateFromInRelative = range.from as RelativeDate;
+  const dateToInRelative = range.to as RelativeDate;
 
   const [from] = useState<AbsoluteDate>(
     range.from.isRelative()
       ? new AbsoluteDate(
           getHistoricalDate({
-            unit: dateFrom.unit,
-            value: dateFrom.value,
+            unit: dateFromInRelative.unit,
+            value: dateFromInRelative.value,
           })
         )
       : (range.from as AbsoluteDate)
@@ -109,8 +112,8 @@ export const RelativeDatePickerForPanel = ({
     range.to.isRelative()
       ? new AbsoluteDate(
           getHistoricalDate({
-            unit: dateTo.unit,
-            value: dateTo.value,
+            unit: dateToInRelative.unit,
+            value: dateToInRelative.value,
           })
         )
       : (range.to as AbsoluteDate)
@@ -140,62 +143,42 @@ export const RelativeDatePickerForPanel = ({
     [from, to]
   );
 
-  // TODO: add comment explaining why we need to use useEffect here
+  // When the list of presets is shown in the popover panel, we use this effect here to ensure that the
+  // absolute date range is converted to a relative date range and we then use the `onChange` prop to
+  // update the range in the component below.
   useEffect(() => {
     onChange(new RelativeDate(unit, value), new RelativeDate(unit, 0));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unit, value]);
 
+  const presetRanges = [
+    {value: 15, unit: UNITS.MINUTE, text: 'Last 15 minutes'},
+    {value: 1, unit: UNITS.HOUR, text: 'Last 1 hour'},
+    {value: 3, unit: UNITS.HOUR, text: 'Last 3 hours'},
+    {value: 6, unit: UNITS.HOUR, text: 'Last 6 hours'},
+    {value: 12, unit: UNITS.HOUR, text: 'Last 12 hours'},
+    {value: 1, unit: UNITS.DAY, text: 'Last 1 day'},
+  ];
+
   return (
-    <div className="flex flex-col gap-4 items-center text-sm p-4">
-      <div
-        className="cursor-pointer"
-        onClick={() => {
-          onChange(new RelativeDate(UNITS.MINUTE, 15), NOW);
-        }}
-      >
-        Last 15 minutes
-      </div>
-      <div
-        className="cursor-pointer"
-        onClick={() => {
-          onChange(new RelativeDate(UNITS.HOUR, 1), NOW);
-        }}
-      >
-        Last 1 hour
-      </div>
-      <div
-        className="cursor-pointer"
-        onClick={() => {
-          onChange(new RelativeDate(UNITS.HOUR, 3), NOW);
-        }}
-      >
-        Last 3 hours
-      </div>
-      <div
-        className="cursor-pointer"
-        onClick={() => {
-          onChange(new RelativeDate(UNITS.HOUR, 6), NOW);
-        }}
-      >
-        Last 6 hours
-      </div>
-      <div
-        className="cursor-pointer"
-        onClick={() => {
-          onChange(new RelativeDate(UNITS.HOUR, 12), NOW);
-        }}
-      >
-        Last 12 hours
-      </div>
-      <div
-        className="cursor-pointer"
-        onClick={() => {
-          onChange(new RelativeDate(UNITS.DAY, 1), NOW);
-        }}
-      >
-        Last 1 day
-      </div>
+    <div className="flex flex-col gap-3 items-center text-sm p-4">
+      {presetRanges.map(({value, unit, text}) => (
+        <div
+          key={`${value}-${unit}`}
+          className={cx(
+            value === dateFromInRelative.value && unit === dateFromInRelative.unit
+              ? 'bg-gray-200 dark:bg-gray-700'
+              : '',
+            'cursor-pointer w-full text-center py-1 hover:bg-gray-200 dark:hover:bg-gray-700'
+          )}
+          onClick={() => {
+            onChange(new RelativeDate(unit, value), NOW);
+            hidePopoverMenu();
+          }}
+        >
+          {text}
+        </div>
+      ))}
     </div>
   );
 };

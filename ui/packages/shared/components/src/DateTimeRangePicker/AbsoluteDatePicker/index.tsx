@@ -11,16 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 
 import {DateTimePicker} from '../../DateTimePicker';
-import {
-  AbsoluteDate,
-  DateTimeRange,
-  RelativeDate,
-  getDateHoursAgo,
-  getHistoricalDate,
-} from '../utils';
+import {AbsoluteDate, DateTimeRange, RelativeDate, getHistoricalDate} from '../utils';
 
 interface AbsoluteDatePickerProps {
   range: DateTimeRange;
@@ -28,15 +22,15 @@ interface AbsoluteDatePickerProps {
 }
 
 const AbsoluteDatePicker = ({range, onChange}: AbsoluteDatePickerProps): JSX.Element => {
-  const dateFrom = range.from as RelativeDate;
-  const dateTo = range.to as RelativeDate;
+  const dateFromInRelative = useMemo(() => range.from as RelativeDate, [range.from]);
+  const dateToInRelative = useMemo(() => range.to as RelativeDate, [range.to]);
 
   const [from, setFrom] = useState<AbsoluteDate>(
     range.from.isRelative()
       ? new AbsoluteDate(
           getHistoricalDate({
-            unit: dateFrom.unit,
-            value: dateFrom.value,
+            unit: dateFromInRelative.unit,
+            value: dateFromInRelative.value,
           })
         )
       : (range.from as AbsoluteDate)
@@ -45,8 +39,8 @@ const AbsoluteDatePicker = ({range, onChange}: AbsoluteDatePickerProps): JSX.Ele
     range.to.isRelative()
       ? new AbsoluteDate(
           getHistoricalDate({
-            unit: dateTo.unit,
-            value: dateTo.value,
+            unit: dateToInRelative.unit,
+            value: dateToInRelative.value,
           })
         )
       : (range.to as AbsoluteDate)
@@ -55,16 +49,7 @@ const AbsoluteDatePicker = ({range, onChange}: AbsoluteDatePickerProps): JSX.Ele
   useEffect(() => {
     onChange(from, to);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    setFrom(
-      range.from.isRelative() ? new AbsoluteDate(getDateHoursAgo(1)) : (range.from as AbsoluteDate)
-    );
-    setTo(
-      range.to.isRelative() ? new AbsoluteDate(getDateHoursAgo(0)) : (range.to as AbsoluteDate)
-    );
-  }, [range]);
+  }, [from, to]);
 
   return (
     <div className="flex flex-col w-[80%] mx-auto">

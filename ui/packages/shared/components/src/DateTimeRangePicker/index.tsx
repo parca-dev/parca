@@ -52,15 +52,16 @@ const DateTimeRangePicker = ({onRangeSelection, range}: DateTimeRangePickerProps
 
         {isActive ? (
           <Popover.Panel
-            className={cx(
-              'absolute z-10 mt-2 w-fit rounded border shadow-lg ring-1 ring-black ring-opacity-5 dark:border-gray-600'
-            )}
+            className="absolute z-10 mt-2 w-fit rounded border shadow-lg dark:border-gray-600"
             static
           >
             <DateTimeRangePickerPanel
               range={range}
               onRangeSelection={(range: DateTimeRange) => {
                 onRangeSelection(range);
+              }}
+              togglePopoverMenu={() => {
+                setIsActive(false);
               }}
             />
           </Popover.Panel>
