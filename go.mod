@@ -3,7 +3,7 @@ module github.com/parca-dev/parca
 go 1.22.2
 
 require (
-	cloud.google.com/go/storage v1.41.0
+	cloud.google.com/go/storage v1.42.0
 	github.com/alecthomas/kong v0.9.0
 	github.com/apache/arrow/go/v16 v16.1.0
 	github.com/cenkalti/backoff/v4 v4.3.0
@@ -35,7 +35,7 @@ require (
 	github.com/polarsignals/frostdb v0.0.0-20240610080310-316067a56dde
 	github.com/polarsignals/iceberg-go v0.0.0-20240502213135-2ee70b71e76b
 	github.com/prometheus/client_golang v1.19.1
-	github.com/prometheus/common v0.53.0
+	github.com/prometheus/common v0.54.0
 	github.com/prometheus/prometheus v0.52.1
 	github.com/stretchr/testify v1.9.0
 	github.com/thanos-io/objstore v0.0.0-20240512204237-71ef2d0cf7c4
@@ -53,11 +53,11 @@ require (
 	go.uber.org/atomic v1.11.0
 	go.uber.org/automaxprocs v1.5.3
 	golang.org/x/exp v0.0.0-20240531132922-fd00a4e0eefc
-	golang.org/x/net v0.25.0
+	golang.org/x/net v0.26.0
 	golang.org/x/oauth2 v0.21.0
 	golang.org/x/sync v0.7.0
 	google.golang.org/api v0.183.0
-	google.golang.org/genproto/googleapis/api v0.0.0-20240521202816-d264139d666e
+	google.golang.org/genproto/googleapis/api v0.0.0-20240604185151-ef581f913117
 	google.golang.org/grpc v1.64.0
 	google.golang.org/protobuf v1.34.1
 	gopkg.in/dnaeon/go-vcr.v3 v3.2.0
@@ -221,13 +221,13 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.52.0 // indirect
 	go.opentelemetry.io/otel/metric v1.27.0 // indirect
-	golang.org/x/crypto v0.23.0 // indirect
+	golang.org/x/crypto v0.24.0 // indirect
 	golang.org/x/mod v0.17.0 // indirect
-	golang.org/x/sys v0.20.0 // indirect
-	golang.org/x/term v0.20.0 // indirect
-	golang.org/x/text v0.15.0 // indirect
+	golang.org/x/sys v0.21.0 // indirect
+	golang.org/x/term v0.21.0 // indirect
+	golang.org/x/text v0.16.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	golang.org/x/tools v0.21.0 // indirect
+	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	google.golang.org/genproto v0.0.0-20240528184218-531527333157 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240528184218-531527333157 // indirect
