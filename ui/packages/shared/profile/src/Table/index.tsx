@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {flexRender} from '@tanstack/react-table';
 import {
@@ -89,6 +89,8 @@ const isDummyRow = (row: Row): row is DummyRow => {
   return 'size' in row;
 };
 
+let doubleClickTimer: NodeJS.Timeout | null = null;
+
 interface TableProps {
   data?: Uint8Array;
   total: bigint;
@@ -104,6 +106,7 @@ interface TableProps {
 
 const rowBgClassNames = (isExpanded: boolean, isSubRow: boolean): Record<string, boolean> => {
   return {
+    relative: true,
     'bg-indigo-100 dark:bg-gray-600': isSubRow,
     'bg-indigo-50 dark:bg-gray-700': isExpanded,
   };
@@ -123,28 +126,10 @@ const sizeToWidthStyle = (size: number): Record<string, string> => {
   };
 };
 
-const sizeToTopStyle = (size: number): Record<string, string> => {
+const sizeToBottomStyle = (size: number): Record<string, string> => {
   return {
-    top: `${size * ROW_HEIGHT + 10}px`,
+    bottom: `-${size * ROW_HEIGHT}px`,
   };
-};
-
-const getCallerLabelWidthStyle = (subRows: Row[]): Record<string, string> => {
-  let callerRows = subRows.filter(row => row.isTopSubRow).length;
-  if (callerRows < 3) {
-    callerRows = 3;
-  }
-
-  return sizeToWidthStyle(callerRows);
-};
-
-const getCalleeLabelWidthStyle = (subRows: Row[]): Record<string, string> => {
-  let calleeRows = subRows.filter(row => row.isBottomSubRow).length;
-  if (calleeRows < 3) {
-    calleeRows = 3;
-  }
-
-  return {...sizeToWidthStyle(calleeRows), ...sizeToTopStyle(calleeRows)};
 };
 
 const CustomRowRenderer = ({
@@ -159,10 +144,35 @@ const CustomRowRenderer = ({
   const data = row.original;
   const isExpanded = row.getIsExpanded();
   const _isSubRow = isSubRow(data);
+  const _isLastSubRow = isLastSubRow(row, rows);
+  const _isFirstSubRow = isFirstSubRow(row, rows);
   const bgClassNames = rowBgClassNames(isExpanded, _isSubRow);
+  const ref = useRef<HTMLTableRowElement>(null);
+  const [rowHeight, setRowHeight] = useState<number>(ROW_HEIGHT);
+
+  useEffect(() => {
+    if (ref.current != null) {
+      setRowHeight(ref.current.clientHeight + 1); // +1 to account for the bottom border
+    }
+  }, []);
+
+  const paddingElement = (
+    <div
+      className={cx(
+        'bg-white dark:bg-indigo-500 w-[18px] absolute top-[-1px] left-0 border-x border-gray-200 dark:border-gray-700',
+        {
+          'border-b': _isLastSubRow,
+          'border-t': _isFirstSubRow,
+        }
+      )}
+      style={{height: `${rowHeight}px`}}
+    />
+  );
+
   if (isDummyRow(data)) {
     return (
-      <tr key={row.id} className={cx(bgClassNames)}>
+      <tr key={row.id} className={cx(bgClassNames)} ref={ref}>
+        {paddingElement}
         <td colSpan={100} className={`text-center`} style={sizeToHeightStyle(data.size)}>
           {data.message}
         </td>
@@ -173,16 +183,29 @@ const CustomRowRenderer = ({
   return (
     <tr
       key={row.id}
-      className={cx(
-        usePointerCursor === true ? 'cursor-pointer' : 'cursor-auto',
-        'relative',
-        bgClassNames,
-        {
-          'hover:bg-[#62626212] dark:hover:bg-[#ffffff12] ': !isExpanded && !_isSubRow,
-          'hover:bg-indigo-200 dark:hover:bg-indigo-500': isExpanded || _isSubRow,
+      ref={ref}
+      className={cx(usePointerCursor === true ? 'cursor-pointer' : 'cursor-auto', bgClassNames, {
+        'hover:bg-[#62626212] dark:hover:bg-[#ffffff12] ': !isExpanded && !_isSubRow,
+        'hover:bg-indigo-200 dark:hover:bg-indigo-500': isExpanded || _isSubRow,
+      })}
+      onClick={e => {
+        if (typeof onRowClick !== 'function') {
+          return;
         }
-      )}
-      onClick={onRowClick != null ? () => onRowClick(row.original) : undefined}
+        if (e.detail === 2 && doubleClickTimer != null) {
+          // Prevent the click event from being triggered as it is part of a double click
+          clearTimeout(doubleClickTimer);
+          doubleClickTimer = null;
+          return;
+        }
+        if (e.detail === 1) {
+          // Schedule a single click event to be triggered after 150ms
+          doubleClickTimer = setTimeout(() => {
+            doubleClickTimer = null;
+            onRowClick(row.original);
+          }, 150);
+        }
+      }}
       onDoubleClick={
         onRowDoubleClick != null
           ? () => {
@@ -201,7 +224,7 @@ const CustomRowRenderer = ({
         return (
           <td
             key={cell.id}
-            className={cx('p-1.5 align-top', {
+            className={cx('p-1.5 align-top relative', {
               /* @ts-expect-error */
               'text-right': cell.column.columnDef.meta?.align === 'right',
               /* @ts-expect-error */
@@ -212,19 +235,23 @@ const CustomRowRenderer = ({
             {idx === 0 && isExpanded ? (
               <>
                 <div
-                  className={`absolute top-0 left-0 bg-white dark:bg-indigo-500 px-1 uppercase -rotate-90 origin-top-left z-10 text-[10px] border-l border-y border-gray-200 dark:border-gray-700 text-left `}
-                  style={getCallerLabelWidthStyle(row.originalSubRows ?? [])}
+                  className={`absolute top-0 left-0 bg-white dark:bg-indigo-500 px-1 uppercase -rotate-90 origin-top-left z-10 text-[10px] border-l border-y border-gray-200 dark:border-gray-700 text-left`}
+                  style={{...sizeToWidthStyle(3)}}
                 >
                   Callers {'->'}
                 </div>
                 <div
-                  className={`absolute left-[18px] bg-white dark:bg-indigo-500 px-1 uppercase -rotate-90 origin-bottom-left z-10 text-[10px] border-r border-y border-gray-200 dark:border-gray-700 `}
-                  style={getCalleeLabelWidthStyle(row.originalSubRows ?? [])}
+                  className={`absolute left-[18px] bg-white dark:bg-indigo-500 px-1 uppercase -rotate-90 origin-bottom-left z-10 text-[10px] border-r border-y border-gray-200 dark:border-gray-700`}
+                  style={{
+                    ...sizeToWidthStyle(3),
+                    ...sizeToBottomStyle(3),
+                  }}
                 >
                   {'<-'} Callees
                 </div>
               </>
             ) : null}
+            {idx === 0 && _isSubRow ? paddingElement : null}
             {flexRender(cell.column.columnDef.cell, cell.getContext())}
           </td>
         );
@@ -783,6 +810,18 @@ function getScrollTargetIndex(
 
 function isSubRow(row: Row): boolean {
   return row.isTopSubRow === true || row.isBottomSubRow === true;
+}
+
+function isLastSubRow(row: RowType<Row>, rows: Array<RowType<Row>>): boolean {
+  const index = rows.indexOf(row);
+  const nextRow = rows[index + 1];
+  return nextRow == null || (!isSubRow(nextRow.original) && !nextRow.getIsExpanded());
+}
+
+function isFirstSubRow(row: RowType<Row>, rows: Array<RowType<Row>>): boolean {
+  const index = rows.indexOf(row);
+  const prevRow = rows[index - 1];
+  return prevRow == null || (!isSubRow(prevRow.original) && !prevRow.getIsExpanded());
 }
 
 export default Table;
