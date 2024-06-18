@@ -189,7 +189,7 @@ const CustomRowRenderer = ({
         return (
           <td
             key={cell.id}
-            className={cx('p-1.5 align-top', {
+            className={cx('p-1.5 align-top relative', {
               /* @ts-expect-error */
               'text-right': cell.column.columnDef.meta?.align === 'right',
               /* @ts-expect-error */
@@ -206,7 +206,7 @@ const CustomRowRenderer = ({
                   Callers {'->'}
                 </div>
                 <div
-                  className={`absolute left-[17px] bg-white dark:bg-indigo-500 px-1 uppercase -rotate-90 origin-bottom-left z-10 text-[10px] border-r border-y border-gray-200 dark:border-gray-700`}
+                  className={`absolute left-[18px] bg-white dark:bg-indigo-500 px-1 uppercase -rotate-90 origin-bottom-left z-10 text-[10px] border-r border-y border-gray-200 dark:border-gray-700`}
                   style={getCalleeLabelWidthStyle()}
                 >
                   {'<-'} Callees
@@ -216,7 +216,7 @@ const CustomRowRenderer = ({
             {idx === 0 && _isSubRow ? (
               <div
                 className={cx(
-                  'bg-white dark:bg-indigo-500 w-[17px] absolute top-0 left-0 border-x border-gray-200 dark:border-gray-700',
+                  'bg-white dark:bg-indigo-500 w-[18px] absolute top-0 left-0 border-x border-gray-200 dark:border-gray-700',
                   {
                     'h-[30px]': !_isLastSubRow,
                     'h-[28px]': _isLastSubRow,
