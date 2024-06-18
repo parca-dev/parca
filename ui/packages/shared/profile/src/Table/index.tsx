@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {flexRender} from '@tanstack/react-table';
 import {
@@ -124,18 +124,10 @@ const sizeToWidthStyle = (size: number): Record<string, string> => {
   };
 };
 
-const sizeToTopStyle = (size: number): Record<string, string> => {
+const sizeToBottomStyle = (size: number): Record<string, string> => {
   return {
-    top: `${size * ROW_HEIGHT + 10}px`,
+    bottom: `-${size * ROW_HEIGHT}px`,
   };
-};
-
-const getCallerLabelWidthStyle = (): Record<string, string> => {
-  return sizeToWidthStyle(3);
-};
-
-const getCalleeLabelWidthStyle = (): Record<string, string> => {
-  return {...sizeToWidthStyle(3), ...sizeToTopStyle(3)};
 };
 
 const CustomRowRenderer = ({
@@ -153,9 +145,32 @@ const CustomRowRenderer = ({
   const _isLastSubRow = isLastSubRow(row, rows);
   const _isFirstSubRow = isFirstSubRow(row, rows);
   const bgClassNames = rowBgClassNames(isExpanded, _isSubRow);
+  const ref = useRef<HTMLTableRowElement>(null);
+  const [rowHeight, setRowHeight] = useState<number>(ROW_HEIGHT);
+
+  useEffect(() => {
+    if (ref.current != null) {
+      setRowHeight(ref.current.clientHeight + 1); // +1 to account for the bottom border
+    }
+  }, []);
+
+  const paddingElement = (
+    <div
+      className={cx(
+        'bg-white dark:bg-indigo-500 w-[18px] absolute top-[-1px] left-0 border-x border-gray-200 dark:border-gray-700',
+        {
+          'border-b': _isLastSubRow,
+          'border-t': _isFirstSubRow,
+        }
+      )}
+      style={{height: `${rowHeight}px`}}
+    />
+  );
+
   if (isDummyRow(data)) {
     return (
-      <tr key={row.id} className={cx(bgClassNames)}>
+      <tr key={row.id} className={cx(bgClassNames)} ref={ref}>
+        {paddingElement}
         <td colSpan={100} className={`text-center`} style={sizeToHeightStyle(data.size)}>
           {data.message}
         </td>
@@ -166,6 +181,7 @@ const CustomRowRenderer = ({
   return (
     <tr
       key={row.id}
+      ref={ref}
       className={cx(usePointerCursor === true ? 'cursor-pointer' : 'cursor-auto', bgClassNames, {
         'hover:bg-[#62626212] dark:hover:bg-[#ffffff12] ': !isExpanded && !_isSubRow,
         'hover:bg-indigo-200 dark:hover:bg-indigo-500': isExpanded || _isSubRow,
@@ -201,32 +217,22 @@ const CustomRowRenderer = ({
               <>
                 <div
                   className={`absolute top-0 left-0 bg-white dark:bg-indigo-500 px-1 uppercase -rotate-90 origin-top-left z-10 text-[10px] border-l border-y border-gray-200 dark:border-gray-700 text-left`}
-                  style={getCallerLabelWidthStyle()}
+                  style={{...sizeToWidthStyle(3)}}
                 >
                   Callers {'->'}
                 </div>
                 <div
                   className={`absolute left-[18px] bg-white dark:bg-indigo-500 px-1 uppercase -rotate-90 origin-bottom-left z-10 text-[10px] border-r border-y border-gray-200 dark:border-gray-700`}
-                  style={getCalleeLabelWidthStyle()}
+                  style={{
+                    ...sizeToWidthStyle(3),
+                    ...sizeToBottomStyle(3),
+                  }}
                 >
                   {'<-'} Callees
                 </div>
               </>
             ) : null}
-            {idx === 0 && _isSubRow ? (
-              <div
-                className={cx(
-                  'bg-white dark:bg-indigo-500 w-[18px] absolute top-0 left-0 border-x border-gray-200 dark:border-gray-700',
-                  {
-                    'h-[30px]': !_isLastSubRow,
-                    'h-[28px]': _isLastSubRow,
-                    'top-[-1px]': !_isFirstSubRow,
-                    'border-b': _isLastSubRow,
-                    'border-t': _isFirstSubRow,
-                  }
-                )}
-              />
-            ) : null}
+            {idx === 0 && _isSubRow ? paddingElement : null}
             {flexRender(cell.column.columnDef.cell, cell.getContext())}
           </td>
         );
