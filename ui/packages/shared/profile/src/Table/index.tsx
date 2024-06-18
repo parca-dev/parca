@@ -104,6 +104,7 @@ interface TableProps {
 
 const rowBgClassNames = (isExpanded: boolean, isSubRow: boolean): Record<string, boolean> => {
   return {
+    relative: true,
     'bg-indigo-100 dark:bg-gray-600': isSubRow,
     'bg-indigo-50 dark:bg-gray-700': isExpanded,
   };
@@ -129,22 +130,12 @@ const sizeToTopStyle = (size: number): Record<string, string> => {
   };
 };
 
-const getCallerLabelWidthStyle = (subRows: Row[]): Record<string, string> => {
-  let callerRows = subRows.filter(row => row.isTopSubRow).length;
-  if (callerRows < 3) {
-    callerRows = 3;
-  }
-
-  return sizeToWidthStyle(callerRows);
+const getCallerLabelWidthStyle = (): Record<string, string> => {
+  return sizeToWidthStyle(3);
 };
 
-const getCalleeLabelWidthStyle = (subRows: Row[]): Record<string, string> => {
-  let calleeRows = subRows.filter(row => row.isBottomSubRow).length;
-  if (calleeRows < 3) {
-    calleeRows = 3;
-  }
-
-  return {...sizeToWidthStyle(calleeRows), ...sizeToTopStyle(calleeRows)};
+const getCalleeLabelWidthStyle = (): Record<string, string> => {
+  return {...sizeToWidthStyle(3), ...sizeToTopStyle(3)};
 };
 
 const CustomRowRenderer = ({
@@ -159,6 +150,8 @@ const CustomRowRenderer = ({
   const data = row.original;
   const isExpanded = row.getIsExpanded();
   const _isSubRow = isSubRow(data);
+  const _isLastSubRow = isLastSubRow(row, rows);
+  const _isFirstSubRow = isFirstSubRow(row, rows);
   const bgClassNames = rowBgClassNames(isExpanded, _isSubRow);
   if (isDummyRow(data)) {
     return (
@@ -173,15 +166,10 @@ const CustomRowRenderer = ({
   return (
     <tr
       key={row.id}
-      className={cx(
-        usePointerCursor === true ? 'cursor-pointer' : 'cursor-auto',
-        'relative',
-        bgClassNames,
-        {
-          'hover:bg-[#62626212] dark:hover:bg-[#ffffff12] ': !isExpanded && !_isSubRow,
-          'hover:bg-indigo-200 dark:hover:bg-indigo-500': isExpanded || _isSubRow,
-        }
-      )}
+      className={cx(usePointerCursor === true ? 'cursor-pointer' : 'cursor-auto', bgClassNames, {
+        'hover:bg-[#62626212] dark:hover:bg-[#ffffff12] ': !isExpanded && !_isSubRow,
+        'hover:bg-indigo-200 dark:hover:bg-indigo-500': isExpanded || _isSubRow,
+      })}
       onClick={onRowClick != null ? () => onRowClick(row.original) : undefined}
       onDoubleClick={
         onRowDoubleClick != null
@@ -212,18 +200,32 @@ const CustomRowRenderer = ({
             {idx === 0 && isExpanded ? (
               <>
                 <div
-                  className={`absolute top-0 left-0 bg-white dark:bg-indigo-500 px-1 uppercase -rotate-90 origin-top-left z-10 text-[10px] border-l border-y border-gray-200 dark:border-gray-700 text-left `}
-                  style={getCallerLabelWidthStyle(row.originalSubRows ?? [])}
+                  className={`absolute top-0 left-0 bg-white dark:bg-indigo-500 px-1 uppercase -rotate-90 origin-top-left z-10 text-[10px] border-l border-y border-gray-200 dark:border-gray-700 text-left`}
+                  style={getCallerLabelWidthStyle()}
                 >
                   Callers {'->'}
                 </div>
                 <div
-                  className={`absolute left-[18px] bg-white dark:bg-indigo-500 px-1 uppercase -rotate-90 origin-bottom-left z-10 text-[10px] border-r border-y border-gray-200 dark:border-gray-700 `}
-                  style={getCalleeLabelWidthStyle(row.originalSubRows ?? [])}
+                  className={`absolute left-[17px] bg-white dark:bg-indigo-500 px-1 uppercase -rotate-90 origin-bottom-left z-10 text-[10px] border-r border-y border-gray-200 dark:border-gray-700`}
+                  style={getCalleeLabelWidthStyle()}
                 >
                   {'<-'} Callees
                 </div>
               </>
+            ) : null}
+            {idx === 0 && _isSubRow ? (
+              <div
+                className={cx(
+                  'bg-white dark:bg-indigo-500 w-[17px] absolute top-0 left-0 border-x border-gray-200 dark:border-gray-700',
+                  {
+                    'h-[30px]': !_isLastSubRow,
+                    'h-[28px]': _isLastSubRow,
+                    'top-[-1px]': !_isFirstSubRow,
+                    'border-b': _isLastSubRow,
+                    'border-t': _isFirstSubRow,
+                  }
+                )}
+              />
             ) : null}
             {flexRender(cell.column.columnDef.cell, cell.getContext())}
           </td>
@@ -783,6 +785,18 @@ function getScrollTargetIndex(
 
 function isSubRow(row: Row): boolean {
   return row.isTopSubRow === true || row.isBottomSubRow === true;
+}
+
+function isLastSubRow(row: RowType<Row>, rows: Array<RowType<Row>>): boolean {
+  const index = rows.indexOf(row);
+  const nextRow = rows[index + 1];
+  return nextRow == null || (!isSubRow(nextRow.original) && !nextRow.getIsExpanded());
+}
+
+function isFirstSubRow(row: RowType<Row>, rows: Array<RowType<Row>>): boolean {
+  const index = rows.indexOf(row);
+  const prevRow = rows[index - 1];
+  return prevRow == null || (!isSubRow(prevRow.original) && !prevRow.getIsExpanded());
 }
 
 export default Table;
