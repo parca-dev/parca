@@ -14,7 +14,6 @@
 import {useRef, useState} from 'react';
 
 import {Popover} from '@headlessui/react';
-import cx from 'classnames';
 import {useClickAway} from 'react-use';
 
 import DateTimeRangePickerPanel from './DateTimeRangePickerPanel';
