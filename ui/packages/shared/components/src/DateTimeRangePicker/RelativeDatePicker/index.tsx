@@ -145,7 +145,7 @@ export const RelativeDatePickerForPanel = ({
 
   // When the list of presets is shown in the popover panel, we use this effect here to ensure that the
   // absolute date range is converted to a relative date range and we then use the `onChange` prop to
-  // update the range in the component below.
+  // update the range in the `RelativeDatePicker` component below.
   useEffect(() => {
     onChange(new RelativeDate(unit, value), new RelativeDate(unit, 0));
     // eslint-disable-next-line react-hooks/exhaustive-deps
