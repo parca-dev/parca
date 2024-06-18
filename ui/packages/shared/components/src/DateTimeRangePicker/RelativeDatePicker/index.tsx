@@ -14,8 +14,8 @@
 import {useEffect, useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
-import cx from 'classnames';
 
+import {Button} from '../../Button';
 import {
   AbsoluteDate,
   DateTimeRange,
@@ -163,21 +163,17 @@ export const RelativeDatePickerForPanel = ({
   return (
     <div className="flex flex-col gap-3 items-center text-sm p-4">
       {presetRanges.map(({value, unit, text}) => (
-        <div
+        <Button
           key={`${value}-${unit}`}
-          className={cx(
-            value === dateFromInRelative.value && unit === dateFromInRelative.unit
-              ? 'bg-gray-200 dark:bg-gray-700'
-              : '',
-            'cursor-pointer w-full text-center py-1 hover:bg-gray-200 dark:hover:bg-gray-700'
-          )}
           onClick={() => {
             onChange(new RelativeDate(unit, value), NOW);
             hidePopoverMenu();
           }}
+          color="link"
+          className="min-w-[142px]"
         >
           {text}
-        </div>
+        </Button>
       ))}
     </div>
   );
@@ -260,7 +256,7 @@ const RelativeDatePicker = ({
       <label htmlFor="range" className="text-xs">
         Range
       </label>
-      <div className="flex h-[38px] rounded-md shadow-sm">
+      <div className="flex h-[38px] w-[300px] rounded-md shadow-sm">
         <button
           type="button"
           disabled={currentPresetIndex === 0}
