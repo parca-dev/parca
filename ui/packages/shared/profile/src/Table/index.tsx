@@ -89,6 +89,8 @@ const isDummyRow = (row: Row): row is DummyRow => {
   return 'size' in row;
 };
 
+let doubleClickTimer: NodeJS.Timeout | null = null;
+
 interface TableProps {
   data?: Uint8Array;
   total: bigint;
@@ -186,7 +188,24 @@ const CustomRowRenderer = ({
         'hover:bg-[#62626212] dark:hover:bg-[#ffffff12] ': !isExpanded && !_isSubRow,
         'hover:bg-indigo-200 dark:hover:bg-indigo-500': isExpanded || _isSubRow,
       })}
-      onClick={onRowClick != null ? () => onRowClick(row.original) : undefined}
+      onClick={e => {
+        if (typeof onRowClick !== 'function') {
+          return;
+        }
+        if (e.detail === 2 && doubleClickTimer != null) {
+          // Prevent the click event from being triggered as it is part of a double click
+          clearTimeout(doubleClickTimer);
+          doubleClickTimer = null;
+          return;
+        }
+        if (e.detail === 1) {
+          // Schedule a single click event to be triggered after 150ms
+          doubleClickTimer = setTimeout(() => {
+            doubleClickTimer = null;
+            onRowClick(row.original);
+          }, 150);
+        }
+      }}
       onDoubleClick={
         onRowDoubleClick != null
           ? () => {
