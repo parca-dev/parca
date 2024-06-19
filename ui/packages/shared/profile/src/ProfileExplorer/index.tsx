@@ -22,6 +22,7 @@ import {capitalizeOnlyFirstLetter, type NavigateFunction} from '@parca/utilities
 
 import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
 import {QuerySelection, useProfileTypes} from '../ProfileSelector';
+import {compareProfile} from '../utils';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
 import ProfileExplorerSingle from './ProfileExplorerSingle';
 
@@ -47,42 +48,7 @@ export const getExpressionAsAString = (expression: string | []): string => {
   return x;
 };
 
-export const DEFAULT_DASHBOARD_ITEMS = ['icicle'];
-
-export const compareProfile = (
-  queryA: {expression: string; from: number; to: number; timeSelection: string},
-  profileA: ProfileSelection | null,
-  navigateTo: NavigateFunction,
-  dashboardItems: string | string[],
-  defaultDashboardItems: string[] = DEFAULT_DASHBOARD_ITEMS
-): void => {
-  let compareQuery = {
-    compare_a: 'true',
-    expression_a: encodeURIComponent(queryA.expression),
-    from_a: queryA.from.toString(),
-    to_a: queryA.to.toString(),
-    time_selection_a: queryA.timeSelection,
-
-    compare_b: 'true',
-    expression_b: encodeURIComponent(queryA.expression),
-    from_b: queryA.from.toString(),
-    to_b: queryA.to.toString(),
-    time_selection_b: queryA.timeSelection,
-  };
-
-  if (profileA != null) {
-    compareQuery = {
-      ...SuffixParams(profileA.HistoryParams(), '_a'),
-      ...compareQuery,
-    };
-  }
-
-  void navigateTo('/', {
-    ...compareQuery,
-    search_string: '',
-    dashboard_items: dashboardItems ?? defaultDashboardItems,
-  });
-};
+const DEFAULT_DASHBOARD_ITEMS = ['icicle'];
 
 /* eslint-disable @typescript-eslint/naming-convention */
 const sanitizeDateRange = (
@@ -305,7 +271,7 @@ const ProfileExplorerApp = ({
         profile={profileA}
         selectQuery={selectQuery}
         selectProfile={selectProfile}
-        compareProfile={() => compareProfile(queryA, profileA, navigateTo, dashboard_items)}
+        compareProfile={() => compareProfile(navigateTo, DEFAULT_DASHBOARD_ITEMS)}
         navigateTo={navigateTo}
       />
     );

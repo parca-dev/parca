@@ -21,9 +21,9 @@ import {Link, LinkProps, useLocation, useNavigate} from 'react-router-dom';
 
 import {Button} from '@parca/components';
 import {Parca, ParcaSmall} from '@parca/icons';
-import {ProfileSelectionFromParams, compareProfile, getExpressionAsAString} from '@parca/profile';
+import {compareProfile} from '@parca/profile';
 import {selectDarkMode, useAppSelector} from '@parca/store';
-import {convertToQueryParams, parseParams} from '@parca/utilities';
+import {convertToQueryParams} from '@parca/utilities';
 
 import ReleaseNotesViewer from '../ReleaseNotesViewer';
 import ThemeToggle from './ThemeToggle';
@@ -70,40 +70,6 @@ const Navbar = () => {
     },
     [navigate]
   );
-
-  const queryParams = parseParams(location.search);
-
-  /* eslint-disable @typescript-eslint/naming-convention */
-  let {
-    from_a,
-    to_a,
-    merge_from_a,
-    merge_to_a,
-    time_selection_a,
-    filter_by_function,
-    dashboard_items,
-  } = queryParams;
-
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  const selection_a = getExpressionAsAString(queryParams.selection_a as string | []);
-
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  const expression_a = getExpressionAsAString(queryParams.expression_a as string | []);
-
-  const mergeFrom = merge_from_a ?? undefined;
-  const mergeTo = merge_to_a ?? undefined;
-  const profileA = ProfileSelectionFromParams(
-    mergeFrom as string,
-    mergeTo as string,
-    selection_a,
-    filter_by_function as string
-  );
-  const queryA = {
-    expression: expression_a,
-    from: parseInt(from_a as string),
-    to: parseInt(to_a as string),
-    timeSelection: time_selection_a as string,
-  };
 
   return (
     <Disclosure as="nav" className="relative z-10 dark:bg-gray-900">
@@ -163,10 +129,9 @@ const Navbar = () => {
                           }
                           return item.href === 'onclick' ? (
                             <Button
+                              className="hover:no-underline rounded-none hover:border-gray-300 border-transparent border-b-2 hover:text-gray-700 dark:hover:text-gray-100 focus:ring-0 focus:outline-none focus:ring-offset-0"
                               variant="link"
-                              onClick={() =>
-                                compareProfile(queryA, profileA, navigateTo, dashboard_items)
-                              }
+                              onClick={() => compareProfile(navigateTo)}
                             >
                               Compare
                             </Button>

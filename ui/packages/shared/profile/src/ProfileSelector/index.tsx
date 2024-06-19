@@ -33,7 +33,6 @@ import MatchersInput from '../MatchersInput/index';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
 import ProfileMetricsGraph, {ProfileMetricsEmptyState} from '../ProfileMetricsGraph';
 import ProfileTypeSelector from '../ProfileTypeSelector/index';
-// import CompareButton from './CompareButton';
 import {useAutoQuerySelector} from './useAutoQuerySelector';
 
 export interface QuerySelection {
@@ -219,14 +218,10 @@ const ProfileSelector = ({
     setQueryExpression,
   });
 
-  // const handleCompareClick = (): void => onCompareProfile();
-
   const searchDisabled =
     queryExpressionString === undefined ||
     queryExpressionString === '' ||
     queryExpressionString === '{}';
-
-  // const compareDisabled = selectedProfileName === '' || querySelection.expression === undefined;
 
   return (
     <>
