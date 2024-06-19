@@ -33,7 +33,7 @@ import MatchersInput from '../MatchersInput/index';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
 import ProfileMetricsGraph, {ProfileMetricsEmptyState} from '../ProfileMetricsGraph';
 import ProfileTypeSelector from '../ProfileTypeSelector/index';
-import CompareButton from './CompareButton';
+// import CompareButton from './CompareButton';
 import {useAutoQuerySelector} from './useAutoQuerySelector';
 
 export interface QuerySelection {
@@ -219,14 +219,14 @@ const ProfileSelector = ({
     setQueryExpression,
   });
 
-  const handleCompareClick = (): void => onCompareProfile();
+  // const handleCompareClick = (): void => onCompareProfile();
 
   const searchDisabled =
     queryExpressionString === undefined ||
     queryExpressionString === '' ||
     queryExpressionString === '{}';
 
-  const compareDisabled = selectedProfileName === '' || querySelection.expression === undefined;
+  // const compareDisabled = selectedProfileName === '' || querySelection.expression === undefined;
 
   return (
     <>
@@ -261,13 +261,13 @@ const ProfileSelector = ({
             range={timeRangeSelection}
           />
           <ButtonGroup>
-            {!searchDisabled && (
+            {/* {!searchDisabled && (
               <>
                 {!comparing && (
                   <CompareButton disabled={compareDisabled} onClick={handleCompareClick} />
                 )}
               </>
-            )}
+            )} */}
             <Button
               disabled={searchDisabled}
               onClick={(e: React.MouseEvent<HTMLElement>) => {

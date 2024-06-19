@@ -11,20 +11,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {useCallback} from 'react';
+
 import {Disclosure} from '@headlessui/react';
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
 import GitHubButton from 'react-github-btn';
-import {Link, LinkProps, useLocation} from 'react-router-dom';
+import {Link, LinkProps, useLocation, useNavigate} from 'react-router-dom';
 
+import {Button} from '@parca/components';
 import {Parca, ParcaSmall} from '@parca/icons';
+import {ProfileSelectionFromParams, compareProfile, getExpressionAsAString} from '@parca/profile';
 import {selectDarkMode, useAppSelector} from '@parca/store';
+import {convertToQueryParams, parseParams} from '@parca/utilities';
 
 import ReleaseNotesViewer from '../ReleaseNotesViewer';
 import ThemeToggle from './ThemeToggle';
 
 const links: {[path: string]: {label: string; href: string; external: boolean}} = {
-  '/': {label: 'Profiles', href: `/`, external: false},
+  '/': {label: 'Explorer', href: `/`, external: false},
+  '/compare': {label: 'Compare', href: 'onclick', external: false},
   '/targets': {label: 'Targets', href: `/targets`, external: false},
   '/help': {label: 'Help', href: 'https://parca.dev/docs/overview', external: true},
 };
@@ -47,9 +53,57 @@ const GitHubStarButton = () => {
 
 const Navbar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const isCurrentPage = (item: {label: string; href: string; external: boolean}) =>
     location.pathname === item.href;
+
+  const navigateTo = useCallback(
+    (path: string, queryParams: any, options?: {replace?: boolean}) => {
+      navigate(
+        {
+          pathname: path,
+          search: `?${convertToQueryParams(queryParams)}`,
+        },
+        options ?? {}
+      );
+    },
+    [navigate]
+  );
+
+  const queryParams = parseParams(location.search);
+
+  /* eslint-disable @typescript-eslint/naming-convention */
+  let {
+    from_a,
+    to_a,
+    merge_from_a,
+    merge_to_a,
+    time_selection_a,
+    filter_by_function,
+    dashboard_items,
+  } = queryParams;
+
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const selection_a = getExpressionAsAString(queryParams.selection_a as string | []);
+
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const expression_a = getExpressionAsAString(queryParams.expression_a as string | []);
+
+  const mergeFrom = merge_from_a ?? undefined;
+  const mergeTo = merge_to_a ?? undefined;
+  const profileA = ProfileSelectionFromParams(
+    mergeFrom as string,
+    mergeTo as string,
+    selection_a,
+    filter_by_function as string
+  );
+  const queryA = {
+    expression: expression_a,
+    from: parseInt(from_a as string),
+    to: parseInt(to_a as string),
+    timeSelection: time_selection_a as string,
+  };
 
   return (
     <Disclosure as="nav" className="relative z-10 dark:bg-gray-900">
@@ -107,7 +161,16 @@ const Navbar = () => {
                           if (isCurrentPage(item)) {
                             props['aria-current'] = 'page';
                           }
-                          return item.external ? (
+                          return item.href === 'onclick' ? (
+                            <Button
+                              variant="link"
+                              onClick={() =>
+                                compareProfile(queryA, profileA, navigateTo, dashboard_items)
+                              }
+                            >
+                              Compare
+                            </Button>
+                          ) : item.external === true ? (
                             <a key={item.label} {...props} href={href}>
                               {item.label}
                             </a>

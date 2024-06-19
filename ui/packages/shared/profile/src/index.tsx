@@ -12,7 +12,11 @@
 // limitations under the License.
 
 import type {Props as CallgraphProps} from './Callgraph';
-import ProfileExplorer from './ProfileExplorer';
+import ProfileExplorer, {
+  DEFAULT_DASHBOARD_ITEMS,
+  compareProfile,
+  getExpressionAsAString,
+} from './ProfileExplorer';
 import ProfileTypeSelector from './ProfileTypeSelector';
 
 export * from './ProfileIcicleGraph/IcicleGraph';
@@ -27,4 +31,10 @@ export {default as Callgraph} from './Callgraph';
 
 export type {CallgraphProps};
 
-export {ProfileExplorer, ProfileTypeSelector};
+export {
+  ProfileExplorer,
+  ProfileTypeSelector,
+  DEFAULT_DASHBOARD_ITEMS,
+  getExpressionAsAString,
+  compareProfile,
+};
