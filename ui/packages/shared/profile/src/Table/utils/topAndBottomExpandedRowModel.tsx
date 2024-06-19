@@ -61,7 +61,13 @@ export function expandRows<TData extends RowData>(rowModel: RowModel<TData>): Ro
     // @ts-expect-error
     const topSubRows = (row.subRows ?? []).filter(subRow => subRow.original?.isTopSubRow);
     if (topSubRows.length > 0) {
-      topSubRows.forEach(handleRow);
+      // Needs to be split into dummy and non-dummy rows to ensure that the dummy rows are rendered at the top.
+      // @ts-expect-error
+      const dummyRows = topSubRows.filter(subRow => 'size' in subRow.original);
+      // @ts-expect-error
+      const nonDummyRows = topSubRows.filter(subRow => !('size' in subRow.original));
+      dummyRows.forEach(handleRow);
+      nonDummyRows.forEach(handleRow);
     }
     expandedRows.push(row);
 

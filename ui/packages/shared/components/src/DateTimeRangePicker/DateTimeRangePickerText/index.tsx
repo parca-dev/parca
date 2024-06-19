@@ -14,7 +14,7 @@
 import cx from 'classnames';
 
 import RelativeDatePicker from '../RelativeDatePicker';
-import {DateTimeRange, DateUnion, formatDateStringForUI} from '../utils';
+import {DateTimeRange, DateUnion} from '../utils';
 
 interface DateTimeRangePickerTextProps {
   range: DateTimeRange;
