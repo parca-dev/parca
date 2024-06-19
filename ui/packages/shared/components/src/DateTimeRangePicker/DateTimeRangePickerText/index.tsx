@@ -30,7 +30,7 @@ const DateTimeRangePickerText = ({
   onRangeSelection,
 }: DateTimeRangePickerTextProps): JSX.Element => {
   const isRelativeRange = range.from.isRelative();
-  const dateString = `${formatDateStringForUI(range.from)} → ${formatDateStringForUI(range.to)}`;
+  const dateString = range.getRangeStringForUI();
 
   return (
     <div>

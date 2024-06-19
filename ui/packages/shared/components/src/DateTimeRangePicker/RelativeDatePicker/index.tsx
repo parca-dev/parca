@@ -169,8 +169,12 @@ export const RelativeDatePickerForPanel = ({
             onChange(new RelativeDate(unit, value), NOW);
             hidePopoverMenu();
           }}
-          color="link"
           className="min-w-[142px]"
+          variant={
+            value === dateFromInRelative.value && unit === dateFromInRelative.unit
+              ? 'primary'
+              : 'neutral'
+          }
         >
           {text}
         </Button>
