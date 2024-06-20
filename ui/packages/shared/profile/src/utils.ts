@@ -16,7 +16,7 @@ import type {RpcMetadata} from '@protobuf-ts/runtime-rpc';
 import {QueryRequest, QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 import {NavigateFunction, parseParams} from '@parca/utilities';
 
-import {ProfileSelectionFromParams, SuffixParams, getExpressionAsAString} from '..';
+import {ProfileSelectionFromParams, SuffixParams, getExpressionAsAString} from '.';
 
 export const hexifyAddress = (address?: bigint): string => {
   if (address == null) {
