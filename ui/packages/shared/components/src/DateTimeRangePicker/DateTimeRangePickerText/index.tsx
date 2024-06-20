@@ -50,7 +50,7 @@ const DateTimeRangePickerText = ({
           <div
             onClick={onClick}
             className={cx(
-              'relative flex min-w-[200px] cursor-default justify-between rounded-md border px-3 py-2 text-left text-gray-600 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:text-gray-300 sm:text-sm',
+              'relative flex min-w-[300px] cursor-default justify-between rounded-md border px-3 py-2 text-left text-gray-600 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:text-gray-300 sm:text-sm',
               {'bg-white dark:bg-gray-900': !isActive},
               {'!justify-center, bg-gray-100 dark:bg-gray-800 ': isActive}
             )}
