@@ -117,6 +117,12 @@ export interface QueryRangeRequest {
      * @generated from protobuf field: google.protobuf.Duration step = 5;
      */
     step?: Duration;
+    /**
+     * sum_by is the set of labels to sum by
+     *
+     * @generated from protobuf field: repeated string sum_by = 6;
+     */
+    sumBy: string[];
 }
 /**
  * QueryRangeResponse is the set of matching profile values
@@ -1569,13 +1575,15 @@ class QueryRangeRequest$Type extends MessageType<QueryRangeRequest> {
             { no: 2, name: "start", kind: "message", T: () => Timestamp },
             { no: 3, name: "end", kind: "message", T: () => Timestamp },
             { no: 4, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 5, name: "step", kind: "message", T: () => Duration }
+            { no: 5, name: "step", kind: "message", T: () => Duration },
+            { no: 6, name: "sum_by", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<QueryRangeRequest>): QueryRangeRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.query = "";
         message.limit = 0;
+        message.sumBy = [];
         if (value !== undefined)
             reflectionMergePartial<QueryRangeRequest>(this, message, value);
         return message;
@@ -1599,6 +1607,9 @@ class QueryRangeRequest$Type extends MessageType<QueryRangeRequest> {
                     break;
                 case /* google.protobuf.Duration step */ 5:
                     message.step = Duration.internalBinaryRead(reader, reader.uint32(), options, message.step);
+                    break;
+                case /* repeated string sum_by */ 6:
+                    message.sumBy.push(reader.string());
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1627,6 +1638,9 @@ class QueryRangeRequest$Type extends MessageType<QueryRangeRequest> {
         /* google.protobuf.Duration step = 5; */
         if (message.step)
             Duration.internalBinaryWrite(message.step, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* repeated string sum_by = 6; */
+        for (let i = 0; i < message.sumBy.length; i++)
+            writer.tag(6, WireType.LengthDelimited).string(message.sumBy[i]);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

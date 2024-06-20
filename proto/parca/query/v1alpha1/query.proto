@@ -92,6 +92,9 @@ message QueryRangeRequest {
 
   // step is the duration of each sample returned.
   google.protobuf.Duration step = 5;
+
+  // sum_by is the set of labels to sum by
+  repeated string sum_by = 6;
 }
 
 // QueryRangeResponse is the set of matching profile values

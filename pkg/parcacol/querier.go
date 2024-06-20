@@ -321,6 +321,7 @@ func (q *Querier) QueryRange(
 	startTime, endTime time.Time,
 	step time.Duration,
 	limit uint32,
+	sumBy []string,
 ) ([]*pb.MetricsSeries, error) {
 	queryParts, selectorExprs, err := QueryToFilterExprs(query)
 	if err != nil {
@@ -349,10 +350,11 @@ func (q *Querier) QueryRange(
 			filterExpr,
 			step,
 			queryParts.Meta,
+			sumBy,
 		)
 	}
 
-	return q.queryRangeNonDelta(ctx, filterExpr, step)
+	return q.queryRangeNonDelta(ctx, filterExpr, step, sumBy)
 }
 
 const (
@@ -365,6 +367,7 @@ func (q *Querier) queryRangeDelta(
 	filterExpr logicalplan.Expr,
 	step time.Duration,
 	m profile.Meta,
+	sumBy []string,
 ) ([]*pb.MetricsSeries, error) {
 	resultType := m.SampleType
 
@@ -454,10 +457,9 @@ func (q *Querier) queryRangeDelta(
 				timestampUnique,
 				totalSum,
 			},
-			[]logicalplan.Expr{
-				logicalplan.DynCol(profile.ColumnLabels),
+			append([]logicalplan.Expr{
 				logicalplan.Col(TimestampBucket),
-			},
+			}, getSumByAggregateExprs(sumBy)...),
 		).
 		Project(
 			perSecondExpr,
@@ -604,7 +606,20 @@ func (q *Querier) queryRangeDelta(
 	return resSeries, nil
 }
 
-func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration) ([]*pb.MetricsSeries, error) {
+func getSumByAggregateExprs(sumBy []string) []logicalplan.Expr {
+	if len(sumBy) == 0 {
+		return []logicalplan.Expr{logicalplan.DynCol(profile.ColumnLabels)}
+	}
+
+	exprs := make([]logicalplan.Expr, 0, len(sumBy))
+	for _, s := range sumBy {
+		exprs = append(exprs, logicalplan.Col(profile.ColumnLabelsPrefix+s))
+	}
+
+	return exprs
+}
+
+func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration, sumBy []string) ([]*pb.MetricsSeries, error) {
 	records := []arrow.Record{}
 	defer func() {
 		for _, r := range records {
@@ -621,10 +636,10 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 			[]*logicalplan.AggregationFunction{
 				valueSum,
 			},
-			[]logicalplan.Expr{
-				logicalplan.DynCol(profile.ColumnLabels),
-				logicalplan.Col(profile.ColumnTimestamp),
-			},
+			append(
+				[]logicalplan.Expr{
+					logicalplan.Col(profile.ColumnTimestamp),
+				}, getSumByAggregateExprs(sumBy)...),
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
