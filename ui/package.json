@@ -102,13 +102,13 @@
     "plop": "3.1.2",
     "pm2": "5.4.0",
     "postcss": "8.4.38",
-    "prettier": "3.3.1",
+    "prettier": "3.3.2",
     "prettier-plugin-tailwindcss": "^0.4.0",
     "react-is": "18.3.1",
     "react-test-renderer": "18.3.1",
     "replace-in-files": "3.0.0",
     "rimraf": "3.0.2",
-    "sass": "1.77.4",
+    "sass": "1.77.6",
     "sass-loader": "13.3.3",
     "storybook": "7.6.19",
     "storybook-dark-mode": "2.1.1",
@@ -117,7 +117,7 @@
     "ts-node": "10.9.2",
     "tsc-watch": "6.2.0",
     "typescript": "5.4.5",
-    "webpack": "5.91.0"
+    "webpack": "5.92.0"
   },
   "eslintConfig": {
     "overrides": [
