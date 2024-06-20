@@ -32,7 +32,7 @@ const Tab = ({
             className={({selected}) =>
               cx(
                 'w-full rounded-lg py-2.5 text-sm font-medium leading-5',
-                'ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2',
+                'ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none',
                 selected
                   ? 'bg-gray-200 font-medium text-gray-900 shadow dark:bg-gray-900 dark:text-gray-200'
                   : 'font-normal hover:bg-gray-200 hover:text-gray-800 hover:dark:bg-white/[0.12] hover:dark:text-gray-300'
@@ -49,7 +49,7 @@ const Tab = ({
             key={idx}
             className={cx(
               'rounded',
-              'ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2'
+              'ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none'
             )}
           >
             {panel}

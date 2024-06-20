@@ -11,10 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 
+import {Button} from '../../Button';
 import {
   AbsoluteDate,
   DateTimeRange,
@@ -27,6 +28,7 @@ import {
 interface RelativeDatePickerProps {
   range: DateTimeRange;
   onChange?: (from: RelativeDate | AbsoluteDate, to: RelativeDate | AbsoluteDate) => void;
+  toggleRangePickerPanel: () => void;
 }
 
 interface UnitsMap {
@@ -84,14 +86,114 @@ const parseInput = (input: string): {value: number; unit: string} | null => {
   return {value, unit: unitLong[unit]};
 };
 
+export const RelativeDatePickerForPanel = ({
+  onChange = () => null,
+  range,
+  hidePopoverMenu,
+}: {
+  onChange: (from: RelativeDate | AbsoluteDate, to: RelativeDate | AbsoluteDate) => void;
+  range: DateTimeRange;
+  hidePopoverMenu: () => void;
+}): JSX.Element => {
+  const dateFromInRelative = range.from as RelativeDate;
+  const dateToInRelative = range.to as RelativeDate;
+
+  const [from] = useState<AbsoluteDate>(
+    range.from.isRelative()
+      ? new AbsoluteDate(
+          getHistoricalDate({
+            unit: dateFromInRelative.unit,
+            value: dateFromInRelative.value,
+          })
+        )
+      : (range.from as AbsoluteDate)
+  );
+  const [to] = useState<AbsoluteDate>(
+    range.to.isRelative()
+      ? new AbsoluteDate(
+          getHistoricalDate({
+            unit: dateToInRelative.unit,
+            value: dateToInRelative.value,
+          })
+        )
+      : (range.to as AbsoluteDate)
+  );
+
+  const getRelativeTimeRangeBetweenDates = (
+    timeRange: number
+  ): {unit: UNIT_TYPE; value: number} => {
+    const roundToHundredth = (value: number): number => {
+      return Number(value.toFixed(2));
+    };
+
+    if (timeRange < 1000 * 60 * 60) {
+      const timeRangeToMinutes = timeRange / 1000 / 60;
+      return {unit: UNITS.MINUTE, value: roundToHundredth(timeRangeToMinutes)};
+    }
+    if (timeRange < 1000 * 60 * 60 * 24) {
+      const timeRangeToHours = timeRange / 1000 / 60 / 60;
+      return {unit: UNITS.HOUR, value: roundToHundredth(timeRangeToHours)};
+    }
+    const timeRangeToDays = timeRange / 1000 / 60 / 60 / 24;
+    return {unit: UNITS.DAY, value: roundToHundredth(timeRangeToDays)};
+  };
+
+  const {unit, value} = useMemo(
+    () => getRelativeTimeRangeBetweenDates(to.getTime().getTime() - from.getTime().getTime()),
+    [from, to]
+  );
+
+  // When the list of presets is shown in the popover panel, we use this effect here to ensure that the
+  // absolute date range is converted to a relative date range and we then use the `onChange` prop to
+  // update the range in the `RelativeDatePicker` component below.
+  useEffect(() => {
+    onChange(new RelativeDate(unit, value), new RelativeDate(unit, 0));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unit, value]);
+
+  const presetRanges = [
+    {value: 15, unit: UNITS.MINUTE, text: 'Last 15 minutes'},
+    {value: 1, unit: UNITS.HOUR, text: 'Last 1 hour'},
+    {value: 3, unit: UNITS.HOUR, text: 'Last 3 hours'},
+    {value: 6, unit: UNITS.HOUR, text: 'Last 6 hours'},
+    {value: 12, unit: UNITS.HOUR, text: 'Last 12 hours'},
+    {value: 1, unit: UNITS.DAY, text: 'Last 1 day'},
+  ];
+
+  return (
+    <div className="flex flex-col gap-3 items-center text-sm p-4">
+      {presetRanges.map(({value, unit, text}) => (
+        <Button
+          key={`${value}-${unit}`}
+          onClick={() => {
+            onChange(new RelativeDate(unit, value), NOW);
+            hidePopoverMenu();
+          }}
+          className="min-w-[142px]"
+          variant={
+            value === dateFromInRelative.value && unit === dateFromInRelative.unit
+              ? 'primary'
+              : 'neutral'
+          }
+        >
+          {text}
+        </Button>
+      ))}
+    </div>
+  );
+};
+
 const RelativeDatePicker = ({
   range,
   onChange = () => null,
+  toggleRangePickerPanel,
 }: RelativeDatePickerProps): JSX.Element => {
   const date = range.from as RelativeDate;
+
   const [rangeInputString, setRangeInputString] = useState<string>(
     `${date.value}${unitShort[date.unit]}`
   );
+
   const [validRange, setValidRange] = useState<{
     value: number;
     unit: string;
@@ -101,9 +203,11 @@ const RelativeDatePicker = ({
   });
 
   useEffect(() => {
-    if (date.value === validRange.value && date.unit === validRange.unit) {
-      return;
-    }
+    setRangeInputString(`${date.value}${unitShort[date.unit]}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [range]);
+
+  useEffect(() => {
     setRangeInputString(`${validRange.value}${unitShort[validRange.unit]}`);
     onChange(new RelativeDate(validRange.unit, validRange.value), NOW);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -156,7 +260,7 @@ const RelativeDatePicker = ({
       <label htmlFor="range" className="text-xs">
         Range
       </label>
-      <div className="flex h-[38px] rounded-md shadow-sm">
+      <div className="flex h-[38px] w-[300px] rounded-md shadow-sm">
         <button
           type="button"
           disabled={currentPresetIndex === 0}
@@ -176,6 +280,9 @@ const RelativeDatePicker = ({
           className="flex w-full flex-grow items-stretch border text-center text-gray-900 placeholder:text-gray-400 focus-within:z-10 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 sm:text-sm sm:leading-6"
           placeholder="6h"
           value={rangeInputString}
+          onClick={() => {
+            toggleRangePickerPanel();
+          }}
           onChange={e => {
             setRangeInputString(e.target.value);
           }}
@@ -212,20 +319,6 @@ const RelativeDatePicker = ({
           <Icon icon="heroicons:plus-20-solid" />
         </button>
       </div>
-      <button
-        type="button"
-        className="flex w-fit"
-        onClick={() => {
-          onChange(
-            new AbsoluteDate(getHistoricalDate(validRange)),
-            new AbsoluteDate(getHistoricalDate(NOW))
-          );
-        }}
-      >
-        <p className="my-1 ml-1 text-center text-xs text-gray-500 hover:text-indigo-600 dark:text-gray-400">
-          Use absolute start time instead
-        </p>
-      </button>
     </div>
   );
 };
