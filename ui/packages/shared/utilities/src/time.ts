@@ -14,7 +14,7 @@
 import * as DateFns from 'date-fns';
 import {toZonedTime} from 'date-fns-tz';
 
-import {Duration} from '@parca/client';
+import {Duration, Timestamp} from '@parca/client';
 
 export const timePattern = (timezone?: string): string => {
   if (timezone !== undefined) {
@@ -179,4 +179,11 @@ export const getStepDuration = (start: number, end: number, stepCount = 1000): D
 export const getStepDurationInMilliseconds = (stepDuration: Duration): number => {
   // Converts both seconds and nanoseconds to milliseconds and adds them together
   return Number(stepDuration.seconds) * 1000 + stepDuration.nanos / 1e6;
+};
+
+export const millisToProtoTimestamp = (millis: number): Timestamp => {
+  return {
+    seconds: BigInt(Math.floor(millis / 1000)),
+    nanos: Math.floor((millis % 1000) * 1e6),
+  };
 };

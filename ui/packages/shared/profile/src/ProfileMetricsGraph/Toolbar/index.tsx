@@ -28,7 +28,7 @@ export const Toolbar = ({sumBy, setSumBy, labels}: Props): ReactNode => {
   const [collapsed, setCollapsed] = useState<boolean>(false);
   return (
     <div className="absolute top-1 left-24 rounded-full bg-gray-100 dark:bg-gray-800 z-10 text-xs">
-      <div className="flex items-center h-[62px] gap-2 p-3">
+      <div className="flex items-center h-14 gap-4 py-1 px-3">
         <Icon icon="quill:hamburger" height={20} />
         {!collapsed ? (
           <div className="flex gap-2 items-center mr-4">
@@ -55,17 +55,12 @@ export const Toolbar = ({sumBy, setSumBy, labels}: Props): ReactNode => {
           icon={
             <Icon
               icon={collapsed ? 'iconamoon:arrow-right-2-light' : 'iconamoon:arrow-left-2-light'}
-              height={20}
+              height={24}
             />
           }
           onClick={() => setCollapsed(!collapsed)}
           className="hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full p-1"
         />
-        {/* <Icon
-          icon={collapsed ? 'iconamoon:arrow-right-2-light' : 'iconamoon:arrow-left-2-light'}
-          onClick={() => setCollapsed(!collapsed)}
-          height={20}
-        /> */}
       </div>
     </div>
   );

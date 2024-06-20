@@ -616,6 +616,9 @@ message LabelsRequest {
 
   // end is the end of the time window to perform the query
   google.protobuf.Timestamp end = 3;
+
+  // profile_type is the type of profile to filter by
+  optional string profile_type = 4;
 }
 
 // LabelsResponse is the set of matching label names

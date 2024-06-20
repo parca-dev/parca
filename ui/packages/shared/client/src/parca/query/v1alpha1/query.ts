@@ -1249,6 +1249,12 @@ export interface LabelsRequest {
      * @generated from protobuf field: google.protobuf.Timestamp end = 3;
      */
     end?: Timestamp;
+    /**
+     * profile_type is the type of profile to filter by
+     *
+     * @generated from protobuf field: optional string profile_type = 4;
+     */
+    profileType?: string;
 }
 /**
  * LabelsResponse is the set of matching label names
@@ -3818,7 +3824,8 @@ class LabelsRequest$Type extends MessageType<LabelsRequest> {
         super("parca.query.v1alpha1.LabelsRequest", [
             { no: 1, name: "match", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "start", kind: "message", T: () => Timestamp },
-            { no: 3, name: "end", kind: "message", T: () => Timestamp }
+            { no: 3, name: "end", kind: "message", T: () => Timestamp },
+            { no: 4, name: "profile_type", kind: "scalar", opt: true, T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<LabelsRequest>): LabelsRequest {
@@ -3842,6 +3849,9 @@ class LabelsRequest$Type extends MessageType<LabelsRequest> {
                 case /* google.protobuf.Timestamp end */ 3:
                     message.end = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.end);
                     break;
+                case /* optional string profile_type */ 4:
+                    message.profileType = reader.string();
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -3863,6 +3873,9 @@ class LabelsRequest$Type extends MessageType<LabelsRequest> {
         /* google.protobuf.Timestamp end = 3; */
         if (message.end)
             Timestamp.internalBinaryWrite(message.end, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* optional string profile_type = 4; */
+        if (message.profileType !== undefined)
+            writer.tag(4, WireType.LengthDelimited).string(message.profileType);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

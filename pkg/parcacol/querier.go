@@ -88,32 +88,51 @@ type Querier struct {
 func (q *Querier) Labels(
 	ctx context.Context,
 	match []string,
-	start, end time.Time,
+	startTime, endTime time.Time,
+	profileType string,
 ) ([]string, error) {
 	seen := map[string]struct{}{}
 
-	err := q.engine.ScanSchema(q.tableName).
-		Distinct(logicalplan.Col("name")).
-		Filter(logicalplan.Col("name").RegexMatch("^labels\\..+$")).
-		Execute(ctx, func(ctx context.Context, ar arrow.Record) error {
-			if ar.NumCols() != 1 {
-				return fmt.Errorf("expected 1 column, got %d", ar.NumCols())
-			}
+	qb := q.engine.ScanTable(q.tableName)
 
-			col := ar.Column(0)
-			stringCol, ok := col.(*array.String)
-			if !ok {
-				return fmt.Errorf("expected string column, got %T", col)
-			}
+	filterExpr := []logicalplan.Expr{}
 
-			for i := 0; i < stringCol.Len(); i++ {
-				// This should usually not happen, but better safe than sorry.
-				if stringCol.IsNull(i) {
-					continue
+	if profileType != "" {
+		_, selectorExprs, err := QueryToFilterExprs(profileType + "{}")
+		if err != nil {
+			return nil, err
+		}
+
+		filterExpr = append(filterExpr, selectorExprs...)
+	}
+
+	if startTime.Unix() != 0 && endTime.Unix() != 0 {
+		start := timestamp.FromTime(startTime)
+		end := timestamp.FromTime(endTime)
+
+		filterExpr = append(filterExpr, logicalplan.Col(profile.ColumnTimestamp).Gt(logicalplan.Literal(start)),
+			logicalplan.Col(profile.ColumnTimestamp).Lt(logicalplan.Literal(end)))
+	}
+
+	if len(filterExpr) > 0 {
+		qb = qb.Filter(logicalplan.And(filterExpr...))
+	}
+
+	err := qb.Project(
+		logicalplan.DynCol(profile.ColumnLabels),
+	).
+		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
+			r.Retain()
+			for i := 0; i < int(r.NumCols()); i++ {
+				col := r.ColumnName(i)
+
+				values := r.Column(i)
+				for j := 0; j < values.Len(); j++ {
+					if !values.IsNull(j) {
+						seen[strings.TrimPrefix(col, "labels.")] = struct{}{}
+						break
+					}
 				}
-
-				val := stringCol.Value(i)
-				seen[strings.TrimPrefix(val, "labels.")] = struct{}{}
 			}
 
 			return nil

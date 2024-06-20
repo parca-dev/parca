@@ -61,6 +61,13 @@
             "required": false,
             "type": "string",
             "format": "date-time"
+          },
+          {
+            "name": "profileType",
+            "description": "profile_type is the type of profile to filter by",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [

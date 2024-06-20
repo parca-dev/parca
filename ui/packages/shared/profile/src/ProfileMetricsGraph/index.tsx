@@ -140,7 +140,12 @@ const ProfileMetricsGraph = ({
   onPointClick,
   comparing = false,
 }: ProfileMetricsGraphProps): JSX.Element => {
-  const {loading: labelNamesLoading, result: labelNamesResult} = useLabelNames(queryClient);
+  const {loading: labelNamesLoading, result: labelNamesResult} = useLabelNames(
+    queryClient,
+    from,
+    to,
+    profile?.ProfileSource()?.ProfileType()?.toString()
+  );
   const [sumBy, setSumBy] = useState<string[]>([]);
   const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to, sumBy);
   const isLoaderVisible = useDelayedLoader(isLoading);

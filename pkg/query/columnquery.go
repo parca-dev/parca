@@ -42,7 +42,7 @@ import (
 )
 
 type Querier interface {
-	Labels(ctx context.Context, match []string, start, end time.Time) ([]string, error)
+	Labels(ctx context.Context, match []string, start, end time.Time, profileType string) ([]string, error)
 	Values(ctx context.Context, labelName string, match []string, start, end time.Time) ([]string, error)
 	QueryRange(ctx context.Context, query string, startTime, endTime time.Time, step time.Duration, limit uint32, sumBy []string) ([]*pb.MetricsSeries, error)
 	ProfileTypes(ctx context.Context) ([]*pb.ProfileType, error)
@@ -119,7 +119,11 @@ func NewTableConverterPool() *sync.Pool {
 
 // Labels issues a labels request against the storage.
 func (q *ColumnQueryAPI) Labels(ctx context.Context, req *pb.LabelsRequest) (*pb.LabelsResponse, error) {
-	vals, err := q.querier.Labels(ctx, req.Match, req.Start.AsTime(), req.End.AsTime())
+	profileType := ""
+	if req.ProfileType != nil {
+		profileType = *req.ProfileType
+	}
+	vals, err := q.querier.Labels(ctx, req.Match, req.Start.AsTime(), req.End.AsTime(), profileType)
 	if err != nil {
 		return nil, err
 	}
