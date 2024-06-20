@@ -14,7 +14,7 @@
 import type {RpcMetadata} from '@protobuf-ts/runtime-rpc';
 
 import {QueryRequest, QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
-import {NavigateFunction, parseParams} from '@parca/utilities';
+import {parseParams, type NavigateFunction} from '@parca/utilities';
 
 import {ProfileSelectionFromParams, SuffixParams, getExpressionAsAString} from '.';
 
@@ -70,7 +70,7 @@ export const compareProfile = (
   const queryParams = parseParams(window.location.search);
 
   /* eslint-disable @typescript-eslint/naming-convention */
-  let {
+  const {
     from_a,
     to_a,
     merge_from_a,
