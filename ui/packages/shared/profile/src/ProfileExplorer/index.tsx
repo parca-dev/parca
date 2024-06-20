@@ -22,7 +22,6 @@ import {capitalizeOnlyFirstLetter, type NavigateFunction} from '@parca/utilities
 
 import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
 import {QuerySelection, useProfileTypes} from '../ProfileSelector';
-import {compareProfile} from '../utils';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
 import ProfileExplorerSingle from './ProfileExplorerSingle';
 
@@ -271,7 +270,6 @@ const ProfileExplorerApp = ({
         profile={profileA}
         selectQuery={selectQuery}
         selectProfile={selectProfile}
-        compareProfile={() => compareProfile(navigateTo, DEFAULT_DASHBOARD_ITEMS)}
         navigateTo={navigateTo}
       />
     );

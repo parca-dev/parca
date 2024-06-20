@@ -160,8 +160,8 @@ const Navbar = () => {
                                 className={cx(
                                   isCurrentPage(item)
                                     ? 'dark:border-gray-100 text-indigo-600 dark:text-gray-100 border-indigo-500'
-                                    : 'hover:border-gray-300 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-100 ',
-                                  'rounded-none hover:no-underline border-b-2 focus:ring-0 focus:outline-none focus:ring-offset-0 h-full border-transparent whitespace-nowrap font-medium'
+                                    : 'hover:border-gray-300 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-100 border-transparent',
+                                  'rounded-none hover:no-underline border-b-2 focus:ring-0 focus:outline-none focus:ring-offset-0 h-full whitespace-nowrap font-medium'
                                 )}
                                 variant="link"
                                 onClick={() => compareProfile(navigateTo)}

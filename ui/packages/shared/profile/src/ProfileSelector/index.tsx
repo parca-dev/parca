@@ -53,7 +53,6 @@ interface ProfileSelectorProps {
   enforcedProfileName: string;
   profileSelection: ProfileSelection | null;
   comparing: boolean;
-  onCompareProfile: () => void;
 }
 
 export interface IProfileTypesResult {
@@ -91,7 +90,6 @@ const ProfileSelector = ({
   enforcedProfileName,
   profileSelection,
   comparing,
-  onCompareProfile,
 }: ProfileSelectorProps): JSX.Element => {
   const {
     loading: profileTypesLoading,
@@ -226,7 +224,7 @@ const ProfileSelector = ({
   return (
     <>
       <div className="mb-2 flex gap-2">
-        <div className="flex w-full flex-wrap content-start items-center justify-between gap-2">
+        <div className="flex w-full flex-wrap content-start items-center gap-2">
           <div className="pb-6">
             <label className="text-xs">Profile type</label>
             <ProfileTypeSelector
@@ -256,13 +254,6 @@ const ProfileSelector = ({
             range={timeRangeSelection}
           />
           <ButtonGroup>
-            {/* {!searchDisabled && (
-              <>
-                {!comparing && (
-                  <CompareButton disabled={compareDisabled} onClick={handleCompareClick} />
-                )}
-              </>
-            )} */}
             <Button
               disabled={searchDisabled}
               onClick={(e: React.MouseEvent<HTMLElement>) => {
