@@ -11,16 +11,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/// <reference types="vite-plugin-svgr/client" />
+
 import CloseIcon from './CloseIcon';
-import {ReactComponent as ArrowForward} from './assets/arrow-forward.svg';
-import {ReactComponent as Checkmark} from './assets/checkmark.svg';
-import {ReactComponent as CompareArrows} from './assets/compare-arrows.svg';
-import {ReactComponent as GitHub} from './assets/github.svg';
-import {ReactComponent as LinkedIn} from './assets/linkedin.svg';
-import {ReactComponent as ParcaSmall} from './assets/logo-small.svg';
-import {ReactComponent as Parca} from './assets/logo.svg';
-import {ReactComponent as RedX} from './assets/red-x.svg';
-import {ReactComponent as Twitter} from './assets/twitter.svg';
+import ArrowForward from './assets/arrow-forward.svg?react';
+import Checkmark from './assets/checkmark.svg?react';
+import CompareArrows from './assets/compare-arrows.svg?react';
+import GitHub from './assets/github.svg?react';
+import LinkedIn from './assets/linkedin.svg?react';
+import ParcaSmall from './assets/logo-small.svg?react';
+import Parca from './assets/logo.svg?react';
+import RedX from './assets/red-x.svg?react';
+import Twitter from './assets/twitter.svg?react';
+
+
+
+
 
 export {
   Parca,

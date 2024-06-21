@@ -13,6 +13,8 @@
 
 import colors from 'tailwindcss/colors';
 
+
+
 import {Label} from '@parca/client';
 
 import {abs, divide} from './bigint';
@@ -121,11 +123,11 @@ export const valueFormatter = (
 };
 
 export const isDevModeOrPreview = (): boolean => {
-  return isDevMode() || process.env.REACT_APP_VERCEL_ENV === 'preview';
+  return isDevMode() || import.meta.env.REACT_APP_VERCEL_ENV === 'preview';
 };
 
 export const isDevMode = (): boolean => {
-  return process.env.NODE_ENV === 'development';
+  return import.meta.env.DEV;
 };
 
 export const getLastItem = (thePath: string | undefined | null): string | undefined => {

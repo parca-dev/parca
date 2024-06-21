@@ -13,7 +13,8 @@
     "esm": true,
     "compilerOptions": {
       "target": "es2020",
-      "module": "es2020"
+      "module": "es2020",
+      "types": ["vite/client"]
     }
   }
 }

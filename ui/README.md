@@ -7,7 +7,7 @@ This is a [Create React App](https://create-react-app.dev/) project that utilize
 The React app requires an environment variable for the API endpoint so as to talk to the Parca backend. Create a file named `.env.local` in `packages/app/web/` to add the environment variable for the API endpoint.
 
 ```shell
-REACT_APP_PUBLIC_API_ENDPOINT=http://localhost:7070
+VITE_API_ENDPOINT=http://localhost:7070
 ```
 
 Then, start the Parca backend by running the command below. The `--cors-allowed-origins='*'` flag allows for enabling CORS headers on Parca.

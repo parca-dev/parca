@@ -16,6 +16,7 @@
     "paths": {
       "@parca/*": ["../packages/shared/*"]
     },
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "types": ["vite/client"]
   }
 }

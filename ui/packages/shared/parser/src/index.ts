@@ -11,9 +11,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Grammar, Parser} from 'nearley';
+import { Grammar, Parser } from 'nearley';
 
-import grammar from './selector';
+
+
+import {grammar} from './selector';
+
+
+
+
 
 export function NewParser(): Parser {
   return new Parser(Grammar.fromCompiled(grammar), {keepHistory: true});

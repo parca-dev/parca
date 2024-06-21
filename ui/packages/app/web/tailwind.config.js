@@ -1,7 +1,7 @@
-const defaultTheme = require('tailwindcss/defaultTheme');
-const typography = require('@tailwindcss/typography');
+import typography from '@tailwindcss/typography';
+import defaultConfig from 'tailwindcss/stubs/defaultConfig.stub.js';
 
-module.exports = {
+const config = {
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -12,7 +12,7 @@ module.exports = {
     extend: {
       fontFamily: {
         robotoMono: ['Roboto Mono', 'monospace'],
-        sans: ['Poppins', ...defaultTheme.fontFamily.sans],
+        sans: ['Poppins', ...defaultConfig.theme.fontFamily.sans],
       },
       maxWidth: {
         '1/2': '50%',
@@ -43,3 +43,5 @@ module.exports = {
   variants: {},
   plugins: [typography],
 };
+
+export default config;

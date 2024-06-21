@@ -11,7 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Icon} from '@iconify/react';
+import { Icon } from '@iconify/react';
+
+
+
+
 
 declare global {
   interface Window {
@@ -19,10 +23,9 @@ declare global {
   }
 }
 
-const pathPrefix =
-  process.env.NODE_ENV === 'development'
-    ? ''
-    : typeof window !== 'undefined'
+const pathPrefix = import.meta.env.DEV
+  ? ''
+  : typeof window !== 'undefined'
     ? window.PATH_PREFIX
     : '';
 

@@ -1,11 +1,25 @@
 // Generated automatically by nearley, version 2.20.1
 // http://github.com/Hardmath123/nearley
+
+// *******************************************************
+// Add the following code whenever this file is regenerated
+// to export the grammer in a type-safe way without using
+// global variables.
+// *******************************************************
+
+import moo from 'moo';
+
+
+
+
+
+export let grammar;
+
 (function () {
   function id(x) {
     return x[0];
   }
 
-  const moo = require('moo');
 
   let lexer = moo.states({
     main: {
@@ -33,7 +47,7 @@
     return matchers;
   }
 
-  var grammar = {
+  grammar = {
     Lexer: lexer,
     ParserRules: [
       {
@@ -129,6 +143,7 @@
     ],
     ParserStart: 'profileSelector',
   };
+
   if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
     module.exports = grammar;
   } else {
