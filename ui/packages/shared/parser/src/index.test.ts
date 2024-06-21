@@ -15,10 +15,6 @@ import {expect, test} from 'vitest';
 
 import {Matcher, MatcherTypes, ProfileType, Query} from './index';
 
-
-
-
-
 test('QueryParseEmpty', () => {
   expect(Query.parse('')).toMatchObject(
     new Query(new ProfileType('', '', '', '', '', false), [], '')

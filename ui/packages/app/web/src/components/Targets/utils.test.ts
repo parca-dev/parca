@@ -15,10 +15,6 @@ import {describe, expect, it} from 'vitest';
 
 import {getHealthStatus} from './utils';
 
-
-
-
-
 describe('getHealthStatus', () => {
   it('returns the correct label and colorVariant for the numeric value', () => {
     expect(getHealthStatus(0)).toEqual({
