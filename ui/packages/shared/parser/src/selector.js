@@ -9,17 +9,12 @@
 
 import moo from 'moo';
 
-
-
-
-
 export let grammar;
 
 (function () {
   function id(x) {
     return x[0];
   }
-
 
   let lexer = moo.states({
     main: {

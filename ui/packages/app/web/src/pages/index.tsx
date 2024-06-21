@@ -11,19 +11,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useCallback } from 'react';
+import {useCallback} from 'react';
 
+import {GrpcWebFetchTransport} from '@protobuf-ts/grpcweb-transport';
+import {useLocation, useNavigate} from 'react-router-dom';
 
-
-import { GrpcWebFetchTransport } from '@protobuf-ts/grpcweb-transport';
-import { useLocation, useNavigate } from 'react-router-dom';
-
-
-
-import { QueryServiceClient } from '@parca/client';
-import { ParcaContextProvider } from '@parca/components';
-import { ProfileExplorer } from '@parca/profile';
-import { selectDarkMode, useAppSelector } from '@parca/store';
+import {QueryServiceClient} from '@parca/client';
+import {ParcaContextProvider} from '@parca/components';
+import {ProfileExplorer} from '@parca/profile';
+import {selectDarkMode, useAppSelector} from '@parca/store';
 import {convertToQueryParams, parseParams} from '@parca/utilities';
 
 const apiEndpoint = import.meta.env.VITE_API_ENDPOINT;

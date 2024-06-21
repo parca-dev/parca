@@ -11,26 +11,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 
+import {GrpcWebFetchTransport} from '@protobuf-ts/grpcweb-transport';
+import {RpcError} from '@protobuf-ts/runtime-rpc';
 
-
-import { GrpcWebFetchTransport } from '@protobuf-ts/grpcweb-transport';
-import { RpcError } from '@protobuf-ts/runtime-rpc';
-
-
-
-import { Agent, AgentsResponse, AgentsServiceClient, ScrapeServiceClient, Target, Targets, TargetsRequest_State, TargetsResponse } from '@parca/client';
-import { EmptyState } from '@parca/components';
-
-
+import {
+  Agent,
+  AgentsResponse,
+  AgentsServiceClient,
+  ScrapeServiceClient,
+  Target,
+  Targets,
+  TargetsRequest_State,
+  TargetsResponse,
+} from '@parca/client';
+import {EmptyState} from '@parca/components';
 
 import AgentsTable from '../components/Targets/AgentsTable';
 import TargetsTable from '../components/Targets/TargetsTable';
-
-
-
-
 
 const apiEndpoint = import.meta.env.VITE_API_ENDPOINT;
 
