@@ -93,8 +93,6 @@ func (q *Querier) Labels(
 ) ([]string, error) {
 	seen := map[string]struct{}{}
 
-	qb := q.engine.ScanTable(q.tableName)
-
 	filterExpr := []logicalplan.Expr{}
 
 	if profileType != "" {
@@ -114,13 +112,9 @@ func (q *Querier) Labels(
 			logicalplan.Col(profile.ColumnTimestamp).Lt(logicalplan.Literal(end)))
 	}
 
-	if len(filterExpr) > 0 {
-		qb = qb.Filter(logicalplan.And(filterExpr...))
-	}
-
-	err := qb.Project(
-		logicalplan.DynCol(profile.ColumnLabels),
-	).
+	err := q.engine.ScanTable(q.tableName).
+		Filter(logicalplan.And(filterExpr...)).
+		Project(logicalplan.DynCol(profile.ColumnLabels)).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
 			for i := 0; i < int(r.NumCols()); i++ {
