@@ -60,8 +60,12 @@ export const DateTimePicker = ({selected, onChange}: Props): JSX.Element => {
   return (
     <Popover>
       {({open}) => (
-        <div className="flex items-center text-sm w-fit" ref={setReferenceElement}>
+        <div
+          className="flex items-center text-sm w-full [&>div:first-child]:w-full"
+          ref={setReferenceElement}
+        >
           <Input
+            className="w-full"
             value={textInput}
             onAction={() => {}}
             actionButton={
