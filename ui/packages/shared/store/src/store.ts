@@ -11,24 +11,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { combineReducers, configureStore } from '@reduxjs/toolkit';
-import type { Store } from 'redux';
-import { FLUSH, PAUSE, PERSIST, PURGE, REGISTER, REHYDRATE, persistReducer, persistStore, type Persistor } from 'redux-persist';
+import {combineReducers, configureStore} from '@reduxjs/toolkit';
+import type {Store} from 'redux';
+import {
+  FLUSH,
+  PAUSE,
+  PERSIST,
+  PURGE,
+  REGISTER,
+  REHYDRATE,
+  persistReducer,
+  persistStore,
+  type Persistor,
+} from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 
+import {type ColorConfig} from '@parca/utilities';
 
-
-import { type ColorConfig } from '@parca/utilities';
-
-
-
-import colorsReducer, { initialColorState } from './slices/colorsSlice';
+import colorsReducer, {initialColorState} from './slices/colorsSlice';
 import profileReducer from './slices/profileSlice';
 import uiReducer from './slices/uiSlice';
-
-
-
-
 
 const rootReducer = combineReducers({
   ui: uiReducer,
