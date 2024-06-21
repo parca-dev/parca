@@ -65,5 +65,5 @@ if [[ -z "$remote_store_token" ]]; then
     snapctl set remote-store-bearer-token=""
 fi
 
-mkdir -p "${SNAP_DATA}/profiles"
+mkdir -p "${SNAP_COMMON}/profiles"
 cp -pnr "${SNAP}/usr/share/parca/example-config.yaml" "${SNAP_DATA}/parca.yaml"
