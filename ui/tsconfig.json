@@ -2,7 +2,8 @@
   "extends": "./config/next.tsconfig.json",
   "include": ["./tests/**/*", "./.storybook/*", "./packages/**/*"],
   "compilerOptions": {
-    "module": "CommonJS",
+    "module": "es2020",
+    "moduleResolution": "node",
     "strict": true,
     "isolatedModules": true,
     "baseUrl": ".",

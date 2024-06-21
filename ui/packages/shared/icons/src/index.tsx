@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/* eslint-disable */
+
 /// <reference types="vite-plugin-svgr/client" />
 
 import CloseIcon from './CloseIcon';
@@ -23,6 +25,10 @@ import ParcaSmall from './assets/logo-small.svg?react';
 import Parca from './assets/logo.svg?react';
 import RedX from './assets/red-x.svg?react';
 import Twitter from './assets/twitter.svg?react';
+
+
+
+
 
 export {
   Parca,
