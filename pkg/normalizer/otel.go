@@ -26,12 +26,11 @@ import (
 	"github.com/polarsignals/frostdb/pqarrow"
 	"github.com/polarsignals/frostdb/query/logicalplan"
 	"github.com/prometheus/prometheus/util/strutil"
+	otelgrpcprofilingpb "go.opentelemetry.io/proto/otlp/collector/profiles/v1experimental"
 	v1 "go.opentelemetry.io/proto/otlp/common/v1"
+	otelprofilingpb "go.opentelemetry.io/proto/otlp/profiles/v1experimental"
 	"golang.org/x/exp/maps"
 
-	otelgrpcprofilingpb "github.com/parca-dev/parca/gen/proto/go/opentelemetry/proto/collector/profiles/v1"
-	otelprofilingpb "github.com/parca-dev/parca/gen/proto/go/opentelemetry/proto/profiles/v1"
-	pprofextended "github.com/parca-dev/parca/gen/proto/go/opentelemetry/proto/profiles/v1/alternatives/pprofextended"
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
@@ -92,7 +91,16 @@ func (n *labelNames) addOtelAttributes(attrs []*v1.KeyValue) {
 	}
 }
 
-func (n *labelNames) addOtelPprofExtendedLabels(stringTable []string, labels []*pprofextended.Label) {
+func (n *labelNames) addOtelAttributesFromTable(attrs []*v1.KeyValue, idxs []uint64) {
+	for _, idx := range idxs {
+		attr := attrs[idx]
+		if strings.TrimSpace(attr.Value.GetStringValue()) != "" {
+			n.addLabel(attr.Key)
+		}
+	}
+}
+
+func (n *labelNames) addOtelPprofExtendedLabels(stringTable []string, labels []*otelprofilingpb.Label) {
 	for _, label := range labels {
 		if label.Str != 0 && strings.TrimSpace(stringTable[label.Str]) != "" {
 			n.addLabel(stringTable[label.Key])
@@ -139,7 +147,14 @@ func (s *labelSet) addOtelAttributes(attrs []*v1.KeyValue) {
 	}
 }
 
-func (s *labelSet) addOtelPprofExtendedLabels(stringTable []string, labels []*pprofextended.Label) {
+func (s *labelSet) addOtelAttributesFromTable(attrs []*v1.KeyValue, idxs []uint64) {
+	for _, idx := range idxs {
+		attr := attrs[idx]
+		s.addLabel(attr.Key, attr.Value.GetStringValue())
+	}
+}
+
+func (s *labelSet) addOtelPprofExtendedLabels(stringTable []string, labels []*otelprofilingpb.Label) {
 	for _, label := range labels {
 		s.addLabel(stringTable[label.Key], stringTable[label.Str])
 	}
@@ -159,6 +174,7 @@ func getAllLabelNames(req *otelgrpcprofilingpb.ExportProfilesServiceRequest) []s
 
 				for _, sample := range p.Profile.Sample {
 					allLabelNames.addOtelPprofExtendedLabels(p.Profile.StringTable, sample.Label)
+					allLabelNames.addOtelAttributesFromTable(p.Profile.AttributeTable, sample.Attributes)
 				}
 			}
 		}
@@ -239,6 +255,7 @@ func (w *profileWriter) writeResourceProfiles(
 
 						ls := newLabelSet()
 						ls.addOtelPprofExtendedLabels(p.Profile.StringTable, sample.Label)
+						ls.addOtelAttributesFromTable(p.Profile.AttributeTable, sample.Attributes)
 						ls.addOtelAttributes(p.Attributes)
 						ls.addOtelAttributes(sp.Scope.Attributes)
 						ls.addOtelAttributes(rp.Resource.Attributes)
@@ -308,7 +325,7 @@ func ValidateOtelExportProfilesServiceRequest(req *otelgrpcprofilingpb.ExportPro
 	return nil
 }
 
-func ValidateOtelProfile(p *pprofextended.Profile) error {
+func ValidateOtelProfile(p *otelprofilingpb.Profile) error {
 	for _, f := range p.Function {
 		if !existsInStringTable(f.Name, p.StringTable) {
 			return fmt.Errorf("function name index %d out of bounds", f.Name)
@@ -391,10 +408,10 @@ func existsInStringTable(i int64, stringTable []string) bool {
 // and where the locations are stored in the location slice. These are
 // technically mutually exclusive.
 func serializeOtelStacktrace(
-	p *pprofextended.Profile,
-	s *pprofextended.Sample,
-	functions []*pprofextended.Function,
-	mappings []*pprofextended.Mapping,
+	p *otelprofilingpb.Profile,
+	s *otelprofilingpb.Sample,
+	functions []*otelprofilingpb.Function,
+	mappings []*otelprofilingpb.Mapping,
 	stringTable []string,
 	stabiliziedAddress bool,
 ) [][]byte {
@@ -403,7 +420,7 @@ func serializeOtelStacktrace(
 	// We handle the case where the location IDs are stored in the sample struct.
 	for _, locationID := range s.LocationIndex {
 		location := p.Location[locationID]
-		var m *pprofextended.Mapping
+		var m *otelprofilingpb.Mapping
 
 		if location.MappingIndex != 0 && location.MappingIndex-1 < uint64(len(mappings)) {
 			m = mappings[location.MappingIndex-1]
@@ -420,7 +437,7 @@ func serializeOtelStacktrace(
 	// And the case where the locations are stored in the location slice. And
 	// the sample just points to the start and length.
 	for _, location := range p.Location[s.LocationsStartIndex : s.LocationsStartIndex+s.LocationsLength] {
-		var m *pprofextended.Mapping
+		var m *otelprofilingpb.Mapping
 
 		if location.MappingIndex != 0 && location.MappingIndex-1 < uint64(len(mappings)) {
 			m = mappings[location.MappingIndex-1]

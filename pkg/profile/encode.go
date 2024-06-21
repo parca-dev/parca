@@ -17,9 +17,9 @@ import (
 	"encoding/binary"
 
 	"github.com/apache/arrow/go/v16/arrow/array"
+	pprofextended "go.opentelemetry.io/proto/otlp/profiles/v1experimental"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
-	pprofextended "github.com/parca-dev/parca/gen/proto/go/opentelemetry/proto/profiles/v1/alternatives/pprofextended"
 )
 
 func EncodeOtelLocation(

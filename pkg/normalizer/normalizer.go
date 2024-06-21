@@ -35,11 +35,11 @@ import (
 	"github.com/polarsignals/frostdb/pqarrow/arrowutils"
 	"github.com/polarsignals/frostdb/query/logicalplan"
 	"github.com/prometheus/common/model"
+	pprofextended "go.opentelemetry.io/proto/otlp/profiles/v1experimental"
 	"golang.org/x/exp/maps"
 	"google.golang.org/grpc/codes"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
-	pprofextended "github.com/parca-dev/parca/gen/proto/go/opentelemetry/proto/profiles/v1/alternatives/pprofextended"
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/profile"
 )
