@@ -11,7 +11,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { describe, expect, it } from 'vitest';
+
+
+
 import {abs, divide, lowestNumberWithSameNumberOfDigits, scaleLinear} from './bigint';
+
+
+
+
 
 describe('bigint divide', () => {
   it('divides two bigints and returns a number', () => {
