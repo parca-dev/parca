@@ -26,10 +26,6 @@ import Parca from './assets/logo.svg?react';
 import RedX from './assets/red-x.svg?react';
 import Twitter from './assets/twitter.svg?react';
 
-
-
-
-
 export {
   Parca,
   ParcaSmall,
