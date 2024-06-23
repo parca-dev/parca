@@ -586,7 +586,7 @@ importers:
         version: 8.5.3(@types/react@18.3.3)(react@18.3.1)
       react-tooltip:
         specifier: ^5.26.3
-        version: 5.26.4(react-dom@18.3.1)(react@18.3.1)
+        version: 5.27.0(react-dom@18.3.1)(react@18.3.1)
       react-use:
         specifier: ^17.3.2
         version: 17.5.0(react-dom@18.3.1)(react@18.3.1)
@@ -803,7 +803,7 @@ importers:
         version: 8.5.3(@types/react@18.3.3)(react@18.3.1)
       react-tooltip:
         specifier: ^5.26.3
-        version: 5.26.4(react-dom@18.3.1)(react@18.3.1)
+        version: 5.27.0(react-dom@18.3.1)(react@18.3.1)
       react-use:
         specifier: ^17.5.0
         version: 17.5.0(react-dom@18.3.1)(react@18.3.1)
@@ -21723,8 +21723,8 @@ packages:
       - '@types/react'
     dev: false
 
-  /react-tooltip@5.26.4(react-dom@18.3.1)(react@18.3.1):
-    resolution: {integrity: sha512-5WyDrsfw1+6qNVSr3IjqElqJ+cCwE8+44b+HpJ8qRLv7v0a3mcKf8wvv+NfgALFS6QpksGFqTLV2JQ60c+okZQ==}
+  /react-tooltip@5.27.0(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-JXROcdfCEbCqkAkh8LyTSP3guQ0dG53iY2E2o4fw3D8clKzziMpE6QG6CclDaHELEKTzpMSeAOsdtg0ahoQosw==}
     peerDependencies:
       react: '>=16.14.0'
       react-dom: '>=16.14.0'
