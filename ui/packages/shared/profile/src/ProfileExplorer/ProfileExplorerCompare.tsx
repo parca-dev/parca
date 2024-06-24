@@ -69,7 +69,6 @@ const ProfileExplorerCompare = ({
             closeProfile={closeProfileA}
             enforcedProfileName={''}
             comparing={true}
-            onCompareProfile={() => {}}
           />
         </Card>
         <Card className="mt-2 p-2">
@@ -82,7 +81,6 @@ const ProfileExplorerCompare = ({
             closeProfile={closeProfileB}
             enforcedProfileName={Query.parse(queryA.expression).profileName()}
             comparing={true}
-            onCompareProfile={() => {}}
           />
         </Card>
       </div>
