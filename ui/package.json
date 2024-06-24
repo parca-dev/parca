@@ -114,11 +114,11 @@
     "storybook": "7.6.19",
     "storybook-dark-mode": "2.1.1",
     "style-loader": "3.3.4",
-    "ts-jest": "29.1.4",
+    "ts-jest": "29.1.5",
     "ts-node": "10.9.2",
     "tsc-watch": "6.2.0",
     "typescript": "5.4.5",
-    "webpack": "5.92.0"
+    "webpack": "5.92.1"
   },
   "eslintConfig": {
     "overrides": [
