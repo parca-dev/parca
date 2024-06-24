@@ -11,9 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {ReactNode, useState} from 'react';
+import {ReactNode, useId, useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
+import Draggable from 'react-draggable';
 import Select from 'react-select';
 
 import {IconButton} from '@parca/components';
@@ -26,42 +27,59 @@ interface Props {
 
 export const Toolbar = ({sumBy, setSumBy, labels}: Props): ReactNode => {
   const [collapsed, setCollapsed] = useState<boolean>(false);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const idWithColon = useId();
+  const id = useMemo(() => idWithColon.replace(/[^a-zA-Z0-9]/g, ''), [idWithColon]);
+
   return (
-    <div className="absolute top-1 left-24 rounded-full bg-gray-100 dark:bg-gray-800 z-10 text-xs">
-      <div className="flex items-center h-14 gap-4 py-1 px-3">
-        <Icon icon="quill:hamburger" height={20} />
-        {!collapsed ? (
-          <div className="flex gap-2 items-center mr-4">
-            <span>Sum by</span>
-            <Select
-              defaultValue={[]}
-              isMulti
-              name="colors"
-              options={labels.map(label => ({label, value: label}))}
-              className="parca-select-container min-w-60"
-              classNamePrefix="parca-select"
-              value={sumBy.map(sumBy => ({label: sumBy, value: sumBy}))}
-              onChange={selectedOptions => {
-                setSumBy(selectedOptions.map(option => option.value));
-              }}
-              placeholder="Labels..."
-              styles={{
-                indicatorSeparator: () => ({display: 'none'}),
-              }}
-            />
-          </div>
-        ) : null}
-        <IconButton
-          icon={
-            <Icon
-              icon={collapsed ? 'iconamoon:arrow-right-2-light' : 'iconamoon:arrow-left-2-light'}
-              height={24}
-            />
-          }
-          onClick={() => setCollapsed(!collapsed)}
-          className="hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full p-1"
-        />
+    <Draggable
+      handle={`#${id}`}
+      onStart={() => setIsDragging(true)}
+      onStop={() => setIsDragging(false)}
+      bounds="parent"
+      defaultPosition={{x: 96, y: 4}}
+    >
+      <div className="absolute rounded-full bg-gray-100 dark:bg-gray-800 z-10 text-xs">
+        <div className="flex items-center h-14 gap-4 py-1 px-3">
+          <Icon
+            icon="radix-icons:drag-handle-dots-2"
+            height={20}
+            className={isDragging ? 'cursor-grabbing' : 'cursor-grab'}
+            id={id}
+          />
+          {!collapsed ? (
+            <div className="flex gap-2 items-center mr-4">
+              <span>Sum by</span>
+              <Select
+                defaultValue={[]}
+                isMulti
+                name="colors"
+                options={labels.map(label => ({label, value: label}))}
+                className="parca-select-container min-w-60"
+                classNamePrefix="parca-select"
+                value={sumBy.map(sumBy => ({label: sumBy, value: sumBy}))}
+                onChange={selectedOptions => {
+                  setSumBy(selectedOptions.map(option => option.value));
+                }}
+                placeholder="Labels..."
+                styles={{
+                  indicatorSeparator: () => ({display: 'none'}),
+                }}
+              />
+            </div>
+          ) : null}
+          <IconButton
+            icon={
+              <Icon
+                icon={collapsed ? 'iconamoon:arrow-right-2-light' : 'iconamoon:arrow-left-2-light'}
+                height={24}
+              />
+            }
+            onClick={() => setCollapsed(!collapsed)}
+            className="hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full p-1"
+          />
+        </div>
       </div>
-    </div>
+    </Draggable>
   );
 };

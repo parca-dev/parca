@@ -77,7 +77,7 @@ export const Button = ({
     const variantConfig = BUTTON_VARIANT_CONFIG[variant];
 
     const classes = cx(
-      'flex text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 items-center relative',
+      'flex text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 dark:ring-offset-gray-900 items-center relative',
       ...Object.values(variantConfig),
       {'opacity-50 pointer-events-none': disabled},
       {[className]: className}
@@ -117,8 +117,8 @@ export const IconButton = ({icon, toolTipText, ...props}: IconButtonProps): JSX.
       data-tooltip-content={toolTipText}
       data-tooltip-id="iconButton-tooltip-text"
       data-tooltip-place="top"
-      {...props}
       variant="link"
+      {...props}
     >
       {typeof icon === 'string' ? <Icon icon={icon} /> : icon}
       <span className="sr-only">{toolTipText}</span>

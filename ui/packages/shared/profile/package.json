@@ -38,6 +38,7 @@
     "react-beautiful-dnd": "^13.1.1",
     "react-contexify": "^6.0.0",
     "react-dom": "18.3.1",
+    "react-draggable": "^4.4.6",
     "react-flame-graph": "^1.4.0",
     "react-inlinesvg": "^3.0.2",
     "react-map-interaction": "^2.1.0",
