@@ -149,11 +149,32 @@ func (q *Querier) Values(
 	ctx context.Context,
 	labelName string,
 	match []string,
-	start, end time.Time,
+	startTime, endTime time.Time,
+	profileType string,
 ) ([]string, error) {
 	vals := []string{}
 
+	filterExpr := []logicalplan.Expr{}
+
+	if profileType != "" {
+		_, selectorExprs, err := QueryToFilterExprs(profileType + "{}")
+		if err != nil {
+			return nil, err
+		}
+
+		filterExpr = append(filterExpr, selectorExprs...)
+	}
+
+	if startTime.Unix() != 0 && endTime.Unix() != 0 {
+		start := timestamp.FromTime(startTime)
+		end := timestamp.FromTime(endTime)
+
+		filterExpr = append(filterExpr, logicalplan.Col(profile.ColumnTimestamp).Gt(logicalplan.Literal(start)),
+			logicalplan.Col(profile.ColumnTimestamp).Lt(logicalplan.Literal(end)))
+	}
+
 	err := q.engine.ScanTable(q.tableName).
+		Filter(logicalplan.And(filterExpr...)).
 		Distinct(logicalplan.Col("labels."+labelName)).
 		Execute(ctx, func(ctx context.Context, ar arrow.Record) error {
 			if ar.NumCols() != 1 {

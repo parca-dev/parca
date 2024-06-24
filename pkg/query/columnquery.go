@@ -43,7 +43,7 @@ import (
 
 type Querier interface {
 	Labels(ctx context.Context, match []string, start, end time.Time, profileType string) ([]string, error)
-	Values(ctx context.Context, labelName string, match []string, start, end time.Time) ([]string, error)
+	Values(ctx context.Context, labelName string, match []string, start, end time.Time, profileType string) ([]string, error)
 	QueryRange(ctx context.Context, query string, startTime, endTime time.Time, step time.Duration, limit uint32, sumBy []string) ([]*pb.MetricsSeries, error)
 	ProfileTypes(ctx context.Context) ([]*pb.ProfileType, error)
 	QuerySingle(ctx context.Context, query string, time time.Time, invertCallStacks bool) (profile.Profile, error)
@@ -135,7 +135,11 @@ func (q *ColumnQueryAPI) Labels(ctx context.Context, req *pb.LabelsRequest) (*pb
 
 // Values issues a values request against the storage.
 func (q *ColumnQueryAPI) Values(ctx context.Context, req *pb.ValuesRequest) (*pb.ValuesResponse, error) {
-	vals, err := q.querier.Values(ctx, req.LabelName, req.Match, req.Start.AsTime(), req.End.AsTime())
+	profileType := ""
+	if req.ProfileType != nil {
+		profileType = *req.ProfileType
+	}
+	vals, err := q.querier.Values(ctx, req.LabelName, req.Match, req.Start.AsTime(), req.End.AsTime(), profileType)
 	if err != nil {
 		return nil, err
 	}

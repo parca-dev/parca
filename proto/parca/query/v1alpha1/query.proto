@@ -643,6 +643,9 @@ message ValuesRequest {
 
   // end is the end of the time window to perform the query
   google.protobuf.Timestamp end = 4;
+
+  // profile_type is the type of profile to filter by
+  optional string profile_type = 5;
 }
 
 // ValuesResponse are the set of matching values

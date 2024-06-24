@@ -1305,6 +1305,12 @@ export interface ValuesRequest {
      * @generated from protobuf field: google.protobuf.Timestamp end = 4;
      */
     end?: Timestamp;
+    /**
+     * profile_type is the type of profile to filter by
+     *
+     * @generated from protobuf field: optional string profile_type = 5;
+     */
+    profileType?: string;
 }
 /**
  * ValuesResponse are the set of matching values
@@ -3948,7 +3954,8 @@ class ValuesRequest$Type extends MessageType<ValuesRequest> {
             { no: 1, name: "label_name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "match", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
             { no: 3, name: "start", kind: "message", T: () => Timestamp },
-            { no: 4, name: "end", kind: "message", T: () => Timestamp }
+            { no: 4, name: "end", kind: "message", T: () => Timestamp },
+            { no: 5, name: "profile_type", kind: "scalar", opt: true, T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<ValuesRequest>): ValuesRequest {
@@ -3976,6 +3983,9 @@ class ValuesRequest$Type extends MessageType<ValuesRequest> {
                 case /* google.protobuf.Timestamp end */ 4:
                     message.end = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.end);
                     break;
+                case /* optional string profile_type */ 5:
+                    message.profileType = reader.string();
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -4000,6 +4010,9 @@ class ValuesRequest$Type extends MessageType<ValuesRequest> {
         /* google.protobuf.Timestamp end = 4; */
         if (message.end)
             Timestamp.internalBinaryWrite(message.end, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* optional string profile_type = 5; */
+        if (message.profileType !== undefined)
+            writer.tag(5, WireType.LengthDelimited).string(message.profileType);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
