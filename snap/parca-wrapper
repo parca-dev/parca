@@ -62,7 +62,7 @@ else
     if [[ "${storage_persist}" == "true" ]]; then
         opts+=(
             "--enable-persistence=true"
-            "--storage-path=${SNAP_DATA}/profiles"
+            "--storage-path=${SNAP_COMMON}/profiles"
         )
     else
         opts+=(
