@@ -1,7 +1,7 @@
 {
   "name": "@parca/web",
   "private": true,
-  "version": "0.16.697",
+  "version": "0.16.699",
   "description": "Parca Web Interface",
   "scripts": {
     "lint": "eslint --no-error-on-unmatched-pattern --ext .ts,.tsx,.js src/*",
@@ -81,7 +81,7 @@
     "tslint-config-prettier": "1.18.0",
     "tslint-plugin-prettier": "2.3.0",
     "tslint-react": "5.0.0",
-    "webpack": "5.92.0"
+    "webpack": "5.92.1"
   },
   "eslintConfig": {
     "extends": [
