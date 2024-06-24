@@ -32,14 +32,14 @@ export const Toolbar = ({sumBy, setSumBy, labels}: Props): ReactNode => {
         <Icon icon="quill:hamburger" height={20} />
         {!collapsed ? (
           <div className="flex gap-2 items-center mr-4">
-            <span>Sum by:</span>
+            <span>Sum by</span>
             <Select
               defaultValue={[]}
               isMulti
               name="colors"
               options={labels.map(label => ({label, value: label}))}
-              className="basic-multi-select min-w-60"
-              classNamePrefix="select"
+              className="parca-select-container min-w-60"
+              classNamePrefix="parca-select"
               value={sumBy.map(sumBy => ({label: sumBy, value: sumBy}))}
               onChange={selectedOptions => {
                 setSumBy(selectedOptions.map(option => option.value));

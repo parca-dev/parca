@@ -1,0 +1,30 @@
+.dark .parca-select-container,
+.dark .parca-select__control,
+.dark .parca-select__menu {
+  background: #000 !important;
+}
+
+.dark .parca-select__control {
+  border-color: #4b5563 !important;
+}
+
+.dark .parca-select__placeholder {
+  color: #9ca3af !important;
+}
+
+.dark .parca-select__option:hover,
+.dark .parca-select__option--is-focused {
+  background: #005dee !important;
+}
+
+.dark .parca-select__input-container {
+  color: white !important;
+}
+
+.dark .parca-select__multi-value {
+  background: #1f2937 !important;
+}
+
+.dark .parca-select__multi-value__label {
+  color: white !important;
+}
