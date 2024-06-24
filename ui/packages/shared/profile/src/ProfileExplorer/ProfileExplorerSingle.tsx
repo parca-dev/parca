@@ -24,7 +24,6 @@ interface ProfileExplorerSingleProps {
   selectQuery: (query: QuerySelection) => void;
   selectProfile: (source: ProfileSelection) => void;
   profile: ProfileSelection | null;
-  compareProfile: () => void;
   navigateTo: NavigateFunction;
 }
 
@@ -34,7 +33,6 @@ const ProfileExplorerSingle = ({
   selectQuery,
   selectProfile,
   profile,
-  compareProfile,
   navigateTo,
 }: ProfileExplorerSingleProps): JSX.Element => {
   return (
@@ -48,7 +46,6 @@ const ProfileExplorerSingle = ({
           closeProfile={() => {}} // eslint-disable-line @typescript-eslint/no-empty-function
           profileSelection={profile}
           comparing={false}
-          onCompareProfile={compareProfile}
           enforcedProfileName={''} // TODO
         />
       </Card>

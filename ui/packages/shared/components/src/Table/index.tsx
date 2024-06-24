@@ -149,7 +149,7 @@ const Table = <T,>({
       expanded: expandedState,
     },
     onSortingChange: setSorting,
-    onExpandedChange: onExpandedChange,
+    onExpandedChange,
     enableColumnResizing: true,
     defaultColumn: {
       // @ts-expect-error

@@ -14,6 +14,9 @@
 import type {RpcMetadata} from '@protobuf-ts/runtime-rpc';
 
 import {QueryRequest, QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
+import {parseParams, type NavigateFunction} from '@parca/utilities';
+
+import {ProfileSelectionFromParams, SuffixParams, getExpressionAsAString} from '.';
 
 export const hexifyAddress = (address?: bigint): string => {
   if (address == null) {
@@ -58,4 +61,74 @@ export const truncateStringReverse = (str: string, num: number): string => {
   }
 
   return '...' + str.slice(str.length - num);
+};
+
+export const compareProfile = (
+  navigateTo: NavigateFunction,
+  defaultDashboardItems: string[] = ['icicle']
+): void => {
+  const queryParams = parseParams(window.location.search);
+
+  /* eslint-disable @typescript-eslint/naming-convention */
+  const {
+    from_a,
+    to_a,
+    merge_from_a,
+    merge_to_a,
+    time_selection_a,
+    filter_by_function,
+    dashboard_items,
+  } = queryParams;
+
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const selection_a = getExpressionAsAString(queryParams.selection_a as string | []);
+
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const expression_a = getExpressionAsAString(queryParams.expression_a as string | []);
+
+  if (expression_a === undefined || selection_a === undefined) {
+    return;
+  }
+
+  const mergeFrom = merge_from_a ?? undefined;
+  const mergeTo = merge_to_a ?? undefined;
+  const profileA = ProfileSelectionFromParams(
+    mergeFrom as string,
+    mergeTo as string,
+    selection_a,
+    filter_by_function as string
+  );
+  const queryA = {
+    expression: expression_a,
+    from: parseInt(from_a as string),
+    to: parseInt(to_a as string),
+    timeSelection: time_selection_a as string,
+  };
+
+  let compareQuery = {
+    compare_a: 'true',
+    expression_a: encodeURIComponent(queryA.expression),
+    from_a: queryA.from.toString(),
+    to_a: queryA.to.toString(),
+    time_selection_a: queryA.timeSelection,
+
+    compare_b: 'true',
+    expression_b: encodeURIComponent(queryA.expression),
+    from_b: queryA.from.toString(),
+    to_b: queryA.to.toString(),
+    time_selection_b: queryA.timeSelection,
+  };
+
+  if (profileA != null) {
+    compareQuery = {
+      ...SuffixParams(profileA.HistoryParams(), '_a'),
+      ...compareQuery,
+    };
+  }
+
+  void navigateTo('/', {
+    ...compareQuery,
+    search_string: '',
+    dashboard_items: dashboard_items ?? defaultDashboardItems,
+  });
 };
