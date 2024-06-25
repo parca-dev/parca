@@ -78,21 +78,40 @@ export const compareProfile = (
   const timeSelection = 'relative:minute|15';
   const dashboardItems = ['icicle'];
 
-  let profileType = profileTypes.find(
-    type => type.name === 'otel_profiling_agent_on_cpu' && type.delta
-  );
-  if (profileType == null) {
-    profileType = profileTypes.find(type => type.name === 'parca_agent_cpu' && type.delta);
-  }
-  if (profileType == null) {
-    profileType = profileTypes.find(type => type.name === 'process_cpu' && type.delta);
-  }
-  if (profileType == null) {
-    profileType = profileTypes[0];
+  let profileType;
+
+  if (profileTypes == null || profileTypes.length === 0) {
+    profileType = undefined;
   }
 
-  const selection = constructProfileName(profileType);
-  const expression = constructProfileName(profileType);
+  if (profileTypes !== null && profileTypes.length > 0) {
+    if (profileType == null) {
+      profileType = profileTypes.find(
+        type => type.name === 'otel_profiling_agent_on_cpu' && type.delta
+      );
+    }
+
+    if (profileType == null) {
+      profileType = profileTypes.find(type => type.name === 'parca_agent_cpu' && type.delta);
+    }
+
+    if (profileType == null) {
+      profileType = profileTypes.find(type => type.name === 'process_cpu' && type.delta);
+    }
+
+    if (profileType == null) {
+      profileType = profileTypes[0];
+    }
+  }
+
+  const selection =
+    profileType !== undefined
+      ? constructProfileName(profileType)
+      : 'process_cpu:samples:count:cpu:nanoseconds:delta{}';
+  const expression =
+    profileType !== undefined
+      ? constructProfileName(profileType)
+      : 'process_cpu:samples:count:cpu:nanoseconds:delta{}';
 
   const range = DateTimeRange.fromRangeKey(timeSelection, undefined, undefined);
   const from = range.getFromMs();

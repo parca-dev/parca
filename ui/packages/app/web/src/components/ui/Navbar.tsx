@@ -177,7 +177,11 @@ const Navbar = () => {
                                 )}
                                 variant="link"
                                 onClick={() =>
-                                  compareProfile(navigateTo, ['icicle'], profileTypesData.types)
+                                  compareProfile(
+                                    navigateTo,
+                                    ['icicle'],
+                                    profileTypesData ? profileTypesData.types : []
+                                  )
                                 }
                                 onMouseEnter={() => setCompareHover(true)}
                                 onMouseLeave={() => setCompareHover(false)}
