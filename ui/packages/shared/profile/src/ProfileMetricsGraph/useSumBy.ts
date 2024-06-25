@@ -15,7 +15,7 @@ import {useEffect, useState} from 'react';
 
 import {ProfileType} from '@parca/parser';
 
-const DEFAULT_EMPTY_SUM_BY = [];
+const DEFAULT_EMPTY_SUM_BY: string[] = [];
 
 const getDefaultSumBy = (
   profile: ProfileType | undefined,
