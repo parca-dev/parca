@@ -32,6 +32,7 @@ import MetricsGraph from '../MetricsGraph';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
 import useDelayedLoader from '../useDelayedLoader';
 import {Toolbar} from './Toolbar';
+import {useSumBy} from './useSumBy';
 
 interface ProfileMetricsEmptyStateProps {
   message: string;
@@ -86,18 +87,22 @@ export const useQueryRange = (
   queryExpression: string,
   start: number,
   end: number,
-  sumBy: string[] = []
+  sumBy: string[] = [],
+  skip = false
 ): IQueryRangeState => {
+  const [isLoading, setLoading] = useState<boolean>(!skip);
   const [state, setState] = useState<IQueryRangeState>({
     response: null,
-    isLoading: true,
+    isLoading,
     error: null,
   });
-  const [isLoading, setLoading] = useState<boolean>(true);
   const metadata = useGrpcMetadata();
 
   useEffect(() => {
     void (async () => {
+      if (skip) {
+        return;
+      }
       setLoading(true);
 
       const stepDuration = getStepDuration(start, end);
@@ -124,7 +129,7 @@ export const useQueryRange = (
           setLoading(false);
         });
     })();
-  }, [client, queryExpression, start, end, metadata, sumBy]);
+  }, [client, queryExpression, start, end, metadata, sumBy, skip]);
 
   return {...state, isLoading};
 };
@@ -146,8 +151,19 @@ const ProfileMetricsGraph = ({
     to,
     profile?.ProfileSource()?.ProfileType()?.toString()
   );
-  const [sumBy, setSumBy] = useState<string[]>([]);
-  const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to, sumBy);
+  const [sumBy, setSumBy] = useSumBy(
+    profile?.ProfileSource()?.ProfileType(),
+    labelNamesResult.response?.labelNames
+  );
+
+  const {isLoading, response, error} = useQueryRange(
+    queryClient,
+    queryExpression,
+    from,
+    to,
+    sumBy,
+    labelNamesLoading
+  );
   const isLoaderVisible = useDelayedLoader(isLoading);
   const {onError, perf, authenticationErrorMessage, isDarkMode} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(comparing);
