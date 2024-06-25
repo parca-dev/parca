@@ -68,16 +68,25 @@ export const Toolbar = ({sumBy, setSumBy, labels}: Props): ReactNode => {
               />
             </div>
           ) : null}
-          <IconButton
-            icon={
-              <Icon
-                icon={collapsed ? 'iconamoon:arrow-right-2-light' : 'iconamoon:arrow-left-2-light'}
-                height={24}
-              />
-            }
-            onClick={() => setCollapsed(!collapsed)}
-            className="hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full p-1"
-          />
+          <div className="relative">
+            <IconButton
+              icon={
+                <Icon
+                  icon={
+                    collapsed ? 'iconamoon:arrow-right-2-light' : 'iconamoon:arrow-left-2-light'
+                  }
+                  height={24}
+                />
+              }
+              onClick={() => setCollapsed(!collapsed)}
+              className="hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full p-1"
+            />
+            {collapsed && sumBy.length > 0 ? (
+              <div className="rounded-full bg-indigo-600 dark:bg-indigo-500 absolute text-xs h-4 w-4 flex items-center justify-center -top-3 -right-3 text-white text-[10px]">
+                {sumBy.length}
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
     </Draggable>
