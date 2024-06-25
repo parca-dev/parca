@@ -14,9 +14,10 @@
 import type {RpcMetadata} from '@protobuf-ts/runtime-rpc';
 
 import {QueryRequest, QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
-import {parseParams, type NavigateFunction} from '@parca/utilities';
+import {DateTimeRange} from '@parca/components';
+import {type NavigateFunction} from '@parca/utilities';
 
-import {ProfileSelectionFromParams, SuffixParams, getExpressionAsAString} from '.';
+import {ProfileSelectionFromParams, SuffixParams} from '.';
 
 export const hexifyAddress = (address?: bigint): string => {
   if (address == null) {
@@ -67,42 +68,21 @@ export const compareProfile = (
   navigateTo: NavigateFunction,
   defaultDashboardItems: string[] = ['icicle']
 ): void => {
-  const queryParams = parseParams(window.location.search);
+  const timeSelection = 'relative:minute|15';
+  const dashboardItems = ['icicle'];
+  const selection = 'process_cpu:samples:count:cpu:nanoseconds:delta{}';
+  const expression = 'process_cpu:samples:count:cpu:nanoseconds:delta{}';
 
-  /* eslint-disable @typescript-eslint/naming-convention */
-  const {
-    from_a,
-    to_a,
-    merge_from_a,
-    merge_to_a,
-    time_selection_a,
-    filter_by_function,
-    dashboard_items,
-  } = queryParams;
+  const range = DateTimeRange.fromRangeKey(timeSelection, undefined, undefined);
+  const from = range.getFromMs();
+  const to = range.getToMs();
 
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  const selection_a = getExpressionAsAString(queryParams.selection_a as string | []);
-
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  const expression_a = getExpressionAsAString(queryParams.expression_a as string | []);
-
-  if (expression_a === undefined || selection_a === undefined) {
-    return;
-  }
-
-  const mergeFrom = merge_from_a ?? undefined;
-  const mergeTo = merge_to_a ?? undefined;
-  const profileA = ProfileSelectionFromParams(
-    mergeFrom as string,
-    mergeTo as string,
-    selection_a,
-    filter_by_function as string
-  );
+  const profileA = ProfileSelectionFromParams(from.toString(), to.toString(), selection, '');
   const queryA = {
-    expression: expression_a,
-    from: parseInt(from_a as string),
-    to: parseInt(to_a as string),
-    timeSelection: time_selection_a as string,
+    expression,
+    from,
+    to,
+    timeSelection: timeSelection as string,
   };
 
   let compareQuery = {
@@ -129,6 +109,6 @@ export const compareProfile = (
   void navigateTo('/', {
     ...compareQuery,
     search_string: '',
-    dashboard_items: dashboard_items ?? defaultDashboardItems,
+    dashboard_items: dashboardItems ?? defaultDashboardItems,
   });
 };
