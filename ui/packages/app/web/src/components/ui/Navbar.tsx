@@ -15,14 +15,16 @@ import {useCallback, useState} from 'react';
 
 import {Disclosure} from '@headlessui/react';
 import {Icon} from '@iconify/react';
+import {GrpcWebFetchTransport} from '@protobuf-ts/grpcweb-transport';
 import cx from 'classnames';
 import GitHubButton from 'react-github-btn';
 import {usePopper} from 'react-popper';
 import {Link, LinkProps, useLocation, useNavigate} from 'react-router-dom';
 
+import {QueryServiceClient} from '@parca/client';
 import {Button} from '@parca/components';
 import {Parca, ParcaSmall} from '@parca/icons';
-import {compareProfile} from '@parca/profile';
+import {compareProfile, useProfileTypes} from '@parca/profile';
 import {selectDarkMode, useAppSelector} from '@parca/store';
 import {convertToQueryParams} from '@parca/utilities';
 
@@ -52,9 +54,19 @@ const GitHubStarButton = () => {
   );
 };
 
+const apiEndpoint = process.env.REACT_APP_PUBLIC_API_ENDPOINT;
+
+const queryClient = new QueryServiceClient(
+  new GrpcWebFetchTransport({
+    baseUrl: apiEndpoint === undefined ? `${window.PATH_PREFIX}/api` : `${apiEndpoint}/api`,
+  })
+);
+
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+
+  const {data: profileTypesData} = useProfileTypes(queryClient);
 
   const queryParams = new URLSearchParams(location.search);
   const expressionA = queryParams.get('expression_a');
@@ -164,7 +176,9 @@ const Navbar = () => {
                                   'rounded-none hover:no-underline border-b-2 focus:ring-0 focus:outline-none focus:ring-offset-0 h-full whitespace-nowrap font-medium'
                                 )}
                                 variant="link"
-                                onClick={() => compareProfile(navigateTo)}
+                                onClick={() =>
+                                  compareProfile(navigateTo, ['icicle'], profileTypesData.types)
+                                }
                                 onMouseEnter={() => setCompareHover(true)}
                                 onMouseLeave={() => setCompareHover(false)}
                                 id="h-compare-button"

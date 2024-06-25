@@ -13,11 +13,17 @@
 
 import type {RpcMetadata} from '@protobuf-ts/runtime-rpc';
 
-import {QueryRequest, QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
+import {
+  ProfileType,
+  QueryRequest,
+  QueryRequest_ReportType,
+  QueryServiceClient,
+} from '@parca/client';
 import {DateTimeRange} from '@parca/components';
 import {type NavigateFunction} from '@parca/utilities';
 
 import {ProfileSelectionFromParams, SuffixParams} from '.';
+import {constructProfileName} from './ProfileTypeSelector';
 
 export const hexifyAddress = (address?: bigint): string => {
   if (address == null) {
@@ -66,12 +72,27 @@ export const truncateStringReverse = (str: string, num: number): string => {
 
 export const compareProfile = (
   navigateTo: NavigateFunction,
-  defaultDashboardItems: string[] = ['icicle']
+  defaultDashboardItems: string[] = ['icicle'],
+  profileTypes: ProfileType[]
 ): void => {
   const timeSelection = 'relative:minute|15';
   const dashboardItems = ['icicle'];
-  const selection = 'process_cpu:samples:count:cpu:nanoseconds:delta{}';
-  const expression = 'process_cpu:samples:count:cpu:nanoseconds:delta{}';
+
+  let profileType = profileTypes.find(
+    type => type.name === 'otel_profiling_agent_on_cpu' && type.delta
+  );
+  if (profileType == null) {
+    profileType = profileTypes.find(type => type.name === 'parca_agent_cpu' && type.delta);
+  }
+  if (profileType == null) {
+    profileType = profileTypes.find(type => type.name === 'process_cpu' && type.delta);
+  }
+  if (profileType == null) {
+    profileType = profileTypes[0];
+  }
+
+  const selection = constructProfileName(profileType);
+  const expression = constructProfileName(profileType);
 
   const range = DateTimeRange.fromRangeKey(timeSelection, undefined, undefined);
   const from = range.getFromMs();
