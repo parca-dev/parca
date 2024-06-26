@@ -23,7 +23,7 @@ import {Link, LinkProps, useLocation, useNavigate} from 'react-router-dom';
 import {Button} from '@parca/components';
 import {Parca, ParcaSmall} from '@parca/icons';
 import {selectDarkMode, useAppSelector} from '@parca/store';
-import {convertToQueryParams} from '@parca/utilities';
+import {convertToQueryParams, parseParams} from '@parca/utilities';
 
 import ReleaseNotesViewer from '../ReleaseNotesViewer';
 import ThemeToggle from './ThemeToggle';
@@ -59,7 +59,21 @@ const Navbar = () => {
   const expressionA = queryParams.get('expression_a');
   const expressionB = queryParams.get('expression_b');
   const comparing = queryParams.get('comparing');
-  console.log('🚀 ~ Navbar ~ comparing:', comparing);
+
+  const queryParamsURL = parseParams(window.location.search);
+
+  /* eslint-disable @typescript-eslint/naming-convention */
+  const {
+    from_a,
+    to_a,
+    merge_from_a,
+    merge_to_a,
+    time_selection_a,
+    filter_by_function,
+    dashboard_items,
+    selection_a,
+    expression_a,
+  } = queryParamsURL;
 
   const isComparePage = expressionA !== null && expressionB !== null;
 
@@ -90,6 +104,24 @@ const Navbar = () => {
     },
     [navigate]
   );
+
+  const queryToBePassed =
+    expression_a === undefined
+      ? {
+          comparing: 'true',
+        }
+      : {
+          comparing: 'true',
+          dashboard_items: dashboard_items,
+          expression_a: expression_a,
+          from_a: from_a,
+          to_a: to_a,
+          time_selection_a: time_selection_a,
+          selection_a: selection_a,
+          filter_by_function: filter_by_function,
+          merge_from_a: merge_from_a,
+          merge_to_a: merge_to_a,
+        };
 
   return (
     <Disclosure as="nav" className="relative z-10 dark:bg-gray-900">
@@ -161,7 +193,7 @@ const Navbar = () => {
                                   navigateTo(
                                     '/',
                                     {
-                                      comparing: 'true',
+                                      ...queryToBePassed,
                                     },
                                     {replace: true}
                                   )
