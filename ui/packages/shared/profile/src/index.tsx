@@ -13,7 +13,6 @@
 
 import type {Props as CallgraphProps} from './Callgraph';
 import ProfileExplorer, {getExpressionAsAString} from './ProfileExplorer';
-import {useProfileTypes} from './ProfileSelector';
 import ProfileTypeSelector from './ProfileTypeSelector';
 
 export * from './ProfileIcicleGraph/IcicleGraph';
@@ -28,4 +27,4 @@ export {default as Callgraph} from './Callgraph';
 
 export type {CallgraphProps};
 
-export {ProfileExplorer, ProfileTypeSelector, getExpressionAsAString, useProfileTypes};
+export {ProfileExplorer, ProfileTypeSelector, getExpressionAsAString};

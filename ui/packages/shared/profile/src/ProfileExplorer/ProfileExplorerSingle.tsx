@@ -47,6 +47,7 @@ const ProfileExplorerSingle = ({
           profileSelection={profile}
           comparing={false}
           enforcedProfileName={''} // TODO
+          navigateTo={navigateTo}
         />
       </Card>
       {profile != null ? (

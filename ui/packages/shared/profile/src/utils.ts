@@ -13,17 +13,7 @@
 
 import type {RpcMetadata} from '@protobuf-ts/runtime-rpc';
 
-import {
-  ProfileType,
-  QueryRequest,
-  QueryRequest_ReportType,
-  QueryServiceClient,
-} from '@parca/client';
-import {DateTimeRange} from '@parca/components';
-import {type NavigateFunction} from '@parca/utilities';
-
-import {ProfileSelectionFromParams, SuffixParams} from '.';
-import {constructProfileName} from './ProfileTypeSelector';
+import {QueryRequest, QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 
 export const hexifyAddress = (address?: bigint): string => {
   if (address == null) {
@@ -68,87 +58,4 @@ export const truncateStringReverse = (str: string, num: number): string => {
   }
 
   return '...' + str.slice(str.length - num);
-};
-
-export const compareProfile = (
-  navigateTo: NavigateFunction,
-  defaultDashboardItems: string[] = ['icicle'],
-  profileTypes: ProfileType[]
-): void => {
-  const timeSelection = 'relative:minute|15';
-  const dashboardItems = ['icicle'];
-
-  let profileType;
-
-  if (profileTypes == null || profileTypes.length === 0) {
-    profileType = undefined;
-  }
-
-  if (profileTypes !== null && profileTypes.length > 0) {
-    if (profileType == null) {
-      profileType = profileTypes.find(
-        type => type.name === 'otel_profiling_agent_on_cpu' && type.delta
-      );
-    }
-
-    if (profileType == null) {
-      profileType = profileTypes.find(type => type.name === 'parca_agent_cpu' && type.delta);
-    }
-
-    if (profileType == null) {
-      profileType = profileTypes.find(type => type.name === 'process_cpu' && type.delta);
-    }
-
-    if (profileType == null) {
-      profileType = profileTypes[0];
-    }
-  }
-
-  const selection =
-    profileType !== undefined
-      ? constructProfileName(profileType)
-      : 'process_cpu:samples:count:cpu:nanoseconds:delta{}';
-  const expression =
-    profileType !== undefined
-      ? constructProfileName(profileType)
-      : 'process_cpu:samples:count:cpu:nanoseconds:delta{}';
-
-  const range = DateTimeRange.fromRangeKey(timeSelection, undefined, undefined);
-  const from = range.getFromMs();
-  const to = range.getToMs();
-
-  const profileA = ProfileSelectionFromParams(from.toString(), to.toString(), selection, '');
-  const queryA = {
-    expression,
-    from,
-    to,
-    timeSelection: timeSelection as string,
-  };
-
-  let compareQuery = {
-    compare_a: 'true',
-    expression_a: encodeURIComponent(queryA.expression),
-    from_a: queryA.from.toString(),
-    to_a: queryA.to.toString(),
-    time_selection_a: queryA.timeSelection,
-
-    compare_b: 'true',
-    expression_b: encodeURIComponent(queryA.expression),
-    from_b: queryA.from.toString(),
-    to_b: queryA.to.toString(),
-    time_selection_b: queryA.timeSelection,
-  };
-
-  if (profileA != null) {
-    compareQuery = {
-      ...SuffixParams(profileA.HistoryParams(), '_a'),
-      ...compareQuery,
-    };
-  }
-
-  void navigateTo('/', {
-    ...compareQuery,
-    search_string: '',
-    dashboard_items: dashboardItems ?? defaultDashboardItems,
-  });
 };

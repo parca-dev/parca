@@ -15,16 +15,13 @@ import {useCallback, useState} from 'react';
 
 import {Disclosure} from '@headlessui/react';
 import {Icon} from '@iconify/react';
-import {GrpcWebFetchTransport} from '@protobuf-ts/grpcweb-transport';
 import cx from 'classnames';
 import GitHubButton from 'react-github-btn';
 import {usePopper} from 'react-popper';
 import {Link, LinkProps, useLocation, useNavigate} from 'react-router-dom';
 
-import {QueryServiceClient} from '@parca/client';
 import {Button} from '@parca/components';
 import {Parca, ParcaSmall} from '@parca/icons';
-import {compareProfile, useProfileTypes} from '@parca/profile';
 import {selectDarkMode, useAppSelector} from '@parca/store';
 import {convertToQueryParams} from '@parca/utilities';
 
@@ -54,23 +51,15 @@ const GitHubStarButton = () => {
   );
 };
 
-const apiEndpoint = process.env.REACT_APP_PUBLIC_API_ENDPOINT;
-
-const queryClient = new QueryServiceClient(
-  new GrpcWebFetchTransport({
-    baseUrl: apiEndpoint === undefined ? `${window.PATH_PREFIX}/api` : `${apiEndpoint}/api`,
-  })
-);
-
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const {data: profileTypesData} = useProfileTypes(queryClient);
-
   const queryParams = new URLSearchParams(location.search);
   const expressionA = queryParams.get('expression_a');
   const expressionB = queryParams.get('expression_b');
+  const comparing = queryParams.get('comparing');
+  console.log('🚀 ~ Navbar ~ comparing:', comparing);
 
   const isComparePage = expressionA !== null && expressionB !== null;
 
@@ -85,17 +74,9 @@ const Navbar = () => {
   const compareExplanation =
     'Compare two profiles and see the relative difference between them more clearly.';
 
-  const isCurrentPage = (item: {label: string; href: string; external: boolean}) => {
-    if (item.href === 'compare' && isComparePage) {
-      return true;
-    }
-
-    if (!isComparePage && location.pathname === item.href) {
-      return true;
-    }
-
-    return false;
-  };
+  const isCurrentPage = (item: {label: string; href: string; external: boolean}) =>
+    (item.href === 'compare' && (isComparePage || comparing === 'true')) ||
+    (!isComparePage && comparing !== 'true' && location.pathname === item.href);
 
   const navigateTo = useCallback(
     (path: string, queryParams: any, options?: {replace?: boolean}) => {
@@ -177,10 +158,12 @@ const Navbar = () => {
                                 )}
                                 variant="link"
                                 onClick={() =>
-                                  compareProfile(
-                                    navigateTo,
-                                    ['icicle'],
-                                    profileTypesData ? profileTypesData.types : []
+                                  navigateTo(
+                                    '/',
+                                    {
+                                      comparing: 'true',
+                                    },
+                                    {replace: true}
                                   )
                                 }
                                 onMouseEnter={() => setCompareHover(true)}
