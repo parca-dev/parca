@@ -13,7 +13,7 @@
 
 import {Grammar, Parser} from 'nearley';
 
-import grammar from './selector';
+import {grammar} from './selector';
 
 export function NewParser(): Parser {
   return new Parser(Grammar.fromCompiled(grammar), {keepHistory: true});

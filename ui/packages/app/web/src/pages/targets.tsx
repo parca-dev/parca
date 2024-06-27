@@ -31,7 +31,7 @@ import {EmptyState} from '@parca/components';
 import AgentsTable from '../components/Targets/AgentsTable';
 import TargetsTable from '../components/Targets/TargetsTable';
 
-const apiEndpoint = process.env.REACT_APP_PUBLIC_API_ENDPOINT;
+const apiEndpoint = import.meta.env.VITE_API_ENDPOINT;
 
 export interface ITargetsResult {
   response: TargetsResponse | null;

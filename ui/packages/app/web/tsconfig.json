@@ -17,7 +17,8 @@
     "noImplicitAny": false,
     "downlevelIteration": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "types": ["vite/client", "vitest/globals"]
   },
   "include": ["src", "../../shared/*"]
 }

@@ -57,7 +57,7 @@ export const createStore = (
 ): {store: Store; persistor: Persistor} => {
   const store = configureStore({
     reducer: persistedReducer,
-    devTools: process.env.NODE_ENV !== 'production',
+    devTools: import.meta.env.DEV,
     middleware: getDefaultMiddleware =>
       getDefaultMiddleware({
         serializableCheck: {

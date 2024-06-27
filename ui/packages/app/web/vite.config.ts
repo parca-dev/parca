@@ -11,23 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {describe, expect, it} from 'vitest';
+import react from '@vitejs/plugin-react-swc';
+import {defineConfig} from 'vite';
+import svgr from 'vite-plugin-svgr';
 
-import {getHealthStatus} from './utils';
-
-describe('getHealthStatus', () => {
-  it('returns the correct label and colorVariant for the numeric value', () => {
-    expect(getHealthStatus(0)).toEqual({
-      label: 'Unspecified',
-      colorVariant: 'neutral',
-    });
-    expect(getHealthStatus(1)).toEqual({
-      label: 'Good',
-      colorVariant: 'success',
-    });
-    expect(getHealthStatus(2)).toEqual({
-      label: 'Bad',
-      colorVariant: 'danger',
-    });
-  });
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react(), svgr()],
+  server: {
+    port: 3000,
+  },
+  build: {
+    outDir: 'build',
+  },
 });

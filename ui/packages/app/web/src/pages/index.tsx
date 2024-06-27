@@ -22,7 +22,7 @@ import {ProfileExplorer} from '@parca/profile';
 import {selectDarkMode, useAppSelector} from '@parca/store';
 import {convertToQueryParams, parseParams} from '@parca/utilities';
 
-const apiEndpoint = process.env.REACT_APP_PUBLIC_API_ENDPOINT;
+const apiEndpoint = import.meta.env.VITE_API_ENDPOINT;
 
 const queryClient = new QueryServiceClient(
   new GrpcWebFetchTransport({
