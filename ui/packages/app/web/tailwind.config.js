@@ -1,10 +1,6 @@
 import typography from '@tailwindcss/typography';
 import defaultConfig from 'tailwindcss/stubs/defaultConfig.stub.js';
 
-
-
-
-
 const config = {
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
