@@ -1,11 +1,15 @@
 import typography from '@tailwindcss/typography';
 import defaultConfig from 'tailwindcss/stubs/defaultConfig.stub.js';
 
+
+
+
+
 const config = {
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    '../../shared/**/*.{js,ts,jsx,tsx,mdx}',
+    '../../shared/*/dist/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   darkMode: 'class',
   theme: {
