@@ -1,8 +1,6 @@
 import typography from '@tailwindcss/typography';
 import defaultConfig from 'tailwindcss/stubs/defaultConfig.stub.js';
 
-
-
 import parcaComponentsConfig from '@parca/components/tailwind.config.js';
 import parcaProfileConfig from '@parca/profile/tailwind.config.js';
 
