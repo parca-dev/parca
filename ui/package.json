@@ -50,6 +50,7 @@
     "@storybook/addon-postcss": "2.0.0",
     "@storybook/addon-storyshots": "7.6.17",
     "@storybook/addon-styling": "0.3.2",
+    "@storybook/builder-vite": "^8.1.11",
     "@storybook/node-logger": "7.6.19",
     "@storybook/preset-create-react-app": "7.6.19",
     "@storybook/preset-typescript": "3.0.0",
