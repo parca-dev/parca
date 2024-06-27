@@ -21,6 +21,7 @@ import './style/profile.css';
 import './style/sidenav.css';
 import './style/source.css';
 import './style/context-menu.css';
+import './style/react-select.css';
 import 'react-datepicker/dist/react-datepicker.css';
 
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';

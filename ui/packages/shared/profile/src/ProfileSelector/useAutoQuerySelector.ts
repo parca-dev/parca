@@ -15,7 +15,10 @@ import {useEffect} from 'react';
 
 import {ProfileTypesResponse} from '@parca/client';
 import {selectAutoQuery, setAutoQuery, useAppDispatch, useAppSelector} from '@parca/store';
+import {type NavigateFunction} from '@parca/utilities';
 
+import {ProfileSelectionFromParams, SuffixParams} from '..';
+import {QuerySelection} from '../ProfileSelector';
 import {constructProfileName} from '../ProfileTypeSelector';
 
 interface Props {
@@ -23,6 +26,8 @@ interface Props {
   profileTypesData: ProfileTypesResponse | undefined;
   setProfileName: (name: string) => void;
   setQueryExpression: () => void;
+  querySelection: QuerySelection;
+  navigateTo: NavigateFunction;
 }
 
 export const useAutoQuerySelector = ({
@@ -30,9 +35,62 @@ export const useAutoQuerySelector = ({
   profileTypesData,
   setProfileName,
   setQueryExpression,
+  querySelection,
+  navigateTo,
 }: Props): void => {
   const autoQuery = useAppSelector(selectAutoQuery);
   const dispatch = useAppDispatch();
+  const queryParams = new URLSearchParams(location.search);
+
+  const comparing = queryParams.get('comparing') === 'true';
+  const expressionA = queryParams.get('expression_a');
+
+  useEffect(() => {
+    if (comparing && expressionA !== null && expressionA !== undefined) {
+      if (querySelection.expression === undefined) {
+        return;
+      }
+      const profileA = ProfileSelectionFromParams(
+        querySelection.mergeFrom?.toString(),
+        querySelection.mergeTo?.toString(),
+        querySelection.expression,
+        ''
+      );
+      const queryA = {
+        expression: querySelection.expression,
+        from: querySelection.from,
+        to: querySelection.to,
+        timeSelection: querySelection.timeSelection,
+      };
+
+      let compareQuery = {
+        compare_a: 'true',
+        expression_a: encodeURIComponent(queryA.expression),
+        from_a: queryA.from.toString(),
+        to_a: queryA.to.toString(),
+        time_selection_a: queryA.timeSelection,
+
+        compare_b: 'true',
+        expression_b: encodeURIComponent(queryA.expression),
+        from_b: queryA.from.toString(),
+        to_b: queryA.to.toString(),
+        time_selection_b: queryA.timeSelection,
+      };
+
+      if (profileA != null) {
+        compareQuery = {
+          ...SuffixParams(profileA.HistoryParams(), '_a'),
+          ...compareQuery,
+        };
+      }
+
+      void navigateTo('/', {
+        ...compareQuery,
+        search_string: '',
+        dashboard_items: ['icicle'],
+      });
+    }
+  }, [comparing, querySelection, navigateTo, expressionA, dispatch]);
 
   // Effect to load some initial data on load when is no selection
   useEffect(() => {

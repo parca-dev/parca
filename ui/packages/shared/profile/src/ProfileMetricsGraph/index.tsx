@@ -27,9 +27,12 @@ import {Query} from '@parca/parser';
 import {capitalizeOnlyFirstLetter, getStepDuration} from '@parca/utilities';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
+import {useLabelNames} from '../MatchersInput';
 import MetricsGraph from '../MetricsGraph';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
 import useDelayedLoader from '../useDelayedLoader';
+import {Toolbar} from './Toolbar';
+import {useSumBy} from './useSumBy';
 
 interface ProfileMetricsEmptyStateProps {
   message: string;
@@ -83,18 +86,23 @@ export const useQueryRange = (
   client: QueryServiceClient,
   queryExpression: string,
   start: number,
-  end: number
+  end: number,
+  sumBy: string[] = [],
+  skip = false
 ): IQueryRangeState => {
+  const [isLoading, setLoading] = useState<boolean>(!skip);
   const [state, setState] = useState<IQueryRangeState>({
     response: null,
-    isLoading: true,
+    isLoading,
     error: null,
   });
-  const [isLoading, setLoading] = useState<boolean>(true);
   const metadata = useGrpcMetadata();
 
   useEffect(() => {
     void (async () => {
+      if (skip) {
+        return;
+      }
       setLoading(true);
 
       const stepDuration = getStepDuration(start, end);
@@ -105,6 +113,7 @@ export const useQueryRange = (
           end: Timestamp.fromDate(new Date(end)),
           step: Duration.create(stepDuration),
           limit: 0,
+          sumBy,
         },
         {meta: metadata}
       );
@@ -120,7 +129,7 @@ export const useQueryRange = (
           setLoading(false);
         });
     })();
-  }, [client, queryExpression, start, end, metadata]);
+  }, [client, queryExpression, start, end, metadata, sumBy, skip]);
 
   return {...state, isLoading};
 };
@@ -136,7 +145,25 @@ const ProfileMetricsGraph = ({
   onPointClick,
   comparing = false,
 }: ProfileMetricsGraphProps): JSX.Element => {
-  const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to);
+  const {loading: labelNamesLoading, result: labelNamesResult} = useLabelNames(
+    queryClient,
+    from,
+    to,
+    profile?.ProfileSource()?.ProfileType()?.toString()
+  );
+  const [sumBy, setSumBy] = useSumBy(
+    profile?.ProfileSource()?.ProfileType(),
+    labelNamesResult.response?.labelNames
+  );
+
+  const {isLoading, response, error} = useQueryRange(
+    queryClient,
+    queryExpression,
+    from,
+    to,
+    sumBy,
+    labelNamesLoading
+  );
   const isLoaderVisible = useDelayedLoader(isLoading);
   const {onError, perf, authenticationErrorMessage, isDarkMode} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(comparing);
@@ -158,7 +185,8 @@ const ProfileMetricsGraph = ({
   const series = response?.series;
   const dataAvailable = series !== null && series !== undefined && series?.length > 0;
 
-  const metricsGraphLoading = isLoaderVisible || (isLoading && !dataAvailable);
+  const metricsGraphLoading =
+    isLoaderVisible || (isLoading && !dataAvailable && !labelNamesLoading);
 
   if (metricsGraphLoading) {
     return <MetricsGraphSkeleton heightStyle={heightStyle} isDarkMode={isDarkMode} />;
@@ -170,6 +198,12 @@ const ProfileMetricsGraph = ({
     }
 
     return <ErrorContent errorMessage={capitalizeOnlyFirstLetter(error.message)} />;
+  }
+
+  if (!labelNamesLoading && labelNamesResult?.error != null) {
+    return (
+      <ErrorContent errorMessage={capitalizeOnlyFirstLetter(labelNamesResult.error.message)} />
+    );
   }
 
   if (dataAvailable) {
@@ -193,12 +227,17 @@ const ProfileMetricsGraph = ({
     return (
       <AnimatePresence>
         <motion.div
-          className="h-full w-full"
+          className="h-full w-full relative"
           key="metrics-graph-loaded"
           initial={{display: 'none', opacity: 0}}
           animate={{display: 'block', opacity: 1}}
           transition={{duration: 0.5}}
         >
+          <Toolbar
+            sumBy={sumBy}
+            setSumBy={setSumBy}
+            labels={labelNamesResult.response?.labelNames ?? []}
+          />
           <MetricsGraph
             data={series}
             from={from}

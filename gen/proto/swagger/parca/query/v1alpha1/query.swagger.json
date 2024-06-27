@@ -61,6 +61,13 @@
             "required": false,
             "type": "string",
             "format": "date-time"
+          },
+          {
+            "name": "profileType",
+            "description": "profile_type is the type of profile to filter by",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -120,6 +127,13 @@
             "required": false,
             "type": "string",
             "format": "date-time"
+          },
+          {
+            "name": "profileType",
+            "description": "profile_type is the type of profile to filter by",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -453,6 +467,17 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "sumBy",
+            "description": "sum_by is the set of labels to sum by",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
           }
         ],
         "tags": [

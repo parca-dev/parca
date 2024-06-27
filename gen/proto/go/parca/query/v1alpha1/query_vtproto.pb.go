@@ -537,6 +537,15 @@ func (m *QueryRangeRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.SumBy) > 0 {
+		for iNdEx := len(m.SumBy) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.SumBy[iNdEx])
+			copy(dAtA[i:], m.SumBy[iNdEx])
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.SumBy[iNdEx])))
+			i--
+			dAtA[i] = 0x32
+		}
+	}
 	if m.Step != nil {
 		size, err := (*durationpb.Duration)(m.Step).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
@@ -2839,6 +2848,13 @@ func (m *LabelsRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.ProfileType != nil {
+		i -= len(*m.ProfileType)
+		copy(dAtA[i:], *m.ProfileType)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(*m.ProfileType)))
+		i--
+		dAtA[i] = 0x22
+	}
 	if m.End != nil {
 		size, err := (*timestamppb.Timestamp)(m.End).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
@@ -2951,6 +2967,13 @@ func (m *ValuesRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.ProfileType != nil {
+		i -= len(*m.ProfileType)
+		copy(dAtA[i:], *m.ProfileType)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(*m.ProfileType)))
+		i--
+		dAtA[i] = 0x2a
 	}
 	if m.End != nil {
 		size, err := (*timestamppb.Timestamp)(m.End).MarshalToSizedBufferVT(dAtA[:i])
@@ -3360,6 +3383,12 @@ func (m *QueryRangeRequest) SizeVT() (n int) {
 	if m.Step != nil {
 		l = (*durationpb.Duration)(m.Step).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if len(m.SumBy) > 0 {
+		for _, s := range m.SumBy {
+			l = len(s)
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
 	}
 	n += len(m.unknownFields)
 	return n
@@ -4311,6 +4340,10 @@ func (m *LabelsRequest) SizeVT() (n int) {
 		l = (*timestamppb.Timestamp)(m.End).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
+	if m.ProfileType != nil {
+		l = len(*m.ProfileType)
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -4359,6 +4392,10 @@ func (m *ValuesRequest) SizeVT() (n int) {
 	}
 	if m.End != nil {
 		l = (*timestamppb.Timestamp)(m.End).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.ProfileType != nil {
+		l = len(*m.ProfileType)
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -5031,6 +5068,38 @@ func (m *QueryRangeRequest) UnmarshalVT(dAtA []byte) error {
 			if err := (*durationpb.Duration)(m.Step).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SumBy", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SumBy = append(m.SumBy, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -10315,6 +10384,39 @@ func (m *LabelsRequest) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProfileType", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.ProfileType = &s
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -10616,6 +10718,39 @@ func (m *ValuesRequest) UnmarshalVT(dAtA []byte) error {
 			if err := (*timestamppb.Timestamp)(m.End).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProfileType", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.ProfileType = &s
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
