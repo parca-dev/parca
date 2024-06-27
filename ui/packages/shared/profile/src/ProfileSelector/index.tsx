@@ -27,6 +27,7 @@ import {
 } from '@parca/components';
 import {CloseIcon} from '@parca/icons';
 import {Query} from '@parca/parser';
+import {type NavigateFunction} from '@parca/utilities';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
 import MatchersInput from '../MatchersInput/index';
@@ -53,6 +54,7 @@ interface ProfileSelectorProps {
   enforcedProfileName: string;
   profileSelection: ProfileSelection | null;
   comparing: boolean;
+  navigateTo: NavigateFunction;
 }
 
 export interface IProfileTypesResult {
@@ -90,6 +92,7 @@ const ProfileSelector = ({
   enforcedProfileName,
   profileSelection,
   comparing,
+  navigateTo,
 }: ProfileSelectorProps): JSX.Element => {
   const {
     loading: profileTypesLoading,
@@ -214,6 +217,8 @@ const ProfileSelector = ({
     profileTypesData,
     setProfileName,
     setQueryExpression,
+    querySelection,
+    navigateTo,
   });
 
   const searchDisabled =
