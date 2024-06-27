@@ -3,9 +3,11 @@ import defaultConfig from 'tailwindcss/stubs/defaultConfig.stub.js';
 
 
 
-
+import parcaComponentsConfig from '@parca/components/tailwind.config.js';
+import parcaProfileConfig from '@parca/profile/tailwind.config.js';
 
 const config = {
+  presets: [parcaComponentsConfig, parcaProfileConfig],
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
