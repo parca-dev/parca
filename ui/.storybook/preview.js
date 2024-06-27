@@ -14,3 +14,4 @@ export const parameters = {
     classTarget: 'html',
   },
 };
+export const tags = ['autodocs'];

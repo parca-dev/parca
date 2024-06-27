@@ -1,7 +1,27 @@
 export default {
-  stories: ['../src/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  addons: ['@storybook/addon-links', '@storybook/addon-essentials'],
+  stories: ['../packages/shared/**/src/**/*.stories.@(js|jsx|ts|tsx)'],
+
+  addons: [
+    '@storybook/addon-links',
+    '@storybook/addon-essentials',
+    '@storybook/addon-interactions',
+    '@storybook/addon-mdx-gfm',
+    'storybook-dark-mode',
+    '@chromatic-com/storybook',
+  ],
+
   core: {
-    builder: '@storybook/builder-vite', // 👈 The builder enabled here.
+    disableTelemetry: true,
+  },
+
+  docs: {},
+
+  framework: {
+    name: '@storybook/react-vite',
+    options: {},
+  },
+
+  typescript: {
+    reactDocgen: 'react-docgen-typescript',
   },
 };
