@@ -74,8 +74,13 @@ const presetRanges = [
 const NOW = new RelativeDate(UNITS.MINUTE, 0);
 
 const parseInput = (input: string): {value: number; unit: string} | null => {
+  // Ensure the input is not too long to mitigate potential DoS attacks
+  if (input.length > 100) {
+    return null; // Input is too long
+  }
+
   const value = parseFloat(input);
-  const match = input.match(/(\d+)([mhdw])/);
+  const match = input.match(/^(\d+)([mhdw])$/);
 
   // handle parseFloat edge cases and non-valid input
   if (Number.isNaN(value) || input.includes('Infinity') || input.includes('e') || match == null) {
