@@ -63,7 +63,7 @@
   },
   "devDependencies": {
     "@types/lodash.throttle": "4.1.9",
-    "@vitejs/plugin-react-swc": "^3.7.0",
+    "@vitejs/plugin-react-swc": "3.7.0",
     "css-loader": "6.11.0",
     "eslint-config-prettier": "8.10.0",
     "eslint-plugin-import": "2.29.1",
@@ -74,7 +74,7 @@
     "tslint-config-prettier": "1.18.0",
     "tslint-plugin-prettier": "2.3.0",
     "tslint-react": "5.0.0",
-    "vite-plugin-svgr": "^4.2.0"
+    "vite-plugin-svgr": "4.2.0"
   },
   "eslintConfig": {
     "extends": [
