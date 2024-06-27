@@ -92,6 +92,9 @@ message QueryRangeRequest {
 
   // step is the duration of each sample returned.
   google.protobuf.Duration step = 5;
+
+  // sum_by is the set of labels to sum by
+  repeated string sum_by = 6;
 }
 
 // QueryRangeResponse is the set of matching profile values
@@ -613,6 +616,9 @@ message LabelsRequest {
 
   // end is the end of the time window to perform the query
   google.protobuf.Timestamp end = 3;
+
+  // profile_type is the type of profile to filter by
+  optional string profile_type = 4;
 }
 
 // LabelsResponse is the set of matching label names
@@ -637,6 +643,9 @@ message ValuesRequest {
 
   // end is the end of the time window to perform the query
   google.protobuf.Timestamp end = 4;
+
+  // profile_type is the type of profile to filter by
+  optional string profile_type = 5;
 }
 
 // ValuesResponse are the set of matching values

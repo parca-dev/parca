@@ -16,10 +16,10 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 import cx from 'classnames';
 import TextareaAutosize from 'react-textarea-autosize';
 
-import {LabelsResponse, QueryServiceClient} from '@parca/client';
+import {LabelsRequest, LabelsResponse, QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata} from '@parca/components';
 import {Query} from '@parca/parser';
-import {sanitizeLabelValue} from '@parca/utilities';
+import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
 import SuggestionsList, {Suggestion, Suggestions} from './SuggestionsList';
 
@@ -40,20 +40,33 @@ interface UseLabelNames {
   loading: boolean;
 }
 
-export const useLabelNames = (client: QueryServiceClient): UseLabelNames => {
+export const useLabelNames = (
+  client: QueryServiceClient,
+  start?: number,
+  end?: number,
+  profileType?: string
+): UseLabelNames => {
   const [loading, setLoading] = useState(true);
   const [result, setResult] = useState<ILabelNamesResult>({});
   const metadata = useGrpcMetadata();
 
   useEffect(() => {
-    const call = client.labels({match: []}, {meta: metadata});
+    const request: LabelsRequest = {match: []};
+    if (start !== undefined && end !== undefined) {
+      request.start = millisToProtoTimestamp(start);
+      request.end = millisToProtoTimestamp(end);
+    }
+    if (profileType !== undefined) {
+      request.profileType = profileType;
+    }
+    const call = client.labels(request, {meta: metadata});
     setLoading(true);
 
     call.response
       .then(response => setResult({response}))
       .catch(error => setResult({error}))
       .finally(() => setLoading(false));
-  }, [client, metadata]);
+  }, [client, metadata, start, end, profileType]);
 
   return {result, loading};
 };

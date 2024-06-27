@@ -88,32 +88,45 @@ type Querier struct {
 func (q *Querier) Labels(
 	ctx context.Context,
 	match []string,
-	start, end time.Time,
+	startTime, endTime time.Time,
+	profileType string,
 ) ([]string, error) {
 	seen := map[string]struct{}{}
 
-	err := q.engine.ScanSchema(q.tableName).
-		Distinct(logicalplan.Col("name")).
-		Filter(logicalplan.Col("name").RegexMatch("^labels\\..+$")).
-		Execute(ctx, func(ctx context.Context, ar arrow.Record) error {
-			if ar.NumCols() != 1 {
-				return fmt.Errorf("expected 1 column, got %d", ar.NumCols())
-			}
+	filterExpr := []logicalplan.Expr{}
 
-			col := ar.Column(0)
-			stringCol, ok := col.(*array.String)
-			if !ok {
-				return fmt.Errorf("expected string column, got %T", col)
-			}
+	if profileType != "" {
+		_, selectorExprs, err := QueryToFilterExprs(profileType + "{}")
+		if err != nil {
+			return nil, err
+		}
 
-			for i := 0; i < stringCol.Len(); i++ {
-				// This should usually not happen, but better safe than sorry.
-				if stringCol.IsNull(i) {
-					continue
+		filterExpr = append(filterExpr, selectorExprs...)
+	}
+
+	if startTime.Unix() != 0 && endTime.Unix() != 0 {
+		start := timestamp.FromTime(startTime)
+		end := timestamp.FromTime(endTime)
+
+		filterExpr = append(filterExpr, logicalplan.Col(profile.ColumnTimestamp).Gt(logicalplan.Literal(start)),
+			logicalplan.Col(profile.ColumnTimestamp).Lt(logicalplan.Literal(end)))
+	}
+
+	err := q.engine.ScanTable(q.tableName).
+		Filter(logicalplan.And(filterExpr...)).
+		Project(logicalplan.DynCol(profile.ColumnLabels)).
+		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
+			r.Retain()
+			for i := 0; i < int(r.NumCols()); i++ {
+				col := r.ColumnName(i)
+
+				values := r.Column(i)
+				for j := 0; j < values.Len(); j++ {
+					if !values.IsNull(j) {
+						seen[strings.TrimPrefix(col, "labels.")] = struct{}{}
+						break
+					}
 				}
-
-				val := stringCol.Value(i)
-				seen[strings.TrimPrefix(val, "labels.")] = struct{}{}
 			}
 
 			return nil
@@ -136,11 +149,32 @@ func (q *Querier) Values(
 	ctx context.Context,
 	labelName string,
 	match []string,
-	start, end time.Time,
+	startTime, endTime time.Time,
+	profileType string,
 ) ([]string, error) {
 	vals := []string{}
 
+	filterExpr := []logicalplan.Expr{}
+
+	if profileType != "" {
+		_, selectorExprs, err := QueryToFilterExprs(profileType + "{}")
+		if err != nil {
+			return nil, err
+		}
+
+		filterExpr = append(filterExpr, selectorExprs...)
+	}
+
+	if startTime.Unix() != 0 && endTime.Unix() != 0 {
+		start := timestamp.FromTime(startTime)
+		end := timestamp.FromTime(endTime)
+
+		filterExpr = append(filterExpr, logicalplan.Col(profile.ColumnTimestamp).Gt(logicalplan.Literal(start)),
+			logicalplan.Col(profile.ColumnTimestamp).Lt(logicalplan.Literal(end)))
+	}
+
 	err := q.engine.ScanTable(q.tableName).
+		Filter(logicalplan.And(filterExpr...)).
 		Distinct(logicalplan.Col("labels."+labelName)).
 		Execute(ctx, func(ctx context.Context, ar arrow.Record) error {
 			if ar.NumCols() != 1 {
@@ -321,6 +355,7 @@ func (q *Querier) QueryRange(
 	startTime, endTime time.Time,
 	step time.Duration,
 	limit uint32,
+	sumBy []string,
 ) ([]*pb.MetricsSeries, error) {
 	queryParts, selectorExprs, err := QueryToFilterExprs(query)
 	if err != nil {
@@ -349,10 +384,11 @@ func (q *Querier) QueryRange(
 			filterExpr,
 			step,
 			queryParts.Meta,
+			sumBy,
 		)
 	}
 
-	return q.queryRangeNonDelta(ctx, filterExpr, step)
+	return q.queryRangeNonDelta(ctx, filterExpr, step, sumBy)
 }
 
 const (
@@ -365,6 +401,7 @@ func (q *Querier) queryRangeDelta(
 	filterExpr logicalplan.Expr,
 	step time.Duration,
 	m profile.Meta,
+	sumBy []string,
 ) ([]*pb.MetricsSeries, error) {
 	resultType := m.SampleType
 
@@ -454,10 +491,9 @@ func (q *Querier) queryRangeDelta(
 				timestampUnique,
 				totalSum,
 			},
-			[]logicalplan.Expr{
-				logicalplan.DynCol(profile.ColumnLabels),
+			append([]logicalplan.Expr{
 				logicalplan.Col(TimestampBucket),
-			},
+			}, getSumByAggregateExprs(sumBy)...),
 		).
 		Project(
 			perSecondExpr,
@@ -604,7 +640,20 @@ func (q *Querier) queryRangeDelta(
 	return resSeries, nil
 }
 
-func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration) ([]*pb.MetricsSeries, error) {
+func getSumByAggregateExprs(sumBy []string) []logicalplan.Expr {
+	if len(sumBy) == 0 {
+		return []logicalplan.Expr{logicalplan.DynCol(profile.ColumnLabels)}
+	}
+
+	exprs := make([]logicalplan.Expr, 0, len(sumBy))
+	for _, s := range sumBy {
+		exprs = append(exprs, logicalplan.Col(profile.ColumnLabelsPrefix+s))
+	}
+
+	return exprs
+}
+
+func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration, sumBy []string) ([]*pb.MetricsSeries, error) {
 	records := []arrow.Record{}
 	defer func() {
 		for _, r := range records {
@@ -621,10 +670,10 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 			[]*logicalplan.AggregationFunction{
 				valueSum,
 			},
-			[]logicalplan.Expr{
-				logicalplan.DynCol(profile.ColumnLabels),
-				logicalplan.Col(profile.ColumnTimestamp),
-			},
+			append(
+				[]logicalplan.Expr{
+					logicalplan.Col(profile.ColumnTimestamp),
+				}, getSumByAggregateExprs(sumBy)...),
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()

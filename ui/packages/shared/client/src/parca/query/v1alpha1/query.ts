@@ -117,6 +117,12 @@ export interface QueryRangeRequest {
      * @generated from protobuf field: google.protobuf.Duration step = 5;
      */
     step?: Duration;
+    /**
+     * sum_by is the set of labels to sum by
+     *
+     * @generated from protobuf field: repeated string sum_by = 6;
+     */
+    sumBy: string[];
 }
 /**
  * QueryRangeResponse is the set of matching profile values
@@ -1243,6 +1249,12 @@ export interface LabelsRequest {
      * @generated from protobuf field: google.protobuf.Timestamp end = 3;
      */
     end?: Timestamp;
+    /**
+     * profile_type is the type of profile to filter by
+     *
+     * @generated from protobuf field: optional string profile_type = 4;
+     */
+    profileType?: string;
 }
 /**
  * LabelsResponse is the set of matching label names
@@ -1293,6 +1305,12 @@ export interface ValuesRequest {
      * @generated from protobuf field: google.protobuf.Timestamp end = 4;
      */
     end?: Timestamp;
+    /**
+     * profile_type is the type of profile to filter by
+     *
+     * @generated from protobuf field: optional string profile_type = 5;
+     */
+    profileType?: string;
 }
 /**
  * ValuesResponse are the set of matching values
@@ -1569,13 +1587,15 @@ class QueryRangeRequest$Type extends MessageType<QueryRangeRequest> {
             { no: 2, name: "start", kind: "message", T: () => Timestamp },
             { no: 3, name: "end", kind: "message", T: () => Timestamp },
             { no: 4, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 5, name: "step", kind: "message", T: () => Duration }
+            { no: 5, name: "step", kind: "message", T: () => Duration },
+            { no: 6, name: "sum_by", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<QueryRangeRequest>): QueryRangeRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.query = "";
         message.limit = 0;
+        message.sumBy = [];
         if (value !== undefined)
             reflectionMergePartial<QueryRangeRequest>(this, message, value);
         return message;
@@ -1599,6 +1619,9 @@ class QueryRangeRequest$Type extends MessageType<QueryRangeRequest> {
                     break;
                 case /* google.protobuf.Duration step */ 5:
                     message.step = Duration.internalBinaryRead(reader, reader.uint32(), options, message.step);
+                    break;
+                case /* repeated string sum_by */ 6:
+                    message.sumBy.push(reader.string());
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1627,6 +1650,9 @@ class QueryRangeRequest$Type extends MessageType<QueryRangeRequest> {
         /* google.protobuf.Duration step = 5; */
         if (message.step)
             Duration.internalBinaryWrite(message.step, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* repeated string sum_by = 6; */
+        for (let i = 0; i < message.sumBy.length; i++)
+            writer.tag(6, WireType.LengthDelimited).string(message.sumBy[i]);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -3804,7 +3830,8 @@ class LabelsRequest$Type extends MessageType<LabelsRequest> {
         super("parca.query.v1alpha1.LabelsRequest", [
             { no: 1, name: "match", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "start", kind: "message", T: () => Timestamp },
-            { no: 3, name: "end", kind: "message", T: () => Timestamp }
+            { no: 3, name: "end", kind: "message", T: () => Timestamp },
+            { no: 4, name: "profile_type", kind: "scalar", opt: true, T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<LabelsRequest>): LabelsRequest {
@@ -3828,6 +3855,9 @@ class LabelsRequest$Type extends MessageType<LabelsRequest> {
                 case /* google.protobuf.Timestamp end */ 3:
                     message.end = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.end);
                     break;
+                case /* optional string profile_type */ 4:
+                    message.profileType = reader.string();
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -3849,6 +3879,9 @@ class LabelsRequest$Type extends MessageType<LabelsRequest> {
         /* google.protobuf.Timestamp end = 3; */
         if (message.end)
             Timestamp.internalBinaryWrite(message.end, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* optional string profile_type = 4; */
+        if (message.profileType !== undefined)
+            writer.tag(4, WireType.LengthDelimited).string(message.profileType);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -3921,7 +3954,8 @@ class ValuesRequest$Type extends MessageType<ValuesRequest> {
             { no: 1, name: "label_name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "match", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
             { no: 3, name: "start", kind: "message", T: () => Timestamp },
-            { no: 4, name: "end", kind: "message", T: () => Timestamp }
+            { no: 4, name: "end", kind: "message", T: () => Timestamp },
+            { no: 5, name: "profile_type", kind: "scalar", opt: true, T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<ValuesRequest>): ValuesRequest {
@@ -3949,6 +3983,9 @@ class ValuesRequest$Type extends MessageType<ValuesRequest> {
                 case /* google.protobuf.Timestamp end */ 4:
                     message.end = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.end);
                     break;
+                case /* optional string profile_type */ 5:
+                    message.profileType = reader.string();
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -3973,6 +4010,9 @@ class ValuesRequest$Type extends MessageType<ValuesRequest> {
         /* google.protobuf.Timestamp end = 4; */
         if (message.end)
             Timestamp.internalBinaryWrite(message.end, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* optional string profile_type = 5; */
+        if (message.profileType !== undefined)
+            writer.tag(5, WireType.LengthDelimited).string(message.profileType);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
