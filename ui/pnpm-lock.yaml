@@ -235,8 +235,8 @@ importers:
         specifier: 3.1.2
         version: 3.1.2
       pm2:
-        specifier: 5.4.0
-        version: 5.4.0
+        specifier: 5.4.1
+        version: 5.4.1
       postcss:
         specifier: 8.4.38
         version: 8.4.38
@@ -437,8 +437,8 @@ importers:
         specifier: 29.7.0
         version: 29.7.0
       pm2:
-        specifier: 5.4.0
-        version: 5.4.0
+        specifier: 5.4.1
+        version: 5.4.1
       tslint:
         specifier: 6.1.3
         version: 6.1.3(typescript@5.4.5)
@@ -19431,8 +19431,8 @@ packages:
     dev: true
     optional: true
 
-  /pm2@5.4.0:
-    resolution: {integrity: sha512-9TrDuckcSEnINoURygr3yfruK20qXuOUPOPQyIh4FIskQduyDNst9ys1XAt9YPY3RyGxVr2+x8Irsdma3klVQw==}
+  /pm2@5.4.1:
+    resolution: {integrity: sha512-y9ndADjy78XfzdbVHISn4WiUTrcvmsO7ieCtM/oC80rwPgBDg+bHkkz1e4eaLOW5a7sJsnDfQjJe4AqxNnIw5Q==}
     engines: {node: '>=12.0.0'}
     hasBin: true
     dependencies:
