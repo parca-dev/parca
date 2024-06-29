@@ -511,13 +511,13 @@ importers:
         version: 8.17.3(react-dom@18.3.1)(react@18.3.1)
       '@tanstack/react-virtual':
         specifier: ^3.5.0
-        version: 3.7.0(react-dom@18.3.1)(react@18.3.1)
+        version: 3.8.1(react-dom@18.3.1)(react@18.3.1)
       '@tanstack/table-core':
         specifier: ^8.17.3
         version: 8.17.3
       '@tanstack/virtual-core':
         specifier: ^3.5.0
-        version: 3.7.0
+        version: 3.8.1
       '@types/d3-selection':
         specifier: ^3.0.10
         version: 3.0.10
@@ -3446,7 +3446,7 @@ packages:
       react: ^16 || ^17 || ^18
       react-dom: ^16 || ^17 || ^18
     dependencies:
-      '@tanstack/react-virtual': 3.7.0(react-dom@18.3.1)(react@18.3.1)
+      '@tanstack/react-virtual': 3.8.1(react-dom@18.3.1)(react@18.3.1)
       client-only: 0.0.1
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
@@ -6809,13 +6809,13 @@ packages:
       react-dom: 18.3.1(react@18.3.1)
     dev: false
 
-  /@tanstack/react-virtual@3.7.0(react-dom@18.3.1)(react@18.3.1):
-    resolution: {integrity: sha512-3RtOwEU1HKS4iFBoTcCrV3Szqt4KoERMhZr8v57dvnh5o70sR9GAdF+0aE/qhiOmePrKujGwAayFNJSr/8Dbqw==}
+  /@tanstack/react-virtual@3.8.1(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-dP5a7giEM4BQWLJ7K07ToZv8rF51mzbrBMkf0scg1QNYuFx3utnPUBPUHdzaowZhIez1K2XS78amuzD+YGRA5Q==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
     dependencies:
-      '@tanstack/virtual-core': 3.7.0
+      '@tanstack/virtual-core': 3.8.1
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
     dev: false
@@ -6825,8 +6825,8 @@ packages:
     engines: {node: '>=12'}
     dev: false
 
-  /@tanstack/virtual-core@3.7.0:
-    resolution: {integrity: sha512-p0CWuqn+n8iZmsL7/l0Xg7kbyIKnHNqkEJkMDOkg4x3Ni3LohszmnJY8FPhTgG7Ad9ZFGcdKmn1R1mKUGEh9Xg==}
+  /@tanstack/virtual-core@3.8.1:
+    resolution: {integrity: sha512-uNtAwenT276M9QYCjTBoHZ8X3MUeCRoGK59zPi92hMIxdfS9AyHjkDWJ94WroDxnv48UE+hIeo21BU84jKc8aQ==}
     dev: false
 
   /@testing-library/dom@10.1.0:
