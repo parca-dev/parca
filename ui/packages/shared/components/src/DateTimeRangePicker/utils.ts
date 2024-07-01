@@ -256,6 +256,9 @@ export const getHistoricalDate = ({value, unit}: {value: number; unit: string}):
     case UNITS.DAY:
       now.setDate(now.getDate() - value);
       return now;
+    case UNITS.WEEK:
+      now.setDate(now.getDate() - value * 7);
+      return now;
     default:
       return now;
   }

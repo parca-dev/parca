@@ -74,8 +74,13 @@ const presetRanges = [
 const NOW = new RelativeDate(UNITS.MINUTE, 0);
 
 const parseInput = (input: string): {value: number; unit: string} | null => {
+  // Ensure the input is not too long to mitigate potential DoS attacks
+  if (input.length > 100) {
+    return null; // Input is too long
+  }
+
   const value = parseFloat(input);
-  const match = input.match(/(\d+)([mhd])/);
+  const match = input.match(/^(\d+)([mhdw])$/);
 
   // handle parseFloat edge cases and non-valid input
   if (Number.isNaN(value) || input.includes('Infinity') || input.includes('e') || match == null) {
@@ -134,8 +139,12 @@ export const RelativeDatePickerForPanel = ({
       const timeRangeToHours = timeRange / 1000 / 60 / 60;
       return {unit: UNITS.HOUR, value: roundToHundredth(timeRangeToHours)};
     }
-    const timeRangeToDays = timeRange / 1000 / 60 / 60 / 24;
-    return {unit: UNITS.DAY, value: roundToHundredth(timeRangeToDays)};
+    if (timeRange < 1000 * 60 * 60 * 24 * 7) {
+      const timeRangeToDays = timeRange / 1000 / 60 / 60 / 24;
+      return {unit: UNITS.DAY, value: roundToHundredth(timeRangeToDays)};
+    }
+    const timeRangeToWeeks = timeRange / 1000 / 60 / 60 / 24 / 7;
+    return {unit: UNITS.WEEK, value: roundToHundredth(timeRangeToWeeks)};
   };
 
   const {unit, value} = useMemo(
