@@ -18,12 +18,9 @@ declare global {
     PATH_PREFIX: string;
   }
 }
-
-const pathPrefix = import.meta.env.DEV
-  ? ''
-  : typeof window !== 'undefined'
-  ? window.PATH_PREFIX
-  : '';
+const dev = import.meta.env?.DEV ?? false;
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+const pathPrefix = (dev as boolean) ? '' : typeof window !== 'undefined' ? window.PATH_PREFIX : '';
 
 export const NoDataPrompt = (): JSX.Element => {
   return (

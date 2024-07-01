@@ -141,7 +141,7 @@ export let grammar;
 
   if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
     module.exports = grammar;
-  } else {
+  } else if (typeof window !== 'undefined') {
     window.grammar = grammar;
   }
 })();
