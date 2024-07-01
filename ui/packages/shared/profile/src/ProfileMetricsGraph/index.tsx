@@ -27,12 +27,9 @@ import {Query} from '@parca/parser';
 import {capitalizeOnlyFirstLetter, getStepDuration} from '@parca/utilities';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
-import {useLabelNames} from '../MatchersInput';
 import MetricsGraph from '../MetricsGraph';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
 import useDelayedLoader from '../useDelayedLoader';
-import {Toolbar} from './Toolbar';
-import {useSumBy} from './useSumBy';
 
 interface ProfileMetricsEmptyStateProps {
   message: string;
@@ -82,12 +79,14 @@ export interface IQueryRangeState {
   error: RpcError | null;
 }
 
+const EMPTY_SUM_BY: string[] = [];
+
 export const useQueryRange = (
   client: QueryServiceClient,
   queryExpression: string,
   start: number,
   end: number,
-  sumBy: string[] = [],
+  sumBy: string[] = EMPTY_SUM_BY,
   skip = false
 ): IQueryRangeState => {
   const [isLoading, setLoading] = useState<boolean>(!skip);
@@ -145,25 +144,7 @@ const ProfileMetricsGraph = ({
   onPointClick,
   comparing = false,
 }: ProfileMetricsGraphProps): JSX.Element => {
-  const {loading: labelNamesLoading, result: labelNamesResult} = useLabelNames(
-    queryClient,
-    from,
-    to,
-    profile?.ProfileSource()?.ProfileType()?.toString()
-  );
-  const [sumBy, setSumBy] = useSumBy(
-    profile?.ProfileSource()?.ProfileType(),
-    labelNamesResult.response?.labelNames
-  );
-
-  const {isLoading, response, error} = useQueryRange(
-    queryClient,
-    queryExpression,
-    from,
-    to,
-    sumBy,
-    labelNamesLoading
-  );
+  const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to);
   const isLoaderVisible = useDelayedLoader(isLoading);
   const {onError, perf, authenticationErrorMessage, isDarkMode} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(comparing);
@@ -185,8 +166,7 @@ const ProfileMetricsGraph = ({
   const series = response?.series;
   const dataAvailable = series !== null && series !== undefined && series?.length > 0;
 
-  const metricsGraphLoading =
-    isLoaderVisible || (isLoading && !dataAvailable && !labelNamesLoading);
+  const metricsGraphLoading = isLoaderVisible || (isLoading && !dataAvailable);
 
   if (metricsGraphLoading) {
     return <MetricsGraphSkeleton heightStyle={heightStyle} isDarkMode={isDarkMode} />;
@@ -198,12 +178,6 @@ const ProfileMetricsGraph = ({
     }
 
     return <ErrorContent errorMessage={capitalizeOnlyFirstLetter(error.message)} />;
-  }
-
-  if (!labelNamesLoading && labelNamesResult?.error != null) {
-    return (
-      <ErrorContent errorMessage={capitalizeOnlyFirstLetter(labelNamesResult.error.message)} />
-    );
   }
 
   if (dataAvailable) {
@@ -233,11 +207,6 @@ const ProfileMetricsGraph = ({
           animate={{display: 'block', opacity: 1}}
           transition={{duration: 0.5}}
         >
-          <Toolbar
-            sumBy={sumBy}
-            setSumBy={setSumBy}
-            labels={labelNamesResult.response?.labelNames ?? []}
-          />
           <MetricsGraph
             data={series}
             from={from}
