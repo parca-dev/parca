@@ -79,12 +79,14 @@ export interface IQueryRangeState {
   error: RpcError | null;
 }
 
+const EMPTY_SUM_BY: string[] = [];
+
 export const useQueryRange = (
   client: QueryServiceClient,
   queryExpression: string,
   start: number,
   end: number,
-  sumBy: string[] = [],
+  sumBy: string[] = EMPTY_SUM_BY,
   skip = false
 ): IQueryRangeState => {
   const [isLoading, setLoading] = useState<boolean>(!skip);
@@ -126,7 +128,7 @@ export const useQueryRange = (
           setLoading(false);
         });
     })();
-  }, [client, queryExpression, start, end, metadata, sumBy.length === 0 ? 'empty' : sumBy, skip]);
+  }, [client, queryExpression, start, end, metadata, sumBy, skip]);
 
   return {...state, isLoading};
 };
