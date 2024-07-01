@@ -14092,7 +14092,7 @@ packages:
       read-package-json: 6.0.4
       semver: 7.6.2
       validate-npm-package-license: 3.0.4
-      validate-npm-package-name: 5.0.0
+      validate-npm-package-name: 5.0.1
     dev: true
 
   /inline-style-parser@0.1.1:
@@ -18266,7 +18266,7 @@ packages:
       hosted-git-info: 6.1.1
       proc-log: 3.0.0
       semver: 7.6.2
-      validate-npm-package-name: 5.0.0
+      validate-npm-package-name: 5.0.1
     dev: true
 
   /npm-package-arg@11.0.2:
@@ -18276,7 +18276,7 @@ packages:
       hosted-git-info: 7.0.2
       proc-log: 4.2.0
       semver: 7.6.2
-      validate-npm-package-name: 5.0.0
+      validate-npm-package-name: 5.0.1
     dev: true
 
   /npm-package-arg@8.1.1:
@@ -24746,6 +24746,11 @@ packages:
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
     dependencies:
       builtins: 5.1.0
+    dev: true
+
+  /validate-npm-package-name@5.0.1:
+    resolution: {integrity: sha512-OljLrQ9SQdOUqTaQxqL5dEfZWrXExyyWsozYlAWFawPVNuD83igl7uJD2RTkNMbniIYgt8l81eCJGIdQF7avLQ==}
+    engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
     dev: true
 
   /vary@1.1.2:
