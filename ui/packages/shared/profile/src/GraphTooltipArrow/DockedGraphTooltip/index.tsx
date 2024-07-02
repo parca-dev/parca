@@ -135,8 +135,8 @@ export const DockedGraphTooltip = ({
               {name !== ''
                 ? name
                 : locationAddress !== 0n
-                  ? hexifyAddress(locationAddress)
-                  : 'unknown'}
+                ? hexifyAddress(locationAddress)
+                : 'unknown'}
             </p>
           )}
         </div>
