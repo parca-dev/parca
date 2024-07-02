@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {AnimatePresence, motion} from 'framer-motion';
@@ -60,6 +60,7 @@ interface ProfileMetricsGraphProps {
   profile: ProfileSelection | null;
   from: number;
   to: number;
+  timeRange: DateTimeRange;
   setTimeRange: (range: DateTimeRange) => void;
   addLabelMatcher: (
     labels: {key: string; value: string} | Array<{key: string; value: string}>
@@ -76,6 +77,7 @@ interface ProfileMetricsGraphProps {
 export interface IQueryRangeState {
   response: QueryRangeResponse | null;
   isLoading: boolean;
+  isRefreshing?: boolean;
   error: RpcError | null;
 }
 
@@ -86,9 +88,15 @@ export const useQueryRange = (
   queryExpression: string,
   start: number,
   end: number,
+  timeRange: DateTimeRange,
   sumBy: string[] = EMPTY_SUM_BY,
   skip = false
 ): IQueryRangeState => {
+  const previousQueryParams = useRef<{
+    queryExpression?: string;
+    timeRange?: DateTimeRange;
+    isRefresh?: boolean;
+  }>({});
   const [isLoading, setLoading] = useState<boolean>(!skip);
   const [state, setState] = useState<IQueryRangeState>({
     response: null,
@@ -102,6 +110,18 @@ export const useQueryRange = (
       if (skip) {
         return;
       }
+
+      if (
+        previousQueryParams.current.queryExpression !== queryExpression ||
+        previousQueryParams.current.timeRange !== timeRange
+      ) {
+        previousQueryParams.current.queryExpression = queryExpression;
+        previousQueryParams.current.timeRange = timeRange;
+        previousQueryParams.current.isRefresh = undefined;
+      } else {
+        previousQueryParams.current.isRefresh = true;
+      }
+
       setLoading(true);
 
       const stepDuration = getStepDuration(start, end);
@@ -126,11 +146,16 @@ export const useQueryRange = (
         .catch(error => {
           setState({response: null, isLoading: false, error});
           setLoading(false);
+        })
+        .finally(() => {
+          if (previousQueryParams.current.isRefresh !== undefined) {
+            previousQueryParams.current.isRefresh = undefined;
+          }
         });
     })();
   }, [client, queryExpression, start, end, metadata, sumBy, skip]);
 
-  return {...state, isLoading};
+  return {...state, isLoading, isRefreshing: previousQueryParams.current.isRefresh};
 };
 
 const ProfileMetricsGraph = ({
@@ -143,9 +168,17 @@ const ProfileMetricsGraph = ({
   addLabelMatcher,
   onPointClick,
   comparing = false,
+  timeRange,
 }: ProfileMetricsGraphProps): JSX.Element => {
-  const {isLoading, response, error} = useQueryRange(queryClient, queryExpression, from, to);
-  const isLoaderVisible = useDelayedLoader(isLoading);
+  const {isLoading, isRefreshing, response, error} = useQueryRange(
+    queryClient,
+    queryExpression,
+    from,
+    to,
+    timeRange
+  );
+  const delayedLoading = useDelayedLoader(isLoading);
+  const isLoaderVisible = isRefreshing ? delayedLoading : isLoading;
   const {onError, perf, authenticationErrorMessage, isDarkMode} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(comparing);
 
