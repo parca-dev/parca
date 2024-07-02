@@ -29,7 +29,6 @@ import {capitalizeOnlyFirstLetter, getStepDuration} from '@parca/utilities';
 import {MergedProfileSelection, ProfileSelection} from '..';
 import MetricsGraph from '../MetricsGraph';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
-import useDelayedLoader from '../useDelayedLoader';
 
 interface ProfileMetricsEmptyStateProps {
   message: string;
