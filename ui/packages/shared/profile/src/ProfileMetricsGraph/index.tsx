@@ -153,7 +153,7 @@ export const useQueryRange = (
           }
         });
     })();
-  }, [client, queryExpression, start, end, metadata, sumBy, skip]);
+  }, [client, queryExpression, start, end, metadata, timeRange, sumBy, skip]);
 
   return {...state, isLoading, isRefreshing: previousQueryParams.current.isRefresh};
 };
@@ -178,7 +178,7 @@ const ProfileMetricsGraph = ({
     timeRange
   );
   const delayedLoading = useDelayedLoader(isLoading);
-  const isLoaderVisible = isRefreshing ? delayedLoading : isLoading;
+  const isLoaderVisible = isRefreshing === true ? delayedLoading : isLoading;
   const {onError, perf, authenticationErrorMessage, isDarkMode} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(comparing);
 
