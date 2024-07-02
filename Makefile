@@ -137,14 +137,6 @@ proto/generate: proto/vendor
 	buf generate buf.build/grpc/grpc --path grpc/health/
 	# docker run --volume ${PWD}:/workspace --workdir /workspace bufbuild/buf generate
 	buf generate
-	rm -rf gen/proto/go/opentelemetry
-	buf generate --template otel-buf.gen.yaml --path proto/opentelemetry/proto/collector/profiles/v1/profiles_service.proto
-	buf generate --template otel-buf.gen.yaml --path proto/opentelemetry/proto/profiles/v1/alternatives/pprofextended/pprofextended.proto
-	buf generate --template otel-buf.gen.yaml --path proto/opentelemetry/proto/profiles/v1/profiles.proto
-	sed -i 's/go.opentelemetry.io\/proto\/otlp\/profiles\/v1\/alternatives\/pprofextended/github.com\/parca-dev\/parca\/gen\/proto\/go\/opentelemetry\/proto\/profiles\/v1\/alternatives\/pprofextended/g' gen/proto/go/opentelemetry/proto/profiles/v1/profiles.pb.go
-	sed -i 's/go.opentelemetry.io\/proto\/otlp\/profiles\/v1/github.com\/parca-dev\/parca\/gen\/proto\/go\/opentelemetry\/proto\/profiles\/v1/g' gen/proto/go/opentelemetry/proto/collector/profiles/v1/profiles_service.pb.go
-	rm -rf gen/proto/go/opentelemetry/proto/common
-	rm -rf gen/proto/go/opentelemetry/proto/resource
 
 .PHONY: proto/vendor
 proto/vendor: proto/google/pprof/profile.proto

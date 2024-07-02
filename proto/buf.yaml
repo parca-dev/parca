@@ -9,7 +9,3 @@ lint:
     - COMMENTS
   ignore:
     - google/pprof/profile.proto
-    - opentelemetry/proto/collector/profiles/v1/profiles_service.proto
-    - opentelemetry/proto/profiles/v1/profiles.proto
-    - opentelemetry/proto/profiles/v1/alternatives/pprofextended/pprofextended.proto
-    - opentelemetry/proto/common/v1/common.proto
