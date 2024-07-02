@@ -93,7 +93,15 @@ export const DockedGraphTooltip = ({
     return <></>;
   }
 
-  const {name, cumulativeText, diffText, diff} = graphTooltipData;
+  const {
+    name,
+    cumulativeText,
+    cumulativePerSecondText,
+    flatText,
+    flatPerSecondText,
+    diffText,
+    diff,
+  } = graphTooltipData;
 
   const labels = labelPairs.map(
     (l): React.JSX.Element => (
@@ -110,6 +118,9 @@ export const DockedGraphTooltip = ({
   const inlinedText = inlined === null ? 'merged' : inlined ? 'yes' : 'no';
   const addressText = locationAddress !== 0n ? hexifyAddress(locationAddress) : <NoData />;
 
+  const cumulativeTextBoth = `${cumulativeText}\n${cumulativePerSecondText}`;
+  const flatTextBoth = `${flatText}\n${flatPerSecondText}`;
+
   return (
     <div
       className="fixed bottom-0 z-20 overflow-hidden rounded-t-lg border-l border-r border-t border-gray-400 bg-white bg-opacity-90 px-8 py-3 dark:border-gray-600 dark:bg-black dark:bg-opacity-80"
@@ -124,13 +135,14 @@ export const DockedGraphTooltip = ({
               {name !== ''
                 ? name
                 : locationAddress !== 0n
-                ? hexifyAddress(locationAddress)
-                : 'unknown'}
+                  ? hexifyAddress(locationAddress)
+                  : 'unknown'}
             </p>
           )}
         </div>
         <div className="flex justify-between gap-3">
-          <InfoSection title="Cumulative" value={cumulativeText} minWidth="w-44" />
+          <InfoSection title="Cumulative" value={cumulativeTextBoth} minWidth="w-44" />
+          <InfoSection title="Flat" value={flatTextBoth} minWidth="w-44" />
           {diff !== 0n ? <InfoSection title="Diff" value={diffText} minWidth="w-44" /> : null}
           <InfoSection
             title="File"
