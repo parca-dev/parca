@@ -16,6 +16,8 @@ package profile
 import (
 	"encoding/binary"
 
+	"github.com/apache/arrow/go/v16/arrow/array"
+
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	pprofextended "github.com/parca-dev/parca/gen/proto/go/opentelemetry/proto/profiles/v1/alternatives/pprofextended"
 )
@@ -25,16 +27,9 @@ func EncodeOtelLocation(
 	m *pprofextended.Mapping,
 	funcs []*pprofextended.Function,
 	stringTable []string,
-	stabilizedAddress bool,
 ) []byte {
 	buf := make([]byte, serializedOtelLocationSize(l, m, funcs, stringTable))
 	offset := binary.PutUvarint(buf, l.Address)
-	if stabilizedAddress {
-		buf[offset] = 0x1
-	} else {
-		buf[offset] = 0x0
-	}
-	offset++
 	offset = writeIntAsUvarint(buf, offset, len(l.Line))
 	if m == nil {
 		buf[offset] = 0x0
@@ -98,7 +93,6 @@ func EncodeOtelLocation(
 func serializedOtelLocationSize(l *pprofextended.Location, m *pprofextended.Mapping, funcs []*pprofextended.Function, stringTable []string) int {
 	size := UvarintSize(l.Address)
 	size++ // 1 byte for whether there is a mapping
-	size++ // 1 byte for whether there is a stabilized address
 
 	size = addSerializedIntAsUvarintSize(size, len(l.Line))
 
@@ -155,16 +149,9 @@ func EncodePprofLocation(
 	m *pprofpb.Mapping,
 	funcs []*pprofpb.Function,
 	stringTable []string,
-	stabilizedAddress bool,
 ) []byte {
 	buf := make([]byte, serializedPprofLocationSize(l, m, funcs, stringTable))
 	offset := binary.PutUvarint(buf, l.Address)
-	if stabilizedAddress {
-		buf[offset] = 0x1
-	} else {
-		buf[offset] = 0x0
-	}
-	offset++
 	offset = writeIntAsUvarint(buf, offset, len(l.Line))
 	if m == nil {
 		buf[offset] = 0x0
@@ -233,7 +220,6 @@ func serializedPprofLocationSize(
 ) int {
 	size := UvarintSize(l.Address)
 	size++ // 1 byte for whether there is a mapping
-	size++ // 1 byte for whether there is a stabilized address
 
 	size = addSerializedIntAsUvarintSize(size, len(l.Line))
 
@@ -279,6 +265,136 @@ func serializedPprofLocationSize(
 				filename = stringTable[f.Filename]
 			}
 			size = addSerializedStringSize(size, filename)
+		}
+	}
+
+	return size
+}
+
+func EncodeArrowLocation(
+	address uint64,
+	hasMapping bool,
+	mappingStart uint64,
+	mappingLimit uint64,
+	mappingOffset uint64,
+	mappingFile []byte,
+	buildID []byte,
+	linesStartOffset int,
+	linesEndOffset int,
+	lines *array.List,
+	line *array.Struct,
+	lineNumber *array.Int64,
+	lineFunctionName *array.Dictionary,
+	lineFunctionNameDict *array.Binary,
+	lineFunctionSystemName *array.Dictionary,
+	lineFunctionSystemNameDict *array.Binary,
+	lineFunctionFilename *array.RunEndEncoded,
+	lineFunctionFilenameDict *array.Dictionary,
+	lineFunctionFilenameDictValues *array.Binary,
+	lineFunctionStartLine *array.Int64,
+) []byte {
+	buf := make([]byte, serializedArrowLocationSize(
+		address,
+		hasMapping,
+		mappingStart,
+		mappingLimit,
+		mappingOffset,
+		mappingFile,
+		buildID,
+		linesStartOffset,
+		linesEndOffset,
+		lines,
+		line,
+		lineNumber,
+		lineFunctionName,
+		lineFunctionNameDict,
+		lineFunctionSystemName,
+		lineFunctionSystemNameDict,
+		lineFunctionFilename,
+		lineFunctionFilenameDict,
+		lineFunctionFilenameDictValues,
+		lineFunctionStartLine,
+	))
+	offset := binary.PutUvarint(buf, address)
+	offset = writeIntAsUvarint(buf, offset, linesEndOffset-linesStartOffset)
+	if hasMapping {
+		buf[offset] = 0x1
+		offset++
+
+		offset = writeString(buf, offset, string(buildID))
+		offset = writeString(buf, offset, string(mappingFile))
+		offset = writeUint64(buf, offset, mappingStart)
+		offset = writeUint64(buf, offset, mappingLimit-mappingStart)
+		offset = writeUint64(buf, offset, mappingOffset)
+	} else {
+		buf[offset] = 0x0
+		offset++
+	}
+
+	for i := linesStartOffset; i < linesEndOffset; i++ {
+		offset = writeInt64AsUvarint(buf, offset, lineNumber.Value(i))
+
+		buf[offset] = 0x1
+		offset++
+
+		offset = writeInt64AsUvarint(buf, offset, lineFunctionStartLine.Value(i))
+		offset = writeString(buf, offset, string(lineFunctionNameDict.Value(int(lineFunctionName.GetValueIndex(i)))))
+		offset = writeString(buf, offset, string(lineFunctionSystemNameDict.Value(int(lineFunctionSystemName.GetValueIndex(i)))))
+
+		if lineFunctionFilenameDict.IsValid(lineFunctionFilename.GetPhysicalIndex(i)) {
+			offset = writeString(buf, offset, string(lineFunctionFilenameDictValues.Value(int(lineFunctionFilenameDict.GetValueIndex(lineFunctionFilename.GetPhysicalIndex(i))))))
+		} else {
+			offset = writeString(buf, offset, "")
+		}
+	}
+
+	return buf
+}
+
+func serializedArrowLocationSize(
+	address uint64,
+	hasMapping bool,
+	mappingStart uint64,
+	mappingLimit uint64,
+	mappingOffset uint64,
+	mappingFile []byte,
+	buildID []byte,
+	linesStartOffset int,
+	linesEndOffset int,
+	lines *array.List,
+	line *array.Struct,
+	lineNumber *array.Int64,
+	lineFunctionName *array.Dictionary,
+	lineFunctionNameDict *array.Binary,
+	lineFunctionSystemName *array.Dictionary,
+	lineFunctionSystemNameDict *array.Binary,
+	lineFunctionFilename *array.RunEndEncoded,
+	lineFunctionFilenameDict *array.Dictionary,
+	lineFunctionFilenameDictValues *array.Binary,
+	lineFunctionStartLine *array.Int64,
+) int {
+	size := UvarintSize(address)
+	size++ // 1 byte for whether there is a mapping
+
+	size = addSerializedIntAsUvarintSize(size, linesEndOffset-linesStartOffset)
+
+	if hasMapping {
+		size = addSerializedStringSize(size, string(buildID))
+		size = addSerializedStringSize(size, string(mappingFile))
+		size = addSerializedUint64Size(size, mappingStart)
+		size = addSerializedUint64Size(size, mappingLimit-mappingStart)
+		size = addSerializedUint64Size(size, mappingOffset)
+	}
+
+	for i := linesStartOffset; i < linesEndOffset; i++ {
+		size = addSerializedInt64AsUvarintSize(size, lineNumber.Value(i))
+
+		size++ // 1 byte for whether there is a function
+		if lineFunctionName.IsValid(i) {
+			size = addSerializedInt64AsUvarintSize(size, lineFunctionStartLine.Value(i))
+			size = addSerializedStringSize(size, string(lineFunctionNameDict.Value(int(lineFunctionName.GetValueIndex(i)))))
+			size = addSerializedStringSize(size, string(lineFunctionSystemNameDict.Value(int(lineFunctionSystemName.GetValueIndex(i)))))
+			size = addSerializedStringSize(size, string(lineFunctionFilenameDictValues.Value(int(lineFunctionFilenameDict.GetValueIndex(lineFunctionFilename.GetPhysicalIndex(i))))))
 		}
 	}
 

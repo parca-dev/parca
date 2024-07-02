@@ -7,6 +7,9 @@ import type { AgentsRequest } from "./profilestore";
 import type { RpcTransport } from "@protobuf-ts/runtime-rpc";
 import type { ServiceInfo } from "@protobuf-ts/runtime-rpc";
 import { ProfileStoreService } from "./profilestore";
+import type { WriteResponse } from "./profilestore";
+import type { WriteRequest } from "./profilestore";
+import type { DuplexStreamingCall } from "@protobuf-ts/runtime-rpc";
 import { stackIntercept } from "@protobuf-ts/runtime-rpc";
 import type { WriteRawResponse } from "./profilestore";
 import type { WriteRawRequest } from "./profilestore";
@@ -24,6 +27,16 @@ export interface IProfileStoreServiceClient {
      * @generated from protobuf rpc: WriteRaw(parca.profilestore.v1alpha1.WriteRawRequest) returns (parca.profilestore.v1alpha1.WriteRawResponse);
      */
     writeRaw(input: WriteRawRequest, options?: RpcOptions): UnaryCall<WriteRawRequest, WriteRawResponse>;
+    /**
+     * Write accepts profiling data encoded as an arrow record. It's a
+     * bi-directional streaming RPC, because the first message can contain only
+     * samples without the stacktraces, and only reference stacktrace IDs. The
+     * backend can then request the full stacktrace from the client should it not
+     * know the stacktrace yet.
+     *
+     * @generated from protobuf rpc: Write(stream parca.profilestore.v1alpha1.WriteRequest) returns (stream parca.profilestore.v1alpha1.WriteResponse);
+     */
+    write(options?: RpcOptions): DuplexStreamingCall<WriteRequest, WriteResponse>;
 }
 /**
  * ProfileStoreService is the service the accepts pprof writes
@@ -44,6 +57,19 @@ export class ProfileStoreServiceClient implements IProfileStoreServiceClient, Se
     writeRaw(input: WriteRawRequest, options?: RpcOptions): UnaryCall<WriteRawRequest, WriteRawResponse> {
         const method = this.methods[0], opt = this._transport.mergeOptions(options);
         return stackIntercept<WriteRawRequest, WriteRawResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * Write accepts profiling data encoded as an arrow record. It's a
+     * bi-directional streaming RPC, because the first message can contain only
+     * samples without the stacktraces, and only reference stacktrace IDs. The
+     * backend can then request the full stacktrace from the client should it not
+     * know the stacktrace yet.
+     *
+     * @generated from protobuf rpc: Write(stream parca.profilestore.v1alpha1.WriteRequest) returns (stream parca.profilestore.v1alpha1.WriteResponse);
+     */
+    write(options?: RpcOptions): DuplexStreamingCall<WriteRequest, WriteResponse> {
+        const method = this.methods[1], opt = this._transport.mergeOptions(options);
+        return stackIntercept<WriteRequest, WriteResponse>("duplex", this._transport, method, opt);
     }
 }
 /**

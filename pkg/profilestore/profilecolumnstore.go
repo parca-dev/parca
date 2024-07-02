@@ -14,16 +14,21 @@
 package profilestore
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/apache/arrow/go/v16/arrow/ipc"
 	"github.com/apache/arrow/go/v16/arrow/memory"
 	"github.com/go-kit/log"
+	"github.com/gogo/status"
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -58,6 +63,8 @@ type ProfileColumnStore struct {
 
 	mem    memory.Allocator
 	schema *dynparquet.Schema
+
+	converterMetrics *normalizer.Metrics
 }
 
 var _ profilestorepb.ProfileStoreServiceServer = &ProfileColumnStore{}
@@ -70,6 +77,7 @@ func NewProfileColumnStore(
 	schema *dynparquet.Schema,
 	mem memory.Allocator,
 ) *ProfileColumnStore {
+	normalizerMetrics := normalizer.NewMetrics(reg)
 	return &ProfileColumnStore{
 		logger:   logger,
 		tracer:   tracer,
@@ -77,6 +85,8 @@ func NewProfileColumnStore(
 		schema:   schema,
 		mem:      mem,
 		agents:   make(map[string]agent),
+
+		converterMetrics: normalizerMetrics,
 	}
 }
 
@@ -162,6 +172,127 @@ func (s *ProfileColumnStore) WriteRaw(ctx context.Context, req *profilestorepb.W
 	}
 
 	return &profilestorepb.WriteRawResponse{}, nil
+}
+
+func (s *ProfileColumnStore) Write(server profilestorepb.ProfileStoreService_WriteServer) error {
+	ctx, cancel := context.WithTimeout(server.Context(), 5*time.Second)
+	defer cancel()
+
+	errChan := make(chan error, 1)
+	go func() {
+		errChan <- s.write(ctx, server)
+		close(errChan)
+	}()
+
+	select {
+	case <-ctx.Done():
+		return status.Error(codes.DeadlineExceeded, "deadline exceeded")
+	case err := <-errChan:
+		return err
+	}
+}
+
+func (s *ProfileColumnStore) write(ctx context.Context, server profilestorepb.ProfileStoreService_WriteServer) error {
+	req, err := server.Recv()
+	if err != nil {
+		return status.Errorf(codes.InvalidArgument, "failed to receive request: %v", err)
+	}
+
+	r, err := ipc.NewReader(bytes.NewReader(req.Record))
+	if err != nil {
+		return status.Errorf(codes.InvalidArgument, "failed to create reader: %v", err)
+	}
+	defer r.Release()
+
+	if !r.Next() {
+		return status.Error(codes.InvalidArgument, "no record found")
+	}
+
+	if r.Err() != nil {
+		return status.Errorf(codes.InvalidArgument, "failed to read record: %v", r.Err())
+	}
+
+	c := normalizer.NewArrowToInternalConverter(
+		s.mem,
+		s.schema,
+		s.converterMetrics,
+	)
+	defer c.Release()
+
+	if err := c.AddSampleRecord(ctx, r.Record()); err != nil {
+		return status.Error(codes.InvalidArgument, "failed to add sample record")
+	}
+
+	hasUnknownStacktraceIDs, err := c.HasUnknownStacktraceIDs()
+	if err != nil {
+		return status.Errorf(codes.Internal, "failed to check unknown stacktrace IDs: %v", err)
+	}
+	if hasUnknownStacktraceIDs {
+		rec, err := c.UnknownStacktraceIDsRecord()
+		if err != nil {
+			return status.Errorf(codes.Internal, "failed to get unknown stacktrace IDs record: %v", err)
+		}
+
+		buf := bytes.NewBuffer(nil)
+		w := ipc.NewWriter(buf,
+			ipc.WithSchema(rec.Schema()),
+			ipc.WithAllocator(s.mem),
+		)
+		if err := w.Write(rec); err != nil {
+			return status.Errorf(codes.Internal, "failed to write unknown stacktrace IDs record: %v", err)
+		}
+
+		if err := w.Close(); err != nil {
+			return status.Errorf(codes.Internal, "failed to close writer")
+		}
+
+		if err := server.Send(&profilestorepb.WriteResponse{
+			Record: buf.Bytes(),
+		}); err != nil {
+			return status.Errorf(codes.Internal, "failed to send unknown stacktrace IDs record")
+		}
+
+		req, err = server.Recv()
+		if err != nil {
+			return status.Errorf(codes.InvalidArgument, "failed to receive request: %v", err)
+		}
+
+		r, err = ipc.NewReader(bytes.NewReader(req.Record))
+		if err != nil {
+			return status.Errorf(codes.InvalidArgument, "failed to create reader: %v", err)
+		}
+
+		if !r.Next() {
+			return status.Error(codes.InvalidArgument, "no record found")
+		}
+
+		if r.Err() != nil {
+			return status.Errorf(codes.InvalidArgument, "failed to read record: %v", r.Err())
+		}
+
+		if err := c.AddLocationsRecord(ctx, r.Record()); err != nil {
+			return status.Errorf(codes.InvalidArgument, "failed to add locations record: %v", err)
+		}
+	}
+
+	if err := c.Validate(); err != nil {
+		return status.Errorf(codes.InvalidArgument, "validate record reader: %v", err)
+	}
+
+	ir, err := c.NewRecord(ctx)
+	if err != nil {
+		return fmt.Errorf("new record: %w", err)
+	}
+
+	if ir.NumRows() == 0 {
+		return nil
+	}
+
+	if err := s.ingester.Ingest(ctx, ir); err != nil {
+		return status.Errorf(codes.Internal, "failed to ingest record: %v", err)
+	}
+
+	return nil
 }
 
 func (s *ProfileColumnStore) Export(ctx context.Context, req *otelgrpcprofilingpb.ExportProfilesServiceRequest) (*otelgrpcprofilingpb.ExportProfilesServiceResponse, error) {
