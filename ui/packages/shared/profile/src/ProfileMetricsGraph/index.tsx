@@ -170,15 +170,11 @@ const ProfileMetricsGraph = ({
   comparing = false,
   timeRange,
 }: ProfileMetricsGraphProps): JSX.Element => {
-  const {isLoading, isRefreshing, response, error} = useQueryRange(
-    queryClient,
-    queryExpression,
-    from,
-    to,
-    timeRange
-  );
-  const delayedLoading = useDelayedLoader(isLoading);
-  const isLoaderVisible = isRefreshing === true ? delayedLoading : isLoading;
+  const {
+    isLoading: metricsGraphLoading,
+    response,
+    error,
+  } = useQueryRange(queryClient, queryExpression, from, to, timeRange);
   const {onError, perf, authenticationErrorMessage, isDarkMode} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(comparing);
 
@@ -198,8 +194,6 @@ const ProfileMetricsGraph = ({
 
   const series = response?.series;
   const dataAvailable = series !== null && series !== undefined && series?.length > 0;
-
-  const metricsGraphLoading = isLoaderVisible || (isLoading && !dataAvailable);
 
   if (metricsGraphLoading) {
     return <MetricsGraphSkeleton heightStyle={heightStyle} isDarkMode={isDarkMode} />;
