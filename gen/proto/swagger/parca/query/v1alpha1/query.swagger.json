@@ -274,6 +274,13 @@
             "type": "string"
           },
           {
+            "name": "diff.absolute",
+            "description": "absolute diffing, by default comparisons are relative",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
             "name": "merge.query",
             "description": "query is the query string to match profiles for merge",
             "in": "query",
@@ -1089,6 +1096,10 @@
         "b": {
           "$ref": "#/definitions/v1alpha1ProfileDiffSelection",
           "title": "b is the second profile to diff"
+        },
+        "absolute": {
+          "type": "boolean",
+          "title": "absolute diffing, by default comparisons are relative"
         }
       },
       "title": "DiffProfile contains parameters for a profile diff request"
