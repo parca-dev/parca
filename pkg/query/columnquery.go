@@ -769,10 +769,10 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile, aggr
 		return profile.Profile{}, err
 	}
 
-	return ComputeDiff(ctx, q.tracer, base, compare, q.mem)
+	return ComputeDiff(ctx, q.tracer, q.mem, base, compare, d.GetAbsolute())
 }
 
-func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile.Profile, mem memory.Allocator) (profile.Profile, error) {
+func ComputeDiff(ctx context.Context, tracer trace.Tracer, mem memory.Allocator, base, compare profile.Profile, absolute bool) (profile.Profile, error) {
 	_, span := tracer.Start(ctx, "ComputeDiff")
 	defer span.End()
 
@@ -813,12 +813,12 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile
 			totalCumulativePerSecond := math.Float64.Sum(columns[len(columns)-3].(*array.Float64))
 
 			var cumulativeRatio, cumulativePerSecondRatio float64
-			if true { // configurable via UI
-				cumulativeRatio = float64(compareTotals[i].Cumulative) / float64(totalCumulative)
-				cumulativePerSecondRatio = compareTotals[i].CumulativePerSecond / totalCumulativePerSecond
-			} else {
+			if absolute {
 				cumulativeRatio = 1
 				cumulativePerSecondRatio = 1
+			} else {
+				cumulativeRatio = float64(compareTotals[i].Cumulative) / float64(totalCumulative)
+				cumulativePerSecondRatio = compareTotals[i].CumulativePerSecond / totalCumulativePerSecond
 			}
 
 			cols := make([]arrow.Array, len(columns))

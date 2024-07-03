@@ -136,12 +136,14 @@ export class ProfileDiffSource implements ProfileSource {
   b: ProfileSource;
   filterQuery: string | undefined;
   profileType: ProfileType;
+  absolute?: boolean;
 
-  constructor(a: ProfileSource, b: ProfileSource, filterQuery?: string) {
+  constructor(a: ProfileSource, b: ProfileSource, filterQuery?: string, absolute?: boolean) {
     this.a = a;
     this.b = b;
     this.filterQuery = filterQuery;
     this.profileType = a.ProfileType();
+    this.absolute = absolute;
   }
 
   DiffSelection(): ProfileDiffSelection {
@@ -155,9 +157,10 @@ export class ProfileDiffSource implements ProfileSource {
         diff: {
           a: this.a.DiffSelection(),
           b: this.b.DiffSelection(),
+          absolute: this.absolute,
         },
       },
-      reportType: QueryRequest_ReportType.FLAMEGRAPH_UNSPECIFIED,
+      reportType: QueryRequest_ReportType.FLAMEGRAPH_ARROW,
       mode: QueryRequest_Mode.DIFF,
       filterQuery: this.filterQuery,
       filter: [],
@@ -227,7 +230,7 @@ export class MergedProfileSource implements ProfileSource {
           query: this.query.toString(),
         },
       },
-      reportType: QueryRequest_ReportType.FLAMEGRAPH_UNSPECIFIED,
+      reportType: QueryRequest_ReportType.FLAMEGRAPH_ARROW,
       mode: QueryRequest_Mode.MERGE,
       filterQuery: this.filterQuery,
       filter: [],

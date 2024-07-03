@@ -238,8 +238,13 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     param: 'invert_call_stack',
     navigateTo,
   });
-
   const isInvert = invertStack === 'true';
+
+  const [compareAbsolute = '', setCompareAbsolute] = useURLState({
+    param: 'compare_absolute',
+    navigateTo,
+  });
+  const isCompareAbsolute = compareAbsolute === 'true';
 
   const [
     totalFormatted,
@@ -294,6 +299,19 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
             </Button>
           )}
           <ShowHideLegendButton isHalfScreen={isHalfScreen} navigateTo={navigateTo} />
+          {compareMode && (
+            <Button
+              variant="neutral"
+              className="gap-2 w-max"
+              onClick={() => setCompareAbsolute(isCompareAbsolute ? '' : 'true')}
+            >
+              {isCompareAbsolute ? 'Compare Relative' : 'Compare Absolute'}
+              <Icon
+                icon={isCompareAbsolute ? 'fluent-mdl2:compare' : 'fluent-mdl2:compare-uneven'}
+                width={20}
+              />
+            </Button>
+          )}
           {isHalfScreen ? (
             <IconButton
               icon="system-uicons:reset"
