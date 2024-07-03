@@ -35,6 +35,7 @@ import (
 	"github.com/polarsignals/frostdb/pqarrow/arrowutils"
 	"github.com/polarsignals/frostdb/query/logicalplan"
 	"github.com/prometheus/common/model"
+	"github.com/prometheus/prometheus/util/strutil"
 	pprofextended "go.opentelemetry.io/proto/otlp/profiles/v1experimental"
 	"golang.org/x/exp/maps"
 	"google.golang.org/grpc/codes"
@@ -466,7 +467,7 @@ func LabelsFromSample(takenLabels map[string]string, stringTable []string, plabe
 			continue
 		}
 
-		key := stringTable[label.Key]
+		key := strutil.SanitizeLabelName(stringTable[label.Key])
 		if _, ok := labels[key]; !ok {
 			labels[key] = []string{}
 			labelNames = append(labelNames, key)
@@ -491,6 +492,7 @@ func LabelsFromSample(takenLabels map[string]string, stringTable []string, plabe
 	for _, label := range plabels {
 		key := stringTable[label.Key]
 		if label.Num != 0 {
+			key = strutil.SanitizeLabelName(key)
 			if _, ok := numLabels[key]; !ok {
 				numLabels[key] = label.Num
 			}
@@ -624,7 +626,7 @@ func LabelNamesFromSamples(
 				continue
 			}
 
-			key := stringTable[label.Key]
+			key := strutil.SanitizeLabelName(stringTable[label.Key])
 			if _, ok := labels[key]; !ok {
 				labels[key] = struct{}{}
 			}
@@ -651,6 +653,7 @@ func LabelNamesFromSamples(
 		for _, label := range sample.Label {
 			key := stringTable[label.Key]
 			if label.Num != 0 {
+				key = strutil.SanitizeLabelName(key)
 				if _, ok := allNumLabels[key]; !ok {
 					allNumLabels[key] = struct{}{}
 				}
