@@ -345,6 +345,9 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     loading,
     isHalfScreen,
     isLoading,
+    compareMode,
+    isCompareAbsolute,
+    setCompareAbsolute,
   ]);
 
   const loadingState =
