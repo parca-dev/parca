@@ -80,6 +80,16 @@ export interface IQueryRangeState {
   error: RpcError | null;
 }
 
+const getStepCountFromScreenWidth = (pixelsPerPoint: number): number => {
+  let width =
+    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+    window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+
+  // subtract the padding around the graph
+  width = width - (20 + 24 + 68) * 2;
+  return width / pixelsPerPoint;
+};
+
 const EMPTY_SUM_BY: string[] = [];
 
 export const useQueryRange = (
@@ -123,7 +133,7 @@ export const useQueryRange = (
 
       setLoading(true);
 
-      const stepDuration = getStepDuration(start, end);
+      const stepDuration = getStepDuration(start, end, getStepCountFromScreenWidth(10));
       const call = client.queryRange(
         {
           query: queryExpression,
