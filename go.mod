@@ -35,7 +35,7 @@ require (
 	github.com/polarsignals/frostdb v0.0.0-20240610080310-316067a56dde
 	github.com/polarsignals/iceberg-go v0.0.0-20240502213135-2ee70b71e76b
 	github.com/prometheus/client_golang v1.19.1
-	github.com/prometheus/common v0.54.0
+	github.com/prometheus/common v0.55.0
 	github.com/prometheus/prometheus v0.53.0
 	github.com/stretchr/testify v1.9.0
 	github.com/thanos-io/objstore v0.0.0-20240512204237-71ef2d0cf7c4
@@ -206,7 +206,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/polarsignals/wal v0.0.0-20240514152147-1cd4b81c9b88 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
-	github.com/prometheus/procfs v0.12.0 // indirect
+	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rs/cors v1.8.0 // indirect
 	github.com/rs/xid v1.5.0 // indirect
