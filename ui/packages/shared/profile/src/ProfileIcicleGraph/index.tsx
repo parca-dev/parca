@@ -240,9 +240,14 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   });
   const isInvert = invertStack === 'true';
 
-  const [compareAbsolute = '', setCompareAbsolute] = useURLState({
+  // By default, we want delta profiles (CPU) to be relatively compared.
+  // For non-delta profiles, like goroutines or memory, we want the profiles to be compared absolutely.
+  const compareAbsoluteDefault = profileType?.delta === false ? 'true' : 'false';
+
+  const [compareAbsolute = compareAbsoluteDefault, setCompareAbsolute] = useURLState({
     param: 'compare_absolute',
     navigateTo,
+    withURLUpdate: true,
   });
   const isCompareAbsolute = compareAbsolute === 'true';
 
