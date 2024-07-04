@@ -161,6 +161,9 @@ message DiffProfile {
 
   // b is the second profile to diff
   ProfileDiffSelection b = 2;
+
+  // absolute diffing, by default comparisons are relative
+  optional bool absolute = 3;
 }
 
 // ProfileDiffSelection contains the parameters of a diff selection

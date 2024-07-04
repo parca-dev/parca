@@ -261,6 +261,12 @@ export interface DiffProfile {
      * @generated from protobuf field: parca.query.v1alpha1.ProfileDiffSelection b = 2;
      */
     b?: ProfileDiffSelection;
+    /**
+     * absolute diffing, by default comparisons are relative
+     *
+     * @generated from protobuf field: optional bool absolute = 3;
+     */
+    absolute?: boolean;
 }
 /**
  * ProfileDiffSelection contains the parameters of a diff selection
@@ -1968,7 +1974,8 @@ class DiffProfile$Type extends MessageType<DiffProfile> {
     constructor() {
         super("parca.query.v1alpha1.DiffProfile", [
             { no: 1, name: "a", kind: "message", T: () => ProfileDiffSelection },
-            { no: 2, name: "b", kind: "message", T: () => ProfileDiffSelection }
+            { no: 2, name: "b", kind: "message", T: () => ProfileDiffSelection },
+            { no: 3, name: "absolute", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<DiffProfile>): DiffProfile {
@@ -1988,6 +1995,9 @@ class DiffProfile$Type extends MessageType<DiffProfile> {
                 case /* parca.query.v1alpha1.ProfileDiffSelection b */ 2:
                     message.b = ProfileDiffSelection.internalBinaryRead(reader, reader.uint32(), options, message.b);
                     break;
+                case /* optional bool absolute */ 3:
+                    message.absolute = reader.bool();
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -2006,6 +2016,9 @@ class DiffProfile$Type extends MessageType<DiffProfile> {
         /* parca.query.v1alpha1.ProfileDiffSelection b = 2; */
         if (message.b)
             ProfileDiffSelection.internalBinaryWrite(message.b, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* optional bool absolute = 3; */
+        if (message.absolute !== undefined)
+            writer.tag(3, WireType.Varint).bool(message.absolute);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	stdmath "math"
 	"strings"
 	"sync"
 	"time"
@@ -768,14 +769,51 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile, aggr
 		return profile.Profile{}, err
 	}
 
-	return ComputeDiff(ctx, q.tracer, base, compare, q.mem)
+	return ComputeDiff(ctx, q.tracer, q.mem, base, compare, d.GetAbsolute())
 }
 
-func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile.Profile, mem memory.Allocator) (profile.Profile, error) {
+func ComputeDiff(ctx context.Context, tracer trace.Tracer, mem memory.Allocator, base, compare profile.Profile, absolute bool) (profile.Profile, error) {
 	_, span := tracer.Start(ctx, "ComputeDiff")
 	defer span.End()
 
 	records := make([]arrow.Record, 0, len(compare.Samples)+len(base.Samples))
+
+	var (
+		compareCumulativeRatio          = 1.0
+		compareCumulativePerSecondRatio = 1.0
+		baseCumulativeRatio             = 1.0
+		baseCumulativePerSecondRatio    = 1.0
+	)
+
+	if !absolute {
+		compareCumulativeTotal := int64(0)
+		compareCumulativePerSecondTotal := float64(0)
+		for _, r := range compare.Samples {
+			cols := r.Columns()
+			compareCumulativeTotal += math.Int64.Sum(cols[len(cols)-4].(*array.Int64))
+			compareCumulativePerSecondTotal += math.Float64.Sum(cols[len(cols)-3].(*array.Float64))
+		}
+
+		baseCumulativeTotal := int64(0)
+		baseCumulativePerSecondTotal := float64(0)
+		for _, r := range base.Samples {
+			cols := r.Columns()
+			baseCumulativeTotal += math.Int64.Sum(cols[len(cols)-4].(*array.Int64))
+			baseCumulativePerSecondTotal += math.Float64.Sum(cols[len(cols)-3].(*array.Float64))
+		}
+
+		// Scale up base if compare is bigger
+		if compareCumulativeTotal > baseCumulativeTotal {
+			baseCumulativeRatio = float64(compareCumulativeTotal) / float64(baseCumulativeTotal)
+			baseCumulativePerSecondRatio = compareCumulativePerSecondTotal / baseCumulativePerSecondTotal
+		}
+
+		// Scale up compare if base is bigger
+		if baseCumulativeTotal > compareCumulativeTotal {
+			compareCumulativeRatio = float64(baseCumulativeTotal) / float64(compareCumulativeTotal)
+			compareCumulativePerSecondRatio = baseCumulativePerSecondTotal / compareCumulativePerSecondTotal
+		}
+	}
 
 	for _, r := range compare.Samples {
 		columns := r.Columns()
@@ -786,8 +824,23 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile
 		// is subtracting the `base` profile, but the actual calculation happens
 		// when building the visualizations. We should eventually have this be done
 		// directly by the query engine.
-		cols[len(cols)-2] = cols[len(cols)-4] // value as diff
-		cols[len(cols)-1] = cols[len(cols)-3] // value_per_second as diff_per_second
+
+		if compareCumulativeRatio > 1.0 {
+			// If compareCumulativeRatio is bigger than 1.0 we have to scale all values
+			cols[len(cols)-2] = multiplyInt64By(mem, cols[len(cols)-4].(*array.Int64), compareCumulativeRatio)
+		} else {
+			// otherwise we simply use the original values.
+			cols[len(cols)-2] = cols[len(cols)-4] // value as diff
+		}
+
+		if compareCumulativePerSecondRatio > 1.0 {
+			// If compareCumulativePerSecondRatio is bigger than 1.0 we have to scale all values
+			cols[len(cols)-1] = multiplyFloat64By(mem, cols[len(cols)-3].(*array.Float64), compareCumulativePerSecondRatio)
+		} else {
+			// otherwise we simply use the original values.
+			cols[len(cols)-1] = cols[len(cols)-3] // value_per_second as diff_per_second
+		}
+
 		records = append(records, array.NewRecord(
 			r.Schema(),
 			cols,
@@ -798,11 +851,12 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile
 	for _, r := range base.Samples {
 		func() {
 			columns := r.Columns()
+
 			cols := make([]arrow.Array, len(columns))
 			copy(cols, columns)
-			diff := multiplyInt64By(mem, columns[len(columns)-4].(*array.Int64), -1)
+			diff := multiplyInt64By(mem, columns[len(columns)-4].(*array.Int64), -1*baseCumulativeRatio)
 			defer diff.Release()
-			diffPerSecond := multiplyFloat64By(mem, columns[len(columns)-3].(*array.Float64), -1)
+			diffPerSecond := multiplyFloat64By(mem, columns[len(columns)-3].(*array.Float64), -1*baseCumulativePerSecondRatio)
 			defer diffPerSecond.Release()
 			value := zeroInt64Array(mem, int(r.NumRows()))
 			defer value.Release()
@@ -828,14 +882,15 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, base, compare profile
 	}, nil
 }
 
-func multiplyInt64By(pool memory.Allocator, arr *array.Int64, factor int64) arrow.Array {
+func multiplyInt64By(pool memory.Allocator, arr *array.Int64, factor float64) arrow.Array {
 	b := array.NewInt64Builder(pool)
 	defer b.Release()
 
 	values := arr.Int64Values()
 	valid := make([]bool, len(values))
 	for i := range values {
-		values[i] *= factor
+		nv := float64(values[i]) * factor
+		values[i] = int64(nv)
 		valid[i] = true
 	}
 
@@ -844,6 +899,11 @@ func multiplyInt64By(pool memory.Allocator, arr *array.Int64, factor int64) arro
 }
 
 func multiplyFloat64By(pool memory.Allocator, arr *array.Float64, factor float64) arrow.Array {
+	if stdmath.IsNaN(factor) {
+		arr.Retain()
+		return arr
+	}
+
 	b := array.NewFloat64Builder(pool)
 	defer b.Release()
 

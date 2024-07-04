@@ -238,8 +238,18 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     param: 'invert_call_stack',
     navigateTo,
   });
-
   const isInvert = invertStack === 'true';
+
+  // By default, we want delta profiles (CPU) to be relatively compared.
+  // For non-delta profiles, like goroutines or memory, we want the profiles to be compared absolutely.
+  const compareAbsoluteDefault = profileType?.delta === false ? 'true' : 'false';
+
+  const [compareAbsolute = compareAbsoluteDefault, setCompareAbsolute] = useURLState({
+    param: 'compare_absolute',
+    navigateTo,
+    withURLUpdate: true,
+  });
+  const isCompareAbsolute = compareAbsolute === 'true';
 
   const [
     totalFormatted,
@@ -294,6 +304,19 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
             </Button>
           )}
           <ShowHideLegendButton isHalfScreen={isHalfScreen} navigateTo={navigateTo} />
+          {compareMode && (
+            <Button
+              variant="neutral"
+              className="gap-2 w-max"
+              onClick={() => setCompareAbsolute(isCompareAbsolute ? '' : 'true')}
+            >
+              {isCompareAbsolute ? 'Compare Relative' : 'Compare Absolute'}
+              <Icon
+                icon={isCompareAbsolute ? 'fluent-mdl2:compare' : 'fluent-mdl2:compare-uneven'}
+                width={20}
+              />
+            </Button>
+          )}
           {isHalfScreen ? (
             <IconButton
               icon="system-uicons:reset"
@@ -327,6 +350,9 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     loading,
     isHalfScreen,
     isLoading,
+    compareMode,
+    isCompareAbsolute,
+    setCompareAbsolute,
   ]);
 
   const loadingState =

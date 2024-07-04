@@ -12,7 +12,7 @@
 // limitations under the License.
 
 import {QueryServiceClient} from '@parca/client';
-import {Card} from '@parca/components';
+import {Card, useURLState} from '@parca/components';
 import {Query} from '@parca/parser';
 import type {NavigateFunction} from '@parca/utilities';
 
@@ -56,6 +56,8 @@ const ProfileExplorerCompare = ({
     closeProfile('B');
   };
 
+  const [compareAbsolute] = useURLState({param: 'compare_absolute', navigateTo});
+
   return (
     <>
       <div className="flex justify-between gap-2">
@@ -94,7 +96,12 @@ const ProfileExplorerCompare = ({
                 navigateTo={navigateTo}
                 queryClient={queryClient}
                 profileSource={
-                  new ProfileDiffSource(profileA.ProfileSource(), profileB.ProfileSource())
+                  new ProfileDiffSource(
+                    profileA.ProfileSource(),
+                    profileB.ProfileSource(),
+                    '',
+                    compareAbsolute === 'true'
+                  )
                 }
               />
             </Card>
