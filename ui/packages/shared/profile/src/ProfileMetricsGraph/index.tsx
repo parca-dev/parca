@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {AnimatePresence, motion} from 'framer-motion';
@@ -22,6 +22,7 @@ import {
   MetricsGraphSkeleton,
   useGrpcMetadata,
   useParcaContext,
+  useURLState,
 } from '@parca/components';
 import {Query} from '@parca/parser';
 import {capitalizeOnlyFirstLetter, getStepDuration} from '@parca/utilities';
@@ -80,6 +81,16 @@ export interface IQueryRangeState {
   error: RpcError | null;
 }
 
+const getStepCountFromScreenWidth = (pixelsPerPoint: number): number => {
+  let width =
+    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+    window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+
+  // subtract the padding around the graph
+  width = width - (20 + 24 + 68) * 2;
+  return Math.round(width / pixelsPerPoint);
+};
+
 const EMPTY_SUM_BY: string[] = [];
 
 export const useQueryRange = (
@@ -103,6 +114,26 @@ export const useQueryRange = (
     error: null,
   });
   const metadata = useGrpcMetadata();
+  const {navigateTo} = useParcaContext();
+  const [stepCountStr, setStepCount] = useURLState({param: 'step_count', navigateTo});
+
+  const defaultStepCount = useMemo(() => {
+    return getStepCountFromScreenWidth(10);
+  }, []);
+
+  const stepCount = useMemo(() => {
+    if (stepCountStr != null) {
+      return parseInt(stepCountStr as string, 10);
+    }
+
+    return defaultStepCount;
+  }, [stepCountStr, defaultStepCount]);
+
+  useEffect(() => {
+    if (stepCountStr == null) {
+      setStepCount(defaultStepCount.toString());
+    }
+  }, [stepCountStr, defaultStepCount, setStepCount]);
 
   useEffect(() => {
     void (async () => {
@@ -123,7 +154,7 @@ export const useQueryRange = (
 
       setLoading(true);
 
-      const stepDuration = getStepDuration(start, end);
+      const stepDuration = getStepDuration(start, end, stepCount);
       const call = client.queryRange(
         {
           query: queryExpression,
@@ -152,7 +183,7 @@ export const useQueryRange = (
           }
         });
     })();
-  }, [client, queryExpression, start, end, metadata, timeRange, sumBy, skip]);
+  }, [client, queryExpression, start, end, metadata, timeRange, sumBy, skip, stepCount]);
 
   return {...state, isLoading, isRefreshing: previousQueryParams.current.isRefresh};
 };
