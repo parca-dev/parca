@@ -103,8 +103,8 @@ importers:
         specifier: 8.1.11
         version: 8.1.11(@types/jest@29.5.12)(jest@29.7.0)(vitest@1.6.0)
       '@swc/cli':
-        specifier: 0.3.14
-        version: 0.3.14(@swc/core@1.6.5)
+        specifier: 0.4.0
+        version: 0.4.0(@swc/core@1.6.5)
       '@swc/core':
         specifier: 1.6.5
         version: 1.6.5
@@ -6609,8 +6609,8 @@ packages:
       - supports-color
     dev: false
 
-  /@swc/cli@0.3.14(@swc/core@1.6.5):
-    resolution: {integrity: sha512-0vGqD6FSW67PaZUZABkA+ADKsX7OUY/PwNEz1SbQdCvVk/e4Z36Gwh7mFVBQH9RIsMonTyhV1RHkwkGnEfR3zQ==}
+  /@swc/cli@0.4.0(@swc/core@1.6.5):
+    resolution: {integrity: sha512-4JdVrPtF/4rCMXp6Q1h5I6YkYZrCCcqod7Wk97ZQq7K8vNGzJUryBv4eHCvqx5sJOJBrbYm9fcswe1B0TygNoA==}
     engines: {node: '>= 16.14.0'}
     hasBin: true
     peerDependencies:
