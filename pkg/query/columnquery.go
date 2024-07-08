@@ -772,9 +772,19 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile, aggr
 	return ComputeDiff(ctx, q.tracer, q.mem, base, compare, d.GetAbsolute())
 }
 
+type Releasable interface {
+	Release()
+}
+
 func ComputeDiff(ctx context.Context, tracer trace.Tracer, mem memory.Allocator, base, compare profile.Profile, absolute bool) (profile.Profile, error) {
 	_, span := tracer.Start(ctx, "ComputeDiff")
 	defer span.End()
+	cleanupArrs := make([]Releasable, 0, len(base.Samples))
+	defer func() {
+		for _, r := range cleanupArrs {
+			r.Release()
+		}
+	}()
 
 	records := make([]arrow.Record, 0, len(compare.Samples)+len(base.Samples))
 
@@ -827,7 +837,9 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, mem memory.Allocator,
 
 		if compareCumulativeRatio > 1.0 {
 			// If compareCumulativeRatio is bigger than 1.0 we have to scale all values
-			cols[len(cols)-2] = multiplyInt64By(mem, cols[len(cols)-4].(*array.Int64), compareCumulativeRatio)
+			multi := multiplyInt64By(mem, cols[len(cols)-4].(*array.Int64), compareCumulativeRatio)
+			cols[len(cols)-2] = multi
+			cleanupArrs = append(cleanupArrs, multi)
 		} else {
 			// otherwise we simply use the original values.
 			cols[len(cols)-2] = cols[len(cols)-4] // value as diff
@@ -835,7 +847,9 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, mem memory.Allocator,
 
 		if compareCumulativePerSecondRatio > 1.0 {
 			// If compareCumulativePerSecondRatio is bigger than 1.0 we have to scale all values
-			cols[len(cols)-1] = multiplyFloat64By(mem, cols[len(cols)-3].(*array.Float64), compareCumulativePerSecondRatio)
+			multi := multiplyFloat64By(mem, cols[len(cols)-3].(*array.Float64), compareCumulativePerSecondRatio)
+			cols[len(cols)-1] = multi
+			cleanupArrs = append(cleanupArrs, multi)
 		} else {
 			// otherwise we simply use the original values.
 			cols[len(cols)-1] = cols[len(cols)-3] // value_per_second as diff_per_second
