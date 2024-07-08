@@ -16,21 +16,19 @@ import {useMemo} from 'react';
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
-import {useURLState} from '@parca/components';
+import {useURLStateNew} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {EVERYTHING_ELSE, selectStackColors, useAppSelector} from '@parca/store';
-import type {NavigateFunction} from '@parca/utilities';
 
 interface Props {
-  navigateTo?: NavigateFunction;
   compareMode?: boolean;
 }
 
-const ColorStackLegend = ({navigateTo, compareMode = false}: Props): JSX.Element => {
+const ColorStackLegend = ({compareMode = false}: Props): JSX.Element => {
   const [colorProfileName] = useUserPreference<string>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
-  const [currentSearchString, setSearchString] = useURLState({param: 'search_string', navigateTo});
+  const [currentSearchString, setSearchString] = useURLStateNew('search_string');
   const stackColors = useAppSelector(selectStackColors);
 
   const stackColorArray = useMemo(() => {

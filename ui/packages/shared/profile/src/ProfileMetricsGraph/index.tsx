@@ -22,7 +22,7 @@ import {
   MetricsGraphSkeleton,
   useGrpcMetadata,
   useParcaContext,
-  useURLState,
+  useURLStateNew,
 } from '@parca/components';
 import {Query} from '@parca/parser';
 import {capitalizeOnlyFirstLetter, getStepDuration} from '@parca/utilities';
@@ -114,8 +114,7 @@ export const useQueryRange = (
     error: null,
   });
   const metadata = useGrpcMetadata();
-  const {navigateTo} = useParcaContext();
-  const [stepCountStr, setStepCount] = useURLState({param: 'step_count', navigateTo});
+  const [stepCountStr, setStepCount] = useURLStateNew('step_count', {debugLog: true});
 
   const defaultStepCount = useMemo(() => {
     return getStepCountFromScreenWidth(10);

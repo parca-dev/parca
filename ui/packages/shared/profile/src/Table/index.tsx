@@ -31,6 +31,7 @@ import {
   TableSkeleton,
   useParcaContext,
   useURLState,
+  useURLStateNew,
 } from '@parca/components';
 import {type RowRendererProps} from '@parca/components/dist/Table';
 import {ProfileType} from '@parca/parser';
@@ -304,7 +305,7 @@ export const Table = React.memo(function Table({
 }: TableProps): React.JSX.Element {
   const router = parseParams(window?.location.search);
   const [rawDashboardItems] = useURLState({param: 'dashboard_items'});
-  const [filterByFunctionInput] = useURLState({param: 'filter_by_function'});
+  const [filterByFunctionInput] = useURLStateNew('filter_by_function');
   const {isDarkMode} = useParcaContext();
   const [expanded, setExpanded] = useState<ExpandedState>({});
   const [scrollToIndex, setScrollToIndex] = useState<number | undefined>(undefined);

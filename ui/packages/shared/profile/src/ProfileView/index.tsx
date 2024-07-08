@@ -41,6 +41,7 @@ import {
   UserPreferences,
   useParcaContext,
   useURLState,
+  useURLStateNew,
 } from '@parca/components';
 import {useContainerDimensions} from '@parca/hooks';
 import {selectDarkMode, useAppSelector} from '@parca/store';
@@ -51,7 +52,7 @@ import {jsonToDot} from '../Callgraph/utils';
 import ProfileIcicleGraph from '../ProfileIcicleGraph';
 import {ProfileSource} from '../ProfileSource';
 import {SourceView} from '../SourceView';
-import Table from '../Table';
+import {Table} from '../Table';
 import ProfileShareButton from '../components/ProfileShareButton';
 import FilterByFunctionButton from './FilterByFunctionButton';
 import {ProfileViewContextProvider} from './ProfileViewContext';
@@ -142,7 +143,7 @@ export const ProfileView = ({
   });
   const [graphvizLoaded, setGraphvizLoaded] = useState(false);
   const [callgraphSVG, setCallgraphSVG] = useState<string | undefined>(undefined);
-  const [currentSearchString] = useURLState({param: 'search_string'});
+  const [currentSearchString] = useURLStateNew('search_string');
 
   const dashboardItems = useMemo(() => {
     if (rawDashboardItems !== undefined) {
@@ -371,7 +372,7 @@ export const ProfileView = ({
           </div>
 
           <div className="lg:flex flex-wrap items-center gap-2 md:justify-end hidden">
-            <FilterByFunctionButton navigateTo={navigateTo} />
+            <FilterByFunctionButton />
             {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
             <UserPreferences
               customButton={

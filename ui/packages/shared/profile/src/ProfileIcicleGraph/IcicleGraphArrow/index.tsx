@@ -17,7 +17,7 @@ import {Dictionary, Table, Vector, tableFromIPC} from 'apache-arrow';
 import {useContextMenu} from 'react-contexify';
 
 import {FlamegraphArrow} from '@parca/client';
-import {useURLState} from '@parca/components';
+import {useURLState, useURLStateNew} from '@parca/components';
 import {USER_PREFERENCES, useCurrentColorProfile, useUserPreference} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
 import {
@@ -130,7 +130,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     navigateTo,
   });
 
-  const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
+  const [currentSearchString] = useURLStateNew('search_string');
   const {compareMode} = useProfileViewContext();
   const currentColorProfile = useCurrentColorProfile();
   const colorForSimilarNodes = currentColorProfile.colorForSimilarNodes;
@@ -258,7 +258,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               path={path}
               level={0}
               isRoot={true}
-              searchString={currentSearchString}
+              searchString={(currentSearchString as string) ?? ''}
               setHoveringRow={setHoveringRow}
               setHoveringLevel={highlightSimilarStacksSetLevel}
               sortBy={sortBy}

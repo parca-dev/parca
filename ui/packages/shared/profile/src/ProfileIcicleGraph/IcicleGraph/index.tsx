@@ -14,9 +14,10 @@
 import {memo, useEffect, useMemo, useRef, useState} from 'react';
 
 import {Flamegraph} from '@parca/client';
+import {useURLStateNew} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 import {setHoveringNode, useAppDispatch} from '@parca/store';
-import {scaleLinear, selectQueryParam, type NavigateFunction} from '@parca/utilities';
+import {scaleLinear, selectQueryParam} from '@parca/utilities';
 
 import GraphTooltip from '../../GraphTooltip';
 import {useProfileViewContext} from '../../ProfileView/ProfileViewContext';
@@ -32,7 +33,6 @@ interface IcicleGraphProps {
   width?: number;
   curPath: string[];
   setCurPath: (path: string[]) => void;
-  navigateTo?: NavigateFunction;
 }
 
 export const IcicleGraph = memo(function IcicleGraph({
@@ -43,7 +43,6 @@ export const IcicleGraph = memo(function IcicleGraph({
   setCurPath,
   curPath,
   profileType,
-  navigateTo,
 }: IcicleGraphProps): JSX.Element {
   const dispatch = useAppDispatch();
   const [height, setHeight] = useState(0);
@@ -51,7 +50,7 @@ export const IcicleGraph = memo(function IcicleGraph({
   const ref = useRef<SVGGElement>(null);
 
   const coloredGraph = useColoredGraph(graph);
-  const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
+  const [currentSearchString] = useURLStateNew('search_string');
   const {compareMode} = useProfileViewContext();
   const isColorStackLegendEnabled = selectQueryParam('color_stack_legend') === 'true';
 
@@ -74,9 +73,7 @@ export const IcicleGraph = memo(function IcicleGraph({
 
   return (
     <div onMouseLeave={() => dispatch(setHoveringNode(undefined))}>
-      {isColorStackLegendEnabled && (
-        <ColorStackLegend navigateTo={navigateTo} compareMode={compareMode} />
-      )}
+      {isColorStackLegendEnabled && <ColorStackLegend compareMode={compareMode} />}
       <GraphTooltip
         unit={profileType?.sampleUnit ?? ''}
         total={total}
@@ -113,7 +110,7 @@ export const IcicleGraph = memo(function IcicleGraph({
               path={[]}
               level={0}
               isRoot={true}
-              searchString={currentSearchString}
+              searchString={currentSearchString as string}
               compareMode={compareMode}
             />
           </g>
