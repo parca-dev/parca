@@ -18,6 +18,7 @@
     },
     "strictNullChecks": true,
     "types": ["vite/client", "vitest/globals"],
+    "declaration": true,
     "declarationMap": true
   }
 }
