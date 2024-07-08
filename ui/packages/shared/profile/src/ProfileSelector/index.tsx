@@ -252,6 +252,7 @@ const ProfileSelector = ({
               setMatchersString={setMatchersString}
               runQuery={setQueryExpression}
               currentQuery={query}
+              profileType={selectedProfileName}
             />
           </div>
           <DateTimeRangePicker
