@@ -96,6 +96,10 @@ export const wellKnownProfiles: WellKnownProfiles = {
     name: 'On-CPU Samples',
     help: 'On CPU profile samples observed by the Otel Profiling Agent.',
   },
+  'parca_agent:samples:count:cpu:nanoseconds:delta': {
+    name: 'On-CPU',
+    help: 'On CPU profile samples observed by the Parca Agent.',
+  },
 };
 
 export function flexibleWellKnownProfileMatching(name: string): WellKnownProfile | undefined {
