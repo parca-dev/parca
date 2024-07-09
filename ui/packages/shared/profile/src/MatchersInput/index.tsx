@@ -28,6 +28,7 @@ interface MatchersInputProps {
   setMatchersString: (arg: string) => void;
   runQuery: () => void;
   currentQuery: Query;
+  profileType: string;
 }
 
 export interface ILabelNamesResult {
@@ -42,15 +43,19 @@ interface UseLabelNames {
 
 export const useLabelNames = (
   client: QueryServiceClient,
+  profileType: string,
   start?: number,
-  end?: number,
-  profileType?: string
+  end?: number
 ): UseLabelNames => {
   const [loading, setLoading] = useState(true);
   const [result, setResult] = useState<ILabelNamesResult>({});
   const metadata = useGrpcMetadata();
 
   useEffect(() => {
+    if (profileType === undefined || profileType === '') {
+      return;
+    }
+
     const request: LabelsRequest = {match: []};
     if (start !== undefined && end !== undefined) {
       request.start = millisToProtoTimestamp(start);
@@ -76,6 +81,7 @@ const MatchersInput = ({
   setMatchersString,
   runQuery,
   currentQuery,
+  profileType,
 }: MatchersInputProps): JSX.Element => {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const [focusedInput, setFocusedInput] = useState(false);
@@ -85,12 +91,15 @@ const MatchersInput = ({
   const [currentLabelName, setCurrentLabelName] = useState<string | null>(null);
   const metadata = useGrpcMetadata();
 
-  const {loading: labelNamesLoading, result} = useLabelNames(queryClient);
+  const {loading: labelNamesLoading, result} = useLabelNames(queryClient, profileType);
   const {response: labelNamesResponse, error: labelNamesError} = result;
 
   useEffect(() => {
     if (currentLabelName !== null) {
-      const call = queryClient.values({labelName: currentLabelName, match: []}, {meta: metadata});
+      const call = queryClient.values(
+        {labelName: currentLabelName, match: [], profileType},
+        {meta: metadata}
+      );
       setLabelValuesLoading(true);
 
       call.response
@@ -103,7 +112,7 @@ const MatchersInput = ({
         .catch(() => setLabelValues(null))
         .finally(() => setLabelValuesLoading(false));
     }
-  }, [currentLabelName, queryClient, metadata]);
+  }, [currentLabelName, metadata, profileType, queryClient]);
 
   const labelNames = useMemo(() => {
     return (labelNamesError === undefined || labelNamesError == null) &&
