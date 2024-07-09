@@ -42,6 +42,12 @@ export interface ShouldInitiateUploadRequest {
      * @generated from protobuf field: parca.debuginfo.v1alpha1.DebuginfoType type = 4;
      */
     type: DebuginfoType;
+    /**
+     * Type of build ID.
+     *
+     * @generated from protobuf field: parca.debuginfo.v1alpha1.BuildIDType build_id_type = 5;
+     */
+    buildIdType: BuildIDType;
 }
 /**
  * ShouldInitiateUploadResponse is the response for ShouldInitiateUpload.
@@ -477,6 +483,37 @@ export enum DebuginfoType {
      */
     SOURCES = 2
 }
+/**
+ * BuildIDType is the type of build ID.
+ *
+ * @generated from protobuf enum parca.debuginfo.v1alpha1.BuildIDType
+ */
+export enum BuildIDType {
+    /**
+     * The build ID is unknown.
+     *
+     * @generated from protobuf enum value: BUILD_ID_TYPE_UNKNOWN_UNSPECIFIED = 0;
+     */
+    BUILD_ID_TYPE_UNKNOWN_UNSPECIFIED = 0,
+    /**
+     * The build ID is a GNU build ID.
+     *
+     * @generated from protobuf enum value: BUILD_ID_TYPE_GNU = 1;
+     */
+    BUILD_ID_TYPE_GNU = 1,
+    /**
+     * The build ID is an opaque hash.
+     *
+     * @generated from protobuf enum value: BUILD_ID_TYPE_HASH = 2;
+     */
+    BUILD_ID_TYPE_HASH = 2,
+    /**
+     * The build ID is a Go build ID.
+     *
+     * @generated from protobuf enum value: BUILD_ID_TYPE_GO = 3;
+     */
+    BUILD_ID_TYPE_GO = 3
+}
 // @generated message type with reflection information, may provide speed optimized methods
 class ShouldInitiateUploadRequest$Type extends MessageType<ShouldInitiateUploadRequest> {
     constructor() {
@@ -484,7 +521,8 @@ class ShouldInitiateUploadRequest$Type extends MessageType<ShouldInitiateUploadR
             { no: 1, name: "build_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "hash", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 3, name: "force", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
-            { no: 4, name: "type", kind: "enum", T: () => ["parca.debuginfo.v1alpha1.DebuginfoType", DebuginfoType, "DEBUGINFO_TYPE_"] }
+            { no: 4, name: "type", kind: "enum", T: () => ["parca.debuginfo.v1alpha1.DebuginfoType", DebuginfoType, "DEBUGINFO_TYPE_"] },
+            { no: 5, name: "build_id_type", kind: "enum", T: () => ["parca.debuginfo.v1alpha1.BuildIDType", BuildIDType] }
         ]);
     }
     create(value?: PartialMessage<ShouldInitiateUploadRequest>): ShouldInitiateUploadRequest {
@@ -493,6 +531,7 @@ class ShouldInitiateUploadRequest$Type extends MessageType<ShouldInitiateUploadR
         message.hash = "";
         message.force = false;
         message.type = 0;
+        message.buildIdType = 0;
         if (value !== undefined)
             reflectionMergePartial<ShouldInitiateUploadRequest>(this, message, value);
         return message;
@@ -513,6 +552,9 @@ class ShouldInitiateUploadRequest$Type extends MessageType<ShouldInitiateUploadR
                     break;
                 case /* parca.debuginfo.v1alpha1.DebuginfoType type */ 4:
                     message.type = reader.int32();
+                    break;
+                case /* parca.debuginfo.v1alpha1.BuildIDType build_id_type */ 5:
+                    message.buildIdType = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -538,6 +580,9 @@ class ShouldInitiateUploadRequest$Type extends MessageType<ShouldInitiateUploadR
         /* parca.debuginfo.v1alpha1.DebuginfoType type = 4; */
         if (message.type !== 0)
             writer.tag(4, WireType.Varint).int32(message.type);
+        /* parca.debuginfo.v1alpha1.BuildIDType build_id_type = 5; */
+        if (message.buildIdType !== 0)
+            writer.tag(5, WireType.Varint).int32(message.buildIdType);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

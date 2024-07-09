@@ -296,6 +296,11 @@ func (m *ShouldInitiateUploadRequest) MarshalToSizedBufferVT(dAtA []byte) (int, 
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.BuildIdType != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.BuildIdType))
+		i--
+		dAtA[i] = 0x28
+	}
 	if m.Type != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Type))
 		i--
@@ -1063,6 +1068,9 @@ func (m *ShouldInitiateUploadRequest) SizeVT() (n int) {
 	if m.Type != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.Type))
 	}
+	if m.BuildIdType != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.BuildIdType))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -1473,6 +1481,25 @@ func (m *ShouldInitiateUploadRequest) UnmarshalVT(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.Type |= DebuginfoType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BuildIdType", wireType)
+			}
+			m.BuildIdType = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.BuildIdType |= BuildIDType(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

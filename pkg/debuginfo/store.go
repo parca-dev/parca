@@ -148,20 +148,27 @@ func (s *Store) ShouldInitiateUpload(ctx context.Context, req *debuginfopb.Shoul
 	} else if errors.Is(err, ErrMetadataNotFound) {
 		// First time we see this Build ID.
 
-		existsInDebuginfods, err := s.debuginfodClients.Exists(ctx, buildID)
-		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
-
-		if len(existsInDebuginfods) > 0 {
-			if err := s.metadata.MarkAsDebuginfodSource(ctx, existsInDebuginfods, buildID, req.Type); err != nil {
-				return nil, status.Error(codes.Internal, fmt.Errorf("mark Build ID to be available from debuginfod: %w", err).Error())
+		if req.BuildIdType == debuginfopb.BuildIDType_BUILD_ID_TYPE_GNU ||
+			req.BuildIdType == debuginfopb.BuildIDType_BUILD_ID_TYPE_UNKNOWN_UNSPECIFIED {
+			// Only check debuginfod if the build ID type is GNU or unknown
+			// (and unknown is really just for backward compatibility, it
+			// should be removed from this if statement in a couple of
+			// versions.).
+			existsInDebuginfods, err := s.debuginfodClients.Exists(ctx, buildID)
+			if err != nil {
+				return nil, status.Error(codes.Internal, err.Error())
 			}
 
-			return &debuginfopb.ShouldInitiateUploadResponse{
-				ShouldInitiateUpload: false,
-				Reason:               ReasonDebuginfoInDebuginfod,
-			}, nil
+			if len(existsInDebuginfods) > 0 {
+				if err := s.metadata.MarkAsDebuginfodSource(ctx, existsInDebuginfods, buildID, req.Type); err != nil {
+					return nil, status.Error(codes.Internal, fmt.Errorf("mark Build ID to be available from debuginfod: %w", err).Error())
+				}
+
+				return &debuginfopb.ShouldInitiateUploadResponse{
+					ShouldInitiateUpload: false,
+					Reason:               ReasonDebuginfoInDebuginfod,
+				}, nil
+			}
 		}
 
 		return &debuginfopb.ShouldInitiateUploadResponse{
