@@ -43,15 +43,19 @@ interface UseLabelNames {
 
 export const useLabelNames = (
   client: QueryServiceClient,
+  profileType: string,
   start?: number,
-  end?: number,
-  profileType?: string
+  end?: number
 ): UseLabelNames => {
   const [loading, setLoading] = useState(true);
   const [result, setResult] = useState<ILabelNamesResult>({});
   const metadata = useGrpcMetadata();
 
   useEffect(() => {
+    if (profileType === undefined || profileType === '') {
+      return;
+    }
+
     const request: LabelsRequest = {match: []};
     if (start !== undefined && end !== undefined) {
       request.start = millisToProtoTimestamp(start);
@@ -87,12 +91,7 @@ const MatchersInput = ({
   const [currentLabelName, setCurrentLabelName] = useState<string | null>(null);
   const metadata = useGrpcMetadata();
 
-  const {loading: labelNamesLoading, result} = useLabelNames(
-    queryClient,
-    undefined,
-    undefined,
-    profileType
-  );
+  const {loading: labelNamesLoading, result} = useLabelNames(queryClient, profileType);
   const {response: labelNamesResponse, error: labelNamesError} = result;
 
   useEffect(() => {
