@@ -57,6 +57,7 @@ const ProfileExplorerCompare = ({
   };
 
   const [compareAbsolute] = useURLStateNew('compare_absolute');
+  const [functionFilter] = useURLStateNew('filter_by_function');
 
   return (
     <>
@@ -99,7 +100,7 @@ const ProfileExplorerCompare = ({
                   new ProfileDiffSource(
                     profileA.ProfileSource(),
                     profileB.ProfileSource(),
-                    '',
+                    Array.isArray(functionFilter) ? functionFilter[0] : functionFilter,
                     compareAbsolute === 'true'
                   )
                 }
