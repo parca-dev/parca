@@ -27,13 +27,7 @@ import {
   useAppDispatch,
   useAppSelector,
 } from '@parca/store';
-import {
-  getLastItem,
-  scaleLinear,
-  selectQueryParam,
-  type ColorConfig,
-  type NavigateFunction,
-} from '@parca/utilities';
+import {getLastItem, scaleLinear, type ColorConfig, type NavigateFunction} from '@parca/utilities';
 
 import GraphTooltipArrow from '../../GraphTooltipArrow';
 import GraphTooltipArrowContent from '../../GraphTooltipArrow/Content';
@@ -70,7 +64,6 @@ interface IcicleGraphArrowProps {
   width?: number;
   curPath: string[];
   setCurPath: (path: string[]) => void;
-  navigateTo?: NavigateFunction;
   sortBy: string;
   flamegraphLoading: boolean;
   isHalfScreen: boolean;
@@ -101,7 +94,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   setCurPath,
   curPath,
   profileType,
-  navigateTo,
   sortBy,
   flamegraphLoading,
   mappingsListFromMetadata,
@@ -125,10 +117,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const svg = useRef(null);
   const ref = useRef<SVGGElement>(null);
 
-  const [binaryFrameFilter, setBinaryFrameFilter] = useURLState({
-    param: 'binary_frame_filter',
-    navigateTo,
-  });
+  const [binaryFrameFilter, setBinaryFrameFilter] = useURLStateNew('binary_frame_filter');
 
   const [currentSearchString] = useURLStateNew('search_string');
   const {compareMode} = useProfileViewContext();
@@ -312,7 +301,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           total={total}
           totalUnfiltered={total + filtered}
           profileType={profileType}
-          navigateTo={navigateTo as NavigateFunction}
           trackVisibility={trackVisibility}
           curPath={curPath}
           setCurPath={setCurPath}
@@ -341,7 +329,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
                 total={total}
                 totalUnfiltered={total + filtered}
                 profileType={profileType}
-                navigateTo={navigateTo as NavigateFunction}
                 unit={arrow.unit}
               />
             </GraphTooltipArrow>

@@ -22,7 +22,7 @@ const FilterByFunctionButton = (): JSX.Element => {
   const [highlightAfterFilteringEnabled] = useUserPreference<boolean>(
     USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING.key
   );
-  const [storeValue, setStoreValue] = useURLStateNew('filter_by_function', {debugLog: true});
+  const [storeValue, setStoreValue] = useURLStateNew('filter_by_function');
   const [_, setSearchString] = useURLStateNew('search_string');
   const [localValue, setLocalValue] = useState(storeValue as string);
 

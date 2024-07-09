@@ -304,7 +304,9 @@ export const Table = React.memo(function Table({
   unit,
 }: TableProps): React.JSX.Element {
   const router = parseParams(window?.location.search);
-  const [rawDashboardItems] = useURLState({param: 'dashboard_items'});
+  const [rawDashboardItems] = useURLStateNew<string[]>('dashboard_items', {
+    alwaysReturnArray: true,
+  });
   const [filterByFunctionInput] = useURLStateNew('filter_by_function');
   const {isDarkMode} = useParcaContext();
   const [expanded, setExpanded] = useState<ExpandedState>({});

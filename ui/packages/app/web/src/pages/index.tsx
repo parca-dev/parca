@@ -18,7 +18,7 @@ import {useLocation, useNavigate} from 'react-router-dom';
 
 import {QueryServiceClient} from '@parca/client';
 import {ParcaContextProvider, URLStateProvider} from '@parca/components';
-import {ProfileExplorer} from '@parca/profile';
+import {DEFAULT_PROFILE_EXPLORER_PARAM_VALUES, ProfileExplorer} from '@parca/profile';
 import {selectDarkMode, useAppSelector} from '@parca/store';
 import {convertToQueryParams, parseParams} from '@parca/utilities';
 
@@ -51,7 +51,7 @@ const Profiles = () => {
   const queryParams = parseParams(location.search);
 
   return (
-    <URLStateProvider navigateTo={navigateTo}>
+    <URLStateProvider navigateTo={navigateTo} defaultValues={DEFAULT_PROFILE_EXPLORER_PARAM_VALUES}>
       <ParcaContextProvider
         value={{
           queryServiceClient: queryClient,

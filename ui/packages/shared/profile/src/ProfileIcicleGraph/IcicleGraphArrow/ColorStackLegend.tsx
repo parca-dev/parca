@@ -16,10 +16,9 @@ import React, {useMemo} from 'react';
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
-import {useURLState} from '@parca/components';
+import {useURLStateNew} from '@parca/components';
 import {USER_PREFERENCES, useCurrentColorProfile, useUserPreference} from '@parca/hooks';
 import {EVERYTHING_ELSE, selectDarkMode, useAppSelector} from '@parca/store';
-import {type NavigateFunction} from '@parca/utilities';
 
 import {getMappingColors} from '.';
 import useMappingList from './useMappingList';
@@ -27,24 +26,18 @@ import useMappingList from './useMappingList';
 interface Props {
   mappings?: string[];
   loading?: boolean;
-  navigateTo?: NavigateFunction;
   compareMode?: boolean;
 }
 
-const ColorStackLegend = ({
-  mappings,
-  navigateTo,
-  compareMode = false,
-  loading,
-}: Props): React.JSX.Element => {
+const ColorStackLegend = ({mappings, compareMode = false, loading}: Props): React.JSX.Element => {
   const isDarkMode = useAppSelector(selectDarkMode);
   const currentColorProfile = useCurrentColorProfile();
   const [colorProfileName] = useUserPreference<string>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
-  const [currentSearchString, setSearchString] = useURLState({
-    param: 'binary_frame_filter',
-    navigateTo,
+  const [currentSearchString, setSearchString] = useURLStateNew<string[]>('binary_frame_filter', {
+    alwaysReturnArray: true,
+    defaultValue: [],
   });
 
   const mappingsList = useMappingList(mappings);
@@ -79,7 +72,7 @@ const ColorStackLegend = ({
   }
 
   return (
-    <div className="my-4 flex w-full flex-wrap justify-start">
+    <div className="my-4 flex w-full flex-wrap justify-start gap-2">
       {stackColorArray.map(([feature, color]) => {
         const filteringAllowed = feature !== EVERYTHING_ELSE;
         const isHighlighted =
@@ -88,24 +81,19 @@ const ColorStackLegend = ({
           <div
             key={feature}
             className={cx(
-              'flex-no-wrap mb-1 flex w-1/5 items-center justify-between text-ellipsis p-1',
+              'flex-no-wrap mb-1 flex w-[19.25%] items-center justify-between text-ellipsis p-1',
               {
                 'cursor-pointer': filteringAllowed,
                 'bg-gray-200 dark:bg-gray-800': isHighlighted,
               }
             )}
             onClick={() => {
-              if (!filteringAllowed || isHighlighted) {
+              if (!filteringAllowed || isHighlighted === true) {
                 return;
               }
 
               // Check if the current search string is defined and an array
-              const updatedSearchString = Array.isArray(currentSearchString)
-                ? [...currentSearchString, feature] // If array, append the feature
-                : // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-                currentSearchString // If not array, preserve current value
-                ? currentSearchString.split(',') // If string, split by commas
-                : [feature]; // If undefined, initialize array with feature
+              const updatedSearchString = [...currentSearchString, feature]; // If array, append the feature
 
               setSearchString(updatedSearchString);
             }}
@@ -119,19 +107,12 @@ const ColorStackLegend = ({
               </div>
             </div>
             <div className="flex w-1/12 justify-end">
-              {isHighlighted && (
+              {isHighlighted === true && (
                 <Icon
                   icon="radix-icons:cross-circled"
                   onClick={e => {
-                    let searchString: string[] = [];
-                    if (typeof currentSearchString === 'string') {
-                      searchString.push(currentSearchString);
-                    } else {
-                      searchString = currentSearchString;
-                    }
-
                     // remove the current feature from the search string array of strings
-                    setSearchString(searchString.filter((f: string) => f !== feature));
+                    setSearchString(currentSearchString.filter((f: string) => f !== feature));
                     e.stopPropagation();
                   }}
                 />

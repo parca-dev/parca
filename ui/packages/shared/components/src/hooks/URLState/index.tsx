@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {ReactNode, createContext, useContext, useState} from 'react';
+import {ReactNode, createContext, useContext, useMemo, useState} from 'react';
 
 import {type NavigateFunction} from '@parca/utilities';
 
@@ -22,6 +22,7 @@ interface URLState {
   navigateTo: NavigateFunction;
   state: Record<string, string | string[] | undefined>;
   setState: (state: Record<string, ParamValue>) => void;
+  defaultValues: Record<string, ParamValue>;
 }
 
 const URLStateContext = createContext<URLState | undefined>(undefined);
@@ -29,13 +30,18 @@ const URLStateContext = createContext<URLState | undefined>(undefined);
 export const URLStateProvider = ({
   children,
   navigateTo,
+  defaultValues = {},
 }: {
   children: ReactNode;
   navigateTo: NavigateFunction;
+  defaultValues?: Record<string, ParamValue>;
 }): JSX.Element => {
-  const [state, setState] = useState<Record<string, ParamValue>>(getQueryParamsFromURL());
+  const [state, setState] = useState<Record<string, ParamValue>>({
+    ...defaultValues,
+    ...getQueryParamsFromURL(),
+  });
   return (
-    <URLStateContext.Provider value={{navigateTo, state, setState}}>
+    <URLStateContext.Provider value={{navigateTo, state, setState, defaultValues}}>
       {children}
     </URLStateContext.Provider>
   );
@@ -60,12 +66,42 @@ const isEmpty = (val: string | string[] | undefined): boolean => {
   return val === undefined || val == null || val === '' || (Array.isArray(val) && val.length === 0);
 };
 
-const sanitize = (params: Record<string, ParamValue>): Record<string, ParamValue> => {
-  console.log('Before sanitize', params);
+const isEqual = (a: ParamValue, b: ParamValue): boolean => {
+  if (typeof a === 'string' && typeof b === 'string') {
+    return decodeURIComponent(a) === decodeURIComponent(b);
+  }
+
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) {
+      return false;
+    }
+
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  if (Array.isArray(a) && a.length === 1 && typeof b === 'string') {
+    return decodeURIComponent(a[0]) === decodeURIComponent(b);
+  }
+
+  if (Array.isArray(b) && b.length === 1 && typeof a === 'string') {
+    return decodeURIComponent(b[0]) === decodeURIComponent(a);
+  }
+
+  return false;
+};
+
+const sanitize = (
+  params: Record<string, ParamValue>,
+  defaultValues: Record<string, ParamValue>
+): Record<string, ParamValue> => {
   const sanitized: Record<string, ParamValue> = {};
   for (const [key, value] of Object.entries(params)) {
-    if (isEmpty(value)) {
-      console.log('isEmpty', key, value);
+    if (isEmpty(value) || isEqual(value, defaultValues[key])) {
       continue;
     }
     sanitized[key] = value;
@@ -76,47 +112,57 @@ const sanitize = (params: Record<string, ParamValue>): Record<string, ParamValue
 interface Options {
   defaultValue?: string | string[];
   debugLog?: boolean;
+  alwaysReturnArray?: boolean;
 }
 
-export const useURLStateNew = (
+export const useURLStateNew = <T extends ParamValue>(
   param: string,
   _options?: Options
-): [ParamValue, ParamValueSetter] => {
+): [T, ParamValueSetter] => {
   const context = useContext(URLStateContext);
   if (context === undefined) {
     throw new Error('useURLState must be used within a URLStateProvider');
   }
 
-  const {debugLog} = _options ?? {};
+  const {debugLog, defaultValue, alwaysReturnArray} = _options ?? {};
 
-  const {navigateTo, state, setState} = context;
+  const {navigateTo, state, setState, defaultValues} = context;
 
   const setParam: ParamValueSetter = (val: ParamValue) => {
-    setState({...state, [param]: val});
-    navigateTo(window.location.pathname, sanitize({...getQueryParamsFromURL(), [param]: val}), {
-      replace: true,
-    });
     if (debugLog === true) {
       console.log('useURLStateNew setParam', param, val);
     }
+    setState({...state, [param]: val});
+    navigateTo(
+      window.location.pathname,
+      sanitize({...getQueryParamsFromURL(), [param]: val}, defaultValues),
+      {
+        replace: true,
+      }
+    );
   };
 
   if (debugLog === true) {
     console.log('useURLStateNew state', param, state[param]);
   }
 
-  let value: ParamValue;
-  if (typeof state[param] === 'string') {
-    value = state[param];
-  } else if (state[param] != null && Array.isArray(state[param])) {
-    if (state[param]?.length === 1) {
-      value = state[param]?.[0];
-    } else {
-      value = state[param];
+  const value = useMemo<ParamValue>(() => {
+    if (typeof state[param] === 'string') {
+      if (alwaysReturnArray === true) {
+        return [state[param]] as ParamValue;
+      }
+      return state[param];
+    } else if (state[param] != null && Array.isArray(state[param])) {
+      if (state[param]?.length === 1 && alwaysReturnArray !== true) {
+        return state[param]?.[0] as ParamValue;
+      } else {
+        return state[param];
+      }
     }
-  }
+  }, [state, param, alwaysReturnArray]);
 
-  return [value, setParam];
+  // TODO(manoj) Fix the forced type
+  return [(value ?? defaultValue) as T, setParam];
 };
 
 export default URLStateContext;

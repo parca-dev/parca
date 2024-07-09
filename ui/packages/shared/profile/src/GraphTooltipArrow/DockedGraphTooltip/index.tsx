@@ -65,7 +65,7 @@ export const DockedGraphTooltip = ({
   unit,
 }: Props): JSX.Element => {
   let {width} = useWindowSize();
-  const {profileExplorer, navigateTo} = useParcaContext();
+  const {profileExplorer} = useParcaContext();
   const {PaddingX} = profileExplorer ?? {PaddingX: 0};
   width = width - PaddingX - 24;
 
@@ -87,7 +87,7 @@ export const DockedGraphTooltip = ({
     mappingFile,
     mappingBuildID,
     inlined,
-  } = useGraphTooltipMetaInfo({table, row: row ?? 0, navigateTo});
+  } = useGraphTooltipMetaInfo({table, row: row ?? 0});
 
   if (graphTooltipData === null) {
     return <></>;

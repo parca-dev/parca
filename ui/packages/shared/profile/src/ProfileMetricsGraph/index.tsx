@@ -114,7 +114,7 @@ export const useQueryRange = (
     error: null,
   });
   const metadata = useGrpcMetadata();
-  const [stepCountStr, setStepCount] = useURLStateNew('step_count', {debugLog: true});
+  const [stepCountStr, setStepCount] = useURLStateNew('step_count');
 
   const defaultStepCount = useMemo(() => {
     return getStepCountFromScreenWidth(10);

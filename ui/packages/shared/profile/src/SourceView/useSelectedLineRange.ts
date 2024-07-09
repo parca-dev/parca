@@ -13,7 +13,7 @@
 
 import {useMemo} from 'react';
 
-import {useURLState} from '@parca/components';
+import {useURLStateNew} from '@parca/components';
 
 interface LineRange {
   startLine: number;
@@ -22,7 +22,7 @@ interface LineRange {
 }
 
 const useLineRange = (): LineRange => {
-  const [sourceLine, setSourceLine] = useURLState({param: 'source_line', navigateTo: () => {}});
+  const [sourceLine, setSourceLine] = useURLStateNew<string | undefined>('source_line');
   const [startLine, endLine] = useMemo(() => {
     if (sourceLine == null) {
       return [-1, -1];

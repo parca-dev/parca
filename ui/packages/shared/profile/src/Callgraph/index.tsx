@@ -19,7 +19,7 @@ import SVG from 'react-inlinesvg';
 import {MapInteractionCSS} from 'react-map-interaction';
 
 import {CallgraphEdge, Callgraph as CallgraphType} from '@parca/client';
-import {Button, useKeyDown, useURLState} from '@parca/components';
+import {Button, useKeyDown, useURLStateNew} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 import {selectDarkMode, setHoveringNode, useAppDispatch, useAppSelector} from '@parca/store';
 import {getNewSpanColor} from '@parca/utilities';
@@ -57,9 +57,10 @@ const Callgraph = ({data, svgString, profileType, width}: Props): JSX.Element =>
   //   ? true
   //   : isSearchMatch(currentSearchString, sourceNode.functionName) &&
   //     isSearchMatch(currentSearchString, targetNode.functionName);
-  const [rawDashboardItems] = useURLState({param: 'dashboard_items'});
-  const dashboardItems =
-    rawDashboardItems !== undefined ? (rawDashboardItems as string[]) : ['icicle'];
+  const [rawDashboardItems] = useURLStateNew<string[]>('dashboard_items', {
+    alwaysReturnArray: true,
+  });
+  const dashboardItems = rawDashboardItems as string[];
 
   const isDarkMode = useAppSelector(selectDarkMode);
   const maxColor: string = getNewSpanColor(isDarkMode);

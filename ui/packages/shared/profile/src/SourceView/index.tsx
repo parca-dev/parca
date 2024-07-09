@@ -18,7 +18,13 @@ import {AnimatePresence, motion} from 'framer-motion';
 import {Item, Menu, useContextMenu} from 'react-contexify';
 
 import {Source} from '@parca/client';
-import {SourceSkeleton, useParcaContext, useURLState, type ProfileData} from '@parca/components';
+import {
+  SourceSkeleton,
+  useParcaContext,
+  useURLState,
+  useURLStateNew,
+  type ProfileData,
+} from '@parca/components';
 
 import {ExpandOnHover} from '../GraphTooltipArrow/ExpandOnHoverValue';
 import {truncateStringReverse} from '../utils';
@@ -42,7 +48,7 @@ export const SourceView = React.memo(function SourceView({
   filtered,
   setActionButtons,
 }: SourceViewProps): JSX.Element {
-  const [sourceFileName] = useURLState({param: 'source_filename', navigateTo: () => {}});
+  const [sourceFileName] = useURLStateNew<string | undefined>('source_filename');
   const {isDarkMode, sourceViewContextMenuItems = []} = useParcaContext();
 
   const sourceCode = useMemo(() => {

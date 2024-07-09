@@ -40,7 +40,6 @@ import {
   KeyDownProvider,
   UserPreferences,
   useParcaContext,
-  useURLState,
   useURLStateNew,
 } from '@parca/components';
 import {useContainerDimensions} from '@parca/hooks';
@@ -137,9 +136,9 @@ export const ProfileView = ({
   const {timezone} = useParcaContext();
   const {ref, dimensions} = useContainerDimensions();
   const [curPath, setCurPath] = useState<string[]>([]);
-  const [rawDashboardItems = ['icicle'], setDashboardItems] = useURLState({
-    param: 'dashboard_items',
-    navigateTo,
+  const [rawDashboardItems, setDashboardItems] = useURLStateNew<string[]>('dashboard_items', {
+    alwaysReturnArray: true,
+    debugLog: true,
   });
   const [graphvizLoaded, setGraphvizLoaded] = useState(false);
   const [callgraphSVG, setCallgraphSVG] = useState<string | undefined>(undefined);
@@ -241,7 +240,6 @@ export const ProfileView = ({
               total={total}
               filtered={filtered}
               profileType={profileSource?.ProfileType()}
-              navigateTo={navigateTo}
               loading={flamegraphData.loading}
               setActionButtons={setActionButtons}
               error={flamegraphData.error}
@@ -403,7 +401,6 @@ export const ProfileView = ({
             </Button>
             <ViewSelector
               defaultValue=""
-              navigateTo={navigateTo}
               position={-1}
               placeholderText="Add panel"
               icon={<Icon icon="material-symbols:add" width={20} />}

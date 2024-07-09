@@ -14,7 +14,7 @@
 import {useEffect, useMemo, useState} from 'react';
 
 import {QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
-import {useGrpcMetadata, useParcaContext, useURLState} from '@parca/components';
+import {useGrpcMetadata, useParcaContext, useURLState, useURLStateNew} from '@parca/components';
 import {saveAsBlob, type NavigateFunction} from '@parca/utilities';
 
 import {FIELD_FUNCTION_NAME} from './ProfileIcicleGraph/IcicleGraphArrow';
@@ -36,16 +36,19 @@ export const ProfileViewWithData = ({
   navigateTo,
 }: ProfileViewWithDataProps): JSX.Element => {
   const metadata = useGrpcMetadata();
-  const [dashboardItems = ['icicle']] = useURLState({param: 'dashboard_items', navigateTo});
-  const [sourceBuildID] = useURLState({param: 'source_buildid', navigateTo}) as unknown as [string];
-  const [sourceFilename] = useURLState({param: 'source_filename', navigateTo}) as unknown as [
-    string
-  ];
-  const [groupBy = [FIELD_FUNCTION_NAME]] = useURLState({param: 'group_by', navigateTo});
+  const [dashboardItems] = useURLStateNew<string[]>('dashboard_items', {
+    alwaysReturnArray: true,
+  });
+  const [sourceBuildID] = useURLStateNew<string>('source_buildid');
+  const [sourceFilename] = useURLStateNew<string>('source_filename');
+  const [groupBy] = useURLStateNew<string[]>('group_by', {
+    defaultValue: [FIELD_FUNCTION_NAME],
+    alwaysReturnArray: true,
+  });
 
-  const [invertStack] = useURLState({param: 'invert_call_stack', navigateTo});
+  const [invertStack] = useURLStateNew('invert_call_stack');
   const invertCallStack = invertStack === 'true';
-  const [binaryFrameFilterStr] = useURLState({param: 'binary_frame_filter', navigateTo});
+  const [binaryFrameFilterStr] = useURLStateNew<string[] | string>('binary_frame_filter');
 
   const binaryFrameFilter: string[] =
     typeof binaryFrameFilterStr === 'string'
@@ -63,17 +66,14 @@ export const ProfileViewWithData = ({
     return (1 / width) * 100;
   }, []);
 
-  // make sure we get a string[]
-  const groupByParam: string[] = typeof groupBy === 'string' ? [groupBy] : groupBy;
-
   const {
     isLoading: flamegraphLoading,
     response: flamegraphResponse,
     error: flamegraphError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMEGRAPH_ARROW, {
-    skip: !dashboardItems.includes('icicle'),
+    skip: dashboardItems.includes('icicle') === false,
     nodeTrimThreshold,
-    groupBy: groupByParam,
+    groupBy,
     invertCallStack,
     binaryFrameFilter,
   });
@@ -83,9 +83,9 @@ export const ProfileViewWithData = ({
     profileSource,
     QueryRequest_ReportType.PROFILE_METADATA,
     {
-      skip: !dashboardItems.includes('icicle'),
+      skip: dashboardItems.includes('icicle') === false,
       nodeTrimThreshold,
-      groupBy: groupByParam,
+      groupBy,
       invertCallStack,
       binaryFrameFilter: undefined,
     }
@@ -98,7 +98,7 @@ export const ProfileViewWithData = ({
     response: tableResponse,
     error: tableError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.TABLE_ARROW, {
-    skip: !dashboardItems.includes('table'),
+    skip: dashboardItems.includes('table') === false,
   });
 
   const {
@@ -106,7 +106,7 @@ export const ProfileViewWithData = ({
     response: callgraphResponse,
     error: callgraphError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.CALLGRAPH, {
-    skip: !dashboardItems.includes('callgraph'),
+    skip: dashboardItems.includes('callgraph') === false,
   });
 
   const {
@@ -114,7 +114,7 @@ export const ProfileViewWithData = ({
     response: sourceResponse,
     error: sourceError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.SOURCE, {
-    skip: !dashboardItems.includes('source'),
+    skip: dashboardItems.includes('source') === false,
     sourceBuildID,
     sourceFilename,
   });

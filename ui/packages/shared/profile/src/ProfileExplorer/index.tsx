@@ -16,7 +16,13 @@ import {useEffect, useMemo, useState} from 'react';
 import {Provider} from 'react-redux';
 
 import {QueryServiceClient} from '@parca/client';
-import {DateTimeRange, KeyDownProvider, useParcaContext} from '@parca/components';
+import {
+  DateTimeRange,
+  KeyDownProvider,
+  useParcaContext,
+  useURLState,
+  useURLStateNew,
+} from '@parca/components';
 import {createStore} from '@parca/store';
 import {capitalizeOnlyFirstLetter, type NavigateFunction} from '@parca/utilities';
 
@@ -46,8 +52,6 @@ export const getExpressionAsAString = (expression: string | []): string => {
   const x = Array.isArray(expression) ? expression.join() : expression;
   return x;
 };
-
-const DEFAULT_DASHBOARD_ITEMS = ['icicle'];
 
 /* eslint-disable @typescript-eslint/naming-convention */
 const sanitizeDateRange = (
@@ -127,7 +131,6 @@ const ProfileExplorerApp = ({
     time_selection_b,
     compare_b,
     filter_by_function,
-    dashboard_items,
   } = queryParams;
 
   // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -206,7 +209,6 @@ const ProfileExplorerApp = ({
     return navigateTo('/', {
       ...queryParams,
       ...SuffixParams(p.HistoryParams(), suffix),
-      dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
     });
   };
 
@@ -247,7 +249,6 @@ const ProfileExplorerApp = ({
             from_a: q.from.toString(),
             to_a: q.to.toString(),
             time_selection_a: q.timeSelection,
-            dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
             ...mergeParams,
           },
         }
@@ -259,7 +260,6 @@ const ProfileExplorerApp = ({
       return navigateTo('/', {
         ...queryParams,
         ...SuffixParams(p.HistoryParams(), '_a'),
-        dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
       });
     };
 
@@ -306,7 +306,6 @@ const ProfileExplorerApp = ({
           to_a: q.to.toString(),
           time_selection_a: q.timeSelection,
           filter_by_function: filter_by_function ?? '',
-          dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
           ...mergeParams,
         },
       }
@@ -337,7 +336,6 @@ const ProfileExplorerApp = ({
           to_b: q.to.toString(),
           time_selection_b: q.timeSelection,
           filter_by_function: filter_by_function ?? '',
-          dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
           ...mergeParams,
         },
       }

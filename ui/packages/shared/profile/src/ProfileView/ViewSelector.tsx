@@ -11,14 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Select, useParcaContext, useURLState, type SelectElement} from '@parca/components';
+import {Select, useParcaContext, useURLStateNew, type SelectElement} from '@parca/components';
 import {useUIFeatureFlag} from '@parca/hooks';
-import type {NavigateFunction} from '@parca/utilities';
 
 interface Props {
   position: number;
   defaultValue: string;
-  navigateTo?: NavigateFunction;
   placeholderText?: string;
   primary?: boolean;
   addView?: boolean;
@@ -29,7 +27,6 @@ interface Props {
 
 const ViewSelector = ({
   defaultValue,
-  navigateTo,
   position,
   placeholderText,
   primary = false,
@@ -39,15 +36,17 @@ const ViewSelector = ({
   id,
 }: Props): JSX.Element => {
   const [callgraphEnabled] = useUIFeatureFlag('callgraph');
-  const [dashboardItems = ['icicle'], setDashboardItems] = useURLState({
-    param: 'dashboard_items',
-    navigateTo,
-  });
+  const [dashboardItems = ['icicle'], setDashboardItems] = useURLStateNew<string[]>(
+    'dashboard_items',
+    {
+      alwaysReturnArray: true,
+    }
+  );
   const {enableSourcesView} = useParcaContext();
 
   const allItems: Array<{key: string; canBeSelected: boolean; supportingText?: string}> = [
-    {key: 'table', canBeSelected: !dashboardItems.includes('table')},
-    {key: 'icicle', canBeSelected: !dashboardItems.includes('icicle')},
+    {key: 'table', canBeSelected: dashboardItems.includes('table') === false},
+    {key: 'icicle', canBeSelected: dashboardItems.includes('icicle') === false},
   ];
   if (enableSourcesView === true) {
     allItems.push({key: 'source', canBeSelected: false});
@@ -55,7 +54,7 @@ const ViewSelector = ({
   if (callgraphEnabled) {
     allItems.push({
       key: 'callgraph',
-      canBeSelected: !dashboardItems.includes('callgraph'),
+      canBeSelected: dashboardItems.includes('callgraph') === false,
     });
   }
 
