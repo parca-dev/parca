@@ -266,6 +266,10 @@
         "type": {
           "$ref": "#/definitions/v1alpha1DebuginfoType",
           "description": "Type of debuginfo to propose uploading."
+        },
+        "buildIdType": {
+          "$ref": "#/definitions/v1alpha1BuildIDType",
+          "description": "Type of build ID."
         }
       },
       "description": "InitiateUploadRequest is the request to initiate an upload."
