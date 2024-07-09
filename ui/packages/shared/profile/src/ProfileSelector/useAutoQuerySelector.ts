@@ -107,8 +107,13 @@ export const useAutoQuerySelector = ({
       }
       dispatch(setAutoQuery('true'));
       let profileType = profileTypesData.types.find(
-        type => type.name === 'otel_profiling_agent_on_cpu' && type.delta
+        type => type.name === 'parca_agent' && type.delta
       );
+      if (profileType == null) {
+        profileType = profileTypesData.types.find(
+          type => type.name === 'otel_profiling_agent_on_cpu' && type.delta
+        );
+      }
       if (profileType == null) {
         profileType = profileTypesData.types.find(
           type => type.name === 'parca_agent_cpu' && type.delta
