@@ -15,7 +15,8 @@ import {ReactNode, createContext, useContext, useMemo, useState} from 'react';
 
 import {type NavigateFunction} from '@parca/utilities';
 
-type ParamValue = string | string[] | undefined;
+import {getQueryParamsFromURL, sanitize, type ParamValue} from './utils';
+
 type ParamValueSetter = (val: ParamValue) => void;
 
 interface URLState {
@@ -45,68 +46,6 @@ export const URLStateProvider = ({
       {children}
     </URLStateContext.Provider>
   );
-};
-
-const getQueryParamsFromURL = (): Record<string, ParamValue> => {
-  if (typeof window === 'undefined') {
-    return {};
-  }
-
-  const searchParams = new URLSearchParams(window.location.search);
-  const params: Record<string, ParamValue> = {};
-
-  searchParams.forEach((value, key) => {
-    params[key] = value.split(',');
-  });
-
-  return params;
-};
-
-const isEmpty = (val: string | string[] | undefined): boolean => {
-  return val === undefined || val == null || val === '' || (Array.isArray(val) && val.length === 0);
-};
-
-const isEqual = (a: ParamValue, b: ParamValue): boolean => {
-  if (typeof a === 'string' && typeof b === 'string') {
-    return decodeURIComponent(a) === decodeURIComponent(b);
-  }
-
-  if (Array.isArray(a) && Array.isArray(b)) {
-    if (a.length !== b.length) {
-      return false;
-    }
-
-    for (let i = 0; i < a.length; i++) {
-      if (a[i] !== b[i]) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  if (Array.isArray(a) && a.length === 1 && typeof b === 'string') {
-    return decodeURIComponent(a[0]) === decodeURIComponent(b);
-  }
-
-  if (Array.isArray(b) && b.length === 1 && typeof a === 'string') {
-    return decodeURIComponent(b[0]) === decodeURIComponent(a);
-  }
-
-  return false;
-};
-
-const sanitize = (
-  params: Record<string, ParamValue>,
-  defaultValues: Record<string, ParamValue>
-): Record<string, ParamValue> => {
-  const sanitized: Record<string, ParamValue> = {};
-  for (const [key, value] of Object.entries(params)) {
-    if (isEmpty(value) || isEqual(value, defaultValues[key])) {
-      continue;
-    }
-    sanitized[key] = value;
-  }
-  return sanitized;
 };
 
 interface Options {
