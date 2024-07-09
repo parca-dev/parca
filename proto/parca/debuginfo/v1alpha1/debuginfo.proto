@@ -102,6 +102,8 @@ message InitiateUploadRequest {
   bool force = 4;
   // Type of debuginfo to propose uploading.
   DebuginfoType type = 5;
+  // Type of build ID.
+  BuildIDType build_id_type = 6;
 }
 
 // InitiateUploadResponse is the response to an InitiateUploadRequest.

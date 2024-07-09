@@ -268,10 +268,11 @@ func (s *Store) InitiateUpload(ctx context.Context, req *debuginfopb.InitiateUpl
 	// We don't want to blindly accept upload initiation requests that
 	// shouldn't have happened.
 	shouldInitiateResp, err := s.ShouldInitiateUpload(ctx, &debuginfopb.ShouldInitiateUploadRequest{
-		BuildId: req.BuildId,
-		Hash:    req.Hash,
-		Force:   req.Force,
-		Type:    req.Type,
+		BuildId:     req.BuildId,
+		BuildIdType: req.BuildIdType,
+		Hash:        req.Hash,
+		Force:       req.Force,
+		Type:        req.Type,
 	})
 	if err != nil {
 		return nil, err
