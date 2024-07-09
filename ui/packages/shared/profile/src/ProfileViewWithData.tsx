@@ -14,8 +14,8 @@
 import {useEffect, useMemo, useState} from 'react';
 
 import {QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
-import {useGrpcMetadata, useParcaContext, useURLState, useURLStateNew} from '@parca/components';
-import {saveAsBlob, type NavigateFunction} from '@parca/utilities';
+import {useGrpcMetadata, useParcaContext, useURLStateNew} from '@parca/components';
+import {saveAsBlob} from '@parca/utilities';
 
 import {FIELD_FUNCTION_NAME} from './ProfileIcicleGraph/IcicleGraphArrow';
 import {ProfileSource} from './ProfileSource';
@@ -26,14 +26,12 @@ import {downloadPprof} from './utils';
 interface ProfileViewWithDataProps {
   queryClient: QueryServiceClient;
   profileSource: ProfileSource;
-  navigateTo?: NavigateFunction;
   compare?: boolean;
 }
 
 export const ProfileViewWithData = ({
   queryClient,
   profileSource,
-  navigateTo,
 }: ProfileViewWithDataProps): JSX.Element => {
   const metadata = useGrpcMetadata();
   const [dashboardItems] = useURLStateNew<string[]>('dashboard_items', {
@@ -71,7 +69,7 @@ export const ProfileViewWithData = ({
     response: flamegraphResponse,
     error: flamegraphError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMEGRAPH_ARROW, {
-    skip: dashboardItems.includes('icicle') === false,
+    skip: !dashboardItems.includes('icicle'),
     nodeTrimThreshold,
     groupBy,
     invertCallStack,
@@ -83,7 +81,7 @@ export const ProfileViewWithData = ({
     profileSource,
     QueryRequest_ReportType.PROFILE_METADATA,
     {
-      skip: dashboardItems.includes('icicle') === false,
+      skip: !dashboardItems.includes('icicle'),
       nodeTrimThreshold,
       groupBy,
       invertCallStack,
@@ -98,7 +96,7 @@ export const ProfileViewWithData = ({
     response: tableResponse,
     error: tableError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.TABLE_ARROW, {
-    skip: dashboardItems.includes('table') === false,
+    skip: !dashboardItems.includes('table'),
   });
 
   const {
@@ -106,7 +104,7 @@ export const ProfileViewWithData = ({
     response: callgraphResponse,
     error: callgraphError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.CALLGRAPH, {
-    skip: dashboardItems.includes('callgraph') === false,
+    skip: !dashboardItems.includes('callgraph'),
   });
 
   const {
@@ -114,7 +112,7 @@ export const ProfileViewWithData = ({
     response: sourceResponse,
     error: sourceError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.SOURCE, {
-    skip: dashboardItems.includes('source') === false,
+    skip: !dashboardItems.includes('source'),
     sourceBuildID,
     sourceFilename,
   });
@@ -237,7 +235,6 @@ export const ProfileViewWithData = ({
       }}
       profileSource={profileSource}
       queryClient={queryClient}
-      navigateTo={navigateTo}
       onDownloadPProf={() => void downloadPProfClick()}
       pprofDownloading={pprofDownloading}
     />

@@ -45,8 +45,8 @@ const ViewSelector = ({
   const {enableSourcesView} = useParcaContext();
 
   const allItems: Array<{key: string; canBeSelected: boolean; supportingText?: string}> = [
-    {key: 'table', canBeSelected: dashboardItems.includes('table') === false},
-    {key: 'icicle', canBeSelected: dashboardItems.includes('icicle') === false},
+    {key: 'table', canBeSelected: !dashboardItems.includes('table')},
+    {key: 'icicle', canBeSelected: !dashboardItems.includes('icicle')},
   ];
   if (enableSourcesView === true) {
     allItems.push({key: 'source', canBeSelected: false});
@@ -54,7 +54,7 @@ const ViewSelector = ({
   if (callgraphEnabled) {
     allItems.push({
       key: 'callgraph',
-      canBeSelected: dashboardItems.includes('callgraph') === false,
+      canBeSelected: !dashboardItems.includes('callgraph'),
     });
   }
 

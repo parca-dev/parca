@@ -14,8 +14,7 @@
 import {Table} from 'apache-arrow';
 
 import {QueryRequest_ReportType} from '@parca/client';
-import {useParcaContext, useURLState, useURLStateNew} from '@parca/components';
-import type {NavigateFunction} from '@parca/utilities';
+import {useParcaContext, useURLStateNew} from '@parca/components';
 
 import {
   FIELD_FUNCTION_FILE_NAME,

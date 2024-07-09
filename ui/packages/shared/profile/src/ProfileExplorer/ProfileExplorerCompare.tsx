@@ -94,7 +94,6 @@ const ProfileExplorerCompare = ({
           <div>
             <Card className="mt-2 px-6 py-4">
               <ProfileViewWithData
-                navigateTo={navigateTo}
                 queryClient={queryClient}
                 profileSource={
                   new ProfileDiffSource(

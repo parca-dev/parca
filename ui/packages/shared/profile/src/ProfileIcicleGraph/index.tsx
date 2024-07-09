@@ -158,7 +158,7 @@ const GroupAndSortActionButtons = (): JSX.Element => {
 
   const toggleGroupBy = useCallback(
     (key: string): void => {
-      groupBy.includes(key) === true
+      groupBy.includes(key)
         ? setGroupBy(groupBy.filter(v => v !== key)) // remove
         : setGroupBy([...groupBy, key]); // add
     },

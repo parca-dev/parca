@@ -27,7 +27,7 @@ const useLineRange = (): LineRange => {
     if (sourceLine == null) {
       return [-1, -1];
     }
-    const [start, end] = (sourceLine as string).split('-');
+    const [start, end] = sourceLine.split('-');
 
     if (end === undefined) {
       return [parseInt(start, 10), parseInt(start, 10)];

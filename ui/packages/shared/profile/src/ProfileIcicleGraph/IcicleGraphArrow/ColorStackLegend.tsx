@@ -88,7 +88,7 @@ const ColorStackLegend = ({mappings, compareMode = false, loading}: Props): Reac
               }
             )}
             onClick={() => {
-              if (!filteringAllowed || isHighlighted === true) {
+              if (!filteringAllowed || isHighlighted) {
                 return;
               }
 
@@ -107,7 +107,7 @@ const ColorStackLegend = ({mappings, compareMode = false, loading}: Props): Reac
               </div>
             </div>
             <div className="flex w-1/12 justify-end">
-              {isHighlighted === true && (
+              {isHighlighted && (
                 <Icon
                   icon="radix-icons:cross-circled"
                   onClick={e => {

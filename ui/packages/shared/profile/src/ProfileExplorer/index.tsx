@@ -16,13 +16,7 @@ import {useEffect, useMemo, useState} from 'react';
 import {Provider} from 'react-redux';
 
 import {QueryServiceClient} from '@parca/client';
-import {
-  DateTimeRange,
-  KeyDownProvider,
-  useParcaContext,
-  useURLState,
-  useURLStateNew,
-} from '@parca/components';
+import {DateTimeRange, KeyDownProvider, useParcaContext} from '@parca/components';
 import {createStore} from '@parca/store';
 import {capitalizeOnlyFirstLetter, type NavigateFunction} from '@parca/utilities';
 

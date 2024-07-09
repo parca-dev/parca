@@ -17,7 +17,7 @@ import {Dictionary, Table, Vector, tableFromIPC} from 'apache-arrow';
 import {useContextMenu} from 'react-contexify';
 
 import {FlamegraphArrow} from '@parca/client';
-import {useURLState, useURLStateNew} from '@parca/components';
+import {useURLStateNew} from '@parca/components';
 import {USER_PREFERENCES, useCurrentColorProfile, useUserPreference} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
 import {
@@ -27,7 +27,7 @@ import {
   useAppDispatch,
   useAppSelector,
 } from '@parca/store';
-import {getLastItem, scaleLinear, type ColorConfig, type NavigateFunction} from '@parca/utilities';
+import {getLastItem, scaleLinear, type ColorConfig} from '@parca/utilities';
 
 import GraphTooltipArrow from '../../GraphTooltipArrow';
 import GraphTooltipArrowContent from '../../GraphTooltipArrow/Content';

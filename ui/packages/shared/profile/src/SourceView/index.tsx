@@ -18,13 +18,7 @@ import {AnimatePresence, motion} from 'framer-motion';
 import {Item, Menu, useContextMenu} from 'react-contexify';
 
 import {Source} from '@parca/client';
-import {
-  SourceSkeleton,
-  useParcaContext,
-  useURLState,
-  useURLStateNew,
-  type ProfileData,
-} from '@parca/components';
+import {SourceSkeleton, useParcaContext, useURLStateNew, type ProfileData} from '@parca/components';
 
 import {ExpandOnHover} from '../GraphTooltipArrow/ExpandOnHoverValue';
 import {truncateStringReverse} from '../utils';
