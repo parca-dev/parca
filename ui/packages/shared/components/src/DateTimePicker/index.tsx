@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 
 import {Popover} from '@headlessui/react';
 import {Icon} from '@iconify/react';
@@ -58,7 +58,7 @@ export const DateTimePicker = ({selected, onChange}: Props): JSX.Element => {
     setTextInput(selected.getUIString(timezone));
   }, [selected, timezone]);
 
-  const setValue = () => {
+  const setValue = (): void => {
     if (!isTextInputDirty) {
       return;
     }

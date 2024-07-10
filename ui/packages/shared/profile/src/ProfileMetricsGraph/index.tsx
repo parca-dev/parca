@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {AnimatePresence, motion} from 'framer-motion';
@@ -159,7 +159,7 @@ export const useQueryRange = (
           setLoading(false);
         });
     })();
-  }, [client, start, end, metadata, sumBy, skip, stepCount]);
+  }, [client, queryExpression, start, end, metadata, sumBy, skip, stepCount]);
 
   return {...state, isLoading};
 };
