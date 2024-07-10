@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {Popover} from '@headlessui/react';
 import {Icon} from '@iconify/react';
@@ -52,10 +52,36 @@ export const DateTimePicker = ({selected, onChange}: Props): JSX.Element => {
   });
   const [textInput, setTextInput] = useState<string>(selected.getUIString(timezone));
   const [isTextInputDirty, setIsTextInputDirty] = useState<boolean>(false);
+  const setValueRef = useRef<() => void>();
 
   useEffect(() => {
     setTextInput(selected.getUIString(timezone));
   }, [selected, timezone]);
+
+  const setValue = () => {
+    if (!isTextInputDirty) {
+      return;
+    }
+    setIsTextInputDirty(false);
+    if (textInput === NOW) {
+      onChange(new AbsoluteDate(textInput));
+      return;
+    }
+    const date = new Date(textInput);
+    if (isNaN(date.getTime())) {
+      setTextInput(selected.getUIString(timezone));
+      return;
+    }
+    onChange(new AbsoluteDate(timezone !== undefined ? date : convertLocalToUTCDate(date)));
+  };
+  setValueRef.current = setValue;
+
+  useEffect(() => {
+    // Effect to handle the case when the user clicks outside the popover
+    return () => {
+      setValueRef.current?.();
+    };
+  }, []);
 
   return (
     <Popover>
@@ -67,7 +93,6 @@ export const DateTimePicker = ({selected, onChange}: Props): JSX.Element => {
           <Input
             className="w-full"
             value={textInput}
-            onAction={() => {}}
             actionButton={
               <Popover.Button
                 className={cx('w-full h-full flex items-center justify-center rounded-md', {
@@ -78,24 +103,8 @@ export const DateTimePicker = ({selected, onChange}: Props): JSX.Element => {
                 <Icon icon="mdi:calendar-month-outline" fontSize={20} />
               </Popover.Button>
             }
-            onBlur={() => {
-              if (!isTextInputDirty) {
-                return;
-              }
-              setIsTextInputDirty(false);
-              if (textInput === NOW) {
-                onChange(new AbsoluteDate(textInput));
-                return;
-              }
-              const date = new Date(textInput);
-              if (isNaN(date.getTime())) {
-                setTextInput(selected.getUIString(timezone));
-                return;
-              }
-              onChange(
-                new AbsoluteDate(timezone !== undefined ? date : convertLocalToUTCDate(date))
-              );
-            }}
+            onBlur={setValue}
+            onAction={setValue}
             onChange={e => {
               setTextInput(e.target.value);
               setIsTextInputDirty(true);

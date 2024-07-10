@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useMemo, useState} from 'react';
+import {useMemo, useState} from 'react';
 
 import {DateTimePicker} from '../../DateTimePicker';
 import {AbsoluteDate, DateTimeRange, RelativeDate, getHistoricalDate} from '../utils';
@@ -46,21 +46,34 @@ const AbsoluteDatePicker = ({range, onChange}: AbsoluteDatePickerProps): JSX.Ele
       : (range.to as AbsoluteDate)
   );
 
-  useEffect(() => {
-    onChange(from, to);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [from, to]);
-
   return (
     <div className="flex flex-col w-[80%] mx-auto">
       <div className="flex flex-col justify-center gap-x-2">
         <div>
           <div className="mb-0.5 mt-1.5 text-xs">Start</div>
-          <DateTimePicker selected={from} onChange={date => date != null && setFrom(date)} />
+          <DateTimePicker
+            selected={from}
+            onChange={date => {
+              if (date == null) {
+                return;
+              }
+              setFrom(date);
+              onChange(date, to);
+            }}
+          />
         </div>
         <div>
           <div className="mb-0.5 mt-1.5 text-xs">End</div>
-          <DateTimePicker selected={to} onChange={date => date != null && setTo(date)} />
+          <DateTimePicker
+            selected={to}
+            onChange={date => {
+              if (date == null) {
+                return;
+              }
+              setTo(date);
+              onChange(from, date);
+            }}
+          />
         </div>
       </div>
     </div>
