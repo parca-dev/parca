@@ -288,7 +288,6 @@ const ProfileSelector = ({
                 to={querySelection.to}
                 profile={profileSelection}
                 comparing={comparing}
-                timeRange={timeRangeSelection}
                 setTimeRange={(range: DateTimeRange) => {
                   const from = range.getFromMs();
                   const to = range.getToMs();
