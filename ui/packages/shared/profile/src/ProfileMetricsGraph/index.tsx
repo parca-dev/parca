@@ -60,7 +60,6 @@ interface ProfileMetricsGraphProps {
   profile: ProfileSelection | null;
   from: number;
   to: number;
-  timeRange: DateTimeRange;
   setTimeRange: (range: DateTimeRange) => void;
   addLabelMatcher: (
     labels: {key: string; value: string} | Array<{key: string; value: string}>
@@ -77,7 +76,6 @@ interface ProfileMetricsGraphProps {
 export interface IQueryRangeState {
   response: QueryRangeResponse | null;
   isLoading: boolean;
-  isRefreshing?: boolean;
   error: RpcError | null;
 }
 
@@ -98,15 +96,9 @@ export const useQueryRange = (
   queryExpression: string,
   start: number,
   end: number,
-  timeRange: DateTimeRange,
   sumBy: string[] = EMPTY_SUM_BY,
   skip = false
 ): IQueryRangeState => {
-  const previousQueryParams = useRef<{
-    queryExpression?: string;
-    timeRange?: DateTimeRange;
-    isRefresh?: boolean;
-  }>({});
   const [isLoading, setLoading] = useState<boolean>(!skip);
   const [state, setState] = useState<IQueryRangeState>({
     response: null,
@@ -141,17 +133,6 @@ export const useQueryRange = (
         return;
       }
 
-      if (
-        previousQueryParams.current.queryExpression !== queryExpression ||
-        previousQueryParams.current.timeRange !== timeRange
-      ) {
-        previousQueryParams.current.queryExpression = queryExpression;
-        previousQueryParams.current.timeRange = timeRange;
-        previousQueryParams.current.isRefresh = undefined;
-      } else {
-        previousQueryParams.current.isRefresh = true;
-      }
-
       setLoading(true);
 
       const stepDuration = getStepDuration(start, end, stepCount);
@@ -176,16 +157,11 @@ export const useQueryRange = (
         .catch(error => {
           setState({response: null, isLoading: false, error});
           setLoading(false);
-        })
-        .finally(() => {
-          if (previousQueryParams.current.isRefresh !== undefined) {
-            previousQueryParams.current.isRefresh = undefined;
-          }
         });
     })();
-  }, [client, queryExpression, start, end, metadata, timeRange, sumBy, skip, stepCount]);
+  }, [client, start, end, metadata, sumBy, skip, stepCount]);
 
-  return {...state, isLoading, isRefreshing: previousQueryParams.current.isRefresh};
+  return {...state, isLoading};
 };
 
 const ProfileMetricsGraph = ({
@@ -198,13 +174,12 @@ const ProfileMetricsGraph = ({
   addLabelMatcher,
   onPointClick,
   comparing = false,
-  timeRange,
 }: ProfileMetricsGraphProps): JSX.Element => {
   const {
     isLoading: metricsGraphLoading,
     response,
     error,
-  } = useQueryRange(queryClient, queryExpression, from, to, timeRange);
+  } = useQueryRange(queryClient, queryExpression, from, to);
   const {onError, perf, authenticationErrorMessage, isDarkMode} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(comparing);
 
