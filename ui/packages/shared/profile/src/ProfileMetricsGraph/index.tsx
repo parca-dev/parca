@@ -28,8 +28,12 @@ import {Query} from '@parca/parser';
 import {capitalizeOnlyFirstLetter, getStepDuration} from '@parca/utilities';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
+import {useLabelNames} from '../MatchersInput';
 import MetricsGraph from '../MetricsGraph';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
+import useGrpcQuery from '../useGrpcQuery';
+import {Toolbar} from './Toolbar';
+import {DEFAULT_EMPTY_SUM_BY, useSumBy} from './useSumBy';
 
 interface ProfileMetricsEmptyStateProps {
   message: string;
@@ -89,26 +93,17 @@ const getStepCountFromScreenWidth = (pixelsPerPoint: number): number => {
   return Math.round(width / pixelsPerPoint);
 };
 
-const EMPTY_SUM_BY: string[] = [];
-
 export const useQueryRange = (
   client: QueryServiceClient,
   queryExpression: string,
   start: number,
   end: number,
-  sumBy: string[] = EMPTY_SUM_BY,
+  sumBy: string[] = DEFAULT_EMPTY_SUM_BY,
   skip = false
 ): IQueryRangeState => {
-  const [isLoading, setLoading] = useState<boolean>(!skip);
-  const [state, setState] = useState<IQueryRangeState>({
-    response: null,
-    isLoading,
-    error: null,
-  });
   const metadata = useGrpcMetadata();
   const {navigateTo} = useParcaContext();
   const [stepCountStr, setStepCount] = useURLState({param: 'step_count', navigateTo});
-
   const defaultStepCount = useMemo(() => {
     return getStepCountFromScreenWidth(10);
   }, []);
@@ -127,16 +122,11 @@ export const useQueryRange = (
     }
   }, [stepCountStr, defaultStepCount, setStepCount]);
 
-  useEffect(() => {
-    void (async () => {
-      if (skip) {
-        return;
-      }
-
-      setLoading(true);
-
+  const {data, isLoading, error} = useGrpcQuery<QueryRangeResponse | undefined>({
+    key: ['query-range', queryExpression, start, end, sumBy.join(','), stepCount, metadata],
+    queryFn: async () => {
       const stepDuration = getStepDuration(start, end, stepCount);
-      const call = client.queryRange(
+      const {response} = await client.queryRange(
         {
           query: queryExpression,
           start: Timestamp.fromDate(new Date(start)),
@@ -147,21 +137,16 @@ export const useQueryRange = (
         },
         {meta: metadata}
       );
+      return response;
+    },
+    options: {
+      retry: false,
+      enabled: !skip && sumBy !== DEFAULT_EMPTY_SUM_BY,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    },
+  });
 
-      call.response
-        .then(response => {
-          setState({response, isLoading: false, error: null});
-          setLoading(false);
-          return null;
-        })
-        .catch(error => {
-          setState({response: null, isLoading: false, error});
-          setLoading(false);
-        });
-    })();
-  }, [client, queryExpression, start, end, metadata, sumBy, skip, stepCount]);
-
-  return {...state, isLoading};
+  return {isLoading, error: error as RpcError | null, response: data ?? null};
 };
 
 const ProfileMetricsGraph = ({
@@ -175,11 +160,22 @@ const ProfileMetricsGraph = ({
   onPointClick,
   comparing = false,
 }: ProfileMetricsGraphProps): JSX.Element => {
+  const {loading: labelNamesLoading, result: labelNamesResult} = useLabelNames(
+    queryClient,
+    profile?.ProfileSource()?.ProfileType()?.toString() ?? '',
+    from,
+    to
+  );
+  const [sumBy, setSumBy] = useSumBy(
+    profile?.ProfileSource()?.ProfileType(),
+    labelNamesResult.response?.labelNames
+  );
+
   const {
     isLoading: metricsGraphLoading,
     response,
     error,
-  } = useQueryRange(queryClient, queryExpression, from, to);
+  } = useQueryRange(queryClient, queryExpression, from, to, sumBy, labelNamesLoading);
   const {onError, perf, authenticationErrorMessage, isDarkMode} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(comparing);
 
@@ -200,8 +196,12 @@ const ProfileMetricsGraph = ({
   const series = response?.series;
   const dataAvailable = series !== null && series !== undefined && series?.length > 0;
 
-  if (metricsGraphLoading) {
-    return <MetricsGraphSkeleton heightStyle={heightStyle} isDarkMode={isDarkMode} />;
+  const loading = metricsGraphLoading || labelNamesLoading;
+
+  if (!labelNamesLoading && labelNamesResult?.error?.message != null) {
+    return (
+      <ErrorContent errorMessage={capitalizeOnlyFirstLetter(labelNamesResult.error.message)} />
+    );
   }
 
   if (!metricsGraphLoading && error !== null) {
@@ -212,52 +212,60 @@ const ProfileMetricsGraph = ({
     return <ErrorContent errorMessage={capitalizeOnlyFirstLetter(error.message)} />;
   }
 
-  if (dataAvailable) {
-    const handleSampleClick = (
-      timestamp: number,
-      _value: number,
-      labels: Label[],
-      duration: number
-    ): void => {
-      onPointClick(timestamp, labels, queryExpression, duration);
-    };
+  let sampleUnit = '';
 
-    let sampleUnit = '';
+  if (dataAvailable) {
     if (series.every((val, i, arr) => val?.sampleType?.unit === arr[0]?.sampleType?.unit)) {
       sampleUnit = series[0]?.sampleType?.unit ?? '';
     }
     if (sampleUnit === '') {
       sampleUnit = Query.parse(queryExpression).profileType().sampleUnit;
     }
+  }
 
-    return (
-      <AnimatePresence>
-        <motion.div
-          className="h-full w-full relative"
-          key="metrics-graph-loaded"
-          initial={{display: 'none', opacity: 0}}
-          animate={{display: 'block', opacity: 1}}
-          transition={{duration: 0.5}}
-        >
+  return (
+    <AnimatePresence>
+      <motion.div
+        className="h-full w-full relative"
+        key="metrics-graph-loaded"
+        initial={{display: 'none', opacity: 0}}
+        animate={{display: 'block', opacity: 1}}
+        transition={{duration: 0.5}}
+      >
+        <Toolbar
+          sumBy={sumBy}
+          setSumBy={setSumBy}
+          labels={labelNamesResult.response?.labelNames ?? []}
+        />
+        {loading ? (
+          <MetricsGraphSkeleton heightStyle={heightStyle} isDarkMode={isDarkMode} />
+        ) : dataAvailable ? (
           <MetricsGraph
             data={series}
             from={from}
             to={to}
             profile={profile as MergedProfileSelection}
             setTimeRange={setTimeRange}
-            onSampleClick={handleSampleClick}
+            onSampleClick={(
+              timestamp: number,
+              _value: number,
+              labels: Label[],
+              duration: number
+            ): void => {
+              onPointClick(timestamp, labels, queryExpression, duration);
+            }}
             addLabelMatcher={addLabelMatcher}
             sampleUnit={sampleUnit}
             height={height}
             width={width}
             margin={margin}
           />
-        </motion.div>
-      </AnimatePresence>
-    );
-  }
-
-  return <ProfileMetricsEmptyState message="No data found. Try a different query." />;
+        ) : (
+          <ProfileMetricsEmptyState message="No data found. Try a different query." />
+        )}
+      </motion.div>
+    </AnimatePresence>
+  );
 };
 
 export default ProfileMetricsGraph;
