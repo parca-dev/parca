@@ -11,11 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 
+import {useParcaContext, useURLState} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 
-const DEFAULT_EMPTY_SUM_BY: string[] = [];
+export const DEFAULT_EMPTY_SUM_BY: string[] = [];
 
 const getDefaultSumBy = (
   profile: ProfileType | undefined,
@@ -48,7 +49,46 @@ export const useSumBy = (
   profileType: ProfileType | undefined,
   labels: string[] | undefined
 ): [string[], (labels: string[]) => void] => {
-  const [userSelectedSumBy, setUserSelectedSumBy] = useState<string[] | undefined>(undefined);
+  const {navigateTo} = useParcaContext();
+  const [userSelectedSumByParam, setUserSelectedSumByParam] = useURLState({
+    param: 'sum_by',
+    navigateTo,
+  });
+
+  const userSelectedSumBy = useMemo<string[] | undefined>(() => {
+    if (userSelectedSumByParam?.length === 0) {
+      return undefined;
+    }
+
+    if (userSelectedSumByParam === '__none__') {
+      return [];
+    }
+
+    if (typeof userSelectedSumByParam === 'string') {
+      return [userSelectedSumByParam];
+    }
+
+    return userSelectedSumByParam;
+  }, [userSelectedSumByParam]);
+
+  const setUserSelectedSumBy = useCallback(
+    (sumBy: string[]) => {
+      if (sumBy.length === 0) {
+        setUserSelectedSumByParam('__none__');
+        return;
+      }
+
+      if (sumBy.length === 1) {
+        // Handle this separately to take care of the empty string scenario
+        setUserSelectedSumByParam(sumBy[0]);
+        return;
+      }
+
+      setUserSelectedSumByParam(sumBy);
+    },
+    [setUserSelectedSumByParam]
+  );
+
   const [defaultSumBy, setDefaultSumBy] = useState<string[] | undefined>(
     getDefaultSumBy(profileType, labels)
   );
@@ -62,9 +102,21 @@ export const useSumBy = (
       return;
     }
 
+    if (userSelectedSumBy !== undefined && userSelectedSumBy.length === 0) {
+      // User has explicitly selected no sumBy, so don't reset it
+      return;
+    }
+
+    if (userSelectedSumBy !== undefined && userSelectedSumBy.length > 0) {
+      // If any of the user selected sumBy is present in the labels, then don't reset it
+      if (userSelectedSumBy.some(sumBy => labels?.includes(sumBy))) {
+        return;
+      }
+    }
+
     // Reset user selected sumBy if profile type changes
-    setUserSelectedSumBy(undefined);
-  }, [profileType]);
+    setUserSelectedSumBy(['']);
+  }, [profileType, labels]);
 
   return [userSelectedSumBy ?? defaultSumBy ?? DEFAULT_EMPTY_SUM_BY, setUserSelectedSumBy];
 };
