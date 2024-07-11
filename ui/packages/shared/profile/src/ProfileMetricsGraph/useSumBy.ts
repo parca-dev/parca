@@ -11,16 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 
-
-
-import { useParcaContext, useURLState } from '@parca/components';
-import { ProfileType } from '@parca/parser';
-
-
-
-
+import {useParcaContext, useURLState} from '@parca/components';
+import {ProfileType} from '@parca/parser';
 
 export const DEFAULT_EMPTY_SUM_BY: string[] = [];
 
@@ -128,6 +122,8 @@ export const useSumBy = (
 
     // Reset user selected sumBy if profile type changes
     setUserSelectedSumBy(['']);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileType, labels]);
 
   return [userSelectedSumBy ?? defaultSumBy ?? DEFAULT_EMPTY_SUM_BY, setUserSelectedSumBy];
