@@ -11,10 +11,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import {useParcaContext, useURLState} from '@parca/components';
-import {ProfileType} from '@parca/parser';
+
+
+import { useParcaContext, useURLState } from '@parca/components';
+import { ProfileType } from '@parca/parser';
+
+
+
+
 
 export const DEFAULT_EMPTY_SUM_BY: string[] = [];
 
@@ -55,6 +61,10 @@ export const useSumBy = (
     navigateTo,
   });
 
+  console.log('labels', labels);
+
+  console.log('userSelectedSumByParam', userSelectedSumByParam);
+
   const userSelectedSumBy = useMemo<string[] | undefined>(() => {
     if (userSelectedSumByParam?.length === 0) {
       return undefined;
@@ -70,6 +80,8 @@ export const useSumBy = (
 
     return userSelectedSumByParam;
   }, [userSelectedSumByParam]);
+
+  console.log('userSelectedSumBy', userSelectedSumBy);
 
   const setUserSelectedSumBy = useCallback(
     (sumBy: string[]) => {
@@ -98,7 +110,7 @@ export const useSumBy = (
   }, [profileType, labels]);
 
   useEffect(() => {
-    if (profileType === undefined) {
+    if (profileType === undefined || labels === undefined) {
       return;
     }
 
