@@ -13,31 +13,27 @@
 
 import {useEffect, useMemo} from 'react';
 
+import {RpcError} from '@protobuf-ts/runtime-rpc';
+import {AnimatePresence, motion} from 'framer-motion';
 
+import {Duration, Label, QueryRangeResponse, QueryServiceClient, Timestamp} from '@parca/client';
+import {
+  DateTimeRange,
+  MetricsGraphSkeleton,
+  useGrpcMetadata,
+  useParcaContext,
+  useURLState,
+} from '@parca/components';
+import {Query} from '@parca/parser';
+import {capitalizeOnlyFirstLetter, getStepDuration} from '@parca/utilities';
 
-import { RpcError } from '@protobuf-ts/runtime-rpc';
-import { AnimatePresence, motion } from 'framer-motion';
-
-
-
-import { Duration, Label, QueryRangeResponse, QueryServiceClient, Timestamp } from '@parca/client';
-import { DateTimeRange, MetricsGraphSkeleton, useGrpcMetadata, useParcaContext, useURLState } from '@parca/components';
-import { Query } from '@parca/parser';
-import { capitalizeOnlyFirstLetter, getStepDuration } from '@parca/utilities';
-
-
-
-import { MergedProfileSelection, ProfileSelection } from '..';
-import { useLabelNames } from '../MatchersInput';
+import {MergedProfileSelection, ProfileSelection} from '..';
+import {useLabelNames} from '../MatchersInput';
 import MetricsGraph from '../MetricsGraph';
-import { useMetricsGraphDimensions } from '../MetricsGraph/useMetricsGraphDimensions';
+import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
 import useGrpcQuery from '../useGrpcQuery';
-import { Toolbar } from './Toolbar';
-import { DEFAULT_EMPTY_SUM_BY, useSumBy } from './useSumBy';
-
-
-
-
+import {Toolbar} from './Toolbar';
+import {DEFAULT_EMPTY_SUM_BY, useSumBy} from './useSumBy';
 
 interface ProfileMetricsEmptyStateProps {
   message: string;
