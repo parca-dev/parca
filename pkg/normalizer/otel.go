@@ -71,15 +71,6 @@ func newLabelNames() *labelNames {
 }
 
 func (n *labelNames) addLabel(name string) {
-	sanitized := strutil.SanitizeLabelName(name)
-
-	// Name is a special case that we don't want to put into the label set. It
-	// represents the name which has a first class representation in the
-	// schema.
-	if sanitized == "__name__" {
-		return
-	}
-
 	n.labelNames[strutil.SanitizeLabelName(name)] = struct{}{}
 }
 
@@ -130,13 +121,6 @@ func newLabelSet() *labelSet {
 
 func (s *labelSet) addLabel(name, value string) {
 	if strings.TrimSpace(value) != "" {
-		sanitized := strutil.SanitizeLabelName(name)
-		// Name is a special case that we don't want to put into the label set.
-		// It represents the name which has a first class representation in the
-		// schema.
-		if sanitized == "__name__" {
-			return
-		}
 		s.labels[strutil.SanitizeLabelName(name)] = strings.TrimSpace(value)
 	}
 }
@@ -222,15 +206,6 @@ func newProfileWriter(
 	}, nil
 }
 
-func findName(attrs []*v1.KeyValue) string {
-	for _, attr := range attrs {
-		if attr.Key == "__name__" {
-			return strings.TrimSpace(attr.Value.GetStringValue())
-		}
-	}
-	return ""
-}
-
 func (w *profileWriter) writeResourceProfiles(
 	rp []*otelprofilingpb.ResourceProfiles,
 ) error {
@@ -239,11 +214,10 @@ func (w *profileWriter) writeResourceProfiles(
 			for _, p := range sp.Profiles {
 				metas := []profile.Meta{}
 				for i := 0; i < len(p.Profile.SampleType); i++ {
-					name := findName(rp.Resource.Attributes)
+					name := sp.Scope.Name
 					if name == "" {
-						return fmt.Errorf("resource profile missing __name__ attribute")
+						name = "unknown"
 					}
-
 					metas = append(metas, MetaFromOtelProfile(p.Profile, name, i))
 				}
 
