@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {useParcaContext, useURLState} from '@parca/components';
 import {ProfileType} from '@parca/parser';
@@ -27,7 +27,7 @@ const getDefaultSumBy = (
   }
 
   if (!profile.delta) {
-    return undefined;
+    return [];
   }
 
   if (labels.includes('comm')) {
@@ -54,10 +54,7 @@ export const useSumBy = (
     param: 'sum_by',
     navigateTo,
   });
-
-  console.log('labels', labels);
-
-  console.log('userSelectedSumByParam', userSelectedSumByParam);
+  const previousProfileType = useRef<ProfileType | undefined>(profileType);
 
   const userSelectedSumBy = useMemo<string[] | undefined>(() => {
     if (userSelectedSumByParam?.length === 0) {
@@ -74,8 +71,6 @@ export const useSumBy = (
 
     return userSelectedSumByParam;
   }, [userSelectedSumByParam]);
-
-  console.log('userSelectedSumBy', userSelectedSumBy);
 
   const setUserSelectedSumBy = useCallback(
     (sumBy: string[]) => {
@@ -104,27 +99,18 @@ export const useSumBy = (
   }, [profileType, labels]);
 
   useEffect(() => {
-    if (profileType === undefined || labels === undefined) {
+    if (
+      profileType === undefined ||
+      profileType.toString() === previousProfileType.current?.toString()
+    ) {
       return;
-    }
-
-    if (userSelectedSumBy !== undefined && userSelectedSumBy.length === 0) {
-      // User has explicitly selected no sumBy, so don't reset it
-      return;
-    }
-
-    if (userSelectedSumBy !== undefined && userSelectedSumBy.length > 0) {
-      // If any of the user selected sumBy is present in the labels, then don't reset it
-      if (userSelectedSumBy.some(sumBy => labels?.includes(sumBy))) {
-        return;
-      }
     }
 
     // Reset user selected sumBy if profile type changes
     setUserSelectedSumBy(['']);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileType, labels]);
+  }, [profileType]);
 
   return [userSelectedSumBy ?? defaultSumBy ?? DEFAULT_EMPTY_SUM_BY, setUserSelectedSumBy];
 };

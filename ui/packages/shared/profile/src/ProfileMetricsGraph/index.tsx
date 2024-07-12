@@ -160,16 +160,17 @@ const ProfileMetricsGraph = ({
   onPointClick,
   comparing = false,
 }: ProfileMetricsGraphProps): JSX.Element => {
+  const profileType = useMemo(() => {
+    return Query.parse(queryExpression).profileType();
+  }, [queryExpression]);
+
   const {loading: labelNamesLoading, result: labelNamesResult} = useLabelNames(
     queryClient,
-    profile?.ProfileSource()?.ProfileType()?.toString() ?? '',
+    profileType.toString() ?? '',
     from,
     to
   );
-  const [sumBy, setSumBy] = useSumBy(
-    profile?.ProfileSource()?.ProfileType(),
-    labelNamesResult.response?.labelNames
-  );
+  const [sumBy, setSumBy] = useSumBy(profileType, labelNamesResult.response?.labelNames);
 
   const {
     isLoading: metricsGraphLoading,
