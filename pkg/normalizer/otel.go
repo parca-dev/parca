@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/apache/arrow/go/v16/arrow"
 	"github.com/apache/arrow/go/v16/arrow/memory"
@@ -213,47 +214,91 @@ func (w *profileWriter) writeResourceProfiles(
 		for _, sp := range rp.ScopeProfiles {
 			for _, p := range sp.Profiles {
 				metas := []profile.Meta{}
-				for i := 0; i < len(p.Profile.SampleType); i++ {
+				for i, st := range p.Profile.SampleType {
+					duration := p.Profile.DurationNanos
+					if duration == 0 {
+						duration = int64(p.EndTimeUnixNano - p.StartTimeUnixNano)
+					}
+					if duration == 0 && st.AggregationTemporality == otelprofilingpb.AggregationTemporality_AGGREGATION_TEMPORALITY_DELTA {
+						duration = time.Second.Nanoseconds()
+					}
+
 					name := sp.Scope.Name
 					if name == "" {
 						name = "unknown"
 					}
-					metas = append(metas, MetaFromOtelProfile(p.Profile, name, i))
+					metas = append(metas, MetaFromOtelProfile(p.Profile, name, i, duration))
 				}
 
 				for _, sample := range p.Profile.Sample {
-					for j, value := range sample.Value {
-						if value == 0 {
-							continue
+					ls := newLabelSet()
+					ls.addOtelPprofExtendedLabels(p.Profile.StringTable, sample.Label)
+					ls.addOtelAttributesFromTable(p.Profile.AttributeTable, sample.Attributes)
+					ls.addOtelAttributes(p.Attributes)
+					ls.addOtelAttributes(sp.Scope.Attributes)
+					ls.addOtelAttributes(rp.Resource.Attributes)
+
+					// It is unclear how to handle the case where there are
+					// multiple sample types with timestamps. Where do the
+					// timestamps start and end for each sample type?
+					if len(sample.TimestampsUnixNano) > 0 && len(p.Profile.SampleType) == 1 {
+						for _, ts := range sample.TimestampsUnixNano {
+							row := SampleToParquetRow(
+								w.schema,
+								w.row[:0],
+								w.labelNames, nil, nil,
+								ls.labels,
+								profile.Meta{
+									Name:       metas[0].Name,
+									PeriodType: metas[0].PeriodType,
+									SampleType: metas[0].SampleType,
+									Timestamp:  int64(ts) / time.Millisecond.Nanoseconds(),
+									Duration:   metas[0].Duration,
+									Period:     metas[0].Period,
+								},
+								&NormalizedSample{
+									Locations: serializeOtelStacktrace(
+										p.Profile,
+										sample,
+										p.Profile.Function,
+										p.Profile.Mapping,
+										p.Profile.StringTable,
+										true,
+									),
+									Value: 1,
+								},
+							)
+							if _, err := w.buffer.WriteRows([]parquet.Row{row}); err != nil {
+								return fmt.Errorf("failed to write row to buffer: %w", err)
+							}
 						}
+					} else {
+						for j, value := range sample.Value {
+							if value == 0 {
+								continue
+							}
 
-						ls := newLabelSet()
-						ls.addOtelPprofExtendedLabels(p.Profile.StringTable, sample.Label)
-						ls.addOtelAttributesFromTable(p.Profile.AttributeTable, sample.Attributes)
-						ls.addOtelAttributes(p.Attributes)
-						ls.addOtelAttributes(sp.Scope.Attributes)
-						ls.addOtelAttributes(rp.Resource.Attributes)
-
-						row := SampleToParquetRow(
-							w.schema,
-							w.row[:0],
-							w.labelNames, nil, nil,
-							ls.labels,
-							metas[j],
-							&NormalizedSample{
-								Locations: serializeOtelStacktrace(
-									p.Profile,
-									sample,
-									p.Profile.Function,
-									p.Profile.Mapping,
-									p.Profile.StringTable,
-									true,
-								),
-								Value: value,
-							},
-						)
-						if _, err := w.buffer.WriteRows([]parquet.Row{row}); err != nil {
-							return fmt.Errorf("failed to write row to buffer: %w", err)
+							row := SampleToParquetRow(
+								w.schema,
+								w.row[:0],
+								w.labelNames, nil, nil,
+								ls.labels,
+								metas[j],
+								&NormalizedSample{
+									Locations: serializeOtelStacktrace(
+										p.Profile,
+										sample,
+										p.Profile.Function,
+										p.Profile.Mapping,
+										p.Profile.StringTable,
+										true,
+									),
+									Value: value,
+								},
+							)
+							if _, err := w.buffer.WriteRows([]parquet.Row{row}); err != nil {
+								return fmt.Errorf("failed to write row to buffer: %w", err)
+							}
 						}
 					}
 				}
