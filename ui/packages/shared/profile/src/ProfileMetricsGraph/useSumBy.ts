@@ -13,14 +13,8 @@
 
 import {useCallback, useEffect, useMemo, useState} from 'react';
 
-
-
-import { useParcaContext, useURLState } from '@parca/components';
-import { ProfileType } from '@parca/parser';
-
-
-
-
+import {useParcaContext, useURLState} from '@parca/components';
+import {ProfileType} from '@parca/parser';
 
 export const DEFAULT_EMPTY_SUM_BY: string[] = [];
 
