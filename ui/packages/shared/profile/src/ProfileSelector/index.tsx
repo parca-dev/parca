@@ -284,6 +284,7 @@ const ProfileSelector = ({
               <ProfileMetricsGraph
                 queryClient={queryClient}
                 queryExpression={querySelection.expression}
+                dirtyQueryExpression={queryExpressionString}
                 from={querySelection.from}
                 to={querySelection.to}
                 profile={profileSelection}

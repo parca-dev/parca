@@ -26,10 +26,6 @@ const getDefaultSumBy = (
     return undefined;
   }
 
-  if (!profile.delta) {
-    return [];
-  }
-
   if (labels.includes('comm')) {
     return ['comm'];
   }
@@ -47,6 +43,7 @@ const getDefaultSumBy = (
 
 export const useSumBy = (
   profileType: ProfileType | undefined,
+  labelNamesLoading: boolean,
   labels: string[] | undefined
 ): [string[], (labels: string[]) => void] => {
   const {navigateTo} = useParcaContext();
@@ -95,23 +92,17 @@ export const useSumBy = (
   );
 
   useEffect(() => {
-    setDefaultSumBy(getDefaultSumBy(profileType, labels));
-  }, [profileType, labels]);
-
-  useEffect(() => {
-    if (
-      profileType === undefined ||
-      profileType.toString() === previousProfileType.current?.toString()
-    ) {
+    if (labelNamesLoading) {
       return;
     }
+    setDefaultSumBy(getDefaultSumBy(profileType, labels));
+  }, [profileType, labels, labelNamesLoading]);
 
-    // Reset user selected sumBy if profile type changes
-    setUserSelectedSumBy(['']);
-    previousProfileType.current = profileType;
+  let sumBy = userSelectedSumBy ?? defaultSumBy ?? DEFAULT_EMPTY_SUM_BY;
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileType]);
+  if (!profileType?.delta) {
+    sumBy = [];
+  }
 
-  return [userSelectedSumBy ?? defaultSumBy ?? DEFAULT_EMPTY_SUM_BY, setUserSelectedSumBy];
+  return [sumBy, setUserSelectedSumBy];
 };

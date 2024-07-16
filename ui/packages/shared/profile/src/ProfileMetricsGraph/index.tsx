@@ -61,6 +61,7 @@ export const ProfileMetricsEmptyState = ({message}: ProfileMetricsEmptyStateProp
 interface ProfileMetricsGraphProps {
   queryClient: QueryServiceClient;
   queryExpression: string;
+  dirtyQueryExpression: string;
   profile: ProfileSelection | null;
   from: number;
   to: number;
@@ -152,6 +153,7 @@ export const useQueryRange = (
 const ProfileMetricsGraph = ({
   queryClient,
   queryExpression,
+  dirtyQueryExpression,
   profile,
   from,
   to,
@@ -164,13 +166,21 @@ const ProfileMetricsGraph = ({
     return Query.parse(queryExpression).profileType();
   }, [queryExpression]);
 
+  const dirtyProfileType = useMemo(() => {
+    return Query.parse(dirtyQueryExpression).profileType();
+  }, [dirtyQueryExpression]);
+
   const {loading: labelNamesLoading, result: labelNamesResult} = useLabelNames(
     queryClient,
     profileType.toString() ?? '',
     from,
     to
   );
-  const [sumBy, setSumBy] = useSumBy(profileType, labelNamesResult.response?.labelNames);
+  const [sumBy, setSumBy] = useSumBy(
+    profileType,
+    labelNamesLoading,
+    labelNamesResult.response?.labelNames
+  );
 
   const {
     isLoading: metricsGraphLoading,
@@ -233,11 +243,13 @@ const ProfileMetricsGraph = ({
         animate={{display: 'block', opacity: 1}}
         transition={{duration: 0.5}}
       >
-        <Toolbar
-          sumBy={sumBy}
-          setSumBy={setSumBy}
-          labels={labelNamesResult.response?.labelNames ?? []}
-        />
+        {dirtyProfileType.delta === true ? (
+          <Toolbar
+            sumBy={sumBy}
+            setSumBy={setSumBy}
+            labels={labelNamesResult.response?.labelNames ?? []}
+          />
+        ) : null}
         {loading ? (
           <MetricsGraphSkeleton heightStyle={heightStyle} isDarkMode={isDarkMode} />
         ) : dataAvailable ? (
