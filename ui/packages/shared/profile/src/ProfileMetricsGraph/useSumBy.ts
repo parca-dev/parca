@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {useParcaContext, useURLState} from '@parca/components';
 import {ProfileType} from '@parca/parser';
@@ -24,10 +24,6 @@ const getDefaultSumBy = (
 ): string[] | undefined => {
   if (profile === undefined || labels === undefined) {
     return undefined;
-  }
-
-  if (!profile.delta) {
-    return [];
   }
 
   if (labels.includes('comm')) {
@@ -47,6 +43,7 @@ const getDefaultSumBy = (
 
 export const useSumBy = (
   profileType: ProfileType | undefined,
+  labelNamesLoading: boolean,
   labels: string[] | undefined
 ): [string[], (labels: string[]) => void] => {
   const {navigateTo} = useParcaContext();
@@ -54,7 +51,6 @@ export const useSumBy = (
     param: 'sum_by',
     navigateTo,
   });
-  const previousProfileType = useRef<ProfileType | undefined>(profileType);
 
   const userSelectedSumBy = useMemo<string[] | undefined>(() => {
     if (userSelectedSumByParam?.length === 0) {
@@ -95,23 +91,17 @@ export const useSumBy = (
   );
 
   useEffect(() => {
-    setDefaultSumBy(getDefaultSumBy(profileType, labels));
-  }, [profileType, labels]);
-
-  useEffect(() => {
-    if (
-      profileType === undefined ||
-      profileType.toString() === previousProfileType.current?.toString()
-    ) {
+    if (labelNamesLoading) {
       return;
     }
+    setDefaultSumBy(getDefaultSumBy(profileType, labels));
+  }, [profileType, labels, labelNamesLoading]);
 
-    // Reset user selected sumBy if profile type changes
-    setUserSelectedSumBy(['']);
-    previousProfileType.current = profileType;
+  let sumBy = userSelectedSumBy ?? defaultSumBy ?? DEFAULT_EMPTY_SUM_BY;
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileType]);
+  if (profileType?.delta !== true) {
+    sumBy = [];
+  }
 
-  return [userSelectedSumBy ?? defaultSumBy ?? DEFAULT_EMPTY_SUM_BY, setUserSelectedSumBy];
+  return [sumBy, setUserSelectedSumBy];
 };
