@@ -243,7 +243,7 @@ const ProfileMetricsGraph = ({
         animate={{display: 'block', opacity: 1}}
         transition={{duration: 0.5}}
       >
-        {dirtyProfileType.delta === true ? (
+        {dirtyProfileType.delta ? (
           <Toolbar
             sumBy={sumBy}
             setSumBy={setSumBy}
