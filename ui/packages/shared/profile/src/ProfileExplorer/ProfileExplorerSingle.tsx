@@ -48,6 +48,7 @@ const ProfileExplorerSingle = ({
           comparing={false}
           enforcedProfileName={''} // TODO
           navigateTo={navigateTo}
+          suffix="_a"
         />
       </Card>
       {profile != null ? (

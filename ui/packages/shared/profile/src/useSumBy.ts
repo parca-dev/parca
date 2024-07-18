@@ -11,10 +11,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import {useParcaContext, useURLState} from '@parca/components';
-import {ProfileType} from '@parca/parser';
+
+
+import { useParcaContext, useURLState } from '@parca/components';
+import { ProfileType } from '@parca/parser';
+
+
+
+
 
 export const DEFAULT_EMPTY_SUM_BY: string[] = [];
 
@@ -44,12 +50,24 @@ const getDefaultSumBy = (
 export const useSumBy = (
   profileType: ProfileType | undefined,
   labelNamesLoading: boolean,
-  labels: string[] | undefined
-): [string[], (labels: string[]) => void] => {
+  labels: string[] | undefined,
+  {
+    urlParamKey = 'sum_by',
+    skipEffects = false,
+    withURLUpdate = true,
+    defaultValue,
+  }: {
+    urlParamKey?: string;
+    skipEffects?: boolean;
+    withURLUpdate?: boolean;
+    defaultValue?: string[];
+  } = {}
+): [string[], (labels: string[]) => void, string[] | undefined] => {
   const {navigateTo} = useParcaContext();
   const [userSelectedSumByParam, setUserSelectedSumByParam] = useURLState({
-    param: 'sum_by',
+    param: urlParamKey,
     navigateTo,
+    withURLUpdate,
   });
 
   const userSelectedSumBy = useMemo<string[] | undefined>(() => {
@@ -59,6 +77,10 @@ export const useSumBy = (
 
     if (userSelectedSumByParam === '__none__') {
       return [];
+    }
+
+    if (userSelectedSumByParam === undefined && defaultValue !== undefined) {
+      return defaultValue;
     }
 
     if (typeof userSelectedSumByParam === 'string') {
@@ -91,7 +113,7 @@ export const useSumBy = (
   );
 
   useEffect(() => {
-    if (labelNamesLoading) {
+    if (labelNamesLoading || skipEffects) {
       return;
     }
     setDefaultSumBy(getDefaultSumBy(profileType, labels));
@@ -103,5 +125,5 @@ export const useSumBy = (
     sumBy = [];
   }
 
-  return [sumBy, setUserSelectedSumBy];
+  return [sumBy, setUserSelectedSumBy, userSelectedSumBy];
 };

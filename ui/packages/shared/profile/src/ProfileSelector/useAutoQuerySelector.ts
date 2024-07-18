@@ -61,9 +61,12 @@ export const useAutoQuerySelector = ({
         from: querySelection.from,
         to: querySelection.to,
         timeSelection: querySelection.timeSelection,
+        sumBy: querySelection.sumBy,
       };
 
-      let compareQuery = {
+      const sumBy = queryA.sumBy?.join(',');
+
+      let compareQuery: Record<string, string> = {
         compare_a: 'true',
         expression_a: encodeURIComponent(queryA.expression),
         from_a: queryA.from.toString(),
@@ -76,6 +79,11 @@ export const useAutoQuerySelector = ({
         to_b: queryA.to.toString(),
         time_selection_b: queryA.timeSelection,
       };
+
+      if (sumBy != null) {
+        compareQuery.sum_by_a = sumBy;
+        compareQuery.sum_by_b = sumBy;
+      }
 
       if (profileA != null) {
         compareQuery = {
