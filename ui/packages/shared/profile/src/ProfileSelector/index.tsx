@@ -144,6 +144,8 @@ const ProfileSelector = ({
     }
   );
 
+  const sumByLoading = labelNamesLoading;
+
   useEffect(() => {
     if (enforcedProfileName !== '') {
       const [q, changed] = Query.parse(querySelection.expression).setProfileName(
@@ -168,7 +170,9 @@ const ProfileSelector = ({
   const selectedProfileName = query.profileName();
 
   const setNewQueryExpression = (expr: string, updateTs = false): void => {
-    setSumBy(sumBySelection);
+    if (!sumByLoading) {
+     setSumBy(sumBySelection);
+    }
     const query = enforcedProfileName !== '' ? enforcedProfileNameQuery() : Query.parse(expr);
     const delta = query.profileType().delta;
     const from = timeRangeSelection.getFromMs(updateTs);
@@ -348,6 +352,7 @@ const ProfileSelector = ({
                 profile={profileSelection}
                 comparing={comparing}
                 sumBy={sumBy}
+                sumByLoading={sumByLoading}
                 setTimeRange={(range: DateTimeRange) => {
                   const from = range.getFromMs();
                   const to = range.getToMs();

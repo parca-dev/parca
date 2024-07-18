@@ -53,12 +53,10 @@ export const useSumBy = (
   labels: string[] | undefined,
   {
     urlParamKey = 'sum_by',
-    skipEffects = false,
     withURLUpdate = true,
     defaultValue,
   }: {
     urlParamKey?: string;
-    skipEffects?: boolean;
     withURLUpdate?: boolean;
     defaultValue?: string[];
   } = {}
@@ -113,7 +111,7 @@ export const useSumBy = (
   );
 
   useEffect(() => {
-    if (labelNamesLoading || skipEffects) {
+    if (labelNamesLoading) {
       return;
     }
     setDefaultSumBy(getDefaultSumBy(profileType, labels));

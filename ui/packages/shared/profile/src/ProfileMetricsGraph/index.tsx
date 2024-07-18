@@ -28,11 +28,9 @@ import {Query} from '@parca/parser';
 import {capitalizeOnlyFirstLetter, getStepDuration} from '@parca/utilities';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
-import {useLabelNames} from '../MatchersInput';
 import MetricsGraph from '../MetricsGraph';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
 import useGrpcQuery from '../useGrpcQuery';
-import {DEFAULT_EMPTY_SUM_BY, useSumBy} from '../useSumBy';
 
 interface ProfileMetricsEmptyStateProps {
   message: string;
@@ -64,6 +62,7 @@ interface ProfileMetricsGraphProps {
   profile: ProfileSelection | null;
   from: number;
   to: number;
+  sumByLoading: boolean;
   sumBy: string[];
   setTimeRange: (range: DateTimeRange) => void;
   addLabelMatcher: (
@@ -99,7 +98,7 @@ export const useQueryRange = (
   queryExpression: string,
   start: number,
   end: number,
-  sumBy: string[] = DEFAULT_EMPTY_SUM_BY,
+  sumBy: string[],
   skip = false
 ): IQueryRangeState => {
   const metadata = useGrpcMetadata();
@@ -142,7 +141,7 @@ export const useQueryRange = (
     },
     options: {
       retry: false,
-      enabled: !skip && sumBy !== DEFAULT_EMPTY_SUM_BY,
+      enabled: !skip,
       staleTime: 1000 * 60 * 5, // 5 minutes
     },
   });
@@ -161,12 +160,13 @@ const ProfileMetricsGraph = ({
   onPointClick,
   comparing = false,
   sumBy,
+  sumByLoading,
 }: ProfileMetricsGraphProps): JSX.Element => {
   const {
     isLoading: metricsGraphLoading,
     response,
     error,
-  } = useQueryRange(queryClient, queryExpression, from, to, sumBy);
+  } = useQueryRange(queryClient, queryExpression, from, to, sumBy, sumByLoading);
   const {onError, perf, authenticationErrorMessage, isDarkMode} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(comparing);
 
