@@ -25,7 +25,6 @@ import {
   IconButton,
   useGrpcMetadata,
   useParcaContext,
-  useURLState,
 } from '@parca/components';
 import {CloseIcon} from '@parca/icons';
 import {Query} from '@parca/parser';
@@ -121,7 +120,7 @@ const ProfileSelector = ({
   const {loading: labelNamesLoading, result} = useLabelNames(queryClient, profileType.toString());
 
   const labels = useMemo(() => {
-    return result.response?.labelNames || [];
+    return result.response?.labelNames === undefined ? [] : result.response.labelNames;
   }, [result]);
 
   const [sumBy, setSumBy, userSelectedSumBy] = useSumBy(

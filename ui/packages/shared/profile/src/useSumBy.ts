@@ -80,6 +80,8 @@ export const useSumBy = (
     }
 
     return userSelectedSumByParam;
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userSelectedSumByParam]);
 
   const setUserSelectedSumBy = useCallback(
