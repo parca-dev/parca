@@ -171,7 +171,7 @@ const ProfileSelector = ({
 
   const setNewQueryExpression = (expr: string, updateTs = false): void => {
     if (!sumByLoading) {
-     setSumBy(sumBySelection);
+      setSumBy(sumBySelection);
     }
     const query = enforcedProfileName !== '' ? enforcedProfileNameQuery() : Query.parse(expr);
     const delta = query.profileType().delta;
