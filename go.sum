@@ -712,12 +712,12 @@ github.com/planetscale/vtprotobuf v0.6.0/go.mod h1:t/avpk3KcrXxUnYOhZhMXJlSEyie6
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/polarsignals/frostdb v0.0.0-20240610080310-316067a56dde h1:aFvA95hKyYB93O8/AjxeY5qvcF5tA1iNodOuIB6l3uw=
-github.com/polarsignals/frostdb v0.0.0-20240610080310-316067a56dde/go.mod h1:6n9DbDuO0wTtg26S5hoZzrA+pEQRYAB1mpN5Z4U5nqI=
+github.com/polarsignals/frostdb v0.0.0-20240709141116-defafee0b73e h1:ZDsjUXBRpEeRGRx0pKTNKIFS/eTu/ZxFENG3/gSag9I=
+github.com/polarsignals/frostdb v0.0.0-20240709141116-defafee0b73e/go.mod h1:Yi3xaZgm67l5p9Z94nSk62qvCj2+az+wEgghsqjrW9g=
 github.com/polarsignals/iceberg-go v0.0.0-20240502213135-2ee70b71e76b h1:Dbm5itapR0uYIMujR8OntWpDJ/nm5OM6JiaKauLcZ4Y=
 github.com/polarsignals/iceberg-go v0.0.0-20240502213135-2ee70b71e76b/go.mod h1:5T9ChEZjRNhAGGLwH1cqzDA7wXB84SmU+WkXQr/ZAjo=
-github.com/polarsignals/wal v0.0.0-20240514152147-1cd4b81c9b88 h1:FZvQW8MXcNjwLfWDRAatOA83Pof5+iKW7veuInygBXY=
-github.com/polarsignals/wal v0.0.0-20240514152147-1cd4b81c9b88/go.mod h1:EVDHAAe+7GQ33A1/x+/gE+sBPN4toQ0XG5RoLD49xr8=
+github.com/polarsignals/wal v0.0.0-20240619104840-9da940027f9c h1:ReFgEXqZ9/y+/9ZdNHOa1L62wqt8mWqoqrWutWj2x+A=
+github.com/polarsignals/wal v0.0.0-20240619104840-9da940027f9c/go.mod h1:EVDHAAe+7GQ33A1/x+/gE+sBPN4toQ0XG5RoLD49xr8=
 github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndrE9hABlRI=
 github.com/posener/complete v1.2.3/go.mod h1:WZIdtGGp+qx0sLrYKtIRAruyNpv6hFCicSgv7Sy7s/s=
 github.com/prashantv/gostub v1.1.0 h1:BTyx3RfQjRHnUWaGF9oQos79AlQ5k8WNktv7VGvVH4g=
