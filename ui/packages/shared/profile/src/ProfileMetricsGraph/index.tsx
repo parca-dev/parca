@@ -28,12 +28,9 @@ import {Query} from '@parca/parser';
 import {capitalizeOnlyFirstLetter, getStepDuration} from '@parca/utilities';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
-import {useLabelNames} from '../MatchersInput';
 import MetricsGraph from '../MetricsGraph';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
 import useGrpcQuery from '../useGrpcQuery';
-import {Toolbar} from './Toolbar';
-import {DEFAULT_EMPTY_SUM_BY, useSumBy} from './useSumBy';
 
 interface ProfileMetricsEmptyStateProps {
   message: string;
@@ -65,6 +62,8 @@ interface ProfileMetricsGraphProps {
   profile: ProfileSelection | null;
   from: number;
   to: number;
+  sumByLoading: boolean;
+  sumBy: string[];
   setTimeRange: (range: DateTimeRange) => void;
   addLabelMatcher: (
     labels: {key: string; value: string} | Array<{key: string; value: string}>
@@ -99,7 +98,7 @@ export const useQueryRange = (
   queryExpression: string,
   start: number,
   end: number,
-  sumBy: string[] = DEFAULT_EMPTY_SUM_BY,
+  sumBy: string[],
   skip = false
 ): IQueryRangeState => {
   const metadata = useGrpcMetadata();
@@ -142,7 +141,7 @@ export const useQueryRange = (
     },
     options: {
       retry: false,
-      enabled: !skip && sumBy !== DEFAULT_EMPTY_SUM_BY,
+      enabled: !skip,
       staleTime: 1000 * 60 * 5, // 5 minutes
     },
   });
@@ -153,7 +152,6 @@ export const useQueryRange = (
 const ProfileMetricsGraph = ({
   queryClient,
   queryExpression,
-  dirtyQueryExpression,
   profile,
   from,
   to,
@@ -161,32 +159,14 @@ const ProfileMetricsGraph = ({
   addLabelMatcher,
   onPointClick,
   comparing = false,
+  sumBy,
+  sumByLoading,
 }: ProfileMetricsGraphProps): JSX.Element => {
-  const profileType = useMemo(() => {
-    return Query.parse(queryExpression).profileType();
-  }, [queryExpression]);
-
-  const dirtyProfileType = useMemo(() => {
-    return Query.parse(dirtyQueryExpression).profileType();
-  }, [dirtyQueryExpression]);
-
-  const {loading: labelNamesLoading, result: labelNamesResult} = useLabelNames(
-    queryClient,
-    profileType.toString() ?? '',
-    from,
-    to
-  );
-  const [sumBy, setSumBy] = useSumBy(
-    profileType,
-    labelNamesLoading,
-    labelNamesResult.response?.labelNames
-  );
-
   const {
     isLoading: metricsGraphLoading,
     response,
     error,
-  } = useQueryRange(queryClient, queryExpression, from, to, sumBy, labelNamesLoading);
+  } = useQueryRange(queryClient, queryExpression, from, to, sumBy, sumByLoading);
   const {onError, perf, authenticationErrorMessage, isDarkMode} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(comparing);
 
@@ -207,13 +187,7 @@ const ProfileMetricsGraph = ({
   const series = response?.series;
   const dataAvailable = series !== null && series !== undefined && series?.length > 0;
 
-  const loading = metricsGraphLoading || labelNamesLoading;
-
-  if (!labelNamesLoading && labelNamesResult?.error?.message != null) {
-    return (
-      <ErrorContent errorMessage={capitalizeOnlyFirstLetter(labelNamesResult.error.message)} />
-    );
-  }
+  const loading = metricsGraphLoading;
 
   if (!metricsGraphLoading && error !== null) {
     if (authenticationErrorMessage !== undefined && error.code === 'UNAUTHENTICATED') {
@@ -243,13 +217,6 @@ const ProfileMetricsGraph = ({
         animate={{display: 'block', opacity: 1}}
         transition={{duration: 0.5}}
       >
-        {dirtyProfileType.delta ? (
-          <Toolbar
-            sumBy={sumBy}
-            setSumBy={setSumBy}
-            labels={labelNamesResult.response?.labelNames ?? []}
-          />
-        ) : null}
         {loading ? (
           <MetricsGraphSkeleton heightStyle={heightStyle} isDarkMode={isDarkMode} />
         ) : dataAvailable ? (

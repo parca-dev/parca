@@ -73,6 +73,7 @@ const ProfileExplorerCompare = ({
             enforcedProfileName={''}
             comparing={true}
             navigateTo={navigateTo}
+            suffix="_a"
           />
         </Card>
         <Card className="mt-2 p-2">
@@ -86,6 +87,7 @@ const ProfileExplorerCompare = ({
             enforcedProfileName={Query.parse(queryA.expression).profileName()}
             comparing={true}
             navigateTo={navigateTo}
+            suffix="_b"
           />
         </Card>
       </div>

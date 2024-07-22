@@ -120,12 +120,14 @@ const ProfileExplorerApp = ({
     merge_to_a,
     time_selection_a,
     compare_a,
+    sum_by_a,
     from_b,
     to_b,
     merge_from_b,
     merge_to_b,
     time_selection_b,
     compare_b,
+    sum_by_b,
     filter_by_function,
     dashboard_items,
   } = queryParams;
@@ -223,6 +225,7 @@ const ProfileExplorerApp = ({
     from: parseInt(from_a as string),
     to: parseInt(to_a as string),
     timeSelection: time_selection_a as string,
+    sumBy: sum_by_a as string[],
   };
 
   // Show the SingleProfileExplorer when not comparing
@@ -280,6 +283,7 @@ const ProfileExplorerApp = ({
     from: parseInt(from_b as string),
     to: parseInt(to_b as string),
     timeSelection: time_selection_b as string,
+    sumBy: sum_by_b as string[],
   };
 
   const selectQueryA = (q: QuerySelection): void => {

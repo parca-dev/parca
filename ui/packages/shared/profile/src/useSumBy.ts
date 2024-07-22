@@ -44,12 +44,22 @@ const getDefaultSumBy = (
 export const useSumBy = (
   profileType: ProfileType | undefined,
   labelNamesLoading: boolean,
-  labels: string[] | undefined
-): [string[], (labels: string[]) => void] => {
+  labels: string[] | undefined,
+  {
+    urlParamKey = 'sum_by',
+    withURLUpdate = true,
+    defaultValue,
+  }: {
+    urlParamKey?: string;
+    withURLUpdate?: boolean;
+    defaultValue?: string[];
+  } = {}
+): [string[], (labels: string[]) => void, string[] | undefined] => {
   const {navigateTo} = useParcaContext();
   const [userSelectedSumByParam, setUserSelectedSumByParam] = useURLState({
-    param: 'sum_by',
+    param: urlParamKey,
     navigateTo,
+    withURLUpdate,
   });
 
   const userSelectedSumBy = useMemo<string[] | undefined>(() => {
@@ -61,11 +71,17 @@ export const useSumBy = (
       return [];
     }
 
+    if (userSelectedSumByParam === undefined && defaultValue !== undefined) {
+      return defaultValue;
+    }
+
     if (typeof userSelectedSumByParam === 'string') {
       return [userSelectedSumByParam];
     }
 
     return userSelectedSumByParam;
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userSelectedSumByParam]);
 
   const setUserSelectedSumBy = useCallback(
@@ -103,5 +119,5 @@ export const useSumBy = (
     sumBy = [];
   }
 
-  return [sumBy, setUserSelectedSumBy];
+  return [sumBy, setUserSelectedSumBy, userSelectedSumBy];
 };

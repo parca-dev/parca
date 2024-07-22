@@ -11,9 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 
 import {RpcError} from '@protobuf-ts/runtime-rpc';
+import Select from 'react-select';
 
 import {Label, ProfileTypesResponse, QueryServiceClient} from '@parca/client';
 import {
@@ -30,10 +31,11 @@ import {Query} from '@parca/parser';
 import {type NavigateFunction} from '@parca/utilities';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
-import MatchersInput from '../MatchersInput/index';
+import MatchersInput, {useLabelNames} from '../MatchersInput/index';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
 import ProfileMetricsGraph, {ProfileMetricsEmptyState} from '../ProfileMetricsGraph';
 import ProfileTypeSelector from '../ProfileTypeSelector/index';
+import {useSumBy} from '../useSumBy';
 import {useAutoQuerySelector} from './useAutoQuerySelector';
 
 export interface QuerySelection {
@@ -41,6 +43,7 @@ export interface QuerySelection {
   from: number;
   to: number;
   timeSelection: string;
+  sumBy?: string[];
   mergeFrom?: number;
   mergeTo?: number;
 }
@@ -55,6 +58,7 @@ interface ProfileSelectorProps {
   profileSelection: ProfileSelection | null;
   comparing: boolean;
   navigateTo: NavigateFunction;
+  suffix?: string;
 }
 
 export interface IProfileTypesResult {
@@ -93,6 +97,7 @@ const ProfileSelector = ({
   profileSelection,
   comparing,
   navigateTo,
+  suffix = '',
 }: ProfileSelectorProps): JSX.Element => {
   const {
     loading: profileTypesLoading,
@@ -107,6 +112,38 @@ const ProfileSelector = ({
   );
 
   const [queryExpressionString, setQueryExpressionString] = useState(querySelection.expression);
+
+  const profileType = useMemo(() => {
+    return Query.parse(queryExpressionString).profileType();
+  }, [queryExpressionString]);
+
+  const {loading: labelNamesLoading, result} = useLabelNames(queryClient, profileType.toString());
+
+  const labels = useMemo(() => {
+    return result.response?.labelNames === undefined ? [] : result.response.labelNames;
+  }, [result]);
+
+  const [sumBy, setSumBy, userSelectedSumBy] = useSumBy(
+    profileType,
+    labelNamesLoading,
+    result.response?.labelNames,
+    {
+      urlParamKey: 'sum_by' + suffix,
+    }
+  );
+
+  const [sumBySelection, setSumBySelection] = useSumBy(
+    profileType,
+    labelNamesLoading,
+    result.response?.labelNames,
+    {
+      urlParamKey: 'sum_by_selection' + suffix,
+      withURLUpdate: false,
+      defaultValue: userSelectedSumBy,
+    }
+  );
+
+  const sumByLoading = labelNamesLoading;
 
   useEffect(() => {
     if (enforcedProfileName !== '') {
@@ -132,6 +169,9 @@ const ProfileSelector = ({
   const selectedProfileName = query.profileName();
 
   const setNewQueryExpression = (expr: string, updateTs = false): void => {
+    if (!sumByLoading) {
+      setSumBy(sumBySelection);
+    }
     const query = enforcedProfileName !== '' ? enforcedProfileNameQuery() : Query.parse(expr);
     const delta = query.profileType().delta;
     const from = timeRangeSelection.getFromMs(updateTs);
@@ -217,7 +257,7 @@ const ProfileSelector = ({
     profileTypesData,
     setProfileName,
     setQueryExpression,
-    querySelection,
+    querySelection: {...querySelection, sumBy},
     navigateTo,
   });
 
@@ -255,6 +295,27 @@ const ProfileSelector = ({
               profileType={selectedProfileName}
             />
           </div>
+          <div className="pb-6">
+            <div className="mb-0.5 mt-1.5 flex items-center justify-between">
+              <label className="text-xs">Sum by</label>
+            </div>
+            <Select
+              defaultValue={[]}
+              isMulti
+              name="colors"
+              options={labels.map(label => ({label, value: label}))}
+              className="parca-select-container text-sm w-80"
+              classNamePrefix="parca-select"
+              value={sumBySelection.map(sumBy => ({label: sumBy, value: sumBy}))}
+              onChange={selectedOptions => {
+                setSumBySelection(selectedOptions.map(option => option.value));
+              }}
+              placeholder="Labels..."
+              styles={{
+                indicatorSeparator: () => ({display: 'none'}),
+              }}
+            />
+          </div>
           <DateTimeRangePicker
             onRangeSelection={setTimeRangeSelection}
             range={timeRangeSelection}
@@ -289,6 +350,8 @@ const ProfileSelector = ({
                 to={querySelection.to}
                 profile={profileSelection}
                 comparing={comparing}
+                sumBy={sumBy}
+                sumByLoading={sumByLoading}
                 setTimeRange={(range: DateTimeRange) => {
                   const from = range.getFromMs();
                   const to = range.getToMs();
