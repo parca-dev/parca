@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useCallback, useMemo} from 'react';
 
 import {useParcaContext, useURLState} from '@parca/components';
 import {ProfileType} from '@parca/parser';
@@ -54,7 +54,11 @@ export const useSumBy = (
     withURLUpdate?: boolean;
     defaultValue?: string[];
   } = {}
-): [string[], (labels: string[]) => void, string[] | undefined] => {
+): [
+  string[],
+  (labels: string[]) => void,
+  {userSelectedSumBy: string[] | undefined; isLoading: boolean},
+] => {
   const {navigateTo} = useParcaContext();
   const [userSelectedSumByParam, setUserSelectedSumByParam] = useURLState({
     param: urlParamKey,
@@ -102,22 +106,15 @@ export const useSumBy = (
     [setUserSelectedSumByParam]
   );
 
-  const [defaultSumBy, setDefaultSumBy] = useState<string[] | undefined>(
-    getDefaultSumBy(profileType, labels)
-  );
-
-  useEffect(() => {
-    if (labelNamesLoading) {
-      return;
-    }
-    setDefaultSumBy(getDefaultSumBy(profileType, labels));
-  }, [profileType, labels, labelNamesLoading]);
+  const defaultSumBy = useMemo(() => {
+    return getDefaultSumBy(profileType, labels);
+  }, [profileType, labels]);
 
   let sumBy = userSelectedSumBy ?? defaultSumBy ?? DEFAULT_EMPTY_SUM_BY;
 
   if (profileType?.delta !== true) {
-    sumBy = [];
+    sumBy = DEFAULT_EMPTY_SUM_BY;
   }
 
-  return [sumBy, setUserSelectedSumBy, userSelectedSumBy];
+  return [sumBy, setUserSelectedSumBy, {userSelectedSumBy, isLoading: labelNamesLoading}];
 };
