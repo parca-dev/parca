@@ -57,7 +57,7 @@ export const useSumBy = (
 ): [
   string[],
   (labels: string[]) => void,
-  {userSelectedSumBy: string[] | undefined; isLoading: boolean},
+  {userSelectedSumBy: string[] | undefined; isLoading: boolean}
 ] => {
   const {navigateTo} = useParcaContext();
   const [userSelectedSumByParam, setUserSelectedSumByParam] = useURLState({

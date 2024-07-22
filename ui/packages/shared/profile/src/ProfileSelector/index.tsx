@@ -122,7 +122,10 @@ const ProfileSelector = ({
   }, [querySelection.expression]);
 
   const {loading: labelNamesLoading, result} = useLabelNames(queryClient, profileType.toString());
-  const {loading: selectedLabelNamesLoading, result: selectedLabelNamesResult} = useLabelNames(queryClient, selectedProfileType.toString());
+  const {loading: selectedLabelNamesLoading, result: selectedLabelNamesResult} = useLabelNames(
+    queryClient,
+    selectedProfileType.toString()
+  );
 
   const labels = useMemo(() => {
     return result.response?.labelNames === undefined ? [] : result.response.labelNames;

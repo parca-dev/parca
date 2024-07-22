@@ -11,18 +11,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-
-
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 
 import cx from 'classnames';
 import TextareaAutosize from 'react-textarea-autosize';
 
-
-
-import { LabelsRequest, LabelsResponse, QueryServiceClient } from '@parca/client';
-import { useGrpcMetadata } from '@parca/components';
-import { Query } from '@parca/parser';
+import {LabelsRequest, LabelsResponse, QueryServiceClient} from '@parca/client';
+import {useGrpcMetadata} from '@parca/components';
+import {Query} from '@parca/parser';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
 import useGrpcQuery from '../useGrpcQuery';
