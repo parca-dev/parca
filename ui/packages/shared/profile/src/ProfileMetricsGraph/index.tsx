@@ -58,7 +58,6 @@ export const ProfileMetricsEmptyState = ({message}: ProfileMetricsEmptyStateProp
 interface ProfileMetricsGraphProps {
   queryClient: QueryServiceClient;
   queryExpression: string;
-  dirtyQueryExpression: string;
   profile: ProfileSelection | null;
   from: number;
   to: number;

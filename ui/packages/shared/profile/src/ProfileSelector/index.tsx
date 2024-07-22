@@ -117,33 +117,45 @@ const ProfileSelector = ({
     return Query.parse(queryExpressionString).profileType();
   }, [queryExpressionString]);
 
+  const selectedProfileType = useMemo(() => {
+    return Query.parse(querySelection.expression).profileType();
+  }, [querySelection.expression]);
+
   const {loading: labelNamesLoading, result} = useLabelNames(queryClient, profileType.toString());
+  const {loading: selectedLabelNamesLoading, result: selectedLabelNamesResult} = useLabelNames(
+    queryClient,
+    selectedProfileType.toString()
+  );
 
   const labels = useMemo(() => {
     return result.response?.labelNames === undefined ? [] : result.response.labelNames;
   }, [result]);
 
-  const [sumBy, setSumBy, userSelectedSumBy] = useSumBy(
-    profileType,
-    labelNamesLoading,
-    result.response?.labelNames,
+  const selectedLabels = useMemo(() => {
+    return selectedLabelNamesResult.response?.labelNames === undefined
+      ? []
+      : selectedLabelNamesResult.response.labelNames;
+  }, [selectedLabelNamesResult]);
+
+  const [sumBy, setSumBy, {userSelectedSumBy, isLoading: isSumByLoading}] = useSumBy(
+    selectedProfileType,
+    selectedLabelNamesLoading,
+    selectedLabels,
     {
       urlParamKey: 'sum_by' + suffix,
     }
   );
 
-  const [sumBySelection, setSumBySelection] = useSumBy(
+  const [sumBySelection, setSumBySelection, {isLoading: isSumBySelectionLoading}] = useSumBy(
     profileType,
     labelNamesLoading,
-    result.response?.labelNames,
+    labels,
     {
       urlParamKey: 'sum_by_selection' + suffix,
       withURLUpdate: false,
       defaultValue: userSelectedSumBy,
     }
   );
-
-  const sumByLoading = labelNamesLoading;
 
   useEffect(() => {
     if (enforcedProfileName !== '') {
@@ -169,7 +181,7 @@ const ProfileSelector = ({
   const selectedProfileName = query.profileName();
 
   const setNewQueryExpression = (expr: string, updateTs = false): void => {
-    if (!sumByLoading) {
+    if (!isSumBySelectionLoading) {
       setSumBy(sumBySelection);
     }
     const query = enforcedProfileName !== '' ? enforcedProfileNameQuery() : Query.parse(expr);
@@ -345,13 +357,12 @@ const ProfileSelector = ({
               <ProfileMetricsGraph
                 queryClient={queryClient}
                 queryExpression={querySelection.expression}
-                dirtyQueryExpression={queryExpressionString}
                 from={querySelection.from}
                 to={querySelection.to}
                 profile={profileSelection}
                 comparing={comparing}
                 sumBy={sumBy}
-                sumByLoading={sumByLoading}
+                sumByLoading={isSumByLoading}
                 setTimeRange={(range: DateTimeRange) => {
                   const from = range.getFromMs();
                   const to = range.getToMs();

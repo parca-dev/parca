@@ -21,6 +21,7 @@ import {useGrpcMetadata} from '@parca/components';
 import {Query} from '@parca/parser';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
+import useGrpcQuery from '../useGrpcQuery';
 import SuggestionsList, {Suggestion, Suggestions} from './SuggestionsList';
 
 interface MatchersInputProps {
@@ -47,33 +48,30 @@ export const useLabelNames = (
   start?: number,
   end?: number
 ): UseLabelNames => {
-  const [loading, setLoading] = useState(true);
-  const [result, setResult] = useState<ILabelNamesResult>({});
   const metadata = useGrpcMetadata();
 
-  useEffect(() => {
-    if (profileType === undefined || profileType === '') {
-      return;
-    }
+  const {data, isLoading, error} = useGrpcQuery<LabelsResponse>({
+    key: ['labelNames', profileType],
+    queryFn: async () => {
+      const request: LabelsRequest = {match: []};
+      if (start !== undefined && end !== undefined) {
+        request.start = millisToProtoTimestamp(start);
+        request.end = millisToProtoTimestamp(end);
+      }
+      if (profileType !== undefined) {
+        request.profileType = profileType;
+      }
+      const {response} = await client.labels(request, {meta: metadata});
+      return response;
+    },
+    options: {
+      enabled: profileType !== undefined && profileType !== '',
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      keepPreviousData: false,
+    },
+  });
 
-    const request: LabelsRequest = {match: []};
-    if (start !== undefined && end !== undefined) {
-      request.start = millisToProtoTimestamp(start);
-      request.end = millisToProtoTimestamp(end);
-    }
-    if (profileType !== undefined) {
-      request.profileType = profileType;
-    }
-    const call = client.labels(request, {meta: metadata});
-    setLoading(true);
-
-    call.response
-      .then(response => setResult({response}))
-      .catch(error => setResult({error}))
-      .finally(() => setLoading(false));
-  }, [client, metadata, start, end, profileType]);
-
-  return {result, loading};
+  return {result: {response: data, error: error as Error}, loading: isLoading};
 };
 
 const MatchersInput = ({
