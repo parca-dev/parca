@@ -11,10 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 
 import {RpcError} from '@protobuf-ts/runtime-rpc';
-import Select from 'react-select';
+import Select, {type SelectInstance} from 'react-select';
 
 import {Label, ProfileTypesResponse, QueryServiceClient} from '@parca/client';
 import {
@@ -105,6 +105,7 @@ const ProfileSelector = ({
   } = useProfileTypes(queryClient);
   const {heightStyle} = useMetricsGraphDimensions(comparing);
   const {viewComponent} = useParcaContext();
+  const sumByRef = useRef(null);
 
   const [timeRangeSelection, setTimeRangeSelection] = useState(
     DateTimeRange.fromRangeKey(querySelection.timeSelection, querySelection.from, querySelection.to)
@@ -316,6 +317,26 @@ const ProfileSelector = ({
                 indicatorSeparator: () => ({display: 'none'}),
               }}
               isDisabled={!profileType.delta}
+              ref={sumByRef}
+              onKeyDown={e => {
+                const currentRef = sumByRef.current as unknown as SelectInstance | null;
+                if (currentRef == null) {
+                  return;
+                }
+                const inputRef = currentRef.inputRef;
+                if (inputRef == null) {
+                  return;
+                }
+
+                if (
+                  e.key === 'Enter' &&
+                  inputRef.value === '' &&
+                  currentRef.state.focusedOptionId === null // menu is not open
+                ) {
+                  setQueryExpression(true);
+                  currentRef.blur();
+                }
+              }}
             />
           </div>
           <DateTimeRangePicker
