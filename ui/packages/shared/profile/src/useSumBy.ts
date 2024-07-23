@@ -58,7 +58,7 @@ export const useSumBySelection = (
   (labels: string[]) => void,
   {
     isLoading: boolean;
-  },
+  }
 ] => {
   const [userSelectedSumBy, setUserSelectedSumBy] = useState<Record<string, string[] | undefined>>(
     profileType != null ? {[profileType.toString()]: defaultValue} : {}
