@@ -28,6 +28,7 @@ interface Props {
   setQueryExpression: () => void;
   querySelection: QuerySelection;
   navigateTo: NavigateFunction;
+  loading: boolean;
 }
 
 export const useAutoQuerySelector = ({
@@ -37,6 +38,7 @@ export const useAutoQuerySelector = ({
   setQueryExpression,
   querySelection,
   navigateTo,
+  loading,
 }: Props): void => {
   const autoQuery = useAppSelector(selectAutoQuery);
   const dispatch = useAppDispatch();
@@ -46,6 +48,9 @@ export const useAutoQuerySelector = ({
   const expressionA = queryParams.get('expression_a');
 
   useEffect(() => {
+    if (loading) {
+      return;
+    }
     if (comparing && expressionA !== null && expressionA !== undefined) {
       if (querySelection.expression === undefined) {
         return;
@@ -98,7 +103,7 @@ export const useAutoQuerySelector = ({
         dashboard_items: ['icicle'],
       });
     }
-  }, [comparing, querySelection, navigateTo, expressionA, dispatch]);
+  }, [comparing, querySelection, navigateTo, expressionA, dispatch, loading]);
 
   // Effect to load some initial data on load when is no selection
   useEffect(() => {
@@ -152,7 +157,8 @@ export const useAutoQuerySelector = ({
         autoQuery !== 'true' ||
         profileTypesData?.types == null ||
         profileTypesData.types.length < 1 ||
-        selectedProfileName.length === 0
+        selectedProfileName.length === 0 ||
+        loading
       ) {
         return;
       }
@@ -166,5 +172,6 @@ export const useAutoQuerySelector = ({
     setProfileName,
     dispatch,
     selectedProfileName,
+    loading,
   ]);
 };

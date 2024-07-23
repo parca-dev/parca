@@ -35,7 +35,7 @@ import MatchersInput, {useLabelNames} from '../MatchersInput/index';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
 import ProfileMetricsGraph, {ProfileMetricsEmptyState} from '../ProfileMetricsGraph';
 import ProfileTypeSelector from '../ProfileTypeSelector/index';
-import {useSumBy} from '../useSumBy';
+import {useDefaultSumBy, useSumBySelection} from '../useSumBy';
 import {useAutoQuerySelector} from './useAutoQuerySelector';
 
 export interface QuerySelection {
@@ -97,7 +97,6 @@ const ProfileSelector = ({
   profileSelection,
   comparing,
   navigateTo,
-  suffix = '',
 }: ProfileSelectorProps): JSX.Element => {
   const {
     loading: profileTypesLoading,
@@ -137,24 +136,15 @@ const ProfileSelector = ({
       : selectedLabelNamesResult.response.labelNames;
   }, [selectedLabelNamesResult]);
 
-  const [sumBy, setSumBy, {userSelectedSumBy, isLoading: isSumByLoading}] = useSumBy(
+  const [sumBySelection, setUserSumBySelection, {isLoading: sumBySelectionLoading}] =
+    useSumBySelection(profileType, labelNamesLoading, labels, {
+      defaultValue: querySelection.sumBy,
+    });
+
+  const {defaultSumBy, isLoading: defaultSumByLoading} = useDefaultSumBy(
     selectedProfileType,
     selectedLabelNamesLoading,
-    selectedLabels,
-    {
-      urlParamKey: 'sum_by' + suffix,
-    }
-  );
-
-  const [sumBySelection, setSumBySelection, {isLoading: isSumBySelectionLoading}] = useSumBy(
-    profileType,
-    labelNamesLoading,
-    labels,
-    {
-      urlParamKey: 'sum_by_selection' + suffix,
-      withURLUpdate: false,
-      defaultValue: userSelectedSumBy,
-    }
+    selectedLabels
   );
 
   useEffect(() => {
@@ -181,9 +171,6 @@ const ProfileSelector = ({
   const selectedProfileName = query.profileName();
 
   const setNewQueryExpression = (expr: string, updateTs = false): void => {
-    if (!isSumBySelectionLoading) {
-      setSumBy(sumBySelection);
-    }
     const query = enforcedProfileName !== '' ? enforcedProfileNameQuery() : Query.parse(expr);
     const delta = query.profileType().delta;
     const from = timeRangeSelection.getFromMs(updateTs);
@@ -200,6 +187,7 @@ const ProfileSelector = ({
       from,
       to,
       timeSelection: timeRangeSelection.getRangeKey(),
+      sumBy: sumBySelection,
       ...mergeParams,
     });
   };
@@ -269,8 +257,9 @@ const ProfileSelector = ({
     profileTypesData,
     setProfileName,
     setQueryExpression,
-    querySelection: {...querySelection, sumBy},
+    querySelection: {...querySelection, sumBy: sumBySelection},
     navigateTo,
+    loading: sumBySelectionLoading,
   });
 
   const searchDisabled =
@@ -318,14 +307,15 @@ const ProfileSelector = ({
               options={labels.map(label => ({label, value: label}))}
               className="parca-select-container text-sm w-80"
               classNamePrefix="parca-select"
-              value={sumBySelection.map(sumBy => ({label: sumBy, value: sumBy}))}
+              value={(sumBySelection ?? []).map(sumBy => ({label: sumBy, value: sumBy}))}
               onChange={selectedOptions => {
-                setSumBySelection(selectedOptions.map(option => option.value));
+                setUserSumBySelection(selectedOptions.map(option => option.value));
               }}
               placeholder="Labels..."
               styles={{
                 indicatorSeparator: () => ({display: 'none'}),
               }}
+              isDisabled={!profileType.delta}
             />
           </div>
           <DateTimeRangePicker
@@ -361,8 +351,8 @@ const ProfileSelector = ({
                 to={querySelection.to}
                 profile={profileSelection}
                 comparing={comparing}
-                sumBy={sumBy}
-                sumByLoading={isSumByLoading}
+                sumBy={querySelection.sumBy ?? defaultSumBy ?? []}
+                sumByLoading={defaultSumByLoading}
                 setTimeRange={(range: DateTimeRange) => {
                   const from = range.getFromMs();
                   const to = range.getToMs();
