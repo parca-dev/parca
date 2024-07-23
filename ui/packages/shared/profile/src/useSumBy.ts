@@ -25,7 +25,7 @@ const getDefaultSumBy = (
     return undefined;
   }
 
-  if (profile.delta !== true) {
+  if (!profile.delta) {
     return DEFAULT_EMPTY_SUM_BY;
   }
 

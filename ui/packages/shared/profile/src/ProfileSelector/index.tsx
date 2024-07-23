@@ -97,7 +97,6 @@ const ProfileSelector = ({
   profileSelection,
   comparing,
   navigateTo,
-  suffix = '',
 }: ProfileSelectorProps): JSX.Element => {
   const {
     loading: profileTypesLoading,
@@ -316,7 +315,7 @@ const ProfileSelector = ({
               styles={{
                 indicatorSeparator: () => ({display: 'none'}),
               }}
-              isDisabled={profileType.delta !== true}
+              isDisabled={!profileType.delta}
             />
           </div>
           <DateTimeRangePicker

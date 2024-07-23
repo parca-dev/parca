@@ -65,9 +65,7 @@ const sanitizeDateRange = (
 };
 /* eslint-enable @typescript-eslint/naming-convention */
 
-const filterEmptyParams = (
-  o: Record<string, string | string[] | undefined>
-): Record<string, string | string[] | undefined> => {
+const filterEmptyParams = (o: Record<string, any>): Record<string, any> => {
   return Object.fromEntries(
     Object.entries(o)
       .filter(
@@ -279,7 +277,7 @@ const ProfileExplorerApp = ({
             dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
             ...mergeParams,
           },
-        } as Record<string, string | string[] | undefined>)
+        })
       );
     };
 
@@ -340,7 +338,7 @@ const ProfileExplorerApp = ({
           dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
           ...mergeParams,
         },
-      } as Record<string, string | string[] | undefined>)
+      })
     );
   };
 
@@ -372,7 +370,7 @@ const ProfileExplorerApp = ({
           dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
           ...mergeParams,
         },
-      } as Record<string, string | string[] | undefined>)
+      })
     );
   };
 
