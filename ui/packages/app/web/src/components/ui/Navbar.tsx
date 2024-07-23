@@ -180,7 +180,7 @@ const Navbar = () => {
                             props['aria-current'] = 'page';
                           }
                           return item.href === 'compare' ? (
-                            <div ref={setComparePopperReferenceElement}>
+                            <div ref={setComparePopperReferenceElement} key={item.label}>
                               <Button
                                 className={cx(
                                   isCurrentPage(item)

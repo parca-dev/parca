@@ -11,26 +11,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useMemo} from 'react';
+import { useEffect, useMemo } from 'react';
 
-import {RpcError} from '@protobuf-ts/runtime-rpc';
-import {AnimatePresence, motion} from 'framer-motion';
 
-import {Duration, Label, QueryRangeResponse, QueryServiceClient, Timestamp} from '@parca/client';
-import {
-  DateTimeRange,
-  MetricsGraphSkeleton,
-  useGrpcMetadata,
-  useParcaContext,
-  useURLState,
-} from '@parca/components';
-import {Query} from '@parca/parser';
-import {capitalizeOnlyFirstLetter, getStepDuration} from '@parca/utilities';
 
-import {MergedProfileSelection, ProfileSelection} from '..';
+import { RpcError } from '@protobuf-ts/runtime-rpc';
+import { AnimatePresence, motion } from 'framer-motion';
+
+
+
+import { Duration, Label, QueryRangeResponse, QueryServiceClient, Timestamp } from '@parca/client';
+import { DateTimeRange, MetricsGraphSkeleton, useGrpcMetadata, useParcaContext, useURLState } from '@parca/components';
+import { Query } from '@parca/parser';
+import { capitalizeOnlyFirstLetter, getStepDuration } from '@parca/utilities';
+
+
+
+import { MergedProfileSelection, ProfileSelection } from '..';
 import MetricsGraph from '../MetricsGraph';
-import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
+import { useMetricsGraphDimensions } from '../MetricsGraph/useMetricsGraphDimensions';
 import useGrpcQuery from '../useGrpcQuery';
+
+
+
+
 
 interface ProfileMetricsEmptyStateProps {
   message: string;
@@ -122,7 +126,7 @@ export const useQueryRange = (
   }, [stepCountStr, defaultStepCount, setStepCount]);
 
   const {data, isLoading, error} = useGrpcQuery<QueryRangeResponse | undefined>({
-    key: ['query-range', queryExpression, start, end, sumBy.join(','), stepCount, metadata],
+    key: ['query-range', queryExpression, start, end, (sumBy ?? []).join(','), stepCount, metadata],
     queryFn: async () => {
       const stepDuration = getStepDuration(start, end, stepCount);
       const {response} = await client.queryRange(

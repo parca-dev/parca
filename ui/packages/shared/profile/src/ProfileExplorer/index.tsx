@@ -22,6 +22,7 @@ import {capitalizeOnlyFirstLetter, type NavigateFunction} from '@parca/utilities
 
 import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
 import {QuerySelection, useProfileTypes} from '../ProfileSelector';
+import {sumByToParam, useSumByFromParams} from '../useSumBy';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
 import ProfileExplorerSingle from './ProfileExplorerSingle';
 
@@ -63,6 +64,27 @@ const sanitizeDateRange = (
   return {time_selection_a: range.getRangeKey(), from_a, to_a};
 };
 /* eslint-enable @typescript-eslint/naming-convention */
+
+const filterEmptyParams = (
+  o: Record<string, string | string[] | undefined>
+): Record<string, string | string[] | undefined> => {
+  return Object.fromEntries(
+    Object.entries(o)
+      .filter(
+        ([_, value]) =>
+          value !== '' && value !== undefined && (Array.isArray(value) ? value.length > 0 : true)
+      )
+      .map(([key, value]) => {
+        if (typeof value === 'string') {
+          return [key, value];
+        }
+        if (Array.isArray(value)) {
+          return [key, value];
+        }
+        return [key, value];
+      })
+  );
+};
 
 const filterSuffix = (
   o: {[key: string]: string | string[] | undefined},
@@ -148,6 +170,9 @@ const ProfileExplorerApp = ({
   const [profileA, setProfileA] = useState<ProfileSelection | null>(null);
   const [profileB, setProfileB] = useState<ProfileSelection | null>(null);
 
+  const sumByA = useSumByFromParams(sum_by_a);
+  const sumByB = useSumByFromParams(sum_by_b);
+
   useEffect(() => {
     const mergeFrom = merge_from_a ?? undefined;
     const mergeTo = merge_to_a ?? undefined;
@@ -225,7 +250,7 @@ const ProfileExplorerApp = ({
     from: parseInt(from_a as string),
     to: parseInt(to_a as string),
     timeSelection: time_selection_a as string,
-    sumBy: sum_by_a as string[],
+    sumBy: sumByA,
   };
 
   // Show the SingleProfileExplorer when not comparing
@@ -243,17 +268,18 @@ const ProfileExplorerApp = ({
         '/',
         // Filtering the _a suffix causes us to reset potential profile
         // selection when running a new query.
-        {
+        filterEmptyParams({
           ...filterSuffix(queryParams, '_a'),
           ...{
             expression_a: encodeURIComponent(q.expression),
             from_a: q.from.toString(),
             to_a: q.to.toString(),
             time_selection_a: q.timeSelection,
+            sum_by_a: sumByToParam(q.sumBy),
             dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
             ...mergeParams,
           },
-        }
+        } as Record<string, string | string[] | undefined>)
       );
     };
 
@@ -283,7 +309,7 @@ const ProfileExplorerApp = ({
     from: parseInt(from_b as string),
     to: parseInt(to_b as string),
     timeSelection: time_selection_b as string,
-    sumBy: sum_by_b as string[],
+    sumBy: sumByB,
   };
 
   const selectQueryA = (q: QuerySelection): void => {
@@ -299,7 +325,7 @@ const ProfileExplorerApp = ({
       '/',
       // Filtering the _a suffix causes us to reset potential profile
       // selection when running a new query.
-      {
+      filterEmptyParams({
         ...filterSuffix(queryParams, '_a'),
         ...{
           compare_a: 'true',
@@ -309,11 +335,12 @@ const ProfileExplorerApp = ({
           from_a: q.from.toString(),
           to_a: q.to.toString(),
           time_selection_a: q.timeSelection,
+          sum_by_a: sumByToParam(q.sumBy),
           filter_by_function: filter_by_function ?? '',
           dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
           ...mergeParams,
         },
-      }
+      } as Record<string, string | string[] | undefined>)
     );
   };
 
@@ -330,7 +357,7 @@ const ProfileExplorerApp = ({
       '/',
       // Filtering the _b suffix causes us to reset potential profile
       // selection when running a new query.
-      {
+      filterEmptyParams({
         ...filterSuffix(queryParams, '_b'),
         ...{
           compare_b: 'true',
@@ -340,11 +367,12 @@ const ProfileExplorerApp = ({
           from_b: q.from.toString(),
           to_b: q.to.toString(),
           time_selection_b: q.timeSelection,
+          sum_by_b: sumByToParam(q.sumBy),
           filter_by_function: filter_by_function ?? '',
           dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
           ...mergeParams,
         },
-      }
+      } as Record<string, string | string[] | undefined>)
     );
   };
 

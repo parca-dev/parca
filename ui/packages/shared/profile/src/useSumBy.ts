@@ -11,9 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useMemo} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 
-import {useParcaContext, useURLState} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 
 export const DEFAULT_EMPTY_SUM_BY: string[] = [];
@@ -24,6 +23,10 @@ const getDefaultSumBy = (
 ): string[] | undefined => {
   if (profile === undefined || labels === undefined) {
     return undefined;
+  }
+
+  if (profile.delta !== true) {
+    return DEFAULT_EMPTY_SUM_BY;
   }
 
   if (labels.includes('comm')) {
@@ -41,80 +44,104 @@ const getDefaultSumBy = (
   return undefined;
 };
 
-export const useSumBy = (
+export const useSumBySelection = (
   profileType: ProfileType | undefined,
   labelNamesLoading: boolean,
   labels: string[] | undefined,
   {
-    urlParamKey = 'sum_by',
-    withURLUpdate = true,
     defaultValue,
   }: {
-    urlParamKey?: string;
-    withURLUpdate?: boolean;
     defaultValue?: string[];
   } = {}
 ): [
-  string[],
+  string[] | undefined,
   (labels: string[]) => void,
-  {userSelectedSumBy: string[] | undefined; isLoading: boolean}
+  {
+    isLoading: boolean;
+  },
 ] => {
-  const {navigateTo} = useParcaContext();
-  const [userSelectedSumByParam, setUserSelectedSumByParam] = useURLState({
-    param: urlParamKey,
-    navigateTo,
-    withURLUpdate,
-  });
-
-  const userSelectedSumBy = useMemo<string[] | undefined>(() => {
-    if (userSelectedSumByParam?.length === 0) {
-      return undefined;
-    }
-
-    if (userSelectedSumByParam === '__none__') {
-      return [];
-    }
-
-    if (userSelectedSumByParam === undefined && defaultValue !== undefined) {
-      return defaultValue;
-    }
-
-    if (typeof userSelectedSumByParam === 'string') {
-      return [userSelectedSumByParam];
-    }
-
-    return userSelectedSumByParam;
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userSelectedSumByParam]);
-
-  const setUserSelectedSumBy = useCallback(
-    (sumBy: string[]) => {
-      if (sumBy.length === 0) {
-        setUserSelectedSumByParam('__none__');
-        return;
-      }
-
-      if (sumBy.length === 1) {
-        // Handle this separately to take care of the empty string scenario
-        setUserSelectedSumByParam(sumBy[0]);
-        return;
-      }
-
-      setUserSelectedSumByParam(sumBy);
-    },
-    [setUserSelectedSumByParam]
+  const [userSelectedSumBy, setUserSelectedSumBy] = useState<Record<string, string[] | undefined>>(
+    profileType != null ? {[profileType.toString()]: defaultValue} : {}
   );
 
-  const defaultSumBy = useMemo(() => {
-    return getDefaultSumBy(profileType, labels);
-  }, [profileType, labels]);
+  const setSumBy = useCallback(
+    (sumBy: string[]) => {
+      setUserSelectedSumBy(prev => {
+        if (profileType == null) {
+          return prev;
+        }
 
-  let sumBy = userSelectedSumBy ?? defaultSumBy ?? DEFAULT_EMPTY_SUM_BY;
+        return {
+          ...prev,
+          [profileType.toString()]: sumBy,
+        };
+      });
+    },
+    [setUserSelectedSumBy, profileType]
+  );
+
+  const {defaultSumBy} = useDefaultSumBy(profileType, labelNamesLoading, labels);
+
+  let sumBy =
+    userSelectedSumBy[profileType?.toString() ?? ''] ?? defaultSumBy ?? DEFAULT_EMPTY_SUM_BY;
 
   if (profileType?.delta !== true) {
     sumBy = DEFAULT_EMPTY_SUM_BY;
   }
 
-  return [sumBy, setUserSelectedSumBy, {userSelectedSumBy, isLoading: labelNamesLoading}];
+  return [
+    labelNamesLoading ? undefined : sumBy,
+    setSumBy,
+    {
+      isLoading: labelNamesLoading,
+    },
+  ];
+};
+
+export const useDefaultSumBy = (
+  profileType: ProfileType | undefined,
+  labelNamesLoading: boolean,
+  labels: string[] | undefined
+): {defaultSumBy: string[] | undefined; isLoading: boolean} => {
+  const defaultSumBy = useMemo(() => {
+    return getDefaultSumBy(profileType, labels);
+  }, [profileType, labels]);
+
+  return {defaultSumBy, isLoading: labelNamesLoading};
+};
+
+const getSumByFromParam = (param: string | string[] | undefined): string[] | undefined => {
+  if (param?.length === 0) {
+    return undefined;
+  }
+
+  if (param === '__none__') {
+    return [];
+  }
+
+  if (typeof param === 'string') {
+    return [param];
+  }
+
+  return param;
+};
+
+export const useSumByFromParams = (param: string | string[] | undefined): string[] | undefined => {
+  const sumBy = useMemo(() => {
+    return getSumByFromParam(param);
+  }, [param]);
+
+  return sumBy;
+};
+
+export const sumByToParam = (sumBy: string[] | undefined): string | string[] | undefined => {
+  if (sumBy === undefined) {
+    return undefined;
+  }
+
+  if (sumBy.length === 0) {
+    return '__none__';
+  }
+
+  return sumBy;
 };
