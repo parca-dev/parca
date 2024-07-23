@@ -11,34 +11,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 
+import {RpcError} from '@protobuf-ts/runtime-rpc';
+import Select, {type SelectInstance} from 'react-select';
 
+import {Label, ProfileTypesResponse, QueryServiceClient} from '@parca/client';
+import {
+  Button,
+  ButtonGroup,
+  DateTimeRange,
+  DateTimeRangePicker,
+  IconButton,
+  useGrpcMetadata,
+  useParcaContext,
+} from '@parca/components';
+import {CloseIcon} from '@parca/icons';
+import {Query} from '@parca/parser';
+import {type NavigateFunction} from '@parca/utilities';
 
-import { RpcError } from '@protobuf-ts/runtime-rpc';
-import Select, { type SelectInstance } from 'react-select';
-
-
-
-import { Label, ProfileTypesResponse, QueryServiceClient } from '@parca/client';
-import { Button, ButtonGroup, DateTimeRange, DateTimeRangePicker, IconButton, useGrpcMetadata, useParcaContext } from '@parca/components';
-import { CloseIcon } from '@parca/icons';
-import { Query } from '@parca/parser';
-import { type NavigateFunction } from '@parca/utilities';
-
-
-
-import { MergedProfileSelection, ProfileSelection } from '..';
-import MatchersInput, { useLabelNames } from '../MatchersInput/index';
-import { useMetricsGraphDimensions } from '../MetricsGraph/useMetricsGraphDimensions';
-import ProfileMetricsGraph, { ProfileMetricsEmptyState } from '../ProfileMetricsGraph';
+import {MergedProfileSelection, ProfileSelection} from '..';
+import MatchersInput, {useLabelNames} from '../MatchersInput/index';
+import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
+import ProfileMetricsGraph, {ProfileMetricsEmptyState} from '../ProfileMetricsGraph';
 import ProfileTypeSelector from '../ProfileTypeSelector/index';
-import { useDefaultSumBy, useSumBySelection } from '../useSumBy';
-import { useAutoQuerySelector } from './useAutoQuerySelector';
-
-
-
-
+import {useDefaultSumBy, useSumBySelection} from '../useSumBy';
+import {useAutoQuerySelector} from './useAutoQuerySelector';
 
 export interface QuerySelection {
   expression: string;
@@ -255,36 +253,6 @@ const ProfileSelector = ({
     }
   }, [query, viewComponent]);
 
-  useEffect(() => {
-    const currentRef = sumByRef.current as unknown as SelectInstance | null;
-    if (currentRef == null) {
-      return;
-    }
-    const inputRef = currentRef.inputRef;
-    if (inputRef == null) {
-      return;
-    }
-
-    const handler = (e: KeyboardEvent): void => {
-      if (
-        e.key === 'Enter' &&
-        inputRef.value === '' &&
-        currentRef.state.focusedOptionId === null // menu is not open
-      ) {
-        setQueryExpression(true);
-        currentRef.blur();
-      }
-    };
-
-    inputRef.addEventListener('keydown', handler);
-
-    return () => {
-      inputRef.removeEventListener('keydown', handler);
-    };
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sumByRef]);
-
   useAutoQuerySelector({
     selectedProfileName,
     profileTypesData,
@@ -350,6 +318,25 @@ const ProfileSelector = ({
               }}
               isDisabled={!profileType.delta}
               ref={sumByRef}
+              onKeyDown={e => {
+                const currentRef = sumByRef.current as unknown as SelectInstance | null;
+                if (currentRef == null) {
+                  return;
+                }
+                const inputRef = currentRef.inputRef;
+                if (inputRef == null) {
+                  return;
+                }
+
+                if (
+                  e.key === 'Enter' &&
+                  inputRef.value === '' &&
+                  currentRef.state.focusedOptionId === null // menu is not open
+                ) {
+                  setQueryExpression(true);
+                  currentRef.blur();
+                }
+              }}
             />
           </div>
           <DateTimeRangePicker
