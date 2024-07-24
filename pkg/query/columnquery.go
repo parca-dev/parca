@@ -224,10 +224,11 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	}
 
 	var (
-		p        profile.Profile
-		filtered int64
-		isDiff   bool
-		isInvert bool
+		profileMetadata *pb.ProfileMetadata
+		p               profile.Profile
+		filtered        int64
+		isDiff          bool
+		isInvert        bool
 	)
 
 	if req.InvertCallStack != nil {
@@ -256,37 +257,8 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	case pb.QueryRequest_MODE_SINGLE_UNSPECIFIED:
 		p, err = q.selectSingle(ctx, req.GetSingle(), isInvert)
 	case pb.QueryRequest_MODE_MERGE:
-		p, err = q.selectMerge(
-			ctx,
-			req.GetMerge(),
-			groupByLabels,
-			isInvert,
-		)
-	case pb.QueryRequest_MODE_DIFF:
-		isDiff = true
-		p, err = q.selectDiff(
-			ctx,
-			req.GetDiff(),
-			groupByLabels,
-			isInvert,
-		)
-	default:
-		return nil, status.Error(codes.InvalidArgument, "unknown query mode")
-	}
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		for _, r := range p.Samples {
-			r.Release()
-		}
-	}()
-
-	if req.GetReportType() == pb.QueryRequest_REPORT_TYPE_PROFILE_METADATA {
-		var profileMetadata *pb.ProfileMetadata
-
-		switch req.Mode {
-		case pb.QueryRequest_MODE_MERGE:
+		switch req.GetReportType() {
+		case pb.QueryRequest_REPORT_TYPE_PROFILE_METADATA:
 			mappingFiles, labels, err := getMappingFilesAndLabels(ctx, q.querier, req.GetMerge().Query, req.GetMerge().Start.AsTime(), req.GetMerge().End.AsTime())
 			if err != nil {
 				return nil, err
@@ -296,8 +268,18 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 				MappingFiles: mappingFiles,
 				Labels:       labels,
 			}
-
-		case pb.QueryRequest_MODE_DIFF:
+		default:
+			p, err = q.selectMerge(
+				ctx,
+				req.GetMerge(),
+				groupByLabels,
+				isInvert,
+			)
+		}
+	case pb.QueryRequest_MODE_DIFF:
+		isDiff = true
+		switch req.GetReportType() {
+		case pb.QueryRequest_REPORT_TYPE_PROFILE_METADATA:
 			// When comparing, we only return the metadata for the profile we are rendering, which is the profile B.
 			mappingFiles, labels, err := getMappingFilesAndLabels(ctx, q.querier, req.GetDiff().B.GetMerge().GetQuery(), req.GetDiff().B.GetMerge().Start.AsTime(), req.GetDiff().B.GetMerge().End.AsTime())
 			if err != nil {
@@ -309,15 +291,31 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 				Labels:       labels,
 			}
 		default:
-			return nil, status.Error(codes.InvalidArgument, "unknown query mode")
+			p, err = q.selectDiff(
+				ctx,
+				req.GetDiff(),
+				groupByLabels,
+				isInvert,
+			)
 		}
-
+	default:
+		return nil, status.Error(codes.InvalidArgument, "unknown query mode")
+	}
+	if err != nil {
+		return nil, err
+	}
+	if req.GetReportType() == pb.QueryRequest_REPORT_TYPE_PROFILE_METADATA {
 		return &pb.QueryResponse{
 			Total:    0,
 			Filtered: 0,
 			Report:   &pb.QueryResponse_ProfileMetadata{ProfileMetadata: profileMetadata},
 		}, nil
 	}
+	defer func() {
+		for _, r := range p.Samples {
+			r.Release()
+		}
+	}()
 
 	var functionToFilterBy string
 	// Extract the function name to filter by from the request in the Filter field.
