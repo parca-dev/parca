@@ -50,11 +50,8 @@ export const FIELD_FUNCTION_START_LINE = 'function_startline';
 export const FIELD_CHILDREN = 'children';
 export const FIELD_LABELS = 'labels';
 export const FIELD_CUMULATIVE = 'cumulative';
-export const FIELD_CUMULATIVE_PER_SECOND = 'cumulative_per_second';
 export const FIELD_FLAT = 'flat';
-export const FIELD_FLAT_PER_SECOND = 'flat_per_second';
 export const FIELD_DIFF = 'diff';
-export const FIELD_DIFF_PER_SECOND = 'diff_per_second';
 
 interface IcicleGraphArrowProps {
   arrow: FlamegraphArrow;
@@ -68,6 +65,7 @@ interface IcicleGraphArrowProps {
   flamegraphLoading: boolean;
   isHalfScreen: boolean;
   mappingsListFromMetadata: string[];
+  compareAbsolute: boolean;
 }
 
 export const getMappingColors = (
@@ -97,6 +95,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   sortBy,
   flamegraphLoading,
   mappingsListFromMetadata,
+  compareAbsolute,
 }: IcicleGraphArrowProps): React.JSX.Element {
   const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
   const dispatch = useAppDispatch();
@@ -330,6 +329,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
                 totalUnfiltered={total + filtered}
                 profileType={profileType}
                 unit={arrow.unit}
+                compareAbsolute={compareAbsolute}
               />
             </GraphTooltipArrow>
           )

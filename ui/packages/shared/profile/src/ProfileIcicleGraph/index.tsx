@@ -368,6 +368,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
           flamegraphLoading={isLoading}
           isHalfScreen={isHalfScreen}
           mappingsListFromMetadata={mappingsList}
+          compareAbsolute={isCompareAbsolute}
         />
       );
   }, [
@@ -385,6 +386,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     isHalfScreen,
     isDarkMode,
     mappingsList,
+    isCompareAbsolute,
   ]);
 
   if (error != null) {
