@@ -146,9 +146,6 @@ found:
 }
 
 func (s *ProfileColumnStore) WriteRaw(ctx context.Context, req *profilestorepb.WriteRawRequest) (*profilestorepb.WriteRawResponse, error) {
-	ctx, span := s.tracer.Start(ctx, "write-raw")
-	defer span.End()
-
 	start := time.Now()
 	writeErr := s.writeSeries(ctx, req)
 
@@ -296,9 +293,6 @@ func (s *ProfileColumnStore) write(ctx context.Context, server profilestorepb.Pr
 }
 
 func (s *ProfileColumnStore) Export(ctx context.Context, req *otelgrpcprofilingpb.ExportProfilesServiceRequest) (*otelgrpcprofilingpb.ExportProfilesServiceResponse, error) {
-	ctx, span := s.tracer.Start(ctx, "otel-export")
-	defer span.End()
-
 	r, err := normalizer.OtlpRequestToArrowRecord(
 		ctx,
 		req,
