@@ -300,6 +300,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           total={total}
           totalUnfiltered={total + filtered}
           profileType={profileType}
+          compareAbsolute={compareAbsolute}
           trackVisibility={trackVisibility}
           curPath={curPath}
           setCurPath={setCurPath}
@@ -316,6 +317,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
             totalUnfiltered={total + filtered}
             profileType={profileType}
             unit={arrow.unit}
+            compareAbsolute={compareAbsolute}
           />
         ) : (
           !isContextMenuOpen && (
