@@ -815,12 +815,16 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, mem memory.Allocator,
 		// Scale up base if compare is bigger
 		if compareCumulativeTotal > baseCumulativeTotal {
 			baseCumulativeRatio = float64(compareCumulativeTotal) / float64(baseCumulativeTotal)
+		}
+		if compareCumulativePerSecondTotal > baseCumulativePerSecondTotal {
 			baseCumulativePerSecondRatio = compareCumulativePerSecondTotal / baseCumulativePerSecondTotal
 		}
 
 		// Scale up compare if base is bigger
 		if baseCumulativeTotal > compareCumulativeTotal {
 			compareCumulativeRatio = float64(baseCumulativeTotal) / float64(compareCumulativeTotal)
+		}
+		if baseCumulativePerSecondTotal > compareCumulativePerSecondTotal {
 			compareCumulativePerSecondRatio = baseCumulativePerSecondTotal / compareCumulativePerSecondTotal
 		}
 	}
