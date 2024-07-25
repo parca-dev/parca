@@ -40,7 +40,7 @@ import {
   KeyDownProvider,
   UserPreferences,
   useParcaContext,
-  useURLStateNew,
+  useURLState,
 } from '@parca/components';
 import {useContainerDimensions} from '@parca/hooks';
 import {selectDarkMode, useAppSelector} from '@parca/store';
@@ -132,14 +132,12 @@ export const ProfileView = ({
   const {timezone} = useParcaContext();
   const {ref, dimensions} = useContainerDimensions();
   const [curPath, setCurPath] = useState<string[]>([]);
-  const [dashboardItems, setDashboardItems] = useURLStateNew<string[]>('dashboard_items', {
+  const [dashboardItems, setDashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
   });
   const [graphvizLoaded, setGraphvizLoaded] = useState(false);
   const [callgraphSVG, setCallgraphSVG] = useState<string | undefined>(undefined);
-  const [currentSearchString, setSearchString] = useURLStateNew<string | undefined>(
-    'search_string'
-  );
+  const [currentSearchString, setSearchString] = useURLState<string | undefined>('search_string');
 
   const isDarkMode = useAppSelector(selectDarkMode);
   const isMultiPanelView = dashboardItems.length > 1;

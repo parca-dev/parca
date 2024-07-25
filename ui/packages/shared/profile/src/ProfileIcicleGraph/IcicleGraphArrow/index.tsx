@@ -17,7 +17,7 @@ import {Dictionary, Table, Vector, tableFromIPC} from 'apache-arrow';
 import {useContextMenu} from 'react-contexify';
 
 import {FlamegraphArrow} from '@parca/client';
-import {useURLStateNew} from '@parca/components';
+import {useURLState} from '@parca/components';
 import {USER_PREFERENCES, useCurrentColorProfile, useUserPreference} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
 import {
@@ -117,9 +117,9 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const svg = useRef(null);
   const ref = useRef<SVGGElement>(null);
 
-  const [binaryFrameFilter, setBinaryFrameFilter] = useURLStateNew('binary_frame_filter');
+  const [binaryFrameFilter, setBinaryFrameFilter] = useURLState('binary_frame_filter');
 
-  const [currentSearchString] = useURLStateNew('search_string');
+  const [currentSearchString] = useURLState('search_string');
   const {compareMode} = useProfileViewContext();
   const currentColorProfile = useCurrentColorProfile();
   const colorForSimilarNodes = currentColorProfile.colorForSimilarNodes;

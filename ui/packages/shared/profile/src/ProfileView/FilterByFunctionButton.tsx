@@ -15,15 +15,15 @@ import {useCallback, useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 
-import {Input, useURLStateNew} from '@parca/components';
+import {Input, useURLState} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 
 const FilterByFunctionButton = (): JSX.Element => {
   const [highlightAfterFilteringEnabled] = useUserPreference<boolean>(
     USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING.key
   );
-  const [storeValue, setStoreValue] = useURLStateNew('filter_by_function');
-  const [_, setSearchString] = useURLStateNew('search_string');
+  const [storeValue, setStoreValue] = useURLState('filter_by_function');
+  const [_, setSearchString] = useURLState('search_string');
   const [localValue, setLocalValue] = useState(storeValue as string);
 
   const isClearAction = useMemo(() => {

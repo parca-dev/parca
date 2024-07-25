@@ -14,7 +14,7 @@
 import {useEffect, useMemo, useState} from 'react';
 
 import {QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
-import {useGrpcMetadata, useParcaContext, useURLStateNew} from '@parca/components';
+import {useGrpcMetadata, useParcaContext, useURLState} from '@parca/components';
 import {saveAsBlob} from '@parca/utilities';
 
 import {FIELD_FUNCTION_NAME} from './ProfileIcicleGraph/IcicleGraphArrow';
@@ -34,19 +34,19 @@ export const ProfileViewWithData = ({
   profileSource,
 }: ProfileViewWithDataProps): JSX.Element => {
   const metadata = useGrpcMetadata();
-  const [dashboardItems] = useURLStateNew<string[]>('dashboard_items', {
+  const [dashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
   });
-  const [sourceBuildID] = useURLStateNew<string>('source_buildid');
-  const [sourceFilename] = useURLStateNew<string>('source_filename');
-  const [groupBy] = useURLStateNew<string[]>('group_by', {
+  const [sourceBuildID] = useURLState<string>('source_buildid');
+  const [sourceFilename] = useURLState<string>('source_filename');
+  const [groupBy] = useURLState<string[]>('group_by', {
     defaultValue: [FIELD_FUNCTION_NAME],
     alwaysReturnArray: true,
   });
 
-  const [invertStack] = useURLStateNew('invert_call_stack');
+  const [invertStack] = useURLState('invert_call_stack');
   const invertCallStack = invertStack === 'true';
-  const [binaryFrameFilterStr] = useURLStateNew<string[] | string>('binary_frame_filter');
+  const [binaryFrameFilterStr] = useURLState<string[] | string>('binary_frame_filter');
 
   const binaryFrameFilter: string[] =
     typeof binaryFrameFilterStr === 'string'

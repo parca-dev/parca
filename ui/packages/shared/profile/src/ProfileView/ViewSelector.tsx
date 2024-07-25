@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Select, useParcaContext, useURLStateNew, type SelectElement} from '@parca/components';
+import {Select, useParcaContext, useURLState, type SelectElement} from '@parca/components';
 import {useUIFeatureFlag} from '@parca/hooks';
 
 interface Props {
@@ -36,7 +36,7 @@ const ViewSelector = ({
   id,
 }: Props): JSX.Element => {
   const [callgraphEnabled] = useUIFeatureFlag('callgraph');
-  const [dashboardItems = ['icicle'], setDashboardItems] = useURLStateNew<string[]>(
+  const [dashboardItems = ['icicle'], setDashboardItems] = useURLState<string[]>(
     'dashboard_items',
     {
       alwaysReturnArray: true,

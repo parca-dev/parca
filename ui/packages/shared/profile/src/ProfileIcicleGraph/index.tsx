@@ -22,7 +22,7 @@ import {
   IcicleGraphSkeleton,
   IconButton,
   useParcaContext,
-  useURLStateNew,
+  useURLState,
 } from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
@@ -63,8 +63,8 @@ const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
 };
 
 const ShowHideLegendButton = ({isHalfScreen}: {isHalfScreen: boolean}): JSX.Element => {
-  const [colorStackLegend, setStoreColorStackLegend] = useURLStateNew('color_stack_legend');
-  const [binaryFrameFilter, setBinaryFrameFilter] = useURLStateNew('binary_frame_filter');
+  const [colorStackLegend, setStoreColorStackLegend] = useURLState('color_stack_legend');
+  const [binaryFrameFilter, setBinaryFrameFilter] = useURLState('binary_frame_filter');
 
   const {compareMode} = useProfileViewContext();
 
@@ -139,12 +139,12 @@ const ShowHideLegendButton = ({isHalfScreen}: {isHalfScreen: boolean}): JSX.Elem
 };
 
 const GroupAndSortActionButtons = (): JSX.Element => {
-  const [storeSortBy, setStoreSortBy] = useURLStateNew('sort_by', {
+  const [storeSortBy, setStoreSortBy] = useURLState('sort_by', {
     defaultValue: FIELD_FUNCTION_NAME,
   });
   const {compareMode} = useProfileViewContext();
 
-  const [groupBy, setStoreGroupBy] = useURLStateNew<string[]>('group_by', {
+  const [groupBy, setStoreGroupBy] = useURLState<string[]>('group_by', {
     defaultValue: [FIELD_FUNCTION_NAME],
     alwaysReturnArray: true,
   });
@@ -199,9 +199,9 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
 
   const mappingsList = useMappingList(mappings);
 
-  const [storeSortBy = FIELD_FUNCTION_NAME] = useURLStateNew('sort_by');
+  const [storeSortBy = FIELD_FUNCTION_NAME] = useURLState('sort_by');
 
-  const [invertStack = '', setInvertStack] = useURLStateNew('invert_call_stack');
+  const [invertStack = '', setInvertStack] = useURLState('invert_call_stack');
   const isInvert = invertStack === 'true';
 
   // By default, we want delta profiles (CPU) to be relatively compared.
@@ -209,7 +209,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   const compareAbsoluteDefault = profileType?.delta === false ? 'true' : 'false';
 
   const [compareAbsolute = compareAbsoluteDefault, setCompareAbsolute] =
-    useURLStateNew('compare_absolute');
+    useURLState('compare_absolute');
   const isCompareAbsolute = compareAbsolute === 'true';
 
   const [

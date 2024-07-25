@@ -65,7 +65,7 @@ interface Options {
   alwaysReturnArray?: boolean;
 }
 
-export const useURLStateNew = <T extends ParamValue>(
+export const useURLState = <T extends ParamValue>(
   param: string,
   _options?: Options
 ): [T, ParamValueSetter] => {
@@ -82,7 +82,7 @@ export const useURLStateNew = <T extends ParamValue>(
     (val: ParamValue) => {
       setTimeout(() => {
         if (debugLog === true) {
-          console.log('useURLStateNew setParam', param, val);
+          console.log('useURLState setParam', param, val);
         }
         setState(state => ({...state, [param]: val}));
 
@@ -105,7 +105,7 @@ export const useURLStateNew = <T extends ParamValue>(
   if (debugLog === true) {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
-      console.log('useURLStateNew state change', param, state[param]);
+      console.log('useURLState state change', param, state[param]);
 
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [state[param]]);

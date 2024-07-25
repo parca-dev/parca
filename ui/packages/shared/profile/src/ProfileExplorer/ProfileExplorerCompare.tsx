@@ -12,7 +12,7 @@
 // limitations under the License.
 
 import {QueryServiceClient} from '@parca/client';
-import {Card, useURLStateNew} from '@parca/components';
+import {Card, useURLState} from '@parca/components';
 import {Query} from '@parca/parser';
 import type {NavigateFunction} from '@parca/utilities';
 
@@ -56,8 +56,8 @@ const ProfileExplorerCompare = ({
     closeProfile('B');
   };
 
-  const [compareAbsolute] = useURLStateNew('compare_absolute');
-  const [functionFilter] = useURLStateNew('filter_by_function');
+  const [compareAbsolute] = useURLState('compare_absolute');
+  const [functionFilter] = useURLState('filter_by_function');
 
   return (
     <>

@@ -16,7 +16,7 @@ import React, {useMemo} from 'react';
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
-import {useURLStateNew} from '@parca/components';
+import {useURLState} from '@parca/components';
 import {USER_PREFERENCES, useCurrentColorProfile, useUserPreference} from '@parca/hooks';
 import {EVERYTHING_ELSE, selectDarkMode, useAppSelector} from '@parca/store';
 
@@ -35,7 +35,7 @@ const ColorStackLegend = ({mappings, compareMode = false, loading}: Props): Reac
   const [colorProfileName] = useUserPreference<string>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
-  const [currentSearchString, setSearchString] = useURLStateNew<string[]>('binary_frame_filter', {
+  const [currentSearchString, setSearchString] = useURLState<string[]>('binary_frame_filter', {
     alwaysReturnArray: true,
     defaultValue: [],
   });

@@ -30,7 +30,7 @@ import {
   Table as TableComponent,
   TableSkeleton,
   useParcaContext,
-  useURLStateNew,
+  useURLState,
 } from '@parca/components';
 import {type RowRendererProps} from '@parca/components/dist/Table';
 import {ProfileType} from '@parca/parser';
@@ -296,7 +296,7 @@ export const Table = React.memo(function Table({
   isHalfScreen,
   unit,
 }: TableProps): React.JSX.Element {
-  const [dashboardItems] = useURLStateNew<string[]>('dashboard_items', {
+  const [dashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
   });
   const {isDarkMode} = useParcaContext();

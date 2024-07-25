@@ -16,7 +16,7 @@ import {useMemo} from 'react';
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
-import {useURLStateNew} from '@parca/components';
+import {useURLState} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {EVERYTHING_ELSE, selectStackColors, useAppSelector} from '@parca/store';
 
@@ -28,7 +28,7 @@ const ColorStackLegend = ({compareMode = false}: Props): JSX.Element => {
   const [colorProfileName] = useUserPreference<string>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
-  const [currentSearchString, setSearchString] = useURLStateNew('search_string');
+  const [currentSearchString, setSearchString] = useURLState('search_string');
   const stackColors = useAppSelector(selectStackColors);
 
   const stackColorArray = useMemo(() => {

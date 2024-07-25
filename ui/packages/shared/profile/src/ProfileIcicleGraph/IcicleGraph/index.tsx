@@ -14,7 +14,7 @@
 import {memo, useEffect, useMemo, useRef, useState} from 'react';
 
 import {Flamegraph} from '@parca/client';
-import {useURLStateNew} from '@parca/components';
+import {useURLState} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 import {setHoveringNode, useAppDispatch} from '@parca/store';
 import {scaleLinear, selectQueryParam} from '@parca/utilities';
@@ -50,7 +50,7 @@ export const IcicleGraph = memo(function IcicleGraph({
   const ref = useRef<SVGGElement>(null);
 
   const coloredGraph = useColoredGraph(graph);
-  const [currentSearchString] = useURLStateNew('search_string');
+  const [currentSearchString] = useURLState('search_string');
   const {compareMode} = useProfileViewContext();
   const isColorStackLegendEnabled = selectQueryParam('color_stack_legend') === 'true';
 

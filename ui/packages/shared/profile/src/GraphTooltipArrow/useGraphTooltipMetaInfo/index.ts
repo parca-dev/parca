@@ -14,7 +14,7 @@
 import {Table} from 'apache-arrow';
 
 import {QueryRequest_ReportType} from '@parca/client';
-import {useParcaContext, useURLStateNew} from '@parca/components';
+import {useParcaContext, useURLState} from '@parca/components';
 
 import {
   FIELD_FUNCTION_FILE_NAME,
@@ -106,18 +106,18 @@ export const useGraphTooltipMetaInfo = ({table, row}: Props): GraphTooltipMetaIn
     ])
     .filter(value => value[1] !== '') as Array<[string, string]>;
 
-  const [dashboardItems, setDashboardItems] = useURLStateNew<string[]>('dashboard_items', {
+  const [dashboardItems, setDashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
   });
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [unusedBuildId, setSourceBuildId] = useURLStateNew('source_buildid');
+  const [unusedBuildId, setSourceBuildId] = useURLState('source_buildid');
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [unusedFilename, setSourceFilename] = useURLStateNew('source_filename');
+  const [unusedFilename, setSourceFilename] = useURLState('source_filename');
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [unusedLine, setSourceLine] = useURLStateNew('source_line');
+  const [unusedLine, setSourceLine] = useURLState('source_line');
 
   const openFile = (): void => {
     setDashboardItems([dashboardItems[0], 'source']);
