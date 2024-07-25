@@ -134,7 +134,6 @@ export const ProfileView = ({
   const [curPath, setCurPath] = useState<string[]>([]);
   const [dashboardItems, setDashboardItems] = useURLStateNew<string[]>('dashboard_items', {
     alwaysReturnArray: true,
-    debugLog: true,
   });
   const [graphvizLoaded, setGraphvizLoaded] = useState(false);
   const [callgraphSVG, setCallgraphSVG] = useState<string | undefined>(undefined);

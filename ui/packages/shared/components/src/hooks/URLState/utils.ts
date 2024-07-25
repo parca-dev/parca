@@ -22,7 +22,7 @@ export const getQueryParamsFromURL = (): Record<string, ParamValue> => {
   const params: Record<string, ParamValue> = {};
 
   searchParams.forEach((value, key) => {
-    params[key] = value.split(',');
+    params[key] = value.split(',').map(v => decodeURIComponent(v));
   });
 
   return params;

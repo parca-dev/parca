@@ -11,7 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {ReactNode, createContext, useContext, useMemo, useState} from 'react';
+import {
+  Dispatch,
+  ReactNode,
+  SetStateAction,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 import {type NavigateFunction} from '@parca/utilities';
 
@@ -22,7 +32,7 @@ type ParamValueSetter = (val: ParamValue) => void;
 interface URLState {
   navigateTo: NavigateFunction;
   state: Record<string, string | string[] | undefined>;
-  setState: (state: Record<string, ParamValue>) => void;
+  setState: Dispatch<SetStateAction<Record<string, ParamValue>>>;
   defaultValues: Record<string, ParamValue>;
 }
 
@@ -41,6 +51,7 @@ export const URLStateProvider = ({
     ...defaultValues,
     ...getQueryParamsFromURL(),
   });
+
   return (
     <URLStateContext.Provider value={{navigateTo, state, setState, defaultValues}}>
       {children}
@@ -67,22 +78,37 @@ export const useURLStateNew = <T extends ParamValue>(
 
   const {navigateTo, state, setState, defaultValues} = context;
 
-  const setParam: ParamValueSetter = (val: ParamValue) => {
-    if (debugLog === true) {
-      console.log('useURLStateNew setParam', param, val);
-    }
-    setState({...state, [param]: val});
-    navigateTo(
-      window.location.pathname,
-      sanitize({...getQueryParamsFromURL(), [param]: val}, defaultValues),
-      {
-        replace: true,
-      }
-    );
-  };
+  const setParam: ParamValueSetter = useCallback(
+    (val: ParamValue) => {
+      setTimeout(() => {
+        if (debugLog === true) {
+          console.log('useURLStateNew setParam', param, val);
+        }
+        setState(state => ({...state, [param]: val}));
+
+        let encodedVal = val;
+        if (typeof val === 'string') {
+          encodedVal = encodeURIComponent(val);
+        }
+        navigateTo(
+          window.location.pathname,
+          sanitize({...getQueryParamsFromURL(), [param]: encodedVal}, defaultValues),
+          {
+            replace: true,
+          }
+        );
+      });
+    },
+    [param, navigateTo, setState, defaultValues, debugLog]
+  );
 
   if (debugLog === true) {
-    console.log('useURLStateNew state', param, state[param]);
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+      console.log('useURLStateNew state change', param, state[param]);
+
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [state[param]]);
   }
 
   const value = useMemo<ParamValue>(() => {
