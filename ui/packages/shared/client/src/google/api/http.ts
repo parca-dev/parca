@@ -54,7 +54,7 @@ export interface Http {
     fullyDecodeReservedExpansion: boolean;
 }
 /**
- * # gRPC Transcoding
+ * gRPC Transcoding
  *
  * gRPC Transcoding is a feature for mapping between a gRPC method and one or
  * more HTTP REST endpoints. It allows developers to build a single API service
@@ -95,9 +95,8 @@ export interface Http {
  *
  * This enables an HTTP REST to gRPC mapping as below:
  *
- * HTTP | gRPC
- * -----|-----
- * `GET /v1/messages/123456`  | `GetMessage(name: "messages/123456")`
+ * - HTTP: `GET /v1/messages/123456`
+ * - gRPC: `GetMessage(name: "messages/123456")`
  *
  * Any fields in the request message which are not bound by the path template
  * automatically become HTTP query parameters if there is no HTTP request body.
@@ -121,11 +120,9 @@ export interface Http {
  *
  * This enables a HTTP JSON to RPC mapping as below:
  *
- * HTTP | gRPC
- * -----|-----
- * `GET /v1/messages/123456?revision=2&sub.subfield=foo` |
- * `GetMessage(message_id: "123456" revision: 2 sub: SubMessage(subfield:
- * "foo"))`
+ * - HTTP: `GET /v1/messages/123456?revision=2&sub.subfield=foo`
+ * - gRPC: `GetMessage(message_id: "123456" revision: 2 sub:
+ * SubMessage(subfield: "foo"))`
  *
  * Note that fields which are mapped to URL query parameters must have a
  * primitive type or a repeated primitive type or a non-repeated message type.
@@ -155,10 +152,8 @@ export interface Http {
  * representation of the JSON in the request body is determined by
  * protos JSON encoding:
  *
- * HTTP | gRPC
- * -----|-----
- * `PATCH /v1/messages/123456 { "text": "Hi!" }` | `UpdateMessage(message_id:
- * "123456" message { text: "Hi!" })`
+ * - HTTP: `PATCH /v1/messages/123456 { "text": "Hi!" }`
+ * - gRPC: `UpdateMessage(message_id: "123456" message { text: "Hi!" })`
  *
  * The special name `*` can be used in the body mapping to define that
  * every field not bound by the path template should be mapped to the
@@ -181,10 +176,8 @@ export interface Http {
  *
  * The following HTTP JSON to RPC mapping is enabled:
  *
- * HTTP | gRPC
- * -----|-----
- * `PATCH /v1/messages/123456 { "text": "Hi!" }` | `UpdateMessage(message_id:
- * "123456" text: "Hi!")`
+ * - HTTP: `PATCH /v1/messages/123456 { "text": "Hi!" }`
+ * - gRPC: `UpdateMessage(message_id: "123456" text: "Hi!")`
  *
  * Note that when using `*` in the body mapping, it is not possible to
  * have HTTP parameters, as all fields not bound by the path end in
@@ -212,13 +205,13 @@ export interface Http {
  *
  * This enables the following two alternative HTTP JSON to RPC mappings:
  *
- * HTTP | gRPC
- * -----|-----
- * `GET /v1/messages/123456` | `GetMessage(message_id: "123456")`
- * `GET /v1/users/me/messages/123456` | `GetMessage(user_id: "me" message_id:
- * "123456")`
+ * - HTTP: `GET /v1/messages/123456`
+ * - gRPC: `GetMessage(message_id: "123456")`
  *
- * ## Rules for HTTP mapping
+ * - HTTP: `GET /v1/users/me/messages/123456`
+ * - gRPC: `GetMessage(user_id: "me" message_id: "123456")`
+ *
+ * Rules for HTTP mapping
  *
  * 1. Leaf request fields (recursive expansion nested messages in the request
  *    message) are classified into three categories:
@@ -237,7 +230,7 @@ export interface Http {
  *  request body, all
  *     fields are passed via URL path and URL query parameters.
  *
- * ### Path template syntax
+ * Path template syntax
  *
  *     Template = "/" Segments [ Verb ] ;
  *     Segments = Segment { "/" Segment } ;
@@ -276,7 +269,7 @@ export interface Http {
  * Document](https://developers.google.com/discovery/v1/reference/apis) as
  * `{+var}`.
  *
- * ## Using gRPC API Service Configuration
+ * Using gRPC API Service Configuration
  *
  * gRPC API Service Configuration (service config) is a configuration language
  * for configuring a gRPC service to become a user-facing product. The
@@ -291,15 +284,14 @@ export interface Http {
  * specified in the service config will override any matching transcoding
  * configuration in the proto.
  *
- * Example:
+ * The following example selects a gRPC method and applies an `HttpRule` to it:
  *
  *     http:
  *       rules:
- *         # Selects a gRPC method and applies HttpRule to it.
  *         - selector: example.v1.Messaging.GetMessage
  *           get: /v1/messages/{message_id}/{sub.subfield}
  *
- * ## Special notes
+ * Special notes
  *
  * When gRPC Transcoding is used to map a gRPC to JSON REST endpoints, the
  * proto to JSON conversion must follow the [proto3
