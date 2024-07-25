@@ -712,12 +712,12 @@ github.com/planetscale/vtprotobuf v0.6.0/go.mod h1:t/avpk3KcrXxUnYOhZhMXJlSEyie6
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/polarsignals/frostdb v0.0.0-20240610080310-316067a56dde h1:aFvA95hKyYB93O8/AjxeY5qvcF5tA1iNodOuIB6l3uw=
-github.com/polarsignals/frostdb v0.0.0-20240610080310-316067a56dde/go.mod h1:6n9DbDuO0wTtg26S5hoZzrA+pEQRYAB1mpN5Z4U5nqI=
+github.com/polarsignals/frostdb v0.0.0-20240709141116-defafee0b73e h1:ZDsjUXBRpEeRGRx0pKTNKIFS/eTu/ZxFENG3/gSag9I=
+github.com/polarsignals/frostdb v0.0.0-20240709141116-defafee0b73e/go.mod h1:Yi3xaZgm67l5p9Z94nSk62qvCj2+az+wEgghsqjrW9g=
 github.com/polarsignals/iceberg-go v0.0.0-20240502213135-2ee70b71e76b h1:Dbm5itapR0uYIMujR8OntWpDJ/nm5OM6JiaKauLcZ4Y=
 github.com/polarsignals/iceberg-go v0.0.0-20240502213135-2ee70b71e76b/go.mod h1:5T9ChEZjRNhAGGLwH1cqzDA7wXB84SmU+WkXQr/ZAjo=
-github.com/polarsignals/wal v0.0.0-20240514152147-1cd4b81c9b88 h1:FZvQW8MXcNjwLfWDRAatOA83Pof5+iKW7veuInygBXY=
-github.com/polarsignals/wal v0.0.0-20240514152147-1cd4b81c9b88/go.mod h1:EVDHAAe+7GQ33A1/x+/gE+sBPN4toQ0XG5RoLD49xr8=
+github.com/polarsignals/wal v0.0.0-20240619104840-9da940027f9c h1:ReFgEXqZ9/y+/9ZdNHOa1L62wqt8mWqoqrWutWj2x+A=
+github.com/polarsignals/wal v0.0.0-20240619104840-9da940027f9c/go.mod h1:EVDHAAe+7GQ33A1/x+/gE+sBPN4toQ0XG5RoLD49xr8=
 github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndrE9hABlRI=
 github.com/posener/complete v1.2.3/go.mod h1:WZIdtGGp+qx0sLrYKtIRAruyNpv6hFCicSgv7Sy7s/s=
 github.com/prashantv/gostub v1.1.0 h1:BTyx3RfQjRHnUWaGF9oQos79AlQ5k8WNktv7VGvVH4g=
@@ -1129,8 +1129,8 @@ google.golang.org/grpc v1.27.0/go.mod h1:qbnxyOmOxrQa7FizSgH+ReBfzJrCY1pSN7KXBS8
 google.golang.org/grpc v1.29.1/go.mod h1:itym6AZVZYACWQqET3MqgPpjcuV5QH3BxFS3IjizoKk=
 google.golang.org/grpc v1.32.0/go.mod h1:N36X2cJ7JwdamYAgDz+s+rVMFjt3numwzf/HckM8pak=
 google.golang.org/grpc v1.33.2/go.mod h1:JMHMWHQWaTccqQQlmk3MJZS+GWXOdAesneDmEnv2fbc=
-google.golang.org/grpc v1.64.0 h1:KH3VH9y/MgNQg1dE7b3XfVK0GsPSIzJwdF617gUSbvY=
-google.golang.org/grpc v1.64.0/go.mod h1:oxjF8E3FBnjp+/gVFYdWacaLDx9na1aqy9oovLpxQYg=
+google.golang.org/grpc v1.64.1 h1:LKtvyfbX3UGVPFcGqJ9ItpVWW6oN/2XqTxfAnwRRXiA=
+google.golang.org/grpc v1.64.1/go.mod h1:hiQF4LFZelK2WKaP6W0L92zGHtiQdZxk8CrSdvyjeP0=
 google.golang.org/protobuf v0.0.0-20200109180630-ec00e32a8dfd/go.mod h1:DFci5gLYBciE7Vtevhsrf46CRTquxDuWsQurQQe4oz8=
 google.golang.org/protobuf v0.0.0-20200221191635-4d8936d0db64/go.mod h1:kwYJMbMJ01Woi6D6+Kah6886xMZcty6N08ah7+eCXa0=
 google.golang.org/protobuf v0.0.0-20200228230310-ab0ca4ff8a60/go.mod h1:cfTl7dwQJ+fmap5saPgwCLgHXTUD7jkjRqWcaiX5VyM=

@@ -11,9 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 
 import {RpcError} from '@protobuf-ts/runtime-rpc';
+import Select, {type SelectInstance} from 'react-select';
 
 import {Label, ProfileTypesResponse, QueryServiceClient} from '@parca/client';
 import {
@@ -30,10 +31,11 @@ import {Query} from '@parca/parser';
 import {type NavigateFunction} from '@parca/utilities';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
-import MatchersInput from '../MatchersInput/index';
+import MatchersInput, {useLabelNames} from '../MatchersInput/index';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
 import ProfileMetricsGraph, {ProfileMetricsEmptyState} from '../ProfileMetricsGraph';
 import ProfileTypeSelector from '../ProfileTypeSelector/index';
+import {useDefaultSumBy, useSumBySelection} from '../useSumBy';
 import {useAutoQuerySelector} from './useAutoQuerySelector';
 
 export interface QuerySelection {
@@ -41,6 +43,7 @@ export interface QuerySelection {
   from: number;
   to: number;
   timeSelection: string;
+  sumBy?: string[];
   mergeFrom?: number;
   mergeTo?: number;
 }
@@ -55,6 +58,7 @@ interface ProfileSelectorProps {
   profileSelection: ProfileSelection | null;
   comparing: boolean;
   navigateTo: NavigateFunction;
+  suffix?: string;
 }
 
 export interface IProfileTypesResult {
@@ -101,12 +105,48 @@ const ProfileSelector = ({
   } = useProfileTypes(queryClient);
   const {heightStyle} = useMetricsGraphDimensions(comparing);
   const {viewComponent} = useParcaContext();
+  const sumByRef = useRef(null);
 
   const [timeRangeSelection, setTimeRangeSelection] = useState(
     DateTimeRange.fromRangeKey(querySelection.timeSelection, querySelection.from, querySelection.to)
   );
 
   const [queryExpressionString, setQueryExpressionString] = useState(querySelection.expression);
+
+  const profileType = useMemo(() => {
+    return Query.parse(queryExpressionString).profileType();
+  }, [queryExpressionString]);
+
+  const selectedProfileType = useMemo(() => {
+    return Query.parse(querySelection.expression).profileType();
+  }, [querySelection.expression]);
+
+  const {loading: labelNamesLoading, result} = useLabelNames(queryClient, profileType.toString());
+  const {loading: selectedLabelNamesLoading, result: selectedLabelNamesResult} = useLabelNames(
+    queryClient,
+    selectedProfileType.toString()
+  );
+
+  const labels = useMemo(() => {
+    return result.response?.labelNames === undefined ? [] : result.response.labelNames;
+  }, [result]);
+
+  const selectedLabels = useMemo(() => {
+    return selectedLabelNamesResult.response?.labelNames === undefined
+      ? []
+      : selectedLabelNamesResult.response.labelNames;
+  }, [selectedLabelNamesResult]);
+
+  const [sumBySelection, setUserSumBySelection, {isLoading: sumBySelectionLoading}] =
+    useSumBySelection(profileType, labelNamesLoading, labels, {
+      defaultValue: querySelection.sumBy,
+    });
+
+  const {defaultSumBy, isLoading: defaultSumByLoading} = useDefaultSumBy(
+    selectedProfileType,
+    selectedLabelNamesLoading,
+    selectedLabels
+  );
 
   useEffect(() => {
     if (enforcedProfileName !== '') {
@@ -148,6 +188,7 @@ const ProfileSelector = ({
       from,
       to,
       timeSelection: timeRangeSelection.getRangeKey(),
+      sumBy: sumBySelection,
       ...mergeParams,
     });
   };
@@ -217,8 +258,9 @@ const ProfileSelector = ({
     profileTypesData,
     setProfileName,
     setQueryExpression,
-    querySelection,
+    querySelection: {...querySelection, sumBy: sumBySelection},
     navigateTo,
+    loading: sumBySelectionLoading,
   });
 
   const searchDisabled =
@@ -252,6 +294,49 @@ const ProfileSelector = ({
               setMatchersString={setMatchersString}
               runQuery={setQueryExpression}
               currentQuery={query}
+              profileType={selectedProfileName}
+            />
+          </div>
+          <div className="pb-6">
+            <div className="mb-0.5 mt-1.5 flex items-center justify-between">
+              <label className="text-xs">Sum by</label>
+            </div>
+            <Select
+              defaultValue={[]}
+              isMulti
+              name="colors"
+              options={labels.map(label => ({label, value: label}))}
+              className="parca-select-container text-sm w-80"
+              classNamePrefix="parca-select"
+              value={(sumBySelection ?? []).map(sumBy => ({label: sumBy, value: sumBy}))}
+              onChange={selectedOptions => {
+                setUserSumBySelection(selectedOptions.map(option => option.value));
+              }}
+              placeholder="Labels..."
+              styles={{
+                indicatorSeparator: () => ({display: 'none'}),
+              }}
+              isDisabled={!profileType.delta}
+              ref={sumByRef}
+              onKeyDown={e => {
+                const currentRef = sumByRef.current as unknown as SelectInstance | null;
+                if (currentRef == null) {
+                  return;
+                }
+                const inputRef = currentRef.inputRef;
+                if (inputRef == null) {
+                  return;
+                }
+
+                if (
+                  e.key === 'Enter' &&
+                  inputRef.value === '' &&
+                  currentRef.state.focusedOptionId === null // menu is not open
+                ) {
+                  setQueryExpression(true);
+                  currentRef.blur();
+                }
+              }}
             />
           </div>
           <DateTimeRangePicker
@@ -287,7 +372,8 @@ const ProfileSelector = ({
                 to={querySelection.to}
                 profile={profileSelection}
                 comparing={comparing}
-                timeRange={timeRangeSelection}
+                sumBy={querySelection.sumBy ?? defaultSumBy ?? []}
+                sumByLoading={defaultSumByLoading}
                 setTimeRange={(range: DateTimeRange) => {
                   const from = range.getFromMs();
                   const to = range.getToMs();

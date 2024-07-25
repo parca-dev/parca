@@ -133,8 +133,7 @@ const (
 // given build ID. Checking if an upload should even be initiated allows the
 // parca-agent to avoid extracting debuginfos unnecessarily from a binary.
 func (s *Store) ShouldInitiateUpload(ctx context.Context, req *debuginfopb.ShouldInitiateUploadRequest) (*debuginfopb.ShouldInitiateUploadResponse, error) {
-	ctx, span := s.tracer.Start(ctx, "ShouldInitiateUpload")
-	defer span.End()
+	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(attribute.String("build_id", req.BuildId))
 
 	buildID := req.BuildId
@@ -148,20 +147,27 @@ func (s *Store) ShouldInitiateUpload(ctx context.Context, req *debuginfopb.Shoul
 	} else if errors.Is(err, ErrMetadataNotFound) {
 		// First time we see this Build ID.
 
-		existsInDebuginfods, err := s.debuginfodClients.Exists(ctx, buildID)
-		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
-
-		if len(existsInDebuginfods) > 0 {
-			if err := s.metadata.MarkAsDebuginfodSource(ctx, existsInDebuginfods, buildID, req.Type); err != nil {
-				return nil, status.Error(codes.Internal, fmt.Errorf("mark Build ID to be available from debuginfod: %w", err).Error())
+		if req.BuildIdType == debuginfopb.BuildIDType_BUILD_ID_TYPE_GNU ||
+			req.BuildIdType == debuginfopb.BuildIDType_BUILD_ID_TYPE_UNKNOWN_UNSPECIFIED {
+			// Only check debuginfod if the build ID type is GNU or unknown
+			// (and unknown is really just for backward compatibility, it
+			// should be removed from this if statement in a couple of
+			// versions.).
+			existsInDebuginfods, err := s.debuginfodClients.Exists(ctx, buildID)
+			if err != nil {
+				return nil, status.Error(codes.Internal, err.Error())
 			}
 
-			return &debuginfopb.ShouldInitiateUploadResponse{
-				ShouldInitiateUpload: false,
-				Reason:               ReasonDebuginfoInDebuginfod,
-			}, nil
+			if len(existsInDebuginfods) > 0 {
+				if err := s.metadata.MarkAsDebuginfodSource(ctx, existsInDebuginfods, buildID, req.Type); err != nil {
+					return nil, status.Error(codes.Internal, fmt.Errorf("mark Build ID to be available from debuginfod: %w", err).Error())
+				}
+
+				return &debuginfopb.ShouldInitiateUploadResponse{
+					ShouldInitiateUpload: false,
+					Reason:               ReasonDebuginfoInDebuginfod,
+				}, nil
+			}
 		}
 
 		return &debuginfopb.ShouldInitiateUploadResponse{
@@ -247,8 +253,7 @@ func (s *Store) ShouldInitiateUpload(ctx context.Context, req *debuginfopb.Shoul
 }
 
 func (s *Store) InitiateUpload(ctx context.Context, req *debuginfopb.InitiateUploadRequest) (*debuginfopb.InitiateUploadResponse, error) {
-	ctx, span := s.tracer.Start(ctx, "InitiateUpload")
-	defer span.End()
+	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(attribute.String("build_id", req.BuildId))
 
 	if req.Hash == "" {
@@ -261,10 +266,11 @@ func (s *Store) InitiateUpload(ctx context.Context, req *debuginfopb.InitiateUpl
 	// We don't want to blindly accept upload initiation requests that
 	// shouldn't have happened.
 	shouldInitiateResp, err := s.ShouldInitiateUpload(ctx, &debuginfopb.ShouldInitiateUploadRequest{
-		BuildId: req.BuildId,
-		Hash:    req.Hash,
-		Force:   req.Force,
-		Type:    req.Type,
+		BuildId:     req.BuildId,
+		BuildIdType: req.BuildIdType,
+		Hash:        req.Hash,
+		Force:       req.Force,
+		Type:        req.Type,
 	})
 	if err != nil {
 		return nil, err
@@ -320,8 +326,7 @@ func (s *Store) InitiateUpload(ctx context.Context, req *debuginfopb.InitiateUpl
 }
 
 func (s *Store) MarkUploadFinished(ctx context.Context, req *debuginfopb.MarkUploadFinishedRequest) (*debuginfopb.MarkUploadFinishedResponse, error) {
-	ctx, span := s.tracer.Start(ctx, "MarkUploadFinished")
-	defer span.End()
+	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(attribute.String("build_id", req.BuildId))
 	span.SetAttributes(attribute.String("upload_id", req.UploadId))
 
@@ -364,8 +369,8 @@ func (s *Store) Upload(stream debuginfopb.DebuginfoService_UploadServer) error {
 		typ      = req.GetInfo().Type
 	)
 
-	ctx, span := s.tracer.Start(stream.Context(), "Upload")
-	defer span.End()
+	ctx := stream.Context()
+	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(attribute.String("build_id", buildID))
 	span.SetAttributes(attribute.String("upload_id", uploadID))
 

@@ -28,6 +28,7 @@ interface Props {
   setQueryExpression: () => void;
   querySelection: QuerySelection;
   navigateTo: NavigateFunction;
+  loading: boolean;
 }
 
 export const useAutoQuerySelector = ({
@@ -37,6 +38,7 @@ export const useAutoQuerySelector = ({
   setQueryExpression,
   querySelection,
   navigateTo,
+  loading,
 }: Props): void => {
   const autoQuery = useAppSelector(selectAutoQuery);
   const dispatch = useAppDispatch();
@@ -46,6 +48,9 @@ export const useAutoQuerySelector = ({
   const expressionA = queryParams.get('expression_a');
 
   useEffect(() => {
+    if (loading) {
+      return;
+    }
     if (comparing && expressionA !== null && expressionA !== undefined) {
       if (querySelection.expression === undefined) {
         return;
@@ -61,9 +66,12 @@ export const useAutoQuerySelector = ({
         from: querySelection.from,
         to: querySelection.to,
         timeSelection: querySelection.timeSelection,
+        sumBy: querySelection.sumBy,
       };
 
-      let compareQuery = {
+      const sumBy = queryA.sumBy?.join(',');
+
+      let compareQuery: Record<string, string> = {
         compare_a: 'true',
         expression_a: encodeURIComponent(queryA.expression),
         from_a: queryA.from.toString(),
@@ -76,6 +84,11 @@ export const useAutoQuerySelector = ({
         to_b: queryA.to.toString(),
         time_selection_b: queryA.timeSelection,
       };
+
+      if (sumBy != null) {
+        compareQuery.sum_by_a = sumBy;
+        compareQuery.sum_by_b = sumBy;
+      }
 
       if (profileA != null) {
         compareQuery = {
@@ -90,7 +103,7 @@ export const useAutoQuerySelector = ({
         dashboard_items: ['icicle'],
       });
     }
-  }, [comparing, querySelection, navigateTo, expressionA, dispatch]);
+  }, [comparing, querySelection, navigateTo, expressionA, dispatch, loading]);
 
   // Effect to load some initial data on load when is no selection
   useEffect(() => {
@@ -107,8 +120,13 @@ export const useAutoQuerySelector = ({
       }
       dispatch(setAutoQuery('true'));
       let profileType = profileTypesData.types.find(
-        type => type.name === 'otel_profiling_agent_on_cpu' && type.delta
+        type => type.name === 'parca_agent' && type.delta
       );
+      if (profileType == null) {
+        profileType = profileTypesData.types.find(
+          type => type.name === 'otel_profiling_agent_on_cpu' && type.delta
+        );
+      }
       if (profileType == null) {
         profileType = profileTypesData.types.find(
           type => type.name === 'parca_agent_cpu' && type.delta
@@ -139,7 +157,8 @@ export const useAutoQuerySelector = ({
         autoQuery !== 'true' ||
         profileTypesData?.types == null ||
         profileTypesData.types.length < 1 ||
-        selectedProfileName.length === 0
+        selectedProfileName.length === 0 ||
+        loading
       ) {
         return;
       }
@@ -153,5 +172,6 @@ export const useAutoQuerySelector = ({
     setProfileName,
     dispatch,
     selectedProfileName,
+    loading,
   ]);
 };

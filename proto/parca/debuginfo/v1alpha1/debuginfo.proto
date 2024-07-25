@@ -66,6 +66,20 @@ message ShouldInitiateUploadRequest {
   bool force = 3;
   // Type of debuginfo to propose uploading.
   DebuginfoType type = 4;
+  // Type of build ID.
+  BuildIDType build_id_type = 5;
+}
+
+// BuildIDType is the type of build ID.
+enum BuildIDType {
+  // The build ID is unknown.
+  BUILD_ID_TYPE_UNKNOWN_UNSPECIFIED = 0;
+  // The build ID is a GNU build ID.
+  BUILD_ID_TYPE_GNU = 1;
+  // The build ID is an opaque hash.
+  BUILD_ID_TYPE_HASH = 2;
+  // The build ID is a Go build ID.
+  BUILD_ID_TYPE_GO = 3;
 }
 
 // ShouldInitiateUploadResponse is the response for ShouldInitiateUpload.
@@ -88,6 +102,8 @@ message InitiateUploadRequest {
   bool force = 4;
   // Type of debuginfo to propose uploading.
   DebuginfoType type = 5;
+  // Type of build ID.
+  BuildIDType build_id_type = 6;
 }
 
 // InitiateUploadResponse is the response to an InitiateUploadRequest.

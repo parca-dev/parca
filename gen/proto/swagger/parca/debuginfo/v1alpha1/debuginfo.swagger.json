@@ -222,6 +222,17 @@
         }
       }
     },
+    "v1alpha1BuildIDType": {
+      "type": "string",
+      "enum": [
+        "BUILD_ID_TYPE_UNKNOWN_UNSPECIFIED",
+        "BUILD_ID_TYPE_GNU",
+        "BUILD_ID_TYPE_HASH",
+        "BUILD_ID_TYPE_GO"
+      ],
+      "default": "BUILD_ID_TYPE_UNKNOWN_UNSPECIFIED",
+      "description": "BuildIDType is the type of build ID.\n\n - BUILD_ID_TYPE_UNKNOWN_UNSPECIFIED: The build ID is unknown.\n - BUILD_ID_TYPE_GNU: The build ID is a GNU build ID.\n - BUILD_ID_TYPE_HASH: The build ID is an opaque hash.\n - BUILD_ID_TYPE_GO: The build ID is a Go build ID."
+    },
     "v1alpha1DebuginfoType": {
       "type": "string",
       "enum": [
@@ -255,6 +266,10 @@
         "type": {
           "$ref": "#/definitions/v1alpha1DebuginfoType",
           "description": "Type of debuginfo to propose uploading."
+        },
+        "buildIdType": {
+          "$ref": "#/definitions/v1alpha1BuildIDType",
+          "description": "Type of build ID."
         }
       },
       "description": "InitiateUploadRequest is the request to initiate an upload."
@@ -309,6 +324,10 @@
         "type": {
           "$ref": "#/definitions/v1alpha1DebuginfoType",
           "description": "Type of debuginfo to propose uploading."
+        },
+        "buildIdType": {
+          "$ref": "#/definitions/v1alpha1BuildIDType",
+          "description": "Type of build ID."
         }
       },
       "description": "ShouldInitiateUploadRequest is the request for ShouldInitiateUpload."
