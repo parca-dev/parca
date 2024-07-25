@@ -72,7 +72,7 @@ const ColorStackLegend = ({mappings, compareMode = false, loading}: Props): Reac
   }
 
   return (
-    <div className="my-4 flex w-full flex-wrap justify-start gap-2">
+    <div className="my-4 flex w-full flex-wrap justify-start column-gap-2">
       {stackColorArray.map(([feature, color]) => {
         const filteringAllowed = feature !== EVERYTHING_ELSE;
         const isHighlighted =
