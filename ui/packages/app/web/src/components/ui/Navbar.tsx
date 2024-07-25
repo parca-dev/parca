@@ -32,6 +32,7 @@ const links: {[path: string]: {label: string; href: string; external: boolean}} 
   '/': {label: 'Explorer', href: `/`, external: false},
   '/compare': {label: 'Compare', href: 'compare', external: false},
   '/targets': {label: 'Targets', href: `/targets`, external: false},
+  '/settings': {label: 'Settings', href: `/settings`, external: false},
   '/help': {label: 'Help', href: 'https://parca.dev/docs/overview', external: true},
 };
 
@@ -124,7 +125,10 @@ const Navbar = () => {
         };
 
   return (
-    <Disclosure as="nav" className="relative z-10 dark:bg-gray-900">
+    <Disclosure
+      as="nav"
+      className="relative z-10 dark:bg-gray-900 border-b-[1px] border-gray-300 dark:border-gray-700"
+    >
       {({open}) => (
         <>
           <div className="mx-auto px-3">
@@ -158,92 +162,90 @@ const Navbar = () => {
                 </div>
                 <div className="hidden sm:ml-6 sm:block">
                   <div className="flex items-center gap-2">
-                    <div className="border-b border-gray-200">
-                      <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-                        {Object.values(links).map(item => {
-                          const href = item.href;
-                          const props: {
-                            target?: LinkProps['target'];
-                            className: string;
-                            rel?: LinkProps['rel'];
-                            'aria-current'?: 'page';
-                          } = {
-                            target: item.external ? '_blank' : undefined,
-                            className: cx(
-                              isCurrentPage(item)
-                                ? 'border-indigo-500 dark:border-gray-100 text-indigo-600 dark:text-gray-100 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium'
-                                : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 hover:text-gray-700 dark:hover:text-gray-100 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium'
-                            ),
-                            rel: item.external ? 'noreferrer' : undefined,
-                          };
-                          if (isCurrentPage(item)) {
-                            props['aria-current'] = 'page';
-                          }
-                          return item.href === 'compare' ? (
-                            <div ref={setComparePopperReferenceElement} key={item.label}>
-                              <Button
-                                className={cx(
-                                  isCurrentPage(item)
-                                    ? 'dark:border-gray-100 text-indigo-600 dark:text-gray-100 border-indigo-500'
-                                    : 'hover:border-gray-300 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-100 border-transparent',
-                                  'rounded-none hover:no-underline border-b-2 focus:ring-0 focus:outline-none focus:ring-offset-0 h-full whitespace-nowrap font-medium'
-                                )}
-                                variant="link"
-                                onClick={() =>
-                                  navigateTo(
-                                    '/',
-                                    {
-                                      ...queryToBePassed,
-                                    },
-                                    {replace: true}
-                                  )
-                                }
-                                onMouseEnter={() => setCompareHover(true)}
-                                onMouseLeave={() => setCompareHover(false)}
-                                id="h-compare-button"
+                    <nav className="-mb-px flex space-x-4" aria-label="Tabs">
+                      {Object.values(links).map(item => {
+                        const href = item.href;
+                        const props: {
+                          target?: LinkProps['target'];
+                          className: string;
+                          rel?: LinkProps['rel'];
+                          'aria-current'?: 'page';
+                        } = {
+                          target: item.external ? '_blank' : undefined,
+                          className: cx(
+                            isCurrentPage(item)
+                              ? 'whitespace-nowrap text-sm font-medium bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-200 py-2 px-4 rounded-lg'
+                              : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-100 whitespace-nowrap py-2 px-4 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg'
+                          ),
+                          rel: item.external ? 'noreferrer' : undefined,
+                        };
+                        if (isCurrentPage(item)) {
+                          props['aria-current'] = 'page';
+                        }
+                        return item.href === 'compare' ? (
+                          <div ref={setComparePopperReferenceElement} key={item.label}>
+                            <Button
+                              className={cx(
+                                isCurrentPage(item)
+                                  ? 'whitespace-nowrap text-sm font-medium bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-200 py-2 px-4 rounded-lg'
+                                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-100 whitespace-nowrap py-2 px-4 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg',
+                                'hover:no-underline focus:ring-0 focus:outline-none focus:ring-offset-0 h-full whitespace-nowrap font-medium'
+                              )}
+                              variant="link"
+                              onClick={() =>
+                                navigateTo(
+                                  '/',
+                                  {
+                                    ...queryToBePassed,
+                                  },
+                                  {replace: true}
+                                )
+                              }
+                              onMouseEnter={() => setCompareHover(true)}
+                              onMouseLeave={() => setCompareHover(false)}
+                              id="h-compare-button"
+                            >
+                              Compare
+                            </Button>
+                            {compareHover && (
+                              <div
+                                ref={setComparePopperElement}
+                                style={styles.popper}
+                                {...attributes.popper}
+                                className="z-50"
                               >
-                                Compare
-                              </Button>
-                              {compareHover && (
-                                <div
-                                  ref={setComparePopperElement}
-                                  style={styles.popper}
-                                  {...attributes.popper}
-                                  className="z-50"
-                                >
-                                  <div className="flex">
-                                    <div className="relative mx-2">
-                                      <svg
-                                        className="left-0 h-1 w-full text-black"
-                                        x="0px"
-                                        y="0px"
-                                        viewBox="0 0 255 127.5"
-                                      >
-                                        <polygon
-                                          className="fill-current"
-                                          points="0,127.5 127.5,0 255,127.5"
-                                        />
-                                      </svg>
-                                      <div className="right-0 w-40 rounded bg-black px-3 py-2 text-xs text-white">
-                                        {compareExplanation}
-                                      </div>
+                                <div className="flex">
+                                  <div className="relative mx-2">
+                                    <svg
+                                      className="left-0 h-1 w-full text-black"
+                                      x="0px"
+                                      y="0px"
+                                      viewBox="0 0 255 127.5"
+                                    >
+                                      <polygon
+                                        className="fill-current"
+                                        points="0,127.5 127.5,0 255,127.5"
+                                      />
+                                    </svg>
+                                    <div className="right-0 w-40 rounded bg-black px-3 py-2 text-xs text-white">
+                                      {compareExplanation}
                                     </div>
                                   </div>
                                 </div>
-                              )}
-                            </div>
-                          ) : item.external === true ? (
-                            <a key={item.label} {...props} href={href}>
-                              {item.label}
-                            </a>
-                          ) : (
-                            <Link key={item.label} {...props} to={href}>
-                              {item.label}
-                            </Link>
-                          );
-                        })}
-                      </nav>
-                    </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : item.external === true ? (
+                          <a key={item.label} {...props} href={href}>
+                            {item.label}
+                          </a>
+                        ) : (
+                          <Link key={item.label} {...props} to={href}>
+                            {item.label}
+                          </Link>
+                        );
+                      })}
+                    </nav>
                   </div>
                 </div>
               </div>
@@ -254,11 +256,7 @@ const Navbar = () => {
                 <div className="hidden md:flex">
                   <GitHubStarButton />
                 </div>
-                <div className="text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-300">
-                  <a target="_blank" href="https://github.com/parca-dev/parca" rel="noreferrer">
-                    GitHub
-                  </a>
-                </div>
+
                 <div className="text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
                   <ThemeToggle />
                 </div>
