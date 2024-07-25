@@ -33,6 +33,7 @@ import HomePage from './pages/index';
 import Component404 from './pages/layouts/Component404';
 import Header from './pages/layouts/Header';
 import ThemeProvider from './pages/layouts/ThemeProvider';
+import SettingsPage from './pages/settings';
 import TargetsPage from './pages/targets';
 
 declare global {
@@ -70,14 +71,13 @@ const App = () => {
           <QueryClientProvider client={queryClient}>
             <ThemeProvider>
               <Header />
-              <div className="px-3">
-                <Routes>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/targets" element={<TargetsPage />} />
-                  <Route path="/PATH_PREFIX_VAR" element={<Navigate to="/" replace />} />
-                  <Route path="*" element={<Component404 />} />
-                </Routes>
-              </div>
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/targets" element={<TargetsPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/PATH_PREFIX_VAR" element={<Navigate to="/" replace />} />
+                <Route path="*" element={<Component404 />} />
+              </Routes>
             </ThemeProvider>
           </QueryClientProvider>
         </BrowserRouter>

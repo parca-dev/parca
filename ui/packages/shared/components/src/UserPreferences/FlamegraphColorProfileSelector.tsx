@@ -33,7 +33,7 @@ const FlamegraphColorProfileSelector = (): JSX.Element => {
 
   return (
     <fieldset className={'mt-2 flex items-center gap-2'}>
-      <legend className="mb-1">Flamegraph Color Profile</legend>
+      <legend className="mb-1">Iciclegraph color profile</legend>
       <div className="flex flex-col gap-3 pl-4 text-sm">
         {(Object.keys(colorProfiles) as ColorProfileName[]).map(profile => {
           const isSelected = profile === colorProfileName;
@@ -60,7 +60,7 @@ const FlamegraphColorProfileSelector = (): JSX.Element => {
                 />
                 <span className="whitespace-nowrap">{displayName}</span>
               </label>
-              <div className="flex w-72 gap-2 overflow-auto">
+              <div className="flex gap-2 overflow-auto">
                 {colorProfiles[profile].colors.map((color: ColorsDuo) => (
                   <div
                     key={`${color[0]}-${color[1]}`}

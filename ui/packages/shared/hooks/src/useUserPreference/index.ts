@@ -20,6 +20,7 @@ export interface UserPreferenceDetails {
   key: string;
   type: string;
   default: boolean | string;
+  description: string;
 }
 
 export const USER_PREFERENCES: {[key: string]: UserPreferenceDetails} = {
@@ -28,30 +29,40 @@ export const USER_PREFERENCES: {[key: string]: UserPreferenceDetails} = {
     key: 'HIGHTLIGHT_AFTER_FILTERING',
     type: 'boolean',
     default: true,
+    description:
+      'When enabled, this option highlights all occurrences of nodes that match your filter criteria, specifically when using the "filter by function" feature.',
   },
   ENABLE_GRAPH_TRIMMING: {
     name: 'Enable trimming of nodes that are too small to be seen',
     key: 'ENABLE_GRAPH_TRIMMING',
     type: 'boolean',
     default: true,
+    description:
+      'When enabled, this option automatically trims nodes that are too small to be seen in the graph, making it easier to read and understand.',
   },
   FLAMEGRAPH_COLOR_PROFILE: {
-    name: 'Flamegraph color profile',
+    name: 'Iciclegraph color profile',
     key: 'FLAMEGRAPH_COLOR_PROFILE',
     type: 'string',
     default: 'ocean',
+    description:
+      'This setting allows you to customize the color scheme used in the Icicle graph visualization.',
   },
   GRAPH_METAINFO_DOCKED: {
     name: 'Dock Graph MetaInfo',
     key: 'GRAPH_METAINFO_DOCKED',
     type: 'boolean',
     default: false,
+    description:
+      'When enabled, this option anchors the graph tooltip to the bottom of your screen instead of floating near your cursor.',
   },
   HIGHLIGHT_SIMILAR_STACKS: {
     name: 'Highlight similar stacks when hovering over a node',
     key: 'HIGHLIGHT_SIMILAR_STACKS',
     type: 'boolean',
     default: false,
+    description:
+      "When enabled, this option automatically highlights stacks that are similar to the one you're currently hovering over in the Icicle graph.",
   },
 } as const;
 

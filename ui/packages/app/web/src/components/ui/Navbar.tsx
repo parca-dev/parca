@@ -127,7 +127,7 @@ const Navbar = () => {
   return (
     <Disclosure
       as="nav"
-      className="relative z-10 dark:bg-gray-900 border-b-[1px] border-gray-300 dark:border-gray-700"
+      className="relative z-10 bg-white dark:bg-gray-900 border-b-[1px] border-gray-300 dark:border-gray-700"
     >
       {({open}) => (
         <>
