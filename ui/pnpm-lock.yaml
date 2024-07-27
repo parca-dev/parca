@@ -235,8 +235,8 @@ importers:
         specifier: 3.1.2
         version: 3.1.2
       pm2:
-        specifier: 5.4.1
-        version: 5.4.1
+        specifier: 5.4.2
+        version: 5.4.2
       postcss:
         specifier: 8.4.39
         version: 8.4.39
@@ -437,8 +437,8 @@ importers:
         specifier: 29.7.0
         version: 29.7.0
       pm2:
-        specifier: 5.4.1
-        version: 5.4.1
+        specifier: 5.4.2
+        version: 5.4.2
       tslint:
         specifier: 6.1.3
         version: 6.1.3(typescript@5.5.2)
@@ -4743,8 +4743,8 @@ packages:
       - utf-8-validate
     dev: true
 
-  /@pm2/io@6.0.0:
-    resolution: {integrity: sha512-sKUEgZoQ5/jRwTyMB1I7u2wXL6dG0j/F/M4ANJ7dJCApfW8nWC0RElMW2siEKvZ79iplIPAaWV27oyBoerEflw==}
+  /@pm2/io@6.0.1:
+    resolution: {integrity: sha512-KiA+shC6sULQAr9mGZ1pg+6KVW9MF8NpG99x26Lf/082/Qy8qsTCtnJy+HQReW1A9Rdf0C/404cz0RZGZro+IA==}
     engines: {node: '>=6.0'}
     dependencies:
       async: 2.6.4
@@ -19478,13 +19478,13 @@ packages:
     dev: true
     optional: true
 
-  /pm2@5.4.1:
-    resolution: {integrity: sha512-y9ndADjy78XfzdbVHISn4WiUTrcvmsO7ieCtM/oC80rwPgBDg+bHkkz1e4eaLOW5a7sJsnDfQjJe4AqxNnIw5Q==}
+  /pm2@5.4.2:
+    resolution: {integrity: sha512-ynVpBwZampRH3YWLwRepZpQ7X3MvpwLIaqIdFEeBYEhaXbHmEx2KqOdxGV4T54wvKBhH3LixvU1j1bK4/sq7Tw==}
     engines: {node: '>=12.0.0'}
     hasBin: true
     dependencies:
       '@pm2/agent': 2.0.3
-      '@pm2/io': 6.0.0
+      '@pm2/io': 6.0.1
       '@pm2/js-api': 0.8.0
       '@pm2/pm2-version-check': 1.0.4
       async: 3.2.5
