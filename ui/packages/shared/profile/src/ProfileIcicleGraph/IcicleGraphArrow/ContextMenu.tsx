@@ -111,10 +111,10 @@ const ContextMenu = ({
     row === 0
       ? ''
       : name !== ''
-        ? name
-        : locationAddress !== 0n
-          ? hexifyAddress(locationAddress)
-          : '';
+      ? name
+      : locationAddress !== 0n
+      ? hexifyAddress(locationAddress)
+      : '';
 
   const buildIdText = !isMappingBuildIDAvailable ? '' : mappingBuildID;
   const inlinedText = inlined === null ? 'merged' : inlined ? 'yes' : 'no';
