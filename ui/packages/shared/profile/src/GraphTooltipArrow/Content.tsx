@@ -33,6 +33,7 @@ interface GraphTooltipArrowContentProps {
   row: number | null;
   level: number;
   isFixed: boolean;
+  compareAbsolute: boolean;
 }
 
 const NoData = (): React.JSX.Element => {
@@ -48,6 +49,7 @@ const GraphTooltipArrowContent = ({
   row,
   level,
   isFixed,
+  compareAbsolute,
 }: GraphTooltipArrowContentProps): React.JSX.Element => {
   const graphTooltipData = useGraphTooltip({
     table,
@@ -57,6 +59,7 @@ const GraphTooltipArrowContent = ({
     totalUnfiltered,
     row,
     level,
+    compareAbsolute,
   });
 
   if (graphTooltipData === null) {
@@ -67,9 +70,7 @@ const GraphTooltipArrowContent = ({
     name,
     locationAddress,
     cumulativeText,
-    cumulativePerSecondText,
     flatText,
-    flatPerSecondText,
     diffText,
     diff,
     row: rowNumber,
@@ -102,32 +103,12 @@ const GraphTooltipArrowContent = ({
                       <div>{cumulativeText}</div>
                     </td>
                   </tr>
-                  {profileType?.delta ?? false ? (
-                    <tr>
-                      <td className="w-1/4"></td>
-                      <td className="w-3/4">
-                        <div>{cumulativePerSecondText}</div>
-                      </td>
-                    </tr>
-                  ) : (
-                    <></>
-                  )}
                   <tr>
                     <td className="w-1/4 pt-2">Flat</td>
                     <td className="w-3/4 pt-2">
                       <div>{flatText}</div>
                     </td>
                   </tr>
-                  {profileType?.delta ?? false ? (
-                    <tr>
-                      <td className="w-1/4"></td>
-                      <td className="w-3/4">
-                        <div>{flatPerSecondText}</div>
-                      </td>
-                    </tr>
-                  ) : (
-                    <></>
-                  )}
                   {diff !== 0n && (
                     <tr>
                       <td className="w-1/4 pt-2">Diff</td>
