@@ -11,60 +11,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {cloneElement, useState} from 'react';
-
-import {Icon} from '@iconify/react';
-
 import {USER_PREFERENCES} from '@parca/hooks';
 
-import {Button, IconButton, Modal} from '../';
 import FlamegraphColorProfileSelector from './FlamegraphColorProfileSelector';
 import UserPreferenceItem from './UserPreferenceItem';
 
-const UserPreferences = ({customButton}: {customButton?: JSX.Element}): JSX.Element => {
-  const [isOpen, setIsOpen] = useState<boolean>(false);
-
+const UserPreferences = (): JSX.Element => {
   return (
     <div>
-      {customButton != null ? (
-        cloneElement(customButton, {
-          onClick: () => setIsOpen(!isOpen),
-        })
-      ) : (
-        <IconButton
-          onClick={() => setIsOpen(!isOpen)}
-          icon={<Icon icon="material-symbols:settings-outline-rounded" fontSize={20} />}
+      <div className="min-h-40 mt-8">
+        <UserPreferenceItem
+          id="h-highlight-after-filtering"
+          userPreferenceDetails={USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING}
         />
-      )}
-      <Modal
-        isOpen={isOpen}
-        closeModal={() => {
-          setIsOpen(false);
-        }}
-        title="Preferences"
-        className="max-w-[460px]"
-      >
-        <div className="min-h-40 mt-8">
-          <UserPreferenceItem
-            id="h-highlight-after-filtering"
-            userPreferenceDetails={USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING}
-          />
-          <UserPreferenceItem
-            id="h-dock-graph-tooltip"
-            userPreferenceDetails={USER_PREFERENCES.GRAPH_METAINFO_DOCKED}
-          />
-          <UserPreferenceItem
-            id="h-highlight-similar-stacks"
-            userPreferenceDetails={USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS}
-          />
-          <FlamegraphColorProfileSelector />
-        </div>
-        <div className="flex justify-end">
-          <Button onClick={() => setIsOpen(false)} className="w-fit">
-            Close
-          </Button>
-        </div>
-      </Modal>
+        <UserPreferenceItem
+          id="h-dock-graph-tooltip"
+          userPreferenceDetails={USER_PREFERENCES.GRAPH_METAINFO_DOCKED}
+        />
+        <UserPreferenceItem
+          id="h-highlight-similar-stacks"
+          userPreferenceDetails={USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS}
+        />
+        <FlamegraphColorProfileSelector />
+      </div>
     </div>
   );
 };

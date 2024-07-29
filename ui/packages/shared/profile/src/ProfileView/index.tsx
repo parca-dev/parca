@@ -133,7 +133,7 @@ export const ProfileView = ({
   const isDarkMode = useAppSelector(selectDarkMode);
   const isMultiPanelView = dashboardItems.length > 1;
 
-  const {perf, profileViewExternalMainActions, profileViewExternalSubActions} = useParcaContext();
+  const {perf} = useParcaContext();
 
   useEffect(() => {
     // Reset the current path when the profile source changes
