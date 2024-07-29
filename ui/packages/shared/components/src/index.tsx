@@ -37,12 +37,12 @@ import Tab from './Tab';
 import Table from './Table';
 import TextWithTooltip from './TextWithTooltip';
 import UserPreferences from './UserPreferences';
-import {useURLState} from './hooks/useURLState';
 
 export type {PillVariant, SelectElement};
 
 export * from './CopyToClipboard';
 export * from './ParcaContext';
+export * from './hooks/URLState';
 
 export {
   Button,
@@ -77,6 +77,5 @@ export {
   EmptyState,
   useGrpcMetadata,
   useKeyDown,
-  useURLState,
   UserPreferences,
 };

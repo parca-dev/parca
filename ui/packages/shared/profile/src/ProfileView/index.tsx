@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Profiler, ProfilerProps, useEffect, useMemo, useState} from 'react';
+import {Profiler, ProfilerProps, useEffect, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
@@ -51,14 +51,12 @@ import {jsonToDot} from '../Callgraph/utils';
 import ProfileIcicleGraph from '../ProfileIcicleGraph';
 import {ProfileSource} from '../ProfileSource';
 import {SourceView} from '../SourceView';
-import Table from '../Table';
+import {Table} from '../Table';
 import ProfileShareButton from '../components/ProfileShareButton';
 import FilterByFunctionButton from './FilterByFunctionButton';
 import {ProfileViewContextProvider} from './ProfileViewContext';
 import ViewSelector from './ViewSelector';
 import {VisualizationPanel} from './VisualizationPanel';
-
-type NavigateFunction = (path: string, queryParams: any, options?: {replace?: boolean}) => void;
 
 export interface FlamegraphData {
   loading: boolean;
@@ -104,7 +102,6 @@ export interface ProfileViewProps {
   sourceData?: SourceData;
   profileSource?: ProfileSource;
   queryClient?: QueryServiceClient;
-  navigateTo?: NavigateFunction;
   compare?: boolean;
   onDownloadPProf: () => void;
   pprofDownloading?: boolean;
@@ -128,7 +125,6 @@ export const ProfileView = ({
   sourceData,
   profileSource,
   queryClient,
-  navigateTo,
   onDownloadPProf,
   pprofDownloading,
   compare,
@@ -136,20 +132,12 @@ export const ProfileView = ({
   const {timezone} = useParcaContext();
   const {ref, dimensions} = useContainerDimensions();
   const [curPath, setCurPath] = useState<string[]>([]);
-  const [rawDashboardItems = ['icicle'], setDashboardItems] = useURLState({
-    param: 'dashboard_items',
-    navigateTo,
+  const [dashboardItems, setDashboardItems] = useURLState<string[]>('dashboard_items', {
+    alwaysReturnArray: true,
   });
   const [graphvizLoaded, setGraphvizLoaded] = useState(false);
   const [callgraphSVG, setCallgraphSVG] = useState<string | undefined>(undefined);
-  const [currentSearchString] = useURLState({param: 'search_string'});
-
-  const dashboardItems = useMemo(() => {
-    if (rawDashboardItems !== undefined) {
-      return rawDashboardItems as string[];
-    }
-    return ['icicle'];
-  }, [rawDashboardItems]);
+  const [currentSearchString, setSearchString] = useURLState<string | undefined>('search_string');
 
   const isDarkMode = useAppSelector(selectDarkMode);
   const isMultiPanelView = dashboardItems.length > 1;
@@ -240,7 +228,6 @@ export const ProfileView = ({
               total={total}
               filtered={filtered}
               profileType={profileSource?.ProfileType()}
-              navigateTo={navigateTo}
               loading={flamegraphData.loading}
               setActionButtons={setActionButtons}
               error={flamegraphData.error}
@@ -281,9 +268,9 @@ export const ProfileView = ({
             data={topTableData.arrow?.record}
             unit={topTableData.unit}
             profileType={profileSource?.ProfileType()}
-            navigateTo={navigateTo}
             setActionButtons={setActionButtons}
-            currentSearchString={currentSearchString as string}
+            currentSearchString={currentSearchString}
+            setSearchString={setSearchString}
             isHalfScreen={isHalfScreen}
           />
         ) : (
@@ -371,7 +358,7 @@ export const ProfileView = ({
           </div>
 
           <div className="lg:flex flex-wrap items-center gap-2 md:justify-end hidden">
-            <FilterByFunctionButton navigateTo={navigateTo} />
+            <FilterByFunctionButton />
             {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
             <UserPreferences
               customButton={
@@ -402,7 +389,6 @@ export const ProfileView = ({
             </Button>
             <ViewSelector
               defaultValue=""
-              navigateTo={navigateTo}
               position={-1}
               placeholderText="Add panel"
               icon={<Icon icon="material-symbols:add" width={20} />}
@@ -451,7 +437,6 @@ export const ProfileView = ({
                               dashboardItem={dashboardItem}
                               getDashboardItemByType={getDashboardItemByType}
                               dragHandleProps={provided.dragHandleProps}
-                              navigateTo={navigateTo}
                               index={index}
                             />
                           </div>

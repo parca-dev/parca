@@ -19,7 +19,7 @@ import {Tooltip} from 'react-tooltip';
 import {useParcaContext} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
-import {getLastItem, type NavigateFunction} from '@parca/utilities';
+import {getLastItem} from '@parca/utilities';
 
 import {useGraphTooltip} from '../../GraphTooltipArrow/useGraphTooltip';
 import {useGraphTooltipMetaInfo} from '../../GraphTooltipArrow/useGraphTooltipMetaInfo';
@@ -34,7 +34,6 @@ interface ContextMenuProps {
   totalUnfiltered: bigint;
   row: number;
   level: number;
-  navigateTo: NavigateFunction;
   trackVisibility: (isVisible: boolean) => void;
   curPath: string[];
   setCurPath: (path: string[]) => void;
@@ -49,7 +48,6 @@ const ContextMenu = ({
   totalUnfiltered,
   row,
   level,
-  navigateTo,
   trackVisibility,
   curPath,
   setCurPath,
@@ -83,7 +81,7 @@ const ContextMenu = ({
     mappingFile,
     mappingBuildID,
     inlined,
-  } = useGraphTooltipMetaInfo({table, row, navigateTo});
+  } = useGraphTooltipMetaInfo({table, row});
 
   if (contextMenuData === null) {
     return <></>;

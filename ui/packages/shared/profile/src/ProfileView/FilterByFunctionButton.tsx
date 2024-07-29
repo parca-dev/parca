@@ -16,14 +16,14 @@ import {useCallback, useMemo, useState} from 'react';
 import {Icon} from '@iconify/react';
 
 import {Input, useURLState} from '@parca/components';
-import type {NavigateFunction} from '@parca/utilities';
+import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 
-const FilterByFunctionButton = ({
-  navigateTo,
-}: {
-  navigateTo: NavigateFunction | undefined;
-}): JSX.Element => {
-  const [storeValue, setStoreValue] = useURLState({param: 'filter_by_function', navigateTo});
+const FilterByFunctionButton = (): JSX.Element => {
+  const [highlightAfterFilteringEnabled] = useUserPreference<boolean>(
+    USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING.key
+  );
+  const [storeValue, setStoreValue] = useURLState('filter_by_function');
+  const [_, setSearchString] = useURLState('search_string');
   const [localValue, setLocalValue] = useState(storeValue as string);
 
   const isClearAction = useMemo(() => {
@@ -34,10 +34,16 @@ const FilterByFunctionButton = ({
     if (isClearAction) {
       setLocalValue('');
       setStoreValue('');
+      if (highlightAfterFilteringEnabled) {
+        setSearchString('');
+      }
     } else {
       setStoreValue(localValue);
+      if (highlightAfterFilteringEnabled) {
+        setSearchString(localValue);
+      }
     }
-  }, [localValue, isClearAction, setStoreValue]);
+  }, [localValue, isClearAction, setStoreValue, highlightAfterFilteringEnabled, setSearchString]);
 
   return (
     <Input

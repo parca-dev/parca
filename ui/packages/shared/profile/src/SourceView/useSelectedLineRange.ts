@@ -22,12 +22,12 @@ interface LineRange {
 }
 
 const useLineRange = (): LineRange => {
-  const [sourceLine, setSourceLine] = useURLState({param: 'source_line', navigateTo: () => {}});
+  const [sourceLine, setSourceLine] = useURLState<string | undefined>('source_line');
   const [startLine, endLine] = useMemo(() => {
     if (sourceLine == null) {
       return [-1, -1];
     }
-    const [start, end] = (sourceLine as string).split('-');
+    const [start, end] = sourceLine.split('-');
 
     if (end === undefined) {
       return [parseInt(start, 10), parseInt(start, 10)];

@@ -19,7 +19,6 @@ import type {DraggableProvidedDragHandleProps} from 'react-beautiful-dnd';
 
 import {IconButton, useParcaContext} from '@parca/components';
 import {CloseIcon} from '@parca/icons';
-import type {NavigateFunction} from '@parca/utilities';
 
 import ViewSelector from './ViewSelector';
 
@@ -28,7 +27,6 @@ interface Props {
   index: number;
   isMultiPanelView: boolean;
   handleClosePanel: (dashboardItem: string) => void;
-  navigateTo: NavigateFunction | undefined;
   dragHandleProps: DraggableProvidedDragHandleProps | null | undefined;
   getDashboardItemByType: (props: {
     type: string;
@@ -42,7 +40,6 @@ export const VisualizationPanel = React.memo(function VisualizationPanel({
   index,
   isMultiPanelView,
   handleClosePanel,
-  navigateTo,
   dragHandleProps,
   getDashboardItemByType,
 }: Props): JSX.Element {
@@ -73,12 +70,7 @@ export const VisualizationPanel = React.memo(function VisualizationPanel({
               isMultiPanelView && dashboardItem === 'icicle' && 'pb-[10px]'
             )}
           >
-            <ViewSelector
-              id="h-switch-viz"
-              defaultValue={dashboardItem}
-              navigateTo={navigateTo}
-              position={index}
-            />
+            <ViewSelector id="h-switch-viz" defaultValue={dashboardItem} position={index} />
 
             {dashboardItem === 'icicle' && flamegraphHint != null ? (
               <div className="px-2">{flamegraphHint}</div>

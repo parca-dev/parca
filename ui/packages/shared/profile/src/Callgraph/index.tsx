@@ -57,9 +57,9 @@ const Callgraph = ({data, svgString, profileType, width}: Props): JSX.Element =>
   //   ? true
   //   : isSearchMatch(currentSearchString, sourceNode.functionName) &&
   //     isSearchMatch(currentSearchString, targetNode.functionName);
-  const [rawDashboardItems] = useURLState({param: 'dashboard_items'});
-  const dashboardItems =
-    rawDashboardItems !== undefined ? (rawDashboardItems as string[]) : ['icicle'];
+  const [dashboardItems] = useURLState<string[]>('dashboard_items', {
+    alwaysReturnArray: true,
+  });
 
   const isDarkMode = useAppSelector(selectDarkMode);
   const maxColor: string = getNewSpanColor(isDarkMode);

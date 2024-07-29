@@ -53,11 +53,7 @@ const ProfileExplorerSingle = ({
       </Card>
       {profile != null ? (
         <Card className="mt-2 px-6 py-4">
-          <ProfileViewWithData
-            queryClient={queryClient}
-            profileSource={profile.ProfileSource()}
-            navigateTo={navigateTo}
-          />
+          <ProfileViewWithData queryClient={queryClient} profileSource={profile.ProfileSource()} />
         </Card>
       ) : (
         <></>

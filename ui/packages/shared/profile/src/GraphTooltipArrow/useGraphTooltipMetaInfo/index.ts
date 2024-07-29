@@ -15,7 +15,6 @@ import {Table} from 'apache-arrow';
 
 import {QueryRequest_ReportType} from '@parca/client';
 import {useParcaContext, useURLState} from '@parca/components';
-import type {NavigateFunction} from '@parca/utilities';
 
 import {
   FIELD_FUNCTION_FILE_NAME,
@@ -35,7 +34,6 @@ import {useQuery} from '../../useQuery';
 interface Props {
   table: Table<any>;
   row: number;
-  navigateTo: NavigateFunction;
 }
 
 interface GraphTooltipMetaInfoData {
@@ -51,11 +49,7 @@ interface GraphTooltipMetaInfoData {
   inlined: boolean | null;
 }
 
-export const useGraphTooltipMetaInfo = ({
-  table,
-  row,
-  navigateTo,
-}: Props): GraphTooltipMetaInfoData => {
+export const useGraphTooltipMetaInfo = ({table, row}: Props): GraphTooltipMetaInfoData => {
   const mappingFile: string | null = arrowToString(table.getChild(FIELD_MAPPING_FILE)?.get(row));
   const mappingBuildID: string | null = arrowToString(
     table.getChild(FIELD_MAPPING_BUILD_ID)?.get(row)
@@ -112,28 +106,18 @@ export const useGraphTooltipMetaInfo = ({
     ])
     .filter(value => value[1] !== '') as Array<[string, string]>;
 
-  const [dashboardItems, setDashboardItems] = useURLState({
-    param: 'dashboard_items',
-    navigateTo,
+  const [dashboardItems, setDashboardItems] = useURLState<string[]>('dashboard_items', {
+    alwaysReturnArray: true,
   });
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [unusedBuildId, setSourceBuildId] = useURLState({
-    param: 'source_buildid',
-    navigateTo,
-  });
+  const [unusedBuildId, setSourceBuildId] = useURLState('source_buildid');
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [unusedFilename, setSourceFilename] = useURLState({
-    param: 'source_filename',
-    navigateTo,
-  });
+  const [unusedFilename, setSourceFilename] = useURLState('source_filename');
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [unusedLine, setSourceLine] = useURLState({
-    param: 'source_line',
-    navigateTo,
-  });
+  const [unusedLine, setSourceLine] = useURLState('source_line');
 
   const openFile = (): void => {
     setDashboardItems([dashboardItems[0], 'source']);

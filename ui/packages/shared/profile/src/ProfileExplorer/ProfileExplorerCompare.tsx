@@ -56,8 +56,8 @@ const ProfileExplorerCompare = ({
     closeProfile('B');
   };
 
-  const [compareAbsolute] = useURLState({param: 'compare_absolute', navigateTo});
-  const [functionFilter] = useURLState({param: 'filter_by_function', navigateTo});
+  const [compareAbsolute] = useURLState('compare_absolute');
+  const [functionFilter] = useURLState('filter_by_function');
 
   return (
     <>
@@ -96,7 +96,6 @@ const ProfileExplorerCompare = ({
           <div>
             <Card className="mt-2 px-6 py-4">
               <ProfileViewWithData
-                navigateTo={navigateTo}
                 queryClient={queryClient}
                 profileSource={
                   new ProfileDiffSource(

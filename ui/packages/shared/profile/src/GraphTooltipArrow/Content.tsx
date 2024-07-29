@@ -17,7 +17,7 @@ import {Icon} from '@iconify/react';
 import {Table} from 'apache-arrow';
 
 import {ProfileType} from '@parca/parser';
-import {getLastItem, type NavigateFunction} from '@parca/utilities';
+import {getLastItem} from '@parca/utilities';
 
 import {hexifyAddress, truncateString, truncateStringReverse} from '../utils';
 import {ExpandOnHover} from './ExpandOnHoverValue';
@@ -33,7 +33,6 @@ interface GraphTooltipArrowContentProps {
   row: number | null;
   level: number;
   isFixed: boolean;
-  navigateTo: NavigateFunction;
 }
 
 const NoData = (): React.JSX.Element => {
@@ -49,7 +48,6 @@ const GraphTooltipArrowContent = ({
   row,
   level,
   isFixed,
-  navigateTo,
 }: GraphTooltipArrowContentProps): React.JSX.Element => {
   const graphTooltipData = useGraphTooltip({
     table,
@@ -138,7 +136,7 @@ const GraphTooltipArrowContent = ({
                       </td>
                     </tr>
                   )}
-                  <TooltipMetaInfo table={table} row={rowNumber} navigateTo={navigateTo} />
+                  <TooltipMetaInfo table={table} row={rowNumber} />
                 </tbody>
               </table>
             </div>
@@ -153,15 +151,7 @@ const GraphTooltipArrowContent = ({
   );
 };
 
-const TooltipMetaInfo = ({
-  table,
-  row,
-  navigateTo,
-}: {
-  table: Table<any>;
-  row: number;
-  navigateTo: NavigateFunction;
-}): React.JSX.Element => {
+const TooltipMetaInfo = ({table, row}: {table: Table<any>; row: number}): React.JSX.Element => {
   const {
     labelPairs,
     functionFilename,
@@ -170,7 +160,7 @@ const TooltipMetaInfo = ({
     mappingFile,
     mappingBuildID,
     inlined,
-  } = useGraphTooltipMetaInfo({table, row, navigateTo});
+  } = useGraphTooltipMetaInfo({table, row});
 
   const labels = labelPairs.map(
     (l): React.JSX.Element => (

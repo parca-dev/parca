@@ -13,12 +13,10 @@
 
 import {Select, useParcaContext, useURLState, type SelectElement} from '@parca/components';
 import {useUIFeatureFlag} from '@parca/hooks';
-import type {NavigateFunction} from '@parca/utilities';
 
 interface Props {
   position: number;
   defaultValue: string;
-  navigateTo?: NavigateFunction;
   placeholderText?: string;
   primary?: boolean;
   addView?: boolean;
@@ -29,7 +27,6 @@ interface Props {
 
 const ViewSelector = ({
   defaultValue,
-  navigateTo,
   position,
   placeholderText,
   primary = false,
@@ -39,10 +36,12 @@ const ViewSelector = ({
   id,
 }: Props): JSX.Element => {
   const [callgraphEnabled] = useUIFeatureFlag('callgraph');
-  const [dashboardItems = ['icicle'], setDashboardItems] = useURLState({
-    param: 'dashboard_items',
-    navigateTo,
-  });
+  const [dashboardItems = ['icicle'], setDashboardItems] = useURLState<string[]>(
+    'dashboard_items',
+    {
+      alwaysReturnArray: true,
+    }
+  );
   const {enableSourcesView} = useParcaContext();
 
   const allItems: Array<{key: string; canBeSelected: boolean; supportingText?: string}> = [
