@@ -29,7 +29,7 @@ GOLANGCI_LINT_VERSION='v1.59.1'
 go install "github.com/golangci/golangci-lint/cmd/golangci-lint@${GOLANGCI_LINT_VERSION}"
 
 # renovate: datasource=go depName=golang.org/x/vuln
-GOVULNCHECK_VERSION='v1.1.2'
+GOVULNCHECK_VERSION='v1.1.3'
 go install "golang.org/x/vuln/cmd/govulncheck@${GOVULNCHECK_VERSION}"
 
 "${ROOT_DIR}/env-proto.sh"
