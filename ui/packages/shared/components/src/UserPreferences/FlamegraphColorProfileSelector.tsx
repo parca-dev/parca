@@ -32,9 +32,15 @@ const FlamegraphColorProfileSelector = (): JSX.Element => {
   }, [colorProfiles, colorProfileName, setColorProfileName]);
 
   return (
-    <fieldset className={'mt-2 flex items-center gap-2'}>
-      <legend className="mb-1">Iciclegraph color profile</legend>
-      <div className="flex flex-col gap-3 pl-4 text-sm">
+    <div className="py-6 flex flex-col items-left border-gray-200 gap-2">
+      <div>
+        <p className="text-base font-medium text-gray-800">Iciclegraph color profile</p>
+        <p className="text-sm text-gray-700 mt-2">
+          This setting allows you to customize the color scheme used in the Icicle graph
+          visualization.
+        </p>
+      </div>
+      <div className="flex flex-col gap-3 pl-2 text-sm">
         {(Object.keys(colorProfiles) as ColorProfileName[]).map(profile => {
           const isSelected = profile === colorProfileName;
           let displayName: string = profile;
@@ -73,7 +79,7 @@ const FlamegraphColorProfileSelector = (): JSX.Element => {
           );
         })}
       </div>
-    </fieldset>
+    </div>
   );
 };
 

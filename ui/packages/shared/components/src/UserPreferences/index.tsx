@@ -11,31 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {USER_PREFERENCES, useUIFeatureFlag} from '@parca/hooks';
+import {USER_PREFERENCES} from '@parca/hooks';
 
 import FlamegraphColorProfileSelector from './FlamegraphColorProfileSelector';
 import UserPreferenceItem from './UserPreferenceItem';
-
-interface FlagToggleProps {
-  name: string;
-  id: string;
-}
-
-const FlagToggle = ({name, id}: FlagToggleProps): JSX.Element => {
-  const [enabled, setEnabled] = useUIFeatureFlag(id);
-
-  return (
-    <div className="flex gap-2">
-      <input
-        type="checkbox"
-        id={id}
-        checked={enabled}
-        onChange={e => setEnabled(e.target.checked)}
-      />
-      <label htmlFor={id}>{name}</label>
-    </div>
-  );
-};
 
 const UserPreferences = (): JSX.Element => {
   return (
@@ -54,10 +33,6 @@ const UserPreferences = (): JSX.Element => {
           userPreferenceDetails={USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS}
         />
         <FlamegraphColorProfileSelector />
-        <div className="min-w-96 mt-10">
-          <h4 className="mb-2 font-medium">Experimental Features</h4>
-          <FlagToggle name="Enable Callgraph" id="callgraph" />
-        </div>
       </div>
     </div>
   );

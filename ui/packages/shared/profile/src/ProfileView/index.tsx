@@ -38,7 +38,6 @@ import {
   Button,
   ConditionalWrapper,
   KeyDownProvider,
-  UserPreferences,
   useParcaContext,
   useURLState,
 } from '@parca/components';
@@ -373,14 +372,6 @@ export const ProfileView = ({
           <div className="lg:flex flex-wrap items-center gap-2 md:justify-end hidden">
             <FilterByFunctionButton navigateTo={navigateTo} />
             {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
-            <UserPreferences
-              customButton={
-                <Button className="gap-2" variant="neutral" id="h-viz-preferences">
-                  Preferences
-                  <Icon icon="pajamas:preferences" width={20} />
-                </Button>
-              }
-            />
             {profileSource !== undefined && queryClient !== undefined ? (
               <ProfileShareButton
                 queryRequest={profileSource.QueryRequest()}
