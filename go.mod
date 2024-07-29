@@ -32,7 +32,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/parquet-go/parquet-go v0.23.0
 	github.com/planetscale/vtprotobuf v0.6.0
-	github.com/polarsignals/frostdb v0.0.0-20240709141116-defafee0b73e
+	github.com/polarsignals/frostdb v0.0.0-20240725052109-695fa06b0eb1
 	github.com/polarsignals/iceberg-go v0.0.0-20240502213135-2ee70b71e76b
 	github.com/prometheus/client_golang v1.19.1
 	github.com/prometheus/common v0.55.0
