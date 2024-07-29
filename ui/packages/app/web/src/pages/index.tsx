@@ -58,11 +58,13 @@ const Profiles = () => {
         isDarkMode,
       }}
     >
-      <ProfileExplorer
-        queryClient={queryClient}
-        queryParams={queryParams}
-        navigateTo={navigateTo}
-      />
+      <div className="bg-white p-3">
+        <ProfileExplorer
+          queryClient={queryClient}
+          queryParams={queryParams}
+          navigateTo={navigateTo}
+        />
+      </div>
     </ParcaContextProvider>
   );
 };

@@ -270,9 +270,9 @@ const ProfileSelector = ({
 
   return (
     <>
-      <div className="mb-2 flex gap-2">
-        <div className="flex w-full flex-wrap content-start items-center gap-2">
-          <div className="pb-6">
+      <div className="mb-2 flex">
+        <div className="flex w-full flex-wrap items-end gap-2">
+          <div>
             <label className="text-xs">Profile type</label>
             <ProfileTypeSelector
               profileTypesData={profileTypesData}
@@ -283,7 +283,7 @@ const ProfileSelector = ({
               disabled={viewComponent?.disableProfileTypesDropdown}
             />
           </div>
-          <div className="w-full flex-1 pb-6">
+          <div className="w-full flex-1">
             <div className="mb-0.5 mt-1.5 flex items-center justify-between">
               <label className="text-xs">Query</label>
               {(query.matchers.length > 0 || query.inputMatcherString.length > 0) &&
@@ -297,7 +297,7 @@ const ProfileSelector = ({
               profileType={selectedProfileName}
             />
           </div>
-          <div className="pb-6">
+          <div>
             <div className="mb-0.5 mt-1.5 flex items-center justify-between">
               <label className="text-xs">Sum by</label>
             </div>
@@ -358,13 +358,13 @@ const ProfileSelector = ({
         </div>
         <div>{comparing && <IconButton onClick={() => closeProfile()} icon={<CloseIcon />} />}</div>
       </div>
-      <div className="rounded bg-white shadow dark:border-gray-500 dark:bg-gray-700">
+      <div>
         <div style={{height: heightStyle}}>
           {querySelection.expression !== undefined &&
           querySelection.expression.length > 0 &&
           querySelection.from !== undefined &&
           querySelection.to !== undefined ? (
-            <div className="p-2">
+            <div>
               <ProfileMetricsGraph
                 queryClient={queryClient}
                 queryExpression={querySelection.expression}

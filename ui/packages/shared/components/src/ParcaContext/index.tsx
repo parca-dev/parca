@@ -72,7 +72,7 @@ export const defaultValue: Props = {
   loader: <Spinner />,
   noDataPrompt: <NoDataPrompt />,
   profileExplorer: {
-    PaddingX: 58,
+    PaddingX: 32,
     metricsGraph: {
       maxHeightStyle: {
         default: 'calc(47vw - 24px)',

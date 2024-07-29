@@ -37,28 +37,24 @@ const ProfileExplorerSingle = ({
 }: ProfileExplorerSingleProps): JSX.Element => {
   return (
     <>
-      <Card className="mt-2 px-6 py-4">
-        <ProfileSelector
-          queryClient={queryClient}
-          querySelection={query}
-          selectQuery={selectQuery}
-          selectProfile={selectProfile}
-          closeProfile={() => {}} // eslint-disable-line @typescript-eslint/no-empty-function
-          profileSelection={profile}
-          comparing={false}
-          enforcedProfileName={''} // TODO
-          navigateTo={navigateTo}
-          suffix="_a"
-        />
-      </Card>
+      <ProfileSelector
+        queryClient={queryClient}
+        querySelection={query}
+        selectQuery={selectQuery}
+        selectProfile={selectProfile}
+        closeProfile={() => {}} // eslint-disable-line @typescript-eslint/no-empty-function
+        profileSelection={profile}
+        comparing={false}
+        enforcedProfileName={''} // TODO
+        navigateTo={navigateTo}
+        suffix="_a"
+      />
       {profile != null ? (
-        <Card className="mt-2 px-6 py-4">
-          <ProfileViewWithData
-            queryClient={queryClient}
-            profileSource={profile.ProfileSource()}
-            navigateTo={navigateTo}
-          />
-        </Card>
+        <ProfileViewWithData
+          queryClient={queryClient}
+          profileSource={profile.ProfileSource()}
+          navigateTo={navigateTo}
+        />
       ) : (
         <></>
       )}
