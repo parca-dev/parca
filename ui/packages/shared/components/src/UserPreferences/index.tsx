@@ -79,10 +79,6 @@ const UserPreferences = ({customButton}: {customButton?: JSX.Element}): JSX.Elem
             userPreferenceDetails={USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS}
           />
           <FlamegraphColorProfileSelector />
-          <div className="min-w-96 mt-10">
-            <h4 className="mb-2 font-medium">Experimental Features</h4>
-            <FlagToggle name="Enable Callgraph" id="callgraph" />
-          </div>
         </div>
         <div className="flex justify-end">
           <Button onClick={() => setIsOpen(false)} className="w-fit">

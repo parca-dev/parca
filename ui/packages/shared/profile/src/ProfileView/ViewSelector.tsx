@@ -12,7 +12,6 @@
 // limitations under the License.
 
 import {Select, useParcaContext, useURLState, type SelectElement} from '@parca/components';
-import {useUIFeatureFlag} from '@parca/hooks';
 
 interface Props {
   position: number;
@@ -35,7 +34,6 @@ const ViewSelector = ({
   icon,
   id,
 }: Props): JSX.Element => {
-  const [callgraphEnabled] = useUIFeatureFlag('callgraph');
   const [dashboardItems = ['icicle'], setDashboardItems] = useURLState<string[]>(
     'dashboard_items',
     {
@@ -50,12 +48,6 @@ const ViewSelector = ({
   ];
   if (enableSourcesView === true) {
     allItems.push({key: 'source', canBeSelected: false});
-  }
-  if (callgraphEnabled) {
-    allItems.push({
-      key: 'callgraph',
-      canBeSelected: !dashboardItems.includes('callgraph'),
-    });
   }
 
   const getOption = ({
