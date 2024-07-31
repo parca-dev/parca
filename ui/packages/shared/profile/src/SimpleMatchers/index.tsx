@@ -313,7 +313,7 @@ const SimpleMatchers = ({
             searchable={true}
             disabled={row.labelName === ''}
             loading={row.isLoading}
-            onButtonClick={handleLabelValueClick(index)}
+            onButtonClick={() => handleLabelValueClick(index)}
           />
           <button
             onClick={() => removeRow(index)}
