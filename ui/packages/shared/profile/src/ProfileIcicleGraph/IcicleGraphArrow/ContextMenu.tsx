@@ -34,6 +34,7 @@ interface ContextMenuProps {
   totalUnfiltered: bigint;
   row: number;
   level: number;
+  compareAbsolute: boolean;
   trackVisibility: (isVisible: boolean) => void;
   curPath: string[];
   setCurPath: (path: string[]) => void;
@@ -48,6 +49,7 @@ const ContextMenu = ({
   totalUnfiltered,
   row,
   level,
+  compareAbsolute,
   trackVisibility,
   curPath,
   setCurPath,
@@ -69,6 +71,7 @@ const ContextMenu = ({
     totalUnfiltered,
     row,
     level,
+    compareAbsolute,
   });
 
   const {

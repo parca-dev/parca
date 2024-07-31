@@ -326,18 +326,6 @@ export const diffColor = (diff: bigint, cumulative: bigint, isDarkMode: boolean)
   return diffColorRatio(hasDiff, diffRatio, isDarkMode);
 };
 
-export const diffColorPerSecond = (
-  diff: number,
-  cumulative: number,
-  isDarkMode: boolean
-): string => {
-  const prevValue = cumulative - diff;
-  const diffRatio = prevValue > 0 ? (diff !== 0 ? diff / prevValue : 0) : 1.0;
-  const hasDiff = Math.abs(diffRatio) > DIFF_RATIO_THRESHOLD;
-
-  return diffColorRatio(hasDiff, diffRatio, isDarkMode);
-};
-
 const diffColorRatio = (hasDiff: boolean, diffRatio: number, isDarkMode: boolean): string => {
   const diffTransparency = hasDiff ? Math.min((Math.abs(diffRatio) / 2 + 0.5) * 0.8, 0.8) : 0;
 

@@ -995,19 +995,14 @@ func (q *Querier) SymbolizeArrowRecord(
 		}
 		defer locationsRecord.Release()
 
-		columns := make([]arrow.Array, len(profileLabels)+5) // +5 for stacktrace locations, value, value_per_second, diff and diff_per_second
+		columns := make([]arrow.Array, len(profileLabels)+3) // +3 for stacktrace locations, value and diff
 		copy(columns, profileLabelColumns)
-		columns[len(columns)-5] = locationsRecord.Column(0)
-		columns[len(columns)-4] = valueColumn
-		columns[len(columns)-3] = valuePerSecondColumn
+		columns[len(columns)-3] = locationsRecord.Column(0)
+		columns[len(columns)-2] = valueColumn
 
 		diffColumn := CreateDiffColumn(q.pool, int(r.NumRows()))
 		defer diffColumn.Release()
-		columns[len(columns)-2] = diffColumn
-
-		diffPerSecondColumn := CreateDiffPerSecondColumn(q.pool, int(r.NumRows()))
-		defer diffPerSecondColumn.Release()
-		columns[len(columns)-1] = diffPerSecondColumn
+		columns[len(columns)-1] = diffColumn
 
 		res[i] = array.NewRecord(profile.ArrowSchema(profileLabels), columns, r.NumRows())
 	}
@@ -1232,20 +1227,6 @@ func CreateDiffColumn(pool memory.Allocator, rows int) arrow.Array {
 	arr := b.NewInt64Array()
 
 	return arr
-}
-
-func CreateDiffPerSecondColumn(pool memory.Allocator, rows int) arrow.Array {
-	b := array.NewFloat64Builder(pool)
-	defer b.Release()
-
-	values := make([]float64, 0, rows)
-	valid := make([]bool, 0, rows)
-	for i := 0; i < rows; i++ {
-		values = append(values, 0)
-		valid = append(valid, true)
-	}
-	b.AppendValues(values, valid)
-	return b.NewFloat64Array()
 }
 
 func (q *Querier) QuerySingle(
