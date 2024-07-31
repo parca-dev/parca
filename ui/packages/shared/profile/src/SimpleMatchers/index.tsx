@@ -29,6 +29,7 @@ interface Props {
   runQuery: () => void;
   currentQuery: Query;
   profileType: string;
+  queryBrowserRef: React.RefObject<HTMLDivElement>;
 }
 
 interface QueryRow {
@@ -36,6 +37,7 @@ interface QueryRow {
   operator: string;
   labelValue: string;
   labelValues: string[];
+  isLoading: boolean;
 }
 
 const transformLabelsForSelect = (labelNames: string[]): SelectItem[] => {
@@ -98,14 +100,21 @@ const SimpleMatchers = ({
   // runQuery,
   currentQuery,
   profileType,
+  queryBrowserRef,
 }: Props): JSX.Element => {
   const [queryRows, setQueryRows] = useState<QueryRow[]>([
-    {labelName: '', operator: '=', labelValue: '', labelValues: []},
+    {labelName: '', operator: '=', labelValue: '', labelValues: [], isLoading: false},
   ]);
   const metadata = useGrpcMetadata();
 
   const {loading: labelNamesLoading, result} = useLabelNames(queryClient, profileType);
   const {response: labelNamesResponse, error: labelNamesError} = result;
+  const [showAll, setShowAll] = useState(false);
+
+  const visibleRows = showAll ? queryRows : queryRows.slice(0, 3);
+  const hiddenRowsCount = queryRows.length - 3;
+
+  const maxWidthInPixels = `max-w-[${queryBrowserRef.current?.offsetWidth.toString() as string}px]`;
 
   const currentMatchers = currentQuery.matchersString();
 
@@ -116,7 +125,8 @@ const SimpleMatchers = ({
           {labelName, match: [], profileType},
           {meta: metadata}
         ).response;
-        return sanitizeLabelValue(response.labelValues);
+        const sanitizedValues = sanitizeLabelValue(response.labelValues);
+        return sanitizedValues;
       } catch (error) {
         console.error('Error fetching label values:', error);
         return [];
@@ -144,7 +154,8 @@ const SimpleMatchers = ({
     const fetchAndSetQueryRows = async (): Promise<void> => {
       const newRows = await Promise.all(
         currentMatchers.split(',').map(async matcher => {
-          const [labelName, operator, labelValue] = matcher.split(/(=|!=|=~|!~)/);
+          let [labelName, operator, labelValue] = matcher.split(/(=|!=|=~|!~)/);
+          labelName = labelName.trim();
           if (labelName === '') return null;
 
           const labelValues = await fetchLabelValues(labelName);
@@ -194,11 +205,17 @@ const SimpleMatchers = ({
       updatedRows[index] = {...updatedRows[index], [field]: value};
 
       if (field === 'labelName') {
-        updatedRows[index].labelValues = await fetchLabelValues(value);
-        updatedRows[index].labelValue = ''; // Reset the label value when changing label name
+        updatedRows[index].labelValues = [];
+        updatedRows[index].labelValue = '';
+        updatedRows[index].isLoading = true;
+        setQueryRows([...updatedRows]);
+
+        const labelValues = await fetchLabelValues(value);
+        updatedRows[index].labelValues = labelValues;
+        updatedRows[index].isLoading = false;
       }
 
-      setQueryRows(updatedRows);
+      setQueryRows([...updatedRows]);
       updateMatchersString(updatedRows);
     },
     [queryRows, fetchLabelValues, updateMatchersString]
@@ -212,7 +229,10 @@ const SimpleMatchers = ({
   );
 
   const addNewRow = useCallback((): void => {
-    const newRows = [...queryRows, {labelName: '', operator: '=', labelValue: '', labelValues: []}];
+    const newRows = [
+      ...queryRows,
+      {labelName: '', operator: '=', labelValue: '', labelValues: [], isLoading: false},
+    ];
     setQueryRows(newRows);
     updateMatchersString(newRows);
   }, [queryRows, updateMatchersString]);
@@ -221,7 +241,13 @@ const SimpleMatchers = ({
     (index: number): void => {
       if (queryRows.length === 1) {
         // Reset the single row instead of removing it
-        const resetRow = {labelName: '', operator: '=', labelValue: '', labelValues: []};
+        const resetRow = {
+          labelName: '',
+          operator: '=',
+          labelValue: '',
+          labelValues: [],
+          isLoading: false,
+        };
         setQueryRows([resetRow]);
         updateMatchersString([resetRow]);
       } else {
@@ -233,16 +259,41 @@ const SimpleMatchers = ({
     [queryRows, updateMatchersString]
   );
 
+  const handleLabelValueClick = useCallback(
+    (index: number) => {
+      return async () => {
+        const updatedRows = [...queryRows];
+        if (updatedRows[index].labelValues.length === 0 && updatedRows[index].labelName !== '') {
+          updatedRows[index].isLoading = true;
+          setQueryRows([...updatedRows]);
+
+          try {
+            const labelValues = await fetchLabelValues(updatedRows[index].labelName);
+            updatedRows[index].labelValues = labelValues;
+          } catch (error) {
+            console.error('Error fetching label values:', error);
+          } finally {
+            updatedRows[index].isLoading = false;
+            setQueryRows([...updatedRows]);
+          }
+        } else {
+          console.log(`Label values already present or empty label name`);
+        }
+      };
+    },
+    [queryRows, fetchLabelValues]
+  );
+
   return (
-    <div className="flex items-center gap-3">
-      {queryRows.map((row, index) => (
+    <div className={`flex items-center gap-3 ${maxWidthInPixels} w-full flex-wrap`}>
+      {visibleRows.map((row, index) => (
         <div key={index} className="flex items-center">
           <Select
             items={transformLabelsForSelect(getAvailableLabelNames(index))}
             onSelection={value => handleUpdateRow(index, 'labelName', value)}
             placeholder="Select label name"
             selectedKey={row.labelName}
-            className="rounded-tr-none rounded-br-none"
+            className="rounded-tr-none rounded-br-none ring-0 focus:ring-0 outline-none"
             loading={labelNamesLoading}
             searchable={true}
           />
@@ -250,21 +301,24 @@ const SimpleMatchers = ({
             items={operatorOptions}
             onSelection={value => handleUpdateRow(index, 'operator', value)}
             selectedKey={row.operator}
-            className="rounded-none"
+            className="rounded-none ring-0 focus:ring-0 outline-none"
           />
           <Select
             items={transformLabelsForSelect(row.labelValues)}
             onSelection={value => handleUpdateRow(index, 'labelValue', value)}
             placeholder="Select label value"
             selectedKey={row.labelValue}
-            className="rounded-none"
+            className="rounded-none ring-0 focus:ring-0 outline-none max-w-48"
             optionsClassname="max-w-[300px]"
             searchable={true}
+            disabled={row.labelName === ''}
+            loading={row.isLoading}
+            onButtonClick={handleLabelValueClick(index)}
           />
           <button
             onClick={() => removeRow(index)}
             className={cx(
-              'p-2 border-gray-200 border rounded rounded-tl-none rounded-bl-none focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
+              'p-2 border-gray-200 border rounded rounded-tl-none rounded-bl-none focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900'
             )}
           >
             <Icon icon="carbon:close" className="h-5 w-5 text-gray-400" aria-hidden="true" />
@@ -272,9 +326,18 @@ const SimpleMatchers = ({
         </div>
       ))}
 
+      {queryRows.length > 3 && (
+        <button
+          onClick={() => setShowAll(!showAll)}
+          className="mr-2 px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-900"
+        >
+          {showAll ? 'Show less' : `Show ${hiddenRowsCount} more`}
+        </button>
+      )}
+
       <button
         onClick={addNewRow}
-        className="p-2 border-gray-200 border rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        className="p-2 border-gray-200 dark:bg-gray-900 dark:border-gray-600 border rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
       >
         <Icon icon="material-symbols:add" className="h-5 w-5 text-gray-400" aria-hidden="true" />
       </button>

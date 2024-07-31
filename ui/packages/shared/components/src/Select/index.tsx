@@ -51,6 +51,7 @@ const Select = ({
   id,
   optionsClassname = '',
   searchable = false,
+  onButtonClick,
 }: {
   items: SelectItem[];
   selectedKey: string | undefined;
@@ -65,6 +66,7 @@ const Select = ({
   id?: string;
   optionsClassname?: string;
   searchable?: boolean;
+  onButtonClick?: () => void;
 }): JSX.Element => {
   const selection = items.find(v => v.key === selectedKey) ?? {
     key: selectedKey,
@@ -94,6 +96,7 @@ const Select = ({
         <div className="relative">
           <div id={id}>
             <Listbox.Button
+              onClick={onButtonClick}
               className={cx(
                 styles,
                 width !== undefined ? `w-${width}` : 'w-full',
@@ -102,7 +105,11 @@ const Select = ({
                 {[className]: className.length > 0}
               )}
             >
-              <div className={cx(icon != null ? '' : 'block overflow-x-hidden text-ellipsis')}>
+              <div
+                className={cx(
+                  icon != null ? '' : 'block overflow-x-hidden text-ellipsis whitespace-nowrap'
+                )}
+              >
                 {selection?.key !== '' ? selection.element.active : placeholder}
               </div>
               <div className={cx(icon != null ? '' : 'pointer-events-none text-gray-400')}>

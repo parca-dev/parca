@@ -26,6 +26,7 @@ import {
   IconButton,
   useGrpcMetadata,
   useParcaContext,
+  useURLState,
 } from '@parca/components';
 import {CloseIcon} from '@parca/icons';
 import {Query} from '@parca/parser';
@@ -108,6 +109,7 @@ const ProfileSelector = ({
   const {heightStyle} = useMetricsGraphDimensions(comparing);
   const {viewComponent} = useParcaContext();
   const sumByRef = useRef(null);
+  const [queryBrowserMode, setQueryBrowserMode] = useURLState('query_browser_mode');
 
   const [timeRangeSelection, setTimeRangeSelection] = useState(
     DateTimeRange.fromRangeKey(querySelection.timeSelection, querySelection.from, querySelection.to)
@@ -115,7 +117,9 @@ const ProfileSelector = ({
 
   const [queryExpressionString, setQueryExpressionString] = useState(querySelection.expression);
 
-  const [advancedModeForQueryBrowser, setAdvancedModeForQueryBrowser] = useState(false);
+  const [advancedModeForQueryBrowser, setAdvancedModeForQueryBrowser] = useState(
+    queryBrowserMode !== 'simple'
+  );
 
   const profileType = useMemo(() => {
     return Query.parse(queryExpressionString).profileType();
@@ -198,7 +202,6 @@ const ProfileSelector = ({
   };
 
   const setQueryExpression = (updateTs = false): void => {
-    console.log('🚀 ~ setQueryExpression ~ updateTs:');
     setNewQueryExpression(query.toString(), updateTs);
   };
 
@@ -237,7 +240,6 @@ const ProfileSelector = ({
   };
 
   const setMatchersString = (matchers: string): void => {
-    console.log('🚀 ~ setMatchersString ~ matchers:', matchers);
     const newExpressionString = `${selectedProfileName}{${matchers}}`;
     setQueryExpressionString(newExpressionString);
   };
@@ -274,6 +276,8 @@ const ProfileSelector = ({
     queryExpressionString === '' ||
     queryExpressionString === '{}';
 
+  const queryBrowserRef = useRef<HTMLDivElement>(null);
+
   return (
     <>
       <div className="mb-2 flex gap-2">
@@ -289,13 +293,16 @@ const ProfileSelector = ({
               disabled={viewComponent?.disableProfileTypesDropdown}
             />
           </div>
-          <div className="w-full flex-1 flex flex-col pb-6 gap-1">
+          <div className="w-full flex-1 flex flex-col pb-6 gap-1" ref={queryBrowserRef}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <label className="text-xs">Query</label>
                 <Switch
                   checked={advancedModeForQueryBrowser}
-                  onChange={setAdvancedModeForQueryBrowser}
+                  onChange={() => {
+                    setAdvancedModeForQueryBrowser(!advancedModeForQueryBrowser);
+                    setQueryBrowserMode(advancedModeForQueryBrowser ? 'simple' : 'advanced');
+                  }}
                   className={`${advancedModeForQueryBrowser ? 'bg-indigo-600' : 'bg-gray-400'}
           relative inline-flex h-[20px] w-[44px] shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2  focus-visible:ring-white/75`}
                 >
@@ -326,6 +333,7 @@ const ProfileSelector = ({
                 runQuery={setQueryExpression}
                 currentQuery={query}
                 profileType={selectedProfileName}
+                queryBrowserRef={queryBrowserRef}
               />
             )}
           </div>
