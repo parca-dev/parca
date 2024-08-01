@@ -33,7 +33,7 @@ interface ProfileShareModalProps {
   closeModal: () => void;
 }
 
-const ProfileShareModal = ({
+export const ProfileShareModal = ({
   isOpen,
   closeModal,
   queryRequest,
