@@ -58,7 +58,7 @@ const Profiles = () => {
         isDarkMode,
       }}
     >
-      <div className="bg-white p-3">
+      <div className="bg-white dark:bg-gray-900 p-3">
         <ProfileExplorer
           queryClient={queryClient}
           queryParams={queryParams}
