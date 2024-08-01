@@ -35,20 +35,29 @@ function UserPreferenceItem<T>({
 
   return (
     <div
-      className={cx('flex items-center justify-between border-b border-gray-200 py-6', {
-        [className]: className,
-        'opacity-50': disabled,
-      })}
+      className={cx(
+        'flex items-center justify-between border-b border-gray-200 dark:border-gray-500 py-6',
+        {
+          [className]: className,
+          'opacity-50': disabled,
+        }
+      )}
     >
       <div className="max-w-[625px]">
-        <h2 className="text-base font-medium text-gray-800">{userPreferenceDetails.name}</h2>
-        <p className="text-sm text-gray-700 mt-2">{userPreferenceDetails.description}</p>
+        <h2 className="text-base font-medium text-gray-800 dark:text-gray-200">
+          {userPreferenceDetails.name}
+        </h2>
+        <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
+          {userPreferenceDetails.description}
+        </p>
       </div>
       <Switch
         id={id ?? userPreferenceDetails.key}
         checked={enabledPreference as boolean}
         onChange={(checked: boolean) => setEnabledPreference(checked as T)}
-        className={`${(enabledPreference as boolean) ? 'bg-indigo-600' : 'bg-gray-400'}
+        className={`${
+          (enabledPreference as boolean) ? 'bg-indigo-600' : 'bg-gray-400 dark:bg-gray-900'
+        }
           relative inline-flex h-[24px] w-[44px] shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2  focus-visible:ring-white/75`}
       >
         <span className="sr-only">Use setting</span>
