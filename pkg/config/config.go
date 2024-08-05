@@ -205,6 +205,21 @@ func (c *ScrapeConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		unmarshalled.ProfilingConfig = defaults.ProfilingConfig
 	} else if unmarshalled.ProfilingConfig.PprofConfig == nil {
 		unmarshalled.ProfilingConfig.PprofConfig = defaults.ProfilingConfig.PprofConfig
+	} else {
+		// Merge unmarshalled config with defaults
+		for pt, pc := range defaults.ProfilingConfig.PprofConfig {
+			// nothing set yet so simply use the default
+			if unmarshalled.ProfilingConfig.PprofConfig[pt] == nil {
+				unmarshalled.ProfilingConfig.PprofConfig[pt] = pc
+				continue
+			}
+			if unmarshalled.ProfilingConfig.PprofConfig[pt].Enabled == nil {
+				unmarshalled.ProfilingConfig.PprofConfig[pt].Enabled = trueValue()
+			}
+			if unmarshalled.ProfilingConfig.PprofConfig[pt].Path == "" {
+				unmarshalled.ProfilingConfig.PprofConfig[pt].Path = pc.Path
+			}
+		}
 	}
 
 	// If path prefix is specified, add to PprofConfig path

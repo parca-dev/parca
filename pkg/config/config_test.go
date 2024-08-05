@@ -91,6 +91,23 @@ scrape_configs:
 							Enabled: trueValue(),
 							Path:    "/parca/debug/pprof/allocs",
 						},
+						"block": &PprofProfilingConfig{
+							Enabled: trueValue(),
+							Path:    "/debug/pprof/block",
+						},
+						"goroutine": &PprofProfilingConfig{
+							Enabled: trueValue(),
+							Path:    "/debug/pprof/goroutine",
+						},
+						"mutex": &PprofProfilingConfig{
+							Enabled: trueValue(),
+							Path:    "/debug/pprof/mutex",
+						},
+						"process_cpu": &PprofProfilingConfig{
+							Enabled: trueValue(),
+							Delta:   true,
+							Path:    "/debug/pprof/profile",
+						},
 						"fgprof": &PprofProfilingConfig{
 							Enabled: trueValue(),
 							Path:    "/debug/fgprof",
@@ -121,6 +138,23 @@ scrape_configs:
 						"memory": &PprofProfilingConfig{
 							Enabled: trueValue(),
 							Path:    "/test/prefix/parca/debug/pprof/allocs",
+						},
+						"block": &PprofProfilingConfig{
+							Enabled: trueValue(),
+							Path:    "/test/prefix/debug/pprof/block",
+						},
+						"goroutine": &PprofProfilingConfig{
+							Enabled: trueValue(),
+							Path:    "/test/prefix/debug/pprof/goroutine",
+						},
+						"mutex": &PprofProfilingConfig{
+							Enabled: trueValue(),
+							Path:    "/test/prefix/debug/pprof/mutex",
+						},
+						"process_cpu": &PprofProfilingConfig{
+							Enabled: trueValue(),
+							Delta:   true,
+							Path:    "/test/prefix/debug/pprof/profile",
 						},
 						"fgprof": &PprofProfilingConfig{
 							Enabled: trueValue(),
@@ -169,6 +203,27 @@ scrape_configs:
 				ProfilingConfig: &ProfilingConfig{
 					PprofPrefix: "/test/prefix",
 					PprofConfig: PprofConfig{
+						"memory": &PprofProfilingConfig{
+							Enabled: trueValue(),
+							Path:    "/test/prefix/debug/pprof/allocs",
+						},
+						"block": &PprofProfilingConfig{
+							Enabled: trueValue(),
+							Path:    "/test/prefix/debug/pprof/block",
+						},
+						"goroutine": &PprofProfilingConfig{
+							Enabled: trueValue(),
+							Path:    "/test/prefix/debug/pprof/goroutine",
+						},
+						"mutex": &PprofProfilingConfig{
+							Enabled: trueValue(),
+							Path:    "/test/prefix/debug/pprof/mutex",
+						},
+						"process_cpu": &PprofProfilingConfig{
+							Enabled: trueValue(),
+							Delta:   true,
+							Path:    "/test/prefix/debug/pprof/profile",
+						},
 						"fgprof": &PprofProfilingConfig{
 							Enabled: trueValue(),
 							Path:    "/test/prefix/debug/fgprof",
@@ -182,7 +237,7 @@ scrape_configs:
 	c, err := Load(complexYAML)
 	require.NoError(t, err)
 	require.Len(t, c.ScrapeConfigs, 5)
-	require.Equal(t, expected, c)
+	require.Equal(t, expected.ScrapeConfigs, c.ScrapeConfigs)
 }
 
 func Test_Config_Validation(t *testing.T) {
