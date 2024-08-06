@@ -20,8 +20,6 @@ import type {DraggableProvidedDragHandleProps} from 'react-beautiful-dnd';
 import {IconButton, useParcaContext} from '@parca/components';
 import {CloseIcon} from '@parca/icons';
 
-import ViewSelector from './ViewSelector';
-
 interface Props {
   dashboardItem: string;
   index: number;
@@ -48,7 +46,7 @@ export const VisualizationPanel = React.memo(function VisualizationPanel({
 
   return (
     <>
-      <div className="flex w-full items-center justify-end gap-2 pb-2 min-h-[78px]">
+      <div className="flex w-full items-center justify-end gap-2 pb-2">
         <div
           className={cx(
             'flex w-full justify-between flex-col-reverse md:flex-row',
@@ -70,8 +68,6 @@ export const VisualizationPanel = React.memo(function VisualizationPanel({
               isMultiPanelView && dashboardItem === 'icicle' && 'pb-[10px]'
             )}
           >
-            <ViewSelector id="h-switch-viz" defaultValue={dashboardItem} position={index} />
-
             {dashboardItem === 'icicle' && flamegraphHint != null ? (
               <div className="px-2">{flamegraphHint}</div>
             ) : null}

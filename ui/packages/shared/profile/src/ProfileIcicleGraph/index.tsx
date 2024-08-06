@@ -30,8 +30,6 @@ import {capitalizeOnlyFirstLetter, divide, selectQueryParam} from '@parca/utilit
 
 import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
 import DiffLegend from '../components/DiffLegend';
-import GroupByDropdown from './ActionButtons/GroupByDropdown';
-import SortBySelect from './ActionButtons/SortBySelect';
 import {IcicleGraph} from './IcicleGraph';
 import {FIELD_FUNCTION_NAME, IcicleGraphArrow} from './IcicleGraphArrow';
 import ColorStackLegend from './IcicleGraphArrow/ColorStackLegend';
@@ -138,44 +136,43 @@ const ShowHideLegendButton = ({isHalfScreen}: {isHalfScreen: boolean}): JSX.Elem
   );
 };
 
-const GroupAndSortActionButtons = (): JSX.Element => {
-  const [storeSortBy, setStoreSortBy] = useURLState('sort_by', {
-    defaultValue: FIELD_FUNCTION_NAME,
-  });
-  const {compareMode} = useProfileViewContext();
+// const GroupAndSortActionButtons = (): JSX.Element => {
+//   const [storeSortBy, setStoreSortBy] = useURLState('sort_by', {
+//     defaultValue: FIELD_FUNCTION_NAME,
+//   });
+//   const {compareMode} = useProfileViewContext();
 
-  const [groupBy, setStoreGroupBy] = useURLState<string[]>('group_by', {
-    defaultValue: [FIELD_FUNCTION_NAME],
-    alwaysReturnArray: true,
-  });
+//   const [groupBy, setStoreGroupBy] = useURLState<string[]>('group_by', {
+//     defaultValue: [FIELD_FUNCTION_NAME],
+//     alwaysReturnArray: true,
+//   });
 
-  const setGroupBy = useCallback(
-    (keys: string[]): void => {
-      setStoreGroupBy(keys);
-    },
-    [setStoreGroupBy]
-  );
+//   const setGroupBy = useCallback(
+//     (keys: string[]): void => {
+//       setStoreGroupBy(keys);
+//     },
+//     [setStoreGroupBy]
+//   );
 
-  const toggleGroupBy = useCallback(
-    (key: string): void => {
-      groupBy.includes(key)
-        ? setGroupBy(groupBy.filter(v => v !== key)) // remove
-        : setGroupBy([...groupBy, key]); // add
-    },
-    [groupBy, setGroupBy]
-  );
+//   const toggleGroupBy = useCallback(
+//     (key: string): void => {
+//       groupBy.includes(key)
+//         ? setGroupBy(groupBy.filter(v => v !== key)) // remove
+//         : setGroupBy([...groupBy, key]); // add
+//     },
+//     [groupBy, setGroupBy]
+//   );
 
-  return (
-    <>
-      <GroupByDropdown groupBy={groupBy} toggleGroupBy={toggleGroupBy} />
-      <SortBySelect
-        compareMode={compareMode}
-        sortBy={storeSortBy as string}
-        setSortBy={setStoreSortBy}
-      />
-    </>
-  );
-};
+//   return (
+//     <>
+//       <SortBySelect
+//         compareMode={compareMode}
+//         sortBy={storeSortBy as string}
+//         setSortBy={setStoreSortBy}
+//       />
+//     </>
+//   );
+// };
 
 const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   graph,
@@ -242,78 +239,77 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     ];
   }, [graph, arrow, filtered, total]);
 
-  useEffect(() => {
-    setActionButtons?.(
-      <div className="flex w-full justify-end gap-2 pb-2">
-        <div className="ml-2 flex w-full flex-col items-start justify-between gap-2 md:flex-row md:items-end">
-          {<GroupAndSortActionButtons />}
-          {isHalfScreen ? (
-            <IconButton
-              icon={isInvert ? 'ph:sort-ascending' : 'ph:sort-descending'}
-              toolTipText={isInvert ? 'Original Call Stack' : 'Invert Call Stack'}
-              onClick={() => setInvertStack(isInvert ? '' : 'true')}
-              className="rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 items-center flex border border-gray-200 dark:border-gray-600 dark:text-white justify-center py-2 px-3 cursor-pointer min-h-[38px]"
-            />
-          ) : (
-            <Button
-              variant="neutral"
-              className="gap-2 w-max"
-              onClick={() => setInvertStack(isInvert ? '' : 'true')}
-            >
-              {isInvert ? 'Original Call Stack' : 'Invert Call Stack'}
-              <Icon icon={isInvert ? 'ph:sort-ascending' : 'ph:sort-descending'} width={20} />
-            </Button>
-          )}
-          <ShowHideLegendButton isHalfScreen={isHalfScreen} />
-          {compareMode && (
-            <Button
-              variant="neutral"
-              className="gap-2 w-max"
-              onClick={() => setCompareAbsolute(isCompareAbsolute ? '' : 'true')}
-            >
-              {isCompareAbsolute ? 'Compare Relative' : 'Compare Absolute'}
-              <Icon
-                icon={isCompareAbsolute ? 'fluent-mdl2:compare' : 'fluent-mdl2:compare-uneven'}
-                width={20}
-              />
-            </Button>
-          )}
-          {isHalfScreen ? (
-            <IconButton
-              icon="system-uicons:reset"
-              disabled={curPath.length === 0}
-              toolTipText="Reset View"
-              onClick={() => setNewCurPath([])}
-              className="rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 items-center flex border border-gray-200 dark:border-gray-600 dark:text-white justify-center py-2 px-3 cursor-pointer min-h-[38px]"
-            />
-          ) : (
-            <Button
-              variant="neutral"
-              className="gap-2 w-max"
-              onClick={() => setNewCurPath([])}
-              disabled={curPath.length === 0}
-            >
-              Reset View
-              <Icon icon="system-uicons:reset" width={20} />
-            </Button>
-          )}
-        </div>
-      </div>
-    );
-  }, [
-    isInvert,
-    setInvertStack,
-    arrow,
-    curPath,
-    setNewCurPath,
-    setActionButtons,
-    loading,
-    isHalfScreen,
-    isLoading,
-    compareMode,
-    isCompareAbsolute,
-    setCompareAbsolute,
-  ]);
+  // useEffect(() => {
+  //   setActionButtons?.(
+  //     <div className="flex w-full justify-end gap-2 pb-2">
+  //       <div className="ml-2 flex w-full flex-col items-start justify-between gap-2 md:flex-row md:items-end">
+  //         {isHalfScreen ? (
+  //           <IconButton
+  //             icon={isInvert ? 'ph:sort-ascending' : 'ph:sort-descending'}
+  //             toolTipText={isInvert ? 'Original Call Stack' : 'Invert Call Stack'}
+  //             onClick={() => setInvertStack(isInvert ? '' : 'true')}
+  //             className="rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 items-center flex border border-gray-200 dark:border-gray-600 dark:text-white justify-center py-2 px-3 cursor-pointer min-h-[38px]"
+  //           />
+  //         ) : (
+  //           <Button
+  //             variant="neutral"
+  //             className="gap-2 w-max"
+  //             onClick={() => setInvertStack(isInvert ? '' : 'true')}
+  //           >
+  //             {isInvert ? 'Original Call Stack' : 'Invert Call Stack'}
+  //             <Icon icon={isInvert ? 'ph:sort-ascending' : 'ph:sort-descending'} width={20} />
+  //           </Button>
+  //         )}
+  //         <ShowHideLegendButton isHalfScreen={isHalfScreen} />
+  //         {compareMode && (
+  //           <Button
+  //             variant="neutral"
+  //             className="gap-2 w-max"
+  //             onClick={() => setCompareAbsolute(isCompareAbsolute ? '' : 'true')}
+  //           >
+  //             {isCompareAbsolute ? 'Compare Relative' : 'Compare Absolute'}
+  //             <Icon
+  //               icon={isCompareAbsolute ? 'fluent-mdl2:compare' : 'fluent-mdl2:compare-uneven'}
+  //               width={20}
+  //             />
+  //           </Button>
+  //         )}
+  //         {isHalfScreen ? (
+  //           <IconButton
+  //             icon="system-uicons:reset"
+  //             disabled={curPath.length === 0}
+  //             toolTipText="Reset View"
+  //             onClick={() => setNewCurPath([])}
+  //             className="rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 items-center flex border border-gray-200 dark:border-gray-600 dark:text-white justify-center py-2 px-3 cursor-pointer min-h-[38px]"
+  //           />
+  //         ) : (
+  //           <Button
+  //             variant="neutral"
+  //             className="gap-2 w-max"
+  //             onClick={() => setNewCurPath([])}
+  //             disabled={curPath.length === 0}
+  //           >
+  //             Reset View
+  //             <Icon icon="system-uicons:reset" width={20} />
+  //           </Button>
+  //         )}
+  //       </div>
+  //     </div>
+  //   );
+  // }, [
+  //   isInvert,
+  //   setInvertStack,
+  //   arrow,
+  //   curPath,
+  //   setNewCurPath,
+  //   setActionButtons,
+  //   loading,
+  //   isHalfScreen,
+  //   isLoading,
+  //   compareMode,
+  //   isCompareAbsolute,
+  //   setCompareAbsolute,
+  // ]);
 
   const loadingState =
     !loading && (arrow !== undefined || graph !== undefined) && mappings !== undefined;

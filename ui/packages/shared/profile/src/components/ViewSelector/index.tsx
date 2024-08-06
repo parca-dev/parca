@@ -11,29 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Select, useParcaContext, useURLState, type SelectElement} from '@parca/components';
+import {useParcaContext, useURLState} from '@parca/components';
 
-interface Props {
-  position: number;
-  defaultValue: string;
-  placeholderText?: string;
-  primary?: boolean;
-  addView?: boolean;
-  disabled?: boolean;
-  icon?: JSX.Element;
-  id?: string;
-}
+import Dropdown, {DropdownElement, InnerAction} from './Dropdown';
 
-const ViewSelector = ({
-  defaultValue,
-  position,
-  placeholderText,
-  primary = false,
-  addView = false,
-  disabled = false,
-  icon,
-  id,
-}: Props): JSX.Element => {
+const ViewSelector = (): JSX.Element => {
   const [dashboardItems = ['icicle'], setDashboardItems] = useURLState<string[]>(
     'dashboard_items',
     {
@@ -56,7 +38,7 @@ const ViewSelector = ({
   }: {
     key: string;
     supportingText?: string;
-  }): SelectElement => {
+  }): DropdownElement => {
     const title = <span className="capitalize">{key.replaceAll('-', ' ')}</span>;
 
     return {
@@ -70,44 +52,50 @@ const ViewSelector = ({
     };
   };
 
+  const getInnerActionForItem = (item: {
+    key: string;
+    canBeSelected: boolean;
+  }): InnerAction | undefined => {
+    if (dashboardItems.length === 1 && item.key === dashboardItems[0]) return undefined;
+    return {
+      text: item.canBeSelected ? 'Add Panel' : 'Close Panel',
+      onClick: () => {
+        if (item.canBeSelected) {
+          setDashboardItems([...dashboardItems, item.key]);
+        } else {
+          setDashboardItems(dashboardItems.filter(v => v !== item.key));
+        }
+      },
+    };
+  };
+
   const items = allItems.map(item => ({
     key: item.key,
     disabled: !item.canBeSelected,
     element: getOption(item),
+    innerAction: getInnerActionForItem(item),
   }));
 
   const onSelection = (value: string): void => {
-    if (addView) {
-      setDashboardItems([dashboardItems[0], value]);
-      return;
-    }
-
     const isOnlyChart = dashboardItems.length === 1;
     if (isOnlyChart) {
       setDashboardItems([value]);
       return;
     }
 
-    // Note: this will need to be updated if we ever have more more than 2 panels
-    const isFirstChart = position === 0;
-    const newDashboardItems = isFirstChart
-      ? [value, dashboardItems[1]]
-      : [dashboardItems[0], value];
+    const newDashboardItems = [dashboardItems[0], value];
 
     setDashboardItems(newDashboardItems);
   };
 
   return (
-    <Select
+    <Dropdown
       className="h-view-selector"
       items={items}
-      selectedKey={defaultValue}
+      selectedKey={dashboardItems.length >= 2 ? 'Multiple' : dashboardItems[0]}
       onSelection={onSelection}
-      placeholder={placeholderText ?? 'Select view type...'}
-      primary={primary}
-      disabled={disabled}
-      icon={icon}
-      id={id}
+      placeholder={'Select view type...'}
+      id="h-view-selector"
     />
   );
 };

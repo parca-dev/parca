@@ -16,14 +16,17 @@ import {useState} from 'react';
 import {Icon} from '@iconify/react';
 
 import {QueryRequest, QueryServiceClient} from '@parca/client';
-import {Button, Modal, useGrpcMetadata} from '@parca/components';
+import {Button, Dropdown, Modal, useGrpcMetadata} from '@parca/components';
 
+import {ProfileSource} from '../../ProfileSource';
 import ResultBox from './ResultBox';
 
 interface Props {
-  queryRequest: QueryRequest;
-  queryClient: QueryServiceClient;
-  disabled?: boolean;
+  profileSource?: ProfileSource;
+  queryClient?: QueryServiceClient;
+  queryRequest?: QueryRequest;
+  onDownloadPProf: () => void;
+  pprofdownloading: boolean;
 }
 
 interface ProfileShareModalProps {
@@ -33,7 +36,7 @@ interface ProfileShareModalProps {
   closeModal: () => void;
 }
 
-export const ProfileShareModal = ({
+const ProfileShareModal = ({
   isOpen,
   closeModal,
   queryRequest,
@@ -122,29 +125,62 @@ export const ProfileShareModal = ({
   );
 };
 
-const ProfileShareButton = ({queryRequest, queryClient, disabled = false}: Props): JSX.Element => {
-  const [isOpen, setIsOpen] = useState<boolean>(false);
+const ShareButton = ({
+  queryRequest,
+  queryClient,
+  profileSource,
+  onDownloadPProf,
+  pprofdownloading,
+}: Props): JSX.Element => {
+  const [showProfileShareModal, setShowProfileShareModal] = useState(false);
+
+  const actions = [
+    {
+      key: 'shareProfile',
+      label: 'Share profile',
+      onSelect: () => setShowProfileShareModal(true),
+      id: 'h-share-profile-button',
+      disabled:
+        profileSource === undefined && queryClient === undefined && queryRequest === undefined,
+    },
+    {
+      key: 'downloadProfile',
+      label: pprofdownloading != null && pprofdownloading ? 'Downloading...' : 'Download pprof',
+      onSelect: () => onDownloadPProf(),
+      id: 'h-download-pprof',
+      disabled: pprofdownloading,
+    },
+  ];
 
   return (
     <>
-      <Button
-        variant="neutral"
-        onClick={() => setIsOpen(true)}
-        disabled={disabled}
-        className="gap-2"
-        id="h-share-profile-button"
+      <Dropdown
+        element={
+          <Button variant="neutral">
+            Share
+            <Icon icon="material-symbols:share" className="h-5 w-5 ml-2" />
+          </Button>
+        }
       >
-        Share profile
-        <Icon icon="material-symbols:share" width={20} />
-      </Button>
-      <ProfileShareModal
-        isOpen={isOpen}
-        closeModal={() => setIsOpen(false)}
-        queryRequest={queryRequest}
-        queryClient={queryClient}
-      />
+        <span className="text-xs text-gray-400 capitalize px-2">actions</span>
+        {actions.map(item => (
+          <Dropdown.Item key={item.key} onSelect={item.onSelect}>
+            <div id={item.id} className="flex items-center">
+              {item.label}
+            </div>
+          </Dropdown.Item>
+        ))}
+      </Dropdown>
+      {profileSource !== undefined && queryClient !== undefined && queryRequest !== undefined && (
+        <ProfileShareModal
+          isOpen={showProfileShareModal}
+          closeModal={() => setShowProfileShareModal(false)}
+          queryRequest={queryRequest}
+          queryClient={queryClient}
+        />
+      )}
     </>
   );
 };
 
-export default ProfileShareButton;
+export default ShareButton;
