@@ -181,7 +181,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
             icon != null ? '' : 'block overflow-x-hidden text-ellipsis whitespace-nowrap'
           )}
         >
-          {selection?.element.active || placeholder}
+          {selection?.element.active ?? placeholder}
         </div>
         <div className={cx(icon != null ? '' : 'pointer-events-none text-gray-400')}>
           {icon ?? <Icon icon="heroicons:chevron-up-down-20-solid" aria-hidden="true" />}
@@ -220,14 +220,16 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                   'relative cursor-default select-none py-2 pl-3 pr-9',
                   index === focusedIndex && 'bg-indigo-600 text-white',
                   item.key === selectedKey && 'bg-indigo-100 dark:bg-indigo-700',
-                  item.disabled && 'opacity-50 cursor-not-allowed',
+                  item.disabled !== null &&
+                    item.disabled === true &&
+                    'opacity-50 cursor-not-allowed',
                   'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 hover:bg-indigo-600 hover:text-white'
                 )}
                 role="option"
                 aria-selected={item.key === selectedKey}
                 tabIndex={-1}
                 onClick={() => {
-                  if (!item.disabled) {
+                  if (!(item.disabled ?? false)) {
                     onSelection(item.key);
                     setIsOpen(false);
                   }

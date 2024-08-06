@@ -191,15 +191,9 @@ const SimpleMatchers = ({
       : [];
   }, [labelNamesError, labelNamesResponse]);
 
-  const getAvailableLabelNames = useCallback(
-    (currentIndex: number) => {
-      const usedLabelNames = queryRows
-        .filter((_, index) => index !== currentIndex)
-        .map(row => row.labelName);
-      return labelNames.filter(name => !usedLabelNames.includes(name));
-    },
-    [labelNames, queryRows]
-  );
+  const labelNameOptions = useMemo(() => {
+    return transformLabelsForSelect(labelNames);
+  }, [labelNames]);
 
   const updateRow = useCallback(
     async (index: number, field: keyof QueryRow, value: string): Promise<void> => {
@@ -292,7 +286,7 @@ const SimpleMatchers = ({
       {visibleRows.map((row, index) => (
         <div key={index} className="flex items-center">
           <Select
-            items={transformLabelsForSelect(getAvailableLabelNames(index))}
+            items={labelNameOptions}
             onSelection={value => handleUpdateRow(index, 'labelName', value)}
             placeholder="Select label name"
             selectedKey={row.labelName}
