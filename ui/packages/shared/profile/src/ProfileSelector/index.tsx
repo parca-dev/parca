@@ -13,6 +13,7 @@
 
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 
+import {Switch} from '@headlessui/react';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 import Select, {type SelectInstance} from 'react-select';
 
@@ -25,6 +26,7 @@ import {
   IconButton,
   useGrpcMetadata,
   useParcaContext,
+  useURLState,
 } from '@parca/components';
 import {CloseIcon} from '@parca/icons';
 import {Query} from '@parca/parser';
@@ -35,6 +37,7 @@ import MatchersInput, {useLabelNames} from '../MatchersInput/index';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
 import ProfileMetricsGraph, {ProfileMetricsEmptyState} from '../ProfileMetricsGraph';
 import ProfileTypeSelector from '../ProfileTypeSelector/index';
+import SimpleMatchers from '../SimpleMatchers';
 import {useDefaultSumBy, useSumBySelection} from '../useSumBy';
 import {useAutoQuerySelector} from './useAutoQuerySelector';
 
@@ -106,12 +109,17 @@ const ProfileSelector = ({
   const {heightStyle} = useMetricsGraphDimensions(comparing);
   const {viewComponent} = useParcaContext();
   const sumByRef = useRef(null);
+  const [queryBrowserMode, setQueryBrowserMode] = useURLState('query_browser_mode');
 
   const [timeRangeSelection, setTimeRangeSelection] = useState(
     DateTimeRange.fromRangeKey(querySelection.timeSelection, querySelection.from, querySelection.to)
   );
 
   const [queryExpressionString, setQueryExpressionString] = useState(querySelection.expression);
+
+  const [advancedModeForQueryBrowser, setAdvancedModeForQueryBrowser] = useState(
+    queryBrowserMode === 'advanced'
+  );
 
   const profileType = useMemo(() => {
     return Query.parse(queryExpressionString).profileType();
@@ -268,6 +276,8 @@ const ProfileSelector = ({
     queryExpressionString === '' ||
     queryExpressionString === '{}';
 
+  const queryBrowserRef = useRef<HTMLDivElement>(null);
+
   return (
     <>
       <div className="mb-2 flex gap-2">
@@ -283,19 +293,51 @@ const ProfileSelector = ({
               disabled={viewComponent?.disableProfileTypesDropdown}
             />
           </div>
-          <div className="w-full flex-1 pb-6">
-            <div className="mb-0.5 mt-1.5 flex items-center justify-between">
-              <label className="text-xs">Query</label>
+          <div className="w-full flex-1 flex flex-col pb-6 gap-1" ref={queryBrowserRef}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <label className="text-xs">Query</label>
+                <Switch
+                  checked={advancedModeForQueryBrowser}
+                  onChange={() => {
+                    setAdvancedModeForQueryBrowser(!advancedModeForQueryBrowser);
+                    setQueryBrowserMode(advancedModeForQueryBrowser ? 'simple' : 'advanced');
+                  }}
+                  className={`${
+                    advancedModeForQueryBrowser ? 'bg-indigo-600' : 'bg-gray-400 dark:bg-gray-900'
+                  }
+          relative inline-flex h-[20px] w-[44px] shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2  focus-visible:ring-white/75`}
+                >
+                  <span className="sr-only">Use setting</span>
+                  <span
+                    aria-hidden="true"
+                    className={`${advancedModeForQueryBrowser ? 'translate-x-6' : 'translate-x-0'}
+            pointer-events-none inline-block h-[16px] w-[16px] transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out`}
+                  />
+                </Switch>
+                <label className="text-xs">Advanced Mode</label>
+              </div>
               {(query.matchers.length > 0 || query.inputMatcherString.length > 0) &&
                 viewComponent !== undefined && <div>{viewComponent?.createViewComponent}</div>}
             </div>
-            <MatchersInput
-              queryClient={queryClient}
-              setMatchersString={setMatchersString}
-              runQuery={setQueryExpression}
-              currentQuery={query}
-              profileType={selectedProfileName}
-            />
+            {advancedModeForQueryBrowser ? (
+              <MatchersInput
+                queryClient={queryClient}
+                setMatchersString={setMatchersString}
+                runQuery={setQueryExpression}
+                currentQuery={query}
+                profileType={selectedProfileName}
+              />
+            ) : (
+              <SimpleMatchers
+                queryClient={queryClient}
+                setMatchersString={setMatchersString}
+                runQuery={setQueryExpression}
+                currentQuery={query}
+                profileType={selectedProfileName}
+                queryBrowserRef={queryBrowserRef}
+              />
+            )}
           </div>
           <div className="pb-6">
             <div className="mb-0.5 mt-1.5 flex items-center justify-between">
@@ -306,7 +348,7 @@ const ProfileSelector = ({
               isMulti
               name="colors"
               options={labels.map(label => ({label, value: label}))}
-              className="parca-select-container text-sm w-80"
+              className="parca-select-container text-sm w-full max-w-80"
               classNamePrefix="parca-select"
               value={(sumBySelection ?? []).map(sumBy => ({label: sumBy, value: sumBy}))}
               onChange={selectedOptions => {
