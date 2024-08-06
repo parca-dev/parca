@@ -17,11 +17,12 @@ import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
 import {QueryServiceClient} from '@parca/client';
-import {Select, useGrpcMetadata, type SelectItem} from '@parca/components';
+import {useGrpcMetadata} from '@parca/components';
 import {Query} from '@parca/parser';
 import {sanitizeLabelValue} from '@parca/utilities';
 
 import {useLabelNames} from '../MatchersInput';
+import Select, {type SelectItem} from './Select';
 
 interface Props {
   queryClient: QueryServiceClient;
@@ -203,9 +204,10 @@ const SimpleMatchers = ({
   const updateRow = useCallback(
     async (index: number, field: keyof QueryRow, value: string): Promise<void> => {
       const updatedRows = [...queryRows];
+      const prevLabelName = updatedRows[index].labelName;
       updatedRows[index] = {...updatedRows[index], [field]: value};
 
-      if (field === 'labelName') {
+      if (field === 'labelName' && value !== prevLabelName) {
         updatedRows[index].labelValues = [];
         updatedRows[index].labelValue = '';
         updatedRows[index].isLoading = true;
