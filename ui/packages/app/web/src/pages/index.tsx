@@ -36,10 +36,9 @@ const Profiles = () => {
   const isDarkMode = useAppSelector(selectDarkMode);
 
   const navigateTo = useCallback(
-    (path: string, queryParams: any, options?: {replace?: boolean}) => {
+    (_: string, queryParams: any, options?: {replace?: boolean}) => {
       navigate(
         {
-          pathname: path,
           search: `?${convertToQueryParams(queryParams)}`,
         },
         options ?? {}
