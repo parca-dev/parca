@@ -70,28 +70,29 @@ const operatorOptions = [
       ),
     },
   },
-  {
-    key: '=~',
-    element: {
-      active: <>{'=~'}</>,
-      expanded: (
-        <>
-          <span>{'=~'}</span>
-        </>
-      ),
-    },
-  },
-  {
-    key: '!~',
-    element: {
-      active: <>{'!~'}</>,
-      expanded: (
-        <>
-          <span>{'!~'}</span>
-        </>
-      ),
-    },
-  },
+  // TODO: Implement these operators to work properly.
+  // {
+  //   key: '=~',
+  //   element: {
+  //     active: <>{'=~'}</>,
+  //     expanded: (
+  //       <>
+  //         <span>{'=~'}</span>
+  //       </>
+  //     ),
+  //   },
+  // },
+  // {
+  //   key: '!~',
+  //   element: {
+  //     active: <>{'!~'}</>,
+  //     expanded: (
+  //       <>
+  //         <span>{'!~'}</span>
+  //       </>
+  //     ),
+  //   },
+  // },
 ];
 
 const SimpleMatchers = ({

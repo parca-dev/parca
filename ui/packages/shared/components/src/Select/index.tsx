@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Fragment, useState} from 'react';
+import {Fragment, useRef, useState} from 'react';
 
 import {Listbox, Transition} from '@headlessui/react';
 import {Icon} from '@iconify/react';
@@ -74,6 +74,7 @@ const Select = ({
   };
   const {loader} = useParcaContext();
   const [searchTerm, setSearchTerm] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const filteredItems = searchable
     ? items.filter(item =>
@@ -83,6 +84,14 @@ const Select = ({
           .includes(searchTerm.toLowerCase())
       )
     : items;
+
+  const handleOpen = (): void => {
+    if (searchable) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 0);
+    }
+  };
 
   const styles =
     'relative border rounded-md shadow-sm px-4 py-2 text-left cursor-default focus:outline-none focus:ring-1 items-center focus:ring-indigo-500 focus:border-indigo-500 text-sm flex gap-2 flex items-center justify-between';
@@ -124,16 +133,18 @@ const Select = ({
             leave="transition ease-in duration-100"
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
+            afterEnter={handleOpen}
           >
             <Listbox.Options
               className={cx(
-                'absolute z-50 mt-1 max-h-[50vh] w-max overflow-auto rounded-md bg-gray-50 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:ring-white dark:ring-opacity-20 sm:text-sm',
+                'absolute z-50 mt-1 pt-0 max-h-[50vh] w-max overflow-auto rounded-md bg-gray-50 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:ring-white dark:ring-opacity-20 sm:text-sm',
                 {[optionsClassname]: optionsClassname.length > 0}
               )}
             >
               {searchable && (
                 <div className="sticky h-[45px] z-10 top-[-5px] border-b border-gray-200">
                   <input
+                    ref={searchInputRef}
                     type="text"
                     className="w-full px-6 h-full text-sm border-none rounded-none ring-0 outline-none bg-gray-50 dark:bg-gray-800 dark:text-white"
                     placeholder="Search..."
