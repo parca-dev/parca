@@ -115,7 +115,10 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]profile.LocationLine, error)
 	for _, ch := range reader.InlineStack(tr, addr) {
 		var name string
 		if ch.Tag == dwarf.TagSubprogram {
-			name = tr.Entry.Val(dwarf.AttrName).(string)
+			name, ok = tr.Entry.Val(dwarf.AttrName).(string)
+			if !ok {
+				name = ""
+			}
 		} else {
 			abstractOrigin := f.abstractSubprograms[ch.Entry.Val(dwarf.AttrAbstractOrigin).(dwarf.Offset)]
 			name = getFunctionName(abstractOrigin)
@@ -243,10 +246,14 @@ func findLineInfo(entries []dwarf.LineEntry, rg [][2]uint64) (string, int64) {
 
 func getFunctionName(entry *dwarf.Entry) string {
 	name := "?"
+	ok := false
 	if entry != nil {
 		for _, field := range entry.Field {
 			if field.Attr == dwarf.AttrName {
-				name = field.Val.(string)
+				name, ok = field.Val.(string)
+				if !ok {
+					name = "?"
+				}
 			}
 		}
 	}
