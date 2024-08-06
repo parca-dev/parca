@@ -118,7 +118,7 @@ const ProfileSelector = ({
   const [queryExpressionString, setQueryExpressionString] = useState(querySelection.expression);
 
   const [advancedModeForQueryBrowser, setAdvancedModeForQueryBrowser] = useState(
-    queryBrowserMode !== 'simple'
+    queryBrowserMode === 'advanced'
   );
 
   const profileType = useMemo(() => {
