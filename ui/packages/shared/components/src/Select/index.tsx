@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Fragment, useState} from 'react';
+import {Fragment} from 'react';
 
 import {Listbox, Transition} from '@headlessui/react';
 import {Icon} from '@iconify/react';
@@ -49,9 +49,6 @@ const Select = ({
   disabled = false,
   icon,
   id,
-  optionsClassname = '',
-  searchable = false,
-  onButtonClick,
 }: {
   items: SelectItem[];
   selectedKey: string | undefined;
@@ -64,25 +61,12 @@ const Select = ({
   disabled?: boolean;
   icon?: JSX.Element;
   id?: string;
-  optionsClassname?: string;
-  searchable?: boolean;
-  onButtonClick?: () => void;
 }): JSX.Element => {
   const selection = items.find(v => v.key === selectedKey) ?? {
     key: selectedKey,
     element: {active: <>{selectedKey}</>, expanded: <>{selectedKey}</>},
   };
   const {loader} = useParcaContext();
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const filteredItems = searchable
-    ? items.filter(item =>
-        item.element.active.props.children
-          .toString()
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase())
-      )
-    : items;
 
   const styles =
     'relative border rounded-md shadow-sm px-4 py-2 text-left cursor-default focus:outline-none focus:ring-1 items-center focus:ring-indigo-500 focus:border-indigo-500 text-sm flex gap-2 flex items-center justify-between';
@@ -96,7 +80,6 @@ const Select = ({
         <div className="relative">
           <div id={id}>
             <Listbox.Button
-              onClick={onButtonClick}
               className={cx(
                 styles,
                 width !== undefined ? `w-${width}` : 'w-full',
@@ -127,26 +110,14 @@ const Select = ({
           >
             <Listbox.Options
               className={cx(
-                'absolute z-50 mt-1 max-h-[50vh] w-max overflow-auto rounded-md bg-gray-50 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:ring-white dark:ring-opacity-20 sm:text-sm',
-                {[optionsClassname]: optionsClassname.length > 0}
+                'absolute z-50 mt-1 pt-0 max-h-[50vh] w-max overflow-auto rounded-md bg-gray-50 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:ring-white dark:ring-opacity-20 sm:text-sm'
               )}
             >
-              {searchable && (
-                <div className="sticky h-[45px] z-10 top-[-5px] border-b border-gray-200">
-                  <input
-                    type="text"
-                    className="w-full px-6 h-full text-sm border-none rounded-none ring-0 outline-none bg-gray-50 dark:bg-gray-800 dark:text-white"
-                    placeholder="Search..."
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                  />
-                </div>
-              )}
               {loading === true ? (
                 <div className="w-[270px]">{loader}</div>
               ) : (
-                filteredItems.length > 0 &&
-                filteredItems.map(option => (
+                items.length > 0 &&
+                items.map(option => (
                   <Listbox.Option
                     id={`h-select-option-${option.key}`}
                     key={option.key}
@@ -155,8 +126,7 @@ const Select = ({
                       cx(
                         active && 'bg-indigo-600 text-white',
                         'relative cursor-default select-none py-2 pl-3 pr-9',
-                        disabled && 'opacity-50',
-                        ''
+                        disabled && 'opacity-50'
                       )
                     }
                     value={option.key}

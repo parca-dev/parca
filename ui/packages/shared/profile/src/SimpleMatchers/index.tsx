@@ -17,11 +17,12 @@ import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
 import {QueryServiceClient} from '@parca/client';
-import {Select, useGrpcMetadata, type SelectItem} from '@parca/components';
+import {useGrpcMetadata} from '@parca/components';
 import {Query} from '@parca/parser';
 import {sanitizeLabelValue} from '@parca/utilities';
 
 import {useLabelNames} from '../MatchersInput';
+import Select, {type SelectItem} from './Select';
 
 interface Props {
   queryClient: QueryServiceClient;
@@ -70,28 +71,29 @@ const operatorOptions = [
       ),
     },
   },
-  {
-    key: '=~',
-    element: {
-      active: <>{'=~'}</>,
-      expanded: (
-        <>
-          <span>{'=~'}</span>
-        </>
-      ),
-    },
-  },
-  {
-    key: '!~',
-    element: {
-      active: <>{'!~'}</>,
-      expanded: (
-        <>
-          <span>{'!~'}</span>
-        </>
-      ),
-    },
-  },
+  // TODO: Implement these operators to work properly.
+  // {
+  //   key: '=~',
+  //   element: {
+  //     active: <>{'=~'}</>,
+  //     expanded: (
+  //       <>
+  //         <span>{'=~'}</span>
+  //       </>
+  //     ),
+  //   },
+  // },
+  // {
+  //   key: '!~',
+  //   element: {
+  //     active: <>{'!~'}</>,
+  //     expanded: (
+  //       <>
+  //         <span>{'!~'}</span>
+  //       </>
+  //     ),
+  //   },
+  // },
 ];
 
 const SimpleMatchers = ({
@@ -189,22 +191,17 @@ const SimpleMatchers = ({
       : [];
   }, [labelNamesError, labelNamesResponse]);
 
-  const getAvailableLabelNames = useCallback(
-    (currentIndex: number) => {
-      const usedLabelNames = queryRows
-        .filter((_, index) => index !== currentIndex)
-        .map(row => row.labelName);
-      return labelNames.filter(name => !usedLabelNames.includes(name));
-    },
-    [labelNames, queryRows]
-  );
+  const labelNameOptions = useMemo(() => {
+    return transformLabelsForSelect(labelNames);
+  }, [labelNames]);
 
   const updateRow = useCallback(
     async (index: number, field: keyof QueryRow, value: string): Promise<void> => {
       const updatedRows = [...queryRows];
+      const prevLabelName = updatedRows[index].labelName;
       updatedRows[index] = {...updatedRows[index], [field]: value};
 
-      if (field === 'labelName') {
+      if (field === 'labelName' && value !== prevLabelName) {
         updatedRows[index].labelValues = [];
         updatedRows[index].labelValue = '';
         updatedRows[index].isLoading = true;
@@ -289,7 +286,7 @@ const SimpleMatchers = ({
       {visibleRows.map((row, index) => (
         <div key={index} className="flex items-center">
           <Select
-            items={transformLabelsForSelect(getAvailableLabelNames(index))}
+            items={labelNameOptions}
             onSelection={value => handleUpdateRow(index, 'labelName', value)}
             placeholder="Select label name"
             selectedKey={row.labelName}
