@@ -215,7 +215,11 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
             filteredItems.map((item, index) => (
               <div
                 key={item.key}
-                ref={el => (optionRefs.current[index] = el)}
+                ref={el => {
+                  if (el !== null) {
+                    optionRefs.current[index] = el;
+                  }
+                }}
                 className={cx(
                   'relative cursor-default select-none py-2 pl-3 pr-9',
                   index === focusedIndex && 'bg-indigo-600 text-white',
