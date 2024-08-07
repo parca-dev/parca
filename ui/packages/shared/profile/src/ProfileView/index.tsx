@@ -351,6 +351,7 @@ export const ProfileView = ({
           dashboardItems={dashboardItems}
           curPath={curPath}
           setNewCurPath={setNewCurPath}
+          profileType={profileSource?.ProfileType()}
         />
 
         <div className="w-full" ref={ref}>

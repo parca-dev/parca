@@ -18,6 +18,7 @@ import cx from 'classnames';
 
 import {QueryRequest, QueryServiceClient} from '@parca/client';
 import {Button, UserPreferences, useParcaContext, useURLState} from '@parca/components';
+import {ProfileType} from '@parca/parser';
 
 import {FIELD_FUNCTION_NAME} from '../../ProfileIcicleGraph/IcicleGraphArrow';
 import {ProfileSource} from '../../ProfileSource';
@@ -40,6 +41,7 @@ interface Props {
   pprofdownloading: boolean | undefined;
   curPath: string[];
   setNewCurPath: (path: string[]) => void;
+  profileType?: ProfileType;
 }
 
 const VisualisationToolbar = ({
@@ -50,7 +52,8 @@ const VisualisationToolbar = ({
   pprofdownloading,
   curPath,
   setNewCurPath,
-}: Props) => {
+  profileType,
+}: Props): JSX.Element => {
   const [dashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
   });
@@ -103,7 +106,7 @@ const VisualisationToolbar = ({
             Reset View
             <Icon icon="system-uicons:reset" width={20} />
           </Button>
-          <MultiLevelDropdown onSelect={() => {}} />
+          <MultiLevelDropdown profileType={profileType} onSelect={() => {}} />
           {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
         </div>
         <div className="flex gap-3">
