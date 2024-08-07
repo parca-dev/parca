@@ -255,11 +255,13 @@ export class MergedProfileSource implements ProfileSource {
 
     let timePart = '';
     if (this.mergeFrom !== 0) {
-      timePart = `over ${formatDuration({milliseconds: this.mergeTo - this.mergeFrom})} from ${formatDate(
-        this.mergeFrom,
+      timePart = `over ${formatDuration({
+        milliseconds: this.mergeTo - this.mergeFrom,
+      })} from ${formatDate(this.mergeFrom, timeFormat(timezone), timezone)} to ${formatDate(
+        this.mergeTo,
         timeFormat(timezone),
         timezone
-      )} to ${formatDate(this.mergeTo, timeFormat(timezone), timezone)}`;
+      )}`;
     }
 
     return `merged profiles${queryPart}${timePart}`;
