@@ -27,6 +27,7 @@ import FilterByFunctionButton from '../FilterByFunctionButton';
 import ShareButton from '../ShareButton';
 import ViewSelector from '../ViewSelector';
 import MultiLevelDropdown from './MultiLevelDropdown';
+import TableColumnsDropdown from './TableColumnsDropdown';
 
 interface Props {
   groupBy: string | string[];
@@ -42,6 +43,8 @@ interface Props {
   curPath: string[];
   setNewCurPath: (path: string[]) => void;
   profileType?: ProfileType;
+  total: bigint;
+  filtered: bigint;
 }
 
 const VisualisationToolbar = ({
@@ -53,6 +56,8 @@ const VisualisationToolbar = ({
   curPath,
   setNewCurPath,
   profileType,
+  total,
+  filtered,
 }: Props): JSX.Element => {
   const [dashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
@@ -80,6 +85,12 @@ const VisualisationToolbar = ({
     [groupBy, setGroupBy]
   );
 
+  console.log('🚀 ~ dashboardItems:', dashboardItems);
+  const isTableViz = dashboardItems?.includes('table');
+  console.log('🚀 ~ isTableViz:', isTableViz);
+  const isGraphViz = dashboardItems?.includes('icicle');
+  console.log('🚀 ~ isGraphViz:', isGraphViz);
+
   return (
     <div
       className={cx(
@@ -95,18 +106,31 @@ const VisualisationToolbar = ({
     >
       <div className="flex w-full justify-between items-end">
         <div className="flex gap-3 items-end">
-          <GroupByDropdown groupBy={groupBy} toggleGroupBy={toggleGroupBy} />
+          {isGraphViz && (
+            <>
+              <GroupByDropdown groupBy={groupBy} toggleGroupBy={toggleGroupBy} />
+              <MultiLevelDropdown profileType={profileType} onSelect={() => {}} />
+              <Button
+                variant="neutral"
+                className="gap-2 w-max"
+                onClick={() => setNewCurPath([])}
+                disabled={curPath.length === 0}
+              >
+                Reset graph
+                <Icon icon="system-uicons:reset" width={20} />
+              </Button>
+            </>
+          )}
+
+          {isTableViz && (
+            <TableColumnsDropdown profileType={profileType} total={total} filtered={filtered} />
+          )}
+
           <FilterByFunctionButton />
-          <Button
-            variant="neutral"
-            className="gap-2 w-max"
-            onClick={() => setNewCurPath([])}
-            disabled={curPath.length === 0}
-          >
-            Reset View
-            <Icon icon="system-uicons:reset" width={20} />
-          </Button>
-          <MultiLevelDropdown profileType={profileType} onSelect={() => {}} />
+
+          {dashboardItems.length === 1 && dashboardItems[0] === 'icicle' && (
+            <MultiLevelDropdown profileType={profileType} onSelect={() => {}} />
+          )}
           {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
         </div>
         <div className="flex gap-3">

@@ -352,6 +352,8 @@ export const ProfileView = ({
           curPath={curPath}
           setNewCurPath={setNewCurPath}
           profileType={profileSource?.ProfileType()}
+          total={total}
+          filtered={filtered}
         />
 
         <div className="w-full" ref={ref}>
