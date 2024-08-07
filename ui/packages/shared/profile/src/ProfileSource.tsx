@@ -20,7 +20,7 @@ import {
   Timestamp,
 } from '@parca/client';
 import {Matcher, NewParser, ProfileType, Query} from '@parca/parser';
-import {formatDate} from '@parca/utilities';
+import {formatDate, formatDuration} from '@parca/utilities';
 
 export interface ProfileSource {
   QueryRequest: () => QueryRequest;
@@ -255,7 +255,7 @@ export class MergedProfileSource implements ProfileSource {
 
     let timePart = '';
     if (this.mergeFrom !== 0) {
-      timePart = ` from ${formatDate(
+      timePart = `over ${formatDuration({milliseconds: this.mergeTo - this.mergeFrom})} from ${formatDate(
         this.mergeFrom,
         timeFormat(timezone),
         timezone
