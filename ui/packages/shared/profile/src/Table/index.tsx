@@ -587,10 +587,6 @@ export const Table = React.memo(function Table({
     return currentSearchString != null && currentSearchString?.length > 0;
   }, [currentSearchString]);
 
-  const clearSelection = useCallback((): void => {
-    setSearchString('');
-  }, [setSearchString]);
-
   const initialSorting = useMemo(() => {
     return [
       {

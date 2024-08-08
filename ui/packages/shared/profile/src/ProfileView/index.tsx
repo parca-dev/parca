@@ -354,6 +354,8 @@ export const ProfileView = ({
           profileType={profileSource?.ProfileType()}
           total={total}
           filtered={filtered}
+          currentSearchString={currentSearchString}
+          setSearchString={setSearchString}
         />
 
         <div className="w-full" ref={ref}>

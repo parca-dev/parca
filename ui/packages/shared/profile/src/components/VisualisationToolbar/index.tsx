@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useCallback} from 'react';
+import {useCallback} from 'react';
 
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
@@ -45,6 +45,8 @@ interface Props {
   profileType?: ProfileType;
   total: bigint;
   filtered: bigint;
+  setSearchString?: (searchString: string) => void;
+  currentSearchString?: string;
 }
 
 const VisualisationToolbar = ({
@@ -58,6 +60,8 @@ const VisualisationToolbar = ({
   profileType,
   total,
   filtered,
+  setSearchString,
+  currentSearchString,
 }: Props): JSX.Element => {
   const [dashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
@@ -84,6 +88,10 @@ const VisualisationToolbar = ({
     },
     [groupBy, setGroupBy]
   );
+
+  const clearSelection = useCallback((): void => {
+    setSearchString?.('');
+  }, [setSearchString]);
 
   console.log('🚀 ~ dashboardItems:', dashboardItems);
   const isTableViz = dashboardItems?.includes('table');
@@ -123,14 +131,24 @@ const VisualisationToolbar = ({
           )}
 
           {isTableViz && (
-            <TableColumnsDropdown profileType={profileType} total={total} filtered={filtered} />
+            <>
+              <TableColumnsDropdown profileType={profileType} total={total} filtered={filtered} />
+              {dashboardItems.length > 1 && (
+                <Button
+                  color="neutral"
+                  onClick={clearSelection}
+                  className="w-auto"
+                  variant="neutral"
+                  disabled={currentSearchString === undefined || currentSearchString.length === 0}
+                >
+                  Clear selection
+                </Button>
+              )}
+            </>
           )}
 
           <FilterByFunctionButton />
 
-          {dashboardItems.length === 1 && dashboardItems[0] === 'icicle' && (
-            <MultiLevelDropdown profileType={profileType} onSelect={() => {}} />
-          )}
           {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
         </div>
         <div className="flex gap-3">
