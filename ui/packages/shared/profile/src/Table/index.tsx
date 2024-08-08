@@ -96,6 +96,20 @@ interface TableProps {
   unit?: string;
 }
 
+export type ColumnName =
+  | 'flat'
+  | 'flatPercentage'
+  | 'flatDiff'
+  | 'flatDiffPercentage'
+  | 'cumulative'
+  | 'cumulativePercentage'
+  | 'cumulativeDiff'
+  | 'cumulativeDiffPercentage'
+  | 'name'
+  | 'functionSystemName'
+  | 'functionFileName'
+  | 'mappingFile';
+
 const rowBgClassNames = (isExpanded: boolean, isSubRow: boolean): Record<string, boolean> => {
   return {
     relative: true,
@@ -508,7 +522,7 @@ export const Table = React.memo(function Table({
     if (Array.isArray(tableColumns)) {
       setColumnVisibility(prevState => {
         const newState = {...prevState};
-        possibleColumns.forEach(column => {
+        (Object.keys(newState) as ColumnName[]).forEach(column => {
           newState[column] = tableColumns.includes(column);
         });
         return newState;

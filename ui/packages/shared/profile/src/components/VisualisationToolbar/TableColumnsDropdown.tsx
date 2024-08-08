@@ -20,7 +20,7 @@ import {ProfileType} from '@parca/parser';
 import {valueFormatter} from '@parca/utilities';
 
 import {useProfileViewContext} from '../../ProfileView/ProfileViewContext';
-import {DataRow, Row, addPlusSign, getRatioString, isDummyRow, possibleColumns} from '../../Table';
+import {ColumnName, DataRow, Row, addPlusSign, getRatioString, isDummyRow} from '../../Table';
 import ColumnsVisibility from '../../Table/ColumnsVisibility';
 
 interface Props {
@@ -188,7 +188,7 @@ const TableColumnsDropdown = ({profileType, total, filtered}: Props): JSX.Elemen
     if (Array.isArray(tableColumns)) {
       setColumnVisibility(prevState => {
         const newState = {...prevState};
-        possibleColumns.forEach(column => {
+        (Object.keys(newState) as ColumnName[]).forEach(column => {
           newState[column] = tableColumns.includes(column);
         });
         return newState;
@@ -199,8 +199,9 @@ const TableColumnsDropdown = ({profileType, total, filtered}: Props): JSX.Elemen
   const updateColumnVisibility = (column: string, isVisible: boolean): void => {
     const updatedColumns = {...columnVisibility, [column]: isVisible};
 
-    const newTableColumns = Object.keys(updatedColumns).filter(col => updatedColumns[col]);
-
+    const newTableColumns = (Object.keys(updatedColumns) as ColumnName[]).filter(
+      col => updatedColumns[col]
+    );
     setTableColumns(newTableColumns);
   };
 
