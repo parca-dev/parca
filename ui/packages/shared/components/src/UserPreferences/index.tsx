@@ -16,9 +16,9 @@ import {useState} from 'react';
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
-import {Button} from '@parca/components';
 import {USER_PREFERENCES} from '@parca/hooks';
 
+import {Button} from '../Button';
 import Modal from '../Modal';
 import FlamegraphColorProfileSelector from './FlamegraphColorProfileSelector';
 import UserPreferenceItem from './UserPreferenceItem';
