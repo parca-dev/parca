@@ -27,7 +27,7 @@ import {NoDataPrompt} from './NoDataPrompt';
 import ParcaContext from './ParcaContext';
 import Pill, {PillVariant} from './Pill';
 import ResponsiveSvg from './ResponsiveSvg';
-import Select, {type SelectElement} from './Select';
+import Select, {type SelectElement, type SelectItem} from './Select';
 import IcicleGraphSkeleton, {IcicleActionButtonPlaceholder} from './Skeletons/IcicleGraphSkeleton';
 import MetricsGraphSkeleton from './Skeletons/MetricsGraphSkeleton';
 import SourceSkeleton from './Skeletons/SourceSkeleton';
@@ -38,7 +38,7 @@ import Table from './Table';
 import TextWithTooltip from './TextWithTooltip';
 import UserPreferences from './UserPreferences';
 
-export type {PillVariant, SelectElement};
+export type {PillVariant, SelectElement, SelectItem};
 
 export * from './CopyToClipboard';
 export * from './ParcaContext';

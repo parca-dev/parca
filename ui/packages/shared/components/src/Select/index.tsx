@@ -67,6 +67,7 @@ const Select = ({
     element: {active: <>{selectedKey}</>, expanded: <>{selectedKey}</>},
   };
   const {loader} = useParcaContext();
+
   const styles =
     'relative border rounded-md shadow-sm px-4 py-2 text-left cursor-default focus:outline-none focus:ring-1 items-center focus:ring-indigo-500 focus:border-indigo-500 text-sm flex gap-2 flex items-center justify-between';
   const defaultStyles = 'bg-white dark:bg-gray-900 dark:border-gray-600';
@@ -87,7 +88,11 @@ const Select = ({
                 {[className]: className.length > 0}
               )}
             >
-              <div className={cx(icon != null ? '' : 'block overflow-x-hidden text-ellipsis')}>
+              <div
+                className={cx(
+                  icon != null ? '' : 'block overflow-x-hidden text-ellipsis whitespace-nowrap'
+                )}
+              >
                 {selection?.key !== '' ? selection.element.active : placeholder}
               </div>
               <div className={cx(icon != null ? '' : 'pointer-events-none text-gray-400')}>
@@ -103,7 +108,11 @@ const Select = ({
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <Listbox.Options className="absolute z-50 mt-1 max-h-[50vh] w-max overflow-auto rounded-md bg-gray-50 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:ring-white dark:ring-opacity-20 sm:text-sm">
+            <Listbox.Options
+              className={cx(
+                'absolute z-50 mt-1 pt-0 max-h-[50vh] w-max overflow-auto rounded-md bg-gray-50 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:ring-white dark:ring-opacity-20 sm:text-sm'
+              )}
+            >
               {loading === true ? (
                 <div className="w-[270px]">{loader}</div>
               ) : (
