@@ -17,7 +17,7 @@ import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
 import {QueryRequest, QueryServiceClient} from '@parca/client';
-import {Button, useParcaContext, useURLState} from '@parca/components';
+import {Button, UserPreferencesModal, useParcaContext, useURLState} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 
 import {FIELD_FUNCTION_NAME} from '../../ProfileIcicleGraph/IcicleGraphArrow';
@@ -66,7 +66,10 @@ const VisualisationToolbar = ({
   const [dashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
   });
-  const {profileViewExternalMainActions, profileViewExternalSubActions} = useParcaContext();
+  const {profileViewExternalMainActions, profileViewExternalSubActions, preferencesModal} =
+    useParcaContext();
+
+  console.log('🚀 ~ preferencesModal:', preferencesModal);
 
   const [groupBy, setStoreGroupBy] = useURLState<string[]>('group_by', {
     defaultValue: [FIELD_FUNCTION_NAME],
@@ -93,11 +96,8 @@ const VisualisationToolbar = ({
     setSearchString?.('');
   }, [setSearchString]);
 
-  console.log('🚀 ~ dashboardItems:', dashboardItems);
   const isTableViz = dashboardItems?.includes('table');
-  console.log('🚀 ~ isTableViz:', isTableViz);
   const isGraphViz = dashboardItems?.includes('icicle');
-  console.log('🚀 ~ isGraphViz:', isGraphViz);
 
   return (
     <div
@@ -152,12 +152,14 @@ const VisualisationToolbar = ({
           {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
         </div>
         <div className="flex gap-3">
+          {preferencesModal === true ? <UserPreferencesModal /> : null}
           <ShareButton
             profileSource={profileSource}
             queryClient={queryClient}
             queryRequest={profileSource?.QueryRequest() ?? undefined}
             onDownloadPProf={onDownloadPProf}
             pprofdownloading={pprofdownloading ?? false}
+            profileViewExternalSubActions={profileViewExternalSubActions}
           />
           <ViewSelector />
         </div>

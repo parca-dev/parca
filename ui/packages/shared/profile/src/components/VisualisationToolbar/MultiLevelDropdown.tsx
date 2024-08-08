@@ -99,7 +99,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
               )}
             </Menu.Button>
             {items !== undefined && (
-              <Menu.Items className="absolute left-full top-0 w-56 mt-0 origin-top-right bg-white border border-gray-200 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+              <Menu.Items className="absolute left-full top-0 w-56 mt-0 origin-top-right bg-white border border-gray-200 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-900 ml-1 dark:border-gray-600">
                 {items?.map((item, index) => (
                   <MenuItem
                     key={index}
@@ -215,12 +215,15 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
       <Menu>
         {({open, close}) => (
           <>
-            <Menu.Button className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-white rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 border border-gray-200">
-              <Icon icon="pepicons-pencil:dots-x" className="h-5 w-5 text-gray-800" />
+            <Menu.Button className="inline-flex dark:bg-gray-900 dark:border-gray-600 justify-center w-full px-4 py-2 text-sm font-medium text-white bg-white rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 border border-gray-200">
+              <Icon
+                icon="pepicons-pencil:dots-x"
+                className="h-5 w-5 text-gray-800 dark:text-gray-200"
+              />
             </Menu.Button>
             {open && (
-              <Menu.Items className="absolute z-30 right-0 w-56 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                <span className="text-xs text-gray-400 capitalize px-4 py-2">actions</span>
+              <Menu.Items className="absolute z-30 right-0 w-56 mt-2 py-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border dark:bg-gray-900 dark:border-gray-600">
+                <span className="text-xs text-gray-400 capitalize px-4 py-3">actions</span>
                 {menuItems
                   .filter(item => item.hide !== undefined && !item.hide)
                   .map((item, index) => (

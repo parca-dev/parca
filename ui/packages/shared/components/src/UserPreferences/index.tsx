@@ -11,15 +11,53 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {useState} from 'react';
+
+import {Icon} from '@iconify/react';
+import cx from 'classnames';
+
+import {Button} from '@parca/components';
 import {USER_PREFERENCES} from '@parca/hooks';
 
+import Modal from '../Modal';
 import FlamegraphColorProfileSelector from './FlamegraphColorProfileSelector';
 import UserPreferenceItem from './UserPreferenceItem';
 
-const UserPreferences = (): JSX.Element => {
+export const UserPreferencesModal = (): JSX.Element => {
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+
+  return (
+    <>
+      <Button
+        onClick={() => setIsOpen(true)}
+        className="gap-2"
+        variant="neutral"
+        id="h-viz-preferences"
+      >
+        Preferences
+        <Icon icon="pajamas:preferences" width={20} />
+      </Button>
+
+      {isOpen && (
+        <Modal
+          isOpen={isOpen}
+          closeModal={() => {
+            setIsOpen(false);
+          }}
+          title="Visualisation Preferences"
+          className="max-w-[600px]"
+        >
+          <UserPreferences modal={true} />
+        </Modal>
+      )}
+    </>
+  );
+};
+
+const UserPreferences = ({modal}: {modal?: boolean}): JSX.Element => {
   return (
     <div>
-      <div className="min-h-40 mt-8">
+      <div className={cx('min-h-40 ', modal === true ? '' : 'mt-8')}>
         <UserPreferenceItem
           id="h-highlight-after-filtering"
           userPreferenceDetails={USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING}

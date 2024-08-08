@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useState} from 'react';
+import React, {useState} from 'react';
 
 import {Icon} from '@iconify/react';
 
@@ -27,6 +27,7 @@ interface Props {
   queryRequest?: QueryRequest;
   onDownloadPProf: () => void;
   pprofdownloading: boolean;
+  profileViewExternalSubActions: React.ReactNode;
 }
 
 interface ProfileShareModalProps {
@@ -131,6 +132,7 @@ const ShareButton = ({
   profileSource,
   onDownloadPProf,
   pprofdownloading,
+  profileViewExternalSubActions,
 }: Props): JSX.Element => {
   const [showProfileShareModal, setShowProfileShareModal] = useState(false);
 
@@ -154,30 +156,53 @@ const ShareButton = ({
 
   return (
     <>
-      <Dropdown
-        element={
-          <Button variant="neutral">
-            Share
-            <Icon icon="material-symbols:share" className="h-5 w-5 ml-2" />
+      {profileViewExternalSubActions != null ? (
+        <>
+          <Button
+            className="gap-2"
+            variant="neutral"
+            onClick={e => {
+              e.preventDefault();
+              onDownloadPProf();
+            }}
+            disabled={pprofdownloading}
+            id="h-download-pprof"
+          >
+            {pprofdownloading != null && pprofdownloading ? 'Downloading...' : 'Download pprof'}
+            <Icon icon="material-symbols:download" width={20} />
           </Button>
-        }
-      >
-        <span className="text-xs text-gray-400 capitalize px-2">actions</span>
-        {actions.map(item => (
-          <Dropdown.Item key={item.key} onSelect={item.onSelect}>
-            <div id={item.id} className="flex items-center">
-              {item.label}
-            </div>
-          </Dropdown.Item>
-        ))}
-      </Dropdown>
-      {profileSource !== undefined && queryClient !== undefined && queryRequest !== undefined && (
-        <ProfileShareModal
-          isOpen={showProfileShareModal}
-          closeModal={() => setShowProfileShareModal(false)}
-          queryRequest={queryRequest}
-          queryClient={queryClient}
-        />
+        </>
+      ) : (
+        <>
+          {' '}
+          <Dropdown
+            element={
+              <Button variant="neutral">
+                Share
+                <Icon icon="material-symbols:share" className="h-5 w-5 ml-2" />
+              </Button>
+            }
+          >
+            <span className="text-xs text-gray-400 capitalize px-2">actions</span>
+            {actions.map(item => (
+              <Dropdown.Item key={item.key} onSelect={item.onSelect}>
+                <div id={item.id} className="flex items-center">
+                  {item.label}
+                </div>
+              </Dropdown.Item>
+            ))}
+          </Dropdown>
+          {profileSource !== undefined &&
+            queryClient !== undefined &&
+            queryRequest !== undefined && (
+              <ProfileShareModal
+                isOpen={showProfileShareModal}
+                closeModal={() => setShowProfileShareModal(false)}
+                queryRequest={queryRequest}
+                queryClient={queryClient}
+              />
+            )}
+        </>
       )}
     </>
   );

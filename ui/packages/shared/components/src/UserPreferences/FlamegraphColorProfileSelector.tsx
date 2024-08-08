@@ -66,7 +66,7 @@ const FlamegraphColorProfileSelector = (): JSX.Element => {
                     }
                   }}
                 />
-                <span className="whitespace-nowrap">{displayName}</span>
+                <span className="whitespace-nowrap dark:text-gray-200">{displayName}</span>
               </label>
               <div className="flex gap-2 overflow-auto">
                 {colorProfiles[profile].colors.map((color: ColorsDuo) => (
