@@ -17,7 +17,7 @@ import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
 import {QueryRequest, QueryServiceClient} from '@parca/client';
-import {Button, UserPreferences, useParcaContext, useURLState} from '@parca/components';
+import {Button, useParcaContext, useURLState} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 
 import {FIELD_FUNCTION_NAME} from '../../ProfileIcicleGraph/IcicleGraphArrow';
@@ -152,14 +152,6 @@ const VisualisationToolbar = ({
           {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
         </div>
         <div className="flex gap-3">
-          <UserPreferences
-            customButton={
-              <Button className="gap-2" variant="neutral" id="h-viz-preferences">
-                Preferences
-                <Icon icon="pajamas:preferences" width={20} />
-              </Button>
-            }
-          />
           <ShareButton
             profileSource={profileSource}
             queryClient={queryClient}
