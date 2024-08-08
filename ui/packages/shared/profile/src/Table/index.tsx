@@ -26,7 +26,6 @@ import cx from 'classnames';
 import {AnimatePresence, motion} from 'framer-motion';
 
 import {
-  Button,
   Table as TableComponent,
   TableSkeleton,
   useParcaContext,
@@ -38,7 +37,6 @@ import {getLastItem, isSearchMatch, valueFormatter} from '@parca/utilities';
 
 import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
 import {hexifyAddress} from '../utils';
-import ColumnsVisibility from './ColumnsVisibility';
 import {getTopAndBottomExpandedRowModel} from './utils/topAndBottomExpandedRowModel';
 
 const FIELD_MAPPING_FILE = 'mapping_file';

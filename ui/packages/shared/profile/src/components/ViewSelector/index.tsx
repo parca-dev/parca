@@ -58,7 +58,12 @@ const ViewSelector = (): JSX.Element => {
   }): InnerAction | undefined => {
     if (dashboardItems.length === 1 && item.key === dashboardItems[0]) return undefined;
     return {
-      text: item.canBeSelected ? 'Add Panel' : 'Close Panel',
+      text:
+        !item.canBeSelected && item.key === 'source'
+          ? 'Add Panel'
+          : item.canBeSelected
+          ? 'Add Panel'
+          : 'Close Panel',
       onClick: () => {
         if (item.canBeSelected) {
           setDashboardItems([...dashboardItems, item.key]);

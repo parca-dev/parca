@@ -140,7 +140,7 @@ const Dropdown = ({
                             {option.element.expanded}
                           </span>
                         </div>
-                        {option.innerAction && (
+                        {option.innerAction !== undefined && (
                           <Button
                             variant="neutral"
                             className="p-[6px]"

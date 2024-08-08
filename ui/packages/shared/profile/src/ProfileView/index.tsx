@@ -133,7 +133,7 @@ export const ProfileView = ({
   const isDarkMode = useAppSelector(selectDarkMode);
   const isMultiPanelView = dashboardItems.length > 1;
 
-  const {perf, profileViewExternalMainActions, profileViewExternalSubActions} = useParcaContext();
+  const {perf, profileViewExternalMainActions} = useParcaContext();
 
   useEffect(() => {
     // Reset the current path when the profile source changes
@@ -354,7 +354,7 @@ export const ProfileView = ({
         >
           <div>
             {hasProfileSource && (
-              <div className="max-w-[300px]">
+              <div className="flex items-center gap-1">
                 <div className="text-sm font-medium capitalize">
                   {headerParts.length > 0 ? headerParts[0].replace(/"/g, '') : ''}
                 </div>

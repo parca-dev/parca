@@ -35,7 +35,6 @@ interface Props {
 
 export const VisualizationPanel = React.memo(function VisualizationPanel({
   dashboardItem,
-  index,
   isMultiPanelView,
   handleClosePanel,
   dragHandleProps,
