@@ -23,7 +23,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.1
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.21.0
 	github.com/ianlancetaylor/demangle v0.0.0-20240312041847-bd984b5ce465
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/klauspost/compress v1.17.9
@@ -57,7 +57,7 @@ require (
 	golang.org/x/oauth2 v0.22.0
 	golang.org/x/sync v0.8.0
 	google.golang.org/api v0.189.0
-	google.golang.org/genproto/googleapis/api v0.0.0-20240701130421-f6361c86f094
+	google.golang.org/genproto/googleapis/api v0.0.0-20240723171418-e6d459c13d2a
 	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.34.2
 	gopkg.in/dnaeon/go-vcr.v3 v3.2.0
@@ -230,7 +230,7 @@ require (
 	golang.org/x/tools v0.22.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	google.golang.org/genproto v0.0.0-20240722135656-d784300faade // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240722135656-d784300faade // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240723171418-e6d459c13d2a // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
