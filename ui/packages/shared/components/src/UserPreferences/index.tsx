@@ -11,60 +11,67 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {cloneElement, useState} from 'react';
+import {useState} from 'react';
 
 import {Icon} from '@iconify/react';
+import cx from 'classnames';
 
 import {USER_PREFERENCES} from '@parca/hooks';
 
-import {Button, IconButton, Modal} from '../';
+import {Button} from '../Button';
+import Modal from '../Modal';
 import FlamegraphColorProfileSelector from './FlamegraphColorProfileSelector';
 import UserPreferenceItem from './UserPreferenceItem';
 
-const UserPreferences = ({customButton}: {customButton?: JSX.Element}): JSX.Element => {
+export const UserPreferencesModal = (): JSX.Element => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
   return (
-    <div>
-      {customButton != null ? (
-        cloneElement(customButton, {
-          onClick: () => setIsOpen(!isOpen),
-        })
-      ) : (
-        <IconButton
-          onClick={() => setIsOpen(!isOpen)}
-          icon={<Icon icon="material-symbols:settings-outline-rounded" fontSize={20} />}
-        />
-      )}
-      <Modal
-        isOpen={isOpen}
-        closeModal={() => {
-          setIsOpen(false);
-        }}
-        title="Preferences"
-        className="max-w-[460px]"
+    <>
+      <Button
+        onClick={() => setIsOpen(true)}
+        className="gap-2"
+        variant="neutral"
+        id="h-viz-preferences"
       >
-        <div className="min-h-40 mt-8">
-          <UserPreferenceItem
-            id="h-highlight-after-filtering"
-            userPreferenceDetails={USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING}
-          />
-          <UserPreferenceItem
-            id="h-dock-graph-tooltip"
-            userPreferenceDetails={USER_PREFERENCES.GRAPH_METAINFO_DOCKED}
-          />
-          <UserPreferenceItem
-            id="h-highlight-similar-stacks"
-            userPreferenceDetails={USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS}
-          />
-          <FlamegraphColorProfileSelector />
-        </div>
-        <div className="flex justify-end">
-          <Button onClick={() => setIsOpen(false)} className="w-fit">
-            Close
-          </Button>
-        </div>
-      </Modal>
+        Preferences
+        <Icon icon="pajamas:preferences" width={20} />
+      </Button>
+
+      {isOpen && (
+        <Modal
+          isOpen={isOpen}
+          closeModal={() => {
+            setIsOpen(false);
+          }}
+          title="Visualisation Preferences"
+          className="max-w-[600px]"
+        >
+          <UserPreferences modal={true} />
+        </Modal>
+      )}
+    </>
+  );
+};
+
+const UserPreferences = ({modal}: {modal?: boolean}): JSX.Element => {
+  return (
+    <div>
+      <div className={cx('min-h-40 ', modal === true ? '' : 'mt-8')}>
+        <UserPreferenceItem
+          id="h-highlight-after-filtering"
+          userPreferenceDetails={USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING}
+        />
+        <UserPreferenceItem
+          id="h-dock-graph-tooltip"
+          userPreferenceDetails={USER_PREFERENCES.GRAPH_METAINFO_DOCKED}
+        />
+        <UserPreferenceItem
+          id="h-highlight-similar-stacks"
+          userPreferenceDetails={USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS}
+        />
+        <FlamegraphColorProfileSelector />
+      </div>
     </div>
   );
 };

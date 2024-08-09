@@ -20,7 +20,7 @@ import {
   FIELD_LABELS,
   FIELD_LOCATION_ADDRESS,
   FIELD_MAPPING_FILE,
-} from '../IcicleGraphArrow';
+} from '../../ProfileIcicleGraph/IcicleGraphArrow';
 
 const groupByOptions = [
   {
