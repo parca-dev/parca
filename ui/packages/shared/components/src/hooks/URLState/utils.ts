@@ -73,10 +73,14 @@ export const sanitize = (
 ): Record<string, ParamValue> => {
   const sanitized: Record<string, ParamValue> = {};
   for (const [key, value] of Object.entries(params)) {
-    if (isEmpty(value) || isEqual(value, defaultValues[key])) {
+    if (isEmpty(value) || isEqual(value, defaultValues[key]) || value == null) {
       continue;
     }
-    sanitized[key] = value;
+    if (Array.isArray(value)) {
+      sanitized[key] = value.map(v => encodeURIComponent(v));
+    } else {
+      sanitized[key] = encodeURIComponent(value);
+    }
   }
   return sanitized;
 };
