@@ -22,7 +22,8 @@ export const getQueryParamsFromURL = (): Record<string, ParamValue> => {
   const params: Record<string, ParamValue> = {};
 
   searchParams.forEach((value, key) => {
-    params[key] = value.split(',').map(v => decodeURIComponent(v));
+    const decodedValue = decodeURIComponent(value);
+    params[key] = decodedValue.includes(',') ? decodedValue.split(',') : decodedValue;
   });
 
   return params;
@@ -77,7 +78,7 @@ export const sanitize = (
       continue;
     }
     if (Array.isArray(value)) {
-      sanitized[key] = value.map(v => encodeURIComponent(v));
+      sanitized[key] = value.map(v => encodeURIComponent(v)).join(',');
     } else {
       sanitized[key] = encodeURIComponent(value);
     }
