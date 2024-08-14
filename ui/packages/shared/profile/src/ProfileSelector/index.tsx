@@ -109,7 +109,6 @@ const ProfileSelector = ({
   } = useProfileTypes(queryClient);
   const {heightStyle} = useMetricsGraphDimensions(comparing);
   const {viewComponent} = useParcaContext();
-  console.log('🚀 ~ viewComponent:', viewComponent);
   const sumByRef = useRef(null);
   const [queryBrowserMode, setQueryBrowserMode] = useURLState('query_browser_mode');
 

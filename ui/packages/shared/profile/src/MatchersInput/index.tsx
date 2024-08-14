@@ -61,7 +61,6 @@ export const useLabelNames = (
       if (profileType !== undefined) {
         request.profileType = profileType;
       }
-
       const {response} = await client.labels(request, {meta: metadata});
       return response;
     },
