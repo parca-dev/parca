@@ -336,8 +336,11 @@ const ProfileSelector = ({
               <>
                 <ViewMatchers
                   labelNames={viewComponent.labelnames}
-                  onSelectionChange={() => {}}
-                  labelValues={[]}
+                  setMatchersString={setMatchersString}
+                  profileType={selectedProfileName}
+                  runQuery={setQueryExpression}
+                  currentQuery={query}
+                  queryClient={queryClient}
                 />
               </>
             ) : (
