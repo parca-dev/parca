@@ -149,6 +149,8 @@ export const RawMetricsGraph = ({
     width = 0;
   }
 
+  const graphWidth = width - margin * 1.5 - margin / 2;
+
   const series: Series[] = data.reduce<Series[]>(function (agg: Series[], s: MetricsSeriesPb) {
     if (s.labelset !== undefined) {
       const metric = s.labelset.labels.sort((a, b) => a.name.localeCompare(b.name));
@@ -184,10 +186,7 @@ export const RawMetricsGraph = ({
   });
 
   /* Scale */
-  const xScale = d3
-    .scaleUtc()
-    .domain([from, to])
-    .range([0, width - 2.5 * margin]);
+  const xScale = d3.scaleUtc().domain([from, to]).range([0, graphWidth]);
 
   const yScale = d3
     .scaleLinear()
@@ -555,8 +554,8 @@ export const RawMetricsGraph = ({
               ))}
               <line
                 className="stroke-gray-300 dark:stroke-gray-500"
-                x1={xScale(from)}
-                x2={xScale(to)}
+                x1={0}
+                x2={graphWidth}
                 y1={0}
                 y2={0}
               />

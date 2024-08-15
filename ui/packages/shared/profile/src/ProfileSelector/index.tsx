@@ -15,6 +15,7 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 
 import {Switch} from '@headlessui/react';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
+import cx from 'classnames';
 import Select, {type SelectInstance} from 'react-select';
 
 import {Label, ProfileTypesResponse, QueryServiceClient} from '@parca/client';
@@ -293,7 +294,7 @@ const ProfileSelector = ({
               disabled={viewComponent?.disableProfileTypesDropdown}
             />
           </div>
-          <div className="w-full flex-1 flex flex-col pb-6 gap-1" ref={queryBrowserRef}>
+          <div className="w-full flex-1 flex flex-col gap-1" ref={queryBrowserRef}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <label className="text-xs">Query</label>
@@ -303,16 +304,18 @@ const ProfileSelector = ({
                     setAdvancedModeForQueryBrowser(!advancedModeForQueryBrowser);
                     setQueryBrowserMode(advancedModeForQueryBrowser ? 'simple' : 'advanced');
                   }}
-                  className={`${
-                    advancedModeForQueryBrowser ? 'bg-indigo-600' : 'bg-gray-400 dark:bg-gray-900'
-                  }
-          relative inline-flex h-[20px] w-[44px] shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2  focus-visible:ring-white/75`}
+                  className={cx(
+                    advancedModeForQueryBrowser ? 'bg-indigo-600' : 'bg-gray-400 dark:bg-gray-800',
+                    'relative inline-flex h-[20px] w-[44px] shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2  focus-visible:ring-white/75'
+                  )}
                 >
                   <span className="sr-only">Use setting</span>
                   <span
                     aria-hidden="true"
-                    className={`${advancedModeForQueryBrowser ? 'translate-x-6' : 'translate-x-0'}
-            pointer-events-none inline-block h-[16px] w-[16px] transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out`}
+                    className={cx(
+                      advancedModeForQueryBrowser ? 'translate-x-6' : 'translate-x-0',
+                      'pointer-events-none inline-block h-[16px] w-[16px] transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out'
+                    )}
                   />
                 </Switch>
                 <label className="text-xs">Advanced Mode</label>

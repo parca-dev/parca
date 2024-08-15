@@ -12,7 +12,6 @@
 // limitations under the License.
 
 import {QueryServiceClient} from '@parca/client';
-import {Card} from '@parca/components';
 import type {NavigateFunction} from '@parca/utilities';
 
 import {ProfileSelection, ProfileViewWithData} from '..';

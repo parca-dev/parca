@@ -32,7 +32,7 @@ const Dropdown = ({
 }): JSX.Element => {
   return (
     <>
-      <Menu as="div" className="relative z-10 inline-block text-left">
+      <Menu as="div" className="relative z-[1px] inline-block text-left">
         <div>
           <Menu.Button as="div">
             {element === undefined ? (

@@ -62,7 +62,7 @@ const ProfileExplorerCompare = ({
   return (
     <>
       <div className="flex justify-between gap-2">
-        <Card className="mt-2 p-2">
+        <Card className="p-2">
           <ProfileSelector
             queryClient={queryClient}
             querySelection={queryA}
@@ -76,7 +76,7 @@ const ProfileExplorerCompare = ({
             suffix="_a"
           />
         </Card>
-        <Card className="mt-2 p-2">
+        <Card className="p-2">
           <ProfileSelector
             queryClient={queryClient}
             querySelection={queryB}

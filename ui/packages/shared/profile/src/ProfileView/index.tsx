@@ -342,23 +342,23 @@ export const ProfileView = ({
       <ProfileViewContextProvider value={{profileSource, compareMode}}>
         <div
           className={cx(
-            'mb-4 flex w-full',
+            'flex w-full',
             hasProfileSource || profileViewExternalMainActions != null
-              ? 'justify-between'
+              ? 'justify-center'
               : 'justify-end',
             {
-              'items-end': !hasProfileSource && profileViewExternalMainActions != null,
-              'items-center': hasProfileSource,
+              'items-end mb-4': !hasProfileSource && profileViewExternalMainActions != null,
+              'items-center mb-2': hasProfileSource,
             }
           )}
         >
           <div>
             {hasProfileSource && (
               <div className="flex items-center gap-1">
-                <div className="text-sm font-medium capitalize">
+                <div className="text-xs font-medium">
                   {headerParts.length > 0 ? headerParts[0].replace(/"/g, '') : ''}
                 </div>
-                <div className="text-xs">
+                <div className="text-xs font-medium">
                   {headerParts.length > 1
                     ? headerParts[headerParts.length - 1].replace(/"/g, '')
                     : ''}
