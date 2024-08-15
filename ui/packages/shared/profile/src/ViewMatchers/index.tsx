@@ -161,6 +161,7 @@ const ViewMatchers: React.FC<Props> = ({
             {labelName}
           </div>
           <CustomSelect
+            searchable={true}
             placeholder="Select value"
             items={transformValuesForSelect(labelValuesMap[labelName] ?? [])}
             onSelection={(value: string) => handleSelection(labelName, value)}
