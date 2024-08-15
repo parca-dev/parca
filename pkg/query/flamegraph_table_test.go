@@ -96,6 +96,7 @@ func TestGenerateFlamegraphTable(t *testing.T) {
 			}},
 		},
 		0,
+		[]string{},
 	)
 	require.NoError(t, err)
 
@@ -222,6 +223,7 @@ func TestGenerateFlamegraphTableTrimming(t *testing.T) {
 			}},
 		},
 		0,
+		[]string{},
 	)
 	require.NoError(t, err)
 
@@ -329,6 +331,7 @@ func TestGenerateFlamegraphTableMergeMappings(t *testing.T) {
 			}},
 		},
 		0,
+		[]string{},
 	)
 	require.NoError(t, err)
 
@@ -426,6 +429,7 @@ func TestGenerateFlamegraphTableFromProfile(t *testing.T) {
 		profile.Meta{},
 		pp,
 		0,
+		[]string{},
 	)
 	require.NoError(t, err)
 
@@ -448,6 +452,7 @@ func Benchmark_GenerateFlamegraphTable_FromProfile(b *testing.B) {
 		profile.Meta{},
 		pp,
 		0,
+		[]string{},
 	)
 	require.NoError(b, err)
 
@@ -514,6 +519,7 @@ func TestGenerateFlamegraphTableWithInlined(t *testing.T) {
 			Function:   functions,
 		},
 		0,
+		[]string{},
 	)
 	require.NoError(t, err)
 
@@ -657,6 +663,7 @@ func TestGenerateFlamegraphTableWithInlinedExisting(t *testing.T) {
 			Function:   functions,
 		},
 		0,
+		[]string{},
 	)
 	require.NoError(t, err)
 
@@ -1009,6 +1016,7 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 			}},
 		},
 		0,
+		[]string{},
 	)
 	require.NoError(t, err)
 
@@ -1181,7 +1189,7 @@ func testGenerateFlamegraphFromProfile(t *testing.T, nodeTrimFraction float32) *
 	p, err := pprofprofile.ParseData(fileContent)
 	require.NoError(t, err)
 
-	pp, err := PprofToSymbolizedProfile(profile.Meta{}, p, 0)
+	pp, err := PprofToSymbolizedProfile(profile.Meta{}, p, 0, []string{})
 	require.NoError(t, err)
 
 	sp, err := parcacol.NewArrowToProfileConverter(nil, kv.NewKeyMaker()).Convert(ctx, pp)

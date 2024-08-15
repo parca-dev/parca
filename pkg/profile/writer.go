@@ -50,7 +50,7 @@ func NewWriter(pool memory.Allocator, labelNames []string) Writer {
 	labelFields := make([]arrow.Field, len(labelNames))
 	for i, name := range labelNames {
 		labelFields[i] = arrow.Field{
-			Name:     ColumnPprofLabelsPrefix + name,
+			Name:     ColumnLabelsPrefix + name,
 			Type:     &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
 			Nullable: true,
 		}

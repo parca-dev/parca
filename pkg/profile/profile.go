@@ -23,8 +23,7 @@ import (
 )
 
 const (
-	ColumnLabelsPrefix      = ColumnLabels + "."
-	ColumnPprofLabelsPrefix = ColumnPprofLabels + "."
+	ColumnLabelsPrefix = ColumnLabels + "."
 )
 
 var LocationsField = arrow.Field{

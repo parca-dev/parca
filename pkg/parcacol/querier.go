@@ -215,21 +215,7 @@ func (q *Querier) Values(
 
 func MatcherToBooleanExpression(matcher *labels.Matcher) (logicalplan.Expr, error) {
 	label := logicalplan.Col(profile.ColumnLabelsPrefix + matcher.Name)
-	labelExpr, err := matcherToBinaryExpression(matcher, label)
-	if err != nil {
-		return nil, err
-	}
-	pprofLabel := logicalplan.Col(profile.ColumnPprofLabelsPrefix + matcher.Name)
-	pprofLabelExpr, err := matcherToBinaryExpression(matcher, pprofLabel)
-	if err != nil {
-		return nil, err
-	}
-
-	return logicalplan.Or(
-			logicalplan.And(pprofLabel.Eq(&logicalplan.LiteralExpr{Value: scalar.ScalarNull}), labelExpr),
-			logicalplan.And(label.Eq(&logicalplan.LiteralExpr{Value: scalar.ScalarNull}), pprofLabelExpr),
-		),
-		nil
+	return matcherToBinaryExpression(matcher, label)
 }
 
 func matcherToBinaryExpression(matcher *labels.Matcher, ref *logicalplan.Column) (*logicalplan.BinaryExpr, error) {
@@ -983,7 +969,7 @@ func (q *Querier) SymbolizeArrowRecord(
 		profileLabels := []arrow.Field{}
 		profileLabelColumns := []arrow.Array{}
 		for i, field := range schema.Fields() {
-			if strings.HasPrefix(field.Name, profile.ColumnPprofLabelsPrefix) {
+			if strings.HasPrefix(field.Name, profile.ColumnLabelsPrefix) {
 				profileLabels = append(profileLabels, field)
 				profileLabelColumns = append(profileLabelColumns, r.Column(i))
 			}
@@ -1356,11 +1342,11 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]
 		nil
 }
 
-func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.Time, aggregateByLabels, invertCallStacks bool) (profile.Profile, error) {
+func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.Time, groupByColumns []string, invertCallStacks bool) (profile.Profile, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/QueryMerge")
 	defer span.End()
 
-	records, valueColumn, queryParts, err := q.selectMerge(ctx, query, start, end, aggregateByLabels)
+	records, valueColumn, queryParts, err := q.selectMerge(ctx, query, start, end, groupByColumns)
 	if err != nil {
 		return profile.Profile{}, err
 	}
@@ -1392,7 +1378,7 @@ func (q *Querier) selectMerge(
 	query string,
 	startTime,
 	endTime time.Time,
-	aggregateByLabels bool,
+	groupByColumns []string,
 ) ([]arrow.Record, string, QueryParts, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/selectMerge")
 	defer span.End()
@@ -1417,16 +1403,16 @@ func (q *Querier) selectMerge(
 	totalSum := logicalplan.Sum(logicalplan.Col(profile.ColumnValue))
 	durationSum := logicalplan.Sum(logicalplan.Col(profile.ColumnDuration))
 
-	aggrCols := []logicalplan.Expr{
+	columnsGroupBy := []logicalplan.Expr{
 		logicalplan.Col(profile.ColumnStacktrace),
 	}
 
-	if aggregateByLabels {
-		aggrCols = append(
-			aggrCols,
-			logicalplan.DynCol(profile.ColumnPprofLabels),
-			logicalplan.DynCol(profile.ColumnPprofNumLabels),
-		)
+	for _, col := range groupByColumns {
+		if strings.HasPrefix(col, profile.ColumnLabelsPrefix) {
+			// If we find one column prefixed with labels. we need to project for the dynamic column: label
+			columnsGroupBy = append(columnsGroupBy, logicalplan.DynCol(profile.ColumnLabels))
+			break
+		}
 	}
 
 	var valueCol logicalplan.Expr = logicalplan.Col(profile.ColumnValue)
@@ -1438,9 +1424,9 @@ func (q *Querier) selectMerge(
 		resultType = queryParts.Meta.PeriodType
 	}
 
-	firstProject := append(aggrCols, valueCol)
-	finalProject := append(aggrCols, totalSum)
-	aggrFunctions := []*logicalplan.AggregationFunction{
+	firstProject := append(columnsGroupBy, valueCol)
+	finalProject := append(columnsGroupBy, totalSum)
+	columnsAggregations := []*logicalplan.AggregationFunction{
 		totalSum,
 	}
 
@@ -1457,7 +1443,7 @@ func (q *Querier) selectMerge(
 				logicalplan.Convert(durationSum, arrow.PrimitiveTypes.Float64),
 			).Alias(ValuePerSecond),
 		)
-		aggrFunctions = append(aggrFunctions, durationSum)
+		columnsAggregations = append(columnsAggregations, durationSum)
 	}
 
 	records := []arrow.Record{}
@@ -1465,8 +1451,8 @@ func (q *Querier) selectMerge(
 		Filter(filterExpr).
 		Project(firstProject...).
 		Aggregate(
-			aggrFunctions,
-			aggrCols,
+			columnsAggregations,
+			columnsGroupBy,
 		).
 		Project(finalProject...).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
@@ -1562,7 +1548,7 @@ func (q *Querier) GetProfileMetadataLabels(
 
 	err := q.engine.ScanSchema(q.tableName).
 		Distinct(logicalplan.Col("name")).
-		Filter(logicalplan.Col("name").RegexMatch("^pprof_labels\\..+$")).
+		Filter(logicalplan.Col("name").RegexMatch("^labels\\..+$")).
 		Execute(ctx, func(ctx context.Context, ar arrow.Record) error {
 			if ar.NumCols() != 1 {
 				return fmt.Errorf("expected 1 column, got %d", ar.NumCols())
