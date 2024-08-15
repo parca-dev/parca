@@ -50,11 +50,17 @@ const ViewMatchers: React.FC<Props> = ({
     const matches = matchersString.match(/(\w+)="([^"]+)"/g);
     if (matches === null) return {};
 
-    return matches.reduce((acc, match) => {
-      const [label, value] = match.split('=');
-      acc[label] = value.replace(/"/g, '');
-      return acc;
-    }, {} satisfies Record<string, string>);
+    return matches.reduce<Record<string, string>>(
+      (acc, match) => {
+        const [label, value] = match.split('=');
+        if (label !== undefined) {
+          acc[label] = value.replace(/"/g, '');
+        }
+        return acc;
+      },
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+      {} as Record<string, string>
+    );
   }, []);
 
   const initialSelections = parseCurrentMatchers(currentMatchers);
