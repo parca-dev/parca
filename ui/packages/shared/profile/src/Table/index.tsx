@@ -34,13 +34,7 @@ import {
 } from '@parca/components';
 import {type RowRendererProps} from '@parca/components/dist/Table';
 import {ProfileType} from '@parca/parser';
-import {
-  getLastItem,
-  isSearchMatch,
-  parseParams,
-  valueFormatter,
-  type NavigateFunction,
-} from '@parca/utilities';
+import {getLastItem, isSearchMatch, valueFormatter} from '@parca/utilities';
 
 import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
 import {hexifyAddress} from '../utils';
@@ -96,9 +90,9 @@ interface TableProps {
   total: bigint;
   filtered: bigint;
   profileType?: ProfileType;
-  navigateTo?: NavigateFunction;
   loading: boolean;
   currentSearchString?: string;
+  setSearchString?: (searchString: string) => void;
   setActionButtons?: (buttons: React.JSX.Element) => void;
   isHalfScreen: boolean;
   unit?: string;
@@ -295,28 +289,21 @@ export const Table = React.memo(function Table({
   total,
   filtered,
   profileType,
-  navigateTo,
   loading,
   currentSearchString,
+  setSearchString = () => {},
   setActionButtons,
   isHalfScreen,
   unit,
 }: TableProps): React.JSX.Element {
-  const router = parseParams(window?.location.search);
-  const [rawDashboardItems] = useURLState({param: 'dashboard_items'});
-  const [filterByFunctionInput] = useURLState({param: 'filter_by_function'});
+  const [dashboardItems] = useURLState<string[]>('dashboard_items', {
+    alwaysReturnArray: true,
+  });
   const {isDarkMode} = useParcaContext();
   const [expanded, setExpanded] = useState<ExpandedState>({});
   const [scrollToIndex, setScrollToIndex] = useState<number | undefined>(undefined);
 
   const {compareMode} = useProfileViewContext();
-
-  const dashboardItems = useMemo(() => {
-    if (rawDashboardItems !== undefined) {
-      return rawDashboardItems as string[];
-    }
-    return ['icicle'];
-  }, [rawDashboardItems]);
 
   const percentageString = (value: bigint | number, total: bigint | number): string => {
     if (total === 0n) {
@@ -486,18 +473,9 @@ export const Table = React.memo(function Table({
 
   const selectSpan = useCallback(
     (span: string): void => {
-      if (navigateTo != null) {
-        navigateTo(
-          '/',
-          {
-            ...router,
-            ...{search_string: span.trim()},
-          },
-          {replace: true}
-        );
-      }
+      setSearchString(span.trim());
     },
-    [navigateTo, router]
+    [setSearchString]
   );
 
   const onRowClick = useCallback(
@@ -563,17 +541,8 @@ export const Table = React.memo(function Table({
   }, [currentSearchString]);
 
   const clearSelection = useCallback((): void => {
-    if (navigateTo != null) {
-      navigateTo(
-        '/',
-        {
-          ...router,
-          ...{search_string: filterByFunctionInput ?? ''},
-        },
-        {replace: true}
-      );
-    }
-  }, [navigateTo, router, filterByFunctionInput]);
+    setSearchString('');
+  }, [setSearchString]);
 
   useEffect(() => {
     setActionButtons?.(

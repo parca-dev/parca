@@ -25,6 +25,10 @@ export * from './ProfileTypeSelector';
 export * from './SourceView';
 export {default as Callgraph} from './Callgraph';
 
+export const DEFAULT_PROFILE_EXPLORER_PARAM_VALUES = {
+  dashboard_items: 'icicle',
+};
+
 export type {CallgraphProps};
 
 export {ProfileExplorer, ProfileTypeSelector, getExpressionAsAString};

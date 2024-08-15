@@ -32,6 +32,7 @@ interface Props {
   level: number;
   profileType?: ProfileType;
   unit?: string;
+  compareAbsolute: boolean;
 }
 
 const InfoSection = ({
@@ -63,9 +64,10 @@ export const DockedGraphTooltip = ({
   level,
   profileType,
   unit,
+  compareAbsolute,
 }: Props): JSX.Element => {
   let {width} = useWindowSize();
-  const {profileExplorer, navigateTo} = useParcaContext();
+  const {profileExplorer} = useParcaContext();
   const {PaddingX} = profileExplorer ?? {PaddingX: 0};
   width = width - PaddingX - 24;
 
@@ -77,6 +79,7 @@ export const DockedGraphTooltip = ({
     totalUnfiltered,
     row,
     level,
+    compareAbsolute,
   });
 
   const {
@@ -87,21 +90,13 @@ export const DockedGraphTooltip = ({
     mappingFile,
     mappingBuildID,
     inlined,
-  } = useGraphTooltipMetaInfo({table, row: row ?? 0, navigateTo});
+  } = useGraphTooltipMetaInfo({table, row: row ?? 0});
 
   if (graphTooltipData === null) {
     return <></>;
   }
 
-  const {
-    name,
-    cumulativeText,
-    cumulativePerSecondText,
-    flatText,
-    flatPerSecondText,
-    diffText,
-    diff,
-  } = graphTooltipData;
+  const {name, cumulativeText, flatText, diffText, diff} = graphTooltipData;
 
   const labels = labelPairs.map(
     (l): React.JSX.Element => (
@@ -117,9 +112,6 @@ export const DockedGraphTooltip = ({
   const isMappingBuildIDAvailable = mappingBuildID !== null && mappingBuildID !== '';
   const inlinedText = inlined === null ? 'merged' : inlined ? 'yes' : 'no';
   const addressText = locationAddress !== 0n ? hexifyAddress(locationAddress) : <NoData />;
-
-  const cumulativeTextBoth = `${cumulativeText}\n${cumulativePerSecondText}`;
-  const flatTextBoth = `${flatText}\n${flatPerSecondText}`;
 
   return (
     <div
@@ -141,8 +133,8 @@ export const DockedGraphTooltip = ({
           )}
         </div>
         <div className="flex justify-between gap-3">
-          <InfoSection title="Cumulative" value={cumulativeTextBoth} minWidth="w-44" />
-          <InfoSection title="Flat" value={flatTextBoth} minWidth="w-44" />
+          <InfoSection title="Cumulative" value={cumulativeText} minWidth="w-44" />
+          <InfoSection title="Flat" value={flatText} minWidth="w-44" />
           {diff !== 0n ? <InfoSection title="Diff" value={diffText} minWidth="w-44" /> : null}
           <InfoSection
             title="File"

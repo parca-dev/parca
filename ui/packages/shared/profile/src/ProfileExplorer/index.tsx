@@ -48,8 +48,6 @@ export const getExpressionAsAString = (expression: string | []): string => {
   return x;
 };
 
-const DEFAULT_DASHBOARD_ITEMS = ['icicle'];
-
 /* eslint-disable @typescript-eslint/naming-convention */
 const sanitizeDateRange = (
   time_selection_a: string,
@@ -149,7 +147,6 @@ const ProfileExplorerApp = ({
     compare_b,
     sum_by_b,
     filter_by_function,
-    dashboard_items,
   } = queryParams;
 
   // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -231,7 +228,6 @@ const ProfileExplorerApp = ({
     return navigateTo('/', {
       ...queryParams,
       ...SuffixParams(p.HistoryParams(), suffix),
-      dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
     });
   };
 
@@ -274,7 +270,6 @@ const ProfileExplorerApp = ({
             to_a: q.to.toString(),
             time_selection_a: q.timeSelection,
             sum_by_a: sumByToParam(q.sumBy),
-            dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
             ...mergeParams,
           },
         })
@@ -286,7 +281,6 @@ const ProfileExplorerApp = ({
       return navigateTo('/', {
         ...queryParams,
         ...SuffixParams(p.HistoryParams(), '_a'),
-        dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
       });
     };
 
@@ -335,7 +329,6 @@ const ProfileExplorerApp = ({
           time_selection_a: q.timeSelection,
           sum_by_a: sumByToParam(q.sumBy),
           filter_by_function: filter_by_function ?? '',
-          dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
           ...mergeParams,
         },
       })
@@ -367,7 +360,6 @@ const ProfileExplorerApp = ({
           time_selection_b: q.timeSelection,
           sum_by_b: sumByToParam(q.sumBy),
           filter_by_function: filter_by_function ?? '',
-          dashboard_items: dashboard_items ?? DEFAULT_DASHBOARD_ITEMS,
           ...mergeParams,
         },
       })

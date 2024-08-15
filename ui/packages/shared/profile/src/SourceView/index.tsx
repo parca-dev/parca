@@ -42,7 +42,7 @@ export const SourceView = React.memo(function SourceView({
   filtered,
   setActionButtons,
 }: SourceViewProps): JSX.Element {
-  const [sourceFileName] = useURLState({param: 'source_filename', navigateTo: () => {}});
+  const [sourceFileName] = useURLState<string | undefined>('source_filename');
   const {isDarkMode, sourceViewContextMenuItems = []} = useParcaContext();
 
   const sourceCode = useMemo(() => {

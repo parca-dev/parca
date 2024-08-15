@@ -17,8 +17,8 @@ import {GrpcWebFetchTransport} from '@protobuf-ts/grpcweb-transport';
 import {useLocation, useNavigate} from 'react-router-dom';
 
 import {QueryServiceClient} from '@parca/client';
-import {ParcaContextProvider} from '@parca/components';
-import {ProfileExplorer} from '@parca/profile';
+import {ParcaContextProvider, URLStateProvider} from '@parca/components';
+import {DEFAULT_PROFILE_EXPLORER_PARAM_VALUES, ProfileExplorer} from '@parca/profile';
 import {selectDarkMode, useAppSelector} from '@parca/store';
 import {convertToQueryParams, parseParams} from '@parca/utilities';
 
@@ -36,10 +36,9 @@ const Profiles = () => {
   const isDarkMode = useAppSelector(selectDarkMode);
 
   const navigateTo = useCallback(
-    (path: string, queryParams: any, options?: {replace?: boolean}) => {
+    (_: string, queryParams: any, options?: {replace?: boolean}) => {
       navigate(
         {
-          pathname: path,
           search: `?${convertToQueryParams(queryParams)}`,
         },
         options ?? {}
@@ -51,21 +50,23 @@ const Profiles = () => {
   const queryParams = parseParams(location.search);
 
   return (
-    <ParcaContextProvider
-      value={{
-        queryServiceClient: queryClient,
-        navigateTo,
-        isDarkMode,
-      }}
-    >
-      <div className="bg-white dark:bg-gray-900 p-3">
-        <ProfileExplorer
-          queryClient={queryClient}
-          queryParams={queryParams}
-          navigateTo={navigateTo}
-        />
-      </div>
-    </ParcaContextProvider>
+    <URLStateProvider navigateTo={navigateTo} defaultValues={DEFAULT_PROFILE_EXPLORER_PARAM_VALUES}>
+      <ParcaContextProvider
+        value={{
+          queryServiceClient: queryClient,
+          navigateTo,
+          isDarkMode,
+        }}
+      >
+        <div className="bg-white dark:bg-gray-900 p-3">
+          <ProfileExplorer
+            queryClient={queryClient}
+            queryParams={queryParams}
+            navigateTo={navigateTo}
+          />
+        </div>
+      </ParcaContextProvider>
+    </URLStateProvider>
   );
 };
 

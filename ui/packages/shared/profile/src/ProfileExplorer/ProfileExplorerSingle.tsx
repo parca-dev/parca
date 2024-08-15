@@ -50,11 +50,7 @@ const ProfileExplorerSingle = ({
         suffix="_a"
       />
       {profile != null ? (
-        <ProfileViewWithData
-          queryClient={queryClient}
-          profileSource={profile.ProfileSource()}
-          navigateTo={navigateTo}
-        />
+        <ProfileViewWithData queryClient={queryClient} profileSource={profile.ProfileSource()} />
       ) : (
         <></>
       )}

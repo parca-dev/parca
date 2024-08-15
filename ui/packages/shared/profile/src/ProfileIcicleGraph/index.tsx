@@ -26,19 +26,14 @@ import {
 } from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
-import {
-  capitalizeOnlyFirstLetter,
-  divide,
-  selectQueryParam,
-  type NavigateFunction,
-} from '@parca/utilities';
+import {capitalizeOnlyFirstLetter, divide, selectQueryParam} from '@parca/utilities';
 
 import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
 import DiffLegend from '../components/DiffLegend';
 import GroupByDropdown from './ActionButtons/GroupByDropdown';
 import SortBySelect from './ActionButtons/SortBySelect';
-import IcicleGraph from './IcicleGraph';
-import IcicleGraphArrow, {FIELD_FUNCTION_NAME} from './IcicleGraphArrow';
+import {IcicleGraph} from './IcicleGraph';
+import {FIELD_FUNCTION_NAME, IcicleGraphArrow} from './IcicleGraphArrow';
 import ColorStackLegend from './IcicleGraphArrow/ColorStackLegend';
 import useMappingList from './IcicleGraphArrow/useMappingList';
 
@@ -55,7 +50,6 @@ interface ProfileIcicleGraphProps {
   profileType?: ProfileType;
   curPath: string[] | [];
   setNewCurPath: (path: string[]) => void;
-  navigateTo?: NavigateFunction;
   loading: boolean;
   setActionButtons?: (buttons: React.JSX.Element) => void;
   error?: any;
@@ -68,21 +62,9 @@ const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
   return <div className="flex justify-center p-10">{errorMessage}</div>;
 };
 
-const ShowHideLegendButton = ({
-  navigateTo,
-  isHalfScreen,
-}: {
-  navigateTo?: NavigateFunction;
-  isHalfScreen: boolean;
-}): JSX.Element => {
-  const [colorStackLegend, setStoreColorStackLegend] = useURLState({
-    param: 'color_stack_legend',
-    navigateTo,
-  });
-  const [binaryFrameFilter, setBinaryFrameFilter] = useURLState({
-    param: 'binary_frame_filter',
-    navigateTo,
-  });
+const ShowHideLegendButton = ({isHalfScreen}: {isHalfScreen: boolean}): JSX.Element => {
+  const [colorStackLegend, setStoreColorStackLegend] = useURLState('color_stack_legend');
+  const [binaryFrameFilter, setBinaryFrameFilter] = useURLState('binary_frame_filter');
 
   const {compareMode} = useProfileViewContext();
 
@@ -156,16 +138,15 @@ const ShowHideLegendButton = ({
   );
 };
 
-const GroupAndSortActionButtons = ({navigateTo}: {navigateTo?: NavigateFunction}): JSX.Element => {
-  const [storeSortBy = FIELD_FUNCTION_NAME, setStoreSortBy] = useURLState({
-    param: 'sort_by',
-    navigateTo,
+const GroupAndSortActionButtons = (): JSX.Element => {
+  const [storeSortBy, setStoreSortBy] = useURLState('sort_by', {
+    defaultValue: FIELD_FUNCTION_NAME,
   });
   const {compareMode} = useProfileViewContext();
 
-  const [storeGroupBy = [FIELD_FUNCTION_NAME], setStoreGroupBy] = useURLState({
-    param: 'group_by',
-    navigateTo,
+  const [groupBy, setStoreGroupBy] = useURLState<string[]>('group_by', {
+    defaultValue: [FIELD_FUNCTION_NAME],
+    alwaysReturnArray: true,
   });
 
   const setGroupBy = useCallback(
@@ -174,16 +155,6 @@ const GroupAndSortActionButtons = ({navigateTo}: {navigateTo?: NavigateFunction}
     },
     [setStoreGroupBy]
   );
-
-  const groupBy = useMemo(() => {
-    if (storeGroupBy !== undefined) {
-      if (typeof storeGroupBy === 'string') {
-        return [storeGroupBy];
-      }
-      return storeGroupBy;
-    }
-    return [FIELD_FUNCTION_NAME];
-  }, [storeGroupBy]);
 
   const toggleGroupBy = useCallback(
     (key: string): void => {
@@ -214,7 +185,6 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   curPath,
   setNewCurPath,
   profileType,
-  navigateTo,
   loading,
   setActionButtons,
   error,
@@ -229,26 +199,17 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
 
   const mappingsList = useMappingList(mappings);
 
-  const [storeSortBy = FIELD_FUNCTION_NAME] = useURLState({
-    param: 'sort_by',
-    navigateTo,
-  });
+  const [storeSortBy = FIELD_FUNCTION_NAME] = useURLState('sort_by');
 
-  const [invertStack = '', setInvertStack] = useURLState({
-    param: 'invert_call_stack',
-    navigateTo,
-  });
+  const [invertStack = '', setInvertStack] = useURLState('invert_call_stack');
   const isInvert = invertStack === 'true';
 
   // By default, we want delta profiles (CPU) to be relatively compared.
   // For non-delta profiles, like goroutines or memory, we want the profiles to be compared absolutely.
   const compareAbsoluteDefault = profileType?.delta === false ? 'true' : 'false';
 
-  const [compareAbsolute = compareAbsoluteDefault, setCompareAbsolute] = useURLState({
-    param: 'compare_absolute',
-    navigateTo,
-    withURLUpdate: true,
-  });
+  const [compareAbsolute = compareAbsoluteDefault, setCompareAbsolute] =
+    useURLState('compare_absolute');
   const isCompareAbsolute = compareAbsolute === 'true';
 
   const [
@@ -285,7 +246,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     setActionButtons?.(
       <div className="flex w-full justify-end gap-2 pb-2">
         <div className="ml-2 flex w-full flex-col items-start justify-between gap-2 md:flex-row md:items-end">
-          {<GroupAndSortActionButtons navigateTo={navigateTo} />}
+          {<GroupAndSortActionButtons />}
           {isHalfScreen ? (
             <IconButton
               icon={isInvert ? 'ph:sort-ascending' : 'ph:sort-descending'}
@@ -303,7 +264,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
               <Icon icon={isInvert ? 'ph:sort-ascending' : 'ph:sort-descending'} width={20} />
             </Button>
           )}
-          <ShowHideLegendButton isHalfScreen={isHalfScreen} navigateTo={navigateTo} />
+          <ShowHideLegendButton isHalfScreen={isHalfScreen} />
           {compareMode && (
             <Button
               variant="neutral"
@@ -340,7 +301,6 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
       </div>
     );
   }, [
-    navigateTo,
     isInvert,
     setInvertStack,
     arrow,
@@ -391,7 +351,6 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
           curPath={curPath}
           setCurPath={setNewCurPath}
           profileType={profileType}
-          navigateTo={navigateTo}
         />
       );
 
@@ -405,11 +364,11 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
           curPath={curPath}
           setCurPath={setNewCurPath}
           profileType={profileType}
-          navigateTo={navigateTo}
           sortBy={storeSortBy as string}
           flamegraphLoading={isLoading}
           isHalfScreen={isHalfScreen}
           mappingsListFromMetadata={mappingsList}
+          compareAbsolute={isCompareAbsolute}
         />
       );
   }, [
@@ -423,11 +382,11 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     curPath,
     setNewCurPath,
     profileType,
-    navigateTo,
     storeSortBy,
     isHalfScreen,
     isDarkMode,
     mappingsList,
+    isCompareAbsolute,
   ]);
 
   if (error != null) {
@@ -455,12 +414,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
       >
         {compareMode ? <DiffLegend /> : null}
         {isColorStackLegendEnabled && (
-          <ColorStackLegend
-            navigateTo={navigateTo}
-            compareMode={compareMode}
-            mappings={mappings}
-            loading={isLoading}
-          />
+          <ColorStackLegend compareMode={compareMode} mappings={mappings} loading={isLoading} />
         )}
         <div className="min-h-48" id="h-icicle-graph">
           <>{icicleGraph}</>

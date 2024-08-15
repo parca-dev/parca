@@ -27,13 +27,7 @@ import {
   useAppDispatch,
   useAppSelector,
 } from '@parca/store';
-import {
-  getLastItem,
-  scaleLinear,
-  selectQueryParam,
-  type ColorConfig,
-  type NavigateFunction,
-} from '@parca/utilities';
+import {getLastItem, scaleLinear, type ColorConfig} from '@parca/utilities';
 
 import GraphTooltipArrow from '../../GraphTooltipArrow';
 import GraphTooltipArrowContent from '../../GraphTooltipArrow/Content';
@@ -56,11 +50,8 @@ export const FIELD_FUNCTION_START_LINE = 'function_startline';
 export const FIELD_CHILDREN = 'children';
 export const FIELD_LABELS = 'labels';
 export const FIELD_CUMULATIVE = 'cumulative';
-export const FIELD_CUMULATIVE_PER_SECOND = 'cumulative_per_second';
 export const FIELD_FLAT = 'flat';
-export const FIELD_FLAT_PER_SECOND = 'flat_per_second';
 export const FIELD_DIFF = 'diff';
-export const FIELD_DIFF_PER_SECOND = 'diff_per_second';
 
 interface IcicleGraphArrowProps {
   arrow: FlamegraphArrow;
@@ -70,11 +61,11 @@ interface IcicleGraphArrowProps {
   width?: number;
   curPath: string[];
   setCurPath: (path: string[]) => void;
-  navigateTo?: NavigateFunction;
   sortBy: string;
   flamegraphLoading: boolean;
   isHalfScreen: boolean;
   mappingsListFromMetadata: string[];
+  compareAbsolute: boolean;
 }
 
 export const getMappingColors = (
@@ -101,10 +92,10 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   setCurPath,
   curPath,
   profileType,
-  navigateTo,
   sortBy,
   flamegraphLoading,
   mappingsListFromMetadata,
+  compareAbsolute,
 }: IcicleGraphArrowProps): React.JSX.Element {
   const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
   const dispatch = useAppDispatch();
@@ -125,12 +116,9 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const svg = useRef(null);
   const ref = useRef<SVGGElement>(null);
 
-  const [binaryFrameFilter, setBinaryFrameFilter] = useURLState({
-    param: 'binary_frame_filter',
-    navigateTo,
-  });
+  const [binaryFrameFilter, setBinaryFrameFilter] = useURLState('binary_frame_filter');
 
-  const currentSearchString = (selectQueryParam('search_string') as string) ?? '';
+  const [currentSearchString] = useURLState('search_string');
   const {compareMode} = useProfileViewContext();
   const currentColorProfile = useCurrentColorProfile();
   const colorForSimilarNodes = currentColorProfile.colorForSimilarNodes;
@@ -258,7 +246,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               path={path}
               level={0}
               isRoot={true}
-              searchString={currentSearchString}
+              searchString={(currentSearchString as string) ?? ''}
               setHoveringRow={setHoveringRow}
               setHoveringLevel={highlightSimilarStacksSetLevel}
               sortBy={sortBy}
@@ -312,7 +300,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           total={total}
           totalUnfiltered={total + filtered}
           profileType={profileType}
-          navigateTo={navigateTo as NavigateFunction}
+          compareAbsolute={compareAbsolute}
           trackVisibility={trackVisibility}
           curPath={curPath}
           setCurPath={setCurPath}
@@ -329,6 +317,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
             totalUnfiltered={total + filtered}
             profileType={profileType}
             unit={arrow.unit}
+            compareAbsolute={compareAbsolute}
           />
         ) : (
           !isContextMenuOpen && (
@@ -341,8 +330,8 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
                 total={total}
                 totalUnfiltered={total + filtered}
                 profileType={profileType}
-                navigateTo={navigateTo as NavigateFunction}
                 unit={arrow.unit}
+                compareAbsolute={compareAbsolute}
               />
             </GraphTooltipArrow>
           )

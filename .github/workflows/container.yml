@@ -21,7 +21,7 @@ env:
   # renovate: datasource=go depName=github.com/goreleaser/goreleaser
   GORELEASER_VERSION: v1.26.2
   # renovate: datasource=npm depName=pnpm versioning=npm
-  PNPM_VERSION: '8.15.8'
+  PNPM_VERSION: '8.15.9'
 
 jobs:
   skip-check:
@@ -158,7 +158,7 @@ jobs:
 
       - name: Install cosign
         if: ${{ github.event_name != 'pull_request' }}
-        uses: sigstore/cosign-installer@59acb6260d9c0ba8f4a2f9d9b48431a222b68e20 # v3.5.0
+        uses: sigstore/cosign-installer@4959ce089c160fddf62f7b42464195ba1a56d382 # v3.6.0
 
       - name: Install crane
         if: ${{ github.event_name != 'pull_request' }}

@@ -3,7 +3,7 @@ services:
 
   # Jaeger
   jaeger-all-in-one:
-    image: docker.io/jaegertracing/all-in-one:1.58.1@sha256:f015fb34e6742bb46b87c42cf83abfacfdd5dc39864a859a4ba942eb21c4b29c
+    image: docker.io/jaegertracing/all-in-one:1.60.0@sha256:4fd2d70fa347d6a47e79fcb06b1c177e6079f92cba88b083153d56263082135e
     ports:
       - "16686:16686"
       - "14268"
@@ -11,7 +11,7 @@ services:
 
   # Collector
   otel-collector:
-    image: docker.io/otel/opentelemetry-collector-contrib:0.104.0@sha256:e07e325e303e86f4a87a617491e921b579a92da6d404007394757ac910bf9587
+    image: docker.io/otel/opentelemetry-collector-contrib:0.106.1@sha256:12a6cab81088666668e312f1e814698f14f205d879181ec5f770301ab17692c2
     command: ["--config=/etc/otel-collector-config.yaml"]
     volumes:
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml

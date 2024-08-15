@@ -26,9 +26,7 @@ import {ProfileType} from '@parca/parser';
 import {
   FIELD_CHILDREN,
   FIELD_CUMULATIVE,
-  FIELD_CUMULATIVE_PER_SECOND,
   FIELD_DIFF,
-  FIELD_DIFF_PER_SECOND,
   FIELD_FUNCTION_NAME,
   FIELD_MAPPING_FILE,
 } from './index';
@@ -224,18 +222,12 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const mappingColumn = table.getChild(FIELD_MAPPING_FILE);
   const functionNameColumn = table.getChild(FIELD_FUNCTION_NAME);
   const cumulativeColumn = table.getChild(FIELD_CUMULATIVE);
-  const cumulativePerSecondColumn = table.getChild(FIELD_CUMULATIVE_PER_SECOND);
   const diffColumn = table.getChild(FIELD_DIFF);
-  const diffPerSecondColumn = table.getChild(FIELD_DIFF_PER_SECOND);
   // get the actual values from the columns
   const mappingFile: string | null = arrowToString(mappingColumn?.get(row));
   const functionName: string | null = arrowToString(functionNameColumn?.get(row));
   const cumulative = cumulativeColumn?.get(row) !== null ? BigInt(cumulativeColumn?.get(row)) : 0n;
-  const cumulativePerSecond: number | null =
-    cumulativePerSecondColumn?.get(row) != null ? cumulativePerSecondColumn.get(row) : 0;
   const diff: bigint | null = diffColumn?.get(row) !== null ? BigInt(diffColumn?.get(row)) : null;
-  const diffPerSecond: number | null =
-    diffPerSecondColumn?.get(row) != null ? diffPerSecondColumn.get(row) : null;
   const childRows: number[] = Array.from(table.getChild(FIELD_CHILDREN)?.get(row) ?? []);
 
   const highlightedNodes = useMemo(() => {
@@ -274,15 +266,6 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
       });
       break;
     case FIELD_CUMULATIVE:
-      if (profileType?.delta ?? false) {
-        childRows.sort((a, b) => {
-          const aCumulativePerSecond = cumulativePerSecondColumn?.get(a);
-          const bCumulativePerSecond = cumulativePerSecondColumn?.get(b);
-          return bCumulativePerSecond - aCumulativePerSecond;
-        });
-        break;
-      }
-
       childRows.sort((a, b) => {
         const aCumulative: bigint = cumulativeColumn?.get(a);
         const bCumulative: bigint = cumulativeColumn?.get(b);
@@ -291,48 +274,22 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
       break;
     case FIELD_DIFF:
       childRows.sort((a, b) => {
-        if (profileType?.delta ?? false) {
-          let aRatio: number | null = null;
-          let bRatio: number | null = null;
-
-          const aDiff: number | null = diffPerSecondColumn?.get(a);
-          if (aDiff !== null) {
-            const cumulative: number = cumulativePerSecondColumn?.get(a);
-            const prev = cumulative - aDiff;
-            aRatio = aDiff / prev;
-          }
-
-          const bDiff: number | null = diffPerSecondColumn?.get(b);
-          if (bDiff !== null) {
-            const cumulative: number = cumulativePerSecondColumn?.get(b);
-            const prev = cumulative - bDiff;
-            bRatio = bDiff / prev;
-          }
-
-          if (aRatio !== null && bRatio !== null) {
-            return bRatio - aRatio;
-          }
-          if (aRatio === null && bRatio !== null) {
-            return -1;
-          }
-          if (aRatio !== null && bRatio === null) {
-            return 1;
-          }
-          // both are null
-          return 0;
-        }
-
         let aRatio: number | null = null;
-        const aDiff: bigint | null = diffColumn?.get(a);
+        const aDiff: bigint | null =
+          diffColumn?.get(a) !== null ? BigInt(diffColumn?.get(a)) : null;
         if (aDiff !== null) {
-          const cumulative: bigint = cumulativeColumn?.get(a) ?? 0n;
+          const cumulative: bigint =
+            cumulativeColumn?.get(a) !== null ? BigInt(cumulativeColumn?.get(a)) : 0n;
+          console.log(typeof cumulative, typeof aDiff);
           const prev: bigint = cumulative - aDiff;
           aRatio = Number(aDiff) / Number(prev);
         }
         let bRatio: number | null = null;
-        const bDiff: bigint | null = diffColumn?.get(b);
+        const bDiff: bigint | null =
+          diffColumn?.get(b) !== null ? BigInt(diffColumn?.get(b)) : null;
         if (bDiff !== null) {
-          const cumulative: bigint = cumulativeColumn?.get(b) ?? 0n;
+          const cumulative: bigint =
+            cumulativeColumn?.get(b) !== null ? BigInt(cumulativeColumn?.get(b)) : 0n;
           const prev: bigint = cumulative - bDiff;
           bRatio = Number(bDiff) / Number(prev);
         }
@@ -357,9 +314,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     isDarkMode: darkMode,
     compareMode,
     cumulative,
-    cumulativePerSecond,
     diff,
-    diffPerSecond,
     mappingColors,
     mappingFile,
   });

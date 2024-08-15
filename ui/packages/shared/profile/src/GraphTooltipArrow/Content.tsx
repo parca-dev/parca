@@ -17,7 +17,7 @@ import {Icon} from '@iconify/react';
 import {Table} from 'apache-arrow';
 
 import {ProfileType} from '@parca/parser';
-import {getLastItem, type NavigateFunction} from '@parca/utilities';
+import {getLastItem} from '@parca/utilities';
 
 import {hexifyAddress, truncateString, truncateStringReverse} from '../utils';
 import {ExpandOnHover} from './ExpandOnHoverValue';
@@ -33,7 +33,7 @@ interface GraphTooltipArrowContentProps {
   row: number | null;
   level: number;
   isFixed: boolean;
-  navigateTo: NavigateFunction;
+  compareAbsolute: boolean;
 }
 
 const NoData = (): React.JSX.Element => {
@@ -49,7 +49,7 @@ const GraphTooltipArrowContent = ({
   row,
   level,
   isFixed,
-  navigateTo,
+  compareAbsolute,
 }: GraphTooltipArrowContentProps): React.JSX.Element => {
   const graphTooltipData = useGraphTooltip({
     table,
@@ -59,6 +59,7 @@ const GraphTooltipArrowContent = ({
     totalUnfiltered,
     row,
     level,
+    compareAbsolute,
   });
 
   if (graphTooltipData === null) {
@@ -69,9 +70,7 @@ const GraphTooltipArrowContent = ({
     name,
     locationAddress,
     cumulativeText,
-    cumulativePerSecondText,
     flatText,
-    flatPerSecondText,
     diffText,
     diff,
     row: rowNumber,
@@ -104,32 +103,12 @@ const GraphTooltipArrowContent = ({
                       <div>{cumulativeText}</div>
                     </td>
                   </tr>
-                  {profileType?.delta ?? false ? (
-                    <tr>
-                      <td className="w-1/4"></td>
-                      <td className="w-3/4">
-                        <div>{cumulativePerSecondText}</div>
-                      </td>
-                    </tr>
-                  ) : (
-                    <></>
-                  )}
                   <tr>
                     <td className="w-1/4 pt-2">Flat</td>
                     <td className="w-3/4 pt-2">
                       <div>{flatText}</div>
                     </td>
                   </tr>
-                  {profileType?.delta ?? false ? (
-                    <tr>
-                      <td className="w-1/4"></td>
-                      <td className="w-3/4">
-                        <div>{flatPerSecondText}</div>
-                      </td>
-                    </tr>
-                  ) : (
-                    <></>
-                  )}
                   {diff !== 0n && (
                     <tr>
                       <td className="w-1/4 pt-2">Diff</td>
@@ -138,7 +117,7 @@ const GraphTooltipArrowContent = ({
                       </td>
                     </tr>
                   )}
-                  <TooltipMetaInfo table={table} row={rowNumber} navigateTo={navigateTo} />
+                  <TooltipMetaInfo table={table} row={rowNumber} />
                 </tbody>
               </table>
             </div>
@@ -153,15 +132,7 @@ const GraphTooltipArrowContent = ({
   );
 };
 
-const TooltipMetaInfo = ({
-  table,
-  row,
-  navigateTo,
-}: {
-  table: Table<any>;
-  row: number;
-  navigateTo: NavigateFunction;
-}): React.JSX.Element => {
+const TooltipMetaInfo = ({table, row}: {table: Table<any>; row: number}): React.JSX.Element => {
   const {
     labelPairs,
     functionFilename,
@@ -170,7 +141,7 @@ const TooltipMetaInfo = ({
     mappingFile,
     mappingBuildID,
     inlined,
-  } = useGraphTooltipMetaInfo({table, row, navigateTo});
+  } = useGraphTooltipMetaInfo({table, row});
 
   const labels = labelPairs.map(
     (l): React.JSX.Element => (
