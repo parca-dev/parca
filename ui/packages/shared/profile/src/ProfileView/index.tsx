@@ -11,9 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Profiler, ProfilerProps, useEffect, useState} from 'react';
+import {Profiler, ProfilerProps, useCallback, useEffect, useState} from 'react';
 
-import {Icon} from '@iconify/react';
 import cx from 'classnames';
 import {scaleLinear} from 'd3';
 import graphviz from 'graphviz-wasm';
@@ -34,13 +33,7 @@ import {
   TableArrow,
   Top,
 } from '@parca/client';
-import {
-  Button,
-  ConditionalWrapper,
-  KeyDownProvider,
-  useParcaContext,
-  useURLState,
-} from '@parca/components';
+import {ConditionalWrapper, KeyDownProvider, useParcaContext, useURLState} from '@parca/components';
 import {useContainerDimensions} from '@parca/hooks';
 import {selectDarkMode, useAppSelector} from '@parca/store';
 import {getNewSpanColor, selectQueryParam} from '@parca/utilities';
@@ -48,13 +41,12 @@ import {getNewSpanColor, selectQueryParam} from '@parca/utilities';
 import {Callgraph} from '../';
 import {jsonToDot} from '../Callgraph/utils';
 import ProfileIcicleGraph from '../ProfileIcicleGraph';
+import {FIELD_FUNCTION_NAME} from '../ProfileIcicleGraph/IcicleGraphArrow';
 import {ProfileSource} from '../ProfileSource';
 import {SourceView} from '../SourceView';
 import {Table} from '../Table';
-import ProfileShareButton from '../components/ProfileShareButton';
-import FilterByFunctionButton from './FilterByFunctionButton';
+import VisualisationToolbar from '../components/VisualisationToolbar';
 import {ProfileViewContextProvider} from './ProfileViewContext';
-import ViewSelector from './ViewSelector';
 import {VisualizationPanel} from './VisualizationPanel';
 
 export interface FlamegraphData {
@@ -141,7 +133,7 @@ export const ProfileView = ({
   const isDarkMode = useAppSelector(selectDarkMode);
   const isMultiPanelView = dashboardItems.length > 1;
 
-  const {perf, profileViewExternalMainActions, profileViewExternalSubActions} = useParcaContext();
+  const {perf, profileViewExternalMainActions} = useParcaContext();
 
   useEffect(() => {
     // Reset the current path when the profile source changes
@@ -324,6 +316,27 @@ export const ProfileView = ({
     compare === true ||
     (selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true');
 
+  const [groupBy, setStoreGroupBy] = useURLState<string[]>('group_by', {
+    defaultValue: [FIELD_FUNCTION_NAME],
+    alwaysReturnArray: true,
+  });
+
+  const setGroupBy = useCallback(
+    (keys: string[]): void => {
+      setStoreGroupBy(keys);
+    },
+    [setStoreGroupBy]
+  );
+
+  const toggleGroupBy = useCallback(
+    (key: string): void => {
+      groupBy.includes(key)
+        ? setGroupBy(groupBy.filter(v => v !== key)) // remove
+        : setGroupBy([...groupBy, key]); // add
+    },
+    [groupBy, setGroupBy]
+  );
+
   return (
     <KeyDownProvider>
       <ProfileViewContextProvider value={{profileSource, compareMode}}>
@@ -341,7 +354,7 @@ export const ProfileView = ({
         >
           <div>
             {hasProfileSource && (
-              <div className="max-w-[300px]">
+              <div className="flex items-center gap-1">
                 <div className="text-sm font-medium capitalize">
                   {headerParts.length > 0 ? headerParts[0].replace(/"/g, '') : ''}
                 </div>
@@ -355,40 +368,26 @@ export const ProfileView = ({
 
             {profileViewExternalMainActions != null ? profileViewExternalMainActions : null}
           </div>
-
-          <div className="lg:flex flex-wrap items-center gap-2 md:justify-end hidden">
-            <FilterByFunctionButton />
-            {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
-            {profileSource !== undefined && queryClient !== undefined ? (
-              <ProfileShareButton
-                queryRequest={profileSource.QueryRequest()}
-                queryClient={queryClient}
-              />
-            ) : null}
-            <Button
-              className="gap-2"
-              variant="neutral"
-              onClick={e => {
-                e.preventDefault();
-                onDownloadPProf();
-              }}
-              disabled={pprofDownloading}
-              id="h-download-pprof"
-            >
-              {pprofDownloading != null && pprofDownloading ? 'Downloading...' : 'Download pprof'}
-              <Icon icon="material-symbols:download" width={20} />
-            </Button>
-            <ViewSelector
-              defaultValue=""
-              position={-1}
-              placeholderText="Add panel"
-              icon={<Icon icon="material-symbols:add" width={20} />}
-              addView={true}
-              disabled={isMultiPanelView || dashboardItems.length < 1}
-              id="h-add-panel"
-            />
-          </div>
         </div>
+
+        <VisualisationToolbar
+          groupBy={groupBy}
+          toggleGroupBy={toggleGroupBy}
+          hasProfileSource={hasProfileSource}
+          pprofdownloading={pprofDownloading}
+          profileSource={profileSource}
+          queryClient={queryClient}
+          onDownloadPProf={onDownloadPProf}
+          isMultiPanelView={isMultiPanelView}
+          dashboardItems={dashboardItems}
+          curPath={curPath}
+          setNewCurPath={setNewCurPath}
+          profileType={profileSource?.ProfileType()}
+          total={total}
+          filtered={filtered}
+          currentSearchString={currentSearchString}
+          setSearchString={setSearchString}
+        />
 
         <div className="w-full" ref={ref}>
           <DragDropContext onDragEnd={onDragEnd}>

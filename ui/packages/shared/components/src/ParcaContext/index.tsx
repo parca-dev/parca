@@ -66,6 +66,7 @@ interface Props {
   sourceViewContextMenuItems?: SourceViewContextMenuItem[];
   additionalFlamegraphColorProfiles?: Record<string, ColorConfig>;
   timezone?: string;
+  preferencesModal?: boolean;
 }
 
 export const defaultValue: Props = {
@@ -88,6 +89,7 @@ export const defaultValue: Props = {
   navigateTo: () => {},
   enableSourcesView: false,
   isDarkMode: false,
+  preferencesModal: false,
 };
 
 const ParcaContext = createContext<Props>(defaultValue);
