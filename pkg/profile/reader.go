@@ -77,7 +77,7 @@ func NewRecordReader(ar arrow.Record) *RecordReader {
 
 	labelFields := make([]arrow.Field, 0, schema.NumFields())
 	for _, field := range schema.Fields() {
-		if strings.HasPrefix(field.Name, ColumnPprofLabelsPrefix) {
+		if strings.HasPrefix(field.Name, ColumnLabelsPrefix) {
 			labelFields = append(labelFields, field)
 		}
 	}

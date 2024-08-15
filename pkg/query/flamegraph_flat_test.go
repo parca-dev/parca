@@ -106,6 +106,7 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 			}},
 		},
 		0,
+		[]string{},
 	)
 	require.NoError(t, err)
 
@@ -176,7 +177,7 @@ func TestGenerateFlamegraphFromProfile(t *testing.T) {
 	p, err := pprofprofile.ParseData(fileContent)
 	require.NoError(t, err)
 
-	pp, err := PprofToSymbolizedProfile(profile.Meta{}, p, 0)
+	pp, err := PprofToSymbolizedProfile(profile.Meta{}, p, 0, []string{})
 	require.NoError(t, err)
 
 	sp, err := parcacol.NewArrowToProfileConverter(nil, kv.NewKeyMaker()).Convert(ctx, pp)
@@ -232,6 +233,7 @@ func TestGenerateFlamegraphWithInlined(t *testing.T) {
 			Function:   functions,
 		},
 		0,
+		[]string{},
 	)
 	require.NoError(t, err)
 
@@ -371,6 +373,7 @@ func TestGenerateFlamegraphWithInlinedExisting(t *testing.T) {
 			Function:   functions,
 		},
 		0,
+		[]string{},
 	)
 	require.NoError(t, err)
 
