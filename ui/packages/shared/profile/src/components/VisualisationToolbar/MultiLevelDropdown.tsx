@@ -36,6 +36,7 @@ interface MenuItemType {
   disabled?: boolean;
   active?: boolean;
   value?: string;
+  icon?: string;
 }
 
 type MenuItemProps = MenuItemType & {
@@ -44,6 +45,7 @@ type MenuItemProps = MenuItemType & {
   closeDropdown: () => void;
   isNested?: boolean;
   activeValue?: string;
+  icon?: string;
 };
 
 const MenuItem: React.FC<MenuItemProps> = ({
@@ -58,6 +60,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
   activeValue,
   value,
   disabled = false,
+  icon,
 }) => {
   const isActive = isNested && value === activeValue;
 
@@ -91,7 +94,10 @@ const MenuItem: React.FC<MenuItemProps> = ({
               disabled={disabled}
             >
               <span className="flex items-center">
-                {label}
+                <div className="flex items-center">
+                  <span>{label}</span>
+                  {icon !== undefined && <Icon icon={icon} className="ml-2 h-4 w-4" />}
+                </div>
                 {isActive && <Icon icon="heroicons-solid:check" className="ml-2 h-4 w-4" />}
               </span>
               {items !== undefined && (
@@ -185,28 +191,33 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
         },
       ],
       hide: false,
+      icon: 'material-symbols:sort',
     },
     {
       label: isColorStackLegendEnabled ? 'Hide legend' : 'Show legend',
       onclick: () => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true'),
       hide: compareMode || colorProfileName === 'default',
       id: 'h-show-legend-button',
+      icon: isColorStackLegendEnabled ? 'ph:eye-closed' : 'ph:eye',
     },
     {
       label: isInvert ? 'Original Call Stack' : 'Invert Call Stack',
       onclick: () => setInvertStack(isInvert ? '' : 'true'),
       hide: false,
+      icon: isInvert ? 'ph:sort-ascending' : 'ph:sort-descending',
     },
     {
       label: isCompareAbsolute ? 'Compare Relative' : 'Compare Absolute',
       onclick: () => setCompareAbsolute(isCompareAbsolute ? 'false' : 'true'),
       hide: !compareMode,
+      icon: isCompareAbsolute ? 'fluent-mdl2:compare' : 'fluent-mdl2:compare-uneven',
     },
     {
       label: 'Reset Legend',
       hide: binaryFrameFilter === undefined || binaryFrameFilter.length === 0,
       onclick: () => resetLegend(),
       id: 'h-reset-legend-button',
+      icon: 'system-uicons:reset',
     },
   ];
 
