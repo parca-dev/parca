@@ -60,6 +60,8 @@ interface Props {
     emitQuery: (query: string) => void;
     createViewComponent?: ReactNode;
     disableProfileTypesDropdown?: boolean;
+    labelnames?: string[];
+    disableExplorativeQuerying?: boolean;
   };
   profileViewExternalMainActions?: ReactNode;
   profileViewExternalSubActions?: ReactNode;
