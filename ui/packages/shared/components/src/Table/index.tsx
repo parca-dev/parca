@@ -213,7 +213,7 @@ const Table = <T,>({
   return (
     <div ref={tableContainerRef} className={cx('h-full overflow-scroll pr-2', className)}>
       <table className="w-full">
-        <thead className="sticky top-0 bg-gray-50 text-sm dark:bg-gray-800 z-20">
+        <thead className="sticky top-0 bg-gray-50 text-sm dark:bg-gray-800 z-[1]">
           {title.length > 0 ? (
             <tr>
               <th colSpan={columns.length} className="p-2 pl-4 text-left uppercase">

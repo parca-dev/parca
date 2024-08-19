@@ -32,6 +32,7 @@ const links: {[path: string]: {label: string; href: string; external: boolean}} 
   '/': {label: 'Explorer', href: `/`, external: false},
   '/compare': {label: 'Compare', href: 'compare', external: false},
   '/targets': {label: 'Targets', href: `/targets`, external: false},
+  '/settings': {label: 'Settings', href: `/settings`, external: false},
   '/help': {label: 'Help', href: 'https://parca.dev/docs/overview', external: true},
 };
 

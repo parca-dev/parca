@@ -11,19 +11,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useState} from 'react';
+import React, {useState} from 'react';
 
 import {Icon} from '@iconify/react';
 
 import {QueryRequest, QueryServiceClient} from '@parca/client';
-import {Button, Modal, useGrpcMetadata} from '@parca/components';
+import {Button, Dropdown, Modal, useGrpcMetadata} from '@parca/components';
 
+import {ProfileSource} from '../../ProfileSource';
 import ResultBox from './ResultBox';
 
 interface Props {
-  queryRequest: QueryRequest;
-  queryClient: QueryServiceClient;
-  disabled?: boolean;
+  profileSource?: ProfileSource;
+  queryClient?: QueryServiceClient;
+  queryRequest?: QueryRequest;
+  onDownloadPProf: () => void;
+  pprofdownloading: boolean;
+  profileViewExternalSubActions: React.ReactNode;
 }
 
 interface ProfileShareModalProps {
@@ -122,29 +126,89 @@ const ProfileShareModal = ({
   );
 };
 
-const ProfileShareButton = ({queryRequest, queryClient, disabled = false}: Props): JSX.Element => {
-  const [isOpen, setIsOpen] = useState<boolean>(false);
+const ShareButton = ({
+  queryRequest,
+  queryClient,
+  profileSource,
+  onDownloadPProf,
+  pprofdownloading,
+  profileViewExternalSubActions,
+}: Props): JSX.Element => {
+  const [showProfileShareModal, setShowProfileShareModal] = useState(false);
+
+  const actions = [
+    {
+      key: 'shareProfile',
+      label: 'Share profile via link',
+      onSelect: () => setShowProfileShareModal(true),
+      id: 'h-share-profile-button',
+      disabled:
+        profileSource === undefined && queryClient === undefined && queryRequest === undefined,
+      icon: 'material-symbols-light:link',
+    },
+    {
+      key: 'downloadProfile',
+      label: pprofdownloading != null && pprofdownloading ? 'Downloading...' : 'Download as pprof',
+      onSelect: () => onDownloadPProf(),
+      id: 'h-download-pprof',
+      disabled: pprofdownloading,
+      icon: 'material-symbols:download',
+    },
+  ];
 
   return (
     <>
-      <Button
-        variant="neutral"
-        onClick={() => setIsOpen(true)}
-        disabled={disabled}
-        className="gap-2"
-        id="h-share-profile-button"
-      >
-        Share profile
-        <Icon icon="material-symbols:share" width={20} />
-      </Button>
-      <ProfileShareModal
-        isOpen={isOpen}
-        closeModal={() => setIsOpen(false)}
-        queryRequest={queryRequest}
-        queryClient={queryClient}
-      />
+      {profileViewExternalSubActions != null ? (
+        <>
+          <Button
+            className="gap-2"
+            variant="neutral"
+            onClick={e => {
+              e.preventDefault();
+              onDownloadPProf();
+            }}
+            disabled={pprofdownloading}
+            id="h-download-pprof"
+          >
+            {pprofdownloading != null && pprofdownloading ? 'Downloading...' : 'Download pprof'}
+            <Icon icon="material-symbols:download" width={20} />
+          </Button>
+        </>
+      ) : (
+        <>
+          <Dropdown
+            dropdownWidth="w-48"
+            element={
+              <Button variant="neutral">
+                Share
+                <Icon icon="material-symbols:share" className="h-5 w-5 ml-2" />
+              </Button>
+            }
+          >
+            <span className="text-xs text-gray-400 capitalize px-2">actions</span>
+            {actions.map(item => (
+              <Dropdown.Item key={item.key} onSelect={item.onSelect}>
+                <div id={item.id} className="flex items-center">
+                  <span>{item.label}</span>
+                  <Icon icon={item.icon} className="ml-2 h-4 w-4" />
+                </div>
+              </Dropdown.Item>
+            ))}
+          </Dropdown>
+          {profileSource !== undefined &&
+            queryClient !== undefined &&
+            queryRequest !== undefined && (
+              <ProfileShareModal
+                isOpen={showProfileShareModal}
+                closeModal={() => setShowProfileShareModal(false)}
+                queryRequest={queryRequest}
+                queryClient={queryClient}
+              />
+            )}
+        </>
+      )}
     </>
   );
 };
 
-export default ProfileShareButton;
+export default ShareButton;

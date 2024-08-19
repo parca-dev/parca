@@ -26,7 +26,6 @@ import cx from 'classnames';
 import {AnimatePresence, motion} from 'framer-motion';
 
 import {
-  Button,
   Table as TableComponent,
   TableSkeleton,
   useParcaContext,
@@ -38,7 +37,6 @@ import {getLastItem, isSearchMatch, valueFormatter} from '@parca/utilities';
 
 import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
 import {hexifyAddress} from '../utils';
-import ColumnsVisibility from './ColumnsVisibility';
 import {getTopAndBottomExpandedRowModel} from './utils/topAndBottomExpandedRowModel';
 
 const FIELD_MAPPING_FILE = 'mapping_file';
@@ -79,7 +77,7 @@ interface DummyRow {
 
 export type Row = DataRow | DummyRow;
 
-const isDummyRow = (row: Row): row is DummyRow => {
+export const isDummyRow = (row: Row): row is DummyRow => {
   return 'size' in row;
 };
 
@@ -97,6 +95,20 @@ interface TableProps {
   isHalfScreen: boolean;
   unit?: string;
 }
+
+export type ColumnName =
+  | 'flat'
+  | 'flatPercentage'
+  | 'flatDiff'
+  | 'flatDiffPercentage'
+  | 'cumulative'
+  | 'cumulativePercentage'
+  | 'cumulativeDiff'
+  | 'cumulativeDiffPercentage'
+  | 'name'
+  | 'functionSystemName'
+  | 'functionFileName'
+  | 'mappingFile';
 
 const rowBgClassNames = (isExpanded: boolean, isSubRow: boolean): Record<string, boolean> => {
   return {
@@ -284,6 +296,38 @@ const getCalleeRows = (callees: DataRow[]): Row[] => {
   return [{size: 3 - rows.length, message: '', isBottomSubRow: true}, ...rows];
 };
 
+export const getPercentageString = (value: bigint | number, total: bigint | number): string => {
+  if (total === 0n) {
+    return '0%';
+  }
+
+  const percentage = (Number(value) / Number(total)) * 100;
+  return `${percentage.toFixed(2)}%`;
+};
+
+export const getRatioString = (value: bigint | number, total: bigint, filtered: bigint): string => {
+  if (filtered === 0n) {
+    return ` ${getPercentageString(value, total)}`;
+  }
+
+  return `${getPercentageString(value, total)} / ${getPercentageString(value, filtered)}`;
+};
+
+export const possibleColumns = [
+  'flat',
+  'flatPercentage',
+  'flatDiff',
+  'flatDiffPercentage',
+  'cumulative',
+  'cumulativePercentage',
+  'cumulativeDiff',
+  'cumulativeDiffPercentage',
+  'name',
+  'functionSystemName',
+  'functionFileName',
+  'mappingFile',
+];
+
 export const Table = React.memo(function Table({
   data,
   total,
@@ -292,13 +336,16 @@ export const Table = React.memo(function Table({
   loading,
   currentSearchString,
   setSearchString = () => {},
-  setActionButtons,
   isHalfScreen,
   unit,
 }: TableProps): React.JSX.Element {
   const [dashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
   });
+  const [tableColumns] = useURLState<string[]>('table_columns', {
+    alwaysReturnArray: true,
+  });
+
   const {isDarkMode} = useParcaContext();
   const [expanded, setExpanded] = useState<ExpandedState>({});
   const [scrollToIndex, setScrollToIndex] = useState<number | undefined>(undefined);
@@ -471,6 +518,18 @@ export const Table = React.memo(function Table({
     };
   });
 
+  useEffect(() => {
+    if (Array.isArray(tableColumns)) {
+      setColumnVisibility(prevState => {
+        const newState = {...prevState};
+        (Object.keys(newState) as ColumnName[]).forEach(column => {
+          newState[column] = tableColumns.includes(column);
+        });
+        return newState;
+      });
+    }
+  }, [tableColumns]);
+
   const selectSpan = useCallback(
     (span: string): void => {
       setSearchString(span.trim());
@@ -539,43 +598,6 @@ export const Table = React.memo(function Table({
   const enableHighlighting = useMemo(() => {
     return currentSearchString != null && currentSearchString?.length > 0;
   }, [currentSearchString]);
-
-  const clearSelection = useCallback((): void => {
-    setSearchString('');
-  }, [setSearchString]);
-
-  useEffect(() => {
-    setActionButtons?.(
-      <>
-        <ColumnsVisibility
-          columns={columns}
-          visibility={columnVisibility}
-          setVisibility={(id, visible) => {
-            setColumnVisibility({...columnVisibility, [id]: visible});
-          }}
-        />
-        {dashboardItems.length > 1 && (
-          <Button
-            color="neutral"
-            onClick={clearSelection}
-            className="w-auto"
-            variant="neutral"
-            disabled={currentSearchString === undefined || currentSearchString.length === 0}
-          >
-            Clear selection
-          </Button>
-        )}
-      </>
-    );
-  }, [
-    dashboardItems,
-    clearSelection,
-    currentSearchString,
-    setActionButtons,
-    columns,
-    columnVisibility,
-    loading,
-  ]);
 
   const initialSorting = useMemo(() => {
     return [
@@ -712,7 +734,7 @@ export const Table = React.memo(function Table({
   );
 });
 
-const addPlusSign = (num: string): string => {
+export const addPlusSign = (num: string): string => {
   if (num.charAt(0) === '0' || num.charAt(0) === '-') {
     return num;
   }

@@ -36,7 +36,7 @@ import Spinner from './Spinner';
 import Tab from './Tab';
 import Table from './Table';
 import TextWithTooltip from './TextWithTooltip';
-import UserPreferences from './UserPreferences';
+import UserPreferences, {UserPreferencesModal} from './UserPreferences';
 
 export type {PillVariant, SelectElement, SelectItem};
 
@@ -78,4 +78,5 @@ export {
   useGrpcMetadata,
   useKeyDown,
   UserPreferences,
+  UserPreferencesModal,
 };

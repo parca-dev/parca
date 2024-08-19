@@ -69,7 +69,7 @@ const Modal = ({
                   {[className]: className?.length > 0}
                 )}
               >
-                <Dialog.Title as="h3" className="text-lg font-medium leading-6">
+                <Dialog.Title as="h3" className="text-lg font-medium leading-6 dark:text-gray-200">
                   {title}
                 </Dialog.Title>
                 {children}
