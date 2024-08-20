@@ -69,8 +69,6 @@ const VisualisationToolbar = ({
   const {profileViewExternalMainActions, profileViewExternalSubActions, preferencesModal} =
     useParcaContext();
 
-  console.log('🚀 ~ preferencesModal:', preferencesModal);
-
   const [groupBy, setStoreGroupBy] = useURLState<string[]>('group_by', {
     defaultValue: [FIELD_FUNCTION_NAME],
     alwaysReturnArray: true,
