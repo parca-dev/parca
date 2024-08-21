@@ -62,7 +62,7 @@ const ProfileExplorerCompare = ({
   return (
     <>
       <div className="flex justify-between gap-2">
-        <Card className="p-2">
+        <div className="flex-column flex-1 p-2">
           <ProfileSelector
             queryClient={queryClient}
             querySelection={queryA}
@@ -75,8 +75,8 @@ const ProfileExplorerCompare = ({
             navigateTo={navigateTo}
             suffix="_a"
           />
-        </Card>
-        <Card className="p-2">
+        </div>
+        <div className="flex-column flex-1 p-2">
           <ProfileSelector
             queryClient={queryClient}
             querySelection={queryB}
@@ -89,24 +89,22 @@ const ProfileExplorerCompare = ({
             navigateTo={navigateTo}
             suffix="_b"
           />
-        </Card>
+        </div>
       </div>
       <div className="grid grid-cols-1">
         {profileA != null && profileB != null ? (
           <div>
-            <Card className="mt-2 px-6 py-4">
-              <ProfileViewWithData
-                queryClient={queryClient}
-                profileSource={
-                  new ProfileDiffSource(
-                    profileA.ProfileSource(),
-                    profileB.ProfileSource(),
-                    Array.isArray(functionFilter) ? functionFilter[0] : functionFilter,
-                    compareAbsolute === 'true'
-                  )
-                }
-              />
-            </Card>
+            <ProfileViewWithData
+              queryClient={queryClient}
+              profileSource={
+                new ProfileDiffSource(
+                  profileA.ProfileSource(),
+                  profileB.ProfileSource(),
+                  Array.isArray(functionFilter) ? functionFilter[0] : functionFilter,
+                  compareAbsolute === 'true'
+                )
+              }
+            />
           </div>
         ) : (
           <div>

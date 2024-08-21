@@ -59,7 +59,7 @@ const IcicleGraphSkeleton = ({isHalfScreen, isDarkMode}: Props): JSX.Element => 
         <linearGradient id="shimmer" x1="0%" y1="0%" x2="100%" y2="0%">
           <stop
             offset="0.599964"
-            stopColor={cx(isDarkMode ? '#111827' : '#f3f3f3')}
+            stopColor={cx(isDarkMode ? '#1f2937' : '#f3f3f3')}
             stopOpacity="1"
           >
             <animate
@@ -70,7 +70,7 @@ const IcicleGraphSkeleton = ({isHalfScreen, isDarkMode}: Props): JSX.Element => 
               repeatCount="indefinite"
             ></animate>
           </stop>
-          <stop offset="1.59996" stopColor={cx(isDarkMode ? '#1f2937' : '#ecebeb')} stopOpacity="1">
+          <stop offset="1.59996" stopColor={cx(isDarkMode ? '#374151' : '#ecebeb')} stopOpacity="1">
             <animate
               attributeName="offset"
               values="-1; -1; 2"
@@ -79,7 +79,7 @@ const IcicleGraphSkeleton = ({isHalfScreen, isDarkMode}: Props): JSX.Element => 
               repeatCount="indefinite"
             ></animate>
           </stop>
-          <stop offset="2.59996" stopColor={cx(isDarkMode ? '#111827' : '#f3f3f3')} stopOpacity="1">
+          <stop offset="2.59996" stopColor={cx(isDarkMode ? '#1f2937' : '#f3f3f3')} stopOpacity="1">
             <animate
               attributeName="offset"
               values="0; 0; 3"

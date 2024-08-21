@@ -340,6 +340,7 @@ export const ProfileView = ({
   return (
     <KeyDownProvider>
       <ProfileViewContextProvider value={{profileSource, compareMode}}>
+        <div className="border-t border-gray-200 dark:border-gray-700 h-[1px] w-full pb-4"></div>
         <div
           className={cx(
             'flex w-full',
@@ -415,10 +416,10 @@ export const ProfileView = ({
                             {...provided.draggableProps}
                             key={dashboardItem}
                             className={cx(
-                              'w-full rounded p-2 shadow dark:border dark:border-gray-700 dark:bg-gray-700 min-h-96',
+                              'w-full min-h-96',
                               snapshot.isDragging
                                 ? 'bg-gray-200 dark:bg-gray-500'
-                                : 'bg-white dark:bg-gray-700'
+                                : 'bg-white dark:bg-gray-900'
                             )}
                           >
                             <VisualizationPanel
