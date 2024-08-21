@@ -261,7 +261,7 @@ func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrac
 				w.MappingBuildID.AppendNull()
 			}
 
-			if loc.Lines != nil && len(loc.Lines) > 0 {
+			if len(loc.Lines) > 0 {
 				w.Lines.Append(true)
 				for _, l := range loc.Lines {
 					w.Line.Append(true)
