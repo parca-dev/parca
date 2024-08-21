@@ -16,6 +16,7 @@ import moment from 'moment-timezone';
 import {ABSOLUTE_TIME_ALIASES, AbsoluteDateValue, DATE_FORMAT} from '../DateTimePicker';
 
 export const UNITS = {
+  SECOND: 'second',
   MINUTE: 'minute',
   HOUR: 'hour',
   DAY: 'day',

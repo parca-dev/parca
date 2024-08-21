@@ -36,6 +36,7 @@ interface UnitsMap {
 }
 
 const unitLong: UnitsMap = {
+  s: UNITS.SECOND,
   m: UNITS.MINUTE,
   h: UNITS.HOUR,
   d: UNITS.DAY,
@@ -43,12 +44,22 @@ const unitLong: UnitsMap = {
   y: UNITS.YEAR,
 };
 const unitShort: UnitsMap = {
+  [UNITS.SECOND]: 's',
   [UNITS.MINUTE]: 'm',
   [UNITS.HOUR]: 'h',
   [UNITS.DAY]: 'd',
   [UNITS.WEEK]: 'w',
   [UNITS.YEAR]: 'y',
 };
+
+const units: Array<[UNIT_TYPE, number]> = [
+  [UNITS.YEAR, 31536000],
+  [UNITS.WEEK, 604800],
+  [UNITS.DAY, 86400],
+  [UNITS.HOUR, 3600],
+  [UNITS.MINUTE, 60],
+  [UNITS.SECOND, 1],
+];
 
 const presetRanges = [
   {value: 1, unit: UNITS.MINUTE},
@@ -73,22 +84,37 @@ const presetRanges = [
 
 const NOW = new RelativeDate(UNITS.MINUTE, 0);
 
-const parseInput = (input: string): {value: number; unit: string} | null => {
-  // Ensure the input is not too long to mitigate potential DoS attacks
-  if (input.length > 100) {
-    return null; // Input is too long
+const parseInput = (input: string): {value: number; unit: UNIT_TYPE} | null => {
+  if (input.length > 100) return null;
+
+  const parts = input.match(/(\d+[smhdwy])/g);
+  if (parts === null) return null;
+
+  let totalSeconds = 0;
+  for (const part of parts) {
+    const value = parseInt(part.slice(0, -1));
+    const unit = part.slice(-1) as keyof typeof unitLong;
+    if (isNaN(value) || unitLong[unit] === '') return null;
+
+    const unitInSeconds = {
+      s: 1,
+      m: 60,
+      h: 3600,
+      d: 86400,
+      w: 604800,
+      y: 31536000,
+    }[unit] as number;
+
+    totalSeconds += value * unitInSeconds;
   }
 
-  const value = parseFloat(input);
-  const match = input.match(/^(\d+)([mhdw])$/);
-
-  // handle parseFloat edge cases and non-valid input
-  if (Number.isNaN(value) || input.includes('Infinity') || input.includes('e') || match == null) {
-    return null;
+  for (const [unit, seconds] of units) {
+    if (totalSeconds >= seconds) {
+      return {value: Math.round((totalSeconds / seconds) * 100) / 100, unit};
+    }
   }
 
-  const unit = match[2];
-  return {value, unit: unitLong[unit]};
+  return {value: totalSeconds, unit: UNITS.SECOND};
 };
 
 export const RelativeDatePickerForPanel = ({
@@ -205,19 +231,46 @@ const RelativeDatePicker = ({
 
   const [validRange, setValidRange] = useState<{
     value: number;
-    unit: string;
+    unit: UNIT_TYPE;
   }>({
     value: date.value,
     unit: date.unit,
   });
 
+  const formatRange = (value: number, unit: UNIT_TYPE): string => {
+    const totalSeconds =
+      value *
+      {
+        [UNITS.SECOND]: 1,
+        [UNITS.MINUTE]: 60,
+        [UNITS.HOUR]: 3600,
+        [UNITS.DAY]: 86400,
+        [UNITS.WEEK]: 604800,
+        [UNITS.YEAR]: 31536000,
+      }[unit];
+
+    const parts: string[] = [];
+    let remaining = totalSeconds;
+
+    for (const [unitName, seconds] of units) {
+      if (remaining >= seconds) {
+        const count = Math.floor(remaining / seconds);
+        parts.push(`${count}${unitShort[unitName]}`);
+        remaining %= seconds;
+      }
+    }
+
+    return parts.join('') ?? `0${unitShort[UNITS.SECOND]}`;
+  };
+
   useEffect(() => {
-    setRangeInputString(`${date.value}${unitShort[date.unit]}`);
+    setRangeInputString(formatRange(date.value, date.unit));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range]);
 
   useEffect(() => {
-    setRangeInputString(`${validRange.value}${unitShort[validRange.unit]}`);
+    const formattedRange = formatRange(validRange.value, validRange.unit);
+    setRangeInputString(formattedRange);
     onChange(new RelativeDate(validRange.unit, validRange.value), NOW);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [validRange]);
@@ -300,13 +353,14 @@ const RelativeDatePicker = ({
 
             // if parsed input is not valid, set input to the previous valid value
             if (parsedInput === null) {
-              setRangeInputString(`${validRange.value}${unitShort[validRange.unit]}`);
-              return;
+              setRangeInputString(formatRange(validRange.value, validRange.unit));
+            } else {
+              setValidRange(parsedInput);
             }
 
             // if parsed input is valid, set valid range state
-            const {value, unit} = parsedInput;
-            setValidRange({value, unit});
+            // const {value, unit} = parsedInput;
+            // setValidRange({value, unit});
           }}
           onKeyDown={e => {
             // if enter key is pressed, blur the input
