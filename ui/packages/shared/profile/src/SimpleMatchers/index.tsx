@@ -120,6 +120,14 @@ const SimpleMatchers = ({
 
   const currentMatchers = currentQuery.matchersString();
 
+  const labelNameFromMatchers = useMemo(() => {
+    if (currentQuery === undefined) return [];
+
+    const matchers = currentQuery.matchers;
+
+    return matchers.map(matcher => matcher.key);
+  }, [currentQuery]);
+
   const fetchLabelValues = useCallback(
     async (labelName: string): Promise<string[]> => {
       try {
@@ -192,8 +200,9 @@ const SimpleMatchers = ({
   }, [labelNamesError, labelNamesResponse]);
 
   const labelNameOptions = useMemo(() => {
-    return transformLabelsForSelect(labelNames);
-  }, [labelNames]);
+    const uniqueLabelNames = Array.from(new Set([...labelNames, ...labelNameFromMatchers]));
+    return transformLabelsForSelect(uniqueLabelNames);
+  }, [labelNames, labelNameFromMatchers]);
 
   const updateRow = useCallback(
     async (index: number, field: keyof QueryRow, value: string): Promise<void> => {

@@ -12,8 +12,10 @@
 // limitations under the License.
 
 import type {Props as CallgraphProps} from './Callgraph';
+import {useLabelNames} from './MatchersInput';
 import ProfileExplorer, {getExpressionAsAString} from './ProfileExplorer';
 import ProfileTypeSelector from './ProfileTypeSelector';
+import CustomSelect from './SimpleMatchers/Select';
 
 export * from './ProfileIcicleGraph/IcicleGraph';
 export * from './ProfileIcicleGraph';
@@ -31,4 +33,4 @@ export const DEFAULT_PROFILE_EXPLORER_PARAM_VALUES = {
 
 export type {CallgraphProps};
 
-export {ProfileExplorer, ProfileTypeSelector, getExpressionAsAString};
+export {ProfileExplorer, ProfileTypeSelector, getExpressionAsAString, CustomSelect, useLabelNames};

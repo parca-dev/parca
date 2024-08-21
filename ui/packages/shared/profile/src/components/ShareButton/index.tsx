@@ -139,18 +139,20 @@ const ShareButton = ({
   const actions = [
     {
       key: 'shareProfile',
-      label: 'Share profile',
+      label: 'Share profile via link',
       onSelect: () => setShowProfileShareModal(true),
       id: 'h-share-profile-button',
       disabled:
         profileSource === undefined && queryClient === undefined && queryRequest === undefined,
+      icon: 'material-symbols-light:link',
     },
     {
       key: 'downloadProfile',
-      label: pprofdownloading != null && pprofdownloading ? 'Downloading...' : 'Download pprof',
+      label: pprofdownloading != null && pprofdownloading ? 'Downloading...' : 'Download as pprof',
       onSelect: () => onDownloadPProf(),
       id: 'h-download-pprof',
       disabled: pprofdownloading,
+      icon: 'material-symbols:download',
     },
   ];
 
@@ -174,8 +176,8 @@ const ShareButton = ({
         </>
       ) : (
         <>
-          {' '}
           <Dropdown
+            dropdownWidth="w-48"
             element={
               <Button variant="neutral">
                 Share
@@ -187,7 +189,8 @@ const ShareButton = ({
             {actions.map(item => (
               <Dropdown.Item key={item.key} onSelect={item.onSelect}>
                 <div id={item.id} className="flex items-center">
-                  {item.label}
+                  <span>{item.label}</span>
+                  <Icon icon={item.icon} className="ml-2 h-4 w-4" />
                 </div>
               </Dropdown.Item>
             ))}

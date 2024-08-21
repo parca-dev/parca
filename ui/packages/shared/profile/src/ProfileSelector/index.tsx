@@ -15,7 +15,6 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 
 import {Switch} from '@headlessui/react';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
-import cx from 'classnames';
 import Select, {type SelectInstance} from 'react-select';
 
 import {Label, ProfileTypesResponse, QueryServiceClient} from '@parca/client';
@@ -39,6 +38,7 @@ import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensio
 import ProfileMetricsGraph, {ProfileMetricsEmptyState} from '../ProfileMetricsGraph';
 import ProfileTypeSelector from '../ProfileTypeSelector/index';
 import SimpleMatchers from '../SimpleMatchers';
+import ViewMatchers from '../ViewMatchers';
 import {useDefaultSumBy, useSumBySelection} from '../useSumBy';
 import {useAutoQuerySelector} from './useAutoQuerySelector';
 
@@ -298,48 +298,71 @@ const ProfileSelector = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <label className="text-xs">Query</label>
-                <Switch
-                  checked={advancedModeForQueryBrowser}
-                  onChange={() => {
-                    setAdvancedModeForQueryBrowser(!advancedModeForQueryBrowser);
-                    setQueryBrowserMode(advancedModeForQueryBrowser ? 'simple' : 'advanced');
-                  }}
-                  className={cx(
-                    advancedModeForQueryBrowser ? 'bg-indigo-600' : 'bg-gray-400 dark:bg-gray-800',
-                    'relative inline-flex h-[20px] w-[44px] shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2  focus-visible:ring-white/75'
-                  )}
-                >
-                  <span className="sr-only">Use setting</span>
-                  <span
-                    aria-hidden="true"
-                    className={cx(
-                      advancedModeForQueryBrowser ? 'translate-x-6' : 'translate-x-0',
-                      'pointer-events-none inline-block h-[16px] w-[16px] transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out'
-                    )}
-                  />
-                </Switch>
-                <label className="text-xs">Advanced Mode</label>
+                {viewComponent?.disableExplorativeQuerying === true ? null : (
+                  <>
+                    <Switch
+                      checked={advancedModeForQueryBrowser}
+                      onChange={() => {
+                        setAdvancedModeForQueryBrowser(!advancedModeForQueryBrowser);
+                        setQueryBrowserMode(advancedModeForQueryBrowser ? 'simple' : 'advanced');
+                      }}
+                      className={`${
+                        advancedModeForQueryBrowser
+                          ? 'bg-indigo-600'
+                          : 'bg-gray-400 dark:bg-gray-900'
+                      }
+          relative inline-flex h-[20px] w-[44px] shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2  focus-visible:ring-white/75`}
+                    >
+                      <span className="sr-only">Use setting</span>
+                      <span
+                        aria-hidden="true"
+                        className={`${
+                          advancedModeForQueryBrowser ? 'translate-x-6' : 'translate-x-0'
+                        }
+            pointer-events-none inline-block h-[16px] w-[16px] transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out`}
+                      />
+                    </Switch>
+                    <label className="text-xs">Advanced Mode</label>
+                  </>
+                )}
               </div>
               {(query.matchers.length > 0 || query.inputMatcherString.length > 0) &&
                 viewComponent !== undefined && <div>{viewComponent?.createViewComponent}</div>}
             </div>
-            {advancedModeForQueryBrowser ? (
-              <MatchersInput
-                queryClient={queryClient}
-                setMatchersString={setMatchersString}
-                runQuery={setQueryExpression}
-                currentQuery={query}
-                profileType={selectedProfileName}
-              />
+            {viewComponent?.disableExplorativeQuerying === true &&
+            viewComponent?.labelnames !== undefined &&
+            viewComponent?.labelnames.length >= 1 ? (
+              <>
+                <ViewMatchers
+                  labelNames={viewComponent.labelnames}
+                  setMatchersString={setMatchersString}
+                  profileType={selectedProfileName}
+                  runQuery={setQueryExpression}
+                  currentQuery={query}
+                  queryClient={queryClient}
+                />
+              </>
             ) : (
-              <SimpleMatchers
-                queryClient={queryClient}
-                setMatchersString={setMatchersString}
-                runQuery={setQueryExpression}
-                currentQuery={query}
-                profileType={selectedProfileName}
-                queryBrowserRef={queryBrowserRef}
-              />
+              <>
+                {advancedModeForQueryBrowser ? (
+                  <MatchersInput
+                    queryClient={queryClient}
+                    setMatchersString={setMatchersString}
+                    runQuery={setQueryExpression}
+                    currentQuery={query}
+                    profileType={selectedProfileName}
+                  />
+                ) : (
+                  <SimpleMatchers
+                    queryClient={queryClient}
+                    setMatchersString={setMatchersString}
+                    runQuery={setQueryExpression}
+                    currentQuery={query}
+                    profileType={selectedProfileName}
+                    queryBrowserRef={queryBrowserRef}
+                  />
+                )}
+              </>
             )}
           </div>
           <div>
@@ -360,6 +383,7 @@ const ProfileSelector = ({
               placeholder="Labels..."
               styles={{
                 indicatorSeparator: () => ({display: 'none'}),
+                menu: provided => ({...provided, width: 'max-content'}),
               }}
               isDisabled={!profileType.delta}
               ref={sumByRef}
