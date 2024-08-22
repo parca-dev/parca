@@ -65,9 +65,7 @@ export const useGraphTooltipMetaInfo = ({table, row}: Props): GraphTooltipMetaIn
   const lineNumber =
     locationLine !== 0n ? locationLine : functionStartLine !== 0n ? functionStartLine : undefined;
   const labelPrefix = 'labels.';
-  const labelColumnNames = table.schema.fields.filter(field =>
-    field.name.startsWith(labelPrefix)
-  );
+  const labelColumnNames = table.schema.fields.filter(field => field.name.startsWith(labelPrefix));
 
   const {queryServiceClient, enableSourcesView} = useParcaContext();
   const {profileSource} = useProfileViewContext();
