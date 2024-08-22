@@ -20,7 +20,7 @@ import {QueryRequest, QueryServiceClient} from '@parca/client';
 import {Button, UserPreferencesModal, useParcaContext, useURLState} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 
-import {FIELD_FUNCTION_NAME} from '../../ProfileIcicleGraph/IcicleGraphArrow';
+import {FIELD_FUNCTION_NAME, FIELD_LABELS} from '../../ProfileIcicleGraph/IcicleGraphArrow';
 import {ProfileSource} from '../../ProfileSource';
 import GroupByDropdown from '../ActionButtons/GroupByDropdown';
 import FilterByFunctionButton from '../FilterByFunctionButton';
@@ -47,6 +47,7 @@ interface Props {
   filtered: bigint;
   setSearchString?: (searchString: string) => void;
   currentSearchString?: string;
+  groupByLabels: string[];
 }
 
 const VisualisationToolbar = ({
@@ -62,6 +63,7 @@ const VisualisationToolbar = ({
   filtered,
   setSearchString,
   currentSearchString,
+  groupByLabels,
 }: Props): JSX.Element => {
   const [dashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
@@ -90,6 +92,13 @@ const VisualisationToolbar = ({
     [groupBy, setGroupBy]
   );
 
+  const setGroupByLabels = useCallback(
+    (labels: string[]): void => {
+      setGroupBy(groupBy.filter(l => !l.startsWith(`${FIELD_LABELS}.`)).concat(labels));
+    },
+    [groupBy, setGroupBy]
+  );
+
   const clearSelection = useCallback((): void => {
     setSearchString?.('');
   }, [setSearchString]);
@@ -114,7 +123,7 @@ const VisualisationToolbar = ({
         <div className="flex gap-3 items-end">
           {isGraphViz && (
             <>
-              <GroupByDropdown groupBy={groupBy} toggleGroupBy={toggleGroupBy} />
+              <GroupByDropdown groupBy={groupBy} toggleGroupBy={toggleGroupBy} labels={groupByLabels} setGroupByLabels={setGroupByLabels}/>
               <MultiLevelDropdown profileType={profileType} onSelect={() => {}} />
               <Button
                 variant="neutral"

@@ -46,6 +46,7 @@ interface ProfileIcicleGraphProps {
   isHalfScreen: boolean;
   mappings?: string[];
   mappingsLoading?: boolean;
+  groupByLabels: string[];
 }
 
 const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
@@ -65,6 +66,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   width,
   isHalfScreen,
   mappings,
+  groupByLabels,
 }: ProfileIcicleGraphProps): JSX.Element {
   const {onError, authenticationErrorMessage, isDarkMode} = useParcaContext();
   const {compareMode} = useProfileViewContext();
