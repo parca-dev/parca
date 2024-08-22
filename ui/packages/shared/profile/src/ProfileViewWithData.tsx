@@ -17,12 +17,12 @@ import {QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata, useParcaContext, useURLState} from '@parca/components';
 import {saveAsBlob} from '@parca/utilities';
 
+import {useLabelNames} from './MatchersInput';
 import {FIELD_FUNCTION_NAME} from './ProfileIcicleGraph/IcicleGraphArrow';
 import {ProfileSource} from './ProfileSource';
 import {ProfileView} from './ProfileView';
 import {useQuery} from './useQuery';
 import {downloadPprof} from './utils';
-import {useLabelNames} from './MatchersInput';
 
 interface ProfileViewWithDataProps {
   queryClient: QueryServiceClient;
@@ -77,9 +77,10 @@ export const ProfileViewWithData = ({
     binaryFrameFilter,
   });
 
-  const {
-    result: profileLabelsResponse,
-  } = useLabelNames(queryClient, profileSource.ProfileType().toString());
+  const {result: profileLabelsResponse} = useLabelNames(
+    queryClient,
+    profileSource.ProfileType().toString()
+  );
 
   const {isLoading: profilemetadataLoading, response: profilemetadataResponse} = useQuery(
     queryClient,

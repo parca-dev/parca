@@ -123,7 +123,12 @@ const VisualisationToolbar = ({
         <div className="flex gap-3 items-end">
           {isGraphViz && (
             <>
-              <GroupByDropdown groupBy={groupBy} toggleGroupBy={toggleGroupBy} labels={groupByLabels} setGroupByLabels={setGroupByLabels}/>
+              <GroupByDropdown
+                groupBy={groupBy}
+                toggleGroupBy={toggleGroupBy}
+                labels={groupByLabels}
+                setGroupByLabels={setGroupByLabels}
+              />
               <MultiLevelDropdown profileType={profileType} onSelect={() => {}} />
               <Button
                 variant="neutral"
