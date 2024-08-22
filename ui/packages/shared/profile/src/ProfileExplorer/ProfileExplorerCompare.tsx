@@ -13,8 +13,6 @@
 
 import {useState} from 'react';
 
-import cx from 'classnames';
-
 import {QueryServiceClient} from '@parca/client';
 import {useURLState} from '@parca/components';
 import {Query} from '@parca/parser';
@@ -79,51 +77,40 @@ const ProfileExplorerCompare = ({
           setShowButton(false);
         }}
       >
-        <button
-          onClick={() => setShowMetricsGraph(!showMetricsGraph)}
-          className={cx(
-            'hidden right-0 bottom-3 z-10 px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-900',
-            showButton && showMetricsGraph && 'absolute !flex',
-            !showMetricsGraph && 'relative !flex mt-3 ml-auto'
-          )}
-        >
-          {showMetricsGraph ? 'Hide' : 'Show'} Metrics Graph
-        </button>
-
-        {showMetricsGraph ? (
-          <>
-            <div className="flex-column flex-1 p-2 shadow-md rounded-md">
-              <ProfileSelector
-                queryClient={queryClient}
-                querySelection={queryA}
-                profileSelection={profileA}
-                selectProfile={selectProfileA}
-                selectQuery={selectQueryA}
-                closeProfile={closeProfileA}
-                enforcedProfileName={''}
-                comparing={true}
-                navigateTo={navigateTo}
-                suffix="_a"
-              />
-            </div>
-            <div className="flex-column flex-1 p-2 shadow-md rounded-md">
-              <ProfileSelector
-                queryClient={queryClient}
-                querySelection={queryB}
-                profileSelection={profileB}
-                selectProfile={selectProfileB}
-                selectQuery={selectQueryB}
-                closeProfile={closeProfileB}
-                enforcedProfileName={Query.parse(queryA.expression).profileName()}
-                comparing={true}
-                navigateTo={navigateTo}
-                suffix="_b"
-              />
-            </div>
-          </>
-        ) : (
-          <></>
-        )}
+        <div className="flex-column flex-1 p-2 shadow-md rounded-md">
+          <ProfileSelector
+            queryClient={queryClient}
+            querySelection={queryA}
+            profileSelection={profileA}
+            selectProfile={selectProfileA}
+            selectQuery={selectQueryA}
+            closeProfile={closeProfileA}
+            enforcedProfileName={''}
+            comparing={true}
+            navigateTo={navigateTo}
+            suffix="_a"
+            showMetricsGraph={showMetricsGraph}
+            displayHideMetricsGraphButton={showButton}
+            setDisplayHideMetricsGraphButton={setShowMetricsGraph}
+          />
+        </div>
+        <div className="flex-column flex-1 p-2 shadow-md rounded-md">
+          <ProfileSelector
+            queryClient={queryClient}
+            querySelection={queryB}
+            profileSelection={profileB}
+            selectProfile={selectProfileB}
+            selectQuery={selectQueryB}
+            closeProfile={closeProfileB}
+            enforcedProfileName={Query.parse(queryA.expression).profileName()}
+            comparing={true}
+            navigateTo={navigateTo}
+            suffix="_b"
+            showMetricsGraph={showMetricsGraph}
+            displayHideMetricsGraphButton={showButton}
+            setDisplayHideMetricsGraphButton={setShowMetricsGraph}
+          />
+        </div>
       </div>
       <div className="grid grid-cols-1">
         {profileA != null && profileB != null ? (

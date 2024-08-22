@@ -337,15 +337,23 @@ export const ProfileView = ({
     [groupBy, setGroupBy]
   );
 
+  const showDivider =
+    hasProfileSource &&
+    (profileViewExternalMainActions === null || profileViewExternalMainActions === undefined);
+
   return (
     <KeyDownProvider>
       <ProfileViewContextProvider value={{profileSource, compareMode}}>
-        <div className="border-t border-gray-200 dark:border-gray-700 h-[1px] w-full pb-4"></div>
+        {showDivider ? (
+          <>
+            <div className="border-t border-gray-200 dark:border-gray-700 h-[1px] w-full pb-4"></div>
+          </>
+        ) : null}
         <div
           className={cx(
             'flex w-full',
             hasProfileSource || profileViewExternalMainActions != null
-              ? 'justify-center'
+              ? 'justify-start'
               : 'justify-end',
             {
               'items-end mb-4': !hasProfileSource && profileViewExternalMainActions != null,
