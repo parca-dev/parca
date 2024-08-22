@@ -413,11 +413,7 @@ export const formatRange = (value: number, unit: UNIT_TYPE): string => {
   const parts: string[] = [];
   let remainingValue = value;
 
-  const addPart = (
-    currentUnit: UNIT_TYPE,
-    nextUnit: UNIT_TYPE | null,
-    divisor: number
-  ): string[] => {
+  const addPart = (currentUnit: UNIT_TYPE, nextUnit: UNIT_TYPE | null, divisor: number): void => {
     if (remainingValue > 0) {
       const wholePart = Math.floor(remainingValue);
       const fraction = remainingValue - wholePart;
@@ -426,7 +422,7 @@ export const formatRange = (value: number, unit: UNIT_TYPE): string => {
         parts.push(`${wholePart}${unitShort[currentUnit]}`);
       }
 
-      if (fraction > 0 && nextUnit) {
+      if (fraction > 0 && nextUnit !== null) {
         remainingValue = Math.round(fraction * divisor * 100) / 100; // Round to 2 decimal places
       } else {
         remainingValue = 0;
