@@ -19,10 +19,16 @@ import {Button} from '../../Button';
 import {
   AbsoluteDate,
   DateTimeRange,
+  NOW,
   RelativeDate,
   UNITS,
   UNIT_TYPE,
+  formatRange,
   getHistoricalDate,
+  getRelativeTimeRangeBetweenDates,
+  parseInput,
+  presetRanges,
+  unitShort,
 } from '../utils';
 
 interface RelativeDatePickerProps {
@@ -30,92 +36,6 @@ interface RelativeDatePickerProps {
   onChange?: (from: RelativeDate | AbsoluteDate, to: RelativeDate | AbsoluteDate) => void;
   toggleRangePickerPanel: () => void;
 }
-
-interface UnitsMap {
-  [key: string]: string;
-}
-
-const unitLong: UnitsMap = {
-  s: UNITS.SECOND,
-  m: UNITS.MINUTE,
-  h: UNITS.HOUR,
-  d: UNITS.DAY,
-  w: UNITS.WEEK,
-  y: UNITS.YEAR,
-};
-const unitShort: UnitsMap = {
-  [UNITS.SECOND]: 's',
-  [UNITS.MINUTE]: 'm',
-  [UNITS.HOUR]: 'h',
-  [UNITS.DAY]: 'd',
-  [UNITS.WEEK]: 'w',
-  [UNITS.YEAR]: 'y',
-};
-
-const units: Array<[UNIT_TYPE, number]> = [
-  [UNITS.YEAR, 31536000],
-  [UNITS.WEEK, 604800],
-  [UNITS.DAY, 86400],
-  [UNITS.HOUR, 3600],
-  [UNITS.MINUTE, 60],
-  [UNITS.SECOND, 1],
-];
-
-const presetRanges = [
-  {value: 1, unit: UNITS.MINUTE},
-  {value: 5, unit: UNITS.MINUTE},
-  {value: 15, unit: UNITS.MINUTE},
-  {value: 30, unit: UNITS.MINUTE},
-  {value: 1, unit: UNITS.HOUR},
-  {value: 3, unit: UNITS.HOUR},
-  {value: 6, unit: UNITS.HOUR},
-  {value: 12, unit: UNITS.HOUR},
-  {value: 1, unit: UNITS.DAY},
-  {value: 2, unit: UNITS.DAY},
-  {value: 1, unit: UNITS.WEEK},
-  {value: 2, unit: UNITS.WEEK},
-  {value: 4, unit: UNITS.WEEK},
-  {value: 8, unit: UNITS.WEEK},
-  {value: 16, unit: UNITS.WEEK},
-  {value: 26, unit: UNITS.WEEK},
-  {value: 1, unit: UNITS.YEAR},
-  {value: 2, unit: UNITS.YEAR},
-];
-
-const NOW = new RelativeDate(UNITS.MINUTE, 0);
-
-const parseInput = (input: string): {value: number; unit: UNIT_TYPE} | null => {
-  if (input.length > 100) return null;
-
-  const parts = input.match(/(\d+[smhdwy])/g);
-  if (parts === null) return null;
-
-  let totalSeconds = 0;
-  for (const part of parts) {
-    const value = parseInt(part.slice(0, -1));
-    const unit = part.slice(-1) as keyof typeof unitLong;
-    if (isNaN(value) || unitLong[unit] === '') return null;
-
-    const unitInSeconds = {
-      s: 1,
-      m: 60,
-      h: 3600,
-      d: 86400,
-      w: 604800,
-      y: 31536000,
-    }[unit] as number;
-
-    totalSeconds += value * unitInSeconds;
-  }
-
-  for (const [unit, seconds] of units) {
-    if (totalSeconds >= seconds) {
-      return {value: Math.round((totalSeconds / seconds) * 100) / 100, unit};
-    }
-  }
-
-  return {value: totalSeconds, unit: UNITS.SECOND};
-};
 
 export const RelativeDatePickerForPanel = ({
   onChange = () => null,
@@ -150,29 +70,6 @@ export const RelativeDatePickerForPanel = ({
       : (range.to as AbsoluteDate)
   );
 
-  const getRelativeTimeRangeBetweenDates = (
-    timeRange: number
-  ): {unit: UNIT_TYPE; value: number} => {
-    const roundToHundredth = (value: number): number => {
-      return Number(value.toFixed(2));
-    };
-
-    if (timeRange < 1000 * 60 * 60) {
-      const timeRangeToMinutes = timeRange / 1000 / 60;
-      return {unit: UNITS.MINUTE, value: roundToHundredth(timeRangeToMinutes)};
-    }
-    if (timeRange < 1000 * 60 * 60 * 24) {
-      const timeRangeToHours = timeRange / 1000 / 60 / 60;
-      return {unit: UNITS.HOUR, value: roundToHundredth(timeRangeToHours)};
-    }
-    if (timeRange < 1000 * 60 * 60 * 24 * 7) {
-      const timeRangeToDays = timeRange / 1000 / 60 / 60 / 24;
-      return {unit: UNITS.DAY, value: roundToHundredth(timeRangeToDays)};
-    }
-    const timeRangeToWeeks = timeRange / 1000 / 60 / 60 / 24 / 7;
-    return {unit: UNITS.WEEK, value: roundToHundredth(timeRangeToWeeks)};
-  };
-
   const {unit, value} = useMemo(
     () => getRelativeTimeRangeBetweenDates(to.getTime().getTime() - from.getTime().getTime()),
     [from, to]
@@ -182,7 +79,7 @@ export const RelativeDatePickerForPanel = ({
   // absolute date range is converted to a relative date range and we then use the `onChange` prop to
   // update the range in the `RelativeDatePicker` component below.
   useEffect(() => {
-    onChange(new RelativeDate(unit, value), new RelativeDate(unit, 0));
+    onChange(new RelativeDate(unit, value), NOW);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unit, value]);
 
@@ -236,32 +133,6 @@ const RelativeDatePicker = ({
     value: date.value,
     unit: date.unit,
   });
-
-  const formatRange = (value: number, unit: UNIT_TYPE): string => {
-    const totalSeconds =
-      value *
-      {
-        [UNITS.SECOND]: 1,
-        [UNITS.MINUTE]: 60,
-        [UNITS.HOUR]: 3600,
-        [UNITS.DAY]: 86400,
-        [UNITS.WEEK]: 604800,
-        [UNITS.YEAR]: 31536000,
-      }[unit];
-
-    const parts: string[] = [];
-    let remaining = totalSeconds;
-
-    for (const [unitName, seconds] of units) {
-      if (remaining >= seconds) {
-        const count = Math.floor(remaining / seconds);
-        parts.push(`${count}${unitShort[unitName]}`);
-        remaining %= seconds;
-      }
-    }
-
-    return parts.join('') ?? `0${unitShort[UNITS.SECOND]}`;
-  };
 
   useEffect(() => {
     setRangeInputString(formatRange(date.value, date.unit));
@@ -357,10 +228,6 @@ const RelativeDatePicker = ({
             } else {
               setValidRange(parsedInput);
             }
-
-            // if parsed input is valid, set valid range state
-            // const {value, unit} = parsedInput;
-            // setValidRange({value, unit});
           }}
           onKeyDown={e => {
             // if enter key is pressed, blur the input
