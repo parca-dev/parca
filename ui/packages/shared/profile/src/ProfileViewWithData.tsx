@@ -22,6 +22,7 @@ import {ProfileSource} from './ProfileSource';
 import {ProfileView} from './ProfileView';
 import {useQuery} from './useQuery';
 import {downloadPprof} from './utils';
+import {useLabelNames} from './MatchersInput';
 
 interface ProfileViewWithDataProps {
   queryClient: QueryServiceClient;
@@ -75,6 +76,10 @@ export const ProfileViewWithData = ({
     invertCallStack,
     binaryFrameFilter,
   });
+
+  const {
+    result: profileLabelsResponse,
+  } = useLabelNames(queryClient, profileSource.ProfileType().toString());
 
   const {isLoading: profilemetadataLoading, response: profilemetadataResponse} = useQuery(
     queryClient,
@@ -204,6 +209,7 @@ export const ProfileViewWithData = ({
             ? profilemetadataResponse?.report?.profileMetadata?.mappingFiles
             : undefined,
         mappingsLoading: profilemetadataLoading,
+        groupByLabels: profileLabelsResponse.response?.labelNames ?? [],
       }}
       topTableData={{
         loading: tableLoading,

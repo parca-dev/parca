@@ -58,6 +58,7 @@ export interface FlamegraphData {
   error?: any;
   mappings?: string[];
   mappingsLoading: boolean;
+  groupByLabels: string[];
 }
 
 export interface TopTableData {
@@ -232,6 +233,7 @@ export const ProfileView = ({
               }
               mappings={flamegraphData.mappings}
               mappingsLoading={flamegraphData.mappingsLoading}
+              groupByLabels={flamegraphData.groupByLabels}
             />
           </ConditionalWrapper>
         );
@@ -396,6 +398,7 @@ export const ProfileView = ({
           filtered={filtered}
           currentSearchString={currentSearchString}
           setSearchString={setSearchString}
+          groupByLabels={flamegraphData.groupByLabels ?? []}
         />
 
         <div className="w-full" ref={ref}>

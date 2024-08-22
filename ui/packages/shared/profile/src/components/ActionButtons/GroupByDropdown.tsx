@@ -21,6 +21,8 @@ import {
   FIELD_LOCATION_ADDRESS,
   FIELD_MAPPING_FILE,
 } from '../../ProfileIcicleGraph/IcicleGraphArrow';
+import Select from 'react-select';
+import React, {useRef} from 'react';
 
 const groupByOptions = [
   {
@@ -28,12 +30,6 @@ const groupByOptions = [
     label: 'Function Name',
     description: 'Stacktraces are grouped by function names.',
     disabled: true,
-  },
-  {
-    value: FIELD_LABELS,
-    label: 'Labels',
-    description: 'Stacktraces are grouped by pprof labels.',
-    disabled: false,
   },
   {
     value: FIELD_FUNCTION_FILE_NAME,
@@ -57,11 +53,17 @@ const groupByOptions = [
 
 const GroupByDropdown = ({
   groupBy,
+  labels,
   toggleGroupBy,
+  setGroupByLabels,
 }: {
   groupBy: string[];
+  labels: string[];
   toggleGroupBy: (key: string) => void;
+  setGroupByLabels: (labels: string[]) => void;
 }): React.JSX.Element => {
+  const groupLabelsRef = useRef(null);
+
   const label =
     groupBy.length === 0
       ? 'Nothing'
@@ -114,6 +116,44 @@ const GroupByDropdown = ({
                       </div>
                     </div>
                   ))}
+                  <div className='ml-7 text-sm leading-6'>
+                    <span className='font-medium text-gray-900 dark:text-gray-200'>Labels</span>
+                    <p className='text-gray-500 dark:text-gray-400'>Stacktraces are grouped by binaries.</p>
+                  <Select
+                    ref={groupLabelsRef}
+                    defaultValue={[]}
+                    isMulti
+                    name="colors"
+                    options={labels.map(label => ({label, value: `${FIELD_LABELS}.${label}`}))}
+                    className="parca-select-container text-sm w-full max-w-80"
+                    classNamePrefix="parca-select"
+                    value={groupBy.filter(l => l.startsWith(FIELD_LABELS)).map(l => ({value:l, label: l.slice(FIELD_LABELS.length + 1)}))}
+                    onChange={selectedOptions => {
+                      console.log('change', selectedOptions)
+                      setGroupByLabels(selectedOptions.map(option => option.value))
+                    }}
+                    placeholder="Labels..."
+                    styles={{ indicatorSeparator: () => ({display: 'none'}), menu: () => ({zIndex: 20})}
+                    onKeyDown={e => {
+                      const currentRef = groupLabelsRef.current as unknown as SelectInstance | null;
+                      if (currentRef == null) {
+                        return;
+                      }
+                      const inputRef = currentRef.inputRef;
+                      if (inputRef == null) {
+                        return;
+                      }
+
+                      if (
+                        e.key === 'Enter' &&
+                        inputRef.value === '' &&
+                        currentRef.state.focusedOptionId === null // menu is not open
+                      ) {
+                        currentRef.blur();
+                      }
+                    }}
+                  />
+                      </div>
                 </div>
               </fieldset>
             </div>
