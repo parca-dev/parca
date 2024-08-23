@@ -52,7 +52,7 @@ repos:
         args:
           - --against=https://github.com/parca-dev/parca.git#branch=main,ref=HEAD~1,subdir=proto
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.59.1
+    rev: v1.60.3
     hooks:
       - id: golangci-lint
   - repo: https://github.com/hadolint/hadolint
