@@ -60,12 +60,15 @@ interface Props {
     emitQuery: (query: string) => void;
     createViewComponent?: ReactNode;
     disableProfileTypesDropdown?: boolean;
+    labelnames?: string[];
+    disableExplorativeQuerying?: boolean;
   };
   profileViewExternalMainActions?: ReactNode;
   profileViewExternalSubActions?: ReactNode;
   sourceViewContextMenuItems?: SourceViewContextMenuItem[];
   additionalFlamegraphColorProfiles?: Record<string, ColorConfig>;
   timezone?: string;
+  preferencesModal?: boolean;
 }
 
 export const defaultValue: Props = {
@@ -88,6 +91,7 @@ export const defaultValue: Props = {
   navigateTo: () => {},
   enableSourcesView: false,
   isDarkMode: false,
+  preferencesModal: false,
 };
 
 const ParcaContext = createContext<Props>(defaultValue);
