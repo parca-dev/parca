@@ -18,7 +18,7 @@ BIN_DIR="$(go env GOBIN)"
 BIN_DIR="${BIN_DIR:-$(go env GOPATH)/bin}"
 
 # renovate: datasource=github-releases depName=bufbuild/buf
-BUF_VERSION='v1.37.0'
+BUF_VERSION='v1.38.0'
 
 # Substitute BINARY_NAME for "buf", "protoc-gen-buf-breaking", or "protoc-gen-buf-lint".
 BINARY_NAME="buf"
