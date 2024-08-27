@@ -233,7 +233,6 @@ export const ProfileView = ({
               }
               mappings={flamegraphData.mappings}
               mappingsLoading={flamegraphData.mappingsLoading}
-              groupByLabels={flamegraphData.groupByLabels}
             />
           </ConditionalWrapper>
         );
