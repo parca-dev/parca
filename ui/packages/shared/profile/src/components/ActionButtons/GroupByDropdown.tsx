@@ -11,8 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import React, {useEffect, useRef, useState} from 'react';
+
 import {Menu, Transition} from '@headlessui/react';
 import {Icon} from '@iconify/react';
+import Select from 'react-select';
 
 import {
   FIELD_FUNCTION_FILE_NAME,
@@ -21,8 +24,33 @@ import {
   FIELD_LOCATION_ADDRESS,
   FIELD_MAPPING_FILE,
 } from '../../ProfileIcicleGraph/IcicleGraphArrow';
-import Select from 'react-select';
-import React, {useRef} from 'react';
+
+interface LabelSelectorProps {
+  labels: string[];
+  groupBy: string[];
+  setGroupByLabels: (labels: string[]) => void;
+  isOpen: boolean;
+  labelsButtonRef: React.RefObject<HTMLDivElement>;
+  setIsLabelSelectorOpen: (isOpen: boolean) => void;
+}
+
+interface LabelSelectorProps {
+  labels: string[];
+  groupBy: string[];
+  setGroupByLabels: (labels: string[]) => void;
+}
+
+interface LabelOption {
+  label: string;
+  value: string;
+}
+
+interface GroupByDropdownProps {
+  groupBy: string[];
+  toggleGroupBy: (key: string) => void;
+  onLabelClick: () => void;
+  labelsButtonRef: React.RefObject<HTMLDivElement>;
+}
 
 const groupByOptions = [
   {
@@ -51,25 +79,101 @@ const groupByOptions = [
   },
 ];
 
-const GroupByDropdown = ({
-  groupBy,
+const LabelSelector: React.FC<LabelSelectorProps> = ({
   labels,
-  toggleGroupBy,
+  groupBy,
   setGroupByLabels,
-}: {
-  groupBy: string[];
-  labels: string[];
-  toggleGroupBy: (key: string) => void;
-  setGroupByLabels: (labels: string[]) => void;
-}): React.JSX.Element => {
-  const groupLabelsRef = useRef(null);
+  isOpen,
+  labelsButtonRef,
+  setIsLabelSelectorOpen,
+}) => {
+  const [position, setPosition] = useState({top: 0, left: 0});
 
+  useEffect(() => {
+    if (isOpen && labelsButtonRef.current !== null) {
+      const rect = labelsButtonRef.current.getBoundingClientRect();
+      const parentRect = labelsButtonRef.current.offsetParent?.getBoundingClientRect() ?? {
+        top: 0,
+        left: 0,
+      };
+
+      setPosition({
+        top: rect.bottom - parentRect.top,
+        left: rect.right - parentRect.left + 4,
+      });
+    }
+  }, [isOpen, labelsButtonRef]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="absolute w-64 ml-4 z-20"
+      style={{
+        top: `${position.top}px`,
+        left: `${position.left}px`,
+      }}
+    >
+      <Select<LabelOption, true>
+        isMulti
+        name="labels"
+        options={labels.map(label => ({label, value: `${FIELD_LABELS}.${label}`}))}
+        className="parca-select-container text-sm w-full border-gray-300 border rounded-md"
+        classNamePrefix="parca-select parca-groupby-label"
+        value={groupBy
+          .filter(l => l.startsWith(FIELD_LABELS))
+          .map(l => ({value: l, label: l.slice(FIELD_LABELS.length + 1)}))}
+        onChange={newValue => {
+          setGroupByLabels(newValue.map(option => option.value));
+          setIsLabelSelectorOpen(false);
+        }}
+        placeholder="Select labels..."
+        styles={{
+          menu: provided => ({
+            ...provided,
+            position: 'relative',
+            marginBottom: 0,
+            boxShadow: 'none',
+            marginTop: 0,
+          }),
+          control: provided => ({
+            ...provided,
+            boxShadow: 'none',
+            borderBottom: '1px solid #e2e8f0',
+            borderRight: 0,
+            borderLeft: 0,
+            borderTop: 0,
+            borderBottomLeftRadius: 0,
+            borderBottomRightRadius: 0,
+            ':hover': {
+              borderColor: '#e2e8f0',
+              borderBottomLeftRadius: 0,
+              borderBottomRightRadius: 0,
+            },
+          }),
+        }}
+        menuIsOpen={true}
+      />
+    </div>
+  );
+};
+
+const GroupByDropdown: React.FC<GroupByDropdownProps> = ({
+  groupBy,
+  toggleGroupBy,
+  onLabelClick,
+  labelsButtonRef,
+}) => {
   const label =
     groupBy.length === 0
       ? 'Nothing'
       : groupBy.length === 1
       ? groupByOptions.find(option => option.value === groupBy[0])?.label
       : 'Multiple';
+
+  const selectedLabels = groupBy
+    .filter(l => l.startsWith(FIELD_LABELS))
+    .map(l => l.slice(FIELD_LABELS.length + 1));
 
   return (
     <div className="relative">
@@ -116,44 +220,39 @@ const GroupByDropdown = ({
                       </div>
                     </div>
                   ))}
-                  <div className='ml-7 text-sm leading-6'>
-                    <span className='font-medium text-gray-900 dark:text-gray-200'>Labels</span>
-                    <p className='text-gray-500 dark:text-gray-400'>Stacktraces are grouped by binaries.</p>
-                  <Select
-                    ref={groupLabelsRef}
-                    defaultValue={[]}
-                    isMulti
-                    name="colors"
-                    options={labels.map(label => ({label, value: `${FIELD_LABELS}.${label}`}))}
-                    className="parca-select-container text-sm w-full max-w-80"
-                    classNamePrefix="parca-select"
-                    value={groupBy.filter(l => l.startsWith(FIELD_LABELS)).map(l => ({value:l, label: l.slice(FIELD_LABELS.length + 1)}))}
-                    onChange={selectedOptions => {
-                      console.log('change', selectedOptions)
-                      setGroupByLabels(selectedOptions.map(option => option.value))
-                    }}
-                    placeholder="Labels..."
-                    styles={{ indicatorSeparator: () => ({display: 'none'}), menu: () => ({zIndex: 20})}
-                    onKeyDown={e => {
-                      const currentRef = groupLabelsRef.current as unknown as SelectInstance | null;
-                      if (currentRef == null) {
-                        return;
-                      }
-                      const inputRef = currentRef.inputRef;
-                      if (inputRef == null) {
-                        return;
-                      }
-
-                      if (
-                        e.key === 'Enter' &&
-                        inputRef.value === '' &&
-                        currentRef.state.focusedOptionId === null // menu is not open
-                      ) {
-                        currentRef.blur();
-                      }
-                    }}
-                  />
+                  <div
+                    className="ml-7 flex flex-col items-start text-sm leading-6 cursor-pointer"
+                    onClick={onLabelClick}
+                    ref={labelsButtonRef}
+                  >
+                    <div className="flex justify-between w-full items-center">
+                      <div>
+                        <span className="font-medium text-gray-900 dark:text-gray-200">Labels</span>
+                        <p className="text-gray-500 dark:text-gray-400">
+                          Stacktraces are grouped by labels.
+                        </p>
                       </div>
+
+                      <Icon icon="flowbite:caret-right-solid" className="h-[14px] w-[14px]" />
+                    </div>
+
+                    {selectedLabels.length > 0 && (
+                      <div className="flex gap-2 flex-wrap">
+                        <span className="text-gray-500 dark:text-gray-200">Selected labels:</span>
+
+                        <div className="flex">
+                          {selectedLabels.map(label => (
+                            <span
+                              key={label}
+                              className="mr-2 px-3 py-1 text-xs text-gray-700 dark:text-gray-200 bg-gray-200 rounded-md dark:bg-gray-900"
+                            >
+                              {label}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </fieldset>
             </div>
@@ -164,4 +263,65 @@ const GroupByDropdown = ({
   );
 };
 
-export default GroupByDropdown;
+interface GroupByControlsProps {
+  groupBy: string[];
+  labels: string[];
+  toggleGroupBy: (key: string) => void;
+  setGroupByLabels: (labels: string[]) => void;
+}
+
+const GroupByControls: React.FC<GroupByControlsProps> = ({
+  groupBy,
+  labels,
+  toggleGroupBy,
+  setGroupByLabels,
+}) => {
+  const [isLabelSelectorOpen, setIsLabelSelectorOpen] = useState(false);
+
+  const labelsButton = useRef<HTMLDivElement>(null);
+  const labelSelectorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent): void => {
+      if (
+        isLabelSelectorOpen &&
+        labelSelectorRef.current !== null &&
+        !labelSelectorRef.current.contains(event.target as Node) &&
+        labelsButton.current !== null &&
+        !labelsButton.current.contains(event.target as Node)
+      ) {
+        setIsLabelSelectorOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isLabelSelectorOpen]);
+
+  return (
+    <div className="inline-flex items-start">
+      <div className="relative flex items-start">
+        <GroupByDropdown
+          groupBy={groupBy}
+          toggleGroupBy={toggleGroupBy}
+          onLabelClick={() => setIsLabelSelectorOpen(!isLabelSelectorOpen)}
+          labelsButtonRef={labelsButton}
+        />
+        <div ref={labelSelectorRef}>
+          <LabelSelector
+            labels={labels}
+            groupBy={groupBy}
+            setGroupByLabels={setGroupByLabels}
+            isOpen={isLabelSelectorOpen}
+            labelsButtonRef={labelsButton}
+            setIsLabelSelectorOpen={setIsLabelSelectorOpen}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default GroupByControls;
