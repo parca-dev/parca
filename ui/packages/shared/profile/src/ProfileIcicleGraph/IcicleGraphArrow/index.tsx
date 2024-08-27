@@ -210,9 +210,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const highlightSimilarStacksSetName = useMemo(() => {
     return highlightSimilarStacksPreference ? setHoveringName : noop;
   }, [highlightSimilarStacksPreference]);
-  const highlightSimilarStacksSetLevel = useMemo(() => {
-    return highlightSimilarStacksPreference ? setHoveringLevel : noop;
-  }, [highlightSimilarStacksPreference]);
   const highlightSimilarStacksRow = highlightSimilarStacksPreference ? hoveringRow : null;
   const path = useMemo(() => {
     return [];
@@ -285,7 +282,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     colorForSimilarNodes,
     highlightSimilarStacksPreference,
     path,
-    highlightSimilarStacksSetLevel,
     highlightSimilarStacksSetName,
   ]);
 
