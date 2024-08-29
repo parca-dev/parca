@@ -49,6 +49,7 @@ interface Props {
   width?: number;
   height?: number;
   margin?: number;
+  sumBy?: string[];
 }
 
 export interface HighlightedSeries {
@@ -80,6 +81,7 @@ const MetricsGraph = ({
   width = 0,
   height = 0,
   margin = 0,
+  sumBy,
 }: Props): JSX.Element => {
   const [isInfoPanelOpen, setIsInfoPanelOpen] = useState<boolean>(false);
   return (
@@ -102,6 +104,7 @@ const MetricsGraph = ({
         width={width}
         height={height}
         margin={margin}
+        sumBy={sumBy}
       />
     </div>
   );
@@ -131,6 +134,7 @@ export const RawMetricsGraph = ({
   height = 50,
   margin = 0,
   sampleUnit,
+  sumBy,
 }: Props): JSX.Element => {
   const {timezone} = useParcaContext();
   const graph = useRef(null);
@@ -332,25 +336,51 @@ export const RawMetricsGraph = ({
     let s: Series | null = null;
     let seriesIndex = -1;
 
+    // Check if we should use sumBy or the profile matcher when looking for the selected profile.
+    // When a sum by is present, we only care about the existence of the label.
+    // Therefore, only use the sum by if it is has values and the profile matchers does not include any of the values in the sumby.
+    const useSumBy =
+      sumBy &&
+      sumBy.length > 0 &&
+      profile.query.matchers &&
+      profile.query.matchers.some(e => sumBy.includes(e.key));
+
+    const keysToMatch = useSumBy ? sumBy : profile.query.matchers.map(e => e.key);
+
     outer: for (let i = 0; i < series.length; i++) {
-      const keys = profile.query.matchers.map(e => e.key);
-      for (let j = 0; j < keys.length; j++) {
-        const matcherKey = keys[j];
+      let allMatch = true;
+      for (let j = 0; j < keysToMatch.length; j++) {
+        const matcherKey = keysToMatch[j];
+
         const label = series[i].metric.find(e => e.name === matcherKey);
         if (label === undefined) {
-          continue outer; // label doesn't exist to begin with
+          allMatch = false;
+          break;
         }
-        if (profile.query.matchers[j].value !== label.value) {
-          continue outer; // label values don't match
+
+        if (sumBy && sumBy.length > 0) {
+          // If sumBy is present, we only care about the existence of the label
+        } else {
+          // If sumBy is not present, we check the value against the profile matcher
+          const matcherValue = profile.query.matchers[j].value;
+          if (matcherValue !== label.value) {
+            allMatch = false;
+            break;
+          }
         }
       }
-      seriesIndex = i;
-      s = series[i];
+
+      if (allMatch) {
+        seriesIndex = i;
+        s = series[i];
+        break outer;
+      }
     }
 
     if (s == null) {
       return null;
     }
+
     // Find the sample that matches the timestamp
     const sample = s.values.find(v => {
       return Math.round(v[0]) === time;
@@ -360,7 +390,7 @@ export const RawMetricsGraph = ({
     }
 
     return {
-      labels: [],
+      labels: s.metric,
       seriesIndex,
       timestamp: sample[0],
       valuePerSecond: sample[1],
