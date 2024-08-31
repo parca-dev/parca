@@ -109,7 +109,7 @@
     "storybook": "8.2.9",
     "storybook-dark-mode": "4.0.2",
     "style-loader": "3.3.4",
-    "ts-jest": "29.2.4",
+    "ts-jest": "29.2.5",
     "ts-node": "10.9.2",
     "tsc-watch": "6.2.0",
     "typescript": "5.5.4",
