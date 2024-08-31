@@ -34,7 +34,7 @@
     "@babel/node": "7.25.0",
     "@babel/plugin-proposal-export-default-from": "7.24.7",
     "@babel/plugin-proposal-private-property-in-object": "7.21.11",
-    "@babel/preset-env": "7.25.3",
+    "@babel/preset-env": "7.25.4",
     "@chromatic-com/storybook": "1.6.1",
     "@ianvs/prettier-plugin-sort-imports": "3.7.2",
     "@mdx-js/loader": "2.3.0",
