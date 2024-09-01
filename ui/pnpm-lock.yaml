@@ -52,8 +52,8 @@ importers:
         specifier: 7.25.4
         version: 7.25.4(@babel/core@7.25.2)
       '@chromatic-com/storybook':
-        specifier: 1.6.1
-        version: 1.6.1(react@18.3.1)
+        specifier: 1.7.0
+        version: 1.7.0(react@18.3.1)
       '@ianvs/prettier-plugin-sort-imports':
         specifier: 3.7.2
         version: 3.7.2(prettier@3.3.3)
@@ -2354,8 +2354,8 @@ packages:
   /@bcoe/v8-coverage@0.2.3:
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
 
-  /@chromatic-com/storybook@1.6.1(react@18.3.1):
-    resolution: {integrity: sha512-x1x1NB3j4xpfeSWKr96emc+7ZvfsvH+/WVb3XCjkB24PPbT8VZXb3mJSAQMrSzuQ8+eQE9kDogYHH9Fj3tb/Cw==}
+  /@chromatic-com/storybook@1.7.0(react@18.3.1):
+    resolution: {integrity: sha512-0aAkSaNsHaJL37/r+TIbpKjCouIysvoJno61LzUSs1xW4fpxF7gdr8xwIOONQjEsz2Fa0uFHXmzkFYcH6o8kmA==}
     engines: {node: '>=16.0.0', yarn: '>=1.22.18'}
     dependencies:
       chromatic: 11.7.1
