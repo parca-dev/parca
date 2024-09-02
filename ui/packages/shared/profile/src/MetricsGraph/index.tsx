@@ -49,6 +49,7 @@ interface Props {
   width?: number;
   height?: number;
   margin?: number;
+  sumBy?: string[];
 }
 
 export interface HighlightedSeries {
@@ -80,6 +81,7 @@ const MetricsGraph = ({
   width = 0,
   height = 0,
   margin = 0,
+  sumBy,
 }: Props): JSX.Element => {
   const [isInfoPanelOpen, setIsInfoPanelOpen] = useState<boolean>(false);
   return (
@@ -102,6 +104,7 @@ const MetricsGraph = ({
         width={width}
         height={height}
         margin={margin}
+        sumBy={sumBy}
       />
     </div>
   );
@@ -131,6 +134,7 @@ export const RawMetricsGraph = ({
   height = 50,
   margin = 0,
   sampleUnit,
+  sumBy,
 }: Props): JSX.Element => {
   const {timezone} = useParcaContext();
   const graph = useRef(null);
@@ -331,15 +335,29 @@ export const RawMetricsGraph = ({
     let s: Series | null = null;
     let seriesIndex = -1;
 
+    // if there are both query matchers and also a sumby value, we need to check if the sumby value is part of the query matchers.
+    // if it is, then we should prioritize using the sumby label name and value to find the selected profile.
+    const useSumBy =
+      sumBy !== undefined &&
+      sumBy.length > 0 &&
+      profile.query.matchers.length > 0 &&
+      profile.query.matchers.some(e => sumBy.includes(e.key));
+
+    // get only the sumby keys and values from the profile query matchers
+    const sumByMatchers =
+      sumBy !== undefined ? profile.query.matchers.filter(e => sumBy.includes(e.key)) : [];
+
+    const keysToMatch = useSumBy ? sumByMatchers : profile.query.matchers;
+
     outer: for (let i = 0; i < series.length; i++) {
-      const keys = profile.query.matchers.map(e => e.key);
+      const keys = keysToMatch.map(e => e.key);
       for (let j = 0; j < keys.length; j++) {
         const matcherKey = keys[j];
         const label = series[i].metric.find(e => e.name === matcherKey);
         if (label === undefined) {
           continue outer; // label doesn't exist to begin with
         }
-        if (profile.query.matchers[j].value !== label.value) {
+        if (keysToMatch[j].value !== label.value) {
           continue outer; // label values don't match
         }
       }

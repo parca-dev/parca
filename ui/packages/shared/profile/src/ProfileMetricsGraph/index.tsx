@@ -238,6 +238,7 @@ const ProfileMetricsGraph = ({
             height={height}
             width={width}
             margin={margin}
+            sumBy={sumBy}
           />
         ) : (
           <ProfileMetricsEmptyState message="No data found. Try a different query." />
