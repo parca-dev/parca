@@ -336,51 +336,39 @@ export const RawMetricsGraph = ({
     let s: Series | null = null;
     let seriesIndex = -1;
 
-    // Check if we should use sumBy or the profile matcher when looking for the selected profile.
-    // When a sum by is present, we only care about the existence of the label.
-    // Therefore, only use the sum by if it is has values and the profile matchers does not include any of the values in the sumby.
+    // if there are both query matchers and also a sumby value, we need to check if the sumby value is part of the query matchers.
+    // if it is, then we should prioritize using the sumby label name and value to find the selected profile.
     const useSumBy =
-      sumBy &&
+      sumBy !== undefined &&
       sumBy.length > 0 &&
-      profile.query.matchers &&
+      profile.query.matchers.length > 0 &&
       profile.query.matchers.some(e => sumBy.includes(e.key));
 
-    const keysToMatch = useSumBy ? sumBy : profile.query.matchers.map(e => e.key);
+    // get only the sumby keys and values from the profile query matchers
+    const sumByMatchers =
+      sumBy !== undefined ? profile.query.matchers.filter(e => sumBy.includes(e.key)) : [];
+
+    const keysToMatch = useSumBy ? sumByMatchers : profile.query.matchers;
 
     outer: for (let i = 0; i < series.length; i++) {
-      let allMatch = true;
-      for (let j = 0; j < keysToMatch.length; j++) {
-        const matcherKey = keysToMatch[j];
-
+      const keys = keysToMatch.map(e => e.key);
+      for (let j = 0; j < keys.length; j++) {
+        const matcherKey = keys[j];
         const label = series[i].metric.find(e => e.name === matcherKey);
         if (label === undefined) {
-          allMatch = false;
-          break;
+          continue outer; // label doesn't exist to begin with
         }
-
-        if (sumBy && sumBy.length > 0) {
-          // If sumBy is present, we only care about the existence of the label
-        } else {
-          // If sumBy is not present, we check the value against the profile matcher
-          const matcherValue = profile.query.matchers[j].value;
-          if (matcherValue !== label.value) {
-            allMatch = false;
-            break;
-          }
+        if (keysToMatch[j].value !== label.value) {
+          continue outer; // label values don't match
         }
       }
-
-      if (allMatch) {
-        seriesIndex = i;
-        s = series[i];
-        break outer;
-      }
+      seriesIndex = i;
+      s = series[i];
     }
 
     if (s == null) {
       return null;
     }
-
     // Find the sample that matches the timestamp
     const sample = s.values.find(v => {
       return Math.round(v[0]) === time;
@@ -390,7 +378,7 @@ export const RawMetricsGraph = ({
     }
 
     return {
-      labels: s.metric,
+      labels: [],
       seriesIndex,
       timestamp: sample[0],
       valuePerSecond: sample[1],
