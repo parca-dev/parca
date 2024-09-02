@@ -105,7 +105,7 @@ jobs:
           GORELEASER_CURRENT_TAG: "${{ env.goreleaser_current_tag }}"
 
       - name: Archive generated artifacts
-        uses: actions/upload-artifact@9ee08a3b00e91a926cc9547dc79589c20872452f # v3.2.0
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
         with:
           name: parca-dist-container
           if-no-files-found: error
