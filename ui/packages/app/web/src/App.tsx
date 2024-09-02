@@ -71,15 +71,13 @@ const App = () => {
           <QueryClientProvider client={queryClient}>
             <ThemeProvider>
               <Header />
-              <div className="px-3">
-                <Routes>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/targets" element={<TargetsPage />} />
-                  <Route path="/settings" element={<SettingsPage />} />
-                  <Route path="/PATH_PREFIX_VAR" element={<Navigate to="/" replace />} />
-                  <Route path="*" element={<Component404 />} />
-                </Routes>
-              </div>
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/targets" element={<TargetsPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/PATH_PREFIX_VAR" element={<Navigate to="/" replace />} />
+                <Route path="*" element={<Component404 />} />
+              </Routes>
             </ThemeProvider>
           </QueryClientProvider>
         </BrowserRouter>

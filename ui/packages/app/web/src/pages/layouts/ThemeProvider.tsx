@@ -69,7 +69,16 @@ const ThemeProvider = ({children}: {children: React.ReactNode}) => {
     }
   }, [darkMode, isSystemSettingsTheme]);
 
-  return <div style={{minHeight: '100vh'}}>{children}</div>;
+  return (
+    <div
+      style={{
+        minHeight: '100vh',
+      }}
+      className="bg-white dark:bg-gray-900"
+    >
+      {children}
+    </div>
+  );
 };
 
 export default ThemeProvider;

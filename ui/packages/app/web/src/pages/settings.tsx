@@ -15,8 +15,8 @@ import {UserPreferences} from '@parca/components';
 
 const SettingsPage = () => {
   return (
-    <section>
-      <div className="bg-white dark:bg-gray-700 max-w-[800px] p-10 w-[800px] mx-auto mt-[60px] rounded">
+    <section className="bg-gray-50 dark:bg-gray-900 h-screen pt-[60px]">
+      <div className="bg-white dark:bg-gray-700 max-w-[800px] p-10 w-[800px] mx-auto rounded">
         <h1 className="text-3xl dark:text-gray-100 font-bold">Visualisation Settings</h1>
         <div>
           <UserPreferences />

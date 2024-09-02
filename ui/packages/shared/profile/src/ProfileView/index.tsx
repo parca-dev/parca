@@ -337,28 +337,37 @@ export const ProfileView = ({
     [groupBy, setGroupBy]
   );
 
+  const showDivider =
+    hasProfileSource &&
+    (profileViewExternalMainActions === null || profileViewExternalMainActions === undefined);
+
   return (
     <KeyDownProvider>
       <ProfileViewContextProvider value={{profileSource, compareMode}}>
+        {showDivider ? (
+          <>
+            <div className="border-t border-gray-200 dark:border-gray-700 h-[1px] w-full pb-4"></div>
+          </>
+        ) : null}
         <div
           className={cx(
-            'mb-4 flex w-full',
+            'flex w-full',
             hasProfileSource || profileViewExternalMainActions != null
-              ? 'justify-between'
+              ? 'justify-start'
               : 'justify-end',
             {
-              'items-end': !hasProfileSource && profileViewExternalMainActions != null,
-              'items-center': hasProfileSource,
+              'items-end mb-4': !hasProfileSource && profileViewExternalMainActions != null,
+              'items-center mb-2': hasProfileSource,
             }
           )}
         >
           <div>
             {hasProfileSource && (
               <div className="flex items-center gap-1">
-                <div className="text-sm font-medium capitalize">
+                <div className="text-xs font-medium">
                   {headerParts.length > 0 ? headerParts[0].replace(/"/g, '') : ''}
                 </div>
-                <div className="text-xs">
+                <div className="text-xs font-medium">
                   {headerParts.length > 1
                     ? headerParts[headerParts.length - 1].replace(/"/g, '')
                     : ''}
@@ -415,10 +424,10 @@ export const ProfileView = ({
                             {...provided.draggableProps}
                             key={dashboardItem}
                             className={cx(
-                              'w-full rounded p-2 shadow dark:border dark:border-gray-700 dark:bg-gray-700 min-h-96',
+                              'w-full min-h-96',
                               snapshot.isDragging
                                 ? 'bg-gray-200 dark:bg-gray-500'
-                                : 'bg-white dark:bg-gray-700'
+                                : 'bg-white dark:bg-gray-900'
                             )}
                           >
                             <VisualizationPanel

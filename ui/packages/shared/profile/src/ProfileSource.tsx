@@ -184,7 +184,7 @@ export class ProfileDiffSource implements ProfileSource {
     const bDesc = this.b.toString();
 
     if (aDesc === bDesc) {
-      return 'profile comparison';
+      return 'Profile comparison';
     }
 
     return `${this.a.toString()} compared with ${this.b.toString()}`;
@@ -264,6 +264,6 @@ export class MergedProfileSource implements ProfileSource {
       )}`;
     }
 
-    return `merged profiles${queryPart}${timePart}`;
+    return `Merged profiles${queryPart}${timePart}`;
   }
 }

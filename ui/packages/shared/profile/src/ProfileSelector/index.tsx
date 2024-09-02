@@ -11,10 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {Dispatch, SetStateAction, useEffect, useMemo, useRef, useState} from 'react';
 
 import {Switch} from '@headlessui/react';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
+import cx from 'classnames';
 import Select, {type SelectInstance} from 'react-select';
 
 import {Label, ProfileTypesResponse, QueryServiceClient} from '@parca/client';
@@ -63,6 +64,9 @@ interface ProfileSelectorProps {
   comparing: boolean;
   navigateTo: NavigateFunction;
   suffix?: string;
+  showMetricsGraph: boolean;
+  displayHideMetricsGraphButton: boolean;
+  setDisplayHideMetricsGraphButton: Dispatch<SetStateAction<boolean>>;
 }
 
 export interface IProfileTypesResult {
@@ -101,6 +105,9 @@ const ProfileSelector = ({
   profileSelection,
   comparing,
   navigateTo,
+  showMetricsGraph,
+  displayHideMetricsGraphButton,
+  setDisplayHideMetricsGraphButton,
 }: ProfileSelectorProps): JSX.Element => {
   const {
     loading: profileTypesLoading,
@@ -281,9 +288,9 @@ const ProfileSelector = ({
 
   return (
     <>
-      <div className="mb-2 flex gap-2">
-        <div className="flex w-full flex-wrap content-start items-center gap-2">
-          <div className="pb-6">
+      <div className="mb-2 flex">
+        <div className="flex w-full flex-wrap items-end gap-2">
+          <div>
             <label className="text-xs">Profile type</label>
             <ProfileTypeSelector
               profileTypesData={profileTypesData}
@@ -294,7 +301,7 @@ const ProfileSelector = ({
               disabled={viewComponent?.disableProfileTypesDropdown}
             />
           </div>
-          <div className="w-full flex-1 flex flex-col pb-6 gap-1" ref={queryBrowserRef}>
+          <div className="w-full flex-1 flex flex-col gap-1" ref={queryBrowserRef}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <label className="text-xs">Query</label>
@@ -309,7 +316,7 @@ const ProfileSelector = ({
                       className={`${
                         advancedModeForQueryBrowser
                           ? 'bg-indigo-600'
-                          : 'bg-gray-400 dark:bg-gray-900'
+                          : 'bg-gray-400 dark:bg-gray-800'
                       }
           relative inline-flex h-[20px] w-[44px] shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2  focus-visible:ring-white/75`}
                     >
@@ -365,7 +372,7 @@ const ProfileSelector = ({
               </>
             )}
           </div>
-          <div className="pb-6">
+          <div>
             <div className="mb-0.5 mt-1.5 flex items-center justify-between">
               <label className="text-xs">Sum by</label>
             </div>
@@ -383,6 +390,7 @@ const ProfileSelector = ({
               placeholder="Labels..."
               styles={{
                 indicatorSeparator: () => ({display: 'none'}),
+                menu: provided => ({...provided, width: 'max-content'}),
               }}
               isDisabled={!profileType.delta}
               ref={sumByRef}
@@ -426,75 +434,91 @@ const ProfileSelector = ({
         </div>
         <div>{comparing && <IconButton onClick={() => closeProfile()} icon={<CloseIcon />} />}</div>
       </div>
-      <div className="rounded bg-white shadow dark:border-gray-500 dark:bg-gray-700">
-        <div style={{height: heightStyle}}>
-          {querySelection.expression !== undefined &&
-          querySelection.expression.length > 0 &&
-          querySelection.from !== undefined &&
-          querySelection.to !== undefined ? (
-            <div className="p-2">
-              <ProfileMetricsGraph
-                queryClient={queryClient}
-                queryExpression={querySelection.expression}
-                from={querySelection.from}
-                to={querySelection.to}
-                profile={profileSelection}
-                comparing={comparing}
-                sumBy={querySelection.sumBy ?? defaultSumBy ?? []}
-                sumByLoading={defaultSumByLoading}
-                setTimeRange={(range: DateTimeRange) => {
-                  const from = range.getFromMs();
-                  const to = range.getToMs();
-                  let mergedProfileParams = {};
-                  if (query.profileType().delta) {
-                    mergedProfileParams = {mergeFrom: from, mergeTo: to};
-                  }
-                  setTimeRangeSelection(range);
-                  selectQuery({
-                    expression: queryExpressionString,
-                    from,
-                    to,
-                    timeSelection: range.getRangeKey(),
-                    ...mergedProfileParams,
-                  });
-                }}
-                addLabelMatcher={addLabelMatcher}
-                onPointClick={(
-                  timestamp: number,
-                  labels: Label[],
-                  queryExpression: string,
-                  duration: number
-                ) => {
-                  // TODO: Pass the query object via click rather than queryExpression
-                  let query = Query.parse(queryExpression);
-                  labels.forEach(l => {
-                    const [newQuery, updated] = query.setMatcher(l.name, l.value);
-                    if (updated) {
-                      query = newQuery;
-                    }
-                  });
-
-                  const durationInMilliseconds = duration / 1000000; // duration is in nanoseconds
-                  const mergeFrom = timestamp;
-                  const mergeTo = query.profileType().delta
-                    ? mergeFrom + durationInMilliseconds
-                    : mergeFrom;
-                  selectProfile(new MergedProfileSelection(mergeFrom, mergeTo, query));
-                }}
-              />
-            </div>
-          ) : (
-            <>
-              {profileSelection == null ? (
-                <div className="p-2">
-                  <ProfileMetricsEmptyState
-                    message={`Please select a profile type and click "Search" to begin.`}
-                  />
-                </div>
-              ) : null}
-            </>
+      <div
+        className={cx('relative', {
+          'py-4': !showMetricsGraph,
+        })}
+      >
+        <button
+          onClick={() => setDisplayHideMetricsGraphButton(!showMetricsGraph)}
+          className={cx(
+            'hidden z-10 px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-900',
+            displayHideMetricsGraphButton && showMetricsGraph && 'absolute right-0 bottom-3 !flex',
+            !showMetricsGraph && 'relative !flex ml-auto'
           )}
-        </div>
+        >
+          {showMetricsGraph ? 'Hide' : 'Show'} Metrics Graph
+        </button>
+        {showMetricsGraph ? (
+          <div style={{height: heightStyle}}>
+            {querySelection.expression !== undefined &&
+            querySelection.expression.length > 0 &&
+            querySelection.from !== undefined &&
+            querySelection.to !== undefined ? (
+              <div>
+                <ProfileMetricsGraph
+                  queryClient={queryClient}
+                  queryExpression={querySelection.expression}
+                  from={querySelection.from}
+                  to={querySelection.to}
+                  profile={profileSelection}
+                  comparing={comparing}
+                  sumBy={querySelection.sumBy ?? defaultSumBy ?? []}
+                  sumByLoading={defaultSumByLoading}
+                  setTimeRange={(range: DateTimeRange) => {
+                    const from = range.getFromMs();
+                    const to = range.getToMs();
+                    let mergedProfileParams = {};
+                    if (query.profileType().delta) {
+                      mergedProfileParams = {mergeFrom: from, mergeTo: to};
+                    }
+                    setTimeRangeSelection(range);
+                    selectQuery({
+                      expression: queryExpressionString,
+                      from,
+                      to,
+                      timeSelection: range.getRangeKey(),
+                      ...mergedProfileParams,
+                    });
+                  }}
+                  addLabelMatcher={addLabelMatcher}
+                  onPointClick={(
+                    timestamp: number,
+                    labels: Label[],
+                    queryExpression: string,
+                    duration: number
+                  ) => {
+                    // TODO: Pass the query object via click rather than queryExpression
+                    let query = Query.parse(queryExpression);
+                    labels.forEach(l => {
+                      const [newQuery, updated] = query.setMatcher(l.name, l.value);
+                      if (updated) {
+                        query = newQuery;
+                      }
+                    });
+
+                    const durationInMilliseconds = duration / 1000000; // duration is in nanoseconds
+                    const mergeFrom = timestamp;
+                    const mergeTo = query.profileType().delta
+                      ? mergeFrom + durationInMilliseconds
+                      : mergeFrom;
+                    selectProfile(new MergedProfileSelection(mergeFrom, mergeTo, query));
+                  }}
+                />
+              </div>
+            ) : (
+              <>
+                {profileSelection == null ? (
+                  <div className="p-2">
+                    <ProfileMetricsEmptyState
+                      message={`Please select a profile type and click "Search" to begin.`}
+                    />
+                  </div>
+                ) : null}
+              </>
+            )}
+          </div>
+        ) : null}
       </div>
     </>
   );

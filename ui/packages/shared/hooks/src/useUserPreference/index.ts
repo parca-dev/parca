@@ -41,12 +41,12 @@ export const USER_PREFERENCES: {[key: string]: UserPreferenceDetails} = {
       'When enabled, this option automatically trims nodes that are too small to be seen in the graph, making it easier to read and understand.',
   },
   FLAMEGRAPH_COLOR_PROFILE: {
-    name: 'Flamegraph color profile',
+    name: 'Iciclegraph color profile',
     key: 'FLAMEGRAPH_COLOR_PROFILE',
     type: 'string',
     default: 'ocean',
     description:
-      'When enabled, this option anchors the graph tooltip to the bottom of your screen instead of floating near your cursor.',
+      'This setting allows you to customize the color scheme used in the Icicle graph visualization.',
   },
   GRAPH_METAINFO_DOCKED: {
     name: 'Dock Graph MetaInfo',
