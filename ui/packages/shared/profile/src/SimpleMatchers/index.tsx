@@ -292,6 +292,8 @@ const SimpleMatchers = ({
     [queryRows, fetchLabelValues]
   );
 
+  const isRowRegex = (row: QueryRow): boolean => row.operator === '=~' || row.operator === '!~';
+
   return (
     <div className={`flex items-center gap-3 ${maxWidthInPixels} w-full flex-wrap`}>
       {visibleRows.map((row, index) => (
@@ -322,6 +324,7 @@ const SimpleMatchers = ({
             disabled={row.labelName === ''}
             loading={row.isLoading}
             onButtonClick={() => handleLabelValueClick(index)}
+            editable={isRowRegex(row)}
           />
           <button
             onClick={() => removeRow(index)}
