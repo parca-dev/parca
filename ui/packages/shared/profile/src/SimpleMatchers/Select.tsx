@@ -16,7 +16,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
-import {useParcaContext} from '@parca/components';
+import {Button, useParcaContext} from '@parca/components';
 
 export interface SelectElement {
   active: JSX.Element;
@@ -44,13 +44,14 @@ interface CustomSelectProps {
   optionsClassname?: string;
   searchable?: boolean;
   onButtonClick?: () => void;
+  editable?: boolean;
 }
 
 const CustomSelect: React.FC<CustomSelectProps> = ({
   items,
   selectedKey,
   onSelection,
-  placeholder,
+  placeholder = 'Select an item',
   width,
   className = '',
   loading,
@@ -61,6 +62,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   optionsClassname = '',
   searchable = false,
   onButtonClick,
+  editable = false,
 }) => {
   const {loader} = useParcaContext();
   const [isOpen, setIsOpen] = useState(false);
@@ -80,7 +82,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
       )
     : items;
 
-  const selection = items.find(v => v.key === selectedKey);
+  const selection = editable ? selectedKey : items.find(v => v.key === selectedKey);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent): void => {
@@ -159,6 +161,14 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   const primaryStyles =
     'text-gray-100 dark:gray-900 bg-indigo-600 border-indigo-500 font-medium py-2 px-4';
 
+  const renderSelection = (selection: SelectItem | string | undefined): string | JSX.Element => {
+    if (editable) {
+      return typeof selection === 'string' && selection.length > 0 ? selection : placeholder;
+    } else {
+      return (selection as SelectItem)?.element?.active ?? placeholder;
+    }
+  };
+
   return (
     <div ref={containerRef} className="relative" onKeyDown={handleKeyDown} onClick={onButtonClick}>
       <div
@@ -181,7 +191,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
             icon != null ? '' : 'block overflow-x-hidden text-ellipsis whitespace-nowrap'
           )}
         >
-          {selection?.element.active ?? placeholder}
+          {renderSelection(selection)}
         </div>
         <div className={cx(icon != null ? '' : 'pointer-events-none text-gray-400')}>
           {icon ?? <Icon icon="heroicons:chevron-up-down-20-solid" aria-hidden="true" />}
@@ -199,14 +209,29 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         >
           {searchable && (
             <div className="sticky h-[45px] z-10 top-[-5px] border-b border-gray-200">
-              <input
-                ref={searchInputRef}
-                type="text"
-                className="w-full px-6 h-full text-sm border-none rounded-none ring-0 outline-none bg-gray-50 dark:bg-gray-800 dark:text-white"
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
+              <div className="relative h-full">
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  className="w-full px-4 h-full text-sm border-none rounded-none ring-0 outline-none bg-gray-50 dark:bg-gray-800 dark:text-white"
+                  placeholder={editable ? 'Type a RegEx to add' : 'Search...'}
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                />
+
+                {editable && searchTerm.length > 0 && (
+                  <Button
+                    variant="neutral"
+                    className="absolute top-[7px] right-[6px] h-[30px]"
+                    onClick={() => {
+                      onSelection(searchTerm);
+                      setIsOpen(false);
+                    }}
+                  >
+                    Add{' '}
+                  </Button>
+                )}
+              </div>
             </div>
           )}
           {loading === true ? (

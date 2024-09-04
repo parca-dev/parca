@@ -71,29 +71,28 @@ const operatorOptions = [
       ),
     },
   },
-  // TODO: Implement these operators to work properly.
-  // {
-  //   key: '=~',
-  //   element: {
-  //     active: <>{'=~'}</>,
-  //     expanded: (
-  //       <>
-  //         <span>{'=~'}</span>
-  //       </>
-  //     ),
-  //   },
-  // },
-  // {
-  //   key: '!~',
-  //   element: {
-  //     active: <>{'!~'}</>,
-  //     expanded: (
-  //       <>
-  //         <span>{'!~'}</span>
-  //       </>
-  //     ),
-  //   },
-  // },
+  {
+    key: '=~',
+    element: {
+      active: <>{'=~'}</>,
+      expanded: (
+        <>
+          <span>{'=~'}</span>
+        </>
+      ),
+    },
+  },
+  {
+    key: '!~',
+    element: {
+      active: <>{'!~'}</>,
+      expanded: (
+        <>
+          <span>{'!~'}</span>
+        </>
+      ),
+    },
+  },
 ];
 
 const SimpleMatchers = ({
@@ -164,18 +163,21 @@ const SimpleMatchers = ({
     const fetchAndSetQueryRows = async (): Promise<void> => {
       const newRows = await Promise.all(
         currentMatchers.split(',').map(async matcher => {
-          let [labelName, operator, labelValue] = matcher.split(/(=|!=|=~|!~)/);
-          labelName = labelName.trim();
-          if (labelName === '') return null;
+          const match = matcher.match(/([^=!~]+)([=!~]{1,2})(.+)/);
+          if (match === null) return null;
 
-          const labelValues = await fetchLabelValues(labelName);
+          const [, labelName, operator, labelValue] = match;
+          const trimmedLabelName = labelName.trim();
+          if (trimmedLabelName === '') return null;
+
+          const labelValues = await fetchLabelValues(trimmedLabelName);
           const sanitizedLabelValue =
             labelValue.startsWith('"') && labelValue.endsWith('"')
               ? labelValue.slice(1, -1)
               : labelValue;
 
           return {
-            labelName,
+            labelName: trimmedLabelName,
             operator,
             labelValue: sanitizedLabelValue,
             labelValues,
@@ -290,6 +292,8 @@ const SimpleMatchers = ({
     [queryRows, fetchLabelValues]
   );
 
+  const isRowRegex = (row: QueryRow): boolean => row.operator === '=~' || row.operator === '!~';
+
   return (
     <div className={`flex items-center gap-3 ${maxWidthInPixels} w-full flex-wrap`}>
       {visibleRows.map((row, index) => (
@@ -320,6 +324,7 @@ const SimpleMatchers = ({
             disabled={row.labelName === ''}
             loading={row.isLoading}
             onButtonClick={() => handleLabelValueClick(index)}
+            editable={isRowRegex(row)}
           />
           <button
             onClick={() => removeRow(index)}
