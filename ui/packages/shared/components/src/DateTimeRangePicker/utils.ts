@@ -16,6 +16,7 @@ import moment from 'moment-timezone';
 import {ABSOLUTE_TIME_ALIASES, AbsoluteDateValue, DATE_FORMAT} from '../DateTimePicker';
 
 export const UNITS = {
+  SECOND: 'second',
   MINUTE: 'minute',
   HOUR: 'hour',
   DAY: 'day',
@@ -30,6 +31,58 @@ export const POSITIONS = {
 
 export type UNIT_TYPE = (typeof UNITS)[keyof typeof UNITS];
 export type POSITION_TYPE = (typeof POSITIONS)[keyof typeof POSITIONS];
+
+export interface UnitsMap {
+  [key: string]: string;
+}
+
+export const unitLong: UnitsMap = {
+  s: UNITS.SECOND,
+  m: UNITS.MINUTE,
+  h: UNITS.HOUR,
+  d: UNITS.DAY,
+  w: UNITS.WEEK,
+  y: UNITS.YEAR,
+};
+
+export const unitShort: UnitsMap = {
+  [UNITS.SECOND]: 's',
+  [UNITS.MINUTE]: 'm',
+  [UNITS.HOUR]: 'h',
+  [UNITS.DAY]: 'd',
+  [UNITS.WEEK]: 'w',
+  [UNITS.YEAR]: 'y',
+};
+
+export const units: Array<[UNIT_TYPE, number]> = [
+  [UNITS.YEAR, 31536000],
+  [UNITS.WEEK, 604800],
+  [UNITS.DAY, 86400],
+  [UNITS.HOUR, 3600],
+  [UNITS.MINUTE, 60],
+  [UNITS.SECOND, 1],
+];
+
+export const presetRanges = [
+  {value: 1, unit: UNITS.MINUTE},
+  {value: 5, unit: UNITS.MINUTE},
+  {value: 15, unit: UNITS.MINUTE},
+  {value: 30, unit: UNITS.MINUTE},
+  {value: 1, unit: UNITS.HOUR},
+  {value: 3, unit: UNITS.HOUR},
+  {value: 6, unit: UNITS.HOUR},
+  {value: 12, unit: UNITS.HOUR},
+  {value: 1, unit: UNITS.DAY},
+  {value: 2, unit: UNITS.DAY},
+  {value: 1, unit: UNITS.WEEK},
+  {value: 2, unit: UNITS.WEEK},
+  {value: 4, unit: UNITS.WEEK},
+  {value: 8, unit: UNITS.WEEK},
+  {value: 16, unit: UNITS.WEEK},
+  {value: 26, unit: UNITS.WEEK},
+  {value: 1, unit: UNITS.YEAR},
+  {value: 2, unit: UNITS.YEAR},
+];
 
 interface BaseDate {
   isRelative: () => boolean;
@@ -246,22 +299,22 @@ export const getDateHoursAgo = (hours = 1): Date => {
 
 export const getHistoricalDate = ({value, unit}: {value: number; unit: string}): Date => {
   const now = new Date();
-  switch (unit) {
-    case UNITS.MINUTE:
-      now.setMinutes(now.getMinutes() - value);
-      return now;
-    case UNITS.HOUR:
-      now.setHours(now.getHours() - value);
-      return now;
-    case UNITS.DAY:
-      now.setDate(now.getDate() - value);
-      return now;
-    case UNITS.WEEK:
-      now.setDate(now.getDate() - value * 7);
-      return now;
-    default:
-      return now;
-  }
+  const msToSubtract = (() => {
+    switch (unit) {
+      case UNITS.MINUTE:
+        return value * 60 * 1000;
+      case UNITS.HOUR:
+        return value * 60 * 60 * 1000;
+      case UNITS.DAY:
+        return value * 24 * 60 * 60 * 1000;
+      case UNITS.WEEK:
+        return value * 7 * 24 * 60 * 60 * 1000;
+      default:
+        return 0;
+    }
+  })();
+
+  return new Date(now.getTime() - msToSubtract);
 };
 
 const getRelativeDateMs = (date: RelativeDate): number => {
@@ -297,3 +350,118 @@ export const getStringForDateInTimezone = (
 ): string => {
   return moment.tz(date.getTime().toISOString(), timezone).format(format);
 };
+
+export const parseInput = (input: string): {value: number; unit: UNIT_TYPE} | null => {
+  if (input.length > 100) return null;
+
+  const parts = input.match(/(\d+[smhdwy])/g);
+  if (parts === null) return null;
+
+  let totalSeconds = 0;
+  for (const part of parts) {
+    const value = parseInt(part.slice(0, -1));
+    const unit = part.slice(-1) as keyof typeof unitLong;
+    if (isNaN(value) || unitLong[unit] === '') return null;
+
+    const unitInSeconds = {
+      s: 1,
+      m: 60,
+      h: 3600,
+      d: 86400,
+      w: 604800,
+      y: 31536000,
+    }[unit] as number;
+
+    totalSeconds += value * unitInSeconds;
+  }
+
+  for (const [unit, seconds] of units) {
+    if (totalSeconds >= seconds) {
+      return {value: totalSeconds / seconds, unit};
+    }
+  }
+
+  return {value: totalSeconds, unit: UNITS.SECOND};
+};
+
+export const getRelativeTimeRangeBetweenDates = (
+  timeRange: number
+): {unit: UNIT_TYPE; value: number} => {
+  const roundToHundredth = (value: number): number => {
+    return Number(value.toFixed(2));
+  };
+
+  if (timeRange < 1000 * 60 * 60) {
+    const timeRangeToMinutes = timeRange / 1000 / 60;
+    return {unit: UNITS.MINUTE, value: roundToHundredth(timeRangeToMinutes)};
+  }
+  if (timeRange < 1000 * 60 * 60 * 24) {
+    const timeRangeToHours = timeRange / 1000 / 60 / 60;
+    return {unit: UNITS.HOUR, value: roundToHundredth(timeRangeToHours)};
+  }
+  if (timeRange < 1000 * 60 * 60 * 24 * 7) {
+    const timeRangeToDays = timeRange / 1000 / 60 / 60 / 24;
+    return {unit: UNITS.DAY, value: roundToHundredth(timeRangeToDays)};
+  }
+  const timeRangeToWeeks = timeRange / 1000 / 60 / 60 / 24 / 7;
+  return {unit: UNITS.WEEK, value: roundToHundredth(timeRangeToWeeks)};
+};
+
+export const formatRange = (value: number, unit: UNIT_TYPE): string => {
+  if (value === 0) return `0${unitShort[UNITS.SECOND]}`;
+
+  const parts: string[] = [];
+  let remainingValue = value;
+
+  const addPart = (currentUnit: UNIT_TYPE, nextUnit: UNIT_TYPE | null, divisor: number): void => {
+    if (remainingValue > 0) {
+      const wholePart = Math.floor(remainingValue);
+      const fraction = remainingValue - wholePart;
+
+      if (wholePart > 0 || currentUnit === unit) {
+        parts.push(`${wholePart}${unitShort[currentUnit]}`);
+      }
+
+      if (fraction > 0 && nextUnit !== null) {
+        remainingValue = Math.round(fraction * divisor * 100) / 100; // Round to 2 decimal places
+      } else {
+        remainingValue = 0;
+      }
+    }
+  };
+
+  switch (unit) {
+    case UNITS.YEAR:
+      addPart(UNITS.YEAR, UNITS.DAY, 365);
+      addPart(UNITS.DAY, UNITS.HOUR, 24);
+      addPart(UNITS.HOUR, UNITS.MINUTE, 60);
+      addPart(UNITS.MINUTE, null, 60);
+      break;
+    case UNITS.WEEK:
+      addPart(UNITS.WEEK, UNITS.DAY, 7);
+      addPart(UNITS.DAY, UNITS.HOUR, 24);
+      addPart(UNITS.HOUR, UNITS.MINUTE, 60);
+      addPart(UNITS.MINUTE, null, 60);
+      break;
+    case UNITS.DAY:
+      addPart(UNITS.DAY, UNITS.HOUR, 24);
+      addPart(UNITS.HOUR, UNITS.MINUTE, 60);
+      addPart(UNITS.MINUTE, null, 60);
+      break;
+    case UNITS.HOUR:
+      addPart(UNITS.HOUR, UNITS.MINUTE, 60);
+      addPart(UNITS.MINUTE, null, 60);
+      break;
+    case UNITS.MINUTE:
+      addPart(UNITS.MINUTE, UNITS.SECOND, 60);
+      addPart(UNITS.SECOND, null, 1);
+      break;
+    case UNITS.SECOND:
+      addPart(UNITS.SECOND, null, 1);
+      break;
+  }
+
+  return parts.join('');
+};
+
+export const NOW = new RelativeDate(UNITS.MINUTE, 0);

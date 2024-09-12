@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useMemo, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 
 import {DateTimePicker} from '../../DateTimePicker';
 import {AbsoluteDate, DateTimeRange, RelativeDate, getHistoricalDate} from '../utils';
@@ -45,6 +45,29 @@ const AbsoluteDatePicker = ({range, onChange}: AbsoluteDatePickerProps): JSX.Ele
         )
       : (range.to as AbsoluteDate)
   );
+
+  useEffect(() => {
+    setFrom(
+      range.from.isRelative()
+        ? new AbsoluteDate(
+            getHistoricalDate({
+              unit: dateFromInRelative.unit,
+              value: dateFromInRelative.value,
+            })
+          )
+        : (range.from as AbsoluteDate)
+    );
+    setTo(
+      range.to.isRelative()
+        ? new AbsoluteDate(
+            getHistoricalDate({
+              unit: dateToInRelative.unit,
+              value: dateToInRelative.value,
+            })
+          )
+        : (range.to as AbsoluteDate)
+    );
+  }, [dateFromInRelative, dateToInRelative, range.from, range.to]);
 
   return (
     <div className="flex flex-col w-[80%] mx-auto">
