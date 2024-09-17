@@ -19,7 +19,7 @@ import {saveAsBlob} from '@parca/utilities';
 
 import {useLabelNames} from './MatchersInput';
 import {FIELD_FUNCTION_NAME} from './ProfileIcicleGraph/IcicleGraphArrow';
-import {ProfileSource} from './ProfileSource';
+import {MergedProfileSource, ProfileSource} from './ProfileSource';
 import {ProfileView} from './ProfileView';
 import {useQuery} from './useQuery';
 import {downloadPprof} from './utils';
@@ -77,9 +77,15 @@ export const ProfileViewWithData = ({
     binaryFrameFilter,
   });
 
+  const mergedProfileSource = profileSource as MergedProfileSource;
+  const matchers = mergedProfileSource.query.matchers.map(m => `${m.key}${m.matcherType}"${m.value}"`);
+
   const {result: profileLabelsResponse} = useLabelNames(
     queryClient,
-    profileSource.ProfileType().toString()
+    profileSource.ProfileType().toString(),
+    undefined,
+    undefined,
+    matchers,
   );
 
   const {isLoading: profilemetadataLoading, response: profilemetadataResponse} = useQuery(
