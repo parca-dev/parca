@@ -46,14 +46,15 @@ export const useLabelNames = (
   client: QueryServiceClient,
   profileType: string,
   start?: number,
-  end?: number
+  end?: number,
+  match?: string[],
 ): UseLabelNames => {
   const metadata = useGrpcMetadata();
 
   const {data, isLoading, error} = useGrpcQuery<LabelsResponse>({
-    key: ['labelNames', profileType],
+    key: ['labelNames', profileType, match?.join(',')],
     queryFn: async () => {
-      const request: LabelsRequest = {match: []};
+      const request: LabelsRequest = {match: match !== undefined ? match : []};
       if (start !== undefined && end !== undefined) {
         request.start = millisToProtoTimestamp(start);
         request.end = millisToProtoTimestamp(end);

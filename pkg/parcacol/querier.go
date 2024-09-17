@@ -96,7 +96,8 @@ func (q *Querier) Labels(
 	filterExpr := []logicalplan.Expr{}
 
 	if profileType != "" {
-		_, selectorExprs, err := QueryToFilterExprs(profileType + "{}")
+		matchers := strings.Join(match, ",")
+		_, selectorExprs, err := QueryToFilterExprs(profileType + "{" + matchers + "}")
 		if err != nil {
 			return nil, err
 		}
