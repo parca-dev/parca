@@ -35,7 +35,7 @@ func request_DebuginfoService_Upload_0(ctx context.Context, marshaler runtime.Ma
 	var metadata runtime.ServerMetadata
 	stream, err := client.Upload(ctx)
 	if err != nil {
-		grpclog.Infof("Failed to start streaming: %v", err)
+		grpclog.Errorf("Failed to start streaming: %v", err)
 		return nil, metadata, err
 	}
 	dec := marshaler.NewDecoder(req.Body)
@@ -46,25 +46,25 @@ func request_DebuginfoService_Upload_0(ctx context.Context, marshaler runtime.Ma
 			break
 		}
 		if err != nil {
-			grpclog.Infof("Failed to decode request: %v", err)
+			grpclog.Errorf("Failed to decode request: %v", err)
 			return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 		}
 		if err = stream.Send(&protoReq); err != nil {
 			if err == io.EOF {
 				break
 			}
-			grpclog.Infof("Failed to send request: %v", err)
+			grpclog.Errorf("Failed to send request: %v", err)
 			return nil, metadata, err
 		}
 	}
 
 	if err := stream.CloseSend(); err != nil {
-		grpclog.Infof("Failed to terminate client stream: %v", err)
+		grpclog.Errorf("Failed to terminate client stream: %v", err)
 		return nil, metadata, err
 	}
 	header, err := stream.Header()
 	if err != nil {
-		grpclog.Infof("Failed to get header from client: %v", err)
+		grpclog.Errorf("Failed to get header from client: %v", err)
 		return nil, metadata, err
 	}
 	metadata.HeaderMD = header
@@ -157,6 +157,7 @@ func local_request_DebuginfoService_MarkUploadFinished_0(ctx context.Context, ma
 // UnaryRPC     :call DebuginfoServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterDebuginfoServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterDebuginfoServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server DebuginfoServiceServer) error {
 
 	mux.Handle("POST", pattern_DebuginfoService_Upload_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -247,21 +248,21 @@ func RegisterDebuginfoServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 // RegisterDebuginfoServiceHandlerFromEndpoint is same as RegisterDebuginfoServiceHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
 func RegisterDebuginfoServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
-	conn, err := grpc.DialContext(ctx, endpoint, opts...)
+	conn, err := grpc.NewClient(endpoint, opts...)
 	if err != nil {
 		return err
 	}
 	defer func() {
 		if err != nil {
 			if cerr := conn.Close(); cerr != nil {
-				grpclog.Infof("Failed to close conn to %s: %v", endpoint, cerr)
+				grpclog.Errorf("Failed to close conn to %s: %v", endpoint, cerr)
 			}
 			return
 		}
 		go func() {
 			<-ctx.Done()
 			if cerr := conn.Close(); cerr != nil {
-				grpclog.Infof("Failed to close conn to %s: %v", endpoint, cerr)
+				grpclog.Errorf("Failed to close conn to %s: %v", endpoint, cerr)
 			}
 		}()
 	}()
@@ -279,7 +280,7 @@ func RegisterDebuginfoServiceHandler(ctx context.Context, mux *runtime.ServeMux,
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "DebuginfoServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "DebuginfoServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "DebuginfoServiceClient" to call the correct interceptors.
+// "DebuginfoServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterDebuginfoServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client DebuginfoServiceClient) error {
 
 	mux.Handle("POST", pattern_DebuginfoService_Upload_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
