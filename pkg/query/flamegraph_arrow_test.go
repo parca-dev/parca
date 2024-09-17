@@ -32,7 +32,6 @@ import (
 	"github.com/apache/arrow/go/v16/arrow/memory"
 	pprofprofile "github.com/google/pprof/profile"
 	"github.com/prometheus/prometheus/model/labels"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 
@@ -590,21 +589,21 @@ func (c *flamegraphComparer) compare(expected flamegraphColumns) {
 		i++
 	}
 
-	assert.Equal(c.t, expected.labelsOnly, reorder(c.actual.labelsOnly, order))
-	assert.Equal(c.t, expected.mappingFiles, reorder(c.actual.mappingFiles, order))
-	assert.Equal(c.t, expected.mappingBuildIDs, reorder(c.actual.mappingBuildIDs, order))
-	assert.Equal(c.t, expected.locationAddresses, reorder(c.actual.locationAddresses, order))
-	assert.Equal(c.t, expected.inlined, reorder(c.actual.inlined, order))
-	assert.Equal(c.t, expected.locationLines, reorder(c.actual.locationLines, order))
-	assert.Equal(c.t, expected.functionStartLines, reorder(c.actual.functionStartLines, order))
-	assert.Equal(c.t, expected.functionNames, reorder(c.actual.functionNames, order))
-	assert.Equal(c.t, expected.functionSystemNames, reorder(c.actual.functionSystemNames, order))
-	assert.Equal(c.t, expected.functionFileNames, reorder(c.actual.functionFileNames, order))
-	assert.Equal(c.t, expected.labels, reorder(c.actual.labels, order))
-	assert.Equal(c.t, expected.cumulative, reorder(c.actual.cumulative, order))
-	assert.Equal(c.t, expected.flat, reorder(c.actual.flat, order))
-	assert.Equal(c.t, expected.diff, reorder(c.actual.diff, order))
-	assert.Equal(c.t, expected.children, sortedChildren)
+	require.Equal(c.t, expected.labelsOnly, reorder(c.actual.labelsOnly, order))
+	require.Equal(c.t, expected.mappingFiles, reorder(c.actual.mappingFiles, order))
+	require.Equal(c.t, expected.mappingBuildIDs, reorder(c.actual.mappingBuildIDs, order))
+	require.Equal(c.t, expected.locationAddresses, reorder(c.actual.locationAddresses, order))
+	require.Equal(c.t, expected.inlined, reorder(c.actual.inlined, order))
+	require.Equal(c.t, expected.locationLines, reorder(c.actual.locationLines, order))
+	require.Equal(c.t, expected.functionStartLines, reorder(c.actual.functionStartLines, order))
+	require.Equal(c.t, expected.functionNames, reorder(c.actual.functionNames, order))
+	require.Equal(c.t, expected.functionSystemNames, reorder(c.actual.functionSystemNames, order))
+	require.Equal(c.t, expected.functionFileNames, reorder(c.actual.functionFileNames, order))
+	require.Equal(c.t, expected.labels, reorder(c.actual.labels, order))
+	require.Equal(c.t, expected.cumulative, reorder(c.actual.cumulative, order))
+	require.Equal(c.t, expected.flat, reorder(c.actual.flat, order))
+	require.Equal(c.t, expected.diff, reorder(c.actual.diff, order))
+	require.Equal(c.t, expected.children, sortedChildren)
 }
 
 func reorder[T any](slice []T, order []int) []T {
