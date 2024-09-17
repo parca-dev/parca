@@ -78,14 +78,16 @@ export const ProfileViewWithData = ({
   });
 
   const mergedProfileSource = profileSource as MergedProfileSource;
-  const matchers = mergedProfileSource.query.matchers.map(m => `${m.key}${m.matcherType}"${m.value}"`);
+  const matchers = mergedProfileSource.query.matchers.map(
+    m => `${m.key}${m.matcherType}"${m.value}"`
+  );
 
   const {result: profileLabelsResponse} = useLabelNames(
     queryClient,
     profileSource.ProfileType().toString(),
     undefined,
     undefined,
-    matchers,
+    matchers
   );
 
   const {isLoading: profilemetadataLoading, response: profilemetadataResponse} = useQuery(

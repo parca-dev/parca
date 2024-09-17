@@ -47,7 +47,7 @@ export const useLabelNames = (
   profileType: string,
   start?: number,
   end?: number,
-  match?: string[],
+  match?: string[]
 ): UseLabelNames => {
   const metadata = useGrpcMetadata();
 
