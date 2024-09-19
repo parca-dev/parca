@@ -44,7 +44,8 @@ type MenuItemProps = MenuItemType & {
   path?: string[];
   closeDropdown: () => void;
   isNested?: boolean;
-  activeValue?: string;
+  activeValueForSortBy?: string;
+  activeValueForColorBy?: string;
   icon?: string;
 };
 
@@ -57,12 +58,21 @@ const MenuItem: React.FC<MenuItemProps> = ({
   id,
   closeDropdown,
   isNested = false,
-  activeValue,
+  activeValueForSortBy,
+  activeValueForColorBy,
   value,
   disabled = false,
   icon,
 }) => {
-  const isActive = isNested && value === activeValue;
+  let isActive = false;
+  if (isNested) {
+    if (activeValueForSortBy !== undefined && value === activeValueForSortBy) {
+      isActive = true;
+    }
+    if (activeValueForColorBy !== undefined && value === activeValueForColorBy) {
+      isActive = true;
+    }
+  }
 
   const handleSelect = (): void => {
     if (items === undefined) {
@@ -118,7 +128,8 @@ const MenuItem: React.FC<MenuItemProps> = ({
                     path={[...path, label]}
                     closeDropdown={closeDropdown}
                     isNested={true}
-                    activeValue={activeValue}
+                    activeValueForSortBy={activeValueForSortBy}
+                    activeValueForColorBy={activeValueForColorBy}
                   />
                 ))}
               </Menu.Items>
@@ -141,6 +152,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
   });
   const [colorStackLegend, setStoreColorStackLegend] = useURLState('color_stack_legend');
   const [binaryFrameFilter, setBinaryFrameFilter] = useURLState('binary_frame_filter');
+  const [colorBy, setColorBy] = useURLState('color_by');
   const {compareMode} = useProfileViewContext();
   const [colorProfileName] = useUserPreference<string>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
@@ -194,6 +206,29 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
       icon: 'material-symbols:sort',
     },
     {
+      label: 'Color by',
+      id: 'h-solor-by-filter',
+      items: [
+        {
+          label: 'Binary',
+          onclick: () => setColorBy('binary'),
+          value: 'binary',
+        },
+        {
+          label: 'Filename',
+          onclick: () => setColorBy('filename'),
+          value: 'filename',
+        },
+        {
+          label: 'Function',
+          onclick: () => setColorBy('function'),
+          value: 'function',
+        },
+      ],
+      hide: false,
+      icon: 'carbon:color-palette',
+    },
+    {
       label: isColorStackLegendEnabled ? 'Hide legend' : 'Show legend',
       onclick: () => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true'),
       hide: compareMode || colorProfileName === 'default',
@@ -233,7 +268,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
               />
             </Menu.Button>
             {open && (
-              <Menu.Items className="absolute z-30 right-0 w-56 mt-2 py-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border dark:bg-gray-900 dark:border-gray-600">
+              <Menu.Items className="absolute z-30 left-0 w-56 mt-2 py-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border dark:bg-gray-900 dark:border-gray-600">
                 <span className="text-xs text-gray-400 capitalize px-4 py-3">actions</span>
                 {menuItems
                   .filter(item => item.hide !== undefined && !item.hide)
@@ -243,7 +278,10 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
                       {...item}
                       onSelect={onSelect}
                       closeDropdown={close}
-                      activeValue={storeSortBy as string}
+                      activeValueForSortBy={storeSortBy as string}
+                      activeValueForColorBy={
+                        colorBy === undefined || colorBy === '' ? 'binary' : (colorBy as string)
+                      }
                     />
                   ))}
               </Menu.Items>
