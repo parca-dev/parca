@@ -21,19 +21,17 @@ import (
 const (
 	SchemaName = "parca"
 	// The columns are sorted by their name in the schema too.
-	ColumnDuration       = "duration"
-	ColumnLabels         = "labels"
-	ColumnName           = "name"
-	ColumnPeriod         = "period"
-	ColumnPeriodType     = "period_type"
-	ColumnPeriodUnit     = "period_unit"
-	ColumnPprofLabels    = "pprof_labels"
-	ColumnPprofNumLabels = "pprof_num_labels"
-	ColumnSampleType     = "sample_type"
-	ColumnSampleUnit     = "sample_unit"
-	ColumnStacktrace     = "stacktrace"
-	ColumnTimestamp      = "timestamp"
-	ColumnValue          = "value"
+	ColumnDuration   = "duration"
+	ColumnLabels     = "labels"
+	ColumnName       = "name"
+	ColumnPeriod     = "period"
+	ColumnPeriodType = "period_type"
+	ColumnPeriodUnit = "period_unit"
+	ColumnSampleType = "sample_type"
+	ColumnSampleUnit = "sample_unit"
+	ColumnStacktrace = "stacktrace"
+	ColumnTimestamp  = "timestamp"
+	ColumnValue      = "value"
 )
 
 func SchemaDefinition() *schemapb.Schema {
@@ -83,22 +81,6 @@ func SchemaDefinition() *schemapb.Schema {
 					Encoding: schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
 				},
 				Dynamic: false,
-			}, {
-				Name: ColumnPprofLabels,
-				StorageLayout: &schemapb.StorageLayout{
-					Type:     schemapb.StorageLayout_TYPE_STRING,
-					Encoding: schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
-					Nullable: true,
-				},
-				Dynamic: true,
-			}, {
-				Name: ColumnPprofNumLabels,
-				StorageLayout: &schemapb.StorageLayout{
-					Type:     schemapb.StorageLayout_TYPE_INT64,
-					Encoding: schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
-					Nullable: true,
-				},
-				Dynamic: true,
 			}, {
 				Name: ColumnSampleType,
 				StorageLayout: &schemapb.StorageLayout{

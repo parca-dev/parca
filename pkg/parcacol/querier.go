@@ -109,8 +109,10 @@ func (q *Querier) Labels(
 		start := timestamp.FromTime(startTime)
 		end := timestamp.FromTime(endTime)
 
-		filterExpr = append(filterExpr, logicalplan.Col(profile.ColumnTimestamp).Gt(logicalplan.Literal(start)),
-			logicalplan.Col(profile.ColumnTimestamp).Lt(logicalplan.Literal(end)))
+		filterExpr = append(filterExpr,
+			logicalplan.Col(profile.ColumnTimestamp).Gt(logicalplan.Literal(start)),
+			logicalplan.Col(profile.ColumnTimestamp).Lt(logicalplan.Literal(end)),
+		)
 	}
 
 	err := q.engine.ScanTable(q.tableName).
@@ -1287,8 +1289,6 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]
 
 	aggrCols := []logicalplan.Expr{
 		logicalplan.Col(profile.ColumnStacktrace),
-		logicalplan.DynCol(profile.ColumnPprofLabels),
-		logicalplan.DynCol(profile.ColumnPprofNumLabels),
 	}
 
 	totalSum := logicalplan.Sum(logicalplan.Col(profile.ColumnValue))
@@ -1343,7 +1343,13 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]
 		nil
 }
 
-func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.Time, groupByColumns []string, invertCallStacks bool) (profile.Profile, error) {
+func (q *Querier) QueryMerge(
+	ctx context.Context,
+	query string,
+	start, end time.Time,
+	groupByColumns []string,
+	invertCallStacks bool,
+) (profile.Profile, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/QueryMerge")
 	defer span.End()
 
@@ -1409,10 +1415,10 @@ func (q *Querier) selectMerge(
 	}
 
 	for _, col := range groupByColumns {
+		// We only want to group by `labels.` prefixed columns.
+		// There can be some columns like `function_name` that are virtual and don't actually exist.
 		if strings.HasPrefix(col, profile.ColumnLabelsPrefix) {
-			// If we find one column prefixed with labels. we need to project for the dynamic column: label
-			columnsGroupBy = append(columnsGroupBy, logicalplan.DynCol(profile.ColumnLabels))
-			break
+			columnsGroupBy = append(columnsGroupBy, logicalplan.Col(col))
 		}
 	}
 
@@ -1425,8 +1431,15 @@ func (q *Querier) selectMerge(
 		resultType = queryParts.Meta.PeriodType
 	}
 
-	firstProject := append(columnsGroupBy, valueCol)
-	finalProject := append(columnsGroupBy, totalSum)
+	firstProject := make([]logicalplan.Expr, len(columnsGroupBy))
+	finalProject := make([]logicalplan.Expr, len(columnsGroupBy))
+	// We copy each slice to make sure they are independent going forward.
+	copy(firstProject, columnsGroupBy)
+	copy(finalProject, columnsGroupBy)
+	// We add the specific projection
+	firstProject = append(firstProject, valueCol)
+	finalProject = append(finalProject, totalSum)
+
 	columnsAggregations := []*logicalplan.AggregationFunction{
 		totalSum,
 	}
@@ -1568,7 +1581,7 @@ func (q *Querier) GetProfileMetadataLabels(
 				}
 
 				val := stringCol.Value(i)
-				seen[strings.TrimPrefix(val, "pprof_labels.")] = struct{}{}
+				seen[strings.TrimPrefix(val, "labels.")] = struct{}{}
 			}
 
 			return nil
