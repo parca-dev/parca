@@ -109,8 +109,10 @@ func (q *Querier) Labels(
 		start := timestamp.FromTime(startTime)
 		end := timestamp.FromTime(endTime)
 
-		filterExpr = append(filterExpr, logicalplan.Col(profile.ColumnTimestamp).Gt(logicalplan.Literal(start)),
-			logicalplan.Col(profile.ColumnTimestamp).Lt(logicalplan.Literal(end)))
+		filterExpr = append(filterExpr,
+			logicalplan.Col(profile.ColumnTimestamp).Gt(logicalplan.Literal(start)),
+			logicalplan.Col(profile.ColumnTimestamp).Lt(logicalplan.Literal(end)),
+		)
 	}
 
 	err := q.engine.ScanTable(q.tableName).
@@ -1287,8 +1289,6 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]
 
 	aggrCols := []logicalplan.Expr{
 		logicalplan.Col(profile.ColumnStacktrace),
-		logicalplan.DynCol(profile.ColumnPprofLabels),
-		logicalplan.DynCol(profile.ColumnPprofNumLabels),
 	}
 
 	totalSum := logicalplan.Sum(logicalplan.Col(profile.ColumnValue))

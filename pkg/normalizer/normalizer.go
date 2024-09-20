@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -66,10 +67,8 @@ type Series struct {
 }
 
 type NormalizedWriteRawRequest struct {
-	Series                []Series
-	AllLabelNames         []string
-	AllPprofLabelNames    []string
-	AllPprofNumLabelNames []string
+	Series        []Series
+	AllLabelNames []string
 }
 
 func MetaFromPprof(p *pprofpb.Profile, name string, sampleIndex int) profile.Meta {
@@ -129,9 +128,7 @@ func WriteRawRequestToArrowRecord(
 	}
 
 	ps, err := schema.GetDynamicParquetSchema(map[string][]string{
-		profile.ColumnLabels:         normalizedRequest.AllLabelNames,
-		profile.ColumnPprofLabels:    normalizedRequest.AllPprofLabelNames,
-		profile.ColumnPprofNumLabels: normalizedRequest.AllPprofNumLabelNames,
+		profile.ColumnLabels: normalizedRequest.AllLabelNames,
 	})
 	if err != nil {
 		return nil, err
@@ -305,42 +302,6 @@ func WriteRawRequestToArrowRecord(
 						for _, sample := range series.Samples {
 							for _, p := range sample {
 								cBuilder.AppendNulls(len(p.Samples))
-							}
-						}
-					}
-				}
-			}
-		case profile.ColumnPprofLabels:
-			for _, name := range normalizedRequest.AllPprofLabelNames {
-				cBuilder := b.Field(b.Schema().FieldIndices(col.Name + "." + name)[0]).(*array.BinaryDictionaryBuilder)
-				for _, series := range normalizedRequest.Series {
-					for _, sample := range series.Samples {
-						for _, p := range sample {
-							for _, ns := range p.Samples {
-								if val, ok := ns.Label[name]; ok {
-									if err := cBuilder.AppendString(val); err != nil {
-										return nil, err
-									}
-								} else {
-									cBuilder.AppendNull()
-								}
-							}
-						}
-					}
-				}
-			}
-		case profile.ColumnPprofNumLabels:
-			for _, name := range normalizedRequest.AllPprofNumLabelNames {
-				cBuilder := b.Field(b.Schema().FieldIndices(col.Name + "." + name)[0]).(*array.Int64Builder)
-				for _, series := range normalizedRequest.Series {
-					for _, sample := range series.Samples {
-						for _, p := range sample {
-							for _, ns := range p.Samples {
-								if val, ok := ns.NumLabel[name]; ok {
-									cBuilder.Append(val)
-								} else {
-									cBuilder.AppendNull()
-								}
 							}
 						}
 					}
@@ -527,8 +488,6 @@ func serializePprofStacktrace(
 
 func NormalizeWriteRawRequest(ctx context.Context, req *profilestorepb.WriteRawRequest) (NormalizedWriteRawRequest, error) {
 	allLabelNames := make(map[string]struct{})
-	allPprofLabelNames := make(map[string]struct{})
-	allPprofNumLabelNames := make(map[string]struct{})
 
 	series := make([]Series, 0, len(req.Series))
 	for _, rawSeries := range req.Series {
@@ -581,12 +540,12 @@ func NormalizeWriteRawRequest(ctx context.Context, req *profilestorepb.WriteRawR
 				return NormalizedWriteRawRequest{}, status.Errorf(codes.InvalidArgument, "invalid profile: %v", err)
 			}
 
+			// Find all pprof label names and add them to the list of (infrastructure) label names
 			LabelNamesFromSamples(
 				ls,
 				p.StringTable,
 				p.Sample,
-				allPprofLabelNames,
-				allPprofNumLabelNames,
+				allLabelNames,
 			)
 
 			normalizedProfiles, err := NormalizePprof(ctx, name, ls, p, req.Normalized, sample.ExecutableInfo)
@@ -603,11 +562,12 @@ func NormalizeWriteRawRequest(ctx context.Context, req *profilestorepb.WriteRawR
 		})
 	}
 
+	allLabelNamesKeys := maps.Keys(allLabelNames)
+	slices.Sort(allLabelNamesKeys)
+
 	return NormalizedWriteRawRequest{
-		Series:                series,
-		AllLabelNames:         sortedKeys(allLabelNames),
-		AllPprofLabelNames:    sortedKeys(allPprofLabelNames),
-		AllPprofNumLabelNames: sortedKeys(allPprofNumLabelNames),
+		Series:        series,
+		AllLabelNames: allLabelNamesKeys,
 	}, nil
 }
 
@@ -616,7 +576,6 @@ func LabelNamesFromSamples(
 	stringTable []string,
 	samples []*pprofpb.Sample,
 	allLabels map[string]struct{},
-	allNumLabels map[string]struct{},
 ) {
 	labels := map[string]struct{}{}
 	for _, sample := range samples {
@@ -648,28 +607,6 @@ func LabelNamesFromSamples(
 	for labelName := range resLabels {
 		allLabels[labelName] = struct{}{}
 	}
-
-	for _, sample := range samples {
-		for _, label := range sample.Label {
-			key := stringTable[label.Key]
-			if label.Num != 0 {
-				key = strutil.SanitizeLabelName(key)
-				if _, ok := allNumLabels[key]; !ok {
-					allNumLabels[key] = struct{}{}
-				}
-			}
-		}
-	}
-}
-
-func sortedKeys(m map[string]struct{}) []string {
-	if len(m) == 0 {
-		return nil
-	}
-
-	out := maps.Keys(m)
-	sort.Strings(out)
-	return out
 }
 
 // SampleToParquetRow converts a sample to a Parquet row. The passed labels
@@ -733,24 +670,6 @@ func SampleToParquetRow(
 		case profile.ColumnLabels:
 			for _, name := range labelNames {
 				if value, ok := lset[name]; ok {
-					row = append(row, parquet.ValueOf(value).Level(0, 1, columnIndex))
-				} else {
-					row = append(row, parquet.ValueOf(nil).Level(0, 0, columnIndex))
-				}
-				columnIndex++
-			}
-		case profile.ColumnPprofLabels:
-			for _, name := range profileLabelNames {
-				if value, ok := s.Label[name]; ok {
-					row = append(row, parquet.ValueOf(value).Level(0, 1, columnIndex))
-				} else {
-					row = append(row, parquet.ValueOf(nil).Level(0, 0, columnIndex))
-				}
-				columnIndex++
-			}
-		case profile.ColumnPprofNumLabels:
-			for _, name := range profileNumLabelNames {
-				if value, ok := s.NumLabel[name]; ok {
 					row = append(row, parquet.ValueOf(value).Level(0, 1, columnIndex))
 				} else {
 					row = append(row, parquet.ValueOf(nil).Level(0, 0, columnIndex))
