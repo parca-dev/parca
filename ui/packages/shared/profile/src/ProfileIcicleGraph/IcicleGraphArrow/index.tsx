@@ -35,12 +35,7 @@ import {DockedGraphTooltip} from '../../GraphTooltipArrow/DockedGraphTooltip';
 import {useProfileViewContext} from '../../ProfileView/ProfileViewContext';
 import ContextMenu from './ContextMenu';
 import {IcicleNode, RowHeight, colorByColors} from './IcicleGraphNodes';
-import {
-  arrowToString,
-  extractFeature,
-  extractFilenameFeature,
-  extractFunctionFeature,
-} from './utils';
+import {arrowToString, extractFeature, extractFilenameFeature} from './utils';
 
 export const FIELD_LABELS_ONLY = 'labels_only';
 export const FIELD_MAPPING_FILE = 'mapping_file';
@@ -101,20 +96,6 @@ export const getFilenameColors = (
   return colors;
 };
 
-export const getFunctionColors = (
-  functionsList: string[],
-  isDarkMode: boolean,
-  currentColorProfile: ColorConfig
-): colorByColors => {
-  const functionFeatures = functionsList.map(functionName => extractFunctionFeature(functionName));
-
-  const colors: colorByColors = {};
-  Object.entries(functionFeatures).forEach(([_, feature]) => {
-    colors[feature.name] = getColorForFeature(feature.name, isDarkMode, currentColorProfile.colors);
-  });
-  return colors;
-};
-
 const noop = (): void => {};
 
 export const IcicleGraphArrow = memo(function IcicleGraphArrow({
@@ -158,30 +139,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   const [colorBy, _] = useURLState('color_by');
   const colorByValue = colorBy === undefined || colorBy === '' ? 'binary' : (colorBy as string);
-
-  const functionsList = useMemo(() => {
-    const functionsDict: Vector<Dictionary> | null = table.getChild(FIELD_FUNCTION_NAME);
-    const functions =
-      functionsDict?.data
-        .map(functionName => {
-          if (functionName.dictionary == null) {
-            return [];
-          }
-          const len = functionName.dictionary.length;
-          const entries: string[] = [];
-          for (let i = 0; i < len; i++) {
-            const fn = arrowToString(functionName.dictionary.get(i));
-            entries.push(getLastItem(fn) ?? '');
-          }
-          return entries;
-        })
-        .flat() ?? [];
-
-    functions.push('');
-
-    functions.sort((a, b) => a.localeCompare(b));
-    return functions;
-  }, [table]);
 
   const filenamesList = useMemo(() => {
     const filenamesDict: Vector<Dictionary> | null = table.getChild(FIELD_FUNCTION_FILE_NAME);
@@ -246,13 +203,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     return colors;
   }, [isDarkMode, mappingsList, currentColorProfile]);
 
-  const functionColors = useMemo(() => {
-    const colors = getFunctionColors(functionsList, isDarkMode, currentColorProfile);
-    return colors;
-  }, [isDarkMode, functionsList, currentColorProfile]);
-
   const colorByList = {
-    function: functionColors,
     filename: filenameColors,
     binary: mappingColors,
   };

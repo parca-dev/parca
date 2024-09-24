@@ -17,10 +17,8 @@ import {
   BINARY_FEATURE_TYPES,
   EVERYTHING_ELSE,
   FILENAMES_FEATURE_TYPES,
-  FUNCTIONS_FEATURE_TYPES,
   type BinaryFeature,
   type FilenameFeature,
-  type FunctionFeature,
 } from '@parca/store';
 import {divide, getLastItem, valueFormatter} from '@parca/utilities';
 
@@ -86,14 +84,6 @@ export const extractFilenameFeature = (filename: string): FilenameFeature => {
   }
 
   return {name: EVERYTHING_ELSE, type: FILENAMES_FEATURE_TYPES.Misc};
-};
-
-export const extractFunctionFeature = (functionName: string): FunctionFeature => {
-  if (functionName != null && functionName !== '') {
-    return {name: functionName, type: FUNCTIONS_FEATURE_TYPES.Function};
-  }
-
-  return {name: EVERYTHING_ELSE, type: FUNCTIONS_FEATURE_TYPES.Misc};
 };
 
 export const getTextForCumulative = (

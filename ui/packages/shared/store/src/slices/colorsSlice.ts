@@ -73,11 +73,6 @@ export interface StackColor {
   name: string;
 }
 
-export const FUNCTIONS_FEATURE_TYPES = {
-  Function: 'Function',
-  Misc: 'Misc',
-} as const;
-
 export const FILENAMES_FEATURE_TYPES = {
   Filename: 'Filename',
   Misc: 'Misc',
@@ -87,9 +82,6 @@ export const BINARY_FEATURE_TYPES = {
   Binary: 'Binary',
   Misc: 'Misc',
 } as const;
-
-export type FunctionsFeatureType =
-  (typeof FUNCTIONS_FEATURE_TYPES)[keyof typeof FUNCTIONS_FEATURE_TYPES];
 
 export type BinaryFeatureType = (typeof BINARY_FEATURE_TYPES)[keyof typeof BINARY_FEATURE_TYPES];
 
@@ -104,15 +96,6 @@ export interface FilenameFeature {
 export interface BinaryFeature {
   name: string;
   type: BinaryFeatureType;
-}
-
-export interface FunctionFeature {
-  name: string;
-  type: FunctionsFeatureType;
-}
-
-export interface FunctionFeaturesMap {
-  [key: string]: FunctionsFeatureType;
 }
 
 export interface FilenameFeaturesMap {
@@ -152,7 +135,7 @@ export const getColorForFeature = (
 };
 
 export interface SetFeaturesRequest {
-  features: BinaryFeaturesMap | FilenameFeaturesMap | FunctionFeaturesMap;
+  features: BinaryFeaturesMap | FilenameFeaturesMap;
   colorProfileName: ColorProfileName;
   isDarkMode: boolean;
 }
@@ -171,8 +154,7 @@ export const colorsSlice = createSlice({
     setFeatures: (state, action: PayloadAction<SetFeaturesRequest>) => {
       const currentProfileColors = state.colorProfiles[action.payload.colorProfileName].colors;
       state.binaries = Object.keys(action.payload.features).filter(name => {
-        // return action.payload.features[name] === BINARY_FEATURE_TYPES.Binary;
-        return action.payload.features[name] === FILENAMES_FEATURE_TYPES.Filename;
+        return action.payload.features[name] === BINARY_FEATURE_TYPES.Binary;
       });
       state.colors = Object.keys(action.payload.features)
         .map(feature => {

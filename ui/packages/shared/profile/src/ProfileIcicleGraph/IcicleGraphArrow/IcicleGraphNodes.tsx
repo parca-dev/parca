@@ -245,12 +245,10 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
       attr = filename;
     } else if (colorBy === 'binary') {
       attr = mappingFile;
-    } else if (colorBy === 'function') {
-      attr = functionName;
     }
 
     return attr ?? null; // Provide a default value of null if attr is undefined
-  }, [colorBy, filename, mappingFile, functionName]);
+  }, [colorBy, filename, mappingFile]);
 
   const colorsMap = colors;
 

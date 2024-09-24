@@ -219,11 +219,6 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
           onclick: () => setColorBy('filename'),
           value: 'filename',
         },
-        {
-          label: 'Function',
-          onclick: () => setColorBy('function'),
-          value: 'function',
-        },
       ],
       hide: false,
       icon: 'carbon:color-palette',
