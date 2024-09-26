@@ -46,7 +46,7 @@
     "lodash.debounce": "4.0.8",
     "lodash.throttle": "^4.1.1",
     "moment": "2.30.1",
-    "postcss": "8.4.40",
+    "postcss": "8.4.47",
     "postcss-flexbugs-fixes": "5.0.2",
     "postcss-preset-env": "8.5.1",
     "react": "18.3.1",
