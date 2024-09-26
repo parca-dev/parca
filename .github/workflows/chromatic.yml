@@ -74,7 +74,7 @@ jobs:
         run: pnpm install --frozen-lockfile --prefer-offline && pnpm run build
         # 👇 Adds Chromatic as a step in the workflow
       - name: Publish to Chromatic
-        uses: chromaui/action@c883154c39671e194613be2f09ff4d17bb95f1e6 # v11.10.3
+        uses: chromaui/action@f4e60a7072abcac4203f4ca50613f28e199a52ba # v11.10.4
         # Chromatic GitHub Action options
         with:
           # 👇 Chromatic projectToken, refer to the manage page to obtain it.
