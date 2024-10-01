@@ -523,7 +523,7 @@ importers:
         version: 3.0.10
       '@types/lodash':
         specifier: ^4.17.0
-        version: 4.17.7
+        version: 4.17.9
       '@types/react-datepicker':
         specifier: ^6.2.0
         version: 6.2.0(react-dom@18.3.1)(react@18.3.1)
@@ -598,7 +598,7 @@ importers:
         version: 2.4.5(react@18.3.1)
       '@types/lodash':
         specifier: ^4.17.0
-        version: 4.17.7
+        version: 4.17.9
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
@@ -5216,7 +5216,7 @@ packages:
       '@storybook/csf': 0.1.11
       '@storybook/global': 5.0.0
       '@storybook/icons': 1.2.12(react-dom@18.3.1)(react@18.3.1)
-      '@types/lodash': 4.17.7
+      '@types/lodash': 4.17.9
       color-convert: 2.0.1
       dequal: 2.0.3
       lodash: 4.17.21
@@ -6636,11 +6636,11 @@ packages:
   /@types/lodash.throttle@4.1.9:
     resolution: {integrity: sha512-PCPVfpfueguWZQB7pJQK890F2scYKoDUL3iM522AptHWn7d5NQmeS/LTEHIcLr5PaTzl3dK2Z0xSUHHTHwaL5g==}
     dependencies:
-      '@types/lodash': 4.17.7
+      '@types/lodash': 4.17.9
     dev: true
 
-  /@types/lodash@4.17.7:
-    resolution: {integrity: sha512-8wTvZawATi/lsmNu10/j2hk1KEP0IvjubqPE3cu1Xz7xfXXt5oCq3SNUz4fMIP4XGF9Ky+Ue2tBA3hcS7LSBlA==}
+  /@types/lodash@4.17.9:
+    resolution: {integrity: sha512-w9iWudx1XWOHW5lQRS9iKpK/XuRhnN+0T7HvdCCd802FYkT1AMTnxndJHGrNJwRoRHkslGr4S29tjm1cT7x/7w==}
 
   /@types/mdast@3.0.15:
     resolution: {integrity: sha512-LnwD+mUEfxWMa1QpDraczIn6k0Ee3SMicuYSSzS6ZYl2gKS09EClnJYGd8Du6rfc5r/GZEk5o1mRb8TaTj03sQ==}
