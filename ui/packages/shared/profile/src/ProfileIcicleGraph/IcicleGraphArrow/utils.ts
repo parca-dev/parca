@@ -102,7 +102,7 @@ export const arrowToString = (buffer: any): string | null => {
     return buffer;
   }
   if (ArrayBuffer.isView(buffer)) {
-    return String.fromCharCode.apply(null, buffer as unknown as number[]);
+    return new TextDecoder().decode(buffer);
   }
   return '';
 };
