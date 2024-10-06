@@ -78,7 +78,7 @@
     "eslint-plugin-n": "15.7.0",
     "eslint-plugin-prettier": "5.2.1",
     "eslint-plugin-promise": "6.6.0",
-    "eslint-plugin-react": "7.36.1",
+    "eslint-plugin-react": "7.37.0",
     "eslint-plugin-react-hooks": "4.6.2",
     "eslint-plugin-standard": "5.0.0",
     "eslint-plugin-storybook": "0.8.0",
