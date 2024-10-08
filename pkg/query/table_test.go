@@ -40,6 +40,7 @@ func TestGenerateTable(t *testing.T) {
 		profile.Meta{},
 		pp,
 		0,
+		[]string{},
 	)
 	require.NoError(t, err)
 
@@ -121,6 +122,7 @@ func TestTableCallView(t *testing.T) {
 		profile.Meta{},
 		pp,
 		0,
+		[]string{},
 	)
 	require.NoError(t, err)
 
@@ -238,6 +240,7 @@ func TestGenerateTableAggregateFlat(t *testing.T) {
 			}},
 		},
 		0,
+		[]string{},
 	)
 	require.NoError(t, err)
 

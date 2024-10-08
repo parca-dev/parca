@@ -107,8 +107,8 @@ func (c *ArrowToProfileConverter) Convert(
 
 		labelIndexes := make(map[string]int)
 		for i, field := range schema.Fields() {
-			if strings.HasPrefix(field.Name, profile.ColumnPprofLabelsPrefix) {
-				labelIndexes[strings.TrimPrefix(field.Name, profile.ColumnPprofLabelsPrefix)] = i
+			if strings.HasPrefix(field.Name, profile.ColumnLabelsPrefix) {
+				labelIndexes[strings.TrimPrefix(field.Name, profile.ColumnLabelsPrefix)] = i
 			}
 		}
 
