@@ -35,6 +35,7 @@ import {DockedGraphTooltip} from '../../GraphTooltipArrow/DockedGraphTooltip';
 import {useProfileViewContext} from '../../ProfileView/ProfileViewContext';
 import ContextMenu from './ContextMenu';
 import {IcicleNode, RowHeight, colorByColors} from './IcicleGraphNodes';
+import {useFilenamesList} from './useMappingList';
 import {arrowToString, extractFeature, extractFilenameFeature} from './utils';
 
 export const FIELD_LABELS_ONLY = 'labels_only';
@@ -65,6 +66,7 @@ interface IcicleGraphArrowProps {
   flamegraphLoading: boolean;
   isHalfScreen: boolean;
   mappingsListFromMetadata: string[];
+  filenamesListFromMetadata: string[];
   compareAbsolute: boolean;
 }
 
@@ -110,6 +112,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   flamegraphLoading,
   mappingsListFromMetadata,
   compareAbsolute,
+  filenamesListFromMetadata,
 }: IcicleGraphArrowProps): React.JSX.Element {
   const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
   const dispatch = useAppDispatch();
@@ -140,29 +143,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const [colorBy, _] = useURLState('color_by');
   const colorByValue = colorBy === undefined || colorBy === '' ? 'binary' : (colorBy as string);
 
-  const filenamesList = useMemo(() => {
-    const filenamesDict: Vector<Dictionary> | null = table.getChild(FIELD_FUNCTION_FILE_NAME);
-    const filenames =
-      filenamesDict?.data
-        .map(file => {
-          if (file.dictionary == null) {
-            return [];
-          }
-          const len = file.dictionary.length;
-          const entries: string[] = [];
-          for (let i = 0; i < len; i++) {
-            const fn = arrowToString(file.dictionary.get(i));
-            entries.push(getLastItem(fn) ?? '');
-          }
-          return entries;
-        })
-        .flat() ?? [];
-
-    filenames.push('');
-
-    filenames.sort((a, b) => a.localeCompare(b));
-    return filenames;
-  }, [table]);
+  const filenamesList = useFilenamesList(table);
 
   const mappingsList = useMemo(() => {
     // Read the mappings from the dictionary that contains all mapping strings.

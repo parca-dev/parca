@@ -1073,7 +1073,7 @@ func TestAllFramesFiltered(t *testing.T) {
 	// data being multiple samples, but all frames are filtered out. What
 	// happened is the input data contains no python frames, but only python
 	// frames were requested.
-	np.Samples, _, err = FilterProfileData(ctx, tracer, mem, np.Samples, "", map[string]struct{}{})
+	np.Samples, _, err = FilterProfileData(ctx, tracer, mem, np.Samples, "", map[string]struct{}{}, map[string]struct{}{})
 	require.NoError(t, err)
 
 	defer func() {

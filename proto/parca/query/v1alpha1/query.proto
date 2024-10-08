@@ -307,6 +307,9 @@ message FrameFilter {
   oneof filter {
     // binary_frame_filter is the list of binary names to filter by
     BinaryFrameFilter binary_frame_filter = 1;
+
+    // filename_frame_filter is the list of filenames to filter by
+    FilenameFrameFilter filename_frame_filter = 2;
   }
 }
 
@@ -314,6 +317,12 @@ message FrameFilter {
 message BinaryFrameFilter {
   // include_binaries is the list of binaries to filter by
   repeated string include_binaries = 1;
+}
+
+// FilenameFrameFilter is a filter for filtering by filenames
+message FilenameFrameFilter {
+  // include_filenames is the list of filenames to filter by
+  repeated string include_filenames = 1;
 }
 
 // RuntimeFilter configures which runtimes to filter frames out for.
@@ -693,11 +702,14 @@ message TableArrow {
   string unit = 2;
 }
 
-// ProfileMetadata contains metadata about the profile i.e. binaries, labels
+// ProfileMetadata contains metadata about the profile i.e. binaries, filenames
 message ProfileMetadata {
   // mapping_files is the list of binaries in the profile
   repeated string mapping_files = 1;
 
   // labels is the list of labels in the profile
-  repeated string labels = 2;
+  repeated string labels = 2 [deprecated = true];
+
+  // filenames is the list of filenames in the profile
+  repeated string filenames = 3;
 }

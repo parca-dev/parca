@@ -44,8 +44,9 @@ interface ProfileIcicleGraphProps {
   setActionButtons?: (buttons: React.JSX.Element) => void;
   error?: any;
   isHalfScreen: boolean;
-  mappings?: string[];
-  mappingsLoading?: boolean;
+  metadataFilenames?: string[];
+  metadataMappingFiles?: string[];
+  metadataLoading?: boolean;
 }
 
 const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
@@ -64,16 +65,19 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   error,
   width,
   isHalfScreen,
-  mappings,
+  metadataMappingFiles,
+  metadataFilenames,
 }: ProfileIcicleGraphProps): JSX.Element {
   const {onError, authenticationErrorMessage, isDarkMode} = useParcaContext();
   const {compareMode} = useProfileViewContext();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const isColorStackLegendEnabled = selectQueryParam('color_stack_legend') === 'true';
 
-  const mappingsList = useMappingList(mappings);
+  const mappingsList = useMappingList(metadataMappingFiles);
+  const filenamesList = useMappingList(metadataFilenames);
 
   const [storeSortBy = FIELD_FUNCTION_NAME] = useURLState('sort_by');
+  const [colorBy, _] = useURLState('color_by');
 
   // By default, we want delta profiles (CPU) to be relatively compared.
   // For non-delta profiles, like goroutines or memory, we want the profiles to be compared absolutely.
@@ -81,6 +85,8 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
 
   const [compareAbsolute = compareAbsoluteDefault] = useURLState('compare_absolute');
   const isCompareAbsolute = compareAbsolute === 'true';
+
+  const colorByValue = colorBy === undefined || colorBy === '' ? 'binary' : (colorBy as string);
 
   const [
     totalFormatted,
@@ -113,7 +119,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   }, [graph, arrow, filtered, total]);
 
   const loadingState =
-    !loading && (arrow !== undefined || graph !== undefined) && mappings !== undefined;
+    !loading && (arrow !== undefined || graph !== undefined) && metadataMappingFiles !== undefined;
 
   useEffect(() => {
     if (loadingState) {
@@ -124,13 +130,15 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   }, [loadingState]);
 
   const icicleGraph = useMemo(() => {
-    if (isLoading) {
-      return (
-        <div className="h-auto overflow-clip">
-          <IcicleGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
-        </div>
-      );
-    }
+    // if (isLoading) {
+    //   return (
+    //     <div className="h-auto overflow-clip">
+    //       <IcicleGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
+    //     </div>
+    //   );
+    // }
+
+    console.log(arrow);
 
     if (graph === undefined && arrow === undefined)
       return <div className="mx-auto text-center">No data...</div>;
@@ -165,6 +173,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
           flamegraphLoading={isLoading}
           isHalfScreen={isHalfScreen}
           mappingsListFromMetadata={mappingsList}
+          filenamesListFromMetadata={filenamesList}
           compareAbsolute={isCompareAbsolute}
         />
       );
@@ -183,6 +192,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     isHalfScreen,
     isDarkMode,
     mappingsList,
+    filenamesList,
     isCompareAbsolute,
   ]);
 
@@ -211,7 +221,11 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
       >
         {compareMode ? <DiffLegend /> : null}
         {isColorStackLegendEnabled && (
-          <ColorStackLegend compareMode={compareMode} mappings={mappings} loading={isLoading} />
+          <ColorStackLegend
+            compareMode={compareMode}
+            mappings={colorByValue === 'binary' ? mappingsList : filenamesList}
+            loading={isLoading}
+          />
         )}
         <div className="min-h-48" id="h-icicle-graph">
           <>{icicleGraph}</>

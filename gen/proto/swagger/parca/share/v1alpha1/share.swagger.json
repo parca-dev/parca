@@ -432,6 +432,19 @@
       },
       "title": "TopNodeMeta is the metadata for a given node"
     },
+    "v1alpha1FilenameFrameFilter": {
+      "type": "object",
+      "properties": {
+        "includeFilenames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "include_filenames is the list of filenames to filter by"
+        }
+      },
+      "title": "FilenameFrameFilter is a filter for filtering by filenames"
+    },
     "v1alpha1Filter": {
       "type": "object",
       "properties": {
@@ -626,6 +639,10 @@
         "binaryFrameFilter": {
           "$ref": "#/definitions/v1alpha1BinaryFrameFilter",
           "title": "binary_frame_filter is the list of binary names to filter by"
+        },
+        "filenameFrameFilter": {
+          "$ref": "#/definitions/v1alpha1FilenameFrameFilter",
+          "title": "filename_frame_filter is the list of filenames to filter by"
         }
       },
       "title": "FrameFilter is a filter for filtering by frames"
@@ -669,9 +686,16 @@
             "type": "string"
           },
           "title": "labels is the list of labels in the profile"
+        },
+        "filenames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "filenames is the list of filenames in the profile"
         }
       },
-      "title": "ProfileMetadata contains metadata about the profile i.e. binaries, labels"
+      "title": "ProfileMetadata contains metadata about the profile i.e. binaries, filenames"
     },
     "v1alpha1ProfileType": {
       "type": "object",

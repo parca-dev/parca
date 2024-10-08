@@ -1551,37 +1551,52 @@ func (q *Querier) GetProfileMetadataMappings(
 	return res, nil
 }
 
-func (q *Querier) GetProfileMetadataLabels(
+func (q *Querier) GetProfileMetadataFilenames(
 	ctx context.Context,
-	start, end time.Time,
+	query string, startTime, endTime time.Time,
 ) ([]string, error) {
-	ctx, span := q.tracer.Start(ctx, "Querier/Labels")
+	ctx, span := q.tracer.Start(ctx, "Querier/Filenames")
 	defer span.End()
 
-	seen := map[string]struct{}{}
+	_, selectorExprs, err := QueryToFilterExprs(query)
+	if err != nil {
+		return nil, err
+	}
 
-	err := q.engine.ScanSchema(q.tableName).
-		Distinct(logicalplan.Col("name")).
-		Filter(logicalplan.Col("name").RegexMatch("^pprof_labels\\..+$")).
-		Execute(ctx, func(ctx context.Context, ar arrow.Record) error {
-			if ar.NumCols() != 1 {
-				return fmt.Errorf("expected 1 column, got %d", ar.NumCols())
+	start := timestamp.FromTime(startTime)
+	end := timestamp.FromTime(endTime)
+	filterExpr := logicalplan.And(
+		append(
+			selectorExprs,
+			logicalplan.Col(profile.ColumnTimestamp).GtEq(logicalplan.Literal(start)),
+			logicalplan.Col(profile.ColumnTimestamp).LtEq(logicalplan.Literal(end)),
+		)...,
+	)
+
+	records := make(map[string]struct{})
+	err = q.engine.ScanTable(q.tableName).
+		Filter(filterExpr).
+		Project(logicalplan.Col("stacktrace")).
+		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
+			r.Retain()
+
+			locations := r.Column(0).(*array.List)
+
+			values := locations.ListValues().(*array.Dictionary)
+
+			compactedDict, err := compactDictionary.CompactDictionary(q.pool, values)
+			if err != nil {
+				fmt.Println("failed to compact dictionary", err)
+				return err
 			}
+			defer compactedDict.Release()
 
-			col := ar.Column(0)
-			stringCol, ok := col.(*array.String)
-			if !ok {
-				return fmt.Errorf("expected string column, got %T", col)
-			}
+			newValues := compactedDict.Dictionary().(*array.Binary)
 
-			for i := 0; i < stringCol.Len(); i++ {
-				// This should usually not happen, but better safe than sorry.
-				if stringCol.IsNull(i) {
-					continue
-				}
-
-				val := stringCol.Value(i)
-				seen[strings.TrimPrefix(val, "pprof_labels.")] = struct{}{}
+			for i := 0; i < newValues.Len(); i++ {
+				encodedLocation := newValues.Value(i)
+				symInfo, _ := profile.DecodeFunctionFilename(encodedLocation)
+				records[symInfo] = struct{}{}
 			}
 
 			return nil
@@ -1590,14 +1605,13 @@ func (q *Querier) GetProfileMetadataLabels(
 		return nil, err
 	}
 
-	vals := make([]string, 0, len(seen))
-	for val := range seen {
-		vals = append(vals, val)
+	res := make([]string, 0, len(records))
+	for r := range records {
+		res = append(res, r)
 	}
 
-	sort.Strings(vals)
-
-	return vals, nil
+	sort.Strings(res)
+	return res, nil
 }
 
 func isNanoseconds(rt profile.ValueType) bool {

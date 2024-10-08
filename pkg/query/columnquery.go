@@ -49,7 +49,7 @@ type Querier interface {
 	QuerySingle(ctx context.Context, query string, time time.Time, invertCallStacks bool) (profile.Profile, error)
 	QueryMerge(ctx context.Context, query string, start, end time.Time, aggregateByLabels, invertCallStacks bool) (profile.Profile, error)
 	GetProfileMetadataMappings(ctx context.Context, query string, start, end time.Time) ([]string, error)
-	GetProfileMetadataLabels(ctx context.Context, start, end time.Time) ([]string, error)
+	GetProfileMetadataFilenames(ctx context.Context, query string, start, end time.Time) ([]string, error)
 }
 
 var (
@@ -258,14 +258,14 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	case pb.QueryRequest_MODE_MERGE:
 		switch req.GetReportType() {
 		case pb.QueryRequest_REPORT_TYPE_PROFILE_METADATA:
-			mappingFiles, labels, err := getMappingFilesAndLabels(ctx, q.querier, req.GetMerge().Query, req.GetMerge().Start.AsTime(), req.GetMerge().End.AsTime())
+			mappingFiles, filenames, err := getMappingFilesAndFilenames(ctx, q.querier, req.GetMerge().Query, req.GetMerge().Start.AsTime(), req.GetMerge().End.AsTime())
 			if err != nil {
 				return nil, err
 			}
 
 			profileMetadata = &pb.ProfileMetadata{
 				MappingFiles: mappingFiles,
-				Labels:       labels,
+				Filenames:    filenames,
 			}
 		default:
 			p, err = q.selectMerge(
@@ -280,14 +280,14 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		switch req.GetReportType() {
 		case pb.QueryRequest_REPORT_TYPE_PROFILE_METADATA:
 			// When comparing, we only return the metadata for the profile we are rendering, which is the profile B.
-			mappingFiles, labels, err := getMappingFilesAndLabels(ctx, q.querier, req.GetDiff().B.GetMerge().GetQuery(), req.GetDiff().B.GetMerge().Start.AsTime(), req.GetDiff().B.GetMerge().End.AsTime())
+			mappingFiles, filenames, err := getMappingFilesAndFilenames(ctx, q.querier, req.GetDiff().B.GetMerge().GetQuery(), req.GetDiff().B.GetMerge().Start.AsTime(), req.GetDiff().B.GetMerge().End.AsTime())
 			if err != nil {
 				return nil, err
 			}
 
 			profileMetadata = &pb.ProfileMetadata{
 				MappingFiles: mappingFiles,
-				Labels:       labels,
+				Filenames:    filenames,
 			}
 		default:
 			p, err = q.selectDiff(
@@ -330,10 +330,14 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	}
 
 	binaryFrameFilter := map[string]struct{}{}
+	filenameFrameFilter := map[string]struct{}{}
 
 	for _, filter := range req.GetFilter() {
 		for _, include := range filter.GetFrameFilter().GetBinaryFrameFilter().GetIncludeBinaries() {
 			binaryFrameFilter[include] = struct{}{}
+		}
+		for _, include := range filter.GetFrameFilter().GetFilenameFrameFilter().GetIncludeFilenames() {
+			filenameFrameFilter[include] = struct{}{}
 		}
 	}
 
@@ -344,6 +348,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		p.Samples,
 		functionToFilterBy,
 		binaryFrameFilter,
+		filenameFrameFilter,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("filtering profile: %w", err)
@@ -369,6 +374,7 @@ func FilterProfileData(
 	records []arrow.Record,
 	functionStackFilter string,
 	binaryFrameFilter map[string]struct{},
+	filenameFrameFilter map[string]struct{},
 ) ([]arrow.Record, int64, error) {
 	_, span := tracer.Start(ctx, "filterByFunction")
 	defer span.End()
@@ -394,6 +400,7 @@ func FilterProfileData(
 			r,
 			functionStackFilterBytes,
 			binaryFrameFilter,
+			filenameFrameFilter,
 		)
 		if err != nil {
 			return nil, 0, fmt.Errorf("filter record: %w", err)
@@ -416,6 +423,7 @@ func filterRecord(
 	rec arrow.Record,
 	functionStackFilterBytes []byte,
 	binaryFrameFilter map[string]struct{},
+	filenameFrameFilter map[string]struct{},
 ) ([]arrow.Record, int64, int64, error) {
 	r := profile.NewRecordReader(rec)
 
@@ -462,15 +470,48 @@ func filterRecord(
 		if lOffsetEnd-lOffsetStart > 0 {
 			for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
 				validMappingStart := r.MappingStart.IsValid(j)
+
 				var mappingFile []byte
 				if validMappingStart {
 					mappingFile = r.MappingFileDict.Value(int(r.MappingFileIndices.Value(j)))
 				}
+
 				lastSlash := bytes.LastIndex(mappingFile, []byte("/"))
 				mappingFileBase := mappingFile
 				if lastSlash >= 0 {
 					mappingFileBase = mappingFile[lastSlash+1:]
 				}
+
+				if len(filenameFrameFilter) > 0 {
+					keepLocation := false
+					indexMatches := make(map[uint32]struct{})
+
+					for i := 0; i < r.LineFunctionFilenameDict.Len(); i++ {
+						functionFilename := r.LineFunctionFilenameDict.Value(i)
+						lastSlashForFunctionFilename := bytes.LastIndex(functionFilename, []byte("/"))
+						functionFilenameBase := functionFilename
+						if lastSlashForFunctionFilename >= 0 {
+							functionFilenameBase = functionFilenameBase[lastSlashForFunctionFilename+1:]
+						}
+
+						if _, ok := filenameFrameFilter[string(functionFilenameBase)]; ok {
+							fmt.Printf("Match found for index %d\n", i)
+							indexMatches[uint32(i)] = struct{}{}
+						}
+					}
+
+					if len(indexMatches) > 0 {
+						if r.LineFunctionNameIndices.IsValid(j) {
+							if _, ok := indexMatches[r.LineFunctionNameIndices.Value(j)]; ok {
+								keepLocation = true
+							}
+						}
+					}
+					if !keepLocation {
+						bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
+					}
+				}
+
 				if len(mappingFileBase) > 0 {
 					if len(binaryFrameFilter) > 0 {
 						keepLocation := false
@@ -482,6 +523,7 @@ func filterRecord(
 						}
 					}
 				}
+
 			}
 		}
 	}
@@ -961,7 +1003,7 @@ func sliceRecord(r arrow.Record, indices []int64) []arrow.Record {
 	return slices
 }
 
-func getMappingFilesAndLabels(
+func getMappingFilesAndFilenames(
 	ctx context.Context,
 	q Querier,
 	query string,
@@ -972,9 +1014,12 @@ func getMappingFilesAndLabels(
 		return nil, nil, err
 	}
 
-	labels := []string{}
+	filenames, err := q.GetProfileMetadataFilenames(ctx, query, startTime, endTime)
+	if err != nil {
+		return nil, nil, err
+	}
 
-	return mappingFiles, labels, nil
+	return mappingFiles, filenames, nil
 }
 
 // This is a deduplicating k-way merge.

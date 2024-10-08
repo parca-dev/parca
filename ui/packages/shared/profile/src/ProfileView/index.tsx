@@ -56,8 +56,9 @@ export interface FlamegraphData {
   total?: bigint;
   filtered?: bigint;
   error?: any;
-  mappings?: string[];
-  mappingsLoading: boolean;
+  metadataMappingFiles?: string[];
+  metadataFilenames?: string[];
+  metadataLoading: boolean;
 }
 
 export interface TopTableData {
@@ -230,8 +231,9 @@ export const ProfileView = ({
                     : dimensions.width - 16
                   : 0
               }
-              mappings={flamegraphData.mappings}
-              mappingsLoading={flamegraphData.mappingsLoading}
+              metadataMappingFiles={flamegraphData.metadataMappingFiles}
+              metadataFilenames={flamegraphData.metadataFilenames}
+              metadataLoading={flamegraphData.metadataLoading}
             />
           </ConditionalWrapper>
         );

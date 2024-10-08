@@ -47,11 +47,17 @@ export const ProfileViewWithData = ({
   const [invertStack] = useURLState('invert_call_stack');
   const invertCallStack = invertStack === 'true';
   const [binaryFrameFilterStr] = useURLState<string[] | string>('binary_frame_filter');
+  const [filenameFrameFilterStr] = useURLState<string[] | string>('filename_frame_filter');
 
   const binaryFrameFilter: string[] =
     typeof binaryFrameFilterStr === 'string'
       ? binaryFrameFilterStr.split(',')
       : binaryFrameFilterStr;
+
+  const filenameFrameFilter: string[] =
+    typeof filenameFrameFilterStr === 'string'
+      ? filenameFrameFilterStr.split(',')
+      : filenameFrameFilterStr;
 
   const [pprofDownloading, setPprofDownloading] = useState<boolean>(false);
 
@@ -74,6 +80,7 @@ export const ProfileViewWithData = ({
     groupBy,
     invertCallStack,
     binaryFrameFilter,
+    filenameFrameFilter,
   });
 
   const {isLoading: profilemetadataLoading, response: profilemetadataResponse} = useQuery(
@@ -199,11 +206,15 @@ export const ProfileViewWithData = ({
         total: BigInt(flamegraphResponse?.total ?? '0'),
         filtered: BigInt(flamegraphResponse?.filtered ?? '0'),
         error: flamegraphError,
-        mappings:
+        metadataMappingFiles:
           profilemetadataResponse?.report.oneofKind === 'profileMetadata'
             ? profilemetadataResponse?.report?.profileMetadata?.mappingFiles
             : undefined,
-        mappingsLoading: profilemetadataLoading,
+        metadataFilenames:
+          profilemetadataResponse?.report.oneofKind === 'profileMetadata'
+            ? profilemetadataResponse?.report?.profileMetadata?.filenames
+            : undefined,
+        metadataLoading: profilemetadataLoading,
       }}
       topTableData={{
         loading: tableLoading,
