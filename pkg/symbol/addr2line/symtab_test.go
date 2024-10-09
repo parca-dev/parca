@@ -176,16 +176,7 @@ func TestSymtabLiner_PCToLines(t *testing.T) {
 			args: args{
 				addr: 30,
 			},
-			wantLines: []profile.LocationLine{
-				{
-					Function: &metastorev1alpha1.Function{
-						Name:       "baz",
-						SystemName: "baz",
-						Filename:   "?",
-					},
-					Line: 0,
-				},
-			},
+			wantErr: true,
 		},
 		{
 			name: "C++ symbols are demangled",
