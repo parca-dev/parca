@@ -1431,8 +1431,7 @@ func TestFilterData(t *testing.T) {
 	w.Value.Append(1)
 	w.Diff.Append(0)
 
-	binaryFrameFilter := map[string]struct{}{"test": {}}
-	filenameFrameFilter := map[string]struct{}{}
+	frameFilter := map[string]struct{}{"test": {}}
 	originalRecord := w.RecordBuilder.NewRecord()
 	recs, _, err := FilterProfileData(
 		context.Background(),
@@ -1440,8 +1439,7 @@ func TestFilterData(t *testing.T) {
 		mem,
 		[]arrow.Record{originalRecord},
 		"",
-		binaryFrameFilter,
-		filenameFrameFilter,
+		frameFilter,
 	)
 	require.NoError(t, err)
 	defer func() {
@@ -1487,7 +1485,6 @@ func TestFilterUnsymbolized(t *testing.T) {
 		[]arrow.Record{originalRecord},
 		"",
 		map[string]struct{}{"test": {}},
-		map[string]struct{}{},
 	)
 	require.NoError(t, err)
 	require.Len(t, recs, 1)
@@ -1560,8 +1557,7 @@ func TestFilterDataWithPath(t *testing.T) {
 	w.Value.Append(1)
 	w.Diff.Append(0)
 
-	binaryFrameFilter := map[string]struct{}{"libpython3.11.so.1.0": {}, "interpreter": {}}
-	filenameFrameFilter := map[string]struct{}{}
+	frameFilter := map[string]struct{}{"libpython3.11.so.1.0": {}, "interpreter": {}}
 	originalRecord := w.RecordBuilder.NewRecord()
 	recs, _, err := FilterProfileData(
 		context.Background(),
@@ -1569,8 +1565,7 @@ func TestFilterDataWithPath(t *testing.T) {
 		mem,
 		[]arrow.Record{originalRecord},
 		"",
-		binaryFrameFilter,
-		filenameFrameFilter,
+		frameFilter,
 	)
 	require.NoError(t, err)
 	defer func() {
@@ -1590,7 +1585,7 @@ func TestFilterDataWithPath(t *testing.T) {
 	require.Equal(t, "test", string(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(2)))))
 }
 
-func TestFilterDataBinaryFrameFilter(t *testing.T) {
+func TestFilterDataFrameFilter(t *testing.T) {
 	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
 	defer mem.AssertSize(t, 0)
 	w := profile.NewWriter(mem, nil)
@@ -1644,7 +1639,7 @@ func TestFilterDataBinaryFrameFilter(t *testing.T) {
 	w.Value.Append(1)
 	w.Diff.Append(0)
 
-	binaryFrameFilter := map[string]struct{}{"interpreter": {}}
+	frameFilter := map[string]struct{}{"interpreter": {}}
 	originalRecord := w.RecordBuilder.NewRecord()
 	recs, _, err := FilterProfileData(
 		context.Background(),
@@ -1652,8 +1647,7 @@ func TestFilterDataBinaryFrameFilter(t *testing.T) {
 		mem,
 		[]arrow.Record{originalRecord},
 		"",
-		binaryFrameFilter,
-		map[string]struct{}{},
+		frameFilter,
 	)
 	require.NoError(t, err)
 	defer func() {
@@ -1671,90 +1665,6 @@ func TestFilterDataBinaryFrameFilter(t *testing.T) {
 	require.Equal(t, 1, valid)
 	require.Equal(t, "test", string(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(2)))))
 }
-
-func TestFilterDataFilenameFrameFilter(t *testing.T) {
-	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
-	defer mem.AssertSize(t, 0)
-	w := profile.NewWriter(mem, nil)
-	defer w.Release()
-
-	w.LocationsList.Append(true)
-	w.Locations.Append(true)
-	w.Addresses.Append(0x1234)
-	w.MappingStart.Append(0x1000)
-	w.MappingLimit.Append(0x2000)
-	w.MappingOffset.Append(0x0)
-	w.MappingFile.Append([]byte("libc.so.6"))
-	w.MappingBuildID.Append([]byte(""))
-	w.Lines.Append(true)
-	w.Line.Append(true)
-	w.LineNumber.Append(1)
-	w.FunctionName.Append([]byte("__libc_start_main"))
-	w.FunctionSystemName.Append([]byte("__libc_start_main"))
-	w.FunctionFilename.Append([]byte(""))
-	w.FunctionStartLine.Append(1)
-
-	w.Locations.Append(true)
-	w.Addresses.Append(0x1234)
-	w.MappingStart.Append(0x1000)
-	w.MappingLimit.Append(0x2000)
-	w.MappingOffset.Append(0x0)
-	w.MappingFile.Append([]byte("/usr/lib/libpython3.11.so.1.0"))
-	w.MappingBuildID.Append([]byte("test"))
-	w.Lines.Append(true)
-	w.Line.Append(true)
-	w.LineNumber.Append(0)
-	w.FunctionName.Append([]byte("test1"))
-	w.FunctionSystemName.Append([]byte("test1"))
-	w.FunctionFilename.Append([]byte(""))
-	w.FunctionStartLine.Append(0)
-
-	w.Locations.Append(true)
-	w.Addresses.Append(0x1234)
-	w.MappingStart.Append(0x1000)
-	w.MappingLimit.Append(0x2000)
-	w.MappingOffset.Append(0x0)
-	w.MappingFile.Append([]byte("interpreter"))
-	w.MappingBuildID.Append([]byte(""))
-	w.Lines.Append(true)
-	w.Line.Append(true)
-	w.LineNumber.Append(0)
-	w.FunctionName.Append([]byte("test"))
-	w.FunctionSystemName.Append([]byte("test"))
-	w.FunctionFilename.Append([]byte("test.py"))
-	w.FunctionStartLine.Append(0)
-	w.Value.Append(1)
-	w.Diff.Append(0)
-
-	binaryFrameFilter := map[string]struct{}{}
-	filenameFrameFilter := map[string]struct{}{"test.py": {}}
-	originalRecord := w.RecordBuilder.NewRecord()
-	recs, _, err := FilterProfileData(
-		context.Background(),
-		noop.NewTracerProvider().Tracer(""),
-		mem,
-		[]arrow.Record{originalRecord},
-		"",
-		binaryFrameFilter,
-		filenameFrameFilter,
-	)
-	require.NoError(t, err)
-	defer func() {
-		for _, r := range recs {
-			r.Release()
-		}
-	}()
-	r := profile.NewRecordReader(recs[0])
-	valid := 0
-	for i := 0; i < r.Location.Len(); i++ {
-		if r.Location.IsValid(i) {
-			valid++
-		}
-	}
-	require.Equal(t, 1, valid)
-	require.Equal(t, "test.py", string(r.LineFunctionFilenameDict.Value(int(r.LineFunctionFilenameIndices.Value(2)))))
-}
-
 func BenchmarkFilterData(t *testing.B) {
 	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
 	defer mem.AssertSize(t, 0)
@@ -1822,7 +1732,6 @@ func BenchmarkFilterData(t *testing.B) {
 			[]arrow.Record{originalRecord},
 			"",
 			map[string]struct{}{"test": {}},
-			map[string]struct{}{},
 		)
 		require.NoError(t, err)
 		for _, r := range recs {

@@ -34,7 +34,6 @@ interface UseQueryOptions {
   sourceOnly?: boolean;
   invertCallStack?: boolean;
   binaryFrameFilter?: string[];
-  filenameFrameFilter?: string[];
 }
 
 export const useQuery = (
@@ -57,7 +56,6 @@ export const useQuery = (
       options?.sourceOnly === true ? '' : options?.sourceFilename,
       options?.invertCallStack ?? false,
       options?.binaryFrameFilter ?? '',
-      options?.filenameFrameFilter ?? '',
     ],
     queryFn: async () => {
       const req = profileSource.QueryRequest();
@@ -86,25 +84,6 @@ export const useQuery = (
                   oneofKind: 'functionNameStackFilter',
                   functionNameStackFilter: {
                     functionToFilter,
-                  },
-                },
-              },
-            },
-          },
-        ];
-      }
-
-      if (options?.filenameFrameFilter !== undefined && options?.filenameFrameFilter.length > 0) {
-        req.filter = [
-          ...req.filter,
-          {
-            filter: {
-              oneofKind: 'frameFilter',
-              frameFilter: {
-                filter: {
-                  oneofKind: 'filenameFrameFilter',
-                  filenameFrameFilter: {
-                    includeFilenames: options?.filenameFrameFilter ?? [],
                   },
                 },
               },

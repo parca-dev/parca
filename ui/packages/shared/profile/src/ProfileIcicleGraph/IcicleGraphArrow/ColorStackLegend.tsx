@@ -38,9 +38,9 @@ const ColorStackLegend = ({mappings, compareMode = false, loading}: Props): Reac
 
   const [colorByValue, _] = useURLState('color_by');
 
-  const colorBy = colorByValue === 'binary' ? 'binary' : 'filename';
+  const colorBy = colorByValue === 'binary' || colorByValue === undefined ? 'binary' : 'filename';
 
-  const [currentSearchString, setSearchString] = useURLState<string[]>(`${colorBy}_frame_filter`, {
+  const [currentSearchString, setSearchString] = useURLState<string[]>(`binary_frame_filter`, {
     alwaysReturnArray: true,
     defaultValue: [],
   });
@@ -93,7 +93,7 @@ const ColorStackLegend = ({mappings, compareMode = false, loading}: Props): Reac
               }
             )}
             onClick={() => {
-              if (!filteringAllowed || isHighlighted) {
+              if (!filteringAllowed || isHighlighted || colorBy !== 'binary') {
                 return;
               }
 

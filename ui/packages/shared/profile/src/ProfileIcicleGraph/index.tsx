@@ -130,15 +130,13 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   }, [loadingState]);
 
   const icicleGraph = useMemo(() => {
-    // if (isLoading) {
-    //   return (
-    //     <div className="h-auto overflow-clip">
-    //       <IcicleGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
-    //     </div>
-    //   );
-    // }
-
-    console.log(arrow);
+    if (isLoading) {
+      return (
+        <div className="h-auto overflow-clip">
+          <IcicleGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
+        </div>
+      );
+    }
 
     if (graph === undefined && arrow === undefined)
       return <div className="mx-auto text-center">No data...</div>;
@@ -173,7 +171,6 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
           flamegraphLoading={isLoading}
           isHalfScreen={isHalfScreen}
           mappingsListFromMetadata={mappingsList}
-          filenamesListFromMetadata={filenamesList}
           compareAbsolute={isCompareAbsolute}
         />
       );
@@ -192,7 +189,6 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     isHalfScreen,
     isDarkMode,
     mappingsList,
-    filenamesList,
     isCompareAbsolute,
   ]);
 

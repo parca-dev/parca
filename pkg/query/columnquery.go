@@ -330,14 +330,10 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	}
 
 	binaryFrameFilter := map[string]struct{}{}
-	filenameFrameFilter := map[string]struct{}{}
 
 	for _, filter := range req.GetFilter() {
 		for _, include := range filter.GetFrameFilter().GetBinaryFrameFilter().GetIncludeBinaries() {
 			binaryFrameFilter[include] = struct{}{}
-		}
-		for _, include := range filter.GetFrameFilter().GetFilenameFrameFilter().GetIncludeFilenames() {
-			filenameFrameFilter[include] = struct{}{}
 		}
 	}
 
@@ -348,7 +344,6 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		p.Samples,
 		functionToFilterBy,
 		binaryFrameFilter,
-		filenameFrameFilter,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("filtering profile: %w", err)
@@ -374,7 +369,6 @@ func FilterProfileData(
 	records []arrow.Record,
 	functionStackFilter string,
 	binaryFrameFilter map[string]struct{},
-	filenameFrameFilter map[string]struct{},
 ) ([]arrow.Record, int64, error) {
 	_, span := tracer.Start(ctx, "filterByFunction")
 	defer span.End()
@@ -400,7 +394,6 @@ func FilterProfileData(
 			r,
 			functionStackFilterBytes,
 			binaryFrameFilter,
-			filenameFrameFilter,
 		)
 		if err != nil {
 			return nil, 0, fmt.Errorf("filter record: %w", err)
@@ -423,7 +416,6 @@ func filterRecord(
 	rec arrow.Record,
 	functionStackFilterBytes []byte,
 	binaryFrameFilter map[string]struct{},
-	filenameFrameFilter map[string]struct{},
 ) ([]arrow.Record, int64, int64, error) {
 	r := profile.NewRecordReader(rec)
 
@@ -480,36 +472,6 @@ func filterRecord(
 				mappingFileBase := mappingFile
 				if lastSlash >= 0 {
 					mappingFileBase = mappingFile[lastSlash+1:]
-				}
-
-				if len(filenameFrameFilter) > 0 {
-					keepLocation := false
-					indexMatches := make(map[uint32]struct{})
-
-					for i := 0; i < r.LineFunctionFilenameDict.Len(); i++ {
-						functionFilename := r.LineFunctionFilenameDict.Value(i)
-						lastSlashForFunctionFilename := bytes.LastIndex(functionFilename, []byte("/"))
-						functionFilenameBase := functionFilename
-						if lastSlashForFunctionFilename >= 0 {
-							functionFilenameBase = functionFilenameBase[lastSlashForFunctionFilename+1:]
-						}
-
-						if _, ok := filenameFrameFilter[string(functionFilenameBase)]; ok {
-							fmt.Printf("Match found for index %d\n", i)
-							indexMatches[uint32(i)] = struct{}{}
-						}
-					}
-
-					if len(indexMatches) > 0 {
-						if r.LineFunctionNameIndices.IsValid(j) {
-							if _, ok := indexMatches[r.LineFunctionNameIndices.Value(j)]; ok {
-								keepLocation = true
-							}
-						}
-					}
-					if !keepLocation {
-						bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
-					}
 				}
 
 				if len(mappingFileBase) > 0 {

@@ -66,7 +66,6 @@ interface IcicleGraphArrowProps {
   flamegraphLoading: boolean;
   isHalfScreen: boolean;
   mappingsListFromMetadata: string[];
-  filenamesListFromMetadata: string[];
   compareAbsolute: boolean;
 }
 
@@ -112,7 +111,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   flamegraphLoading,
   mappingsListFromMetadata,
   compareAbsolute,
-  filenamesListFromMetadata,
 }: IcicleGraphArrowProps): React.JSX.Element {
   const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
   const dispatch = useAppDispatch();

@@ -583,14 +583,6 @@ export interface FrameFilter {
          */
         binaryFrameFilter: BinaryFrameFilter;
     } | {
-        oneofKind: "filenameFrameFilter";
-        /**
-         * filename_frame_filter is the list of filenames to filter by
-         *
-         * @generated from protobuf field: parca.query.v1alpha1.FilenameFrameFilter filename_frame_filter = 2;
-         */
-        filenameFrameFilter: FilenameFrameFilter;
-    } | {
         oneofKind: undefined;
     };
 }
@@ -606,19 +598,6 @@ export interface BinaryFrameFilter {
      * @generated from protobuf field: repeated string include_binaries = 1;
      */
     includeBinaries: string[];
-}
-/**
- * FilenameFrameFilter is a filter for filtering by filenames
- *
- * @generated from protobuf message parca.query.v1alpha1.FilenameFrameFilter
- */
-export interface FilenameFrameFilter {
-    /**
-     * include_filenames is the list of filenames to filter by
-     *
-     * @generated from protobuf field: repeated string include_filenames = 1;
-     */
-    includeFilenames: string[];
 }
 /**
  * RuntimeFilter configures which runtimes to filter frames out for.
@@ -2422,8 +2401,7 @@ export const FunctionNameStackFilter = new FunctionNameStackFilter$Type();
 class FrameFilter$Type extends MessageType<FrameFilter> {
     constructor() {
         super("parca.query.v1alpha1.FrameFilter", [
-            { no: 1, name: "binary_frame_filter", kind: "message", oneof: "filter", T: () => BinaryFrameFilter },
-            { no: 2, name: "filename_frame_filter", kind: "message", oneof: "filter", T: () => FilenameFrameFilter }
+            { no: 1, name: "binary_frame_filter", kind: "message", oneof: "filter", T: () => BinaryFrameFilter }
         ]);
     }
     create(value?: PartialMessage<FrameFilter>): FrameFilter {
@@ -2444,12 +2422,6 @@ class FrameFilter$Type extends MessageType<FrameFilter> {
                         binaryFrameFilter: BinaryFrameFilter.internalBinaryRead(reader, reader.uint32(), options, (message.filter as any).binaryFrameFilter)
                     };
                     break;
-                case /* parca.query.v1alpha1.FilenameFrameFilter filename_frame_filter */ 2:
-                    message.filter = {
-                        oneofKind: "filenameFrameFilter",
-                        filenameFrameFilter: FilenameFrameFilter.internalBinaryRead(reader, reader.uint32(), options, (message.filter as any).filenameFrameFilter)
-                    };
-                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -2465,9 +2437,6 @@ class FrameFilter$Type extends MessageType<FrameFilter> {
         /* parca.query.v1alpha1.BinaryFrameFilter binary_frame_filter = 1; */
         if (message.filter.oneofKind === "binaryFrameFilter")
             BinaryFrameFilter.internalBinaryWrite(message.filter.binaryFrameFilter, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
-        /* parca.query.v1alpha1.FilenameFrameFilter filename_frame_filter = 2; */
-        if (message.filter.oneofKind === "filenameFrameFilter")
-            FilenameFrameFilter.internalBinaryWrite(message.filter.filenameFrameFilter, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2525,53 +2494,6 @@ class BinaryFrameFilter$Type extends MessageType<BinaryFrameFilter> {
  * @generated MessageType for protobuf message parca.query.v1alpha1.BinaryFrameFilter
  */
 export const BinaryFrameFilter = new BinaryFrameFilter$Type();
-// @generated message type with reflection information, may provide speed optimized methods
-class FilenameFrameFilter$Type extends MessageType<FilenameFrameFilter> {
-    constructor() {
-        super("parca.query.v1alpha1.FilenameFrameFilter", [
-            { no: 1, name: "include_filenames", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
-        ]);
-    }
-    create(value?: PartialMessage<FilenameFrameFilter>): FilenameFrameFilter {
-        const message = globalThis.Object.create((this.messagePrototype!));
-        message.includeFilenames = [];
-        if (value !== undefined)
-            reflectionMergePartial<FilenameFrameFilter>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: FilenameFrameFilter): FilenameFrameFilter {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* repeated string include_filenames */ 1:
-                    message.includeFilenames.push(reader.string());
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: FilenameFrameFilter, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* repeated string include_filenames = 1; */
-        for (let i = 0; i < message.includeFilenames.length; i++)
-            writer.tag(1, WireType.LengthDelimited).string(message.includeFilenames[i]);
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message parca.query.v1alpha1.FilenameFrameFilter
- */
-export const FilenameFrameFilter = new FilenameFrameFilter$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class RuntimeFilter$Type extends MessageType<RuntimeFilter> {
     constructor() {
