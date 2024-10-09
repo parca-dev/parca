@@ -199,11 +199,15 @@ export const ProfileViewWithData = ({
         total: BigInt(flamegraphResponse?.total ?? '0'),
         filtered: BigInt(flamegraphResponse?.filtered ?? '0'),
         error: flamegraphError,
-        mappings:
+        metadataMappingFiles:
           profilemetadataResponse?.report.oneofKind === 'profileMetadata'
             ? profilemetadataResponse?.report?.profileMetadata?.mappingFiles
             : undefined,
-        mappingsLoading: profilemetadataLoading,
+        metadataFilenames:
+          profilemetadataResponse?.report.oneofKind === 'profileMetadata'
+            ? profilemetadataResponse?.report?.profileMetadata?.filenames
+            : undefined,
+        metadataLoading: profilemetadataLoading,
       }}
       topTableData={{
         loading: tableLoading,

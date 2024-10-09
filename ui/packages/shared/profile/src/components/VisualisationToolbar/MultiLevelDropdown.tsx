@@ -37,6 +37,7 @@ interface MenuItemType {
   active?: boolean;
   value?: string;
   icon?: string;
+  customSubmenu?: React.ReactNode;
 }
 
 type MenuItemProps = MenuItemType & {
@@ -44,7 +45,8 @@ type MenuItemProps = MenuItemType & {
   path?: string[];
   closeDropdown: () => void;
   isNested?: boolean;
-  activeValue?: string;
+  activeValueForSortBy?: string;
+  activeValueForColorBy?: string;
   icon?: string;
 };
 
@@ -57,12 +59,22 @@ const MenuItem: React.FC<MenuItemProps> = ({
   id,
   closeDropdown,
   isNested = false,
-  activeValue,
+  activeValueForSortBy,
+  activeValueForColorBy,
   value,
   disabled = false,
   icon,
+  customSubmenu,
 }) => {
-  const isActive = isNested && value === activeValue;
+  let isActive = false;
+  if (isNested) {
+    if (activeValueForSortBy !== undefined && value === activeValueForSortBy) {
+      isActive = true;
+    }
+    if (activeValueForColorBy !== undefined && value === activeValueForColorBy) {
+      isActive = true;
+    }
+  }
 
   const handleSelect = (): void => {
     if (items === undefined) {
@@ -93,13 +105,17 @@ const MenuItem: React.FC<MenuItemProps> = ({
               id={id}
               disabled={disabled}
             >
-              <span className="flex items-center">
-                <div className="flex items-center">
-                  <span>{label}</span>
-                  {icon !== undefined && <Icon icon={icon} className="ml-2 h-4 w-4" />}
-                </div>
-                {isActive && <Icon icon="heroicons-solid:check" className="ml-2 h-4 w-4" />}
-              </span>
+              {customSubmenu !== undefined ? (
+                customSubmenu
+              ) : (
+                <span className="flex items-center">
+                  <div className="flex items-center">
+                    <span>{label}</span>
+                    {icon !== undefined && <Icon icon={icon} className="ml-2 h-4 w-4" />}
+                  </div>
+                  {isActive && <Icon icon="heroicons-solid:check" className="ml-2 h-4 w-4" />}
+                </span>
+              )}
               {items !== undefined && (
                 <Icon icon="flowbite:caret-right-solid" className="h-[14px] w-[14px]" />
               )}
@@ -118,7 +134,8 @@ const MenuItem: React.FC<MenuItemProps> = ({
                     path={[...path, label]}
                     closeDropdown={closeDropdown}
                     isNested={true}
-                    activeValue={activeValue}
+                    activeValueForSortBy={activeValueForSortBy}
+                    activeValueForColorBy={activeValueForColorBy}
                   />
                 ))}
               </Menu.Items>
@@ -141,6 +158,11 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
   });
   const [colorStackLegend, setStoreColorStackLegend] = useURLState('color_stack_legend');
   const [binaryFrameFilter, setBinaryFrameFilter] = useURLState('binary_frame_filter');
+  const [colorBy, setColorBy] = useURLState('color_by');
+  const [hiddenBinaries, setHiddenBinaries] = useURLState('binary_frame_filter', {
+    defaultValue: [],
+    alwaysReturnArray: true,
+  });
   const {compareMode} = useProfileViewContext();
   const [colorProfileName] = useUserPreference<string>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
@@ -156,6 +178,12 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
   const [compareAbsolute = compareAbsoluteDefault, setCompareAbsolute] =
     useURLState('compare_absolute');
   const isCompareAbsolute = compareAbsolute === 'true';
+
+  const handleBinaryToggle = (index: number): void => {
+    const updatedBinaries = [...(hiddenBinaries as string[])];
+    updatedBinaries.splice(index, 1);
+    setHiddenBinaries(updatedBinaries);
+  };
 
   const setColorStackLegend = useCallback(
     (value: string): void => {
@@ -194,6 +222,25 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
       icon: 'material-symbols:sort',
     },
     {
+      label: 'Color by',
+      id: 'h-solor-by-filter',
+      items: [
+        {
+          label: 'Binary',
+          onclick: () => setColorBy('binary'),
+          value: 'binary',
+        },
+        {
+          label: 'Filename',
+          onclick: () => setColorBy('filename'),
+          value: 'filename',
+        },
+      ],
+      hide: false,
+      icon: 'carbon:color-palette',
+    },
+
+    {
       label: isColorStackLegendEnabled ? 'Hide legend' : 'Show legend',
       onclick: () => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true'),
       hide: compareMode || colorProfileName === 'default',
@@ -219,6 +266,28 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
       id: 'h-reset-legend-button',
       icon: 'system-uicons:reset',
     },
+    {
+      label: 'Hidden Binaries',
+      id: 'h-hidden-binaries',
+      items: (hiddenBinaries as string[])?.map((binary, index) => ({
+        label: binary,
+        customSubmenu: (
+          <div className="flex items-center gap-2 w-full">
+            <input
+              id={binary}
+              name={binary}
+              type="checkbox"
+              className="h-4 w-4 rounded-md border-2 border-gray-300 text-indigo-600 focus:ring-indigo-600 focus:ring-offset-0 checked:bg-indigo-600 checked:border-indigo-600"
+              checked={hiddenBinaries?.includes(binary)}
+              onChange={() => handleBinaryToggle(index)}
+            />
+            <span>{binary}</span>
+          </div>
+        ),
+      })),
+      hide: hiddenBinaries === undefined || hiddenBinaries.length === 0,
+      icon: 'ph:eye-closed',
+    },
   ];
 
   return (
@@ -233,7 +302,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
               />
             </Menu.Button>
             {open && (
-              <Menu.Items className="absolute z-30 right-0 w-56 mt-2 py-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border dark:bg-gray-900 dark:border-gray-600">
+              <Menu.Items className="absolute z-30 left-0 w-56 mt-2 py-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border dark:bg-gray-900 dark:border-gray-600">
                 <span className="text-xs text-gray-400 capitalize px-4 py-3">actions</span>
                 {menuItems
                   .filter(item => item.hide !== undefined && !item.hide)
@@ -243,7 +312,10 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
                       {...item}
                       onSelect={onSelect}
                       closeDropdown={close}
-                      activeValue={storeSortBy as string}
+                      activeValueForSortBy={storeSortBy as string}
+                      activeValueForColorBy={
+                        colorBy === undefined || colorBy === '' ? 'binary' : (colorBy as string)
+                      }
                     />
                   ))}
               </Menu.Items>

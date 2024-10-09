@@ -1408,7 +1408,7 @@ export interface TableArrow {
     unit: string;
 }
 /**
- * ProfileMetadata contains metadata about the profile i.e. binaries, labels
+ * ProfileMetadata contains metadata about the profile i.e. binaries, filenames
  *
  * @generated from protobuf message parca.query.v1alpha1.ProfileMetadata
  */
@@ -1422,9 +1422,16 @@ export interface ProfileMetadata {
     /**
      * labels is the list of labels in the profile
      *
-     * @generated from protobuf field: repeated string labels = 2;
+     * @deprecated
+     * @generated from protobuf field: repeated string labels = 2 [deprecated = true];
      */
     labels: string[];
+    /**
+     * filenames is the list of filenames in the profile
+     *
+     * @generated from protobuf field: repeated string filenames = 3;
+     */
+    filenames: string[];
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class ProfileTypesRequest$Type extends MessageType<ProfileTypesRequest> {
@@ -4306,13 +4313,15 @@ class ProfileMetadata$Type extends MessageType<ProfileMetadata> {
     constructor() {
         super("parca.query.v1alpha1.ProfileMetadata", [
             { no: 1, name: "mapping_files", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "labels", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+            { no: 2, name: "labels", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "filenames", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<ProfileMetadata>): ProfileMetadata {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.mappingFiles = [];
         message.labels = [];
+        message.filenames = [];
         if (value !== undefined)
             reflectionMergePartial<ProfileMetadata>(this, message, value);
         return message;
@@ -4325,8 +4334,11 @@ class ProfileMetadata$Type extends MessageType<ProfileMetadata> {
                 case /* repeated string mapping_files */ 1:
                     message.mappingFiles.push(reader.string());
                     break;
-                case /* repeated string labels */ 2:
+                case /* repeated string labels = 2 [deprecated = true];*/ 2:
                     message.labels.push(reader.string());
+                    break;
+                case /* repeated string filenames */ 3:
+                    message.filenames.push(reader.string());
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -4343,9 +4355,12 @@ class ProfileMetadata$Type extends MessageType<ProfileMetadata> {
         /* repeated string mapping_files = 1; */
         for (let i = 0; i < message.mappingFiles.length; i++)
             writer.tag(1, WireType.LengthDelimited).string(message.mappingFiles[i]);
-        /* repeated string labels = 2; */
+        /* repeated string labels = 2 [deprecated = true]; */
         for (let i = 0; i < message.labels.length; i++)
             writer.tag(2, WireType.LengthDelimited).string(message.labels[i]);
+        /* repeated string filenames = 3; */
+        for (let i = 0; i < message.filenames.length; i++)
+            writer.tag(3, WireType.LengthDelimited).string(message.filenames[i]);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

@@ -17,7 +17,7 @@ import {
   Mapping,
   Function as ParcaFunction,
 } from '@parca/client/dist/parca/metastore/v1alpha1/metastore';
-import {EVERYTHING_ELSE, FEATURE_TYPES, type Feature} from '@parca/store';
+import {BINARY_FEATURE_TYPES, EVERYTHING_ELSE, type BinaryFeature} from '@parca/store';
 import {getLastItem} from '@parca/utilities';
 
 import {hexifyAddress} from '../../utils';
@@ -92,11 +92,11 @@ export const extractFeature = (
   mappings: Mapping[],
   locations: Location[],
   strings: string[]
-): Feature => {
+): BinaryFeature => {
   const binaryName = getBinaryName(data, mappings, locations, strings);
   if (binaryName != null) {
-    return {name: binaryName, type: FEATURE_TYPES.Binary};
+    return {name: binaryName, type: BINARY_FEATURE_TYPES.Binary};
   }
 
-  return {name: EVERYTHING_ELSE, type: FEATURE_TYPES.Misc};
+  return {name: EVERYTHING_ELSE, type: BINARY_FEATURE_TYPES.Misc};
 };

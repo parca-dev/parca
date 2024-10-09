@@ -201,3 +201,58 @@ func decodeString(data []byte) ([]byte, int) {
 	length, n := varint.Uvarint(data)
 	return data[n : n+int(length)], n + int(length)
 }
+
+func DecodeFunctionFilename(data []byte) (string, error) {
+	offset := 0
+	_, n := varint.Uvarint(data) // we need to know the address size to read the build ID
+	offset += n
+
+	numberOfLines, n := varint.Uvarint(data[offset:])
+	offset += n
+
+	hasMapping := data[offset] == 0x1
+	offset++
+
+	if hasMapping {
+		_, n := decodeString(data[offset:])
+		offset += n
+
+		_, n = decodeString(data[offset:])
+		offset += n
+
+		_, n = varint.Uvarint(data[offset:])
+		offset += n
+
+		_, n = varint.Uvarint(data[offset:])
+		offset += n
+
+		_, _ = varint.Uvarint(data[offset:])
+		offset++
+	}
+
+	if numberOfLines > 0 {
+		for i := uint64(0); i < numberOfLines; i++ {
+			_, n := varint.Uvarint(data[offset:])
+			offset += n
+
+			hasFunction := data[offset] == 0x1
+			offset++
+
+			if hasFunction {
+				_, n := varint.Uvarint(data[offset:])
+				offset += n
+
+				_, n = decodeString(data[offset:])
+				offset += n
+
+				_, n = decodeString(data[offset:])
+				offset += n
+
+				filename, _ := decodeString(data[offset:])
+				return string(filename), nil
+			}
+		}
+	}
+
+	return "", fmt.Errorf("function filename not found")
+}
