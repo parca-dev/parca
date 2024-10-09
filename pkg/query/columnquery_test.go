@@ -1665,6 +1665,7 @@ func TestFilterDataFrameFilter(t *testing.T) {
 	require.Equal(t, 1, valid)
 	require.Equal(t, "test", string(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(2)))))
 }
+
 func BenchmarkFilterData(t *testing.B) {
 	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
 	defer mem.AssertSize(t, 0)

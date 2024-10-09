@@ -462,18 +462,15 @@ func filterRecord(
 		if lOffsetEnd-lOffsetStart > 0 {
 			for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
 				validMappingStart := r.MappingStart.IsValid(j)
-
 				var mappingFile []byte
 				if validMappingStart {
 					mappingFile = r.MappingFileDict.Value(int(r.MappingFileIndices.Value(j)))
 				}
-
 				lastSlash := bytes.LastIndex(mappingFile, []byte("/"))
 				mappingFileBase := mappingFile
 				if lastSlash >= 0 {
 					mappingFileBase = mappingFile[lastSlash+1:]
 				}
-
 				if len(mappingFileBase) > 0 {
 					if len(binaryFrameFilter) > 0 {
 						keepLocation := false
@@ -485,7 +482,6 @@ func filterRecord(
 						}
 					}
 				}
-
 			}
 		}
 	}
