@@ -37,6 +37,7 @@ interface MenuItemType {
   active?: boolean;
   value?: string;
   icon?: string;
+  customSubmenu?: React.ReactNode;
 }
 
 type MenuItemProps = MenuItemType & {
@@ -63,6 +64,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
   value,
   disabled = false,
   icon,
+  customSubmenu,
 }) => {
   let isActive = false;
   if (isNested) {
@@ -103,13 +105,17 @@ const MenuItem: React.FC<MenuItemProps> = ({
               id={id}
               disabled={disabled}
             >
-              <span className="flex items-center">
-                <div className="flex items-center">
-                  <span>{label}</span>
-                  {icon !== undefined && <Icon icon={icon} className="ml-2 h-4 w-4" />}
-                </div>
-                {isActive && <Icon icon="heroicons-solid:check" className="ml-2 h-4 w-4" />}
-              </span>
+              {customSubmenu !== undefined ? (
+                customSubmenu
+              ) : (
+                <span className="flex items-center">
+                  <div className="flex items-center">
+                    <span>{label}</span>
+                    {icon !== undefined && <Icon icon={icon} className="ml-2 h-4 w-4" />}
+                  </div>
+                  {isActive && <Icon icon="heroicons-solid:check" className="ml-2 h-4 w-4" />}
+                </span>
+              )}
               {items !== undefined && (
                 <Icon icon="flowbite:caret-right-solid" className="h-[14px] w-[14px]" />
               )}
@@ -153,6 +159,10 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
   const [colorStackLegend, setStoreColorStackLegend] = useURLState('color_stack_legend');
   const [binaryFrameFilter, setBinaryFrameFilter] = useURLState('binary_frame_filter');
   const [colorBy, setColorBy] = useURLState('color_by');
+  const [hiddenBinaries, setHiddenBinaries] = useURLState('binary_frame_filter', {
+    defaultValue: [],
+    alwaysReturnArray: true,
+  });
   const {compareMode} = useProfileViewContext();
   const [colorProfileName] = useUserPreference<string>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
@@ -168,6 +178,12 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
   const [compareAbsolute = compareAbsoluteDefault, setCompareAbsolute] =
     useURLState('compare_absolute');
   const isCompareAbsolute = compareAbsolute === 'true';
+
+  const handleBinaryToggle = (index: number): void => {
+    const updatedBinaries = [...(hiddenBinaries as string[])];
+    updatedBinaries.splice(index, 1);
+    setHiddenBinaries(updatedBinaries);
+  };
 
   const setColorStackLegend = useCallback(
     (value: string): void => {
@@ -223,6 +239,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
       hide: false,
       icon: 'carbon:color-palette',
     },
+
     {
       label: isColorStackLegendEnabled ? 'Hide legend' : 'Show legend',
       onclick: () => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true'),
@@ -248,6 +265,28 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
       onclick: () => resetLegend(),
       id: 'h-reset-legend-button',
       icon: 'system-uicons:reset',
+    },
+    {
+      label: 'Hidden Binaries',
+      id: 'h-hidden-binaries',
+      items: (hiddenBinaries as string[])?.map((binary, index) => ({
+        label: binary,
+        customSubmenu: (
+          <div className="flex items-center gap-2 w-full">
+            <input
+              id={binary}
+              name={binary}
+              type="checkbox"
+              className="h-4 w-4 rounded-md border-2 border-gray-300 text-indigo-600 focus:ring-indigo-600 focus:ring-offset-0 checked:bg-indigo-600 checked:border-indigo-600"
+              checked={hiddenBinaries?.includes(binary)}
+              onChange={() => handleBinaryToggle(index)}
+            />
+            <span>{binary}</span>
+          </div>
+        ),
+      })),
+      hide: hiddenBinaries === undefined || hiddenBinaries.length === 0,
+      icon: 'ph:eye-closed',
     },
   ];
 
