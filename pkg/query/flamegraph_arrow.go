@@ -169,7 +169,6 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					// We want to compare against this found label root's children.
 					rootRowChildren = fb.children[row]
 					rootRow = row
-					sampleLabelRow = row
 					fb.compareRows = rootRowChildren
 					fb.addRowValues(r, row, i, false) // adds the cumulative and diff values to the existing row
 				} else {
