@@ -241,9 +241,11 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		FlamegraphFieldMappingFile:      {},
 		FlamegraphFieldFunctionFileName: {},
 	}
+	groupByLabels := make([]string, 0, len(groupBy))
 	for _, f := range groupBy {
 		if strings.HasPrefix(f, FlamegraphFieldLabels+".") {
-			// We allow to group by columns prefixed with labels.
+			// Add label to the groupByLabels passed to FrostDB
+			groupByLabels = append(groupByLabels, f)
 			continue
 		}
 		if _, allowed := allowedGroupBy[f]; !allowed {
@@ -270,7 +272,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 			p, err = q.selectMerge(
 				ctx,
 				req.GetMerge(),
-				groupBy,
+				groupByLabels,
 				isInvert,
 			)
 		}
@@ -354,7 +356,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		req.GetReportType(),
 		req.GetNodeTrimThreshold(),
 		filtered,
-		groupBy,
+		groupByLabels,
 		req.GetSourceReference(),
 		source,
 		isDiff,

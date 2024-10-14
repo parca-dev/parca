@@ -1347,13 +1347,13 @@ func (q *Querier) QueryMerge(
 	ctx context.Context,
 	query string,
 	start, end time.Time,
-	groupByColumns []string,
+	groupByLabels []string,
 	invertCallStacks bool,
 ) (profile.Profile, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/QueryMerge")
 	defer span.End()
 
-	records, valueColumn, queryParts, err := q.selectMerge(ctx, query, start, end, groupByColumns)
+	records, valueColumn, queryParts, err := q.selectMerge(ctx, query, start, end, groupByLabels)
 	if err != nil {
 		return profile.Profile{}, err
 	}
@@ -1385,7 +1385,7 @@ func (q *Querier) selectMerge(
 	query string,
 	startTime,
 	endTime time.Time,
-	groupByColumns []string,
+	groupByLabels []string,
 ) ([]arrow.Record, string, QueryParts, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/selectMerge")
 	defer span.End()
@@ -1408,18 +1408,13 @@ func (q *Querier) selectMerge(
 	)
 
 	totalSum := logicalplan.Sum(logicalplan.Col(profile.ColumnValue))
-	durationSum := logicalplan.Sum(logicalplan.Col(profile.ColumnDuration))
 
 	columnsGroupBy := []logicalplan.Expr{
 		logicalplan.Col(profile.ColumnStacktrace),
 	}
 
-	for _, col := range groupByColumns {
-		// We only want to group by `labels.` prefixed columns.
-		// There can be some columns like `function_name` that are virtual and don't actually exist.
-		if strings.HasPrefix(col, profile.ColumnLabelsPrefix) {
-			columnsGroupBy = append(columnsGroupBy, logicalplan.Col(col))
-		}
+	for _, col := range groupByLabels {
+		columnsGroupBy = append(columnsGroupBy, logicalplan.Col(col))
 	}
 
 	var valueCol logicalplan.Expr = logicalplan.Col(profile.ColumnValue)
@@ -1445,19 +1440,12 @@ func (q *Querier) selectMerge(
 	}
 
 	if queryParts.Delta {
-		// Only for cpu and nanoseconds do we first project the ColumnDuration.
-		// We then use the aggregation function to sum(duration) for each stacktraces.
-		// The final project then takes the sum(value) / sum(duration) to get to the per second value.
-		firstProject = append(firstProject,
-			logicalplan.Col(profile.ColumnDuration),
-		)
 		finalProject = append(finalProject,
 			logicalplan.Div(
 				logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
-				logicalplan.Convert(durationSum, arrow.PrimitiveTypes.Float64),
+				logicalplan.Literal(float64(endTime.Sub(startTime).Nanoseconds())),
 			).Alias(ValuePerSecond),
 		)
-		columnsAggregations = append(columnsAggregations, durationSum)
 	}
 
 	records := []arrow.Record{}
@@ -1478,8 +1466,8 @@ func (q *Querier) selectMerge(
 		return nil, "", queryParts, err
 	}
 
-	queryParts.Meta.Timestamp = start
 	queryParts.Meta.SampleType = resultType
+	queryParts.Meta.Timestamp = start
 
 	return records, "sum(value)", queryParts, nil
 }
