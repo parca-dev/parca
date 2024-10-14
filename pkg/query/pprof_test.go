@@ -51,6 +51,7 @@ func TestGenerateFlatPprof(t *testing.T) {
 		},
 		pp,
 		0,
+		[]string{},
 	)
 	require.NoError(t, err)
 
@@ -145,6 +146,7 @@ func TestGeneratePprofNilMapping(t *testing.T) {
 			}},
 		},
 		0,
+		[]string{},
 	)
 	require.NoError(t, err)
 

@@ -64,10 +64,8 @@ export const useGraphTooltipMetaInfo = ({table, row}: Props): GraphTooltipMetaIn
   const functionStartLine: bigint = table.getChild(FIELD_FUNCTION_START_LINE)?.get(row) ?? 0n;
   const lineNumber =
     locationLine !== 0n ? locationLine : functionStartLine !== 0n ? functionStartLine : undefined;
-  const pprofLabelPrefix = 'pprof_labels.';
-  const labelColumnNames = table.schema.fields.filter(field =>
-    field.name.startsWith(pprofLabelPrefix)
-  );
+  const labelPrefix = 'labels.';
+  const labelColumnNames = table.schema.fields.filter(field => field.name.startsWith(labelPrefix));
 
   const {queryServiceClient, enableSourcesView} = useParcaContext();
   const {profileSource} = useProfileViewContext();
@@ -101,7 +99,7 @@ export const useGraphTooltipMetaInfo = ({table, row}: Props): GraphTooltipMetaIn
 
   const labelPairs: Array<[string, string]> = labelColumnNames
     .map((field, i) => [
-      labelColumnNames[i].name.slice(pprofLabelPrefix.length),
+      labelColumnNames[i].name.slice(labelPrefix.length),
       arrowToString(table.getChild(field.name)?.get(row)) ?? '',
     ])
     .filter(value => value[1] !== '') as Array<[string, string]>;
