@@ -520,7 +520,7 @@ importers:
         version: 3.10.8
       '@types/d3-selection':
         specifier: ^3.0.10
-        version: 3.0.10
+        version: 3.0.11
       '@types/lodash':
         specifier: ^4.17.0
         version: 4.17.10
@@ -704,7 +704,7 @@ importers:
         version: 4.0.8
       '@types/d3-selection':
         specifier: ^3.0.10
-        version: 3.0.10
+        version: 3.0.11
       '@types/react-beautiful-dnd':
         specifier: ^13.1.8
         version: 13.1.8
@@ -6282,13 +6282,13 @@ packages:
   /@types/d3-axis@3.0.6:
     resolution: {integrity: sha512-pYeijfZuBd87T0hGn0FO1vQ/cgLk6E1ALJjfkC0oJ8cbwkZl3TpgS8bVBLZN+2jjGgg38epgxb2zmoGtSfvgMw==}
     dependencies:
-      '@types/d3-selection': 3.0.10
+      '@types/d3-selection': 3.0.11
     dev: false
 
   /@types/d3-brush@3.0.6:
     resolution: {integrity: sha512-nH60IZNNxEcrh6L1ZSMNA28rj27ut/2ZmI3r96Zd+1jrZD++zD3LsMIjWlvg4AYrHn/Pqz4CF3veCxGjtbqt7A==}
     dependencies:
-      '@types/d3-selection': 3.0.10
+      '@types/d3-selection': 3.0.11
     dev: false
 
   /@types/d3-chord@3.0.6:
@@ -6317,7 +6317,7 @@ packages:
   /@types/d3-drag@3.0.7:
     resolution: {integrity: sha512-HE3jVKlzU9AaMazNufooRJ5ZpWmLIoc90A37WU2JMmeq28w1FQqCZswHZ3xR+SuxYftzHq6WU6KJHvqxKzTxxQ==}
     dependencies:
-      '@types/d3-selection': 3.0.10
+      '@types/d3-selection': 3.0.11
     dev: false
 
   /@types/d3-dsv@3.0.7:
@@ -6384,8 +6384,8 @@ packages:
       '@types/d3-time': 3.0.3
     dev: false
 
-  /@types/d3-selection@3.0.10:
-    resolution: {integrity: sha512-cuHoUgS/V3hLdjJOLTT691+G2QoqAjCVLmr4kJXR4ha56w1Zdu8UUQ5TxLRqudgNjwXeQxKMq4j+lyf9sWuslg==}
+  /@types/d3-selection@3.0.11:
+    resolution: {integrity: sha512-bhAXu23DJWsrI45xafYpkQ4NtcKMwWnAC/vKrd2l+nxMFuvOT3XMYTIj2opv8vq8AO5Yh7Qac/nSeP/3zjTK0w==}
     dev: false
 
   /@types/d3-shape@3.1.6:
@@ -6409,14 +6409,14 @@ packages:
   /@types/d3-transition@3.0.8:
     resolution: {integrity: sha512-ew63aJfQ/ms7QQ4X7pk5NxQ9fZH/z+i24ZfJ6tJSfqxJMrYLiK01EAs2/Rtw/JreGUsS3pLPNV644qXFGnoZNQ==}
     dependencies:
-      '@types/d3-selection': 3.0.10
+      '@types/d3-selection': 3.0.11
     dev: false
 
   /@types/d3-zoom@3.0.8:
     resolution: {integrity: sha512-iqMC4/YlFCSlO8+2Ii1GGGliCAY4XdeG748w5vQUbevlbDu0zSjH/+jojorQVBK/se0j6DUFNPBGSqD3YWYnDw==}
     dependencies:
       '@types/d3-interpolate': 3.0.4
-      '@types/d3-selection': 3.0.10
+      '@types/d3-selection': 3.0.11
     dev: false
 
   /@types/d3@7.4.3:
@@ -6445,7 +6445,7 @@ packages:
       '@types/d3-random': 3.0.3
       '@types/d3-scale': 4.0.8
       '@types/d3-scale-chromatic': 3.0.3
-      '@types/d3-selection': 3.0.10
+      '@types/d3-selection': 3.0.11
       '@types/d3-shape': 3.1.6
       '@types/d3-time': 3.0.3
       '@types/d3-time-format': 4.0.3
@@ -19779,6 +19779,7 @@ packages:
 
   /react-beautiful-dnd@13.1.1(react-dom@18.3.1)(react@18.3.1):
     resolution: {integrity: sha512-0Lvs4tq2VcrEjEgDXHjT98r+63drkKEgqyxdA7qD3mvKwga6a5SscbdLPO2IExotU1jW8L0Ksdl0Cj2AF67nPQ==}
+    deprecated: 'react-beautiful-dnd is now deprecated. Context and options: https://github.com/atlassian/react-beautiful-dnd/issues/2672'
     peerDependencies:
       react: ^16.8.5 || ^17.0.0 || ^18.0.0
       react-dom: ^16.8.5 || ^17.0.0 || ^18.0.0
