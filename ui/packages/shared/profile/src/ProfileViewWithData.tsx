@@ -17,9 +17,8 @@ import {QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata, useParcaContext, useURLState} from '@parca/components';
 import {saveAsBlob} from '@parca/utilities';
 
-import {useLabelNames} from './MatchersInput';
 import {FIELD_FUNCTION_NAME} from './ProfileIcicleGraph/IcicleGraphArrow';
-import {MergedProfileSource, ProfileSource} from './ProfileSource';
+import {ProfileSource} from './ProfileSource';
 import {ProfileView} from './ProfileView';
 import {useQuery} from './useQuery';
 import {downloadPprof} from './utils';
@@ -77,20 +76,7 @@ export const ProfileViewWithData = ({
     binaryFrameFilter,
   });
 
-  const mergedProfileSource = profileSource as MergedProfileSource;
-  const matchers = mergedProfileSource.query.matchers.map(
-    m => `${m.key}${m.matcherType}"${m.value}"`
-  );
-
-  const {result: profileLabelsResponse} = useLabelNames(
-    queryClient,
-    profileSource.ProfileType().toString(),
-    undefined,
-    undefined,
-    matchers
-  );
-
-  const {isLoading: profilemetadataLoading, response: profilemetadataResponse} = useQuery(
+  const {isLoading: profileMetadataLoading, response: profileMetadataResponse} = useQuery(
     queryClient,
     profileSource,
     QueryRequest_ReportType.PROFILE_METADATA,
@@ -201,7 +187,7 @@ export const ProfileViewWithData = ({
       total={total}
       filtered={filtered}
       flamegraphData={{
-        loading: flamegraphLoading && profilemetadataLoading,
+        loading: flamegraphLoading && profileMetadataLoading,
         data:
           flamegraphResponse?.report.oneofKind === 'flamegraph'
             ? flamegraphResponse?.report?.flamegraph
@@ -214,11 +200,14 @@ export const ProfileViewWithData = ({
         filtered: BigInt(flamegraphResponse?.filtered ?? '0'),
         error: flamegraphError,
         mappings:
-          profilemetadataResponse?.report.oneofKind === 'profileMetadata'
-            ? profilemetadataResponse?.report?.profileMetadata?.mappingFiles
+          profileMetadataResponse?.report.oneofKind === 'profileMetadata'
+            ? profileMetadataResponse?.report?.profileMetadata?.mappingFiles
             : undefined,
-        mappingsLoading: profilemetadataLoading,
-        groupByLabels: profileLabelsResponse.response?.labelNames ?? [],
+        mappingsLoading: profileMetadataLoading,
+        groupByLabels:
+          profileMetadataResponse?.report.oneofKind === 'profileMetadata'
+            ? profileMetadataResponse?.report?.profileMetadata?.labels
+            : [],
       }}
       topTableData={{
         loading: tableLoading,

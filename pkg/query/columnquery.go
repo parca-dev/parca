@@ -49,7 +49,7 @@ type Querier interface {
 	QuerySingle(ctx context.Context, query string, time time.Time, invertCallStacks bool) (profile.Profile, error)
 	QueryMerge(ctx context.Context, query string, start, end time.Time, aggregateByLabels []string, invertCallStacks bool) (profile.Profile, error)
 	GetProfileMetadataMappings(ctx context.Context, query string, start, end time.Time) ([]string, error)
-	GetProfileMetadataLabels(ctx context.Context, start, end time.Time) ([]string, error)
+	GetProfileMetadataLabels(ctx context.Context, query string, start, end time.Time) ([]string, error)
 }
 
 var (
@@ -973,7 +973,10 @@ func getMappingFilesAndLabels(
 		return nil, nil, fmt.Errorf("failed to get mappings: %w", err)
 	}
 
-	labels := []string{}
+	labels, err := q.GetProfileMetadataLabels(ctx, query, startTime, endTime)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get mappings: %w", err)
+	}
 
 	return mappingFiles, labels, nil
 }

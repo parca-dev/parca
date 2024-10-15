@@ -1541,37 +1541,43 @@ func (q *Querier) GetProfileMetadataMappings(
 
 func (q *Querier) GetProfileMetadataLabels(
 	ctx context.Context,
-	start, end time.Time,
+	query string,
+	startTime, endTime time.Time,
 ) ([]string, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/Labels")
 	defer span.End()
 
+	_, selectorExprs, err := QueryToFilterExprs(query)
+	if err != nil {
+		return nil, err
+	}
+
+	start := timestamp.FromTime(startTime)
+	end := timestamp.FromTime(endTime)
+	filterExpr := logicalplan.And(
+		append(
+			selectorExprs,
+			logicalplan.Col(profile.ColumnTimestamp).GtEq(logicalplan.Literal(start)),
+			logicalplan.Col(profile.ColumnTimestamp).LtEq(logicalplan.Literal(end)),
+		)...,
+	)
+
 	seen := map[string]struct{}{}
 
-	err := q.engine.ScanSchema(q.tableName).
-		Distinct(logicalplan.Col("name")).
-		Filter(logicalplan.Col("name").RegexMatch("^labels\\..+$")).
+	err = q.engine.ScanTable(q.tableName).
+		Filter(filterExpr).
+		Project(logicalplan.DynCol("labels")).
 		Execute(ctx, func(ctx context.Context, ar arrow.Record) error {
-			if ar.NumCols() != 1 {
-				return fmt.Errorf("expected 1 column, got %d", ar.NumCols())
-			}
-
-			col := ar.Column(0)
-			stringCol, ok := col.(*array.String)
-			if !ok {
-				return fmt.Errorf("expected string column, got %T", col)
-			}
-
-			for i := 0; i < stringCol.Len(); i++ {
-				// This should usually not happen, but better safe than sorry.
-				if stringCol.IsNull(i) {
+			for i, field := range ar.Schema().Fields() {
+				nulls := ar.Column(i).NullN()
+				rows := int(ar.NumRows())
+				if nulls == rows {
+					// This column only has nulls.
+					// Therefore, it's not part of the label set to group by.
 					continue
 				}
-
-				val := stringCol.Value(i)
-				seen[strings.TrimPrefix(val, "labels.")] = struct{}{}
+				seen[strings.TrimPrefix(field.Name, "labels.")] = struct{}{}
 			}
-
 			return nil
 		})
 	if err != nil {
