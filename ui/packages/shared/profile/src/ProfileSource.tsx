@@ -26,6 +26,7 @@ export interface ProfileSource {
   QueryRequest: () => QueryRequest;
   ProfileType: () => ProfileType;
   DiffSelection: () => ProfileDiffSelection;
+  Matchers: () => string[];
   toString: (timezone?: string) => string;
 }
 
@@ -171,6 +172,12 @@ export class ProfileDiffSource implements ProfileSource {
     return this.profileType;
   }
 
+  Matchers(): string[] {
+    // Currently, this only returns the matchers of the base profile.
+    // For the most part this should be acceptable. But it might not cover the full picture.
+    return this.a.Matchers()
+  }
+
   Describe(): JSX.Element {
     return (
       <>
@@ -241,10 +248,10 @@ export class MergedProfileSource implements ProfileSource {
     return this.profileType;
   }
 
-  stringMatchers(): string[] {
+  Matchers(): string[] {
     return this.query.matchers
       .filter((m: Matcher) => m.key !== '__name__')
-      .map((m: Matcher) => `${m.key}=${m.value}`);
+      .map((m: Matcher) => `${m.key}${m.matcherType}"${m.value}"`);
   }
 
   toString(timezone?: string): string {
