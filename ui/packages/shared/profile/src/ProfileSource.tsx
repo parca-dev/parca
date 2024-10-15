@@ -175,7 +175,7 @@ export class ProfileDiffSource implements ProfileSource {
   Matchers(): string[] {
     // Currently, this only returns the matchers of the base profile.
     // For the most part this should be acceptable. But it might not cover the full picture.
-    return this.a.Matchers()
+    return this.a.Matchers();
   }
 
   Describe(): JSX.Element {

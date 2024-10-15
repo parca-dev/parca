@@ -82,7 +82,7 @@ export const ProfileViewWithData = ({
     profileSource.ProfileType().toString(),
     undefined,
     undefined,
-    profileSource.Matchers(),
+    profileSource.Matchers()
   );
 
   const {isLoading: profilemetadataLoading, response: profilemetadataResponse} = useQuery(
