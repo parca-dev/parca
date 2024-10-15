@@ -204,9 +204,10 @@ export const ProfileViewWithData = ({
             ? profileMetadataResponse?.report?.profileMetadata?.mappingFiles
             : undefined,
         mappingsLoading: profileMetadataLoading,
-        groupByLabels: profileMetadataResponse?.report.oneofKind === 'profileMetadata'
-        ? profileMetadataResponse?.report?.profileMetadata?.labels
-        : [],
+        groupByLabels:
+          profileMetadataResponse?.report.oneofKind === 'profileMetadata'
+            ? profileMetadataResponse?.report?.profileMetadata?.labels
+            : [],
       }}
       topTableData={{
         loading: tableLoading,
