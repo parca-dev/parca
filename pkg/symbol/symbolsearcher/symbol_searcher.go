@@ -57,6 +57,9 @@ func (s Searcher) Search(addr uint64) (string, error) {
 
 	// sym[i-1] <= addr < sym[i]
 	i--
+	if addr >= s.symbols[i].Value+s.symbols[i].Size {
+		return "", errors.New("failed to find symbol for address")
+	}
 	return s.symbols[i].Name, nil
 }
 
