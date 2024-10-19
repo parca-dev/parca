@@ -3,7 +3,7 @@ module github.com/parca-dev/parca
 go 1.22.2
 
 require (
-	cloud.google.com/go/storage v1.43.0
+	cloud.google.com/go/storage v1.44.0
 	github.com/alecthomas/kong v0.9.0
 	github.com/apache/arrow/go/v16 v16.1.0
 	github.com/cenkalti/backoff/v4 v4.3.0
@@ -65,11 +65,13 @@ require (
 )
 
 require (
+	cel.dev/expr v0.16.1 // indirect
 	cloud.google.com/go v0.115.1 // indirect
 	cloud.google.com/go/auth v0.9.5 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.4 // indirect
 	cloud.google.com/go/compute/metadata v0.5.2 // indirect
-	cloud.google.com/go/iam v1.2.0 // indirect
+	cloud.google.com/go/iam v1.2.1 // indirect
+	cloud.google.com/go/monitoring v1.21.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.13.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.7.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.10.0 // indirect
@@ -78,6 +80,9 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.3.0 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.2.2 // indirect
 	github.com/Code-Hex/go-generics-cache v1.5.1 // indirect
+	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.24.1 // indirect
+	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.48.1 // indirect
+	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.48.1 // indirect
 	github.com/JohnCGriffin/overflow v0.0.0-20211019200055-46fa312c352c // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/RoaringBitmap/roaring v1.9.3 // indirect
@@ -100,8 +105,9 @@ require (
 	github.com/benbjohnson/immutable v0.4.3 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.12.0 // indirect
+	github.com/census-instrumentation/opencensus-proto v0.4.1 // indirect
 	github.com/clbanning/mxj v1.8.4 // indirect
-	github.com/cncf/xds/go v0.0.0-20240723142845-024c85f92f20 // indirect
+	github.com/cncf/xds/go v0.0.0-20240905190251-b4127c9b8d78 // indirect
 	github.com/coreos/etcd v3.3.27+incompatible // indirect
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf // indirect
 	github.com/coreos/pkg v0.0.0-20230601102743-20bbbf26f4d8 // indirect
@@ -216,8 +222,10 @@ require (
 	github.com/vultr/govultr/v2 v2.17.2 // indirect
 	go.etcd.io/bbolt v1.3.7 // indirect
 	go.opencensus.io v0.24.0 // indirect
+	go.opentelemetry.io/contrib/detectors/gcp v1.29.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.55.0 // indirect
 	go.opentelemetry.io/otel/metric v1.30.0 // indirect
+	go.opentelemetry.io/otel/sdk/metric v1.29.0 // indirect
 	golang.org/x/crypto v0.27.0 // indirect
 	golang.org/x/mod v0.20.0 // indirect
 	golang.org/x/sys v0.25.0 // indirect
@@ -228,6 +236,7 @@ require (
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	google.golang.org/genproto v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
+	google.golang.org/grpc/stats/opentelemetry v0.0.0-20240907200651-3ffb98b2c93a // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
