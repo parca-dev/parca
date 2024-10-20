@@ -65,7 +65,7 @@
     "@typescript-eslint/eslint-plugin": "5.62.0",
     "@typescript-eslint/parser": "5.62.0",
     "arg": "5.0.2",
-    "chromatic": "11.11.0",
+    "chromatic": "11.12.5",
     "css-loader": "6.11.0",
     "dev-kong": "0.11.0",
     "eslint": "8.45.0",
