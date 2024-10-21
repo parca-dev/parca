@@ -59,6 +59,7 @@ export interface FlamegraphData {
   metadataMappingFiles?: string[];
   metadataFilenames?: string[];
   metadataLoading: boolean;
+  metadataLabels?: string[];
 }
 
 export interface TopTableData {
@@ -398,6 +399,7 @@ export const ProfileView = ({
           filtered={filtered}
           currentSearchString={currentSearchString}
           setSearchString={setSearchString}
+          groupByLabels={flamegraphData.metadataLabels ?? []}
         />
 
         <div className="w-full" ref={ref}>

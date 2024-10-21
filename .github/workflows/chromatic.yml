@@ -58,7 +58,7 @@ jobs:
       run:
         working-directory: ./ui
     steps:
-      - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+      - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
         with:
           fetch-depth: 0 # Required to retrieve git history
       - uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
@@ -74,7 +74,7 @@ jobs:
         run: pnpm install --frozen-lockfile --prefer-offline && pnpm run build
         # 👇 Adds Chromatic as a step in the workflow
       - name: Publish to Chromatic
-        uses: chromaui/action@30b6228aa809059d46219e0f556752e8672a7e26 # v11.11.0
+        uses: chromaui/action@d0287706b64177148bc19217ec7753ff66bbbed5 # v11.12.6
         # Chromatic GitHub Action options
         with:
           # 👇 Chromatic projectToken, refer to the manage page to obtain it.

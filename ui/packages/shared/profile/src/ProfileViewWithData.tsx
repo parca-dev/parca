@@ -76,7 +76,7 @@ export const ProfileViewWithData = ({
     binaryFrameFilter,
   });
 
-  const {isLoading: profilemetadataLoading, response: profilemetadataResponse} = useQuery(
+  const {isLoading: profileMetadataLoading, response: profileMetadataResponse} = useQuery(
     queryClient,
     profileSource,
     QueryRequest_ReportType.PROFILE_METADATA,
@@ -187,7 +187,7 @@ export const ProfileViewWithData = ({
       total={total}
       filtered={filtered}
       flamegraphData={{
-        loading: flamegraphLoading && profilemetadataLoading,
+        loading: flamegraphLoading && profileMetadataLoading,
         data:
           flamegraphResponse?.report.oneofKind === 'flamegraph'
             ? flamegraphResponse?.report?.flamegraph
@@ -200,14 +200,18 @@ export const ProfileViewWithData = ({
         filtered: BigInt(flamegraphResponse?.filtered ?? '0'),
         error: flamegraphError,
         metadataMappingFiles:
-          profilemetadataResponse?.report.oneofKind === 'profileMetadata'
-            ? profilemetadataResponse?.report?.profileMetadata?.mappingFiles
+          profileMetadataResponse?.report.oneofKind === 'profileMetadata'
+            ? profileMetadataResponse?.report?.profileMetadata?.mappingFiles
+            : undefined,
+        metadataLabels:
+          profileMetadataResponse?.report.oneofKind === 'profileMetadata'
+            ? profileMetadataResponse?.report?.profileMetadata?.labels
             : undefined,
         metadataFilenames:
-          profilemetadataResponse?.report.oneofKind === 'profileMetadata'
-            ? profilemetadataResponse?.report?.profileMetadata?.filenames
+          profileMetadataResponse?.report.oneofKind === 'profileMetadata'
+            ? profileMetadataResponse?.report?.profileMetadata?.filenames
             : undefined,
-        metadataLoading: profilemetadataLoading,
+        metadataLoading: profileMetadataLoading,
       }}
       topTableData={{
         loading: tableLoading,

@@ -96,7 +96,8 @@ func (q *Querier) Labels(
 	filterExpr := []logicalplan.Expr{}
 
 	if profileType != "" {
-		_, selectorExprs, err := QueryToFilterExprs(profileType + "{}")
+		matchers := strings.Join(match, ",")
+		_, selectorExprs, err := QueryToFilterExprs(profileType + "{" + matchers + "}")
 		if err != nil {
 			return nil, err
 		}
@@ -108,8 +109,10 @@ func (q *Querier) Labels(
 		start := timestamp.FromTime(startTime)
 		end := timestamp.FromTime(endTime)
 
-		filterExpr = append(filterExpr, logicalplan.Col(profile.ColumnTimestamp).Gt(logicalplan.Literal(start)),
-			logicalplan.Col(profile.ColumnTimestamp).Lt(logicalplan.Literal(end)))
+		filterExpr = append(filterExpr,
+			logicalplan.Col(profile.ColumnTimestamp).Gt(logicalplan.Literal(start)),
+			logicalplan.Col(profile.ColumnTimestamp).Lt(logicalplan.Literal(end)),
+		)
 	}
 
 	err := q.engine.ScanTable(q.tableName).
@@ -215,21 +218,7 @@ func (q *Querier) Values(
 
 func MatcherToBooleanExpression(matcher *labels.Matcher) (logicalplan.Expr, error) {
 	label := logicalplan.Col(profile.ColumnLabelsPrefix + matcher.Name)
-	labelExpr, err := matcherToBinaryExpression(matcher, label)
-	if err != nil {
-		return nil, err
-	}
-	pprofLabel := logicalplan.Col(profile.ColumnPprofLabelsPrefix + matcher.Name)
-	pprofLabelExpr, err := matcherToBinaryExpression(matcher, pprofLabel)
-	if err != nil {
-		return nil, err
-	}
-
-	return logicalplan.Or(
-			logicalplan.And(pprofLabel.Eq(&logicalplan.LiteralExpr{Value: scalar.ScalarNull}), labelExpr),
-			logicalplan.And(label.Eq(&logicalplan.LiteralExpr{Value: scalar.ScalarNull}), pprofLabelExpr),
-		),
-		nil
+	return matcherToBinaryExpression(matcher, label)
 }
 
 func matcherToBinaryExpression(matcher *labels.Matcher, ref *logicalplan.Column) (*logicalplan.BinaryExpr, error) {
@@ -983,7 +972,7 @@ func (q *Querier) SymbolizeArrowRecord(
 		profileLabels := []arrow.Field{}
 		profileLabelColumns := []arrow.Array{}
 		for i, field := range schema.Fields() {
-			if strings.HasPrefix(field.Name, profile.ColumnPprofLabelsPrefix) {
+			if strings.HasPrefix(field.Name, profile.ColumnLabelsPrefix) {
 				profileLabels = append(profileLabels, field)
 				profileLabelColumns = append(profileLabelColumns, r.Column(i))
 			}
@@ -1300,8 +1289,6 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]
 
 	aggrCols := []logicalplan.Expr{
 		logicalplan.Col(profile.ColumnStacktrace),
-		logicalplan.DynCol(profile.ColumnPprofLabels),
-		logicalplan.DynCol(profile.ColumnPprofNumLabels),
 	}
 
 	totalSum := logicalplan.Sum(logicalplan.Col(profile.ColumnValue))
@@ -1356,11 +1343,17 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]
 		nil
 }
 
-func (q *Querier) QueryMerge(ctx context.Context, query string, start, end time.Time, aggregateByLabels, invertCallStacks bool) (profile.Profile, error) {
+func (q *Querier) QueryMerge(
+	ctx context.Context,
+	query string,
+	start, end time.Time,
+	groupByLabels []string,
+	invertCallStacks bool,
+) (profile.Profile, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/QueryMerge")
 	defer span.End()
 
-	records, valueColumn, queryParts, err := q.selectMerge(ctx, query, start, end, aggregateByLabels)
+	records, valueColumn, queryParts, err := q.selectMerge(ctx, query, start, end, groupByLabels)
 	if err != nil {
 		return profile.Profile{}, err
 	}
@@ -1392,7 +1385,7 @@ func (q *Querier) selectMerge(
 	query string,
 	startTime,
 	endTime time.Time,
-	aggregateByLabels bool,
+	groupByLabels []string,
 ) ([]arrow.Record, string, QueryParts, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/selectMerge")
 	defer span.End()
@@ -1415,18 +1408,13 @@ func (q *Querier) selectMerge(
 	)
 
 	totalSum := logicalplan.Sum(logicalplan.Col(profile.ColumnValue))
-	durationSum := logicalplan.Sum(logicalplan.Col(profile.ColumnDuration))
 
-	aggrCols := []logicalplan.Expr{
+	columnsGroupBy := []logicalplan.Expr{
 		logicalplan.Col(profile.ColumnStacktrace),
 	}
 
-	if aggregateByLabels {
-		aggrCols = append(
-			aggrCols,
-			logicalplan.DynCol(profile.ColumnPprofLabels),
-			logicalplan.DynCol(profile.ColumnPprofNumLabels),
-		)
+	for _, col := range groupByLabels {
+		columnsGroupBy = append(columnsGroupBy, logicalplan.Col(col))
 	}
 
 	var valueCol logicalplan.Expr = logicalplan.Col(profile.ColumnValue)
@@ -1438,26 +1426,26 @@ func (q *Querier) selectMerge(
 		resultType = queryParts.Meta.PeriodType
 	}
 
-	firstProject := append(aggrCols, valueCol)
-	finalProject := append(aggrCols, totalSum)
-	aggrFunctions := []*logicalplan.AggregationFunction{
+	firstProject := make([]logicalplan.Expr, len(columnsGroupBy))
+	finalProject := make([]logicalplan.Expr, len(columnsGroupBy))
+	// We copy each slice to make sure they are independent going forward.
+	copy(firstProject, columnsGroupBy)
+	copy(finalProject, columnsGroupBy)
+	// We add the specific projection
+	firstProject = append(firstProject, valueCol)
+	finalProject = append(finalProject, totalSum)
+
+	columnsAggregations := []*logicalplan.AggregationFunction{
 		totalSum,
 	}
 
 	if queryParts.Delta {
-		// Only for cpu and nanoseconds do we first project the ColumnDuration.
-		// We then use the aggregation function to sum(duration) for each stacktraces.
-		// The final project then takes the sum(value) / sum(duration) to get to the per second value.
-		firstProject = append(firstProject,
-			logicalplan.Col(profile.ColumnDuration),
-		)
 		finalProject = append(finalProject,
 			logicalplan.Div(
 				logicalplan.Convert(totalSum, arrow.PrimitiveTypes.Float64),
-				logicalplan.Convert(durationSum, arrow.PrimitiveTypes.Float64),
+				logicalplan.Literal(float64(endTime.Sub(startTime).Nanoseconds())),
 			).Alias(ValuePerSecond),
 		)
-		aggrFunctions = append(aggrFunctions, durationSum)
 	}
 
 	records := []arrow.Record{}
@@ -1465,8 +1453,8 @@ func (q *Querier) selectMerge(
 		Filter(filterExpr).
 		Project(firstProject...).
 		Aggregate(
-			aggrFunctions,
-			aggrCols,
+			columnsAggregations,
+			columnsGroupBy,
 		).
 		Project(finalProject...).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
@@ -1478,8 +1466,8 @@ func (q *Querier) selectMerge(
 		return nil, "", queryParts, err
 	}
 
-	queryParts.Meta.Timestamp = start
 	queryParts.Meta.SampleType = resultType
+	queryParts.Meta.Timestamp = start
 
 	return records, "sum(value)", queryParts, nil
 }
@@ -1551,11 +1539,12 @@ func (q *Querier) GetProfileMetadataMappings(
 	return res, nil
 }
 
-func (q *Querier) GetProfileMetadataFilenames(
+func (q *Querier) GetProfileMetadataLabels(
 	ctx context.Context,
-	query string, startTime, endTime time.Time,
+	query string,
+	startTime, endTime time.Time,
 ) ([]string, error) {
-	ctx, span := q.tracer.Start(ctx, "Querier/Filenames")
+	ctx, span := q.tracer.Start(ctx, "Querier/Labels")
 	defer span.End()
 
 	_, selectorExprs, err := QueryToFilterExprs(query)
@@ -1573,45 +1562,36 @@ func (q *Querier) GetProfileMetadataFilenames(
 		)...,
 	)
 
-	records := make(map[string]struct{})
+	seen := map[string]struct{}{}
+
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
-		Project(logicalplan.Col("stacktrace")).
-		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
-			r.Retain()
-
-			locations := r.Column(0).(*array.List)
-
-			values := locations.ListValues().(*array.Dictionary)
-
-			compactedDict, err := compactDictionary.CompactDictionary(q.pool, values)
-			if err != nil {
-				fmt.Println("failed to compact dictionary", err)
-				return err
+		Project(logicalplan.DynCol("labels")).
+		Execute(ctx, func(ctx context.Context, ar arrow.Record) error {
+			for i, field := range ar.Schema().Fields() {
+				nulls := ar.Column(i).NullN()
+				rows := int(ar.NumRows())
+				if nulls == rows {
+					// This column only has nulls.
+					// Therefore, it's not part of the label set to group by.
+					continue
+				}
+				seen[strings.TrimPrefix(field.Name, "labels.")] = struct{}{}
 			}
-			defer compactedDict.Release()
-
-			newValues := compactedDict.Dictionary().(*array.Binary)
-
-			for i := 0; i < newValues.Len(); i++ {
-				encodedLocation := newValues.Value(i)
-				symInfo, _ := profile.DecodeFunctionFilename(encodedLocation)
-				records[symInfo] = struct{}{}
-			}
-
 			return nil
 		})
 	if err != nil {
 		return nil, err
 	}
 
-	res := make([]string, 0, len(records))
-	for r := range records {
-		res = append(res, r)
+	vals := make([]string, 0, len(seen))
+	for val := range seen {
+		vals = append(vals, val)
 	}
 
-	sort.Strings(res)
-	return res, nil
+	sort.Strings(vals)
+
+	return vals, nil
 }
 
 func isNanoseconds(rt profile.ValueType) bool {

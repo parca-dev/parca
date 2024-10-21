@@ -1191,7 +1191,7 @@ func BenchmarkQuery(b *testing.B) {
 	p, err := pprofprofile.ParseData(fileContent)
 	require.NoError(b, err)
 
-	sp, err := PprofToSymbolizedProfile(profile.Meta{}, p, 0)
+	sp, err := PprofToSymbolizedProfile(profile.Meta{}, p, 0, []string{})
 	require.NoError(b, err)
 
 	b.ReportAllocs()
@@ -1218,7 +1218,7 @@ func BenchmarkQuery(b *testing.B) {
 	}
 }
 
-func PprofToSymbolizedProfile(meta profile.Meta, prof *pprofprofile.Profile, index int) (profile.Profile, error) {
+func PprofToSymbolizedProfile(meta profile.Meta, prof *pprofprofile.Profile, index int, groupBy []string) (profile.Profile, error) {
 	labelNameSet := make(map[string]struct{})
 	for _, s := range prof.Sample {
 		for k := range s.Label {
@@ -1228,6 +1228,11 @@ func PprofToSymbolizedProfile(meta profile.Meta, prof *pprofprofile.Profile, ind
 	labelNames := make([]string, 0, len(labelNameSet))
 	for l := range labelNameSet {
 		labelNames = append(labelNames, l)
+	}
+
+	groupBySet := make(map[string]struct{}, len(groupBy))
+	for _, g := range groupBy {
+		groupBySet[g] = struct{}{}
 	}
 
 	w := profile.NewWriter(memory.DefaultAllocator, labelNames)
@@ -1297,82 +1302,6 @@ func PprofToSymbolizedProfile(meta profile.Meta, prof *pprofprofile.Profile, ind
 
 	return profile.Profile{
 		Meta:    meta,
-		Samples: []arrow.Record{w.RecordBuilder.NewRecord()},
-	}, nil
-}
-
-func OldProfileToArrowProfile(p profile.OldProfile) (profile.Profile, error) {
-	labelNameSet := make(map[string]struct{})
-	for _, s := range p.Samples {
-		for k := range s.Label {
-			labelNameSet[k] = struct{}{}
-		}
-	}
-	labelNames := make([]string, 0, len(labelNameSet))
-	for l := range labelNameSet {
-		labelNames = append(labelNames, l)
-	}
-
-	w := profile.NewWriter(memory.DefaultAllocator, labelNames)
-	defer w.RecordBuilder.Release()
-	for i := range p.Samples {
-		w.Value.Append(p.Samples[i].Value)
-		w.Diff.Append(p.Samples[i].DiffValue)
-
-		for labelName, labelBuilder := range w.LabelBuildersMap {
-			if p.Samples[i].Label == nil {
-				labelBuilder.AppendNull()
-				continue
-			}
-
-			if labelValue, ok := p.Samples[i].Label[labelName]; ok {
-				labelBuilder.Append([]byte(labelValue))
-			} else {
-				labelBuilder.AppendNull()
-			}
-		}
-
-		w.LocationsList.Append(len(p.Samples[i].Locations) > 0)
-		if len(p.Samples[i].Locations) > 0 {
-			for _, loc := range p.Samples[i].Locations {
-				w.Locations.Append(true)
-				w.Addresses.Append(loc.Address)
-
-				if loc.Mapping != nil {
-					w.MappingStart.Append(loc.Mapping.Start)
-					w.MappingLimit.Append(loc.Mapping.Limit)
-					w.MappingOffset.Append(loc.Mapping.Offset)
-					w.MappingFile.Append([]byte(loc.Mapping.File))
-					w.MappingBuildID.Append([]byte(loc.Mapping.BuildId))
-				} else {
-					w.MappingStart.AppendNull()
-					w.MappingLimit.AppendNull()
-					w.MappingOffset.AppendNull()
-					w.MappingFile.AppendNull()
-					w.MappingBuildID.AppendNull()
-				}
-
-				w.Lines.Append(len(loc.Lines) > 0)
-				if len(loc.Lines) > 0 {
-					for _, line := range loc.Lines {
-						if line.Function != nil {
-							w.Line.Append(true)
-							w.LineNumber.Append(line.Line)
-							w.FunctionName.Append([]byte(line.Function.Name))
-							w.FunctionSystemName.Append([]byte(line.Function.SystemName))
-							w.FunctionFilename.Append([]byte(line.Function.Filename))
-							w.FunctionStartLine.Append(line.Function.StartLine)
-						} else {
-							w.Line.AppendNull()
-						}
-					}
-				}
-			}
-		}
-	}
-
-	return profile.Profile{
-		Meta:    p.Meta,
 		Samples: []arrow.Record{w.RecordBuilder.NewRecord()},
 	}, nil
 }

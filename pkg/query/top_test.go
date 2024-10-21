@@ -38,6 +38,7 @@ func TestGenerateTopTable(t *testing.T) {
 		profile.Meta{},
 		pp,
 		0,
+		[]string{},
 	)
 	require.NoError(t, err)
 
@@ -113,6 +114,7 @@ func TestGenerateTopTableAggregateFlat(t *testing.T) {
 			}},
 		},
 		0,
+		[]string{},
 	)
 	require.NoError(t, err)
 

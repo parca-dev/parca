@@ -48,6 +48,7 @@ func TestGenerateCallgraph(t *testing.T) {
 		},
 		prof,
 		0,
+		[]string{},
 	)
 	require.NoError(t, err)
 

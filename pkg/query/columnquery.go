@@ -47,8 +47,9 @@ type Querier interface {
 	QueryRange(ctx context.Context, query string, startTime, endTime time.Time, step time.Duration, limit uint32, sumBy []string) ([]*pb.MetricsSeries, error)
 	ProfileTypes(ctx context.Context) ([]*pb.ProfileType, error)
 	QuerySingle(ctx context.Context, query string, time time.Time, invertCallStacks bool) (profile.Profile, error)
-	QueryMerge(ctx context.Context, query string, start, end time.Time, aggregateByLabels, invertCallStacks bool) (profile.Profile, error)
+	QueryMerge(ctx context.Context, query string, start, end time.Time, aggregateByLabels []string, invertCallStacks bool) (profile.Profile, error)
 	GetProfileMetadataMappings(ctx context.Context, query string, start, end time.Time) ([]string, error)
+	GetProfileMetadataLabels(ctx context.Context, query string, start, end time.Time) ([]string, error)
 	GetProfileMetadataFilenames(ctx context.Context, query string, start, end time.Time) ([]string, error)
 }
 
@@ -237,15 +238,16 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	groupBy := req.GetGroupBy().GetFields()
 	allowedGroupBy := map[string]struct{}{
 		FlamegraphFieldFunctionName:     {},
-		FlamegraphFieldLabels:           {},
 		FlamegraphFieldLocationAddress:  {},
 		FlamegraphFieldMappingFile:      {},
 		FlamegraphFieldFunctionFileName: {},
 	}
-	groupByLabels := false
+	groupByLabels := make([]string, 0, len(groupBy))
 	for _, f := range groupBy {
-		if f == FlamegraphFieldLabels {
-			groupByLabels = true
+		if strings.HasPrefix(f, FlamegraphFieldLabels+".") {
+			// Add label to the groupByLabels passed to FrostDB
+			groupByLabels = append(groupByLabels, f)
+			continue
 		}
 		if _, allowed := allowedGroupBy[f]; !allowed {
 			return nil, status.Errorf(codes.InvalidArgument, "invalid group by field: %s", f)
@@ -293,7 +295,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 			p, err = q.selectDiff(
 				ctx,
 				req.GetDiff(),
-				groupByLabels,
+				false,
 				isInvert,
 			)
 		}
@@ -355,7 +357,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		req.GetReportType(),
 		req.GetNodeTrimThreshold(),
 		filtered,
-		groupBy,
+		groupByLabels,
 		req.GetSourceReference(),
 		source,
 		isDiff,
@@ -705,7 +707,7 @@ func (q *ColumnQueryAPI) selectSingle(ctx context.Context, s *pb.SingleProfile, 
 func (q *ColumnQueryAPI) selectMerge(
 	ctx context.Context,
 	m *pb.MergeProfile,
-	aggregateByLabels bool,
+	groupByLabels []string,
 	isInverted bool,
 ) (profile.Profile, error) {
 	p, err := q.querier.QueryMerge(
@@ -713,7 +715,7 @@ func (q *ColumnQueryAPI) selectMerge(
 		m.Query,
 		m.Start.AsTime(),
 		m.End.AsTime(),
-		aggregateByLabels,
+		groupByLabels,
 		isInverted,
 	)
 	if err != nil {
@@ -903,7 +905,7 @@ func (q *ColumnQueryAPI) selectProfileForDiff(ctx context.Context, s *pb.Profile
 	case pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED:
 		return q.selectSingle(ctx, s.GetSingle(), isInverted)
 	case pb.ProfileDiffSelection_MODE_MERGE:
-		return q.selectMerge(ctx, s.GetMerge(), aggregateByLabels, isInverted)
+		return q.selectMerge(ctx, s.GetMerge(), []string{}, isInverted)
 	default:
 		return profile.Profile{}, status.Error(codes.InvalidArgument, "unknown mode for diff profile selection")
 	}
@@ -966,10 +968,15 @@ func getMappingFilesAndFilenames(
 	q Querier,
 	query string,
 	startTime, endTime time.Time,
-) ([]string, []string, error) {
+) ([]string, []string, []string, error) {
 	mappingFiles, err := q.GetProfileMetadataMappings(ctx, query, startTime, endTime)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to get mappings: %w", err)
+	}
+
+	labels, err := q.GetProfileMetadataLabels(ctx, query, startTime, endTime)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get mappings: %w", err)
 	}
 
 	filenames, err := q.GetProfileMetadataFilenames(ctx, query, startTime, endTime)
@@ -977,7 +984,7 @@ func getMappingFilesAndFilenames(
 		return nil, nil, err
 	}
 
-	return mappingFiles, filenames, nil
+	return mappingFiles, labels, filenames, nil
 }
 
 // This is a deduplicating k-way merge.
