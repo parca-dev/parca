@@ -1484,7 +1484,7 @@
           "title": "filenames is the list of filenames in the profile"
         }
       },
-      "title": "ProfileMetadata contains metadata about the profile i.e. binaries, filenames"
+      "title": "ProfileMetadata contains metadata about the profile i.e. binaries, labels, and filenames"
     },
     "v1alpha1ProfileType": {
       "type": "object",

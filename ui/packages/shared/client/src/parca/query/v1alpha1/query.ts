@@ -1408,7 +1408,7 @@ export interface TableArrow {
     unit: string;
 }
 /**
- * ProfileMetadata contains metadata about the profile i.e. binaries, filenames
+ * ProfileMetadata contains metadata about the profile i.e. binaries, labels, and filenames
  *
  * @generated from protobuf message parca.query.v1alpha1.ProfileMetadata
  */
@@ -1422,8 +1422,7 @@ export interface ProfileMetadata {
     /**
      * labels is the list of labels in the profile
      *
-     * @deprecated
-     * @generated from protobuf field: repeated string labels = 2 [deprecated = true];
+     * @generated from protobuf field: repeated string labels = 2;
      */
     labels: string[];
     /**
@@ -4334,7 +4333,7 @@ class ProfileMetadata$Type extends MessageType<ProfileMetadata> {
                 case /* repeated string mapping_files */ 1:
                     message.mappingFiles.push(reader.string());
                     break;
-                case /* repeated string labels = 2 [deprecated = true];*/ 2:
+                case /* repeated string labels */ 2:
                     message.labels.push(reader.string());
                     break;
                 case /* repeated string filenames */ 3:
@@ -4355,7 +4354,7 @@ class ProfileMetadata$Type extends MessageType<ProfileMetadata> {
         /* repeated string mapping_files = 1; */
         for (let i = 0; i < message.mappingFiles.length; i++)
             writer.tag(1, WireType.LengthDelimited).string(message.mappingFiles[i]);
-        /* repeated string labels = 2 [deprecated = true]; */
+        /* repeated string labels = 2; */
         for (let i = 0; i < message.labels.length; i++)
             writer.tag(2, WireType.LengthDelimited).string(message.labels[i]);
         /* repeated string filenames = 3; */

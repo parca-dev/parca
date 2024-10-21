@@ -693,13 +693,13 @@ message TableArrow {
   string unit = 2;
 }
 
-// ProfileMetadata contains metadata about the profile i.e. binaries, filenames
+// ProfileMetadata contains metadata about the profile i.e. binaries, labels, and filenames
 message ProfileMetadata {
   // mapping_files is the list of binaries in the profile
   repeated string mapping_files = 1;
 
   // labels is the list of labels in the profile
-  repeated string labels = 2 [deprecated = true];
+  repeated string labels = 2;
 
   // filenames is the list of filenames in the profile
   repeated string filenames = 3;
