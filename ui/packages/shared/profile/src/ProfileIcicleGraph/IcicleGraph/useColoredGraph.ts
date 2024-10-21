@@ -25,8 +25,8 @@ import {
   setFeatures,
   useAppDispatch,
   useAppSelector,
-  type FeatureType,
-  type FeaturesMap,
+  type BinaryFeatureType,
+  type BinaryFeaturesMap,
 } from '@parca/store';
 import type {ColorProfileName} from '@parca/utilities';
 
@@ -52,7 +52,7 @@ const colorNodes = (
   mappings: Mapping[],
   locations: Location[],
   functions: ParcaFunction[],
-  features: {[key: string]: FeatureType}
+  features: {[key: string]: BinaryFeatureType}
 ): ColoredFlamegraphNode[] => {
   if (nodes === undefined) {
     return [];
@@ -85,11 +85,11 @@ const useColoredGraph = (graph: Flamegraph): ColoredFlamegraph => {
   );
   const isDarkMode = useAppSelector(selectDarkMode);
 
-  const [coloredGraph, features]: [ColoredFlamegraph, FeaturesMap] = useMemo(() => {
+  const [coloredGraph, features]: [ColoredFlamegraph, BinaryFeaturesMap] = useMemo(() => {
     if (graph.root == null) {
       return [graph as ColoredFlamegraph, {}];
     }
-    const features: FeaturesMap = {};
+    const features: BinaryFeaturesMap = {};
     const coloredGraph = {
       ...graph,
       root: {
