@@ -80,7 +80,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   const filenamesList = useFilenamesList(table);
 
   const [storeSortBy = FIELD_FUNCTION_NAME] = useURLState('sort_by');
-  const [colorBy, _] = useURLState('color_by');
+  const [colorBy, setColorBy] = useURLState('color_by');
 
   // By default, we want delta profiles (CPU) to be relatively compared.
   // For non-delta profiles, like goroutines or memory, we want the profiles to be compared absolutely.
@@ -90,6 +90,10 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   const isCompareAbsolute = compareAbsolute === 'true';
 
   const colorByValue = colorBy === undefined || colorBy === '' ? 'binary' : (colorBy as string);
+  const mappingsListCount = useMemo(
+    () => mappingsList.filter(m => m !== '').length,
+    [mappingsList]
+  );
 
   const [
     totalFormatted,
@@ -123,6 +127,14 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
 
   const loadingState =
     !loading && (arrow !== undefined || graph !== undefined) && metadataMappingFiles !== undefined;
+
+  // If there is only one mapping file, we want to color by filename by default.
+  useEffect(() => {
+    if (mappingsListCount === 1 && colorBy !== 'filename') {
+      setColorBy('filename');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mappingsListCount]);
 
   useEffect(() => {
     if (loadingState) {

@@ -259,7 +259,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	case pb.QueryRequest_MODE_MERGE:
 		switch req.GetReportType() {
 		case pb.QueryRequest_REPORT_TYPE_PROFILE_METADATA:
-			mappingFiles, labels, err := getMetadataForProfile(ctx, q.querier, req.GetMerge().Query, req.GetMerge().Start.AsTime(), req.GetMerge().End.AsTime())
+			mappingFiles, labels, err := getMappingFilesAndLabels(ctx, q.querier, req.GetMerge().Query, req.GetMerge().Start.AsTime(), req.GetMerge().End.AsTime())
 			if err != nil {
 				return nil, err
 			}
@@ -281,7 +281,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		switch req.GetReportType() {
 		case pb.QueryRequest_REPORT_TYPE_PROFILE_METADATA:
 			// When comparing, we only return the metadata for the profile we are rendering, which is the profile B.
-			mappingFiles, labels, err := getMetadataForProfile(ctx, q.querier, req.GetDiff().B.GetMerge().GetQuery(), req.GetDiff().B.GetMerge().Start.AsTime(), req.GetDiff().B.GetMerge().End.AsTime())
+			mappingFiles, labels, err := getMappingFilesAndLabels(ctx, q.querier, req.GetDiff().B.GetMerge().GetQuery(), req.GetDiff().B.GetMerge().Start.AsTime(), req.GetDiff().B.GetMerge().End.AsTime())
 			if err != nil {
 				return nil, err
 			}
@@ -962,7 +962,7 @@ func sliceRecord(r arrow.Record, indices []int64) []arrow.Record {
 	return slices
 }
 
-func getMetadataForProfile(
+func getMappingFilesAndLabels(
 	ctx context.Context,
 	q Querier,
 	query string,
