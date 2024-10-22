@@ -207,10 +207,6 @@ export const ProfileViewWithData = ({
           profileMetadataResponse?.report.oneofKind === 'profileMetadata'
             ? profileMetadataResponse?.report?.profileMetadata?.labels
             : undefined,
-        metadataFilenames:
-          profileMetadataResponse?.report.oneofKind === 'profileMetadata'
-            ? profileMetadataResponse?.report?.profileMetadata?.filenames
-            : undefined,
         metadataLoading: profileMetadataLoading,
       }}
       topTableData={{

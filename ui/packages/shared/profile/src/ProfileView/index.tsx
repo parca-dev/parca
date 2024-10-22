@@ -57,7 +57,6 @@ export interface FlamegraphData {
   filtered?: bigint;
   error?: any;
   metadataMappingFiles?: string[];
-  metadataFilenames?: string[];
   metadataLoading: boolean;
   metadataLabels?: string[];
 }
@@ -233,7 +232,6 @@ export const ProfileView = ({
                   : 0
               }
               metadataMappingFiles={flamegraphData.metadataMappingFiles}
-              metadataFilenames={flamegraphData.metadataFilenames}
               metadataLoading={flamegraphData.metadataLoading}
             />
           </ConditionalWrapper>

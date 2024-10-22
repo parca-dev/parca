@@ -44,8 +44,8 @@ const useMappingList = (mappings: string[] | undefined): string[] => {
   return mappingsList;
 };
 
-export const useFilenamesList = (table: Table | undefined): string[] => {
-  if (table === undefined) {
+export const useFilenamesList = (table: Table | null): string[] => {
+  if (table === null) {
     return [];
   }
   const filenamesDict: Vector<Dictionary> | null = table.getChild(FIELD_FUNCTION_FILE_NAME);

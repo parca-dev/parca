@@ -13,6 +13,7 @@
 
 import React, {useEffect, useMemo, useState} from 'react';
 
+import {Table, tableFromIPC} from 'apache-arrow';
 import {AnimatePresence, motion} from 'framer-motion';
 
 import {Flamegraph, FlamegraphArrow} from '@parca/client';
@@ -25,7 +26,7 @@ import DiffLegend from '../components/DiffLegend';
 import {IcicleGraph} from './IcicleGraph';
 import {FIELD_FUNCTION_NAME, IcicleGraphArrow} from './IcicleGraphArrow';
 import ColorStackLegend from './IcicleGraphArrow/ColorStackLegend';
-import useMappingList from './IcicleGraphArrow/useMappingList';
+import useMappingList, {useFilenamesList} from './IcicleGraphArrow/useMappingList';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 
@@ -44,7 +45,6 @@ interface ProfileIcicleGraphProps {
   setActionButtons?: (buttons: React.JSX.Element) => void;
   error?: any;
   isHalfScreen: boolean;
-  metadataFilenames?: string[];
   metadataMappingFiles?: string[];
   metadataLoading?: boolean;
 }
@@ -66,15 +66,18 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   width,
   isHalfScreen,
   metadataMappingFiles,
-  metadataFilenames,
 }: ProfileIcicleGraphProps): JSX.Element {
   const {onError, authenticationErrorMessage, isDarkMode} = useParcaContext();
   const {compareMode} = useProfileViewContext();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const isColorStackLegendEnabled = selectQueryParam('color_stack_legend') === 'true';
 
+  const table: Table<any> | null = useMemo(() => {
+    return arrow !== undefined ? tableFromIPC(arrow.record) : null;
+  }, [arrow]);
+
   const mappingsList = useMappingList(metadataMappingFiles);
-  const filenamesList = useMappingList(metadataFilenames);
+  const filenamesList = useFilenamesList(table);
 
   const [storeSortBy = FIELD_FUNCTION_NAME] = useURLState('sort_by');
   const [colorBy, _] = useURLState('color_by');

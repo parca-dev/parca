@@ -50,7 +50,6 @@ type Querier interface {
 	QueryMerge(ctx context.Context, query string, start, end time.Time, aggregateByLabels []string, invertCallStacks bool) (profile.Profile, error)
 	GetProfileMetadataMappings(ctx context.Context, query string, start, end time.Time) ([]string, error)
 	GetProfileMetadataLabels(ctx context.Context, query string, start, end time.Time) ([]string, error)
-	GetProfileMetadataFilenames(ctx context.Context, query string, start, end time.Time) ([]string, error)
 }
 
 var (
@@ -260,14 +259,13 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	case pb.QueryRequest_MODE_MERGE:
 		switch req.GetReportType() {
 		case pb.QueryRequest_REPORT_TYPE_PROFILE_METADATA:
-			mappingFiles, labels, filenames, err := getMetadataForProfile(ctx, q.querier, req.GetMerge().Query, req.GetMerge().Start.AsTime(), req.GetMerge().End.AsTime())
+			mappingFiles, labels, err := getMetadataForProfile(ctx, q.querier, req.GetMerge().Query, req.GetMerge().Start.AsTime(), req.GetMerge().End.AsTime())
 			if err != nil {
 				return nil, err
 			}
 
 			profileMetadata = &pb.ProfileMetadata{
 				MappingFiles: mappingFiles,
-				Filenames:    filenames,
 				Labels:       labels,
 			}
 		default:
@@ -283,14 +281,13 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		switch req.GetReportType() {
 		case pb.QueryRequest_REPORT_TYPE_PROFILE_METADATA:
 			// When comparing, we only return the metadata for the profile we are rendering, which is the profile B.
-			mappingFiles, labels, filenames, err := getMetadataForProfile(ctx, q.querier, req.GetDiff().B.GetMerge().GetQuery(), req.GetDiff().B.GetMerge().Start.AsTime(), req.GetDiff().B.GetMerge().End.AsTime())
+			mappingFiles, labels, err := getMetadataForProfile(ctx, q.querier, req.GetDiff().B.GetMerge().GetQuery(), req.GetDiff().B.GetMerge().Start.AsTime(), req.GetDiff().B.GetMerge().End.AsTime())
 			if err != nil {
 				return nil, err
 			}
 
 			profileMetadata = &pb.ProfileMetadata{
 				MappingFiles: mappingFiles,
-				Filenames:    filenames,
 				Labels:       labels,
 			}
 		default:
@@ -970,23 +967,18 @@ func getMetadataForProfile(
 	q Querier,
 	query string,
 	startTime, endTime time.Time,
-) ([]string, []string, []string, error) {
+) ([]string, []string, error) {
 	mappingFiles, err := q.GetProfileMetadataMappings(ctx, query, startTime, endTime)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to get mappings: %w", err)
+		return nil, nil, fmt.Errorf("failed to get mappings: %w", err)
 	}
 
 	labels, err := q.GetProfileMetadataLabels(ctx, query, startTime, endTime)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to get labels: %w", err)
+		return nil, nil, fmt.Errorf("failed to get labels: %w", err)
 	}
 
-	filenames, err := q.GetProfileMetadataFilenames(ctx, query, startTime, endTime)
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to get filenames: %w", err)
-	}
-
-	return mappingFiles, labels, filenames, nil
+	return mappingFiles, labels, nil
 }
 
 // This is a deduplicating k-way merge.

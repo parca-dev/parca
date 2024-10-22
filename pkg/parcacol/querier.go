@@ -1594,69 +1594,6 @@ func (q *Querier) GetProfileMetadataLabels(
 	return vals, nil
 }
 
-func (q *Querier) GetProfileMetadataFilenames(
-	ctx context.Context,
-	query string, startTime, endTime time.Time,
-) ([]string, error) {
-	ctx, span := q.tracer.Start(ctx, "Querier/Filenames")
-	defer span.End()
-
-	_, selectorExprs, err := QueryToFilterExprs(query)
-	if err != nil {
-		return nil, err
-	}
-
-	start := timestamp.FromTime(startTime)
-	end := timestamp.FromTime(endTime)
-	filterExpr := logicalplan.And(
-		append(
-			selectorExprs,
-			logicalplan.Col(profile.ColumnTimestamp).GtEq(logicalplan.Literal(start)),
-			logicalplan.Col(profile.ColumnTimestamp).LtEq(logicalplan.Literal(end)),
-		)...,
-	)
-
-	records := make(map[string]struct{})
-	err = q.engine.ScanTable(q.tableName).
-		Filter(filterExpr).
-		Project(logicalplan.Col("stacktrace")).
-		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
-			r.Retain()
-
-			locations := r.Column(0).(*array.List)
-
-			values := locations.ListValues().(*array.Dictionary)
-
-			compactedDict, err := compactDictionary.CompactDictionary(q.pool, values)
-			if err != nil {
-				fmt.Println("failed to compact dictionary", err)
-				return err
-			}
-			defer compactedDict.Release()
-
-			newValues := compactedDict.Dictionary().(*array.Binary)
-
-			for i := 0; i < newValues.Len(); i++ {
-				encodedLocation := newValues.Value(i)
-				symInfo, _ := profile.DecodeFunctionFilename(encodedLocation)
-				records[symInfo] = struct{}{}
-			}
-
-			return nil
-		})
-	if err != nil {
-		return nil, err
-	}
-
-	res := make([]string, 0, len(records))
-	for r := range records {
-		res = append(res, r)
-	}
-
-	sort.Strings(res)
-	return res, nil
-}
-
 func isNanoseconds(rt profile.ValueType) bool {
 	return rt.Type == "cpu" && rt.Unit == "nanoseconds"
 }
