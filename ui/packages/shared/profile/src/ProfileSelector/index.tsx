@@ -377,6 +377,7 @@ const ProfileSelector = ({
               <label className="text-xs">Sum by</label>
             </div>
             <Select
+              id="h-sum-by-selector"
               defaultValue={[]}
               isMulti
               name="colors"
