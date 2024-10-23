@@ -121,7 +121,7 @@ const LabelSelector: React.FC<LabelSelectorProps> = ({
         name="labels"
         options={labels.map(label => ({label, value: `${FIELD_LABELS}.${label}`}))}
         className="parca-select-container text-sm w-full border-gray-300 border rounded-md"
-        classNamePrefix="parca-select parca-groupby-label"
+        classNamePrefix="parca-select"
         value={groupBy
           .filter(l => l.startsWith(FIELD_LABELS))
           .map(l => ({value: l, label: l.slice(FIELD_LABELS.length + 1)}))}
@@ -248,11 +248,11 @@ const GroupByDropdown: React.FC<GroupByDropdownProps> = ({
                       <div className="flex gap-2 flex-wrap">
                         <span className="text-gray-500 dark:text-gray-200">Selected labels:</span>
 
-                        <div className="flex">
+                        <div className="flex flex-wrap gap-3">
                           {selectedLabels.map(label => (
                             <span
                               key={label}
-                              className="mr-2 px-3 py-1 text-xs text-gray-700 dark:text-gray-200 bg-gray-200 rounded-md dark:bg-gray-900"
+                              className="mr-2 px-3 py-1 text-xs text-gray-700 dark:text-gray-200 bg-gray-200 rounded-md dark:bg-gray-800"
                             >
                               {label}
                             </span>
