@@ -222,7 +222,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
   ];
 
   return (
-    <div className="relative inline-block text-left">
+    <div className="relative inline-block text-left" id="h-visualisation-toolbar-actions">
       <Menu>
         {({open, close}) => (
           <>

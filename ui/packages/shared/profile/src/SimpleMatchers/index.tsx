@@ -295,7 +295,10 @@ const SimpleMatchers = ({
   const isRowRegex = (row: QueryRow): boolean => row.operator === '=~' || row.operator === '!~';
 
   return (
-    <div className={`flex items-center gap-3 ${maxWidthInPixels} w-full flex-wrap`}>
+    <div
+      className={`flex items-center gap-3 ${maxWidthInPixels} w-full flex-wrap`}
+      id="simple-matchers"
+    >
       {visibleRows.map((row, index) => (
         <div key={index} className="flex items-center">
           <Select
