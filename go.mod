@@ -34,7 +34,7 @@ require (
 	github.com/planetscale/vtprotobuf v0.6.1-0.20241011083415-71c992bc3c87
 	github.com/polarsignals/frostdb v0.0.0-20240725052109-695fa06b0eb1
 	github.com/polarsignals/iceberg-go v0.0.0-20240502213135-2ee70b71e76b
-	github.com/prometheus/client_golang v1.20.4
+	github.com/prometheus/client_golang v1.20.5
 	github.com/prometheus/common v0.60.0
 	github.com/prometheus/prometheus v0.54.1
 	github.com/stretchr/testify v1.9.0
