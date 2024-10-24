@@ -975,7 +975,7 @@ func getMappingFilesAndLabels(
 
 	labels, err := q.GetProfileMetadataLabels(ctx, query, startTime, endTime)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get mappings: %w", err)
+		return nil, nil, fmt.Errorf("failed to get labels: %w", err)
 	}
 
 	return mappingFiles, labels, nil

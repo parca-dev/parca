@@ -27,6 +27,7 @@ import {
   FIELD_CHILDREN,
   FIELD_CUMULATIVE,
   FIELD_DIFF,
+  FIELD_FUNCTION_FILE_NAME,
   FIELD_FUNCTION_NAME,
   FIELD_MAPPING_FILE,
 } from './index';
@@ -38,7 +39,8 @@ export const RowHeight = 26;
 interface IcicleGraphNodesProps {
   table: Table<any>;
   row: number;
-  mappingColors: mappingColors;
+  colors: colorByColors;
+  colorBy: string;
   childRows: number[];
   x: number;
   y: number;
@@ -67,7 +69,8 @@ interface IcicleGraphNodesProps {
 export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
   table,
   childRows,
-  mappingColors,
+  colors,
+  colorBy,
   x,
   y,
   xScale,
@@ -114,7 +117,8 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
         key={`node-${level}-${i}`}
         table={table}
         row={child}
-        mappingColors={mappingColors}
+        colors={colors}
+        colorBy={colorBy}
         x={xStart}
         y={0}
         totalWidth={totalWidth}
@@ -145,7 +149,7 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
   return <g transform={`translate(${x}, ${y})`}>{childrenElements}</g>;
 });
 
-export interface mappingColors {
+export interface colorByColors {
   [key: string]: string;
 }
 
@@ -158,7 +162,8 @@ interface IcicleNodeProps {
   level: number;
   table: Table<any>;
   row: number;
-  mappingColors: mappingColors;
+  colors: colorByColors;
+  colorBy: string;
   path: string[];
   total: bigint;
   setCurPath: (path: string[]) => void;
@@ -192,7 +197,8 @@ const fadedIcicleRectStyles = {
 export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   table,
   row,
-  mappingColors,
+  colors,
+  colorBy,
   x,
   y,
   height,
@@ -223,12 +229,28 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const functionNameColumn = table.getChild(FIELD_FUNCTION_NAME);
   const cumulativeColumn = table.getChild(FIELD_CUMULATIVE);
   const diffColumn = table.getChild(FIELD_DIFF);
+  const filenameColumn = table.getChild(FIELD_FUNCTION_FILE_NAME);
   // get the actual values from the columns
   const mappingFile: string | null = arrowToString(mappingColumn?.get(row));
   const functionName: string | null = arrowToString(functionNameColumn?.get(row));
   const cumulative = cumulativeColumn?.get(row) !== null ? BigInt(cumulativeColumn?.get(row)) : 0n;
   const diff: bigint | null = diffColumn?.get(row) !== null ? BigInt(diffColumn?.get(row)) : null;
   const childRows: number[] = Array.from(table.getChild(FIELD_CHILDREN)?.get(row) ?? []);
+  const filename: string | null = arrowToString(filenameColumn?.get(row));
+
+  const colorAttribute: string | null = useMemo(() => {
+    let attr: string | null | undefined;
+
+    if (colorBy === 'filename') {
+      attr = filename;
+    } else if (colorBy === 'binary') {
+      attr = mappingFile;
+    }
+
+    return attr ?? null; // Provide a default value of null if attr is undefined
+  }, [colorBy, filename, mappingFile]);
+
+  const colorsMap = colors;
 
   const highlightedNodes = useMemo(() => {
     if (!highlightSimilarStacksPreference) {
@@ -280,7 +302,6 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
         if (aDiff !== null) {
           const cumulative: bigint =
             cumulativeColumn?.get(a) !== null ? BigInt(cumulativeColumn?.get(a)) : 0n;
-          console.log(typeof cumulative, typeof aDiff);
           const prev: bigint = cumulative - aDiff;
           aRatio = Number(aDiff) / Number(prev);
         }
@@ -315,8 +336,8 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     compareMode,
     cumulative,
     diff,
-    mappingColors,
-    mappingFile,
+    colorsMap,
+    colorAttribute,
   });
   const name = useMemo(() => {
     return isRoot ? 'root' : nodeLabel(table, row, level, binaries.length > 1);
@@ -401,7 +422,8 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
         <IcicleGraphNodes
           table={table}
           row={row}
-          mappingColors={mappingColors}
+          colors={colors}
+          colorBy={colorBy}
           childRows={childRows}
           x={x}
           y={RowHeight}

@@ -13,6 +13,7 @@
 
 import React, {useEffect, useMemo, useState} from 'react';
 
+import {Table, tableFromIPC} from 'apache-arrow';
 import {AnimatePresence, motion} from 'framer-motion';
 
 import {Flamegraph, FlamegraphArrow} from '@parca/client';
@@ -25,7 +26,7 @@ import DiffLegend from '../components/DiffLegend';
 import {IcicleGraph} from './IcicleGraph';
 import {FIELD_FUNCTION_NAME, IcicleGraphArrow} from './IcicleGraphArrow';
 import ColorStackLegend from './IcicleGraphArrow/ColorStackLegend';
-import useMappingList from './IcicleGraphArrow/useMappingList';
+import useMappingList, {useFilenamesList} from './IcicleGraphArrow/useMappingList';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 
@@ -44,8 +45,8 @@ interface ProfileIcicleGraphProps {
   setActionButtons?: (buttons: React.JSX.Element) => void;
   error?: any;
   isHalfScreen: boolean;
-  mappings?: string[];
-  mappingsLoading?: boolean;
+  metadataMappingFiles?: string[];
+  metadataLoading?: boolean;
 }
 
 const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
@@ -64,16 +65,22 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   error,
   width,
   isHalfScreen,
-  mappings,
+  metadataMappingFiles,
 }: ProfileIcicleGraphProps): JSX.Element {
   const {onError, authenticationErrorMessage, isDarkMode} = useParcaContext();
   const {compareMode} = useProfileViewContext();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const isColorStackLegendEnabled = selectQueryParam('color_stack_legend') === 'true';
 
-  const mappingsList = useMappingList(mappings);
+  const table: Table<any> | null = useMemo(() => {
+    return arrow !== undefined ? tableFromIPC(arrow.record) : null;
+  }, [arrow]);
+
+  const mappingsList = useMappingList(metadataMappingFiles);
+  const filenamesList = useFilenamesList(table);
 
   const [storeSortBy = FIELD_FUNCTION_NAME] = useURLState('sort_by');
+  const [colorBy, setColorBy] = useURLState('color_by');
 
   // By default, we want delta profiles (CPU) to be relatively compared.
   // For non-delta profiles, like goroutines or memory, we want the profiles to be compared absolutely.
@@ -81,6 +88,12 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
 
   const [compareAbsolute = compareAbsoluteDefault] = useURLState('compare_absolute');
   const isCompareAbsolute = compareAbsolute === 'true';
+
+  const colorByValue = colorBy === undefined || colorBy === '' ? 'binary' : (colorBy as string);
+  const mappingsListCount = useMemo(
+    () => mappingsList.filter(m => m !== '').length,
+    [mappingsList]
+  );
 
   const [
     totalFormatted,
@@ -113,7 +126,15 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   }, [graph, arrow, filtered, total]);
 
   const loadingState =
-    !loading && (arrow !== undefined || graph !== undefined) && mappings !== undefined;
+    !loading && (arrow !== undefined || graph !== undefined) && metadataMappingFiles !== undefined;
+
+  // If there is only one mapping file, we want to color by filename by default.
+  useEffect(() => {
+    if (mappingsListCount === 1 && colorBy !== 'filename') {
+      setColorBy('filename');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mappingsListCount]);
 
   useEffect(() => {
     if (loadingState) {
@@ -211,7 +232,11 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
       >
         {compareMode ? <DiffLegend /> : null}
         {isColorStackLegendEnabled && (
-          <ColorStackLegend compareMode={compareMode} mappings={mappings} loading={isLoading} />
+          <ColorStackLegend
+            compareMode={compareMode}
+            mappings={colorByValue === 'binary' ? mappingsList : filenamesList}
+            loading={isLoading}
+          />
         )}
         <div className="min-h-48" id="h-icicle-graph">
           <>{icicleGraph}</>
