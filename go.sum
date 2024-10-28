@@ -64,8 +64,8 @@ github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible/go
 github.com/Microsoft/go-winio v0.6.1 h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migciow=
 github.com/Microsoft/go-winio v0.6.1/go.mod h1:LRdKpFKfdobln8UmuiYcKPot9D2v6svN5+sAH+4kjUM=
 github.com/QcloudApi/qcloud_sign_golang v0.0.0-20141224014652-e4130a326409/go.mod h1:1pk82RBxDY/JZnPQrtqHlUFfCctgdorsd9M06fMynOM=
-github.com/RoaringBitmap/roaring v1.9.3 h1:t4EbC5qQwnisr5PrP9nt0IRhRTb9gMUgQF4t4S2OByM=
-github.com/RoaringBitmap/roaring v1.9.3/go.mod h1:6AXUsoIEzDTFFQCe1RbGA6uFONMhvejWj5rqITANK90=
+github.com/RoaringBitmap/roaring v1.9.4 h1:yhEIoH4YezLYT04s1nHehNO64EKFTop/wBhxv2QzDdQ=
+github.com/RoaringBitmap/roaring v1.9.4/go.mod h1:6AXUsoIEzDTFFQCe1RbGA6uFONMhvejWj5rqITANK90=
 github.com/Shopify/sarama v1.19.0/go.mod h1:FVkBWblsNy7DGZRfXLU0O9RCGt5g3g3yEuWXgklEdEo=
 github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMxUHB2q5Ap20/P/eIdh4G0pI=
 github.com/VividCortex/gohistogram v1.0.0/go.mod h1:Pf5mBqqDxYaXu3hDrrU+w6nw50o/4+TcAqDqk/vUH7g=
@@ -724,8 +724,8 @@ github.com/planetscale/vtprotobuf v0.6.1-0.20241011083415-71c992bc3c87/go.mod h1
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/polarsignals/frostdb v0.0.0-20240725052109-695fa06b0eb1 h1:iDVYWCmzfUfe5fXEMz9hS7eqJ2AEaYE1RITjs/4Gzqg=
-github.com/polarsignals/frostdb v0.0.0-20240725052109-695fa06b0eb1/go.mod h1:Yi3xaZgm67l5p9Z94nSk62qvCj2+az+wEgghsqjrW9g=
+github.com/polarsignals/frostdb v0.0.0-20240823114939-ecd6b80402ae h1:S6I0pqMvDah/rWLLC1cIcsVjLe0nHF9AQPEYx5LKZwI=
+github.com/polarsignals/frostdb v0.0.0-20240823114939-ecd6b80402ae/go.mod h1:gF12QGLNx2JFGMMQQhur6mQCV+1KV8qEbd/JCWIAso4=
 github.com/polarsignals/iceberg-go v0.0.0-20240502213135-2ee70b71e76b h1:Dbm5itapR0uYIMujR8OntWpDJ/nm5OM6JiaKauLcZ4Y=
 github.com/polarsignals/iceberg-go v0.0.0-20240502213135-2ee70b71e76b/go.mod h1:5T9ChEZjRNhAGGLwH1cqzDA7wXB84SmU+WkXQr/ZAjo=
 github.com/polarsignals/wal v0.0.0-20240619104840-9da940027f9c h1:ReFgEXqZ9/y+/9ZdNHOa1L62wqt8mWqoqrWutWj2x+A=

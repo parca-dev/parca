@@ -32,7 +32,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/parquet-go/parquet-go v0.23.0
 	github.com/planetscale/vtprotobuf v0.6.1-0.20241011083415-71c992bc3c87
-	github.com/polarsignals/frostdb v0.0.0-20240725052109-695fa06b0eb1
+	github.com/polarsignals/frostdb v0.0.0-20240823114939-ecd6b80402ae
 	github.com/polarsignals/iceberg-go v0.0.0-20240502213135-2ee70b71e76b
 	github.com/prometheus/client_golang v1.20.5
 	github.com/prometheus/common v0.60.1
@@ -85,7 +85,7 @@ require (
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.48.1 // indirect
 	github.com/JohnCGriffin/overflow v0.0.0-20211019200055-46fa312c352c // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
-	github.com/RoaringBitmap/roaring v1.9.3 // indirect
+	github.com/RoaringBitmap/roaring v1.9.4 // indirect
 	github.com/aliyun/aliyun-oss-go-sdk v2.2.2+incompatible // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
