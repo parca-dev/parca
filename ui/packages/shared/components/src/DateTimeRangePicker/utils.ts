@@ -172,8 +172,9 @@ export class DateTimeRange {
     }
     const formattedFrom = formatDateStringForUI(this.from);
     const formattedTo = formatDateStringForUI(this.to)
-      .replace(getUtcStringForDate(this.from as AbsoluteDate, 'll'), '')
+      .replace(getUtcStringForDate(this.from as AbsoluteDate, 'YYYY-MM-DD'), '')
       .trim();
+
     return `${formattedFrom} → ${formattedTo}`;
   }
 
@@ -336,7 +337,7 @@ const getRelativeDateMs = (date: RelativeDate): number => {
   }
 };
 
-export const getUtcStringForDate = (date: AbsoluteDate, format = 'lll'): string => {
+export const getUtcStringForDate = (date: AbsoluteDate, format = 'YYYY-MM-DD HH:mm:ss'): string => {
   return moment
     .tz(date.getTime().toISOString(), Intl.DateTimeFormat().resolvedOptions().timeZone)
     .utc()
@@ -346,7 +347,7 @@ export const getUtcStringForDate = (date: AbsoluteDate, format = 'lll'): string 
 export const getStringForDateInTimezone = (
   date: AbsoluteDate,
   timezone: string,
-  format = 'lll'
+  format = 'YYYY-MM-DD HH:mm:ss'
 ): string => {
   return moment.tz(date.getTime().toISOString(), timezone).format(format);
 };
