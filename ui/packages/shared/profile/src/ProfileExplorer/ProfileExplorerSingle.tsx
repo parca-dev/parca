@@ -37,21 +37,10 @@ const ProfileExplorerSingle = ({
   navigateTo,
 }: ProfileExplorerSingleProps): JSX.Element => {
   const [showMetricsGraph, setShowMetricsGraph] = useState(true);
-  const [showButton, setShowButton] = useState(false);
 
   return (
     <>
-      <div
-        className="relative"
-        onMouseEnter={() => {
-          if (!showMetricsGraph) return;
-          setShowButton(true);
-        }}
-        onMouseLeave={() => {
-          if (!showMetricsGraph) return;
-          setShowButton(false);
-        }}
-      >
+      <div className="relative">
         <ProfileSelector
           queryClient={queryClient}
           querySelection={query}
@@ -64,7 +53,6 @@ const ProfileExplorerSingle = ({
           navigateTo={navigateTo}
           suffix="_a"
           showMetricsGraph={showMetricsGraph}
-          displayHideMetricsGraphButton={showButton}
           setDisplayHideMetricsGraphButton={setShowMetricsGraph}
         />
       </div>
