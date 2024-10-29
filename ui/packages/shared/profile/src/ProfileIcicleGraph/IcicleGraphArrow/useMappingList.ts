@@ -13,7 +13,12 @@
 
 import {useMemo} from 'react';
 
+import {Dictionary, Table, Vector} from 'apache-arrow';
+
 import {getLastItem} from '@parca/utilities';
+
+import {FIELD_FUNCTION_FILE_NAME} from './index';
+import {arrowToString} from './utils';
 
 const useMappingList = (mappings: string[] | undefined): string[] => {
   const mappingsList = useMemo(() => {
@@ -37,6 +42,33 @@ const useMappingList = (mappings: string[] | undefined): string[] => {
   }, [mappings]);
 
   return mappingsList;
+};
+
+export const useFilenamesList = (table: Table | null): string[] => {
+  if (table === null) {
+    return [];
+  }
+  const filenamesDict: Vector<Dictionary> | null = table.getChild(FIELD_FUNCTION_FILE_NAME);
+  const filenames =
+    filenamesDict?.data
+      .map(file => {
+        if (file.dictionary == null) {
+          return [];
+        }
+        const len = file.dictionary.length;
+        const entries: string[] = [];
+        for (let i = 0; i < len; i++) {
+          const fn = arrowToString(file.dictionary.get(i));
+          entries.push(getLastItem(fn) ?? '');
+        }
+        return entries;
+      })
+      .flat() ?? [];
+
+  filenames.push('');
+
+  filenames.sort((a, b) => a.localeCompare(b));
+  return filenames;
 };
 
 export default useMappingList;

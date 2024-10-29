@@ -35,7 +35,12 @@ const ColorStackLegend = ({mappings, compareMode = false, loading}: Props): Reac
   const [colorProfileName] = useUserPreference<string>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
-  const [currentSearchString, setSearchString] = useURLState<string[]>('binary_frame_filter', {
+
+  const [colorByValue, _] = useURLState('color_by');
+
+  const colorBy = colorByValue === 'binary' || colorByValue === undefined ? 'binary' : 'filename';
+
+  const [currentSearchString, setSearchString] = useURLState<string[]>(`binary_frame_filter`, {
     alwaysReturnArray: true,
     defaultValue: [],
   });
@@ -88,7 +93,7 @@ const ColorStackLegend = ({mappings, compareMode = false, loading}: Props): Reac
               }
             )}
             onClick={() => {
-              if (!filteringAllowed || isHighlighted) {
+              if (!filteringAllowed || isHighlighted || colorBy !== 'binary') {
                 return;
               }
 

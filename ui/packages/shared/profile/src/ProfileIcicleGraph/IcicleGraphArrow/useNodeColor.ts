@@ -14,7 +14,7 @@
 import {EVERYTHING_ELSE} from '@parca/store';
 import {diffColor, getLastItem} from '@parca/utilities';
 
-interface mappingColors {
+interface colors {
   [key: string]: string;
 }
 
@@ -23,8 +23,8 @@ interface Props {
   compareMode: boolean;
   cumulative: bigint;
   diff: bigint | null;
-  mappingColors: mappingColors;
-  mappingFile: string | null;
+  colorsMap: colors;
+  colorAttribute: string | null;
 }
 
 const useNodeColor = ({
@@ -32,14 +32,14 @@ const useNodeColor = ({
   compareMode,
   cumulative,
   diff,
-  mappingColors,
-  mappingFile,
+  colorsMap,
+  colorAttribute,
 }: Props): string => {
   if (compareMode) {
     return diffColor(diff ?? 0n, cumulative, isDarkMode);
   }
 
-  return mappingColors[getLastItem(mappingFile ?? '') ?? EVERYTHING_ELSE];
+  return colorsMap[getLastItem(colorAttribute ?? '') ?? EVERYTHING_ELSE];
 };
 
 export default useNodeColor;

@@ -34,8 +34,9 @@ import GraphTooltipArrowContent from '../../GraphTooltipArrow/Content';
 import {DockedGraphTooltip} from '../../GraphTooltipArrow/DockedGraphTooltip';
 import {useProfileViewContext} from '../../ProfileView/ProfileViewContext';
 import ContextMenu from './ContextMenu';
-import {IcicleNode, RowHeight, mappingColors} from './IcicleGraphNodes';
-import {arrowToString, extractFeature} from './utils';
+import {IcicleNode, RowHeight, colorByColors} from './IcicleGraphNodes';
+import {useFilenamesList} from './useMappingList';
+import {arrowToString, extractFeature, extractFilenameFeature} from './utils';
 
 export const FIELD_LABELS_ONLY = 'labels_only';
 export const FIELD_MAPPING_FILE = 'mapping_file';
@@ -72,11 +73,25 @@ export const getMappingColors = (
   mappingsList: string[],
   isDarkMode: boolean,
   currentColorProfile: ColorConfig
-): mappingColors => {
+): colorByColors => {
   const mappingFeatures = mappingsList.map(mapping => extractFeature(mapping));
 
-  const colors: mappingColors = {};
+  const colors: colorByColors = {};
   Object.entries(mappingFeatures).forEach(([_, feature]) => {
+    colors[feature.name] = getColorForFeature(feature.name, isDarkMode, currentColorProfile.colors);
+  });
+  return colors;
+};
+
+export const getFilenameColors = (
+  filenamesList: string[],
+  isDarkMode: boolean,
+  currentColorProfile: ColorConfig
+): colorByColors => {
+  const filenameFeatures = filenamesList.map(filename => extractFilenameFeature(filename));
+
+  const colors: colorByColors = {};
+  Object.entries(filenameFeatures).forEach(([_, feature]) => {
     colors[feature.name] = getColorForFeature(feature.name, isDarkMode, currentColorProfile.colors);
   });
   return colors;
@@ -123,6 +138,11 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const currentColorProfile = useCurrentColorProfile();
   const colorForSimilarNodes = currentColorProfile.colorForSimilarNodes;
 
+  const [colorBy, _] = useURLState('color_by');
+  const colorByValue = colorBy === undefined || colorBy === '' ? 'binary' : (colorBy as string);
+
+  const filenamesList = useFilenamesList(table);
+
   const mappingsList = useMemo(() => {
     // Read the mappings from the dictionary that contains all mapping strings.
     // This is great, as might only have a dozen or so mappings,
@@ -152,10 +172,24 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     return mappings;
   }, [table]);
 
+  const filenameColors = useMemo(() => {
+    const colors = getFilenameColors(filenamesList, isDarkMode, currentColorProfile);
+    return colors;
+  }, [isDarkMode, filenamesList, currentColorProfile]);
+
   const mappingColors = useMemo(() => {
     const colors = getMappingColors(mappingsList, isDarkMode, currentColorProfile);
     return colors;
   }, [isDarkMode, mappingsList, currentColorProfile]);
+
+  const colorByList = {
+    filename: filenameColors,
+    binary: mappingColors,
+  };
+
+  type ColorByKey = keyof typeof colorByList;
+
+  const colorByColors: colorByColors = colorByList[colorByValue as ColorByKey];
 
   useEffect(() => {
     if (ref.current != null) {
@@ -231,7 +265,8 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
             <IcicleNode
               table={table}
               row={0} // root is always row 0 in the arrow record
-              mappingColors={mappingColors}
+              colors={colorByColors}
+              colorBy={colorByValue}
               x={0}
               y={0}
               totalWidth={width ?? 1}
@@ -266,7 +301,8 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     height,
     displayMenu,
     table,
-    mappingColors,
+    colorByColors,
+    colorByValue,
     setCurPath,
     curPath,
     total,
