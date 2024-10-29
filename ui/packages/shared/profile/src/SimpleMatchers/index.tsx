@@ -322,7 +322,9 @@ const SimpleMatchers = ({
             placeholder="Select label value"
             selectedKey={row.labelValue}
             className="rounded-none ring-0 focus:ring-0 outline-none max-w-48"
-            optionsClassname="max-w-[300px]"
+            optionsClassname={cx('max-w-[300px]', {
+              'w-[300px]': isRowRegex(row),
+            })}
             searchable={true}
             disabled={row.labelName === ''}
             loading={row.isLoading}

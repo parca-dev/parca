@@ -70,7 +70,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const optionsRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchInputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const optionRefs = useRef<Array<HTMLElement | null>>([]);
 
   const filteredItems = searchable
@@ -208,21 +208,36 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
           role="listbox"
         >
           {searchable && (
-            <div className="sticky h-[45px] z-10 top-[-5px] border-b border-gray-200">
+            <div
+              className={cx(
+                'sticky z-10 top-[-5px] border-b border-gray-200 w-auto max-w-full',
+                editable ? 'h-full min-h-[50px]' : 'h-[45px]'
+              )}
+            >
               <div className="relative h-full">
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  className="w-full px-4 h-full text-sm border-none rounded-none ring-0 outline-none bg-gray-50 dark:bg-gray-800 dark:text-white"
-                  placeholder={editable ? 'Type a RegEx to add' : 'Search...'}
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                />
+                {editable ? (
+                  <textarea
+                    ref={searchInputRef as React.LegacyRef<HTMLTextAreaElement>}
+                    className="w-full px-4 h-full text-sm border-none rounded-none ring-0 outline-none bg-gray-50 dark:bg-gray-800 dark:text-white"
+                    placeholder={editable ? 'Type a RegEx to add' : 'Search...'}
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                  />
+                ) : (
+                  <input
+                    ref={searchInputRef as React.LegacyRef<HTMLInputElement>}
+                    type="text"
+                    className="w-full px-4 h-full text-sm border-none rounded-none ring-0 outline-none bg-gray-50 dark:bg-gray-800 dark:text-white"
+                    placeholder={editable ? 'Type a RegEx to add' : 'Search...'}
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                  />
+                )}
 
                 {editable && searchTerm.length > 0 && (
                   <Button
                     variant="neutral"
-                    className="absolute top-[7px] right-[6px] h-[30px]"
+                    className="absolute bottom-[2px] right-[10px] h-[30px]"
                     onClick={() => {
                       onSelection(searchTerm);
                       setIsOpen(false);
