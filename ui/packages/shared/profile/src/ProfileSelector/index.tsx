@@ -65,7 +65,6 @@ interface ProfileSelectorProps {
   navigateTo: NavigateFunction;
   suffix?: string;
   showMetricsGraph: boolean;
-  displayHideMetricsGraphButton: boolean;
   setDisplayHideMetricsGraphButton: Dispatch<SetStateAction<boolean>>;
 }
 
@@ -106,7 +105,6 @@ const ProfileSelector = ({
   comparing,
   navigateTo,
   showMetricsGraph,
-  displayHideMetricsGraphButton,
   setDisplayHideMetricsGraphButton,
 }: ProfileSelectorProps): JSX.Element => {
   const {
@@ -444,7 +442,7 @@ const ProfileSelector = ({
           onClick={() => setDisplayHideMetricsGraphButton(!showMetricsGraph)}
           className={cx(
             'hidden z-10 px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-900',
-            displayHideMetricsGraphButton && showMetricsGraph && 'absolute right-0 bottom-3 !flex',
+            showMetricsGraph && 'absolute right-0 bottom-3 !flex',
             !showMetricsGraph && 'relative !flex ml-auto'
           )}
         >

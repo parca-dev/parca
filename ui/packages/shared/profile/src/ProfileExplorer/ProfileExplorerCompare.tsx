@@ -51,7 +51,6 @@ const ProfileExplorerCompare = ({
   navigateTo,
 }: ProfileExplorerCompareProps): JSX.Element => {
   const [showMetricsGraph, setShowMetricsGraph] = useState(true);
-  const [showButton, setShowButton] = useState(false);
 
   const closeProfileA = (): void => {
     closeProfile('A');
@@ -66,17 +65,7 @@ const ProfileExplorerCompare = ({
 
   return (
     <>
-      <div
-        className="flex justify-between gap-2 relative mb-2"
-        onMouseEnter={() => {
-          if (!showMetricsGraph) return;
-          setShowButton(true);
-        }}
-        onMouseLeave={() => {
-          if (!showMetricsGraph) return;
-          setShowButton(false);
-        }}
-      >
+      <div className="flex justify-between gap-2 relative mb-2">
         <div className="flex-column flex-1 p-2 shadow-md rounded-md">
           <ProfileSelector
             queryClient={queryClient}
@@ -90,7 +79,6 @@ const ProfileExplorerCompare = ({
             navigateTo={navigateTo}
             suffix="_a"
             showMetricsGraph={showMetricsGraph}
-            displayHideMetricsGraphButton={showButton}
             setDisplayHideMetricsGraphButton={setShowMetricsGraph}
           />
         </div>
@@ -107,7 +95,6 @@ const ProfileExplorerCompare = ({
             navigateTo={navigateTo}
             suffix="_b"
             showMetricsGraph={showMetricsGraph}
-            displayHideMetricsGraphButton={showButton}
             setDisplayHideMetricsGraphButton={setShowMetricsGraph}
           />
         </div>
