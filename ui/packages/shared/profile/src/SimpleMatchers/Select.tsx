@@ -208,17 +208,12 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
           role="listbox"
         >
           {searchable && (
-            <div
-              className={cx(
-                'sticky z-10 top-[-5px] border-b border-gray-200 w-auto max-w-full',
-                editable ? 'h-full min-h-[50px]' : 'h-[45px]'
-              )}
-            >
-              <div className="relative h-full">
+            <div className="sticky z-10 top-[-5px] w-auto max-w-full">
+              <div className={cx('relative h-full', editable ? 'h-full min-h-[50px]' : 'h-[45px]')}>
                 {editable ? (
                   <textarea
                     ref={searchInputRef as React.LegacyRef<HTMLTextAreaElement>}
-                    className="w-full px-4 h-full text-sm border-none rounded-none ring-0 outline-none bg-gray-50 dark:bg-gray-800 dark:text-white"
+                    className="w-full px-4 py-2 h-full text-sm border-b border-gray-200 rounded-none ring-0 outline-none bg-gray-50 dark:bg-gray-800 dark:text-white"
                     placeholder={editable ? 'Type a RegEx to add' : 'Search...'}
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
@@ -237,7 +232,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                 {editable && searchTerm.length > 0 && (
                   <Button
                     variant="neutral"
-                    className="absolute bottom-[2px] right-[10px] h-[30px]"
+                    className="absolute bottom-[10px] right-[10px] h-[30px]"
                     onClick={() => {
                       onSelection(searchTerm);
                       setIsOpen(false);
