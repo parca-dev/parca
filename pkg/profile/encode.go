@@ -394,7 +394,12 @@ func serializedArrowLocationSize(
 			size = addSerializedInt64AsUvarintSize(size, lineFunctionStartLine.Value(i))
 			size = addSerializedStringSize(size, string(lineFunctionNameDict.Value(int(lineFunctionName.GetValueIndex(i)))))
 			size = addSerializedStringSize(size, string(lineFunctionSystemNameDict.Value(int(lineFunctionSystemName.GetValueIndex(i)))))
-			size = addSerializedStringSize(size, string(lineFunctionFilenameDictValues.Value(int(lineFunctionFilenameDict.GetValueIndex(lineFunctionFilename.GetPhysicalIndex(i))))))
+
+			if lineFunctionFilenameDict.IsValid(lineFunctionFilename.GetPhysicalIndex(i)) {
+				size = addSerializedStringSize(size, string(lineFunctionFilenameDictValues.Value(int(lineFunctionFilenameDict.GetValueIndex(lineFunctionFilename.GetPhysicalIndex(i))))))
+			} else {
+				size = addSerializedStringSize(size, "")
+			}
 		}
 	}
 
