@@ -209,7 +209,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         >
           {searchable && (
             <div className="sticky z-10 top-[-5px] w-auto max-w-full">
-              <div className={cx('relative h-full', editable ? 'h-full min-h-[50px]' : 'h-[45px]')}>
+              <div className={cx('relative', editable ? 'h-full min-h-[50px]' : 'h-[45px]')}>
                 {editable ? (
                   <textarea
                     ref={searchInputRef as React.LegacyRef<HTMLTextAreaElement>}
