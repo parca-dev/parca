@@ -109,7 +109,7 @@ const VisualisationToolbar = ({
   return (
     <div
       className={cx(
-        'mb-4 flex w-full',
+        'mb-4 flex w-full p-2',
         hasProfileSource || profileViewExternalMainActions != null
           ? 'justify-between'
           : 'justify-end',

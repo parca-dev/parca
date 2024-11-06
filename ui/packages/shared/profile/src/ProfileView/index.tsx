@@ -352,7 +352,7 @@ export const ProfileView = ({
         ) : null}
         <div
           className={cx(
-            'flex w-full',
+            'flex w-full p-2',
             hasProfileSource || profileViewExternalMainActions != null
               ? 'justify-start'
               : 'justify-end',
@@ -400,7 +400,7 @@ export const ProfileView = ({
           groupByLabels={flamegraphData.metadataLabels ?? []}
         />
 
-        <div className="w-full" ref={ref}>
+        <div className="w-full p-2" ref={ref}>
           <DragDropContext onDragEnd={onDragEnd}>
             <Droppable droppableId="droppable" direction="horizontal">
               {provided => (

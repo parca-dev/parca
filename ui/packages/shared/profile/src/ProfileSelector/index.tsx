@@ -287,7 +287,7 @@ const ProfileSelector = ({
   return (
     <>
       <div className="mb-2 flex">
-        <div className="flex w-full flex-wrap items-end gap-2">
+        <div className="flex w-full flex-wrap items-end gap-2 p-2">
           <div>
             <label className="text-xs">Profile type</label>
             <ProfileTypeSelector
