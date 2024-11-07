@@ -45,7 +45,10 @@ import {FIELD_FUNCTION_NAME} from '../ProfileIcicleGraph/IcicleGraphArrow';
 import {ProfileSource} from '../ProfileSource';
 import {SourceView} from '../SourceView';
 import {Table} from '../Table';
-import VisualisationToolbar from '../components/VisualisationToolbar';
+import VisualisationToolbar, {
+  IcicleGraphToolbar,
+  TableToolbar,
+} from '../components/VisualisationToolbar';
 import {ProfileViewContextProvider} from './ProfileViewContext';
 import {VisualizationPanel} from './VisualizationPanel';
 
@@ -195,11 +198,9 @@ export const ProfileView = ({
   const getDashboardItemByType = ({
     type,
     isHalfScreen,
-    setActionButtons,
   }: {
     type: string;
     isHalfScreen: boolean;
-    setActionButtons: (actionButtons: JSX.Element) => void;
   }): JSX.Element => {
     switch (type) {
       case 'icicle': {
@@ -221,13 +222,12 @@ export const ProfileView = ({
               filtered={filtered}
               profileType={profileSource?.ProfileType()}
               loading={flamegraphData.loading}
-              setActionButtons={setActionButtons}
               error={flamegraphData.error}
               isHalfScreen={isHalfScreen}
               width={
                 dimensions?.width !== undefined
                   ? isHalfScreen
-                    ? (dimensions.width - 40) / 2
+                    ? (dimensions.width - 54) / 2
                     : dimensions.width - 16
                   : 0
               }
@@ -260,7 +260,6 @@ export const ProfileView = ({
             data={topTableData.arrow?.record}
             unit={topTableData.unit}
             profileType={profileSource?.ProfileType()}
-            setActionButtons={setActionButtons}
             currentSearchString={currentSearchString}
             setSearchString={setSearchString}
             isHalfScreen={isHalfScreen}
@@ -276,7 +275,6 @@ export const ProfileView = ({
             data={sourceData.data}
             total={total}
             filtered={filtered}
-            setActionButtons={setActionButtons}
           />
         ) : (
           <></>
@@ -341,6 +339,28 @@ export const ProfileView = ({
   const showDivider =
     hasProfileSource &&
     (profileViewExternalMainActions === null || profileViewExternalMainActions === undefined);
+
+  const clearSelection = useCallback((): void => {
+    setSearchString?.('');
+  }, [setSearchString]);
+
+  const getActionButtonsWithMultiPanelView = (): {
+    icicle: JSX.Element;
+    table: JSX.Element;
+  } => {
+    return {
+      icicle: <IcicleGraphToolbar curPath={curPath} setNewCurPath={setNewCurPath} />,
+      table: (
+        <TableToolbar
+          profileType={profileSource?.ProfileType()}
+          total={total}
+          filtered={filtered}
+          clearSelection={clearSelection}
+          currentSearchString={currentSearchString}
+        />
+      ),
+    };
+  };
 
   return (
     <KeyDownProvider>
@@ -429,7 +449,10 @@ export const ProfileView = ({
                               'w-full min-h-96',
                               snapshot.isDragging
                                 ? 'bg-gray-200 dark:bg-gray-500'
-                                : 'bg-white dark:bg-gray-900'
+                                : 'bg-white dark:bg-gray-900',
+                              isMultiPanelView
+                                ? 'border-2 border-gray-100 dark:border-gray-700 rounded-md p-3'
+                                : ''
                             )}
                           >
                             <VisualizationPanel
@@ -439,6 +462,7 @@ export const ProfileView = ({
                               getDashboardItemByType={getDashboardItemByType}
                               dragHandleProps={provided.dragHandleProps}
                               index={index}
+                              actionButtons={getActionButtonsWithMultiPanelView()}
                             />
                           </div>
                         )}
