@@ -263,6 +263,7 @@ export const ProfileView = ({
             currentSearchString={currentSearchString}
             setSearchString={setSearchString}
             isHalfScreen={isHalfScreen}
+            metadataMappingFiles={flamegraphData.metadataMappingFiles}
           />
         ) : (
           <></>

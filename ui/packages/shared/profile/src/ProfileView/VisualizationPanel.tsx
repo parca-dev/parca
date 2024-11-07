@@ -60,7 +60,9 @@ export const VisualizationPanel = React.memo(function VisualizationPanel({
               <Icon className="text-xl" icon="material-symbols:drag-indicator" />
             </div>
             {isMultiPanelView ? (
-              <div className="flex gap-2">{actionButtons[dashboardItem]}</div>
+              <div className="flex gap-2">
+                {actionButtons[dashboardItem as keyof typeof actionButtons]}
+              </div>
             ) : null}
           </div>
           <div

@@ -81,7 +81,6 @@ export const ProfileViewWithData = ({
     profileSource,
     QueryRequest_ReportType.PROFILE_METADATA,
     {
-      skip: !dashboardItems.includes('icicle'),
       nodeTrimThreshold,
       groupBy,
       invertCallStack,
