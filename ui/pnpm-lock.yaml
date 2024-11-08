@@ -190,8 +190,8 @@ importers:
         specifier: 5.0.0
         version: 5.0.0(eslint@8.45.0)
       eslint-plugin-storybook:
-        specifier: 0.10.1
-        version: 0.10.1(eslint@8.45.0)(typescript@5.5.4)
+        specifier: 0.10.2
+        version: 0.10.2(eslint@8.45.0)(typescript@5.5.4)
       eslint-plugin-typescript-enum:
         specifier: 2.1.0
         version: 2.1.0(eslint@8.45.0)(typescript@5.5.4)
@@ -11336,8 +11336,8 @@ packages:
       eslint: 8.45.0
     dev: true
 
-  /eslint-plugin-storybook@0.10.1(eslint@8.45.0)(typescript@5.5.4):
-    resolution: {integrity: sha512-YpxkdqyiKpMIrRquuvBaCinsqmZJ86JvXRX/gtRa4Qctpk0ipFt2cWqEjkB1HHWWG0DVRXlUBKHjRogC2Ig1fg==}
+  /eslint-plugin-storybook@0.10.2(eslint@8.45.0)(typescript@5.5.4):
+    resolution: {integrity: sha512-iOrFJfyLgRLIbWDLbbs3J4yrknvIB+uiZ8KGqGOEXTL7/BGuBMZLiIU9Q4Pm/VYJrHN4JqmMtwCSrAemHL2nFg==}
     engines: {node: '>= 18'}
     peerDependencies:
       eslint: '>=6'
