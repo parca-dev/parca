@@ -131,7 +131,11 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         setIsOpen(true);
       } else if (focusedIndex !== -1) {
         onSelection(filteredItems[focusedIndex].key);
-        setIsOpen(false);
+        if (editable) {
+          setSearchTerm(filteredItems[focusedIndex].key);
+        } else {
+          setIsOpen(false);
+        }
       }
     } else if (e.key === 'Escape') {
       setIsOpen(false);
@@ -166,6 +170,16 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
       return typeof selection === 'string' && selection.length > 0 ? selection : placeholder;
     } else {
       return (selection as SelectItem)?.element?.active ?? placeholder;
+    }
+  };
+
+  const handleSelection = (value: string): void => {
+    onSelection(value);
+    if (editable) {
+      setSearchTerm(value);
+      setIsOpen(true);
+    } else {
+      setIsOpen(false);
     }
   };
 
@@ -209,37 +223,40 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         >
           {searchable && (
             <div className="sticky z-10 top-[-5px] w-auto max-w-full">
-              <div className={cx('relative', editable ? 'h-full min-h-[50px]' : 'h-[45px]')}>
+              <div className="flex flex-col">
                 {editable ? (
-                  <textarea
-                    ref={searchInputRef as React.LegacyRef<HTMLTextAreaElement>}
-                    className="w-full px-4 py-2 h-full text-sm border-b border-gray-200 rounded-none ring-0 outline-none bg-gray-50 dark:bg-gray-800 dark:text-white"
-                    placeholder={editable ? 'Type a RegEx to add' : 'Search...'}
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                  />
+                  <>
+                    <textarea
+                      ref={searchInputRef as React.LegacyRef<HTMLTextAreaElement>}
+                      className="w-full px-4 py-2 text-sm border-b border-gray-200 rounded-none ring-0 outline-none bg-gray-50 dark:bg-gray-800 dark:text-white min-h-[50px]"
+                      placeholder="Type a RegEx to add"
+                      value={searchTerm}
+                      onChange={e => setSearchTerm(e.target.value)}
+                    />
+                    {editable && searchTerm.length > 0 && (
+                      <div className="p-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                        <Button
+                          variant="primary"
+                          className="w-full h-[30px]"
+                          onClick={() => {
+                            onSelection(searchTerm);
+                            setIsOpen(false);
+                          }}
+                        >
+                          Add
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <input
                     ref={searchInputRef as React.LegacyRef<HTMLInputElement>}
                     type="text"
-                    className="w-full px-4 h-full text-sm border-none rounded-none ring-0 outline-none bg-gray-50 dark:bg-gray-800 dark:text-white"
-                    placeholder={editable ? 'Type a RegEx to add' : 'Search...'}
+                    className="w-full px-4 h-[45px] text-sm border-none rounded-none ring-0 outline-none bg-gray-50 dark:bg-gray-800 dark:text-white"
+                    placeholder="Search..."
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
                   />
-                )}
-
-                {editable && searchTerm.length > 0 && (
-                  <Button
-                    variant="neutral"
-                    className="absolute bottom-[10px] right-[10px] h-[30px]"
-                    onClick={() => {
-                      onSelection(searchTerm);
-                      setIsOpen(false);
-                    }}
-                  >
-                    Add{' '}
-                  </Button>
                 )}
               </div>
             </div>
@@ -269,8 +286,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                 tabIndex={-1}
                 onClick={() => {
                   if (!(item.disabled ?? false)) {
-                    onSelection(item.key);
-                    setIsOpen(false);
+                    handleSelection(item.key);
                   }
                 }}
               >
