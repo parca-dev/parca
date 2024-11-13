@@ -11,8 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Profiler, ProfilerProps, useCallback, useEffect, useState} from 'react';
+import {Profiler, ProfilerProps, useCallback, useEffect, useMemo, useState} from 'react';
 
+import {Table as ArrowTable, tableFromIPC} from 'apache-arrow';
 import cx from 'classnames';
 import {scaleLinear} from 'd3';
 import graphviz from 'graphviz-wasm';
@@ -42,6 +43,9 @@ import {Callgraph} from '../';
 import {jsonToDot} from '../Callgraph/utils';
 import ProfileIcicleGraph from '../ProfileIcicleGraph';
 import {FIELD_FUNCTION_NAME} from '../ProfileIcicleGraph/IcicleGraphArrow';
+import useMappingList, {
+  useFilenamesList,
+} from '../ProfileIcicleGraph/IcicleGraphArrow/useMappingList';
 import {ProfileSource} from '../ProfileSource';
 import {SourceView} from '../SourceView';
 import {Table} from '../Table';
@@ -49,6 +53,7 @@ import VisualisationToolbar, {
   IcicleGraphToolbar,
   TableToolbar,
 } from '../components/VisualisationToolbar';
+import ColorStackLegend from './ColorStackLegend';
 import {ProfileViewContextProvider} from './ProfileViewContext';
 import {VisualizationPanel} from './VisualizationPanel';
 
@@ -133,9 +138,21 @@ export const ProfileView = ({
   const [graphvizLoaded, setGraphvizLoaded] = useState(false);
   const [callgraphSVG, setCallgraphSVG] = useState<string | undefined>(undefined);
   const [currentSearchString, setSearchString] = useURLState<string | undefined>('search_string');
+  const [colorStackLegend] = useURLState<string | undefined>('color_stack_legend');
+  const [colorBy] = useURLState('color_by');
+
+  const isColorStackLegendEnabled = colorStackLegend === 'true';
+  const colorByValue = colorBy === undefined || colorBy === '' ? 'binary' : (colorBy as string);
 
   const isDarkMode = useAppSelector(selectDarkMode);
   const isMultiPanelView = dashboardItems.length > 1;
+
+  const table: ArrowTable<any> | null = useMemo(() => {
+    return flamegraphData.arrow !== undefined ? tableFromIPC(flamegraphData.arrow.record) : null;
+  }, [flamegraphData.arrow]);
+
+  const mappingsList = useMappingList(flamegraphData.metadataMappingFiles);
+  const filenamesList = useFilenamesList(table);
 
   const {perf, profileViewExternalMainActions} = useParcaContext();
 
@@ -420,6 +437,14 @@ export const ProfileView = ({
           setSearchString={setSearchString}
           groupByLabels={flamegraphData.metadataLabels ?? []}
         />
+
+        {isColorStackLegendEnabled && (
+          <ColorStackLegend
+            compareMode={compareMode}
+            mappings={colorByValue === 'binary' ? mappingsList : filenamesList}
+            loading={flamegraphData.metadataLoading}
+          />
+        )}
 
         <div className="w-full" ref={ref}>
           <DragDropContext onDragEnd={onDragEnd}>
