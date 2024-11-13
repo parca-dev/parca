@@ -153,7 +153,7 @@ interface MultiLevelDropdownProps {
 }
 
 const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profileType}) => {
-  const [storeSortBy, setStoreSortBy] = useURLState('sort_by', {
+  const [storeSortBy] = useURLState('sort_by', {
     defaultValue: FIELD_FUNCTION_NAME,
   });
   const [colorStackLegend, setStoreColorStackLegend] = useURLState('color_stack_legend');
