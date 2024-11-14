@@ -18,6 +18,18 @@ module.exports = {
           '100%': {transform: 'translateX(100%)'},
         },
       },
+      maxWidth: theme => ({
+        ...theme('spacing'),
+      }),
+      minWidth: theme => ({
+        ...theme('spacing'),
+      }),
+      maxHeight: theme => ({
+        ...theme('spacing'),
+      }),
+      minHeight: theme => ({
+        ...theme('spacing'),
+      }),
     },
   },
   plugins: [],
