@@ -506,9 +506,6 @@ importers:
       '@protobuf-ts/runtime-rpc':
         specifier: ^2.5.0
         version: 2.9.4
-      '@storybook/preview-api':
-        specifier: ^8.4.3
-        version: 8.4.3(storybook@8.3.6)
       '@tanstack/react-table':
         specifier: ^8.17.3
         version: 8.20.5(react-dom@18.3.1)(react@18.3.1)
@@ -690,6 +687,9 @@ importers:
       '@protobuf-ts/runtime-rpc':
         specifier: ^2.5.0
         version: 2.9.4
+      '@storybook/preview-api':
+        specifier: ^8.4.3
+        version: 8.4.3(storybook@8.3.6)
       '@tanstack/react-query':
         specifier: ^4.0.5
         version: 4.36.1(react-dom@18.3.1)(react@18.3.1)
@@ -5438,21 +5438,12 @@ packages:
       storybook: 8.3.6
     dev: true
 
-  /@storybook/preview-api@8.3.6(storybook@8.3.6):
-    resolution: {integrity: sha512-/Wxvb7wbI2O2iH63arRQQyyojA630vibdshkFjuC/u1nYdptEV1jkxa0OYmbZbKCn4/ze6uH4hfsKOpDPV9SWg==}
-    peerDependencies:
-      storybook: ^8.3.6
-    dependencies:
-      storybook: 8.3.6
-    dev: true
-
   /@storybook/preview-api@8.4.3(storybook@8.3.6):
     resolution: {integrity: sha512-SQPiGJ5iNk/RMZTfTQZe27MaZz16XfIgb1GTDWuaSrDBWVcelHRCZdh8Ps+9X5Mre6GeZ9wMQ56l+hQf/DO9Ug==}
     peerDependencies:
       storybook: ^8.2.0 || ^8.3.0-0 || ^8.4.0-0 || ^8.5.0-0 || ^8.6.0-0
     dependencies:
       storybook: 8.3.6
-    dev: false
 
   /@storybook/react-dom-shim@8.3.6(react-dom@18.3.1)(react@18.3.1)(storybook@8.3.6):
     resolution: {integrity: sha512-9BO6VXIdli4GHSfiP/Z0gwAf7oQig3D/yWK2U1+91UWDV8nIAgnNBAi76U4ORC6MiK5MdkDfIikIxnLLeLnahA==}
@@ -5515,7 +5506,7 @@ packages:
       '@storybook/components': 8.3.6(storybook@8.3.6)
       '@storybook/global': 5.0.0
       '@storybook/manager-api': 8.3.6(storybook@8.3.6)
-      '@storybook/preview-api': 8.3.6(storybook@8.3.6)
+      '@storybook/preview-api': 8.4.3(storybook@8.3.6)
       '@storybook/react-dom-shim': 8.3.6(react-dom@18.3.1)(react@18.3.1)(storybook@8.3.6)
       '@storybook/test': 8.3.6(storybook@8.3.6)
       '@storybook/theming': 8.3.6(storybook@8.3.6)

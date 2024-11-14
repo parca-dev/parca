@@ -15,7 +15,7 @@ import {Fragment, useMemo} from 'react';
 
 import * as d3 from 'd3';
 
-import {DataPoint} from '../AreaGraph';
+import { DataPoint, NumberDuo } from '../AreaGraph';
 
 interface Props {
   width: number;
@@ -37,7 +37,7 @@ const alignBeforeAxisCorrection = (val: number) => {
 
 export const TimelineGuide = ({data, width, height, margin}: Props) => {
   const bounds = useMemo(() => {
-    const bounds: [number, number] = [Infinity, -Infinity];
+    const bounds: NumberDuo = [Infinity, -Infinity];
     data.forEach(cpuData => {
       cpuData.forEach(dataPoint => {
         bounds[0] = Math.min(bounds[0], dataPoint.timestamp);

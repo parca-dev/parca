@@ -11,33 +11,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useMemo, useState} from 'react';
+import { useMemo, useState } from 'react';
 
-import {Icon} from '@iconify/react';
+import { Icon } from '@iconify/react';
 import * as d3 from 'd3';
 
-import {AreaGraph, DataPoint} from './AreaGraph';
-import {TimelineGuide} from './TimelineGuide';
+import { AreaGraph, DataPoint, NumberDuo } from './AreaGraph';
+import { TimelineGuide } from './TimelineGuide';
 
 interface Props {
   cpus: string[];
   data: DataPoint[][];
   selectedTimeline?: {
     index: number;
-    bounds: [number, number];
+    bounds: NumberDuo;
   };
-  onSelectedTimeline: (index: number, bounds: [number, number] | undefined) => void;
+  onSelectedTimeline: (index: number, bounds: NumberDuo | undefined) => void;
 }
 
 const COLORS = [];
 
-const getTimelineGuideHeight = (cpus, collapsedIndices) => {
+const getTimelineGuideHeight = (cpus: string[], collapsedIndices: number[]) => {
   return 56 * (cpus.length - collapsedIndices.length) + 20 * collapsedIndices.length + 24;
 };
 
-export const MetricsGraphStrips = ({cpus, data, selectedTimeline, onSelectedTimeline}: Props) => {
+export const MetricsGraphStrips = ({ cpus, data, selectedTimeline, onSelectedTimeline }: Props) => {
   const [collapsedIndices, setCollapsedIndices] = useState<number[]>([]);
 
+  // @ts-expect-error
   const color = d3.scaleOrdinal(d3.schemeObservable10);
 
   return (
@@ -72,7 +73,7 @@ export const MetricsGraphStrips = ({cpus, data, selectedTimeline, onSelectedTime
                 data={data[i]}
                 height={56}
                 width={1468}
-                fill={color(i)}
+                fill={color(i.toString()) as string}
                 selectionBounds={
                   selectedTimeline?.index === i ? selectedTimeline.bounds : undefined
                 }

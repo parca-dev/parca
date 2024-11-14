@@ -22,6 +22,8 @@ export interface DataPoint {
   value: number;
 }
 
+export type NumberDuo = [number, number];
+
 interface Props {
   width: number;
   height: number;
@@ -31,8 +33,8 @@ interface Props {
   marginBottom?: number;
   fill?: string;
   data: DataPoint[];
-  selectionBounds?: [number, number] | undefined;
-  setSelectionBounds: (newBounds: [number, number] | undefined) => void;
+  selectionBounds?: NumberDuo | undefined;
+  setSelectionBounds: (newBounds: NumberDuo | undefined) => void;
 }
 
 const DraggingWindow = ({
@@ -65,14 +67,14 @@ const ZoomWindow = ({
   onZoomWindowChange,
   setIsHoveringDragHandle,
 }: {
-  zoomWindow?: [number, number];
+    zoomWindow?: NumberDuo;
   width: number;
-  onZoomWindowChange: (newWindow: [number, number]) => void;
+    onZoomWindowChange: (newWindow: NumberDuo) => void;
   setIsHoveringDragHandle: (arg: boolean) => void;
 }) => {
   const windowStartHandleRef = useRef<HTMLDivElement>(null);
   const windowEndHandleRef = useRef<HTMLDivElement>(null);
-  const [zoomWindowState, setZoomWindowState] = useState<[number, number] | undefined>(zoomWindow);
+  const [zoomWindowState, setZoomWindowState] = useState<NumberDuo | undefined>(zoomWindow);
   const [dragginStart, setDraggingStart] = useState(false);
   const [draggingEnd, setDraggingEnd] = useState(false);
 
@@ -202,13 +204,13 @@ export const AreaGraph = ({
   selectionBounds,
   setSelectionBounds,
 }: Props) => {
-  const [mousePosition, setMousePosition] = useState<[number, number] | undefined>(undefined);
+  const [mousePosition, setMousePosition] = useState<NumberDuo | undefined>(undefined);
   const [dragStart, setDragStart] = useState<number | undefined>(undefined);
   const [isHoveringDragHandle, setIsHoveringDragHandle] = useState(false);
   const isDragging = dragStart !== undefined;
 
   // Declare the x (horizontal position) scale.
-  const x = d3.scaleUtc(d3.extent(data, d => d.timestamp) as [number, number], [
+  const x = d3.scaleUtc(d3.extent(data, d => d.timestamp) as NumberDuo, [
     marginLeft,
     width - marginRight,
   ]);
@@ -225,14 +227,14 @@ export const AreaGraph = ({
     .y0(y(0))
     .y1(d => y(d.value));
 
-  const zoomWindow: [number, number] | undefined = useMemo(() => {
+  const zoomWindow: NumberDuo | undefined = useMemo(() => {
     if (selectionBounds === undefined) {
       return undefined;
     }
     return [x(selectionBounds[0]), x(selectionBounds[1])];
   }, [selectionBounds]);
 
-  const setSelectionBoundsWithScaling = ([startPx, endPx]) => {
+  const setSelectionBoundsWithScaling = ([startPx, endPx]: NumberDuo) => {
     setSelectionBounds([x.invert(startPx).getTime(), x.invert(endPx).getTime()]);
   };
 

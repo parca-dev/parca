@@ -22,7 +22,6 @@
     "@parca/utilities": "workspace:*",
     "@protobuf-ts/grpcweb-transport": "^2.5.0",
     "@protobuf-ts/runtime-rpc": "^2.5.0",
-    "@storybook/preview-api": "^8.4.3",
     "@tanstack/react-table": "^8.17.3",
     "@tanstack/react-virtual": "^3.5.0",
     "@tanstack/table-core": "^8.17.3",
