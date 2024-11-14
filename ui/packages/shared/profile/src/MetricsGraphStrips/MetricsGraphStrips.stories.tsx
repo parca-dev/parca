@@ -11,15 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-<<<<<<< HEAD
 // eslint-disable-next-line import/named
 import { useArgs } from '@storybook/preview-api';
 // eslint-disable-next-line import/named
 import { Meta } from '@storybook/react';
-=======
-import {useArgs} from '@storybook/preview-api';
-import {Meta} from '@storybook/react';
->>>>>>> origin/metrics-graph-strips
 
 import { DataPoint, NumberDuo } from './AreaGraph';
 import { MetricsGraphStrips } from './index';
