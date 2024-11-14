@@ -67,9 +67,9 @@ const ZoomWindow = ({
   onZoomWindowChange,
   setIsHoveringDragHandle,
 }: {
-    zoomWindow?: NumberDuo;
+  zoomWindow?: NumberDuo;
   width: number;
-    onZoomWindowChange: (newWindow: NumberDuo) => void;
+  onZoomWindowChange: (newWindow: NumberDuo) => void;
   setIsHoveringDragHandle: (arg: boolean) => void;
 }) => {
   const windowStartHandleRef = useRef<HTMLDivElement>(null);
