@@ -43,7 +43,7 @@ const DraggingWindow = ({
 }: {
   dragStart: number | undefined;
   currentX: number | undefined;
-  }): JSX.Element | null => {
+}): JSX.Element | null => {
   const start = useMemo(() => Math.min(dragStart ?? 0, currentX ?? 0), [dragStart, currentX]);
   const width = useMemo(() => Math.abs((dragStart ?? 0) - (currentX ?? 0)), [dragStart, currentX]);
 
@@ -71,7 +71,7 @@ const ZoomWindow = ({
   width: number;
   onZoomWindowChange: (newWindow: NumberDuo) => void;
   setIsHoveringDragHandle: (arg: boolean) => void;
-  }): JSX.Element | null => {
+}): JSX.Element | null => {
   const windowStartHandleRef = useRef<HTMLDivElement>(null);
   const windowEndHandleRef = useRef<HTMLDivElement>(null);
   const [zoomWindowState, setZoomWindowState] = useState<NumberDuo | undefined>(zoomWindow);
