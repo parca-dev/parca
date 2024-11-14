@@ -11,9 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {Fragment, useMemo} from 'react';
+
 import * as d3 from 'd3';
 
-import {Fragment, useMemo} from 'react';
 import {DataPoint} from '../AreaGraph';
 
 interface Props {

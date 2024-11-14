@@ -11,12 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Meta } from '@storybook/react';
+import {useArgs} from '@storybook/preview-api';
+import {Meta} from '@storybook/react';
 
-import { useArgs } from '@storybook/preview-api';
-
-import { MetricsGraphStrips } from './index';
-import { DataPoint } from './AreaGraph';
+import {DataPoint} from './AreaGraph';
+import {MetricsGraphStrips} from './index';
 
 const mockData: DataPoint[][] = [[], [], []];
 
@@ -38,7 +37,7 @@ export const ThreeCPUStrips = {
   args: {
     cpus: Array.from(mockData, (_, i) => `CPU ${i + 1}`),
     data: mockData,
-    selectedTimeline: { index: 1, bounds: [mockData[0][25].timestamp, mockData[0][100].timestamp] },
+    selectedTimeline: {index: 1, bounds: [mockData[0][25].timestamp, mockData[0][100].timestamp]},
     onSelectedTimeline: (index, bounds) => {
       console.log('onSelectedTimeline', index, bounds);
     },
@@ -48,7 +47,7 @@ export const ThreeCPUStrips = {
 
     const onSelectedTimeline = (index, bounds) => {
       args.onSelectedTimeline(index, bounds);
-      setArgs({ ...args, selectedTimeline: { index, bounds } });
+      setArgs({...args, selectedTimeline: {index, bounds}});
     };
 
     return <MetricsGraphStrips {...args} onSelectedTimeline={onSelectedTimeline} />;
