@@ -11,12 +11,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {useMemo, useState} from 'react';
+
+import {Icon} from '@iconify/react';
 import * as d3 from 'd3';
 
-import { AreaGraph, DataPoint } from './AreaGraph';
-import { useMemo, useState } from 'react';
-import { Icon } from '@iconify/react';
-import { TimelineGuide } from './TimelineGuide';
+import {AreaGraph, DataPoint} from './AreaGraph';
+import {TimelineGuide} from './TimelineGuide';
 
 interface Props {
   cpus: string[];
@@ -34,7 +35,7 @@ const getTimelineGuideHeight = (cpus, collapsedIndices) => {
   return 56 * (cpus.length - collapsedIndices.length) + 20 * collapsedIndices.length + 24;
 };
 
-export const MetricsGraphStrips = ({ cpus, data, selectedTimeline, onSelectedTimeline }: Props) => {
+export const MetricsGraphStrips = ({cpus, data, selectedTimeline, onSelectedTimeline}: Props) => {
   const [collapsedIndices, setCollapsedIndices] = useState<number[]>([]);
 
   const color = d3.scaleOrdinal(d3.schemeObservable10);

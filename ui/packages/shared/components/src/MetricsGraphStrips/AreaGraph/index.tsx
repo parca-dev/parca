@@ -11,10 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as d3 from 'd3';
+import {useEffect, useMemo, useRef, useState} from 'react';
+
+import {Icon} from '@iconify/react';
 import cx from 'classnames';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Icon } from '@iconify/react';
+import * as d3 from 'd3';
 
 export interface DataPoint {
   timestamp: number;
@@ -50,7 +51,7 @@ const DraggingWindow = ({
 
   return (
     <div
-      style={{ height: '100%', width, left: start }}
+      style={{height: '100%', width, left: start}}
       className={cx(
         'bg-gray-500 absolute top-0 opacity-50 border-x-2 border-gray-900 dark:border-gray-100'
       )}
@@ -137,7 +138,7 @@ const ZoomWindow = ({
       }}
     >
       <div
-        style={{ height: '100%', width: beforeWidth, left: beforeStart }}
+        style={{height: '100%', width: beforeWidth, left: beforeStart}}
         className={cx(
           'bg-gray-500/50 absolute top-0 border-r-2 border-gray-900 dark:border-gray-100 z-20'
         )}
@@ -162,7 +163,7 @@ const ZoomWindow = ({
       </div>
 
       <div
-        style={{ height: '100%', width: afterWidth, left: afterStart }}
+        style={{height: '100%', width: afterWidth, left: afterStart}}
         className={cx(
           'bg-gray-500/50 absolute top-0 border-l-2 border-gray-900 dark:border-gray-100'
         )}
@@ -237,7 +238,7 @@ export const AreaGraph = ({
 
   return (
     <div
-      style={{ height, width }}
+      style={{height, width}}
       onMouseMove={e => {
         const [x, y] = d3.pointer(e);
         setMousePosition([x, y]);
@@ -283,7 +284,7 @@ export const AreaGraph = ({
     >
       {/* onHover guide, only visible when hovering and not dragging and not having an active zoom window */}
       <div
-        style={{ height, width: 2, left: mousePosition?.[0] ?? -1 }}
+        style={{height, width: 2, left: mousePosition?.[0] ?? -1}}
         className={cx('bg-gray-700/75 dark:bg-gray-200/75 absolute top-0', {
           hidden: mousePosition === undefined || isDragging || isHoveringDragHandle,
         })}
@@ -307,7 +308,7 @@ export const AreaGraph = ({
         })}
       ></div>
 
-      <svg style={{ width: '100%', height: '100%' }}>
+      <svg style={{width: '100%', height: '100%'}}>
         <path fill={fill} d={area(data) as string} className="opacity-80" />
       </svg>
     </div>
