@@ -43,7 +43,7 @@ const DraggingWindow = ({
 }: {
   dragStart: number | undefined;
   currentX: number | undefined;
-}) => {
+  }): JSX.Element | null => {
   const start = useMemo(() => Math.min(dragStart ?? 0, currentX ?? 0), [dragStart, currentX]);
   const width = useMemo(() => Math.abs((dragStart ?? 0) - (currentX ?? 0)), [dragStart, currentX]);
 
@@ -71,7 +71,7 @@ const ZoomWindow = ({
   width: number;
     onZoomWindowChange: (newWindow: NumberDuo) => void;
   setIsHoveringDragHandle: (arg: boolean) => void;
-}) => {
+  }): JSX.Element | null => {
   const windowStartHandleRef = useRef<HTMLDivElement>(null);
   const windowEndHandleRef = useRef<HTMLDivElement>(null);
   const [zoomWindowState, setZoomWindowState] = useState<NumberDuo | undefined>(zoomWindow);
@@ -86,8 +86,9 @@ const ZoomWindow = ({
       zoomWindow[1] !== zoomWindowState[1]
     ) {
       setZoomWindowState(zoomWindow);
-      return;
     }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoomWindow]);
 
   if (zoomWindowState === undefined) {
@@ -112,7 +113,7 @@ const ZoomWindow = ({
           setZoomWindowState([newStart, newEnd]);
         }
         if (draggingEnd) {
-          const [x, y] = d3.pointer(e);
+          const [x] = d3.pointer(e);
           if (x <= beforeWidth + 10) {
             return;
           }
@@ -203,7 +204,7 @@ export const AreaGraph = ({
   fill = 'gray',
   selectionBounds,
   setSelectionBounds,
-}: Props) => {
+}: Props): JSX.Element => {
   const [mousePosition, setMousePosition] = useState<NumberDuo | undefined>(undefined);
   const [dragStart, setDragStart] = useState<number | undefined>(undefined);
   const [isHoveringDragHandle, setIsHoveringDragHandle] = useState(false);
@@ -232,9 +233,11 @@ export const AreaGraph = ({
       return undefined;
     }
     return [x(selectionBounds[0]), x(selectionBounds[1])];
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectionBounds]);
 
-  const setSelectionBoundsWithScaling = ([startPx, endPx]: NumberDuo) => {
+  const setSelectionBoundsWithScaling = ([startPx, endPx]: NumberDuo): void => {
     setSelectionBounds([x.invert(startPx).getTime(), x.invert(endPx).getTime()]);
   };
 
@@ -275,7 +278,7 @@ export const AreaGraph = ({
         const rel = d3.pointer(e);
         const xCoordinate = rel[0];
         const xCoordinateWithoutMargin = xCoordinate - marginLeft;
-        if (xCoordinateWithoutMargin >= 0 && dragStart != xCoordinateWithoutMargin) {
+        if (xCoordinateWithoutMargin >= 0 && dragStart !== xCoordinateWithoutMargin) {
           const start = Math.min(dragStart, xCoordinateWithoutMargin);
           const end = Math.max(dragStart, xCoordinateWithoutMargin);
           setSelectionBoundsWithScaling([start, end]);

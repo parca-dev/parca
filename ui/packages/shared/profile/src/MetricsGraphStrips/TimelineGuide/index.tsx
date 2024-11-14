@@ -24,7 +24,7 @@ interface Props {
   data: DataPoint[][];
 }
 
-const alignBeforeAxisCorrection = (val: number) => {
+const alignBeforeAxisCorrection = (val: number): number => {
   if (val < 10000) {
     return -24;
   }
@@ -35,7 +35,7 @@ const alignBeforeAxisCorrection = (val: number) => {
   return 0;
 };
 
-export const TimelineGuide = ({data, width, height, margin}: Props) => {
+export const TimelineGuide = ({ data, width, height, margin }: Props): JSX.Element => {
   const bounds = useMemo(() => {
     const bounds: NumberDuo = [Infinity, -Infinity];
     data.forEach(cpuData => {

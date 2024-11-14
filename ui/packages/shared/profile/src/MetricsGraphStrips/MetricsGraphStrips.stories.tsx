@@ -11,7 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// eslint-disable-next-line import/named
 import { useArgs } from '@storybook/preview-api';
+// eslint-disable-next-line import/named
 import { Meta } from '@storybook/react';
 
 import { DataPoint, NumberDuo } from './AreaGraph';
@@ -38,14 +40,14 @@ export const ThreeCPUStrips = {
     cpus: Array.from(mockData, (_, i) => `CPU ${i + 1}`),
     data: mockData,
     selectedTimeline: { index: 1, bounds: [mockData[0][25].timestamp, mockData[0][100].timestamp] },
-    onSelectedTimeline: (index: number, bounds: NumberDuo) => {
+    onSelectedTimeline: (index: number, bounds: NumberDuo): void => {
       console.log('onSelectedTimeline', index, bounds);
     },
   },
-  render: function Component(args: any) {
+  render: function Component(args: any): JSX.Element {
     const [, setArgs] = useArgs();
 
-    const onSelectedTimeline = (index: number, bounds: NumberDuo) => {
+    const onSelectedTimeline = (index: number, bounds: NumberDuo): void => {
       args.onSelectedTimeline(index, bounds);
       setArgs({ ...args, selectedTimeline: { index, bounds } });
     };
