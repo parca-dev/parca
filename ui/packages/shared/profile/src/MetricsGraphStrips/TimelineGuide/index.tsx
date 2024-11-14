@@ -15,7 +15,7 @@ import {Fragment, useMemo} from 'react';
 
 import * as d3 from 'd3';
 
-import { DataPoint, NumberDuo } from '../AreaGraph';
+import {DataPoint, NumberDuo} from '../AreaGraph';
 
 interface Props {
   width: number;

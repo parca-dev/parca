@@ -11,7 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+<<<<<<< HEAD
 import { useState } from 'react';
+=======
+import {useMemo, useState} from 'react';
+>>>>>>> origin/metrics-graph-strips
 
 import { Icon } from '@iconify/react';
 import * as d3 from 'd3';
