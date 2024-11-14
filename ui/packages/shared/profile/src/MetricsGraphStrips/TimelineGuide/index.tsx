@@ -35,7 +35,7 @@ const alignBeforeAxisCorrection = (val: number): number => {
   return 0;
 };
 
-export const TimelineGuide = ({ data, width, height, margin }: Props): JSX.Element => {
+export const TimelineGuide = ({data, width, height, margin}: Props): JSX.Element => {
   const bounds = useMemo(() => {
     const bounds: NumberDuo = [Infinity, -Infinity];
     data.forEach(cpuData => {
