@@ -12,12 +12,12 @@
 // limitations under the License.
 
 // eslint-disable-next-line import/named
-import { useArgs } from '@storybook/preview-api';
+import {useArgs} from '@storybook/preview-api';
 // eslint-disable-next-line import/named
-import { Meta } from '@storybook/react';
+import {Meta} from '@storybook/react';
 
-import { DataPoint, NumberDuo } from './AreaGraph';
-import { MetricsGraphStrips } from './index';
+import {DataPoint, NumberDuo} from './AreaGraph';
+import {MetricsGraphStrips} from './index';
 
 const mockData: DataPoint[][] = [[], [], []];
 
@@ -39,7 +39,7 @@ export const ThreeCPUStrips = {
   args: {
     cpus: Array.from(mockData, (_, i) => `CPU ${i + 1}`),
     data: mockData,
-    selectedTimeline: { index: 1, bounds: [mockData[0][25].timestamp, mockData[0][100].timestamp] },
+    selectedTimeline: {index: 1, bounds: [mockData[0][25].timestamp, mockData[0][100].timestamp]},
     onSelectedTimeline: (index: number, bounds: NumberDuo): void => {
       console.log('onSelectedTimeline', index, bounds);
     },
@@ -49,7 +49,7 @@ export const ThreeCPUStrips = {
 
     const onSelectedTimeline = (index: number, bounds: NumberDuo): void => {
       args.onSelectedTimeline(index, bounds);
-      setArgs({ ...args, selectedTimeline: { index, bounds } });
+      setArgs({...args, selectedTimeline: {index, bounds}});
     };
 
     return <MetricsGraphStrips {...args} onSelectedTimeline={onSelectedTimeline} />;
