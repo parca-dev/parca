@@ -242,6 +242,8 @@ export const Table = React.memo(function Table({
   const [dashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
   });
+  const [showInTable] = useURLState<string | undefined>('show_in_table');
+
   const [tableColumns] = useURLState<string[]>('table_columns', {
     alwaysReturnArray: true,
   });
@@ -616,6 +618,18 @@ export const Table = React.memo(function Table({
 
     return rows;
   }, [table, colorByColors, colorBy]);
+
+  useEffect(() => {
+    if (currentSearchString == null || rows.length === 0) return;
+
+    const firstHighlightedRowIndex = rows.findIndex(row => {
+      return !isDummyRow(row) && isSearchMatch(currentSearchString, row.name);
+    });
+
+    if (firstHighlightedRowIndex !== -1) {
+      setScrollToIndex(firstHighlightedRowIndex);
+    }
+  }, [currentSearchString, rows, showInTable]);
 
   if (loading) {
     return (
