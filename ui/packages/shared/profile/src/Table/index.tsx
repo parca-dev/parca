@@ -242,7 +242,6 @@ export const Table = React.memo(function Table({
   const [dashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
   });
-  const [showInTable] = useURLState<string | undefined>('show_in_table');
 
   const [tableColumns] = useURLState<string[]>('table_columns', {
     alwaysReturnArray: true,
@@ -251,6 +250,8 @@ export const Table = React.memo(function Table({
   const {isDarkMode} = useParcaContext();
   const [expanded, setExpanded] = useState<ExpandedState>({});
   const [scrollToIndex, setScrollToIndex] = useState<number | undefined>(undefined);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const scrollingRef = useRef<number>();
 
   const {compareMode} = useProfileViewContext();
 
@@ -629,7 +630,7 @@ export const Table = React.memo(function Table({
     if (firstHighlightedRowIndex !== -1) {
       setScrollToIndex(firstHighlightedRowIndex);
     }
-  }, [currentSearchString, rows, showInTable]);
+  }, [currentSearchString, rows]);
 
   if (loading) {
     return (
