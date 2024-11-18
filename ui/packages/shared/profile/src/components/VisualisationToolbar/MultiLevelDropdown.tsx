@@ -153,7 +153,7 @@ interface MultiLevelDropdownProps {
 }
 
 const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profileType}) => {
-  const [storeSortBy, setStoreSortBy] = useURLState('sort_by', {
+  const [storeSortBy] = useURLState('sort_by', {
     defaultValue: FIELD_FUNCTION_NAME,
   });
   const [colorStackLegend, setStoreColorStackLegend] = useURLState('color_stack_legend');
@@ -197,30 +197,6 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
   };
 
   const menuItems: MenuItemType[] = [
-    {
-      label: 'Sort by',
-      id: 'h-sort-by-filter',
-      items: [
-        {
-          label: 'Function',
-          onclick: () => setStoreSortBy(FIELD_FUNCTION_NAME),
-          value: FIELD_FUNCTION_NAME,
-        },
-        {
-          label: 'Cumulative',
-          onclick: () => setStoreSortBy(FIELD_CUMULATIVE),
-          value: FIELD_CUMULATIVE,
-        },
-        {
-          label: 'Diff',
-          onclick: () => setStoreSortBy(FIELD_DIFF),
-          value: FIELD_DIFF,
-          disabled: !compareMode,
-        },
-      ],
-      hide: false,
-      icon: 'material-symbols:sort',
-    },
     {
       label: 'Color by',
       id: 'h-solor-by-filter',
@@ -295,11 +271,12 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
       <Menu>
         {({open, close}) => (
           <>
-            <Menu.Button className="inline-flex dark:bg-gray-900 dark:border-gray-600 justify-center w-full px-4 py-2 text-sm font-medium text-white bg-white rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 border border-gray-200">
-              <Icon
-                icon="pepicons-pencil:dots-x"
-                className="h-5 w-5 text-gray-800 dark:text-gray-200"
-              />
+            <Menu.Button className="inline-flex dark:bg-gray-900 dark:border-gray-600 justify-center w-full px-4 py-2 text-sm font-normal text-gray-600 dark:text-gray-200 bg-white rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 border border-gray-200 pr-[1.7rem]">
+              <span>More</span>
+
+              <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-400">
+                <Icon icon="heroicons:chevron-down-20-solid" aria-hidden="true" />
+              </span>
             </Menu.Button>
             {open && (
               <Menu.Items className="absolute z-30 left-0 w-56 mt-2 py-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border dark:bg-gray-900 dark:border-gray-600">
