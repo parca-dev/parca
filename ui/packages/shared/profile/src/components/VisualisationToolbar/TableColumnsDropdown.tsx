@@ -20,8 +20,9 @@ import {ProfileType} from '@parca/parser';
 import {valueFormatter} from '@parca/utilities';
 
 import {useProfileViewContext} from '../../ProfileView/ProfileViewContext';
-import {ColumnName, DataRow, Row, addPlusSign, getRatioString, isDummyRow} from '../../Table';
+import {Row, isDummyRow} from '../../Table';
 import ColumnsVisibility from '../../Table/ColumnsVisibility';
+import {ColumnName, DataRow, addPlusSign, getRatioString} from '../../Table/utils/functions';
 
 interface Props {
   profileType?: ProfileType;
@@ -169,6 +170,7 @@ const TableColumnsDropdown = ({profileType, total, filtered}: Props): JSX.Elemen
 
   const [columnVisibility, setColumnVisibility] = useState(() => {
     return {
+      color: true,
       flat: true,
       flatPercentage: false,
       flatDiff: compareMode,
