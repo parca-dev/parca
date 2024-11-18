@@ -100,6 +100,11 @@ export const wellKnownProfiles: WellKnownProfiles = {
     name: 'On-CPU',
     help: 'On CPU profile samples observed by the Parca Agent.',
   },
+  // Manually added profile type for GPU Utilization
+  'parca_agent:gpu_utilization:count:utilization:count': {
+    name: 'GPU Utilization',
+    help: 'GPU utilization metrics collected by the Parca Agent.',
+  },
 };
 
 export function flexibleWellKnownProfileMatching(name: string): WellKnownProfile | undefined {
@@ -179,6 +184,15 @@ const ProfileTypeSelector = ({
     key: name,
     element: profileSelectElement(name, flexibleKnownProfilesDetection),
   }));
+
+  // Manually add a new profile type, for GPU Utilization
+  profileLabels.push({
+    key: 'parca_agent:gpu_utilization:count:utilization:count',
+    element: profileSelectElement(
+      'parca_agent:gpu_utilization:count:utilization:count',
+      flexibleKnownProfilesDetection
+    ),
+  });
 
   return (
     <Select

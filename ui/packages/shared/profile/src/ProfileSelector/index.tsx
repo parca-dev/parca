@@ -391,7 +391,10 @@ const ProfileSelector = ({
                 indicatorSeparator: () => ({display: 'none'}),
                 menu: provided => ({...provided, width: 'max-content'}),
               }}
-              isDisabled={!profileType.delta}
+              isDisabled={
+                !profileType.delta ||
+                selectedProfileName === 'parca_agent:gpu_utilization:count:utilization:count'
+              }
               ref={sumByRef}
               onKeyDown={e => {
                 const currentRef = sumByRef.current as unknown as SelectInstance | null;

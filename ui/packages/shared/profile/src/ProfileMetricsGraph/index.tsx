@@ -183,6 +183,87 @@ const ProfileMetricsGraph = ({
     perf?.markInteraction('Metrics graph render', response.series[0].samples.length);
   }, [perf, response]);
 
+  if (queryExpression === 'parca_agent:gpu_utilization:count:utilization:count{}') {
+    // Mock data for GPU utilization graph
+    const mockData: QueryRangeResponse = {
+      series: [
+        {
+          labelset: {
+            labels: [
+              {name: 'threads', value: `${Math.floor(Math.random() * 32)}`},
+              {
+                name: 'inference-model',
+                value: ['yolo-v8', 'resnet50', 'bert-base', 'gpt2'][Math.floor(Math.random() * 4)],
+              },
+            ],
+          },
+          sampleType: {
+            type: 'gpu_utilization',
+            unit: 'Utilization',
+          },
+          samples: Array.from({length: 50}, (_, i) => ({
+            timestamp: Timestamp.fromDate(new Date(from + i * ((to - from) / 49))),
+            value: BigInt(
+              Math.round(
+                Math.min(100, Math.max(0, 50 + Math.sin(i * 0.3) * 20 + Math.random() * 10))
+              )
+            ),
+            valuePerSecond: Number(
+              Math.min(100, Math.max(0, 50 + Math.sin(i * 0.3) * 20 + Math.random() * 10))
+            ),
+            duration: BigInt(0),
+          })),
+        },
+        {
+          labelset: {
+            labels: [
+              {name: 'threads', value: `${Math.floor(Math.random() * 32)}`},
+              {
+                name: 'inference-model',
+                value: ['yolo-v8', 'resnet50', 'bert-base', 'gpt2'][Math.floor(Math.random() * 4)],
+              },
+            ],
+          },
+          sampleType: {
+            type: 'gpu_utilization',
+            unit: 'Utilization',
+          },
+          samples: Array.from({length: 50}, (_, i) => ({
+            timestamp: Timestamp.fromDate(new Date(from + i * ((to - from) / 49))),
+            value: BigInt(
+              Math.round(
+                Math.min(100, Math.max(0, 50 + Math.sin(i * 0.3) * 20 + Math.random() * 10))
+              )
+            ),
+            valuePerSecond: Number(
+              Math.min(100, Math.max(0, 50 + Math.sin(i * 0.3) * 20 + Math.random() * 10))
+            ),
+            duration: BigInt(0),
+          })),
+        },
+      ],
+    };
+
+    return (
+      <MetricsGraph
+        data={mockData.series}
+        from={from}
+        to={to}
+        profile={profile as MergedProfileSelection}
+        setTimeRange={setTimeRange}
+        onSampleClick={(timestamp: number, _value: number, labels: Label[], duration: number) => {
+          onPointClick(timestamp, labels, queryExpression, duration);
+        }}
+        addLabelMatcher={addLabelMatcher}
+        sampleUnit="Utilization"
+        height={height}
+        width={width}
+        margin={margin}
+        sumBy={sumBy}
+      />
+    );
+  }
+
   const series = response?.series;
   const dataAvailable = series !== null && series !== undefined && series?.length > 0;
 
