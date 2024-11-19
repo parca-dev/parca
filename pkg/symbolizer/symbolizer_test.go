@@ -67,6 +67,7 @@ func TestSymbolizer(t *testing.T) {
 		&NoopSymbolizerCache{},
 		debuginfo.NewFetcher(debuginfodClient, bucket),
 		symbolizerCacheDir,
+		"",
 	)
 
 	ctx := context.Background()
