@@ -14,18 +14,23 @@
 package symbolizer
 
 import (
+	"bufio"
 	"context"
 	"debug/elf"
 	"errors"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
+	profilepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/symbol/addr2line"
@@ -126,7 +131,7 @@ func (s *Symbolizer) Symbolize(
 	req SymbolizationRequest,
 ) error {
 	if err := s.symbolize(ctx, req); err != nil {
-		level.Debug(s.logger).Log("msg", "failed to symbolize", "err", err)
+		level.Debug(s.logger).Log("msg", fmt.Sprintf("failed to symbolize: BuildID %s", req.BuildID), "err", err)
 	}
 
 	return nil
@@ -156,6 +161,17 @@ func (s *Symbolizer) symbolize(
 		return fmt.Errorf("executable info from ELF: %w", err)
 	}
 
+	addr2lineCmd := exec.Command("./addr2line-gimli", "--exe", path, "-fC")
+	addr2lineInput, err := addr2lineCmd.StdinPipe()
+	if err != nil {
+		return fmt.Errorf("error creating input pipe for addr2line: %w", err)
+	}
+	addr2lineOutputPipe, err := addr2lineCmd.StdoutPipe()
+	if err != nil {
+		return fmt.Errorf("error creating output pipe for addr2line: %w", err)
+	}
+	scanner := bufio.NewReader(addr2lineOutputPipe)
+	addr2lineCmd.Start()
 	for _, mapping := range req.Mappings {
 		for _, loc := range mapping.Locations {
 			addr, err := NormalizeAddress(loc.Address, ei, profile.Mapping{
@@ -167,9 +183,34 @@ func (s *Symbolizer) symbolize(
 				return fmt.Errorf("normalize address: %w", err)
 			}
 
-			loc.Lines, err = l.PCToLines(ctx, addr)
+			_, err = io.WriteString(addr2lineInput, fmt.Sprintf("0%x\n", addr))
 			if err != nil {
-				level.Debug(s.logger).Log("msg", "failed to get lines", "err", err)
+				return fmt.Errorf("error writing to addr2line stdin: %w\n", err)
+			}
+			// addr2line output consists of two lines per address
+			line1, err := scanner.ReadString('\n')
+			if err != nil {
+				return fmt.Errorf("error scanning addr2line output: %w\n", err)
+			}
+			line2, err := scanner.ReadString('\n')
+			if err != nil {
+				return fmt.Errorf("error scanning addr2line output: %w\n", err)
+			}
+
+			line1 = strings.TrimSuffix(line1, "\n")
+			line2 = strings.TrimSuffix(line2, "\n")
+
+			fileLocation := strings.Split(line2, ":")
+			lineNum, err := strconv.Atoi(fileLocation[1])
+			loc.Lines = []profile.LocationLine{
+				{
+					Line: int64(lineNum),
+					Function: &profilepb.Function{
+						StartLine: int64(lineNum),
+						Filename:  fileLocation[0],
+						Name:      line1,
+					},
+				},
 			}
 		}
 	}
