@@ -192,7 +192,7 @@ const ContextMenu = ({
           <div className="flex w-full items-center gap-2">
             <Icon icon="bx:bxs-hide" />
             <div>
-              Hide Binary {mappingFile !== null && `(${getLastItem(mappingFile) as string})`}
+              Hide binary {mappingFile !== null && `(${getLastItem(mappingFile) as string})`}
             </div>
           </div>
         </div>

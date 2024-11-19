@@ -250,8 +250,6 @@ export const Table = React.memo(function Table({
   const {isDarkMode} = useParcaContext();
   const [expanded, setExpanded] = useState<ExpandedState>({});
   const [scrollToIndex, setScrollToIndex] = useState<number | undefined>(undefined);
-  const tableContainerRef = useRef<HTMLDivElement>(null);
-  const scrollingRef = useRef<number>();
 
   const {compareMode} = useProfileViewContext();
 
@@ -621,15 +619,17 @@ export const Table = React.memo(function Table({
   }, [table, colorByColors, colorBy]);
 
   useEffect(() => {
-    if (currentSearchString == null || rows.length === 0) return;
+    setTimeout(() => {
+      if (currentSearchString == null || rows.length === 0) return;
 
-    const firstHighlightedRowIndex = rows.findIndex(row => {
-      return !isDummyRow(row) && isSearchMatch(currentSearchString, row.name);
-    });
+      const firstHighlightedRowIndex = rows.findIndex(row => {
+        return !isDummyRow(row) && isSearchMatch(currentSearchString, row.name);
+      });
 
-    if (firstHighlightedRowIndex !== -1) {
-      setScrollToIndex(firstHighlightedRowIndex);
-    }
+      if (firstHighlightedRowIndex !== -1) {
+        setScrollToIndex(firstHighlightedRowIndex);
+      }
+    }, 1000); // Adding a delay to allow the table to render seems to be the only way to get this to work i.e. scrolling down to the highlighted row
   }, [currentSearchString, rows]);
 
   if (loading) {
