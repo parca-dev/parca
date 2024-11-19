@@ -201,13 +201,13 @@ const CustomRowRenderer = ({
             {idx === 0 && isExpanded ? (
               <>
                 <div
-                  className={`absolute top-0 left-0 bg-white dark:bg-indigo-500 px-1 uppercase -rotate-90 origin-top-left z-10 text-[10px] border-l border-y border-gray-200 dark:border-gray-700 text-left`}
+                  className={`absolute top-0 left-0 bg-white dark:bg-indigo-500 px-1 uppercase -rotate-90 origin-top-left z-[9] text-[10px] border-l border-y border-gray-200 dark:border-gray-700 text-left`}
                   style={{...sizeToWidthStyle(3)}}
                 >
                   Callers {'->'}
                 </div>
                 <div
-                  className={`absolute left-[18px] bg-white dark:bg-indigo-500 px-1 uppercase -rotate-90 origin-bottom-left z-10 text-[10px] border-r border-y border-gray-200 dark:border-gray-700`}
+                  className={`absolute left-[18px] bg-white dark:bg-indigo-500 px-1 uppercase -rotate-90 origin-bottom-left z-[9] text-[10px] border-r border-y border-gray-200 dark:border-gray-700`}
                   style={{
                     ...sizeToWidthStyle(3),
                     ...sizeToBottomStyle(3),
@@ -242,6 +242,7 @@ export const Table = React.memo(function Table({
   const [dashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
   });
+
   const [tableColumns] = useURLState<string[]>('table_columns', {
     alwaysReturnArray: true,
   });
@@ -616,6 +617,20 @@ export const Table = React.memo(function Table({
 
     return rows;
   }, [table, colorByColors, colorBy]);
+
+  useEffect(() => {
+    setTimeout(() => {
+      if (currentSearchString == null || rows.length === 0) return;
+
+      const firstHighlightedRowIndex = rows.findIndex(row => {
+        return !isDummyRow(row) && isSearchMatch(currentSearchString, row.name);
+      });
+
+      if (firstHighlightedRowIndex !== -1) {
+        setScrollToIndex(firstHighlightedRowIndex);
+      }
+    }, 1000); // Adding a delay to allow the table to render seems to be the only way to get this to work i.e. scrolling down to the highlighted row
+  }, [currentSearchString, rows]);
 
   if (loading) {
     return (
