@@ -66,6 +66,8 @@ interface ProfileSelectorProps {
   suffix?: string;
   showMetricsGraph: boolean;
   setDisplayHideMetricsGraphButton: Dispatch<SetStateAction<boolean>>;
+  showSumBySelector?: boolean;
+  showProfileTypeSelector?: boolean;
 }
 
 export interface IProfileTypesResult {
@@ -106,6 +108,8 @@ const ProfileSelector = ({
   navigateTo,
   showMetricsGraph,
   setDisplayHideMetricsGraphButton,
+  showProfileTypeSelector = true,
+  showSumBySelector = true,
 }: ProfileSelectorProps): JSX.Element => {
   const {
     loading: profileTypesLoading,
@@ -275,6 +279,7 @@ const ProfileSelector = ({
     querySelection: {...querySelection, sumBy: sumBySelection},
     navigateTo,
     loading: sumBySelectionLoading,
+    isProfileTypeSelectorDisabled: showProfileTypeSelector,
   });
 
   const searchDisabled =
@@ -288,17 +293,19 @@ const ProfileSelector = ({
     <>
       <div className="mb-2 flex">
         <div className="flex w-full flex-wrap items-end gap-2">
-          <div>
-            <label className="text-xs">Profile type</label>
-            <ProfileTypeSelector
-              profileTypesData={profileTypesData}
-              loading={profileTypesLoading}
-              selectedKey={selectedProfileName}
-              onSelection={setProfileName}
-              error={error}
-              disabled={viewComponent?.disableProfileTypesDropdown}
-            />
-          </div>
+          {showProfileTypeSelector && (
+            <div>
+              <label className="text-xs">Profile type</label>
+              <ProfileTypeSelector
+                profileTypesData={profileTypesData}
+                loading={profileTypesLoading}
+                selectedKey={selectedProfileName}
+                onSelection={setProfileName}
+                error={error}
+                disabled={viewComponent?.disableProfileTypesDropdown}
+              />
+            </div>
+          )}
           <div className="w-full flex-1 flex flex-col gap-1" ref={queryBrowserRef}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -370,50 +377,52 @@ const ProfileSelector = ({
               </>
             )}
           </div>
-          <div>
-            <div className="mb-0.5 mt-1.5 flex items-center justify-between">
-              <label className="text-xs">Sum by</label>
-            </div>
-            <Select
-              id="h-sum-by-selector"
-              defaultValue={[]}
-              isMulti
-              name="colors"
-              options={labels.map(label => ({label, value: label}))}
-              className="parca-select-container text-sm w-full max-w-80"
-              classNamePrefix="parca-select"
-              value={(sumBySelection ?? []).map(sumBy => ({label: sumBy, value: sumBy}))}
-              onChange={selectedOptions => {
-                setUserSumBySelection(selectedOptions.map(option => option.value));
-              }}
-              placeholder="Labels..."
-              styles={{
-                indicatorSeparator: () => ({display: 'none'}),
-                menu: provided => ({...provided, width: 'max-content'}),
-              }}
-              isDisabled={!profileType.delta}
-              ref={sumByRef}
-              onKeyDown={e => {
-                const currentRef = sumByRef.current as unknown as SelectInstance | null;
-                if (currentRef == null) {
-                  return;
-                }
-                const inputRef = currentRef.inputRef;
-                if (inputRef == null) {
-                  return;
-                }
+          {showSumBySelector && (
+            <div>
+              <div className="mb-0.5 mt-1.5 flex items-center justify-between">
+                <label className="text-xs">Sum by</label>
+              </div>
+              <Select
+                id="h-sum-by-selector"
+                defaultValue={[]}
+                isMulti
+                name="colors"
+                options={labels.map(label => ({label, value: label}))}
+                className="parca-select-container text-sm w-full max-w-80"
+                classNamePrefix="parca-select"
+                value={(sumBySelection ?? []).map(sumBy => ({label: sumBy, value: sumBy}))}
+                onChange={selectedOptions => {
+                  setUserSumBySelection(selectedOptions.map(option => option.value));
+                }}
+                placeholder="Labels..."
+                styles={{
+                  indicatorSeparator: () => ({display: 'none'}),
+                  menu: provided => ({...provided, width: 'max-content'}),
+                }}
+                isDisabled={!profileType.delta}
+                ref={sumByRef}
+                onKeyDown={e => {
+                  const currentRef = sumByRef.current as unknown as SelectInstance | null;
+                  if (currentRef == null) {
+                    return;
+                  }
+                  const inputRef = currentRef.inputRef;
+                  if (inputRef == null) {
+                    return;
+                  }
 
-                if (
-                  e.key === 'Enter' &&
-                  inputRef.value === '' &&
-                  currentRef.state.focusedOptionId === null // menu is not open
-                ) {
-                  setQueryExpression(true);
-                  currentRef.blur();
-                }
-              }}
-            />
-          </div>
+                  if (
+                    e.key === 'Enter' &&
+                    inputRef.value === '' &&
+                    currentRef.state.focusedOptionId === null // menu is not open
+                  ) {
+                    setQueryExpression(true);
+                    currentRef.blur();
+                  }
+                }}
+              />
+            </div>
+          )}
           <DateTimeRangePicker
             onRangeSelection={setTimeRangeSelection}
             range={timeRangeSelection}
