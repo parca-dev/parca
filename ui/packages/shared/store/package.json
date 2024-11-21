@@ -21,7 +21,7 @@
     "react-redux": "^8.0.2",
     "redux": "^5.0.1",
     "redux-persist": "^6.0.0",
-    "tsc-watch": "6.2.0"
+    "tsc-watch": "6.2.1"
   },
   "publishConfig": {
     "access": "public",
