@@ -59,7 +59,7 @@ const ContextMenu = ({
   hideBinary,
 }: ContextMenuProps): JSX.Element => {
   const {isDarkMode} = useParcaContext();
-  const { enableSourcesView, checkDebuginfoStatusHandler } = useParcaContext();
+  const {enableSourcesView, checkDebuginfoStatusHandler} = useParcaContext();
   const [isGraphTooltipDocked, setIsDocked] = useUserPreference<boolean>(
     USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key
   );
@@ -222,12 +222,23 @@ const ContextMenu = ({
           ))}
         </div>
       </Submenu>
-      {checkDebuginfoStatusHandler !== undefined ? <Item id="check-debuginfo-status" onClick={() => checkDebuginfoStatusHandler(mappingBuildID)} disabled={!isMappingBuildIDAvailable}>
-        <div className="flex w-full items-center gap-2">
-          <Icon icon="bx:bx-info-circle" />
-          <div className="relative pr-4">Check debuginfo status <span className="absolute top-1 right-0"><Icon icon="radix-icons:open-in-new-window" width={12} height={12} /></span></div>
-        </div>
-      </Item> : null}
+      {checkDebuginfoStatusHandler !== undefined ? (
+        <Item
+          id="check-debuginfo-status"
+          onClick={() => checkDebuginfoStatusHandler(mappingBuildID)}
+          disabled={!isMappingBuildIDAvailable}
+        >
+          <div className="flex w-full items-center gap-2">
+            <Icon icon="bx:bx-info-circle" />
+            <div className="relative pr-4">
+              Check debuginfo status{' '}
+              <span className="absolute top-1 right-0">
+                <Icon icon="radix-icons:open-in-new-window" width={12} height={12} />
+              </span>
+            </div>
+          </div>
+        </Item>
+      ) : null}
       <Separator />
       <Item id="dock-tooltip" onClick={handleDockTooltip}>
         <div className="flex w-full items-center gap-2">
