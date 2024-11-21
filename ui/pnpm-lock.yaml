@@ -280,8 +280,8 @@ importers:
         specifier: 10.9.2
         version: 10.9.2(@swc/core@1.9.1)(@types/node@18.19.64)(typescript@5.5.4)
       tsc-watch:
-        specifier: 6.2.0
-        version: 6.2.0(typescript@5.5.4)
+        specifier: 6.2.1
+        version: 6.2.1(typescript@5.5.4)
       typescript:
         specifier: 5.5.4
         version: 5.5.4
@@ -464,8 +464,8 @@ importers:
         specifier: ^2.5.0
         version: 2.9.4
       tsc-watch:
-        specifier: 6.2.0
-        version: 6.2.0(typescript@5.5.4)
+        specifier: 6.2.1
+        version: 6.2.1(typescript@5.5.4)
     devDependencies:
       globby:
         specifier: 13.2.2
@@ -570,8 +570,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4(postcss@8.4.49)(ts-node@10.9.2)
       tsc-watch:
-        specifier: 6.2.0
-        version: 6.2.0(typescript@5.5.4)
+        specifier: 6.2.1
+        version: 6.2.1(typescript@5.5.4)
     devDependencies:
       react:
         specifier: 18.3.1
@@ -609,8 +609,8 @@ importers:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
       tsc-watch:
-        specifier: 6.2.0
-        version: 6.2.0(typescript@5.5.4)
+        specifier: 6.2.1
+        version: 6.2.1(typescript@5.5.4)
 
   packages/shared/icons:
     dependencies:
@@ -624,8 +624,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4(postcss@8.4.49)(ts-node@10.9.2)
       tsc-watch:
-        specifier: 6.2.0
-        version: 6.2.0(typescript@5.5.4)
+        specifier: 6.2.1
+        version: 6.2.1(typescript@5.5.4)
       vite-plugin-svgr:
         specifier: ^4.2.0
         version: 4.2.0(rollup@2.79.1)(typescript@5.5.4)(vite@5.4.10)
@@ -639,8 +639,8 @@ importers:
         specifier: 2.20.1
         version: 2.20.1
       tsc-watch:
-        specifier: 6.2.0
-        version: 6.2.0(typescript@5.5.4)
+        specifier: 6.2.1
+        version: 6.2.1(typescript@5.5.4)
     devDependencies:
       '@types/nearley':
         specifier: 2.11.5
@@ -796,8 +796,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4(postcss@8.4.49)(ts-node@10.9.2)
       tsc-watch:
-        specifier: 6.2.0
-        version: 6.2.0(typescript@5.5.4)
+        specifier: 6.2.1
+        version: 6.2.1(typescript@5.5.4)
       with-alpha-hex:
         specifier: ^1.0.6
         version: 1.0.6
@@ -833,8 +833,8 @@ importers:
         specifier: ^6.0.0
         version: 6.0.0(react@18.3.1)(redux@5.0.1)
       tsc-watch:
-        specifier: 6.2.0
-        version: 6.2.0(typescript@5.5.4)
+        specifier: 6.2.1
+        version: 6.2.1(typescript@5.5.4)
 
   packages/shared/utilities:
     dependencies:
@@ -854,8 +854,8 @@ importers:
         specifier: 3.2.4
         version: 3.2.4(postcss@8.4.49)(ts-node@10.9.2)
       tsc-watch:
-        specifier: 6.2.0
-        version: 6.2.0(typescript@5.5.4)
+        specifier: 6.2.1
+        version: 6.2.1(typescript@5.5.4)
 
 packages:
 
@@ -22735,8 +22735,8 @@ packages:
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
 
-  /tsc-watch@6.2.0(typescript@5.5.4):
-    resolution: {integrity: sha512-2LBhf9kjKXnz7KQ/puLHlozMzzUNHAdYBNMkg3eksQJ9GBAgMg8czznM83T5PmsoUvDnXzfIeQn2lNcIYDr8LA==}
+  /tsc-watch@6.2.1(typescript@5.5.4):
+    resolution: {integrity: sha512-GLwdz5Dy9K3sVm3RzgkLcyDpl5cvU9HEcE1A3gf5rqEwlUe7gDLxNCgcuNEw3zoKOiegMo3LnbF1t6HLqxhrSA==}
     engines: {node: '>=12.12.0'}
     hasBin: true
     peerDependencies:
