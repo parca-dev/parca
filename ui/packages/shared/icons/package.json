@@ -1,6 +1,6 @@
 {
   "name": "@parca/icons",
-  "version": "0.16.70",
+  "version": "0.16.71",
   "description": "Parca commonly used icons",
   "main": "dist/index.js",
   "scripts": {
