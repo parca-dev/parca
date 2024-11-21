@@ -11,19 +11,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Icon } from '@iconify/react';
-import { Table } from 'apache-arrow';
-import { Item, Menu, Separator, Submenu } from 'react-contexify';
-import { Tooltip } from 'react-tooltip';
+import {Icon} from '@iconify/react';
+import {Table} from 'apache-arrow';
+import {Item, Menu, Separator, Submenu} from 'react-contexify';
+import {Tooltip} from 'react-tooltip';
 
-import { useParcaContext, useURLState } from '@parca/components';
-import { USER_PREFERENCES, useUserPreference } from '@parca/hooks';
-import { ProfileType } from '@parca/parser';
-import { getLastItem } from '@parca/utilities';
+import {useParcaContext, useURLState} from '@parca/components';
+import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
+import {ProfileType} from '@parca/parser';
+import {getLastItem} from '@parca/utilities';
 
-import { useGraphTooltip } from '../../GraphTooltipArrow/useGraphTooltip';
-import { useGraphTooltipMetaInfo } from '../../GraphTooltipArrow/useGraphTooltipMetaInfo';
-import { hexifyAddress, truncateString } from '../../utils';
+import {useGraphTooltip} from '../../GraphTooltipArrow/useGraphTooltip';
+import {useGraphTooltipMetaInfo} from '../../GraphTooltipArrow/useGraphTooltipMetaInfo';
+import {hexifyAddress, truncateString} from '../../utils';
 
 interface ContextMenuProps {
   menuId: string;
@@ -58,8 +58,8 @@ const ContextMenu = ({
   unit,
   hideBinary,
 }: ContextMenuProps): JSX.Element => {
-  const { isDarkMode } = useParcaContext();
-  const { enableSourcesView, checkDebuginfoStatusHandler } = useParcaContext();
+  const {isDarkMode} = useParcaContext();
+  const {enableSourcesView, checkDebuginfoStatusHandler} = useParcaContext();
   const [isGraphTooltipDocked, setIsDocked] = useUserPreference<boolean>(
     USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key
   );
@@ -84,7 +84,7 @@ const ContextMenu = ({
     mappingFile,
     mappingBuildID,
     inlined,
-  } = useGraphTooltipMetaInfo({ table, row });
+  } = useGraphTooltipMetaInfo({table, row});
 
   const [_, setSearchString] = useURLState<string | undefined>('search_string');
   const [dashboardItems, setDashboardItems] = useURLState<string[]>('dashboard_items', {
@@ -95,7 +95,7 @@ const ContextMenu = ({
     return <></>;
   }
 
-  const { name, cumulativeText, diffText, diff } = contextMenuData;
+  const {name, cumulativeText, diffText, diff} = contextMenuData;
 
   const isMappingBuildIDAvailable = mappingBuildID !== null && mappingBuildID !== '';
 
@@ -116,33 +116,33 @@ const ContextMenu = ({
     row === 0
       ? ''
       : name !== ''
-        ? name
-        : locationAddress !== 0n
-          ? hexifyAddress(locationAddress)
-          : '';
+      ? name
+      : locationAddress !== 0n
+      ? hexifyAddress(locationAddress)
+      : '';
 
   const buildIdText = !isMappingBuildIDAvailable ? '' : mappingBuildID;
   const inlinedText = inlined === null ? 'merged' : inlined ? 'yes' : 'no';
 
   const valuesToCopy = [
-    { id: 'Function name', value: functionName },
+    {id: 'Function name', value: functionName},
     {
       id: 'Function system name',
       value: functionSystemName === functionName ? '' : functionSystemName,
     }, // an empty string will be filtered out below
-    { id: 'Cumulative', value: cumulativeText ?? '' },
-    { id: 'Diff', value: diff !== 0n ? diffText : '' },
+    {id: 'Cumulative', value: cumulativeText ?? ''},
+    {id: 'Diff', value: diff !== 0n ? diffText : ''},
     {
       id: 'File',
       value: functionFilename === '' ? functionFilename : file,
     },
-    { id: 'Address', value: locationAddress === 0n ? '' : hexifyAddress(locationAddress) },
-    { id: 'Inlined', value: inlinedText },
-    { id: 'Binary', value: mappingFile ?? '' },
-    { id: 'Build Id', value: buildIdText },
+    {id: 'Address', value: locationAddress === 0n ? '' : hexifyAddress(locationAddress)},
+    {id: 'Inlined', value: inlinedText},
+    {id: 'Binary', value: mappingFile ?? ''},
+    {id: 'Build Id', value: buildIdText},
   ];
 
-  const nonEmptyValuesToCopy = valuesToCopy.filter(({ value }) => value !== '');
+  const nonEmptyValuesToCopy = valuesToCopy.filter(({value}) => value !== '');
 
   return (
     <Menu id={menuId} onVisibilityChange={trackVisibility} theme={isDarkMode ? 'dark' : ''}>
@@ -207,7 +207,7 @@ const ContextMenu = ({
         }
       >
         <div className="max-h-[300px] overflow-scroll">
-          {nonEmptyValuesToCopy.map(({ id, value }: { id: string; value: string }) => (
+          {nonEmptyValuesToCopy.map(({id, value}: {id: string; value: string}) => (
             <Item
               key={id}
               id={id}
