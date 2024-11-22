@@ -96,7 +96,7 @@
     "next-transpile-modules": "9.1.0",
     "ora": "6.3.1",
     "plop": "3.1.2",
-    "pm2": "5.4.2",
+    "pm2": "5.4.3",
     "postcss": "8.4.49",
     "prettier": "3.3.3",
     "prettier-plugin-tailwindcss": "^0.4.0",
