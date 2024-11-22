@@ -52,7 +52,7 @@
     "@storybook/react": "8.3.6",
     "@storybook/react-vite": "8.3.6",
     "@storybook/test": "8.3.6",
-    "@swc/cli": "0.5.0",
+    "@swc/cli": "0.5.1",
     "@swc/core": "1.9.2",
     "@swc/jest": "0.2.37",
     "@testing-library/jest-dom": "5.17.0",
