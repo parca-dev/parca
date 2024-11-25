@@ -29,7 +29,6 @@ interface Props {
   querySelection: QuerySelection;
   navigateTo: NavigateFunction;
   loading: boolean;
-  isProfileTypeSelectorDisabled: boolean;
 }
 
 export const useAutoQuerySelector = ({
@@ -40,7 +39,6 @@ export const useAutoQuerySelector = ({
   querySelection,
   navigateTo,
   loading,
-  isProfileTypeSelectorDisabled,
 }: Props): void => {
   const autoQuery = useAppSelector(selectAutoQuery);
   const dispatch = useAppDispatch();
@@ -50,10 +48,6 @@ export const useAutoQuerySelector = ({
   const expressionA = queryParams.get('expression_a');
 
   useEffect(() => {
-    if (isProfileTypeSelectorDisabled) {
-      return;
-    }
-
     if (loading) {
       return;
     }
@@ -109,15 +103,7 @@ export const useAutoQuerySelector = ({
         dashboard_items: ['icicle'],
       });
     }
-  }, [
-    comparing,
-    querySelection,
-    navigateTo,
-    expressionA,
-    dispatch,
-    loading,
-    isProfileTypeSelectorDisabled,
-  ]);
+  }, [comparing, querySelection, navigateTo, expressionA, dispatch, loading]);
 
   // Effect to load some initial data on load when is no selection
   useEffect(() => {

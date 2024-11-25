@@ -241,7 +241,6 @@ const ProfileSelector = ({
     querySelection: {...querySelection, sumBy: sumBySelection},
     navigateTo,
     loading: sumBySelectionLoading,
-    isProfileTypeSelectorDisabled: showProfileTypeSelector,
   });
 
   const searchDisabled =
@@ -250,6 +249,7 @@ const ProfileSelector = ({
     queryExpressionString === '{}';
 
   const queryBrowserRef = useRef<HTMLDivElement>(null);
+  const sumByRef = useRef(null);
 
   return (
     <>
@@ -274,6 +274,12 @@ const ProfileSelector = ({
           advancedModeForQueryBrowser={advancedModeForQueryBrowser}
           setAdvancedModeForQueryBrowser={setAdvancedModeForQueryBrowser}
           queryClient={queryClient}
+          sumByRef={sumByRef}
+          labels={labels}
+          sumBySelection={sumBySelection ?? []}
+          setUserSumBySelection={setUserSumBySelection}
+          profileType={profileType}
+          profileTypesError={error}
         />
         {comparing && (
           <div>

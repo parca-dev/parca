@@ -142,7 +142,9 @@ export function MetricsGraphSection({
       </button>
       {showMetricsGraph && (
         <div style={{height: heightStyle}}>
-          {querySelection.expression && querySelection.from && querySelection.to ? (
+          {querySelection.expression !== '' &&
+          querySelection.from !== undefined &&
+          querySelection.to !== undefined ? (
             <ProfileMetricsGraph
               queryClient={queryClient}
               queryExpression={querySelection.expression}

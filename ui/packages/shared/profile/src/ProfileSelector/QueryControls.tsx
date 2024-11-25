@@ -13,15 +13,21 @@
 
 import {Switch} from '@headlessui/react';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
+import Select, {type SelectInstance} from 'react-select';
 
 import {ProfileTypesResponse, QueryServiceClient} from '@parca/client';
 import {Button, ButtonGroup, DateTimeRange, DateTimeRangePicker} from '@parca/components';
-import {Query} from '@parca/parser';
+import {ProfileType, Query} from '@parca/parser';
 
 import MatchersInput from '../MatchersInput';
 import ProfileTypeSelector from '../ProfileTypeSelector';
 import SimpleMatchers from '../SimpleMatchers';
 import ViewMatchers from '../ViewMatchers';
+
+interface SelectOption {
+  label: string;
+  value: string;
+}
 
 interface QueryControlsProps {
   showProfileTypeSelector: boolean;
@@ -31,7 +37,7 @@ interface QueryControlsProps {
   profileTypesLoading: boolean;
   selectedProfileName: string;
   setProfileName: (name: string) => void;
-  error?: RpcError;
+  profileTypesError?: RpcError;
   viewComponent?: {
     disableProfileTypesDropdown?: boolean;
     disableExplorativeQuerying?: boolean;
@@ -50,6 +56,11 @@ interface QueryControlsProps {
   setTimeRangeSelection: (range: DateTimeRange) => void;
   searchDisabled: boolean;
   queryClient: QueryServiceClient;
+  labels: string[];
+  sumBySelection: string[];
+  setUserSumBySelection: (sumBy: string[]) => void;
+  sumByRef: React.RefObject<SelectInstance>;
+  profileType: ProfileType;
 }
 
 export function QueryControls({
@@ -58,7 +69,6 @@ export function QueryControls({
   profileTypesLoading,
   selectedProfileName,
   setProfileName,
-  error,
   viewComponent,
   setQueryBrowserMode,
   advancedModeForQueryBrowser,
@@ -71,6 +81,13 @@ export function QueryControls({
   setTimeRangeSelection,
   searchDisabled,
   queryClient,
+  labels,
+  sumBySelection,
+  setUserSumBySelection,
+  sumByRef,
+  profileType,
+  showSumBySelector,
+  profileTypesError,
 }: QueryControlsProps): JSX.Element {
   return (
     <div className="flex w-full flex-wrap items-end gap-2">
@@ -82,7 +99,7 @@ export function QueryControls({
             loading={profileTypesLoading}
             selectedKey={selectedProfileName}
             onSelection={setProfileName}
-            error={error}
+            error={profileTypesError}
             disabled={viewComponent?.disableProfileTypesDropdown}
           />
         </div>
@@ -148,6 +165,53 @@ export function QueryControls({
           />
         )}
       </div>
+
+      {showSumBySelector && (
+        <div>
+          <div className="mb-0.5 mt-1.5 flex items-center justify-between">
+            <label className="text-xs">Sum by</label>
+          </div>
+          <Select
+            id="h-sum-by-selector"
+            defaultValue={[]}
+            isMulti
+            name="colors"
+            options={labels.map(label => ({label, value: label}))}
+            className="parca-select-container text-sm w-full max-w-80"
+            classNamePrefix="parca-select"
+            value={(sumBySelection ?? []).map(sumBy => ({label: sumBy, value: sumBy}))}
+            onChange={(selectedOptions: readonly SelectOption[]) => {
+              setUserSumBySelection(selectedOptions.map(option => option.value));
+            }}
+            placeholder="Labels..."
+            styles={{
+              indicatorSeparator: () => ({display: 'none'}),
+              menu: provided => ({...provided, width: 'max-content'}),
+            }}
+            isDisabled={!profileType.delta}
+            ref={sumByRef}
+            onKeyDown={e => {
+              const currentRef = sumByRef.current as unknown as SelectInstance | null;
+              if (currentRef == null) {
+                return;
+              }
+              const inputRef = currentRef.inputRef;
+              if (inputRef == null) {
+                return;
+              }
+
+              if (
+                e.key === 'Enter' &&
+                inputRef.value === '' &&
+                currentRef.state.focusedOptionId === null // menu is not open
+              ) {
+                setQueryExpression(true);
+                currentRef.blur();
+              }
+            }}
+          />
+        </div>
+      )}
 
       <DateTimeRangePicker onRangeSelection={setTimeRangeSelection} range={timeRangeSelection} />
 
