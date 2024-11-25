@@ -105,7 +105,7 @@ http://localhost:3000/?disable-ui-flag=greeting
 When the app loads with the above URL, the feature flags module will handle those and update the flag state accordingly.
 Note: These 'enable' and 'disable' params work for setting one flag value at a time (rather than for example enabling "greeting" and another feature at the same time).
 
-If you are interested in the implementation details, you can read the [source here](packages/shared/functions/src/useUIFeatureFlag/index.ts).
+If you are interested in the implementation details, you can read the [source here](packages/shared/hooks/src/useUIFeatureFlag/index.ts).
 
 ### Thanks
 
