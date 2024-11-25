@@ -81,11 +81,8 @@ export const ProfileViewWithData = ({
     profileSource,
     QueryRequest_ReportType.PROFILE_METADATA,
     {
-      skip: !dashboardItems.includes('icicle'),
       nodeTrimThreshold,
       groupBy,
-      invertCallStack,
-      binaryFrameFilter: undefined,
     }
   );
 
@@ -97,6 +94,7 @@ export const ProfileViewWithData = ({
     error: tableError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.TABLE_ARROW, {
     skip: !dashboardItems.includes('table'),
+    binaryFrameFilter,
   });
 
   const {

@@ -69,6 +69,7 @@ interface Props {
   additionalFlamegraphColorProfiles?: Record<string, ColorConfig>;
   timezone?: string;
   preferencesModal?: boolean;
+  checkDebuginfoStatusHandler?: (buildId: string) => void;
 }
 
 export const defaultValue: Props = {

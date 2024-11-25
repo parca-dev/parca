@@ -248,9 +248,11 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 			groupByLabels = append(groupByLabels, f)
 			continue
 		}
-		if _, allowed := allowedGroupBy[f]; !allowed {
-			return nil, status.Errorf(codes.InvalidArgument, "invalid group by field: %s", f)
+		if _, allowed := allowedGroupBy[f]; allowed {
+			groupByLabels = append(groupByLabels, f)
+			continue
 		}
+		return nil, status.Errorf(codes.InvalidArgument, "invalid group by field: %s", f)
 	}
 
 	switch req.Mode {

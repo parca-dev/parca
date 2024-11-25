@@ -23,6 +23,7 @@ import {ProfileType} from '@parca/parser';
 import {FIELD_FUNCTION_NAME, FIELD_LABELS} from '../../ProfileIcicleGraph/IcicleGraphArrow';
 import {ProfileSource} from '../../ProfileSource';
 import GroupByDropdown from '../ActionButtons/GroupByDropdown';
+import SortByDropdown from '../ActionButtons/SortByDropdown';
 import FilterByFunctionButton from '../FilterByFunctionButton';
 import ShareButton from '../ShareButton';
 import ViewSelector from '../ViewSelector';
@@ -49,6 +50,58 @@ interface Props {
   currentSearchString?: string;
   groupByLabels: string[];
 }
+
+export const IcicleGraphToolbar = ({
+  curPath,
+  setNewCurPath,
+}: {
+  curPath: string[];
+  setNewCurPath: (path: string[]) => void;
+}): JSX.Element => {
+  return (
+    <div className="flex w-full gap-2 items-end">
+      <SortByDropdown />
+      <Button
+        variant="neutral"
+        className="gap-2 w-max h-fit"
+        onClick={() => setNewCurPath([])}
+        disabled={curPath.length === 0}
+      >
+        Reset graph
+        <Icon icon="system-uicons:reset" width={20} />
+      </Button>
+    </div>
+  );
+};
+
+export const TableToolbar = ({
+  profileType,
+  total,
+  filtered,
+  clearSelection,
+  currentSearchString,
+}: {
+  profileType: ProfileType | undefined;
+  total: bigint;
+  filtered: bigint;
+  clearSelection: () => void;
+  currentSearchString: string | undefined;
+}): JSX.Element => {
+  return (
+    <div className="flex w-full gap-2 items-end">
+      <TableColumnsDropdown profileType={profileType} total={total} filtered={filtered} />
+      <Button
+        color="neutral"
+        onClick={clearSelection}
+        className="w-auto"
+        variant="neutral"
+        disabled={currentSearchString === undefined || currentSearchString.length === 0}
+      >
+        Clear selection
+      </Button>
+    </div>
+  );
+};
 
 const VisualisationToolbar = ({
   hasProfileSource,
@@ -107,21 +160,21 @@ const VisualisationToolbar = ({
   const isGraphViz = dashboardItems?.includes('icicle');
 
   return (
-    <div
-      className={cx(
-        'mb-4 flex w-full',
-        hasProfileSource || profileViewExternalMainActions != null
-          ? 'justify-between'
-          : 'justify-end',
-        {
-          'items-end': !hasProfileSource && profileViewExternalMainActions != null,
-          'items-center': hasProfileSource,
-        }
-      )}
-    >
-      <div className="flex w-full justify-between items-end">
-        <div className="flex gap-3 items-end">
-          {isGraphViz && (
+    <>
+      <div
+        className={cx(
+          'mb-4 flex w-full',
+          hasProfileSource || profileViewExternalMainActions != null
+            ? 'justify-between'
+            : 'justify-end',
+          {
+            'items-end': !hasProfileSource && profileViewExternalMainActions != null,
+            'items-center': hasProfileSource,
+          }
+        )}
+      >
+        <div className="flex w-full justify-between items-end">
+          <div className="flex gap-3 items-end">
             <>
               <GroupByDropdown
                 groupBy={groupBy}
@@ -130,53 +183,45 @@ const VisualisationToolbar = ({
                 setGroupByLabels={setGroupByLabels}
               />
               <MultiLevelDropdown profileType={profileType} onSelect={() => {}} />
-              <Button
-                variant="neutral"
-                className="gap-2 w-max"
-                onClick={() => setNewCurPath([])}
-                disabled={curPath.length === 0}
-              >
-                Reset graph
-                <Icon icon="system-uicons:reset" width={20} />
-              </Button>
             </>
-          )}
 
-          {isTableViz && (
-            <>
-              <TableColumnsDropdown profileType={profileType} total={total} filtered={filtered} />
-              {dashboardItems.length > 1 && (
-                <Button
-                  color="neutral"
-                  onClick={clearSelection}
-                  className="w-auto"
-                  variant="neutral"
-                  disabled={currentSearchString === undefined || currentSearchString.length === 0}
-                >
-                  Clear selection
-                </Button>
-              )}
-            </>
-          )}
+            <FilterByFunctionButton />
 
-          <FilterByFunctionButton />
-
-          {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
-        </div>
-        <div className="flex gap-3">
-          {preferencesModal === true ? <UserPreferencesModal /> : null}
-          <ShareButton
-            profileSource={profileSource}
-            queryClient={queryClient}
-            queryRequest={profileSource?.QueryRequest() ?? undefined}
-            onDownloadPProf={onDownloadPProf}
-            pprofdownloading={pprofdownloading ?? false}
-            profileViewExternalSubActions={profileViewExternalSubActions}
-          />
-          <ViewSelector />
+            {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
+          </div>
+          <div className="flex gap-3">
+            {preferencesModal === true ? <UserPreferencesModal /> : null}
+            <ShareButton
+              profileSource={profileSource}
+              queryClient={queryClient}
+              queryRequest={profileSource?.QueryRequest() ?? undefined}
+              onDownloadPProf={onDownloadPProf}
+              pprofdownloading={pprofdownloading ?? false}
+              profileViewExternalSubActions={profileViewExternalSubActions}
+            />
+            <ViewSelector />
+          </div>
         </div>
       </div>
-    </div>
+      {isGraphViz && !isTableViz && (
+        <>
+          <div className="border-t border-gray-200 dark:border-gray-700 h-[1px] w-full pb-4"></div>
+          <IcicleGraphToolbar curPath={curPath} setNewCurPath={setNewCurPath} />
+        </>
+      )}
+      {isTableViz && !isGraphViz && (
+        <>
+          <div className="border-t border-gray-200 dark:border-gray-700 h-[1px] w-full pb-4"></div>
+          <TableToolbar
+            profileType={profileType}
+            total={total}
+            filtered={filtered}
+            clearSelection={clearSelection}
+            currentSearchString={currentSearchString}
+          />
+        </>
+      )}
+    </>
   );
 };
 

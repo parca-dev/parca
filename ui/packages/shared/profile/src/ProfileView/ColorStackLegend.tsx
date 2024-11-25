@@ -20,8 +20,8 @@ import {useURLState} from '@parca/components';
 import {USER_PREFERENCES, useCurrentColorProfile, useUserPreference} from '@parca/hooks';
 import {EVERYTHING_ELSE, selectDarkMode, useAppSelector} from '@parca/store';
 
-import {getMappingColors} from '.';
-import useMappingList from './useMappingList';
+import {getMappingColors} from '../ProfileIcicleGraph/IcicleGraphArrow/';
+import useMappingList from '../ProfileIcicleGraph/IcicleGraphArrow/useMappingList';
 
 interface Props {
   mappings?: string[];
