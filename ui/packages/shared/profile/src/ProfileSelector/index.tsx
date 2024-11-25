@@ -64,6 +64,7 @@ interface ProfileSelectorProps extends ProfileSelectorFeatures {
   comparing: boolean;
   navigateTo: NavigateFunction;
   setDisplayHideMetricsGraphButton: Dispatch<SetStateAction<boolean>>;
+  suffix?: string;
 }
 
 export interface IProfileTypesResult {
