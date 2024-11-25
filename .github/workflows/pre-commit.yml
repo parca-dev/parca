@@ -99,5 +99,5 @@ jobs:
           pre-commit run --show-diff-on-failure --color=always "${EXTRA_ARGS[@]}"
 
       - name: 'pre-commit-ci-lite: Apply automatic fixes'
-        uses: pre-commit-ci/lite-action@1384014f1a0d9c9e0656844e4e6e0f3554b1b3e7 # v1.0.3
+        uses: pre-commit-ci/lite-action@5d6cc0eb514c891a40562a58a8e71576c5c7fb43 # v1.1.0
         if: always()
