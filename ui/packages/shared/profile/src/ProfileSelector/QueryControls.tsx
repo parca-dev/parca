@@ -36,7 +36,7 @@ interface QueryControlsProps {
   profileTypesData?: ProfileTypesResponse;
   profileTypesLoading: boolean;
   selectedProfileName: string;
-  setProfileName: (name: string) => void;
+  setProfileName: (name: string | undefined) => void;
   profileTypesError?: RpcError;
   viewComponent?: {
     disableProfileTypesDropdown?: boolean;
@@ -171,7 +171,7 @@ export function QueryControls({
           <div className="mb-0.5 mt-1.5 flex items-center justify-between">
             <label className="text-xs">Sum by</label>
           </div>
-          <Select
+          <Select<SelectOption, true>
             id="h-sum-by-selector"
             defaultValue={[]}
             isMulti
@@ -180,8 +180,8 @@ export function QueryControls({
             className="parca-select-container text-sm w-full max-w-80"
             classNamePrefix="parca-select"
             value={(sumBySelection ?? []).map(sumBy => ({label: sumBy, value: sumBy}))}
-            onChange={(selectedOptions: readonly SelectOption[]) => {
-              setUserSumBySelection(selectedOptions.map(option => option.value));
+            onChange={newValue => {
+              setUserSumBySelection(newValue.map(option => option.value));
             }}
             placeholder="Labels..."
             styles={{
@@ -189,6 +189,7 @@ export function QueryControls({
               menu: provided => ({...provided, width: 'max-content'}),
             }}
             isDisabled={!profileType.delta}
+            // @ts-expect-error
             ref={sumByRef}
             onKeyDown={e => {
               const currentRef = sumByRef.current as unknown as SelectInstance | null;
