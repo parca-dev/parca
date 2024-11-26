@@ -33,7 +33,7 @@ interface ProfileViewWithDataProps {
 export const ProfileViewWithData = ({
   queryClient,
   profileSource,
-  showVisualizationSelector = true,
+  showVisualizationSelector,
 }: ProfileViewWithDataProps): JSX.Element => {
   const metadata = useGrpcMetadata();
   const [dashboardItems] = useURLState<string[]>('dashboard_items', {
