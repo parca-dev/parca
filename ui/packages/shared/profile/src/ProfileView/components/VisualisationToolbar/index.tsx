@@ -20,8 +20,8 @@ import {QueryRequest, QueryServiceClient} from '@parca/client';
 import {Button, UserPreferencesModal, useParcaContext, useURLState} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 
-import {FIELD_FUNCTION_NAME, FIELD_LABELS} from '../../ProfileIcicleGraph/IcicleGraphArrow';
-import {ProfileSource} from '../../ProfileSource';
+import {FIELD_FUNCTION_NAME, FIELD_LABELS} from '../../../ProfileIcicleGraph/IcicleGraphArrow';
+import {ProfileSource} from '../../../ProfileSource';
 import GroupByDropdown from '../ActionButtons/GroupByDropdown';
 import SortByDropdown from '../ActionButtons/SortByDropdown';
 import FilterByFunctionButton from '../FilterByFunctionButton';

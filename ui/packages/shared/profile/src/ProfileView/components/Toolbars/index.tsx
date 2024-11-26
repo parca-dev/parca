@@ -24,10 +24,10 @@ import {useDashboard} from '../../context/DashboardContext';
 import GroupByDropdown from '../ActionButtons/GroupByDropdown';
 import SortByDropdown from '../ActionButtons/SortByDropdown';
 import FilterByFunctionButton from '../FilterByFunctionButton';
-import MultiLevelDropdown from '../MultiLevelDropdown';
 import ShareButton from '../ShareButton';
-import TableColumnsDropdown from '../TableColumnsDropdown';
 import ViewSelector from '../ViewSelector';
+import MultiLevelDropdown from '../VisualisationToolbar/MultiLevelDropdown';
+import TableColumnsDropdown from '../VisualisationToolbar/TableColumnsDropdown';
 
 export interface VisualisationToolbarProps {
   groupBy: string[];
