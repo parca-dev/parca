@@ -24,10 +24,10 @@ import {useDashboard} from '../../context/DashboardContext';
 import GroupByDropdown from '../ActionButtons/GroupByDropdown';
 import SortByDropdown from '../ActionButtons/SortByDropdown';
 import FilterByFunctionButton from '../FilterByFunctionButton';
+import MultiLevelDropdown from '../MultiLevelDropdown';
 import ShareButton from '../ShareButton';
+import TableColumnsDropdown from '../TableColumnsDropdown';
 import ViewSelector from '../ViewSelector';
-import MultiLevelDropdown from '../VisualisationToolbar/MultiLevelDropdown';
-import TableColumnsDropdown from '../VisualisationToolbar/TableColumnsDropdown';
 
 export interface VisualisationToolbarProps {
   groupBy: string[];
@@ -49,6 +49,7 @@ export interface VisualisationToolbarProps {
   profileViewExternalSubActions?: React.ReactNode;
   clearSelection: () => void;
   setGroupByLabels: (labels: string[]) => void;
+  showVisualizationSelector?: boolean;
 }
 
 export interface TableToolbarProps {
@@ -130,6 +131,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   filtered,
   currentSearchString,
   clearSelection,
+  showVisualizationSelector,
 }) => {
   const {dashboardItems} = useDashboard();
 
@@ -164,7 +166,8 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
             pprofdownloading={pprofdownloading ?? false}
             profileViewExternalSubActions={profileViewExternalSubActions}
           />
-          <ViewSelector />
+
+          {showVisualizationSelector === true ? <ViewSelector /> : null}
         </div>
       </div>
       {isGraphViz && !isTableViz && (

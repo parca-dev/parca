@@ -16,9 +16,9 @@ import {FC} from 'react';
 import cx from 'classnames';
 import type {DraggableProvided, DraggableStateSnapshot} from 'react-beautiful-dnd';
 
-import {VisualizationPanel} from '../../VisualizationPanel';
 import {useDashboard} from '../../context/DashboardContext';
 import {VisualizationType} from '../../types/visualization';
+import {VisualizationPanel} from '../VisualizationPanel';
 
 interface VisualizationContainerProps {
   provided: DraggableProvided;

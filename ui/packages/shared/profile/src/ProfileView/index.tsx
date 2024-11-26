@@ -16,13 +16,13 @@ import {useContainerDimensions} from '@parca/hooks';
 import {selectDarkMode, useAppSelector} from '@parca/store';
 import {selectQueryParam} from '@parca/utilities';
 
-import ColorStackLegend from './ColorStackLegend';
-import {ProfileViewContextProvider} from './ProfileViewContext';
+import ColorStackLegend from './components/ColorStackLegend';
 import {getDashboardItem} from './components/DashboardItems';
 import {DashboardLayout} from './components/DashboardLayout';
 import {ProfileHeader} from './components/ProfileHeader';
 import {IcicleGraphToolbar, TableToolbar, VisualisationToolbar} from './components/Toolbars';
 import {DashboardProvider} from './context/DashboardContext';
+import {ProfileViewContextProvider} from './context/ProfileViewContext';
 import {useGraphviz} from './hooks/useGraphviz';
 import {useProfileMetadata} from './hooks/useProfileMetadata';
 import {useVisualizationState} from './hooks/useVisualizationState';
@@ -41,6 +41,7 @@ export const ProfileView = ({
   onDownloadPProf,
   pprofDownloading,
   compare,
+  showVisualizationSelector,
 }: ProfileViewProps): JSX.Element => {
   const {
     timezone,
@@ -156,6 +157,7 @@ export const ProfileView = ({
             profileViewExternalSubActions={profileViewExternalSubActions}
             clearSelection={clearSelection}
             setGroupByLabels={setGroupByLabels}
+            showVisualizationSelector={showVisualizationSelector}
           />
 
           {isColorStackLegendEnabled && (

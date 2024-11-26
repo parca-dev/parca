@@ -71,4 +71,5 @@ export interface ProfileViewProps {
   compare?: boolean;
   onDownloadPProf: () => void;
   pprofDownloading?: boolean;
+  showVisualizationSelector?: boolean;
 }

@@ -19,7 +19,7 @@ import {useURLState} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 import {valueFormatter} from '@parca/utilities';
 
-import {useProfileViewContext} from '../../ProfileView/ProfileViewContext';
+import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
 import {Row, isDummyRow} from '../../Table';
 import ColumnsVisibility from '../../Table/ColumnsVisibility';
 import {ColumnName, DataRow, addPlusSign, getRatioString} from '../../Table/utils/functions';

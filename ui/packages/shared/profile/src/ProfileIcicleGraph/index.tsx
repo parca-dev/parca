@@ -20,7 +20,7 @@ import {IcicleGraphSkeleton, useParcaContext, useURLState} from '@parca/componen
 import {ProfileType} from '@parca/parser';
 import {capitalizeOnlyFirstLetter, divide} from '@parca/utilities';
 
-import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
+import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
 import DiffLegend from '../components/DiffLegend';
 import {IcicleGraph} from './IcicleGraph';
 import {FIELD_FUNCTION_NAME, IcicleGraphArrow} from './IcicleGraphArrow';

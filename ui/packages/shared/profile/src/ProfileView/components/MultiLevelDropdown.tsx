@@ -20,8 +20,8 @@ import {useURLState} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
 
-import {FIELD_FUNCTION_NAME} from '../../../ProfileIcicleGraph/IcicleGraphArrow';
-import {useProfileViewContext} from '../../../ProfileView/ProfileViewContext';
+import {FIELD_FUNCTION_NAME} from '../../ProfileIcicleGraph/IcicleGraphArrow';
+import {useProfileViewContext} from '../context/ProfileViewContext';
 
 interface MenuItemType {
   label: string;

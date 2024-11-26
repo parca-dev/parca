@@ -28,7 +28,7 @@ import {
 } from '../../ProfileIcicleGraph/IcicleGraphArrow';
 import {arrowToString} from '../../ProfileIcicleGraph/IcicleGraphArrow/utils';
 import {ProfileSource} from '../../ProfileSource';
-import {useProfileViewContext} from '../../ProfileView/ProfileViewContext';
+import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
 import {useQuery} from '../../useQuery';
 
 interface Props {
