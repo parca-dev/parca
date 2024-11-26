@@ -26,8 +26,8 @@ import SortByDropdown from '../ActionButtons/SortByDropdown';
 import FilterByFunctionButton from '../FilterByFunctionButton';
 import ShareButton from '../ShareButton';
 import ViewSelector from '../ViewSelector';
-import MultiLevelDropdown from '../VisualisationToolbar/MultiLevelDropdown';
-import TableColumnsDropdown from '../VisualisationToolbar/TableColumnsDropdown';
+import MultiLevelDropdown from './MultiLevelDropdown';
+import TableColumnsDropdown from './TableColumnsDropdown';
 
 export interface VisualisationToolbarProps {
   groupBy: string[];
@@ -131,7 +131,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   filtered,
   currentSearchString,
   clearSelection,
-  showVisualizationSelector,
+  showVisualizationSelector = true,
 }) => {
   const {dashboardItems} = useDashboard();
 
@@ -167,7 +167,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
             profileViewExternalSubActions={profileViewExternalSubActions}
           />
 
-          {showVisualizationSelector === true ? <ViewSelector /> : null}
+          {showVisualizationSelector ? <ViewSelector /> : null}
         </div>
       </div>
       {isGraphViz && !isTableViz && (

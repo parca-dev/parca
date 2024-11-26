@@ -61,7 +61,10 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({
         {provided => (
           <div
             ref={provided.innerRef}
-            className={cx('grid w-full gap-2', isMultiPanelView ? 'grid-cols-2' : 'grid-cols-1')}
+            className={cx(
+              'grid w-full gap-2',
+              isMultiPanelView ? 'grid-cols-2 mt-4' : 'grid-cols-1'
+            )}
             {...provided.droppableProps}
           >
             {dashboardItems.map((dashboardItem, index) => (
