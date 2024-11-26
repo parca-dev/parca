@@ -19,7 +19,6 @@ import {QueryServiceClient} from '@parca/client';
 import {Button, UserPreferencesModal} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 
-import {FIELD_FUNCTION_NAME, FIELD_LABELS} from '../../../ProfileIcicleGraph/IcicleGraphArrow';
 import {ProfileSource} from '../../../ProfileSource';
 import {useDashboard} from '../../context/DashboardContext';
 import GroupByDropdown from '../ActionButtons/GroupByDropdown';
@@ -109,6 +108,10 @@ export const IcicleGraphToolbar: FC<IcicleGraphToolbarProps> = ({curPath, setNew
   );
 };
 
+const Divider = (): JSX.Element => (
+  <div className="border-t mt-4 border-gray-200 dark:border-gray-700 h-[1px] w-full pb-4" />
+);
+
 export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   groupBy,
   toggleGroupBy,
@@ -166,13 +169,13 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
       </div>
       {isGraphViz && !isTableViz && (
         <>
-          <div className="border-t border-gray-200 dark:border-gray-700 h-[1px] w-full pb-4"></div>
+          <Divider />
           <IcicleGraphToolbar curPath={curPath} setNewCurPath={setNewCurPath} />
         </>
       )}
       {isTableViz && !isGraphViz && (
         <>
-          <div className="border-t border-gray-200 dark:border-gray-700 h-[1px] w-full pb-4"></div>
+          <Divider />
           <TableToolbar
             profileType={profileType}
             total={total}

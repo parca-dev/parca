@@ -18,7 +18,7 @@ import {Icon} from '@iconify/react';
 import {QueryRequest, QueryServiceClient} from '@parca/client';
 import {Button, Dropdown, Modal, useGrpcMetadata} from '@parca/components';
 
-import {ProfileSource} from '../../ProfileSource';
+import {ProfileSource} from '../../../ProfileSource';
 import ResultBox from './ResultBox';
 
 interface Props {
