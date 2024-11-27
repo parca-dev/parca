@@ -16,7 +16,8 @@ import {useArgs} from '@storybook/preview-api';
 // eslint-disable-next-line import/named
 import {Meta} from '@storybook/react';
 
-import {DataPoint, NumberDuo} from './AreaGraph';
+import {NumberDuo} from '../utils';
+import {DataPoint} from './AreaGraph';
 import {MetricsGraphStrips} from './index';
 
 function seededRandom(seed: number): () => number {
