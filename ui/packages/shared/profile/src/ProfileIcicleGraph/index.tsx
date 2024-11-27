@@ -20,6 +20,7 @@ import {IcicleGraphSkeleton, useParcaContext, useURLState} from '@parca/componen
 import {ProfileType} from '@parca/parser';
 import {capitalizeOnlyFirstLetter, divide} from '@parca/utilities';
 
+import {TimelineGuide} from '../MetricsGraphStrips/TimelineGuide';
 import DiffLegend from '../ProfileView/components/DiffLegend';
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
 import {IcicleGraph} from './IcicleGraph';
@@ -165,20 +166,23 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
 
     if (arrow !== undefined)
       return (
-        <IcicleGraphArrow
-          width={width}
-          arrow={arrow}
-          total={total}
-          filtered={filtered}
-          curPath={curPath}
-          setCurPath={setNewCurPath}
-          profileType={profileType}
-          sortBy={storeSortBy as string}
-          flamegraphLoading={isLoading}
-          isHalfScreen={isHalfScreen}
-          mappingsListFromMetadata={mappingsList}
-          compareAbsolute={isCompareAbsolute}
-        />
+        <div>
+          <TimelineGuide width={width} height={1000} margin={0} ticks={60000 / 10000} />
+          <IcicleGraphArrow
+            width={width}
+            arrow={arrow}
+            total={total}
+            filtered={filtered}
+            curPath={curPath}
+            setCurPath={setNewCurPath}
+            profileType={profileType}
+            sortBy={storeSortBy as string}
+            flamegraphLoading={isLoading}
+            isHalfScreen={isHalfScreen}
+            mappingsListFromMetadata={mappingsList}
+            compareAbsolute={isCompareAbsolute}
+          />
+        </div>
       );
   }, [
     isLoading,
