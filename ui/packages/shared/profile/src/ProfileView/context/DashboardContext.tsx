@@ -20,7 +20,7 @@ import {VisualizationType} from '../types/visualization';
 interface DashboardContextType {
   dashboardItems: string[];
   setDashboardItems: (items: string[]) => void;
-  handleClosePanel: (visualizationType: string) => void;
+  handleClosePanel: (visualizationType: VisualizationType) => void;
   isMultiPanelView: boolean;
 }
 

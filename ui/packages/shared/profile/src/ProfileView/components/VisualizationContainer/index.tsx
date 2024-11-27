@@ -24,7 +24,7 @@ interface VisualizationContainerProps {
   provided: DraggableProvided;
   snapshot: DraggableStateSnapshot;
   dashboardItem: VisualizationType;
-  getDashboardItemByType: (props: {type: string; isHalfScreen: boolean}) => JSX.Element;
+  getDashboardItemByType: (props: {type: VisualizationType; isHalfScreen: boolean}) => JSX.Element;
   isMultiPanelView: boolean;
   index: number;
   actionButtons: {

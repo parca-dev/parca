@@ -167,7 +167,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
             profileViewExternalSubActions={profileViewExternalSubActions}
           />
 
-          {showVisualizationSelector === true ? <ViewSelector /> : null}
+          {showVisualizationSelector ? <ViewSelector /> : null}
         </div>
       </div>
       {isGraphViz && !isTableViz && (
