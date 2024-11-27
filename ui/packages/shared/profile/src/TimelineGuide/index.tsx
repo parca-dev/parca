@@ -65,7 +65,7 @@ export const TimelineGuide = ({bounds, width, height, margin, ticks}: Props): JS
                 </g>
                 <g key={`grid-${i}`}>
                   <line
-                    className="stroke-gray-300 dark:stroke-gray-500 z-30 relative isolate"
+                    className="stroke-gray-300 dark:stroke-gray-500"
                     x1={xScale(d)}
                     x2={xScale(d)}
                     y1={0}
