@@ -92,6 +92,28 @@ func ValidatePprofProfile(p *pprofpb.Profile, ei []*profilestorepb.ExecutableInf
 		return fmt.Errorf("missing sample type information")
 	}
 
+	for i, st := range p.SampleType {
+		if st == nil {
+			return fmt.Errorf("profile has nil sample type")
+		}
+
+		if st.Type != 0 && st.Type > stringTableLen {
+			return fmt.Errorf("sample type %d has invalid type index %d", i, st.Type)
+		}
+
+		if st.Unit != 0 && st.Unit > stringTableLen {
+			return fmt.Errorf("sample type %d has invalid unit index %d", i, st.Unit)
+		}
+	}
+
+	if p.PeriodType.Type != 0 && p.PeriodType.Type > stringTableLen {
+		return fmt.Errorf("period type has invalid type index %d", p.PeriodType.Type)
+	}
+
+	if p.PeriodType.Unit != 0 && p.PeriodType.Unit > stringTableLen {
+		return fmt.Errorf("period type has invalid unit index %d", p.PeriodType.Unit)
+	}
+
 	for i, s := range p.Sample {
 		if s == nil {
 			return fmt.Errorf("profile has nil sample")
