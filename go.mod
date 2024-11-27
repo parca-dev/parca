@@ -30,7 +30,7 @@ require (
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/parquet-go/parquet-go v0.23.0
+	github.com/parquet-go/parquet-go v0.24.0
 	github.com/planetscale/vtprotobuf v0.6.1-0.20241011083415-71c992bc3c87
 	github.com/polarsignals/frostdb v0.0.0-20240823114939-ecd6b80402ae
 	github.com/polarsignals/iceberg-go v0.0.0-20240502213135-2ee70b71e76b
@@ -216,7 +216,6 @@ require (
 	github.com/rs/cors v1.8.0 // indirect
 	github.com/rs/xid v1.5.0 // indirect
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.30 // indirect
-	github.com/segmentio/encoding v0.4.0 // indirect
 	github.com/sony/gobreaker v0.5.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/tencentyun/cos-go-sdk-v5 v0.7.40 // indirect
