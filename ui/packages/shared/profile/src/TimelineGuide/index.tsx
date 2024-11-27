@@ -22,6 +22,7 @@ interface Props {
   height: number;
   margin: number;
   bounds: NumberDuo;
+  ticks?: number;
 }
 
 const alignBeforeAxisCorrection = (val: number): number => {
@@ -35,7 +36,7 @@ const alignBeforeAxisCorrection = (val: number): number => {
   return 0;
 };
 
-export const TimelineGuide = ({bounds, width, height, margin}: Props): JSX.Element => {
+export const TimelineGuide = ({bounds, width, height, margin, ticks}: Props): JSX.Element => {
   const xScale = d3.scaleLinear().domain(bounds).range([0, width]);
 
   return (
@@ -49,7 +50,7 @@ export const TimelineGuide = ({bounds, width, height, margin}: Props): JSX.Eleme
             textAnchor="middle"
             transform={`translate(0,${height - margin})`}
           >
-            {xScale.ticks().map((d, i) => (
+            {xScale.ticks(ticks).map((d, i) => (
               <Fragment key={`${i.toString()}-${d.toString()}`}>
                 <g
                   key={`tick-${i}`}
@@ -64,7 +65,7 @@ export const TimelineGuide = ({bounds, width, height, margin}: Props): JSX.Eleme
                 </g>
                 <g key={`grid-${i}`}>
                   <line
-                    className="stroke-gray-300 dark:stroke-gray-500"
+                    className="stroke-gray-300 dark:stroke-gray-500 z-30 relative isolate"
                     x1={xScale(d)}
                     x2={xScale(d)}
                     y1={0}
