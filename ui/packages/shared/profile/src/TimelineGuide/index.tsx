@@ -11,17 +11,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Fragment, useMemo} from 'react';
+import {Fragment} from 'react';
 
 import * as d3 from 'd3';
 
-import {DataPoint, NumberDuo} from '../AreaGraph';
+import {NumberDuo} from '../utils';
 
 interface Props {
   width: number;
   height: number;
   margin: number;
-  data: DataPoint[][];
+  bounds: NumberDuo;
+  ticks?: number;
 }
 
 const alignBeforeAxisCorrection = (val: number): number => {
@@ -35,18 +36,7 @@ const alignBeforeAxisCorrection = (val: number): number => {
   return 0;
 };
 
-export const TimelineGuide = ({data, width, height, margin}: Props): JSX.Element => {
-  const bounds = useMemo(() => {
-    const bounds: NumberDuo = [Infinity, -Infinity];
-    data.forEach(cpuData => {
-      cpuData.forEach(dataPoint => {
-        bounds[0] = Math.min(bounds[0], dataPoint.timestamp);
-        bounds[1] = Math.max(bounds[1], dataPoint.timestamp);
-      });
-    });
-    return [0, bounds[1] - bounds[0]];
-  }, [data]);
-
+export const TimelineGuide = ({bounds, width, height, margin, ticks}: Props): JSX.Element => {
   const xScale = d3.scaleLinear().domain(bounds).range([0, width]);
 
   return (
@@ -60,7 +50,7 @@ export const TimelineGuide = ({data, width, height, margin}: Props): JSX.Element
             textAnchor="middle"
             transform={`translate(0,${height - margin})`}
           >
-            {xScale.ticks().map((d, i) => (
+            {xScale.ticks(ticks).map((d, i) => (
               <Fragment key={`${i.toString()}-${d.toString()}`}>
                 <g
                   key={`tick-${i}`}
