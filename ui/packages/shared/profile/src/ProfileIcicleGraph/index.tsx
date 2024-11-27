@@ -20,9 +20,9 @@ import {IcicleGraphSkeleton, useParcaContext, useURLState} from '@parca/componen
 import {ProfileType} from '@parca/parser';
 import {capitalizeOnlyFirstLetter, divide} from '@parca/utilities';
 
-import {TimelineGuide} from '../MetricsGraphStrips/TimelineGuide';
 import DiffLegend from '../ProfileView/components/DiffLegend';
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
+import {TimelineGuide} from '../TimelineGuide';
 import {IcicleGraph} from './IcicleGraph';
 import {FIELD_FUNCTION_NAME, IcicleGraphArrow} from './IcicleGraphArrow';
 import useMappingList from './IcicleGraphArrow/useMappingList';
@@ -46,6 +46,7 @@ interface ProfileIcicleGraphProps {
   isHalfScreen: boolean;
   metadataMappingFiles?: string[];
   metadataLoading?: boolean;
+  showTimelineGuide?: boolean;
 }
 
 const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
@@ -65,6 +66,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   width,
   isHalfScreen,
   metadataMappingFiles,
+  showTimelineGuide = false,
 }: ProfileIcicleGraphProps): JSX.Element {
   const {onError, authenticationErrorMessage, isDarkMode} = useParcaContext();
   const {compareMode} = useProfileViewContext();
@@ -166,8 +168,16 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
 
     if (arrow !== undefined)
       return (
-        <div>
-          <TimelineGuide width={width} height={1000} margin={0} ticks={60000 / 10000} />
+        <div className="relative">
+          {showTimelineGuide && (
+            <TimelineGuide
+              bounds={[0, 60000]}
+              width={width}
+              height={1000}
+              margin={0}
+              ticks={60000 / 10000}
+            />
+          )}
           <IcicleGraphArrow
             width={width}
             arrow={arrow}
@@ -200,6 +210,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     isDarkMode,
     mappingsList,
     isCompareAbsolute,
+    showTimelineGuide,
   ]);
 
   if (error != null) {

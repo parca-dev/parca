@@ -28,12 +28,14 @@ interface ProfileViewWithDataProps {
   profileSource: ProfileSource;
   compare?: boolean;
   showVisualizationSelector?: boolean;
+  showTimelineGuide?: boolean;
 }
 
 export const ProfileViewWithData = ({
   queryClient,
   profileSource,
   showVisualizationSelector,
+  showTimelineGuide,
 }: ProfileViewWithDataProps): JSX.Element => {
   const metadata = useGrpcMetadata();
   const [dashboardItems] = useURLState<string[]>('dashboard_items', {
@@ -242,6 +244,7 @@ export const ProfileViewWithData = ({
       onDownloadPProf={() => void downloadPProfClick()}
       pprofDownloading={pprofDownloading}
       showVisualizationSelector={showVisualizationSelector}
+      showTimelineGuide={showTimelineGuide}
     />
   );
 };
