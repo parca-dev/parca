@@ -174,23 +174,20 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
 
     if (arrow !== undefined)
       return (
-        <div>
-          <TimelineGuide width={width} height={1000} margin={0} ticks={60000 / 10000} />
-          <IcicleGraphArrow
-            width={width}
-            arrow={arrow}
-            total={total}
-            filtered={filtered}
-            curPath={curPath}
-            setCurPath={setNewCurPath}
-            profileType={profileType}
-            sortBy={storeSortBy as string}
-            flamegraphLoading={isLoading}
-            isHalfScreen={isHalfScreen}
-            mappingsListFromMetadata={mappingsList}
-            compareAbsolute={isCompareAbsolute}
-          />
-        </div>
+        <IcicleGraphArrow
+          width={width}
+          arrow={arrow}
+          total={total}
+          filtered={filtered}
+          curPath={curPath}
+          setCurPath={setNewCurPath}
+          profileType={profileType}
+          sortBy={storeSortBy as string}
+          flamegraphLoading={isLoading}
+          isHalfScreen={isHalfScreen}
+          mappingsListFromMetadata={mappingsList}
+          compareAbsolute={isCompareAbsolute}
+        />
       );
   }, [
     isLoading,
