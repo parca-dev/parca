@@ -25,7 +25,7 @@ import {
   type NavigateFunction,
 } from '@parca/utilities';
 
-import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
+import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
 import {hexifyAddress} from '../utils';
 
 interface TopTableProps {

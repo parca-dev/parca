@@ -20,7 +20,7 @@ import {setHoveringNode, useAppDispatch} from '@parca/store';
 import {scaleLinear, selectQueryParam} from '@parca/utilities';
 
 import GraphTooltip from '../../GraphTooltip';
-import {useProfileViewContext} from '../../ProfileView/ProfileViewContext';
+import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
 import ColorStackLegend from './ColorStackLegend';
 import {IcicleNode, RowHeight} from './IcicleGraphNodes';
 import useColoredGraph from './useColoredGraph';

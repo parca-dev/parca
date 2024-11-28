@@ -13,7 +13,7 @@
 
 import {ReactNode, createContext, useContext} from 'react';
 
-import {ProfileSource} from '../ProfileSource';
+import {ProfileSource} from '../../ProfileSource';
 
 interface Props {
   profileSource?: ProfileSource;

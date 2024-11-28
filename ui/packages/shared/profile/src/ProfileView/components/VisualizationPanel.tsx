@@ -20,13 +20,15 @@ import type {DraggableProvidedDragHandleProps} from 'react-beautiful-dnd';
 import {IconButton, useParcaContext} from '@parca/components';
 import {CloseIcon} from '@parca/icons';
 
+import {VisualizationType} from '../types/visualization';
+
 interface Props {
-  dashboardItem: string;
+  dashboardItem: VisualizationType;
   index: number;
   isMultiPanelView: boolean;
-  handleClosePanel: (dashboardItem: string) => void;
+  handleClosePanel: (dashboardItem: VisualizationType) => void;
   dragHandleProps: DraggableProvidedDragHandleProps | null | undefined;
-  getDashboardItemByType: (props: {type: string; isHalfScreen: boolean}) => JSX.Element;
+  getDashboardItemByType: (props: {type: VisualizationType; isHalfScreen: boolean}) => JSX.Element;
   actionButtons: {
     icicle: JSX.Element;
     table: JSX.Element;

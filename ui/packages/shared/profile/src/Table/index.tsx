@@ -41,7 +41,7 @@ import {colorByColors} from '../ProfileIcicleGraph/IcicleGraphArrow/IcicleGraphN
 import useMappingList, {
   useFilenamesList,
 } from '../ProfileIcicleGraph/IcicleGraphArrow/useMappingList';
-import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
+import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
 import {
   ColumnName,
   DataRow,

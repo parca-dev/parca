@@ -11,110 +11,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Profiler, ProfilerProps, useCallback, useEffect, useMemo, useState} from 'react';
-
-import {Table as ArrowTable, tableFromIPC} from 'apache-arrow';
-import cx from 'classnames';
-import {scaleLinear} from 'd3';
-import graphviz from 'graphviz-wasm';
-import {
-  DragDropContext,
-  Draggable,
-  Droppable,
-  type DraggableLocation,
-  type DropResult,
-} from 'react-beautiful-dnd';
-
-import {
-  Callgraph as CallgraphType,
-  Flamegraph,
-  FlamegraphArrow,
-  QueryServiceClient,
-  Source,
-  TableArrow,
-  Top,
-} from '@parca/client';
-import {ConditionalWrapper, KeyDownProvider, useParcaContext, useURLState} from '@parca/components';
+import {KeyDownProvider, useParcaContext} from '@parca/components';
 import {useContainerDimensions} from '@parca/hooks';
 import {selectDarkMode, useAppSelector} from '@parca/store';
-import {getNewSpanColor, selectQueryParam} from '@parca/utilities';
+import {selectQueryParam} from '@parca/utilities';
 
-import {Callgraph} from '../';
-import {jsonToDot} from '../Callgraph/utils';
-import ProfileIcicleGraph from '../ProfileIcicleGraph';
-import {FIELD_FUNCTION_NAME} from '../ProfileIcicleGraph/IcicleGraphArrow';
-import useMappingList, {
-  useFilenamesList,
-} from '../ProfileIcicleGraph/IcicleGraphArrow/useMappingList';
-import {ProfileSource} from '../ProfileSource';
-import {SourceView} from '../SourceView';
-import {Table} from '../Table';
-import VisualisationToolbar, {
-  IcicleGraphToolbar,
-  TableToolbar,
-} from '../components/VisualisationToolbar';
-import ColorStackLegend from './ColorStackLegend';
-import {ProfileViewContextProvider} from './ProfileViewContext';
-import {VisualizationPanel} from './VisualizationPanel';
-
-export interface FlamegraphData {
-  loading: boolean;
-  data?: Flamegraph;
-  arrow?: FlamegraphArrow;
-  total?: bigint;
-  filtered?: bigint;
-  error?: any;
-  metadataMappingFiles?: string[];
-  metadataLoading: boolean;
-  metadataLabels?: string[];
-}
-
-export interface TopTableData {
-  loading: boolean;
-  arrow?: TableArrow;
-  data?: Top; // TODO: Remove this once we only have arrow support
-  total?: bigint;
-  filtered?: bigint;
-  error?: any;
-  unit?: string;
-}
-
-interface CallgraphData {
-  loading: boolean;
-  data?: CallgraphType;
-  total?: bigint;
-  filtered?: bigint;
-  error?: any;
-}
-
-interface SourceData {
-  loading: boolean;
-  data?: Source;
-  error?: any;
-}
-
-export interface ProfileViewProps {
-  total: bigint;
-  filtered: bigint;
-  flamegraphData: FlamegraphData;
-  topTableData?: TopTableData;
-  callgraphData?: CallgraphData;
-  sourceData?: SourceData;
-  profileSource?: ProfileSource;
-  queryClient?: QueryServiceClient;
-  compare?: boolean;
-  onDownloadPProf: () => void;
-  pprofDownloading?: boolean;
-}
-
-function arrayEquals<T>(a: T[], b: T[]): boolean {
-  return (
-    Array.isArray(a) &&
-    Array.isArray(b) &&
-    a.length === b.length &&
-    a.every((val, index) => val === b[index])
-  );
-}
+import ColorStackLegend from './components/ColorStackLegend';
+import {getDashboardItem} from './components/DashboardItems';
+import {DashboardLayout} from './components/DashboardLayout';
+import {ProfileHeader} from './components/ProfileHeader';
+import {IcicleGraphToolbar, TableToolbar, VisualisationToolbar} from './components/Toolbars';
+import {DashboardProvider} from './context/DashboardContext';
+import {ProfileViewContextProvider} from './context/ProfileViewContext';
+import {useGraphviz} from './hooks/useGraphviz';
+import {useProfileMetadata} from './hooks/useProfileMetadata';
+import {useVisualizationState} from './hooks/useVisualizationState';
+import type {ProfileViewProps, VisualizationType} from './types/visualization';
+import {getColorRange} from './utils/colorUtils';
 
 export const ProfileView = ({
   total,
@@ -128,378 +41,140 @@ export const ProfileView = ({
   onDownloadPProf,
   pprofDownloading,
   compare,
+  showVisualizationSelector,
 }: ProfileViewProps): JSX.Element => {
-  const {timezone} = useParcaContext();
+  const {
+    timezone,
+    perf,
+    profileViewExternalMainActions,
+    preferencesModal,
+    profileViewExternalSubActions,
+  } = useParcaContext();
   const {ref, dimensions} = useContainerDimensions();
-  const [curPath, setCurPath] = useState<string[]>([]);
-  const [dashboardItems, setDashboardItems] = useURLState<string[]>('dashboard_items', {
-    alwaysReturnArray: true,
+  const isDarkMode = useAppSelector(selectDarkMode);
+  const colorRange = getColorRange(isDarkMode);
+
+  const {
+    curPath,
+    setCurPath,
+    currentSearchString,
+    setSearchString,
+    colorStackLegend,
+    colorBy,
+    groupBy,
+    toggleGroupBy,
+    clearSelection,
+    setGroupByLabels,
+  } = useVisualizationState();
+
+  const {callgraphSVG} = useGraphviz({
+    callgraphData: callgraphData?.data,
+    width: dimensions?.width,
+    colorRange,
   });
-  const [graphvizLoaded, setGraphvizLoaded] = useState(false);
-  const [callgraphSVG, setCallgraphSVG] = useState<string | undefined>(undefined);
-  const [currentSearchString, setSearchString] = useURLState<string | undefined>('search_string');
-  const [colorStackLegend] = useURLState<string | undefined>('color_stack_legend');
-  const [colorBy] = useURLState('color_by');
+
+  const {colorMappings} = useProfileMetadata({
+    flamegraphArrow: flamegraphData.arrow,
+    metadataMappingFiles: flamegraphData.metadataMappingFiles,
+    metadataLoading: flamegraphData.metadataLoading,
+    colorBy,
+  });
 
   const isColorStackLegendEnabled = colorStackLegend === 'true';
-  const colorByValue = colorBy === undefined || colorBy === '' ? 'binary' : (colorBy as string);
-
-  const isDarkMode = useAppSelector(selectDarkMode);
-  const isMultiPanelView = dashboardItems.length > 1;
-
-  const table: ArrowTable<any> | null = useMemo(() => {
-    return flamegraphData.arrow !== undefined ? tableFromIPC(flamegraphData.arrow.record) : null;
-  }, [flamegraphData.arrow]);
-
-  const mappingsList = useMappingList(flamegraphData.metadataMappingFiles);
-  const filenamesList = useFilenamesList(table);
-
-  const {perf, profileViewExternalMainActions} = useParcaContext();
-
-  useEffect(() => {
-    // Reset the current path when the profile source changes
-    setCurPath([]);
-  }, [profileSource]);
-
-  useEffect(() => {
-    async function loadGraphviz(): Promise<void> {
-      await graphviz.loadWASM();
-      setGraphvizLoaded(true);
-    }
-    void loadGraphviz();
-  }, []);
-
-  const maxColor: string = getNewSpanColor(isDarkMode);
-  const minColor: string = scaleLinear([isDarkMode ? 'black' : 'white', maxColor])(0.3);
-  const colorRange: [string, string] = [minColor, maxColor];
-  // Note: If we want to further optimize the experience, we could try to load the graphviz layout in the ProfileViewWithData layer
-  // and pass it down to the ProfileView. This would allow us to load the layout in parallel with the flamegraph data.
-  // However, the layout calculation is dependent on the width and color range of the graph container, which is why it is done at this level
-  useEffect(() => {
-    async function loadCallgraphSVG(
-      graph: CallgraphType,
-      width: number,
-      colorRange: [string, string]
-    ): Promise<void> {
-      await setCallgraphSVG(undefined);
-      // Translate JSON to 'dot' graph string
-      const dataAsDot = await jsonToDot({
-        graph,
-        width,
-        colorRange,
-      });
-
-      // Use Graphviz-WASM to translate the 'dot' graph to a 'JSON' graph
-      const svgGraph = await graphviz.layout(dataAsDot, 'svg', 'dot');
-      await setCallgraphSVG(svgGraph);
-    }
-
-    if (
-      graphvizLoaded &&
-      callgraphData?.data !== null &&
-      callgraphData?.data !== undefined &&
-      dimensions?.width !== undefined
-    ) {
-      void loadCallgraphSVG(callgraphData?.data, dimensions?.width, colorRange);
-    }
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graphvizLoaded, callgraphData?.data]);
-
-  const setNewCurPath = (path: string[]): void => {
-    if (!arrayEquals(curPath, path)) {
-      setCurPath(path);
-    }
-  };
+  const compareMode =
+    compare === true ||
+    (selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true');
 
   const getDashboardItemByType = ({
     type,
     isHalfScreen,
   }: {
-    type: string;
+    type: VisualizationType;
     isHalfScreen: boolean;
   }): JSX.Element => {
-    switch (type) {
-      case 'icicle': {
-        return (
-          <ConditionalWrapper<ProfilerProps>
-            condition={perf?.onRender != null}
-            WrapperComponent={Profiler}
-            wrapperProps={{
-              id: 'icicleGraph',
-              onRender: perf?.onRender as React.ProfilerOnRenderCallback,
-            }}
-          >
-            <ProfileIcicleGraph
-              curPath={curPath}
-              setNewCurPath={setNewCurPath}
-              arrow={flamegraphData?.arrow}
-              graph={flamegraphData?.data}
-              total={total}
-              filtered={filtered}
-              profileType={profileSource?.ProfileType()}
-              loading={flamegraphData.loading}
-              error={flamegraphData.error}
-              isHalfScreen={isHalfScreen}
-              width={
-                dimensions?.width !== undefined
-                  ? isHalfScreen
-                    ? (dimensions.width - 54) / 2
-                    : dimensions.width - 16
-                  : 0
-              }
-              metadataMappingFiles={flamegraphData.metadataMappingFiles}
-              metadataLoading={flamegraphData.metadataLoading}
-            />
-          </ConditionalWrapper>
-        );
-      }
-      case 'callgraph': {
-        return callgraphData?.data !== undefined &&
-          callgraphSVG !== undefined &&
-          dimensions?.width !== undefined ? (
-          <Callgraph
-            data={callgraphData.data}
-            svgString={callgraphSVG}
-            profileType={profileSource?.ProfileType()}
-            width={isHalfScreen ? dimensions?.width / 2 : dimensions?.width}
-          />
-        ) : (
-          <></>
-        );
-      }
-      case 'table': {
-        return topTableData != null ? (
-          <Table
-            total={total}
-            filtered={filtered}
-            loading={topTableData.loading}
-            data={topTableData.arrow?.record}
-            unit={topTableData.unit}
-            profileType={profileSource?.ProfileType()}
-            currentSearchString={currentSearchString}
-            setSearchString={setSearchString}
-            isHalfScreen={isHalfScreen}
-            metadataMappingFiles={flamegraphData.metadataMappingFiles}
-          />
-        ) : (
-          <></>
-        );
-      }
-      case 'source': {
-        return sourceData != null ? (
-          <SourceView
-            loading={sourceData.loading}
-            data={sourceData.data}
-            total={total}
-            filtered={filtered}
-          />
-        ) : (
-          <></>
-        );
-      }
-      default: {
-        return <></>;
-      }
-    }
+    return getDashboardItem({
+      type,
+      isHalfScreen,
+      dimensions,
+      flamegraphData,
+      topTableData,
+      callgraphData,
+      sourceData,
+      profileSource,
+      total,
+      filtered,
+      curPath,
+      setNewCurPath: setCurPath,
+      currentSearchString,
+      setSearchString,
+      callgraphSVG,
+      perf,
+    });
   };
 
-  const handleClosePanel = (visualizationType: string): void => {
-    const newDashboardItems = dashboardItems.filter(item => item !== visualizationType);
-    setDashboardItems(newDashboardItems);
+  const actionButtons = {
+    icicle: <IcicleGraphToolbar curPath={curPath} setNewCurPath={setCurPath} />,
+    table: (
+      <TableToolbar
+        profileType={profileSource?.ProfileType()}
+        total={total}
+        filtered={filtered}
+        clearSelection={clearSelection}
+        currentSearchString={currentSearchString}
+      />
+    ),
   };
 
-  const onDragEnd = (result: DropResult): void => {
-    const {destination, source, draggableId} = result;
-
-    if (Boolean(destination) && destination?.index !== source.index) {
-      const targetItem = draggableId;
-      const otherItems = dashboardItems.filter(item => item !== targetItem);
-      const newDashboardItems =
-        (destination as DraggableLocation).index < source.index
-          ? [targetItem, ...otherItems]
-          : [...otherItems, targetItem];
-
-      setDashboardItems(newDashboardItems);
-    }
-  };
-
-  // TODO: this is just a placeholder, we need to replace with an actually informative and accurate title (cc @metalmatze)
-  const profileSourceString = profileSource?.toString(timezone);
-  const hasProfileSource = profileSource !== undefined && profileSourceString !== '';
-  const headerParts = profileSourceString?.split('"') ?? [];
-
-  const compareMode =
-    compare === true ||
-    (selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true');
-
-  const [groupBy, setStoreGroupBy] = useURLState<string[]>('group_by', {
-    defaultValue: [FIELD_FUNCTION_NAME],
-    alwaysReturnArray: true,
-  });
-
-  const setGroupBy = useCallback(
-    (keys: string[]): void => {
-      setStoreGroupBy(keys);
-    },
-    [setStoreGroupBy]
-  );
-
-  const toggleGroupBy = useCallback(
-    (key: string): void => {
-      groupBy.includes(key)
-        ? setGroupBy(groupBy.filter(v => v !== key)) // remove
-        : setGroupBy([...groupBy, key]); // add
-    },
-    [groupBy, setGroupBy]
-  );
-
-  const showDivider =
-    hasProfileSource &&
-    (profileViewExternalMainActions === null || profileViewExternalMainActions === undefined);
-
-  const clearSelection = useCallback((): void => {
-    setSearchString?.('');
-  }, [setSearchString]);
-
-  const getActionButtonsWithMultiPanelView = (): {
-    icicle: JSX.Element;
-    table: JSX.Element;
-  } => {
-    return {
-      icicle: <IcicleGraphToolbar curPath={curPath} setNewCurPath={setNewCurPath} />,
-      table: (
-        <TableToolbar
-          profileType={profileSource?.ProfileType()}
-          total={total}
-          filtered={filtered}
-          clearSelection={clearSelection}
-          currentSearchString={currentSearchString}
-        />
-      ),
-    };
-  };
+  const hasProfileSource = profileSource !== undefined && profileSource.toString(timezone) !== '';
 
   return (
     <KeyDownProvider>
       <ProfileViewContextProvider value={{profileSource, compareMode}}>
-        {showDivider ? (
-          <>
-            <div className="border-t border-gray-200 dark:border-gray-700 h-[1px] w-full pb-4"></div>
-          </>
-        ) : null}
-        <div
-          className={cx(
-            'flex w-full',
-            hasProfileSource || profileViewExternalMainActions != null
-              ? 'justify-start'
-              : 'justify-end',
-            {
-              'items-end mb-4': !hasProfileSource && profileViewExternalMainActions != null,
-              'items-center mb-2': hasProfileSource,
-            }
-          )}
-        >
-          <div>
-            {hasProfileSource && (
-              <div className="flex items-center gap-1">
-                <div className="text-xs font-medium">
-                  {headerParts.length > 0 ? headerParts[0].replace(/"/g, '') : ''}
-                </div>
-                <div className="text-xs font-medium">
-                  {headerParts.length > 1
-                    ? headerParts[headerParts.length - 1].replace(/"/g, '')
-                    : ''}
-                </div>
-              </div>
-            )}
-
-            {profileViewExternalMainActions != null ? profileViewExternalMainActions : null}
-          </div>
-        </div>
-
-        <VisualisationToolbar
-          groupBy={groupBy}
-          toggleGroupBy={toggleGroupBy}
-          hasProfileSource={hasProfileSource}
-          pprofdownloading={pprofDownloading}
-          profileSource={profileSource}
-          queryClient={queryClient}
-          onDownloadPProf={onDownloadPProf}
-          isMultiPanelView={isMultiPanelView}
-          dashboardItems={dashboardItems}
-          curPath={curPath}
-          setNewCurPath={setNewCurPath}
-          profileType={profileSource?.ProfileType()}
-          total={total}
-          filtered={filtered}
-          currentSearchString={currentSearchString}
-          setSearchString={setSearchString}
-          groupByLabels={flamegraphData.metadataLabels ?? []}
-        />
-
-        {isColorStackLegendEnabled && (
-          <ColorStackLegend
-            compareMode={compareMode}
-            mappings={colorByValue === 'binary' ? mappingsList : filenamesList}
-            loading={flamegraphData.metadataLoading}
+        <DashboardProvider>
+          <ProfileHeader
+            profileSourceString={profileSource?.toString(timezone)}
+            hasProfileSource={hasProfileSource}
+            externalMainActions={profileViewExternalMainActions}
           />
-        )}
 
-        <div className="w-full" ref={ref}>
-          <DragDropContext onDragEnd={onDragEnd}>
-            <Droppable droppableId="droppable" direction="horizontal">
-              {provided => (
-                <div
-                  ref={provided.innerRef}
-                  className={cx(
-                    'grid w-full gap-2',
-                    isMultiPanelView ? 'grid-cols-2' : 'grid-cols-1'
-                  )}
-                  {...provided.droppableProps}
-                >
-                  {dashboardItems.map((dashboardItem, index) => {
-                    return (
-                      <Draggable
-                        key={dashboardItem}
-                        draggableId={dashboardItem}
-                        index={index}
-                        isDragDisabled={!isMultiPanelView}
-                      >
-                        {(provided, snapshot: {isDragging: boolean}) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            key={dashboardItem}
-                            className={cx(
-                              'w-full min-h-96',
-                              snapshot.isDragging
-                                ? 'bg-gray-200 dark:bg-gray-500'
-                                : 'bg-white dark:bg-gray-900',
-                              isMultiPanelView
-                                ? 'border-2 border-gray-100 dark:border-gray-700 rounded-md p-3'
-                                : ''
-                            )}
-                          >
-                            <VisualizationPanel
-                              handleClosePanel={handleClosePanel}
-                              isMultiPanelView={isMultiPanelView}
-                              dashboardItem={dashboardItem}
-                              getDashboardItemByType={getDashboardItemByType}
-                              dragHandleProps={provided.dragHandleProps}
-                              index={index}
-                              actionButtons={getActionButtonsWithMultiPanelView()}
-                            />
-                          </div>
-                        )}
-                      </Draggable>
-                    );
-                  })}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
-        </div>
+          <VisualisationToolbar
+            groupBy={groupBy}
+            toggleGroupBy={toggleGroupBy}
+            hasProfileSource={hasProfileSource}
+            pprofdownloading={pprofDownloading}
+            profileSource={profileSource}
+            queryClient={queryClient}
+            onDownloadPProf={onDownloadPProf}
+            curPath={curPath}
+            setNewCurPath={setCurPath}
+            profileType={profileSource?.ProfileType()}
+            total={total}
+            filtered={filtered}
+            currentSearchString={currentSearchString}
+            setSearchString={setSearchString}
+            groupByLabels={flamegraphData.metadataLabels ?? []}
+            preferencesModal={preferencesModal}
+            profileViewExternalSubActions={profileViewExternalSubActions}
+            clearSelection={clearSelection}
+            setGroupByLabels={setGroupByLabels}
+            showVisualizationSelector={showVisualizationSelector}
+          />
+
+          {isColorStackLegendEnabled && (
+            <ColorStackLegend
+              compareMode={compareMode}
+              mappings={colorMappings}
+              loading={flamegraphData.metadataLoading}
+            />
+          )}
+
+          <div className="w-full" ref={ref}>
+            <DashboardLayout
+              getDashboardItemByType={getDashboardItemByType}
+              actionButtons={actionButtons}
+            />
+          </div>
+        </DashboardProvider>
       </ProfileViewContextProvider>
     </KeyDownProvider>
   );

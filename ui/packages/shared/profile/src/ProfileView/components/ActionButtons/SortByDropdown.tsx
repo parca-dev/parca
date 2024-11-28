@@ -17,8 +17,8 @@ import {
   FIELD_CUMULATIVE,
   FIELD_DIFF,
   FIELD_FUNCTION_NAME,
-} from '../../ProfileIcicleGraph/IcicleGraphArrow';
-import {useProfileViewContext} from '../../ProfileView/ProfileViewContext';
+} from '../../../ProfileIcicleGraph/IcicleGraphArrow';
+import {useProfileViewContext} from '../../context/ProfileViewContext';
 
 const SortByDropdown = (): React.JSX.Element => {
   const [storeSortBy, setStoreSortBy] = useURLState('sort_by', {
