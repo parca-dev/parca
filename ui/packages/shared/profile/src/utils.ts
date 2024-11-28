@@ -59,3 +59,5 @@ export const truncateStringReverse = (str: string, num: number): string => {
 
   return '...' + str.slice(str.length - num);
 };
+
+export type NumberDuo = [number, number];

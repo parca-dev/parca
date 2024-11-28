@@ -16,16 +16,25 @@ import {useArgs} from '@storybook/preview-api';
 // eslint-disable-next-line import/named
 import {Meta} from '@storybook/react';
 
-import {DataPoint, NumberDuo} from './AreaGraph';
+import {NumberDuo} from '../utils';
+import {DataPoint} from './AreaGraph';
 import {MetricsGraphStrips} from './index';
 
+function seededRandom(seed: number): () => number {
+  return () => {
+    seed = (seed * 16807) % 2147483647;
+    return (seed - 1) / 2147483646;
+  };
+}
+
 const mockData: DataPoint[][] = [[], [], []];
+const random = seededRandom(42);
 
 for (let i = 0; i < 200; i++) {
   for (let j = 0; j < mockData.length; j++) {
     mockData[j].push({
       timestamp: 1731326092000 + i * 100,
-      value: Math.floor(Math.random() * 100),
+      value: Math.floor(random() * 100),
     });
   }
 }

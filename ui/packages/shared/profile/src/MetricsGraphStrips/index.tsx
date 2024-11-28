@@ -11,13 +11,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useState} from 'react';
+import {useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import * as d3 from 'd3';
 
-import {AreaGraph, DataPoint, NumberDuo} from './AreaGraph';
-import {TimelineGuide} from './TimelineGuide';
+import {TimelineGuide} from '../TimelineGuide';
+import {NumberDuo} from '../utils';
+import {AreaGraph, DataPoint} from './AreaGraph';
 
 interface Props {
   cpus: string[];
@@ -44,10 +45,21 @@ export const MetricsGraphStrips = ({
   // @ts-expect-error
   const color = d3.scaleOrdinal(d3.schemeObservable10);
 
+  const bounds = useMemo(() => {
+    const bounds: NumberDuo = [Infinity, -Infinity];
+    data.forEach(cpuData => {
+      cpuData.forEach(dataPoint => {
+        bounds[0] = Math.min(bounds[0], dataPoint.timestamp);
+        bounds[1] = Math.max(bounds[1], dataPoint.timestamp);
+      });
+    });
+    return [0, bounds[1] - bounds[0]] as NumberDuo;
+  }, [data]);
+
   return (
     <div className="flex flex-col gap-1 relative">
       <TimelineGuide
-        data={data}
+        bounds={bounds}
         width={1468}
         height={getTimelineGuideHeight(cpus, collapsedIndices)}
         margin={1}
