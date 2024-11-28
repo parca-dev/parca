@@ -50,7 +50,7 @@ export const VisualizationContainer: FC<VisualizationContainerProps> = ({
       {...provided.draggableProps}
       className={cx(
         'w-full min-h-96',
-        snapshot.isDragging ? 'bg-gray-200 dark:bg-gray-500' : 'bg-white dark:bg-gray-900',
+        snapshot.isDragging ? 'bg-gray-200 dark:bg-gray-500' : 'bg-inherit dark:bg-gray-900',
         isMultiPanelView ? 'border-2 border-gray-100 dark:border-gray-700 rounded-md p-3' : ''
       )}
     >
