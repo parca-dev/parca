@@ -1,6 +1,6 @@
 {
   "name": "@parca/profile",
-  "version": "0.16.444",
+  "version": "0.16.449",
   "description": "Profile viewing libraries",
   "dependencies": {
     "@headlessui/react": "^1.7.19",
@@ -51,7 +51,7 @@
     "react-tooltip": "^5.26.3",
     "react-use": "^17.5.0",
     "tailwindcss": "3.2.4",
-    "tsc-watch": "6.2.0",
+    "tsc-watch": "6.2.1",
     "with-alpha-hex": "^1.0.6"
   },
   "devDependencies": {

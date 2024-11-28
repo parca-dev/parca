@@ -29,7 +29,7 @@ import {
   type Table as TableType,
   type VisibilityState,
 } from '@tanstack/react-table';
-import {useVirtualizer, type VirtualizerOptions} from '@tanstack/react-virtual';
+import {useVirtualizer} from '@tanstack/react-virtual';
 import {elementScroll} from '@tanstack/virtual-core';
 import cx from 'classnames';
 
@@ -132,10 +132,12 @@ const Table = <T,>({
   onExpandedChange,
   CustomRowRenderer,
   scrollToIndex,
-  estimatedRowHeight,
+  estimatedRowHeight = 26,
 }: Props<T>): JSX.Element => {
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
-  const [lastScrolledIndex, setLastScrolledIndex] = useState<number | null>(null);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const scrollingRef = useRef<number>();
+  const isMounted = useRef(false);
 
   const table = useReactTable({
     data,
@@ -160,10 +162,54 @@ const Table = <T,>({
 
   const {rows} = table.getRowModel();
 
-  const tableContainerRef = useRef<HTMLDivElement>(null);
-  const scrollingRef = useRef<number>();
-  const scrollToFn: VirtualizerOptions<any, any>['scrollToFn'] = useCallback(
-    (offset, canSmooth, instance) => {
+  const getActualRowIndex = useCallback(
+    (targetIndex: number) => {
+      const targetRow = data[targetIndex];
+      if (targetRow === undefined) return -1;
+      return rows.findIndex(row => row.original === targetRow);
+    },
+    [data, rows]
+  );
+
+  useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true;
+      return;
+    }
+
+    if (scrollToIndex != null && scrollToIndex >= 0 && tableContainerRef.current !== null) {
+      const actualIndex = getActualRowIndex(scrollToIndex);
+      const container = tableContainerRef.current;
+
+      // Always scroll, but if actualIndex is 0, scroll to top
+      if (actualIndex === 0) {
+        container.scrollTo({
+          top: 0,
+          behavior: 'smooth',
+        });
+      } else if (actualIndex > 0) {
+        const targetPosition = actualIndex * estimatedRowHeight;
+        const containerHeight = container.clientHeight;
+
+        const scrollPosition = Math.max(
+          0,
+          targetPosition - containerHeight / 2 + estimatedRowHeight / 2
+        );
+
+        container.scrollTo({
+          top: scrollPosition,
+          behavior: 'smooth',
+        });
+      }
+    }
+  }, [scrollToIndex, getActualRowIndex, estimatedRowHeight]);
+
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => tableContainerRef.current,
+    overscan: 10,
+    estimateSize: () => estimatedRowHeight ?? 26,
+    scrollToFn: (offset, canSmooth, instance) => {
       const duration = 1000;
       const start = tableContainerRef.current?.scrollTop ?? 0;
       const startTime = (scrollingRef.current = Date.now());
@@ -185,24 +231,8 @@ const Table = <T,>({
 
       requestAnimationFrame(run);
     },
-    []
-  );
-
-  const rowVirtualizer = useVirtualizer({
-    count: rows.length,
-    getScrollElement: () => tableContainerRef.current,
-    overscan: 10,
-    estimateSize: () => estimatedRowHeight ?? 26,
-    scrollToFn,
   });
   const virtualRows = rowVirtualizer.getVirtualItems();
-
-  useEffect(() => {
-    if (scrollToIndex != null && scrollToIndex >= 0 && scrollToIndex !== lastScrolledIndex) {
-      rowVirtualizer.scrollToIndex(scrollToIndex);
-      setLastScrolledIndex(scrollToIndex);
-    }
-  }, [scrollToIndex, rowVirtualizer, lastScrolledIndex, setLastScrolledIndex]);
 
   const paddingTop: number = virtualRows.length > 0 ? virtualRows?.[0]?.start ?? 0 : 0;
   const paddingBottom: number =
