@@ -17,12 +17,12 @@ import {Icon} from '@iconify/react';
 import cx from 'classnames';
 import * as d3 from 'd3';
 
+import {NumberDuo} from '../../utils';
+
 export interface DataPoint {
   timestamp: number;
   value: number;
 }
-
-export type NumberDuo = [number, number];
 
 interface Props {
   width: number;
