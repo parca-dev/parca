@@ -1,7 +1,7 @@
 {
   "name": "@parca/web",
   "private": true,
-  "version": "0.16.781",
+  "version": "0.16.782",
   "description": "Parca Web Interface",
   "type": "module",
   "scripts": {
@@ -74,7 +74,7 @@
     "tslint-config-prettier": "1.18.0",
     "tslint-plugin-prettier": "2.3.0",
     "tslint-react": "5.0.0",
-    "vite-plugin-svgr": "4.2.0"
+    "vite-plugin-svgr": "4.3.0"
   },
   "eslintConfig": {
     "extends": [
