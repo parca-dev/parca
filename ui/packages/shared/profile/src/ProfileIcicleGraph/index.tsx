@@ -22,6 +22,7 @@ import {capitalizeOnlyFirstLetter, divide} from '@parca/utilities';
 
 import DiffLegend from '../ProfileView/components/DiffLegend';
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
+import {TimelineGuide} from '../TimelineGuide';
 import {IcicleGraph} from './IcicleGraph';
 import {FIELD_FUNCTION_NAME, IcicleGraphArrow} from './IcicleGraphArrow';
 import useMappingList from './IcicleGraphArrow/useMappingList';
@@ -45,6 +46,7 @@ interface ProfileIcicleGraphProps {
   isHalfScreen: boolean;
   metadataMappingFiles?: string[];
   metadataLoading?: boolean;
+  showTimelineGuide?: boolean;
 }
 
 const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
@@ -64,6 +66,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   width,
   isHalfScreen,
   metadataMappingFiles,
+  showTimelineGuide = false,
 }: ProfileIcicleGraphProps): JSX.Element {
   const {onError, authenticationErrorMessage, isDarkMode} = useParcaContext();
   const {compareMode} = useProfileViewContext();
@@ -165,20 +168,31 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
 
     if (arrow !== undefined)
       return (
-        <IcicleGraphArrow
-          width={width}
-          arrow={arrow}
-          total={total}
-          filtered={filtered}
-          curPath={curPath}
-          setCurPath={setNewCurPath}
-          profileType={profileType}
-          sortBy={storeSortBy as string}
-          flamegraphLoading={isLoading}
-          isHalfScreen={isHalfScreen}
-          mappingsListFromMetadata={mappingsList}
-          compareAbsolute={isCompareAbsolute}
-        />
+        <div className="relative">
+          {showTimelineGuide && (
+            <TimelineGuide
+              bounds={[0, 60000]}
+              width={width}
+              height={1000}
+              margin={0}
+              ticks={60000 / 10000}
+            />
+          )}
+          <IcicleGraphArrow
+            width={width}
+            arrow={arrow}
+            total={total}
+            filtered={filtered}
+            curPath={curPath}
+            setCurPath={setNewCurPath}
+            profileType={profileType}
+            sortBy={storeSortBy as string}
+            flamegraphLoading={isLoading}
+            isHalfScreen={isHalfScreen}
+            mappingsListFromMetadata={mappingsList}
+            compareAbsolute={isCompareAbsolute}
+          />
+        </div>
       );
   }, [
     isLoading,
@@ -196,6 +210,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     isDarkMode,
     mappingsList,
     isCompareAbsolute,
+    showTimelineGuide,
   ]);
 
   if (error != null) {

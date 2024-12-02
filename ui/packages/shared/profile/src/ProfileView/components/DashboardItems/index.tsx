@@ -47,6 +47,7 @@ interface GetDashboardItemProps {
   perf?: {
     onRender?: ProfilerOnRenderCallback;
   };
+  showTimelineGuide?: boolean;
 }
 
 export const getDashboardItem = ({
@@ -66,6 +67,7 @@ export const getDashboardItem = ({
   setSearchString,
   callgraphSVG,
   perf,
+  showTimelineGuide,
 }: GetDashboardItemProps): JSX.Element => {
   switch (type) {
     case 'icicle':
@@ -98,6 +100,7 @@ export const getDashboardItem = ({
             }
             metadataMappingFiles={flamegraphData.metadataMappingFiles}
             metadataLoading={flamegraphData.metadataLoading}
+            showTimelineGuide={showTimelineGuide}
           />
         </ConditionalWrapper>
       );

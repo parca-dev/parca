@@ -28,6 +28,7 @@ interface Props {
     bounds: NumberDuo;
   };
   onSelectedTimeline: (index: number, bounds: NumberDuo | undefined) => void;
+  width?: number;
 }
 
 const getTimelineGuideHeight = (cpus: string[], collapsedIndices: number[]): number => {
@@ -39,6 +40,7 @@ export const MetricsGraphStrips = ({
   data,
   selectedTimeline,
   onSelectedTimeline,
+  width,
 }: Props): JSX.Element => {
   const [collapsedIndices, setCollapsedIndices] = useState<number[]>([]);
 
@@ -57,17 +59,17 @@ export const MetricsGraphStrips = ({
   }, [data]);
 
   return (
-    <div className="flex flex-col gap-1 relative">
+    <div className="flex flex-col gap-1 relative my-0 ml-[70px]" style={{width: width ?? '100%'}}>
       <TimelineGuide
         bounds={bounds}
-        width={1468}
+        width={width ?? 1468}
         height={getTimelineGuideHeight(cpus, collapsedIndices)}
         margin={1}
       />
       {cpus.map((cpu, i) => {
         const isCollapsed = collapsedIndices.includes(i);
         return (
-          <div className="relative min-h-5" key={cpu}>
+          <div className="relative min-h-5" style={{width: width ?? 1468}} key={cpu}>
             <div
               className="text-xs absolute top-0 left-0 flex gap-[2px] items-center bg-white/50 px-1 rounded-sm cursor-pointer z-30"
               onClick={() => {
@@ -87,7 +89,7 @@ export const MetricsGraphStrips = ({
               <AreaGraph
                 data={data[i]}
                 height={56}
-                width={1468}
+                width={width ?? 1468}
                 fill={color(i.toString()) as string}
                 selectionBounds={
                   selectedTimeline?.index === i ? selectedTimeline.bounds : undefined
