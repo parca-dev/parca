@@ -32,7 +32,7 @@ import {getLastItem, scaleLinear, type ColorConfig} from '@parca/utilities';
 import GraphTooltipArrow from '../../GraphTooltipArrow';
 import GraphTooltipArrowContent from '../../GraphTooltipArrow/Content';
 import {DockedGraphTooltip} from '../../GraphTooltipArrow/DockedGraphTooltip';
-import {useProfileViewContext} from '../../ProfileView/ProfileViewContext';
+import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
 import ContextMenu from './ContextMenu';
 import {IcicleNode, RowHeight, colorByColors} from './IcicleGraphNodes';
 import {useFilenamesList} from './useMappingList';
@@ -323,7 +323,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   return (
     <>
-      <div onMouseLeave={() => dispatch(setHoveringNode(undefined))}>
+      <div className="relative z-[9]" onMouseLeave={() => dispatch(setHoveringNode(undefined))}>
         <ContextMenu
           menuId={MENU_ID}
           table={table}

@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useState} from 'react';
+import React from 'react';
 
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
@@ -20,17 +20,19 @@ import type {DraggableProvidedDragHandleProps} from 'react-beautiful-dnd';
 import {IconButton, useParcaContext} from '@parca/components';
 import {CloseIcon} from '@parca/icons';
 
+import {VisualizationType} from '../types/visualization';
+
 interface Props {
-  dashboardItem: string;
+  dashboardItem: VisualizationType;
   index: number;
   isMultiPanelView: boolean;
-  handleClosePanel: (dashboardItem: string) => void;
+  handleClosePanel: (dashboardItem: VisualizationType) => void;
   dragHandleProps: DraggableProvidedDragHandleProps | null | undefined;
-  getDashboardItemByType: (props: {
-    type: string;
-    isHalfScreen: boolean;
-    setActionButtons: (actionButtons: JSX.Element) => void;
-  }) => JSX.Element;
+  getDashboardItemByType: (props: {type: VisualizationType; isHalfScreen: boolean}) => JSX.Element;
+  actionButtons: {
+    icicle: JSX.Element;
+    table: JSX.Element;
+  };
 }
 
 export const VisualizationPanel = React.memo(function VisualizationPanel({
@@ -39,8 +41,8 @@ export const VisualizationPanel = React.memo(function VisualizationPanel({
   handleClosePanel,
   dragHandleProps,
   getDashboardItemByType,
+  actionButtons,
 }: Props): JSX.Element {
-  const [actionButtons, setActionButtons] = useState<JSX.Element>(<></>);
   const {flamegraphHint} = useParcaContext();
 
   return (
@@ -52,14 +54,18 @@ export const VisualizationPanel = React.memo(function VisualizationPanel({
             isMultiPanelView && dashboardItem === 'icicle' ? 'items-end gap-x-2' : 'items-end'
           )}
         >
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
             <div
               className={cx(isMultiPanelView ? '' : 'hidden', 'flex items-center')}
               {...dragHandleProps}
             >
               <Icon className="text-xl" icon="material-symbols:drag-indicator" />
             </div>
-            <div className="flex gap-2">{actionButtons}</div>
+            {isMultiPanelView ? (
+              <div className="flex gap-2">
+                {actionButtons[dashboardItem as keyof typeof actionButtons]}
+              </div>
+            ) : null}
           </div>
           <div
             className={cx(
@@ -83,7 +89,6 @@ export const VisualizationPanel = React.memo(function VisualizationPanel({
       {getDashboardItemByType({
         type: dashboardItem,
         isHalfScreen: isMultiPanelView,
-        setActionButtons,
       })}
     </>
   );

@@ -42,7 +42,7 @@ export const TimelineGuide = ({bounds, width, height, margin, ticks}: Props): JS
   return (
     <div className="relative h-4">
       <div className="absolute" style={{width, height}}>
-        <svg style={{width: '100%', height: '100%'}}>
+        <svg style={{width: '100%', height: '100%'}} className="z-[5]">
           <g
             className="x axis"
             fill="none"

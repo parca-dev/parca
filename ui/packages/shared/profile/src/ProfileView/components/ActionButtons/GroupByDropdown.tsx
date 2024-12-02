@@ -25,7 +25,7 @@ import {
   FIELD_LABELS,
   FIELD_LOCATION_ADDRESS,
   FIELD_MAPPING_FILE,
-} from '../../ProfileIcicleGraph/IcicleGraphArrow';
+} from '../../../ProfileIcicleGraph/IcicleGraphArrow';
 
 interface LabelSelectorProps {
   labels: string[];
@@ -180,7 +180,7 @@ const GroupByDropdown: React.FC<GroupByDropdownProps> = ({
 
   return (
     <div className="relative">
-      <label className="text-sm">Group</label>
+      <label className="text-sm">Group by</label>
       <div className="relative text-left" id="h-group-by-filter">
         <Button
           variant="neutral"

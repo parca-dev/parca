@@ -13,20 +13,19 @@
 
 import React, {useEffect, useMemo, useState} from 'react';
 
-import {Table, tableFromIPC} from 'apache-arrow';
 import {AnimatePresence, motion} from 'framer-motion';
 
 import {Flamegraph, FlamegraphArrow} from '@parca/client';
 import {IcicleGraphSkeleton, useParcaContext, useURLState} from '@parca/components';
 import {ProfileType} from '@parca/parser';
-import {capitalizeOnlyFirstLetter, divide, selectQueryParam} from '@parca/utilities';
+import {capitalizeOnlyFirstLetter, divide} from '@parca/utilities';
 
-import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
-import DiffLegend from '../components/DiffLegend';
+import DiffLegend from '../ProfileView/components/DiffLegend';
+import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
+import {TimelineGuide} from '../TimelineGuide';
 import {IcicleGraph} from './IcicleGraph';
 import {FIELD_FUNCTION_NAME, IcicleGraphArrow} from './IcicleGraphArrow';
-import ColorStackLegend from './IcicleGraphArrow/ColorStackLegend';
-import useMappingList, {useFilenamesList} from './IcicleGraphArrow/useMappingList';
+import useMappingList from './IcicleGraphArrow/useMappingList';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 
@@ -47,6 +46,7 @@ interface ProfileIcicleGraphProps {
   isHalfScreen: boolean;
   metadataMappingFiles?: string[];
   metadataLoading?: boolean;
+  showTimelineGuide?: boolean;
 }
 
 const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
@@ -66,18 +66,13 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   width,
   isHalfScreen,
   metadataMappingFiles,
+  showTimelineGuide = false,
 }: ProfileIcicleGraphProps): JSX.Element {
   const {onError, authenticationErrorMessage, isDarkMode} = useParcaContext();
   const {compareMode} = useProfileViewContext();
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const isColorStackLegendEnabled = selectQueryParam('color_stack_legend') === 'true';
-
-  const table: Table<any> | null = useMemo(() => {
-    return arrow !== undefined ? tableFromIPC(arrow.record) : null;
-  }, [arrow]);
 
   const mappingsList = useMappingList(metadataMappingFiles);
-  const filenamesList = useFilenamesList(table);
 
   const [storeSortBy = FIELD_FUNCTION_NAME] = useURLState('sort_by');
   const [colorBy, setColorBy] = useURLState('color_by');
@@ -89,7 +84,6 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   const [compareAbsolute = compareAbsoluteDefault] = useURLState('compare_absolute');
   const isCompareAbsolute = compareAbsolute === 'true';
 
-  const colorByValue = colorBy === undefined || colorBy === '' ? 'binary' : (colorBy as string);
   const mappingsListCount = useMemo(
     () => mappingsList.filter(m => m !== '').length,
     [mappingsList]
@@ -174,20 +168,31 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
 
     if (arrow !== undefined)
       return (
-        <IcicleGraphArrow
-          width={width}
-          arrow={arrow}
-          total={total}
-          filtered={filtered}
-          curPath={curPath}
-          setCurPath={setNewCurPath}
-          profileType={profileType}
-          sortBy={storeSortBy as string}
-          flamegraphLoading={isLoading}
-          isHalfScreen={isHalfScreen}
-          mappingsListFromMetadata={mappingsList}
-          compareAbsolute={isCompareAbsolute}
-        />
+        <div className="relative">
+          {showTimelineGuide && (
+            <TimelineGuide
+              bounds={[0, 60000]}
+              width={width}
+              height={1000}
+              margin={0}
+              ticks={60000 / 10000}
+            />
+          )}
+          <IcicleGraphArrow
+            width={width}
+            arrow={arrow}
+            total={total}
+            filtered={filtered}
+            curPath={curPath}
+            setCurPath={setNewCurPath}
+            profileType={profileType}
+            sortBy={storeSortBy as string}
+            flamegraphLoading={isLoading}
+            isHalfScreen={isHalfScreen}
+            mappingsListFromMetadata={mappingsList}
+            compareAbsolute={isCompareAbsolute}
+          />
+        </div>
       );
   }, [
     isLoading,
@@ -205,6 +210,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     isDarkMode,
     mappingsList,
     isCompareAbsolute,
+    showTimelineGuide,
   ]);
 
   if (error != null) {
@@ -231,13 +237,6 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
         transition={{duration: 0.5}}
       >
         {compareMode ? <DiffLegend /> : null}
-        {isColorStackLegendEnabled && (
-          <ColorStackLegend
-            compareMode={compareMode}
-            mappings={colorByValue === 'binary' ? mappingsList : filenamesList}
-            loading={isLoading}
-          />
-        )}
         <div className="min-h-48" id="h-icicle-graph">
           <>{icicleGraph}</>
         </div>

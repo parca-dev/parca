@@ -25,7 +25,7 @@ import {Tooltip} from 'react-tooltip';
 import {useParcaContext} from '@parca/components';
 import {valueFormatter} from '@parca/utilities';
 
-import {useProfileViewContext} from '../ProfileView/ProfileViewContext';
+import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
 import {LineNo} from './LineNo';
 import {langaugeFromFile} from './lang-detector';
 import useLineRange from './useSelectedLineRange';

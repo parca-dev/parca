@@ -16,7 +16,7 @@ import {Table} from 'apache-arrow';
 import {Item, Menu, Separator, Submenu} from 'react-contexify';
 import {Tooltip} from 'react-tooltip';
 
-import {useParcaContext} from '@parca/components';
+import {useParcaContext, useURLState} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
 import {getLastItem} from '@parca/utilities';
@@ -59,7 +59,7 @@ const ContextMenu = ({
   hideBinary,
 }: ContextMenuProps): JSX.Element => {
   const {isDarkMode} = useParcaContext();
-  const {enableSourcesView} = useParcaContext();
+  const {enableSourcesView, checkDebuginfoStatusHandler} = useParcaContext();
   const [isGraphTooltipDocked, setIsDocked] = useUserPreference<boolean>(
     USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key
   );
@@ -85,6 +85,11 @@ const ContextMenu = ({
     mappingBuildID,
     inlined,
   } = useGraphTooltipMetaInfo({table, row});
+
+  const [_, setSearchString] = useURLState<string | undefined>('search_string');
+  const [dashboardItems, setDashboardItems] = useURLState<string[]>('dashboard_items', {
+    alwaysReturnArray: true,
+  });
 
   if (contextMenuData === null) {
     return <></>;
@@ -157,6 +162,18 @@ const ContextMenu = ({
         </div>
         {!isSourceAvailable ? <Tooltip id="view-source-file-help" /> : null}
       </Item>
+      <Item
+        id="show-in-table"
+        onClick={() => {
+          setSearchString(functionName);
+          setDashboardItems([...dashboardItems, 'table']);
+        }}
+      >
+        <div className="flex w-full items-center gap-2">
+          <Icon icon="ph:table" />
+          <div>Show in table</div>
+        </div>
+      </Item>
       <Item id="reset-view" onClick={handleResetView} disabled={curPath.length === 0}>
         <div className="flex w-full items-center gap-2">
           <Icon icon="system-uicons:reset" />
@@ -175,7 +192,7 @@ const ContextMenu = ({
           <div className="flex w-full items-center gap-2">
             <Icon icon="bx:bxs-hide" />
             <div>
-              Hide Binary {mappingFile !== null && `(${getLastItem(mappingFile) as string})`}
+              Hide binary {mappingFile !== null && `(${getLastItem(mappingFile) as string})`}
             </div>
           </div>
         </div>
@@ -205,6 +222,23 @@ const ContextMenu = ({
           ))}
         </div>
       </Submenu>
+      {checkDebuginfoStatusHandler !== undefined ? (
+        <Item
+          id="check-debuginfo-status"
+          onClick={() => checkDebuginfoStatusHandler(mappingBuildID as string)}
+          disabled={!isMappingBuildIDAvailable}
+        >
+          <div className="flex w-full items-center gap-2">
+            <Icon icon="bx:bx-info-circle" />
+            <div className="relative pr-4">
+              Check debuginfo status{' '}
+              <span className="absolute top-1 right-0">
+                <Icon icon="radix-icons:open-in-new-window" width={12} height={12} />
+              </span>
+            </div>
+          </div>
+        </Item>
+      ) : null}
       <Separator />
       <Item id="dock-tooltip" onClick={handleDockTooltip}>
         <div className="flex w-full items-center gap-2">
