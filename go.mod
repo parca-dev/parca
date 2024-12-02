@@ -33,7 +33,7 @@ require (
 	github.com/oklog/run v1.1.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/parquet-go/parquet-go v0.24.0
-	github.com/planetscale/vtprotobuf v0.6.1-0.20241011083415-71c992bc3c87
+	github.com/planetscale/vtprotobuf v0.6.1-0.20241121165744-79df5c4772f2
 	github.com/polarsignals/frostdb v0.0.0-20240823114939-ecd6b80402ae
 	github.com/polarsignals/iceberg-go v0.0.0-20240502213135-2ee70b71e76b
 	github.com/prometheus/client_golang v1.20.5
