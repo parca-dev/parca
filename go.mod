@@ -2,7 +2,7 @@ module github.com/parca-dev/parca
 
 go 1.22.7
 
-toolchain go1.23.3
+toolchain go1.23.4
 
 require (
 	cloud.google.com/go/storage v1.47.0
