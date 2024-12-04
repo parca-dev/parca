@@ -16,30 +16,53 @@ import {useMemo, useState} from 'react';
 import {Icon} from '@iconify/react';
 import * as d3 from 'd3';
 
+import {LabelSet} from '@parca/client';
+
 import {TimelineGuide} from '../TimelineGuide';
 import {NumberDuo} from '../utils';
 import {AreaGraph, DataPoint} from './AreaGraph';
 
 interface Props {
-  cpus: string[];
+  cpus: LabelSet[];
   data: DataPoint[][];
-  selectedTimeline?: {
-    index: number;
+  selectedTimeframe?: {
+    labels: LabelSet;
     bounds: NumberDuo;
   };
-  onSelectedTimeline: (index: number, bounds: NumberDuo | undefined) => void;
+  onSelectedTimeframe: (labels: LabelSet, bounds: NumberDuo | undefined) => void;
   width?: number;
 }
 
-const getTimelineGuideHeight = (cpus: string[], collapsedIndices: number[]): number => {
+const labelSetToString = (labelSet?: LabelSet): string => {
+  if (labelSet === undefined) {
+    return '{}';
+  }
+
+  let str = '{';
+
+  let isFirst = true;
+  for (const label of labelSet.labels) {
+    if (!isFirst) {
+      str += ', ';
+      isFirst = false;
+    }
+    str += `${label.name}: ${label.value}`;
+  }
+
+  str += '}';
+
+  return str;
+};
+
+const getTimelineGuideHeight = (cpus: LabelSet[], collapsedIndices: number[]): number => {
   return 56 * (cpus.length - collapsedIndices.length) + 20 * collapsedIndices.length + 24;
 };
 
 export const MetricsGraphStrips = ({
   cpus,
   data,
-  selectedTimeline,
-  onSelectedTimeline,
+  selectedTimeframe,
+  onSelectedTimeframe,
   width,
 }: Props): JSX.Element => {
   const [collapsedIndices, setCollapsedIndices] = useState<number[]>([]);
@@ -68,8 +91,9 @@ export const MetricsGraphStrips = ({
       />
       {cpus.map((cpu, i) => {
         const isCollapsed = collapsedIndices.includes(i);
+        const labelStr = labelSetToString(cpu);
         return (
-          <div className="relative min-h-5" style={{width: width ?? 1468}} key={cpu}>
+          <div className="relative min-h-5" style={{width: width ?? 1468}} key={labelStr}>
             <div
               className="text-xs absolute top-0 left-0 flex gap-[2px] items-center bg-white/50 px-1 rounded-sm cursor-pointer z-30"
               onClick={() => {
@@ -83,19 +107,19 @@ export const MetricsGraphStrips = ({
               }}
             >
               <Icon icon={isCollapsed ? 'bxs:right-arrow' : 'bxs:down-arrow'} />
-              {cpu}
+              {labelStr}
             </div>
             {!isCollapsed ? (
               <AreaGraph
                 data={data[i]}
                 height={56}
                 width={width ?? 1468}
-                fill={color(i.toString()) as string}
+                fill={color(labelStr) as string}
                 selectionBounds={
-                  selectedTimeline?.index === i ? selectedTimeline.bounds : undefined
+                  cpu === selectedTimeframe?.labels ? selectedTimeframe.bounds : undefined
                 }
                 setSelectionBounds={bounds => {
-                  onSelectedTimeline(i, bounds);
+                  onSelectedTimeframe(cpu, bounds);
                 }}
               />
             ) : null}

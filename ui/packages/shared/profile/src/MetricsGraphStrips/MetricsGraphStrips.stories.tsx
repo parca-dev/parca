@@ -48,19 +48,19 @@ export const ThreeCPUStrips = {
   args: {
     cpus: Array.from(mockData, (_, i) => `CPU ${i + 1}`),
     data: mockData,
-    selectedTimeline: {index: 1, bounds: [mockData[0][25].timestamp, mockData[0][100].timestamp]},
-    onSelectedTimeline: (index: number, bounds: NumberDuo): void => {
-      console.log('onSelectedTimeline', index, bounds);
+    selectedTimeframe: {index: 1, bounds: [mockData[0][25].timestamp, mockData[0][100].timestamp]},
+    onSelectedTimeframe: (index: number, bounds: NumberDuo): void => {
+      console.log('onSelectedTimeframe', index, bounds);
     },
   },
   render: function Component(args: any): JSX.Element {
     const [, setArgs] = useArgs();
 
-    const onSelectedTimeline = (index: number, bounds: NumberDuo): void => {
-      args.onSelectedTimeline(index, bounds);
-      setArgs({...args, selectedTimeline: {index, bounds}});
+    const onSelectedTimeframe = (index: number, bounds: NumberDuo): void => {
+      args.onSelectedTimeframe(index, bounds);
+      setArgs({...args, selectedTimeframe: {index, bounds}});
     };
 
-    return <MetricsGraphStrips {...args} onSelectedTimeline={onSelectedTimeline} />;
+    return <MetricsGraphStrips {...args} onSelectedTimeframe={onSelectedTimeframe} />;
   },
 };
