@@ -25,6 +25,7 @@ export * from './ProfileViewWithData';
 export * from './utils';
 export * from './ProfileTypeSelector';
 export * from './SourceView';
+export * from './ProfileMetricsGraph';
 export {default as Callgraph} from './Callgraph';
 
 export const DEFAULT_PROFILE_EXPLORER_PARAM_VALUES = {

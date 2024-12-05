@@ -46,7 +46,6 @@ interface ProfileIcicleGraphProps {
   isHalfScreen: boolean;
   metadataMappingFiles?: string[];
   metadataLoading?: boolean;
-  showTimelineGuide?: boolean;
 }
 
 const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
@@ -66,10 +65,9 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   width,
   isHalfScreen,
   metadataMappingFiles,
-  showTimelineGuide = false,
 }: ProfileIcicleGraphProps): JSX.Element {
   const {onError, authenticationErrorMessage, isDarkMode} = useParcaContext();
-  const {compareMode} = useProfileViewContext();
+  const {compareMode, timelineGuide} = useProfileViewContext();
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const mappingsList = useMappingList(metadataMappingFiles);
@@ -169,9 +167,9 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     if (arrow !== undefined)
       return (
         <div className="relative">
-          {showTimelineGuide && (
+          {timelineGuide?.show === true && (
             <TimelineGuide
-              bounds={[0, 60000]}
+              bounds={timelineGuide.props.bounds}
               width={width}
               height={1000}
               margin={0}
@@ -210,7 +208,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     isDarkMode,
     mappingsList,
     isCompareAbsolute,
-    showTimelineGuide,
+    timelineGuide,
   ]);
 
   if (error != null) {

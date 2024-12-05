@@ -42,7 +42,7 @@ export const ProfileView = ({
   pprofDownloading,
   compare,
   showVisualizationSelector,
-  showTimelineGuide,
+  timelineGuide,
 }: ProfileViewProps): JSX.Element => {
   const {
     timezone,
@@ -110,7 +110,6 @@ export const ProfileView = ({
       setSearchString,
       callgraphSVG,
       perf,
-      showTimelineGuide,
     });
   };
 
@@ -131,7 +130,7 @@ export const ProfileView = ({
 
   return (
     <KeyDownProvider>
-      <ProfileViewContextProvider value={{profileSource, compareMode}}>
+      <ProfileViewContextProvider value={{profileSource, compareMode, timelineGuide}}>
         <DashboardProvider>
           <ProfileHeader
             profileSourceString={profileSource?.toString(timezone)}

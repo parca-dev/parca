@@ -44,6 +44,7 @@ export const FIELD_MAPPING_BUILD_ID = 'mapping_build_id';
 export const FIELD_LOCATION_ADDRESS = 'location_address';
 export const FIELD_LOCATION_LINE = 'location_line';
 export const FIELD_INLINED = 'inlined';
+export const FIELD_TIMESTAMP = 'timestamp';
 export const FIELD_FUNCTION_NAME = 'function_name';
 export const FIELD_FUNCTION_SYSTEM_NAME = 'function_system_name';
 export const FIELD_FUNCTION_FILE_NAME = 'function_file_name';
