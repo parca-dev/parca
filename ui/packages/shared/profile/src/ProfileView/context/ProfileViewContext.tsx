@@ -13,9 +13,8 @@
 
 import {ReactNode, createContext, useContext} from 'react';
 
-import {NumberDuo} from 'utils';
-
 import {ProfileSource} from '../../ProfileSource';
+import {NumberDuo} from '../../utils';
 
 export type TimelineGuideData =
   | {show: false}
