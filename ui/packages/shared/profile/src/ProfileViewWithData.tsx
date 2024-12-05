@@ -17,9 +17,10 @@ import {QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata, useParcaContext, useURLState} from '@parca/components';
 import {saveAsBlob} from '@parca/utilities';
 
-import {FIELD_FUNCTION_NAME} from './ProfileIcicleGraph/IcicleGraphArrow';
+import {FIELD_FUNCTION_NAME, FIELD_TIMESTAMP} from './ProfileIcicleGraph/IcicleGraphArrow';
 import {ProfileSource} from './ProfileSource';
 import {ProfileView} from './ProfileView';
+import {TimelineGuideData} from './ProfileView/context/ProfileViewContext';
 import {useQuery} from './useQuery';
 import {downloadPprof} from './utils';
 
@@ -28,14 +29,16 @@ interface ProfileViewWithDataProps {
   profileSource: ProfileSource;
   compare?: boolean;
   showVisualizationSelector?: boolean;
-  showTimelineGuide?: boolean;
+  isGroupByTimestamp?: boolean;
+  timelineGuide?: TimelineGuideData;
 }
 
 export const ProfileViewWithData = ({
   queryClient,
   profileSource,
   showVisualizationSelector,
-  showTimelineGuide,
+  isGroupByTimestamp,
+  timelineGuide,
 }: ProfileViewWithDataProps): JSX.Element => {
   const metadata = useGrpcMetadata();
   const [dashboardItems] = useURLState<string[]>('dashboard_items', {
@@ -44,7 +47,10 @@ export const ProfileViewWithData = ({
   const [sourceBuildID] = useURLState<string>('source_buildid');
   const [sourceFilename] = useURLState<string>('source_filename');
   const [groupBy] = useURLState<string[]>('group_by', {
-    defaultValue: [FIELD_FUNCTION_NAME],
+    defaultValue: [
+      isGroupByTimestamp === true ? FIELD_TIMESTAMP : (null as unknown as string),
+      FIELD_FUNCTION_NAME,
+    ].filter(Boolean),
     alwaysReturnArray: true,
   });
 
@@ -244,7 +250,7 @@ export const ProfileViewWithData = ({
       onDownloadPProf={() => void downloadPProfClick()}
       pprofDownloading={pprofDownloading}
       showVisualizationSelector={showVisualizationSelector}
-      showTimelineGuide={showTimelineGuide}
+      timelineGuide={timelineGuide}
     />
   );
 };

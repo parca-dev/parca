@@ -88,11 +88,6 @@ export const TimelineGuide = ({bounds, width, height, margin, ticks}: Props): JS
               y1={-height + 20}
               y2={-height + 20}
             />
-            {/* <g transform={`translate(${(width - 2.5 * margin) / 2}, ${margin / 2})`}>
-                <text fill="currentColor" dy=".71em" y={5} className="text-sm">
-                    Time
-                </text>
-            </g> */}
           </g>
         </svg>
       </div>

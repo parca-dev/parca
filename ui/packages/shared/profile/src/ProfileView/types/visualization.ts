@@ -21,6 +21,7 @@ import {
 } from '@parca/client';
 
 import {ProfileSource} from '../../ProfileSource';
+import {TimelineGuideData} from '../context/ProfileViewContext';
 
 export interface FlamegraphData {
   loading: boolean;
@@ -73,4 +74,5 @@ export interface ProfileViewProps {
   pprofDownloading?: boolean;
   showVisualizationSelector?: boolean;
   showTimelineGuide?: boolean;
+  timelineGuide?: TimelineGuideData;
 }

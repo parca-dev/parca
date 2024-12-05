@@ -13,16 +13,29 @@
 
 import {ReactNode, createContext, useContext} from 'react';
 
+import {NumberDuo} from 'utils';
+
 import {ProfileSource} from '../../ProfileSource';
+
+export type TimelineGuideData =
+  | {show: false}
+  | {
+      show: true;
+      props: {
+        bounds: NumberDuo;
+      };
+    };
 
 interface Props {
   profileSource?: ProfileSource;
   compareMode: boolean;
+  timelineGuide?: TimelineGuideData;
 }
 
 export const defaultValue: Props = {
   profileSource: undefined,
   compareMode: false,
+  timelineGuide: {show: false},
 };
 
 const ProfileViewContext = createContext<Props>(defaultValue);
