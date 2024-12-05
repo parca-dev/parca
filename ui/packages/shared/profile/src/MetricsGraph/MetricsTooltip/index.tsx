@@ -105,7 +105,7 @@ const MetricsTooltip = ({
   const highlightedNameLabel: Label = nameLabel !== undefined ? nameLabel : {name: '', value: ''};
 
   return (
-    <div ref={setPopperElement} style={styles.popper} {...attributes.popper} className="z-10">
+    <div ref={setPopperElement} style={styles.popper} {...attributes.popper} className="z-20">
       <div className="flex max-w-md">
         <div className="m-auto">
           <div
