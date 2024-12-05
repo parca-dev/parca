@@ -46,7 +46,7 @@ export default meta;
 
 export const ThreeCPUStrips = {
   args: {
-    cpus: Array.from(mockData, (_, i) => `CPU ${i + 1}`),
+    cpus: Array.from(mockData, (_, i) => ({labels: {cpuid: i + 1}})),
     data: mockData,
     selectedTimeframe: {index: 1, bounds: [mockData[0][25].timestamp, mockData[0][100].timestamp]},
     onSelectedTimeframe: (index: number, bounds: NumberDuo): void => {
