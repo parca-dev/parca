@@ -33,7 +33,7 @@ RUN chmod +x parca
 
 # https://github.com/hadolint/hadolint/issues/861
 # hadolint ignore=DL3029
-FROM --platform="${TARGETPLATFORM:-linux/amd64}"  docker.io/alpine:3.21.0@sha256:e323a465c03a31ad04374fc7239144d0fd4e2b92da6e3e0655580476d3a84621 AS runner
+FROM --platform="${TARGETPLATFORM:-linux/amd64}"  docker.io/alpine:3.21.0@sha256:21dc6063fd678b478f57c0e13f47560d0ea4eeba26dfc947b2a4f81f686b9f45 AS runner
 
 LABEL \
     org.opencontainers.image.source="https://github.com/parca-dev/parca" \
