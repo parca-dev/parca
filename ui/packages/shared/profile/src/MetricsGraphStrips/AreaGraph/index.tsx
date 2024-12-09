@@ -18,6 +18,7 @@ import cx from 'classnames';
 import * as d3 from 'd3';
 
 import {NumberDuo} from '../../utils';
+import {Tooltip} from './Tooltip';
 
 export interface DataPoint {
   timestamp: number;
@@ -143,7 +144,7 @@ const ZoomWindow = ({
       <div
         style={{height: '100%', width: beforeWidth, left: beforeStart}}
         className={cx(
-          'bg-gray-500/50 absolute top-0 border-r-2 border-gray-900 dark:border-gray-100 z-20'
+          'bg-gray-500/50 absolute top-0 border-r-2 border-gray-900 dark:border-gray-100 z-10'
         )}
       >
         <div
@@ -208,6 +209,8 @@ export const AreaGraph = ({
   const [mousePosition, setMousePosition] = useState<NumberDuo | undefined>(undefined);
   const [dragStart, setDragStart] = useState<number | undefined>(undefined);
   const [isHoveringDragHandle, setIsHoveringDragHandle] = useState(false);
+  const [hoverData, setHoverData] = useState<{timestamp: number; value: number} | null>(null);
+  const [isMouseOverGraph, setIsMouseOverGraph] = useState(false);
   const isDragging = dragStart !== undefined;
 
   // Declare the x (horizontal position) scale.
@@ -245,12 +248,39 @@ export const AreaGraph = ({
     <div
       style={{height, width}}
       onMouseMove={e => {
-        const [x, y] = d3.pointer(e);
-        setMousePosition([x, y]);
+        const [xPos, yPos] = d3.pointer(e);
+
+        if (
+          xPos >= marginLeft &&
+          xPos <= width - marginRight &&
+          yPos >= marginTop &&
+          yPos <= height - marginBottom
+        ) {
+          setMousePosition([xPos, yPos]);
+
+          // Find the closest data point
+          if (!isHoveringDragHandle && !isDragging) {
+            const xDate = x.invert(xPos);
+            const bisect = d3.bisector((d: DataPoint) => d.timestamp).left;
+            const index = bisect(data, xDate.getTime());
+            const dataPoint = data[index];
+            if (dataPoint !== undefined) {
+              setHoverData(dataPoint);
+            }
+          }
+        } else {
+          setMousePosition(undefined);
+          setHoverData(null);
+        }
+      }}
+      onMouseEnter={() => {
+        setIsMouseOverGraph(true);
       }}
       onMouseLeave={() => {
+        setIsMouseOverGraph(false);
         setMousePosition(undefined);
         setDragStart(undefined);
+        setHoverData(null);
       }}
       onMouseDown={e => {
         // only left mouse button
@@ -312,6 +342,21 @@ export const AreaGraph = ({
           hidden: isDragging || selectionBounds !== undefined,
         })}
       ></div>
+
+      {/* Update Tooltip conditional render */}
+      {mousePosition !== undefined &&
+        hoverData !== null &&
+        !isDragging &&
+        !isHoveringDragHandle &&
+        isMouseOverGraph && (
+          <Tooltip
+            x={mousePosition[0]}
+            y={mousePosition[1]}
+            timestamp={new Date(hoverData.timestamp)}
+            value={hoverData.value}
+            containerWidth={width}
+          />
+        )}
 
       <svg style={{width: '100%', height: '100%'}}>
         <path fill={fill} d={area(data) as string} className="opacity-80" />
