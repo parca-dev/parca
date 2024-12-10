@@ -13,10 +13,8 @@
 
 import {useEffect, useRef, useState} from 'react';
 
-import {format} from 'date-fns-tz';
-
 import {useParcaContext} from '@parca/components';
-import {valueFormatter} from '@parca/utilities';
+import {formatDateTimeDownToMS, valueFormatter} from '@parca/utilities';
 
 interface TooltipProps {
   x: number;
@@ -24,12 +22,6 @@ interface TooltipProps {
   timestamp: Date;
   value: number;
   containerWidth: number;
-}
-
-function formatDateTime(timestamp: Date, timezone?: string): string {
-  return timezone !== undefined
-    ? format(timestamp, "yyyy:MM:dd'T'HH:mm:ss.SSS", {timeZone: timezone})
-    : format(timestamp, "yyyy:MM:dd'T'HH:mm:ss.SSS", {timeZone: 'UTC'});
 }
 
 export function Tooltip({x, y, timestamp, value, containerWidth}: TooltipProps): JSX.Element {
@@ -75,7 +67,7 @@ export function Tooltip({x, y, timestamp, value, containerWidth}: TooltipProps):
         <div className="flex gap-1 items-center">
           <div>Timestamp:</div>
           <div className="text-gray-600 dark:text-gray-300">
-            {formatDateTime(timestamp, timezone)}
+            {formatDateTimeDownToMS(timestamp, timezone)}
           </div>
         </div>
 
