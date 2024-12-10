@@ -11,10 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Fragment} from 'react';
+import {Fragment, useContext} from 'react';
 
+import cx from 'classnames';
 import * as d3 from 'd3';
 
+import {TimelineAndIcicleContext} from '../ProfileIcicleGraph/context/TimelineAndIcicleContext';
 import {NumberDuo} from '../utils';
 
 interface Props {
@@ -38,11 +40,15 @@ const alignBeforeAxisCorrection = (val: number): number => {
 
 export const TimelineGuide = ({bounds, width, height, margin, ticks}: Props): JSX.Element => {
   const xScale = d3.scaleLinear().domain(bounds).range([0, width]);
+  const {isIcicleGraphHovered} = useContext(TimelineAndIcicleContext);
 
   return (
     <div className="relative h-4">
-      <div className="absolute" style={{width, height}}>
-        <svg style={{width: '100%', height: '100%'}} className="z-[5]">
+      <div
+        className={cx('absolute pointer-events-none', isIcicleGraphHovered ? 'z-[9]' : 'z-[10]')}
+        style={{width, height}}
+      >
+        <svg style={{width: '100%', height: '100%'}}>
           <g
             className="x axis"
             fill="none"

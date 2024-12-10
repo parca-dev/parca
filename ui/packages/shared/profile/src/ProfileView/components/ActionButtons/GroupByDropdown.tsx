@@ -200,7 +200,7 @@ const GroupByDropdown: React.FC<GroupByDropdownProps> = ({
           leaveTo="opacity-0"
           show={isDropdownOpen}
         >
-          <div className="absolute left-0 z-10 mt-1 min-w-[400px] overflow-auto rounded-md bg-gray-50 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:ring-white dark:ring-opacity-20 sm:text-sm">
+          <div className="absolute left-0 z-30 mt-1 min-w-[400px] overflow-auto rounded-md bg-gray-50 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:ring-white dark:ring-opacity-20 sm:text-sm">
             <div className="p-4">
               <fieldset>
                 <div className="space-y-5">

@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {memo, useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {memo, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
 
 import {Dictionary, Table, Vector, tableFromIPC} from 'apache-arrow';
 import {useContextMenu} from 'react-contexify';
@@ -33,6 +33,7 @@ import GraphTooltipArrow from '../../GraphTooltipArrow';
 import GraphTooltipArrowContent from '../../GraphTooltipArrow/Content';
 import {DockedGraphTooltip} from '../../GraphTooltipArrow/DockedGraphTooltip';
 import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
+import {TimelineAndIcicleContext} from '../context/TimelineAndIcicleContext';
 import ContextMenu from './ContextMenu';
 import {IcicleNode, RowHeight, colorByColors} from './IcicleGraphNodes';
 import {useFilenamesList} from './useMappingList';
@@ -113,6 +114,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   mappingsListFromMetadata,
   compareAbsolute,
 }: IcicleGraphArrowProps): React.JSX.Element {
+  const {setIsIcicleGraphHovered} = useContext(TimelineAndIcicleContext);
   const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
   const dispatch = useAppDispatch();
   const [highlightSimilarStacksPreference] = useUserPreference<boolean>(
@@ -191,6 +193,10 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   type ColorByKey = keyof typeof colorByList;
 
   const colorByColors: colorByColors = colorByList[colorByValue as ColorByKey];
+
+  useEffect(() => {
+    setIsIcicleGraphHovered(hoveringRow !== null);
+  }, [hoveringRow, setIsIcicleGraphHovered]);
 
   useEffect(() => {
     if (ref.current != null) {

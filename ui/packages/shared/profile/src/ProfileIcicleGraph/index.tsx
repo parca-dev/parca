@@ -26,6 +26,7 @@ import {TimelineGuide} from '../TimelineGuide';
 import {IcicleGraph} from './IcicleGraph';
 import {FIELD_FUNCTION_NAME, IcicleGraphArrow} from './IcicleGraphArrow';
 import useMappingList from './IcicleGraphArrow/useMappingList';
+import TimelineAndIcicleProvider from './context/TimelineAndIcicleContext';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 
@@ -167,29 +168,31 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     if (arrow !== undefined)
       return (
         <div className="relative">
-          {timelineGuide?.show === true && (
-            <TimelineGuide
-              bounds={timelineGuide.props.bounds}
+          <TimelineAndIcicleProvider>
+            {timelineGuide?.show === true && (
+              <TimelineGuide
+                bounds={timelineGuide.props.bounds}
+                width={width}
+                height={1000}
+                margin={0}
+                ticks={60000 / 10000}
+              />
+            )}
+            <IcicleGraphArrow
               width={width}
-              height={1000}
-              margin={0}
-              ticks={60000 / 10000}
+              arrow={arrow}
+              total={total}
+              filtered={filtered}
+              curPath={curPath}
+              setCurPath={setNewCurPath}
+              profileType={profileType}
+              sortBy={storeSortBy as string}
+              flamegraphLoading={isLoading}
+              isHalfScreen={isHalfScreen}
+              mappingsListFromMetadata={mappingsList}
+              compareAbsolute={isCompareAbsolute}
             />
-          )}
-          <IcicleGraphArrow
-            width={width}
-            arrow={arrow}
-            total={total}
-            filtered={filtered}
-            curPath={curPath}
-            setCurPath={setNewCurPath}
-            profileType={profileType}
-            sortBy={storeSortBy as string}
-            flamegraphLoading={isLoading}
-            isHalfScreen={isHalfScreen}
-            mappingsListFromMetadata={mappingsList}
-            compareAbsolute={isCompareAbsolute}
-          />
+          </TimelineAndIcicleProvider>
         </div>
       );
   }, [
