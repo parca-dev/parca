@@ -95,7 +95,10 @@ export const MetricsGraphStrips = ({
         return (
           <div className="relative min-h-5" style={{width: width ?? 1468}} key={labelStr}>
             <div
-              className="text-xs absolute top-0 left-0 flex gap-[2px] items-center bg-white/50 px-1 rounded-sm cursor-pointer z-30"
+              className="text-xs absolute top-0 left-0 flex gap-[2px] items-center bg-white/50 px-1 rounded-sm cursor-pointer"
+              style={{
+                zIndex: 15,
+              }}
               onClick={() => {
                 const newCollapsedIndices = [...collapsedIndices];
                 if (collapsedIndices.includes(i)) {
