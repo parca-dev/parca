@@ -18,11 +18,11 @@ import (
 	"context"
 	"strings"
 
-	"github.com/apache/arrow/go/v16/arrow"
-	"github.com/apache/arrow/go/v16/arrow/array"
-	"github.com/apache/arrow/go/v16/arrow/ipc"
-	"github.com/apache/arrow/go/v16/arrow/math"
-	"github.com/apache/arrow/go/v16/arrow/memory"
+	"github.com/apache/arrow/go/v17/arrow"
+	"github.com/apache/arrow/go/v17/arrow/array"
+	"github.com/apache/arrow/go/v17/arrow/ipc"
+	"github.com/apache/arrow/go/v17/arrow/math"
+	"github.com/apache/arrow/go/v17/arrow/memory"
 	"go.opentelemetry.io/otel/trace"
 
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
