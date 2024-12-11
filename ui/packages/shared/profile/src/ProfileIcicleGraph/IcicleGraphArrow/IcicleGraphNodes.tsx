@@ -23,6 +23,7 @@ import 'react-contexify/dist/ReactContexify.css';
 
 import {ProfileType} from '@parca/parser';
 
+import TextWithEllipsis from './TextWithEllipsis';
 import {
   FIELD_CHILDREN,
   FIELD_CUMULATIVE,
@@ -412,9 +413,12 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
         />
         {width > 5 && (
           <svg width={width - 5} height={height}>
-            <text x={5} y={15} style={{fontSize: '12px'}}>
-              {name}
-            </text>
+            <TextWithEllipsis
+              text={name}
+              x={5}
+              y={15}
+              width={width - 10} // Subtract padding from available width
+            />
           </svg>
         )}
       </g>
