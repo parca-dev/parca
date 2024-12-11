@@ -19,7 +19,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/apache/arrow/go/v16/arrow/memory"
+	"github.com/apache/arrow/go/v17/arrow/memory"
 	pprofprofile "github.com/google/pprof/profile"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
