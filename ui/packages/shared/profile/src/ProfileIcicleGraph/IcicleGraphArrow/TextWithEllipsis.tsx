@@ -13,72 +13,73 @@
 
 import {useEffect, useRef, useState} from 'react';
 
-import cx from 'classnames';
-
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 
-interface TextWithEllipsisProps {
+interface Props {
   text: string;
   x: number;
   y: number;
   width: number;
 }
 
-function TextWithEllipsis({text, x, y, width}: TextWithEllipsisProps): React.ReactNode {
+function calculateTruncatedText(
+  text: string,
+  textElement: SVGTextElement,
+  maxWidth: number
+): string {
+  // Create a temporary element for measurement
+  const tempElement = textElement.cloneNode() as SVGTextElement;
+  tempElement.textContent = text;
+  textElement.parentElement?.appendChild(tempElement);
+
+  // If the text fits, return it
+  const fullWidth = tempElement.getComputedTextLength();
+  if (fullWidth <= maxWidth) {
+    textElement.parentElement?.removeChild(tempElement);
+    return text;
+  }
+
+  // Binary search to find the maximum text that fits
+  let start = 0;
+  let end = text.length;
+  let result = text;
+
+  while (start < end) {
+    const mid = Math.floor((start + end + 1) / 2);
+    const truncated = text.slice(-mid);
+
+    tempElement.textContent = truncated;
+    const currentWidth = tempElement.getComputedTextLength();
+
+    if (currentWidth <= maxWidth) {
+      result = truncated;
+      start = mid;
+    } else {
+      end = mid - 1;
+    }
+  }
+
+  textElement.parentElement?.removeChild(tempElement);
+  return result;
+}
+
+function TextWithEllipsis({text, x, y, width}: Props): JSX.Element {
   const textRef = useRef<SVGTextElement>(null);
   const [displayText, setDisplayText] = useState(text);
-
   const [showFunctionNameFromLeft] = useUserPreference<boolean>(
     USER_PREFERENCES.SHOW_FUNCTION_NAME_FROM_LEFT.key
   );
 
   useEffect(() => {
-    if (showFunctionNameFromLeft) {
-      setDisplayText(text);
-      return;
-    }
-
     const textElement = textRef.current;
     if (textElement === null) return;
 
-    const textWidth = textElement.getComputedTextLength();
-    if (textWidth <= width) {
-      setDisplayText(text);
-      return;
-    }
+    const newText = showFunctionNameFromLeft
+      ? text
+      : calculateTruncatedText(text, textElement, width);
 
-    // Binary search to find the maximum text that fits
-    let start = 0;
-    let end = text.length;
-    let result = text;
-
-    while (start < end) {
-      const mid = Math.floor((start + end + 1) / 2);
-      const truncated = !showFunctionNameFromLeft
-        ? `...${text.slice(-mid)}`
-        : `${text.slice(0, mid)}...`;
-
-      textElement.textContent = truncated;
-      const currentWidth = textElement.getComputedTextLength();
-
-      if (currentWidth <= width) {
-        result = truncated;
-        start = mid;
-      } else {
-        end = mid - 1;
-      }
-    }
-
-    setDisplayText(result);
+    setDisplayText(newText);
   }, [text, width, showFunctionNameFromLeft]);
-
-  if (showFunctionNameFromLeft) {
-    return (
-      <text ref={textRef} x={x} y={y} className="text-xs">
-        {displayText}
-      </text>
-    );
-  }
 
   return (
     <text ref={textRef} x={x} y={y} className="text-xs">

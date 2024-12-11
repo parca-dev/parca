@@ -413,13 +413,6 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
         />
         {width > 5 && (
           <svg width={width - 5} height={height}>
-            {/* <text
-                x={5}
-                y={15}
-                className={cx(showFunctionNameFromLeft ? 'text-left' : 'text-right', 'text-xs')}
-              >
-                {name}
-              </text> */}
             <TextWithEllipsis
               text={name}
               x={5}
