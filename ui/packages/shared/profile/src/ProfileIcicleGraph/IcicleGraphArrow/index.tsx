@@ -119,9 +119,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS.key
   );
   const [dockedMetainfo] = useUserPreference<boolean>(USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key);
-  const [showFunctionNameFromLeft] = useUserPreference<boolean>(
-    USER_PREFERENCES.SHOW_FUNCTION_NAME_FROM_LEFT.key
-  );
   const isDarkMode = useAppSelector(selectDarkMode);
 
   const table: Table<any> = useMemo(() => {
