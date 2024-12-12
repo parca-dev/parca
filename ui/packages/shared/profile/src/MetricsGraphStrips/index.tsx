@@ -71,7 +71,7 @@ export const MetricsGraphStrips = ({
   const color = d3.scaleOrdinal(d3.schemeObservable10);
 
   const bounds = useMemo(() => {
-    const bounds: NumberDuo = [Infinity, -Infinity];
+    const bounds: NumberDuo = data.length > 0 ? [Infinity, -Infinity] : [0, 1];
     data.forEach(cpuData => {
       cpuData.forEach(dataPoint => {
         bounds[0] = Math.min(bounds[0], dataPoint.timestamp);
@@ -84,7 +84,7 @@ export const MetricsGraphStrips = ({
   return (
     <div className="flex flex-col gap-1 relative my-0 ml-[70px]" style={{width: width ?? '100%'}}>
       <TimelineGuide
-        bounds={bounds}
+        bounds={[BigInt(bounds[0]), BigInt(bounds[1])]}
         width={width ?? 1468}
         height={getTimelineGuideHeight(cpus, collapsedIndices)}
         margin={1}

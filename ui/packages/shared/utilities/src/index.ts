@@ -16,7 +16,7 @@ import colors from 'tailwindcss/colors';
 import {Label} from '@parca/client';
 
 import {abs, divide} from './bigint';
-import {unitsInTime} from './time';
+import {unitsInTimeMs, unitsInTimeNs} from './time';
 
 export * from './time';
 export * from './string';
@@ -78,9 +78,10 @@ const unitsInCores = {
 
 const knownValueFormatters = {
   bytes: unitsInBytes,
-  nanoseconds: unitsInTime,
+  nanoseconds: unitsInTimeNs,
   count: unitsInCount,
   'CPU Cores': unitsInCores,
+  milliseconds: unitsInTimeMs,
 };
 
 export const roundToDecimals = (n: number, decimals: number): number => {
@@ -174,9 +175,9 @@ export const selectQueryParam = (key: string): string | string[] | undefined => 
   const router = parseParams(window.location.search);
 
   if (key === 'dashboard_items') {
-    let dashboardItems = router[key];
+    let dashboardItems = router[key] ?? [];
     if (typeof dashboardItems === 'string') {
-      dashboardItems = [dashboardItems] ?? [];
+      dashboardItems = [dashboardItems];
     }
     return dashboardItems;
   }
