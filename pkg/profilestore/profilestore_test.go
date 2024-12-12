@@ -18,7 +18,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/apache/arrow/go/v16/arrow/memory"
+	"github.com/apache/arrow/go/v17/arrow/memory"
 	"github.com/go-kit/log"
 	"github.com/polarsignals/frostdb"
 	"github.com/prometheus/client_golang/prometheus"

@@ -42,7 +42,7 @@ export const ProfileViewWithData = ({
   const [sourceBuildID] = useURLState<string>('source_buildid');
   const [sourceFilename] = useURLState<string>('source_filename');
   const [groupBy] = useURLState<string[]>('group_by', {
-    defaultValue: [FIELD_FUNCTION_NAME].filter(Boolean),
+    defaultValue: [FIELD_FUNCTION_NAME],
     alwaysReturnArray: true,
   });
 

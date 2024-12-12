@@ -1,18 +1,18 @@
 module github.com/parca-dev/parca
 
-go 1.22.7
+go 1.23
 
-toolchain go1.23.3
+toolchain go1.23.4
 
 require (
 	cloud.google.com/go/storage v1.47.0
 	github.com/alecthomas/kong v0.9.0
-	github.com/apache/arrow/go/v16 v16.1.0
+	github.com/apache/arrow/go/v17 v17.0.0
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/dennwc/varint v1.0.0
-	github.com/dgraph-io/badger/v4 v4.4.0
+	github.com/dgraph-io/badger/v4 v4.5.0
 	github.com/felixge/fgprof v0.9.5
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/go-chi/chi/v5 v5.1.0
@@ -35,7 +35,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/parquet-go/parquet-go v0.24.0
 	github.com/planetscale/vtprotobuf v0.6.1-0.20241121165744-79df5c4772f2
-	github.com/polarsignals/frostdb v0.0.0-20240823114939-ecd6b80402ae
+	github.com/polarsignals/frostdb v0.0.0-20241211123813-627a00ffae53
 	github.com/polarsignals/iceberg-go v0.0.0-20240502213135-2ee70b71e76b
 	github.com/prometheus/client_golang v1.20.5
 	github.com/prometheus/common v0.60.1
@@ -58,7 +58,7 @@ require (
 	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c
 	golang.org/x/net v0.31.0
 	golang.org/x/oauth2 v0.24.0
-	golang.org/x/sync v0.9.0
+	golang.org/x/sync v0.10.0
 	google.golang.org/api v0.209.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20241113202542-65e8d215514f
 	google.golang.org/grpc v1.68.0
@@ -159,7 +159,7 @@ require (
 	github.com/gophercloud/gophercloud v1.14.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/grafana/regexp v0.0.0-20240518133315-a468a5bfb3bc // indirect
-	github.com/hamba/avro/v2 v2.20.1 // indirect
+	github.com/hamba/avro/v2 v2.22.1 // indirect
 	github.com/hashicorp/consul/api v1.29.4 // indirect
 	github.com/hashicorp/cronexpr v1.1.2 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -173,6 +173,7 @@ require (
 	github.com/hashicorp/nomad/api v0.0.0-20240717122358-3d93bd3778f3 // indirect
 	github.com/hashicorp/serf v0.10.1 // indirect
 	github.com/hetznercloud/hcloud-go/v2 v2.13.1 // indirect
+	github.com/huandu/xstrings v1.4.0 // indirect
 	github.com/huaweicloud/huaweicloud-sdk-go-obs v3.23.3+incompatible // indirect
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/ionos-cloud/sdk-go/v6 v6.2.1 // indirect

@@ -1,7 +1,7 @@
 {
   "name": "@parca/web",
   "private": true,
-  "version": "0.16.783",
+  "version": "0.16.787",
   "description": "Parca Web Interface",
   "type": "module",
   "scripts": {
@@ -63,7 +63,7 @@
   },
   "devDependencies": {
     "@types/lodash.throttle": "4.1.9",
-    "@vitejs/plugin-react-swc": "3.7.1",
+    "@vitejs/plugin-react-swc": "3.7.2",
     "css-loader": "6.11.0",
     "eslint-config-prettier": "8.10.0",
     "eslint-plugin-import": "2.31.0",

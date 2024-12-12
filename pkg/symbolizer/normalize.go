@@ -53,10 +53,6 @@ func CalculateBase(ei profile.ExecutableInfo, m profile.Mapping, addr uint64) (u
 	//nolint:exhaustive
 	switch elf.Type(ei.ElfType) {
 	case elf.ET_EXEC:
-		if h == nil {
-			// Assume fixed-address executable and so no adjustment.
-			return 0, nil
-		}
 		return m.StartAddr - m.Offset + h.Off - h.Vaddr, nil
 	case elf.ET_REL:
 		if m.Offset != 0 {
@@ -64,13 +60,6 @@ func CalculateBase(ei profile.ExecutableInfo, m profile.Mapping, addr uint64) (u
 		}
 		return m.StartAddr, nil
 	case elf.ET_DYN:
-		// The process mapping information, start = start of virtual address range,
-		// and offset = offset in the executable file of the start address, tells us
-		// that a runtime virtual address x maps to a file offset
-		// fx = x - start + offset.
-		if h == nil {
-			return m.StartAddr - m.Offset, nil
-		}
 
 		// The program header, if not nil, indicates the offset in the file where
 		// the executable segment is located (loadSegment.Off), and the base virtual
