@@ -248,8 +248,6 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		groupBy = append(groupBy, profile.ColumnTimestamp, profile.ColumnDuration)
 	}
 
-	fmt.Println("groupBy", groupBy)
-
 	groupByLabels := make([]string, 0, len(groupBy))
 	for _, f := range groupBy {
 		if strings.HasPrefix(f, FlamegraphFieldLabels+".") {
@@ -263,8 +261,6 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		}
 		return nil, status.Errorf(codes.InvalidArgument, "invalid group by field: %s", f)
 	}
-
-	fmt.Println("groupByLabels", groupByLabels)
 
 	switch req.Mode {
 	case pb.QueryRequest_MODE_SINGLE_UNSPECIFIED:
