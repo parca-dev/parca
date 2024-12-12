@@ -17,11 +17,13 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"os"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -31,6 +33,7 @@ import (
 	"github.com/apache/arrow/go/v16/arrow/ipc"
 	"github.com/apache/arrow/go/v16/arrow/memory"
 	pprofprofile "github.com/google/pprof/profile"
+	"github.com/m1gwings/treedrawer/tree"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
@@ -1167,4 +1170,190 @@ func TestAllFramesFiltered(t *testing.T) {
 
 	err = w.Write(record)
 	require.NoError(t, err)
+}
+
+func TestFlamechartGroupByTimestamp(t *testing.T) {
+	ctx := context.Background()
+	tracer := noop.NewTracerProvider().Tracer("")
+
+	mem := memory.NewCheckedAllocator(memory.NewGoAllocator())
+	defer mem.AssertSize(t, 0)
+
+	np, err := foldedStacksWithTsToProfile(mem, []byte(`
+main;func_fib 10 1000 20
+main;func_fib 10 2000 20
+main;func_fib 10 3000 20
+runtime;gc 20 2000 30
+runtime;gc 20 3000 30
+main;func_add 30 1000 20
+main;func_add 30 3000 20
+`))
+	require.NoError(t, err)
+	defer func() {
+		for _, r := range np.Samples {
+			r.Release()
+		}
+	}()
+
+	// Group by function_name, timestamp, duration
+	record, _, _, _, err := generateFlamegraphArrowRecord(
+		ctx,
+		mem,
+		tracer,
+		np,
+		[]string{FlamegraphFieldFunctionName, profile.ColumnTimestamp, profile.ColumnDuration},
+		0,
+	)
+	require.NoError(t, err)
+	defer record.Release()
+	// drawFlamegraphToConsole(t, record)
+
+	row := 0
+	schema := record.Schema()
+	childrenColIdx := schema.FieldIndices("children")[0]
+	childrenCol := record.Column(childrenColIdx).(*array.List)
+	ChildrenValues := childrenCol.ListValues().(*array.Uint32)
+
+	offsetStart, offsetEnd := childrenCol.ValueOffsets(row)
+
+	groupByMetadataColIdx := schema.FieldIndices("groupby_metadata")[0]
+	groupByMetadataCol := record.Column(groupByMetadataColIdx).(*array.Struct)
+	tsValues := groupByMetadataCol.Field(1).(*array.Binary)
+	durationValues := groupByMetadataCol.Field(2).(*array.Binary)
+
+	nums := offsetEnd - offsetStart
+
+	type metadata struct {
+		ts       int64
+		duration int64
+	}
+	rootNodesMetadata := make([]metadata, 0)
+
+	for j := int64(0); j < nums; j++ {
+		row = int(ChildrenValues.Value(int(offsetStart + j)))
+		tsBytes := tsValues.Value(int(row))
+		durationBytes := durationValues.Value(int(row))
+		ts, err := strconv.ParseInt(string(tsBytes), 10, 64)
+		require.NoError(t, err)
+		duration, err := strconv.ParseInt(string(durationBytes), 10, 64)
+		require.NoError(t, err)
+
+		rootNodesMetadata = append(rootNodesMetadata, metadata{ts: ts, duration: duration})
+	}
+
+	require.Equal(t, []metadata{{1000, 20}, {2000, 20}, {3000, 20}, {2000, 30}, {3000, 30}}, rootNodesMetadata)
+}
+
+// split the line into 4 parts: stack, value, timestamp, duration
+//
+// example line:
+//
+// main;do;some;work 123 1732617178462 duration
+func splitLine(line string) (string, string, string, string, error) {
+	parts := strings.Split(line, " ")
+	if len(parts) != 4 {
+		return "", "", "", "", fmt.Errorf("invalid line format")
+	}
+
+	return parts[0], parts[1], parts[2], parts[3], nil
+}
+
+func foldedStacksWithTsToProfile(pool memory.Allocator, input []byte) (profile.Profile, error) {
+	w := profile.NewWriter(pool, nil)
+	defer w.RecordBuilder.Release()
+
+	for n, line := range strings.Split(string(input), "\n") {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+
+		stack, valueStr, timstampStr, durationStr, err := splitLine(line)
+		if err != nil {
+			return profile.Profile{}, err
+		}
+
+		val, err := strconv.ParseInt(valueStr, 10, 64)
+		if err != nil {
+			return profile.Profile{}, fmt.Errorf("bad line: %d: %q: %s", n, line, err)
+		}
+
+		ts, err := strconv.ParseInt(timstampStr, 10, 64)
+		if err != nil {
+			return profile.Profile{}, fmt.Errorf("bad line: %d: %q: %s", n, line, err)
+		}
+
+		duration, err := strconv.ParseInt(durationStr, 10, 64)
+		if err != nil {
+			return profile.Profile{}, fmt.Errorf("bad line: %d: %q: %s", n, line, err)
+		}
+
+		stackFrames := strings.Split(stack, ";")
+		if len(stackFrames) == 0 {
+			return profile.Profile{}, fmt.Errorf("bad line: %d: %q: no stack frames", n, line)
+		}
+
+		w.Value.Append(val)
+		w.Diff.Append(0)
+		w.Timestamp.Append(ts)
+		w.Duration.Append(duration)
+		w.LocationsList.Append(true)
+
+		for i := len(stackFrames) - 1; i >= 0; i-- {
+			w.Locations.Append(true)
+			w.Addresses.Append(0)
+			w.MappingStart.AppendNull()
+			w.MappingLimit.AppendNull()
+			w.MappingOffset.AppendNull()
+			w.MappingFile.AppendNull()
+			w.MappingBuildID.AppendNull()
+			w.Lines.Append(true)
+			w.Line.Append(true)
+			w.LineNumber.Append(0)
+			w.FunctionName.Append([]byte(stackFrames[i]))
+			w.FunctionSystemName.Append([]byte(""))
+			w.FunctionFilename.Append([]byte(""))
+			w.FunctionStartLine.Append(0)
+		}
+	}
+
+	return profile.Profile{
+		Samples: []arrow.Record{w.RecordBuilder.NewRecord()},
+	}, nil
+}
+
+func drawFlamegraphToConsole(testing *testing.T, record arrow.Record) {
+	schema := record.Schema()
+	childrenColIdx := schema.FieldIndices("children")[0]
+	functionNameColIdx := schema.FieldIndices("function_name")[0]
+	childrenCol := record.Column(childrenColIdx).(*array.List)
+	functionNameCol := record.Column(functionNameColIdx).(*array.Dictionary)
+	ChildrenValues := childrenCol.ListValues().(*array.Uint32)
+	groupByMetadataColIdx := schema.FieldIndices("groupby_metadata")[0]
+	groupByMetadataCol := record.Column(groupByMetadataColIdx).(*array.Struct)
+	tsValues := groupByMetadataCol.Field(1).(*array.Binary)
+	durationValues := groupByMetadataCol.Field(2).(*array.Binary)
+
+	t := tree.NewTree(tree.NodeString("root" + " " + string(tsValues.Value(0))))
+
+	var populateChild func(t *tree.Tree, row int)
+
+	populateChild = func(t *tree.Tree, row int) {
+		offsetStart, offsetEnd := childrenCol.ValueOffsets(row)
+		nums := offsetEnd - offsetStart
+		for j := int64(0); j < nums; j++ {
+			child := ChildrenValues.Value(int(offsetStart + j))
+			fBytes := functionNameCol.ValueStr(int(child))
+			funcName, err := base64.StdEncoding.DecodeString(fBytes)
+			if err != nil {
+				funcName = []byte("N/A")
+			}
+			tsBytes := tsValues.Value(int(child))
+			durationBytes := durationValues.Value(int(child))
+			childT := t.AddChild(tree.NodeString(string(funcName) + " " + string(tsBytes) + " " + string(durationBytes)))
+			populateChild(childT, int(child))
+		}
+	}
+
+	populateChild(t, 0)
+	fmt.Println(t)
 }

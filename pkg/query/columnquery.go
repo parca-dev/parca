@@ -236,11 +236,20 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 
 	groupBy := req.GetGroupBy().GetFields()
 	allowedGroupBy := map[string]struct{}{
+		profile.ColumnTimestamp:         {},
+		profile.ColumnDuration:          {},
 		FlamegraphFieldFunctionName:     {},
 		FlamegraphFieldLocationAddress:  {},
 		FlamegraphFieldMappingFile:      {},
 		FlamegraphFieldFunctionFileName: {},
 	}
+
+	if req.GetReportType() == pb.QueryRequest_REPORT_TYPE_FLAMECHART {
+		groupBy = append(groupBy, profile.ColumnTimestamp, profile.ColumnDuration)
+	}
+
+	fmt.Println("groupBy", groupBy)
+
 	groupByLabels := make([]string, 0, len(groupBy))
 	for _, f := range groupBy {
 		if strings.HasPrefix(f, FlamegraphFieldLabels+".") {
@@ -254,6 +263,8 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		}
 		return nil, status.Errorf(codes.InvalidArgument, "invalid group by field: %s", f)
 	}
+
+	fmt.Println("groupByLabels", groupByLabels)
 
 	switch req.Mode {
 	case pb.QueryRequest_MODE_SINGLE_UNSPECIFIED:
@@ -592,7 +603,7 @@ func RenderReport(
 				Flamegraph: fg,
 			},
 		}, nil
-	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW:
+	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW, pb.QueryRequest_REPORT_TYPE_FLAMECHART:
 		fa, total, err := GenerateFlamegraphArrow(ctx, mem, tracer, p, groupBy, nodeTrimFraction)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate arrow flamegraph: %v", err.Error())

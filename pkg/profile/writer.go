@@ -40,6 +40,8 @@ type Writer struct {
 	FunctionStartLine  *array.Int64Builder
 	Value              *array.Int64Builder
 	Diff               *array.Int64Builder
+	Timestamp          *array.Int64Builder
+	Duration           *array.Int64Builder
 }
 
 func (w *Writer) Release() {
@@ -87,6 +89,8 @@ func NewWriter(pool memory.Allocator, labelNames []string) Writer {
 
 	value := b.Field(labelNum + 1).(*array.Int64Builder)
 	diff := b.Field(labelNum + 2).(*array.Int64Builder)
+	timestamp := b.Field(labelNum + 3).(*array.Int64Builder)
+	duration := b.Field(labelNum + 4).(*array.Int64Builder)
 
 	return Writer{
 		RecordBuilder:      b,
@@ -109,6 +113,8 @@ func NewWriter(pool memory.Allocator, labelNames []string) Writer {
 		FunctionStartLine:  functionStartLine,
 		Value:              value,
 		Diff:               diff,
+		Timestamp:          timestamp,
+		Duration:           duration,
 	}
 }
 

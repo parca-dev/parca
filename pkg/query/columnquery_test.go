@@ -1244,6 +1244,8 @@ func PprofToSymbolizedProfile(meta profile.Meta, prof *pprofprofile.Profile, ind
 
 		w.Value.Append(prof.Sample[i].Value[index])
 		w.Diff.Append(0)
+		w.Timestamp.Append(prof.TimeNanos)
+		w.Duration.Append(prof.DurationNanos)
 
 		for labelName, labelBuilder := range w.LabelBuildersMap {
 			if prof.Sample[i].Label == nil {
@@ -1359,6 +1361,8 @@ func TestFilterData(t *testing.T) {
 	w.FunctionStartLine.Append(1)
 	w.Value.Append(1)
 	w.Diff.Append(0)
+	w.Timestamp.Append(1)
+	w.Duration.Append(1)
 
 	frameFilter := map[string]struct{}{"test": {}}
 	originalRecord := w.RecordBuilder.NewRecord()
@@ -1405,6 +1409,8 @@ func TestFilterUnsymbolized(t *testing.T) {
 	w.Lines.Append(false)
 	w.Value.Append(1)
 	w.Diff.Append(0)
+	w.Timestamp.Append(1)
+	w.Duration.Append(1)
 
 	originalRecord := w.RecordBuilder.NewRecord()
 	recs, _, err := FilterProfileData(
@@ -1485,6 +1491,8 @@ func TestFilterDataWithPath(t *testing.T) {
 	w.FunctionStartLine.Append(0)
 	w.Value.Append(1)
 	w.Diff.Append(0)
+	w.Timestamp.Append(1)
+	w.Duration.Append(1)
 
 	frameFilter := map[string]struct{}{"libpython3.11.so.1.0": {}, "interpreter": {}}
 	originalRecord := w.RecordBuilder.NewRecord()
@@ -1567,6 +1575,8 @@ func TestFilterDataFrameFilter(t *testing.T) {
 	w.FunctionStartLine.Append(0)
 	w.Value.Append(1)
 	w.Diff.Append(0)
+	w.Timestamp.Append(1)
+	w.Duration.Append(1)
 
 	frameFilter := map[string]struct{}{"interpreter": {}}
 	originalRecord := w.RecordBuilder.NewRecord()
@@ -1649,6 +1659,8 @@ func BenchmarkFilterData(t *testing.B) {
 		w.FunctionStartLine.Append(1)
 		w.Value.Append(1)
 		w.Diff.Append(0)
+		w.Timestamp.Append(1)
+		w.Duration.Append(1)
 	}
 
 	originalRecord := w.RecordBuilder.NewRecord()
