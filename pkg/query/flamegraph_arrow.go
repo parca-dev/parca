@@ -202,8 +202,8 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				tsHasher.Reset()
 				tsStr := strconv.FormatInt(r.Timestamp.Value(i), 10)
 				durationStr := strconv.FormatInt(r.Duration.Value(i), 10)
-				tsHasher.Write([]byte(tsStr))
-				tsHasher.Write([]byte(durationStr))
+				_, _ = tsHasher.Write([]byte(tsStr))
+				_, _ = tsHasher.Write([]byte(durationStr))
 				tsHash = tsHasher.Sum64()
 
 				sampleTsRow := row

@@ -1249,6 +1249,7 @@ main;func_add 30 3000 20
 // example line:
 //
 // main;do;some;work 123 1732617178462 duration
+// end.
 func splitLine(line string) (string, string, string, string, error) {
 	parts := strings.Split(line, " ")
 	if len(parts) != 4 {
@@ -1321,6 +1322,7 @@ func foldedStacksWithTsToProfile(pool memory.Allocator, input []byte) (profile.P
 	}, nil
 }
 
+//lint:ignore U1000 Used for debugging purposes
 func drawFlamegraphToConsole(testing *testing.T, record arrow.Record) {
 	schema := record.Schema()
 	childrenColIdx := schema.FieldIndices("children")[0]
