@@ -76,7 +76,7 @@ func ArrowSamplesField(profileLabelFields []arrow.Field) []arrow.Field {
 	fields := make([]arrow.Field, numFields)
 	copy(fields, profileLabelFields)
 	fields[numFields-5] = LocationsField
-	fields[numFields-3] = arrow.Field{
+	fields[numFields-4] = arrow.Field{
 		Name: "value",
 		Type: arrow.PrimitiveTypes.Int64,
 	}
