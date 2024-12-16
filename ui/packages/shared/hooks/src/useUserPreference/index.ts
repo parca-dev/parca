@@ -64,6 +64,14 @@ export const USER_PREFERENCES: {[key: string]: UserPreferenceDetails} = {
     description:
       "When enabled, this option automatically highlights stacks that are similar to the one you're currently hovering over in the Icicle graph.",
   },
+  SHOW_FUNCTION_NAME_FROM_LEFT: {
+    name: 'Show function name from left side',
+    key: 'SHOW_FUNCTION_NAME_FROM_LEFT',
+    type: 'boolean',
+    default: true,
+    description:
+      'When enabled, function names in the graph will be shown starting from the left side. When disabled, names will be shown from the right side, which can be more useful for languages where the most distinctive part of the function name appears at the end.',
+  },
 } as const;
 
 export type UserPreference = keyof typeof USER_PREFERENCES;
