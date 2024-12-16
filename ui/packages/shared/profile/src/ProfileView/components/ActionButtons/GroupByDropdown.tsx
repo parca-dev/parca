@@ -167,6 +167,25 @@ const GroupByDropdown: React.FC<GroupByDropdownProps> = ({
   labelsButtonRef,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent): void => {
+      if (
+        isDropdownOpen &&
+        dropdownRef.current != null &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
+
   const label =
     groupBy.length === 0
       ? 'Nothing'
@@ -179,7 +198,7 @@ const GroupByDropdown: React.FC<GroupByDropdownProps> = ({
     .map(l => l.slice(FIELD_LABELS.length + 1));
 
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       <label className="text-sm">Group by</label>
       <div className="relative text-left" id="h-group-by-filter">
         <Button
