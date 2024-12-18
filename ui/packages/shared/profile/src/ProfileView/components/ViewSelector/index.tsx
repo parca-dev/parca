@@ -22,12 +22,16 @@ const ViewSelector = (): JSX.Element => {
       alwaysReturnArray: true,
     }
   );
-  const {enableSourcesView} = useParcaContext();
+  const {enableSourcesView, enableIciclechartView} = useParcaContext();
 
   const allItems: Array<{key: string; canBeSelected: boolean; supportingText?: string}> = [
     {key: 'table', canBeSelected: !dashboardItems.includes('table')},
     {key: 'icicle', canBeSelected: !dashboardItems.includes('icicle')},
   ];
+  if (enableIciclechartView === true) {
+    allItems.push({key: 'iciclechart', canBeSelected: !dashboardItems.includes('iciclechart')});
+  }
+
   if (enableSourcesView === true) {
     allItems.push({key: 'source', canBeSelected: false});
   }

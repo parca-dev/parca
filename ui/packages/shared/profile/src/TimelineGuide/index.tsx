@@ -13,19 +13,20 @@
 
 import {Fragment} from 'react';
 
-import * as d3 from 'd3';
+import {scaleLinear, valueFormatter} from '@parca/utilities';
 
-import {NumberDuo} from '../utils';
+import {BigIntDuo} from '../utils';
 
 interface Props {
   width: number;
   height: number;
   margin: number;
-  bounds: NumberDuo;
+  bounds: BigIntDuo;
   ticks?: number;
+  timeUnit?: string;
 }
 
-const alignBeforeAxisCorrection = (val: number): number => {
+const alignBeforeAxisCorrection = (val: bigint): number => {
   if (val < 10000) {
     return -24;
   }
@@ -36,11 +37,18 @@ const alignBeforeAxisCorrection = (val: number): number => {
   return 0;
 };
 
-export const TimelineGuide = ({bounds, width, height, margin, ticks}: Props): JSX.Element => {
-  const xScale = d3.scaleLinear().domain(bounds).range([0, width]);
+export const TimelineGuide = ({
+  bounds,
+  width,
+  height,
+  margin,
+  ticks,
+  timeUnit = 'milliseconds',
+}: Props): JSX.Element => {
+  const xScale = scaleLinear(bounds, [0, width]);
 
   return (
-    <div className="relative h-4">
+    <div className="relative h-5">
       <div className="absolute" style={{width, height}}>
         <svg style={{width: '100%', height: '100%'}} className="z-[5]">
           <g
@@ -50,30 +58,32 @@ export const TimelineGuide = ({bounds, width, height, margin, ticks}: Props): JS
             textAnchor="middle"
             transform={`translate(0,${height - margin})`}
           >
-            {xScale.ticks(ticks).map((d, i) => (
-              <Fragment key={`${i.toString()}-${d.toString()}`}>
-                <g
-                  key={`tick-${i}`}
-                  className="tick"
-                  /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
-                  transform={`translate(${xScale(d) + alignBeforeAxisCorrection(d)}, ${-height})`}
-                >
-                  {/* <line y2={6} className="stroke-gray-300 dark:stroke-gray-500" /> */}
-                  <text fill="currentColor" dy=".71em" y={9}>
-                    {d} ms
-                  </text>
-                </g>
-                <g key={`grid-${i}`}>
-                  <line
-                    className="stroke-gray-300 dark:stroke-gray-500"
-                    x1={xScale(d)}
-                    x2={xScale(d)}
-                    y1={0}
-                    y2={-height + margin}
-                  />
-                </g>
-              </Fragment>
-            ))}
+            {xScale.ticks(ticks).map((d, i) => {
+              return (
+                <Fragment key={`${i.toString()}-${d.toString()}`}>
+                  <g
+                    key={`tick-${i}`}
+                    className="tick"
+                    /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
+                    transform={`translate(${xScale(d) + alignBeforeAxisCorrection(d)}, ${-height})`}
+                  >
+                    {/* <line y2={6} className="stroke-gray-300 dark:stroke-gray-500" /> */}
+                    <text fill="currentColor" dy=".71em" y={9}>
+                      {valueFormatter(d - bounds[0], timeUnit, 2, true).toString()}
+                    </text>
+                  </g>
+                  <g key={`grid-${i}`}>
+                    <line
+                      className="stroke-gray-300 dark:stroke-gray-500"
+                      x1={xScale(d)}
+                      x2={xScale(d)}
+                      y1={0}
+                      y2={-height + margin}
+                    />
+                  </g>
+                </Fragment>
+              );
+            })}
             <line
               className="stroke-gray-300 dark:stroke-gray-500"
               x1={0}

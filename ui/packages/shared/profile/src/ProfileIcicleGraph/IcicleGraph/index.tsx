@@ -62,7 +62,7 @@ export const IcicleGraph = memo(function IcicleGraph({
 
   const xScale = useMemo(() => {
     if (width === undefined) {
-      return () => 0;
+      return scaleLinear([0n, total], [0, 1]);
     }
     return scaleLinear([0n, total], [0, width]);
   }, [total, width]);

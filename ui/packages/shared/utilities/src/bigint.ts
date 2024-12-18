@@ -37,18 +37,50 @@ export const abs = (a: bigint): bigint => {
   return a < 0n ? -a : a;
 };
 
-export type ScaleFunction = (x: bigint) => number;
+export interface ScaleFunction {
+  ticks: (count?: number) => bigint[];
+  (x: bigint): number;
+}
 
-export const scaleLinear = (domain: [bigint, bigint], range: [number, number]): ScaleFunction => {
+export const scaleLinear = (
+  domain: [bigint, bigint],
+  range: [number, number],
+  debugLog = false
+): ScaleFunction => {
   const [domainMin, domainMax] = domain;
   const [rangeMin, rangeMax] = range;
   const domainRange = domainMax - domainMin;
   const rangeRange = BigInt(Math.floor(rangeMax - rangeMin));
+  if (debugLog) {
+    console.log('domainRange', domainRange, rangeRange, divide(rangeRange, domainRange));
+  }
 
   // rate * MULTIPLE to retain the decimal places in BigInt format, then divide by MULTIPLE to get the final result
   const rate = BigInt(Math.round(divide(rangeRange, domainRange) * MULTIPLE));
 
-  return x => {
+  const func = (x: bigint): number => {
+    if (debugLog) {
+      console.log(
+        'x',
+        x,
+        domainMin,
+        domainMax,
+        rate,
+        Number(BigInt(rangeMin) + (x - domainMin) * rate) / MULTIPLE
+      );
+    }
+
     return Number(BigInt(rangeMin) + (x - domainMin) * rate) / MULTIPLE;
   };
+
+  func.ticks = (count = 5): bigint[] => {
+    const step = domainRange / BigInt(count - 1);
+    const ticks: bigint[] = [];
+    for (let i = 0; i < count; i++) {
+      ticks.push(domainMin + step * BigInt(i));
+    }
+    return ticks;
+  };
+
+  return func;
 };

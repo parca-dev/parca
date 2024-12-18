@@ -61,3 +61,4 @@ export const truncateStringReverse = (str: string, num: number): string => {
 };
 
 export type NumberDuo = [number, number];
+export type BigIntDuo = [bigint, bigint];
