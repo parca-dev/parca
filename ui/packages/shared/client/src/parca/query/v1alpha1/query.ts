@@ -500,7 +500,13 @@ export enum QueryRequest_ReportType {
      *
      * @generated from protobuf enum value: REPORT_TYPE_PROFILE_METADATA = 8;
      */
-    PROFILE_METADATA = 8
+    PROFILE_METADATA = 8,
+    /**
+     * REPORT_TYPE_FLAMECHART contains flamechart representation of the report
+     *
+     * @generated from protobuf enum value: REPORT_TYPE_FLAMECHART = 9;
+     */
+    FLAMECHART = 9
 }
 /**
  * Filter to apply to the query request

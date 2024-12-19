@@ -53,6 +53,7 @@ interface Props {
   queryServiceClient: QueryServiceClient;
   navigateTo: NavigateFunction;
   enableSourcesView?: boolean;
+  enableIciclechartView?: boolean;
   authenticationErrorMessage?: string;
   isDarkMode: boolean;
   flamegraphHint?: ReactNode;

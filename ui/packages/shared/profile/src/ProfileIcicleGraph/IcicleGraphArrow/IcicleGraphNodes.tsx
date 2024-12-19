@@ -154,7 +154,7 @@ export interface colorByColors {
   [key: string]: string;
 }
 
-interface IcicleNodeProps {
+export interface IcicleNodeProps {
   x: number;
   y: number;
   height: number;
@@ -185,11 +185,11 @@ interface IcicleNodeProps {
   highlightSimilarStacksPreference: boolean;
 }
 
-const icicleRectStyles = {
+export const icicleRectStyles = {
   cursor: 'pointer',
   transition: 'opacity .15s linear',
 };
-const fadedIcicleRectStyles = {
+export const fadedIcicleRectStyles = {
   cursor: 'pointer',
   transition: 'opacity .15s linear',
   opacity: '0.5',
