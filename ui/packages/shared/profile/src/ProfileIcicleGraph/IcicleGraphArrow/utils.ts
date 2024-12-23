@@ -22,7 +22,8 @@ import {
 } from '@parca/store';
 import {divide, getLastItem, valueFormatter} from '@parca/utilities';
 
-import {hexifyAddress} from '../../utils';
+import {MergedProfileSource, ProfileSource} from '../../ProfileSource';
+import {BigIntDuo, hexifyAddress} from '../../utils';
 import {
   FIELD_FUNCTION_NAME,
   FIELD_LABELS_ONLY,
@@ -120,4 +121,31 @@ export const arrowToString = (buffer: any): string | null => {
     return new TextDecoder().decode(buffer);
   }
   return '';
+};
+
+export const boundsFromProfileSource = (profileSource?: ProfileSource): BigIntDuo => {
+  if (profileSource === undefined) {
+    return [0n, 1n];
+  }
+
+  if (!(profileSource instanceof MergedProfileSource)) {
+    return [0n, 1n];
+  }
+
+  const request = profileSource.QueryRequest();
+
+  if (
+    request.options.oneofKind !== 'merge' ||
+    request.options.merge.start === undefined ||
+    request.options.merge.end === undefined
+  ) {
+    return [0n, 1n];
+  }
+
+  const start =
+    request.options.merge.start.seconds * 1000000000n + BigInt(request.options.merge.start.nanos);
+  const end =
+    request.options.merge.end.seconds * 1000000000n + BigInt(request.options.merge.end.nanos);
+
+  return [start, end];
 };

@@ -17,10 +17,9 @@ import {QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata, useParcaContext, useURLState} from '@parca/components';
 import {saveAsBlob} from '@parca/utilities';
 
-import {FIELD_FUNCTION_NAME, FIELD_TIMESTAMP} from './ProfileIcicleGraph/IcicleGraphArrow';
+import {FIELD_FUNCTION_NAME} from './ProfileIcicleGraph/IcicleGraphArrow';
 import {ProfileSource} from './ProfileSource';
 import {ProfileView} from './ProfileView';
-import {TimelineGuideData} from './ProfileView/context/ProfileViewContext';
 import {useQuery} from './useQuery';
 import {downloadPprof} from './utils';
 
@@ -29,16 +28,12 @@ interface ProfileViewWithDataProps {
   profileSource: ProfileSource;
   compare?: boolean;
   showVisualizationSelector?: boolean;
-  isGroupByTimestamp?: boolean;
-  timelineGuide?: TimelineGuideData;
 }
 
 export const ProfileViewWithData = ({
   queryClient,
   profileSource,
   showVisualizationSelector,
-  isGroupByTimestamp,
-  timelineGuide,
 }: ProfileViewWithDataProps): JSX.Element => {
   const metadata = useGrpcMetadata();
   const [dashboardItems] = useURLState<string[]>('dashboard_items', {
@@ -47,10 +42,7 @@ export const ProfileViewWithData = ({
   const [sourceBuildID] = useURLState<string>('source_buildid');
   const [sourceFilename] = useURLState<string>('source_filename');
   const [groupBy] = useURLState<string[]>('group_by', {
-    defaultValue: [
-      isGroupByTimestamp === true ? FIELD_TIMESTAMP : (null as unknown as string),
-      FIELD_FUNCTION_NAME,
-    ].filter(Boolean),
+    defaultValue: [FIELD_FUNCTION_NAME],
     alwaysReturnArray: true,
   });
 
@@ -80,6 +72,18 @@ export const ProfileViewWithData = ({
     error: flamegraphError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMEGRAPH_ARROW, {
     skip: !dashboardItems.includes('icicle'),
+    nodeTrimThreshold,
+    groupBy,
+    invertCallStack,
+    binaryFrameFilter,
+  });
+
+  const {
+    isLoading: flamechartLoading,
+    response: flamechartResponse,
+    error: flamechartError,
+  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMECHART, {
+    skip: !dashboardItems.includes('iciclechart'),
     nodeTrimThreshold,
     groupBy,
     invertCallStack,
@@ -188,6 +192,9 @@ export const ProfileViewWithData = ({
   } else if (sourceResponse !== null) {
     total = BigInt(sourceResponse.total);
     filtered = BigInt(sourceResponse.filtered);
+  } else if (flamechartResponse !== null) {
+    total = BigInt(flamechartResponse.total);
+    filtered = BigInt(flamechartResponse.filtered);
   }
 
   return (
@@ -207,6 +214,25 @@ export const ProfileViewWithData = ({
         total: BigInt(flamegraphResponse?.total ?? '0'),
         filtered: BigInt(flamegraphResponse?.filtered ?? '0'),
         error: flamegraphError,
+        metadataMappingFiles:
+          profileMetadataResponse?.report.oneofKind === 'profileMetadata'
+            ? profileMetadataResponse?.report?.profileMetadata?.mappingFiles
+            : undefined,
+        metadataLabels:
+          profileMetadataResponse?.report.oneofKind === 'profileMetadata'
+            ? profileMetadataResponse?.report?.profileMetadata?.labels
+            : undefined,
+        metadataLoading: profileMetadataLoading,
+      }}
+      flamechartData={{
+        loading: flamechartLoading && profileMetadataLoading,
+        arrow:
+          flamechartResponse?.report.oneofKind === 'flamegraphArrow'
+            ? flamechartResponse?.report?.flamegraphArrow
+            : undefined,
+        total: BigInt(flamechartResponse?.total ?? '0'),
+        filtered: BigInt(flamechartResponse?.filtered ?? '0'),
+        error: flamechartError,
         metadataMappingFiles:
           profileMetadataResponse?.report.oneofKind === 'profileMetadata'
             ? profileMetadataResponse?.report?.profileMetadata?.mappingFiles
@@ -250,7 +276,6 @@ export const ProfileViewWithData = ({
       onDownloadPProf={() => void downloadPProfClick()}
       pprofDownloading={pprofDownloading}
       showVisualizationSelector={showVisualizationSelector}
-      timelineGuide={timelineGuide}
     />
   );
 };

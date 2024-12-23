@@ -32,8 +32,10 @@ import {getLastItem, scaleLinear, type ColorConfig} from '@parca/utilities';
 import GraphTooltipArrow from '../../GraphTooltipArrow';
 import GraphTooltipArrowContent from '../../GraphTooltipArrow/Content';
 import {DockedGraphTooltip} from '../../GraphTooltipArrow/DockedGraphTooltip';
+import {ProfileSource} from '../../ProfileSource';
 import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
 import ContextMenu from './ContextMenu';
+import {IcicleChartRootNode} from './IcicleChartRootNode';
 import {IcicleNode, RowHeight, colorByColors} from './IcicleGraphNodes';
 import {useFilenamesList} from './useMappingList';
 import {arrowToString, extractFeature, extractFilenameFeature} from './utils';
@@ -45,6 +47,8 @@ export const FIELD_LOCATION_ADDRESS = 'location_address';
 export const FIELD_LOCATION_LINE = 'location_line';
 export const FIELD_INLINED = 'inlined';
 export const FIELD_TIMESTAMP = 'timestamp';
+export const FIELD_DURATION = 'duration';
+export const FIELD_GROUPBY_METADATA = 'groupby_metadata';
 export const FIELD_FUNCTION_NAME = 'function_name';
 export const FIELD_FUNCTION_SYSTEM_NAME = 'function_system_name';
 export const FIELD_FUNCTION_FILE_NAME = 'function_file_name';
@@ -60,6 +64,7 @@ interface IcicleGraphArrowProps {
   total: bigint;
   filtered: bigint;
   profileType?: ProfileType;
+  profileSource?: ProfileSource;
   width?: number;
   curPath: string[];
   setCurPath: (path: string[]) => void;
@@ -68,6 +73,7 @@ interface IcicleGraphArrowProps {
   isHalfScreen: boolean;
   mappingsListFromMetadata: string[];
   compareAbsolute: boolean;
+  isIcicleChart?: boolean;
 }
 
 export const getMappingColors = (
@@ -108,10 +114,12 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   setCurPath,
   curPath,
   profileType,
+  profileSource,
   sortBy,
   flamegraphLoading,
   mappingsListFromMetadata,
   compareAbsolute,
+  isIcicleChart = false,
 }: IcicleGraphArrowProps): React.JSX.Element {
   const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
   const dispatch = useAppDispatch();
@@ -252,6 +260,54 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   // useMemo for the root graph as it otherwise renders the whole graph if the hoveringRow changes.
   const root = useMemo(() => {
+    if (isIcicleChart) {
+      return (
+        <svg
+          className="font-robotoMono"
+          width={width}
+          height={height}
+          preserveAspectRatio="xMinYMid"
+          ref={svg}
+          onContextMenu={displayMenu}
+        >
+          <g ref={ref}>
+            <g transform={'translate(0, 0)'}>
+              <IcicleChartRootNode
+                table={table}
+                row={0}
+                colors={colorByColors}
+                colorBy={colorByValue}
+                x={0}
+                y={0}
+                totalWidth={width ?? 1}
+                height={RowHeight}
+                setCurPath={setCurPath}
+                curPath={curPath}
+                total={total}
+                xScale={xScale}
+                path={path}
+                level={0}
+                isRoot={true}
+                searchString={(currentSearchString as string) ?? ''}
+                setHoveringRow={setHoveringRow}
+                setHoveringLevel={setHoveringLevel}
+                sortBy={sortBy}
+                darkMode={isDarkMode}
+                compareMode={compareMode}
+                profileType={profileType}
+                isContextMenuOpen={isContextMenuOpen}
+                hoveringName={highlightSimilarStacksName}
+                setHoveringName={highlightSimilarStacksSetName}
+                hoveringRow={highlightSimilarStacksRow}
+                colorForSimilarNodes={colorForSimilarNodes}
+                highlightSimilarStacksPreference={highlightSimilarStacksPreference}
+                profileSource={profileSource}
+              />
+            </g>
+          </g>
+        </svg>
+      );
+    }
     return (
       <svg
         className="font-robotoMono"
@@ -320,6 +376,8 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     highlightSimilarStacksPreference,
     path,
     highlightSimilarStacksSetName,
+    isIcicleChart,
+    profileSource,
   ]);
 
   return (

@@ -33,6 +33,7 @@ export const ProfileView = ({
   total,
   filtered,
   flamegraphData,
+  flamechartData,
   topTableData,
   callgraphData,
   sourceData,
@@ -42,7 +43,6 @@ export const ProfileView = ({
   pprofDownloading,
   compare,
   showVisualizationSelector,
-  timelineGuide,
 }: ProfileViewProps): JSX.Element => {
   const {
     timezone,
@@ -98,6 +98,7 @@ export const ProfileView = ({
       isHalfScreen,
       dimensions,
       flamegraphData,
+      flamechartData,
       topTableData,
       callgraphData,
       sourceData,
@@ -130,14 +131,13 @@ export const ProfileView = ({
 
   return (
     <KeyDownProvider>
-      <ProfileViewContextProvider value={{profileSource, compareMode, timelineGuide}}>
+      <ProfileViewContextProvider value={{profileSource, compareMode}}>
         <DashboardProvider>
           <ProfileHeader
             profileSourceString={profileSource?.toString(timezone)}
             hasProfileSource={hasProfileSource}
             externalMainActions={profileViewExternalMainActions}
           />
-
           <VisualisationToolbar
             groupBy={groupBy}
             toggleGroupBy={toggleGroupBy}
