@@ -124,7 +124,6 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 	profileReader := profile.NewReader(p)
 	labelHasher := xxh3.New()
-	tsHasher := xxh3.New()
 	for _, r := range profileReader.RecordReaders {
 		fb.cumulative += math.Int64.Sum(r.Value)
 		fb.diff += math.Int64.Sum(r.Diff)
@@ -199,12 +198,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				row = fb.builderCumulative.Len()
 			}
 			if fb.aggregationConfig.aggregateByTimestamp {
-				tsHasher.Reset()
-				tsStr := strconv.FormatInt(r.Timestamp.Value(i), 10)
-				durationStr := strconv.FormatInt(r.Duration.Value(i), 10)
-				_, _ = tsHasher.Write([]byte(tsStr))
-				_, _ = tsHasher.Write([]byte(durationStr))
-				tsHash = tsHasher.Sum64()
+				tsHash = uint64(r.Timestamp.Value(i))
 
 				sampleTsRow := row
 				if _, ok := fb.rootsRow[tsHash]; ok {

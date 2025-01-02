@@ -1220,8 +1220,6 @@ func TestFlamechartGroupByTimestamp(t *testing.T) {
 main;func_fib 10 1000 20
 runtime;gc 10 2000 20
 main;func_fib 10 3000 20
-runtime;gc 20 2000 30
-runtime;gc 20 3000 30
 `))
 	require.NoError(t, err)
 	defer func() {
@@ -1276,7 +1274,7 @@ runtime;gc 20 3000 30
 		rootNodesMetadata = append(rootNodesMetadata, metadata{ts: ts, duration: duration})
 	}
 
-	require.Equal(t, []metadata{{1000, 20}, {2000, 20}, {3000, 20}, {2000, 30}, {3000, 30}}, rootNodesMetadata)
+	require.Equal(t, []metadata{{1000, 20}, {2000, 20}, {3000, 20}}, rootNodesMetadata)
 }
 
 // split the line into 4 parts: stack, value, timestamp, duration
