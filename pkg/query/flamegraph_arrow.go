@@ -1,4 +1,4 @@
-// Copyright 2023-2024 The Parca Authors
+// Copyright 2023-2025 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -207,12 +207,9 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				tsHash = tsHasher.Sum64()
 
 				sampleTsRow := row
-				if row, ok := fb.rootsRow[tsHash]; ok {
-					// We want to compare against this found root's children.
-					rootRowChildren = fb.children[row]
-					rootRow = row
-					fb.compareRows = rootRowChildren
-					fb.addRowValues(r, row, i, false) // adds the cumulative and diff values to the existing row
+				if _, ok := fb.rootsRow[tsHash]; ok {
+					// If we have multiple samples for the same timestamp, we return an error.
+					return nil, 0, 0, 0, fmt.Errorf("multiple samples for the same timestamp is not allowed: %d", r.Timestamp.Value(i))
 				} else {
 					rootRowChildren = map[uint64]int{}
 					err := fb.AppendTimestampRow(

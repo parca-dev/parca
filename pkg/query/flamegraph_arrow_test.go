@@ -1,4 +1,4 @@
-// Copyright 2023-2024 The Parca Authors
+// Copyright 2023-2025 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -1175,7 +1175,7 @@ func TestAllFramesFiltered(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestFlamechartGroupByTimestamp(t *testing.T) {
+func TestFlamechartMultipleSamplesForSameTimestamp(t *testing.T) {
 	ctx := context.Background()
 	tracer := noop.NewTracerProvider().Tracer("")
 
@@ -1186,10 +1186,42 @@ func TestFlamechartGroupByTimestamp(t *testing.T) {
 main;func_fib 10 1000 20
 main;func_fib 10 2000 20
 main;func_fib 10 3000 20
+main;func_add 10 3000 20
+`))
+	require.NoError(t, err)
+
+	defer func() {
+		for _, r := range np.Samples {
+			r.Release()
+		}
+	}()
+
+	record, _, _, _, err := generateFlamegraphArrowRecord(
+		ctx,
+		mem,
+		tracer,
+		np,
+		[]string{FlamegraphFieldFunctionName, profile.ColumnTimestamp, profile.ColumnDuration},
+		0,
+	)
+
+	require.Error(t, err)
+	require.Nil(t, record)
+}
+
+func TestFlamechartGroupByTimestamp(t *testing.T) {
+	ctx := context.Background()
+	tracer := noop.NewTracerProvider().Tracer("")
+
+	mem := memory.NewCheckedAllocator(memory.NewGoAllocator())
+	defer mem.AssertSize(t, 0)
+
+	np, err := foldedStacksWithTsToProfile(mem, []byte(`
+main;func_fib 10 1000 20
+runtime;gc 10 2000 20
+main;func_fib 10 3000 20
 runtime;gc 20 2000 30
 runtime;gc 20 3000 30
-runtime;gc 30 1000 20
-main;func_add 30 3000 20
 `))
 	require.NoError(t, err)
 	defer func() {
