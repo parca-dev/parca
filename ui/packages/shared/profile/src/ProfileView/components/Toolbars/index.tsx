@@ -157,7 +157,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
           {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
         </div>
         <div className="flex gap-3">
-          {preferencesModal != null ? <UserPreferencesModal /> : null}
+          {preferencesModal === true && <UserPreferencesModal />}
           <ShareButton
             profileSource={profileSource}
             queryClient={queryClient}

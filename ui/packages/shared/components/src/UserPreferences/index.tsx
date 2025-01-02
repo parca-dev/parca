@@ -70,6 +70,10 @@ const UserPreferences = ({modal}: {modal?: boolean}): JSX.Element => {
           id="h-highlight-similar-stacks"
           userPreferenceDetails={USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS}
         />
+        <UserPreferenceItem
+          id="h-show-function-name-from-left"
+          userPreferenceDetails={USER_PREFERENCES.SHOW_FUNCTION_NAME_FROM_LEFT}
+        />
         <FlamegraphColorProfileSelector />
       </div>
     </div>
