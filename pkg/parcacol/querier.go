@@ -1,4 +1,4 @@
-// Copyright 2022-2024 The Parca Authors
+// Copyright 2022-2025 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -969,6 +969,20 @@ func (q *Querier) SymbolizeArrowRecord(
 			defer valuePerSecondColumn.Release()
 		}
 
+		indices = schema.FieldIndices(profile.ColumnTimestamp)
+		var timestampColumn *array.Int64
+		if len(indices) != 1 {
+			timestampColumn = arrowutils.MakeNullArray(q.pool, arrow.PrimitiveTypes.Int64, valueColumn.Len()).(*array.Int64)
+			defer timestampColumn.Release()
+		}
+
+		indices = schema.FieldIndices(profile.ColumnDuration)
+		var durationColumn *array.Int64
+		if len(indices) != 1 {
+			durationColumn = arrowutils.MakeNullArray(q.pool, arrow.PrimitiveTypes.Int64, valueColumn.Len()).(*array.Int64)
+			defer durationColumn.Release()
+		}
+
 		profileLabels := []arrow.Field{}
 		profileLabelColumns := []arrow.Array{}
 		for i, field := range schema.Fields() {
@@ -984,14 +998,17 @@ func (q *Querier) SymbolizeArrowRecord(
 		}
 		defer locationsRecord.Release()
 
-		columns := make([]arrow.Array, len(profileLabels)+3) // +3 for stacktrace locations, value and diff
+		columns := make([]arrow.Array, len(profileLabels)+5) // +5 for stacktrace locations, value, diff, timestamp and duration
 		copy(columns, profileLabelColumns)
-		columns[len(columns)-3] = locationsRecord.Column(0)
-		columns[len(columns)-2] = valueColumn
+		columns[len(columns)-5] = locationsRecord.Column(0)
+		columns[len(columns)-4] = valueColumn
 
 		diffColumn := CreateDiffColumn(q.pool, int(r.NumRows()))
 		defer diffColumn.Release()
-		columns[len(columns)-1] = diffColumn
+		columns[len(columns)-3] = diffColumn
+
+		columns[len(columns)-2] = timestampColumn
+		columns[len(columns)-1] = durationColumn
 
 		res[i] = array.NewRecord(profile.ArrowSchema(profileLabels), columns, r.NumRows())
 	}

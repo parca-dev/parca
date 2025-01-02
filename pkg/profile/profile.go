@@ -1,4 +1,4 @@
-// Copyright 2022-2024 The Parca Authors
+// Copyright 2022-2025 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -72,16 +72,24 @@ func LocationsArrowSchema() *arrow.Schema {
 }
 
 func ArrowSamplesField(profileLabelFields []arrow.Field) []arrow.Field {
-	numFields := len(profileLabelFields) + 3 // +3 for stacktraces, value and diff
+	numFields := len(profileLabelFields) + 5 // +5 for stacktraces, value, diff, timestamp and duration
 	fields := make([]arrow.Field, numFields)
 	copy(fields, profileLabelFields)
-	fields[numFields-3] = LocationsField
-	fields[numFields-2] = arrow.Field{
+	fields[numFields-5] = LocationsField
+	fields[numFields-4] = arrow.Field{
 		Name: "value",
 		Type: arrow.PrimitiveTypes.Int64,
 	}
-	fields[numFields-1] = arrow.Field{
+	fields[numFields-3] = arrow.Field{
 		Name: "diff",
+		Type: arrow.PrimitiveTypes.Int64,
+	}
+	fields[numFields-2] = arrow.Field{
+		Name: ColumnTimestamp,
+		Type: arrow.PrimitiveTypes.Int64,
+	}
+	fields[numFields-1] = arrow.Field{
+		Name: ColumnDuration,
 		Type: arrow.PrimitiveTypes.Int64,
 	}
 

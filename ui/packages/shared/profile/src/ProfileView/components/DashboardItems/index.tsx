@@ -33,6 +33,7 @@ interface GetDashboardItemProps {
   isHalfScreen: boolean;
   dimensions: DOMRect | undefined;
   flamegraphData: FlamegraphData;
+  flamechartData: FlamegraphData;
   topTableData?: TopTableData;
   callgraphData?: CallgraphData;
   sourceData?: SourceData;
@@ -54,6 +55,7 @@ export const getDashboardItem = ({
   isHalfScreen,
   dimensions,
   flamegraphData,
+  flamechartData,
   topTableData,
   callgraphData,
   sourceData,
@@ -100,6 +102,31 @@ export const getDashboardItem = ({
             metadataLoading={flamegraphData.metadataLoading}
           />
         </ConditionalWrapper>
+      );
+    case 'iciclechart':
+      return (
+        <ProfileIcicleGraph
+          curPath={curPath}
+          setNewCurPath={setNewCurPath}
+          arrow={flamechartData?.arrow}
+          total={total}
+          filtered={filtered}
+          profileType={profileSource?.ProfileType()}
+          loading={flamechartData.loading}
+          error={flamechartData.error}
+          isHalfScreen={isHalfScreen}
+          width={
+            dimensions?.width !== undefined
+              ? isHalfScreen
+                ? (dimensions.width - 54) / 2
+                : dimensions.width - 16
+              : 0
+          }
+          metadataMappingFiles={flamechartData.metadataMappingFiles}
+          metadataLoading={flamechartData.metadataLoading}
+          profileSource={profileSource}
+          isIcicleChart={true}
+        />
       );
     case 'callgraph':
       return callgraphData?.data !== undefined &&

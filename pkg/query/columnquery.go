@@ -1,4 +1,4 @@
-// Copyright 2022-2024 The Parca Authors
+// Copyright 2022-2025 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -236,11 +236,18 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 
 	groupBy := req.GetGroupBy().GetFields()
 	allowedGroupBy := map[string]struct{}{
+		profile.ColumnTimestamp:         {},
+		profile.ColumnDuration:          {},
 		FlamegraphFieldFunctionName:     {},
 		FlamegraphFieldLocationAddress:  {},
 		FlamegraphFieldMappingFile:      {},
 		FlamegraphFieldFunctionFileName: {},
 	}
+
+	if req.GetReportType() == pb.QueryRequest_REPORT_TYPE_FLAMECHART {
+		groupBy = append(groupBy, profile.ColumnTimestamp, profile.ColumnDuration)
+	}
+
 	groupByLabels := make([]string, 0, len(groupBy))
 	for _, f := range groupBy {
 		if strings.HasPrefix(f, FlamegraphFieldLabels+".") {
@@ -592,7 +599,7 @@ func RenderReport(
 				Flamegraph: fg,
 			},
 		}, nil
-	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW:
+	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW, pb.QueryRequest_REPORT_TYPE_FLAMECHART:
 		fa, total, err := GenerateFlamegraphArrow(ctx, mem, tracer, p, groupBy, nodeTrimFraction)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate arrow flamegraph: %v", err.Error())
@@ -797,13 +804,13 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, mem memory.Allocator,
 		compareCumulativeTotal := int64(0)
 		for _, r := range compare.Samples {
 			cols := r.Columns()
-			compareCumulativeTotal += math.Int64.Sum(cols[len(cols)-2].(*array.Int64))
+			compareCumulativeTotal += math.Int64.Sum(cols[len(cols)-4].(*array.Int64))
 		}
 
 		baseCumulativeTotal := int64(0)
 		for _, r := range base.Samples {
 			cols := r.Columns()
-			baseCumulativeTotal += math.Int64.Sum(cols[len(cols)-2].(*array.Int64))
+			baseCumulativeTotal += math.Int64.Sum(cols[len(cols)-4].(*array.Int64))
 		}
 
 		// Scale up base if compare is bigger
@@ -828,12 +835,12 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, mem memory.Allocator,
 
 		if compareCumulativeRatio > 1.0 {
 			// If compareCumulativeRatio is bigger than 1.0 we have to scale all values
-			multi := multiplyInt64By(mem, cols[len(cols)-2].(*array.Int64), compareCumulativeRatio)
-			cols[len(cols)-1] = multi
+			multi := multiplyInt64By(mem, cols[len(cols)-4].(*array.Int64), compareCumulativeRatio)
+			cols[len(cols)-3] = multi
 			cleanupArrs = append(cleanupArrs, multi)
 		} else {
 			// otherwise we simply use the original values.
-			cols[len(cols)-1] = cols[len(cols)-2] // value as diff
+			cols[len(cols)-3] = cols[len(cols)-4] // value as diff
 		}
 
 		records = append(records, array.NewRecord(
@@ -849,16 +856,22 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, mem memory.Allocator,
 
 			cols := make([]arrow.Array, len(columns))
 			copy(cols, columns)
-			diff := multiplyInt64By(mem, columns[len(columns)-2].(*array.Int64), -1*baseCumulativeRatio)
+			diff := multiplyInt64By(mem, columns[len(columns)-4].(*array.Int64), -1*baseCumulativeRatio)
 			defer diff.Release()
 			value := zeroInt64Array(mem, int(r.NumRows()))
 			defer value.Release()
+			timestamp := zeroInt64Array(mem, int(r.NumRows()))
+			defer timestamp.Release()
+			duration := zeroInt64Array(mem, int(r.NumRows()))
+			defer duration.Release()
 			records = append(records, array.NewRecord(
 				r.Schema(),
 				append(
-					cols[:len(cols)-2], // all other columns like locations
+					cols[:len(cols)-4], // all other columns like locations
 					value,
 					diff,
+					timestamp,
+					duration,
 				),
 				r.NumRows(),
 			))
