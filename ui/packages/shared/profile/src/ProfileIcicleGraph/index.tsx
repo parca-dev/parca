@@ -20,12 +20,14 @@ import {IcicleGraphSkeleton, useParcaContext, useURLState} from '@parca/componen
 import {ProfileType} from '@parca/parser';
 import {capitalizeOnlyFirstLetter, divide} from '@parca/utilities';
 
+import {ProfileSource} from '../ProfileSource';
 import DiffLegend from '../ProfileView/components/DiffLegend';
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
 import {TimelineGuide} from '../TimelineGuide';
 import {IcicleGraph} from './IcicleGraph';
 import {FIELD_FUNCTION_NAME, IcicleGraphArrow} from './IcicleGraphArrow';
 import useMappingList from './IcicleGraphArrow/useMappingList';
+import {boundsFromProfileSource} from './IcicleGraphArrow/utils';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 
@@ -38,6 +40,7 @@ interface ProfileIcicleGraphProps {
   total: bigint;
   filtered: bigint;
   profileType?: ProfileType;
+  profileSource?: ProfileSource;
   curPath: string[] | [];
   setNewCurPath: (path: string[]) => void;
   loading: boolean;
@@ -46,6 +49,7 @@ interface ProfileIcicleGraphProps {
   isHalfScreen: boolean;
   metadataMappingFiles?: string[];
   metadataLoading?: boolean;
+  isIcicleChart?: boolean;
 }
 
 const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
@@ -65,9 +69,11 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   width,
   isHalfScreen,
   metadataMappingFiles,
+  isIcicleChart = false,
+  profileSource,
 }: ProfileIcicleGraphProps): JSX.Element {
   const {onError, authenticationErrorMessage, isDarkMode} = useParcaContext();
-  const {compareMode, timelineGuide} = useProfileViewContext();
+  const {compareMode} = useProfileViewContext();
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const mappingsList = useMappingList(metadataMappingFiles);
@@ -167,15 +173,16 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     if (arrow !== undefined)
       return (
         <div className="relative">
-          {timelineGuide?.show === true && (
+          {isIcicleChart ? (
             <TimelineGuide
-              bounds={timelineGuide.props.bounds}
+              bounds={boundsFromProfileSource(profileSource)}
               width={width}
               height={1000}
               margin={0}
-              ticks={60000 / 10000}
+              ticks={12}
+              timeUnit="nanoseconds"
             />
-          )}
+          ) : null}
           <IcicleGraphArrow
             width={width}
             arrow={arrow}
@@ -189,6 +196,8 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
             isHalfScreen={isHalfScreen}
             mappingsListFromMetadata={mappingsList}
             compareAbsolute={isCompareAbsolute}
+            isIcicleChart={isIcicleChart}
+            profileSource={profileSource}
           />
         </div>
       );
@@ -208,7 +217,8 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     isDarkMode,
     mappingsList,
     isCompareAbsolute,
-    timelineGuide,
+    isIcicleChart,
+    profileSource,
   ]);
 
   if (error != null) {

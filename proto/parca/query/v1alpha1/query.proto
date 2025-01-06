@@ -247,6 +247,9 @@ message QueryRequest {
 
     // REPORT_TYPE_PROFILE_METADATA contains metadata about the profile i.e. binaries, labels
     REPORT_TYPE_PROFILE_METADATA = 8;
+
+    // REPORT_TYPE_FLAMECHART contains flamechart representation of the report
+    REPORT_TYPE_FLAMECHART = 9;
   }
 
   // report_type is the type of report to return

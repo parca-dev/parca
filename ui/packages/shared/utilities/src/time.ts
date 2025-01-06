@@ -50,7 +50,7 @@ export const TimeUnits = {
 
 export type TimeUnit = (typeof TimeUnits)[keyof typeof TimeUnits];
 
-export const unitsInTime = {
+export const unitsInTimeNs = {
   [TimeUnits.Nanos]: {multiplier: 1, symbol: 'ns'},
   [TimeUnits.Micros]: {multiplier: 1e3, symbol: 'µs'},
   [TimeUnits.Milliseconds]: {multiplier: 1e6, symbol: 'ms'},
@@ -62,9 +62,19 @@ export const unitsInTime = {
   [TimeUnits.Years]: {multiplier: 365 * 24 * 60 * 60 * 1e9, symbol: 'y'},
 };
 
+export const unitsInTimeMs = {
+  [TimeUnits.Milliseconds]: {multiplier: 1, symbol: 'ms'},
+  [TimeUnits.Seconds]: {multiplier: 1e3, symbol: 's'},
+  [TimeUnits.Minutes]: {multiplier: 6 * 1e4, symbol: 'm'},
+  [TimeUnits.Hours]: {multiplier: 60 * 60 * 1e3, symbol: 'h'},
+  [TimeUnits.Days]: {multiplier: 24 * 60 * 60 * 1e3, symbol: 'd'},
+  [TimeUnits.Weeks]: {multiplier: 7 * 24 * 60 * 60 * 1e3, symbol: 'w'},
+  [TimeUnits.Years]: {multiplier: 365 * 24 * 60 * 60 * 1e3, symbol: 'y'},
+};
+
 export const convertTime = (value: number, from: TimeUnit, to: TimeUnit): number => {
-  const startUnit = unitsInTime[from];
-  const endUnit = unitsInTime[to];
+  const startUnit = unitsInTimeNs[from];
+  const endUnit = unitsInTimeNs[to];
   if (startUnit === undefined || endUnit === undefined) {
     console.error('invalid start or end unit provided');
     return value;
@@ -89,24 +99,24 @@ export const formatDuration = (timeObject: TimeObject, to?: number): string => {
   }
 
   // for more than one second, just show up until whole seconds; otherwise, show whole micros
-  if (Math.floor(nanos / unitsInTime[TimeUnits.Seconds].multiplier) > 0) {
+  if (Math.floor(nanos / unitsInTimeNs[TimeUnits.Seconds].multiplier) > 0) {
     for (let i = 0; i < unitsLargeToSmall.length; i++) {
-      const multiplier = unitsInTime[unitsLargeToSmall[i]].multiplier;
+      const multiplier = unitsInTimeNs[unitsLargeToSmall[i]].multiplier;
 
       if (nanos > multiplier) {
         if (unitsLargeToSmall[i] === TimeUnits.Milliseconds) {
           break;
         } else {
           const amount = Math.floor(nanos / multiplier);
-          values = [...values, `${amount}${unitsInTime[unitsLargeToSmall[i]].symbol}`];
+          values = [...values, `${amount}${unitsInTimeNs[unitsLargeToSmall[i]].symbol}`];
           nanos -= amount * multiplier;
         }
       }
     }
   } else {
-    const milliseconds = Math.floor(nanos / unitsInTime[TimeUnits.Milliseconds].multiplier);
+    const milliseconds = Math.floor(nanos / unitsInTimeNs[TimeUnits.Milliseconds].multiplier);
     if (milliseconds > 0) {
-      values = [`${milliseconds}${unitsInTime[TimeUnits.Milliseconds].symbol}`];
+      values = [`${milliseconds}${unitsInTimeNs[TimeUnits.Milliseconds].symbol}`];
     } else {
       return '<1ms';
     }

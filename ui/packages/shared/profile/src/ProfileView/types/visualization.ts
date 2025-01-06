@@ -21,7 +21,6 @@ import {
 } from '@parca/client';
 
 import {ProfileSource} from '../../ProfileSource';
-import {TimelineGuideData} from '../context/ProfileViewContext';
 
 export interface FlamegraphData {
   loading: boolean;
@@ -58,12 +57,13 @@ export interface SourceData {
   error?: any;
 }
 
-export type VisualizationType = 'icicle' | 'callgraph' | 'table' | 'source';
+export type VisualizationType = 'icicle' | 'callgraph' | 'table' | 'source' | 'iciclechart';
 
 export interface ProfileViewProps {
   total: bigint;
   filtered: bigint;
   flamegraphData: FlamegraphData;
+  flamechartData: FlamegraphData;
   topTableData?: TopTableData;
   callgraphData?: CallgraphData;
   sourceData?: SourceData;
@@ -73,6 +73,4 @@ export interface ProfileViewProps {
   onDownloadPProf: () => void;
   pprofDownloading?: boolean;
   showVisualizationSelector?: boolean;
-  showTimelineGuide?: boolean;
-  timelineGuide?: TimelineGuideData;
 }
