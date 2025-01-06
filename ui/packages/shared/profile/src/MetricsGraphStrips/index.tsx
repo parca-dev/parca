@@ -33,7 +33,7 @@ interface Props {
   width?: number;
 }
 
-const labelSetToString = (labelSet?: LabelSet): string => {
+export const labelSetToString = (labelSet?: LabelSet): string => {
   if (labelSet === undefined) {
     return '{}';
   }
