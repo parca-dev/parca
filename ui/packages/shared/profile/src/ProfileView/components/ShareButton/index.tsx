@@ -16,7 +16,7 @@ import React, {useState} from 'react';
 import {Icon} from '@iconify/react';
 
 import {QueryRequest, QueryServiceClient} from '@parca/client';
-import {Button, Dropdown, Modal, useGrpcMetadata} from '@parca/components';
+import { Button, Dropdown, Modal, useGrpcMetadata, useParcaContext } from '@parca/components';
 
 import {ProfileSource} from '../../../ProfileSource';
 import ResultBox from './ResultBox';
@@ -48,6 +48,7 @@ const ProfileShareModal = ({
   const [error, setError] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [sharedLink, setSharedLink] = useState<string>('');
+  const { Spinner, loader } = useParcaContext();
   const metadata = useGrpcMetadata();
   const isFormDataValid = (): boolean => true;
 
@@ -99,7 +100,7 @@ const ProfileShareModal = ({
             ></textarea>
             <Button
               variant="primary"
-              className="mt-4"
+              className="mt-4 h-[38px]"
               onClick={e => {
                 e.preventDefault();
                 void handleSubmit();
@@ -107,7 +108,7 @@ const ProfileShareModal = ({
               disabled={loading || !isFormDataValid()}
               type="submit"
             >
-              {loading ? 'Sharing' : 'Share'}
+              {loading ? <Spinner paddingClasses="p-0" /> : 'Share'}
             </Button>
             {error !== '' ? <p>Something went wrong please try again</p> : null}
           </>
