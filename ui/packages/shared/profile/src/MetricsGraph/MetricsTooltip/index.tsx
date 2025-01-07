@@ -106,7 +106,7 @@ const MetricsTooltip = ({
 
   return (
     <div ref={setPopperElement} style={styles.popper} {...attributes.popper} className="z-20">
-      <div className="flex max-w-md">
+      <div className="flex max-w-lg">
         <div className="m-auto">
           <div
             className="rounded-lg border-gray-300 bg-gray-50 p-3 opacity-90 shadow-lg dark:border-gray-500 dark:bg-gray-900"
@@ -121,7 +121,7 @@ const MetricsTooltip = ({
                       {delta ? (
                         <>
                           <tr>
-                            <td className="w-1/4">Per Second</td>
+                            <td className="w-1/4 pr-3">Per&nbsp;Second</td>
                             <td className="w-3/4">
                               {valueFormatter(
                                 highlighted.valuePerSecond,
