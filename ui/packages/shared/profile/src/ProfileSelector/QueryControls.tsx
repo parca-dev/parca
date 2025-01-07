@@ -217,17 +217,17 @@ export function QueryControls({
       <DateTimeRangePicker onRangeSelection={setTimeRangeSelection} range={timeRangeSelection} />
 
       <div>
-          <label className="text-xs">&nbsp;</label>
-          <Button
-            disabled={searchDisabled}
-            onClick={(e: React.MouseEvent<HTMLElement>) => {
-              e.preventDefault();
-              setQueryExpression(true);
-            }}
-            id="h-matcher-search-button"
-          >
-            Search
-          </Button>
+        <label className="text-xs">&nbsp;</label>
+        <Button
+          disabled={searchDisabled}
+          onClick={(e: React.MouseEvent<HTMLElement>) => {
+            e.preventDefault();
+            setQueryExpression(true);
+          }}
+          id="h-matcher-search-button"
+        >
+          Search
+        </Button>
       </div>
     </div>
   );
