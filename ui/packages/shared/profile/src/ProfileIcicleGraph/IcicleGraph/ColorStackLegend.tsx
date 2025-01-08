@@ -71,7 +71,10 @@ const ColorStackLegend = ({compareMode = false}: Props): JSX.Element => {
             }}
           >
             <div className="flex items-center">
-              <div className="mr-1 inline-block h-4 w-4" style={{backgroundColor: color}} />
+              <div
+                className="mr-1 inline-block h-4 w-4 rounded-[4px]"
+                style={{backgroundColor: color}}
+              />
               <span className="text-sm">{feature}</span>
             </div>
             {isHighlighted ? (

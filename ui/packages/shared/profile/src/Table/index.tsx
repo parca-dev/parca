@@ -24,6 +24,7 @@ import {
 import {Int64, Vector, tableFromIPC, vectorFromArray} from 'apache-arrow';
 import cx from 'classnames';
 import {AnimatePresence, motion} from 'framer-motion';
+import {Tooltip} from 'react-tooltip';
 
 import {
   Table as TableComponent,
@@ -34,7 +35,7 @@ import {
 import {type RowRendererProps} from '@parca/components/dist/Table';
 import {useCurrentColorProfile} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
-import {isSearchMatch, valueFormatter} from '@parca/utilities';
+import {getLastItem, isSearchMatch, valueFormatter} from '@parca/utilities';
 
 import {getFilenameColors, getMappingColors} from '../ProfileIcicleGraph/IcicleGraphArrow/';
 import {colorByColors} from '../ProfileIcicleGraph/IcicleGraphArrow/IcicleGraphNodes';
@@ -303,12 +304,22 @@ export const Table = React.memo(function Table({
 
   const columns = useMemo<Array<ColumnDef<Row>>>(() => {
     return [
-      columnHelper.accessor('color', {
+      columnHelper.accessor('colorProperty', {
         id: 'color',
         header: '',
         cell: info => {
-          const color = info.getValue() as string;
-          return <div className="w-4 h-4 rounded-[4px]" style={{backgroundColor: color}} />;
+          const color = info.getValue() as {color: string; mappingFile: string};
+          return (
+            <>
+              <div
+                className="w-4 h-4 rounded-[4px]"
+                style={{backgroundColor: color.color}}
+                data-tooltip-id="table-color-tooltip"
+                data-tooltip-content={getLastItem(color.mappingFile)}
+              />
+              <Tooltip id="table-color-tooltip" />
+            </>
+          );
         },
         size: 10,
       }),
@@ -577,13 +588,16 @@ export const Table = React.memo(function Table({
 
       return {
         id: i,
-        color: getRowColor(
-          colorByColors,
-          mappingFileColumn,
-          i,
-          functionFileNameColumn,
-          colorBy as string
-        ),
+        colorProperty: {
+          color: getRowColor(
+            colorByColors,
+            mappingFileColumn,
+            i,
+            functionFileNameColumn,
+            colorBy as string
+          ),
+          mappingFile,
+        },
         name: RowName(mappingFileColumn, locationAddressColumn, functionNameColumn, i),
         flat,
         flatDiff,
