@@ -16,7 +16,7 @@ import {RpcError} from '@protobuf-ts/runtime-rpc';
 import Select, {type SelectInstance} from 'react-select';
 
 import {ProfileTypesResponse, QueryServiceClient} from '@parca/client';
-import {Button, ButtonGroup, DateTimeRange, DateTimeRangePicker} from '@parca/components';
+import {Button, DateTimeRange, DateTimeRangePicker} from '@parca/components';
 import {ProfileType, Query} from '@parca/parser';
 
 import MatchersInput from '../MatchersInput';
@@ -90,7 +90,7 @@ export function QueryControls({
   profileTypesError,
 }: QueryControlsProps): JSX.Element {
   return (
-    <div className="flex w-full flex-wrap items-end gap-2">
+    <div className="flex w-full flex-wrap items-start gap-2">
       {showProfileTypeSelector && (
         <div>
           <label className="text-xs">Profile type</label>
@@ -216,7 +216,8 @@ export function QueryControls({
 
       <DateTimeRangePicker onRangeSelection={setTimeRangeSelection} range={timeRangeSelection} />
 
-      <ButtonGroup>
+      <div>
+        <label className="text-xs">&nbsp;</label>
         <Button
           disabled={searchDisabled}
           onClick={(e: React.MouseEvent<HTMLElement>) => {
@@ -227,7 +228,7 @@ export function QueryControls({
         >
           Search
         </Button>
-      </ButtonGroup>
+      </div>
     </div>
   );
 }
