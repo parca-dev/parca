@@ -47,7 +47,7 @@ export const useProfileMetadata = ({
   const mappingsList = useMappingList(metadataMappingFiles);
   const filenamesList = useFilenamesList(table);
 
-  const colorMappings = colorBy === 'binary' ? mappingsList : filenamesList;
+  const colorMappings = colorBy === 'binary' || colorBy === '' ? mappingsList : filenamesList;
 
   return {
     table,
