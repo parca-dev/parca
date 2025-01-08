@@ -20,7 +20,11 @@ export interface SpinnerProps {
   loadingText?: string;
 }
 
-const Spinner = ({ paddingClasses = 'py-10', className, loadingText = 'Loading...' }: SpinnerProps): JSX.Element => {
+const Spinner = ({
+  paddingClasses = 'py-10',
+  className,
+  loadingText = 'Loading...',
+}: SpinnerProps): JSX.Element => {
   return (
     <div
       style={{

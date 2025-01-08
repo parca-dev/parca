@@ -11,14 +11,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 
-import {Icon} from '@iconify/react';
+import { Icon } from '@iconify/react';
 
-import {QueryRequest, QueryServiceClient} from '@parca/client';
+import { QueryRequest, QueryServiceClient } from '@parca/client';
 import { Button, Dropdown, Modal, useGrpcMetadata, useParcaContext } from '@parca/components';
 
-import {ProfileSource} from '../../../ProfileSource';
+import { ProfileSource } from '../../../ProfileSource';
 import ResultBox from './ResultBox';
 
 interface Props {
@@ -55,9 +55,9 @@ const ProfileShareModal = ({
   const handleSubmit: () => Promise<void> = async () => {
     try {
       setLoading(true);
-      const {response} = await queryClient.shareProfile(
-        {queryRequest, description},
-        {meta: metadata}
+      const { response } = await queryClient.shareProfile(
+        { queryRequest, description },
+        { meta: metadata }
       );
       setSharedLink(response.link);
       setLoading(false);
