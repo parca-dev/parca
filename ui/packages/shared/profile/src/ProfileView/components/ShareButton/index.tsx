@@ -16,7 +16,7 @@ import React, {useState} from 'react';
 import {Icon} from '@iconify/react';
 
 import {QueryRequest, QueryServiceClient} from '@parca/client';
-import { Button, Dropdown, Modal, useGrpcMetadata, useParcaContext } from '@parca/components';
+import {Button, Dropdown, Modal, useGrpcMetadata, useParcaContext} from '@parca/components';
 
 import {ProfileSource} from '../../../ProfileSource';
 import ResultBox from './ResultBox';
@@ -48,7 +48,7 @@ const ProfileShareModal = ({
   const [error, setError] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [sharedLink, setSharedLink] = useState<string>('');
-  const { Spinner, loader } = useParcaContext();
+  const {Spinner, loader} = useParcaContext();
   const metadata = useGrpcMetadata();
   const isFormDataValid = (): boolean => true;
 
