@@ -17,7 +17,7 @@ import {GrpcWebFetchTransport} from '@protobuf-ts/grpcweb-transport';
 import {useLocation, useNavigate} from 'react-router-dom';
 
 import {QueryServiceClient} from '@parca/client';
-import { ParcaContextProvider, URLStateProvider, Spinner } from '@parca/components';
+import {ParcaContextProvider, Spinner, URLStateProvider} from '@parca/components';
 import {DEFAULT_PROFILE_EXPLORER_PARAM_VALUES, ProfileExplorer} from '@parca/profile';
 import {selectDarkMode, useAppSelector} from '@parca/store';
 import {convertToQueryParams, parseParams} from '@parca/utilities';
