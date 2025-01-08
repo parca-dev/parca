@@ -34,7 +34,7 @@ export interface SourceViewContextMenuItem {
 }
 
 interface Props {
-  Spinner?: FC<SpinnerProps>;
+  Spinner: FC<SpinnerProps>;
   loader?: ReactNode;
   noDataPrompt?: ReactNode;
   profileExplorer?: {

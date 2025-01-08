@@ -48,7 +48,7 @@ const ProfileShareModal = ({
   const [error, setError] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [sharedLink, setSharedLink] = useState<string>('');
-  const { Spinner, loader } = useParcaContext();
+  const { Spinner } = useParcaContext();
   const metadata = useGrpcMetadata();
   const isFormDataValid = (): boolean => true;
 
