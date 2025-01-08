@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {ProfilerOnRenderCallback, ReactNode, createContext, useContext} from 'react';
+import {FC, ProfilerOnRenderCallback, ReactNode, createContext, useContext} from 'react';
 
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 
@@ -19,7 +19,7 @@ import {QueryServiceClient} from '@parca/client';
 import type {ColorConfig, NavigateFunction} from '@parca/utilities';
 
 import {NoDataPrompt} from '../NoDataPrompt';
-import Spinner from '../Spinner';
+import Spinner, {SpinnerProps} from '../Spinner';
 
 export interface ProfileData {
   line: number;
@@ -34,6 +34,7 @@ export interface SourceViewContextMenuItem {
 }
 
 interface Props {
+  Spinner: FC<SpinnerProps>;
   loader?: ReactNode;
   noDataPrompt?: ReactNode;
   profileExplorer?: {
@@ -75,6 +76,7 @@ interface Props {
 
 export const defaultValue: Props = {
   loader: <Spinner />,
+  Spinner,
   noDataPrompt: <NoDataPrompt />,
   profileExplorer: {
     PaddingX: 32,

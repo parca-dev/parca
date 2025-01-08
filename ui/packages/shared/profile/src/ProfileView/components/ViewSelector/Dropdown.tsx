@@ -148,6 +148,7 @@ const Dropdown = ({
                               e.stopPropagation();
                               option.innerAction?.onClick();
                             }}
+                            disabled={disabled}
                           >
                             {option.innerAction.text}
                             {option.innerAction.text === 'Add Panel' && (
