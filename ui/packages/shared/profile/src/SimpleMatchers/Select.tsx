@@ -183,6 +183,12 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     }
   };
 
+  const moveCaretToEnd = (e: React.FocusEvent<HTMLTextAreaElement>): void => {
+    const value = e.target.value;
+    e.target.value = '';
+    e.target.value = value;
+  };
+
   return (
     <div ref={containerRef} className="relative" onKeyDown={handleKeyDown} onClick={onButtonClick}>
       <div
@@ -232,6 +238,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                       placeholder="Type a RegEx to add"
                       value={searchTerm}
                       onChange={e => setSearchTerm(e.target.value)}
+                      onFocus={e => moveCaretToEnd(e)}
                     />
                     {editable && searchTerm.length > 0 && (
                       <div className="p-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">

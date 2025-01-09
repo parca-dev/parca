@@ -88,7 +88,7 @@ const ColorStackLegend = ({mappings, compareMode = false, loading}: Props): Reac
             className={cx(
               'flex-no-wrap mb-1 flex w-[19.25%] items-center justify-between text-ellipsis p-1',
               {
-                'cursor-pointer': filteringAllowed,
+                'cursor-pointer': filteringAllowed && colorBy === 'binary',
                 'bg-gray-200 dark:bg-gray-800': isHighlighted,
               }
             )}
@@ -105,7 +105,10 @@ const ColorStackLegend = ({mappings, compareMode = false, loading}: Props): Reac
           >
             <div className="flex w-11/12 items-center justify-start">
               <div className="flex w-5 items-center">
-                <div className="mr-1 inline-block h-4 w-4" style={{backgroundColor: color}} />
+                <div
+                  className="mr-1 inline-block h-4 w-4 rounded-[4px]"
+                  style={{backgroundColor: color}}
+                />
               </div>
               <div className="shrink overflow-hidden text-ellipsis whitespace-nowrap text-sm hover:whitespace-normal">
                 {feature}

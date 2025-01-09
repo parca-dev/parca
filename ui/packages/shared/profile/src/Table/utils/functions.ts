@@ -21,7 +21,10 @@ import {hexifyAddress} from '../../utils';
 
 export interface DataRow {
   id: number;
-  color: string;
+  colorProperty: {
+    color: string;
+    mappingFile: string;
+  };
   name: string;
   flat: bigint;
   flatDiff: bigint;
