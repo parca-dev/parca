@@ -14,6 +14,7 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
+import {useQueryClient} from '@tanstack/react-query';
 import cx from 'classnames';
 
 import {QueryServiceClient} from '@parca/client';
@@ -106,6 +107,7 @@ const SimpleMatchers = ({
   const [queryRows, setQueryRows] = useState<QueryRow[]>([
     {labelName: '', operator: '=', labelValue: '', labelValues: [], isLoading: false},
   ]);
+  const reactQueryClient = useQueryClient();
   const metadata = useGrpcMetadata();
 
   const {loading: labelNamesLoading, result} = useLabelNames(queryClient, profileType);
@@ -129,19 +131,31 @@ const SimpleMatchers = ({
 
   const fetchLabelValues = useCallback(
     async (labelName: string): Promise<string[]> => {
+      if (labelName == null || labelName === '' || profileType == null || profileType === '') {
+        return [];
+      }
       try {
-        const response = await queryClient.values(
-          {labelName, match: [], profileType},
-          {meta: metadata}
-        ).response;
-        const sanitizedValues = sanitizeLabelValue(response.labelValues);
-        return sanitizedValues;
+        const values = await reactQueryClient.fetchQuery(
+          [labelName, profileType],
+          async () => {
+            const response = await queryClient.values(
+              {labelName, match: [], profileType},
+              {meta: metadata}
+            ).response;
+            const sanitizedValues = sanitizeLabelValue(response.labelValues);
+            return sanitizedValues;
+          },
+          {
+            staleTime: 1000 * 60 * 5, // 5 minutes
+          }
+        );
+        return values;
       } catch (error) {
         console.error('Error fetching label values:', error);
         return [];
       }
     },
-    [queryClient, metadata, profileType]
+    [queryClient, metadata, profileType, reactQueryClient]
   );
 
   const updateMatchersString = useCallback(

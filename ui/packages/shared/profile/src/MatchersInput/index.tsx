@@ -11,12 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useMemo, useRef, useState} from 'react';
 
 import cx from 'classnames';
 import TextareaAutosize from 'react-textarea-autosize';
 
-import {LabelsRequest, LabelsResponse, QueryServiceClient} from '@parca/client';
+import {LabelsRequest, LabelsResponse, QueryServiceClient, ValuesRequest} from '@parca/client';
 import {useGrpcMetadata} from '@parca/components';
 import {Query} from '@parca/parser';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
@@ -75,6 +75,42 @@ export const useLabelNames = (
   return {result: {response: data, error: error as Error}, loading: isLoading};
 };
 
+interface UseLabelValues {
+  result: {
+    response: string[];
+    error?: Error;
+  };
+  loading: boolean;
+}
+
+export const useLabelValues = (
+  client: QueryServiceClient,
+  labelName: string,
+  profileType: string
+): UseLabelValues => {
+  const metadata = useGrpcMetadata();
+
+  const {data, isLoading, error} = useGrpcQuery<string[]>({
+    key: ['labelValues', labelName, profileType],
+    queryFn: async () => {
+      const request: ValuesRequest = {labelName, match: [], profileType};
+      const {response} = await client.values(request, {meta: metadata});
+      return sanitizeLabelValue(response.labelValues);
+    },
+    options: {
+      enabled:
+        profileType !== undefined &&
+        profileType !== '' &&
+        labelName !== undefined &&
+        labelName !== '',
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      keepPreviousData: false,
+    },
+  });
+
+  return {result: {response: data ?? [], error: error as Error}, loading: isLoading};
+};
+
 const MatchersInput = ({
   queryClient,
   setMatchersString,
@@ -84,34 +120,16 @@ const MatchersInput = ({
 }: MatchersInputProps): JSX.Element => {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const [focusedInput, setFocusedInput] = useState(false);
-  const [labelValuesLoading, setLabelValuesLoading] = useState(false);
   const [lastCompleted, setLastCompleted] = useState<Suggestion>(new Suggestion('', '', ''));
-  const [labelValues, setLabelValues] = useState<string[] | null>(null);
   const [currentLabelName, setCurrentLabelName] = useState<string | null>(null);
-  const metadata = useGrpcMetadata();
 
   const {loading: labelNamesLoading, result} = useLabelNames(queryClient, profileType);
   const {response: labelNamesResponse, error: labelNamesError} = result;
 
-  useEffect(() => {
-    if (currentLabelName !== null) {
-      const call = queryClient.values(
-        {labelName: currentLabelName, match: [], profileType},
-        {meta: metadata}
-      );
-      setLabelValuesLoading(true);
-
-      call.response
-        .then(response => {
-          // replace single `\` in the `labelValues` string with doubles `\\` if available.
-          const newValues = sanitizeLabelValue(response.labelValues);
-
-          return setLabelValues(newValues);
-        })
-        .catch(() => setLabelValues(null))
-        .finally(() => setLabelValuesLoading(false));
-    }
-  }, [currentLabelName, metadata, profileType, queryClient]);
+  const {
+    loading: labelValuesLoading,
+    result: {response: labelValues},
+  } = useLabelValues(queryClient, currentLabelName ?? '', profileType);
 
   const labelNames = useMemo(() => {
     return (labelNamesError === undefined || labelNamesError == null) &&
