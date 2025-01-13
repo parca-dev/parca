@@ -11,12 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 
 import cx from 'classnames';
 import TextareaAutosize from 'react-textarea-autosize';
 
-import { LabelsRequest, LabelsResponse, QueryServiceClient, ValuesRequest, ValuesResponse } from '@parca/client';
+import { LabelsRequest, LabelsResponse, QueryServiceClient, ValuesRequest } from '@parca/client';
 import {useGrpcMetadata} from '@parca/components';
 import {Query} from '@parca/parser';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
@@ -90,12 +90,12 @@ export const useLabelValues = (
 ): UseLabelValues => {
   const metadata = useGrpcMetadata();
 
-  const { data, isLoading, error } = useGrpcQuery<ValuesResponse>({
+  const { data, isLoading, error } = useGrpcQuery<string[]>({
     key: ['labelValues', labelName, profileType],
     queryFn: async () => {
       const request: ValuesRequest = { labelName, match: [], profileType };
       const { response } = await client.values(request, { meta: metadata });
-      return response;
+      return sanitizeLabelValue(response.labelValues);
     },
     options: {
       enabled: profileType !== undefined && profileType !== '' && labelName !== undefined && labelName !== '',
@@ -104,7 +104,7 @@ export const useLabelValues = (
     },
   });
 
-  return { result: { response: data?.labelValues ?? [], error: error as Error }, loading: isLoading };
+  return { result: { response: data ?? [], error: error as Error }, loading: isLoading };
 }
 
 const MatchersInput = ({
@@ -118,8 +118,6 @@ const MatchersInput = ({
   const [focusedInput, setFocusedInput] = useState(false);
   const [lastCompleted, setLastCompleted] = useState<Suggestion>(new Suggestion('', '', ''));
   const [currentLabelName, setCurrentLabelName] = useState<string | null>(null);
-
-  const metadata = useGrpcMetadata();
 
   const {loading: labelNamesLoading, result} = useLabelNames(queryClient, profileType);
   const {response: labelNamesResponse, error: labelNamesError} = result;

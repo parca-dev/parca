@@ -155,7 +155,7 @@ const SimpleMatchers = ({
         return [];
       }
     },
-    [queryClient, metadata, profileType]
+    [queryClient, metadata, profileType, reactQueryClient]
   );
 
   const updateMatchersString = useCallback(
