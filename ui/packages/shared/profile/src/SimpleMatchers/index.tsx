@@ -14,6 +14,7 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
+import {useQueryClient} from '@tanstack/react-query';
 import cx from 'classnames';
 
 import {QueryServiceClient} from '@parca/client';
@@ -23,7 +24,6 @@ import {sanitizeLabelValue} from '@parca/utilities';
 
 import {useLabelNames} from '../MatchersInput';
 import Select, {type SelectItem} from './Select';
-import { useQueryClient } from '@tanstack/react-query';
 
 interface Props {
   queryClient: QueryServiceClient;
@@ -139,8 +139,8 @@ const SimpleMatchers = ({
           [labelName, profileType],
           async () => {
             const response = await queryClient.values(
-              { labelName, match: [], profileType },
-              { meta: metadata }
+              {labelName, match: [], profileType},
+              {meta: metadata}
             ).response;
             const sanitizedValues = sanitizeLabelValue(response.labelValues);
             return sanitizedValues;
