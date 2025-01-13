@@ -17,12 +17,12 @@ import cx from 'classnames';
 import TextareaAutosize from 'react-textarea-autosize';
 
 import { LabelsRequest, LabelsResponse, QueryServiceClient, ValuesRequest } from '@parca/client';
-import {useGrpcMetadata} from '@parca/components';
-import {Query} from '@parca/parser';
-import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
+import { useGrpcMetadata } from '@parca/components';
+import { Query } from '@parca/parser';
+import { millisToProtoTimestamp, sanitizeLabelValue } from '@parca/utilities';
 
 import useGrpcQuery from '../useGrpcQuery';
-import SuggestionsList, {Suggestion, Suggestions} from './SuggestionsList';
+import SuggestionsList, { Suggestion, Suggestions } from './SuggestionsList';
 
 interface MatchersInputProps {
   queryClient: QueryServiceClient;
@@ -51,10 +51,10 @@ export const useLabelNames = (
 ): UseLabelNames => {
   const metadata = useGrpcMetadata();
 
-  const {data, isLoading, error} = useGrpcQuery<LabelsResponse>({
+  const { data, isLoading, error } = useGrpcQuery<LabelsResponse>({
     key: ['labelNames', profileType, match?.join(',')],
     queryFn: async () => {
-      const request: LabelsRequest = {match: match !== undefined ? match : []};
+      const request: LabelsRequest = { match: match !== undefined ? match : [] };
       if (start !== undefined && end !== undefined) {
         request.start = millisToProtoTimestamp(start);
         request.end = millisToProtoTimestamp(end);
@@ -62,7 +62,7 @@ export const useLabelNames = (
       if (profileType !== undefined) {
         request.profileType = profileType;
       }
-      const {response} = await client.labels(request, {meta: metadata});
+      const { response } = await client.labels(request, { meta: metadata });
       return response;
     },
     options: {
@@ -72,7 +72,7 @@ export const useLabelNames = (
     },
   });
 
-  return {result: {response: data, error: error as Error}, loading: isLoading};
+  return { result: { response: data, error: error as Error }, loading: isLoading };
 };
 
 interface UseLabelValues {
@@ -86,7 +86,7 @@ interface UseLabelValues {
 export const useLabelValues = (
   client: QueryServiceClient,
   labelName: string,
-  profileType: string,
+  profileType: string
 ): UseLabelValues => {
   const metadata = useGrpcMetadata();
 
@@ -98,7 +98,11 @@ export const useLabelValues = (
       return sanitizeLabelValue(response.labelValues);
     },
     options: {
-      enabled: profileType !== undefined && profileType !== '' && labelName !== undefined && labelName !== '',
+      enabled:
+        profileType !== undefined &&
+        profileType !== '' &&
+        labelName !== undefined &&
+        labelName !== '',
       staleTime: 1000 * 60 * 5, // 5 minutes
       keepPreviousData: false,
     },
@@ -119,14 +123,13 @@ const MatchersInput = ({
   const [lastCompleted, setLastCompleted] = useState<Suggestion>(new Suggestion('', '', ''));
   const [currentLabelName, setCurrentLabelName] = useState<string | null>(null);
 
-  const {loading: labelNamesLoading, result} = useLabelNames(queryClient, profileType);
-  const {response: labelNamesResponse, error: labelNamesError} = result;
+  const { loading: labelNamesLoading, result } = useLabelNames(queryClient, profileType);
+  const { response: labelNamesResponse, error: labelNamesError } = result;
 
-  const { loading: labelValuesLoading, result: { response: labelValues } } = useLabelValues(
-    queryClient,
-    currentLabelName ?? '',
-    profileType
-  );
+  const {
+    loading: labelValuesLoading,
+    result: { response: labelValues },
+  } = useLabelValues(queryClient, currentLabelName ?? '', profileType);
 
   const labelNames = useMemo(() => {
     return (labelNamesError === undefined || labelNamesError == null) &&
