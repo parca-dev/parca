@@ -23,6 +23,7 @@ import {sanitizeLabelValue} from '@parca/utilities';
 
 import {useLabelNames} from '../MatchersInput';
 import Select, {type SelectItem} from './Select';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface Props {
   queryClient: QueryServiceClient;
@@ -106,6 +107,7 @@ const SimpleMatchers = ({
   const [queryRows, setQueryRows] = useState<QueryRow[]>([
     {labelName: '', operator: '=', labelValue: '', labelValues: [], isLoading: false},
   ]);
+  const reactQueryClient = useQueryClient();
   const metadata = useGrpcMetadata();
 
   const {loading: labelNamesLoading, result} = useLabelNames(queryClient, profileType);
@@ -129,13 +131,25 @@ const SimpleMatchers = ({
 
   const fetchLabelValues = useCallback(
     async (labelName: string): Promise<string[]> => {
+      if (labelName == null || labelName === '' || profileType == null || profileType === '') {
+        return [];
+      }
       try {
-        const response = await queryClient.values(
-          {labelName, match: [], profileType},
-          {meta: metadata}
-        ).response;
-        const sanitizedValues = sanitizeLabelValue(response.labelValues);
-        return sanitizedValues;
+        const values = await reactQueryClient.fetchQuery(
+          [labelName, profileType],
+          async () => {
+            const response = await queryClient.values(
+              { labelName, match: [], profileType },
+              { meta: metadata }
+            ).response;
+            const sanitizedValues = sanitizeLabelValue(response.labelValues);
+            return sanitizedValues;
+          },
+          {
+            staleTime: 1000 * 60 * 5, // 5 minutes
+          }
+        );
+        return values;
       } catch (error) {
         console.error('Error fetching label values:', error);
         return [];
