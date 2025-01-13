@@ -11,18 +11,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, { useMemo, useRef, useState } from 'react';
+import React, {useMemo, useRef, useState} from 'react';
 
 import cx from 'classnames';
 import TextareaAutosize from 'react-textarea-autosize';
 
-import { LabelsRequest, LabelsResponse, QueryServiceClient, ValuesRequest } from '@parca/client';
-import { useGrpcMetadata } from '@parca/components';
-import { Query } from '@parca/parser';
-import { millisToProtoTimestamp, sanitizeLabelValue } from '@parca/utilities';
+import {LabelsRequest, LabelsResponse, QueryServiceClient, ValuesRequest} from '@parca/client';
+import {useGrpcMetadata} from '@parca/components';
+import {Query} from '@parca/parser';
+import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
 import useGrpcQuery from '../useGrpcQuery';
-import SuggestionsList, { Suggestion, Suggestions } from './SuggestionsList';
+import SuggestionsList, {Suggestion, Suggestions} from './SuggestionsList';
 
 interface MatchersInputProps {
   queryClient: QueryServiceClient;
@@ -51,10 +51,10 @@ export const useLabelNames = (
 ): UseLabelNames => {
   const metadata = useGrpcMetadata();
 
-  const { data, isLoading, error } = useGrpcQuery<LabelsResponse>({
+  const {data, isLoading, error} = useGrpcQuery<LabelsResponse>({
     key: ['labelNames', profileType, match?.join(',')],
     queryFn: async () => {
-      const request: LabelsRequest = { match: match !== undefined ? match : [] };
+      const request: LabelsRequest = {match: match !== undefined ? match : []};
       if (start !== undefined && end !== undefined) {
         request.start = millisToProtoTimestamp(start);
         request.end = millisToProtoTimestamp(end);
@@ -62,7 +62,7 @@ export const useLabelNames = (
       if (profileType !== undefined) {
         request.profileType = profileType;
       }
-      const { response } = await client.labels(request, { meta: metadata });
+      const {response} = await client.labels(request, {meta: metadata});
       return response;
     },
     options: {
@@ -72,7 +72,7 @@ export const useLabelNames = (
     },
   });
 
-  return { result: { response: data, error: error as Error }, loading: isLoading };
+  return {result: {response: data, error: error as Error}, loading: isLoading};
 };
 
 interface UseLabelValues {
@@ -90,11 +90,11 @@ export const useLabelValues = (
 ): UseLabelValues => {
   const metadata = useGrpcMetadata();
 
-  const { data, isLoading, error } = useGrpcQuery<string[]>({
+  const {data, isLoading, error} = useGrpcQuery<string[]>({
     key: ['labelValues', labelName, profileType],
     queryFn: async () => {
-      const request: ValuesRequest = { labelName, match: [], profileType };
-      const { response } = await client.values(request, { meta: metadata });
+      const request: ValuesRequest = {labelName, match: [], profileType};
+      const {response} = await client.values(request, {meta: metadata});
       return sanitizeLabelValue(response.labelValues);
     },
     options: {
@@ -108,8 +108,8 @@ export const useLabelValues = (
     },
   });
 
-  return { result: { response: data ?? [], error: error as Error }, loading: isLoading };
-}
+  return {result: {response: data ?? [], error: error as Error}, loading: isLoading};
+};
 
 const MatchersInput = ({
   queryClient,
@@ -123,12 +123,12 @@ const MatchersInput = ({
   const [lastCompleted, setLastCompleted] = useState<Suggestion>(new Suggestion('', '', ''));
   const [currentLabelName, setCurrentLabelName] = useState<string | null>(null);
 
-  const { loading: labelNamesLoading, result } = useLabelNames(queryClient, profileType);
-  const { response: labelNamesResponse, error: labelNamesError } = result;
+  const {loading: labelNamesLoading, result} = useLabelNames(queryClient, profileType);
+  const {response: labelNamesResponse, error: labelNamesError} = result;
 
   const {
     loading: labelValuesLoading,
-    result: { response: labelValues },
+    result: {response: labelValues},
   } = useLabelValues(queryClient, currentLabelName ?? '', profileType);
 
   const labelNames = useMemo(() => {
