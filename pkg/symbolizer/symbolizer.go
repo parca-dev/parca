@@ -203,33 +203,37 @@ func (s *Symbolizer) getDebuginfo(ctx context.Context, buildID string) (string, 
 		return "", nil, nil, debuginfo.ErrUnknownDebuginfoSource
 	}
 
-	// Fetch the debug info for the build ID.
-	rc, err := s.debuginfo.FetchDebuginfo(ctx, dbginfo)
-	if err != nil {
-		return "", nil, nil, fmt.Errorf("fetch debuginfo (BuildID: %q): %w", buildID, err)
-	}
-	defer rc.Close()
-
-	f, err := os.CreateTemp(s.tmpDir, "parca-symbolizer-*")
-	if err != nil {
-		return "", nil, nil, fmt.Errorf("create temp file: %w", err)
-	}
-	defer func() {
-		f.Close()
-		os.Remove(f.Name())
-	}()
-
-	if _, err := io.Copy(f, rc); err != nil {
-		return "", nil, nil, fmt.Errorf("copy debuginfo to temp file: %w", err)
-	}
-
-	if err := f.Close(); err != nil {
-		return "", nil, nil, fmt.Errorf("close temp file: %w", err)
-	}
-
 	targetPath := filepath.Join(s.tmpDir, buildID)
-	if err := os.Rename(f.Name(), targetPath); err != nil {
-		return "", nil, nil, fmt.Errorf("rename temp file: %w", err)
+	if _, err := os.Stat(targetPath); errors.Is(err, os.ErrNotExist) {
+		// Fetch the debug info for the build ID.
+		rc, err := s.debuginfo.FetchDebuginfo(ctx, dbginfo)
+		if err != nil {
+			return "", nil, nil, fmt.Errorf("fetch debuginfo (BuildID: %q): %w", buildID, err)
+		}
+		defer rc.Close()
+
+		f, err := os.CreateTemp(s.tmpDir, "parca-symbolizer-*")
+		if err != nil {
+			return "", nil, nil, fmt.Errorf("create temp file: %w", err)
+		}
+
+		level.Debug(s.logger).Log("msg", fmt.Sprintf("Copying %s to tmp file %s\n", buildID, f.Name()))
+		defer func() {
+			f.Close()
+			os.Remove(f.Name())
+		}()
+
+		if _, err := io.Copy(f, rc); err != nil {
+			return "", nil, nil, fmt.Errorf("copy debuginfo to temp file: %w", err)
+		}
+
+		if err := f.Close(); err != nil {
+			return "", nil, nil, fmt.Errorf("close temp file: %w", err)
+		}
+
+		if err := os.Rename(f.Name(), targetPath); err != nil {
+			return "", nil, nil, fmt.Errorf("rename temp file: %w", err)
+		}
 	}
 
 	e, err := elf.Open(targetPath)
