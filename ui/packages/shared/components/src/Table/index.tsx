@@ -288,8 +288,8 @@ const Table = <T,>({
                               ? 'pepicons:triangle-up-filled'
                               : 'pepicons:triangle-down-filled'
                             : isDefaultSortDesc
-                              ? 'pepicons:triangle-up-filled'
-                              : 'pepicons:triangle-down-filled'
+                            ? 'pepicons:triangle-up-filled'
+                            : 'pepicons:triangle-down-filled'
                         }
                         className={isCurrentSortingColumn ? undefined : 'opacity-50'}
                       />
