@@ -181,8 +181,8 @@ importers:
         specifier: 6.6.0
         version: 6.6.0(eslint@8.45.0)
       eslint-plugin-react:
-        specifier: 7.37.3
-        version: 7.37.3(eslint@8.45.0)
+        specifier: 7.37.4
+        version: 7.37.4(eslint@8.45.0)
       eslint-plugin-react-hooks:
         specifier: 4.6.2
         version: 4.6.2(eslint@8.45.0)
@@ -11192,7 +11192,7 @@ packages:
       eslint-plugin-import: 2.31.0(@typescript-eslint/parser@5.62.0)(eslint@8.45.0)
       eslint-plugin-jest: 25.7.0(@typescript-eslint/eslint-plugin@5.62.0)(eslint@8.45.0)(jest@27.5.1)(typescript@4.9.5)
       eslint-plugin-jsx-a11y: 6.8.0(eslint@8.45.0)
-      eslint-plugin-react: 7.37.3(eslint@8.45.0)
+      eslint-plugin-react: 7.37.4(eslint@8.45.0)
       eslint-plugin-react-hooks: 4.6.2(eslint@8.45.0)
       eslint-plugin-testing-library: 5.11.1(eslint@8.45.0)(typescript@4.9.5)
       typescript: 4.9.5
@@ -11227,7 +11227,7 @@ packages:
       eslint-plugin-import: 2.31.0(@typescript-eslint/parser@5.62.0)(eslint@8.45.0)
       eslint-plugin-jest: 25.7.0(@typescript-eslint/eslint-plugin@5.62.0)(eslint@8.45.0)(jest@29.7.0)(typescript@5.7.3)
       eslint-plugin-jsx-a11y: 6.8.0(eslint@8.45.0)
-      eslint-plugin-react: 7.37.3(eslint@8.45.0)
+      eslint-plugin-react: 7.37.4(eslint@8.45.0)
       eslint-plugin-react-hooks: 4.6.2(eslint@8.45.0)
       eslint-plugin-testing-library: 5.11.1(eslint@8.45.0)(typescript@5.7.3)
       typescript: 5.7.3
@@ -11543,8 +11543,8 @@ packages:
     dependencies:
       eslint: 8.45.0
 
-  /eslint-plugin-react@7.37.3(eslint@8.45.0):
-    resolution: {integrity: sha512-DomWuTQPFYZwF/7c9W2fkKkStqZmBd3uugfqBYLdkZ3Hii23WzZuOLUskGxB8qkSKqftxEeGL1TB2kMhrce0jA==}
+  /eslint-plugin-react@7.37.4(eslint@8.45.0):
+    resolution: {integrity: sha512-BGP0jRmfYyvOyvMoRX/uoUeW+GqNj9y16bPQzqAHf3AYII/tDs+jMN0dBVkl88/OZwNGwrVFxE7riHsXVfy/LQ==}
     engines: {node: '>=4'}
     peerDependencies:
       eslint: ^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7
