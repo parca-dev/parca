@@ -25,7 +25,7 @@ import MetricsCircle from '../../MetricsCircle';
 import MetricsSeries from '../../MetricsSeries';
 import MetricsContextMenu from '../MetricsContextMenu';
 import MetricsTooltip from '../MetricsTooltip';
-import {type HighlightedSeries, type Series} from '../index';
+import {type Series} from '../index';
 import {useMetricsGraphDimensions} from '../useMetricsGraphDimensions';
 
 interface MetricSeries {
@@ -45,8 +45,6 @@ interface Props {
     labels: {key: string; value: string} | Array<{key: string; value: string}>
   ) => void;
   setTimeRange: (range: DateTimeRange) => void;
-  from: number;
-  to: number;
 }
 
 function transformToSeries(data: MetricSeries[]): Series[] {
@@ -70,11 +68,14 @@ function transformToSeries(data: MetricSeries[]): Series[] {
   // Sort values by timestamp for each series
   return Object.values(groupedData).map(series => ({
     ...series,
-    values: series.values.sort((a, b) => a[0] - b[0]),
+    values: series.values
+      .sort((a, b) => a[0] - b[0])
+      // Filter out duplicate timestamps, keeping the last value
+      .filter((value, index, self) => index === self.findIndex(v => v[0] === value[0])),
   }));
 }
 
-const MetricsGraphLite = ({data, addLabelMatcher, from, to, setTimeRange}: Props): JSX.Element => {
+const MetricsGraphLite = ({data, addLabelMatcher, setTimeRange}: Props): JSX.Element => {
   const {timezone} = useParcaContext();
   const graph = useRef(null);
   const [dragging, setDragging] = useState(false);
@@ -91,8 +92,17 @@ const MetricsGraphLite = ({data, addLabelMatcher, from, to, setTimeRange}: Props
 
   const graphWidth = width - margin * 1.5 - margin / 2;
 
+  // Calculate the time range from the data
+  const timeExtent = d3.extent(data, d => d.timestamp);
+  const from = timeExtent[0] ?? 0;
+  const to = timeExtent[1] ?? 0;
+
+  // Add a small padding (2%) to the time range to avoid points touching the edges
+  const timeRange = to - from;
+  const paddedFrom = from - timeRange * 0.02;
+  const paddedTo = to + timeRange * 0.02;
+
   const series = transformToSeries(data);
-  console.log('🚀 ~ series:', series);
 
   const extentsY = series.map(function (s) {
     return d3.extent(s.values, function (d) {
@@ -108,8 +118,8 @@ const MetricsGraphLite = ({data, addLabelMatcher, from, to, setTimeRange}: Props
     return d[1];
   });
 
-  // Setup scales
-  const xScale = d3.scaleUtc().domain([from, to]).range([0, graphWidth]);
+  // Setup scales with padded time range
+  const xScale = d3.scaleUtc().domain([paddedFrom, paddedTo]).range([0, graphWidth]);
 
   const yScale = d3
     .scaleLinear()
@@ -164,7 +174,6 @@ const MetricsGraphLite = ({data, addLabelMatcher, from, to, setTimeRange}: Props
 
   const highlighted = useMemo(() => {
     // Return the closest point as the highlighted point
-
     const closestPointPerSeries = series.map(function (s) {
       const distances = s.values.map(d => {
         const x = xScale(d[0]) + margin / 2;

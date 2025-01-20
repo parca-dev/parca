@@ -166,8 +166,6 @@ export function MetricsGraphSection({
                     data={arrowSeries}
                     addLabelMatcher={addLabelMatcher}
                     setTimeRange={handleTimeRangeChange}
-                    from={querySelection.from}
-                    to={querySelection.to}
                   />
                 ) : (
                   <>
