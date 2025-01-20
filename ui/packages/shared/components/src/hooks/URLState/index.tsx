@@ -130,7 +130,7 @@ export const useURLState = <T extends ParamValue>(
   return [(value ?? defaultValue) as T, setParam];
 };
 
-interface OptionsCustom<T> {
+export interface OptionsCustom<T> {
   parse: (val: ParamValue) => T;
   stringify: (val: T) => ParamValue;
 }
