@@ -35,7 +35,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/parquet-go/parquet-go v0.24.0
 	github.com/planetscale/vtprotobuf v0.6.1-0.20241121165744-79df5c4772f2
-	github.com/polarsignals/frostdb v0.0.0-20241211123813-627a00ffae53
+	github.com/polarsignals/frostdb v0.0.0-20250107161604-e9ab6f315eae
 	github.com/polarsignals/iceberg-go v0.0.0-20240502213135-2ee70b71e76b
 	github.com/prometheus/client_golang v1.20.5
 	github.com/prometheus/common v0.61.0
@@ -117,7 +117,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/dgraph-io/ristretto/v2 v2.0.0 // indirect
-	github.com/dgryski/go-metro v0.0.0-20211217172704-adc40b04c140 // indirect
+	github.com/dgryski/go-metro v0.0.0-20250106013310-edb8663e5e33 // indirect
 	github.com/digitalocean/godo v1.122.0 // indirect
 	github.com/distribution/reference v0.5.0 // indirect
 	github.com/docker/docker v27.2.0+incompatible // indirect
