@@ -11,26 +11,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useMemo} from 'react';
+import {useEffect} from 'react';
 
-import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {AnimatePresence, motion} from 'framer-motion';
 
-import {Duration, Label, QueryRangeResponse, QueryServiceClient, Timestamp} from '@parca/client';
-import {
-  DateTimeRange,
-  MetricsGraphSkeleton,
-  useGrpcMetadata,
-  useParcaContext,
-  useURLState,
-} from '@parca/components';
+import {Label, QueryServiceClient} from '@parca/client';
+import {DateTimeRange, MetricsGraphSkeleton, useParcaContext} from '@parca/components';
 import {Query} from '@parca/parser';
-import {capitalizeOnlyFirstLetter, getStepDuration} from '@parca/utilities';
+import {capitalizeOnlyFirstLetter} from '@parca/utilities';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
 import MetricsGraph from '../MetricsGraph';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
-import useGrpcQuery from '../useGrpcQuery';
+import {useQueryRange} from './hooks/useQueryRange';
 
 interface ProfileMetricsEmptyStateProps {
   message: string;
@@ -74,79 +67,8 @@ interface ProfileMetricsGraphProps {
     duration: number
   ) => void;
   comparing?: boolean;
+  arrowSeries?: any;
 }
-
-export interface IQueryRangeState {
-  response: QueryRangeResponse | null;
-  isLoading: boolean;
-  error: RpcError | null;
-}
-
-const getStepCountFromScreenWidth = (pixelsPerPoint: number): number => {
-  let width =
-    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-    window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-
-  // subtract the padding around the graph
-  width = width - (20 + 24 + 68) * 2;
-  return Math.round(width / pixelsPerPoint);
-};
-
-export const useQueryRange = (
-  client: QueryServiceClient,
-  queryExpression: string,
-  start: number,
-  end: number,
-  sumBy: string[],
-  skip = false
-): IQueryRangeState => {
-  const metadata = useGrpcMetadata();
-  const [stepCountStr, setStepCount] = useURLState('step_count');
-
-  const defaultStepCount = useMemo(() => {
-    return getStepCountFromScreenWidth(10);
-  }, []);
-
-  const stepCount = useMemo(() => {
-    if (stepCountStr != null) {
-      return parseInt(stepCountStr as string, 10);
-    }
-
-    return defaultStepCount;
-  }, [stepCountStr, defaultStepCount]);
-
-  useEffect(() => {
-    if (stepCountStr == null) {
-      setStepCount(defaultStepCount.toString());
-    }
-  }, [stepCountStr, defaultStepCount, setStepCount]);
-
-  const {data, isLoading, error} = useGrpcQuery<QueryRangeResponse | undefined>({
-    key: ['query-range', queryExpression, start, end, (sumBy ?? []).join(','), stepCount, metadata],
-    queryFn: async () => {
-      const stepDuration = getStepDuration(start, end, stepCount);
-      const {response} = await client.queryRange(
-        {
-          query: queryExpression,
-          start: Timestamp.fromDate(new Date(start)),
-          end: Timestamp.fromDate(new Date(end)),
-          step: Duration.create(stepDuration),
-          limit: 0,
-          sumBy,
-        },
-        {meta: metadata}
-      );
-      return response;
-    },
-    options: {
-      retry: false,
-      enabled: !skip,
-      staleTime: 1000 * 60 * 5, // 5 minutes
-    },
-  });
-
-  return {isLoading, error: error as RpcError | null, response: data ?? null};
-};
 
 const ProfileMetricsGraph = ({
   queryClient,
@@ -160,6 +82,7 @@ const ProfileMetricsGraph = ({
   comparing = false,
   sumBy,
   sumByLoading,
+  arrowSeries,
 }: ProfileMetricsGraphProps): JSX.Element => {
   const {
     isLoading: metricsGraphLoading,
@@ -184,6 +107,7 @@ const ProfileMetricsGraph = ({
   }, [perf, response]);
 
   const series = response?.series;
+
   const dataAvailable = series !== null && series !== undefined && series?.length > 0;
 
   const loading = metricsGraphLoading;

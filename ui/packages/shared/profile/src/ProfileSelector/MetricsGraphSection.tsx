@@ -18,6 +18,7 @@ import {DateTimeRange} from '@parca/components';
 import {Query} from '@parca/parser';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
+import MetricsGraphLite from '../MetricsGraph/MetricsGraphLite';
 import ProfileMetricsGraph, {ProfileMetricsEmptyState} from '../ProfileMetricsGraph';
 import {QuerySelection} from './index';
 
@@ -38,6 +39,16 @@ interface MetricsGraphSectionProps {
   query: Query;
   setNewQueryExpression: (queryExpression: string) => void;
   setQueryExpression: (updateTs?: boolean) => void;
+  arrowSeries?: Array<{
+    timestamp: number;
+    value: number;
+    resource: {
+      [key: string]: string;
+    };
+    attributes: {
+      [key: string]: string;
+    };
+  }>;
 }
 
 export function MetricsGraphSection({
@@ -56,6 +67,7 @@ export function MetricsGraphSection({
   selectProfile,
   query,
   setNewQueryExpression,
+  arrowSeries,
 }: MetricsGraphSectionProps): JSX.Element {
   const handleTimeRangeChange = (range: DateTimeRange): void => {
     const from = range.getFromMs();
@@ -141,31 +153,46 @@ export function MetricsGraphSection({
         {showMetricsGraph ? 'Hide' : 'Show'} Metrics Graph
       </button>
       {showMetricsGraph && (
-        <div style={{height: heightStyle}}>
-          {querySelection.expression !== '' &&
-          querySelection.from !== undefined &&
-          querySelection.to !== undefined ? (
-            <ProfileMetricsGraph
-              queryClient={queryClient}
-              queryExpression={querySelection.expression}
+        <>
+          {arrowSeries !== undefined ? (
+            <MetricsGraphLite
+              data={arrowSeries}
+              addLabelMatcher={addLabelMatcher}
+              setTimeRange={handleTimeRangeChange}
               from={querySelection.from}
               to={querySelection.to}
-              profile={profileSelection}
-              comparing={comparing}
-              sumBy={querySelection.sumBy ?? sumBy ?? []}
-              sumByLoading={defaultSumByLoading}
-              setTimeRange={handleTimeRangeChange}
-              addLabelMatcher={addLabelMatcher}
-              onPointClick={handlePointClick}
             />
           ) : (
-            profileSelection === null && (
-              <div className="p-2">
-                <ProfileMetricsEmptyState message="Please select a profile type and click 'Search' to begin." />
+            <>
+              <div style={{height: heightStyle}}>
+                {querySelection.expression !== '' &&
+                querySelection.from !== undefined &&
+                querySelection.to !== undefined ? (
+                  <ProfileMetricsGraph
+                    queryClient={queryClient}
+                    queryExpression={querySelection.expression}
+                    from={querySelection.from}
+                    to={querySelection.to}
+                    profile={profileSelection}
+                    comparing={comparing}
+                    sumBy={querySelection.sumBy ?? sumBy ?? []}
+                    sumByLoading={defaultSumByLoading}
+                    setTimeRange={handleTimeRangeChange}
+                    addLabelMatcher={addLabelMatcher}
+                    onPointClick={handlePointClick}
+                    arrowSeries={arrowSeries}
+                  />
+                ) : (
+                  profileSelection === null && (
+                    <div className="p-2">
+                      <ProfileMetricsEmptyState message="Please select a profile type and click 'Search' to begin." />
+                    </div>
+                  )
+                )}
               </div>
-            )
+            </>
           )}
-        </div>
+        </>
       )}
     </div>
   );

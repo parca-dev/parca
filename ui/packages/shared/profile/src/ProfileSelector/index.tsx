@@ -29,6 +29,7 @@ import {type NavigateFunction} from '@parca/utilities';
 
 import {ProfileSelection} from '..';
 import {useLabelNames} from '../MatchersInput/index';
+import MetricsGraphLite from '../MetricsGraph/MetricsGraphLite';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
 import {useDefaultSumBy, useSumBySelection} from '../useSumBy';
 import {MetricsGraphSection} from './MetricsGraphSection';
@@ -65,6 +66,16 @@ interface ProfileSelectorProps extends ProfileSelectorFeatures {
   navigateTo: NavigateFunction;
   setDisplayHideMetricsGraphButton: Dispatch<SetStateAction<boolean>>;
   suffix?: string;
+  arrowSeries?: Array<{
+    timestamp: number;
+    value: number;
+    resource: {
+      [key: string]: string;
+    };
+    attributes: {
+      [key: string]: string;
+    };
+  }>;
 }
 
 export interface IProfileTypesResult {
@@ -108,6 +119,7 @@ const ProfileSelector = ({
   showProfileTypeSelector = true,
   disableExplorativeQuerying = false,
   setDisplayHideMetricsGraphButton,
+  arrowSeries,
 }: ProfileSelectorProps): JSX.Element => {
   const {
     loading: profileTypesLoading,
@@ -288,7 +300,35 @@ const ProfileSelector = ({
           </div>
         )}
       </div>
-
+      {/*
+      {arrowSeries !== undefined ? (
+        <MetricsGraphLite
+          data={arrowSeries}
+          addLabelMatcher={addLabelMatcher}
+          setTimeRange={setTimeRange}
+          from={querySelection.from}
+          to={querySelection.to}
+        />
+      ) : (
+        <MetricsGraphSection
+          showMetricsGraph={showMetricsGraph}
+          setDisplayHideMetricsGraphButton={setDisplayHideMetricsGraphButton}
+          heightStyle={heightStyle}
+          querySelection={querySelection}
+          profileSelection={profileSelection}
+          comparing={comparing}
+          sumBy={querySelection.sumBy ?? defaultSumBy ?? []}
+          defaultSumByLoading={defaultSumByLoading}
+          queryClient={queryClient}
+          queryExpressionString={queryExpressionString}
+          setTimeRangeSelection={setTimeRangeSelection}
+          selectQuery={selectQuery}
+          selectProfile={selectProfile}
+          query={query}
+          setQueryExpression={setQueryExpression}
+          setNewQueryExpression={setNewQueryExpression}
+        />
+      )} */}
       <MetricsGraphSection
         showMetricsGraph={showMetricsGraph}
         setDisplayHideMetricsGraphButton={setDisplayHideMetricsGraphButton}
@@ -306,6 +346,7 @@ const ProfileSelector = ({
         query={query}
         setQueryExpression={setQueryExpression}
         setNewQueryExpression={setNewQueryExpression}
+        arrowSeries={arrowSeries}
       />
     </>
   );
