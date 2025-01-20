@@ -139,7 +139,7 @@ type ParamValueSetterCustom<T> = (val: T) => void;
 
 export const useURLStateCustom = <T extends object>(
   param: string,
-  { parse, stringify, ..._options }: Options & OptionsCustom<T>
+  {parse, stringify, ..._options}: Options & OptionsCustom<T>
 ): [T, ParamValueSetterCustom<T>] => {
   const [urlValue, setURLValue] = useURLState<string>(param, _options);
 
@@ -155,6 +155,6 @@ export const useURLStateCustom = <T extends object>(
   );
 
   return [val, setVal];
-}
+};
 
 export default URLStateContext;
