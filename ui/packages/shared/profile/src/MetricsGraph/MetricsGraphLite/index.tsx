@@ -64,25 +64,17 @@ function transformToSeries(data: MetricSeries[]): Series[] {
     }
 
     acc[resourceKey].values.push([series.timestamp, series.value, 0, 0]);
-
     return acc;
   }, {} as Record<string, Series>);
 
-  // Convert the grouped data object back to an array
-  return Object.values(groupedData);
+  // Sort values by timestamp for each series
+  return Object.values(groupedData).map(series => ({
+    ...series,
+    values: series.values.sort((a, b) => a[0] - b[0]),
+  }));
 }
 
-// make the from and to, the last 15 minutes in timestamp
-const defaultFrom = Date.now() - 15 * 60 * 1000;
-const defaultTo = Date.now();
-
-const MetricsGraphLite = ({
-  data,
-  addLabelMatcher,
-  from = defaultFrom,
-  to = defaultTo,
-  setTimeRange,
-}: Props): JSX.Element => {
+const MetricsGraphLite = ({data, addLabelMatcher, from, to, setTimeRange}: Props): JSX.Element => {
   const {timezone} = useParcaContext();
   const graph = useRef(null);
   const [dragging, setDragging] = useState(false);
@@ -117,7 +109,7 @@ const MetricsGraphLite = ({
   });
 
   // Setup scales
-  const xScale = d3.scaleUtc().domain([defaultFrom, defaultTo]).range([0, graphWidth]);
+  const xScale = d3.scaleUtc().domain([from, to]).range([0, graphWidth]);
 
   const yScale = d3
     .scaleLinear()

@@ -140,6 +140,8 @@ export function MetricsGraphSection({
     selectProfile(new MergedProfileSelection(mergeFrom, mergeTo, query));
   };
 
+  console.log('arrowSeries', querySelection);
+
   return (
     <div className={cx('relative', {'py-4': !showMetricsGraph})}>
       <button
@@ -154,44 +156,46 @@ export function MetricsGraphSection({
       </button>
       {showMetricsGraph && (
         <>
-          {arrowSeries !== undefined ? (
-            <MetricsGraphLite
-              data={arrowSeries}
-              addLabelMatcher={addLabelMatcher}
-              setTimeRange={handleTimeRangeChange}
-              from={querySelection.from}
-              to={querySelection.to}
-            />
-          ) : (
-            <>
-              <div style={{height: heightStyle}}>
-                {querySelection.expression !== '' &&
-                querySelection.from !== undefined &&
-                querySelection.to !== undefined ? (
-                  <ProfileMetricsGraph
-                    queryClient={queryClient}
-                    queryExpression={querySelection.expression}
+          <div style={{height: heightStyle}}>
+            {querySelection.expression !== '' &&
+            querySelection.from !== undefined &&
+            querySelection.to !== undefined ? (
+              <>
+                {arrowSeries !== undefined ? (
+                  <MetricsGraphLite
+                    data={arrowSeries}
+                    addLabelMatcher={addLabelMatcher}
+                    setTimeRange={handleTimeRangeChange}
                     from={querySelection.from}
                     to={querySelection.to}
-                    profile={profileSelection}
-                    comparing={comparing}
-                    sumBy={querySelection.sumBy ?? sumBy ?? []}
-                    sumByLoading={defaultSumByLoading}
-                    setTimeRange={handleTimeRangeChange}
-                    addLabelMatcher={addLabelMatcher}
-                    onPointClick={handlePointClick}
-                    arrowSeries={arrowSeries}
                   />
                 ) : (
-                  profileSelection === null && (
-                    <div className="p-2">
-                      <ProfileMetricsEmptyState message="Please select a profile type and click 'Search' to begin." />
-                    </div>
-                  )
+                  <>
+                    <ProfileMetricsGraph
+                      queryClient={queryClient}
+                      queryExpression={querySelection.expression}
+                      from={querySelection.from}
+                      to={querySelection.to}
+                      profile={profileSelection}
+                      comparing={comparing}
+                      sumBy={querySelection.sumBy ?? sumBy ?? []}
+                      sumByLoading={defaultSumByLoading}
+                      setTimeRange={handleTimeRangeChange}
+                      addLabelMatcher={addLabelMatcher}
+                      onPointClick={handlePointClick}
+                      arrowSeries={arrowSeries}
+                    />
+                  </>
                 )}
-              </div>
-            </>
-          )}
+              </>
+            ) : (
+              profileSelection === null && (
+                <div className="p-2">
+                  <ProfileMetricsEmptyState message="Please select a profile type and click 'Search' to begin." />
+                </div>
+              )
+            )}
+          </div>
         </>
       )}
     </div>
