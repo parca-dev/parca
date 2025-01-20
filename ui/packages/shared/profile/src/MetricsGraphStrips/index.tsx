@@ -120,7 +120,7 @@ export const MetricsGraphStrips = ({
                 width={width ?? 1468}
                 fill={color(labelStr) as string}
                 selectionBounds={
-                  isEqual(cpu.labels, selectedTimeframe?.labels.labels)
+                  isEqual(cpu, selectedTimeframe?.labels)
                     ? selectedTimeframe?.bounds
                     : undefined
                 }
