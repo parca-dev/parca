@@ -15,6 +15,7 @@ import {useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import * as d3 from 'd3';
+import isEqual from 'fast-deep-equal';
 
 import {LabelSet} from '@parca/client';
 
@@ -119,7 +120,7 @@ export const MetricsGraphStrips = ({
                 width={width ?? 1468}
                 fill={color(labelStr) as string}
                 selectionBounds={
-                  cpu === selectedTimeframe?.labels ? selectedTimeframe.bounds : undefined
+                  isEqual(cpu, selectedTimeframe?.labels) ? selectedTimeframe?.bounds : undefined
                 }
                 setSelectionBounds={bounds => {
                   onSelectedTimeframe(cpu, bounds);
