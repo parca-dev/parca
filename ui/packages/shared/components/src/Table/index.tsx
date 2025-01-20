@@ -241,7 +241,7 @@ const Table = <T,>({
       : 0;
 
   return (
-    <div ref={tableContainerRef} className={cx('h-full overflow-scroll pr-2', className)}>
+    <div ref={tableContainerRef} className={cx('h-full overflow-auto pr-2', className)}>
       <table className="w-full">
         <thead className="sticky top-0 bg-gray-50 text-sm dark:bg-gray-800 z-[1]">
           {title.length > 0 ? (
@@ -285,11 +285,11 @@ const Table = <T,>({
                         icon={
                           isCurrentSortingColumn
                             ? sorting[0]?.desc
-                              ? 'pepicons:triangle-down-filled'
-                              : 'pepicons:triangle-up-filled'
+                              ? 'pepicons:triangle-up-filled'
+                              : 'pepicons:triangle-down-filled'
                             : isDefaultSortDesc
-                            ? 'pepicons:triangle-down-filled'
-                            : 'pepicons:triangle-up-filled'
+                            ? 'pepicons:triangle-up-filled'
+                            : 'pepicons:triangle-down-filled'
                         }
                         className={isCurrentSortingColumn ? undefined : 'opacity-50'}
                       />
