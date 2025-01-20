@@ -130,4 +130,31 @@ export const useURLState = <T extends ParamValue>(
   return [(value ?? defaultValue) as T, setParam];
 };
 
+interface OptionsCustom<T> {
+  parse: (val: ParamValue) => T;
+  stringify: (val: T) => ParamValue;
+}
+
+type ParamValueSetterCustom<T> = (val: T) => void;
+
+export const useURLStateCustom = <T extends object>(
+  param: string,
+  { parse, stringify, ..._options }: Options & OptionsCustom<T>
+): [T, ParamValueSetterCustom<T>] => {
+  const [urlValue, setURLValue] = useURLState<string>(param, _options);
+
+  const val = useMemo<T>(() => {
+    return parse(urlValue);
+  }, [parse, urlValue]);
+
+  const setVal = useCallback(
+    (val: T) => {
+      setURLValue(stringify(val));
+    },
+    [setURLValue, stringify]
+  );
+
+  return [val, setVal];
+}
+
 export default URLStateContext;
