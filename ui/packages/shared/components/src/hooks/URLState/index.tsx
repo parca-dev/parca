@@ -137,7 +137,7 @@ export interface OptionsCustom<T> {
 
 type ParamValueSetterCustom<T> = (val: T) => void;
 
-export const useURLStateCustom = <T extends object>(
+export const useURLStateCustom = <T extends any>(
   param: string,
   {parse, stringify, ..._options}: Options & OptionsCustom<T>
 ): [T, ParamValueSetterCustom<T>] => {
