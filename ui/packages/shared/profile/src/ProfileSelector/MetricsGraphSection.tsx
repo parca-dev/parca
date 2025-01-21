@@ -18,9 +18,9 @@ import {DateTimeRange} from '@parca/components';
 import {Query} from '@parca/parser';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
-import MetricsGraphLite from '../MetricsGraph/MetricsGraphLite';
+import UtilizationMetrics from '../MetricsGraph/UtilizationMetrics';
 import ProfileMetricsGraph, {ProfileMetricsEmptyState} from '../ProfileMetricsGraph';
-import {QuerySelection} from './index';
+import {QuerySelection, type UtilizationMetrics as UtilizationMetricsType} from './index';
 
 interface MetricsGraphSectionProps {
   showMetricsGraph: boolean;
@@ -39,16 +39,8 @@ interface MetricsGraphSectionProps {
   query: Query;
   setNewQueryExpression: (queryExpression: string) => void;
   setQueryExpression: (updateTs?: boolean) => void;
-  arrowSeries?: Array<{
-    timestamp: number;
-    value: number;
-    resource: {
-      [key: string]: string;
-    };
-    attributes: {
-      [key: string]: string;
-    };
-  }>;
+  utilizationMetrics?: UtilizationMetricsType[];
+  utilizationMetricsLoading: boolean;
 }
 
 export function MetricsGraphSection({
@@ -67,7 +59,8 @@ export function MetricsGraphSection({
   selectProfile,
   query,
   setNewQueryExpression,
-  arrowSeries,
+  utilizationMetrics,
+  utilizationMetricsLoading,
 }: MetricsGraphSectionProps): JSX.Element {
   const handleTimeRangeChange = (range: DateTimeRange): void => {
     const from = range.getFromMs();
@@ -161,11 +154,12 @@ export function MetricsGraphSection({
             querySelection.from !== undefined &&
             querySelection.to !== undefined ? (
               <>
-                {arrowSeries !== undefined ? (
-                  <MetricsGraphLite
-                    data={arrowSeries}
+                {utilizationMetrics !== undefined ? (
+                  <UtilizationMetrics
+                    data={utilizationMetrics}
                     addLabelMatcher={addLabelMatcher}
                     setTimeRange={handleTimeRangeChange}
+                    utilizationMetricsLoading={utilizationMetricsLoading}
                   />
                 ) : (
                   <>
@@ -181,7 +175,6 @@ export function MetricsGraphSection({
                       setTimeRange={handleTimeRangeChange}
                       addLabelMatcher={addLabelMatcher}
                       onPointClick={handlePointClick}
-                      arrowSeries={arrowSeries}
                     />
                   </>
                 )}

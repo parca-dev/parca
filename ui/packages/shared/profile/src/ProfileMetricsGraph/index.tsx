@@ -67,7 +67,6 @@ interface ProfileMetricsGraphProps {
     duration: number
   ) => void;
   comparing?: boolean;
-  arrowSeries?: any;
 }
 
 const ProfileMetricsGraph = ({
@@ -82,7 +81,6 @@ const ProfileMetricsGraph = ({
   comparing = false,
   sumBy,
   sumByLoading,
-  arrowSeries,
 }: ProfileMetricsGraphProps): JSX.Element => {
   const {
     isLoading: metricsGraphLoading,

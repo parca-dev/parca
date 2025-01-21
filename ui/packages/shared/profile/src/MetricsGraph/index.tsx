@@ -173,8 +173,6 @@ export const RawMetricsGraph = ({
     return agg;
   }, []);
 
-  console.log('🚀 ~ series:', series);
-
   // Sort series by id to make sure the colors are consistent
   series.sort((a, b) => a.labelset.localeCompare(b.labelset));
 

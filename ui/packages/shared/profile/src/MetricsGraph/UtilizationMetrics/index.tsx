@@ -15,10 +15,11 @@ import {Fragment, useCallback, useId, useMemo, useRef, useState, type FC} from '
 
 import * as d3 from 'd3';
 import {pointer} from 'd3-selection';
+import {AnimatePresence, motion} from 'framer-motion';
 import throttle from 'lodash.throttle';
 import {useContextMenu} from 'react-contexify';
 
-import {DateTimeRange, useParcaContext} from '@parca/components';
+import {DateTimeRange, MetricsGraphSkeleton, useParcaContext} from '@parca/components';
 import {formatDate, formatForTimespan, getPrecision, valueFormatter} from '@parca/utilities';
 
 import MetricsCircle from '../../MetricsCircle';
@@ -37,6 +38,17 @@ interface MetricSeries {
   attributes: {
     [key: string]: string;
   };
+}
+
+interface RawUtilizationMetricsProps {
+  data: MetricSeries[];
+  addLabelMatcher: (
+    labels: {key: string; value: string} | Array<{key: string; value: string}>
+  ) => void;
+  setTimeRange: (range: DateTimeRange) => void;
+  width: number;
+  height: number;
+  margin: number;
 }
 
 interface Props {
@@ -68,14 +80,18 @@ function transformToSeries(data: MetricSeries[]): Series[] {
   // Sort values by timestamp for each series
   return Object.values(groupedData).map(series => ({
     ...series,
-    values: series.values
-      .sort((a, b) => a[0] - b[0])
-      // Filter out duplicate timestamps, keeping the last value
-      .filter((value, index, self) => index === self.findIndex(v => v[0] === value[0])),
+    values: series.values.sort((a, b) => a[0] - b[0]),
   }));
 }
 
-const MetricsGraphLite = ({data, addLabelMatcher, setTimeRange}: Props): JSX.Element => {
+const RawUtilizationMetrics = ({
+  data,
+  addLabelMatcher,
+  setTimeRange,
+  width,
+  height,
+  margin,
+}: RawUtilizationMetricsProps): JSX.Element => {
   const {timezone} = useParcaContext();
   const graph = useRef(null);
   const [dragging, setDragging] = useState(false);
@@ -85,7 +101,6 @@ const MetricsGraphLite = ({data, addLabelMatcher, setTimeRange}: Props): JSX.Ele
   const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
   const metricPointRef = useRef(null);
   const idForContextMenu = useId();
-  const {width, height, margin} = useMetricsGraphDimensions(false);
 
   const lineStroke = '1px';
   const lineStrokeHover = '2px';
@@ -458,4 +473,39 @@ const MetricsGraphLite = ({data, addLabelMatcher, setTimeRange}: Props): JSX.Ele
   );
 };
 
-export default MetricsGraphLite;
+const UtilizationMetrics = ({
+  data,
+  addLabelMatcher,
+  setTimeRange,
+  utilizationMetricsLoading,
+}: Props & {utilizationMetricsLoading: boolean}): JSX.Element => {
+  const {isDarkMode} = useParcaContext();
+  const {width, height, margin, heightStyle} = useMetricsGraphDimensions(false);
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        className="h-full w-full relative"
+        key="utilization-metrics-graph-loaded"
+        initial={{display: 'none', opacity: 0}}
+        animate={{display: 'block', opacity: 1}}
+        transition={{duration: 0.5}}
+      >
+        {utilizationMetricsLoading ? (
+          <MetricsGraphSkeleton heightStyle={heightStyle} isDarkMode={isDarkMode} />
+        ) : (
+          <RawUtilizationMetrics
+            data={data}
+            addLabelMatcher={addLabelMatcher}
+            setTimeRange={setTimeRange}
+            width={width}
+            height={height}
+            margin={margin}
+          />
+        )}
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
+export default UtilizationMetrics;
