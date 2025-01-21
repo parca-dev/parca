@@ -11,131 +11,88 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {Fragment, useCallback, useId, useMemo, useRef, useState} from 'react';
+import {Fragment, useCallback, useId, useMemo, useRef, useState} from 'react';
 
 import * as d3 from 'd3';
 import {pointer} from 'd3-selection';
+import {AnimatePresence, motion} from 'framer-motion';
 import throttle from 'lodash.throttle';
 import {useContextMenu} from 'react-contexify';
 
-import {Label, MetricsSample, MetricsSeries as MetricsSeriesPb} from '@parca/client';
-import {DateTimeRange, useParcaContext} from '@parca/components';
-import {
-  formatDate,
-  formatForTimespan,
-  getPrecision,
-  sanitizeHighlightedValues,
-  valueFormatter,
-} from '@parca/utilities';
+import {DateTimeRange, MetricsGraphSkeleton, useParcaContext} from '@parca/components';
+import {formatDate, formatForTimespan, getPrecision, valueFormatter} from '@parca/utilities';
 
-import {MergedProfileSelection} from '..';
-import MetricsCircle from '../MetricsCircle';
-import MetricsSeries from '../MetricsSeries';
-import MetricsContextMenu from './MetricsContextMenu';
-import MetricsInfoPanel from './MetricsInfoPanel';
-import MetricsTooltip from './MetricsTooltip';
+import MetricsCircle from '../../MetricsCircle';
+import MetricsSeries from '../../MetricsSeries';
+import MetricsContextMenu from '../MetricsContextMenu';
+import MetricsTooltip from '../MetricsTooltip';
+import {type Series} from '../index';
+import {useMetricsGraphDimensions} from '../useMetricsGraphDimensions';
 
-interface Props {
-  data: MetricsSeriesPb[];
-  from: number;
-  to: number;
-  profile: MergedProfileSelection | null;
-  onSampleClick: (timestamp: number, value: number, labels: Label[], duration: number) => void;
+interface MetricSeries {
+  timestamp: number;
+  value: number;
+  resource: {
+    [key: string]: string;
+  };
+  attributes: {
+    [key: string]: string;
+  };
+}
+
+interface RawUtilizationMetricsProps {
+  data: MetricSeries[];
   addLabelMatcher: (
     labels: {key: string; value: string} | Array<{key: string; value: string}>
   ) => void;
   setTimeRange: (range: DateTimeRange) => void;
-  sampleUnit: string;
-  width?: number;
-  height?: number;
-  margin?: number;
-  sumBy?: string[];
+  width: number;
+  height: number;
+  margin: number;
 }
 
-export interface HighlightedSeries {
-  seriesIndex: number;
-  labels: Label[];
-  timestamp: number;
-  value: number;
-  valuePerSecond: number;
-  duration: number;
-  x: number;
-  y: number;
+interface Props {
+  data: MetricSeries[];
+  addLabelMatcher: (
+    labels: {key: string; value: string} | Array<{key: string; value: string}>
+  ) => void;
+  setTimeRange: (range: DateTimeRange) => void;
+  utilizationMetricsLoading?: boolean;
 }
 
-export interface Series {
-  metric: Label[];
-  values: number[][];
-  labelset: string;
+function transformToSeries(data: MetricSeries[]): Series[] {
+  const groupedData = data.reduce<Record<string, Series>>((acc, series) => {
+    const resourceKey = Object.entries(series.resource)
+      .map(([name, value]) => `${name}=${value}`)
+      .join(',');
+
+    if (!Object.hasOwn(acc, resourceKey)) {
+      acc[resourceKey] = {
+        metric: Object.entries(series.resource).map(([name, value]) => ({name, value})),
+        values: [],
+        labelset: resourceKey,
+      };
+    }
+
+    acc[resourceKey].values.push([series.timestamp, series.value, 0, 0]);
+    return acc;
+  }, {});
+
+  // Sort values by timestamp for each series
+  return Object.values(groupedData).map(series => ({
+    ...series,
+    values: series.values.sort((a, b) => a[0] - b[0]),
+  }));
 }
 
-const MetricsGraph = ({
+const RawUtilizationMetrics = ({
   data,
-  from,
-  to,
-  profile,
-  onSampleClick,
-  addLabelMatcher,
-  setTimeRange,
-  sampleUnit,
-  width = 0,
-  height = 0,
-  margin = 0,
-  sumBy,
-}: Props): JSX.Element => {
-  const [isInfoPanelOpen, setIsInfoPanelOpen] = useState<boolean>(false);
-  return (
-    <div className="relative" onClick={() => isInfoPanelOpen && setIsInfoPanelOpen(false)}>
-      <div className="absolute right-0 top-0">
-        <MetricsInfoPanel
-          isInfoPanelOpen={isInfoPanelOpen}
-          onInfoIconClick={() => setIsInfoPanelOpen(true)}
-        />
-      </div>
-      <RawMetricsGraph
-        data={data}
-        from={from}
-        to={to}
-        profile={profile}
-        onSampleClick={onSampleClick}
-        addLabelMatcher={addLabelMatcher}
-        setTimeRange={setTimeRange}
-        sampleUnit={sampleUnit}
-        width={width}
-        height={height}
-        margin={margin}
-        sumBy={sumBy}
-      />
-    </div>
-  );
-};
-
-export default MetricsGraph;
-
-export const parseValue = (value: string): number | null => {
-  const val = parseFloat(value);
-  // "+Inf", "-Inf", "+Inf" will be parsed into NaN by parseFloat(). They
-  // can't be graphed, so show them as gaps (null).
-  return isNaN(val) ? null : val;
-};
-
-const lineStroke = '1px';
-const lineStrokeHover = '2px';
-
-export const RawMetricsGraph = ({
-  data,
-  from,
-  to,
-  profile,
-  onSampleClick,
   addLabelMatcher,
   setTimeRange,
   width,
-  height = 50,
-  margin = 0,
-  sampleUnit,
-  sumBy,
-}: Props): JSX.Element => {
+  height,
+  margin,
+}: RawUtilizationMetricsProps): JSX.Element => {
   const {timezone} = useParcaContext();
   const graph = useRef(null);
   const [dragging, setDragging] = useState(false);
@@ -146,35 +103,22 @@ export const RawMetricsGraph = ({
   const metricPointRef = useRef(null);
   const idForContextMenu = useId();
 
-  // the time of the selected point is the start of the merge window
-  const time: number = parseFloat(profile?.HistoryParams().merge_from);
-
-  if (width === undefined || width == null) {
-    width = 0;
-  }
+  const lineStroke = '1px';
+  const lineStrokeHover = '2px';
 
   const graphWidth = width - margin * 1.5 - margin / 2;
 
-  const series: Series[] = data.reduce<Series[]>(function (agg: Series[], s: MetricsSeriesPb) {
-    if (s.labelset !== undefined) {
-      const metric = s.labelset.labels.sort((a, b) => a.name.localeCompare(b.name));
-      agg.push({
-        metric,
-        values: s.samples.reduce<number[][]>(function (agg: number[][], d: MetricsSample) {
-          if (d.timestamp !== undefined && d.valuePerSecond !== undefined) {
-            const t = (Number(d.timestamp.seconds) * 1e9 + d.timestamp.nanos) / 1e6; // https://github.com/microsoft/TypeScript/issues/5710#issuecomment-157886246
-            agg.push([t, d.valuePerSecond, Number(d.value), Number(d.duration)]);
-          }
-          return agg;
-        }, []),
-        labelset: metric.map(m => `${m.name}=${m.value}`).join(','),
-      });
-    }
-    return agg;
-  }, []);
+  // Calculate the time range from the data
+  const timeExtent = d3.extent(data, d => d.timestamp);
+  const from = timeExtent[0] ?? 0;
+  const to = timeExtent[1] ?? 0;
 
-  // Sort series by id to make sure the colors are consistent
-  series.sort((a, b) => a.labelset.localeCompare(b.labelset));
+  // Add a small padding (2%) to the time range to avoid points touching the edges
+  const timeRange = to - from;
+  const paddedFrom = from - timeRange * 0.02;
+  const paddedTo = to + timeRange * 0.02;
+
+  const series = transformToSeries(data);
 
   const extentsY = series.map(function (s) {
     return d3.extent(s.values, function (d) {
@@ -185,12 +129,13 @@ export const RawMetricsGraph = ({
   const minY = d3.min(extentsY, function (d) {
     return d[0];
   });
+
   const maxY = d3.max(extentsY, function (d) {
     return d[1];
   });
 
-  /* Scale */
-  const xScale = d3.scaleUtc().domain([from, to]).range([0, graphWidth]);
+  // Setup scales with padded time range
+  const xScale = d3.scaleUtc().domain([paddedFrom, paddedTo]).range([0, graphWidth]);
 
   const yScale = d3
     .scaleLinear()
@@ -198,6 +143,43 @@ export const RawMetricsGraph = ({
     .domain([minY, maxY] as Iterable<d3.NumberValue>)
     .range([height - margin, 0])
     .nice();
+
+  const throttledSetPos = throttle(setPos, 20);
+
+  const onMouseMove = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement, MouseEvent>): void => {
+    if (isContextMenuOpen) {
+      return;
+    }
+
+    // X/Y coordinate array relative to svg
+    const rel = pointer(e);
+
+    const xCoordinate = rel[0];
+    const xCoordinateWithoutMargin = xCoordinate - margin;
+    const yCoordinate = rel[1];
+    const yCoordinateWithoutMargin = yCoordinate - margin;
+
+    throttledSetPos([xCoordinateWithoutMargin, yCoordinateWithoutMargin]);
+  };
+
+  const trackVisibility = (isVisible: boolean): void => {
+    setIsContextMenuOpen(isVisible);
+  };
+
+  const MENU_ID = `utilizationmetrics-context-menu-${idForContextMenu}`;
+
+  const {show} = useContextMenu({
+    id: MENU_ID,
+  });
+
+  const displayMenu = useCallback(
+    (e: React.MouseEvent): void => {
+      show({
+        event: e,
+      });
+    },
+    [show]
+  );
 
   const color = d3.scaleOrdinal(d3.schemeCategory10);
 
@@ -208,7 +190,6 @@ export const RawMetricsGraph = ({
 
   const highlighted = useMemo(() => {
     // Return the closest point as the highlighted point
-
     const closestPointPerSeries = series.map(function (s) {
       const distances = s.values.map(d => {
         const x = xScale(d[0]) + margin / 2;
@@ -261,17 +242,6 @@ export const RawMetricsGraph = ({
     e.preventDefault();
   };
 
-  const openClosestProfile = (): void => {
-    if (highlighted != null) {
-      onSampleClick(
-        Math.round(highlighted.timestamp),
-        highlighted.value,
-        sanitizeHighlightedValues(highlighted.labels), // When a user clicks on any sample in the graph, replace single `\` in the `labelValues` string with doubles `\\` if available.
-        highlighted.duration
-      );
-    }
-  };
-
   const onMouseUp = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement, MouseEvent>): void => {
     setDragging(false);
 
@@ -283,7 +253,6 @@ export const RawMetricsGraph = ({
     // This is a normal click. We tolerate tiny movements to still be a
     // click as they can occur when clicking based on user feedback.
     if (Math.abs(relPos - pos[0]) <= 1) {
-      openClosestProfile();
       setRelPos(-1);
       return;
     }
@@ -310,120 +279,6 @@ export const RawMetricsGraph = ({
     e.preventDefault();
   };
 
-  const throttledSetPos = throttle(setPos, 20);
-
-  const onMouseMove = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement, MouseEvent>): void => {
-    if (isContextMenuOpen) {
-      return;
-    }
-
-    // X/Y coordinate array relative to svg
-    const rel = pointer(e);
-
-    const xCoordinate = rel[0];
-    const xCoordinateWithoutMargin = xCoordinate - margin;
-    const yCoordinate = rel[1];
-    const yCoordinateWithoutMargin = yCoordinate - margin;
-
-    throttledSetPos([xCoordinateWithoutMargin, yCoordinateWithoutMargin]);
-  };
-
-  const findSelectedProfile = (): HighlightedSeries | null => {
-    if (profile == null) {
-      return null;
-    }
-
-    let s: Series | null = null;
-    let seriesIndex = -1;
-
-    // if there are both query matchers and also a sumby value, we need to check if the sumby value is part of the query matchers.
-    // if it is, then we should prioritize using the sumby label name and value to find the selected profile.
-    const useSumBy =
-      sumBy !== undefined &&
-      sumBy.length > 0 &&
-      profile.query.matchers.length > 0 &&
-      profile.query.matchers.some(e => sumBy.includes(e.key));
-
-    // get only the sumby keys and values from the profile query matchers
-    const sumByMatchers =
-      sumBy !== undefined ? profile.query.matchers.filter(e => sumBy.includes(e.key)) : [];
-
-    const keysToMatch = useSumBy ? sumByMatchers : profile.query.matchers;
-
-    outer: for (let i = 0; i < series.length; i++) {
-      const keys = keysToMatch.map(e => e.key);
-      for (let j = 0; j < keys.length; j++) {
-        const matcherKey = keys[j];
-        const label = series[i].metric.find(e => e.name === matcherKey);
-        if (label === undefined) {
-          continue outer; // label doesn't exist to begin with
-        }
-        if (keysToMatch[j].value !== label.value) {
-          continue outer; // label values don't match
-        }
-      }
-      seriesIndex = i;
-      s = series[i];
-    }
-
-    if (s == null) {
-      return null;
-    }
-    // Find the sample that matches the timestamp
-    const sample = s.values.find(v => {
-      return Math.round(v[0]) === time;
-    });
-    if (sample === undefined) {
-      return null;
-    }
-
-    return {
-      labels: [],
-      seriesIndex,
-      timestamp: sample[0],
-      valuePerSecond: sample[1],
-      value: sample[2],
-      duration: sample[3],
-      x: xScale(sample[0]),
-      y: yScale(sample[1]),
-    };
-  };
-
-  const selected = findSelectedProfile();
-
-  const MENU_ID = `metrics-context-menu-${idForContextMenu}`;
-
-  const {show} = useContextMenu({
-    id: MENU_ID,
-  });
-
-  const displayMenu = useCallback(
-    (e: React.MouseEvent): void => {
-      show({
-        event: e,
-      });
-    },
-    [show]
-  );
-
-  const trackVisibility = (isVisible: boolean): void => {
-    setIsContextMenuOpen(isVisible);
-  };
-
-  const isDeltaType = profile !== null ? profile?.query.profType.delta : false;
-
-  let yAxisLabel = sampleUnit;
-  let yAxisUnit = sampleUnit;
-  if (isDeltaType) {
-    if (sampleUnit === 'nanoseconds') {
-      yAxisLabel = 'CPU Cores';
-      yAxisUnit = '';
-    }
-    if (sampleUnit === 'bytes') {
-      yAxisLabel = 'Bytes per Second';
-    }
-  }
-
   return (
     <>
       <MetricsContextMenu
@@ -432,6 +287,7 @@ export const RawMetricsGraph = ({
         highlighted={highlighted}
         trackVisibility={trackVisibility}
       />
+
       {highlighted != null && hovering && !dragging && pos[0] !== 0 && pos[1] !== 0 && (
         <div
           onMouseMove={onMouseMove}
@@ -444,8 +300,8 @@ export const RawMetricsGraph = ({
               y={pos[1] + margin}
               highlighted={highlighted}
               contextElement={graph.current}
-              sampleUnit={sampleUnit}
-              delta={isDeltaType}
+              sampleUnit="%"
+              delta={false}
             />
           )}
         </div>
@@ -500,7 +356,7 @@ export const RawMetricsGraph = ({
                     >
                       <line className="stroke-gray-300 dark:stroke-gray-500" x2={-6} />
                       <text fill="currentColor" x={-9} dy={'0.32em'}>
-                        {valueFormatter(d, yAxisUnit, decimals)}
+                        {valueFormatter(d, 'percent', decimals)}
                       </text>
                     </g>
                     <g key={`grid-${i}`}>
@@ -536,7 +392,7 @@ export const RawMetricsGraph = ({
                   className="text-sm capitalize"
                   textAnchor="middle"
                 >
-                  {yAxisLabel}
+                  Utilization
                 </text>
               </g>
             </g>
@@ -611,21 +467,46 @@ export const RawMetricsGraph = ({
                 <MetricsCircle cx={highlighted.x} cy={highlighted.y} />
               </g>
             )}
-            {selected != null && (
-              <g
-                className="circle-group"
-                style={
-                  selected?.seriesIndex != null
-                    ? {fill: color(selected.seriesIndex.toString())}
-                    : {}
-                }
-              >
-                <MetricsCircle cx={selected.x} cy={selected.y} radius={5} />
-              </g>
-            )}
           </g>
         </svg>
       </div>
     </>
   );
 };
+
+const UtilizationMetrics = ({
+  data,
+  addLabelMatcher,
+  setTimeRange,
+  utilizationMetricsLoading,
+}: Props): JSX.Element => {
+  const {isDarkMode} = useParcaContext();
+  const {width, height, margin, heightStyle} = useMetricsGraphDimensions(false);
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        className="h-full w-full relative"
+        key="utilization-metrics-graph-loaded"
+        initial={{display: 'none', opacity: 0}}
+        animate={{display: 'block', opacity: 1}}
+        transition={{duration: 0.5}}
+      >
+        {utilizationMetricsLoading === true ? (
+          <MetricsGraphSkeleton heightStyle={heightStyle} isDarkMode={isDarkMode} />
+        ) : (
+          <RawUtilizationMetrics
+            data={data}
+            addLabelMatcher={addLabelMatcher}
+            setTimeRange={setTimeRange}
+            width={width}
+            height={height}
+            margin={margin}
+          />
+        )}
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
+export default UtilizationMetrics;
