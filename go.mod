@@ -5,7 +5,7 @@ go 1.23
 toolchain go1.23.5
 
 require (
-	cloud.google.com/go/storage v1.49.0
+	cloud.google.com/go/storage v1.50.0
 	github.com/alecthomas/kong v0.9.0
 	github.com/apache/arrow/go/v17 v17.0.0
 	github.com/cenkalti/backoff/v4 v4.3.0
