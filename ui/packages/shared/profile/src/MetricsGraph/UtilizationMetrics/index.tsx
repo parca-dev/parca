@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Fragment, useCallback, useId, useMemo, useRef, useState, type FC} from 'react';
+import {Fragment, useCallback, useId, useMemo, useRef, useState} from 'react';
 
 import * as d3 from 'd3';
 import {pointer} from 'd3-selection';
@@ -57,15 +57,16 @@ interface Props {
     labels: {key: string; value: string} | Array<{key: string; value: string}>
   ) => void;
   setTimeRange: (range: DateTimeRange) => void;
+  utilizationMetricsLoading?: boolean;
 }
 
 function transformToSeries(data: MetricSeries[]): Series[] {
-  const groupedData = data.reduce((acc, series) => {
+  const groupedData = data.reduce<Record<string, Series>>((acc, series) => {
     const resourceKey = Object.entries(series.resource)
       .map(([name, value]) => `${name}=${value}`)
       .join(',');
 
-    if (!acc[resourceKey]) {
+    if (!Object.hasOwn(acc, resourceKey)) {
       acc[resourceKey] = {
         metric: Object.entries(series.resource).map(([name, value]) => ({name, value})),
         values: [],
@@ -75,7 +76,7 @@ function transformToSeries(data: MetricSeries[]): Series[] {
 
     acc[resourceKey].values.push([series.timestamp, series.value, 0, 0]);
     return acc;
-  }, {} as Record<string, Series>);
+  }, {});
 
   // Sort values by timestamp for each series
   return Object.values(groupedData).map(series => ({
@@ -478,7 +479,7 @@ const UtilizationMetrics = ({
   addLabelMatcher,
   setTimeRange,
   utilizationMetricsLoading,
-}: Props & {utilizationMetricsLoading: boolean}): JSX.Element => {
+}: Props): JSX.Element => {
   const {isDarkMode} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(false);
 
@@ -491,7 +492,7 @@ const UtilizationMetrics = ({
         animate={{display: 'block', opacity: 1}}
         transition={{duration: 0.5}}
       >
-        {utilizationMetricsLoading ? (
+        {utilizationMetricsLoading === true ? (
           <MetricsGraphSkeleton heightStyle={heightStyle} isDarkMode={isDarkMode} />
         ) : (
           <RawUtilizationMetrics

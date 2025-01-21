@@ -77,7 +77,7 @@ interface ProfileSelectorProps extends ProfileSelectorFeatures {
   setDisplayHideMetricsGraphButton: Dispatch<SetStateAction<boolean>>;
   suffix?: string;
   utilizationMetrics?: UtilizationMetrics[];
-  utilizationMetricsLoading: boolean;
+  utilizationMetricsLoading?: boolean;
 }
 
 export interface IProfileTypesResult {

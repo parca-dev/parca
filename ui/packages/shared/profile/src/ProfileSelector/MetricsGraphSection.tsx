@@ -18,7 +18,7 @@ import {DateTimeRange} from '@parca/components';
 import {Query} from '@parca/parser';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
-import UtilizationMetrics from '../MetricsGraph/UtilizationMetrics';
+import UtilizationMetricsGraph from '../MetricsGraph/UtilizationMetrics';
 import ProfileMetricsGraph, {ProfileMetricsEmptyState} from '../ProfileMetricsGraph';
 import {QuerySelection, type UtilizationMetrics as UtilizationMetricsType} from './index';
 
@@ -40,7 +40,7 @@ interface MetricsGraphSectionProps {
   setNewQueryExpression: (queryExpression: string) => void;
   setQueryExpression: (updateTs?: boolean) => void;
   utilizationMetrics?: UtilizationMetricsType[];
-  utilizationMetricsLoading: boolean;
+  utilizationMetricsLoading?: boolean;
 }
 
 export function MetricsGraphSection({
@@ -133,8 +133,6 @@ export function MetricsGraphSection({
     selectProfile(new MergedProfileSelection(mergeFrom, mergeTo, query));
   };
 
-  console.log('arrowSeries', querySelection);
-
   return (
     <div className={cx('relative', {'py-4': !showMetricsGraph})}>
       <button
@@ -155,7 +153,7 @@ export function MetricsGraphSection({
             querySelection.to !== undefined ? (
               <>
                 {utilizationMetrics !== undefined ? (
-                  <UtilizationMetrics
+                  <UtilizationMetricsGraph
                     data={utilizationMetrics}
                     addLabelMatcher={addLabelMatcher}
                     setTimeRange={handleTimeRangeChange}

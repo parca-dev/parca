@@ -80,7 +80,6 @@ const ProfileExplorerCompare = ({
             suffix="_a"
             showMetricsGraph={showMetricsGraph}
             setDisplayHideMetricsGraphButton={setShowMetricsGraph}
-            utilizationMetricsLoading={false}
           />
         </div>
         <div className="flex-column flex-1 p-2 shadow-md rounded-md">
@@ -97,7 +96,6 @@ const ProfileExplorerCompare = ({
             suffix="_b"
             showMetricsGraph={showMetricsGraph}
             setDisplayHideMetricsGraphButton={setShowMetricsGraph}
-            utilizationMetricsLoading={false}
           />
         </div>
       </div>
