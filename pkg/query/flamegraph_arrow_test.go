@@ -1201,7 +1201,7 @@ main;func_add 10 3000 20
 		mem,
 		tracer,
 		np,
-		[]string{FlamegraphFieldFunctionName, profile.ColumnTimestamp, profile.ColumnDuration},
+		[]string{FlamegraphFieldFunctionName, profile.ColumnTimeNanos, profile.ColumnDuration},
 		0,
 	)
 
@@ -1234,7 +1234,7 @@ main;func_fib 10 3000 20
 		mem,
 		tracer,
 		np,
-		[]string{FlamegraphFieldFunctionName, profile.ColumnTimestamp, profile.ColumnDuration},
+		[]string{FlamegraphFieldFunctionName, profile.ColumnTimeNanos, profile.ColumnDuration},
 		0,
 	)
 	require.NoError(t, err)
@@ -1328,7 +1328,7 @@ func foldedStacksWithTsToProfile(pool memory.Allocator, input []byte) (profile.P
 
 		w.Value.Append(val)
 		w.Diff.Append(0)
-		w.Timestamp.Append(ts)
+		w.TimeNanos.Append(ts)
 		w.Duration.Append(duration)
 		w.LocationsList.Append(true)
 

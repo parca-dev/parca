@@ -85,6 +85,7 @@ func MetaFromPprof(p *pprofpb.Profile, name string, sampleIndex int) profile.Met
 	return profile.Meta{
 		Name:       name,
 		Timestamp:  p.TimeNanos / time.Millisecond.Nanoseconds(),
+		TimeNanos:  p.TimeNanos,
 		Duration:   p.DurationNanos,
 		Period:     p.Period,
 		PeriodType: periodType,
@@ -106,6 +107,7 @@ func MetaFromOtelProfile(p *pprofextended.Profile, name string, sampleIndex int,
 	return profile.Meta{
 		Name:       name,
 		Timestamp:  p.TimeNanos / time.Millisecond.Nanoseconds(),
+		TimeNanos:  p.TimeNanos,
 		Duration:   duration,
 		Period:     p.Period,
 		PeriodType: periodType,
@@ -269,6 +271,17 @@ func WriteRawRequestToArrowRecord(
 					for _, p := range sample {
 						for range p.Samples {
 							cBuilder.Append(p.Meta.Timestamp)
+						}
+					}
+				}
+			}
+		case profile.ColumnTimeNanos:
+			cBuilder := b.Field(b.Schema().FieldIndices(col.Name)[0]).(*array.Int64Builder)
+			for _, series := range normalizedRequest.Series {
+				for _, sample := range series.Samples {
+					for _, p := range sample {
+						for range p.Samples {
+							cBuilder.Append(p.Meta.TimeNanos)
 						}
 					}
 				}
@@ -661,6 +674,9 @@ func SampleToParquetRow(
 			columnIndex++
 		case profile.ColumnTimestamp:
 			row = append(row, parquet.ValueOf(meta.Timestamp).Level(0, 0, columnIndex))
+			columnIndex++
+		case profile.ColumnTimeNanos:
+			row = append(row, parquet.ValueOf(meta.TimeNanos).Level(0, 0, columnIndex))
 			columnIndex++
 		case profile.ColumnValue:
 			row = append(row, parquet.ValueOf(s.Value).Level(0, 0, columnIndex))

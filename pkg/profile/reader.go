@@ -39,7 +39,7 @@ type RecordReader struct {
 	Locations                     *array.List
 	Location                      *array.Struct
 	Address                       *array.Uint64
-	Timestamp                     *array.Int64
+	TimeNanos                     *array.Int64
 	Duration                      *array.Int64
 	MappingStart                  *array.Uint64
 	MappingLimit                  *array.Uint64
@@ -122,7 +122,7 @@ func NewRecordReader(ar arrow.Record) *RecordReader {
 	lineFunctionStartLine := line.Field(4).(*array.Int64)
 	valueColumn := ar.Column(labelNum + 1).(*array.Int64)
 	diffColumn := ar.Column(labelNum + 2).(*array.Int64)
-	timestamp := ar.Column(labelNum + 3).(*array.Int64)
+	timeNanos := ar.Column(labelNum + 3).(*array.Int64)
 	duration := ar.Column(labelNum + 4).(*array.Int64)
 
 	return &RecordReader{
@@ -151,7 +151,7 @@ func NewRecordReader(ar arrow.Record) *RecordReader {
 		LineFunctionStartLine:         lineFunctionStartLine,
 		Value:                         valueColumn,
 		Diff:                          diffColumn,
-		Timestamp:                     timestamp,
+		TimeNanos:                     timeNanos,
 		Duration:                      duration,
 	}
 }

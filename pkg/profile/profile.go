@@ -164,6 +164,7 @@ type Meta struct {
 	PeriodType ValueType
 	SampleType ValueType
 	Timestamp  int64
+	TimeNanos  int64
 	Duration   int64
 	Period     int64
 }
@@ -182,6 +183,7 @@ func MetaFromPprof(p *pprofproto.Profile, name string, sampleIndex int) Meta {
 	return Meta{
 		Name:       name,
 		Timestamp:  p.TimeNanos / time.Millisecond.Nanoseconds(),
+		TimeNanos:  p.TimeNanos,
 		Duration:   p.DurationNanos,
 		Period:     p.Period,
 		PeriodType: periodType,

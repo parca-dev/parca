@@ -236,7 +236,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 
 	groupBy := req.GetGroupBy().GetFields()
 	allowedGroupBy := map[string]struct{}{
-		profile.ColumnTimestamp:         {},
+		profile.ColumnTimeNanos:         {},
 		profile.ColumnDuration:          {},
 		FlamegraphFieldFunctionName:     {},
 		FlamegraphFieldLocationAddress:  {},
@@ -245,7 +245,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	}
 
 	if req.GetReportType() == pb.QueryRequest_REPORT_TYPE_FLAMECHART {
-		groupBy = append(groupBy, profile.ColumnTimestamp, profile.ColumnDuration)
+		groupBy = append(groupBy, profile.ColumnTimeNanos, profile.ColumnDuration)
 	}
 
 	groupByLabels := make([]string, 0, len(groupBy))

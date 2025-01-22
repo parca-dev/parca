@@ -198,12 +198,12 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				row = fb.builderCumulative.Len()
 			}
 			if fb.aggregationConfig.aggregateByTimestamp {
-				tsHash = uint64(r.Timestamp.Value(i))
+				tsHash = uint64(r.TimeNanos.Value(i))
 
 				sampleTsRow := row
 				if _, ok := fb.rootsRow[tsHash]; ok {
 					// If we have multiple samples for the same timestamp, we return an error.
-					return nil, 0, 0, 0, fmt.Errorf("multiple samples for the same timestamp is not allowed: %d", r.Timestamp.Value(i))
+					return nil, 0, 0, 0, fmt.Errorf("multiple samples for the same timestamp is not allowed: %d", r.TimeNanos.Value(i))
 				} else {
 					rootRowChildren = map[uint64]int{}
 					err := fb.AppendTimestampRow(
@@ -317,7 +317,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						key = hashCombine(key, r.Address.Value(j))
 					}
 					if fb.aggregationConfig.aggregateByTimestamp {
-						key = hashCombine(key, uint64(r.Timestamp.Value(i)))
+						key = hashCombine(key, uint64(r.TimeNanos.Value(i)))
 						key = hashCombine(key, uint64(r.Duration.Value(i)))
 					}
 					if fb.aggregationConfig.aggregateByFunctionFilename {
@@ -962,7 +962,7 @@ func newFlamegraphBuilder(
 		if f == FlamegraphFieldFunctionFileName {
 			fb.aggregationConfig.aggregateByFunctionFilename = true
 		}
-		if f == profile.ColumnTimestamp {
+		if f == profile.ColumnTimeNanos {
 			fb.aggregationConfig.aggregateByTimestamp = true
 		}
 	}
@@ -1400,8 +1400,8 @@ func appendGroupByMetadata(fb *flamegraphBuilder, r *profile.RecordReader, sampl
 		n := fb.groupByMetadataFields[i].Name
 		b := fb.builderGroupByMetadata.FieldBuilder(i).(*array.BinaryBuilder)
 		switch n {
-		case profile.ColumnTimestamp:
-			ts := r.Timestamp.Value(sampleRow)
+		case profile.ColumnTimeNanos:
+			ts := r.TimeNanos.Value(sampleRow)
 			b.Append([]byte(fmt.Sprint(ts)))
 		case profile.ColumnDuration:
 			duration := r.Duration.Value(sampleRow)
