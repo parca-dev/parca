@@ -53,6 +53,17 @@ interface ProfileSelectorFeatures {
   disableProfileTypesDropdown?: boolean;
 }
 
+export interface UtilizationMetrics {
+  timestamp: number;
+  value: number;
+  resource: {
+    [key: string]: string;
+  };
+  attributes: {
+    [key: string]: string;
+  };
+}
+
 interface ProfileSelectorProps extends ProfileSelectorFeatures {
   queryClient: QueryServiceClient;
   querySelection: QuerySelection;
@@ -65,6 +76,8 @@ interface ProfileSelectorProps extends ProfileSelectorFeatures {
   navigateTo: NavigateFunction;
   setDisplayHideMetricsGraphButton: Dispatch<SetStateAction<boolean>>;
   suffix?: string;
+  utilizationMetrics?: UtilizationMetrics[];
+  utilizationMetricsLoading?: boolean;
 }
 
 export interface IProfileTypesResult {
@@ -108,6 +121,8 @@ const ProfileSelector = ({
   showProfileTypeSelector = true,
   disableExplorativeQuerying = false,
   setDisplayHideMetricsGraphButton,
+  utilizationMetrics,
+  utilizationMetricsLoading,
 }: ProfileSelectorProps): JSX.Element => {
   const {
     loading: profileTypesLoading,
@@ -288,7 +303,6 @@ const ProfileSelector = ({
           </div>
         )}
       </div>
-
       <MetricsGraphSection
         showMetricsGraph={showMetricsGraph}
         setDisplayHideMetricsGraphButton={setDisplayHideMetricsGraphButton}
@@ -306,6 +320,8 @@ const ProfileSelector = ({
         query={query}
         setQueryExpression={setQueryExpression}
         setNewQueryExpression={setNewQueryExpression}
+        utilizationMetrics={utilizationMetrics}
+        utilizationMetricsLoading={utilizationMetricsLoading}
       />
     </>
   );
