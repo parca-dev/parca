@@ -1244,7 +1244,7 @@ func PprofToSymbolizedProfile(meta profile.Meta, prof *pprofprofile.Profile, ind
 
 		w.Value.Append(prof.Sample[i].Value[index])
 		w.Diff.Append(0)
-		w.Timestamp.Append(prof.TimeNanos)
+		w.TimeNanos.Append(prof.TimeNanos)
 		w.Duration.Append(prof.DurationNanos)
 
 		for labelName, labelBuilder := range w.LabelBuildersMap {
@@ -1361,7 +1361,7 @@ func TestFilterData(t *testing.T) {
 	w.FunctionStartLine.Append(1)
 	w.Value.Append(1)
 	w.Diff.Append(0)
-	w.Timestamp.Append(1)
+	w.TimeNanos.Append(1)
 	w.Duration.Append(1)
 
 	frameFilter := map[string]struct{}{"test": {}}
@@ -1409,7 +1409,7 @@ func TestFilterUnsymbolized(t *testing.T) {
 	w.Lines.Append(false)
 	w.Value.Append(1)
 	w.Diff.Append(0)
-	w.Timestamp.Append(1)
+	w.TimeNanos.Append(1)
 	w.Duration.Append(1)
 
 	originalRecord := w.RecordBuilder.NewRecord()
@@ -1491,7 +1491,7 @@ func TestFilterDataWithPath(t *testing.T) {
 	w.FunctionStartLine.Append(0)
 	w.Value.Append(1)
 	w.Diff.Append(0)
-	w.Timestamp.Append(1)
+	w.TimeNanos.Append(1)
 	w.Duration.Append(1)
 
 	frameFilter := map[string]struct{}{"libpython3.11.so.1.0": {}, "interpreter": {}}
@@ -1575,7 +1575,7 @@ func TestFilterDataFrameFilter(t *testing.T) {
 	w.FunctionStartLine.Append(0)
 	w.Value.Append(1)
 	w.Diff.Append(0)
-	w.Timestamp.Append(1)
+	w.TimeNanos.Append(1)
 	w.Duration.Append(1)
 
 	frameFilter := map[string]struct{}{"interpreter": {}}
@@ -1659,7 +1659,7 @@ func BenchmarkFilterData(t *testing.B) {
 		w.FunctionStartLine.Append(1)
 		w.Value.Append(1)
 		w.Diff.Append(0)
-		w.Timestamp.Append(1)
+		w.TimeNanos.Append(1)
 		w.Duration.Append(1)
 	}
 

@@ -31,6 +31,7 @@ const (
 	ColumnSampleUnit = "sample_unit"
 	ColumnStacktrace = "stacktrace"
 	ColumnTimestamp  = "timestamp"
+	ColumnTimeNanos  = "time_nanos"
 	ColumnValue      = "value"
 )
 
@@ -114,6 +115,14 @@ func SchemaDefinition() *schemapb.Schema {
 				},
 				Dynamic: false,
 			}, {
+				Name: ColumnTimeNanos,
+				StorageLayout: &schemapb.StorageLayout{
+					Type:        schemapb.StorageLayout_TYPE_INT64,
+					Encoding:    schemapb.StorageLayout_ENCODING_DELTA_BINARY_PACKED,
+					Compression: schemapb.StorageLayout_COMPRESSION_LZ4_RAW,
+				},
+				Dynamic: false,
+			}, {
 				Name: ColumnValue,
 				StorageLayout: &schemapb.StorageLayout{
 					Type:        schemapb.StorageLayout_TYPE_INT64,
@@ -141,6 +150,9 @@ func SchemaDefinition() *schemapb.Schema {
 				Direction: schemapb.SortingColumn_DIRECTION_ASCENDING,
 			}, {
 				Name:      ColumnTimestamp,
+				Direction: schemapb.SortingColumn_DIRECTION_ASCENDING,
+			}, {
+				Name:      ColumnTimeNanos,
 				Direction: schemapb.SortingColumn_DIRECTION_ASCENDING,
 			},
 		},

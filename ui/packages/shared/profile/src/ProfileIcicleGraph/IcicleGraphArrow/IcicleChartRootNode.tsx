@@ -87,9 +87,9 @@ export const IcicleChartRootNode = React.memo(function IcicleChartRootNodeNonMem
           groupByMetadata?.get(row) as StructRow<Record<string, Binary>>
         ).toJSON();
 
-        const tsStr = arrowToString(groupByFields.timestamp) as string;
+        const tsStr = arrowToString(groupByFields.time_nanos) as string;
 
-        const tsNanos = BigInt(parseInt(tsStr, 10)) * 1000000n;
+        const tsNanos = BigInt(parseInt(tsStr, 10));
         const durationStr = arrowToString(groupByFields.duration) as string;
         const duration = parseInt(durationStr, 10);
 
