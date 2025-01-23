@@ -175,8 +175,8 @@ importers:
         specifier: 15.7.0
         version: 15.7.0(eslint@8.45.0)
       eslint-plugin-prettier:
-        specifier: 5.2.2
-        version: 5.2.2(eslint-config-prettier@9.0.0)(eslint@8.45.0)(prettier@3.4.2)
+        specifier: 5.2.3
+        version: 5.2.3(eslint-config-prettier@9.0.0)(eslint@8.45.0)(prettier@3.4.2)
       eslint-plugin-promise:
         specifier: 6.6.0
         version: 6.6.0(eslint@8.45.0)
@@ -11508,8 +11508,8 @@ packages:
       prettier: 2.8.8
     dev: true
 
-  /eslint-plugin-prettier@5.2.2(eslint-config-prettier@9.0.0)(eslint@8.45.0)(prettier@3.4.2):
-    resolution: {integrity: sha512-1yI3/hf35wmlq66C8yOyrujQnel+v5l1Vop5Cl2I6ylyNTT1JbuUUnV3/41PzwTzcyDp/oF0jWE3HXvcH5AQOQ==}
+  /eslint-plugin-prettier@5.2.3(eslint-config-prettier@9.0.0)(eslint@8.45.0)(prettier@3.4.2):
+    resolution: {integrity: sha512-qJ+y0FfCp/mQYQ/vWQ3s7eUlFEL4PyKfAJxsnYTJ4YT73nsJBWqmEpFryxV9OeUiqmsTsYJ5Y+KDNaeP31wrRw==}
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
       '@types/eslint': '>=8.0.0'
