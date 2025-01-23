@@ -316,7 +316,11 @@ func (c *cachedLiner) newExternalExecutableLiner(
 	if err != nil {
 		return nil, fmt.Errorf("error creating output pipe for addr2line: %w", err)
 	}
+
+	// 100 KiB buffer, addr2line output can be very large sometimes
+	buf := make([]byte, 100*1024)
 	scanner := bufio.NewScanner(addr2lineOutput)
+	scanner.Buffer(buf, 100*1024)
 
 	// Start command to load executable info and wait for input
 	err = addr2lineCmd.Start()
@@ -336,12 +340,17 @@ func (c *cachedLiner) newExternalExecutableLiner(
 func (l *externalExecutableLiner) Close() error {
 	err := l.inputPipe.Close()
 	if err != nil {
+		level.Warn(l.logger).Log("msg", "error closing input pipe of addr2line process", "err", err)
 		return err
 	}
+
 	err = l.cmd.Wait()
 	if err != nil {
+		level.Warn(l.logger).Log("msg", "error waiting for addr2line process to exit", "err", err)
 		return err
 	}
+	level.Debug(l.logger).Log("msg", "addr2line process exited successfully, closed external executable liner")
+
 	return nil
 }
 
@@ -354,23 +363,46 @@ func (l *externalExecutableLiner) PCToLines(ctx context.Context, pc uint64) ([]p
 		}
 	}
 
+	// Auxiliary function to call Scan() and handle errors
+	scan := func() error {
+		if !l.scanner.Scan() {
+			if err := l.scanner.Err(); err != nil {
+				return fmt.Errorf("error scanning addr2line output: %w", err)
+			}
+			return fmt.Errorf("unexpected EOF while scanning addr2line output")
+		}
+		return nil
+	}
+
 	lines := []profile.LocationLine{}
 	// addr2line output consists of a variable number of pairs of lines per address
 	// The first line of each block of output is the address, if we have to skip additional lines
 	// it means the previous read loop left some output unread
-	l.scanner.Scan()
+	err := scan()
+	if err != nil {
+		return nil, err
+	}
 	addressLine := l.scanner.Text()
 	for !strings.HasPrefix(addressLine, "0x") {
-		l.scanner.Scan()
+		err := scan()
+		if err != nil {
+			return nil, err
+		}
 		addressLine = l.scanner.Text()
 	}
 
 	keepReading := true
-	l.scanner.Scan()
+	err = scan()
+	if err != nil {
+		return nil, err
+	}
 	for keepReading {
 		line1 := l.scanner.Text()
 
-		l.scanner.Scan()
+		err := scan()
+		if err != nil {
+			return nil, err
+		}
 		line2 := l.scanner.Text()
 
 		line1 = strings.TrimSuffix(line1, "\n")
@@ -391,7 +423,10 @@ func (l *externalExecutableLiner) PCToLines(ctx context.Context, pc uint64) ([]p
 			},
 		})
 
-		l.scanner.Scan()
+		err = scan()
+		if err != nil {
+			return nil, err
+		}
 		keepReading = !strings.HasPrefix(l.scanner.Text(), "0x")
 	}
 
