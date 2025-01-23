@@ -158,6 +158,8 @@ export function MetricsGraphSection({
                     addLabelMatcher={addLabelMatcher}
                     setTimeRange={handleTimeRangeChange}
                     utilizationMetricsLoading={utilizationMetricsLoading}
+                    from={querySelection.from}
+                    to={querySelection.to}
                   />
                 ) : (
                   <>

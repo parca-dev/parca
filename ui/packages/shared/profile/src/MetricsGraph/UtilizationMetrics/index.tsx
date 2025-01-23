@@ -49,6 +49,8 @@ interface RawUtilizationMetricsProps {
   width: number;
   height: number;
   margin: number;
+  from: number;
+  to: number;
 }
 
 interface Props {
@@ -58,6 +60,8 @@ interface Props {
   ) => void;
   setTimeRange: (range: DateTimeRange) => void;
   utilizationMetricsLoading?: boolean;
+  from: number;
+  to: number;
 }
 
 function transformToSeries(data: MetricSeries[]): Series[] {
@@ -92,6 +96,8 @@ const RawUtilizationMetrics = ({
   width,
   height,
   margin,
+  from,
+  to,
 }: RawUtilizationMetricsProps): JSX.Element => {
   const {timezone} = useParcaContext();
   const graph = useRef(null);
@@ -108,12 +114,7 @@ const RawUtilizationMetrics = ({
 
   const graphWidth = width - margin * 1.5 - margin / 2;
 
-  // Calculate the time range from the data
-  const timeExtent = d3.extent(data, d => d.timestamp);
-  const from = timeExtent[0] ?? 0;
-  const to = timeExtent[1] ?? 0;
-
-  // Add a small padding (2%) to the time range to avoid points touching the edges
+  // Use the props directly
   const timeRange = to - from;
   const paddedFrom = from - timeRange * 0.02;
   const paddedTo = to + timeRange * 0.02;
@@ -479,6 +480,8 @@ const UtilizationMetrics = ({
   addLabelMatcher,
   setTimeRange,
   utilizationMetricsLoading,
+  from,
+  to,
 }: Props): JSX.Element => {
   const {isDarkMode} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(false);
@@ -502,6 +505,8 @@ const UtilizationMetrics = ({
             width={width}
             height={height}
             margin={margin}
+            from={from}
+            to={to}
           />
         )}
       </motion.div>
