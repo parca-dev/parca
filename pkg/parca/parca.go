@@ -151,8 +151,9 @@ type FlagsStorage struct {
 }
 
 type FlagsSymbolizer struct {
-	DemangleMode  string `default:"simple" help:"Mode to demangle C++ symbols. Default mode is simplified: no parameters, no templates, no return type" enum:"simple,full,none,templates"`
-	NumberOfTries int    `default:"3" help:"Number of tries to attempt to symbolize an unsybolized location"`
+	DemangleMode          string `default:"simple" help:"Mode to demangle C++ symbols. Default mode is simplified: no parameters, no templates, no return type" enum:"simple,full,none,templates"`
+	ExternalAddr2linePath string `default:"" help:"Path to addr2line utility, to be used for symbolization instead of native implementation"`
+	NumberOfTries         int    `default:"3" help:"Number of tries to attempt to symbolize an unsybolized location"`
 }
 
 // FlagsDebuginfo configures the Parca Debuginfo client.
@@ -415,6 +416,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			symbolizer.NewBadgerCache(db),
 			debuginfo.NewFetcher(debuginfodClients, debuginfoBucket),
 			flags.Debuginfo.CacheDir,
+			flags.Symbolizer.ExternalAddr2linePath,
 			symbolizer.WithDemangleMode(flags.Symbolizer.DemangleMode),
 		),
 		memory.DefaultAllocator,

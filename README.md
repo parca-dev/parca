@@ -127,6 +127,9 @@ Flags:
                                  Mode to demangle C++ symbols. Default mode
                                  is simplified: no parameters, no templates,
                                  no return type
+      --symbolizer-external-addr-2-line-path=""
+                                 Path to addr2line utility, to be used for
+                                 symbolization instead of native implementation
       --symbolizer-number-of-tries=3
                                  Number of tries to attempt to symbolize an
                                  unsybolized location
