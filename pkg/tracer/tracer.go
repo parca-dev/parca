@@ -107,12 +107,12 @@ func NewProvider(ctx context.Context, version string, exporter sdktrace.SpanExpo
 	return provider, nil
 }
 
-func NewExporter(exType, otlpAddress string) (Exporter, error) {
+func NewExporter(exType, otlpAddress string, otlpInsecure bool) (Exporter, error) {
 	switch strings.ToLower(exType) {
 	case string(ExporterTypeGRPC):
-		return NewGRPCExporter(otlpAddress)
+		return NewGRPCExporter(otlpAddress, otlpInsecure)
 	case string(ExporterTypeHTTP):
-		return NewHTTPExporter(otlpAddress)
+		return NewHTTPExporter(otlpAddress, otlpInsecure)
 	case string(ExporterTypeStdio):
 		return NewConsoleExporter(os.Stdout)
 	default:
@@ -144,18 +144,23 @@ func NewConsoleExporter(w io.Writer) (Exporter, error) {
 }
 
 // NewGRPCExporter returns a gRPC exporter.
-func NewGRPCExporter(otlpAddress string) (Exporter, error) {
-	return otlptracegrpc.NewUnstarted(
-		otlptracegrpc.WithInsecure(),
-		otlptracegrpc.WithEndpoint(otlpAddress),
-	), nil
+func NewGRPCExporter(otlpAddress string, otlpInsecure bool) (Exporter, error) {
+	opts := []otlptracegrpc.Option{otlptracegrpc.WithEndpoint(otlpAddress)}
+	if otlpInsecure {
+		opts = append(opts, otlptracegrpc.WithInsecure())
+	}
+
+	return otlptracegrpc.NewUnstarted(opts...), nil
 }
 
 // NewHTTPExporter returns a HTTP exporter.
-func NewHTTPExporter(otlpAddress string) (Exporter, error) {
+func NewHTTPExporter(otlpAddress string, otlpInsecure bool) (Exporter, error) {
+	opts := []otlptracehttp.Option{otlptracehttp.WithEndpoint(otlpAddress)}
+	if otlpInsecure {
+		opts = append(opts, otlptracehttp.WithInsecure())
+	}
 	return otlptrace.NewUnstarted(otlptracehttp.NewClient(
-		otlptracehttp.WithInsecure(),
-		otlptracehttp.WithEndpoint(otlpAddress),
+		opts...,
 	)), nil
 }
 

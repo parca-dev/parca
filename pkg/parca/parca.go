@@ -139,6 +139,7 @@ type FlagsLogs struct {
 type FlagsOTLP struct {
 	Address  string `help:"The endpoint to send OTLP traces to."`
 	Exporter string `default:"grpc"                              enum:"grpc,http,stdout" help:"The OTLP exporter to use."`
+	Insecure bool   `default:"true" help:"If true, disables TLS for OTLP exporters (both gRPC and HTTP)."`
 }
 
 type FlagsStorage struct {
@@ -193,7 +194,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	if flags.OTLP.Address != "" {
 		var err error
 
-		exporter, err = tracer.NewExporter(flags.OTLP.Exporter, flags.OTLP.Address)
+		exporter, err = tracer.NewExporter(flags.OTLP.Exporter, flags.OTLP.Address, flags.OTLP.Insecure)
 		if err != nil {
 			level.Error(logger).Log("msg", "failed to create tracing exporter", "err", err)
 		}
