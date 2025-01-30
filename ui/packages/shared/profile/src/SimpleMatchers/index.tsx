@@ -23,6 +23,7 @@ import {Query} from '@parca/parser';
 import {sanitizeLabelValue} from '@parca/utilities';
 
 import {useLabelNames} from '../MatchersInput';
+import {UtilizationLabels} from '../ProfileSelector';
 import Select, {type SelectItem} from './Select';
 
 interface Props {
@@ -31,6 +32,7 @@ interface Props {
   runQuery: () => void;
   currentQuery: Query;
   profileType: string;
+  utilizationLabels?: UtilizationLabels;
   queryBrowserRef: React.RefObject<HTMLDivElement>;
 }
 
@@ -42,10 +44,13 @@ interface QueryRow {
   isLoading: boolean;
 }
 
-const transformLabelsForSelect = (labelNames: string[]): SelectItem[] => {
+const transformLabelsForSelect = (labelNames: string[], shouldTrimPrefix = false): SelectItem[] => {
   return labelNames.map(labelName => ({
     key: labelName,
-    element: {active: <>{labelName}</>, expanded: <>{labelName}</>},
+    element: {
+      active: <>{shouldTrimPrefix ? labelName.split('.').pop() : labelName}</>,
+      expanded: <>{shouldTrimPrefix ? labelName.split('.').pop() : labelName}</>,
+    },
   }));
 };
 
@@ -99,10 +104,10 @@ const operatorOptions = [
 const SimpleMatchers = ({
   queryClient,
   setMatchersString,
-  // runQuery,
   currentQuery,
   profileType,
   queryBrowserRef,
+  utilizationLabels,
 }: Props): JSX.Element => {
   const [queryRows, setQueryRows] = useState<QueryRow[]>([
     {labelName: '', operator: '=', labelValue: '', labelValues: [], isLoading: false},
@@ -129,6 +134,8 @@ const SimpleMatchers = ({
     return matchers.map(matcher => matcher.key);
   }, [currentQuery]);
 
+  // TODO: This is a temporary solution to use the label values from the query client or the utilization labels.
+  // We need to find a better solution to handle this. e.g. using a Context to pass the label values to the SimpleMatchers component.
   const fetchLabelValues = useCallback(
     async (labelName: string): Promise<string[]> => {
       if (labelName == null || labelName === '' || profileType == null || profileType === '') {
@@ -158,6 +165,15 @@ const SimpleMatchers = ({
     [queryClient, metadata, profileType, reactQueryClient]
   );
 
+  const fetchLabelValuesUtilization = useCallback(
+    async (labelName: string): Promise<string[]> => {
+      utilizationLabels?.utilizationFetchLabelValues?.(labelName);
+
+      return utilizationLabels?.utilizationLabelValues ?? [];
+    },
+    [utilizationLabels]
+  );
+
   const updateMatchersString = useCallback(
     (rows: QueryRow[]) => {
       const matcherString = rows
@@ -184,7 +200,10 @@ const SimpleMatchers = ({
           const trimmedLabelName = labelName.trim();
           if (trimmedLabelName === '') return null;
 
-          const labelValues = await fetchLabelValues(trimmedLabelName);
+          const labelValues =
+            utilizationLabels?.utilizationFetchLabelValues !== undefined
+              ? await fetchLabelValuesUtilization(trimmedLabelName)
+              : await fetchLabelValues(trimmedLabelName);
           const sanitizedLabelValue =
             labelValue.startsWith('"') && labelValue.endsWith('"')
               ? labelValue.slice(1, -1)
@@ -205,7 +224,13 @@ const SimpleMatchers = ({
     };
 
     void fetchAndSetQueryRows();
-  }, [currentMatchers, fetchLabelValues, updateMatchersString]);
+  }, [
+    currentMatchers,
+    fetchLabelValues,
+    updateMatchersString,
+    fetchLabelValuesUtilization,
+    utilizationLabels,
+  ]);
 
   const labelNames = useMemo(() => {
     return (labelNamesError === undefined || labelNamesError == null) &&
@@ -215,10 +240,20 @@ const SimpleMatchers = ({
       : [];
   }, [labelNamesError, labelNamesResponse]);
 
+  // TODO: This is a temporary solution to use the utilization label names if they are available.
+  // We need to find a better solution to handle this. e.g. using a Context to pass the label names to the SimpleMatchers component.
+  const labelNamesToUse =
+    utilizationLabels?.utilizationLabelNames !== undefined &&
+    utilizationLabels.utilizationLabelNames.length > 0 &&
+    utilizationLabels.utilizationLabelNames !== null
+      ? utilizationLabels.utilizationLabelNames
+      : labelNames;
+
   const labelNameOptions = useMemo(() => {
-    const uniqueLabelNames = Array.from(new Set([...labelNames, ...labelNameFromMatchers]));
-    return transformLabelsForSelect(uniqueLabelNames);
-  }, [labelNames, labelNameFromMatchers]);
+    const uniqueLabelNames = Array.from(new Set([...labelNamesToUse, ...labelNameFromMatchers]));
+    const shouldTrimPrefix = utilizationLabels?.utilizationLabelNames !== undefined;
+    return transformLabelsForSelect(uniqueLabelNames, shouldTrimPrefix);
+  }, [labelNamesToUse, labelNameFromMatchers, utilizationLabels]);
 
   const updateRow = useCallback(
     async (index: number, field: keyof QueryRow, value: string): Promise<void> => {
@@ -232,7 +267,10 @@ const SimpleMatchers = ({
         updatedRows[index].isLoading = true;
         setQueryRows([...updatedRows]);
 
-        const labelValues = await fetchLabelValues(value);
+        const labelValues =
+          utilizationLabels?.utilizationFetchLabelValues !== undefined
+            ? await fetchLabelValuesUtilization(value)
+            : await fetchLabelValues(value);
         updatedRows[index].labelValues = labelValues;
         updatedRows[index].isLoading = false;
       }
@@ -240,7 +278,13 @@ const SimpleMatchers = ({
       setQueryRows([...updatedRows]);
       updateMatchersString(updatedRows);
     },
-    [queryRows, fetchLabelValues, updateMatchersString]
+    [
+      queryRows,
+      fetchLabelValues,
+      updateMatchersString,
+      fetchLabelValuesUtilization,
+      utilizationLabels,
+    ]
   );
 
   const handleUpdateRow = useCallback(
@@ -290,7 +334,10 @@ const SimpleMatchers = ({
           setQueryRows([...updatedRows]);
 
           try {
-            const labelValues = await fetchLabelValues(updatedRows[index].labelName);
+            const labelValues =
+              utilizationLabels?.utilizationFetchLabelValues !== undefined
+                ? await fetchLabelValuesUtilization(updatedRows[index].labelName)
+                : await fetchLabelValues(updatedRows[index].labelName);
             updatedRows[index].labelValues = labelValues;
           } catch (error) {
             console.error('Error fetching label values:', error);
@@ -303,7 +350,7 @@ const SimpleMatchers = ({
         }
       };
     },
-    [queryRows, fetchLabelValues]
+    [queryRows, fetchLabelValues, fetchLabelValuesUtilization, utilizationLabels]
   );
 
   const isRowRegex = (row: QueryRow): boolean => row.operator === '=~' || row.operator === '!~';

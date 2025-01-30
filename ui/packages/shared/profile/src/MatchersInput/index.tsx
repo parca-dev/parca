@@ -30,6 +30,7 @@ interface MatchersInputProps {
   runQuery: () => void;
   currentQuery: Query;
   profileType: string;
+  utilizationLabelNames?: string[];
 }
 
 export interface ILabelNamesResult {
@@ -117,6 +118,7 @@ const MatchersInput = ({
   runQuery,
   currentQuery,
   profileType,
+  utilizationLabelNames,
 }: MatchersInputProps): JSX.Element => {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const [focusedInput, setFocusedInput] = useState(false);
@@ -131,13 +133,16 @@ const MatchersInput = ({
     result: {response: labelValues},
   } = useLabelValues(queryClient, currentLabelName ?? '', profileType);
 
-  const labelNames = useMemo(() => {
+  const labelNamesFromAPI = useMemo(() => {
     return (labelNamesError === undefined || labelNamesError == null) &&
       labelNamesResponse !== undefined &&
       labelNamesResponse != null
       ? labelNamesResponse.labelNames.filter(e => e !== '__name__')
       : [];
   }, [labelNamesError, labelNamesResponse]);
+
+  const labelNames =
+    utilizationLabelNames !== undefined ? utilizationLabelNames : labelNamesFromAPI;
 
   const value = currentQuery.matchersString();
 

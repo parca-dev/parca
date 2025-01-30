@@ -64,6 +64,12 @@ export interface UtilizationMetrics {
   };
 }
 
+export interface UtilizationLabels {
+  utilizationLabelNames?: string[];
+  utilizationFetchLabelValues?: (labelName: string) => void;
+  utilizationLabelValues?: string[];
+}
+
 interface ProfileSelectorProps extends ProfileSelectorFeatures {
   queryClient: QueryServiceClient;
   querySelection: QuerySelection;
@@ -78,6 +84,7 @@ interface ProfileSelectorProps extends ProfileSelectorFeatures {
   suffix?: string;
   utilizationMetrics?: UtilizationMetrics[];
   utilizationMetricsLoading?: boolean;
+  utilizationLabels?: UtilizationLabels;
 }
 
 export interface IProfileTypesResult {
@@ -123,6 +130,7 @@ const ProfileSelector = ({
   setDisplayHideMetricsGraphButton,
   utilizationMetrics,
   utilizationMetricsLoading,
+  utilizationLabels,
 }: ProfileSelectorProps): JSX.Element => {
   const {
     loading: profileTypesLoading,
@@ -292,6 +300,7 @@ const ProfileSelector = ({
           queryClient={queryClient}
           sumByRef={sumByRef}
           labels={labels}
+          utilizationLabels={utilizationLabels}
           sumBySelection={sumBySelection ?? []}
           setUserSumBySelection={setUserSumBySelection}
           profileType={profileType}
