@@ -61,7 +61,7 @@ require (
 	golang.org/x/sync v0.10.0
 	google.golang.org/api v0.214.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20241219192143-6b3ec007d9bb
-	google.golang.org/grpc v1.68.1
+	google.golang.org/grpc v1.70.0
 	google.golang.org/protobuf v1.36.1
 	gopkg.in/dnaeon/go-vcr.v3 v3.2.2
 	gopkg.in/yaml.v3 v3.0.1
