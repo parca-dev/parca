@@ -13,6 +13,7 @@
 
 import React, {useMemo, useRef, useState} from 'react';
 
+import {useQuery} from '@tanstack/react-query';
 import cx from 'classnames';
 import TextareaAutosize from 'react-textarea-autosize';
 
@@ -21,6 +22,7 @@ import {useGrpcMetadata} from '@parca/components';
 import {Query} from '@parca/parser';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
+import {UtilizationLabels} from '../ProfileSelector';
 import useGrpcQuery from '../useGrpcQuery';
 import SuggestionsList, {Suggestion, Suggestions} from './SuggestionsList';
 
@@ -30,7 +32,7 @@ interface MatchersInputProps {
   runQuery: () => void;
   currentQuery: Query;
   profileType: string;
-  utilizationLabelNames?: string[];
+  utilizationLabels?: UtilizationLabels;
 }
 
 export interface ILabelNamesResult {
@@ -112,13 +114,27 @@ export const useLabelValues = (
   return {result: {response: data ?? [], error: error as Error}, loading: isLoading};
 };
 
+export const useFetchUtilizationLabelValues = (
+  labelName: string,
+  utilizationLabels?: UtilizationLabels
+): string[] => {
+  const {data} = useQuery({
+    queryKey: ['utilizationLabelValues', labelName],
+    queryFn: async () => {
+      return await utilizationLabels?.utilizationFetchLabelValues?.(labelName);
+    },
+  });
+
+  return data ?? [];
+};
+
 const MatchersInput = ({
   queryClient,
   setMatchersString,
   runQuery,
   currentQuery,
   profileType,
-  utilizationLabelNames,
+  utilizationLabels,
 }: MatchersInputProps): JSX.Element => {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const [focusedInput, setFocusedInput] = useState(false);
@@ -130,8 +146,13 @@ const MatchersInput = ({
 
   const {
     loading: labelValuesLoading,
-    result: {response: labelValues},
+    result: {response: labelValuesOriginal},
   } = useLabelValues(queryClient, currentLabelName ?? '', profileType);
+
+  const utilizationLabelValues = useFetchUtilizationLabelValues(
+    currentLabelName ?? '',
+    utilizationLabels
+  );
 
   const labelNamesFromAPI = useMemo(() => {
     return (labelNamesError === undefined || labelNamesError == null) &&
@@ -140,9 +161,17 @@ const MatchersInput = ({
       ? labelNamesResponse.labelNames.filter(e => e !== '__name__')
       : [];
   }, [labelNamesError, labelNamesResponse]);
+  const shouldTrimPrefix = utilizationLabels?.utilizationLabelNames !== undefined;
 
   const labelNames =
-    utilizationLabelNames !== undefined ? utilizationLabelNames : labelNamesFromAPI;
+    utilizationLabels?.utilizationLabelNames !== undefined
+      ? utilizationLabels.utilizationLabelNames
+      : labelNamesFromAPI;
+
+  const labelValues =
+    utilizationLabels?.utilizationFetchLabelValues !== undefined
+      ? utilizationLabelValues
+      : labelValuesOriginal;
 
   const value = currentQuery.matchersString();
 
@@ -281,6 +310,7 @@ const MatchersInput = ({
         runQuery={runQuery}
         focusedInput={focusedInput}
         isLabelValuesLoading={labelValuesLoading && lastCompleted.type === 'literal'}
+        shouldTrimPrefix={shouldTrimPrefix}
       />
     </div>
   );
