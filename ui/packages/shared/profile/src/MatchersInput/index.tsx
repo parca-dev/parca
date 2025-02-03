@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useMemo, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 
 import {useQuery} from '@tanstack/react-query';
 import cx from 'classnames';
@@ -44,6 +44,21 @@ interface UseLabelNames {
   result: ILabelNamesResult;
   loading: boolean;
 }
+
+interface LabelNameMapping {
+  displayName: string;
+  fullName: string;
+}
+
+const createLabelNameMapping = (labelNames: string[]): LabelNameMapping[] => {
+  return labelNames.map(name => {
+    const displayName = name.replace(/^(attributes\.|attributes_resource\.)/, '');
+    return {
+      displayName,
+      fullName: name,
+    };
+  });
+};
 
 export const useLabelNames = (
   client: QueryServiceClient,
@@ -140,6 +155,7 @@ const MatchersInput = ({
   const [focusedInput, setFocusedInput] = useState(false);
   const [lastCompleted, setLastCompleted] = useState<Suggestion>(new Suggestion('', '', ''));
   const [currentLabelName, setCurrentLabelName] = useState<string | null>(null);
+  const [labelNameMappings, setLabelNameMappings] = useState<LabelNameMapping[]>([]);
 
   const {loading: labelNamesLoading, result} = useLabelNames(queryClient, profileType);
   const {response: labelNamesResponse, error: labelNamesError} = result;
@@ -161,15 +177,21 @@ const MatchersInput = ({
       ? labelNamesResponse.labelNames.filter(e => e !== '__name__')
       : [];
   }, [labelNamesError, labelNamesResponse]);
-  const shouldTrimPrefix = utilizationLabels?.utilizationLabelNames !== undefined;
 
-  const labelNames =
-    utilizationLabels?.utilizationLabelNames !== undefined
-      ? utilizationLabels.utilizationLabelNames
-      : labelNamesFromAPI;
+  const shouldHandlePrefixes = utilizationLabels?.utilizationLabelNames !== undefined;
+
+  useEffect(() => {
+    const names = utilizationLabels?.utilizationLabelNames ?? labelNamesFromAPI;
+
+    setLabelNameMappings(createLabelNameMapping(names));
+  }, [labelNamesFromAPI, utilizationLabels?.utilizationLabelNames]);
+
+  const labelNames = useMemo(() => {
+    return shouldHandlePrefixes ? labelNameMappings.map(m => m.displayName) : labelNamesFromAPI;
+  }, [labelNameMappings, labelNamesFromAPI, shouldHandlePrefixes]);
 
   const labelValues =
-    utilizationLabels?.utilizationFetchLabelValues !== undefined
+    utilizationLabels?.utilizationFetchLabelValues != null
       ? utilizationLabelValues
       : labelValuesOriginal;
 
@@ -202,18 +224,36 @@ const MatchersInput = ({
           return label.toLowerCase().slice(0, inputLength) === inputValue;
         });
 
-        matches.forEach(m =>
-          suggestionSections.labelNames.push({
+        matches.forEach(m => {
+          const suggestion = {
             type: s.type,
             typeahead: s.typeahead,
             value: m,
-          })
-        );
+          };
+
+          if (shouldHandlePrefixes) {
+            const mapping = labelNameMappings.find(l => l.displayName === m);
+            if (mapping != null) {
+              (suggestion as any).fullName = mapping.fullName;
+            }
+          }
+
+          suggestionSections.labelNames.push(suggestion);
+        });
       }
 
       if (s.type === 'labelValue') {
-        if (currentLabelName === null || s.labelName !== currentLabelName) {
-          setCurrentLabelName(s.labelName);
+        let labelNameForQuery = s.labelName;
+
+        if (shouldHandlePrefixes) {
+          const mapping = labelNameMappings.find(l => l.displayName === s.labelName);
+          if (mapping != null) {
+            labelNameForQuery = mapping.fullName;
+          }
+        }
+
+        if (currentLabelName === null || labelNameForQuery !== currentLabelName) {
+          setCurrentLabelName(labelNameForQuery);
           return;
         }
 
@@ -231,7 +271,16 @@ const MatchersInput = ({
       }
     });
     return suggestionSections;
-  }, [currentQuery, lastCompleted, labelNames, labelValues, currentLabelName, value]);
+  }, [
+    currentQuery,
+    lastCompleted,
+    labelNames,
+    labelValues,
+    currentLabelName,
+    value,
+    shouldHandlePrefixes,
+    labelNameMappings,
+  ]);
 
   const resetLastCompleted = (): void => setLastCompleted(new Suggestion('', '', ''));
 
@@ -310,7 +359,7 @@ const MatchersInput = ({
         runQuery={runQuery}
         focusedInput={focusedInput}
         isLabelValuesLoading={labelValuesLoading && lastCompleted.type === 'literal'}
-        shouldTrimPrefix={shouldTrimPrefix}
+        shouldTrimPrefix={shouldHandlePrefixes}
       />
     </div>
   );
