@@ -66,7 +66,7 @@ export interface UtilizationMetrics {
 
 export interface UtilizationLabels {
   utilizationLabelNames?: string[];
-  utilizationFetchLabelValues?: (labelName: string) => void;
+  utilizationFetchLabelValues?: (key: string) => Promise<string[]>;
   utilizationLabelValues?: string[];
 }
 

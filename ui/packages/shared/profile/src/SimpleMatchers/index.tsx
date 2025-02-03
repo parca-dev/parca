@@ -134,8 +134,6 @@ const SimpleMatchers = ({
     return matchers.map(matcher => matcher.key);
   }, [currentQuery]);
 
-  // TODO: This is a temporary solution to use the label values from the query client or the utilization labels.
-  // We need to find a better solution to handle this. e.g. using a Context to pass the label values to the SimpleMatchers component.
   const fetchLabelValues = useCallback(
     async (labelName: string): Promise<string[]> => {
       if (labelName == null || labelName === '' || profileType == null || profileType === '') {
@@ -165,11 +163,11 @@ const SimpleMatchers = ({
     [queryClient, metadata, profileType, reactQueryClient]
   );
 
+  // TODO: This is a temporary solution to use the label values from the query client or the utilization labels.
+  // We need to find a better solution to handle this. e.g. using a Context to pass the label values to the SimpleMatchers component.
   const fetchLabelValuesUtilization = useCallback(
     async (labelName: string): Promise<string[]> => {
-      utilizationLabels?.utilizationFetchLabelValues?.(labelName);
-
-      return utilizationLabels?.utilizationLabelValues ?? [];
+      return (await utilizationLabels?.utilizationFetchLabelValues?.(labelName)) ?? [];
     },
     [utilizationLabels]
   );
