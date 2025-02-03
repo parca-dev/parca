@@ -22,7 +22,7 @@ import {useGrpcMetadata} from '@parca/components';
 import {Query} from '@parca/parser';
 import {sanitizeLabelValue} from '@parca/utilities';
 
-import {useLabelNames} from '../MatchersInput';
+import {LabelProvider, useLabels} from '../contexts/SimpleMatchersLabelContext';
 import {useUtilizationLabels} from '../contexts/UtilizationLabelsContext';
 import Select, {type SelectItem} from './Select';
 
@@ -43,7 +43,10 @@ interface QueryRow {
   isLoading: boolean;
 }
 
-const transformLabelsForSelect = (labelNames: string[], shouldTrimPrefix = false): SelectItem[] => {
+export const transformLabelsForSelect = (
+  labelNames: string[],
+  shouldTrimPrefix = false
+): SelectItem[] => {
   return labelNames.map(labelName => ({
     key: labelName,
     element: {
@@ -114,8 +117,6 @@ const SimpleMatchers = ({
   const reactQueryClient = useQueryClient();
   const metadata = useGrpcMetadata();
 
-  const {loading: labelNamesLoading, result} = useLabelNames(queryClient, profileType);
-  const {response: labelNamesResponse, error: labelNamesError} = result;
   const [showAll, setShowAll] = useState(false);
 
   const visibleRows = showAll ? queryRows : queryRows.slice(0, 3);
@@ -124,14 +125,6 @@ const SimpleMatchers = ({
   const maxWidthInPixels = `max-w-[${queryBrowserRef.current?.offsetWidth.toString() as string}px]`;
 
   const currentMatchers = currentQuery.matchersString();
-
-  const labelNameFromMatchers = useMemo(() => {
-    if (currentQuery === undefined) return [];
-
-    const matchers = currentQuery.matchers;
-
-    return matchers.map(matcher => matcher.key);
-  }, [currentQuery]);
 
   const fetchLabelValues = useCallback(
     async (labelName: string): Promise<string[]> => {
@@ -162,8 +155,6 @@ const SimpleMatchers = ({
     [queryClient, metadata, profileType, reactQueryClient]
   );
 
-  // TODO: This is a temporary solution to use the label values from the query client or the utilization labels.
-  // We need to find a better solution to handle this. e.g. using a Context to pass the label values to the SimpleMatchers component.
   const fetchLabelValuesUtilization = useCallback(
     async (labelName: string): Promise<string[]> => {
       return (await utilizationLabels?.utilizationFetchLabelValues?.(labelName)) ?? [];
@@ -229,28 +220,7 @@ const SimpleMatchers = ({
     utilizationLabels,
   ]);
 
-  const labelNames = useMemo(() => {
-    return (labelNamesError === undefined || labelNamesError == null) &&
-      labelNamesResponse !== undefined &&
-      labelNamesResponse != null
-      ? labelNamesResponse.labelNames.filter(e => e !== '__name__')
-      : [];
-  }, [labelNamesError, labelNamesResponse]);
-
-  // TODO: This is a temporary solution to use the utilization label names if they are available.
-  // We need to find a better solution to handle this. e.g. using a Context to pass the label names to the SimpleMatchers component.
-  const labelNamesToUse =
-    utilizationLabels?.utilizationLabelNames !== undefined &&
-    utilizationLabels.utilizationLabelNames.length > 0 &&
-    utilizationLabels.utilizationLabelNames !== null
-      ? utilizationLabels.utilizationLabelNames
-      : labelNames;
-
-  const labelNameOptions = useMemo(() => {
-    const uniqueLabelNames = Array.from(new Set([...labelNamesToUse, ...labelNameFromMatchers]));
-    const shouldTrimPrefix = utilizationLabels?.utilizationLabelNames !== undefined;
-    return transformLabelsForSelect(uniqueLabelNames, shouldTrimPrefix);
-  }, [labelNamesToUse, labelNameFromMatchers, utilizationLabels]);
+  const {labelNameOptions, isLoading: labelNamesLoading} = useLabels();
 
   const updateRow = useCallback(
     async (index: number, field: keyof QueryRow, value: string): Promise<void> => {
@@ -419,4 +389,22 @@ const SimpleMatchers = ({
   );
 };
 
-export default SimpleMatchers;
+export default function SimpleMathersWithProvider(props: Props): JSX.Element {
+  const labelNameFromMatchers = useMemo(() => {
+    if (props.currentQuery === undefined) return [];
+
+    const matchers = props.currentQuery.matchers;
+
+    return matchers.map(matcher => matcher.key);
+  }, [props.currentQuery]);
+
+  return (
+    <LabelProvider
+      queryClient={props.queryClient}
+      profileType={props.profileType}
+      labelNameFromMatchers={labelNameFromMatchers}
+    >
+      <SimpleMatchers {...props} />
+    </LabelProvider>
+  );
+}
