@@ -23,7 +23,7 @@ import {Query} from '@parca/parser';
 import {sanitizeLabelValue} from '@parca/utilities';
 
 import {useLabelNames} from '../MatchersInput';
-import {UtilizationLabels} from '../ProfileSelector';
+import {useUtilizationLabels} from '../contexts/UtilizationLabelsContext';
 import Select, {type SelectItem} from './Select';
 
 interface Props {
@@ -32,7 +32,6 @@ interface Props {
   runQuery: () => void;
   currentQuery: Query;
   profileType: string;
-  utilizationLabels?: UtilizationLabels;
   queryBrowserRef: React.RefObject<HTMLDivElement>;
 }
 
@@ -107,8 +106,8 @@ const SimpleMatchers = ({
   currentQuery,
   profileType,
   queryBrowserRef,
-  utilizationLabels,
 }: Props): JSX.Element => {
+  const utilizationLabels = useUtilizationLabels();
   const [queryRows, setQueryRows] = useState<QueryRow[]>([
     {labelName: '', operator: '=', labelValue: '', labelValues: [], isLoading: false},
   ]);

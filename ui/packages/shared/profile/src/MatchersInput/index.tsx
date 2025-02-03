@@ -23,6 +23,7 @@ import {Query} from '@parca/parser';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
 import {UtilizationLabels} from '../ProfileSelector';
+import {useUtilizationLabels} from '../contexts/UtilizationLabelsContext';
 import useGrpcQuery from '../useGrpcQuery';
 import SuggestionsList, {Suggestion, Suggestions} from './SuggestionsList';
 
@@ -32,7 +33,6 @@ interface MatchersInputProps {
   runQuery: () => void;
   currentQuery: Query;
   profileType: string;
-  utilizationLabels?: UtilizationLabels;
 }
 
 export interface ILabelNamesResult {
@@ -149,13 +149,13 @@ const MatchersInput = ({
   runQuery,
   currentQuery,
   profileType,
-  utilizationLabels,
 }: MatchersInputProps): JSX.Element => {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const [focusedInput, setFocusedInput] = useState(false);
   const [lastCompleted, setLastCompleted] = useState<Suggestion>(new Suggestion('', '', ''));
   const [currentLabelName, setCurrentLabelName] = useState<string | null>(null);
   const [labelNameMappings, setLabelNameMappings] = useState<LabelNameMapping[]>([]);
+  const utilizationLabels = useUtilizationLabels();
 
   const {loading: labelNamesLoading, result} = useLabelNames(queryClient, profileType);
   const {response: labelNamesResponse, error: labelNamesError} = result;

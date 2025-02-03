@@ -23,7 +23,7 @@ import MatchersInput from '../MatchersInput';
 import ProfileTypeSelector from '../ProfileTypeSelector';
 import SimpleMatchers from '../SimpleMatchers';
 import ViewMatchers from '../ViewMatchers';
-import {UtilizationLabels} from './index';
+import {UtilizationLabels} from '../contexts/UtilizationLabelsContext';
 
 interface SelectOption {
   label: string;
@@ -62,7 +62,6 @@ interface QueryControlsProps {
   setUserSumBySelection: (sumBy: string[]) => void;
   sumByRef: React.RefObject<SelectInstance>;
   profileType: ProfileType;
-  utilizationLabels?: UtilizationLabels;
 }
 
 export function QueryControls({
@@ -90,7 +89,6 @@ export function QueryControls({
   profileType,
   showSumBySelector,
   profileTypesError,
-  utilizationLabels,
 }: QueryControlsProps): JSX.Element {
   return (
     <div className="flex w-full flex-wrap items-start gap-2">
@@ -156,7 +154,6 @@ export function QueryControls({
             currentQuery={query}
             profileType={selectedProfileName}
             queryClient={queryClient}
-            utilizationLabels={utilizationLabels}
           />
         ) : (
           <SimpleMatchers
@@ -166,7 +163,6 @@ export function QueryControls({
             profileType={selectedProfileName}
             queryBrowserRef={queryBrowserRef}
             queryClient={queryClient}
-            utilizationLabels={utilizationLabels}
           />
         )}
       </div>
