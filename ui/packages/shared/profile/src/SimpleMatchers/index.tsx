@@ -22,7 +22,8 @@ import {useGrpcMetadata} from '@parca/components';
 import {Query} from '@parca/parser';
 import {sanitizeLabelValue} from '@parca/utilities';
 
-import {useLabelNames} from '../MatchersInput';
+import {LabelProvider, useLabels} from '../contexts/SimpleMatchersLabelContext';
+import {useUtilizationLabels} from '../contexts/UtilizationLabelsContext';
 import Select, {type SelectItem} from './Select';
 
 interface Props {
@@ -42,10 +43,16 @@ interface QueryRow {
   isLoading: boolean;
 }
 
-const transformLabelsForSelect = (labelNames: string[]): SelectItem[] => {
+export const transformLabelsForSelect = (
+  labelNames: string[],
+  shouldTrimPrefix = false
+): SelectItem[] => {
   return labelNames.map(labelName => ({
     key: labelName,
-    element: {active: <>{labelName}</>, expanded: <>{labelName}</>},
+    element: {
+      active: <>{shouldTrimPrefix ? labelName.split('.').pop() : labelName}</>,
+      expanded: <>{shouldTrimPrefix ? labelName.split('.').pop() : labelName}</>,
+    },
   }));
 };
 
@@ -99,19 +106,17 @@ const operatorOptions = [
 const SimpleMatchers = ({
   queryClient,
   setMatchersString,
-  // runQuery,
   currentQuery,
   profileType,
   queryBrowserRef,
 }: Props): JSX.Element => {
+  const utilizationLabels = useUtilizationLabels();
   const [queryRows, setQueryRows] = useState<QueryRow[]>([
     {labelName: '', operator: '=', labelValue: '', labelValues: [], isLoading: false},
   ]);
   const reactQueryClient = useQueryClient();
   const metadata = useGrpcMetadata();
 
-  const {loading: labelNamesLoading, result} = useLabelNames(queryClient, profileType);
-  const {response: labelNamesResponse, error: labelNamesError} = result;
   const [showAll, setShowAll] = useState(false);
 
   const visibleRows = showAll ? queryRows : queryRows.slice(0, 3);
@@ -120,14 +125,6 @@ const SimpleMatchers = ({
   const maxWidthInPixels = `max-w-[${queryBrowserRef.current?.offsetWidth.toString() as string}px]`;
 
   const currentMatchers = currentQuery.matchersString();
-
-  const labelNameFromMatchers = useMemo(() => {
-    if (currentQuery === undefined) return [];
-
-    const matchers = currentQuery.matchers;
-
-    return matchers.map(matcher => matcher.key);
-  }, [currentQuery]);
 
   const fetchLabelValues = useCallback(
     async (labelName: string): Promise<string[]> => {
@@ -158,6 +155,13 @@ const SimpleMatchers = ({
     [queryClient, metadata, profileType, reactQueryClient]
   );
 
+  const fetchLabelValuesUtilization = useCallback(
+    async (labelName: string): Promise<string[]> => {
+      return (await utilizationLabels?.utilizationFetchLabelValues?.(labelName)) ?? [];
+    },
+    [utilizationLabels]
+  );
+
   const updateMatchersString = useCallback(
     (rows: QueryRow[]) => {
       const matcherString = rows
@@ -184,7 +188,10 @@ const SimpleMatchers = ({
           const trimmedLabelName = labelName.trim();
           if (trimmedLabelName === '') return null;
 
-          const labelValues = await fetchLabelValues(trimmedLabelName);
+          const labelValues =
+            utilizationLabels?.utilizationFetchLabelValues !== undefined
+              ? await fetchLabelValuesUtilization(trimmedLabelName)
+              : await fetchLabelValues(trimmedLabelName);
           const sanitizedLabelValue =
             labelValue.startsWith('"') && labelValue.endsWith('"')
               ? labelValue.slice(1, -1)
@@ -205,20 +212,15 @@ const SimpleMatchers = ({
     };
 
     void fetchAndSetQueryRows();
-  }, [currentMatchers, fetchLabelValues, updateMatchersString]);
+  }, [
+    currentMatchers,
+    fetchLabelValues,
+    updateMatchersString,
+    fetchLabelValuesUtilization,
+    utilizationLabels,
+  ]);
 
-  const labelNames = useMemo(() => {
-    return (labelNamesError === undefined || labelNamesError == null) &&
-      labelNamesResponse !== undefined &&
-      labelNamesResponse != null
-      ? labelNamesResponse.labelNames.filter(e => e !== '__name__')
-      : [];
-  }, [labelNamesError, labelNamesResponse]);
-
-  const labelNameOptions = useMemo(() => {
-    const uniqueLabelNames = Array.from(new Set([...labelNames, ...labelNameFromMatchers]));
-    return transformLabelsForSelect(uniqueLabelNames);
-  }, [labelNames, labelNameFromMatchers]);
+  const {labelNameOptions, isLoading: labelNamesLoading} = useLabels();
 
   const updateRow = useCallback(
     async (index: number, field: keyof QueryRow, value: string): Promise<void> => {
@@ -232,7 +234,10 @@ const SimpleMatchers = ({
         updatedRows[index].isLoading = true;
         setQueryRows([...updatedRows]);
 
-        const labelValues = await fetchLabelValues(value);
+        const labelValues =
+          utilizationLabels?.utilizationFetchLabelValues !== undefined
+            ? await fetchLabelValuesUtilization(value)
+            : await fetchLabelValues(value);
         updatedRows[index].labelValues = labelValues;
         updatedRows[index].isLoading = false;
       }
@@ -240,7 +245,13 @@ const SimpleMatchers = ({
       setQueryRows([...updatedRows]);
       updateMatchersString(updatedRows);
     },
-    [queryRows, fetchLabelValues, updateMatchersString]
+    [
+      queryRows,
+      fetchLabelValues,
+      updateMatchersString,
+      fetchLabelValuesUtilization,
+      utilizationLabels,
+    ]
   );
 
   const handleUpdateRow = useCallback(
@@ -290,7 +301,10 @@ const SimpleMatchers = ({
           setQueryRows([...updatedRows]);
 
           try {
-            const labelValues = await fetchLabelValues(updatedRows[index].labelName);
+            const labelValues =
+              utilizationLabels?.utilizationFetchLabelValues !== undefined
+                ? await fetchLabelValuesUtilization(updatedRows[index].labelName)
+                : await fetchLabelValues(updatedRows[index].labelName);
             updatedRows[index].labelValues = labelValues;
           } catch (error) {
             console.error('Error fetching label values:', error);
@@ -303,7 +317,7 @@ const SimpleMatchers = ({
         }
       };
     },
-    [queryRows, fetchLabelValues]
+    [queryRows, fetchLabelValues, fetchLabelValuesUtilization, utilizationLabels]
   );
 
   const isRowRegex = (row: QueryRow): boolean => row.operator === '=~' || row.operator === '!~';
@@ -375,4 +389,22 @@ const SimpleMatchers = ({
   );
 };
 
-export default SimpleMatchers;
+export default function SimpleMathersWithProvider(props: Props): JSX.Element {
+  const labelNameFromMatchers = useMemo(() => {
+    if (props.currentQuery === undefined) return [];
+
+    const matchers = props.currentQuery.matchers;
+
+    return matchers.map(matcher => matcher.key);
+  }, [props.currentQuery]);
+
+  return (
+    <LabelProvider
+      queryClient={props.queryClient}
+      profileType={props.profileType}
+      labelNameFromMatchers={labelNameFromMatchers}
+    >
+      <SimpleMatchers {...props} />
+    </LabelProvider>
+  );
+}

@@ -13,6 +13,7 @@
 
 import React, {useMemo, useRef, useState} from 'react';
 
+import {useQuery} from '@tanstack/react-query';
 import cx from 'classnames';
 import TextareaAutosize from 'react-textarea-autosize';
 
@@ -21,6 +22,8 @@ import {useGrpcMetadata} from '@parca/components';
 import {Query} from '@parca/parser';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
+import {UtilizationLabels} from '../ProfileSelector';
+import {LabelsProvider, useLabels} from '../contexts/MatchersInputLabelsContext';
 import useGrpcQuery from '../useGrpcQuery';
 import SuggestionsList, {Suggestion, Suggestions} from './SuggestionsList';
 
@@ -111,33 +114,39 @@ export const useLabelValues = (
   return {result: {response: data ?? [], error: error as Error}, loading: isLoading};
 };
 
+export const useFetchUtilizationLabelValues = (
+  labelName: string,
+  utilizationLabels?: UtilizationLabels
+): string[] => {
+  const {data} = useQuery({
+    queryKey: ['utilizationLabelValues', labelName],
+    queryFn: async () => {
+      return await utilizationLabels?.utilizationFetchLabelValues?.(labelName);
+    },
+  });
+
+  return data ?? [];
+};
+
 const MatchersInput = ({
-  queryClient,
   setMatchersString,
   runQuery,
   currentQuery,
-  profileType,
 }: MatchersInputProps): JSX.Element => {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const [focusedInput, setFocusedInput] = useState(false);
   const [lastCompleted, setLastCompleted] = useState<Suggestion>(new Suggestion('', '', ''));
-  const [currentLabelName, setCurrentLabelName] = useState<string | null>(null);
-
-  const {loading: labelNamesLoading, result} = useLabelNames(queryClient, profileType);
-  const {response: labelNamesResponse, error: labelNamesError} = result;
 
   const {
-    loading: labelValuesLoading,
-    result: {response: labelValues},
-  } = useLabelValues(queryClient, currentLabelName ?? '', profileType);
-
-  const labelNames = useMemo(() => {
-    return (labelNamesError === undefined || labelNamesError == null) &&
-      labelNamesResponse !== undefined &&
-      labelNamesResponse != null
-      ? labelNamesResponse.labelNames.filter(e => e !== '__name__')
-      : [];
-  }, [labelNamesError, labelNamesResponse]);
+    labelNames,
+    labelValues,
+    labelNameMappings,
+    isLabelNamesLoading,
+    isLabelValuesLoading,
+    currentLabelName,
+    setCurrentLabelName,
+    shouldHandlePrefixes,
+  } = useLabels();
 
   const value = currentQuery.matchersString();
 
@@ -168,18 +177,36 @@ const MatchersInput = ({
           return label.toLowerCase().slice(0, inputLength) === inputValue;
         });
 
-        matches.forEach(m =>
-          suggestionSections.labelNames.push({
+        matches.forEach(m => {
+          const suggestion = {
             type: s.type,
             typeahead: s.typeahead,
             value: m,
-          })
-        );
+          };
+
+          if (shouldHandlePrefixes) {
+            const mapping = labelNameMappings.find(l => l.displayName === m);
+            if (mapping != null) {
+              (suggestion as any).fullName = mapping.fullName;
+            }
+          }
+
+          suggestionSections.labelNames.push(suggestion);
+        });
       }
 
       if (s.type === 'labelValue') {
-        if (currentLabelName === null || s.labelName !== currentLabelName) {
-          setCurrentLabelName(s.labelName);
+        let labelNameForQuery = s.labelName;
+
+        if (shouldHandlePrefixes) {
+          const mapping = labelNameMappings.find(l => l.displayName === s.labelName);
+          if (mapping != null) {
+            labelNameForQuery = mapping.fullName;
+          }
+        }
+
+        if (currentLabelName === null || labelNameForQuery !== currentLabelName) {
+          setCurrentLabelName(labelNameForQuery);
           return;
         }
 
@@ -197,7 +224,17 @@ const MatchersInput = ({
       }
     });
     return suggestionSections;
-  }, [currentQuery, lastCompleted, labelNames, labelValues, currentLabelName, value]);
+  }, [
+    currentQuery,
+    lastCompleted,
+    labelNames,
+    labelValues,
+    currentLabelName,
+    value,
+    shouldHandlePrefixes,
+    labelNameMappings,
+    setCurrentLabelName,
+  ]);
 
   const resetLastCompleted = (): void => setLastCompleted(new Suggestion('', '', ''));
 
@@ -269,16 +306,23 @@ const MatchersInput = ({
         id="matchers-input"
       />
       <SuggestionsList
-        isLabelNamesLoading={labelNamesLoading}
+        isLabelNamesLoading={isLabelNamesLoading}
         suggestions={suggestionSections}
         applySuggestion={applySuggestion}
         inputRef={inputRef.current}
         runQuery={runQuery}
         focusedInput={focusedInput}
-        isLabelValuesLoading={labelValuesLoading && lastCompleted.type === 'literal'}
+        isLabelValuesLoading={isLabelValuesLoading && lastCompleted.type === 'literal'}
+        shouldTrimPrefix={shouldHandlePrefixes}
       />
     </div>
   );
 };
 
-export default MatchersInput;
+export default function MatchersInputWithProvider(props: MatchersInputProps): JSX.Element {
+  return (
+    <LabelsProvider queryClient={props.queryClient} profileType={props.profileType}>
+      <MatchersInput {...props} />
+    </LabelsProvider>
+  );
+}
