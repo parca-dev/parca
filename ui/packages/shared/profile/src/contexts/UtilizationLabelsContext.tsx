@@ -24,6 +24,9 @@ interface UtilizationLabelsProviderProps {
   value: UtilizationLabels | undefined;
 }
 
+// The UtilizationLabelsContext is used to store the utilization label names and values. It also
+// contains the function utilizationFetchLabelValues to fetch the utilization label values.
+// This context was created so as to avoid props drilling.
 const UtilizationLabelsContext = createContext<UtilizationLabels | undefined>(undefined);
 
 export function UtilizationLabelsProvider({

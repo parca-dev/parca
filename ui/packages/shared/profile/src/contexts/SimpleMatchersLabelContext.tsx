@@ -35,6 +35,9 @@ interface LabelProviderProps {
   labelNameFromMatchers: string[];
 }
 
+// With there being the possibility of having utilization labels, we need to be able to determine whether the labels to be used are utilization labels or profiling data labels.
+// This context is used to determine this.
+
 export function LabelProvider({
   children,
   queryClient,

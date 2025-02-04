@@ -23,7 +23,6 @@ import MatchersInput from '../MatchersInput';
 import ProfileTypeSelector from '../ProfileTypeSelector';
 import SimpleMatchers from '../SimpleMatchers';
 import ViewMatchers from '../ViewMatchers';
-import {UtilizationLabels} from '../contexts/UtilizationLabelsContext';
 
 interface SelectOption {
   label: string;
