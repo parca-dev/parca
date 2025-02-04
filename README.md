@@ -98,6 +98,8 @@ Flags:
                                  logfmt
       --otlp-address=STRING      The endpoint to send OTLP traces to.
       --otlp-exporter="grpc"     The OTLP exporter to use.
+      --otlp-insecure            If true, disables TLS for OTLP exporters (both
+                                 gRPC and HTTP).
       --cors-allowed-origins=CORS-ALLOWED-ORIGINS,...
                                  Allowed CORS origins.
       --version                  Show application version.
