@@ -10,6 +10,7 @@ package metastorev1alpha1
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 
@@ -24,271 +25,254 @@ import (
 )
 
 // Suppress "imported and not used" errors
-var _ codes.Code
-var _ io.Reader
-var _ status.Status
-var _ = runtime.String
-var _ = utilities.NewDoubleArray
-var _ = metadata.Join
+var (
+	_ codes.Code
+	_ io.Reader
+	_ status.Status
+	_ = errors.New
+	_ = runtime.String
+	_ = utilities.NewDoubleArray
+	_ = metadata.Join
+)
 
 func request_MetastoreService_GetOrCreateMappings_0(ctx context.Context, marshaler runtime.Marshaler, client MetastoreServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetOrCreateMappingsRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq GetOrCreateMappingsRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.GetOrCreateMappings(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_MetastoreService_GetOrCreateMappings_0(ctx context.Context, marshaler runtime.Marshaler, server MetastoreServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetOrCreateMappingsRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq GetOrCreateMappingsRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.GetOrCreateMappings(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_MetastoreService_GetOrCreateFunctions_0(ctx context.Context, marshaler runtime.Marshaler, client MetastoreServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetOrCreateFunctionsRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq GetOrCreateFunctionsRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.GetOrCreateFunctions(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_MetastoreService_GetOrCreateFunctions_0(ctx context.Context, marshaler runtime.Marshaler, server MetastoreServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetOrCreateFunctionsRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq GetOrCreateFunctionsRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.GetOrCreateFunctions(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_MetastoreService_GetOrCreateLocations_0(ctx context.Context, marshaler runtime.Marshaler, client MetastoreServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetOrCreateLocationsRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq GetOrCreateLocationsRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.GetOrCreateLocations(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_MetastoreService_GetOrCreateLocations_0(ctx context.Context, marshaler runtime.Marshaler, server MetastoreServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetOrCreateLocationsRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq GetOrCreateLocationsRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.GetOrCreateLocations(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_MetastoreService_GetOrCreateStacktraces_0(ctx context.Context, marshaler runtime.Marshaler, client MetastoreServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetOrCreateStacktracesRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq GetOrCreateStacktracesRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.GetOrCreateStacktraces(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_MetastoreService_GetOrCreateStacktraces_0(ctx context.Context, marshaler runtime.Marshaler, server MetastoreServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetOrCreateStacktracesRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq GetOrCreateStacktracesRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.GetOrCreateStacktraces(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_MetastoreService_UnsymbolizedLocations_0(ctx context.Context, marshaler runtime.Marshaler, client MetastoreServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq UnsymbolizedLocationsRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq UnsymbolizedLocationsRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.UnsymbolizedLocations(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_MetastoreService_UnsymbolizedLocations_0(ctx context.Context, marshaler runtime.Marshaler, server MetastoreServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq UnsymbolizedLocationsRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq UnsymbolizedLocationsRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.UnsymbolizedLocations(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_MetastoreService_CreateLocationLines_0(ctx context.Context, marshaler runtime.Marshaler, client MetastoreServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq CreateLocationLinesRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq CreateLocationLinesRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.CreateLocationLines(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_MetastoreService_CreateLocationLines_0(ctx context.Context, marshaler runtime.Marshaler, server MetastoreServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq CreateLocationLinesRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq CreateLocationLinesRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.CreateLocationLines(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_MetastoreService_Locations_0(ctx context.Context, marshaler runtime.Marshaler, client MetastoreServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq LocationsRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq LocationsRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.Locations(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_MetastoreService_Locations_0(ctx context.Context, marshaler runtime.Marshaler, server MetastoreServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq LocationsRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq LocationsRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.Locations(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_MetastoreService_Functions_0(ctx context.Context, marshaler runtime.Marshaler, client MetastoreServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq FunctionsRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq FunctionsRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.Functions(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_MetastoreService_Functions_0(ctx context.Context, marshaler runtime.Marshaler, server MetastoreServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq FunctionsRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq FunctionsRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.Functions(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_MetastoreService_Mappings_0(ctx context.Context, marshaler runtime.Marshaler, client MetastoreServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq MappingsRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq MappingsRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.Mappings(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_MetastoreService_Mappings_0(ctx context.Context, marshaler runtime.Marshaler, server MetastoreServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq MappingsRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq MappingsRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.Mappings(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_MetastoreService_Stacktraces_0(ctx context.Context, marshaler runtime.Marshaler, client MetastoreServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq StacktracesRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq StacktracesRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.Stacktraces(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_MetastoreService_Stacktraces_0(ctx context.Context, marshaler runtime.Marshaler, server MetastoreServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq StacktracesRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq StacktracesRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.Stacktraces(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 // RegisterMetastoreServiceHandlerServer registers the http handlers for service MetastoreService to "mux".
@@ -297,16 +281,13 @@ func local_request_MetastoreService_Stacktraces_0(ctx context.Context, marshaler
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterMetastoreServiceHandlerFromEndpoint instead.
 // GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterMetastoreServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server MetastoreServiceServer) error {
-
-	mux.Handle("POST", pattern_MetastoreService_GetOrCreateMappings_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_MetastoreService_GetOrCreateMappings_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateMappings", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/GetOrCreateMappings"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateMappings", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/GetOrCreateMappings"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -318,20 +299,15 @@ func RegisterMetastoreServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_MetastoreService_GetOrCreateMappings_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_MetastoreService_GetOrCreateFunctions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_MetastoreService_GetOrCreateFunctions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateFunctions", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/GetOrCreateFunctions"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateFunctions", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/GetOrCreateFunctions"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -343,20 +319,15 @@ func RegisterMetastoreServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_MetastoreService_GetOrCreateFunctions_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_MetastoreService_GetOrCreateLocations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_MetastoreService_GetOrCreateLocations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateLocations", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/GetOrCreateLocations"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateLocations", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/GetOrCreateLocations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -368,20 +339,15 @@ func RegisterMetastoreServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_MetastoreService_GetOrCreateLocations_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_MetastoreService_GetOrCreateStacktraces_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_MetastoreService_GetOrCreateStacktraces_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateStacktraces", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/GetOrCreateStacktraces"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateStacktraces", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/GetOrCreateStacktraces"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -393,20 +359,15 @@ func RegisterMetastoreServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_MetastoreService_GetOrCreateStacktraces_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_MetastoreService_UnsymbolizedLocations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_MetastoreService_UnsymbolizedLocations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/UnsymbolizedLocations", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/UnsymbolizedLocations"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/UnsymbolizedLocations", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/UnsymbolizedLocations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -418,20 +379,15 @@ func RegisterMetastoreServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_MetastoreService_UnsymbolizedLocations_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_MetastoreService_CreateLocationLines_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_MetastoreService_CreateLocationLines_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/CreateLocationLines", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/CreateLocationLines"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/CreateLocationLines", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/CreateLocationLines"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -443,20 +399,15 @@ func RegisterMetastoreServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_MetastoreService_CreateLocationLines_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_MetastoreService_Locations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_MetastoreService_Locations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Locations", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/Locations"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Locations", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/Locations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -468,20 +419,15 @@ func RegisterMetastoreServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_MetastoreService_Locations_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_MetastoreService_Functions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_MetastoreService_Functions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Functions", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/Functions"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Functions", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/Functions"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -493,20 +439,15 @@ func RegisterMetastoreServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_MetastoreService_Functions_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_MetastoreService_Mappings_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_MetastoreService_Mappings_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Mappings", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/Mappings"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Mappings", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/Mappings"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -518,20 +459,15 @@ func RegisterMetastoreServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_MetastoreService_Mappings_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_MetastoreService_Stacktraces_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_MetastoreService_Stacktraces_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Stacktraces", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/Stacktraces"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Stacktraces", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/Stacktraces"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -543,9 +479,7 @@ func RegisterMetastoreServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_MetastoreService_Stacktraces_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
 
 	return nil
@@ -572,7 +506,6 @@ func RegisterMetastoreServiceHandlerFromEndpoint(ctx context.Context, mux *runti
 			}
 		}()
 	}()
-
 	return RegisterMetastoreServiceHandler(ctx, mux, conn)
 }
 
@@ -588,14 +521,11 @@ func RegisterMetastoreServiceHandler(ctx context.Context, mux *runtime.ServeMux,
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
 // "MetastoreServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterMetastoreServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client MetastoreServiceClient) error {
-
-	mux.Handle("POST", pattern_MetastoreService_GetOrCreateMappings_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_MetastoreService_GetOrCreateMappings_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateMappings", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/GetOrCreateMappings"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateMappings", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/GetOrCreateMappings"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -606,18 +536,13 @@ func RegisterMetastoreServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_MetastoreService_GetOrCreateMappings_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_MetastoreService_GetOrCreateFunctions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_MetastoreService_GetOrCreateFunctions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateFunctions", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/GetOrCreateFunctions"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateFunctions", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/GetOrCreateFunctions"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -628,18 +553,13 @@ func RegisterMetastoreServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_MetastoreService_GetOrCreateFunctions_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_MetastoreService_GetOrCreateLocations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_MetastoreService_GetOrCreateLocations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateLocations", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/GetOrCreateLocations"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateLocations", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/GetOrCreateLocations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -650,18 +570,13 @@ func RegisterMetastoreServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_MetastoreService_GetOrCreateLocations_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_MetastoreService_GetOrCreateStacktraces_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_MetastoreService_GetOrCreateStacktraces_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateStacktraces", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/GetOrCreateStacktraces"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/GetOrCreateStacktraces", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/GetOrCreateStacktraces"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -672,18 +587,13 @@ func RegisterMetastoreServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_MetastoreService_GetOrCreateStacktraces_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_MetastoreService_UnsymbolizedLocations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_MetastoreService_UnsymbolizedLocations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/UnsymbolizedLocations", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/UnsymbolizedLocations"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/UnsymbolizedLocations", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/UnsymbolizedLocations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -694,18 +604,13 @@ func RegisterMetastoreServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_MetastoreService_UnsymbolizedLocations_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_MetastoreService_CreateLocationLines_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_MetastoreService_CreateLocationLines_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/CreateLocationLines", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/CreateLocationLines"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/CreateLocationLines", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/CreateLocationLines"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -716,18 +621,13 @@ func RegisterMetastoreServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_MetastoreService_CreateLocationLines_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_MetastoreService_Locations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_MetastoreService_Locations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Locations", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/Locations"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Locations", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/Locations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -738,18 +638,13 @@ func RegisterMetastoreServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_MetastoreService_Locations_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_MetastoreService_Functions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_MetastoreService_Functions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Functions", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/Functions"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Functions", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/Functions"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -760,18 +655,13 @@ func RegisterMetastoreServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_MetastoreService_Functions_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_MetastoreService_Mappings_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_MetastoreService_Mappings_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Mappings", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/Mappings"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Mappings", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/Mappings"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -782,18 +672,13 @@ func RegisterMetastoreServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_MetastoreService_Mappings_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_MetastoreService_Stacktraces_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_MetastoreService_Stacktraces_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Stacktraces", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/Stacktraces"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.metastore.v1alpha1.MetastoreService/Stacktraces", runtime.WithHTTPPathPattern("/parca.metastore.v1alpha1.MetastoreService/Stacktraces"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -804,54 +689,33 @@ func RegisterMetastoreServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_MetastoreService_Stacktraces_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
 	return nil
 }
 
 var (
-	pattern_MetastoreService_GetOrCreateMappings_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "GetOrCreateMappings"}, ""))
-
-	pattern_MetastoreService_GetOrCreateFunctions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "GetOrCreateFunctions"}, ""))
-
-	pattern_MetastoreService_GetOrCreateLocations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "GetOrCreateLocations"}, ""))
-
+	pattern_MetastoreService_GetOrCreateMappings_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "GetOrCreateMappings"}, ""))
+	pattern_MetastoreService_GetOrCreateFunctions_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "GetOrCreateFunctions"}, ""))
+	pattern_MetastoreService_GetOrCreateLocations_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "GetOrCreateLocations"}, ""))
 	pattern_MetastoreService_GetOrCreateStacktraces_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "GetOrCreateStacktraces"}, ""))
-
-	pattern_MetastoreService_UnsymbolizedLocations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "UnsymbolizedLocations"}, ""))
-
-	pattern_MetastoreService_CreateLocationLines_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "CreateLocationLines"}, ""))
-
-	pattern_MetastoreService_Locations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "Locations"}, ""))
-
-	pattern_MetastoreService_Functions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "Functions"}, ""))
-
-	pattern_MetastoreService_Mappings_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "Mappings"}, ""))
-
-	pattern_MetastoreService_Stacktraces_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "Stacktraces"}, ""))
+	pattern_MetastoreService_UnsymbolizedLocations_0  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "UnsymbolizedLocations"}, ""))
+	pattern_MetastoreService_CreateLocationLines_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "CreateLocationLines"}, ""))
+	pattern_MetastoreService_Locations_0              = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "Locations"}, ""))
+	pattern_MetastoreService_Functions_0              = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "Functions"}, ""))
+	pattern_MetastoreService_Mappings_0               = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "Mappings"}, ""))
+	pattern_MetastoreService_Stacktraces_0            = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"parca.metastore.v1alpha1.MetastoreService", "Stacktraces"}, ""))
 )
 
 var (
-	forward_MetastoreService_GetOrCreateMappings_0 = runtime.ForwardResponseMessage
-
-	forward_MetastoreService_GetOrCreateFunctions_0 = runtime.ForwardResponseMessage
-
-	forward_MetastoreService_GetOrCreateLocations_0 = runtime.ForwardResponseMessage
-
+	forward_MetastoreService_GetOrCreateMappings_0    = runtime.ForwardResponseMessage
+	forward_MetastoreService_GetOrCreateFunctions_0   = runtime.ForwardResponseMessage
+	forward_MetastoreService_GetOrCreateLocations_0   = runtime.ForwardResponseMessage
 	forward_MetastoreService_GetOrCreateStacktraces_0 = runtime.ForwardResponseMessage
-
-	forward_MetastoreService_UnsymbolizedLocations_0 = runtime.ForwardResponseMessage
-
-	forward_MetastoreService_CreateLocationLines_0 = runtime.ForwardResponseMessage
-
-	forward_MetastoreService_Locations_0 = runtime.ForwardResponseMessage
-
-	forward_MetastoreService_Functions_0 = runtime.ForwardResponseMessage
-
-	forward_MetastoreService_Mappings_0 = runtime.ForwardResponseMessage
-
-	forward_MetastoreService_Stacktraces_0 = runtime.ForwardResponseMessage
+	forward_MetastoreService_UnsymbolizedLocations_0  = runtime.ForwardResponseMessage
+	forward_MetastoreService_CreateLocationLines_0    = runtime.ForwardResponseMessage
+	forward_MetastoreService_Locations_0              = runtime.ForwardResponseMessage
+	forward_MetastoreService_Functions_0              = runtime.ForwardResponseMessage
+	forward_MetastoreService_Mappings_0               = runtime.ForwardResponseMessage
+	forward_MetastoreService_Stacktraces_0            = runtime.ForwardResponseMessage
 )

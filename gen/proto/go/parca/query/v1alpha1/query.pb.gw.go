@@ -10,6 +10,7 @@ package queryv1alpha1
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 
@@ -24,269 +25,234 @@ import (
 )
 
 // Suppress "imported and not used" errors
-var _ codes.Code
-var _ io.Reader
-var _ status.Status
-var _ = runtime.String
-var _ = utilities.NewDoubleArray
-var _ = metadata.Join
-
 var (
-	filter_QueryService_QueryRange_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	_ codes.Code
+	_ io.Reader
+	_ status.Status
+	_ = errors.New
+	_ = runtime.String
+	_ = utilities.NewDoubleArray
+	_ = metadata.Join
 )
 
-func request_QueryService_QueryRange_0(ctx context.Context, marshaler runtime.Marshaler, client QueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq QueryRangeRequest
-	var metadata runtime.ServerMetadata
+var filter_QueryService_QueryRange_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 
+func request_QueryService_QueryRange_0(ctx context.Context, marshaler runtime.Marshaler, client QueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq QueryRangeRequest
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_QueryRange_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.QueryRange(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_QueryService_QueryRange_0(ctx context.Context, marshaler runtime.Marshaler, server QueryServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq QueryRangeRequest
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq QueryRangeRequest
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_QueryRange_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.QueryRange(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_QueryService_Query_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
+var filter_QueryService_Query_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 
 func request_QueryService_Query_0(ctx context.Context, marshaler runtime.Marshaler, client QueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq QueryRequest
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq QueryRequest
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_Query_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.Query(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_QueryService_Query_0(ctx context.Context, marshaler runtime.Marshaler, server QueryServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq QueryRequest
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq QueryRequest
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_Query_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.Query(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_QueryService_Series_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
+var filter_QueryService_Series_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 
 func request_QueryService_Series_0(ctx context.Context, marshaler runtime.Marshaler, client QueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq SeriesRequest
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq SeriesRequest
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_Series_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.Series(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_QueryService_Series_0(ctx context.Context, marshaler runtime.Marshaler, server QueryServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq SeriesRequest
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq SeriesRequest
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_Series_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.Series(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_QueryService_ProfileTypes_0(ctx context.Context, marshaler runtime.Marshaler, client QueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ProfileTypesRequest
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq ProfileTypesRequest
+		metadata runtime.ServerMetadata
+	)
 	msg, err := client.ProfileTypes(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_QueryService_ProfileTypes_0(ctx context.Context, marshaler runtime.Marshaler, server QueryServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ProfileTypesRequest
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq ProfileTypesRequest
+		metadata runtime.ServerMetadata
+	)
 	msg, err := server.ProfileTypes(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_QueryService_Labels_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
+var filter_QueryService_Labels_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 
 func request_QueryService_Labels_0(ctx context.Context, marshaler runtime.Marshaler, client QueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq LabelsRequest
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq LabelsRequest
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_Labels_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.Labels(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_QueryService_Labels_0(ctx context.Context, marshaler runtime.Marshaler, server QueryServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq LabelsRequest
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq LabelsRequest
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_Labels_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.Labels(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_QueryService_Values_0 = &utilities.DoubleArray{Encoding: map[string]int{"label_name": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
-)
+var filter_QueryService_Values_0 = &utilities.DoubleArray{Encoding: map[string]int{"label_name": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 
 func request_QueryService_Values_0(ctx context.Context, marshaler runtime.Marshaler, client QueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ValuesRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ValuesRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["label_name"]
+	val, ok := pathParams["label_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "label_name")
 	}
-
 	protoReq.LabelName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "label_name", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_Values_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.Values(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_QueryService_Values_0(ctx context.Context, marshaler runtime.Marshaler, server QueryServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ValuesRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ValuesRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["label_name"]
+	val, ok := pathParams["label_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "label_name")
 	}
-
 	protoReq.LabelName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "label_name", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_QueryService_Values_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.Values(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_QueryService_ShareProfile_0(ctx context.Context, marshaler runtime.Marshaler, client QueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ShareProfileRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq ShareProfileRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.ShareProfile(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_QueryService_ShareProfile_0(ctx context.Context, marshaler runtime.Marshaler, server QueryServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ShareProfileRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq ShareProfileRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.ShareProfile(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 // RegisterQueryServiceHandlerServer registers the http handlers for service QueryService to "mux".
@@ -295,16 +261,13 @@ func local_request_QueryService_ShareProfile_0(ctx context.Context, marshaler ru
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterQueryServiceHandlerFromEndpoint instead.
 // GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterQueryServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server QueryServiceServer) error {
-
-	mux.Handle("GET", pattern_QueryService_QueryRange_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_QueryService_QueryRange_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/QueryRange", runtime.WithHTTPPathPattern("/profiles/query_range"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/QueryRange", runtime.WithHTTPPathPattern("/profiles/query_range"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -316,20 +279,15 @@ func RegisterQueryServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_QueryService_QueryRange_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_QueryService_Query_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_QueryService_Query_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Query", runtime.WithHTTPPathPattern("/profiles/query"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Query", runtime.WithHTTPPathPattern("/profiles/query"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -341,20 +299,15 @@ func RegisterQueryServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_QueryService_Query_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_QueryService_Series_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_QueryService_Series_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Series", runtime.WithHTTPPathPattern("/profiles/series"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Series", runtime.WithHTTPPathPattern("/profiles/series"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -366,20 +319,15 @@ func RegisterQueryServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_QueryService_Series_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_QueryService_ProfileTypes_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_QueryService_ProfileTypes_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/ProfileTypes", runtime.WithHTTPPathPattern("/profiles/types"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/ProfileTypes", runtime.WithHTTPPathPattern("/profiles/types"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -391,20 +339,15 @@ func RegisterQueryServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_QueryService_ProfileTypes_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_QueryService_Labels_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_QueryService_Labels_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Labels", runtime.WithHTTPPathPattern("/profiles/labels"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Labels", runtime.WithHTTPPathPattern("/profiles/labels"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -416,20 +359,15 @@ func RegisterQueryServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_QueryService_Labels_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_QueryService_Values_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_QueryService_Values_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Values", runtime.WithHTTPPathPattern("/profiles/labels/{label_name}/values"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Values", runtime.WithHTTPPathPattern("/profiles/labels/{label_name}/values"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -441,20 +379,15 @@ func RegisterQueryServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_QueryService_Values_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_QueryService_ShareProfile_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_QueryService_ShareProfile_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/ShareProfile", runtime.WithHTTPPathPattern("/profiles/share"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/ShareProfile", runtime.WithHTTPPathPattern("/profiles/share"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -466,9 +399,7 @@ func RegisterQueryServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_QueryService_ShareProfile_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
 
 	return nil
@@ -495,7 +426,6 @@ func RegisterQueryServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.S
 			}
 		}()
 	}()
-
 	return RegisterQueryServiceHandler(ctx, mux, conn)
 }
 
@@ -511,14 +441,11 @@ func RegisterQueryServiceHandler(ctx context.Context, mux *runtime.ServeMux, con
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
 // "QueryServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterQueryServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client QueryServiceClient) error {
-
-	mux.Handle("GET", pattern_QueryService_QueryRange_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_QueryService_QueryRange_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/QueryRange", runtime.WithHTTPPathPattern("/profiles/query_range"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/QueryRange", runtime.WithHTTPPathPattern("/profiles/query_range"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -529,18 +456,13 @@ func RegisterQueryServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_QueryService_QueryRange_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_QueryService_Query_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_QueryService_Query_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Query", runtime.WithHTTPPathPattern("/profiles/query"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Query", runtime.WithHTTPPathPattern("/profiles/query"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -551,18 +473,13 @@ func RegisterQueryServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_QueryService_Query_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_QueryService_Series_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_QueryService_Series_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Series", runtime.WithHTTPPathPattern("/profiles/series"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Series", runtime.WithHTTPPathPattern("/profiles/series"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -573,18 +490,13 @@ func RegisterQueryServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_QueryService_Series_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_QueryService_ProfileTypes_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_QueryService_ProfileTypes_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/ProfileTypes", runtime.WithHTTPPathPattern("/profiles/types"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/ProfileTypes", runtime.WithHTTPPathPattern("/profiles/types"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -595,18 +507,13 @@ func RegisterQueryServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_QueryService_ProfileTypes_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_QueryService_Labels_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_QueryService_Labels_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Labels", runtime.WithHTTPPathPattern("/profiles/labels"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Labels", runtime.WithHTTPPathPattern("/profiles/labels"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -617,18 +524,13 @@ func RegisterQueryServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_QueryService_Labels_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_QueryService_Values_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_QueryService_Values_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Values", runtime.WithHTTPPathPattern("/profiles/labels/{label_name}/values"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/Values", runtime.WithHTTPPathPattern("/profiles/labels/{label_name}/values"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -639,18 +541,13 @@ func RegisterQueryServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_QueryService_Values_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_QueryService_ShareProfile_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_QueryService_ShareProfile_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/ShareProfile", runtime.WithHTTPPathPattern("/profiles/share"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.query.v1alpha1.QueryService/ShareProfile", runtime.WithHTTPPathPattern("/profiles/share"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -661,42 +558,27 @@ func RegisterQueryServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_QueryService_ShareProfile_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
 	return nil
 }
 
 var (
-	pattern_QueryService_QueryRange_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"profiles", "query_range"}, ""))
-
-	pattern_QueryService_Query_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"profiles", "query"}, ""))
-
-	pattern_QueryService_Series_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"profiles", "series"}, ""))
-
+	pattern_QueryService_QueryRange_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"profiles", "query_range"}, ""))
+	pattern_QueryService_Query_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"profiles", "query"}, ""))
+	pattern_QueryService_Series_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"profiles", "series"}, ""))
 	pattern_QueryService_ProfileTypes_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"profiles", "types"}, ""))
-
-	pattern_QueryService_Labels_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"profiles", "labels"}, ""))
-
-	pattern_QueryService_Values_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"profiles", "labels", "label_name", "values"}, ""))
-
+	pattern_QueryService_Labels_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"profiles", "labels"}, ""))
+	pattern_QueryService_Values_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"profiles", "labels", "label_name", "values"}, ""))
 	pattern_QueryService_ShareProfile_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"profiles", "share"}, ""))
 )
 
 var (
-	forward_QueryService_QueryRange_0 = runtime.ForwardResponseMessage
-
-	forward_QueryService_Query_0 = runtime.ForwardResponseMessage
-
-	forward_QueryService_Series_0 = runtime.ForwardResponseMessage
-
+	forward_QueryService_QueryRange_0   = runtime.ForwardResponseMessage
+	forward_QueryService_Query_0        = runtime.ForwardResponseMessage
+	forward_QueryService_Series_0       = runtime.ForwardResponseMessage
 	forward_QueryService_ProfileTypes_0 = runtime.ForwardResponseMessage
-
-	forward_QueryService_Labels_0 = runtime.ForwardResponseMessage
-
-	forward_QueryService_Values_0 = runtime.ForwardResponseMessage
-
+	forward_QueryService_Labels_0       = runtime.ForwardResponseMessage
+	forward_QueryService_Values_0       = runtime.ForwardResponseMessage
 	forward_QueryService_ShareProfile_0 = runtime.ForwardResponseMessage
 )
