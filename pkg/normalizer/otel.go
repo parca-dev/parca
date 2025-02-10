@@ -27,9 +27,9 @@ import (
 	"github.com/polarsignals/frostdb/pqarrow"
 	"github.com/polarsignals/frostdb/query/logicalplan"
 	"github.com/prometheus/prometheus/util/strutil"
-	otelgrpcprofilingpb "go.opentelemetry.io/proto/otlp/collector/profiles/v1experimental"
+	otelgrpcprofilingpb "go.opentelemetry.io/proto/otlp/collector/profiles/v1development"
 	v1 "go.opentelemetry.io/proto/otlp/common/v1"
-	otelprofilingpb "go.opentelemetry.io/proto/otlp/profiles/v1experimental"
+	otelprofilingpb "go.opentelemetry.io/proto/otlp/profiles/v1development"
 	"golang.org/x/exp/maps"
 
 	"github.com/parca-dev/parca/pkg/profile"

@@ -17,7 +17,7 @@ import (
 	"encoding/binary"
 
 	"github.com/apache/arrow/go/v17/arrow/array"
-	pprofextended "go.opentelemetry.io/proto/otlp/profiles/v1experimental"
+	pprofextended "go.opentelemetry.io/proto/otlp/profiles/v1development"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 )
