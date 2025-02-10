@@ -4,8 +4,8 @@ deps:
   - remote: buf.build
     owner: googleapis
     repository: googleapis
-    commit: e93e34f48be043dab55be31b4b47f458
-    digest: shake256:93dbe51c27606999eef918360df509485a4d272e79aaed6d0016940379a9b06d316fc5228b7b50cca94bb310f34c5fc5955ce7474f655f0d0a224c4121dda3c1
+    commit: 83c0f6c19b2f4ea0b0fd84a80e753659
+    digest: shake256:20e034fe1562d2ef4137cd7822344d4c29cff8130e112a16e44bc3102be688e9134fae531ec1de7ae18dd660160649db28d160b006c9c70964e3f72a60dc47e3
   - remote: buf.build
     owner: grpc-ecosystem
     repository: grpc-gateway
