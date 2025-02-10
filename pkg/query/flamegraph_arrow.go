@@ -59,6 +59,9 @@ const (
 	FlamegraphFieldFlat       = "flat"
 	FlamegraphFieldDiff       = "diff"
 
+	FlamegraphFieldTimestamp = "timestamp"
+	FlamegraphFieldDuration  = "duration"
+
 	FlamegraphFieldGroupByMetadata = "groupby_metadata"
 )
 
@@ -388,6 +391,10 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		fb.trimmedFlat.AppendNull()
 		fb.trimmedDiff = array.NewUint8Builder(fb.pool)
 		fb.trimmedDiff.AppendNull()
+		fb.trimmedTimestamp = builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
+		fb.trimmedTimestamp.AppendNull()
+		fb.trimmedDuration = builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
+		fb.trimmedDuration.AppendNull()
 	}
 
 	_, spanNewRecord := tracer.Start(ctx, "NewRecord")
@@ -603,6 +610,11 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 			fb.intersectLabels(r, t, recordLabelIndex, sampleIndex, cr)
 		}
 
+		// TODO (do this only for flamecharts)
+		if fb.builderTimestamp.Value(cr) + fb.builderDuration.Value(cr) != r.TimeNanos.Value(sampleIndex) {
+			return false, nil
+		}
+
 		// Compare the existing row's metadata values with the one we're merging.
 		// If these values differ we need to set the row's metadata column to null.
 		{
@@ -734,6 +746,9 @@ func (fb *flamegraphBuilder) mergeUnsymbolizedRows(
 			fb.intersectLabels(r, t, recordLabelIndex, sampleIndex, cr)
 		}
 
+		// TODO check the timestamps and merge only if they are neighbors
+
+
 		value := r.Value.Value(sampleIndex)
 
 		fb.builderCumulative.Add(cr, value)
@@ -855,6 +870,8 @@ type flamegraphBuilder struct {
 	builderCumulative                    *builder.OptInt64Builder
 	builderFlat                          *builder.OptInt64Builder
 	builderDiff                          *builder.OptInt64Builder
+	builderTimestamp					 *builder.OptInt64Builder
+	builderDuration						 *builder.OptInt64Builder
 
 	// Only at the last step when preparing the new record these are populated.
 	// They are also used to create compacted dictionaries and after that replaced by them.
@@ -879,6 +896,9 @@ type flamegraphBuilder struct {
 	trimmedCumulative        array.Builder
 	trimmedFlat              array.Builder
 	trimmedDiff              array.Builder
+
+	trimmedTimestamp *builder.OptInt64Builder
+	trimmedDuration  *builder.OptInt64Builder
 }
 
 type aggregationConfig struct {
@@ -937,6 +957,9 @@ func newFlamegraphBuilder(
 		builderFunctionFilenameIndices:       array.NewInt32Builder(pool),
 		builderFunctionFilenameDictUnifier:   array.NewBinaryDictionaryUnifier(pool),
 
+		builderTimestamp: 	builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
+		builderDuration:		builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
+
 		builderChildren:       builderChildren,
 		builderChildrenValues: builderChildren.ValueBuilder().(*array.Uint32Builder),
 		builderCumulative:     builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
@@ -992,6 +1015,9 @@ func newFlamegraphBuilder(
 	fb.builderDiff.Append(0)
 	// the root will never have a flat value
 	fb.builderFlat.Append(0)
+
+	fb.builderTimestamp.Append(0)
+	fb.builderDuration.Append(0)
 
 	fb.builderGroupByMetadata.AppendNull()
 
@@ -1124,6 +1150,9 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 		{Name: FlamegraphFieldCumulative, Type: fb.trimmedCumulative.Type()},
 		{Name: FlamegraphFieldFlat, Type: fb.trimmedFlat.Type()},
 		{Name: FlamegraphFieldDiff, Type: fb.trimmedDiff.Type()},
+		// Timestamp
+		{Name: FlamegraphFieldTimestamp, Type: arrow.PrimitiveTypes.Int64},
+		{Name: FlamegraphFieldDuration, Type: arrow.PrimitiveTypes.Int64},
 		// Metadata
 		{Name: FlamegraphFieldGroupByMetadata, Type: fb.builderGroupByMetadata.Type().(*arrow.StructType)},
 	}
@@ -1179,8 +1208,12 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	cleanupArrs = append(cleanupArrs, arrays[12])
 	arrays[13] = fb.trimmedDiff.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[13])
-	arrays[14] = fb.builderGroupByMetadata.NewArray()
+	arrays[14] = fb.trimmedTimestamp.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[14])
+	arrays[15] = fb.trimmedDuration.NewArray()
+	cleanupArrs = append(cleanupArrs, arrays[15])
+	arrays[16] = fb.builderGroupByMetadata.NewArray()
+	cleanupArrs = append(cleanupArrs, arrays[16])
 
 	for i, field := range fb.builderLabelFields {
 		field.Type = fb.labels[i].DataType() // overwrite for variable length uint types
@@ -1215,6 +1248,9 @@ func (fb *flamegraphBuilder) Release() {
 	fb.builderFunctionSystemNameDictUnifier.Release()
 	fb.builderFunctionFilenameIndices.Release()
 	fb.builderFunctionFilenameDictUnifier.Release()
+
+	fb.builderTimestamp.Release()
+	fb.builderDuration.Release()
 
 	fb.builderChildren.Release()
 	fb.builderCumulative.Release()
@@ -1372,6 +1408,9 @@ func (fb *flamegraphBuilder) appendRow(
 		}
 	}
 
+	fb.builderTimestamp.Append(r.TimeNanos.Value(sampleRow))
+	fb.builderDuration.Append(r.Duration.Value(sampleRow))
+
 	value := r.Value.Value(sampleRow)
 
 	fb.builderCumulative.Append(value)
@@ -1422,6 +1461,7 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 	children map[uint64]int,
 	leaf bool,
 ) error {
+	// TODO Check and not merge when the timestamps are apart
 	labelsExist := false
 	for i, labelColumn := range fb.builderLabels {
 		if recordIndex := builderToRecordIndexMapping[i]; recordIndex != -1 {
@@ -1509,6 +1549,9 @@ func (fb *flamegraphBuilder) AppendTimestampRow(
 	fb.builderFunctionFilenameIndices.AppendNull()
 	appendGroupByMetadata(fb, r, sampleRow)
 
+	fb.builderTimestamp.Append(r.TimeNanos.Value(sampleRow))
+	fb.builderDuration.Append(0)
+
 	// Append both cumulative and diff values and overwrite them below.
 	fb.builderCumulative.Append(0)
 	fb.builderDiff.Append(0)
@@ -1528,6 +1571,8 @@ func (fb *flamegraphBuilder) addRowValues(r *profile.RecordReader, row, sampleRo
 	if leaf {
 		fb.builderFlat.Add(row, value)
 	}
+
+	fb.builderDuration.Add(row, r.Duration.Value(sampleRow))
 }
 
 func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, threshold float32) error {
@@ -1606,6 +1651,10 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedDiff := array.NewBuilder(fb.pool, trimmedDiffType)
 	trimmedGroupByMetadata := array.NewStructBuilder(fb.pool, fb.builderGroupByMetadata.Type().(*arrow.StructType))
 
+	trimmedTimestamps := builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
+	// TODO: We should use the smallest type for the duration.
+	trimmedDurations := builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
+
 	releasers = append(releasers,
 		trimmedMappingFileIndices,
 		trimmedMappingBuildIDIndices,
@@ -1638,6 +1687,8 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedFlat.Reserve(row)
 	trimmedDiff.Reserve(row)
 	trimmedGroupByMetadata.Reserve(row)
+	trimmedTimestamps.Reserve(row)
+	trimmedDurations.Reserve(row)
 
 	for _, l := range trimmedLabelsIndices {
 		l.Reserve(row)
@@ -1663,6 +1714,8 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 		appendDictionaryIndexInt32(fb.functionSystemNameIndices, trimmedFunctionSystemNameIndices, te.row)
 		appendDictionaryIndexInt32(fb.functionFilenameIndices, trimmedFunctionFilenameIndices, te.row)
 		copyStructBuilderValue(fb.builderGroupByMetadata, trimmedGroupByMetadata, te.row)
+		copyOptInt64BuilderValue(fb.builderTimestamp, trimmedTimestamps, te.row)
+		copyOptInt64BuilderValue(fb.builderDuration, trimmedDurations, te.row)
 		for i := range fb.labels {
 			appendDictionaryIndexInt32(fb.labelsIndices[i], trimmedLabelsIndices[i], te.row)
 		}
@@ -1846,6 +1899,8 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	fb.trimmedDiff = trimmedDiff
 	fb.builderGroupByMetadata = trimmedGroupByMetadata
 	fb.trimmedChildren = trimmedChildren
+	fb.trimmedTimestamp = trimmedTimestamps
+	fb.trimmedDuration = trimmedDurations
 
 	return nil
 }
@@ -1894,6 +1949,14 @@ func copyInt64BuilderValueToUnknownUnsigned(old *builder.OptInt64Builder, new ar
 }
 
 func copyUint64BuilderValue(old, new *array.Uint64Builder, row int) {
+	if old.IsNull(row) {
+		new.AppendNull()
+		return
+	}
+	new.Append(old.Value(row))
+}
+
+func copyOptInt64BuilderValue(old, new *builder.OptInt64Builder, row int) {
 	if old.IsNull(row) {
 		new.AppendNull()
 		return

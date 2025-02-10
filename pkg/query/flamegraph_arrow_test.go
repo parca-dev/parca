@@ -1246,35 +1246,91 @@ main;func_fib 10 3000 20
 	childrenColIdx := schema.FieldIndices("children")[0]
 	childrenCol := record.Column(childrenColIdx).(*array.List)
 	ChildrenValues := childrenCol.ListValues().(*array.Uint32)
+	timestampColIdx := schema.FieldIndices("timestamp")[0]
+	timestampCol := record.Column(timestampColIdx).(*array.Int64)
+	durationColIdx := schema.FieldIndices("duration")[0]
+	durationCol := record.Column(durationColIdx).(*array.Int64)
+
 
 	offsetStart, offsetEnd := childrenCol.ValueOffsets(row)
 
-	groupByMetadataColIdx := schema.FieldIndices("groupby_metadata")[0]
-	groupByMetadataCol := record.Column(groupByMetadataColIdx).(*array.Struct)
-	tsValues := groupByMetadataCol.Field(1).(*array.Binary)
-	durationValues := groupByMetadataCol.Field(2).(*array.Binary)
-
 	nums := offsetEnd - offsetStart
 
-	type metadata struct {
-		ts       int64
-		duration int64
-	}
-	rootNodesMetadata := make([]metadata, 0)
+	expectedTs := []int64{1000, 2000, 3000}
+	expectedDuration := []int64{20, 20, 20}
 
 	for j := int64(0); j < nums; j++ {
 		row = int(ChildrenValues.Value(int(offsetStart + j)))
-		tsBytes := tsValues.Value(int(row))
-		durationBytes := durationValues.Value(int(row))
-		ts, err := strconv.ParseInt(string(tsBytes), 10, 64)
-		require.NoError(t, err)
-		duration, err := strconv.ParseInt(string(durationBytes), 10, 64)
-		require.NoError(t, err)
-
-		rootNodesMetadata = append(rootNodesMetadata, metadata{ts: ts, duration: duration})
+		ts := timestampCol.Value(row)
+		duration := durationCol.Value(row)
+		require.Equal(t, expectedTs[j], ts)
+		require.Equal(t, expectedDuration[j], duration)
 	}
+}
 
-	require.Equal(t, []metadata{{1000, 20}, {2000, 20}, {3000, 20}}, rootNodesMetadata)
+func TestFlamechart_MergeNeighbouringStacksWithSameRoot(t *testing.T) {
+	ctx := context.Background()
+	tracer := noop.NewTracerProvider().Tracer("")
+
+	mem := memory.NewCheckedAllocator(memory.NewGoAllocator())
+	defer mem.AssertSize(t, 0)
+
+	np, err := foldedStacksWithTsToProfile(mem, []byte(`
+main;func_fib 10 1000 1000
+main;func_fib 10 2000 1000
+main;func_add 10 3000 1000
+runtime;gc 10 4000 1000
+main;func_fib 10 5000 1000
+main;func_fib 10 6000 1000
+`))
+	require.NoError(t, err)
+	defer func() {
+		for _, r := range np.Samples {
+			r.Release()
+		}
+	}()
+
+	// Group by function_name, timestamp, duration
+	record, _, _, _, err := generateFlamegraphArrowRecord(
+		ctx,
+		mem,
+		tracer,
+		np,
+		[]string{FlamegraphFieldFunctionName, profile.ColumnTimestamp, profile.ColumnDuration},
+		0,
+	)
+	require.NoError(t, err)
+	defer record.Release()
+	drawFlamegraphToConsole(t, record)
+
+	row := 0
+	schema := record.Schema()
+	childrenColIdx := schema.FieldIndices("children")[0]
+	childrenCol := record.Column(childrenColIdx).(*array.List)
+	ChildrenValues := childrenCol.ListValues().(*array.Uint32)
+	timestampColIdx := schema.FieldIndices("timestamp")[0]
+	timestampCol := record.Column(timestampColIdx).(*array.Int64)
+	durationColIdx := schema.FieldIndices("duration")[0]
+	durationCol := record.Column(durationColIdx).(*array.Int64)
+
+	offsetStart, offsetEnd := childrenCol.ValueOffsets(row)
+
+	nums := offsetEnd - offsetStart
+
+	require.Equal(t, int64(3), nums)
+
+	expectedTs := []int64{1000, 4000, 5000}
+	expectedDuration := []int64{3000, 1000, 2000}
+
+
+
+	for j := int64(0); j < nums; j++ {
+		row = int(ChildrenValues.Value(int(offsetStart + j)))
+		ts := timestampCol.Value(row)
+		duration := durationCol.Value(row)
+		require.Equal(t, expectedTs[j], ts)
+		require.Equal(t, expectedDuration[j], duration)
+	}
 }
 
 // split the line into 4 parts: stack, value, timestamp, duration
@@ -1365,12 +1421,12 @@ func drawFlamegraphToConsole(testing *testing.T, record arrow.Record) {
 	ChildrenValues := childrenCol.ListValues().(*array.Uint32)
 	cumulativeColIdx := schema.FieldIndices("cumulative")[0]
 	cumulativeCol := record.Column(cumulativeColIdx).(*array.Uint8)
-	groupByMetadataColIdx := schema.FieldIndices("groupby_metadata")[0]
-	groupByMetadataCol := record.Column(groupByMetadataColIdx).(*array.Struct)
-	tsValues := groupByMetadataCol.Field(1).(*array.Binary)
-	durationValues := groupByMetadataCol.Field(2).(*array.Binary)
+	timestampColIdx := schema.FieldIndices("timestamp")[0]
+	timestampCol := record.Column(timestampColIdx).(*array.Int64)
+	durationColIdx := schema.FieldIndices("duration")[0]
+	durationCol := record.Column(durationColIdx).(*array.Int64)
 
-	t := tree.NewTree(tree.NodeString("root" + " " + string(tsValues.Value(0))))
+	t := tree.NewTree(tree.NodeString("root" + " " + fmt.Sprint(timestampCol.Value(0))))
 
 	var populateChild func(t *tree.Tree, row int)
 
@@ -1385,9 +1441,9 @@ func drawFlamegraphToConsole(testing *testing.T, record arrow.Record) {
 			if err != nil {
 				funcName = []byte("N/A")
 			}
-			tsBytes := tsValues.Value(int(child))
-			durationBytes := durationValues.Value(int(child))
-			childT := t.AddChild(tree.NodeString(string(funcName) + " " + string(tsBytes) + " " + string(durationBytes) + " " + fmt.Sprint(cumulativeValue)))
+			ts := timestampCol.Value(int(child))
+			duration := durationCol.Value(int(child))
+			childT := t.AddChild(tree.NodeString(string(funcName) + " " + fmt.Sprint(ts) + " " + fmt.Sprint(duration) + " " + fmt.Sprint(cumulativeValue)))
 			populateChild(childT, int(child))
 		}
 	}
