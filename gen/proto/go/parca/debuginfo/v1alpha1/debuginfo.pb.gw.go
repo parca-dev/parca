@@ -10,6 +10,7 @@ package debuginfov1alpha1
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 
@@ -24,12 +25,15 @@ import (
 )
 
 // Suppress "imported and not used" errors
-var _ codes.Code
-var _ io.Reader
-var _ status.Status
-var _ = runtime.String
-var _ = utilities.NewDoubleArray
-var _ = metadata.Join
+var (
+	_ codes.Code
+	_ io.Reader
+	_ status.Status
+	_ = errors.New
+	_ = runtime.String
+	_ = utilities.NewDoubleArray
+	_ = metadata.Join
+)
 
 func request_DebuginfoService_Upload_0(ctx context.Context, marshaler runtime.Marshaler, client DebuginfoServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var metadata runtime.ServerMetadata
@@ -42,7 +46,7 @@ func request_DebuginfoService_Upload_0(ctx context.Context, marshaler runtime.Ma
 	for {
 		var protoReq UploadRequest
 		err = dec.Decode(&protoReq)
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -50,14 +54,13 @@ func request_DebuginfoService_Upload_0(ctx context.Context, marshaler runtime.Ma
 			return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 		}
 		if err = stream.Send(&protoReq); err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			}
 			grpclog.Errorf("Failed to send request: %v", err)
 			return nil, metadata, err
 		}
 	}
-
 	if err := stream.CloseSend(); err != nil {
 		grpclog.Errorf("Failed to terminate client stream: %v", err)
 		return nil, metadata, err
@@ -68,89 +71,81 @@ func request_DebuginfoService_Upload_0(ctx context.Context, marshaler runtime.Ma
 		return nil, metadata, err
 	}
 	metadata.HeaderMD = header
-
 	msg, err := stream.CloseAndRecv()
 	metadata.TrailerMD = stream.Trailer()
 	return msg, metadata, err
-
 }
 
 func request_DebuginfoService_ShouldInitiateUpload_0(ctx context.Context, marshaler runtime.Marshaler, client DebuginfoServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ShouldInitiateUploadRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq ShouldInitiateUploadRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.ShouldInitiateUpload(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_DebuginfoService_ShouldInitiateUpload_0(ctx context.Context, marshaler runtime.Marshaler, server DebuginfoServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ShouldInitiateUploadRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq ShouldInitiateUploadRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.ShouldInitiateUpload(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_DebuginfoService_InitiateUpload_0(ctx context.Context, marshaler runtime.Marshaler, client DebuginfoServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq InitiateUploadRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq InitiateUploadRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.InitiateUpload(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_DebuginfoService_InitiateUpload_0(ctx context.Context, marshaler runtime.Marshaler, server DebuginfoServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq InitiateUploadRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq InitiateUploadRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.InitiateUpload(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_DebuginfoService_MarkUploadFinished_0(ctx context.Context, marshaler runtime.Marshaler, client DebuginfoServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq MarkUploadFinishedRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq MarkUploadFinishedRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.MarkUploadFinished(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_DebuginfoService_MarkUploadFinished_0(ctx context.Context, marshaler runtime.Marshaler, server DebuginfoServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq MarkUploadFinishedRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq MarkUploadFinishedRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.MarkUploadFinished(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 // RegisterDebuginfoServiceHandlerServer registers the http handlers for service DebuginfoService to "mux".
@@ -159,23 +154,19 @@ func local_request_DebuginfoService_MarkUploadFinished_0(ctx context.Context, ma
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterDebuginfoServiceHandlerFromEndpoint instead.
 // GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterDebuginfoServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server DebuginfoServiceServer) error {
-
-	mux.Handle("POST", pattern_DebuginfoService_Upload_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_DebuginfoService_Upload_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 		return
 	})
-
-	mux.Handle("POST", pattern_DebuginfoService_ShouldInitiateUpload_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_DebuginfoService_ShouldInitiateUpload_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/ShouldInitiateUpload", runtime.WithHTTPPathPattern("/shouldinitiateupload"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/ShouldInitiateUpload", runtime.WithHTTPPathPattern("/shouldinitiateupload"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -187,20 +178,15 @@ func RegisterDebuginfoServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DebuginfoService_ShouldInitiateUpload_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_DebuginfoService_InitiateUpload_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_DebuginfoService_InitiateUpload_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/InitiateUpload", runtime.WithHTTPPathPattern("/initiateupload"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/InitiateUpload", runtime.WithHTTPPathPattern("/initiateupload"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -212,20 +198,15 @@ func RegisterDebuginfoServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DebuginfoService_InitiateUpload_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_DebuginfoService_MarkUploadFinished_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_DebuginfoService_MarkUploadFinished_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/MarkUploadFinished", runtime.WithHTTPPathPattern("/markuploadfinished"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/MarkUploadFinished", runtime.WithHTTPPathPattern("/markuploadfinished"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -237,9 +218,7 @@ func RegisterDebuginfoServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DebuginfoService_MarkUploadFinished_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
 
 	return nil
@@ -266,7 +245,6 @@ func RegisterDebuginfoServiceHandlerFromEndpoint(ctx context.Context, mux *runti
 			}
 		}()
 	}()
-
 	return RegisterDebuginfoServiceHandler(ctx, mux, conn)
 }
 
@@ -282,14 +260,11 @@ func RegisterDebuginfoServiceHandler(ctx context.Context, mux *runtime.ServeMux,
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
 // "DebuginfoServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterDebuginfoServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client DebuginfoServiceClient) error {
-
-	mux.Handle("POST", pattern_DebuginfoService_Upload_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_DebuginfoService_Upload_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/Upload", runtime.WithHTTPPathPattern("/upload"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/Upload", runtime.WithHTTPPathPattern("/upload"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -300,18 +275,13 @@ func RegisterDebuginfoServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DebuginfoService_Upload_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_DebuginfoService_ShouldInitiateUpload_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_DebuginfoService_ShouldInitiateUpload_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/ShouldInitiateUpload", runtime.WithHTTPPathPattern("/shouldinitiateupload"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/ShouldInitiateUpload", runtime.WithHTTPPathPattern("/shouldinitiateupload"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -322,18 +292,13 @@ func RegisterDebuginfoServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DebuginfoService_ShouldInitiateUpload_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_DebuginfoService_InitiateUpload_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_DebuginfoService_InitiateUpload_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/InitiateUpload", runtime.WithHTTPPathPattern("/initiateupload"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/InitiateUpload", runtime.WithHTTPPathPattern("/initiateupload"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -344,18 +309,13 @@ func RegisterDebuginfoServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DebuginfoService_InitiateUpload_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_DebuginfoService_MarkUploadFinished_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_DebuginfoService_MarkUploadFinished_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/MarkUploadFinished", runtime.WithHTTPPathPattern("/markuploadfinished"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.debuginfo.v1alpha1.DebuginfoService/MarkUploadFinished", runtime.WithHTTPPathPattern("/markuploadfinished"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -366,30 +326,21 @@ func RegisterDebuginfoServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DebuginfoService_MarkUploadFinished_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
 	return nil
 }
 
 var (
-	pattern_DebuginfoService_Upload_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"upload"}, ""))
-
+	pattern_DebuginfoService_Upload_0               = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"upload"}, ""))
 	pattern_DebuginfoService_ShouldInitiateUpload_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"shouldinitiateupload"}, ""))
-
-	pattern_DebuginfoService_InitiateUpload_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"initiateupload"}, ""))
-
-	pattern_DebuginfoService_MarkUploadFinished_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"markuploadfinished"}, ""))
+	pattern_DebuginfoService_InitiateUpload_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"initiateupload"}, ""))
+	pattern_DebuginfoService_MarkUploadFinished_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"markuploadfinished"}, ""))
 )
 
 var (
-	forward_DebuginfoService_Upload_0 = runtime.ForwardResponseMessage
-
+	forward_DebuginfoService_Upload_0               = runtime.ForwardResponseMessage
 	forward_DebuginfoService_ShouldInitiateUpload_0 = runtime.ForwardResponseMessage
-
-	forward_DebuginfoService_InitiateUpload_0 = runtime.ForwardResponseMessage
-
-	forward_DebuginfoService_MarkUploadFinished_0 = runtime.ForwardResponseMessage
+	forward_DebuginfoService_InitiateUpload_0       = runtime.ForwardResponseMessage
+	forward_DebuginfoService_MarkUploadFinished_0   = runtime.ForwardResponseMessage
 )
