@@ -971,14 +971,18 @@ func (q *Querier) SymbolizeArrowRecord(
 
 		indices = schema.FieldIndices(profile.ColumnTimestamp)
 		var timestampColumn *array.Int64
-		if len(indices) != 1 {
+		if len(indices) == 1 {
+			timestampColumn = r.Column(indices[0]).(*array.Int64)
+		} else {
 			timestampColumn = arrowutils.MakeNullArray(q.pool, arrow.PrimitiveTypes.Int64, valueColumn.Len()).(*array.Int64)
 			defer timestampColumn.Release()
 		}
 
 		indices = schema.FieldIndices(profile.ColumnDuration)
 		var durationColumn *array.Int64
-		if len(indices) != 1 {
+		if len(indices) == 1 {
+			durationColumn = r.Column(indices[0]).(*array.Int64)
+		} else {
 			durationColumn = arrowutils.MakeNullArray(q.pool, arrow.PrimitiveTypes.Int64, valueColumn.Len()).(*array.Int64)
 			defer durationColumn.Release()
 		}
