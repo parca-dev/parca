@@ -37,7 +37,7 @@ import (
 	"github.com/polarsignals/frostdb/query/logicalplan"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/util/strutil"
-	pprofextended "go.opentelemetry.io/proto/otlp/profiles/v1experimental"
+	pprofextended "go.opentelemetry.io/proto/otlp/profiles/v1development"
 	"golang.org/x/exp/maps"
 	"google.golang.org/grpc/codes"
 
