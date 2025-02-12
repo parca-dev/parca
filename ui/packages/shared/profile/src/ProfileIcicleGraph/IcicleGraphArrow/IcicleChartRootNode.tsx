@@ -13,16 +13,15 @@
 
 import React from 'react';
 
-import {Binary, StructRow} from 'apache-arrow';
 import cx from 'classnames';
 import twColors from 'tailwindcss/colors';
 
 import {scaleLinear} from '@parca/utilities';
 
-import {FIELD_CHILDREN, FIELD_CUMULATIVE, FIELD_GROUPBY_METADATA} from '.';
+import {FIELD_CHILDREN, FIELD_CUMULATIVE, FIELD_DURATION, FIELD_TIMESTAMP} from '.';
 import {ProfileSource} from '../../ProfileSource';
 import {IcicleNode, IcicleNodeProps, RowHeight} from './IcicleGraphNodes';
-import {arrowToString, boundsFromProfileSource} from './utils';
+import {boundsFromProfileSource} from './utils';
 
 interface IcicleChartRootNodeSpecificProps {
   profileSource?: ProfileSource;
@@ -58,8 +57,9 @@ export const IcicleChartRootNode = React.memo(function IcicleChartRootNodeNonMem
   profileSource,
 }: IcicleNodeProps & IcicleChartRootNodeSpecificProps): React.JSX.Element {
   // get the columns to read from
+  const durationColumn = table.getChild(FIELD_DURATION);
+  const timestampColumn = table.getChild(FIELD_TIMESTAMP);
   const cumulativeColumn = table.getChild(FIELD_CUMULATIVE);
-  const groupByMetadata = table.getChild(FIELD_GROUPBY_METADATA);
   const cumulative = cumulativeColumn?.get(row) !== null ? BigInt(cumulativeColumn?.get(row)) : 0n;
   const childRows: number[] = Array.from<number>(
     table.getChild(FIELD_CHILDREN)?.get(row) ?? []
@@ -83,18 +83,12 @@ export const IcicleChartRootNode = React.memo(function IcicleChartRootNodeNonMem
   return (
     <>
       {childRows.map(row => {
-        const groupByFields = (
-          groupByMetadata?.get(row) as StructRow<Record<string, Binary>>
-        ).toJSON();
+        const duration = durationColumn?.get(row) !== null ? BigInt(durationColumn?.get(row)) : 0n;
+        const timestamp =
+          timestampColumn?.get(row) !== null ? BigInt(timestampColumn?.get(row)) : 0n;
 
-        const tsStr = arrowToString(groupByFields.time_nanos) as string;
-
-        const tsNanos = BigInt(parseInt(tsStr, 10));
-        const durationStr = arrowToString(groupByFields.duration) as string;
-        const duration = parseInt(durationStr, 10);
-
-        const x = tsXScale(tsNanos);
-        const width = tsXScale(tsNanos + BigInt(Math.round(duration))) - x;
+        const x = tsXScale(timestamp);
+        const width = tsXScale(timestamp + BigInt(Math.round(Number(duration)))) - x;
 
         const cumulative =
           cumulativeColumn?.get(row) !== null ? BigInt(cumulativeColumn?.get(row)) : 0n;

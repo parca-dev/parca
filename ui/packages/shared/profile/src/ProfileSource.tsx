@@ -35,7 +35,8 @@ export interface ProfileSelection {
   ProfileSource: () => ProfileSource;
   Type: () => string;
 }
-const timeFormat = (timezone?: string): string => {
+
+export const timeFormat = (timezone?: string): string => {
   if (timezone !== undefined) {
     return 'yyyy-MM-dd HH:mm:ss';
   }
