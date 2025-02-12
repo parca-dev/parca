@@ -13,7 +13,6 @@
 
 import React from 'react';
 
-import {Binary, StructRow} from 'apache-arrow';
 import cx from 'classnames';
 import twColors from 'tailwindcss/colors';
 
