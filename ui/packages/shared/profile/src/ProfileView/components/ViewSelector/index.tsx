@@ -27,6 +27,7 @@ const ViewSelector = (): JSX.Element => {
   const allItems: Array<{key: string; canBeSelected: boolean; supportingText?: string}> = [
     {key: 'table', canBeSelected: !dashboardItems.includes('table')},
     {key: 'icicle', canBeSelected: !dashboardItems.includes('icicle')},
+    {key: 'sandwich', canBeSelected: !dashboardItems.includes('sandwich')},
   ];
   if (enableIciclechartView === true) {
     allItems.push({key: 'iciclechart', canBeSelected: !dashboardItems.includes('iciclechart')});

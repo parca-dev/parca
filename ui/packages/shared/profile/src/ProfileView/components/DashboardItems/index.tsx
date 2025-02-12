@@ -18,6 +18,7 @@ import {ConditionalWrapper} from '@parca/components';
 import Callgraph from '../../../Callgraph';
 import ProfileIcicleGraph from '../../../ProfileIcicleGraph';
 import {ProfileSource} from '../../../ProfileSource';
+import Sandwich from '../../../Sandwich';
 import {SourceView} from '../../../SourceView';
 import {Table} from '../../../Table';
 import type {
@@ -144,6 +145,23 @@ export const getDashboardItem = ({
     case 'table':
       return topTableData != null ? (
         <Table
+          total={total}
+          filtered={filtered}
+          loading={topTableData.loading}
+          data={topTableData.arrow?.record}
+          unit={topTableData.unit}
+          profileType={profileSource?.ProfileType()}
+          currentSearchString={currentSearchString}
+          setSearchString={setSearchString}
+          isHalfScreen={isHalfScreen}
+          metadataMappingFiles={flamegraphData.metadataMappingFiles}
+        />
+      ) : (
+        <></>
+      );
+    case 'sandwich':
+      return topTableData != null ? (
+        <Sandwich
           total={total}
           filtered={filtered}
           loading={topTableData.loading}

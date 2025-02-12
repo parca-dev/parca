@@ -44,9 +44,24 @@ import useMappingList, {
 } from '../ProfileIcicleGraph/IcicleGraphArrow/useMappingList';
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
 import {
+  FIELD_CALLEES,
+  FIELD_CALLERS,
+  FIELD_CUMULATIVE,
+  FIELD_CUMULATIVE_DIFF,
+  FIELD_FLAT,
+  FIELD_FLAT_DIFF,
+  FIELD_FUNCTION_FILE_NAME,
+  FIELD_FUNCTION_NAME,
+  FIELD_FUNCTION_SYSTEM_NAME,
+  FIELD_LOCATION_ADDRESS,
+  FIELD_MAPPING_FILE,
+  Row,
+  TableProps,
+  isDummyRow,
+} from '../Table';
+import {
   ColumnName,
   DataRow,
-  DummyRow,
   ROW_HEIGHT,
   RowName,
   addPlusSign,
@@ -62,44 +77,12 @@ import {
   sizeToBottomStyle,
   sizeToHeightStyle,
   sizeToWidthStyle,
-} from './utils/functions';
-import {getTopAndBottomExpandedRowModel} from './utils/topAndBottomExpandedRowModel';
+} from '../Table/utils/functions';
+import {getTopAndBottomExpandedRowModel} from '../Table/utils/topAndBottomExpandedRowModel';
 
-export const FIELD_MAPPING_FILE = 'mapping_file';
-export const FIELD_LOCATION_ADDRESS = 'location_address';
-export const FIELD_FUNCTION_NAME = 'function_name';
-export const FIELD_FUNCTION_SYSTEM_NAME = 'function_system_name';
-export const FIELD_FUNCTION_FILE_NAME = 'function_file_name';
-export const FIELD_FLAT = 'flat';
-export const FIELD_FLAT_DIFF = 'flat_diff';
-export const FIELD_CUMULATIVE = 'cumulative';
-export const FIELD_CUMULATIVE_DIFF = 'cumulative_diff';
-export const FIELD_CALLERS = 'callers';
-export const FIELD_CALLEES = 'callees';
+let doubleClickTimer: NodeJS.Timeout | null = null;
 
-export type Row = DataRow | DummyRow;
-
-export const isDummyRow = (row: Row): row is DummyRow => {
-  return 'size' in row;
-};
-
-export let doubleClickTimer: NodeJS.Timeout | null = null;
-
-export interface TableProps {
-  data?: Uint8Array;
-  total: bigint;
-  filtered: bigint;
-  profileType?: ProfileType;
-  loading: boolean;
-  currentSearchString?: string;
-  setSearchString?: (searchString: string) => void;
-  setActionButtons?: (buttons: React.JSX.Element) => void;
-  isHalfScreen: boolean;
-  unit?: string;
-  metadataMappingFiles?: string[];
-}
-
-export const CustomRowRenderer = ({
+const CustomRowRenderer = ({
   row,
   usePointerCursor,
   onRowClick,
@@ -227,7 +210,7 @@ export const CustomRowRenderer = ({
   );
 };
 
-export const Table = React.memo(function Table({
+const Sandwich = React.memo(function Sandwich({
   data,
   total,
   filtered,
@@ -661,47 +644,49 @@ export const Table = React.memo(function Table({
   }
 
   return (
-    <AnimatePresence>
-      <motion.div
-        className="h-full w-full"
-        key="table-loaded"
-        initial={{display: 'none', opacity: 0}}
-        animate={{display: 'block', opacity: 1}}
-        transition={{duration: 0.5}}
-      >
-        <div className="relative">
-          <div className="font-robotoMono h-[80vh] w-full">
-            <TableComponent
-              data={rows}
-              columns={columns}
-              initialSorting={initialSorting}
-              columnVisibility={columnVisibility}
-              onRowClick={onRowClick}
-              enableHighlighting={enableHighlighting}
-              shouldHighlightRow={shouldHighlightRow}
-              usePointerCursor={dashboardItems.length > 1}
-              onRowDoubleClick={onRowDoubleClick}
-              getSubRows={row => (isDummyRow(row) ? [] : row.subRows ?? [])}
-              getCustomExpandedRowModel={getTopAndBottomExpandedRowModel}
-              expandedState={expanded}
-              onExpandedChange={getNewState => {
-                // We only want the new expanded row so passing the exisitng state as empty
-                // @ts-expect-error
-                let newState = getNewState({});
-                if (Object.keys(newState)[0] === Object.keys(expanded)[0]) {
-                  newState = {};
-                }
-                setExpanded(newState);
-              }}
-              CustomRowRenderer={CustomRowRenderer}
-              scrollToIndex={scrollToIndex}
-              estimatedRowHeight={ROW_HEIGHT}
-            />
+    <section className="flex flex-row h-full w-full">
+      <AnimatePresence>
+        <motion.div
+          className="h-full w-full"
+          key="sandwich-loaded"
+          initial={{display: 'none', opacity: 0}}
+          animate={{display: 'block', opacity: 1}}
+          transition={{duration: 0.5}}
+        >
+          <div className="relative">
+            <div className="font-robotoMono h-[80vh] w-full cursor-pointer">
+              <TableComponent
+                data={rows}
+                columns={columns}
+                initialSorting={initialSorting}
+                columnVisibility={columnVisibility}
+                onRowClick={onRowClick}
+                enableHighlighting={enableHighlighting}
+                shouldHighlightRow={shouldHighlightRow}
+                usePointerCursor={dashboardItems.length > 1}
+                onRowDoubleClick={onRowDoubleClick}
+                getSubRows={row => (isDummyRow(row) ? [] : row.subRows ?? [])}
+                getCustomExpandedRowModel={getTopAndBottomExpandedRowModel}
+                expandedState={expanded}
+                onExpandedChange={getNewState => {
+                  // We only want the new expanded row so passing the exisitng state as empty
+                  // @ts-expect-error
+                  let newState = getNewState({});
+                  if (Object.keys(newState)[0] === Object.keys(expanded)[0]) {
+                    newState = {};
+                  }
+                  setExpanded(newState);
+                }}
+                CustomRowRenderer={CustomRowRenderer}
+                scrollToIndex={scrollToIndex}
+                estimatedRowHeight={ROW_HEIGHT}
+              />
+            </div>
           </div>
-        </div>
-      </motion.div>
-    </AnimatePresence>
+        </motion.div>
+      </AnimatePresence>
+    </section>
   );
 });
 
-export default Table;
+export default Sandwich;
