@@ -10,6 +10,7 @@ package profilestorev1alpha1
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 
@@ -24,56 +25,59 @@ import (
 )
 
 // Suppress "imported and not used" errors
-var _ codes.Code
-var _ io.Reader
-var _ status.Status
-var _ = runtime.String
-var _ = utilities.NewDoubleArray
-var _ = metadata.Join
+var (
+	_ codes.Code
+	_ io.Reader
+	_ status.Status
+	_ = errors.New
+	_ = runtime.String
+	_ = utilities.NewDoubleArray
+	_ = metadata.Join
+)
 
 func request_ProfileStoreService_WriteRaw_0(ctx context.Context, marshaler runtime.Marshaler, client ProfileStoreServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq WriteRawRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq WriteRawRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.WriteRaw(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ProfileStoreService_WriteRaw_0(ctx context.Context, marshaler runtime.Marshaler, server ProfileStoreServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq WriteRawRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq WriteRawRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.WriteRaw(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-func request_ProfileStoreService_Write_0(ctx context.Context, marshaler runtime.Marshaler, client ProfileStoreServiceClient, req *http.Request, pathParams map[string]string) (ProfileStoreService_WriteClient, runtime.ServerMetadata, error) {
+func request_ProfileStoreService_Write_0(ctx context.Context, marshaler runtime.Marshaler, client ProfileStoreServiceClient, req *http.Request, pathParams map[string]string) (ProfileStoreService_WriteClient, runtime.ServerMetadata, chan error, error) {
 	var metadata runtime.ServerMetadata
+	errChan := make(chan error, 1)
 	stream, err := client.Write(ctx)
 	if err != nil {
 		grpclog.Errorf("Failed to start streaming: %v", err)
-		return nil, metadata, err
+		close(errChan)
+		return nil, metadata, errChan, err
 	}
 	dec := marshaler.NewDecoder(req.Body)
 	handleSend := func() error {
 		var protoReq WriteRequest
 		err := dec.Decode(&protoReq)
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			return err
 		}
 		if err != nil {
 			grpclog.Errorf("Failed to decode request: %v", err)
-			return err
+			return status.Errorf(codes.InvalidArgument, "Failed to decode request: %v", err)
 		}
 		if err := stream.Send(&protoReq); err != nil {
 			grpclog.Errorf("Failed to send request: %v", err)
@@ -82,8 +86,10 @@ func request_ProfileStoreService_Write_0(ctx context.Context, marshaler runtime.
 		return nil
 	}
 	go func() {
+		defer close(errChan)
 		for {
 			if err := handleSend(); err != nil {
+				errChan <- err
 				break
 			}
 		}
@@ -94,28 +100,28 @@ func request_ProfileStoreService_Write_0(ctx context.Context, marshaler runtime.
 	header, err := stream.Header()
 	if err != nil {
 		grpclog.Errorf("Failed to get header from client: %v", err)
-		return nil, metadata, err
+		return nil, metadata, errChan, err
 	}
 	metadata.HeaderMD = header
-	return stream, metadata, nil
+	return stream, metadata, errChan, nil
 }
 
 func request_AgentsService_Agents_0(ctx context.Context, marshaler runtime.Marshaler, client AgentsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq AgentsRequest
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq AgentsRequest
+		metadata runtime.ServerMetadata
+	)
 	msg, err := client.Agents(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_AgentsService_Agents_0(ctx context.Context, marshaler runtime.Marshaler, server AgentsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq AgentsRequest
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq AgentsRequest
+		metadata runtime.ServerMetadata
+	)
 	msg, err := server.Agents(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 // RegisterProfileStoreServiceHandlerServer registers the http handlers for service ProfileStoreService to "mux".
@@ -124,16 +130,13 @@ func local_request_AgentsService_Agents_0(ctx context.Context, marshaler runtime
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterProfileStoreServiceHandlerFromEndpoint instead.
 // GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterProfileStoreServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server ProfileStoreServiceServer) error {
-
-	mux.Handle("POST", pattern_ProfileStoreService_WriteRaw_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_ProfileStoreService_WriteRaw_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.profilestore.v1alpha1.ProfileStoreService/WriteRaw", runtime.WithHTTPPathPattern("/profiles/writeraw"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.profilestore.v1alpha1.ProfileStoreService/WriteRaw", runtime.WithHTTPPathPattern("/profiles/writeraw"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -145,12 +148,10 @@ func RegisterProfileStoreServiceHandlerServer(ctx context.Context, mux *runtime.
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ProfileStoreService_WriteRaw_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
 
-	mux.Handle("POST", pattern_ProfileStoreService_Write_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_ProfileStoreService_Write_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -166,16 +167,13 @@ func RegisterProfileStoreServiceHandlerServer(ctx context.Context, mux *runtime.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterAgentsServiceHandlerFromEndpoint instead.
 // GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterAgentsServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server AgentsServiceServer) error {
-
-	mux.Handle("GET", pattern_AgentsService_Agents_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_AgentsService_Agents_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.profilestore.v1alpha1.AgentsService/Agents", runtime.WithHTTPPathPattern("/agents"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.profilestore.v1alpha1.AgentsService/Agents", runtime.WithHTTPPathPattern("/agents"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -187,9 +185,7 @@ func RegisterAgentsServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_AgentsService_Agents_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
 
 	return nil
@@ -216,7 +212,6 @@ func RegisterProfileStoreServiceHandlerFromEndpoint(ctx context.Context, mux *ru
 			}
 		}()
 	}()
-
 	return RegisterProfileStoreServiceHandler(ctx, mux, conn)
 }
 
@@ -232,14 +227,11 @@ func RegisterProfileStoreServiceHandler(ctx context.Context, mux *runtime.ServeM
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
 // "ProfileStoreServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterProfileStoreServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client ProfileStoreServiceClient) error {
-
-	mux.Handle("POST", pattern_ProfileStoreService_WriteRaw_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_ProfileStoreService_WriteRaw_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.profilestore.v1alpha1.ProfileStoreService/WriteRaw", runtime.WithHTTPPathPattern("/profiles/writeraw"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.profilestore.v1alpha1.ProfileStoreService/WriteRaw", runtime.WithHTTPPathPattern("/profiles/writeraw"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -250,46 +242,44 @@ func RegisterProfileStoreServiceHandlerClient(ctx context.Context, mux *runtime.
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ProfileStoreService_WriteRaw_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_ProfileStoreService_Write_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_ProfileStoreService_Write_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.profilestore.v1alpha1.ProfileStoreService/Write", runtime.WithHTTPPathPattern("/profiles/write"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.profilestore.v1alpha1.ProfileStoreService/Write", runtime.WithHTTPPathPattern("/profiles/write"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_ProfileStoreService_Write_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+
+		resp, md, reqErrChan, err := request_ProfileStoreService_Write_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
+		go func() {
+			for err := range reqErrChan {
+				if err != nil && !errors.Is(err, io.EOF) {
+					runtime.HTTPStreamError(annotatedContext, mux, outboundMarshaler, w, req, err)
+				}
+			}
+		}()
 		forward_ProfileStoreService_Write_0(annotatedContext, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
-
 	})
-
 	return nil
 }
 
 var (
 	pattern_ProfileStoreService_WriteRaw_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"profiles", "writeraw"}, ""))
-
-	pattern_ProfileStoreService_Write_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"profiles", "write"}, ""))
+	pattern_ProfileStoreService_Write_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"profiles", "write"}, ""))
 )
 
 var (
 	forward_ProfileStoreService_WriteRaw_0 = runtime.ForwardResponseMessage
-
-	forward_ProfileStoreService_Write_0 = runtime.ForwardResponseStream
+	forward_ProfileStoreService_Write_0    = runtime.ForwardResponseStream
 )
 
 // RegisterAgentsServiceHandlerFromEndpoint is same as RegisterAgentsServiceHandler but
@@ -313,7 +303,6 @@ func RegisterAgentsServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.
 			}
 		}()
 	}()
-
 	return RegisterAgentsServiceHandler(ctx, mux, conn)
 }
 
@@ -329,14 +318,11 @@ func RegisterAgentsServiceHandler(ctx context.Context, mux *runtime.ServeMux, co
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
 // "AgentsServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterAgentsServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client AgentsServiceClient) error {
-
-	mux.Handle("GET", pattern_AgentsService_Agents_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_AgentsService_Agents_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.profilestore.v1alpha1.AgentsService/Agents", runtime.WithHTTPPathPattern("/agents"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.profilestore.v1alpha1.AgentsService/Agents", runtime.WithHTTPPathPattern("/agents"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -347,11 +333,8 @@ func RegisterAgentsServiceHandlerClient(ctx context.Context, mux *runtime.ServeM
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_AgentsService_Agents_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
 	return nil
 }
 

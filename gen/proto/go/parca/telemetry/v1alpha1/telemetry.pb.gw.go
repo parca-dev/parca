@@ -10,6 +10,7 @@ package telemetryv1alpha1
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 
@@ -24,37 +25,38 @@ import (
 )
 
 // Suppress "imported and not used" errors
-var _ codes.Code
-var _ io.Reader
-var _ status.Status
-var _ = runtime.String
-var _ = utilities.NewDoubleArray
-var _ = metadata.Join
+var (
+	_ codes.Code
+	_ io.Reader
+	_ status.Status
+	_ = errors.New
+	_ = runtime.String
+	_ = utilities.NewDoubleArray
+	_ = metadata.Join
+)
 
 func request_TelemetryService_ReportPanic_0(ctx context.Context, marshaler runtime.Marshaler, client TelemetryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ReportPanicRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq ReportPanicRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.ReportPanic(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_TelemetryService_ReportPanic_0(ctx context.Context, marshaler runtime.Marshaler, server TelemetryServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ReportPanicRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq ReportPanicRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.ReportPanic(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 // RegisterTelemetryServiceHandlerServer registers the http handlers for service TelemetryService to "mux".
@@ -63,16 +65,13 @@ func local_request_TelemetryService_ReportPanic_0(ctx context.Context, marshaler
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterTelemetryServiceHandlerFromEndpoint instead.
 // GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterTelemetryServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server TelemetryServiceServer) error {
-
-	mux.Handle("POST", pattern_TelemetryService_ReportPanic_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_TelemetryService_ReportPanic_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.telemetry.v1alpha1.TelemetryService/ReportPanic", runtime.WithHTTPPathPattern("/telemetry/panic"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/parca.telemetry.v1alpha1.TelemetryService/ReportPanic", runtime.WithHTTPPathPattern("/telemetry/panic"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -84,9 +83,7 @@ func RegisterTelemetryServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_TelemetryService_ReportPanic_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
 
 	return nil
@@ -113,7 +110,6 @@ func RegisterTelemetryServiceHandlerFromEndpoint(ctx context.Context, mux *runti
 			}
 		}()
 	}()
-
 	return RegisterTelemetryServiceHandler(ctx, mux, conn)
 }
 
@@ -129,14 +125,11 @@ func RegisterTelemetryServiceHandler(ctx context.Context, mux *runtime.ServeMux,
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
 // "TelemetryServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterTelemetryServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client TelemetryServiceClient) error {
-
-	mux.Handle("POST", pattern_TelemetryService_ReportPanic_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_TelemetryService_ReportPanic_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/parca.telemetry.v1alpha1.TelemetryService/ReportPanic", runtime.WithHTTPPathPattern("/telemetry/panic"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/parca.telemetry.v1alpha1.TelemetryService/ReportPanic", runtime.WithHTTPPathPattern("/telemetry/panic"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -147,11 +140,8 @@ func RegisterTelemetryServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_TelemetryService_ReportPanic_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
 	return nil
 }
 
