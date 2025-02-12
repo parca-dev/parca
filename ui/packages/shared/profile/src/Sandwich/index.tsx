@@ -78,6 +78,7 @@ import {
   sizeToWidthStyle,
 } from '../Table/utils/functions';
 import {getTopAndBottomExpandedRowModel} from '../Table/utils/topAndBottomExpandedRowModel';
+import {CanvasIcicle} from './CanvasIcicle';
 
 const CustomRowRenderer = ({
   row,
@@ -210,6 +211,7 @@ const Sandwich = React.memo(function Sandwich({
   const {isDarkMode} = useParcaContext();
   const [expanded, setExpanded] = useState<ExpandedState>({});
   const [scrollToIndex, setScrollToIndex] = useState<number | undefined>(undefined);
+  const [selectedRow, setSelectedRow] = useState<RowType<Row> | null>(null);
 
   const {compareMode} = useProfileViewContext();
 
@@ -438,15 +440,19 @@ const Sandwich = React.memo(function Sandwich({
     }
   }, [tableColumns]);
 
-  const onRowDoubleClick = useCallback(
+  const onRowClick = useCallback(
     (row: RowType<Row>, rows: Array<RowType<Row>>) => {
       if (isDummyRow(row.original)) {
         return;
       }
+
+      setSelectedRow(row);
+
       if (!isSubRow(row.original)) {
         row.toggleExpanded();
         return;
       }
+
       // find the original row for this subrow and toggle it
       const newRow = rows.find(
         r =>
@@ -455,6 +461,7 @@ const Sandwich = React.memo(function Sandwich({
           r.original.name === row.original.name &&
           !isSubRow(r.original)
       );
+
       const parentRow = rows.find(r => {
         const parent = row.getParentRow()!;
         if (isDummyRow(parent.original) || isDummyRow(r.original)) {
@@ -466,8 +473,10 @@ const Sandwich = React.memo(function Sandwich({
         return;
       }
 
+      // expand the row
       newRow.toggleExpanded();
 
+      // scroll to the row
       setScrollToIndex(getScrollTargetIndex(rows, parentRow, newRow));
     },
     [setScrollToIndex]
@@ -576,15 +585,19 @@ const Sandwich = React.memo(function Sandwich({
           animate={{display: 'block', opacity: 1}}
           transition={{duration: 0.5}}
         >
-          <div className="relative">
-            <div className="font-robotoMono h-[80vh] w-full cursor-pointer">
+          <div className="relative flex flex-row">
+            <div
+              className={cx('font-robotoMono h-[80vh] w-full cursor-pointer', {
+                'w-[50%]': selectedRow != null,
+              })}
+            >
               <TableComponent
                 data={rows}
                 columns={columns}
                 initialSorting={initialSorting}
                 columnVisibility={columnVisibility}
                 usePointerCursor={dashboardItems.length > 1}
-                onRowDoubleClick={onRowDoubleClick}
+                onRowDoubleClick={onRowClick}
                 getSubRows={row => (isDummyRow(row) ? [] : row.subRows ?? [])}
                 getCustomExpandedRowModel={getTopAndBottomExpandedRowModel}
                 expandedState={expanded}
@@ -603,6 +616,12 @@ const Sandwich = React.memo(function Sandwich({
                 sandwich={true}
               />
             </div>
+
+            {selectedRow != null && (
+              <div className="w-[50%]">
+                <CanvasIcicle row={selectedRow} />
+              </div>
+            )}
           </div>
         </motion.div>
       </AnimatePresence>
