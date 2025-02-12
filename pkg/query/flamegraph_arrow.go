@@ -583,6 +583,7 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 				fb.builderTimestamp.Value(cr),
 				fb.builderDuration.Value(cr),
 				r.Timestamp.Value(sampleIndex),
+				r.Duration.Value(sampleIndex),
 			)
 			if err != nil {
 				return false, err
@@ -729,6 +730,7 @@ func (fb *flamegraphBuilder) mergeUnsymbolizedRows(
 				fb.builderTimestamp.Value(cr),
 				fb.builderDuration.Value(cr),
 				r.Timestamp.Value(sampleIndex),
+				r.Duration.Value(sampleIndex),
 			)
 			if err != nil {
 				return false, err
@@ -755,17 +757,17 @@ func (fb *flamegraphBuilder) mergeUnsymbolizedRows(
 	return false, nil
 }
 
-func matchRowsByTimestamp(compareTimestamp, compareDuration, timestamp int64) (bool, error) {
+func matchRowsByTimestamp(compareTimestamp, compareDuration, timestamp, duration int64) (bool, error) {
 	if compareTimestamp == timestamp {
 		return false, fmt.Errorf("multiple samples for the same timestamp is not allowed: %d", timestamp)
 	}
 
 	difference := time.Duration(timestamp - (compareTimestamp + compareDuration))
-
-	// TODO: We can use the truncate method to remove jitter based on the total time range we're looking at.
-	// return difference.Truncate(time.Millisecond) == 0, nil
-
-	return int64(difference) == 0, nil
+	// We truncate 10% jitter. We use duration which usually is the period.
+	// For example, for 19hz sampling rate, we'll get a duration of 1000ms/19hz = 52.63ms
+	// and 10% are 5.2ms jitter that gets truncated.
+	truncated := difference.Truncate(time.Duration(duration / 10))
+	return truncated == 0, nil
 }
 
 func (fb *flamegraphBuilder) intersectLabels(
