@@ -25,6 +25,7 @@ import {
   FIELD_LOCATION_LINE,
   FIELD_MAPPING_BUILD_ID,
   FIELD_MAPPING_FILE,
+  FIELD_TIMESTAMP,
 } from '../../ProfileIcicleGraph/IcicleGraphArrow';
 import {arrowToString} from '../../ProfileIcicleGraph/IcicleGraphArrow/utils';
 import {ProfileSource} from '../../ProfileSource';
@@ -47,6 +48,7 @@ interface GraphTooltipMetaInfoData {
   mappingFile: string | null;
   mappingBuildID: string | null;
   inlined: boolean | null;
+  timestamp: bigint | null;
 }
 
 export const useGraphTooltipMetaInfo = ({table, row}: Props): GraphTooltipMetaInfoData => {
@@ -66,6 +68,7 @@ export const useGraphTooltipMetaInfo = ({table, row}: Props): GraphTooltipMetaIn
     locationLine !== 0n ? locationLine : functionStartLine !== 0n ? functionStartLine : undefined;
   const labelPrefix = 'labels.';
   const labelColumnNames = table.schema.fields.filter(field => field.name.startsWith(labelPrefix));
+  const timestamp = table.getChild(FIELD_TIMESTAMP)?.get(row);
 
   const {queryServiceClient, enableSourcesView} = useParcaContext();
   const {profileSource} = useProfileViewContext();
@@ -140,5 +143,6 @@ export const useGraphTooltipMetaInfo = ({table, row}: Props): GraphTooltipMetaIn
     mappingBuildID,
     mappingFile,
     inlined,
+    timestamp,
   };
 };

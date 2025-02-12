@@ -16,8 +16,9 @@ import React from 'react';
 import {Icon} from '@iconify/react';
 import {Table} from 'apache-arrow';
 
+import {useParcaContext} from '@parca/components';
 import {ProfileType} from '@parca/parser';
-import {getLastItem} from '@parca/utilities';
+import {formatDateTimeDownToMS, getLastItem} from '@parca/utilities';
 
 import {hexifyAddress, truncateString, truncateStringReverse} from '../utils';
 import {ExpandOnHover} from './ExpandOnHoverValue';
@@ -141,7 +142,9 @@ const TooltipMetaInfo = ({table, row}: {table: Table<any>; row: number}): React.
     mappingFile,
     mappingBuildID,
     inlined,
+    timestamp,
   } = useGraphTooltipMetaInfo({table, row});
+  const {timezone} = useParcaContext();
 
   const labels = labelPairs.map(
     (l): React.JSX.Element => (
@@ -159,9 +162,19 @@ const TooltipMetaInfo = ({table, row}: {table: Table<any>; row: number}): React.
 
   return (
     <>
+      {timestamp == null || timestamp === 0n ? (
+        <div className="pt-2" />
+      ) : (
+        <tr>
+          <td className="w-1/4 pt-2">Timestamp</td>
+          <td className="w-3/4 pt-2 break-all">
+            {formatDateTimeDownToMS(new Date(Number(timestamp / 1000000n)), timezone)}
+          </td>{' '}
+        </tr>
+      )}
       <tr>
-        <td className="w-1/4 pt-2">File</td>
-        <td className="w-3/4 pt-2 break-all">
+        <td className="w-1/4">File</td>
+        <td className="w-3/4 break-all">
           {functionFilename === '' ? (
             <NoData />
           ) : (
