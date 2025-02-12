@@ -84,8 +84,7 @@ export const IcicleChartRootNode = React.memo(function IcicleChartRootNodeNonMem
   return (
     <>
       {childRows.map(row => {
-        const duration =
-          durationColumn?.get(row) !== null ? BigInt(durationColumn?.get(row)) : 0n;
+        const duration = durationColumn?.get(row) !== null ? BigInt(durationColumn?.get(row)) : 0n;
         const timestamp =
           timestampColumn?.get(row) !== null ? BigInt(timestampColumn?.get(row)) : 0n;
 
