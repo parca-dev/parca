@@ -169,7 +169,6 @@ export const getDashboardItem = ({
           unit={topTableData.unit}
           profileType={profileSource?.ProfileType()}
           currentSearchString={currentSearchString}
-          setSearchString={setSearchString}
           isHalfScreen={isHalfScreen}
           metadataMappingFiles={flamegraphData.metadataMappingFiles}
         />

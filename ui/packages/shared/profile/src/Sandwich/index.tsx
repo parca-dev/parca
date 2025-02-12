@@ -34,8 +34,7 @@ import {
 } from '@parca/components';
 import {type RowRendererProps} from '@parca/components/dist/Table';
 import {useCurrentColorProfile} from '@parca/hooks';
-import {ProfileType} from '@parca/parser';
-import {getLastItem, isSearchMatch, valueFormatter} from '@parca/utilities';
+import {getLastItem, valueFormatter} from '@parca/utilities';
 
 import {getFilenameColors, getMappingColors} from '../ProfileIcicleGraph/IcicleGraphArrow/';
 import {colorByColors} from '../ProfileIcicleGraph/IcicleGraphArrow/IcicleGraphNodes';
@@ -80,12 +79,9 @@ import {
 } from '../Table/utils/functions';
 import {getTopAndBottomExpandedRowModel} from '../Table/utils/topAndBottomExpandedRowModel';
 
-let doubleClickTimer: NodeJS.Timeout | null = null;
-
 const CustomRowRenderer = ({
   row,
   usePointerCursor,
-  onRowClick,
   onRowDoubleClick,
   enableHighlighting,
   shouldHighlightRow,
@@ -138,25 +134,7 @@ const CustomRowRenderer = ({
         'hover:bg-[#62626212] dark:hover:bg-[#ffffff12] ': !isExpanded && !_isSubRow,
         'hover:bg-indigo-200 dark:hover:bg-indigo-500': isExpanded || _isSubRow,
       })}
-      onClick={e => {
-        if (typeof onRowClick !== 'function') {
-          return;
-        }
-        if (e.detail === 2 && doubleClickTimer != null) {
-          // Prevent the click event from being triggered as it is part of a double click
-          clearTimeout(doubleClickTimer);
-          doubleClickTimer = null;
-          return;
-        }
-        if (e.detail === 1) {
-          // Schedule a single click event to be triggered after 150ms
-          doubleClickTimer = setTimeout(() => {
-            doubleClickTimer = null;
-            onRowClick(row.original);
-          }, 150);
-        }
-      }}
-      onDoubleClick={
+      onClick={
         onRowDoubleClick != null
           ? () => {
               onRowDoubleClick(row, rows);
@@ -216,12 +194,10 @@ const Sandwich = React.memo(function Sandwich({
   filtered,
   profileType,
   loading,
-  currentSearchString,
-  setSearchString = () => {},
   isHalfScreen,
   unit,
   metadataMappingFiles,
-}: TableProps): React.JSX.Element {
+}: Omit<TableProps, 'setSearchString'>): React.JSX.Element {
   const currentColorProfile = useCurrentColorProfile();
   const [dashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
@@ -462,28 +438,6 @@ const Sandwich = React.memo(function Sandwich({
     }
   }, [tableColumns]);
 
-  const selectSpan = useCallback(
-    (span: string): void => {
-      setSearchString(span.trim());
-    },
-    [setSearchString]
-  );
-
-  const onRowClick = useCallback(
-    (row: Row) => {
-      if (isDummyRow(row)) {
-        return;
-      }
-
-      // If there is only one dashboard item, we don't want to select a span
-      if (dashboardItems.length <= 1) {
-        return;
-      }
-      selectSpan(row.name);
-    },
-    [selectSpan, dashboardItems.length]
-  );
-
   const onRowDoubleClick = useCallback(
     (row: RowType<Row>, rows: Array<RowType<Row>>) => {
       if (isDummyRow(row.original)) {
@@ -518,21 +472,6 @@ const Sandwich = React.memo(function Sandwich({
     },
     [setScrollToIndex]
   );
-
-  const shouldHighlightRow = useCallback(
-    (row: Row) => {
-      if (!('name' in row)) {
-        return false;
-      }
-      const name = row.name;
-      return isSearchMatch(currentSearchString as string, name);
-    },
-    [currentSearchString]
-  );
-
-  const enableHighlighting = useMemo(() => {
-    return currentSearchString != null && currentSearchString?.length > 0;
-  }, [currentSearchString]);
 
   const initialSorting = useMemo(() => {
     return [
@@ -609,27 +548,11 @@ const Sandwich = React.memo(function Sandwich({
       row.callees = callees;
       row.subRows = [...getCallerRows(callers), ...getCalleeRows(callees)];
 
-      console.log('🚀 ~ constrows:DataRow[]=usceMemo ~ row:', row);
-
       rows.push(row);
     }
 
     return rows;
   }, [table, colorByColors, colorBy]);
-
-  useEffect(() => {
-    setTimeout(() => {
-      if (currentSearchString == null || rows.length === 0) return;
-
-      const firstHighlightedRowIndex = rows.findIndex(row => {
-        return !isDummyRow(row) && isSearchMatch(currentSearchString, row.name);
-      });
-
-      if (firstHighlightedRowIndex !== -1) {
-        setScrollToIndex(firstHighlightedRowIndex);
-      }
-    }, 1000); // Adding a delay to allow the table to render seems to be the only way to get this to work i.e. scrolling down to the highlighted row
-  }, [currentSearchString, rows]);
 
   if (loading) {
     return (
@@ -660,9 +583,6 @@ const Sandwich = React.memo(function Sandwich({
                 columns={columns}
                 initialSorting={initialSorting}
                 columnVisibility={columnVisibility}
-                onRowClick={onRowClick}
-                enableHighlighting={enableHighlighting}
-                shouldHighlightRow={shouldHighlightRow}
                 usePointerCursor={dashboardItems.length > 1}
                 onRowDoubleClick={onRowDoubleClick}
                 getSubRows={row => (isDummyRow(row) ? [] : row.subRows ?? [])}
@@ -680,6 +600,7 @@ const Sandwich = React.memo(function Sandwich({
                 CustomRowRenderer={CustomRowRenderer}
                 scrollToIndex={scrollToIndex}
                 estimatedRowHeight={ROW_HEIGHT}
+                sandwich={true}
               />
             </div>
           </div>

@@ -33,10 +33,15 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import {elementScroll} from '@tanstack/virtual-core';
 import cx from 'classnames';
 
+type RowClickHandler<TData, Sandwich extends boolean = false> = Sandwich extends true
+  ? (row: TData, rows?: Array<Row<TData>>) => void
+  : (row: TData) => void;
+
 export interface RowRendererProps<TData> {
+  sandwich?: boolean;
   row: Row<TData>;
   usePointerCursor?: boolean;
-  onRowClick?: (row: TData) => void;
+  onRowClick?: RowClickHandler<TData, boolean>;
   onRowDoubleClick?: (row: Row<TData>, rows: Array<Row<TData>>) => void;
   enableHighlighting?: boolean;
   shouldHighlightRow?: (row: TData) => boolean;
@@ -60,7 +65,7 @@ const DefaultRowRenderer = ({
         'hover:bg-[#62626212] dark:hover:bg-[#ffffff12]',
         {'bg-red-500': row.getIsExpanded()}
       )}
-      onClick={onRowClick != null ? () => onRowClick(row.original) : undefined}
+      onClick={onRowClick != null ? () => onRowClick(row.original, rows) : undefined}
       onDoubleClick={onRowDoubleClick != null ? () => onRowDoubleClick(row, rows) : undefined}
       style={
         enableHighlighting !== true || shouldHighlightRow === undefined
@@ -88,11 +93,12 @@ const DefaultRowRenderer = ({
 };
 
 interface Props<TData> {
+  sandwich?: boolean;
   data: TData[];
   columns: Array<ColumnDef<TData>>;
   initialSorting?: SortingState;
   columnVisibility?: VisibilityState;
-  onRowClick?: (row: TData) => void;
+  onRowClick?: RowClickHandler<TData, boolean>;
   onRowDoubleClick?: (row: Row<TData>, rows: Array<Row<TData>>) => void;
   enableHighlighting?: boolean;
   shouldHighlightRow?: (row: TData) => boolean;

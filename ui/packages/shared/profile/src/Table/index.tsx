@@ -19,9 +19,8 @@ import {
   type CellContext,
   type ColumnDef,
   type ExpandedState,
-  type Row as RowType,
 } from '@tanstack/table-core';
-import {Int64, Vector, tableFromIPC, vectorFromArray} from 'apache-arrow';
+import {tableFromIPC} from 'apache-arrow';
 import cx from 'classnames';
 import {AnimatePresence, motion} from 'framer-motion';
 import {Tooltip} from 'react-tooltip';
@@ -50,10 +49,7 @@ import {
   ROW_HEIGHT,
   RowName,
   addPlusSign,
-  getCalleeRows,
-  getCallerRows,
   getRowColor,
-  getScrollTargetIndex,
   isFirstSubRow,
   isLastSubRow,
   isSubRow,
@@ -83,8 +79,6 @@ export const isDummyRow = (row: Row): row is DummyRow => {
   return 'size' in row;
 };
 
-export let doubleClickTimer: NodeJS.Timeout | null = null;
-
 export interface TableProps {
   data?: Uint8Array;
   total: bigint;
@@ -103,7 +97,6 @@ export const CustomRowRenderer = ({
   row,
   usePointerCursor,
   onRowClick,
-  onRowDoubleClick,
   enableHighlighting,
   shouldHighlightRow,
   rows,
@@ -155,32 +148,13 @@ export const CustomRowRenderer = ({
         'hover:bg-[#62626212] dark:hover:bg-[#ffffff12] ': !isExpanded && !_isSubRow,
         'hover:bg-indigo-200 dark:hover:bg-indigo-500': isExpanded || _isSubRow,
       })}
-      onClick={e => {
+      onClick={() => {
         if (typeof onRowClick !== 'function') {
           return;
         }
-        if (e.detail === 2 && doubleClickTimer != null) {
-          // Prevent the click event from being triggered as it is part of a double click
-          clearTimeout(doubleClickTimer);
-          doubleClickTimer = null;
-          return;
-        }
-        if (e.detail === 1) {
-          // Schedule a single click event to be triggered after 150ms
-          doubleClickTimer = setTimeout(() => {
-            doubleClickTimer = null;
-            onRowClick(row.original);
-          }, 150);
-        }
+
+        onRowClick(row.original);
       }}
-      onDoubleClick={
-        onRowDoubleClick != null
-          ? () => {
-              onRowDoubleClick(row, rows);
-              window.getSelection()?.removeAllRanges();
-            }
-          : undefined
-      }
       style={
         enableHighlighting !== true || shouldHighlightRow === undefined
           ? undefined
@@ -501,41 +475,6 @@ export const Table = React.memo(function Table({
     [selectSpan, dashboardItems.length]
   );
 
-  const onRowDoubleClick = useCallback(
-    (row: RowType<Row>, rows: Array<RowType<Row>>) => {
-      if (isDummyRow(row.original)) {
-        return;
-      }
-      if (!isSubRow(row.original)) {
-        row.toggleExpanded();
-        return;
-      }
-      // find the original row for this subrow and toggle it
-      const newRow = rows.find(
-        r =>
-          !isDummyRow(r.original) &&
-          !isDummyRow(row.original) &&
-          r.original.name === row.original.name &&
-          !isSubRow(r.original)
-      );
-      const parentRow = rows.find(r => {
-        const parent = row.getParentRow()!;
-        if (isDummyRow(parent.original) || isDummyRow(r.original)) {
-          return false;
-        }
-        return r.original.name === parent.original.name;
-      });
-      if (parentRow == null || newRow == null) {
-        return;
-      }
-
-      newRow.toggleExpanded();
-
-      setScrollToIndex(getScrollTargetIndex(rows, parentRow, newRow));
-    },
-    [setScrollToIndex]
-  );
-
   const shouldHighlightRow = useCallback(
     (row: Row) => {
       if (!('name' in row)) {
@@ -574,8 +513,6 @@ export const Table = React.memo(function Table({
     const functionFileNameColumn = table.getChild(FIELD_FUNCTION_FILE_NAME);
     const mappingFileColumn = table.getChild(FIELD_MAPPING_FILE);
     const locationAddressColumn = table.getChild(FIELD_LOCATION_ADDRESS);
-    const callersColumn = table.getChild(FIELD_CALLERS);
-    const calleesColumn = table.getChild(FIELD_CALLEES);
 
     const getRow = (i: number): DataRow => {
       const flat: bigint = flatColumn?.get(i) ?? 0n;
@@ -609,27 +546,7 @@ export const Table = React.memo(function Table({
       };
     };
 
-    const rows: DataRow[] = [];
-    for (let i = 0; i < table.numRows; i++) {
-      const row = getRow(i);
-      const callerIndices: Vector<Int64> = callersColumn?.get(i) ?? vectorFromArray([]);
-      const callers: DataRow[] = Array.from(callerIndices.toArray().values()).map(rowIdx => {
-        return getRow(Number(rowIdx));
-      });
-
-      const calleeIndices: Vector<Int64> = calleesColumn?.get(i) ?? vectorFromArray([]);
-      const callees: DataRow[] = Array.from(calleeIndices.toArray().values()).map(rowIdx => {
-        return getRow(Number(rowIdx));
-      });
-
-      row.callers = callers;
-      row.callees = callees;
-      row.subRows = [...getCallerRows(callers), ...getCalleeRows(callees)];
-
-      console.log('🚀 ~ constrows:DataRow[]=usceMemo ~ row:', row);
-
-      rows.push(row);
-    }
+    const rows: DataRow[] = Array.from({length: table.numRows}, (_, i) => getRow(i));
 
     return rows;
   }, [table, colorByColors, colorBy]);
@@ -680,7 +597,6 @@ export const Table = React.memo(function Table({
               enableHighlighting={enableHighlighting}
               shouldHighlightRow={shouldHighlightRow}
               usePointerCursor={dashboardItems.length > 1}
-              onRowDoubleClick={onRowDoubleClick}
               getSubRows={row => (isDummyRow(row) ? [] : row.subRows ?? [])}
               getCustomExpandedRowModel={getTopAndBottomExpandedRowModel}
               expandedState={expanded}
@@ -696,6 +612,7 @@ export const Table = React.memo(function Table({
               CustomRowRenderer={CustomRowRenderer}
               scrollToIndex={scrollToIndex}
               estimatedRowHeight={ROW_HEIGHT}
+              sandwich={false}
             />
           </div>
         </div>
