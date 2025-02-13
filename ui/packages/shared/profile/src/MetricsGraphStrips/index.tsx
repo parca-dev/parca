@@ -107,7 +107,7 @@ export const MetricsGraphStrips = ({
             {!isCollapsed ? (
               <AreaGraph
                 data={data[i]}
-                height={56}
+                height={24}
                 width={width ?? 1468}
                 fill={color(labelStr) as string}
                 selectionBounds={

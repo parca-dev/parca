@@ -24,7 +24,7 @@ import {QuerySelection, type UtilizationMetrics as UtilizationMetricsType} from 
 
 interface MetricsGraphSectionProps {
   showMetricsGraph: boolean;
-  setDisplayHideMetricsGraphButton: (show: boolean) => void;
+  setDisplayHideMetricsGraphButton?: (show: boolean) => void;
   heightStyle: string;
   querySelection: QuerySelection;
   profileSelection: ProfileSelection | null;
@@ -135,16 +135,18 @@ export function MetricsGraphSection({
 
   return (
     <div className={cx('relative', {'py-4': !showMetricsGraph})}>
-      <button
-        onClick={() => setDisplayHideMetricsGraphButton(!showMetricsGraph)}
-        className={cx(
-          'hidden px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-900',
-          showMetricsGraph && 'absolute right-0 bottom-3 !flex',
-          !showMetricsGraph && 'relative !flex ml-auto'
-        )}
-      >
-        {showMetricsGraph ? 'Hide' : 'Show'} Metrics Graph
-      </button>
+      {setDisplayHideMetricsGraphButton != null ? (
+        <button
+          onClick={() => setDisplayHideMetricsGraphButton(!showMetricsGraph)}
+          className={cx(
+            'hidden px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-900',
+            showMetricsGraph && 'absolute right-0 bottom-3 !flex',
+            !showMetricsGraph && 'relative !flex ml-auto'
+          )}
+        >
+          {showMetricsGraph ? 'Hide' : 'Show'} Metrics Graph
+        </button>
+      ) : null}
       {showMetricsGraph && (
         <>
           <div style={{height: heightStyle}}>

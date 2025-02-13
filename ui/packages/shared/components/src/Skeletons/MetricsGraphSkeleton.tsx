@@ -15,9 +15,10 @@ import cx from 'classnames';
 interface Props {
   heightStyle?: string;
   isDarkMode: boolean;
+  isMini?: boolean;
 }
 
-const MetricsGraphSkeleton = ({heightStyle, isDarkMode}: Props): JSX.Element => {
+const MetricsGraphSkeleton = ({heightStyle, isDarkMode, isMini = false}: Props): JSX.Element => {
   return (
     <div className="relative overflow-hidden" style={{height: heightStyle}}>
       <div className="absolute top-0 left-0 w-full h-full bg-shimmer-gradient dark:bg-shimmer-gradient-dark animate-shimmer"></div>
@@ -120,10 +121,10 @@ const MetricsGraphSkeleton = ({heightStyle, isDarkMode}: Props): JSX.Element => 
         <g stroke={cx(isDarkMode ? '#6b7280' : '#d1d5db')}>
           <path d="m49.5 19h1385v365h-1385z" />
           <path d="m49 139.039h1386" />
-          <path d="m49 79.8652h1386" />
-          <path d="m49 198.213h1386" />
+          {!isMini ? <path d="m49 79.8652h1386" /> : null}
+          {!isMini ? <path d="m49 198.213h1386" /> : null}
           <path d="m49 257.387h1386" />
-          <path d="m49 316.561h1386" />
+          {!isMini ? <path d="m49 316.561h1386" /> : null}
           <path d="m282.09 18.5v366" />
           <path d="m511.602 18.5v366" />
           <path d="m739.309 18.5v366" />

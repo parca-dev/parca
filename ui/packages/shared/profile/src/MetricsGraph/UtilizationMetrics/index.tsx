@@ -485,19 +485,19 @@ const UtilizationMetrics = ({
   utilizationMetricsLoading,
 }: Props): JSX.Element => {
   const {isDarkMode} = useParcaContext();
-  const {width, height, margin, heightStyle} = useMetricsGraphDimensions(false);
+  const {width, height, margin, heightStyle} = useMetricsGraphDimensions(false, true);
 
   return (
     <AnimatePresence>
       <motion.div
-        className="h-full w-full relative"
+        className="w-full relative"
         key="utilization-metrics-graph-loaded"
         initial={{display: 'none', opacity: 0}}
         animate={{display: 'block', opacity: 1}}
         transition={{duration: 0.5}}
       >
         {utilizationMetricsLoading === true ? (
-          <MetricsGraphSkeleton heightStyle={heightStyle} isDarkMode={isDarkMode} />
+          <MetricsGraphSkeleton heightStyle={heightStyle} isDarkMode={isDarkMode} isMini={true} />
         ) : (
           <RawUtilizationMetrics
             data={data}
