@@ -12,7 +12,7 @@
 // limitations under the License.
 
 import * as DateFns from 'date-fns';
-import {toZonedTime} from 'date-fns-tz';
+import {format, toZonedTime} from 'date-fns-tz';
 
 import {Duration, Timestamp} from '@parca/client';
 
@@ -139,6 +139,12 @@ export const formatDate = (date: number | Date, timeFormat: string, timezone?: s
 
   return DateFns.format(new Date(ISOString), timeFormat);
 };
+
+export function formatDateTimeDownToMS(timestamp: number | Date, timezone?: string): string {
+  return timezone !== undefined
+    ? format(timestamp, "yyyy:MM:dd'T'HH:mm:ss.SSS", {timeZone: timezone})
+    : format(toZonedTime(timestamp, 'UTC'), "yyyy:MM:dd'T'HH:mm:ss.SSS (zzz)", {timeZone: 'UTC'});
+}
 
 export const formatForTimespan = (from: number, to: number): string => {
   const duration = DateFns.intervalToDuration({start: from, end: to});
