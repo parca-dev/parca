@@ -52,6 +52,7 @@ export const ThreeCPUStrips = {
     onSelectedTimeframe: (index: number, bounds: NumberDuo): void => {
       console.log('onSelectedTimeframe', index, bounds);
     },
+    bounds: [mockData[0][0].timestamp, mockData[0][mockData[0].length - 1].timestamp],
   },
   render: function Component(args: any): JSX.Element {
     const [, setArgs] = useArgs();
