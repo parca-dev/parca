@@ -81,7 +81,7 @@ interface ProfileSelectorProps extends ProfileSelectorFeatures {
   profileSelection: ProfileSelection | null;
   comparing: boolean;
   navigateTo: NavigateFunction;
-  setDisplayHideMetricsGraphButton: Dispatch<SetStateAction<boolean>>;
+  setDisplayHideMetricsGraphButton?: Dispatch<SetStateAction<boolean>>;
   suffix?: string;
   utilizationMetrics?: UtilizationMetrics[];
   utilizationMetricsLoading?: boolean;
@@ -138,7 +138,7 @@ const ProfileSelector = ({
     data: profileTypesData,
     error,
   } = useProfileTypes(queryClient);
-  const {heightStyle} = useMetricsGraphDimensions(comparing);
+  const {heightStyle} = useMetricsGraphDimensions(comparing, utilizationMetrics != null);
   const {viewComponent} = useParcaContext();
   const [queryBrowserMode, setQueryBrowserMode] = useURLState('query_browser_mode');
 
