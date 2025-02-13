@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useMemo, useState} from 'react';
+import {useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import * as d3 from 'd3';
