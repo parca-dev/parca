@@ -19,7 +19,7 @@ import {formatDateTimeDownToMS, valueFormatter} from '@parca/utilities';
 interface TooltipProps {
   x: number;
   y: number;
-  timestamp: Date;
+  timestamp: Date | number;
   value: number;
   containerWidth: number;
 }
