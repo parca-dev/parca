@@ -62,8 +62,6 @@ const (
 
 	FlamegraphFieldTimestamp = "timestamp"
 	FlamegraphFieldDuration  = "duration"
-
-	FlamegraphFieldGroupByMetadata = "groupby_metadata"
 )
 
 func GenerateFlamegraphArrow(
@@ -847,8 +845,6 @@ type flamegraphBuilder struct {
 	// height keeps track of the current stack trace's height of the flame graph.
 	height int32
 
-	groupByMetadataFields []arrow.Field
-
 	builderLabelsOnly                    *array.BooleanBuilder
 	builderMappingFileIndices            *array.Int32Builder
 	builderMappingFileDictUnifier        array.DictionaryUnifier
@@ -868,7 +864,6 @@ type flamegraphBuilder struct {
 	builderLabelsExist                   *builder.OptBooleanBuilder
 	builderLabels                        []*builder.OptInt32Builder
 	builderLabelsDictUnifiers            []array.DictionaryUnifier
-	builderGroupByMetadata               *array.StructBuilder
 	builderChildren                      *builder.ListBuilder
 	builderChildrenValues                *array.Uint32Builder
 	builderCumulative                    *builder.OptInt64Builder
@@ -926,10 +921,6 @@ func newFlamegraphBuilder(
 	groupBy []string,
 ) (*flamegraphBuilder, error) {
 	builderChildren := builder.NewListBuilder(pool, arrow.PrimitiveTypes.Uint32)
-	groupByMetadataStructFields := make([]arrow.Field, 0, len(groupBy))
-	for _, f := range groupBy {
-		groupByMetadataStructFields = append(groupByMetadataStructFields, arrow.Field{Name: f, Type: arrow.BinaryTypes.Binary})
-	}
 
 	fb := &flamegraphBuilder{
 		pool: pool,
@@ -969,9 +960,6 @@ func newFlamegraphBuilder(
 		builderCumulative:     builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
 		builderFlat:           builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
 		builderDiff:           builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
-
-		groupByMetadataFields:  groupByMetadataStructFields,
-		builderGroupByMetadata: array.NewStructBuilder(pool, arrow.StructOf(groupByMetadataStructFields...)),
 	}
 
 	fb.aggregationConfig = aggregationConfig{aggregateByLabels: map[string]struct{}{}}
@@ -1022,8 +1010,6 @@ func newFlamegraphBuilder(
 
 	fb.builderTimestamp.Append(0)
 	fb.builderDuration.Append(0)
-
-	fb.builderGroupByMetadata.AppendNull()
 
 	return fb, nil
 }
@@ -1157,8 +1143,6 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 		// Timestamp
 		{Name: FlamegraphFieldTimestamp, Type: arrow.PrimitiveTypes.Int64},
 		{Name: FlamegraphFieldDuration, Type: arrow.PrimitiveTypes.Int64},
-		// Metadata
-		{Name: FlamegraphFieldGroupByMetadata, Type: fb.builderGroupByMetadata.Type().(*arrow.StructType)},
 	}
 
 	numCols := len(fields)
@@ -1216,8 +1200,6 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	cleanupArrs = append(cleanupArrs, arrays[14])
 	arrays[15] = fb.trimmedDuration.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[15])
-	arrays[16] = fb.builderGroupByMetadata.NewArray()
-	cleanupArrs = append(cleanupArrs, arrays[16])
 
 	for i, field := range fb.builderLabelFields {
 		field.Type = fb.labels[i].DataType() // overwrite for variable length uint types
@@ -1260,8 +1242,6 @@ func (fb *flamegraphBuilder) Release() {
 	fb.builderCumulative.Release()
 	fb.builderFlat.Release()
 	fb.builderDiff.Release()
-
-	fb.builderGroupByMetadata.Release()
 
 	if fb.trimmedLocationLine != nil {
 		fb.trimmedLocationLine.Release()
@@ -1432,27 +1412,7 @@ func (fb *flamegraphBuilder) appendRow(
 		fb.builderDiff.AppendNull()
 	}
 
-	appendGroupByMetadata(fb, r, sampleRow)
-
 	return nil
-}
-
-func appendGroupByMetadata(fb *flamegraphBuilder, r *profile.RecordReader, sampleRow int) {
-	fb.builderGroupByMetadata.Append(true)
-	for i := 0; i < fb.builderGroupByMetadata.NumField(); i++ {
-		n := fb.groupByMetadataFields[i].Name
-		b := fb.builderGroupByMetadata.FieldBuilder(i).(*array.BinaryBuilder)
-		switch n {
-		case FlamegraphFieldTimestamp:
-			ts := r.Timestamp.Value(sampleRow)
-			b.Append([]byte(fmt.Sprint(ts)))
-		case FlamegraphFieldDuration:
-			duration := r.Duration.Value(sampleRow)
-			b.Append([]byte(fmt.Sprint(duration)))
-		default:
-			b.AppendNull()
-		}
-	}
 }
 
 func (fb *flamegraphBuilder) AppendLabelRow(
@@ -1608,7 +1568,6 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedFlat := array.NewBuilder(fb.pool, trimmedFlatType)
 	trimmedDiffType := smallestSignedTypeFor(smallestDiffValue, largestDiffValue)
 	trimmedDiff := array.NewBuilder(fb.pool, trimmedDiffType)
-	trimmedGroupByMetadata := array.NewStructBuilder(fb.pool, fb.builderGroupByMetadata.Type().(*arrow.StructType))
 
 	trimmedTimestamps := builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
 	// TODO: We should use the smallest type for the duration.
@@ -1645,7 +1604,6 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedCumulative.Reserve(row)
 	trimmedFlat.Reserve(row)
 	trimmedDiff.Reserve(row)
-	trimmedGroupByMetadata.Reserve(row)
 	trimmedTimestamps.Reserve(row)
 	trimmedDurations.Reserve(row)
 
@@ -1672,7 +1630,6 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 		appendDictionaryIndexInt32(fb.functionNameIndices, trimmedFunctionNameIndices, te.row)
 		appendDictionaryIndexInt32(fb.functionSystemNameIndices, trimmedFunctionSystemNameIndices, te.row)
 		appendDictionaryIndexInt32(fb.functionFilenameIndices, trimmedFunctionFilenameIndices, te.row)
-		copyStructBuilderValue(fb.builderGroupByMetadata, trimmedGroupByMetadata, te.row)
 		copyOptInt64BuilderValue(fb.builderTimestamp, trimmedTimestamps, te.row)
 		copyOptInt64BuilderValue(fb.builderDuration, trimmedDurations, te.row)
 		for i := range fb.labels {
@@ -1845,7 +1802,6 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 		fb.builderDiff,
 		fb.builderLocationLine,
 		fb.builderFunctionStartLine,
-		fb.builderGroupByMetadata,
 	)
 	fb.builderLabelsOnly = trimmedLabelsOnly
 	fb.builderLabelsExist = trimmedLabelsExist
@@ -1856,7 +1812,6 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	fb.trimmedCumulative = trimmedCumulative
 	fb.trimmedFlat = trimmedFlat
 	fb.trimmedDiff = trimmedDiff
-	fb.builderGroupByMetadata = trimmedGroupByMetadata
 	fb.trimmedChildren = trimmedChildren
 	fb.trimmedTimestamp = trimmedTimestamps
 	fb.trimmedDuration = trimmedDurations
@@ -1945,20 +1900,6 @@ func appendDictionaryIndexInt32(dict *array.Int32, index *array.Int32Builder, ro
 		return
 	}
 	index.Append(dict.Value(row))
-}
-
-func copyStructBuilderValue(old, new *array.StructBuilder, row int) {
-	if old.IsNull(row) {
-		new.AppendNull()
-		return
-	}
-
-	new.Append(true)
-	for i := 0; i < old.NumField(); i++ {
-		old := old.FieldBuilder(i).(*array.BinaryBuilder)
-		new := new.FieldBuilder(i).(*array.BinaryBuilder)
-		new.Append(old.Value(row))
-	}
 }
 
 func isLocationRoot(beg, end, i int64, list *array.List) bool {
