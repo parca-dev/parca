@@ -352,7 +352,7 @@ export const AreaGraph = ({
           <Tooltip
             x={mousePosition[0]}
             y={mousePosition[1]}
-            timestamp={new Date(hoverData.timestamp)}
+            timestamp={hoverData.timestamp}
             value={hoverData.value}
             containerWidth={width}
           />

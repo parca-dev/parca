@@ -189,6 +189,10 @@ const RawUtilizationMetrics = ({
   );
 
   const highlighted = useMemo(() => {
+    if (series.length === 0) {
+      return null;
+    }
+
     // Return the closest point as the highlighted point
     const closestPointPerSeries = series.map(function (s) {
       const distances = s.values.map(d => {

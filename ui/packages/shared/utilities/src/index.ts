@@ -11,7 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {format} from 'date-fns-tz';
 import colors from 'tailwindcss/colors';
 
 import {Label} from '@parca/client';
@@ -378,9 +377,3 @@ export const isUrlEncoded = (str: string): boolean => {
     return false; // Invalid encoding
   }
 };
-
-export function formatDateTimeDownToMS(timestamp: Date, timezone?: string): string {
-  return timezone !== undefined
-    ? format(timestamp, "yyyy:MM:dd'T'HH:mm:ss.SSS", {timeZone: timezone})
-    : `${format(timestamp, "yyyy:MM:dd'T'HH:mm:ss.SSS", {timeZone: 'UTC'})} (UTC)`;
-}
