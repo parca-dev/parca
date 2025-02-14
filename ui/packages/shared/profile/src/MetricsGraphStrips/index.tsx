@@ -56,8 +56,15 @@ export const labelSetToString = (labelSet?: LabelSet): string => {
   return str;
 };
 
+const STRIP_HEIGHT = 24;
+
 const getTimelineGuideHeight = (cpus: LabelSet[], collapsedIndices: number[]): number => {
-  return 56 * (cpus.length - collapsedIndices.length) + 20 * collapsedIndices.length + 24;
+  return (
+    (STRIP_HEIGHT + 4) * (cpus.length - collapsedIndices.length) +
+    20 * collapsedIndices.length +
+    24 -
+    6
+  );
 };
 
 export const MetricsGraphStrips = ({
@@ -107,7 +114,7 @@ export const MetricsGraphStrips = ({
             {!isCollapsed ? (
               <AreaGraph
                 data={data[i]}
-                height={24}
+                height={STRIP_HEIGHT}
                 width={width ?? 1468}
                 fill={color(labelStr) as string}
                 selectionBounds={
