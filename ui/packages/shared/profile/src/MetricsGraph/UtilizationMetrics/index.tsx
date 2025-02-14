@@ -341,7 +341,7 @@ const RawUtilizationMetrics = ({
           </g>
           <g transform={`translate(${margin * 1.5}, ${margin / 1.5})`}>
             <g className="y axis" textAnchor="end" fontSize="10" fill="none">
-              {yScale.ticks(5).map((d, i, allTicks) => {
+              {yScale.ticks(3).map((d, i, allTicks) => {
                 let decimals = 2;
                 const intervalBetweenTicks = allTicks[1] - allTicks[0];
 
