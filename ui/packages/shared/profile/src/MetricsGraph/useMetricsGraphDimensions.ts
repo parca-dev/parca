@@ -23,7 +23,7 @@ interface MetricsGraphDimensions {
 }
 
 const MAX_HEIGHT = 402;
-const MINI_VARIANT_HEIGHT = 100;
+const MINI_VARIANT_HEIGHT = 180;
 const margin = 50;
 
 export const useMetricsGraphDimensions = (

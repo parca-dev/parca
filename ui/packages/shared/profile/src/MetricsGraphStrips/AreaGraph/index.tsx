@@ -338,7 +338,7 @@ export const AreaGraph = ({
 
       {/* Inactive indicator */}
       <div
-        className={cx('absolute top-0 left-0 w-full h-full bg-gray-900/50 dark:bg-gray-200/50', {
+        className={cx('absolute top-0 left-0 w-full h-full bg-gray-900/25 dark:bg-gray-200/25', {
           hidden: isDragging || selectionBounds !== undefined,
         })}
       ></div>
