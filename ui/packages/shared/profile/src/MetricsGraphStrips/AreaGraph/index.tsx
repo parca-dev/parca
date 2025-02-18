@@ -188,15 +188,6 @@ const ZoomWindow = ({
           <Icon icon="si:drag-handle-line" className="rotate-90" fontSize={16} />
         </div>
       </div>
-
-      {/* <div
-        style={{height: '100%', width: afterWidth, left: afterStart}}
-        className={cx(
-          'bg-gray-500/50 absolute top-0 border-l-2 border-gray-900 dark:border-gray-100'
-        )}
-      >
-
-      </div> */}
     </div>
   );
 };
@@ -340,13 +331,6 @@ export const AreaGraph = ({
         onZoomWindowChange={setSelectionBoundsWithScaling}
         setIsHoveringDragHandle={setIsHoveringDragHandle}
       />
-
-      {/* Inactive indicator */}
-      {/* <div
-        className={cx('absolute top-0 left-0 w-full h-full bg-gray-900/25 dark:bg-gray-200/25', {
-          hidden: isDragging || selectionBounds !== undefined,
-        })}
-      ></div> */}
 
       {/* Update Tooltip conditional render */}
       {mousePosition !== undefined &&
