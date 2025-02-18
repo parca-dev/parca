@@ -20,9 +20,16 @@ interface MetricsSeriesProps {
   strokeWidth: string;
   xScale: (input: number) => number;
   yScale: (input: number) => number;
+  onClick: () => void;
 }
 
-const MetricsSeries = ({data, line, color, strokeWidth}: MetricsSeriesProps): JSX.Element => (
+const MetricsSeries = ({
+  data,
+  line,
+  color,
+  strokeWidth,
+  onClick,
+}: MetricsSeriesProps): JSX.Element => (
   <g className="line-group">
     <path
       className="line"
@@ -31,6 +38,7 @@ const MetricsSeries = ({data, line, color, strokeWidth}: MetricsSeriesProps): JS
         stroke: color,
         strokeWidth,
       }}
+      onClick={onClick}
     />
   </g>
 );

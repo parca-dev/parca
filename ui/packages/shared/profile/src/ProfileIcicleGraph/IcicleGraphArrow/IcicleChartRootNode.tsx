@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React from 'react';
+import React, {Fragment} from 'react';
 
 import cx from 'classnames';
 import twColors from 'tailwindcss/colors';
@@ -95,7 +95,7 @@ export const IcicleChartRootNode = React.memo(function IcicleChartRootNodeNonMem
         const newXScale = scaleLinear([0n, BigInt(cumulative)], [0, width]);
 
         return (
-          <>
+          <Fragment key={row}>
             <g transform={`translate(${x + 1}, ${y + 1})`}>
               <rect
                 x={0}
@@ -143,7 +143,7 @@ export const IcicleChartRootNode = React.memo(function IcicleChartRootNodeNonMem
               highlightSimilarStacksPreference={highlightSimilarStacksPreference}
               key={row}
             />
-          </>
+          </Fragment>
         );
       })}
     </>

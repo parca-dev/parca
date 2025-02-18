@@ -14,6 +14,7 @@
 import {useState} from 'react';
 
 import {Icon} from '@iconify/react';
+import cx from 'classnames';
 import * as d3 from 'd3';
 import isEqual from 'fast-deep-equal';
 
@@ -80,6 +81,8 @@ export const MetricsGraphStrips = ({
   // @ts-expect-error
   const color = d3.scaleOrdinal(d3.schemeObservable10);
 
+  const valueBounds = d3.extent(data.flatMap(d => d.map(p => p.value))) as [number, number];
+
   return (
     <div className="flex flex-col gap-1 relative my-0 ml-[70px]" style={{width: width ?? '100%'}}>
       <TimelineGuide
@@ -90,11 +93,19 @@ export const MetricsGraphStrips = ({
       />
       {cpus.map((cpu, i) => {
         const isCollapsed = collapsedIndices.includes(i);
+        const isSelected = isEqual(cpu, selectedTimeframe?.labels);
         const labelStr = labelSetToString(cpu);
         return (
-          <div className="relative min-h-5" style={{width: width ?? 1468}} key={labelStr}>
+          <div
+            className={cx('min-h-5', {
+              relative: !isSelected,
+              'sticky z-30 bg-white dark:bg-black bg-opacity-75': isSelected,
+            })}
+            style={{width: width ?? 1468, top: isSelected ? 302 : undefined}}
+            key={labelStr}
+          >
             <div
-              className="text-xs absolute top-0 left-0 flex gap-[2px] items-center bg-white/50 px-1 rounded-sm cursor-pointer"
+              className="text-xs absolute top-0 left-0 flex gap-[2px] items-center bg-white/50 dark:bg-black/50 px-1 rounded-sm cursor-pointer"
               style={{
                 zIndex: 15,
               }}
@@ -117,12 +128,11 @@ export const MetricsGraphStrips = ({
                 height={STRIP_HEIGHT}
                 width={width ?? 1468}
                 fill={color(labelStr) as string}
-                selectionBounds={
-                  isEqual(cpu, selectedTimeframe?.labels) ? selectedTimeframe?.bounds : undefined
-                }
+                selectionBounds={isSelected ? selectedTimeframe?.bounds : undefined}
                 setSelectionBounds={bounds => {
                   onSelectedTimeframe(cpu, bounds);
                 }}
+                valueBounds={valueBounds}
               />
             ) : null}
           </div>

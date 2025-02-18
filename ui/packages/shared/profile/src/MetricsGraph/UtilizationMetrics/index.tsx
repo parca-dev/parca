@@ -19,6 +19,7 @@ import {AnimatePresence, motion} from 'framer-motion';
 import throttle from 'lodash.throttle';
 import {useContextMenu} from 'react-contexify';
 
+import {Label} from '@parca/client';
 import {DateTimeRange, MetricsGraphSkeleton, useParcaContext} from '@parca/components';
 import {formatDate, formatForTimespan, getPrecision, valueFormatter} from '@parca/utilities';
 
@@ -58,6 +59,7 @@ interface Props {
   ) => void;
   setTimeRange: (range: DateTimeRange) => void;
   utilizationMetricsLoading?: boolean;
+  onSeriesClick: (labels: Label[]) => void;
 }
 
 function transformToSeries(data: MetricSeries[]): Series[] {
@@ -113,10 +115,8 @@ const RawUtilizationMetrics = ({
   const from = timeExtent[0] ?? 0;
   const to = timeExtent[1] ?? 0;
 
-  // Add a small padding (2%) to the time range to avoid points touching the edges
-  const timeRange = to - from;
-  const paddedFrom = from - timeRange * 0.02;
-  const paddedTo = to + timeRange * 0.02;
+  const paddedFrom = from;
+  const paddedTo = to;
 
   const series = transformToSeries(data);
 
@@ -458,11 +458,18 @@ const RawUtilizationMetrics = ({
                     }
                     xScale={xScale}
                     yScale={yScale}
+                    onClick={() => {
+                      if (highlighted != null) {
+                        addLabelMatcher(
+                          highlighted.labels.map(l => ({key: l.name, value: l.value}))
+                        );
+                      }
+                    }}
                   />
                 </g>
               ))}
             </g>
-            {hovering && highlighted != null && (
+            {false && hovering && highlighted != null && (
               <g
                 className="circle-group"
                 ref={metricPointRef}

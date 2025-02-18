@@ -56,7 +56,7 @@ export function Tooltip({x, y, timestamp, value, containerWidth}: TooltipProps):
   return (
     <div
       ref={tooltipRef}
-      className="absolute bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 p-2 text-sm z-20"
+      className="absolute bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 p-2 text-sm z-50"
       style={{
         left: `${tooltipPosition.x}px`,
         top: `${tooltipPosition.y}px`,
