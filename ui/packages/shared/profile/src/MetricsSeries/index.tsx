@@ -20,7 +20,7 @@ interface MetricsSeriesProps {
   strokeWidth: string;
   xScale: (input: number) => number;
   yScale: (input: number) => number;
-  onClick: () => void;
+  onClick?: () => void;
 }
 
 const MetricsSeries = ({

@@ -59,7 +59,6 @@ interface Props {
   ) => void;
   setTimeRange: (range: DateTimeRange) => void;
   utilizationMetricsLoading?: boolean;
-  onSeriesClick: (labels: Label[]) => void;
 }
 
 function transformToSeries(data: MetricSeries[]): Series[] {
