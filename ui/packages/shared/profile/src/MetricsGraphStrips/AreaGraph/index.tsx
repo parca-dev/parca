@@ -65,7 +65,6 @@ const DraggingWindow = ({
 
 const ZoomWindow = ({
   zoomWindow,
-  width,
   onZoomWindowChange,
   setIsHoveringDragHandle,
 }: {
