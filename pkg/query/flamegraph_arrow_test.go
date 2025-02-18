@@ -1459,3 +1459,24 @@ func drawFlamegraphToConsole(testing *testing.T, record arrow.Record) {
 	populateChild(t, 0)
 	fmt.Println(t)
 }
+
+func Test_matchRowsByTimestamp(t *testing.T) {
+	second := time.Second.Nanoseconds()
+
+	tests := []struct {
+		name         string
+		ct, cd, t, d int64
+		match        bool
+	}{
+		{"0", 0, second, second, second, true},
+		{"1/100", 0, second, second + second/100, second, true},
+		{"1/10", 0, second, second + second/10, second, true},
+		{"1/5", 0, second, second + second/5, second, false},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			m, _ := matchRowsByTimestamp(tc.ct, tc.cd, tc.t, tc.d)
+			require.Equal(t, tc.match, m)
+		})
+	}
+}
