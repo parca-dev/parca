@@ -469,15 +469,6 @@ const RawUtilizationMetrics = ({
                 </g>
               ))}
             </g>
-            {false && hovering && highlighted != null && (
-              <g
-                className="circle-group"
-                ref={metricPointRef}
-                style={{fill: color(highlighted.seriesIndex.toString())}}
-              >
-                <MetricsCircle cx={highlighted.x} cy={highlighted.y} />
-              </g>
-            )}
           </g>
         </svg>
       </div>
