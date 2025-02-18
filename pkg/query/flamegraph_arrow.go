@@ -932,6 +932,10 @@ func newFlamegraphBuilder(
 		childrenList:   make([][]int, maxInt64(rows, 1)),
 		labelNameIndex: map[string]int{},
 
+		// // only used for the sandwich
+		// callers:       make([]map[uint64]int, maxInt64(rows, 1)),
+		// callees:       make([]map[uint64]int, maxInt64(rows, 1)),
+
 		builderLabelsOnly:  array.NewBooleanBuilder(pool),
 		builderLabelsExist: builder.NewOptBooleanBuilder(arrow.FixedWidthTypes.Boolean),
 

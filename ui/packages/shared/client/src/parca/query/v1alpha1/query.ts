@@ -506,7 +506,13 @@ export enum QueryRequest_ReportType {
      *
      * @generated from protobuf enum value: REPORT_TYPE_FLAMECHART = 9;
      */
-    FLAMECHART = 9
+    FLAMECHART = 9,
+    /**
+     * REPORT_TYPE_FLAMEGRAPH_SANDWICH contains flamegraph sandwich representation of the report
+     *
+     * @generated from protobuf enum value: REPORT_TYPE_FLAMEGRAPH_SANDWICH = 10;
+     */
+    FLAMEGRAPH_SANDWICH = 10
 }
 /**
  * Filter to apply to the query request

@@ -250,6 +250,9 @@ message QueryRequest {
 
     // REPORT_TYPE_FLAMECHART contains flamechart representation of the report
     REPORT_TYPE_FLAMECHART = 9;
+
+    // REPORT_TYPE_FLAMEGRAPH_SANDWICH contains flamegraph sandwich representation of the report
+    REPORT_TYPE_FLAMEGRAPH_SANDWICH = 10;
   }
 
   // report_type is the type of report to return

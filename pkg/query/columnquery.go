@@ -612,6 +612,19 @@ func RenderReport(
 				FlamegraphArrow: fa,
 			},
 		}, nil
+	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_SANDWICH:
+		fa, total, err := GenerateFlamegraphSandwhich(ctx, mem, tracer, p, groupBy, nodeTrimFraction)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to generate arrow flamegraph: %v", err.Error())
+		}
+
+		return &pb.QueryResponse{
+			Total:    total,
+			Filtered: filtered,
+			Report: &pb.QueryResponse_FlamegraphArrow{
+				FlamegraphArrow: fa,
+			},
+		}, nil
 	case pb.QueryRequest_REPORT_TYPE_SOURCE:
 		s, total, err := GenerateSourceReport(
 			ctx,
