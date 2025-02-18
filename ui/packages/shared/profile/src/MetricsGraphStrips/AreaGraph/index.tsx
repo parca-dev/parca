@@ -36,6 +36,7 @@ interface Props {
   data: DataPoint[];
   selectionBounds?: NumberDuo | undefined;
   setSelectionBounds: (newBounds: NumberDuo | undefined) => void;
+  valueBounds: NumberDuo;
 }
 
 const DraggingWindow = ({
@@ -64,7 +65,6 @@ const DraggingWindow = ({
 
 const ZoomWindow = ({
   zoomWindow,
-  width,
   onZoomWindowChange,
   setIsHoveringDragHandle,
 }: {
@@ -95,10 +95,8 @@ const ZoomWindow = ({
   if (zoomWindowState === undefined) {
     return null;
   }
-  const beforeStart = 0;
   const beforeWidth = zoomWindowState[0];
   const afterStart = zoomWindowState[1];
-  const afterWidth = width - zoomWindowState[1];
 
   return (
     <div
@@ -142,13 +140,17 @@ const ZoomWindow = ({
       }}
     >
       <div
-        style={{height: '100%', width: beforeWidth, left: beforeStart}}
+        style={{
+          height: '100%',
+          width: zoomWindowState[1] - zoomWindowState[0],
+          left: zoomWindowState[0],
+        }}
         className={cx(
-          'bg-gray-500/50 absolute top-0 border-r-2 border-gray-900 dark:border-gray-100 z-10'
+          'bg-gray-500/50 absolute top-0 border-r-2 border-gray-900 dark:border-gray-100 z-20'
         )}
       >
         <div
-          className="w-3 h-4 absolute top-0 right-[-7px] rounded-b bg-gray-200  cursor-ew-resize flex justify-center"
+          className="w-3 h-4 absolute top-0 left-[-7px] rounded-b bg-gray-200  cursor-ew-resize flex justify-center z-30"
           onMouseDown={e => {
             setDraggingStart(true);
             e.stopPropagation();
@@ -164,16 +166,9 @@ const ZoomWindow = ({
         >
           <Icon icon="si:drag-handle-line" className="rotate-90" fontSize={16} />
         </div>
-      </div>
 
-      <div
-        style={{height: '100%', width: afterWidth, left: afterStart}}
-        className={cx(
-          'bg-gray-500/50 absolute top-0 border-l-2 border-gray-900 dark:border-gray-100'
-        )}
-      >
         <div
-          className="w-3 h-4 absolute top-0 rounded-b bg-gray-200 cursor-ew-resize flex justify-center left-[-7px]"
+          className="w-3 h-4 absolute top-0 rounded-b bg-gray-200 cursor-ew-resize flex justify-center right-[-7px]"
           onMouseDown={e => {
             setDraggingEnd(true);
             e.stopPropagation();
@@ -205,6 +200,7 @@ export const AreaGraph = ({
   fill = 'gray',
   selectionBounds,
   setSelectionBounds,
+  valueBounds,
 }: Props): JSX.Element => {
   const [mousePosition, setMousePosition] = useState<NumberDuo | undefined>(undefined);
   const [dragStart, setDragStart] = useState<number | undefined>(undefined);
@@ -220,10 +216,7 @@ export const AreaGraph = ({
   ]);
 
   // Declare the y (vertical position) scale.
-  const y = d3.scaleLinear(
-    [0, d3.max(data, d => d.value) as number],
-    [height - marginBottom, marginTop]
-  );
+  const y = d3.scaleLinear([valueBounds[0], valueBounds[1]], [height - marginBottom, marginTop]);
   const area = d3
     .area<DataPoint>()
     .curve(d3.curveMonotoneX)
@@ -335,13 +328,6 @@ export const AreaGraph = ({
         onZoomWindowChange={setSelectionBoundsWithScaling}
         setIsHoveringDragHandle={setIsHoveringDragHandle}
       />
-
-      {/* Inactive indicator */}
-      <div
-        className={cx('absolute top-0 left-0 w-full h-full bg-gray-900/25 dark:bg-gray-200/25', {
-          hidden: isDragging || selectionBounds !== undefined,
-        })}
-      ></div>
 
       {/* Update Tooltip conditional render */}
       {mousePosition !== undefined &&

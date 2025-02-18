@@ -22,7 +22,6 @@ import {useContextMenu} from 'react-contexify';
 import {DateTimeRange, MetricsGraphSkeleton, useParcaContext} from '@parca/components';
 import {formatDate, formatForTimespan, getPrecision, valueFormatter} from '@parca/utilities';
 
-import MetricsCircle from '../../MetricsCircle';
 import MetricsSeries from '../../MetricsSeries';
 import MetricsContextMenu from '../MetricsContextMenu';
 import MetricsTooltip from '../MetricsTooltip';
@@ -100,7 +99,6 @@ const RawUtilizationMetrics = ({
   const [relPos, setRelPos] = useState(-1);
   const [pos, setPos] = useState([0, 0]);
   const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
-  const metricPointRef = useRef(null);
   const idForContextMenu = useId();
 
   const lineStroke = '1px';
@@ -113,10 +111,8 @@ const RawUtilizationMetrics = ({
   const from = timeExtent[0] ?? 0;
   const to = timeExtent[1] ?? 0;
 
-  // Add a small padding (2%) to the time range to avoid points touching the edges
-  const timeRange = to - from;
-  const paddedFrom = from - timeRange * 0.02;
-  const paddedTo = to + timeRange * 0.02;
+  const paddedFrom = from;
+  const paddedTo = to;
 
   const series = transformToSeries(data);
 
@@ -458,19 +454,17 @@ const RawUtilizationMetrics = ({
                     }
                     xScale={xScale}
                     yScale={yScale}
+                    onClick={() => {
+                      if (highlighted != null) {
+                        addLabelMatcher(
+                          highlighted.labels.map(l => ({key: l.name, value: l.value}))
+                        );
+                      }
+                    }}
                   />
                 </g>
               ))}
             </g>
-            {hovering && highlighted != null && (
-              <g
-                className="circle-group"
-                ref={metricPointRef}
-                style={{fill: color(highlighted.seriesIndex.toString())}}
-              >
-                <MetricsCircle cx={highlighted.x} cy={highlighted.y} />
-              </g>
-            )}
           </g>
         </svg>
       </div>

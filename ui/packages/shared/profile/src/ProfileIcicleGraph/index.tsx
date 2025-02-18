@@ -11,9 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {LegacyRef, useEffect, useMemo, useState} from 'react';
 
 import {AnimatePresence, motion} from 'framer-motion';
+import {useMeasure} from 'react-use';
 
 import {Flamegraph, FlamegraphArrow} from '@parca/client';
 import {IcicleGraphSkeleton, useParcaContext, useURLState} from '@parca/components';
@@ -75,6 +76,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   const {onError, authenticationErrorMessage, isDarkMode} = useParcaContext();
   const {compareMode} = useProfileViewContext();
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [icicleChartRef, {height: icicleChartHeight}] = useMeasure();
 
   const mappingsList = useMappingList(metadataMappingFiles);
 
@@ -170,37 +172,40 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
         />
       );
 
-    if (arrow !== undefined)
+    if (arrow !== undefined) {
       return (
         <div className="relative">
           {isIcicleChart ? (
             <TimelineGuide
               bounds={boundsFromProfileSource(profileSource)}
               width={width}
-              height={1000}
+              height={icicleChartHeight ?? 420}
               margin={0}
               ticks={12}
               timeUnit="nanoseconds"
             />
           ) : null}
-          <IcicleGraphArrow
-            width={width}
-            arrow={arrow}
-            total={total}
-            filtered={filtered}
-            curPath={curPath}
-            setCurPath={setNewCurPath}
-            profileType={profileType}
-            sortBy={storeSortBy as string}
-            flamegraphLoading={isLoading}
-            isHalfScreen={isHalfScreen}
-            mappingsListFromMetadata={mappingsList}
-            compareAbsolute={isCompareAbsolute}
-            isIcicleChart={isIcicleChart}
-            profileSource={profileSource}
-          />
+          <div ref={icicleChartRef as LegacyRef<HTMLDivElement>}>
+            <IcicleGraphArrow
+              width={width}
+              arrow={arrow}
+              total={total}
+              filtered={filtered}
+              curPath={curPath}
+              setCurPath={setNewCurPath}
+              profileType={profileType}
+              sortBy={storeSortBy as string}
+              flamegraphLoading={isLoading}
+              isHalfScreen={isHalfScreen}
+              mappingsListFromMetadata={mappingsList}
+              compareAbsolute={isCompareAbsolute}
+              isIcicleChart={isIcicleChart}
+              profileSource={profileSource}
+            />
+          </div>
         </div>
       );
+    }
   }, [
     isLoading,
     graph,
@@ -219,6 +224,8 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     isCompareAbsolute,
     isIcicleChart,
     profileSource,
+    icicleChartHeight,
+    icicleChartRef,
   ]);
 
   if (error != null) {
