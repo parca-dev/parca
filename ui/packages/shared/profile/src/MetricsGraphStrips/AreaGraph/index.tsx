@@ -96,10 +96,8 @@ const ZoomWindow = ({
   if (zoomWindowState === undefined) {
     return null;
   }
-  const beforeStart = 0;
   const beforeWidth = zoomWindowState[0];
   const afterStart = zoomWindowState[1];
-  const afterWidth = width - zoomWindowState[1];
 
   return (
     <div

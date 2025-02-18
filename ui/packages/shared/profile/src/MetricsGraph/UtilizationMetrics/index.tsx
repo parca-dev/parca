@@ -19,11 +19,9 @@ import {AnimatePresence, motion} from 'framer-motion';
 import throttle from 'lodash.throttle';
 import {useContextMenu} from 'react-contexify';
 
-import {Label} from '@parca/client';
 import {DateTimeRange, MetricsGraphSkeleton, useParcaContext} from '@parca/components';
 import {formatDate, formatForTimespan, getPrecision, valueFormatter} from '@parca/utilities';
 
-import MetricsCircle from '../../MetricsCircle';
 import MetricsSeries from '../../MetricsSeries';
 import MetricsContextMenu from '../MetricsContextMenu';
 import MetricsTooltip from '../MetricsTooltip';
@@ -101,7 +99,6 @@ const RawUtilizationMetrics = ({
   const [relPos, setRelPos] = useState(-1);
   const [pos, setPos] = useState([0, 0]);
   const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
-  const metricPointRef = useRef(null);
   const idForContextMenu = useId();
 
   const lineStroke = '1px';

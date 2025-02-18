@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {LegacyRef, useEffect, useMemo, useRef, useState} from 'react';
+import React, {LegacyRef, useEffect, useMemo, useState} from 'react';
 
 import {AnimatePresence, motion} from 'framer-motion';
 import {useMeasure} from 'react-use';
@@ -224,6 +224,8 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     isCompareAbsolute,
     isIcicleChart,
     profileSource,
+    icicleChartHeight,
+    icicleChartRef,
   ]);
 
   if (error != null) {
