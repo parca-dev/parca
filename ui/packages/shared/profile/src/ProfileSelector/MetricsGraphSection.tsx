@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {useMemo} from 'react';
+
 import cx from 'classnames';
 
 import {Label, QueryServiceClient} from '@parca/client';
@@ -133,6 +135,11 @@ export function MetricsGraphSection({
     selectProfile(new MergedProfileSelection(mergeFrom, mergeTo, query));
   };
 
+  const selectedMatchers = useMemo(
+    () => Query.parse(querySelection.expression).matchers,
+    [querySelection.expression]
+  );
+
   return (
     <div className={cx('relative', {'py-4': !showMetricsGraph})}>
       {setDisplayHideMetricsGraphButton != null ? (
@@ -160,6 +167,7 @@ export function MetricsGraphSection({
                     addLabelMatcher={addLabelMatcher}
                     setTimeRange={handleTimeRangeChange}
                     utilizationMetricsLoading={utilizationMetricsLoading}
+                    selectedSeriesMatchers={selectedMatchers}
                   />
                 ) : (
                   <>

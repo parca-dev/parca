@@ -20,6 +20,7 @@ import throttle from 'lodash.throttle';
 import {useContextMenu} from 'react-contexify';
 
 import {DateTimeRange, MetricsGraphSkeleton, useParcaContext} from '@parca/components';
+import {Matcher} from '@parca/parser';
 import {formatDate, formatForTimespan, getPrecision, valueFormatter} from '@parca/utilities';
 
 import MetricsSeries from '../../MetricsSeries';
@@ -39,25 +40,29 @@ interface MetricSeries {
   };
 }
 
-interface RawUtilizationMetricsProps {
+interface CommonProps {
   data: MetricSeries[];
   addLabelMatcher: (
     labels: {key: string; value: string} | Array<{key: string; value: string}>
   ) => void;
   setTimeRange: (range: DateTimeRange) => void;
+  selectedSeriesMatchers?: Matcher[];
+}
+
+type RawUtilizationMetricsProps = CommonProps & {
   width: number;
   height: number;
   margin: number;
-}
+};
 
-interface Props {
+type Props = CommonProps & {
   data: MetricSeries[];
   addLabelMatcher: (
     labels: {key: string; value: string} | Array<{key: string; value: string}>
   ) => void;
   setTimeRange: (range: DateTimeRange) => void;
   utilizationMetricsLoading?: boolean;
-}
+};
 
 function transformToSeries(data: MetricSeries[]): Series[] {
   const groupedData = data.reduce<Record<string, Series>>((acc, series) => {
@@ -91,6 +96,7 @@ const RawUtilizationMetrics = ({
   width,
   height,
   margin,
+  selectedSeriesMatchers,
 }: RawUtilizationMetricsProps): JSX.Element => {
   const {timezone} = useParcaContext();
   const graph = useRef(null);
@@ -103,6 +109,7 @@ const RawUtilizationMetrics = ({
 
   const lineStroke = '1px';
   const lineStrokeHover = '2px';
+  const lineStrokeSelected = '3px';
 
   const graphWidth = width - margin * 1.5 - margin / 2;
 
@@ -441,29 +448,49 @@ const RawUtilizationMetrics = ({
               </g>
             </g>
             <g className="lines fill-transparent">
-              {series.map((s, i) => (
-                <g key={i} className="line">
-                  <MetricsSeries
-                    data={s}
-                    line={l}
-                    color={color(i.toString())}
-                    strokeWidth={
-                      hovering && highlighted != null && i === highlighted.seriesIndex
-                        ? lineStrokeHover
-                        : lineStroke
-                    }
-                    xScale={xScale}
-                    yScale={yScale}
-                    onClick={() => {
-                      if (highlighted != null) {
-                        addLabelMatcher(
-                          highlighted.labels.map(l => ({key: l.name, value: l.value}))
-                        );
+              {series.map((s, i) => {
+                let isSelected = false;
+                if (
+                  selectedSeriesMatchers != null &&
+                  selectedSeriesMatchers.length > 0 &&
+                  selectedSeriesMatchers.length === s.metric.length
+                ) {
+                  isSelected = selectedSeriesMatchers.every(m => {
+                    for (let i = 0; i < s.metric.length; i++) {
+                      if (s.metric[i].name === m.key && s.metric[i].value === m.value) {
+                        return true;
                       }
-                    }}
-                  />
-                </g>
-              ))}
+                    }
+                    return false;
+                  });
+                }
+
+                return (
+                  <g key={i} className="line cursor-pointer">
+                    <MetricsSeries
+                      data={s}
+                      line={l}
+                      color={color(i.toString())}
+                      strokeWidth={
+                        isSelected
+                          ? lineStrokeSelected
+                          : hovering && highlighted != null && i === highlighted.seriesIndex
+                          ? lineStrokeHover
+                          : lineStroke
+                      }
+                      xScale={xScale}
+                      yScale={yScale}
+                      onClick={() => {
+                        if (highlighted != null) {
+                          addLabelMatcher(
+                            highlighted.labels.map(l => ({key: l.name, value: l.value}))
+                          );
+                        }
+                      }}
+                    />
+                  </g>
+                );
+              })}
             </g>
           </g>
         </svg>
@@ -477,6 +504,7 @@ const UtilizationMetrics = ({
   addLabelMatcher,
   setTimeRange,
   utilizationMetricsLoading,
+  selectedSeriesMatchers,
 }: Props): JSX.Element => {
   const {isDarkMode} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(false, true);
@@ -500,6 +528,7 @@ const UtilizationMetrics = ({
             width={width}
             height={height}
             margin={margin}
+            selectedSeriesMatchers={selectedSeriesMatchers}
           />
         )}
       </motion.div>
