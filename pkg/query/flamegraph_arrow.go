@@ -756,6 +756,9 @@ func (fb *flamegraphBuilder) mergeUnsymbolizedRows(
 }
 
 func matchRowsByTimestamp(compareTimestamp, compareDuration, timestamp, duration int64) (bool, error) {
+	if compareTimestamp > timestamp {
+		return false, fmt.Errorf("compareTimestamp > timestamp: %d > %d", compareTimestamp, timestamp)
+	}
 	if compareTimestamp == timestamp {
 		return false, fmt.Errorf("multiple samples for the same timestamp is not allowed: %d", timestamp)
 	}
@@ -764,8 +767,9 @@ func matchRowsByTimestamp(compareTimestamp, compareDuration, timestamp, duration
 	// We truncate 10% jitter. We use duration which usually is the period.
 	// For example, for 19hz sampling rate, we'll get a duration of 1000ms/19hz = 52.63ms
 	// and 10% are 5.2ms jitter that gets truncated.
-	truncated := difference.Truncate(time.Duration(duration / 10))
-	return truncated == 0, nil
+	jitter := time.Duration(duration / 10)
+	truncated := difference - jitter
+	return truncated <= 0, nil
 }
 
 func (fb *flamegraphBuilder) intersectLabels(
