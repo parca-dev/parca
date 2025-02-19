@@ -146,11 +146,11 @@ const ZoomWindow = ({
           left: zoomWindowState[0],
         }}
         className={cx(
-          'bg-gray-500/50 absolute top-0 border-r-2 border-gray-900 dark:border-gray-100 z-20'
+          'bg-gray-500/50 dark:bg-gray-100/90 absolute top-0 border-x-2 border-gray-900 dark:border-gray-100 z-20'
         )}
       >
         <div
-          className="w-3 h-4 absolute top-0 left-[-7px] rounded-b bg-gray-200  cursor-ew-resize flex justify-center z-30"
+          className="w-3 h-4 absolute top-0 left-[-7px] rounded-b bg-gray-200 dark:bg-gray-600  cursor-ew-resize flex justify-center z-30"
           onMouseDown={e => {
             setDraggingStart(true);
             e.stopPropagation();
@@ -168,7 +168,7 @@ const ZoomWindow = ({
         </div>
 
         <div
-          className="w-3 h-4 absolute top-0 rounded-b bg-gray-200 cursor-ew-resize flex justify-center right-[-7px]"
+          className="w-3 h-4 absolute top-0 rounded-b bg-gray-200 dark:bg-gray-600 cursor-ew-resize flex justify-center right-[-7px]"
           onMouseDown={e => {
             setDraggingEnd(true);
             e.stopPropagation();
