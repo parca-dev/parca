@@ -154,8 +154,8 @@ importers:
         specifier: 8.45.0
         version: 8.45.0
       eslint-config-prettier:
-        specifier: 9.0.0
-        version: 9.0.0(eslint@8.45.0)
+        specifier: 9.1.0
+        version: 9.1.0(eslint@8.45.0)
       eslint-config-react-app:
         specifier: 7.0.1
         version: 7.0.1(@babel/plugin-syntax-flow@7.26.0)(@babel/plugin-transform-react-jsx@7.25.9)(eslint@8.45.0)(jest@29.7.0)(typescript@5.7.3)
@@ -176,7 +176,7 @@ importers:
         version: 15.7.0(eslint@8.45.0)
       eslint-plugin-prettier:
         specifier: 5.2.3
-        version: 5.2.3(eslint-config-prettier@9.0.0)(eslint@8.45.0)(prettier@3.4.2)
+        version: 5.2.3(eslint-config-prettier@9.1.0)(eslint@8.45.0)(prettier@3.4.2)
       eslint-plugin-promise:
         specifier: 6.6.0
         version: 6.6.0(eslint@8.45.0)
@@ -11274,8 +11274,8 @@ packages:
       eslint: 8.45.0
     dev: true
 
-  /eslint-config-prettier@9.0.0(eslint@8.45.0):
-    resolution: {integrity: sha512-IcJsTkJae2S35pRsRAwoCE+925rJJStOdkKnLVgtE+tEpqU0EVVM7OqrwxqgptKdX29NUwC82I5pXsGFIgSevw==}
+  /eslint-config-prettier@9.1.0(eslint@8.45.0):
+    resolution: {integrity: sha512-NSWl5BFQWEPi1j4TjVNItzYV7dZXZ+wP6I6ZhrBGpChQhZRUaElihE9uRRkcbRnNb76UMKDF3r+WTmNcGPKsqw==}
     hasBin: true
     peerDependencies:
       eslint: '>=7.0.0'
@@ -11618,7 +11618,7 @@ packages:
       prettier: 2.8.8
     dev: true
 
-  /eslint-plugin-prettier@5.2.3(eslint-config-prettier@9.0.0)(eslint@8.45.0)(prettier@3.4.2):
+  /eslint-plugin-prettier@5.2.3(eslint-config-prettier@9.1.0)(eslint@8.45.0)(prettier@3.4.2):
     resolution: {integrity: sha512-qJ+y0FfCp/mQYQ/vWQ3s7eUlFEL4PyKfAJxsnYTJ4YT73nsJBWqmEpFryxV9OeUiqmsTsYJ5Y+KDNaeP31wrRw==}
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
@@ -11633,7 +11633,7 @@ packages:
         optional: true
     dependencies:
       eslint: 8.45.0
-      eslint-config-prettier: 9.0.0(eslint@8.45.0)
+      eslint-config-prettier: 9.1.0(eslint@8.45.0)
       prettier: 3.4.2
       prettier-linter-helpers: 1.0.0
       synckit: 0.9.1
