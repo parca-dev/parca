@@ -190,8 +190,8 @@ importers:
         specifier: 5.0.0
         version: 5.0.0(eslint@8.45.0)
       eslint-plugin-storybook:
-        specifier: 0.11.2
-        version: 0.11.2(eslint@8.45.0)(typescript@5.7.3)
+        specifier: 0.11.3
+        version: 0.11.3(eslint@8.45.0)(typescript@5.7.3)
       eslint-plugin-typescript-enum:
         specifier: 2.1.0
         version: 2.1.0(eslint@8.45.0)(typescript@5.7.3)
@@ -11691,19 +11691,20 @@ packages:
       eslint: 8.45.0
     dev: true
 
-  /eslint-plugin-storybook@0.11.2(eslint@8.45.0)(typescript@5.7.3):
-    resolution: {integrity: sha512-0Z4DUklJrC+GHjCRXa7PYfPzWC15DaVnwaOYenpgXiCEijXPZkLKCms+rHhtoRcWccP7Z8DpOOaP1gc3P9oOwg==}
+  /eslint-plugin-storybook@0.11.3(eslint@8.45.0)(typescript@5.7.3):
+    resolution: {integrity: sha512-gDBnBZiyk4ZG7OMSJRaHBcuJ8TMCXgMIQ3HB/XvtN0SvSio2ZOIeYD3yGj39g/DbyCe/Bg02j/ip9tWlDEs82A==}
     engines: {node: '>= 18'}
     peerDependencies:
       eslint: '>=8'
+      typescript: '>=4.8.4 <5.8.0'
     dependencies:
       '@storybook/csf': 0.1.12
       '@typescript-eslint/utils': 8.12.1(eslint@8.45.0)(typescript@5.7.3)
       eslint: 8.45.0
       ts-dedent: 2.2.0
+      typescript: 5.7.3
     transitivePeerDependencies:
       - supports-color
-      - typescript
     dev: true
 
   /eslint-plugin-testing-library@5.11.1(eslint@8.45.0)(typescript@4.9.5):
