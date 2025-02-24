@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.819](https://github.com/parca-dev/parca/compare/@parca/web@0.16.818...@parca/web@0.16.819) (2025-02-24)
+
+### Bug Fixes
+
+- **ui:** Remove .env commited by accident in [#4612](https://github.com/parca-dev/parca/issues/4612) ([5e92ca9](https://github.com/parca-dev/parca/commit/5e92ca901c0e8131b3e80f2211c8f6b0a94563b9))
+
 ## [0.16.818](https://github.com/parca-dev/parca/compare/@parca/web@0.16.817...@parca/web@0.16.818) (2025-02-22)
 
 **Note:** Version bump only for package @parca/web
