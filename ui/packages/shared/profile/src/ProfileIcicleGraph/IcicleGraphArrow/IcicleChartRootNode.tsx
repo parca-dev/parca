@@ -96,30 +96,13 @@ export const IcicleChartRootNode = React.memo(function IcicleChartRootNodeNonMem
 
         return (
           <Fragment key={row}>
-            <g transform={`translate(${x + 1}, ${y + 1})`}>
-              <rect
-                x={0}
-                y={0}
-                width={width}
-                height={RowHeight}
-                style={{
-                  fill: darkMode ? twColors.gray[500] : twColors.gray[200],
-                }}
-                className={cx(`stroke-white dark:stroke-gray-700 fill-gray-600 dark:fill-gray-100`)}
-              />
-              <svg width={width - 5} height={height}>
-                <text x={5} y={15} style={{fontSize: '12px'}}>
-                  root
-                </text>
-              </svg>
-            </g>
             <IcicleNode
               table={table}
               row={row}
               colors={colors}
               colorBy={colorBy}
               x={x}
-              y={RowHeight}
+              y={0}
               totalWidth={width ?? 1}
               height={RowHeight}
               setCurPath={setCurPath}
