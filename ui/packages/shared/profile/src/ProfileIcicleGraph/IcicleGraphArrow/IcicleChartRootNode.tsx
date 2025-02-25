@@ -13,9 +13,6 @@
 
 import React, {Fragment} from 'react';
 
-import cx from 'classnames';
-import twColors from 'tailwindcss/colors';
-
 import {scaleLinear} from '@parca/utilities';
 
 import {FIELD_CHILDREN, FIELD_CUMULATIVE, FIELD_DURATION, FIELD_TIMESTAMP} from '.';
@@ -33,7 +30,6 @@ export const IcicleChartRootNode = React.memo(function IcicleChartRootNodeNonMem
   colors,
   colorBy,
   y,
-  height,
   setCurPath,
   curPath,
   level,
@@ -102,7 +98,7 @@ export const IcicleChartRootNode = React.memo(function IcicleChartRootNodeNonMem
               colors={colors}
               colorBy={colorBy}
               x={x}
-              y={0}
+              y={y}
               totalWidth={width ?? 1}
               height={RowHeight}
               setCurPath={setCurPath}
