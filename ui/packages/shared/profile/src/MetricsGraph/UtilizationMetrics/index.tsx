@@ -446,14 +446,15 @@ const RawUtilizationMetrics = ({
             <g className="lines fill-transparent">
               {series.map((s, i) => {
                 let isSelected = false;
-                if (
-                  selectedSeriesMatchers != null &&
-                  selectedSeriesMatchers.length > 0 &&
-                  selectedSeriesMatchers.length === s.metric.length
-                ) {
+                if (selectedSeriesMatchers != null && selectedSeriesMatchers.length > 0) {
                   isSelected = selectedSeriesMatchers.every(m => {
                     for (let i = 0; i < s.metric.length; i++) {
-                      if (s.metric[i].name === m.key && s.metric[i].value === m.value) {
+                      if (
+                        s.metric[i].name
+                          .replace('attributes_resource.', '')
+                          .replace('attributes.', '') === m.key &&
+                        s.metric[i].value === m.value
+                      ) {
                         return true;
                       }
                     }
