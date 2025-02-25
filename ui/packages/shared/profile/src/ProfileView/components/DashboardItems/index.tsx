@@ -107,7 +107,7 @@ export const getDashboardItem = ({
       return (
         <ProfileIcicleGraph
           curPath={curPath}
-          setNewCurPath={setNewCurPath}
+          setNewCurPath={() => {}}
           arrow={flamechartData?.arrow}
           total={total}
           filtered={filtered}
