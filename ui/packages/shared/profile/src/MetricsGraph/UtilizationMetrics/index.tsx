@@ -115,7 +115,7 @@ const RawUtilizationMetrics = ({
   const paddedFrom = from;
   const paddedTo = to;
 
-  const series = transformToSeries(data);
+  const series = useMemo(() => transformToSeries(data), [data]);
 
   const extentsY = series.map(function (s) {
     return d3.extent(s.values, function (d) {
@@ -287,6 +287,7 @@ const RawUtilizationMetrics = ({
         menuId={MENU_ID}
         highlighted={highlighted}
         trackVisibility={trackVisibility}
+        utilizationMetrics={true}
       />
 
       {highlighted != null && hovering && !dragging && pos[0] !== 0 && pos[1] !== 0 && (
@@ -303,6 +304,7 @@ const RawUtilizationMetrics = ({
               contextElement={graph.current}
               sampleUnit="%"
               delta={false}
+              utilizationMetrics={true}
             />
           )}
         </div>
@@ -477,7 +479,12 @@ const RawUtilizationMetrics = ({
                       onClick={() => {
                         if (highlighted != null) {
                           addLabelMatcher(
-                            highlighted.labels.map(l => ({key: l.name, value: l.value}))
+                            highlighted.labels
+                              .filter(l => l.name.startsWith('attributes_resource.'))
+                              .map(l => ({
+                                key: l.name.replace('attributes_resource.', ''),
+                                value: l.value,
+                              }))
                           );
                         }
                       }}

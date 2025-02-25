@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import type {VirtualElement} from '@popperjs/core';
@@ -30,6 +30,7 @@ interface Props {
   contextElement: Element | null;
   sampleUnit: string;
   delta: boolean;
+  utilizationMetrics?: boolean;
 }
 
 const virtualElement: VirtualElement = {
@@ -67,6 +68,7 @@ const MetricsTooltip = ({
   contextElement,
   sampleUnit,
   delta,
+  utilizationMetrics = false,
 }: Props): JSX.Element => {
   const {timezone} = useParcaContext();
 
@@ -93,6 +95,29 @@ const MetricsTooltip = ({
   });
 
   const update = popperProps.update;
+
+  const attributesMap = useMemo(() => {
+    return highlighted.labels
+      .filter(
+        label =>
+          label.name.startsWith('attributes.') && !label.name.startsWith('attributes_resource.')
+      )
+      .reduce<Record<string, string>>((acc, label) => {
+        const key = label.name.replace('attributes.', '');
+        acc[key] = label.value;
+        return acc;
+      }, {});
+  }, [highlighted.labels]);
+
+  const attributesResourceMap = useMemo(() => {
+    return highlighted.labels
+      .filter(label => label.name.startsWith('attributes_resource.'))
+      .reduce<Record<string, string>>((acc, label) => {
+        const key = label.name.replace('attributes_resource.', '');
+        acc[key] = label.value;
+        return acc;
+      }, {});
+  }, [highlighted.labels]);
 
   useEffect(() => {
     if (contextElement != null) {
@@ -167,20 +192,67 @@ const MetricsTooltip = ({
                   </table>
                 </span>
                 <span className="my-2 block text-gray-500">
-                  {highlighted.labels
-                    .filter((label: Label) => label.name !== '__name__')
-                    .map((label: Label) => (
-                      <div
-                        key={label.name}
-                        className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
-                      >
-                        <TextWithTooltip
-                          text={`${label.name}="${label.value}"`}
-                          maxTextLength={37}
-                          id={`tooltip-${label.name}`}
-                        />
-                      </div>
-                    ))}
+                  {utilizationMetrics ? (
+                    <>
+                      {Object.keys(attributesResourceMap).length > 0 && (
+                        <span className="text-sm font-bold text-gray-700 dark:text-white">
+                          Resource Attributes
+                        </span>
+                      )}
+                      <span className="my-2 block text-gray-500">
+                        {Object.keys(attributesResourceMap).map(name => (
+                          <div
+                            key={name}
+                            className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+                          >
+                            <TextWithTooltip
+                              text={`${name.replace('attributes.', '')}="${
+                                attributesResourceMap[name]
+                              }"`}
+                              maxTextLength={48}
+                              id={`tooltip-${name}-${attributesResourceMap[name]}`}
+                            />
+                          </div>
+                        ))}
+                      </span>
+                      {Object.keys(attributesMap).length > 0 && (
+                        <span className="text-sm font-bold text-gray-700 dark:text-white">
+                          Attributes
+                        </span>
+                      )}
+                      <span className="my-2 block text-gray-500">
+                        {Object.keys(attributesMap).map(name => (
+                          <div
+                            key={name}
+                            className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+                          >
+                            <TextWithTooltip
+                              text={`${name.replace('attributes.', '')}="${attributesMap[name]}"`}
+                              maxTextLength={48}
+                              id={`tooltip-${name}-${attributesMap[name]}`}
+                            />
+                          </div>
+                        ))}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      {highlighted.labels
+                        .filter((label: Label) => label.name !== '__name__')
+                        .map((label: Label) => (
+                          <div
+                            key={label.name}
+                            className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+                          >
+                            <TextWithTooltip
+                              text={`${label.name}="${label.value}"`}
+                              maxTextLength={37}
+                              id={`tooltip-${label.name}`}
+                            />
+                          </div>
+                        ))}
+                    </>
+                  )}
                 </span>
                 <div className="flex w-full items-center gap-1 text-xs text-gray-500">
                   <Icon icon="iconoir:mouse-button-right" />
