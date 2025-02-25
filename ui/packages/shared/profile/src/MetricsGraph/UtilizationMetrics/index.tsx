@@ -24,21 +24,11 @@ import {Matcher} from '@parca/parser';
 import {formatDate, formatForTimespan, getPrecision, valueFormatter} from '@parca/utilities';
 
 import MetricsSeries from '../../MetricsSeries';
+import {type UtilizationMetrics as MetricSeries} from '../../ProfileSelector';
 import MetricsContextMenu from '../MetricsContextMenu';
 import MetricsTooltip from '../MetricsTooltip';
 import {type Series} from '../index';
 import {useMetricsGraphDimensions} from '../useMetricsGraphDimensions';
-
-interface MetricSeries {
-  timestamp: number;
-  value: number;
-  resource: {
-    [key: string]: string;
-  };
-  attributes: {
-    [key: string]: string;
-  };
-}
 
 interface CommonProps {
   data: MetricSeries[];
@@ -64,26 +54,31 @@ type Props = CommonProps & {
   utilizationMetricsLoading?: boolean;
 };
 
+interface MetricsSample {
+  timestamp: number;
+  value: number;
+}
+
 function transformToSeries(data: MetricSeries[]): Series[] {
-  const groupedData = data.reduce<Record<string, Series>>((acc, series) => {
-    const resourceKey = Object.entries(series.resource)
-      .map(([name, value]) => `${name}=${value}`)
-      .join(',');
-
-    if (!Object.hasOwn(acc, resourceKey)) {
-      acc[resourceKey] = {
-        metric: Object.entries(series.resource).map(([name, value]) => ({name, value})),
-        values: [],
-        labelset: resourceKey,
-      };
+  const series: Series[] = data.reduce<Series[]>(function (agg: Series[], s: MetricSeries) {
+    if (s.labelset !== undefined) {
+      const metric = s.labelset.labels.sort((a, b) => a.name.localeCompare(b.name));
+      agg.push({
+        metric,
+        values: s.samples.reduce<number[][]>(function (agg: number[][], d: MetricsSample) {
+          if (d.timestamp !== undefined && d.value !== undefined) {
+            agg.push([d.timestamp, d.value]);
+          }
+          return agg;
+        }, []),
+        labelset: metric.map(m => `${m.name}=${m.value}`).join(','),
+      });
     }
-
-    acc[resourceKey].values.push([series.timestamp, series.value, 0, 0]);
-    return acc;
-  }, {});
+    return agg;
+  }, []);
 
   // Sort values by timestamp for each series
-  return Object.values(groupedData).map(series => ({
+  return series.map(series => ({
     ...series,
     values: series.values.sort((a, b) => a[0] - b[0]),
   }));
@@ -113,15 +108,14 @@ const RawUtilizationMetrics = ({
 
   const graphWidth = width - margin * 1.5 - margin / 2;
 
-  // Calculate the time range from the data
-  const timeExtent = d3.extent(data, d => d.timestamp);
+  const timeExtent = d3.extent(data.flatMap(d => d.samples.map(s => s.timestamp)));
   const from = timeExtent[0] ?? 0;
   const to = timeExtent[1] ?? 0;
 
   const paddedFrom = from;
   const paddedTo = to;
 
-  const series = transformToSeries(data);
+  const series = useMemo(() => transformToSeries(data), [data]);
 
   const extentsY = series.map(function (s) {
     return d3.extent(s.values, function (d) {
@@ -293,6 +287,7 @@ const RawUtilizationMetrics = ({
         menuId={MENU_ID}
         highlighted={highlighted}
         trackVisibility={trackVisibility}
+        utilizationMetrics={true}
       />
 
       {highlighted != null && hovering && !dragging && pos[0] !== 0 && pos[1] !== 0 && (
@@ -309,6 +304,7 @@ const RawUtilizationMetrics = ({
               contextElement={graph.current}
               sampleUnit="%"
               delta={false}
+              utilizationMetrics={true}
             />
           )}
         </div>
@@ -483,7 +479,12 @@ const RawUtilizationMetrics = ({
                       onClick={() => {
                         if (highlighted != null) {
                           addLabelMatcher(
-                            highlighted.labels.map(l => ({key: l.name, value: l.value}))
+                            highlighted.labels
+                              .filter(l => l.name.startsWith('attributes_resource.'))
+                              .map(l => ({
+                                key: l.name.replace('attributes_resource.', ''),
+                                value: l.value,
+                              }))
                           );
                         }
                       }}

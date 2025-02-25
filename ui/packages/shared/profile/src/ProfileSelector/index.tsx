@@ -55,14 +55,16 @@ interface ProfileSelectorFeatures {
 }
 
 export interface UtilizationMetrics {
-  timestamp: number;
-  value: number;
-  resource: {
-    [key: string]: string;
+  labelset: {
+    labels: Array<{
+      name: string;
+      value: string;
+    }>;
   };
-  attributes: {
-    [key: string]: string;
-  };
+  samples: Array<{
+    timestamp: number;
+    value: number;
+  }>;
 }
 
 export interface UtilizationLabels {
