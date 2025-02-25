@@ -1341,7 +1341,7 @@ func (fb *flamegraphBuilder) appendRow(
 		// something has already gone terribly wrong.
 		fb.builderLocationLine.Append(r.LineNumber.Value(lineRow))
 
-		if r.LineFunctionNameIndices.IsValid(lineRow) {
+		if r.LineFunctionNameIndices.IsValid(lineRow) && t.functionSystemName.indices.Len() > 0 {
 			fb.builderFunctionStartLine.Append(r.LineFunctionStartLine.Value(lineRow))
 			fb.builderFunctionNameIndices.Append(t.functionName.indices.Value(int(r.LineFunctionNameIndices.Value(lineRow))))
 			fb.builderFunctionSystemNameIndices.Append(t.functionSystemName.indices.Value(int(r.LineFunctionSystemNameIndices.Value(lineRow))))
