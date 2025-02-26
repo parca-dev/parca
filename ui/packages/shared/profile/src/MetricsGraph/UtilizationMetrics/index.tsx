@@ -480,12 +480,10 @@ const RawUtilizationMetrics = ({
                       onClick={() => {
                         if (highlighted != null) {
                           addLabelMatcher(
-                            highlighted.labels
-                              .filter(l => l.name.startsWith('attributes_resource.'))
-                              .map(l => ({
-                                key: l.name.replace('attributes_resource.', ''),
-                                value: l.value,
-                              }))
+                            highlighted.labels.map(l => ({
+                              key: l.name,
+                              value: l.value,
+                            }))
                           );
                         }
                       }}
