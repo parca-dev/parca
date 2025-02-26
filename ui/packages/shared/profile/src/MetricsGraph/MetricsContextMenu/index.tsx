@@ -78,7 +78,7 @@ const MetricsContextMenu = ({
               id={label.name}
               onClick={() => {
                 onAddLabelMatcher({
-                  key: transformUtilizationLabels(label.name, utilizationMetrics),
+                  key: label.name,
                   value: label.value,
                 });
               }}

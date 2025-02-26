@@ -19,7 +19,7 @@ import {AnimatePresence, motion} from 'framer-motion';
 import throttle from 'lodash.throttle';
 import {useContextMenu} from 'react-contexify';
 
-import {DateTimeRange, MetricsGraphSkeleton, useParcaContext} from '@parca/components';
+import {DateTimeRange, MetricsGraphSkeleton, useParcaContext, useURLState} from '@parca/components';
 import {Matcher} from '@parca/parser';
 import {formatDate, formatForTimespan, getPrecision, valueFormatter} from '@parca/utilities';
 
@@ -36,7 +36,6 @@ interface CommonProps {
     labels: {key: string; value: string} | Array<{key: string; value: string}>
   ) => void;
   setTimeRange: (range: DateTimeRange) => void;
-  selectedSeriesMatchers?: Matcher[];
 }
 
 type RawUtilizationMetricsProps = CommonProps & {
@@ -91,7 +90,6 @@ const RawUtilizationMetrics = ({
   width,
   height,
   margin,
-  selectedSeriesMatchers,
 }: RawUtilizationMetricsProps): JSX.Element => {
   const {timezone} = useParcaContext();
   const graph = useRef(null);
@@ -101,6 +99,15 @@ const RawUtilizationMetrics = ({
   const [pos, setPos] = useState([0, 0]);
   const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
   const idForContextMenu = useId();
+  const [selectedSeries, setSelectedSeries] = useURLState<string>('selectedSeries');
+
+  const parsedSelectedSeries: Matcher[] = useMemo(() => {
+    if (selectedSeries === undefined) {
+      return [];
+    }
+
+    return JSON.parse(decodeURIComponent(selectedSeries));
+  }, [selectedSeries]);
 
   const lineStroke = '1px';
   const lineStrokeHover = '2px';
@@ -446,15 +453,10 @@ const RawUtilizationMetrics = ({
             <g className="lines fill-transparent">
               {series.map((s, i) => {
                 let isSelected = false;
-                if (selectedSeriesMatchers != null && selectedSeriesMatchers.length > 0) {
-                  isSelected = selectedSeriesMatchers.every(m => {
+                if (parsedSelectedSeries != null && parsedSelectedSeries.length > 0) {
+                  isSelected = parsedSelectedSeries.every(m => {
                     for (let i = 0; i < s.metric.length; i++) {
-                      if (
-                        s.metric[i].name
-                          .replace('attributes_resource.', '')
-                          .replace('attributes.', '') === m.key &&
-                        s.metric[i].value === m.value
-                      ) {
+                      if (s.metric[i].name === m.key && s.metric[i].value === m.value) {
                         return true;
                       }
                     }
@@ -479,13 +481,13 @@ const RawUtilizationMetrics = ({
                       yScale={yScale}
                       onClick={() => {
                         if (highlighted != null) {
-                          addLabelMatcher(
-                            highlighted.labels
-                              .filter(l => l.name.startsWith('attributes_resource.'))
-                              .map(l => ({
-                                key: l.name.replace('attributes_resource.', ''),
+                          setSelectedSeries(
+                            JSON.stringify(
+                              highlighted.labels.map(l => ({
+                                key: l.name,
                                 value: l.value,
                               }))
+                            )
                           );
                         }
                       }}
@@ -506,7 +508,6 @@ const UtilizationMetrics = ({
   addLabelMatcher,
   setTimeRange,
   utilizationMetricsLoading,
-  selectedSeriesMatchers,
 }: Props): JSX.Element => {
   const {isDarkMode} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(false, true);
@@ -530,7 +531,6 @@ const UtilizationMetrics = ({
             width={width}
             height={height}
             margin={margin}
-            selectedSeriesMatchers={selectedSeriesMatchers}
           />
         )}
       </motion.div>
