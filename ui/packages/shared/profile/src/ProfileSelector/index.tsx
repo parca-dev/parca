@@ -308,6 +308,7 @@ const ProfileSelector = ({
             setUserSumBySelection={setUserSumBySelection}
             profileType={profileType}
             profileTypesError={error}
+            viewComponent={viewComponent}
           />
           {comparing && (
             <div>
