@@ -100,6 +100,7 @@ const RawUtilizationMetrics = ({
   const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
   const idForContextMenu = useId();
   const [selectedSeries, setSelectedSeries] = useURLState<string>('selectedSeries');
+  const [_, setSelectedTimeframe] = useURLState('gpu_selected_timeframe');
 
   const parsedSelectedSeries: Matcher[] = useMemo(() => {
     if (selectedSeries === undefined) {
@@ -489,6 +490,8 @@ const RawUtilizationMetrics = ({
                               }))
                             )
                           );
+                          // reset the selected_timeframe
+                          setSelectedTimeframe(undefined);
                         }
                       }}
                     />
