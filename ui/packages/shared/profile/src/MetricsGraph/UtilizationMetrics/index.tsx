@@ -19,7 +19,13 @@ import {AnimatePresence, motion} from 'framer-motion';
 import throttle from 'lodash.throttle';
 import {useContextMenu} from 'react-contexify';
 
-import {DateTimeRange, MetricsGraphSkeleton, useParcaContext, useURLState} from '@parca/components';
+import {
+  DateTimeRange,
+  MetricsGraphSkeleton,
+  useParcaContext,
+  useURLState,
+  useURLStateCustom,
+} from '@parca/components';
 import {Matcher} from '@parca/parser';
 import {formatDate, formatForTimespan, getPrecision, valueFormatter} from '@parca/utilities';
 
@@ -100,6 +106,7 @@ const RawUtilizationMetrics = ({
   const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
   const idForContextMenu = useId();
   const [selectedSeries, setSelectedSeries] = useURLState<string>('selectedSeries');
+  const [_, setSelectedTimeframe] = useURLState('gpu_selected_timeframe');
 
   const parsedSelectedSeries: Matcher[] = useMemo(() => {
     if (selectedSeries === undefined) {
@@ -489,6 +496,8 @@ const RawUtilizationMetrics = ({
                               }))
                             )
                           );
+                          // reset the selected_timeframe
+                          setSelectedTimeframe(undefined);
                         }
                       }}
                     />
