@@ -19,13 +19,7 @@ import {AnimatePresence, motion} from 'framer-motion';
 import throttle from 'lodash.throttle';
 import {useContextMenu} from 'react-contexify';
 
-import {
-  DateTimeRange,
-  MetricsGraphSkeleton,
-  useParcaContext,
-  useURLState,
-  useURLStateCustom,
-} from '@parca/components';
+import {DateTimeRange, MetricsGraphSkeleton, useParcaContext, useURLState} from '@parca/components';
 import {Matcher} from '@parca/parser';
 import {formatDate, formatForTimespan, getPrecision, valueFormatter} from '@parca/utilities';
 
