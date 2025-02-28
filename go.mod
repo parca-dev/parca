@@ -28,7 +28,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.1
 	github.com/ianlancetaylor/demangle v0.0.0-20240912202439-0a2b6291aafd
 	github.com/improbable-eng/grpc-web v0.15.0
-	github.com/klauspost/compress v1.17.11
+	github.com/klauspost/compress v1.18.0
 	github.com/m1gwings/treedrawer v0.3.3-beta
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.1.0
