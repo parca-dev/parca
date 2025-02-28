@@ -24,7 +24,7 @@ require (
 	github.com/google/pprof v0.0.0-20250208200701-d0013a598941
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.1
-	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.2.0
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.1
 	github.com/ianlancetaylor/demangle v0.0.0-20240912202439-0a2b6291aafd
 	github.com/improbable-eng/grpc-web v0.15.0
@@ -68,7 +68,7 @@ require (
 )
 
 require (
-	cel.dev/expr v0.19.0 // indirect
+	cel.dev/expr v0.19.1 // indirect
 	cloud.google.com/go v0.116.0 // indirect
 	cloud.google.com/go/auth v0.14.1 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.7 // indirect
