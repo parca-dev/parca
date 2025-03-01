@@ -220,8 +220,8 @@ importers:
         specifier: 29.7.0
         version: 29.7.0
       lerna:
-        specifier: 8.1.9
-        version: 8.1.9(@swc/core@1.10.1)
+        specifier: 8.2.0
+        version: 8.2.0(@swc/core@1.10.1)
       local-web-server:
         specifier: 5.4.0
         version: 5.4.0
@@ -3954,8 +3954,8 @@ packages:
     resolution: {integrity: sha512-Vo+PSpZG2/fmgmiNzYK9qWRh8h/CHrwD0mo1h1DzL4yzHNSfWYujGTYsWGreD000gcgmZ7K4Ys6Tx9TxtsKdDw==}
     dev: false
 
-  /@lerna/create@8.1.9(@swc/core@1.10.1)(typescript@5.7.3):
-    resolution: {integrity: sha512-DPnl5lPX4v49eVxEbJnAizrpMdMTBz1qykZrAbBul9rfgk531v8oAt+Pm6O/rpAleRombNM7FJb5rYGzBJatOQ==}
+  /@lerna/create@8.2.0(@swc/core@1.10.1)(typescript@5.7.3):
+    resolution: {integrity: sha512-kyrAc709xhf79Ci2qM+neMfe3IuT89kJyqdMe+YK16kkTNlXedmmQOSs2ARdlEqVVGCWu7M75Dt2VoCBZPnZ8g==}
     engines: {node: '>=18.0.0'}
     dependencies:
       '@npmcli/arborist': 7.5.4
@@ -4016,7 +4016,6 @@ packages:
       slash: 3.0.0
       ssri: 10.0.6
       string-width: 4.2.3
-      strip-ansi: 6.0.1
       strong-log-transformer: 2.1.0
       tar: 6.2.1
       temp-dir: 1.0.0
@@ -15525,12 +15524,12 @@ packages:
     engines: {node: '>=0.2.0'}
     dev: true
 
-  /lerna@8.1.9(@swc/core@1.10.1):
-    resolution: {integrity: sha512-ZRFlRUBB2obm+GkbTR7EbgTMuAdni6iwtTQTMy7LIrQ4UInG44LyfRepljtgUxh4HA0ltzsvWfPkd5J1DKGCeQ==}
+  /lerna@8.2.0(@swc/core@1.10.1):
+    resolution: {integrity: sha512-SLXPPUqU1V6m8pGVNYp8CpqGX92U2fp6XFWQsQMY36VTCGVP/5dGtri4hd2sgk2hcBuFPnxycgEnJecT2MQUsg==}
     engines: {node: '>=18.0.0'}
     hasBin: true
     dependencies:
-      '@lerna/create': 8.1.9(@swc/core@1.10.1)(typescript@5.7.3)
+      '@lerna/create': 8.2.0(@swc/core@1.10.1)(typescript@5.7.3)
       '@npmcli/arborist': 7.5.4
       '@npmcli/package-json': 5.2.0
       '@npmcli/run-script': 8.1.0
@@ -15597,7 +15596,6 @@ packages:
       slash: 3.0.0
       ssri: 10.0.6
       string-width: 4.2.3
-      strip-ansi: 6.0.1
       strong-log-transformer: 2.1.0
       tar: 6.2.1
       temp-dir: 1.0.0
