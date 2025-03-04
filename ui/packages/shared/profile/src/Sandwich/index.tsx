@@ -11,9 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 
-import {flexRender} from '@tanstack/react-table';
 import {
   createColumnHelper,
   type CellContext,
@@ -26,21 +25,24 @@ import cx from 'classnames';
 import {AnimatePresence, motion} from 'framer-motion';
 import {Tooltip} from 'react-tooltip';
 
+import {QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 import {
   Table as TableComponent,
   TableSkeleton,
   useParcaContext,
   useURLState,
 } from '@parca/components';
-import {type RowRendererProps} from '@parca/components/dist/Table';
 import {useCurrentColorProfile} from '@parca/hooks';
-import {getLastItem, valueFormatter} from '@parca/utilities';
+import {ProfileType} from '@parca/parser';
+import {getLastItem, isSearchMatch, valueFormatter} from '@parca/utilities';
 
+import ProfileIcicleGraph from '../ProfileIcicleGraph';
 import {getFilenameColors, getMappingColors} from '../ProfileIcicleGraph/IcicleGraphArrow/';
 import {colorByColors} from '../ProfileIcicleGraph/IcicleGraphArrow/IcicleGraphNodes';
 import useMappingList, {
   useFilenamesList,
 } from '../ProfileIcicleGraph/IcicleGraphArrow/useMappingList';
+import {ProfileSource} from '../ProfileSource';
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
 import {
   FIELD_CALLEES,
@@ -55,7 +57,6 @@ import {
   FIELD_LOCATION_ADDRESS,
   FIELD_MAPPING_FILE,
   Row,
-  TableProps,
   isDummyRow,
 } from '../Table';
 import {
@@ -67,127 +68,32 @@ import {
   getCalleeRows,
   getCallerRows,
   getRowColor,
-  getScrollTargetIndex,
-  isFirstSubRow,
-  isLastSubRow,
-  isSubRow,
   ratioString,
-  rowBgClassNames,
-  sizeToBottomStyle,
-  sizeToHeightStyle,
-  sizeToWidthStyle,
 } from '../Table/utils/functions';
 import {getTopAndBottomExpandedRowModel} from '../Table/utils/topAndBottomExpandedRowModel';
-import {CanvasIcicle} from './CanvasIcicle';
+import {useQuery} from '../useQuery';
+// import {CanvasIcicle} from './CanvasIcicle';
+import CustomRowRenderer from './CustomRenderer';
 
-const CustomRowRenderer = ({
-  row,
-  usePointerCursor,
-  onRowDoubleClick,
-  enableHighlighting,
-  shouldHighlightRow,
-  rows,
-}: RowRendererProps<Row>): React.JSX.Element => {
-  const data = row.original;
-  const isExpanded = row.getIsExpanded();
-  const _isSubRow = isSubRow(data);
-  const _isLastSubRow = isLastSubRow(row, rows);
-  const _isFirstSubRow = isFirstSubRow(row, rows);
-  const bgClassNames = rowBgClassNames(isExpanded, _isSubRow);
-  const ref = useRef<HTMLTableRowElement>(null);
-  const [rowHeight, setRowHeight] = useState<number>(ROW_HEIGHT);
-
-  useEffect(() => {
-    if (ref.current != null) {
-      setRowHeight(ref.current.clientHeight + 1); // +1 to account for the bottom border
-    }
-  }, []);
-
-  const paddingElement = (
-    <div
-      className={cx(
-        'bg-white dark:bg-indigo-500 w-[18px] absolute top-[-1px] left-0 border-x border-gray-200 dark:border-gray-700',
-        {
-          'border-b': _isLastSubRow,
-          'border-t': _isFirstSubRow,
-        }
-      )}
-      style={{height: `${rowHeight}px`}}
-    />
-  );
-
-  if (isDummyRow(data)) {
-    return (
-      <tr key={row.id} className={cx(bgClassNames)} ref={ref}>
-        {paddingElement}
-        <td colSpan={100} className={`text-center`} style={sizeToHeightStyle(data.size)}>
-          {data.message}
-        </td>
-      </tr>
-    );
-  }
-
-  return (
-    <tr
-      key={row.id}
-      ref={ref}
-      className={cx(usePointerCursor === true ? 'cursor-pointer' : 'cursor-auto', bgClassNames, {
-        'hover:bg-[#62626212] dark:hover:bg-[#ffffff12] ': !isExpanded && !_isSubRow,
-        'hover:bg-indigo-200 dark:hover:bg-indigo-500': isExpanded || _isSubRow,
-      })}
-      onClick={
-        onRowDoubleClick != null
-          ? () => {
-              onRowDoubleClick(row, rows);
-              window.getSelection()?.removeAllRanges();
-            }
-          : undefined
-      }
-      style={
-        enableHighlighting !== true || shouldHighlightRow === undefined
-          ? undefined
-          : {opacity: shouldHighlightRow(row.original) ? 1 : 0.5}
-      }
-    >
-      {row.getVisibleCells().map((cell, idx) => {
-        return (
-          <td
-            key={cell.id}
-            className={cx('p-1.5 align-top relative', {
-              /* @ts-expect-error */
-              'text-right': cell.column.columnDef.meta?.align === 'right',
-              /* @ts-expect-error */
-              'text-left': cell.column.columnDef.meta?.align === 'left',
-              'pl-5 whitespace-nowrap': idx === 0,
-            })}
-          >
-            {idx === 0 && isExpanded ? (
-              <>
-                <div
-                  className={`absolute top-0 left-0 bg-white dark:bg-indigo-500 px-1 uppercase -rotate-90 origin-top-left z-[9] text-[10px] border-l border-y border-gray-200 dark:border-gray-700 text-left`}
-                  style={{...sizeToWidthStyle(3)}}
-                >
-                  Callers {'->'}
-                </div>
-                <div
-                  className={`absolute left-[18px] bg-white dark:bg-indigo-500 px-1 uppercase -rotate-90 origin-bottom-left z-[9] text-[10px] border-r border-y border-gray-200 dark:border-gray-700`}
-                  style={{
-                    ...sizeToWidthStyle(3),
-                    ...sizeToBottomStyle(3),
-                  }}
-                >
-                  {'<-'} Callees
-                </div>
-              </>
-            ) : null}
-            {idx === 0 && _isSubRow ? paddingElement : null}
-            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-          </td>
-        );
-      })}
-    </tr>
-  );
-};
+interface Props {
+  data?: Uint8Array;
+  total: bigint;
+  filtered: bigint;
+  profileType?: ProfileType;
+  loading: boolean;
+  currentSearchString?: string;
+  setActionButtons?: (buttons: React.JSX.Element) => void;
+  isHalfScreen: boolean;
+  unit?: string;
+  metadataMappingFiles?: string[];
+  metadataLoading?: boolean;
+  callees?: Uint8Array;
+  callers?: Uint8Array;
+  queryClient?: QueryServiceClient;
+  profileSource?: ProfileSource;
+  curPath: string[] | [];
+  setNewCurPath: (path: string[]) => void;
+}
 
 const Sandwich = React.memo(function Sandwich({
   data,
@@ -198,7 +104,12 @@ const Sandwich = React.memo(function Sandwich({
   isHalfScreen,
   unit,
   metadataMappingFiles,
-}: Omit<TableProps, 'setSearchString'>): React.JSX.Element {
+  queryClient,
+  profileSource,
+  metadataLoading,
+  curPath,
+  setNewCurPath,
+}: Props): React.JSX.Element {
   const currentColorProfile = useCurrentColorProfile();
   const [dashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
@@ -210,10 +121,58 @@ const Sandwich = React.memo(function Sandwich({
   const [colorBy, setColorBy] = useURLState('color_by');
   const {isDarkMode} = useParcaContext();
   const [expanded, setExpanded] = useState<ExpandedState>({});
-  const [scrollToIndex, setScrollToIndex] = useState<number | undefined>(undefined);
   const [selectedRow, setSelectedRow] = useState<RowType<Row> | null>(null);
+  const callersRef = React.useRef<HTMLDivElement | null>(null);
+  const calleesRef = React.useRef<HTMLDivElement | null>(null);
 
   const {compareMode} = useProfileViewContext();
+
+  const nodeTrimThreshold = useMemo(() => {
+    let width =
+      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+      window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+    // subtract the padding
+    width = width - 12 - 16 - 12;
+    return (1 / width) * 100;
+  }, []);
+
+  const [selectedFunctionName, setSelectedFunctionName] = useState<string | undefined>();
+
+  const {
+    isLoading: callersFlamegraphLoading,
+    response: callersFlamegraphResponse,
+    error: callersFlamegraphError,
+  } = useQuery(
+    queryClient as QueryServiceClient,
+    profileSource as ProfileSource,
+    QueryRequest_ReportType.FLAMEGRAPH_ARROW,
+    {
+      nodeTrimThreshold,
+      groupBy: [FIELD_FUNCTION_NAME],
+      invertCallStack: false,
+      binaryFrameFilter: [],
+      filterByFunction: selectedFunctionName,
+      skip: selectedFunctionName === undefined,
+    }
+  );
+
+  const {
+    isLoading: calleesFlamegraphLoading,
+    response: calleesFlamegraphResponse,
+    error: calleesFlamegraphError,
+  } = useQuery(
+    queryClient as QueryServiceClient,
+    profileSource as ProfileSource,
+    QueryRequest_ReportType.FLAMEGRAPH_ARROW,
+    {
+      nodeTrimThreshold,
+      groupBy: [FIELD_FUNCTION_NAME],
+      invertCallStack: true,
+      binaryFrameFilter: [],
+      filterByFunction: selectedFunctionName,
+      skip: selectedFunctionName === undefined,
+    }
+  );
 
   const table = useMemo(() => {
     if (loading || data == null) {
@@ -440,47 +399,14 @@ const Sandwich = React.memo(function Sandwich({
     }
   }, [tableColumns]);
 
-  const onRowClick = useCallback(
-    (row: RowType<Row>, rows: Array<RowType<Row>>) => {
-      if (isDummyRow(row.original)) {
-        return;
-      }
+  const onRowClick = useCallback((row: RowType<Row>) => {
+    if (isDummyRow(row.original)) {
+      return;
+    }
 
-      setSelectedRow(row);
-
-      if (!isSubRow(row.original)) {
-        row.toggleExpanded();
-        return;
-      }
-
-      // find the original row for this subrow and toggle it
-      const newRow = rows.find(
-        r =>
-          !isDummyRow(r.original) &&
-          !isDummyRow(row.original) &&
-          r.original.name === row.original.name &&
-          !isSubRow(r.original)
-      );
-
-      const parentRow = rows.find(r => {
-        const parent = row.getParentRow()!;
-        if (isDummyRow(parent.original) || isDummyRow(r.original)) {
-          return false;
-        }
-        return r.original.name === parent.original.name;
-      });
-      if (parentRow == null || newRow == null) {
-        return;
-      }
-
-      // expand the row
-      newRow.toggleExpanded();
-
-      // scroll to the row
-      setScrollToIndex(getScrollTargetIndex(rows, parentRow, newRow));
-    },
-    [setScrollToIndex]
-  );
+    setSelectedRow(row);
+    setSelectedFunctionName(row.original.name.trim());
+  }, []);
 
   const initialSorting = useMemo(() => {
     return [
@@ -490,6 +416,22 @@ const Sandwich = React.memo(function Sandwich({
       },
     ];
   }, [compareMode]);
+
+  const enableHighlighting = useMemo(() => {
+    return selectedRow != null;
+  }, [selectedRow]);
+
+  const shouldHighlightRow = useCallback(
+    (row: Row) => {
+      if (!('name' in row)) {
+        return false;
+      }
+      const name = row.name;
+      // @ts-expect-error
+      return isSearchMatch(selectedRow?.original?.name as string, name);
+    },
+    [selectedRow]
+  );
 
   const rows: DataRow[] = useMemo(() => {
     if (table == null || table.numRows === 0) {
@@ -575,6 +517,8 @@ const Sandwich = React.memo(function Sandwich({
     return <div className="mx-auto text-center">Profile has no samples</div>;
   }
 
+  // console.log(dimensions, ref);
+
   return (
     <section className="flex flex-row h-full w-full">
       <AnimatePresence>
@@ -601,6 +545,8 @@ const Sandwich = React.memo(function Sandwich({
                 getSubRows={row => (isDummyRow(row) ? [] : row.subRows ?? [])}
                 getCustomExpandedRowModel={getTopAndBottomExpandedRowModel}
                 expandedState={expanded}
+                shouldHighlightRow={shouldHighlightRow}
+                enableHighlighting={enableHighlighting}
                 onExpandedChange={getNewState => {
                   // We only want the new expanded row so passing the exisitng state as empty
                   // @ts-expect-error
@@ -611,15 +557,70 @@ const Sandwich = React.memo(function Sandwich({
                   setExpanded(newState);
                 }}
                 CustomRowRenderer={CustomRowRenderer}
-                scrollToIndex={scrollToIndex}
                 estimatedRowHeight={ROW_HEIGHT}
                 sandwich={true}
               />
             </div>
 
             {selectedRow != null && (
-              <div className="w-[50%]">
-                <CanvasIcicle row={selectedRow} />
+              <div className="w-[50%] flex flex-col">
+                <div className="" ref={callersRef}>
+                  <ProfileIcicleGraph
+                    curPath={curPath}
+                    setNewCurPath={setNewCurPath}
+                    arrow={
+                      callersFlamegraphResponse?.report.oneofKind === 'flamegraphArrow'
+                        ? callersFlamegraphResponse?.report?.flamegraphArrow
+                        : undefined
+                    }
+                    graph={undefined}
+                    total={BigInt(callersFlamegraphResponse?.total ?? '0')}
+                    filtered={filtered}
+                    profileType={profileSource?.ProfileType()}
+                    loading={callersFlamegraphLoading}
+                    error={callersFlamegraphError}
+                    isHalfScreen={true}
+                    width={
+                      callersRef.current != null
+                        ? isHalfScreen
+                          ? (callersRef.current.getBoundingClientRect().width - 54) / 2
+                          : callersRef.current.getBoundingClientRect().width - 16
+                        : 0
+                    }
+                    metadataMappingFiles={metadataMappingFiles}
+                    metadataLoading={metadataLoading}
+                    isSandwichIcicleGraph={true}
+                  />
+                </div>
+                <div className="h-4" />
+                <div className="" ref={calleesRef}>
+                  <ProfileIcicleGraph
+                    curPath={curPath}
+                    setNewCurPath={setNewCurPath}
+                    arrow={
+                      calleesFlamegraphResponse?.report.oneofKind === 'flamegraphArrow'
+                        ? calleesFlamegraphResponse?.report?.flamegraphArrow
+                        : undefined
+                    }
+                    graph={undefined}
+                    total={BigInt(calleesFlamegraphResponse?.total ?? '0')}
+                    filtered={filtered}
+                    profileType={profileSource?.ProfileType()}
+                    loading={calleesFlamegraphLoading}
+                    error={calleesFlamegraphError}
+                    isHalfScreen={true}
+                    width={
+                      calleesRef.current != null
+                        ? isHalfScreen
+                          ? (calleesRef.current.getBoundingClientRect().width - 54) / 2
+                          : calleesRef.current.getBoundingClientRect().width - 16
+                        : 0
+                    }
+                    metadataMappingFiles={metadataMappingFiles}
+                    metadataLoading={metadataLoading}
+                    isSandwichIcicleGraph={true}
+                  />
+                </div>
               </div>
             )}
           </div>

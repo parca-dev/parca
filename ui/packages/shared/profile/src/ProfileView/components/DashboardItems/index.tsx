@@ -13,6 +13,7 @@
 
 import {Profiler, ProfilerOnRenderCallback} from 'react';
 
+import {QueryServiceClient} from '@parca/client';
 import {ConditionalWrapper} from '@parca/components';
 
 import Callgraph from '../../../Callgraph';
@@ -49,6 +50,7 @@ interface GetDashboardItemProps {
   perf?: {
     onRender?: ProfilerOnRenderCallback;
   };
+  queryClient?: QueryServiceClient;
 }
 
 export const getDashboardItem = ({
@@ -69,6 +71,7 @@ export const getDashboardItem = ({
   setSearchString,
   callgraphSVG,
   perf,
+  queryClient,
 }: GetDashboardItemProps): JSX.Element => {
   switch (type) {
     case 'icicle':
@@ -171,6 +174,11 @@ export const getDashboardItem = ({
           currentSearchString={currentSearchString}
           isHalfScreen={isHalfScreen}
           metadataMappingFiles={flamegraphData.metadataMappingFiles}
+          metadataLoading={flamegraphData.metadataLoading}
+          profileSource={profileSource}
+          queryClient={queryClient}
+          curPath={curPath}
+          setNewCurPath={setNewCurPath}
         />
       ) : (
         <></>

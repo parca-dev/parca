@@ -111,6 +111,7 @@ export const ProfileView = ({
       setSearchString,
       callgraphSVG,
       perf,
+      queryClient,
     });
   };
 

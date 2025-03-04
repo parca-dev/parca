@@ -13,6 +13,7 @@
 
 import React, {useEffect, useMemo, useState} from 'react';
 
+import cx from 'classnames';
 import {AnimatePresence, motion} from 'framer-motion';
 
 import {Flamegraph, FlamegraphArrow} from '@parca/client';
@@ -50,6 +51,7 @@ interface ProfileIcicleGraphProps {
   metadataMappingFiles?: string[];
   metadataLoading?: boolean;
   isIcicleChart?: boolean;
+  isSandwichIcicleGraph?: boolean;
 }
 
 const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
@@ -71,6 +73,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   metadataMappingFiles,
   isIcicleChart = false,
   profileSource,
+  isSandwichIcicleGraph = false,
 }: ProfileIcicleGraphProps): JSX.Element {
   const {onError, authenticationErrorMessage, isDarkMode} = useParcaContext();
   const {compareMode} = useProfileViewContext();
@@ -245,20 +248,22 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
         transition={{duration: 0.5}}
       >
         {compareMode ? <DiffLegend /> : null}
-        <div className="min-h-48" id="h-icicle-graph">
+        <div className={cx(!isSandwichIcicleGraph ? 'min-h-48' : '')} id="h-icicle-graph">
           <>{icicleGraph}</>
         </div>
-        <p className="my-2 text-xs">
-          Showing {totalFormatted}{' '}
-          {isFiltered ? (
-            <span>
-              ({filteredPercentage}%) filtered of {totalUnfilteredFormatted}{' '}
-            </span>
-          ) : (
-            <></>
-          )}
-          values.{' '}
-        </p>
+        {!isSandwichIcicleGraph && (
+          <p className="my-2 text-xs">
+            Showing {totalFormatted}{' '}
+            {isFiltered ? (
+              <span>
+                ({filteredPercentage}%) filtered of {totalUnfilteredFormatted}{' '}
+              </span>
+            ) : (
+              <></>
+            )}
+            values.{' '}
+          </p>
+        )}
       </motion.div>
     </AnimatePresence>
   );
