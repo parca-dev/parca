@@ -90,15 +90,14 @@ export const ProfileViewWithData = ({
     binaryFrameFilter,
   });
 
-  const {isLoading: profileMetadataLoading, response: profileMetadataResponse} = useQuery(
-    queryClient,
-    profileSource,
-    QueryRequest_ReportType.PROFILE_METADATA,
-    {
-      nodeTrimThreshold,
-      groupBy,
-    }
-  );
+  const {
+    isLoading: profileMetadataLoading,
+    response: profileMetadataResponse,
+    error: profileMetadataError,
+  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.PROFILE_METADATA, {
+    nodeTrimThreshold,
+    groupBy,
+  });
 
   const {perf} = useParcaContext();
 
@@ -213,7 +212,7 @@ export const ProfileViewWithData = ({
             : undefined,
         total: BigInt(flamegraphResponse?.total ?? '0'),
         filtered: BigInt(flamegraphResponse?.filtered ?? '0'),
-        error: flamegraphError,
+        error: flamegraphError ?? profileMetadataError,
         metadataMappingFiles:
           profileMetadataResponse?.report.oneofKind === 'profileMetadata'
             ? profileMetadataResponse?.report?.profileMetadata?.mappingFiles
