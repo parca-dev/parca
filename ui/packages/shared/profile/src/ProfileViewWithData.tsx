@@ -94,15 +94,10 @@ export const ProfileViewWithData = ({
     isLoading: profileMetadataLoading,
     response: profileMetadataResponse,
     error: profileMetadataError,
-  } = useQuery(
-    queryClient,
-    profileSource,
-    QueryRequest_ReportType.PROFILE_METADATA,
-    {
-      nodeTrimThreshold,
-      groupBy,
-    }
-  );
+  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.PROFILE_METADATA, {
+    nodeTrimThreshold,
+    groupBy,
+  });
 
   const {perf} = useParcaContext();
 
