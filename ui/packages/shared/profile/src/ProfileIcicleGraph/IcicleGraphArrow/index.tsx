@@ -382,7 +382,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   return (
     <>
-      <div className="relative z-[9]" onMouseLeave={() => dispatch(setHoveringNode(undefined))}>
+      <div className="relative" onMouseLeave={() => dispatch(setHoveringNode(undefined))}>
         <ContextMenu
           menuId={MENU_ID}
           table={table}
