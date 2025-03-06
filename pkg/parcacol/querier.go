@@ -14,6 +14,7 @@
 package parcacol
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -933,6 +934,7 @@ func (q *Querier) SymbolizeArrowRecord(
 	valueColumnName string,
 	queryParts QueryParts,
 	invertCallStacks bool,
+	functionToFilterBy string,
 ) ([]arrow.Record, error) {
 	res := make([]arrow.Record, len(records))
 
@@ -996,7 +998,7 @@ func (q *Querier) SymbolizeArrowRecord(
 			}
 		}
 
-		locationsRecord, err := q.resolveStacks(ctx, stacktraceColumn, invertCallStacks)
+		locationsRecord, err := q.resolveStacks(ctx, stacktraceColumn, invertCallStacks, functionToFilterBy)
 		if err != nil {
 			return nil, err
 		}
@@ -1032,7 +1034,10 @@ func (q *Querier) resolveStacks(
 	ctx context.Context,
 	stacktraceColumn *array.List,
 	invertCallStacks bool,
+	functionToFilterBy string,
 ) (arrow.Record, error) {
+	functionToFilterByBytes := []byte(functionToFilterBy)
+
 	w := profile.NewLocationsWriter(q.pool)
 	defer w.RecordBuilder.Release()
 
@@ -1051,6 +1056,33 @@ func (q *Querier) resolveStacks(
 		w.LocationsList.Append(true)
 
 		start, end := stacktraceColumn.ValueOffsets(i)
+
+		if len(functionToFilterByBytes) > 0 {
+			var found bool
+			for j := start; j < end; j++ {
+				jWithInversion := handleIndexInversion(invertCallStacks, int(start), int(end), int(j))
+				idx := values.GetValueIndex(jWithInversion)
+
+				encodedLocation := valueDict.Value(idx)
+				fn, err := profile.DecodeFunctionName(encodedLocation)
+				if err != nil {
+					return nil, err
+				}
+
+				if bytes.Compare(functionToFilterByBytes, fn) == 0 {
+					found = true
+					start = j // We want to start from the function onwards.
+					break
+				}
+			}
+
+			// Ignore stacks that don't contain the functionName
+			if !found {
+				w.LocationsList.AppendNull()
+				continue
+			}
+		}
+
 		for j := int(start); j < int(end); j++ {
 			jWithInversion := handleIndexInversion(invertCallStacks, int(start), int(end), j)
 			w.Locations.Append(true)
@@ -1264,6 +1296,7 @@ func (q *Querier) QuerySingle(
 		valueColumn,
 		queryParts,
 		invertCallStacks,
+		"", // not implemented
 	)
 	if err != nil {
 		// if the column cannot be found the timestamp is too far in the past and we don't have data
@@ -1370,6 +1403,7 @@ func (q *Querier) QueryMerge(
 	start, end time.Time,
 	groupByLabels []string,
 	invertCallStacks bool,
+	functionToFilterBy string,
 ) (profile.Profile, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/QueryMerge")
 	defer span.End()
@@ -1390,6 +1424,7 @@ func (q *Querier) QueryMerge(
 		valueColumn,
 		queryParts,
 		invertCallStacks,
+		functionToFilterBy,
 	)
 	if err != nil {
 		return profile.Profile{}, err
