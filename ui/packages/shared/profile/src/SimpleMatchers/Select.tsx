@@ -15,6 +15,7 @@ import React, {useEffect, useRef, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
+import levenshtein from 'fast-levenshtein';
 
 import {Button, useParcaContext} from '@parca/components';
 
@@ -74,12 +75,19 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   const optionRefs = useRef<Array<HTMLElement | null>>([]);
 
   const filteredItems = searchable
-    ? items.filter(item =>
-        item.element.active.props.children
-          .toString()
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase())
-      )
+    ? items
+        .filter(item =>
+          item.element.active.props.children
+            .toString()
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase())
+        )
+        .sort((a, b) => {
+          if (searchTerm === '') {
+            return a.key.localeCompare(b.key);
+          }
+          return levenshtein.get(a.key, searchTerm) - levenshtein.get(b.key, searchTerm);
+        })
     : items;
 
   const selection = editable ? selectedKey : items.find(v => v.key === selectedKey);
