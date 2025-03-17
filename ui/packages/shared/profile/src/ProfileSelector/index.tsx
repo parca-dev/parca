@@ -85,9 +85,13 @@ interface ProfileSelectorProps extends ProfileSelectorFeatures {
   navigateTo: NavigateFunction;
   setDisplayHideMetricsGraphButton?: Dispatch<SetStateAction<boolean>>;
   suffix?: string;
-  utilizationMetrics?: UtilizationMetrics[];
+  utilizationMetrics?: Array<{
+    name: string;
+    data: UtilizationMetrics[];
+  }>;
   utilizationMetricsLoading?: boolean;
   utilizationLabels?: UtilizationLabels;
+  selectorForMetricsGraph?: JSX.Element;
 }
 
 export interface IProfileTypesResult {
@@ -134,6 +138,7 @@ const ProfileSelector = ({
   utilizationMetrics,
   utilizationMetricsLoading,
   utilizationLabels,
+  selectorForMetricsGraph,
 }: ProfileSelectorProps): JSX.Element => {
   const {
     loading: profileTypesLoading,
@@ -279,7 +284,7 @@ const ProfileSelector = ({
   const sumByRef = useRef(null);
 
   return (
-    <UtilizationLabelsProvider value={utilizationLabels}>
+    <UtilizationLabelsProvider value={{...utilizationLabels}}>
       <>
         <div className="mb-2 flex">
           <QueryControls
@@ -309,6 +314,7 @@ const ProfileSelector = ({
             profileType={profileType}
             profileTypesError={error}
             viewComponent={viewComponent}
+            selectorForMetricsGraph={selectorForMetricsGraph}
           />
           {comparing && (
             <div>
@@ -319,7 +325,11 @@ const ProfileSelector = ({
         <MetricsGraphSection
           showMetricsGraph={showMetricsGraph}
           setDisplayHideMetricsGraphButton={setDisplayHideMetricsGraphButton}
-          heightStyle={heightStyle}
+          heightStyle={
+            utilizationMetrics !== undefined && utilizationMetrics?.length > 0
+              ? 'auto'
+              : heightStyle
+          }
           querySelection={querySelection}
           profileSelection={profileSelection}
           comparing={comparing}

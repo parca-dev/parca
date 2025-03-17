@@ -39,7 +39,10 @@ interface MetricsGraphSectionProps {
   query: Query;
   setNewQueryExpression: (queryExpression: string) => void;
   setQueryExpression: (updateTs?: boolean) => void;
-  utilizationMetrics?: UtilizationMetricsType[];
+  utilizationMetrics?: Array<{
+    name: string;
+    data: UtilizationMetricsType[];
+  }>;
   utilizationMetricsLoading?: boolean;
 }
 
@@ -155,12 +158,17 @@ export function MetricsGraphSection({
             querySelection.to !== undefined ? (
               <>
                 {utilizationMetrics !== undefined ? (
-                  <UtilizationMetricsGraph
-                    data={utilizationMetrics}
-                    addLabelMatcher={addLabelMatcher}
-                    setTimeRange={handleTimeRangeChange}
-                    utilizationMetricsLoading={utilizationMetricsLoading}
-                  />
+                  utilizationMetrics.map(({name, data}) => (
+                    <>
+                      <UtilizationMetricsGraph
+                        key={name}
+                        data={data}
+                        addLabelMatcher={addLabelMatcher}
+                        setTimeRange={handleTimeRangeChange}
+                        utilizationMetricsLoading={utilizationMetricsLoading}
+                      />
+                    </>
+                  ))
                 ) : (
                   <>
                     <ProfileMetricsGraph
