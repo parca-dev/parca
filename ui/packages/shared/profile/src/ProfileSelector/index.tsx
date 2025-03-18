@@ -85,7 +85,11 @@ interface ProfileSelectorProps extends ProfileSelectorFeatures {
   navigateTo: NavigateFunction;
   setDisplayHideMetricsGraphButton?: Dispatch<SetStateAction<boolean>>;
   suffix?: string;
-  utilizationMetrics?: UtilizationMetrics[];
+  utilizationMetrics?: Array<{
+    name: string;
+    humanReadableName: string;
+    data: UtilizationMetrics[];
+  }>;
   utilizationMetricsLoading?: boolean;
   utilizationLabels?: UtilizationLabels;
 }
@@ -279,7 +283,7 @@ const ProfileSelector = ({
   const sumByRef = useRef(null);
 
   return (
-    <UtilizationLabelsProvider value={utilizationLabels}>
+    <UtilizationLabelsProvider value={{...utilizationLabels}}>
       <>
         <div className="mb-2 flex">
           <QueryControls
@@ -319,7 +323,11 @@ const ProfileSelector = ({
         <MetricsGraphSection
           showMetricsGraph={showMetricsGraph}
           setDisplayHideMetricsGraphButton={setDisplayHideMetricsGraphButton}
-          heightStyle={heightStyle}
+          heightStyle={
+            utilizationMetrics !== undefined && utilizationMetrics?.length > 0
+              ? 'auto'
+              : heightStyle
+          }
           querySelection={querySelection}
           profileSelection={profileSelection}
           comparing={comparing}

@@ -36,6 +36,8 @@ interface CommonProps {
     labels: {key: string; value: string} | Array<{key: string; value: string}>
   ) => void;
   setTimeRange: (range: DateTimeRange) => void;
+  name: string;
+  humanReadableName: string;
 }
 
 type RawUtilizationMetricsProps = CommonProps & {
@@ -83,6 +85,19 @@ function transformToSeries(data: MetricSeries[]): Series[] {
   }));
 }
 
+const getYAxisUnit = (name: string): string => {
+  switch (name) {
+    case 'gpu_utilization_percent':
+      return 'percent';
+    case 'gpu_memory_utilization_percent':
+      return 'percent';
+    case 'gpu_power_watt':
+      return 'watts';
+    default:
+      return 'percent';
+  }
+};
+
 const RawUtilizationMetrics = ({
   data,
   addLabelMatcher,
@@ -90,6 +105,8 @@ const RawUtilizationMetrics = ({
   width,
   height,
   margin,
+  name,
+  humanReadableName,
 }: RawUtilizationMetricsProps): JSX.Element => {
   const {timezone} = useParcaContext();
   const graph = useRef(null);
@@ -310,7 +327,7 @@ const RawUtilizationMetrics = ({
               y={pos[1] + margin}
               highlighted={highlighted}
               contextElement={graph.current}
-              sampleUnit="%"
+              sampleUnit={getYAxisUnit(name)}
               delta={false}
               utilizationMetrics={true}
             />
@@ -367,7 +384,7 @@ const RawUtilizationMetrics = ({
                     >
                       <line className="stroke-gray-300 dark:stroke-gray-500" x2={-6} />
                       <text fill="currentColor" x={-9} dy={'0.32em'}>
-                        {valueFormatter(d, 'percent', decimals)}
+                        {valueFormatter(d, getYAxisUnit(name), decimals)}
                       </text>
                     </g>
                     <g key={`grid-${i}`}>
@@ -403,7 +420,7 @@ const RawUtilizationMetrics = ({
                   className="text-sm capitalize"
                   textAnchor="middle"
                 >
-                  Utilization
+                  {humanReadableName}
                 </text>
               </g>
             </g>
@@ -511,6 +528,8 @@ const UtilizationMetrics = ({
   addLabelMatcher,
   setTimeRange,
   utilizationMetricsLoading,
+  name,
+  humanReadableName,
 }: Props): JSX.Element => {
   const {isDarkMode} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(false, true);
@@ -534,6 +553,8 @@ const UtilizationMetrics = ({
             width={width}
             height={height}
             margin={margin}
+            name={name}
+            humanReadableName={humanReadableName}
           />
         )}
       </motion.div>

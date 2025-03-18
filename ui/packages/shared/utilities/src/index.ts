@@ -76,12 +76,23 @@ const unitsInCores = {
   exa: {multiplier: 1e18, symbol: 'E'},
 };
 
+const unitsInWatts = {
+  unit: {multiplier: 1, symbol: 'W'},
+  kilo: {multiplier: 1e3, symbol: 'kW'},
+  mega: {multiplier: 1e6, symbol: 'MW'},
+  giga: {multiplier: 1e9, symbol: 'GW'},
+  tera: {multiplier: 1e12, symbol: 'TW'},
+  peta: {multiplier: 1e15, symbol: 'PW'},
+  exa: {multiplier: 1e18, symbol: 'EW'},
+};
+
 const knownValueFormatters = {
   bytes: unitsInBytes,
   nanoseconds: unitsInTimeNs,
   count: unitsInCount,
   'CPU Cores': unitsInCores,
   milliseconds: unitsInTimeMs,
+  watts: unitsInWatts,
 };
 
 export const roundToDecimals = (n: number, decimals: number): number => {
@@ -102,6 +113,9 @@ export const valueFormatter = (
 ): string => {
   const isBigInt = typeof num === 'bigint';
   const absoluteNum = isBigInt ? abs(num) : Math.abs(num);
+  if (unit === 'percent') {
+    return `${num.toString()}%`;
+  }
   const formatter = knownValueFormatters[unit as keyof typeof knownValueFormatters];
   if (formatter == null) {
     return num.toString();
