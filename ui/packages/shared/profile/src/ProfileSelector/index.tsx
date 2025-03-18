@@ -91,7 +91,6 @@ interface ProfileSelectorProps extends ProfileSelectorFeatures {
   }>;
   utilizationMetricsLoading?: boolean;
   utilizationLabels?: UtilizationLabels;
-  selectorForMetricsGraph?: JSX.Element;
 }
 
 export interface IProfileTypesResult {
@@ -138,7 +137,6 @@ const ProfileSelector = ({
   utilizationMetrics,
   utilizationMetricsLoading,
   utilizationLabels,
-  selectorForMetricsGraph,
 }: ProfileSelectorProps): JSX.Element => {
   const {
     loading: profileTypesLoading,
@@ -314,7 +312,6 @@ const ProfileSelector = ({
             profileType={profileType}
             profileTypesError={error}
             viewComponent={viewComponent}
-            selectorForMetricsGraph={selectorForMetricsGraph}
           />
           {comparing && (
             <div>

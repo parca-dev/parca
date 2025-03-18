@@ -113,6 +113,9 @@ export const valueFormatter = (
 ): string => {
   const isBigInt = typeof num === 'bigint';
   const absoluteNum = isBigInt ? abs(num) : Math.abs(num);
+  if (unit === 'percent') {
+    return `${num.toString()}%`;
+  }
   const formatter = knownValueFormatters[unit as keyof typeof knownValueFormatters];
   if (formatter == null) {
     return num.toString();

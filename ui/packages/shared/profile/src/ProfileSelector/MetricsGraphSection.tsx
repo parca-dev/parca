@@ -166,6 +166,7 @@ export function MetricsGraphSection({
                         addLabelMatcher={addLabelMatcher}
                         setTimeRange={handleTimeRangeChange}
                         utilizationMetricsLoading={utilizationMetricsLoading}
+                        name={name}
                       />
                     </>
                   ))
