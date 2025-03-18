@@ -37,6 +37,7 @@ interface CommonProps {
   ) => void;
   setTimeRange: (range: DateTimeRange) => void;
   name: string;
+  humanReadableName: string;
 }
 
 type RawUtilizationMetricsProps = CommonProps & {
@@ -86,16 +87,17 @@ function transformToSeries(data: MetricSeries[]): Series[] {
 
 const getYAxisUnit = (name: string): string => {
   switch (name) {
-    case 'GPU Utilization':
+    case 'gpu_utilization_percent':
       return 'percent';
-    case 'GPU Memory Utilization':
+    case 'gpu_memory_utilization_percent':
       return 'percent';
-    case 'GPU Power':
+    case 'gpu_power_watt':
       return 'watts';
     default:
       return 'percent';
   }
 };
+
 const RawUtilizationMetrics = ({
   data,
   addLabelMatcher,
@@ -104,6 +106,7 @@ const RawUtilizationMetrics = ({
   height,
   margin,
   name,
+  humanReadableName,
 }: RawUtilizationMetricsProps): JSX.Element => {
   const {timezone} = useParcaContext();
   const graph = useRef(null);
@@ -324,7 +327,7 @@ const RawUtilizationMetrics = ({
               y={pos[1] + margin}
               highlighted={highlighted}
               contextElement={graph.current}
-              sampleUnit="%"
+              sampleUnit={getYAxisUnit(name)}
               delta={false}
               utilizationMetrics={true}
             />
@@ -417,7 +420,7 @@ const RawUtilizationMetrics = ({
                   className="text-sm capitalize"
                   textAnchor="middle"
                 >
-                  {name}
+                  {humanReadableName}
                 </text>
               </g>
             </g>
@@ -526,6 +529,7 @@ const UtilizationMetrics = ({
   setTimeRange,
   utilizationMetricsLoading,
   name,
+  humanReadableName,
 }: Props): JSX.Element => {
   const {isDarkMode} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(false, true);
@@ -550,6 +554,7 @@ const UtilizationMetrics = ({
             height={height}
             margin={margin}
             name={name}
+            humanReadableName={humanReadableName}
           />
         )}
       </motion.div>

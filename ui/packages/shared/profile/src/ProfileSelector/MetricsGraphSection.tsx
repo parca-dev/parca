@@ -41,6 +41,7 @@ interface MetricsGraphSectionProps {
   setQueryExpression: (updateTs?: boolean) => void;
   utilizationMetrics?: Array<{
     name: string;
+    humanReadableName: string;
     data: UtilizationMetricsType[];
   }>;
   utilizationMetricsLoading?: boolean;
@@ -158,7 +159,7 @@ export function MetricsGraphSection({
             querySelection.to !== undefined ? (
               <>
                 {utilizationMetrics !== undefined ? (
-                  utilizationMetrics.map(({name, data}) => (
+                  utilizationMetrics.map(({name, humanReadableName, data}) => (
                     <>
                       <UtilizationMetricsGraph
                         key={name}
@@ -167,6 +168,7 @@ export function MetricsGraphSection({
                         setTimeRange={handleTimeRangeChange}
                         utilizationMetricsLoading={utilizationMetricsLoading}
                         name={name}
+                        humanReadableName={humanReadableName}
                       />
                     </>
                   ))

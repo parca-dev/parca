@@ -87,6 +87,7 @@ interface ProfileSelectorProps extends ProfileSelectorFeatures {
   suffix?: string;
   utilizationMetrics?: Array<{
     name: string;
+    humanReadableName: string;
     data: UtilizationMetrics[];
   }>;
   utilizationMetricsLoading?: boolean;
