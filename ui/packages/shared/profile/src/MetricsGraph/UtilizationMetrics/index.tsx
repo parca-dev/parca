@@ -38,6 +38,8 @@ interface CommonProps {
   setTimeRange: (range: DateTimeRange) => void;
   name: string;
   humanReadableName: string;
+  from: number;
+  to: number;
 }
 
 type RawUtilizationMetricsProps = CommonProps & {
@@ -107,6 +109,8 @@ const RawUtilizationMetrics = ({
   margin,
   name,
   humanReadableName,
+  from,
+  to,
 }: RawUtilizationMetricsProps): JSX.Element => {
   const {timezone} = useParcaContext();
   const graph = useRef(null);
@@ -132,10 +136,6 @@ const RawUtilizationMetrics = ({
   const lineStrokeSelected = '3px';
 
   const graphWidth = width - margin * 1.5 - margin / 2;
-
-  const timeExtent = d3.extent(data.flatMap(d => d.samples.map(s => s.timestamp)));
-  const from = timeExtent[0] ?? 0;
-  const to = timeExtent[1] ?? 0;
 
   const paddedFrom = from;
   const paddedTo = to;
@@ -530,6 +530,8 @@ const UtilizationMetrics = ({
   utilizationMetricsLoading,
   name,
   humanReadableName,
+  from,
+  to,
 }: Props): JSX.Element => {
   const {isDarkMode} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(false, true);
@@ -555,6 +557,8 @@ const UtilizationMetrics = ({
             margin={margin}
             name={name}
             humanReadableName={humanReadableName}
+            from={from}
+            to={to}
           />
         )}
       </motion.div>

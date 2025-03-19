@@ -169,6 +169,8 @@ export function MetricsGraphSection({
                         utilizationMetricsLoading={utilizationMetricsLoading}
                         name={name}
                         humanReadableName={humanReadableName}
+                        from={querySelection.from}
+                        to={querySelection.to}
                       />
                     </>
                   ))
