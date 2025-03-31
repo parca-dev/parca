@@ -16,7 +16,7 @@ package profile
 import (
 	"testing"
 
-	"github.com/apache/arrow/go/v17/arrow/memory"
+	"github.com/apache/arrow-go/v18/arrow/memory"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 )

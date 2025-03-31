@@ -16,7 +16,7 @@ package profile
 import (
 	"encoding/binary"
 
-	"github.com/apache/arrow/go/v17/arrow/array"
+	"github.com/apache/arrow-go/v18/arrow/array"
 	pprofextended "go.opentelemetry.io/proto/otlp/profiles/v1experimental"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
