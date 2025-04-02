@@ -11,10 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useParcaContext, useURLState} from '@parca/components';
-
-import Dropdown, {DropdownElement, InnerAction} from './Dropdown';
 import { ReactNode } from 'react';
+
+import { useParcaContext, useURLState } from '@parca/components';
+
+import Dropdown, { DropdownElement, InnerAction } from './Dropdown';
 import { USER_PREFERENCES, useUserPreference } from '@parca/hooks';
 
 const ViewSelector = (): JSX.Element => {
@@ -28,27 +29,44 @@ const ViewSelector = (): JSX.Element => {
 
   const [enableicicleCharts] = useUserPreference<boolean>(USER_PREFERENCES.ENABLE_ICICLECHARTS.key);
 
-  const allItems: Array<{ key: string | ReactNode; canBeSelected: boolean; supportingText?: string }> = [
-    {key: 'table', canBeSelected: !dashboardItems.includes('table')},
-    {key: 'icicle', canBeSelected: !dashboardItems.includes('icicle')},
-  ];
-
+  const allItems: Array<{
+    key: string;
+    label?: string | ReactNode;
+    canBeSelected: boolean;
+    supportingText?: string;
+  }> = [
+      { key: 'table', label: 'Table', canBeSelected: !dashboardItems.includes('table') },
+      { key: 'icicle', label: 'icicle', canBeSelected: !dashboardItems.includes('icicle') },
+    ];
   if (enableicicleCharts === true) {
-    allItems.push({ key: <span className='relative'>IcicleChart<span className='absolute top-[-2px] text-xs lowercase text-red-500'>&nbsp;alpha</span></span>, canBeSelected: !dashboardItems.includes('iciclechart') });
+    allItems.push({
+      key: 'iciclechart',
+      label: (
+        <span className="relative">
+          IcicleChart
+          <span className="absolute top-[-2px] text-xs lowercase text-red-500">&nbsp;alpha</span>
+        </span>
+      ),
+      canBeSelected: !dashboardItems.includes('iciclechart'),
+    });
   }
 
   if (enableSourcesView === true) {
-    allItems.push({key: 'source', canBeSelected: false});
+    allItems.push({ key: 'source', canBeSelected: false });
   }
 
   const getOption = ({
     key,
+    label,
     supportingText,
   }: {
-      key: string | ReactNode;
+    key: string;
+    label?: string | ReactNode;
     supportingText?: string;
   }): DropdownElement => {
-    const title = <span className="capitalize">{typeof key === 'string' ? key.replaceAll('-', ' ') : key}</span>;
+    const title = (
+      <span className="capitalize">{typeof label === 'string' ? label.replaceAll('-', ' ') : label}</span>
+    );
 
     return {
       active: title,
@@ -71,8 +89,8 @@ const ViewSelector = (): JSX.Element => {
         !item.canBeSelected && item.key === 'source'
           ? 'Add Panel'
           : item.canBeSelected
-          ? 'Add Panel'
-          : 'Close Panel',
+            ? 'Add Panel'
+            : 'Close Panel',
       onClick: () => {
         if (item.canBeSelected) {
           setDashboardItems([...dashboardItems, item.key]);
