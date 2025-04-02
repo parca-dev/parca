@@ -11,16 +11,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useState} from 'react';
+import { useState } from 'react';
 
-import {Icon} from '@iconify/react';
+import { Icon } from '@iconify/react';
 import cx from 'classnames';
 
-import {USER_PREFERENCES} from '@parca/hooks';
+import { USER_PREFERENCES } from '@parca/hooks';
 
-import {Button} from '../Button';
+import { Button } from '../Button';
 import Modal from '../Modal';
-import {useParcaContext} from '../ParcaContext';
+import { useParcaContext } from '../ParcaContext';
 import FlamegraphColorProfileSelector from './FlamegraphColorProfileSelector';
 import UserPreferenceItem from './UserPreferenceItem';
 
@@ -55,8 +55,8 @@ export const UserPreferencesModal = (): JSX.Element => {
   );
 };
 
-const UserPreferences = ({modal}: {modal?: boolean}): JSX.Element => {
-  const {enableIciclechartView} = useParcaContext();
+const UserPreferences = ({ modal }: { modal?: boolean }): JSX.Element => {
+  const { enableIciclechartView } = useParcaContext();
   return (
     <div>
       <div className={cx('min-h-40 ', modal === true ? '' : 'mt-8')}>
@@ -76,12 +76,10 @@ const UserPreferences = ({modal}: {modal?: boolean}): JSX.Element => {
           id="h-show-function-name-from-left"
           userPreferenceDetails={USER_PREFERENCES.SHOW_FUNCTION_NAME_FROM_LEFT}
         />
-        {enableIciclechartView ? (
-          <UserPreferenceItem
-            id="h-enable-iciclechart"
-            userPreferenceDetails={USER_PREFERENCES.ENABLE_ICICLECHARTS}
-          />
-        ) : null}
+        {enableIciclechartView === true ? <UserPreferenceItem
+          id="h-enable-iciclechart"
+          userPreferenceDetails={USER_PREFERENCES.ENABLE_ICICLECHARTS}
+        /> : null}
         <FlamegraphColorProfileSelector />
       </div>
     </div>

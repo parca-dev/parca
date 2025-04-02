@@ -11,12 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {ReactNode} from 'react';
+import { ReactNode } from 'react';
 
-import {useParcaContext, useURLState} from '@parca/components';
-import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
+import { useParcaContext, useURLState } from '@parca/components';
+import { USER_PREFERENCES, useUserPreference } from '@parca/hooks';
 
-import Dropdown, {DropdownElement, InnerAction} from './Dropdown';
+import Dropdown, { DropdownElement, InnerAction } from './Dropdown';
 
 const ViewSelector = (): JSX.Element => {
   const [dashboardItems = ['icicle'], setDashboardItems] = useURLState<string[]>(
@@ -25,7 +25,7 @@ const ViewSelector = (): JSX.Element => {
       alwaysReturnArray: true,
     }
   );
-  const {enableSourcesView} = useParcaContext();
+  const { enableSourcesView } = useParcaContext();
 
   const [enableicicleCharts] = useUserPreference<boolean>(USER_PREFERENCES.ENABLE_ICICLECHARTS.key);
 
@@ -35,10 +35,10 @@ const ViewSelector = (): JSX.Element => {
     canBeSelected: boolean;
     supportingText?: string;
   }> = [
-    {key: 'table', label: 'Table', canBeSelected: !dashboardItems.includes('table')},
-    {key: 'icicle', label: 'icicle', canBeSelected: !dashboardItems.includes('icicle')},
-  ];
-  if (enableicicleCharts === true) {
+      { key: 'table', label: 'Table', canBeSelected: !dashboardItems.includes('table') },
+      { key: 'icicle', label: 'icicle', canBeSelected: !dashboardItems.includes('icicle') },
+    ];
+  if (enableicicleCharts) {
     allItems.push({
       key: 'iciclechart',
       label: (
@@ -52,11 +52,10 @@ const ViewSelector = (): JSX.Element => {
   }
 
   if (enableSourcesView === true) {
-    allItems.push({key: 'source', canBeSelected: false});
+    allItems.push({ key: 'source', canBeSelected: false });
   }
 
   const getOption = ({
-    key,
     label,
     supportingText,
   }: {
@@ -91,8 +90,8 @@ const ViewSelector = (): JSX.Element => {
         !item.canBeSelected && item.key === 'source'
           ? 'Add Panel'
           : item.canBeSelected
-          ? 'Add Panel'
-          : 'Close Panel',
+            ? 'Add Panel'
+            : 'Close Panel',
       onClick: () => {
         if (item.canBeSelected) {
           setDashboardItems([...dashboardItems, item.key]);
