@@ -14,6 +14,7 @@
 import {useParcaContext, useURLState} from '@parca/components';
 
 import Dropdown, {DropdownElement, InnerAction} from './Dropdown';
+import { ReactNode } from 'react';
 
 const ViewSelector = (): JSX.Element => {
   const [dashboardItems = ['icicle'], setDashboardItems] = useURLState<string[]>(
@@ -24,12 +25,12 @@ const ViewSelector = (): JSX.Element => {
   );
   const {enableSourcesView, enableIciclechartView} = useParcaContext();
 
-  const allItems: Array<{key: string; canBeSelected: boolean; supportingText?: string}> = [
+  const allItems: Array<{ key: string | ReactNode; canBeSelected: boolean; supportingText?: string }> = [
     {key: 'table', canBeSelected: !dashboardItems.includes('table')},
     {key: 'icicle', canBeSelected: !dashboardItems.includes('icicle')},
   ];
   if (enableIciclechartView === true) {
-    allItems.push({key: 'iciclechart', canBeSelected: !dashboardItems.includes('iciclechart')});
+    allItems.push({ key: <span className='relative'>IcicleChart<span className='absolute top-[-2px] text-xs lowercase text-red-500'>&nbsp;alpha</span></span>, canBeSelected: !dashboardItems.includes('iciclechart') });
   }
 
   if (enableSourcesView === true) {
@@ -40,10 +41,10 @@ const ViewSelector = (): JSX.Element => {
     key,
     supportingText,
   }: {
-    key: string;
+      key: string | ReactNode;
     supportingText?: string;
   }): DropdownElement => {
-    const title = <span className="capitalize">{key.replaceAll('-', ' ')}</span>;
+    const title = <span className="capitalize">{typeof key === 'string' ? key.replaceAll('-', ' ') : key}</span>;
 
     return {
       active: title,
