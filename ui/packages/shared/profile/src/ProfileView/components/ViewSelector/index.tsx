@@ -15,6 +15,7 @@ import {useParcaContext, useURLState} from '@parca/components';
 
 import Dropdown, {DropdownElement, InnerAction} from './Dropdown';
 import { ReactNode } from 'react';
+import { USER_PREFERENCES, useUserPreference } from '@parca/hooks';
 
 const ViewSelector = (): JSX.Element => {
   const [dashboardItems = ['icicle'], setDashboardItems] = useURLState<string[]>(
@@ -23,13 +24,16 @@ const ViewSelector = (): JSX.Element => {
       alwaysReturnArray: true,
     }
   );
-  const {enableSourcesView, enableIciclechartView} = useParcaContext();
+  const { enableSourcesView } = useParcaContext();
+
+  const [enableicicleCharts] = useUserPreference<boolean>(USER_PREFERENCES.ENABLE_ICICLECHARTS.key);
 
   const allItems: Array<{ key: string | ReactNode; canBeSelected: boolean; supportingText?: string }> = [
     {key: 'table', canBeSelected: !dashboardItems.includes('table')},
     {key: 'icicle', canBeSelected: !dashboardItems.includes('icicle')},
   ];
-  if (enableIciclechartView === true) {
+
+  if (enableicicleCharts === true) {
     allItems.push({ key: <span className='relative'>IcicleChart<span className='absolute top-[-2px] text-xs lowercase text-red-500'>&nbsp;alpha</span></span>, canBeSelected: !dashboardItems.includes('iciclechart') });
   }
 
