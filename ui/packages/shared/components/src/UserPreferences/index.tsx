@@ -20,9 +20,9 @@ import {USER_PREFERENCES} from '@parca/hooks';
 
 import {Button} from '../Button';
 import Modal from '../Modal';
+import {useParcaContext} from '../ParcaContext';
 import FlamegraphColorProfileSelector from './FlamegraphColorProfileSelector';
 import UserPreferenceItem from './UserPreferenceItem';
-import { useParcaContext } from '../ParcaContext';
 
 export const UserPreferencesModal = (): JSX.Element => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -56,7 +56,7 @@ export const UserPreferencesModal = (): JSX.Element => {
 };
 
 const UserPreferences = ({modal}: {modal?: boolean}): JSX.Element => {
-  const { enableIciclechartView } = useParcaContext();
+  const {enableIciclechartView} = useParcaContext();
   return (
     <div>
       <div className={cx('min-h-40 ', modal === true ? '' : 'mt-8')}>
@@ -76,10 +76,12 @@ const UserPreferences = ({modal}: {modal?: boolean}): JSX.Element => {
           id="h-show-function-name-from-left"
           userPreferenceDetails={USER_PREFERENCES.SHOW_FUNCTION_NAME_FROM_LEFT}
         />
-        {enableIciclechartView ? <UserPreferenceItem
-          id="h-enable-iciclechart"
-          userPreferenceDetails={USER_PREFERENCES.ENABLE_ICICLECHARTS}
-        /> : null}
+        {enableIciclechartView ? (
+          <UserPreferenceItem
+            id="h-enable-iciclechart"
+            userPreferenceDetails={USER_PREFERENCES.ENABLE_ICICLECHARTS}
+          />
+        ) : null}
         <FlamegraphColorProfileSelector />
       </div>
     </div>

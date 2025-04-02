@@ -79,7 +79,7 @@ export const USER_PREFERENCES: {[key: string]: UserPreferenceDetails} = {
     default: false,
     description:
       'When enabled, this option adds a new visualization type, allowing you to view your data in an Icicle chart format.',
-  }
+  },
 } as const;
 
 export type UserPreference = keyof typeof USER_PREFERENCES;
