@@ -30,7 +30,11 @@ export const useVisualizationState = (): {
   clearSelection: () => void;
   setGroupByLabels: (labels: string[]) => void;
 } => {
-  const [curPath, setCurPath] = useURLStateCustom<string[]>('cur_path', {parse: JSON.parse, stringify: JSON.stringify, defaultValue: '[]'});
+  const [curPath, setCurPath] = useURLStateCustom<string[]>('cur_path', {
+    parse: JSON.parse,
+    stringify: JSON.stringify,
+    defaultValue: '[]',
+  });
   const [currentSearchString, setSearchString] = useURLState<string | undefined>('search_string');
   const [colorStackLegend] = useURLState<string | undefined>('color_stack_legend');
   const [colorBy] = useURLState('color_by');
