@@ -11,9 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useState} from 'react';
+import {useCallback} from 'react';
 
-import {useURLState} from '@parca/components';
+import {useURLState, useURLStateCustom} from '@parca/components';
 
 import {FIELD_FUNCTION_NAME, FIELD_LABELS} from '../../ProfileIcicleGraph/IcicleGraphArrow';
 
@@ -30,7 +30,7 @@ export const useVisualizationState = (): {
   clearSelection: () => void;
   setGroupByLabels: (labels: string[]) => void;
 } => {
-  const [curPath, setCurPath] = useState<string[]>([]);
+  const [curPath, setCurPath] = useURLStateCustom<string[]>('cur_path', {parse: JSON.parse, stringify: JSON.stringify, defaultValue: '[]'});
   const [currentSearchString, setSearchString] = useURLState<string | undefined>('search_string');
   const [colorStackLegend] = useURLState<string | undefined>('color_stack_legend');
   const [colorBy] = useURLState('color_by');
