@@ -72,6 +72,14 @@ export const USER_PREFERENCES: {[key: string]: UserPreferenceDetails} = {
     description:
       'When enabled, function names in the graph will be shown starting from the left side. When disabled, names will be shown from the right side, which can be more useful for languages where the most distinctive part of the function name appears at the end.',
   },
+  ENABLE_ICICLECHARTS: {
+    name: 'Enable Icicle charts',
+    key: 'ENABLE_ICICLECHARTS',
+    type: 'boolean',
+    default: false,
+    description:
+      'When enabled, this option adds a new visualization type, allowing you to view your data in an Icicle chart format.',
+  },
 } as const;
 
 export type UserPreference = keyof typeof USER_PREFERENCES;

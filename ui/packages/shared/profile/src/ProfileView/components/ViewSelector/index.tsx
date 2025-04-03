@@ -11,7 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {ReactNode} from 'react';
+
 import {useParcaContext, useURLState} from '@parca/components';
+import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 
 import Dropdown, {DropdownElement, InnerAction} from './Dropdown';
 
@@ -22,14 +25,30 @@ const ViewSelector = (): JSX.Element => {
       alwaysReturnArray: true,
     }
   );
-  const {enableSourcesView, enableIciclechartView} = useParcaContext();
+  const {enableSourcesView} = useParcaContext();
 
-  const allItems: Array<{key: string; canBeSelected: boolean; supportingText?: string}> = [
-    {key: 'table', canBeSelected: !dashboardItems.includes('table')},
-    {key: 'icicle', canBeSelected: !dashboardItems.includes('icicle')},
+  const [enableicicleCharts] = useUserPreference<boolean>(USER_PREFERENCES.ENABLE_ICICLECHARTS.key);
+
+  const allItems: Array<{
+    key: string;
+    label?: string | ReactNode;
+    canBeSelected: boolean;
+    supportingText?: string;
+  }> = [
+    {key: 'table', label: 'Table', canBeSelected: !dashboardItems.includes('table')},
+    {key: 'icicle', label: 'icicle', canBeSelected: !dashboardItems.includes('icicle')},
   ];
-  if (enableIciclechartView === true) {
-    allItems.push({key: 'iciclechart', canBeSelected: !dashboardItems.includes('iciclechart')});
+  if (enableicicleCharts) {
+    allItems.push({
+      key: 'iciclechart',
+      label: (
+        <span className="relative">
+          IcicleChart
+          <span className="absolute top-[-2px] text-xs lowercase text-red-500">&nbsp;alpha</span>
+        </span>
+      ),
+      canBeSelected: !dashboardItems.includes('iciclechart'),
+    });
   }
 
   if (enableSourcesView === true) {
@@ -37,13 +56,18 @@ const ViewSelector = (): JSX.Element => {
   }
 
   const getOption = ({
-    key,
+    label,
     supportingText,
   }: {
     key: string;
+    label?: string | ReactNode;
     supportingText?: string;
   }): DropdownElement => {
-    const title = <span className="capitalize">{key.replaceAll('-', ' ')}</span>;
+    const title = (
+      <span className="capitalize">
+        {typeof label === 'string' ? label.replaceAll('-', ' ') : label}
+      </span>
+    );
 
     return {
       active: title,
