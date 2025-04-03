@@ -31,7 +31,7 @@ export const useVisualizationState = (): {
   setGroupByLabels: (labels: string[]) => void;
 } => {
   const [curPath, setCurPath] = useURLStateCustom<string[]>('cur_path', {
-    parse: JSON.parse,
+    parse: (val) => JSON.parse(val as string ?? '[]'),
     stringify: JSON.stringify,
     defaultValue: '[]',
   });
