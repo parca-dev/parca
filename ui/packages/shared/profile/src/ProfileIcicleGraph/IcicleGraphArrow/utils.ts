@@ -26,6 +26,7 @@ import {MergedProfileSource, ProfileSource} from '../../ProfileSource';
 import {BigIntDuo, hexifyAddress} from '../../utils';
 import {
   FIELD_FUNCTION_NAME,
+  FIELD_INLINED,
   FIELD_LABELS_ONLY,
   FIELD_LOCATION_ADDRESS,
   FIELD_MAPPING_FILE,
@@ -149,3 +150,44 @@ export const boundsFromProfileSource = (profileSource?: ProfileSource): BigIntDu
 
   return [start, end];
 };
+
+export interface CurrentPathFrame {
+  functionName: string;
+  systemName: string;
+  fileName: string;
+  lineNumber: number;
+  inlined: boolean;
+}
+
+export const getCurrentPathFrameData = (
+  table: Table<any>,
+  row: number,
+  level: number
+): CurrentPathFrame => {
+  const functionName: string | null = arrowToString(table.getChild(FIELD_FUNCTION_NAME)?.get(row));
+  const systemName: string | null = arrowToString(
+    table.getChild(FIELD_FUNCTION_NAME)?.get(row)
+  );
+  const fileName: string | null = arrowToString(table.getChild(FIELD_MAPPING_FILE)?.get(row));
+  const lineNumber: bigint = table.getChild(FIELD_LOCATION_ADDRESS)?.get(row) ?? 0n;
+  const inlined: boolean | null = table.getChild(FIELD_INLINED)?.get(row);
+
+  return {
+    functionName: functionName ?? '',
+    systemName: systemName ?? '',
+    fileName: fileName ?? '',
+    lineNumber: Number(lineNumber),
+    inlined: inlined ?? false,
+  };
+}
+
+export function isCurrentPathFrameMatch(table: Table<any>, row: number, level: number, b: CurrentPathFrame): boolean {
+  const a = getCurrentPathFrameData(table, row, level);
+  return (
+    a.functionName === b.functionName &&
+    a.systemName === b.systemName &&
+    a.fileName === b.fileName &&
+    a.lineNumber === b.lineNumber &&
+    a.inlined === b.inlined
+  );
+}

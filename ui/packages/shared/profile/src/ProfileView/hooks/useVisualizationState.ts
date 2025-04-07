@@ -11,15 +11,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback} from 'react';
+import {useCallback, useState} from 'react';
 
-import {useURLState, useURLStateCustom} from '@parca/components';
+import {JSONParser, JSONSerializer, useURLState, useURLStateCustom} from '@parca/components';
 
 import {FIELD_FUNCTION_NAME, FIELD_LABELS} from '../../ProfileIcicleGraph/IcicleGraphArrow';
+import { CurrentPathFrame } from 'ProfileIcicleGraph/IcicleGraphArrow/utils';
 
 export const useVisualizationState = (): {
   curPath: string[];
   setCurPath: (path: string[]) => void;
+  curPathArrow: CurrentPathFrame[];
+  setCurPathArrow: (path: CurrentPathFrame[]) => void;
   currentSearchString: string | undefined;
   setSearchString: (searchString: string | undefined) => void;
   colorStackLegend: string | undefined;
@@ -30,9 +33,10 @@ export const useVisualizationState = (): {
   clearSelection: () => void;
   setGroupByLabels: (labels: string[]) => void;
 } => {
-  const [curPath, setCurPath] = useURLStateCustom<string[]>('cur_path', {
-    parse: (val) => JSON.parse(val as string ?? '[]'),
-    stringify: JSON.stringify,
+  const [curPath, setCurPath] = useState<string[]>([]);
+  const [curPathArrow, setCurPathArrow] = useURLStateCustom<CurrentPathFrame[]>('cur_path', {
+    parse: JSONParser<CurrentPathFrame[]>,
+    stringify: JSONSerializer,
     defaultValue: '[]',
   });
   const [currentSearchString, setSearchString] = useURLState<string | undefined>('search_string');
@@ -73,6 +77,8 @@ export const useVisualizationState = (): {
   return {
     curPath,
     setCurPath,
+    curPathArrow,
+    setCurPathArrow,
     currentSearchString,
     setSearchString,
     colorStackLegend,

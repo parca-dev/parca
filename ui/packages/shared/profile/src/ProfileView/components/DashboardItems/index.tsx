@@ -27,6 +27,7 @@ import type {
   TopTableData,
   VisualizationType,
 } from '../../types/visualization';
+import { CurrentPathFrame } from 'ProfileIcicleGraph/IcicleGraphArrow/utils';
 
 interface GetDashboardItemProps {
   type: VisualizationType;
@@ -42,6 +43,8 @@ interface GetDashboardItemProps {
   filtered: bigint;
   curPath: string[];
   setNewCurPath: (path: string[]) => void;
+  curPathArrow: CurrentPathFrame[];
+  setNewCurPathArrow: (path: CurrentPathFrame[]) => void;
   currentSearchString?: string;
   setSearchString?: (value: string) => void;
   callgraphSVG?: string;
@@ -64,6 +67,8 @@ export const getDashboardItem = ({
   filtered,
   curPath,
   setNewCurPath,
+  curPathArrow,
+  setNewCurPathArrow,
   currentSearchString,
   setSearchString,
   callgraphSVG,
@@ -83,6 +88,8 @@ export const getDashboardItem = ({
           <ProfileIcicleGraph
             curPath={curPath}
             setNewCurPath={setNewCurPath}
+            curPathArrow={curPathArrow}
+            setNewCurPathArrow={setNewCurPathArrow}
             arrow={flamegraphData?.arrow}
             graph={flamegraphData?.data}
             total={total}
@@ -106,8 +113,10 @@ export const getDashboardItem = ({
     case 'iciclechart':
       return (
         <ProfileIcicleGraph
-          curPath={curPath}
+          curPath={[]}
           setNewCurPath={() => {}}
+          curPathArrow={[]}
+          setNewCurPathArrow={() => { }}
           arrow={flamechartData?.arrow}
           total={total}
           filtered={filtered}

@@ -24,6 +24,7 @@ import {getLastItem} from '@parca/utilities';
 import {useGraphTooltip} from '../../GraphTooltipArrow/useGraphTooltip';
 import {useGraphTooltipMetaInfo} from '../../GraphTooltipArrow/useGraphTooltipMetaInfo';
 import {hexifyAddress, truncateString} from '../../utils';
+import { CurrentPathFrame } from './utils';
 
 interface ContextMenuProps {
   menuId: string;
@@ -36,8 +37,8 @@ interface ContextMenuProps {
   level: number;
   compareAbsolute: boolean;
   trackVisibility: (isVisible: boolean) => void;
-  curPath: string[];
-  setCurPath: (path: string[]) => void;
+  curPath: CurrentPathFrame[];
+  setCurPath: (path: CurrentPathFrame[]) => void;
   hideMenu: () => void;
   hideBinary: (binaryToRemove: string) => void;
 }

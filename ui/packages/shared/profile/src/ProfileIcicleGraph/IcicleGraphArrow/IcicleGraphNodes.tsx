@@ -33,7 +33,7 @@ import {
   FIELD_MAPPING_FILE,
 } from './index';
 import useNodeColor from './useNodeColor';
-import {arrowToString, nodeLabel} from './utils';
+import { arrowToString, CurrentPathFrame, getCurrentPathFrameData, isCurrentPathFrameMatch, nodeLabel } from './utils';
 
 export const RowHeight = 26;
 
@@ -48,11 +48,11 @@ interface IcicleGraphNodesProps {
   total: bigint;
   totalWidth: number;
   level: number;
-  curPath: string[];
-  setCurPath: (path: string[]) => void;
+  curPath: CurrentPathFrame[];
+  setCurPath: (path: CurrentPathFrame[]) => void;
   setHoveringRow: (row: number | null) => void;
   setHoveringLevel: (level: number | null) => void;
-  path: string[];
+  path: CurrentPathFrame[];
   xScale: (value: bigint) => number;
   searchString?: string;
   sortBy: string;
@@ -104,7 +104,7 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
   childRows =
     curPath.length === 0
       ? childRows
-      : childRows.filter(c => nodeLabel(table, c, level, false) === curPath[0]);
+      : childRows.filter(c => isCurrentPathFrameMatch(table, c, level, curPath[0]));
 
   let childrenCumulative = BigInt(0);
   const childrenElements: ReactNode[] = [];
@@ -159,15 +159,15 @@ export interface IcicleNodeProps {
   y: number;
   height: number;
   totalWidth: number;
-  curPath: string[];
+  curPath: CurrentPathFrame[];
   level: number;
   table: Table<any>;
   row: number;
   colors: colorByColors;
   colorBy: string;
-  path: string[];
+  path: CurrentPathFrame[];
   total: bigint;
-  setCurPath: (path: string[]) => void;
+  setCurPath: (path: CurrentPathFrame[]) => void;
   setHoveringRow: (row: number | null) => void;
   setHoveringLevel: (level: number | null) => void;
   xScale: (value: bigint) => number;
@@ -343,8 +343,9 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const name = useMemo(() => {
     return isRoot ? 'root' : nodeLabel(table, row, level, binaries.length > 1);
   }, [table, row, level, isRoot, binaries]);
-  const nextPath = path.concat([name]);
-  const isFaded = curPath.length > 0 && name !== curPath[curPath.length - 1];
+  const currentPathFrame: CurrentPathFrame = getCurrentPathFrameData(table, row, level);
+  const nextPath = path.concat([currentPathFrame]);
+  const isFaded = curPath.length > 0 && !isCurrentPathFrameMatch(table, row, level, curPath[curPath.length - 1]);
   const styles = isFaded ? fadedIcicleRectStyles : icicleRectStyles;
   const nextLevel = level + 1;
   const nextCurPath = curPath.length === 0 ? [] : curPath.slice(1);

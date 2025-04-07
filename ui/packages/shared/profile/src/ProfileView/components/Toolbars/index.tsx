@@ -28,6 +28,7 @@ import ShareButton from '../ShareButton';
 import ViewSelector from '../ViewSelector';
 import MultiLevelDropdown from './MultiLevelDropdown';
 import TableColumnsDropdown from './TableColumnsDropdown';
+import { CurrentPathFrame } from 'ProfileIcicleGraph/IcicleGraphArrow/utils';
 
 export interface VisualisationToolbarProps {
   groupBy: string[];
@@ -37,8 +38,8 @@ export interface VisualisationToolbarProps {
   profileSource?: ProfileSource;
   queryClient?: QueryServiceClient;
   onDownloadPProf: () => void;
-  curPath: string[];
-  setNewCurPath: (path: string[]) => void;
+  curPath: CurrentPathFrame[];
+  setNewCurPath: (path: CurrentPathFrame[]) => void;
   profileType?: ProfileType;
   total: bigint;
   filtered: bigint;
@@ -61,8 +62,8 @@ export interface TableToolbarProps {
 }
 
 export interface IcicleGraphToolbarProps {
-  curPath: string[];
-  setNewCurPath: (path: string[]) => void;
+  curPath: CurrentPathFrame[];
+  setNewCurPath: (path: CurrentPathFrame[]) => void;
 }
 
 export const TableToolbar: FC<TableToolbarProps> = ({
