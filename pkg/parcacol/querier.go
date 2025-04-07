@@ -630,10 +630,6 @@ func (q *Querier) queryRangeDelta(
 }
 
 func getSumByAggregateExprs(sumBy []string) []logicalplan.Expr {
-	if len(sumBy) == 0 {
-		return []logicalplan.Expr{logicalplan.DynCol(profile.ColumnLabels)}
-	}
-
 	exprs := make([]logicalplan.Expr, 0, len(sumBy))
 	for _, s := range sumBy {
 		exprs = append(exprs, logicalplan.Col(profile.ColumnLabelsPrefix+s))
