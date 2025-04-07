@@ -33,7 +33,13 @@ import {
   FIELD_MAPPING_FILE,
 } from './index';
 import useNodeColor from './useNodeColor';
-import { arrowToString, CurrentPathFrame, getCurrentPathFrameData, isCurrentPathFrameMatch, nodeLabel } from './utils';
+import {
+  CurrentPathFrame,
+  arrowToString,
+  getCurrentPathFrameData,
+  isCurrentPathFrameMatch,
+  nodeLabel,
+} from './utils';
 
 export const RowHeight = 26;
 
@@ -345,7 +351,8 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   }, [table, row, level, isRoot, binaries]);
   const currentPathFrame: CurrentPathFrame = getCurrentPathFrameData(table, row, level);
   const nextPath = path.concat([currentPathFrame]);
-  const isFaded = curPath.length > 0 && !isCurrentPathFrameMatch(table, row, level, curPath[curPath.length - 1]);
+  const isFaded =
+    curPath.length > 0 && !isCurrentPathFrameMatch(table, row, level, curPath[curPath.length - 1]);
   const styles = isFaded ? fadedIcicleRectStyles : icicleRectStyles;
   const nextLevel = level + 1;
   const nextCurPath = curPath.length === 0 ? [] : curPath.slice(1);

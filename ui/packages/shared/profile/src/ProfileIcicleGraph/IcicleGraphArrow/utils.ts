@@ -165,9 +165,7 @@ export const getCurrentPathFrameData = (
   level: number
 ): CurrentPathFrame => {
   const functionName: string | null = arrowToString(table.getChild(FIELD_FUNCTION_NAME)?.get(row));
-  const systemName: string | null = arrowToString(
-    table.getChild(FIELD_FUNCTION_NAME)?.get(row)
-  );
+  const systemName: string | null = arrowToString(table.getChild(FIELD_FUNCTION_NAME)?.get(row));
   const fileName: string | null = arrowToString(table.getChild(FIELD_MAPPING_FILE)?.get(row));
   const lineNumber: bigint = table.getChild(FIELD_LOCATION_ADDRESS)?.get(row) ?? 0n;
   const inlined: boolean | null = table.getChild(FIELD_INLINED)?.get(row);
@@ -179,9 +177,14 @@ export const getCurrentPathFrameData = (
     lineNumber: Number(lineNumber),
     inlined: inlined ?? false,
   };
-}
+};
 
-export function isCurrentPathFrameMatch(table: Table<any>, row: number, level: number, b: CurrentPathFrame): boolean {
+export function isCurrentPathFrameMatch(
+  table: Table<any>,
+  row: number,
+  level: number,
+  b: CurrentPathFrame
+): boolean {
   const a = getCurrentPathFrameData(table, row, level);
   return (
     a.functionName === b.functionName &&

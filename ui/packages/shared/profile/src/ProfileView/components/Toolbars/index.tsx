@@ -14,6 +14,7 @@
 import {FC} from 'react';
 
 import {Icon} from '@iconify/react';
+import {CurrentPathFrame} from 'ProfileIcicleGraph/IcicleGraphArrow/utils';
 
 import {QueryServiceClient} from '@parca/client';
 import {Button, UserPreferencesModal} from '@parca/components';
@@ -28,7 +29,6 @@ import ShareButton from '../ShareButton';
 import ViewSelector from '../ViewSelector';
 import MultiLevelDropdown from './MultiLevelDropdown';
 import TableColumnsDropdown from './TableColumnsDropdown';
-import { CurrentPathFrame } from 'ProfileIcicleGraph/IcicleGraphArrow/utils';
 
 export interface VisualisationToolbarProps {
   groupBy: string[];

@@ -13,6 +13,8 @@
 
 import {Profiler, ProfilerOnRenderCallback} from 'react';
 
+import {CurrentPathFrame} from 'ProfileIcicleGraph/IcicleGraphArrow/utils';
+
 import {ConditionalWrapper} from '@parca/components';
 
 import Callgraph from '../../../Callgraph';
@@ -27,7 +29,6 @@ import type {
   TopTableData,
   VisualizationType,
 } from '../../types/visualization';
-import { CurrentPathFrame } from 'ProfileIcicleGraph/IcicleGraphArrow/utils';
 
 interface GetDashboardItemProps {
   type: VisualizationType;
@@ -116,7 +117,7 @@ export const getDashboardItem = ({
           curPath={[]}
           setNewCurPath={() => {}}
           curPathArrow={[]}
-          setNewCurPathArrow={() => { }}
+          setNewCurPathArrow={() => {}}
           arrow={flamechartData?.arrow}
           total={total}
           filtered={filtered}

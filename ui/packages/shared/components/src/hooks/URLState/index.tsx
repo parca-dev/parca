@@ -158,11 +158,11 @@ export const useURLStateCustom = <T extends object | undefined>(
 };
 
 export const JSONSerializer = (val: object): string => {
-  return JSON.stringify(val, (_, v) => typeof v === 'bigint' ? v.toString() : v);
+  return JSON.stringify(val, (_, v) => (typeof v === 'bigint' ? v.toString() : v));
 };
 
 export const JSONParser = <T extends any>(val: string): T => {
   return JSON.parse(val);
-}
+};
 
 export default URLStateContext;
