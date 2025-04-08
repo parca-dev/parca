@@ -26,11 +26,11 @@ import {MergedProfileSource, ProfileSource} from '../../ProfileSource';
 import {BigIntDuo, hexifyAddress} from '../../utils';
 import {
   FIELD_FUNCTION_NAME,
+  FIELD_FUNCTION_START_LINE,
   FIELD_INLINED,
   FIELD_LABELS_ONLY,
   FIELD_LOCATION_ADDRESS,
   FIELD_MAPPING_FILE,
-  FIELD_FUNCTION_START_LINE,
 } from './index';
 
 export function nodeLabel(
