@@ -28,7 +28,7 @@ import {TimelineGuide} from '../TimelineGuide';
 import {IcicleGraph} from './IcicleGraph';
 import {FIELD_FUNCTION_NAME, IcicleGraphArrow} from './IcicleGraphArrow';
 import useMappingList from './IcicleGraphArrow/useMappingList';
-import { boundsFromProfileSource, CurrentPathFrame } from './IcicleGraphArrow/utils';
+import {CurrentPathFrame, boundsFromProfileSource} from './IcicleGraphArrow/utils';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 

@@ -24,7 +24,7 @@ import {getLastItem} from '@parca/utilities';
 import {useGraphTooltip} from '../../GraphTooltipArrow/useGraphTooltip';
 import {useGraphTooltipMetaInfo} from '../../GraphTooltipArrow/useGraphTooltipMetaInfo';
 import {hexifyAddress, truncateString} from '../../utils';
-import { CurrentPathFrame } from './utils';
+import {CurrentPathFrame} from './utils';
 
 interface ContextMenuProps {
   menuId: string;
