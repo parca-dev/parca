@@ -144,7 +144,7 @@ export const useURLStateCustom = <T extends object | undefined>(
   const [urlValue, setURLValue] = useURLState<string>(param, _options);
 
   const val = useMemo<T>(() => {
-    return parse(urlValue);
+    return parse(decodeURIComponent(urlValue));
   }, [parse, urlValue]);
 
   const setVal = useCallback(
@@ -155,6 +155,14 @@ export const useURLStateCustom = <T extends object | undefined>(
   );
 
   return [val, setVal];
+};
+
+export const JSONSerializer = (val: object): string => {
+  return JSON.stringify(val, (_, v) => (typeof v === 'bigint' ? v.toString() : v));
+};
+
+export const JSONParser = <T extends object>(val: ParamValue): T => {
+  return JSON.parse(val as string);
 };
 
 export default URLStateContext;

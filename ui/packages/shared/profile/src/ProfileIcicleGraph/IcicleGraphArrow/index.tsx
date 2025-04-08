@@ -38,7 +38,7 @@ import ContextMenu from './ContextMenu';
 import {IcicleChartRootNode} from './IcicleChartRootNode';
 import {IcicleNode, RowHeight, colorByColors} from './IcicleGraphNodes';
 import {useFilenamesList} from './useMappingList';
-import {arrowToString, extractFeature, extractFilenameFeature} from './utils';
+import {CurrentPathFrame, arrowToString, extractFeature, extractFilenameFeature} from './utils';
 
 export const FIELD_LABELS_ONLY = 'labels_only';
 export const FIELD_MAPPING_FILE = 'mapping_file';
@@ -66,8 +66,8 @@ interface IcicleGraphArrowProps {
   profileType?: ProfileType;
   profileSource?: ProfileSource;
   width?: number;
-  curPath: string[];
-  setCurPath: (path: string[]) => void;
+  curPath: CurrentPathFrame[];
+  setCurPath: (path: CurrentPathFrame[]) => void;
   sortBy: string;
   flamegraphLoading: boolean;
   isHalfScreen: boolean;

@@ -19,6 +19,7 @@ import {QueryServiceClient} from '@parca/client';
 import {Button, UserPreferencesModal} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 
+import {CurrentPathFrame} from '../../../ProfileIcicleGraph/IcicleGraphArrow/utils';
 import {ProfileSource} from '../../../ProfileSource';
 import {useDashboard} from '../../context/DashboardContext';
 import GroupByDropdown from '../ActionButtons/GroupByDropdown';
@@ -37,8 +38,8 @@ export interface VisualisationToolbarProps {
   profileSource?: ProfileSource;
   queryClient?: QueryServiceClient;
   onDownloadPProf: () => void;
-  curPath: string[];
-  setNewCurPath: (path: string[]) => void;
+  curPath: CurrentPathFrame[];
+  setNewCurPath: (path: CurrentPathFrame[]) => void;
   profileType?: ProfileType;
   total: bigint;
   filtered: bigint;
@@ -61,8 +62,8 @@ export interface TableToolbarProps {
 }
 
 export interface IcicleGraphToolbarProps {
-  curPath: string[];
-  setNewCurPath: (path: string[]) => void;
+  curPath: CurrentPathFrame[];
+  setNewCurPath: (path: CurrentPathFrame[]) => void;
 }
 
 export const TableToolbar: FC<TableToolbarProps> = ({

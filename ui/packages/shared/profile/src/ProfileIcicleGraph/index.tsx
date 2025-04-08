@@ -28,7 +28,7 @@ import {TimelineGuide} from '../TimelineGuide';
 import {IcicleGraph} from './IcicleGraph';
 import {FIELD_FUNCTION_NAME, IcicleGraphArrow} from './IcicleGraphArrow';
 import useMappingList from './IcicleGraphArrow/useMappingList';
-import {boundsFromProfileSource} from './IcicleGraphArrow/utils';
+import {CurrentPathFrame, boundsFromProfileSource} from './IcicleGraphArrow/utils';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 
@@ -44,6 +44,8 @@ interface ProfileIcicleGraphProps {
   profileSource?: ProfileSource;
   curPath: string[] | [];
   setNewCurPath: (path: string[]) => void;
+  curPathArrow: CurrentPathFrame[] | [];
+  setNewCurPathArrow: (path: CurrentPathFrame[]) => void;
   loading: boolean;
   setActionButtons?: (buttons: React.JSX.Element) => void;
   error?: any;
@@ -64,6 +66,8 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   filtered,
   curPath,
   setNewCurPath,
+  curPathArrow,
+  setNewCurPathArrow,
   profileType,
   loading,
   error,
@@ -191,8 +195,8 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
               arrow={arrow}
               total={total}
               filtered={filtered}
-              curPath={curPath}
-              setCurPath={setNewCurPath}
+              curPath={curPathArrow}
+              setCurPath={setNewCurPathArrow}
               profileType={profileType}
               sortBy={storeSortBy as string}
               flamegraphLoading={isLoading}
@@ -216,6 +220,8 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     filtered,
     curPath,
     setNewCurPath,
+    curPathArrow,
+    setNewCurPathArrow,
     profileType,
     storeSortBy,
     isHalfScreen,
