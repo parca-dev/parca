@@ -30,6 +30,7 @@ import {
   FIELD_LABELS_ONLY,
   FIELD_LOCATION_ADDRESS,
   FIELD_MAPPING_FILE,
+  FIELD_FUNCTION_START_LINE,
 } from './index';
 
 export function nodeLabel(
@@ -156,6 +157,7 @@ export interface CurrentPathFrame {
   systemName: string;
   fileName: string;
   lineNumber: number;
+  address: string;
   inlined: boolean;
 }
 
@@ -167,7 +169,9 @@ export const getCurrentPathFrameData = (
   const functionName: string | null = arrowToString(table.getChild(FIELD_FUNCTION_NAME)?.get(row));
   const systemName: string | null = arrowToString(table.getChild(FIELD_FUNCTION_NAME)?.get(row));
   const fileName: string | null = arrowToString(table.getChild(FIELD_MAPPING_FILE)?.get(row));
-  const lineNumber: bigint = table.getChild(FIELD_LOCATION_ADDRESS)?.get(row) ?? 0n;
+  const lineNumber: bigint = table.getChild(FIELD_FUNCTION_START_LINE)?.get(row) ?? 0n;
+  const addressBigInt: bigint = table.getChild(FIELD_LOCATION_ADDRESS)?.get(row);
+  const address = hexifyAddress(addressBigInt);
   const inlined: boolean | null = table.getChild(FIELD_INLINED)?.get(row);
 
   return {
@@ -175,6 +179,7 @@ export const getCurrentPathFrameData = (
     systemName: systemName ?? '',
     fileName: fileName ?? '',
     lineNumber: Number(lineNumber),
+    address: address,
     inlined: inlined ?? false,
   };
 };
@@ -191,6 +196,7 @@ export function isCurrentPathFrameMatch(
     a.systemName === b.systemName &&
     a.fileName === b.fileName &&
     a.lineNumber === b.lineNumber &&
+    a.address === b.address &&
     a.inlined === b.inlined
   );
 }
