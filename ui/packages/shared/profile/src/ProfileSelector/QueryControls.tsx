@@ -58,6 +58,7 @@ interface QueryControlsProps {
   queryClient: QueryServiceClient;
   labels: string[];
   sumBySelection: string[];
+  sumBySelectionLoading: boolean;
   setUserSumBySelection: (sumBy: string[]) => void;
   sumByRef: React.RefObject<SelectInstance>;
   profileType: ProfileType;
@@ -83,6 +84,7 @@ export function QueryControls({
   queryClient,
   labels,
   sumBySelection,
+  sumBySelectionLoading,
   setUserSumBySelection,
   sumByRef,
   profileType,
@@ -189,6 +191,7 @@ export function QueryControls({
               indicatorSeparator: () => ({display: 'none'}),
               menu: provided => ({...provided, width: 'max-content'}),
             }}
+            isLoading={sumBySelectionLoading}
             isDisabled={!profileType.delta}
             // @ts-expect-error
             ref={sumByRef}
