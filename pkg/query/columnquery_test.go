@@ -222,7 +222,6 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 		Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
 		Start: timestamppb.New(timestamp.Time(0)),
 		End:   timestamppb.New(timestamp.Time(9223372036854775807)),
-		SumBy: []string{"job"},
 	})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(res.Series))

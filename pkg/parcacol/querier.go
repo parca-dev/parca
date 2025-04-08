@@ -655,10 +655,10 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 			[]*logicalplan.AggregationFunction{
 				valueSum,
 			},
-			append(
-				[]logicalplan.Expr{
-					logicalplan.Col(profile.ColumnTimestamp),
-				}, getSumByAggregateExprs(sumBy)...),
+			[]logicalplan.Expr{
+				logicalplan.Col(profile.ColumnTimestamp),
+				logicalplan.DynCol(profile.ColumnLabels),
+			},
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
