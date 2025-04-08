@@ -161,8 +161,8 @@ export const JSONSerializer = (val: object): string => {
   return JSON.stringify(val, (_, v) => typeof v === 'bigint' ? v.toString() : v);
 };
 
-export const JSONParser = <T extends any>(val: string): T => {
-  return JSON.parse(val);
+export const JSONParser = <T extends any>(val: ParamValue): T => {
+  return JSON.parse(val as string);
 }
 
 export default URLStateContext;

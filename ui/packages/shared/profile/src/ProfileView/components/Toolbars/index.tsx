@@ -28,7 +28,7 @@ import ShareButton from '../ShareButton';
 import ViewSelector from '../ViewSelector';
 import MultiLevelDropdown from './MultiLevelDropdown';
 import TableColumnsDropdown from './TableColumnsDropdown';
-import { CurrentPathFrame } from 'ProfileIcicleGraph/IcicleGraphArrow/utils';
+import { CurrentPathFrame } from '../../../ProfileIcicleGraph/IcicleGraphArrow/utils';
 
 export interface VisualisationToolbarProps {
   groupBy: string[];

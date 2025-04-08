@@ -27,7 +27,7 @@ import type {
   TopTableData,
   VisualizationType,
 } from '../../types/visualization';
-import { CurrentPathFrame } from 'ProfileIcicleGraph/IcicleGraphArrow/utils';
+import { CurrentPathFrame } from '../../../ProfileIcicleGraph/IcicleGraphArrow/utils';
 
 interface GetDashboardItemProps {
   type: VisualizationType;

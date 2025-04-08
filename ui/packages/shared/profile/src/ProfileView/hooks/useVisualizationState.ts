@@ -16,7 +16,7 @@ import {useCallback, useState} from 'react';
 import {JSONParser, JSONSerializer, useURLState, useURLStateCustom} from '@parca/components';
 
 import {FIELD_FUNCTION_NAME, FIELD_LABELS} from '../../ProfileIcicleGraph/IcicleGraphArrow';
-import { CurrentPathFrame } from 'ProfileIcicleGraph/IcicleGraphArrow/utils';
+import { CurrentPathFrame } from '../../ProfileIcicleGraph/IcicleGraphArrow/utils';
 
 export const useVisualizationState = (): {
   curPath: string[];
