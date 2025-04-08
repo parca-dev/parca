@@ -11,15 +11,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Profiler, ProfilerOnRenderCallback } from 'react';
+import {Profiler, ProfilerOnRenderCallback} from 'react';
 
-import { ConditionalWrapper } from '@parca/components';
+import {ConditionalWrapper} from '@parca/components';
 
 import Callgraph from '../../../Callgraph';
 import ProfileIcicleGraph from '../../../ProfileIcicleGraph';
-import { ProfileSource } from '../../../ProfileSource';
-import { SourceView } from '../../../SourceView';
-import { Table } from '../../../Table';
+import {CurrentPathFrame} from '../../../ProfileIcicleGraph/IcicleGraphArrow/utils';
+import {ProfileSource} from '../../../ProfileSource';
+import {SourceView} from '../../../SourceView';
+import {Table} from '../../../Table';
 import type {
   CallgraphData,
   FlamegraphData,
@@ -27,7 +28,6 @@ import type {
   TopTableData,
   VisualizationType,
 } from '../../types/visualization';
-import { CurrentPathFrame } from '../../../ProfileIcicleGraph/IcicleGraphArrow/utils';
 
 interface GetDashboardItemProps {
   type: VisualizationType;
@@ -82,7 +82,7 @@ export const getDashboardItem = ({
           WrapperComponent={Profiler}
           wrapperProps={{
             id: 'icicleGraph',
-            onRender: perf?.onRender ?? (() => { }),
+            onRender: perf?.onRender ?? (() => {}),
           }}
         >
           <ProfileIcicleGraph
@@ -114,9 +114,9 @@ export const getDashboardItem = ({
       return (
         <ProfileIcicleGraph
           curPath={[]}
-          setNewCurPath={() => { }}
+          setNewCurPath={() => {}}
           curPathArrow={[]}
-          setNewCurPathArrow={() => { }}
+          setNewCurPathArrow={() => {}}
           arrow={flamechartData?.arrow}
           total={total}
           filtered={filtered}

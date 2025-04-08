@@ -23,9 +23,9 @@ import {
   useState,
 } from 'react';
 
-import { type NavigateFunction } from '@parca/utilities';
+import {type NavigateFunction} from '@parca/utilities';
 
-import { getQueryParamsFromURL, sanitize, type ParamValue } from './utils';
+import {getQueryParamsFromURL, sanitize, type ParamValue} from './utils';
 
 type ParamValueSetter = (val: ParamValue) => void;
 
@@ -53,7 +53,7 @@ export const URLStateProvider = ({
   });
 
   return (
-    <URLStateContext.Provider value={{ navigateTo, state, setState, defaultValues }}>
+    <URLStateContext.Provider value={{navigateTo, state, setState, defaultValues}}>
       {children}
     </URLStateContext.Provider>
   );
@@ -74,9 +74,9 @@ export const useURLState = <T extends ParamValue>(
     throw new Error('useURLState must be used within a URLStateProvider');
   }
 
-  const { debugLog, defaultValue, alwaysReturnArray } = _options ?? {};
+  const {debugLog, defaultValue, alwaysReturnArray} = _options ?? {};
 
-  const { navigateTo, state, setState, defaultValues } = context;
+  const {navigateTo, state, setState, defaultValues} = context;
 
   const setParam: ParamValueSetter = useCallback(
     (val: ParamValue) => {
@@ -84,7 +84,7 @@ export const useURLState = <T extends ParamValue>(
         if (debugLog === true) {
           console.log('useURLState setParam', param, val);
         }
-        setState(state => ({ ...state, [param]: val }));
+        setState(state => ({...state, [param]: val}));
 
         let encodedVal = val;
         if (typeof val === 'string') {
@@ -92,7 +92,7 @@ export const useURLState = <T extends ParamValue>(
         }
         navigateTo(
           window.location.pathname,
-          sanitize({ ...getQueryParamsFromURL(), [param]: encodedVal }, defaultValues),
+          sanitize({...getQueryParamsFromURL(), [param]: encodedVal}, defaultValues),
           {
             replace: true,
           }
@@ -139,7 +139,7 @@ type ParamValueSetterCustom<T> = (val: T) => void;
 
 export const useURLStateCustom = <T extends object | undefined>(
   param: string,
-  { parse, stringify, ..._options }: Options & OptionsCustom<T>
+  {parse, stringify, ..._options}: Options & OptionsCustom<T>
 ): [T, ParamValueSetterCustom<T>] => {
   const [urlValue, setURLValue] = useURLState<string>(param, _options);
 
@@ -163,6 +163,6 @@ export const JSONSerializer = (val: object): string => {
 
 export const JSONParser = <T extends any>(val: ParamValue): T => {
   return JSON.parse(val as string);
-}
+};
 
 export default URLStateContext;

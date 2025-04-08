@@ -11,16 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { FC } from 'react';
+import {FC} from 'react';
 
-import { Icon } from '@iconify/react';
+import {Icon} from '@iconify/react';
 
-import { QueryServiceClient } from '@parca/client';
-import { Button, UserPreferencesModal } from '@parca/components';
-import { ProfileType } from '@parca/parser';
+import {QueryServiceClient} from '@parca/client';
+import {Button, UserPreferencesModal} from '@parca/components';
+import {ProfileType} from '@parca/parser';
 
-import { ProfileSource } from '../../../ProfileSource';
-import { useDashboard } from '../../context/DashboardContext';
+import {CurrentPathFrame} from '../../../ProfileIcicleGraph/IcicleGraphArrow/utils';
+import {ProfileSource} from '../../../ProfileSource';
+import {useDashboard} from '../../context/DashboardContext';
 import GroupByDropdown from '../ActionButtons/GroupByDropdown';
 import SortByDropdown from '../ActionButtons/SortByDropdown';
 import FilterByFunctionButton from '../FilterByFunctionButton';
@@ -28,7 +29,6 @@ import ShareButton from '../ShareButton';
 import ViewSelector from '../ViewSelector';
 import MultiLevelDropdown from './MultiLevelDropdown';
 import TableColumnsDropdown from './TableColumnsDropdown';
-import { CurrentPathFrame } from '../../../ProfileIcicleGraph/IcicleGraphArrow/utils';
 
 export interface VisualisationToolbarProps {
   groupBy: string[];
@@ -91,7 +91,7 @@ export const TableToolbar: FC<TableToolbarProps> = ({
   );
 };
 
-export const IcicleGraphToolbar: FC<IcicleGraphToolbarProps> = ({ curPath, setNewCurPath }) => {
+export const IcicleGraphToolbar: FC<IcicleGraphToolbarProps> = ({curPath, setNewCurPath}) => {
   return (
     <>
       <div className="flex w-full gap-2 items-end">
@@ -134,7 +134,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   clearSelection,
   showVisualizationSelector = true,
 }) => {
-  const { dashboardItems } = useDashboard();
+  const {dashboardItems} = useDashboard();
 
   const isTableViz = dashboardItems?.includes('table');
   const isGraphViz = dashboardItems?.includes('icicle');
@@ -150,7 +150,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
               labels={groupByLabels}
               setGroupByLabels={setGroupByLabels}
             />
-            <MultiLevelDropdown profileType={profileType} onSelect={() => { }} />
+            <MultiLevelDropdown profileType={profileType} onSelect={() => {}} />
           </>
 
           <FilterByFunctionButton />
