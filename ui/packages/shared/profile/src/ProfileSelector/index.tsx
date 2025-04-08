@@ -309,6 +309,7 @@ const ProfileSelector = ({
             sumByRef={sumByRef}
             labels={labels}
             sumBySelection={sumBySelection ?? []}
+            sumBySelectionLoading={sumBySelectionLoading}
             setUserSumBySelection={setUserSumBySelection}
             profileType={profileType}
             profileTypesError={error}
