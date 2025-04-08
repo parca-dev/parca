@@ -162,7 +162,7 @@ export interface CurrentPathFrame {
 export const getCurrentPathFrameData = (
   table: Table<any>,
   row: number,
-  level: number
+  _level: number
 ): CurrentPathFrame => {
   const functionName: string | null = arrowToString(table.getChild(FIELD_FUNCTION_NAME)?.get(row));
   const systemName: string | null = arrowToString(table.getChild(FIELD_FUNCTION_NAME)?.get(row));
