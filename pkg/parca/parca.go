@@ -731,7 +731,11 @@ func runForwarder(
 	}
 
 	dbginfo := debuginfo.NewGRPCForwarder(debuginfopb.NewDebuginfoServiceClient(conn))
-	store := profilestore.NewGRPCForwarder(conn, logger)
+	client := profilestore.NewClient(
+		profilestorepb.NewProfileStoreServiceClient(conn),
+		otelgrpcprofilingpb.NewProfilesServiceClient(conn),
+	)
+	store := profilestore.NewGRPCForwarder(client, logger)
 
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(reg)
 	if err != nil {
