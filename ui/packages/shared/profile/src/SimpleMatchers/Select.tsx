@@ -83,10 +83,8 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   const searchInputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const optionRefs = useRef<Array<HTMLElement | null>>([]);
 
-  let isGrouped = false;
   let items: TypedSelectItem[] = [];
-  if (itemsProp[0] && 'type' in itemsProp[0]) {
-    isGrouped = true;
+  if (itemsProp[0] != null && 'type' in itemsProp[0]) {
     items = (itemsProp as GroupedSelectItem[]).flatMap(item =>
       item.values.map(v => ({...v, type: item.type}))
     );
@@ -220,7 +218,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   const groupedFilteredItems = filteredItems
     .reduce((acc: GroupedSelectItem[], item) => {
       const group = acc.find(g => g.type === item.type);
-      if (group) {
+      if (group != null) {
         group.values.push(item);
       } else {
         acc.push({type: item.type, values: [item]});
@@ -320,6 +318,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                 ) : null}
                 {group.values.map((item, index) => (
                   <OptionItem
+                    key={item.key}
                     item={item}
                     index={index}
                     optionRefs={optionRefs}
@@ -346,15 +345,14 @@ const OptionItem = ({
   handleSelection,
 }: {
   item: SelectItem;
-  optionRefs: React.MutableRefObject<(HTMLElement | null)[]>;
+    optionRefs: React.MutableRefObject<Array<(HTMLElement | null)>>;
   index: number;
   focusedIndex: number;
   selectedKey: string | undefined;
   handleSelection: (value: string) => void;
-}) => {
+  }): JSX.Element => {
   return (
     <div
-      key={item.key}
       ref={el => {
         if (el !== null) {
           optionRefs.current[index] = el;

@@ -62,7 +62,7 @@ export function LabelProvider({
       isLoading: loading,
       error: result.error ?? null,
     };
-  }, [result, loading, labelNameFromMatchers]);
+  }, [result, loading]);
 
   const utilizationValues = useMemo(() => {
     if (utilizationLabelResponse?.utilizationLabelNamesLoading === true) {
@@ -82,13 +82,13 @@ export function LabelProvider({
       labelNameOptions: uniqueUtilizationLabelNames,
       isLoading: utilizationLabelResponse.utilizationLabelNamesLoading,
     };
-  }, [utilizationLabelResponse, labelNameFromMatchers]);
+  }, [utilizationLabelResponse]);
 
   const value = useMemo(() => {
-    if (profileValues.error != null || profileValues.isLoading || utilizationValues.isLoading) {
+    if (profileValues.error != null || profileValues.isLoading || utilizationValues.isLoading === true) {
       return {
         labelNameOptions: [],
-        isLoading: profileValues.isLoading || utilizationValues.isLoading || false,
+        isLoading: (profileValues.isLoading || utilizationValues.isLoading) ?? false,
         error: profileValues.error,
       };
     }

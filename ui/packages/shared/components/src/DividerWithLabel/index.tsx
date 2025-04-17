@@ -13,7 +13,7 @@
 
 import cx from 'classnames';
 
-export const DividerWithLabel = ({label, className = ''}: {label: string; className?: string}) => {
+export const DividerWithLabel = ({ label, className = '' }: { label: string; className?: string }): JSX.Element => {
   return (
     <div className={cx('relative', className)}>
       <div aria-hidden="true" className="absolute inset-0 flex items-center">
