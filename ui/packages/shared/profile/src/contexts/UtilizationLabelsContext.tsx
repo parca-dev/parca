@@ -17,6 +17,7 @@ export interface UtilizationLabels {
   utilizationLabelNames?: string[];
   utilizationFetchLabelValues?: (key: string) => Promise<string[]>;
   utilizationLabelValues?: string[];
+  utilizationLabelNamesLoading?: boolean;
 }
 
 interface UtilizationLabelsProviderProps {
