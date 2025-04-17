@@ -173,13 +173,16 @@ const SimpleMatchers = ({
     [setMatchersString]
   );
 
-  const { labelNameOptions, isLoading: labelNamesLoading } = useLabels();
+  const {labelNameOptions, isLoading: labelNamesLoading} = useLabels();
 
   const fetchLabelValuesUnified = useCallback(
     async (labelName: string): Promise<string[]> => {
-      const labelType = labelNameOptions.find(option => option.values.some(e => e.key === labelName))?.type
+      const labelType = labelNameOptions.find(option =>
+        option.values.some(e => e.key === labelName)
+      )?.type;
       const labelValues =
-        labelType === 'gpu' ? await fetchLabelValuesUtilization(labelName)
+        labelType === 'gpu'
+          ? await fetchLabelValuesUtilization(labelName)
           : await fetchLabelValues(labelName);
       return labelValues;
     },
@@ -222,11 +225,7 @@ const SimpleMatchers = ({
     };
 
     void fetchAndSetQueryRows();
-  }, [
-    currentMatchers,
-    fetchLabelValuesUnified,
-    updateMatchersString,
-  ]);
+  }, [currentMatchers, fetchLabelValuesUnified, updateMatchersString]);
 
   const updateRow = useCallback(
     async (index: number, field: keyof QueryRow, value: string): Promise<void> => {
@@ -248,11 +247,7 @@ const SimpleMatchers = ({
       setQueryRows([...updatedRows]);
       updateMatchersString(updatedRows);
     },
-    [
-      queryRows,
-      fetchLabelValuesUnified,
-      updateMatchersString,
-    ]
+    [queryRows, fetchLabelValuesUnified, updateMatchersString]
   );
 
   const handleUpdateRow = useCallback(

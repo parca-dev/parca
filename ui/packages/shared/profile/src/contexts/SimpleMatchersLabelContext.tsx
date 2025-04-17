@@ -22,7 +22,7 @@ import {useUtilizationLabels} from './UtilizationLabelsContext';
 
 interface LabelNameSection {
   type: string;
-  values: SelectItem[]
+  values: SelectItem[];
 }
 
 interface LabelContextValue {
@@ -66,13 +66,18 @@ export function LabelProvider({
 
   const utilizationValues = useMemo(() => {
     if (utilizationLabelResponse?.utilizationLabelNamesLoading === true) {
-      return { labelNameOptions: [] as string[], isLoading: true };
+      return {labelNameOptions: [] as string[], isLoading: true};
     }
-    if (utilizationLabelResponse == null || utilizationLabelResponse.utilizationLabelNames == null) {
-      return { labelNameOptions: [] as string[], isLoading: false };
+    if (
+      utilizationLabelResponse == null ||
+      utilizationLabelResponse.utilizationLabelNames == null
+    ) {
+      return {labelNameOptions: [] as string[], isLoading: false};
     }
 
-    const uniqueUtilizationLabelNames = Array.from(new Set(utilizationLabelResponse.utilizationLabelNames));
+    const uniqueUtilizationLabelNames = Array.from(
+      new Set(utilizationLabelResponse.utilizationLabelNames)
+    );
     return {
       labelNameOptions: uniqueUtilizationLabelNames,
       isLoading: utilizationLabelResponse.utilizationLabelNamesLoading,
@@ -89,25 +94,33 @@ export function LabelProvider({
     }
 
     let nonMatchingLabels = labelNameFromMatchers.filter(
-      label => !utilizationValues.labelNameOptions.includes(label),
+      label => !utilizationValues.labelNameOptions.includes(label)
     );
     nonMatchingLabels = nonMatchingLabels.filter(
-      label => !profileValues.labelNameOptions.includes(label),
+      label => !profileValues.labelNameOptions.includes(label)
     );
 
     const nonMatchingLabelsSet = Array.from(new Set(nonMatchingLabels));
-    const options = [{
-      type: 'cpu',
-      values: transformLabelsForSelect(profileValues.labelNameOptions),
-    }, {
-      type: 'gpu',
-      values: transformLabelsForSelect(utilizationValues.labelNameOptions, true),
-    }, {
-      type: '',
-      values: transformLabelsForSelect(nonMatchingLabelsSet),
-    }]
+    const options = [
+      {
+        type: 'cpu',
+        values: transformLabelsForSelect(profileValues.labelNameOptions),
+      },
+      {
+        type: 'gpu',
+        values: transformLabelsForSelect(utilizationValues.labelNameOptions, true),
+      },
+      {
+        type: '',
+        values: transformLabelsForSelect(nonMatchingLabelsSet),
+      },
+    ];
 
-    return { labelNameOptions: options.filter(e => e.values.length > 0), isLoading: false, error: null };
+    return {
+      labelNameOptions: options.filter(e => e.values.length > 0),
+      isLoading: false,
+      error: null,
+    };
   }, [profileValues, utilizationValues, labelNameFromMatchers]);
 
   return <LabelContext.Provider value={value}>{children}</LabelContext.Provider>;
