@@ -173,6 +173,22 @@ const SimpleMatchers = ({
     [setMatchersString]
   );
 
+  const {labelNameOptions, isLoading: labelNamesLoading} = useLabels();
+
+  const fetchLabelValuesUnified = useCallback(
+    async (labelName: string): Promise<string[]> => {
+      const labelType = labelNameOptions.find(option =>
+        option.values.some(e => e.key === labelName)
+      )?.type;
+      const labelValues =
+        labelType === 'gpu'
+          ? await fetchLabelValuesUtilization(labelName)
+          : await fetchLabelValues(labelName);
+      return labelValues;
+    },
+    [fetchLabelValues, fetchLabelValuesUtilization, labelNameOptions]
+  );
+
   useEffect(() => {
     if (currentMatchers === '') {
       return;
@@ -188,10 +204,7 @@ const SimpleMatchers = ({
           const trimmedLabelName = labelName.trim();
           if (trimmedLabelName === '') return null;
 
-          const labelValues =
-            utilizationLabels?.utilizationFetchLabelValues !== undefined
-              ? await fetchLabelValuesUtilization(trimmedLabelName)
-              : await fetchLabelValues(trimmedLabelName);
+          const labelValues = await fetchLabelValuesUnified(trimmedLabelName);
           const sanitizedLabelValue =
             labelValue.startsWith('"') && labelValue.endsWith('"')
               ? labelValue.slice(1, -1)
@@ -212,15 +225,7 @@ const SimpleMatchers = ({
     };
 
     void fetchAndSetQueryRows();
-  }, [
-    currentMatchers,
-    fetchLabelValues,
-    updateMatchersString,
-    fetchLabelValuesUtilization,
-    utilizationLabels,
-  ]);
-
-  const {labelNameOptions, isLoading: labelNamesLoading} = useLabels();
+  }, [currentMatchers, fetchLabelValuesUnified, updateMatchersString]);
 
   const updateRow = useCallback(
     async (index: number, field: keyof QueryRow, value: string): Promise<void> => {
@@ -234,10 +239,7 @@ const SimpleMatchers = ({
         updatedRows[index].isLoading = true;
         setQueryRows([...updatedRows]);
 
-        const labelValues =
-          utilizationLabels?.utilizationFetchLabelValues !== undefined
-            ? await fetchLabelValuesUtilization(value)
-            : await fetchLabelValues(value);
+        const labelValues = await fetchLabelValuesUnified(value);
         updatedRows[index].labelValues = labelValues;
         updatedRows[index].isLoading = false;
       }
@@ -245,13 +247,7 @@ const SimpleMatchers = ({
       setQueryRows([...updatedRows]);
       updateMatchersString(updatedRows);
     },
-    [
-      queryRows,
-      fetchLabelValues,
-      updateMatchersString,
-      fetchLabelValuesUtilization,
-      utilizationLabels,
-    ]
+    [queryRows, fetchLabelValuesUnified, updateMatchersString]
   );
 
   const handleUpdateRow = useCallback(
@@ -301,10 +297,7 @@ const SimpleMatchers = ({
           setQueryRows([...updatedRows]);
 
           try {
-            const labelValues =
-              utilizationLabels?.utilizationFetchLabelValues !== undefined
-                ? await fetchLabelValuesUtilization(updatedRows[index].labelName)
-                : await fetchLabelValues(updatedRows[index].labelName);
+            const labelValues = await fetchLabelValuesUnified(updatedRows[index].labelName);
             updatedRows[index].labelValues = labelValues;
           } catch (error) {
             console.error('Error fetching label values:', error);
@@ -317,7 +310,7 @@ const SimpleMatchers = ({
         }
       };
     },
-    [queryRows, fetchLabelValues, fetchLabelValuesUtilization, utilizationLabels]
+    [queryRows, fetchLabelValuesUnified]
   );
 
   const isRowRegex = (row: QueryRow): boolean => row.operator === '=~' || row.operator === '!~';
