@@ -345,12 +345,12 @@ const OptionItem = ({
   handleSelection,
 }: {
   item: SelectItem;
-    optionRefs: React.MutableRefObject<Array<(HTMLElement | null)>>;
+  optionRefs: React.MutableRefObject<Array<HTMLElement | null>>;
   index: number;
   focusedIndex: number;
   selectedKey: string | undefined;
   handleSelection: (value: string) => void;
-  }): JSX.Element => {
+}): JSX.Element => {
   return (
     <div
       ref={el => {

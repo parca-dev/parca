@@ -85,7 +85,11 @@ export function LabelProvider({
   }, [utilizationLabelResponse]);
 
   const value = useMemo(() => {
-    if (profileValues.error != null || profileValues.isLoading || utilizationValues.isLoading === true) {
+    if (
+      profileValues.error != null ||
+      profileValues.isLoading ||
+      utilizationValues.isLoading === true
+    ) {
       return {
         labelNameOptions: [],
         isLoading: (profileValues.isLoading || utilizationValues.isLoading) ?? false,
