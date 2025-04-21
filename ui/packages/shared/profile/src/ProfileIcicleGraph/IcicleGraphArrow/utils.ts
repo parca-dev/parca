@@ -181,8 +181,7 @@ export const getCurrentPathFrameData = (
 
 function getLabelSet(table: Table<any>, row: number): string {
   const labelPrefix = 'labels.';
-  const labelColumnNames = table.schema.fields.filter(field => field.name.startsWith(labelPrefix)
-  );
+  const labelColumnNames = table.schema.fields.filter(field => field.name.startsWith(labelPrefix));
 
   return labelColumnNames
     .map((field, i) => [
