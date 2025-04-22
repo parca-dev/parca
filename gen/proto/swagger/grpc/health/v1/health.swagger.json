@@ -63,6 +63,18 @@
           "$ref": "#/definitions/HealthCheckResponseServingStatus"
         }
       }
+    },
+    "v1HealthListResponse": {
+      "type": "object",
+      "properties": {
+        "statuses": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v1HealthCheckResponse"
+          },
+          "description": "statuses contains all the services and their respective status."
+        }
+      }
     }
   }
 }
