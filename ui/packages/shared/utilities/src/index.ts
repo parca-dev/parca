@@ -56,6 +56,16 @@ const unitsInBytes = {
   exabytes: {multiplier: 1e18, symbol: 'EB'},
 };
 
+const unitsInBytesPerSecond = {
+  bytes_per_second: {multiplier: 1, symbol: 'Bytes/s'},
+  kilobytes_per_second: {multiplier: 1e3, symbol: 'kB/s'},
+  megabytes_per_second: {multiplier: 1e6, symbol: 'MB/s'},
+  gigabytes_per_second: {multiplier: 1e9, symbol: 'GB/s'},
+  terabytes_per_second: {multiplier: 1e12, symbol: 'TB/s'},
+  petabytes_per_second: {multiplier: 1e15, symbol: 'PB/s'},
+  exabytes_per_second: {multiplier: 1e18, symbol: 'EB/s'},
+};
+
 const unitsInCount = {
   unit: {multiplier: 1, symbol: ''},
   kilo: {multiplier: 1e3, symbol: 'k'},
@@ -93,6 +103,7 @@ const knownValueFormatters = {
   'CPU Cores': unitsInCores,
   milliseconds: unitsInTimeMs,
   watts: unitsInWatts,
+  bytes_per_second: unitsInBytesPerSecond,
 };
 
 export const roundToDecimals = (n: number, decimals: number): number => {

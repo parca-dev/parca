@@ -108,6 +108,10 @@ const getYAxisUnit = (name: string): string => {
       return 'percent';
     case 'gpu_power_watt':
       return 'watts';
+    case 'gpu_pcie_throughput_transmit_bytes':
+      return 'bytes_per_second';
+    case 'gpu_pcie_throughput_receive_bytes':
+      return 'bytes_per_second';
     default:
       return 'percent';
   }
@@ -409,6 +413,7 @@ const RawAreaChart = ({
                     <g key={`tick-${i}`} className="tick" transform={`translate(0, ${yScale(d)})`}>
                       <line className="stroke-gray-300 dark:stroke-gray-500" x2={-6} />
                       <text fill="currentColor" x={-9} dy={'0.32em'}>
+                        {d < 0 ? '-' : ''}
                         {valueFormatter(Math.abs(d), getYAxisUnit(name), decimals)}
                       </text>
                     </g>
