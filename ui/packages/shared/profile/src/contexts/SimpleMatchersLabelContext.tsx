@@ -112,7 +112,7 @@ export function LabelProvider({
       },
       {
         type: 'gpu',
-        values: transformLabelsForSelect(utilizationValues.labelNameOptions, true),
+        values: transformLabelsForSelect(utilizationValues.labelNameOptions),
       },
       {
         type: '',

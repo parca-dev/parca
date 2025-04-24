@@ -43,15 +43,24 @@ interface QueryRow {
   isLoading: boolean;
 }
 
+const trimOtelPrefix = (labelName: string): string => {
+  if (labelName.startsWith('attributes_resource.')) {
+    return labelName.replace('attributes_resource.', '');
+  }
+  if (labelName.startsWith('attributes.')) {
+    return labelName.replace('attributes.', '');
+  }
+  return labelName;
+}
+
 export const transformLabelsForSelect = (
   labelNames: string[],
-  shouldTrimPrefix = false
 ): SelectItem[] => {
   return labelNames.map(labelName => ({
     key: labelName,
     element: {
-      active: <>{shouldTrimPrefix ? labelName.split('.').pop() : labelName}</>,
-      expanded: <>{shouldTrimPrefix ? labelName.split('.').pop() : labelName}</>,
+      active: <>{trimOtelPrefix(labelName)}</>,
+      expanded: <>{trimOtelPrefix(labelName)}</>,
     },
   }));
 };
