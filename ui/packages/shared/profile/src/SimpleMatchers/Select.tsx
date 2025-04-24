@@ -17,7 +17,7 @@ import {Icon} from '@iconify/react';
 import cx from 'classnames';
 import levenshtein from 'fast-levenshtein';
 
-import {Button, useParcaContext} from '@parca/components';
+import {Button, DividerWithLabel, useParcaContext} from '@parca/components';
 
 export interface SelectElement {
   active: JSX.Element;
@@ -30,8 +30,17 @@ export interface SelectItem {
   element: SelectElement;
 }
 
+export interface TypedSelectItem extends SelectItem {
+  type: string;
+}
+
+export interface GroupedSelectItem {
+  type: string;
+  values: SelectItem[];
+}
+
 interface CustomSelectProps {
-  items: SelectItem[];
+  items: GroupedSelectItem[] | SelectItem[];
   selectedKey: string | undefined;
   onSelection: (value: string) => void;
   placeholder?: string;
@@ -49,7 +58,7 @@ interface CustomSelectProps {
 }
 
 const CustomSelect: React.FC<CustomSelectProps> = ({
-  items,
+  items: itemsProp,
   selectedKey,
   onSelection,
   placeholder = 'Select an item',
@@ -73,6 +82,15 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   const optionsRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const optionRefs = useRef<Array<HTMLElement | null>>([]);
+
+  let items: TypedSelectItem[] = [];
+  if (itemsProp[0] != null && 'type' in itemsProp[0]) {
+    items = (itemsProp as GroupedSelectItem[]).flatMap(item =>
+      item.values.map(v => ({...v, type: item.type}))
+    );
+  } else {
+    items = (itemsProp as SelectItem[]).map(item => ({...item, type: ''}));
+  }
 
   const filteredItems = searchable
     ? items
@@ -197,6 +215,18 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     e.target.value = value;
   };
 
+  const groupedFilteredItems = filteredItems
+    .reduce((acc: GroupedSelectItem[], item) => {
+      const group = acc.find(g => g.type === item.type);
+      if (group != null) {
+        group.values.push(item);
+      } else {
+        acc.push({type: item.type, values: [item]});
+      }
+      return acc;
+    }, [])
+    .sort((a, b) => a.values.length - b.values.length);
+
   return (
     <div ref={containerRef} className="relative" onKeyDown={handleKeyDown} onClick={onButtonClick}>
       <div
@@ -279,42 +309,76 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
           {loading === true ? (
             <div className="w-[270px]">{loader}</div>
           ) : (
-            filteredItems.map((item, index) => (
-              <div
-                key={item.key}
-                ref={el => {
-                  if (el !== null) {
-                    optionRefs.current[index] = el;
-                  }
-                }}
-                className={cx(
-                  'relative cursor-default select-none py-2 pl-3 pr-9',
-                  index === focusedIndex && 'bg-indigo-600 text-white',
-                  item.key === selectedKey && 'bg-indigo-100 dark:bg-indigo-700',
-                  item.disabled !== null &&
-                    item.disabled === true &&
-                    'opacity-50 cursor-not-allowed',
-                  'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 hover:bg-indigo-600 hover:text-white'
-                )}
-                role="option"
-                aria-selected={item.key === selectedKey}
-                tabIndex={-1}
-                onClick={() => {
-                  if (!(item.disabled ?? false)) {
-                    handleSelection(item.key);
-                  }
-                }}
-              >
-                {item.element.expanded}
-                {item.key === selectedKey && (
-                  <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-600">
-                    <Icon icon="heroicons:check-20-solid" aria-hidden="true" />
-                  </span>
-                )}
-              </div>
+            groupedFilteredItems.map(group => (
+              <>
+                {groupedFilteredItems.length > 1 ? (
+                  <div className="pl-2">
+                    <DividerWithLabel label={group.type} />
+                  </div>
+                ) : null}
+                {group.values.map((item, index) => (
+                  <OptionItem
+                    key={item.key}
+                    item={item}
+                    index={index}
+                    optionRefs={optionRefs}
+                    focusedIndex={focusedIndex}
+                    selectedKey={selectedKey}
+                    handleSelection={handleSelection}
+                  />
+                ))}
+              </>
             ))
           )}
         </div>
+      )}
+    </div>
+  );
+};
+
+const OptionItem = ({
+  item,
+  optionRefs,
+  index,
+  focusedIndex,
+  selectedKey,
+  handleSelection,
+}: {
+  item: SelectItem;
+  optionRefs: React.MutableRefObject<Array<HTMLElement | null>>;
+  index: number;
+  focusedIndex: number;
+  selectedKey: string | undefined;
+  handleSelection: (value: string) => void;
+}): JSX.Element => {
+  return (
+    <div
+      ref={el => {
+        if (el !== null) {
+          optionRefs.current[index] = el;
+        }
+      }}
+      className={cx(
+        'relative cursor-default select-none py-2 pl-3 pr-9',
+        index === focusedIndex && 'bg-indigo-600 text-white',
+        item.key === selectedKey && 'bg-indigo-100 dark:bg-indigo-700',
+        item.disabled !== null && item.disabled === true && 'opacity-50 cursor-not-allowed',
+        'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 hover:bg-indigo-600 hover:text-white'
+      )}
+      role="option"
+      aria-selected={item.key === selectedKey}
+      tabIndex={-1}
+      onClick={() => {
+        if (!(item.disabled ?? false)) {
+          handleSelection(item.key);
+        }
+      }}
+    >
+      {item.element.expanded}
+      {item.key === selectedKey && (
+        <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-600">
+          <Icon icon="heroicons:check-20-solid" aria-hidden="true" />
+        </span>
       )}
     </div>
   );
