@@ -181,14 +181,12 @@ const RawAreaChart = ({
   // Setup scales with padded time range
   const xScale = d3.scaleUtc().domain([paddedFrom, paddedTo]).range([0, graphWidth]);
 
-  // Find the absolute maximum to ensure symmetric scale
-  const absMax = Math.max(Math.abs(minY ?? 0), Math.abs(maxY ?? 0));
-
   const yScale = d3
     .scaleLinear()
-    // Ensure domain is symmetric around 0 and includes all values
-    .domain([-absMax, absMax])
-    .range([height - margin, 0]);
+    // Ensure domain is symmetric around 0 for balanced visualization
+    .domain([minY ?? 0, maxY ?? 0])
+    .range([height - margin, 0])
+    .nice();
 
   const throttledSetPos = throttle(setPos, 20);
 
