@@ -27,7 +27,7 @@ interface IQueryRangeState {
   error: RpcError | null;
 }
 
-const getStepCountFromScreenWidth = (pixelsPerPoint: number): number => {
+export const getStepCountFromScreenWidth = (pixelsPerPoint: number): number => {
   let width =
     // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
     window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
