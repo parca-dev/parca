@@ -181,12 +181,14 @@ const RawAreaChart = ({
   // Setup scales with padded time range
   const xScale = d3.scaleUtc().domain([paddedFrom, paddedTo]).range([0, graphWidth]);
 
+  // Find the absolute maximum to ensure symmetric scale
+  const absMax = Math.max(Math.abs(minY ?? 0), Math.abs(maxY ?? 0));
+
   const yScale = d3
     .scaleLinear()
-    // Ensure domain is symmetric around 0 for balanced visualization
-    .domain([minY ?? 0, maxY ?? 0])
-    .range([height - margin, 0])
-    .nice();
+    // Ensure domain is symmetric around 0 and includes all values
+    .domain([-absMax, absMax])
+    .range([height - margin, 0]);
 
   const throttledSetPos = throttle(setPos, 20);
 
@@ -360,12 +362,15 @@ const RawAreaChart = ({
               y={pos[1] + margin}
               highlighted={{
                 ...highlighted,
-                valuePerSecond: Math.abs(highlighted.valuePerSecond), // Show absolute value in tooltip
+                valuePerSecond: Math.abs(highlighted.valuePerSecond),
               }}
               contextElement={graph.current}
               sampleUnit={getYAxisUnit(name)}
               delta={false}
               utilizationMetrics={true}
+              valuePrefix={
+                highlighted.seriesIndex >= transmitData.length ? 'Receive ' : 'Transmit '
+              }
             />
           )}
         </div>
