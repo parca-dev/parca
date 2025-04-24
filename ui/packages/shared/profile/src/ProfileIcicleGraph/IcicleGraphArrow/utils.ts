@@ -41,19 +41,7 @@ export function nodeLabel(
 ): string {
   const labelsOnly: boolean | null = table.getChild(FIELD_LABELS_ONLY)?.get(row);
   if (level === 1 && labelsOnly !== null && labelsOnly) {
-    const labelPrefix = 'labels.';
-    const labelColumnNames = table.schema.fields.filter(field =>
-      field.name.startsWith(labelPrefix)
-    );
-
-    return labelColumnNames
-      .map((field, i) => [
-        labelColumnNames[i].name.slice(labelPrefix.length),
-        arrowToString(table.getChild(field.name)?.get(row)) ?? '',
-      ])
-      .filter(value => value[1] !== '')
-      .map(([k, v]) => `${k}="${v}"`)
-      .join(', ');
+    return getLabelSet(table, row);
   }
 
   const functionName: string | null = arrowToString(table.getChild(FIELD_FUNCTION_NAME)?.get(row));
@@ -159,12 +147,13 @@ export interface CurrentPathFrame {
   lineNumber: number;
   address: string;
   inlined: boolean;
+  labels?: string;
 }
 
 export const getCurrentPathFrameData = (
   table: Table<any>,
   row: number,
-  _level: number
+  level: number
 ): CurrentPathFrame => {
   const functionName: string | null = arrowToString(table.getChild(FIELD_FUNCTION_NAME)?.get(row));
   const systemName: string | null = arrowToString(table.getChild(FIELD_FUNCTION_NAME)?.get(row));
@@ -173,6 +162,11 @@ export const getCurrentPathFrameData = (
   const addressBigInt: bigint = table.getChild(FIELD_LOCATION_ADDRESS)?.get(row);
   const address = hexifyAddress(addressBigInt);
   const inlined: boolean | null = table.getChild(FIELD_INLINED)?.get(row);
+  const labelsOnly: boolean | null = table.getChild(FIELD_LABELS_ONLY)?.get(row);
+  let labels: undefined | string;
+  if (level === 1 && labelsOnly !== null && labelsOnly) {
+    labels = getLabelSet(table, row);
+  }
 
   return {
     functionName: functionName ?? '',
@@ -181,8 +175,23 @@ export const getCurrentPathFrameData = (
     lineNumber: Number(lineNumber),
     address: address,
     inlined: inlined ?? false,
+    labels: labels ?? undefined,
   };
 };
+
+function getLabelSet(table: Table<any>, row: number): string {
+  const labelPrefix = 'labels.';
+  const labelColumnNames = table.schema.fields.filter(field => field.name.startsWith(labelPrefix));
+
+  return labelColumnNames
+    .map((field, i) => [
+      labelColumnNames[i].name.slice(labelPrefix.length),
+      arrowToString(table.getChild(field.name)?.get(row)) ?? '',
+    ])
+    .filter(value => value[1] !== '')
+    .map(([k, v]) => `${k}="${v}"`)
+    .join(', ');
+}
 
 export function isCurrentPathFrameMatch(
   table: Table<any>,
@@ -197,6 +206,7 @@ export function isCurrentPathFrameMatch(
     a.fileName === b.fileName &&
     a.lineNumber === b.lineNumber &&
     a.address === b.address &&
-    a.inlined === b.inlined
+    a.inlined === b.inlined &&
+    a.labels === b.labels
   );
 }

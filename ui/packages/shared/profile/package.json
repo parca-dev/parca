@@ -1,6 +1,6 @@
 {
   "name": "@parca/profile",
-  "version": "0.16.492",
+  "version": "0.16.495",
   "description": "Profile viewing libraries",
   "dependencies": {
     "@headlessui/react": "^1.7.19",
@@ -24,7 +24,7 @@
     "@types/d3-selection": "^3.0.10",
     "@types/fast-levenshtein": "^0.0.4",
     "@types/react-beautiful-dnd": "^13.1.8",
-    "apache-arrow": "^12.0.1",
+    "apache-arrow": "^19.0.1",
     "classnames": "^2.3.1",
     "d3": "7.9.0",
     "d3-array": "^3.2.4",
