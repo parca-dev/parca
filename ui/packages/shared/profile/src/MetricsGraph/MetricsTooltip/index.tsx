@@ -31,6 +31,7 @@ interface Props {
   sampleUnit: string;
   delta: boolean;
   utilizationMetrics?: boolean;
+  valuePrefix?: string;
 }
 
 const virtualElement: VirtualElement = {
@@ -69,6 +70,7 @@ const MetricsTooltip = ({
   sampleUnit,
   delta,
   utilizationMetrics = false,
+  valuePrefix,
 }: Props): JSX.Element => {
   const {timezone} = useParcaContext();
 
@@ -164,7 +166,10 @@ const MetricsTooltip = ({
                         </>
                       ) : (
                         <tr>
-                          <td className="w-1/4">Value</td>
+                          <td className="w-1/4">
+                            {valuePrefix ?? ''}
+                            Value
+                          </td>
                           <td className="w-3/4">
                             {valueFormatter(highlighted.valuePerSecond, sampleUnit, 5)}
                           </td>
