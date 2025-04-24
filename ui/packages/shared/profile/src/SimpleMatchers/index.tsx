@@ -51,11 +51,9 @@ const trimOtelPrefix = (labelName: string): string => {
     return labelName.replace('attributes.', '');
   }
   return labelName;
-}
+};
 
-export const transformLabelsForSelect = (
-  labelNames: string[],
-): SelectItem[] => {
+export const transformLabelsForSelect = (labelNames: string[]): SelectItem[] => {
   return labelNames.map(labelName => ({
     key: labelName,
     element: {
