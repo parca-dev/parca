@@ -547,7 +547,7 @@ importers:
         version: 4.17.21
       moment-timezone:
         specifier: ^0.5.45
-        version: 0.5.47
+        version: 0.5.48
       react-datepicker:
         specifier: 6.9.0
         version: 6.9.0(react-dom@18.3.1)(react@18.3.1)
@@ -17125,8 +17125,8 @@ packages:
     resolution: {integrity: sha512-ySViT69/76t8VhE1xXHK6Ch4NcDd26gx0MzKXLO+F7NOtnqH68d9zF94nT8ZWSxXh8ELOERsnJO/sWt1xZYw5A==}
     dev: true
 
-  /moment-timezone@0.5.47:
-    resolution: {integrity: sha512-UbNt/JAWS0m/NJOebR0QMRHBk0hu03r5dx9GK8Cs0AS3I81yDcOc9k+DytPItgVvBP7J6Mf6U2n3BPAacAV9oA==}
+  /moment-timezone@0.5.48:
+    resolution: {integrity: sha512-f22b8LV1gbTO2ms2j2z13MuPogNoh5UzxL3nzNAYKGraILnbGc9NEE6dyiiiLv46DGRb8A4kg8UKWLjPthxBHw==}
     dependencies:
       moment: 2.30.1
     dev: false
