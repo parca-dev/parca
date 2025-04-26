@@ -556,7 +556,7 @@ importers:
         version: 2.3.0(@popperjs/core@2.11.8)(react-dom@18.3.1)(react@18.3.1)
       react-textarea-autosize:
         specifier: ^8.4.0
-        version: 8.5.7(@types/react@18.3.18)(react@18.3.1)
+        version: 8.5.9(@types/react@18.3.18)(react@18.3.1)
       react-tooltip:
         specifier: ^5.26.3
         version: 5.28.0(react-dom@18.3.1)(react@18.3.1)
@@ -794,7 +794,7 @@ importers:
         version: 15.6.1(react@18.3.1)
       react-textarea-autosize:
         specifier: ^8.4.0
-        version: 8.5.7(@types/react@18.3.18)(react@18.3.1)
+        version: 8.5.9(@types/react@18.3.18)(react@18.3.1)
       react-tooltip:
         specifier: ^5.26.3
         version: 5.28.0(react-dom@18.3.1)(react@18.3.1)
@@ -20676,8 +20676,8 @@ packages:
       scheduler: 0.23.2
     dev: true
 
-  /react-textarea-autosize@8.5.7(@types/react@18.3.18)(react@18.3.1):
-    resolution: {integrity: sha512-2MqJ3p0Jh69yt9ktFIaZmORHXw4c4bxSIhCeWiFwmJ9EYKgLmuNII3e9c9b2UO+ijl4StnpZdqpxNIhTdHvqtQ==}
+  /react-textarea-autosize@8.5.9(@types/react@18.3.18)(react@18.3.1):
+    resolution: {integrity: sha512-U1DGlIQN5AwgjTyOEnI1oCcMuEr1pv1qOtklB2l4nyMGbHzWrI0eFsYK0zos2YWqAolJyG0IWJaqWmWj5ETh0A==}
     engines: {node: '>=10'}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
