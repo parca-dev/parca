@@ -15,7 +15,7 @@ require (
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/go-chi/cors v1.2.1
-	github.com/go-delve/delve v1.24.0
+	github.com/go-delve/delve v1.24.2
 	github.com/go-kit/log v0.2.1
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/gogo/status v1.1.1
@@ -216,7 +216,7 @@ require (
 	github.com/rs/xid v1.5.0 // indirect
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.30 // indirect
 	github.com/sony/gobreaker v0.5.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/tencentyun/cos-go-sdk-v5 v0.7.40 // indirect
 	github.com/vultr/govultr/v2 v2.17.2 // indirect
