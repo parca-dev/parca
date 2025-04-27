@@ -508,13 +508,13 @@ importers:
         version: 2.9.6
       '@tanstack/react-table':
         specifier: ^8.17.3
-        version: 8.21.2(react-dom@18.3.1)(react@18.3.1)
+        version: 8.21.3(react-dom@18.3.1)(react@18.3.1)
       '@tanstack/react-virtual':
         specifier: ^3.5.0
         version: 3.13.6(react-dom@18.3.1)(react@18.3.1)
       '@tanstack/table-core':
         specifier: ^8.17.3
-        version: 8.21.2
+        version: 8.21.3
       '@tanstack/virtual-core':
         specifier: ^3.5.0
         version: 3.13.6
@@ -695,10 +695,10 @@ importers:
         version: 4.36.1(react-dom@18.3.1)(react@18.3.1)
       '@tanstack/react-table':
         specifier: ^8.17.3
-        version: 8.21.2(react-dom@18.3.1)(react@18.3.1)
+        version: 8.21.3(react-dom@18.3.1)(react@18.3.1)
       '@tanstack/table-core':
         specifier: ^8.16.0
-        version: 8.21.2
+        version: 8.21.3
       '@types/d3':
         specifier: ^7.4.3
         version: 7.4.3
@@ -6256,14 +6256,14 @@ packages:
       use-sync-external-store: 1.2.2(react@18.3.1)
     dev: false
 
-  /@tanstack/react-table@8.21.2(react-dom@18.3.1)(react@18.3.1):
-    resolution: {integrity: sha512-11tNlEDTdIhMJba2RBH+ecJ9l1zgS2kjmexDPAraulc8jeNA4xocSNeyzextT0XJyASil4XsCYlJmf5jEWAtYg==}
+  /@tanstack/react-table@8.21.3(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-5nNMTSETP4ykGegmVkhjcS8tTLW6Vl4axfEGQN3v0zdHYbK4UfoqfPChclTrJ4EoK9QynqAu9oUf8VEmrpZ5Ww==}
     engines: {node: '>=12'}
     peerDependencies:
       react: '>=16.8'
       react-dom: '>=16.8'
     dependencies:
-      '@tanstack/table-core': 8.21.2
+      '@tanstack/table-core': 8.21.3
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
     dev: false
@@ -6279,8 +6279,8 @@ packages:
       react-dom: 18.3.1(react@18.3.1)
     dev: false
 
-  /@tanstack/table-core@8.21.2:
-    resolution: {integrity: sha512-uvXk/U4cBiFMxt+p9/G7yUWI/UbHYbyghLCjlpWZ3mLeIZiUBSKcUnw9UnKkdRz7Z/N4UBuFLWQdJCjUe7HjvA==}
+  /@tanstack/table-core@8.21.3:
+    resolution: {integrity: sha512-ldZXEhOBb8Is7xLs01fR3YEc3DERiz5silj8tnGkFZytt1abEvl/GhUmCE0PMLaMPTa3Jk4HbKmRlHmu+gCftg==}
     engines: {node: '>=12'}
     dev: false
 
