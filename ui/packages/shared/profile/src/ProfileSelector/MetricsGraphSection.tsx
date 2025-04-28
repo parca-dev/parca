@@ -19,7 +19,7 @@ import {Query} from '@parca/parser';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
 import UtilizationMetricsGraph from '../MetricsGraph/UtilizationMetrics';
-import AreaChart from '../MetricsGraph/UtilizationMetrics/AreaChart';
+import AreaChart from '../MetricsGraph/UtilizationMetrics/Throughput';
 import ProfileMetricsGraph, {ProfileMetricsEmptyState} from '../ProfileMetricsGraph';
 import {QuerySelection, type UtilizationMetrics as UtilizationMetricsType} from './index';
 
