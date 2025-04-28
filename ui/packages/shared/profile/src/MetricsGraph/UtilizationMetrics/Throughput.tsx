@@ -100,23 +100,6 @@ function transformToSeries(data: MetricSeries[], isReceive = false): NetworkSeri
   }));
 }
 
-const getYAxisUnit = (name: string): string => {
-  switch (name) {
-    case 'gpu_utilization_percent':
-      return 'percent';
-    case 'gpu_memory_utilization_percent':
-      return 'percent';
-    case 'gpu_power_watt':
-      return 'watts';
-    case 'gpu_pcie_throughput_transmit_bytes':
-      return 'bytes_per_second';
-    case 'gpu_pcie_throughput_receive_bytes':
-      return 'bytes_per_second';
-    default:
-      return 'percent';
-  }
-};
-
 const RawAreaChart = ({
   transmitData,
   receiveData,
@@ -125,7 +108,6 @@ const RawAreaChart = ({
   width,
   height,
   margin,
-  name,
   humanReadableName,
   from,
   to,
@@ -225,23 +207,17 @@ const RawAreaChart = ({
     [show]
   );
 
+  const color = d3.scaleOrdinal(d3.schemeCategory10);
+
   const getSeriesColor = (series: NetworkSeries): string => {
-    return series.isReceive === true ? '#EAB308' : '#22C55E'; // Yellow for receive, Green for transmit
+    return color(series.labelset);
   };
 
-  // Create area generator for transmit (above zero)
-  const transmitArea = d3
-    .area<number[]>()
+  // Create line generator for both transmit and receive
+  const lineGenerator = d3
+    .line<number[]>()
     .x(d => xScale(d[0]))
-    .y0(yScale(0)) // Start from zero line
-    .y1(d => yScale(d[1])); // Top of the area (data point)
-
-  // Create area generator for receive (below zero)
-  const receiveArea = d3
-    .area<number[]>()
-    .x(d => xScale(d[0]))
-    .y0(yScale(0)) // Start from zero line
-    .y1(d => yScale(d[1])); // Bottom of the area (negative data point)
+    .y(d => yScale(d[1]));
 
   const highlighted = useMemo(() => {
     if (series.length === 0) {
@@ -363,7 +339,7 @@ const RawAreaChart = ({
                 valuePerSecond: Math.abs(highlighted.valuePerSecond),
               }}
               contextElement={graph.current}
-              sampleUnit={getYAxisUnit(name)}
+              sampleUnit={'bytes_per_second'}
               delta={false}
               utilizationMetrics={true}
               valuePrefix={
@@ -417,7 +393,7 @@ const RawAreaChart = ({
                       <line className="stroke-gray-300 dark:stroke-gray-500" x2={-6} />
                       <text fill="currentColor" x={-9} dy={'0.32em'}>
                         {d < 0 ? '-' : ''}
-                        {valueFormatter(Math.abs(d), getYAxisUnit(name), decimals)}
+                        {valueFormatter(Math.abs(d), 'bytes_per_second', decimals)}
                       </text>
                     </g>
                     <g key={`grid-${i}`}>
@@ -502,6 +478,17 @@ const RawAreaChart = ({
               </g>
             </g>
             <g className="areas">
+              {/* Draw baseline at y=0 */}
+              <line
+                x1={xScale(from)}
+                x2={xScale(to)}
+                y1={yScale(0)}
+                y2={yScale(0)}
+                stroke="#64748b"
+                strokeDasharray="4 2"
+                strokeWidth={1}
+                opacity={0.7}
+              />
               {series.map((s, i) => {
                 let isSelected = false;
                 if (parsedSelectedSeries != null && parsedSelectedSeries.length > 0) {
@@ -516,16 +503,13 @@ const RawAreaChart = ({
                 }
 
                 const seriesColor = getSeriesColor(s);
-                const fillOpacity = isSelected ? 0.4 : 0.2;
                 const strokeOpacity = isSelected ? 1 : 0.8;
-                const areaGenerator = s.isReceive === true ? receiveArea : transmitArea;
 
                 return (
-                  <g key={i} className="area cursor-pointer">
+                  <g key={i} className="line cursor-pointer">
                     <path
-                      d={areaGenerator(s.values) ?? ''}
-                      fill={seriesColor}
-                      fillOpacity={fillOpacity}
+                      d={lineGenerator(s.values) ?? ''}
+                      fill="none"
                       stroke={seriesColor}
                       strokeWidth={
                         isSelected
