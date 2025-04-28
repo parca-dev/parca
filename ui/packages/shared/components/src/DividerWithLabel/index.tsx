@@ -22,9 +22,9 @@ export const DividerWithLabel = ({
 }: {
   label: string;
   className?: string;
-    bgColorClassName?: string;
-    textColorClassName?: string;
-    dividerColorClassName?: string;
+  bgColorClassName?: string;
+  textColorClassName?: string;
+  dividerColorClassName?: string;
 }): JSX.Element => {
   return (
     <div className={cx('relative', className)}>
@@ -32,7 +32,9 @@ export const DividerWithLabel = ({
         <div className={`w-full border-t ${dividerColorClassName}`} />
       </div>
       <div className="relative flex justify-start">
-        <span className={`${bgColorClassName} pr-2 text-xs ${textColorClassName} uppercase`}>{label}</span>
+        <span className={`${bgColorClassName} pr-2 text-xs ${textColorClassName} uppercase`}>
+          {label}
+        </span>
       </div>
     </div>
   );
