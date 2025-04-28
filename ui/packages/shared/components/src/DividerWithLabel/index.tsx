@@ -16,17 +16,23 @@ import cx from 'classnames';
 export const DividerWithLabel = ({
   label,
   className = '',
+  bgColorClassName = 'bg-gray-50 dark:bg-gray-900',
+  textColorClassName = 'text-gray-700 dark:text-gray-300',
+  dividerColorClassName = 'border-gray-300 dark:border-gray-700',
 }: {
   label: string;
   className?: string;
+    bgColorClassName?: string;
+    textColorClassName?: string;
+    dividerColorClassName?: string;
 }): JSX.Element => {
   return (
     <div className={cx('relative', className)}>
       <div aria-hidden="true" className="absolute inset-0 flex items-center">
-        <div className="w-full border-t border-gray-300" />
+        <div className={`w-full border-t ${dividerColorClassName}`} />
       </div>
       <div className="relative flex justify-start">
-        <span className="bg-white pr-2 text-xs text-gray-500 uppercase">{label}</span>
+        <span className={`${bgColorClassName} pr-2 text-xs ${textColorClassName} uppercase`}>{label}</span>
       </div>
     </div>
   );
