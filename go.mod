@@ -15,14 +15,14 @@ require (
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/go-chi/cors v1.2.1
-	github.com/go-delve/delve v1.24.0
+	github.com/go-delve/delve v1.24.2
 	github.com/go-kit/log v0.2.1
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/gogo/status v1.1.1
 	github.com/google/pprof v0.0.0-20250208200701-d0013a598941
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.1
-	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.0
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.1
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.1
 	github.com/ianlancetaylor/demangle v0.0.0-20240912202439-0a2b6291aafd
 	github.com/improbable-eng/grpc-web v0.15.0
@@ -59,7 +59,7 @@ require (
 	golang.org/x/sync v0.12.0
 	google.golang.org/api v0.223.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20250204164813-702378808489
-	google.golang.org/grpc v1.71.0
+	google.golang.org/grpc v1.71.1
 	google.golang.org/protobuf v1.36.6
 	gopkg.in/dnaeon/go-vcr.v3 v3.2.2
 	gopkg.in/yaml.v3 v3.0.1
@@ -216,7 +216,7 @@ require (
 	github.com/rs/xid v1.5.0 // indirect
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.30 // indirect
 	github.com/sony/gobreaker v0.5.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/tencentyun/cos-go-sdk-v5 v0.7.40 // indirect
 	github.com/vultr/govultr/v2 v2.17.2 // indirect
