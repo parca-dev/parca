@@ -78,7 +78,6 @@ export const MetricsGraphStrips = ({
 }: Props): JSX.Element => {
   const [collapsedIndices, setCollapsedIndices] = useState<number[]>([]);
 
-  // @ts-expect-error
   const color = d3.scaleOrdinal(d3.schemeObservable10);
 
   const valueBounds = d3.extent(data.flatMap(d => d.map(p => p.value))) as [number, number];
