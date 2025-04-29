@@ -126,7 +126,7 @@ export const MetricsGraphStrips = ({
                 data={data[i]}
                 height={STRIP_HEIGHT}
                 width={width ?? 1468}
-                fill={color(labelStr) as string}
+                fill={color(labelStr)}
                 selectionBounds={isSelected ? selectedTimeframe?.bounds : undefined}
                 setSelectionBounds={bounds => {
                   onSelectedTimeframe(cpu, bounds);
