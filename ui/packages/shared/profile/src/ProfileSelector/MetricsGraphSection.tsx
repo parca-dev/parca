@@ -184,8 +184,14 @@ export function MetricsGraphSection({
         })}
         {throughputMetrics.length > 0 && (
           <AreaChart
-            transmitData={throughputMetrics[0].data}
-            receiveData={throughputMetrics[1].data}
+            transmitData={
+              throughputMetrics.find(metric => metric.name === 'gpu_pcie_throughput_transmit_bytes')
+                ?.data ?? []
+            }
+            receiveData={
+              throughputMetrics.find(metric => metric.name === 'gpu_pcie_throughput_receive_bytes')
+                ?.data ?? []
+            }
             addLabelMatcher={addLabelMatcher}
             setTimeRange={handleTimeRangeChange}
             name={throughputMetrics[0].name}

@@ -27,6 +27,7 @@ import {type UtilizationMetrics as MetricSeries} from '../../ProfileSelector';
 import MetricsContextMenu from '../MetricsContextMenu';
 import MetricsTooltip from '../MetricsTooltip';
 import {useMetricsGraphDimensions} from '../useMetricsGraphDimensions';
+import {getSeriesColor} from '../utils/colorMapping';
 
 interface NetworkLabel {
   name: string;
@@ -206,12 +207,6 @@ const RawAreaChart = ({
     },
     [show]
   );
-
-  const color = d3.scaleOrdinal(d3.schemeCategory10);
-
-  const getSeriesColor = (series: NetworkSeries): string => {
-    return color(series.labelset);
-  };
 
   // Create line generator for both transmit and receive
   const lineGenerator = d3
@@ -502,15 +497,12 @@ const RawAreaChart = ({
                   });
                 }
 
-                const seriesColor = getSeriesColor(s);
-                const strokeOpacity = isSelected ? 1 : 0.8;
-
                 return (
                   <g key={i} className="line cursor-pointer">
                     <path
                       d={lineGenerator(s.values) ?? ''}
                       fill="none"
-                      stroke={seriesColor}
+                      stroke={getSeriesColor(s.metric)}
                       strokeWidth={
                         isSelected
                           ? lineStrokeSelected
@@ -518,7 +510,7 @@ const RawAreaChart = ({
                           ? lineStrokeHover
                           : lineStroke
                       }
-                      strokeOpacity={strokeOpacity}
+                      strokeOpacity={isSelected ? 1 : 0.8}
                       onClick={() => {
                         if (highlighted != null) {
                           setSelectedSeries(
