@@ -29,6 +29,7 @@ import MetricsContextMenu from '../MetricsContextMenu';
 import MetricsTooltip from '../MetricsTooltip';
 import {type Series} from '../index';
 import {useMetricsGraphDimensions} from '../useMetricsGraphDimensions';
+import {getSeriesColor} from '../utils/colorMapping';
 
 interface CommonProps {
   data: MetricSeries[];
@@ -202,8 +203,6 @@ const RawUtilizationMetrics = ({
     },
     [show]
   );
-
-  const color = d3.scaleOrdinal(d3.schemeCategory10);
 
   const l = d3.line(
     d => xScale(d[0]),
@@ -487,7 +486,7 @@ const RawUtilizationMetrics = ({
                     <MetricsSeries
                       data={s}
                       line={l}
-                      color={color(i.toString())}
+                      color={getSeriesColor(s.metric)}
                       strokeWidth={
                         isSelected
                           ? lineStrokeSelected
