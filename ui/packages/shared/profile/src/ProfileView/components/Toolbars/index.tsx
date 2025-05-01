@@ -139,6 +139,12 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   const isTableViz = dashboardItems?.includes('table');
   const isGraphViz = dashboardItems?.includes('icicle');
 
+  const req = profileSource?.QueryRequest();
+  if (req) {
+    req.groupBy = {
+      fields: groupBy ?? [],
+    };
+  }
   return (
     <>
       <div className="flex w-full justify-between items-end">
@@ -162,7 +168,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
           <ShareButton
             profileSource={profileSource}
             queryClient={queryClient}
-            queryRequest={profileSource?.QueryRequest() ?? undefined}
+            queryRequest={req}
             onDownloadPProf={onDownloadPProf}
             pprofdownloading={pprofdownloading ?? false}
             profileViewExternalSubActions={profileViewExternalSubActions}
