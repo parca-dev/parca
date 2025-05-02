@@ -140,7 +140,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   const isGraphViz = dashboardItems?.includes('icicle');
 
   const req = profileSource?.QueryRequest();
-  if (req) {
+  if (req !== null && req !== undefined) {
     req.groupBy = {
       fields: groupBy ?? [],
     };
