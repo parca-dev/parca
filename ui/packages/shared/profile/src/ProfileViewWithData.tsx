@@ -166,7 +166,9 @@ export const ProfileViewWithData = ({
 
     try {
       setPprofDownloading(true);
-      const blob = await downloadPprof(profileSource.QueryRequest(), queryClient, metadata);
+      const req = profileSource.QueryRequest();
+      req.groupBy = {fields: groupBy};
+      const blob = await downloadPprof(req, queryClient, metadata);
       saveAsBlob(blob, `profile.pb.gz`);
       setPprofDownloading(false);
     } catch (error) {
