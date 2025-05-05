@@ -137,7 +137,7 @@ export interface OptionsCustom<T> {
 
 type ParamValueSetterCustom<T> = (val: T) => void;
 
-export const useURLStateCustom = <T extends object | undefined>(
+export const useURLStateCustom = <T,>(
   param: string,
   {parse, stringify, ..._options}: Options & OptionsCustom<T>
 ): [T, ParamValueSetterCustom<T>] => {
@@ -166,6 +166,20 @@ export const JSONSerializer = (val: object): string => {
 
 export const JSONParser = <T extends object>(val: ParamValue): T => {
   return JSON.parse(val as string);
+};
+
+export const NumberParser = (val: string): number => {
+  if (val == null || val === '' || val === 'undefined') {
+    return 0;
+  }
+  return Number(val);
+};
+
+export const NumberSerializer = (val: number): string => {
+  if (val == null) {
+    return '';
+  }
+  return String(val);
 };
 
 export default URLStateContext;
