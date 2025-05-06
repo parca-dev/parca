@@ -21,7 +21,7 @@ import {IcicleGraphSkeleton, useParcaContext, useURLState} from '@parca/componen
 import {ProfileType} from '@parca/parser';
 import {capitalizeOnlyFirstLetter, divide} from '@parca/utilities';
 
-import {ProfileSource} from '../ProfileSource';
+import {MergedProfileSource, ProfileSource} from '../ProfileSource';
 import DiffLegend from '../ProfileView/components/DiffLegend';
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
 import {TimelineGuide} from '../TimelineGuide';
@@ -57,6 +57,14 @@ interface ProfileIcicleGraphProps {
 
 const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
   return <div className="flex justify-center p-10">{errorMessage}</div>;
+};
+
+export const validateIcicleChartQuery = (
+  profileSource: MergedProfileSource
+): {isValid: boolean; isNonDelta: boolean; isDurationTooLong: boolean} => {
+  const isNonDelta = !profileSource.ProfileType().delta;
+  const isDurationTooLong = profileSource.mergeTo - profileSource.mergeFrom > 60000;
+  return {isValid: !isNonDelta && !isDurationTooLong, isNonDelta, isDurationTooLong};
 };
 
 const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
@@ -149,12 +157,33 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   }, [loadingState]);
 
   const icicleGraph = useMemo(() => {
-    if (isLoading) {
+    const {
+      isValid: isIcicleChartValid,
+      isNonDelta,
+      isDurationTooLong,
+    } = isIcicleChart
+      ? validateIcicleChartQuery(profileSource as MergedProfileSource)
+      : {isValid: true, isNonDelta: false, isDurationTooLong: false};
+    const isInvalidIcicleChartQuery = isIcicleChart && !isIcicleChartValid;
+    if (isLoading && !isInvalidIcicleChartQuery) {
       return (
         <div className="h-auto overflow-clip">
           <IcicleGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
         </div>
       );
+    }
+
+    // Do necessary checks to ensure that icicle chart can be rendered for this query.
+    if (isInvalidIcicleChartQuery) {
+      if (isNonDelta) {
+        return <ErrorContent errorMessage="Icicle chart is only available for delta profiles." />;
+      } else if (isDurationTooLong) {
+        return (
+          <ErrorContent errorMessage="Icicle chart is not available for queries with a duration longer than a minute, select a point in the metrics graph to continue." />
+        );
+      } else {
+        return <ErrorContent errorMessage="Icicle chart is not available for this query." />;
+      }
     }
 
     if (graph === undefined && arrow === undefined)

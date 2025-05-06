@@ -17,8 +17,9 @@ import {QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata, useParcaContext, useURLState} from '@parca/components';
 import {saveAsBlob} from '@parca/utilities';
 
+import {validateIcicleChartQuery} from './ProfileIcicleGraph';
 import {FIELD_FUNCTION_NAME} from './ProfileIcicleGraph/IcicleGraphArrow';
-import {ProfileSource} from './ProfileSource';
+import {MergedProfileSource, ProfileSource} from './ProfileSource';
 import {ProfileView} from './ProfileView';
 import {useQuery} from './useQuery';
 import {downloadPprof} from './utils';
@@ -83,7 +84,10 @@ export const ProfileViewWithData = ({
     response: flamechartResponse,
     error: flamechartError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMECHART, {
-    skip: !dashboardItems.includes('iciclechart'),
+    skip: !(
+      dashboardItems.includes('iciclechart') &&
+      validateIcicleChartQuery(profileSource as MergedProfileSource).isValid
+    ),
     nodeTrimThreshold,
     groupBy,
     invertCallStack,
