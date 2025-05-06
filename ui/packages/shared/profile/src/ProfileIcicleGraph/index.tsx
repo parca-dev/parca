@@ -161,7 +161,9 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
       isValid: isIcicleChartValid,
       isNonDelta,
       isDurationTooLong,
-    } = isIcicleChart ? validateIcicleChartQuery(profileSource as MergedProfileSource) : { isValid: true, isNonDelta: false, isDurationTooLong: false };
+    } = isIcicleChart
+      ? validateIcicleChartQuery(profileSource as MergedProfileSource)
+      : {isValid: true, isNonDelta: false, isDurationTooLong: false};
     const isInvalidIcicleChartQuery = isIcicleChart && !isIcicleChartValid;
     if (isLoading && !isInvalidIcicleChartQuery) {
       return (
