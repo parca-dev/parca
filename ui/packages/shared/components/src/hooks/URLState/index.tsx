@@ -164,7 +164,7 @@ export const JSONSerializer = (val: object): string => {
   return JSON.stringify(val, (_, v) => (typeof v === 'bigint' ? v.toString() : v));
 };
 
-export const JSONParser = <T extends object>(val: ParamValue): T => {
+export const JSONParser = <T,>(val: ParamValue): T => {
   return JSON.parse(val as string);
 };
 
