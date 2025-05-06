@@ -59,9 +59,9 @@ const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
   return <div className="flex justify-center p-10">{errorMessage}</div>;
 };
 
-export const validateIcicleChartQuery = (profileSource: MergedProfileSource) => {
-  const isNonDelta = profileSource.ProfileType().delta !== true;
-  const isDurationTooLong = profileSource.mergeTo - profileSource.mergeFrom > 10000;
+export const validateIcicleChartQuery = (profileSource: MergedProfileSource): { isValid: boolean; isNonDelta: boolean; isDurationTooLong: boolean } => {
+  const isNonDelta = !profileSource.ProfileType().delta;
+  const isDurationTooLong = profileSource.mergeTo - profileSource.mergeFrom > 60000;
   return {isValid: !isNonDelta && !isDurationTooLong, isNonDelta, isDurationTooLong};
 };
 
@@ -160,7 +160,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
       isNonDelta,
       isDurationTooLong,
     } = validateIcicleChartQuery(profileSource as MergedProfileSource);
-    const isInvalidIcicleChartQuery = isIcicleChart && isIcicleChartValid === false;
+    const isInvalidIcicleChartQuery = isIcicleChart && isIcicleChartValid;
     if (isLoading && !isInvalidIcicleChartQuery) {
       return (
         <div className="h-auto overflow-clip">
@@ -175,7 +175,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
         return <ErrorContent errorMessage="Icicle chart is only available for delta profiles." />;
       } else if (isDurationTooLong) {
         return (
-          <ErrorContent errorMessage="Icicle chart is not available for queries with a duration longer than 10 seconds, select a point in the metrics graph to continue." />
+          <ErrorContent errorMessage="Icicle chart is not available for queries with a duration longer than a minute, select a point in the metrics graph to continue." />
         );
       } else {
         return <ErrorContent errorMessage="Icicle chart is not available for this query." />;
