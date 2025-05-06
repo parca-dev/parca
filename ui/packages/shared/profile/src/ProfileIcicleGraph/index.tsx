@@ -21,7 +21,7 @@ import {IcicleGraphSkeleton, useParcaContext, useURLState} from '@parca/componen
 import {ProfileType} from '@parca/parser';
 import {capitalizeOnlyFirstLetter, divide} from '@parca/utilities';
 
-import { MergedProfileSource, ProfileSource } from '../ProfileSource';
+import {MergedProfileSource, ProfileSource} from '../ProfileSource';
 import DiffLegend from '../ProfileView/components/DiffLegend';
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
 import {TimelineGuide} from '../TimelineGuide';
@@ -62,8 +62,8 @@ const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
 export const validateIcicleChartQuery = (profileSource: MergedProfileSource) => {
   const isNonDelta = profileSource.ProfileType().delta !== true;
   const isDurationTooLong = profileSource.mergeTo - profileSource.mergeFrom > 10000;
-  return { isValid: !isNonDelta && !isDurationTooLong, isNonDelta, isDurationTooLong };
-}
+  return {isValid: !isNonDelta && !isDurationTooLong, isNonDelta, isDurationTooLong};
+};
 
 const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   graph,
@@ -155,7 +155,11 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   }, [loadingState]);
 
   const icicleGraph = useMemo(() => {
-    const { isValid: isIcicleChartValid, isNonDelta, isDurationTooLong } = validateIcicleChartQuery(profileSource as MergedProfileSource);
+    const {
+      isValid: isIcicleChartValid,
+      isNonDelta,
+      isDurationTooLong,
+    } = validateIcicleChartQuery(profileSource as MergedProfileSource);
     const isInvalidIcicleChartQuery = isIcicleChart && isIcicleChartValid === false;
     if (isLoading && !isInvalidIcicleChartQuery) {
       return (
@@ -174,9 +178,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
           <ErrorContent errorMessage="Icicle chart is not available for queries with a duration longer than 10 seconds, select a point in the metrics graph to continue." />
         );
       } else {
-        return (
-          <ErrorContent errorMessage="Icicle chart is not available for this query." />
-        );
+        return <ErrorContent errorMessage="Icicle chart is not available for this query." />;
       }
     }
 
