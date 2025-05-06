@@ -159,8 +159,8 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
       isValid: isIcicleChartValid,
       isNonDelta,
       isDurationTooLong,
-    } = validateIcicleChartQuery(profileSource as MergedProfileSource);
-    const isInvalidIcicleChartQuery = isIcicleChart && isIcicleChartValid;
+    } = isIcicleChart ? validateIcicleChartQuery(profileSource as MergedProfileSource) : { isValid: true, isNonDelta: false, isDurationTooLong: false };
+    const isInvalidIcicleChartQuery = isIcicleChart && !isIcicleChartValid;
     if (isLoading && !isInvalidIcicleChartQuery) {
       return (
         <div className="h-auto overflow-clip">
