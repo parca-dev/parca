@@ -59,7 +59,9 @@ const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
   return <div className="flex justify-center p-10">{errorMessage}</div>;
 };
 
-export const validateIcicleChartQuery = (profileSource: MergedProfileSource): { isValid: boolean; isNonDelta: boolean; isDurationTooLong: boolean } => {
+export const validateIcicleChartQuery = (
+  profileSource: MergedProfileSource
+): {isValid: boolean; isNonDelta: boolean; isDurationTooLong: boolean} => {
   const isNonDelta = !profileSource.ProfileType().delta;
   const isDurationTooLong = profileSource.mergeTo - profileSource.mergeFrom > 60000;
   return {isValid: !isNonDelta && !isDurationTooLong, isNonDelta, isDurationTooLong};
