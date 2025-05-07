@@ -75,7 +75,6 @@ export const ProfileViewWithData = ({
     setDashboardItems(newDashboardItems);
   }, [profileSource, dashboardItems, setDashboardItems]);
 
-
   const nodeTrimThreshold = useMemo(() => {
     let width =
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
