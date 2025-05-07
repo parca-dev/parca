@@ -43,7 +43,7 @@ const ViewSelector = (): JSX.Element => {
       key: 'iciclechart',
       label: (
         <span className="relative">
-          IcicleChart
+          Iciclechart
           <span className="absolute top-[-2px] text-xs lowercase text-red-500">&nbsp;alpha</span>
         </span>
       ),
