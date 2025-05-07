@@ -16,21 +16,21 @@ import {ReactNode} from 'react';
 import {useParcaContext, useURLState} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 
+import {ProfileSource} from '../../../ProfileSource';
 import Dropdown, {DropdownElement, InnerAction} from './Dropdown';
-import { ProfileSource } from '../../../ProfileSource';
 
 interface Props {
   profileSource?: ProfileSource;
 }
 
-const ViewSelector = ({ profileSource }: Props): JSX.Element => {
+const ViewSelector = ({profileSource}: Props): JSX.Element => {
   const [dashboardItems = ['icicle'], setDashboardItems] = useURLState<string[]>(
     'dashboard_items',
     {
       alwaysReturnArray: true,
     }
   );
-  const { enableSourcesView } = useParcaContext();
+  const {enableSourcesView} = useParcaContext();
 
   const [enableicicleCharts] = useUserPreference<boolean>(USER_PREFERENCES.ENABLE_ICICLECHARTS.key);
 
@@ -53,13 +53,17 @@ const ViewSelector = ({ profileSource }: Props): JSX.Element => {
           <span className="absolute top-[-2px] text-xs lowercase text-red-500">&nbsp;alpha</span>
         </span>
       ),
-      canBeSelected: !dashboardItems.includes('iciclechart') && profileSource?.ProfileType().delta === true,
-      disabledText: !dashboardItems.includes('iciclechart') && profileSource?.ProfileType().delta !== true ? 'Iciclechart is not available for non-delta profiles' : undefined,
+      canBeSelected:
+        !dashboardItems.includes('iciclechart') && profileSource?.ProfileType().delta === true,
+      disabledText:
+        !dashboardItems.includes('iciclechart') && profileSource?.ProfileType().delta !== true
+          ? 'Iciclechart is not available for non-delta profiles'
+          : undefined,
     });
   }
 
   if (enableSourcesView === true) {
-    allItems.push({ key: 'source', label: 'Source', canBeSelected: false });
+    allItems.push({key: 'source', label: 'Source', canBeSelected: false});
   }
 
   const getOption = ({
