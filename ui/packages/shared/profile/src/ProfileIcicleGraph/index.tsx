@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, { LegacyRef, ReactNode, useEffect, useMemo, useState } from 'react';
+import React, {LegacyRef, ReactNode, useEffect, useMemo, useState} from 'react';
 
 import {AnimatePresence, motion} from 'framer-motion';
 import {useMeasure} from 'react-use';
@@ -55,8 +55,12 @@ interface ProfileIcicleGraphProps {
   isIcicleChart?: boolean;
 }
 
-const ErrorContent = ({ errorMessage }: { errorMessage: string | ReactNode }): JSX.Element => {
-  return <div className="flex flex-col justify-center p-10 text-center gap-6 text-sm">{errorMessage}</div>;
+const ErrorContent = ({errorMessage}: {errorMessage: string | ReactNode}): JSX.Element => {
+  return (
+    <div className="flex flex-col justify-center p-10 text-center gap-6 text-sm">
+      {errorMessage}
+    </div>
+  );
 };
 
 export const validateIcicleChartQuery = (
@@ -85,7 +89,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   isIcicleChart = false,
   profileSource,
 }: ProfileIcicleGraphProps): JSX.Element {
-  const { onError, authenticationErrorMessage, isDarkMode, iciclechartHelpText } = useParcaContext();
+  const {onError, authenticationErrorMessage, isDarkMode, iciclechartHelpText} = useParcaContext();
   const {compareMode} = useProfileViewContext();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [icicleChartRef, {height: icicleChartHeight}] = useMeasure();
@@ -176,13 +180,41 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     // Do necessary checks to ensure that icicle chart can be rendered for this query.
     if (isInvalidIcicleChartQuery) {
       if (isNonDelta) {
-        return <ErrorContent errorMessage={<><span>To use the Icicle chart, please switch to a Delta profile.</span>{iciclechartHelpText ?? null}</>} />;
+        return (
+          <ErrorContent
+            errorMessage={
+              <>
+                <span>To use the Icicle chart, please switch to a Delta profile.</span>
+                {iciclechartHelpText ?? null}
+              </>
+            }
+          />
+        );
       } else if (isDurationTooLong) {
         return (
-          <ErrorContent errorMessage={<><span>Icicle chart is unavailable for queries longer than one minute. Please select a point in the metrics graph to continue.</span>{iciclechartHelpText ?? null}</>} />
+          <ErrorContent
+            errorMessage={
+              <>
+                <span>
+                  Icicle chart is unavailable for queries longer than one minute. Please select a
+                  point in the metrics graph to continue.
+                </span>
+                {iciclechartHelpText ?? null}
+              </>
+            }
+          />
         );
       } else {
-        return <ErrorContent errorMessage={<><span>The Icicle chart is not available for this query.</span>{iciclechartHelpText ?? null}</>} />;
+        return (
+          <ErrorContent
+            errorMessage={
+              <>
+                <span>The Icicle chart is not available for this query.</span>
+                {iciclechartHelpText ?? null}
+              </>
+            }
+          />
+        );
       }
     }
 
