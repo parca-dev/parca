@@ -96,6 +96,18 @@ const unitsInWatts = {
   exa: {multiplier: 1e18, symbol: 'EW'},
 };
 
+const unitsInCelsius = {
+  unit: {multiplier: 1, symbol: '°C'}
+};
+
+const unitsInHertz= {
+  unit: {multiplier: 1, symbol: 'Hz'},
+  kilo: {multiplier: 1e3, symbol: 'kHz'},
+  mega: {multiplier: 1e6, symbol: 'MHz'},
+  giga: {multiplier: 1e9, symbol: 'GHz'},
+  tera: {multiplier: 1e12, symbol: 'THz'},
+};
+
 const knownValueFormatters = {
   bytes: unitsInBytes,
   nanoseconds: unitsInTimeNs,
@@ -104,6 +116,8 @@ const knownValueFormatters = {
   milliseconds: unitsInTimeMs,
   watts: unitsInWatts,
   bytes_per_second: unitsInBytesPerSecond,
+  celsius: unitsInCelsius,
+  hertz: unitsInHertz,
 };
 
 export const roundToDecimals = (n: number, decimals: number): number => {

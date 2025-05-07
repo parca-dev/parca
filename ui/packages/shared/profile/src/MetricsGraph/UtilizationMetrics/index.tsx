@@ -90,12 +90,12 @@ function transformToSeries(data: MetricSeries[]): Series[] {
 
 const getYAxisUnit = (name: string): string => {
   switch (name) {
-    case 'gpu_utilization_percent':
-      return 'percent';
-    case 'gpu_memory_utilization_percent':
-      return 'percent';
     case 'gpu_power_watt':
       return 'watts';
+    case 'gpu_temperature_celsius':
+      return 'celsius';
+    case 'gpu_clock_hertz':
+      return 'hertz';
     default:
       return 'percent';
   }
