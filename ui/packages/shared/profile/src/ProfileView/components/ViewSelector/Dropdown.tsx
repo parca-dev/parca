@@ -17,8 +17,7 @@ import {Listbox, Transition} from '@headlessui/react';
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
-import {Button, useParcaContext} from '@parca/components';
-import { usePopper } from 'react-popper';
+import { Button, useParcaContext } from '@parca/components';
 
 export interface DropdownElement {
   active: JSX.Element;
@@ -148,7 +147,7 @@ const DropdownOption = ({ option }: { option: DropdownItem }): JSX.Element => {
         {({ selected, active, disabled }) => (
           <div className="relative flex items-center w-full justify-between" onMouseEnter={() => setIsMouseOver(true)}
             onMouseLeave={() => setIsMouseOver(false)}>
-            {option.disabledText || (isMouseOver && disabled && option.disabledText) ? (
+            {(isMouseOver && disabled && option.disabledText != null) ? (
               <div className="absolute top-[-60px] text-gray-500 dark:text-gray-400 text-xs bg-white dark:bg-black border rounded p-2 z-100 w-52 text-center" onMouseEnter={() => setIsMouseOver(false)}>{option.disabledText}<div className="absolute left-1/2 -translate-x-1/2 top-full h-0 w-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent"></div></div>
             ) : null}
             <div className="flex items-center">

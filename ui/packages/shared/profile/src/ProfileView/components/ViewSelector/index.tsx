@@ -20,7 +20,7 @@ import Dropdown, {DropdownElement, InnerAction} from './Dropdown';
 import { ProfileSource } from '../../../ProfileSource';
 
 interface Props {
-  profileSource?: ProfileSource
+  profileSource?: ProfileSource;
 }
 
 const ViewSelector = ({ profileSource }: Props): JSX.Element => {

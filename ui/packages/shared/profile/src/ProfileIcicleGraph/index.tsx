@@ -293,6 +293,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     profileSource,
     icicleChartHeight,
     icicleChartRef,
+    iciclechartHelpText,
   ]);
 
   if (error != null) {
