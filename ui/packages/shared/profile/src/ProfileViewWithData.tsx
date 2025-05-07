@@ -37,7 +37,7 @@ export const ProfileViewWithData = ({
   showVisualizationSelector,
 }: ProfileViewWithDataProps): JSX.Element => {
   const metadata = useGrpcMetadata();
-  const [dashboardItems] = useURLState<string[]>('dashboard_items', {
+  const [dashboardItems, setDashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
   });
   const [sourceBuildID] = useURLState<string>('source_buildid');
@@ -57,6 +57,24 @@ export const ProfileViewWithData = ({
       : binaryFrameFilterStr;
 
   const [pprofDownloading, setPprofDownloading] = useState<boolean>(false);
+
+  useEffect(() => {
+    // If profile type is not delta, remove iciclechart from the dashboard items
+    // and set it to icicle if no other items are selected.
+    if (profileSource == null) {
+      return;
+    }
+    const profileType = profileSource.ProfileType();
+    let newDashboardItems = dashboardItems;
+    if (dashboardItems.includes('iciclechart') && profileType.delta !== true) {
+      newDashboardItems = dashboardItems.filter(item => item !== 'iciclechart');
+    }
+    if (newDashboardItems.length === 0) {
+      newDashboardItems = ['icicle'];
+    }
+    setDashboardItems(newDashboardItems);
+  }, [profileSource, dashboardItems, setDashboardItems]);
+
 
   const nodeTrimThreshold = useMemo(() => {
     let width =
