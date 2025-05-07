@@ -66,7 +66,7 @@ export const ProfileViewWithData = ({
     }
     const profileType = profileSource.ProfileType();
     let newDashboardItems = dashboardItems;
-    if (dashboardItems.includes('iciclechart') && profileType.delta !== true) {
+    if (dashboardItems.includes('iciclechart') && !profileType.delta) {
       newDashboardItems = dashboardItems.filter(item => item !== 'iciclechart');
     }
     if (newDashboardItems.length === 0) {
