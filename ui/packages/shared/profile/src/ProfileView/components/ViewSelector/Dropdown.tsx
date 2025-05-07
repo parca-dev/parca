@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Fragment} from 'react';
+import {Fragment, useState} from 'react';
 
 import {Listbox, Transition} from '@headlessui/react';
 import {Icon} from '@iconify/react';
@@ -26,7 +26,9 @@ export interface DropdownElement {
 
 export interface DropdownItem {
   key: string;
+  id?: string;
   disabled?: boolean;
+  disabledText?: string;
   element: DropdownElement;
   innerAction?: InnerAction;
 }
@@ -115,67 +117,83 @@ const Dropdown = ({
                 <div className="w-[270px]">{loader}</div>
               ) : (
                 items.length > 0 &&
-                items.map(option => (
-                  <Listbox.Option
-                    id={`h-select-option-${option.key}`}
-                    key={option.key}
-                    disabled={option.disabled ?? false}
-                    className={({active}) =>
-                      cx(
-                        active && 'bg-indigo-600 text-white',
-                        'relative flex cursor-default select-none py-2 px-3'
-                      )
-                    }
-                    value={option.key}
-                  >
-                    {({selected, active, disabled}) => (
-                      <div className="flex items-center w-full justify-between">
-                        <div className="flex items-center">
-                          <span
-                            className={cx(
-                              selected ? 'font-semibold' : 'font-normal',
-                              disabled && 'opacity-50'
-                            )}
-                          >
-                            {option.element.expanded}
-                          </span>
-                        </div>
-                        {option.innerAction !== undefined && (
-                          <Button
-                            variant="neutral"
-                            className="p-[6px]"
-                            onClick={e => {
-                              e.stopPropagation();
-                              option.innerAction?.onClick();
-                            }}
-                            disabled={disabled}
-                          >
-                            {option.innerAction.text}
-                            {option.innerAction.text === 'Add Panel' && (
-                              <Icon icon="ic:baseline-plus" className="w-[14px] h-[14px] ml-2" />
-                            )}
-                          </Button>
-                        )}
-                        {selected ? (
-                          <span
-                            className={cx(
-                              active ? 'text-white' : 'text-indigo-600',
-                              'absolute inset-y-0 right-0 flex items-center pr-4'
-                            )}
-                          >
-                            <Icon icon="heroicons:check-20-solid" aria-hidden="true" />
-                          </span>
-                        ) : null}
-                      </div>
-                    )}
-                  </Listbox.Option>
-                ))
+                items.map(option => <DropdownOption key={option.key} option={option} />)
               )}
             </Listbox.Options>
           </Transition>
         </div>
       )}
     </Listbox>
+  );
+};
+
+const DropdownOption = ({option}: {option: DropdownItem}): JSX.Element => {
+  const [isMouseOver, setIsMouseOver] = useState(false);
+
+  return (
+    <Listbox.Option
+      id={option.id ?? `h-select-option-${option.key}`}
+      key={option.key}
+      disabled={option.disabled ?? false}
+      className={({active}) =>
+        cx(
+          active && 'bg-indigo-600 text-white',
+          'relative flex cursor-default select-none py-2 px-3'
+        )
+      }
+      value={option.key}
+    >
+      {({selected, active, disabled}) => (
+        <div
+          className="relative flex items-center w-full justify-between"
+          onMouseEnter={() => setIsMouseOver(true)}
+          onMouseLeave={() => setIsMouseOver(false)}
+        >
+          {isMouseOver && disabled && option.disabledText != null ? (
+            <div
+              className="absolute top-[-60px] text-gray-500 dark:text-gray-400 text-xs bg-white dark:bg-black border rounded p-2 z-100 w-52 text-center"
+              onMouseEnter={() => setIsMouseOver(false)}
+            >
+              {option.disabledText}
+              <div className="absolute left-1/2 -translate-x-1/2 top-full h-0 w-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent"></div>
+            </div>
+          ) : null}
+          <div className="flex items-center">
+            <span
+              className={cx(selected ? 'font-semibold' : 'font-normal', disabled && 'opacity-50')}
+            >
+              {option.element.expanded}
+            </span>
+          </div>
+          {option.innerAction !== undefined && (
+            <Button
+              variant="neutral"
+              className="p-[6px]"
+              onClick={e => {
+                e.stopPropagation();
+                option.innerAction?.onClick();
+              }}
+              disabled={disabled}
+            >
+              {option.innerAction.text}
+              {option.innerAction.text === 'Add Panel' && (
+                <Icon icon="ic:baseline-plus" className="w-[14px] h-[14px] ml-2" />
+              )}
+            </Button>
+          )}
+          {selected ? (
+            <span
+              className={cx(
+                active ? 'text-white' : 'text-indigo-600',
+                'absolute inset-y-0 right-0 flex items-center pr-4'
+              )}
+            >
+              <Icon icon="heroicons:check-20-solid" aria-hidden="true" />
+            </span>
+          ) : null}
+        </div>
+      )}
+    </Listbox.Option>
   );
 };
 

@@ -16,9 +16,14 @@ import {ReactNode} from 'react';
 import {useParcaContext, useURLState} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 
+import {ProfileSource} from '../../../ProfileSource';
 import Dropdown, {DropdownElement, InnerAction} from './Dropdown';
 
-const ViewSelector = (): JSX.Element => {
+interface Props {
+  profileSource?: ProfileSource;
+}
+
+const ViewSelector = ({profileSource}: Props): JSX.Element => {
   const [dashboardItems = ['icicle'], setDashboardItems] = useURLState<string[]>(
     'dashboard_items',
     {
@@ -34,6 +39,7 @@ const ViewSelector = (): JSX.Element => {
     label?: string | ReactNode;
     canBeSelected: boolean;
     supportingText?: string;
+    disabledText?: string;
   }> = [
     {key: 'table', label: 'Table', canBeSelected: !dashboardItems.includes('table')},
     {key: 'icicle', label: 'icicle', canBeSelected: !dashboardItems.includes('icicle')},
@@ -43,16 +49,21 @@ const ViewSelector = (): JSX.Element => {
       key: 'iciclechart',
       label: (
         <span className="relative">
-          IcicleChart
+          Iciclechart
           <span className="absolute top-[-2px] text-xs lowercase text-red-500">&nbsp;alpha</span>
         </span>
       ),
-      canBeSelected: !dashboardItems.includes('iciclechart'),
+      canBeSelected:
+        !dashboardItems.includes('iciclechart') && profileSource?.ProfileType().delta === true,
+      disabledText:
+        !dashboardItems.includes('iciclechart') && profileSource?.ProfileType().delta !== true
+          ? 'Iciclechart is not available for non-delta profiles'
+          : undefined,
     });
   }
 
   if (enableSourcesView === true) {
-    allItems.push({key: 'source', canBeSelected: false});
+    allItems.push({key: 'source', label: 'Source', canBeSelected: false});
   }
 
   const getOption = ({
@@ -105,6 +116,7 @@ const ViewSelector = (): JSX.Element => {
   const items = allItems.map(item => ({
     key: item.key,
     disabled: !item.canBeSelected,
+    disabledText: item.disabledText,
     element: getOption(item),
     innerAction: getInnerActionForItem(item),
   }));
