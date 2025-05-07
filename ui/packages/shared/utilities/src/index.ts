@@ -97,10 +97,10 @@ const unitsInWatts = {
 };
 
 const unitsInCelsius = {
-  unit: {multiplier: 1, symbol: '°C'}
+  unit: {multiplier: 1, symbol: '°C'},
 };
 
-const unitsInHertz= {
+const unitsInHertz = {
   unit: {multiplier: 1, symbol: 'Hz'},
   kilo: {multiplier: 1e3, symbol: 'kHz'},
   mega: {multiplier: 1e6, symbol: 'MHz'},
