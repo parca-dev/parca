@@ -68,6 +68,8 @@ export const ProfileViewWithData = ({
     let newDashboardItems = dashboardItems;
     if (dashboardItems.includes('iciclechart') && !profileType.delta) {
       newDashboardItems = dashboardItems.filter(item => item !== 'iciclechart');
+    } else {
+      return;
     }
     if (newDashboardItems.length === 0) {
       newDashboardItems = ['icicle'];
