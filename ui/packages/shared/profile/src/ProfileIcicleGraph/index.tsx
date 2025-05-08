@@ -296,6 +296,12 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     iciclechartHelpText,
   ]);
 
+  useEffect(() => {
+    if (isTrimmed) {
+      console.info(`Trimmed ${trimmedFormatted} (${trimmedPercentage}%) too small values.`);
+    }
+  }, [isTrimmed, trimmedFormatted, trimmedPercentage])
+
   if (error != null) {
     onError?.(error);
 
@@ -303,11 +309,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
       return <ErrorContent errorMessage={authenticationErrorMessage} />;
     }
 
-    return <ErrorContent errorMessage={capitalizeOnlyFirstLetter(error.message)} />;
-  }
-
-  if (isTrimmed) {
-    console.info(`Trimmed ${trimmedFormatted} (${trimmedPercentage}%) too small values.`);
+    return <ErrorContent errorMessage={<><span>{capitalizeOnlyFirstLetter(error.message)}</span>{isIcicleChart ? (iciclechartHelpText ?? null) : null}</>} />;
   }
 
   return (
