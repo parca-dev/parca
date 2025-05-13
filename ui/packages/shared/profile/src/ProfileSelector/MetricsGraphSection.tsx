@@ -153,7 +153,7 @@ export function MetricsGraphSection({
         metric.name === 'gpu_pcie_throughput_receive_bytes'
     );
 
-    if (utilizationMetrics === undefined || utilizationMetrics.length === 0) {
+    if (utilizationMetrics.length === 0) {
       return <></>;
     }
 
