@@ -481,8 +481,8 @@ const RawUtilizationMetrics = ({
                   });
                 }
 
-                const isLimit = s.metric
-                  .findIndex(m => m.name === '__type__' && m.value === 'limit') > -1;
+                const isLimit =
+                  s.metric.findIndex(m => m.name === '__type__' && m.value === 'limit') > -1;
                 const strokeDasharray = isLimit ? '8 4' : '';
 
                 return (
