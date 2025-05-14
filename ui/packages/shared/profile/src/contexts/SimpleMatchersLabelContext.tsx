@@ -20,8 +20,13 @@ import {transformLabelsForSelect} from '../SimpleMatchers';
 import type {SelectItem} from '../SimpleMatchers/Select';
 import {useUtilizationLabels} from './UtilizationLabelsContext';
 
+interface LabelNameSection {
+  type: string;
+  values: SelectItem[];
+}
+
 interface LabelContextValue {
-  labelNameOptions: SelectItem[];
+  labelNameOptions: LabelNameSection[];
   isLoading: boolean;
   error: Error | null;
 }
@@ -44,27 +49,83 @@ export function LabelProvider({
   profileType,
   labelNameFromMatchers,
 }: LabelProviderProps): JSX.Element {
-  const utilizationLabels = useUtilizationLabels();
+  const utilizationLabelResponse = useUtilizationLabels();
   const {loading, result} = useLabelNames(queryClient, profileType);
 
-  const value = useMemo(() => {
-    const baseLabels =
+  const profileValues = useMemo(() => {
+    const profileLabelNames =
       result.error != null ? [] : result.response?.labelNames.filter(e => e !== '__name__') ?? [];
-
-    const labelsToUse =
-      utilizationLabels?.utilizationLabelNames?.length !== undefined
-        ? utilizationLabels?.utilizationLabelNames ?? []
-        : baseLabels;
-
-    const uniqueLabels = Array.from(new Set([...labelsToUse, ...labelNameFromMatchers]));
-    const shouldTrimPrefix = Boolean(utilizationLabels?.utilizationLabelNames);
+    const uniqueProfileLabelNames = Array.from(new Set(profileLabelNames));
 
     return {
-      labelNameOptions: transformLabelsForSelect(uniqueLabels, shouldTrimPrefix),
+      labelNameOptions: uniqueProfileLabelNames,
       isLoading: loading,
       error: result.error ?? null,
     };
-  }, [result, loading, utilizationLabels, labelNameFromMatchers]);
+  }, [result, loading]);
+
+  const utilizationValues = useMemo(() => {
+    if (utilizationLabelResponse?.utilizationLabelNamesLoading === true) {
+      return {labelNameOptions: [] as string[], isLoading: true};
+    }
+    if (
+      utilizationLabelResponse == null ||
+      utilizationLabelResponse.utilizationLabelNames == null
+    ) {
+      return {labelNameOptions: [] as string[], isLoading: false};
+    }
+
+    const uniqueUtilizationLabelNames = Array.from(
+      new Set(utilizationLabelResponse.utilizationLabelNames)
+    );
+    return {
+      labelNameOptions: uniqueUtilizationLabelNames,
+      isLoading: utilizationLabelResponse.utilizationLabelNamesLoading,
+    };
+  }, [utilizationLabelResponse]);
+
+  const value = useMemo(() => {
+    if (
+      profileValues.error != null ||
+      profileValues.isLoading ||
+      utilizationValues.isLoading === true
+    ) {
+      return {
+        labelNameOptions: [],
+        isLoading: (profileValues.isLoading || utilizationValues.isLoading) ?? false,
+        error: profileValues.error,
+      };
+    }
+
+    let nonMatchingLabels = labelNameFromMatchers.filter(
+      label => !utilizationValues.labelNameOptions.includes(label)
+    );
+    nonMatchingLabels = nonMatchingLabels.filter(
+      label => !profileValues.labelNameOptions.includes(label)
+    );
+
+    const nonMatchingLabelsSet = Array.from(new Set(nonMatchingLabels));
+    const options = [
+      {
+        type: 'cpu',
+        values: transformLabelsForSelect(profileValues.labelNameOptions),
+      },
+      {
+        type: 'gpu',
+        values: transformLabelsForSelect(utilizationValues.labelNameOptions),
+      },
+      {
+        type: '',
+        values: transformLabelsForSelect(nonMatchingLabelsSet),
+      },
+    ];
+
+    return {
+      labelNameOptions: options.filter(e => e.values.length > 0),
+      isLoading: false,
+      error: null,
+    };
+  }, [profileValues, utilizationValues, labelNameFromMatchers]);
 
   return <LabelContext.Provider value={value}>{children}</LabelContext.Provider>;
 }

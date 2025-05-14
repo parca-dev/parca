@@ -120,7 +120,7 @@ const GraphTooltip = ({
   return isFixed ? (
     <>{children}</>
   ) : (
-    <div ref={setPopperElement} style={styles.popper} {...attributes.popper} className="z-10">
+    <div ref={setPopperElement} style={styles.popper} {...attributes.popper} className="z-50">
       {children}
     </div>
   );

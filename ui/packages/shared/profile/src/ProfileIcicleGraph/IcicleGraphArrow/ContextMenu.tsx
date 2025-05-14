@@ -24,6 +24,7 @@ import {getLastItem} from '@parca/utilities';
 import {useGraphTooltip} from '../../GraphTooltipArrow/useGraphTooltip';
 import {useGraphTooltipMetaInfo} from '../../GraphTooltipArrow/useGraphTooltipMetaInfo';
 import {hexifyAddress, truncateString} from '../../utils';
+import {CurrentPathFrame} from './utils';
 
 interface ContextMenuProps {
   menuId: string;
@@ -36,8 +37,8 @@ interface ContextMenuProps {
   level: number;
   compareAbsolute: boolean;
   trackVisibility: (isVisible: boolean) => void;
-  curPath: string[];
-  setCurPath: (path: string[]) => void;
+  curPath: CurrentPathFrame[];
+  setCurPath: (path: CurrentPathFrame[]) => void;
   hideMenu: () => void;
   hideBinary: (binaryToRemove: string) => void;
 }
@@ -230,12 +231,7 @@ const ContextMenu = ({
         >
           <div className="flex w-full items-center gap-2">
             <Icon icon="bx:bx-info-circle" />
-            <div className="relative pr-4">
-              Check debuginfo status{' '}
-              <span className="absolute top-1 right-0">
-                <Icon icon="radix-icons:open-in-new-window" width={12} height={12} />
-              </span>
-            </div>
+            <div className="relative pr-4">Check debuginfo status</div>
           </div>
         </Item>
       ) : null}

@@ -58,6 +58,8 @@ export const ProfileView = ({
   const {
     curPath,
     setCurPath,
+    curPathArrow,
+    setCurPathArrow,
     currentSearchString,
     setSearchString,
     colorStackLegend,
@@ -107,6 +109,8 @@ export const ProfileView = ({
       filtered,
       curPath,
       setNewCurPath: setCurPath,
+      curPathArrow,
+      setNewCurPathArrow: setCurPathArrow,
       currentSearchString,
       setSearchString,
       callgraphSVG,
@@ -116,7 +120,7 @@ export const ProfileView = ({
   };
 
   const actionButtons = {
-    icicle: <IcicleGraphToolbar curPath={curPath} setNewCurPath={setCurPath} />,
+    icicle: <IcicleGraphToolbar curPath={curPathArrow} setNewCurPath={setCurPathArrow} />,
     table: (
       <TableToolbar
         profileType={profileSource?.ProfileType()}
@@ -147,8 +151,8 @@ export const ProfileView = ({
             profileSource={profileSource}
             queryClient={queryClient}
             onDownloadPProf={onDownloadPProf}
-            curPath={curPath}
-            setNewCurPath={setCurPath}
+            curPath={curPathArrow}
+            setNewCurPath={setCurPathArrow}
             profileType={profileSource?.ProfileType()}
             total={total}
             filtered={filtered}

@@ -22,10 +22,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apache/arrow/go/v17/arrow"
-	"github.com/apache/arrow/go/v17/arrow/array"
-	"github.com/apache/arrow/go/v17/arrow/memory"
-	"github.com/apache/arrow/go/v17/arrow/scalar"
+	"github.com/apache/arrow-go/v18/arrow"
+	"github.com/apache/arrow-go/v18/arrow/array"
+	"github.com/apache/arrow-go/v18/arrow/memory"
+	"github.com/apache/arrow-go/v18/arrow/scalar"
 	"github.com/go-kit/log"
 	"github.com/polarsignals/frostdb/pqarrow/arrowutils"
 	"github.com/polarsignals/frostdb/query"
@@ -631,10 +631,6 @@ func (q *Querier) queryRangeDelta(
 }
 
 func getSumByAggregateExprs(sumBy []string) []logicalplan.Expr {
-	if len(sumBy) == 0 {
-		return []logicalplan.Expr{logicalplan.DynCol(profile.ColumnLabels)}
-	}
-
 	exprs := make([]logicalplan.Expr, 0, len(sumBy))
 	for _, s := range sumBy {
 		exprs = append(exprs, logicalplan.Col(profile.ColumnLabelsPrefix+s))
@@ -660,10 +656,10 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 			[]*logicalplan.AggregationFunction{
 				valueSum,
 			},
-			append(
-				[]logicalplan.Expr{
-					logicalplan.Col(profile.ColumnTimestamp),
-				}, getSumByAggregateExprs(sumBy)...),
+			[]logicalplan.Expr{
+				logicalplan.Col(profile.ColumnTimestamp),
+				logicalplan.DynCol(profile.ColumnLabels),
+			},
 		).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()

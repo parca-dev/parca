@@ -26,7 +26,7 @@ async function startApp() {
     await tryLoadAndStartRecorder({
       projectId: 'lgBUqjZEtPYwCUmwxdv0IEiMsaPwDJWo9AJHvbzX',
       isProduction: false,
-    });
+    } as any);
   }
 
   // Initialise app after the Meticulous recorder is ready: Meticulous needs to be initialised first,

@@ -98,7 +98,11 @@ export const wellKnownProfiles: WellKnownProfiles = {
   },
   'parca_agent:samples:count:cpu:nanoseconds:delta': {
     name: 'On-CPU',
-    help: 'On CPU profile samples observed by the Parca Agent.',
+    help: 'On CPU profile samples as observed by the Parca Agent.',
+  },
+  'parca_agent:wallclock:nanoseconds:samples:count:delta': {
+    name: 'Off-CPU',
+    help: 'Time spent off the CPU as observed by the Parca Agent.',
   },
 };
 

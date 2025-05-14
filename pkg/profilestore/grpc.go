@@ -15,10 +15,13 @@ package profilestore
 
 import (
 	"context"
+	"io"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"google.golang.org/grpc"
+	"github.com/gogo/status"
+	otelgrpcprofilingpb "go.opentelemetry.io/proto/otlp/collector/profiles/v1experimental"
+	"google.golang.org/grpc/codes"
 
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 )
@@ -27,14 +30,30 @@ import (
 // instead of storing the profiles locally in a database.
 type GRPCForwarder struct {
 	logger log.Logger
-	client profilestorepb.ProfileStoreServiceClient
+	client *Client
 
 	profilestorepb.UnimplementedProfileStoreServiceServer
+	otelgrpcprofilingpb.UnimplementedProfilesServiceServer
 }
 
-func NewGRPCForwarder(conn grpc.ClientConnInterface, logger log.Logger) *GRPCForwarder {
+type Client struct {
+	profilestorepb.ProfileStoreServiceClient
+	otelgrpcprofilingpb.ProfilesServiceClient
+}
+
+func NewClient(
+	profilestoreClient profilestorepb.ProfileStoreServiceClient,
+	otelgrpcprofilingClient otelgrpcprofilingpb.ProfilesServiceClient,
+) *Client {
+	return &Client{
+		ProfileStoreServiceClient: profilestoreClient,
+		ProfilesServiceClient:     otelgrpcprofilingClient,
+	}
+}
+
+func NewGRPCForwarder(client *Client, logger log.Logger) *GRPCForwarder {
 	return &GRPCForwarder{
-		client: profilestorepb.NewProfileStoreServiceClient(conn),
+		client: client,
 		logger: logger,
 	}
 }
@@ -43,6 +62,43 @@ func (s *GRPCForwarder) WriteRaw(ctx context.Context, req *profilestorepb.WriteR
 	// TODO: Batch writes to only send a request every now and then.
 	// See https://github.com/parca-dev/parca-agent/blob/main/pkg/agent/write_client.go#L28
 	resp, err := s.client.WriteRaw(ctx, req)
+	if err != nil {
+		level.Warn(s.logger).Log("msg", "failed to forward profiles", "err", err)
+	}
+	return resp, err
+}
+
+func (s *GRPCForwarder) Write(srv profilestorepb.ProfileStoreService_WriteServer) error {
+	c, err := s.client.Write(srv.Context())
+	if err != nil {
+		return status.Errorf(codes.Internal, "failed to create stream: %v", err)
+	}
+
+	for {
+		r, err := srv.Recv()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+
+			return status.Errorf(codes.Internal, "failed to receive profile: %v", err)
+		}
+		if err := c.Send(r); err != nil {
+			return status.Errorf(codes.Internal, "failed to send profile: %v", err)
+		}
+	}
+
+	if err := c.CloseSend(); err != nil {
+		return status.Errorf(codes.Internal, "failed to close send: %v", err)
+	}
+
+	return nil
+}
+
+func (s *GRPCForwarder) Export(ctx context.Context, req *otelgrpcprofilingpb.ExportProfilesServiceRequest) (*otelgrpcprofilingpb.ExportProfilesServiceResponse, error) {
+	// TODO: Batch writes to only send a request every now and then.
+	// See https://github.com/parca-dev/parca-agent/blob/main/pkg/agent/write_client.go#L28
+	resp, err := s.client.Export(ctx, req)
 	if err != nil {
 		level.Warn(s.logger).Log("msg", "failed to forward profiles", "err", err)
 	}

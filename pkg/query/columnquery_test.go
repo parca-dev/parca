@@ -23,8 +23,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apache/arrow/go/v17/arrow"
-	"github.com/apache/arrow/go/v17/arrow/memory"
+	"github.com/apache/arrow-go/v18/arrow"
+	"github.com/apache/arrow-go/v18/arrow/memory"
 	"github.com/go-kit/log"
 	pprofprofile "github.com/google/pprof/profile"
 	columnstore "github.com/polarsignals/frostdb"
@@ -459,6 +459,7 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 		Query: `fgprof:samples:count:wallclock:nanoseconds:delta`,
 		Start: timestamppb.New(timestamp.Time(0)),
 		End:   timestamppb.New(timestamp.Time(9223372036854775807)),
+		SumBy: []string{"job"},
 	})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(res.Series))

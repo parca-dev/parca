@@ -55,20 +55,23 @@ interface ProfileSelectorFeatures {
 }
 
 export interface UtilizationMetrics {
-  timestamp: number;
-  value: number;
-  resource: {
-    [key: string]: string;
+  labelset: {
+    labels: Array<{
+      name: string;
+      value: string;
+    }>;
   };
-  attributes: {
-    [key: string]: string;
-  };
+  samples: Array<{
+    timestamp: number;
+    value: number;
+  }>;
 }
 
 export interface UtilizationLabels {
   utilizationLabelNames?: string[];
   utilizationFetchLabelValues?: (key: string) => Promise<string[]>;
   utilizationLabelValues?: string[];
+  utilizationLabelNamesLoading?: boolean;
 }
 
 interface ProfileSelectorProps extends ProfileSelectorFeatures {
@@ -81,9 +84,13 @@ interface ProfileSelectorProps extends ProfileSelectorFeatures {
   profileSelection: ProfileSelection | null;
   comparing: boolean;
   navigateTo: NavigateFunction;
-  setDisplayHideMetricsGraphButton: Dispatch<SetStateAction<boolean>>;
+  setDisplayHideMetricsGraphButton?: Dispatch<SetStateAction<boolean>>;
   suffix?: string;
-  utilizationMetrics?: UtilizationMetrics[];
+  utilizationMetrics?: Array<{
+    name: string;
+    humanReadableName: string;
+    data: UtilizationMetrics[];
+  }>;
   utilizationMetricsLoading?: boolean;
   utilizationLabels?: UtilizationLabels;
 }
@@ -138,7 +145,7 @@ const ProfileSelector = ({
     data: profileTypesData,
     error,
   } = useProfileTypes(queryClient);
-  const {heightStyle} = useMetricsGraphDimensions(comparing);
+  const {heightStyle} = useMetricsGraphDimensions(comparing, utilizationMetrics != null);
   const {viewComponent} = useParcaContext();
   const [queryBrowserMode, setQueryBrowserMode] = useURLState('query_browser_mode');
 
@@ -277,7 +284,7 @@ const ProfileSelector = ({
   const sumByRef = useRef(null);
 
   return (
-    <UtilizationLabelsProvider value={utilizationLabels}>
+    <UtilizationLabelsProvider value={{...utilizationLabels}}>
       <>
         <div className="mb-2 flex">
           <QueryControls
@@ -303,9 +310,11 @@ const ProfileSelector = ({
             sumByRef={sumByRef}
             labels={labels}
             sumBySelection={sumBySelection ?? []}
+            sumBySelectionLoading={sumBySelectionLoading}
             setUserSumBySelection={setUserSumBySelection}
             profileType={profileType}
             profileTypesError={error}
+            viewComponent={viewComponent}
           />
           {comparing && (
             <div>
@@ -316,7 +325,11 @@ const ProfileSelector = ({
         <MetricsGraphSection
           showMetricsGraph={showMetricsGraph}
           setDisplayHideMetricsGraphButton={setDisplayHideMetricsGraphButton}
-          heightStyle={heightStyle}
+          heightStyle={
+            utilizationMetrics !== undefined && utilizationMetrics?.length > 0
+              ? 'auto'
+              : heightStyle
+          }
           querySelection={querySelection}
           profileSelection={profileSelection}
           comparing={comparing}

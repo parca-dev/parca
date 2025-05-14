@@ -26,6 +26,8 @@ import {MergedProfileSource, ProfileSource} from '../../ProfileSource';
 import {BigIntDuo, hexifyAddress} from '../../utils';
 import {
   FIELD_FUNCTION_NAME,
+  FIELD_FUNCTION_START_LINE,
+  FIELD_INLINED,
   FIELD_LABELS_ONLY,
   FIELD_LOCATION_ADDRESS,
   FIELD_MAPPING_FILE,
@@ -39,19 +41,7 @@ export function nodeLabel(
 ): string {
   const labelsOnly: boolean | null = table.getChild(FIELD_LABELS_ONLY)?.get(row);
   if (level === 1 && labelsOnly !== null && labelsOnly) {
-    const labelPrefix = 'labels.';
-    const labelColumnNames = table.schema.fields.filter(field =>
-      field.name.startsWith(labelPrefix)
-    );
-
-    return labelColumnNames
-      .map((field, i) => [
-        labelColumnNames[i].name.slice(labelPrefix.length),
-        arrowToString(table.getChild(field.name)?.get(row)) ?? '',
-      ])
-      .filter(value => value[1] !== '')
-      .map(([k, v]) => `${k}="${v}"`)
-      .join(', ');
+    return getLabelSet(table, row);
   }
 
   const functionName: string | null = arrowToString(table.getChild(FIELD_FUNCTION_NAME)?.get(row));
@@ -149,3 +139,74 @@ export const boundsFromProfileSource = (profileSource?: ProfileSource): BigIntDu
 
   return [start, end];
 };
+
+export interface CurrentPathFrame {
+  functionName: string;
+  systemName: string;
+  fileName: string;
+  lineNumber: number;
+  address: string;
+  inlined: boolean;
+  labels?: string;
+}
+
+export const getCurrentPathFrameData = (
+  table: Table<any>,
+  row: number,
+  level: number
+): CurrentPathFrame => {
+  const functionName: string | null = arrowToString(table.getChild(FIELD_FUNCTION_NAME)?.get(row));
+  const systemName: string | null = arrowToString(table.getChild(FIELD_FUNCTION_NAME)?.get(row));
+  const fileName: string | null = arrowToString(table.getChild(FIELD_MAPPING_FILE)?.get(row));
+  const lineNumber: bigint = table.getChild(FIELD_FUNCTION_START_LINE)?.get(row) ?? 0n;
+  const addressBigInt: bigint = table.getChild(FIELD_LOCATION_ADDRESS)?.get(row);
+  const address = hexifyAddress(addressBigInt);
+  const inlined: boolean | null = table.getChild(FIELD_INLINED)?.get(row);
+  const labelsOnly: boolean | null = table.getChild(FIELD_LABELS_ONLY)?.get(row);
+  let labels: undefined | string;
+  if (level === 1 && labelsOnly !== null && labelsOnly) {
+    labels = getLabelSet(table, row);
+  }
+
+  return {
+    functionName: functionName ?? '',
+    systemName: systemName ?? '',
+    fileName: fileName ?? '',
+    lineNumber: Number(lineNumber),
+    address: address,
+    inlined: inlined ?? false,
+    labels: labels ?? undefined,
+  };
+};
+
+function getLabelSet(table: Table<any>, row: number): string {
+  const labelPrefix = 'labels.';
+  const labelColumnNames = table.schema.fields.filter(field => field.name.startsWith(labelPrefix));
+
+  return labelColumnNames
+    .map((field, i) => [
+      labelColumnNames[i].name.slice(labelPrefix.length),
+      arrowToString(table.getChild(field.name)?.get(row)) ?? '',
+    ])
+    .filter(value => value[1] !== '')
+    .map(([k, v]) => `${k}="${v}"`)
+    .join(', ');
+}
+
+export function isCurrentPathFrameMatch(
+  table: Table<any>,
+  row: number,
+  level: number,
+  b: CurrentPathFrame
+): boolean {
+  const a = getCurrentPathFrameData(table, row, level);
+  return (
+    a.functionName === b.functionName &&
+    a.systemName === b.systemName &&
+    a.fileName === b.fileName &&
+    a.lineNumber === b.lineNumber &&
+    a.address === b.address &&
+    a.inlined === b.inlined &&
+    a.labels === b.labels
+  );
+}

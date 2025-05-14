@@ -22,17 +22,19 @@ import (
 	"sync"
 	"time"
 
-	"github.com/apache/arrow/go/v17/arrow"
-	"github.com/apache/arrow/go/v17/arrow/array"
-	"github.com/apache/arrow/go/v17/arrow/bitutil"
-	"github.com/apache/arrow/go/v17/arrow/math"
-	"github.com/apache/arrow/go/v17/arrow/memory"
+	"github.com/apache/arrow-go/v18/arrow"
+	"github.com/apache/arrow-go/v18/arrow/array"
+	"github.com/apache/arrow-go/v18/arrow/bitutil"
+	"github.com/apache/arrow-go/v18/arrow/math"
+	"github.com/apache/arrow-go/v18/arrow/memory"
 	"github.com/go-kit/log"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/polarsignals/frostdb/pqarrow/arrowutils"
 
 	metastorev1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
@@ -610,6 +612,55 @@ func RenderReport(
 			},
 		}, nil
 	case pb.QueryRequest_REPORT_TYPE_FLAMEGRAPH_ARROW, pb.QueryRequest_REPORT_TYPE_FLAMECHART:
+		if typ == pb.QueryRequest_REPORT_TYPE_FLAMECHART {
+			// Generating the flame chart assumes a single record that is sorted by timestamp.
+			for i, sample := range p.Samples {
+				indices := sample.Schema().FieldIndices(FlamegraphFieldTimestamp)
+				if len(indices) != 1 {
+					return nil, status.Errorf(codes.Internal, "invalid flame chart timestamp indices: %v", indices)
+				}
+				sortedIndices, err := arrowutils.SortRecord(sample, []arrowutils.SortingColumn{
+					{Index: indices[0], Direction: arrowutils.Ascending},
+				})
+				if err != nil {
+					return nil, status.Errorf(codes.Internal, "failed to sort flame chart record: %v", err.Error())
+				}
+
+				isSorted := true
+				for j := 0; j < sortedIndices.Len(); j++ {
+					if sortedIndices.Value(j) != int32(j) {
+						isSorted = false
+						break
+					}
+				}
+				if isSorted {
+					// Don't sort if the indices are already sorted.
+					continue
+				}
+
+				sorted, err := arrowutils.Take(ctx, sample, sortedIndices)
+				if err != nil {
+					return nil, status.Errorf(codes.Internal, "failed to sort flame chart record: %v", err.Error())
+				}
+
+				p.Samples[i] = sorted
+			}
+
+			if len(p.Samples) > 1 {
+				indices := p.Samples[0].Schema().FieldIndices(FlamegraphFieldTimestamp)
+				if len(indices) != 1 {
+					return nil, status.Errorf(codes.Internal, "invalid flame chart timestamp indices: %v", indices)
+				}
+				sorted, err := arrowutils.MergeRecords(mem, p.Samples, []arrowutils.SortingColumn{
+					{Index: indices[0], Direction: arrowutils.Ascending},
+				}, 0)
+				if err != nil {
+					return nil, status.Errorf(codes.Internal, "failed to merge flame chart records: %v", err.Error())
+				}
+				p.Samples = []arrow.Record{sorted}
+			}
+		}
+
 		fa, total, err := GenerateFlamegraphArrow(ctx, mem, tracer, p, groupBy, nodeTrimFraction)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to generate arrow flamegraph: %v", err.Error())

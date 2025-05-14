@@ -13,13 +13,16 @@
 
 import {useCallback, useState} from 'react';
 
-import {useURLState} from '@parca/components';
+import {JSONParser, JSONSerializer, useURLState, useURLStateCustom} from '@parca/components';
 
 import {FIELD_FUNCTION_NAME, FIELD_LABELS} from '../../ProfileIcicleGraph/IcicleGraphArrow';
+import {CurrentPathFrame} from '../../ProfileIcicleGraph/IcicleGraphArrow/utils';
 
 export const useVisualizationState = (): {
   curPath: string[];
   setCurPath: (path: string[]) => void;
+  curPathArrow: CurrentPathFrame[];
+  setCurPathArrow: (path: CurrentPathFrame[]) => void;
   currentSearchString: string | undefined;
   setSearchString: (searchString: string | undefined) => void;
   colorStackLegend: string | undefined;
@@ -31,6 +34,11 @@ export const useVisualizationState = (): {
   setGroupByLabels: (labels: string[]) => void;
 } => {
   const [curPath, setCurPath] = useState<string[]>([]);
+  const [curPathArrow, setCurPathArrow] = useURLStateCustom<CurrentPathFrame[]>('cur_path', {
+    parse: JSONParser<CurrentPathFrame[]>,
+    stringify: JSONSerializer,
+    defaultValue: '[]',
+  });
   const [currentSearchString, setSearchString] = useURLState<string | undefined>('search_string');
   const [colorStackLegend] = useURLState<string | undefined>('color_stack_legend');
   const [colorBy] = useURLState('color_by');
@@ -69,6 +77,8 @@ export const useVisualizationState = (): {
   return {
     curPath,
     setCurPath,
+    curPathArrow,
+    setCurPathArrow,
     currentSearchString,
     setSearchString,
     colorStackLegend,

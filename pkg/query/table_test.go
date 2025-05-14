@@ -17,9 +17,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/apache/arrow/go/v17/arrow"
-	"github.com/apache/arrow/go/v17/arrow/array"
-	"github.com/apache/arrow/go/v17/arrow/memory"
+	"github.com/apache/arrow-go/v18/arrow"
+	"github.com/apache/arrow-go/v18/arrow/array"
+	"github.com/apache/arrow-go/v18/arrow/memory"
 	pprofprofile "github.com/google/pprof/profile"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"

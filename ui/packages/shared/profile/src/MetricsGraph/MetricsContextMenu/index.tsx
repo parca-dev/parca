@@ -26,13 +26,22 @@ interface MetricsContextMenuProps {
   ) => void;
   highlighted: HighlightedSeries | null;
   trackVisibility: (isVisible: boolean) => void;
+  utilizationMetrics?: boolean;
 }
+
+const transformUtilizationLabels = (label: string, utilizationMetrics: boolean): string => {
+  if (utilizationMetrics) {
+    return label.replace('attributes.', '').replace('attributes_resource.', '');
+  }
+  return label;
+};
 
 const MetricsContextMenu = ({
   menuId,
   onAddLabelMatcher,
   highlighted,
   trackVisibility,
+  utilizationMetrics = false,
 }: MetricsContextMenuProps): JSX.Element => {
   const {isDarkMode} = useParcaContext();
   const labels = highlighted?.labels.filter((label: Label) => label.name !== '__name__');
@@ -67,11 +76,16 @@ const MetricsContextMenu = ({
             <Item
               key={label.name}
               id={label.name}
-              onClick={() => onAddLabelMatcher({key: label.name, value: label.value})}
+              onClick={() => {
+                onAddLabelMatcher({
+                  key: label.name,
+                  value: label.value,
+                });
+              }}
               className="max-w-[400px] overflow-hidden"
             >
               <div className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                {`${label.name}="${label.value}"`}
+                {`${transformUtilizationLabels(label.name, utilizationMetrics)}="${label.value}"`}
               </div>
             </Item>
           ))}

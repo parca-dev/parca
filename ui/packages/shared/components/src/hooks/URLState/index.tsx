@@ -137,14 +137,17 @@ export interface OptionsCustom<T> {
 
 type ParamValueSetterCustom<T> = (val: T) => void;
 
-export const useURLStateCustom = <T extends object | undefined>(
+export const useURLStateCustom = <T,>(
   param: string,
   {parse, stringify, ..._options}: Options & OptionsCustom<T>
 ): [T, ParamValueSetterCustom<T>] => {
   const [urlValue, setURLValue] = useURLState<string>(param, _options);
 
   const val = useMemo<T>(() => {
-    return parse(urlValue);
+    if (urlValue === undefined) {
+      return undefined as T;
+    }
+    return parse(decodeURIComponent(urlValue));
   }, [parse, urlValue]);
 
   const setVal = useCallback(
@@ -155,6 +158,28 @@ export const useURLStateCustom = <T extends object | undefined>(
   );
 
   return [val, setVal];
+};
+
+export const JSONSerializer = (val: object): string => {
+  return JSON.stringify(val, (_, v) => (typeof v === 'bigint' ? v.toString() : v));
+};
+
+export const JSONParser = <T,>(val: ParamValue): T => {
+  return JSON.parse(val as string);
+};
+
+export const NumberParser = (val: string): number => {
+  if (val == null || val === '' || val === 'undefined') {
+    return 0;
+  }
+  return Number(val);
+};
+
+export const NumberSerializer = (val: number): string => {
+  if (val == null) {
+    return '';
+  }
+  return String(val);
 };
 
 export default URLStateContext;

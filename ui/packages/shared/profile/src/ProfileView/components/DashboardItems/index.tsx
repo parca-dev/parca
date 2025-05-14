@@ -18,6 +18,7 @@ import {ConditionalWrapper} from '@parca/components';
 
 import Callgraph from '../../../Callgraph';
 import ProfileIcicleGraph from '../../../ProfileIcicleGraph';
+import {CurrentPathFrame} from '../../../ProfileIcicleGraph/IcicleGraphArrow/utils';
 import {ProfileSource} from '../../../ProfileSource';
 import Sandwich from '../../../Sandwich';
 import {SourceView} from '../../../SourceView';
@@ -44,6 +45,8 @@ interface GetDashboardItemProps {
   filtered: bigint;
   curPath: string[];
   setNewCurPath: (path: string[]) => void;
+  curPathArrow: CurrentPathFrame[];
+  setNewCurPathArrow: (path: CurrentPathFrame[]) => void;
   currentSearchString?: string;
   setSearchString?: (value: string) => void;
   callgraphSVG?: string;
@@ -67,6 +70,8 @@ export const getDashboardItem = ({
   filtered,
   curPath,
   setNewCurPath,
+  curPathArrow,
+  setNewCurPathArrow,
   currentSearchString,
   setSearchString,
   callgraphSVG,
@@ -87,6 +92,8 @@ export const getDashboardItem = ({
           <ProfileIcicleGraph
             curPath={curPath}
             setNewCurPath={setNewCurPath}
+            curPathArrow={curPathArrow}
+            setNewCurPathArrow={setNewCurPathArrow}
             arrow={flamegraphData?.arrow}
             graph={flamegraphData?.data}
             total={total}
@@ -110,8 +117,10 @@ export const getDashboardItem = ({
     case 'iciclechart':
       return (
         <ProfileIcicleGraph
-          curPath={curPath}
-          setNewCurPath={setNewCurPath}
+          curPath={[]}
+          setNewCurPath={() => {}}
+          curPathArrow={[]}
+          setNewCurPathArrow={() => {}}
           arrow={flamechartData?.arrow}
           total={total}
           filtered={filtered}

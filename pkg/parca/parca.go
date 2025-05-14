@@ -28,7 +28,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/apache/arrow/go/v17/arrow/memory"
+	"github.com/apache/arrow-go/v18/arrow/memory"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -731,7 +731,11 @@ func runForwarder(
 	}
 
 	dbginfo := debuginfo.NewGRPCForwarder(debuginfopb.NewDebuginfoServiceClient(conn))
-	store := profilestore.NewGRPCForwarder(conn, logger)
+	client := profilestore.NewClient(
+		profilestorepb.NewProfileStoreServiceClient(conn),
+		otelgrpcprofilingpb.NewProfilesServiceClient(conn),
+	)
+	store := profilestore.NewGRPCForwarder(client, logger)
 
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(reg)
 	if err != nil {

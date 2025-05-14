@@ -72,6 +72,7 @@ interface Props {
   timezone?: string;
   preferencesModal?: boolean;
   checkDebuginfoStatusHandler?: (buildId: string) => void;
+  iciclechartHelpText?: ReactNode;
 }
 
 export const defaultValue: Props = {

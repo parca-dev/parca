@@ -11,7 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {format} from 'date-fns-tz';
 import colors from 'tailwindcss/colors';
 
 import {Label} from '@parca/client';
@@ -57,6 +56,16 @@ const unitsInBytes = {
   exabytes: {multiplier: 1e18, symbol: 'EB'},
 };
 
+const unitsInBytesPerSecond = {
+  bytes_per_second: {multiplier: 1, symbol: 'Bytes/s'},
+  kilobytes_per_second: {multiplier: 1e3, symbol: 'kB/s'},
+  megabytes_per_second: {multiplier: 1e6, symbol: 'MB/s'},
+  gigabytes_per_second: {multiplier: 1e9, symbol: 'GB/s'},
+  terabytes_per_second: {multiplier: 1e12, symbol: 'TB/s'},
+  petabytes_per_second: {multiplier: 1e15, symbol: 'PB/s'},
+  exabytes_per_second: {multiplier: 1e18, symbol: 'EB/s'},
+};
+
 const unitsInCount = {
   unit: {multiplier: 1, symbol: ''},
   kilo: {multiplier: 1e3, symbol: 'k'},
@@ -77,12 +86,38 @@ const unitsInCores = {
   exa: {multiplier: 1e18, symbol: 'E'},
 };
 
+const unitsInWatts = {
+  unit: {multiplier: 1, symbol: 'W'},
+  kilo: {multiplier: 1e3, symbol: 'kW'},
+  mega: {multiplier: 1e6, symbol: 'MW'},
+  giga: {multiplier: 1e9, symbol: 'GW'},
+  tera: {multiplier: 1e12, symbol: 'TW'},
+  peta: {multiplier: 1e15, symbol: 'PW'},
+  exa: {multiplier: 1e18, symbol: 'EW'},
+};
+
+const unitsInCelsius = {
+  unit: {multiplier: 1, symbol: '°C'},
+};
+
+const unitsInHertz = {
+  unit: {multiplier: 1, symbol: 'Hz'},
+  kilo: {multiplier: 1e3, symbol: 'kHz'},
+  mega: {multiplier: 1e6, symbol: 'MHz'},
+  giga: {multiplier: 1e9, symbol: 'GHz'},
+  tera: {multiplier: 1e12, symbol: 'THz'},
+};
+
 const knownValueFormatters = {
   bytes: unitsInBytes,
   nanoseconds: unitsInTimeNs,
   count: unitsInCount,
   'CPU Cores': unitsInCores,
   milliseconds: unitsInTimeMs,
+  watts: unitsInWatts,
+  bytes_per_second: unitsInBytesPerSecond,
+  celsius: unitsInCelsius,
+  hertz: unitsInHertz,
 };
 
 export const roundToDecimals = (n: number, decimals: number): number => {
@@ -103,6 +138,9 @@ export const valueFormatter = (
 ): string => {
   const isBigInt = typeof num === 'bigint';
   const absoluteNum = isBigInt ? abs(num) : Math.abs(num);
+  if (unit === 'percent') {
+    return `${num.toString()}%`;
+  }
   const formatter = knownValueFormatters[unit as keyof typeof knownValueFormatters];
   if (formatter == null) {
     return num.toString();
@@ -378,9 +416,3 @@ export const isUrlEncoded = (str: string): boolean => {
     return false; // Invalid encoding
   }
 };
-
-export function formatDateTimeDownToMS(timestamp: Date, timezone?: string): string {
-  return timezone !== undefined
-    ? format(timestamp, "yyyy:MM:dd'T'HH:mm:ss.SSS", {timeZone: timezone})
-    : `${format(timestamp, "yyyy:MM:dd'T'HH:mm:ss.SSS", {timeZone: 'UTC'})} (UTC)`;
-}

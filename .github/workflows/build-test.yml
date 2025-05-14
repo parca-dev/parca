@@ -23,7 +23,7 @@ env:
   # renovate: datasource=docker depName=docker.io/buildpack-deps versioning=ubuntu
   BUILDPACK_DEPS_VERSION: '22.04'
   # renovate: datasource=npm depName=pnpm versioning=npm
-  PNPM_VERSION: '8.15.9'
+  PNPM_VERSION: '10.10.0'
 
 jobs:
   build-and-test-multi-arch:
@@ -59,7 +59,7 @@ jobs:
 
     - name: Set up Go
       if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}
-      uses: actions/setup-go@3041bf56c941b39c61721a86cd11f3bb1338122a # v5.2.0
+      uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5.3.0
       with:
         go-version-file: .go-version
 
@@ -69,7 +69,7 @@ jobs:
 
     - name: Set up Node.js
       if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}
-      uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+      uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
       with:
         node-version-file: .node-version
         cache: 'pnpm'
@@ -92,7 +92,7 @@ jobs:
 
     - name: Archive generated artifacts
       if: ${{ steps.skip-check.outputs.should_skip != 'true' && matrix.arch == 'amd64' }}
-      uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: parca-bin
         if-no-files-found: error

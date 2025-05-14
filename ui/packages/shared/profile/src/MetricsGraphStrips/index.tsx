@@ -11,9 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useMemo, useState} from 'react';
+import {useState} from 'react';
 
 import {Icon} from '@iconify/react';
+import cx from 'classnames';
 import * as d3 from 'd3';
 import isEqual from 'fast-deep-equal';
 
@@ -32,6 +33,7 @@ interface Props {
   };
   onSelectedTimeframe: (labels: LabelSet, bounds: NumberDuo | undefined) => void;
   width?: number;
+  bounds: NumberDuo;
 }
 
 export const labelSetToString = (labelSet?: LabelSet): string => {
@@ -55,8 +57,15 @@ export const labelSetToString = (labelSet?: LabelSet): string => {
   return str;
 };
 
+const STRIP_HEIGHT = 24;
+
 const getTimelineGuideHeight = (cpus: LabelSet[], collapsedIndices: number[]): number => {
-  return 56 * (cpus.length - collapsedIndices.length) + 20 * collapsedIndices.length + 24;
+  return (
+    (STRIP_HEIGHT + 4) * (cpus.length - collapsedIndices.length) +
+    20 * collapsedIndices.length +
+    24 -
+    6
+  );
 };
 
 export const MetricsGraphStrips = ({
@@ -65,38 +74,37 @@ export const MetricsGraphStrips = ({
   selectedTimeframe,
   onSelectedTimeframe,
   width,
+  bounds,
 }: Props): JSX.Element => {
   const [collapsedIndices, setCollapsedIndices] = useState<number[]>([]);
 
-  // @ts-expect-error
   const color = d3.scaleOrdinal(d3.schemeObservable10);
 
-  const bounds = useMemo(() => {
-    const bounds: NumberDuo = data.length > 0 ? [Infinity, -Infinity] : [0, 1];
-    data.forEach(cpuData => {
-      cpuData.forEach(dataPoint => {
-        bounds[0] = Math.min(bounds[0], dataPoint.timestamp);
-        bounds[1] = Math.max(bounds[1], dataPoint.timestamp);
-      });
-    });
-    return [0, bounds[1] - bounds[0]] as NumberDuo;
-  }, [data]);
+  const valueBounds = d3.extent(data.flatMap(d => d.map(p => p.value))) as [number, number];
 
   return (
     <div className="flex flex-col gap-1 relative my-0 ml-[70px]" style={{width: width ?? '100%'}}>
       <TimelineGuide
-        bounds={[BigInt(bounds[0]), BigInt(bounds[1])]}
+        bounds={[BigInt(0), BigInt(bounds[1] - bounds[0])]}
         width={width ?? 1468}
         height={getTimelineGuideHeight(cpus, collapsedIndices)}
         margin={1}
       />
       {cpus.map((cpu, i) => {
         const isCollapsed = collapsedIndices.includes(i);
+        const isSelected = isEqual(cpu, selectedTimeframe?.labels);
         const labelStr = labelSetToString(cpu);
         return (
-          <div className="relative min-h-5" style={{width: width ?? 1468}} key={labelStr}>
+          <div
+            className={cx('min-h-5', {
+              relative: !isSelected,
+              'sticky z-30 bg-white dark:bg-black bg-opacity-75': isSelected,
+            })}
+            style={{width: width ?? 1468, top: isSelected ? 302 : undefined}}
+            key={labelStr}
+          >
             <div
-              className="text-xs absolute top-0 left-0 flex gap-[2px] items-center bg-white/50 px-1 rounded-sm cursor-pointer"
+              className="text-xs absolute top-0 left-0 flex gap-[2px] items-center bg-white/50 dark:bg-black/50 px-1 rounded-sm cursor-pointer"
               style={{
                 zIndex: 15,
               }}
@@ -116,15 +124,14 @@ export const MetricsGraphStrips = ({
             {!isCollapsed ? (
               <AreaGraph
                 data={data[i]}
-                height={56}
+                height={STRIP_HEIGHT}
                 width={width ?? 1468}
-                fill={color(labelStr) as string}
-                selectionBounds={
-                  isEqual(cpu, selectedTimeframe?.labels) ? selectedTimeframe?.bounds : undefined
-                }
+                fill={color(labelStr)}
+                selectionBounds={isSelected ? selectedTimeframe?.bounds : undefined}
                 setSelectionBounds={bounds => {
                   onSelectedTimeframe(cpu, bounds);
                 }}
+                valueBounds={valueBounds}
               />
             ) : null}
           </div>

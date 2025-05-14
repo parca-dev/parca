@@ -23,16 +23,27 @@ import {DateTimeRange, MetricsGraphSkeleton, useParcaContext, useURLState} from 
 import {Matcher} from '@parca/parser';
 import {formatDate, formatForTimespan, getPrecision, valueFormatter} from '@parca/utilities';
 
-import MetricsSeries from '../../MetricsSeries';
 import {type UtilizationMetrics as MetricSeries} from '../../ProfileSelector';
 import MetricsContextMenu from '../MetricsContextMenu';
 import MetricsTooltip from '../MetricsTooltip';
-import {type Series} from '../index';
 import {useMetricsGraphDimensions} from '../useMetricsGraphDimensions';
 import {getSeriesColor} from '../utils/colorMapping';
 
+interface NetworkLabel {
+  name: string;
+  value: string;
+}
+
+interface NetworkSeries {
+  metric: NetworkLabel[];
+  values: number[][];
+  labelset: string;
+  isReceive?: boolean;
+}
+
 interface CommonProps {
-  data: MetricSeries[];
+  transmitData: MetricSeries[];
+  receiveData: MetricSeries[];
   addLabelMatcher: (
     labels: {key: string; value: string} | Array<{key: string; value: string}>
   ) => void;
@@ -43,18 +54,13 @@ interface CommonProps {
   to: number;
 }
 
-type RawUtilizationMetricsProps = CommonProps & {
+type RawAreaChartProps = CommonProps & {
   width: number;
   height: number;
   margin: number;
 };
 
 type Props = CommonProps & {
-  data: MetricSeries[];
-  addLabelMatcher: (
-    labels: {key: string; value: string} | Array<{key: string; value: string}>
-  ) => void;
-  setTimeRange: (range: DateTimeRange) => void;
   utilizationMetricsLoading?: boolean;
 };
 
@@ -63,23 +69,30 @@ interface MetricsSample {
   value: number;
 }
 
-function transformToSeries(data: MetricSeries[]): Series[] {
-  const series: Series[] = data.reduce<Series[]>(function (agg: Series[], s: MetricSeries) {
+function transformToSeries(data: MetricSeries[], isReceive = false): NetworkSeries[] {
+  const series: NetworkSeries[] = data.reduce<NetworkSeries[]>(function (
+    agg: NetworkSeries[],
+    s: MetricSeries
+  ) {
     if (s.labelset !== undefined) {
       const metric = s.labelset.labels.sort((a, b) => a.name.localeCompare(b.name));
       agg.push({
         metric,
         values: s.samples.reduce<number[][]>(function (agg: number[][], d: MetricsSample) {
           if (d.timestamp !== undefined && d.value !== undefined) {
-            agg.push([d.timestamp, d.value]);
+            // Multiply receive values by -1 to display below zero
+            const value = isReceive ? -1 * d.value : d.value;
+            agg.push([d.timestamp, value]);
           }
           return agg;
         }, []),
         labelset: metric.map(m => `${m.name}=${m.value}`).join(','),
+        isReceive,
       });
     }
     return agg;
-  }, []);
+  },
+  []);
 
   // Sort values by timestamp for each series
   return series.map(series => ({
@@ -88,31 +101,18 @@ function transformToSeries(data: MetricSeries[]): Series[] {
   }));
 }
 
-const getYAxisUnit = (name: string): string => {
-  switch (name) {
-    case 'gpu_power_watt':
-      return 'watts';
-    case 'gpu_temperature_celsius':
-      return 'celsius';
-    case 'gpu_clock_hertz':
-      return 'hertz';
-    default:
-      return 'percent';
-  }
-};
-
-const RawUtilizationMetrics = ({
-  data,
+const RawAreaChart = ({
+  transmitData,
+  receiveData,
   addLabelMatcher,
   setTimeRange,
   width,
   height,
   margin,
-  name,
   humanReadableName,
   from,
   to,
-}: RawUtilizationMetricsProps): JSX.Element => {
+}: RawAreaChartProps): JSX.Element => {
   const {timezone} = useParcaContext();
   const graph = useRef(null);
   const [dragging, setDragging] = useState(false);
@@ -141,7 +141,11 @@ const RawUtilizationMetrics = ({
   const paddedFrom = from;
   const paddedTo = to;
 
-  const series = useMemo(() => transformToSeries(data), [data]);
+  const series = useMemo(() => {
+    const transmitSeries = transformToSeries(transmitData);
+    const receiveSeries = transformToSeries(receiveData, true);
+    return [...transmitSeries, ...receiveSeries];
+  }, [transmitData, receiveData]);
 
   const extentsY = series.map(function (s) {
     return d3.extent(s.values, function (d) {
@@ -162,8 +166,8 @@ const RawUtilizationMetrics = ({
 
   const yScale = d3
     .scaleLinear()
-    // tslint:disable-next-line
-    .domain([minY, maxY] as Iterable<d3.NumberValue>)
+    // Ensure domain is symmetric around 0 for balanced visualization
+    .domain([minY ?? 0, maxY ?? 0])
     .range([height - margin, 0])
     .nice();
 
@@ -189,7 +193,7 @@ const RawUtilizationMetrics = ({
     setIsContextMenuOpen(isVisible);
   };
 
-  const MENU_ID = `utilizationmetrics-context-menu-${idForContextMenu}`;
+  const MENU_ID = `areachart-context-menu-${idForContextMenu}`;
 
   const {show} = useContextMenu({
     id: MENU_ID,
@@ -204,10 +208,11 @@ const RawUtilizationMetrics = ({
     [show]
   );
 
-  const l = d3.line(
-    d => xScale(d[0]),
-    d => yScale(d[1])
-  );
+  // Create line generator for both transmit and receive
+  const lineGenerator = d3
+    .line<number[]>()
+    .x(d => xScale(d[0]))
+    .y(d => yScale(d[1]));
 
   const highlighted = useMemo(() => {
     if (series.length === 0) {
@@ -324,20 +329,24 @@ const RawUtilizationMetrics = ({
             <MetricsTooltip
               x={pos[0] + margin}
               y={pos[1] + margin}
-              highlighted={highlighted}
+              highlighted={{
+                ...highlighted,
+                valuePerSecond: Math.abs(highlighted.valuePerSecond),
+              }}
               contextElement={graph.current}
-              sampleUnit={getYAxisUnit(name)}
+              sampleUnit={'bytes_per_second'}
               delta={false}
               utilizationMetrics={true}
+              valuePrefix={
+                highlighted.seriesIndex >= transmitData.length ? 'Receive ' : 'Transmit '
+              }
             />
           )}
         </div>
       )}
       <div
         ref={graph}
-        onMouseEnter={function () {
-          setHovering(true);
-        }}
+        onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => setHovering(false)}
         onContextMenu={displayMenu}
       >
@@ -364,7 +373,7 @@ const RawUtilizationMetrics = ({
           </g>
           <g transform={`translate(${margin * 1.5}, ${margin / 1.5})`}>
             <g className="y axis" textAnchor="end" fontSize="10" fill="none">
-              {yScale.ticks(3).map((d, i, allTicks) => {
+              {yScale.ticks(6).map((d, i, allTicks) => {
                 let decimals = 2;
                 const intervalBetweenTicks = allTicks[1] - allTicks[0];
 
@@ -375,15 +384,11 @@ const RawUtilizationMetrics = ({
 
                 return (
                   <Fragment key={`${i.toString()}-${d.toString()}`}>
-                    <g
-                      key={`tick-${i}`}
-                      className="tick"
-                      /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
-                      transform={`translate(0, ${yScale(d)})`}
-                    >
+                    <g key={`tick-${i}`} className="tick" transform={`translate(0, ${yScale(d)})`}>
                       <line className="stroke-gray-300 dark:stroke-gray-500" x2={-6} />
                       <text fill="currentColor" x={-9} dy={'0.32em'}>
-                        {valueFormatter(d, getYAxisUnit(name), decimals)}
+                        {d < 0 ? '-' : ''}
+                        {valueFormatter(Math.abs(d), 'bytes_per_second', decimals)}
                       </text>
                     </g>
                     <g key={`grid-${i}`}>
@@ -467,7 +472,18 @@ const RawUtilizationMetrics = ({
                 </text>
               </g>
             </g>
-            <g className="lines fill-transparent">
+            <g className="areas">
+              {/* Draw baseline at y=0 */}
+              <line
+                x1={xScale(from)}
+                x2={xScale(to)}
+                y1={yScale(0)}
+                y2={yScale(0)}
+                stroke="#64748b"
+                strokeDasharray="4 2"
+                strokeWidth={1}
+                opacity={0.7}
+              />
               {series.map((s, i) => {
                 let isSelected = false;
                 if (parsedSelectedSeries != null && parsedSelectedSeries.length > 0) {
@@ -481,16 +497,12 @@ const RawUtilizationMetrics = ({
                   });
                 }
 
-                const isLimit =
-                  s.metric.findIndex(m => m.name === '__type__' && m.value === 'limit') > -1;
-                const strokeDasharray = isLimit ? '8 4' : '';
-
                 return (
                   <g key={i} className="line cursor-pointer">
-                    <MetricsSeries
-                      data={s}
-                      line={l}
-                      color={getSeriesColor(s.metric)}
+                    <path
+                      d={lineGenerator(s.values) ?? ''}
+                      fill="none"
+                      stroke={getSeriesColor(s.metric)}
                       strokeWidth={
                         isSelected
                           ? lineStrokeSelected
@@ -498,9 +510,7 @@ const RawUtilizationMetrics = ({
                           ? lineStrokeHover
                           : lineStroke
                       }
-                      strokeDasharray={strokeDasharray}
-                      xScale={xScale}
-                      yScale={yScale}
+                      strokeOpacity={isSelected ? 1 : 0.8}
                       onClick={() => {
                         if (highlighted != null) {
                           setSelectedSeries(
@@ -511,7 +521,6 @@ const RawUtilizationMetrics = ({
                               }))
                             )
                           );
-                          // reset the selected_timeframe
                           setSelectedTimeframe(undefined);
                         }
                       }}
@@ -527,8 +536,9 @@ const RawUtilizationMetrics = ({
   );
 };
 
-const UtilizationMetrics = ({
-  data,
+const AreaChart = ({
+  transmitData,
+  receiveData,
   addLabelMatcher,
   setTimeRange,
   utilizationMetricsLoading,
@@ -544,7 +554,7 @@ const UtilizationMetrics = ({
     <AnimatePresence>
       <motion.div
         className="w-full relative"
-        key="utilization-metrics-graph-loaded"
+        key="area-chart-graph-loaded"
         initial={{display: 'none', opacity: 0}}
         animate={{display: 'block', opacity: 1}}
         transition={{duration: 0.5}}
@@ -552,8 +562,9 @@ const UtilizationMetrics = ({
         {utilizationMetricsLoading === true ? (
           <MetricsGraphSkeleton heightStyle={heightStyle} isDarkMode={isDarkMode} isMini={true} />
         ) : (
-          <RawUtilizationMetrics
-            data={data}
+          <RawAreaChart
+            transmitData={transmitData}
+            receiveData={receiveData}
             addLabelMatcher={addLabelMatcher}
             setTimeRange={setTimeRange}
             width={width}
@@ -570,4 +581,4 @@ const UtilizationMetrics = ({
   );
 };
 
-export default UtilizationMetrics;
+export default AreaChart;

@@ -17,8 +17,9 @@ import {QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata, useParcaContext, useURLState} from '@parca/components';
 import {saveAsBlob} from '@parca/utilities';
 
+import {validateIcicleChartQuery} from './ProfileIcicleGraph';
 import {FIELD_FUNCTION_NAME} from './ProfileIcicleGraph/IcicleGraphArrow';
-import {ProfileSource} from './ProfileSource';
+import {MergedProfileSource, ProfileSource} from './ProfileSource';
 import {ProfileView} from './ProfileView';
 import {useQuery} from './useQuery';
 import {downloadPprof} from './utils';
@@ -36,7 +37,7 @@ export const ProfileViewWithData = ({
   showVisualizationSelector,
 }: ProfileViewWithDataProps): JSX.Element => {
   const metadata = useGrpcMetadata();
-  const [dashboardItems] = useURLState<string[]>('dashboard_items', {
+  const [dashboardItems, setDashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
   });
   const [sourceBuildID] = useURLState<string>('source_buildid');
@@ -56,6 +57,25 @@ export const ProfileViewWithData = ({
       : binaryFrameFilterStr;
 
   const [pprofDownloading, setPprofDownloading] = useState<boolean>(false);
+
+  useEffect(() => {
+    // If profile type is not delta, remove iciclechart from the dashboard items
+    // and set it to icicle if no other items are selected.
+    if (profileSource == null) {
+      return;
+    }
+    const profileType = profileSource.ProfileType();
+    let newDashboardItems = dashboardItems;
+    if (dashboardItems.includes('iciclechart') && !profileType.delta) {
+      newDashboardItems = dashboardItems.filter(item => item !== 'iciclechart');
+    } else {
+      return;
+    }
+    if (newDashboardItems.length === 0) {
+      newDashboardItems = ['icicle'];
+    }
+    setDashboardItems(newDashboardItems);
+  }, [profileSource, dashboardItems, setDashboardItems]);
 
   const nodeTrimThreshold = useMemo(() => {
     let width =
@@ -83,22 +103,24 @@ export const ProfileViewWithData = ({
     response: flamechartResponse,
     error: flamechartError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMECHART, {
-    skip: !dashboardItems.includes('iciclechart'),
+    skip: !(
+      dashboardItems.includes('iciclechart') &&
+      validateIcicleChartQuery(profileSource as MergedProfileSource).isValid
+    ),
     nodeTrimThreshold,
     groupBy,
     invertCallStack,
     binaryFrameFilter,
   });
 
-  const {isLoading: profileMetadataLoading, response: profileMetadataResponse} = useQuery(
-    queryClient,
-    profileSource,
-    QueryRequest_ReportType.PROFILE_METADATA,
-    {
-      nodeTrimThreshold,
-      groupBy,
-    }
-  );
+  const {
+    isLoading: profileMetadataLoading,
+    response: profileMetadataResponse,
+    error: profileMetadataError,
+  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.PROFILE_METADATA, {
+    nodeTrimThreshold,
+    groupBy,
+  });
 
   const {perf} = useParcaContext();
 
@@ -167,7 +189,9 @@ export const ProfileViewWithData = ({
 
     try {
       setPprofDownloading(true);
-      const blob = await downloadPprof(profileSource.QueryRequest(), queryClient, metadata);
+      const req = profileSource.QueryRequest();
+      req.groupBy = {fields: groupBy};
+      const blob = await downloadPprof(req, queryClient, metadata);
       saveAsBlob(blob, `profile.pb.gz`);
       setPprofDownloading(false);
     } catch (error) {
@@ -213,7 +237,7 @@ export const ProfileViewWithData = ({
             : undefined,
         total: BigInt(flamegraphResponse?.total ?? '0'),
         filtered: BigInt(flamegraphResponse?.filtered ?? '0'),
-        error: flamegraphError,
+        error: flamegraphError ?? profileMetadataError,
         metadataMappingFiles:
           profileMetadataResponse?.report.oneofKind === 'profileMetadata'
             ? profileMetadataResponse?.report?.profileMetadata?.mappingFiles

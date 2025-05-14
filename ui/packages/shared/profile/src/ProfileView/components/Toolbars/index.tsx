@@ -19,6 +19,7 @@ import {QueryServiceClient} from '@parca/client';
 import {Button, UserPreferencesModal} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 
+import {CurrentPathFrame} from '../../../ProfileIcicleGraph/IcicleGraphArrow/utils';
 import {ProfileSource} from '../../../ProfileSource';
 import {useDashboard} from '../../context/DashboardContext';
 import GroupByDropdown from '../ActionButtons/GroupByDropdown';
@@ -37,8 +38,8 @@ export interface VisualisationToolbarProps {
   profileSource?: ProfileSource;
   queryClient?: QueryServiceClient;
   onDownloadPProf: () => void;
-  curPath: string[];
-  setNewCurPath: (path: string[]) => void;
+  curPath: CurrentPathFrame[];
+  setNewCurPath: (path: CurrentPathFrame[]) => void;
   profileType?: ProfileType;
   total: bigint;
   filtered: bigint;
@@ -61,8 +62,8 @@ export interface TableToolbarProps {
 }
 
 export interface IcicleGraphToolbarProps {
-  curPath: string[];
-  setNewCurPath: (path: string[]) => void;
+  curPath: CurrentPathFrame[];
+  setNewCurPath: (path: CurrentPathFrame[]) => void;
 }
 
 export const TableToolbar: FC<TableToolbarProps> = ({
@@ -138,6 +139,12 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   const isTableViz = dashboardItems?.includes('table');
   const isGraphViz = dashboardItems?.includes('icicle');
 
+  const req = profileSource?.QueryRequest();
+  if (req !== null && req !== undefined) {
+    req.groupBy = {
+      fields: groupBy ?? [],
+    };
+  }
   return (
     <>
       <div className="flex w-full justify-between items-end">
@@ -161,13 +168,13 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
           <ShareButton
             profileSource={profileSource}
             queryClient={queryClient}
-            queryRequest={profileSource?.QueryRequest() ?? undefined}
+            queryRequest={req}
             onDownloadPProf={onDownloadPProf}
             pprofdownloading={pprofdownloading ?? false}
             profileViewExternalSubActions={profileViewExternalSubActions}
           />
 
-          {showVisualizationSelector ? <ViewSelector /> : null}
+          {showVisualizationSelector ? <ViewSelector profileSource={profileSource} /> : null}
         </div>
       </div>
       {isGraphViz && !isTableViz && (
