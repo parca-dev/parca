@@ -44,6 +44,7 @@ import useMappingList, {
 } from '../ProfileIcicleGraph/IcicleGraphArrow/useMappingList';
 import {ProfileSource} from '../ProfileSource';
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
+import {useVisualizationState} from '../ProfileView/hooks/useVisualizationState';
 import {
   FIELD_CALLEES,
   FIELD_CALLERS,
@@ -72,7 +73,6 @@ import {
 } from '../Table/utils/functions';
 import {getTopAndBottomExpandedRowModel} from '../Table/utils/topAndBottomExpandedRowModel';
 import {useQuery} from '../useQuery';
-// import {CanvasIcicle} from './CanvasIcicle';
 import CustomRowRenderer from './CustomRenderer';
 
 interface Props {
@@ -107,8 +107,6 @@ const Sandwich = React.memo(function Sandwich({
   queryClient,
   profileSource,
   metadataLoading,
-  curPath,
-  setNewCurPath,
 }: Props): React.JSX.Element {
   const currentColorProfile = useCurrentColorProfile();
   const [dashboardItems] = useURLState<string[]>('dashboard_items', {
@@ -118,7 +116,6 @@ const Sandwich = React.memo(function Sandwich({
   const [tableColumns] = useURLState<string[]>('table_columns', {
     alwaysReturnArray: true,
   });
-  const [colorBy, setColorBy] = useURLState('color_by');
   const {isDarkMode} = useParcaContext();
   const [expanded, setExpanded] = useState<ExpandedState>({});
   const [selectedRow, setSelectedRow] = useState<RowType<Row> | null>(null);
@@ -149,7 +146,7 @@ const Sandwich = React.memo(function Sandwich({
     {
       nodeTrimThreshold,
       groupBy: [FIELD_FUNCTION_NAME],
-      invertCallStack: false,
+      invertCallStack: true,
       binaryFrameFilter: [],
       filterByFunction: selectedFunctionName,
       skip: selectedFunctionName === undefined,
@@ -167,12 +164,15 @@ const Sandwich = React.memo(function Sandwich({
     {
       nodeTrimThreshold,
       groupBy: [FIELD_FUNCTION_NAME],
-      invertCallStack: true,
+      invertCallStack: false,
       binaryFrameFilter: [],
       filterByFunction: selectedFunctionName,
       skip: selectedFunctionName === undefined,
     }
   );
+
+  const {curPath, setCurPath, colorBy, setColorBy, curPathArrow, setCurPathArrow} =
+    useVisualizationState();
 
   const table = useMemo(() => {
     if (loading || data == null) {
@@ -567,7 +567,7 @@ const Sandwich = React.memo(function Sandwich({
                 <div className="" ref={callersRef}>
                   <ProfileIcicleGraph
                     curPath={curPath}
-                    setNewCurPath={setNewCurPath}
+                    setNewCurPath={setCurPath}
                     arrow={
                       callersFlamegraphResponse?.report.oneofKind === 'flamegraphArrow'
                         ? callersFlamegraphResponse?.report?.flamegraphArrow
@@ -590,13 +590,15 @@ const Sandwich = React.memo(function Sandwich({
                     metadataMappingFiles={metadataMappingFiles}
                     metadataLoading={metadataLoading}
                     isSandwichIcicleGraph={true}
+                    curPathArrow={curPathArrow}
+                    setNewCurPathArrow={setCurPathArrow}
                   />
                 </div>
                 <div className="h-4" />
                 <div className="" ref={calleesRef}>
                   <ProfileIcicleGraph
                     curPath={curPath}
-                    setNewCurPath={setNewCurPath}
+                    setNewCurPath={setCurPath}
                     arrow={
                       calleesFlamegraphResponse?.report.oneofKind === 'flamegraphArrow'
                         ? calleesFlamegraphResponse?.report?.flamegraphArrow
@@ -619,6 +621,8 @@ const Sandwich = React.memo(function Sandwich({
                     metadataMappingFiles={metadataMappingFiles}
                     metadataLoading={metadataLoading}
                     isSandwichIcicleGraph={true}
+                    curPathArrow={curPathArrow}
+                    setNewCurPathArrow={setCurPathArrow}
                   />
                 </div>
               </div>

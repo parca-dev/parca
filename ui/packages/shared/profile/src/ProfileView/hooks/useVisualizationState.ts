@@ -27,6 +27,7 @@ export const useVisualizationState = (): {
   setSearchString: (searchString: string | undefined) => void;
   colorStackLegend: string | undefined;
   colorBy: string;
+  setColorBy: (colorBy: string) => void;
   groupBy: string[];
   setGroupBy: (keys: string[]) => void;
   toggleGroupBy: (key: string) => void;
@@ -41,7 +42,7 @@ export const useVisualizationState = (): {
   });
   const [currentSearchString, setSearchString] = useURLState<string | undefined>('search_string');
   const [colorStackLegend] = useURLState<string | undefined>('color_stack_legend');
-  const [colorBy] = useURLState('color_by');
+  const [colorBy, setColorBy] = useURLState('color_by');
   const [groupBy, setStoreGroupBy] = useURLState<string[]>('group_by', {
     defaultValue: [FIELD_FUNCTION_NAME],
     alwaysReturnArray: true,
@@ -83,6 +84,7 @@ export const useVisualizationState = (): {
     setSearchString,
     colorStackLegend,
     colorBy: (colorBy as string) ?? '',
+    setColorBy,
     groupBy,
     setGroupBy,
     toggleGroupBy,
