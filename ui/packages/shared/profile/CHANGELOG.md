@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.17.0](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.511...@parca/profile@0.17.0) (2025-05-14)
+
+### Features
+
+- ui: Add support for dashed lines for limit metrics in graphs ([ff2a43a](https://github.com/parca-dev/parca/commit/ff2a43a9ead4e3c7ce47beb824c2b3165caf73df))
+
 ## [0.16.511](https://github.com/parca-dev/parca/compare/@parca/profile@0.16.510...@parca/profile@0.16.511) (2025-05-08)
 
 **Note:** Version bump only for package @parca/profile
