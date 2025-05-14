@@ -18,6 +18,7 @@ interface MetricsSeriesProps {
   line: d3.Line<[number, number]>;
   color: string;
   strokeWidth: string;
+  strokeDasharray?: string;
   xScale: (input: number) => number;
   yScale: (input: number) => number;
   onClick?: () => void;
@@ -28,6 +29,7 @@ const MetricsSeries = ({
   line,
   color,
   strokeWidth,
+  strokeDasharray = '',
   onClick,
 }: MetricsSeriesProps): JSX.Element => (
   <g className="line-group">
@@ -37,6 +39,7 @@ const MetricsSeries = ({
       style={{
         stroke: color,
         strokeWidth,
+        strokeDasharray,
       }}
       onClick={onClick}
     />

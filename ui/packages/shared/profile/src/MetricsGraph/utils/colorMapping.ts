@@ -25,6 +25,7 @@ const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
 export function getSeriesColor(labels: Array<{name: string; value: string}>): string {
   // Create a key from all labels to ensure unique identification
   const key = labels
+    .filter(l => l.name !== '__type__' && l.name !== 'limit') // ignore injected virtual labels
     .map(l => `${l.name}=${l.value}`)
     .sort()
     .join(',');
