@@ -70,6 +70,8 @@ import {
   getCallerRows,
   getRowColor,
   ratioString,
+  sizeToBottomStyle,
+  sizeToWidthStyle,
 } from '../Table/utils/functions';
 import {getTopAndBottomExpandedRowModel} from '../Table/utils/topAndBottomExpandedRowModel';
 import {useQuery} from '../useQuery';
@@ -146,7 +148,7 @@ const Sandwich = React.memo(function Sandwich({
     {
       nodeTrimThreshold,
       groupBy: [FIELD_FUNCTION_NAME],
-      invertCallStack: true,
+      invertCallStack: false,
       binaryFrameFilter: [],
       filterByFunction: selectedFunctionName,
       skip: selectedFunctionName === undefined,
@@ -184,7 +186,7 @@ const Sandwich = React.memo(function Sandwich({
 
   const mappingsList = useMappingList(metadataMappingFiles);
   const filenamesList = useFilenamesList(table);
-  const colorByValue = colorBy === undefined || colorBy === '' ? 'binary' : (colorBy as string);
+  const colorByValue = colorBy === undefined || colorBy === '' ? 'binary' : colorBy;
 
   const mappingsListCount = useMemo(
     () => mappingsList.filter(m => m !== '').length,
@@ -462,13 +464,7 @@ const Sandwich = React.memo(function Sandwich({
       return {
         id: i,
         colorProperty: {
-          color: getRowColor(
-            colorByColors,
-            mappingFileColumn,
-            i,
-            functionFileNameColumn,
-            colorBy as string
-          ),
+          color: getRowColor(colorByColors, mappingFileColumn, i, functionFileNameColumn, colorBy),
           mappingFile,
         },
         name: RowName(mappingFileColumn, locationAddressColumn, functionNameColumn, i),
@@ -564,7 +560,10 @@ const Sandwich = React.memo(function Sandwich({
 
             {selectedRow != null && (
               <div className="w-[50%] flex flex-col">
-                <div className="" ref={callersRef}>
+                <div className="flex relative flex-row" ref={callersRef}>
+                  <div className="[writing-mode:vertical-lr] -rotate-180 px-1 uppercase text-[10px] text-left">
+                    Callers {'->'}
+                  </div>
                   <ProfileIcicleGraph
                     curPath={curPath}
                     setNewCurPath={setCurPath}
@@ -594,8 +593,13 @@ const Sandwich = React.memo(function Sandwich({
                     setNewCurPathArrow={setCurPathArrow}
                   />
                 </div>
+                {/* divider space */}
                 <div className="h-4" />
-                <div className="" ref={calleesRef}>
+                {/* divider space */}
+                <div className="flex relative items-start flex-row" ref={calleesRef}>
+                  <div className="[writing-mode:vertical-lr] -rotate-180 px-1 uppercase text-[10px] text-left">
+                    {'<-'} Callees
+                  </div>
                   <ProfileIcicleGraph
                     curPath={curPath}
                     setNewCurPath={setCurPath}

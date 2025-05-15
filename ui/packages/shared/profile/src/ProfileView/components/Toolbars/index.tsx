@@ -66,6 +66,13 @@ export interface IcicleGraphToolbarProps {
   setNewCurPath: (path: CurrentPathFrame[]) => void;
 }
 
+export interface SandwichIcicleGraphToolbarProps {
+  curPath: CurrentPathFrame[];
+  setNewCurPath: (path: CurrentPathFrame[]) => void;
+  clearSelection: () => void;
+  currentSearchString?: string;
+}
+
 export const TableToolbar: FC<TableToolbarProps> = ({
   profileType,
   total,
@@ -110,6 +117,39 @@ export const IcicleGraphToolbar: FC<IcicleGraphToolbarProps> = ({curPath, setNew
   );
 };
 
+export const SandwichIcicleGraphToolbar: FC<SandwichIcicleGraphToolbarProps> = ({
+  curPath,
+  setNewCurPath,
+  clearSelection,
+  currentSearchString,
+}) => {
+  return (
+    <>
+      <div className="flex w-full gap-2 items-end justify-between">
+        {/* <SortByDropdown /> */}
+        <Button
+          color="neutral"
+          onClick={clearSelection}
+          className="w-auto"
+          variant="neutral"
+          disabled={currentSearchString === undefined || currentSearchString.length === 0}
+        >
+          Clear selection
+        </Button>
+        <Button
+          variant="neutral"
+          className="gap-2 w-max h-fit"
+          onClick={() => setNewCurPath([])}
+          disabled={curPath.length === 0}
+        >
+          Reset Icicle graph
+          <Icon icon="system-uicons:reset" width={20} />
+        </Button>
+      </div>
+    </>
+  );
+};
+
 const Divider = (): JSX.Element => (
   <div className="border-t mt-4 border-gray-200 dark:border-gray-700 h-[1px] w-full pb-4" />
 );
@@ -138,7 +178,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
 
   const isTableViz = dashboardItems?.includes('table');
   const isGraphViz = dashboardItems?.includes('icicle');
-
+  const isSandwichIcicleGraphViz = dashboardItems?.includes('sandwich');
   const req = profileSource?.QueryRequest();
   if (req !== null && req !== undefined) {
     req.groupBy = {
@@ -190,6 +230,17 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
             profileType={profileType}
             total={total}
             filtered={filtered}
+            clearSelection={clearSelection}
+            currentSearchString={currentSearchString}
+          />
+        </>
+      )}
+      {isSandwichIcicleGraphViz && (
+        <>
+          <Divider />
+          <SandwichIcicleGraphToolbar
+            curPath={curPath}
+            setNewCurPath={setNewCurPath}
             clearSelection={clearSelection}
             currentSearchString={currentSearchString}
           />
