@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {LegacyRef, ReactNode, useEffect, useMemo, useState} from 'react';
+import React, {LegacyRef, ReactNode, useCallback, useEffect, useMemo, useState} from 'react';
 
 import cx from 'classnames';
 import {AnimatePresence, motion} from 'framer-motion';
@@ -96,6 +96,37 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   const {compareMode} = useProfileViewContext();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [icicleChartRef, {height: icicleChartHeight}] = useMeasure();
+
+  // Create local state for paths when in sandwich view to avoid URL updates
+  const [localCurPath, setLocalCurPath] = useState<string[]>([]);
+  const [localCurPathArrow, setLocalCurPathArrow] = useState<CurrentPathFrame[]>([]);
+
+  // Create wrapper functions to conditionally update either local state or URL state
+  const setCurPathWrapper = useCallback(
+    (path: string[]) => {
+      if (isSandwichIcicleGraph) {
+        setLocalCurPath(path);
+      } else {
+        setNewCurPath(path);
+      }
+    },
+    [isSandwichIcicleGraph, setNewCurPath]
+  );
+
+  const setCurPathArrowWrapper = useCallback(
+    (path: CurrentPathFrame[]) => {
+      if (isSandwichIcicleGraph) {
+        setLocalCurPathArrow(path);
+      } else {
+        setNewCurPathArrow(path);
+      }
+    },
+    [isSandwichIcicleGraph, setNewCurPathArrow]
+  );
+
+  // Determine which paths to use based on isSandwichIcicleGraph flag
+  const effectiveCurPath = isSandwichIcicleGraph ? localCurPath : curPath;
+  const effectiveCurPathArrow = isSandwichIcicleGraph ? localCurPathArrow : curPathArrow;
 
   const mappingsList = useMappingList(metadataMappingFiles);
 
@@ -234,8 +265,8 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
           graph={graph}
           total={total}
           filtered={filtered}
-          curPath={curPath}
-          setCurPath={setNewCurPath}
+          curPath={effectiveCurPath}
+          setCurPath={setCurPathWrapper}
           profileType={profileType}
         />
       );
@@ -259,8 +290,8 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
               arrow={arrow}
               total={total}
               filtered={filtered}
-              curPath={curPathArrow}
-              setCurPath={setNewCurPathArrow}
+              curPath={effectiveCurPathArrow}
+              setCurPath={setCurPathArrowWrapper}
               profileType={profileType}
               sortBy={storeSortBy as string}
               flamegraphLoading={isLoading}
@@ -282,10 +313,10 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     loading,
     width,
     filtered,
-    curPath,
-    setNewCurPath,
-    curPathArrow,
-    setNewCurPathArrow,
+    effectiveCurPath,
+    setCurPathWrapper,
+    effectiveCurPathArrow,
+    setCurPathArrowWrapper,
     profileType,
     storeSortBy,
     isHalfScreen,
