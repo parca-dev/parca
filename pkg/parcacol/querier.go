@@ -1018,7 +1018,7 @@ func (q *Querier) SymbolizeArrowRecord(
 	return res, nil
 }
 
-func handleIndexInversion(isInvert bool, start, end, j int) int {
+func handleIndexInversion(isInvert bool, start, end, j int64) int64 {
 	if !isInvert {
 		return j
 	}
@@ -1056,8 +1056,8 @@ func (q *Querier) resolveStacks(
 		if len(functionToFilterByBytes) > 0 {
 			var found bool
 			for j := start; j < end; j++ {
-				jWithInversion := handleIndexInversion(invertCallStacks, int(start), int(end), int(j))
-				idx := values.GetValueIndex(jWithInversion)
+				jWithInversion := handleIndexInversion(invertCallStacks, start, end, j)
+				idx := values.GetValueIndex(int(jWithInversion))
 
 				encodedLocation := valueDict.Value(idx)
 				fn, err := profile.DecodeFunctionName(encodedLocation)
@@ -1067,7 +1067,11 @@ func (q *Querier) resolveStacks(
 
 				if bytes.Compare(functionToFilterByBytes, fn) == 0 {
 					found = true
-					start = j // We want to start from the function onwards.
+					if invertCallStacks {
+						start = jWithInversion // We want to start from the function onwards.
+					} else {
+						end = jWithInversion + 1 // We want to end with the function (+1 to include it)
+					}
 					break
 				}
 			}
@@ -1080,9 +1084,9 @@ func (q *Querier) resolveStacks(
 		}
 
 		for j := int(start); j < int(end); j++ {
-			jWithInversion := handleIndexInversion(invertCallStacks, int(start), int(end), j)
+			jWithInversion := handleIndexInversion(invertCallStacks, start, end, int64(j))
 			w.Locations.Append(true)
-			idx := values.GetValueIndex(jWithInversion)
+			idx := values.GetValueIndex(int(jWithInversion))
 
 			if symbolizedLocations[idx] != nil {
 				// We symbolized the location successfully, so we'll use the symbolized location.

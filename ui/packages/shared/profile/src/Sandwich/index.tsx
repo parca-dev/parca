@@ -148,7 +148,7 @@ const Sandwich = React.memo(function Sandwich({
     {
       nodeTrimThreshold,
       groupBy: [FIELD_FUNCTION_NAME],
-      invertCallStack: false,
+      invertCallStack: true,
       binaryFrameFilter: [],
       filterByFunction: selectedFunctionName,
       skip: selectedFunctionName === undefined,
