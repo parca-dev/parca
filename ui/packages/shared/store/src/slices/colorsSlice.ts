@@ -21,7 +21,6 @@ import {
   CallgraphNodeMeta,
   FlamegraphNode,
   FlamegraphNodeMeta,
-  FlamegraphRootNode,
 } from '@parca/client';
 import {
   COLOR_PROFILES,
@@ -40,7 +39,7 @@ interface ExtendedCallgraphNodeMeta extends CallgraphNodeMeta {
   locationIndex: number;
 }
 
-export interface HoveringNode extends FlamegraphRootNode, FlamegraphNode, CallgraphNode {
+export interface HoveringNode extends FlamegraphNode, CallgraphNode {
   diff: bigint;
   meta?: FlamegraphNodeMeta | ExtendedCallgraphNodeMeta;
   cumulative: bigint;
@@ -54,7 +53,6 @@ export interface HoveringRow {
 export interface ColorsState {
   colors: StackColorMap;
   binaries: string[];
-  hoveringNode: HoveringNode | undefined;
   hoveringRow: HoveringRow | undefined;
   colorProfiles: Record<string, ColorConfig>;
 }
@@ -63,7 +61,6 @@ export interface ColorsState {
 export const initialColorState: ColorsState = {
   colors: {},
   binaries: [],
-  hoveringNode: undefined,
   hoveringRow: undefined,
   colorProfiles: COLOR_PROFILES,
 };
@@ -177,9 +174,6 @@ export const colorsSlice = createSlice({
           }
         );
     },
-    setHoveringNode: (state, action: PayloadAction<HoveringNode | undefined>) => {
-      state.hoveringNode = action.payload;
-    },
     setHoveringRow: (state, action: PayloadAction<HoveringRow | undefined>) => {
       state.hoveringRow = action.payload;
     },
@@ -189,16 +183,13 @@ export const colorsSlice = createSlice({
   },
 });
 
-export const {addColor, resetColors, setFeatures, setHoveringNode, setHoveringRow} =
+export const {addColor, resetColors, setFeatures, setHoveringRow} =
   colorsSlice.actions;
 
 // Other code such as selectors can use the imported `RootState` type
 export const selectStackColors = (state: RootState): StackColorMap => state.colors.colors;
 
 export const selectBinaries = (state: RootState): string[] => state.colors.binaries;
-
-export const selectHoveringNode = (state: RootState): HoveringNode | undefined =>
-  state.colors.hoveringNode;
 
 export const selectHoveringRow = (state: RootState): HoveringRow | undefined =>
   state.colors.hoveringRow;

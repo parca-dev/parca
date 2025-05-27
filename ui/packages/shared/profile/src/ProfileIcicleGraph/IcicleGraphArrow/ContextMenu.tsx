@@ -24,7 +24,6 @@ import {getLastItem} from '@parca/utilities';
 import {useGraphTooltip} from '../../GraphTooltipArrow/useGraphTooltip';
 import {useGraphTooltipMetaInfo} from '../../GraphTooltipArrow/useGraphTooltipMetaInfo';
 import {hexifyAddress, truncateString} from '../../utils';
-import {CurrentPathFrame} from './utils';
 
 interface ContextMenuProps {
   menuId: string;
@@ -34,11 +33,8 @@ interface ContextMenuProps {
   total: bigint;
   totalUnfiltered: bigint;
   row: number;
-  level: number;
   compareAbsolute: boolean;
-  trackVisibility: (isVisible: boolean) => void;
-  curPath: CurrentPathFrame[];
-  setCurPath: (path: CurrentPathFrame[]) => void;
+  resetPath: () => void;
   hideMenu: () => void;
   hideBinary: (binaryToRemove: string) => void;
 }
@@ -49,15 +45,12 @@ const ContextMenu = ({
   total,
   totalUnfiltered,
   row,
-  level,
   compareAbsolute,
-  trackVisibility,
-  curPath,
-  setCurPath,
   hideMenu,
   profileType,
   unit,
   hideBinary,
+  resetPath,
 }: ContextMenuProps): JSX.Element => {
   const {isDarkMode} = useParcaContext();
   const {enableSourcesView, checkDebuginfoStatusHandler} = useParcaContext();
@@ -71,7 +64,6 @@ const ContextMenu = ({
     total,
     totalUnfiltered,
     row,
-    level,
     compareAbsolute,
   });
 
@@ -103,7 +95,7 @@ const ContextMenu = ({
   const handleViewSourceFile = (): void => openFile();
 
   const handleResetView = (): void => {
-    setCurPath([]);
+    resetPath();
     return hideMenu();
   };
   const handleDockTooltip = (): void => {
@@ -146,7 +138,7 @@ const ContextMenu = ({
   const nonEmptyValuesToCopy = valuesToCopy.filter(({value}) => value !== '');
 
   return (
-    <Menu id={menuId} onVisibilityChange={trackVisibility} theme={isDarkMode ? 'dark' : ''}>
+    <Menu id={menuId} theme={isDarkMode ? 'dark' : ''}>
       <Item
         id="view-source-file"
         onClick={handleViewSourceFile}
@@ -175,7 +167,7 @@ const ContextMenu = ({
           <div>Show in table</div>
         </div>
       </Item>
-      <Item id="reset-view" onClick={handleResetView} disabled={curPath.length === 0}>
+      <Item id="reset-view" onClick={handleResetView}>
         <div className="flex w-full items-center gap-2">
           <Icon icon="system-uicons:reset" />
           <div>Reset graph</div>
