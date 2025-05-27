@@ -62,6 +62,7 @@ const (
 
 	FlamegraphFieldTimestamp = "timestamp"
 	FlamegraphFieldDuration  = "duration"
+	FlamegraphFieldDepth     = "depth"
 )
 
 func GenerateFlamegraphArrow(
@@ -193,7 +194,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					rootRow = sampleLabelRow
 				}
 				fb.maxHeight = max(fb.maxHeight, fb.height)
-				fb.height = 1
+				fb.height = 1 // We start with root + label row.
 
 				fb.parent.Set(rootRow)
 				row = fb.builderCumulative.Len()
@@ -360,6 +361,8 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		fb.trimmedTimestamp.AppendNull()
 		fb.trimmedDuration = builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
 		fb.trimmedDuration.AppendNull()
+		fb.trimmedDepth = array.NewUint8Builder(fb.pool)
+		fb.trimmedDepth.AppendNull()
 	}
 
 	_, spanNewRecord := tracer.Start(ctx, "NewRecord")
@@ -875,6 +878,7 @@ type flamegraphBuilder struct {
 	builderDiff                          *builder.OptInt64Builder
 	builderTimestamp                     *builder.OptInt64Builder
 	builderDuration                      *builder.OptInt64Builder
+	builderDepth                         *array.Uint32Builder
 
 	// Only at the last step when preparing the new record these are populated.
 	// They are also used to create compacted dictionaries and after that replaced by them.
@@ -902,6 +906,7 @@ type flamegraphBuilder struct {
 
 	trimmedTimestamp *builder.OptInt64Builder
 	trimmedDuration  *builder.OptInt64Builder
+	trimmedDepth     array.Builder
 }
 
 type aggregationConfig struct {
@@ -958,6 +963,7 @@ func newFlamegraphBuilder(
 
 		builderTimestamp: builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
 		builderDuration:  builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
+		builderDepth:     array.NewUint32Builder(pool),
 
 		builderChildren:       builderChildren,
 		builderChildrenValues: builderChildren.ValueBuilder().(*array.Uint32Builder),
@@ -1014,6 +1020,7 @@ func newFlamegraphBuilder(
 
 	fb.builderTimestamp.Append(0)
 	fb.builderDuration.Append(0)
+	fb.builderDepth.Append(0)
 
 	return fb, nil
 }
@@ -1147,6 +1154,8 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 		// Timestamp
 		{Name: FlamegraphFieldTimestamp, Type: arrow.PrimitiveTypes.Int64},
 		{Name: FlamegraphFieldDuration, Type: arrow.PrimitiveTypes.Int64},
+		// Depth
+		{Name: FlamegraphFieldDepth, Type: fb.trimmedDepth.Type()},
 	}
 
 	numCols := len(fields)
@@ -1204,6 +1213,8 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	cleanupArrs = append(cleanupArrs, arrays[14])
 	arrays[15] = fb.trimmedDuration.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[15])
+	arrays[16] = fb.trimmedDepth.NewArray()
+	cleanupArrs = append(cleanupArrs, arrays[16])
 
 	for i, field := range fb.builderLabelFields {
 		field.Type = fb.labels[i].DataType() // overwrite for variable length uint types
@@ -1241,6 +1252,7 @@ func (fb *flamegraphBuilder) Release() {
 
 	fb.builderTimestamp.Release()
 	fb.builderDuration.Release()
+	fb.builderDepth.Release()
 
 	fb.builderChildren.Release()
 	fb.builderCumulative.Release()
@@ -1259,8 +1271,16 @@ func (fb *flamegraphBuilder) Release() {
 		fb.trimmedCumulative.Release()
 	}
 
+	if fb.trimmedFlat != nil {
+		fb.trimmedFlat.Release()
+	}
+
 	if fb.trimmedDiff != nil {
 		fb.trimmedDiff.Release()
+	}
+
+	if fb.trimmedDepth != nil {
+		fb.trimmedDepth.Release()
 	}
 
 	for i := range fb.builderLabelFields {
@@ -1398,6 +1418,7 @@ func (fb *flamegraphBuilder) appendRow(
 
 	fb.builderTimestamp.Append(r.Timestamp.Value(sampleRow))
 	fb.builderDuration.Append(r.Duration.Value(sampleRow))
+	fb.builderDepth.Append(uint32(fb.height))
 
 	value := r.Value.Value(sampleRow)
 
@@ -1474,6 +1495,7 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 
 	fb.builderTimestamp.Append(0)
 	fb.builderDuration.Append(0)
+	fb.builderDepth.Append(1) // Label rows are direct children of root, so depth is 1
 
 	// Append both cumulative and diff values and overwrite them below.
 	fb.builderCumulative.Append(0)
@@ -1520,6 +1542,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	largestFlatValue := uint64(0)
 	largestDiffValue := int64(0)
 	smallestDiffValue := int64(0)
+	largestDepth := uint64(0)
 	for trimmingQueue.len() > 0 {
 		// pop the first item from the queue
 		te := trimmingQueue.pop()
@@ -1541,6 +1564,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 		diff := fb.builderDiff.Value(te.row)
 		largestDiffValue = max(largestDiffValue, diff)
 		smallestDiffValue = max(smallestDiffValue, diff)
+		largestDepth = max(largestDepth, uint64(fb.builderDepth.Value(te.row)))
 
 		cumThreshold := float32(cum) * threshold
 
@@ -1576,6 +1600,8 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedTimestamps := builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
 	// TODO: We should use the smallest type for the duration.
 	trimmedDurations := builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
+	trimmedDepthType := smallestUnsignedTypeFor(largestDepth)
+	trimmedDepth := array.NewBuilder(fb.pool, trimmedDepthType)
 
 	releasers = append(releasers,
 		trimmedMappingFileIndices,
@@ -1610,6 +1636,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedDiff.Reserve(row)
 	trimmedTimestamps.Reserve(row)
 	trimmedDurations.Reserve(row)
+	trimmedDepth.Reserve(row)
 
 	for _, l := range trimmedLabelsIndices {
 		l.Reserve(row)
@@ -1677,6 +1704,19 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 			b.Append(int16(fb.builderDiff.Value(te.row)))
 		case *array.Int8Builder:
 			b.Append(int8(fb.builderDiff.Value(te.row)))
+		default:
+			panic(fmt.Errorf("unsupported type %T", b))
+		}
+
+		switch b := trimmedDepth.(type) {
+		case *array.Uint64Builder:
+			b.Append(uint64(fb.builderDepth.Value(te.row)))
+		case *array.Uint32Builder:
+			b.Append(fb.builderDepth.Value(te.row))
+		case *array.Uint16Builder:
+			b.Append(uint16(fb.builderDepth.Value(te.row)))
+		case *array.Uint8Builder:
+			b.Append(uint8(fb.builderDepth.Value(te.row)))
 		default:
 			panic(fmt.Errorf("unsupported type %T", b))
 		}
@@ -1819,6 +1859,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	fb.trimmedChildren = trimmedChildren
 	fb.trimmedTimestamp = trimmedTimestamps
 	fb.trimmedDuration = trimmedDurations
+	fb.trimmedDepth = trimmedDepth
 
 	return nil
 }
