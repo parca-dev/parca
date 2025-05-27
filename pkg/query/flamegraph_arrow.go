@@ -56,6 +56,7 @@ const (
 
 	FlamegraphFieldLabels     = "labels"
 	FlamegraphFieldChildren   = "children"
+	FlamegraphFieldParent     = "parent"
 	FlamegraphFieldCumulative = "cumulative"
 	FlamegraphFieldFlat       = "flat"
 	FlamegraphFieldDiff       = "diff"
@@ -363,6 +364,8 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		fb.trimmedDuration.AppendNull()
 		fb.trimmedDepth = array.NewUint8Builder(fb.pool)
 		fb.trimmedDepth.AppendNull()
+		fb.trimmedParent = array.NewInt32Builder(fb.pool)
+		fb.trimmedParent.Append(-1) // -1 indicates no parent, which is the root row.
 	}
 
 	_, spanNewRecord := tracer.Start(ctx, "NewRecord")
@@ -873,6 +876,7 @@ type flamegraphBuilder struct {
 	builderLabelsDictUnifiers            []array.DictionaryUnifier
 	builderChildren                      *builder.ListBuilder
 	builderChildrenValues                *array.Uint32Builder
+	builderParent                        *array.Int32Builder
 	builderCumulative                    *builder.OptInt64Builder
 	builderFlat                          *builder.OptInt64Builder
 	builderDiff                          *builder.OptInt64Builder
@@ -907,6 +911,7 @@ type flamegraphBuilder struct {
 	trimmedTimestamp *builder.OptInt64Builder
 	trimmedDuration  *builder.OptInt64Builder
 	trimmedDepth     array.Builder
+	trimmedParent    *array.Int32Builder
 }
 
 type aggregationConfig struct {
@@ -967,6 +972,7 @@ func newFlamegraphBuilder(
 
 		builderChildren:       builderChildren,
 		builderChildrenValues: builderChildren.ValueBuilder().(*array.Uint32Builder),
+		builderParent:         array.NewInt32Builder(pool),
 		builderCumulative:     builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
 		builderFlat:           builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
 		builderDiff:           builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
@@ -1021,6 +1027,9 @@ func newFlamegraphBuilder(
 	fb.builderTimestamp.Append(0)
 	fb.builderDuration.Append(0)
 	fb.builderDepth.Append(0)
+
+	// The root has no parent
+	fb.builderParent.Append(-1)
 
 	return fb, nil
 }
@@ -1148,6 +1157,7 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 		{Name: FlamegraphFieldFunctionFileName, Type: fb.functionFilename.DataType()},
 		// Values
 		{Name: FlamegraphFieldChildren, Type: arrow.ListOf(arrow.PrimitiveTypes.Uint32)},
+		{Name: FlamegraphFieldParent, Type: arrow.PrimitiveTypes.Int32},
 		{Name: FlamegraphFieldCumulative, Type: fb.trimmedCumulative.Type()},
 		{Name: FlamegraphFieldFlat, Type: fb.trimmedFlat.Type()},
 		{Name: FlamegraphFieldDiff, Type: fb.trimmedDiff.Type()},
@@ -1203,18 +1213,26 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	arrays[9] = fb.functionFilename
 	arrays[10] = fb.builderChildren.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[10])
-	arrays[11] = fb.trimmedCumulative.NewArray()
+
+	// Handle parent array - use trimmedParent if available, otherwise use builderParent
+	if fb.trimmedParent != nil {
+		arrays[11] = fb.trimmedParent.NewArray()
+	} else {
+		arrays[11] = fb.builderParent.NewArray()
+	}
 	cleanupArrs = append(cleanupArrs, arrays[11])
-	arrays[12] = fb.trimmedFlat.NewArray()
+	arrays[12] = fb.trimmedCumulative.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[12])
-	arrays[13] = fb.trimmedDiff.NewArray()
+	arrays[13] = fb.trimmedFlat.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[13])
-	arrays[14] = fb.trimmedTimestamp.NewArray()
+	arrays[14] = fb.trimmedDiff.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[14])
-	arrays[15] = fb.trimmedDuration.NewArray()
+	arrays[15] = fb.trimmedTimestamp.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[15])
-	arrays[16] = fb.trimmedDepth.NewArray()
+	arrays[16] = fb.trimmedDuration.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[16])
+	arrays[17] = fb.trimmedDepth.NewArray()
+	cleanupArrs = append(cleanupArrs, arrays[17])
 
 	for i, field := range fb.builderLabelFields {
 		field.Type = fb.labels[i].DataType() // overwrite for variable length uint types
@@ -1255,6 +1273,7 @@ func (fb *flamegraphBuilder) Release() {
 	fb.builderDepth.Release()
 
 	fb.builderChildren.Release()
+	fb.builderParent.Release()
 	fb.builderCumulative.Release()
 	fb.builderFlat.Release()
 	fb.builderDiff.Release()
@@ -1281,6 +1300,10 @@ func (fb *flamegraphBuilder) Release() {
 
 	if fb.trimmedDepth != nil {
 		fb.trimmedDepth.Release()
+	}
+
+	if fb.trimmedParent != nil {
+		fb.trimmedParent.Release()
 	}
 
 	for i := range fb.builderLabelFields {
@@ -1419,6 +1442,7 @@ func (fb *flamegraphBuilder) appendRow(
 	fb.builderTimestamp.Append(r.Timestamp.Value(sampleRow))
 	fb.builderDuration.Append(r.Duration.Value(sampleRow))
 	fb.builderDepth.Append(uint32(fb.height))
+	fb.builderParent.Append(int32(fb.parent.Get()))
 
 	value := r.Value.Value(sampleRow)
 
@@ -1496,6 +1520,9 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 	fb.builderTimestamp.Append(0)
 	fb.builderDuration.Append(0)
 	fb.builderDepth.Append(1) // Label rows are direct children of root, so depth is 1
+
+	// Label rows are always children of root (row 0)
+	fb.builderParent.Append(0)
 
 	// Append both cumulative and diff values and overwrite them below.
 	fb.builderCumulative.Append(0)
@@ -1603,6 +1630,9 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedDepthType := smallestUnsignedTypeFor(largestDepth)
 	trimmedDepth := array.NewBuilder(fb.pool, trimmedDepthType)
 
+	// Parent indices use int32 to allow for -1 (null parent)
+	trimmedParent := array.NewInt32Builder(fb.pool)
+
 	releasers = append(releasers,
 		trimmedMappingFileIndices,
 		trimmedMappingBuildIDIndices,
@@ -1637,6 +1667,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedTimestamps.Reserve(row)
 	trimmedDurations.Reserve(row)
 	trimmedDepth.Reserve(row)
+	trimmedParent.Reserve(row)
 
 	for _, l := range trimmedLabelsIndices {
 		l.Reserve(row)
@@ -1724,6 +1755,14 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 		// This gets the newly inserted row's index.
 		// It is used further down as the children's parent value when added to the trimmingQueue.
 		row := trimmedCumulative.Len() - 1
+
+		// When trimming, te.parent is the parent index in the trimmed structure
+		// For the root row (te.row == 0), parent should be -1
+		if row == 0 {
+			trimmedParent.Append(-1)
+		} else {
+			trimmedParent.Append(int32(te.parent))
+		}
 
 		// Add this new row as child to its parent if not the root row (index 0).
 		if row != 0 {
@@ -1860,6 +1899,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	fb.trimmedTimestamp = trimmedTimestamps
 	fb.trimmedDuration = trimmedDurations
 	fb.trimmedDepth = trimmedDepth
+	fb.trimmedParent = trimmedParent
 
 	return nil
 }
