@@ -55,6 +55,7 @@ interface ProfileIcicleGraphProps {
   metadataLoading?: boolean;
   isIcicleChart?: boolean;
   isSandwichIcicleGraph?: boolean;
+  isFlamegraph?: boolean;
 }
 
 const ErrorContent = ({errorMessage}: {errorMessage: string | ReactNode}): JSX.Element => {
@@ -91,6 +92,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   isIcicleChart = false,
   profileSource,
   isSandwichIcicleGraph = false,
+  isFlamegraph = false,
 }: ProfileIcicleGraphProps): JSX.Element {
   const {onError, authenticationErrorMessage, isDarkMode, iciclechartHelpText} = useParcaContext();
   const {compareMode} = useProfileViewContext();
@@ -268,6 +270,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
           curPath={effectiveCurPath}
           setCurPath={setCurPathWrapper}
           profileType={profileType}
+          isFlamegraph={isFlamegraph}
         />
       );
 
@@ -300,6 +303,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
               compareAbsolute={isCompareAbsolute}
               isIcicleChart={isIcicleChart}
               profileSource={profileSource}
+              isFlamegraph={isFlamegraph}
             />
           </div>
         </div>
@@ -328,6 +332,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     icicleChartHeight,
     icicleChartRef,
     iciclechartHelpText,
+    isFlamegraph,
   ]);
 
   useEffect(() => {

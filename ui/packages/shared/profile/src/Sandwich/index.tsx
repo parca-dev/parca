@@ -591,6 +591,7 @@ const Sandwich = React.memo(function Sandwich({
                     isSandwichIcicleGraph={true}
                     curPathArrow={curPathArrow}
                     setNewCurPathArrow={setCurPathArrow}
+                    isFlamegraph={true}
                   />
                 </div>
                 {/* divider space */}

@@ -71,6 +71,15 @@ interface IcicleGraphNodesProps {
   hoveringRow: number | null;
   colorForSimilarNodes: string;
   highlightSimilarStacksPreference: boolean;
+  isFlamegraph?: boolean;
+  isRoot?: boolean;
+  isSandwich?: boolean;
+}
+
+function getMaxDepth(table: Table<any>, row: number, level: number = 1): number {
+  const childRows: number[] = Array.from(table.getChild(FIELD_CHILDREN)?.get(row) ?? []);
+  if (childRows.length === 0) return level;
+  return Math.max(...childRows.map(child => getMaxDepth(table, child, level + 1)));
 }
 
 export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
@@ -100,6 +109,9 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
   hoveringRow,
   colorForSimilarNodes,
   highlightSimilarStacksPreference,
+  isFlamegraph = false,
+  isRoot = false,
+  isSandwich = false,
 }: IcicleGraphNodesProps): React.JSX.Element {
   const cumulatives = table.getChild(FIELD_CUMULATIVE);
 
@@ -149,11 +161,20 @@ export const IcicleGraphNodes = React.memo(function IcicleGraphNodesNoMemo({
         hoveringRow={hoveringRow}
         colorForSimilarNodes={colorForSimilarNodes}
         highlightSimilarStacksPreference={highlightSimilarStacksPreference}
+        isFlamegraph={isFlamegraph}
+        isSandwich={isSandwich}
       />
     );
   });
 
-  return <g transform={`translate(${x}, ${y})`}>{childrenElements}</g>;
+  let flamegraphYOffset = 0;
+  if (isFlamegraph && isRoot) {
+    const maxDepth = getMaxDepth(table, 0);
+    flamegraphYOffset = RowHeight * maxDepth;
+  }
+  const adjustedY = isFlamegraph ? -y : y;
+
+  return <g transform={`translate(${x}, ${adjustedY + flamegraphYOffset})`}>{childrenElements}</g>;
 });
 
 export interface colorByColors {
@@ -189,6 +210,8 @@ export interface IcicleNodeProps {
   hoveringRow: number | null;
   colorForSimilarNodes: string;
   highlightSimilarStacksPreference: boolean;
+  isFlamegraph?: boolean;
+  isSandwich?: boolean;
 }
 
 export const icicleRectStyles = {
@@ -230,6 +253,8 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   hoveringRow,
   colorForSimilarNodes,
   highlightSimilarStacksPreference,
+  isFlamegraph = false,
+  isSandwich = false,
 }: IcicleNodeProps): React.JSX.Element {
   // get the columns to read from
   const mappingColumn = table.getChild(FIELD_MAPPING_FILE);
@@ -349,6 +374,9 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const name = useMemo(() => {
     return isRoot ? 'root' : nodeLabel(table, row, level, binaries.length > 1);
   }, [table, row, level, isRoot, binaries]);
+
+  console.log('🚀 ~ name ~ name:', name, isSandwich);
+
   const currentPathFrame: CurrentPathFrame = getCurrentPathFrameData(table, row, level);
   const nextPath = path.concat([currentPathFrame]);
   const isFaded =
@@ -373,6 +401,8 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     return {isHighlightEnabled: true, isHighlighted: isSearchMatch(searchString, name)};
   }, [searchString, name]);
 
+  const adjustedY = isFlamegraph ? -y : y;
+
   if (width <= 1) {
     return <>{null}</>;
   }
@@ -394,7 +424,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   return (
     <>
       <g
-        transform={`translate(${x + 1}, ${y + 1})`}
+        transform={`translate(${x + 1}, ${adjustedY + 1})`}
         style={styles}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
@@ -459,6 +489,9 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
           hoveringRow={hoveringRow}
           colorForSimilarNodes={colorForSimilarNodes}
           highlightSimilarStacksPreference={highlightSimilarStacksPreference}
+          isFlamegraph={isFlamegraph}
+          isRoot={false}
+          isSandwich={isSandwich}
         />
       )}
     </>

@@ -130,6 +130,7 @@ interface IcicleNodeProps {
   isRoot?: boolean;
   searchString?: string;
   compareMode: boolean;
+  isFlamegraph?: boolean;
 }
 
 const icicleRectStyles = {
@@ -161,6 +162,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   isRoot = false,
   searchString,
   compareMode,
+  isFlamegraph = false,
 }: IcicleNodeProps): JSX.Element {
   const binaries = useAppSelector(selectBinaries);
   const dispatch = useAppDispatch();
@@ -194,6 +196,8 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     return {isHighlightEnabled: true, isHighlighted: isSearchMatch(searchString, name)};
   }, [searchString, name]);
 
+  const adjustedY = isFlamegraph ? -y : y;
+
   if (width <= 1) {
     return <>{null}</>;
   }
@@ -211,9 +215,8 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   };
 
   return (
-    <>
+    <g transform={`translate(${x}, ${adjustedY})`}>
       <g
-        transform={`translate(${x + 1}, ${y + 1})`}
         style={styles}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
@@ -261,6 +264,6 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
           compareMode={compareMode}
         />
       )}
-    </>
+    </g>
   );
 });

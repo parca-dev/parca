@@ -74,6 +74,8 @@ interface IcicleGraphArrowProps {
   mappingsListFromMetadata: string[];
   compareAbsolute: boolean;
   isIcicleChart?: boolean;
+  isFlamegraph?: boolean;
+  isSandwich?: boolean;
 }
 
 export const getMappingColors = (
@@ -120,6 +122,8 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   mappingsListFromMetadata,
   compareAbsolute,
   isIcicleChart = false,
+  isFlamegraph = false,
+  isSandwich = false,
 }: IcicleGraphArrowProps): React.JSX.Element {
   const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
   const dispatch = useAppDispatch();
@@ -132,6 +136,14 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const table: Table<any> = useMemo(() => {
     return tableFromIPC(arrow.record);
   }, [arrow]);
+
+  function getMaxDepth(table: Table<any>, row: number, level: number = 1): number {
+    const FIELD_CHILDREN = 'children';
+    const childRows: number[] = Array.from(table.getChild(FIELD_CHILDREN)?.get(row) ?? []);
+    if (childRows.length === 0) return level;
+    return Math.max(...childRows.map(child => getMaxDepth(table, child, level + 1)));
+  }
+  const flamegraphHeight = isFlamegraph ? RowHeight * getMaxDepth(table, 0) : 0;
 
   const [height, setHeight] = useState(0);
   const [hoveringRow, setHoveringRow] = useState<number | null>(null);
@@ -271,7 +283,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           onContextMenu={displayMenu}
         >
           <g ref={ref}>
-            <g transform={'translate(0, 0)'}>
+            <g transform={isFlamegraph ? `translate(0, ${flamegraphHeight})` : 'translate(0, 0)'}>
               <IcicleChartRootNode
                 table={table}
                 row={0}
@@ -302,6 +314,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
                 colorForSimilarNodes={colorForSimilarNodes}
                 highlightSimilarStacksPreference={highlightSimilarStacksPreference}
                 profileSource={profileSource}
+                isSandwich={isSandwich}
               />
             </g>
           </g>
@@ -318,7 +331,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
         onContextMenu={displayMenu}
       >
         <g ref={ref}>
-          <g transform={'translate(0, 0)'}>
+          <g transform={isFlamegraph ? `translate(0, ${flamegraphHeight})` : 'translate(0, 0)'}>
             <IcicleNode
               table={table}
               row={0} // root is always row 0 in the arrow record
@@ -348,6 +361,8 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               hoveringRow={highlightSimilarStacksRow}
               colorForSimilarNodes={colorForSimilarNodes}
               highlightSimilarStacksPreference={highlightSimilarStacksPreference}
+              isFlamegraph={isFlamegraph}
+              isSandwich={isSandwich}
             />
           </g>
         </g>
@@ -378,6 +393,8 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     highlightSimilarStacksSetName,
     isIcicleChart,
     profileSource,
+    isFlamegraph,
+    flamegraphHeight,
   ]);
 
   return (

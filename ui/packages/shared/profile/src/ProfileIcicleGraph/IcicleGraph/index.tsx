@@ -33,6 +33,7 @@ interface IcicleGraphProps {
   width?: number;
   curPath: string[];
   setCurPath: (path: string[]) => void;
+  isFlamegraph?: boolean;
 }
 
 export const IcicleGraph = memo(function IcicleGraph({
@@ -43,6 +44,7 @@ export const IcicleGraph = memo(function IcicleGraph({
   setCurPath,
   curPath,
   profileType,
+  isFlamegraph = false,
 }: IcicleGraphProps): JSX.Element {
   const dispatch = useAppDispatch();
   const [height, setHeight] = useState(0);
@@ -112,6 +114,7 @@ export const IcicleGraph = memo(function IcicleGraph({
               isRoot={true}
               searchString={currentSearchString as string}
               compareMode={compareMode}
+              isFlamegraph={isFlamegraph}
             />
           </g>
         </g>
