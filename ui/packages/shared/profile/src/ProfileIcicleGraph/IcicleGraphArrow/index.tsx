@@ -35,7 +35,6 @@ import {DockedGraphTooltip} from '../../GraphTooltipArrow/DockedGraphTooltip';
 import {ProfileSource} from '../../ProfileSource';
 import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
 import ContextMenu from './ContextMenu';
-import {IcicleChartRootNode} from './IcicleChartRootNode';
 import {IcicleNode, RowHeight, colorByColors} from './IcicleGraphNodes';
 import {useFilenamesList} from './useMappingList';
 import {CurrentPathFrame, arrowToString, extractFeature, extractFilenameFeature} from './utils';
@@ -58,6 +57,9 @@ export const FIELD_LABELS = 'labels';
 export const FIELD_CUMULATIVE = 'cumulative';
 export const FIELD_FLAT = 'flat';
 export const FIELD_DIFF = 'diff';
+export const FIELD_PARENT = 'parent';
+export const FIELD_DEPTH = 'depth';
+export const FIELD_VALUE_OFFSET = 'value_offset';
 
 interface IcicleGraphArrowProps {
   arrow: FlamegraphArrow;
@@ -132,13 +134,9 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const table: Table<any> = useMemo(() => {
     return tableFromIPC(arrow.record);
   }, [arrow]);
-
-  const [height, setHeight] = useState(0);
-  const [hoveringRow, setHoveringRow] = useState<number | null>(null);
-  const [hoveringLevel, setHoveringLevel] = useState<number | null>(null);
-  const [hoveringName, setHoveringName] = useState<string | null>(null);
   const svg = useRef(null);
-  const ref = useRef<SVGGElement>(null);
+
+  const [hoveringRow, setHoveringRow] = useState<number | null>(null);
 
   const [binaryFrameFilter, setBinaryFrameFilter] = useURLState('binary_frame_filter');
 
@@ -200,23 +198,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   const colorByColors: colorByColors = colorByList[colorByValue as ColorByKey];
 
-  useEffect(() => {
-    if (ref.current != null) {
-      setHeight(ref?.current.getBoundingClientRect().height);
-    }
-  }, [width, flamegraphLoading]);
-
-  const xScale = useMemo(() => {
-    if (total === 0n) {
-      return () => 0;
-    }
-
-    if (width === undefined) {
-      return () => 0;
-    }
-    return scaleLinear([0n, total], [0, width]);
-  }, [total, width]);
-
   const MENU_ID = 'icicle-graph-context-menu';
   const {show, hideAll} = useContextMenu({
     id: MENU_ID,
@@ -249,136 +230,11 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     setBinaryFrameFilter(newMappingsList);
   };
 
-  const highlightSimilarStacksName = highlightSimilarStacksPreference ? hoveringName : null;
-  const highlightSimilarStacksSetName = useMemo(() => {
-    return highlightSimilarStacksPreference ? setHoveringName : noop;
-  }, [highlightSimilarStacksPreference]);
-  const highlightSimilarStacksRow = highlightSimilarStacksPreference ? hoveringRow : null;
-  const path = useMemo(() => {
-    return [];
-  }, []);
+  const depthColumn = table.getChild(FIELD_DEPTH);
+  const maxDepth = depthColumn === null ? 0 : Math.max(...depthColumn.toArray());
+  const height = maxDepth * RowHeight;
 
-  // useMemo for the root graph as it otherwise renders the whole graph if the hoveringRow changes.
-  const root = useMemo(() => {
-    if (isIcicleChart) {
-      return (
-        <svg
-          className="font-robotoMono"
-          width={width}
-          height={height}
-          preserveAspectRatio="xMinYMid"
-          ref={svg}
-          onContextMenu={displayMenu}
-        >
-          <g ref={ref}>
-            <g transform={'translate(0, 0)'}>
-              <IcicleChartRootNode
-                table={table}
-                row={0}
-                colors={colorByColors}
-                colorBy={colorByValue}
-                x={0}
-                y={0}
-                totalWidth={width ?? 1}
-                height={RowHeight}
-                setCurPath={setCurPath}
-                curPath={curPath}
-                total={total}
-                xScale={xScale}
-                path={path}
-                level={0}
-                isRoot={true}
-                searchString={(currentSearchString as string) ?? ''}
-                setHoveringRow={setHoveringRow}
-                setHoveringLevel={setHoveringLevel}
-                sortBy={sortBy}
-                darkMode={isDarkMode}
-                compareMode={compareMode}
-                profileType={profileType}
-                isContextMenuOpen={isContextMenuOpen}
-                hoveringName={highlightSimilarStacksName}
-                setHoveringName={highlightSimilarStacksSetName}
-                hoveringRow={highlightSimilarStacksRow}
-                colorForSimilarNodes={colorForSimilarNodes}
-                highlightSimilarStacksPreference={highlightSimilarStacksPreference}
-                profileSource={profileSource}
-              />
-            </g>
-          </g>
-        </svg>
-      );
-    }
-    return (
-      <svg
-        className="font-robotoMono"
-        width={width}
-        height={height}
-        preserveAspectRatio="xMinYMid"
-        ref={svg}
-        onContextMenu={displayMenu}
-      >
-        <g ref={ref}>
-          <g transform={'translate(0, 0)'}>
-            <IcicleNode
-              table={table}
-              row={0} // root is always row 0 in the arrow record
-              colors={colorByColors}
-              colorBy={colorByValue}
-              x={0}
-              y={0}
-              totalWidth={width ?? 1}
-              height={RowHeight}
-              setCurPath={setCurPath}
-              curPath={curPath}
-              total={total}
-              xScale={xScale}
-              path={path}
-              level={0}
-              isRoot={true}
-              searchString={(currentSearchString as string) ?? ''}
-              setHoveringRow={setHoveringRow}
-              setHoveringLevel={setHoveringLevel}
-              sortBy={sortBy}
-              darkMode={isDarkMode}
-              compareMode={compareMode}
-              profileType={profileType}
-              isContextMenuOpen={isContextMenuOpen}
-              hoveringName={highlightSimilarStacksName}
-              setHoveringName={highlightSimilarStacksSetName}
-              hoveringRow={highlightSimilarStacksRow}
-              colorForSimilarNodes={colorForSimilarNodes}
-              highlightSimilarStacksPreference={highlightSimilarStacksPreference}
-            />
-          </g>
-        </g>
-      </svg>
-    );
-  }, [
-    width,
-    height,
-    displayMenu,
-    table,
-    colorByColors,
-    colorByValue,
-    setCurPath,
-    curPath,
-    total,
-    xScale,
-    currentSearchString,
-    sortBy,
-    isDarkMode,
-    compareMode,
-    profileType,
-    isContextMenuOpen,
-    highlightSimilarStacksName,
-    highlightSimilarStacksRow,
-    colorForSimilarNodes,
-    highlightSimilarStacksPreference,
-    path,
-    highlightSimilarStacksSetName,
-    isIcicleChart,
-    profileSource,
-  ]);
+  const selectedRow = 0;
 
   return (
     <>
@@ -387,7 +243,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           menuId={MENU_ID}
           table={table}
           row={hoveringRow ?? 0}
-          level={hoveringLevel ?? 0}
           total={total}
           totalUnfiltered={total + filtered}
           profileType={profileType}
@@ -403,7 +258,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           <DockedGraphTooltip
             table={table}
             row={hoveringRow}
-            level={hoveringLevel ?? 0}
             total={total}
             totalUnfiltered={total + filtered}
             profileType={profileType}
@@ -416,7 +270,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               <GraphTooltipArrowContent
                 table={table}
                 row={hoveringRow}
-                level={hoveringLevel ?? 0}
                 isFixed={false}
                 total={total}
                 totalUnfiltered={total + filtered}
@@ -427,7 +280,37 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
             </GraphTooltipArrow>
           )
         )}
-        {root}
+          <svg
+            className="font-robotoMono"
+            width={width}
+            height={height}
+            preserveAspectRatio="xMinYMid"
+            ref={svg}
+            onContextMenu={displayMenu}
+          >
+            {Array.from({ length: table.numRows }, (_, row) => (
+              <IcicleNode
+                key={row}
+                table={table}
+                row={row} // root is always row 0 in the arrow record
+                colors={colorByColors}
+                colorBy={colorByValue}
+                totalWidth={width ?? 1}
+                height={RowHeight}
+                searchString={(currentSearchString as string) ?? ''}
+                darkMode={isDarkMode}
+                compareMode={compareMode}
+                profileType={profileType}
+                isContextMenuOpen={isContextMenuOpen}
+                setHoveringRow={setHoveringRow}
+                colorForSimilarNodes={colorForSimilarNodes}
+                selectedRow={selectedRow}
+                hoveringRow={highlightSimilarStacksPreference ? hoveringRow : 0}
+                onClick={() => {
+                }}
+              />
+            ))}
+          </svg>
       </div>
     </>
   );

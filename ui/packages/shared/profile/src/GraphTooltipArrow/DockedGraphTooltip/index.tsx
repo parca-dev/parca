@@ -29,7 +29,6 @@ interface Props {
   total: bigint;
   totalUnfiltered: bigint;
   row: number | null;
-  level: number;
   profileType?: ProfileType;
   unit?: string;
   compareAbsolute: boolean;
@@ -61,7 +60,6 @@ export const DockedGraphTooltip = ({
   total,
   totalUnfiltered,
   row,
-  level,
   profileType,
   unit,
   compareAbsolute,
@@ -78,7 +76,6 @@ export const DockedGraphTooltip = ({
     total,
     totalUnfiltered,
     row,
-    level,
     compareAbsolute,
   });
 
