@@ -32,7 +32,6 @@ interface GraphTooltipArrowContentProps {
   total: bigint;
   totalUnfiltered: bigint;
   row: number | null;
-  level: number;
   isFixed: boolean;
   compareAbsolute: boolean;
 }
@@ -48,7 +47,6 @@ const GraphTooltipArrowContent = ({
   total,
   totalUnfiltered,
   row,
-  level,
   isFixed,
   compareAbsolute,
 }: GraphTooltipArrowContentProps): React.JSX.Element => {
@@ -59,7 +57,6 @@ const GraphTooltipArrowContent = ({
     total,
     totalUnfiltered,
     row,
-    level,
     compareAbsolute,
   });
 
