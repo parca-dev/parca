@@ -139,14 +139,6 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const name = useMemo(() => {
     return row === 0 ? 'root' : nodeLabel(table, row, binaries.length > 1);
   }, [table, row, binaries]);
-  const selectedDepth = depthColumn?.get(selectedRow);
-  const styles = selectedDepth !== undefined && selectedDepth > depth ? fadedIcicleRectStyles : icicleRectStyles;
-
-  // Cumulative can be larger than total when a selection is made. All parents of the selection are likely larger, but we want to only show them as 100% in the graph.
-  const total = cumulativeColumn?.get(selectedRow) !== null ? cumulativeColumn?.get(0) : 0;
-  const totalRatio = cumulative > total ? 1 : Number(cumulative) / Number(total);
-  const width: number =
-    (Number(cumulative) / Number(total)) * totalWidth;
 
   const {isHighlightEnabled = false, isHighlighted = false} = useMemo(() => {
     if (searchString === undefined || searchString === '') {
@@ -154,6 +146,21 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     }
     return {isHighlightEnabled: true, isHighlighted: isSearchMatch(searchString, name)};
   }, [searchString, name]);
+
+  const selectionOffset = valueOffsetColumn?.get(selectedRow) !== null ? BigInt(valueOffsetColumn?.get(selectedRow)) : 0n;
+  const selectionCumulative = cumulativeColumn?.get(selectedRow) !== null ? BigInt(cumulativeColumn?.get(selectedRow)) : 0n;
+  if ((valueOffset + cumulative) <= selectionOffset || valueOffset >= (selectionOffset + selectionCumulative)) {
+    // If the end of the node is before the selection offset or the start of the node is after the selection offset + totalWidth, we don't render it.
+    return <></>;
+  }
+
+  const selectedDepth = depthColumn?.get(selectedRow);
+  const styles = selectedDepth !== undefined && selectedDepth > depth ? fadedIcicleRectStyles : icicleRectStyles;
+
+  // Cumulative can be larger than total when a selection is made. All parents of the selection are likely larger, but we want to only show them as 100% in the graph.
+  const total = cumulativeColumn?.get(selectedRow);
+  const totalRatio = cumulative > total ? 1 : Number(cumulative) / Number(total);
+  const width: number = totalRatio * totalWidth;
 
   if (width <= 1) {
     return <>{null}</>;
@@ -177,9 +184,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     onContextMenu(e, row);
   };
 
-  const selectionOffset = valueOffsetColumn?.get(selectedRow) ?? 0n;
-  //const x = selectedDepth > depth ? 0 : (Number(valueOffset) - Number(selectionOffset)) * totalRatio;
-  const x = (Number(valueOffset) / Number(total)) * totalWidth;
+  const x = selectedDepth > depth ? 0 : ((Number(valueOffset) - Number(selectionOffset)) / Number(total)) * totalWidth;
   const y = depth * (height);
 
   return (
