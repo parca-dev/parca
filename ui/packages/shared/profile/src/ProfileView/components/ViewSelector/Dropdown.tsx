@@ -36,6 +36,7 @@ export interface DropdownItem {
 export interface InnerAction {
   text: string;
   onClick: () => void;
+  isDisabled?: boolean;
 }
 
 export function contructItemsFromArray(items: any[]): DropdownItem[] {
@@ -173,7 +174,7 @@ const DropdownOption = ({option}: {option: DropdownItem}): JSX.Element => {
                 e.stopPropagation();
                 option.innerAction?.onClick();
               }}
-              disabled={disabled}
+              disabled={disabled || option.innerAction.isDisabled}
             >
               {option.innerAction.text}
               {option.innerAction.text === 'Add Panel' && (

@@ -35,6 +35,7 @@ interface GraphTooltipArrowContentProps {
   level: number;
   isFixed: boolean;
   compareAbsolute: boolean;
+  isSandwich: boolean;
 }
 
 const NoData = (): React.JSX.Element => {
@@ -51,6 +52,7 @@ const GraphTooltipArrowContent = ({
   level,
   isFixed,
   compareAbsolute,
+  isSandwich,
 }: GraphTooltipArrowContentProps): React.JSX.Element => {
   const graphTooltipData = useGraphTooltip({
     table,
@@ -123,10 +125,12 @@ const GraphTooltipArrowContent = ({
               </table>
             </div>
           </div>
-          <div className="flex w-full items-center gap-1 text-xs text-gray-500">
-            <Icon icon="iconoir:mouse-button-right" />
-            <div>Right click to show context menu</div>
-          </div>
+          {!isSandwich && (
+            <div className="flex w-full items-center gap-1 text-xs text-gray-500">
+              <Icon icon="iconoir:mouse-button-right" />
+              <div>Right click to show context menu</div>
+            </div>
+          )}
         </div>
       </div>
     </div>

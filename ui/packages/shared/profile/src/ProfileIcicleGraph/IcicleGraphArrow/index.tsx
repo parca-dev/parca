@@ -142,6 +142,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     if (childRows.length === 0) return level;
     return Math.max(...childRows.map(child => getMaxDepth(table, child, level + 1)));
   }
+
   const flamegraphHeight = isFlamegraph ? RowHeight * getMaxDepth(table, 0) : 0;
 
   const [height, setHeight] = useState(0);
@@ -282,7 +283,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           onContextMenu={displayMenu}
         >
           <g ref={ref}>
-            <g transform={isFlamegraph ? `translate(0, ${flamegraphHeight})` : 'translate(0, 0)'}>
+            <g transform="translate(0, 0)">
               <IcicleChartRootNode
                 table={table}
                 row={0}
@@ -329,7 +330,15 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
         onContextMenu={displayMenu}
       >
         <g ref={ref}>
-          <g transform={isFlamegraph ? `translate(0, ${flamegraphHeight})` : 'translate(0, 0)'}>
+          <g
+            transform={
+              isFlamegraph
+                ? `translate(0, ${flamegraphHeight})`
+                : isSandwich
+                ? `translate(0, -26)`
+                : 'translate(0, 0)'
+            }
+          >
             <IcicleNode
               table={table}
               row={0} // root is always row 0 in the arrow record
@@ -398,22 +407,24 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   return (
     <>
       <div className="relative" onMouseLeave={() => dispatch(setHoveringNode(undefined))}>
-        <ContextMenu
-          menuId={MENU_ID}
-          table={table}
-          row={hoveringRow ?? 0}
-          level={hoveringLevel ?? 0}
-          total={total}
-          totalUnfiltered={total + filtered}
-          profileType={profileType}
-          compareAbsolute={compareAbsolute}
-          trackVisibility={trackVisibility}
-          curPath={curPath}
-          setCurPath={setCurPath}
-          hideMenu={hideAll}
-          hideBinary={hideBinary}
-          unit={arrow.unit}
-        />
+        {!isSandwich && (
+          <ContextMenu
+            menuId={MENU_ID}
+            table={table}
+            row={hoveringRow ?? 0}
+            level={hoveringLevel ?? 0}
+            total={total}
+            totalUnfiltered={total + filtered}
+            profileType={profileType}
+            compareAbsolute={compareAbsolute}
+            trackVisibility={trackVisibility}
+            curPath={curPath}
+            setCurPath={setCurPath}
+            hideMenu={hideAll}
+            hideBinary={hideBinary}
+            unit={arrow.unit}
+          />
+        )}
         {dockedMetainfo ? (
           <DockedGraphTooltip
             table={table}
@@ -438,6 +449,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
                 profileType={profileType}
                 unit={arrow.unit}
                 compareAbsolute={compareAbsolute}
+                isSandwich={isSandwich}
               />
             </GraphTooltipArrow>
           )
