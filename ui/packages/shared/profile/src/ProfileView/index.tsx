@@ -23,7 +23,6 @@ import {ProfileHeader} from './components/ProfileHeader';
 import {IcicleGraphToolbar, TableToolbar, VisualisationToolbar} from './components/Toolbars';
 import {DashboardProvider} from './context/DashboardContext';
 import {ProfileViewContextProvider} from './context/ProfileViewContext';
-import {useGraphviz} from './hooks/useGraphviz';
 import {useProfileMetadata} from './hooks/useProfileMetadata';
 import {useVisualizationState} from './hooks/useVisualizationState';
 import type {ProfileViewProps, VisualizationType} from './types/visualization';
@@ -35,7 +34,6 @@ export const ProfileView = ({
   flamegraphData,
   flamechartData,
   topTableData,
-  callgraphData,
   sourceData,
   profileSource,
   queryClient,
@@ -70,12 +68,6 @@ export const ProfileView = ({
     setGroupByLabels,
   } = useVisualizationState();
 
-  const {callgraphSVG} = useGraphviz({
-    callgraphData: callgraphData?.data,
-    width: dimensions?.width,
-    colorRange,
-  });
-
   const {colorMappings} = useProfileMetadata({
     flamegraphArrow: flamegraphData.arrow,
     metadataMappingFiles: flamegraphData.metadataMappingFiles,
@@ -102,7 +94,6 @@ export const ProfileView = ({
       flamegraphData,
       flamechartData,
       topTableData,
-      callgraphData,
       sourceData,
       profileSource,
       total,
@@ -113,7 +104,6 @@ export const ProfileView = ({
       setNewCurPathArrow: setCurPathArrow,
       currentSearchString,
       setSearchString,
-      callgraphSVG,
       perf,
     });
   };

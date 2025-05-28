@@ -36,8 +36,7 @@ interface ContextMenuProps {
   row: number;
   compareAbsolute: boolean;
   trackVisibility: (isVisible: boolean) => void;
-  curPath: CurrentPathFrame[];
-  setCurPath: (path: CurrentPathFrame[]) => void;
+  resetPath: () => void;
   hideMenu: () => void;
   hideBinary: (binaryToRemove: string) => void;
 }
@@ -50,12 +49,11 @@ const ContextMenu = ({
   row,
   compareAbsolute,
   trackVisibility,
-  curPath,
-  setCurPath,
   hideMenu,
   profileType,
   unit,
   hideBinary,
+  resetPath,
 }: ContextMenuProps): JSX.Element => {
   const {isDarkMode} = useParcaContext();
   const {enableSourcesView, checkDebuginfoStatusHandler} = useParcaContext();
@@ -100,7 +98,7 @@ const ContextMenu = ({
   const handleViewSourceFile = (): void => openFile();
 
   const handleResetView = (): void => {
-    setCurPath([]);
+    resetPath();
     return hideMenu();
   };
   const handleDockTooltip = (): void => {
@@ -172,7 +170,7 @@ const ContextMenu = ({
           <div>Show in table</div>
         </div>
       </Item>
-      <Item id="reset-view" onClick={handleResetView} disabled={curPath.length === 0}>
+    <Item id="reset-view" onClick={handleResetView}>
         <div className="flex w-full items-center gap-2">
           <Icon icon="system-uicons:reset" />
           <div>Reset graph</div>

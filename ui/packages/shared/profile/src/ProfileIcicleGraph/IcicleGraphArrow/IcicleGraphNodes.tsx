@@ -23,6 +23,8 @@ import 'react-contexify/dist/ReactContexify.css';
 
 import {ProfileType} from '@parca/parser';
 
+import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
+
 import TextWithEllipsis from './TextWithEllipsis';
 import {
   FIELD_CHILDREN,
@@ -62,8 +64,6 @@ export interface IcicleNodeProps {
   compareMode: boolean;
   profileType?: ProfileType;
   isContextMenuOpen: boolean;
-  hoveringRow: number | null;
-  setHoveringRow: (name: number | null) => void;
   colorForSimilarNodes: string;
   selectedRow: number;
   onClick: () => void;
@@ -91,12 +91,14 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   compareMode,
   profileType,
   isContextMenuOpen,
-  hoveringRow,
-  setHoveringRow,
   colorForSimilarNodes,
   selectedRow,
   onClick,
 }: IcicleNodeProps): React.JSX.Element {
+  const [highlightSimilarStacksPreference] = useUserPreference<boolean>(
+    USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS.key
+  );
+
   // get the columns to read from
   const mappingColumn = table.getChild(FIELD_MAPPING_FILE);
   const functionNameColumn = table.getChild(FIELD_FUNCTION_NAME);
@@ -120,7 +122,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
 
   const colorsMap = colors;
 
-  const hoveringName = functionNameColumn?.get(hoveringRow ?? 0);
+  const hoveringName = functionNameColumn?.get(0); // TODO
 
   const shouldBeHighlighted = (functionName != null && hoveringName != null && functionName === hoveringName);
 
@@ -134,7 +136,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     colorAttribute,
   });
   const name = useMemo(() => {
-    return row == 0 ? 'root' : nodeLabel(table, row, binaries.length > 1);
+    return row === 0 ? 'root' : nodeLabel(table, row, binaries.length > 1);
   }, [table, row, binaries]);
   const selectedDepth = depthColumn?.get(selectedRow);
   const styles = selectedDepth !== undefined && selectedDepth > depth ? fadedIcicleRectStyles : icicleRectStyles;
@@ -160,14 +162,19 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     return <>{null}</>;
   }
 
-  const onMouseEnter = (): void => {
+
+  const onMouseEnter = (e: React.MouseEvent): void => {
     if (isContextMenuOpen) return;
-    setHoveringRow(row);
+    window.dispatchEvent(new CustomEvent('icicle-tooltip-update', {
+      detail: { row }
+    }));
   };
 
   const onMouseLeave = (): void => {
     if (isContextMenuOpen) return;
-    setHoveringRow(null);
+    window.dispatchEvent(new CustomEvent('icicle-tooltip-update', {
+      detail: { row: null }
+    }));
   };
 
   const selectionOffset = valueOffsetColumn?.get(selectedRow) ?? 0n;

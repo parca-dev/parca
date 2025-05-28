@@ -23,8 +23,6 @@ import {ProfileType} from '@parca/parser';
 import {
   getColorForFeature,
   selectDarkMode,
-  setHoveringNode,
-  useAppDispatch,
   useAppSelector,
 } from '@parca/store';
 import {getLastItem, scaleLinear, type ColorConfig} from '@parca/utilities';
@@ -38,6 +36,8 @@ import ContextMenu from './ContextMenu';
 import {IcicleNode, RowHeight, colorByColors} from './IcicleGraphNodes';
 import {useFilenamesList} from './useMappingList';
 import {CurrentPathFrame, arrowToString, extractFeature, extractFilenameFeature} from './utils';
+import {TooltipProvider} from './TooltipContext';
+import {MemoizedTooltip} from './MemoizedTooltip';
 
 export const FIELD_LABELS_ONLY = 'labels_only';
 export const FIELD_MAPPING_FILE = 'mapping_file';
@@ -124,10 +124,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   isIcicleChart = false,
 }: IcicleGraphArrowProps): React.JSX.Element {
   const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
-  const dispatch = useAppDispatch();
-  const [highlightSimilarStacksPreference] = useUserPreference<boolean>(
-    USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS.key
-  );
   const [dockedMetainfo] = useUserPreference<boolean>(USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key);
   const isDarkMode = useAppSelector(selectDarkMode);
 
@@ -135,8 +131,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     return tableFromIPC(arrow.record);
   }, [arrow]);
   const svg = useRef(null);
-
-  const [hoveringRow, setHoveringRow] = useState<number | null>(null);
 
   const [binaryFrameFilter, setBinaryFrameFilter] = useURLState('binary_frame_filter');
 
@@ -237,49 +231,34 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const selectedRow = 0;
 
   return (
-    <>
-      <div className="relative" onMouseLeave={() => dispatch(setHoveringNode(undefined))}>
+    <TooltipProvider
+      table={table}
+      total={total}
+      totalUnfiltered={total + filtered}
+      profileType={profileType}
+      unit={arrow.unit}
+      compareAbsolute={compareAbsolute}
+    >
+      <div className="relative">
         <ContextMenu
           menuId={MENU_ID}
           table={table}
-          row={hoveringRow ?? 0}
+          row={0}
           total={total}
           totalUnfiltered={total + filtered}
           profileType={profileType}
           compareAbsolute={compareAbsolute}
           trackVisibility={trackVisibility}
-          curPath={curPath}
-          setCurPath={setCurPath}
+          resetPath={() => setCurPath([])}
           hideMenu={hideAll}
           hideBinary={hideBinary}
           unit={arrow.unit}
         />
-        {dockedMetainfo ? (
-          <DockedGraphTooltip
-            table={table}
-            row={hoveringRow}
-            total={total}
-            totalUnfiltered={total + filtered}
-            profileType={profileType}
-            unit={arrow.unit}
-            compareAbsolute={compareAbsolute}
-          />
-        ) : (
-          !isContextMenuOpen && (
-            <GraphTooltipArrow contextElement={svg.current} isContextMenuOpen={isContextMenuOpen}>
-              <GraphTooltipArrowContent
-                table={table}
-                row={hoveringRow}
-                isFixed={false}
-                total={total}
-                totalUnfiltered={total + filtered}
-                profileType={profileType}
-                unit={arrow.unit}
-                compareAbsolute={compareAbsolute}
-              />
-            </GraphTooltipArrow>
-          )
-        )}
+        <MemoizedTooltip
+          contextElement={svg.current}
+          isContextMenuOpen={isContextMenuOpen}
+          dockedMetainfo={dockedMetainfo}
+        />
           <svg
             className="font-robotoMono"
             width={width}
@@ -301,18 +280,16 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
                 darkMode={isDarkMode}
                 compareMode={compareMode}
                 profileType={profileType}
-                isContextMenuOpen={isContextMenuOpen}
-                setHoveringRow={setHoveringRow}
                 colorForSimilarNodes={colorForSimilarNodes}
                 selectedRow={selectedRow}
-                hoveringRow={highlightSimilarStacksPreference ? hoveringRow : 0}
                 onClick={() => {
                 }}
+                isContextMenuOpen={isContextMenuOpen}
               />
             ))}
           </svg>
       </div>
-    </>
+    </TooltipProvider>
   );
 });
 
