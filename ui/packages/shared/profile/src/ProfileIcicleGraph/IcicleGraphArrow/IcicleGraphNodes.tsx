@@ -63,11 +63,14 @@ export interface IcicleNodeProps {
   darkMode: boolean;
   compareMode: boolean;
   profileType?: ProfileType;
-  isContextMenuOpen: boolean;
-  onContextMenu: (e: React.MouseEvent) => void;
+  onContextMenu: (e: React.MouseEvent, row: number) => void;
   colorForSimilarNodes: string;
   selectedRow: number;
   onClick: () => void;
+
+  // Hovering row must only ever be used for highlighting similar nodes, otherwise it will cause performance issues as it causes the full iciclegraph to get rerendered every time the hovering row changes.
+  hoveringRow?: number;
+  setHoveringRow: (row: number | undefined) => void;
 }
 
 export const icicleRectStyles = {
@@ -91,16 +94,13 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   darkMode,
   compareMode,
   profileType,
-  isContextMenuOpen,
   colorForSimilarNodes,
   selectedRow,
   onClick,
   onContextMenu,
+  hoveringRow,
+  setHoveringRow,
 }: IcicleNodeProps): React.JSX.Element {
-  const [highlightSimilarStacksPreference] = useUserPreference<boolean>(
-    USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS.key
-  );
-
   // get the columns to read from
   const mappingColumn = table.getChild(FIELD_MAPPING_FILE);
   const functionNameColumn = table.getChild(FIELD_FUNCTION_NAME);
@@ -124,8 +124,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
 
   const colorsMap = colors;
 
-  const hoveringName = functionNameColumn?.get(0); // TODO
-
+  const hoveringName = hoveringRow !== undefined ? arrowToString(functionNameColumn?.get(hoveringRow)) : "";
   const shouldBeHighlighted = (functionName != null && hoveringName != null && functionName === hoveringName);
 
   const binaries = useAppSelector(selectBinaries);
@@ -149,10 +148,6 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const width: number =
     (Number(cumulative) / Number(total)) * totalWidth;
 
-  if (width <= 1) {
-    return <></>;
-  }
-
   const {isHighlightEnabled = false, isHighlighted = false} = useMemo(() => {
     if (searchString === undefined || searchString === '') {
       return {isHighlightEnabled: false};
@@ -164,23 +159,22 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     return <>{null}</>;
   }
 
-
-  const onMouseEnter = (e: React.MouseEvent): void => {
-    if (isContextMenuOpen) return;
+  const onMouseEnter = (): void => {
+    setHoveringRow(row);
     window.dispatchEvent(new CustomEvent('icicle-tooltip-update', {
       detail: { row }
     }));
   };
 
   const onMouseLeave = (): void => {
-    if (isContextMenuOpen) return;
+    setHoveringRow(undefined);
     window.dispatchEvent(new CustomEvent('icicle-tooltip-update', {
       detail: { row: null }
     }));
   };
 
   const handleContextMenu = (e: React.MouseEvent): void => {
-    onContextMenu(e);
+    onContextMenu(e, row);
   };
 
   const selectionOffset = valueOffsetColumn?.get(selectedRow) ?? 0n;

@@ -19,13 +19,11 @@ import { useTooltipContext } from './TooltipContext';
 
 interface MemoizedTooltipProps {
   contextElement: Element | null;
-  isContextMenuOpen: boolean;
   dockedMetainfo: boolean;
 }
 
 export const MemoizedTooltip = memo(function MemoizedTooltip({
   contextElement,
-  isContextMenuOpen,
   dockedMetainfo,
 }: MemoizedTooltipProps): React.JSX.Element | null {
   const [tooltipRow, setTooltipRow] = useState<number | null>(null);
@@ -58,12 +56,12 @@ export const MemoizedTooltip = memo(function MemoizedTooltip({
     );
   }
 
-  if (isContextMenuOpen || tooltipRow === null) {
+  if (tooltipRow === null) {
     return null;
   }
 
   return (
-    <GraphTooltipArrow contextElement={contextElement} isContextMenuOpen={isContextMenuOpen}>
+    <GraphTooltipArrow contextElement={contextElement}>
       <GraphTooltipArrowContent
         table={table}
         row={tooltipRow}
