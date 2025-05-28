@@ -33,6 +33,7 @@ import {DockedGraphTooltip} from '../../GraphTooltipArrow/DockedGraphTooltip';
 import {ProfileSource} from '../../ProfileSource';
 import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
 import ContextMenu from './ContextMenu';
+import ContextMenuWrapper, { ContextMenuWrapperRef } from './ContextMenuWrapper';
 import {IcicleNode, RowHeight, colorByColors} from './IcicleGraphNodes';
 import {useFilenamesList} from './useMappingList';
 import {CurrentPathFrame, arrowToString, extractFeature, extractFilenameFeature} from './utils';
@@ -70,7 +71,6 @@ interface IcicleGraphArrowProps {
   width?: number;
   curPath: CurrentPathFrame[];
   setCurPath: (path: CurrentPathFrame[]) => void;
-  sortBy: string;
   flamegraphLoading: boolean;
   isHalfScreen: boolean;
   mappingsListFromMetadata: string[];
@@ -117,13 +117,15 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   curPath,
   profileType,
   profileSource,
-  sortBy,
   flamegraphLoading,
   mappingsListFromMetadata,
   compareAbsolute,
   isIcicleChart = false,
 }: IcicleGraphArrowProps): React.JSX.Element {
-  const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
+  const [highlightSimilarStacksPreference] = useUserPreference<boolean>(
+    USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS.key
+  );
+  const [hoveringRow, setHoveringRow] = useState<number | undefined>(undefined);
   const [dockedMetainfo] = useUserPreference<boolean>(USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key);
   const isDarkMode = useAppSelector(selectDarkMode);
 
@@ -193,21 +195,19 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const colorByColors: colorByColors = colorByList[colorByValue as ColorByKey];
 
   const MENU_ID = 'icicle-graph-context-menu';
+  const contextMenuRef = useRef<ContextMenuWrapperRef>(null);
   const {show, hideAll} = useContextMenu({
     id: MENU_ID,
   });
   const displayMenu = useCallback(
-    (e: React.MouseEvent): void => {
+    (e: React.MouseEvent, row: number): void => {
+      contextMenuRef.current?.setRow(row);
       show({
         event: e,
       });
     },
     [show]
   );
-
-  const trackVisibility = (isVisible: boolean): void => {
-    setIsContextMenuOpen(isVisible);
-  };
 
   const hideBinary = (binaryToRemove: string): void => {
     // second/subsequent time filtering out a binary i.e. a binary has already been hidden
@@ -240,15 +240,14 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
       compareAbsolute={compareAbsolute}
     >
       <div className="relative">
-        <ContextMenu
+        <ContextMenuWrapper
+          ref={contextMenuRef}
           menuId={MENU_ID}
           table={table}
-          row={0}
           total={total}
           totalUnfiltered={total + filtered}
           profileType={profileType}
           compareAbsolute={compareAbsolute}
-          trackVisibility={trackVisibility}
           resetPath={() => setCurPath([])}
           hideMenu={hideAll}
           hideBinary={hideBinary}
@@ -256,7 +255,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
         />
         <MemoizedTooltip
           contextElement={svg.current}
-          isContextMenuOpen={isContextMenuOpen}
           dockedMetainfo={dockedMetainfo}
         />
           <svg
@@ -284,7 +282,8 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
                 onClick={() => {
                 }}
                 onContextMenu={displayMenu}
-                isContextMenuOpen={isContextMenuOpen}
+                hoveringRow={highlightSimilarStacksPreference ? hoveringRow : undefined}
+                setHoveringRow={highlightSimilarStacksPreference ? setHoveringRow : noop}
               />
             ))}
           </svg>

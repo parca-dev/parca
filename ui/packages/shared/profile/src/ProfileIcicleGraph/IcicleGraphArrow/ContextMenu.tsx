@@ -35,7 +35,6 @@ interface ContextMenuProps {
   totalUnfiltered: bigint;
   row: number;
   compareAbsolute: boolean;
-  trackVisibility: (isVisible: boolean) => void;
   resetPath: () => void;
   hideMenu: () => void;
   hideBinary: (binaryToRemove: string) => void;
@@ -48,7 +47,6 @@ const ContextMenu = ({
   totalUnfiltered,
   row,
   compareAbsolute,
-  trackVisibility,
   hideMenu,
   profileType,
   unit,
@@ -141,7 +139,7 @@ const ContextMenu = ({
   const nonEmptyValuesToCopy = valuesToCopy.filter(({value}) => value !== '');
 
   return (
-    <Menu id={menuId} onVisibilityChange={trackVisibility} theme={isDarkMode ? 'dark' : ''}>
+    <Menu id={menuId} theme={isDarkMode ? 'dark' : ''}>
       <Item
         id="view-source-file"
         onClick={handleViewSourceFile}
@@ -170,7 +168,7 @@ const ContextMenu = ({
           <div>Show in table</div>
         </div>
       </Item>
-    <Item id="reset-view" onClick={handleResetView}>
+      <Item id="reset-view" onClick={handleResetView}>
         <div className="flex w-full items-center gap-2">
           <Icon icon="system-uicons:reset" />
           <div>Reset graph</div>
