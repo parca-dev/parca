@@ -25,7 +25,6 @@ import {MergedProfileSource, ProfileSource} from '../ProfileSource';
 import DiffLegend from '../ProfileView/components/DiffLegend';
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
 import {TimelineGuide} from '../TimelineGuide';
-import {IcicleGraph} from './IcicleGraph';
 import {FIELD_FUNCTION_NAME, IcicleGraphArrow} from './IcicleGraphArrow';
 import useMappingList from './IcicleGraphArrow/useMappingList';
 import {CurrentPathFrame, boundsFromProfileSource} from './IcicleGraphArrow/utils';
@@ -36,13 +35,11 @@ export type ResizeHandler = (width: number, height: number) => void;
 
 interface ProfileIcicleGraphProps {
   width: number;
-  graph?: Flamegraph;
   arrow?: FlamegraphArrow;
   total: bigint;
   filtered: bigint;
   profileType?: ProfileType;
   profileSource?: ProfileSource;
-  curPath: string[] | [];
   setNewCurPath: (path: string[]) => void;
   curPathArrow: CurrentPathFrame[] | [];
   setNewCurPathArrow: (path: CurrentPathFrame[]) => void;
@@ -218,24 +215,12 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
       }
     }
 
-    if (graph === undefined && arrow === undefined)
+    if (arrow === undefined)
+
       return <div className="mx-auto text-center">No data...</div>;
 
     if (total === 0n && !loading)
       return <div className="mx-auto text-center">Profile has no samples</div>;
-
-    if (graph !== undefined)
-      return (
-        <IcicleGraph
-          width={width}
-          graph={graph}
-          total={total}
-          filtered={filtered}
-          curPath={curPath}
-          setCurPath={setNewCurPath}
-          profileType={profileType}
-        />
-      );
 
     if (arrow !== undefined) {
       return (
@@ -273,14 +258,11 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     }
   }, [
     isLoading,
-    graph,
     arrow,
     total,
     loading,
     width,
     filtered,
-    curPath,
-    setNewCurPath,
     curPathArrow,
     setNewCurPathArrow,
     profileType,
