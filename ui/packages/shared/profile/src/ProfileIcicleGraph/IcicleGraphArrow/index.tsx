@@ -265,7 +265,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
             height={height}
             preserveAspectRatio="xMinYMid"
             ref={svg}
-            onContextMenu={displayMenu}
           >
             {Array.from({ length: table.numRows }, (_, row) => (
               <IcicleNode
@@ -284,6 +283,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
                 selectedRow={selectedRow}
                 onClick={() => {
                 }}
+                onContextMenu={displayMenu}
                 isContextMenuOpen={isContextMenuOpen}
               />
             ))}

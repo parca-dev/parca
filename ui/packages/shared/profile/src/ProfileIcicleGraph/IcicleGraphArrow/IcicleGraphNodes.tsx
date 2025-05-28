@@ -64,6 +64,7 @@ export interface IcicleNodeProps {
   compareMode: boolean;
   profileType?: ProfileType;
   isContextMenuOpen: boolean;
+  onContextMenu: (e: React.MouseEvent) => void;
   colorForSimilarNodes: string;
   selectedRow: number;
   onClick: () => void;
@@ -94,6 +95,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   colorForSimilarNodes,
   selectedRow,
   onClick,
+  onContextMenu,
 }: IcicleNodeProps): React.JSX.Element {
   const [highlightSimilarStacksPreference] = useUserPreference<boolean>(
     USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS.key
@@ -177,6 +179,10 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     }));
   };
 
+  const handleContextMenu = (e: React.MouseEvent): void => {
+    onContextMenu(e);
+  };
+
   const selectionOffset = valueOffsetColumn?.get(selectedRow) ?? 0n;
   //const x = selectedDepth > depth ? 0 : (Number(valueOffset) - Number(selectionOffset)) * totalRatio;
   const x = (Number(valueOffset) / Number(total)) * totalWidth;
@@ -190,6 +196,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
         onClick={onClick}
+        onContextMenu={handleContextMenu}
       >
         <rect
           x={0}
