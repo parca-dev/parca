@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {KeyDownProvider, useParcaContext} from '@parca/components';
+import {KeyDownProvider, useParcaContext, useURLState} from '@parca/components';
 import {useContainerDimensions} from '@parca/hooks';
 import {selectDarkMode, useAppSelector} from '@parca/store';
 import {selectQueryParam} from '@parca/utilities';
@@ -90,6 +90,9 @@ export const ProfileView = ({
   const compareMode =
     compare === true ||
     (selectQueryParam('compare_a') === 'true' && selectQueryParam('compare_b') === 'true');
+  const [dashboardItems] = useURLState<string[]>('dashboard_items', {
+    alwaysReturnArray: true,
+  });
 
   const getDashboardItemByType = ({
     type,
@@ -131,6 +134,7 @@ export const ProfileView = ({
         filtered={filtered}
         clearSelection={clearSelection}
         currentSearchString={currentSearchString}
+        isIcicleGraphOpen={dashboardItems.includes('icicle')}
       />
     ),
   };

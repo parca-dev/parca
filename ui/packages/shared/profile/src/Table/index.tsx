@@ -79,9 +79,6 @@ export const Table = React.memo(function Table({
     alwaysReturnArray: true,
   });
 
-  const [tableColumns] = useURLState<string[]>('table_columns', {
-    alwaysReturnArray: true,
-  });
   const [colorBy, setColorBy] = useURLState('color_by');
   const {isDarkMode} = useParcaContext();
   const [scrollToIndex, setScrollToIndex] = useState<number | undefined>(undefined);

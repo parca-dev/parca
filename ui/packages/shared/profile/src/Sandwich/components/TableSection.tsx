@@ -16,14 +16,14 @@ import {type ColumnDef, type ExpandedState, type Row as RowType} from '@tanstack
 import {Table as TableComponent} from '@parca/components';
 
 import {type Row} from '../../Table';
-import {ColumnName, ROW_HEIGHT} from '../../Table/utils/functions';
+import {ColumnName, DataRow, ROW_HEIGHT} from '../../Table/utils/functions';
 
 interface TableSectionProps {
   rows: any[];
   columns: ColumnDef<Row>[];
   initialSorting: Array<{id: string; desc: boolean}>;
   selectedRow: RowType<Row> | null;
-  onRowClick: (row: RowType<Row>) => void;
+  onRowClick: (row: DataRow) => void;
   shouldHighlightRow: (row: Row) => boolean;
   enableHighlighting: boolean;
   columnVisibility: Record<ColumnName, boolean>;

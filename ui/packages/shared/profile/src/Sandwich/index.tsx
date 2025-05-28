@@ -91,19 +91,6 @@ const Sandwich = React.memo(function Sandwich({
     return (1 / width) * 100;
   }, []);
 
-  useEffect(() => {
-    if (sandwichFunctionName !== undefined && selectedRow == null) {
-      // find the row with the sandwichFunctionName
-      const row = rows.find(row => {
-        return row.name.trim() === sandwichFunctionName.trim();
-      });
-
-      if (row) {
-        setSelectedRow(row as unknown as TableRow<Row>);
-      }
-    }
-  }, [sandwichFunctionName]);
-
   const {
     isLoading: callersFlamegraphLoading,
     response: callersFlamegraphResponse,
@@ -198,13 +185,23 @@ const Sandwich = React.memo(function Sandwich({
     });
   }, [table, colorByColors, colorByValue]);
 
-  const onRowClick = useCallback(
-    (row: DataRow) => {
-      setSelectedRow(row as unknown as TableRow<Row>);
-      setSandwichFunctionName(row.name.trim());
-    },
-    [dashboardItems.length]
-  );
+  useEffect(() => {
+    if (sandwichFunctionName !== undefined && selectedRow == null) {
+      // find the row with the sandwichFunctionName
+      const row = rows.find(row => {
+        return row.name.trim() === sandwichFunctionName.trim();
+      });
+
+      if (row) {
+        setSelectedRow(row as unknown as TableRow<Row>);
+      }
+    }
+  }, [sandwichFunctionName, rows, selectedRow]);
+
+  const onRowClick = useCallback((row: DataRow) => {
+    setSelectedRow(row as unknown as TableRow<Row>);
+    setSandwichFunctionName(row.name.trim());
+  }, []);
 
   const enableHighlighting = useMemo(() => {
     return sandwichFunctionName != null && sandwichFunctionName?.length > 0;

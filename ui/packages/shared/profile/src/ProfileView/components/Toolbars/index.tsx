@@ -62,6 +62,7 @@ export interface TableToolbarProps {
   filtered: bigint;
   clearSelection: () => void;
   currentSearchString?: string;
+  isIcicleGraphOpen?: boolean;
 }
 
 export interface IcicleGraphToolbarProps {
@@ -80,20 +81,23 @@ export const TableToolbar: FC<TableToolbarProps> = ({
   filtered,
   clearSelection,
   currentSearchString,
+  isIcicleGraphOpen = false,
 }) => {
   return (
     <>
       <div className="flex w-full gap-2 items-end">
         <TableColumnsDropdown profileType={profileType} total={total} filtered={filtered} />
-        <Button
-          color="neutral"
-          onClick={clearSelection}
-          className="w-auto"
-          variant="neutral"
-          disabled={currentSearchString === undefined || currentSearchString.length === 0}
-        >
-          Clear selection
-        </Button>
+        {isIcicleGraphOpen && (
+          <Button
+            color="neutral"
+            onClick={clearSelection}
+            className="w-auto"
+            variant="neutral"
+            disabled={currentSearchString === undefined || currentSearchString.length === 0}
+          >
+            Clear selection
+          </Button>
+        )}
       </div>
     </>
   );
