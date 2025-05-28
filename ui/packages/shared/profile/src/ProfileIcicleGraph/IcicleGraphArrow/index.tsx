@@ -36,7 +36,14 @@ import ContextMenu from './ContextMenu';
 import ContextMenuWrapper, { ContextMenuWrapperRef } from './ContextMenuWrapper';
 import {IcicleNode, RowHeight, colorByColors} from './IcicleGraphNodes';
 import {useFilenamesList} from './useMappingList';
-import {CurrentPathFrame, arrowToString, extractFeature, extractFilenameFeature} from './utils';
+import {
+  CurrentPathFrame,
+  arrowToString,
+  extractFeature,
+  extractFilenameFeature,
+  getCurrentPathFrameData,
+  isCurrentPathFrameMatch,
+} from './utils';
 import {TooltipProvider} from './TooltipContext';
 import {MemoizedTooltip} from './MemoizedTooltip';
 
@@ -224,11 +231,49 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     setBinaryFrameFilter(newMappingsList);
   };
 
+  const handleRowClick = (row: number): void => {
+    // Walk down the stack starting at row until we reach the root (row 0).
+    const path: CurrentPathFrame[] = [];
+    let currentRow = row;
+    while (currentRow > 0) {
+      const frame = getCurrentPathFrameData(table, currentRow);
+      path.push(frame);
+      currentRow = table.getChild(FIELD_PARENT)?.get(currentRow) ?? 0;
+    }
+
+    // Reverse the path so that the root is first.
+    path.reverse();
+    setCurPath(path);
+  }
+
   const depthColumn = table.getChild(FIELD_DEPTH);
   const maxDepth = depthColumn === null ? 0 : Math.max(...depthColumn.toArray());
   const height = maxDepth * RowHeight;
 
-  const selectedRow = 0;
+  // To find the selected row, we must walk the current path and look at which
+  // children of the current frame matches the path element exactly. Until the
+  // end, the row we find at the end is our selected row.
+  let currentRow = 0;
+  for (const frame of curPath) {
+    let childRows: number[] = Array.from(table.getChild(FIELD_CHILDREN)?.get(currentRow) ?? []);
+    if (childRows.length === 0) {
+      // If there are no children, we can stop here.
+      break;
+    }
+    childRows = childRows.filter(c => isCurrentPathFrameMatch(table, c, frame));
+    if (childRows.length === 0) {
+      // If there are no children that match the current path frame, we can stop here.
+      break;
+    }
+    if (childRows.length > 1) {
+      // If there are multiple children that match the current path frame, we can stop here.
+      // This is a case where the path is ambiguous and we cannot determine a single row.
+      break;
+    }
+    // If there is exactly one child that matches the current path frame, we can continue.
+    currentRow = childRows[0];
+  }
+  const selectedRow = currentRow;
 
   return (
     <TooltipProvider
@@ -280,6 +325,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
                 colorForSimilarNodes={colorForSimilarNodes}
                 selectedRow={selectedRow}
                 onClick={() => {
+                  handleRowClick(row);
                 }}
                 onContextMenu={displayMenu}
                 hoveringRow={highlightSimilarStacksPreference ? hoveringRow : undefined}
