@@ -1,0 +1,62 @@
+// Copyright 2022 The Parca Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import {type ColumnDef, type ExpandedState, type Row as RowType} from '@tanstack/table-core';
+
+import {Table as TableComponent} from '@parca/components';
+
+import {type Row} from '../../Table';
+import {ColumnName, ROW_HEIGHT} from '../../Table/utils/functions';
+
+interface TableSectionProps {
+  rows: any[];
+  columns: ColumnDef<Row>[];
+  initialSorting: Array<{id: string; desc: boolean}>;
+  selectedRow: RowType<Row> | null;
+  onRowClick: (row: RowType<Row>) => void;
+  shouldHighlightRow: (row: Row) => boolean;
+  enableHighlighting: boolean;
+  columnVisibility: Record<ColumnName, boolean>;
+}
+
+export function TableSection({
+  rows,
+  columns,
+  initialSorting,
+  selectedRow,
+  onRowClick,
+  shouldHighlightRow,
+  enableHighlighting,
+  columnVisibility,
+}: TableSectionProps) {
+  return (
+    <div
+      className={`font-robotoMono h-[80vh] w-full cursor-pointer ${
+        selectedRow != null ? 'w-[50%]' : ''
+      }`}
+    >
+      <TableComponent
+        data={rows}
+        columns={columns}
+        initialSorting={initialSorting}
+        usePointerCursor={true}
+        onRowClick={onRowClick}
+        shouldHighlightRow={shouldHighlightRow}
+        enableHighlighting={enableHighlighting}
+        estimatedRowHeight={ROW_HEIGHT}
+        sandwich={true}
+        columnVisibility={columnVisibility}
+      />
+    </div>
+  );
+}

@@ -91,6 +91,9 @@ const ContextMenu = ({
   const [dashboardItems, setDashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
   });
+  const [sandwichFunctionName, setSandwichFunctionName] = useURLState<string | undefined>(
+    'sandwich_function_name'
+  );
 
   if (contextMenuData === null) {
     return <></>;
@@ -173,6 +176,18 @@ const ContextMenu = ({
         <div className="flex w-full items-center gap-2">
           <Icon icon="ph:table" />
           <div>Show in table</div>
+        </div>
+      </Item>
+      <Item
+        id="show-in-sandwich"
+        onClick={() => {
+          setSandwichFunctionName(functionName);
+          setDashboardItems(['sandwich']);
+        }}
+      >
+        <div className="flex w-full items-center gap-2">
+          <Icon icon="tdesign:sandwich-filled" />
+          <div>Show in caller/callee </div>
         </div>
       </Item>
       <Item id="reset-view" onClick={handleResetView} disabled={curPath.length === 0}>

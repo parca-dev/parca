@@ -51,7 +51,6 @@ export const IcicleChartRootNode = React.memo(function IcicleChartRootNodeNonMem
   colorForSimilarNodes,
   highlightSimilarStacksPreference,
   profileSource,
-  isSandwich,
 }: IcicleNodeProps & IcicleChartRootNodeSpecificProps): React.JSX.Element {
   // get the columns to read from
   const durationColumn = table.getChild(FIELD_DURATION);
@@ -122,7 +121,6 @@ export const IcicleChartRootNode = React.memo(function IcicleChartRootNodeNonMem
               colorForSimilarNodes={colorForSimilarNodes}
               highlightSimilarStacksPreference={highlightSimilarStacksPreference}
               key={row}
-              isSandwich={isSandwich}
             />
           </Fragment>
         );

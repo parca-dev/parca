@@ -304,6 +304,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
               isIcicleChart={isIcicleChart}
               profileSource={profileSource}
               isFlamegraph={isFlamegraph}
+              isSandwich={isSandwichIcicleGraph}
             />
           </div>
         </div>

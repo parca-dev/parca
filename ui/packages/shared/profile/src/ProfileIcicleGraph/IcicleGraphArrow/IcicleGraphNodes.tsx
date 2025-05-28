@@ -375,8 +375,6 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     return isRoot ? 'root' : nodeLabel(table, row, level, binaries.length > 1);
   }, [table, row, level, isRoot, binaries]);
 
-  console.log('🚀 ~ name ~ name:', name, isSandwich);
-
   const currentPathFrame: CurrentPathFrame = getCurrentPathFrameData(table, row, level);
   const nextPath = path.concat([currentPathFrame]);
   const isFaded =
@@ -423,43 +421,45 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
 
   return (
     <>
-      <g
-        transform={`translate(${x + 1}, ${adjustedY + 1})`}
-        style={styles}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-        onClick={() => {
-          setCurPath(nextPath);
-        }}
-      >
-        <rect
-          x={0}
-          y={0}
-          width={width}
-          height={height}
-          style={{
-            fill: colorResult,
+      {!(isRoot && isSandwich) && (
+        <g
+          transform={`translate(${x + 1}, ${adjustedY + 1})`}
+          style={styles}
+          onMouseEnter={onMouseEnter}
+          onMouseLeave={onMouseLeave}
+          onClick={() => {
+            setCurPath(nextPath);
           }}
-          className={cx(
-            shouldBeHighlightedIfSimilarStacks
-              ? `${colorForSimilarNodes} stroke-[3] [stroke-dasharray:6,4] [stroke-linecap:round] [stroke-linejoin:round] h-6`
-              : 'stroke-white dark:stroke-gray-700',
-            {
-              'opacity-50': isHighlightEnabled && !isHighlighted,
-            }
+        >
+          <rect
+            x={0}
+            y={0}
+            width={width}
+            height={height}
+            style={{
+              fill: colorResult,
+            }}
+            className={cx(
+              shouldBeHighlightedIfSimilarStacks
+                ? `${colorForSimilarNodes} stroke-[3] [stroke-dasharray:6,4] [stroke-linecap:round] [stroke-linejoin:round] h-6`
+                : 'stroke-white dark:stroke-gray-700',
+              {
+                'opacity-50': isHighlightEnabled && !isHighlighted,
+              }
+            )}
+          />
+          {width > 5 && (
+            <svg width={width - 5} height={height}>
+              <TextWithEllipsis
+                text={name}
+                x={5}
+                y={15}
+                width={width - 10} // Subtract padding from available width
+              />
+            </svg>
           )}
-        />
-        {width > 5 && (
-          <svg width={width - 5} height={height}>
-            <TextWithEllipsis
-              text={name}
-              x={5}
-              y={15}
-              width={width - 10} // Subtract padding from available width
-            />
-          </svg>
-        )}
-      </g>
+        </g>
+      )}
       {childRows.length > 0 && (
         <IcicleGraphNodes
           table={table}

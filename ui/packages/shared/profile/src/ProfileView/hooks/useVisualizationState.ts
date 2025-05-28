@@ -33,6 +33,9 @@ export const useVisualizationState = (): {
   toggleGroupBy: (key: string) => void;
   clearSelection: () => void;
   setGroupByLabels: (labels: string[]) => void;
+  sandwichFunctionName: string | undefined;
+  setSandwichFunctionName: (sandwichFunctionName: string | undefined) => void;
+  resetSandwichFunctionName: () => void;
 } => {
   const [curPath, setCurPath] = useState<string[]>([]);
   const [curPathArrow, setCurPathArrow] = useURLStateCustom<CurrentPathFrame[]>('cur_path', {
@@ -47,6 +50,9 @@ export const useVisualizationState = (): {
     defaultValue: [FIELD_FUNCTION_NAME],
     alwaysReturnArray: true,
   });
+  const [sandwichFunctionName, setSandwichFunctionName] = useURLState<string | undefined>(
+    'sandwich_function_name'
+  );
 
   const setGroupBy = useCallback(
     (keys: string[]): void => {
@@ -75,6 +81,10 @@ export const useVisualizationState = (): {
     setSearchString?.('');
   }, [setSearchString]);
 
+  const resetSandwichFunctionName = useCallback((): void => {
+    setSandwichFunctionName(undefined);
+  }, [setSandwichFunctionName]);
+
   return {
     curPath,
     setCurPath,
@@ -90,5 +100,8 @@ export const useVisualizationState = (): {
     toggleGroupBy,
     setGroupByLabels,
     clearSelection,
+    sandwichFunctionName,
+    setSandwichFunctionName,
+    resetSandwichFunctionName,
   };
 };

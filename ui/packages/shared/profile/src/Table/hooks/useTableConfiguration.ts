@@ -11,150 +11,47 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 
 import {createColumnHelper, type CellContext, type ColumnDef} from '@tanstack/table-core';
 
 import {useURLState} from '@parca/components';
-import {ProfileType} from '@parca/parser';
+import {type ProfileType} from '@parca/parser';
 import {valueFormatter} from '@parca/utilities';
 
-import {Row} from '../../../Table';
-import ColumnsVisibility from '../../../Table/ColumnsVisibility';
-import {ColumnName, DataRow, addPlusSign, getRatioString} from '../../../Table/utils/functions';
-import {useProfileViewContext} from '../../context/ProfileViewContext';
+import {type Row} from '..';
+import {type colorByColors} from '../../ProfileIcicleGraph/IcicleGraphArrow/IcicleGraphNodes';
+import {addPlusSign, ratioString, type ColumnName} from '../utils/functions';
 
-interface Props {
+interface UseTableConfigurationProps {
+  unit?: string;
   profileType?: ProfileType;
   total: bigint;
   filtered: bigint;
+  colorByColors: colorByColors;
+  colorBy: string;
+  compareMode: boolean;
 }
 
-const TableColumnsDropdown = ({profileType, total, filtered}: Props): JSX.Element => {
-  const {compareMode} = useProfileViewContext();
-  const [tableColumns, setTableColumns] = useURLState<string[]>('table_columns', {
+interface TableConfiguration {
+  columns: Array<ColumnDef<Row>>;
+  initialSorting: Array<{id: string; desc: boolean}>;
+  columnVisibility: Record<ColumnName, boolean>;
+}
+
+export function useTableConfiguration({
+  unit = '',
+  profileType,
+  total,
+  filtered,
+  colorByColors,
+  colorBy,
+  compareMode,
+}: UseTableConfigurationProps): TableConfiguration {
+  const columnHelper = createColumnHelper<Row>();
+  const [tableColumns] = useURLState<string[]>('table_columns', {
     alwaysReturnArray: true,
   });
-
-  const columnHelper = createColumnHelper<Row>();
-
-  const unit: string = useMemo(() => profileType?.sampleUnit ?? '', [profileType?.sampleUnit]);
-
-  const columns = useMemo<Array<ColumnDef<Row>>>(() => {
-    return [
-      columnHelper.accessor('flat', {
-        id: 'flat',
-        header: 'Flat',
-        cell: info => valueFormatter((info as CellContext<DataRow, bigint>).getValue(), unit, 2),
-        size: 80,
-        meta: {
-          align: 'right',
-        },
-        invertSorting: true,
-      }),
-      columnHelper.accessor('flat', {
-        id: 'flatPercentage',
-        header: 'Flat (%)',
-        cell: info => {
-          return getRatioString((info as CellContext<DataRow, bigint>).getValue(), total, filtered);
-        },
-        size: 120,
-        meta: {
-          align: 'right',
-        },
-        invertSorting: true,
-      }),
-      columnHelper.accessor('flatDiff', {
-        id: 'flatDiff',
-        header: 'Flat Diff',
-        cell: info =>
-          addPlusSign(valueFormatter((info as CellContext<DataRow, bigint>).getValue(), unit, 2)),
-        size: 120,
-        meta: {
-          align: 'right',
-        },
-        invertSorting: true,
-      }),
-      columnHelper.accessor('flatDiff', {
-        id: 'flatDiffPercentage',
-        header: 'Flat Diff (%)',
-        cell: info => {
-          return getRatioString((info as CellContext<DataRow, bigint>).getValue(), total, filtered);
-        },
-        size: 120,
-        meta: {
-          align: 'right',
-        },
-        invertSorting: true,
-      }),
-      columnHelper.accessor('cumulative', {
-        id: 'cumulative',
-        header: 'Cumulative',
-        cell: info => valueFormatter((info as CellContext<DataRow, bigint>).getValue(), unit, 2),
-        size: 150,
-        meta: {
-          align: 'right',
-        },
-        invertSorting: true,
-      }),
-      columnHelper.accessor('cumulative', {
-        id: 'cumulativePercentage',
-        header: 'Cumulative (%)',
-        cell: info => {
-          return getRatioString((info as CellContext<DataRow, bigint>).getValue(), total, filtered);
-        },
-        size: 150,
-        meta: {
-          align: 'right',
-        },
-        invertSorting: true,
-      }),
-      columnHelper.accessor('cumulativeDiff', {
-        id: 'cumulativeDiff',
-        header: 'Cumulative Diff',
-        cell: info =>
-          addPlusSign(valueFormatter((info as CellContext<DataRow, bigint>).getValue(), unit, 2)),
-        size: 170,
-        meta: {
-          align: 'right',
-        },
-        invertSorting: true,
-      }),
-      columnHelper.accessor('cumulativeDiff', {
-        id: 'cumulativeDiffPercentage',
-        header: 'Cumulative Diff (%)',
-        cell: info => {
-          return getRatioString((info as CellContext<DataRow, bigint>).getValue(), total, filtered);
-        },
-        size: 170,
-        meta: {
-          align: 'right',
-        },
-        invertSorting: true,
-      }),
-      columnHelper.accessor('name', {
-        id: 'name',
-        header: 'Name',
-        cell: info => info.getValue(),
-      }),
-      columnHelper.accessor('functionSystemName', {
-        id: 'functionSystemName',
-        header: 'Function System Name',
-        cell: info => info.getValue(),
-      }),
-      columnHelper.accessor('functionFileName', {
-        id: 'functionFileName',
-        header: 'Function File Name',
-        cell: info => info.getValue(),
-      }),
-      columnHelper.accessor('mappingFile', {
-        id: 'mappingFile',
-        header: 'Mapping File',
-        cell: info => info.getValue(),
-      }),
-    ];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileType, unit]);
 
   const [columnVisibility, setColumnVisibility] = useState(() => {
     return {
@@ -186,27 +83,147 @@ const TableColumnsDropdown = ({profileType, total, filtered}: Props): JSX.Elemen
     }
   }, [tableColumns]);
 
-  const updateColumnVisibility = (column: string, isVisible: boolean): void => {
-    const updatedColumns = {...columnVisibility, [column]: isVisible};
+  const columns = useMemo<Array<ColumnDef<Row>>>(() => {
+    return [
+      columnHelper.accessor('colorProperty', {
+        id: 'color',
+        header: '',
+        cell: info => {
+          const color = info.getValue() as {color: string; mappingFile: string};
+          return React.createElement('div', {
+            className: 'w-4 h-4 rounded-[4px]',
+            style: {backgroundColor: color.color},
+            'data-tooltip-id': 'table-color-tooltip',
+            'data-tooltip-content': color.mappingFile,
+          });
+        },
+        size: 10,
+      }),
+      columnHelper.accessor('flat', {
+        id: 'flat',
+        header: 'Flat',
+        cell: info => valueFormatter((info as CellContext<Row, bigint>).getValue(), unit, 2),
+        size: 80,
+        meta: {
+          align: 'right',
+        },
+        invertSorting: true,
+      }),
+      columnHelper.accessor('flat', {
+        id: 'flatPercentage',
+        header: 'Flat (%)',
+        cell: info => {
+          return ratioString((info as CellContext<Row, bigint>).getValue(), total, filtered);
+        },
+        size: 120,
+        meta: {
+          align: 'right',
+        },
+        invertSorting: true,
+      }),
+      columnHelper.accessor('flatDiff', {
+        id: 'flatDiff',
+        header: 'Flat Diff',
+        cell: info =>
+          addPlusSign(valueFormatter((info as CellContext<Row, bigint>).getValue(), unit, 2)),
+        size: 120,
+        meta: {
+          align: 'right',
+        },
+        invertSorting: true,
+      }),
+      columnHelper.accessor('flatDiff', {
+        id: 'flatDiffPercentage',
+        header: 'Flat Diff (%)',
+        cell: info => {
+          return ratioString((info as CellContext<Row, bigint>).getValue(), total, filtered);
+        },
+        size: 120,
+        meta: {
+          align: 'right',
+        },
+        invertSorting: true,
+      }),
+      columnHelper.accessor('cumulative', {
+        id: 'cumulative',
+        header: 'Cumulative',
+        cell: info => valueFormatter((info as CellContext<Row, bigint>).getValue(), unit, 2),
+        size: 150,
+        meta: {
+          align: 'right',
+        },
+        invertSorting: true,
+      }),
+      columnHelper.accessor('cumulative', {
+        id: 'cumulativePercentage',
+        header: 'Cumulative (%)',
+        cell: info => {
+          return ratioString((info as CellContext<Row, bigint>).getValue(), total, filtered);
+        },
+        size: 150,
+        meta: {
+          align: 'right',
+        },
+        invertSorting: true,
+      }),
+      columnHelper.accessor('cumulativeDiff', {
+        id: 'cumulativeDiff',
+        header: 'Cumulative Diff',
+        cell: info =>
+          addPlusSign(valueFormatter((info as CellContext<Row, bigint>).getValue(), unit, 2)),
+        size: 170,
+        meta: {
+          align: 'right',
+        },
+        invertSorting: true,
+      }),
+      columnHelper.accessor('cumulativeDiff', {
+        id: 'cumulativeDiffPercentage',
+        header: 'Cumulative Diff (%)',
+        cell: info => {
+          return ratioString((info as CellContext<Row, bigint>).getValue(), total, filtered);
+        },
+        size: 170,
+        meta: {
+          align: 'right',
+        },
+        invertSorting: true,
+      }),
+      columnHelper.accessor('name', {
+        id: 'name',
+        header: 'Name',
+        cell: info => info.getValue(),
+      }),
+      columnHelper.accessor('functionSystemName', {
+        id: 'functionSystemName',
+        header: 'Function System Name',
+        cell: info => info.getValue(),
+      }),
+      columnHelper.accessor('functionFileName', {
+        id: 'functionFileName',
+        header: 'Function File Name',
+        cell: info => info.getValue(),
+      }),
+      columnHelper.accessor('mappingFile', {
+        id: 'mappingFile',
+        header: 'Mapping File',
+        cell: info => info.getValue(),
+      }),
+    ];
+  }, [profileType, unit, total, filtered, colorByColors, colorBy]);
 
-    const newTableColumns = (Object.keys(updatedColumns) as ColumnName[]).filter(
-      col => updatedColumns[col]
-    );
-    setTableColumns(newTableColumns);
+  const initialSorting = useMemo(() => {
+    return [
+      {
+        id: compareMode ? 'flatDiff' : 'flat',
+        desc: false,
+      },
+    ];
+  }, [compareMode]);
+
+  return {
+    columns,
+    initialSorting,
+    columnVisibility,
   };
-
-  return (
-    <div className="flex flex-col gap-1">
-      <label className="text-sm">Table Columns</label>
-      <ColumnsVisibility
-        columns={columns}
-        visibility={columnVisibility}
-        setVisibility={(id, visible) => {
-          updateColumnVisibility(id, visible);
-        }}
-      />
-    </div>
-  );
-};
-
-export default TableColumnsDropdown;
+}

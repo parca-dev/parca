@@ -51,6 +51,9 @@ export interface VisualisationToolbarProps {
   clearSelection: () => void;
   setGroupByLabels: (labels: string[]) => void;
   showVisualizationSelector?: boolean;
+  sandwichFunctionName?: string;
+  setSandwichFunctionName: (sandwichFunctionName: string | undefined) => void;
+  resetSandwichFunctionName: () => void;
 }
 
 export interface TableToolbarProps {
@@ -67,10 +70,8 @@ export interface IcicleGraphToolbarProps {
 }
 
 export interface SandwichIcicleGraphToolbarProps {
-  curPath: CurrentPathFrame[];
-  setNewCurPath: (path: CurrentPathFrame[]) => void;
-  clearSelection: () => void;
-  currentSearchString?: string;
+  resetSandwichFunctionName: () => void;
+  sandwichFunctionName?: string;
 }
 
 export const TableToolbar: FC<TableToolbarProps> = ({
@@ -118,32 +119,20 @@ export const IcicleGraphToolbar: FC<IcicleGraphToolbarProps> = ({curPath, setNew
 };
 
 export const SandwichIcicleGraphToolbar: FC<SandwichIcicleGraphToolbarProps> = ({
-  curPath,
-  setNewCurPath,
-  clearSelection,
-  currentSearchString,
+  resetSandwichFunctionName,
+  sandwichFunctionName,
 }) => {
   return (
     <>
       <div className="flex w-full gap-2 items-end justify-between">
-        {/* <SortByDropdown /> */}
         <Button
           color="neutral"
-          onClick={clearSelection}
+          onClick={() => resetSandwichFunctionName()}
           className="w-auto"
           variant="neutral"
-          disabled={currentSearchString === undefined || currentSearchString.length === 0}
+          disabled={sandwichFunctionName === undefined || sandwichFunctionName.length === 0}
         >
-          Clear selection
-        </Button>
-        <Button
-          variant="neutral"
-          className="gap-2 w-max h-fit"
-          onClick={() => setNewCurPath([])}
-          disabled={curPath.length === 0}
-        >
-          Reset Icicle graph
-          <Icon icon="system-uicons:reset" width={20} />
+          Reset view
         </Button>
       </div>
     </>
@@ -173,6 +162,8 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   currentSearchString,
   clearSelection,
   showVisualizationSelector = true,
+  resetSandwichFunctionName,
+  sandwichFunctionName,
 }) => {
   const {dashboardItems} = useDashboard();
 
@@ -239,10 +230,8 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
         <>
           <Divider />
           <SandwichIcicleGraphToolbar
-            curPath={curPath}
-            setNewCurPath={setNewCurPath}
-            clearSelection={clearSelection}
-            currentSearchString={currentSearchString}
+            resetSandwichFunctionName={resetSandwichFunctionName}
+            sandwichFunctionName={sandwichFunctionName}
           />
         </>
       )}

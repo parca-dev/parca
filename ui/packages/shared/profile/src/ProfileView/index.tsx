@@ -68,6 +68,9 @@ export const ProfileView = ({
     toggleGroupBy,
     clearSelection,
     setGroupByLabels,
+    sandwichFunctionName,
+    setSandwichFunctionName,
+    resetSandwichFunctionName,
   } = useVisualizationState();
 
   const {callgraphSVG} = useGraphviz({
@@ -164,6 +167,9 @@ export const ProfileView = ({
             clearSelection={clearSelection}
             setGroupByLabels={setGroupByLabels}
             showVisualizationSelector={showVisualizationSelector}
+            sandwichFunctionName={sandwichFunctionName}
+            setSandwichFunctionName={setSandwichFunctionName}
+            resetSandwichFunctionName={resetSandwichFunctionName}
           />
 
           {isColorStackLegendEnabled && (

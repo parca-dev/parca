@@ -13,69 +13,31 @@
 
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 
-import {
-  createColumnHelper,
-  type CellContext,
-  type ColumnDef,
-  type ExpandedState,
-  type Row as RowType,
-} from '@tanstack/table-core';
-import {Int64, Vector, tableFromIPC, vectorFromArray} from 'apache-arrow';
-import cx from 'classnames';
+import {type Row as TableRow} from '@tanstack/table-core';
+import {DataRow} from 'Table/utils/functions';
+import {tableFromIPC} from 'apache-arrow';
 import {AnimatePresence, motion} from 'framer-motion';
-import {Tooltip} from 'react-tooltip';
 
 import {QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
-import {
-  Table as TableComponent,
-  TableSkeleton,
-  useParcaContext,
-  useURLState,
-} from '@parca/components';
+import {TableSkeleton, useParcaContext, useURLState} from '@parca/components';
 import {useCurrentColorProfile} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
-import {getLastItem, isSearchMatch, valueFormatter} from '@parca/utilities';
+import {isSearchMatch} from '@parca/utilities';
 
-import ProfileIcicleGraph from '../ProfileIcicleGraph';
-import {getFilenameColors, getMappingColors} from '../ProfileIcicleGraph/IcicleGraphArrow/';
-import {colorByColors} from '../ProfileIcicleGraph/IcicleGraphArrow/IcicleGraphNodes';
 import useMappingList, {
   useFilenamesList,
 } from '../ProfileIcicleGraph/IcicleGraphArrow/useMappingList';
 import {ProfileSource} from '../ProfileSource';
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
 import {useVisualizationState} from '../ProfileView/hooks/useVisualizationState';
-import {
-  FIELD_CALLEES,
-  FIELD_CALLERS,
-  FIELD_CUMULATIVE,
-  FIELD_CUMULATIVE_DIFF,
-  FIELD_FLAT,
-  FIELD_FLAT_DIFF,
-  FIELD_FUNCTION_FILE_NAME,
-  FIELD_FUNCTION_NAME,
-  FIELD_FUNCTION_SYSTEM_NAME,
-  FIELD_LOCATION_ADDRESS,
-  FIELD_MAPPING_FILE,
-  Row,
-  isDummyRow,
-} from '../Table';
-import {
-  ColumnName,
-  DataRow,
-  ROW_HEIGHT,
-  RowName,
-  addPlusSign,
-  getCalleeRows,
-  getCallerRows,
-  getRowColor,
-  ratioString,
-  sizeToBottomStyle,
-  sizeToWidthStyle,
-} from '../Table/utils/functions';
-import {getTopAndBottomExpandedRowModel} from '../Table/utils/topAndBottomExpandedRowModel';
+import {FIELD_FUNCTION_NAME, Row} from '../Table';
+import {useColorManagement} from '../Table/hooks/useColorManagement';
+import {useTableConfiguration} from '../Table/hooks/useTableConfiguration';
 import {useQuery} from '../useQuery';
-import CustomRowRenderer from './CustomRenderer';
+import {CalleesSection} from './components/CalleesSection';
+import {CallersSection} from './components/CallersSection';
+import {TableSection} from './components/TableSection';
+import {processRowData} from './utils/processRowData';
 
 interface Props {
   data?: Uint8Array;
@@ -83,18 +45,11 @@ interface Props {
   filtered: bigint;
   profileType?: ProfileType;
   loading: boolean;
-  currentSearchString?: string;
-  setActionButtons?: (buttons: React.JSX.Element) => void;
   isHalfScreen: boolean;
   unit?: string;
   metadataMappingFiles?: string[];
-  metadataLoading?: boolean;
-  callees?: Uint8Array;
-  callers?: Uint8Array;
   queryClient?: QueryServiceClient;
   profileSource?: ProfileSource;
-  curPath: string[] | [];
-  setNewCurPath: (path: string[]) => void;
 }
 
 const Sandwich = React.memo(function Sandwich({
@@ -108,23 +63,24 @@ const Sandwich = React.memo(function Sandwich({
   metadataMappingFiles,
   queryClient,
   profileSource,
-  metadataLoading,
 }: Props): React.JSX.Element {
   const currentColorProfile = useCurrentColorProfile();
   const [dashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
   });
 
-  const [tableColumns] = useURLState<string[]>('table_columns', {
-    alwaysReturnArray: true,
-  });
+  const [sandwichFunctionName, setSandwichFunctionName] = useURLState<string | undefined>(
+    'sandwich_function_name'
+  );
   const {isDarkMode} = useParcaContext();
-  const [expanded, setExpanded] = useState<ExpandedState>({});
-  const [selectedRow, setSelectedRow] = useState<RowType<Row> | null>(null);
+  const [selectedRow, setSelectedRow] = useState<TableRow<Row> | null>(null);
   const callersRef = React.useRef<HTMLDivElement | null>(null);
   const calleesRef = React.useRef<HTMLDivElement | null>(null);
 
   const {compareMode} = useProfileViewContext();
+
+  const {curPath, setCurPath, colorBy, setColorBy, curPathArrow, setCurPathArrow} =
+    useVisualizationState();
 
   const nodeTrimThreshold = useMemo(() => {
     let width =
@@ -135,7 +91,18 @@ const Sandwich = React.memo(function Sandwich({
     return (1 / width) * 100;
   }, []);
 
-  const [selectedFunctionName, setSelectedFunctionName] = useState<string | undefined>();
+  useEffect(() => {
+    if (sandwichFunctionName !== undefined && selectedRow == null) {
+      // find the row with the sandwichFunctionName
+      const row = rows.find(row => {
+        return row.name.trim() === sandwichFunctionName.trim();
+      });
+
+      if (row) {
+        setSelectedRow(row as unknown as TableRow<Row>);
+      }
+    }
+  }, [sandwichFunctionName]);
 
   const {
     isLoading: callersFlamegraphLoading,
@@ -150,8 +117,8 @@ const Sandwich = React.memo(function Sandwich({
       groupBy: [FIELD_FUNCTION_NAME],
       invertCallStack: true,
       binaryFrameFilter: [],
-      filterByFunction: selectedFunctionName,
-      skip: selectedFunctionName === undefined,
+      filterByFunction: sandwichFunctionName,
+      skip: sandwichFunctionName === undefined,
     }
   );
 
@@ -168,13 +135,10 @@ const Sandwich = React.memo(function Sandwich({
       groupBy: [FIELD_FUNCTION_NAME],
       invertCallStack: false,
       binaryFrameFilter: [],
-      filterByFunction: selectedFunctionName,
-      skip: selectedFunctionName === undefined,
+      filterByFunction: sandwichFunctionName,
+      skip: sandwichFunctionName === undefined,
     }
   );
-
-  const {curPath, setCurPath, colorBy, setColorBy, curPathArrow, setCurPathArrow} =
-    useVisualizationState();
 
   const table = useMemo(() => {
     if (loading || data == null) {
@@ -186,7 +150,6 @@ const Sandwich = React.memo(function Sandwich({
 
   const mappingsList = useMappingList(metadataMappingFiles);
   const filenamesList = useFilenamesList(table);
-  const colorByValue = colorBy === undefined || colorBy === '' ? 'binary' : colorBy;
 
   const mappingsListCount = useMemo(
     () => mappingsList.filter(m => m !== '').length,
@@ -201,227 +164,51 @@ const Sandwich = React.memo(function Sandwich({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mappingsListCount]);
 
-  const filenameColors = useMemo(() => {
-    const colors = getFilenameColors(filenamesList, isDarkMode, currentColorProfile);
-    return colors;
-  }, [isDarkMode, filenamesList, currentColorProfile]);
-
-  const mappingColors = useMemo(() => {
-    const colors = getMappingColors(mappingsList, isDarkMode, currentColorProfile);
-    return colors;
-  }, [isDarkMode, mappingsList, currentColorProfile]);
-
-  const colorByList = {
-    filename: filenameColors,
-    binary: mappingColors,
-  };
-
-  type ColorByKey = keyof typeof colorByList;
-
-  const colorByColors: colorByColors = colorByList[colorByValue as ColorByKey];
-
-  const columnHelper = createColumnHelper<Row>();
+  const {colorByColors, colorByValue} = useColorManagement({
+    isDarkMode,
+    currentColorProfile,
+    mappingsList,
+    filenamesList,
+    colorBy,
+  });
 
   unit = useMemo(() => unit ?? profileType?.sampleUnit ?? '', [unit, profileType?.sampleUnit]);
 
-  const columns = useMemo<Array<ColumnDef<Row>>>(() => {
-    return [
-      columnHelper.accessor('colorProperty', {
-        id: 'color',
-        header: '',
-        cell: info => {
-          const color = info.getValue() as {color: string; mappingFile: string};
-          return (
-            <>
-              <div
-                className="w-4 h-4 rounded-[4px]"
-                style={{backgroundColor: color.color}}
-                data-tooltip-id="table-color-tooltip"
-                data-tooltip-content={getLastItem(color.mappingFile)}
-              />
-              <Tooltip id="table-color-tooltip" />
-            </>
-          );
-        },
-        size: 10,
-      }),
-      columnHelper.accessor('flat', {
-        id: 'flat',
-        header: 'Flat',
-        cell: info => valueFormatter((info as CellContext<DataRow, bigint>).getValue(), unit, 2),
-        size: 80,
-        meta: {
-          align: 'right',
-        },
-        invertSorting: true,
-      }),
-      columnHelper.accessor('flat', {
-        id: 'flatPercentage',
-        header: 'Flat (%)',
-        cell: info => {
-          if (isDummyRow(info.row.original)) {
-            return '';
-          }
-          return ratioString((info as CellContext<DataRow, bigint>).getValue(), total, filtered);
-        },
-        size: 120,
-        meta: {
-          align: 'right',
-        },
-        invertSorting: true,
-      }),
-      columnHelper.accessor('flatDiff', {
-        id: 'flatDiff',
-        header: 'Flat Diff',
-        cell: info =>
-          addPlusSign(valueFormatter((info as CellContext<DataRow, bigint>).getValue(), unit, 2)),
-        size: 120,
-        meta: {
-          align: 'right',
-        },
-        invertSorting: true,
-      }),
-      columnHelper.accessor('flatDiff', {
-        id: 'flatDiffPercentage',
-        header: 'Flat Diff (%)',
-        cell: info => {
-          if (isDummyRow(info.row.original)) {
-            return '';
-          }
-          return ratioString((info as CellContext<DataRow, bigint>).getValue(), total, filtered);
-        },
-        size: 120,
-        meta: {
-          align: 'right',
-        },
-        invertSorting: true,
-      }),
-      columnHelper.accessor('cumulative', {
-        id: 'cumulative',
-        header: 'Cumulative',
-        cell: info => valueFormatter((info as CellContext<DataRow, bigint>).getValue(), unit, 2),
-        size: 150,
-        meta: {
-          align: 'right',
-        },
-        invertSorting: true,
-      }),
-      columnHelper.accessor('cumulative', {
-        id: 'cumulativePercentage',
-        header: 'Cumulative (%)',
-        cell: info => {
-          if (isDummyRow(info.row.original)) {
-            return '';
-          }
-          return ratioString((info as CellContext<DataRow, bigint>).getValue(), total, filtered);
-        },
-        size: 150,
-        meta: {
-          align: 'right',
-        },
-        invertSorting: true,
-      }),
-      columnHelper.accessor('cumulativeDiff', {
-        id: 'cumulativeDiff',
-        header: 'Cumulative Diff',
-        cell: info =>
-          addPlusSign(valueFormatter((info as CellContext<DataRow, bigint>).getValue(), unit, 2)),
-        size: 170,
-        meta: {
-          align: 'right',
-        },
-        invertSorting: true,
-      }),
-      columnHelper.accessor('cumulativeDiff', {
-        id: 'cumulativeDiffPercentage',
-        header: 'Cumulative Diff (%)',
-        cell: info => {
-          if (isDummyRow(info.row.original)) {
-            return '';
-          }
-          return ratioString((info as CellContext<DataRow, bigint>).getValue(), total, filtered);
-        },
-        size: 170,
-        meta: {
-          align: 'right',
-        },
-        invertSorting: true,
-      }),
-      columnHelper.accessor('name', {
-        id: 'name',
-        header: 'Name',
-        cell: info => info.getValue(),
-      }),
-      columnHelper.accessor('functionSystemName', {
-        id: 'functionSystemName',
-        header: 'Function System Name',
-        cell: info => info.getValue(),
-      }),
-      columnHelper.accessor('functionFileName', {
-        id: 'functionFileName',
-        header: 'Function File Name',
-        cell: info => info.getValue(),
-      }),
-      columnHelper.accessor('mappingFile', {
-        id: 'mappingFile',
-        header: 'Mapping File',
-        cell: info => info.getValue(),
-      }),
-    ];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileType, unit]);
-
-  const [columnVisibility, setColumnVisibility] = useState(() => {
-    return {
-      color: true,
-      flat: true,
-      flatPercentage: false,
-      flatDiff: compareMode,
-      flatDiffPercentage: false,
-      cumulative: true,
-      cumulativePercentage: false,
-      cumulativeDiff: compareMode,
-      cumulativeDiffPercentage: false,
-      name: true,
-      functionSystemName: false,
-      functionFileName: false,
-      mappingFile: false,
-    };
+  const tableConfig = useTableConfiguration({
+    unit,
+    profileType,
+    total,
+    filtered,
+    colorByColors,
+    colorBy: colorByValue,
+    compareMode,
   });
 
-  useEffect(() => {
-    if (Array.isArray(tableColumns)) {
-      setColumnVisibility(prevState => {
-        const newState = {...prevState};
-        (Object.keys(newState) as ColumnName[]).forEach(column => {
-          newState[column] = tableColumns.includes(column);
-        });
-        return newState;
-      });
-    }
-  }, [tableColumns]);
+  const {columns, initialSorting, columnVisibility} = tableConfig;
 
-  const onRowClick = useCallback((row: RowType<Row>) => {
-    if (isDummyRow(row.original)) {
-      return;
+  const rows = useMemo(() => {
+    if (table == null || table.numRows === 0) {
+      return [];
     }
 
-    setSelectedRow(row);
-    setSelectedFunctionName(row.original.name.trim());
-  }, []);
+    return processRowData({
+      table,
+      colorByColors,
+      colorBy: colorByValue,
+    });
+  }, [table, colorByColors, colorByValue]);
 
-  const initialSorting = useMemo(() => {
-    return [
-      {
-        id: compareMode ? 'flatDiff' : 'flat',
-        desc: false, // columns sorting are inverted - so this is actually descending
-      },
-    ];
-  }, [compareMode]);
+  const onRowClick = useCallback(
+    (row: DataRow) => {
+      setSelectedRow(row as unknown as TableRow<Row>);
+      setSandwichFunctionName(row.name.trim());
+    },
+    [dashboardItems.length]
+  );
 
   const enableHighlighting = useMemo(() => {
-    return selectedRow != null;
-  }, [selectedRow]);
+    return sandwichFunctionName != null && sandwichFunctionName?.length > 0;
+  }, [sandwichFunctionName]);
 
   const shouldHighlightRow = useCallback(
     (row: Row) => {
@@ -429,77 +216,10 @@ const Sandwich = React.memo(function Sandwich({
         return false;
       }
       const name = row.name;
-      // @ts-expect-error
-      return isSearchMatch(selectedRow?.original?.name as string, name);
+      return isSearchMatch(sandwichFunctionName as string, name);
     },
-    [selectedRow]
+    [sandwichFunctionName]
   );
-
-  const rows: DataRow[] = useMemo(() => {
-    if (table == null || table.numRows === 0) {
-      return [];
-    }
-
-    const flatColumn = table.getChild(FIELD_FLAT);
-    const flatDiffColumn = table.getChild(FIELD_FLAT_DIFF);
-    const cumulativeColumn = table.getChild(FIELD_CUMULATIVE);
-    const cumulativeDiffColumn = table.getChild(FIELD_CUMULATIVE_DIFF);
-    const functionNameColumn = table.getChild(FIELD_FUNCTION_NAME);
-    const functionSystemNameColumn = table.getChild(FIELD_FUNCTION_SYSTEM_NAME);
-    const functionFileNameColumn = table.getChild(FIELD_FUNCTION_FILE_NAME);
-    const mappingFileColumn = table.getChild(FIELD_MAPPING_FILE);
-    const locationAddressColumn = table.getChild(FIELD_LOCATION_ADDRESS);
-    const callersColumn = table.getChild(FIELD_CALLERS);
-    const calleesColumn = table.getChild(FIELD_CALLEES);
-
-    const getRow = (i: number): DataRow => {
-      const flat: bigint = flatColumn?.get(i) ?? 0n;
-      const flatDiff: bigint = flatDiffColumn?.get(i) ?? 0n;
-      const cumulative: bigint = cumulativeColumn?.get(i) ?? 0n;
-      const cumulativeDiff: bigint = cumulativeDiffColumn?.get(i) ?? 0n;
-      const functionSystemName: string = functionSystemNameColumn?.get(i) ?? '';
-      const functionFileName: string = functionFileNameColumn?.get(i) ?? '';
-      const mappingFile: string = mappingFileColumn?.get(i) ?? '';
-
-      return {
-        id: i,
-        colorProperty: {
-          color: getRowColor(colorByColors, mappingFileColumn, i, functionFileNameColumn, colorBy),
-          mappingFile,
-        },
-        name: RowName(mappingFileColumn, locationAddressColumn, functionNameColumn, i),
-        flat,
-        flatDiff,
-        cumulative,
-        cumulativeDiff,
-        functionSystemName,
-        functionFileName,
-        mappingFile,
-      };
-    };
-
-    const rows: DataRow[] = [];
-    for (let i = 0; i < table.numRows; i++) {
-      const row = getRow(i);
-      const callerIndices: Vector<Int64> = callersColumn?.get(i) ?? vectorFromArray([]);
-      const callers: DataRow[] = Array.from(callerIndices.toArray().values()).map(rowIdx => {
-        return getRow(Number(rowIdx));
-      });
-
-      const calleeIndices: Vector<Int64> = calleesColumn?.get(i) ?? vectorFromArray([]);
-      const callees: DataRow[] = Array.from(calleeIndices.toArray().values()).map(rowIdx => {
-        return getRow(Number(rowIdx));
-      });
-
-      row.callers = callers;
-      row.callees = callees;
-      row.subRows = [...getCallerRows(callers), ...getCalleeRows(callees)];
-
-      rows.push(row);
-    }
-
-    return rows;
-  }, [table, colorByColors, colorBy]);
 
   if (loading) {
     return (
@@ -513,8 +233,6 @@ const Sandwich = React.memo(function Sandwich({
     return <div className="mx-auto text-center">Profile has no samples</div>;
   }
 
-  // console.log(dimensions, ref);
-
   return (
     <section className="flex flex-row h-full w-full">
       <AnimatePresence>
@@ -526,110 +244,70 @@ const Sandwich = React.memo(function Sandwich({
           transition={{duration: 0.5}}
         >
           <div className="relative flex flex-row">
-            <div
-              className={cx('font-robotoMono h-[80vh] w-full cursor-pointer', {
-                'w-[50%]': selectedRow != null,
-              })}
-            >
-              <TableComponent
-                data={rows}
-                columns={columns}
-                initialSorting={initialSorting}
-                columnVisibility={columnVisibility}
-                usePointerCursor={dashboardItems.length > 1}
-                onRowDoubleClick={onRowClick}
-                getSubRows={row => (isDummyRow(row) ? [] : row.subRows ?? [])}
-                getCustomExpandedRowModel={getTopAndBottomExpandedRowModel}
-                expandedState={expanded}
-                shouldHighlightRow={shouldHighlightRow}
-                enableHighlighting={enableHighlighting}
-                onExpandedChange={getNewState => {
-                  // We only want the new expanded row so passing the exisitng state as empty
-                  // @ts-expect-error
-                  let newState = getNewState({});
-                  if (Object.keys(newState)[0] === Object.keys(expanded)[0]) {
-                    newState = {};
-                  }
-                  setExpanded(newState);
-                }}
-                CustomRowRenderer={CustomRowRenderer}
-                estimatedRowHeight={ROW_HEIGHT}
-                sandwich={true}
-              />
-            </div>
+            <TableSection
+              rows={rows}
+              columns={columns}
+              initialSorting={initialSorting}
+              columnVisibility={columnVisibility}
+              selectedRow={selectedRow}
+              onRowClick={onRowClick}
+              shouldHighlightRow={shouldHighlightRow}
+              enableHighlighting={enableHighlighting}
+            />
 
-            {selectedRow != null && (
+            {sandwichFunctionName != null && (
               <div className="w-[50%] flex flex-col">
-                <div className="flex relative flex-row" ref={callersRef}>
-                  <div className="[writing-mode:vertical-lr] -rotate-180 px-1 uppercase text-[10px] text-left">
-                    Callers {'->'}
-                  </div>
-                  <ProfileIcicleGraph
-                    curPath={curPath}
-                    setNewCurPath={setCurPath}
-                    arrow={
-                      callersFlamegraphResponse?.report.oneofKind === 'flamegraphArrow'
-                        ? callersFlamegraphResponse?.report?.flamegraphArrow
-                        : undefined
-                    }
-                    graph={undefined}
-                    total={BigInt(callersFlamegraphResponse?.total ?? '0')}
-                    filtered={filtered}
-                    profileType={profileSource?.ProfileType()}
-                    loading={callersFlamegraphLoading}
-                    error={callersFlamegraphError}
-                    isHalfScreen={true}
-                    width={
-                      callersRef.current != null
-                        ? isHalfScreen
-                          ? (callersRef.current.getBoundingClientRect().width - 54) / 2
-                          : callersRef.current.getBoundingClientRect().width - 16
-                        : 0
-                    }
-                    metadataMappingFiles={metadataMappingFiles}
-                    metadataLoading={metadataLoading}
-                    isSandwichIcicleGraph={true}
-                    curPathArrow={curPathArrow}
-                    setNewCurPathArrow={setCurPathArrow}
-                    isFlamegraph={true}
-                  />
-                </div>
-                {/* divider space */}
+                <CallersSection
+                  callersRef={callersRef}
+                  isHalfScreen={isHalfScreen}
+                  callersFlamegraphResponse={
+                    callersFlamegraphResponse?.report.oneofKind === 'flamegraphArrow'
+                      ? {
+                          report: {
+                            oneofKind: 'flamegraphArrow',
+                            flamegraphArrow: callersFlamegraphResponse.report.flamegraphArrow,
+                          },
+                          total: callersFlamegraphResponse.total?.toString() ?? '0',
+                        }
+                      : undefined
+                  }
+                  callersFlamegraphLoading={callersFlamegraphLoading}
+                  callersFlamegraphError={callersFlamegraphError}
+                  filtered={filtered}
+                  profileSource={profileSource}
+                  curPath={curPath}
+                  setCurPath={setCurPath}
+                  curPathArrow={curPathArrow}
+                  setCurPathArrow={setCurPathArrow}
+                  metadataMappingFiles={metadataMappingFiles}
+                  metadataLoading={false}
+                />
                 <div className="h-4" />
-                {/* divider space */}
-                <div className="flex relative items-start flex-row" ref={calleesRef}>
-                  <div className="[writing-mode:vertical-lr] -rotate-180 px-1 uppercase text-[10px] text-left">
-                    {'<-'} Callees
-                  </div>
-                  <ProfileIcicleGraph
-                    curPath={curPath}
-                    setNewCurPath={setCurPath}
-                    arrow={
-                      calleesFlamegraphResponse?.report.oneofKind === 'flamegraphArrow'
-                        ? calleesFlamegraphResponse?.report?.flamegraphArrow
-                        : undefined
-                    }
-                    graph={undefined}
-                    total={BigInt(calleesFlamegraphResponse?.total ?? '0')}
-                    filtered={filtered}
-                    profileType={profileSource?.ProfileType()}
-                    loading={calleesFlamegraphLoading}
-                    error={calleesFlamegraphError}
-                    isHalfScreen={true}
-                    width={
-                      calleesRef.current != null
-                        ? isHalfScreen
-                          ? (calleesRef.current.getBoundingClientRect().width - 54) / 2
-                          : calleesRef.current.getBoundingClientRect().width - 16
-                        : 0
-                    }
-                    metadataMappingFiles={metadataMappingFiles}
-                    metadataLoading={metadataLoading}
-                    isSandwichIcicleGraph={true}
-                    curPathArrow={curPathArrow}
-                    setNewCurPathArrow={setCurPathArrow}
-                  />
-                </div>
+                <CalleesSection
+                  calleesRef={calleesRef}
+                  isHalfScreen={isHalfScreen}
+                  calleesFlamegraphResponse={
+                    calleesFlamegraphResponse?.report.oneofKind === 'flamegraphArrow'
+                      ? {
+                          report: {
+                            oneofKind: 'flamegraphArrow',
+                            flamegraphArrow: calleesFlamegraphResponse.report.flamegraphArrow,
+                          },
+                          total: calleesFlamegraphResponse.total?.toString() ?? '0',
+                        }
+                      : undefined
+                  }
+                  calleesFlamegraphLoading={calleesFlamegraphLoading}
+                  calleesFlamegraphError={calleesFlamegraphError}
+                  filtered={filtered}
+                  profileSource={profileSource}
+                  curPath={curPath}
+                  setCurPath={setCurPath}
+                  curPathArrow={curPathArrow}
+                  setCurPathArrow={setCurPathArrow}
+                  metadataMappingFiles={metadataMappingFiles}
+                  metadataLoading={false}
+                />
               </div>
             )}
           </div>

@@ -137,8 +137,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     return tableFromIPC(arrow.record);
   }, [arrow]);
 
-  function getMaxDepth(table: Table<any>, row: number, level: number = 1): number {
-    const FIELD_CHILDREN = 'children';
+  function getMaxDepth(table: Table<any>, row: number, level: number = 0): number {
     const childRows: number[] = Array.from(table.getChild(FIELD_CHILDREN)?.get(row) ?? []);
     if (childRows.length === 0) return level;
     return Math.max(...childRows.map(child => getMaxDepth(table, child, level + 1)));
@@ -314,7 +313,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
                 colorForSimilarNodes={colorForSimilarNodes}
                 highlightSimilarStacksPreference={highlightSimilarStacksPreference}
                 profileSource={profileSource}
-                isSandwich={isSandwich}
               />
             </g>
           </g>
