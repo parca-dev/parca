@@ -1302,12 +1302,12 @@ func TestFlameChartMergeNeighbouringStacksWithSameRoot(t *testing.T) {
 	defer mem.AssertSize(t, 0)
 
 	np, err := foldedStacksWithTsToProfile(mem, []byte(`
-main;func_fib 10 1000 1000
-main;func_fib 10 2000 1000
-main;func_add 10 3000 1000
-runtime;gc 10 4000 1000
-main;func_fib 10 5000 1000
-main;func_fib 10 6000 1000
+main;func_fib 10 10 10
+main;func_fib 10 20 10
+main;func_add 10 30 10
+runtime;gc 10 40 10
+main;func_fib 10 50 10
+main;func_fib 10 60 10
 `))
 	require.NoError(t, err)
 	defer func() {
@@ -1348,8 +1348,8 @@ main;func_fib 10 6000 1000
 
 	require.Equal(t, int64(3), nums)
 
-	expectedTs := []int64{1000, 4000, 5000}
-	expectedDuration := []int64{3000, 1000, 2000}
+	expectedTs := []int64{10, 40, 50}
+	expectedDuration := []int64{30, 10, 20}
 
 	for j := int64(0); j < nums; j++ {
 		row = int(ChildrenValues.Value(int(offsetStart + j)))
@@ -1358,6 +1358,48 @@ main;func_fib 10 6000 1000
 		require.Equal(t, expectedTs[j], ts)
 		require.Equal(t, expectedDuration[j], duration)
 	}
+}
+
+func TestFlameChartDoNotMergeSamplesTooFarApart(t *testing.T) {
+	ctx := context.Background()
+	tracer := noop.NewTracerProvider().Tracer("")
+
+	mem := memory.NewCheckedAllocator(memory.NewGoAllocator())
+	defer mem.AssertSize(t, 0)
+
+	np, err := foldedStacksWithTsToProfile(mem, []byte(`
+a;b 52 1000 1000
+a;c 52 1158 1000
+a;d 52 1211 1000
+`))
+
+	// 1-2 diff in ts: 158, which means the first two samples are not merged
+	// 2-3 diff in ts: 53, which means the last two samples are merged
+	require.NoError(t, err)
+	defer func() {
+		for _, r := range np.Samples {
+			r.Release()
+		}
+	}()
+
+	// Group by function_name, timestamp, duration
+	record, _, _, _, err := generateFlamegraphArrowRecord(
+		ctx,
+		mem,
+		tracer,
+		np,
+		[]string{
+			FlamegraphFieldFunctionName,
+			FlamegraphFieldTimestamp,
+		},
+		0,
+	)
+	require.NoError(t, err)
+	defer record.Release()
+	// root -> a -> b
+	//      -> a -> c
+	//         ┗ -> d
+	require.Equal(t, int64(6), record.NumRows())
 }
 
 // split the line into 4 parts: stack, value, timestamp, duration

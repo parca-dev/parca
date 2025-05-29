@@ -585,7 +585,7 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 		if fb.aggregationConfig.aggregateByTimestamp {
 			merge, err := matchRowsByTimestamp(
 				fb.builderTimestamp.Value(cr),
-				fb.builderDuration.Value(cr),
+				fb.builderCumulative.Value(cr),
 				r.Timestamp.Value(sampleIndex),
 				r.Duration.Value(sampleIndex),
 			)
@@ -732,7 +732,7 @@ func (fb *flamegraphBuilder) mergeUnsymbolizedRows(
 		if fb.aggregationConfig.aggregateByTimestamp {
 			merge, err := matchRowsByTimestamp(
 				fb.builderTimestamp.Value(cr),
-				fb.builderDuration.Value(cr),
+				fb.builderCumulative.Value(cr),
 				r.Timestamp.Value(sampleIndex),
 				r.Duration.Value(sampleIndex),
 			)
@@ -761,7 +761,7 @@ func (fb *flamegraphBuilder) mergeUnsymbolizedRows(
 	return false, nil
 }
 
-func matchRowsByTimestamp(compareTimestamp, compareDuration, timestamp, duration int64) (bool, error) {
+func matchRowsByTimestamp(compareTimestamp, compareCumulative, timestamp, duration int64) (bool, error) {
 	if compareTimestamp > timestamp {
 		return false, fmt.Errorf("compareTimestamp > timestamp: %d > %d", compareTimestamp, timestamp)
 	}
@@ -769,10 +769,12 @@ func matchRowsByTimestamp(compareTimestamp, compareDuration, timestamp, duration
 		return false, fmt.Errorf("multiple samples for the same timestamp is not allowed: %d", timestamp)
 	}
 
-	difference := time.Duration(timestamp - (compareTimestamp + compareDuration))
+	difference := time.Duration(timestamp - (compareTimestamp + compareCumulative))
 	// We truncate 10% jitter. We use duration which usually is the period.
 	// For example, for 19hz sampling rate, we'll get a duration of 1000ms/19hz = 52.63ms
 	// and 10% are 5.2ms jitter that gets truncated.
+
+	// TODO: This heuristic makes no sense whatsoever, we should use period of the sample instead. 10% of the duration only happens to kind of work by accident at 19hz sampling rate.
 	jitter := time.Duration(duration / 10)
 	truncated := difference - jitter
 	return truncated <= 0, nil
