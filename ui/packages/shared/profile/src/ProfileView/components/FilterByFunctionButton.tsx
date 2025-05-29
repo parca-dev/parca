@@ -11,12 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useCallback, useMemo, useState } from 'react';
+import {useCallback, useMemo, useState} from 'react';
 
-import { Icon } from '@iconify/react';
+import {Icon} from '@iconify/react';
 
-import { Input, Select, type SelectItem, useURLState } from '@parca/components';
-import { USER_PREFERENCES, useUserPreference } from '@parca/hooks';
+import {Input, Select, useURLState, type SelectItem} from '@parca/components';
+import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 
 const FilterByFunctionButton = (): JSX.Element => {
   const [highlightAfterFilteringEnabled] = useUserPreference<boolean>(
