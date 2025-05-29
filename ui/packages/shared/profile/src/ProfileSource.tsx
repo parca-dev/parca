@@ -27,6 +27,7 @@ export interface ProfileSource {
   ProfileType: () => ProfileType;
   DiffSelection: () => ProfileDiffSelection;
   toString: (timezone?: string) => string;
+  excludeFunction?: boolean;
 }
 
 export interface ProfileSelection {
@@ -62,7 +63,8 @@ export function ProfileSelectionFromParams(
   mergeFrom: string | undefined,
   mergeTo: string | undefined,
   selection: string | undefined,
-  filterQuery?: string
+  filterQuery?: string,
+  excludeFunction?: boolean
 ): ProfileSelection | null {
   if (
     mergeFrom !== undefined &&
@@ -84,7 +86,8 @@ export function ProfileSelectionFromParams(
       parseInt(mergeFrom),
       parseInt(mergeTo),
       Query.parse(selection),
-      filterQuery
+      filterQuery,
+      excludeFunction
     );
   }
 
@@ -96,18 +99,21 @@ export class MergedProfileSelection implements ProfileSelection {
   mergeTo: number;
   query: Query;
   filterQuery: string | undefined;
+  excludeFunction: boolean | undefined;
   profileSource: ProfileSource;
 
-  constructor(mergeFrom: number, mergeTo: number, query: Query, filterQuery?: string) {
+  constructor(mergeFrom: number, mergeTo: number, query: Query, filterQuery?: string, excludeFunction?: boolean) {
     this.mergeFrom = mergeFrom;
     this.mergeTo = mergeTo;
     this.query = query;
     this.filterQuery = filterQuery;
+    this.excludeFunction = excludeFunction;
     this.profileSource = new MergedProfileSource(
       this.mergeFrom,
       this.mergeTo,
       this.query,
-      this.filterQuery
+      this.filterQuery,
+      this.excludeFunction
     );
   }
 
@@ -136,13 +142,15 @@ export class ProfileDiffSource implements ProfileSource {
   a: ProfileSource;
   b: ProfileSource;
   filterQuery: string | undefined;
+  excludeFunction: boolean | undefined;
   profileType: ProfileType;
   absolute?: boolean;
 
-  constructor(a: ProfileSource, b: ProfileSource, filterQuery?: string, absolute?: boolean) {
+  constructor(a: ProfileSource, b: ProfileSource, filterQuery?: string, excludeFunction?: boolean, absolute?: boolean) {
     this.a = a;
     this.b = b;
     this.filterQuery = filterQuery;
+    this.excludeFunction = excludeFunction;
     this.profileType = a.ProfileType();
     this.absolute = absolute;
   }
@@ -197,13 +205,15 @@ export class MergedProfileSource implements ProfileSource {
   mergeTo: number;
   query: Query;
   filterQuery: string | undefined;
+  excludeFunction: boolean | undefined;
   profileType: ProfileType;
 
-  constructor(mergeFrom: number, mergeTo: number, query: Query, filterQuery?: string) {
+  constructor(mergeFrom: number, mergeTo: number, query: Query, filterQuery?: string, excludeFunction?: boolean) {
     this.mergeFrom = mergeFrom;
     this.mergeTo = mergeTo;
     this.query = query;
     this.filterQuery = filterQuery;
+    this.excludeFunction = excludeFunction;
     this.profileType = ProfileType.fromString(Query.parse(this.query.toString()).profileName());
   }
 

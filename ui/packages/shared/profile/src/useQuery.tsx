@@ -56,6 +56,7 @@ export const useQuery = (
       options?.sourceOnly === true ? '' : options?.sourceFilename,
       options?.invertCallStack ?? false,
       options?.binaryFrameFilter ?? '',
+      profileSource.excludeFunction ?? false,
     ],
     queryFn: async () => {
       const req = profileSource.QueryRequest();
@@ -84,6 +85,7 @@ export const useQuery = (
                   oneofKind: 'functionNameStackFilter',
                   functionNameStackFilter: {
                     functionToFilter,
+                    exclude: profileSource.excludeFunction ?? false,
                   },
                 },
               },

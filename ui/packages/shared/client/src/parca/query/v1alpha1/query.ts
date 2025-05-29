@@ -570,6 +570,12 @@ export interface FunctionNameStackFilter {
      * @generated from protobuf field: string function_to_filter = 1;
      */
     functionToFilter: string;
+    /**
+     * exclude determines whether to exclude stacks matching the function
+     *
+     * @generated from protobuf field: bool exclude = 2;
+     */
+    exclude: boolean;
 }
 /**
  * FrameFilter is a filter for filtering by frames
@@ -2366,12 +2372,14 @@ export const StackFilter = new StackFilter$Type();
 class FunctionNameStackFilter$Type extends MessageType<FunctionNameStackFilter> {
     constructor() {
         super("parca.query.v1alpha1.FunctionNameStackFilter", [
-            { no: 1, name: "function_to_filter", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 1, name: "function_to_filter", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "exclude", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<FunctionNameStackFilter>): FunctionNameStackFilter {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.functionToFilter = "";
+        message.exclude = false;
         if (value !== undefined)
             reflectionMergePartial<FunctionNameStackFilter>(this, message, value);
         return message;
@@ -2383,6 +2391,9 @@ class FunctionNameStackFilter$Type extends MessageType<FunctionNameStackFilter> 
             switch (fieldNo) {
                 case /* string function_to_filter */ 1:
                     message.functionToFilter = reader.string();
+                    break;
+                case /* bool exclude */ 2:
+                    message.exclude = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2399,6 +2410,9 @@ class FunctionNameStackFilter$Type extends MessageType<FunctionNameStackFilter> 
         /* string function_to_filter = 1; */
         if (message.functionToFilter !== "")
             writer.tag(1, WireType.LengthDelimited).string(message.functionToFilter);
+        /* bool exclude = 2; */
+        if (message.exclude !== false)
+            writer.tag(2, WireType.Varint).bool(message.exclude);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
