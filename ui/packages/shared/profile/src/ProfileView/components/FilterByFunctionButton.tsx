@@ -15,7 +15,7 @@ import {useCallback, useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 
-import { Input, Select, SelectItem, useURLState } from '@parca/components';
+import { Input, Select, type SelectItem, useURLState } from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 
 const FilterByFunctionButton = (): JSX.Element => {

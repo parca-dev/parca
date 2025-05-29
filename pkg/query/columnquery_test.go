@@ -1873,7 +1873,7 @@ func TestFilterDataExclude(t *testing.T) {
 		}
 		require.Equal(t, int64(2), totalRows)
 		require.Equal(t, int64(400), totalValue) // kept: 100 + 300
-		require.Equal(t, int64(200), filtered) // removed: 200 (sample 2)
+		require.Equal(t, int64(200), filtered)   // removed: 200 (sample 2)
 	})
 
 	t.Run("exclude=true filters out samples with foo", func(t *testing.T) {
@@ -1908,7 +1908,7 @@ func TestFilterDataExclude(t *testing.T) {
 			tracer,
 			mem,
 			[]arrow.Record{originalRecord},
-			"", // empty filter
+			"",   // empty filter
 			true, // exclude=true
 			map[string]struct{}{},
 		)
@@ -1943,7 +1943,7 @@ func TestFilterDataExclude(t *testing.T) {
 			mem,
 			[]arrow.Record{originalRecord},
 			"nonexistent", // function that doesn't exist
-			true, // exclude=true
+			true,          // exclude=true
 			map[string]struct{}{},
 		)
 		require.NoError(t, err)
@@ -1971,7 +1971,7 @@ func TestFilterDataExclude(t *testing.T) {
 			mem,
 			[]arrow.Record{originalRecord},
 			"nonexistent", // function that doesn't exist
-			false, // exclude=false
+			false,         // exclude=false
 			map[string]struct{}{},
 		)
 		require.NoError(t, err)
