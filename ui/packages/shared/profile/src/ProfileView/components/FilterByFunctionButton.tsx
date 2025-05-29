@@ -15,7 +15,7 @@ import {useCallback, useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 
-import { Input, Select, SelectItem, useURLState } from '@parca/components';
+import {Input, Select, SelectItem, useURLState} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 
 const FilterByFunctionButton = (): JSX.Element => {
@@ -29,7 +29,14 @@ const FilterByFunctionButton = (): JSX.Element => {
   const [localValue, setLocalValue] = useState(storeValue as string);
 
   const isClearAction = useMemo(() => {
-    return localValue === storeValue && localValue != null && localValue !== '' && (excludeFunction ? excludeFunctionStoreValue === 'true' : excludeFunctionStoreValue !== 'true');
+    return (
+      localValue === storeValue &&
+      localValue != null &&
+      localValue !== '' &&
+      (excludeFunction
+        ? excludeFunctionStoreValue === 'true'
+        : excludeFunctionStoreValue !== 'true')
+    );
   }, [localValue, storeValue, excludeFunction, excludeFunctionStoreValue]);
 
   const onAction = useCallback((): void => {
@@ -50,7 +57,15 @@ const FilterByFunctionButton = (): JSX.Element => {
         setSearchString('');
       }
     }
-  }, [localValue, isClearAction, setStoreValue, setExcludeFunctionStoreValue, excludeFunction, highlightAfterFilteringEnabled, setSearchString]);
+  }, [
+    localValue,
+    isClearAction,
+    setStoreValue,
+    setExcludeFunctionStoreValue,
+    excludeFunction,
+    highlightAfterFilteringEnabled,
+    setSearchString,
+  ]);
 
   const filterModeItems: SelectItem[] = [
     {
@@ -93,7 +108,9 @@ const FilterByFunctionButton = (): JSX.Element => {
           onChange={e => setLocalValue(e.target.value)}
           value={localValue ?? ''}
           onBlur={() => setLocalValue(storeValue as string)}
-          actionIcon={isClearAction ? <Icon icon="ep:circle-close" /> : <Icon icon="ep:arrow-right" />}
+          actionIcon={
+            isClearAction ? <Icon icon="ep:circle-close" /> : <Icon icon="ep:arrow-right" />
+          }
           id="h-filter-by-function"
         />
       </div>
