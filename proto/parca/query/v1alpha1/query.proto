@@ -302,6 +302,8 @@ message StackFilter {
 message FunctionNameStackFilter {
   // function_to_filter is the function name to filter by
   string function_to_filter = 1;
+  // exclude determines whether to exclude stacks matching the function
+  bool exclude = 2;
 }
 
 // FrameFilter is a filter for filtering by frames

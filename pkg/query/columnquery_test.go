@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/apache/arrow-go/v18/arrow"
+	"github.com/apache/arrow-go/v18/arrow/math"
 	"github.com/apache/arrow-go/v18/arrow/memory"
 	"github.com/go-kit/log"
 	pprofprofile "github.com/google/pprof/profile"
@@ -1373,6 +1374,7 @@ func TestFilterData(t *testing.T) {
 		mem,
 		[]arrow.Record{originalRecord},
 		"",
+		false,
 		frameFilter,
 	)
 	require.NoError(t, err)
@@ -1420,6 +1422,7 @@ func TestFilterUnsymbolized(t *testing.T) {
 		mem,
 		[]arrow.Record{originalRecord},
 		"",
+		false,
 		map[string]struct{}{"test": {}},
 	)
 	require.NoError(t, err)
@@ -1503,6 +1506,7 @@ func TestFilterDataWithPath(t *testing.T) {
 		mem,
 		[]arrow.Record{originalRecord},
 		"",
+		false,
 		frameFilter,
 	)
 	require.NoError(t, err)
@@ -1587,6 +1591,7 @@ func TestFilterDataFrameFilter(t *testing.T) {
 		mem,
 		[]arrow.Record{originalRecord},
 		"",
+		false,
 		frameFilter,
 	)
 	require.NoError(t, err)
@@ -1674,6 +1679,7 @@ func BenchmarkFilterData(t *testing.B) {
 			mem,
 			[]arrow.Record{originalRecord},
 			"",
+			false,
 			map[string]struct{}{"test": {}},
 		)
 		require.NoError(t, err)
@@ -1681,6 +1687,303 @@ func BenchmarkFilterData(t *testing.B) {
 			r.Release()
 		}
 	}
+}
+
+func TestFilterDataExclude(t *testing.T) {
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
+
+	tracer := noop.NewTracerProvider().Tracer("")
+	ctx := context.Background()
+
+	// Create a profile with 3 samples:
+	// Sample 1: function "foo" -> "bar" -> "baz"
+	// Sample 2: function "main" -> "process" -> "handle"
+	// Sample 3: function "foo" -> "qux"
+	w := profile.NewWriter(mem, nil)
+	defer w.Release()
+
+	// Sample 1: has "foo"
+	w.LocationsList.Append(true)
+	w.Locations.Append(true)
+	w.Addresses.Append(0x1000)
+	w.MappingStart.Append(0x1000)
+	w.MappingLimit.Append(0x2000)
+	w.MappingOffset.Append(0x0)
+	w.MappingFile.Append([]byte("test"))
+	w.MappingBuildID.Append([]byte("test"))
+	w.Lines.Append(true)
+	w.Line.Append(true)
+	w.LineNumber.Append(1)
+	w.FunctionName.Append([]byte("foo"))
+	w.FunctionSystemName.Append([]byte("foo"))
+	w.FunctionFilename.Append([]byte("test.go"))
+	w.FunctionStartLine.Append(1)
+
+	w.Locations.Append(true)
+	w.Addresses.Append(0x1100)
+	w.MappingStart.Append(0x1000)
+	w.MappingLimit.Append(0x2000)
+	w.MappingOffset.Append(0x0)
+	w.MappingFile.Append([]byte("test"))
+	w.MappingBuildID.Append([]byte("test"))
+	w.Lines.Append(true)
+	w.Line.Append(true)
+	w.LineNumber.Append(2)
+	w.FunctionName.Append([]byte("bar"))
+	w.FunctionSystemName.Append([]byte("bar"))
+	w.FunctionFilename.Append([]byte("test.go"))
+	w.FunctionStartLine.Append(10)
+
+	w.Locations.Append(true)
+	w.Addresses.Append(0x1200)
+	w.MappingStart.Append(0x1000)
+	w.MappingLimit.Append(0x2000)
+	w.MappingOffset.Append(0x0)
+	w.MappingFile.Append([]byte("test"))
+	w.MappingBuildID.Append([]byte("test"))
+	w.Lines.Append(true)
+	w.Line.Append(true)
+	w.LineNumber.Append(3)
+	w.FunctionName.Append([]byte("baz"))
+	w.FunctionSystemName.Append([]byte("baz"))
+	w.FunctionFilename.Append([]byte("test.go"))
+	w.FunctionStartLine.Append(20)
+	w.Value.Append(100)
+	w.Diff.Append(0)
+	w.TimeNanos.Append(1)
+	w.Duration.Append(1)
+
+	// Sample 2: no "foo"
+	w.LocationsList.Append(true)
+	w.Locations.Append(true)
+	w.Addresses.Append(0x2000)
+	w.MappingStart.Append(0x1000)
+	w.MappingLimit.Append(0x3000)
+	w.MappingOffset.Append(0x0)
+	w.MappingFile.Append([]byte("test"))
+	w.MappingBuildID.Append([]byte("test"))
+	w.Lines.Append(true)
+	w.Line.Append(true)
+	w.LineNumber.Append(4)
+	w.FunctionName.Append([]byte("main"))
+	w.FunctionSystemName.Append([]byte("main"))
+	w.FunctionFilename.Append([]byte("main.go"))
+	w.FunctionStartLine.Append(1)
+
+	w.Locations.Append(true)
+	w.Addresses.Append(0x2100)
+	w.MappingStart.Append(0x1000)
+	w.MappingLimit.Append(0x3000)
+	w.MappingOffset.Append(0x0)
+	w.MappingFile.Append([]byte("test"))
+	w.MappingBuildID.Append([]byte("test"))
+	w.Lines.Append(true)
+	w.Line.Append(true)
+	w.LineNumber.Append(5)
+	w.FunctionName.Append([]byte("process"))
+	w.FunctionSystemName.Append([]byte("process"))
+	w.FunctionFilename.Append([]byte("main.go"))
+	w.FunctionStartLine.Append(10)
+
+	w.Locations.Append(true)
+	w.Addresses.Append(0x2200)
+	w.MappingStart.Append(0x1000)
+	w.MappingLimit.Append(0x3000)
+	w.MappingOffset.Append(0x0)
+	w.MappingFile.Append([]byte("test"))
+	w.MappingBuildID.Append([]byte("test"))
+	w.Lines.Append(true)
+	w.Line.Append(true)
+	w.LineNumber.Append(6)
+	w.FunctionName.Append([]byte("handle"))
+	w.FunctionSystemName.Append([]byte("handle"))
+	w.FunctionFilename.Append([]byte("main.go"))
+	w.FunctionStartLine.Append(20)
+	w.Value.Append(200)
+	w.Diff.Append(0)
+	w.TimeNanos.Append(2)
+	w.Duration.Append(1)
+
+	// Sample 3: has "foo"
+	w.LocationsList.Append(true)
+	w.Locations.Append(true)
+	w.Addresses.Append(0x3000)
+	w.MappingStart.Append(0x1000)
+	w.MappingLimit.Append(0x4000)
+	w.MappingOffset.Append(0x0)
+	w.MappingFile.Append([]byte("test"))
+	w.MappingBuildID.Append([]byte("test"))
+	w.Lines.Append(true)
+	w.Line.Append(true)
+	w.LineNumber.Append(7)
+	w.FunctionName.Append([]byte("foo"))
+	w.FunctionSystemName.Append([]byte("foo"))
+	w.FunctionFilename.Append([]byte("test.go"))
+	w.FunctionStartLine.Append(1)
+
+	w.Locations.Append(true)
+	w.Addresses.Append(0x3100)
+	w.MappingStart.Append(0x1000)
+	w.MappingLimit.Append(0x4000)
+	w.MappingOffset.Append(0x0)
+	w.MappingFile.Append([]byte("test"))
+	w.MappingBuildID.Append([]byte("test"))
+	w.Lines.Append(true)
+	w.Line.Append(true)
+	w.LineNumber.Append(8)
+	w.FunctionName.Append([]byte("qux"))
+	w.FunctionSystemName.Append([]byte("qux"))
+	w.FunctionFilename.Append([]byte("test.go"))
+	w.FunctionStartLine.Append(30)
+	w.Value.Append(300)
+	w.Diff.Append(0)
+	w.TimeNanos.Append(3)
+	w.Duration.Append(1)
+
+	originalRecord := w.RecordBuilder.NewRecord()
+	defer originalRecord.Release()
+
+	t.Run("exclude=false filters to only samples with foo", func(t *testing.T) {
+		originalRecord.Retain()
+		recs, filtered, err := FilterProfileData(
+			ctx,
+			tracer,
+			mem,
+			[]arrow.Record{originalRecord},
+			"foo",
+			false, // exclude=false (include only matching)
+			map[string]struct{}{},
+		)
+		require.NoError(t, err)
+		defer func() {
+			for _, r := range recs {
+				r.Release()
+			}
+		}()
+
+		// Should have 2 samples (sample 1 and 3 which have "foo")
+		// The filtered value is the sum of values that were REMOVED, not kept
+		totalRows := int64(0)
+		totalValue := int64(0)
+		for _, rec := range recs {
+			totalRows += rec.NumRows()
+			r := profile.NewRecordReader(rec)
+			totalValue += math.Int64.Sum(r.Value)
+		}
+		require.Equal(t, int64(2), totalRows)
+		require.Equal(t, int64(400), totalValue) // kept: 100 + 300
+		require.Equal(t, int64(200), filtered)   // removed: 200 (sample 2)
+	})
+
+	t.Run("exclude=true filters out samples with foo", func(t *testing.T) {
+		originalRecord.Retain()
+		recs, filtered, err := FilterProfileData(
+			ctx,
+			tracer,
+			mem,
+			[]arrow.Record{originalRecord},
+			"foo",
+			true, // exclude=true (exclude matching)
+			map[string]struct{}{},
+		)
+		require.NoError(t, err)
+		defer func() {
+			for _, r := range recs {
+				r.Release()
+			}
+		}()
+
+		// Should have 1 sample (sample 2 which doesn't have "foo")
+		require.Len(t, recs, 1)
+		require.Equal(t, int64(1), recs[0].NumRows())
+		// The filtered value is the sum of values that were REMOVED
+		require.Equal(t, int64(400), filtered) // removed: 100 + 300 (samples with foo)
+	})
+
+	t.Run("empty filter with exclude=true returns all samples", func(t *testing.T) {
+		originalRecord.Retain()
+		recs, filtered, err := FilterProfileData(
+			ctx,
+			tracer,
+			mem,
+			[]arrow.Record{originalRecord},
+			"",   // empty filter
+			true, // exclude=true
+			map[string]struct{}{},
+		)
+		require.NoError(t, err)
+		defer func() {
+			for _, r := range recs {
+				r.Release()
+			}
+		}()
+
+		// Debug output
+		t.Logf("Number of records returned: %d", len(recs))
+		if len(recs) > 0 {
+			t.Logf("Rows in first record: %d", recs[0].NumRows())
+		}
+		t.Logf("Filtered value: %d", filtered)
+
+		// Should return all samples
+		require.Greater(t, len(recs), 0, "Expected at least one record")
+		if len(recs) > 0 {
+			require.Equal(t, int64(3), recs[0].NumRows())
+			// The filtered value is the sum of values that were REMOVED
+			require.Equal(t, int64(0), filtered) // nothing removed with empty filter
+		}
+	})
+
+	t.Run("function not found with exclude=true returns all samples", func(t *testing.T) {
+		originalRecord.Retain()
+		recs, filtered, err := FilterProfileData(
+			ctx,
+			tracer,
+			mem,
+			[]arrow.Record{originalRecord},
+			"nonexistent", // function that doesn't exist
+			true,          // exclude=true
+			map[string]struct{}{},
+		)
+		require.NoError(t, err)
+		defer func() {
+			for _, r := range recs {
+				r.Release()
+			}
+		}()
+
+		// Should return all samples (nothing to exclude)
+		totalRows := int64(0)
+		for _, rec := range recs {
+			totalRows += rec.NumRows()
+		}
+		require.Equal(t, int64(3), totalRows)
+		// The filtered value is the sum of values that were REMOVED
+		require.Equal(t, int64(0), filtered) // nothing removed
+	})
+
+	t.Run("function not found with exclude=false returns no samples", func(t *testing.T) {
+		originalRecord.Retain()
+		recs, _, err := FilterProfileData(
+			ctx,
+			tracer,
+			mem,
+			[]arrow.Record{originalRecord},
+			"nonexistent", // function that doesn't exist
+			false,         // exclude=false
+			map[string]struct{}{},
+		)
+		require.NoError(t, err)
+		defer func() {
+			for _, r := range recs {
+				r.Release()
+			}
+		}()
+
+		// Should return no samples (nothing matches)
+		require.Len(t, recs, 0)
+	})
 }
 
 func TestKwayMerge(t *testing.T) {

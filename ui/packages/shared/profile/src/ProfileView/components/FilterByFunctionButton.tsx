@@ -15,7 +15,7 @@ import {useCallback, useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 
-import {Input, useURLState} from '@parca/components';
+import {Input, Select, useURLState, type SelectItem} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 
 const FilterByFunctionButton = (): JSX.Element => {
@@ -23,39 +23,98 @@ const FilterByFunctionButton = (): JSX.Element => {
     USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING.key
   );
   const [storeValue, setStoreValue] = useURLState('filter_by_function');
+  const [excludeFunctionStoreValue, setExcludeFunctionStoreValue] = useURLState('exclude_function');
+  const [excludeFunction, setExcludeFunction] = useState(excludeFunctionStoreValue === 'true');
   const [_, setSearchString] = useURLState('search_string');
   const [localValue, setLocalValue] = useState(storeValue as string);
 
   const isClearAction = useMemo(() => {
-    return localValue === storeValue && localValue != null && localValue !== '';
-  }, [localValue, storeValue]);
+    return (
+      localValue === storeValue &&
+      localValue != null &&
+      localValue !== '' &&
+      (excludeFunction
+        ? excludeFunctionStoreValue === 'true'
+        : excludeFunctionStoreValue !== 'true')
+    );
+  }, [localValue, storeValue, excludeFunction, excludeFunctionStoreValue]);
 
   const onAction = useCallback((): void => {
     if (isClearAction) {
       setLocalValue('');
       setStoreValue('');
+      setExcludeFunction(false);
+      setExcludeFunctionStoreValue('');
       if (highlightAfterFilteringEnabled) {
         setSearchString('');
       }
     } else {
       setStoreValue(localValue);
-      if (highlightAfterFilteringEnabled) {
+      setExcludeFunctionStoreValue(excludeFunction ? 'true' : '');
+      if (!excludeFunction && highlightAfterFilteringEnabled) {
         setSearchString(localValue);
+      } else {
+        setSearchString('');
       }
     }
-  }, [localValue, isClearAction, setStoreValue, highlightAfterFilteringEnabled, setSearchString]);
+  }, [
+    localValue,
+    isClearAction,
+    setStoreValue,
+    setExcludeFunctionStoreValue,
+    excludeFunction,
+    highlightAfterFilteringEnabled,
+    setSearchString,
+  ]);
+
+  const filterModeItems: SelectItem[] = [
+    {
+      key: 'include',
+      element: {
+        active: <>Contains</>,
+        expanded: <>Contains</>,
+      },
+    },
+    {
+      key: 'exclude',
+      element: {
+        active: <>Not Contains</>,
+        expanded: <>Not Contains</>,
+      },
+    },
+  ];
+
+  const handleFilterModeChange = useCallback((key: string): void => {
+    setExcludeFunction(key === 'exclude');
+  }, []);
 
   return (
-    <Input
-      placeholder="Filter by function"
-      className="text-sm"
-      onAction={onAction}
-      onChange={e => setLocalValue(e.target.value)}
-      value={localValue ?? ''}
-      onBlur={() => setLocalValue(storeValue as string)}
-      actionIcon={isClearAction ? <Icon icon="ep:circle-close" /> : <Icon icon="ep:arrow-right" />}
-      id="h-filter-by-function"
-    />
+    <div className="relative">
+      <div className="absolute inset-y-0 left-0 z-10 flex items-center">
+        <div className="h-full">
+          <Select
+            items={filterModeItems}
+            selectedKey={excludeFunction ? 'exclude' : 'include'}
+            onSelection={handleFilterModeChange}
+            className="h-full rounded-l-md rounded-r-none w-[148px]"
+          />
+        </div>
+      </div>
+      <div className="flex">
+        <Input
+          placeholder="Filter by function"
+          className="pl-[152px] text-sm"
+          onAction={onAction}
+          onChange={e => setLocalValue(e.target.value)}
+          value={localValue ?? ''}
+          onBlur={() => setLocalValue(storeValue as string)}
+          actionIcon={
+            isClearAction ? <Icon icon="ep:circle-close" /> : <Icon icon="ep:arrow-right" />
+          }
+          id="h-filter-by-function"
+        />
+      </div>
+    </div>
   );
 };
 
