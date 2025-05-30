@@ -23,7 +23,6 @@ import {CurrentPathFrame} from '../../../ProfileIcicleGraph/IcicleGraphArrow/uti
 import {ProfileSource} from '../../../ProfileSource';
 import {useDashboard} from '../../context/DashboardContext';
 import GroupByDropdown from '../ActionButtons/GroupByDropdown';
-import SortByDropdown from '../ActionButtons/SortByDropdown';
 import FilterByFunctionButton from '../FilterByFunctionButton';
 import ShareButton from '../ShareButton';
 import ViewSelector from '../ViewSelector';
@@ -95,7 +94,6 @@ export const IcicleGraphToolbar: FC<IcicleGraphToolbarProps> = ({curPath, setNew
   return (
     <>
       <div className="flex w-full gap-2 items-end">
-        <SortByDropdown />
         <Button
           variant="neutral"
           className="gap-2 w-max h-fit"

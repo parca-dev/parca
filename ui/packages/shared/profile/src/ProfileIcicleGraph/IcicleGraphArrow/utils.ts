@@ -25,6 +25,7 @@ import {divide, getLastItem, valueFormatter} from '@parca/utilities';
 import {MergedProfileSource, ProfileSource} from '../../ProfileSource';
 import {BigIntDuo, hexifyAddress} from '../../utils';
 import {
+  FIELD_DEPTH,
   FIELD_FUNCTION_NAME,
   FIELD_FUNCTION_START_LINE,
   FIELD_INLINED,
@@ -33,14 +34,10 @@ import {
   FIELD_MAPPING_FILE,
 } from './index';
 
-export function nodeLabel(
-  table: Table<any>,
-  row: number,
-  level: number,
-  showBinaryName: boolean
-): string {
+export function nodeLabel(table: Table<any>, row: number, showBinaryName: boolean): string {
   const labelsOnly: boolean | null = table.getChild(FIELD_LABELS_ONLY)?.get(row);
-  if (level === 1 && labelsOnly !== null && labelsOnly) {
+  const depth: number = table.getChild(FIELD_DEPTH)?.get(row) ?? 0;
+  if (depth === 1 && labelsOnly !== null && labelsOnly) {
     return getLabelSet(table, row);
   }
 
@@ -150,11 +147,7 @@ export interface CurrentPathFrame {
   labels?: string;
 }
 
-export const getCurrentPathFrameData = (
-  table: Table<any>,
-  row: number,
-  level: number
-): CurrentPathFrame => {
+export const getCurrentPathFrameData = (table: Table<any>, row: number): CurrentPathFrame => {
   const functionName: string | null = arrowToString(table.getChild(FIELD_FUNCTION_NAME)?.get(row));
   const systemName: string | null = arrowToString(table.getChild(FIELD_FUNCTION_NAME)?.get(row));
   const fileName: string | null = arrowToString(table.getChild(FIELD_MAPPING_FILE)?.get(row));
@@ -163,8 +156,9 @@ export const getCurrentPathFrameData = (
   const address = hexifyAddress(addressBigInt);
   const inlined: boolean | null = table.getChild(FIELD_INLINED)?.get(row);
   const labelsOnly: boolean | null = table.getChild(FIELD_LABELS_ONLY)?.get(row);
+  const depth = table.getChild(FIELD_DEPTH)?.get(row) ?? 0;
   let labels: undefined | string;
-  if (level === 1 && labelsOnly !== null && labelsOnly) {
+  if (depth === 1 && labelsOnly !== null && labelsOnly) {
     labels = getLabelSet(table, row);
   }
 
@@ -196,10 +190,9 @@ function getLabelSet(table: Table<any>, row: number): string {
 export function isCurrentPathFrameMatch(
   table: Table<any>,
   row: number,
-  level: number,
   b: CurrentPathFrame
 ): boolean {
-  const a = getCurrentPathFrameData(table, row, level);
+  const a = getCurrentPathFrameData(table, row);
   return (
     a.functionName === b.functionName &&
     a.systemName === b.systemName &&

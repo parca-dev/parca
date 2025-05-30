@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {memo, useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {memo, useCallback, useMemo, useRef, useState} from 'react';
 
 import {Dictionary, Table, Vector, tableFromIPC} from 'apache-arrow';
 import {useContextMenu} from 'react-contexify';
@@ -19,26 +19,24 @@ import {useContextMenu} from 'react-contexify';
 import {FlamegraphArrow} from '@parca/client';
 import {useURLState} from '@parca/components';
 import {USER_PREFERENCES, useCurrentColorProfile, useUserPreference} from '@parca/hooks';
-import {ProfileType} from '@parca/parser';
-import {
-  getColorForFeature,
-  selectDarkMode,
-  setHoveringNode,
-  useAppDispatch,
-  useAppSelector,
-} from '@parca/store';
-import {getLastItem, scaleLinear, type ColorConfig} from '@parca/utilities';
+import {getColorForFeature, selectDarkMode, useAppSelector} from '@parca/store';
+import {getLastItem, type ColorConfig} from '@parca/utilities';
 
-import GraphTooltipArrow from '../../GraphTooltipArrow';
-import GraphTooltipArrowContent from '../../GraphTooltipArrow/Content';
-import {DockedGraphTooltip} from '../../GraphTooltipArrow/DockedGraphTooltip';
 import {ProfileSource} from '../../ProfileSource';
 import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
-import ContextMenu from './ContextMenu';
-import {IcicleChartRootNode} from './IcicleChartRootNode';
+import ContextMenuWrapper, {ContextMenuWrapperRef} from './ContextMenuWrapper';
 import {IcicleNode, RowHeight, colorByColors} from './IcicleGraphNodes';
+import {MemoizedTooltip} from './MemoizedTooltip';
+import {TooltipProvider} from './TooltipContext';
 import {useFilenamesList} from './useMappingList';
-import {CurrentPathFrame, arrowToString, extractFeature, extractFilenameFeature} from './utils';
+import {
+  CurrentPathFrame,
+  arrowToString,
+  extractFeature,
+  extractFilenameFeature,
+  getCurrentPathFrameData,
+  isCurrentPathFrameMatch,
+} from './utils';
 
 export const FIELD_LABELS_ONLY = 'labels_only';
 export const FIELD_MAPPING_FILE = 'mapping_file';
@@ -58,18 +56,18 @@ export const FIELD_LABELS = 'labels';
 export const FIELD_CUMULATIVE = 'cumulative';
 export const FIELD_FLAT = 'flat';
 export const FIELD_DIFF = 'diff';
+export const FIELD_PARENT = 'parent';
+export const FIELD_DEPTH = 'depth';
+export const FIELD_VALUE_OFFSET = 'value_offset';
 
 interface IcicleGraphArrowProps {
   arrow: FlamegraphArrow;
   total: bigint;
   filtered: bigint;
-  profileType?: ProfileType;
-  profileSource?: ProfileSource;
+  profileSource: ProfileSource;
   width?: number;
   curPath: CurrentPathFrame[];
   setCurPath: (path: CurrentPathFrame[]) => void;
-  sortBy: string;
-  flamegraphLoading: boolean;
   isHalfScreen: boolean;
   mappingsListFromMetadata: string[];
   compareAbsolute: boolean;
@@ -113,32 +111,22 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   width,
   setCurPath,
   curPath,
-  profileType,
   profileSource,
-  sortBy,
-  flamegraphLoading,
   mappingsListFromMetadata,
   compareAbsolute,
   isIcicleChart = false,
 }: IcicleGraphArrowProps): React.JSX.Element {
-  const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
-  const dispatch = useAppDispatch();
   const [highlightSimilarStacksPreference] = useUserPreference<boolean>(
     USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS.key
   );
+  const [hoveringRow, setHoveringRow] = useState<number | undefined>(undefined);
   const [dockedMetainfo] = useUserPreference<boolean>(USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key);
   const isDarkMode = useAppSelector(selectDarkMode);
 
   const table: Table<any> = useMemo(() => {
     return tableFromIPC(arrow.record);
   }, [arrow]);
-
-  const [height, setHeight] = useState(0);
-  const [hoveringRow, setHoveringRow] = useState<number | null>(null);
-  const [hoveringLevel, setHoveringLevel] = useState<number | null>(null);
-  const [hoveringName, setHoveringName] = useState<string | null>(null);
   const svg = useRef(null);
-  const ref = useRef<SVGGElement>(null);
 
   const [binaryFrameFilter, setBinaryFrameFilter] = useURLState('binary_frame_filter');
 
@@ -200,39 +188,20 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   const colorByColors: colorByColors = colorByList[colorByValue as ColorByKey];
 
-  useEffect(() => {
-    if (ref.current != null) {
-      setHeight(ref?.current.getBoundingClientRect().height);
-    }
-  }, [width, flamegraphLoading]);
-
-  const xScale = useMemo(() => {
-    if (total === 0n) {
-      return () => 0;
-    }
-
-    if (width === undefined) {
-      return () => 0;
-    }
-    return scaleLinear([0n, total], [0, width]);
-  }, [total, width]);
-
   const MENU_ID = 'icicle-graph-context-menu';
+  const contextMenuRef = useRef<ContextMenuWrapperRef>(null);
   const {show, hideAll} = useContextMenu({
     id: MENU_ID,
   });
   const displayMenu = useCallback(
-    (e: React.MouseEvent): void => {
+    (e: React.MouseEvent, row: number): void => {
+      contextMenuRef.current?.setRow(row);
       show({
         event: e,
       });
     },
     [show]
   );
-
-  const trackVisibility = (isVisible: boolean): void => {
-    setIsContextMenuOpen(isVisible);
-  };
 
   const hideBinary = (binaryToRemove: string): void => {
     // second/subsequent time filtering out a binary i.e. a binary has already been hidden
@@ -249,187 +218,110 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     setBinaryFrameFilter(newMappingsList);
   };
 
-  const highlightSimilarStacksName = highlightSimilarStacksPreference ? hoveringName : null;
-  const highlightSimilarStacksSetName = useMemo(() => {
-    return highlightSimilarStacksPreference ? setHoveringName : noop;
-  }, [highlightSimilarStacksPreference]);
-  const highlightSimilarStacksRow = highlightSimilarStacksPreference ? hoveringRow : null;
-  const path = useMemo(() => {
-    return [];
-  }, []);
+  const handleRowClick = (row: number): void => {
+    // Walk down the stack starting at row until we reach the root (row 0).
+    const path: CurrentPathFrame[] = [];
+    let currentRow = row;
+    while (currentRow > 0) {
+      const frame = getCurrentPathFrameData(table, currentRow);
+      path.push(frame);
+      currentRow = table.getChild(FIELD_PARENT)?.get(currentRow) ?? 0;
+    }
 
-  // useMemo for the root graph as it otherwise renders the whole graph if the hoveringRow changes.
-  const root = useMemo(() => {
-    if (isIcicleChart) {
-      return (
+    // Reverse the path so that the root is first.
+    path.reverse();
+    setCurPath(path);
+  };
+
+  const depthColumn = table.getChild(FIELD_DEPTH);
+  const maxDepth = depthColumn === null ? 0 : Math.max(...depthColumn.toArray());
+  const height = maxDepth * RowHeight;
+
+  // To find the selected row, we must walk the current path and look at which
+  // children of the current frame matches the path element exactly. Until the
+  // end, the row we find at the end is our selected row.
+  let currentRow = 0;
+  for (const frame of curPath) {
+    let childRows: number[] = Array.from(table.getChild(FIELD_CHILDREN)?.get(currentRow) ?? []);
+    if (childRows.length === 0) {
+      // If there are no children, we can stop here.
+      break;
+    }
+    childRows = childRows.filter(c => isCurrentPathFrameMatch(table, c, frame));
+    if (childRows.length === 0) {
+      // If there are no children that match the current path frame, we can stop here.
+      break;
+    }
+    if (childRows.length > 1) {
+      // If there are multiple children that match the current path frame, we can stop here.
+      // This is a case where the path is ambiguous and we cannot determine a single row.
+      break;
+    }
+    // If there is exactly one child that matches the current path frame, we can continue.
+    currentRow = childRows[0];
+  }
+  const selectedRow = currentRow;
+
+  return (
+    <TooltipProvider
+      table={table}
+      total={total}
+      totalUnfiltered={total + filtered}
+      unit={arrow.unit}
+      compareAbsolute={compareAbsolute}
+    >
+      <div className="relative">
+        <ContextMenuWrapper
+          ref={contextMenuRef}
+          menuId={MENU_ID}
+          table={table}
+          total={total}
+          totalUnfiltered={total + filtered}
+          compareAbsolute={compareAbsolute}
+          resetPath={() => setCurPath([])}
+          hideMenu={hideAll}
+          hideBinary={hideBinary}
+          unit={arrow.unit}
+        />
+        <MemoizedTooltip contextElement={svg.current} dockedMetainfo={dockedMetainfo} />
         <svg
           className="font-robotoMono"
           width={width}
           height={height}
           preserveAspectRatio="xMinYMid"
           ref={svg}
-          onContextMenu={displayMenu}
         >
-          <g ref={ref}>
-            <g transform={'translate(0, 0)'}>
-              <IcicleChartRootNode
-                table={table}
-                row={0}
-                colors={colorByColors}
-                colorBy={colorByValue}
-                x={0}
-                y={0}
-                totalWidth={width ?? 1}
-                height={RowHeight}
-                setCurPath={setCurPath}
-                curPath={curPath}
-                total={total}
-                xScale={xScale}
-                path={path}
-                level={0}
-                isRoot={true}
-                searchString={(currentSearchString as string) ?? ''}
-                setHoveringRow={setHoveringRow}
-                setHoveringLevel={setHoveringLevel}
-                sortBy={sortBy}
-                darkMode={isDarkMode}
-                compareMode={compareMode}
-                profileType={profileType}
-                isContextMenuOpen={isContextMenuOpen}
-                hoveringName={highlightSimilarStacksName}
-                setHoveringName={highlightSimilarStacksSetName}
-                hoveringRow={highlightSimilarStacksRow}
-                colorForSimilarNodes={colorForSimilarNodes}
-                highlightSimilarStacksPreference={highlightSimilarStacksPreference}
-                profileSource={profileSource}
-              />
-            </g>
-          </g>
-        </svg>
-      );
-    }
-    return (
-      <svg
-        className="font-robotoMono"
-        width={width}
-        height={height}
-        preserveAspectRatio="xMinYMid"
-        ref={svg}
-        onContextMenu={displayMenu}
-      >
-        <g ref={ref}>
-          <g transform={'translate(0, 0)'}>
+          {Array.from({length: table.numRows}, (_, row) => (
             <IcicleNode
+              key={row}
               table={table}
-              row={0} // root is always row 0 in the arrow record
+              row={row} // root is always row 0 in the arrow record
               colors={colorByColors}
               colorBy={colorByValue}
-              x={0}
-              y={0}
               totalWidth={width ?? 1}
               height={RowHeight}
-              setCurPath={setCurPath}
-              curPath={curPath}
-              total={total}
-              xScale={xScale}
-              path={path}
-              level={0}
-              isRoot={true}
               searchString={(currentSearchString as string) ?? ''}
-              setHoveringRow={setHoveringRow}
-              setHoveringLevel={setHoveringLevel}
-              sortBy={sortBy}
               darkMode={isDarkMode}
               compareMode={compareMode}
-              profileType={profileType}
-              isContextMenuOpen={isContextMenuOpen}
-              hoveringName={highlightSimilarStacksName}
-              setHoveringName={highlightSimilarStacksSetName}
-              hoveringRow={highlightSimilarStacksRow}
               colorForSimilarNodes={colorForSimilarNodes}
-              highlightSimilarStacksPreference={highlightSimilarStacksPreference}
+              selectedRow={selectedRow}
+              onClick={() => {
+                if (isIcicleChart) {
+                  // We don't want to expand in icicle charts.
+                  return;
+                }
+                handleRowClick(row);
+              }}
+              onContextMenu={displayMenu}
+              hoveringRow={highlightSimilarStacksPreference ? hoveringRow : undefined}
+              setHoveringRow={highlightSimilarStacksPreference ? setHoveringRow : noop}
+              isIcicleChart={isIcicleChart}
+              profileSource={profileSource}
             />
-          </g>
-        </g>
-      </svg>
-    );
-  }, [
-    width,
-    height,
-    displayMenu,
-    table,
-    colorByColors,
-    colorByValue,
-    setCurPath,
-    curPath,
-    total,
-    xScale,
-    currentSearchString,
-    sortBy,
-    isDarkMode,
-    compareMode,
-    profileType,
-    isContextMenuOpen,
-    highlightSimilarStacksName,
-    highlightSimilarStacksRow,
-    colorForSimilarNodes,
-    highlightSimilarStacksPreference,
-    path,
-    highlightSimilarStacksSetName,
-    isIcicleChart,
-    profileSource,
-  ]);
-
-  return (
-    <>
-      <div className="relative" onMouseLeave={() => dispatch(setHoveringNode(undefined))}>
-        <ContextMenu
-          menuId={MENU_ID}
-          table={table}
-          row={hoveringRow ?? 0}
-          level={hoveringLevel ?? 0}
-          total={total}
-          totalUnfiltered={total + filtered}
-          profileType={profileType}
-          compareAbsolute={compareAbsolute}
-          trackVisibility={trackVisibility}
-          curPath={curPath}
-          setCurPath={setCurPath}
-          hideMenu={hideAll}
-          hideBinary={hideBinary}
-          unit={arrow.unit}
-        />
-        {dockedMetainfo ? (
-          <DockedGraphTooltip
-            table={table}
-            row={hoveringRow}
-            level={hoveringLevel ?? 0}
-            total={total}
-            totalUnfiltered={total + filtered}
-            profileType={profileType}
-            unit={arrow.unit}
-            compareAbsolute={compareAbsolute}
-          />
-        ) : (
-          !isContextMenuOpen && (
-            <GraphTooltipArrow contextElement={svg.current} isContextMenuOpen={isContextMenuOpen}>
-              <GraphTooltipArrowContent
-                table={table}
-                row={hoveringRow}
-                level={hoveringLevel ?? 0}
-                isFixed={false}
-                total={total}
-                totalUnfiltered={total + filtered}
-                profileType={profileType}
-                unit={arrow.unit}
-                compareAbsolute={compareAbsolute}
-              />
-            </GraphTooltipArrow>
-          )
-        )}
-        {root}
+          ))}
+        </svg>
       </div>
-    </>
+    </TooltipProvider>
   );
 });
 
