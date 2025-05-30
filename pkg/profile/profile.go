@@ -72,7 +72,7 @@ func LocationsArrowSchema() *arrow.Schema {
 }
 
 func ArrowSamplesField(profileLabelFields []arrow.Field) []arrow.Field {
-	numFields := len(profileLabelFields) + 5 // +5 for stacktraces, value, diff, timestamp and duration
+	numFields := len(profileLabelFields) + 5 // +5 for stacktraces, value, diff, timestamp and period
 	fields := make([]arrow.Field, numFields)
 	copy(fields, profileLabelFields)
 	fields[numFields-5] = LocationsField
@@ -89,7 +89,7 @@ func ArrowSamplesField(profileLabelFields []arrow.Field) []arrow.Field {
 		Type: arrow.PrimitiveTypes.Int64,
 	}
 	fields[numFields-1] = arrow.Field{
-		Name: ColumnDuration,
+		Name: ColumnPeriod,
 		Type: arrow.PrimitiveTypes.Int64,
 	}
 
