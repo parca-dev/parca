@@ -1402,6 +1402,49 @@ a;d 52 1211 1000
 	require.Equal(t, int64(6), record.NumRows())
 }
 
+func TestFlameChartDoNotMergeWithSampleInbetween(t *testing.T) {
+	ctx := context.Background()
+	tracer := noop.NewTracerProvider().Tracer("")
+
+	mem := memory.NewCheckedAllocator(memory.NewGoAllocator())
+	defer mem.AssertSize(t, 0)
+
+	np, err := foldedStacksWithTsToProfile(mem, []byte(`
+a;b 52 1549 1000
+a;c 52 1601 1000
+a;b 52 1654 1000
+`))
+
+	// 1-2 diff in ts: 158, which means the first two samples are not merged
+	// 2-3 diff in ts: 53, which means the last two samples are merged
+	require.NoError(t, err)
+	defer func() {
+		for _, r := range np.Samples {
+			r.Release()
+		}
+	}()
+
+	// Group by function_name, timestamp, duration
+	record, _, _, _, err := generateFlamegraphArrowRecord(
+		ctx,
+		mem,
+		tracer,
+		np,
+		[]string{
+			FlamegraphFieldFunctionName,
+			FlamegraphFieldTimestamp,
+		},
+		0,
+	)
+	require.NoError(t, err)
+	defer record.Release()
+	// root -> a -> b
+	//      -> a -> c
+	//      -> a -> b
+	drawFlamegraphToConsole(t, record)
+	require.Equal(t, int64(5), record.NumRows())
+}
+
 // split the line into 4 parts: stack, value, timestamp, duration
 //
 // example line:
