@@ -11,9 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useState, useImperativeHandle, forwardRef } from 'react';
-import { Table } from 'apache-arrow';
-import { ProfileType } from '@parca/parser';
+import {forwardRef, useImperativeHandle, useState} from 'react';
+
+import {Table} from 'apache-arrow';
+
+import {ProfileType} from '@parca/parser';
+
 import ContextMenu from './ContextMenu';
 
 interface ContextMenuWrapperProps {
@@ -33,20 +36,17 @@ export interface ContextMenuWrapperRef {
   setRow: (row: number) => void;
 }
 
-const ContextMenuWrapper = forwardRef<ContextMenuWrapperRef, ContextMenuWrapperProps>((props, ref) => {
-  const [row, setRow] = useState(0);
+const ContextMenuWrapper = forwardRef<ContextMenuWrapperRef, ContextMenuWrapperProps>(
+  (props, ref) => {
+    const [row, setRow] = useState(0);
 
-  useImperativeHandle(ref, () => ({
-    setRow
-  }));
+    useImperativeHandle(ref, () => ({
+      setRow,
+    }));
 
-  return (
-    <ContextMenu
-      {...props}
-      row={row}
-    />
-  );
-});
+    return <ContextMenu {...props} row={row} />;
+  }
+);
 
 ContextMenuWrapper.displayName = 'ContextMenuWrapper';
 

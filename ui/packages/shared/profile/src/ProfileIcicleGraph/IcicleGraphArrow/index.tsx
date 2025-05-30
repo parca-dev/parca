@@ -19,17 +19,15 @@ import {useContextMenu} from 'react-contexify';
 import {FlamegraphArrow} from '@parca/client';
 import {useURLState} from '@parca/components';
 import {USER_PREFERENCES, useCurrentColorProfile, useUserPreference} from '@parca/hooks';
-import {
-  getColorForFeature,
-  selectDarkMode,
-  useAppSelector,
-} from '@parca/store';
+import {getColorForFeature, selectDarkMode, useAppSelector} from '@parca/store';
 import {getLastItem, type ColorConfig} from '@parca/utilities';
 
 import {ProfileSource} from '../../ProfileSource';
 import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
-import ContextMenuWrapper, { ContextMenuWrapperRef } from './ContextMenuWrapper';
+import ContextMenuWrapper, {ContextMenuWrapperRef} from './ContextMenuWrapper';
 import {IcicleNode, RowHeight, colorByColors} from './IcicleGraphNodes';
+import {MemoizedTooltip} from './MemoizedTooltip';
+import {TooltipProvider} from './TooltipContext';
 import {useFilenamesList} from './useMappingList';
 import {
   CurrentPathFrame,
@@ -39,8 +37,6 @@ import {
   getCurrentPathFrameData,
   isCurrentPathFrameMatch,
 } from './utils';
-import {TooltipProvider} from './TooltipContext';
-import {MemoizedTooltip} from './MemoizedTooltip';
 
 export const FIELD_LABELS_ONLY = 'labels_only';
 export const FIELD_MAPPING_FILE = 'mapping_file';
@@ -235,7 +231,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     // Reverse the path so that the root is first.
     path.reverse();
     setCurPath(path);
-  }
+  };
 
   const depthColumn = table.getChild(FIELD_DEPTH);
   const maxDepth = depthColumn === null ? 0 : Math.max(...depthColumn.toArray());
@@ -287,46 +283,43 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           hideBinary={hideBinary}
           unit={arrow.unit}
         />
-        <MemoizedTooltip
-          contextElement={svg.current}
-          dockedMetainfo={dockedMetainfo}
-        />
-          <svg
-            className="font-robotoMono"
-            width={width}
-            height={height}
-            preserveAspectRatio="xMinYMid"
-            ref={svg}
-          >
-            {Array.from({ length: table.numRows }, (_, row) => (
-              <IcicleNode
-                key={row}
-                table={table}
-                row={row} // root is always row 0 in the arrow record
-                colors={colorByColors}
-                colorBy={colorByValue}
-                totalWidth={width ?? 1}
-                height={RowHeight}
-                searchString={(currentSearchString as string) ?? ''}
-                darkMode={isDarkMode}
-                compareMode={compareMode}
-                colorForSimilarNodes={colorForSimilarNodes}
-                selectedRow={selectedRow}
-                onClick={() => {
-                  if (isIcicleChart) {
-                    // We don't want to expand in icicle charts.
-                    return;
-                  }
-                  handleRowClick(row);
-                }}
-                onContextMenu={displayMenu}
-                hoveringRow={highlightSimilarStacksPreference ? hoveringRow : undefined}
-                setHoveringRow={highlightSimilarStacksPreference ? setHoveringRow : noop}
-                isIcicleChart={isIcicleChart}
-                profileSource={profileSource}
-              />
-            ))}
-          </svg>
+        <MemoizedTooltip contextElement={svg.current} dockedMetainfo={dockedMetainfo} />
+        <svg
+          className="font-robotoMono"
+          width={width}
+          height={height}
+          preserveAspectRatio="xMinYMid"
+          ref={svg}
+        >
+          {Array.from({length: table.numRows}, (_, row) => (
+            <IcicleNode
+              key={row}
+              table={table}
+              row={row} // root is always row 0 in the arrow record
+              colors={colorByColors}
+              colorBy={colorByValue}
+              totalWidth={width ?? 1}
+              height={RowHeight}
+              searchString={(currentSearchString as string) ?? ''}
+              darkMode={isDarkMode}
+              compareMode={compareMode}
+              colorForSimilarNodes={colorForSimilarNodes}
+              selectedRow={selectedRow}
+              onClick={() => {
+                if (isIcicleChart) {
+                  // We don't want to expand in icicle charts.
+                  return;
+                }
+                handleRowClick(row);
+              }}
+              onContextMenu={displayMenu}
+              hoveringRow={highlightSimilarStacksPreference ? hoveringRow : undefined}
+              setHoveringRow={highlightSimilarStacksPreference ? setHoveringRow : noop}
+              isIcicleChart={isIcicleChart}
+              profileSource={profileSource}
+            />
+          ))}
+        </svg>
       </div>
     </TooltipProvider>
   );

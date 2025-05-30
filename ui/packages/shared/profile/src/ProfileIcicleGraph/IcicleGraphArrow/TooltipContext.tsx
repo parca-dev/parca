@@ -11,9 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, { createContext, useContext, useRef, useCallback, useMemo } from 'react';
-import { Table } from 'apache-arrow';
-import { ProfileType } from '@parca/parser';
+import React, {createContext, useCallback, useContext, useMemo, useRef} from 'react';
+
+import {Table} from 'apache-arrow';
+
+import {ProfileType} from '@parca/parser';
 
 interface TooltipState {
   row: number | null;
@@ -63,23 +65,29 @@ export const TooltipProvider: React.FC<TooltipProviderProps> = ({
   compareAbsolute,
   onTooltipUpdate,
 }) => {
-  const tooltipStateRef = useRef<TooltipState>({ row: null, x: 0, y: 0 });
+  const tooltipStateRef = useRef<TooltipState>({row: null, x: 0, y: 0});
 
-  const updateTooltip = useCallback((row: number | null, x = 0, y = 0) => {
-    tooltipStateRef.current = { row, x, y };
-    onTooltipUpdate?.(tooltipStateRef.current);
-  }, [onTooltipUpdate]);
+  const updateTooltip = useCallback(
+    (row: number | null, x = 0, y = 0) => {
+      tooltipStateRef.current = {row, x, y};
+      onTooltipUpdate?.(tooltipStateRef.current);
+    },
+    [onTooltipUpdate]
+  );
 
-  const value = useMemo(() => ({
-    table,
-    total,
-    totalUnfiltered,
-    profileType,
-    unit,
-    compareAbsolute,
-    updateTooltip,
-    tooltipState: tooltipStateRef.current,
-  }), [table, total, totalUnfiltered, profileType, unit, compareAbsolute, updateTooltip]);
+  const value = useMemo(
+    () => ({
+      table,
+      total,
+      totalUnfiltered,
+      profileType,
+      unit,
+      compareAbsolute,
+      updateTooltip,
+      tooltipState: tooltipStateRef.current,
+    }),
+    [table, total, totalUnfiltered, profileType, unit, compareAbsolute, updateTooltip]
+  );
 
   return <TooltipContext.Provider value={value}>{children}</TooltipContext.Provider>;
 };

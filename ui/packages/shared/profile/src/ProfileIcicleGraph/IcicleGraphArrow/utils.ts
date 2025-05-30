@@ -25,20 +25,16 @@ import {divide, getLastItem, valueFormatter} from '@parca/utilities';
 import {MergedProfileSource, ProfileSource} from '../../ProfileSource';
 import {BigIntDuo, hexifyAddress} from '../../utils';
 import {
+  FIELD_DEPTH,
   FIELD_FUNCTION_NAME,
   FIELD_FUNCTION_START_LINE,
   FIELD_INLINED,
   FIELD_LABELS_ONLY,
   FIELD_LOCATION_ADDRESS,
   FIELD_MAPPING_FILE,
-  FIELD_DEPTH,
 } from './index';
 
-export function nodeLabel(
-  table: Table<any>,
-  row: number,
-  showBinaryName: boolean
-): string {
+export function nodeLabel(table: Table<any>, row: number, showBinaryName: boolean): string {
   const labelsOnly: boolean | null = table.getChild(FIELD_LABELS_ONLY)?.get(row);
   const depth: number = table.getChild(FIELD_DEPTH)?.get(row) ?? 0;
   if (depth === 1 && labelsOnly !== null && labelsOnly) {
@@ -151,10 +147,7 @@ export interface CurrentPathFrame {
   labels?: string;
 }
 
-export const getCurrentPathFrameData = (
-  table: Table<any>,
-  row: number,
-): CurrentPathFrame => {
+export const getCurrentPathFrameData = (table: Table<any>, row: number): CurrentPathFrame => {
   const functionName: string | null = arrowToString(table.getChild(FIELD_FUNCTION_NAME)?.get(row));
   const systemName: string | null = arrowToString(table.getChild(FIELD_FUNCTION_NAME)?.get(row));
   const fileName: string | null = arrowToString(table.getChild(FIELD_MAPPING_FILE)?.get(row));

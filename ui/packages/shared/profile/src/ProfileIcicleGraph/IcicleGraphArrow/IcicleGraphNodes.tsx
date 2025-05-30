@@ -21,28 +21,23 @@ import {isSearchMatch} from '@parca/utilities';
 
 import 'react-contexify/dist/ReactContexify.css';
 
-import {ProfileSource} from '../../ProfileSource';
-
 import {USER_PREFERENCES} from '@parca/hooks';
 
+import {ProfileSource} from '../../ProfileSource';
 import TextWithEllipsis from './TextWithEllipsis';
 import {
   FIELD_CUMULATIVE,
+  FIELD_DEPTH,
   FIELD_DIFF,
   FIELD_FUNCTION_FILE_NAME,
   FIELD_FUNCTION_NAME,
   FIELD_MAPPING_FILE,
-  FIELD_DEPTH,
   FIELD_PARENT,
-  FIELD_VALUE_OFFSET,
   FIELD_TIMESTAMP,
+  FIELD_VALUE_OFFSET,
 } from './index';
 import useNodeColor from './useNodeColor';
-import {
-  arrowToString,
-  nodeLabel,
-  boundsFromProfileSource,
-} from './utils';
+import {arrowToString, boundsFromProfileSource, nodeLabel} from './utils';
 
 export const RowHeight = 26;
 
@@ -118,14 +113,18 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const diff: bigint | null = diffColumn?.get(row) !== null ? BigInt(diffColumn?.get(row)) : null;
   const filename: string | null = arrowToString(filenameColumn?.get(row));
   const depth: number = depthColumn?.get(row) ?? 0;
-  const valueOffset: bigint = valueOffsetColumn?.get(row) !== null ? BigInt(valueOffsetColumn?.get(row)) : 0n;
+  const valueOffset: bigint =
+    valueOffsetColumn?.get(row) !== null ? BigInt(valueOffsetColumn?.get(row)) : 0n;
 
-  const colorAttribute = colorBy === 'filename' ? filename  : colorBy === 'binary' ? mappingFile : null;
+  const colorAttribute =
+    colorBy === 'filename' ? filename : colorBy === 'binary' ? mappingFile : null;
 
   const colorsMap = colors;
 
-  const hoveringName = hoveringRow !== undefined ? arrowToString(functionNameColumn?.get(hoveringRow)) : "";
-  const shouldBeHighlighted = (functionName != null && hoveringName != null && functionName === hoveringName);
+  const hoveringName =
+    hoveringRow !== undefined ? arrowToString(functionNameColumn?.get(hoveringRow)) : '';
+  const shouldBeHighlighted =
+    functionName != null && hoveringName != null && functionName === hoveringName;
 
   const binaries = useAppSelector(selectBinaries);
   const colorResult = useNodeColor({
@@ -147,9 +146,14 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     return {isHighlightEnabled: true, isHighlighted: isSearchMatch(searchString, name)};
   }, [searchString, name]);
 
-  const selectionOffset = valueOffsetColumn?.get(selectedRow) !== null ? BigInt(valueOffsetColumn?.get(selectedRow)) : 0n;
-  const selectionCumulative = cumulativeColumn?.get(selectedRow) !== null ? BigInt(cumulativeColumn?.get(selectedRow)) : 0n;
-  if ((valueOffset + cumulative) <= selectionOffset || valueOffset >= (selectionOffset + selectionCumulative)) {
+  const selectionOffset =
+    valueOffsetColumn?.get(selectedRow) !== null ? BigInt(valueOffsetColumn?.get(selectedRow)) : 0n;
+  const selectionCumulative =
+    cumulativeColumn?.get(selectedRow) !== null ? BigInt(cumulativeColumn?.get(selectedRow)) : 0n;
+  if (
+    valueOffset + cumulative <= selectionOffset ||
+    valueOffset >= selectionOffset + selectionCumulative
+  ) {
     // If the end of the node is before the selection offset or the start of the node is after the selection offset + totalWidth, we don't render it.
     return <></>;
   }
@@ -162,29 +166,34 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const tsBounds = boundsFromProfileSource(profileSource);
   const total = cumulativeColumn?.get(selectedRow);
   const totalRatio = cumulative > total ? 1 : Number(cumulative) / Number(total);
-  const width: number = isIcicleChart ?
-    (Number(cumulative) / (Number(tsBounds[1]) - Number(tsBounds[0]))) * totalWidth :
-    totalRatio * totalWidth;
+  const width: number = isIcicleChart
+    ? (Number(cumulative) / (Number(tsBounds[1]) - Number(tsBounds[0]))) * totalWidth
+    : totalRatio * totalWidth;
 
   if (width <= 1) {
     return <></>;
   }
 
   const selectedDepth = depthColumn?.get(selectedRow);
-  const styles = selectedDepth !== undefined && selectedDepth > depth ? fadedIcicleRectStyles : icicleRectStyles;
+  const styles =
+    selectedDepth !== undefined && selectedDepth > depth ? fadedIcicleRectStyles : icicleRectStyles;
 
   const onMouseEnter = (): void => {
     setHoveringRow(row);
-    window.dispatchEvent(new CustomEvent('icicle-tooltip-update', {
-      detail: { row }
-    }));
+    window.dispatchEvent(
+      new CustomEvent('icicle-tooltip-update', {
+        detail: {row},
+      })
+    );
   };
 
   const onMouseLeave = (): void => {
     setHoveringRow(undefined);
-    window.dispatchEvent(new CustomEvent('icicle-tooltip-update', {
-      detail: { row: null }
-    }));
+    window.dispatchEvent(
+      new CustomEvent('icicle-tooltip-update', {
+        detail: {row: null},
+      })
+    );
   };
 
   const handleContextMenu = (e: React.MouseEvent): void => {
@@ -192,9 +201,12 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   };
 
   const ts = tsColumn !== null ? Number(tsColumn.get(row)) : 0;
-  const x = isIcicleChart && tsColumn !== null ?
-    ((ts - Number(tsBounds[0])) / (Number(tsBounds[1]) - Number(tsBounds[0]))) * totalWidth :
-    selectedDepth > depth ? 0 : ((Number(valueOffset) - Number(selectionOffset)) / Number(total)) * totalWidth;
+  const x =
+    isIcicleChart && tsColumn !== null
+      ? ((ts - Number(tsBounds[0])) / (Number(tsBounds[1]) - Number(tsBounds[0]))) * totalWidth
+      : selectedDepth > depth
+      ? 0
+      : ((Number(valueOffset) - Number(selectionOffset)) / Number(total)) * totalWidth;
   const y = isIcicleChart ? (depth - 1) * height : depth * height;
 
   return (

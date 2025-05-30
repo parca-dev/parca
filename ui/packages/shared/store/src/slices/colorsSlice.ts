@@ -16,12 +16,7 @@ import 'immer';
 
 import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
 
-import {
-  CallgraphNode,
-  CallgraphNodeMeta,
-  FlamegraphNode,
-  FlamegraphNodeMeta,
-} from '@parca/client';
+import {CallgraphNode, CallgraphNodeMeta, FlamegraphNode, FlamegraphNodeMeta} from '@parca/client';
 import {
   COLOR_PROFILES,
   type ColorConfig,
@@ -183,8 +178,7 @@ export const colorsSlice = createSlice({
   },
 });
 
-export const {addColor, resetColors, setFeatures, setHoveringRow} =
-  colorsSlice.actions;
+export const {addColor, resetColors, setFeatures, setHoveringRow} = colorsSlice.actions;
 
 // Other code such as selectors can use the imported `RootState` type
 export const selectStackColors = (state: RootState): StackColorMap => state.colors.colors;

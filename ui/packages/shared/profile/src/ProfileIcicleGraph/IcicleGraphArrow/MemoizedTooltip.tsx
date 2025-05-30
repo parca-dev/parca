@@ -11,11 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, { memo, useState, useEffect } from 'react';
+import React, {memo, useEffect, useState} from 'react';
+
 import GraphTooltipArrow from '../../GraphTooltipArrow';
 import GraphTooltipArrowContent from '../../GraphTooltipArrow/Content';
-import { DockedGraphTooltip } from '../../GraphTooltipArrow/DockedGraphTooltip';
-import { useTooltipContext } from './TooltipContext';
+import {DockedGraphTooltip} from '../../GraphTooltipArrow/DockedGraphTooltip';
+import {useTooltipContext} from './TooltipContext';
 
 interface MemoizedTooltipProps {
   contextElement: Element | null;
@@ -27,12 +28,12 @@ export const MemoizedTooltip = memo(function MemoizedTooltip({
   dockedMetainfo,
 }: MemoizedTooltipProps): React.JSX.Element | null {
   const [tooltipRow, setTooltipRow] = useState<number | null>(null);
-  const { table, total, totalUnfiltered, profileType, unit, compareAbsolute } = useTooltipContext();
+  const {table, total, totalUnfiltered, profileType, unit, compareAbsolute} = useTooltipContext();
 
   // This component subscribes to tooltip updates through a callback
   // passed to the TooltipProvider, avoiding the need to lift state
   useEffect(() => {
-    const handleTooltipUpdate = (event: CustomEvent<{ row: number | null }>): void => {
+    const handleTooltipUpdate = (event: CustomEvent<{row: number | null}>): void => {
       setTooltipRow(event.detail.row);
     };
 

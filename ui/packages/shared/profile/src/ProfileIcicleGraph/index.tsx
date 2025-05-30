@@ -133,8 +133,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     ];
   }, [arrow, filtered, total]);
 
-  const loadingState =
-    !loading && (arrow !== undefined) && metadataMappingFiles !== undefined;
+  const loadingState = !loading && arrow !== undefined && metadataMappingFiles !== undefined;
 
   // If there is only one mapping file, we want to color by filename by default.
   useEffect(() => {
@@ -210,9 +209,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
       }
     }
 
-    if (arrow === undefined)
-
-      return <div className="mx-auto text-center">No data...</div>;
+    if (arrow === undefined) return <div className="mx-auto text-center">No data...</div>;
 
     if (total === 0n && !loading)
       return <div className="mx-auto text-center">Profile has no samples</div>;
