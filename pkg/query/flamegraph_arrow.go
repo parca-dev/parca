@@ -583,6 +583,9 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 
 		// Aggregating by timestamp usually means that we're rendering a flame chart and not graph.
 		if fb.aggregationConfig.aggregateByTimestamp {
+			if fb.parent.Has() && fb.lastChildMerged[fb.parent] != cr {
+				return false, nil
+			}
 			merge, err := matchRowsByTimestamp(
 				fb.builderTimestamp.Value(cr),
 				fb.builderCumulative.Value(cr),
@@ -700,6 +703,9 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 			}
 		}
 
+		if fb.parent.Has() {
+			fb.lastChildMerged[fb.parent] = cr
+		}
 		// All fields match, so we can aggregate this new row with the existing one.
 		fb.addRowValues(r, cr, sampleIndex, leaf)
 		// Continue with this row as the parent for the next iteration and compare to its children.
@@ -730,6 +736,9 @@ func (fb *flamegraphBuilder) mergeUnsymbolizedRows(
 
 		// Aggregating by timestamp usually means that we're rendering a flame chart and not graph.
 		if fb.aggregationConfig.aggregateByTimestamp {
+			if fb.parent.Has() && fb.lastChildMerged[fb.parent] != cr {
+				return false, nil
+			}
 			merge, err := matchRowsByTimestamp(
 				fb.builderTimestamp.Value(cr),
 				fb.builderCumulative.Value(cr),
@@ -845,8 +854,9 @@ type flamegraphBuilder struct {
 	parent parent
 	// This keeps track of a row's children and will be converted to an arrow array of lists at the end.
 	// Allocating for an average of 8 children per stacktrace upfront.
-	children     []map[uint64]int
-	childrenList [][]int
+	children        []map[uint64]int
+	childrenList    [][]int
+	lastChildMerged []int
 
 	// This keeps track of the root rows indexed by the labels string.
 	// If the stack trace has no labels, we use the empty string as the key.
@@ -944,9 +954,10 @@ func newFlamegraphBuilder(
 		parent: parent(-1),
 
 		// ensuring that we always have space to set the first row below
-		children:       make([]map[uint64]int, maxInt64(rows, 1)),
-		childrenList:   make([][]int, maxInt64(rows, 1)),
-		labelNameIndex: map[string]int{},
+		children:        make([]map[uint64]int, maxInt64(rows, 1)),
+		childrenList:    make([][]int, maxInt64(rows, 1)),
+		lastChildMerged: []int{-1}, // The first row is the root row, so we start with -1 to indicate no children merged yet.
+		labelNameIndex:  map[string]int{},
 
 		builderLabelsOnly:  array.NewBooleanBuilder(pool),
 		builderLabelsExist: builder.NewOptBooleanBuilder(arrow.FixedWidthTypes.Boolean),
@@ -1428,6 +1439,15 @@ func (fb *flamegraphBuilder) appendRow(
 		fb.children = newChildren
 		fb.childrenList = newChildrenList
 	}
+	if len(fb.lastChildMerged) == row {
+		newLastChildMerged := make([]int, len(fb.lastChildMerged)*2)
+		copy(newLastChildMerged, fb.lastChildMerged)
+		// Set all new lastChildMerged to -1, meaning that we haven't merged any children yet.
+		for i := len(fb.lastChildMerged); i < len(newLastChildMerged); i++ {
+			newLastChildMerged[i] = -1
+		}
+		fb.lastChildMerged = newLastChildMerged
+	}
 	// If there is a parent for this stack the parent is not -1 but the parent's row number.
 	if fb.parent.Has() {
 		// this is the first time we see this parent have a child, so we need to initialize the slice
@@ -1439,6 +1459,8 @@ func (fb *flamegraphBuilder) appendRow(
 			fb.children[fb.parent.Get()][key] = row
 			fb.childrenList[fb.parent.Get()] = append(fb.childrenList[fb.parent.Get()], row)
 		}
+
+		fb.lastChildMerged[fb.parent.Get()] = row
 	}
 
 	fb.builderTimestamp.Append(r.Timestamp.Value(sampleRow))
@@ -1504,9 +1526,19 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 		fb.children = newChildren
 		fb.childrenList = newChildrenList
 	}
+	if len(fb.lastChildMerged) == row {
+		newLastChildMerged := make([]int, len(fb.lastChildMerged)*2)
+		copy(newLastChildMerged, fb.lastChildMerged)
+		// Set all new lastChildMerged to -1, meaning that we haven't merged any children yet.
+		for i := len(fb.lastChildMerged); i < len(newLastChildMerged); i++ {
+			newLastChildMerged[i] = -1
+		}
+		fb.lastChildMerged = newLastChildMerged
+	}
 	fb.rootsRow[labelHash] = row
 	fb.childrenList[0] = append(fb.childrenList[0], row)
 	fb.children[row] = children
+	fb.lastChildMerged[0] = row
 
 	fb.builderLabelsOnly.Append(true)
 	fb.builderMappingFileIndices.AppendNull()
