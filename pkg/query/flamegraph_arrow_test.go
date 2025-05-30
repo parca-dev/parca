@@ -63,7 +63,6 @@ type flamegraphRow struct {
 	Cumulative         uint8
 	Flat               uint8
 	Diff               int8
-	Duration           int64
 	Depth              uint8
 }
 
@@ -84,7 +83,6 @@ type flamegraphColumns struct {
 	cumulative          []uint8
 	flat                []uint8
 	diff                []int8
-	duration            []int64
 	depth               []uint8
 }
 
@@ -107,7 +105,6 @@ func rowsToColumn(rows []flamegraphRow) flamegraphColumns {
 		columns.cumulative = append(columns.cumulative, row.Cumulative)
 		columns.flat = append(columns.flat, row.Flat)
 		columns.diff = append(columns.diff, row.Diff)
-		columns.duration = append(columns.duration, row.Duration)
 		columns.depth = append(columns.depth, row.Depth)
 	}
 	return columns
@@ -383,7 +380,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 		cumulative: 11,
 		height:     5,
 		trimmed:    0,
-		cols:       18,
+		cols:       17,
 		rows: []flamegraphRow{
 			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: array.NullValueStr, MappingBuildID: array.NullValueStr, LocationAddress: 0, LocationLine: 0, FunctionStartLine: 0, FunctionName: array.NullValueStr, FunctionSystemName: array.NullValueStr, FunctionFilename: array.NullValueStr, Cumulative: 11, Flat: 0, Labels: nil, Children: []uint32{1}, Parent: -1, Depth: 0}, // 0
 			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationLine: 1, FunctionStartLine: 1, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 11, Flat: 0, Labels: nil, Children: []uint32{2}, Parent: 0, Depth: 1},                                                                   // 1
@@ -399,7 +396,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 		cumulative: 11,
 		height:     6,
 		trimmed:    0,
-		cols:       19,
+		cols:       18,
 		rows: []flamegraphRow{
 			// root
 			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: array.NullValueStr, MappingBuildID: array.NullValueStr, LocationAddress: 0, LocationLine: 0, FunctionStartLine: 0, FunctionName: `(null)`, FunctionSystemName: array.NullValueStr, FunctionFilename: array.NullValueStr, Cumulative: 11, Flat: 0, Labels: nil, Children: []uint32{1, 6, 11}, Parent: -1, Depth: 0}, // 0
@@ -428,7 +425,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 		cumulative: 11,
 		height:     6,
 		trimmed:    0,
-		cols:       19,
+		cols:       18,
 		rows: []flamegraphRow{
 			// root
 			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: array.NullValueStr, MappingBuildID: array.NullValueStr, LocationAddress: 0, LocationLine: 0, FunctionStartLine: 0, FunctionName: `(null)`, FunctionSystemName: array.NullValueStr, FunctionFilename: array.NullValueStr, Cumulative: 11, Flat: 0, Labels: nil, Children: []uint32{1, 4, 9}, Parent: -1, Depth: 0}, // 0
@@ -456,7 +453,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 		cumulative: 11,
 		height:     6,
 		trimmed:    0,
-		cols:       20,
+		cols:       19,
 		rows: []flamegraphRow{
 			// root
 			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: array.NullValueStr, MappingBuildID: array.NullValueStr, LocationAddress: 0, LocationLine: 0, FunctionStartLine: 0, FunctionName: `(null)`, FunctionSystemName: array.NullValueStr, FunctionFilename: array.NullValueStr, Cumulative: 11, Flat: 0, Labels: nil, Children: []uint32{1, 4, 9, 14}, Parent: -1, Depth: 0}, // 0
@@ -489,7 +486,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 		cumulative: 11,
 		height:     5,
 		trimmed:    0,
-		cols:       18,
+		cols:       17,
 		rows: []flamegraphRow{
 			// This aggregates all the rows with the same mapping file, meaning that we only keep one flamegraphRow per stack depth in this example.
 			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: array.NullValueStr, MappingBuildID: array.NullValueStr, LocationAddress: 0, LocationLine: 0, FunctionStartLine: 0, FunctionName: array.NullValueStr, FunctionSystemName: array.NullValueStr, FunctionFilename: array.NullValueStr, Cumulative: 11, Flat: 0, Labels: nil, Children: []uint32{1}, Parent: -1, Depth: 0}, // 0
@@ -561,7 +558,6 @@ func (c *flamegraphComparer) convert(r arrow.Record) {
 		cumulative:          extractColumn(c.t, r, FlamegraphFieldCumulative).([]uint8),
 		flat:                extractColumn(c.t, r, FlamegraphFieldFlat).([]uint8),
 		diff:                extractColumn(c.t, r, FlamegraphFieldDiff).([]int8),
-		duration:            extractColumn(c.t, r, FlamegraphFieldDuration).([]int64),
 		depth:               extractColumn(c.t, r, FlamegraphFieldDepth).([]uint8),
 	}
 }
@@ -627,7 +623,6 @@ func (c *flamegraphComparer) compare(expected flamegraphColumns) {
 	require.Equal(c.t, expected.cumulative, reorder(c.actual.cumulative, order))
 	require.Equal(c.t, expected.flat, reorder(c.actual.flat, order))
 	require.Equal(c.t, expected.diff, reorder(c.actual.diff, order))
-	require.Equal(c.t, expected.duration, reorder(c.actual.duration, order))
 	require.Equal(c.t, expected.depth, reorder(c.actual.depth, order))
 	require.Equal(c.t, expected.children, sortedChildren)
 	require.Equal(c.t, expected.parent, reorder(c.actual.parent, order))
@@ -682,7 +677,7 @@ func TestGenerateFlamegraphArrowEmpty(t *testing.T) {
 	require.Equal(t, int64(0), total)
 	require.Equal(t, int32(1), height)
 	require.Equal(t, int64(0), trimmed)
-	require.Equal(t, int64(18), record.NumCols())
+	require.Equal(t, int64(17), record.NumCols())
 	require.Equal(t, int64(1), record.NumRows())
 }
 
@@ -732,7 +727,7 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 	require.Equal(t, int32(5), height)
 	require.Equal(t, int64(0), trimmed)
 
-	require.Equal(t, int64(18), record.NumCols())
+	require.Equal(t, int64(17), record.NumCols())
 	require.Equal(t, int64(5), record.NumRows())
 
 	rows := []flamegraphRow{
@@ -833,7 +828,7 @@ func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 			require.Equal(t, tc.height, height)
 			require.Equal(t, tc.trimmed, trimmed)
 			require.Equal(t, int64(len(tc.rows)), fa.NumRows())
-			require.Equal(t, int64(18), fa.NumCols())
+			require.Equal(t, int64(17), fa.NumCols())
 
 			// Convert the numRows to columns for easier access when testing below.
 			expectedColumns := rowsToColumn(tc.rows)
@@ -920,7 +915,7 @@ func TestGenerateFlamegraphArrowTrimming(t *testing.T) {
 	require.Equal(t, int32(5), height)
 	require.Equal(t, int64(4), trimmed)
 	require.Equal(t, int64(3), fa.NumRows())
-	require.Equal(t, int64(18), fa.NumCols())
+	require.Equal(t, int64(17), fa.NumCols())
 
 	// TODO: MappingBuildID and FunctionSystemNames shouldn't be "" but null?
 	rows := []flamegraphRow{
@@ -1204,10 +1199,10 @@ func TestFlameChartMultipleSamplesForSameTimestamp(t *testing.T) {
 	defer mem.AssertSize(t, 0)
 
 	np, err := foldedStacksWithTsToProfile(mem, []byte(`
-main;func_fib 10 1000 20
-main;func_fib 10 2000 20
-main;func_fib 10 3000 20
-main;func_add 10 3000 20
+main;func_fib 10 1000 10
+main;func_fib 10 2000 10
+main;func_fib 10 3000 10
+main;func_add 10 3000 10
 `))
 	require.NoError(t, err)
 
@@ -1241,9 +1236,9 @@ func TestFlameChartGroupByTimestamp(t *testing.T) {
 	defer mem.AssertSize(t, 0)
 
 	np, err := foldedStacksWithTsToProfile(mem, []byte(`
-main;func_fib 10 1000 20
-runtime;gc 10 2000 20
-main;func_fib 10 3000 20
+main;func_fib 10 1000 10
+runtime;gc 10 2000 10
+main;func_fib 10 3000 10
 `))
 	require.NoError(t, err)
 	defer func() {
@@ -1266,7 +1261,6 @@ main;func_fib 10 3000 20
 	)
 	require.NoError(t, err)
 	defer record.Release()
-	// drawFlamegraphToConsole(t, record)
 
 	row := 0
 	schema := record.Schema()
@@ -1275,22 +1269,17 @@ main;func_fib 10 3000 20
 	ChildrenValues := childrenCol.ListValues().(*array.Uint32)
 	timestampColIdx := schema.FieldIndices("timestamp")[0]
 	timestampCol := record.Column(timestampColIdx).(*array.Int64)
-	durationColIdx := schema.FieldIndices("duration")[0]
-	durationCol := record.Column(durationColIdx).(*array.Int64)
 
 	offsetStart, offsetEnd := childrenCol.ValueOffsets(row)
 
 	nums := offsetEnd - offsetStart
 
 	expectedTs := []int64{1000, 2000, 3000}
-	expectedDuration := []int64{20, 20, 20}
 
 	for j := int64(0); j < nums; j++ {
 		row = int(ChildrenValues.Value(int(offsetStart + j)))
 		ts := timestampCol.Value(row)
-		duration := durationCol.Value(row)
 		require.Equal(t, expectedTs[j], ts)
-		require.Equal(t, expectedDuration[j], duration)
 	}
 }
 
@@ -1302,12 +1291,12 @@ func TestFlameChartMergeNeighbouringStacksWithSameRoot(t *testing.T) {
 	defer mem.AssertSize(t, 0)
 
 	np, err := foldedStacksWithTsToProfile(mem, []byte(`
-main;func_fib 10 10 10
-main;func_fib 10 20 10
-main;func_add 10 30 10
-runtime;gc 10 40 10
-main;func_fib 10 50 10
-main;func_fib 10 60 10
+main;func_fib 10 10 1
+main;func_fib 10 20 1
+main;func_add 10 30 1
+runtime;gc 10 40 1
+main;func_fib 10 50 1
+main;func_fib 10 60 1
 `))
 	require.NoError(t, err)
 	defer func() {
@@ -1330,7 +1319,6 @@ main;func_fib 10 60 10
 	)
 	require.NoError(t, err)
 	defer record.Release()
-	drawFlamegraphToConsole(t, record)
 
 	row := 0
 	schema := record.Schema()
@@ -1339,8 +1327,6 @@ main;func_fib 10 60 10
 	ChildrenValues := childrenCol.ListValues().(*array.Uint32)
 	timestampColIdx := schema.FieldIndices("timestamp")[0]
 	timestampCol := record.Column(timestampColIdx).(*array.Int64)
-	durationColIdx := schema.FieldIndices("duration")[0]
-	durationCol := record.Column(durationColIdx).(*array.Int64)
 
 	offsetStart, offsetEnd := childrenCol.ValueOffsets(row)
 
@@ -1349,14 +1335,11 @@ main;func_fib 10 60 10
 	require.Equal(t, int64(3), nums)
 
 	expectedTs := []int64{10, 40, 50}
-	expectedDuration := []int64{30, 10, 20}
 
 	for j := int64(0); j < nums; j++ {
 		row = int(ChildrenValues.Value(int(offsetStart + j)))
 		ts := timestampCol.Value(row)
-		duration := durationCol.Value(row)
 		require.Equal(t, expectedTs[j], ts)
-		require.Equal(t, expectedDuration[j], duration)
 	}
 }
 
@@ -1368,9 +1351,9 @@ func TestFlameChartDoNotMergeSamplesTooFarApart(t *testing.T) {
 	defer mem.AssertSize(t, 0)
 
 	np, err := foldedStacksWithTsToProfile(mem, []byte(`
-a;b 52 1000 1000
-a;c 52 1158 1000
-a;d 52 1211 1000
+a;b 52 1000 52
+a;c 52 1158 52
+a;d 52 1211 52
 `))
 
 	// 1-2 diff in ts: 158, which means the first two samples are not merged
@@ -1410,9 +1393,9 @@ func TestFlameChartDoNotMergeWithSampleInbetween(t *testing.T) {
 	defer mem.AssertSize(t, 0)
 
 	np, err := foldedStacksWithTsToProfile(mem, []byte(`
-a;b 52 1549 1000
-a;c 52 1601 1000
-a;b 52 1654 1000
+a;b 52 1549 52
+a;c 52 1601 52
+a;b 52 1654 52
 `))
 
 	// 1-2 diff in ts: 158, which means the first two samples are not merged
@@ -1441,7 +1424,44 @@ a;b 52 1654 1000
 	// root -> a -> b
 	//      -> a -> c
 	//      -> a -> b
-	drawFlamegraphToConsole(t, record)
+	require.Equal(t, int64(5), record.NumRows())
+}
+
+func TestFlameChartDoNotMergeWithDistance(t *testing.T) {
+	ctx := context.Background()
+	tracer := noop.NewTracerProvider().Tracer("")
+
+	mem := memory.NewCheckedAllocator(memory.NewGoAllocator())
+	defer mem.AssertSize(t, 0)
+
+	np, err := foldedStacksWithTsToProfile(mem, []byte(`
+a;b 52 1549 52
+a;b 52 1654 52
+`))
+
+	require.NoError(t, err)
+	defer func() {
+		for _, r := range np.Samples {
+			r.Release()
+		}
+	}()
+
+	// Group by function_name, timestamp, duration
+	record, _, _, _, err := generateFlamegraphArrowRecord(
+		ctx,
+		mem,
+		tracer,
+		np,
+		[]string{
+			FlamegraphFieldFunctionName,
+			FlamegraphFieldTimestamp,
+		},
+		0,
+	)
+	require.NoError(t, err)
+	defer record.Release()
+	// root -> a -> b
+	//      -> a -> b
 	require.Equal(t, int64(5), record.NumRows())
 }
 
@@ -1469,7 +1489,7 @@ func foldedStacksWithTsToProfile(pool memory.Allocator, input []byte) (profile.P
 			continue
 		}
 
-		stack, valueStr, timstampStr, durationStr, err := splitLine(line)
+		stack, valueStr, timstampStr, periodStr, err := splitLine(line)
 		if err != nil {
 			return profile.Profile{}, err
 		}
@@ -1484,7 +1504,7 @@ func foldedStacksWithTsToProfile(pool memory.Allocator, input []byte) (profile.P
 			return profile.Profile{}, fmt.Errorf("bad line: %d: %q: %s", n, line, err)
 		}
 
-		duration, err := strconv.ParseInt(durationStr, 10, 64)
+		period, err := strconv.ParseInt(periodStr, 10, 64)
 		if err != nil {
 			return profile.Profile{}, fmt.Errorf("bad line: %d: %q: %s", n, line, err)
 		}
@@ -1497,7 +1517,7 @@ func foldedStacksWithTsToProfile(pool memory.Allocator, input []byte) (profile.P
 		w.Value.Append(val)
 		w.Diff.Append(0)
 		w.TimeNanos.Append(ts)
-		w.Duration.Append(duration)
+		w.Period.Append(period)
 		w.LocationsList.Append(true)
 
 		for i := len(stackFrames) - 1; i >= 0; i-- {
@@ -1535,8 +1555,6 @@ func drawFlamegraphToConsole(testing *testing.T, record arrow.Record) {
 	cumulativeCol := record.Column(cumulativeColIdx).(*array.Uint8)
 	timestampColIdx := schema.FieldIndices("timestamp")[0]
 	timestampCol := record.Column(timestampColIdx).(*array.Int64)
-	durationColIdx := schema.FieldIndices("duration")[0]
-	durationCol := record.Column(durationColIdx).(*array.Int64)
 
 	t := tree.NewTree(tree.NodeString("root" + " " + fmt.Sprint(timestampCol.Value(0))))
 
@@ -1554,8 +1572,7 @@ func drawFlamegraphToConsole(testing *testing.T, record arrow.Record) {
 				funcName = []byte("N/A")
 			}
 			ts := timestampCol.Value(int(child))
-			duration := durationCol.Value(int(child))
-			childT := t.AddChild(tree.NodeString(string(funcName) + " " + fmt.Sprint(ts) + " " + fmt.Sprint(duration) + " " + fmt.Sprint(cumulativeValue)))
+			childT := t.AddChild(tree.NodeString(string(funcName) + " " + fmt.Sprint(ts) + " " + fmt.Sprint(cumulativeValue)))
 			populateChild(childT, int(child))
 		}
 	}

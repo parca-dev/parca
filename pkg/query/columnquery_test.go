@@ -1247,7 +1247,7 @@ func PprofToSymbolizedProfile(meta profile.Meta, prof *pprofprofile.Profile, ind
 		w.Value.Append(prof.Sample[i].Value[index])
 		w.Diff.Append(0)
 		w.TimeNanos.Append(prof.TimeNanos)
-		w.Duration.Append(prof.DurationNanos)
+		w.Period.Append(prof.Period)
 
 		for labelName, labelBuilder := range w.LabelBuildersMap {
 			if prof.Sample[i].Label == nil {
@@ -1364,7 +1364,7 @@ func TestFilterData(t *testing.T) {
 	w.Value.Append(1)
 	w.Diff.Append(0)
 	w.TimeNanos.Append(1)
-	w.Duration.Append(1)
+	w.Period.Append(1)
 
 	frameFilter := map[string]struct{}{"test": {}}
 	originalRecord := w.RecordBuilder.NewRecord()
@@ -1413,7 +1413,7 @@ func TestFilterUnsymbolized(t *testing.T) {
 	w.Value.Append(1)
 	w.Diff.Append(0)
 	w.TimeNanos.Append(1)
-	w.Duration.Append(1)
+	w.Period.Append(1)
 
 	originalRecord := w.RecordBuilder.NewRecord()
 	recs, _, err := FilterProfileData(
@@ -1496,7 +1496,7 @@ func TestFilterDataWithPath(t *testing.T) {
 	w.Value.Append(1)
 	w.Diff.Append(0)
 	w.TimeNanos.Append(1)
-	w.Duration.Append(1)
+	w.Period.Append(1)
 
 	frameFilter := map[string]struct{}{"libpython3.11.so.1.0": {}, "interpreter": {}}
 	originalRecord := w.RecordBuilder.NewRecord()
@@ -1581,7 +1581,7 @@ func TestFilterDataFrameFilter(t *testing.T) {
 	w.Value.Append(1)
 	w.Diff.Append(0)
 	w.TimeNanos.Append(1)
-	w.Duration.Append(1)
+	w.Period.Append(1)
 
 	frameFilter := map[string]struct{}{"interpreter": {}}
 	originalRecord := w.RecordBuilder.NewRecord()
@@ -1666,7 +1666,7 @@ func BenchmarkFilterData(t *testing.B) {
 		w.Value.Append(1)
 		w.Diff.Append(0)
 		w.TimeNanos.Append(1)
-		w.Duration.Append(1)
+		w.Period.Append(1)
 	}
 
 	originalRecord := w.RecordBuilder.NewRecord()
@@ -1752,7 +1752,7 @@ func TestFilterDataExclude(t *testing.T) {
 	w.Value.Append(100)
 	w.Diff.Append(0)
 	w.TimeNanos.Append(1)
-	w.Duration.Append(1)
+	w.Period.Append(1)
 
 	// Sample 2: no "foo"
 	w.LocationsList.Append(true)
@@ -1803,7 +1803,7 @@ func TestFilterDataExclude(t *testing.T) {
 	w.Value.Append(200)
 	w.Diff.Append(0)
 	w.TimeNanos.Append(2)
-	w.Duration.Append(1)
+	w.Period.Append(1)
 
 	// Sample 3: has "foo"
 	w.LocationsList.Append(true)
@@ -1839,7 +1839,7 @@ func TestFilterDataExclude(t *testing.T) {
 	w.Value.Append(300)
 	w.Diff.Append(0)
 	w.TimeNanos.Append(3)
-	w.Duration.Append(1)
+	w.Period.Append(1)
 
 	originalRecord := w.RecordBuilder.NewRecord()
 	defer originalRecord.Release()
