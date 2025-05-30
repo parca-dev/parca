@@ -61,8 +61,9 @@ const (
 	FlamegraphFieldFlat       = "flat"
 	FlamegraphFieldDiff       = "diff"
 
-	FlamegraphFieldTimestamp = "timestamp"
-	FlamegraphFieldDepth     = "depth"
+	FlamegraphFieldTimestamp   = "timestamp"
+	FlamegraphFieldDepth       = "depth"
+	FlamegraphFieldValueOffset = "value_offset"
 )
 
 func GenerateFlamegraphArrow(
@@ -363,6 +364,8 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		fb.trimmedDepth.AppendNull()
 		fb.trimmedParent = array.NewInt32Builder(fb.pool)
 		fb.trimmedParent.Append(-1) // -1 indicates no parent, which is the root row.
+		fb.valueOffset = array.NewUint8Builder(fb.pool)
+		fb.valueOffset.(*array.Uint8Builder).Append(0) // by definition the root row has a value offset of 0
 	}
 
 	_, spanNewRecord := tracer.Start(ctx, "NewRecord")
@@ -917,6 +920,7 @@ type flamegraphBuilder struct {
 	trimmedTimestamp *builder.OptInt64Builder
 	trimmedDepth     array.Builder
 	trimmedParent    *array.Int32Builder
+	valueOffset      array.Builder
 }
 
 type aggregationConfig struct {
@@ -1167,8 +1171,9 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 		{Name: FlamegraphFieldDiff, Type: fb.trimmedDiff.Type()},
 		// Timestamp
 		{Name: FlamegraphFieldTimestamp, Type: arrow.PrimitiveTypes.Int64},
-		// Depth
+		// Depth and ValueOffset are required for parallelized frontend rendering.
 		{Name: FlamegraphFieldDepth, Type: fb.trimmedDepth.Type()},
+		{Name: FlamegraphFieldValueOffset, Type: fb.valueOffset.Type()},
 	}
 
 	numCols := len(fields)
@@ -1234,6 +1239,8 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	cleanupArrs = append(cleanupArrs, arrays[15])
 	arrays[16] = fb.trimmedDepth.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[16])
+	arrays[17] = fb.valueOffset.NewArray()
+	cleanupArrs = append(cleanupArrs, arrays[17])
 
 	for i, field := range fb.builderLabelFields {
 		field.Type = fb.labels[i].DataType() // overwrite for variable length uint types
@@ -1648,6 +1655,8 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	// Parent indices use int32 to allow for -1 (null parent)
 	trimmedParent := array.NewInt32Builder(fb.pool)
 
+	valueOffset := array.NewBuilder(fb.pool, trimmedCumulativeType)
+
 	releasers = append(releasers,
 		trimmedMappingFileIndices,
 		trimmedMappingBuildIDIndices,
@@ -1682,6 +1691,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedTimestamps.Reserve(row)
 	trimmedDepth.Reserve(row)
 	trimmedParent.Reserve(row)
+	valueOffset.Reserve(row)
 
 	for _, l := range trimmedLabelsIndices {
 		l.Reserve(row)
@@ -1777,6 +1787,19 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 			trimmedParent.Append(int32(te.parent))
 		}
 
+		switch b := valueOffset.(type) {
+		case *array.Uint64Builder:
+			b.Append(uint64(te.valueOffset))
+		case *array.Uint32Builder:
+			b.Append(uint32(te.valueOffset))
+		case *array.Uint16Builder:
+			b.Append(uint16(te.valueOffset))
+		case *array.Uint8Builder:
+			b.Append(uint8(te.valueOffset))
+		default:
+			panic(fmt.Errorf("unsupported type %T", b))
+		}
+
 		// Add this new row as child to its parent if not the root row (index 0).
 		if row != 0 {
 			if len(trimmedChildren[te.parent]) == 0 {
@@ -1788,11 +1811,17 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 
 		cumThreshold := float32(cum) * threshold
 
+		valueOffset := te.valueOffset
 		for _, cr := range fb.childrenList[te.row] {
 			if v := fb.builderCumulative.Value(cr); v > int64(cumThreshold) {
 				// this row is above the threshold, so we need to keep it
 				// add this row to the queue to check its children.
-				trimmingQueue.push(trimmingElement{row: cr, parent: row})
+				trimmingQueue.push(trimmingElement{
+					row:         cr,
+					parent:      row,
+					valueOffset: valueOffset,
+				})
+				valueOffset += fb.builderCumulative.Value(cr)
 			} else {
 				// this row is below the threshold, so we need to trim it
 				fb.trimmed += v
@@ -1912,6 +1941,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	fb.trimmedTimestamp = trimmedTimestamps
 	fb.trimmedDepth = trimmedDepth
 	fb.trimmedParent = trimmedParent
+	fb.valueOffset = valueOffset
 
 	return nil
 }
@@ -2020,8 +2050,9 @@ func (p *parent) Get() int { return int(*p) }
 func (p *parent) Has() bool { return *p > -1 }
 
 type trimmingElement struct {
-	row    int
-	parent int
+	row         int
+	parent      int
+	valueOffset int64
 }
 
 // queue is a small wrapper around a []trimmingElement used as queue.

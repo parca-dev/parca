@@ -380,7 +380,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 		cumulative: 11,
 		height:     5,
 		trimmed:    0,
-		cols:       17,
+		cols:       18,
 		rows: []flamegraphRow{
 			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: array.NullValueStr, MappingBuildID: array.NullValueStr, LocationAddress: 0, LocationLine: 0, FunctionStartLine: 0, FunctionName: array.NullValueStr, FunctionSystemName: array.NullValueStr, FunctionFilename: array.NullValueStr, Cumulative: 11, Flat: 0, Labels: nil, Children: []uint32{1}, Parent: -1, Depth: 0}, // 0
 			{MappingStart: 1, MappingLimit: 1, MappingOffset: 0x1234, MappingFile: "a", MappingBuildID: "aID", LocationAddress: 0xa1, LocationLine: 1, FunctionStartLine: 1, FunctionName: "1", FunctionSystemName: "1", FunctionFilename: "1", Cumulative: 11, Flat: 0, Labels: nil, Children: []uint32{2}, Parent: 0, Depth: 1},                                                                   // 1
@@ -396,7 +396,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 		cumulative: 11,
 		height:     6,
 		trimmed:    0,
-		cols:       18,
+		cols:       19,
 		rows: []flamegraphRow{
 			// root
 			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: array.NullValueStr, MappingBuildID: array.NullValueStr, LocationAddress: 0, LocationLine: 0, FunctionStartLine: 0, FunctionName: `(null)`, FunctionSystemName: array.NullValueStr, FunctionFilename: array.NullValueStr, Cumulative: 11, Flat: 0, Labels: nil, Children: []uint32{1, 6, 11}, Parent: -1, Depth: 0}, // 0
@@ -425,7 +425,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 		cumulative: 11,
 		height:     6,
 		trimmed:    0,
-		cols:       18,
+		cols:       19,
 		rows: []flamegraphRow{
 			// root
 			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: array.NullValueStr, MappingBuildID: array.NullValueStr, LocationAddress: 0, LocationLine: 0, FunctionStartLine: 0, FunctionName: `(null)`, FunctionSystemName: array.NullValueStr, FunctionFilename: array.NullValueStr, Cumulative: 11, Flat: 0, Labels: nil, Children: []uint32{1, 4, 9}, Parent: -1, Depth: 0}, // 0
@@ -453,7 +453,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 		cumulative: 11,
 		height:     6,
 		trimmed:    0,
-		cols:       19,
+		cols:       20,
 		rows: []flamegraphRow{
 			// root
 			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: array.NullValueStr, MappingBuildID: array.NullValueStr, LocationAddress: 0, LocationLine: 0, FunctionStartLine: 0, FunctionName: `(null)`, FunctionSystemName: array.NullValueStr, FunctionFilename: array.NullValueStr, Cumulative: 11, Flat: 0, Labels: nil, Children: []uint32{1, 4, 9, 14}, Parent: -1, Depth: 0}, // 0
@@ -486,7 +486,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 		cumulative: 11,
 		height:     5,
 		trimmed:    0,
-		cols:       17,
+		cols:       18,
 		rows: []flamegraphRow{
 			// This aggregates all the rows with the same mapping file, meaning that we only keep one flamegraphRow per stack depth in this example.
 			{MappingStart: 0, MappingLimit: 0, MappingOffset: 0, MappingFile: array.NullValueStr, MappingBuildID: array.NullValueStr, LocationAddress: 0, LocationLine: 0, FunctionStartLine: 0, FunctionName: array.NullValueStr, FunctionSystemName: array.NullValueStr, FunctionFilename: array.NullValueStr, Cumulative: 11, Flat: 0, Labels: nil, Children: []uint32{1}, Parent: -1, Depth: 0}, // 0
@@ -677,7 +677,7 @@ func TestGenerateFlamegraphArrowEmpty(t *testing.T) {
 	require.Equal(t, int64(0), total)
 	require.Equal(t, int32(1), height)
 	require.Equal(t, int64(0), trimmed)
-	require.Equal(t, int64(17), record.NumCols())
+	require.Equal(t, int64(18), record.NumCols())
 	require.Equal(t, int64(1), record.NumRows())
 }
 
@@ -727,7 +727,7 @@ func TestGenerateFlamegraphArrowWithInlined(t *testing.T) {
 	require.Equal(t, int32(5), height)
 	require.Equal(t, int64(0), trimmed)
 
-	require.Equal(t, int64(17), record.NumCols())
+	require.Equal(t, int64(18), record.NumCols())
 	require.Equal(t, int64(5), record.NumRows())
 
 	rows := []flamegraphRow{
@@ -828,7 +828,7 @@ func TestGenerateFlamegraphArrowUnsymbolized(t *testing.T) {
 			require.Equal(t, tc.height, height)
 			require.Equal(t, tc.trimmed, trimmed)
 			require.Equal(t, int64(len(tc.rows)), fa.NumRows())
-			require.Equal(t, int64(17), fa.NumCols())
+			require.Equal(t, int64(18), fa.NumCols())
 
 			// Convert the numRows to columns for easier access when testing below.
 			expectedColumns := rowsToColumn(tc.rows)
@@ -915,7 +915,7 @@ func TestGenerateFlamegraphArrowTrimming(t *testing.T) {
 	require.Equal(t, int32(5), height)
 	require.Equal(t, int64(4), trimmed)
 	require.Equal(t, int64(3), fa.NumRows())
-	require.Equal(t, int64(17), fa.NumCols())
+	require.Equal(t, int64(18), fa.NumCols())
 
 	// TODO: MappingBuildID and FunctionSystemNames shouldn't be "" but null?
 	rows := []flamegraphRow{
