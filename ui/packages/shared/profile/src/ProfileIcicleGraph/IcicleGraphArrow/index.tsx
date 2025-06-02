@@ -19,6 +19,7 @@ import {useContextMenu} from 'react-contexify';
 import {FlamegraphArrow} from '@parca/client';
 import {useURLState} from '@parca/components';
 import {USER_PREFERENCES, useCurrentColorProfile, useUserPreference} from '@parca/hooks';
+import {ProfileType} from '@parca/parser';
 import {getColorForFeature, selectDarkMode, useAppSelector} from '@parca/store';
 import {getLastItem, type ColorConfig} from '@parca/utilities';
 
@@ -64,6 +65,7 @@ interface IcicleGraphArrowProps {
   arrow: FlamegraphArrow;
   total: bigint;
   filtered: bigint;
+  profileType?: ProfileType;
   profileSource: ProfileSource;
   width?: number;
   curPath: CurrentPathFrame[];
@@ -111,6 +113,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   width,
   setCurPath,
   curPath,
+  profileType,
   profileSource,
   mappingsListFromMetadata,
   compareAbsolute,
@@ -267,6 +270,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
       table={table}
       total={total}
       totalUnfiltered={total + filtered}
+      profileType={profileType}
       unit={arrow.unit}
       compareAbsolute={compareAbsolute}
     >
@@ -282,6 +286,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           hideMenu={hideAll}
           hideBinary={hideBinary}
           unit={arrow.unit}
+          profileType={profileType}
         />
         <MemoizedTooltip contextElement={svg.current} dockedMetainfo={dockedMetainfo} />
         <svg

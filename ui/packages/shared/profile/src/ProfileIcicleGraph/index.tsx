@@ -235,6 +235,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
               filtered={filtered}
               curPath={curPathArrow}
               setCurPath={setNewCurPathArrow}
+              profileType={profileType}
               isHalfScreen={isHalfScreen}
               mappingsListFromMetadata={mappingsList}
               compareAbsolute={isCompareAbsolute}
@@ -254,6 +255,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     filtered,
     curPathArrow,
     setNewCurPathArrow,
+    profileType,
     isHalfScreen,
     isDarkMode,
     mappingsList,
