@@ -106,6 +106,17 @@ export const getFilenameColors = (
 
 const noop = (): void => {};
 
+function getMaxDepth(depthColumn: Vector<any> | null): number {
+  if (depthColumn === null) return 0;
+
+  let max = 0;
+  for (const val of depthColumn) {
+    const numVal = Number(val);
+    if (numVal > max) max = numVal;
+  }
+  return max;
+}
+
 export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   arrow,
   total,
@@ -237,16 +248,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   };
 
   const depthColumn = table.getChild(FIELD_DEPTH);
-  const maxDepth =
-    depthColumn === null
-      ? 0
-      : (() => {
-          let max = 0;
-          for (const val of depthColumn) {
-            max = Math.max(max, val);
-          }
-          return max;
-        })();
+  const maxDepth = getMaxDepth(depthColumn);
   const height = maxDepth * RowHeight;
 
   // To find the selected row, we must walk the current path and look at which
