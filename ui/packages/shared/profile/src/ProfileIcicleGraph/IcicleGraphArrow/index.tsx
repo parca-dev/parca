@@ -37,6 +37,7 @@ import {
   getCurrentPathFrameData,
   isCurrentPathFrameMatch,
 } from './utils';
+import {ProfileType} from '@parca/parser';
 
 export const FIELD_LABELS_ONLY = 'labels_only';
 export const FIELD_MAPPING_FILE = 'mapping_file';
@@ -64,6 +65,7 @@ interface IcicleGraphArrowProps {
   arrow: FlamegraphArrow;
   total: bigint;
   filtered: bigint;
+  profileType?: ProfileType;
   profileSource: ProfileSource;
   width?: number;
   curPath: CurrentPathFrame[];
@@ -111,6 +113,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   width,
   setCurPath,
   curPath,
+  profileType,
   profileSource,
   mappingsListFromMetadata,
   compareAbsolute,
@@ -267,6 +270,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
       table={table}
       total={total}
       totalUnfiltered={total + filtered}
+      profileType={profileType}
       unit={arrow.unit}
       compareAbsolute={compareAbsolute}
     >
@@ -282,6 +286,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           hideMenu={hideAll}
           hideBinary={hideBinary}
           unit={arrow.unit}
+          profileType={profileType}
         />
         <MemoizedTooltip contextElement={svg.current} dockedMetainfo={dockedMetainfo} />
         <svg
