@@ -19,6 +19,7 @@ import {useContextMenu} from 'react-contexify';
 import {FlamegraphArrow} from '@parca/client';
 import {useURLState} from '@parca/components';
 import {USER_PREFERENCES, useCurrentColorProfile, useUserPreference} from '@parca/hooks';
+import {ProfileType} from '@parca/parser';
 import {getColorForFeature, selectDarkMode, useAppSelector} from '@parca/store';
 import {getLastItem, type ColorConfig} from '@parca/utilities';
 
@@ -37,7 +38,6 @@ import {
   getCurrentPathFrameData,
   isCurrentPathFrameMatch,
 } from './utils';
-import {ProfileType} from '@parca/parser';
 
 export const FIELD_LABELS_ONLY = 'labels_only';
 export const FIELD_MAPPING_FILE = 'mapping_file';
