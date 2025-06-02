@@ -14,7 +14,6 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {type Row as TableRow} from '@tanstack/table-core';
-import {DataRow} from 'Table/utils/functions';
 import {tableFromIPC} from 'apache-arrow';
 import {AnimatePresence, motion} from 'framer-motion';
 
@@ -33,6 +32,7 @@ import {useVisualizationState} from '../ProfileView/hooks/useVisualizationState'
 import {FIELD_FUNCTION_NAME, Row} from '../Table';
 import {useColorManagement} from '../Table/hooks/useColorManagement';
 import {useTableConfiguration} from '../Table/hooks/useTableConfiguration';
+import {type DataRow} from '../Table/utils/functions';
 import {useQuery} from '../useQuery';
 import {CalleesSection} from './components/CalleesSection';
 import {CallersSection} from './components/CallersSection';
@@ -65,9 +65,6 @@ const Sandwich = React.memo(function Sandwich({
   profileSource,
 }: Props): React.JSX.Element {
   const currentColorProfile = useCurrentColorProfile();
-  const [dashboardItems] = useURLState<string[]>('dashboard_items', {
-    alwaysReturnArray: true,
-  });
 
   const [sandwichFunctionName, setSandwichFunctionName] = useURLState<string | undefined>(
     'sandwich_function_name'
@@ -163,11 +160,8 @@ const Sandwich = React.memo(function Sandwich({
 
   const tableConfig = useTableConfiguration({
     unit,
-    profileType,
     total,
     filtered,
-    colorByColors,
-    colorBy: colorByValue,
     compareMode,
   });
 
@@ -192,16 +186,19 @@ const Sandwich = React.memo(function Sandwich({
         return row.name.trim() === sandwichFunctionName.trim();
       });
 
-      if (row) {
+      if (row != null) {
         setSelectedRow(row as unknown as TableRow<Row>);
       }
     }
   }, [sandwichFunctionName, rows, selectedRow]);
 
-  const onRowClick = useCallback((row: DataRow) => {
-    setSelectedRow(row as unknown as TableRow<Row>);
-    setSandwichFunctionName(row.name.trim());
-  }, []);
+  const onRowClick = useCallback(
+    (row: DataRow) => {
+      setSelectedRow(row as unknown as TableRow<Row>);
+      setSandwichFunctionName(row.name.trim());
+    },
+    [setSandwichFunctionName]
+  );
 
   const enableHighlighting = useMemo(() => {
     return sandwichFunctionName != null && sandwichFunctionName?.length > 0;

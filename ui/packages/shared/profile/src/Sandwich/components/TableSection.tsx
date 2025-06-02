@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {type ColumnDef, type ExpandedState, type Row as RowType} from '@tanstack/table-core';
+import {type ColumnDef, type Row as RowType} from '@tanstack/table-core';
 
 import {Table as TableComponent} from '@parca/components';
 
@@ -19,8 +19,8 @@ import {type Row} from '../../Table';
 import {ColumnName, DataRow, ROW_HEIGHT} from '../../Table/utils/functions';
 
 interface TableSectionProps {
-  rows: any[];
-  columns: ColumnDef<Row>[];
+  rows: Row[];
+  columns: Array<ColumnDef<Row>>;
   initialSorting: Array<{id: string; desc: boolean}>;
   selectedRow: RowType<Row> | null;
   onRowClick: (row: DataRow) => void;
@@ -38,7 +38,7 @@ export function TableSection({
   shouldHighlightRow,
   enableHighlighting,
   columnVisibility,
-}: TableSectionProps) {
+}: TableSectionProps): JSX.Element {
   return (
     <div
       className={`font-robotoMono h-[80vh] w-full cursor-pointer ${

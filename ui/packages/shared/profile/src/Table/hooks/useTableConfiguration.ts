@@ -13,23 +13,18 @@
 
 import React, {useEffect, useMemo, useState} from 'react';
 
-import {createColumnHelper, type CellContext, type ColumnDef} from '@tanstack/table-core';
+import {createColumnHelper, type ColumnDef} from '@tanstack/table-core';
 
 import {useURLState} from '@parca/components';
-import {type ProfileType} from '@parca/parser';
 import {valueFormatter} from '@parca/utilities';
 
 import {type Row} from '..';
-import {type colorByColors} from '../../ProfileIcicleGraph/IcicleGraphArrow/IcicleGraphNodes';
 import {addPlusSign, ratioString, type ColumnName} from '../utils/functions';
 
 interface UseTableConfigurationProps {
   unit?: string;
-  profileType?: ProfileType;
   total: bigint;
   filtered: bigint;
-  colorByColors: colorByColors;
-  colorBy: string;
   compareMode: boolean;
 }
 
@@ -41,11 +36,8 @@ interface TableConfiguration {
 
 export function useTableConfiguration({
   unit = '',
-  profileType,
   total,
   filtered,
-  colorByColors,
-  colorBy,
   compareMode,
 }: UseTableConfigurationProps): TableConfiguration {
   const columnHelper = createColumnHelper<Row>();
@@ -102,7 +94,7 @@ export function useTableConfiguration({
       columnHelper.accessor('flat', {
         id: 'flat',
         header: 'Flat',
-        cell: info => valueFormatter((info as CellContext<Row, bigint>).getValue(), unit, 2),
+        cell: info => valueFormatter(info.getValue(), unit, 2),
         size: 80,
         meta: {
           align: 'right',
@@ -113,7 +105,7 @@ export function useTableConfiguration({
         id: 'flatPercentage',
         header: 'Flat (%)',
         cell: info => {
-          return ratioString((info as CellContext<Row, bigint>).getValue(), total, filtered);
+          return ratioString(info.getValue(), total, filtered);
         },
         size: 120,
         meta: {
@@ -124,8 +116,7 @@ export function useTableConfiguration({
       columnHelper.accessor('flatDiff', {
         id: 'flatDiff',
         header: 'Flat Diff',
-        cell: info =>
-          addPlusSign(valueFormatter((info as CellContext<Row, bigint>).getValue(), unit, 2)),
+        cell: info => addPlusSign(valueFormatter(info.getValue(), unit, 2)),
         size: 120,
         meta: {
           align: 'right',
@@ -136,7 +127,7 @@ export function useTableConfiguration({
         id: 'flatDiffPercentage',
         header: 'Flat Diff (%)',
         cell: info => {
-          return ratioString((info as CellContext<Row, bigint>).getValue(), total, filtered);
+          return ratioString(info.getValue(), total, filtered);
         },
         size: 120,
         meta: {
@@ -147,7 +138,7 @@ export function useTableConfiguration({
       columnHelper.accessor('cumulative', {
         id: 'cumulative',
         header: 'Cumulative',
-        cell: info => valueFormatter((info as CellContext<Row, bigint>).getValue(), unit, 2),
+        cell: info => valueFormatter(info.getValue(), unit, 2),
         size: 150,
         meta: {
           align: 'right',
@@ -158,7 +149,7 @@ export function useTableConfiguration({
         id: 'cumulativePercentage',
         header: 'Cumulative (%)',
         cell: info => {
-          return ratioString((info as CellContext<Row, bigint>).getValue(), total, filtered);
+          return ratioString(info.getValue(), total, filtered);
         },
         size: 150,
         meta: {
@@ -169,8 +160,7 @@ export function useTableConfiguration({
       columnHelper.accessor('cumulativeDiff', {
         id: 'cumulativeDiff',
         header: 'Cumulative Diff',
-        cell: info =>
-          addPlusSign(valueFormatter((info as CellContext<Row, bigint>).getValue(), unit, 2)),
+        cell: info => addPlusSign(valueFormatter(info.getValue(), unit, 2)),
         size: 170,
         meta: {
           align: 'right',
@@ -181,7 +171,7 @@ export function useTableConfiguration({
         id: 'cumulativeDiffPercentage',
         header: 'Cumulative Diff (%)',
         cell: info => {
-          return ratioString((info as CellContext<Row, bigint>).getValue(), total, filtered);
+          return ratioString(info.getValue(), total, filtered);
         },
         size: 170,
         meta: {
@@ -210,7 +200,7 @@ export function useTableConfiguration({
         cell: info => info.getValue(),
       }),
     ];
-  }, [profileType, unit, total, filtered, colorByColors, colorBy]);
+  }, [unit, total, filtered, columnHelper]);
 
   const initialSorting = useMemo(() => {
     return [

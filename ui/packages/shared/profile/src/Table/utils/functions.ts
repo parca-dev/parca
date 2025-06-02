@@ -21,6 +21,7 @@ import {hexifyAddress} from '../../utils';
 
 export interface DataRow {
   id: number;
+  moreActions?: number;
   colorProperty: {
     color: string;
     mappingFile: string;
