@@ -237,7 +237,16 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   };
 
   const depthColumn = table.getChild(FIELD_DEPTH);
-  const maxDepth = depthColumn === null ? 0 : Math.max(...depthColumn.toArray());
+  const maxDepth =
+    depthColumn === null
+      ? 0
+      : (() => {
+          let max = 0;
+          for (const val of depthColumn) {
+            max = Math.max(max, val);
+          }
+          return max;
+        })();
   const height = maxDepth * RowHeight;
 
   // To find the selected row, we must walk the current path and look at which
