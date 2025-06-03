@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 
 import {createColumnHelper, type ColumnDef} from '@tanstack/table-core';
 
@@ -19,6 +19,8 @@ import {useURLState} from '@parca/components';
 import {valueFormatter} from '@parca/utilities';
 
 import {type Row} from '..';
+import {ColorCell} from '../ColorCell';
+import MoreDropdown from '../MoreDropdown';
 import {addPlusSign, ratioString, type ColumnName} from '../utils/functions';
 
 interface UseTableConfigurationProps {
@@ -77,19 +79,24 @@ export function useTableConfiguration({
 
   const columns = useMemo<Array<ColumnDef<Row>>>(() => {
     return [
+      columnHelper.accessor('moreActions', {
+        id: 'moreActions',
+        header: '',
+        cell: info => {
+          return <MoreDropdown functionName={info.row.original.name} />;
+        },
+        size: 10,
+        enableSorting: false,
+      }),
       columnHelper.accessor('colorProperty', {
         id: 'color',
         header: '',
         cell: info => {
           const color = info.getValue() as {color: string; mappingFile: string};
-          return React.createElement('div', {
-            className: 'w-4 h-4 rounded-[4px]',
-            style: {backgroundColor: color.color},
-            'data-tooltip-id': 'table-color-tooltip',
-            'data-tooltip-content': color.mappingFile,
-          });
+          return <ColorCell color={color.color} mappingFile={color.mappingFile} />;
         },
         size: 10,
+        enableSorting: false,
       }),
       columnHelper.accessor('flat', {
         id: 'flat',

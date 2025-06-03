@@ -188,7 +188,7 @@ const ContextMenu = ({
       >
         <div className="flex w-full items-center gap-2">
           <Icon icon="tdesign:sandwich-filled" />
-          <div>Show in sandwich </div>
+          <div>Show in sandwich</div>
         </div>
       </Item>
       <Item id="reset-view" onClick={handleResetView} disabled={curPath.length === 0}>
