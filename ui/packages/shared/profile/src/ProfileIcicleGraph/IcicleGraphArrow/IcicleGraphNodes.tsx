@@ -114,7 +114,9 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const filename: string | null = arrowToString(filenameColumn?.get(row));
   const depth: number = depthColumn?.get(row) ?? 0;
   const valueOffset: bigint =
-    valueOffsetColumn?.get(row) !== null ? BigInt(valueOffsetColumn?.get(row)) : 0n;
+    valueOffsetColumn?.get(row) !== null && valueOffsetColumn?.get(row) !== undefined
+      ? BigInt(valueOffsetColumn?.get(row))
+      : 0n;
 
   const colorAttribute =
     colorBy === 'filename' ? filename : colorBy === 'binary' ? mappingFile : null;
@@ -147,7 +149,10 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   }, [searchString, name]);
 
   const selectionOffset =
-    valueOffsetColumn?.get(selectedRow) !== null ? BigInt(valueOffsetColumn?.get(selectedRow)) : 0n;
+    valueOffsetColumn?.get(selectedRow) !== null &&
+    valueOffsetColumn?.get(selectedRow) !== undefined
+      ? BigInt(valueOffsetColumn?.get(selectedRow))
+      : 0n;
   const selectionCumulative =
     cumulativeColumn?.get(selectedRow) !== null ? BigInt(cumulativeColumn?.get(selectedRow)) : 0n;
   if (
