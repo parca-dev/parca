@@ -61,6 +61,10 @@ export interface IcicleNodeProps {
   onClick: () => void;
   isIcicleChart: boolean;
   profileSource: ProfileSource;
+  isFlamegraph?: boolean;
+  isSandwich?: boolean;
+  maxDepth?: number;
+  tooltipId?: string;
 
   // Hovering row must only ever be used for highlighting similar nodes, otherwise it will cause performance issues as it causes the full iciclegraph to get rerendered every time the hovering row changes.
   hoveringRow?: number;
@@ -97,6 +101,8 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   profileSource,
   isFlamegraph = false,
   isSandwich = false,
+  maxDepth = 0,
+  tooltipId = 'default',
 }: IcicleNodeProps): React.JSX.Element {
   // get the columns to read from
   const mappingColumn = table.getChild(FIELD_MAPPING_FILE);
@@ -150,8 +156,6 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     return {isHighlightEnabled: true, isHighlighted: isSearchMatch(searchString, name)};
   }, [searchString, name]);
 
-  const adjustedY = isFlamegraph ? -y : y;
-
   const selectionOffset =
     valueOffsetColumn?.get(selectedRow) !== null &&
     valueOffsetColumn?.get(selectedRow) !== undefined
@@ -166,8 +170,9 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     // If the end of the node is before the selection offset or the start of the node is after the selection offset + totalWidth, we don't render it.
     return <></>;
   }
-  if (row === 0 && isIcicleChart) {
-    // The root node is not rendered in the icicle chart, so we return null.
+
+  if (row === 0 && (isIcicleChart || isSandwich)) {
+    // The root node is not rendered in the icicle chart or sandwich view, so we return null.
     return <></>;
   }
 
@@ -190,7 +195,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const onMouseEnter = (): void => {
     setHoveringRow(row);
     window.dispatchEvent(
-      new CustomEvent('icicle-tooltip-update', {
+      new CustomEvent(`icicle-tooltip-update-${tooltipId}`, {
         detail: {row},
       })
     );
@@ -199,7 +204,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const onMouseLeave = (): void => {
     setHoveringRow(undefined);
     window.dispatchEvent(
-      new CustomEvent('icicle-tooltip-update', {
+      new CustomEvent(`icicle-tooltip-update-${tooltipId}`, {
         detail: {row: null},
       })
     );
@@ -216,7 +221,16 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
       : selectedDepth > depth
       ? 0
       : ((Number(valueOffset) - Number(selectionOffset)) / Number(total)) * totalWidth;
-  const y = isIcicleChart ? (depth - 1) * height : depth * height;
+
+  const y = isFlamegraph
+    ? isSandwich
+      ? (maxDepth - depth) * height // Flamegraph in sandwich: adjust for skipped root
+      : (maxDepth - depth - 1) * height // Flamegraph: invert the depth
+    : isIcicleChart
+    ? (depth - 1) * height
+    : isSandwich
+    ? (depth - 1) * height // Sandwich view: adjust for skipped root
+    : depth * height;
 
   return (
     <>

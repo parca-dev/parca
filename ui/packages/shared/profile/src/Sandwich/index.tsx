@@ -49,7 +49,7 @@ interface Props {
   unit?: string;
   metadataMappingFiles?: string[];
   queryClient?: QueryServiceClient;
-  profileSource?: ProfileSource;
+  profileSource: ProfileSource;
 }
 
 const Sandwich = React.memo(function Sandwich({
@@ -269,12 +269,9 @@ const Sandwich = React.memo(function Sandwich({
                   callersFlamegraphError={callersFlamegraphError}
                   filtered={filtered}
                   profileSource={profileSource}
-                  curPath={curPath}
-                  setCurPath={setCurPath}
                   curPathArrow={curPathArrow}
                   setCurPathArrow={setCurPathArrow}
                   metadataMappingFiles={metadataMappingFiles}
-                  metadataLoading={false}
                 />
                 <div className="h-4" />
                 <CalleesSection
@@ -295,12 +292,9 @@ const Sandwich = React.memo(function Sandwich({
                   calleesFlamegraphError={calleesFlamegraphError}
                   filtered={filtered}
                   profileSource={profileSource}
-                  curPath={curPath}
-                  setCurPath={setCurPath}
                   curPathArrow={curPathArrow}
                   setCurPathArrow={setCurPathArrow}
                   metadataMappingFiles={metadataMappingFiles}
-                  metadataLoading={false}
                 />
               </div>
             )}

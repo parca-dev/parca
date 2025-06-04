@@ -76,6 +76,7 @@ interface IcicleGraphArrowProps {
   isIcicleChart?: boolean;
   isFlamegraph?: boolean;
   isSandwich?: boolean;
+  tooltipId?: string;
 }
 
 export const getMappingColors = (
@@ -133,6 +134,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   isIcicleChart = false,
   isFlamegraph = false,
   isSandwich = false,
+  tooltipId = 'default',
 }: IcicleGraphArrowProps): React.JSX.Element {
   const [highlightSimilarStacksPreference] = useUserPreference<boolean>(
     USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS.key
@@ -253,7 +255,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   const depthColumn = table.getChild(FIELD_DEPTH);
   const maxDepth = getMaxDepth(depthColumn);
-  const height = maxDepth * RowHeight;
+  const height = isSandwich ? (maxDepth - 1) * RowHeight : maxDepth * RowHeight;
 
   // To find the selected row, we must walk the current path and look at which
   // children of the current frame matches the path element exactly. Until the
@@ -288,21 +290,24 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
       profileType={profileType}
       unit={arrow.unit}
       compareAbsolute={compareAbsolute}
+      tooltipId={tooltipId}
     >
       <div className="relative">
-        <ContextMenuWrapper
-          ref={contextMenuRef}
-          menuId={MENU_ID}
-          table={table}
-          total={total}
-          totalUnfiltered={total + filtered}
-          compareAbsolute={compareAbsolute}
-          resetPath={() => setCurPath([])}
-          hideMenu={hideAll}
-          hideBinary={hideBinary}
-          unit={arrow.unit}
-          profileType={profileType}
-        />
+        {!isSandwich && (
+          <ContextMenuWrapper
+            ref={contextMenuRef}
+            menuId={MENU_ID}
+            table={table}
+            total={total}
+            totalUnfiltered={total + filtered}
+            compareAbsolute={compareAbsolute}
+            resetPath={() => setCurPath([])}
+            hideMenu={hideAll}
+            hideBinary={hideBinary}
+            unit={arrow.unit}
+            profileType={profileType}
+          />
+        )}
         <MemoizedTooltip contextElement={svg.current} dockedMetainfo={dockedMetainfo} />
         <svg
           className="font-robotoMono"
@@ -337,6 +342,10 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               setHoveringRow={highlightSimilarStacksPreference ? setHoveringRow : noop}
               isIcicleChart={isIcicleChart}
               profileSource={profileSource}
+              isFlamegraph={isFlamegraph}
+              isSandwich={isSandwich}
+              maxDepth={maxDepth}
+              tooltipId={tooltipId}
             />
           ))}
         </svg>

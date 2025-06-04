@@ -52,6 +52,7 @@ interface ProfileIcicleGraphProps {
   isIcicleChart?: boolean;
   isSandwichIcicleGraph?: boolean;
   isFlamegraph?: boolean;
+  tooltipId?: string;
 }
 
 const ErrorContent = ({errorMessage}: {errorMessage: string | ReactNode}): JSX.Element => {
@@ -86,6 +87,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   profileSource,
   isSandwichIcicleGraph = false,
   isFlamegraph = false,
+  tooltipId,
 }: ProfileIcicleGraphProps): JSX.Element {
   const {onError, authenticationErrorMessage, isDarkMode, iciclechartHelpText} = useParcaContext();
   const {compareMode} = useProfileViewContext();
@@ -93,20 +95,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   const [icicleChartRef, {height: icicleChartHeight}] = useMeasure();
 
   // Create local state for paths when in sandwich view to avoid URL updates
-  const [localCurPath, setLocalCurPath] = useState<string[]>([]);
   const [localCurPathArrow, setLocalCurPathArrow] = useState<CurrentPathFrame[]>([]);
-
-  // Create wrapper functions to conditionally update either local state or URL state
-  const setCurPathWrapper = useCallback(
-    (path: string[]) => {
-      if (isSandwichIcicleGraph) {
-        setLocalCurPath(path);
-      } else {
-        setNewCurPath(path);
-      }
-    },
-    [isSandwichIcicleGraph, setNewCurPath]
-  );
 
   const setCurPathArrowWrapper = useCallback(
     (path: CurrentPathFrame[]) => {
@@ -120,7 +109,6 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   );
 
   // Determine which paths to use based on isSandwichIcicleGraph flag
-  const effectiveCurPath = isSandwichIcicleGraph ? localCurPath : curPath;
   const effectiveCurPathArrow = isSandwichIcicleGraph ? localCurPathArrow : curPathArrow;
 
   const mappingsList = useMappingList(metadataMappingFiles);
@@ -279,6 +267,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
               profileSource={profileSource}
               isFlamegraph={isFlamegraph}
               isSandwich={isSandwichIcicleGraph}
+              tooltipId={tooltipId}
             />
           </div>
         </div>
@@ -291,8 +280,6 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     loading,
     width,
     filtered,
-    curPathArrow,
-    setNewCurPathArrow,
     profileType,
     isHalfScreen,
     isDarkMode,
@@ -304,6 +291,9 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     icicleChartRef,
     iciclechartHelpText,
     isFlamegraph,
+    isSandwichIcicleGraph,
+    effectiveCurPathArrow,
+    setCurPathArrowWrapper,
   ]);
 
   useEffect(() => {

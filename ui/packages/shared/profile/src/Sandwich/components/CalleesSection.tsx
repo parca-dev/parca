@@ -14,7 +14,6 @@
 import React from 'react';
 
 import {type FlamegraphArrow} from '@parca/client';
-import {type ProfileType} from '@parca/parser';
 
 import ProfileIcicleGraph from '../../ProfileIcicleGraph';
 import {type CurrentPathFrame} from '../../ProfileIcicleGraph/IcicleGraphArrow/utils';
@@ -33,13 +32,10 @@ interface CalleesSectionProps {
   calleesFlamegraphLoading: boolean;
   calleesFlamegraphError: any;
   filtered: bigint;
-  profileSource?: ProfileSource;
-  curPath: string[];
-  setCurPath: (path: string[]) => void;
+  profileSource: ProfileSource;
   curPathArrow: CurrentPathFrame[];
   setCurPathArrow: (path: CurrentPathFrame[]) => void;
   metadataMappingFiles?: string[];
-  metadataLoading?: boolean;
 }
 
 export function CalleesSection({
@@ -50,27 +46,21 @@ export function CalleesSection({
   calleesFlamegraphError,
   filtered,
   profileSource,
-  curPath,
-  setCurPath,
   curPathArrow,
   setCurPathArrow,
   metadataMappingFiles,
-  metadataLoading,
-}: CalleesSectionProps) {
+}: CalleesSectionProps): JSX.Element {
   return (
     <div className="flex relative items-start flex-row" ref={calleesRef}>
       <div className="[writing-mode:vertical-lr] -rotate-180 px-1 uppercase text-[10px] text-left">
         {'<-'} Callees
       </div>
       <ProfileIcicleGraph
-        curPath={curPath}
-        setNewCurPath={setCurPath}
         arrow={
           calleesFlamegraphResponse?.report.oneofKind === 'flamegraphArrow'
             ? calleesFlamegraphResponse?.report?.flamegraphArrow
             : undefined
         }
-        graph={undefined}
         total={BigInt(calleesFlamegraphResponse?.total ?? '0')}
         filtered={filtered}
         profileType={profileSource?.ProfileType()}
@@ -85,10 +75,12 @@ export function CalleesSection({
             : 0
         }
         metadataMappingFiles={metadataMappingFiles}
-        metadataLoading={metadataLoading}
+        metadataLoading={false}
         isSandwichIcicleGraph={true}
         curPathArrow={curPathArrow}
         setNewCurPathArrow={setCurPathArrow}
+        profileSource={profileSource}
+        tooltipId="callees"
       />
     </div>
   );

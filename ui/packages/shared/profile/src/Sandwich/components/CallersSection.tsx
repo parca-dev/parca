@@ -14,7 +14,6 @@
 import React from 'react';
 
 import {type FlamegraphArrow} from '@parca/client';
-import {type ProfileType} from '@parca/parser';
 
 import ProfileIcicleGraph from '../../ProfileIcicleGraph';
 import {type CurrentPathFrame} from '../../ProfileIcicleGraph/IcicleGraphArrow/utils';
@@ -33,13 +32,10 @@ interface CallersSectionProps {
   callersFlamegraphLoading: boolean;
   callersFlamegraphError: any;
   filtered: bigint;
-  profileSource?: ProfileSource;
-  curPath: string[];
-  setCurPath: (path: string[]) => void;
+  profileSource: ProfileSource;
   curPathArrow: CurrentPathFrame[];
   setCurPathArrow: (path: CurrentPathFrame[]) => void;
   metadataMappingFiles?: string[];
-  metadataLoading?: boolean;
 }
 
 export function CallersSection({
@@ -50,27 +46,21 @@ export function CallersSection({
   callersFlamegraphError,
   filtered,
   profileSource,
-  curPath,
-  setCurPath,
   curPathArrow,
   setCurPathArrow,
   metadataMappingFiles,
-  metadataLoading,
-}: CallersSectionProps) {
+}: CallersSectionProps): JSX.Element {
   return (
     <div className="flex relative flex-row" ref={callersRef}>
       <div className="[writing-mode:vertical-lr] -rotate-180 px-1 uppercase text-[10px] text-left">
         Callers {'->'}
       </div>
       <ProfileIcicleGraph
-        curPath={curPath}
-        setNewCurPath={setCurPath}
         arrow={
           callersFlamegraphResponse?.report.oneofKind === 'flamegraphArrow'
             ? callersFlamegraphResponse?.report?.flamegraphArrow
             : undefined
         }
-        graph={undefined}
         total={BigInt(callersFlamegraphResponse?.total ?? '0')}
         filtered={filtered}
         profileType={profileSource?.ProfileType()}
@@ -85,11 +75,13 @@ export function CallersSection({
             : 0
         }
         metadataMappingFiles={metadataMappingFiles}
-        metadataLoading={metadataLoading}
+        metadataLoading={false}
         isSandwichIcicleGraph={true}
         curPathArrow={curPathArrow}
         setNewCurPathArrow={setCurPathArrow}
         isFlamegraph={true}
+        profileSource={profileSource}
+        tooltipId="callers"
       />
     </div>
   );

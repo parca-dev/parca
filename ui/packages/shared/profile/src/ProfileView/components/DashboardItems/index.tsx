@@ -155,14 +155,10 @@ export const getDashboardItem = ({
           data={topTableData.arrow?.record}
           unit={topTableData.unit}
           profileType={profileSource?.ProfileType()}
-          currentSearchString={currentSearchString}
           isHalfScreen={isHalfScreen}
           metadataMappingFiles={flamegraphData.metadataMappingFiles}
-          metadataLoading={flamegraphData.metadataLoading}
           profileSource={profileSource}
           queryClient={queryClient}
-          curPath={curPath}
-          setNewCurPath={setNewCurPath}
         />
       ) : (
         <></>
