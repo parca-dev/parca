@@ -294,6 +294,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     isSandwichIcicleGraph,
     effectiveCurPathArrow,
     setCurPathArrowWrapper,
+    tooltipId,
   ]);
 
   useEffect(() => {
