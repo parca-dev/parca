@@ -27,6 +27,7 @@ interface TableSectionProps {
   shouldHighlightRow: (row: Row) => boolean;
   enableHighlighting: boolean;
   columnVisibility: Record<ColumnName, boolean>;
+  height?: number;
 }
 
 export function TableSection({
@@ -38,12 +39,13 @@ export function TableSection({
   shouldHighlightRow,
   enableHighlighting,
   columnVisibility,
+  height,
 }: TableSectionProps): JSX.Element {
+  console.log(height);
   return (
     <div
-      className={`font-robotoMono h-[80vh] w-full cursor-pointer ${
-        selectedRow != null ? 'w-[50%]' : ''
-      }`}
+      style={{height: height !== undefined ? `${height}px` : '80vh'}}
+      className={`font-robotoMono w-full cursor-pointer ${selectedRow != null ? 'w-[50%]' : ''}`}
     >
       <TableComponent
         data={rows}

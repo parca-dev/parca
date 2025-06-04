@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {type Row as TableRow} from '@tanstack/table-core';
 import {tableFromIPC} from 'apache-arrow';
@@ -74,10 +74,12 @@ const Sandwich = React.memo(function Sandwich({
   const callersRef = React.useRef<HTMLDivElement | null>(null);
   const calleesRef = React.useRef<HTMLDivElement | null>(null);
 
+  const callersCalleesContainerRef = useRef<HTMLDivElement | null>(null);
+  const [tableHeight, setTableHeight] = useState<number | undefined>(undefined);
+
   const {compareMode} = useProfileViewContext();
 
-  const {curPath, setCurPath, colorBy, setColorBy, curPathArrow, setCurPathArrow} =
-    useVisualizationState();
+  const {colorBy, setColorBy, curPathArrow, setCurPathArrow} = useVisualizationState();
 
   const nodeTrimThreshold = useMemo(() => {
     let width =
@@ -87,6 +89,8 @@ const Sandwich = React.memo(function Sandwich({
     width = width - 12 - 16 - 12;
     return (1 / width) * 100;
   }, []);
+
+  console.log('🚀 ~ sandwichFunctionName:', sandwichFunctionName);
 
   const {
     isLoading: callersFlamegraphLoading,
@@ -192,6 +196,36 @@ const Sandwich = React.memo(function Sandwich({
     }
   }, [sandwichFunctionName, rows, selectedRow]);
 
+  // Update table height based on callers/callees container height
+  useEffect(() => {
+    const updateTableHeight = (): void => {
+      if (callersCalleesContainerRef.current != null) {
+        const containerHeight = callersCalleesContainerRef.current.getBoundingClientRect().height;
+        setTableHeight(containerHeight);
+      }
+    };
+
+    // Initial measurement
+    updateTableHeight();
+
+    // Update on window resize
+    window.addEventListener('resize', updateTableHeight);
+
+    // Use ResizeObserver if available for more accurate updates
+    let resizeObserver: ResizeObserver | null = null;
+    if (callersCalleesContainerRef.current != null && 'ResizeObserver' in window) {
+      resizeObserver = new ResizeObserver(updateTableHeight);
+      resizeObserver.observe(callersCalleesContainerRef.current);
+    }
+
+    return () => {
+      window.removeEventListener('resize', updateTableHeight);
+      if (resizeObserver != null) {
+        resizeObserver.disconnect();
+      }
+    };
+  }, [sandwichFunctionName, callersFlamegraphResponse, calleesFlamegraphResponse]);
+
   const onRowClick = useCallback(
     (row: DataRow) => {
       setSelectedRow(row as unknown as TableRow<Row>);
@@ -247,10 +281,11 @@ const Sandwich = React.memo(function Sandwich({
               onRowClick={onRowClick}
               shouldHighlightRow={shouldHighlightRow}
               enableHighlighting={enableHighlighting}
+              height={tableHeight}
             />
 
             {sandwichFunctionName != null && (
-              <div className="w-[50%] flex flex-col">
+              <div className="w-[50%] flex flex-col" ref={callersCalleesContainerRef}>
                 <CallersSection
                   callersRef={callersRef}
                   isHalfScreen={isHalfScreen}

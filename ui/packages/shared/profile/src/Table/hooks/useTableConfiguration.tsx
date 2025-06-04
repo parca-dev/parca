@@ -28,6 +28,7 @@ interface UseTableConfigurationProps {
   total: bigint;
   filtered: bigint;
   compareMode: boolean;
+  isSandwich?: boolean;
 }
 
 interface TableConfiguration {
@@ -44,6 +45,9 @@ export function useTableConfiguration({
 }: UseTableConfigurationProps): TableConfiguration {
   const columnHelper = createColumnHelper<Row>();
   const [tableColumns] = useURLState<string[]>('table_columns', {
+    alwaysReturnArray: true,
+  });
+  const [dashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
   });
 
@@ -78,16 +82,7 @@ export function useTableConfiguration({
   }, [tableColumns]);
 
   const columns = useMemo<Array<ColumnDef<Row>>>(() => {
-    return [
-      columnHelper.accessor('moreActions', {
-        id: 'moreActions',
-        header: '',
-        cell: info => {
-          return <MoreDropdown functionName={info.row.original.name} />;
-        },
-        size: 10,
-        enableSorting: false,
-      }),
+    const baseColumns: Array<ColumnDef<Row>> = [
       columnHelper.accessor('colorProperty', {
         id: 'color',
         header: '',
@@ -207,7 +202,23 @@ export function useTableConfiguration({
         cell: info => info.getValue(),
       }),
     ];
-  }, [unit, total, filtered, columnHelper]);
+
+    if (dashboardItems.length === 1 && dashboardItems[0] === 'table') {
+      baseColumns.unshift(
+        columnHelper.accessor('moreActions', {
+          id: 'moreActions',
+          header: '',
+          cell: info => {
+            return <MoreDropdown functionName={info.row.original.name} />;
+          },
+          size: 10,
+          enableSorting: false,
+        })
+      );
+    }
+
+    return baseColumns;
+  }, [unit, total, filtered, columnHelper, dashboardItems]);
 
   const initialSorting = useMemo(() => {
     return [
