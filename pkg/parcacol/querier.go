@@ -1467,10 +1467,13 @@ func (q *Querier) selectMerge(
 
 	columnsGroupBy := []logicalplan.Expr{
 		logicalplan.Col(profile.ColumnStacktrace),
+		logicalplan.Col(profile.ColumnPeriod),
 	}
 
 	for _, col := range groupByLabels {
-		columnsGroupBy = append(columnsGroupBy, logicalplan.Col(col))
+		if col != profile.ColumnTimestamp {
+			columnsGroupBy = append(columnsGroupBy, logicalplan.Col(col))
+		}
 	}
 
 	var valueCol logicalplan.Expr = logicalplan.Col(profile.ColumnValue)
@@ -1490,6 +1493,14 @@ func (q *Querier) selectMerge(
 	// We add the specific projection
 	firstProject = append(firstProject, valueCol)
 	finalProject = append(finalProject, totalSum)
+
+	for _, col := range groupByLabels {
+		if col == profile.ColumnTimestamp {
+			firstProject = append(firstProject, logicalplan.Col(profile.ColumnTimeNanos).Alias(profile.ColumnTimestamp))
+			columnsGroupBy = append(columnsGroupBy, logicalplan.Col(profile.ColumnTimestamp))
+			finalProject = append(finalProject, logicalplan.Col(profile.ColumnTimestamp))
+		}
+	}
 
 	columnsAggregations := []*logicalplan.AggregationFunction{
 		totalSum,

@@ -41,7 +41,7 @@ type Writer struct {
 	Value              *array.Int64Builder
 	Diff               *array.Int64Builder
 	TimeNanos          *array.Int64Builder
-	Duration           *array.Int64Builder
+	Period             *array.Int64Builder
 }
 
 func (w *Writer) Release() {
@@ -90,7 +90,7 @@ func NewWriter(pool memory.Allocator, labelNames []string) Writer {
 	value := b.Field(labelNum + 1).(*array.Int64Builder)
 	diff := b.Field(labelNum + 2).(*array.Int64Builder)
 	timeNanos := b.Field(labelNum + 3).(*array.Int64Builder)
-	duration := b.Field(labelNum + 4).(*array.Int64Builder)
+	period := b.Field(labelNum + 4).(*array.Int64Builder)
 
 	return Writer{
 		RecordBuilder:      b,
@@ -114,7 +114,7 @@ func NewWriter(pool memory.Allocator, labelNames []string) Writer {
 		Value:              value,
 		Diff:               diff,
 		TimeNanos:          timeNanos,
-		Duration:           duration,
+		Period:             period,
 	}
 }
 

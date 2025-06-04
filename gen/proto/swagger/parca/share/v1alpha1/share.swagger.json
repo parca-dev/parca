@@ -637,6 +637,10 @@
         "functionToFilter": {
           "type": "string",
           "title": "function_to_filter is the function name to filter by"
+        },
+        "exclude": {
+          "type": "boolean",
+          "title": "exclude determines whether to exclude stacks matching the function"
         }
       },
       "title": "FunctionNameStackFilter is a filter for filtering by function name"

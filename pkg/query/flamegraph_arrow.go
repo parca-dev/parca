@@ -56,12 +56,14 @@ const (
 
 	FlamegraphFieldLabels     = "labels"
 	FlamegraphFieldChildren   = "children"
+	FlamegraphFieldParent     = "parent"
 	FlamegraphFieldCumulative = "cumulative"
 	FlamegraphFieldFlat       = "flat"
 	FlamegraphFieldDiff       = "diff"
 
-	FlamegraphFieldTimestamp = "timestamp"
-	FlamegraphFieldDuration  = "duration"
+	FlamegraphFieldTimestamp   = "timestamp"
+	FlamegraphFieldDepth       = "depth"
+	FlamegraphFieldValueOffset = "value_offset"
 )
 
 func GenerateFlamegraphArrow(
@@ -193,7 +195,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					rootRow = sampleLabelRow
 				}
 				fb.maxHeight = max(fb.maxHeight, fb.height)
-				fb.height = 1
+				fb.height = 1 // We start with root + label row.
 
 				fb.parent.Set(rootRow)
 				row = fb.builderCumulative.Len()
@@ -358,8 +360,12 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		fb.trimmedDiff.AppendNull()
 		fb.trimmedTimestamp = builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
 		fb.trimmedTimestamp.AppendNull()
-		fb.trimmedDuration = builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
-		fb.trimmedDuration.AppendNull()
+		fb.trimmedDepth = array.NewUint8Builder(fb.pool)
+		fb.trimmedDepth.AppendNull()
+		fb.trimmedParent = array.NewInt32Builder(fb.pool)
+		fb.trimmedParent.Append(-1) // -1 indicates no parent, which is the root row.
+		fb.valueOffset = array.NewUint8Builder(fb.pool)
+		fb.valueOffset.(*array.Uint8Builder).Append(0) // by definition the root row has a value offset of 0
 	}
 
 	_, spanNewRecord := tracer.Start(ctx, "NewRecord")
@@ -577,11 +583,14 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 
 		// Aggregating by timestamp usually means that we're rendering a flame chart and not graph.
 		if fb.aggregationConfig.aggregateByTimestamp {
+			if fb.parent.Has() && fb.lastChildMerged[fb.parent] != cr {
+				return false, nil
+			}
 			merge, err := matchRowsByTimestamp(
 				fb.builderTimestamp.Value(cr),
-				fb.builderDuration.Value(cr),
+				fb.builderCumulative.Value(cr),
 				r.Timestamp.Value(sampleIndex),
-				r.Duration.Value(sampleIndex),
+				r.Period.Value(sampleIndex),
 			)
 			if err != nil {
 				return false, err
@@ -694,6 +703,9 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 			}
 		}
 
+		if fb.parent.Has() {
+			fb.lastChildMerged[fb.parent] = cr
+		}
 		// All fields match, so we can aggregate this new row with the existing one.
 		fb.addRowValues(r, cr, sampleIndex, leaf)
 		// Continue with this row as the parent for the next iteration and compare to its children.
@@ -724,11 +736,14 @@ func (fb *flamegraphBuilder) mergeUnsymbolizedRows(
 
 		// Aggregating by timestamp usually means that we're rendering a flame chart and not graph.
 		if fb.aggregationConfig.aggregateByTimestamp {
+			if fb.parent.Has() && fb.lastChildMerged[fb.parent] != cr {
+				return false, nil
+			}
 			merge, err := matchRowsByTimestamp(
 				fb.builderTimestamp.Value(cr),
-				fb.builderDuration.Value(cr),
+				fb.builderCumulative.Value(cr),
 				r.Timestamp.Value(sampleIndex),
-				r.Duration.Value(sampleIndex),
+				r.Period.Value(sampleIndex),
 			)
 			if err != nil {
 				return false, err
@@ -755,7 +770,7 @@ func (fb *flamegraphBuilder) mergeUnsymbolizedRows(
 	return false, nil
 }
 
-func matchRowsByTimestamp(compareTimestamp, compareDuration, timestamp, duration int64) (bool, error) {
+func matchRowsByTimestamp(compareTimestamp, compareCumulative, timestamp, period int64) (bool, error) {
 	if compareTimestamp > timestamp {
 		return false, fmt.Errorf("compareTimestamp > timestamp: %d > %d", compareTimestamp, timestamp)
 	}
@@ -763,11 +778,11 @@ func matchRowsByTimestamp(compareTimestamp, compareDuration, timestamp, duration
 		return false, fmt.Errorf("multiple samples for the same timestamp is not allowed: %d", timestamp)
 	}
 
-	difference := time.Duration(timestamp - (compareTimestamp + compareDuration))
+	difference := time.Duration(timestamp - (compareTimestamp + compareCumulative))
 	// We truncate 10% jitter. We use duration which usually is the period.
 	// For example, for 19hz sampling rate, we'll get a duration of 1000ms/19hz = 52.63ms
 	// and 10% are 5.2ms jitter that gets truncated.
-	jitter := time.Duration(duration / 10)
+	jitter := time.Duration(period / 10)
 	truncated := difference - jitter
 	return truncated <= 0, nil
 }
@@ -837,8 +852,9 @@ type flamegraphBuilder struct {
 	parent parent
 	// This keeps track of a row's children and will be converted to an arrow array of lists at the end.
 	// Allocating for an average of 8 children per stacktrace upfront.
-	children     []map[uint64]int
-	childrenList [][]int
+	children        []map[uint64]int
+	childrenList    [][]int
+	lastChildMerged []int
 
 	// This keeps track of the root rows indexed by the labels string.
 	// If the stack trace has no labels, we use the empty string as the key.
@@ -870,11 +886,12 @@ type flamegraphBuilder struct {
 	builderLabelsDictUnifiers            []array.DictionaryUnifier
 	builderChildren                      *builder.ListBuilder
 	builderChildrenValues                *array.Uint32Builder
+	builderParent                        *array.Int32Builder
 	builderCumulative                    *builder.OptInt64Builder
 	builderFlat                          *builder.OptInt64Builder
 	builderDiff                          *builder.OptInt64Builder
 	builderTimestamp                     *builder.OptInt64Builder
-	builderDuration                      *builder.OptInt64Builder
+	builderDepth                         *array.Uint32Builder
 
 	// Only at the last step when preparing the new record these are populated.
 	// They are also used to create compacted dictionaries and after that replaced by them.
@@ -901,7 +918,9 @@ type flamegraphBuilder struct {
 	trimmedDiff              array.Builder
 
 	trimmedTimestamp *builder.OptInt64Builder
-	trimmedDuration  *builder.OptInt64Builder
+	trimmedDepth     array.Builder
+	trimmedParent    *array.Int32Builder
+	valueOffset      array.Builder
 }
 
 type aggregationConfig struct {
@@ -932,9 +951,10 @@ func newFlamegraphBuilder(
 		parent: parent(-1),
 
 		// ensuring that we always have space to set the first row below
-		children:       make([]map[uint64]int, maxInt64(rows, 1)),
-		childrenList:   make([][]int, maxInt64(rows, 1)),
-		labelNameIndex: map[string]int{},
+		children:        make([]map[uint64]int, maxInt64(rows, 1)),
+		childrenList:    make([][]int, maxInt64(rows, 1)),
+		lastChildMerged: []int{-1}, // The first row is the root row, so we start with -1 to indicate no children merged yet.
+		labelNameIndex:  map[string]int{},
 
 		builderLabelsOnly:  array.NewBooleanBuilder(pool),
 		builderLabelsExist: builder.NewOptBooleanBuilder(arrow.FixedWidthTypes.Boolean),
@@ -957,10 +977,11 @@ func newFlamegraphBuilder(
 		builderFunctionFilenameDictUnifier:   array.NewBinaryDictionaryUnifier(pool),
 
 		builderTimestamp: builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
-		builderDuration:  builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
+		builderDepth:     array.NewUint32Builder(pool),
 
 		builderChildren:       builderChildren,
 		builderChildrenValues: builderChildren.ValueBuilder().(*array.Uint32Builder),
+		builderParent:         array.NewInt32Builder(pool),
 		builderCumulative:     builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
 		builderFlat:           builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
 		builderDiff:           builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64),
@@ -1013,7 +1034,10 @@ func newFlamegraphBuilder(
 	fb.builderFlat.Append(0)
 
 	fb.builderTimestamp.Append(0)
-	fb.builderDuration.Append(0)
+	fb.builderDepth.Append(0)
+
+	// The root has no parent
+	fb.builderParent.Append(-1)
 
 	return fb, nil
 }
@@ -1141,12 +1165,15 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 		{Name: FlamegraphFieldFunctionFileName, Type: fb.functionFilename.DataType()},
 		// Values
 		{Name: FlamegraphFieldChildren, Type: arrow.ListOf(arrow.PrimitiveTypes.Uint32)},
+		{Name: FlamegraphFieldParent, Type: arrow.PrimitiveTypes.Int32},
 		{Name: FlamegraphFieldCumulative, Type: fb.trimmedCumulative.Type()},
 		{Name: FlamegraphFieldFlat, Type: fb.trimmedFlat.Type()},
 		{Name: FlamegraphFieldDiff, Type: fb.trimmedDiff.Type()},
 		// Timestamp
 		{Name: FlamegraphFieldTimestamp, Type: arrow.PrimitiveTypes.Int64},
-		{Name: FlamegraphFieldDuration, Type: arrow.PrimitiveTypes.Int64},
+		// Depth and ValueOffset are required for parallelized frontend rendering.
+		{Name: FlamegraphFieldDepth, Type: fb.trimmedDepth.Type()},
+		{Name: FlamegraphFieldValueOffset, Type: fb.valueOffset.Type()},
 	}
 
 	numCols := len(fields)
@@ -1194,16 +1221,26 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 	arrays[9] = fb.functionFilename
 	arrays[10] = fb.builderChildren.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[10])
-	arrays[11] = fb.trimmedCumulative.NewArray()
+
+	// Handle parent array - use trimmedParent if available, otherwise use builderParent
+	if fb.trimmedParent != nil {
+		arrays[11] = fb.trimmedParent.NewArray()
+	} else {
+		arrays[11] = fb.builderParent.NewArray()
+	}
 	cleanupArrs = append(cleanupArrs, arrays[11])
-	arrays[12] = fb.trimmedFlat.NewArray()
+	arrays[12] = fb.trimmedCumulative.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[12])
-	arrays[13] = fb.trimmedDiff.NewArray()
+	arrays[13] = fb.trimmedFlat.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[13])
-	arrays[14] = fb.trimmedTimestamp.NewArray()
+	arrays[14] = fb.trimmedDiff.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[14])
-	arrays[15] = fb.trimmedDuration.NewArray()
+	arrays[15] = fb.trimmedTimestamp.NewArray()
 	cleanupArrs = append(cleanupArrs, arrays[15])
+	arrays[16] = fb.trimmedDepth.NewArray()
+	cleanupArrs = append(cleanupArrs, arrays[16])
+	arrays[17] = fb.valueOffset.NewArray()
+	cleanupArrs = append(cleanupArrs, arrays[17])
 
 	for i, field := range fb.builderLabelFields {
 		field.Type = fb.labels[i].DataType() // overwrite for variable length uint types
@@ -1240,9 +1277,10 @@ func (fb *flamegraphBuilder) Release() {
 	fb.builderFunctionFilenameDictUnifier.Release()
 
 	fb.builderTimestamp.Release()
-	fb.builderDuration.Release()
+	fb.builderDepth.Release()
 
 	fb.builderChildren.Release()
+	fb.builderParent.Release()
 	fb.builderCumulative.Release()
 	fb.builderFlat.Release()
 	fb.builderDiff.Release()
@@ -1259,8 +1297,20 @@ func (fb *flamegraphBuilder) Release() {
 		fb.trimmedCumulative.Release()
 	}
 
+	if fb.trimmedFlat != nil {
+		fb.trimmedFlat.Release()
+	}
+
 	if fb.trimmedDiff != nil {
 		fb.trimmedDiff.Release()
+	}
+
+	if fb.trimmedDepth != nil {
+		fb.trimmedDepth.Release()
+	}
+
+	if fb.trimmedParent != nil {
+		fb.trimmedParent.Release()
 	}
 
 	for i := range fb.builderLabelFields {
@@ -1383,6 +1433,15 @@ func (fb *flamegraphBuilder) appendRow(
 		fb.children = newChildren
 		fb.childrenList = newChildrenList
 	}
+	if len(fb.lastChildMerged) == row {
+		newLastChildMerged := make([]int, len(fb.lastChildMerged)*2)
+		copy(newLastChildMerged, fb.lastChildMerged)
+		// Set all new lastChildMerged to -1, meaning that we haven't merged any children yet.
+		for i := len(fb.lastChildMerged); i < len(newLastChildMerged); i++ {
+			newLastChildMerged[i] = -1
+		}
+		fb.lastChildMerged = newLastChildMerged
+	}
 	// If there is a parent for this stack the parent is not -1 but the parent's row number.
 	if fb.parent.Has() {
 		// this is the first time we see this parent have a child, so we need to initialize the slice
@@ -1394,10 +1453,13 @@ func (fb *flamegraphBuilder) appendRow(
 			fb.children[fb.parent.Get()][key] = row
 			fb.childrenList[fb.parent.Get()] = append(fb.childrenList[fb.parent.Get()], row)
 		}
+
+		fb.lastChildMerged[fb.parent.Get()] = row
 	}
 
 	fb.builderTimestamp.Append(r.Timestamp.Value(sampleRow))
-	fb.builderDuration.Append(r.Duration.Value(sampleRow))
+	fb.builderDepth.Append(uint32(fb.height))
+	fb.builderParent.Append(int32(fb.parent.Get()))
 
 	value := r.Value.Value(sampleRow)
 
@@ -1457,9 +1519,19 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 		fb.children = newChildren
 		fb.childrenList = newChildrenList
 	}
+	if len(fb.lastChildMerged) == row {
+		newLastChildMerged := make([]int, len(fb.lastChildMerged)*2)
+		copy(newLastChildMerged, fb.lastChildMerged)
+		// Set all new lastChildMerged to -1, meaning that we haven't merged any children yet.
+		for i := len(fb.lastChildMerged); i < len(newLastChildMerged); i++ {
+			newLastChildMerged[i] = -1
+		}
+		fb.lastChildMerged = newLastChildMerged
+	}
 	fb.rootsRow[labelHash] = row
 	fb.childrenList[0] = append(fb.childrenList[0], row)
 	fb.children[row] = children
+	fb.lastChildMerged[0] = row
 
 	fb.builderLabelsOnly.Append(true)
 	fb.builderMappingFileIndices.AppendNull()
@@ -1473,7 +1545,10 @@ func (fb *flamegraphBuilder) AppendLabelRow(
 	fb.builderFunctionFilenameIndices.AppendNull()
 
 	fb.builderTimestamp.Append(0)
-	fb.builderDuration.Append(0)
+	fb.builderDepth.Append(1) // Label rows are direct children of root, so depth is 1
+
+	// Label rows are always children of root (row 0)
+	fb.builderParent.Append(0)
 
 	// Append both cumulative and diff values and overwrite them below.
 	fb.builderCumulative.Append(0)
@@ -1494,8 +1569,6 @@ func (fb *flamegraphBuilder) addRowValues(r *profile.RecordReader, row, sampleRo
 	if leaf {
 		fb.builderFlat.Add(row, value)
 	}
-
-	fb.builderDuration.Add(row, r.Duration.Value(sampleRow))
 }
 
 func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, threshold float32) error {
@@ -1520,6 +1593,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	largestFlatValue := uint64(0)
 	largestDiffValue := int64(0)
 	smallestDiffValue := int64(0)
+	largestDepth := uint64(0)
 	for trimmingQueue.len() > 0 {
 		// pop the first item from the queue
 		te := trimmingQueue.pop()
@@ -1541,6 +1615,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 		diff := fb.builderDiff.Value(te.row)
 		largestDiffValue = max(largestDiffValue, diff)
 		smallestDiffValue = max(smallestDiffValue, diff)
+		largestDepth = max(largestDepth, uint64(fb.builderDepth.Value(te.row)))
 
 		cumThreshold := float32(cum) * threshold
 
@@ -1574,8 +1649,13 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedDiff := array.NewBuilder(fb.pool, trimmedDiffType)
 
 	trimmedTimestamps := builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
-	// TODO: We should use the smallest type for the duration.
-	trimmedDurations := builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
+	trimmedDepthType := smallestUnsignedTypeFor(largestDepth)
+	trimmedDepth := array.NewBuilder(fb.pool, trimmedDepthType)
+
+	// Parent indices use int32 to allow for -1 (null parent)
+	trimmedParent := array.NewInt32Builder(fb.pool)
+
+	valueOffset := array.NewBuilder(fb.pool, trimmedCumulativeType)
 
 	releasers = append(releasers,
 		trimmedMappingFileIndices,
@@ -1609,7 +1689,9 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedFlat.Reserve(row)
 	trimmedDiff.Reserve(row)
 	trimmedTimestamps.Reserve(row)
-	trimmedDurations.Reserve(row)
+	trimmedDepth.Reserve(row)
+	trimmedParent.Reserve(row)
+	valueOffset.Reserve(row)
 
 	for _, l := range trimmedLabelsIndices {
 		l.Reserve(row)
@@ -1635,7 +1717,6 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 		appendDictionaryIndexInt32(fb.functionSystemNameIndices, trimmedFunctionSystemNameIndices, te.row)
 		appendDictionaryIndexInt32(fb.functionFilenameIndices, trimmedFunctionFilenameIndices, te.row)
 		copyOptInt64BuilderValue(fb.builderTimestamp, trimmedTimestamps, te.row)
-		copyOptInt64BuilderValue(fb.builderDuration, trimmedDurations, te.row)
 		for i := range fb.labels {
 			appendDictionaryIndexInt32(fb.labelsIndices[i], trimmedLabelsIndices[i], te.row)
 		}
@@ -1681,9 +1762,43 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 			panic(fmt.Errorf("unsupported type %T", b))
 		}
 
+		switch b := trimmedDepth.(type) {
+		case *array.Uint64Builder:
+			b.Append(uint64(fb.builderDepth.Value(te.row)))
+		case *array.Uint32Builder:
+			b.Append(fb.builderDepth.Value(te.row))
+		case *array.Uint16Builder:
+			b.Append(uint16(fb.builderDepth.Value(te.row)))
+		case *array.Uint8Builder:
+			b.Append(uint8(fb.builderDepth.Value(te.row)))
+		default:
+			panic(fmt.Errorf("unsupported type %T", b))
+		}
+
 		// This gets the newly inserted row's index.
 		// It is used further down as the children's parent value when added to the trimmingQueue.
 		row := trimmedCumulative.Len() - 1
+
+		// When trimming, te.parent is the parent index in the trimmed structure
+		// For the root row (te.row == 0), parent should be -1
+		if row == 0 {
+			trimmedParent.Append(-1)
+		} else {
+			trimmedParent.Append(int32(te.parent))
+		}
+
+		switch b := valueOffset.(type) {
+		case *array.Uint64Builder:
+			b.Append(uint64(te.valueOffset))
+		case *array.Uint32Builder:
+			b.Append(uint32(te.valueOffset))
+		case *array.Uint16Builder:
+			b.Append(uint16(te.valueOffset))
+		case *array.Uint8Builder:
+			b.Append(uint8(te.valueOffset))
+		default:
+			panic(fmt.Errorf("unsupported type %T", b))
+		}
 
 		// Add this new row as child to its parent if not the root row (index 0).
 		if row != 0 {
@@ -1696,11 +1811,17 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 
 		cumThreshold := float32(cum) * threshold
 
+		valueOffset := te.valueOffset
 		for _, cr := range fb.childrenList[te.row] {
 			if v := fb.builderCumulative.Value(cr); v > int64(cumThreshold) {
 				// this row is above the threshold, so we need to keep it
 				// add this row to the queue to check its children.
-				trimmingQueue.push(trimmingElement{row: cr, parent: row})
+				trimmingQueue.push(trimmingElement{
+					row:         cr,
+					parent:      row,
+					valueOffset: valueOffset,
+				})
+				valueOffset += fb.builderCumulative.Value(cr)
 			} else {
 				// this row is below the threshold, so we need to trim it
 				fb.trimmed += v
@@ -1818,7 +1939,9 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	fb.trimmedDiff = trimmedDiff
 	fb.trimmedChildren = trimmedChildren
 	fb.trimmedTimestamp = trimmedTimestamps
-	fb.trimmedDuration = trimmedDurations
+	fb.trimmedDepth = trimmedDepth
+	fb.trimmedParent = trimmedParent
+	fb.valueOffset = valueOffset
 
 	return nil
 }
@@ -1927,8 +2050,9 @@ func (p *parent) Get() int { return int(*p) }
 func (p *parent) Has() bool { return *p > -1 }
 
 type trimmingElement struct {
-	row    int
-	parent int
+	row         int
+	parent      int
+	valueOffset int64
 }
 
 // queue is a small wrapper around a []trimmingElement used as queue.

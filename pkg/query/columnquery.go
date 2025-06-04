@@ -238,7 +238,6 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 
 	groupBy := req.GetGroupBy().GetFields()
 	allowedGroupBy := map[string]struct{}{
-		FlamegraphFieldDuration:         {},
 		FlamegraphFieldFunctionFileName: {},
 		FlamegraphFieldFunctionName:     {},
 		FlamegraphFieldLocationAddress:  {},
@@ -247,7 +246,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	}
 
 	if req.GetReportType() == pb.QueryRequest_REPORT_TYPE_FLAMECHART {
-		groupBy = append(groupBy, FlamegraphFieldTimestamp, FlamegraphFieldDuration)
+		groupBy = append(groupBy, FlamegraphFieldTimestamp)
 	}
 
 	groupByLabels := make([]string, 0, len(groupBy))
@@ -339,6 +338,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	}()
 
 	var functionToFilterBy string
+	var excludeFunction bool
 	// Extract the function name to filter by from the request in the Filter field.
 	// The Filter API allows for multiple stack filters, but for now, we only support the one,
 	// which is the function name stack filter. This will be expanded in the future
@@ -347,6 +347,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		if stackFilter := filter.GetStackFilter(); stackFilter != nil {
 			if functionNameFilter := stackFilter.GetFunctionNameStackFilter(); functionNameFilter != nil {
 				functionToFilterBy = functionNameFilter.GetFunctionToFilter()
+				excludeFunction = functionNameFilter.GetExclude()
 			}
 		}
 	}
@@ -365,6 +366,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		q.mem,
 		p.Samples,
 		functionToFilterBy,
+		excludeFunction,
 		binaryFrameFilter,
 	)
 	if err != nil {
@@ -390,6 +392,7 @@ func FilterProfileData(
 	pool memory.Allocator,
 	records []arrow.Record,
 	functionStackFilter string,
+	excludeFunction bool,
 	binaryFrameFilter map[string]struct{},
 ) ([]arrow.Record, int64, error) {
 	_, span := tracer.Start(ctx, "filterByFunction")
@@ -415,6 +418,7 @@ func FilterProfileData(
 			pool,
 			r,
 			functionStackFilterBytes,
+			excludeFunction,
 			binaryFrameFilter,
 		)
 		if err != nil {
@@ -437,6 +441,7 @@ func filterRecord(
 	pool memory.Allocator,
 	rec arrow.Record,
 	functionStackFilterBytes []byte,
+	excludeFunction bool,
 	binaryFrameFilter map[string]struct{},
 ) ([]arrow.Record, int64, int64, error) {
 	r := profile.NewRecordReader(rec)
@@ -451,6 +456,18 @@ func filterRecord(
 		}
 
 		if len(indexMatches) == 0 {
+			// If exclude mode and no matches found, keep all records
+			if excludeFunction {
+				// No function matches, so nothing to exclude - keep all records
+				rowsToKeep := make([]int64, 0, int(rec.NumRows()))
+				for i := 0; i < int(rec.NumRows()); i++ {
+					rowsToKeep = append(rowsToKeep, int64(i))
+				}
+				recs := sliceRecord(rec, rowsToKeep)
+				valueSum := math.Int64.Sum(r.Value)
+				return recs, valueSum, valueSum, nil
+			}
+			// Include mode with no matches - return empty
 			return nil, math.Int64.Sum(r.Value), 0, nil
 		}
 	}
@@ -459,6 +476,7 @@ func filterRecord(
 	for i := 0; i < int(rec.NumRows()); i++ {
 		lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 		keepRow := false
+		hasMatch := false
 		if len(functionStackFilterBytes) > 0 {
 			if lOffsetStart < lOffsetEnd {
 				firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
@@ -466,12 +484,15 @@ func filterRecord(
 				for k := int(firstStart); k < int(lastEnd); k++ {
 					if r.LineFunctionNameIndices.IsValid(k) {
 						if _, ok := indexMatches[r.LineFunctionNameIndices.Value(k)]; ok {
-							keepRow = true
+							hasMatch = true
 							break
 						}
 					}
 				}
 			}
+			// If exclude is true, keep rows that DON'T match
+			// If exclude is false, keep rows that DO match
+			keepRow = excludeFunction != hasMatch
 		} else {
 			keepRow = true
 		}

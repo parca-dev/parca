@@ -1300,8 +1300,10 @@ type FunctionNameStackFilter struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// function_to_filter is the function name to filter by
 	FunctionToFilter string `protobuf:"bytes,1,opt,name=function_to_filter,json=functionToFilter,proto3" json:"function_to_filter,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// exclude determines whether to exclude stacks matching the function
+	Exclude       bool `protobuf:"varint,2,opt,name=exclude,proto3" json:"exclude,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *FunctionNameStackFilter) Reset() {
@@ -1339,6 +1341,13 @@ func (x *FunctionNameStackFilter) GetFunctionToFilter() string {
 		return x.FunctionToFilter
 	}
 	return ""
+}
+
+func (x *FunctionNameStackFilter) GetExclude() bool {
+	if x != nil {
+		return x.Exclude
+	}
+	return false
 }
 
 // FrameFilter is a filter for filtering by frames
@@ -3596,9 +3605,10 @@ const file_parca_query_v1alpha1_query_proto_rawDesc = "" +
 	"\x06filter\"\x85\x01\n" +
 	"\vStackFilter\x12l\n" +
 	"\x1afunction_name_stack_filter\x18\x01 \x01(\v2-.parca.query.v1alpha1.FunctionNameStackFilterH\x00R\x17functionNameStackFilterB\b\n" +
-	"\x06filter\"G\n" +
+	"\x06filter\"a\n" +
 	"\x17FunctionNameStackFilter\x12,\n" +
-	"\x12function_to_filter\x18\x01 \x01(\tR\x10functionToFilter\"r\n" +
+	"\x12function_to_filter\x18\x01 \x01(\tR\x10functionToFilter\x12\x18\n" +
+	"\aexclude\x18\x02 \x01(\bR\aexclude\"r\n" +
 	"\vFrameFilter\x12Y\n" +
 	"\x13binary_frame_filter\x18\x01 \x01(\v2'.parca.query.v1alpha1.BinaryFrameFilterH\x00R\x11binaryFrameFilterB\b\n" +
 	"\x06filter\">\n" +

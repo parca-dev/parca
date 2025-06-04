@@ -13,7 +13,6 @@
 
 import {KeyDownProvider, useParcaContext, useURLState} from '@parca/components';
 import {useContainerDimensions} from '@parca/hooks';
-import {selectDarkMode, useAppSelector} from '@parca/store';
 import {selectQueryParam} from '@parca/utilities';
 
 import ColorStackLegend from './components/ColorStackLegend';
@@ -23,11 +22,9 @@ import {ProfileHeader} from './components/ProfileHeader';
 import {IcicleGraphToolbar, TableToolbar, VisualisationToolbar} from './components/Toolbars';
 import {DashboardProvider} from './context/DashboardContext';
 import {ProfileViewContextProvider} from './context/ProfileViewContext';
-import {useGraphviz} from './hooks/useGraphviz';
 import {useProfileMetadata} from './hooks/useProfileMetadata';
 import {useVisualizationState} from './hooks/useVisualizationState';
 import type {ProfileViewProps, VisualizationType} from './types/visualization';
-import {getColorRange} from './utils/colorUtils';
 
 export const ProfileView = ({
   total,
@@ -35,7 +32,6 @@ export const ProfileView = ({
   flamegraphData,
   flamechartData,
   topTableData,
-  callgraphData,
   sourceData,
   profileSource,
   queryClient,
@@ -52,8 +48,6 @@ export const ProfileView = ({
     profileViewExternalSubActions,
   } = useParcaContext();
   const {ref, dimensions} = useContainerDimensions();
-  const isDarkMode = useAppSelector(selectDarkMode);
-  const colorRange = getColorRange(isDarkMode);
 
   const {
     curPath,
@@ -72,12 +66,6 @@ export const ProfileView = ({
     setSandwichFunctionName,
     resetSandwichFunctionName,
   } = useVisualizationState();
-
-  const {callgraphSVG} = useGraphviz({
-    callgraphData: callgraphData?.data,
-    width: dimensions?.width,
-    colorRange,
-  });
 
   const {colorMappings} = useProfileMetadata({
     flamegraphArrow: flamegraphData.arrow,
@@ -108,7 +96,6 @@ export const ProfileView = ({
       flamegraphData,
       flamechartData,
       topTableData,
-      callgraphData,
       sourceData,
       profileSource,
       total,
@@ -119,7 +106,6 @@ export const ProfileView = ({
       setNewCurPathArrow: setCurPathArrow,
       currentSearchString,
       setSearchString,
-      callgraphSVG,
       perf,
       queryClient,
     });

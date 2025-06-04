@@ -17,7 +17,7 @@ import cx from 'classnames';
 import {AnimatePresence, motion} from 'framer-motion';
 import {useMeasure} from 'react-use';
 
-import {Flamegraph, FlamegraphArrow} from '@parca/client';
+import {FlamegraphArrow} from '@parca/client';
 import {IcicleGraphSkeleton, useParcaContext, useURLState} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 import {capitalizeOnlyFirstLetter, divide} from '@parca/utilities';
@@ -26,7 +26,6 @@ import {MergedProfileSource, ProfileSource} from '../ProfileSource';
 import DiffLegend from '../ProfileView/components/DiffLegend';
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
 import {TimelineGuide} from '../TimelineGuide';
-import {IcicleGraph} from './IcicleGraph';
 import {FIELD_FUNCTION_NAME, IcicleGraphArrow} from './IcicleGraphArrow';
 import useMappingList from './IcicleGraphArrow/useMappingList';
 import {CurrentPathFrame, boundsFromProfileSource} from './IcicleGraphArrow/utils';
@@ -37,14 +36,11 @@ export type ResizeHandler = (width: number, height: number) => void;
 
 interface ProfileIcicleGraphProps {
   width: number;
-  graph?: Flamegraph;
   arrow?: FlamegraphArrow;
   total: bigint;
   filtered: bigint;
   profileType?: ProfileType;
-  profileSource?: ProfileSource;
-  curPath: string[] | [];
-  setNewCurPath: (path: string[]) => void;
+  profileSource: ProfileSource;
   curPathArrow: CurrentPathFrame[] | [];
   setNewCurPathArrow: (path: CurrentPathFrame[]) => void;
   loading: boolean;
@@ -75,12 +71,9 @@ export const validateIcicleChartQuery = (
 };
 
 const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
-  graph,
   arrow,
   total,
   filtered,
-  curPath,
-  setNewCurPath,
   curPathArrow,
   setNewCurPathArrow,
   profileType,
@@ -132,7 +125,6 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
 
   const mappingsList = useMappingList(metadataMappingFiles);
 
-  const [storeSortBy = FIELD_FUNCTION_NAME] = useURLState('sort_by');
   const [colorBy, setColorBy] = useURLState('color_by');
 
   // By default, we want delta profiles (CPU) to be relatively compared.
@@ -156,11 +148,11 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     isFiltered,
     filteredPercentage,
   ] = useMemo(() => {
-    if (graph === undefined && arrow === undefined) {
+    if (arrow === undefined) {
       return ['0', '0', false, '0', '0', false, '0', '0'];
     }
 
-    const trimmed: bigint = graph?.trimmed ?? arrow?.trimmed ?? 0n;
+    const trimmed: bigint = arrow?.trimmed ?? 0n;
 
     const totalUnfiltered = total + filtered;
     // safeguard against division by zero
@@ -175,10 +167,9 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
       filtered > 0,
       numberFormatter.format(divide(total * 100n, totalUnfilteredDivisor)),
     ];
-  }, [graph, arrow, filtered, total]);
+  }, [arrow, filtered, total]);
 
-  const loadingState =
-    !loading && (arrow !== undefined || graph !== undefined) && metadataMappingFiles !== undefined;
+  const loadingState = !loading && arrow !== undefined && metadataMappingFiles !== undefined;
 
   // If there is only one mapping file, we want to color by filename by default.
   useEffect(() => {
@@ -254,25 +245,10 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
       }
     }
 
-    if (graph === undefined && arrow === undefined)
-      return <div className="mx-auto text-center">No data...</div>;
+    if (arrow === undefined) return <div className="mx-auto text-center">No data...</div>;
 
     if (total === 0n && !loading)
       return <div className="mx-auto text-center">Profile has no samples</div>;
-
-    if (graph !== undefined)
-      return (
-        <IcicleGraph
-          width={width}
-          graph={graph}
-          total={total}
-          filtered={filtered}
-          curPath={effectiveCurPath}
-          setCurPath={setCurPathWrapper}
-          profileType={profileType}
-          isFlamegraph={isFlamegraph}
-        />
-      );
 
     if (arrow !== undefined) {
       return (
@@ -296,8 +272,6 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
               curPath={effectiveCurPathArrow}
               setCurPath={setCurPathArrowWrapper}
               profileType={profileType}
-              sortBy={storeSortBy as string}
-              flamegraphLoading={isLoading}
               isHalfScreen={isHalfScreen}
               mappingsListFromMetadata={mappingsList}
               compareAbsolute={isCompareAbsolute}
@@ -312,18 +286,14 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     }
   }, [
     isLoading,
-    graph,
     arrow,
     total,
     loading,
     width,
     filtered,
-    effectiveCurPath,
-    setCurPathWrapper,
-    effectiveCurPathArrow,
-    setCurPathArrowWrapper,
+    curPathArrow,
+    setNewCurPathArrow,
     profileType,
-    storeSortBy,
     isHalfScreen,
     isDarkMode,
     mappingsList,

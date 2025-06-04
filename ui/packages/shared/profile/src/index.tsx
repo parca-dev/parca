@@ -11,13 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import type {Props as CallgraphProps} from './Callgraph';
 import {useLabelNames} from './MatchersInput';
 import ProfileExplorer, {getExpressionAsAString} from './ProfileExplorer';
 import ProfileTypeSelector from './ProfileTypeSelector';
 import CustomSelect from './SimpleMatchers/Select';
 
-export * from './ProfileIcicleGraph/IcicleGraph';
 export * from './ProfileIcicleGraph';
 export * from './ProfileSource';
 export * from './ProfileView';
@@ -26,12 +24,9 @@ export * from './utils';
 export * from './ProfileTypeSelector';
 export * from './SourceView';
 export * from './ProfileMetricsGraph';
-export {default as Callgraph} from './Callgraph';
 
 export const DEFAULT_PROFILE_EXPLORER_PARAM_VALUES = {
   dashboard_items: 'icicle',
 };
-
-export type {CallgraphProps};
 
 export {ProfileExplorer, ProfileTypeSelector, getExpressionAsAString, CustomSelect, useLabelNames};

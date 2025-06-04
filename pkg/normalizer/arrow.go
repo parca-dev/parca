@@ -278,6 +278,7 @@ type InternalRecordBuilderV1 struct {
 	Period    *array.Int64
 	Duration  *array.Int64
 	Timestamp *array.Int64
+	TimeNanos *array.Int64
 	Value     *array.Int64
 
 	Labels      []arrow.Array
@@ -312,6 +313,9 @@ func (r *InternalRecordBuilderV1) Release() {
 	}
 	if r.Timestamp != nil {
 		r.Timestamp.Release()
+	}
+	if r.TimeNanos != nil {
+		r.TimeNanos.Release()
 	}
 	if r.Value != nil {
 		r.Value.Release()
@@ -355,6 +359,9 @@ func (r *InternalRecordBuilderV1) validate() error {
 	if r.Timestamp == nil {
 		return fmt.Errorf("missing column %q", profile.ColumnTimestamp)
 	}
+	if r.TimeNanos == nil {
+		return fmt.Errorf("missing column %q", profile.ColumnTimeNanos)
+	}
 	if r.Value == nil {
 		return fmt.Errorf("missing column %q", profile.ColumnValue)
 	}
@@ -389,6 +396,9 @@ func (c *arrowToInternalConverter) NewRecord(ctx context.Context) (arrow.Record,
 			Name: profile.ColumnTimestamp,
 			Type: arrow.PrimitiveTypes.Int64,
 		}, {
+			Name: profile.ColumnTimeNanos,
+			Type: arrow.PrimitiveTypes.Int64,
+		}, {
 			Name: profile.ColumnStacktrace,
 			Type: arrow.ListOf(&arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary}),
 		}, {
@@ -409,6 +419,7 @@ func (c *arrowToInternalConverter) NewRecord(ctx context.Context) (arrow.Record,
 				c.b.PeriodType,
 				c.b.PeriodUnit,
 				c.b.Timestamp,
+				c.b.TimeNanos,
 				c.b.Locations,
 				c.b.Duration,
 				c.b.Period,
@@ -676,7 +687,6 @@ func (c *arrowToInternalConverter) AddSampleRecordV1(
 			if err != nil {
 				return fmt.Errorf("expected column %q to be of type Int64, got %T", field.Name, rec.Column(i))
 			}
-			defer timestamp.Release()
 
 			b := array.NewBuilder(c.mem, arrow.PrimitiveTypes.Int64).(*array.Int64Builder)
 			defer b.Release()
@@ -687,6 +697,7 @@ func (c *arrowToInternalConverter) AddSampleRecordV1(
 			}
 
 			c.b.Timestamp = b.NewInt64Array()
+			c.b.TimeNanos = timestamp
 		case profile.ColumnValue:
 			c.b.Value, ok = rec.Column(i).(*array.Int64)
 			if !ok {

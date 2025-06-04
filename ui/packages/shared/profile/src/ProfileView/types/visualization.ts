@@ -73,7 +73,7 @@ export interface ProfileViewProps {
   topTableData?: TopTableData;
   callgraphData?: CallgraphData;
   sourceData?: SourceData;
-  profileSource?: ProfileSource;
+  profileSource: ProfileSource;
   queryClient?: QueryServiceClient;
   compare?: boolean;
   onDownloadPProf: () => void;

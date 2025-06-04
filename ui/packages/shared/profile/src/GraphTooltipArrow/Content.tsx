@@ -32,7 +32,6 @@ interface GraphTooltipArrowContentProps {
   total: bigint;
   totalUnfiltered: bigint;
   row: number | null;
-  level: number;
   isFixed: boolean;
   compareAbsolute: boolean;
   isSandwich: boolean;
@@ -49,7 +48,6 @@ const GraphTooltipArrowContent = ({
   total,
   totalUnfiltered,
   row,
-  level,
   isFixed,
   compareAbsolute,
   isSandwich,
@@ -61,7 +59,6 @@ const GraphTooltipArrowContent = ({
     total,
     totalUnfiltered,
     row,
-    level,
     compareAbsolute,
   });
 

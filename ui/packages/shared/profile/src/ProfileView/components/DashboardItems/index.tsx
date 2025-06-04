@@ -16,7 +16,6 @@ import {Profiler, ProfilerOnRenderCallback} from 'react';
 import {QueryServiceClient} from '@parca/client';
 import {ConditionalWrapper} from '@parca/components';
 
-import Callgraph from '../../../Callgraph';
 import ProfileIcicleGraph from '../../../ProfileIcicleGraph';
 import {CurrentPathFrame} from '../../../ProfileIcicleGraph/IcicleGraphArrow/utils';
 import {ProfileSource} from '../../../ProfileSource';
@@ -24,7 +23,6 @@ import Sandwich from '../../../Sandwich';
 import {SourceView} from '../../../SourceView';
 import {Table} from '../../../Table';
 import type {
-  CallgraphData,
   FlamegraphData,
   SourceData,
   TopTableData,
@@ -38,9 +36,8 @@ interface GetDashboardItemProps {
   flamegraphData: FlamegraphData;
   flamechartData: FlamegraphData;
   topTableData?: TopTableData;
-  callgraphData?: CallgraphData;
   sourceData?: SourceData;
-  profileSource?: ProfileSource;
+  profileSource: ProfileSource;
   total: bigint;
   filtered: bigint;
   curPath: string[];
@@ -49,7 +46,6 @@ interface GetDashboardItemProps {
   setNewCurPathArrow: (path: CurrentPathFrame[]) => void;
   currentSearchString?: string;
   setSearchString?: (value: string) => void;
-  callgraphSVG?: string;
   perf?: {
     onRender?: ProfilerOnRenderCallback;
   };
@@ -63,18 +59,14 @@ export const getDashboardItem = ({
   flamegraphData,
   flamechartData,
   topTableData,
-  callgraphData,
   sourceData,
   profileSource,
   total,
   filtered,
-  curPath,
-  setNewCurPath,
   curPathArrow,
   setNewCurPathArrow,
   currentSearchString,
   setSearchString,
-  callgraphSVG,
   perf,
   queryClient,
 }: GetDashboardItemProps): JSX.Element => {
@@ -90,12 +82,9 @@ export const getDashboardItem = ({
           }}
         >
           <ProfileIcicleGraph
-            curPath={curPath}
-            setNewCurPath={setNewCurPath}
             curPathArrow={curPathArrow}
             setNewCurPathArrow={setNewCurPathArrow}
             arrow={flamegraphData?.arrow}
-            graph={flamegraphData?.data}
             total={total}
             filtered={filtered}
             profileType={profileSource?.ProfileType()}
@@ -111,14 +100,13 @@ export const getDashboardItem = ({
             }
             metadataMappingFiles={flamegraphData.metadataMappingFiles}
             metadataLoading={flamegraphData.metadataLoading}
+            profileSource={profileSource}
           />
         </ConditionalWrapper>
       );
     case 'iciclechart':
       return (
         <ProfileIcicleGraph
-          curPath={[]}
-          setNewCurPath={() => {}}
           curPathArrow={[]}
           setNewCurPathArrow={() => {}}
           arrow={flamechartData?.arrow}
@@ -140,19 +128,6 @@ export const getDashboardItem = ({
           profileSource={profileSource}
           isIcicleChart={true}
         />
-      );
-    case 'callgraph':
-      return callgraphData?.data !== undefined &&
-        callgraphSVG !== undefined &&
-        dimensions?.width !== undefined ? (
-        <Callgraph
-          data={callgraphData.data}
-          svgString={callgraphSVG}
-          profileType={profileSource?.ProfileType()}
-          width={isHalfScreen ? dimensions?.width / 2 : dimensions?.width}
-        />
-      ) : (
-        <></>
       );
     case 'table':
       return topTableData != null ? (

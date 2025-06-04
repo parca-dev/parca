@@ -32,7 +32,6 @@ interface Props {
   totalUnfiltered: bigint;
   compareAbsolute: boolean;
   row: number | null;
-  level: number;
 }
 
 interface GraphTooltipData {
@@ -53,7 +52,6 @@ export const useGraphTooltip = ({
   total,
   totalUnfiltered,
   row,
-  level,
 }: Props): GraphTooltipData | null => {
   if (row === null || profileType === undefined) {
     return null;
@@ -84,7 +82,7 @@ export const useGraphTooltip = ({
 
   diffText = compareAbsolute ? `${diffValueText} (${diffPercentageText})` : diffPercentageText;
 
-  const name = nodeLabel(table, row, level, false);
+  const name = nodeLabel(table, row, false);
 
   return {
     name,
