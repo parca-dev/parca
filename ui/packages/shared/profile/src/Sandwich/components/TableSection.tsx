@@ -28,6 +28,7 @@ interface TableSectionProps {
   enableHighlighting: boolean;
   columnVisibility: Record<ColumnName, boolean>;
   height?: number;
+  sandwichFunctionName?: string;
 }
 
 export function TableSection({
@@ -40,12 +41,15 @@ export function TableSection({
   enableHighlighting,
   columnVisibility,
   height,
+  sandwichFunctionName,
 }: TableSectionProps): JSX.Element {
   console.log(height);
   return (
     <div
       style={{height: height !== undefined ? `${height}px` : '80vh'}}
-      className={`font-robotoMono w-full cursor-pointer ${selectedRow != null ? 'w-[50%]' : ''}`}
+      className={`font-robotoMono w-full cursor-pointer ${
+        selectedRow != null && sandwichFunctionName !== undefined ? 'w-[50%]' : ''
+      }`}
     >
       <TableComponent
         data={rows}

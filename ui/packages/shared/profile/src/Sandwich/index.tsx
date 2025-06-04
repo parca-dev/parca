@@ -282,9 +282,10 @@ const Sandwich = React.memo(function Sandwich({
               shouldHighlightRow={shouldHighlightRow}
               enableHighlighting={enableHighlighting}
               height={tableHeight}
+              sandwichFunctionName={sandwichFunctionName}
             />
 
-            {sandwichFunctionName != null && (
+            {sandwichFunctionName !== undefined && (
               <div className="w-[50%] flex flex-col" ref={callersCalleesContainerRef}>
                 <CallersSection
                   callersRef={callersRef}
