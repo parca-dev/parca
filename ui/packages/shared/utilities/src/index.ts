@@ -187,7 +187,7 @@ export const parseParams = (
 
   const obj: Record<string, string | string[]> = {};
   for (const key of Array.from(params.keys())) {
-    let values = params.getAll(key);
+    let values = params.getAll(key).filter((v): v is string => v != null);
 
     // Handle expression parameters that might have multiple levels of encoding
     if (
@@ -196,15 +196,19 @@ export const parseParams = (
       key === 'selection_a' ||
       key === 'selection_b'
     ) {
-      values = values.map(value => {
+      values = values.map((value): string => {
         // First, decode multiple levels if present
         const decoded = decodeMultipleEncodings(value);
         // Then, if encodeValues is true, ensure it's encoded once
         if (encodeValues === true) {
-          return isUrlEncoded(decoded) ? decoded : encodeURIComponent(decoded);
+          return decoded != null
+            ? isUrlEncoded(decoded)
+              ? decoded
+              : encodeURIComponent(decoded)
+            : '';
         }
         // Otherwise return the fully decoded value
-        return decoded;
+        return decoded ?? '';
       });
     }
 
