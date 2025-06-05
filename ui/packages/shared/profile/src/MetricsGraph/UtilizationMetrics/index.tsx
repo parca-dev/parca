@@ -326,6 +326,7 @@ const RawUtilizationMetrics = ({
               y={pos[1] + margin}
               highlighted={highlighted}
               contextElement={graph.current}
+              sampleType={name}
               sampleUnit={getYAxisUnit(name)}
               delta={false}
               utilizationMetrics={true}
@@ -495,8 +496,8 @@ const RawUtilizationMetrics = ({
                         isSelected
                           ? lineStrokeSelected
                           : hovering && highlighted != null && i === highlighted.seriesIndex
-                          ? lineStrokeHover
-                          : lineStroke
+                            ? lineStrokeHover
+                            : lineStroke
                       }
                       strokeDasharray={strokeDasharray}
                       xScale={xScale}

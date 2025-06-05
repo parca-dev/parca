@@ -334,6 +334,7 @@ const RawAreaChart = ({
                 valuePerSecond: Math.abs(highlighted.valuePerSecond),
               }}
               contextElement={graph.current}
+              sampleType={'throughput'}
               sampleUnit={'bytes_per_second'}
               delta={false}
               utilizationMetrics={true}

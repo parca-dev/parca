@@ -104,7 +104,7 @@ export const wellKnownProfiles: WellKnownProfiles = {
     name: 'Off-CPU',
     help: 'Time spent off the CPU as observed by the Parca Agent.',
   },
-  'parca_agent:cuda:nanoseconds:samples:count:delta': {
+  'parca_agent:cuda:nanoseconds:cuda:nanoseconds:delta': {
     name: 'On-GPU',
     help: 'Time spent on the GPU.',
   },
