@@ -188,8 +188,24 @@ export const parseParams = (
   const obj: Record<string, string | string[]> = {};
   for (const key of Array.from(params.keys())) {
     let values = params.getAll(key);
-    if (encodeValues === true && (key === 'expression_a' || key === 'expression_b')) {
-      values = values.map(value => (isUrlEncoded(value) ? value : encodeURIComponent(value)));
+
+    // Handle expression parameters that might have multiple levels of encoding
+    if (
+      key === 'expression_a' ||
+      key === 'expression_b' ||
+      key === 'selection_a' ||
+      key === 'selection_b'
+    ) {
+      values = values.map(value => {
+        // First, decode multiple levels if present
+        const decoded = decodeMultipleEncodings(value);
+        // Then, if encodeValues is true, ensure it's encoded once
+        if (encodeValues === true) {
+          return isUrlEncoded(decoded) ? decoded : encodeURIComponent(decoded);
+        }
+        // Otherwise return the fully decoded value
+        return decoded;
+      });
     }
 
     if (values.length > 1) {
@@ -415,4 +431,33 @@ export const isUrlEncoded = (str: string): boolean => {
   } catch (e) {
     return false; // Invalid encoding
   }
+};
+
+// Safely decode a string that might have multiple levels of URL encoding
+export const decodeMultipleEncodings = (str: string): string => {
+  if (str === undefined || str === '') return str;
+
+  let decoded = str;
+  let previousDecoded = '';
+  const maxIterations = 10; // Prevent infinite loops
+  let iterations = 0;
+
+  // Keep decoding until the string doesn't change or we hit the limit
+  while (decoded !== previousDecoded && iterations < maxIterations) {
+    previousDecoded = decoded;
+    try {
+      // Check if it's still encoded
+      if (isUrlEncoded(decoded)) {
+        decoded = decodeURIComponent(decoded);
+      } else {
+        break;
+      }
+    } catch (e) {
+      // If decoding fails, return the last successful decode
+      return previousDecoded;
+    }
+    iterations++;
+  }
+
+  return decoded;
 };

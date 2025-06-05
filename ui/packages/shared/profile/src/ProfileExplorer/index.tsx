@@ -18,7 +18,12 @@ import {Provider} from 'react-redux';
 import {QueryServiceClient} from '@parca/client';
 import {DateTimeRange, KeyDownProvider, useParcaContext} from '@parca/components';
 import {createStore} from '@parca/store';
-import {capitalizeOnlyFirstLetter, type NavigateFunction} from '@parca/utilities';
+import {
+  capitalizeOnlyFirstLetter,
+  decodeMultipleEncodings,
+  isUrlEncoded,
+  type NavigateFunction,
+} from '@parca/utilities';
 
 import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
 import {QuerySelection, useProfileTypes} from '../ProfileSelector';
@@ -91,10 +96,12 @@ const filterSuffix = (
       .filter(([key]) => !key.endsWith(suffix))
       .map(([key, value]) => {
         if (typeof value === 'string') {
-          return [key, encodeURIComponent(value)];
+          // Only encode if not already encoded
+          return [key, isUrlEncoded(value) ? value : encodeURIComponent(value)];
         }
         if (Array.isArray(value)) {
-          return [key, value.map(v => encodeURIComponent(v))];
+          // Only encode array values if not already encoded
+          return [key, value.map(v => (isUrlEncoded(v) ? v : encodeURIComponent(v)))];
         }
         return [key, value];
       })
@@ -220,14 +227,12 @@ const ProfileExplorerApp = ({
   from_a = sanitizedRange.from_a;
   to_a = sanitizedRange.to_a;
 
-  if ((queryParams?.expression_a ?? '') !== '') queryParams.expression_a = expression_a;
-  if ((queryParams?.expression_b ?? '') !== '') queryParams.expression_b = expression_b;
+  if ((queryParams?.expression_a ?? '') !== '')
+    queryParams.expression_a = decodeMultipleEncodings(expression_a);
+  if ((queryParams?.expression_b ?? '') !== '')
+    queryParams.expression_b = decodeMultipleEncodings(expression_b);
 
   const selectProfile = (p: ProfileSelection, suffix: string): void => {
-    queryParams.expression_a = encodeURIComponent(queryParams.expression_a);
-    queryParams.selection_a = encodeURIComponent(queryParams.selection_a);
-    queryParams.expression_b = encodeURIComponent(queryParams.expression_b);
-    queryParams.selection_b = encodeURIComponent(queryParams.selection_b);
     return navigateTo('/', {
       ...queryParams,
       ...SuffixParams(p.HistoryParams(), suffix),
@@ -258,7 +263,7 @@ const ProfileExplorerApp = ({
           ? {
               merge_from_a: q.mergeFrom,
               merge_to_a: q.mergeTo,
-              selection_a: encodeURIComponent(q.expression),
+              selection_a: q.expression,
             }
           : {};
       return navigateTo(
@@ -268,7 +273,7 @@ const ProfileExplorerApp = ({
         filterEmptyParams({
           ...filterSuffix(queryParams, '_a'),
           ...{
-            expression_a: encodeURIComponent(q.expression),
+            expression_a: q.expression,
             from_a: q.from.toString(),
             to_a: q.to.toString(),
             time_selection_a: q.timeSelection,
@@ -280,7 +285,6 @@ const ProfileExplorerApp = ({
     };
 
     const selectProfile = (p: ProfileSelection): void => {
-      queryParams.expression_a = encodeURIComponent(queryParams.expression_a);
       return navigateTo('/', {
         ...queryParams,
         ...SuffixParams(p.HistoryParams(), '_a'),
@@ -324,9 +328,9 @@ const ProfileExplorerApp = ({
         ...filterSuffix(queryParams, '_a'),
         ...{
           compare_a: 'true',
-          expression_a: encodeURIComponent(q.expression),
-          expression_b: encodeURIComponent(expression_b),
-          selection_b: encodeURIComponent(selection_b),
+          expression_a: q.expression,
+          expression_b,
+          selection_b,
           from_a: q.from.toString(),
           to_a: q.to.toString(),
           time_selection_a: q.timeSelection,
@@ -344,7 +348,7 @@ const ProfileExplorerApp = ({
         ? {
             merge_from_b: q.mergeFrom,
             merge_to_b: q.mergeTo,
-            selection_b: encodeURIComponent(q.expression),
+            selection_b: q.expression,
           }
         : {};
     return navigateTo(
@@ -355,9 +359,9 @@ const ProfileExplorerApp = ({
         ...filterSuffix(queryParams, '_b'),
         ...{
           compare_b: 'true',
-          expression_b: encodeURIComponent(q.expression),
-          expression_a: encodeURIComponent(expression_a),
-          selection_a: encodeURIComponent(selection_a),
+          expression_b: q.expression,
+          expression_a,
+          selection_a,
           from_b: q.from.toString(),
           to_b: q.to.toString(),
           time_selection_b: q.timeSelection,
