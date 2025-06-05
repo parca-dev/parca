@@ -434,8 +434,10 @@ export const isUrlEncoded = (str: string): boolean => {
 };
 
 // Safely decode a string that might have multiple levels of URL encoding
-export const decodeMultipleEncodings = (str: string): string => {
-  if (str === undefined || str === '') return str;
+export const decodeMultipleEncodings = (
+  str: string | null | undefined
+): string | null | undefined => {
+  if (str == null) return str;
 
   let decoded = str;
   let previousDecoded = '';

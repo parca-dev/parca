@@ -51,8 +51,8 @@ test('decodeMultipleEncodings - should handle empty strings', () => {
 });
 
 test('decodeMultipleEncodings - should handle null/undefined gracefully', () => {
-  expect(decodeMultipleEncodings(null as any)).toBe(null);
-  expect(decodeMultipleEncodings(undefined as any)).toBe(undefined);
+  expect(decodeMultipleEncodings(null)).toBe(null);
+  expect(decodeMultipleEncodings(undefined)).toBe(undefined);
 });
 
 test('decodeMultipleEncodings - should handle invalid encoding gracefully', () => {
