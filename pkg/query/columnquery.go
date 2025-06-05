@@ -278,22 +278,14 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 				MappingFiles: mappingFiles,
 				Labels:       labels,
 			}
-		default:
-			var functionToFilterBy string
-			for _, filter := range req.GetFilter() {
-				if stackFilter := filter.GetStackFilter(); stackFilter != nil {
-					if functionNameFilter := stackFilter.GetFunctionNameStackFilter(); functionNameFilter != nil {
-						functionToFilterBy = functionNameFilter.GetFunctionToFilter()
-					}
-				}
-			}
 
+		default:
 			p, err = q.selectMerge(
 				ctx,
 				req.GetMerge(),
 				groupByLabels,
 				isInvert,
-				functionToFilterBy,
+				req.GetSandwichByFunction(),
 			)
 		}
 	case pb.QueryRequest_MODE_DIFF:
@@ -371,6 +363,25 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	)
 	if err != nil {
 		return nil, fmt.Errorf("filtering profile: %w", err)
+	}
+
+	// Apply sandwich view filtering if specified
+	sandwichByFunction := req.GetSandwichByFunction()
+	if sandwichByFunction != "" {
+		var sandwichFiltered int64
+		p.Samples, sandwichFiltered, err = FilterProfileData(
+			ctx,
+			q.tracer,
+			q.mem,
+			p.Samples,
+			sandwichByFunction,
+			false, // Never exclude for sandwich view
+			binaryFrameFilter,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("filtering profile for sandwich view: %w", err)
+		}
+		filtered += sandwichFiltered
 	}
 
 	return q.renderReport(

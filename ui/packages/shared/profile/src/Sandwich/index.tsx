@@ -105,7 +105,7 @@ const Sandwich = React.memo(function Sandwich({
       groupBy: [FIELD_FUNCTION_NAME],
       invertCallStack: true,
       binaryFrameFilter: [],
-      filterByFunction: sandwichFunctionName,
+      sandwichByFunction: sandwichFunctionName,
       skip: sandwichFunctionName === undefined,
     }
   );
@@ -123,7 +123,7 @@ const Sandwich = React.memo(function Sandwich({
       groupBy: [FIELD_FUNCTION_NAME],
       invertCallStack: false,
       binaryFrameFilter: [],
-      filterByFunction: sandwichFunctionName,
+      sandwichByFunction: sandwichFunctionName,
       skip: sandwichFunctionName === undefined,
     }
   );

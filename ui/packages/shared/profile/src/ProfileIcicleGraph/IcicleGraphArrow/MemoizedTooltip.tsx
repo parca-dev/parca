@@ -21,11 +21,13 @@ import {useTooltipContext} from './TooltipContext';
 interface MemoizedTooltipProps {
   contextElement: Element | null;
   dockedMetainfo: boolean;
+  isSandwich: boolean;
 }
 
 export const MemoizedTooltip = memo(function MemoizedTooltip({
   contextElement,
   dockedMetainfo,
+  isSandwich,
 }: MemoizedTooltipProps): React.JSX.Element | null {
   const [tooltipRow, setTooltipRow] = useState<number | null>(null);
   const {table, total, totalUnfiltered, profileType, unit, compareAbsolute, tooltipId} =
@@ -74,6 +76,7 @@ export const MemoizedTooltip = memo(function MemoizedTooltip({
         profileType={profileType}
         unit={unit}
         compareAbsolute={compareAbsolute}
+        isSandwich={isSandwich}
       />
     </GraphTooltipArrow>
   );

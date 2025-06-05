@@ -34,7 +34,7 @@ interface UseQueryOptions {
   sourceOnly?: boolean;
   invertCallStack?: boolean;
   binaryFrameFilter?: string[];
-  filterByFunction?: string;
+  sandwichByFunction?: string;
 }
 
 export const useQuery = (
@@ -58,7 +58,7 @@ export const useQuery = (
       options?.invertCallStack ?? false,
       options?.binaryFrameFilter ?? '',
       profileSource.excludeFunction ?? false,
-      options?.filterByFunction ?? '',
+      options?.sandwichByFunction ?? '',
     ],
     queryFn: async () => {
       const req = profileSource.QueryRequest();
@@ -75,8 +75,10 @@ export const useQuery = (
         };
       }
       req.invertCallStack = options?.invertCallStack ?? false;
-      const functionToFilter = req.filterQuery ?? options?.filterByFunction;
-      if (functionToFilter !== undefined) {
+
+      // Handle filter from ProfileSource (filter by function toolbar)
+      const functionToFilter = req.filterQuery;
+      if (functionToFilter !== undefined && functionToFilter !== '') {
         req.filter = [
           ...req.filter,
           {
@@ -94,6 +96,11 @@ export const useQuery = (
             },
           },
         ];
+      }
+
+      // Handle sandwich view filter separately
+      if (options?.sandwichByFunction !== undefined) {
+        req.sandwichByFunction = options.sandwichByFunction;
       }
 
       if (options?.binaryFrameFilter !== undefined && options?.binaryFrameFilter.length > 0) {

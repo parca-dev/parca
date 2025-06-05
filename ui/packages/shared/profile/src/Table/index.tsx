@@ -121,11 +121,8 @@ export const Table = React.memo(function Table({
 
   const tableConfig = useTableConfiguration({
     unit,
-    profileType,
     total,
     filtered,
-    colorByColors,
-    colorBy: colorByValue,
     compareMode,
   });
 

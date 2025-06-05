@@ -308,7 +308,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
             profileType={profileType}
           />
         )}
-        <MemoizedTooltip contextElement={svg.current} dockedMetainfo={dockedMetainfo} />
+        <MemoizedTooltip contextElement={svg.current} dockedMetainfo={dockedMetainfo} isSandwich={isSandwich} />
         <svg
           className="font-robotoMono"
           width={width}
