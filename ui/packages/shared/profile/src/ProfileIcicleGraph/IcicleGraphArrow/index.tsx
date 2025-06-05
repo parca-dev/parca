@@ -249,7 +249,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   const depthColumn = table.getChild(FIELD_DEPTH);
   const maxDepth = getMaxDepth(depthColumn);
-  const height = maxDepth * RowHeight;
+  const height = (maxDepth + 1) * RowHeight;
 
   // To find the selected row, we must walk the current path and look at which
   // children of the current frame matches the path element exactly. Until the
