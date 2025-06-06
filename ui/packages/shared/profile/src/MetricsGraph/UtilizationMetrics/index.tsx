@@ -496,8 +496,8 @@ const RawUtilizationMetrics = ({
                         isSelected
                           ? lineStrokeSelected
                           : hovering && highlighted != null && i === highlighted.seriesIndex
-                            ? lineStrokeHover
-                            : lineStroke
+                          ? lineStrokeHover
+                          : lineStroke
                       }
                       strokeDasharray={strokeDasharray}
                       xScale={xScale}

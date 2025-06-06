@@ -376,8 +376,8 @@ const diffColorRatio = (hasDiff: boolean, diffRatio: number, isDarkMode: boolean
   const color: string = !hasDiff
     ? newSpanColor
     : diffRatio > 0
-      ? increasedSpanColor
-      : reducedSpanColor;
+    ? increasedSpanColor
+    : reducedSpanColor;
 
   return color;
 };

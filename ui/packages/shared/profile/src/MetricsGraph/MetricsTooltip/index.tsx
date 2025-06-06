@@ -60,7 +60,7 @@ function generateGetBoundingClientRect(contextElement: Element, x = 0, y = 0): (
       left: domRect.x + x,
       right: domRect.x + x,
       bottom: domRect.y + y,
-    }) as DOMRect;
+    } as DOMRect);
 }
 
 const MetricsTooltip = ({
