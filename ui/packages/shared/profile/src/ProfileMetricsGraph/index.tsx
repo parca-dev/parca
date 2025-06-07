@@ -119,13 +119,17 @@ const ProfileMetricsGraph = ({
   }
 
   let sampleUnit = '';
+  let sampleType = '';
 
   if (dataAvailable) {
     if (series.every((val, i, arr) => val?.sampleType?.unit === arr[0]?.sampleType?.unit)) {
       sampleUnit = series[0]?.sampleType?.unit ?? '';
+      sampleType = series[0]?.sampleType?.type ?? '';
     }
     if (sampleUnit === '') {
-      sampleUnit = Query.parse(queryExpression).profileType().sampleUnit;
+      const profileType = Query.parse(queryExpression).profileType();
+      sampleUnit = profileType.sampleUnit;
+      sampleType = profileType.sampleType;
     }
   }
 
@@ -157,6 +161,7 @@ const ProfileMetricsGraph = ({
             }}
             addLabelMatcher={addLabelMatcher}
             sampleUnit={sampleUnit}
+            sampleType={sampleType}
             height={height}
             width={width}
             margin={margin}

@@ -45,6 +45,7 @@ interface Props {
     labels: {key: string; value: string} | Array<{key: string; value: string}>
   ) => void;
   setTimeRange: (range: DateTimeRange) => void;
+  sampleType: string;
   sampleUnit: string;
   width?: number;
   height?: number;
@@ -77,6 +78,7 @@ const MetricsGraph = ({
   onSampleClick,
   addLabelMatcher,
   setTimeRange,
+  sampleType,
   sampleUnit,
   width = 0,
   height = 0,
@@ -100,6 +102,7 @@ const MetricsGraph = ({
         onSampleClick={onSampleClick}
         addLabelMatcher={addLabelMatcher}
         setTimeRange={setTimeRange}
+        sampleType={sampleType}
         sampleUnit={sampleUnit}
         width={width}
         height={height}
@@ -130,10 +133,11 @@ export const RawMetricsGraph = ({
   onSampleClick,
   addLabelMatcher,
   setTimeRange,
+  sampleType,
+  sampleUnit,
   width,
   height = 50,
   margin = 0,
-  sampleUnit,
   sumBy,
 }: Props): JSX.Element => {
   const {timezone} = useParcaContext();
@@ -416,8 +420,13 @@ export const RawMetricsGraph = ({
   let yAxisUnit = sampleUnit;
   if (isDeltaType) {
     if (sampleUnit === 'nanoseconds') {
-      yAxisLabel = 'CPU Cores';
-      yAxisUnit = '';
+      if (sampleType === 'cpu') {
+        yAxisLabel = 'CPU Cores';
+        yAxisUnit = '';
+      }
+      if (sampleType === 'cuda') {
+        yAxisLabel = 'GPU Time';
+      }
     }
     if (sampleUnit === 'bytes') {
       yAxisLabel = 'Bytes per Second';
@@ -444,6 +453,7 @@ export const RawMetricsGraph = ({
               y={pos[1] + margin}
               highlighted={highlighted}
               contextElement={graph.current}
+              sampleType={sampleType}
               sampleUnit={sampleUnit}
               delta={isDeltaType}
             />

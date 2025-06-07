@@ -28,6 +28,7 @@ interface Props {
   y: number;
   highlighted: HighlightedSeries;
   contextElement: Element | null;
+  sampleType: string;
   sampleUnit: string;
   delta: boolean;
   utilizationMetrics?: boolean;
@@ -67,6 +68,7 @@ const MetricsTooltip = ({
   y,
   highlighted,
   contextElement,
+  sampleType,
   sampleUnit,
   delta,
   utilizationMetrics = false,
@@ -152,7 +154,9 @@ const MetricsTooltip = ({
                             <td className="w-3/4">
                               {valueFormatter(
                                 highlighted.valuePerSecond,
-                                sampleUnit === 'nanoseconds' ? 'CPU Cores' : sampleUnit,
+                                sampleUnit === 'nanoseconds' && sampleType === 'cpu'
+                                  ? 'CPU Cores'
+                                  : sampleUnit,
                                 5
                               )}
                             </td>
