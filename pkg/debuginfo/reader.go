@@ -91,9 +91,3 @@ func contextError(ctx context.Context) error {
 		return nil
 	}
 }
-
-// ObjectSize implements the objstore.ObjectSizer interface to provide the total size of bytes read so far.
-// This is used by objstore.TryToGetSize to optimize multipart uploads by pre-allocating the correct buffer size.
-func (r *UploadReader) ObjectSize() (int64, error) {
-	return int64(r.size), nil
-}
