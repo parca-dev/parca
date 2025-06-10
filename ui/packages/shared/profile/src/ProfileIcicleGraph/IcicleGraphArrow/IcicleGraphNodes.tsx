@@ -222,15 +222,26 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
       ? 0
       : ((Number(valueOffset) - Number(selectionOffset)) / Number(total)) * totalWidth;
 
-  const y = isFlamegraph
-    ? isSandwich
-      ? (maxDepth - depth) * height // Flamegraph in sandwich: adjust for skipped root
-      : (maxDepth - depth - 1) * height // Flamegraph: invert the depth
-    : isIcicleChart
-    ? (depth - 1) * height
-    : isSandwich
-    ? (depth - 1) * height // Sandwich view: adjust for skipped root
-    : depth * height;
+  const calculateY = (
+    isFlamegraph: boolean,
+    isSandwich: boolean,
+    isIcicleChart: boolean,
+    maxDepth: number,
+    depth: number,
+    height: number
+  ): number => {
+    if (isFlamegraph) {
+      return (maxDepth - depth) * height; // Flamegraph is inverted
+    }
+
+    if (isIcicleChart || isSandwich) {
+      return (depth - 1) * height;
+    }
+
+    return depth * height;
+  };
+
+  const y = calculateY(isFlamegraph, isSandwich, isIcicleChart, maxDepth, depth, height);
 
   return (
     <>
