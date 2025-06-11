@@ -32,6 +32,7 @@ interface TooltipContextValue {
   compareAbsolute: boolean;
   updateTooltip: (row: number | null, x?: number, y?: number) => void;
   tooltipState: TooltipState;
+  tooltipId: string;
 }
 
 const TooltipContext = createContext<TooltipContextValue | null>(null);
@@ -53,6 +54,7 @@ interface TooltipProviderProps {
   unit?: string;
   compareAbsolute: boolean;
   onTooltipUpdate?: (state: TooltipState) => void;
+  tooltipId?: string;
 }
 
 export const TooltipProvider: React.FC<TooltipProviderProps> = ({
@@ -64,6 +66,7 @@ export const TooltipProvider: React.FC<TooltipProviderProps> = ({
   unit,
   compareAbsolute,
   onTooltipUpdate,
+  tooltipId = 'default',
 }) => {
   const tooltipStateRef = useRef<TooltipState>({row: null, x: 0, y: 0});
 
@@ -85,8 +88,9 @@ export const TooltipProvider: React.FC<TooltipProviderProps> = ({
       compareAbsolute,
       updateTooltip,
       tooltipState: tooltipStateRef.current,
+      tooltipId,
     }),
-    [table, total, totalUnfiltered, profileType, unit, compareAbsolute, updateTooltip]
+    [table, total, totalUnfiltered, profileType, unit, compareAbsolute, updateTooltip, tooltipId]
   );
 
   return <TooltipContext.Provider value={value}>{children}</TooltipContext.Provider>;

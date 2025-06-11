@@ -61,15 +61,18 @@ export const useGraphTooltip = ({
   unit = unit ?? profileType.sampleUnit;
 
   const cumulative: bigint =
-    table.getChild(FIELD_CUMULATIVE)?.get(row) !== null
+    table.getChild(FIELD_CUMULATIVE)?.get(row) !== null &&
+    table.getChild(FIELD_CUMULATIVE)?.get(row) !== undefined
       ? BigInt(table.getChild(FIELD_CUMULATIVE)?.get(row))
       : 0n;
   const flat: bigint =
-    table.getChild(FIELD_FLAT)?.get(row) !== null
+    table.getChild(FIELD_FLAT)?.get(row) !== null &&
+    table.getChild(FIELD_FLAT)?.get(row) !== undefined
       ? BigInt(table.getChild(FIELD_FLAT)?.get(row))
       : 0n;
   const diff: bigint =
-    table.getChild(FIELD_DIFF)?.get(row) !== null
+    table.getChild(FIELD_DIFF)?.get(row) !== null &&
+    table.getChild(FIELD_DIFF)?.get(row) !== undefined
       ? BigInt(table.getChild(FIELD_DIFF)?.get(row))
       : 0n;
 
