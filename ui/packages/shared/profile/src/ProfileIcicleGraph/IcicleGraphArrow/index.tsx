@@ -293,21 +293,20 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
       tooltipId={tooltipId}
     >
       <div className="relative">
-        {!isSandwich && (
-          <ContextMenuWrapper
-            ref={contextMenuRef}
-            menuId={MENU_ID}
-            table={table}
-            total={total}
-            totalUnfiltered={total + filtered}
-            compareAbsolute={compareAbsolute}
-            resetPath={() => setCurPath([])}
-            hideMenu={hideAll}
-            hideBinary={hideBinary}
-            unit={arrow.unit}
-            profileType={profileType}
-          />
-        )}
+        <ContextMenuWrapper
+          ref={contextMenuRef}
+          menuId={MENU_ID}
+          table={table}
+          total={total}
+          totalUnfiltered={total + filtered}
+          compareAbsolute={compareAbsolute}
+          resetPath={() => setCurPath([])}
+          hideMenu={hideAll}
+          hideBinary={hideBinary}
+          unit={arrow.unit}
+          profileType={profileType}
+          isSandwich={isSandwich}
+        />
         <MemoizedTooltip
           contextElement={svg.current}
           dockedMetainfo={dockedMetainfo}

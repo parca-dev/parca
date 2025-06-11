@@ -30,6 +30,7 @@ interface ContextMenuWrapperProps {
   hideMenu: () => void;
   hideBinary: (binaryToRemove: string) => void;
   unit?: string;
+  isSandwich?: boolean;
 }
 
 export interface ContextMenuWrapperRef {

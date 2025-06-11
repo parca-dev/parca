@@ -37,6 +37,7 @@ interface ContextMenuProps {
   resetPath: () => void;
   hideMenu: () => void;
   hideBinary: (binaryToRemove: string) => void;
+  isSandwich?: boolean;
 }
 
 const ContextMenu = ({
@@ -51,6 +52,7 @@ const ContextMenu = ({
   unit,
   hideBinary,
   resetPath,
+  isSandwich = false,
 }: ContextMenuProps): JSX.Element => {
   const {isDarkMode} = useParcaContext();
   const {enableSourcesView, checkDebuginfoStatusHandler} = useParcaContext();
@@ -163,7 +165,11 @@ const ContextMenu = ({
         id="show-in-table"
         onClick={() => {
           setSearchString(functionName);
-          setDashboardItems([...dashboardItems, 'table']);
+          if (isSandwich) {
+            setDashboardItems(['table']);
+          } else {
+            setDashboardItems([...dashboardItems, 'table']);
+          }
         }}
       >
         <div className="flex w-full items-center gap-2">

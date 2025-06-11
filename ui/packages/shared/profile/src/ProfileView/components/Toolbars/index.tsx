@@ -86,17 +86,16 @@ export const TableToolbar: FC<TableToolbarProps> = ({
     <>
       <div className="flex w-full gap-2 items-end">
         <TableColumnsDropdown profileType={profileType} total={total} filtered={filtered} />
-        {isIcicleGraphOpen && (
-          <Button
-            color="neutral"
-            onClick={clearSelection}
-            className="w-auto"
-            variant="neutral"
-            disabled={currentSearchString === undefined || currentSearchString.length === 0}
-          >
-            Clear selection
-          </Button>
-        )}
+
+        <Button
+          color="neutral"
+          onClick={clearSelection}
+          className="w-auto"
+          variant="neutral"
+          disabled={currentSearchString === undefined || currentSearchString.length === 0}
+        >
+          Clear selection
+        </Button>
       </div>
     </>
   );
