@@ -61,14 +61,14 @@ importers:
         specifier: 2.3.0
         version: 2.3.0(webpack@5.99.7(@swc/core@1.11.5(@swc/helpers@0.5.17))(esbuild@0.25.3))
       '@next/bundle-analyzer':
-        specifier: 12.3.4
-        version: 12.3.4
+        specifier: 12.3.7
+        version: 12.3.7
       '@next/eslint-plugin-next':
-        specifier: 12.3.4
-        version: 12.3.4
+        specifier: 12.3.7
+        version: 12.3.7
       '@next/mdx':
-        specifier: 12.3.4
-        version: 12.3.4(@mdx-js/loader@2.3.0(webpack@5.99.7(@swc/core@1.11.5(@swc/helpers@0.5.17))(esbuild@0.25.3)))(@mdx-js/react@3.1.0(@types/react@18.3.18)(react@18.3.1))
+        specifier: 12.3.7
+        version: 12.3.7(@mdx-js/loader@2.3.0(webpack@5.99.7(@swc/core@1.11.5(@swc/helpers@0.5.17))(esbuild@0.25.3)))(@mdx-js/react@3.1.0(@types/react@18.3.18)(react@18.3.1))
       '@storybook/addon-actions':
         specifier: 8.6.14
         version: 8.6.14(storybook@8.6.14(prettier@3.5.3))
@@ -2667,14 +2667,14 @@ packages:
   '@napi-rs/wasm-runtime@0.2.4':
     resolution: {integrity: sha512-9zESzOO5aDByvhIAsOy9TbpZ0Ur2AJbUI7UT73kcUTS2mxAMHOBaa1st/jAymNoCtvrit99kkzT1FZuXVcgfIQ==}
 
-  '@next/bundle-analyzer@12.3.4':
-    resolution: {integrity: sha512-eKjgRICzbLTmod0UnJcArFVs5uEAiuZwB6NCf84m+btW7jdylUVoOYf1wi5tA14xk5L9Lho7Prm6/XJ8gxYzfQ==}
+  '@next/bundle-analyzer@12.3.7':
+    resolution: {integrity: sha512-bUjEBnAtlHR+vorMbq8LJZTZryE0XmNDiVx96kgJjazyVx5+ogC17JEiBi1toNDiz21mfM4rAqDEiD8kgZEzSA==}
 
-  '@next/eslint-plugin-next@12.3.4':
-    resolution: {integrity: sha512-BFwj8ykJY+zc1/jWANsDprDIu2MgwPOIKxNVnrKvPs+f5TPegrVnem8uScND+1veT4B7F6VeqgaNLFW1Hzl9Og==}
+  '@next/eslint-plugin-next@12.3.7':
+    resolution: {integrity: sha512-L3WEJJBd1CUUsuxSEThheAV5Nh6/mzCagwj4LHaYlANBkW8Hmg8Ne8l/Vx/sPyfyE7FjuKyiNYWbSVpXRvrmaw==}
 
-  '@next/mdx@12.3.4':
-    resolution: {integrity: sha512-YTF/ph9NMKjmrNsr8O+y3IiZee9TaxSd6051qI0Fj/du75pKRRZ1DnOX6ZS7mMgswH7VMERVV7fBZxmJr9sN7Q==}
+  '@next/mdx@12.3.7':
+    resolution: {integrity: sha512-8H8pBw7+2wcmQC2TivZ8q5+76SZg1braJSpdcSEgUzg2aDKhxXvnjIGhN2slQpG9E3ds9WgwB60KnVbflLSi8w==}
     peerDependencies:
       '@mdx-js/loader': '>=0.15.0'
       '@mdx-js/react': '*'
@@ -15536,18 +15536,18 @@ snapshots:
       '@emnapi/runtime': 1.4.3
       '@tybys/wasm-util': 0.9.0
 
-  '@next/bundle-analyzer@12.3.4':
+  '@next/bundle-analyzer@12.3.7':
     dependencies:
       webpack-bundle-analyzer: 4.3.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
 
-  '@next/eslint-plugin-next@12.3.4':
+  '@next/eslint-plugin-next@12.3.7':
     dependencies:
       glob: 7.1.7
 
-  '@next/mdx@12.3.4(@mdx-js/loader@2.3.0(webpack@5.99.7(@swc/core@1.11.5(@swc/helpers@0.5.17))(esbuild@0.25.3)))(@mdx-js/react@3.1.0(@types/react@18.3.18)(react@18.3.1))':
+  '@next/mdx@12.3.7(@mdx-js/loader@2.3.0(webpack@5.99.7(@swc/core@1.11.5(@swc/helpers@0.5.17))(esbuild@0.25.3)))(@mdx-js/react@3.1.0(@types/react@18.3.18)(react@18.3.1))':
     dependencies:
       '@mdx-js/loader': 2.3.0(webpack@5.99.7(@swc/core@1.11.5(@swc/helpers@0.5.17))(esbuild@0.25.3))
       '@mdx-js/react': 3.1.0(@types/react@18.3.18)(react@18.3.1)
