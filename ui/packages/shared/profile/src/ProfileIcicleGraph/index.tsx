@@ -283,7 +283,9 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     // Check for specific merge errors
     const errorMessageLower = error.message?.toLowerCase() ?? '';
     const isMergeError: boolean = errorMessageLower.includes('failed to merge flame chart records');
-    const isTimestampError: boolean = errorMessageLower.includes('multiple samples for the same timestamp is not allowed');
+    const isTimestampError: boolean = errorMessageLower.includes(
+      'multiple samples for the same timestamp is not allowed'
+    );
 
     if (isMergeError || isTimestampError) {
       return (
@@ -292,7 +294,8 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
             <>
               <span className="font-semibold">Unable to display overlapping data</span>
               <span className="text-gray-600 dark:text-gray-400">
-                The selected data contains overlapping samples from multiple nodes or threads that cannot be merged.
+                The selected data contains overlapping samples from multiple nodes or threads that
+                cannot be merged.
               </span>
               <span className="text-gray-600 dark:text-gray-400">
                 To view this data, please apply more specific filters:
