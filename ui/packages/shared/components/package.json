@@ -35,7 +35,7 @@
     "d3-selection": "3.0.0",
     "graphviz-wasm": "3.0.2",
     "lodash": "^4.17.21",
-    "moment-timezone": "^0.5.45",
+    "moment-timezone": "^0.6.0",
     "react-datepicker": "6.9.0",
     "react-popper": "^2.3.0",
     "react-textarea-autosize": "^8.4.0",
