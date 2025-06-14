@@ -28,7 +28,8 @@ export const MemoizedTooltip = memo(function MemoizedTooltip({
   dockedMetainfo,
 }: MemoizedTooltipProps): React.JSX.Element | null {
   const [tooltipRow, setTooltipRow] = useState<number | null>(null);
-  const {table, total, totalUnfiltered, profileType, unit, compareAbsolute} = useTooltipContext();
+  const {table, total, totalUnfiltered, profileType, unit, compareAbsolute, tooltipId} =
+    useTooltipContext();
 
   // This component subscribes to tooltip updates through a callback
   // passed to the TooltipProvider, avoiding the need to lift state
@@ -37,11 +38,12 @@ export const MemoizedTooltip = memo(function MemoizedTooltip({
       setTooltipRow(event.detail.row);
     };
 
-    window.addEventListener('icicle-tooltip-update' as any, handleTooltipUpdate as any);
+    const eventName = `icicle-tooltip-update-${tooltipId}`;
+    window.addEventListener(eventName as any, handleTooltipUpdate as any);
     return () => {
-      window.removeEventListener('icicle-tooltip-update' as any, handleTooltipUpdate as any);
+      window.removeEventListener(eventName as any, handleTooltipUpdate as any);
     };
-  }, []);
+  }, [tooltipId]);
 
   if (dockedMetainfo) {
     return (

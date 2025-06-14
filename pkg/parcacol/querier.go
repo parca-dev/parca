@@ -14,6 +14,7 @@
 package parcacol
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -929,6 +930,7 @@ func (q *Querier) SymbolizeArrowRecord(
 	valueColumnName string,
 	queryParts QueryParts,
 	invertCallStacks bool,
+	functionToFilterBy string,
 ) ([]arrow.Record, error) {
 	res := make([]arrow.Record, len(records))
 
@@ -992,7 +994,7 @@ func (q *Querier) SymbolizeArrowRecord(
 			}
 		}
 
-		locationsRecord, err := q.resolveStacks(ctx, stacktraceColumn, invertCallStacks)
+		locationsRecord, err := q.resolveStacks(ctx, stacktraceColumn, invertCallStacks, functionToFilterBy)
 		if err != nil {
 			return nil, err
 		}
@@ -1016,7 +1018,7 @@ func (q *Querier) SymbolizeArrowRecord(
 	return res, nil
 }
 
-func handleIndexInversion(isInvert bool, start, end, j int) int {
+func handleIndexInversion(isInvert bool, start, end, j int64) int64 {
 	if !isInvert {
 		return j
 	}
@@ -1028,7 +1030,10 @@ func (q *Querier) resolveStacks(
 	ctx context.Context,
 	stacktraceColumn *array.List,
 	invertCallStacks bool,
+	functionToFilterBy string,
 ) (arrow.Record, error) {
+	functionToFilterByBytes := []byte(functionToFilterBy)
+
 	w := profile.NewLocationsWriter(q.pool)
 	defer w.RecordBuilder.Release()
 
@@ -1047,10 +1052,41 @@ func (q *Querier) resolveStacks(
 		w.LocationsList.Append(true)
 
 		start, end := stacktraceColumn.ValueOffsets(i)
+
+		if len(functionToFilterByBytes) > 0 {
+			var found bool
+			for j := start; j < end; j++ {
+				jWithInversion := handleIndexInversion(invertCallStacks, start, end, j)
+				idx := values.GetValueIndex(int(jWithInversion))
+
+				encodedLocation := valueDict.Value(idx)
+				fn, err := profile.DecodeFunctionName(encodedLocation)
+				if err != nil {
+					return nil, err
+				}
+
+				if bytes.Equal(functionToFilterByBytes, fn) {
+					found = true
+					if invertCallStacks {
+						start = jWithInversion // We want to start from the function onwards.
+					} else {
+						end = jWithInversion + 1 // We want to end with the function (+1 to include it)
+					}
+					break
+				}
+			}
+
+			// Ignore stacks that don't contain the functionName
+			if !found {
+				w.LocationsList.AppendNull()
+				continue
+			}
+		}
+
 		for j := int(start); j < int(end); j++ {
-			jWithInversion := handleIndexInversion(invertCallStacks, int(start), int(end), j)
+			jWithInversion := handleIndexInversion(invertCallStacks, start, end, int64(j))
 			w.Locations.Append(true)
-			idx := values.GetValueIndex(jWithInversion)
+			idx := values.GetValueIndex(int(jWithInversion))
 
 			if symbolizedLocations[idx] != nil {
 				// We symbolized the location successfully, so we'll use the symbolized location.
@@ -1260,6 +1296,7 @@ func (q *Querier) QuerySingle(
 		valueColumn,
 		queryParts,
 		invertCallStacks,
+		"", // not implemented
 	)
 	if err != nil {
 		// if the column cannot be found the timestamp is too far in the past and we don't have data
@@ -1366,6 +1403,7 @@ func (q *Querier) QueryMerge(
 	start, end time.Time,
 	groupByLabels []string,
 	invertCallStacks bool,
+	functionToFilterBy string,
 ) (profile.Profile, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/QueryMerge")
 	defer span.End()
@@ -1386,6 +1424,7 @@ func (q *Querier) QueryMerge(
 		valueColumn,
 		queryParts,
 		invertCallStacks,
+		functionToFilterBy,
 	)
 	if err != nil {
 		return profile.Profile{}, err

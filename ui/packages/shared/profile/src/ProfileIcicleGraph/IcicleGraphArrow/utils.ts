@@ -167,7 +167,7 @@ export const getCurrentPathFrameData = (table: Table<any>, row: number): Current
     systemName: systemName ?? '',
     fileName: fileName ?? '',
     lineNumber: Number(lineNumber),
-    address: address,
+    address,
     inlined: inlined ?? false,
     labels: labels ?? undefined,
   };

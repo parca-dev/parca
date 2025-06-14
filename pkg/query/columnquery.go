@@ -49,7 +49,7 @@ type Querier interface {
 	QueryRange(ctx context.Context, query string, startTime, endTime time.Time, step time.Duration, limit uint32, sumBy []string) ([]*pb.MetricsSeries, error)
 	ProfileTypes(ctx context.Context) ([]*pb.ProfileType, error)
 	QuerySingle(ctx context.Context, query string, time time.Time, invertCallStacks bool) (profile.Profile, error)
-	QueryMerge(ctx context.Context, query string, start, end time.Time, aggregateByLabels []string, invertCallStacks bool) (profile.Profile, error)
+	QueryMerge(ctx context.Context, query string, start, end time.Time, aggregateByLabels []string, invertCallStacks bool, functionToFilterBy string) (profile.Profile, error)
 	GetProfileMetadataMappings(ctx context.Context, query string, start, end time.Time) ([]string, error)
 	GetProfileMetadataLabels(ctx context.Context, query string, start, end time.Time) ([]string, error)
 }
@@ -278,12 +278,14 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 				MappingFiles: mappingFiles,
 				Labels:       labels,
 			}
+
 		default:
 			p, err = q.selectMerge(
 				ctx,
 				req.GetMerge(),
 				groupByLabels,
 				isInvert,
+				req.GetSandwichByFunction(),
 			)
 		}
 	case pb.QueryRequest_MODE_DIFF:
@@ -361,6 +363,25 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	)
 	if err != nil {
 		return nil, fmt.Errorf("filtering profile: %w", err)
+	}
+
+	// Apply sandwich view filtering if specified
+	sandwichByFunction := req.GetSandwichByFunction()
+	if sandwichByFunction != "" {
+		var sandwichFiltered int64
+		p.Samples, sandwichFiltered, err = FilterProfileData(
+			ctx,
+			q.tracer,
+			q.mem,
+			p.Samples,
+			sandwichByFunction,
+			false, // Never exclude for sandwich view
+			binaryFrameFilter,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("filtering profile for sandwich view: %w", err)
+		}
+		filtered += sandwichFiltered
 	}
 
 	return q.renderReport(
@@ -784,12 +805,7 @@ func (q *ColumnQueryAPI) selectSingle(ctx context.Context, s *pb.SingleProfile, 
 	return p, nil
 }
 
-func (q *ColumnQueryAPI) selectMerge(
-	ctx context.Context,
-	m *pb.MergeProfile,
-	groupByLabels []string,
-	isInverted bool,
-) (profile.Profile, error) {
+func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile, groupByLabels []string, isInverted bool, functionToFilterBy string) (profile.Profile, error) {
 	p, err := q.querier.QueryMerge(
 		ctx,
 		m.Query,
@@ -797,6 +813,7 @@ func (q *ColumnQueryAPI) selectMerge(
 		m.End.AsTime(),
 		groupByLabels,
 		isInverted,
+		functionToFilterBy,
 	)
 	if err != nil {
 		return profile.Profile{}, err
@@ -991,7 +1008,7 @@ func (q *ColumnQueryAPI) selectProfileForDiff(ctx context.Context, s *pb.Profile
 	case pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED:
 		return q.selectSingle(ctx, s.GetSingle(), isInverted)
 	case pb.ProfileDiffSelection_MODE_MERGE:
-		return q.selectMerge(ctx, s.GetMerge(), []string{}, isInverted)
+		return q.selectMerge(ctx, s.GetMerge(), []string{}, isInverted, "")
 	default:
 		return profile.Profile{}, status.Error(codes.InvalidArgument, "unknown mode for diff profile selection")
 	}

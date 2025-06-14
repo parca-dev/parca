@@ -57,7 +57,13 @@ export interface SourceData {
   error?: any;
 }
 
-export type VisualizationType = 'icicle' | 'callgraph' | 'table' | 'source' | 'iciclechart';
+export type VisualizationType =
+  | 'icicle'
+  | 'callgraph'
+  | 'table'
+  | 'source'
+  | 'iciclechart'
+  | 'sandwich';
 
 export interface ProfileViewProps {
   total: bigint;

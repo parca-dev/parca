@@ -129,7 +129,7 @@ export const ProfileViewWithData = ({
     response: tableResponse,
     error: tableError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.TABLE_ARROW, {
-    skip: !dashboardItems.includes('table'),
+    skip: !dashboardItems.includes('table') && !dashboardItems.includes('sandwich'),
     binaryFrameFilter,
   });
 
