@@ -19,7 +19,7 @@
     "lodash": "^4.17.21",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "tsc-watch": "6.2.1"
+    "tsc-watch": "6.3.1"
   },
   "keywords": [],
   "author": "",
