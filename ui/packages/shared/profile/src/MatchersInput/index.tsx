@@ -33,6 +33,8 @@ interface MatchersInputProps {
   runQuery: () => void;
   currentQuery: Query;
   profileType: string;
+  start?: number;
+  end?: number;
 }
 
 export interface ILabelNamesResult {
@@ -55,7 +57,7 @@ export const useLabelNames = (
   const metadata = useGrpcMetadata();
 
   const {data, isLoading, error} = useGrpcQuery<LabelsResponse>({
-    key: ['labelNames', profileType, match?.join(',')],
+    key: ['labelNames', profileType, match?.join(','), start, end],
     queryFn: async () => {
       const request: LabelsRequest = {match: match !== undefined ? match : []};
       if (start !== undefined && end !== undefined) {
@@ -89,14 +91,20 @@ interface UseLabelValues {
 export const useLabelValues = (
   client: QueryServiceClient,
   labelName: string,
-  profileType: string
+  profileType: string,
+  start?: number,
+  end?: number
 ): UseLabelValues => {
   const metadata = useGrpcMetadata();
 
   const {data, isLoading, error} = useGrpcQuery<string[]>({
-    key: ['labelValues', labelName, profileType],
+    key: ['labelValues', labelName, profileType, start, end],
     queryFn: async () => {
       const request: ValuesRequest = {labelName, match: [], profileType};
+      if (start !== undefined && end !== undefined) {
+        request.start = millisToProtoTimestamp(start);
+        request.end = millisToProtoTimestamp(end);
+      }
       const {response} = await client.values(request, {meta: metadata});
       return sanitizeLabelValue(response.labelValues);
     },
@@ -321,7 +329,12 @@ const MatchersInput = ({
 
 export default function MatchersInputWithProvider(props: MatchersInputProps): JSX.Element {
   return (
-    <LabelsProvider queryClient={props.queryClient} profileType={props.profileType}>
+    <LabelsProvider
+      queryClient={props.queryClient}
+      profileType={props.profileType}
+      start={props.start}
+      end={props.end}
+      >
       <MatchersInput {...props} />
     </LabelsProvider>
   );
