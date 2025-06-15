@@ -20,7 +20,7 @@ import cx from 'classnames';
 import {QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata} from '@parca/components';
 import {Query} from '@parca/parser';
-import {sanitizeLabelValue} from '@parca/utilities';
+import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
 import {LabelProvider, useLabels} from '../contexts/SimpleMatchersLabelContext';
 import {useUtilizationLabels} from '../contexts/UtilizationLabelsContext';
@@ -33,6 +33,8 @@ interface Props {
   currentQuery: Query;
   profileType: string;
   queryBrowserRef: React.RefObject<HTMLDivElement>;
+  start?: number;
+  end?: number;
 }
 
 interface QueryRow {
@@ -116,6 +118,8 @@ const SimpleMatchers = ({
   currentQuery,
   profileType,
   queryBrowserRef,
+  start,
+  end,
 }: Props): JSX.Element => {
   const utilizationLabels = useUtilizationLabels();
   const [queryRows, setQueryRows] = useState<QueryRow[]>([
@@ -140,10 +144,20 @@ const SimpleMatchers = ({
       }
       try {
         const values = await reactQueryClient.fetchQuery(
-          [labelName, profileType],
+          [labelName, profileType, start, end],
           async () => {
             const response = await queryClient.values(
-              {labelName, match: [], profileType},
+              {
+                labelName,
+                match: [],
+                profileType,
+                ...(start !== undefined && end !== undefined
+                  ? {
+                      start: millisToProtoTimestamp(start),
+                      end: millisToProtoTimestamp(end),
+                    }
+                  : {}),
+              },
               {meta: metadata}
             ).response;
             const sanitizedValues = sanitizeLabelValue(response.labelValues);
@@ -159,7 +173,7 @@ const SimpleMatchers = ({
         return [];
       }
     },
-    [queryClient, metadata, profileType, reactQueryClient]
+    [queryClient, metadata, profileType, reactQueryClient, start, end]
   );
 
   const fetchLabelValuesUtilization = useCallback(
@@ -403,6 +417,8 @@ export default function SimpleMathersWithProvider(props: Props): JSX.Element {
       queryClient={props.queryClient}
       profileType={props.profileType}
       labelNameFromMatchers={labelNameFromMatchers}
+      start={props.start}
+      end={props.end}
     >
       <SimpleMatchers {...props} />
     </LabelProvider>

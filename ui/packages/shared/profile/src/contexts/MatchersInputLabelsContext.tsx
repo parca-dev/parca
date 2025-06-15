@@ -40,6 +40,8 @@ interface LabelsProviderProps {
   children: React.ReactNode;
   queryClient: QueryServiceClient;
   profileType: string;
+  start?: number;
+  end?: number;
 }
 
 // With there being the possibility of having utilization labels, we need to be able to determine whether the labels to be used are utilization labels or profiling data labels.
@@ -48,13 +50,17 @@ export function LabelsProvider({
   children,
   queryClient,
   profileType,
+  start,
+  end,
 }: LabelsProviderProps): JSX.Element {
   const [currentLabelName, setCurrentLabelName] = React.useState<string | null>(null);
   const utilizationLabels = useUtilizationLabels();
 
   const {result: labelNamesResponse, loading: isLabelNamesLoading} = useLabelNames(
     queryClient,
-    profileType
+    profileType,
+    start,
+    end
   );
 
   const labelNamesFromAPI = useMemo(() => {
@@ -68,7 +74,9 @@ export function LabelsProvider({
   const {result: labelValuesOriginal, loading: isLabelValuesLoading} = useLabelValues(
     queryClient,
     currentLabelName ?? '',
-    profileType
+    profileType,
+    start,
+    end
   );
 
   const utilizationLabelValues = useFetchUtilizationLabelValues(

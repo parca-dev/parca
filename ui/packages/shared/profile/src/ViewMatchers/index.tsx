@@ -19,7 +19,7 @@ import cx from 'classnames';
 import {QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata} from '@parca/components';
 import {Query} from '@parca/parser';
-import {sanitizeLabelValue} from '@parca/utilities';
+import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
 import CustomSelect, {SelectItem} from '../SimpleMatchers/Select';
 
@@ -30,6 +30,8 @@ interface Props {
   currentQuery: Query;
   queryClient: QueryServiceClient;
   setMatchersString: (arg: string) => void;
+  start?: number;
+  end?: number;
 }
 
 const ViewMatchers: React.FC<Props> = ({
@@ -38,6 +40,8 @@ const ViewMatchers: React.FC<Props> = ({
   queryClient,
   runQuery,
   setMatchersString,
+  start,
+  end,
   currentQuery,
 }) => {
   const [labelValuesMap, setLabelValuesMap] = useState<Record<string, string[]>>({});
@@ -77,7 +81,17 @@ const ViewMatchers: React.FC<Props> = ({
     async (labelName: string): Promise<string[]> => {
       try {
         const response = await queryClient.values(
-          {labelName, match: [], profileType},
+          {
+            labelName,
+            match: [],
+            profileType,
+            ...(start !== undefined && end !== undefined
+              ? {
+                  start: millisToProtoTimestamp(start),
+                  end: millisToProtoTimestamp(end),
+                }
+              : {}),
+          },
           {meta: metadata}
         ).response;
         return sanitizeLabelValue(response.labelValues);
@@ -86,7 +100,7 @@ const ViewMatchers: React.FC<Props> = ({
         return [];
       }
     },
-    [queryClient, metadata, profileType]
+    [queryClient, metadata, profileType, start, end]
   );
 
   useEffect(() => {
