@@ -334,7 +334,7 @@ export default function MatchersInputWithProvider(props: MatchersInputProps): JS
       profileType={props.profileType}
       start={props.start}
       end={props.end}
-      >
+    >
       <MatchersInput {...props} />
     </LabelsProvider>
   );

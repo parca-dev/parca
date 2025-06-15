@@ -167,11 +167,15 @@ const ProfileSelector = ({
     return Query.parse(querySelection.expression).profileType();
   }, [querySelection.expression]);
 
-  
   const from = timeRangeSelection.getFromMs();
   const to = timeRangeSelection.getToMs();
 
-  const {loading: labelNamesLoading, result} = useLabelNames(queryClient, profileType.toString(), from, to);
+  const {loading: labelNamesLoading, result} = useLabelNames(
+    queryClient,
+    profileType.toString(),
+    from,
+    to
+  );
   const {loading: selectedLabelNamesLoading, result: selectedLabelNamesResult} = useLabelNames(
     queryClient,
     selectedProfileType.toString(),
