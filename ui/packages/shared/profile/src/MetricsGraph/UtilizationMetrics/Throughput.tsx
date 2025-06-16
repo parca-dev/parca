@@ -135,7 +135,7 @@ const RawAreaChart = ({
     return selectedSeries.map(s => ({
       key: s.key,
       value: s.value,
-      matcherType: '=' as const
+      matcherType: '=' as const,
     }));
   }, [selectedSeries]);
 
