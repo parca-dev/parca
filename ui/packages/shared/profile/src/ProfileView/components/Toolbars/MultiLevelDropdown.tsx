@@ -167,6 +167,9 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
   const isInvert = invertStack === 'true';
   const isColorStackLegendEnabled = colorStackLegend === 'true';
 
+  const [alignFunctionName, setAlignFunctionName] = useURLState('align_function_name');
+  const isLeftAligned = alignFunctionName === 'left' || alignFunctionName === undefined;
+
   // By default, we want delta profiles (CPU) to be relatively compared.
   // For non-delta profiles, like goroutines or memory, we want the profiles to be compared absolutely.
   const compareAbsoluteDefault = profileType?.delta === false ? 'true' : 'false';
@@ -226,6 +229,15 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
       icon: isInvert ? 'ph:sort-ascending' : 'ph:sort-descending',
     },
     {
+      label: isLeftAligned ? 'Right-align function names' : 'Left-align function names',
+      onclick: () => setAlignFunctionName(isLeftAligned ? 'right' : 'left'),
+      id: 'h-align-function-names',
+      hide: false,
+      icon: isLeftAligned
+        ? 'ic:outline-align-horizontal-right'
+        : 'ic:outline-align-horizontal-left',
+    },
+    {
       label: isCompareAbsolute ? 'Compare Relative' : 'Compare Absolute',
       onclick: () => setCompareAbsolute(isCompareAbsolute ? 'false' : 'true'),
       hide: !compareMode,
@@ -275,7 +287,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
               </span>
             </Menu.Button>
             {open && (
-              <Menu.Items className="absolute z-30 left-0 w-56 mt-2 py-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border dark:bg-gray-900 dark:border-gray-600">
+              <Menu.Items className="absolute z-30 left-0 w-64 mt-2 py-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border dark:bg-gray-900 dark:border-gray-600">
                 <span className="text-xs text-gray-400 capitalize px-4 py-3">actions</span>
                 {menuItems
                   .filter(item => item.hide !== undefined && !item.hide)
