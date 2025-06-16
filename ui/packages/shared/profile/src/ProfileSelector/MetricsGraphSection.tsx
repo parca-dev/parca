@@ -46,6 +46,7 @@ interface MetricsGraphSectionProps {
     data: UtilizationMetricsType[];
   }>;
   utilizationMetricsLoading?: boolean;
+  onUtilizationSeriesSelect?: (series: Array<{key: string; value: string}>) => void;
 }
 
 export function MetricsGraphSection({
@@ -66,6 +67,7 @@ export function MetricsGraphSection({
   setNewQueryExpression,
   utilizationMetrics,
   utilizationMetricsLoading,
+  onUtilizationSeriesSelect,
 }: MetricsGraphSectionProps): JSX.Element {
   const handleTimeRangeChange = (range: DateTimeRange): void => {
     const from = range.getFromMs();
@@ -176,6 +178,8 @@ export function MetricsGraphSection({
                   humanReadableName={humanReadableName}
                   from={querySelection.from}
                   to={querySelection.to}
+                  selectedSeries={undefined}
+                  onSelectedSeriesChange={onUtilizationSeriesSelect}
                 />
               </>
             );
@@ -199,6 +203,8 @@ export function MetricsGraphSection({
             from={querySelection.from}
             to={querySelection.to}
             utilizationMetricsLoading={utilizationMetricsLoading}
+            selectedSeries={undefined}
+            onSelectedSeriesChange={onUtilizationSeriesSelect}
           />
         )}
       </div>

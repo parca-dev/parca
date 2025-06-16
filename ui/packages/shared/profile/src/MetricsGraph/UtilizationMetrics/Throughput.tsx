@@ -52,6 +52,8 @@ interface CommonProps {
   humanReadableName: string;
   from: number;
   to: number;
+  selectedSeries?: Array<{key: string; value: string}>;
+  onSelectedSeriesChange?: (series: Array<{key: string; value: string}>) => void;
 }
 
 type RawAreaChartProps = CommonProps & {
@@ -112,6 +114,8 @@ const RawAreaChart = ({
   humanReadableName,
   from,
   to,
+  selectedSeries,
+  onSelectedSeriesChange,
 }: RawAreaChartProps): JSX.Element => {
   const {timezone} = useParcaContext();
   const graph = useRef(null);
@@ -121,15 +125,18 @@ const RawAreaChart = ({
   const [pos, setPos] = useState([0, 0]);
   const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
   const idForContextMenu = useId();
-  const [selectedSeries, setSelectedSeries] = useURLState<string>('selectedSeries');
   const [_, setSelectedTimeframe] = useURLState('gpu_selected_timeframe');
 
   const parsedSelectedSeries: Matcher[] = useMemo(() => {
-    if (selectedSeries === undefined) {
+    if (!selectedSeries || selectedSeries.length === 0) {
       return [];
     }
 
-    return JSON.parse(decodeURIComponent(selectedSeries));
+    return selectedSeries.map(s => ({
+      key: s.key,
+      value: s.value,
+      matcherType: '=' as const
+    }));
   }, [selectedSeries]);
 
   const lineStroke = '1px';
@@ -513,14 +520,12 @@ const RawAreaChart = ({
                       }
                       strokeOpacity={isSelected ? 1 : 0.8}
                       onClick={() => {
-                        if (highlighted != null) {
-                          setSelectedSeries(
-                            JSON.stringify(
-                              highlighted.labels.map(l => ({
-                                key: l.name,
-                                value: l.value,
-                              }))
-                            )
+                        if (highlighted != null && onSelectedSeriesChange) {
+                          onSelectedSeriesChange(
+                            highlighted.labels.map(l => ({
+                              key: l.name,
+                              value: l.value,
+                            }))
                           );
                           setSelectedTimeframe(undefined);
                         }
@@ -547,6 +552,8 @@ const AreaChart = ({
   humanReadableName,
   from,
   to,
+  selectedSeries,
+  onSelectedSeriesChange,
 }: Props): JSX.Element => {
   const {isDarkMode} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(false, true);
@@ -575,6 +582,8 @@ const AreaChart = ({
             humanReadableName={humanReadableName}
             from={from}
             to={to}
+            selectedSeries={selectedSeries}
+            onSelectedSeriesChange={onSelectedSeriesChange}
           />
         )}
       </motion.div>
