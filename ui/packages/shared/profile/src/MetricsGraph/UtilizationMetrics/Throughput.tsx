@@ -128,7 +128,7 @@ const RawAreaChart = ({
   const [_, setSelectedTimeframe] = useURLState('gpu_selected_timeframe');
 
   const parsedSelectedSeries: Matcher[] = useMemo(() => {
-    if (!selectedSeries || selectedSeries.length === 0) {
+    if (selectedSeries == null || selectedSeries.length === 0) {
       return [];
     }
 
@@ -520,7 +520,7 @@ const RawAreaChart = ({
                       }
                       strokeOpacity={isSelected ? 1 : 0.8}
                       onClick={() => {
-                        if (highlighted != null && onSelectedSeriesChange) {
+                        if (highlighted != null && onSelectedSeriesChange != null) {
                           onSelectedSeriesChange(
                             highlighted.labels.map(l => ({
                               key: l.name,
