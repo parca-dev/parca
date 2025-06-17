@@ -93,6 +93,7 @@ interface ProfileSelectorProps extends ProfileSelectorFeatures {
   }>;
   utilizationMetricsLoading?: boolean;
   utilizationLabels?: UtilizationLabels;
+  onUtilizationSeriesSelect?: (series: Array<{key: string; value: string}>) => void;
 }
 
 export interface IProfileTypesResult {
@@ -139,6 +140,7 @@ const ProfileSelector = ({
   utilizationMetrics,
   utilizationMetricsLoading,
   utilizationLabels,
+  onUtilizationSeriesSelect,
 }: ProfileSelectorProps): JSX.Element => {
   const {
     loading: profileTypesLoading,
@@ -345,6 +347,7 @@ const ProfileSelector = ({
           setNewQueryExpression={setNewQueryExpression}
           utilizationMetrics={utilizationMetrics}
           utilizationMetricsLoading={utilizationMetricsLoading}
+          onUtilizationSeriesSelect={onUtilizationSeriesSelect}
         />
       </>
     </UtilizationLabelsProvider>
