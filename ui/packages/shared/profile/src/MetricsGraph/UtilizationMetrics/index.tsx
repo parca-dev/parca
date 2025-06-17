@@ -544,7 +544,7 @@ const UtilizationMetrics = ({
             name={name}
             humanReadableName={humanReadableName}
             from={from}
-              to={to}
+            to={to}
             onSelectedSeriesChange={onSelectedSeriesChange}
           />
         )}
