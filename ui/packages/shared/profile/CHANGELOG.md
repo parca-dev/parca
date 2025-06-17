@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.18.0](https://github.com/parca-dev/parca/compare/@parca/profile@0.17.11...@parca/profile@0.18.0) (2025-06-16)
+
+### Features
+
+- improve error handling for overlapping data in icicle charts ([563afe4](https://github.com/parca-dev/parca/commit/563afe4a8b38dd2a3d694a31fe2d05ee195b472e))
+
+## [0.17.11](https://github.com/parca-dev/parca/compare/@parca/profile@0.17.10...@parca/profile@0.17.11) (2025-06-16)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.17.10 (2025-06-14)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.17.9](https://github.com/parca-dev/parca/compare/@parca/profile@0.17.8...@parca/profile@0.17.9) (2025-06-12)
+
+**Note:** Version bump only for package @parca/profile
+
 ## [0.17.8](https://github.com/parca-dev/parca/compare/@parca/profile@0.17.5...@parca/profile@0.17.8) (2025-06-07)
 
 **Note:** Version bump only for package @parca/profile

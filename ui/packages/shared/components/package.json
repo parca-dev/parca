@@ -1,6 +1,6 @@
 {
   "name": "@parca/components",
-  "version": "0.16.338",
+  "version": "0.16.341",
   "description": "A component library for Parca",
   "main": "dist/index.js",
   "scripts": {
@@ -35,7 +35,7 @@
     "d3-selection": "3.0.0",
     "graphviz-wasm": "3.0.2",
     "lodash": "^4.17.21",
-    "moment-timezone": "^0.5.45",
+    "moment-timezone": "^0.6.0",
     "react-datepicker": "6.9.0",
     "react-popper": "^2.3.0",
     "react-textarea-autosize": "^8.4.0",
@@ -43,7 +43,7 @@
     "react-use": "^17.3.2",
     "tailwind-merge": "^1.10.0",
     "tailwindcss": "3.2.4",
-    "tsc-watch": "6.2.1"
+    "tsc-watch": "6.3.1"
   },
   "devDependencies": {
     "react": "18.3.1",

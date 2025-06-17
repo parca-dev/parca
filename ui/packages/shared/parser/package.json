@@ -1,6 +1,6 @@
 {
   "name": "@parca/parser",
-  "version": "0.16.78",
+  "version": "0.16.79",
   "description": "JavaScript parser implementation for the continuous profiling language",
   "main": "dist/index.js",
   "scripts": {
@@ -15,7 +15,7 @@
   "dependencies": {
     "moo": "^0.5.2",
     "nearley": "2.20.1",
-    "tsc-watch": "6.2.1"
+    "tsc-watch": "6.3.1"
   },
   "devDependencies": {
     "@types/nearley": "2.11.5",
