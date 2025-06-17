@@ -11,12 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useEffect, useRef, useState} from 'react';
+import React from 'react';
 
 import {
   FIELD_FUNCTION_FILE_NAME,
   FIELD_FUNCTION_NAME,
-  FIELD_LABELS,
   FIELD_LOCATION_ADDRESS,
   FIELD_MAPPING_FILE,
 } from '../../../ProfileIcicleGraph/IcicleGraphArrow';

@@ -26,7 +26,7 @@ interface Props {
   setGroupByLabels: (labels: string[]) => void;
 }
 
-const GroupByLabelsDropdown = ({labels, groupBy, setGroupByLabels}: Props) => {
+const GroupByLabelsDropdown = ({labels, groupBy, setGroupByLabels}: Props): JSX.Element => {
   return (
     <div>
       <div className="flex items-center justify-between">
