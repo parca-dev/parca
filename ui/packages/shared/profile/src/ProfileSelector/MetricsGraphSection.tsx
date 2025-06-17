@@ -178,7 +178,6 @@ export function MetricsGraphSection({
                   humanReadableName={humanReadableName}
                   from={querySelection.from}
                   to={querySelection.to}
-                  selectedSeries={undefined}
                   onSelectedSeriesChange={onUtilizationSeriesSelect}
                 />
               </>

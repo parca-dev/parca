@@ -20,7 +20,6 @@ import throttle from 'lodash.throttle';
 import {useContextMenu} from 'react-contexify';
 
 import {DateTimeRange, MetricsGraphSkeleton, useParcaContext, useURLState} from '@parca/components';
-import {Matcher} from '@parca/parser';
 import {formatDate, formatForTimespan, getPrecision, valueFormatter} from '@parca/utilities';
 
 import MetricsSeries from '../../MetricsSeries';
@@ -41,7 +40,6 @@ interface CommonProps {
   humanReadableName: string;
   from: number;
   to: number;
-  selectedSeries?: Array<{key: string; value: string}>;
   onSelectedSeriesChange?: (series: Array<{key: string; value: string}>) => void;
 }
 
@@ -71,6 +69,7 @@ function transformToSeries(data: MetricSeries[]): Series[] {
       const metric = s.labelset.labels.sort((a, b) => a.name.localeCompare(b.name));
       agg.push({
         metric,
+        isSelected: s.isSelected ?? false,
         values: s.samples.reduce<number[][]>(function (agg: number[][], d: MetricsSample) {
           if (d.timestamp !== undefined && d.value !== undefined) {
             agg.push([d.timestamp, d.value]);
@@ -114,7 +113,6 @@ const RawUtilizationMetrics = ({
   humanReadableName,
   from,
   to,
-  selectedSeries,
   onSelectedSeriesChange,
 }: RawUtilizationMetricsProps): JSX.Element => {
   const {timezone} = useParcaContext();
@@ -126,18 +124,6 @@ const RawUtilizationMetrics = ({
   const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
   const idForContextMenu = useId();
   const [_, setSelectedTimeframe] = useURLState('gpu_selected_timeframe');
-
-  const parsedSelectedSeries: Matcher[] = useMemo(() => {
-    if (selectedSeries == null || selectedSeries.length === 0) {
-      return [];
-    }
-
-    return selectedSeries.map(s => ({
-      key: s.key,
-      value: s.value,
-      matcherType: '=' as const,
-    }));
-  }, [selectedSeries]);
 
   const lineStroke = '1px';
   const lineStrokeHover = '2px';
@@ -477,18 +463,6 @@ const RawUtilizationMetrics = ({
             </g>
             <g className="lines fill-transparent">
               {series.map((s, i) => {
-                let isSelected = false;
-                if (parsedSelectedSeries != null && parsedSelectedSeries.length > 0) {
-                  isSelected = parsedSelectedSeries.every(m => {
-                    for (let i = 0; i < s.metric.length; i++) {
-                      if (s.metric[i].name === m.key && s.metric[i].value === m.value) {
-                        return true;
-                      }
-                    }
-                    return false;
-                  });
-                }
-
                 const isLimit =
                   s.metric.findIndex(m => m.name === '__type__' && m.value === 'limit') > -1;
                 const strokeDasharray = isLimit ? '8 4' : '';
@@ -500,7 +474,7 @@ const RawUtilizationMetrics = ({
                       line={l}
                       color={getSeriesColor(s.metric)}
                       strokeWidth={
-                        isSelected
+                        s.isSelected === true
                           ? lineStrokeSelected
                           : hovering && highlighted != null && i === highlighted.seriesIndex
                           ? lineStrokeHover
@@ -542,7 +516,6 @@ const UtilizationMetrics = ({
   humanReadableName,
   from,
   to,
-  selectedSeries,
   onSelectedSeriesChange,
 }: Props): JSX.Element => {
   const {isDarkMode} = useParcaContext();
@@ -571,7 +544,6 @@ const UtilizationMetrics = ({
             humanReadableName={humanReadableName}
             from={from}
             to={to}
-            selectedSeries={selectedSeries}
             onSelectedSeriesChange={onSelectedSeriesChange}
           />
         )}
