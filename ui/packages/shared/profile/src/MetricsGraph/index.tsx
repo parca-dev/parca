@@ -68,6 +68,7 @@ export interface Series {
   metric: Label[];
   values: number[][];
   labelset: string;
+  isSelected?: boolean;
 }
 
 const MetricsGraph = ({

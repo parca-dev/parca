@@ -55,6 +55,7 @@ interface ProfileSelectorFeatures {
 }
 
 export interface UtilizationMetrics {
+  isSelected: boolean;
   labelset: {
     labels: Array<{
       name: string;
