@@ -71,10 +71,6 @@ const UserPreferences = ({modal}: {modal?: boolean}): JSX.Element => {
           userPreferenceDetails={USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS}
         />
         <UserPreferenceItem
-          id="h-show-function-name-from-left"
-          userPreferenceDetails={USER_PREFERENCES.SHOW_FUNCTION_NAME_FROM_LEFT}
-        />
-        <UserPreferenceItem
           id="h-enable-iciclechart"
           userPreferenceDetails={USER_PREFERENCES.ENABLE_ICICLECHARTS}
         />

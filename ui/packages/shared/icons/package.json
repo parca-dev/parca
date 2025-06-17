@@ -1,6 +1,6 @@
 {
   "name": "@parca/icons",
-  "version": "0.16.71",
+  "version": "0.16.72",
   "description": "Parca commonly used icons",
   "main": "dist/index.js",
   "scripts": {
@@ -22,7 +22,7 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "tailwindcss": "3.2.4",
-    "tsc-watch": "6.2.1",
+    "tsc-watch": "6.3.1",
     "vite-plugin-svgr": "^4.2.0"
   }
 }

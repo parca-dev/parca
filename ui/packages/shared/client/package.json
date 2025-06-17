@@ -1,6 +1,6 @@
 {
   "name": "@parca/client",
-  "version": "0.16.129",
+  "version": "0.16.130",
   "description": "Parca API Client",
   "main": "dist/index.js",
   "scripts": {
@@ -13,7 +13,7 @@
   "dependencies": {
     "@protobuf-ts/runtime": "^2.5.0",
     "@protobuf-ts/runtime-rpc": "^2.5.0",
-    "tsc-watch": "6.2.1"
+    "tsc-watch": "6.3.1"
   },
   "devDependencies": {
     "globby": "13.2.2"
