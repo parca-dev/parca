@@ -16,7 +16,7 @@ import {useEffect, useMemo, useState} from 'react';
 import {Provider} from 'react-redux';
 
 import {QueryServiceClient} from '@parca/client';
-import {DateTimeRange, KeyDownProvider, useParcaContext} from '@parca/components';
+import { DateTimeRange, KeyDownProvider, useParcaContext, useURLState } from '@parca/components';
 import {createStore} from '@parca/store';
 import {
   capitalizeOnlyFirstLetter,
@@ -30,6 +30,8 @@ import {QuerySelection, useProfileTypes} from '../ProfileSelector';
 import {sumByToParam, useSumByFromParams} from '../useSumBy';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
 import ProfileExplorerSingle from './ProfileExplorerSingle';
+import { Query } from '@parca/parser';
+import { FIELD_FUNCTION_NAME } from '../ProfileIcicleGraph/IcicleGraphArrow';
 
 interface ProfileExplorerProps {
   queryClient: QueryServiceClient;
@@ -173,6 +175,8 @@ const ProfileExplorerApp = ({
   const [profileA, setProfileA] = useState<ProfileSelection | null>(null);
   const [profileB, setProfileB] = useState<ProfileSelection | null>(null);
 
+  const [_, setStoreGroupBy] = useURLState<string[]>('group_by');
+
   const sumByA = useSumByFromParams(sum_by_a);
   const sumByB = useSumByFromParams(sum_by_b);
 
@@ -258,6 +262,14 @@ const ProfileExplorerApp = ({
   // Show the SingleProfileExplorer when not comparing
   if (compare_a !== 'true' && compare_b !== 'true') {
     const selectQuery = (q: QuerySelection): void => {
+      const profileNameAfter = Query.parse(q.expression).profileName();
+      if (profileA != null && profileA?.ProfileName() !== profileNameAfter) {
+        // Reset the group_by when the profile types change.
+        // Using a timeout to ensure that the state is updated after the below navigation.
+        setTimeout(() => {
+          setStoreGroupBy(undefined);
+        });
+      }
       const mergeParams =
         q.mergeFrom !== undefined && q.mergeTo !== undefined
           ? {
