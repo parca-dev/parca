@@ -412,6 +412,13 @@
             "in": "query",
             "required": false,
             "type": "boolean"
+          },
+          {
+            "name": "sandwichByFunction",
+            "description": "sandwich_by_function is a function name to use for sandwich view functionality",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -847,6 +854,10 @@
             "$ref": "#/definitions/v1alpha1Filter"
           },
           "title": "a set of filter to apply to the query request"
+        },
+        "sandwichByFunction": {
+          "type": "string",
+          "title": "sandwich_by_function is a function name to use for sandwich view functionality"
         }
       },
       "title": "QueryRequest is a request for a profile query"

@@ -156,9 +156,11 @@ type QueryRequest struct {
 	// invert_call_stack inverts the call stacks in the flamegraph
 	InvertCallStack *bool `protobuf:"varint,8,opt,name=invert_call_stack,json=invertCallStack,proto3,oneof" json:"invert_call_stack,omitempty"`
 	// filter is a varying set of filter to apply to the query
-	Filter        []*v1alpha1.Filter `protobuf:"bytes,9,rep,name=filter,proto3" json:"filter,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Filter []*v1alpha1.Filter `protobuf:"bytes,9,rep,name=filter,proto3" json:"filter,omitempty"`
+	// sandwich_by_function is a function name to use for sandwich view functionality
+	SandwichByFunction *string `protobuf:"bytes,10,opt,name=sandwich_by_function,json=sandwichByFunction,proto3,oneof" json:"sandwich_by_function,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *QueryRequest) Reset() {
@@ -254,6 +256,13 @@ func (x *QueryRequest) GetFilter() []*v1alpha1.Filter {
 		return x.Filter
 	}
 	return nil
+}
+
+func (x *QueryRequest) GetSandwichByFunction() string {
+	if x != nil && x.SandwichByFunction != nil {
+		return *x.SandwichByFunction
+	}
+	return ""
 }
 
 // ProfileTypesRequest represents the profile types request with the id of the profile to be queried.
@@ -574,7 +583,7 @@ const file_parca_share_v1alpha1_share_proto_rawDesc = "" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\"4\n" +
 	"\x0eUploadResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04link\x18\x02 \x01(\tR\x04link\"\xe2\x04\n" +
+	"\x04link\x18\x02 \x01(\tR\x04link\"\xb2\x05\n" +
 	"\fQueryRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12&\n" +
 	"\fprofile_type\x18\x02 \x01(\tH\x00R\vprofileType\x88\x01\x01\x12N\n" +
@@ -585,13 +594,16 @@ const file_parca_share_v1alpha1_share_proto_rawDesc = "" +
 	"\x0eruntime_filter\x18\x06 \x01(\v2#.parca.query.v1alpha1.RuntimeFilterB\x02\x18\x01H\x03R\rruntimeFilter\x88\x01\x01\x12=\n" +
 	"\bgroup_by\x18\a \x01(\v2\x1d.parca.query.v1alpha1.GroupByH\x04R\agroupBy\x88\x01\x01\x12/\n" +
 	"\x11invert_call_stack\x18\b \x01(\bH\x05R\x0finvertCallStack\x88\x01\x01\x124\n" +
-	"\x06filter\x18\t \x03(\v2\x1c.parca.query.v1alpha1.FilterR\x06filterB\x0f\n" +
+	"\x06filter\x18\t \x03(\v2\x1c.parca.query.v1alpha1.FilterR\x06filter\x125\n" +
+	"\x14sandwich_by_function\x18\n" +
+	" \x01(\tH\x06R\x12sandwichByFunction\x88\x01\x01B\x0f\n" +
 	"\r_profile_typeB\x0f\n" +
 	"\r_filter_queryB\x16\n" +
 	"\x14_node_trim_thresholdB\x11\n" +
 	"\x0f_runtime_filterB\v\n" +
 	"\t_group_byB\x14\n" +
-	"\x12_invert_call_stack\"%\n" +
+	"\x12_invert_call_stackB\x17\n" +
+	"\x15_sandwich_by_function\"%\n" +
 	"\x13ProfileTypesRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"q\n" +
 	"\x14ProfileTypesResponse\x127\n" +

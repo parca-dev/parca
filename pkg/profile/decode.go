@@ -197,6 +197,66 @@ func DecodeInto(lw LocationsWriter, data []byte) (DecodeResult, error) {
 	}
 }
 
+// DecodeFunctionName is a fork of DecodeInto that only tries to find a function name and returns it.
+// It returns "" if no function name is found.
+func DecodeFunctionName(data []byte) ([]byte, error) {
+	var n int
+
+	// addr
+	_, offset := varint.Uvarint(data)
+
+	lineNumber, n := varint.Uvarint(data[offset:])
+	offset += n
+
+	hasMapping := data[offset] == 0x1
+	offset++
+	if hasMapping {
+		// buildID
+		_, n = decodeString(data[offset:])
+		offset += n
+
+		// filename
+		_, n := decodeString(data[offset:])
+		offset += n
+
+		// memoryStart
+		_, n = varint.Uvarint(data[offset:])
+		offset += n
+
+		// memoryLength
+		_, n = varint.Uvarint(data[offset:])
+		offset += n
+
+		// mappingOffset
+		_, n = varint.Uvarint(data[offset:])
+		offset += n
+	}
+
+	if lineNumber > 0 {
+		for i := uint64(0); i < lineNumber; i++ {
+			// line
+			_, n = varint.Uvarint(data[offset:])
+			offset += n
+
+			hasFunction := data[offset] == 0x1
+			offset++
+
+			if hasFunction {
+				// startLine
+				_, n = varint.Uvarint(data[offset:])
+				offset += n
+
+				name, _ := decodeString(data[offset:])
+				return name, nil
+			}
+		}
+
+		return []byte{}, nil
+	} else {
+		return []byte{}, nil
+	}
+}
+
 func decodeString(data []byte) ([]byte, int) {
 	length, n := varint.Uvarint(data)
 	return data[n : n+int(length)], n + int(length)

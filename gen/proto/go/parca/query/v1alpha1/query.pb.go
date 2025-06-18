@@ -979,9 +979,11 @@ type QueryRequest struct {
 	// invert_call_stack inverts the call stacks in the flamegraph
 	InvertCallStack *bool `protobuf:"varint,11,opt,name=invert_call_stack,json=invertCallStack,proto3,oneof" json:"invert_call_stack,omitempty"`
 	// a set of filter to apply to the query request
-	Filter        []*Filter `protobuf:"bytes,12,rep,name=filter,proto3" json:"filter,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Filter []*Filter `protobuf:"bytes,12,rep,name=filter,proto3" json:"filter,omitempty"`
+	// sandwich_by_function is a function name to use for sandwich view functionality
+	SandwichByFunction *string `protobuf:"bytes,13,opt,name=sandwich_by_function,json=sandwichByFunction,proto3,oneof" json:"sandwich_by_function,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *QueryRequest) Reset() {
@@ -1111,6 +1113,13 @@ func (x *QueryRequest) GetFilter() []*Filter {
 		return x.Filter
 	}
 	return nil
+}
+
+func (x *QueryRequest) GetSandwichByFunction() string {
+	if x != nil && x.SandwichByFunction != nil {
+		return *x.SandwichByFunction
+	}
+	return ""
 }
 
 type isQueryRequest_Options interface {
@@ -3559,7 +3568,8 @@ const file_parca_query_v1alpha1_query_proto_rawDesc = "" +
 	"\x17MODE_SINGLE_UNSPECIFIED\x10\x00\x12\x0e\n" +
 	"\n" +
 	"MODE_MERGE\x10\x01B\t\n" +
-	"\aoptions\"\xfe\t\n" +
+	"\aoptions\"\xce\n" +
+	"\n" +
 	"\fQueryRequest\x12;\n" +
 	"\x04mode\x18\x01 \x01(\x0e2'.parca.query.v1alpha1.QueryRequest.ModeR\x04mode\x127\n" +
 	"\x04diff\x18\x02 \x01(\v2!.parca.query.v1alpha1.DiffProfileH\x00R\x04diff\x12:\n" +
@@ -3574,7 +3584,8 @@ const file_parca_query_v1alpha1_query_proto_rawDesc = "" +
 	"\x0eruntime_filter\x18\n" +
 	" \x01(\v2#.parca.query.v1alpha1.RuntimeFilterB\x02\x18\x01H\x05R\rruntimeFilter\x88\x01\x01\x12/\n" +
 	"\x11invert_call_stack\x18\v \x01(\bH\x06R\x0finvertCallStack\x88\x01\x01\x124\n" +
-	"\x06filter\x18\f \x03(\v2\x1c.parca.query.v1alpha1.FilterR\x06filter\"B\n" +
+	"\x06filter\x18\f \x03(\v2\x1c.parca.query.v1alpha1.FilterR\x06filter\x125\n" +
+	"\x14sandwich_by_function\x18\r \x01(\tH\aR\x12sandwichByFunction\x88\x01\x01\"B\n" +
 	"\x04Mode\x12\x1b\n" +
 	"\x17MODE_SINGLE_UNSPECIFIED\x10\x00\x12\r\n" +
 	"\tMODE_DIFF\x10\x01\x12\x0e\n" +
@@ -3598,7 +3609,8 @@ const file_parca_query_v1alpha1_query_proto_rawDesc = "" +
 	"\t_group_byB\x13\n" +
 	"\x11_source_referenceB\x11\n" +
 	"\x0f_runtime_filterB\x14\n" +
-	"\x12_invert_call_stack\"\xa2\x01\n" +
+	"\x12_invert_call_stackB\x17\n" +
+	"\x15_sandwich_by_function\"\xa2\x01\n" +
 	"\x06Filter\x12F\n" +
 	"\fstack_filter\x18\x01 \x01(\v2!.parca.query.v1alpha1.StackFilterH\x00R\vstackFilter\x12F\n" +
 	"\fframe_filter\x18\x02 \x01(\v2!.parca.query.v1alpha1.FrameFilterH\x00R\vframeFilterB\b\n" +
