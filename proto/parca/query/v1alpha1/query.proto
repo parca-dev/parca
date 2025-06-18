@@ -275,6 +275,9 @@ message QueryRequest {
 
   // a set of filter to apply to the query request
   repeated Filter filter = 12;
+
+  // sandwich_by_function is a function name to use for sandwich view functionality
+  optional string sandwich_by_function = 13;
 }
 
 // Filter to apply to the query request

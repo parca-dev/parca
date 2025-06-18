@@ -27,11 +27,15 @@ export const useVisualizationState = (): {
   setSearchString: (searchString: string | undefined) => void;
   colorStackLegend: string | undefined;
   colorBy: string;
+  setColorBy: (colorBy: string) => void;
   groupBy: string[];
   setGroupBy: (keys: string[]) => void;
   toggleGroupBy: (key: string) => void;
   clearSelection: () => void;
   setGroupByLabels: (labels: string[]) => void;
+  sandwichFunctionName: string | undefined;
+  setSandwichFunctionName: (sandwichFunctionName: string | undefined) => void;
+  resetSandwichFunctionName: () => void;
 } => {
   const [curPath, setCurPath] = useState<string[]>([]);
   const [curPathArrow, setCurPathArrow] = useURLStateCustom<CurrentPathFrame[]>('cur_path', {
@@ -41,11 +45,14 @@ export const useVisualizationState = (): {
   });
   const [currentSearchString, setSearchString] = useURLState<string | undefined>('search_string');
   const [colorStackLegend] = useURLState<string | undefined>('color_stack_legend');
-  const [colorBy] = useURLState('color_by');
+  const [colorBy, setColorBy] = useURLState('color_by');
   const [groupBy, setStoreGroupBy] = useURLState<string[]>('group_by', {
     defaultValue: [FIELD_FUNCTION_NAME],
     alwaysReturnArray: true,
   });
+  const [sandwichFunctionName, setSandwichFunctionName] = useURLState<string | undefined>(
+    'sandwich_function_name'
+  );
 
   const setGroupBy = useCallback(
     (keys: string[]): void => {
@@ -74,6 +81,10 @@ export const useVisualizationState = (): {
     setSearchString?.('');
   }, [setSearchString]);
 
+  const resetSandwichFunctionName = useCallback((): void => {
+    setSandwichFunctionName(undefined);
+  }, [setSandwichFunctionName]);
+
   return {
     curPath,
     setCurPath,
@@ -83,10 +94,14 @@ export const useVisualizationState = (): {
     setSearchString,
     colorStackLegend,
     colorBy: (colorBy as string) ?? '',
+    setColorBy,
     groupBy,
     setGroupBy,
     toggleGroupBy,
     setGroupByLabels,
     clearSelection,
+    sandwichFunctionName,
+    setSandwichFunctionName,
+    resetSandwichFunctionName,
   };
 };

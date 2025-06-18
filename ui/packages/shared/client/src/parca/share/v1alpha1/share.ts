@@ -123,6 +123,12 @@ export interface QueryRequest {
      * @generated from protobuf field: repeated parca.query.v1alpha1.Filter filter = 9;
      */
     filter: Filter[];
+    /**
+     * sandwich_by_function is a function name to use for sandwich view functionality
+     *
+     * @generated from protobuf field: optional string sandwich_by_function = 10;
+     */
+    sandwichByFunction?: string;
 }
 /**
  * ProfileTypesRequest represents the profile types request with the id of the profile to be queried.
@@ -367,7 +373,8 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
             { no: 6, name: "runtime_filter", kind: "message", T: () => RuntimeFilter },
             { no: 7, name: "group_by", kind: "message", T: () => GroupBy },
             { no: 8, name: "invert_call_stack", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
-            { no: 9, name: "filter", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Filter }
+            { no: 9, name: "filter", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => Filter },
+            { no: 10, name: "sandwich_by_function", kind: "scalar", opt: true, T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<QueryRequest>): QueryRequest {
@@ -411,6 +418,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
                 case /* repeated parca.query.v1alpha1.Filter filter */ 9:
                     message.filter.push(Filter.internalBinaryRead(reader, reader.uint32(), options));
                     break;
+                case /* optional string sandwich_by_function */ 10:
+                    message.sandwichByFunction = reader.string();
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -450,6 +460,9 @@ class QueryRequest$Type extends MessageType<QueryRequest> {
         /* repeated parca.query.v1alpha1.Filter filter = 9; */
         for (let i = 0; i < message.filter.length; i++)
             Filter.internalBinaryWrite(message.filter[i], writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* optional string sandwich_by_function = 10; */
+        if (message.sandwichByFunction !== undefined)
+            writer.tag(10, WireType.LengthDelimited).string(message.sandwichByFunction);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

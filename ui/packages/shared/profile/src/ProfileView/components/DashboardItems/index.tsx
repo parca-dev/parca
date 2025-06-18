@@ -13,11 +13,13 @@
 
 import {Profiler, ProfilerOnRenderCallback} from 'react';
 
+import {QueryServiceClient} from '@parca/client';
 import {ConditionalWrapper} from '@parca/components';
 
 import ProfileIcicleGraph from '../../../ProfileIcicleGraph';
 import {CurrentPathFrame} from '../../../ProfileIcicleGraph/IcicleGraphArrow/utils';
 import {ProfileSource} from '../../../ProfileSource';
+import Sandwich from '../../../Sandwich';
 import {SourceView} from '../../../SourceView';
 import {Table} from '../../../Table';
 import type {
@@ -47,6 +49,7 @@ interface GetDashboardItemProps {
   perf?: {
     onRender?: ProfilerOnRenderCallback;
   };
+  queryClient?: QueryServiceClient;
 }
 
 export const getDashboardItem = ({
@@ -65,6 +68,7 @@ export const getDashboardItem = ({
   currentSearchString,
   setSearchString,
   perf,
+  queryClient,
 }: GetDashboardItemProps): JSX.Element => {
   switch (type) {
     case 'icicle':
@@ -138,6 +142,23 @@ export const getDashboardItem = ({
           setSearchString={setSearchString}
           isHalfScreen={isHalfScreen}
           metadataMappingFiles={flamegraphData.metadataMappingFiles}
+        />
+      ) : (
+        <></>
+      );
+    case 'sandwich':
+      return topTableData != null ? (
+        <Sandwich
+          total={total}
+          filtered={filtered}
+          loading={topTableData.loading}
+          data={topTableData.arrow?.record}
+          unit={topTableData.unit}
+          profileType={profileSource?.ProfileType()}
+          isHalfScreen={isHalfScreen}
+          metadataMappingFiles={flamegraphData.metadataMappingFiles}
+          profileSource={profileSource}
+          queryClient={queryClient}
         />
       ) : (
         <></>
