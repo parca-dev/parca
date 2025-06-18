@@ -43,6 +43,7 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
   }> = [
     {key: 'table', label: 'Table', canBeSelected: !dashboardItems.includes('table')},
     {key: 'icicle', label: 'icicle', canBeSelected: !dashboardItems.includes('icicle')},
+    {key: 'sandwich', label: 'sandwich', canBeSelected: !dashboardItems.includes('sandwich')},
   ];
   if (enableicicleCharts) {
     allItems.push({
@@ -96,6 +97,16 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
     canBeSelected: boolean;
   }): InnerAction | undefined => {
     if (dashboardItems.length === 1 && item.key === dashboardItems[0]) return undefined;
+
+    // For sandwich view, return a no-op action
+    if (item.key === 'sandwich') {
+      return {
+        text: 'Add Panel',
+        onClick: () => {},
+        isDisabled: true, // Custom property to control button state
+      };
+    }
+
     return {
       text:
         !item.canBeSelected && item.key === 'source'
