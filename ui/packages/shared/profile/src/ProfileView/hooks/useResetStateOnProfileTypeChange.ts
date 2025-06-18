@@ -13,7 +13,7 @@
 
 import {useURLState} from '@parca/components';
 
-export const useResetStateOnProfileTypeChange = (): () => void => {
+export const useResetStateOnProfileTypeChange = (): (() => void) => {
   const [, setGroupBy] = useURLState('group_by');
   const [, setFilterByFunction] = useURLState('filter_by_function');
   const [, setExcludeFunction] = useURLState('exclude_function');
