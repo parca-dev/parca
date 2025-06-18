@@ -16,7 +16,8 @@ import {useEffect, useMemo, useState} from 'react';
 import {Provider} from 'react-redux';
 
 import {QueryServiceClient} from '@parca/client';
-import { DateTimeRange, KeyDownProvider, useParcaContext, useURLState } from '@parca/components';
+import {DateTimeRange, KeyDownProvider, useParcaContext, useURLState} from '@parca/components';
+import {Query} from '@parca/parser';
 import {createStore} from '@parca/store';
 import {
   capitalizeOnlyFirstLetter,
@@ -26,12 +27,11 @@ import {
 } from '@parca/utilities';
 
 import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
+import {FIELD_FUNCTION_NAME} from '../ProfileIcicleGraph/IcicleGraphArrow';
 import {QuerySelection, useProfileTypes} from '../ProfileSelector';
 import {sumByToParam, useSumByFromParams} from '../useSumBy';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
 import ProfileExplorerSingle from './ProfileExplorerSingle';
-import { Query } from '@parca/parser';
-import { FIELD_FUNCTION_NAME } from '../ProfileIcicleGraph/IcicleGraphArrow';
 
 interface ProfileExplorerProps {
   queryClient: QueryServiceClient;
