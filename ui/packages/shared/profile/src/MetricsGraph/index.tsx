@@ -158,7 +158,7 @@ export const RawMetricsGraph = ({
     width = 0;
   }
 
-  const graphWidth = useMemo(() => (width - (margin * 1.5) - (margin / 2)), [width, margin]);
+  const graphWidth = useMemo(() => width - margin * 1.5 - margin / 2, [width, margin]);
   const graphTransform = useMemo(() => {
     // Adds 6px padding which aligns the graph on the grid
     return `translate(6, 0) scale(${(graphWidth - 6) / graphWidth}, 1)`;
@@ -599,7 +599,11 @@ export const RawMetricsGraph = ({
                 </text>
               </g>
             </g>
-            <g className="lines fill-transparent" transform={graphTransform} width={graphWidth - 100}>
+            <g
+              className="lines fill-transparent"
+              transform={graphTransform}
+              width={graphWidth - 100}
+            >
               {series.map((s, i) => (
                 <g key={i} className="line">
                   <MetricsSeries

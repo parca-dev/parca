@@ -129,7 +129,7 @@ const RawUtilizationMetrics = ({
   const lineStrokeHover = '2px';
   const lineStrokeSelected = '3px';
 
-  const graphWidth = useMemo(() => (width - margin * 1.5 - margin / 2), [width, margin]);
+  const graphWidth = useMemo(() => width - margin * 1.5 - margin / 2, [width, margin]);
   const graphTransform = useMemo(() => {
     // Adds 10px padding which aligns the graph on the grid
     return `translate(10, 0) scale(${(graphWidth - 10) / graphWidth}, 1)`;
