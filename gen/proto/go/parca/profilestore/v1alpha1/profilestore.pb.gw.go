@@ -59,14 +59,12 @@ func local_request_ProfileStoreService_WriteRaw_0(ctx context.Context, marshaler
 	return msg, metadata, err
 }
 
-func request_ProfileStoreService_Write_0(ctx context.Context, marshaler runtime.Marshaler, client ProfileStoreServiceClient, req *http.Request, pathParams map[string]string) (ProfileStoreService_WriteClient, runtime.ServerMetadata, chan error, error) {
+func request_ProfileStoreService_Write_0(ctx context.Context, marshaler runtime.Marshaler, client ProfileStoreServiceClient, req *http.Request, pathParams map[string]string) (ProfileStoreService_WriteClient, runtime.ServerMetadata, error) {
 	var metadata runtime.ServerMetadata
-	errChan := make(chan error, 1)
 	stream, err := client.Write(ctx)
 	if err != nil {
 		grpclog.Errorf("Failed to start streaming: %v", err)
-		close(errChan)
-		return nil, metadata, errChan, err
+		return nil, metadata, err
 	}
 	dec := marshaler.NewDecoder(req.Body)
 	handleSend := func() error {
@@ -86,10 +84,8 @@ func request_ProfileStoreService_Write_0(ctx context.Context, marshaler runtime.
 		return nil
 	}
 	go func() {
-		defer close(errChan)
 		for {
 			if err := handleSend(); err != nil {
-				errChan <- err
 				break
 			}
 		}
@@ -100,10 +96,10 @@ func request_ProfileStoreService_Write_0(ctx context.Context, marshaler runtime.
 	header, err := stream.Header()
 	if err != nil {
 		grpclog.Errorf("Failed to get header from client: %v", err)
-		return nil, metadata, errChan, err
+		return nil, metadata, err
 	}
 	metadata.HeaderMD = header
-	return stream, metadata, errChan, nil
+	return stream, metadata, nil
 }
 
 func request_AgentsService_Agents_0(ctx context.Context, marshaler runtime.Marshaler, client AgentsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -111,6 +107,7 @@ func request_AgentsService_Agents_0(ctx context.Context, marshaler runtime.Marsh
 		protoReq AgentsRequest
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	msg, err := client.Agents(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -253,20 +250,12 @@ func RegisterProfileStoreServiceHandlerClient(ctx context.Context, mux *runtime.
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
-		resp, md, reqErrChan, err := request_ProfileStoreService_Write_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ProfileStoreService_Write_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		go func() {
-			for err := range reqErrChan {
-				if err != nil && !errors.Is(err, io.EOF) {
-					runtime.HTTPStreamError(annotatedContext, mux, outboundMarshaler, w, req, err)
-				}
-			}
-		}()
 		forward_ProfileStoreService_Write_0(annotatedContext, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
 	})
 	return nil
