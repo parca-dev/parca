@@ -129,7 +129,11 @@ const RawUtilizationMetrics = ({
   const lineStrokeHover = '2px';
   const lineStrokeSelected = '3px';
 
-  const graphWidth = width - margin * 1.5 - margin / 2;
+  const graphWidth = useMemo(() => (width - margin * 1.5 - margin / 2), [width, margin]);
+  const graphTransform = useMemo(() => {
+    // Adds 10px padding which aligns the graph on the grid
+    return `translate(10, 0) scale(${(graphWidth - 10) / graphWidth}, 1)`;
+  }, [graphWidth]);
 
   const paddedFrom = from;
   const paddedTo = to;
@@ -461,7 +465,7 @@ const RawUtilizationMetrics = ({
                 </text>
               </g>
             </g>
-            <g className="lines fill-transparent">
+            <g className="lines fill-transparent" transform={graphTransform}>
               {series.map((s, i) => {
                 const isLimit =
                   s.metric.findIndex(m => m.name === '__type__' && m.value === 'limit') > -1;
