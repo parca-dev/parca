@@ -198,8 +198,18 @@ const SimpleMatchers = ({
 
   useEffect(() => {
     if (currentMatchers === '') {
+      const defaultRow = {
+        labelName: '',
+        operator: '=',
+        labelValue: '',
+        labelValues: [],
+        isLoading: false,
+      };
+      setQueryRows([defaultRow]);
       return;
     }
+
+    let isCancelled = false;
 
     const fetchAndSetQueryRows = async (): Promise<void> => {
       const newRows = await Promise.all(
@@ -222,17 +232,23 @@ const SimpleMatchers = ({
             operator,
             labelValue: sanitizedLabelValue,
             labelValues,
+            isLoading: false,
           };
         })
       );
 
-      const filteredRows = newRows.filter((row): row is QueryRow => row !== null);
-      setQueryRows(filteredRows);
-      updateMatchersString(filteredRows);
+      if (!isCancelled) {
+        const filteredRows = newRows.filter((row): row is QueryRow => row !== null);
+        setQueryRows(filteredRows);
+      }
     };
 
     void fetchAndSetQueryRows();
-  }, [currentMatchers, fetchLabelValuesUnified, updateMatchersString]);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentMatchers, fetchLabelValuesUnified]);
 
   const updateRow = useCallback(
     async (index: number, field: keyof QueryRow, value: string): Promise<void> => {

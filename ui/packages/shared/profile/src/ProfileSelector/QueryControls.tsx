@@ -159,6 +159,7 @@ export function QueryControls({
           />
         ) : (
           <SimpleMatchers
+            key={query.toString()}
             setMatchersString={setMatchersString}
             runQuery={setQueryExpression}
             currentQuery={query}

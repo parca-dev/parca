@@ -36,7 +36,7 @@ const MoreDropdown = ({functionName}: {functionName: string}): React.JSX.Element
   ];
 
   return (
-    <div>
+    <div className="relative">
       <Menu>
         {({open, close}) => (
           <>
