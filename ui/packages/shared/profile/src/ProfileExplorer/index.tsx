@@ -11,13 +11,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useMemo, useState} from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import {Provider} from 'react-redux';
+import { Provider } from 'react-redux';
 
-import {QueryServiceClient} from '@parca/client';
+import { QueryServiceClient } from '@parca/client';
 import { DateTimeRange, KeyDownProvider, useParcaContext } from '@parca/components';
-import {createStore} from '@parca/store';
+import { createStore } from '@parca/store';
 import {
   capitalizeOnlyFirstLetter,
   decodeMultipleEncodings,
@@ -25,9 +25,9 @@ import {
   type NavigateFunction,
 } from '@parca/utilities';
 
-import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
-import {QuerySelection, useProfileTypes} from '../ProfileSelector';
-import {sumByToParam, useSumByFromParams} from '../useSumBy';
+import { ProfileSelection, ProfileSelectionFromParams, SuffixParams } from '..';
+import { QuerySelection, useProfileTypes } from '../ProfileSelector';
+import { sumByToParam, useSumByFromParams } from '../useSumBy';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
 import ProfileExplorerSingle from './ProfileExplorerSingle';
 import { Query } from '@parca/parser';
@@ -40,7 +40,7 @@ interface ProfileExplorerProps {
   navigateTo: NavigateFunction;
 }
 
-const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
+const ErrorContent = ({ errorMessage }: { errorMessage: string }): JSX.Element => {
   return (
     <div
       className="relative rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700"
@@ -61,13 +61,13 @@ const sanitizeDateRange = (
   time_selection_a: string,
   from_a: number,
   to_a: number
-): {time_selection_a: string; from_a: number; to_a: number} => {
+): { time_selection_a: string; from_a: number; to_a: number } => {
   const range = DateTimeRange.fromRangeKey(time_selection_a, from_a, to_a);
   if (from_a == null && to_a == null) {
     from_a = range.getFromMs();
     to_a = range.getToMs();
   }
-  return {time_selection_a: range.getRangeKey(), from_a, to_a};
+  return { time_selection_a: range.getRangeKey(), from_a, to_a };
 };
 /* eslint-enable @typescript-eslint/naming-convention */
 
@@ -91,9 +91,9 @@ const filterEmptyParams = (o: Record<string, any>): Record<string, any> => {
 };
 
 const filterSuffix = (
-  o: {[key: string]: string | string[] | undefined},
+  o: { [key: string]: string | string[] | undefined },
   suffix: string
-): {[key: string]: string | string[] | undefined} =>
+): { [key: string]: string | string[] | undefined } =>
   Object.fromEntries(
     Object.entries(o)
       .filter(([key]) => !key.endsWith(suffix))
@@ -112,7 +112,7 @@ const filterSuffix = (
 
 const swapQueryParameters = (o: {
   [key: string]: string | string[] | undefined;
-}): {[key: string]: string | string[] | undefined} => {
+}): { [key: string]: string | string[] | undefined } => {
   Object.entries(o).forEach(([key, value]) => {
     if (key.endsWith('_b')) {
       o[key.slice(0, -2) + '_a'] = value;
@@ -132,7 +132,7 @@ const ProfileExplorerApp = ({
     error: profileTypesError,
   } = useProfileTypes(queryClient);
 
-  const {loader, noDataPrompt, onError, authenticationErrorMessage} = useParcaContext();
+  const { loader, noDataPrompt, onError, authenticationErrorMessage } = useParcaContext();
 
   useEffect(() => {
     if (profileTypesError !== undefined && profileTypesError !== null) {
@@ -278,10 +278,10 @@ const ProfileExplorerApp = ({
       const mergeParams =
         q.mergeFrom !== undefined && q.mergeTo !== undefined
           ? {
-              merge_from_a: q.mergeFrom,
-              merge_to_a: q.mergeTo,
-              selection_a: q.expression,
-            }
+            merge_from_a: q.mergeFrom,
+            merge_to_a: q.mergeTo,
+            selection_a: q.expression,
+          }
           : {};
       return navigateTo(
         '/',
@@ -332,10 +332,10 @@ const ProfileExplorerApp = ({
     const mergeParams =
       q.mergeFrom !== undefined && q.mergeTo !== undefined
         ? {
-            merge_from_a: q.mergeFrom,
-            merge_to_a: q.mergeTo,
-            selection_a: encodeURIComponent(q.expression),
-          }
+          merge_from_a: q.mergeFrom,
+          merge_to_a: q.mergeTo,
+          selection_a: encodeURIComponent(q.expression),
+        }
         : {};
     return navigateTo(
       '/',
@@ -363,10 +363,10 @@ const ProfileExplorerApp = ({
     const mergeParams =
       q.mergeFrom !== undefined && q.mergeTo !== undefined
         ? {
-            merge_from_b: q.mergeFrom,
-            merge_to_b: q.mergeTo,
-            selection_b: q.expression,
-          }
+          merge_from_b: q.mergeFrom,
+          merge_to_b: q.mergeTo,
+          selection_b: q.expression,
+        }
         : {};
     return navigateTo(
       '/',
@@ -428,9 +428,9 @@ const ProfileExplorer = ({
   queryParams,
   navigateTo,
 }: ProfileExplorerProps): JSX.Element => {
-  const {additionalFlamegraphColorProfiles} = useParcaContext();
+  const { additionalFlamegraphColorProfiles } = useParcaContext();
 
-  const {store: reduxStore} = useMemo(() => {
+  const { store: reduxStore } = useMemo(() => {
     return createStore(additionalFlamegraphColorProfiles);
   }, [additionalFlamegraphColorProfiles]);
 
