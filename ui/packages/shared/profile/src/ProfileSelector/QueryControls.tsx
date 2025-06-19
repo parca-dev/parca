@@ -148,6 +148,8 @@ export function QueryControls({
             runQuery={setQueryExpression}
             currentQuery={query}
             queryClient={queryClient}
+            start={timeRangeSelection.getFromMs()}
+            end={timeRangeSelection.getToMs()}
           />
         ) : advancedModeForQueryBrowser ? (
           <MatchersInput
@@ -156,6 +158,8 @@ export function QueryControls({
             currentQuery={query}
             profileType={selectedProfileName}
             queryClient={queryClient}
+            start={timeRangeSelection.getFromMs()}
+            end={timeRangeSelection.getToMs()}
           />
         ) : (
           <SimpleMatchers
@@ -166,6 +170,8 @@ export function QueryControls({
             profileType={selectedProfileName}
             queryBrowserRef={queryBrowserRef}
             queryClient={queryClient}
+            start={timeRangeSelection.getFromMs()}
+            end={timeRangeSelection.getToMs()}
           />
         )}
       </div>
