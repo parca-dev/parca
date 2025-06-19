@@ -19,10 +19,10 @@ import {Button} from '../../Button';
 import {
   AbsoluteDate,
   DateTimeRange,
-  NOW,
   RelativeDate,
   UNITS,
   UNIT_TYPE,
+  createNow,
   formatRange,
   getHistoricalDate,
   getRelativeTimeRangeBetweenDates,
@@ -79,7 +79,7 @@ export const RelativeDatePickerForPanel = ({
   // absolute date range is converted to a relative date range and we then use the `onChange` prop to
   // update the range in the `RelativeDatePicker` component below.
   useEffect(() => {
-    onChange(new RelativeDate(unit, value), NOW);
+    onChange(new RelativeDate(unit, value), createNow());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unit, value]);
 
@@ -98,7 +98,7 @@ export const RelativeDatePickerForPanel = ({
         <Button
           key={`${value}-${unit}`}
           onClick={() => {
-            onChange(new RelativeDate(unit, value), NOW);
+            onChange(new RelativeDate(unit, value), createNow());
             hidePopoverMenu();
           }}
           className="min-w-[142px]"
@@ -142,7 +142,7 @@ const RelativeDatePicker = ({
   useEffect(() => {
     const formattedRange = formatRange(validRange.value, validRange.unit);
     setRangeInputString(formattedRange);
-    onChange(new RelativeDate(validRange.unit, validRange.value), NOW);
+    onChange(new RelativeDate(validRange.unit, validRange.value), createNow());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [validRange]);
 
