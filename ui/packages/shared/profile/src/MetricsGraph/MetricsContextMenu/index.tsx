@@ -71,8 +71,15 @@ const MetricsContextMenu = ({
           </div>
         }
       >
-        <div className="max-h-[300px] overflow-scroll">
-          {labels?.map((label: Label) => (
+        <div className="max-h-[300px] overflow-auto">
+          {labels == null || labels.length === 0 ? (
+            <Item disabled>
+              <div className="flex w-full items-center gap-2">
+                <Icon icon="ph:warning" />
+                <div>No labels available</div>
+              </div>
+            </Item>
+          ) : labels.map((label: Label) => (
             <Item
               key={label.name}
               id={label.name}
