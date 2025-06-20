@@ -55,7 +55,7 @@ const ContextMenu = ({
   isSandwich = false,
 }: ContextMenuProps): JSX.Element => {
   const {isDarkMode} = useParcaContext();
-  const {enableSourcesView, checkDebuginfoStatusHandler} = useParcaContext();
+  const {enableSourcesView, enableSandwichView, checkDebuginfoStatusHandler} = useParcaContext();
   const [isGraphTooltipDocked, setIsDocked] = useUserPreference<boolean>(
     USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key
   );
@@ -177,18 +177,20 @@ const ContextMenu = ({
           <div>Show in table</div>
         </div>
       </Item>
-      <Item
-        id="show-in-sandwich"
-        onClick={() => {
-          setSandwichFunctionName(functionName);
-          setDashboardItems(['sandwich']);
-        }}
-      >
-        <div className="flex w-full items-center gap-2">
-          <Icon icon="tdesign:sandwich-filled" />
-          <div>Show in sandwich</div>
-        </div>
-      </Item>
+      {enableSandwichView === true && (
+        <Item
+          id="show-in-sandwich"
+          onClick={() => {
+            setSandwichFunctionName(functionName);
+            setDashboardItems(['sandwich']);
+          }}
+        >
+          <div className="flex w-full items-center gap-2">
+            <Icon icon="tdesign:sandwich-filled" />
+            <div>Show in sandwich</div>
+          </div>
+        </Item>
+      )}
       <Item id="reset-view" onClick={handleResetView}>
         <div className="flex w-full items-center gap-2">
           <Icon icon="system-uicons:reset" />

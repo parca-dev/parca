@@ -14,26 +14,33 @@
 import {Menu} from '@headlessui/react';
 import {Icon} from '@iconify/react';
 
-import {useURLState} from '@parca/components';
+import {useParcaContext, useURLState} from '@parca/components';
 
-const MoreDropdown = ({functionName}: {functionName: string}): React.JSX.Element => {
+const MoreDropdown = ({functionName}: {functionName: string}): React.JSX.Element | null => {
   const [_, setSandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [dashboardItems, setDashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
   });
+  const {enableSandwichView} = useParcaContext();
 
   const onSandwichViewSelect = (): void => {
     setSandwichFunctionName(functionName.trim());
     setDashboardItems(['sandwich']);
   };
 
-  const menuItems = [
-    {
+  const menuItems: Array<{label: string; action: () => void}> = [];
+
+  if (enableSandwichView === true) {
+    menuItems.push({
       label: 'Show in Sandwich view',
       action: () => onSandwichViewSelect(),
-    },
-  ];
+    });
+  }
+
+  if (menuItems.length === 0) {
+    return null;
+  }
 
   return (
     <div className="relative">

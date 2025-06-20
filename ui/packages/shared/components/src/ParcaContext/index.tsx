@@ -54,6 +54,7 @@ interface Props {
   queryServiceClient: QueryServiceClient;
   navigateTo: NavigateFunction;
   enableSourcesView?: boolean;
+  enableSandwichView?: boolean;
   enableIciclechartView?: boolean;
   authenticationErrorMessage?: string;
   isDarkMode: boolean;
@@ -95,6 +96,7 @@ export const defaultValue: Props = {
   queryServiceClient: {} as unknown as QueryServiceClient,
   navigateTo: () => {},
   enableSourcesView: false,
+  enableSandwichView: false,
   isDarkMode: false,
   preferencesModal: false,
 };
