@@ -14,7 +14,7 @@
 import {Menu} from '@headlessui/react';
 import {Icon} from '@iconify/react';
 
-import {useURLState, useParcaContext} from '@parca/components';
+import {useParcaContext, useURLState} from '@parca/components';
 
 const MoreDropdown = ({functionName}: {functionName: string}): React.JSX.Element | null => {
   const [_, setSandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
@@ -30,7 +30,7 @@ const MoreDropdown = ({functionName}: {functionName: string}): React.JSX.Element
   };
 
   const menuItems: Array<{label: string; action: () => void}> = [];
-  
+
   if (enableSandwichView === true) {
     menuItems.push({
       label: 'Show in Sandwich view',

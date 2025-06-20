@@ -44,9 +44,13 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
     {key: 'table', label: 'Table', canBeSelected: !dashboardItems.includes('table')},
     {key: 'icicle', label: 'icicle', canBeSelected: !dashboardItems.includes('icicle')},
   ];
-  
+
   if (enableSandwichView === true) {
-    allItems.push({key: 'sandwich', label: 'sandwich', canBeSelected: !dashboardItems.includes('sandwich')});
+    allItems.push({
+      key: 'sandwich',
+      label: 'sandwich',
+      canBeSelected: !dashboardItems.includes('sandwich'),
+    });
   }
   if (enableicicleCharts) {
     allItems.push({

@@ -15,7 +15,7 @@ import {useEffect, useMemo, useState} from 'react';
 
 import {createColumnHelper, type ColumnDef} from '@tanstack/table-core';
 
-import {useURLState, useParcaContext} from '@parca/components';
+import {useParcaContext, useURLState} from '@parca/components';
 import {valueFormatter} from '@parca/utilities';
 
 import {type Row} from '..';
@@ -204,7 +204,11 @@ export function useTableConfiguration({
       }),
     ];
 
-    if (dashboardItems.length === 1 && dashboardItems[0] === 'table' && enableSandwichView === true) {
+    if (
+      dashboardItems.length === 1 &&
+      dashboardItems[0] === 'table' &&
+      enableSandwichView === true
+    ) {
       baseColumns.unshift(
         columnHelper.accessor('moreActions', {
           id: 'moreActions',
