@@ -15,7 +15,7 @@ import {useEffect, useMemo, useState} from 'react';
 
 import {createColumnHelper, type ColumnDef} from '@tanstack/table-core';
 
-import {useURLState} from '@parca/components';
+import {useURLState, useParcaContext} from '@parca/components';
 import {valueFormatter} from '@parca/utilities';
 
 import {type Row} from '..';
@@ -50,6 +50,7 @@ export function useTableConfiguration({
   const [dashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
   });
+  const {enableSandwichView} = useParcaContext();
 
   const [columnVisibility, setColumnVisibility] = useState(() => {
     return {
@@ -203,7 +204,7 @@ export function useTableConfiguration({
       }),
     ];
 
-    if (dashboardItems.length === 1 && dashboardItems[0] === 'table') {
+    if (dashboardItems.length === 1 && dashboardItems[0] === 'table' && enableSandwichView === true) {
       baseColumns.unshift(
         columnHelper.accessor('moreActions', {
           id: 'moreActions',
@@ -218,7 +219,7 @@ export function useTableConfiguration({
     }
 
     return baseColumns;
-  }, [unit, total, filtered, columnHelper, dashboardItems]);
+  }, [unit, total, filtered, columnHelper, dashboardItems, enableSandwichView]);
 
   const initialSorting = useMemo(() => {
     return [
