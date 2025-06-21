@@ -12,7 +12,7 @@ require (
 	github.com/dennwc/varint v1.0.0
 	github.com/dgraph-io/badger/v4 v4.5.1
 	github.com/felixge/fgprof v0.9.5
-	github.com/fsnotify/fsnotify v1.8.0
+	github.com/fsnotify/fsnotify v1.9.0
 	github.com/go-chi/chi/v5 v5.2.2
 	github.com/go-chi/cors v1.2.1
 	github.com/go-delve/delve v1.24.2
