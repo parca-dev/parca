@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useCallback} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 
 import {Menu} from '@headlessui/react';
 import {Icon} from '@iconify/react';
@@ -20,7 +20,12 @@ import {useURLState} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
 
-import {FIELD_FUNCTION_NAME} from '../../../ProfileIcicleGraph/IcicleGraphArrow';
+import {
+  FIELD_FUNCTION_FILE_NAME,
+  FIELD_FUNCTION_NAME,
+  FIELD_LOCATION_ADDRESS,
+  FIELD_MAPPING_FILE,
+} from '../../../ProfileIcicleGraph/IcicleGraphArrow';
 import {useProfileViewContext} from '../../context/ProfileViewContext';
 
 interface MenuItemType {
@@ -43,6 +48,7 @@ type MenuItemProps = MenuItemType & {
   isNested?: boolean;
   activeValueForSortBy?: string;
   activeValueForColorBy?: string;
+  activeValuesForLevel?: string[];
   icon?: string;
 };
 
@@ -57,17 +63,37 @@ const MenuItem: React.FC<MenuItemProps> = ({
   isNested = false,
   activeValueForSortBy,
   activeValueForColorBy,
+  activeValuesForLevel,
   value,
   disabled = false,
   icon,
   customSubmenu,
 }) => {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [shouldOpenLeft, setShouldOpenLeft] = useState(false);
+
+  useEffect(() => {
+    if (items !== undefined && menuRef.current !== null) {
+      const rect = menuRef.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const menuWidth = 224; // w-56 = 14rem = 224px
+      const spaceOnRight = viewportWidth - rect.right;
+      const spaceOnLeft = rect.left;
+
+      // Open to the left if there's not enough space on the right but enough on the left
+      setShouldOpenLeft(spaceOnRight < menuWidth && spaceOnLeft >= menuWidth);
+    }
+  }, [items]);
   let isActive = false;
+
   if (isNested) {
     if (activeValueForSortBy !== undefined && value === activeValueForSortBy) {
       isActive = true;
     }
     if (activeValueForColorBy !== undefined && value === activeValueForColorBy) {
+      isActive = true;
+    }
+    if (activeValuesForLevel?.includes(value ?? '') ?? false) {
       isActive = true;
     }
   }
@@ -85,7 +111,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={menuRef}>
       <Menu>
         {({close}) => (
           <>
@@ -117,7 +143,13 @@ const MenuItem: React.FC<MenuItemProps> = ({
               )}
             </Menu.Button>
             {items !== undefined && (
-              <Menu.Items className="absolute left-full top-0 w-56 mt-0 origin-top-right bg-white border border-gray-200 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-900 ml-1 dark:border-gray-600">
+              <Menu.Items
+                className={`absolute top-0 w-56 mt-0 bg-white border border-gray-200 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-900 dark:border-gray-600 ${
+                  shouldOpenLeft
+                    ? 'right-full mr-1 origin-top-left'
+                    : 'left-full ml-1 origin-top-right'
+                }`}
+              >
                 {items?.map((item, index) => (
                   <MenuItem
                     key={index}
@@ -132,6 +164,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
                     isNested={true}
                     activeValueForSortBy={activeValueForSortBy}
                     activeValueForColorBy={activeValueForColorBy}
+                    activeValuesForLevel={activeValuesForLevel}
                   />
                 ))}
               </Menu.Items>
@@ -146,9 +179,16 @@ const MenuItem: React.FC<MenuItemProps> = ({
 interface MultiLevelDropdownProps {
   onSelect: (path: string[]) => void;
   profileType?: ProfileType;
+  groupBy: string[];
+  toggleGroupBy: (key: string) => void;
 }
 
-const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profileType}) => {
+const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
+  onSelect,
+  profileType,
+  groupBy,
+  toggleGroupBy,
+}) => {
   const [storeSortBy] = useURLState('sort_by', {
     defaultValue: FIELD_FUNCTION_NAME,
   });
@@ -195,10 +235,54 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
     setBinaryFrameFilter([]);
   };
 
+  const activeSelectionCount = groupBy.length > 1 ? groupBy.length - 1 : 0; // Subtract 1 because Function is always active and disabled
+
   const menuItems: MenuItemType[] = [
     {
+      label: 'Levels',
+      id: 'h-levels-filter',
+      items: [
+        {
+          label: 'Function',
+          onclick: () => toggleGroupBy(FIELD_FUNCTION_NAME),
+          value: FIELD_FUNCTION_NAME,
+          disabled: true,
+        },
+        {
+          label: 'Binary',
+          onclick: () => toggleGroupBy(FIELD_MAPPING_FILE),
+          value: FIELD_MAPPING_FILE,
+        },
+        {
+          label: 'Code',
+          onclick: () => toggleGroupBy(FIELD_FUNCTION_FILE_NAME),
+          value: FIELD_FUNCTION_FILE_NAME,
+        },
+        {
+          label: 'Address',
+          onclick: () => toggleGroupBy(FIELD_LOCATION_ADDRESS),
+          value: FIELD_LOCATION_ADDRESS,
+        },
+      ],
+      hide: false,
+      icon: 'heroicons-solid:bars-3',
+      customSubmenu: (
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center">
+            <span className={activeSelectionCount > 0 ? 'text-indigo-400' : ''}>Levels</span>
+            <Icon icon="heroicons-solid:bars-3" className="ml-2 h-4 w-4" />
+          </div>
+          {activeSelectionCount > 0 && (
+            <span className="ml-2 px-2 py-1 text-xs font-medium text-white bg-indigo-500 rounded-full">
+              {activeSelectionCount}
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
       label: 'Color by',
-      id: 'h-solor-by-filter',
+      id: 'h-color-by-filter',
       items: [
         {
           label: 'Binary',
@@ -214,7 +298,6 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
       hide: false,
       icon: 'carbon:color-palette',
     },
-
     {
       label: isColorStackLegendEnabled ? 'Hide legend' : 'Show legend',
       onclick: () => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true'),
@@ -280,7 +363,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
         {({open, close}) => (
           <>
             <Menu.Button className="inline-flex dark:bg-gray-900 dark:border-gray-600 justify-center w-full px-4 py-2 text-sm font-normal text-gray-600 dark:text-gray-200 bg-white rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 border border-gray-200 pr-[1.7rem]">
-              <span>More</span>
+              <span>Preferences</span>
 
               <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-400">
                 <Icon icon="heroicons:chevron-down-20-solid" aria-hidden="true" />
@@ -288,7 +371,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
             </Menu.Button>
             {open && (
               <Menu.Items className="absolute z-30 left-0 w-64 mt-2 py-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border dark:bg-gray-900 dark:border-gray-600">
-                <span className="text-xs text-gray-400 capitalize px-4 py-3">actions</span>
+                {/* <span className="text-xs text-gray-400 capitalize px-4 py-3">actions</span> */}
                 {menuItems
                   .filter(item => item.hide !== undefined && !item.hide)
                   .map((item, index) => (
@@ -301,6 +384,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
                       activeValueForColorBy={
                         colorBy === undefined || colorBy === '' ? 'binary' : (colorBy as string)
                       }
+                      activeValuesForLevel={groupBy}
                     />
                   ))}
               </Menu.Items>

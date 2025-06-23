@@ -20,7 +20,6 @@ import {
   FIELD_MAPPING_FILE,
 } from '../../../ProfileIcicleGraph/IcicleGraphArrow';
 import GroupByLabelsDropdown from '../GroupByLabelsDropdown';
-import LevelsDropdownSelect from '../LevelsDropdownSelect';
 
 export const groupByOptions = [
   {
@@ -48,24 +47,13 @@ export const groupByOptions = [
 interface GroupByControlsProps {
   groupBy: string[];
   labels: string[];
-  toggleGroupBy: (key: string) => void;
   setGroupByLabels: (labels: string[]) => void;
 }
 
-const GroupByControls: React.FC<GroupByControlsProps> = ({
-  groupBy,
-  labels,
-  toggleGroupBy,
-  setGroupByLabels,
-}) => {
+const GroupByControls: React.FC<GroupByControlsProps> = ({groupBy, labels, setGroupByLabels}) => {
   return (
     <div className="inline-flex items-start">
       <div className="relative flex gap-3 items-start">
-        <LevelsDropdownSelect
-          groupBy={groupBy}
-          toggleGroupBy={toggleGroupBy}
-          groupByOptions={groupByOptions}
-        />
         <GroupByLabelsDropdown
           labels={labels}
           groupBy={groupBy}

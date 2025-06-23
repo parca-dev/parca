@@ -150,11 +150,9 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
           <>
             <GroupByDropdown
               groupBy={groupBy}
-              toggleGroupBy={toggleGroupBy}
               labels={groupByLabels}
               setGroupByLabels={setGroupByLabels}
             />
-            <MultiLevelDropdown profileType={profileType} onSelect={() => {}} />
           </>
 
           <FilterByFunctionButton />
@@ -163,6 +161,13 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
         </div>
         <div className="flex gap-3">
           {preferencesModal === true && <UserPreferencesModal />}
+          <MultiLevelDropdown
+            groupBy={groupBy}
+            toggleGroupBy={toggleGroupBy}
+            profileType={profileType}
+            onSelect={() => {}}
+          />
+
           <ShareButton
             profileSource={profileSource}
             queryClient={queryClient}
