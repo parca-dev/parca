@@ -13,14 +13,13 @@
 
 import React, {useEffect, useState} from 'react';
 
+import {VirtualElement, autoUpdate, flip, offset, shift, useFloating} from '@floating-ui/react';
 import {pointer} from 'd3-selection';
-import { useFloating, offset, shift, flip, autoUpdate, VirtualElement } from '@floating-ui/react';
 
 interface GraphTooltipProps {
   children: React.ReactNode;
   contextElement: Element | null;
 }
-
 
 function createPositionedVirtualElement(contextElement: Element, x = 0, y = 0): VirtualElement {
   const domRect = contextElement.getBoundingClientRect();
@@ -39,13 +38,10 @@ function createPositionedVirtualElement(contextElement: Element, x = 0, y = 0): 
   };
 }
 
-const GraphTooltip = ({
-  children,
-  contextElement,
-}: GraphTooltipProps): React.JSX.Element => {
+const GraphTooltip = ({children, contextElement}: GraphTooltipProps): React.JSX.Element => {
   const [isPositioned, setIsPositioned] = useState(false);
 
-  const { refs, floatingStyles, update } = useFloating({
+  const {refs, floatingStyles, update} = useFloating({
     placement: 'bottom-start',
     strategy: 'absolute',
     middleware: [
@@ -61,7 +57,6 @@ const GraphTooltip = ({
     whileElementsMounted: undefined,
   });
 
-
   useEffect(() => {
     if (contextElement === null) return;
 
@@ -69,11 +64,7 @@ const GraphTooltip = ({
       const rel = pointer(e);
       const tooltipX = rel[0];
       const tooltipY = rel[1];
-      const virtualElement = createPositionedVirtualElement(
-        contextElement,
-        tooltipX,
-        tooltipY
-      );
+      const virtualElement = createPositionedVirtualElement(contextElement, tooltipX, tooltipY);
       refs.setReference(virtualElement);
       setIsPositioned(true);
       update();
@@ -90,7 +81,7 @@ const GraphTooltip = ({
       ref={refs.setFloating}
       style={{
         ...floatingStyles,
-        visibility: !isPositioned ? 'hidden' : 'visible'
+        visibility: !isPositioned ? 'hidden' : 'visible',
       }}
       className="z-50 w-max"
     >
