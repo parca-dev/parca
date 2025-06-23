@@ -3,6 +3,7 @@
   "version": "0.19.5",
   "description": "Profile viewing libraries",
   "dependencies": {
+    "@floating-ui/react": "^0.27.12",
     "@headlessui/react": "^1.7.19",
     "@iconify/react": "^4.0.0",
     "@parca/client": "workspace:*",
