@@ -24,6 +24,7 @@ import {ProfileSource} from '../../../ProfileSource';
 import {useDashboard} from '../../context/DashboardContext';
 import GroupByDropdown from '../ActionButtons/GroupByDropdown';
 import FilterByFunctionButton from '../FilterByFunctionButton';
+import InvertCallStack from '../InvertCallStack';
 import ShareButton from '../ShareButton';
 import ViewSelector from '../ViewSelector';
 import MultiLevelDropdown from './MultiLevelDropdown';
@@ -154,6 +155,8 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
               setGroupByLabels={setGroupByLabels}
             />
           </>
+
+          <InvertCallStack />
 
           <FilterByFunctionButton />
 

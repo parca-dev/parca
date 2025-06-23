@@ -319,12 +319,6 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
       icon: isColorStackLegendEnabled ? 'ph:eye-closed' : 'ph:eye',
     },
     {
-      label: isInvert ? 'Original Call Stack' : 'Invert Call Stack',
-      onclick: () => setInvertStack(isInvert ? '' : 'true'),
-      hide: false,
-      icon: isInvert ? 'ph:sort-ascending' : 'ph:sort-descending',
-    },
-    {
       label: isLeftAligned ? 'Right-align function names' : 'Left-align function names',
       onclick: () => setAlignFunctionName(isLeftAligned ? 'right' : 'left'),
       id: 'h-align-function-names',

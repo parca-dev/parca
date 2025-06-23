@@ -32,8 +32,6 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
   );
   const {enableSourcesView} = useParcaContext();
 
-  const [enableicicleCharts] = useUserPreference<boolean>(USER_PREFERENCES.ENABLE_ICICLECHARTS.key);
-
   const allItems: Array<{
     key: string;
     label?: string | ReactNode;
@@ -43,9 +41,7 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
   }> = [
     {key: 'table', label: 'Table', canBeSelected: !dashboardItems.includes('table')},
     {key: 'icicle', label: 'icicle', canBeSelected: !dashboardItems.includes('icicle')},
-  ];
-  if (enableicicleCharts) {
-    allItems.push({
+    {
       key: 'iciclechart',
       label: (
         <span className="relative">
@@ -59,8 +55,8 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
         !dashboardItems.includes('iciclechart') && profileSource?.ProfileType().delta !== true
           ? 'Iciclechart is not available for non-delta profiles'
           : undefined,
-    });
-  }
+    },
+  ];
 
   if (enableSourcesView === true) {
     allItems.push({key: 'source', label: 'Source', canBeSelected: false});
