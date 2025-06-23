@@ -3,7 +3,7 @@
 FROM docker.io/golang:1.24.4-alpine@sha256:68932fa6d4d4059845c8f40ad7e654e626f3ebd3706eef7846f319293ab5cb7a AS builder
 
 # renovate: datasource=go depName=github.com/go-delve/delve
-ARG DLV_VERSION=v1.24.2
+ARG DLV_VERSION=v1.25.0
 
 # renovate: datasource=go depName=github.com/grpc-ecosystem/grpc-health-probe
 ARG GRPC_HEALTH_PROBE_VERSION=v0.4.38

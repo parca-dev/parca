@@ -159,6 +159,7 @@ export function QueryControls({
           />
         ) : (
           <SimpleMatchers
+            key={query.toString()}
             setMatchersString={setMatchersString}
             runQuery={setQueryExpression}
             currentQuery={query}
@@ -189,7 +190,7 @@ export function QueryControls({
             placeholder="Labels..."
             styles={{
               indicatorSeparator: () => ({display: 'none'}),
-              menu: provided => ({...provided, width: 'max-content'}),
+              menu: provided => ({...provided, width: 'max-content', zIndex: 50}), // Setting the same zIndex as drop down menus
             }}
             isLoading={sumBySelectionLoading}
             isDisabled={!profileType.delta}

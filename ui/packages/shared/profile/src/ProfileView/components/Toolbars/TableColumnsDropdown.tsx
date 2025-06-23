@@ -13,15 +13,15 @@
 
 import {useEffect, useMemo, useState} from 'react';
 
-import {createColumnHelper, type CellContext, type ColumnDef} from '@tanstack/table-core';
+import {createColumnHelper, type ColumnDef} from '@tanstack/table-core';
 
 import {useURLState} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 import {valueFormatter} from '@parca/utilities';
 
-import {Row, isDummyRow} from '../../../Table';
+import {Row} from '../../../Table';
 import ColumnsVisibility from '../../../Table/ColumnsVisibility';
-import {ColumnName, DataRow, addPlusSign, getRatioString} from '../../../Table/utils/functions';
+import {ColumnName, addPlusSign, getRatioString} from '../../../Table/utils/functions';
 import {useProfileViewContext} from '../../context/ProfileViewContext';
 
 interface Props {
@@ -45,7 +45,7 @@ const TableColumnsDropdown = ({profileType, total, filtered}: Props): JSX.Elemen
       columnHelper.accessor('flat', {
         id: 'flat',
         header: 'Flat',
-        cell: info => valueFormatter((info as CellContext<DataRow, bigint>).getValue(), unit, 2),
+        cell: info => valueFormatter(info.getValue(), unit, 2),
         size: 80,
         meta: {
           align: 'right',
@@ -56,10 +56,7 @@ const TableColumnsDropdown = ({profileType, total, filtered}: Props): JSX.Elemen
         id: 'flatPercentage',
         header: 'Flat (%)',
         cell: info => {
-          if (isDummyRow(info.row.original)) {
-            return '';
-          }
-          return getRatioString((info as CellContext<DataRow, bigint>).getValue(), total, filtered);
+          return getRatioString(info.getValue(), total, filtered);
         },
         size: 120,
         meta: {
@@ -70,8 +67,7 @@ const TableColumnsDropdown = ({profileType, total, filtered}: Props): JSX.Elemen
       columnHelper.accessor('flatDiff', {
         id: 'flatDiff',
         header: 'Flat Diff',
-        cell: info =>
-          addPlusSign(valueFormatter((info as CellContext<DataRow, bigint>).getValue(), unit, 2)),
+        cell: info => addPlusSign(valueFormatter(info.getValue(), unit, 2)),
         size: 120,
         meta: {
           align: 'right',
@@ -82,10 +78,7 @@ const TableColumnsDropdown = ({profileType, total, filtered}: Props): JSX.Elemen
         id: 'flatDiffPercentage',
         header: 'Flat Diff (%)',
         cell: info => {
-          if (isDummyRow(info.row.original)) {
-            return '';
-          }
-          return getRatioString((info as CellContext<DataRow, bigint>).getValue(), total, filtered);
+          return getRatioString(info.getValue(), total, filtered);
         },
         size: 120,
         meta: {
@@ -96,7 +89,7 @@ const TableColumnsDropdown = ({profileType, total, filtered}: Props): JSX.Elemen
       columnHelper.accessor('cumulative', {
         id: 'cumulative',
         header: 'Cumulative',
-        cell: info => valueFormatter((info as CellContext<DataRow, bigint>).getValue(), unit, 2),
+        cell: info => valueFormatter(info.getValue(), unit, 2),
         size: 150,
         meta: {
           align: 'right',
@@ -107,10 +100,7 @@ const TableColumnsDropdown = ({profileType, total, filtered}: Props): JSX.Elemen
         id: 'cumulativePercentage',
         header: 'Cumulative (%)',
         cell: info => {
-          if (isDummyRow(info.row.original)) {
-            return '';
-          }
-          return getRatioString((info as CellContext<DataRow, bigint>).getValue(), total, filtered);
+          return getRatioString(info.getValue(), total, filtered);
         },
         size: 150,
         meta: {
@@ -121,8 +111,7 @@ const TableColumnsDropdown = ({profileType, total, filtered}: Props): JSX.Elemen
       columnHelper.accessor('cumulativeDiff', {
         id: 'cumulativeDiff',
         header: 'Cumulative Diff',
-        cell: info =>
-          addPlusSign(valueFormatter((info as CellContext<DataRow, bigint>).getValue(), unit, 2)),
+        cell: info => addPlusSign(valueFormatter(info.getValue(), unit, 2)),
         size: 170,
         meta: {
           align: 'right',
@@ -133,10 +122,7 @@ const TableColumnsDropdown = ({profileType, total, filtered}: Props): JSX.Elemen
         id: 'cumulativeDiffPercentage',
         header: 'Cumulative Diff (%)',
         cell: info => {
-          if (isDummyRow(info.row.original)) {
-            return '';
-          }
-          return getRatioString((info as CellContext<DataRow, bigint>).getValue(), total, filtered);
+          return getRatioString(info.getValue(), total, filtered);
         },
         size: 170,
         meta: {

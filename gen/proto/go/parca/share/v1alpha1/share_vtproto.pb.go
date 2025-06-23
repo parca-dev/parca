@@ -318,6 +318,13 @@ func (m *QueryRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.SandwichByFunction != nil {
+		i -= len(*m.SandwichByFunction)
+		copy(dAtA[i:], *m.SandwichByFunction)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(*m.SandwichByFunction)))
+		i--
+		dAtA[i] = 0x52
+	}
 	if len(m.Filter) > 0 {
 		for iNdEx := len(m.Filter) - 1; iNdEx >= 0; iNdEx-- {
 			size, err := m.Filter[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
@@ -762,6 +769,10 @@ func (m *QueryRequest) SizeVT() (n int) {
 			l = e.SizeVT()
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
+	}
+	if m.SandwichByFunction != nil {
+		l = len(*m.SandwichByFunction)
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1430,6 +1441,39 @@ func (m *QueryRequest) UnmarshalVT(dAtA []byte) error {
 			if err := m.Filter[len(m.Filter)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SandwichByFunction", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.SandwichByFunction = &s
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

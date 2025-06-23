@@ -20,7 +20,6 @@ import throttle from 'lodash.throttle';
 import {useContextMenu} from 'react-contexify';
 
 import {DateTimeRange, MetricsGraphSkeleton, useParcaContext, useURLState} from '@parca/components';
-import {Matcher} from '@parca/parser';
 import {formatDate, formatForTimespan, getPrecision, valueFormatter} from '@parca/utilities';
 
 import MetricsSeries from '../../MetricsSeries';
@@ -41,6 +40,7 @@ interface CommonProps {
   humanReadableName: string;
   from: number;
   to: number;
+  onSelectedSeriesChange?: (series: Array<{key: string; value: string}>) => void;
 }
 
 type RawUtilizationMetricsProps = CommonProps & {
@@ -69,6 +69,7 @@ function transformToSeries(data: MetricSeries[]): Series[] {
       const metric = s.labelset.labels.sort((a, b) => a.name.localeCompare(b.name));
       agg.push({
         metric,
+        isSelected: s.isSelected ?? false,
         values: s.samples.reduce<number[][]>(function (agg: number[][], d: MetricsSample) {
           if (d.timestamp !== undefined && d.value !== undefined) {
             agg.push([d.timestamp, d.value]);
@@ -112,6 +113,7 @@ const RawUtilizationMetrics = ({
   humanReadableName,
   from,
   to,
+  onSelectedSeriesChange,
 }: RawUtilizationMetricsProps): JSX.Element => {
   const {timezone} = useParcaContext();
   const graph = useRef(null);
@@ -121,22 +123,17 @@ const RawUtilizationMetrics = ({
   const [pos, setPos] = useState([0, 0]);
   const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
   const idForContextMenu = useId();
-  const [selectedSeries, setSelectedSeries] = useURLState<string>('selectedSeries');
   const [_, setSelectedTimeframe] = useURLState('gpu_selected_timeframe');
-
-  const parsedSelectedSeries: Matcher[] = useMemo(() => {
-    if (selectedSeries === undefined) {
-      return [];
-    }
-
-    return JSON.parse(decodeURIComponent(selectedSeries));
-  }, [selectedSeries]);
 
   const lineStroke = '1px';
   const lineStrokeHover = '2px';
   const lineStrokeSelected = '3px';
 
-  const graphWidth = width - margin * 1.5 - margin / 2;
+  const graphWidth = useMemo(() => width - margin * 1.5 - margin / 2, [width, margin]);
+  const graphTransform = useMemo(() => {
+    // Adds 10px padding which aligns the graph on the grid
+    return `translate(10, 0) scale(${(graphWidth - 10) / graphWidth}, 1)`;
+  }, [graphWidth]);
 
   const paddedFrom = from;
   const paddedTo = to;
@@ -468,20 +465,8 @@ const RawUtilizationMetrics = ({
                 </text>
               </g>
             </g>
-            <g className="lines fill-transparent">
+            <g className="lines fill-transparent" transform={graphTransform}>
               {series.map((s, i) => {
-                let isSelected = false;
-                if (parsedSelectedSeries != null && parsedSelectedSeries.length > 0) {
-                  isSelected = parsedSelectedSeries.every(m => {
-                    for (let i = 0; i < s.metric.length; i++) {
-                      if (s.metric[i].name === m.key && s.metric[i].value === m.value) {
-                        return true;
-                      }
-                    }
-                    return false;
-                  });
-                }
-
                 const isLimit =
                   s.metric.findIndex(m => m.name === '__type__' && m.value === 'limit') > -1;
                 const strokeDasharray = isLimit ? '8 4' : '';
@@ -493,7 +478,7 @@ const RawUtilizationMetrics = ({
                       line={l}
                       color={getSeriesColor(s.metric)}
                       strokeWidth={
-                        isSelected
+                        s.isSelected === true
                           ? lineStrokeSelected
                           : hovering && highlighted != null && i === highlighted.seriesIndex
                           ? lineStrokeHover
@@ -503,14 +488,12 @@ const RawUtilizationMetrics = ({
                       xScale={xScale}
                       yScale={yScale}
                       onClick={() => {
-                        if (highlighted != null) {
-                          setSelectedSeries(
-                            JSON.stringify(
-                              highlighted.labels.map(l => ({
-                                key: l.name,
-                                value: l.value,
-                              }))
-                            )
+                        if (highlighted != null && onSelectedSeriesChange != null) {
+                          onSelectedSeriesChange(
+                            highlighted.labels.map(l => ({
+                              key: l.name,
+                              value: l.value,
+                            }))
                           );
                           // reset the selected_timeframe
                           setSelectedTimeframe(undefined);
@@ -537,6 +520,7 @@ const UtilizationMetrics = ({
   humanReadableName,
   from,
   to,
+  onSelectedSeriesChange,
 }: Props): JSX.Element => {
   const {isDarkMode} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(false, true);
@@ -564,6 +548,7 @@ const UtilizationMetrics = ({
             humanReadableName={humanReadableName}
             from={from}
             to={to}
+            onSelectedSeriesChange={onSelectedSeriesChange}
           />
         )}
       </motion.div>

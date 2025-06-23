@@ -37,6 +37,7 @@ interface ContextMenuProps {
   resetPath: () => void;
   hideMenu: () => void;
   hideBinary: (binaryToRemove: string) => void;
+  isSandwich?: boolean;
 }
 
 const ContextMenu = ({
@@ -51,9 +52,10 @@ const ContextMenu = ({
   unit,
   hideBinary,
   resetPath,
+  isSandwich = false,
 }: ContextMenuProps): JSX.Element => {
   const {isDarkMode} = useParcaContext();
-  const {enableSourcesView, checkDebuginfoStatusHandler} = useParcaContext();
+  const {enableSourcesView, enableSandwichView, checkDebuginfoStatusHandler} = useParcaContext();
   const [isGraphTooltipDocked, setIsDocked] = useUserPreference<boolean>(
     USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key
   );
@@ -83,6 +85,10 @@ const ContextMenu = ({
   const [dashboardItems, setDashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
   });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [sandwichFunctionName, setSandwichFunctionName] = useURLState<string | undefined>(
+    'sandwich_function_name'
+  );
 
   if (contextMenuData === null) {
     return <></>;
@@ -159,7 +165,11 @@ const ContextMenu = ({
         id="show-in-table"
         onClick={() => {
           setSearchString(functionName);
-          setDashboardItems([...dashboardItems, 'table']);
+          if (isSandwich) {
+            setDashboardItems(['table']);
+          } else {
+            setDashboardItems([...dashboardItems, 'table']);
+          }
         }}
       >
         <div className="flex w-full items-center gap-2">
@@ -167,6 +177,20 @@ const ContextMenu = ({
           <div>Show in table</div>
         </div>
       </Item>
+      {enableSandwichView === true && (
+        <Item
+          id="show-in-sandwich"
+          onClick={() => {
+            setSandwichFunctionName(functionName);
+            setDashboardItems(['sandwich']);
+          }}
+        >
+          <div className="flex w-full items-center gap-2">
+            <Icon icon="tdesign:sandwich-filled" />
+            <div>Show in sandwich</div>
+          </div>
+        </Item>
+      )}
       <Item id="reset-view" onClick={handleResetView}>
         <div className="flex w-full items-center gap-2">
           <Icon icon="system-uicons:reset" />

@@ -71,24 +71,33 @@ const MetricsContextMenu = ({
           </div>
         }
       >
-        <div className="max-h-[300px] overflow-scroll">
-          {labels?.map((label: Label) => (
-            <Item
-              key={label.name}
-              id={label.name}
-              onClick={() => {
-                onAddLabelMatcher({
-                  key: label.name,
-                  value: label.value,
-                });
-              }}
-              className="max-w-[400px] overflow-hidden"
-            >
-              <div className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                {`${transformUtilizationLabels(label.name, utilizationMetrics)}="${label.value}"`}
+        <div className="max-h-[300px] overflow-auto">
+          {labels == null || labels.length === 0 ? (
+            <Item disabled>
+              <div className="flex w-full items-center gap-2">
+                <Icon icon="ph:warning" />
+                <div>No labels available</div>
               </div>
             </Item>
-          ))}
+          ) : (
+            labels.map((label: Label) => (
+              <Item
+                key={label.name}
+                id={label.name}
+                onClick={() => {
+                  onAddLabelMatcher({
+                    key: label.name,
+                    value: label.value,
+                  });
+                }}
+                className="max-w-[400px] overflow-hidden"
+              >
+                <div className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                  {`${transformUtilizationLabels(label.name, utilizationMetrics)}="${label.value}"`}
+                </div>
+              </Item>
+            ))
+          )}
         </div>
       </Submenu>
     </Menu>

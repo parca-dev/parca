@@ -13,114 +13,78 @@
 
 import React, {useEffect, useState} from 'react';
 
+import {flip, offset, shift, useFloating, type VirtualElement} from '@floating-ui/react';
 import {pointer} from 'd3-selection';
-import {usePopper} from 'react-popper';
 
 interface GraphTooltipProps {
   children: React.ReactNode;
-  x?: number;
-  y?: number;
   contextElement: Element | null;
-  isFixed?: boolean;
-  virtualContextElement?: boolean;
-  isContextMenuOpen?: boolean;
 }
 
-const virtualElement = {
-  getBoundingClientRect: () =>
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    ({
-      width: 0,
-      height: 0,
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-    } as DOMRect),
-};
-
-function generateGetBoundingClientRect(contextElement: Element, x = 0, y = 0): () => DOMRect {
+function createPositionedVirtualElement(contextElement: Element, x = 0, y = 0): VirtualElement {
   const domRect = contextElement.getBoundingClientRect();
-  return () =>
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    ({
+  return {
+    getBoundingClientRect: () => ({
       width: 0,
       height: 0,
       top: domRect.y + y,
       left: domRect.x + x,
       right: domRect.x + x,
       bottom: domRect.y + y,
-    } as DOMRect);
+      x: domRect.x + x,
+      y: domRect.y + y,
+      toJSON: () => ({}),
+    }),
+  };
 }
 
-const GraphTooltip = ({
-  children,
-  x,
-  y,
-  contextElement,
-  isFixed = false,
-  virtualContextElement = true,
-  isContextMenuOpen = false,
-}: GraphTooltipProps): React.JSX.Element => {
-  const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
+const GraphTooltip = ({children, contextElement}: GraphTooltipProps): React.JSX.Element => {
+  const [isPositioned, setIsPositioned] = useState(false);
 
-  const {styles, attributes, ...popperProps} = usePopper(
-    virtualContextElement ? virtualElement : contextElement,
-    popperElement,
-    {
-      placement: 'bottom-start',
-      strategy: 'absolute',
-      modifiers: [
-        {
-          name: 'preventOverflow',
-          options: {
-            tether: false,
-            altAxis: true,
-          },
-        },
-        {
-          name: 'offset',
-          options: {
-            offset: [30, 30],
-          },
-        },
-      ],
-    }
-  );
+  const {refs, floatingStyles, update} = useFloating({
+    placement: 'bottom-start',
+    strategy: 'absolute',
+    middleware: [
+      offset({
+        mainAxis: 30,
+        crossAxis: 30,
+      }),
+      flip(),
+      shift({
+        padding: 5,
+      }),
+    ],
+    whileElementsMounted: undefined,
+  });
 
   useEffect(() => {
     if (contextElement === null) return;
+
     const onMouseMove: EventListenerOrEventListenerObject = (e: Event) => {
-      if (isContextMenuOpen) {
-        return;
-      }
-
-      let tooltipX = x;
-      let tooltipY = y;
-      if (tooltipX == null || tooltipY == null) {
-        const rel = pointer(e);
-        tooltipX = rel[0];
-        tooltipY = rel[1];
-      }
-      virtualElement.getBoundingClientRect = generateGetBoundingClientRect(
-        contextElement,
-        tooltipX,
-        tooltipY
-      );
-
-      void popperProps.update?.();
+      const rel = pointer(e);
+      const tooltipX = rel[0];
+      const tooltipY = rel[1];
+      const virtualElement = createPositionedVirtualElement(contextElement, tooltipX, tooltipY);
+      refs.setReference(virtualElement);
+      setIsPositioned(true);
+      update();
     };
 
     contextElement.addEventListener('mousemove', onMouseMove);
     return () => {
       contextElement.removeEventListener('mousemove', onMouseMove);
     };
-  }, [contextElement, popperProps, x, y, isContextMenuOpen]);
+  }, [contextElement, update, refs]);
 
-  return isFixed ? (
-    <>{children}</>
-  ) : (
-    <div ref={setPopperElement} style={styles.popper} {...attributes.popper} className="z-50">
+  return (
+    <div
+      ref={refs.setFloating}
+      style={{
+        ...floatingStyles,
+        visibility: !isPositioned ? 'hidden' : 'visible',
+      }}
+      className="z-50 w-max"
+    >
       {children}
     </div>
   );

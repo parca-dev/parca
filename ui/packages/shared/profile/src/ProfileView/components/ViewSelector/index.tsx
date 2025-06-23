@@ -29,7 +29,7 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
       alwaysReturnArray: true,
     }
   );
-  const {enableSourcesView} = useParcaContext();
+  const {enableSourcesView, enableSandwichView} = useParcaContext();
 
   const allItems: Array<{
     key: string;
@@ -56,6 +56,14 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
           : undefined,
     },
   ];
+
+  if (enableSandwichView === true) {
+    allItems.push({
+      key: 'sandwich',
+      label: 'sandwich',
+      canBeSelected: !dashboardItems.includes('sandwich'),
+    });
+  }
 
   if (enableSourcesView === true) {
     allItems.push({key: 'source', label: 'Source', canBeSelected: false});
@@ -91,6 +99,16 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
     canBeSelected: boolean;
   }): InnerAction | undefined => {
     if (dashboardItems.length === 1 && item.key === dashboardItems[0]) return undefined;
+
+    // For sandwich view, return a no-op action
+    if (item.key === 'sandwich') {
+      return {
+        text: 'Add Panel',
+        onClick: () => {},
+        isDisabled: true, // Custom property to control button state
+      };
+    }
+
     return {
       text:
         !item.canBeSelected && item.key === 'source'

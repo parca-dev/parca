@@ -51,6 +51,9 @@ export interface VisualisationToolbarProps {
   clearSelection: () => void;
   setGroupByLabels: (labels: string[]) => void;
   showVisualizationSelector?: boolean;
+  sandwichFunctionName?: string;
+  setSandwichFunctionName: (sandwichFunctionName: string | undefined) => void;
+  resetSandwichFunctionName: () => void;
 }
 
 export interface TableToolbarProps {
@@ -66,6 +69,11 @@ export interface IcicleGraphToolbarProps {
   setNewCurPath: (path: CurrentPathFrame[]) => void;
 }
 
+export interface SandwichIcicleGraphToolbarProps {
+  resetSandwichFunctionName: () => void;
+  sandwichFunctionName?: string;
+}
+
 export const TableToolbar: FC<TableToolbarProps> = ({
   profileType,
   total,
@@ -77,6 +85,7 @@ export const TableToolbar: FC<TableToolbarProps> = ({
     <>
       <div className="flex w-full gap-2 items-end">
         <TableColumnsDropdown profileType={profileType} total={total} filtered={filtered} />
+
         <Button
           color="neutral"
           onClick={clearSelection}
@@ -109,6 +118,27 @@ export const IcicleGraphToolbar: FC<IcicleGraphToolbarProps> = ({curPath, setNew
   );
 };
 
+export const SandwichIcicleGraphToolbar: FC<SandwichIcicleGraphToolbarProps> = ({
+  resetSandwichFunctionName,
+  sandwichFunctionName,
+}) => {
+  return (
+    <>
+      <div className="flex w-full gap-2 items-end justify-between">
+        <Button
+          color="neutral"
+          onClick={() => resetSandwichFunctionName()}
+          className="w-auto"
+          variant="neutral"
+          disabled={sandwichFunctionName === undefined || sandwichFunctionName.length === 0}
+        >
+          Reset view
+        </Button>
+      </div>
+    </>
+  );
+};
+
 const Divider = (): JSX.Element => (
   <div className="border-t mt-4 border-gray-200 dark:border-gray-700 h-[1px] w-full pb-4" />
 );
@@ -132,13 +162,15 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   currentSearchString,
   clearSelection,
   showVisualizationSelector = true,
+  resetSandwichFunctionName,
+  sandwichFunctionName,
 }) => {
   const {dashboardItems} = useDashboard();
 
   const isTableViz = dashboardItems?.includes('table');
   const isTableVizOnly = dashboardItems?.length === 1 && isTableViz;
   const isGraphViz = dashboardItems?.includes('icicle');
-
+  const isSandwichIcicleGraphViz = dashboardItems?.includes('sandwich');
   const req = profileSource?.QueryRequest();
   if (req !== null && req !== undefined) {
     req.groupBy = {
@@ -202,6 +234,15 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
             filtered={filtered}
             clearSelection={clearSelection}
             currentSearchString={currentSearchString}
+          />
+        </>
+      )}
+      {isSandwichIcicleGraphViz && (
+        <>
+          <Divider />
+          <SandwichIcicleGraphToolbar
+            resetSandwichFunctionName={resetSandwichFunctionName}
+            sandwichFunctionName={sandwichFunctionName}
           />
         </>
       )}

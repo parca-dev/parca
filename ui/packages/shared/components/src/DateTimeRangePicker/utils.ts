@@ -465,4 +465,4 @@ export const formatRange = (value: number, unit: UNIT_TYPE): string => {
   return parts.join('');
 };
 
-export const NOW = new RelativeDate(UNITS.MINUTE, 0);
+export const createNow = (): RelativeDate => new RelativeDate(UNITS.MINUTE, 0);
