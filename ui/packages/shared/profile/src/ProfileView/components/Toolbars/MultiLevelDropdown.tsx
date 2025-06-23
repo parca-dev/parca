@@ -218,6 +218,19 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
     useURLState('compare_absolute');
   const isCompareAbsolute = compareAbsolute === 'true';
 
+  const [highlightAfterFiltering, setHighlightAfterFiltering] = useURLState(
+    'highlight_after_filtering'
+  );
+  const isHighlightAfterFiltering = highlightAfterFiltering === 'true';
+
+  const [dockGraphMetaInfo, setDockGraphMetaInfo] = useURLState('dock_graph_meta_info');
+  const isDockGraphMetaInfo = dockGraphMetaInfo === 'true';
+
+  const [highlightSimilarStacks, setHighlightSimilarStacks] = useURLState(
+    'highlight_similar_stacks'
+  );
+  const isHighlightSimilarStacks = highlightSimilarStacks === 'true';
+
   const handleBinaryToggle = (index: number): void => {
     const updatedBinaries = [...(hiddenBinaries as string[])];
     updatedBinaries.splice(index, 1);
@@ -327,6 +340,28 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
       icon: isCompareAbsolute ? 'fluent-mdl2:compare' : 'fluent-mdl2:compare-uneven',
     },
     {
+      label: isHighlightAfterFiltering ? 'Disable highlight matches' : 'Highlight matches',
+      onclick: () => setHighlightAfterFiltering(isHighlightAfterFiltering ? 'false' : 'true'),
+      hide: false,
+      icon: isHighlightAfterFiltering ? 'ph:eye-closed' : 'ph:eye',
+    },
+    {
+      label: isDockGraphMetaInfo ? 'Undock graph tooltip' : 'Dock graph tooltip',
+      onclick: () => setDockGraphMetaInfo(isDockGraphMetaInfo ? 'false' : 'true'),
+      hide: false,
+      icon: isDockGraphMetaInfo
+        ? 'material-symbols:dock-to-bottom-outline'
+        : 'material-symbols:dock-to-bottom',
+    },
+    {
+      label: isHighlightSimilarStacks
+        ? 'Disable similar stack highlighting'
+        : 'Highlight similar stacks',
+      onclick: () => setHighlightSimilarStacks(isHighlightSimilarStacks ? 'false' : 'true'),
+      hide: false,
+      icon: isHighlightSimilarStacks ? 'ph:cursor-click' : 'ph:cursor',
+    },
+    {
       label: 'Reset Legend',
       hide: binaryFrameFilter === undefined || binaryFrameFilter.length === 0,
       onclick: () => resetLegend(),
@@ -370,7 +405,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
               </span>
             </Menu.Button>
             {open && (
-              <Menu.Items className="absolute z-30 left-0 w-64 mt-2 py-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border dark:bg-gray-900 dark:border-gray-600">
+              <Menu.Items className="absolute z-30 left-0 w-72 mt-2 py-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border dark:bg-gray-900 dark:border-gray-600">
                 {/* <span className="text-xs text-gray-400 capitalize px-4 py-3">actions</span> */}
                 {menuItems
                   .filter(item => item.hide !== undefined && !item.hide)
