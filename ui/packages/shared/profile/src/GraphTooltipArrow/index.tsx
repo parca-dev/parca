@@ -11,10 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 
-import { type VirtualElement, flip, offset, shift, useFloating } from '@floating-ui/react';
-import { pointer } from 'd3-selection';
+import {flip, offset, shift, useFloating, type VirtualElement} from '@floating-ui/react';
+import {pointer} from 'd3-selection';
 
 interface GraphTooltipProps {
   children: React.ReactNode;
@@ -38,10 +38,10 @@ function createPositionedVirtualElement(contextElement: Element, x = 0, y = 0): 
   };
 }
 
-const GraphTooltip = ({ children, contextElement }: GraphTooltipProps): React.JSX.Element => {
+const GraphTooltip = ({children, contextElement}: GraphTooltipProps): React.JSX.Element => {
   const [isPositioned, setIsPositioned] = useState(false);
 
-  const { refs, floatingStyles, update } = useFloating({
+  const {refs, floatingStyles, update} = useFloating({
     placement: 'bottom-start',
     strategy: 'absolute',
     middleware: [
