@@ -13,36 +13,7 @@
 
 import React from 'react';
 
-import {
-  FIELD_FUNCTION_FILE_NAME,
-  FIELD_FUNCTION_NAME,
-  FIELD_LOCATION_ADDRESS,
-  FIELD_MAPPING_FILE,
-} from '../../../ProfileIcicleGraph/IcicleGraphArrow';
 import GroupByLabelsDropdown from '../GroupByLabelsDropdown';
-
-export const groupByOptions = [
-  {
-    value: FIELD_FUNCTION_NAME,
-    label: 'Function',
-    disabled: true,
-  },
-  {
-    value: FIELD_MAPPING_FILE,
-    label: 'Binary',
-    disabled: false,
-  },
-  {
-    value: FIELD_FUNCTION_FILE_NAME,
-    label: 'Code',
-    disabled: false,
-  },
-  {
-    value: FIELD_LOCATION_ADDRESS,
-    label: 'Address',
-    disabled: false,
-  },
-];
 
 interface GroupByControlsProps {
   groupBy: string[];

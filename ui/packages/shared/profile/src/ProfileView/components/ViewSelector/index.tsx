@@ -14,7 +14,6 @@
 import {ReactNode} from 'react';
 
 import {useParcaContext, useURLState} from '@parca/components';
-import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 
 import {ProfileSource} from '../../../ProfileSource';
 import Dropdown, {DropdownElement, InnerAction} from './Dropdown';

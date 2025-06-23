@@ -27,6 +27,7 @@ import {
   FIELD_MAPPING_FILE,
 } from '../../../ProfileIcicleGraph/IcicleGraphArrow';
 import {useProfileViewContext} from '../../context/ProfileViewContext';
+import SwitchMenuItem from './SwitchMenuItem';
 
 interface MenuItemType {
   label: string;
@@ -39,6 +40,7 @@ interface MenuItemType {
   value?: string;
   icon?: string;
   customSubmenu?: React.ReactNode;
+  renderAsDiv?: boolean;
 }
 
 type MenuItemProps = MenuItemType & {
@@ -68,6 +70,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
   disabled = false,
   icon,
   customSubmenu,
+  renderAsDiv = false,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [shouldOpenLeft, setShouldOpenLeft] = useState(false);
@@ -116,6 +119,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
         {({close}) => (
           <>
             <Menu.Button
+              as={renderAsDiv ? 'div' : 'button'}
               className={`w-full text-left px-4 py-2 text-sm ${
                 disabled
                   ? 'text-gray-400'
@@ -203,8 +207,6 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
   const [colorProfileName] = useUserPreference<string>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
-  const [invertStack = '', setInvertStack] = useURLState('invert_call_stack');
-  const isInvert = invertStack === 'true';
   const isColorStackLegendEnabled = colorStackLegend === 'true';
 
   const [alignFunctionName, setAlignFunctionName] = useURLState('align_function_name');
@@ -217,19 +219,6 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
   const [compareAbsolute = compareAbsoluteDefault, setCompareAbsolute] =
     useURLState('compare_absolute');
   const isCompareAbsolute = compareAbsolute === 'true';
-
-  const [highlightAfterFiltering, setHighlightAfterFiltering] = useURLState(
-    'highlight_after_filtering'
-  );
-  const isHighlightAfterFiltering = highlightAfterFiltering === 'true';
-
-  const [dockGraphMetaInfo, setDockGraphMetaInfo] = useURLState('dock_graph_meta_info');
-  const isDockGraphMetaInfo = dockGraphMetaInfo === 'true';
-
-  const [highlightSimilarStacks, setHighlightSimilarStacks] = useURLState(
-    'highlight_similar_stacks'
-  );
-  const isHighlightSimilarStacks = highlightSimilarStacks === 'true';
 
   const handleBinaryToggle = (index: number): void => {
     const updatedBinaries = [...(hiddenBinaries as string[])];
@@ -334,26 +323,40 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
       icon: isCompareAbsolute ? 'fluent-mdl2:compare' : 'fluent-mdl2:compare-uneven',
     },
     {
-      label: isHighlightAfterFiltering ? 'Disable highlight matches' : 'Highlight matches',
-      onclick: () => setHighlightAfterFiltering(isHighlightAfterFiltering ? 'false' : 'true'),
+      label: 'Highlight matching nodes after filtering',
       hide: false,
-      icon: isHighlightAfterFiltering ? 'ph:eye-closed' : 'ph:eye',
+      customSubmenu: (
+        <SwitchMenuItem
+          label="Highlight matching nodes after filtering"
+          id="h-highlight-after-filtering"
+          userPreferenceDetails={USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING}
+        />
+      ),
+      renderAsDiv: true,
     },
     {
-      label: isDockGraphMetaInfo ? 'Undock graph tooltip' : 'Dock graph tooltip',
-      onclick: () => setDockGraphMetaInfo(isDockGraphMetaInfo ? 'false' : 'true'),
+      label: 'Dock Graph MetaInfo',
       hide: false,
-      icon: isDockGraphMetaInfo
-        ? 'material-symbols:dock-to-bottom-outline'
-        : 'material-symbols:dock-to-bottom',
+      customSubmenu: (
+        <SwitchMenuItem
+          label="Dock graph tooltip"
+          id="h-dock-graph-meta-info"
+          userPreferenceDetails={USER_PREFERENCES.GRAPH_METAINFO_DOCKED}
+        />
+      ),
+      renderAsDiv: true,
     },
     {
-      label: isHighlightSimilarStacks
-        ? 'Disable similar stack highlighting'
-        : 'Highlight similar stacks',
-      onclick: () => setHighlightSimilarStacks(isHighlightSimilarStacks ? 'false' : 'true'),
+      label: 'Highlight similar stacks when hovering over a node',
       hide: false,
-      icon: isHighlightSimilarStacks ? 'ph:cursor-click' : 'ph:cursor',
+      customSubmenu: (
+        <SwitchMenuItem
+          label="Highlight similar stacks when hovering over a node"
+          id="h-highlight-similar-stacks"
+          userPreferenceDetails={USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS}
+        />
+      ),
+      renderAsDiv: true,
     },
     {
       label: 'Reset Legend',
@@ -386,6 +389,11 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
     },
   ];
 
+  console.log(
+    'MultiLevelDropdown rendered with items:',
+    USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS.key
+  );
+
   return (
     <div className="relative inline-block text-left" id="h-visualisation-toolbar-actions">
       <Menu>
@@ -399,8 +407,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
               </span>
             </Menu.Button>
             {open && (
-              <Menu.Items className="absolute z-30 left-0 w-72 mt-2 py-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border dark:bg-gray-900 dark:border-gray-600">
-                {/* <span className="text-xs text-gray-400 capitalize px-4 py-3">actions</span> */}
+              <Menu.Items className="absolute z-30 left-0 w-80 mt-2 py-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border dark:bg-gray-900 dark:border-gray-600">
                 {menuItems
                   .filter(item => item.hide !== undefined && !item.hide)
                   .map((item, index) => (
@@ -414,6 +421,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
                         colorBy === undefined || colorBy === '' ? 'binary' : (colorBy as string)
                       }
                       activeValuesForLevel={groupBy}
+                      renderAsDiv={item.renderAsDiv}
                     />
                   ))}
               </Menu.Items>
