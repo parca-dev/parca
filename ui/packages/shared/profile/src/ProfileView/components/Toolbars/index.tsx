@@ -136,6 +136,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   const {dashboardItems} = useDashboard();
 
   const isTableViz = dashboardItems?.includes('table');
+  const isTableVizOnly = dashboardItems?.length === 1 && isTableViz;
   const isGraphViz = dashboardItems?.includes('icicle');
 
   const req = profileSource?.QueryRequest();
@@ -148,15 +149,17 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
     <>
       <div className="flex w-full justify-between items-end">
         <div className="flex gap-3 items-end">
-          <>
-            <GroupByDropdown
-              groupBy={groupBy}
-              labels={groupByLabels}
-              setGroupByLabels={setGroupByLabels}
-            />
-          </>
+          {!isTableVizOnly && (
+            <>
+              <GroupByDropdown
+                groupBy={groupBy}
+                labels={groupByLabels}
+                setGroupByLabels={setGroupByLabels}
+              />
 
-          <InvertCallStack />
+              <InvertCallStack />
+            </>
+          )}
 
           <FilterByFunctionButton />
 
@@ -169,6 +172,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
             toggleGroupBy={toggleGroupBy}
             profileType={profileType}
             onSelect={() => {}}
+            isTableVizOnly={isTableVizOnly}
           />
 
           <ShareButton

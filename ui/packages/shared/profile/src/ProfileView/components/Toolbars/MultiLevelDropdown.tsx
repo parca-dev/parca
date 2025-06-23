@@ -15,6 +15,7 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 
 import {Menu} from '@headlessui/react';
 import {Icon} from '@iconify/react';
+import cx from 'classnames';
 
 import {useURLState} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
@@ -185,6 +186,7 @@ interface MultiLevelDropdownProps {
   profileType?: ProfileType;
   groupBy: string[];
   toggleGroupBy: (key: string) => void;
+  isTableVizOnly: boolean;
 }
 
 const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
@@ -192,6 +194,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
   profileType,
   groupBy,
   toggleGroupBy,
+  isTableVizOnly,
 }) => {
   const [storeSortBy] = useURLState('sort_by', {
     defaultValue: FIELD_FUNCTION_NAME,
@@ -266,7 +269,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
           value: FIELD_LOCATION_ADDRESS,
         },
       ],
-      hide: false,
+      hide: !!isTableVizOnly,
       icon: 'heroicons-solid:bars-3',
       customSubmenu: (
         <div className="flex items-center justify-between w-full">
@@ -311,7 +314,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
       label: isLeftAligned ? 'Right-align function names' : 'Left-align function names',
       onclick: () => setAlignFunctionName(isLeftAligned ? 'right' : 'left'),
       id: 'h-align-function-names',
-      hide: false,
+      hide: !!isTableVizOnly,
       icon: isLeftAligned
         ? 'ic:outline-align-horizontal-right'
         : 'ic:outline-align-horizontal-left',
@@ -324,7 +327,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
     },
     {
       label: 'Highlight matching nodes after filtering',
-      hide: false,
+      hide: !!isTableVizOnly,
       customSubmenu: (
         <SwitchMenuItem
           label="Highlight matching nodes after filtering"
@@ -336,7 +339,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
     },
     {
       label: 'Dock Graph MetaInfo',
-      hide: false,
+      hide: !!isTableVizOnly,
       customSubmenu: (
         <SwitchMenuItem
           label="Dock graph tooltip"
@@ -348,7 +351,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
     },
     {
       label: 'Highlight similar stacks when hovering over a node',
-      hide: false,
+      hide: !!isTableVizOnly,
       customSubmenu: (
         <SwitchMenuItem
           label="Highlight similar stacks when hovering over a node"
@@ -407,7 +410,12 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
               </span>
             </Menu.Button>
             {open && (
-              <Menu.Items className="absolute z-30 left-0 w-80 mt-2 py-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border dark:bg-gray-900 dark:border-gray-600">
+              <Menu.Items
+                className={cx(
+                  isTableVizOnly ? 'w-64' : 'w-80',
+                  'absolute z-30 left-0 mt-2 py-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border dark:bg-gray-900 dark:border-gray-600'
+                )}
+              >
                 {menuItems
                   .filter(item => item.hide !== undefined && !item.hide)
                   .map((item, index) => (

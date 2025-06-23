@@ -55,6 +55,7 @@ const GroupByLabelsDropdown = ({labels, groupBy, setGroupByLabels}: Props): JSX.
             marginBottom: 0,
             boxShadow: 'none',
             marginTop: 0,
+            zIndex: 1000,
           }),
           control: provided => ({
             ...provided,
