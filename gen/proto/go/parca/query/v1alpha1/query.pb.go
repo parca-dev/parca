@@ -1237,12 +1237,8 @@ func (*Filter_FrameFilter) isFilter_Filter() {}
 // StackFilter is a filter for filtering by stacks
 type StackFilter struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// filter contains the different methods in which you can filter a stack
-	//
-	// Types that are valid to be assigned to Filter:
-	//
-	//	*StackFilter_FunctionNameStackFilter
-	Filter        isStackFilter_Filter `protobuf_oneof:"filter"`
+	// location contains the location filter to apply
+	Location      *LocationFilter `protobuf:"bytes,1,opt,name=location,proto3" json:"location,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1277,104 +1273,25 @@ func (*StackFilter) Descriptor() ([]byte, []int) {
 	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *StackFilter) GetFilter() isStackFilter_Filter {
+func (x *StackFilter) GetLocation() *LocationFilter {
 	if x != nil {
-		return x.Filter
+		return x.Location
 	}
 	return nil
-}
-
-func (x *StackFilter) GetFunctionNameStackFilter() *FunctionNameStackFilter {
-	if x != nil {
-		if x, ok := x.Filter.(*StackFilter_FunctionNameStackFilter); ok {
-			return x.FunctionNameStackFilter
-		}
-	}
-	return nil
-}
-
-type isStackFilter_Filter interface {
-	isStackFilter_Filter()
-}
-
-type StackFilter_FunctionNameStackFilter struct {
-	// function_name_stack_filter is the function name to filter by
-	FunctionNameStackFilter *FunctionNameStackFilter `protobuf:"bytes,1,opt,name=function_name_stack_filter,json=functionNameStackFilter,proto3,oneof"`
-}
-
-func (*StackFilter_FunctionNameStackFilter) isStackFilter_Filter() {}
-
-// FunctionNameStackFilter is a filter for filtering by function name
-type FunctionNameStackFilter struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// function_to_filter is the function name to filter by
-	FunctionToFilter string `protobuf:"bytes,1,opt,name=function_to_filter,json=functionToFilter,proto3" json:"function_to_filter,omitempty"`
-	// exclude determines whether to exclude stacks matching the function
-	Exclude       bool `protobuf:"varint,2,opt,name=exclude,proto3" json:"exclude,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *FunctionNameStackFilter) Reset() {
-	*x = FunctionNameStackFilter{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[14]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *FunctionNameStackFilter) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*FunctionNameStackFilter) ProtoMessage() {}
-
-func (x *FunctionNameStackFilter) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[14]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use FunctionNameStackFilter.ProtoReflect.Descriptor instead.
-func (*FunctionNameStackFilter) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{14}
-}
-
-func (x *FunctionNameStackFilter) GetFunctionToFilter() string {
-	if x != nil {
-		return x.FunctionToFilter
-	}
-	return ""
-}
-
-func (x *FunctionNameStackFilter) GetExclude() bool {
-	if x != nil {
-		return x.Exclude
-	}
-	return false
 }
 
 // FrameFilter is a filter for filtering by frames
 type FrameFilter struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// filter contains the different methods in which you can filter a frame
-	//
-	// Types that are valid to be assigned to Filter:
-	//
-	//	*FrameFilter_BinaryFrameFilter
-	Filter        isFrameFilter_Filter `protobuf_oneof:"filter"`
+	// location contains the location filter to apply
+	Location      *LocationFilter `protobuf:"bytes,1,opt,name=location,proto3" json:"location,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *FrameFilter) Reset() {
 	*x = FrameFilter{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[15]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1386,7 +1303,7 @@ func (x *FrameFilter) String() string {
 func (*FrameFilter) ProtoMessage() {}
 
 func (x *FrameFilter) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[15]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1399,59 +1316,128 @@ func (x *FrameFilter) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FrameFilter.ProtoReflect.Descriptor instead.
 func (*FrameFilter) Descriptor() ([]byte, []int) {
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *FrameFilter) GetLocation() *LocationFilter {
+	if x != nil {
+		return x.Location
+	}
+	return nil
+}
+
+// LocationFilter provides filtering by location attributes
+type LocationFilter struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// filter contains the different methods for filtering
+	//
+	// Types that are valid to be assigned to Filter:
+	//
+	//	*LocationFilter_FunctionNameFilter
+	//	*LocationFilter_BinaryFilter
+	Filter        isLocationFilter_Filter `protobuf_oneof:"filter"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LocationFilter) Reset() {
+	*x = LocationFilter{}
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LocationFilter) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LocationFilter) ProtoMessage() {}
+
+func (x *LocationFilter) ProtoReflect() protoreflect.Message {
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LocationFilter.ProtoReflect.Descriptor instead.
+func (*LocationFilter) Descriptor() ([]byte, []int) {
 	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{15}
 }
 
-func (x *FrameFilter) GetFilter() isFrameFilter_Filter {
+func (x *LocationFilter) GetFilter() isLocationFilter_Filter {
 	if x != nil {
 		return x.Filter
 	}
 	return nil
 }
 
-func (x *FrameFilter) GetBinaryFrameFilter() *BinaryFrameFilter {
+func (x *LocationFilter) GetFunctionNameFilter() *FunctionNameFilter {
 	if x != nil {
-		if x, ok := x.Filter.(*FrameFilter_BinaryFrameFilter); ok {
-			return x.BinaryFrameFilter
+		if x, ok := x.Filter.(*LocationFilter_FunctionNameFilter); ok {
+			return x.FunctionNameFilter
 		}
 	}
 	return nil
 }
 
-type isFrameFilter_Filter interface {
-	isFrameFilter_Filter()
+func (x *LocationFilter) GetBinaryFilter() *BinaryFilter {
+	if x != nil {
+		if x, ok := x.Filter.(*LocationFilter_BinaryFilter); ok {
+			return x.BinaryFilter
+		}
+	}
+	return nil
 }
 
-type FrameFilter_BinaryFrameFilter struct {
-	// binary_frame_filter is the list of binary names to filter by
-	BinaryFrameFilter *BinaryFrameFilter `protobuf:"bytes,1,opt,name=binary_frame_filter,json=binaryFrameFilter,proto3,oneof"`
+type isLocationFilter_Filter interface {
+	isLocationFilter_Filter()
 }
 
-func (*FrameFilter_BinaryFrameFilter) isFrameFilter_Filter() {}
+type LocationFilter_FunctionNameFilter struct {
+	// function_name_filter is the function name to filter by
+	FunctionNameFilter *FunctionNameFilter `protobuf:"bytes,1,opt,name=function_name_filter,json=functionNameFilter,proto3,oneof"`
+}
 
-// BinaryFrameFilter is a filter for filtering by binaries
-type BinaryFrameFilter struct {
+type LocationFilter_BinaryFilter struct {
+	// binary_filter is the binary name to filter by
+	BinaryFilter *BinaryFilter `protobuf:"bytes,2,opt,name=binary_filter,json=binaryFilter,proto3,oneof"`
+}
+
+func (*LocationFilter_FunctionNameFilter) isLocationFilter_Filter() {}
+
+func (*LocationFilter_BinaryFilter) isLocationFilter_Filter() {}
+
+// FunctionNameFilter is a filter for filtering by function name
+type FunctionNameFilter struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// include_binaries is the list of binaries to filter by
-	IncludeBinaries []string `protobuf:"bytes,1,rep,name=include_binaries,json=includeBinaries,proto3" json:"include_binaries,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// function_to_filter is the function name to filter by
+	FunctionToFilter string `protobuf:"bytes,1,opt,name=function_to_filter,json=functionToFilter,proto3" json:"function_to_filter,omitempty"`
+	// exclude determines whether to exclude stacks matching the function
+	Exclude       bool `protobuf:"varint,2,opt,name=exclude,proto3" json:"exclude,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
-func (x *BinaryFrameFilter) Reset() {
-	*x = BinaryFrameFilter{}
+func (x *FunctionNameFilter) Reset() {
+	*x = FunctionNameFilter{}
 	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *BinaryFrameFilter) String() string {
+func (x *FunctionNameFilter) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*BinaryFrameFilter) ProtoMessage() {}
+func (*FunctionNameFilter) ProtoMessage() {}
 
-func (x *BinaryFrameFilter) ProtoReflect() protoreflect.Message {
+func (x *FunctionNameFilter) ProtoReflect() protoreflect.Message {
 	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1463,16 +1449,78 @@ func (x *BinaryFrameFilter) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BinaryFrameFilter.ProtoReflect.Descriptor instead.
-func (*BinaryFrameFilter) Descriptor() ([]byte, []int) {
+// Deprecated: Use FunctionNameFilter.ProtoReflect.Descriptor instead.
+func (*FunctionNameFilter) Descriptor() ([]byte, []int) {
 	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{16}
 }
 
-func (x *BinaryFrameFilter) GetIncludeBinaries() []string {
+func (x *FunctionNameFilter) GetFunctionToFilter() string {
 	if x != nil {
-		return x.IncludeBinaries
+		return x.FunctionToFilter
 	}
-	return nil
+	return ""
+}
+
+func (x *FunctionNameFilter) GetExclude() bool {
+	if x != nil {
+		return x.Exclude
+	}
+	return false
+}
+
+// BinaryFilter is a filter for filtering by binaries
+type BinaryFilter struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// binary_to_filter is the binary name to filter by
+	BinaryToFilter string `protobuf:"bytes,1,opt,name=binary_to_filter,json=binaryToFilter,proto3" json:"binary_to_filter,omitempty"`
+	// exclude determines whether to exclude frames matching the binary
+	Exclude       bool `protobuf:"varint,2,opt,name=exclude,proto3" json:"exclude,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BinaryFilter) Reset() {
+	*x = BinaryFilter{}
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BinaryFilter) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BinaryFilter) ProtoMessage() {}
+
+func (x *BinaryFilter) ProtoReflect() protoreflect.Message {
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BinaryFilter.ProtoReflect.Descriptor instead.
+func (*BinaryFilter) Descriptor() ([]byte, []int) {
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *BinaryFilter) GetBinaryToFilter() string {
+	if x != nil {
+		return x.BinaryToFilter
+	}
+	return ""
+}
+
+func (x *BinaryFilter) GetExclude() bool {
+	if x != nil {
+		return x.Exclude
+	}
+	return false
 }
 
 // RuntimeFilter configures which runtimes to filter frames out for.
@@ -1490,7 +1538,7 @@ type RuntimeFilter struct {
 
 func (x *RuntimeFilter) Reset() {
 	*x = RuntimeFilter{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[17]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1502,7 +1550,7 @@ func (x *RuntimeFilter) String() string {
 func (*RuntimeFilter) ProtoMessage() {}
 
 func (x *RuntimeFilter) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[17]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1515,7 +1563,7 @@ func (x *RuntimeFilter) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RuntimeFilter.ProtoReflect.Descriptor instead.
 func (*RuntimeFilter) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{17}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *RuntimeFilter) GetShowPython() bool {
@@ -1554,7 +1602,7 @@ type SourceReference struct {
 
 func (x *SourceReference) Reset() {
 	*x = SourceReference{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[18]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1566,7 +1614,7 @@ func (x *SourceReference) String() string {
 func (*SourceReference) ProtoMessage() {}
 
 func (x *SourceReference) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[18]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1579,7 +1627,7 @@ func (x *SourceReference) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SourceReference.ProtoReflect.Descriptor instead.
 func (*SourceReference) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{18}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *SourceReference) GetBuildId() string {
@@ -1615,7 +1663,7 @@ type GroupBy struct {
 
 func (x *GroupBy) Reset() {
 	*x = GroupBy{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[19]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1627,7 +1675,7 @@ func (x *GroupBy) String() string {
 func (*GroupBy) ProtoMessage() {}
 
 func (x *GroupBy) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[19]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1640,7 +1688,7 @@ func (x *GroupBy) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GroupBy.ProtoReflect.Descriptor instead.
 func (*GroupBy) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{19}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *GroupBy) GetFields() []string {
@@ -1670,7 +1718,7 @@ type Top struct {
 
 func (x *Top) Reset() {
 	*x = Top{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[20]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1682,7 +1730,7 @@ func (x *Top) String() string {
 func (*Top) ProtoMessage() {}
 
 func (x *Top) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[20]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1695,7 +1743,7 @@ func (x *Top) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Top.ProtoReflect.Descriptor instead.
 func (*Top) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{20}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *Top) GetList() []*TopNode {
@@ -1744,7 +1792,7 @@ type TopNode struct {
 
 func (x *TopNode) Reset() {
 	*x = TopNode{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[21]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1756,7 +1804,7 @@ func (x *TopNode) String() string {
 func (*TopNode) ProtoMessage() {}
 
 func (x *TopNode) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[21]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1769,7 +1817,7 @@ func (x *TopNode) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TopNode.ProtoReflect.Descriptor instead.
 func (*TopNode) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{21}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *TopNode) GetMeta() *TopNodeMeta {
@@ -1817,7 +1865,7 @@ type TopNodeMeta struct {
 
 func (x *TopNodeMeta) Reset() {
 	*x = TopNodeMeta{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[22]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1829,7 +1877,7 @@ func (x *TopNodeMeta) String() string {
 func (*TopNodeMeta) ProtoMessage() {}
 
 func (x *TopNodeMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[22]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1842,7 +1890,7 @@ func (x *TopNodeMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TopNodeMeta.ProtoReflect.Descriptor instead.
 func (*TopNodeMeta) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{22}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *TopNodeMeta) GetLocation() *v1alpha11.Location {
@@ -1908,7 +1956,7 @@ type Flamegraph struct {
 
 func (x *Flamegraph) Reset() {
 	*x = Flamegraph{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[23]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1920,7 +1968,7 @@ func (x *Flamegraph) String() string {
 func (*Flamegraph) ProtoMessage() {}
 
 func (x *Flamegraph) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[23]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1933,7 +1981,7 @@ func (x *Flamegraph) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Flamegraph.ProtoReflect.Descriptor instead.
 func (*Flamegraph) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{23}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *Flamegraph) GetRoot() *FlamegraphRootNode {
@@ -2025,7 +2073,7 @@ type FlamegraphArrow struct {
 
 func (x *FlamegraphArrow) Reset() {
 	*x = FlamegraphArrow{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[24]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2037,7 +2085,7 @@ func (x *FlamegraphArrow) String() string {
 func (*FlamegraphArrow) ProtoMessage() {}
 
 func (x *FlamegraphArrow) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[24]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2050,7 +2098,7 @@ func (x *FlamegraphArrow) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FlamegraphArrow.ProtoReflect.Descriptor instead.
 func (*FlamegraphArrow) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{24}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *FlamegraphArrow) GetRecord() []byte {
@@ -2096,7 +2144,7 @@ type Source struct {
 
 func (x *Source) Reset() {
 	*x = Source{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[25]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2108,7 +2156,7 @@ func (x *Source) String() string {
 func (*Source) ProtoMessage() {}
 
 func (x *Source) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[25]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2121,7 +2169,7 @@ func (x *Source) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Source.ProtoReflect.Descriptor instead.
 func (*Source) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{25}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *Source) GetRecord() []byte {
@@ -2160,7 +2208,7 @@ type FlamegraphRootNode struct {
 
 func (x *FlamegraphRootNode) Reset() {
 	*x = FlamegraphRootNode{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[26]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2172,7 +2220,7 @@ func (x *FlamegraphRootNode) String() string {
 func (*FlamegraphRootNode) ProtoMessage() {}
 
 func (x *FlamegraphRootNode) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[26]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2185,7 +2233,7 @@ func (x *FlamegraphRootNode) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FlamegraphRootNode.ProtoReflect.Descriptor instead.
 func (*FlamegraphRootNode) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{26}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *FlamegraphRootNode) GetCumulative() int64 {
@@ -2226,7 +2274,7 @@ type FlamegraphNode struct {
 
 func (x *FlamegraphNode) Reset() {
 	*x = FlamegraphNode{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[27]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2238,7 +2286,7 @@ func (x *FlamegraphNode) String() string {
 func (*FlamegraphNode) ProtoMessage() {}
 
 func (x *FlamegraphNode) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[27]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2251,7 +2299,7 @@ func (x *FlamegraphNode) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FlamegraphNode.ProtoReflect.Descriptor instead.
 func (*FlamegraphNode) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{27}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *FlamegraphNode) GetMeta() *FlamegraphNodeMeta {
@@ -2303,7 +2351,7 @@ type FlamegraphNodeMeta struct {
 
 func (x *FlamegraphNodeMeta) Reset() {
 	*x = FlamegraphNodeMeta{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[28]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2315,7 +2363,7 @@ func (x *FlamegraphNodeMeta) String() string {
 func (*FlamegraphNodeMeta) ProtoMessage() {}
 
 func (x *FlamegraphNodeMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[28]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2328,7 +2376,7 @@ func (x *FlamegraphNodeMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FlamegraphNodeMeta.ProtoReflect.Descriptor instead.
 func (*FlamegraphNodeMeta) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{28}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *FlamegraphNodeMeta) GetLocation() *v1alpha11.Location {
@@ -2390,7 +2438,7 @@ type CallgraphNode struct {
 
 func (x *CallgraphNode) Reset() {
 	*x = CallgraphNode{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[29]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2402,7 +2450,7 @@ func (x *CallgraphNode) String() string {
 func (*CallgraphNode) ProtoMessage() {}
 
 func (x *CallgraphNode) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[29]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2415,7 +2463,7 @@ func (x *CallgraphNode) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CallgraphNode.ProtoReflect.Descriptor instead.
 func (*CallgraphNode) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{29}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *CallgraphNode) GetId() string {
@@ -2463,7 +2511,7 @@ type CallgraphNodeMeta struct {
 
 func (x *CallgraphNodeMeta) Reset() {
 	*x = CallgraphNodeMeta{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[30]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2475,7 +2523,7 @@ func (x *CallgraphNodeMeta) String() string {
 func (*CallgraphNodeMeta) ProtoMessage() {}
 
 func (x *CallgraphNodeMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[30]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2488,7 +2536,7 @@ func (x *CallgraphNodeMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CallgraphNodeMeta.ProtoReflect.Descriptor instead.
 func (*CallgraphNodeMeta) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{30}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *CallgraphNodeMeta) GetLocation() *v1alpha11.Location {
@@ -2538,7 +2586,7 @@ type CallgraphEdge struct {
 
 func (x *CallgraphEdge) Reset() {
 	*x = CallgraphEdge{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[31]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2550,7 +2598,7 @@ func (x *CallgraphEdge) String() string {
 func (*CallgraphEdge) ProtoMessage() {}
 
 func (x *CallgraphEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[31]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2563,7 +2611,7 @@ func (x *CallgraphEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CallgraphEdge.ProtoReflect.Descriptor instead.
 func (*CallgraphEdge) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{31}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *CallgraphEdge) GetId() string {
@@ -2619,7 +2667,7 @@ type Callgraph struct {
 
 func (x *Callgraph) Reset() {
 	*x = Callgraph{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[32]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2631,7 +2679,7 @@ func (x *Callgraph) String() string {
 func (*Callgraph) ProtoMessage() {}
 
 func (x *Callgraph) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[32]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2644,7 +2692,7 @@ func (x *Callgraph) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Callgraph.ProtoReflect.Descriptor instead.
 func (*Callgraph) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{32}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *Callgraph) GetNodes() []*CallgraphNode {
@@ -2695,7 +2743,7 @@ type QueryResponse struct {
 
 func (x *QueryResponse) Reset() {
 	*x = QueryResponse{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[33]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2707,7 +2755,7 @@ func (x *QueryResponse) String() string {
 func (*QueryResponse) ProtoMessage() {}
 
 func (x *QueryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[33]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2720,7 +2768,7 @@ func (x *QueryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryResponse.ProtoReflect.Descriptor instead.
 func (*QueryResponse) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{33}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *QueryResponse) GetReport() isQueryResponse_Report {
@@ -2891,7 +2939,7 @@ type SeriesRequest struct {
 
 func (x *SeriesRequest) Reset() {
 	*x = SeriesRequest{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[34]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2903,7 +2951,7 @@ func (x *SeriesRequest) String() string {
 func (*SeriesRequest) ProtoMessage() {}
 
 func (x *SeriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[34]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2916,7 +2964,7 @@ func (x *SeriesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SeriesRequest.ProtoReflect.Descriptor instead.
 func (*SeriesRequest) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{34}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *SeriesRequest) GetMatch() []string {
@@ -2949,7 +2997,7 @@ type SeriesResponse struct {
 
 func (x *SeriesResponse) Reset() {
 	*x = SeriesResponse{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[35]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2961,7 +3009,7 @@ func (x *SeriesResponse) String() string {
 func (*SeriesResponse) ProtoMessage() {}
 
 func (x *SeriesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[35]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2974,7 +3022,7 @@ func (x *SeriesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SeriesResponse.ProtoReflect.Descriptor instead.
 func (*SeriesResponse) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{35}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{36}
 }
 
 // LabelsRequest are the request values for labels
@@ -2994,7 +3042,7 @@ type LabelsRequest struct {
 
 func (x *LabelsRequest) Reset() {
 	*x = LabelsRequest{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[36]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3006,7 +3054,7 @@ func (x *LabelsRequest) String() string {
 func (*LabelsRequest) ProtoMessage() {}
 
 func (x *LabelsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[36]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3019,7 +3067,7 @@ func (x *LabelsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LabelsRequest.ProtoReflect.Descriptor instead.
 func (*LabelsRequest) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{36}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *LabelsRequest) GetMatch() []string {
@@ -3063,7 +3111,7 @@ type LabelsResponse struct {
 
 func (x *LabelsResponse) Reset() {
 	*x = LabelsResponse{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[37]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3075,7 +3123,7 @@ func (x *LabelsResponse) String() string {
 func (*LabelsResponse) ProtoMessage() {}
 
 func (x *LabelsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[37]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3088,7 +3136,7 @@ func (x *LabelsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LabelsResponse.ProtoReflect.Descriptor instead.
 func (*LabelsResponse) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{37}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *LabelsResponse) GetLabelNames() []string {
@@ -3124,7 +3172,7 @@ type ValuesRequest struct {
 
 func (x *ValuesRequest) Reset() {
 	*x = ValuesRequest{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[38]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3136,7 +3184,7 @@ func (x *ValuesRequest) String() string {
 func (*ValuesRequest) ProtoMessage() {}
 
 func (x *ValuesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[38]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3149,7 +3197,7 @@ func (x *ValuesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ValuesRequest.ProtoReflect.Descriptor instead.
 func (*ValuesRequest) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{38}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *ValuesRequest) GetLabelName() string {
@@ -3200,7 +3248,7 @@ type ValuesResponse struct {
 
 func (x *ValuesResponse) Reset() {
 	*x = ValuesResponse{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[39]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3212,7 +3260,7 @@ func (x *ValuesResponse) String() string {
 func (*ValuesResponse) ProtoMessage() {}
 
 func (x *ValuesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[39]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3225,7 +3273,7 @@ func (x *ValuesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ValuesResponse.ProtoReflect.Descriptor instead.
 func (*ValuesResponse) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{39}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *ValuesResponse) GetLabelValues() []string {
@@ -3255,7 +3303,7 @@ type ValueType struct {
 
 func (x *ValueType) Reset() {
 	*x = ValueType{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[40]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3267,7 +3315,7 @@ func (x *ValueType) String() string {
 func (*ValueType) ProtoMessage() {}
 
 func (x *ValueType) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[40]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3280,7 +3328,7 @@ func (x *ValueType) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ValueType.ProtoReflect.Descriptor instead.
 func (*ValueType) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{40}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *ValueType) GetType() string {
@@ -3310,7 +3358,7 @@ type ShareProfileRequest struct {
 
 func (x *ShareProfileRequest) Reset() {
 	*x = ShareProfileRequest{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[41]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3322,7 +3370,7 @@ func (x *ShareProfileRequest) String() string {
 func (*ShareProfileRequest) ProtoMessage() {}
 
 func (x *ShareProfileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[41]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3335,7 +3383,7 @@ func (x *ShareProfileRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ShareProfileRequest.ProtoReflect.Descriptor instead.
 func (*ShareProfileRequest) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{41}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *ShareProfileRequest) GetQueryRequest() *QueryRequest {
@@ -3363,7 +3411,7 @@ type ShareProfileResponse struct {
 
 func (x *ShareProfileResponse) Reset() {
 	*x = ShareProfileResponse{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[42]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3375,7 +3423,7 @@ func (x *ShareProfileResponse) String() string {
 func (*ShareProfileResponse) ProtoMessage() {}
 
 func (x *ShareProfileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[42]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3388,7 +3436,7 @@ func (x *ShareProfileResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ShareProfileResponse.ProtoReflect.Descriptor instead.
 func (*ShareProfileResponse) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{42}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *ShareProfileResponse) GetLink() string {
@@ -3411,7 +3459,7 @@ type TableArrow struct {
 
 func (x *TableArrow) Reset() {
 	*x = TableArrow{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[43]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3423,7 +3471,7 @@ func (x *TableArrow) String() string {
 func (*TableArrow) ProtoMessage() {}
 
 func (x *TableArrow) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[43]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3436,7 +3484,7 @@ func (x *TableArrow) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TableArrow.ProtoReflect.Descriptor instead.
 func (*TableArrow) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{43}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *TableArrow) GetRecord() []byte {
@@ -3466,7 +3514,7 @@ type ProfileMetadata struct {
 
 func (x *ProfileMetadata) Reset() {
 	*x = ProfileMetadata{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[44]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3478,7 +3526,7 @@ func (x *ProfileMetadata) String() string {
 func (*ProfileMetadata) ProtoMessage() {}
 
 func (x *ProfileMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[44]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3491,7 +3539,7 @@ func (x *ProfileMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProfileMetadata.ProtoReflect.Descriptor instead.
 func (*ProfileMetadata) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{44}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *ProfileMetadata) GetMappingFiles() []string {
@@ -3614,18 +3662,21 @@ const file_parca_query_v1alpha1_query_proto_rawDesc = "" +
 	"\x06Filter\x12F\n" +
 	"\fstack_filter\x18\x01 \x01(\v2!.parca.query.v1alpha1.StackFilterH\x00R\vstackFilter\x12F\n" +
 	"\fframe_filter\x18\x02 \x01(\v2!.parca.query.v1alpha1.FrameFilterH\x00R\vframeFilterB\b\n" +
-	"\x06filter\"\x85\x01\n" +
-	"\vStackFilter\x12l\n" +
-	"\x1afunction_name_stack_filter\x18\x01 \x01(\v2-.parca.query.v1alpha1.FunctionNameStackFilterH\x00R\x17functionNameStackFilterB\b\n" +
-	"\x06filter\"a\n" +
-	"\x17FunctionNameStackFilter\x12,\n" +
+	"\x06filter\"O\n" +
+	"\vStackFilter\x12@\n" +
+	"\blocation\x18\x01 \x01(\v2$.parca.query.v1alpha1.LocationFilterR\blocation\"O\n" +
+	"\vFrameFilter\x12@\n" +
+	"\blocation\x18\x01 \x01(\v2$.parca.query.v1alpha1.LocationFilterR\blocation\"\xc3\x01\n" +
+	"\x0eLocationFilter\x12\\\n" +
+	"\x14function_name_filter\x18\x01 \x01(\v2(.parca.query.v1alpha1.FunctionNameFilterH\x00R\x12functionNameFilter\x12I\n" +
+	"\rbinary_filter\x18\x02 \x01(\v2\".parca.query.v1alpha1.BinaryFilterH\x00R\fbinaryFilterB\b\n" +
+	"\x06filter\"\\\n" +
+	"\x12FunctionNameFilter\x12,\n" +
 	"\x12function_to_filter\x18\x01 \x01(\tR\x10functionToFilter\x12\x18\n" +
-	"\aexclude\x18\x02 \x01(\bR\aexclude\"r\n" +
-	"\vFrameFilter\x12Y\n" +
-	"\x13binary_frame_filter\x18\x01 \x01(\v2'.parca.query.v1alpha1.BinaryFrameFilterH\x00R\x11binaryFrameFilterB\b\n" +
-	"\x06filter\">\n" +
-	"\x11BinaryFrameFilter\x12)\n" +
-	"\x10include_binaries\x18\x01 \x03(\tR\x0fincludeBinaries\"\x81\x01\n" +
+	"\aexclude\x18\x02 \x01(\bR\aexclude\"R\n" +
+	"\fBinaryFilter\x12(\n" +
+	"\x10binary_to_filter\x18\x01 \x01(\tR\x0ebinaryToFilter\x12\x18\n" +
+	"\aexclude\x18\x02 \x01(\bR\aexclude\"\x81\x01\n" +
 	"\rRuntimeFilter\x12\x1f\n" +
 	"\vshow_python\x18\x01 \x01(\bR\n" +
 	"showPython\x12\x1b\n" +
@@ -3807,78 +3858,79 @@ func file_parca_query_v1alpha1_query_proto_rawDescGZIP() []byte {
 }
 
 var file_parca_query_v1alpha1_query_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_parca_query_v1alpha1_query_proto_msgTypes = make([]protoimpl.MessageInfo, 45)
+var file_parca_query_v1alpha1_query_proto_msgTypes = make([]protoimpl.MessageInfo, 46)
 var file_parca_query_v1alpha1_query_proto_goTypes = []any{
-	(ProfileDiffSelection_Mode)(0),  // 0: parca.query.v1alpha1.ProfileDiffSelection.Mode
-	(QueryRequest_Mode)(0),          // 1: parca.query.v1alpha1.QueryRequest.Mode
-	(QueryRequest_ReportType)(0),    // 2: parca.query.v1alpha1.QueryRequest.ReportType
-	(*ProfileTypesRequest)(nil),     // 3: parca.query.v1alpha1.ProfileTypesRequest
-	(*ProfileTypesResponse)(nil),    // 4: parca.query.v1alpha1.ProfileTypesResponse
-	(*ProfileType)(nil),             // 5: parca.query.v1alpha1.ProfileType
-	(*QueryRangeRequest)(nil),       // 6: parca.query.v1alpha1.QueryRangeRequest
-	(*QueryRangeResponse)(nil),      // 7: parca.query.v1alpha1.QueryRangeResponse
-	(*MetricsSeries)(nil),           // 8: parca.query.v1alpha1.MetricsSeries
-	(*MetricsSample)(nil),           // 9: parca.query.v1alpha1.MetricsSample
-	(*MergeProfile)(nil),            // 10: parca.query.v1alpha1.MergeProfile
-	(*SingleProfile)(nil),           // 11: parca.query.v1alpha1.SingleProfile
-	(*DiffProfile)(nil),             // 12: parca.query.v1alpha1.DiffProfile
-	(*ProfileDiffSelection)(nil),    // 13: parca.query.v1alpha1.ProfileDiffSelection
-	(*QueryRequest)(nil),            // 14: parca.query.v1alpha1.QueryRequest
-	(*Filter)(nil),                  // 15: parca.query.v1alpha1.Filter
-	(*StackFilter)(nil),             // 16: parca.query.v1alpha1.StackFilter
-	(*FunctionNameStackFilter)(nil), // 17: parca.query.v1alpha1.FunctionNameStackFilter
-	(*FrameFilter)(nil),             // 18: parca.query.v1alpha1.FrameFilter
-	(*BinaryFrameFilter)(nil),       // 19: parca.query.v1alpha1.BinaryFrameFilter
-	(*RuntimeFilter)(nil),           // 20: parca.query.v1alpha1.RuntimeFilter
-	(*SourceReference)(nil),         // 21: parca.query.v1alpha1.SourceReference
-	(*GroupBy)(nil),                 // 22: parca.query.v1alpha1.GroupBy
-	(*Top)(nil),                     // 23: parca.query.v1alpha1.Top
-	(*TopNode)(nil),                 // 24: parca.query.v1alpha1.TopNode
-	(*TopNodeMeta)(nil),             // 25: parca.query.v1alpha1.TopNodeMeta
-	(*Flamegraph)(nil),              // 26: parca.query.v1alpha1.Flamegraph
-	(*FlamegraphArrow)(nil),         // 27: parca.query.v1alpha1.FlamegraphArrow
-	(*Source)(nil),                  // 28: parca.query.v1alpha1.Source
-	(*FlamegraphRootNode)(nil),      // 29: parca.query.v1alpha1.FlamegraphRootNode
-	(*FlamegraphNode)(nil),          // 30: parca.query.v1alpha1.FlamegraphNode
-	(*FlamegraphNodeMeta)(nil),      // 31: parca.query.v1alpha1.FlamegraphNodeMeta
-	(*CallgraphNode)(nil),           // 32: parca.query.v1alpha1.CallgraphNode
-	(*CallgraphNodeMeta)(nil),       // 33: parca.query.v1alpha1.CallgraphNodeMeta
-	(*CallgraphEdge)(nil),           // 34: parca.query.v1alpha1.CallgraphEdge
-	(*Callgraph)(nil),               // 35: parca.query.v1alpha1.Callgraph
-	(*QueryResponse)(nil),           // 36: parca.query.v1alpha1.QueryResponse
-	(*SeriesRequest)(nil),           // 37: parca.query.v1alpha1.SeriesRequest
-	(*SeriesResponse)(nil),          // 38: parca.query.v1alpha1.SeriesResponse
-	(*LabelsRequest)(nil),           // 39: parca.query.v1alpha1.LabelsRequest
-	(*LabelsResponse)(nil),          // 40: parca.query.v1alpha1.LabelsResponse
-	(*ValuesRequest)(nil),           // 41: parca.query.v1alpha1.ValuesRequest
-	(*ValuesResponse)(nil),          // 42: parca.query.v1alpha1.ValuesResponse
-	(*ValueType)(nil),               // 43: parca.query.v1alpha1.ValueType
-	(*ShareProfileRequest)(nil),     // 44: parca.query.v1alpha1.ShareProfileRequest
-	(*ShareProfileResponse)(nil),    // 45: parca.query.v1alpha1.ShareProfileResponse
-	(*TableArrow)(nil),              // 46: parca.query.v1alpha1.TableArrow
-	(*ProfileMetadata)(nil),         // 47: parca.query.v1alpha1.ProfileMetadata
-	(*timestamppb.Timestamp)(nil),   // 48: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),     // 49: google.protobuf.Duration
-	(*v1alpha1.LabelSet)(nil),       // 50: parca.profilestore.v1alpha1.LabelSet
-	(*v1alpha11.Location)(nil),      // 51: parca.metastore.v1alpha1.Location
-	(*v1alpha11.Mapping)(nil),       // 52: parca.metastore.v1alpha1.Mapping
-	(*v1alpha11.Function)(nil),      // 53: parca.metastore.v1alpha1.Function
-	(*v1alpha11.Line)(nil),          // 54: parca.metastore.v1alpha1.Line
+	(ProfileDiffSelection_Mode)(0), // 0: parca.query.v1alpha1.ProfileDiffSelection.Mode
+	(QueryRequest_Mode)(0),         // 1: parca.query.v1alpha1.QueryRequest.Mode
+	(QueryRequest_ReportType)(0),   // 2: parca.query.v1alpha1.QueryRequest.ReportType
+	(*ProfileTypesRequest)(nil),    // 3: parca.query.v1alpha1.ProfileTypesRequest
+	(*ProfileTypesResponse)(nil),   // 4: parca.query.v1alpha1.ProfileTypesResponse
+	(*ProfileType)(nil),            // 5: parca.query.v1alpha1.ProfileType
+	(*QueryRangeRequest)(nil),      // 6: parca.query.v1alpha1.QueryRangeRequest
+	(*QueryRangeResponse)(nil),     // 7: parca.query.v1alpha1.QueryRangeResponse
+	(*MetricsSeries)(nil),          // 8: parca.query.v1alpha1.MetricsSeries
+	(*MetricsSample)(nil),          // 9: parca.query.v1alpha1.MetricsSample
+	(*MergeProfile)(nil),           // 10: parca.query.v1alpha1.MergeProfile
+	(*SingleProfile)(nil),          // 11: parca.query.v1alpha1.SingleProfile
+	(*DiffProfile)(nil),            // 12: parca.query.v1alpha1.DiffProfile
+	(*ProfileDiffSelection)(nil),   // 13: parca.query.v1alpha1.ProfileDiffSelection
+	(*QueryRequest)(nil),           // 14: parca.query.v1alpha1.QueryRequest
+	(*Filter)(nil),                 // 15: parca.query.v1alpha1.Filter
+	(*StackFilter)(nil),            // 16: parca.query.v1alpha1.StackFilter
+	(*FrameFilter)(nil),            // 17: parca.query.v1alpha1.FrameFilter
+	(*LocationFilter)(nil),         // 18: parca.query.v1alpha1.LocationFilter
+	(*FunctionNameFilter)(nil),     // 19: parca.query.v1alpha1.FunctionNameFilter
+	(*BinaryFilter)(nil),           // 20: parca.query.v1alpha1.BinaryFilter
+	(*RuntimeFilter)(nil),          // 21: parca.query.v1alpha1.RuntimeFilter
+	(*SourceReference)(nil),        // 22: parca.query.v1alpha1.SourceReference
+	(*GroupBy)(nil),                // 23: parca.query.v1alpha1.GroupBy
+	(*Top)(nil),                    // 24: parca.query.v1alpha1.Top
+	(*TopNode)(nil),                // 25: parca.query.v1alpha1.TopNode
+	(*TopNodeMeta)(nil),            // 26: parca.query.v1alpha1.TopNodeMeta
+	(*Flamegraph)(nil),             // 27: parca.query.v1alpha1.Flamegraph
+	(*FlamegraphArrow)(nil),        // 28: parca.query.v1alpha1.FlamegraphArrow
+	(*Source)(nil),                 // 29: parca.query.v1alpha1.Source
+	(*FlamegraphRootNode)(nil),     // 30: parca.query.v1alpha1.FlamegraphRootNode
+	(*FlamegraphNode)(nil),         // 31: parca.query.v1alpha1.FlamegraphNode
+	(*FlamegraphNodeMeta)(nil),     // 32: parca.query.v1alpha1.FlamegraphNodeMeta
+	(*CallgraphNode)(nil),          // 33: parca.query.v1alpha1.CallgraphNode
+	(*CallgraphNodeMeta)(nil),      // 34: parca.query.v1alpha1.CallgraphNodeMeta
+	(*CallgraphEdge)(nil),          // 35: parca.query.v1alpha1.CallgraphEdge
+	(*Callgraph)(nil),              // 36: parca.query.v1alpha1.Callgraph
+	(*QueryResponse)(nil),          // 37: parca.query.v1alpha1.QueryResponse
+	(*SeriesRequest)(nil),          // 38: parca.query.v1alpha1.SeriesRequest
+	(*SeriesResponse)(nil),         // 39: parca.query.v1alpha1.SeriesResponse
+	(*LabelsRequest)(nil),          // 40: parca.query.v1alpha1.LabelsRequest
+	(*LabelsResponse)(nil),         // 41: parca.query.v1alpha1.LabelsResponse
+	(*ValuesRequest)(nil),          // 42: parca.query.v1alpha1.ValuesRequest
+	(*ValuesResponse)(nil),         // 43: parca.query.v1alpha1.ValuesResponse
+	(*ValueType)(nil),              // 44: parca.query.v1alpha1.ValueType
+	(*ShareProfileRequest)(nil),    // 45: parca.query.v1alpha1.ShareProfileRequest
+	(*ShareProfileResponse)(nil),   // 46: parca.query.v1alpha1.ShareProfileResponse
+	(*TableArrow)(nil),             // 47: parca.query.v1alpha1.TableArrow
+	(*ProfileMetadata)(nil),        // 48: parca.query.v1alpha1.ProfileMetadata
+	(*timestamppb.Timestamp)(nil),  // 49: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),    // 50: google.protobuf.Duration
+	(*v1alpha1.LabelSet)(nil),      // 51: parca.profilestore.v1alpha1.LabelSet
+	(*v1alpha11.Location)(nil),     // 52: parca.metastore.v1alpha1.Location
+	(*v1alpha11.Mapping)(nil),      // 53: parca.metastore.v1alpha1.Mapping
+	(*v1alpha11.Function)(nil),     // 54: parca.metastore.v1alpha1.Function
+	(*v1alpha11.Line)(nil),         // 55: parca.metastore.v1alpha1.Line
 }
 var file_parca_query_v1alpha1_query_proto_depIdxs = []int32{
 	5,  // 0: parca.query.v1alpha1.ProfileTypesResponse.types:type_name -> parca.query.v1alpha1.ProfileType
-	48, // 1: parca.query.v1alpha1.QueryRangeRequest.start:type_name -> google.protobuf.Timestamp
-	48, // 2: parca.query.v1alpha1.QueryRangeRequest.end:type_name -> google.protobuf.Timestamp
-	49, // 3: parca.query.v1alpha1.QueryRangeRequest.step:type_name -> google.protobuf.Duration
+	49, // 1: parca.query.v1alpha1.QueryRangeRequest.start:type_name -> google.protobuf.Timestamp
+	49, // 2: parca.query.v1alpha1.QueryRangeRequest.end:type_name -> google.protobuf.Timestamp
+	50, // 3: parca.query.v1alpha1.QueryRangeRequest.step:type_name -> google.protobuf.Duration
 	8,  // 4: parca.query.v1alpha1.QueryRangeResponse.series:type_name -> parca.query.v1alpha1.MetricsSeries
-	50, // 5: parca.query.v1alpha1.MetricsSeries.labelset:type_name -> parca.profilestore.v1alpha1.LabelSet
+	51, // 5: parca.query.v1alpha1.MetricsSeries.labelset:type_name -> parca.profilestore.v1alpha1.LabelSet
 	9,  // 6: parca.query.v1alpha1.MetricsSeries.samples:type_name -> parca.query.v1alpha1.MetricsSample
-	43, // 7: parca.query.v1alpha1.MetricsSeries.period_type:type_name -> parca.query.v1alpha1.ValueType
-	43, // 8: parca.query.v1alpha1.MetricsSeries.sample_type:type_name -> parca.query.v1alpha1.ValueType
-	48, // 9: parca.query.v1alpha1.MetricsSample.timestamp:type_name -> google.protobuf.Timestamp
-	48, // 10: parca.query.v1alpha1.MergeProfile.start:type_name -> google.protobuf.Timestamp
-	48, // 11: parca.query.v1alpha1.MergeProfile.end:type_name -> google.protobuf.Timestamp
-	48, // 12: parca.query.v1alpha1.SingleProfile.time:type_name -> google.protobuf.Timestamp
+	44, // 7: parca.query.v1alpha1.MetricsSeries.period_type:type_name -> parca.query.v1alpha1.ValueType
+	44, // 8: parca.query.v1alpha1.MetricsSeries.sample_type:type_name -> parca.query.v1alpha1.ValueType
+	49, // 9: parca.query.v1alpha1.MetricsSample.timestamp:type_name -> google.protobuf.Timestamp
+	49, // 10: parca.query.v1alpha1.MergeProfile.start:type_name -> google.protobuf.Timestamp
+	49, // 11: parca.query.v1alpha1.MergeProfile.end:type_name -> google.protobuf.Timestamp
+	49, // 12: parca.query.v1alpha1.SingleProfile.time:type_name -> google.protobuf.Timestamp
 	13, // 13: parca.query.v1alpha1.DiffProfile.a:type_name -> parca.query.v1alpha1.ProfileDiffSelection
 	13, // 14: parca.query.v1alpha1.DiffProfile.b:type_name -> parca.query.v1alpha1.ProfileDiffSelection
 	0,  // 15: parca.query.v1alpha1.ProfileDiffSelection.mode:type_name -> parca.query.v1alpha1.ProfileDiffSelection.Mode
@@ -3889,71 +3941,73 @@ var file_parca_query_v1alpha1_query_proto_depIdxs = []int32{
 	10, // 20: parca.query.v1alpha1.QueryRequest.merge:type_name -> parca.query.v1alpha1.MergeProfile
 	11, // 21: parca.query.v1alpha1.QueryRequest.single:type_name -> parca.query.v1alpha1.SingleProfile
 	2,  // 22: parca.query.v1alpha1.QueryRequest.report_type:type_name -> parca.query.v1alpha1.QueryRequest.ReportType
-	22, // 23: parca.query.v1alpha1.QueryRequest.group_by:type_name -> parca.query.v1alpha1.GroupBy
-	21, // 24: parca.query.v1alpha1.QueryRequest.source_reference:type_name -> parca.query.v1alpha1.SourceReference
-	20, // 25: parca.query.v1alpha1.QueryRequest.runtime_filter:type_name -> parca.query.v1alpha1.RuntimeFilter
+	23, // 23: parca.query.v1alpha1.QueryRequest.group_by:type_name -> parca.query.v1alpha1.GroupBy
+	22, // 24: parca.query.v1alpha1.QueryRequest.source_reference:type_name -> parca.query.v1alpha1.SourceReference
+	21, // 25: parca.query.v1alpha1.QueryRequest.runtime_filter:type_name -> parca.query.v1alpha1.RuntimeFilter
 	15, // 26: parca.query.v1alpha1.QueryRequest.filter:type_name -> parca.query.v1alpha1.Filter
 	16, // 27: parca.query.v1alpha1.Filter.stack_filter:type_name -> parca.query.v1alpha1.StackFilter
-	18, // 28: parca.query.v1alpha1.Filter.frame_filter:type_name -> parca.query.v1alpha1.FrameFilter
-	17, // 29: parca.query.v1alpha1.StackFilter.function_name_stack_filter:type_name -> parca.query.v1alpha1.FunctionNameStackFilter
-	19, // 30: parca.query.v1alpha1.FrameFilter.binary_frame_filter:type_name -> parca.query.v1alpha1.BinaryFrameFilter
-	24, // 31: parca.query.v1alpha1.Top.list:type_name -> parca.query.v1alpha1.TopNode
-	25, // 32: parca.query.v1alpha1.TopNode.meta:type_name -> parca.query.v1alpha1.TopNodeMeta
-	51, // 33: parca.query.v1alpha1.TopNodeMeta.location:type_name -> parca.metastore.v1alpha1.Location
-	52, // 34: parca.query.v1alpha1.TopNodeMeta.mapping:type_name -> parca.metastore.v1alpha1.Mapping
-	53, // 35: parca.query.v1alpha1.TopNodeMeta.function:type_name -> parca.metastore.v1alpha1.Function
-	54, // 36: parca.query.v1alpha1.TopNodeMeta.line:type_name -> parca.metastore.v1alpha1.Line
-	29, // 37: parca.query.v1alpha1.Flamegraph.root:type_name -> parca.query.v1alpha1.FlamegraphRootNode
-	51, // 38: parca.query.v1alpha1.Flamegraph.locations:type_name -> parca.metastore.v1alpha1.Location
-	52, // 39: parca.query.v1alpha1.Flamegraph.mapping:type_name -> parca.metastore.v1alpha1.Mapping
-	53, // 40: parca.query.v1alpha1.Flamegraph.function:type_name -> parca.metastore.v1alpha1.Function
-	30, // 41: parca.query.v1alpha1.FlamegraphRootNode.children:type_name -> parca.query.v1alpha1.FlamegraphNode
-	31, // 42: parca.query.v1alpha1.FlamegraphNode.meta:type_name -> parca.query.v1alpha1.FlamegraphNodeMeta
-	30, // 43: parca.query.v1alpha1.FlamegraphNode.children:type_name -> parca.query.v1alpha1.FlamegraphNode
-	51, // 44: parca.query.v1alpha1.FlamegraphNodeMeta.location:type_name -> parca.metastore.v1alpha1.Location
-	52, // 45: parca.query.v1alpha1.FlamegraphNodeMeta.mapping:type_name -> parca.metastore.v1alpha1.Mapping
-	53, // 46: parca.query.v1alpha1.FlamegraphNodeMeta.function:type_name -> parca.metastore.v1alpha1.Function
-	54, // 47: parca.query.v1alpha1.FlamegraphNodeMeta.line:type_name -> parca.metastore.v1alpha1.Line
-	33, // 48: parca.query.v1alpha1.CallgraphNode.meta:type_name -> parca.query.v1alpha1.CallgraphNodeMeta
-	51, // 49: parca.query.v1alpha1.CallgraphNodeMeta.location:type_name -> parca.metastore.v1alpha1.Location
-	52, // 50: parca.query.v1alpha1.CallgraphNodeMeta.mapping:type_name -> parca.metastore.v1alpha1.Mapping
-	53, // 51: parca.query.v1alpha1.CallgraphNodeMeta.function:type_name -> parca.metastore.v1alpha1.Function
-	54, // 52: parca.query.v1alpha1.CallgraphNodeMeta.line:type_name -> parca.metastore.v1alpha1.Line
-	32, // 53: parca.query.v1alpha1.Callgraph.nodes:type_name -> parca.query.v1alpha1.CallgraphNode
-	34, // 54: parca.query.v1alpha1.Callgraph.edges:type_name -> parca.query.v1alpha1.CallgraphEdge
-	26, // 55: parca.query.v1alpha1.QueryResponse.flamegraph:type_name -> parca.query.v1alpha1.Flamegraph
-	23, // 56: parca.query.v1alpha1.QueryResponse.top:type_name -> parca.query.v1alpha1.Top
-	35, // 57: parca.query.v1alpha1.QueryResponse.callgraph:type_name -> parca.query.v1alpha1.Callgraph
-	27, // 58: parca.query.v1alpha1.QueryResponse.flamegraph_arrow:type_name -> parca.query.v1alpha1.FlamegraphArrow
-	28, // 59: parca.query.v1alpha1.QueryResponse.source:type_name -> parca.query.v1alpha1.Source
-	46, // 60: parca.query.v1alpha1.QueryResponse.table_arrow:type_name -> parca.query.v1alpha1.TableArrow
-	47, // 61: parca.query.v1alpha1.QueryResponse.profile_metadata:type_name -> parca.query.v1alpha1.ProfileMetadata
-	48, // 62: parca.query.v1alpha1.SeriesRequest.start:type_name -> google.protobuf.Timestamp
-	48, // 63: parca.query.v1alpha1.SeriesRequest.end:type_name -> google.protobuf.Timestamp
-	48, // 64: parca.query.v1alpha1.LabelsRequest.start:type_name -> google.protobuf.Timestamp
-	48, // 65: parca.query.v1alpha1.LabelsRequest.end:type_name -> google.protobuf.Timestamp
-	48, // 66: parca.query.v1alpha1.ValuesRequest.start:type_name -> google.protobuf.Timestamp
-	48, // 67: parca.query.v1alpha1.ValuesRequest.end:type_name -> google.protobuf.Timestamp
-	14, // 68: parca.query.v1alpha1.ShareProfileRequest.query_request:type_name -> parca.query.v1alpha1.QueryRequest
-	6,  // 69: parca.query.v1alpha1.QueryService.QueryRange:input_type -> parca.query.v1alpha1.QueryRangeRequest
-	14, // 70: parca.query.v1alpha1.QueryService.Query:input_type -> parca.query.v1alpha1.QueryRequest
-	37, // 71: parca.query.v1alpha1.QueryService.Series:input_type -> parca.query.v1alpha1.SeriesRequest
-	3,  // 72: parca.query.v1alpha1.QueryService.ProfileTypes:input_type -> parca.query.v1alpha1.ProfileTypesRequest
-	39, // 73: parca.query.v1alpha1.QueryService.Labels:input_type -> parca.query.v1alpha1.LabelsRequest
-	41, // 74: parca.query.v1alpha1.QueryService.Values:input_type -> parca.query.v1alpha1.ValuesRequest
-	44, // 75: parca.query.v1alpha1.QueryService.ShareProfile:input_type -> parca.query.v1alpha1.ShareProfileRequest
-	7,  // 76: parca.query.v1alpha1.QueryService.QueryRange:output_type -> parca.query.v1alpha1.QueryRangeResponse
-	36, // 77: parca.query.v1alpha1.QueryService.Query:output_type -> parca.query.v1alpha1.QueryResponse
-	38, // 78: parca.query.v1alpha1.QueryService.Series:output_type -> parca.query.v1alpha1.SeriesResponse
-	4,  // 79: parca.query.v1alpha1.QueryService.ProfileTypes:output_type -> parca.query.v1alpha1.ProfileTypesResponse
-	40, // 80: parca.query.v1alpha1.QueryService.Labels:output_type -> parca.query.v1alpha1.LabelsResponse
-	42, // 81: parca.query.v1alpha1.QueryService.Values:output_type -> parca.query.v1alpha1.ValuesResponse
-	45, // 82: parca.query.v1alpha1.QueryService.ShareProfile:output_type -> parca.query.v1alpha1.ShareProfileResponse
-	76, // [76:83] is the sub-list for method output_type
-	69, // [69:76] is the sub-list for method input_type
-	69, // [69:69] is the sub-list for extension type_name
-	69, // [69:69] is the sub-list for extension extendee
-	0,  // [0:69] is the sub-list for field type_name
+	17, // 28: parca.query.v1alpha1.Filter.frame_filter:type_name -> parca.query.v1alpha1.FrameFilter
+	18, // 29: parca.query.v1alpha1.StackFilter.location:type_name -> parca.query.v1alpha1.LocationFilter
+	18, // 30: parca.query.v1alpha1.FrameFilter.location:type_name -> parca.query.v1alpha1.LocationFilter
+	19, // 31: parca.query.v1alpha1.LocationFilter.function_name_filter:type_name -> parca.query.v1alpha1.FunctionNameFilter
+	20, // 32: parca.query.v1alpha1.LocationFilter.binary_filter:type_name -> parca.query.v1alpha1.BinaryFilter
+	25, // 33: parca.query.v1alpha1.Top.list:type_name -> parca.query.v1alpha1.TopNode
+	26, // 34: parca.query.v1alpha1.TopNode.meta:type_name -> parca.query.v1alpha1.TopNodeMeta
+	52, // 35: parca.query.v1alpha1.TopNodeMeta.location:type_name -> parca.metastore.v1alpha1.Location
+	53, // 36: parca.query.v1alpha1.TopNodeMeta.mapping:type_name -> parca.metastore.v1alpha1.Mapping
+	54, // 37: parca.query.v1alpha1.TopNodeMeta.function:type_name -> parca.metastore.v1alpha1.Function
+	55, // 38: parca.query.v1alpha1.TopNodeMeta.line:type_name -> parca.metastore.v1alpha1.Line
+	30, // 39: parca.query.v1alpha1.Flamegraph.root:type_name -> parca.query.v1alpha1.FlamegraphRootNode
+	52, // 40: parca.query.v1alpha1.Flamegraph.locations:type_name -> parca.metastore.v1alpha1.Location
+	53, // 41: parca.query.v1alpha1.Flamegraph.mapping:type_name -> parca.metastore.v1alpha1.Mapping
+	54, // 42: parca.query.v1alpha1.Flamegraph.function:type_name -> parca.metastore.v1alpha1.Function
+	31, // 43: parca.query.v1alpha1.FlamegraphRootNode.children:type_name -> parca.query.v1alpha1.FlamegraphNode
+	32, // 44: parca.query.v1alpha1.FlamegraphNode.meta:type_name -> parca.query.v1alpha1.FlamegraphNodeMeta
+	31, // 45: parca.query.v1alpha1.FlamegraphNode.children:type_name -> parca.query.v1alpha1.FlamegraphNode
+	52, // 46: parca.query.v1alpha1.FlamegraphNodeMeta.location:type_name -> parca.metastore.v1alpha1.Location
+	53, // 47: parca.query.v1alpha1.FlamegraphNodeMeta.mapping:type_name -> parca.metastore.v1alpha1.Mapping
+	54, // 48: parca.query.v1alpha1.FlamegraphNodeMeta.function:type_name -> parca.metastore.v1alpha1.Function
+	55, // 49: parca.query.v1alpha1.FlamegraphNodeMeta.line:type_name -> parca.metastore.v1alpha1.Line
+	34, // 50: parca.query.v1alpha1.CallgraphNode.meta:type_name -> parca.query.v1alpha1.CallgraphNodeMeta
+	52, // 51: parca.query.v1alpha1.CallgraphNodeMeta.location:type_name -> parca.metastore.v1alpha1.Location
+	53, // 52: parca.query.v1alpha1.CallgraphNodeMeta.mapping:type_name -> parca.metastore.v1alpha1.Mapping
+	54, // 53: parca.query.v1alpha1.CallgraphNodeMeta.function:type_name -> parca.metastore.v1alpha1.Function
+	55, // 54: parca.query.v1alpha1.CallgraphNodeMeta.line:type_name -> parca.metastore.v1alpha1.Line
+	33, // 55: parca.query.v1alpha1.Callgraph.nodes:type_name -> parca.query.v1alpha1.CallgraphNode
+	35, // 56: parca.query.v1alpha1.Callgraph.edges:type_name -> parca.query.v1alpha1.CallgraphEdge
+	27, // 57: parca.query.v1alpha1.QueryResponse.flamegraph:type_name -> parca.query.v1alpha1.Flamegraph
+	24, // 58: parca.query.v1alpha1.QueryResponse.top:type_name -> parca.query.v1alpha1.Top
+	36, // 59: parca.query.v1alpha1.QueryResponse.callgraph:type_name -> parca.query.v1alpha1.Callgraph
+	28, // 60: parca.query.v1alpha1.QueryResponse.flamegraph_arrow:type_name -> parca.query.v1alpha1.FlamegraphArrow
+	29, // 61: parca.query.v1alpha1.QueryResponse.source:type_name -> parca.query.v1alpha1.Source
+	47, // 62: parca.query.v1alpha1.QueryResponse.table_arrow:type_name -> parca.query.v1alpha1.TableArrow
+	48, // 63: parca.query.v1alpha1.QueryResponse.profile_metadata:type_name -> parca.query.v1alpha1.ProfileMetadata
+	49, // 64: parca.query.v1alpha1.SeriesRequest.start:type_name -> google.protobuf.Timestamp
+	49, // 65: parca.query.v1alpha1.SeriesRequest.end:type_name -> google.protobuf.Timestamp
+	49, // 66: parca.query.v1alpha1.LabelsRequest.start:type_name -> google.protobuf.Timestamp
+	49, // 67: parca.query.v1alpha1.LabelsRequest.end:type_name -> google.protobuf.Timestamp
+	49, // 68: parca.query.v1alpha1.ValuesRequest.start:type_name -> google.protobuf.Timestamp
+	49, // 69: parca.query.v1alpha1.ValuesRequest.end:type_name -> google.protobuf.Timestamp
+	14, // 70: parca.query.v1alpha1.ShareProfileRequest.query_request:type_name -> parca.query.v1alpha1.QueryRequest
+	6,  // 71: parca.query.v1alpha1.QueryService.QueryRange:input_type -> parca.query.v1alpha1.QueryRangeRequest
+	14, // 72: parca.query.v1alpha1.QueryService.Query:input_type -> parca.query.v1alpha1.QueryRequest
+	38, // 73: parca.query.v1alpha1.QueryService.Series:input_type -> parca.query.v1alpha1.SeriesRequest
+	3,  // 74: parca.query.v1alpha1.QueryService.ProfileTypes:input_type -> parca.query.v1alpha1.ProfileTypesRequest
+	40, // 75: parca.query.v1alpha1.QueryService.Labels:input_type -> parca.query.v1alpha1.LabelsRequest
+	42, // 76: parca.query.v1alpha1.QueryService.Values:input_type -> parca.query.v1alpha1.ValuesRequest
+	45, // 77: parca.query.v1alpha1.QueryService.ShareProfile:input_type -> parca.query.v1alpha1.ShareProfileRequest
+	7,  // 78: parca.query.v1alpha1.QueryService.QueryRange:output_type -> parca.query.v1alpha1.QueryRangeResponse
+	37, // 79: parca.query.v1alpha1.QueryService.Query:output_type -> parca.query.v1alpha1.QueryResponse
+	39, // 80: parca.query.v1alpha1.QueryService.Series:output_type -> parca.query.v1alpha1.SeriesResponse
+	4,  // 81: parca.query.v1alpha1.QueryService.ProfileTypes:output_type -> parca.query.v1alpha1.ProfileTypesResponse
+	41, // 82: parca.query.v1alpha1.QueryService.Labels:output_type -> parca.query.v1alpha1.LabelsResponse
+	43, // 83: parca.query.v1alpha1.QueryService.Values:output_type -> parca.query.v1alpha1.ValuesResponse
+	46, // 84: parca.query.v1alpha1.QueryService.ShareProfile:output_type -> parca.query.v1alpha1.ShareProfileResponse
+	78, // [78:85] is the sub-list for method output_type
+	71, // [71:78] is the sub-list for method input_type
+	71, // [71:71] is the sub-list for extension type_name
+	71, // [71:71] is the sub-list for extension extendee
+	0,  // [0:71] is the sub-list for field type_name
 }
 
 func init() { file_parca_query_v1alpha1_query_proto_init() }
@@ -3975,13 +4029,11 @@ func file_parca_query_v1alpha1_query_proto_init() {
 		(*Filter_StackFilter)(nil),
 		(*Filter_FrameFilter)(nil),
 	}
-	file_parca_query_v1alpha1_query_proto_msgTypes[13].OneofWrappers = []any{
-		(*StackFilter_FunctionNameStackFilter)(nil),
-	}
 	file_parca_query_v1alpha1_query_proto_msgTypes[15].OneofWrappers = []any{
-		(*FrameFilter_BinaryFrameFilter)(nil),
+		(*LocationFilter_FunctionNameFilter)(nil),
+		(*LocationFilter_BinaryFilter)(nil),
 	}
-	file_parca_query_v1alpha1_query_proto_msgTypes[33].OneofWrappers = []any{
+	file_parca_query_v1alpha1_query_proto_msgTypes[34].OneofWrappers = []any{
 		(*QueryResponse_Flamegraph)(nil),
 		(*QueryResponse_Pprof)(nil),
 		(*QueryResponse_Top)(nil),
@@ -3991,16 +4043,16 @@ func file_parca_query_v1alpha1_query_proto_init() {
 		(*QueryResponse_TableArrow)(nil),
 		(*QueryResponse_ProfileMetadata)(nil),
 	}
-	file_parca_query_v1alpha1_query_proto_msgTypes[36].OneofWrappers = []any{}
-	file_parca_query_v1alpha1_query_proto_msgTypes[38].OneofWrappers = []any{}
-	file_parca_query_v1alpha1_query_proto_msgTypes[41].OneofWrappers = []any{}
+	file_parca_query_v1alpha1_query_proto_msgTypes[37].OneofWrappers = []any{}
+	file_parca_query_v1alpha1_query_proto_msgTypes[39].OneofWrappers = []any{}
+	file_parca_query_v1alpha1_query_proto_msgTypes[42].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_parca_query_v1alpha1_query_proto_rawDesc), len(file_parca_query_v1alpha1_query_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   45,
+			NumMessages:   46,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -294,34 +294,41 @@ message Filter {
 
 // StackFilter is a filter for filtering by stacks
 message StackFilter {
-  // filter contains the different methods in which you can filter a stack
+  // location contains the location filter to apply
+  LocationFilter location = 1;
+}
+
+// FrameFilter is a filter for filtering by frames
+message FrameFilter {
+  // location contains the location filter to apply
+  LocationFilter location = 1;
+}
+
+// LocationFilter provides filtering by location attributes
+message LocationFilter {
+  // filter contains the different methods for filtering
   oneof filter {
-    // function_name_stack_filter is the function name to filter by
-    FunctionNameStackFilter function_name_stack_filter = 1;
+    // function_name_filter is the function name to filter by
+    FunctionNameFilter function_name_filter = 1;
+    // binary_filter is the binary name to filter by
+    BinaryFilter binary_filter = 2;
   }
 }
 
-// FunctionNameStackFilter is a filter for filtering by function name
-message FunctionNameStackFilter {
+// FunctionNameFilter is a filter for filtering by function name
+message FunctionNameFilter {
   // function_to_filter is the function name to filter by
   string function_to_filter = 1;
   // exclude determines whether to exclude stacks matching the function
   bool exclude = 2;
 }
 
-// FrameFilter is a filter for filtering by frames
-message FrameFilter {
-  // filter contains the different methods in which you can filter a frame
-  oneof filter {
-    // binary_frame_filter is the list of binary names to filter by
-    BinaryFrameFilter binary_frame_filter = 1;
-  }
-}
-
-// BinaryFrameFilter is a filter for filtering by binaries
-message BinaryFrameFilter {
-  // include_binaries is the list of binaries to filter by
-  repeated string include_binaries = 1;
+// BinaryFilter is a filter for filtering by binaries
+message BinaryFilter {
+  // binary_to_filter is the binary name to filter by
+  string binary_to_filter = 1;
+  // exclude determines whether to exclude frames matching the binary
+  bool exclude = 2;
 }
 
 // RuntimeFilter configures which runtimes to filter frames out for.

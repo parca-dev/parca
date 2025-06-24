@@ -986,18 +986,19 @@
         }
       }
     },
-    "v1alpha1BinaryFrameFilter": {
+    "v1alpha1BinaryFilter": {
       "type": "object",
       "properties": {
-        "includeBinaries": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "title": "include_binaries is the list of binaries to filter by"
+        "binaryToFilter": {
+          "type": "string",
+          "title": "binary_to_filter is the binary name to filter by"
+        },
+        "exclude": {
+          "type": "boolean",
+          "title": "exclude determines whether to exclude frames matching the binary"
         }
       },
-      "title": "BinaryFrameFilter is a filter for filtering by binaries"
+      "title": "BinaryFilter is a filter for filtering by binaries"
     },
     "v1alpha1Callgraph": {
       "type": "object",
@@ -1308,14 +1309,14 @@
     "v1alpha1FrameFilter": {
       "type": "object",
       "properties": {
-        "binaryFrameFilter": {
-          "$ref": "#/definitions/v1alpha1BinaryFrameFilter",
-          "title": "binary_frame_filter is the list of binary names to filter by"
+        "location": {
+          "$ref": "#/definitions/v1alpha1LocationFilter",
+          "title": "location contains the location filter to apply"
         }
       },
       "title": "FrameFilter is a filter for filtering by frames"
     },
-    "v1alpha1FunctionNameStackFilter": {
+    "v1alpha1FunctionNameFilter": {
       "type": "object",
       "properties": {
         "functionToFilter": {
@@ -1327,7 +1328,7 @@
           "title": "exclude determines whether to exclude stacks matching the function"
         }
       },
-      "title": "FunctionNameStackFilter is a filter for filtering by function name"
+      "title": "FunctionNameFilter is a filter for filtering by function name"
     },
     "v1alpha1GroupBy": {
       "type": "object",
@@ -1375,6 +1376,20 @@
         }
       },
       "title": "LabelsResponse is the set of matching label names"
+    },
+    "v1alpha1LocationFilter": {
+      "type": "object",
+      "properties": {
+        "functionNameFilter": {
+          "$ref": "#/definitions/v1alpha1FunctionNameFilter",
+          "title": "function_name_filter is the function name to filter by"
+        },
+        "binaryFilter": {
+          "$ref": "#/definitions/v1alpha1BinaryFilter",
+          "title": "binary_filter is the binary name to filter by"
+        }
+      },
+      "title": "LocationFilter provides filtering by location attributes"
     },
     "v1alpha1MergeProfile": {
       "type": "object",
@@ -1633,9 +1648,9 @@
     "v1alpha1StackFilter": {
       "type": "object",
       "properties": {
-        "functionNameStackFilter": {
-          "$ref": "#/definitions/v1alpha1FunctionNameStackFilter",
-          "title": "function_name_stack_filter is the function name to filter by"
+        "location": {
+          "$ref": "#/definitions/v1alpha1LocationFilter",
+          "title": "location contains the location filter to apply"
         }
       },
       "title": "StackFilter is a filter for filtering by stacks"
