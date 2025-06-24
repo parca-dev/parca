@@ -171,17 +171,21 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   const isTableVizOnly = dashboardItems?.length === 1 && isTableViz;
   const isGraphViz = dashboardItems?.includes('icicle');
   const isSandwichIcicleGraphViz = dashboardItems?.includes('sandwich');
+
+  const isTableView = isTableVizOnly || isSandwichIcicleGraphViz;
+
   const req = profileSource?.QueryRequest();
   if (req !== null && req !== undefined) {
     req.groupBy = {
       fields: groupBy ?? [],
     };
   }
+
   return (
     <>
       <div className="flex w-full justify-between items-end">
         <div className="flex gap-3 items-end">
-          {!isTableVizOnly && (
+          {!isTableView && (
             <>
               <GroupByDropdown
                 groupBy={groupBy}
@@ -204,7 +208,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
             toggleGroupBy={toggleGroupBy}
             profileType={profileType}
             onSelect={() => {}}
-            isTableVizOnly={isTableVizOnly}
+            isTableVizOnly={isTableView}
           />
 
           <ShareButton

@@ -123,6 +123,7 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
           setDashboardItems(dashboardItems.filter(v => v !== item.key));
         }
       },
+      isDisabled: dashboardItems.length === 1 && dashboardItems.includes('sandwich'),
     };
   };
 
