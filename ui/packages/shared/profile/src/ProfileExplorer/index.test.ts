@@ -11,8 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { describe, it, expect } from 'vitest';
-import { filterEmptyParams } from './index';
+import {describe, expect, it} from 'vitest';
+
+import {filterEmptyParams} from './index';
 
 describe('filterEmptyParams', () => {
   it('should return an array with 2 elements when given object with 2 valid and multiple invalid values', () => {
@@ -42,7 +43,7 @@ describe('filterEmptyParams', () => {
     };
 
     const result = filterEmptyParams(input);
-    expect(result).toEqual({ valid: 'test' });
+    expect(result).toEqual({valid: 'test'});
   });
 
   it('should filter out undefined values', () => {
@@ -52,7 +53,7 @@ describe('filterEmptyParams', () => {
     };
 
     const result = filterEmptyParams(input);
-    expect(result).toEqual({ valid: 'test' });
+    expect(result).toEqual({valid: 'test'});
   });
 
   it('should filter out empty arrays', () => {
@@ -74,7 +75,7 @@ describe('filterEmptyParams', () => {
       string: 'test',
       number: 0,
       boolean: false,
-      object: { key: 'value' },
+      object: {key: 'value'},
       array: ['item'],
     };
 
