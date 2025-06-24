@@ -170,10 +170,20 @@ const ProfileSelector = ({
     return Query.parse(querySelection.expression).profileType();
   }, [querySelection.expression]);
 
-  const {loading: labelNamesLoading, result} = useLabelNames(queryClient, profileType.toString());
+  const from = timeRangeSelection.getFromMs();
+  const to = timeRangeSelection.getToMs();
+
+  const {loading: labelNamesLoading, result} = useLabelNames(
+    queryClient,
+    profileType.toString(),
+    from,
+    to
+  );
   const {loading: selectedLabelNamesLoading, result: selectedLabelNamesResult} = useLabelNames(
     queryClient,
-    selectedProfileType.toString()
+    selectedProfileType.toString(),
+    from,
+    to
   );
 
   const labels = useMemo(() => {
