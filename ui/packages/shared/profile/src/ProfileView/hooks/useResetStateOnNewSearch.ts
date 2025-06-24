@@ -14,10 +14,13 @@
 import {useURLState} from '@parca/components';
 
 export const useResetStateOnNewSearch = (): (() => void) => {
-  const [, setCurPath] = useURLState('cur_path');
+  const [val, setCurPath] = useURLState('cur_path');
 
   return () => {
     setTimeout(() => {
+      if (val === undefined) {
+        return;
+      }
       setCurPath(undefined);
     });
   };

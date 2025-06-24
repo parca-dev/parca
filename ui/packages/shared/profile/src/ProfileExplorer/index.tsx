@@ -71,7 +71,7 @@ const sanitizeDateRange = (
 };
 /* eslint-enable @typescript-eslint/naming-convention */
 
-const filterEmptyParams = (o: Record<string, any>): Record<string, any> => {
+export const filterEmptyParams = (o: Record<string, any>): Record<string, any> => {
   return Object.fromEntries(
     Object.entries(o)
       .filter(
