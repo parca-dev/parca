@@ -136,9 +136,9 @@ const MenuItem: React.FC<MenuItemProps> = ({
                 customSubmenu
               ) : (
                 <span className="flex items-center">
-                  <div className="flex items-center">
+                  <div className="flex items-center gap-2">
+                    {icon !== undefined && <Icon icon={icon} className="h-4 w-4" />}
                     <span>{label}</span>
-                    {icon !== undefined && <Icon icon={icon} className="ml-2 h-4 w-4" />}
                   </div>
                   {isActive && <Icon icon="heroicons-solid:check" className="ml-2 h-4 w-4" />}
                 </span>
@@ -240,8 +240,6 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
     setBinaryFrameFilter([]);
   };
 
-  const activeSelectionCount = groupBy.length > 1 ? groupBy.length - 1 : 0; // Subtract 1 because Function is always active and disabled
-
   const menuItems: MenuItemType[] = [
     {
       label: 'Levels',
@@ -251,7 +249,6 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
           label: 'Function',
           onclick: () => toggleGroupBy(FIELD_FUNCTION_NAME),
           value: FIELD_FUNCTION_NAME,
-          disabled: true,
         },
         {
           label: 'Binary',
@@ -271,19 +268,6 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
       ],
       hide: !!isTableVizOnly,
       icon: 'heroicons-solid:bars-3',
-      customSubmenu: (
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center">
-            <span className={activeSelectionCount > 0 ? 'text-indigo-400' : ''}>Levels</span>
-            <Icon icon="heroicons-solid:bars-3" className="ml-2 h-4 w-4" />
-          </div>
-          {activeSelectionCount > 0 && (
-            <span className="ml-2 px-2 py-1 text-xs font-medium text-white bg-indigo-500 rounded-full">
-              {activeSelectionCount}
-            </span>
-          )}
-        </div>
-      ),
     },
     {
       label: 'Color by',
@@ -392,18 +376,17 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
     },
   ];
 
-  console.log(
-    'MultiLevelDropdown rendered with items:',
-    USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS.key
-  );
-
   return (
     <div className="relative inline-block text-left" id="h-visualisation-toolbar-actions">
       <Menu>
         {({open, close}) => (
           <>
-            <Menu.Button className="inline-flex dark:bg-gray-900 dark:border-gray-600 justify-center w-full px-4 py-2 text-sm font-normal text-gray-600 dark:text-gray-200 bg-white rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 border border-gray-200 pr-[1.7rem]">
-              <span>Preferences</span>
+            <Menu.Button className="flex dark:bg-gray-900 dark:border-gray-600 justify-center w-full px-4 py-2 text-sm font-normal text-gray-600 dark:text-gray-200 bg-white rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 border border-gray-200 pr-[1.7rem]">
+              <div className="flex items-center gap-2">
+                <Icon icon="pajamas:preferences" className="w-4 h-4" />
+
+                <span>Preferences</span>
+              </div>
 
               <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-400">
                 <Icon icon="heroicons:chevron-down-20-solid" aria-hidden="true" />
