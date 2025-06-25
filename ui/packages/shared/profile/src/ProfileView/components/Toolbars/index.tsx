@@ -108,6 +108,7 @@ export const IcicleGraphToolbar: FC<IcicleGraphToolbarProps> = ({curPath, setNew
           className="gap-2 w-max h-fit"
           onClick={() => setNewCurPath([])}
           disabled={curPath.length === 0}
+          id="h-reset-graph"
         >
           Reset graph
           <Icon icon="system-uicons:reset" width={20} />
