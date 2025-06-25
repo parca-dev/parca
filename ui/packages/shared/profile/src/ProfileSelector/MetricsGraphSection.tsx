@@ -21,6 +21,7 @@ import {MergedProfileSelection, ProfileSelection} from '..';
 import UtilizationMetricsGraph from '../MetricsGraph/UtilizationMetrics';
 import AreaChart from '../MetricsGraph/UtilizationMetrics/Throughput';
 import ProfileMetricsGraph, {ProfileMetricsEmptyState} from '../ProfileMetricsGraph';
+import {useResetStateOnSeriesChange} from '../ProfileView/hooks/useResetStateOnSeriesChange';
 import {QuerySelection, type UtilizationMetrics as UtilizationMetricsType} from './index';
 
 interface MetricsGraphSectionProps {
@@ -69,6 +70,7 @@ export function MetricsGraphSection({
   utilizationMetricsLoading,
   onUtilizationSeriesSelect,
 }: MetricsGraphSectionProps): JSX.Element {
+  const resetStateOnSeriesChange = useResetStateOnSeriesChange();
   const handleTimeRangeChange = (range: DateTimeRange): void => {
     const from = range.getFromMs();
     const to = range.getToMs();
@@ -137,6 +139,8 @@ export function MetricsGraphSection({
     const durationInMilliseconds = duration / 1000000; // duration is in nanoseconds
     const mergeFrom = timestamp;
     const mergeTo = query.profileType().delta ? mergeFrom + durationInMilliseconds : mergeFrom;
+
+    resetStateOnSeriesChange(); // reset some state when a new series is selected
     selectProfile(new MergedProfileSelection(mergeFrom, mergeTo, query));
   };
 
