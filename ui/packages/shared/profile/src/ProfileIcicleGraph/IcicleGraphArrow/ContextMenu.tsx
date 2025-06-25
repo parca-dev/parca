@@ -144,7 +144,7 @@ const ContextMenu = ({
   const nonEmptyValuesToCopy = valuesToCopy.filter(({value}) => value !== '');
 
   return (
-    <Menu id={menuId} theme={isDarkMode ? 'dark' : ''}>
+    <Menu id={menuId} theme={isDarkMode ? 'dark' : ''} className="w-[250px]">
       <Item
         id="view-source-file"
         onClick={handleViewSourceFile}
@@ -187,7 +187,12 @@ const ContextMenu = ({
         >
           <div className="flex w-full items-center gap-2">
             <Icon icon="tdesign:sandwich-filled" />
-            <div>Show in sandwich</div>
+            <div className="relative">
+              Show in sandwich
+              <span className="absolute top-[-2px] text-xs lowercase text-red-500">
+                &nbsp;alpha
+              </span>
+            </div>
           </div>
         </Item>
       )}
