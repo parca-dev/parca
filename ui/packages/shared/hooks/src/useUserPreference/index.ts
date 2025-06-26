@@ -41,7 +41,7 @@ export const USER_PREFERENCES: {[key: string]: UserPreferenceDetails} = {
       'When enabled, this option automatically trims nodes that are too small to be seen in the graph, making it easier to read and understand.',
   },
   FLAMEGRAPH_COLOR_PROFILE: {
-    name: 'Flamegraph color profile',
+    name: 'Flame graph color profile',
     key: 'FLAMEGRAPH_COLOR_PROFILE',
     type: 'string',
     default: 'ocean',
