@@ -26,7 +26,7 @@ import {getLastItem, type ColorConfig} from '@parca/utilities';
 import {ProfileSource} from '../../ProfileSource';
 import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
 import ContextMenuWrapper, {ContextMenuWrapperRef} from './ContextMenuWrapper';
-import {IcicleNode, RowHeight, colorByColors} from './IcicleGraphNodes';
+import {FlameNode, RowHeight, colorByColors} from './FlameGraphNodes';
 import {MemoizedTooltip} from './MemoizedTooltip';
 import {TooltipProvider} from './TooltipContext';
 import {useFilenamesList} from './useMappingList';
@@ -61,7 +61,7 @@ export const FIELD_PARENT = 'parent';
 export const FIELD_DEPTH = 'depth';
 export const FIELD_VALUE_OFFSET = 'value_offset';
 
-interface IcicleGraphArrowProps {
+interface FlameGraphArrowProps {
   arrow: FlamegraphArrow;
   total: bigint;
   filtered: bigint;
@@ -73,7 +73,7 @@ interface IcicleGraphArrowProps {
   isHalfScreen: boolean;
   mappingsListFromMetadata: string[];
   compareAbsolute: boolean;
-  isIcicleChart?: boolean;
+  isFlameChart?: boolean;
   isFlamegraph?: boolean;
   isSandwich?: boolean;
   tooltipId?: string;
@@ -120,7 +120,7 @@ function getMaxDepth(depthColumn: Vector<any> | null): number {
   return max;
 }
 
-export const IcicleGraphArrow = memo(function IcicleGraphArrow({
+export const FlameGraphArrow = memo(function FlameGraphArrow({
   arrow,
   total,
   filtered,
@@ -131,11 +131,11 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   profileSource,
   mappingsListFromMetadata,
   compareAbsolute,
-  isIcicleChart = false,
+  isFlameChart = false,
   isFlamegraph = false,
   isSandwich = false,
   tooltipId = 'default',
-}: IcicleGraphArrowProps): React.JSX.Element {
+}: FlameGraphArrowProps): React.JSX.Element {
   const [highlightSimilarStacksPreference] = useUserPreference<boolean>(
     USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS.key
   );
@@ -208,7 +208,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   const colorByColors: colorByColors = colorByList[colorByValue as ColorByKey];
 
-  const MENU_ID = 'icicle-graph-context-menu';
+  const MENU_ID = 'flame-graph-context-menu';
   const contextMenuRef = useRef<ContextMenuWrapperRef>(null);
   const {show, hideAll} = useContextMenu({
     id: MENU_ID,
@@ -316,7 +316,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           ref={svg}
         >
           {Array.from({length: table.numRows}, (_, row) => (
-            <IcicleNode
+            <FlameNode
               key={row}
               table={table}
               row={row} // root is always row 0 in the arrow record
@@ -330,8 +330,8 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               colorForSimilarNodes={colorForSimilarNodes}
               selectedRow={selectedRow}
               onClick={() => {
-                if (isIcicleChart) {
-                  // We don't want to expand in icicle charts.
+                if (isFlameChart) {
+                  // We don't want to expand in flame charts.
                   return;
                 }
                 handleRowClick(row);
@@ -339,7 +339,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               onContextMenu={displayMenu}
               hoveringRow={highlightSimilarStacksPreference ? hoveringRow : undefined}
               setHoveringRow={highlightSimilarStacksPreference ? setHoveringRow : noop}
-              isIcicleChart={isIcicleChart}
+              isFlameChart={isFlameChart}
               profileSource={profileSource}
               isFlamegraph={isFlamegraph}
               isSandwich={isSandwich}
@@ -353,4 +353,4 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   );
 });
 
-export default IcicleGraphArrow;
+export default FlameGraphArrow;

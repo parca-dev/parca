@@ -28,7 +28,7 @@ import {isSearchMatch} from '@parca/utilities';
 
 import useMappingList, {
   useFilenamesList,
-} from '../ProfileIcicleGraph/IcicleGraphArrow/useMappingList';
+} from '../ProfileFlameGraph/FlameGraphArrow/useMappingList';
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
 import {useColorManagement} from './hooks/useColorManagement';
 import {useTableConfiguration} from './hooks/useTableConfiguration';

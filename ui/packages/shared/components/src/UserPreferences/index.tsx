@@ -71,8 +71,8 @@ const UserPreferences = ({modal}: {modal?: boolean}): JSX.Element => {
           userPreferenceDetails={USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS}
         />
         <UserPreferenceItem
-          id="h-enable-iciclechart"
-          userPreferenceDetails={USER_PREFERENCES.ENABLE_ICICLECHARTS}
+          id="h-enable-flamechart"
+          userPreferenceDetails={USER_PREFERENCES.ENABLE_FLAMECHARTS}
         />
         <FlamegraphColorProfileSelector />
       </div>

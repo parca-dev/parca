@@ -15,8 +15,8 @@ import React from 'react';
 
 import {type FlamegraphArrow} from '@parca/client';
 
-import ProfileIcicleGraph from '../../ProfileIcicleGraph';
-import {type CurrentPathFrame} from '../../ProfileIcicleGraph/IcicleGraphArrow/utils';
+import ProfileFlameGraph from '../../ProfileFlameGraph';
+import {type CurrentPathFrame} from '../../ProfileFlameGraph/FlameGraphArrow/utils';
 import {type ProfileSource} from '../../ProfileSource';
 
 interface CallersSectionProps {
@@ -55,7 +55,7 @@ export function CallersSection({
       <div className="[writing-mode:vertical-lr] -rotate-180 px-1 uppercase text-[10px] text-left">
         Callers {'->'}
       </div>
-      <ProfileIcicleGraph
+      <ProfileFlameGraph
         arrow={
           callersFlamegraphResponse?.report.oneofKind === 'flamegraphArrow'
             ? callersFlamegraphResponse?.report?.flamegraphArrow
@@ -76,7 +76,7 @@ export function CallersSection({
         }
         metadataMappingFiles={metadataMappingFiles}
         metadataLoading={false}
-        isSandwichIcicleGraph={true}
+        isSandwichFlameGraph={true}
         curPathArrow={curPathArrow}
         setNewCurPathArrow={setCurPathArrow}
         isFlamegraph={true}

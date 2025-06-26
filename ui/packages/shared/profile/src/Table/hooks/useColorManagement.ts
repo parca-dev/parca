@@ -15,7 +15,7 @@ import {useMemo} from 'react';
 
 import {type ColorConfig} from '@parca/utilities';
 
-import {getFilenameColors, getMappingColors} from '../../ProfileIcicleGraph/IcicleGraphArrow';
+import {getFilenameColors, getMappingColors} from '../../ProfileFlameGraph/FlameGraphArrow';
 
 interface UseColorManagementProps {
   isDarkMode: boolean;

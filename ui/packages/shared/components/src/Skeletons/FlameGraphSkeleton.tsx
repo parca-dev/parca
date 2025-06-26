@@ -17,7 +17,7 @@ interface Props {
   isDarkMode: boolean;
 }
 
-export const IcicleActionButtonPlaceholder = ({
+export const FlameActionButtonPlaceholder = ({
   isHalfScreen,
 }: {
   isHalfScreen: boolean;
@@ -46,7 +46,7 @@ export const IcicleActionButtonPlaceholder = ({
   );
 };
 
-const IcicleGraphSkeleton = ({isHalfScreen, isDarkMode}: Props): JSX.Element => {
+const FlameGraphSkeleton = ({isHalfScreen, isDarkMode}: Props): JSX.Element => {
   return (
     <svg
       fill="none"
@@ -321,4 +321,4 @@ const IcicleGraphSkeleton = ({isHalfScreen, isDarkMode}: Props): JSX.Element => 
   );
 };
 
-export default IcicleGraphSkeleton;
+export default FlameGraphSkeleton;

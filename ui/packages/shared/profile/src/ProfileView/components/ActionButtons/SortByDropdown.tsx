@@ -17,7 +17,7 @@ import {
   FIELD_CUMULATIVE,
   FIELD_DIFF,
   FIELD_FUNCTION_NAME,
-} from '../../../ProfileIcicleGraph/IcicleGraphArrow';
+} from '../../../ProfileFlameGraph/FlameGraphArrow';
 import {useProfileViewContext} from '../../context/ProfileViewContext';
 
 const SortByDropdown = (): React.JSX.Element => {

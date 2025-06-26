@@ -58,11 +58,11 @@ export interface SourceData {
 }
 
 export type VisualizationType =
-  | 'icicle'
+  | 'flame'
   | 'callgraph'
   | 'table'
   | 'source'
-  | 'iciclechart'
+  | 'flamechart'
   | 'sandwich';
 
 export interface ProfileViewProps {

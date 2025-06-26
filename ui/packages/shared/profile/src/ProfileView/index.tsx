@@ -19,7 +19,7 @@ import ColorStackLegend from './components/ColorStackLegend';
 import {getDashboardItem} from './components/DashboardItems';
 import {DashboardLayout} from './components/DashboardLayout';
 import {ProfileHeader} from './components/ProfileHeader';
-import {IcicleGraphToolbar, TableToolbar, VisualisationToolbar} from './components/Toolbars';
+import {FlameGraphToolbar, TableToolbar, VisualisationToolbar} from './components/Toolbars';
 import {DashboardProvider} from './context/DashboardContext';
 import {ProfileViewContextProvider} from './context/ProfileViewContext';
 import {useProfileMetadata} from './hooks/useProfileMetadata';
@@ -109,7 +109,7 @@ export const ProfileView = ({
   };
 
   const actionButtons = {
-    icicle: <IcicleGraphToolbar curPath={curPathArrow} setNewCurPath={setCurPathArrow} />,
+    flame: <FlameGraphToolbar curPath={curPathArrow} setNewCurPath={setCurPathArrow} />,
     table: (
       <TableToolbar
         profileType={profileSource?.ProfileType()}

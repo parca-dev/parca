@@ -12,7 +12,7 @@
 // limitations under the License.
 
 import React from 'react';
-import ProfileIcicleGraph from '../';
+import ProfileFlameGraph from '../';
 import {Provider} from 'react-redux';
 import {createStore} from '@parca/store';
 import {Flamegraph} from '@parca/client';
@@ -26,7 +26,7 @@ export default function ({callback = () => {}}): React.ReactElement {
   return (
     <div ref={callback}>
       <Provider store={reduxStore}>
-        <ProfileIcicleGraph
+        <ProfileFlameGraph
           graph={parca1mGraph}
           sampleUnit={parca1mGraph.unit}
           curPath={[]}
