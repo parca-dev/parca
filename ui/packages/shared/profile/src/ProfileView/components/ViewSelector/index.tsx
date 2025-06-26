@@ -24,12 +24,9 @@ interface Props {
 }
 
 const ViewSelector = ({profileSource}: Props): JSX.Element => {
-  const [dashboardItems = ['flame'], setDashboardItems] = useURLState<string[]>(
-    'dashboard_items',
-    {
-      alwaysReturnArray: true,
-    }
-  );
+  const [dashboardItems = ['flame'], setDashboardItems] = useURLState<string[]>('dashboard_items', {
+    alwaysReturnArray: true,
+  });
   const {enableSourcesView, enableSandwichView} = useParcaContext();
 
   const [enableflameCharts] = useUserPreference<boolean>(USER_PREFERENCES.ENABLE_FLAMECHARTS.key);
