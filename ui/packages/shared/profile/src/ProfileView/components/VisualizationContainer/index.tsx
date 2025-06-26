@@ -28,7 +28,7 @@ interface VisualizationContainerProps {
   isMultiPanelView: boolean;
   index: number;
   actionButtons: {
-    icicle: JSX.Element;
+    flame: JSX.Element;
     table: JSX.Element;
   };
 }

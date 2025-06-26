@@ -19,7 +19,7 @@ import {FlamegraphArrow} from '@parca/client';
 
 import useMappingList, {
   useFilenamesList,
-} from '../../ProfileIcicleGraph/IcicleGraphArrow/useMappingList';
+} from '../../ProfileFlameGraph/FlameGraphArrow/useMappingList';
 
 interface UseProfileMetadataProps {
   flamegraphArrow?: FlamegraphArrow;

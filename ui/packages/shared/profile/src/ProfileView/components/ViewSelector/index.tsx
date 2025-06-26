@@ -24,7 +24,7 @@ interface Props {
 }
 
 const ViewSelector = ({profileSource}: Props): JSX.Element => {
-  const [dashboardItems = ['icicle'], setDashboardItems] = useURLState<string[]>(
+  const [dashboardItems = ['flame'], setDashboardItems] = useURLState<string[]>(
     'dashboard_items',
     {
       alwaysReturnArray: true,
@@ -32,7 +32,7 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
   );
   const {enableSourcesView, enableSandwichView} = useParcaContext();
 
-  const [enableicicleCharts] = useUserPreference<boolean>(USER_PREFERENCES.ENABLE_ICICLECHARTS.key);
+  const [enableflameCharts] = useUserPreference<boolean>(USER_PREFERENCES.ENABLE_FLAMECHARTS.key);
 
   const allItems: Array<{
     key: string;
@@ -42,7 +42,7 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
     disabledText?: string;
   }> = [
     {key: 'table', label: 'Table', canBeSelected: !dashboardItems.includes('table')},
-    {key: 'icicle', label: 'icicle', canBeSelected: !dashboardItems.includes('icicle')},
+    {key: 'flame', label: 'flame', canBeSelected: !dashboardItems.includes('flame')},
   ];
 
   if (enableSandwichView === true) {
@@ -52,20 +52,20 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
       canBeSelected: !dashboardItems.includes('sandwich'),
     });
   }
-  if (enableicicleCharts) {
+  if (enableflameCharts) {
     allItems.push({
-      key: 'iciclechart',
+      key: 'flamechart',
       label: (
         <span className="relative">
-          Iciclechart
+          Flamechart
           <span className="absolute top-[-2px] text-xs lowercase text-red-500">&nbsp;alpha</span>
         </span>
       ),
       canBeSelected:
-        !dashboardItems.includes('iciclechart') && profileSource?.ProfileType().delta === true,
+        !dashboardItems.includes('flamechart') && profileSource?.ProfileType().delta === true,
       disabledText:
-        !dashboardItems.includes('iciclechart') && profileSource?.ProfileType().delta !== true
-          ? 'Iciclechart is not available for non-delta profiles'
+        !dashboardItems.includes('flamechart') && profileSource?.ProfileType().delta !== true
+          ? 'Flamechart is not available for non-delta profiles'
           : undefined,
     });
   }

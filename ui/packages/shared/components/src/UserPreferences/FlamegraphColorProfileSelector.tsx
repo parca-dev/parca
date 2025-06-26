@@ -35,10 +35,10 @@ const FlamegraphColorProfileSelector = (): JSX.Element => {
     <div className="py-6 flex flex-col items-left border-gray-200 gap-2">
       <div>
         <p className="text-base font-medium text-gray-800 dark:text-gray-200">
-          Iciclegraph color profile
+          Flamegraph color profile
         </p>
         <p className="text-sm text-gray-700 mt-2 dark:text-gray-300">
-          This setting allows you to customize the color scheme used in the Icicle graph
+          This setting allows you to customize the color scheme used in the Flame graph
           visualization.
         </p>
       </div>

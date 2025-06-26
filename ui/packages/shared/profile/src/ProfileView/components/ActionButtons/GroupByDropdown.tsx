@@ -25,7 +25,7 @@ import {
   FIELD_LABELS,
   FIELD_LOCATION_ADDRESS,
   FIELD_MAPPING_FILE,
-} from '../../../ProfileIcicleGraph/IcicleGraphArrow';
+} from '../../../ProfileFlameGraph/FlameGraphArrow';
 
 interface LabelSelectorProps {
   labels: string[];

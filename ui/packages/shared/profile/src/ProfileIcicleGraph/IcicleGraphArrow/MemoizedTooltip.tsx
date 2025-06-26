@@ -38,7 +38,7 @@ export const MemoizedTooltip = memo(function MemoizedTooltip({
       setTooltipRow(event.detail.row);
     };
 
-    const eventName = `icicle-tooltip-update-${tooltipId}`;
+    const eventName = `flame-tooltip-update-${tooltipId}`;
     window.addEventListener(eventName as any, handleTooltipUpdate as any);
     return () => {
       window.removeEventListener(eventName as any, handleTooltipUpdate as any);

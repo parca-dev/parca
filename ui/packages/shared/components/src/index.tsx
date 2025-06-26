@@ -28,7 +28,7 @@ import ParcaContext from './ParcaContext';
 import Pill, {PillVariant} from './Pill';
 import ResponsiveSvg from './ResponsiveSvg';
 import Select, {type SelectElement, type SelectItem} from './Select';
-import IcicleGraphSkeleton, {IcicleActionButtonPlaceholder} from './Skeletons/IcicleGraphSkeleton';
+import FlameGraphSkeleton, {FlameActionButtonPlaceholder} from './Skeletons/FlameGraphSkeleton';
 import MetricsGraphSkeleton from './Skeletons/MetricsGraphSkeleton';
 import SourceSkeleton from './Skeletons/SourceSkeleton';
 import TableSkeleton, {TableActionButtonPlaceholder} from './Skeletons/TableSkeleton';
@@ -56,8 +56,8 @@ export {
   Dropdown,
   GrpcMetadataContext,
   GrpcMetadataProvider,
-  IcicleActionButtonPlaceholder,
-  IcicleGraphSkeleton,
+  FlameActionButtonPlaceholder,
+  FlameGraphSkeleton,
   IconButton,
   Input,
   KeyDownProvider,
