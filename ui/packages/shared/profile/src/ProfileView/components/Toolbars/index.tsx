@@ -24,6 +24,7 @@ import {ProfileSource} from '../../../ProfileSource';
 import {useDashboard} from '../../context/DashboardContext';
 import GroupByDropdown from '../ActionButtons/GroupByDropdown';
 import FilterByFunctionButton from '../FilterByFunctionButton';
+import InvertCallStack from '../InvertCallStack';
 import ShareButton from '../ShareButton';
 import ViewSelector from '../ViewSelector';
 import MultiLevelDropdown from './MultiLevelDropdown';
@@ -168,27 +169,34 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   const {dashboardItems} = useDashboard();
 
   const isTableViz = dashboardItems?.includes('table');
+  const isTableVizOnly = dashboardItems?.length === 1 && isTableViz;
   const isGraphViz = dashboardItems?.includes('icicle');
   const isSandwichIcicleGraphViz = dashboardItems?.includes('sandwich');
+
+  const isTableView = isTableVizOnly || isSandwichIcicleGraphViz;
+
   const req = profileSource?.QueryRequest();
   if (req !== null && req !== undefined) {
     req.groupBy = {
       fields: groupBy ?? [],
     };
   }
+
   return (
     <>
       <div className="flex w-full justify-between items-end">
         <div className="flex gap-3 items-end">
-          <>
-            <GroupByDropdown
-              groupBy={groupBy}
-              toggleGroupBy={toggleGroupBy}
-              labels={groupByLabels}
-              setGroupByLabels={setGroupByLabels}
-            />
-            <MultiLevelDropdown profileType={profileType} onSelect={() => {}} />
-          </>
+          {!isTableView && (
+            <>
+              <GroupByDropdown
+                groupBy={groupBy}
+                labels={groupByLabels}
+                setGroupByLabels={setGroupByLabels}
+              />
+
+              <InvertCallStack />
+            </>
+          )}
 
           <FilterByFunctionButton />
 
@@ -196,6 +204,14 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
         </div>
         <div className="flex gap-3">
           {preferencesModal === true && <UserPreferencesModal />}
+          <MultiLevelDropdown
+            groupBy={groupBy}
+            toggleGroupBy={toggleGroupBy}
+            profileType={profileType}
+            onSelect={() => {}}
+            isTableVizOnly={isTableView}
+          />
+
           <ShareButton
             profileSource={profileSource}
             queryClient={queryClient}
