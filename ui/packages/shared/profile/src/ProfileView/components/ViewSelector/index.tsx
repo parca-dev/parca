@@ -60,7 +60,12 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
   if (enableSandwichView === true) {
     allItems.push({
       key: 'sandwich',
-      label: 'sandwich',
+      label: (
+        <span className="relative">
+          Sandwich
+          <span className="absolute top-[-2px] text-xs lowercase text-red-500">&nbsp;alpha</span>
+        </span>
+      ),
       canBeSelected: !dashboardItems.includes('sandwich'),
     });
   }
