@@ -40,15 +40,14 @@ export interface ContextMenuWrapperRef {
 
 const ContextMenuWrapper = forwardRef<ContextMenuWrapperRef, ContextMenuWrapperProps>(
   (props, ref) => {
-    // Fix for race condition: Start with null instead of 0 to prevent initial render
-    // with invalid row data. This ensures ContextMenu only renders when we have
-    // the correct row number from the right-click event.
-    const [row, setRow] = useState<number | null>(null);
+    // Fix for race condition: Always render ContextMenu to maintain component tree stability
+    // but use callback timing to ensure correct data is available when menu shows
+    const [row, setRow] = useState(0);
     const callbackRef = useRef<(() => void) | null>(null);
 
     // Execute callback after row state update completes
     useEffect(() => {
-      if (callbackRef.current && row !== null) {
+      if (callbackRef.current) {
         callbackRef.current();
         callbackRef.current = null;
       }
@@ -66,11 +65,7 @@ const ContextMenuWrapper = forwardRef<ContextMenuWrapperRef, ContextMenuWrapperP
       },
     }));
 
-    // Don't render the ContextMenu until we have a valid row.
-    if (row === null) {
-      return null;
-    }
-
+    // Always render ContextMenu - race condition is handled by callback timing
     return <ContextMenu {...props} row={row} />;
   }
 );

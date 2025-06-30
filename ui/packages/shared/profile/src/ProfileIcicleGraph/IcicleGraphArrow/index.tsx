@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {memo, useCallback, useMemo, useRef, useState} from 'react';
+import React, {memo, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {Dictionary, Table, Vector, tableFromIPC} from 'apache-arrow';
 import {useContextMenu} from 'react-contexify';
@@ -151,6 +151,14 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     return tableFromIPC(arrow.record);
   }, [arrow]);
   const svg = useRef(null);
+
+  // Fix for sandwich view tooltip issue: Track when SVG ref becomes available
+  const [svgElement, setSvgElement] = useState<SVGSVGElement | null>(null);
+
+  // Update SVG element state when ref changes (fixes sandwich view tooltip timing)
+  useEffect(() => {
+    setSvgElement(svg.current);
+  }, [svg.current, tooltipId]);
 
   const [binaryFrameFilter, setBinaryFrameFilter] = useURLState('binary_frame_filter');
 
@@ -321,7 +329,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           profileType={profileType}
           isSandwich={isSandwich}
         />
-        <MemoizedTooltip contextElement={svg.current} dockedMetainfo={dockedMetainfo} />
+        <MemoizedTooltip contextElement={svgElement} dockedMetainfo={dockedMetainfo} />
         <svg
           className="font-robotoMono"
           width={width}
