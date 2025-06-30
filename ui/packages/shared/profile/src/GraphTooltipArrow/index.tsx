@@ -43,7 +43,7 @@ const GraphTooltip = ({children, contextElement}: GraphTooltipProps): React.JSX.
 
   const {refs, floatingStyles, update} = useFloating({
     placement: 'bottom-start',
-    strategy: 'absolute',
+    strategy: 'fixed',
     middleware: [
       offset({
         mainAxis: 30,
@@ -51,7 +51,7 @@ const GraphTooltip = ({children, contextElement}: GraphTooltipProps): React.JSX.
       }),
       flip(),
       shift({
-        padding: 5,
+        padding: 20,
       }),
     ],
     whileElementsMounted: undefined,
