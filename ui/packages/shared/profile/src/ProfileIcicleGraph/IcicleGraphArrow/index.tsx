@@ -219,9 +219,14 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   });
   const displayMenu = useCallback(
     (e: React.MouseEvent, row: number): void => {
-      contextMenuRef.current?.setRow(row);
-      show({
-        event: e,
+      e.preventDefault();
+      // Race condition fix: Use callback to ensure context menu shows only after
+      // row state has been updated and propagated through the hook chain.
+      // This prevents empty function names on first click.
+      contextMenuRef.current?.setRow(row, () => {
+        show({
+          event: e,
+        });
       });
     },
     [show]

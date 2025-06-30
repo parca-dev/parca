@@ -13,6 +13,7 @@
 
 import {Icon} from '@iconify/react';
 import {Table} from 'apache-arrow';
+import cx from 'classnames';
 import {Item, Menu, Separator, Submenu} from 'react-contexify';
 import {Tooltip} from 'react-tooltip';
 
@@ -144,7 +145,11 @@ const ContextMenu = ({
   const nonEmptyValuesToCopy = valuesToCopy.filter(({value}) => value !== '');
 
   return (
-    <Menu id={menuId} theme={isDarkMode ? 'dark' : ''} className="w-[250px]">
+    <Menu
+      id={menuId}
+      theme={isDarkMode ? 'dark' : ''}
+      className={cx(dashboardItems.includes('sandwich') ? 'w-[350px]' : 'w-[250px]')}
+    >
       <Item
         id="view-source-file"
         onClick={handleViewSourceFile}
@@ -188,7 +193,9 @@ const ContextMenu = ({
           <div className="flex w-full items-center gap-2">
             <Icon icon="tdesign:sandwich-filled" />
             <div className="relative">
-              Show in sandwich
+              {dashboardItems.includes('sandwich')
+                ? 'Focus sandwich on this frame.'
+                : 'Show in sandwich'}
               <span className="absolute top-[-2px] text-xs lowercase text-red-500">
                 &nbsp;alpha
               </span>

@@ -11,9 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {forwardRef, useImperativeHandle, useState} from 'react';
+import {forwardRef, useEffect, useImperativeHandle, useRef, useState} from 'react';
 
 import {Table} from 'apache-arrow';
+import {flushSync} from 'react-dom';
 
 import {ProfileType} from '@parca/parser';
 
@@ -34,16 +35,41 @@ interface ContextMenuWrapperProps {
 }
 
 export interface ContextMenuWrapperRef {
-  setRow: (row: number) => void;
+  setRow: (row: number, callback?: () => void) => void;
 }
 
 const ContextMenuWrapper = forwardRef<ContextMenuWrapperRef, ContextMenuWrapperProps>(
   (props, ref) => {
-    const [row, setRow] = useState(0);
+    // Fix for race condition: Start with null instead of 0 to prevent initial render
+    // with invalid row data. This ensures ContextMenu only renders when we have
+    // the correct row number from the right-click event.
+    const [row, setRow] = useState<number | null>(null);
+    const callbackRef = useRef<(() => void) | null>(null);
+
+    // Execute callback after row state update completes
+    useEffect(() => {
+      if (callbackRef.current && row !== null) {
+        callbackRef.current();
+        callbackRef.current = null;
+      }
+    }, [row]);
 
     useImperativeHandle(ref, () => ({
-      setRow,
+      setRow: (newRow: number, callback?: () => void) => {
+        if (callback) {
+          callbackRef.current = callback;
+        }
+        // Use flushSync to ensure synchronous state update before callback execution
+        flushSync(() => {
+          setRow(newRow);
+        });
+      },
     }));
+
+    // Don't render the ContextMenu until we have a valid row.
+    if (row === null) {
+      return null;
+    }
 
     return <ContextMenu {...props} row={row} />;
   }
