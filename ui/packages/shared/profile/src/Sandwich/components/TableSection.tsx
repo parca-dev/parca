@@ -46,8 +46,8 @@ export function TableSection({
   return (
     <div
       style={{height: height !== undefined ? `${height}px` : '80vh'}}
-      className={`font-robotoMono w-full cursor-pointer ${
-        selectedRow != null && sandwichFunctionName !== undefined ? 'w-[50%]' : ''
+      className={`font-robotoMono cursor-pointer ${
+        selectedRow != null && sandwichFunctionName !== undefined ? 'w-[50%]' : 'w-full'
       }`}
     >
       <TableComponent

@@ -64,6 +64,7 @@ export interface IcicleNodeProps {
   isFlamegraph?: boolean;
   isSandwich?: boolean;
   maxDepth?: number;
+  effectiveDepth?: number;
   tooltipId?: string;
 
   // Hovering row must only ever be used for highlighting similar nodes, otherwise it will cause performance issues as it causes the full iciclegraph to get rerendered every time the hovering row changes.
@@ -102,6 +103,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   isFlamegraph = false,
   isSandwich = false,
   maxDepth = 0,
+  effectiveDepth,
   tooltipId = 'default',
 }: IcicleNodeProps): React.JSX.Element {
   // get the columns to read from
@@ -121,6 +123,12 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const diff: bigint | null = diffColumn?.get(row) !== null ? BigInt(diffColumn?.get(row)) : null;
   const filename: string | null = arrowToString(filenameColumn?.get(row));
   const depth: number = depthColumn?.get(row) ?? 0;
+
+  // Hide frames beyond effective depth limit
+  if (effectiveDepth !== undefined && depth > effectiveDepth) {
+    return <></>;
+  }
+
   const valueOffset: bigint =
     valueOffsetColumn?.get(row) !== null && valueOffsetColumn?.get(row) !== undefined
       ? BigInt(valueOffsetColumn?.get(row))
@@ -241,7 +249,14 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     return depth * height;
   };
 
-  const y = calculateY(isFlamegraph, isSandwich, isIcicleChart, maxDepth, depth, height);
+  const y = calculateY(
+    isFlamegraph,
+    isSandwich,
+    isIcicleChart,
+    effectiveDepth ?? maxDepth,
+    depth,
+    height
+  );
 
   return (
     <>

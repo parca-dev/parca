@@ -38,8 +38,8 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
     supportingText?: string;
     disabledText?: string;
   }> = [
-    {key: 'table', label: 'Table', canBeSelected: !dashboardItems.includes('table')},
     {key: 'icicle', label: 'icicle', canBeSelected: !dashboardItems.includes('icicle')},
+    {key: 'table', label: 'Table', canBeSelected: !dashboardItems.includes('table')},
     {
       key: 'iciclechart',
       label: (

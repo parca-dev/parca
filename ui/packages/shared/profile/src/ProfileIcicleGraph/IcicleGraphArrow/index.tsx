@@ -77,6 +77,8 @@ interface IcicleGraphArrowProps {
   isFlamegraph?: boolean;
   isSandwich?: boolean;
   tooltipId?: string;
+  maxFrameCount?: number;
+  isExpanded?: boolean;
 }
 
 export const getMappingColors = (
@@ -135,6 +137,8 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   isFlamegraph = false,
   isSandwich = false,
   tooltipId = 'default',
+  maxFrameCount,
+  isExpanded = false,
 }: IcicleGraphArrowProps): React.JSX.Element {
   const [highlightSimilarStacksPreference] = useUserPreference<boolean>(
     USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS.key
@@ -255,7 +259,12 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   const depthColumn = table.getChild(FIELD_DEPTH);
   const maxDepth = getMaxDepth(depthColumn);
-  const height = isSandwich ? maxDepth * RowHeight : (maxDepth + 1) * RowHeight;
+
+  // Apply frame limit if maxFrameCount is provided and not expanded
+  const effectiveDepth =
+    maxFrameCount !== undefined && !isExpanded ? Math.min(maxDepth, maxFrameCount) : maxDepth;
+
+  const height = isSandwich ? effectiveDepth * RowHeight : (effectiveDepth + 1) * RowHeight;
 
   // To find the selected row, we must walk the current path and look at which
   // children of the current frame matches the path element exactly. Until the
@@ -344,6 +353,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               isFlamegraph={isFlamegraph}
               isSandwich={isSandwich}
               maxDepth={maxDepth}
+              effectiveDepth={effectiveDepth}
               tooltipId={tooltipId}
             />
           ))}

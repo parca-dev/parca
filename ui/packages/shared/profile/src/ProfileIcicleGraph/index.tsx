@@ -18,7 +18,12 @@ import {AnimatePresence, motion} from 'framer-motion';
 import {useMeasure} from 'react-use';
 
 import {FlamegraphArrow} from '@parca/client';
-import {IcicleGraphSkeleton, useParcaContext, useURLState} from '@parca/components';
+import {
+  FlamegraphSkeleton,
+  IcicleGraphSkeleton,
+  useParcaContext,
+  useURLState,
+} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 import {capitalizeOnlyFirstLetter, divide} from '@parca/utilities';
 
@@ -53,6 +58,8 @@ interface ProfileIcicleGraphProps {
   isSandwichIcicleGraph?: boolean;
   isFlamegraph?: boolean;
   tooltipId?: string;
+  maxFrameCount?: number;
+  isExpanded?: boolean;
 }
 
 const ErrorContent = ({errorMessage}: {errorMessage: string | ReactNode}): JSX.Element => {
@@ -88,6 +95,8 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   isSandwichIcicleGraph = false,
   isFlamegraph = false,
   tooltipId,
+  maxFrameCount,
+  isExpanded = false,
 }: ProfileIcicleGraphProps): JSX.Element {
   const {onError, authenticationErrorMessage, isDarkMode, iciclechartHelpText} = useParcaContext();
   const {compareMode} = useProfileViewContext();
@@ -184,10 +193,15 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
       ? validateIcicleChartQuery(profileSource as MergedProfileSource)
       : {isValid: true, isNonDelta: false, isDurationTooLong: false};
     const isInvalidIcicleChartQuery = isIcicleChart && !isIcicleChartValid;
+
     if (isLoading && !isInvalidIcicleChartQuery) {
       return (
         <div className="h-auto overflow-clip">
-          <IcicleGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
+          {isFlamegraph ? (
+            <FlamegraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
+          ) : (
+            <IcicleGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
+          )}
         </div>
       );
     }
@@ -268,6 +282,8 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
               isFlamegraph={isFlamegraph}
               isSandwich={isSandwichIcicleGraph}
               tooltipId={tooltipId}
+              maxFrameCount={maxFrameCount}
+              isExpanded={isExpanded}
             />
           </div>
         </div>
@@ -295,6 +311,8 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     effectiveCurPathArrow,
     setCurPathArrowWrapper,
     tooltipId,
+    maxFrameCount,
+    isExpanded,
   ]);
 
   useEffect(() => {

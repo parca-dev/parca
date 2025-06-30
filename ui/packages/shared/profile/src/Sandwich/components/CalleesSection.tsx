@@ -68,11 +68,7 @@ export function CalleesSection({
         error={calleesFlamegraphError}
         isHalfScreen={true}
         width={
-          calleesRef.current != null
-            ? isHalfScreen
-              ? (calleesRef.current.getBoundingClientRect().width - 54) / 2
-              : calleesRef.current.getBoundingClientRect().width - 16
-            : 0
+          calleesRef.current != null ? calleesRef.current.getBoundingClientRect().width - 25 : 0
         }
         metadataMappingFiles={metadataMappingFiles}
         metadataLoading={false}

@@ -73,6 +73,8 @@ const Sandwich = React.memo(function Sandwich({
   const [selectedRow, setSelectedRow] = useState<TableRow<Row> | null>(null);
   const callersRef = React.useRef<HTMLDivElement | null>(null);
   const calleesRef = React.useRef<HTMLDivElement | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const defaultMaxFrames = 10;
 
   const callersCalleesContainerRef = useRef<HTMLDivElement | null>(null);
   const [tableHeight, setTableHeight] = useState<number | undefined>(undefined);
@@ -222,7 +224,7 @@ const Sandwich = React.memo(function Sandwich({
         resizeObserver.disconnect();
       }
     };
-  }, [sandwichFunctionName, callersFlamegraphResponse, calleesFlamegraphResponse]);
+  }, [sandwichFunctionName, callersFlamegraphResponse, calleesFlamegraphResponse, isExpanded]);
 
   const onRowClick = useCallback(
     (row: DataRow) => {
@@ -287,7 +289,6 @@ const Sandwich = React.memo(function Sandwich({
               <div className="w-[50%] flex flex-col" ref={callersCalleesContainerRef}>
                 <CallersSection
                   callersRef={callersRef}
-                  isHalfScreen={isHalfScreen}
                   callersFlamegraphResponse={
                     callersFlamegraphResponse?.report.oneofKind === 'flamegraphArrow'
                       ? {
@@ -306,6 +307,9 @@ const Sandwich = React.memo(function Sandwich({
                   curPathArrow={curPathArrow}
                   setCurPathArrow={setCurPathArrow}
                   metadataMappingFiles={metadataMappingFiles}
+                  isExpanded={isExpanded}
+                  setIsExpanded={setIsExpanded}
+                  defaultMaxFrames={defaultMaxFrames}
                 />
                 <div className="h-4" />
                 <CalleesSection
