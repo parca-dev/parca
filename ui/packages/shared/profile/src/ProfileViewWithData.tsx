@@ -21,6 +21,7 @@ import {validateIcicleChartQuery} from './ProfileIcicleGraph';
 import {FIELD_FUNCTION_NAME} from './ProfileIcicleGraph/IcicleGraphArrow';
 import {MergedProfileSource, ProfileSource} from './ProfileSource';
 import {ProfileView} from './ProfileView';
+import { useProfileFilters } from './ProfileView/components/ProfileFilters/useProfileFilters';
 import {useQuery} from './useQuery';
 import {downloadPprof} from './utils';
 
@@ -57,6 +58,8 @@ export const ProfileViewWithData = ({
       : binaryFrameFilterStr;
 
   const [pprofDownloading, setPprofDownloading] = useState<boolean>(false);
+
+  const { protoFilters } = useProfileFilters();
 
   useEffect(() => {
     // If profile type is not delta, remove iciclechart from the dashboard items
@@ -96,6 +99,7 @@ export const ProfileViewWithData = ({
     groupBy,
     invertCallStack,
     binaryFrameFilter,
+    protoFilters,
   });
 
   const {
@@ -111,6 +115,7 @@ export const ProfileViewWithData = ({
     groupBy,
     invertCallStack,
     binaryFrameFilter,
+    protoFilters,
   });
 
   const {
@@ -120,6 +125,7 @@ export const ProfileViewWithData = ({
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.PROFILE_METADATA, {
     nodeTrimThreshold,
     groupBy,
+    protoFilters,
   });
 
   const {perf} = useParcaContext();
@@ -131,6 +137,7 @@ export const ProfileViewWithData = ({
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.TABLE_ARROW, {
     skip: !dashboardItems.includes('table') && !dashboardItems.includes('sandwich'),
     binaryFrameFilter,
+    protoFilters,
   });
 
   const {
@@ -139,6 +146,7 @@ export const ProfileViewWithData = ({
     error: callgraphError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.CALLGRAPH, {
     skip: !dashboardItems.includes('callgraph'),
+    protoFilters,
   });
 
   const {
@@ -149,6 +157,7 @@ export const ProfileViewWithData = ({
     skip: !dashboardItems.includes('source'),
     sourceBuildID,
     sourceFilename,
+    protoFilters,
   });
 
   useEffect(() => {

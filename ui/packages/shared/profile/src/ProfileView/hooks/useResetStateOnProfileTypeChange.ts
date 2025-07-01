@@ -12,24 +12,18 @@
 // limitations under the License.
 
 import {useURLState} from '@parca/components';
+import {useProfileFilters} from '../components/ProfileFilters/useProfileFilters';
 
 export const useResetStateOnProfileTypeChange = (): (() => void) => {
   const [groupBy, setGroupBy] = useURLState('group_by');
-  const [filterByFunction, setFilterByFunction] = useURLState('filter_by_function');
-  const [excludeFunction, setExcludeFunction] = useURLState('exclude_function');
   const [searchString, setSearchString] = useURLState('search_string');
   const [curPath, setCurPath] = useURLState('cur_path');
+  const {resetFilters} = useProfileFilters();
 
   return () => {
     setTimeout(() => {
       if (groupBy !== undefined) {
         setGroupBy(undefined);
-      }
-      if (filterByFunction !== undefined) {
-        setFilterByFunction(undefined);
-      }
-      if (excludeFunction !== undefined) {
-        setExcludeFunction(undefined);
       }
       if (searchString !== undefined) {
         setSearchString(undefined);
@@ -37,6 +31,8 @@ export const useResetStateOnProfileTypeChange = (): (() => void) => {
       if (curPath !== undefined) {
         setCurPath(undefined);
       }
+
+      resetFilters();
     });
   };
 };

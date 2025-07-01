@@ -156,8 +156,6 @@ const ProfileExplorerApp = ({
     time_selection_b,
     compare_b,
     sum_by_b,
-    filter_by_function,
-    exclude_function,
   } = queryParams;
 
   // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -189,13 +187,11 @@ const ProfileExplorerApp = ({
       mergeFrom as string,
       mergeTo as string,
       selection_a,
-      filter_by_function as string,
-      exclude_function === 'true'
     );
 
     setProfileA(profileA);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [merge_from_a, merge_to_a, selection_a, filter_by_function, exclude_function]);
+  }, [merge_from_a, merge_to_a, selection_a]);
 
   useEffect(() => {
     const mergeFrom = merge_from_b ?? undefined;
@@ -204,13 +200,11 @@ const ProfileExplorerApp = ({
       mergeFrom as string,
       mergeTo as string,
       selection_b,
-      filter_by_function as string,
-      exclude_function === 'true'
     );
 
     setProfileB(profileB);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [merge_from_b, merge_to_b, selection_b, filter_by_function, exclude_function]);
+  }, [merge_from_b, merge_to_b, selection_b]);
 
   if (profileTypesLoading) {
     return <>{loader}</>;
@@ -352,7 +346,6 @@ const ProfileExplorerApp = ({
           to_a: q.to.toString(),
           time_selection_a: q.timeSelection,
           sum_by_a: sumByToParam(q.sumBy),
-          filter_by_function: filter_by_function ?? '',
           ...mergeParams,
         },
       })
@@ -383,7 +376,6 @@ const ProfileExplorerApp = ({
           to_b: q.to.toString(),
           time_selection_b: q.timeSelection,
           sum_by_b: sumByToParam(q.sumBy),
-          filter_by_function: filter_by_function ?? '',
           ...mergeParams,
         },
       })

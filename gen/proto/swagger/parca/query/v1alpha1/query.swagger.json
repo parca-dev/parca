@@ -986,20 +986,6 @@
         }
       }
     },
-    "v1alpha1BinaryFilter": {
-      "type": "object",
-      "properties": {
-        "binaryToFilter": {
-          "type": "string",
-          "title": "binary_to_filter is the binary name to filter by"
-        },
-        "exclude": {
-          "type": "boolean",
-          "title": "exclude determines whether to exclude frames matching the binary"
-        }
-      },
-      "title": "BinaryFilter is a filter for filtering by binaries"
-    },
     "v1alpha1Callgraph": {
       "type": "object",
       "properties": {
@@ -1131,6 +1117,36 @@
         }
       },
       "title": "Filter to apply to the query request"
+    },
+    "v1alpha1FilterCriteria": {
+      "type": "object",
+      "properties": {
+        "functionName": {
+          "$ref": "#/definitions/v1alpha1StringCondition",
+          "title": "function_name filters by the function name"
+        },
+        "systemName": {
+          "$ref": "#/definitions/v1alpha1StringCondition",
+          "title": "system_name filters by the system name"
+        },
+        "binary": {
+          "$ref": "#/definitions/v1alpha1StringCondition",
+          "title": "binary filters by the binary/executable name"
+        },
+        "filename": {
+          "$ref": "#/definitions/v1alpha1StringCondition",
+          "title": "filename filters by the source code filename"
+        },
+        "address": {
+          "$ref": "#/definitions/v1alpha1NumberCondition",
+          "title": "address filters by the memory address"
+        },
+        "lineNumber": {
+          "$ref": "#/definitions/v1alpha1NumberCondition",
+          "title": "line_number filters by the source code line number"
+        }
+      },
+      "title": "FilterCriteria defines the various criteria that can be used to filter stack frames or stacks"
     },
     "v1alpha1Flamegraph": {
       "type": "object",
@@ -1309,26 +1325,12 @@
     "v1alpha1FrameFilter": {
       "type": "object",
       "properties": {
-        "location": {
-          "$ref": "#/definitions/v1alpha1LocationFilter",
-          "title": "location contains the location filter to apply"
+        "filter": {
+          "$ref": "#/definitions/v1alpha1FilterCriteria",
+          "title": "filter defines the criteria to filter individual frames by"
         }
       },
-      "title": "FrameFilter is a filter for filtering by frames"
-    },
-    "v1alpha1FunctionNameFilter": {
-      "type": "object",
-      "properties": {
-        "functionToFilter": {
-          "type": "string",
-          "title": "function_to_filter is the function name to filter by"
-        },
-        "exclude": {
-          "type": "boolean",
-          "title": "exclude determines whether to exclude stacks matching the function"
-        }
-      },
-      "title": "FunctionNameFilter is a filter for filtering by function name"
+      "title": "FrameFilter applies filtering criteria to individual stack frames"
     },
     "v1alpha1GroupBy": {
       "type": "object",
@@ -1376,20 +1378,6 @@
         }
       },
       "title": "LabelsResponse is the set of matching label names"
-    },
-    "v1alpha1LocationFilter": {
-      "type": "object",
-      "properties": {
-        "functionNameFilter": {
-          "$ref": "#/definitions/v1alpha1FunctionNameFilter",
-          "title": "function_name_filter is the function name to filter by"
-        },
-        "binaryFilter": {
-          "$ref": "#/definitions/v1alpha1BinaryFilter",
-          "title": "binary_filter is the binary name to filter by"
-        }
-      },
-      "title": "LocationFilter provides filtering by location attributes"
     },
     "v1alpha1MergeProfile": {
       "type": "object",
@@ -1462,6 +1450,22 @@
         }
       },
       "title": "MetricsSeries is a set of labels and corresponding sample values"
+    },
+    "v1alpha1NumberCondition": {
+      "type": "object",
+      "properties": {
+        "equal": {
+          "type": "string",
+          "format": "uint64",
+          "title": "equal matches numbers that are exactly equal"
+        },
+        "notEqual": {
+          "type": "string",
+          "format": "uint64",
+          "title": "not_equal matches numbers that are not equal"
+        }
+      },
+      "title": "NumberCondition defines numeric filtering conditions"
     },
     "v1alpha1ProfileDiffSelection": {
       "type": "object",
@@ -1648,12 +1652,34 @@
     "v1alpha1StackFilter": {
       "type": "object",
       "properties": {
-        "location": {
-          "$ref": "#/definitions/v1alpha1LocationFilter",
-          "title": "location contains the location filter to apply"
+        "criteria": {
+          "$ref": "#/definitions/v1alpha1FilterCriteria",
+          "title": "criteria defines the filter conditions to apply to the stack"
         }
       },
-      "title": "StackFilter is a filter for filtering by stacks"
+      "title": "StackFilter applies filtering criteria to entire call stacks"
+    },
+    "v1alpha1StringCondition": {
+      "type": "object",
+      "properties": {
+        "equal": {
+          "type": "string",
+          "title": "equal matches strings that are exactly equal"
+        },
+        "notEqual": {
+          "type": "string",
+          "title": "not_equal matches strings that are not equal"
+        },
+        "contains": {
+          "type": "string",
+          "title": "contains matches strings that contain the specified substring"
+        },
+        "notContains": {
+          "type": "string",
+          "title": "not_contains matches strings that do not contain the specified substring"
+        }
+      },
+      "title": "StringCondition defines string-based filtering conditions"
     },
     "v1alpha1TableArrow": {
       "type": "object",

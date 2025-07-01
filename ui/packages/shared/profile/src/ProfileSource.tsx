@@ -27,7 +27,6 @@ export interface ProfileSource {
   ProfileType: () => ProfileType;
   DiffSelection: () => ProfileDiffSelection;
   toString: (timezone?: string) => string;
-  excludeFunction?: boolean;
 }
 
 export interface ProfileSelection {
@@ -63,8 +62,6 @@ export function ProfileSelectionFromParams(
   mergeFrom: string | undefined,
   mergeTo: string | undefined,
   selection: string | undefined,
-  filterQuery?: string,
-  excludeFunction?: boolean
 ): ProfileSelection | null {
   if (
     mergeFrom !== undefined &&
@@ -86,8 +83,6 @@ export function ProfileSelectionFromParams(
       parseInt(mergeFrom),
       parseInt(mergeTo),
       Query.parse(selection),
-      filterQuery,
-      excludeFunction
     );
   }
 
@@ -147,22 +142,16 @@ export class MergedProfileSelection implements ProfileSelection {
 export class ProfileDiffSource implements ProfileSource {
   a: ProfileSource;
   b: ProfileSource;
-  filterQuery: string | undefined;
-  excludeFunction: boolean | undefined;
   profileType: ProfileType;
   absolute?: boolean;
 
   constructor(
     a: ProfileSource,
     b: ProfileSource,
-    filterQuery?: string,
-    excludeFunction?: boolean,
     absolute?: boolean
   ) {
     this.a = a;
     this.b = b;
-    this.filterQuery = filterQuery;
-    this.excludeFunction = excludeFunction;
     this.profileType = a.ProfileType();
     this.absolute = absolute;
   }
@@ -183,7 +172,6 @@ export class ProfileDiffSource implements ProfileSource {
       },
       reportType: QueryRequest_ReportType.FLAMEGRAPH_ARROW,
       mode: QueryRequest_Mode.DIFF,
-      filterQuery: this.filterQuery,
       filter: [],
     };
   }
@@ -217,7 +205,6 @@ export class MergedProfileSource implements ProfileSource {
   mergeTo: number;
   query: Query;
   filterQuery: string | undefined;
-  excludeFunction: boolean | undefined;
   profileType: ProfileType;
 
   constructor(
@@ -231,7 +218,6 @@ export class MergedProfileSource implements ProfileSource {
     this.mergeTo = mergeTo;
     this.query = query;
     this.filterQuery = filterQuery;
-    this.excludeFunction = excludeFunction;
     this.profileType = ProfileType.fromString(Query.parse(this.query.toString()).profileName());
   }
 

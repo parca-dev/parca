@@ -1147,6 +1147,305 @@ func (*QueryRequest_Merge) isQueryRequest_Options() {}
 
 func (*QueryRequest_Single) isQueryRequest_Options() {}
 
+// FilterCriteria defines the various criteria that can be used to filter stack frames or stacks
+type FilterCriteria struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// function_name filters by the function name
+	FunctionName *StringCondition `protobuf:"bytes,1,opt,name=function_name,json=functionName,proto3" json:"function_name,omitempty"`
+	// system_name filters by the system name
+	SystemName *StringCondition `protobuf:"bytes,2,opt,name=system_name,json=systemName,proto3" json:"system_name,omitempty"`
+	// binary filters by the binary/executable name
+	Binary *StringCondition `protobuf:"bytes,3,opt,name=binary,proto3" json:"binary,omitempty"`
+	// filename filters by the source code filename
+	Filename *StringCondition `protobuf:"bytes,4,opt,name=filename,proto3" json:"filename,omitempty"`
+	// address filters by the memory address
+	Address *NumberCondition `protobuf:"bytes,5,opt,name=address,proto3" json:"address,omitempty"`
+	// line_number filters by the source code line number
+	LineNumber    *NumberCondition `protobuf:"bytes,6,opt,name=line_number,json=lineNumber,proto3" json:"line_number,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FilterCriteria) Reset() {
+	*x = FilterCriteria{}
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FilterCriteria) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FilterCriteria) ProtoMessage() {}
+
+func (x *FilterCriteria) ProtoReflect() protoreflect.Message {
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FilterCriteria.ProtoReflect.Descriptor instead.
+func (*FilterCriteria) Descriptor() ([]byte, []int) {
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *FilterCriteria) GetFunctionName() *StringCondition {
+	if x != nil {
+		return x.FunctionName
+	}
+	return nil
+}
+
+func (x *FilterCriteria) GetSystemName() *StringCondition {
+	if x != nil {
+		return x.SystemName
+	}
+	return nil
+}
+
+func (x *FilterCriteria) GetBinary() *StringCondition {
+	if x != nil {
+		return x.Binary
+	}
+	return nil
+}
+
+func (x *FilterCriteria) GetFilename() *StringCondition {
+	if x != nil {
+		return x.Filename
+	}
+	return nil
+}
+
+func (x *FilterCriteria) GetAddress() *NumberCondition {
+	if x != nil {
+		return x.Address
+	}
+	return nil
+}
+
+func (x *FilterCriteria) GetLineNumber() *NumberCondition {
+	if x != nil {
+		return x.LineNumber
+	}
+	return nil
+}
+
+// StringCondition defines string-based filtering conditions
+type StringCondition struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// condition specifies the type of string comparison to perform
+	//
+	// Types that are valid to be assigned to Condition:
+	//
+	//	*StringCondition_Equal
+	//	*StringCondition_NotEqual
+	//	*StringCondition_Contains
+	//	*StringCondition_NotContains
+	Condition     isStringCondition_Condition `protobuf_oneof:"condition"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StringCondition) Reset() {
+	*x = StringCondition{}
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StringCondition) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StringCondition) ProtoMessage() {}
+
+func (x *StringCondition) ProtoReflect() protoreflect.Message {
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StringCondition.ProtoReflect.Descriptor instead.
+func (*StringCondition) Descriptor() ([]byte, []int) {
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *StringCondition) GetCondition() isStringCondition_Condition {
+	if x != nil {
+		return x.Condition
+	}
+	return nil
+}
+
+func (x *StringCondition) GetEqual() string {
+	if x != nil {
+		if x, ok := x.Condition.(*StringCondition_Equal); ok {
+			return x.Equal
+		}
+	}
+	return ""
+}
+
+func (x *StringCondition) GetNotEqual() string {
+	if x != nil {
+		if x, ok := x.Condition.(*StringCondition_NotEqual); ok {
+			return x.NotEqual
+		}
+	}
+	return ""
+}
+
+func (x *StringCondition) GetContains() string {
+	if x != nil {
+		if x, ok := x.Condition.(*StringCondition_Contains); ok {
+			return x.Contains
+		}
+	}
+	return ""
+}
+
+func (x *StringCondition) GetNotContains() string {
+	if x != nil {
+		if x, ok := x.Condition.(*StringCondition_NotContains); ok {
+			return x.NotContains
+		}
+	}
+	return ""
+}
+
+type isStringCondition_Condition interface {
+	isStringCondition_Condition()
+}
+
+type StringCondition_Equal struct {
+	// equal matches strings that are exactly equal
+	Equal string `protobuf:"bytes,1,opt,name=equal,proto3,oneof"`
+}
+
+type StringCondition_NotEqual struct {
+	// not_equal matches strings that are not equal
+	NotEqual string `protobuf:"bytes,2,opt,name=not_equal,json=notEqual,proto3,oneof"`
+}
+
+type StringCondition_Contains struct {
+	// contains matches strings that contain the specified substring
+	Contains string `protobuf:"bytes,3,opt,name=contains,proto3,oneof"`
+}
+
+type StringCondition_NotContains struct {
+	// not_contains matches strings that do not contain the specified substring
+	NotContains string `protobuf:"bytes,4,opt,name=not_contains,json=notContains,proto3,oneof"`
+}
+
+func (*StringCondition_Equal) isStringCondition_Condition() {}
+
+func (*StringCondition_NotEqual) isStringCondition_Condition() {}
+
+func (*StringCondition_Contains) isStringCondition_Condition() {}
+
+func (*StringCondition_NotContains) isStringCondition_Condition() {}
+
+// NumberCondition defines numeric filtering conditions
+type NumberCondition struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// condition specifies the type of numeric comparison to perform
+	//
+	// Types that are valid to be assigned to Condition:
+	//
+	//	*NumberCondition_Equal
+	//	*NumberCondition_NotEqual
+	Condition     isNumberCondition_Condition `protobuf_oneof:"condition"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NumberCondition) Reset() {
+	*x = NumberCondition{}
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NumberCondition) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NumberCondition) ProtoMessage() {}
+
+func (x *NumberCondition) ProtoReflect() protoreflect.Message {
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NumberCondition.ProtoReflect.Descriptor instead.
+func (*NumberCondition) Descriptor() ([]byte, []int) {
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *NumberCondition) GetCondition() isNumberCondition_Condition {
+	if x != nil {
+		return x.Condition
+	}
+	return nil
+}
+
+func (x *NumberCondition) GetEqual() uint64 {
+	if x != nil {
+		if x, ok := x.Condition.(*NumberCondition_Equal); ok {
+			return x.Equal
+		}
+	}
+	return 0
+}
+
+func (x *NumberCondition) GetNotEqual() uint64 {
+	if x != nil {
+		if x, ok := x.Condition.(*NumberCondition_NotEqual); ok {
+			return x.NotEqual
+		}
+	}
+	return 0
+}
+
+type isNumberCondition_Condition interface {
+	isNumberCondition_Condition()
+}
+
+type NumberCondition_Equal struct {
+	// equal matches numbers that are exactly equal
+	Equal uint64 `protobuf:"varint,1,opt,name=equal,proto3,oneof"`
+}
+
+type NumberCondition_NotEqual struct {
+	// not_equal matches numbers that are not equal
+	NotEqual uint64 `protobuf:"varint,2,opt,name=not_equal,json=notEqual,proto3,oneof"`
+}
+
+func (*NumberCondition_Equal) isNumberCondition_Condition() {}
+
+func (*NumberCondition_NotEqual) isNumberCondition_Condition() {}
+
 // Filter to apply to the query request
 type Filter struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -1163,7 +1462,7 @@ type Filter struct {
 
 func (x *Filter) Reset() {
 	*x = Filter{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[12]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1175,7 +1474,7 @@ func (x *Filter) String() string {
 func (*Filter) ProtoMessage() {}
 
 func (x *Filter) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[12]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1188,7 +1487,7 @@ func (x *Filter) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Filter.ProtoReflect.Descriptor instead.
 func (*Filter) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{12}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *Filter) GetFilter() isFilter_Filter {
@@ -1234,18 +1533,18 @@ func (*Filter_StackFilter) isFilter_Filter() {}
 
 func (*Filter_FrameFilter) isFilter_Filter() {}
 
-// StackFilter is a filter for filtering by stacks
+// StackFilter applies filtering criteria to entire call stacks
 type StackFilter struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// location contains the location filter to apply
-	Location      *LocationFilter `protobuf:"bytes,1,opt,name=location,proto3" json:"location,omitempty"`
+	// criteria defines the filter conditions to apply to the stack
+	Criteria      *FilterCriteria `protobuf:"bytes,1,opt,name=criteria,proto3" json:"criteria,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *StackFilter) Reset() {
 	*x = StackFilter{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[13]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1257,7 +1556,7 @@ func (x *StackFilter) String() string {
 func (*StackFilter) ProtoMessage() {}
 
 func (x *StackFilter) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[13]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1270,28 +1569,28 @@ func (x *StackFilter) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StackFilter.ProtoReflect.Descriptor instead.
 func (*StackFilter) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{13}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{16}
 }
 
-func (x *StackFilter) GetLocation() *LocationFilter {
+func (x *StackFilter) GetCriteria() *FilterCriteria {
 	if x != nil {
-		return x.Location
+		return x.Criteria
 	}
 	return nil
 }
 
-// FrameFilter is a filter for filtering by frames
+// FrameFilter applies filtering criteria to individual stack frames
 type FrameFilter struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// location contains the location filter to apply
-	Location      *LocationFilter `protobuf:"bytes,1,opt,name=location,proto3" json:"location,omitempty"`
+	// filter defines the criteria to filter individual frames by
+	Filter        *FilterCriteria `protobuf:"bytes,1,opt,name=filter,proto3" json:"filter,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *FrameFilter) Reset() {
 	*x = FrameFilter{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[14]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1303,7 +1602,7 @@ func (x *FrameFilter) String() string {
 func (*FrameFilter) ProtoMessage() {}
 
 func (x *FrameFilter) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[14]
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1316,211 +1615,14 @@ func (x *FrameFilter) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FrameFilter.ProtoReflect.Descriptor instead.
 func (*FrameFilter) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{14}
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{17}
 }
 
-func (x *FrameFilter) GetLocation() *LocationFilter {
-	if x != nil {
-		return x.Location
-	}
-	return nil
-}
-
-// LocationFilter provides filtering by location attributes
-type LocationFilter struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// filter contains the different methods for filtering
-	//
-	// Types that are valid to be assigned to Filter:
-	//
-	//	*LocationFilter_FunctionNameFilter
-	//	*LocationFilter_BinaryFilter
-	Filter        isLocationFilter_Filter `protobuf_oneof:"filter"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *LocationFilter) Reset() {
-	*x = LocationFilter{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[15]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *LocationFilter) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*LocationFilter) ProtoMessage() {}
-
-func (x *LocationFilter) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[15]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use LocationFilter.ProtoReflect.Descriptor instead.
-func (*LocationFilter) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{15}
-}
-
-func (x *LocationFilter) GetFilter() isLocationFilter_Filter {
+func (x *FrameFilter) GetFilter() *FilterCriteria {
 	if x != nil {
 		return x.Filter
 	}
 	return nil
-}
-
-func (x *LocationFilter) GetFunctionNameFilter() *FunctionNameFilter {
-	if x != nil {
-		if x, ok := x.Filter.(*LocationFilter_FunctionNameFilter); ok {
-			return x.FunctionNameFilter
-		}
-	}
-	return nil
-}
-
-func (x *LocationFilter) GetBinaryFilter() *BinaryFilter {
-	if x != nil {
-		if x, ok := x.Filter.(*LocationFilter_BinaryFilter); ok {
-			return x.BinaryFilter
-		}
-	}
-	return nil
-}
-
-type isLocationFilter_Filter interface {
-	isLocationFilter_Filter()
-}
-
-type LocationFilter_FunctionNameFilter struct {
-	// function_name_filter is the function name to filter by
-	FunctionNameFilter *FunctionNameFilter `protobuf:"bytes,1,opt,name=function_name_filter,json=functionNameFilter,proto3,oneof"`
-}
-
-type LocationFilter_BinaryFilter struct {
-	// binary_filter is the binary name to filter by
-	BinaryFilter *BinaryFilter `protobuf:"bytes,2,opt,name=binary_filter,json=binaryFilter,proto3,oneof"`
-}
-
-func (*LocationFilter_FunctionNameFilter) isLocationFilter_Filter() {}
-
-func (*LocationFilter_BinaryFilter) isLocationFilter_Filter() {}
-
-// FunctionNameFilter is a filter for filtering by function name
-type FunctionNameFilter struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// function_to_filter is the function name to filter by
-	FunctionToFilter string `protobuf:"bytes,1,opt,name=function_to_filter,json=functionToFilter,proto3" json:"function_to_filter,omitempty"`
-	// exclude determines whether to exclude stacks matching the function
-	Exclude       bool `protobuf:"varint,2,opt,name=exclude,proto3" json:"exclude,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *FunctionNameFilter) Reset() {
-	*x = FunctionNameFilter{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[16]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *FunctionNameFilter) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*FunctionNameFilter) ProtoMessage() {}
-
-func (x *FunctionNameFilter) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[16]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use FunctionNameFilter.ProtoReflect.Descriptor instead.
-func (*FunctionNameFilter) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{16}
-}
-
-func (x *FunctionNameFilter) GetFunctionToFilter() string {
-	if x != nil {
-		return x.FunctionToFilter
-	}
-	return ""
-}
-
-func (x *FunctionNameFilter) GetExclude() bool {
-	if x != nil {
-		return x.Exclude
-	}
-	return false
-}
-
-// BinaryFilter is a filter for filtering by binaries
-type BinaryFilter struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// binary_to_filter is the binary name to filter by
-	BinaryToFilter string `protobuf:"bytes,1,opt,name=binary_to_filter,json=binaryToFilter,proto3" json:"binary_to_filter,omitempty"`
-	// exclude determines whether to exclude frames matching the binary
-	Exclude       bool `protobuf:"varint,2,opt,name=exclude,proto3" json:"exclude,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *BinaryFilter) Reset() {
-	*x = BinaryFilter{}
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[17]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *BinaryFilter) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*BinaryFilter) ProtoMessage() {}
-
-func (x *BinaryFilter) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[17]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use BinaryFilter.ProtoReflect.Descriptor instead.
-func (*BinaryFilter) Descriptor() ([]byte, []int) {
-	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{17}
-}
-
-func (x *BinaryFilter) GetBinaryToFilter() string {
-	if x != nil {
-		return x.BinaryToFilter
-	}
-	return ""
-}
-
-func (x *BinaryFilter) GetExclude() bool {
-	if x != nil {
-		return x.Exclude
-	}
-	return false
 }
 
 // RuntimeFilter configures which runtimes to filter frames out for.
@@ -3658,25 +3760,34 @@ const file_parca_query_v1alpha1_query_proto_rawDesc = "" +
 	"\x11_source_referenceB\x11\n" +
 	"\x0f_runtime_filterB\x14\n" +
 	"\x12_invert_call_stackB\x17\n" +
-	"\x15_sandwich_by_function\"\xa2\x01\n" +
+	"\x15_sandwich_by_function\"\xaf\x03\n" +
+	"\x0eFilterCriteria\x12J\n" +
+	"\rfunction_name\x18\x01 \x01(\v2%.parca.query.v1alpha1.StringConditionR\ffunctionName\x12F\n" +
+	"\vsystem_name\x18\x02 \x01(\v2%.parca.query.v1alpha1.StringConditionR\n" +
+	"systemName\x12=\n" +
+	"\x06binary\x18\x03 \x01(\v2%.parca.query.v1alpha1.StringConditionR\x06binary\x12A\n" +
+	"\bfilename\x18\x04 \x01(\v2%.parca.query.v1alpha1.StringConditionR\bfilename\x12?\n" +
+	"\aaddress\x18\x05 \x01(\v2%.parca.query.v1alpha1.NumberConditionR\aaddress\x12F\n" +
+	"\vline_number\x18\x06 \x01(\v2%.parca.query.v1alpha1.NumberConditionR\n" +
+	"lineNumber\"\x98\x01\n" +
+	"\x0fStringCondition\x12\x16\n" +
+	"\x05equal\x18\x01 \x01(\tH\x00R\x05equal\x12\x1d\n" +
+	"\tnot_equal\x18\x02 \x01(\tH\x00R\bnotEqual\x12\x1c\n" +
+	"\bcontains\x18\x03 \x01(\tH\x00R\bcontains\x12#\n" +
+	"\fnot_contains\x18\x04 \x01(\tH\x00R\vnotContainsB\v\n" +
+	"\tcondition\"U\n" +
+	"\x0fNumberCondition\x12\x16\n" +
+	"\x05equal\x18\x01 \x01(\x04H\x00R\x05equal\x12\x1d\n" +
+	"\tnot_equal\x18\x02 \x01(\x04H\x00R\bnotEqualB\v\n" +
+	"\tcondition\"\xa2\x01\n" +
 	"\x06Filter\x12F\n" +
 	"\fstack_filter\x18\x01 \x01(\v2!.parca.query.v1alpha1.StackFilterH\x00R\vstackFilter\x12F\n" +
 	"\fframe_filter\x18\x02 \x01(\v2!.parca.query.v1alpha1.FrameFilterH\x00R\vframeFilterB\b\n" +
 	"\x06filter\"O\n" +
 	"\vStackFilter\x12@\n" +
-	"\blocation\x18\x01 \x01(\v2$.parca.query.v1alpha1.LocationFilterR\blocation\"O\n" +
-	"\vFrameFilter\x12@\n" +
-	"\blocation\x18\x01 \x01(\v2$.parca.query.v1alpha1.LocationFilterR\blocation\"\xc3\x01\n" +
-	"\x0eLocationFilter\x12\\\n" +
-	"\x14function_name_filter\x18\x01 \x01(\v2(.parca.query.v1alpha1.FunctionNameFilterH\x00R\x12functionNameFilter\x12I\n" +
-	"\rbinary_filter\x18\x02 \x01(\v2\".parca.query.v1alpha1.BinaryFilterH\x00R\fbinaryFilterB\b\n" +
-	"\x06filter\"\\\n" +
-	"\x12FunctionNameFilter\x12,\n" +
-	"\x12function_to_filter\x18\x01 \x01(\tR\x10functionToFilter\x12\x18\n" +
-	"\aexclude\x18\x02 \x01(\bR\aexclude\"R\n" +
-	"\fBinaryFilter\x12(\n" +
-	"\x10binary_to_filter\x18\x01 \x01(\tR\x0ebinaryToFilter\x12\x18\n" +
-	"\aexclude\x18\x02 \x01(\bR\aexclude\"\x81\x01\n" +
+	"\bcriteria\x18\x01 \x01(\v2$.parca.query.v1alpha1.FilterCriteriaR\bcriteria\"K\n" +
+	"\vFrameFilter\x12<\n" +
+	"\x06filter\x18\x01 \x01(\v2$.parca.query.v1alpha1.FilterCriteriaR\x06filter\"\x81\x01\n" +
 	"\rRuntimeFilter\x12\x1f\n" +
 	"\vshow_python\x18\x01 \x01(\bR\n" +
 	"showPython\x12\x1b\n" +
@@ -3875,12 +3986,12 @@ var file_parca_query_v1alpha1_query_proto_goTypes = []any{
 	(*DiffProfile)(nil),            // 12: parca.query.v1alpha1.DiffProfile
 	(*ProfileDiffSelection)(nil),   // 13: parca.query.v1alpha1.ProfileDiffSelection
 	(*QueryRequest)(nil),           // 14: parca.query.v1alpha1.QueryRequest
-	(*Filter)(nil),                 // 15: parca.query.v1alpha1.Filter
-	(*StackFilter)(nil),            // 16: parca.query.v1alpha1.StackFilter
-	(*FrameFilter)(nil),            // 17: parca.query.v1alpha1.FrameFilter
-	(*LocationFilter)(nil),         // 18: parca.query.v1alpha1.LocationFilter
-	(*FunctionNameFilter)(nil),     // 19: parca.query.v1alpha1.FunctionNameFilter
-	(*BinaryFilter)(nil),           // 20: parca.query.v1alpha1.BinaryFilter
+	(*FilterCriteria)(nil),         // 15: parca.query.v1alpha1.FilterCriteria
+	(*StringCondition)(nil),        // 16: parca.query.v1alpha1.StringCondition
+	(*NumberCondition)(nil),        // 17: parca.query.v1alpha1.NumberCondition
+	(*Filter)(nil),                 // 18: parca.query.v1alpha1.Filter
+	(*StackFilter)(nil),            // 19: parca.query.v1alpha1.StackFilter
+	(*FrameFilter)(nil),            // 20: parca.query.v1alpha1.FrameFilter
 	(*RuntimeFilter)(nil),          // 21: parca.query.v1alpha1.RuntimeFilter
 	(*SourceReference)(nil),        // 22: parca.query.v1alpha1.SourceReference
 	(*GroupBy)(nil),                // 23: parca.query.v1alpha1.GroupBy
@@ -3944,70 +4055,74 @@ var file_parca_query_v1alpha1_query_proto_depIdxs = []int32{
 	23, // 23: parca.query.v1alpha1.QueryRequest.group_by:type_name -> parca.query.v1alpha1.GroupBy
 	22, // 24: parca.query.v1alpha1.QueryRequest.source_reference:type_name -> parca.query.v1alpha1.SourceReference
 	21, // 25: parca.query.v1alpha1.QueryRequest.runtime_filter:type_name -> parca.query.v1alpha1.RuntimeFilter
-	15, // 26: parca.query.v1alpha1.QueryRequest.filter:type_name -> parca.query.v1alpha1.Filter
-	16, // 27: parca.query.v1alpha1.Filter.stack_filter:type_name -> parca.query.v1alpha1.StackFilter
-	17, // 28: parca.query.v1alpha1.Filter.frame_filter:type_name -> parca.query.v1alpha1.FrameFilter
-	18, // 29: parca.query.v1alpha1.StackFilter.location:type_name -> parca.query.v1alpha1.LocationFilter
-	18, // 30: parca.query.v1alpha1.FrameFilter.location:type_name -> parca.query.v1alpha1.LocationFilter
-	19, // 31: parca.query.v1alpha1.LocationFilter.function_name_filter:type_name -> parca.query.v1alpha1.FunctionNameFilter
-	20, // 32: parca.query.v1alpha1.LocationFilter.binary_filter:type_name -> parca.query.v1alpha1.BinaryFilter
-	25, // 33: parca.query.v1alpha1.Top.list:type_name -> parca.query.v1alpha1.TopNode
-	26, // 34: parca.query.v1alpha1.TopNode.meta:type_name -> parca.query.v1alpha1.TopNodeMeta
-	52, // 35: parca.query.v1alpha1.TopNodeMeta.location:type_name -> parca.metastore.v1alpha1.Location
-	53, // 36: parca.query.v1alpha1.TopNodeMeta.mapping:type_name -> parca.metastore.v1alpha1.Mapping
-	54, // 37: parca.query.v1alpha1.TopNodeMeta.function:type_name -> parca.metastore.v1alpha1.Function
-	55, // 38: parca.query.v1alpha1.TopNodeMeta.line:type_name -> parca.metastore.v1alpha1.Line
-	30, // 39: parca.query.v1alpha1.Flamegraph.root:type_name -> parca.query.v1alpha1.FlamegraphRootNode
-	52, // 40: parca.query.v1alpha1.Flamegraph.locations:type_name -> parca.metastore.v1alpha1.Location
-	53, // 41: parca.query.v1alpha1.Flamegraph.mapping:type_name -> parca.metastore.v1alpha1.Mapping
-	54, // 42: parca.query.v1alpha1.Flamegraph.function:type_name -> parca.metastore.v1alpha1.Function
-	31, // 43: parca.query.v1alpha1.FlamegraphRootNode.children:type_name -> parca.query.v1alpha1.FlamegraphNode
-	32, // 44: parca.query.v1alpha1.FlamegraphNode.meta:type_name -> parca.query.v1alpha1.FlamegraphNodeMeta
-	31, // 45: parca.query.v1alpha1.FlamegraphNode.children:type_name -> parca.query.v1alpha1.FlamegraphNode
-	52, // 46: parca.query.v1alpha1.FlamegraphNodeMeta.location:type_name -> parca.metastore.v1alpha1.Location
-	53, // 47: parca.query.v1alpha1.FlamegraphNodeMeta.mapping:type_name -> parca.metastore.v1alpha1.Mapping
-	54, // 48: parca.query.v1alpha1.FlamegraphNodeMeta.function:type_name -> parca.metastore.v1alpha1.Function
-	55, // 49: parca.query.v1alpha1.FlamegraphNodeMeta.line:type_name -> parca.metastore.v1alpha1.Line
-	34, // 50: parca.query.v1alpha1.CallgraphNode.meta:type_name -> parca.query.v1alpha1.CallgraphNodeMeta
-	52, // 51: parca.query.v1alpha1.CallgraphNodeMeta.location:type_name -> parca.metastore.v1alpha1.Location
-	53, // 52: parca.query.v1alpha1.CallgraphNodeMeta.mapping:type_name -> parca.metastore.v1alpha1.Mapping
-	54, // 53: parca.query.v1alpha1.CallgraphNodeMeta.function:type_name -> parca.metastore.v1alpha1.Function
-	55, // 54: parca.query.v1alpha1.CallgraphNodeMeta.line:type_name -> parca.metastore.v1alpha1.Line
-	33, // 55: parca.query.v1alpha1.Callgraph.nodes:type_name -> parca.query.v1alpha1.CallgraphNode
-	35, // 56: parca.query.v1alpha1.Callgraph.edges:type_name -> parca.query.v1alpha1.CallgraphEdge
-	27, // 57: parca.query.v1alpha1.QueryResponse.flamegraph:type_name -> parca.query.v1alpha1.Flamegraph
-	24, // 58: parca.query.v1alpha1.QueryResponse.top:type_name -> parca.query.v1alpha1.Top
-	36, // 59: parca.query.v1alpha1.QueryResponse.callgraph:type_name -> parca.query.v1alpha1.Callgraph
-	28, // 60: parca.query.v1alpha1.QueryResponse.flamegraph_arrow:type_name -> parca.query.v1alpha1.FlamegraphArrow
-	29, // 61: parca.query.v1alpha1.QueryResponse.source:type_name -> parca.query.v1alpha1.Source
-	47, // 62: parca.query.v1alpha1.QueryResponse.table_arrow:type_name -> parca.query.v1alpha1.TableArrow
-	48, // 63: parca.query.v1alpha1.QueryResponse.profile_metadata:type_name -> parca.query.v1alpha1.ProfileMetadata
-	49, // 64: parca.query.v1alpha1.SeriesRequest.start:type_name -> google.protobuf.Timestamp
-	49, // 65: parca.query.v1alpha1.SeriesRequest.end:type_name -> google.protobuf.Timestamp
-	49, // 66: parca.query.v1alpha1.LabelsRequest.start:type_name -> google.protobuf.Timestamp
-	49, // 67: parca.query.v1alpha1.LabelsRequest.end:type_name -> google.protobuf.Timestamp
-	49, // 68: parca.query.v1alpha1.ValuesRequest.start:type_name -> google.protobuf.Timestamp
-	49, // 69: parca.query.v1alpha1.ValuesRequest.end:type_name -> google.protobuf.Timestamp
-	14, // 70: parca.query.v1alpha1.ShareProfileRequest.query_request:type_name -> parca.query.v1alpha1.QueryRequest
-	6,  // 71: parca.query.v1alpha1.QueryService.QueryRange:input_type -> parca.query.v1alpha1.QueryRangeRequest
-	14, // 72: parca.query.v1alpha1.QueryService.Query:input_type -> parca.query.v1alpha1.QueryRequest
-	38, // 73: parca.query.v1alpha1.QueryService.Series:input_type -> parca.query.v1alpha1.SeriesRequest
-	3,  // 74: parca.query.v1alpha1.QueryService.ProfileTypes:input_type -> parca.query.v1alpha1.ProfileTypesRequest
-	40, // 75: parca.query.v1alpha1.QueryService.Labels:input_type -> parca.query.v1alpha1.LabelsRequest
-	42, // 76: parca.query.v1alpha1.QueryService.Values:input_type -> parca.query.v1alpha1.ValuesRequest
-	45, // 77: parca.query.v1alpha1.QueryService.ShareProfile:input_type -> parca.query.v1alpha1.ShareProfileRequest
-	7,  // 78: parca.query.v1alpha1.QueryService.QueryRange:output_type -> parca.query.v1alpha1.QueryRangeResponse
-	37, // 79: parca.query.v1alpha1.QueryService.Query:output_type -> parca.query.v1alpha1.QueryResponse
-	39, // 80: parca.query.v1alpha1.QueryService.Series:output_type -> parca.query.v1alpha1.SeriesResponse
-	4,  // 81: parca.query.v1alpha1.QueryService.ProfileTypes:output_type -> parca.query.v1alpha1.ProfileTypesResponse
-	41, // 82: parca.query.v1alpha1.QueryService.Labels:output_type -> parca.query.v1alpha1.LabelsResponse
-	43, // 83: parca.query.v1alpha1.QueryService.Values:output_type -> parca.query.v1alpha1.ValuesResponse
-	46, // 84: parca.query.v1alpha1.QueryService.ShareProfile:output_type -> parca.query.v1alpha1.ShareProfileResponse
-	78, // [78:85] is the sub-list for method output_type
-	71, // [71:78] is the sub-list for method input_type
-	71, // [71:71] is the sub-list for extension type_name
-	71, // [71:71] is the sub-list for extension extendee
-	0,  // [0:71] is the sub-list for field type_name
+	18, // 26: parca.query.v1alpha1.QueryRequest.filter:type_name -> parca.query.v1alpha1.Filter
+	16, // 27: parca.query.v1alpha1.FilterCriteria.function_name:type_name -> parca.query.v1alpha1.StringCondition
+	16, // 28: parca.query.v1alpha1.FilterCriteria.system_name:type_name -> parca.query.v1alpha1.StringCondition
+	16, // 29: parca.query.v1alpha1.FilterCriteria.binary:type_name -> parca.query.v1alpha1.StringCondition
+	16, // 30: parca.query.v1alpha1.FilterCriteria.filename:type_name -> parca.query.v1alpha1.StringCondition
+	17, // 31: parca.query.v1alpha1.FilterCriteria.address:type_name -> parca.query.v1alpha1.NumberCondition
+	17, // 32: parca.query.v1alpha1.FilterCriteria.line_number:type_name -> parca.query.v1alpha1.NumberCondition
+	19, // 33: parca.query.v1alpha1.Filter.stack_filter:type_name -> parca.query.v1alpha1.StackFilter
+	20, // 34: parca.query.v1alpha1.Filter.frame_filter:type_name -> parca.query.v1alpha1.FrameFilter
+	15, // 35: parca.query.v1alpha1.StackFilter.criteria:type_name -> parca.query.v1alpha1.FilterCriteria
+	15, // 36: parca.query.v1alpha1.FrameFilter.filter:type_name -> parca.query.v1alpha1.FilterCriteria
+	25, // 37: parca.query.v1alpha1.Top.list:type_name -> parca.query.v1alpha1.TopNode
+	26, // 38: parca.query.v1alpha1.TopNode.meta:type_name -> parca.query.v1alpha1.TopNodeMeta
+	52, // 39: parca.query.v1alpha1.TopNodeMeta.location:type_name -> parca.metastore.v1alpha1.Location
+	53, // 40: parca.query.v1alpha1.TopNodeMeta.mapping:type_name -> parca.metastore.v1alpha1.Mapping
+	54, // 41: parca.query.v1alpha1.TopNodeMeta.function:type_name -> parca.metastore.v1alpha1.Function
+	55, // 42: parca.query.v1alpha1.TopNodeMeta.line:type_name -> parca.metastore.v1alpha1.Line
+	30, // 43: parca.query.v1alpha1.Flamegraph.root:type_name -> parca.query.v1alpha1.FlamegraphRootNode
+	52, // 44: parca.query.v1alpha1.Flamegraph.locations:type_name -> parca.metastore.v1alpha1.Location
+	53, // 45: parca.query.v1alpha1.Flamegraph.mapping:type_name -> parca.metastore.v1alpha1.Mapping
+	54, // 46: parca.query.v1alpha1.Flamegraph.function:type_name -> parca.metastore.v1alpha1.Function
+	31, // 47: parca.query.v1alpha1.FlamegraphRootNode.children:type_name -> parca.query.v1alpha1.FlamegraphNode
+	32, // 48: parca.query.v1alpha1.FlamegraphNode.meta:type_name -> parca.query.v1alpha1.FlamegraphNodeMeta
+	31, // 49: parca.query.v1alpha1.FlamegraphNode.children:type_name -> parca.query.v1alpha1.FlamegraphNode
+	52, // 50: parca.query.v1alpha1.FlamegraphNodeMeta.location:type_name -> parca.metastore.v1alpha1.Location
+	53, // 51: parca.query.v1alpha1.FlamegraphNodeMeta.mapping:type_name -> parca.metastore.v1alpha1.Mapping
+	54, // 52: parca.query.v1alpha1.FlamegraphNodeMeta.function:type_name -> parca.metastore.v1alpha1.Function
+	55, // 53: parca.query.v1alpha1.FlamegraphNodeMeta.line:type_name -> parca.metastore.v1alpha1.Line
+	34, // 54: parca.query.v1alpha1.CallgraphNode.meta:type_name -> parca.query.v1alpha1.CallgraphNodeMeta
+	52, // 55: parca.query.v1alpha1.CallgraphNodeMeta.location:type_name -> parca.metastore.v1alpha1.Location
+	53, // 56: parca.query.v1alpha1.CallgraphNodeMeta.mapping:type_name -> parca.metastore.v1alpha1.Mapping
+	54, // 57: parca.query.v1alpha1.CallgraphNodeMeta.function:type_name -> parca.metastore.v1alpha1.Function
+	55, // 58: parca.query.v1alpha1.CallgraphNodeMeta.line:type_name -> parca.metastore.v1alpha1.Line
+	33, // 59: parca.query.v1alpha1.Callgraph.nodes:type_name -> parca.query.v1alpha1.CallgraphNode
+	35, // 60: parca.query.v1alpha1.Callgraph.edges:type_name -> parca.query.v1alpha1.CallgraphEdge
+	27, // 61: parca.query.v1alpha1.QueryResponse.flamegraph:type_name -> parca.query.v1alpha1.Flamegraph
+	24, // 62: parca.query.v1alpha1.QueryResponse.top:type_name -> parca.query.v1alpha1.Top
+	36, // 63: parca.query.v1alpha1.QueryResponse.callgraph:type_name -> parca.query.v1alpha1.Callgraph
+	28, // 64: parca.query.v1alpha1.QueryResponse.flamegraph_arrow:type_name -> parca.query.v1alpha1.FlamegraphArrow
+	29, // 65: parca.query.v1alpha1.QueryResponse.source:type_name -> parca.query.v1alpha1.Source
+	47, // 66: parca.query.v1alpha1.QueryResponse.table_arrow:type_name -> parca.query.v1alpha1.TableArrow
+	48, // 67: parca.query.v1alpha1.QueryResponse.profile_metadata:type_name -> parca.query.v1alpha1.ProfileMetadata
+	49, // 68: parca.query.v1alpha1.SeriesRequest.start:type_name -> google.protobuf.Timestamp
+	49, // 69: parca.query.v1alpha1.SeriesRequest.end:type_name -> google.protobuf.Timestamp
+	49, // 70: parca.query.v1alpha1.LabelsRequest.start:type_name -> google.protobuf.Timestamp
+	49, // 71: parca.query.v1alpha1.LabelsRequest.end:type_name -> google.protobuf.Timestamp
+	49, // 72: parca.query.v1alpha1.ValuesRequest.start:type_name -> google.protobuf.Timestamp
+	49, // 73: parca.query.v1alpha1.ValuesRequest.end:type_name -> google.protobuf.Timestamp
+	14, // 74: parca.query.v1alpha1.ShareProfileRequest.query_request:type_name -> parca.query.v1alpha1.QueryRequest
+	6,  // 75: parca.query.v1alpha1.QueryService.QueryRange:input_type -> parca.query.v1alpha1.QueryRangeRequest
+	14, // 76: parca.query.v1alpha1.QueryService.Query:input_type -> parca.query.v1alpha1.QueryRequest
+	38, // 77: parca.query.v1alpha1.QueryService.Series:input_type -> parca.query.v1alpha1.SeriesRequest
+	3,  // 78: parca.query.v1alpha1.QueryService.ProfileTypes:input_type -> parca.query.v1alpha1.ProfileTypesRequest
+	40, // 79: parca.query.v1alpha1.QueryService.Labels:input_type -> parca.query.v1alpha1.LabelsRequest
+	42, // 80: parca.query.v1alpha1.QueryService.Values:input_type -> parca.query.v1alpha1.ValuesRequest
+	45, // 81: parca.query.v1alpha1.QueryService.ShareProfile:input_type -> parca.query.v1alpha1.ShareProfileRequest
+	7,  // 82: parca.query.v1alpha1.QueryService.QueryRange:output_type -> parca.query.v1alpha1.QueryRangeResponse
+	37, // 83: parca.query.v1alpha1.QueryService.Query:output_type -> parca.query.v1alpha1.QueryResponse
+	39, // 84: parca.query.v1alpha1.QueryService.Series:output_type -> parca.query.v1alpha1.SeriesResponse
+	4,  // 85: parca.query.v1alpha1.QueryService.ProfileTypes:output_type -> parca.query.v1alpha1.ProfileTypesResponse
+	41, // 86: parca.query.v1alpha1.QueryService.Labels:output_type -> parca.query.v1alpha1.LabelsResponse
+	43, // 87: parca.query.v1alpha1.QueryService.Values:output_type -> parca.query.v1alpha1.ValuesResponse
+	46, // 88: parca.query.v1alpha1.QueryService.ShareProfile:output_type -> parca.query.v1alpha1.ShareProfileResponse
+	82, // [82:89] is the sub-list for method output_type
+	75, // [75:82] is the sub-list for method input_type
+	75, // [75:75] is the sub-list for extension type_name
+	75, // [75:75] is the sub-list for extension extendee
+	0,  // [0:75] is the sub-list for field type_name
 }
 
 func init() { file_parca_query_v1alpha1_query_proto_init() }
@@ -4025,13 +4140,19 @@ func file_parca_query_v1alpha1_query_proto_init() {
 		(*QueryRequest_Merge)(nil),
 		(*QueryRequest_Single)(nil),
 	}
-	file_parca_query_v1alpha1_query_proto_msgTypes[12].OneofWrappers = []any{
-		(*Filter_StackFilter)(nil),
-		(*Filter_FrameFilter)(nil),
+	file_parca_query_v1alpha1_query_proto_msgTypes[13].OneofWrappers = []any{
+		(*StringCondition_Equal)(nil),
+		(*StringCondition_NotEqual)(nil),
+		(*StringCondition_Contains)(nil),
+		(*StringCondition_NotContains)(nil),
+	}
+	file_parca_query_v1alpha1_query_proto_msgTypes[14].OneofWrappers = []any{
+		(*NumberCondition_Equal)(nil),
+		(*NumberCondition_NotEqual)(nil),
 	}
 	file_parca_query_v1alpha1_query_proto_msgTypes[15].OneofWrappers = []any{
-		(*LocationFilter_FunctionNameFilter)(nil),
-		(*LocationFilter_BinaryFilter)(nil),
+		(*Filter_StackFilter)(nil),
+		(*Filter_FrameFilter)(nil),
 	}
 	file_parca_query_v1alpha1_query_proto_msgTypes[34].OneofWrappers = []any{
 		(*QueryResponse_Flamegraph)(nil),

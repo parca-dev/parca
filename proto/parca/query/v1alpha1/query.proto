@@ -280,6 +280,48 @@ message QueryRequest {
   optional string sandwich_by_function = 13;
 }
 
+// FilterCriteria defines the various criteria that can be used to filter stack frames or stacks
+message FilterCriteria {
+  // function_name filters by the function name
+  StringCondition function_name = 1;
+  // system_name filters by the system name
+  StringCondition system_name = 2;
+  // binary filters by the binary/executable name
+  StringCondition binary = 3;
+  // filename filters by the source code filename
+  StringCondition filename = 4;
+  // address filters by the memory address
+  NumberCondition address = 5;
+  // line_number filters by the source code line number
+  NumberCondition line_number = 6;
+}
+
+// StringCondition defines string-based filtering conditions
+message StringCondition {
+  // condition specifies the type of string comparison to perform
+  oneof condition {
+    // equal matches strings that are exactly equal
+    string equal = 1;
+    // not_equal matches strings that are not equal
+    string not_equal = 2;
+    // contains matches strings that contain the specified substring
+    string contains = 3;
+    // not_contains matches strings that do not contain the specified substring
+    string not_contains = 4;
+  }
+}
+
+// NumberCondition defines numeric filtering conditions
+message NumberCondition {
+  // condition specifies the type of numeric comparison to perform
+  oneof condition {
+    // equal matches numbers that are exactly equal
+    uint64 equal = 1;
+    // not_equal matches numbers that are not equal
+    uint64 not_equal = 2;
+  }
+}
+
 // Filter to apply to the query request
 message Filter {
   // filter is a oneof type of filter to apply to the query request
@@ -292,43 +334,16 @@ message Filter {
   }
 }
 
-// StackFilter is a filter for filtering by stacks
+// StackFilter applies filtering criteria to entire call stacks
 message StackFilter {
-  // location contains the location filter to apply
-  LocationFilter location = 1;
+  // criteria defines the filter conditions to apply to the stack
+  FilterCriteria criteria = 1;
 }
 
-// FrameFilter is a filter for filtering by frames
+// FrameFilter applies filtering criteria to individual stack frames
 message FrameFilter {
-  // location contains the location filter to apply
-  LocationFilter location = 1;
-}
-
-// LocationFilter provides filtering by location attributes
-message LocationFilter {
-  // filter contains the different methods for filtering
-  oneof filter {
-    // function_name_filter is the function name to filter by
-    FunctionNameFilter function_name_filter = 1;
-    // binary_filter is the binary name to filter by
-    BinaryFilter binary_filter = 2;
-  }
-}
-
-// FunctionNameFilter is a filter for filtering by function name
-message FunctionNameFilter {
-  // function_to_filter is the function name to filter by
-  string function_to_filter = 1;
-  // exclude determines whether to exclude stacks matching the function
-  bool exclude = 2;
-}
-
-// BinaryFilter is a filter for filtering by binaries
-message BinaryFilter {
-  // binary_to_filter is the binary name to filter by
-  string binary_to_filter = 1;
-  // exclude determines whether to exclude frames matching the binary
-  bool exclude = 2;
+  // filter defines the criteria to filter individual frames by
+  FilterCriteria filter = 1;
 }
 
 // RuntimeFilter configures which runtimes to filter frames out for.

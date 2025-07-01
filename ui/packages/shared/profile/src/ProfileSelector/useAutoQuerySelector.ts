@@ -59,7 +59,6 @@ export const useAutoQuerySelector = ({
         querySelection.mergeFrom?.toString(),
         querySelection.mergeTo?.toString(),
         querySelection.expression,
-        ''
       );
       const queryA = {
         expression: querySelection.expression,

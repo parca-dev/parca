@@ -71,6 +71,10 @@ const Input = ({
           if (e.key === 'Enter' && hasAction) {
             onAction();
           }
+          // Call the provided onKeyDown handler if it exists
+          if (props.onKeyDown) {
+            props.onKeyDown(e);
+          }
         }}
         id={id}
       />
