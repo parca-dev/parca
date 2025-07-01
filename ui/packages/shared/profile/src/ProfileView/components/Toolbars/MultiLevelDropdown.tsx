@@ -11,17 +11,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useCallback} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 
 import {Menu} from '@headlessui/react';
 import {Icon} from '@iconify/react';
+import cx from 'classnames';
 
 import {useURLState} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
 
-import {FIELD_FUNCTION_NAME} from '../../../ProfileIcicleGraph/IcicleGraphArrow';
+import {
+  FIELD_FUNCTION_FILE_NAME,
+  FIELD_FUNCTION_NAME,
+  FIELD_LOCATION_ADDRESS,
+  FIELD_MAPPING_FILE,
+} from '../../../ProfileIcicleGraph/IcicleGraphArrow';
 import {useProfileViewContext} from '../../context/ProfileViewContext';
+import SwitchMenuItem from './SwitchMenuItem';
 
 interface MenuItemType {
   label: string;
@@ -34,6 +41,7 @@ interface MenuItemType {
   value?: string;
   icon?: string;
   customSubmenu?: React.ReactNode;
+  renderAsDiv?: boolean;
 }
 
 type MenuItemProps = MenuItemType & {
@@ -43,6 +51,7 @@ type MenuItemProps = MenuItemType & {
   isNested?: boolean;
   activeValueForSortBy?: string;
   activeValueForColorBy?: string;
+  activeValuesForLevel?: string[];
   icon?: string;
 };
 
@@ -57,17 +66,38 @@ const MenuItem: React.FC<MenuItemProps> = ({
   isNested = false,
   activeValueForSortBy,
   activeValueForColorBy,
+  activeValuesForLevel,
   value,
   disabled = false,
   icon,
   customSubmenu,
+  renderAsDiv = false,
 }) => {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [shouldOpenLeft, setShouldOpenLeft] = useState(false);
+
+  useEffect(() => {
+    if (items !== undefined && menuRef.current !== null) {
+      const rect = menuRef.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const menuWidth = 224; // w-56 = 14rem = 224px
+      const spaceOnRight = viewportWidth - rect.right;
+      const spaceOnLeft = rect.left;
+
+      // Open to the left if there's not enough space on the right but enough on the left
+      setShouldOpenLeft(spaceOnRight < menuWidth && spaceOnLeft >= menuWidth);
+    }
+  }, [items]);
   let isActive = false;
+
   if (isNested) {
     if (activeValueForSortBy !== undefined && value === activeValueForSortBy) {
       isActive = true;
     }
     if (activeValueForColorBy !== undefined && value === activeValueForColorBy) {
+      isActive = true;
+    }
+    if (activeValuesForLevel?.includes(value ?? '') ?? false) {
       isActive = true;
     }
   }
@@ -85,11 +115,12 @@ const MenuItem: React.FC<MenuItemProps> = ({
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={menuRef}>
       <Menu>
         {({close}) => (
           <>
             <Menu.Button
+              as={renderAsDiv ? 'div' : 'button'}
               className={`w-full text-left px-4 py-2 text-sm ${
                 disabled
                   ? 'text-gray-400'
@@ -105,9 +136,9 @@ const MenuItem: React.FC<MenuItemProps> = ({
                 customSubmenu
               ) : (
                 <span className="flex items-center">
-                  <div className="flex items-center">
+                  <div className="flex items-center gap-2">
+                    {icon !== undefined && <Icon icon={icon} className="h-4 w-4" />}
                     <span>{label}</span>
-                    {icon !== undefined && <Icon icon={icon} className="ml-2 h-4 w-4" />}
                   </div>
                   {isActive && <Icon icon="heroicons-solid:check" className="ml-2 h-4 w-4" />}
                 </span>
@@ -117,7 +148,13 @@ const MenuItem: React.FC<MenuItemProps> = ({
               )}
             </Menu.Button>
             {items !== undefined && (
-              <Menu.Items className="absolute left-full top-0 w-56 mt-0 origin-top-right bg-white border border-gray-200 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-900 ml-1 dark:border-gray-600">
+              <Menu.Items
+                className={`absolute top-0 w-56 mt-0 bg-white border border-gray-200 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-900 dark:border-gray-600 ${
+                  shouldOpenLeft
+                    ? 'right-full mr-1 origin-top-left'
+                    : 'left-full ml-1 origin-top-right'
+                }`}
+              >
                 {items?.map((item, index) => (
                   <MenuItem
                     key={index}
@@ -132,6 +169,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
                     isNested={true}
                     activeValueForSortBy={activeValueForSortBy}
                     activeValueForColorBy={activeValueForColorBy}
+                    activeValuesForLevel={activeValuesForLevel}
                   />
                 ))}
               </Menu.Items>
@@ -146,9 +184,18 @@ const MenuItem: React.FC<MenuItemProps> = ({
 interface MultiLevelDropdownProps {
   onSelect: (path: string[]) => void;
   profileType?: ProfileType;
+  groupBy: string[];
+  toggleGroupBy: (key: string) => void;
+  isTableVizOnly: boolean;
 }
 
-const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profileType}) => {
+const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
+  onSelect,
+  profileType,
+  groupBy,
+  toggleGroupBy,
+  isTableVizOnly,
+}) => {
   const [storeSortBy] = useURLState('sort_by', {
     defaultValue: FIELD_FUNCTION_NAME,
   });
@@ -163,8 +210,6 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
   const [colorProfileName] = useUserPreference<string>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
-  const [invertStack = '', setInvertStack] = useURLState('invert_call_stack');
-  const isInvert = invertStack === 'true';
   const isColorStackLegendEnabled = colorStackLegend === 'true';
 
   const [alignFunctionName, setAlignFunctionName] = useURLState('align_function_name');
@@ -197,8 +242,36 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
 
   const menuItems: MenuItemType[] = [
     {
+      label: 'Levels',
+      id: 'h-levels-filter',
+      items: [
+        {
+          label: 'Function',
+          onclick: () => toggleGroupBy(FIELD_FUNCTION_NAME),
+          value: FIELD_FUNCTION_NAME,
+        },
+        {
+          label: 'Binary',
+          onclick: () => toggleGroupBy(FIELD_MAPPING_FILE),
+          value: FIELD_MAPPING_FILE,
+        },
+        {
+          label: 'Code',
+          onclick: () => toggleGroupBy(FIELD_FUNCTION_FILE_NAME),
+          value: FIELD_FUNCTION_FILE_NAME,
+        },
+        {
+          label: 'Address',
+          onclick: () => toggleGroupBy(FIELD_LOCATION_ADDRESS),
+          value: FIELD_LOCATION_ADDRESS,
+        },
+      ],
+      hide: !!isTableVizOnly,
+      icon: 'heroicons-solid:bars-3',
+    },
+    {
       label: 'Color by',
-      id: 'h-solor-by-filter',
+      id: 'h-color-by-filter',
       items: [
         {
           label: 'Binary',
@@ -214,7 +287,6 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
       hide: false,
       icon: 'carbon:color-palette',
     },
-
     {
       label: isColorStackLegendEnabled ? 'Hide legend' : 'Show legend',
       onclick: () => setColorStackLegend(isColorStackLegendEnabled ? 'false' : 'true'),
@@ -223,16 +295,10 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
       icon: isColorStackLegendEnabled ? 'ph:eye-closed' : 'ph:eye',
     },
     {
-      label: isInvert ? 'Original Call Stack' : 'Invert Call Stack',
-      onclick: () => setInvertStack(isInvert ? '' : 'true'),
-      hide: false,
-      icon: isInvert ? 'ph:sort-ascending' : 'ph:sort-descending',
-    },
-    {
       label: isLeftAligned ? 'Right-align function names' : 'Left-align function names',
       onclick: () => setAlignFunctionName(isLeftAligned ? 'right' : 'left'),
       id: 'h-align-function-names',
-      hide: false,
+      hide: !!isTableVizOnly,
       icon: isLeftAligned
         ? 'ic:outline-align-horizontal-right'
         : 'ic:outline-align-horizontal-left',
@@ -242,6 +308,42 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
       onclick: () => setCompareAbsolute(isCompareAbsolute ? 'false' : 'true'),
       hide: !compareMode,
       icon: isCompareAbsolute ? 'fluent-mdl2:compare' : 'fluent-mdl2:compare-uneven',
+    },
+    {
+      label: 'Highlight matching nodes after filtering',
+      hide: !!isTableVizOnly,
+      customSubmenu: (
+        <SwitchMenuItem
+          label="Highlight matching nodes after filtering"
+          id="h-highlight-after-filtering"
+          userPreferenceDetails={USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING}
+        />
+      ),
+      renderAsDiv: true,
+    },
+    {
+      label: 'Dock Graph MetaInfo',
+      hide: !!isTableVizOnly,
+      customSubmenu: (
+        <SwitchMenuItem
+          label="Dock graph tooltip"
+          id="h-dock-graph-meta-info"
+          userPreferenceDetails={USER_PREFERENCES.GRAPH_METAINFO_DOCKED}
+        />
+      ),
+      renderAsDiv: true,
+    },
+    {
+      label: 'Highlight similar stacks when hovering over a node',
+      hide: !!isTableVizOnly,
+      customSubmenu: (
+        <SwitchMenuItem
+          label="Highlight similar stacks when hovering over a node"
+          id="h-highlight-similar-stacks"
+          userPreferenceDetails={USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS}
+        />
+      ),
+      renderAsDiv: true,
     },
     {
       label: 'Reset Legend',
@@ -279,16 +381,24 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
       <Menu>
         {({open, close}) => (
           <>
-            <Menu.Button className="inline-flex dark:bg-gray-900 dark:border-gray-600 justify-center w-full px-4 py-2 text-sm font-normal text-gray-600 dark:text-gray-200 bg-white rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 border border-gray-200 pr-[1.7rem]">
-              <span>More</span>
+            <Menu.Button className="flex dark:bg-gray-900 dark:border-gray-600 justify-center w-full px-4 py-2 text-sm font-normal text-gray-600 dark:text-gray-200 bg-white rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 border border-gray-200 pr-[1.7rem]">
+              <div className="flex items-center gap-2">
+                <Icon icon="pajamas:preferences" className="w-4 h-4" />
+
+                <span>Preferences</span>
+              </div>
 
               <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-400">
                 <Icon icon="heroicons:chevron-down-20-solid" aria-hidden="true" />
               </span>
             </Menu.Button>
             {open && (
-              <Menu.Items className="absolute z-30 left-0 w-64 mt-2 py-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border dark:bg-gray-900 dark:border-gray-600">
-                <span className="text-xs text-gray-400 capitalize px-4 py-3">actions</span>
+              <Menu.Items
+                className={cx(
+                  isTableVizOnly ? 'w-64' : 'w-80',
+                  'absolute z-30 left-0 mt-2 py-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border dark:bg-gray-900 dark:border-gray-600'
+                )}
+              >
                 {menuItems
                   .filter(item => item.hide !== undefined && !item.hide)
                   .map((item, index) => (
@@ -301,6 +411,8 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({onSelect, profil
                       activeValueForColorBy={
                         colorBy === undefined || colorBy === '' ? 'binary' : (colorBy as string)
                       }
+                      activeValuesForLevel={groupBy}
+                      renderAsDiv={item.renderAsDiv}
                     />
                   ))}
               </Menu.Items>

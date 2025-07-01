@@ -174,7 +174,7 @@ const DropdownOption = ({option}: {option: DropdownItem}): JSX.Element => {
                 e.stopPropagation();
                 option.innerAction?.onClick();
               }}
-              disabled={disabled || option.innerAction.isDisabled}
+              disabled={option.innerAction?.isDisabled}
             >
               {option.innerAction.text}
               {option.innerAction.text === 'Add Panel' && (

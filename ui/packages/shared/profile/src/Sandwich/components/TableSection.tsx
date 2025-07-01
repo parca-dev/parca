@@ -43,7 +43,6 @@ export function TableSection({
   height,
   sandwichFunctionName,
 }: TableSectionProps): JSX.Element {
-  console.log(height);
   return (
     <div
       style={{height: height !== undefined ? `${height}px` : '80vh'}}

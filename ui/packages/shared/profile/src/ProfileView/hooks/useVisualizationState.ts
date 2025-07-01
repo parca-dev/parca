@@ -11,11 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 
 import {JSONParser, JSONSerializer, useURLState, useURLStateCustom} from '@parca/components';
 
-import {FIELD_FUNCTION_NAME, FIELD_LABELS} from '../../ProfileIcicleGraph/IcicleGraphArrow';
+import {
+  FIELD_FUNCTION_FILE_NAME,
+  FIELD_FUNCTION_NAME,
+  FIELD_LABELS,
+  FIELD_LOCATION_ADDRESS,
+  FIELD_MAPPING_FILE,
+} from '../../ProfileIcicleGraph/IcicleGraphArrow';
 import {CurrentPathFrame} from '../../ProfileIcicleGraph/IcicleGraphArrow/utils';
 
 export const useVisualizationState = (): {
@@ -54,6 +60,16 @@ export const useVisualizationState = (): {
     'sandwich_function_name'
   );
 
+  const levelsOfProfiling = useMemo(
+    () => [
+      FIELD_FUNCTION_NAME,
+      FIELD_FUNCTION_FILE_NAME,
+      FIELD_LOCATION_ADDRESS,
+      FIELD_MAPPING_FILE,
+    ],
+    []
+  );
+
   const setGroupBy = useCallback(
     (keys: string[]): void => {
       setStoreGroupBy(keys);
@@ -63,11 +79,14 @@ export const useVisualizationState = (): {
 
   const toggleGroupBy = useCallback(
     (key: string): void => {
-      groupBy.includes(key)
-        ? setGroupBy(groupBy.filter(v => v !== key)) // remove
-        : setGroupBy([...groupBy, key]); // add
+      if (groupBy.includes(key)) {
+        setGroupBy(groupBy.filter(v => v !== key)); // remove
+      } else {
+        const filteredGroupBy = groupBy.filter(item => !levelsOfProfiling.includes(item));
+        setGroupBy([...filteredGroupBy, key]); // add
+      }
     },
-    [groupBy, setGroupBy]
+    [groupBy, setGroupBy, levelsOfProfiling]
   );
 
   const setGroupByLabels = useCallback(

@@ -11,19 +11,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {FC} from 'react';
+import { FC } from 'react';
 
-import {Icon} from '@iconify/react';
+import { Icon } from '@iconify/react';
 
-import {QueryServiceClient} from '@parca/client';
-import {Button, UserPreferencesModal} from '@parca/components';
-import {ProfileType} from '@parca/parser';
+import { QueryServiceClient } from '@parca/client';
+import { Button, UserPreferencesModal } from '@parca/components';
+import { ProfileType } from '@parca/parser';
 
-import {CurrentPathFrame} from '../../../ProfileIcicleGraph/IcicleGraphArrow/utils';
-import {ProfileSource} from '../../../ProfileSource';
-import {useDashboard} from '../../context/DashboardContext';
+import { CurrentPathFrame } from '../../../ProfileIcicleGraph/IcicleGraphArrow/utils';
+import { ProfileSource } from '../../../ProfileSource';
+import { useDashboard } from '../../context/DashboardContext';
 import GroupByDropdown from '../ActionButtons/GroupByDropdown';
 import ProfileFilters from '../ProfileFilters';
+import InvertCallStack from '../InvertCallStack';
 import ShareButton from '../ShareButton';
 import ViewSelector from '../ViewSelector';
 import MultiLevelDropdown from './MultiLevelDropdown';
@@ -99,7 +100,7 @@ export const TableToolbar: FC<TableToolbarProps> = ({
   );
 };
 
-export const IcicleGraphToolbar: FC<IcicleGraphToolbarProps> = ({curPath, setNewCurPath}) => {
+export const IcicleGraphToolbar: FC<IcicleGraphToolbarProps> = ({ curPath, setNewCurPath }) => {
   return (
     <>
       <div className="flex w-full gap-2 items-end">
@@ -108,6 +109,7 @@ export const IcicleGraphToolbar: FC<IcicleGraphToolbarProps> = ({curPath, setNew
           className="gap-2 w-max h-fit"
           onClick={() => setNewCurPath([])}
           disabled={curPath.length === 0}
+          id="h-reset-graph"
         >
           Reset graph
           <Icon icon="system-uicons:reset" width={20} />
@@ -164,30 +166,37 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   resetSandwichFunctionName,
   sandwichFunctionName,
 }) => {
-  const {dashboardItems} = useDashboard();
+  const { dashboardItems } = useDashboard();
 
   const isTableViz = dashboardItems?.includes('table');
+  const isTableVizOnly = dashboardItems?.length === 1 && isTableViz;
   const isGraphViz = dashboardItems?.includes('icicle');
   const isSandwichIcicleGraphViz = dashboardItems?.includes('sandwich');
+
+  const isTableView = isTableVizOnly || isSandwichIcicleGraphViz;
+
   const req = profileSource?.QueryRequest();
   if (req !== null && req !== undefined) {
     req.groupBy = {
       fields: groupBy ?? [],
     };
   }
+
   return (
     <>
       <div className="flex w-full justify-between items-end gap-3">
         <div className="flex gap-3 items-end">
-          <>
-            <GroupByDropdown
-              groupBy={groupBy}
-              toggleGroupBy={toggleGroupBy}
-              labels={groupByLabels}
-              setGroupByLabels={setGroupByLabels}
-            />
-            <MultiLevelDropdown profileType={profileType} onSelect={() => {}} />
-          </>
+          {!isTableView && (
+            <>
+              <GroupByDropdown
+                groupBy={groupBy}
+                labels={groupByLabels}
+                setGroupByLabels={setGroupByLabels}
+              />
+
+              <InvertCallStack />
+            </>
+          )}
 
           <ProfileFilters />
 
@@ -195,6 +204,14 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
         </div>
         <div className="flex gap-3">
           {preferencesModal === true && <UserPreferencesModal />}
+          <MultiLevelDropdown
+            groupBy={groupBy}
+            toggleGroupBy={toggleGroupBy}
+            profileType={profileType}
+            onSelect={() => { }}
+            isTableVizOnly={isTableView}
+          />
+
           <ShareButton
             profileSource={profileSource}
             queryClient={queryClient}

@@ -246,6 +246,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   return (
     <>
       <g
+        id={row === 0 ? 'root-span' : undefined}
         transform={`translate(${x + 1}, ${y + 1})`}
         style={styles}
         onMouseEnter={onMouseEnter}

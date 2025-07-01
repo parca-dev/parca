@@ -14,7 +14,6 @@
 import {ReactNode} from 'react';
 
 import {useParcaContext, useURLState} from '@parca/components';
-import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 
 import {ProfileSource} from '../../../ProfileSource';
 import Dropdown, {DropdownElement, InnerAction} from './Dropdown';
@@ -32,8 +31,6 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
   );
   const {enableSourcesView, enableSandwichView} = useParcaContext();
 
-  const [enableicicleCharts] = useUserPreference<boolean>(USER_PREFERENCES.ENABLE_ICICLECHARTS.key);
-
   const allItems: Array<{
     key: string;
     label?: string | ReactNode;
@@ -43,17 +40,7 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
   }> = [
     {key: 'table', label: 'Table', canBeSelected: !dashboardItems.includes('table')},
     {key: 'icicle', label: 'icicle', canBeSelected: !dashboardItems.includes('icicle')},
-  ];
-
-  if (enableSandwichView === true) {
-    allItems.push({
-      key: 'sandwich',
-      label: 'sandwich',
-      canBeSelected: !dashboardItems.includes('sandwich'),
-    });
-  }
-  if (enableicicleCharts) {
-    allItems.push({
+    {
       key: 'iciclechart',
       label: (
         <span className="relative">
@@ -67,6 +54,19 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
         !dashboardItems.includes('iciclechart') && profileSource?.ProfileType().delta !== true
           ? 'Iciclechart is not available for non-delta profiles'
           : undefined,
+    },
+  ];
+
+  if (enableSandwichView === true) {
+    allItems.push({
+      key: 'sandwich',
+      label: (
+        <span className="relative">
+          Sandwich
+          <span className="absolute top-[-2px] text-xs lowercase text-red-500">&nbsp;alpha</span>
+        </span>
+      ),
+      canBeSelected: !dashboardItems.includes('sandwich'),
     });
   }
 
@@ -128,6 +128,7 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
           setDashboardItems(dashboardItems.filter(v => v !== item.key));
         }
       },
+      isDisabled: dashboardItems.length === 1 && dashboardItems.includes('sandwich'),
     };
   };
 
