@@ -21,7 +21,6 @@ import {type ProfileSource} from '../../ProfileSource';
 
 interface CalleesSectionProps {
   calleesRef: React.RefObject<HTMLDivElement>;
-  isHalfScreen: boolean;
   calleesFlamegraphResponse?: {
     report: {
       oneofKind: string;
@@ -40,7 +39,6 @@ interface CalleesSectionProps {
 
 export function CalleesSection({
   calleesRef,
-  isHalfScreen,
   calleesFlamegraphResponse,
   calleesFlamegraphLoading,
   calleesFlamegraphError,

@@ -33,7 +33,6 @@ export const MemoizedTooltip = memo(function MemoizedTooltip({
 
   // This component subscribes to tooltip updates through a callback
   // passed to the TooltipProvider, avoiding the need to lift state
-  // Fix for tooltip timing issue: Ensure proper cleanup and re-setup when table changes
   useEffect(() => {
     const handleTooltipUpdate = (event: CustomEvent<{row: number | null}>): void => {
       setTooltipRow(event.detail.row);

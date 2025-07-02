@@ -160,13 +160,11 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   }, [arrow]);
   const svg = useRef(null);
 
-  // Fix for sandwich view tooltip issue: Track when SVG ref becomes available
   const [svgElement, setSvgElement] = useState<SVGSVGElement | null>(null);
 
-  // Update SVG element state when ref changes (fixes sandwich view tooltip timing)
   useEffect(() => {
     setSvgElement(svg.current);
-  }, [svg.current, tooltipId]);
+  }, [tooltipId]);
 
   const [binaryFrameFilter, setBinaryFrameFilter] = useURLState('binary_frame_filter');
 

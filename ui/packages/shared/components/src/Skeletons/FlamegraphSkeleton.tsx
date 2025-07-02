@@ -24,7 +24,7 @@ const FlamegraphSkeleton = ({isDarkMode, isHalfScreen}: Props): JSX.Element => {
       fill="none"
       height="100%"
       viewBox="0 0 2000 509"
-      width={isHalfScreen ? '1455px' : '100%'}
+      width={isHalfScreen === true ? '1455px' : '100%'}
       xmlns="http://www.w3.org/2000/svg"
     >
       <defs>

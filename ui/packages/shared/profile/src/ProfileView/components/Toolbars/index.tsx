@@ -52,8 +52,6 @@ export interface VisualisationToolbarProps {
   setGroupByLabels: (labels: string[]) => void;
   showVisualizationSelector?: boolean;
   sandwichFunctionName?: string;
-  setSandwichFunctionName: (sandwichFunctionName: string | undefined) => void;
-  resetSandwichFunctionName: () => void;
 }
 
 export interface TableToolbarProps {
@@ -162,8 +160,6 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   currentSearchString,
   clearSelection,
   showVisualizationSelector = true,
-  resetSandwichFunctionName,
-  sandwichFunctionName,
 }) => {
   const {dashboardItems} = useDashboard();
 
@@ -171,7 +167,6 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   const isTableVizOnly = dashboardItems?.length === 1 && isTableViz;
   const isGraphViz = dashboardItems?.includes('icicle');
   const isGraphVizOnly = dashboardItems?.length === 1 && isGraphViz;
-  const isSandwichIcicleGraphViz = dashboardItems?.includes('sandwich');
 
   const req = profileSource?.QueryRequest();
   if (req !== null && req !== undefined) {

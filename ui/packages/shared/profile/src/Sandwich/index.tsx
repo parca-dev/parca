@@ -41,7 +41,6 @@ interface Props {
   filtered: bigint;
   profileType?: ProfileType;
   loading: boolean;
-  isHalfScreen: boolean;
   unit?: string;
   metadataMappingFiles?: string[];
   queryClient?: QueryServiceClient;
@@ -53,7 +52,6 @@ const Sandwich = React.memo(function Sandwich({
   filtered,
   profileType,
   loading,
-  isHalfScreen,
   unit,
   metadataMappingFiles,
   queryClient,
@@ -218,7 +216,6 @@ const Sandwich = React.memo(function Sandwich({
                 <div className="h-4" />
                 <CalleesSection
                   calleesRef={calleesRef}
-                  isHalfScreen={isHalfScreen}
                   calleesFlamegraphResponse={
                     calleesFlamegraphResponse?.report.oneofKind === 'flamegraphArrow'
                       ? {

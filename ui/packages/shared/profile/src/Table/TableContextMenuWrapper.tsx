@@ -34,7 +34,7 @@ const TableContextMenuWrapper = forwardRef<
     setRow: (newRow: Row | null, callback?: () => void) => {
       setRow(newRow);
       // Execute callback after state update using requestAnimationFrame
-      if (callback) {
+      if (callback != null) {
         requestAnimationFrame(callback);
       }
     },
@@ -42,5 +42,7 @@ const TableContextMenuWrapper = forwardRef<
 
   return <TableContextMenu menuId={menuId} row={row} />;
 });
+
+TableContextMenuWrapper.displayName = 'TableContextMenuWrapper';
 
 export default TableContextMenuWrapper;

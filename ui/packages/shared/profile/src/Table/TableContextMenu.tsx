@@ -34,7 +34,7 @@ const TableContextMenu = ({menuId, row}: TableContextMenuProps): React.JSX.Eleme
   const {enableSandwichView, isDarkMode} = useParcaContext();
 
   const onSandwichViewSelect = (): void => {
-    if (row?.name) {
+    if (row?.name != null && row.name.length > 0) {
       setSandwichFunctionName(row.name.trim());
       if (!dashboardItems.includes('sandwich')) {
         setDashboardItems([...dashboardItems, 'sandwich']);
@@ -42,7 +42,7 @@ const TableContextMenu = ({menuId, row}: TableContextMenuProps): React.JSX.Eleme
     }
   };
 
-  const isMenuDisabled = !row || !enableSandwichView;
+  const isMenuDisabled = row === null || enableSandwichView !== true;
 
   return (
     <Menu

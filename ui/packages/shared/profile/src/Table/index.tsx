@@ -233,11 +233,11 @@ export const Table = React.memo(function Table({
       const target = e.target as Element;
       const rowElement = target.closest('tr');
 
-      if (rowElement) {
+      if (rowElement !== null) {
         // Look for a data attribute that might contain the actual row ID
-        const rowId = rowElement.getAttribute('data-row-id') || rowElement.getAttribute('data-id');
+        const rowId = rowElement.getAttribute('data-row-id') ?? rowElement.getAttribute('data-id');
 
-        if (rowId) {
+        if (rowId != null && rowId.length > 0) {
           // Find the row by ID
           const actualRowIndex = parseInt(rowId, 10);
 
@@ -255,29 +255,29 @@ export const Table = React.memo(function Table({
 
         // Fallback: try to find row by matching text content
         const nameCell = rowElement.querySelector('td:last-child'); // Name is usually the last column
-        if (nameCell) {
+        if (nameCell !== null) {
           const cellText = nameCell.textContent?.trim();
 
-          if (cellText) {
+          if (cellText != null && cellText.length > 0) {
             // First try exact match
             let matchingRow = rows.find(row => row.name === cellText);
 
             // If no exact match, try partial match (in case of truncation)
-            if (!matchingRow) {
+            if (matchingRow == null) {
               matchingRow = rows.find(
                 row => row.name.includes(cellText) || cellText.includes(row.name)
               );
             }
 
             // If still no match, try matching the end of the name (for cases like package.function)
-            if (!matchingRow) {
+            if (matchingRow == null) {
               matchingRow = rows.find(
                 row =>
-                  row.name.endsWith(cellText) || cellText.endsWith(row.name.split('.').pop() || '')
+                  row.name.endsWith(cellText) || cellText.endsWith(row.name.split('.').pop() ?? '')
               );
             }
 
-            if (matchingRow) {
+            if (matchingRow != null) {
               contextMenuRef.current?.setRow(matchingRow, () => {
                 show({
                   event: e,

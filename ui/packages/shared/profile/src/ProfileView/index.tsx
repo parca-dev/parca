@@ -68,7 +68,6 @@ export const ProfileView = ({
     clearSelection,
     setGroupByLabels,
     sandwichFunctionName,
-    setSandwichFunctionName,
     resetSandwichFunctionName,
   } = useVisualizationState();
 
@@ -165,8 +164,6 @@ export const ProfileView = ({
             setGroupByLabels={setGroupByLabels}
             showVisualizationSelector={showVisualizationSelector}
             sandwichFunctionName={sandwichFunctionName}
-            setSandwichFunctionName={setSandwichFunctionName}
-            resetSandwichFunctionName={resetSandwichFunctionName}
           />
 
           {isColorStackLegendEnabled && (

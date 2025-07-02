@@ -47,7 +47,7 @@ const ContextMenuWrapper = forwardRef<ContextMenuWrapperRef, ContextMenuWrapperP
       setRow: (newRow: number, callback?: () => void) => {
         setRow(newRow);
         // Execute callback after state update using requestAnimationFrame
-        if (callback) {
+        if (callback != null) {
           requestAnimationFrame(callback);
         }
       },

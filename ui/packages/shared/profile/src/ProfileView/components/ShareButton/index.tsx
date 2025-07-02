@@ -182,7 +182,7 @@ const ShareButton = ({
             element={
               <Button
                 variant="neutral"
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 pr-[1.7rem]"
                 id="h-share-dropdown-button"
               >
                 <div className="flex items-center gap-2">
