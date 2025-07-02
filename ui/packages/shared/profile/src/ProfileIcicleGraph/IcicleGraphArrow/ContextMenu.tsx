@@ -149,7 +149,9 @@ const ContextMenu = ({
       id={menuId}
       theme={isDarkMode ? 'dark' : ''}
       className={cx(
-        dashboardItems.includes('sandwich') ? 'min-w-[350px] w-[350px]' : 'min-w-[250px]'
+        dashboardItems.includes('sandwich')
+          ? 'min-w-[350px] w-[350px]'
+          : 'min-w-[260px] w-fit-content'
       )}
     >
       <Item

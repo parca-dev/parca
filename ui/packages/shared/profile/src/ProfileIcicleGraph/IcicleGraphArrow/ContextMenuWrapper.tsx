@@ -11,10 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {forwardRef, useEffect, useImperativeHandle, useRef, useState} from 'react';
+import {forwardRef, useImperativeHandle, useState} from 'react';
 
 import {Table} from 'apache-arrow';
-import {flushSync} from 'react-dom';
 
 import {ProfileType} from '@parca/parser';
 
@@ -43,29 +42,17 @@ const ContextMenuWrapper = forwardRef<ContextMenuWrapperRef, ContextMenuWrapperP
     // Fix for race condition: Always render ContextMenu to maintain component tree stability
     // but use callback timing to ensure correct data is available when menu shows
     const [row, setRow] = useState(0);
-    const callbackRef = useRef<(() => void) | null>(null);
-
-    // Execute callback after row state update completes
-    useEffect(() => {
-      if (callbackRef.current) {
-        callbackRef.current();
-        callbackRef.current = null;
-      }
-    }, [row]);
 
     useImperativeHandle(ref, () => ({
       setRow: (newRow: number, callback?: () => void) => {
+        setRow(newRow);
+        // Execute callback after state update using requestAnimationFrame
         if (callback) {
-          callbackRef.current = callback;
+          requestAnimationFrame(callback);
         }
-        // Use flushSync to ensure synchronous state update before callback execution
-        flushSync(() => {
-          setRow(newRow);
-        });
       },
     }));
 
-    // Always render ContextMenu - race condition is handled by callback timing
     return <ContextMenu {...props} row={row} />;
   }
 );

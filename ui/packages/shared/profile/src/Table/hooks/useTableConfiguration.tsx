@@ -15,12 +15,11 @@ import {useEffect, useMemo, useState} from 'react';
 
 import {createColumnHelper, type ColumnDef} from '@tanstack/table-core';
 
-import {useParcaContext, useURLState} from '@parca/components';
+import {useURLState} from '@parca/components';
 import {valueFormatter} from '@parca/utilities';
 
 import {type Row} from '..';
 import {ColorCell} from '../ColorCell';
-import MoreDropdown from '../MoreDropdown';
 import {addPlusSign, ratioString, type ColumnName} from '../utils/functions';
 
 interface UseTableConfigurationProps {
@@ -47,10 +46,6 @@ export function useTableConfiguration({
   const [tableColumns] = useURLState<string[]>('table_columns', {
     alwaysReturnArray: true,
   });
-  const [dashboardItems] = useURLState<string[]>('dashboard_items', {
-    alwaysReturnArray: true,
-  });
-  const {enableSandwichView} = useParcaContext();
 
   const [columnVisibility, setColumnVisibility] = useState(() => {
     return {
@@ -204,26 +199,8 @@ export function useTableConfiguration({
       }),
     ];
 
-    if (
-      dashboardItems.length === 1 &&
-      dashboardItems[0] === 'table' &&
-      enableSandwichView === true
-    ) {
-      baseColumns.unshift(
-        columnHelper.accessor('moreActions', {
-          id: 'moreActions',
-          header: '',
-          cell: info => {
-            return <MoreDropdown functionName={info.row.original.name} />;
-          },
-          size: 10,
-          enableSorting: false,
-        })
-      );
-    }
-
     return baseColumns;
-  }, [unit, total, filtered, columnHelper, dashboardItems, enableSandwichView]);
+  }, [unit, total, filtered, columnHelper]);
 
   const initialSorting = useMemo(() => {
     return [
