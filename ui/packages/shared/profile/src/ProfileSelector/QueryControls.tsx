@@ -179,6 +179,7 @@ export function QueryControls({
             id="h-sum-by-selector"
             defaultValue={[]}
             isMulti
+            isClearable={false}
             name="colors"
             options={labels.map(label => ({label, value: label}))}
             className="parca-select-container text-sm w-full max-w-80"
