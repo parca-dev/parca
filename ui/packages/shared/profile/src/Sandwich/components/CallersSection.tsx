@@ -91,7 +91,7 @@ export function CallersSection({
         <Button
           variant="neutral"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="absolute right-1 top-[-46px] z-10"
+          className="absolute right-8 top-[-46px] z-10"
           type="button"
         >
           <span

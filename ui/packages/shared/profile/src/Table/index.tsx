@@ -78,7 +78,7 @@ export const Table = React.memo(function Table({
   const [dashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
   });
-
+  const [_, setSandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
   const [colorBy, setColorBy] = useURLState('color_by');
   const {isDarkMode} = useParcaContext();
   const [scrollToIndex, setScrollToIndex] = useState<number | undefined>(undefined);
@@ -130,9 +130,13 @@ export const Table = React.memo(function Table({
 
   const selectSpan = useCallback(
     (span: string): void => {
-      setSearchString(span.trim());
+      if (dashboardItems.includes('icicle')) {
+        setSearchString(span.trim());
+      } else {
+        setSandwichFunctionName(span.trim());
+      }
     },
-    [setSearchString]
+    [setSearchString, setSandwichFunctionName, dashboardItems]
   );
 
   const onRowClick = useCallback(

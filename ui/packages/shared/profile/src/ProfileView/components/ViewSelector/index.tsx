@@ -29,6 +29,7 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
       alwaysReturnArray: true,
     }
   );
+  const [, setSandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
   const {enableSourcesView, enableSandwichView} = useParcaContext();
 
   const allItems: Array<{
@@ -105,14 +106,8 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
   }): InnerAction | undefined => {
     if (dashboardItems.length === 1 && item.key === dashboardItems[0]) return undefined;
 
-    // For sandwich view, return a no-op action
-    if (item.key === 'sandwich') {
-      return {
-        text: 'Add Panel',
-        onClick: () => {},
-        isDisabled: true, // Custom property to control button state
-      };
-    }
+    // If we already have 2 panels and this item isn't selected, don't show any action
+    if (dashboardItems.length >= 2 && !dashboardItems.includes(item.key)) return undefined;
 
     return {
       text:
@@ -120,12 +115,20 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
           ? 'Add Panel'
           : item.canBeSelected
           ? 'Add Panel'
-          : 'Close Panel',
+          : dashboardItems.includes(item.key)
+          ? 'Close Panel'
+          : 'Add Panel',
       onClick: () => {
         if (item.canBeSelected) {
           setDashboardItems([...dashboardItems, item.key]);
         } else {
-          setDashboardItems(dashboardItems.filter(v => v !== item.key));
+          const newDashboardItems = dashboardItems.filter(v => v !== item.key);
+          setDashboardItems(newDashboardItems);
+
+          // Reset sandwich function name when removing sandwich panel
+          if (item.key === 'sandwich') {
+            setSandwichFunctionName(undefined);
+          }
         }
       },
       isDisabled: dashboardItems.length === 1 && dashboardItems.includes('sandwich'),
@@ -142,6 +145,12 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
 
   const onSelection = (value: string): void => {
     const isOnlyChart = dashboardItems.length === 1;
+
+    if (isOnlyChart && value === 'sandwich') {
+      setDashboardItems([...dashboardItems, value]);
+      return;
+    }
+
     if (isOnlyChart) {
       setDashboardItems([value]);
       return;

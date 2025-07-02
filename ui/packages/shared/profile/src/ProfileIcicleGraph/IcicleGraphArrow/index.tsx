@@ -11,7 +11,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {memo, useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {
+  memo,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import {Dictionary, Table, Vector, tableFromIPC} from 'apache-arrow';
 import {useContextMenu} from 'react-contexify';
@@ -277,7 +285,12 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   const effectiveDepth =
     maxFrameCount !== undefined && !isExpanded ? Math.min(maxDepth, maxFrameCount) : maxDepth;
 
-  const height = isSandwich ? effectiveDepth * RowHeight : (effectiveDepth + 1) * RowHeight;
+  // Use deferred value to prevent UI blocking when expanding frames
+  const deferredEffectiveDepth = useDeferredValue(effectiveDepth);
+
+  const height = isSandwich
+    ? deferredEffectiveDepth * RowHeight
+    : (deferredEffectiveDepth + 1) * RowHeight;
 
   // To find the selected row, we must walk the current path and look at which
   // children of the current frame matches the path element exactly. Until the
@@ -366,7 +379,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               isFlamegraph={isFlamegraph}
               isSandwich={isSandwich}
               maxDepth={maxDepth}
-              effectiveDepth={effectiveDepth}
+              effectiveDepth={deferredEffectiveDepth}
               tooltipId={tooltipId}
             />
           ))}

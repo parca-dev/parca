@@ -148,7 +148,9 @@ const ContextMenu = ({
     <Menu
       id={menuId}
       theme={isDarkMode ? 'dark' : ''}
-      className={cx(dashboardItems.includes('sandwich') ? 'w-[350px]' : 'w-[250px]')}
+      className={cx(
+        dashboardItems.includes('sandwich') ? 'min-w-[350px] w-[350px]' : 'min-w-[250px]'
+      )}
     >
       <Item
         id="view-source-file"
@@ -186,8 +188,13 @@ const ContextMenu = ({
         <Item
           id="show-in-sandwich"
           onClick={() => {
+            if (dashboardItems.includes('sandwich')) {
+              setSandwichFunctionName(functionName);
+              return;
+            }
+
             setSandwichFunctionName(functionName);
-            setDashboardItems(['sandwich']);
+            setDashboardItems([...dashboardItems, 'sandwich']);
           }}
         >
           <div className="flex w-full items-center gap-2">

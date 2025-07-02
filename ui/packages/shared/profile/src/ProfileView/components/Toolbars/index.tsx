@@ -16,7 +16,7 @@ import {FC} from 'react';
 import {Icon} from '@iconify/react';
 
 import {QueryServiceClient} from '@parca/client';
-import {Button, UserPreferencesModal} from '@parca/components';
+import {Button} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 
 import {CurrentPathFrame} from '../../../ProfileIcicleGraph/IcicleGraphArrow/utils';
@@ -150,7 +150,6 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   groupByLabels,
   setGroupByLabels,
   profileType,
-  preferencesModal,
   profileSource,
   queryClient,
   onDownloadPProf,
@@ -171,9 +170,8 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   const isTableViz = dashboardItems?.includes('table');
   const isTableVizOnly = dashboardItems?.length === 1 && isTableViz;
   const isGraphViz = dashboardItems?.includes('icicle');
+  const isGraphVizOnly = dashboardItems?.length === 1 && isGraphViz;
   const isSandwichIcicleGraphViz = dashboardItems?.includes('sandwich');
-
-  const isTableView = isTableVizOnly || isSandwichIcicleGraphViz;
 
   const req = profileSource?.QueryRequest();
   if (req !== null && req !== undefined) {
@@ -186,7 +184,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
     <>
       <div className="flex w-full justify-between items-end">
         <div className="flex gap-3 items-end">
-          {!isTableView && (
+          {isGraphViz && (
             <>
               <GroupByDropdown
                 groupBy={groupBy}
@@ -203,13 +201,12 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
           {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
         </div>
         <div className="flex gap-3">
-          {preferencesModal === true && <UserPreferencesModal />}
           <MultiLevelDropdown
             groupBy={groupBy}
             toggleGroupBy={toggleGroupBy}
             profileType={profileType}
             onSelect={() => {}}
-            isTableVizOnly={isTableView}
+            isTableVizOnly={isTableVizOnly}
           />
 
           <ShareButton
@@ -224,13 +221,14 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
           {showVisualizationSelector ? <ViewSelector profileSource={profileSource} /> : null}
         </div>
       </div>
-      {isGraphViz && !isTableViz && (
+
+      {isGraphVizOnly && (
         <>
           <Divider />
           <IcicleGraphToolbar curPath={curPath} setNewCurPath={setNewCurPath} />
         </>
       )}
-      {isTableViz && !isGraphViz && (
+      {isTableVizOnly && (
         <>
           <Divider />
           <TableToolbar
@@ -239,15 +237,6 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
             filtered={filtered}
             clearSelection={clearSelection}
             currentSearchString={currentSearchString}
-          />
-        </>
-      )}
-      {isSandwichIcicleGraphViz && (
-        <>
-          <Divider />
-          <SandwichIcicleGraphToolbar
-            resetSandwichFunctionName={resetSandwichFunctionName}
-            sandwichFunctionName={sandwichFunctionName}
           />
         </>
       )}
