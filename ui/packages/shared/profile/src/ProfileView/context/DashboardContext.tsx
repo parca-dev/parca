@@ -30,10 +30,16 @@ export const DashboardProvider: FC<PropsWithChildren> = ({children}) => {
   const [dashboardItems, setDashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
   });
+  const [, setSandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
 
   const handleClosePanel = (visualizationType: VisualizationType): void => {
     const newDashboardItems = dashboardItems.filter(item => item !== visualizationType);
     setDashboardItems(newDashboardItems);
+
+    // Reset sandwich function name when closing sandwich panel
+    if (visualizationType === 'sandwich') {
+      setSandwichFunctionName(undefined);
+    }
   };
 
   const isMultiPanelView = dashboardItems.length > 1;

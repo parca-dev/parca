@@ -19,7 +19,12 @@ import ColorStackLegend from './components/ColorStackLegend';
 import {getDashboardItem} from './components/DashboardItems';
 import {DashboardLayout} from './components/DashboardLayout';
 import {ProfileHeader} from './components/ProfileHeader';
-import {IcicleGraphToolbar, TableToolbar, VisualisationToolbar} from './components/Toolbars';
+import {
+  IcicleGraphToolbar,
+  SandwichIcicleGraphToolbar,
+  TableToolbar,
+  VisualisationToolbar,
+} from './components/Toolbars';
 import {DashboardProvider} from './context/DashboardContext';
 import {ProfileViewContextProvider} from './context/ProfileViewContext';
 import {useProfileMetadata} from './hooks/useProfileMetadata';
@@ -63,7 +68,6 @@ export const ProfileView = ({
     clearSelection,
     setGroupByLabels,
     sandwichFunctionName,
-    setSandwichFunctionName,
     resetSandwichFunctionName,
   } = useVisualizationState();
 
@@ -119,6 +123,12 @@ export const ProfileView = ({
         currentSearchString={currentSearchString}
       />
     ),
+    sandwich: (
+      <SandwichIcicleGraphToolbar
+        resetSandwichFunctionName={resetSandwichFunctionName}
+        sandwichFunctionName={sandwichFunctionName}
+      />
+    ),
   };
 
   const hasProfileSource = profileSource !== undefined && profileSource.toString(timezone) !== '';
@@ -154,8 +164,6 @@ export const ProfileView = ({
             setGroupByLabels={setGroupByLabels}
             showVisualizationSelector={showVisualizationSelector}
             sandwichFunctionName={sandwichFunctionName}
-            setSandwichFunctionName={setSandwichFunctionName}
-            resetSandwichFunctionName={resetSandwichFunctionName}
           />
 
           {isColorStackLegendEnabled && (

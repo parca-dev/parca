@@ -182,11 +182,17 @@ const ShareButton = ({
             element={
               <Button
                 variant="neutral"
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 pr-[1.7rem]"
                 id="h-share-dropdown-button"
               >
-                <Icon icon="material-symbols:share" className="h-4 w-4" />
-                Share
+                <div className="flex items-center gap-2">
+                  <Icon icon="material-symbols:share" className="w-4 h-4" />
+
+                  <span>Share</span>
+                </div>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-400">
+                  <Icon icon="heroicons:chevron-down-20-solid" aria-hidden="true" />
+                </div>
               </Button>
             }
           >
