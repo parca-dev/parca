@@ -120,6 +120,7 @@ const (
 	ReasonFirstTimeSeen                   = "First time we see this Build ID, and it does not exist in debuginfod, therefore please upload!"
 	ReasonUploadStale                     = "A previous upload was started but not finished and is now stale, so it can be retried."
 	ReasonUploadInProgress                = "A previous upload is still in-progress and not stale yet (only stale uploads can be retried)."
+	ReasonUploadInProgressButForced       = "A previous upload is in-progress, but accepting restart because it's requested to be forced."
 	ReasonDebuginfoAlreadyExists          = "Debuginfo already exists and is not marked as invalid, therefore no new upload is needed."
 	ReasonDebuginfoAlreadyExistsButForced = "Debuginfo already exists and is not marked as invalid, therefore wouldn't have accepted a new upload, but accepting it because it's requested to be forced."
 	ReasonDebuginfoInvalid                = "Debuginfo already exists but is marked as invalid, therefore a new upload is needed. Hash the debuginfo and initiate the upload."
@@ -185,6 +186,13 @@ func (s *Store) ShouldInitiateUpload(ctx context.Context, req *debuginfopb.Shoul
 
 			switch dbginfo.Upload.State {
 			case debuginfopb.DebuginfoUpload_STATE_UPLOADING:
+				if req.Force {
+					return &debuginfopb.ShouldInitiateUploadResponse{
+						ShouldInitiateUpload: true,
+						Reason:               ReasonUploadInProgressButForced,
+					}, nil
+				}
+
 				if s.uploadIsStale(dbginfo.Upload) {
 					return &debuginfopb.ShouldInitiateUploadResponse{
 						ShouldInitiateUpload: true,
