@@ -29,7 +29,7 @@ require (
 	github.com/klauspost/compress v1.18.0
 	github.com/m1gwings/treedrawer v0.3.3-beta
 	github.com/nanmu42/limitio v1.0.0
-	github.com/oklog/run v1.1.0
+	github.com/oklog/run v1.2.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/parquet-go/parquet-go v0.24.0
 	github.com/planetscale/vtprotobuf v0.6.1-0.20250313105119-ba97887b0a25
