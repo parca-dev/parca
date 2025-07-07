@@ -11,7 +11,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {memo, useCallback, useMemo, useRef, useState} from 'react';
+import React, {
+  memo,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import {Dictionary, Table, Vector, tableFromIPC} from 'apache-arrow';
 import {useContextMenu} from 'react-contexify';
@@ -77,6 +85,8 @@ interface IcicleGraphArrowProps {
   isFlamegraph?: boolean;
   isSandwich?: boolean;
   tooltipId?: string;
+  maxFrameCount?: number;
+  isExpanded?: boolean;
 }
 
 export const getMappingColors = (
@@ -135,6 +145,8 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   isFlamegraph = false,
   isSandwich = false,
   tooltipId = 'default',
+  maxFrameCount,
+  isExpanded = false,
 }: IcicleGraphArrowProps): React.JSX.Element {
   const [highlightSimilarStacksPreference] = useUserPreference<boolean>(
     USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS.key
@@ -147,6 +159,12 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     return tableFromIPC(arrow.record);
   }, [arrow]);
   const svg = useRef(null);
+
+  const [svgElement, setSvgElement] = useState<SVGSVGElement | null>(null);
+
+  useEffect(() => {
+    setSvgElement(svg.current);
+  }, [tooltipId]);
 
   const [binaryFrameFilter, setBinaryFrameFilter] = useURLState('binary_frame_filter');
 
@@ -215,9 +233,14 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   });
   const displayMenu = useCallback(
     (e: React.MouseEvent, row: number): void => {
-      contextMenuRef.current?.setRow(row);
-      show({
-        event: e,
+      e.preventDefault();
+      // Race condition fix: Use callback to ensure context menu shows only after
+      // row state has been updated and propagated through the hook chain.
+      // This prevents empty function names on first click.
+      contextMenuRef.current?.setRow(row, () => {
+        show({
+          event: e,
+        });
       });
     },
     [show]
@@ -255,7 +278,17 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   const depthColumn = table.getChild(FIELD_DEPTH);
   const maxDepth = getMaxDepth(depthColumn);
-  const height = isSandwich ? maxDepth * RowHeight : (maxDepth + 1) * RowHeight;
+
+  // Apply frame limit if maxFrameCount is provided and not expanded
+  const effectiveDepth =
+    maxFrameCount !== undefined && !isExpanded ? Math.min(maxDepth, maxFrameCount) : maxDepth;
+
+  // Use deferred value to prevent UI blocking when expanding frames
+  const deferredEffectiveDepth = useDeferredValue(effectiveDepth);
+
+  const height = isSandwich
+    ? deferredEffectiveDepth * RowHeight
+    : (deferredEffectiveDepth + 1) * RowHeight;
 
   // To find the selected row, we must walk the current path and look at which
   // children of the current frame matches the path element exactly. Until the
@@ -307,7 +340,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           profileType={profileType}
           isSandwich={isSandwich}
         />
-        <MemoizedTooltip contextElement={svg.current} dockedMetainfo={dockedMetainfo} />
+        <MemoizedTooltip contextElement={svgElement} dockedMetainfo={dockedMetainfo} />
         <svg
           className="font-robotoMono"
           width={width}
@@ -344,6 +377,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               isFlamegraph={isFlamegraph}
               isSandwich={isSandwich}
               maxDepth={maxDepth}
+              effectiveDepth={deferredEffectiveDepth}
               tooltipId={tooltipId}
             />
           ))}
