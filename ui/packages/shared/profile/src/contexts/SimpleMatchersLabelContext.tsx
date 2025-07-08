@@ -38,6 +38,8 @@ interface LabelProviderProps {
   queryClient: QueryServiceClient;
   profileType: string;
   labelNameFromMatchers: string[];
+  start?: number;
+  end?: number;
 }
 
 // With there being the possibility of having utilization labels, we need to be able to determine whether the labels to be used are utilization labels or profiling data labels.
@@ -48,9 +50,11 @@ export function LabelProvider({
   queryClient,
   profileType,
   labelNameFromMatchers,
+  start,
+  end,
 }: LabelProviderProps): JSX.Element {
   const utilizationLabelResponse = useUtilizationLabels();
-  const {loading, result} = useLabelNames(queryClient, profileType);
+  const {loading, result} = useLabelNames(queryClient, profileType, start, end);
 
   const profileValues = useMemo(() => {
     const profileLabelNames =

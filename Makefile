@@ -213,8 +213,8 @@ README.md: embedmd tmp/help.txt
 
 .PHONY: release-dry-run
 release-dry-run:
-	goreleaser release --clean --auto-snapshot --skip-validate --skip-publish --debug
+	goreleaser release --clean --auto-snapshot --skip=validate --skip-publish --debug
 
 .PHONY: release-build
 release-build:
-	goreleaser build --clean --skip-validate --snapshot --debug
+	goreleaser build --clean --skip=validate --snapshot --debug

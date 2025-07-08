@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {ProfileType} from '@parca/parser';
 
@@ -63,6 +63,16 @@ export const useSumBySelection = (
   const [userSelectedSumBy, setUserSelectedSumBy] = useState<Record<string, string[] | undefined>>(
     profileType != null ? {[profileType.toString()]: defaultValue} : {}
   );
+
+  // Update userSelectedSumBy when defaultValue changes (e.g., during navigation)
+  useEffect(() => {
+    if (profileType != null && defaultValue !== undefined) {
+      setUserSelectedSumBy(prev => ({
+        ...prev,
+        [profileType.toString()]: defaultValue,
+      }));
+    }
+  }, [profileType, defaultValue]);
 
   const setSumBy = useCallback(
     (sumBy: string[]) => {
@@ -120,6 +130,13 @@ const getSumByFromParam = (param: string | string[] | undefined): string[] | und
   }
 
   if (typeof param === 'string') {
+    // Handle comma-separated strings (e.g., "comm,node" -> ["comm", "node"])
+    if (param.includes(',')) {
+      return param
+        .split(',')
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+    }
     return [param];
   }
 
