@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# 0.17.0 (2025-06-18)
+
+### Features
+
+- implement sandwich view ([#5683](https://github.com/parca-dev/parca/issues/5683)) ([83b54de](https://github.com/parca-dev/parca/commit/83b54ded3dc6626889421689d0293bda6d199fbd))
+
 ## 0.16.130 (2025-06-14)
 
 **Note:** Version bump only for package @parca/client

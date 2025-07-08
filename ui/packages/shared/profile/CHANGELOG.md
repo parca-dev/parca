@@ -3,6 +3,90 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.19.13](https://github.com/parca-dev/parca/compare/@parca/profile@0.19.12...@parca/profile@0.19.13) (2025-07-03)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.19.12 (2025-07-02)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.19.11](https://github.com/parca-dev/parca/compare/@parca/profile@0.19.10...@parca/profile@0.19.11) (2025-06-26)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.19.10](https://github.com/parca-dev/parca/compare/@parca/profile@0.19.9...@parca/profile@0.19.10) (2025-06-25)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.19.9](https://github.com/parca-dev/parca/compare/@parca/profile@0.19.8...@parca/profile@0.19.9) (2025-06-25)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.19.8](https://github.com/parca-dev/parca/compare/@parca/profile@0.19.7...@parca/profile@0.19.8) (2025-06-25)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.19.7](https://github.com/parca-dev/parca/compare/@parca/profile@0.19.6...@parca/profile@0.19.7) (2025-06-24)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.19.6](https://github.com/parca-dev/parca/compare/@parca/profile@0.19.5...@parca/profile@0.19.6) (2025-06-23)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.19.5](https://github.com/parca-dev/parca/compare/@parca/profile@0.19.4...@parca/profile@0.19.5) (2025-06-20)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.19.4](https://github.com/parca-dev/parca/compare/@parca/profile@0.19.3...@parca/profile@0.19.4) (2025-06-19)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.19.3](https://github.com/parca-dev/parca/compare/@parca/profile@0.19.2...@parca/profile@0.19.3) (2025-06-19)
+
+**Note:** Version bump only for package @parca/profile
+
+## 0.19.2 (2025-06-19)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.19.1](https://github.com/parca-dev/parca/compare/@parca/profile@0.19.0...@parca/profile@0.19.1) (2025-06-18)
+
+**Note:** Version bump only for package @parca/profile
+
+# [0.19.0](https://github.com/parca-dev/parca/compare/@parca/profile@0.18.4...@parca/profile@0.19.0) (2025-06-18)
+
+### Features
+
+- implement sandwich view ([#5683](https://github.com/parca-dev/parca/issues/5683)) ([83b54de](https://github.com/parca-dev/parca/commit/83b54ded3dc6626889421689d0293bda6d199fbd))
+
+## [0.18.4](https://github.com/parca-dev/parca/compare/@parca/profile@0.18.3...@parca/profile@0.18.4) (2025-06-18)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.18.3](https://github.com/parca-dev/parca/compare/@parca/profile@0.18.2...@parca/profile@0.18.3) (2025-06-18)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.18.2](https://github.com/parca-dev/parca/compare/@parca/profile@0.18.1...@parca/profile@0.18.2) (2025-06-17)
+
+**Note:** Version bump only for package @parca/profile
+
+## [0.18.1](https://github.com/parca-dev/parca/compare/@parca/profile@0.18.0...@parca/profile@0.18.1) (2025-06-17)
+
+**Note:** Version bump only for package @parca/profile
+
+# [0.18.0](https://github.com/parca-dev/parca/compare/@parca/profile@0.17.11...@parca/profile@0.18.0) (2025-06-16)
+
+### Features
+
+- improve error handling for overlapping data in icicle charts ([563afe4](https://github.com/parca-dev/parca/commit/563afe4a8b38dd2a3d694a31fe2d05ee195b472e))
+
+## [0.17.11](https://github.com/parca-dev/parca/compare/@parca/profile@0.17.10...@parca/profile@0.17.11) (2025-06-16)
+
+**Note:** Version bump only for package @parca/profile
+
 ## 0.17.10 (2025-06-14)
 
 **Note:** Version bump only for package @parca/profile

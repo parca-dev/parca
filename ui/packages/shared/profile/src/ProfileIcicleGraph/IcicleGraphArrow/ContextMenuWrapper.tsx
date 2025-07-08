@@ -30,18 +30,27 @@ interface ContextMenuWrapperProps {
   hideMenu: () => void;
   hideBinary: (binaryToRemove: string) => void;
   unit?: string;
+  isSandwich?: boolean;
 }
 
 export interface ContextMenuWrapperRef {
-  setRow: (row: number) => void;
+  setRow: (row: number, callback?: () => void) => void;
 }
 
 const ContextMenuWrapper = forwardRef<ContextMenuWrapperRef, ContextMenuWrapperProps>(
   (props, ref) => {
+    // Fix for race condition: Always render ContextMenu to maintain component tree stability
+    // but use callback timing to ensure correct data is available when menu shows
     const [row, setRow] = useState(0);
 
     useImperativeHandle(ref, () => ({
-      setRow,
+      setRow: (newRow: number, callback?: () => void) => {
+        setRow(newRow);
+        // Execute callback after state update using requestAnimationFrame
+        if (callback != null) {
+          requestAnimationFrame(callback);
+        }
+      },
     }));
 
     return <ContextMenu {...props} row={row} />;

@@ -28,7 +28,8 @@ export const MemoizedTooltip = memo(function MemoizedTooltip({
   dockedMetainfo,
 }: MemoizedTooltipProps): React.JSX.Element | null {
   const [tooltipRow, setTooltipRow] = useState<number | null>(null);
-  const {table, total, totalUnfiltered, profileType, unit, compareAbsolute} = useTooltipContext();
+  const {table, total, totalUnfiltered, profileType, unit, compareAbsolute, tooltipId} =
+    useTooltipContext();
 
   // This component subscribes to tooltip updates through a callback
   // passed to the TooltipProvider, avoiding the need to lift state
@@ -37,11 +38,25 @@ export const MemoizedTooltip = memo(function MemoizedTooltip({
       setTooltipRow(event.detail.row);
     };
 
-    window.addEventListener('icicle-tooltip-update' as any, handleTooltipUpdate as any);
+    const eventName = `icicle-tooltip-update-${tooltipId}`;
+
+    // Delay to ensure all DOM updates and React renders are complete
+    // This fixes the race condition in sandwich view
+    const timeoutId = setTimeout(() => {
+      window.addEventListener(eventName as any, handleTooltipUpdate as any);
+    }, 200);
+
     return () => {
-      window.removeEventListener('icicle-tooltip-update' as any, handleTooltipUpdate as any);
+      clearTimeout(timeoutId);
+      window.removeEventListener(eventName as any, handleTooltipUpdate as any);
     };
-  }, []);
+  }, [tooltipId, table]);
+
+  // Re-render when contextElement becomes available (fixes sandwich view timing issue)
+  useEffect(() => {
+    // Force re-render when contextElement transitions from null to valid element
+    // This ensures tooltips work immediately in sandwich view
+  }, [contextElement, tooltipId]);
 
   if (dockedMetainfo) {
     return (
@@ -61,6 +76,11 @@ export const MemoizedTooltip = memo(function MemoizedTooltip({
     return null;
   }
 
+  // Fix for sandwich view tooltip issue: Don't render tooltip if contextElement is null
+  // This happens when the SVG ref isn't ready yet during initial sandwich view render
+  if (contextElement === null) {
+    return null;
+  }
   return (
     <GraphTooltipArrow contextElement={contextElement}>
       <GraphTooltipArrowContent

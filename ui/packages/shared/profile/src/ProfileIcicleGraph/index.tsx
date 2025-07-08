@@ -11,13 +11,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {LegacyRef, ReactNode, useEffect, useMemo, useState} from 'react';
+import React, {LegacyRef, ReactNode, useCallback, useEffect, useMemo, useState} from 'react';
 
+import cx from 'classnames';
 import {AnimatePresence, motion} from 'framer-motion';
 import {useMeasure} from 'react-use';
 
 import {FlamegraphArrow} from '@parca/client';
-import {IcicleGraphSkeleton, useParcaContext, useURLState} from '@parca/components';
+import {
+  FlamegraphSkeleton,
+  IcicleGraphSkeleton,
+  useParcaContext,
+  useURLState,
+} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 import {capitalizeOnlyFirstLetter, divide} from '@parca/utilities';
 
@@ -25,7 +31,7 @@ import {MergedProfileSource, ProfileSource} from '../ProfileSource';
 import DiffLegend from '../ProfileView/components/DiffLegend';
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
 import {TimelineGuide} from '../TimelineGuide';
-import {FIELD_FUNCTION_NAME, IcicleGraphArrow} from './IcicleGraphArrow';
+import {IcicleGraphArrow} from './IcicleGraphArrow';
 import useMappingList from './IcicleGraphArrow/useMappingList';
 import {CurrentPathFrame, boundsFromProfileSource} from './IcicleGraphArrow/utils';
 
@@ -49,6 +55,11 @@ interface ProfileIcicleGraphProps {
   metadataMappingFiles?: string[];
   metadataLoading?: boolean;
   isIcicleChart?: boolean;
+  isSandwichIcicleGraph?: boolean;
+  isFlamegraph?: boolean;
+  tooltipId?: string;
+  maxFrameCount?: number;
+  isExpanded?: boolean;
 }
 
 const ErrorContent = ({errorMessage}: {errorMessage: string | ReactNode}): JSX.Element => {
@@ -81,11 +92,33 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   metadataMappingFiles,
   isIcicleChart = false,
   profileSource,
+  isSandwichIcicleGraph = false,
+  isFlamegraph = false,
+  tooltipId,
+  maxFrameCount,
+  isExpanded = false,
 }: ProfileIcicleGraphProps): JSX.Element {
   const {onError, authenticationErrorMessage, isDarkMode, iciclechartHelpText} = useParcaContext();
   const {compareMode} = useProfileViewContext();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [icicleChartRef, {height: icicleChartHeight}] = useMeasure();
+
+  // Create local state for paths when in sandwich view to avoid URL updates
+  const [localCurPathArrow, setLocalCurPathArrow] = useState<CurrentPathFrame[]>([]);
+
+  const setCurPathArrowWrapper = useCallback(
+    (path: CurrentPathFrame[]) => {
+      if (isSandwichIcicleGraph) {
+        setLocalCurPathArrow(path);
+      } else {
+        setNewCurPathArrow(path);
+      }
+    },
+    [isSandwichIcicleGraph, setNewCurPathArrow]
+  );
+
+  // Determine which paths to use based on isSandwichIcicleGraph flag
+  const effectiveCurPathArrow = isSandwichIcicleGraph ? localCurPathArrow : curPathArrow;
 
   const mappingsList = useMappingList(metadataMappingFiles);
 
@@ -160,10 +193,15 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
       ? validateIcicleChartQuery(profileSource as MergedProfileSource)
       : {isValid: true, isNonDelta: false, isDurationTooLong: false};
     const isInvalidIcicleChartQuery = isIcicleChart && !isIcicleChartValid;
+
     if (isLoading && !isInvalidIcicleChartQuery) {
       return (
         <div className="h-auto overflow-clip">
-          <IcicleGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
+          {isFlamegraph ? (
+            <FlamegraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
+          ) : (
+            <IcicleGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
+          )}
         </div>
       );
     }
@@ -233,14 +271,19 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
               arrow={arrow}
               total={total}
               filtered={filtered}
-              curPath={curPathArrow}
-              setCurPath={setNewCurPathArrow}
+              curPath={effectiveCurPathArrow}
+              setCurPath={setCurPathArrowWrapper}
               profileType={profileType}
               isHalfScreen={isHalfScreen}
               mappingsListFromMetadata={mappingsList}
               compareAbsolute={isCompareAbsolute}
               isIcicleChart={isIcicleChart}
               profileSource={profileSource}
+              isFlamegraph={isFlamegraph}
+              isSandwich={isSandwichIcicleGraph}
+              tooltipId={tooltipId}
+              maxFrameCount={maxFrameCount}
+              isExpanded={isExpanded}
             />
           </div>
         </div>
@@ -253,8 +296,6 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     loading,
     width,
     filtered,
-    curPathArrow,
-    setNewCurPathArrow,
     profileType,
     isHalfScreen,
     isDarkMode,
@@ -265,6 +306,13 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     icicleChartHeight,
     icicleChartRef,
     iciclechartHelpText,
+    isFlamegraph,
+    isSandwichIcicleGraph,
+    effectiveCurPathArrow,
+    setCurPathArrowWrapper,
+    tooltipId,
+    maxFrameCount,
+    isExpanded,
   ]);
 
   useEffect(() => {
@@ -278,6 +326,36 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
 
     if (authenticationErrorMessage !== undefined && error.code === 'UNAUTHENTICATED') {
       return <ErrorContent errorMessage={authenticationErrorMessage} />;
+    }
+
+    // Check for specific merge errors
+    const errorMessageLower = error.message?.toLowerCase() ?? '';
+    const isMergeError: boolean = errorMessageLower.includes('failed to merge flame chart records');
+    const isTimestampError: boolean = errorMessageLower.includes(
+      'multiple samples for the same timestamp is not allowed'
+    );
+
+    if (isMergeError || isTimestampError) {
+      return (
+        <ErrorContent
+          errorMessage={
+            <>
+              <span className="font-semibold">Unable to display overlapping data</span>
+              <span className="text-gray-600 dark:text-gray-400">
+                The selected data contains overlapping samples from multiple nodes or threads that
+                cannot be merged.
+              </span>
+              <span className="text-gray-600 dark:text-gray-400">
+                To view this data, please apply more specific filters:
+              </span>
+              <ul className="list-disc list-inside text-left max-w-md mx-auto text-gray-600 dark:text-gray-400">
+                <li>Select a specific node from the node selector</li>
+                <li>Filter by either CPU or thread</li>
+              </ul>
+            </>
+          }
+        />
+      );
     }
 
     return (
@@ -302,20 +380,22 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
         transition={{duration: 0.5}}
       >
         {compareMode ? <DiffLegend /> : null}
-        <div className="min-h-48" id="h-icicle-graph">
+        <div className={cx(!isSandwichIcicleGraph ? 'min-h-48' : '')} id="h-icicle-graph">
           <>{icicleGraph}</>
         </div>
-        <p className="my-2 text-xs">
-          Showing {totalFormatted}{' '}
-          {isFiltered ? (
-            <span>
-              ({filteredPercentage}%) filtered of {totalUnfilteredFormatted}{' '}
-            </span>
-          ) : (
-            <></>
-          )}
-          values.{' '}
-        </p>
+        {!isSandwichIcicleGraph && (
+          <p className="my-2 text-xs">
+            Showing {totalFormatted}{' '}
+            {isFiltered ? (
+              <span>
+                ({filteredPercentage}%) filtered of {totalUnfilteredFormatted}{' '}
+              </span>
+            ) : (
+              <></>
+            )}
+            values.{' '}
+          </p>
+        )}
       </motion.div>
     </AnimatePresence>
   );

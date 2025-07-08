@@ -11,11 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 
 import {JSONParser, JSONSerializer, useURLState, useURLStateCustom} from '@parca/components';
 
-import {FIELD_FUNCTION_NAME, FIELD_LABELS} from '../../ProfileIcicleGraph/IcicleGraphArrow';
+import {
+  FIELD_FUNCTION_FILE_NAME,
+  FIELD_FUNCTION_NAME,
+  FIELD_LABELS,
+  FIELD_LOCATION_ADDRESS,
+  FIELD_MAPPING_FILE,
+} from '../../ProfileIcicleGraph/IcicleGraphArrow';
 import {CurrentPathFrame} from '../../ProfileIcicleGraph/IcicleGraphArrow/utils';
 
 export const useVisualizationState = (): {
@@ -27,11 +33,15 @@ export const useVisualizationState = (): {
   setSearchString: (searchString: string | undefined) => void;
   colorStackLegend: string | undefined;
   colorBy: string;
+  setColorBy: (colorBy: string) => void;
   groupBy: string[];
   setGroupBy: (keys: string[]) => void;
   toggleGroupBy: (key: string) => void;
   clearSelection: () => void;
   setGroupByLabels: (labels: string[]) => void;
+  sandwichFunctionName: string | undefined;
+  setSandwichFunctionName: (sandwichFunctionName: string | undefined) => void;
+  resetSandwichFunctionName: () => void;
 } => {
   const [curPath, setCurPath] = useState<string[]>([]);
   const [curPathArrow, setCurPathArrow] = useURLStateCustom<CurrentPathFrame[]>('cur_path', {
@@ -41,11 +51,24 @@ export const useVisualizationState = (): {
   });
   const [currentSearchString, setSearchString] = useURLState<string | undefined>('search_string');
   const [colorStackLegend] = useURLState<string | undefined>('color_stack_legend');
-  const [colorBy] = useURLState('color_by');
+  const [colorBy, setColorBy] = useURLState('color_by');
   const [groupBy, setStoreGroupBy] = useURLState<string[]>('group_by', {
     defaultValue: [FIELD_FUNCTION_NAME],
     alwaysReturnArray: true,
   });
+  const [sandwichFunctionName, setSandwichFunctionName] = useURLState<string | undefined>(
+    'sandwich_function_name'
+  );
+
+  const levelsOfProfiling = useMemo(
+    () => [
+      FIELD_FUNCTION_NAME,
+      FIELD_FUNCTION_FILE_NAME,
+      FIELD_LOCATION_ADDRESS,
+      FIELD_MAPPING_FILE,
+    ],
+    []
+  );
 
   const setGroupBy = useCallback(
     (keys: string[]): void => {
@@ -56,11 +79,14 @@ export const useVisualizationState = (): {
 
   const toggleGroupBy = useCallback(
     (key: string): void => {
-      groupBy.includes(key)
-        ? setGroupBy(groupBy.filter(v => v !== key)) // remove
-        : setGroupBy([...groupBy, key]); // add
+      if (groupBy.includes(key)) {
+        setGroupBy(groupBy.filter(v => v !== key)); // remove
+      } else {
+        const filteredGroupBy = groupBy.filter(item => !levelsOfProfiling.includes(item));
+        setGroupBy([...filteredGroupBy, key]); // add
+      }
     },
-    [groupBy, setGroupBy]
+    [groupBy, setGroupBy, levelsOfProfiling]
   );
 
   const setGroupByLabels = useCallback(
@@ -74,6 +100,10 @@ export const useVisualizationState = (): {
     setSearchString?.('');
   }, [setSearchString]);
 
+  const resetSandwichFunctionName = useCallback((): void => {
+    setSandwichFunctionName(undefined);
+  }, [setSandwichFunctionName]);
+
   return {
     curPath,
     setCurPath,
@@ -83,10 +113,14 @@ export const useVisualizationState = (): {
     setSearchString,
     colorStackLegend,
     colorBy: (colorBy as string) ?? '',
+    setColorBy,
     groupBy,
     setGroupBy,
     toggleGroupBy,
     setGroupByLabels,
     clearSelection,
+    sandwichFunctionName,
+    setSandwichFunctionName,
+    resetSandwichFunctionName,
   };
 };

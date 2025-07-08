@@ -57,6 +57,7 @@ const Profiles = () => {
           queryServiceClient: queryClient,
           navigateTo,
           isDarkMode,
+          enableSandwichView: true,
         }}
       >
         <div className="bg-white dark:bg-gray-900 p-3">

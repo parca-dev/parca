@@ -19,6 +19,7 @@ interface MetricsSeriesProps {
   color: string;
   strokeWidth: string;
   strokeDasharray?: string;
+  strokeLinecap?: React.CSSProperties['strokeLinecap'];
   xScale: (input: number) => number;
   yScale: (input: number) => number;
   onClick?: () => void;
@@ -30,6 +31,7 @@ const MetricsSeries = ({
   color,
   strokeWidth,
   strokeDasharray = '',
+  strokeLinecap = 'round',
   onClick,
 }: MetricsSeriesProps): JSX.Element => (
   <g className="line-group">
@@ -40,6 +42,7 @@ const MetricsSeries = ({
         stroke: color,
         strokeWidth,
         strokeDasharray,
+        strokeLinecap,
       }}
       onClick={onClick}
     />

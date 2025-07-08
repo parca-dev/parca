@@ -17,6 +17,7 @@ import {Provider} from 'react-redux';
 
 import {QueryServiceClient} from '@parca/client';
 import {DateTimeRange, KeyDownProvider, useParcaContext} from '@parca/components';
+import {Query} from '@parca/parser';
 import {createStore} from '@parca/store';
 import {
   capitalizeOnlyFirstLetter,
@@ -27,6 +28,8 @@ import {
 
 import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
 import {QuerySelection, useProfileTypes} from '../ProfileSelector';
+import {useResetStateOnNewSearch} from '../ProfileView/hooks/useResetStateOnNewSearch';
+import {useResetStateOnProfileTypeChange} from '../ProfileView/hooks/useResetStateOnProfileTypeChange';
 import {sumByToParam, useSumByFromParams} from '../useSumBy';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
 import ProfileExplorerSingle from './ProfileExplorerSingle';
@@ -68,7 +71,7 @@ const sanitizeDateRange = (
 };
 /* eslint-enable @typescript-eslint/naming-convention */
 
-const filterEmptyParams = (o: Record<string, any>): Record<string, any> => {
+export const filterEmptyParams = (o: Record<string, any>): Record<string, any> => {
   return Object.fromEntries(
     Object.entries(o)
       .filter(
@@ -173,6 +176,9 @@ const ProfileExplorerApp = ({
   const [profileA, setProfileA] = useState<ProfileSelection | null>(null);
   const [profileB, setProfileB] = useState<ProfileSelection | null>(null);
 
+  const resetStateOnProfileTypeChange = useResetStateOnProfileTypeChange();
+  const resetStateOnNewSearch = useResetStateOnNewSearch();
+
   const sumByA = useSumByFromParams(sum_by_a);
   const sumByB = useSumByFromParams(sum_by_b);
 
@@ -258,6 +264,17 @@ const ProfileExplorerApp = ({
   // Show the SingleProfileExplorer when not comparing
   if (compare_a !== 'true' && compare_b !== 'true') {
     const selectQuery = (q: QuerySelection): void => {
+      const profileNameAfter = Query.parse(q.expression).profileName();
+      if (profileA != null) {
+        if (profileA.ProfileName() !== profileNameAfter) {
+          // Reset required state when the profile type changes.
+          resetStateOnProfileTypeChange();
+        } else {
+          // Reset the state when a new search is performed.
+          resetStateOnNewSearch();
+        }
+      }
+
       const mergeParams =
         q.mergeFrom !== undefined && q.mergeTo !== undefined
           ? {

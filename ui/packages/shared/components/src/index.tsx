@@ -28,6 +28,7 @@ import ParcaContext from './ParcaContext';
 import Pill, {PillVariant} from './Pill';
 import ResponsiveSvg from './ResponsiveSvg';
 import Select, {type SelectElement, type SelectItem} from './Select';
+import FlamegraphSkeleton from './Skeletons/FlamegraphSkeleton';
 import IcicleGraphSkeleton, {IcicleActionButtonPlaceholder} from './Skeletons/IcicleGraphSkeleton';
 import MetricsGraphSkeleton from './Skeletons/MetricsGraphSkeleton';
 import SourceSkeleton from './Skeletons/SourceSkeleton';
@@ -54,6 +55,7 @@ export {
   DateTimeRange,
   DateTimeRangePicker,
   Dropdown,
+  FlamegraphSkeleton,
   GrpcMetadataContext,
   GrpcMetadataProvider,
   IcicleActionButtonPlaceholder,

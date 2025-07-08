@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 
@@ -38,6 +38,13 @@ const FilterByFunctionButton = (): JSX.Element => {
         : excludeFunctionStoreValue !== 'true')
     );
   }, [localValue, storeValue, excludeFunction, excludeFunctionStoreValue]);
+
+  useEffect(() => {
+    if (storeValue === undefined) {
+      setLocalValue('');
+      setExcludeFunction(false);
+    }
+  }, [storeValue]);
 
   const onAction = useCallback((): void => {
     if (isClearAction) {

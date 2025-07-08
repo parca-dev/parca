@@ -13,7 +13,7 @@
 
 import {useEffect, useRef, useState} from 'react';
 
-import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
+import {useURLState} from '@parca/components';
 
 interface Props {
   text: string;
@@ -66,9 +66,9 @@ function calculateTruncatedText(
 function TextWithEllipsis({text, x, y, width}: Props): JSX.Element {
   const textRef = useRef<SVGTextElement>(null);
   const [displayText, setDisplayText] = useState(text);
-  const [showFunctionNameFromLeft] = useUserPreference<boolean>(
-    USER_PREFERENCES.SHOW_FUNCTION_NAME_FROM_LEFT.key
-  );
+  const [alignFunctionName] = useURLState('align_function_name');
+
+  const showFunctionNameFromLeft = alignFunctionName === 'left' || alignFunctionName === undefined;
 
   useEffect(() => {
     const textElement = textRef.current;

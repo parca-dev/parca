@@ -68,6 +68,7 @@ export interface Series {
   metric: Label[];
   values: number[][];
   labelset: string;
+  isSelected?: boolean;
 }
 
 const MetricsGraph = ({
@@ -157,7 +158,11 @@ export const RawMetricsGraph = ({
     width = 0;
   }
 
-  const graphWidth = width - margin * 1.5 - margin / 2;
+  const graphWidth = useMemo(() => width - margin * 1.5 - margin / 2, [width, margin]);
+  const graphTransform = useMemo(() => {
+    // Adds 6px padding which aligns the graph on the grid
+    return `translate(6, 0) scale(${(graphWidth - 6) / graphWidth}, 1)`;
+  }, [graphWidth]);
 
   const series: Series[] = data.reduce<Series[]>(function (agg: Series[], s: MetricsSeriesPb) {
     if (s.labelset !== undefined) {
@@ -594,7 +599,11 @@ export const RawMetricsGraph = ({
                 </text>
               </g>
             </g>
-            <g className="lines fill-transparent">
+            <g
+              className="lines fill-transparent"
+              transform={graphTransform}
+              width={graphWidth - 100}
+            >
               {series.map((s, i) => (
                 <g key={i} className="line">
                   <MetricsSeries
@@ -617,6 +626,7 @@ export const RawMetricsGraph = ({
                 className="circle-group"
                 ref={metricPointRef}
                 style={{fill: color(highlighted.seriesIndex.toString())}}
+                transform={graphTransform}
               >
                 <MetricsCircle cx={highlighted.x} cy={highlighted.y} />
               </g>
@@ -629,6 +639,7 @@ export const RawMetricsGraph = ({
                     ? {fill: color(selected.seriesIndex.toString())}
                     : {}
                 }
+                transform={graphTransform}
               >
                 <MetricsCircle cx={selected.x} cy={selected.y} radius={5} />
               </g>

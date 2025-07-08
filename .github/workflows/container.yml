@@ -21,7 +21,7 @@ env:
   # renovate: datasource=go depName=github.com/goreleaser/goreleaser
   GORELEASER_VERSION: v1.26.2
   # renovate: datasource=npm depName=pnpm versioning=npm
-  PNPM_VERSION: '10.10.0'
+  PNPM_VERSION: '10.12.4'
 
 jobs:
   skip-check:
@@ -72,7 +72,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5.3.0
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version-file: .go-version
 
@@ -81,7 +81,7 @@ jobs:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Set up Node.js
-        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .node-version
           cache: 'pnpm'
@@ -141,7 +141,7 @@ jobs:
       - name: Add repository directory to the git global config as a safe directory
         run: git config --global --add safe.directory /__w/parca/parca
 
-      - uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: parca-dist-container
           path: dist

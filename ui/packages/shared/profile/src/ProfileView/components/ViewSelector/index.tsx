@@ -14,7 +14,6 @@
 import {ReactNode} from 'react';
 
 import {useParcaContext, useURLState} from '@parca/components';
-import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 
 import {ProfileSource} from '../../../ProfileSource';
 import Dropdown, {DropdownElement, InnerAction} from './Dropdown';
@@ -30,9 +29,8 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
       alwaysReturnArray: true,
     }
   );
-  const {enableSourcesView} = useParcaContext();
-
-  const [enableicicleCharts] = useUserPreference<boolean>(USER_PREFERENCES.ENABLE_ICICLECHARTS.key);
+  const [, setSandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
+  const {enableSourcesView, enableSandwichView} = useParcaContext();
 
   const allItems: Array<{
     key: string;
@@ -41,11 +39,9 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
     supportingText?: string;
     disabledText?: string;
   }> = [
-    {key: 'table', label: 'Table', canBeSelected: !dashboardItems.includes('table')},
     {key: 'icicle', label: 'icicle', canBeSelected: !dashboardItems.includes('icicle')},
-  ];
-  if (enableicicleCharts) {
-    allItems.push({
+    {key: 'table', label: 'Table', canBeSelected: !dashboardItems.includes('table')},
+    {
       key: 'iciclechart',
       label: (
         <span className="relative">
@@ -59,6 +55,19 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
         !dashboardItems.includes('iciclechart') && profileSource?.ProfileType().delta !== true
           ? 'Iciclechart is not available for non-delta profiles'
           : undefined,
+    },
+  ];
+
+  if (enableSandwichView === true) {
+    allItems.push({
+      key: 'sandwich',
+      label: (
+        <span className="relative">
+          Sandwich
+          <span className="absolute top-[-2px] text-xs lowercase text-red-500">&nbsp;alpha</span>
+        </span>
+      ),
+      canBeSelected: !dashboardItems.includes('sandwich'),
     });
   }
 
@@ -96,20 +105,33 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
     canBeSelected: boolean;
   }): InnerAction | undefined => {
     if (dashboardItems.length === 1 && item.key === dashboardItems[0]) return undefined;
+
+    // If we already have 2 panels and this item isn't selected, don't show any action
+    if (dashboardItems.length >= 2 && !dashboardItems.includes(item.key)) return undefined;
+
     return {
       text:
         !item.canBeSelected && item.key === 'source'
           ? 'Add Panel'
           : item.canBeSelected
           ? 'Add Panel'
-          : 'Close Panel',
+          : dashboardItems.includes(item.key)
+          ? 'Close Panel'
+          : 'Add Panel',
       onClick: () => {
         if (item.canBeSelected) {
           setDashboardItems([...dashboardItems, item.key]);
         } else {
-          setDashboardItems(dashboardItems.filter(v => v !== item.key));
+          const newDashboardItems = dashboardItems.filter(v => v !== item.key);
+          setDashboardItems(newDashboardItems);
+
+          // Reset sandwich function name when removing sandwich panel
+          if (item.key === 'sandwich') {
+            setSandwichFunctionName(undefined);
+          }
         }
       },
+      isDisabled: dashboardItems.length === 1 && dashboardItems.includes('sandwich'),
     };
   };
 
@@ -123,6 +145,12 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
 
   const onSelection = (value: string): void => {
     const isOnlyChart = dashboardItems.length === 1;
+
+    if (isOnlyChart && value === 'sandwich') {
+      setDashboardItems([...dashboardItems, value]);
+      return;
+    }
+
     if (isOnlyChart) {
       setDashboardItems([value]);
       return;

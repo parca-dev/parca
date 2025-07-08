@@ -152,6 +152,12 @@ func TestStore(t *testing.T) {
 	require.False(t, shouldInitiateResp.ShouldInitiateUpload)
 	require.Equal(t, ReasonUploadInProgress, shouldInitiateResp.Reason)
 
+	// But with force=true, we should be able to restart an ongoing upload.
+	shouldInitiateResp, err = debuginfoClient.ShouldInitiateUpload(ctx, &debuginfopb.ShouldInitiateUploadRequest{BuildId: "abcd", Force: true})
+	require.NoError(t, err)
+	require.True(t, shouldInitiateResp.ShouldInitiateUpload)
+	require.Equal(t, ReasonUploadInProgressButForced, shouldInitiateResp.Reason)
+
 	// Set time to current time, where the upload should be expired. So we can initiate a new one.
 	s.timeNow = time.Now
 
@@ -190,6 +196,12 @@ func TestStore(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, shouldInitiateResp.ShouldInitiateUpload)
 	require.Equal(t, ReasonDebuginfoAlreadyExists, shouldInitiateResp.Reason)
+
+	// But with force=true, we should be able to re-upload existing valid debuginfo.
+	shouldInitiateResp, err = debuginfoClient.ShouldInitiateUpload(ctx, &debuginfopb.ShouldInitiateUploadRequest{BuildId: "abcd", Force: true})
+	require.NoError(t, err)
+	require.True(t, shouldInitiateResp.ShouldInitiateUpload)
+	require.Equal(t, ReasonDebuginfoAlreadyExistsButForced, shouldInitiateResp.Reason)
 
 	// If asynchronously we figured out the debuginfo was not a valid ELF file,
 	// we should allow uploading something else. Don't test the whole upload
