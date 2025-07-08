@@ -100,7 +100,7 @@ jobs:
         with:
           distribution: goreleaser
           version: ${{ env.GORELEASER_VERSION }}
-          args: build --clean --skip-validate --snapshot --debug --timeout=60m
+          args: build --clean --skip=validate --snapshot --debug --timeout=60m
         env:
           GORELEASER_CURRENT_TAG: "${{ env.goreleaser_current_tag }}"
 
