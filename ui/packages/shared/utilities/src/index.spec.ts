@@ -111,9 +111,9 @@ describe('formatDate', () => {
 });
 
 describe('parseParams', () => {
-  it('transforms legacy icicle parameter to flame for backward compatibility', () => {
+  it('transforms legacy icicle parameter to flamegraph for backward compatibility', () => {
     const result = parseParams('?dashboard_items=icicle');
-    expect(result.dashboard_items).toBe('flame');
+    expect(result.dashboard_items).toBe('flamegraph');
   });
 
   it('transforms legacy iciclechart parameter to flamechart for backward compatibility', () => {
@@ -121,9 +121,9 @@ describe('parseParams', () => {
     expect(result.dashboard_items).toBe('flamechart');
   });
 
-  it('preserves new flame parameter values', () => {
-    const result = parseParams('?dashboard_items=flame');
-    expect(result.dashboard_items).toBe('flame');
+  it('preserves new flamegraph parameter values', () => {
+    const result = parseParams('?dashboard_items=flamegraph');
+    expect(result.dashboard_items).toBe('flamegraph');
   });
 
   it('preserves new flamechart parameter values', () => {
@@ -132,13 +132,13 @@ describe('parseParams', () => {
   });
 
   it('handles multiple dashboard_items with mixed legacy and new values', () => {
-    const result = parseParams('?dashboard_items=icicle,table,iciclechart,flame');
-    expect(result.dashboard_items).toEqual(['flame', 'table', 'flamechart', 'flame']);
+    const result = parseParams('?dashboard_items=icicle,table,iciclechart,flamegraph');
+    expect(result.dashboard_items).toEqual(['flamegraph', 'table', 'flamechart', 'flamegraph']);
   });
 
   it('does not affect other parameters', () => {
     const result = parseParams('?dashboard_items=icicle&other_param=value');
-    expect(result.dashboard_items).toBe('flame');
+    expect(result.dashboard_items).toBe('flamegraph');
     expect(result.other_param).toBe('value');
   });
 });

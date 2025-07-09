@@ -100,7 +100,7 @@ export const useAutoQuerySelector = ({
       void navigateTo('/', {
         ...compareQuery,
         search_string: '',
-        dashboard_items: ['flame'],
+        dashboard_items: ['flamegraph'],
       });
     }
   }, [comparing, querySelection, navigateTo, expressionA, dispatch, loading]);

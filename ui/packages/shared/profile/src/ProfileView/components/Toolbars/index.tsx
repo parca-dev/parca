@@ -165,7 +165,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
 
   const isTableViz = dashboardItems?.includes('table');
   const isTableVizOnly = dashboardItems?.length === 1 && isTableViz;
-  const isGraphViz = dashboardItems?.includes('flame');
+  const isGraphViz = dashboardItems?.includes('flamegraph');
   const isGraphVizOnly = dashboardItems?.length === 1 && isGraphViz;
 
   const req = profileSource?.QueryRequest();

@@ -71,7 +71,7 @@ export const getDashboardItem = ({
   queryClient,
 }: GetDashboardItemProps): JSX.Element => {
   switch (type) {
-    case 'flame':
+    case 'flamegraph':
       return (
         <ConditionalWrapper
           condition={perf?.onRender != null}

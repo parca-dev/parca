@@ -72,7 +72,7 @@ export const ProfileViewWithData = ({
       return;
     }
     if (newDashboardItems.length === 0) {
-      newDashboardItems = ['flame'];
+      newDashboardItems = ['flamegraph'];
     }
     setDashboardItems(newDashboardItems);
   }, [profileSource, dashboardItems, setDashboardItems]);
@@ -91,7 +91,7 @@ export const ProfileViewWithData = ({
     response: flamegraphResponse,
     error: flamegraphError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMEGRAPH_ARROW, {
-    skip: !dashboardItems.includes('flame'),
+    skip: !dashboardItems.includes('flamegraph'),
     nodeTrimThreshold,
     groupBy,
     invertCallStack,

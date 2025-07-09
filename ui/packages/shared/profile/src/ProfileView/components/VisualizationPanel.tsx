@@ -51,7 +51,7 @@ export const VisualizationPanel = React.memo(function VisualizationPanel({
         <div
           className={cx(
             'flex w-full justify-between flex-col-reverse md:flex-row',
-            isMultiPanelView && dashboardItem === 'flame' ? 'items-end gap-x-2' : 'items-end'
+            isMultiPanelView && dashboardItem === 'flamegraph' ? 'items-end gap-x-2' : 'items-end'
           )}
         >
           <div className="flex items-center gap-2">
@@ -70,10 +70,10 @@ export const VisualizationPanel = React.memo(function VisualizationPanel({
           <div
             className={cx(
               'flex flex-row items-center gap-4',
-              isMultiPanelView && dashboardItem === 'flame' && 'pb-[10px]'
+              isMultiPanelView && dashboardItem === 'flamegraph' && 'pb-[10px]'
             )}
           >
-            {dashboardItem === 'flame' && flamegraphHint != null ? (
+            {dashboardItem === 'flamegraph' && flamegraphHint != null ? (
               <div className="px-2">{flamegraphHint}</div>
             ) : null}
           </div>

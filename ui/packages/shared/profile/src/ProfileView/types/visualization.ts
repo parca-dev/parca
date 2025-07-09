@@ -58,7 +58,7 @@ export interface SourceData {
 }
 
 export type VisualizationType =
-  | 'flame'
+  | 'flamegraph'
   | 'callgraph'
   | 'table'
   | 'source'

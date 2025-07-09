@@ -227,7 +227,7 @@ export const parseParams = (
       const transformLegacyValue = (value: string): string => {
         // Map legacy icicle parameter values to new flame values
         if (value === 'icicle') {
-          return 'flame';
+          return 'flamegraph';
         }
         if (value === 'iciclechart') {
           return 'flamechart';

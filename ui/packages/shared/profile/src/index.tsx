@@ -26,7 +26,7 @@ export * from './SourceView';
 export * from './ProfileMetricsGraph';
 
 export const DEFAULT_PROFILE_EXPLORER_PARAM_VALUES = {
-  dashboard_items: 'flame',
+  dashboard_items: 'flamegraph',
 };
 
 export {ProfileExplorer, ProfileTypeSelector, getExpressionAsAString, CustomSelect, useLabelNames};

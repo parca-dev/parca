@@ -23,9 +23,12 @@ interface Props {
 }
 
 const ViewSelector = ({profileSource}: Props): JSX.Element => {
-  const [dashboardItems = ['flame'], setDashboardItems] = useURLState<string[]>('dashboard_items', {
-    alwaysReturnArray: true,
-  });
+  const [dashboardItems = ['flamegraph'], setDashboardItems] = useURLState<string[]>(
+    'dashboard_items',
+    {
+      alwaysReturnArray: true,
+    }
+  );
   const [, setSandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
   const {enableSourcesView, enableSandwichView} = useParcaContext();
 
@@ -36,7 +39,11 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
     supportingText?: string;
     disabledText?: string;
   }> = [
-    {key: 'flame', label: 'Flame Graph', canBeSelected: !dashboardItems.includes('flame')},
+    {
+      key: 'flamegraph',
+      label: 'Flame Graph',
+      canBeSelected: !dashboardItems.includes('flamegraph'),
+    },
     {key: 'table', label: 'Table', canBeSelected: !dashboardItems.includes('table')},
     {
       key: 'flamechart',

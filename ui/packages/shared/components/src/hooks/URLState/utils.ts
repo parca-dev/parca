@@ -45,12 +45,12 @@ const isEqual = (a: ParamValue, b: ParamValue): boolean => {
     return true;
   }
 
-  // ['flame'] === 'flame'
+  // ['flamegraph'] === 'flamegraph'
   if (Array.isArray(a) && a.length === 1 && typeof b === 'string') {
     return decodeURIComponent(a[0]) === decodeURIComponent(b);
   }
 
-  // 'flame' === ['flame']
+  // 'flamegraph' === ['flamegraph']
   if (Array.isArray(b) && b.length === 1 && typeof a === 'string') {
     return decodeURIComponent(b[0]) === decodeURIComponent(a);
   }
