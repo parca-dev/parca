@@ -180,18 +180,28 @@ const ShareButton = ({
           <Dropdown
             dropdownWidth="w-48"
             element={
-              <Button variant="neutral">
-                Share
-                <Icon icon="material-symbols:share" className="h-5 w-5 ml-2" />
+              <Button
+                variant="neutral"
+                className="flex items-center gap-2 pr-[1.7rem]"
+                id="h-share-dropdown-button"
+              >
+                <div className="flex items-center gap-2">
+                  <Icon icon="material-symbols:share" className="w-4 h-4" />
+
+                  <span>Share</span>
+                </div>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-400">
+                  <Icon icon="heroicons:chevron-down-20-solid" aria-hidden="true" />
+                </div>
               </Button>
             }
           >
             <span className="text-xs text-gray-400 capitalize px-2">actions</span>
             {actions.map(item => (
               <Dropdown.Item key={item.key} onSelect={item.onSelect}>
-                <div id={item.id} className="flex items-center">
+                <div id={item.id} className="flex items-center gap-2">
+                  <Icon icon={item.icon} className="h-4 w-4" />
                   <span>{item.label}</span>
-                  <Icon icon={item.icon} className="ml-2 h-4 w-4" />
                 </div>
               </Dropdown.Item>
             ))}

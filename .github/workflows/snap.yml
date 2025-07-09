@@ -21,7 +21,7 @@ env:
   # renovate: datasource=go depName=github.com/goreleaser/goreleaser
   GORELEASER_VERSION: v1.26.2
   # renovate: datasource=npm depName=pnpm versioning=npm
-  PNPM_VERSION: '10.10.0'
+  PNPM_VERSION: '10.12.4'
 
 permissions:
   contents: write
@@ -124,7 +124,7 @@ jobs:
         with:
           distribution: goreleaser
           version: ${{ env.GORELEASER_VERSION }}
-          args: release --clean --skip-validate --skip-publish --timeout=60m
+          args: release --clean --skip=validate --skip-publish --timeout=60m
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_CURRENT_TAG: "${{ env.goreleaser_current_tag }}"

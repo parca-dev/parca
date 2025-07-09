@@ -14,7 +14,6 @@
 import {ReactNode} from 'react';
 
 import {useParcaContext, useURLState} from '@parca/components';
-import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 
 import {ProfileSource} from '../../../ProfileSource';
 import Dropdown, {DropdownElement, InnerAction} from './Dropdown';
@@ -27,9 +26,8 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
   const [dashboardItems = ['flame'], setDashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
   });
+  const [, setSandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
   const {enableSourcesView, enableSandwichView} = useParcaContext();
-
-  const [enableflameCharts] = useUserPreference<boolean>(USER_PREFERENCES.ENABLE_FLAMECHARTS.key);
 
   const allItems: Array<{
     key: string;
@@ -38,24 +36,9 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
     supportingText?: string;
     disabledText?: string;
   }> = [
-    {key: 'table', label: 'Table', canBeSelected: !dashboardItems.includes('table')},
     {key: 'flame', label: 'flame', canBeSelected: !dashboardItems.includes('flame')},
-  ];
-
-  if (enableSandwichView === true) {
-    allItems.push({
-      key: 'sandwich',
-      label: (
-        <span className="relative">
-          Sandwich
-          <span className="absolute top-[-2px] text-xs lowercase text-red-500">&nbsp;alpha</span>
-        </span>
-      ),
-      canBeSelected: !dashboardItems.includes('sandwich'),
-    });
-  }
-  if (enableflameCharts) {
-    allItems.push({
+    {key: 'table', label: 'Table', canBeSelected: !dashboardItems.includes('table')},
+    {
       key: 'flamechart',
       label: (
         <span className="relative">
@@ -69,6 +52,19 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
         !dashboardItems.includes('flamechart') && profileSource?.ProfileType().delta !== true
           ? 'Flamechart is not available for non-delta profiles'
           : undefined,
+    },
+  ];
+
+  if (enableSandwichView === true) {
+    allItems.push({
+      key: 'sandwich',
+      label: (
+        <span className="relative">
+          Sandwich
+          <span className="absolute top-[-2px] text-xs lowercase text-red-500">&nbsp;alpha</span>
+        </span>
+      ),
+      canBeSelected: !dashboardItems.includes('sandwich'),
     });
   }
 
@@ -107,14 +103,8 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
   }): InnerAction | undefined => {
     if (dashboardItems.length === 1 && item.key === dashboardItems[0]) return undefined;
 
-    // For sandwich view, return a no-op action
-    if (item.key === 'sandwich') {
-      return {
-        text: 'Add Panel',
-        onClick: () => {},
-        isDisabled: true, // Custom property to control button state
-      };
-    }
+    // If we already have 2 panels and this item isn't selected, don't show any action
+    if (dashboardItems.length >= 2 && !dashboardItems.includes(item.key)) return undefined;
 
     return {
       text:
@@ -122,14 +112,23 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
           ? 'Add Panel'
           : item.canBeSelected
           ? 'Add Panel'
-          : 'Close Panel',
+          : dashboardItems.includes(item.key)
+          ? 'Close Panel'
+          : 'Add Panel',
       onClick: () => {
         if (item.canBeSelected) {
           setDashboardItems([...dashboardItems, item.key]);
         } else {
-          setDashboardItems(dashboardItems.filter(v => v !== item.key));
+          const newDashboardItems = dashboardItems.filter(v => v !== item.key);
+          setDashboardItems(newDashboardItems);
+
+          // Reset sandwich function name when removing sandwich panel
+          if (item.key === 'sandwich') {
+            setSandwichFunctionName(undefined);
+          }
         }
       },
+      isDisabled: dashboardItems.length === 1 && dashboardItems.includes('sandwich'),
     };
   };
 
@@ -143,6 +142,12 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
 
   const onSelection = (value: string): void => {
     const isOnlyChart = dashboardItems.length === 1;
+
+    if (isOnlyChart && value === 'sandwich') {
+      setDashboardItems([...dashboardItems, value]);
+      return;
+    }
+
     if (isOnlyChart) {
       setDashboardItems([value]);
       return;

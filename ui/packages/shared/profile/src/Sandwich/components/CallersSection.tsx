@@ -11,17 +11,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React from 'react';
+import React, {useMemo} from 'react';
+
+import {Vector, tableFromIPC} from 'apache-arrow';
+import {Tooltip} from 'react-tooltip';
 
 import {type FlamegraphArrow} from '@parca/client';
+import {Button} from '@parca/components';
 
 import ProfileFlameGraph from '../../ProfileFlameGraph';
 import {type CurrentPathFrame} from '../../ProfileFlameGraph/FlameGraphArrow/utils';
 import {type ProfileSource} from '../../ProfileSource';
 
+const FIELD_DEPTH = 'depth';
+
+function getMaxDepth(depthColumn: Vector<any> | null): number {
+  if (depthColumn === null) return 0;
+
+  let max = 0;
+  for (const val of depthColumn) {
+    const numVal = Number(val);
+    if (numVal > max) max = numVal;
+  }
+  return max;
+}
+
 interface CallersSectionProps {
   callersRef: React.RefObject<HTMLDivElement>;
-  isHalfScreen: boolean;
   callersFlamegraphResponse?: {
     report: {
       oneofKind: string;
@@ -36,11 +52,13 @@ interface CallersSectionProps {
   curPathArrow: CurrentPathFrame[];
   setCurPathArrow: (path: CurrentPathFrame[]) => void;
   metadataMappingFiles?: string[];
+  isExpanded: boolean;
+  setIsExpanded: (isExpanded: boolean) => void;
+  defaultMaxFrames: number;
 }
 
 export function CallersSection({
   callersRef,
-  isHalfScreen,
   callersFlamegraphResponse,
   callersFlamegraphLoading,
   callersFlamegraphError,
@@ -49,40 +67,79 @@ export function CallersSection({
   curPathArrow,
   setCurPathArrow,
   metadataMappingFiles,
+  isExpanded,
+  setIsExpanded,
+  defaultMaxFrames,
 }: CallersSectionProps): JSX.Element {
+  const maxDepth = useMemo(() => {
+    if (
+      callersFlamegraphResponse?.report.oneofKind === 'flamegraphArrow' &&
+      callersFlamegraphResponse?.report?.flamegraphArrow != null
+    ) {
+      const table = tableFromIPC(callersFlamegraphResponse.report.flamegraphArrow.record);
+      const depthColumn = table.getChild(FIELD_DEPTH);
+      return getMaxDepth(depthColumn);
+    }
+    return 0;
+  }, [callersFlamegraphResponse]);
+
+  const shouldShowButton = maxDepth > defaultMaxFrames;
+
   return (
-    <div className="flex relative flex-row" ref={callersRef}>
-      <div className="[writing-mode:vertical-lr] -rotate-180 px-1 uppercase text-[10px] text-left">
-        Callers {'->'}
+    <>
+      {shouldShowButton && (
+        <Button
+          variant="neutral"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="absolute right-8 top-[-46px] z-10"
+          type="button"
+        >
+          <span
+            data-tooltip-content={
+              !isExpanded
+                ? `This profile has ${maxDepth} frames, showing only the top ${defaultMaxFrames} frames. Click to show more frames.`
+                : `This profile has ${maxDepth} frames, showing all frames. Click to hide frames.`
+            }
+            data-tooltip-id="show-more-frames"
+          >
+            {isExpanded ? 'Hide frames' : 'Show more frames'}
+          </span>
+          <Tooltip id="show-more-frames" />
+        </Button>
+      )}
+      <div className="flex relative flex-row overflow-hidden" ref={callersRef}>
+        <div className="[writing-mode:vertical-lr] -rotate-180 px-1 uppercase text-[10px] text-left flex-shrink-0">
+          Callers {'->'}
+        </div>
+        <div className="flex-1 overflow-hidden relative">
+          <ProfileFlameGraph
+            arrow={
+              callersFlamegraphResponse?.report.oneofKind === 'flamegraphArrow'
+                ? callersFlamegraphResponse?.report?.flamegraphArrow
+                : undefined
+            }
+            total={BigInt(callersFlamegraphResponse?.total ?? '0')}
+            filtered={filtered}
+            profileType={profileSource?.ProfileType()}
+            loading={callersFlamegraphLoading}
+            error={callersFlamegraphError}
+            isHalfScreen={true}
+            width={
+              callersRef.current != null ? callersRef.current.getBoundingClientRect().width - 25 : 0
+            }
+            metadataMappingFiles={metadataMappingFiles}
+            metadataLoading={false}
+            isSandwichFlameGraph={true}
+            curPathArrow={curPathArrow}
+            setNewCurPathArrow={setCurPathArrow}
+            isFlamegraph={true}
+            profileSource={profileSource}
+            tooltipId="callers"
+            maxFrameCount={defaultMaxFrames}
+            isExpanded={isExpanded}
+          />
+        </div>
       </div>
-      <ProfileFlameGraph
-        arrow={
-          callersFlamegraphResponse?.report.oneofKind === 'flamegraphArrow'
-            ? callersFlamegraphResponse?.report?.flamegraphArrow
-            : undefined
-        }
-        total={BigInt(callersFlamegraphResponse?.total ?? '0')}
-        filtered={filtered}
-        profileType={profileSource?.ProfileType()}
-        loading={callersFlamegraphLoading}
-        error={callersFlamegraphError}
-        isHalfScreen={true}
-        width={
-          callersRef.current != null
-            ? isHalfScreen
-              ? (callersRef.current.getBoundingClientRect().width - 54) / 2
-              : callersRef.current.getBoundingClientRect().width - 16
-            : 0
-        }
-        metadataMappingFiles={metadataMappingFiles}
-        metadataLoading={false}
-        isSandwichFlameGraph={true}
-        curPathArrow={curPathArrow}
-        setNewCurPathArrow={setCurPathArrow}
-        isFlamegraph={true}
-        profileSource={profileSource}
-        tooltipId="callers"
-      />
-    </div>
+    </>
   );
 }

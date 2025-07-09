@@ -30,6 +30,7 @@ import ResponsiveSvg from './ResponsiveSvg';
 import Select, {type SelectElement, type SelectItem} from './Select';
 import FlameGraphSkeleton, {FlameActionButtonPlaceholder} from './Skeletons/FlameGraphSkeleton';
 import MetricsGraphSkeleton from './Skeletons/MetricsGraphSkeleton';
+import SandwichFlameGraphSkeleton from './Skeletons/SandwichFlameGraphSkeleton';
 import SourceSkeleton from './Skeletons/SourceSkeleton';
 import TableSkeleton, {TableActionButtonPlaceholder} from './Skeletons/TableSkeleton';
 import Spinner from './Spinner';
@@ -54,10 +55,11 @@ export {
   DateTimeRange,
   DateTimeRangePicker,
   Dropdown,
+  FlameGraphSkeleton,
   GrpcMetadataContext,
   GrpcMetadataProvider,
   FlameActionButtonPlaceholder,
-  FlameGraphSkeleton,
+  SandwichFlameGraphSkeleton,
   IconButton,
   Input,
   KeyDownProvider,

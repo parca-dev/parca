@@ -16,7 +16,7 @@ import {FC} from 'react';
 import {Icon} from '@iconify/react';
 
 import {QueryServiceClient} from '@parca/client';
-import {Button, UserPreferencesModal} from '@parca/components';
+import {Button} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 
 import {CurrentPathFrame} from '../../../ProfileFlameGraph/FlameGraphArrow/utils';
@@ -24,6 +24,7 @@ import {ProfileSource} from '../../../ProfileSource';
 import {useDashboard} from '../../context/DashboardContext';
 import GroupByDropdown from '../ActionButtons/GroupByDropdown';
 import FilterByFunctionButton from '../FilterByFunctionButton';
+import InvertCallStack from '../InvertCallStack';
 import ShareButton from '../ShareButton';
 import ViewSelector from '../ViewSelector';
 import MultiLevelDropdown from './MultiLevelDropdown';
@@ -51,8 +52,6 @@ export interface VisualisationToolbarProps {
   setGroupByLabels: (labels: string[]) => void;
   showVisualizationSelector?: boolean;
   sandwichFunctionName?: string;
-  setSandwichFunctionName: (sandwichFunctionName: string | undefined) => void;
-  resetSandwichFunctionName: () => void;
 }
 
 export interface TableToolbarProps {
@@ -149,7 +148,6 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   groupByLabels,
   setGroupByLabels,
   profileType,
-  preferencesModal,
   profileSource,
   queryClient,
   onDownloadPProf,
@@ -162,40 +160,50 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   currentSearchString,
   clearSelection,
   showVisualizationSelector = true,
-  resetSandwichFunctionName,
-  sandwichFunctionName,
 }) => {
   const {dashboardItems} = useDashboard();
 
   const isTableViz = dashboardItems?.includes('table');
+  const isTableVizOnly = dashboardItems?.length === 1 && isTableViz;
   const isGraphViz = dashboardItems?.includes('flame');
-  const isSandwichFlameGraphViz = dashboardItems?.includes('sandwich');
+  const isGraphVizOnly = dashboardItems?.length === 1 && isGraphViz;
+
   const req = profileSource?.QueryRequest();
   if (req !== null && req !== undefined) {
     req.groupBy = {
       fields: groupBy ?? [],
     };
   }
+
   return (
     <>
       <div className="flex w-full justify-between items-end">
         <div className="flex gap-3 items-end">
-          <>
-            <GroupByDropdown
-              groupBy={groupBy}
-              toggleGroupBy={toggleGroupBy}
-              labels={groupByLabels}
-              setGroupByLabels={setGroupByLabels}
-            />
-            <MultiLevelDropdown profileType={profileType} onSelect={() => {}} />
-          </>
+          {isGraphViz && (
+            <>
+              <GroupByDropdown
+                groupBy={groupBy}
+                labels={groupByLabels}
+                setGroupByLabels={setGroupByLabels}
+              />
+
+              <InvertCallStack />
+            </>
+          )}
 
           <FilterByFunctionButton />
 
           {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
         </div>
         <div className="flex gap-3">
-          {preferencesModal === true && <UserPreferencesModal />}
+          <MultiLevelDropdown
+            groupBy={groupBy}
+            toggleGroupBy={toggleGroupBy}
+            profileType={profileType}
+            onSelect={() => {}}
+            isTableVizOnly={isTableVizOnly}
+          />
+
           <ShareButton
             profileSource={profileSource}
             queryClient={queryClient}
@@ -208,13 +216,14 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
           {showVisualizationSelector ? <ViewSelector profileSource={profileSource} /> : null}
         </div>
       </div>
-      {isGraphViz && !isTableViz && (
+
+      {isGraphVizOnly && (
         <>
           <Divider />
           <FlameGraphToolbar curPath={curPath} setNewCurPath={setNewCurPath} />
         </>
       )}
-      {isTableViz && !isGraphViz && (
+      {isTableVizOnly && (
         <>
           <Divider />
           <TableToolbar
@@ -223,15 +232,6 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
             filtered={filtered}
             clearSelection={clearSelection}
             currentSearchString={currentSearchString}
-          />
-        </>
-      )}
-      {isSandwichFlameGraphViz && (
-        <>
-          <Divider />
-          <SandwichFlameGraphToolbar
-            resetSandwichFunctionName={resetSandwichFunctionName}
-            sandwichFunctionName={sandwichFunctionName}
           />
         </>
       )}

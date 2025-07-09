@@ -148,6 +148,8 @@ export function QueryControls({
             runQuery={setQueryExpression}
             currentQuery={query}
             queryClient={queryClient}
+            start={timeRangeSelection.getFromMs()}
+            end={timeRangeSelection.getToMs()}
           />
         ) : advancedModeForQueryBrowser ? (
           <MatchersInput
@@ -156,6 +158,8 @@ export function QueryControls({
             currentQuery={query}
             profileType={selectedProfileName}
             queryClient={queryClient}
+            start={timeRangeSelection.getFromMs()}
+            end={timeRangeSelection.getToMs()}
           />
         ) : (
           <SimpleMatchers
@@ -166,6 +170,8 @@ export function QueryControls({
             profileType={selectedProfileName}
             queryBrowserRef={queryBrowserRef}
             queryClient={queryClient}
+            start={timeRangeSelection.getFromMs()}
+            end={timeRangeSelection.getToMs()}
           />
         )}
       </div>
@@ -179,6 +185,7 @@ export function QueryControls({
             id="h-sum-by-selector"
             defaultValue={[]}
             isMulti
+            isClearable={false}
             name="colors"
             options={labels.map(label => ({label, value: label}))}
             className="parca-select-container text-sm w-full max-w-80"

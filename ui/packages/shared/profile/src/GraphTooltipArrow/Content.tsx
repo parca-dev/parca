@@ -98,20 +98,20 @@ const GraphTooltipArrowContent = ({
                   <tr>
                     <td className="w-1/4">Cumulative</td>
                     <td className="w-3/4">
-                      <div>{cumulativeText}</div>
+                      <p>{cumulativeText}</p>
                     </td>
                   </tr>
                   <tr>
                     <td className="w-1/4 pt-2">Flat</td>
                     <td className="w-3/4 pt-2">
-                      <div>{flatText}</div>
+                      <p>{flatText}</p>
                     </td>
                   </tr>
                   {diff !== 0n && (
                     <tr>
                       <td className="w-1/4 pt-2">Diff</td>
                       <td className="w-3/4 pt-2">
-                        <div>{diffText}</div>
+                        <p>{diffText}</p>
                       </td>
                     </tr>
                   )}

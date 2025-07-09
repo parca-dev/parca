@@ -18,7 +18,12 @@ import {AnimatePresence, motion} from 'framer-motion';
 import {useMeasure} from 'react-use';
 
 import {FlamegraphArrow} from '@parca/client';
-import {FlameGraphSkeleton, useParcaContext, useURLState} from '@parca/components';
+import {
+  FlameGraphSkeleton,
+  SandwichFlameGraphSkeleton,
+  useParcaContext,
+  useURLState,
+} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 import {capitalizeOnlyFirstLetter, divide} from '@parca/utilities';
 
@@ -53,6 +58,8 @@ interface ProfileFlameGraphProps {
   isSandwichFlameGraph?: boolean;
   isFlamegraph?: boolean;
   tooltipId?: string;
+  maxFrameCount?: number;
+  isExpanded?: boolean;
 }
 
 const ErrorContent = ({errorMessage}: {errorMessage: string | ReactNode}): JSX.Element => {
@@ -71,7 +78,7 @@ export const validateFlameChartQuery = (
   return {isValid: !isNonDelta && !isDurationTooLong, isNonDelta, isDurationTooLong};
 };
 
-const ProfileFlameGraphfunction ProfileFlameGraphNonMemo({
+const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
   arrow,
   total,
   filtered,
@@ -88,6 +95,8 @@ const ProfileFlameGraphfunction ProfileFlameGraphNonMemo({
   isSandwichFlameGraph = false,
   isFlamegraph = false,
   tooltipId,
+  maxFrameCount,
+  isExpanded = false,
 }: ProfileFlameGraphProps): JSX.Element {
   const {onError, authenticationErrorMessage, isDarkMode, flamechartHelpText} = useParcaContext();
   const {compareMode} = useProfileViewContext();
@@ -184,10 +193,15 @@ const ProfileFlameGraphfunction ProfileFlameGraphNonMemo({
       ? validateFlameChartQuery(profileSource as MergedProfileSource)
       : {isValid: true, isNonDelta: false, isDurationTooLong: false};
     const isInvalidFlameChartQuery = isFlameChart && !isFlameChartValid;
+
     if (isLoading && !isInvalidFlameChartQuery) {
       return (
         <div className="h-auto overflow-clip">
-          <FlameGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
+          {isFlamegraph ? (
+            <SandwichFlameGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
+          ) : (
+            <FlameGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
+          )}
         </div>
       );
     }
@@ -268,6 +282,8 @@ const ProfileFlameGraphfunction ProfileFlameGraphNonMemo({
               isFlamegraph={isFlamegraph}
               isSandwich={isSandwichFlameGraph}
               tooltipId={tooltipId}
+              maxFrameCount={maxFrameCount}
+              isExpanded={isExpanded}
             />
           </div>
         </div>
@@ -295,6 +311,8 @@ const ProfileFlameGraphfunction ProfileFlameGraphNonMemo({
     effectiveCurPathArrow,
     setCurPathArrowWrapper,
     tooltipId,
+    maxFrameCount,
+    isExpanded,
   ]);
 
   useEffect(() => {

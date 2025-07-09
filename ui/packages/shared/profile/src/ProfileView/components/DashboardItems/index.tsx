@@ -155,7 +155,6 @@ export const getDashboardItem = ({
           data={topTableData.arrow?.record}
           unit={topTableData.unit}
           profileType={profileSource?.ProfileType()}
-          isHalfScreen={isHalfScreen}
           metadataMappingFiles={flamegraphData.metadataMappingFiles}
           profileSource={profileSource}
           queryClient={queryClient}

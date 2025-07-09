@@ -21,7 +21,7 @@ env:
   # renovate: datasource=go depName=github.com/goreleaser/goreleaser
   GORELEASER_VERSION: v1.26.2
   # renovate: datasource=npm depName=pnpm versioning=npm
-  PNPM_VERSION: '10.10.0'
+  PNPM_VERSION: '10.12.4'
 
 jobs:
   skip-check:
@@ -100,7 +100,7 @@ jobs:
         with:
           distribution: goreleaser
           version: ${{ env.GORELEASER_VERSION }}
-          args: build --clean --skip-validate --snapshot --debug --timeout=60m
+          args: build --clean --skip=validate --snapshot --debug --timeout=60m
         env:
           GORELEASER_CURRENT_TAG: "${{ env.goreleaser_current_tag }}"
 

@@ -18,7 +18,6 @@ import {useParcaContext, useURLState} from '@parca/components';
 
 const MoreDropdown = ({functionName}: {functionName: string}): React.JSX.Element | null => {
   const [_, setSandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [dashboardItems, setDashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
   });
@@ -26,7 +25,7 @@ const MoreDropdown = ({functionName}: {functionName: string}): React.JSX.Element
 
   const onSandwichViewSelect = (): void => {
     setSandwichFunctionName(functionName.trim());
-    setDashboardItems(['sandwich']);
+    setDashboardItems([...dashboardItems, 'sandwich']);
   };
 
   const menuItems: Array<{label: string; action: () => void}> = [];

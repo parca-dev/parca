@@ -21,8 +21,6 @@ import {isSearchMatch} from '@parca/utilities';
 
 import 'react-contexify/dist/ReactContexify.css';
 
-import {USER_PREFERENCES} from '@parca/hooks';
-
 import {ProfileSource} from '../../ProfileSource';
 import TextWithEllipsis from './TextWithEllipsis';
 import {
@@ -32,7 +30,6 @@ import {
   FIELD_FUNCTION_FILE_NAME,
   FIELD_FUNCTION_NAME,
   FIELD_MAPPING_FILE,
-  FIELD_PARENT,
   FIELD_TIMESTAMP,
   FIELD_VALUE_OFFSET,
 } from './index';
@@ -64,6 +61,7 @@ export interface FlameNodeProps {
   isFlamegraph?: boolean;
   isSandwich?: boolean;
   maxDepth?: number;
+  effectiveDepth?: number;
   tooltipId?: string;
 
   // Hovering row must only ever be used for highlighting similar nodes, otherwise it will cause performance issues as it causes the full flamegraph to get rerendered every time the hovering row changes.
@@ -102,6 +100,7 @@ export const FlameNode = React.memo(function FlameNodeNoMemo({
   isFlamegraph = false,
   isSandwich = false,
   maxDepth = 0,
+  effectiveDepth,
   tooltipId = 'default',
 }: FlameNodeProps): React.JSX.Element {
   // get the columns to read from
@@ -115,12 +114,15 @@ export const FlameNode = React.memo(function FlameNodeNoMemo({
   const tsColumn = table.getChild(FIELD_TIMESTAMP);
 
   // get the actual values from the columns
+  const binaries = useAppSelector(selectBinaries);
+
   const mappingFile: string | null = arrowToString(mappingColumn?.get(row));
   const functionName: string | null = arrowToString(functionNameColumn?.get(row));
   const cumulative = cumulativeColumn?.get(row) !== null ? BigInt(cumulativeColumn?.get(row)) : 0n;
   const diff: bigint | null = diffColumn?.get(row) !== null ? BigInt(diffColumn?.get(row)) : null;
   const filename: string | null = arrowToString(filenameColumn?.get(row));
   const depth: number = depthColumn?.get(row) ?? 0;
+
   const valueOffset: bigint =
     valueOffsetColumn?.get(row) !== null && valueOffsetColumn?.get(row) !== undefined
       ? BigInt(valueOffsetColumn?.get(row))
@@ -136,7 +138,6 @@ export const FlameNode = React.memo(function FlameNodeNoMemo({
   const shouldBeHighlighted =
     functionName != null && hoveringName != null && functionName === hoveringName;
 
-  const binaries = useAppSelector(selectBinaries);
   const colorResult = useNodeColor({
     isDarkMode: darkMode,
     compareMode,
@@ -145,6 +146,7 @@ export const FlameNode = React.memo(function FlameNodeNoMemo({
     colorsMap,
     colorAttribute,
   });
+
   const name = useMemo(() => {
     return row === 0 ? 'root' : nodeLabel(table, row, binaries.length > 1);
   }, [table, row, binaries]);
@@ -155,6 +157,11 @@ export const FlameNode = React.memo(function FlameNodeNoMemo({
     }
     return {isHighlightEnabled: true, isHighlighted: isSearchMatch(searchString, name)};
   }, [searchString, name]);
+
+  // Hide frames beyond effective depth limit
+  if (effectiveDepth !== undefined && depth > effectiveDepth) {
+    return <></>;
+  }
 
   const selectionOffset =
     valueOffsetColumn?.get(selectedRow) !== null &&
@@ -241,7 +248,14 @@ export const FlameNode = React.memo(function FlameNodeNoMemo({
     return depth * height;
   };
 
-  const y = calculateY(isFlamegraph, isSandwich, isFlameChart, maxDepth, depth, height);
+  const y = calculateY(
+    isFlamegraph,
+    isSandwich,
+    isFlameChart,
+    effectiveDepth ?? maxDepth,
+    depth,
+    height
+  );
 
   return (
     <>
