@@ -19,6 +19,7 @@ import {
   convertTime,
   formatDate,
   formatDuration,
+  parseParams,
   valueFormatter,
 } from './index';
 
@@ -106,5 +107,38 @@ describe('formatDate', () => {
     expect(
       formatDate(new Date('2019-01-01T00:00:00Z'), "'Date:' dd/MM/yyyy 'Time:' hh:mm:s'")
     ).toBe('Date: 01/01/2019 Time: 12:00:0');
+  });
+});
+
+describe('parseParams', () => {
+  it('transforms legacy icicle parameter to flame for backward compatibility', () => {
+    const result = parseParams('?dashboard_items=icicle');
+    expect(result.dashboard_items).toBe('flame');
+  });
+
+  it('transforms legacy iciclechart parameter to flamechart for backward compatibility', () => {
+    const result = parseParams('?dashboard_items=iciclechart');
+    expect(result.dashboard_items).toBe('flamechart');
+  });
+
+  it('preserves new flame parameter values', () => {
+    const result = parseParams('?dashboard_items=flame');
+    expect(result.dashboard_items).toBe('flame');
+  });
+
+  it('preserves new flamechart parameter values', () => {
+    const result = parseParams('?dashboard_items=flamechart');
+    expect(result.dashboard_items).toBe('flamechart');
+  });
+
+  it('handles multiple dashboard_items with mixed legacy and new values', () => {
+    const result = parseParams('?dashboard_items=icicle,table,iciclechart,flame');
+    expect(result.dashboard_items).toEqual(['flame', 'table', 'flamechart', 'flame']);
+  });
+
+  it('does not affect other parameters', () => {
+    const result = parseParams('?dashboard_items=icicle&other_param=value');
+    expect(result.dashboard_items).toBe('flame');
+    expect(result.other_param).toBe('value');
   });
 });

@@ -221,6 +221,26 @@ export const parseParams = (
         obj[key] = values[0];
       }
     }
+
+    // Handle legacy parameter values for backward compatibility
+    if (key === 'dashboard_items') {
+      const transformLegacyValue = (value: string): string => {
+        // Map legacy icicle parameter values to new flame values
+        if (value === 'icicle') {
+          return 'flame';
+        }
+        if (value === 'iciclechart') {
+          return 'flamechart';
+        }
+        return value;
+      };
+
+      if (Array.isArray(obj[key])) {
+        obj[key] = obj[key].map(transformLegacyValue);
+      } else if (typeof obj[key] === 'string') {
+        obj[key] = transformLegacyValue(obj[key]);
+      }
+    }
   }
 
   return obj;
