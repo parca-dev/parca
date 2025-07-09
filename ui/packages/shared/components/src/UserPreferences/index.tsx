@@ -20,7 +20,7 @@ import {USER_PREFERENCES} from '@parca/hooks';
 
 import {Button} from '../Button';
 import Modal from '../Modal';
-import FlamegraphColorProfileSelector from './FlamegraphColorProfileSelector';
+import FlameGraphColorProfileSelector from './FlameGraphColorProfileSelector';
 import UserPreferenceItem from './UserPreferenceItem';
 
 export const UserPreferencesModal = (): JSX.Element => {
@@ -74,7 +74,7 @@ const UserPreferences = ({modal}: {modal?: boolean}): JSX.Element => {
           id="h-enable-flamechart"
           userPreferenceDetails={USER_PREFERENCES.ENABLE_FLAMECHARTS}
         />
-        <FlamegraphColorProfileSelector />
+        <FlameGraphColorProfileSelector />
       </div>
     </div>
   );

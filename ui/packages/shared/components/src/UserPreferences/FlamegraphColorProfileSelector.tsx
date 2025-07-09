@@ -17,7 +17,7 @@ import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {selectColorProfiles, selectDarkMode, useAppSelector} from '@parca/store';
 import {type ColorProfileName, type ColorsDuo} from '@parca/utilities';
 
-const FlamegraphColorProfileSelector = (): JSX.Element => {
+const FlameGraphColorProfileSelector = (): JSX.Element => {
   const [colorProfileName, setColorProfileName] = useUserPreference<string>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
@@ -85,4 +85,4 @@ const FlamegraphColorProfileSelector = (): JSX.Element => {
   );
 };
 
-export default FlamegraphColorProfileSelector;
+export default FlameGraphColorProfileSelector;
