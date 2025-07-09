@@ -129,10 +129,10 @@ export function CallersSection({
             }
             metadataMappingFiles={metadataMappingFiles}
             metadataLoading={false}
-            isSandwichFlameGraph={true}
+            isInSandwichView={true}
             curPathArrow={curPathArrow}
             setNewCurPathArrow={setCurPathArrow}
-            isFlamegraph={true}
+            isRenderedAsFlamegraph={true}
             profileSource={profileSource}
             tooltipId="callers"
             maxFrameCount={defaultMaxFrames}

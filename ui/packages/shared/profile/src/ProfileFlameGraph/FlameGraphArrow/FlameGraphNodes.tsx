@@ -58,8 +58,8 @@ export interface FlameNodeProps {
   onClick: () => void;
   isFlameChart: boolean;
   profileSource: ProfileSource;
-  isFlamegraph?: boolean;
-  isSandwich?: boolean;
+  isRenderedAsFlamegraph?: boolean;
+  isInSandwichView?: boolean;
   maxDepth?: number;
   effectiveDepth?: number;
   tooltipId?: string;
@@ -97,8 +97,8 @@ export const FlameNode = React.memo(function FlameNodeNoMemo({
   setHoveringRow,
   isFlameChart,
   profileSource,
-  isFlamegraph = false,
-  isSandwich = false,
+  isRenderedAsFlamegraph = false,
+  isInSandwichView = false,
   maxDepth = 0,
   effectiveDepth,
   tooltipId = 'default',
@@ -178,7 +178,7 @@ export const FlameNode = React.memo(function FlameNodeNoMemo({
     return <></>;
   }
 
-  if (row === 0 && (isFlameChart || isSandwich)) {
+  if (row === 0 && (isFlameChart || isInSandwichView)) {
     // The root node is not rendered in the flame chart or sandwich view, so we return null.
     return <></>;
   }
@@ -230,18 +230,18 @@ export const FlameNode = React.memo(function FlameNodeNoMemo({
       : ((Number(valueOffset) - Number(selectionOffset)) / Number(total)) * totalWidth;
 
   const calculateY = (
-    isFlamegraph: boolean,
-    isSandwich: boolean,
+    isRenderedAsFlamegraph: boolean,
+    isInSandwichView: boolean,
     isFlameChart: boolean,
     maxDepth: number,
     depth: number,
     height: number
   ): number => {
-    if (isFlamegraph) {
+    if (isRenderedAsFlamegraph) {
       return (maxDepth - depth) * height; // Flamegraph is inverted
     }
 
-    if (isFlameChart || isSandwich) {
+    if (isFlameChart || isInSandwichView) {
       return (depth - 1) * height;
     }
 
@@ -249,8 +249,8 @@ export const FlameNode = React.memo(function FlameNodeNoMemo({
   };
 
   const y = calculateY(
-    isFlamegraph,
-    isSandwich,
+    isRenderedAsFlamegraph,
+    isInSandwichView,
     isFlameChart,
     effectiveDepth ?? maxDepth,
     depth,

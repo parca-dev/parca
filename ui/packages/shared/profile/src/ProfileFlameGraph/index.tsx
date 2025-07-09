@@ -55,8 +55,8 @@ interface ProfileFlameGraphProps {
   metadataMappingFiles?: string[];
   metadataLoading?: boolean;
   isFlameChart?: boolean;
-  isSandwichFlameGraph?: boolean;
-  isFlamegraph?: boolean;
+  isInSandwichView?: boolean;
+  isRenderedAsFlamegraph?: boolean;
   tooltipId?: string;
   maxFrameCount?: number;
   isExpanded?: boolean;
@@ -92,8 +92,8 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
   metadataMappingFiles,
   isFlameChart = false,
   profileSource,
-  isSandwichFlameGraph = false,
-  isFlamegraph = false,
+  isInSandwichView = false,
+  isRenderedAsFlamegraph = false,
   tooltipId,
   maxFrameCount,
   isExpanded = false,
@@ -108,17 +108,17 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
 
   const setCurPathArrowWrapper = useCallback(
     (path: CurrentPathFrame[]) => {
-      if (isSandwichFlameGraph) {
+      if (isInSandwichView) {
         setLocalCurPathArrow(path);
       } else {
         setNewCurPathArrow(path);
       }
     },
-    [isSandwichFlameGraph, setNewCurPathArrow]
+    [isInSandwichView, setNewCurPathArrow]
   );
 
-  // Determine which paths to use based on isSandwichFlameGraph flag
-  const effectiveCurPathArrow = isSandwichFlameGraph ? localCurPathArrow : curPathArrow;
+  // Determine which paths to use based on isInSandwichView flag
+  const effectiveCurPathArrow = isInSandwichView ? localCurPathArrow : curPathArrow;
 
   const mappingsList = useMappingList(metadataMappingFiles);
 
@@ -197,7 +197,7 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
     if (isLoading && !isInvalidFlameChartQuery) {
       return (
         <div className="h-auto overflow-clip">
-          {isFlamegraph ? (
+          {isRenderedAsFlamegraph ? (
             <SandwichFlameGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
           ) : (
             <FlameGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
@@ -279,8 +279,8 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
               compareAbsolute={isCompareAbsolute}
               isFlameChart={isFlameChart}
               profileSource={profileSource}
-              isFlamegraph={isFlamegraph}
-              isSandwich={isSandwichFlameGraph}
+              isRenderedAsFlamegraph={isRenderedAsFlamegraph}
+              isInSandwichView={isInSandwichView}
               tooltipId={tooltipId}
               maxFrameCount={maxFrameCount}
               isExpanded={isExpanded}
@@ -306,8 +306,8 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
     flameChartHeight,
     flameChartRef,
     flamechartHelpText,
-    isFlamegraph,
-    isSandwichFlameGraph,
+    isRenderedAsFlamegraph,
+    isInSandwichView,
     effectiveCurPathArrow,
     setCurPathArrowWrapper,
     tooltipId,
@@ -380,10 +380,10 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
         transition={{duration: 0.5}}
       >
         {compareMode ? <DiffLegend /> : null}
-        <div className={cx(!isSandwichFlameGraph ? 'min-h-48' : '')} id="h-flame-graph">
+        <div className={cx(!isInSandwichView ? 'min-h-48' : '')} id="h-flame-graph">
           <>{flameGraph}</>
         </div>
-        {!isSandwichFlameGraph && (
+        {!isInSandwichView && (
           <p className="my-2 text-xs">
             Showing {totalFormatted}{' '}
             {isFiltered ? (

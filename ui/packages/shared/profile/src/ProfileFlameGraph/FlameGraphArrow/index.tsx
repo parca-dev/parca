@@ -82,8 +82,8 @@ interface FlameGraphArrowProps {
   mappingsListFromMetadata: string[];
   compareAbsolute: boolean;
   isFlameChart?: boolean;
-  isFlamegraph?: boolean;
-  isSandwich?: boolean;
+  isRenderedAsFlamegraph?: boolean;
+  isInSandwichView?: boolean;
   tooltipId?: string;
   maxFrameCount?: number;
   isExpanded?: boolean;
@@ -142,8 +142,8 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   mappingsListFromMetadata,
   compareAbsolute,
   isFlameChart = false,
-  isFlamegraph = false,
-  isSandwich = false,
+  isRenderedAsFlamegraph = false,
+  isInSandwichView = false,
   tooltipId = 'default',
   maxFrameCount,
   isExpanded = false,
@@ -286,7 +286,7 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   // Use deferred value to prevent UI blocking when expanding frames
   const deferredEffectiveDepth = useDeferredValue(effectiveDepth);
 
-  const height = isSandwich
+  const height = isInSandwichView
     ? deferredEffectiveDepth * RowHeight
     : (deferredEffectiveDepth + 1) * RowHeight;
 
@@ -338,7 +338,7 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
           hideBinary={hideBinary}
           unit={arrow.unit}
           profileType={profileType}
-          isSandwich={isSandwich}
+          isInSandwichView={isInSandwichView}
         />
         <MemoizedTooltip contextElement={svgElement} dockedMetainfo={dockedMetainfo} />
         <svg
@@ -374,8 +374,8 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
               setHoveringRow={highlightSimilarStacksPreference ? setHoveringRow : noop}
               isFlameChart={isFlameChart}
               profileSource={profileSource}
-              isFlamegraph={isFlamegraph}
-              isSandwich={isSandwich}
+              isRenderedAsFlamegraph={isRenderedAsFlamegraph}
+              isInSandwichView={isInSandwichView}
               maxDepth={maxDepth}
               effectiveDepth={deferredEffectiveDepth}
               tooltipId={tooltipId}

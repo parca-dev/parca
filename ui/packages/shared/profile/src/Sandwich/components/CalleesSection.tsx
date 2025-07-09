@@ -70,7 +70,7 @@ export function CalleesSection({
         }
         metadataMappingFiles={metadataMappingFiles}
         metadataLoading={false}
-        isSandwichFlameGraph={true}
+        isInSandwichView={true}
         curPathArrow={curPathArrow}
         setNewCurPathArrow={setCurPathArrow}
         profileSource={profileSource}
