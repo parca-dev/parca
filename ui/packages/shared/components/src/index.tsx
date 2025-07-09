@@ -28,7 +28,7 @@ import ParcaContext from './ParcaContext';
 import Pill, {PillVariant} from './Pill';
 import ResponsiveSvg from './ResponsiveSvg';
 import Select, {type SelectElement, type SelectItem} from './Select';
-import FlameGraphSkeleton, {FlameActionButtonPlaceholder} from './Skeletons/FlameGraphSkeleton';
+import FlameGraphSkeleton, {FlameActionButtonPlaceholder} from './Skeletons/FlamegraphSkeleton';
 import MetricsGraphSkeleton from './Skeletons/MetricsGraphSkeleton';
 import SandwichFlameGraphSkeleton from './Skeletons/SandwichFlameGraphSkeleton';
 import SourceSkeleton from './Skeletons/SourceSkeleton';

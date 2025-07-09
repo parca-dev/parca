@@ -20,7 +20,7 @@ import {USER_PREFERENCES} from '@parca/hooks';
 
 import {Button} from '../Button';
 import Modal from '../Modal';
-import FlameGraphColorProfileSelector from './FlameGraphColorProfileSelector';
+import FlameGraphColorProfileSelector from './FlamegraphColorProfileSelector';
 import UserPreferenceItem from './UserPreferenceItem';
 
 export const UserPreferencesModal = (): JSX.Element => {

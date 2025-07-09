@@ -1,7 +1,5 @@
 {
   "github": {
     "silent": true
-  },
-  "buildCommand": "PNPM_NO_UPDATE_NOTIFIER=true pnpm run build",
-  "installCommand": "PNPM_NO_UPDATE_NOTIFIER=true pnpm install --frozen-lockfile"
+  }
 }
