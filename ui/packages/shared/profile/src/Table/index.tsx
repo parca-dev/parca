@@ -138,7 +138,7 @@ export const Table = React.memo(function Table({
 
   const selectSpan = useCallback(
     (span: string): void => {
-      if (dashboardItems.includes('icicle')) {
+      if (dashboardItems.includes('flame')) {
         setSearchString(span.trim());
       } else {
         setSandwichFunctionName(span.trim());

@@ -147,7 +147,7 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   tooltipId = 'default',
   maxFrameCount,
   isExpanded = false,
-}: IcicleGraphArrowProps): React.JSX.Element {
+}: FlameGraphArrowProps): React.JSX.Element {
   const [highlightSimilarStacksPreference] = useUserPreference<boolean>(
     USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS.key
   );

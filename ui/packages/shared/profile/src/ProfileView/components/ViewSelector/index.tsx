@@ -36,13 +36,13 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
     supportingText?: string;
     disabledText?: string;
   }> = [
-    {key: 'flame', label: 'flame', canBeSelected: !dashboardItems.includes('flame')},
+    {key: 'flame', label: 'Flame Graph', canBeSelected: !dashboardItems.includes('flame')},
     {key: 'table', label: 'Table', canBeSelected: !dashboardItems.includes('table')},
     {
       key: 'flamechart',
       label: (
         <span className="relative">
-          Flamechart
+          Flame Chart
           <span className="absolute top-[-2px] text-xs lowercase text-red-500">&nbsp;alpha</span>
         </span>
       ),
@@ -166,6 +166,7 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
       onSelection={onSelection}
       placeholder={'Select view type...'}
       id="h-view-selector"
+      optionsClassName="min-w-[260px]"
     />
   );
 };
