@@ -79,7 +79,7 @@ const convertToProtoFilters = (profileFilters: ProfileFilter[]) => {
         return {
           filter: {
             oneofKind: 'frameFilter' as const,
-            frameFilter: { filter: criteria }
+            frameFilter: { criteria }
           }
         };
       }
@@ -91,11 +91,8 @@ interface UseProfileFiltersProps {
 }
 
 export const useProfileFilters = ({ onFiltersChange }: UseProfileFiltersProps = {}) => {
-  const [highlightAfterFilteringEnabled] = useUserPreference<boolean>(
-    USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING.key
-  );
 
-  const { appliedFilters, setAppliedFilters, setSearchString } = useProfileFiltersUrlState();
+  const { appliedFilters, setAppliedFilters } = useProfileFiltersUrlState();
 
   const [localFilters, setLocalFilters] = useState<ProfileFilter[]>(() => {
     return appliedFilters || [];
@@ -144,11 +141,8 @@ export const useProfileFilters = ({ onFiltersChange }: UseProfileFiltersProps = 
   const resetFilters = useCallback(() => {
     setLocalFilters([]);
     setAppliedFilters([]);
-    if (highlightAfterFilteringEnabled) {
-      setSearchString('');
-    }
     onFiltersChange?.([]);
-  }, [setAppliedFilters, highlightAfterFilteringEnabled, setSearchString, onFiltersChange]);
+  }, [setAppliedFilters, onFiltersChange]);
 
   const onApplyFilters = useCallback((): void => {
     if (isClearAction) {
@@ -163,19 +157,6 @@ export const useProfileFilters = ({ onFiltersChange }: UseProfileFiltersProps = 
 
       setAppliedFilters(filtersToApply);
 
-      if (highlightAfterFilteringEnabled) {
-        const functionFilters = filtersToApply.filter(f =>
-          f.field === 'function_name' &&
-          f.type === 'stack' &&
-          (f.matchType === 'contains' || f.matchType === 'equal')
-        );
-        if (functionFilters.length > 0) {
-          setSearchString(functionFilters[0].value);
-        } else {
-          setSearchString('');
-        }
-      }
-
       onFiltersChange?.(filtersToApply);
     }
   }, [
@@ -183,8 +164,6 @@ export const useProfileFilters = ({ onFiltersChange }: UseProfileFiltersProps = 
     isClearAction,
     resetFilters,
     setAppliedFilters,
-    highlightAfterFilteringEnabled,
-    setSearchString,
     onFiltersChange,
   ]);
 

@@ -393,7 +393,6 @@ const ProfileExplorerApp = ({
       ...{
         compare_a: 'false',
         compare_b: 'false',
-        search_string: '',
       },
     });
   };

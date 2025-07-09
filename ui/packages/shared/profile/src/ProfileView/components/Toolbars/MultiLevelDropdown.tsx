@@ -310,18 +310,6 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
       icon: isCompareAbsolute ? 'fluent-mdl2:compare' : 'fluent-mdl2:compare-uneven',
     },
     {
-      label: 'Highlight matching nodes after filtering',
-      hide: !!isTableVizOnly,
-      customSubmenu: (
-        <SwitchMenuItem
-          label="Highlight matching nodes after filtering"
-          id="h-highlight-after-filtering"
-          userPreferenceDetails={USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING}
-        />
-      ),
-      renderAsDiv: true,
-    },
-    {
       label: 'Dock Graph MetaInfo',
       hide: !!isTableVizOnly,
       customSubmenu: (

@@ -168,7 +168,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   const [binaryFrameFilter, setBinaryFrameFilter] = useURLState('binary_frame_filter');
 
-  const [currentSearchString] = useURLState('search_string');
   const {compareMode} = useProfileViewContext();
   const currentColorProfile = useCurrentColorProfile();
   const colorForSimilarNodes = currentColorProfile.colorForSimilarNodes;
@@ -357,7 +356,6 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               colorBy={colorByValue}
               totalWidth={width ?? 1}
               height={RowHeight}
-              searchString={(currentSearchString as string) ?? ''}
               darkMode={isDarkMode}
               compareMode={compareMode}
               colorForSimilarNodes={colorForSimilarNodes}

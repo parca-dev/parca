@@ -43,12 +43,9 @@ export interface VisualisationToolbarProps {
   profileType?: ProfileType;
   total: bigint;
   filtered: bigint;
-  currentSearchString?: string;
-  setSearchString?: (value: string) => void;
   groupByLabels: string[];
   preferencesModal?: boolean;
   profileViewExternalSubActions?: React.ReactNode;
-  clearSelection: () => void;
   setGroupByLabels: (labels: string[]) => void;
   showVisualizationSelector?: boolean;
   sandwichFunctionName?: string;
@@ -58,8 +55,6 @@ export interface TableToolbarProps {
   profileType?: ProfileType;
   total: bigint;
   filtered: bigint;
-  clearSelection: () => void;
-  currentSearchString?: string;
 }
 
 export interface IcicleGraphToolbarProps {
@@ -76,23 +71,11 @@ export const TableToolbar: FC<TableToolbarProps> = ({
   profileType,
   total,
   filtered,
-  clearSelection,
-  currentSearchString,
 }) => {
   return (
     <>
       <div className="flex w-full gap-2 items-end">
         <TableColumnsDropdown profileType={profileType} total={total} filtered={filtered} />
-
-        <Button
-          color="neutral"
-          onClick={clearSelection}
-          className="w-auto"
-          variant="neutral"
-          disabled={currentSearchString === undefined || currentSearchString.length === 0}
-        >
-          Clear selection
-        </Button>
       </div>
     </>
   );
@@ -157,8 +140,6 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   setNewCurPath,
   total,
   filtered,
-  currentSearchString,
-  clearSelection,
   showVisualizationSelector = true,
 }) => {
   const { dashboardItems } = useDashboard();
@@ -230,8 +211,6 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
             profileType={profileType}
             total={total}
             filtered={filtered}
-            clearSelection={clearSelection}
-            currentSearchString={currentSearchString}
           />
         </>
       )}

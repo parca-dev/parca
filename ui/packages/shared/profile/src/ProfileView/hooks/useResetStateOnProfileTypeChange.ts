@@ -16,7 +16,6 @@ import {useProfileFilters} from '../components/ProfileFilters/useProfileFilters'
 
 export const useResetStateOnProfileTypeChange = (): (() => void) => {
   const [groupBy, setGroupBy] = useURLState('group_by');
-  const [searchString, setSearchString] = useURLState('search_string');
   const [curPath, setCurPath] = useURLState('cur_path');
   const {resetFilters} = useProfileFilters();
   const [sandwichFunctionName, setSandwichFunctionName] = useURLState('sandwich_function_name');
@@ -25,9 +24,6 @@ export const useResetStateOnProfileTypeChange = (): (() => void) => {
     setTimeout(() => {
       if (groupBy !== undefined) {
         setGroupBy(undefined);
-      }
-      if (searchString !== undefined) {
-        setSearchString(undefined);
       }
       if (curPath !== undefined) {
         setCurPath(undefined);

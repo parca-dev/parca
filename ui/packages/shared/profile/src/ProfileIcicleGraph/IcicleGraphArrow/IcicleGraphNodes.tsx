@@ -52,7 +52,6 @@ export interface IcicleNodeProps {
   row: number;
   colors: colorByColors;
   colorBy: string;
-  searchString?: string;
   darkMode: boolean;
   compareMode: boolean;
   onContextMenu: (e: React.MouseEvent, row: number) => void;
@@ -89,7 +88,6 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   colorBy,
   height,
   totalWidth,
-  searchString,
   darkMode,
   compareMode,
   colorForSimilarNodes,
@@ -153,13 +151,6 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const name = useMemo(() => {
     return row === 0 ? 'root' : nodeLabel(table, row, binaries.length > 1);
   }, [table, row, binaries]);
-
-  const {isHighlightEnabled = false, isHighlighted = false} = useMemo(() => {
-    if (searchString === undefined || searchString === '') {
-      return {isHighlightEnabled: false};
-    }
-    return {isHighlightEnabled: true, isHighlighted: isSearchMatch(searchString, name)};
-  }, [searchString, name]);
 
   // Hide frames beyond effective depth limit
   if (effectiveDepth !== undefined && depth > effectiveDepth) {
@@ -282,10 +273,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
           className={cx(
             shouldBeHighlighted
               ? `${colorForSimilarNodes} stroke-[3] [stroke-dasharray:6,4] [stroke-linecap:round] [stroke-linejoin:round] h-6`
-              : 'stroke-white dark:stroke-gray-700',
-            {
-              'opacity-50': isHighlightEnabled && !isHighlighted,
-            }
+              : 'stroke-white dark:stroke-gray-700'
           )}
         />
         {width > 5 && (

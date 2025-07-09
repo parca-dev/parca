@@ -247,7 +247,7 @@ const ProfileFilters = ({ onFiltersChange }: ProfileFiltersProps): JSX.Element =
 
                 {localFilters.length === 0 && !appliedFilters?.length && (
                     <Button
-                        variant="secondary"
+                        variant="neutral"
                         onClick={addFilter}
                         className="flex items-center gap-2"
                     >

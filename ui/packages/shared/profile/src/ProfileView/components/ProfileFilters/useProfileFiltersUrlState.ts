@@ -98,14 +98,8 @@ export const useProfileFiltersUrlState = () => {
     },
   });
 
-  const [_, setSearchString] = useURLStateCustom<string>('search_string', {
-    parse: (value) => value as string || '',
-    stringify: (value) => value,
-  });
-
   return {
     appliedFilters,
     setAppliedFilters,
-    setSearchString,
   };
 };
