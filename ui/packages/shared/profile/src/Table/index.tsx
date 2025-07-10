@@ -11,11 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, {useCallback, useEffect, useMemo, useRef} from 'react';
 
-import { tableFromIPC } from 'apache-arrow';
-import { AnimatePresence, motion } from 'framer-motion';
-import { useContextMenu } from 'react-contexify';
+import {tableFromIPC} from 'apache-arrow';
+import {AnimatePresence, motion} from 'framer-motion';
+import {useContextMenu} from 'react-contexify';
 
 import {
   Table as TableComponent,
@@ -23,17 +23,17 @@ import {
   useParcaContext,
   useURLState,
 } from '@parca/components';
-import { useCurrentColorProfile } from '@parca/hooks';
-import { ProfileType } from '@parca/parser';
+import {useCurrentColorProfile} from '@parca/hooks';
+import {ProfileType} from '@parca/parser';
 
 import useMappingList, {
   useFilenamesList,
 } from '../ProfileFlameGraph/FlameGraphArrow/useMappingList';
-import { useProfileViewContext } from '../ProfileView/context/ProfileViewContext';
-import TableContextMenuWrapper, { TableContextMenuWrapperRef } from './TableContextMenuWrapper';
-import { useColorManagement } from './hooks/useColorManagement';
-import { useTableConfiguration } from './hooks/useTableConfiguration';
-import { DataRow, ROW_HEIGHT, RowName, getRowColor } from './utils/functions';
+import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
+import TableContextMenuWrapper, {TableContextMenuWrapperRef} from './TableContextMenuWrapper';
+import {useColorManagement} from './hooks/useColorManagement';
+import {useTableConfiguration} from './hooks/useTableConfiguration';
+import {DataRow, ROW_HEIGHT, RowName, getRowColor} from './utils/functions';
 
 export const FIELD_MAPPING_FILE = 'mapping_file';
 export const FIELD_LOCATION_ADDRESS = 'location_address';
@@ -77,12 +77,12 @@ export const Table = React.memo(function Table({
   });
   const [_, setSandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
   const [colorBy, setColorBy] = useURLState('color_by');
-  const { isDarkMode } = useParcaContext();
-  const { compareMode } = useProfileViewContext();
+  const {isDarkMode} = useParcaContext();
+  const {compareMode} = useProfileViewContext();
 
   const MENU_ID = 'table-context-menu';
   const contextMenuRef = useRef<TableContextMenuWrapperRef>(null);
-  const { show } = useContextMenu({
+  const {show} = useContextMenu({
     id: MENU_ID,
   });
 
@@ -110,7 +110,7 @@ export const Table = React.memo(function Table({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mappingsListCount]);
 
-  const { colorByColors } = useColorManagement({
+  const {colorByColors} = useColorManagement({
     isDarkMode,
     currentColorProfile,
     mappingsList,
@@ -127,7 +127,7 @@ export const Table = React.memo(function Table({
     compareMode,
   });
 
-  const { columns, initialSorting, columnVisibility } = tableConfig;
+  const {columns, initialSorting, columnVisibility} = tableConfig;
 
   const selectSpan = useCallback(
     (span: string): void => {
@@ -196,7 +196,7 @@ export const Table = React.memo(function Table({
       };
     };
 
-    const rows: DataRow[] = Array.from({ length: table.numRows }, (_, i) => getRow(i));
+    const rows: DataRow[] = Array.from({length: table.numRows}, (_, i) => getRow(i));
 
     return rows;
   }, [table, colorByColors, colorBy]);
@@ -284,9 +284,9 @@ export const Table = React.memo(function Table({
       <motion.div
         className="h-full w-full"
         key="table-loaded"
-        initial={{ display: 'none', opacity: 0 }}
-        animate={{ display: 'block', opacity: 1 }}
-        transition={{ duration: 0.5 }}
+        initial={{display: 'none', opacity: 0}}
+        animate={{display: 'block', opacity: 1}}
+        transition={{duration: 0.5}}
       >
         <div className="relative">
           <TableContextMenuWrapper ref={contextMenuRef} menuId={MENU_ID} />
