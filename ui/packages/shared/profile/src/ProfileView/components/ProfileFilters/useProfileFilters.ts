@@ -166,16 +166,16 @@ export const useProfileFilters = ({onFiltersChange}: UseProfileFiltersProps = {}
   }, [setAppliedFilters, onFiltersChange]);
 
   const onApplyFilters = useCallback((): void => {
-      const validFilters = localFilters.filter(f => f.value !== '');
+    const validFilters = localFilters.filter(f => f.value !== '');
 
-      const filtersToApply = validFilters.map((f, index) => ({
-        ...f,
-        id: `filter-${Date.now()}-${index}`,
-      }));
+    const filtersToApply = validFilters.map((f, index) => ({
+      ...f,
+      id: `filter-${Date.now()}-${index}`,
+    }));
 
-      setAppliedFilters(filtersToApply);
+    setAppliedFilters(filtersToApply);
 
-      onFiltersChange?.(filtersToApply);
+    onFiltersChange?.(filtersToApply);
   }, [localFilters, setAppliedFilters, onFiltersChange]);
 
   const protoFilters = useMemo(() => {
