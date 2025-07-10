@@ -357,10 +357,12 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 			{
 				Filter: &pb.Filter_StackFilter{
 					StackFilter: &pb.StackFilter{
-						Criteria: &pb.FilterCriteria{
-							FunctionName: &pb.StringCondition{
-								Condition: &pb.StringCondition_Contains{
-									Contains: "runtime",
+						Filter: &pb.StackFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								FunctionName: &pb.StringCondition{
+									Condition: &pb.StringCondition_Contains{
+										Contains: "runtime",
+									},
 								},
 							},
 						},
@@ -1378,10 +1380,12 @@ func TestFilterData(t *testing.T) {
 			{
 				Filter: &pb.Filter_FrameFilter{
 					FrameFilter: &pb.FrameFilter{
-						Criteria: &pb.FilterCriteria{
-							Binary: &pb.StringCondition{
-								Condition: &pb.StringCondition_Contains{
-									Contains: "test",
+						Filter: &pb.FrameFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								Binary: &pb.StringCondition{
+									Condition: &pb.StringCondition_Contains{
+										Contains: "test",
+									},
 								},
 							},
 						},
@@ -1438,10 +1442,12 @@ func TestFilterUnsymbolized(t *testing.T) {
 			{
 				Filter: &pb.Filter_FrameFilter{
 					FrameFilter: &pb.FrameFilter{
-						Criteria: &pb.FilterCriteria{
-							Binary: &pb.StringCondition{
-								Condition: &pb.StringCondition_Contains{
-									Contains: "test",
+						Filter: &pb.FrameFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								Binary: &pb.StringCondition{
+									Condition: &pb.StringCondition_Contains{
+										Contains: "test",
+									},
 								},
 							},
 						},
@@ -1533,10 +1539,12 @@ func TestFilterDataWithPath(t *testing.T) {
 			{
 				Filter: &pb.Filter_FrameFilter{
 					FrameFilter: &pb.FrameFilter{
-						Criteria: &pb.FilterCriteria{
-							Binary: &pb.StringCondition{
-								Condition: &pb.StringCondition_Contains{
-									Contains: "libpython3.11.so.1.0",
+						Filter: &pb.FrameFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								Binary: &pb.StringCondition{
+									Condition: &pb.StringCondition_Contains{
+										Contains: "libpython3.11.so.1.0",
+									},
 								},
 							},
 						},
@@ -1633,10 +1641,12 @@ func TestFilterDataFrameFilter(t *testing.T) {
 			{
 				Filter: &pb.Filter_FrameFilter{
 					FrameFilter: &pb.FrameFilter{
-						Criteria: &pb.FilterCriteria{
-							Binary: &pb.StringCondition{
-								Condition: &pb.StringCondition_Contains{
-									Contains: "interpreter",
+						Filter: &pb.FrameFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								Binary: &pb.StringCondition{
+									Condition: &pb.StringCondition_Contains{
+										Contains: "interpreter",
+									},
 								},
 							},
 						},
@@ -1733,10 +1743,12 @@ func BenchmarkFilterData(t *testing.B) {
 				{
 					Filter: &pb.Filter_FrameFilter{
 						FrameFilter: &pb.FrameFilter{
-							Criteria: &pb.FilterCriteria{
-								Binary: &pb.StringCondition{
-									Condition: &pb.StringCondition_Contains{
-										Contains: "test",
+							Filter: &pb.FrameFilter_Criteria{
+								Criteria: &pb.FilterCriteria{
+									Binary: &pb.StringCondition{
+										Condition: &pb.StringCondition_Contains{
+											Contains: "test",
+										},
 									},
 								},
 							},
@@ -1918,13 +1930,15 @@ func TestFilterDataExclude(t *testing.T) {
 				{
 					Filter: &pb.Filter_StackFilter{
 						StackFilter: &pb.StackFilter{
-							Criteria: &pb.FilterCriteria{
-								FunctionName: &pb.StringCondition{
-									Condition: &pb.StringCondition_Contains{
+							Filter: &pb.StackFilter_Criteria{
+								Criteria: &pb.FilterCriteria{
+									FunctionName: &pb.StringCondition{
+										Condition: &pb.StringCondition_Contains{
 										Contains: "foo",
 									},
 								},
 							},
+						},
 						},
 					},
 				},
@@ -1964,10 +1978,12 @@ func TestFilterDataExclude(t *testing.T) {
 				{
 					Filter: &pb.Filter_StackFilter{
 						StackFilter: &pb.StackFilter{
-							Criteria: &pb.FilterCriteria{
-								FunctionName: &pb.StringCondition{
-									Condition: &pb.StringCondition_NotContains{
-										NotContains: "foo",
+							Filter: &pb.StackFilter_Criteria{
+								Criteria: &pb.FilterCriteria{
+									FunctionName: &pb.StringCondition{
+										Condition: &pb.StringCondition_NotContains{
+											NotContains: "foo",
+										},
 									},
 								},
 							},
@@ -2053,10 +2069,12 @@ func TestFilterDataExclude(t *testing.T) {
 				{
 					Filter: &pb.Filter_StackFilter{
 						StackFilter: &pb.StackFilter{
-							Criteria: &pb.FilterCriteria{
-								FunctionName: &pb.StringCondition{
-									Condition: &pb.StringCondition_Contains{
-										Contains: "nonexistent",
+							Filter: &pb.StackFilter_Criteria{
+								Criteria: &pb.FilterCriteria{
+									FunctionName: &pb.StringCondition{
+										Condition: &pb.StringCondition_Contains{
+											Contains: "nonexistent",
+										},
 									},
 								},
 							},

@@ -79,14 +79,24 @@ const convertToProtoFilters = (profileFilters: ProfileFilter[]): Filter[] => {
         return {
           filter: {
             oneofKind: 'stackFilter' as const,
-            stackFilter: {criteria},
+            stackFilter: {
+              filter: {
+                oneofKind: 'criteria' as const,
+                criteria,
+              },
+            },
           },
         };
       } else {
         return {
           filter: {
             oneofKind: 'frameFilter' as const,
-            frameFilter: {criteria},
+            frameFilter: {
+              filter: {
+                oneofKind: 'criteria' as const,
+                criteria,
+              },
+            },
           },
         };
       }

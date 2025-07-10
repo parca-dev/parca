@@ -347,10 +347,12 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		sandwichFilter := &pb.Filter{
 			Filter: &pb.Filter_StackFilter{
 				StackFilter: &pb.StackFilter{
-					Criteria: &pb.FilterCriteria{
-						FunctionName: &pb.StringCondition{
-							Condition: &pb.StringCondition_Contains{
-								Contains: sandwichByFunction,
+					Filter: &pb.StackFilter_Criteria{
+						Criteria: &pb.FilterCriteria{
+							FunctionName: &pb.StringCondition{
+								Condition: &pb.StringCondition_Contains{
+									Contains: sandwichByFunction,
+								},
 							},
 						},
 					},
@@ -456,13 +458,42 @@ func filterRecord(
 
 	for _, filter := range filters {
 		if stackFilter := filter.GetStackFilter(); stackFilter != nil {
+			// Handle new oneof structure - prefer new criteria over deprecated function_name_stack_filter
 			if criteria := stackFilter.GetCriteria(); criteria != nil {
+				stackFilters = append(stackFilters, criteria)
+			} else if funcFilter := stackFilter.GetFunctionNameStackFilter(); funcFilter != nil {
+				// Handle deprecated function_name_stack_filter for backward compatibility
+				criteria := &pb.FilterCriteria{
+					FunctionName: &pb.StringCondition{},
+				}
+				if funcFilter.GetExclude() {
+					criteria.FunctionName.Condition = &pb.StringCondition_NotContains{
+						NotContains: funcFilter.GetFunctionToFilter(),
+					}
+				} else {
+					criteria.FunctionName.Condition = &pb.StringCondition_Contains{
+						Contains: funcFilter.GetFunctionToFilter(),
+					}
+				}
 				stackFilters = append(stackFilters, criteria)
 			}
 		}
 		if frameFilter := filter.GetFrameFilter(); frameFilter != nil {
+			// Handle new oneof structure - prefer new criteria over deprecated binary_frame_filter
 			if criteria := frameFilter.GetCriteria(); criteria != nil {
 				frameFilters = append(frameFilters, criteria)
+			} else if binaryFilter := frameFilter.GetBinaryFrameFilter(); binaryFilter != nil {
+				// Handle deprecated binary_frame_filter for backward compatibility
+				for _, binary := range binaryFilter.GetIncludeBinaries() {
+					criteria := &pb.FilterCriteria{
+						Binary: &pb.StringCondition{
+							Condition: &pb.StringCondition_Contains{
+								Contains: binary,
+							},
+						},
+					}
+					frameFilters = append(frameFilters, criteria)
+				}
 			}
 		}
 	}

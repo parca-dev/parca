@@ -320,6 +320,19 @@
         }
       }
     },
+    "v1alpha1BinaryFrameFilter": {
+      "type": "object",
+      "properties": {
+        "includeBinaries": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "include_binaries is the list of binaries to filter by"
+        }
+      },
+      "title": "BinaryFrameFilter is a filter for filtering by binaries"
+    },
     "v1alpha1Callgraph": {
       "type": "object",
       "properties": {
@@ -641,12 +654,30 @@
     "v1alpha1FrameFilter": {
       "type": "object",
       "properties": {
+        "binaryFrameFilter": {
+          "$ref": "#/definitions/v1alpha1BinaryFrameFilter",
+          "title": "binary_frame_filter is the list of binary names to filter by"
+        },
         "criteria": {
           "$ref": "#/definitions/v1alpha1FilterCriteria",
-          "title": "filter defines the criteria to filter individual frames by"
+          "title": "criteria defines the filter conditions to apply to individual frames"
         }
       },
       "title": "FrameFilter applies filtering criteria to individual stack frames"
+    },
+    "v1alpha1FunctionNameStackFilter": {
+      "type": "object",
+      "properties": {
+        "functionToFilter": {
+          "type": "string",
+          "title": "function_to_filter is the function name to filter by"
+        },
+        "exclude": {
+          "type": "boolean",
+          "title": "exclude determines whether to exclude stacks matching the function"
+        }
+      },
+      "title": "FunctionNameStackFilter is a filter for filtering by function name"
     },
     "v1alpha1GroupBy": {
       "type": "object",
@@ -748,6 +779,10 @@
     "v1alpha1StackFilter": {
       "type": "object",
       "properties": {
+        "functionNameStackFilter": {
+          "$ref": "#/definitions/v1alpha1FunctionNameStackFilter",
+          "title": "function_name_stack_filter is the function name to filter by"
+        },
         "criteria": {
           "$ref": "#/definitions/v1alpha1FilterCriteria",
           "title": "criteria defines the filter conditions to apply to the stack"

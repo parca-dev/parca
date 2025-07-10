@@ -1030,10 +1030,12 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 		{
 			Filter: &pb.Filter_StackFilter{
 				StackFilter: &pb.StackFilter{
-					Criteria: &pb.FilterCriteria{
-						FunctionName: &pb.StringCondition{
-							Condition: &pb.StringCondition_Contains{
-								Contains: "b",
+					Filter: &pb.StackFilter_Criteria{
+						Criteria: &pb.FilterCriteria{
+							FunctionName: &pb.StringCondition{
+								Condition: &pb.StringCondition_Contains{
+									Contains: "b",
+								},
 							},
 						},
 					},

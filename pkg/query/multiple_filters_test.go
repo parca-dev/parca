@@ -333,10 +333,12 @@ func TestStackFilterFunctionNameSingle(t *testing.T) {
 			{
 				Filter: &pb.Filter_StackFilter{
 					StackFilter: &pb.StackFilter{
-						Criteria: &pb.FilterCriteria{
-							FunctionName: &pb.StringCondition{
-								Condition: &pb.StringCondition_Contains{
-									Contains: "main",
+						Filter: &pb.StackFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								FunctionName: &pb.StringCondition{
+									Condition: &pb.StringCondition_Contains{
+										Contains: "main",
+									},
 								},
 							},
 						},
@@ -406,10 +408,12 @@ func TestStackFilterFunctionNameDouble(t *testing.T) {
 			{
 				Filter: &pb.Filter_StackFilter{
 					StackFilter: &pb.StackFilter{
-						Criteria: &pb.FilterCriteria{
-							FunctionName: &pb.StringCondition{
-								Condition: &pb.StringCondition_Contains{
-									Contains: "main",
+						Filter: &pb.StackFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								FunctionName: &pb.StringCondition{
+									Condition: &pb.StringCondition_Contains{
+										Contains: "main",
+									},
 								},
 							},
 						},
@@ -419,10 +423,12 @@ func TestStackFilterFunctionNameDouble(t *testing.T) {
 			{
 				Filter: &pb.Filter_StackFilter{
 					StackFilter: &pb.StackFilter{
-						Criteria: &pb.FilterCriteria{
-							FunctionName: &pb.StringCondition{
-								Condition: &pb.StringCondition_Contains{
-									Contains: "app",
+						Filter: &pb.StackFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								FunctionName: &pb.StringCondition{
+									Condition: &pb.StringCondition_Contains{
+										Contains: "app",
+									},
 								},
 							},
 						},
@@ -496,10 +502,12 @@ func TestStackFilterFunctionNameTriple(t *testing.T) {
 			{
 				Filter: &pb.Filter_StackFilter{
 					StackFilter: &pb.StackFilter{
-						Criteria: &pb.FilterCriteria{
-							FunctionName: &pb.StringCondition{
-								Condition: &pb.StringCondition_Contains{
-									Contains: "runtime",
+						Filter: &pb.StackFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								FunctionName: &pb.StringCondition{
+									Condition: &pb.StringCondition_Contains{
+										Contains: "runtime",
+									},
 								},
 							},
 						},
@@ -509,10 +517,12 @@ func TestStackFilterFunctionNameTriple(t *testing.T) {
 			{
 				Filter: &pb.Filter_StackFilter{
 					StackFilter: &pb.StackFilter{
-						Criteria: &pb.FilterCriteria{
-							FunctionName: &pb.StringCondition{
-								Condition: &pb.StringCondition_Contains{
-									Contains: "malloc",
+						Filter: &pb.StackFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								FunctionName: &pb.StringCondition{
+									Condition: &pb.StringCondition_Contains{
+										Contains: "malloc",
+									},
 								},
 							},
 						},
@@ -522,10 +532,12 @@ func TestStackFilterFunctionNameTriple(t *testing.T) {
 			{
 				Filter: &pb.Filter_StackFilter{
 					StackFilter: &pb.StackFilter{
-						Criteria: &pb.FilterCriteria{
-							FunctionName: &pb.StringCondition{
-								Condition: &pb.StringCondition_Contains{
-									Contains: "gc",
+						Filter: &pb.StackFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								FunctionName: &pb.StringCondition{
+									Condition: &pb.StringCondition_Contains{
+										Contains: "gc",
+									},
 								},
 							},
 						},
@@ -599,10 +611,12 @@ func TestStackFilterFunctionNameExclusion(t *testing.T) {
 			{
 				Filter: &pb.Filter_StackFilter{
 					StackFilter: &pb.StackFilter{
-						Criteria: &pb.FilterCriteria{
-							FunctionName: &pb.StringCondition{
-								Condition: &pb.StringCondition_Contains{
-									Contains: "nonexistent",
+						Filter: &pb.StackFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								FunctionName: &pb.StringCondition{
+									Condition: &pb.StringCondition_Contains{
+										Contains: "nonexistent",
+									},
 								},
 							},
 						},
@@ -641,10 +655,12 @@ func TestStackFilterFunctionNamePartialExclusion(t *testing.T) {
 			{
 				Filter: &pb.Filter_StackFilter{
 					StackFilter: &pb.StackFilter{
-						Criteria: &pb.FilterCriteria{
-							FunctionName: &pb.StringCondition{
-								Condition: &pb.StringCondition_Contains{
-									Contains: "database",
+						Filter: &pb.StackFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								FunctionName: &pb.StringCondition{
+									Condition: &pb.StringCondition_Contains{
+										Contains: "database",
+									},
 								},
 							},
 						},
@@ -726,10 +742,12 @@ func TestFrameFilterFunctionNameSingle(t *testing.T) {
 			{
 				Filter: &pb.Filter_FrameFilter{
 					FrameFilter: &pb.FrameFilter{
-						Criteria: &pb.FilterCriteria{
-							FunctionName: &pb.StringCondition{
-								Condition: &pb.StringCondition_Contains{
-									Contains: "database",
+						Filter: &pb.FrameFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								FunctionName: &pb.StringCondition{
+									Condition: &pb.StringCondition_Contains{
+										Contains: "database",
+									},
 								},
 							},
 						},
@@ -803,10 +821,12 @@ func TestFrameFilterFunctionNameNotContains(t *testing.T) {
 			{
 				Filter: &pb.Filter_FrameFilter{
 					FrameFilter: &pb.FrameFilter{
-						Criteria: &pb.FilterCriteria{
-							FunctionName: &pb.StringCondition{
-								Condition: &pb.StringCondition_NotContains{
-									NotContains: "database",
+						Filter: &pb.FrameFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								FunctionName: &pb.StringCondition{
+									Condition: &pb.StringCondition_NotContains{
+										NotContains: "database",
+									},
 								},
 							},
 						},
@@ -880,10 +900,12 @@ func TestStackFilterBinary(t *testing.T) {
 			{
 				Filter: &pb.Filter_StackFilter{
 					StackFilter: &pb.StackFilter{
-						Criteria: &pb.FilterCriteria{
-							Binary: &pb.StringCondition{
-								Condition: &pb.StringCondition_Contains{
-									Contains: "runtime",
+						Filter: &pb.StackFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								Binary: &pb.StringCondition{
+									Condition: &pb.StringCondition_Contains{
+										Contains: "runtime",
+									},
 								},
 							},
 						},
@@ -947,10 +969,12 @@ func TestStackFilterAddress(t *testing.T) {
 			{
 				Filter: &pb.Filter_StackFilter{
 					StackFilter: &pb.StackFilter{
-						Criteria: &pb.FilterCriteria{
-							Address: &pb.NumberCondition{
-								Condition: &pb.NumberCondition_Equal{
-									Equal: 0x1000,
+						Filter: &pb.StackFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								Address: &pb.NumberCondition{
+									Condition: &pb.NumberCondition_Equal{
+										Equal: 0x1000,
+									},
 								},
 							},
 						},
@@ -1015,10 +1039,12 @@ func TestStackFilterLineNumber(t *testing.T) {
 			{
 				Filter: &pb.Filter_StackFilter{
 					StackFilter: &pb.StackFilter{
-						Criteria: &pb.FilterCriteria{
-							LineNumber: &pb.NumberCondition{
-								Condition: &pb.NumberCondition_Equal{
-									Equal: 100,
+						Filter: &pb.StackFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								LineNumber: &pb.NumberCondition{
+									Condition: &pb.NumberCondition_Equal{
+										Equal: 100,
+									},
 								},
 							},
 						},
@@ -1085,10 +1111,12 @@ func TestStackFilterSystemName(t *testing.T) {
 			{
 				Filter: &pb.Filter_StackFilter{
 					StackFilter: &pb.StackFilter{
-						Criteria: &pb.FilterCriteria{
-							SystemName: &pb.StringCondition{
-								Condition: &pb.StringCondition_Contains{
-									Contains: "database",
+						Filter: &pb.StackFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								SystemName: &pb.StringCondition{
+									Condition: &pb.StringCondition_Contains{
+										Contains: "database",
+									},
 								},
 							},
 						},
@@ -1155,10 +1183,12 @@ func TestStackFilterFilename(t *testing.T) {
 			{
 				Filter: &pb.Filter_StackFilter{
 					StackFilter: &pb.StackFilter{
-						Criteria: &pb.FilterCriteria{
-							Filename: &pb.StringCondition{
-								Condition: &pb.StringCondition_Contains{
-									Contains: "db.go",
+						Filter: &pb.StackFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								Filename: &pb.StringCondition{
+									Condition: &pb.StringCondition_Contains{
+										Contains: "db.go",
+									},
 								},
 							},
 						},
@@ -1225,10 +1255,12 @@ func TestFrameFilterAddress(t *testing.T) {
 			{
 				Filter: &pb.Filter_FrameFilter{
 					FrameFilter: &pb.FrameFilter{
-						Criteria: &pb.FilterCriteria{
-							Address: &pb.NumberCondition{
-								Condition: &pb.NumberCondition_Equal{
-									Equal: 0x3000,
+						Filter: &pb.FrameFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								Address: &pb.NumberCondition{
+									Condition: &pb.NumberCondition_Equal{
+										Equal: 0x3000,
+									},
 								},
 							},
 						},
@@ -1295,10 +1327,12 @@ func TestStackFilterAndLogicValidation(t *testing.T) {
 			{
 				Filter: &pb.Filter_StackFilter{
 					StackFilter: &pb.StackFilter{
-						Criteria: &pb.FilterCriteria{
-							FunctionName: &pb.StringCondition{
-								Condition: &pb.StringCondition_Contains{
-									Contains: "main",
+						Filter: &pb.StackFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								FunctionName: &pb.StringCondition{
+									Condition: &pb.StringCondition_Contains{
+										Contains: "main",
+									},
 								},
 							},
 						},
@@ -1308,10 +1342,12 @@ func TestStackFilterAndLogicValidation(t *testing.T) {
 			{
 				Filter: &pb.Filter_StackFilter{
 					StackFilter: &pb.StackFilter{
-						Criteria: &pb.FilterCriteria{
-							FunctionName: &pb.StringCondition{
-								Condition: &pb.StringCondition_NotContains{
-									NotContains: "database",
+						Filter: &pb.StackFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								FunctionName: &pb.StringCondition{
+									Condition: &pb.StringCondition_NotContains{
+										NotContains: "database",
+									},
 								},
 							},
 						},

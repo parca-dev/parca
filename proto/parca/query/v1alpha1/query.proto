@@ -336,14 +336,40 @@ message Filter {
 
 // StackFilter applies filtering criteria to entire call stacks
 message StackFilter {
-  // criteria defines the filter conditions to apply to the stack
-  FilterCriteria criteria = 1;
+  // filter contains the different methods in which you can filter a stack
+  oneof filter {
+    // function_name_stack_filter is the function name to filter by
+    FunctionNameStackFilter function_name_stack_filter = 1 [deprecated = true];
+
+    // criteria defines the filter conditions to apply to the stack
+    FilterCriteria criteria = 2;
+  }
+}
+
+// FunctionNameStackFilter is a filter for filtering by function name
+message FunctionNameStackFilter {
+  // function_to_filter is the function name to filter by
+  string function_to_filter = 1;
+  // exclude determines whether to exclude stacks matching the function
+  bool exclude = 2;
 }
 
 // FrameFilter applies filtering criteria to individual stack frames
 message FrameFilter {
-  // filter defines the criteria to filter individual frames by
-  FilterCriteria criteria = 1;
+  // filter contains the different methods in which you can filter a frame
+  oneof filter {
+    // binary_frame_filter is the list of binary names to filter by
+    BinaryFrameFilter binary_frame_filter = 1 [deprecated = true];
+
+    // criteria defines the filter conditions to apply to individual frames
+    FilterCriteria criteria = 2;
+  }
+}
+
+// BinaryFrameFilter is a filter for filtering by binaries
+message BinaryFrameFilter {
+  // include_binaries is the list of binaries to filter by
+  repeated string include_binaries = 1;
 }
 
 // RuntimeFilter configures which runtimes to filter frames out for.
