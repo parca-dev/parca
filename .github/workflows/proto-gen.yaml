@@ -47,7 +47,7 @@ jobs:
 
       - uses: bufbuild/buf-action@c231a1aa9281e5db706c970f468f0744a37561fd # v1.2.0
         with:
-          version: v1.55.1
+          version: 1.55.1
           setup_only: true
 
       - name: Generate
