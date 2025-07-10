@@ -14,9 +14,9 @@
 // limitations under the License.
 
 import {useCallback} from 'react';
-import cx from 'classnames';
 
 import {Icon} from '@iconify/react';
+import cx from 'classnames';
 
 import {Button, Input, Select, type SelectItem} from '@parca/components';
 
@@ -258,11 +258,11 @@ const ProfileFilters = ({onFiltersChange}: ProfileFiltersProps): JSX.Element => 
         )}
       </div>
 
-      {(localFilters.length > 0 && hasUnsavedChanges) && (
+      {localFilters.length > 0 && hasUnsavedChanges && (
         <Button
           variant="primary"
           onClick={onApplyFilters}
-          className={cx("flex items-center gap-2 self-end")}
+          className={cx('flex items-center gap-2 self-end')}
         >
           <span>Apply</span>
         </Button>

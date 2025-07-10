@@ -21,7 +21,7 @@ interface GroupByControlsProps {
   setGroupByLabels: (labels: string[]) => void;
 }
 
-const GroupByControls: React.FC<GroupByControlsProps> = ({ groupBy, labels, setGroupByLabels }) => {
+const GroupByControls: React.FC<GroupByControlsProps> = ({groupBy, labels, setGroupByLabels}) => {
   return (
     <div className="relative flex" id="h-group-by-controls">
       <GroupByLabelsDropdown
