@@ -1,3 +1,5 @@
+// TODO: This license is not consistent with the license used in the project.
+//       Delete the inconsistent license and above line and rerun pre-commit to insert a good license.
 // Copyright 2025 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useURLStateCustom } from '@parca/components';
+import {useURLStateCustom} from '@parca/components';
 
 // Types for our filter structure
 export interface ProfileFilter {
@@ -89,14 +91,17 @@ const decodeFilters = (encoded: string): ProfileFilter[] => {
 
 export const useProfileFiltersUrlState = () => {
   // Store applied filters in URL state for persistence using compact encoding
-  const [appliedFilters, setAppliedFilters] = useURLStateCustom<ProfileFilter[]>('profile_filters', {
-    parse: (value) => {
-      return decodeFilters(value as string);
-    },
-    stringify: (value) => {
-      return encodeFilters(value);
-    },
-  });
+  const [appliedFilters, setAppliedFilters] = useURLStateCustom<ProfileFilter[]>(
+    'profile_filters',
+    {
+      parse: value => {
+        return decodeFilters(value as string);
+      },
+      stringify: value => {
+        return encodeFilters(value);
+      },
+    }
+  );
 
   return {
     appliedFilters,

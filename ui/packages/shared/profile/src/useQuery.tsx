@@ -11,14 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useMemo } from 'react';
+import {useMemo} from 'react';
+
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 
-import {
-  QueryRequest_ReportType,
-  QueryResponse,
-  QueryServiceClient,
-} from '@parca/client';
+import {QueryRequest_ReportType, QueryResponse, QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata} from '@parca/components';
 
 import {ProfileSource} from './ProfileSource';
@@ -88,7 +85,7 @@ export const useQuery = (
       req.invertCallStack = options?.invertCallStack ?? false;
 
       if (options?.protoFilters && options.protoFilters.length > 0) {
-        req.filter = options.protoFilters
+        req.filter = options.protoFilters;
       }
       // Handle sandwich view filter separately
       if (options?.sandwichByFunction !== undefined) {

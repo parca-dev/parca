@@ -1,4 +1,6 @@
 // Copyright 2025 The Parca Authors
+// TODO: This license is not consistent with the license used in the project.
+//       Delete the inconsistent license and above line and rerun pre-commit to insert a good license.
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -11,12 +13,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useCallback, useMemo, useState } from 'react';
-import { USER_PREFERENCES, useUserPreference } from '@parca/hooks';
-import { useProfileFiltersUrlState, type ProfileFilter } from './useProfileFiltersUrlState';
+import {useCallback, useMemo, useState} from 'react';
+
+import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
+
+import {useProfileFiltersUrlState, type ProfileFilter} from './useProfileFiltersUrlState';
 
 // Re-export the ProfileFilter type for convenience
-export type { ProfileFilter };
+export type {ProfileFilter};
 
 // Convert ProfileFilter[] to protobuf Filter[] matching the expected structure
 const convertToProtoFilters = (profileFilters: ProfileFilter[]) => {
@@ -30,17 +34,21 @@ const convertToProtoFilters = (profileFilters: ProfileFilter[]) => {
       if (isNumberField) {
         const numValue = BigInt(f.value);
         condition = {
-          condition: f.matchType === 'equal'
-            ? { oneofKind: 'equal' as const, equal: numValue }
-            : { oneofKind: 'notEqual' as const, notEqual: numValue }
+          condition:
+            f.matchType === 'equal'
+              ? {oneofKind: 'equal' as const, equal: numValue}
+              : {oneofKind: 'notEqual' as const, notEqual: numValue},
         };
       } else {
         condition = {
           condition:
-            f.matchType === 'equal' ? { oneofKind: 'equal' as const, equal: f.value } :
-            f.matchType === 'not_equal' ? { oneofKind: 'notEqual' as const, notEqual: f.value } :
-            f.matchType === 'contains' ? { oneofKind: 'contains' as const, contains: f.value } :
-            { oneofKind: 'notContains' as const, notContains: f.value }
+            f.matchType === 'equal'
+              ? {oneofKind: 'equal' as const, equal: f.value}
+              : f.matchType === 'not_equal'
+              ? {oneofKind: 'notEqual' as const, notEqual: f.value}
+              : f.matchType === 'contains'
+              ? {oneofKind: 'contains' as const, contains: f.value}
+              : {oneofKind: 'notContains' as const, notContains: f.value},
         };
       }
 
@@ -72,15 +80,15 @@ const convertToProtoFilters = (profileFilters: ProfileFilter[]) => {
         return {
           filter: {
             oneofKind: 'stackFilter' as const,
-            stackFilter: { criteria }
-          }
+            stackFilter: {criteria},
+          },
         };
       } else {
         return {
           filter: {
             oneofKind: 'frameFilter' as const,
-            frameFilter: { criteria }
-          }
+            frameFilter: {criteria},
+          },
         };
       }
     });
@@ -90,14 +98,12 @@ interface UseProfileFiltersProps {
   onFiltersChange?: (filters: ProfileFilter[]) => void;
 }
 
-export const useProfileFilters = ({ onFiltersChange }: UseProfileFiltersProps = {}) => {
-
-  const { appliedFilters, setAppliedFilters } = useProfileFiltersUrlState();
+export const useProfileFilters = ({onFiltersChange}: UseProfileFiltersProps = {}) => {
+  const {appliedFilters, setAppliedFilters} = useProfileFiltersUrlState();
 
   const [localFilters, setLocalFilters] = useState<ProfileFilter[]>(() => {
     return appliedFilters || [];
   });
-
 
   const hasUnsavedChanges = useMemo(() => {
     const localWithValues = localFilters.filter(f => f.value !== '');
@@ -107,15 +113,18 @@ export const useProfileFilters = ({ onFiltersChange }: UseProfileFiltersProps = 
 
     return !localWithValues.every((local, index) => {
       const applied = appliedWithValues[index];
-      return local.type === applied?.type &&
-             local.field === applied?.field &&
-             local.matchType === applied?.matchType &&
-             local.value === applied?.value;
+      return (
+        local.type === applied?.type &&
+        local.field === applied?.field &&
+        local.matchType === applied?.matchType &&
+        local.value === applied?.value
+      );
     });
   }, [localFilters, appliedFilters]);
 
   const isClearAction = useMemo(() => {
-    const hasAppliedFilters = appliedFilters && appliedFilters.length > 0 && appliedFilters.some(f => f.value !== '');
+    const hasAppliedFilters =
+      appliedFilters && appliedFilters.length > 0 && appliedFilters.some(f => f.value !== '');
     return hasAppliedFilters && !hasUnsavedChanges;
   }, [appliedFilters, hasUnsavedChanges]);
 
@@ -135,7 +144,7 @@ export const useProfileFilters = ({ onFiltersChange }: UseProfileFiltersProps = 
   }, []);
 
   const updateFilter = useCallback((id: string, updates: Partial<ProfileFilter>) => {
-    setLocalFilters(prev => prev.map(f => f.id === id ? { ...f, ...updates } : f));
+    setLocalFilters(prev => prev.map(f => (f.id === id ? {...f, ...updates} : f)));
   }, []);
 
   const resetFilters = useCallback(() => {
@@ -152,20 +161,14 @@ export const useProfileFilters = ({ onFiltersChange }: UseProfileFiltersProps = 
 
       const filtersToApply = validFilters.map((f, index) => ({
         ...f,
-        id: `filter-${Date.now()}-${index}`
+        id: `filter-${Date.now()}-${index}`,
       }));
 
       setAppliedFilters(filtersToApply);
 
       onFiltersChange?.(filtersToApply);
     }
-  }, [
-    localFilters,
-    isClearAction,
-    resetFilters,
-    setAppliedFilters,
-    onFiltersChange,
-  ]);
+  }, [localFilters, isClearAction, resetFilters, setAppliedFilters, onFiltersChange]);
 
   const protoFilters = useMemo(() => {
     return convertToProtoFilters(appliedFilters || []);

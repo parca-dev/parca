@@ -24,7 +24,7 @@ import {
   useURLState,
 } from '@parca/components';
 import {useCurrentColorProfile} from '@parca/hooks';
-import { ProfileType } from '@parca/parser';
+import {ProfileType} from '@parca/parser';
 
 import useMappingList, {
   useFilenamesList,

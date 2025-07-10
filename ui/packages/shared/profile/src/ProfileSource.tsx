@@ -61,7 +61,7 @@ export function SuffixParams(params: {[key: string]: any}, suffix: string): {[ke
 export function ProfileSelectionFromParams(
   mergeFrom: string | undefined,
   mergeTo: string | undefined,
-  selection: string | undefined,
+  selection: string | undefined
 ): ProfileSelection | null {
   if (
     mergeFrom !== undefined &&
@@ -82,7 +82,7 @@ export function ProfileSelectionFromParams(
     return new MergedProfileSelection(
       parseInt(mergeFrom),
       parseInt(mergeTo),
-      Query.parse(selection),
+      Query.parse(selection)
     );
   }
 
@@ -145,11 +145,7 @@ export class ProfileDiffSource implements ProfileSource {
   profileType: ProfileType;
   absolute?: boolean;
 
-  constructor(
-    a: ProfileSource,
-    b: ProfileSource,
-    absolute?: boolean
-  ) {
+  constructor(a: ProfileSource, b: ProfileSource, absolute?: boolean) {
     this.a = a;
     this.b = b;
     this.profileType = a.ProfileType();

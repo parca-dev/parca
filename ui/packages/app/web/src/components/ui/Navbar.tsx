@@ -116,7 +116,7 @@ const Navbar = () => {
           from_a: from_a,
           to_a: to_a,
           time_selection_a: time_selection_a,
-        selection_a: selection_a,
+          selection_a: selection_a,
           merge_from_a: merge_from_a,
           merge_to_a: merge_to_a,
         };

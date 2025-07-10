@@ -11,20 +11,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { FC } from 'react';
+import {FC} from 'react';
 
-import { Icon } from '@iconify/react';
+import {Icon} from '@iconify/react';
 
-import { QueryServiceClient } from '@parca/client';
-import { Button } from '@parca/components';
-import { ProfileType } from '@parca/parser';
+import {QueryServiceClient} from '@parca/client';
+import {Button} from '@parca/components';
+import {ProfileType} from '@parca/parser';
 
-import { CurrentPathFrame } from '../../../ProfileIcicleGraph/IcicleGraphArrow/utils';
-import { ProfileSource } from '../../../ProfileSource';
-import { useDashboard } from '../../context/DashboardContext';
+import {CurrentPathFrame} from '../../../ProfileIcicleGraph/IcicleGraphArrow/utils';
+import {ProfileSource} from '../../../ProfileSource';
+import {useDashboard} from '../../context/DashboardContext';
 import GroupByDropdown from '../ActionButtons/GroupByDropdown';
-import ProfileFilters from '../ProfileFilters';
 import InvertCallStack from '../InvertCallStack';
+import ProfileFilters from '../ProfileFilters';
 import ShareButton from '../ShareButton';
 import ViewSelector from '../ViewSelector';
 import MultiLevelDropdown from './MultiLevelDropdown';
@@ -67,11 +67,7 @@ export interface SandwichIcicleGraphToolbarProps {
   sandwichFunctionName?: string;
 }
 
-export const TableToolbar: FC<TableToolbarProps> = ({
-  profileType,
-  total,
-  filtered,
-}) => {
+export const TableToolbar: FC<TableToolbarProps> = ({profileType, total, filtered}) => {
   return (
     <>
       <div className="flex w-full gap-2 items-end">
@@ -81,7 +77,7 @@ export const TableToolbar: FC<TableToolbarProps> = ({
   );
 };
 
-export const IcicleGraphToolbar: FC<IcicleGraphToolbarProps> = ({ curPath, setNewCurPath }) => {
+export const IcicleGraphToolbar: FC<IcicleGraphToolbarProps> = ({curPath, setNewCurPath}) => {
   return (
     <>
       <div className="flex w-full gap-2 items-end">
@@ -142,7 +138,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   filtered,
   showVisualizationSelector = true,
 }) => {
-  const { dashboardItems } = useDashboard();
+  const {dashboardItems} = useDashboard();
 
   const isTableViz = dashboardItems?.includes('table');
   const isTableVizOnly = dashboardItems?.length === 1 && isTableViz;
@@ -181,7 +177,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
             groupBy={groupBy}
             toggleGroupBy={toggleGroupBy}
             profileType={profileType}
-            onSelect={() => { }}
+            onSelect={() => {}}
             isTableVizOnly={isTableVizOnly}
           />
 
@@ -207,11 +203,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
       {isTableVizOnly && (
         <>
           <Divider />
-          <TableToolbar
-            profileType={profileType}
-            total={total}
-            filtered={filtered}
-          />
+          <TableToolbar profileType={profileType} total={total} filtered={filtered} />
         </>
       )}
     </>

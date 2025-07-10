@@ -267,7 +267,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					if !r.LineFunctionNameIndices.IsValid(k) {
 						continue
 					}
-					
+
 					isInlineRoot := isLocationRoot(llOffsetStart, llOffsetEnd, int64(k), r.Lines)
 					isInlined := !isInlineRoot
 					isLeaf := isFirstNonNil(i, j, r.Locations) && isFirstNonNil(j, k, r.Lines)

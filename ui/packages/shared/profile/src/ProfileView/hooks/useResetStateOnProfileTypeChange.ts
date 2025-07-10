@@ -12,6 +12,7 @@
 // limitations under the License.
 
 import {useURLState} from '@parca/components';
+
 import {useProfileFilters} from '../components/ProfileFilters/useProfileFilters';
 
 export const useResetStateOnProfileTypeChange = (): (() => void) => {

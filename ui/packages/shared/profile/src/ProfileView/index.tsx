@@ -110,11 +110,7 @@ export const ProfileView = ({
   const actionButtons = {
     icicle: <IcicleGraphToolbar curPath={curPathArrow} setNewCurPath={setCurPathArrow} />,
     table: (
-      <TableToolbar
-        profileType={profileSource?.ProfileType()}
-        total={total}
-        filtered={filtered}
-      />
+      <TableToolbar profileType={profileSource?.ProfileType()} total={total} filtered={filtered} />
     ),
     sandwich: (
       <SandwichIcicleGraphToolbar

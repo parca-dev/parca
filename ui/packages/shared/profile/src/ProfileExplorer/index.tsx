@@ -186,7 +186,7 @@ const ProfileExplorerApp = ({
     const profileA = ProfileSelectionFromParams(
       mergeFrom as string,
       mergeTo as string,
-      selection_a,
+      selection_a
     );
 
     setProfileA(profileA);
@@ -199,7 +199,7 @@ const ProfileExplorerApp = ({
     const profileB = ProfileSelectionFromParams(
       mergeFrom as string,
       mergeTo as string,
-      selection_b,
+      selection_b
     );
 
     setProfileB(profileB);

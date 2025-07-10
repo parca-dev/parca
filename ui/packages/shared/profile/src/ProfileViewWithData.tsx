@@ -21,7 +21,7 @@ import {validateIcicleChartQuery} from './ProfileIcicleGraph';
 import {FIELD_FUNCTION_NAME} from './ProfileIcicleGraph/IcicleGraphArrow';
 import {MergedProfileSource, ProfileSource} from './ProfileSource';
 import {ProfileView} from './ProfileView';
-import { useProfileFilters } from './ProfileView/components/ProfileFilters/useProfileFilters';
+import {useProfileFilters} from './ProfileView/components/ProfileFilters/useProfileFilters';
 import {useQuery} from './useQuery';
 import {downloadPprof} from './utils';
 
@@ -59,7 +59,7 @@ export const ProfileViewWithData = ({
 
   const [pprofDownloading, setPprofDownloading] = useState<boolean>(false);
 
-  const { protoFilters } = useProfileFilters();
+  const {protoFilters} = useProfileFilters();
 
   useEffect(() => {
     // If profile type is not delta, remove iciclechart from the dashboard items
