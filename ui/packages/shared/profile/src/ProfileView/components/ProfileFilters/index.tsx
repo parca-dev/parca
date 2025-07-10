@@ -252,7 +252,7 @@ const ProfileFilters = ({onFiltersChange}: ProfileFiltersProps): JSX.Element => 
           </Button>
         )}
 
-        {localFilters.length === 0 && !appliedFilters?.length && (
+        {localFilters.length === 0 && (appliedFilters?.length ?? 0) === 0 && (
           <Button variant="neutral" onClick={addFilter} className="flex items-center gap-2">
             <Icon icon="mdi:filter-plus" className="h-4 w-4" />
             <span>Add Filter</span>
@@ -260,7 +260,7 @@ const ProfileFilters = ({onFiltersChange}: ProfileFiltersProps): JSX.Element => 
         )}
       </div>
 
-      {(localFilters.length > 0 || (appliedFilters && appliedFilters.length > 0)) && (
+      {(localFilters.length > 0 || (appliedFilters?.length ?? 0) > 0) && (
         <Button
           variant={isClearAction ? 'secondary' : 'primary'}
           onClick={onApplyFilters}

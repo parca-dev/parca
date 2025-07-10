@@ -84,7 +84,7 @@ export const useQuery = (
       }
       req.invertCallStack = options?.invertCallStack ?? false;
 
-      if (options?.protoFilters && options.protoFilters.length > 0) {
+      if (options?.protoFilters != null && options?.protoFilters?.length > 0) {
         req.filter = options.protoFilters;
       }
       // Handle sandwich view filter separately

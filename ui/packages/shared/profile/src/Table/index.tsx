@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import {tableFromIPC} from 'apache-arrow';
 import {AnimatePresence, motion} from 'framer-motion';
@@ -77,9 +77,7 @@ export const Table = React.memo(function Table({
   });
   const [_, setSandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
   const [colorBy, setColorBy] = useURLState('color_by');
-  const {isDarkMode} = useParcaContext();
-  const [scrollToIndex, setScrollToIndex] = useState<number | undefined>(undefined);
-
+  const { isDarkMode } = useParcaContext();
   const {compareMode} = useProfileViewContext();
 
   const MENU_ID = 'table-context-menu';
@@ -300,7 +298,6 @@ export const Table = React.memo(function Table({
               columnVisibility={columnVisibility}
               onRowClick={onRowClick}
               usePointerCursor={dashboardItems.length > 1}
-              scrollToIndex={scrollToIndex}
               estimatedRowHeight={ROW_HEIGHT}
             />
           </div>

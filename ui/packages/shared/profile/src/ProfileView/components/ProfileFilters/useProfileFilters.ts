@@ -15,15 +15,14 @@
 
 import {useCallback, useMemo, useState} from 'react';
 
-import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
-
+import {type Filter} from '@parca/client';
 import {useProfileFiltersUrlState, type ProfileFilter} from './useProfileFiltersUrlState';
 
 // Re-export the ProfileFilter type for convenience
 export type {ProfileFilter};
 
 // Convert ProfileFilter[] to protobuf Filter[] matching the expected structure
-const convertToProtoFilters = (profileFilters: ProfileFilter[]) => {
+const convertToProtoFilters = (profileFilters: ProfileFilter[]): Filter[] => {
   return profileFilters
     .filter(f => f.value !== '') // Only include filters with values
     .map(f => {
@@ -98,16 +97,27 @@ interface UseProfileFiltersProps {
   onFiltersChange?: (filters: ProfileFilter[]) => void;
 }
 
-export const useProfileFilters = ({onFiltersChange}: UseProfileFiltersProps = {}) => {
+export const useProfileFilters = ({onFiltersChange}: UseProfileFiltersProps = {}): {
+  localFilters: ProfileFilter[];
+  appliedFilters: ProfileFilter[];
+  protoFilters: Filter[];
+  hasUnsavedChanges: boolean;
+  isClearAction: boolean;
+  onApplyFilters: () => void;
+  addFilter: () => void;
+  removeFilter: (id: string) => void;
+  updateFilter: (id: string, updates: Partial<ProfileFilter>) => void;
+  resetFilters: () => void;
+} => {
   const {appliedFilters, setAppliedFilters} = useProfileFiltersUrlState();
 
   const [localFilters, setLocalFilters] = useState<ProfileFilter[]>(() => {
-    return appliedFilters || [];
+    return appliedFilters ?? [];
   });
 
   const hasUnsavedChanges = useMemo(() => {
     const localWithValues = localFilters.filter(f => f.value !== '');
-    const appliedWithValues = (appliedFilters || []).filter(f => f.value !== '');
+    const appliedWithValues = (appliedFilters ?? []).filter(f => f.value !== '');
 
     if (localWithValues.length !== appliedWithValues.length) return true;
 
@@ -124,7 +134,7 @@ export const useProfileFilters = ({onFiltersChange}: UseProfileFiltersProps = {}
 
   const isClearAction = useMemo(() => {
     const hasAppliedFilters =
-      appliedFilters && appliedFilters.length > 0 && appliedFilters.some(f => f.value !== '');
+      appliedFilters != null && appliedFilters.length > 0 && appliedFilters.some(f => f.value !== '');
     return hasAppliedFilters && !hasUnsavedChanges;
   }, [appliedFilters, hasUnsavedChanges]);
 
@@ -171,7 +181,7 @@ export const useProfileFilters = ({onFiltersChange}: UseProfileFiltersProps = {}
   }, [localFilters, isClearAction, resetFilters, setAppliedFilters, onFiltersChange]);
 
   const protoFilters = useMemo(() => {
-    return convertToProtoFilters(appliedFilters || []);
+    return convertToProtoFilters(appliedFilters ?? []);
   }, [appliedFilters]);
 
   return {

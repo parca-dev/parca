@@ -94,6 +94,8 @@ interface Props<TData> {
   columnVisibility?: VisibilityState;
   onRowClick?: (row: TData) => void;
   onRowDoubleClick?: (row: Row<TData>, rows: Array<Row<TData>>) => void;
+  enableHighlighting?: boolean;
+  shouldHighlightRow?: (row: TData) => boolean;
   usePointerCursor?: boolean;
   className?: string;
   title?: string;
@@ -118,7 +120,9 @@ const Table = <T,>({
   columnVisibility = {},
   onRowClick,
   onRowDoubleClick,
+  enableHighlighting = false,
   usePointerCursor = true,
+  shouldHighlightRow,
   className = '',
   title = '',
   emptyTableMessage = '',
@@ -316,8 +320,10 @@ const Table = <T,>({
                 <CustomRowRenderer
                   key={row.id}
                   row={row}
+                  enableHighlighting={enableHighlighting}
                   onRowDoubleClick={onRowDoubleClick}
                   onRowClick={onRowClick}
+                  shouldHighlightRow={shouldHighlightRow}
                   usePointerCursor={usePointerCursor}
                   rows={rows}
                 />
@@ -327,8 +333,10 @@ const Table = <T,>({
               <DefaultRowRenderer
                 key={row.id}
                 row={row}
+                enableHighlighting={enableHighlighting}
                 onRowDoubleClick={onRowDoubleClick}
                 onRowClick={onRowClick}
+                shouldHighlightRow={shouldHighlightRow}
                 usePointerCursor={usePointerCursor}
                 rows={rows}
               />

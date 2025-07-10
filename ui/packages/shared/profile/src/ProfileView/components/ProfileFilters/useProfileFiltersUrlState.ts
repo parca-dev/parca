@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useURLStateCustom} from '@parca/components';
+import {useURLStateCustom, type ParamValueSetterCustom} from '@parca/components';
 
 // Types for our filter structure
 export interface ProfileFilter {
@@ -69,7 +69,7 @@ const encodeFilters = (filters: ProfileFilter[]): string => {
 
 // Decode filters from compact string format
 const decodeFilters = (encoded: string): ProfileFilter[] => {
-  if (!encoded || encoded === '') return [];
+  if (encoded === '' || encoded === undefined) return [];
 
   try {
     return encoded.split(',').map((filter, index) => {
@@ -89,7 +89,7 @@ const decodeFilters = (encoded: string): ProfileFilter[] => {
   }
 };
 
-export const useProfileFiltersUrlState = () => {
+export const useProfileFiltersUrlState = (): {appliedFilters: ProfileFilter[]; setAppliedFilters: ParamValueSetterCustom<ProfileFilter[]>} => {
   // Store applied filters in URL state for persistence using compact encoding
   const [appliedFilters, setAppliedFilters] = useURLStateCustom<ProfileFilter[]>(
     'profile_filters',

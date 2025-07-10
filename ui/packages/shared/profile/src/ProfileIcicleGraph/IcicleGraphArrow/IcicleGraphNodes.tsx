@@ -16,8 +16,7 @@ import React, {useMemo} from 'react';
 import {Table} from 'apache-arrow';
 import cx from 'classnames';
 
-import {selectBinaries, useAppSelector} from '@parca/store';
-import {isSearchMatch} from '@parca/utilities';
+import { selectBinaries, useAppSelector } from '@parca/store';
 
 import 'react-contexify/dist/ReactContexify.css';
 

@@ -93,28 +93,20 @@ export class MergedProfileSelection implements ProfileSelection {
   mergeFrom: number;
   mergeTo: number;
   query: Query;
-  filterQuery: string | undefined;
-  excludeFunction: boolean | undefined;
   profileSource: ProfileSource;
 
   constructor(
     mergeFrom: number,
     mergeTo: number,
     query: Query,
-    filterQuery?: string,
-    excludeFunction?: boolean
   ) {
     this.mergeFrom = mergeFrom;
     this.mergeTo = mergeTo;
     this.query = query;
-    this.filterQuery = filterQuery;
-    this.excludeFunction = excludeFunction;
     this.profileSource = new MergedProfileSource(
       this.mergeFrom,
       this.mergeTo,
       this.query,
-      this.filterQuery,
-      this.excludeFunction
     );
   }
 
@@ -200,20 +192,16 @@ export class MergedProfileSource implements ProfileSource {
   mergeFrom: number;
   mergeTo: number;
   query: Query;
-  filterQuery: string | undefined;
   profileType: ProfileType;
 
   constructor(
     mergeFrom: number,
     mergeTo: number,
     query: Query,
-    filterQuery?: string,
-    excludeFunction?: boolean
   ) {
     this.mergeFrom = mergeFrom;
     this.mergeTo = mergeTo;
     this.query = query;
-    this.filterQuery = filterQuery;
     this.profileType = ProfileType.fromString(Query.parse(this.query.toString()).profileName());
   }
 
@@ -243,7 +231,6 @@ export class MergedProfileSource implements ProfileSource {
       },
       reportType: QueryRequest_ReportType.FLAMEGRAPH_ARROW,
       mode: QueryRequest_Mode.MERGE,
-      filterQuery: this.filterQuery,
       filter: [],
     };
   }

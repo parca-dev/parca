@@ -72,7 +72,7 @@ const Input = ({
             onAction();
           }
           // Call the provided onKeyDown handler if it exists
-          if (props.onKeyDown) {
+          if (props.onKeyDown != null) {
             props.onKeyDown(e);
           }
         }}
