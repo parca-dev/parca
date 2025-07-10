@@ -24,6 +24,7 @@ const InvertCallStack = (): JSX.Element => {
       variant="neutral"
       className="flex items-center gap-2 whitespace-nowrap"
       onClick={() => setInvertStack(isInvert ? '' : 'true')}
+      id="h-invert-call-stack"
     >
       <Icon icon={isInvert ? 'ph:sort-ascending' : 'ph:sort-descending'} className="h-4 w-4" />
       {isInvert ? 'Original' : 'Invert'} Call Stack
