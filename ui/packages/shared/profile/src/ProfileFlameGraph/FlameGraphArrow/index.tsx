@@ -174,16 +174,23 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
     if (perf?.markInteraction != null) {
       renderStartTime.current = performance.now();
     }
-  }, [perf]);
+  }, [table, width, curPath, perf]);
 
   useEffect(() => {
     if (perf?.setMeasurement != null && renderStartTime.current > 0) {
-      const renderTime = performance.now() - renderStartTime.current;
-      perf.setMeasurement('flamegraph.render_time', renderTime);
+      const measureRenderTime = (): void => {
+        const renderTime = performance.now() - renderStartTime.current;
+        if (perf?.setMeasurement != null) {
+          perf.setMeasurement('flamegraph.render_time', renderTime);
+        }
 
-      if (renderTime > 500 && perf.captureMessage != null) {
-        perf.captureMessage(`Slow flamegraph render: ${renderTime.toFixed(0)}ms`, 'warning');
-      }
+        if (renderTime > 500 && perf.captureMessage != null) {
+          perf.captureMessage(`Slow flamegraph render: ${renderTime.toFixed(0)}ms`, 'warning');
+        }
+        renderStartTime.current = 0;
+      };
+
+      requestAnimationFrame(measureRenderTime);
     }
   }, [table, width, curPath, perf]);
 
