@@ -95,19 +95,11 @@ export class MergedProfileSelection implements ProfileSelection {
   query: Query;
   profileSource: ProfileSource;
 
-  constructor(
-    mergeFrom: number,
-    mergeTo: number,
-    query: Query,
-  ) {
+  constructor(mergeFrom: number, mergeTo: number, query: Query) {
     this.mergeFrom = mergeFrom;
     this.mergeTo = mergeTo;
     this.query = query;
-    this.profileSource = new MergedProfileSource(
-      this.mergeFrom,
-      this.mergeTo,
-      this.query,
-    );
+    this.profileSource = new MergedProfileSource(this.mergeFrom, this.mergeTo, this.query);
   }
 
   ProfileName(): string {
@@ -194,11 +186,7 @@ export class MergedProfileSource implements ProfileSource {
   query: Query;
   profileType: ProfileType;
 
-  constructor(
-    mergeFrom: number,
-    mergeTo: number,
-    query: Query,
-  ) {
+  constructor(mergeFrom: number, mergeTo: number, query: Query) {
     this.mergeFrom = mergeFrom;
     this.mergeTo = mergeTo;
     this.query = query;

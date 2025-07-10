@@ -89,7 +89,10 @@ const decodeFilters = (encoded: string): ProfileFilter[] => {
   }
 };
 
-export const useProfileFiltersUrlState = (): {appliedFilters: ProfileFilter[]; setAppliedFilters: ParamValueSetterCustom<ProfileFilter[]>} => {
+export const useProfileFiltersUrlState = (): {
+  appliedFilters: ProfileFilter[];
+  setAppliedFilters: ParamValueSetterCustom<ProfileFilter[]>;
+} => {
   // Store applied filters in URL state for persistence using compact encoding
   const [appliedFilters, setAppliedFilters] = useURLStateCustom<ProfileFilter[]>(
     'profile_filters',
