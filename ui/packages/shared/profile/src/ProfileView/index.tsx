@@ -20,8 +20,8 @@ import {getDashboardItem} from './components/DashboardItems';
 import {DashboardLayout} from './components/DashboardLayout';
 import {ProfileHeader} from './components/ProfileHeader';
 import {
-  IcicleGraphToolbar,
-  SandwichIcicleGraphToolbar,
+  FlameGraphToolbar,
+  SandwichFlameGraphToolbar,
   TableToolbar,
   VisualisationToolbar,
 } from './components/Toolbars';
@@ -108,12 +108,12 @@ export const ProfileView = ({
   };
 
   const actionButtons = {
-    icicle: <IcicleGraphToolbar curPath={curPathArrow} setNewCurPath={setCurPathArrow} />,
+    flame: <FlameGraphToolbar curPath={curPathArrow} setNewCurPath={setCurPathArrow} />,
     table: (
       <TableToolbar profileType={profileSource?.ProfileType()} total={total} filtered={filtered} />
     ),
     sandwich: (
-      <SandwichIcicleGraphToolbar
+      <SandwichFlameGraphToolbar
         resetSandwichFunctionName={resetSandwichFunctionName}
         sandwichFunctionName={sandwichFunctionName}
       />

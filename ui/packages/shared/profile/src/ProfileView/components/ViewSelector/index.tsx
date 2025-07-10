@@ -23,7 +23,7 @@ interface Props {
 }
 
 const ViewSelector = ({profileSource}: Props): JSX.Element => {
-  const [dashboardItems = ['icicle'], setDashboardItems] = useURLState<string[]>(
+  const [dashboardItems = ['flamegraph'], setDashboardItems] = useURLState<string[]>(
     'dashboard_items',
     {
       alwaysReturnArray: true,
@@ -39,21 +39,25 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
     supportingText?: string;
     disabledText?: string;
   }> = [
-    {key: 'icicle', label: 'icicle', canBeSelected: !dashboardItems.includes('icicle')},
+    {
+      key: 'flamegraph',
+      label: 'Flame Graph',
+      canBeSelected: !dashboardItems.includes('flamegraph'),
+    },
     {key: 'table', label: 'Table', canBeSelected: !dashboardItems.includes('table')},
     {
-      key: 'iciclechart',
+      key: 'flamechart',
       label: (
         <span className="relative">
-          Iciclechart
+          Flame Chart
           <span className="absolute top-[-2px] text-xs lowercase text-red-500">&nbsp;alpha</span>
         </span>
       ),
       canBeSelected:
-        !dashboardItems.includes('iciclechart') && profileSource?.ProfileType().delta === true,
+        !dashboardItems.includes('flamechart') && profileSource?.ProfileType().delta === true,
       disabledText:
-        !dashboardItems.includes('iciclechart') && profileSource?.ProfileType().delta !== true
-          ? 'Iciclechart is not available for non-delta profiles'
+        !dashboardItems.includes('flamechart') && profileSource?.ProfileType().delta !== true
+          ? 'Flamechart is not available for non-delta profiles'
           : undefined,
     },
   ];
@@ -169,6 +173,7 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
       onSelection={onSelection}
       placeholder={'Select view type...'}
       id="h-view-selector"
+      optionsClassName="min-w-[260px]"
     />
   );
 };

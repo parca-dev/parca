@@ -34,7 +34,7 @@ import {getLastItem, type ColorConfig} from '@parca/utilities';
 import {ProfileSource} from '../../ProfileSource';
 import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
 import ContextMenuWrapper, {ContextMenuWrapperRef} from './ContextMenuWrapper';
-import {IcicleNode, RowHeight, colorByColors} from './IcicleGraphNodes';
+import {FlameNode, RowHeight, colorByColors} from './FlameGraphNodes';
 import {MemoizedTooltip} from './MemoizedTooltip';
 import {TooltipProvider} from './TooltipContext';
 import {useFilenamesList} from './useMappingList';
@@ -69,7 +69,7 @@ export const FIELD_PARENT = 'parent';
 export const FIELD_DEPTH = 'depth';
 export const FIELD_VALUE_OFFSET = 'value_offset';
 
-interface IcicleGraphArrowProps {
+interface FlameGraphArrowProps {
   arrow: FlamegraphArrow;
   total: bigint;
   filtered: bigint;
@@ -81,9 +81,9 @@ interface IcicleGraphArrowProps {
   isHalfScreen: boolean;
   mappingsListFromMetadata: string[];
   compareAbsolute: boolean;
-  isIcicleChart?: boolean;
-  isFlamegraph?: boolean;
-  isSandwich?: boolean;
+  isFlameChart?: boolean;
+  isRenderedAsFlamegraph?: boolean;
+  isInSandwichView?: boolean;
   tooltipId?: string;
   maxFrameCount?: number;
   isExpanded?: boolean;
@@ -130,7 +130,7 @@ function getMaxDepth(depthColumn: Vector<any> | null): number {
   return max;
 }
 
-export const IcicleGraphArrow = memo(function IcicleGraphArrow({
+export const FlameGraphArrow = memo(function FlameGraphArrow({
   arrow,
   total,
   filtered,
@@ -141,13 +141,13 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   profileSource,
   mappingsListFromMetadata,
   compareAbsolute,
-  isIcicleChart = false,
-  isFlamegraph = false,
-  isSandwich = false,
+  isFlameChart = false,
+  isRenderedAsFlamegraph = false,
+  isInSandwichView = false,
   tooltipId = 'default',
   maxFrameCount,
   isExpanded = false,
-}: IcicleGraphArrowProps): React.JSX.Element {
+}: FlameGraphArrowProps): React.JSX.Element {
   const [highlightSimilarStacksPreference] = useUserPreference<boolean>(
     USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS.key
   );
@@ -174,16 +174,23 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
     if (perf?.markInteraction != null) {
       renderStartTime.current = performance.now();
     }
-  }, [perf]);
+  }, [table, width, curPath, perf]);
 
   useEffect(() => {
     if (perf?.setMeasurement != null && renderStartTime.current > 0) {
-      const renderTime = performance.now() - renderStartTime.current;
-      perf.setMeasurement('flamegraph.render_time', renderTime);
+      const measureRenderTime = (): void => {
+        const renderTime = performance.now() - renderStartTime.current;
+        if (perf?.setMeasurement != null) {
+          perf.setMeasurement('flamegraph.render_time', renderTime);
+        }
 
-      if (renderTime > 500 && perf.captureMessage != null) {
-        perf.captureMessage(`Slow flamegraph render: ${renderTime.toFixed(0)}ms`, 'warning');
-      }
+        if (renderTime > 500 && perf.captureMessage != null) {
+          perf.captureMessage(`Slow flamegraph render: ${renderTime.toFixed(0)}ms`, 'warning');
+        }
+        renderStartTime.current = 0;
+      };
+
+      requestAnimationFrame(measureRenderTime);
     }
   }, [table, width, curPath, perf]);
 
@@ -250,7 +257,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
 
   const colorByColors: colorByColors = colorByList[colorByValue as ColorByKey];
 
-  const MENU_ID = 'icicle-graph-context-menu';
+  const MENU_ID = 'flame-graph-context-menu';
   const contextMenuRef = useRef<ContextMenuWrapperRef>(null);
   const {show, hideAll} = useContextMenu({
     id: MENU_ID,
@@ -310,7 +317,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   // Use deferred value to prevent UI blocking when expanding frames
   const deferredEffectiveDepth = useDeferredValue(effectiveDepth);
 
-  const height = isSandwich
+  const height = isInSandwichView
     ? deferredEffectiveDepth * RowHeight
     : (deferredEffectiveDepth + 1) * RowHeight;
 
@@ -362,7 +369,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           hideBinary={hideBinary}
           unit={arrow.unit}
           profileType={profileType}
-          isSandwich={isSandwich}
+          isInSandwichView={isInSandwichView}
         />
         <MemoizedTooltip contextElement={svgElement} dockedMetainfo={dockedMetainfo} />
         <svg
@@ -373,7 +380,7 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
           ref={svg}
         >
           {Array.from({length: table.numRows}, (_, row) => (
-            <IcicleNode
+            <FlameNode
               key={row}
               table={table}
               row={row} // root is always row 0 in the arrow record
@@ -386,8 +393,8 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               colorForSimilarNodes={colorForSimilarNodes}
               selectedRow={selectedRow}
               onClick={() => {
-                if (isIcicleChart) {
-                  // We don't want to expand in icicle charts.
+                if (isFlameChart) {
+                  // We don't want to expand in flame charts.
                   return;
                 }
                 handleRowClick(row);
@@ -395,10 +402,10 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
               onContextMenu={displayMenu}
               hoveringRow={highlightSimilarStacksPreference ? hoveringRow : undefined}
               setHoveringRow={highlightSimilarStacksPreference ? setHoveringRow : noop}
-              isIcicleChart={isIcicleChart}
+              isFlameChart={isFlameChart}
               profileSource={profileSource}
-              isFlamegraph={isFlamegraph}
-              isSandwich={isSandwich}
+              isRenderedAsFlamegraph={isRenderedAsFlamegraph}
+              isInSandwichView={isInSandwichView}
               maxDepth={maxDepth}
               effectiveDepth={deferredEffectiveDepth}
               tooltipId={tooltipId}
@@ -410,4 +417,4 @@ export const IcicleGraphArrow = memo(function IcicleGraphArrow({
   );
 });
 
-export default IcicleGraphArrow;
+export default FlameGraphArrow;

@@ -13,7 +13,7 @@
 
 import Select from 'react-select';
 
-import {FIELD_LABELS} from '../../../ProfileIcicleGraph/IcicleGraphArrow';
+import {FIELD_LABELS} from '../../../ProfileFlameGraph/FlameGraphArrow';
 
 interface LabelOption {
   label: string;

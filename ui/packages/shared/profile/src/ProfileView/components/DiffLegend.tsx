@@ -97,9 +97,9 @@ const DiffLegend = (): JSX.Element => {
                 <div className="bg-gray-50 p-4 dark:bg-gray-800">
                   <div className="flex items-center justify-center"></div>
                   <span className="block text-sm text-gray-500 dark:text-gray-50">
-                    This is a differential icicle graph, where a purple-colored node means
-                    unchanged, and the darker the red, the worse the node got, and the darker the
-                    green, the better the node got.
+                    This is a differential flame graph, where a purple-colored node means unchanged,
+                    and the darker the red, the worse the node got, and the darker the green, the
+                    better the node got.
                   </span>
                 </div>
               </div>

@@ -16,7 +16,7 @@ import {Vector} from 'apache-arrow';
 
 import {getLastItem} from '@parca/utilities';
 
-import {colorByColors} from '../../ProfileIcicleGraph/IcicleGraphArrow/IcicleGraphNodes';
+import {colorByColors} from '../../ProfileFlameGraph/FlameGraphArrow/FlameGraphNodes';
 import {hexifyAddress} from '../../utils';
 
 export interface DataRow {

@@ -33,12 +33,12 @@ export const USER_PREFERENCES: {[key: string]: UserPreferenceDetails} = {
       'When enabled, this option automatically trims nodes that are too small to be seen in the graph, making it easier to read and understand.',
   },
   FLAMEGRAPH_COLOR_PROFILE: {
-    name: 'Iciclegraph color profile',
+    name: 'Flame graph color profile',
     key: 'FLAMEGRAPH_COLOR_PROFILE',
     type: 'string',
     default: 'ocean',
     description:
-      'This setting allows you to customize the color scheme used in the Icicle graph visualization.',
+      'This setting allows you to customize the color scheme used in the Flame graph visualization.',
   },
   GRAPH_METAINFO_DOCKED: {
     name: 'Dock Graph MetaInfo',
@@ -54,15 +54,15 @@ export const USER_PREFERENCES: {[key: string]: UserPreferenceDetails} = {
     type: 'boolean',
     default: false,
     description:
-      "When enabled, this option automatically highlights stacks that are similar to the one you're currently hovering over in the Icicle graph.",
+      "When enabled, this option automatically highlights stacks that are similar to the one you're currently hovering over in the Flame graph.",
   },
-  ENABLE_ICICLECHARTS: {
-    name: 'Enable Icicle charts',
-    key: 'ENABLE_ICICLECHARTS',
+  ENABLE_FLAMECHARTS: {
+    name: 'Enable Flame charts',
+    key: 'ENABLE_FLAMECHARTS',
     type: 'boolean',
     default: false,
     description:
-      'When enabled, this option adds a new visualization type, allowing you to view your data in an Icicle chart format.',
+      'When enabled, this option adds a new visualization type, allowing you to view your data in an Flame chart format.',
   },
 } as const;
 

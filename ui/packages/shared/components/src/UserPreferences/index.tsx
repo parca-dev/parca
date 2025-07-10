@@ -20,7 +20,7 @@ import {USER_PREFERENCES} from '@parca/hooks';
 
 import {Button} from '../Button';
 import Modal from '../Modal';
-import FlamegraphColorProfileSelector from './FlamegraphColorProfileSelector';
+import FlameGraphColorProfileSelector from './FlamegraphColorProfileSelector';
 import UserPreferenceItem from './UserPreferenceItem';
 
 export const UserPreferencesModal = (): JSX.Element => {
@@ -67,10 +67,10 @@ const UserPreferences = ({modal}: {modal?: boolean}): JSX.Element => {
           userPreferenceDetails={USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS}
         />
         <UserPreferenceItem
-          id="h-enable-iciclechart"
-          userPreferenceDetails={USER_PREFERENCES.ENABLE_ICICLECHARTS}
+          id="h-enable-flamechart"
+          userPreferenceDetails={USER_PREFERENCES.ENABLE_FLAMECHARTS}
         />
-        <FlamegraphColorProfileSelector />
+        <FlameGraphColorProfileSelector />
       </div>
     </div>
   );

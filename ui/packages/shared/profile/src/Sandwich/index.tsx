@@ -24,7 +24,7 @@ import {ProfileType} from '@parca/parser';
 
 import useMappingList, {
   useFilenamesList,
-} from '../ProfileIcicleGraph/IcicleGraphArrow/useMappingList';
+} from '../ProfileFlameGraph/FlameGraphArrow/useMappingList';
 import {ProfileSource} from '../ProfileSource';
 import {useDashboard} from '../ProfileView/context/DashboardContext';
 import {useVisualizationState} from '../ProfileView/hooks/useVisualizationState';
@@ -239,9 +239,15 @@ const Sandwich = React.memo(function Sandwich({
             ) : (
               <div className="items-center justify-center flex h-full w-full">
                 <p className="text-sm">
-                  {dashboardItems.includes('table')
-                    ? 'Please select a function to view its callers and callees.'
-                    : 'Use the right-click menu on the flame graph to choose a function to view its callers and callees.'}
+                  {dashboardItems.includes('table') ? (
+                    'Please select a function to view its callers and callees.'
+                  ) : (
+                    <>
+                      Use the right-click menu on the Flame{' '}
+                      {dashboardItems.includes('flamegraph') ? 'Graph' : 'Chart'} to choose a
+                      function to view its callers and callees.
+                    </>
+                  )}
                 </p>
               </div>
             )}

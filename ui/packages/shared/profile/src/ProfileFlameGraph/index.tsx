@@ -19,8 +19,8 @@ import {useMeasure} from 'react-use';
 
 import {FlamegraphArrow} from '@parca/client';
 import {
-  FlamegraphSkeleton,
-  IcicleGraphSkeleton,
+  FlameGraphSkeleton,
+  SandwichFlameGraphSkeleton,
   useParcaContext,
   useURLState,
 } from '@parca/components';
@@ -31,15 +31,15 @@ import {MergedProfileSource, ProfileSource} from '../ProfileSource';
 import DiffLegend from '../ProfileView/components/DiffLegend';
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
 import {TimelineGuide} from '../TimelineGuide';
-import {IcicleGraphArrow} from './IcicleGraphArrow';
-import useMappingList from './IcicleGraphArrow/useMappingList';
-import {CurrentPathFrame, boundsFromProfileSource} from './IcicleGraphArrow/utils';
+import {FlameGraphArrow} from './FlameGraphArrow';
+import useMappingList from './FlameGraphArrow/useMappingList';
+import {CurrentPathFrame, boundsFromProfileSource} from './FlameGraphArrow/utils';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 
 export type ResizeHandler = (width: number, height: number) => void;
 
-interface ProfileIcicleGraphProps {
+interface ProfileFlameGraphProps {
   width: number;
   arrow?: FlamegraphArrow;
   total: bigint;
@@ -54,9 +54,9 @@ interface ProfileIcicleGraphProps {
   isHalfScreen: boolean;
   metadataMappingFiles?: string[];
   metadataLoading?: boolean;
-  isIcicleChart?: boolean;
-  isSandwichIcicleGraph?: boolean;
-  isFlamegraph?: boolean;
+  isFlameChart?: boolean;
+  isInSandwichView?: boolean;
+  isRenderedAsFlamegraph?: boolean;
   tooltipId?: string;
   maxFrameCount?: number;
   isExpanded?: boolean;
@@ -70,7 +70,7 @@ const ErrorContent = ({errorMessage}: {errorMessage: string | ReactNode}): JSX.E
   );
 };
 
-export const validateIcicleChartQuery = (
+export const validateFlameChartQuery = (
   profileSource: MergedProfileSource
 ): {isValid: boolean; isNonDelta: boolean; isDurationTooLong: boolean} => {
   const isNonDelta = !profileSource.ProfileType().delta;
@@ -78,7 +78,7 @@ export const validateIcicleChartQuery = (
   return {isValid: !isNonDelta && !isDurationTooLong, isNonDelta, isDurationTooLong};
 };
 
-const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
+const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
   arrow,
   total,
   filtered,
@@ -90,35 +90,35 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   width,
   isHalfScreen,
   metadataMappingFiles,
-  isIcicleChart = false,
+  isFlameChart = false,
   profileSource,
-  isSandwichIcicleGraph = false,
-  isFlamegraph = false,
+  isInSandwichView = false,
+  isRenderedAsFlamegraph = false,
   tooltipId,
   maxFrameCount,
   isExpanded = false,
-}: ProfileIcicleGraphProps): JSX.Element {
-  const {onError, authenticationErrorMessage, isDarkMode, iciclechartHelpText} = useParcaContext();
+}: ProfileFlameGraphProps): JSX.Element {
+  const {onError, authenticationErrorMessage, isDarkMode, flamechartHelpText} = useParcaContext();
   const {compareMode} = useProfileViewContext();
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [icicleChartRef, {height: icicleChartHeight}] = useMeasure();
+  const [flameChartRef, {height: flameChartHeight}] = useMeasure();
 
   // Create local state for paths when in sandwich view to avoid URL updates
   const [localCurPathArrow, setLocalCurPathArrow] = useState<CurrentPathFrame[]>([]);
 
   const setCurPathArrowWrapper = useCallback(
     (path: CurrentPathFrame[]) => {
-      if (isSandwichIcicleGraph) {
+      if (isInSandwichView) {
         setLocalCurPathArrow(path);
       } else {
         setNewCurPathArrow(path);
       }
     },
-    [isSandwichIcicleGraph, setNewCurPathArrow]
+    [isInSandwichView, setNewCurPathArrow]
   );
 
-  // Determine which paths to use based on isSandwichIcicleGraph flag
-  const effectiveCurPathArrow = isSandwichIcicleGraph ? localCurPathArrow : curPathArrow;
+  // Determine which paths to use based on isInSandwichView flag
+  const effectiveCurPathArrow = isInSandwichView ? localCurPathArrow : curPathArrow;
 
   const mappingsList = useMappingList(metadataMappingFiles);
 
@@ -184,37 +184,37 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     }
   }, [loadingState]);
 
-  const icicleGraph = useMemo(() => {
+  const flameGraph = useMemo(() => {
     const {
-      isValid: isIcicleChartValid,
+      isValid: isFlameChartValid,
       isNonDelta,
       isDurationTooLong,
-    } = isIcicleChart
-      ? validateIcicleChartQuery(profileSource as MergedProfileSource)
+    } = isFlameChart
+      ? validateFlameChartQuery(profileSource as MergedProfileSource)
       : {isValid: true, isNonDelta: false, isDurationTooLong: false};
-    const isInvalidIcicleChartQuery = isIcicleChart && !isIcicleChartValid;
+    const isInvalidFlameChartQuery = isFlameChart && !isFlameChartValid;
 
-    if (isLoading && !isInvalidIcicleChartQuery) {
+    if (isLoading && !isInvalidFlameChartQuery) {
       return (
         <div className="h-auto overflow-clip">
-          {isFlamegraph ? (
-            <FlamegraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
+          {isRenderedAsFlamegraph ? (
+            <SandwichFlameGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
           ) : (
-            <IcicleGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
+            <FlameGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
           )}
         </div>
       );
     }
 
-    // Do necessary checks to ensure that icicle chart can be rendered for this query.
-    if (isInvalidIcicleChartQuery) {
+    // Do necessary checks to ensure that flame chart can be rendered for this query.
+    if (isInvalidFlameChartQuery) {
       if (isNonDelta) {
         return (
           <ErrorContent
             errorMessage={
               <>
-                <span>To use the Icicle chart, please switch to a Delta profile.</span>
-                {iciclechartHelpText ?? null}
+                <span>To use the Flame chart, please switch to a Delta profile.</span>
+                {flamechartHelpText ?? null}
               </>
             }
           />
@@ -225,10 +225,10 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
             errorMessage={
               <>
                 <span>
-                  Icicle chart is unavailable for queries longer than one minute. Please select a
+                  Flame chart is unavailable for queries longer than one minute. Please select a
                   point in the metrics graph to continue.
                 </span>
-                {iciclechartHelpText ?? null}
+                {flamechartHelpText ?? null}
               </>
             }
           />
@@ -238,8 +238,8 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
           <ErrorContent
             errorMessage={
               <>
-                <span>The Icicle chart is not available for this query.</span>
-                {iciclechartHelpText ?? null}
+                <span>The Flame chart is not available for this query.</span>
+                {flamechartHelpText ?? null}
               </>
             }
           />
@@ -255,18 +255,18 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     if (arrow !== undefined) {
       return (
         <div className="relative">
-          {isIcicleChart ? (
+          {isFlameChart ? (
             <TimelineGuide
               bounds={boundsFromProfileSource(profileSource)}
               width={width}
-              height={icicleChartHeight ?? 420}
+              height={flameChartHeight ?? 420}
               margin={0}
               ticks={12}
               timeUnit="nanoseconds"
             />
           ) : null}
-          <div ref={icicleChartRef as LegacyRef<HTMLDivElement>}>
-            <IcicleGraphArrow
+          <div ref={flameChartRef as LegacyRef<HTMLDivElement>}>
+            <FlameGraphArrow
               width={width}
               arrow={arrow}
               total={total}
@@ -277,10 +277,10 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
               isHalfScreen={isHalfScreen}
               mappingsListFromMetadata={mappingsList}
               compareAbsolute={isCompareAbsolute}
-              isIcicleChart={isIcicleChart}
+              isFlameChart={isFlameChart}
               profileSource={profileSource}
-              isFlamegraph={isFlamegraph}
-              isSandwich={isSandwichIcicleGraph}
+              isRenderedAsFlamegraph={isRenderedAsFlamegraph}
+              isInSandwichView={isInSandwichView}
               tooltipId={tooltipId}
               maxFrameCount={maxFrameCount}
               isExpanded={isExpanded}
@@ -301,13 +301,13 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     isDarkMode,
     mappingsList,
     isCompareAbsolute,
-    isIcicleChart,
+    isFlameChart,
     profileSource,
-    icicleChartHeight,
-    icicleChartRef,
-    iciclechartHelpText,
-    isFlamegraph,
-    isSandwichIcicleGraph,
+    flameChartHeight,
+    flameChartRef,
+    flamechartHelpText,
+    isRenderedAsFlamegraph,
+    isInSandwichView,
     effectiveCurPathArrow,
     setCurPathArrowWrapper,
     tooltipId,
@@ -363,7 +363,7 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
         errorMessage={
           <>
             <span>{capitalizeOnlyFirstLetter(error.message)}</span>
-            {isIcicleChart ? iciclechartHelpText ?? null : null}
+            {isFlameChart ? flamechartHelpText ?? null : null}
           </>
         }
       />
@@ -374,16 +374,16 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
     <AnimatePresence>
       <motion.div
         className="relative h-full w-full"
-        key="icicle-graph-loaded"
+        key="flame-graph-loaded"
         initial={{opacity: 0}}
         animate={{opacity: 1}}
         transition={{duration: 0.5}}
       >
         {compareMode ? <DiffLegend /> : null}
-        <div className={cx(!isSandwichIcicleGraph ? 'min-h-48' : '')} id="h-icicle-graph">
-          <>{icicleGraph}</>
+        <div className={cx(!isInSandwichView ? 'min-h-48' : '')} id="h-flame-graph">
+          <>{flameGraph}</>
         </div>
-        {!isSandwichIcicleGraph && (
+        {!isInSandwichView && (
           <p className="my-2 text-xs">
             Showing {totalFormatted}{' '}
             {isFiltered ? (
@@ -401,4 +401,4 @@ const ProfileIcicleGraph = function ProfileIcicleGraphNonMemo({
   );
 };
 
-export default ProfileIcicleGraph;
+export default ProfileFlameGraph;

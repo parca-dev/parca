@@ -38,7 +38,7 @@ export const MemoizedTooltip = memo(function MemoizedTooltip({
       setTooltipRow(event.detail.row);
     };
 
-    const eventName = `icicle-tooltip-update-${tooltipId}`;
+    const eventName = `flame-tooltip-update-${tooltipId}`;
 
     // Delay to ensure all DOM updates and React renders are complete
     // This fixes the race condition in sandwich view

@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {parseParams} from '@parca/utilities';
+
 export type ParamValue = string | string[] | undefined;
 
 export const getQueryParamsFromURL = (): Record<string, ParamValue> => {
@@ -18,15 +20,7 @@ export const getQueryParamsFromURL = (): Record<string, ParamValue> => {
     return {};
   }
 
-  const searchParams = new URLSearchParams(window.location.search);
-  const params: Record<string, ParamValue> = {};
-
-  searchParams.forEach((value, key) => {
-    const decodedValue = decodeURIComponent(value);
-    params[key] = decodedValue.includes(',') ? decodedValue.split(',') : decodedValue;
-  });
-
-  return params;
+  return parseParams(window.location.search);
 };
 
 const isEmpty = (val: string | string[] | undefined): boolean => {
@@ -51,12 +45,12 @@ const isEqual = (a: ParamValue, b: ParamValue): boolean => {
     return true;
   }
 
-  // ['icicle'] === 'icicle'
+  // ['flamegraph'] === 'flamegraph'
   if (Array.isArray(a) && a.length === 1 && typeof b === 'string') {
     return decodeURIComponent(a[0]) === decodeURIComponent(b);
   }
 
-  // 'icicle' === ['icicle']
+  // 'flamegraph' === ['flamegraph']
   if (Array.isArray(b) && b.length === 1 && typeof a === 'string') {
     return decodeURIComponent(b[0]) === decodeURIComponent(a);
   }

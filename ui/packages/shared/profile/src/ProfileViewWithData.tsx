@@ -17,8 +17,8 @@ import {QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata, useParcaContext, useURLState} from '@parca/components';
 import {saveAsBlob} from '@parca/utilities';
 
-import {validateIcicleChartQuery} from './ProfileIcicleGraph';
-import {FIELD_FUNCTION_NAME} from './ProfileIcicleGraph/IcicleGraphArrow';
+import {validateFlameChartQuery} from './ProfileFlameGraph';
+import {FIELD_FUNCTION_NAME} from './ProfileFlameGraph/FlameGraphArrow';
 import {MergedProfileSource, ProfileSource} from './ProfileSource';
 import {ProfileView} from './ProfileView';
 import {useProfileFilters} from './ProfileView/components/ProfileFilters/useProfileFilters';
@@ -62,20 +62,20 @@ export const ProfileViewWithData = ({
   const {protoFilters} = useProfileFilters();
 
   useEffect(() => {
-    // If profile type is not delta, remove iciclechart from the dashboard items
-    // and set it to icicle if no other items are selected.
+    // If profile type is not delta, remove flamechart from the dashboard items
+    // and set it to flame if no other items are selected.
     if (profileSource == null) {
       return;
     }
     const profileType = profileSource.ProfileType();
     let newDashboardItems = dashboardItems;
-    if (dashboardItems.includes('iciclechart') && !profileType.delta) {
-      newDashboardItems = dashboardItems.filter(item => item !== 'iciclechart');
+    if (dashboardItems.includes('flamechart') && !profileType.delta) {
+      newDashboardItems = dashboardItems.filter(item => item !== 'flamechart');
     } else {
       return;
     }
     if (newDashboardItems.length === 0) {
-      newDashboardItems = ['icicle'];
+      newDashboardItems = ['flamegraph'];
     }
     setDashboardItems(newDashboardItems);
   }, [profileSource, dashboardItems, setDashboardItems]);
@@ -94,7 +94,7 @@ export const ProfileViewWithData = ({
     response: flamegraphResponse,
     error: flamegraphError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMEGRAPH_ARROW, {
-    skip: !dashboardItems.includes('icicle'),
+    skip: !dashboardItems.includes('flamegraph'),
     nodeTrimThreshold,
     groupBy,
     invertCallStack,
@@ -108,8 +108,8 @@ export const ProfileViewWithData = ({
     error: flamechartError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMECHART, {
     skip: !(
-      dashboardItems.includes('iciclechart') &&
-      validateIcicleChartQuery(profileSource as MergedProfileSource).isValid
+      dashboardItems.includes('flamechart') &&
+      validateFlameChartQuery(profileSource as MergedProfileSource).isValid
     ),
     nodeTrimThreshold,
     groupBy,
