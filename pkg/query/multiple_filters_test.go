@@ -307,9 +307,7 @@ func createTestProfileData(mem memory.Allocator) ([]arrow.Record, func()) {
 		for _, w := range writers {
 			w.Release()
 		}
-		for _, r := range records {
-			r.Release()
-		}
+		// Don't release records here - they will be handled by FilterProfileData
 	}
 
 	return records, cleanup
