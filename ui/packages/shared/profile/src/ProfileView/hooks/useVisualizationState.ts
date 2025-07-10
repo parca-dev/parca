@@ -21,8 +21,8 @@ import {
   FIELD_LABELS,
   FIELD_LOCATION_ADDRESS,
   FIELD_MAPPING_FILE,
-} from '../../ProfileIcicleGraph/IcicleGraphArrow';
-import {CurrentPathFrame} from '../../ProfileIcicleGraph/IcicleGraphArrow/utils';
+} from '../../ProfileFlameGraph/FlameGraphArrow';
+import {CurrentPathFrame} from '../../ProfileFlameGraph/FlameGraphArrow/utils';
 
 export const useVisualizationState = (): {
   curPath: string[];

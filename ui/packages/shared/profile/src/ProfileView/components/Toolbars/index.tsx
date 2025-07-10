@@ -19,7 +19,7 @@ import {QueryServiceClient} from '@parca/client';
 import {Button} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 
-import {CurrentPathFrame} from '../../../ProfileIcicleGraph/IcicleGraphArrow/utils';
+import {CurrentPathFrame} from '../../../ProfileFlameGraph/FlameGraphArrow/utils';
 import {ProfileSource} from '../../../ProfileSource';
 import {useDashboard} from '../../context/DashboardContext';
 import GroupByDropdown from '../ActionButtons/GroupByDropdown';
@@ -62,12 +62,12 @@ export interface TableToolbarProps {
   currentSearchString?: string;
 }
 
-export interface IcicleGraphToolbarProps {
+export interface FlameGraphToolbarProps {
   curPath: CurrentPathFrame[];
   setNewCurPath: (path: CurrentPathFrame[]) => void;
 }
 
-export interface SandwichIcicleGraphToolbarProps {
+export interface SandwichFlameGraphToolbarProps {
   resetSandwichFunctionName: () => void;
   sandwichFunctionName?: string;
 }
@@ -98,7 +98,7 @@ export const TableToolbar: FC<TableToolbarProps> = ({
   );
 };
 
-export const IcicleGraphToolbar: FC<IcicleGraphToolbarProps> = ({curPath, setNewCurPath}) => {
+export const FlameGraphToolbar: FC<FlameGraphToolbarProps> = ({curPath, setNewCurPath}) => {
   return (
     <>
       <div className="flex w-full gap-2 items-end">
@@ -117,7 +117,7 @@ export const IcicleGraphToolbar: FC<IcicleGraphToolbarProps> = ({curPath, setNew
   );
 };
 
-export const SandwichIcicleGraphToolbar: FC<SandwichIcicleGraphToolbarProps> = ({
+export const SandwichFlameGraphToolbar: FC<SandwichFlameGraphToolbarProps> = ({
   resetSandwichFunctionName,
   sandwichFunctionName,
 }) => {
@@ -165,7 +165,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
 
   const isTableViz = dashboardItems?.includes('table');
   const isTableVizOnly = dashboardItems?.length === 1 && isTableViz;
-  const isGraphViz = dashboardItems?.includes('icicle');
+  const isGraphViz = dashboardItems?.includes('flamegraph');
   const isGraphVizOnly = dashboardItems?.length === 1 && isGraphViz;
 
   const req = profileSource?.QueryRequest();
@@ -220,7 +220,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
       {isGraphVizOnly && (
         <>
           <Divider />
-          <IcicleGraphToolbar curPath={curPath} setNewCurPath={setNewCurPath} />
+          <FlameGraphToolbar curPath={curPath} setNewCurPath={setNewCurPath} />
         </>
       )}
       {isTableVizOnly && (

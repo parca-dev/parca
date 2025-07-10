@@ -13,7 +13,7 @@
 
 import {type Table} from 'apache-arrow';
 
-import {type colorByColors} from '../../ProfileIcicleGraph/IcicleGraphArrow/IcicleGraphNodes';
+import {type colorByColors} from '../../ProfileFlameGraph/FlameGraphArrow/FlameGraphNodes';
 import {
   FIELD_CUMULATIVE,
   FIELD_CUMULATIVE_DIFF,

@@ -15,8 +15,8 @@ import React from 'react';
 
 import {type FlamegraphArrow} from '@parca/client';
 
-import ProfileIcicleGraph from '../../ProfileIcicleGraph';
-import {type CurrentPathFrame} from '../../ProfileIcicleGraph/IcicleGraphArrow/utils';
+import ProfileFlameGraph from '../../ProfileFlameGraph';
+import {type CurrentPathFrame} from '../../ProfileFlameGraph/FlameGraphArrow/utils';
 import {type ProfileSource} from '../../ProfileSource';
 
 interface CalleesSectionProps {
@@ -53,7 +53,7 @@ export function CalleesSection({
       <div className="[writing-mode:vertical-lr] -rotate-180 px-1 uppercase text-[10px] text-left">
         {'<-'} Callees
       </div>
-      <ProfileIcicleGraph
+      <ProfileFlameGraph
         arrow={
           calleesFlamegraphResponse?.report.oneofKind === 'flamegraphArrow'
             ? calleesFlamegraphResponse?.report?.flamegraphArrow
@@ -70,7 +70,7 @@ export function CalleesSection({
         }
         metadataMappingFiles={metadataMappingFiles}
         metadataLoading={false}
-        isSandwichIcicleGraph={true}
+        isInSandwichView={true}
         curPathArrow={curPathArrow}
         setNewCurPathArrow={setCurPathArrow}
         profileSource={profileSource}

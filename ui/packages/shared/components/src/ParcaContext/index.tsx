@@ -57,7 +57,7 @@ interface Props {
   navigateTo: NavigateFunction;
   enableSourcesView?: boolean;
   enableSandwichView?: boolean;
-  enableIciclechartView?: boolean;
+  enableFlamechartView?: boolean;
   authenticationErrorMessage?: string;
   isDarkMode: boolean;
   flamegraphHint?: ReactNode;
@@ -75,7 +75,7 @@ interface Props {
   timezone?: string;
   preferencesModal?: boolean;
   checkDebuginfoStatusHandler?: (buildId: string) => void;
-  iciclechartHelpText?: ReactNode;
+  flamechartHelpText?: ReactNode;
 }
 
 export const defaultValue: Props = {

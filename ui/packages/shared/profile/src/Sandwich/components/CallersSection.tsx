@@ -19,8 +19,8 @@ import {Tooltip} from 'react-tooltip';
 import {type FlamegraphArrow} from '@parca/client';
 import {Button} from '@parca/components';
 
-import ProfileIcicleGraph from '../../ProfileIcicleGraph';
-import {type CurrentPathFrame} from '../../ProfileIcicleGraph/IcicleGraphArrow/utils';
+import ProfileFlameGraph from '../../ProfileFlameGraph';
+import {type CurrentPathFrame} from '../../ProfileFlameGraph/FlameGraphArrow/utils';
 import {type ProfileSource} from '../../ProfileSource';
 
 const FIELD_DEPTH = 'depth';
@@ -112,7 +112,7 @@ export function CallersSection({
           Callers {'->'}
         </div>
         <div className="flex-1 overflow-hidden relative">
-          <ProfileIcicleGraph
+          <ProfileFlameGraph
             arrow={
               callersFlamegraphResponse?.report.oneofKind === 'flamegraphArrow'
                 ? callersFlamegraphResponse?.report?.flamegraphArrow
@@ -129,10 +129,10 @@ export function CallersSection({
             }
             metadataMappingFiles={metadataMappingFiles}
             metadataLoading={false}
-            isSandwichIcicleGraph={true}
+            isInSandwichView={true}
             curPathArrow={curPathArrow}
             setNewCurPathArrow={setCurPathArrow}
-            isFlamegraph={true}
+            isRenderedAsFlamegraph={true}
             profileSource={profileSource}
             tooltipId="callers"
             maxFrameCount={defaultMaxFrames}

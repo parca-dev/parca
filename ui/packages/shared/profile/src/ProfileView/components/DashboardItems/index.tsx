@@ -16,8 +16,8 @@ import {Profiler, ProfilerOnRenderCallback} from 'react';
 import {QueryServiceClient} from '@parca/client';
 import {ConditionalWrapper} from '@parca/components';
 
-import ProfileIcicleGraph from '../../../ProfileIcicleGraph';
-import {CurrentPathFrame} from '../../../ProfileIcicleGraph/IcicleGraphArrow/utils';
+import ProfileFlameGraph from '../../../ProfileFlameGraph';
+import {CurrentPathFrame} from '../../../ProfileFlameGraph/FlameGraphArrow/utils';
 import {ProfileSource} from '../../../ProfileSource';
 import Sandwich from '../../../Sandwich';
 import {SourceView} from '../../../SourceView';
@@ -71,17 +71,17 @@ export const getDashboardItem = ({
   queryClient,
 }: GetDashboardItemProps): JSX.Element => {
   switch (type) {
-    case 'icicle':
+    case 'flamegraph':
       return (
         <ConditionalWrapper
           condition={perf?.onRender != null}
           WrapperComponent={Profiler}
           wrapperProps={{
-            id: 'icicleGraph',
+            id: 'flameGraph',
             onRender: perf?.onRender ?? (() => {}),
           }}
         >
-          <ProfileIcicleGraph
+          <ProfileFlameGraph
             curPathArrow={curPathArrow}
             setNewCurPathArrow={setNewCurPathArrow}
             arrow={flamegraphData?.arrow}
@@ -104,9 +104,9 @@ export const getDashboardItem = ({
           />
         </ConditionalWrapper>
       );
-    case 'iciclechart':
+    case 'flamechart':
       return (
-        <ProfileIcicleGraph
+        <ProfileFlameGraph
           curPathArrow={[]}
           setNewCurPathArrow={() => {}}
           arrow={flamechartData?.arrow}
@@ -126,7 +126,7 @@ export const getDashboardItem = ({
           metadataMappingFiles={flamechartData.metadataMappingFiles}
           metadataLoading={flamechartData.metadataLoading}
           profileSource={profileSource}
-          isIcicleChart={true}
+          isFlameChart={true}
         />
       );
     case 'table':

@@ -21,8 +21,8 @@ import {
   FIELD_DIFF,
   FIELD_FLAT,
   FIELD_LOCATION_ADDRESS,
-} from '../../ProfileIcicleGraph/IcicleGraphArrow';
-import {getTextForCumulative, nodeLabel} from '../../ProfileIcicleGraph/IcicleGraphArrow/utils';
+} from '../../ProfileFlameGraph/FlameGraphArrow';
+import {getTextForCumulative, nodeLabel} from '../../ProfileFlameGraph/FlameGraphArrow/utils';
 
 interface Props {
   table: Table<any>;

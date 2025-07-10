@@ -16,7 +16,7 @@ import ProfileExplorer, {getExpressionAsAString} from './ProfileExplorer';
 import ProfileTypeSelector from './ProfileTypeSelector';
 import CustomSelect from './SimpleMatchers/Select';
 
-export * from './ProfileIcicleGraph';
+export * from './ProfileFlameGraph';
 export * from './ProfileSource';
 export * from './ProfileView';
 export * from './ProfileViewWithData';
@@ -26,7 +26,7 @@ export * from './SourceView';
 export * from './ProfileMetricsGraph';
 
 export const DEFAULT_PROFILE_EXPLORER_PARAM_VALUES = {
-  dashboard_items: 'icicle',
+  dashboard_items: 'flamegraph',
 };
 
 export {ProfileExplorer, ProfileTypeSelector, getExpressionAsAString, CustomSelect, useLabelNames};

@@ -26,8 +26,8 @@ import {
   FIELD_MAPPING_BUILD_ID,
   FIELD_MAPPING_FILE,
   FIELD_TIMESTAMP,
-} from '../../ProfileIcicleGraph/IcicleGraphArrow';
-import {arrowToString} from '../../ProfileIcicleGraph/IcicleGraphArrow/utils';
+} from '../../ProfileFlameGraph/FlameGraphArrow';
+import {arrowToString} from '../../ProfileFlameGraph/FlameGraphArrow/utils';
 import {ProfileSource} from '../../ProfileSource';
 import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
 import {useQuery} from '../../useQuery';

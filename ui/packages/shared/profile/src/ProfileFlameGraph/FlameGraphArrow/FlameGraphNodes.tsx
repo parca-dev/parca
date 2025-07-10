@@ -21,8 +21,6 @@ import {isSearchMatch} from '@parca/utilities';
 
 import 'react-contexify/dist/ReactContexify.css';
 
-import {USER_PREFERENCES} from '@parca/hooks';
-
 import {ProfileSource} from '../../ProfileSource';
 import TextWithEllipsis from './TextWithEllipsis';
 import {
@@ -32,7 +30,6 @@ import {
   FIELD_FUNCTION_FILE_NAME,
   FIELD_FUNCTION_NAME,
   FIELD_MAPPING_FILE,
-  FIELD_PARENT,
   FIELD_TIMESTAMP,
   FIELD_VALUE_OFFSET,
 } from './index';
@@ -45,7 +42,7 @@ export interface colorByColors {
   [key: string]: string;
 }
 
-export interface IcicleNodeProps {
+export interface FlameNodeProps {
   height: number;
   totalWidth: number;
   table: Table<any>;
@@ -59,30 +56,30 @@ export interface IcicleNodeProps {
   colorForSimilarNodes: string;
   selectedRow: number;
   onClick: () => void;
-  isIcicleChart: boolean;
+  isFlameChart: boolean;
   profileSource: ProfileSource;
-  isFlamegraph?: boolean;
-  isSandwich?: boolean;
+  isRenderedAsFlamegraph?: boolean;
+  isInSandwichView?: boolean;
   maxDepth?: number;
   effectiveDepth?: number;
   tooltipId?: string;
 
-  // Hovering row must only ever be used for highlighting similar nodes, otherwise it will cause performance issues as it causes the full iciclegraph to get rerendered every time the hovering row changes.
+  // Hovering row must only ever be used for highlighting similar nodes, otherwise it will cause performance issues as it causes the full flamegraph to get rerendered every time the hovering row changes.
   hoveringRow?: number;
   setHoveringRow: (row: number | undefined) => void;
 }
 
-export const icicleRectStyles = {
+export const flameRectStyles = {
   cursor: 'pointer',
   transition: 'opacity .15s linear',
 };
-export const fadedIcicleRectStyles = {
+export const fadedFlameRectStyles = {
   cursor: 'pointer',
   transition: 'opacity .15s linear',
   opacity: '0.5',
 };
 
-export const IcicleNode = React.memo(function IcicleNodeNoMemo({
+export const FlameNode = React.memo(function FlameNodeNoMemo({
   table,
   row,
   colors,
@@ -98,14 +95,14 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   onContextMenu,
   hoveringRow,
   setHoveringRow,
-  isIcicleChart,
+  isFlameChart,
   profileSource,
-  isFlamegraph = false,
-  isSandwich = false,
+  isRenderedAsFlamegraph = false,
+  isInSandwichView = false,
   maxDepth = 0,
   effectiveDepth,
   tooltipId = 'default',
-}: IcicleNodeProps): React.JSX.Element {
+}: FlameNodeProps): React.JSX.Element {
   // get the columns to read from
   const mappingColumn = table.getChild(FIELD_MAPPING_FILE);
   const functionNameColumn = table.getChild(FIELD_FUNCTION_NAME);
@@ -181,8 +178,8 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
     return <></>;
   }
 
-  if (row === 0 && (isIcicleChart || isSandwich)) {
-    // The root node is not rendered in the icicle chart or sandwich view, so we return null.
+  if (row === 0 && (isFlameChart || isInSandwichView)) {
+    // The root node is not rendered in the flame chart or sandwich view, so we return null.
     return <></>;
   }
 
@@ -190,7 +187,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const tsBounds = boundsFromProfileSource(profileSource);
   const total = cumulativeColumn?.get(selectedRow);
   const totalRatio = cumulative > total ? 1 : Number(cumulative) / Number(total);
-  const width: number = isIcicleChart
+  const width: number = isFlameChart
     ? (Number(cumulative) / (Number(tsBounds[1]) - Number(tsBounds[0]))) * totalWidth
     : totalRatio * totalWidth;
 
@@ -200,12 +197,12 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
 
   const selectedDepth = depthColumn?.get(selectedRow);
   const styles =
-    selectedDepth !== undefined && selectedDepth > depth ? fadedIcicleRectStyles : icicleRectStyles;
+    selectedDepth !== undefined && selectedDepth > depth ? fadedFlameRectStyles : flameRectStyles;
 
   const onMouseEnter = (): void => {
     setHoveringRow(row);
     window.dispatchEvent(
-      new CustomEvent(`icicle-tooltip-update-${tooltipId}`, {
+      new CustomEvent(`flame-tooltip-update-${tooltipId}`, {
         detail: {row},
       })
     );
@@ -214,7 +211,7 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   const onMouseLeave = (): void => {
     setHoveringRow(undefined);
     window.dispatchEvent(
-      new CustomEvent(`icicle-tooltip-update-${tooltipId}`, {
+      new CustomEvent(`flame-tooltip-update-${tooltipId}`, {
         detail: {row: null},
       })
     );
@@ -226,25 +223,25 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
 
   const ts = tsColumn !== null ? Number(tsColumn.get(row)) : 0;
   const x =
-    isIcicleChart && tsColumn !== null
+    isFlameChart && tsColumn !== null
       ? ((ts - Number(tsBounds[0])) / (Number(tsBounds[1]) - Number(tsBounds[0]))) * totalWidth
       : selectedDepth > depth
       ? 0
       : ((Number(valueOffset) - Number(selectionOffset)) / Number(total)) * totalWidth;
 
   const calculateY = (
-    isFlamegraph: boolean,
-    isSandwich: boolean,
-    isIcicleChart: boolean,
+    isRenderedAsFlamegraph: boolean,
+    isInSandwichView: boolean,
+    isFlameChart: boolean,
     maxDepth: number,
     depth: number,
     height: number
   ): number => {
-    if (isFlamegraph) {
+    if (isRenderedAsFlamegraph) {
       return (maxDepth - depth) * height; // Flamegraph is inverted
     }
 
-    if (isIcicleChart || isSandwich) {
+    if (isFlameChart || isInSandwichView) {
       return (depth - 1) * height;
     }
 
@@ -252,9 +249,9 @@ export const IcicleNode = React.memo(function IcicleNodeNoMemo({
   };
 
   const y = calculateY(
-    isFlamegraph,
-    isSandwich,
-    isIcicleChart,
+    isRenderedAsFlamegraph,
+    isInSandwichView,
+    isFlameChart,
     effectiveDepth ?? maxDepth,
     depth,
     height

@@ -29,7 +29,7 @@ import {isSearchMatch} from '@parca/utilities';
 
 import useMappingList, {
   useFilenamesList,
-} from '../ProfileIcicleGraph/IcicleGraphArrow/useMappingList';
+} from '../ProfileFlameGraph/FlameGraphArrow/useMappingList';
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
 import TableContextMenuWrapper, {TableContextMenuWrapperRef} from './TableContextMenuWrapper';
 import {useColorManagement} from './hooks/useColorManagement';
@@ -138,7 +138,7 @@ export const Table = React.memo(function Table({
 
   const selectSpan = useCallback(
     (span: string): void => {
-      if (dashboardItems.includes('icicle')) {
+      if (dashboardItems.includes('flamegraph')) {
         setSearchString(span.trim());
       } else {
         setSandwichFunctionName(span.trim());

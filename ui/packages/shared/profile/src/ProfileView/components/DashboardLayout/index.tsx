@@ -29,7 +29,7 @@ import {VisualizationContainer} from '../VisualizationContainer';
 interface DashboardLayoutProps {
   getDashboardItemByType: (props: {type: VisualizationType; isHalfScreen: boolean}) => JSX.Element;
   actionButtons: {
-    icicle: JSX.Element;
+    flame: JSX.Element;
     table: JSX.Element;
   };
 }

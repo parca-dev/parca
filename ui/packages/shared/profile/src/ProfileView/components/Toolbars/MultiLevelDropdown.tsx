@@ -26,7 +26,7 @@ import {
   FIELD_FUNCTION_NAME,
   FIELD_LOCATION_ADDRESS,
   FIELD_MAPPING_FILE,
-} from '../../../ProfileIcicleGraph/IcicleGraphArrow';
+} from '../../../ProfileFlameGraph/FlameGraphArrow';
 import {useProfileViewContext} from '../../context/ProfileViewContext';
 import SwitchMenuItem from './SwitchMenuItem';
 
