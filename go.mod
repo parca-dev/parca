@@ -14,7 +14,7 @@ require (
 	github.com/felixge/fgprof v0.9.5
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/go-chi/chi/v5 v5.2.2
-	github.com/go-chi/cors v1.2.1
+	github.com/go-chi/cors v1.2.2
 	github.com/go-delve/delve v1.25.0
 	github.com/go-kit/log v0.2.1
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
@@ -56,7 +56,7 @@ require (
 	golang.org/x/exp v0.0.0-20250128182459-e0ece0dbea4c
 	golang.org/x/net v0.41.0
 	golang.org/x/oauth2 v0.30.0
-	golang.org/x/sync v0.15.0
+	golang.org/x/sync v0.16.0
 	google.golang.org/api v0.239.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20250512202823-5a2f75b736a9
 	google.golang.org/grpc v1.73.0
