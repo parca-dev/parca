@@ -12,6 +12,9 @@ Refer to the following maintainers with their focus areas:
 - Thor Hansen <https://github.com/thorfour> @thorfour: Storage and backend. (Please do not disturb him with questions about the frontend).
 - Matthias Loibl <https://github.com/metalmatze> @metalmatze: Everything related to the Parca server (storage, backend, frontend).
 - Yomi Eluwande <https://github.com/yomete> @yomete: Everything related to frontend (website, design).
-- Kemal Akkoyun <https://github.com/kakkoyun> @kakkoyun: Backend, especially symbolization and debug information related components.
 - Monica Wojciechowski <https://github.com/monicawoj> @monicawoj: Everything related to frontend (website, design).
 - Manoj Vivek <https://github.com/manojVivek> @manojvivek: Everything related to frontend (website, design).
+
+### Emeritus Maintainers
+
+- Kemal Akkoyun <https://github.com/kakkoyun> @kakkoyun: Backend, especially symbolization and debug information related components.
