@@ -461,7 +461,7 @@ func filterRecord(
 			// Handle new oneof structure - prefer new criteria over deprecated function_name_stack_filter
 			if criteria := stackFilter.GetCriteria(); criteria != nil {
 				stackFilters = append(stackFilters, criteria)
-			} else if funcFilter := stackFilter.GetFunctionNameStackFilter(); funcFilter != nil {
+			} else if funcFilter := stackFilter.GetFunctionNameStackFilter(); funcFilter != nil { //nolint:staticcheck // deprecated but needed for backward compatibility
 				// Handle deprecated function_name_stack_filter for backward compatibility
 				criteria := &pb.FilterCriteria{
 					FunctionName: &pb.StringCondition{},
@@ -482,7 +482,7 @@ func filterRecord(
 			// Handle new oneof structure - prefer new criteria over deprecated binary_frame_filter
 			if criteria := frameFilter.GetCriteria(); criteria != nil {
 				frameFilters = append(frameFilters, criteria)
-			} else if binaryFilter := frameFilter.GetBinaryFrameFilter(); binaryFilter != nil {
+			} else if binaryFilter := frameFilter.GetBinaryFrameFilter(); binaryFilter != nil { //nolint:staticcheck // deprecated but needed for backward compatibility
 				// Handle deprecated binary_frame_filter for backward compatibility
 				for _, binary := range binaryFilter.GetIncludeBinaries() {
 					criteria := &pb.FilterCriteria{
@@ -641,7 +641,7 @@ func filterRecord(
 	return recs, originalValueSum, filtered, nil
 }
 
-// stackMatchesFilter checks if a stack matches the given filter criteria
+// stackMatchesFilter checks if a stack matches the given filter criteria.
 func stackMatchesFilter(r *profile.RecordReader, firstStart, lastEnd, locStart, locEnd int, filter *pb.FilterCriteria) bool {
 	if fnCond := filter.GetFunctionName(); fnCond != nil {
 		if r.LineFunctionNameIndices.Len() == 0 {
@@ -875,7 +875,7 @@ func matchesAllFrameFilters(r *profile.RecordReader, locationIndex, lineIndex in
 	return true
 }
 
-// matchesFrameFilter checks if a single frame matches the filter criteria
+// matchesFrameFilter checks if a single frame matches the filter criteria.
 func matchesFrameFilter(r *profile.RecordReader, locationIndex, lineIndex int, filter *pb.FilterCriteria) bool {
 	if fnCond := filter.GetFunctionName(); fnCond != nil {
 		// If lineIndex is -1, skip function name check
@@ -979,7 +979,7 @@ func matchesFrameFilter(r *profile.RecordReader, locationIndex, lineIndex int, f
 	return true
 }
 
-// matchesStringCondition checks if a value matches a string condition
+// matchesStringCondition checks if a value matches a string condition.
 func matchesStringCondition(value []byte, condition *pb.StringCondition) bool {
 	if condition == nil {
 		return true
