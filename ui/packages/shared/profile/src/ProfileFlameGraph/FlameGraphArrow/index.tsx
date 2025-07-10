@@ -25,7 +25,7 @@ import {Dictionary, Table, Vector, tableFromIPC} from 'apache-arrow';
 import {useContextMenu} from 'react-contexify';
 
 import {FlamegraphArrow} from '@parca/client';
-import {useURLState} from '@parca/components';
+import {useParcaContext, useURLState} from '@parca/components';
 import {USER_PREFERENCES, useCurrentColorProfile, useUserPreference} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
 import {getColorForFeature, selectDarkMode, useAppSelector} from '@parca/store';
@@ -154,13 +154,38 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   const [hoveringRow, setHoveringRow] = useState<number | undefined>(undefined);
   const [dockedMetainfo] = useUserPreference<boolean>(USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key);
   const isDarkMode = useAppSelector(selectDarkMode);
+  const {perf} = useParcaContext();
 
   const table: Table<any> = useMemo(() => {
-    return tableFromIPC(arrow.record);
-  }, [arrow]);
+    const result = tableFromIPC(arrow.record);
+
+    if (perf?.setMeasurement != null) {
+      perf.setMeasurement('flamegraph.node_count', result.numRows);
+    }
+
+    return result;
+  }, [arrow, perf]);
   const svg = useRef(null);
+  const renderStartTime = useRef<number>(0);
 
   const [svgElement, setSvgElement] = useState<SVGSVGElement | null>(null);
+
+  useEffect(() => {
+    if (perf?.markInteraction != null) {
+      renderStartTime.current = performance.now();
+    }
+  }, [perf]);
+
+  useEffect(() => {
+    if (perf?.setMeasurement != null && renderStartTime.current > 0) {
+      const renderTime = performance.now() - renderStartTime.current;
+      perf.setMeasurement('flamegraph.render_time', renderTime);
+
+      if (renderTime > 500 && perf.captureMessage != null) {
+        perf.captureMessage(`Slow flamegraph render: ${renderTime.toFixed(0)}ms`, 'warning');
+      }
+    }
+  }, [table, width, curPath, perf]);
 
   useEffect(() => {
     setSvgElement(svg.current);

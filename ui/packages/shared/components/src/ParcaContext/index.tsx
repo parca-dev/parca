@@ -49,6 +49,8 @@ interface Props {
   perf?: {
     onRender?: ProfilerOnRenderCallback;
     markInteraction: (interactionName: string, sampleCount: number | string | bigint) => void;
+    setMeasurement?: (name: string, value: number) => void;
+    captureMessage?: (message: string, level?: 'info' | 'warning' | 'error') => void;
   };
   onError?: (error: RpcError) => void;
   queryServiceClient: QueryServiceClient;
@@ -92,6 +94,8 @@ export const defaultValue: Props = {
   perf: {
     onRender: () => {},
     markInteraction: () => {},
+    setMeasurement: () => {},
+    captureMessage: () => {},
   },
   queryServiceClient: {} as unknown as QueryServiceClient,
   navigateTo: () => {},
