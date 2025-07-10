@@ -178,7 +178,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   return (
     <>
       <div className="flex w-full justify-between items-end">
-        <div className="flex gap-3 items-end">
+        <div className="flex gap-2 items-end">
           {isGraphViz && (
             <>
               <GroupByDropdown
