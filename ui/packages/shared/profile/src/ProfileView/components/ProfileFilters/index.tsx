@@ -258,7 +258,7 @@ const ProfileFilters = ({onFiltersChange}: ProfileFiltersProps): JSX.Element => 
         )}
       </div>
 
-      {(localFilters.length > 0 && hasUnsavedChanges) && (
+      {(localFilters.length > 0 && hasUnsavedChanges && localFilters.every(f => f.value !== '')) && (
         <Button
           variant="primary"
           onClick={onApplyFilters}
