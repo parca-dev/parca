@@ -14,6 +14,7 @@
 // limitations under the License.
 
 import {useCallback} from 'react';
+import cx from 'classnames';
 
 import {Icon} from '@iconify/react';
 
@@ -103,29 +104,29 @@ const stringMatchTypeItems: SelectItem[] = [
   {
     key: 'equal',
     element: {
-      active: <>=</>,
-      expanded: <>= Equals</>,
+      active: <>Equals</>,
+      expanded: <>Equals</>,
     },
   },
   {
     key: 'not_equal',
     element: {
-      active: <>!=</>,
-      expanded: <>!= Not Equals</>,
+      active: <>Not Equals</>,
+      expanded: <>Not Equals</>,
     },
   },
   {
     key: 'contains',
     element: {
-      active: <>=~</>,
-      expanded: <>=~ Contains</>,
+      active: <>Contains</>,
+      expanded: <>Contains</>,
     },
   },
   {
     key: 'not_contains',
     element: {
-      active: <>!~</>,
-      expanded: <>!~ Not Contains</>,
+      active: <>Not Contains</>,
+      expanded: <>Not Contains</>,
     },
   },
 ];
@@ -134,15 +135,15 @@ const numberMatchTypeItems: SelectItem[] = [
   {
     key: 'equal',
     element: {
-      active: <>=</>,
-      expanded: <>= Equals</>,
+      active: <>Equals</>,
+      expanded: <>Equals</>,
     },
   },
   {
     key: 'not_equal',
     element: {
-      active: <>!=</>,
-      expanded: <>!= Not Equals</>,
+      active: <>Not Equals</>,
+      expanded: <>Not Equals</>,
     },
   },
 ];
@@ -152,7 +153,6 @@ const ProfileFilters = ({onFiltersChange}: ProfileFiltersProps): JSX.Element => 
     localFilters,
     appliedFilters,
     hasUnsavedChanges,
-    isClearAction,
     onApplyFilters,
     addFilter,
     removeFilter,
@@ -186,7 +186,7 @@ const ProfileFilters = ({onFiltersChange}: ProfileFiltersProps): JSX.Element => 
                 items={filterTypeItems}
                 selectedKey={filter.type}
                 onSelection={key => updateFilter(filter.id, {type: key as 'stack' | 'frame'})}
-                className="rounded-l-md rounded-r-none border-r-0 w-28 pr-1 gap-0"
+                className="rounded-l-md rounded-r-none border-r-0 w-28 pr-1 gap-0 focus:z-50 focus:relative focus:outline-1"
               />
 
               <Select
@@ -207,7 +207,7 @@ const ProfileFilters = ({onFiltersChange}: ProfileFiltersProps): JSX.Element => 
                     updateFilter(filter.id, {field: newField});
                   }
                 }}
-                className="rounded-none border-r-0 w-32 pr-1 gap-0"
+                className="rounded-none border-r-0 w-32 pr-1 gap-0 focus:z-50 focus:relative focus:outline-1"
               />
 
               <Select
@@ -216,17 +216,15 @@ const ProfileFilters = ({onFiltersChange}: ProfileFiltersProps): JSX.Element => 
                 onSelection={key =>
                   updateFilter(filter.id, {matchType: key as ProfileFilter['matchType']})
                 }
-                className="rounded-none border-r-0 w-16 pr-1 gap-0"
+                className="rounded-none border-r-0 pr-1 gap-0 focus:z-50 focus:relative focus:outline-1"
               />
 
               <Input
-                placeholder={
-                  filter.field === 'address' || filter.field === 'line_number' ? 'Number' : 'Value'
-                }
+                placeholder="Value"
                 value={filter.value}
                 onChange={e => updateFilter(filter.id, {value: e.target.value})}
                 onKeyDown={handleKeyDown}
-                className="rounded-r-md w-36 text-sm"
+                className="rounded-none w-36 text-sm focus:outline-1"
               />
 
               <Button
@@ -238,7 +236,7 @@ const ProfileFilters = ({onFiltersChange}: ProfileFiltersProps): JSX.Element => 
                     removeFilter(filter.id);
                   }
                 }}
-                className="ml-2"
+                className="h-[38px] rounded-none rounded-r-md p-3"
               >
                 <Icon icon="mdi:close" className="h-4 w-4" />
               </Button>
@@ -247,28 +245,26 @@ const ProfileFilters = ({onFiltersChange}: ProfileFiltersProps): JSX.Element => 
         })}
 
         {localFilters.length > 0 && (
-          <Button variant="neutral" onClick={addFilter} className="">
-            <Icon icon="mdi:plus" className="h-4 w-4" />
+          <Button variant="neutral" onClick={addFilter} className="p-3 h-[38px]">
+            <Icon icon="mdi:filter-plus-outline" className="h-4 w-4" />
           </Button>
         )}
 
         {localFilters.length === 0 && (appliedFilters?.length ?? 0) === 0 && (
           <Button variant="neutral" onClick={addFilter} className="flex items-center gap-2">
-            <Icon icon="mdi:filter-plus" className="h-4 w-4" />
-            <span>Add Filter</span>
+            <Icon icon="mdi:filter-outline" className="h-4 w-4" />
+            <span>Filter</span>
           </Button>
         )}
       </div>
 
-      {(localFilters.length > 0 || (appliedFilters?.length ?? 0) > 0) && (
+      {(localFilters.length > 0 && hasUnsavedChanges) && (
         <Button
-          variant={isClearAction ? 'secondary' : 'primary'}
+          variant="primary"
           onClick={onApplyFilters}
-          className="flex items-center gap-2 self-end"
-          disabled={!isClearAction && !hasUnsavedChanges}
+          className={cx("flex items-center gap-2 self-end")}
         >
-          <Icon icon={isClearAction ? 'ep:circle-close' : 'ep:arrow-right'} className="h-4 w-4" />
-          <span>{isClearAction ? 'Clear Filters' : 'Apply Filters'}</span>
+          <span>Apply</span>
         </Button>
       )}
     </div>

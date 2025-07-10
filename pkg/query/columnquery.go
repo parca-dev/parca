@@ -501,8 +501,8 @@ func filterRecord(
 	// To keep track of which rows and frames to keep, we will build a list of row indices
 	// and the corresponding frames to keep within those rows.
 	type rowInfo struct {
-		rowIndex      int
-		framesToKeep  []int // indices of frames to keep within the location list
+		rowIndex     int
+		framesToKeep []int // indices of frames to keep within the location list
 	}
 
 	rowsInfo := make([]rowInfo, 0)
@@ -640,7 +640,6 @@ func filterRecord(
 
 	return recs, originalValueSum, filtered, nil
 }
-
 
 // stackMatchesFilter checks if a stack matches the given filter criteria
 func stackMatchesFilter(r *profile.RecordReader, firstStart, lastEnd, locStart, locEnd int, filter *pb.FilterCriteria) bool {
@@ -832,7 +831,6 @@ func matchesFilenameInRange(r *profile.RecordReader, firstStart, lastEnd int, fi
 	return isNegativeCondition
 }
 
-
 func matchesLineNumberInRange(r *profile.RecordReader, firstStart, lastEnd int, lineCond *pb.NumberCondition) bool {
 	isNegativeCondition := false
 	switch lineCond.GetCondition().(type) {
@@ -862,7 +860,6 @@ func matchesLineNumberInRange(r *profile.RecordReader, firstStart, lastEnd int, 
 
 	return isNegativeCondition
 }
-
 
 func matchesAllFrameFilters(r *profile.RecordReader, locationIndex, lineIndex int, frameFilters []*pb.FilterCriteria) bool {
 	// If no frame filters are provided, keep all frames

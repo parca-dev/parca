@@ -113,7 +113,6 @@ export const useProfileFilters = ({onFiltersChange}: UseProfileFiltersProps = {}
   appliedFilters: ProfileFilter[];
   protoFilters: Filter[];
   hasUnsavedChanges: boolean;
-  isClearAction: boolean;
   onApplyFilters: () => void;
   addFilter: () => void;
   removeFilter: (id: string) => void;
@@ -143,14 +142,6 @@ export const useProfileFilters = ({onFiltersChange}: UseProfileFiltersProps = {}
     });
   }, [localFilters, appliedFilters]);
 
-  const isClearAction = useMemo(() => {
-    const hasAppliedFilters =
-      appliedFilters != null &&
-      appliedFilters.length > 0 &&
-      appliedFilters.some(f => f.value !== '');
-    return hasAppliedFilters && !hasUnsavedChanges;
-  }, [appliedFilters, hasUnsavedChanges]);
-
   const addFilter = useCallback(() => {
     const newFilter: ProfileFilter = {
       id: `filter-${Date.now()}-${Math.random()}`,
@@ -177,9 +168,6 @@ export const useProfileFilters = ({onFiltersChange}: UseProfileFiltersProps = {}
   }, [setAppliedFilters, onFiltersChange]);
 
   const onApplyFilters = useCallback((): void => {
-    if (isClearAction) {
-      resetFilters();
-    } else {
       const validFilters = localFilters.filter(f => f.value !== '');
 
       const filtersToApply = validFilters.map((f, index) => ({
@@ -190,8 +178,7 @@ export const useProfileFilters = ({onFiltersChange}: UseProfileFiltersProps = {}
       setAppliedFilters(filtersToApply);
 
       onFiltersChange?.(filtersToApply);
-    }
-  }, [localFilters, isClearAction, resetFilters, setAppliedFilters, onFiltersChange]);
+  }, [localFilters, setAppliedFilters, onFiltersChange]);
 
   const protoFilters = useMemo(() => {
     return convertToProtoFilters(appliedFilters ?? []);
@@ -202,7 +189,6 @@ export const useProfileFilters = ({onFiltersChange}: UseProfileFiltersProps = {}
     appliedFilters,
     protoFilters,
     hasUnsavedChanges,
-    isClearAction,
     onApplyFilters,
     addFilter,
     removeFilter,

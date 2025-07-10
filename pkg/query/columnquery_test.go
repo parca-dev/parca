@@ -1934,11 +1934,11 @@ func TestFilterDataExclude(t *testing.T) {
 								Criteria: &pb.FilterCriteria{
 									FunctionName: &pb.StringCondition{
 										Condition: &pb.StringCondition_Contains{
-										Contains: "foo",
+											Contains: "foo",
+										},
 									},
 								},
 							},
-						},
 						},
 					},
 				},
@@ -2021,7 +2021,6 @@ func TestFilterDataExclude(t *testing.T) {
 				r.Release()
 			}
 		}()
-
 
 		// Should return all samples
 		require.Greater(t, len(recs), 0, "Expected at least one record")
