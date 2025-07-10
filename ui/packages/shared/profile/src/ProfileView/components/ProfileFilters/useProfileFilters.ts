@@ -16,6 +16,7 @@
 import {useCallback, useMemo, useState} from 'react';
 
 import {type Filter} from '@parca/client';
+
 import {useProfileFiltersUrlState, type ProfileFilter} from './useProfileFiltersUrlState';
 
 // Re-export the ProfileFilter type for convenience
@@ -134,7 +135,9 @@ export const useProfileFilters = ({onFiltersChange}: UseProfileFiltersProps = {}
 
   const isClearAction = useMemo(() => {
     const hasAppliedFilters =
-      appliedFilters != null && appliedFilters.length > 0 && appliedFilters.some(f => f.value !== '');
+      appliedFilters != null &&
+      appliedFilters.length > 0 &&
+      appliedFilters.some(f => f.value !== '');
     return hasAppliedFilters && !hasUnsavedChanges;
   }, [appliedFilters, hasUnsavedChanges]);
 
