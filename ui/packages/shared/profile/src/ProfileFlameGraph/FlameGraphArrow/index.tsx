@@ -184,9 +184,6 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
           perf.setMeasurement('flamegraph.render_time', renderTime);
         }
 
-        if (renderTime > 500 && perf.captureMessage != null) {
-          perf.captureMessage(`Slow flamegraph render: ${renderTime.toFixed(0)}ms`, 'warning');
-        }
         renderStartTime.current = 0;
       };
 
