@@ -343,7 +343,7 @@ message StackFilter {
 // FrameFilter applies filtering criteria to individual stack frames
 message FrameFilter {
   // filter defines the criteria to filter individual frames by
-  FilterCriteria filter = 1;
+  FilterCriteria criteria = 1;
 }
 
 // RuntimeFilter configures which runtimes to filter frames out for.

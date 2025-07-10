@@ -1619,8 +1619,8 @@ func (m *FrameFilter) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.Filter != nil {
-		size, err := m.Filter.MarshalToSizedBufferVT(dAtA[:i])
+	if m.Criteria != nil {
+		size, err := m.Criteria.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -3980,8 +3980,8 @@ func (m *FrameFilter) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Filter != nil {
-		l = m.Filter.SizeVT()
+	if m.Criteria != nil {
+		l = m.Criteria.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -7577,7 +7577,7 @@ func (m *FrameFilter) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Filter", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Criteria", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -7604,10 +7604,10 @@ func (m *FrameFilter) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Filter == nil {
-				m.Filter = &FilterCriteria{}
+			if m.Criteria == nil {
+				m.Criteria = &FilterCriteria{}
 			}
-			if err := m.Filter.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Criteria.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

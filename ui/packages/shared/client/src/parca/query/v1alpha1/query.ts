@@ -682,9 +682,9 @@ export interface FrameFilter {
     /**
      * filter defines the criteria to filter individual frames by
      *
-     * @generated from protobuf field: parca.query.v1alpha1.FilterCriteria filter = 1;
+     * @generated from protobuf field: parca.query.v1alpha1.FilterCriteria criteria = 1;
      */
-    filter?: FilterCriteria;
+    criteria?: FilterCriteria;
 }
 /**
  * RuntimeFilter configures which runtimes to filter frames out for.
@@ -2671,7 +2671,7 @@ export const StackFilter = new StackFilter$Type();
 class FrameFilter$Type extends MessageType<FrameFilter> {
     constructor() {
         super("parca.query.v1alpha1.FrameFilter", [
-            { no: 1, name: "filter", kind: "message", T: () => FilterCriteria }
+            { no: 1, name: "criteria", kind: "message", T: () => FilterCriteria }
         ]);
     }
     create(value?: PartialMessage<FrameFilter>): FrameFilter {
@@ -2685,8 +2685,8 @@ class FrameFilter$Type extends MessageType<FrameFilter> {
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* parca.query.v1alpha1.FilterCriteria filter */ 1:
-                    message.filter = FilterCriteria.internalBinaryRead(reader, reader.uint32(), options, message.filter);
+                case /* parca.query.v1alpha1.FilterCriteria criteria */ 1:
+                    message.criteria = FilterCriteria.internalBinaryRead(reader, reader.uint32(), options, message.criteria);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2700,9 +2700,9 @@ class FrameFilter$Type extends MessageType<FrameFilter> {
         return message;
     }
     internalBinaryWrite(message: FrameFilter, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* parca.query.v1alpha1.FilterCriteria filter = 1; */
-        if (message.filter)
-            FilterCriteria.internalBinaryWrite(message.filter, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* parca.query.v1alpha1.FilterCriteria criteria = 1; */
+        if (message.criteria)
+            FilterCriteria.internalBinaryWrite(message.criteria, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

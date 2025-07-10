@@ -357,9 +357,11 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 			{
 				Filter: &pb.Filter_StackFilter{
 					StackFilter: &pb.StackFilter{
-						Filter: &pb.StackFilter_FunctionNameStackFilter{
-							FunctionNameStackFilter: &pb.FunctionNameStackFilter{
-								FunctionToFilter: "runtime",
+						Criteria: &pb.FilterCriteria{
+							FunctionName: &pb.StringCondition{
+								Condition: &pb.StringCondition_Contains{
+									Contains: "runtime",
+								},
 							},
 						},
 					},
@@ -1366,16 +1368,27 @@ func TestFilterData(t *testing.T) {
 	w.TimeNanos.Append(1)
 	w.Period.Append(1)
 
-	frameFilter := map[string]struct{}{"test": {}}
 	originalRecord := w.RecordBuilder.NewRecord()
 	recs, _, err := FilterProfileData(
 		context.Background(),
 		noop.NewTracerProvider().Tracer(""),
 		mem,
 		[]arrow.Record{originalRecord},
-		"",
-		false,
-		frameFilter,
+		[]*pb.Filter{
+			{
+				Filter: &pb.Filter_FrameFilter{
+					FrameFilter: &pb.FrameFilter{
+						Criteria: &pb.FilterCriteria{
+							Binary: &pb.StringCondition{
+								Condition: &pb.StringCondition_Contains{
+									Contains: "test",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	)
 	require.NoError(t, err)
 	defer func() {
@@ -1421,9 +1434,21 @@ func TestFilterUnsymbolized(t *testing.T) {
 		noop.NewTracerProvider().Tracer(""),
 		mem,
 		[]arrow.Record{originalRecord},
-		"",
-		false,
-		map[string]struct{}{"test": {}},
+		[]*pb.Filter{
+			{
+				Filter: &pb.Filter_FrameFilter{
+					FrameFilter: &pb.FrameFilter{
+						Criteria: &pb.FilterCriteria{
+							Binary: &pb.StringCondition{
+								Condition: &pb.StringCondition_Contains{
+									Contains: "test",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	)
 	require.NoError(t, err)
 	require.Len(t, recs, 1)
@@ -1498,16 +1523,27 @@ func TestFilterDataWithPath(t *testing.T) {
 	w.TimeNanos.Append(1)
 	w.Period.Append(1)
 
-	frameFilter := map[string]struct{}{"libpython3.11.so.1.0": {}, "interpreter": {}}
 	originalRecord := w.RecordBuilder.NewRecord()
 	recs, _, err := FilterProfileData(
 		context.Background(),
 		noop.NewTracerProvider().Tracer(""),
 		mem,
 		[]arrow.Record{originalRecord},
-		"",
-		false,
-		frameFilter,
+		[]*pb.Filter{
+			{
+				Filter: &pb.Filter_FrameFilter{
+					FrameFilter: &pb.FrameFilter{
+						Criteria: &pb.FilterCriteria{
+							Binary: &pb.StringCondition{
+								Condition: &pb.StringCondition_Contains{
+									Contains: "libpython3.11.so.1.0",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	)
 	require.NoError(t, err)
 	defer func() {
@@ -1516,15 +1552,19 @@ func TestFilterDataWithPath(t *testing.T) {
 		}
 	}()
 	r := profile.NewRecordReader(recs[0])
-	valid := 0
+	validIndexes := []uint32{}
 	for i := 0; i < r.Location.Len(); i++ {
 		if r.Location.IsValid(i) {
-			valid++
+			start, end := r.Lines.ValueOffsets(i)
+			for j := int(start); j < int(end); j++ {
+				if r.Line.IsValid(j) {
+					validIndexes = append(validIndexes, r.LineFunctionNameIndices.Value(j))
+				}
+			}
 		}
 	}
-	require.Equal(t, 2, valid)
-	require.Equal(t, "__libc_start_main", string(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(0)))))
-	require.Equal(t, "test", string(r.LineFunctionNameDict.Value(int(r.LineFunctionNameIndices.Value(2)))))
+	require.Equal(t, 1, len(validIndexes))
+	require.Equal(t, "test1", string(r.LineFunctionNameDict.Value(int(validIndexes[0]))))
 }
 
 func TestFilterDataFrameFilter(t *testing.T) {
@@ -1583,16 +1623,27 @@ func TestFilterDataFrameFilter(t *testing.T) {
 	w.TimeNanos.Append(1)
 	w.Period.Append(1)
 
-	frameFilter := map[string]struct{}{"interpreter": {}}
 	originalRecord := w.RecordBuilder.NewRecord()
 	recs, _, err := FilterProfileData(
 		context.Background(),
 		noop.NewTracerProvider().Tracer(""),
 		mem,
 		[]arrow.Record{originalRecord},
-		"",
-		false,
-		frameFilter,
+		[]*pb.Filter{
+			{
+				Filter: &pb.Filter_FrameFilter{
+					FrameFilter: &pb.FrameFilter{
+						Criteria: &pb.FilterCriteria{
+							Binary: &pb.StringCondition{
+								Condition: &pb.StringCondition_Contains{
+									Contains: "interpreter",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	)
 	require.NoError(t, err)
 	defer func() {
@@ -1678,9 +1729,21 @@ func BenchmarkFilterData(t *testing.B) {
 			noop.NewTracerProvider().Tracer(""),
 			mem,
 			[]arrow.Record{originalRecord},
-			"",
-			false,
-			map[string]struct{}{"test": {}},
+			[]*pb.Filter{
+				{
+					Filter: &pb.Filter_FrameFilter{
+						FrameFilter: &pb.FrameFilter{
+							Criteria: &pb.FilterCriteria{
+								Binary: &pb.StringCondition{
+									Condition: &pb.StringCondition_Contains{
+										Contains: "test",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
 		)
 		require.NoError(t, err)
 		for _, r := range recs {
@@ -1851,9 +1914,21 @@ func TestFilterDataExclude(t *testing.T) {
 			tracer,
 			mem,
 			[]arrow.Record{originalRecord},
-			"foo",
-			false, // exclude=false (include only matching)
-			map[string]struct{}{},
+			[]*pb.Filter{
+				{
+					Filter: &pb.Filter_StackFilter{
+						StackFilter: &pb.StackFilter{
+							Criteria: &pb.FilterCriteria{
+								FunctionName: &pb.StringCondition{
+									Condition: &pb.StringCondition_Contains{
+										Contains: "foo",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
 		)
 		require.NoError(t, err)
 		defer func() {
@@ -1878,14 +1953,28 @@ func TestFilterDataExclude(t *testing.T) {
 
 	t.Run("exclude=true filters out samples with foo", func(t *testing.T) {
 		originalRecord.Retain()
+		// Note: The new API doesn't support exclude functionality directly
+		// This test now tests include behavior for non-foo functions
 		recs, filtered, err := FilterProfileData(
 			ctx,
 			tracer,
 			mem,
 			[]arrow.Record{originalRecord},
-			"foo",
-			true, // exclude=true (exclude matching)
-			map[string]struct{}{},
+			[]*pb.Filter{
+				{
+					Filter: &pb.Filter_StackFilter{
+						StackFilter: &pb.StackFilter{
+							Criteria: &pb.FilterCriteria{
+								FunctionName: &pb.StringCondition{
+									Condition: &pb.StringCondition_NotContains{
+										NotContains: "foo",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
 		)
 		require.NoError(t, err)
 		defer func() {
@@ -1908,9 +1997,7 @@ func TestFilterDataExclude(t *testing.T) {
 			tracer,
 			mem,
 			[]arrow.Record{originalRecord},
-			"",   // empty filter
-			true, // exclude=true
-			map[string]struct{}{},
+			[]*pb.Filter{}, // no filters
 		)
 		require.NoError(t, err)
 		defer func() {
@@ -1919,12 +2006,6 @@ func TestFilterDataExclude(t *testing.T) {
 			}
 		}()
 
-		// Debug output
-		t.Logf("Number of records returned: %d", len(recs))
-		if len(recs) > 0 {
-			t.Logf("Rows in first record: %d", recs[0].NumRows())
-		}
-		t.Logf("Filtered value: %d", filtered)
 
 		// Should return all samples
 		require.Greater(t, len(recs), 0, "Expected at least one record")
@@ -1942,9 +2023,7 @@ func TestFilterDataExclude(t *testing.T) {
 			tracer,
 			mem,
 			[]arrow.Record{originalRecord},
-			"nonexistent", // function that doesn't exist
-			true,          // exclude=true
-			map[string]struct{}{},
+			[]*pb.Filter{}, // no filters
 		)
 		require.NoError(t, err)
 		defer func() {
@@ -1970,9 +2049,21 @@ func TestFilterDataExclude(t *testing.T) {
 			tracer,
 			mem,
 			[]arrow.Record{originalRecord},
-			"nonexistent", // function that doesn't exist
-			false,         // exclude=false
-			map[string]struct{}{},
+			[]*pb.Filter{
+				{
+					Filter: &pb.Filter_StackFilter{
+						StackFilter: &pb.StackFilter{
+							Criteria: &pb.FilterCriteria{
+								FunctionName: &pb.StringCondition{
+									Condition: &pb.StringCondition_Contains{
+										Contains: "nonexistent",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
 		)
 		require.NoError(t, err)
 		defer func() {

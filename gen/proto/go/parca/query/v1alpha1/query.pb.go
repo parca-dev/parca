@@ -1583,7 +1583,7 @@ func (x *StackFilter) GetCriteria() *FilterCriteria {
 type FrameFilter struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// filter defines the criteria to filter individual frames by
-	Filter        *FilterCriteria `protobuf:"bytes,1,opt,name=filter,proto3" json:"filter,omitempty"`
+	Criteria      *FilterCriteria `protobuf:"bytes,1,opt,name=criteria,proto3" json:"criteria,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1618,9 +1618,9 @@ func (*FrameFilter) Descriptor() ([]byte, []int) {
 	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{17}
 }
 
-func (x *FrameFilter) GetFilter() *FilterCriteria {
+func (x *FrameFilter) GetCriteria() *FilterCriteria {
 	if x != nil {
-		return x.Filter
+		return x.Criteria
 	}
 	return nil
 }
@@ -3785,9 +3785,9 @@ const file_parca_query_v1alpha1_query_proto_rawDesc = "" +
 	"\fframe_filter\x18\x02 \x01(\v2!.parca.query.v1alpha1.FrameFilterH\x00R\vframeFilterB\b\n" +
 	"\x06filter\"O\n" +
 	"\vStackFilter\x12@\n" +
-	"\bcriteria\x18\x01 \x01(\v2$.parca.query.v1alpha1.FilterCriteriaR\bcriteria\"K\n" +
-	"\vFrameFilter\x12<\n" +
-	"\x06filter\x18\x01 \x01(\v2$.parca.query.v1alpha1.FilterCriteriaR\x06filter\"\x81\x01\n" +
+	"\bcriteria\x18\x01 \x01(\v2$.parca.query.v1alpha1.FilterCriteriaR\bcriteria\"O\n" +
+	"\vFrameFilter\x12@\n" +
+	"\bcriteria\x18\x01 \x01(\v2$.parca.query.v1alpha1.FilterCriteriaR\bcriteria\"\x81\x01\n" +
 	"\rRuntimeFilter\x12\x1f\n" +
 	"\vshow_python\x18\x01 \x01(\bR\n" +
 	"showPython\x12\x1b\n" +
@@ -4065,7 +4065,7 @@ var file_parca_query_v1alpha1_query_proto_depIdxs = []int32{
 	19, // 33: parca.query.v1alpha1.Filter.stack_filter:type_name -> parca.query.v1alpha1.StackFilter
 	20, // 34: parca.query.v1alpha1.Filter.frame_filter:type_name -> parca.query.v1alpha1.FrameFilter
 	15, // 35: parca.query.v1alpha1.StackFilter.criteria:type_name -> parca.query.v1alpha1.FilterCriteria
-	15, // 36: parca.query.v1alpha1.FrameFilter.filter:type_name -> parca.query.v1alpha1.FilterCriteria
+	15, // 36: parca.query.v1alpha1.FrameFilter.criteria:type_name -> parca.query.v1alpha1.FilterCriteria
 	25, // 37: parca.query.v1alpha1.Top.list:type_name -> parca.query.v1alpha1.TopNode
 	26, // 38: parca.query.v1alpha1.TopNode.meta:type_name -> parca.query.v1alpha1.TopNodeMeta
 	52, // 39: parca.query.v1alpha1.TopNodeMeta.location:type_name -> parca.metastore.v1alpha1.Location

@@ -1325,7 +1325,7 @@
     "v1alpha1FrameFilter": {
       "type": "object",
       "properties": {
-        "filter": {
+        "criteria": {
           "$ref": "#/definitions/v1alpha1FilterCriteria",
           "title": "filter defines the criteria to filter individual frames by"
         }
