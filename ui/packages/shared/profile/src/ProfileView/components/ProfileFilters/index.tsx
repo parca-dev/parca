@@ -1,4 +1,6 @@
 // Copyright 2025 The Parca Authors
+// TODO: This license is not consistent with the license used in the project.
+//       Delete the inconsistent license and above line and rerun pre-commit to insert a good license.
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -11,14 +13,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useCallback } from 'react';
+import {useCallback} from 'react';
 
-import { Icon } from '@iconify/react';
+import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
-import { Button, Input, Select, type SelectItem } from '@parca/components';
+import {Button, Input, Select, type SelectItem} from '@parca/components';
 
-import { useProfileFilters, type ProfileFilter } from './useProfileFilters';
+import {useProfileFilters, type ProfileFilter} from './useProfileFilters';
 
 interface ProfileFiltersProps {
   onFiltersChange?: (filters: ProfileFilter[]) => void;
@@ -146,7 +148,7 @@ const numberMatchTypeItems: SelectItem[] = [
   },
 ];
 
-const ProfileFilters = ({ onFiltersChange }: ProfileFiltersProps): JSX.Element => {
+const ProfileFilters = ({onFiltersChange}: ProfileFiltersProps): JSX.Element => {
   const {
     localFilters,
     appliedFilters,
@@ -156,7 +158,7 @@ const ProfileFilters = ({ onFiltersChange }: ProfileFiltersProps): JSX.Element =
     removeFilter,
     updateFilter,
     resetFilters,
-  } = useProfileFilters({ onFiltersChange });
+  } = useProfileFilters({onFiltersChange});
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -183,7 +185,7 @@ const ProfileFilters = ({ onFiltersChange }: ProfileFiltersProps): JSX.Element =
               <Select
                 items={filterTypeItems}
                 selectedKey={filter.type}
-                onSelection={key => updateFilter(filter.id, { type: key as 'stack' | 'frame' })}
+                onSelection={key => updateFilter(filter.id, {type: key as 'stack' | 'frame'})}
                 className="rounded-l-md rounded-r-none border-r-0 w-28 pr-1 gap-0 focus:z-50 focus:relative focus:outline-1"
               />
 
@@ -202,7 +204,7 @@ const ProfileFilters = ({ onFiltersChange }: ProfileFiltersProps): JSX.Element =
                       matchType: 'equal',
                     });
                   } else {
-                    updateFilter(filter.id, { field: newField });
+                    updateFilter(filter.id, {field: newField});
                   }
                 }}
                 className="rounded-none border-r-0 w-32 pr-1 gap-0 focus:z-50 focus:relative focus:outline-1"
@@ -212,7 +214,7 @@ const ProfileFilters = ({ onFiltersChange }: ProfileFiltersProps): JSX.Element =
                 items={matchTypeItems}
                 selectedKey={filter.matchType}
                 onSelection={key =>
-                  updateFilter(filter.id, { matchType: key as ProfileFilter['matchType'] })
+                  updateFilter(filter.id, {matchType: key as ProfileFilter['matchType']})
                 }
                 className="rounded-none border-r-0 pr-1 gap-0 focus:z-50 focus:relative focus:outline-1"
               />
@@ -220,7 +222,7 @@ const ProfileFilters = ({ onFiltersChange }: ProfileFiltersProps): JSX.Element =
               <Input
                 placeholder="Value"
                 value={filter.value}
-                onChange={e => updateFilter(filter.id, { value: e.target.value })}
+                onChange={e => updateFilter(filter.id, {value: e.target.value})}
                 onKeyDown={handleKeyDown}
                 className="rounded-none w-36 text-sm focus:outline-1"
               />
@@ -256,7 +258,7 @@ const ProfileFilters = ({ onFiltersChange }: ProfileFiltersProps): JSX.Element =
         )}
       </div>
 
-      {(localFilters.length > 0 && hasUnsavedChanges && localFilters.every(f => f.value !== '')) && (
+      {localFilters.length > 0 && hasUnsavedChanges && localFilters.every(f => f.value !== '') && (
         <Button
           variant="primary"
           onClick={onApplyFilters}
