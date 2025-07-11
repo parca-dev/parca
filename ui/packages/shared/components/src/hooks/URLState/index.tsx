@@ -86,9 +86,13 @@ export const useURLState = <T extends ParamValue>(
         }
         setState(state => ({...state, [param]: val}));
 
+        let encodedVal = val;
+        if (typeof val === 'string') {
+          encodedVal = encodeURIComponent(val);
+        }
         navigateTo(
           window.location.pathname,
-          sanitize({...getQueryParamsFromURL(), [param]: val}, defaultValues),
+          sanitize({...getQueryParamsFromURL(), [param]: encodedVal}, defaultValues),
           {
             replace: true,
           }
