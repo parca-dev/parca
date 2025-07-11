@@ -1005,7 +1005,7 @@ func matchesStringCondition(value []byte, condition *pb.StringCondition) bool {
 	}
 }
 
-// matchesNumberCondition checks if a numeric value matches a number condition
+// matchesNumberCondition checks if a numeric value matches a number condition.
 func matchesNumberCondition(value uint64, condition *pb.NumberCondition) bool {
 	if condition == nil {
 		return true

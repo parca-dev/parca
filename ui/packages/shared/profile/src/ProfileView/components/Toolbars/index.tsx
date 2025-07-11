@@ -167,12 +167,11 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
               <InvertCallStack />
             </>
           )}
-
           <ProfileFilters />
 
           {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           <MultiLevelDropdown
             groupBy={groupBy}
             toggleGroupBy={toggleGroupBy}
