@@ -69,7 +69,6 @@ const Navbar = () => {
     merge_from_a,
     merge_to_a,
     time_selection_a,
-    filter_by_function,
     dashboard_items,
     selection_a,
     expression_a,
@@ -118,7 +117,6 @@ const Navbar = () => {
           to_a: to_a,
           time_selection_a: time_selection_a,
           selection_a: selection_a,
-          filter_by_function: filter_by_function,
           merge_from_a: merge_from_a,
           merge_to_a: merge_to_a,
         };

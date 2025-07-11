@@ -1025,7 +1025,25 @@ func TestFlamegraphTrimmingAndFiltering(t *testing.T) {
 	defer mem.AssertSize(t, 0)
 
 	tracer := noop.NewTracerProvider().Tracer("")
-	p.Samples, filtered, err = FilterProfileData(ctx, tracer, mem, p.Samples, "b", false, map[string]struct{}{}) // querying for "b" should filter out the "5.c" function.
+	// Create stack filter for function "b" - should filter out the "5.c" function
+	filters := []*pb.Filter{
+		{
+			Filter: &pb.Filter_StackFilter{
+				StackFilter: &pb.StackFilter{
+					Filter: &pb.StackFilter_Criteria{
+						Criteria: &pb.FilterCriteria{
+							FunctionName: &pb.StringCondition{
+								Condition: &pb.StringCondition_Contains{
+									Contains: "b",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	p.Samples, filtered, err = FilterProfileData(ctx, tracer, mem, p.Samples, filters)
 	require.NoError(t, err)
 	defer func() {
 		for _, s := range p.Samples {

@@ -59,10 +59,6 @@ const UserPreferences = ({modal}: {modal?: boolean}): JSX.Element => {
     <div>
       <div className={cx('min-h-40 ', modal === true ? '' : 'mt-8')}>
         <UserPreferenceItem
-          id="h-highlight-after-filtering"
-          userPreferenceDetails={USER_PREFERENCES.HIGHTLIGHT_AFTER_FILTERING}
-        />
-        <UserPreferenceItem
           id="h-dock-graph-tooltip"
           userPreferenceDetails={USER_PREFERENCES.GRAPH_METAINFO_DOCKED}
         />

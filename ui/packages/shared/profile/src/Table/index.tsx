@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef} from 'react';
 
 import {tableFromIPC} from 'apache-arrow';
 import {AnimatePresence, motion} from 'framer-motion';
@@ -25,7 +25,6 @@ import {
 } from '@parca/components';
 import {useCurrentColorProfile} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
-import {isSearchMatch} from '@parca/utilities';
 
 import useMappingList, {
   useFilenamesList,
@@ -56,8 +55,6 @@ export interface TableProps {
   filtered: bigint;
   profileType?: ProfileType;
   loading: boolean;
-  currentSearchString?: string;
-  setSearchString?: (searchString: string) => void;
   setActionButtons?: (buttons: React.JSX.Element) => void;
   isHalfScreen: boolean;
   unit?: string;
@@ -70,8 +67,6 @@ export const Table = React.memo(function Table({
   filtered,
   profileType,
   loading,
-  currentSearchString,
-  setSearchString = () => {},
   isHalfScreen,
   unit,
   metadataMappingFiles,
@@ -83,8 +78,6 @@ export const Table = React.memo(function Table({
   const [_, setSandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
   const [colorBy, setColorBy] = useURLState('color_by');
   const {isDarkMode} = useParcaContext();
-  const [scrollToIndex, setScrollToIndex] = useState<number | undefined>(undefined);
-
   const {compareMode} = useProfileViewContext();
 
   const MENU_ID = 'table-context-menu';
@@ -138,13 +131,11 @@ export const Table = React.memo(function Table({
 
   const selectSpan = useCallback(
     (span: string): void => {
-      if (dashboardItems.includes('flamegraph')) {
-        setSearchString(span.trim());
-      } else {
+      if (!dashboardItems.includes('flamegraph')) {
         setSandwichFunctionName(span.trim());
       }
     },
-    [setSearchString, setSandwichFunctionName, dashboardItems]
+    [setSandwichFunctionName, dashboardItems]
   );
 
   const onRowClick = useCallback(
@@ -157,21 +148,6 @@ export const Table = React.memo(function Table({
     },
     [selectSpan, dashboardItems.length]
   );
-
-  const shouldHighlightRow = useCallback(
-    (row: Row) => {
-      if (!('name' in row)) {
-        return false;
-      }
-      const name = row.name;
-      return isSearchMatch(currentSearchString as string, name);
-    },
-    [currentSearchString]
-  );
-
-  const enableHighlighting = useMemo(() => {
-    return currentSearchString != null && currentSearchString?.length > 0;
-  }, [currentSearchString]);
 
   const rows: DataRow[] = useMemo(() => {
     if (table == null || table.numRows === 0) {
@@ -291,20 +267,6 @@ export const Table = React.memo(function Table({
     [rows, show]
   );
 
-  useEffect(() => {
-    setTimeout(() => {
-      if (currentSearchString == null || rows.length === 0) return;
-
-      const firstHighlightedRowIndex = rows.findIndex(row => {
-        return isSearchMatch(currentSearchString, row.name);
-      });
-
-      if (firstHighlightedRowIndex !== -1) {
-        setScrollToIndex(firstHighlightedRowIndex);
-      }
-    }, 1000); // Adding a delay to allow the table to render seems to be the only way to get this to work i.e. scrolling down to the highlighted row
-  }, [currentSearchString, rows]);
-
   if (loading) {
     return (
       <div className="overflow-clip h-[700px] min-h-[700px]">
@@ -335,10 +297,7 @@ export const Table = React.memo(function Table({
               initialSorting={initialSorting}
               columnVisibility={columnVisibility}
               onRowClick={onRowClick}
-              enableHighlighting={enableHighlighting}
-              shouldHighlightRow={shouldHighlightRow}
               usePointerCursor={dashboardItems.length > 1}
-              scrollToIndex={scrollToIndex}
               estimatedRowHeight={ROW_HEIGHT}
             />
           </div>

@@ -24,14 +24,6 @@ export interface UserPreferenceDetails {
 }
 
 export const USER_PREFERENCES: {[key: string]: UserPreferenceDetails} = {
-  HIGHTLIGHT_AFTER_FILTERING: {
-    name: 'Highlight matching nodes after filtering',
-    key: 'HIGHTLIGHT_AFTER_FILTERING',
-    type: 'boolean',
-    default: true,
-    description:
-      'When enabled, this option highlights all occurrences of nodes that match your filter criteria, specifically when using the "filter by function" feature.',
-  },
   ENABLE_GRAPH_TRIMMING: {
     name: 'Enable trimming of nodes that are too small to be seen',
     key: 'ENABLE_GRAPH_TRIMMING',

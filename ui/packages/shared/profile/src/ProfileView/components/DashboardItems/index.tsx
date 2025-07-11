@@ -44,8 +44,6 @@ interface GetDashboardItemProps {
   setNewCurPath: (path: string[]) => void;
   curPathArrow: CurrentPathFrame[];
   setNewCurPathArrow: (path: CurrentPathFrame[]) => void;
-  currentSearchString?: string;
-  setSearchString?: (value: string) => void;
   perf?: {
     onRender?: ProfilerOnRenderCallback;
   };
@@ -65,8 +63,6 @@ export const getDashboardItem = ({
   filtered,
   curPathArrow,
   setNewCurPathArrow,
-  currentSearchString,
-  setSearchString,
   perf,
   queryClient,
 }: GetDashboardItemProps): JSX.Element => {
@@ -138,8 +134,6 @@ export const getDashboardItem = ({
           data={topTableData.arrow?.record}
           unit={topTableData.unit}
           profileType={profileSource?.ProfileType()}
-          currentSearchString={currentSearchString}
-          setSearchString={setSearchString}
           isHalfScreen={isHalfScreen}
           metadataMappingFiles={flamegraphData.metadataMappingFiles}
         />
