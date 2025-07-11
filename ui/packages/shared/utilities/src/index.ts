@@ -189,12 +189,14 @@ export const parseParams = (
   for (const key of Array.from(params.keys())) {
     let values = params.getAll(key).filter((v): v is string => v != null);
 
-    // Handle expression parameters that might have multiple levels of encoding
+    // Handle parameters that might have multiple levels of encoding
     if (
       key === 'expression_a' ||
       key === 'expression_b' ||
       key === 'selection_a' ||
-      key === 'selection_b'
+      key === 'selection_b' ||
+      key === 'profileType' ||
+      key === 'cur_path'
     ) {
       values = values.map((value): string => {
         // First, decode multiple levels if present
