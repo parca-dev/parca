@@ -226,7 +226,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
   const isCompareAbsolute = compareAbsolute === 'true';
 
   useEffect(() => {
-    const checkOverflow = () => {
+    const checkOverflow = (): void => {
       if (dropdownRef.current !== null) {
         const rect = dropdownRef.current.getBoundingClientRect();
         const viewportWidth = window.innerWidth;
