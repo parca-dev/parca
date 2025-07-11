@@ -196,7 +196,9 @@ export const parseParams = (
       key === 'selection_a' ||
       key === 'selection_b' ||
       key === 'profileType' ||
-      key === 'cur_path'
+      key === 'cur_path' ||
+      key === 'time_selection_a' ||
+      key === 'time_selection_b'
     ) {
       values = values.map((value): string => {
         // First, decode multiple levels if present
