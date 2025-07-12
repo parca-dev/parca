@@ -296,7 +296,7 @@ importers:
     dependencies:
       '@alwaysmeticulous/recorder-loader':
         specifier: ^2.19.0
-        version: 2.223.0
+        version: 2.224.0
       '@headlessui/react':
         specifier: ^1.7.19
         version: 1.7.19(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -882,8 +882,8 @@ packages:
     resolution: {integrity: sha512-jX40lYMkaMO+hEgqazQN3C7gGmq2Vwkef4FdVqe0Nvq88LI9UMX8punX14i64NOTehcknjZ54e9LKHeJOK90pw==}
     engines: {node: '>= 12'}
 
-  '@alwaysmeticulous/recorder-loader@2.223.0':
-    resolution: {integrity: sha512-LmGeqM5kAx1P2FiX8gXKIWqJ/CzPNQi+dxF9+f6KrihV4giyEbEfLQlNV3udtX3Vjp3nzjrDrz8jyBBtIhuWWg==}
+  '@alwaysmeticulous/recorder-loader@2.224.0':
+    resolution: {integrity: sha512-LbuCkDvK7O9ldP4S8B18YOO1WYu0rVx3Ggqv0TxVnGirrbpfZ5wwnLbCkXlupBzC06eHJrk7/jIBNYum1wIeJA==}
 
   '@alwaysmeticulous/sdk-bundles-api@2.224.0':
     resolution: {integrity: sha512-yiu3oqGfiCattRK5c9SNSLz/WxQy2QJnro8/UkU1VwHqKh+RonI8RPkAncVAwLQVWAoNhAP6RuGtxv3r+KSw/g==}
@@ -13469,7 +13469,7 @@ snapshots:
 
   '@alwaysmeticulous/api@2.224.0': {}
 
-  '@alwaysmeticulous/recorder-loader@2.223.0':
+  '@alwaysmeticulous/recorder-loader@2.224.0':
     dependencies:
       '@alwaysmeticulous/sdk-bundles-api': 2.224.0
 
