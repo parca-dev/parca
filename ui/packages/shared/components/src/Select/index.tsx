@@ -93,7 +93,7 @@ const Select = ({
                   icon != null ? '' : 'block overflow-x-hidden text-ellipsis whitespace-nowrap'
                 )}
               >
-                {selection?.key !== '' ? selection.element.active : placeholder}
+                {selection?.key != null && selection?.key !== '' ? selection.element.active : placeholder}
               </div>
               <div className={cx(icon != null ? '' : 'pointer-events-none text-gray-400')}>
                 {icon ?? <Icon icon="heroicons:chevron-up-down-20-solid" aria-hidden="true" />}

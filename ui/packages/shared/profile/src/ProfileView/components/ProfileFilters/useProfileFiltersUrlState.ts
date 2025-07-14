@@ -46,11 +46,11 @@ const encodeFilters = (filters: ProfileFilter[]): string => {
   if (filters.length === 0) return '';
 
   return filters
-    .filter(f => f.value !== '')
+    .filter(f => f.value !== '' && f.type && f.field && f.matchType)
     .map(f => {
-      const type = TYPE_MAP[f.type];
-      const field = FIELD_MAP[f.field];
-      const match = MATCH_MAP[f.matchType];
+      const type = TYPE_MAP[f.type!];
+      const field = FIELD_MAP[f.field!];
+      const match = MATCH_MAP[f.matchType!];
       const value = encodeURIComponent(f.value);
       return `${type}:${field}:${match}:${value}`;
     })

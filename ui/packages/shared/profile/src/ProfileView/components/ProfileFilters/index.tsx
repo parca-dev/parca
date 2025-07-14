@@ -20,6 +20,10 @@ import {Button, Input, Select, type SelectItem} from '@parca/components';
 
 import {useProfileFilters, type ProfileFilter} from './useProfileFilters';
 
+export const isFilterComplete = (filter: ProfileFilter): boolean => {
+  return filter.value !== '' && filter.type != null && filter.field != null && filter.matchType != null;
+};
+
 const filterTypeItems: SelectItem[] = [
   {
     key: 'stack',
@@ -176,52 +180,69 @@ const ProfileFilters = (): JSX.Element => {
           const isNumberField = filter.field === 'address' || filter.field === 'line_number';
           const matchTypeItems = isNumberField ? numberMatchTypeItems : stringMatchTypeItems;
 
+          console.log('Rendering filter:', filter);
+
           return (
             <div key={filter.id} className="flex items-center gap-0">
               <Select
                 items={filterTypeItems}
                 selectedKey={filter.type}
-                onSelection={key => updateFilter(filter.id, {type: key as 'stack' | 'frame'})}
-                className="rounded-l-md rounded-r-none border-r-0 w-28 pr-1 gap-0 focus:z-50 focus:relative focus:outline-1"
-              />
-
-              <Select
-                items={fieldItems}
-                selectedKey={filter.field}
+                placeholder="Select Filter"
                 onSelection={key => {
-                  const newField = key as ProfileFilter['field'];
-                  const isNewFieldNumber = newField === 'address' || newField === 'line_number';
-                  const isCurrentFieldNumber =
-                    filter.field === 'address' || filter.field === 'line_number';
-
-                  if (isNewFieldNumber !== isCurrentFieldNumber) {
-                    updateFilter(filter.id, {
-                      field: newField,
-                      matchType: 'equal',
-                    });
-                  } else {
-                    updateFilter(filter.id, {field: newField});
-                  }
+                  const newType = key as 'stack' | 'frame';
+                  updateFilter(filter.id, {
+                    type: newType,
+                    field: filter.field || 'function_name',
+                    matchType: filter.matchType || 'contains',
+                  });
                 }}
-                className="rounded-none border-r-0 w-32 pr-1 gap-0 focus:z-50 focus:relative focus:outline-1"
+                className={cx(
+                  'rounded-l-md pr-1 gap-0 focus:z-50 focus:relative focus:outline-1',
+                  filter.type ? 'rounded-r-none border-r-0 w-28' : 'rounded-r-md w-32'
+                )}
               />
 
-              <Select
-                items={matchTypeItems}
-                selectedKey={filter.matchType}
-                onSelection={key =>
-                  updateFilter(filter.id, {matchType: key as ProfileFilter['matchType']})
-                }
-                className="rounded-none border-r-0 pr-1 gap-0 focus:z-50 focus:relative focus:outline-1"
-              />
+              {filter.type && (
+                <>
+                  <Select
+                    items={fieldItems}
+                    selectedKey={filter.field || ''}
+                    onSelection={key => {
+                      const newField = key as ProfileFilter['field'];
+                      const isNewFieldNumber = newField === 'address' || newField === 'line_number';
+                      const isCurrentFieldNumber =
+                        filter.field === 'address' || filter.field === 'line_number';
 
-              <Input
-                placeholder="Value"
-                value={filter.value}
-                onChange={e => updateFilter(filter.id, {value: e.target.value})}
-                onKeyDown={handleKeyDown}
-                className="rounded-none w-36 text-sm focus:outline-1"
-              />
+                      if (isNewFieldNumber !== isCurrentFieldNumber) {
+                        updateFilter(filter.id, {
+                          field: newField,
+                          matchType: 'equal',
+                        });
+                      } else {
+                        updateFilter(filter.id, { field: newField });
+                      }
+                    }}
+                    className="rounded-none border-r-0 w-32 pr-1 gap-0 focus:z-50 focus:relative focus:outline-1"
+                  />
+
+                  <Select
+                    items={matchTypeItems}
+                    selectedKey={filter.matchType || ''}
+                    onSelection={key =>
+                      updateFilter(filter.id, { matchType: key as ProfileFilter['matchType'] })
+                    }
+                    className="rounded-none border-r-0 pr-1 gap-0 focus:z-50 focus:relative focus:outline-1"
+                  />
+
+                  <Input
+                    placeholder="Value"
+                    value={filter.value}
+                    onChange={e => updateFilter(filter.id, { value: e.target.value })}
+                    onKeyDown={handleKeyDown}
+                    className="rounded-none w-36 text-sm focus:outline-1"
+                  />
+                </>
+              )}
 
               <Button
                 variant="neutral"
@@ -232,7 +253,10 @@ const ProfileFilters = (): JSX.Element => {
                     removeFilter(filter.id);
                   }
                 }}
-                className="h-[38px] rounded-none rounded-r-md p-3"
+                className={cx(
+                  'h-[38px] p-3',
+                  filter.type ? 'rounded-none rounded-r-md' : 'rounded-l-none rounded-r-md'
+                )}
               >
                 <Icon icon="mdi:close" className="h-4 w-4" />
               </Button>
@@ -254,7 +278,7 @@ const ProfileFilters = (): JSX.Element => {
         )}
       </div>
 
-      {localFilters.length > 0 && hasUnsavedChanges && localFilters.every(f => f.value !== '') && (
+      {localFilters.length > 0 && hasUnsavedChanges && localFilters.some(isFilterComplete) && (
         <Button
           variant="primary"
           onClick={onApplyFilters}
