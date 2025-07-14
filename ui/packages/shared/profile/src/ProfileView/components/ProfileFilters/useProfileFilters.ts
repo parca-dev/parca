@@ -11,13 +11,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo} from 'react';
 
 import {type Filter} from '@parca/client';
+import {
+  selectLocalFilters,
+  setLocalFilters,
+  useAppDispatch,
+  useAppSelector,
+  type ProfileFilter,
+} from '@parca/store';
 
-import {useProfileFiltersUrlState, type ProfileFilter} from './useProfileFiltersUrlState';
+import {useProfileFiltersUrlState} from './useProfileFiltersUrlState';
 
-// Re-export the ProfileFilter type for convenience
 export type {ProfileFilter};
 
 // Convert ProfileFilter[] to protobuf Filter[] matching the expected structure
@@ -102,26 +108,43 @@ const convertToProtoFilters = (profileFilters: ProfileFilter[]): Filter[] => {
     });
 };
 
-interface UseProfileFiltersProps {
-  onFiltersChange?: (filters: ProfileFilter[]) => void;
-}
-
-export const useProfileFilters = ({onFiltersChange}: UseProfileFiltersProps = {}): {
+export const useProfileFilters = (): {
   localFilters: ProfileFilter[];
   appliedFilters: ProfileFilter[];
   protoFilters: Filter[];
   hasUnsavedChanges: boolean;
   onApplyFilters: () => void;
   addFilter: () => void;
+  excludeBinary: (binaryName: string) => void;
+  removeExcludeBinary: (binaryName: string) => void;
   removeFilter: (id: string) => void;
   updateFilter: (id: string, updates: Partial<ProfileFilter>) => void;
   resetFilters: () => void;
 } => {
   const {appliedFilters, setAppliedFilters} = useProfileFiltersUrlState();
+  const dispatch = useAppDispatch();
+  const localFilters = useAppSelector(selectLocalFilters);
 
-  const [localFilters, setLocalFilters] = useState<ProfileFilter[]>(() => {
-    return appliedFilters ?? [];
-  });
+  useEffect(() => {
+    if (appliedFilters && appliedFilters.length > 0) {
+      // Check if they're different to avoid unnecessary updates
+      const areFiltersEqual = appliedFilters.length === localFilters.length &&
+        appliedFilters.every((applied, index) => {
+          const local = localFilters[index];
+          return local &&
+            applied.type === local.type &&
+            applied.field === local.field &&
+            applied.matchType === local.matchType &&
+            applied.value === local.value;
+        });
+
+      if (!areFiltersEqual) {
+        dispatch(setLocalFilters(appliedFilters));
+      }
+    } else if (appliedFilters && appliedFilters.length === 0 && localFilters.length > 0) {
+      dispatch(setLocalFilters([]));
+    }
+  }, []);
 
   const hasUnsavedChanges = useMemo(() => {
     const localWithValues = localFilters.filter(f => f.value !== '');
@@ -148,22 +171,62 @@ export const useProfileFilters = ({onFiltersChange}: UseProfileFiltersProps = {}
       matchType: 'contains',
       value: '',
     };
-    setLocalFilters(prev => [...prev, newFilter]);
-  }, []);
+    dispatch(setLocalFilters([...localFilters, newFilter]));
+  }, [dispatch, localFilters]);
+
+  const excludeBinary = useCallback((binaryName: string) => {
+    // Check if this binary is already being filtered with not_contains
+    const existingFilter = (appliedFilters ?? []).find(
+      f => f.type === 'frame' && f.field === 'binary' && f.matchType === 'not_contains' && f.value === binaryName
+    );
+
+    if (existingFilter) {
+      return; // Already exists, don't add duplicate
+    }
+
+    const newFilter: ProfileFilter = {
+      id: `filter-${Date.now()}-${Math.random()}`,
+      type: 'frame',
+      field: 'binary',
+      matchType: 'not_contains',
+      value: binaryName,
+    };
+    dispatch(setLocalFilters([...localFilters, newFilter]));
+
+    // Auto-apply the filter since it has a value
+    const filtersToApply = [...(appliedFilters ?? []), newFilter];
+    setAppliedFilters(filtersToApply);
+  }, [appliedFilters, setAppliedFilters, dispatch, localFilters]);
+
+  const removeExcludeBinary = useCallback((binaryName: string) => {
+    // Search for the exclude filter (not_contains) for this binary
+    const filterToRemove = (appliedFilters ?? []).find(
+      f => f.type === 'frame' && f.field === 'binary' && f.matchType === 'not_contains' && f.value === binaryName
+    );
+
+    if (filterToRemove) {
+      // Remove the filter from applied filters
+      const updatedAppliedFilters = (appliedFilters ?? []).filter(f => f.id !== filterToRemove.id);
+      setAppliedFilters(updatedAppliedFilters);
+      
+      // Also remove from local filters
+      const updatedLocalFilters = localFilters.filter(f => f.id !== filterToRemove.id);
+      dispatch(setLocalFilters(updatedLocalFilters));
+    }
+  }, [appliedFilters, setAppliedFilters, dispatch, localFilters]);
 
   const removeFilter = useCallback((id: string) => {
-    setLocalFilters(prev => prev.filter(f => f.id !== id));
-  }, []);
+    dispatch(setLocalFilters(localFilters.filter(f => f.id !== id)));
+  }, [dispatch, localFilters]);
 
   const updateFilter = useCallback((id: string, updates: Partial<ProfileFilter>) => {
-    setLocalFilters(prev => prev.map(f => (f.id === id ? {...f, ...updates} : f)));
-  }, []);
+    dispatch(setLocalFilters(localFilters.map(f => (f.id === id ? {...f, ...updates} : f))));
+  }, [dispatch, localFilters]);
 
   const resetFilters = useCallback(() => {
-    setLocalFilters([]);
+    dispatch(setLocalFilters([]));
     setAppliedFilters([]);
-    onFiltersChange?.([]);
-  }, [setAppliedFilters, onFiltersChange]);
+  }, [dispatch, setAppliedFilters]);
 
   const onApplyFilters = useCallback((): void => {
     const validFilters = localFilters.filter(f => f.value !== '');
@@ -174,9 +237,7 @@ export const useProfileFilters = ({onFiltersChange}: UseProfileFiltersProps = {}
     }));
 
     setAppliedFilters(filtersToApply);
-
-    onFiltersChange?.(filtersToApply);
-  }, [localFilters, setAppliedFilters, onFiltersChange]);
+  }, [localFilters, setAppliedFilters]);
 
   const protoFilters = useMemo(() => {
     return convertToProtoFilters(appliedFilters ?? []);
@@ -189,6 +250,8 @@ export const useProfileFilters = ({onFiltersChange}: UseProfileFiltersProps = {}
     hasUnsavedChanges,
     onApplyFilters,
     addFilter,
+    excludeBinary,
+    removeExcludeBinary,
     removeFilter,
     updateFilter,
     resetFilters,

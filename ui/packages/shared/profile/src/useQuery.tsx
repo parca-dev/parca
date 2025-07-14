@@ -35,7 +35,6 @@ interface UseQueryOptions {
   sourceFilename?: string;
   sourceOnly?: boolean;
   invertCallStack?: boolean;
-  binaryFrameFilter?: string[];
   sandwichByFunction?: string;
   protoFilters?: any[]; // Using any[] to match the Filter type from hook
 }
@@ -64,7 +63,6 @@ export const useQuery = (
       options?.sourceOnly,
       options?.sourceOnly === true ? '' : options?.sourceFilename,
       options?.invertCallStack ?? false,
-      options?.binaryFrameFilter ?? '',
       options?.sandwichByFunction ?? '',
       protoFiltersKey,
     ],

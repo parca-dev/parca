@@ -16,6 +16,7 @@ import {createStore} from './store';
 
 export * from './slices/uiSlice';
 export * from './slices/profileSlice';
+export * from './slices/profileFiltersSlice';
 export * from './slices/colorsSlice';
 
 export {createStore, useAppDispatch, useAppSelector};

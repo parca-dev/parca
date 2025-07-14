@@ -200,9 +200,8 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
     defaultValue: FIELD_FUNCTION_NAME,
   });
   const [colorStackLegend, setStoreColorStackLegend] = useURLState('color_stack_legend');
-  const [binaryFrameFilter, setBinaryFrameFilter] = useURLState('binary_frame_filter');
   const [colorBy, setColorBy] = useURLState('color_by');
-  const [hiddenBinaries, setHiddenBinaries] = useURLState('binary_frame_filter', {
+  const [hiddenBinaries, setHiddenBinaries] = useURLState('hidden_binaries', {
     defaultValue: [],
     alwaysReturnArray: true,
   });
@@ -237,7 +236,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
   );
 
   const resetLegend = (): void => {
-    setBinaryFrameFilter([]);
+    setHiddenBinaries([]);
   };
 
   const menuItems: MenuItemType[] = [
@@ -335,7 +334,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
     },
     {
       label: 'Reset Legend',
-      hide: binaryFrameFilter === undefined || binaryFrameFilter.length === 0,
+      hide: hiddenBinaries === undefined || hiddenBinaries.length === 0,
       onclick: () => resetLegend(),
       id: 'h-reset-legend-button',
       icon: 'system-uicons:reset',

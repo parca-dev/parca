@@ -13,14 +13,7 @@
 
 import {useURLStateCustom, type ParamValueSetterCustom} from '@parca/components';
 
-// Types for our filter structure
-export interface ProfileFilter {
-  id: string;
-  type: 'stack' | 'frame';
-  field: 'function_name' | 'binary' | 'system_name' | 'filename' | 'address' | 'line_number';
-  matchType: 'equal' | 'not_equal' | 'contains' | 'not_contains';
-  value: string;
-}
+import {type ProfileFilter} from '@parca/store';
 
 // Compact encoding mappings
 const TYPE_MAP: Record<string, string> = {

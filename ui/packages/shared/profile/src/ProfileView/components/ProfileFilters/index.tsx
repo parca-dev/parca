@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback} from 'react';
+import { useCallback, useEffect } from 'react';
 
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
@@ -19,10 +19,6 @@ import cx from 'classnames';
 import {Button, Input, Select, type SelectItem} from '@parca/components';
 
 import {useProfileFilters, type ProfileFilter} from './useProfileFilters';
-
-interface ProfileFiltersProps {
-  onFiltersChange?: (filters: ProfileFilter[]) => void;
-}
 
 const filterTypeItems: SelectItem[] = [
   {
@@ -146,7 +142,7 @@ const numberMatchTypeItems: SelectItem[] = [
   },
 ];
 
-const ProfileFilters = ({onFiltersChange}: ProfileFiltersProps): JSX.Element => {
+const ProfileFilters = (): JSX.Element => {
   const {
     localFilters,
     appliedFilters,
@@ -156,7 +152,7 @@ const ProfileFilters = ({onFiltersChange}: ProfileFiltersProps): JSX.Element => 
     removeFilter,
     updateFilter,
     resetFilters,
-  } = useProfileFilters({onFiltersChange});
+  } = useProfileFilters();
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -171,10 +167,12 @@ const ProfileFilters = ({onFiltersChange}: ProfileFiltersProps): JSX.Element => 
     [onApplyFilters]
   );
 
+  const filtersToRender = localFilters.length > 0 ? localFilters : appliedFilters ?? [];
+
   return (
     <div className="flex gap-2 w-full">
       <div className="flex-1 flex flex-wrap gap-2">
-        {localFilters.map(filter => {
+        {filtersToRender.map(filter => {
           const isNumberField = filter.field === 'address' || filter.field === 'line_number';
           const matchTypeItems = isNumberField ? numberMatchTypeItems : stringMatchTypeItems;
 

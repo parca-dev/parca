@@ -50,12 +50,6 @@ export const ProfileViewWithData = ({
 
   const [invertStack] = useURLState('invert_call_stack');
   const invertCallStack = invertStack === 'true';
-  const [binaryFrameFilterStr] = useURLState<string[] | string>('binary_frame_filter');
-
-  const binaryFrameFilter: string[] =
-    typeof binaryFrameFilterStr === 'string'
-      ? binaryFrameFilterStr.split(',')
-      : binaryFrameFilterStr;
 
   const [pprofDownloading, setPprofDownloading] = useState<boolean>(false);
 
@@ -98,7 +92,6 @@ export const ProfileViewWithData = ({
     nodeTrimThreshold,
     groupBy,
     invertCallStack,
-    binaryFrameFilter,
     protoFilters,
   });
 
@@ -114,7 +107,6 @@ export const ProfileViewWithData = ({
     nodeTrimThreshold,
     groupBy,
     invertCallStack,
-    binaryFrameFilter,
     protoFilters,
   });
 
@@ -136,7 +128,6 @@ export const ProfileViewWithData = ({
     error: tableError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.TABLE_ARROW, {
     skip: !dashboardItems.includes('table') && !dashboardItems.includes('sandwich'),
-    binaryFrameFilter,
     protoFilters,
   });
 
