@@ -21,7 +21,9 @@ import {Button, Input, Select, type SelectItem} from '@parca/components';
 import {useProfileFilters, type ProfileFilter} from './useProfileFilters';
 
 export const isFilterComplete = (filter: ProfileFilter): boolean => {
-  return filter.value !== '' && filter.type != null && filter.field != null && filter.matchType != null;
+  return (
+    filter.value !== '' && filter.type != null && filter.field != null && filter.matchType != null
+  );
 };
 
 const filterTypeItems: SelectItem[] = [
@@ -217,7 +219,7 @@ const ProfileFilters = (): JSX.Element => {
                           matchType: 'equal',
                         });
                       } else {
-                        updateFilter(filter.id, { field: newField });
+                        updateFilter(filter.id, {field: newField});
                       }
                     }}
                     className="rounded-none border-r-0 w-32 pr-1 gap-0 focus:z-50 focus:relative focus:outline-1"
@@ -227,7 +229,7 @@ const ProfileFilters = (): JSX.Element => {
                     items={matchTypeItems}
                     selectedKey={filter.matchType ?? ''}
                     onSelection={key =>
-                      updateFilter(filter.id, { matchType: key as ProfileFilter['matchType'] })
+                      updateFilter(filter.id, {matchType: key as ProfileFilter['matchType']})
                     }
                     className="rounded-none border-r-0 pr-1 gap-0 focus:z-50 focus:relative focus:outline-1"
                   />
@@ -235,7 +237,7 @@ const ProfileFilters = (): JSX.Element => {
                   <Input
                     placeholder="Value"
                     value={filter.value}
-                    onChange={e => updateFilter(filter.id, { value: e.target.value })}
+                    onChange={e => updateFilter(filter.id, {value: e.target.value})}
                     onKeyDown={handleKeyDown}
                     className="rounded-none w-36 text-sm focus:outline-1"
                   />
