@@ -128,14 +128,17 @@ export const useProfileFilters = (): {
   useEffect(() => {
     if (appliedFilters && appliedFilters.length > 0) {
       // Check if they're different to avoid unnecessary updates
-      const areFiltersEqual = appliedFilters.length === localFilters.length &&
+      const areFiltersEqual =
+        appliedFilters.length === localFilters.length &&
         appliedFilters.every((applied, index) => {
           const local = localFilters[index];
-          return local &&
+          return (
+            local &&
             applied.type === local.type &&
             applied.field === local.field &&
             applied.matchType === local.matchType &&
-            applied.value === local.value;
+            applied.value === local.value
+          );
         });
 
       if (!areFiltersEqual) {
@@ -174,54 +177,76 @@ export const useProfileFilters = (): {
     dispatch(setLocalFilters([...localFilters, newFilter]));
   }, [dispatch, localFilters]);
 
-  const excludeBinary = useCallback((binaryName: string) => {
-    // Check if this binary is already being filtered with not_contains
-    const existingFilter = (appliedFilters ?? []).find(
-      f => f.type === 'frame' && f.field === 'binary' && f.matchType === 'not_contains' && f.value === binaryName
-    );
+  const excludeBinary = useCallback(
+    (binaryName: string) => {
+      // Check if this binary is already being filtered with not_contains
+      const existingFilter = (appliedFilters ?? []).find(
+        f =>
+          f.type === 'frame' &&
+          f.field === 'binary' &&
+          f.matchType === 'not_contains' &&
+          f.value === binaryName
+      );
 
-    if (existingFilter) {
-      return; // Already exists, don't add duplicate
-    }
+      if (existingFilter) {
+        return; // Already exists, don't add duplicate
+      }
 
-    const newFilter: ProfileFilter = {
-      id: `filter-${Date.now()}-${Math.random()}`,
-      type: 'frame',
-      field: 'binary',
-      matchType: 'not_contains',
-      value: binaryName,
-    };
-    dispatch(setLocalFilters([...localFilters, newFilter]));
+      const newFilter: ProfileFilter = {
+        id: `filter-${Date.now()}-${Math.random()}`,
+        type: 'frame',
+        field: 'binary',
+        matchType: 'not_contains',
+        value: binaryName,
+      };
+      dispatch(setLocalFilters([...localFilters, newFilter]));
 
-    // Auto-apply the filter since it has a value
-    const filtersToApply = [...(appliedFilters ?? []), newFilter];
-    setAppliedFilters(filtersToApply);
-  }, [appliedFilters, setAppliedFilters, dispatch, localFilters]);
+      // Auto-apply the filter since it has a value
+      const filtersToApply = [...(appliedFilters ?? []), newFilter];
+      setAppliedFilters(filtersToApply);
+    },
+    [appliedFilters, setAppliedFilters, dispatch, localFilters]
+  );
 
-  const removeExcludeBinary = useCallback((binaryName: string) => {
-    // Search for the exclude filter (not_contains) for this binary
-    const filterToRemove = (appliedFilters ?? []).find(
-      f => f.type === 'frame' && f.field === 'binary' && f.matchType === 'not_contains' && f.value === binaryName
-    );
+  const removeExcludeBinary = useCallback(
+    (binaryName: string) => {
+      // Search for the exclude filter (not_contains) for this binary
+      const filterToRemove = (appliedFilters ?? []).find(
+        f =>
+          f.type === 'frame' &&
+          f.field === 'binary' &&
+          f.matchType === 'not_contains' &&
+          f.value === binaryName
+      );
 
-    if (filterToRemove) {
-      // Remove the filter from applied filters
-      const updatedAppliedFilters = (appliedFilters ?? []).filter(f => f.id !== filterToRemove.id);
-      setAppliedFilters(updatedAppliedFilters);
-      
-      // Also remove from local filters
-      const updatedLocalFilters = localFilters.filter(f => f.id !== filterToRemove.id);
-      dispatch(setLocalFilters(updatedLocalFilters));
-    }
-  }, [appliedFilters, setAppliedFilters, dispatch, localFilters]);
+      if (filterToRemove) {
+        // Remove the filter from applied filters
+        const updatedAppliedFilters = (appliedFilters ?? []).filter(
+          f => f.id !== filterToRemove.id
+        );
+        setAppliedFilters(updatedAppliedFilters);
 
-  const removeFilter = useCallback((id: string) => {
-    dispatch(setLocalFilters(localFilters.filter(f => f.id !== id)));
-  }, [dispatch, localFilters]);
+        // Also remove from local filters
+        const updatedLocalFilters = localFilters.filter(f => f.id !== filterToRemove.id);
+        dispatch(setLocalFilters(updatedLocalFilters));
+      }
+    },
+    [appliedFilters, setAppliedFilters, dispatch, localFilters]
+  );
 
-  const updateFilter = useCallback((id: string, updates: Partial<ProfileFilter>) => {
-    dispatch(setLocalFilters(localFilters.map(f => (f.id === id ? {...f, ...updates} : f))));
-  }, [dispatch, localFilters]);
+  const removeFilter = useCallback(
+    (id: string) => {
+      dispatch(setLocalFilters(localFilters.filter(f => f.id !== id)));
+    },
+    [dispatch, localFilters]
+  );
+
+  const updateFilter = useCallback(
+    (id: string, updates: Partial<ProfileFilter>) => {
+      dispatch(setLocalFilters(localFilters.map(f => (f.id === id ? {...f, ...updates} : f))));
+    },
+    [dispatch, localFilters]
+  );
 
   const resetFilters = useCallback(() => {
     dispatch(setLocalFilters([]));

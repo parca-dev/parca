@@ -32,8 +32,8 @@ import {getColorForFeature, selectDarkMode, useAppSelector} from '@parca/store';
 import {getLastItem, type ColorConfig} from '@parca/utilities';
 
 import {ProfileSource} from '../../ProfileSource';
+import {useProfileFilters} from '../../ProfileView/components/ProfileFilters/useProfileFilters';
 import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
-import { useProfileFilters } from '../../ProfileView/components/ProfileFilters/useProfileFilters';
 import ContextMenuWrapper, {ContextMenuWrapperRef} from './ContextMenuWrapper';
 import {FlameNode, RowHeight, colorByColors} from './FlameGraphNodes';
 import {MemoizedTooltip} from './MemoizedTooltip';
@@ -196,7 +196,7 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
     setSvgElement(svg.current);
   }, [tooltipId]);
 
-  const { excludeBinary } = useProfileFilters();
+  const {excludeBinary} = useProfileFilters();
 
   const {compareMode} = useProfileViewContext();
   const currentColorProfile = useCurrentColorProfile();

@@ -22,7 +22,7 @@ import {EVERYTHING_ELSE, selectDarkMode, useAppSelector} from '@parca/store';
 
 import {getMappingColors} from '../../ProfileFlameGraph/FlameGraphArrow';
 import useMappingList from '../../ProfileFlameGraph/FlameGraphArrow/useMappingList';
-import { useProfileFilters } from './ProfileFilters/useProfileFilters';
+import {useProfileFilters} from './ProfileFilters/useProfileFilters';
 
 interface Props {
   mappings?: string[];
@@ -41,7 +41,7 @@ const ColorStackLegend = ({mappings, compareMode = false, loading}: Props): Reac
 
   const colorBy = colorByValue === 'binary' || colorByValue === undefined ? 'binary' : 'filename';
 
-  const { appliedFilters, removeExcludeBinary, excludeBinary } = useProfileFilters();
+  const {appliedFilters, removeExcludeBinary, excludeBinary} = useProfileFilters();
 
   // Get current binary filters from the new ProfileFilters system
   const currentBinaryFilters = useMemo(() => {
