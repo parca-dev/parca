@@ -126,12 +126,12 @@ export const useProfileFilters = (): {
   const localFilters = useAppSelector(selectLocalFilters);
 
   useEffect(() => {
-    if (appliedFilters && appliedFilters.length > 0) {
+    if (appliedFilters != null && appliedFilters.length > 0) {
       // Check if they're different to avoid unnecessary updates
       const areFiltersEqual = appliedFilters.length === localFilters.length &&
         appliedFilters.every((applied, index) => {
           const local = localFilters[index];
-          return local &&
+          return local != null &&
             applied.type === local.type &&
             applied.field === local.field &&
             applied.matchType === local.matchType &&
@@ -141,9 +141,10 @@ export const useProfileFilters = (): {
       if (!areFiltersEqual) {
         dispatch(setLocalFilters(appliedFilters));
       }
-    } else if (appliedFilters && appliedFilters.length === 0 && localFilters.length > 0) {
+    } else if (appliedFilters != null && appliedFilters.length === 0 && localFilters.length > 0) {
       dispatch(setLocalFilters([]));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const hasUnsavedChanges = useMemo(() => {
@@ -180,7 +181,7 @@ export const useProfileFilters = (): {
       f => f.type === 'frame' && f.field === 'binary' && f.matchType === 'not_contains' && f.value === binaryName
     );
 
-    if (existingFilter) {
+    if (existingFilter != null) {
       return; // Already exists, don't add duplicate
     }
 
@@ -204,11 +205,11 @@ export const useProfileFilters = (): {
       f => f.type === 'frame' && f.field === 'binary' && f.matchType === 'not_contains' && f.value === binaryName
     );
 
-    if (filterToRemove) {
+    if (filterToRemove != null) {
       // Remove the filter from applied filters
       const updatedAppliedFilters = (appliedFilters ?? []).filter(f => f.id !== filterToRemove.id);
       setAppliedFilters(updatedAppliedFilters);
-      
+
       // Also remove from local filters
       const updatedLocalFilters = localFilters.filter(f => f.id !== filterToRemove.id);
       dispatch(setLocalFilters(updatedLocalFilters));

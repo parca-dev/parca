@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 
 import {Icon} from '@iconify/react';
 import cx from 'classnames';

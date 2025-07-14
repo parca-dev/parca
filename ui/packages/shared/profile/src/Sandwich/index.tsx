@@ -93,7 +93,6 @@ const Sandwich = React.memo(function Sandwich({
       nodeTrimThreshold,
       groupBy: [FIELD_FUNCTION_NAME],
       invertCallStack: true,
-      binaryFrameFilter: [],
       sandwichByFunction: sandwichFunctionName,
       skip: sandwichFunctionName === undefined,
     }
@@ -111,7 +110,6 @@ const Sandwich = React.memo(function Sandwich({
       nodeTrimThreshold,
       groupBy: [FIELD_FUNCTION_NAME],
       invertCallStack: false,
-      binaryFrameFilter: [],
       sandwichByFunction: sandwichFunctionName,
       skip: sandwichFunctionName === undefined,
     }

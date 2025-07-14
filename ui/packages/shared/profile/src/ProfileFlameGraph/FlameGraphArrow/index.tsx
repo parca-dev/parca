@@ -140,7 +140,6 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   curPath,
   profileType,
   profileSource,
-  mappingsListFromMetadata,
   compareAbsolute,
   isFlameChart = false,
   isRenderedAsFlamegraph = false,
