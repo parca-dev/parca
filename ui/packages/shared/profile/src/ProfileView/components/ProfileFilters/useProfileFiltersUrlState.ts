@@ -12,7 +12,6 @@
 // limitations under the License.
 
 import {useURLStateCustom, type ParamValueSetterCustom} from '@parca/components';
-
 import {type ProfileFilter} from '@parca/store';
 
 // Compact encoding mappings

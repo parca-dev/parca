@@ -128,7 +128,8 @@ export const useProfileFilters = (): {
   useEffect(() => {
     if (appliedFilters != null && appliedFilters.length > 0) {
       // Check if they're different to avoid unnecessary updates
-      const areFiltersEqual = appliedFilters.length === localFilters.length &&
+      const areFiltersEqual =
+        appliedFilters.length === localFilters.length &&
         appliedFilters.every((applied, index) => {
           const local = localFilters[index];
           return local != null &&
@@ -175,35 +176,47 @@ export const useProfileFilters = (): {
     dispatch(setLocalFilters([...localFilters, newFilter]));
   }, [dispatch, localFilters]);
 
-  const excludeBinary = useCallback((binaryName: string) => {
-    // Check if this binary is already being filtered with not_contains
-    const existingFilter = (appliedFilters ?? []).find(
-      f => f.type === 'frame' && f.field === 'binary' && f.matchType === 'not_contains' && f.value === binaryName
-    );
+  const excludeBinary = useCallback(
+    (binaryName: string) => {
+      // Check if this binary is already being filtered with not_contains
+      const existingFilter = (appliedFilters ?? []).find(
+        f =>
+          f.type === 'frame' &&
+          f.field === 'binary' &&
+          f.matchType === 'not_contains' &&
+          f.value === binaryName
+      );
 
     if (existingFilter != null) {
       return; // Already exists, don't add duplicate
     }
 
-    const newFilter: ProfileFilter = {
-      id: `filter-${Date.now()}-${Math.random()}`,
-      type: 'frame',
-      field: 'binary',
-      matchType: 'not_contains',
-      value: binaryName,
-    };
-    dispatch(setLocalFilters([...localFilters, newFilter]));
+      const newFilter: ProfileFilter = {
+        id: `filter-${Date.now()}-${Math.random()}`,
+        type: 'frame',
+        field: 'binary',
+        matchType: 'not_contains',
+        value: binaryName,
+      };
+      dispatch(setLocalFilters([...localFilters, newFilter]));
 
-    // Auto-apply the filter since it has a value
-    const filtersToApply = [...(appliedFilters ?? []), newFilter];
-    setAppliedFilters(filtersToApply);
-  }, [appliedFilters, setAppliedFilters, dispatch, localFilters]);
+      // Auto-apply the filter since it has a value
+      const filtersToApply = [...(appliedFilters ?? []), newFilter];
+      setAppliedFilters(filtersToApply);
+    },
+    [appliedFilters, setAppliedFilters, dispatch, localFilters]
+  );
 
-  const removeExcludeBinary = useCallback((binaryName: string) => {
-    // Search for the exclude filter (not_contains) for this binary
-    const filterToRemove = (appliedFilters ?? []).find(
-      f => f.type === 'frame' && f.field === 'binary' && f.matchType === 'not_contains' && f.value === binaryName
-    );
+  const removeExcludeBinary = useCallback(
+    (binaryName: string) => {
+      // Search for the exclude filter (not_contains) for this binary
+      const filterToRemove = (appliedFilters ?? []).find(
+        f =>
+          f.type === 'frame' &&
+          f.field === 'binary' &&
+          f.matchType === 'not_contains' &&
+          f.value === binaryName
+      );
 
     if (filterToRemove != null) {
       // Remove the filter from applied filters
@@ -216,13 +229,19 @@ export const useProfileFilters = (): {
     }
   }, [appliedFilters, setAppliedFilters, dispatch, localFilters]);
 
-  const removeFilter = useCallback((id: string) => {
-    dispatch(setLocalFilters(localFilters.filter(f => f.id !== id)));
-  }, [dispatch, localFilters]);
+  const removeFilter = useCallback(
+    (id: string) => {
+      dispatch(setLocalFilters(localFilters.filter(f => f.id !== id)));
+    },
+    [dispatch, localFilters]
+  );
 
-  const updateFilter = useCallback((id: string, updates: Partial<ProfileFilter>) => {
-    dispatch(setLocalFilters(localFilters.map(f => (f.id === id ? {...f, ...updates} : f))));
-  }, [dispatch, localFilters]);
+  const updateFilter = useCallback(
+    (id: string, updates: Partial<ProfileFilter>) => {
+      dispatch(setLocalFilters(localFilters.map(f => (f.id === id ? {...f, ...updates} : f))));
+    },
+    [dispatch, localFilters]
+  );
 
   const resetFilters = useCallback(() => {
     dispatch(setLocalFilters([]));

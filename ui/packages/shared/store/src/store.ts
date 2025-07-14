@@ -29,8 +29,8 @@ import storage from 'redux-persist/lib/storage';
 import {type ColorConfig} from '@parca/utilities';
 
 import colorsReducer, {initialColorState} from './slices/colorsSlice';
-import profileReducer from './slices/profileSlice';
 import profileFiltersReducer from './slices/profileFiltersSlice';
+import profileReducer from './slices/profileSlice';
 import uiReducer from './slices/uiSlice';
 
 const rootReducer = combineReducers({
