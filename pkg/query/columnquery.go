@@ -359,7 +359,11 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 				},
 			},
 		}
-		sandwichFilters := []*pb.Filter{sandwichFilter}
+		// Combine existing filters with the sandwich filter
+		existingFilters := req.GetFilter()
+		sandwichFilters := make([]*pb.Filter, 0, len(existingFilters)+1)
+		sandwichFilters = append(sandwichFilters, existingFilters...)
+		sandwichFilters = append(sandwichFilters, sandwichFilter)
 
 		var sandwichFiltered int64
 		p.Samples, sandwichFiltered, err = FilterProfileData(

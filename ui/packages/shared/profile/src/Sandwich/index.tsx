@@ -34,6 +34,7 @@ import {useQuery} from '../useQuery';
 import {CalleesSection} from './components/CalleesSection';
 import {CallersSection} from './components/CallersSection';
 import {processRowData} from './utils/processRowData';
+import { useProfileFilters } from '../ProfileView/components/ProfileFilters/useProfileFilters';
 
 interface Props {
   data?: Uint8Array;
@@ -81,6 +82,8 @@ const Sandwich = React.memo(function Sandwich({
     return (1 / width) * 100;
   }, []);
 
+  const { protoFilters } = useProfileFilters();
+
   const {
     isLoading: callersFlamegraphLoading,
     response: callersFlamegraphResponse,
@@ -95,6 +98,7 @@ const Sandwich = React.memo(function Sandwich({
       invertCallStack: true,
       sandwichByFunction: sandwichFunctionName,
       skip: sandwichFunctionName === undefined,
+      protoFilters,
     }
   );
 
@@ -112,6 +116,7 @@ const Sandwich = React.memo(function Sandwich({
       invertCallStack: false,
       sandwichByFunction: sandwichFunctionName,
       skip: sandwichFunctionName === undefined,
+      protoFilters,
     }
   );
 
