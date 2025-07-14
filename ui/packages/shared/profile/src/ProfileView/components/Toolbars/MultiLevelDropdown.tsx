@@ -196,6 +196,8 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
   toggleGroupBy,
   isTableVizOnly,
 }) => {
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [shouldOpenLeft, setShouldOpenLeft] = useState(false);
   const [storeSortBy] = useURLState('sort_by', {
     defaultValue: FIELD_FUNCTION_NAME,
   });
@@ -221,6 +223,24 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
   const [compareAbsolute = compareAbsoluteDefault, setCompareAbsolute] =
     useURLState('compare_absolute');
   const isCompareAbsolute = compareAbsolute === 'true';
+
+  useEffect(() => {
+    const checkOverflow = (): void => {
+      if (dropdownRef.current !== null) {
+        const rect = dropdownRef.current.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const menuWidth = isTableVizOnly ? 256 : 320; // w-64 = 256px, w-80 = 320px
+        const spaceOnRight = viewportWidth - rect.right;
+        const spaceOnLeft = rect.left;
+
+        setShouldOpenLeft(spaceOnRight < menuWidth && spaceOnLeft >= menuWidth);
+      }
+    };
+
+    checkOverflow();
+    window.addEventListener('resize', checkOverflow);
+    return () => window.removeEventListener('resize', checkOverflow);
+  }, [isTableVizOnly]);
 
   const handleBinaryToggle = (index: number): void => {
     const updatedBinaries = [...(hiddenBinaries as string[])];
@@ -364,7 +384,11 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
   ];
 
   return (
-    <div className="relative inline-block text-left" id="h-visualisation-toolbar-actions">
+    <div
+      className="relative inline-block text-left"
+      id="h-visualisation-toolbar-actions"
+      ref={dropdownRef}
+    >
       <Menu>
         {({open, close}) => (
           <>
@@ -383,7 +407,8 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
               <Menu.Items
                 className={cx(
                   isTableVizOnly ? 'w-64' : 'w-80',
-                  'absolute z-30 left-0 mt-2 py-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border dark:bg-gray-900 dark:border-gray-600'
+                  'absolute z-30 mt-2 py-2 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border dark:bg-gray-900 dark:border-gray-600',
+                  shouldOpenLeft ? 'right-0 origin-top-right' : 'left-0 origin-top-left'
                 )}
               >
                 {menuItems
