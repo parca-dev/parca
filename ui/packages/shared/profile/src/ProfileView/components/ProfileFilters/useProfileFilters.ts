@@ -252,7 +252,9 @@ export const useProfileFilters = (): {
   }, [dispatch, setAppliedFilters]);
 
   const onApplyFilters = useCallback((): void => {
-    const validFilters = localFilters.filter(f => f.value !== '' && f.type != null && f.field != null && f.matchType != null);
+    const validFilters = localFilters.filter(
+      f => f.value !== '' && f.type != null && f.field != null && f.matchType != null
+    );
 
     const filtersToApply = validFilters.map((f, index) => ({
       ...f,
