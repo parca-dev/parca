@@ -26,6 +26,7 @@ import useMappingList, {
   useFilenamesList,
 } from '../ProfileFlameGraph/FlameGraphArrow/useMappingList';
 import {ProfileSource} from '../ProfileSource';
+import {useProfileFilters} from '../ProfileView/components/ProfileFilters/useProfileFilters';
 import {useDashboard} from '../ProfileView/context/DashboardContext';
 import {useVisualizationState} from '../ProfileView/hooks/useVisualizationState';
 import {FIELD_FUNCTION_NAME, Row} from '../Table';
@@ -34,7 +35,6 @@ import {useQuery} from '../useQuery';
 import {CalleesSection} from './components/CalleesSection';
 import {CallersSection} from './components/CallersSection';
 import {processRowData} from './utils/processRowData';
-import { useProfileFilters } from '../ProfileView/components/ProfileFilters/useProfileFilters';
 
 interface Props {
   data?: Uint8Array;
@@ -82,7 +82,7 @@ const Sandwich = React.memo(function Sandwich({
     return (1 / width) * 100;
   }, []);
 
-  const { protoFilters } = useProfileFilters();
+  const {protoFilters} = useProfileFilters();
 
   const {
     isLoading: callersFlamegraphLoading,
