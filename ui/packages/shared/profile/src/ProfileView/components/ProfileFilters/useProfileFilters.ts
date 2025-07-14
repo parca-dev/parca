@@ -132,11 +132,13 @@ export const useProfileFilters = (): {
         appliedFilters.length === localFilters.length &&
         appliedFilters.every((applied, index) => {
           const local = localFilters[index];
-          return local != null &&
+          return (
+            local != null &&
             applied.type === local.type &&
             applied.field === local.field &&
             applied.matchType === local.matchType &&
-            applied.value === local.value;
+            applied.value === local.value
+          );
         });
 
       if (!areFiltersEqual) {
@@ -187,9 +189,9 @@ export const useProfileFilters = (): {
           f.value === binaryName
       );
 
-    if (existingFilter != null) {
-      return; // Already exists, don't add duplicate
-    }
+      if (existingFilter != null) {
+        return; // Already exists, don't add duplicate
+      }
 
       const newFilter: ProfileFilter = {
         id: `filter-${Date.now()}-${Math.random()}`,
@@ -218,16 +220,20 @@ export const useProfileFilters = (): {
           f.value === binaryName
       );
 
-    if (filterToRemove != null) {
-      // Remove the filter from applied filters
-      const updatedAppliedFilters = (appliedFilters ?? []).filter(f => f.id !== filterToRemove.id);
-      setAppliedFilters(updatedAppliedFilters);
+      if (filterToRemove != null) {
+        // Remove the filter from applied filters
+        const updatedAppliedFilters = (appliedFilters ?? []).filter(
+          f => f.id !== filterToRemove.id
+        );
+        setAppliedFilters(updatedAppliedFilters);
 
-      // Also remove from local filters
-      const updatedLocalFilters = localFilters.filter(f => f.id !== filterToRemove.id);
-      dispatch(setLocalFilters(updatedLocalFilters));
-    }
-  }, [appliedFilters, setAppliedFilters, dispatch, localFilters]);
+        // Also remove from local filters
+        const updatedLocalFilters = localFilters.filter(f => f.id !== filterToRemove.id);
+        dispatch(setLocalFilters(updatedLocalFilters));
+      }
+    },
+    [appliedFilters, setAppliedFilters, dispatch, localFilters]
+  );
 
   const removeFilter = useCallback(
     (id: string) => {
