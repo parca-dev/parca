@@ -46,7 +46,7 @@ const encodeFilters = (filters: ProfileFilter[]): string => {
   if (filters.length === 0) return '';
 
   return filters
-    .filter(f => f.value !== '' && f.type && f.field && f.matchType)
+    .filter(f => f.value !== '' && f.type != null && f.field != null && f.matchType != null)
     .map(f => {
       const type = TYPE_MAP[f.type!];
       const field = FIELD_MAP[f.field!];

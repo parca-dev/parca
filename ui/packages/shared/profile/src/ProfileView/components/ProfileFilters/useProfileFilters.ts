@@ -29,7 +29,7 @@ export type {ProfileFilter};
 // Convert ProfileFilter[] to protobuf Filter[] matching the expected structure
 const convertToProtoFilters = (profileFilters: ProfileFilter[]): Filter[] => {
   return profileFilters
-    .filter(f => f.value !== '' && f.type && f.field && f.matchType) // Only include complete filters with values
+    .filter(f => f.value !== '' && f.type != null && f.field != null && f.matchType != null) // Only include complete filters with values
     .map(f => {
       // Build the condition based on field type
       const isNumberField = f.field === 'address' || f.field === 'line_number';
@@ -252,7 +252,7 @@ export const useProfileFilters = (): {
   }, [dispatch, setAppliedFilters]);
 
   const onApplyFilters = useCallback((): void => {
-    const validFilters = localFilters.filter(f => f.value !== '' && f.type && f.field && f.matchType);
+    const validFilters = localFilters.filter(f => f.value !== '' && f.type != null && f.field != null && f.matchType != null);
 
     const filtersToApply = validFilters.map((f, index) => ({
       ...f,

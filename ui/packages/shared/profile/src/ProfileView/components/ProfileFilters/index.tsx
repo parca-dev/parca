@@ -180,8 +180,6 @@ const ProfileFilters = (): JSX.Element => {
           const isNumberField = filter.field === 'address' || filter.field === 'line_number';
           const matchTypeItems = isNumberField ? numberMatchTypeItems : stringMatchTypeItems;
 
-          console.log('Rendering filter:', filter);
-
           return (
             <div key={filter.id} className="flex items-center gap-0">
               <Select
@@ -192,21 +190,21 @@ const ProfileFilters = (): JSX.Element => {
                   const newType = key as 'stack' | 'frame';
                   updateFilter(filter.id, {
                     type: newType,
-                    field: filter.field || 'function_name',
-                    matchType: filter.matchType || 'contains',
+                    field: filter.field ?? 'function_name',
+                    matchType: filter.matchType ?? 'contains',
                   });
                 }}
                 className={cx(
                   'rounded-l-md pr-1 gap-0 focus:z-50 focus:relative focus:outline-1',
-                  filter.type ? 'rounded-r-none border-r-0 w-28' : 'rounded-r-md w-32'
+                  filter.type != null ? 'rounded-r-none border-r-0 w-28' : 'rounded-r-md w-32'
                 )}
               />
 
-              {filter.type && (
+              {filter.type != null && (
                 <>
                   <Select
                     items={fieldItems}
-                    selectedKey={filter.field || ''}
+                    selectedKey={filter.field ?? ''}
                     onSelection={key => {
                       const newField = key as ProfileFilter['field'];
                       const isNewFieldNumber = newField === 'address' || newField === 'line_number';
@@ -227,7 +225,7 @@ const ProfileFilters = (): JSX.Element => {
 
                   <Select
                     items={matchTypeItems}
-                    selectedKey={filter.matchType || ''}
+                    selectedKey={filter.matchType ?? ''}
                     onSelection={key =>
                       updateFilter(filter.id, { matchType: key as ProfileFilter['matchType'] })
                     }
@@ -255,7 +253,7 @@ const ProfileFilters = (): JSX.Element => {
                 }}
                 className={cx(
                   'h-[38px] p-3',
-                  filter.type ? 'rounded-none rounded-r-md' : 'rounded-l-none rounded-r-md'
+                  filter.type != null ? 'rounded-none rounded-r-md' : 'rounded-l-none rounded-r-md'
                 )}
               >
                 <Icon icon="mdi:close" className="h-4 w-4" />
