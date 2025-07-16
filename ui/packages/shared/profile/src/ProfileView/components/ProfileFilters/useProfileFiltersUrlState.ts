@@ -42,7 +42,7 @@ const FIELD_MAP_REVERSE = Object.fromEntries(Object.entries(FIELD_MAP).map(([k, 
 const MATCH_MAP_REVERSE = Object.fromEntries(Object.entries(MATCH_MAP).map(([k, v]) => [v, k]));
 
 // Encode filters to compact string format
-const encodeFilters = (filters: ProfileFilter[]): string => {
+const encodeProfileFilters = (filters: ProfileFilter[]): string => {
   if (filters.length === 0) return '';
 
   return filters
@@ -58,7 +58,7 @@ const encodeFilters = (filters: ProfileFilter[]): string => {
 };
 
 // Decode filters from compact string format
-const decodeFilters = (encoded: string): ProfileFilter[] => {
+export const decodeProfileFilters = (encoded: string): ProfileFilter[] => {
   if (encoded === '' || encoded === undefined) return [];
 
   try {
@@ -88,10 +88,10 @@ export const useProfileFiltersUrlState = (): {
     'profile_filters',
     {
       parse: value => {
-        return decodeFilters(value as string);
+        return decodeProfileFilters(value as string);
       },
       stringify: value => {
-        return encodeFilters(value);
+        return encodeProfileFilters(value);
       },
     }
   );

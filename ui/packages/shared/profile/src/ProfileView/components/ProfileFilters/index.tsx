@@ -197,8 +197,8 @@ const ProfileFilters = (): JSX.Element => {
                   });
                 }}
                 className={cx(
-                  'rounded-l-md pr-1 gap-0 focus:z-50 focus:relative focus:outline-1',
-                  filter.type != null ? 'rounded-r-none border-r-0 w-28' : 'rounded-r-md w-32'
+                  'rounded-l-md pr-1 gap-0 focus:z-50 focus:relative focus:outline-1 rounded-r-none ',
+                  filter.type != null ? 'border-r-0 w-28' : 'w-32'
                 )}
               />
 
