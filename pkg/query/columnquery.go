@@ -1566,7 +1566,7 @@ func MergeTwoSortedSlices(arr1, arr2 []string) []string {
 	return merged
 }
 
-// ConvertDeprecatedFilters converts deprecated filter fields to the new schema for backward compatibility
+// ConvertDeprecatedFilters converts deprecated filter fields to the new schema for backward compatibility.
 func ConvertDeprecatedFilters(filters []*pb.Filter) []*pb.Filter {
 	convertedFilters := make([]*pb.Filter, 0, len(filters))
 
