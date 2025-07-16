@@ -58,8 +58,7 @@ export const useAutoQuerySelector = ({
       const profileA = ProfileSelectionFromParams(
         querySelection.mergeFrom?.toString(),
         querySelection.mergeTo?.toString(),
-        querySelection.expression,
-        ''
+        querySelection.expression
       );
       const queryA = {
         expression: querySelection.expression,

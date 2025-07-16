@@ -29,15 +29,12 @@ export const useVisualizationState = (): {
   setCurPath: (path: string[]) => void;
   curPathArrow: CurrentPathFrame[];
   setCurPathArrow: (path: CurrentPathFrame[]) => void;
-  currentSearchString: string | undefined;
-  setSearchString: (searchString: string | undefined) => void;
   colorStackLegend: string | undefined;
   colorBy: string;
   setColorBy: (colorBy: string) => void;
   groupBy: string[];
   setGroupBy: (keys: string[]) => void;
   toggleGroupBy: (key: string) => void;
-  clearSelection: () => void;
   setGroupByLabels: (labels: string[]) => void;
   sandwichFunctionName: string | undefined;
   setSandwichFunctionName: (sandwichFunctionName: string | undefined) => void;
@@ -49,7 +46,6 @@ export const useVisualizationState = (): {
     stringify: JSONSerializer,
     defaultValue: '[]',
   });
-  const [currentSearchString, setSearchString] = useURLState<string | undefined>('search_string');
   const [colorStackLegend] = useURLState<string | undefined>('color_stack_legend');
   const [colorBy, setColorBy] = useURLState('color_by');
   const [groupBy, setStoreGroupBy] = useURLState<string[]>('group_by', {
@@ -96,10 +92,6 @@ export const useVisualizationState = (): {
     [groupBy, setGroupBy]
   );
 
-  const clearSelection = useCallback((): void => {
-    setSearchString?.('');
-  }, [setSearchString]);
-
   const resetSandwichFunctionName = useCallback((): void => {
     setSandwichFunctionName(undefined);
   }, [setSandwichFunctionName]);
@@ -109,8 +101,6 @@ export const useVisualizationState = (): {
     setCurPath,
     curPathArrow,
     setCurPathArrow,
-    currentSearchString,
-    setSearchString,
     colorStackLegend,
     colorBy: (colorBy as string) ?? '',
     setColorBy,
@@ -118,7 +108,6 @@ export const useVisualizationState = (): {
     setGroupBy,
     toggleGroupBy,
     setGroupByLabels,
-    clearSelection,
     sandwichFunctionName,
     setSandwichFunctionName,
     resetSandwichFunctionName,

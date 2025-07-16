@@ -21,6 +21,7 @@ import {validateFlameChartQuery} from './ProfileFlameGraph';
 import {FIELD_FUNCTION_NAME} from './ProfileFlameGraph/FlameGraphArrow';
 import {MergedProfileSource, ProfileSource} from './ProfileSource';
 import {ProfileView} from './ProfileView';
+import {useProfileFilters} from './ProfileView/components/ProfileFilters/useProfileFilters';
 import {useQuery} from './useQuery';
 import {downloadPprof} from './utils';
 
@@ -49,14 +50,10 @@ export const ProfileViewWithData = ({
 
   const [invertStack] = useURLState('invert_call_stack');
   const invertCallStack = invertStack === 'true';
-  const [binaryFrameFilterStr] = useURLState<string[] | string>('binary_frame_filter');
-
-  const binaryFrameFilter: string[] =
-    typeof binaryFrameFilterStr === 'string'
-      ? binaryFrameFilterStr.split(',')
-      : binaryFrameFilterStr;
 
   const [pprofDownloading, setPprofDownloading] = useState<boolean>(false);
+
+  const {protoFilters} = useProfileFilters();
 
   useEffect(() => {
     // If profile type is not delta, remove flamechart from the dashboard items
@@ -95,7 +92,7 @@ export const ProfileViewWithData = ({
     nodeTrimThreshold,
     groupBy,
     invertCallStack,
-    binaryFrameFilter,
+    protoFilters,
   });
 
   const {
@@ -110,7 +107,7 @@ export const ProfileViewWithData = ({
     nodeTrimThreshold,
     groupBy,
     invertCallStack,
-    binaryFrameFilter,
+    protoFilters,
   });
 
   const {
@@ -120,6 +117,7 @@ export const ProfileViewWithData = ({
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.PROFILE_METADATA, {
     nodeTrimThreshold,
     groupBy,
+    protoFilters,
   });
 
   const {perf} = useParcaContext();
@@ -130,7 +128,7 @@ export const ProfileViewWithData = ({
     error: tableError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.TABLE_ARROW, {
     skip: !dashboardItems.includes('table') && !dashboardItems.includes('sandwich'),
-    binaryFrameFilter,
+    protoFilters,
   });
 
   const {
@@ -139,6 +137,7 @@ export const ProfileViewWithData = ({
     error: callgraphError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.CALLGRAPH, {
     skip: !dashboardItems.includes('callgraph'),
+    protoFilters,
   });
 
   const {
@@ -149,6 +148,7 @@ export const ProfileViewWithData = ({
     skip: !dashboardItems.includes('source'),
     sourceBuildID,
     sourceFilename,
+    protoFilters,
   });
 
   useEffect(() => {

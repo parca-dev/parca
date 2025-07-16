@@ -28,7 +28,7 @@ interface Props {
 
 const GroupByLabelsDropdown = ({labels, groupBy, setGroupByLabels}: Props): JSX.Element => {
   return (
-    <div>
+    <div className="flex flex-col">
       <div className="flex items-center justify-between">
         <label className="text-sm">Group by</label>
       </div>
@@ -40,7 +40,7 @@ const GroupByLabelsDropdown = ({labels, groupBy, setGroupByLabels}: Props): JSX.
         defaultValue={undefined}
         name="labels"
         options={labels.map(label => ({label, value: `${FIELD_LABELS}.${label}`}))}
-        className="parca-select-container text-sm w-full rounded-md bg-white"
+        className="parca-select-container text-sm rounded-md bg-white"
         classNamePrefix="parca-select"
         value={groupBy
           .filter(l => l.startsWith(FIELD_LABELS))
@@ -66,11 +66,24 @@ const GroupByLabelsDropdown = ({labels, groupBy, setGroupByLabels}: Props): JSX.
             borderRight: '1px solid #e2e8f0',
             borderLeft: '1px solid #e2e8f0',
             borderTop: '1px solid #e2e8f0',
+            minWidth: '156px',
+            width: 'max-content',
+            minHeight: '38px',
             ':hover': {
               borderColor: '#e2e8f0',
               borderBottomLeftRadius: 0,
               borderBottomRightRadius: 0,
             },
+          }),
+          valueContainer: provided => ({
+            ...provided,
+            flexWrap: 'nowrap',
+            overflowX: 'auto',
+            padding: '2px 8px',
+          }),
+          multiValue: provided => ({
+            ...provided,
+            flex: '0 0 auto',
           }),
           option: provided => ({
             ...provided,

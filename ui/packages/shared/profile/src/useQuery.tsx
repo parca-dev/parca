@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {useMemo} from 'react';
+
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 
 import {QueryRequest_ReportType, QueryResponse, QueryServiceClient} from '@parca/client';
@@ -33,8 +35,8 @@ interface UseQueryOptions {
   sourceFilename?: string;
   sourceOnly?: boolean;
   invertCallStack?: boolean;
-  binaryFrameFilter?: string[];
   sandwichByFunction?: string;
+  protoFilters?: any[]; // Using any[] to match the Filter type from hook
 }
 
 export const useQuery = (
@@ -45,6 +47,11 @@ export const useQuery = (
 ): IQueryResult => {
   const {skip = false} = options ?? {};
   const metadata = useGrpcMetadata();
+
+  const protoFiltersKey = useMemo(() => {
+    return JSON.stringify(options?.protoFilters ?? []);
+  }, [options?.protoFilters]);
+
   const {data, isLoading, error} = useGrpcQuery<QueryResponse | undefined>({
     key: [
       'query',
@@ -56,9 +63,8 @@ export const useQuery = (
       options?.sourceOnly,
       options?.sourceOnly === true ? '' : options?.sourceFilename,
       options?.invertCallStack ?? false,
-      options?.binaryFrameFilter ?? '',
-      profileSource.excludeFunction ?? false,
       options?.sandwichByFunction ?? '',
+      protoFiltersKey,
     ],
     queryFn: async () => {
       const req = profileSource.QueryRequest();
@@ -76,50 +82,12 @@ export const useQuery = (
       }
       req.invertCallStack = options?.invertCallStack ?? false;
 
-      // Handle filter from ProfileSource (filter by function toolbar)
-      const functionToFilter = req.filterQuery;
-      if (functionToFilter !== undefined && functionToFilter !== '') {
-        req.filter = [
-          ...req.filter,
-          {
-            filter: {
-              oneofKind: 'stackFilter',
-              stackFilter: {
-                filter: {
-                  oneofKind: 'functionNameStackFilter',
-                  functionNameStackFilter: {
-                    functionToFilter,
-                    exclude: profileSource.excludeFunction ?? false,
-                  },
-                },
-              },
-            },
-          },
-        ];
+      if (options?.protoFilters != null && options?.protoFilters?.length > 0) {
+        req.filter = options.protoFilters;
       }
-
       // Handle sandwich view filter separately
       if (options?.sandwichByFunction !== undefined) {
         req.sandwichByFunction = options.sandwichByFunction;
-      }
-
-      if (options?.binaryFrameFilter !== undefined && options?.binaryFrameFilter.length > 0) {
-        req.filter = [
-          ...req.filter,
-          {
-            filter: {
-              oneofKind: 'frameFilter',
-              frameFilter: {
-                filter: {
-                  oneofKind: 'binaryFrameFilter',
-                  binaryFrameFilter: {
-                    includeBinaries: options?.binaryFrameFilter ?? [],
-                  },
-                },
-              },
-            },
-          },
-        ];
       }
 
       try {

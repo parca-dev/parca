@@ -23,8 +23,8 @@ import {CurrentPathFrame} from '../../../ProfileFlameGraph/FlameGraphArrow/utils
 import {ProfileSource} from '../../../ProfileSource';
 import {useDashboard} from '../../context/DashboardContext';
 import GroupByDropdown from '../ActionButtons/GroupByDropdown';
-import FilterByFunctionButton from '../FilterByFunctionButton';
 import InvertCallStack from '../InvertCallStack';
+import ProfileFilters from '../ProfileFilters';
 import ShareButton from '../ShareButton';
 import ViewSelector from '../ViewSelector';
 import MultiLevelDropdown from './MultiLevelDropdown';
@@ -43,12 +43,9 @@ export interface VisualisationToolbarProps {
   profileType?: ProfileType;
   total: bigint;
   filtered: bigint;
-  currentSearchString?: string;
-  setSearchString?: (value: string) => void;
   groupByLabels: string[];
   preferencesModal?: boolean;
   profileViewExternalSubActions?: React.ReactNode;
-  clearSelection: () => void;
   setGroupByLabels: (labels: string[]) => void;
   showVisualizationSelector?: boolean;
   sandwichFunctionName?: string;
@@ -58,8 +55,6 @@ export interface TableToolbarProps {
   profileType?: ProfileType;
   total: bigint;
   filtered: bigint;
-  clearSelection: () => void;
-  currentSearchString?: string;
 }
 
 export interface FlameGraphToolbarProps {
@@ -72,27 +67,11 @@ export interface SandwichFlameGraphToolbarProps {
   sandwichFunctionName?: string;
 }
 
-export const TableToolbar: FC<TableToolbarProps> = ({
-  profileType,
-  total,
-  filtered,
-  clearSelection,
-  currentSearchString,
-}) => {
+export const TableToolbar: FC<TableToolbarProps> = ({profileType, total, filtered}) => {
   return (
     <>
       <div className="flex w-full gap-2 items-end">
         <TableColumnsDropdown profileType={profileType} total={total} filtered={filtered} />
-
-        <Button
-          color="neutral"
-          onClick={clearSelection}
-          className="w-auto"
-          variant="neutral"
-          disabled={currentSearchString === undefined || currentSearchString.length === 0}
-        >
-          Clear selection
-        </Button>
       </div>
     </>
   );
@@ -157,8 +136,6 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   setNewCurPath,
   total,
   filtered,
-  currentSearchString,
-  clearSelection,
   showVisualizationSelector = true,
 }) => {
   const {dashboardItems} = useDashboard();
@@ -190,12 +167,11 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
               <InvertCallStack />
             </>
           )}
-
-          <FilterByFunctionButton />
+          <ProfileFilters />
 
           {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           <MultiLevelDropdown
             groupBy={groupBy}
             toggleGroupBy={toggleGroupBy}
@@ -226,13 +202,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
       {isTableVizOnly && (
         <>
           <Divider />
-          <TableToolbar
-            profileType={profileType}
-            total={total}
-            filtered={filtered}
-            clearSelection={clearSelection}
-            currentSearchString={currentSearchString}
-          />
+          <TableToolbar profileType={profileType} total={total} filtered={filtered} />
         </>
       )}
     </>

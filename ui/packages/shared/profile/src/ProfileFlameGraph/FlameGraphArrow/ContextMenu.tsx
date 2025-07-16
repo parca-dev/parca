@@ -82,7 +82,6 @@ const ContextMenu = ({
     inlined,
   } = useGraphTooltipMetaInfo({table, row});
 
-  const [_, setSearchString] = useURLState<string | undefined>('search_string');
   const [dashboardItems, setDashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
   });
@@ -173,7 +172,6 @@ const ContextMenu = ({
       <Item
         id="show-in-table"
         onClick={() => {
-          setSearchString(functionName);
           if (isSandwich) {
             setDashboardItems(['table']);
           } else {

@@ -27,7 +27,7 @@ import {type NavigateFunction} from '@parca/utilities';
 
 import {getQueryParamsFromURL, sanitize, type ParamValue} from './utils';
 
-type ParamValueSetter = (val: ParamValue) => void;
+export type ParamValueSetter = (val: ParamValue) => void;
 
 interface URLState {
   navigateTo: NavigateFunction;
@@ -135,7 +135,7 @@ export interface OptionsCustom<T> {
   stringify: (val: T) => ParamValue;
 }
 
-type ParamValueSetterCustom<T> = (val: T) => void;
+export type ParamValueSetterCustom<T> = (val: T) => void;
 
 export const useURLStateCustom = <T,>(
   param: string,

@@ -32,6 +32,7 @@ import {getColorForFeature, selectDarkMode, useAppSelector} from '@parca/store';
 import {getLastItem, type ColorConfig} from '@parca/utilities';
 
 import {ProfileSource} from '../../ProfileSource';
+import {useProfileFilters} from '../../ProfileView/components/ProfileFilters/useProfileFilters';
 import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
 import ContextMenuWrapper, {ContextMenuWrapperRef} from './ContextMenuWrapper';
 import {FlameNode, RowHeight, colorByColors} from './FlameGraphNodes';
@@ -139,7 +140,6 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   curPath,
   profileType,
   profileSource,
-  mappingsListFromMetadata,
   compareAbsolute,
   isFlameChart = false,
   isRenderedAsFlamegraph = false,
@@ -195,9 +195,8 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
     setSvgElement(svg.current);
   }, [tooltipId]);
 
-  const [binaryFrameFilter, setBinaryFrameFilter] = useURLState('binary_frame_filter');
+  const {excludeBinary} = useProfileFilters();
 
-  const [currentSearchString] = useURLState('search_string');
   const {compareMode} = useProfileViewContext();
   const currentColorProfile = useCurrentColorProfile();
   const colorForSimilarNodes = currentColorProfile.colorForSimilarNodes;
@@ -276,18 +275,8 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   );
 
   const hideBinary = (binaryToRemove: string): void => {
-    // second/subsequent time filtering out a binary i.e. a binary has already been hidden
-    // and we want to hide more binaries, we simply remove the binary from the binaryFrameFilter array in the URL.
-    if (Array.isArray(binaryFrameFilter) && binaryFrameFilter.length > 0) {
-      const newMappingsList = binaryFrameFilter.filter(mapping => mapping !== binaryToRemove);
-
-      setBinaryFrameFilter(newMappingsList);
-      return;
-    }
-
-    // first time hiding a binary
-    const newMappingsList = mappingsListFromMetadata.filter(mapping => mapping !== binaryToRemove);
-    setBinaryFrameFilter(newMappingsList);
+    // Add a new frame filter to hide this binary using the new ProfileFilters system
+    excludeBinary(binaryToRemove);
   };
 
   const handleRowClick = (row: number): void => {
@@ -386,7 +375,6 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
               colorBy={colorByValue}
               totalWidth={width ?? 1}
               height={RowHeight}
-              searchString={(currentSearchString as string) ?? ''}
               darkMode={isDarkMode}
               compareMode={compareMode}
               colorForSimilarNodes={colorForSimilarNodes}

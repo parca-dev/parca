@@ -69,10 +69,10 @@ const Select = ({
   const {loader} = useParcaContext();
 
   const styles =
-    'relative border rounded-md shadow-sm px-4 py-2 text-left cursor-default focus:outline-none focus:ring-1 items-center focus:ring-indigo-500 focus:border-indigo-500 text-sm flex gap-2 flex items-center justify-between';
+    'relative border rounded-md shadow-sm px-4 py-2 text-left cursor-default focus:outline-none focus:ring-1 items-center text-sm flex gap-2 flex items-center justify-between';
   const defaultStyles = 'bg-white dark:bg-gray-900 dark:border-gray-600';
   const primaryStyles =
-    'text-gray-100 dark:gray-900 bg-indigo-600 border-indigo-500 font-medium py-2 px-4';
+    'text-gray-100 dark:gray-900 bg-indigo-600 border-indigo-500 font-medium py-2 px-4 focus:ring-indigo-500 focus:border-indigo-500';
 
   return (
     <Listbox value={selectedKey} onChange={onSelection}>
@@ -93,7 +93,9 @@ const Select = ({
                   icon != null ? '' : 'block overflow-x-hidden text-ellipsis whitespace-nowrap'
                 )}
               >
-                {selection?.key !== '' ? selection.element.active : placeholder}
+                {selection?.key != null && selection?.key !== ''
+                  ? selection.element.active
+                  : placeholder}
               </div>
               <div className={cx(icon != null ? '' : 'pointer-events-none text-gray-400')}>
                 {icon ?? <Icon icon="heroicons:chevron-up-down-20-solid" aria-hidden="true" />}

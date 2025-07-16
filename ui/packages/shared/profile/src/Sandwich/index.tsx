@@ -26,6 +26,7 @@ import useMappingList, {
   useFilenamesList,
 } from '../ProfileFlameGraph/FlameGraphArrow/useMappingList';
 import {ProfileSource} from '../ProfileSource';
+import {useProfileFilters} from '../ProfileView/components/ProfileFilters/useProfileFilters';
 import {useDashboard} from '../ProfileView/context/DashboardContext';
 import {useVisualizationState} from '../ProfileView/hooks/useVisualizationState';
 import {FIELD_FUNCTION_NAME, Row} from '../Table';
@@ -81,6 +82,8 @@ const Sandwich = React.memo(function Sandwich({
     return (1 / width) * 100;
   }, []);
 
+  const {protoFilters} = useProfileFilters();
+
   const {
     isLoading: callersFlamegraphLoading,
     response: callersFlamegraphResponse,
@@ -93,9 +96,9 @@ const Sandwich = React.memo(function Sandwich({
       nodeTrimThreshold,
       groupBy: [FIELD_FUNCTION_NAME],
       invertCallStack: true,
-      binaryFrameFilter: [],
       sandwichByFunction: sandwichFunctionName,
       skip: sandwichFunctionName === undefined,
+      protoFilters,
     }
   );
 
@@ -111,9 +114,9 @@ const Sandwich = React.memo(function Sandwich({
       nodeTrimThreshold,
       groupBy: [FIELD_FUNCTION_NAME],
       invertCallStack: false,
-      binaryFrameFilter: [],
       sandwichByFunction: sandwichFunctionName,
       skip: sandwichFunctionName === undefined,
+      protoFilters,
     }
   );
 

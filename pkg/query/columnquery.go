@@ -329,37 +329,12 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		}
 	}()
 
-	var functionToFilterBy string
-	var excludeFunction bool
-	// Extract the function name to filter by from the request in the Filter field.
-	// The Filter API allows for multiple stack filters, but for now, we only support the one,
-	// which is the function name stack filter. This will be expanded in the future
-	// to support multiple filters
-	for _, filter := range req.GetFilter() {
-		if stackFilter := filter.GetStackFilter(); stackFilter != nil {
-			if functionNameFilter := stackFilter.GetFunctionNameStackFilter(); functionNameFilter != nil {
-				functionToFilterBy = functionNameFilter.GetFunctionToFilter()
-				excludeFunction = functionNameFilter.GetExclude()
-			}
-		}
-	}
-
-	binaryFrameFilter := map[string]struct{}{}
-
-	for _, filter := range req.GetFilter() {
-		for _, include := range filter.GetFrameFilter().GetBinaryFrameFilter().GetIncludeBinaries() {
-			binaryFrameFilter[include] = struct{}{}
-		}
-	}
-
 	p.Samples, filtered, err = FilterProfileData(
 		ctx,
 		q.tracer,
 		q.mem,
 		p.Samples,
-		functionToFilterBy,
-		excludeFunction,
-		binaryFrameFilter,
+		req.GetFilter(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("filtering profile: %w", err)
@@ -368,15 +343,35 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	// Apply sandwich view filtering if specified
 	sandwichByFunction := req.GetSandwichByFunction()
 	if sandwichByFunction != "" {
+		// Create a stack filter for sandwich view
+		sandwichFilter := &pb.Filter{
+			Filter: &pb.Filter_StackFilter{
+				StackFilter: &pb.StackFilter{
+					Filter: &pb.StackFilter_Criteria{
+						Criteria: &pb.FilterCriteria{
+							FunctionName: &pb.StringCondition{
+								Condition: &pb.StringCondition_Contains{
+									Contains: sandwichByFunction,
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		// Combine existing filters with the sandwich filter
+		existingFilters := req.GetFilter()
+		sandwichFilters := make([]*pb.Filter, 0, len(existingFilters)+1)
+		sandwichFilters = append(sandwichFilters, existingFilters...)
+		sandwichFilters = append(sandwichFilters, sandwichFilter)
+
 		var sandwichFiltered int64
 		p.Samples, sandwichFiltered, err = FilterProfileData(
 			ctx,
 			q.tracer,
 			q.mem,
 			p.Samples,
-			sandwichByFunction,
-			false, // Never exclude for sandwich view
-			binaryFrameFilter,
+			sandwichFilters,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("filtering profile for sandwich view: %w", err)
@@ -402,12 +397,15 @@ func FilterProfileData(
 	tracer trace.Tracer,
 	pool memory.Allocator,
 	records []arrow.Record,
-	functionStackFilter string,
-	excludeFunction bool,
-	binaryFrameFilter map[string]struct{},
+	filters []*pb.Filter,
 ) ([]arrow.Record, int64, error) {
 	_, span := tracer.Start(ctx, "filterByFunction")
 	defer span.End()
+
+	if len(filters) == 0 {
+		// No filtering means all values are kept, so filtered count = 0
+		return records, 0, nil
+	}
 
 	defer func() {
 		for _, r := range records {
@@ -415,9 +413,6 @@ func FilterProfileData(
 		}
 	}()
 
-	// We want to filter by function name case-insensitive, so we need to lowercase the query.
-	// We lower case the query here, so we don't have to do it for every sample.
-	functionStackFilterBytes := []byte(strings.ToLower(functionStackFilter))
 	res := make([]arrow.Record, 0, len(records))
 	allValues := int64(0)
 	allFiltered := int64(0)
@@ -428,9 +423,7 @@ func FilterProfileData(
 			tracer,
 			pool,
 			r,
-			functionStackFilterBytes,
-			excludeFunction,
-			binaryFrameFilter,
+			filters,
 		)
 		if err != nil {
 			return nil, 0, fmt.Errorf("filter record: %w", err)
@@ -451,96 +444,197 @@ func filterRecord(
 	tracer trace.Tracer,
 	pool memory.Allocator,
 	rec arrow.Record,
-	functionStackFilterBytes []byte,
-	excludeFunction bool,
-	binaryFrameFilter map[string]struct{},
+	filters []*pb.Filter,
 ) ([]arrow.Record, int64, int64, error) {
+	_, span := tracer.Start(ctx, "filterRecord")
+	defer span.End()
+
 	r := profile.NewRecordReader(rec)
 
-	var indexMatches map[uint32]struct{}
-	if len(functionStackFilterBytes) > 0 {
-		indexMatches = map[uint32]struct{}{}
-		for i := 0; i < r.LineFunctionNameDict.Len(); i++ {
-			if bytes.Contains(bytes.ToLower(r.LineFunctionNameDict.Value(i)), functionStackFilterBytes) {
-				indexMatches[uint32(i)] = struct{}{}
+	// If no filters, return all records
+	if len(filters) == 0 {
+		valueSum := math.Int64.Sum(r.Value)
+		return []arrow.Record{rec}, valueSum, valueSum, nil
+	}
+
+	stackFilters := make([]*pb.FilterCriteria, 0)
+	frameFilters := make([]*pb.FilterCriteria, 0)
+
+	for _, filter := range filters {
+		if stackFilter := filter.GetStackFilter(); stackFilter != nil {
+			// Handle new oneof structure - prefer new criteria over deprecated function_name_stack_filter
+			if criteria := stackFilter.GetCriteria(); criteria != nil {
+				stackFilters = append(stackFilters, criteria)
+			} else if funcFilter := stackFilter.GetFunctionNameStackFilter(); funcFilter != nil { //nolint:staticcheck // deprecated but needed for backward compatibility
+				// Handle deprecated function_name_stack_filter for backward compatibility
+				criteria := &pb.FilterCriteria{
+					FunctionName: &pb.StringCondition{},
+				}
+				if funcFilter.GetExclude() {
+					criteria.FunctionName.Condition = &pb.StringCondition_NotContains{
+						NotContains: funcFilter.GetFunctionToFilter(),
+					}
+				} else {
+					criteria.FunctionName.Condition = &pb.StringCondition_Contains{
+						Contains: funcFilter.GetFunctionToFilter(),
+					}
+				}
+				stackFilters = append(stackFilters, criteria)
 			}
 		}
-
-		if len(indexMatches) == 0 {
-			// If exclude mode and no matches found, keep all records
-			if excludeFunction {
-				// No function matches, so nothing to exclude - keep all records
-				rowsToKeep := make([]int64, 0, int(rec.NumRows()))
-				for i := 0; i < int(rec.NumRows()); i++ {
-					rowsToKeep = append(rowsToKeep, int64(i))
+		if frameFilter := filter.GetFrameFilter(); frameFilter != nil {
+			// Handle new oneof structure - prefer new criteria over deprecated binary_frame_filter
+			if criteria := frameFilter.GetCriteria(); criteria != nil {
+				frameFilters = append(frameFilters, criteria)
+			} else if binaryFilter := frameFilter.GetBinaryFrameFilter(); binaryFilter != nil { //nolint:staticcheck // deprecated but needed for backward compatibility
+				// Handle deprecated binary_frame_filter for backward compatibility
+				for _, binary := range binaryFilter.GetIncludeBinaries() {
+					criteria := &pb.FilterCriteria{
+						Binary: &pb.StringCondition{
+							Condition: &pb.StringCondition_Contains{
+								Contains: binary,
+							},
+						},
+					}
+					frameFilters = append(frameFilters, criteria)
 				}
-				recs := sliceRecord(rec, rowsToKeep)
-				valueSum := math.Int64.Sum(r.Value)
-				return recs, valueSum, valueSum, nil
 			}
-			// Include mode with no matches - return empty
-			return nil, math.Int64.Sum(r.Value), 0, nil
 		}
 	}
 
-	rowsToKeep := make([]int64, 0, int(rec.NumRows()))
+	// To keep track of which rows and frames to keep, we will build a list of row indices
+	// and the corresponding frames to keep within those rows.
+	type rowInfo struct {
+		rowIndex     int
+		framesToKeep []int // indices of frames to keep within the location list
+	}
+
+	rowsInfo := make([]rowInfo, 0)
+	originalValueSum := math.Int64.Sum(r.Value)
+
 	for i := 0; i < int(rec.NumRows()); i++ {
 		lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
-		keepRow := false
-		hasMatch := false
-		if len(functionStackFilterBytes) > 0 {
+
+		// Check stack filters first
+		keepRow := true
+		if len(stackFilters) > 0 {
+			stackMatches := true
 			if lOffsetStart < lOffsetEnd {
 				firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
 				_, lastEnd := r.Lines.ValueOffsets(int(lOffsetEnd - 1))
-				for k := int(firstStart); k < int(lastEnd); k++ {
-					if r.LineFunctionNameIndices.IsValid(k) {
-						if _, ok := indexMatches[r.LineFunctionNameIndices.Value(k)]; ok {
-							hasMatch = true
-							break
-						}
+
+				for _, filter := range stackFilters {
+					if !stackMatchesFilter(r, int(firstStart), int(lastEnd-1), int(lOffsetStart), int(lOffsetEnd), filter) {
+						stackMatches = false
+						break
 					}
 				}
 			}
-			// If exclude is true, keep rows that DON'T match
-			// If exclude is false, keep rows that DO match
-			keepRow = excludeFunction != hasMatch
-		} else {
-			keepRow = true
+			keepRow = stackMatches
 		}
 
 		if !keepRow {
 			continue
 		}
 
-		rowsToKeep = append(rowsToKeep, int64(i))
+		// Apply frame filters - determine which frames to keep
+		framesToKeep := make([]int, 0)
 		if lOffsetEnd-lOffsetStart > 0 {
 			for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
-				validMappingStart := r.MappingStart.IsValid(j)
-				var mappingFile []byte
-				if validMappingStart {
-					mappingFile = r.MappingFileDict.Value(int(r.MappingFileIndices.Value(j)))
-				}
-				lastSlash := bytes.LastIndex(mappingFile, []byte("/"))
-				mappingFileBase := mappingFile
-				if lastSlash >= 0 {
-					mappingFileBase = mappingFile[lastSlash+1:]
-				}
-				if len(mappingFileBase) > 0 {
-					if len(binaryFrameFilter) > 0 {
-						keepLocation := false
-						if _, ok := binaryFrameFilter[(string(mappingFileBase))]; ok {
-							keepLocation = true
+				lineStart, lineEnd := r.Lines.ValueOffsets(j)
+				if lineStart >= lineEnd {
+					// For Unsymbolized location, check at location level only
+					if matchesAllFrameFilters(r, j, -1, frameFilters) {
+						framesToKeep = append(framesToKeep, -1)
+					}
+				} else {
+					// For Symbolized location, check each line/frame
+					for lineIdx := int(lineStart); lineIdx < int(lineEnd); lineIdx++ {
+						if matchesAllFrameFilters(r, j, lineIdx, frameFilters) {
+							framesToKeep = append(framesToKeep, lineIdx)
 						}
-						if !keepLocation {
-							bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
-						}
+					}
+				}
+			}
+		}
+
+		// Only keep rows that have at least one frame after filtering
+		if len(framesToKeep) > 0 {
+			rowsInfo = append(rowsInfo, rowInfo{
+				rowIndex:     i,
+				framesToKeep: framesToKeep,
+			})
+		}
+	}
+
+	if len(rowsInfo) == 0 {
+		// No rows match the filters
+		return []arrow.Record{}, originalValueSum, 0, nil
+	}
+
+	// Now apply frame filtering by nulling out non-matching frames within rows
+	for _, info := range rowsInfo {
+		lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(info.rowIndex)
+
+		// Create a set of frames to keep for quick lookup
+		keepSet := make(map[int]bool)
+		for _, frameIdx := range info.framesToKeep {
+			keepSet[frameIdx] = true
+		}
+
+		// Null out frames that don't match the filters
+		for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
+			lineStart, lineEnd := r.Lines.ValueOffsets(j)
+			allLinesFiltered := true
+
+			// Check if any line in this location is kept (or if this is unsymbolized and kept)
+			for lineIdx := int(lineStart); lineIdx < int(lineEnd); lineIdx++ {
+				if keepSet[lineIdx] {
+					allLinesFiltered = false
+					break
+				}
+			}
+			// Also check for unsymbolized case
+			if keepSet[-1] {
+				allLinesFiltered = false
+			}
+
+			// If all lines in this location are filtered out, invalidate the location
+			if allLinesFiltered {
+				bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
+			}
+
+			// Null out individual line fields that don't match
+			for lineIdx := int(lineStart); lineIdx < int(lineEnd); lineIdx++ {
+				if !keepSet[lineIdx] {
+					// Null out the frame fields for this line
+					if r.LineFunctionNameIndices.Len() > 0 {
+						bitutil.ClearBit(r.LineFunctionNameIndices.NullBitmapBytes(), lineIdx)
+					}
+					if r.LineFunctionSystemNameIndices.Len() > 0 {
+						bitutil.ClearBit(r.LineFunctionSystemNameIndices.NullBitmapBytes(), lineIdx)
+					}
+					if r.LineFunctionFilenameIndices.Len() > 0 {
+						bitutil.ClearBit(r.LineFunctionFilenameIndices.NullBitmapBytes(), lineIdx)
+					}
+					if r.LineFunctionStartLine.Len() > 0 {
+						bitutil.ClearBit(r.LineFunctionStartLine.NullBitmapBytes(), lineIdx)
+					}
+					if r.LineNumber.Len() > 0 {
+						bitutil.ClearBit(r.LineNumber.NullBitmapBytes(), lineIdx)
 					}
 				}
 			}
 		}
 	}
 
-	// Split the record into slices based on the rowsToKeep.
+	// Extract the rows we want to keep
+	rowsToKeep := make([]int64, len(rowsInfo))
+	for i, info := range rowsInfo {
+		rowsToKeep[i] = int64(info.rowIndex)
+	}
+
+	// Split the record into slices based on the rowsToKeep
 	recs := sliceRecord(rec, rowsToKeep)
 
 	filtered := int64(0)
@@ -548,10 +642,387 @@ func filterRecord(
 		filtered += math.Int64.Sum(profile.NewRecordReader(r).Value)
 	}
 
-	return recs,
-		math.Int64.Sum(r.Value),
-		filtered,
-		nil
+	return recs, originalValueSum, filtered, nil
+}
+
+// stackMatchesFilter checks if a stack matches the given filter criteria.
+func stackMatchesFilter(r *profile.RecordReader, firstStart, lastEnd, locStart, locEnd int, filter *pb.FilterCriteria) bool {
+	if fnCond := filter.GetFunctionName(); fnCond != nil {
+		if r.LineFunctionNameIndices.Len() == 0 {
+			return handleUnsymbolizedFunctionCondition(fnCond)
+		}
+		return matchesFunctionNameInRange(r, firstStart, lastEnd, fnCond)
+	}
+
+	if binCond := filter.GetBinary(); binCond != nil {
+		found := false
+		for locIdx := locStart; locIdx < locEnd; locIdx++ {
+			if r.MappingStart.IsValid(locIdx) {
+				mappingFile := r.MappingFileDict.Value(int(r.MappingFileIndices.Value(locIdx)))
+				lastSlash := bytes.LastIndex(mappingFile, []byte("/"))
+				mappingFileBase := mappingFile
+				if lastSlash >= 0 {
+					mappingFileBase = mappingFile[lastSlash+1:]
+				}
+				if matchesStringCondition(mappingFileBase, binCond) {
+					found = true
+					break
+				}
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+
+	if sysCond := filter.GetSystemName(); sysCond != nil {
+		if r.LineFunctionSystemNameIndices.Len() == 0 {
+			return handleUnsymbolizedFunctionCondition(sysCond)
+		}
+		if !matchesSystemNameInRange(r, firstStart, lastEnd, sysCond) {
+			return false
+		}
+	}
+
+	if fileCond := filter.GetFilename(); fileCond != nil {
+		if r.LineFunctionFilenameIndices.Len() == 0 {
+			return handleUnsymbolizedFunctionCondition(fileCond)
+		}
+		if !matchesFilenameInRange(r, firstStart, lastEnd, fileCond) {
+			return false
+		}
+	}
+
+	if addrCond := filter.GetAddress(); addrCond != nil {
+		found := false
+		for locIdx := locStart; locIdx < locEnd; locIdx++ {
+			if r.Address.IsValid(locIdx) {
+				address := r.Address.Value(locIdx)
+				if matchesNumberCondition(address, addrCond) {
+					found = true
+					break
+				}
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+
+	if lineCond := filter.GetLineNumber(); lineCond != nil {
+		if !matchesLineNumberInRange(r, firstStart, lastEnd, lineCond) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func handleUnsymbolizedFunctionCondition(fnCond *pb.StringCondition) bool {
+	switch fnCond.GetCondition().(type) {
+	case *pb.StringCondition_Contains, *pb.StringCondition_Equal:
+		// For Contains/Equal: no function names means no matches
+		return false
+	case *pb.StringCondition_NotContains, *pb.StringCondition_NotEqual:
+		// For NotContains/NotEqual: no function names means condition is satisfied
+		return true
+	}
+	return false
+}
+
+func matchesFunctionNameInRange(r *profile.RecordReader, firstStart, lastEnd int, fnCond *pb.StringCondition) bool {
+	// For NotContains/NotEqual, we need ALL functions to not contain/equal the target (AND logic)
+	// For Contains/Equal, we need ANY function to contain/equal the target (OR logic)
+	isNegativeCondition := false
+	switch fnCond.GetCondition().(type) {
+	case *pb.StringCondition_NotContains, *pb.StringCondition_NotEqual:
+		isNegativeCondition = true
+	}
+
+	// Iterate through all line indices in the range
+	for lineIndex := firstStart; lineIndex <= lastEnd; lineIndex++ {
+		if lineIndex >= r.LineFunctionNameIndices.Len() {
+			break
+		}
+
+		// Check if this line has a valid function name
+		if r.LineFunctionNameIndices.IsValid(lineIndex) {
+			fnIndex := r.LineFunctionNameIndices.Value(lineIndex)
+			functionName := r.LineFunctionNameDict.Value(int(fnIndex))
+
+			if isNegativeCondition {
+				// For negative conditions (NotContains/NotEqual), if ANY function matches the negative condition, return false
+				if !matchesStringCondition(functionName, fnCond) {
+					return false
+				}
+			} else {
+				// For positive conditions (Contains/Equal), if ANY function matches, return true
+				if matchesStringCondition(functionName, fnCond) {
+					return true
+				}
+			}
+		}
+	}
+
+	if isNegativeCondition {
+		// For negative conditions, if we got here, ALL functions passed the negative condition
+		return true
+	} else {
+		// For positive conditions, if we got here, NO function matched
+		return false
+	}
+}
+
+func matchesSystemNameInRange(r *profile.RecordReader, firstStart, lastEnd int, sysCond *pb.StringCondition) bool {
+	isNegativeCondition := false
+	switch sysCond.GetCondition().(type) {
+	case *pb.StringCondition_NotContains, *pb.StringCondition_NotEqual:
+		isNegativeCondition = true
+	}
+
+	for lineIndex := firstStart; lineIndex <= lastEnd; lineIndex++ {
+		if lineIndex >= r.LineFunctionSystemNameIndices.Len() {
+			break
+		}
+
+		if r.LineFunctionSystemNameIndices.IsValid(lineIndex) {
+			sysIndex := r.LineFunctionSystemNameIndices.Value(lineIndex)
+			systemName := r.LineFunctionSystemNameDict.Value(int(sysIndex))
+
+			if isNegativeCondition {
+				if !matchesStringCondition(systemName, sysCond) {
+					return false
+				}
+			} else {
+				if matchesStringCondition(systemName, sysCond) {
+					return true
+				}
+			}
+		}
+	}
+
+	return isNegativeCondition
+}
+
+func matchesFilenameInRange(r *profile.RecordReader, firstStart, lastEnd int, fileCond *pb.StringCondition) bool {
+	isNegativeCondition := false
+	switch fileCond.GetCondition().(type) {
+	case *pb.StringCondition_NotContains, *pb.StringCondition_NotEqual:
+		isNegativeCondition = true
+	}
+
+	for lineIndex := firstStart; lineIndex <= lastEnd; lineIndex++ {
+		if lineIndex >= r.LineFunctionFilenameIndices.Len() {
+			break
+		}
+
+		if r.LineFunctionFilenameIndices.IsValid(lineIndex) {
+			fileIndex := r.LineFunctionFilenameIndices.Value(lineIndex)
+			filename := r.LineFunctionFilenameDict.Value(int(fileIndex))
+
+			if isNegativeCondition {
+				if !matchesStringCondition(filename, fileCond) {
+					return false
+				}
+			} else {
+				if matchesStringCondition(filename, fileCond) {
+					return true
+				}
+			}
+		}
+	}
+
+	return isNegativeCondition
+}
+
+func matchesLineNumberInRange(r *profile.RecordReader, firstStart, lastEnd int, lineCond *pb.NumberCondition) bool {
+	isNegativeCondition := false
+	switch lineCond.GetCondition().(type) {
+	case *pb.NumberCondition_NotEqual:
+		isNegativeCondition = true
+	}
+
+	for lineIndex := firstStart; lineIndex <= lastEnd; lineIndex++ {
+		if lineIndex >= r.LineNumber.Len() {
+			break
+		}
+
+		if r.LineNumber.IsValid(lineIndex) {
+			lineNumber := uint64(r.LineNumber.Value(lineIndex))
+
+			if isNegativeCondition {
+				if !matchesNumberCondition(lineNumber, lineCond) {
+					return false
+				}
+			} else {
+				if matchesNumberCondition(lineNumber, lineCond) {
+					return true
+				}
+			}
+		}
+	}
+
+	return isNegativeCondition
+}
+
+func matchesAllFrameFilters(r *profile.RecordReader, locationIndex, lineIndex int, frameFilters []*pb.FilterCriteria) bool {
+	// If no frame filters are provided, keep all frames
+	if len(frameFilters) == 0 {
+		return true
+	}
+
+	for _, filter := range frameFilters {
+		if !matchesFrameFilter(r, locationIndex, lineIndex, filter) {
+			return false
+		}
+	}
+	return true
+}
+
+// matchesFrameFilter checks if a single frame matches the filter criteria.
+func matchesFrameFilter(r *profile.RecordReader, locationIndex, lineIndex int, filter *pb.FilterCriteria) bool {
+	if fnCond := filter.GetFunctionName(); fnCond != nil {
+		// If lineIndex is -1, skip function name check
+		if lineIndex >= 0 {
+			// If unsymbolized, always return false
+			if r.LineFunctionNameIndices.Len() == 0 {
+				return false
+			}
+			if r.LineFunctionNameIndices.IsValid(lineIndex) {
+				fnIndex := r.LineFunctionNameIndices.Value(lineIndex)
+				functionName := r.LineFunctionNameDict.Value(int(fnIndex))
+				if !matchesStringCondition(functionName, fnCond) {
+					return false
+				}
+			} else {
+				// Frame has no function name, so function name filter doesn't match
+				return false
+			}
+		}
+	}
+
+	if binCond := filter.GetBinary(); binCond != nil {
+		if r.MappingStart.IsValid(locationIndex) {
+			mappingFile := r.MappingFileDict.Value(int(r.MappingFileIndices.Value(locationIndex)))
+			lastSlash := bytes.LastIndex(mappingFile, []byte("/"))
+			mappingFileBase := mappingFile
+			if lastSlash >= 0 {
+				mappingFileBase = mappingFile[lastSlash+1:]
+			}
+			if !matchesStringCondition(mappingFileBase, binCond) {
+				return false
+			}
+		}
+	}
+
+	if sysCond := filter.GetSystemName(); sysCond != nil {
+		// If lineIndex is -1, skip system name check
+		if lineIndex >= 0 {
+			if r.LineFunctionSystemNameIndices.Len() == 0 {
+				return false
+			}
+			if r.LineFunctionSystemNameIndices.IsValid(lineIndex) {
+				sysIndex := r.LineFunctionSystemNameIndices.Value(lineIndex)
+				systemName := r.LineFunctionSystemNameDict.Value(int(sysIndex))
+				if !matchesStringCondition(systemName, sysCond) {
+					return false
+				}
+			} else {
+				// Frame has no system name, so system name filter doesn't match
+				return false
+			}
+		}
+	}
+
+	if fileCond := filter.GetFilename(); fileCond != nil {
+		// If lineIndex is -1, skip filename check
+		if lineIndex >= 0 {
+			if r.LineFunctionFilenameIndices.Len() == 0 {
+				return false
+			}
+			if r.LineFunctionFilenameIndices.IsValid(lineIndex) {
+				fileIndex := r.LineFunctionFilenameIndices.Value(lineIndex)
+				filename := r.LineFunctionFilenameDict.Value(int(fileIndex))
+				if !matchesStringCondition(filename, fileCond) {
+					return false
+				}
+			} else {
+				// Frame has no filename, so filename filter doesn't match
+				return false
+			}
+		}
+	}
+
+	if addrCond := filter.GetAddress(); addrCond != nil {
+		if r.Address.IsValid(locationIndex) {
+			address := r.Address.Value(locationIndex)
+			if !matchesNumberCondition(address, addrCond) {
+				return false
+			}
+		} else {
+			// Frame has no address, so address filter doesn't match
+			return false
+		}
+	}
+
+	if lineCond := filter.GetLineNumber(); lineCond != nil {
+		// If lineIndex is -1, skip line number check
+		if lineIndex >= 0 {
+			if r.LineNumber.IsValid(lineIndex) {
+				lineNumber := uint64(r.LineNumber.Value(lineIndex))
+				if !matchesNumberCondition(lineNumber, lineCond) {
+					return false
+				}
+			} else {
+				// Frame has no line number, so line number filter doesn't match
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+// matchesStringCondition checks if a value matches a string condition.
+func matchesStringCondition(value []byte, condition *pb.StringCondition) bool {
+	if condition == nil {
+		return true
+	}
+
+	valueLower := bytes.ToLower(value)
+
+	switch condition.GetCondition().(type) {
+	case *pb.StringCondition_Equal:
+		target := bytes.ToLower([]byte(condition.GetEqual()))
+		return bytes.Equal(valueLower, target)
+	case *pb.StringCondition_NotEqual:
+		target := bytes.ToLower([]byte(condition.GetNotEqual()))
+		return !bytes.Equal(valueLower, target)
+	case *pb.StringCondition_Contains:
+		target := bytes.ToLower([]byte(condition.GetContains()))
+		return bytes.Contains(valueLower, target)
+	case *pb.StringCondition_NotContains:
+		target := bytes.ToLower([]byte(condition.GetNotContains()))
+		return !bytes.Contains(valueLower, target)
+	default:
+		return true
+	}
+}
+
+// matchesNumberCondition checks if a numeric value matches a number condition.
+func matchesNumberCondition(value uint64, condition *pb.NumberCondition) bool {
+	if condition == nil {
+		return true
+	}
+
+	switch condition.GetCondition().(type) {
+	case *pb.NumberCondition_Equal:
+		return value == condition.GetEqual()
+	case *pb.NumberCondition_NotEqual:
+		return value != condition.GetNotEqual()
+	default:
+		return true
+	}
 }
 
 func (q *ColumnQueryAPI) renderReport(

@@ -22,6 +22,7 @@ import {EVERYTHING_ELSE, selectDarkMode, useAppSelector} from '@parca/store';
 
 import {getMappingColors} from '../../ProfileFlameGraph/FlameGraphArrow';
 import useMappingList from '../../ProfileFlameGraph/FlameGraphArrow/useMappingList';
+import {useProfileFilters} from './ProfileFilters/useProfileFilters';
 
 interface Props {
   mappings?: string[];
@@ -40,10 +41,16 @@ const ColorStackLegend = ({mappings, compareMode = false, loading}: Props): Reac
 
   const colorBy = colorByValue === 'binary' || colorByValue === undefined ? 'binary' : 'filename';
 
-  const [currentSearchString, setSearchString] = useURLState<string[]>(`binary_frame_filter`, {
-    alwaysReturnArray: true,
-    defaultValue: [],
-  });
+  const {appliedFilters, removeExcludeBinary, excludeBinary} = useProfileFilters();
+
+  // Get current binary filters from the new ProfileFilters system
+  const currentBinaryFilters = useMemo(() => {
+    return (appliedFilters ?? [])
+      .filter(f => f.type === 'frame' && f.field === 'binary')
+      .map(f => f.value);
+  }, [appliedFilters]);
+
+  console.log('currentBinaryFilters', currentBinaryFilters);
 
   const mappingsList = useMappingList(mappings);
 
@@ -80,8 +87,7 @@ const ColorStackLegend = ({mappings, compareMode = false, loading}: Props): Reac
     <div className="my-4 flex w-full flex-wrap justify-start column-gap-2">
       {stackColorArray.map(([feature, color]) => {
         const filteringAllowed = feature !== EVERYTHING_ELSE;
-        const isHighlighted =
-          currentSearchString !== undefined ? currentSearchString.includes(feature) : false;
+        const isHighlighted = currentBinaryFilters.includes(feature);
         return (
           <div
             key={feature}
@@ -97,10 +103,8 @@ const ColorStackLegend = ({mappings, compareMode = false, loading}: Props): Reac
                 return;
               }
 
-              // Check if the current search string is defined and an array
-              const updatedSearchString = [...currentSearchString, feature]; // If array, append the feature
-
-              setSearchString(updatedSearchString);
+              // Remove the exclude filter for this binary
+              removeExcludeBinary(feature);
             }}
           >
             <div className="flex w-11/12 items-center justify-start">
@@ -119,8 +123,8 @@ const ColorStackLegend = ({mappings, compareMode = false, loading}: Props): Reac
                 <Icon
                   icon="radix-icons:cross-circled"
                   onClick={e => {
-                    // remove the current feature from the search string array of strings
-                    setSearchString(currentSearchString.filter((f: string) => f !== feature));
+                    // Find and remove the filter for this binary
+                    excludeBinary(feature);
                     e.stopPropagation();
                   }}
                 />
