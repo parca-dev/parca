@@ -59,13 +59,10 @@ export const ProfileView = ({
     setCurPath,
     curPathArrow,
     setCurPathArrow,
-    currentSearchString,
-    setSearchString,
     colorStackLegend,
     colorBy,
     groupBy,
     toggleGroupBy,
-    clearSelection,
     setGroupByLabels,
     sandwichFunctionName,
     resetSandwichFunctionName,
@@ -105,8 +102,6 @@ export const ProfileView = ({
       setNewCurPath: setCurPath,
       curPathArrow,
       setNewCurPathArrow: setCurPathArrow,
-      currentSearchString,
-      setSearchString,
       perf,
       queryClient,
     });
@@ -115,13 +110,7 @@ export const ProfileView = ({
   const actionButtons = {
     flame: <FlameGraphToolbar curPath={curPathArrow} setNewCurPath={setCurPathArrow} />,
     table: (
-      <TableToolbar
-        profileType={profileSource?.ProfileType()}
-        total={total}
-        filtered={filtered}
-        clearSelection={clearSelection}
-        currentSearchString={currentSearchString}
-      />
+      <TableToolbar profileType={profileSource?.ProfileType()} total={total} filtered={filtered} />
     ),
     sandwich: (
       <SandwichFlameGraphToolbar
@@ -155,12 +144,9 @@ export const ProfileView = ({
             profileType={profileSource?.ProfileType()}
             total={total}
             filtered={filtered}
-            currentSearchString={currentSearchString}
-            setSearchString={setSearchString}
             groupByLabels={flamegraphData.metadataLabels ?? []}
             preferencesModal={preferencesModal}
             profileViewExternalSubActions={profileViewExternalSubActions}
-            clearSelection={clearSelection}
             setGroupByLabels={setGroupByLabels}
             showVisualizationSelector={showVisualizationSelector}
             sandwichFunctionName={sandwichFunctionName}

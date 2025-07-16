@@ -11,12 +11,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useAppDispatch, useAppSelector} from './hooks';
-import {createStore} from './store';
-
-export * from './slices/uiSlice';
-export * from './slices/profileSlice';
-export * from './slices/profileFiltersSlice';
-export * from './slices/colorsSlice';
-
-export {createStore, useAppDispatch, useAppSelector};
+// This file will be deleted - temporary placeholder

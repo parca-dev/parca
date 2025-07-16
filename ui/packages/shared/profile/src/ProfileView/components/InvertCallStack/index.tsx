@@ -22,7 +22,7 @@ const InvertCallStack = (): JSX.Element => {
   return (
     <Button
       variant="neutral"
-      className="flex items-center gap-2"
+      className="flex items-center gap-2 whitespace-nowrap"
       onClick={() => setInvertStack(isInvert ? '' : 'true')}
       id="h-invert-call-stack"
     >
