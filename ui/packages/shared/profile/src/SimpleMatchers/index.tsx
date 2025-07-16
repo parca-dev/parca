@@ -69,10 +69,10 @@ const operatorOptions = [
   {
     key: '=',
     element: {
-      active: <>equals</>,
+      active: <>Equals</>,
       expanded: (
         <>
-          <span>equals</span>
+          <span>Equals</span>
         </>
       ),
     },
@@ -80,10 +80,10 @@ const operatorOptions = [
   {
     key: '!=',
     element: {
-      active: <>not equals</>,
+      active: <>Not Equals</>,
       expanded: (
         <>
-          <span>not equals</span>
+          <span>Not Equals</span>
         </>
       ),
     },
@@ -91,10 +91,10 @@ const operatorOptions = [
   {
     key: '=~',
     element: {
-      active: <>regex</>,
+      active: <>Regex</>,
       expanded: (
         <>
-          <span>regex</span>
+          <span>Regex</span>
         </>
       ),
     },
@@ -102,10 +102,10 @@ const operatorOptions = [
   {
     key: '!~',
     element: {
-      active: <>not regex</>,
+      active: <>Not Regex</>,
       expanded: (
         <>
-          <span>not regex</span>
+          <span>Not Regex</span>
         </>
       ),
     },
