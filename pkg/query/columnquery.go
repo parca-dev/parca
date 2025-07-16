@@ -329,12 +329,15 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		}
 	}()
 
+	// Convert deprecated filters to new format for backward compatibility
+	filters := ConvertDeprecatedFilters(req.GetFilter())
+
 	p.Samples, filtered, err = FilterProfileData(
 		ctx,
 		q.tracer,
 		q.mem,
 		p.Samples,
-		req.GetFilter(),
+		filters,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("filtering profile: %w", err)
@@ -360,9 +363,8 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 			},
 		}
 		// Combine existing filters with the sandwich filter
-		existingFilters := req.GetFilter()
-		sandwichFilters := make([]*pb.Filter, 0, len(existingFilters)+1)
-		sandwichFilters = append(sandwichFilters, existingFilters...)
+		sandwichFilters := make([]*pb.Filter, 0, len(filters)+1)
+		sandwichFilters = append(sandwichFilters, filters...)
 		sandwichFilters = append(sandwichFilters, sandwichFilter)
 
 		var sandwichFiltered int64
@@ -462,42 +464,13 @@ func filterRecord(
 
 	for _, filter := range filters {
 		if stackFilter := filter.GetStackFilter(); stackFilter != nil {
-			// Handle new oneof structure - prefer new criteria over deprecated function_name_stack_filter
 			if criteria := stackFilter.GetCriteria(); criteria != nil {
-				stackFilters = append(stackFilters, criteria)
-			} else if funcFilter := stackFilter.GetFunctionNameStackFilter(); funcFilter != nil { //nolint:staticcheck // deprecated but needed for backward compatibility
-				// Handle deprecated function_name_stack_filter for backward compatibility
-				criteria := &pb.FilterCriteria{
-					FunctionName: &pb.StringCondition{},
-				}
-				if funcFilter.GetExclude() {
-					criteria.FunctionName.Condition = &pb.StringCondition_NotContains{
-						NotContains: funcFilter.GetFunctionToFilter(),
-					}
-				} else {
-					criteria.FunctionName.Condition = &pb.StringCondition_Contains{
-						Contains: funcFilter.GetFunctionToFilter(),
-					}
-				}
 				stackFilters = append(stackFilters, criteria)
 			}
 		}
 		if frameFilter := filter.GetFrameFilter(); frameFilter != nil {
-			// Handle new oneof structure - prefer new criteria over deprecated binary_frame_filter
 			if criteria := frameFilter.GetCriteria(); criteria != nil {
 				frameFilters = append(frameFilters, criteria)
-			} else if binaryFilter := frameFilter.GetBinaryFrameFilter(); binaryFilter != nil { //nolint:staticcheck // deprecated but needed for backward compatibility
-				// Handle deprecated binary_frame_filter for backward compatibility
-				for _, binary := range binaryFilter.GetIncludeBinaries() {
-					criteria := &pb.FilterCriteria{
-						Binary: &pb.StringCondition{
-							Condition: &pb.StringCondition_Contains{
-								Contains: binary,
-							},
-						},
-					}
-					frameFilters = append(frameFilters, criteria)
-				}
 			}
 		}
 	}
@@ -1591,4 +1564,91 @@ func MergeTwoSortedSlices(arr1, arr2 []string) []string {
 	}
 
 	return merged
+}
+
+// ConvertDeprecatedFilters converts deprecated filter fields to the new schema for backward compatibility.
+func ConvertDeprecatedFilters(filters []*pb.Filter) []*pb.Filter {
+	convertedFilters := make([]*pb.Filter, 0, len(filters))
+
+	for _, filter := range filters {
+		newFilter := &pb.Filter{}
+
+		if stackFilter := filter.GetStackFilter(); stackFilter != nil {
+			// Handle new oneof structure - prefer new criteria over deprecated function_name_stack_filter
+			if criteria := stackFilter.GetCriteria(); criteria != nil {
+				newFilter.Filter = &pb.Filter_StackFilter{
+					StackFilter: &pb.StackFilter{
+						Filter: &pb.StackFilter_Criteria{
+							Criteria: criteria,
+						},
+					},
+				}
+			} else if funcFilter := stackFilter.GetFunctionNameStackFilter(); funcFilter != nil { //nolint:staticcheck // deprecated but needed for backward compatibility
+				// Handle deprecated function_name_stack_filter for backward compatibility
+				criteria := &pb.FilterCriteria{
+					FunctionName: &pb.StringCondition{},
+				}
+				if funcFilter.GetExclude() {
+					criteria.FunctionName.Condition = &pb.StringCondition_NotContains{
+						NotContains: funcFilter.GetFunctionToFilter(),
+					}
+				} else {
+					criteria.FunctionName.Condition = &pb.StringCondition_Contains{
+						Contains: funcFilter.GetFunctionToFilter(),
+					}
+				}
+				newFilter.Filter = &pb.Filter_StackFilter{
+					StackFilter: &pb.StackFilter{
+						Filter: &pb.StackFilter_Criteria{
+							Criteria: criteria,
+						},
+					},
+				}
+			}
+		}
+
+		if frameFilter := filter.GetFrameFilter(); frameFilter != nil {
+			// Handle new oneof structure - prefer new criteria over deprecated binary_frame_filter
+			if criteria := frameFilter.GetCriteria(); criteria != nil {
+				newFilter.Filter = &pb.Filter_FrameFilter{
+					FrameFilter: &pb.FrameFilter{
+						Filter: &pb.FrameFilter_Criteria{
+							Criteria: criteria,
+						},
+					},
+				}
+			} else if binaryFilter := frameFilter.GetBinaryFrameFilter(); binaryFilter != nil { //nolint:staticcheck // deprecated but needed for backward compatibility
+				// Handle deprecated binary_frame_filter for backward compatibility
+				for _, binary := range binaryFilter.GetIncludeBinaries() {
+					criteria := &pb.FilterCriteria{
+						Binary: &pb.StringCondition{
+							Condition: &pb.StringCondition_Contains{
+								Contains: binary,
+							},
+						},
+					}
+					binaryFilter := &pb.Filter{
+						Filter: &pb.Filter_FrameFilter{
+							FrameFilter: &pb.FrameFilter{
+								Filter: &pb.FrameFilter_Criteria{
+									Criteria: criteria,
+								},
+							},
+						},
+					}
+					convertedFilters = append(convertedFilters, binaryFilter)
+				}
+				continue // Skip adding the original filter since we added converted ones
+			}
+		}
+
+		// Add the converted filter (or original if no conversion needed)
+		if newFilter.Filter != nil {
+			convertedFilters = append(convertedFilters, newFilter)
+		} else {
+			convertedFilters = append(convertedFilters, filter)
+		}
+	}
+
+	return convertedFilters
 }

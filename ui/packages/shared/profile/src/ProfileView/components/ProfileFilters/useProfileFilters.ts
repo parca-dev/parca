@@ -27,7 +27,7 @@ import {useProfileFiltersUrlState} from './useProfileFiltersUrlState';
 export type {ProfileFilter};
 
 // Convert ProfileFilter[] to protobuf Filter[] matching the expected structure
-const convertToProtoFilters = (profileFilters: ProfileFilter[]): Filter[] => {
+export const convertToProtoFilters = (profileFilters: ProfileFilter[]): Filter[] => {
   return profileFilters
     .filter(f => f.value !== '' && f.type != null && f.field != null && f.matchType != null) // Only include complete filters with values
     .map(f => {

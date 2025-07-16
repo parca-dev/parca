@@ -18,6 +18,7 @@ import CustomSelect from './SimpleMatchers/Select';
 
 export * from './ProfileFlameGraph';
 export * from './ProfileSource';
+export {convertToProtoFilters} from './ProfileView/components/ProfileFilters/useProfileFilters';
 export * from './ProfileView';
 export * from './ProfileViewWithData';
 export * from './utils';
