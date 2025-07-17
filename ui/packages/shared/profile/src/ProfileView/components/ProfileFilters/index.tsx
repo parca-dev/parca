@@ -22,6 +22,11 @@ import {useProfileFilters, type ProfileFilter} from './useProfileFilters';
 import {filterPresets, isPresetKey, getPresetByKey} from './filterPresets';
 
 export const isFilterComplete = (filter: ProfileFilter): boolean => {
+  // For preset filters, only need type and value
+  if (filter.type != null && isPresetKey(filter.type)) {
+    return filter.value !== '' && filter.type != null;
+  }
+  // For regular filters, need all fields
   return (
     filter.value !== '' && filter.type != null && filter.field != null && filter.matchType != null
   );
@@ -172,7 +177,6 @@ const ProfileFilters = (): JSX.Element => {
     removeFilter,
     updateFilter,
     resetFilters,
-    applyPreset,
   } = useProfileFilters();
 
   const handleKeyDown = useCallback(
@@ -196,6 +200,7 @@ const ProfileFilters = (): JSX.Element => {
         {filtersToRender.map(filter => {
           const isNumberField = filter.field === 'address' || filter.field === 'line_number';
           const matchTypeItems = isNumberField ? numberMatchTypeItems : stringMatchTypeItems;
+          const isPresetFilter = filter.type != null && isPresetKey(filter.type);
 
           return (
             <div key={filter.id} className="flex items-center gap-0">
@@ -208,25 +213,41 @@ const ProfileFilters = (): JSX.Element => {
                   if (isPresetKey(key)) {
                     const preset = getPresetByKey(key);
                     if (preset != null) {
-                      applyPreset(preset);
+                      updateFilter(filter.id, {
+                        type: preset.key,
+                        field: undefined,
+                        matchType: undefined,
+                        value: preset.name,
+                      });
                     }
                   } else {
-                    // Normal stack/frame filter selection
                     const newType = key as 'stack' | 'frame';
-                    updateFilter(filter.id, {
-                      type: newType,
-                      field: filter.field ?? 'function_name',
-                      matchType: filter.matchType ?? 'contains',
-                    });
+
+                    // Check if we're converting a preset filter to a regular filter
+                    if (filter.type != null && isPresetKey(filter.type)) {
+                      updateFilter(filter.id, {
+                        type: newType,
+                        field: 'function_name',
+                        matchType: 'contains',
+                        value: '',
+                      });
+                    } else {
+                      updateFilter(filter.id, {
+                        type: newType,
+                        field: filter.field ?? 'function_name',
+                        matchType: filter.matchType ?? 'contains',
+                      });
+                    }
                   }
                 }}
                 className={cx(
-                  'rounded-l-md pr-1 gap-0 focus:z-50 focus:relative focus:outline-1 rounded-r-none ',
-                  filter.type != null ? 'border-r-0 w-28' : 'w-32'
+                  'rounded-l-md pr-1 gap-0 focus:z-50 focus:relative focus:outline-1',
+                  isPresetFilter ? 'rounded-r-none border-r-0' : 'rounded-r-none',
+                  filter.type != null ? 'border-r-0 w-auto' : 'w-32'
                 )}
               />
 
-              {filter.type != null && (
+              {filter.type != null && !isPresetFilter && (
                 <>
                   <Select
                     items={fieldItems}
@@ -271,9 +292,16 @@ const ProfileFilters = (): JSX.Element => {
               <Button
                 variant="neutral"
                 onClick={() => {
-                  if (localFilters.length === 1) {
+                  // If we're displaying local filters and this is the last one, reset everything
+                  if (localFilters.length > 0 && localFilters.length === 1) {
                     resetFilters();
-                  } else {
+                  }
+                  // If we're displaying applied filters and this is the last one, reset everything
+                  else if (localFilters.length === 0 && filtersToRender.length === 1) {
+                    resetFilters();
+                  }
+                  // Otherwise, just remove this specific filter
+                  else {
                     removeFilter(filter.id);
                   }
                 }}

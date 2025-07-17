@@ -13,6 +13,7 @@
 
 import {useURLStateCustom, type ParamValueSetterCustom} from '@parca/components';
 import {type ProfileFilter} from '@parca/store';
+import {isPresetKey} from './filterPresets';
 
 // Compact encoding mappings
 const TYPE_MAP: Record<string, string> = {
@@ -46,8 +47,16 @@ const encodeProfileFilters = (filters: ProfileFilter[]): string => {
   if (filters.length === 0) return '';
 
   return filters
-    .filter(f => f.value !== '' && f.type != null && f.field != null && f.matchType != null)
+    .filter(f => f.value !== '' && f.type != null)
     .map(f => {
+      // Handle preset filters differently
+      if (isPresetKey(f.type!)) {
+        const presetKey = encodeURIComponent(f.type!);
+        const value = encodeURIComponent(f.value);
+        return `p:${presetKey}:${value}`;
+      }
+      
+      // Handle regular filters
       const type = TYPE_MAP[f.type!];
       const field = FIELD_MAP[f.field!];
       const match = MATCH_MAP[f.matchType!];
@@ -63,7 +72,22 @@ export const decodeProfileFilters = (encoded: string): ProfileFilter[] => {
 
   try {
     return encoded.split(',').map((filter, index) => {
-      const [type, field, match, ...valueParts] = filter.split(':');
+      const parts = filter.split(':');
+      
+      // Handle preset filters (format: p:presetKey:value)
+      if (parts[0] === 'p' && parts.length >= 3) {
+        const presetKey = decodeURIComponent(parts[1]);
+        const value = decodeURIComponent(parts.slice(2).join(':')); // Handle values with colons
+        
+        return {
+          id: `filter-${Date.now()}-${index}`,
+          type: presetKey,
+          value,
+        };
+      }
+      
+      // Handle regular filters (format: type:field:match:value)
+      const [type, field, match, ...valueParts] = parts;
       const value = decodeURIComponent(valueParts.join(':')); // Handle values with colons
 
       return {
