@@ -18,8 +18,8 @@ import cx from 'classnames';
 
 import {Button, Input, Select, type SelectItem} from '@parca/components';
 
+import {filterPresets, getPresetByKey, isPresetKey} from './filterPresets';
 import {useProfileFilters, type ProfileFilter} from './useProfileFilters';
-import {filterPresets, isPresetKey, getPresetByKey} from './filterPresets';
 
 export const isFilterComplete = (filter: ProfileFilter): boolean => {
   return (
