@@ -22,8 +22,8 @@ import {
   type ProfileFilter,
 } from '@parca/store';
 
+import {getPresetByKey, isPresetKey, type FilterPreset} from './filterPresets';
 import {useProfileFiltersUrlState} from './useProfileFiltersUrlState';
-import {type FilterPreset, getPresetByKey, isPresetKey} from './filterPresets';
 
 export type {ProfileFilter};
 

@@ -13,6 +13,7 @@
 
 import {useURLStateCustom, type ParamValueSetterCustom} from '@parca/components';
 import {type ProfileFilter} from '@parca/store';
+
 import {isPresetKey} from './filterPresets';
 
 // Compact encoding mappings
@@ -55,7 +56,7 @@ const encodeProfileFilters = (filters: ProfileFilter[]): string => {
         const value = encodeURIComponent(f.value);
         return `p:${presetKey}:${value}`;
       }
-      
+
       // Handle regular filters
       const type = TYPE_MAP[f.type!];
       const field = FIELD_MAP[f.field!];
@@ -73,19 +74,19 @@ export const decodeProfileFilters = (encoded: string): ProfileFilter[] => {
   try {
     return encoded.split(',').map((filter, index) => {
       const parts = filter.split(':');
-      
+
       // Handle preset filters (format: p:presetKey:value)
       if (parts[0] === 'p' && parts.length >= 3) {
         const presetKey = decodeURIComponent(parts[1]);
         const value = decodeURIComponent(parts.slice(2).join(':')); // Handle values with colons
-        
+
         return {
           id: `filter-${Date.now()}-${index}`,
           type: presetKey,
           value,
         };
       }
-      
+
       // Handle regular filters (format: type:field:match:value)
       const [type, field, match, ...valueParts] = parts;
       const value = decodeURIComponent(valueParts.join(':')); // Handle values with colons
