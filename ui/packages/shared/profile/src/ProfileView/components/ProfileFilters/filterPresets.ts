@@ -24,7 +24,7 @@ export const filterPresets: FilterPreset[] = [
   {
     key: 'go_runtime_expected_off_cpu',
     name: 'Go Runtime Expected Off-CPU',
-    description: 'Excludes expected Go runtime blocking functions like usleep and futex',
+    description: 'Excludes expected Go runtime blocking functions',
     filters: [
       {
         type: 'stack',
@@ -37,6 +37,31 @@ export const filterPresets: FilterPreset[] = [
         field: 'function_name',
         matchType: 'not_equal',
         value: 'runtime.futex',
+      },
+    ],
+  },
+  {
+    key: 'rust_runtime_expected_off_cpu',
+    name: 'Rust Expected Off-CPU',
+    description: 'Excludes expected Rust runtime blocking functions',
+    filters: [
+      {
+        type: 'stack',
+        field: 'function_name',
+        matchType: 'not_equal',
+        value: 'parking_lot_core::thread_parker::imp::ThreadParker::futex_wait',
+      },
+      {
+        type: 'stack',
+        field: 'function_name',
+        matchType: 'not_equal',
+        value: 'tokio::runtime::time::Driver::park_internal',
+      },
+      {
+        type: 'stack',
+        field: 'function_name',
+        matchType: 'not_equal',
+        value: 'futex_wait',
       },
     ],
   },
