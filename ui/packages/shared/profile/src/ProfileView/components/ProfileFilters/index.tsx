@@ -330,10 +330,11 @@ const ProfileFilters = (): JSX.Element => {
         )}
       </div>
 
-      {localFilters.length > 0 && hasUnsavedChanges && localFilters.some(isFilterComplete) && (
+      {localFilters.length > 0 && (
         <Button
           variant="primary"
           onClick={onApplyFilters}
+          disabled={!hasUnsavedChanges || !localFilters.some(isFilterComplete)}
           className={cx('flex items-center gap-2 self-end')}
         >
           <span>Apply</span>
