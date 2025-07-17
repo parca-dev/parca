@@ -17,7 +17,7 @@ import type {RootState} from '../store';
 
 export interface ProfileFilter {
   id: string;
-  type?: 'stack' | 'frame';
+  type?: 'stack' | 'frame' | string; // string allows preset keys
   field?: 'function_name' | 'binary' | 'system_name' | 'filename' | 'address' | 'line_number';
   matchType?: 'equal' | 'not_equal' | 'contains' | 'not_contains';
   value: string;

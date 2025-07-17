@@ -22,13 +22,35 @@ import {
   type ProfileFilter,
 } from '@parca/store';
 
+import {getPresetByKey, isPresetKey, type FilterPreset} from './filterPresets';
 import {useProfileFiltersUrlState} from './useProfileFiltersUrlState';
 
 export type {ProfileFilter};
 
 // Convert ProfileFilter[] to protobuf Filter[] matching the expected structure
 export const convertToProtoFilters = (profileFilters: ProfileFilter[]): Filter[] => {
-  return profileFilters
+  // First, expand any preset filters to their constituent filters
+  const expandedFilters: ProfileFilter[] = [];
+
+  for (const filter of profileFilters) {
+    if (filter.type != null && isPresetKey(filter.type)) {
+      // This is a preset filter, expand it
+      const preset = getPresetByKey(filter.type);
+      if (preset != null) {
+        preset.filters.forEach((presetFilter, index) => {
+          expandedFilters.push({
+            ...presetFilter,
+            id: `${filter.id}-expanded-${index}`,
+          });
+        });
+      }
+    } else {
+      // Regular filter, add as is
+      expandedFilters.push(filter);
+    }
+  }
+
+  return expandedFilters
     .filter(f => f.value !== '' && f.type != null && f.field != null && f.matchType != null) // Only include complete filters with values
     .map(f => {
       // Build the condition based on field type
@@ -120,6 +142,7 @@ export const useProfileFilters = (): {
   removeFilter: (id: string) => void;
   updateFilter: (id: string, updates: Partial<ProfileFilter>) => void;
   resetFilters: () => void;
+  applyPreset: (preset: FilterPreset) => void;
 } => {
   const {appliedFilters, setAppliedFilters} = useProfileFiltersUrlState();
   const dispatch = useAppDispatch();
@@ -151,8 +174,23 @@ export const useProfileFilters = (): {
   }, []);
 
   const hasUnsavedChanges = useMemo(() => {
-    const localWithValues = localFilters.filter(f => f.value !== '');
-    const appliedWithValues = (appliedFilters ?? []).filter(f => f.value !== '');
+    const localWithValues = localFilters.filter(f => {
+      // For preset filters, only need type and value
+      if (f.type != null && isPresetKey(f.type)) {
+        return f.value !== '' && f.type != null;
+      }
+      // For regular filters, need all fields
+      return f.value !== '' && f.type != null && f.field != null && f.matchType != null;
+    });
+
+    const appliedWithValues = (appliedFilters ?? []).filter(f => {
+      // For preset filters, only need type and value
+      if (f.type != null && isPresetKey(f.type)) {
+        return f.value !== '' && f.type != null;
+      }
+      // For regular filters, need all fields
+      return f.value !== '' && f.type != null && f.field != null && f.matchType != null;
+    });
 
     if (localWithValues.length !== appliedWithValues.length) return true;
 
@@ -252,9 +290,14 @@ export const useProfileFilters = (): {
   }, [dispatch, setAppliedFilters]);
 
   const onApplyFilters = useCallback((): void => {
-    const validFilters = localFilters.filter(
-      f => f.value !== '' && f.type != null && f.field != null && f.matchType != null
-    );
+    const validFilters = localFilters.filter(f => {
+      // For preset filters, only need type and value
+      if (f.type != null && isPresetKey(f.type)) {
+        return f.value !== '' && f.type != null;
+      }
+      // For regular filters, need all fields
+      return f.value !== '' && f.type != null && f.field != null && f.matchType != null;
+    });
 
     const filtersToApply = validFilters.map((f, index) => ({
       ...f,
@@ -268,6 +311,23 @@ export const useProfileFilters = (): {
     return convertToProtoFilters(appliedFilters ?? []);
   }, [appliedFilters]);
 
+  const applyPreset = useCallback(
+    (preset: FilterPreset) => {
+      const presetFilter: ProfileFilter = {
+        id: `filter-preset-${Date.now()}`,
+        type: preset.key,
+        value: preset.name,
+      };
+
+      // Add preset filter to existing filters
+      const updatedFilters = [...localFilters, presetFilter];
+      dispatch(setLocalFilters(updatedFilters));
+
+      setAppliedFilters(updatedFilters);
+    },
+    [dispatch, setAppliedFilters, localFilters]
+  );
+
   return {
     localFilters,
     appliedFilters,
@@ -280,5 +340,6 @@ export const useProfileFilters = (): {
     removeFilter,
     updateFilter,
     resetFilters,
+    applyPreset,
   };
 };
