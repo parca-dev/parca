@@ -23,6 +23,7 @@ import {
 } from '@parca/store';
 
 import {useProfileFiltersUrlState} from './useProfileFiltersUrlState';
+import {type FilterPreset} from './filterPresets';
 
 export type {ProfileFilter};
 
@@ -120,6 +121,7 @@ export const useProfileFilters = (): {
   removeFilter: (id: string) => void;
   updateFilter: (id: string, updates: Partial<ProfileFilter>) => void;
   resetFilters: () => void;
+  applyPreset: (preset: FilterPreset) => void;
 } => {
   const {appliedFilters, setAppliedFilters} = useProfileFiltersUrlState();
   const dispatch = useAppDispatch();
@@ -268,6 +270,23 @@ export const useProfileFilters = (): {
     return convertToProtoFilters(appliedFilters ?? []);
   }, [appliedFilters]);
 
+  const applyPreset = useCallback(
+    (preset: FilterPreset) => {
+      // Create new filters from the preset with unique IDs
+      const presetFilters: ProfileFilter[] = preset.filters.map((filter, index) => ({
+        ...filter,
+        id: `filter-preset-${Date.now()}-${index}`,
+      }));
+
+      // Set local filters to the preset filters
+      dispatch(setLocalFilters(presetFilters));
+
+      // Immediately apply the filters
+      setAppliedFilters(presetFilters);
+    },
+    [dispatch, setAppliedFilters]
+  );
+
   return {
     localFilters,
     appliedFilters,
@@ -280,5 +299,6 @@ export const useProfileFilters = (): {
     removeFilter,
     updateFilter,
     resetFilters,
+    applyPreset,
   };
 };

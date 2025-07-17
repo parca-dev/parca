@@ -19,6 +19,7 @@ import cx from 'classnames';
 import {Button, Input, Select, type SelectItem} from '@parca/components';
 
 import {useProfileFilters, type ProfileFilter} from './useProfileFilters';
+import {filterPresets, isPresetKey, getPresetByKey} from './filterPresets';
 
 export const isFilterComplete = (filter: ProfileFilter): boolean => {
   return (
@@ -53,6 +54,19 @@ const filterTypeItems: SelectItem[] = [
       ),
     },
   },
+  ...filterPresets.map(preset => ({
+    key: preset.key,
+    element: {
+      active: <>{preset.name}</>,
+      expanded: (
+        <>
+          <span>{preset.name}</span>
+          <br />
+          <span className="text-xs">{preset.description}</span>
+        </>
+      ),
+    },
+  })),
 ];
 
 const fieldItems: SelectItem[] = [
@@ -158,6 +172,7 @@ const ProfileFilters = (): JSX.Element => {
     removeFilter,
     updateFilter,
     resetFilters,
+    applyPreset,
   } = useProfileFilters();
 
   const handleKeyDown = useCallback(
@@ -189,12 +204,21 @@ const ProfileFilters = (): JSX.Element => {
                 selectedKey={filter.type}
                 placeholder="Select Filter"
                 onSelection={key => {
-                  const newType = key as 'stack' | 'frame';
-                  updateFilter(filter.id, {
-                    type: newType,
-                    field: filter.field ?? 'function_name',
-                    matchType: filter.matchType ?? 'contains',
-                  });
+                  // Check if this is a preset selection
+                  if (isPresetKey(key)) {
+                    const preset = getPresetByKey(key);
+                    if (preset != null) {
+                      applyPreset(preset);
+                    }
+                  } else {
+                    // Normal stack/frame filter selection
+                    const newType = key as 'stack' | 'frame';
+                    updateFilter(filter.id, {
+                      type: newType,
+                      field: filter.field ?? 'function_name',
+                      matchType: filter.matchType ?? 'contains',
+                    });
+                  }
                 }}
                 className={cx(
                   'rounded-l-md pr-1 gap-0 focus:z-50 focus:relative focus:outline-1 rounded-r-none ',
