@@ -22,21 +22,21 @@ export interface FilterPreset {
 
 export const filterPresets: FilterPreset[] = [
   {
-    key: 'runtime_no_gc_drain',
-    name: 'Runtime without GC drain frames',
-    description: 'Shows runtime frames but excludes garbage collection drain frames',
+    key: 'go_runtime_expected_off_cpu',
+    name: 'Go Runtime Expected Off-CPU',
+    description: 'Excludes expected Go runtime blocking functions like usleep and futex',
     filters: [
       {
         type: 'stack',
         field: 'function_name',
-        matchType: 'contains',
-        value: 'runtime',
+        matchType: 'not_equal',
+        value: 'runtime.usleep',
       },
       {
-        type: 'frame',
+        type: 'stack',
         field: 'function_name',
-        matchType: 'not_contains',
-        value: 'gcDrain',
+        matchType: 'not_equal',
+        value: 'runtime.futex',
       },
     ],
   },
