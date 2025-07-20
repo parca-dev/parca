@@ -198,7 +198,8 @@ export const parseParams = (
       key === 'profileType' ||
       key === 'cur_path' ||
       key === 'time_selection_a' ||
-      key === 'time_selection_b'
+      key === 'time_selection_b' ||
+      key === 'sandwich_function_name'
     ) {
       values = values.map((value): string => {
         // First, decode multiple levels if present

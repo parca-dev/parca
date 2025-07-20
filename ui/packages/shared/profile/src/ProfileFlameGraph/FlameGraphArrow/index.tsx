@@ -333,6 +333,27 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   }
   const selectedRow = currentRow;
 
+  const VisibleNodes = useMemo(() => {
+    if (table === undefined) return [];
+
+    const visibleRows: number[] = [];
+
+    for (let row = 0; row < table.numRows; row++) {
+      const depth = table.getChild(FIELD_DEPTH)?.get(row) ?? 0;
+      const cumulative = table.getChild(FIELD_CUMULATIVE)?.get(row) ?? 0n;
+      const computedWidth = (Number(cumulative) / Number(total)) * (width ?? 1);
+
+      // Skip nodes that are too small to see or outside viewport
+      if (computedWidth <= 1 || (effectiveDepth !== undefined && depth > effectiveDepth)) {
+        continue;
+      }
+
+      visibleRows.push(row);
+    }
+
+    return visibleRows;
+  }, [table, total, width, effectiveDepth]);
+
   return (
     <TooltipProvider
       table={table}
@@ -366,7 +387,7 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
           preserveAspectRatio="xMinYMid"
           ref={svg}
         >
-          {Array.from({length: table.numRows}, (_, row) => (
+          {VisibleNodes.map((_, row) => (
             <FlameNode
               key={row}
               table={table}
