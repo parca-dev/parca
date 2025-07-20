@@ -44,6 +44,7 @@ export const ProfileView = ({
   pprofDownloading,
   compare,
   showVisualizationSelector,
+  sandwichData,
 }: ProfileViewProps): JSX.Element => {
   const {
     timezone,
@@ -88,6 +89,7 @@ export const ProfileView = ({
     isHalfScreen: boolean;
   }): JSX.Element => {
     return getDashboardItem({
+      sandwichData,
       type,
       isHalfScreen,
       dimensions,

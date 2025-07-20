@@ -47,6 +47,7 @@ export const ProfileViewWithData = ({
     defaultValue: [FIELD_FUNCTION_NAME],
     alwaysReturnArray: true,
   });
+  const [sandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
 
   const [invertStack] = useURLState('invert_call_stack');
   const invertCallStack = invertStack === 'true';
@@ -132,15 +133,6 @@ export const ProfileViewWithData = ({
   });
 
   const {
-    isLoading: callgraphLoading,
-    response: callgraphResponse,
-    error: callgraphError,
-  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.CALLGRAPH, {
-    skip: !dashboardItems.includes('callgraph'),
-    protoFilters,
-  });
-
-  const {
     isLoading: sourceLoading,
     response: sourceResponse,
     error: sourceError,
@@ -148,6 +140,32 @@ export const ProfileViewWithData = ({
     skip: !dashboardItems.includes('source'),
     sourceBuildID,
     sourceFilename,
+    protoFilters,
+  });
+
+  const {
+    isLoading: callersFlamegraphLoading,
+    response: callersFlamegraphResponse,
+    error: callersFlamegraphError,
+  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMEGRAPH_ARROW, {
+    nodeTrimThreshold,
+    groupBy: [FIELD_FUNCTION_NAME],
+    invertCallStack: true,
+    sandwichByFunction: sandwichFunctionName,
+    skip: sandwichFunctionName === undefined && !dashboardItems.includes('sandwich'),
+    protoFilters,
+  });
+
+  const {
+    isLoading: calleesFlamegraphLoading,
+    response: calleesFlamegraphResponse,
+    error: calleesFlamegraphError,
+  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMEGRAPH_ARROW, {
+    nodeTrimThreshold,
+    groupBy: [FIELD_FUNCTION_NAME],
+    invertCallStack: false,
+    sandwichByFunction: sandwichFunctionName,
+    skip: sandwichFunctionName === undefined && !dashboardItems.includes('sandwich'),
     protoFilters,
   });
 
@@ -163,18 +181,12 @@ export const ProfileViewWithData = ({
       perf?.markInteraction('table render', tableResponse.total);
     }
 
-    if (!callgraphLoading && callgraphResponse?.report.oneofKind === 'callgraph') {
-      perf?.markInteraction('Callgraph render', callgraphResponse.total);
-    }
-
     if (!sourceLoading && sourceResponse?.report.oneofKind === 'source') {
       perf?.markInteraction('Source render', sourceResponse.total);
     }
   }, [
     flamegraphLoading,
     flamegraphResponse,
-    callgraphResponse,
-    callgraphLoading,
     tableLoading,
     tableResponse,
     sourceLoading,
@@ -210,15 +222,18 @@ export const ProfileViewWithData = ({
   } else if (tableResponse !== null) {
     total = BigInt(tableResponse.total);
     filtered = BigInt(tableResponse.filtered);
-  } else if (callgraphResponse !== null) {
-    total = BigInt(callgraphResponse.total);
-    filtered = BigInt(callgraphResponse.filtered);
   } else if (sourceResponse !== null) {
     total = BigInt(sourceResponse.total);
     filtered = BigInt(sourceResponse.filtered);
   } else if (flamechartResponse !== null) {
     total = BigInt(flamechartResponse.total);
     filtered = BigInt(flamechartResponse.filtered);
+  } else if (callersFlamegraphResponse !== null) {
+    total = BigInt(callersFlamegraphResponse.total);
+    filtered = BigInt(callersFlamegraphResponse.filtered);
+  } else if (calleesFlamegraphResponse !== null) {
+    total = BigInt(calleesFlamegraphResponse.total);
+    filtered = BigInt(calleesFlamegraphResponse.filtered);
   }
 
   return (
@@ -227,10 +242,6 @@ export const ProfileViewWithData = ({
       filtered={filtered}
       flamegraphData={{
         loading: flamegraphLoading && profileMetadataLoading,
-        data:
-          flamegraphResponse?.report.oneofKind === 'flamegraph'
-            ? flamegraphResponse?.report?.flamegraph
-            : undefined,
         arrow:
           flamegraphResponse?.report.oneofKind === 'flamegraphArrow'
             ? flamegraphResponse?.report?.flamegraphArrow
@@ -279,14 +290,6 @@ export const ProfileViewWithData = ({
             ? tableResponse.report.tableArrow.unit
             : '',
       }}
-      callgraphData={{
-        loading: callgraphLoading,
-        data:
-          callgraphResponse?.report.oneofKind === 'callgraph'
-            ? callgraphResponse?.report?.callgraph
-            : undefined,
-        error: callgraphError,
-      }}
       sourceData={{
         loading: sourceLoading,
         data:
@@ -294,6 +297,38 @@ export const ProfileViewWithData = ({
             ? sourceResponse?.report?.source
             : undefined,
         error: sourceError,
+      }}
+      sandwichData={{
+        callees: {
+          arrow:
+            calleesFlamegraphResponse?.report.oneofKind === 'flamegraphArrow'
+              ? calleesFlamegraphResponse?.report?.flamegraphArrow
+              : undefined,
+          loading: calleesFlamegraphLoading,
+          error: calleesFlamegraphError,
+          total: BigInt(calleesFlamegraphResponse?.total ?? '0'),
+          filtered: BigInt(calleesFlamegraphResponse?.filtered ?? '0'),
+          metadataMappingFiles:
+            profileMetadataResponse?.report.oneofKind === 'profileMetadata'
+              ? profileMetadataResponse?.report?.profileMetadata?.mappingFiles
+              : undefined,
+          metadataLoading: profileMetadataLoading,
+        },
+        callers: {
+          arrow:
+            callersFlamegraphResponse?.report.oneofKind === 'flamegraphArrow'
+              ? callersFlamegraphResponse?.report?.flamegraphArrow
+              : undefined,
+          loading: callersFlamegraphLoading,
+          error: callersFlamegraphError,
+          total: BigInt(callersFlamegraphResponse?.total ?? '0'),
+          filtered: BigInt(callersFlamegraphResponse?.filtered ?? '0'),
+          metadataMappingFiles:
+            profileMetadataResponse?.report.oneofKind === 'profileMetadata'
+              ? profileMetadataResponse?.report?.profileMetadata?.mappingFiles
+              : undefined,
+          metadataLoading: profileMetadataLoading,
+        },
       }}
       profileSource={profileSource}
       queryClient={queryClient}

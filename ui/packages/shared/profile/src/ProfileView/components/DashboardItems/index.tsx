@@ -24,6 +24,7 @@ import {SourceView} from '../../../SourceView';
 import {Table} from '../../../Table';
 import type {
   FlamegraphData,
+  SandwichData,
   SourceData,
   TopTableData,
   VisualizationType,
@@ -36,6 +37,7 @@ interface GetDashboardItemProps {
   flamegraphData: FlamegraphData;
   flamechartData: FlamegraphData;
   topTableData?: TopTableData;
+  sandwichData: SandwichData;
   sourceData?: SourceData;
   profileSource: ProfileSource;
   total: bigint;
@@ -58,13 +60,13 @@ export const getDashboardItem = ({
   flamechartData,
   topTableData,
   sourceData,
+  sandwichData,
   profileSource,
   total,
   filtered,
   curPathArrow,
   setNewCurPathArrow,
   perf,
-  queryClient,
 }: GetDashboardItemProps): JSX.Element => {
   switch (type) {
     case 'flamegraph':
@@ -142,17 +144,7 @@ export const getDashboardItem = ({
       );
     case 'sandwich':
       return topTableData != null ? (
-        <Sandwich
-          total={total}
-          filtered={filtered}
-          loading={topTableData.loading}
-          data={topTableData.arrow?.record}
-          unit={topTableData.unit}
-          profileType={profileSource?.ProfileType()}
-          metadataMappingFiles={flamegraphData.metadataMappingFiles}
-          profileSource={profileSource}
-          queryClient={queryClient}
-        />
+        <Sandwich profileSource={profileSource} sandwichData={sandwichData} />
       ) : (
         <></>
       );

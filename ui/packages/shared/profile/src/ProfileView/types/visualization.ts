@@ -11,20 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  Callgraph as CallgraphType,
-  Flamegraph,
-  FlamegraphArrow,
-  QueryServiceClient,
-  Source,
-  TableArrow,
-} from '@parca/client';
+import {FlamegraphArrow, QueryServiceClient, Source, TableArrow} from '@parca/client';
 
 import {ProfileSource} from '../../ProfileSource';
 
 export interface FlamegraphData {
   loading: boolean;
-  data?: Flamegraph;
   arrow?: FlamegraphArrow;
   total?: bigint;
   filtered?: bigint;
@@ -43,18 +35,15 @@ export interface TopTableData {
   unit?: string;
 }
 
-export interface CallgraphData {
-  loading: boolean;
-  data?: CallgraphType;
-  total?: bigint;
-  filtered?: bigint;
-  error?: any;
-}
-
 export interface SourceData {
   loading: boolean;
   data?: Source;
   error?: any;
+}
+
+export interface SandwichData {
+  callees: FlamegraphData;
+  callers: FlamegraphData;
 }
 
 export type VisualizationType =
@@ -70,8 +59,8 @@ export interface ProfileViewProps {
   filtered: bigint;
   flamegraphData: FlamegraphData;
   flamechartData: FlamegraphData;
+  sandwichData: SandwichData;
   topTableData?: TopTableData;
-  callgraphData?: CallgraphData;
   sourceData?: SourceData;
   profileSource: ProfileSource;
   queryClient?: QueryServiceClient;

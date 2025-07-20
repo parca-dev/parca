@@ -50,8 +50,6 @@ const ColorStackLegend = ({mappings, compareMode = false, loading}: Props): Reac
       .map(f => f.value);
   }, [appliedFilters]);
 
-  console.log('currentBinaryFilters', currentBinaryFilters);
-
   const mappingsList = useMappingList(mappings);
 
   const mappingColors = useMemo(() => {
