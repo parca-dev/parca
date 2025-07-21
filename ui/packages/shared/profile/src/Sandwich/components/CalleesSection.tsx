@@ -13,24 +13,14 @@
 
 import React from 'react';
 
-import {type FlamegraphArrow} from '@parca/client';
-
 import ProfileFlameGraph from '../../ProfileFlameGraph';
 import {type CurrentPathFrame} from '../../ProfileFlameGraph/FlameGraphArrow/utils';
 import {type ProfileSource} from '../../ProfileSource';
+import {FlamegraphData} from '../../ProfileView/types/visualization';
 
 interface CalleesSectionProps {
   calleesRef: React.RefObject<HTMLDivElement>;
-  calleesFlamegraphResponse?: {
-    report: {
-      oneofKind: string;
-      flamegraphArrow?: FlamegraphArrow;
-    };
-    total?: string;
-  };
-  calleesFlamegraphLoading: boolean;
-  calleesFlamegraphError: any;
-  filtered: bigint;
+  calleesFlamegraphData: FlamegraphData;
   profileSource: ProfileSource;
   curPathArrow: CurrentPathFrame[];
   setCurPathArrow: (path: CurrentPathFrame[]) => void;
@@ -39,14 +29,10 @@ interface CalleesSectionProps {
 
 export function CalleesSection({
   calleesRef,
-  calleesFlamegraphResponse,
-  calleesFlamegraphLoading,
-  calleesFlamegraphError,
-  filtered,
+  calleesFlamegraphData,
   profileSource,
   curPathArrow,
   setCurPathArrow,
-  metadataMappingFiles,
 }: CalleesSectionProps): JSX.Element {
   return (
     <div className="flex relative items-start flex-row" ref={calleesRef}>
@@ -54,22 +40,18 @@ export function CalleesSection({
         {'<-'} Callees
       </div>
       <ProfileFlameGraph
-        arrow={
-          calleesFlamegraphResponse?.report.oneofKind === 'flamegraphArrow'
-            ? calleesFlamegraphResponse?.report?.flamegraphArrow
-            : undefined
-        }
-        total={BigInt(calleesFlamegraphResponse?.total ?? '0')}
-        filtered={filtered}
+        arrow={calleesFlamegraphData?.arrow}
+        total={calleesFlamegraphData.total ?? BigInt(0)}
+        filtered={calleesFlamegraphData.filtered ?? BigInt(0)}
         profileType={profileSource?.ProfileType()}
-        loading={calleesFlamegraphLoading}
-        error={calleesFlamegraphError}
+        loading={calleesFlamegraphData.loading}
+        error={calleesFlamegraphData.error}
         isHalfScreen={true}
         width={
           calleesRef.current != null ? calleesRef.current.getBoundingClientRect().width - 25 : 0
         }
-        metadataMappingFiles={metadataMappingFiles}
-        metadataLoading={false}
+        metadataMappingFiles={calleesFlamegraphData.metadataMappingFiles}
+        metadataLoading={calleesFlamegraphData.metadataLoading}
         isInSandwichView={true}
         curPathArrow={curPathArrow}
         setNewCurPathArrow={setCurPathArrow}

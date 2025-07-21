@@ -16,12 +16,12 @@ import React, {useMemo} from 'react';
 import {Vector, tableFromIPC} from 'apache-arrow';
 import {Tooltip} from 'react-tooltip';
 
-import {type FlamegraphArrow} from '@parca/client';
 import {Button} from '@parca/components';
 
 import ProfileFlameGraph from '../../ProfileFlameGraph';
 import {type CurrentPathFrame} from '../../ProfileFlameGraph/FlameGraphArrow/utils';
 import {type ProfileSource} from '../../ProfileSource';
+import {FlamegraphData} from '../../ProfileView/types/visualization';
 
 const FIELD_DEPTH = 'depth';
 
@@ -38,20 +38,10 @@ function getMaxDepth(depthColumn: Vector<any> | null): number {
 
 interface CallersSectionProps {
   callersRef: React.RefObject<HTMLDivElement>;
-  callersFlamegraphResponse?: {
-    report: {
-      oneofKind: string;
-      flamegraphArrow?: FlamegraphArrow;
-    };
-    total?: string;
-  };
-  callersFlamegraphLoading: boolean;
-  callersFlamegraphError: any;
-  filtered: bigint;
+  callersFlamegraphData: FlamegraphData;
   profileSource: ProfileSource;
   curPathArrow: CurrentPathFrame[];
   setCurPathArrow: (path: CurrentPathFrame[]) => void;
-  metadataMappingFiles?: string[];
   isExpanded: boolean;
   setIsExpanded: (isExpanded: boolean) => void;
   defaultMaxFrames: number;
@@ -59,29 +49,22 @@ interface CallersSectionProps {
 
 export function CallersSection({
   callersRef,
-  callersFlamegraphResponse,
-  callersFlamegraphLoading,
-  callersFlamegraphError,
-  filtered,
+  callersFlamegraphData,
   profileSource,
   curPathArrow,
   setCurPathArrow,
-  metadataMappingFiles,
   isExpanded,
   setIsExpanded,
   defaultMaxFrames,
 }: CallersSectionProps): JSX.Element {
   const maxDepth = useMemo(() => {
-    if (
-      callersFlamegraphResponse?.report.oneofKind === 'flamegraphArrow' &&
-      callersFlamegraphResponse?.report?.flamegraphArrow != null
-    ) {
-      const table = tableFromIPC(callersFlamegraphResponse.report.flamegraphArrow.record);
+    if (callersFlamegraphData?.arrow != null) {
+      const table = tableFromIPC(callersFlamegraphData.arrow.record);
       const depthColumn = table.getChild(FIELD_DEPTH);
       return getMaxDepth(depthColumn);
     }
     return 0;
-  }, [callersFlamegraphResponse]);
+  }, [callersFlamegraphData]);
 
   const shouldShowButton = maxDepth > defaultMaxFrames;
 
@@ -113,22 +96,18 @@ export function CallersSection({
         </div>
         <div className="flex-1 overflow-hidden relative">
           <ProfileFlameGraph
-            arrow={
-              callersFlamegraphResponse?.report.oneofKind === 'flamegraphArrow'
-                ? callersFlamegraphResponse?.report?.flamegraphArrow
-                : undefined
-            }
-            total={BigInt(callersFlamegraphResponse?.total ?? '0')}
-            filtered={filtered}
+            arrow={callersFlamegraphData?.arrow}
+            total={callersFlamegraphData.total ?? BigInt(0)}
+            filtered={callersFlamegraphData.filtered ?? BigInt(0)}
             profileType={profileSource?.ProfileType()}
-            loading={callersFlamegraphLoading}
-            error={callersFlamegraphError}
+            loading={callersFlamegraphData.loading}
+            error={callersFlamegraphData.error}
             isHalfScreen={true}
             width={
               callersRef.current != null ? callersRef.current.getBoundingClientRect().width - 25 : 0
             }
-            metadataMappingFiles={metadataMappingFiles}
-            metadataLoading={false}
+            metadataMappingFiles={callersFlamegraphData.metadataMappingFiles}
+            metadataLoading={callersFlamegraphData.metadataLoading}
             isInSandwichView={true}
             curPathArrow={curPathArrow}
             setNewCurPathArrow={setCurPathArrow}

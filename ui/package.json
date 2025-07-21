@@ -59,7 +59,7 @@
     "@testing-library/react": "13.4.0",
     "@types/command-line-args": "5.2.3",
     "@types/jest": "29.5.14",
-    "@types/node": "18.19.117",
+    "@types/node": "18.19.120",
     "@types/react": "18.3.23",
     "@types/react-dom": "18.3.7",
     "@typescript-eslint/eslint-plugin": "5.62.0",
