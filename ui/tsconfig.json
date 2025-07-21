@@ -1,5 +1,5 @@
 {
-  "extends": "./config/next.tsconfig.json",
+  "extends": "./config/base.tsconfig.json",
   "include": ["./tests/**/*", "./.storybook/*", "./packages/**/*"],
   "compilerOptions": {
     "module": "es2020",

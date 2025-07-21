@@ -23,7 +23,6 @@
     "@parca/react-benchmark": "^5.4.1",
     "command-line-args": "^5.2.1",
     "not-a-log": "^1.0.1",
-    "postcss-loader": "^8.1.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-popper": "^2.3.0",
@@ -38,9 +37,6 @@
     "@chromatic-com/storybook": "1.9.0",
     "@ianvs/prettier-plugin-sort-imports": "3.7.2",
     "@mdx-js/loader": "2.3.0",
-    "@next/bundle-analyzer": "12.3.7",
-    "@next/eslint-plugin-next": "12.3.7",
-    "@next/mdx": "12.3.7",
     "@storybook/addon-actions": "8.6.14",
     "@storybook/addon-docs": "8.6.14",
     "@storybook/addon-essentials": "8.6.14",
@@ -66,7 +62,6 @@
     "@typescript-eslint/parser": "5.62.0",
     "arg": "5.0.2",
     "chromatic": "11.29.0",
-    "css-loader": "6.11.0",
     "dev-kong": "0.11.0",
     "eslint": "8.45.0",
     "eslint-config-prettier": "9.1.0",
@@ -93,7 +88,6 @@
     "jest-environment-jsdom": "29.7.0",
     "lerna": "8.2.3",
     "local-web-server": "5.4.0",
-    "next-transpile-modules": "9.1.0",
     "ora": "6.3.1",
     "plop": "3.1.2",
     "pm2": "5.4.3",
@@ -105,10 +99,8 @@
     "replace-in-files": "3.0.0",
     "rimraf": "3.0.2",
     "sass": "1.89.2",
-    "sass-loader": "13.3.3",
     "storybook": "8.6.14",
     "storybook-dark-mode": "4.0.2",
-    "style-loader": "3.3.4",
     "ts-jest": "29.4.0",
     "ts-node": "10.9.2",
     "tsc-watch": "6.3.1",
@@ -127,8 +119,5 @@
         }
       }
     ]
-  },
-  "resolutions": {
-    "fork-ts-checker-webpack-plugin": "^8.0.0"
   }
 }
