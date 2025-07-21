@@ -246,6 +246,7 @@ export const useProfileFilters = (): {
       const filtersToApply = [...(appliedFilters ?? []), newFilter];
       setAppliedFilters(filtersToApply);
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [setAppliedFilters]
   );
 
