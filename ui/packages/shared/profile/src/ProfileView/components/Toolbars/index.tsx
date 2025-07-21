@@ -154,7 +154,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
 
   return (
     <>
-      <div className="flex w-full justify-between items-end">
+      <div className="flex w-full justify-between items-end gap-2">
         <div className="flex gap-2 items-end">
           {isGraphViz && (
             <>

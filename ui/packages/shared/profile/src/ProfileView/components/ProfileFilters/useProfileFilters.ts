@@ -11,21 +11,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useEffect, useMemo} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {type Filter} from '@parca/client';
-import {
-  selectLocalFilters,
-  setLocalFilters,
-  useAppDispatch,
-  useAppSelector,
-  type ProfileFilter,
-} from '@parca/store';
 
-import {getPresetByKey, isPresetKey, type FilterPreset} from './filterPresets';
+export interface ProfileFilter {
+  id: string;
+  type?: 'stack' | 'frame' | string; // string allows preset keys
+  field?: 'function_name' | 'binary' | 'system_name' | 'filename' | 'address' | 'line_number';
+  matchType?: 'equal' | 'not_equal' | 'contains' | 'not_contains';
+  value: string;
+}
+
+import {getPresetByKey, isPresetKey} from './filterPresets';
 import {useProfileFiltersUrlState} from './useProfileFiltersUrlState';
 
-export type {ProfileFilter};
 
 // Convert ProfileFilter[] to protobuf Filter[] matching the expected structure
 export const convertToProtoFilters = (profileFilters: ProfileFilter[]): Filter[] => {
@@ -41,6 +41,7 @@ export const convertToProtoFilters = (profileFilters: ProfileFilter[]): Filter[]
           expandedFilters.push({
             ...presetFilter,
             id: `${filter.id}-expanded-${index}`,
+            value: presetFilter.value,
           });
         });
       }
@@ -142,36 +143,41 @@ export const useProfileFilters = (): {
   removeFilter: (id: string) => void;
   updateFilter: (id: string, updates: Partial<ProfileFilter>) => void;
   resetFilters: () => void;
-  applyPreset: (preset: FilterPreset) => void;
 } => {
   const {appliedFilters, setAppliedFilters} = useProfileFiltersUrlState();
-  const dispatch = useAppDispatch();
-  const localFilters = useAppSelector(selectLocalFilters);
+
+  const [localFilters, setLocalFilters] = useState<ProfileFilter[]>([]);
+
+  const lastAppliedFiltersRef = useRef<ProfileFilter[]>([]);
+
+  const localFiltersRef = useRef<ProfileFilter[]>(localFilters);
+  localFiltersRef.current = localFilters;
 
   useEffect(() => {
-    if (appliedFilters != null && appliedFilters.length > 0) {
-      // Check if they're different to avoid unnecessary updates
-      const areFiltersEqual =
-        appliedFilters.length === localFilters.length &&
-        appliedFilters.every((applied, index) => {
-          const local = localFilters[index];
-          return (
-            local != null &&
-            applied.type === local.type &&
-            applied.field === local.field &&
-            applied.matchType === local.matchType &&
-            applied.value === local.value
-          );
-        });
+    const currentApplied = appliedFilters ?? [];
+    const lastApplied = lastAppliedFiltersRef.current;
 
-      if (!areFiltersEqual) {
-        dispatch(setLocalFilters(appliedFilters));
-      }
-    } else if (appliedFilters != null && appliedFilters.length === 0 && localFilters.length > 0) {
-      dispatch(setLocalFilters([]));
+    // Check if appliedFilters actually changed (avoid circular updates)
+    const appliedChanged =
+      currentApplied.length !== lastApplied.length ||
+      currentApplied.some((applied, index) => {
+        const last = lastApplied[index];
+        return (
+          last == null ||
+          applied.type !== last.type ||
+          applied.field !== last.field ||
+          applied.matchType !== last.matchType ||
+          applied.value !== last.value
+        );
+      });
+
+    if (!appliedChanged) {
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+
+    lastAppliedFiltersRef.current = currentApplied;
+    setLocalFilters(currentApplied);
+  }, [appliedFilters]);
 
   const hasUnsavedChanges = useMemo(() => {
     const localWithValues = localFilters.filter(f => {
@@ -210,8 +216,8 @@ export const useProfileFilters = (): {
       id: `filter-${Date.now()}-${Math.random()}`,
       value: '',
     };
-    dispatch(setLocalFilters([...localFilters, newFilter]));
-  }, [dispatch, localFilters]);
+    setLocalFilters([...localFiltersRef.current, newFilter]);
+  }, []);
 
   const excludeBinary = useCallback(
     (binaryName: string) => {
@@ -235,13 +241,13 @@ export const useProfileFilters = (): {
         matchType: 'not_contains',
         value: binaryName,
       };
-      dispatch(setLocalFilters([...localFilters, newFilter]));
+      setLocalFilters([...localFiltersRef.current, newFilter]);
 
       // Auto-apply the filter since it has a value
       const filtersToApply = [...(appliedFilters ?? []), newFilter];
       setAppliedFilters(filtersToApply);
     },
-    [appliedFilters, setAppliedFilters, dispatch, localFilters]
+    [setAppliedFilters]
   );
 
   const removeExcludeBinary = useCallback(
@@ -263,34 +269,37 @@ export const useProfileFilters = (): {
         setAppliedFilters(updatedAppliedFilters);
 
         // Also remove from local filters
-        const updatedLocalFilters = localFilters.filter(f => f.id !== filterToRemove.id);
-        dispatch(setLocalFilters(updatedLocalFilters));
+        setLocalFilters(
+          localFiltersRef.current.filter(f => f.id !== filterToRemove.id)
+        );
       }
     },
-    [appliedFilters, setAppliedFilters, dispatch, localFilters]
+    [appliedFilters, setAppliedFilters]
   );
 
   const removeFilter = useCallback(
     (id: string) => {
-      dispatch(setLocalFilters(localFilters.filter(f => f.id !== id)));
+      setLocalFilters(localFiltersRef.current.filter(f => f.id !== id));
     },
-    [dispatch, localFilters]
+    []
   );
 
   const updateFilter = useCallback(
     (id: string, updates: Partial<ProfileFilter>) => {
-      dispatch(setLocalFilters(localFilters.map(f => (f.id === id ? {...f, ...updates} : f))));
+      setLocalFilters(
+        localFiltersRef.current.map(f => (f.id === id ? {...f, ...updates} : f))
+      );
     },
-    [dispatch, localFilters]
+    []
   );
 
   const resetFilters = useCallback(() => {
-    dispatch(setLocalFilters([]));
+    setLocalFilters([]);
     setAppliedFilters([]);
-  }, [dispatch, setAppliedFilters]);
+  }, [setAppliedFilters]);
 
   const onApplyFilters = useCallback((): void => {
-    const validFilters = localFilters.filter(f => {
+    const validFilters = localFiltersRef.current.filter(f => {
       // For preset filters, only need type and value
       if (f.type != null && isPresetKey(f.type)) {
         return f.value !== '' && f.type != null;
@@ -305,41 +314,23 @@ export const useProfileFilters = (): {
     }));
 
     setAppliedFilters(filtersToApply);
-  }, [localFilters, setAppliedFilters]);
+  }, [setAppliedFilters]);
 
   const protoFilters = useMemo(() => {
     return convertToProtoFilters(appliedFilters ?? []);
   }, [appliedFilters]);
 
-  const applyPreset = useCallback(
-    (preset: FilterPreset) => {
-      const presetFilter: ProfileFilter = {
-        id: `filter-preset-${Date.now()}`,
-        type: preset.key,
-        value: preset.name,
-      };
-
-      // Add preset filter to existing filters
-      const updatedFilters = [...localFilters, presetFilter];
-      dispatch(setLocalFilters(updatedFilters));
-
-      setAppliedFilters(updatedFilters);
-    },
-    [dispatch, setAppliedFilters, localFilters]
-  );
-
   return {
-    localFilters,
-    appliedFilters,
-    protoFilters,
-    hasUnsavedChanges,
-    onApplyFilters,
-    addFilter,
-    excludeBinary,
-    removeExcludeBinary,
-    removeFilter,
-    updateFilter,
-    resetFilters,
-    applyPreset,
-  };
+      localFilters,
+      appliedFilters,
+      protoFilters,
+      hasUnsavedChanges,
+      onApplyFilters,
+      addFilter,
+      excludeBinary,
+      removeExcludeBinary,
+      removeFilter,
+      updateFilter,
+      resetFilters,
+    };
 };

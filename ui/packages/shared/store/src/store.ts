@@ -29,14 +29,12 @@ import storage from 'redux-persist/lib/storage';
 import {type ColorConfig} from '@parca/utilities';
 
 import colorsReducer, {initialColorState} from './slices/colorsSlice';
-import profileFiltersReducer from './slices/profileFiltersSlice';
 import profileReducer from './slices/profileSlice';
 import uiReducer from './slices/uiSlice';
 
 const rootReducer = combineReducers({
   ui: uiReducer,
   profile: profileReducer,
-  profileFilters: profileFiltersReducer,
   colors: colorsReducer,
 });
 
@@ -93,6 +91,5 @@ export type AppDispatch = AppStore['dispatch'];
 
 export * from './slices/uiSlice';
 export * from './slices/profileSlice';
-export * from './slices/profileFiltersSlice';
 export * from './slices/colorsSlice';
 export * from './hooks';

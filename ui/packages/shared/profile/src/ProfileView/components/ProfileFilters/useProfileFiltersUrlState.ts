@@ -12,7 +12,8 @@
 // limitations under the License.
 
 import {useURLStateCustom, type ParamValueSetterCustom} from '@parca/components';
-import {type ProfileFilter} from '@parca/store';
+
+import {type ProfileFilter} from './useProfileFilters';
 
 import {isPresetKey} from './filterPresets';
 

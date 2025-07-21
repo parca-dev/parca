@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import type {ProfileFilter} from '@parca/store';
+import type {ProfileFilter} from './useProfileFilters';
 
 export interface FilterPreset {
   key: string;
@@ -67,8 +67,10 @@ export const filterPresets: FilterPreset[] = [
   },
 ];
 
+const presetKeys = new Set(filterPresets.map(preset => preset.key));
+
 export const isPresetKey = (key: string): boolean => {
-  return filterPresets.some(preset => preset.key === key);
+  return presetKeys.has(key);
 };
 
 export const getPresetByKey = (key: string): FilterPreset | undefined => {
