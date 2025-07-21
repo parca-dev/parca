@@ -39,12 +39,15 @@ import {FlameNode, RowHeight, colorByColors} from './FlameGraphNodes';
 import {MemoizedTooltip} from './MemoizedTooltip';
 import {TooltipProvider} from './TooltipContext';
 import {useFilenamesList} from './useMappingList';
+import {useScrollViewport} from './useScrollViewport';
+import {useVisibleNodes} from './useVisibleNodes';
 import {
   CurrentPathFrame,
   arrowToString,
   extractFeature,
   extractFilenameFeature,
   getCurrentPathFrameData,
+  getMaxDepth,
   isCurrentPathFrameMatch,
 } from './utils';
 
@@ -120,17 +123,6 @@ export const getFilenameColors = (
 
 const noop = (): void => {};
 
-function getMaxDepth(depthColumn: Vector<any> | null): number {
-  if (depthColumn === null) return 0;
-
-  let max = 0;
-  for (const val of depthColumn) {
-    const numVal = Number(val);
-    if (numVal > max) max = numVal;
-  }
-  return max;
-}
-
 export const FlameGraphArrow = memo(function FlameGraphArrow({
   arrow,
   total,
@@ -166,34 +158,10 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
     return result;
   }, [arrow, perf]);
   const svg = useRef(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const renderStartTime = useRef<number>(0);
 
   const [svgElement, setSvgElement] = useState<SVGSVGElement | null>(null);
-
-  useEffect(() => {
-    if (perf?.markInteraction != null) {
-      renderStartTime.current = performance.now();
-    }
-  }, [table, width, curPath, perf]);
-
-  useEffect(() => {
-    if (perf?.setMeasurement != null && renderStartTime.current > 0) {
-      const measureRenderTime = (): void => {
-        const renderTime = performance.now() - renderStartTime.current;
-        if (perf?.setMeasurement != null) {
-          perf.setMeasurement('flamegraph.render_time', renderTime);
-        }
-
-        renderStartTime.current = 0;
-      };
-
-      requestAnimationFrame(measureRenderTime);
-    }
-  }, [table, width, curPath, perf]);
-
-  useEffect(() => {
-    setSvgElement(svg.current);
-  }, [tooltipId]);
 
   const {excludeBinary} = useProfileFilters();
 
@@ -304,9 +272,12 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   // Use deferred value to prevent UI blocking when expanding frames
   const deferredEffectiveDepth = useDeferredValue(effectiveDepth);
 
-  const height = isInSandwichView
+  const totalHeight = isInSandwichView
     ? deferredEffectiveDepth * RowHeight
     : (deferredEffectiveDepth + 1) * RowHeight;
+
+  // Get the viewport of the container, this is used to determine which rows are visible.
+  const viewport = useScrollViewport(containerRef);
 
   // To find the selected row, we must walk the current path and look at which
   // children of the current frame matches the path element exactly. Until the
@@ -332,6 +303,25 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
     currentRow = childRows[0];
   }
   const selectedRow = currentRow;
+
+  const visibleNodes = useVisibleNodes({
+    table,
+    viewport,
+    total,
+    width: width ?? 1,
+    selectedRow,
+    effectiveDepth: deferredEffectiveDepth,
+  });
+
+  useEffect(() => {
+    if (perf?.markInteraction != null) {
+      renderStartTime.current = performance.now();
+    }
+  }, [table, width, curPath, perf]);
+
+  useEffect(() => {
+    setSvgElement(svg.current);
+  }, [tooltipId]);
 
   return (
     <TooltipProvider
@@ -359,46 +349,55 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
           isInSandwichView={isInSandwichView}
         />
         <MemoizedTooltip contextElement={svgElement} dockedMetainfo={dockedMetainfo} />
-        <svg
-          className="font-robotoMono"
-          width={width}
-          height={height}
-          preserveAspectRatio="xMinYMid"
-          ref={svg}
+        <div
+          ref={containerRef}
+          className="overflow-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800 will-change-transform scroll-smooth webkit-overflow-scrolling-touch contain"
+          style={{
+            width: width ?? '100%',
+            contain: 'layout style paint',
+          }}
         >
-          {Array.from({length: table.numRows}, (_, row) => (
-            <FlameNode
-              key={row}
-              table={table}
-              row={row} // root is always row 0 in the arrow record
-              colors={colorByColors}
-              colorBy={colorByValue}
-              totalWidth={width ?? 1}
-              height={RowHeight}
-              darkMode={isDarkMode}
-              compareMode={compareMode}
-              colorForSimilarNodes={colorForSimilarNodes}
-              selectedRow={selectedRow}
-              onClick={() => {
-                if (isFlameChart) {
-                  // We don't want to expand in flame charts.
-                  return;
-                }
-                handleRowClick(row);
-              }}
-              onContextMenu={displayMenu}
-              hoveringRow={highlightSimilarStacksPreference ? hoveringRow : undefined}
-              setHoveringRow={highlightSimilarStacksPreference ? setHoveringRow : noop}
-              isFlameChart={isFlameChart}
-              profileSource={profileSource}
-              isRenderedAsFlamegraph={isRenderedAsFlamegraph}
-              isInSandwichView={isInSandwichView}
-              maxDepth={maxDepth}
-              effectiveDepth={deferredEffectiveDepth}
-              tooltipId={tooltipId}
-            />
-          ))}
-        </svg>
+          <svg
+            className="font-robotoMono"
+            width={width ?? 0}
+            height={totalHeight}
+            preserveAspectRatio="xMinYMid"
+            ref={svg}
+          >
+            {visibleNodes.map(row => (
+              <FlameNode
+                key={row}
+                table={table}
+                row={row}
+                colors={colorByColors}
+                colorBy={colorByValue}
+                totalWidth={width ?? 1}
+                height={RowHeight}
+                darkMode={isDarkMode}
+                compareMode={compareMode}
+                colorForSimilarNodes={colorForSimilarNodes}
+                selectedRow={selectedRow}
+                onClick={() => {
+                  if (isFlameChart) {
+                    // We don't want to expand in flame charts.
+                    return;
+                  }
+                  handleRowClick(row);
+                }}
+                onContextMenu={displayMenu}
+                hoveringRow={highlightSimilarStacksPreference ? hoveringRow : undefined}
+                setHoveringRow={highlightSimilarStacksPreference ? setHoveringRow : noop}
+                isFlameChart={isFlameChart}
+                profileSource={profileSource}
+                isRenderedAsFlamegraph={isRenderedAsFlamegraph}
+                isInSandwichView={isInSandwichView}
+                maxDepth={maxDepth}
+                effectiveDepth={deferredEffectiveDepth}
+                tooltipId={tooltipId}
+              />
+            ))}
+          </svg>
+        </div>
       </div>
     </TooltipProvider>
   );
