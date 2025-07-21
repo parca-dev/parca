@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useMemo, useRef, useState} from 'react';
+import React, {useRef, useState} from 'react';
 
 import {AnimatePresence, motion} from 'framer-motion';
 
@@ -45,9 +45,6 @@ const Sandwich = React.memo(function Sandwich({
 
   const {curPathArrow, setCurPathArrow} = useVisualizationState();
 
-  const callersFlamegraphData = useMemo(() => sandwichData.callers, [sandwichData.callers]);
-  const calleesFlamegraphData = useMemo(() => sandwichData.callees, [sandwichData.callees]);
-
   return (
     <section className="flex flex-row h-full w-full">
       <AnimatePresence>
@@ -63,7 +60,7 @@ const Sandwich = React.memo(function Sandwich({
               <div className="w-full flex flex-col" ref={callersCalleesContainerRef}>
                 <CallersSection
                   callersRef={callersRef}
-                  callersFlamegraphData={callersFlamegraphData}
+                  callersFlamegraphData={sandwichData.callers}
                   profileSource={profileSource}
                   curPathArrow={curPathArrow}
                   setCurPathArrow={setCurPathArrow}
@@ -74,7 +71,7 @@ const Sandwich = React.memo(function Sandwich({
                 <div className="h-4" />
                 <CalleesSection
                   calleesRef={calleesRef}
-                  calleesFlamegraphData={calleesFlamegraphData}
+                  calleesFlamegraphData={sandwichData.callees}
                   profileSource={profileSource}
                   curPathArrow={curPathArrow}
                   setCurPathArrow={setCurPathArrow}
