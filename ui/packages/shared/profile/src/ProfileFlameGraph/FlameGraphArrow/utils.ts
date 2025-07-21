@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Table} from 'apache-arrow';
+import {Table, Vector} from 'apache-arrow';
 
 import {
   BINARY_FEATURE_TYPES,
@@ -202,4 +202,15 @@ export function isCurrentPathFrameMatch(
     a.inlined === b.inlined &&
     a.labels === b.labels
   );
+}
+
+export function getMaxDepth(depthColumn: Vector<any> | null): number {
+  if (depthColumn === null) return 0;
+
+  let max = 0;
+  for (const val of depthColumn) {
+    const numVal = Number(val);
+    if (numVal > max) max = numVal;
+  }
+  return max;
 }

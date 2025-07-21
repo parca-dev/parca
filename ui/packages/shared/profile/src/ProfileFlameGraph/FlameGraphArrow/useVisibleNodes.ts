@@ -18,6 +18,7 @@ import {Table} from 'apache-arrow';
 import {RowHeight} from './FlameGraphNodes';
 import {FIELD_CUMULATIVE, FIELD_DEPTH, FIELD_VALUE_OFFSET} from './index';
 import {ViewportState} from './useScrollViewport';
+import {getMaxDepth} from './utils';
 
 /**
  * This function groups rows by their depth level.
@@ -34,11 +35,7 @@ const useDepthBuckets = <TRow extends Record<string, any>>(
     if (depthColumn === null) return [];
 
     // Find max depth
-    let maxDepth = 0;
-    for (let i = 0; i < table.numRows; i++) {
-      const depth = depthColumn.get(i) ?? 0;
-      if (depth > maxDepth) maxDepth = depth;
-    }
+    const maxDepth = getMaxDepth(depthColumn);
 
     // Create buckets for each depth level
     const buckets: number[][] = Array.from({length: maxDepth + 1}, () => []);

@@ -47,6 +47,7 @@ import {
   extractFeature,
   extractFilenameFeature,
   getCurrentPathFrameData,
+  getMaxDepth,
   isCurrentPathFrameMatch,
 } from './utils';
 
@@ -121,17 +122,6 @@ export const getFilenameColors = (
 };
 
 const noop = (): void => {};
-
-function getMaxDepth(depthColumn: Vector<any> | null): number {
-  if (depthColumn === null) return 0;
-
-  let max = 0;
-  for (const val of depthColumn) {
-    const numVal = Number(val);
-    if (numVal > max) max = numVal;
-  }
-  return max;
-}
 
 export const FlameGraphArrow = memo(function FlameGraphArrow({
   arrow,
