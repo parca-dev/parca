@@ -21,26 +21,26 @@ import React, {
   useState,
 } from 'react';
 
-import { Dictionary, Table, Vector, tableFromIPC } from 'apache-arrow';
-import { useContextMenu } from 'react-contexify';
+import {Dictionary, Table, Vector, tableFromIPC} from 'apache-arrow';
+import {useContextMenu} from 'react-contexify';
 
-import { FlamegraphArrow } from '@parca/client';
-import { useParcaContext, useURLState } from '@parca/components';
-import { USER_PREFERENCES, useCurrentColorProfile, useUserPreference } from '@parca/hooks';
-import { ProfileType } from '@parca/parser';
-import { getColorForFeature, selectDarkMode, useAppSelector } from '@parca/store';
-import { getLastItem, type ColorConfig } from '@parca/utilities';
+import {FlamegraphArrow} from '@parca/client';
+import {useParcaContext, useURLState} from '@parca/components';
+import {USER_PREFERENCES, useCurrentColorProfile, useUserPreference} from '@parca/hooks';
+import {ProfileType} from '@parca/parser';
+import {getColorForFeature, selectDarkMode, useAppSelector} from '@parca/store';
+import {getLastItem, type ColorConfig} from '@parca/utilities';
 
-import { ProfileSource } from '../../ProfileSource';
-import { useProfileFilters } from '../../ProfileView/components/ProfileFilters/useProfileFilters';
-import { useProfileViewContext } from '../../ProfileView/context/ProfileViewContext';
-import ContextMenuWrapper, { ContextMenuWrapperRef } from './ContextMenuWrapper';
-import { FlameNode, RowHeight, colorByColors } from './FlameGraphNodes';
-import { MemoizedTooltip } from './MemoizedTooltip';
-import { TooltipProvider } from './TooltipContext';
-import { useFilenamesList } from './useMappingList';
-import { useScrollViewport } from './useScrollViewport';
-import { useVisibleNodes } from './useVisibleNodes';
+import {ProfileSource} from '../../ProfileSource';
+import {useProfileFilters} from '../../ProfileView/components/ProfileFilters/useProfileFilters';
+import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
+import ContextMenuWrapper, {ContextMenuWrapperRef} from './ContextMenuWrapper';
+import {FlameNode, RowHeight, colorByColors} from './FlameGraphNodes';
+import {MemoizedTooltip} from './MemoizedTooltip';
+import {TooltipProvider} from './TooltipContext';
+import {useFilenamesList} from './useMappingList';
+import {useScrollViewport} from './useScrollViewport';
+import {useVisibleNodes} from './useVisibleNodes';
 import {
   CurrentPathFrame,
   arrowToString,
@@ -121,7 +121,7 @@ export const getFilenameColors = (
   return colors;
 };
 
-const noop = (): void => { };
+const noop = (): void => {};
 
 export const FlameGraphArrow = memo(function FlameGraphArrow({
   arrow,
@@ -146,7 +146,7 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   const [hoveringRow, setHoveringRow] = useState<number | undefined>(undefined);
   const [dockedMetainfo] = useUserPreference<boolean>(USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key);
   const isDarkMode = useAppSelector(selectDarkMode);
-  const { perf } = useParcaContext();
+  const {perf} = useParcaContext();
 
   const table: Table<any> = useMemo(() => {
     const result = tableFromIPC(arrow.record);
@@ -163,9 +163,9 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
 
   const [svgElement, setSvgElement] = useState<SVGSVGElement | null>(null);
 
-  const { excludeBinary } = useProfileFilters();
+  const {excludeBinary} = useProfileFilters();
 
-  const { compareMode } = useProfileViewContext();
+  const {compareMode} = useProfileViewContext();
   const currentColorProfile = useCurrentColorProfile();
   const colorForSimilarNodes = currentColorProfile.colorForSimilarNodes;
 
@@ -224,7 +224,7 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
 
   const MENU_ID = 'flame-graph-context-menu';
   const contextMenuRef = useRef<ContextMenuWrapperRef>(null);
-  const { show, hideAll } = useContextMenu({
+  const {show, hideAll} = useContextMenu({
     id: MENU_ID,
   });
   const displayMenu = useCallback(
