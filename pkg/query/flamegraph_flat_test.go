@@ -27,7 +27,6 @@ import (
 	"github.com/parca-dev/parca/pkg/kv"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profile"
-	parcaprofile "github.com/parca-dev/parca/pkg/profile"
 )
 
 func TestGenerateFlamegraphFlat(t *testing.T) {
@@ -89,7 +88,7 @@ func TestGenerateFlamegraphFlat(t *testing.T) {
 	}}
 
 	p, err := PprofToSymbolizedProfile(
-		parcaprofile.Meta{},
+		profile.Meta{},
 		&pprofprofile.Profile{
 			Mapping:  mappings,
 			Function: functions,
@@ -214,7 +213,7 @@ func TestGenerateFlamegraphWithInlined(t *testing.T) {
 	}
 
 	p, err := PprofToSymbolizedProfile(
-		parcaprofile.Meta{
+		profile.Meta{
 			Name: "memory",
 			SampleType: profile.ValueType{
 				Type: "alloc_space",
@@ -364,7 +363,7 @@ func TestGenerateFlamegraphWithInlinedExisting(t *testing.T) {
 		},
 	}
 	p, err := PprofToSymbolizedProfile(
-		parcaprofile.Meta{},
+		profile.Meta{},
 		&pprofprofile.Profile{
 			SampleType: []*pprofprofile.ValueType{{Type: "", Unit: ""}},
 			PeriodType: &pprofprofile.ValueType{Type: "", Unit: ""},

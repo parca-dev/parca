@@ -317,10 +317,7 @@ func ParseQuery(query string) (QueryParts, error) {
 	if len(parts) != 5 && len(parts) != 6 {
 		return QueryParts{}, status.Errorf(codes.InvalidArgument, "profile-type selection must be of the form <name>:<sample-type>:<sample-unit>:<period-type>:<period-unit>(:delta), got(%d): %q", len(parts), nameLabel.Value)
 	}
-	delta := false
-	if len(parts) == 6 && parts[5] == "delta" {
-		delta = true
-	}
+	delta := len(parts) == 6 && parts[5] == "delta"
 
 	return QueryParts{
 		Meta: profile.Meta{
@@ -639,7 +636,7 @@ func getSumByAggregateExprs(sumBy []string) []logicalplan.Expr {
 	return exprs
 }
 
-func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration, sumBy []string) ([]*pb.MetricsSeries, error) {
+func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration, _ []string) ([]*pb.MetricsSeries, error) {
 	records := []arrow.Record{}
 	defer func() {
 		for _, r := range records {

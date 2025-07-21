@@ -195,7 +195,7 @@ func (s *Symbolizer) getDebuginfo(ctx context.Context, buildID string) (string, 
 		if dbginfo.Quality.NotValidElf {
 			return "", nil, nil, ErrNotValidElf
 		}
-		if !dbginfo.Quality.HasDwarf && !dbginfo.Quality.HasGoPclntab && !(dbginfo.Quality.HasSymtab || dbginfo.Quality.HasDynsym) {
+		if !dbginfo.Quality.HasDwarf && !dbginfo.Quality.HasGoPclntab && !dbginfo.Quality.HasSymtab && !dbginfo.Quality.HasDynsym {
 			return "", nil, nil, fmt.Errorf("check previously reported debuginfo quality: %w", ErrNoDebuginfo)
 		}
 	}
@@ -268,7 +268,7 @@ func (s *Symbolizer) getDebuginfo(ctx context.Context, buildID string) (string, 
 			}
 			return "", nil, nil, fmt.Errorf("set quality: %w", err)
 		}
-		if !dbginfo.Quality.HasDwarf && !dbginfo.Quality.HasGoPclntab && !(dbginfo.Quality.HasSymtab || dbginfo.Quality.HasDynsym) {
+		if !dbginfo.Quality.HasDwarf && !dbginfo.Quality.HasGoPclntab && !dbginfo.Quality.HasSymtab && !dbginfo.Quality.HasDynsym {
 			if err := e.Close(); err != nil {
 				level.Debug(s.logger).Log("msg", "failed to close debuginfo file", "err", err)
 			}
@@ -359,7 +359,7 @@ func (l *externalExecutableLiner) PCToLines(ctx context.Context, pc uint64) ([]p
 	for i := 0; i < 2; i++ {
 		_, err := io.WriteString(l.inputPipe, fmt.Sprintf("0x%x\n", pc))
 		if err != nil {
-			return nil, fmt.Errorf("error writing to addr2line stdin: %w\n", err)
+			return nil, fmt.Errorf("error writing to addr2line stdin: %w", err)
 		}
 	}
 
@@ -491,7 +491,7 @@ func (c *cachedLiner) PCToLines(ctx context.Context, pc uint64) ([]profile.Locat
 	return lines, nil
 }
 
-func (c *cachedLiner) newConcreteLiner(filepath string, f *elf.File, quality *debuginfopb.DebuginfoQuality) (liner, error) {
+func (c *cachedLiner) newConcreteLiner(filepath string, _ *elf.File, quality *debuginfopb.DebuginfoQuality) (liner, error) {
 	switch {
 	case c.externalAddr2linePath != "":
 		level.Debug(c.logger).Log("msg", fmt.Sprintf("using external addr2line liner with binary: %s", c.externalAddr2linePath))

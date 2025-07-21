@@ -103,7 +103,7 @@ func (c *PrefixedClient) Close() error {
 }
 
 func validPrefix(prefix string) bool {
-	prefix = strings.Replace(prefix, "/", "", -1)
+	prefix = strings.ReplaceAll(prefix, "/", "")
 	return len(prefix) > 0
 }
 

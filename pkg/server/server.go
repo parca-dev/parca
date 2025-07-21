@@ -204,7 +204,7 @@ func (s *Server) uiHandler(uiFS fs.FS, pathPrefix string) (*http.ServeMux, error
 		}
 
 		if strings.HasSuffix(path, ".html") {
-			tmpl, err := template.New(path).Parse(strings.Replace(string(b), "/PATH_PREFIX_VAR", "{{.PathPrefix}}", -1))
+			tmpl, err := template.New(path).Parse(strings.ReplaceAll(string(b), "/PATH_PREFIX_VAR", "{{.PathPrefix}}"))
 			if err != nil {
 				return fmt.Errorf("failed to parse ui file %s: %w", path, err)
 			}
@@ -256,10 +256,7 @@ func (s *Server) uiHandler(uiFS fs.FS, pathPrefix string) (*http.ServeMux, error
 }
 
 func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler, allowedCORSOrigins []string) http.Handler {
-	allowAll := false
-	if len(allowedCORSOrigins) == 1 && allowedCORSOrigins[0] == "*" {
-		allowAll = true
-	}
+	allowAll := len(allowedCORSOrigins) == 1 && allowedCORSOrigins[0] == "*"
 	origins := map[string]struct{}{}
 	for _, o := range allowedCORSOrigins {
 		origins[o] = struct{}{}

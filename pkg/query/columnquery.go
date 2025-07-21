@@ -55,8 +55,8 @@ type Querier interface {
 }
 
 var (
-	ErrSourceNotFound     = errors.New("Source file not found. Either profiling metadata is wrong, or the referenced file was not included in the uploaded sources.")
-	ErrNoSourceForBuildID = errors.New("No sources for this build id have been uploaded.")
+	ErrSourceNotFound     = errors.New("source file not found; either profiling metadata is wrong, or the referenced file was not included in the uploaded sources")
+	ErrNoSourceForBuildID = errors.New("no sources for this build id have been uploaded")
 )
 
 type SourceFinder interface {
@@ -444,7 +444,7 @@ func FilterProfileData(
 func filterRecord(
 	ctx context.Context,
 	tracer trace.Tracer,
-	pool memory.Allocator,
+	_ memory.Allocator,
 	rec arrow.Record,
 	filters []*pb.Filter,
 ) ([]arrow.Record, int64, int64, error) {
@@ -1447,7 +1447,7 @@ func zeroInt64Array(pool memory.Allocator, rows int) arrow.Array {
 	return b.NewArray()
 }
 
-func (q *ColumnQueryAPI) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelection, aggregateByLabels, isInverted bool) (profile.Profile, error) {
+func (q *ColumnQueryAPI) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelection, _, isInverted bool) (profile.Profile, error) {
 	switch s.Mode {
 	case pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED:
 		return q.selectSingle(ctx, s.GetSingle(), isInverted)

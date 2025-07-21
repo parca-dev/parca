@@ -263,7 +263,6 @@ func (w *profileWriter) writeResourceProfiles(
 										p.Profile.Function,
 										p.Profile.Mapping,
 										p.Profile.StringTable,
-										true,
 									),
 									Value: 1,
 								},
@@ -291,7 +290,6 @@ func (w *profileWriter) writeResourceProfiles(
 										p.Profile.Function,
 										p.Profile.Mapping,
 										p.Profile.StringTable,
-										true,
 									),
 									Value: value,
 								},
@@ -432,7 +430,6 @@ func serializeOtelStacktrace(
 	functions []*otelprofilingpb.Function,
 	mappings []*otelprofilingpb.Mapping,
 	stringTable []string,
-	stabiliziedAddress bool,
 ) [][]byte {
 	st := make([][]byte, 0, len(s.LocationIndex)+int(s.LocationsLength))
 
