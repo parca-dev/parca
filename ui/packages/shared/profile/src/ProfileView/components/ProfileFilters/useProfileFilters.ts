@@ -15,6 +15,9 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {type Filter} from '@parca/client';
 
+import {getPresetByKey, isPresetKey} from './filterPresets';
+import {useProfileFiltersUrlState} from './useProfileFiltersUrlState';
+
 export interface ProfileFilter {
   id: string;
   type?: 'stack' | 'frame' | string; // string allows preset keys
@@ -22,10 +25,6 @@ export interface ProfileFilter {
   matchType?: 'equal' | 'not_equal' | 'contains' | 'not_contains';
   value: string;
 }
-
-import {getPresetByKey, isPresetKey} from './filterPresets';
-import {useProfileFiltersUrlState} from './useProfileFiltersUrlState';
-
 
 // Convert ProfileFilter[] to protobuf Filter[] matching the expected structure
 export const convertToProtoFilters = (profileFilters: ProfileFilter[]): Filter[] => {
@@ -269,29 +268,19 @@ export const useProfileFilters = (): {
         setAppliedFilters(updatedAppliedFilters);
 
         // Also remove from local filters
-        setLocalFilters(
-          localFiltersRef.current.filter(f => f.id !== filterToRemove.id)
-        );
+        setLocalFilters(localFiltersRef.current.filter(f => f.id !== filterToRemove.id));
       }
     },
     [appliedFilters, setAppliedFilters]
   );
 
-  const removeFilter = useCallback(
-    (id: string) => {
-      setLocalFilters(localFiltersRef.current.filter(f => f.id !== id));
-    },
-    []
-  );
+  const removeFilter = useCallback((id: string) => {
+    setLocalFilters(localFiltersRef.current.filter(f => f.id !== id));
+  }, []);
 
-  const updateFilter = useCallback(
-    (id: string, updates: Partial<ProfileFilter>) => {
-      setLocalFilters(
-        localFiltersRef.current.map(f => (f.id === id ? {...f, ...updates} : f))
-      );
-    },
-    []
-  );
+  const updateFilter = useCallback((id: string, updates: Partial<ProfileFilter>) => {
+    setLocalFilters(localFiltersRef.current.map(f => (f.id === id ? {...f, ...updates} : f)));
+  }, []);
 
   const resetFilters = useCallback(() => {
     setLocalFilters([]);
@@ -321,16 +310,16 @@ export const useProfileFilters = (): {
   }, [appliedFilters]);
 
   return {
-      localFilters,
-      appliedFilters,
-      protoFilters,
-      hasUnsavedChanges,
-      onApplyFilters,
-      addFilter,
-      excludeBinary,
-      removeExcludeBinary,
-      removeFilter,
-      updateFilter,
-      resetFilters,
-    };
+    localFilters,
+    appliedFilters,
+    protoFilters,
+    hasUnsavedChanges,
+    onApplyFilters,
+    addFilter,
+    excludeBinary,
+    removeExcludeBinary,
+    removeFilter,
+    updateFilter,
+    resetFilters,
+  };
 };

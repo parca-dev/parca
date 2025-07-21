@@ -13,9 +13,8 @@
 
 import {useURLStateCustom, type ParamValueSetterCustom} from '@parca/components';
 
-import {type ProfileFilter} from './useProfileFilters';
-
 import {isPresetKey} from './filterPresets';
+import {type ProfileFilter} from './useProfileFilters';
 
 // Compact encoding mappings
 const TYPE_MAP: Record<string, string> = {
