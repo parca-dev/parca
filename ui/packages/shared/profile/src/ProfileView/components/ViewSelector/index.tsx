@@ -88,7 +88,7 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
     supportingText?: string;
   }): DropdownElement => {
     const title = (
-      <span className="capitalize">
+      <span className="capitalize whitespace-nowrap">
         {typeof label === 'string' ? label.replaceAll('-', ' ') : label}
       </span>
     );

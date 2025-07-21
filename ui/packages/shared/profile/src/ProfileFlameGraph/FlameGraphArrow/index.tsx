@@ -247,20 +247,27 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
     excludeBinary(binaryToRemove);
   };
 
-  const handleRowClick = (row: number): void => {
-    // Walk down the stack starting at row until we reach the root (row 0).
-    const path: CurrentPathFrame[] = [];
-    let currentRow = row;
-    while (currentRow > 0) {
-      const frame = getCurrentPathFrameData(table, currentRow);
-      path.push(frame);
-      currentRow = table.getChild(FIELD_PARENT)?.get(currentRow) ?? 0;
-    }
+  const handleRowClick = useCallback(
+    (row: number): void => {
+      if (isFlameChart) {
+        // In flame charts, we don't want to expand the node, so we return early.
+        return;
+      }
+      // Walk down the stack starting at row until we reach the root (row 0).
+      const path: CurrentPathFrame[] = [];
+      let currentRow = row;
+      while (currentRow > 0) {
+        const frame = getCurrentPathFrameData(table, currentRow);
+        path.push(frame);
+        currentRow = table.getChild(FIELD_PARENT)?.get(currentRow) ?? 0;
+      }
 
-    // Reverse the path so that the root is first.
-    path.reverse();
-    setCurPath(path);
-  };
+      // Reverse the path so that the root is first.
+      path.reverse();
+      setCurPath(path);
+    },
+    [table, setCurPath, isFlameChart]
+  );
 
   const depthColumn = table.getChild(FIELD_DEPTH);
   const maxDepth = getMaxDepth(depthColumn);
@@ -377,13 +384,7 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
                 compareMode={compareMode}
                 colorForSimilarNodes={colorForSimilarNodes}
                 selectedRow={selectedRow}
-                onClick={() => {
-                  if (isFlameChart) {
-                    // We don't want to expand in flame charts.
-                    return;
-                  }
-                  handleRowClick(row);
-                }}
+                onClick={() => handleRowClick(row)}
                 onContextMenu={displayMenu}
                 hoveringRow={highlightSimilarStacksPreference ? hoveringRow : undefined}
                 setHoveringRow={highlightSimilarStacksPreference ? setHoveringRow : noop}
