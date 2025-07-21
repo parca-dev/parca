@@ -60,7 +60,7 @@ func ExecutableInfoFromELF(f *elf.File) (ExecutableInfo, error) {
 	}
 
 	return ExecutableInfo{
-		ElfType:          f.FileHeader.Type,
+		ElfType:          f.Type,
 		TextProgHdrIndex: idx,
 		ProgHeaders:      progHeaders,
 	}, nil

@@ -429,7 +429,7 @@ func (tb *tableBuilder) appendRow(
 	return nil
 }
 
-func (tb *tableBuilder) mergeRow(r *profile.RecordReader, mergeRow, sampleRow, locationRow, lineRow, currentTableRow, previousTableRow int, isLeaf bool) {
+func (tb *tableBuilder) mergeRow(r *profile.RecordReader, mergeRow, sampleRow, _, lineRow, currentTableRow, previousTableRow int, isLeaf bool) {
 	tb.builderCumulative.Add(mergeRow, r.Value.Value(sampleRow))
 	if r.Diff.Value(sampleRow) != 0 {
 		tb.builderCumulativeDiff.Add(mergeRow, r.Diff.Value(sampleRow))

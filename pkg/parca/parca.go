@@ -50,7 +50,6 @@ import (
 	"github.com/thanos-io/objstore/client"
 	objstoretracing "github.com/thanos-io/objstore/tracing/opentelemetry"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-	tracing "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/otel/trace/noop"
@@ -689,8 +688,8 @@ func runForwarder(
 
 	opts := []grpc.DialOption{
 		grpc.WithStatsHandler(otelgrpc.NewServerHandler(
-			tracing.WithTracerProvider(tracer),
-			tracing.WithPropagators(propagators),
+			otelgrpc.WithTracerProvider(tracer),
+			otelgrpc.WithPropagators(propagators),
 		)),
 		grpc.WithChainUnaryInterceptor(
 			metrics.UnaryClientInterceptor(),

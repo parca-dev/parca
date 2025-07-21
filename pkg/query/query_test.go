@@ -23,7 +23,6 @@ import (
 
 	"github.com/apache/arrow-go/v18/arrow/memory"
 	"github.com/go-kit/log"
-	"github.com/polarsignals/frostdb"
 	columnstore "github.com/polarsignals/frostdb"
 	"github.com/polarsignals/frostdb/query"
 	"github.com/prometheus/client_golang/prometheus"
@@ -156,8 +155,8 @@ func Benchmark_ProfileTypes(b *testing.B) {
 	logger := log.NewNopLogger()
 	tracer := noop.NewTracerProvider().Tracer("")
 	col, err := columnstore.New(
-		frostdb.WithWAL(),
-		frostdb.WithStoragePath("../../data"),
+		columnstore.WithWAL(),
+		columnstore.WithStoragePath("../../data"),
 	)
 	require.NoError(b, err)
 

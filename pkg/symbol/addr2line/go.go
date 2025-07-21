@@ -166,9 +166,10 @@ func symbolData(f *elf.File, start, end string) []byte {
 	}
 	var addr, eaddr uint64
 	for _, s := range elfSyms {
-		if s.Name == start {
+		switch s.Name {
+		case start:
 			addr = s.Value
-		} else if s.Name == end {
+		case end:
 			eaddr = s.Value
 		}
 		if addr != 0 && eaddr != 0 {

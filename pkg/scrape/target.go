@@ -78,7 +78,7 @@ func (t *Target) String() string {
 // hash returns an identifying hash for the target.
 func (t *Target) hash() uint64 {
 	h := fnv.New64a()
-	_, _ = h.Write([]byte(fmt.Sprintf("%016d", t.labels.Hash())))
+	_, _ = fmt.Fprintf(h, "%016d", t.labels.Hash())
 	_, _ = h.Write([]byte(t.URL().String()))
 	return h.Sum64()
 }
