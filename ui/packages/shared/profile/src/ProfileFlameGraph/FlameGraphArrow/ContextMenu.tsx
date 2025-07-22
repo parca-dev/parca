@@ -188,6 +188,10 @@ const ContextMenu = ({
         <Item
           id="show-in-sandwich"
           onClick={() => {
+            if (functionName === '' || functionName == null) {
+              return;
+            }
+
             if (dashboardItems.includes('sandwich')) {
               setSandwichFunctionName(functionName);
               return;
@@ -196,6 +200,7 @@ const ContextMenu = ({
             setSandwichFunctionName(functionName);
             setDashboardItems([...dashboardItems, 'sandwich']);
           }}
+          disabled={functionName === '' || functionName == null}
         >
           <div className="flex w-full items-center gap-2">
             <Icon icon="tdesign:sandwich-filled" />

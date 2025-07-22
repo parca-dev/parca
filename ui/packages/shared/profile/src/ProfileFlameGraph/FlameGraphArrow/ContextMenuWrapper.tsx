@@ -39,21 +39,27 @@ export interface ContextMenuWrapperRef {
 
 const ContextMenuWrapper = forwardRef<ContextMenuWrapperRef, ContextMenuWrapperProps>(
   (props, ref) => {
-    // Fix for race condition: Always render ContextMenu to maintain component tree stability
-    // but use callback timing to ensure correct data is available when menu shows
-    const [row, setRow] = useState(0);
+    // Initialize with null to prevent rendering with invalid data
+    const [row, setRow] = useState<number | null>(null);
 
     useImperativeHandle(ref, () => ({
       setRow: (newRow: number, callback?: () => void) => {
         setRow(newRow);
         // Execute callback after state update using requestAnimationFrame
         if (callback != null) {
-          requestAnimationFrame(callback);
+          requestAnimationFrame(() => {
+            requestAnimationFrame(callback);
+          });
         }
       },
     }));
 
-    return <ContextMenu {...props} row={row} />;
+    // Only render ContextMenu when we have a valid row
+    if (row === null) {
+      return null;
+    }
+
+    return <ContextMenu {...props} row={row} isSandwich={props.isInSandwichView} />;
   }
 );
 
