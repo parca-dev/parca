@@ -12,6 +12,7 @@
 // limitations under the License.
 
 import {useURLStateCustom, type ParamValueSetterCustom} from '@parca/components';
+import {decodeMultipleEncodings} from '@parca/utilities';
 
 import {isPresetKey} from './filterPresets';
 import {type ProfileFilter} from './useProfileFilters';
@@ -72,13 +73,16 @@ export const decodeProfileFilters = (encoded: string): ProfileFilter[] => {
   if (encoded === '' || encoded === undefined) return [];
 
   try {
-    return encoded.split(',').map((filter, index) => {
+    // Handle multiple levels of URL encoding that can happen in Next.js
+    const decodedString = decodeMultipleEncodings(encoded) ?? encoded;
+    
+    return decodedString.split(',').map((filter, index) => {
       const parts = filter.split(':');
 
       // Handle preset filters (format: p:presetKey:value)
       if (parts[0] === 'p' && parts.length >= 3) {
-        const presetKey = decodeURIComponent(parts[1]);
-        const value = decodeURIComponent(parts.slice(2).join(':')); // Handle values with colons
+        const presetKey = parts[1];
+        const value = parts.slice(2).join(':'); // Handle values with colons
 
         return {
           id: `filter-${Date.now()}-${index}`,
@@ -89,15 +93,17 @@ export const decodeProfileFilters = (encoded: string): ProfileFilter[] => {
 
       // Handle regular filters (format: type:field:match:value)
       const [type, field, match, ...valueParts] = parts;
-      const value = decodeURIComponent(valueParts.join(':')); // Handle values with colons
+      const value = valueParts.join(':'); // Handle values with colons
 
-      return {
+      const decodedFilter = {
         id: `filter-${Date.now()}-${index}`,
         type: TYPE_MAP_REVERSE[type] as ProfileFilter['type'],
         field: FIELD_MAP_REVERSE[field] as ProfileFilter['field'],
         matchType: MATCH_MAP_REVERSE[match] as ProfileFilter['matchType'],
         value,
       };
+      
+      return decodedFilter;
     });
   } catch {
     return [];
@@ -118,11 +124,12 @@ export const useProfileFiltersUrlState = (): {
       stringify: value => {
         return encodeProfileFilters(value);
       },
+      defaultValue: [],
     }
   );
 
   return {
-    appliedFilters,
+    appliedFilters: appliedFilters ?? [],
     setAppliedFilters,
   };
 };
