@@ -145,7 +145,7 @@ export const useProfileFilters = (): {
 } => {
   const {appliedFilters, setAppliedFilters} = useProfileFiltersUrlState();
 
-  const [localFilters, setLocalFilters] = useState<ProfileFilter[]>([]);
+  const [localFilters, setLocalFilters] = useState<ProfileFilter[]>(appliedFilters ?? []);
 
   const lastAppliedFiltersRef = useRef<ProfileFilter[]>([]);
 
@@ -312,7 +312,7 @@ export const useProfileFilters = (): {
 
   return {
     localFilters,
-    appliedFilters,
+    appliedFilters: appliedFilters ?? [],
     protoFilters,
     hasUnsavedChanges,
     onApplyFilters,
