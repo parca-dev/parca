@@ -73,9 +73,9 @@ export const decodeProfileFilters = (encoded: string): ProfileFilter[] => {
   if (encoded === '' || encoded === undefined) return [];
 
   try {
-    // Handle multiple levels of URL encoding that can happen in Next.js
+    // Handle multiple levels of URL encoding
     const decodedString = decodeMultipleEncodings(encoded) ?? encoded;
-    
+
     return decodedString.split(',').map((filter, index) => {
       const parts = filter.split(':');
 
@@ -102,7 +102,7 @@ export const decodeProfileFilters = (encoded: string): ProfileFilter[] => {
         matchType: MATCH_MAP_REVERSE[match] as ProfileFilter['matchType'],
         value,
       };
-      
+
       return decodedFilter;
     });
   } catch {
