@@ -111,7 +111,7 @@ func rowsToColumn(rows []flamegraphRow) flamegraphColumns {
 	return columns
 }
 
-func extractLabelColumns(t *testing.T, r arrow.Record) []map[string]string {
+func extractLabelColumns(_ *testing.T, r arrow.Record) []map[string]string {
 	pprofLabels := make([]map[string]string, r.NumRows())
 	for i := 0; i < int(r.NumRows()); i++ {
 		sampleLabels := map[string]string{}
@@ -133,7 +133,7 @@ func extractLabelColumns(t *testing.T, r arrow.Record) []map[string]string {
 	return pprofLabels
 }
 
-func extractChildrenColumn(t *testing.T, r arrow.Record) [][]uint32 {
+func extractChildrenColumn(_ *testing.T, r arrow.Record) [][]uint32 {
 	children := make([][]uint32, r.NumRows())
 	list := r.Column(r.Schema().FieldIndices(FlamegraphFieldChildren)[0]).(*array.List)
 	listValues := list.ListValues().(*array.Uint32).Uint32Values()
@@ -155,7 +155,7 @@ func extractChildrenColumn(t *testing.T, r arrow.Record) [][]uint32 {
 	return children
 }
 
-func extractParentColumn(t *testing.T, r arrow.Record) []int32 {
+func extractParentColumn(_ *testing.T, r arrow.Record) []int32 {
 	parents := make([]int32, r.NumRows())
 	col := r.Column(r.Schema().FieldIndices(FlamegraphFieldParent)[0]).(*array.Int32)
 	for i := 0; i < int(r.NumRows()); i++ {
@@ -1546,7 +1546,7 @@ func foldedStacksWithTsToProfile(pool memory.Allocator, input []byte) (profile.P
 }
 
 //lint:ignore U1000 Used for debugging purposes
-func drawFlamegraphToConsole(testing *testing.T, record arrow.Record) {
+func drawFlamegraphToConsole(_ *testing.T, record arrow.Record) {
 	schema := record.Schema()
 	childrenColIdx := schema.FieldIndices("children")[0]
 	functionNameColIdx := schema.FieldIndices("function_name")[0]

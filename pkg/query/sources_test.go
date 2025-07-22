@@ -78,7 +78,7 @@ func TestSourcesOnlyRequest(t *testing.T) {
 			Filename: "file",
 		},
 	})
-	require.ErrorContains(t, err, "rpc error: code = NotFound desc = Source file not found. Either profiling metadata is wrong, or the referenced file was not included in the uploaded sources.")
+	require.ErrorContains(t, err, "rpc error: code = NotFound desc = source file not found; either profiling metadata is wrong, or the referenced file was not included in the uploaded sources")
 
 	_, err = api.Query(ctx, &pb.QueryRequest{
 		Mode: pb.QueryRequest_MODE_MERGE,
@@ -96,7 +96,7 @@ func TestSourcesOnlyRequest(t *testing.T) {
 			Filename:   "file",
 		},
 	})
-	require.ErrorContains(t, err, "rpc error: code = NotFound desc = No sources for this build id have been uploaded.")
+	require.ErrorContains(t, err, "rpc error: code = NotFound desc = no sources for this build id have been uploaded")
 
 	resp, err := api.Query(ctx, &pb.QueryRequest{
 		Mode: pb.QueryRequest_MODE_MERGE,

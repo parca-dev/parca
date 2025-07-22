@@ -91,12 +91,12 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]profile.LocationLine, error)
 		return lines, nil
 	}
 
-	name, ok := tr.Entry.Val(dwarf.AttrName).(string)
+	name, ok := tr.Val(dwarf.AttrName).(string)
 	if !ok {
 		name = ""
 	}
 
-	declLine, ok := tr.Entry.Val(dwarf.AttrDeclLine).(int64)
+	declLine, ok := tr.Val(dwarf.AttrDeclLine).(int64)
 	if !ok {
 		declLine = 0
 	}
@@ -115,16 +115,16 @@ func (f *debugInfoFile) SourceLines(addr uint64) ([]profile.LocationLine, error)
 	for _, ch := range reader.InlineStack(tr, addr) {
 		var name string
 		if ch.Tag == dwarf.TagSubprogram {
-			name, ok = tr.Entry.Val(dwarf.AttrName).(string)
+			name, ok = tr.Val(dwarf.AttrName).(string)
 			if !ok {
 				name = ""
 			}
 		} else {
-			abstractOrigin := f.abstractSubprograms[ch.Entry.Val(dwarf.AttrAbstractOrigin).(dwarf.Offset)]
+			abstractOrigin := f.abstractSubprograms[ch.Val(dwarf.AttrAbstractOrigin).(dwarf.Offset)]
 			name = getFunctionName(abstractOrigin)
 		}
 
-		declLine, ok := ch.Entry.Val(dwarf.AttrDeclLine).(int64)
+		declLine, ok := ch.Val(dwarf.AttrDeclLine).(int64)
 		if !ok {
 			declLine = 0
 		}

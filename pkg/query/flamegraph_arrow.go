@@ -213,7 +213,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 				// This returns whether this location is a root of a stacktrace.
 				locationRoot := isLocationRoot(beg, end, int64(j), r.Locations)
 				// Depending on whether we aggregate the labels (and thus inject node labels), we either compare the rows or not.
-				isRoot := locationRoot && !(len(fb.aggregationConfig.aggregateByLabels) > 0 && hasLabels)
+				isRoot := locationRoot && (len(fb.aggregationConfig.aggregateByLabels) == 0 || !hasLabels)
 
 				llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
 				if !r.Lines.IsValid(j) || llOffsetEnd-llOffsetStart <= 0 {
@@ -272,7 +272,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 					isInlined := !isInlineRoot
 					isLeaf := isFirstNonNil(i, j, r.Locations) && isFirstNonNil(j, k, r.Lines)
 
-					isRoot = locationRoot && !(len(fb.aggregationConfig.aggregateByLabels) > 0 && hasLabels) && isInlineRoot
+					isRoot = locationRoot && (len(fb.aggregationConfig.aggregateByLabels) == 0 || !hasLabels) && isInlineRoot
 					// We only want to compare the rows if this is the root, and we don't aggregate the labels.
 					if isRoot {
 						fb.compareRows = rootRowChildren
@@ -575,7 +575,7 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 	r *profile.RecordReader,
 	t *transpositions,
 	recordLabelIndex []int,
-	sampleIndex, locationIndex, lineIndex, end int,
+	sampleIndex, locationIndex, lineIndex, _ int,
 	key uint64,
 	leaf bool,
 	inlined bool,
@@ -729,7 +729,7 @@ func (fb *flamegraphBuilder) mergeUnsymbolizedRows(
 	r *profile.RecordReader,
 	t *transpositions,
 	recordLabelIndex []int,
-	sampleIndex, locationIndex, end int,
+	sampleIndex, _, _ int,
 	key uint64,
 	leaf bool,
 ) (bool, error) {

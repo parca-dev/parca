@@ -27,7 +27,6 @@ import (
 
 	metastorepb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
-	querypb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 	"github.com/parca-dev/parca/pkg/kv"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profile"
@@ -462,7 +461,7 @@ func Benchmark_GenerateFlamegraphTable_FromProfile(b *testing.B) {
 	tracer := noop.NewTracerProvider().Tracer("")
 	pool := NewTableConverterPool()
 
-	var dontOptimise *querypb.Flamegraph
+	var dontOptimise *pb.Flamegraph
 	for i := 0; i < b.N; i++ {
 		ctx, cancel := context.WithCancel(ctx)
 		dontOptimise, err = GenerateFlamegraphTable(ctx, tracer, op, float32(0), pool)

@@ -68,7 +68,7 @@ func GenerateSourceReport(
 func generateSourceReportRecord(
 	_ context.Context,
 	pool memory.Allocator,
-	tracer trace.Tracer,
+	_ trace.Tracer,
 	p profile.Profile,
 	ref *pb.SourceReference,
 	source string,

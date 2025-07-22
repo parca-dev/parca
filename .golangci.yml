@@ -1,51 +1,66 @@
+version: "2"
 run:
-  deadline: 12m
-  timeout: 10m
-  go: '1.21'
-
+  go: "1.24"
 linters:
   enable:
     - depguard
     - godot
-    - gofumpt
-    - goimports
     - revive
     - whitespace
-
-issues:
-  exclude-rules:
-    - path: _test.go
-      linters:
-        - errcheck
-
-linters-settings:
-  depguard:
+  settings:
+    depguard:
+      rules:
+        Main:
+          deny:
+            - pkg: sync/atomic
+              desc: Use go.uber.org/atomic instead of sync/atomic
+            - pkg: github.com/stretchr/testify/assert
+              desc: Use github.com/stretchr/testify/require instead of github.com/stretchr/testify/assert
+            - pkg: github.com/go-kit/kit/log
+              desc: Use github.com/go-kit/log instead of github.com/go-kit/kit/log
+            - pkg: github.com/pkg/errors
+              desc: Use fmt.Errorf instead
+            - pkg: github.com/segmentio/parquet-go
+              desc: Use github.com/parquet-go/parquet-go instead
+    errcheck:
+      exclude-functions:
+        - (github.com/go-kit/log.Logger).Log
+        - (hash.Hash).Write
+    misspell:
+      locale: US
+    revive:
+      rules:
+        - name: unexported-return
+          severity: warning
+          disabled: true
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
     rules:
-      Main:
-        deny:
-          - pkg: sync/atomic
-            desc: Use go.uber.org/atomic instead of sync/atomic
-          - pkg: github.com/stretchr/testify/assert
-            desc: Use github.com/stretchr/testify/require instead of github.com/stretchr/testify/assert
-          - pkg: github.com/go-kit/kit/log
-            desc: Use github.com/go-kit/log instead of github.com/go-kit/kit/log
-          - pkg: github.com/pkg/errors
-            desc: Use fmt.Errorf instead
-          - pkg: github.com/segmentio/parquet-go
-            desc: Use github.com/parquet-go/parquet-go instead
-  errcheck:
-    exclude-functions:
-      - (github.com/go-kit/log.Logger).Log
-      - (hash.Hash).Write
-  goimports:
-    local-prefixes: github.com/parca-dev/parca
-  gofumpt:
-    extra-rules: true
-  misspell:
-    locale: US
-  revive:
-    rules:
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#unexported-return
-      - name: unexported-return
-        severity: warning
-        disabled: true
+      - linters:
+          - errcheck
+        path: _test.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+  settings:
+    gofumpt:
+      extra-rules: true
+    goimports:
+      local-prefixes:
+        - github.com/parca-dev/parca
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
