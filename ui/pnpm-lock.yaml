@@ -296,7 +296,7 @@ importers:
     dependencies:
       '@alwaysmeticulous/recorder-loader':
         specifier: ^2.19.0
-        version: 2.224.0
+        version: 2.225.0
       '@headlessui/react':
         specifier: ^1.7.19
         version: 1.7.19(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -878,15 +878,15 @@ packages:
   '@adobe/css-tools@4.4.3':
     resolution: {integrity: sha512-VQKMkwriZbaOgVCby1UDY/LDk5fIjhQicCvVPFqfe+69fWaPWydbWJ3wRt59/YzIwda1I81loas3oCoHxnqvdA==}
 
-  '@alwaysmeticulous/api@2.224.0':
-    resolution: {integrity: sha512-jX40lYMkaMO+hEgqazQN3C7gGmq2Vwkef4FdVqe0Nvq88LI9UMX8punX14i64NOTehcknjZ54e9LKHeJOK90pw==}
+  '@alwaysmeticulous/api@2.227.1':
+    resolution: {integrity: sha512-YBo7wua9dHPGjl1Vc02eQ74dgJ8TilDU88RWBWVKKHiAFnG+A26/FgScH10m8lrXHC7cmsNMEsWGj+Ibaj7uaw==}
     engines: {node: '>= 12'}
 
-  '@alwaysmeticulous/recorder-loader@2.224.0':
-    resolution: {integrity: sha512-LbuCkDvK7O9ldP4S8B18YOO1WYu0rVx3Ggqv0TxVnGirrbpfZ5wwnLbCkXlupBzC06eHJrk7/jIBNYum1wIeJA==}
+  '@alwaysmeticulous/recorder-loader@2.225.0':
+    resolution: {integrity: sha512-S0hI4ZiW1BYja4vXK0DWdZTLiRQTaB6TEW0bh8sEyeLYIuZ5Blmo5DQ+PGIywZWIZwWCF8T0UFYX+RiSlSWoGw==}
 
-  '@alwaysmeticulous/sdk-bundles-api@2.224.0':
-    resolution: {integrity: sha512-yiu3oqGfiCattRK5c9SNSLz/WxQy2QJnro8/UkU1VwHqKh+RonI8RPkAncVAwLQVWAoNhAP6RuGtxv3r+KSw/g==}
+  '@alwaysmeticulous/sdk-bundles-api@2.227.1':
+    resolution: {integrity: sha512-jYB0B+LkFJY6tcB/n5NFueKoWtk+DsjYixswySYuuoOPgiiG2IZrySADvMbJHFK8V98G+96kuIiCXK77b65geg==}
     engines: {node: '>= 12'}
 
   '@ampproject/remapping@2.3.0':
@@ -13421,15 +13421,15 @@ snapshots:
 
   '@adobe/css-tools@4.4.3': {}
 
-  '@alwaysmeticulous/api@2.224.0': {}
+  '@alwaysmeticulous/api@2.227.1': {}
 
-  '@alwaysmeticulous/recorder-loader@2.224.0':
+  '@alwaysmeticulous/recorder-loader@2.225.0':
     dependencies:
-      '@alwaysmeticulous/sdk-bundles-api': 2.224.0
+      '@alwaysmeticulous/sdk-bundles-api': 2.227.1
 
-  '@alwaysmeticulous/sdk-bundles-api@2.224.0':
+  '@alwaysmeticulous/sdk-bundles-api@2.227.1':
     dependencies:
-      '@alwaysmeticulous/api': 2.224.0
+      '@alwaysmeticulous/api': 2.227.1
 
   '@ampproject/remapping@2.3.0':
     dependencies:
