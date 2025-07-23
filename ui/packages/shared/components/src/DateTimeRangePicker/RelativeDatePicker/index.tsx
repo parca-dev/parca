@@ -210,7 +210,7 @@ const RelativeDatePicker = ({
           type="text"
           name="range"
           id="range"
-          className="flex w-full flex-grow items-stretch border text-center text-gray-900 placeholder:text-gray-400 focus-within:z-10 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 sm:text-sm sm:leading-6"
+          className="flex w-full flex-grow items-stretch border text-center text-gray-900 placeholder:text-gray-400 focus-within:z-10 focus:border-indigo-500 focus:ring-1 focus:ring-inset focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 sm:text-sm sm:leading-6 outline-none"
           placeholder="6h"
           value={rangeInputString}
           onClick={() => {

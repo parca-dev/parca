@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {useMemo} from 'react';
+
 import {Switch} from '@headlessui/react';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 import Select, {type SelectInstance} from 'react-select';
@@ -20,6 +22,7 @@ import {Button, DateTimeRange, DateTimeRangePicker} from '@parca/components';
 import {ProfileType, Query} from '@parca/parser';
 
 import MatchersInput from '../MatchersInput';
+import MatchersInputMask from '../MatchersInputMask';
 import ProfileTypeSelector from '../ProfileTypeSelector';
 import SimpleMatchers from '../SimpleMatchers';
 import ViewMatchers from '../ViewMatchers';
@@ -91,10 +94,30 @@ export function QueryControls({
   showSumBySelector,
   profileTypesError,
 }: QueryControlsProps): JSX.Element {
+  // Memoized styles for the sum by selector
+  // This prevents unnecessary re-renders and recalculations of styles
+  /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/strict-boolean-expressions */
+  const sumBySelectStyles = useMemo(
+    () => ({
+      indicatorSeparator: () => ({display: 'none'}),
+      menu: (provided: any) => ({...provided, width: 'max-content', zIndex: 50}), // Setting the same zIndex as drop down menus
+      control: (provided: any, state: any) => ({
+        ...provided,
+        borderColor: state.isFocused ? '#6366f1' : provided.borderColor,
+        boxShadow: state.isFocused ? '0 0 0 1px #6366f1' : provided.boxShadow,
+        '&:hover': {
+          borderColor: state.isFocused ? '#6366f1' : provided.borderColor,
+        },
+      }),
+    }),
+    []
+  );
+  /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/strict-boolean-expressions */
+
   return (
     <div className="flex w-full flex-wrap items-start gap-2">
       {showProfileTypeSelector && (
-        <div>
+        <div className="max-w-56">
           <label className="text-xs">Profile type</label>
           <ProfileTypeSelector
             profileTypesData={profileTypesData}
@@ -141,16 +164,21 @@ export function QueryControls({
         {viewComponent?.disableExplorativeQuerying === true &&
         viewComponent?.labelnames !== undefined &&
         viewComponent?.labelnames.length >= 1 ? (
-          <ViewMatchers
-            labelNames={viewComponent.labelnames}
-            setMatchersString={setMatchersString}
-            profileType={selectedProfileName}
-            runQuery={setQueryExpression}
-            currentQuery={query}
-            queryClient={queryClient}
-            start={timeRangeSelection.getFromMs()}
-            end={timeRangeSelection.getToMs()}
-          />
+          <MatchersInputMask
+            disabled={selectedProfileName === ''}
+            placeholder="Select a profile first to enter a filter..."
+          >
+            <ViewMatchers
+              labelNames={viewComponent.labelnames}
+              setMatchersString={setMatchersString}
+              profileType={selectedProfileName}
+              runQuery={setQueryExpression}
+              currentQuery={query}
+              queryClient={queryClient}
+              start={timeRangeSelection.getFromMs()}
+              end={timeRangeSelection.getToMs()}
+            />
+          </MatchersInputMask>
         ) : advancedModeForQueryBrowser ? (
           <MatchersInput
             setMatchersString={setMatchersString}
@@ -162,17 +190,22 @@ export function QueryControls({
             end={timeRangeSelection.getToMs()}
           />
         ) : (
-          <SimpleMatchers
-            key={query.toString()}
-            setMatchersString={setMatchersString}
-            runQuery={setQueryExpression}
-            currentQuery={query}
-            profileType={selectedProfileName}
-            queryBrowserRef={queryBrowserRef}
-            queryClient={queryClient}
-            start={timeRangeSelection.getFromMs()}
-            end={timeRangeSelection.getToMs()}
-          />
+          <MatchersInputMask
+            disabled={selectedProfileName === ''}
+            placeholder="Select a profile first to enter a filter..."
+          >
+            <SimpleMatchers
+              key={query.toString()}
+              setMatchersString={setMatchersString}
+              runQuery={setQueryExpression}
+              currentQuery={query}
+              profileType={selectedProfileName}
+              queryBrowserRef={queryBrowserRef}
+              queryClient={queryClient}
+              start={timeRangeSelection.getFromMs()}
+              end={timeRangeSelection.getToMs()}
+            />
+          </MatchersInputMask>
         )}
       </div>
 
@@ -195,10 +228,7 @@ export function QueryControls({
               setUserSumBySelection(newValue.map(option => option.value));
             }}
             placeholder="Labels..."
-            styles={{
-              indicatorSeparator: () => ({display: 'none'}),
-              menu: provided => ({...provided, width: 'max-content', zIndex: 50}), // Setting the same zIndex as drop down menus
-            }}
+            styles={sumBySelectStyles}
             isLoading={sumBySelectionLoading}
             isDisabled={!profileType.delta}
             // @ts-expect-error

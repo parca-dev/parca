@@ -364,7 +364,7 @@ const SimpleMatchers = ({
             onSelection={value => handleUpdateRow(index, 'labelName', value)}
             placeholder="Select label name"
             selectedKey={row.labelName}
-            className="rounded-tr-none rounded-br-none ring-0 focus:ring-0 outline-none"
+            className="rounded-tr-none rounded-br-none border-0 bg-transparent ring-0 focus:ring-0 outline-none shadow-none"
             loading={labelNamesLoading}
             searchable={true}
           />
@@ -372,14 +372,14 @@ const SimpleMatchers = ({
             items={operatorOptions}
             onSelection={value => handleUpdateRow(index, 'operator', value)}
             selectedKey={row.operator}
-            className="rounded-none ring-0 focus:ring-0 outline-none"
+            className="rounded-none border-0 bg-transparent ring-0 focus:ring-0 outline-none shadow-none"
           />
           <Select
             items={transformLabelsForSelect(row.labelValues)}
             onSelection={value => handleUpdateRow(index, 'labelValue', value)}
             placeholder="Select label value"
             selectedKey={row.labelValue}
-            className="rounded-none ring-0 focus:ring-0 outline-none max-w-48"
+            className="rounded-none border-0 bg-transparent ring-0 focus:ring-0 outline-none shadow-none max-w-48"
             optionsClassname={cx('max-w-[300px]', {
               'w-[300px]': isRowRegex(row),
             })}
@@ -392,7 +392,7 @@ const SimpleMatchers = ({
           <button
             onClick={() => removeRow(index)}
             className={cx(
-              'p-2 border-gray-200 border rounded rounded-tl-none rounded-bl-none focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900'
+              'p-2 rounded rounded-tl-none rounded-bl-none focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 hover:bg-gray-100 dark:hover:bg-gray-800'
             )}
           >
             <Icon icon="carbon:close" className="h-5 w-5 text-gray-400" aria-hidden="true" />
@@ -411,7 +411,7 @@ const SimpleMatchers = ({
 
       <button
         onClick={addNewRow}
-        className="p-2 border-gray-200 dark:bg-gray-900 dark:border-gray-600 border rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        className="p-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 hover:bg-gray-100 dark:hover:bg-gray-800"
       >
         <Icon icon="material-symbols:add" className="h-5 w-5 text-gray-400" aria-hidden="true" />
       </button>
