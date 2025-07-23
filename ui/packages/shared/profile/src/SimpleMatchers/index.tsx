@@ -364,7 +364,7 @@ const SimpleMatchers = ({
             onSelection={value => handleUpdateRow(index, 'labelName', value)}
             placeholder="Select label name"
             selectedKey={row.labelName}
-            className="rounded-tr-none rounded-br-none border-0 bg-transparent ring-0 focus:ring-0 outline-none shadow-none"
+            className="rounded-tr-none rounded-br-none border-0 bg-transparent outline-none shadow-none"
             loading={labelNamesLoading}
             searchable={true}
           />
@@ -372,14 +372,14 @@ const SimpleMatchers = ({
             items={operatorOptions}
             onSelection={value => handleUpdateRow(index, 'operator', value)}
             selectedKey={row.operator}
-            className="rounded-none border-0 bg-transparent ring-0 focus:ring-0 outline-none shadow-none"
+            className="rounded-none border-0 bg-transparent outline-none shadow-none"
           />
           <Select
             items={transformLabelsForSelect(row.labelValues)}
             onSelection={value => handleUpdateRow(index, 'labelValue', value)}
             placeholder="Select label value"
             selectedKey={row.labelValue}
-            className="rounded-none border-0 bg-transparent ring-0 focus:ring-0 outline-none shadow-none max-w-48"
+            className="rounded-none border-0 bg-transparent outline-none shadow-none max-w-48"
             optionsClassname={cx('max-w-[300px]', {
               'w-[300px]': isRowRegex(row),
             })}
