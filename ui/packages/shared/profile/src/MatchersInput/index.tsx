@@ -293,7 +293,7 @@ const MatchersInput = ({
       <TextareaAutosize
         ref={inputRef}
         className={cx(
-          'block h-[38px] w-full flex-1 rounded-md border bg-white px-2 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900',
+          'block h-[38px] w-full flex-1 rounded-md border bg-white px-2 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 dark:bg-gray-900',
           profileSelected && 'cursor-not-allowed'
         )}
         placeholder={

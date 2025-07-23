@@ -197,7 +197,7 @@ const RelativeDatePicker = ({
         <button
           type="button"
           disabled={currentPresetIndex === 0}
-          className="rounded-l-md border border-r-0 bg-gray-100 p-3 text-sm font-semibold text-gray-900 hover:bg-gray-200 disabled:bg-white disabled:text-gray-400 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-700"
+          className="rounded-l-md border border-r-0 bg-gray-100 p-3 text-sm font-semibold text-gray-900 hover:bg-gray-200 disabled:bg-white disabled:text-gray-400 border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-700"
           onClick={() => {
             const previousRangeIndex = currentPresetIndex - 1;
             const previousRange = presetRanges[previousRangeIndex];
@@ -210,7 +210,7 @@ const RelativeDatePicker = ({
           type="text"
           name="range"
           id="range"
-          className="flex w-full flex-grow items-stretch border text-center text-gray-900 placeholder:text-gray-400 focus-within:z-10 focus:border-indigo-500 focus:ring-1 focus:ring-inset focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 sm:text-sm sm:leading-6 outline-none"
+          className="flex w-full flex-grow items-stretch border text-center text-gray-900 placeholder:text-gray-400 focus-within:z-10 focus:border-indigo-500 focus:ring-1 focus:ring-inset focus:ring-indigo-500 border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 sm:text-sm sm:leading-6 outline-none"
           placeholder="6h"
           value={rangeInputString}
           onClick={() => {
@@ -239,7 +239,7 @@ const RelativeDatePicker = ({
         <button
           type="button"
           disabled={currentPresetIndex >= presetRanges.length - 1}
-          className="rounded-r-md border border-l-0 bg-gray-100 p-3 text-sm font-semibold text-gray-900 hover:bg-gray-200 disabled:bg-white disabled:text-gray-400 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-700"
+          className="rounded-r-md border border-l-0 bg-gray-100 p-3 text-sm font-semibold text-gray-900 hover:bg-gray-200 disabled:bg-white disabled:text-gray-400 border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-700"
           onClick={() => {
             const previousRangeIndex = currentPresetIndex + 1;
             const previousRange = presetRanges[previousRangeIndex];

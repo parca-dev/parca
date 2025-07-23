@@ -211,9 +211,7 @@ export function QueryControls({
 
       {showSumBySelector && (
         <div>
-          <div className="mb-0.5 mt-1.5 flex items-center justify-between">
-            <label className="text-xs">Sum by</label>
-          </div>
+          <label className="text-xs">Sum by</label>
           <Select<SelectOption, true>
             id="h-sum-by-selector"
             defaultValue={[]}
