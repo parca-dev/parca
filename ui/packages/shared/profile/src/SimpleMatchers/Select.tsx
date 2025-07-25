@@ -186,7 +186,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   };
 
   const styles =
-    'relative border rounded-md shadow-sm px-4 py-2 text-left cursor-default focus:outline-none focus:ring-1 items-center focus:ring-indigo-500 focus:border-indigo-500 text-sm flex gap-2 flex items-center justify-between';
+    'relative border rounded-md shadow-sm px-4 py-2 text-left cursor-default focus:outline-none items-center text-sm flex gap-2 flex items-center justify-between';
   const defaultStyles = 'bg-white dark:bg-gray-900 dark:border-gray-600';
   const primaryStyles =
     'text-gray-100 dark:gray-900 bg-indigo-600 border-indigo-500 font-medium py-2 px-4';
