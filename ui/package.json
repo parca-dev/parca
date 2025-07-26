@@ -69,7 +69,7 @@
     "css-loader": "6.11.0",
     "dev-kong": "0.11.0",
     "eslint": "8.45.0",
-    "eslint-config-prettier": "9.1.0",
+    "eslint-config-prettier": "9.1.2",
     "eslint-config-react-app": "7.0.1",
     "eslint-config-standard-with-typescript": "22.0.0",
     "eslint-plugin-import": "2.32.0",
