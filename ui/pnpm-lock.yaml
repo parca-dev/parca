@@ -425,8 +425,8 @@ importers:
         specifier: 6.11.0
         version: 6.11.0(webpack@5.99.9(@swc/core@1.12.14(@swc/helpers@0.5.17))(esbuild@0.25.5))
       eslint-config-prettier:
-        specifier: 8.10.0
-        version: 8.10.0(eslint@8.45.0)
+        specifier: 8.10.2
+        version: 8.10.2(eslint@8.45.0)
       eslint-plugin-import:
         specifier: 2.32.0
         version: 2.32.0(@typescript-eslint/parser@5.62.0(eslint@8.45.0)(typescript@5.8.3))(eslint@8.45.0)
@@ -6486,8 +6486,8 @@ packages:
     engines: {node: '>=6.0'}
     hasBin: true
 
-  eslint-config-prettier@8.10.0:
-    resolution: {integrity: sha512-SM8AMJdeQqRYT9O9zguiruQZaN7+z+E4eAP9oiLNGKMtomwaB1E9dcgUD6ZAn/eQAb52USbvezbiljfZUhbJcg==}
+  eslint-config-prettier@8.10.2:
+    resolution: {integrity: sha512-/IGJ6+Dka158JnP5n5YFMOszjDWrXggGz1LaK/guZq9vZTmniaKlHcsscvkAhn9y4U+BU3JuUdYvtAMcv30y4A==}
     hasBin: true
     peerDependencies:
       eslint: '>=7.0.0'
@@ -20122,7 +20122,7 @@ snapshots:
     optionalDependencies:
       source-map: 0.6.1
 
-  eslint-config-prettier@8.10.0(eslint@8.45.0):
+  eslint-config-prettier@8.10.2(eslint@8.45.0):
     dependencies:
       eslint: 8.45.0
 
