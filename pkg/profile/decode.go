@@ -182,6 +182,7 @@ func DecodeInto(lw LocationsWriter, data []byte) (DecodeResult, error) {
 
 		return DecodeResult{
 			WroteLines: true,
+			Addr:       addr,
 		}, nil
 	} else {
 		return DecodeResult{
