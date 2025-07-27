@@ -63,7 +63,7 @@
   },
   "devDependencies": {
     "@types/lodash.throttle": "4.1.9",
-    "@vitejs/plugin-react-swc": "3.10.2",
+    "@vitejs/plugin-react-swc": "3.11.0",
     "css-loader": "6.11.0",
     "eslint-config-prettier": "8.10.2",
     "eslint-plugin-import": "2.32.0",
