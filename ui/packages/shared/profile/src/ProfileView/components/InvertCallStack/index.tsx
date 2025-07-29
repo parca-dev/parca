@@ -20,16 +20,17 @@ const InvertCallStack = (): JSX.Element => {
   const isInvert = invertStack === 'true';
 
   return (
-    <div className="flex flex-col"><label className="text-sm">&nbsp;</label>
-    <Button
-      variant="neutral"
-      className="flex items-center gap-2 whitespace-nowrap"
-      onClick={() => setInvertStack(isInvert ? '' : 'true')}
-      id="h-invert-call-stack"
-    >
-      <Icon icon={isInvert ? 'ph:sort-ascending' : 'ph:sort-descending'} className="h-4 w-4" />
-      {isInvert ? 'Original' : 'Invert'} Call Stack
-    </Button>
+    <div className="flex flex-col">
+      <label className="text-sm">&nbsp;</label>
+      <Button
+        variant="neutral"
+        className="flex items-center gap-2 whitespace-nowrap"
+        onClick={() => setInvertStack(isInvert ? '' : 'true')}
+        id="h-invert-call-stack"
+      >
+        <Icon icon={isInvert ? 'ph:sort-ascending' : 'ph:sort-descending'} className="h-4 w-4" />
+        {isInvert ? 'Original' : 'Invert'} Call Stack
+      </Button>
     </div>
   );
 };

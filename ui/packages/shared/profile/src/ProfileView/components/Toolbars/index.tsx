@@ -168,8 +168,8 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
             </>
           )}
 
-          <div className='flex mt-5'>
-          <ProfileFilters />
+          <div className="flex mt-5">
+            <ProfileFilters />
 
             {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
           </div>
