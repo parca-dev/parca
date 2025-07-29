@@ -195,7 +195,7 @@ const ProfileFilters = (): JSX.Element => {
   const filtersToRender = localFilters.length > 0 ? localFilters : appliedFilters ?? [];
 
   return (
-    <div className="flex gap-2 w-full">
+    <div className="flex gap-2 w-full items-start">
       <div className="flex-1 flex flex-wrap gap-2">
         {filtersToRender.map(filter => {
           const isNumberField = filter.field === 'address' || filter.field === 'line_number';
@@ -335,7 +335,7 @@ const ProfileFilters = (): JSX.Element => {
           variant="primary"
           onClick={onApplyFilters}
           disabled={!hasUnsavedChanges || !localFilters.some(isFilterComplete)}
-          className={cx('flex items-center gap-2 self-end')}
+          className={cx('flex items-center gap-2 sticky top-0 z-50')}
         >
           <span>Apply</span>
         </Button>
