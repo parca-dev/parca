@@ -154,8 +154,8 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
 
   return (
     <>
-      <div className="flex w-full justify-between items-end gap-2">
-        <div className="flex gap-2 items-end">
+      <div className="flex w-full justify-between items-start gap-2">
+        <div className="flex gap-2 items-start">
           {isGraphViz && (
             <>
               <GroupByDropdown
@@ -167,11 +167,14 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
               <InvertCallStack />
             </>
           )}
+
+          <div className='flex mt-5'>
           <ProfileFilters />
 
-          {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
+            {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
+          </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 mt-5">
           <MultiLevelDropdown
             groupBy={groupBy}
             toggleGroupBy={toggleGroupBy}
