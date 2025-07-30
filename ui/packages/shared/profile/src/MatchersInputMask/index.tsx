@@ -63,8 +63,7 @@ const MatchersInputMask = ({
     <div
       ref={containerRef}
       className={cx(
-        'w-full min-w-[300px] flex-1 relative rounded-md border bg-white shadow-sm transition-colors min-h-[38px] flex items-center',
-        'dark:border-gray-600 dark:bg-gray-900',
+        'w-full min-w-[300px] flex-1 relative rounded-md border bg-white shadow-sm transition-colors min-h-[38px] flex items-center dark:border-gray-600 dark:bg-gray-900 px-2',
         {
           'border-indigo-500 ring-1 ring-indigo-500': isFocused && !disabled,
           'border-gray-300 dark:border-gray-600': !isFocused && !disabled,

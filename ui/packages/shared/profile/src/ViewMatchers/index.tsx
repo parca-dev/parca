@@ -168,12 +168,12 @@ const ViewMatchers: React.FC<Props> = ({
   }, []);
 
   return (
-    <div className="flex flex-wrap gap-3 items-center">
+    <div className="flex flex-wrap gap-2">
       {labelNames.map(labelName => (
-        <div key={labelName} className="flex items-center h-full">
-          <span className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap flex items-center h-full">
-            {labelName}:
-          </span>
+        <div key={labelName} className="flex items-center">
+          <div className="relative border shadow-sm px-4 py-1 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm flex gap-2 items-center justify-between bg-gray-100 dark:bg-gray-700 rounded-l-sm border-gray-300 dark:border-gray-600">
+            {labelName}
+          </div>
           <CustomSelect
             searchable={true}
             placeholder="Select value"
@@ -181,22 +181,18 @@ const ViewMatchers: React.FC<Props> = ({
             onSelection={(value: string) => handleSelection(labelName, value)}
             selectedKey={selectionsRef.current[labelName] ?? undefined}
             className={cx(
-              'border-0 bg-transparent shadow-none ring-0 focus:ring-0 outline-none min-w-[120px] h-full',
-              selectionsRef.current[labelName] != null ? 'rounded-r-none' : 'rounded-md'
+              'rounded-l-none border-l-0',
+              selectionsRef.current[labelName] != null && 'border-r-0 rounded-r-none'
             )}
             loading={isLoading[labelName] ?? false}
           />
           {selectionsRef.current[labelName] != null && (
             <button
               onClick={() => handleReset(labelName)}
-              className="p-1 ml-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 h-full flex items-center"
+              className="p-2 border-gray-200 bg-white dark:bg-gray-900 dark:border-gray-600 border rounded-r-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               aria-label={`Reset ${labelName} selection`}
             >
-              <Icon
-                icon="mdi:close"
-                className="h-4 w-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                aria-hidden="true"
-              />
+              <Icon icon="mdi:close" className="h-5 w-5 text-gray-400" aria-hidden="true" />
             </button>
           )}
         </div>
