@@ -54,6 +54,7 @@ interface Props {
   };
   onError?: (error: RpcError) => void;
   queryServiceClient: QueryServiceClient;
+  // Function to navigate to a new URL with query parameters. This function should handle URL encoding of parameters internally.
   navigateTo: NavigateFunction;
   enableSourcesView?: boolean;
   enableSandwichView?: boolean;
