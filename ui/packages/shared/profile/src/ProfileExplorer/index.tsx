@@ -19,11 +19,7 @@ import {QueryServiceClient} from '@parca/client';
 import {DateTimeRange, KeyDownProvider, useParcaContext} from '@parca/components';
 import {Query} from '@parca/parser';
 import {createStore} from '@parca/store';
-import {
-  capitalizeOnlyFirstLetter,
-  safeDecode,
-  type NavigateFunction,
-} from '@parca/utilities';
+import {capitalizeOnlyFirstLetter, safeDecode, type NavigateFunction} from '@parca/utilities';
 
 import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
 import {QuerySelection, useProfileTypes} from '../ProfileSelector';
