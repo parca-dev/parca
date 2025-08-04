@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 0.0.106 (2025-08-04)
+
+**Note:** Version bump only for package @parca/utilities
+
 ## 0.0.105 (2025-07-21)
 
 **Note:** Version bump only for package @parca/utilities

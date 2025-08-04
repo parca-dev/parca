@@ -1,6 +1,6 @@
 {
   "name": "@parca/hooks",
-  "version": "0.0.98",
+  "version": "0.0.99",
   "description": "A library containing React hooks used in the Parca UI",
   "main": "dist/index.js",
   "scripts": {
