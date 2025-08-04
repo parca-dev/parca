@@ -219,10 +219,8 @@ const ProfileExplorerApp = ({
   from_a = sanitizedRange.from_a;
   to_a = sanitizedRange.to_a;
 
-  if ((queryParams?.expression_a ?? '') !== '')
-    queryParams.expression_a = safeDecode(expression_a);
-  if ((queryParams?.expression_b ?? '') !== '')
-    queryParams.expression_b = safeDecode(expression_b);
+  if ((queryParams?.expression_a ?? '') !== '') queryParams.expression_a = safeDecode(expression_a);
+  if ((queryParams?.expression_b ?? '') !== '') queryParams.expression_b = safeDecode(expression_b);
 
   const selectProfile = (p: ProfileSelection, suffix: string): void => {
     return navigateTo('/', {
