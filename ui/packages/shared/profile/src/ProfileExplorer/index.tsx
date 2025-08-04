@@ -21,7 +21,6 @@ import {Query} from '@parca/parser';
 import {createStore} from '@parca/store';
 import {
   capitalizeOnlyFirstLetter,
-  isUrlEncoded,
   safeDecode,
   type NavigateFunction,
 } from '@parca/utilities';
