@@ -21,8 +21,8 @@ import {Query} from '@parca/parser';
 import {createStore} from '@parca/store';
 import {
   capitalizeOnlyFirstLetter,
-  decodeMultipleEncodings,
   isUrlEncoded,
+  safeDecode,
   type NavigateFunction,
 } from '@parca/utilities';
 
@@ -98,14 +98,6 @@ const filterSuffix = (
     Object.entries(o)
       .filter(([key]) => !key.endsWith(suffix))
       .map(([key, value]) => {
-        if (typeof value === 'string') {
-          // Only encode if not already encoded
-          return [key, isUrlEncoded(value) ? value : encodeURIComponent(value)];
-        }
-        if (Array.isArray(value)) {
-          // Only encode array values if not already encoded
-          return [key, value.map(v => (isUrlEncoded(v) ? v : encodeURIComponent(v)))];
-        }
         return [key, value];
       })
   );
@@ -228,9 +220,9 @@ const ProfileExplorerApp = ({
   to_a = sanitizedRange.to_a;
 
   if ((queryParams?.expression_a ?? '') !== '')
-    queryParams.expression_a = decodeMultipleEncodings(expression_a);
+    queryParams.expression_a = safeDecode(expression_a);
   if ((queryParams?.expression_b ?? '') !== '')
-    queryParams.expression_b = decodeMultipleEncodings(expression_b);
+    queryParams.expression_b = safeDecode(expression_b);
 
   const selectProfile = (p: ProfileSelection, suffix: string): void => {
     return navigateTo('/', {
@@ -328,7 +320,7 @@ const ProfileExplorerApp = ({
         ? {
             merge_from_a: q.mergeFrom,
             merge_to_a: q.mergeTo,
-            selection_a: encodeURIComponent(q.expression),
+            selection_a: q.expression,
           }
         : {};
     return navigateTo(

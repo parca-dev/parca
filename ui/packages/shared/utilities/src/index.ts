@@ -202,8 +202,8 @@ export const parseParams = (
       key === 'sandwich_function_name'
     ) {
       values = values.map((value): string => {
-        // First, decode multiple levels if present
-        const decoded = decodeMultipleEncodings(value);
+        // Decode once since we fixed the double encoding issue
+        const decoded = safeDecode(value);
         // Then, if encodeValues is true, ensure it's encoded once
         if (encodeValues === true) {
           return decoded != null
@@ -212,7 +212,7 @@ export const parseParams = (
               : encodeURIComponent(decoded)
             : '';
         }
-        // Otherwise return the fully decoded value
+        // Otherwise return the decoded value
         return decoded ?? '';
       });
     }
@@ -275,7 +275,7 @@ export const selectQueryParam = (key: string): string | string[] | undefined => 
 
 export const convertToQueryParams = (params: {[key: string]: string | string[]}): string =>
   Object.keys(params)
-    .map((key: string) => `${key}=${params[key] as string}`)
+    .map((key: string) => `${key}=${encodeURIComponent(params[key] as string)}`)
     .join('&');
 
 export function convertUTCToLocalDate(date: Date): Date {
@@ -462,33 +462,12 @@ export const isUrlEncoded = (str: string): boolean => {
   }
 };
 
-// Safely decode a string that might have multiple levels of URL encoding
-export const decodeMultipleEncodings = (
-  str: string | null | undefined
-): string | null | undefined => {
-  if (str == null) return str;
-
-  let decoded = str;
-  let previousDecoded = '';
-  const maxIterations = 10; // Prevent infinite loops
-  let iterations = 0;
-
-  // Keep decoding until the string doesn't change or we hit the limit
-  while (decoded !== previousDecoded && iterations < maxIterations) {
-    previousDecoded = decoded;
-    try {
-      // Check if it's still encoded
-      if (isUrlEncoded(decoded)) {
-        decoded = decodeURIComponent(decoded);
-      } else {
-        break;
-      }
-    } catch (e) {
-      // If decoding fails, return the last successful decode
-      return previousDecoded;
-    }
-    iterations++;
+// Safely decode a URL-encoded string, returning the original if decoding fails
+export const safeDecode = (str: string): string => {
+  try {
+    return decodeURIComponent(str);
+  } catch (e) {
+    return str;
   }
-
-  return decoded;
 };
+

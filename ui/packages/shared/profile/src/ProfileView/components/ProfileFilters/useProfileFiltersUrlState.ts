@@ -12,7 +12,7 @@
 // limitations under the License.
 
 import {useURLStateCustom, type ParamValueSetterCustom} from '@parca/components';
-import {decodeMultipleEncodings} from '@parca/utilities';
+import {safeDecode} from '@parca/utilities';
 
 import {isPresetKey} from './filterPresets';
 import {type ProfileFilter} from './useProfileFilters';
@@ -73,8 +73,8 @@ export const decodeProfileFilters = (encoded: string): ProfileFilter[] => {
   if (encoded === '' || encoded === undefined) return [];
 
   try {
-    // Handle multiple levels of URL encoding
-    const decodedString = decodeMultipleEncodings(encoded) ?? encoded;
+    // Decode once since we fixed the double encoding issue
+    const decodedString = safeDecode(encoded);
 
     return decodedString.split(',').map((filter, index) => {
       const parts = filter.split(':');
