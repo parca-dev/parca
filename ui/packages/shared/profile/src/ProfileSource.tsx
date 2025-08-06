@@ -110,7 +110,7 @@ export class MergedProfileSelection implements ProfileSelection {
     return {
       merge_from: this.mergeFrom.toString(),
       merge_to: this.mergeTo.toString(),
-      selection: encodeURIComponent(this.query.toString()),
+      selection: this.query.toString(),
     };
   }
 

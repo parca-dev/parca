@@ -72,13 +72,13 @@ export const useAutoQuerySelector = ({
 
       let compareQuery: Record<string, string> = {
         compare_a: 'true',
-        expression_a: encodeURIComponent(queryA.expression),
+        expression_a: queryA.expression,
         from_a: queryA.from.toString(),
         to_a: queryA.to.toString(),
         time_selection_a: queryA.timeSelection,
 
         compare_b: 'true',
-        expression_b: encodeURIComponent(queryA.expression),
+        expression_b: queryA.expression,
         from_b: queryA.from.toString(),
         to_b: queryA.to.toString(),
         time_selection_b: queryA.timeSelection,

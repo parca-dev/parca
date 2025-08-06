@@ -72,9 +72,9 @@ export const sanitize = (
       continue;
     }
     if (Array.isArray(value)) {
-      sanitized[key] = value.map(v => encodeURIComponent(v)).join(',');
+      sanitized[key] = value.join(',');
     } else {
-      sanitized[key] = encodeURIComponent(value);
+      sanitized[key] = value;
     }
   }
   return sanitized;
