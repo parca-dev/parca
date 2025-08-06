@@ -171,7 +171,7 @@ const ViewMatchers: React.FC<Props> = ({
     <div className="flex flex-wrap gap-2">
       {labelNames.map(labelName => (
         <div key={labelName} className="flex items-center">
-          <div className="relative border shadow-sm px-4 py-1 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm flex gap-2 items-center justify-between bg-gray-100 dark:bg-gray-700 rounded-l-sm border-gray-300 dark:border-gray-600">
+          <div className="relative border shadow-sm px-2 py-1 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm flex gap-2 items-center justify-between bg-gray-100 dark:bg-gray-700 rounded-l-sm border-gray-300 dark:border-gray-600">
             {labelName}
           </div>
           <CustomSelect
