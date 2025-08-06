@@ -65,6 +65,25 @@ export const filterPresets: FilterPreset[] = [
       },
     ],
   },
+  {
+    key: 'hide_v8_internals',
+    name: 'Hide V8 internals',
+    description: 'Excludes Node.js and V8 internal functions from the profile',
+    filters: [
+      {
+        type: 'stack',
+        field: 'binary',
+        matchType: 'not_contains',
+        value: 'node',
+      },
+      {
+        type: 'stack',
+        field: 'function_name',
+        matchType: 'not_contains',
+        value: 'V8',
+      },
+    ],
+  },
 ];
 
 const presetKeys = new Set(filterPresets.map(preset => preset.key));
