@@ -18,8 +18,9 @@ import cx from 'classnames';
 
 import {Button, Input, Select, type SelectItem} from '@parca/components';
 
-import {filterPresets, getPresetByKey, isPresetKey} from './filterPresets';
+import {getPresetByKey, getPresetsForProfileType, isPresetKey} from './filterPresets';
 import {useProfileFilters, type ProfileFilter} from './useProfileFilters';
+import {useProfileViewContext} from '../../context/ProfileViewContext';
 
 export const isFilterComplete = (filter: ProfileFilter): boolean => {
   // For preset filters, only need type and value
@@ -32,7 +33,7 @@ export const isFilterComplete = (filter: ProfileFilter): boolean => {
   );
 };
 
-const filterTypeItems: SelectItem[] = [
+const getFilterTypeItems = (currentProfileType?: string): SelectItem[] => [
   {
     key: 'stack',
     element: {
@@ -59,7 +60,7 @@ const filterTypeItems: SelectItem[] = [
       ),
     },
   },
-  ...filterPresets.map(preset => ({
+  ...getPresetsForProfileType(currentProfileType).map(preset => ({
     key: preset.key,
     element: {
       active: <>{preset.name}</>,
@@ -168,6 +169,10 @@ const numberMatchTypeItems: SelectItem[] = [
 ];
 
 const ProfileFilters = (): JSX.Element => {
+  const {profileSource} = useProfileViewContext();
+  const currentProfileType = profileSource?.ProfileType()?.toString();
+  const filterTypeItems = getFilterTypeItems(currentProfileType);
+
   const {
     localFilters,
     appliedFilters,
