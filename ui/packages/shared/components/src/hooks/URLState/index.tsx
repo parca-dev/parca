@@ -140,10 +140,10 @@ export const useURLStateCustom = <T,>(
   const [urlValue, setURLValue] = useURLState<string>(param, _options);
 
   const val = useMemo<T>(() => {
-    if (urlValue === undefined) {
+    if (urlValue == null || (Array.isArray(urlValue) && urlValue.length === 0)) {
       return undefined as T;
     }
-    return parse(decodeURIComponent(urlValue));
+    return parse(urlValue);
   }, [parse, urlValue]);
 
   const setVal = useCallback(
