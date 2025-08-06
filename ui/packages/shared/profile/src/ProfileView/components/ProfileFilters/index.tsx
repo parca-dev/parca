@@ -18,9 +18,9 @@ import cx from 'classnames';
 
 import {Button, Input, Select, type SelectItem} from '@parca/components';
 
+import {useProfileViewContext} from '../../context/ProfileViewContext';
 import {getPresetByKey, getPresetsForProfileType, isPresetKey} from './filterPresets';
 import {useProfileFilters, type ProfileFilter} from './useProfileFilters';
-import {useProfileViewContext} from '../../context/ProfileViewContext';
 
 export const isFilterComplete = (filter: ProfileFilter): boolean => {
   // For preset filters, only need type and value
