@@ -74,13 +74,13 @@ export const filterPresets: FilterPreset[] = [
     description: 'Excludes Node.js and V8 internal functions from the profile',
     filters: [
       {
-        type: 'stack',
+        type: 'frame',
         field: 'binary',
         matchType: 'not_contains',
         value: 'node',
       },
       {
-        type: 'stack',
+        type: 'frame',
         field: 'function_name',
         matchType: 'not_contains',
         value: 'V8',
