@@ -100,10 +100,10 @@ export const getPresetByKey = (key: string): FilterPreset | undefined => {
 };
 
 export const getPresetsForProfileType = (profileType?: string): FilterPreset[] => {
-  if (!profileType) return filterPresets;
+  if (profileType === undefined || profileType === '') return filterPresets;
 
   return filterPresets.filter(preset => {
-    if (!preset.allowedProfileTypes) return true;
+    if (preset.allowedProfileTypes === undefined) return true;
     return preset.allowedProfileTypes.includes(profileType);
   });
 };
