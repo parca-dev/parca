@@ -340,7 +340,7 @@ const ProfileFilters = (): JSX.Element => {
           variant="primary"
           onClick={onApplyFilters}
           disabled={!hasUnsavedChanges || !localFilters.some(isFilterComplete)}
-          className={cx('flex items-center gap-2 sticky top-0 z-50')}
+          className={cx('flex items-center gap-2 sticky top-0')}
         >
           <span>Apply</span>
         </Button>
