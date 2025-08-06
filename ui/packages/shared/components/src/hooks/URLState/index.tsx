@@ -143,7 +143,7 @@ export const useURLStateCustom = <T,>(
     if (urlValue === undefined) {
       return undefined as T;
     }
-    return parse(decodeURIComponent(urlValue));
+    return parse(urlValue);
   }, [parse, urlValue]);
 
   const setVal = useCallback(
