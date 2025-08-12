@@ -149,6 +149,18 @@ export const Table = React.memo(function Table({
     [selectSpan, dashboardItems.length]
   );
 
+  const onRowContextMenu = useCallback(
+    (e: React.MouseEvent, row: Row) => {
+      e.preventDefault();
+      contextMenuRef.current?.setRow(row, () => {
+        show({
+          event: e,
+        });
+      });
+    },
+    [show]
+  );
+
   const rows: DataRow[] = useMemo(() => {
     if (table == null || table.numRows === 0) {
       return [];
@@ -201,72 +213,6 @@ export const Table = React.memo(function Table({
     return rows;
   }, [table, colorByColors, colorBy]);
 
-  const handleTableContextMenu = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-
-      // Find the closest table row element
-      const target = e.target as Element;
-      const rowElement = target.closest('tr');
-
-      if (rowElement !== null) {
-        // Look for a data attribute that might contain the actual row ID
-        const rowId = rowElement.getAttribute('data-row-id') ?? rowElement.getAttribute('data-id');
-
-        if (rowId != null && rowId.length > 0) {
-          // Find the row by ID
-          const actualRowIndex = parseInt(rowId, 10);
-
-          if (actualRowIndex >= 0 && actualRowIndex < rows.length) {
-            const row = rows[actualRowIndex];
-
-            contextMenuRef.current?.setRow(row, () => {
-              show({
-                event: e,
-              });
-            });
-            return;
-          }
-        }
-
-        // Fallback: try to find row by matching text content
-        const nameCell = rowElement.querySelector('td:last-child'); // Name is usually the last column
-        if (nameCell !== null) {
-          const cellText = nameCell.textContent?.trim();
-
-          if (cellText != null && cellText.length > 0) {
-            // First try exact match
-            let matchingRow = rows.find(row => row.name === cellText);
-
-            // If no exact match, try partial match (in case of truncation)
-            if (matchingRow == null) {
-              matchingRow = rows.find(
-                row => row.name.includes(cellText) || cellText.includes(row.name)
-              );
-            }
-
-            // If still no match, try matching the end of the name (for cases like package.function)
-            if (matchingRow == null) {
-              matchingRow = rows.find(
-                row =>
-                  row.name.endsWith(cellText) || cellText.endsWith(row.name.split('.').pop() ?? '')
-              );
-            }
-
-            if (matchingRow != null) {
-              contextMenuRef.current?.setRow(matchingRow, () => {
-                show({
-                  event: e,
-                });
-              });
-            }
-          }
-        }
-      }
-    },
-    [rows, show]
-  );
-
   if (loading) {
     return (
       <div className="overflow-clip h-[700px] min-h-[700px]">
@@ -289,14 +235,22 @@ export const Table = React.memo(function Table({
         transition={{duration: 0.5}}
       >
         <div className="relative">
-          <TableContextMenuWrapper ref={contextMenuRef} menuId={MENU_ID} />
-          <div className="font-robotoMono h-[80vh] w-full" onContextMenu={handleTableContextMenu}>
+          <TableContextMenuWrapper
+            ref={contextMenuRef}
+            menuId={MENU_ID}
+            unit={unit}
+            total={total}
+            totalUnfiltered={total}
+            columnVisibility={columnVisibility}
+          />
+          <div className="font-robotoMono h-[80vh] w-full">
             <TableComponent
               data={rows}
               columns={columns}
               initialSorting={initialSorting}
               columnVisibility={columnVisibility}
               onRowClick={onRowClick}
+              onRowContextMenu={onRowContextMenu}
               usePointerCursor={dashboardItems.length > 1}
               estimatedRowHeight={ROW_HEIGHT}
             />
