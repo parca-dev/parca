@@ -38,6 +38,7 @@ export interface RowRendererProps<TData> {
   usePointerCursor?: boolean;
   onRowClick?: (row: TData) => void;
   onRowDoubleClick?: (row: Row<TData>, rows: Array<Row<TData>>) => void;
+  onRowContextMenu?: (e: React.MouseEvent, row: TData) => void;
   enableHighlighting?: boolean;
   shouldHighlightRow?: (row: TData) => boolean;
   rows: Array<Row<TData>>;
@@ -48,6 +49,7 @@ const DefaultRowRenderer = ({
   usePointerCursor,
   onRowClick,
   onRowDoubleClick,
+  onRowContextMenu,
   enableHighlighting,
   shouldHighlightRow,
   rows,
@@ -62,6 +64,7 @@ const DefaultRowRenderer = ({
       )}
       onClick={onRowClick != null ? () => onRowClick(row.original) : undefined}
       onDoubleClick={onRowDoubleClick != null ? () => onRowDoubleClick(row, rows) : undefined}
+      onContextMenu={onRowContextMenu != null ? e => onRowContextMenu(e, row.original) : undefined}
       style={
         enableHighlighting !== true || shouldHighlightRow === undefined
           ? undefined
@@ -94,6 +97,7 @@ interface Props<TData> {
   columnVisibility?: VisibilityState;
   onRowClick?: (row: TData) => void;
   onRowDoubleClick?: (row: Row<TData>, rows: Array<Row<TData>>) => void;
+  onRowContextMenu?: (e: React.MouseEvent, row: TData) => void;
   enableHighlighting?: boolean;
   shouldHighlightRow?: (row: TData) => boolean;
   usePointerCursor?: boolean;
@@ -120,6 +124,7 @@ const Table = <T,>({
   columnVisibility = {},
   onRowClick,
   onRowDoubleClick,
+  onRowContextMenu,
   enableHighlighting = false,
   usePointerCursor = true,
   shouldHighlightRow,
@@ -323,6 +328,7 @@ const Table = <T,>({
                   enableHighlighting={enableHighlighting}
                   onRowDoubleClick={onRowDoubleClick}
                   onRowClick={onRowClick}
+                  onRowContextMenu={onRowContextMenu}
                   shouldHighlightRow={shouldHighlightRow}
                   usePointerCursor={usePointerCursor}
                   rows={rows}
@@ -336,6 +342,7 @@ const Table = <T,>({
                 enableHighlighting={enableHighlighting}
                 onRowDoubleClick={onRowDoubleClick}
                 onRowClick={onRowClick}
+                onRowContextMenu={onRowContextMenu}
                 shouldHighlightRow={shouldHighlightRow}
                 usePointerCursor={usePointerCursor}
                 rows={rows}
