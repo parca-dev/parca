@@ -15,9 +15,14 @@ import {forwardRef, useImperativeHandle, useState} from 'react';
 
 import {type Row} from '.';
 import TableContextMenu from './TableContextMenu';
+import {type ColumnName} from './utils/functions';
 
 interface TableContextMenuWrapperProps {
   menuId: string;
+  unit?: string;
+  total?: bigint;
+  totalUnfiltered?: bigint;
+  columnVisibility?: Record<ColumnName, boolean>;
 }
 
 export interface TableContextMenuWrapperRef {
@@ -27,7 +32,7 @@ export interface TableContextMenuWrapperRef {
 const TableContextMenuWrapper = forwardRef<
   TableContextMenuWrapperRef,
   TableContextMenuWrapperProps
->(({menuId}, ref) => {
+>(({menuId, unit, total, totalUnfiltered, columnVisibility}, ref) => {
   const [row, setRow] = useState<Row | null>(null);
 
   useImperativeHandle(ref, () => ({
@@ -40,7 +45,16 @@ const TableContextMenuWrapper = forwardRef<
     },
   }));
 
-  return <TableContextMenu menuId={menuId} row={row} />;
+  return (
+    <TableContextMenu
+      menuId={menuId}
+      row={row}
+      unit={unit}
+      total={total}
+      totalUnfiltered={totalUnfiltered}
+      columnVisibility={columnVisibility}
+    />
+  );
 });
 
 TableContextMenuWrapper.displayName = 'TableContextMenuWrapper';

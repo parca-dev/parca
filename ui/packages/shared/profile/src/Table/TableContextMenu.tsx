@@ -13,20 +13,35 @@
 
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
-import {Item, Menu} from 'react-contexify';
+import {Item, Menu, Submenu} from 'react-contexify';
 
 import 'react-contexify/dist/ReactContexify.css';
 
 import {useParcaContext, useURLState} from '@parca/components';
+import {valueFormatter} from '@parca/utilities';
 
 import {type Row} from '.';
+import {getTextForCumulative} from '../ProfileFlameGraph/FlameGraphArrow/utils';
+import {truncateString} from '../utils';
+import {type ColumnName} from './utils/functions';
 
 interface TableContextMenuProps {
   menuId: string;
   row: Row | null;
+  unit?: string;
+  total?: bigint;
+  totalUnfiltered?: bigint;
+  columnVisibility?: Record<ColumnName, boolean>;
 }
 
-const TableContextMenu = ({menuId, row}: TableContextMenuProps): React.JSX.Element => {
+const TableContextMenu = ({
+  menuId,
+  row,
+  unit,
+  total,
+  totalUnfiltered,
+  columnVisibility,
+}: TableContextMenuProps): React.JSX.Element => {
   const [_, setSandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
   const [dashboardItems, setDashboardItems] = useURLState<string[]>('dashboard_items', {
     alwaysReturnArray: true,
@@ -41,6 +56,70 @@ const TableContextMenu = ({menuId, row}: TableContextMenuProps): React.JSX.Eleme
       }
     }
   };
+
+  const handleCopyItem = (text: string): void => {
+    void navigator.clipboard.writeText(text);
+  };
+
+  const isColumnVisible = (columnName: ColumnName): boolean => {
+    return columnVisibility?.[columnName] ?? true;
+  };
+
+  const valuesToCopy = row
+    ? [
+        {id: 'Function name', value: row.name || ''},
+        ...(isColumnVisible('functionSystemName')
+          ? [{id: 'Function system name', value: row.functionSystemName || ''}]
+          : []),
+        ...(isColumnVisible('cumulative') || isColumnVisible('cumulativePercentage')
+          ? [
+              {
+                id: 'Cumulative',
+                value:
+                  total && totalUnfiltered
+                    ? getTextForCumulative(row.cumulative, totalUnfiltered, total, unit ?? '')
+                    : valueFormatter(row.cumulative, unit ?? '', 1),
+              },
+            ]
+          : []),
+        ...(isColumnVisible('cumulativeDiff') || isColumnVisible('cumulativeDiffPercentage')
+          ? [
+              {
+                id: 'Cumulative diff',
+                value:
+                  row.cumulativeDiff !== 0n
+                    ? valueFormatter(row.cumulativeDiff, unit ?? '', 1)
+                    : '',
+              },
+            ]
+          : []),
+        ...(isColumnVisible('flat') || isColumnVisible('flatPercentage')
+          ? [
+              {
+                id: 'Flat',
+                value:
+                  total && totalUnfiltered
+                    ? getTextForCumulative(row.flat, totalUnfiltered, total, unit ?? '')
+                    : valueFormatter(row.flat, unit ?? '', 1),
+              },
+            ]
+          : []),
+        ...(isColumnVisible('flatDiff') || isColumnVisible('flatDiffPercentage')
+          ? [
+              {
+                id: 'Flat diff',
+                value: row.flatDiff !== 0n ? valueFormatter(row.flatDiff, unit ?? '', 1) : '',
+              },
+            ]
+          : []),
+        ...(isColumnVisible('functionFileName')
+          ? [{id: 'File', value: row.functionFileName || ''}]
+          : []),
+        ...(isColumnVisible('mappingFile') ? [{id: 'Binary', value: row.mappingFile || ''}] : []),
+      ].flat()
+    : [];
+
+  const nonEmptyValuesToCopy = valuesToCopy.filter(({value}) => value !== '');
 
   const isMenuDisabled = row === null || enableSandwichView !== true;
 
@@ -63,6 +142,31 @@ const TableContextMenu = ({menuId, row}: TableContextMenuProps): React.JSX.Eleme
           </div>
         </div>
       </Item>
+      <Submenu
+        label={
+          <div className="flex w-full items-center gap-2">
+            <Icon icon="ph:copy" />
+            <div>Copy</div>
+          </div>
+        }
+        disabled={row === null}
+      >
+        <div className="max-h-[300px] overflow-scroll">
+          {nonEmptyValuesToCopy.map(({id, value}: {id: string; value: string}) => (
+            <Item
+              key={id}
+              id={id}
+              onClick={() => handleCopyItem(value)}
+              className="dark:bg-gray-800"
+            >
+              <div className="flex flex-col dark:text-gray-300 hover:dark:text-gray-100">
+                <div className="text-sm">{id}</div>
+                <div className="text-xs">{truncateString(value, 30)}</div>
+              </div>
+            </Item>
+          ))}
+        </div>
+      </Submenu>
     </Menu>
   );
 };
