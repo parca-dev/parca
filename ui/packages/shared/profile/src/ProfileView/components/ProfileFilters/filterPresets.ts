@@ -18,6 +18,7 @@ export interface FilterPreset {
   name: string;
   description: string;
   filters: Array<Omit<ProfileFilter, 'id'>>;
+  allowedProfileTypes?: string[];
 }
 
 export const filterPresets: FilterPreset[] = [
@@ -25,6 +26,7 @@ export const filterPresets: FilterPreset[] = [
     key: 'go_runtime_expected_off_cpu',
     name: 'Go Runtime Expected Off-CPU',
     description: 'Excludes expected Go runtime blocking functions',
+    allowedProfileTypes: ['parca_agent:wallclock:nanoseconds:samples:count:delta'],
     filters: [
       {
         type: 'stack',
@@ -44,6 +46,7 @@ export const filterPresets: FilterPreset[] = [
     key: 'rust_runtime_expected_off_cpu',
     name: 'Rust Expected Off-CPU',
     description: 'Excludes expected Rust runtime blocking functions',
+    allowedProfileTypes: ['parca_agent:wallclock:nanoseconds:samples:count:delta'],
     filters: [
       {
         type: 'stack',
@@ -65,6 +68,25 @@ export const filterPresets: FilterPreset[] = [
       },
     ],
   },
+  {
+    key: 'hide_v8_internals',
+    name: 'Hide V8 internals',
+    description: 'Excludes Node.js and V8 internal functions from the profile',
+    filters: [
+      {
+        type: 'frame',
+        field: 'binary',
+        matchType: 'not_contains',
+        value: 'node',
+      },
+      {
+        type: 'frame',
+        field: 'function_name',
+        matchType: 'not_contains',
+        value: 'V8',
+      },
+    ],
+  },
 ];
 
 const presetKeys = new Set(filterPresets.map(preset => preset.key));
@@ -75,4 +97,13 @@ export const isPresetKey = (key: string): boolean => {
 
 export const getPresetByKey = (key: string): FilterPreset | undefined => {
   return filterPresets.find(preset => preset.key === key);
+};
+
+export const getPresetsForProfileType = (profileType?: string): FilterPreset[] => {
+  if (profileType === undefined || profileType === '') return filterPresets;
+
+  return filterPresets.filter(preset => {
+    if (preset.allowedProfileTypes === undefined) return true;
+    return preset.allowedProfileTypes.includes(profileType);
+  });
 };

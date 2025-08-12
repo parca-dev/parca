@@ -18,7 +18,8 @@ import cx from 'classnames';
 
 import {Button, Input, Select, type SelectItem} from '@parca/components';
 
-import {filterPresets, getPresetByKey, isPresetKey} from './filterPresets';
+import {useProfileViewContext} from '../../context/ProfileViewContext';
+import {getPresetByKey, getPresetsForProfileType, isPresetKey} from './filterPresets';
 import {useProfileFilters, type ProfileFilter} from './useProfileFilters';
 
 export const isFilterComplete = (filter: ProfileFilter): boolean => {
@@ -32,7 +33,7 @@ export const isFilterComplete = (filter: ProfileFilter): boolean => {
   );
 };
 
-const filterTypeItems: SelectItem[] = [
+const getFilterTypeItems = (currentProfileType?: string): SelectItem[] => [
   {
     key: 'stack',
     element: {
@@ -59,7 +60,7 @@ const filterTypeItems: SelectItem[] = [
       ),
     },
   },
-  ...filterPresets.map(preset => ({
+  ...getPresetsForProfileType(currentProfileType).map(preset => ({
     key: preset.key,
     element: {
       active: <>{preset.name}</>,
@@ -168,6 +169,10 @@ const numberMatchTypeItems: SelectItem[] = [
 ];
 
 const ProfileFilters = (): JSX.Element => {
+  const {profileSource} = useProfileViewContext();
+  const currentProfileType = profileSource?.ProfileType()?.toString();
+  const filterTypeItems = getFilterTypeItems(currentProfileType);
+
   const {
     localFilters,
     appliedFilters,
@@ -335,7 +340,7 @@ const ProfileFilters = (): JSX.Element => {
           variant="primary"
           onClick={onApplyFilters}
           disabled={!hasUnsavedChanges || !localFilters.some(isFilterComplete)}
-          className={cx('flex items-center gap-2 sticky top-0 z-50')}
+          className={cx('flex items-center gap-2 sticky top-0')}
         >
           <span>Apply</span>
         </Button>
