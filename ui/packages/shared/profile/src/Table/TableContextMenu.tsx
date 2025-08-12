@@ -65,71 +65,122 @@ const TableContextMenu = ({
     return columnVisibility?.[columnName] ?? true;
   };
 
-  const valuesToCopy = row
-    ? [
-        ...(isColumnVisible('flat')
-          ? [
-              {
-                id: 'Flat',
-                value:
-                  total && total
-                    ? getTextForCumulative(row.flat, total, total, unit ?? '')
-                    : valueFormatter(row.flat, unit ?? '', 1),
-              },
-            ]
-          : []),
-        ...(isColumnVisible('flatDiff')
-          ? [
-              {
-                id: 'Flat Diff',
-                value:
-                  row.flatDiff !== 0n && total && totalUnfiltered
-                    ? getTextForCumulative(row.flatDiff, total, totalUnfiltered, unit ?? '')
-                    : `${valueFormatter(row.flatDiff, unit ?? '', 1)}`,
-              },
-            ]
-          : []),
-        ...(isColumnVisible('cumulative')
-          ? [
-              {
-                id: 'Cumulative',
-                value:
-                  total && totalUnfiltered
-                    ? getTextForCumulative(row.cumulative, total, totalUnfiltered, unit ?? '')
-                    : valueFormatter(row.cumulative, unit ?? '', 1),
-              },
-            ]
-          : []),
-        ...(isColumnVisible('cumulativeDiff')
-          ? [
-              {
-                id: 'Cumulative Diff',
-                value:
-                  row.cumulativeDiff !== 0n && total && totalUnfiltered
-                    ? getTextForCumulative(row.cumulativeDiff, total, totalUnfiltered, unit ?? '')
-                    : `${valueFormatter(row.cumulativeDiff, unit ?? '', 1)}`,
-              },
-            ]
-          : []),
-        ...(isColumnVisible('name')
-          ? [
-              {
-                id: 'Name',
-                value: row.name || '',
-              },
-            ]
-          : []),
-        ...(isColumnVisible('functionSystemName')
-          ? [{id: 'Function System Name', value: row.functionSystemName || ''}]
-          : []),
-        ...(isColumnVisible('functionFileName')
-          ? [{id: 'Function File Name', value: row.functionFileName || ''}]
-          : []),
-        ...(isColumnVisible('mappingFile')
-          ? [{id: 'Mapping File', value: row.mappingFile || ''}]
-          : []),
-      ].flat()
-    : [];
+  const valuesToCopy =
+    row !== null
+      ? [
+          ...(isColumnVisible('flat')
+            ? [
+                {
+                  id: 'Flat',
+                  value:
+                    total !== null &&
+                    total !== undefined &&
+                    totalUnfiltered !== null &&
+                    totalUnfiltered !== undefined
+                      ? getTextForCumulative(row.flat, total, totalUnfiltered, unit ?? '')
+                      : valueFormatter(row.flat, unit ?? '', 1),
+                },
+              ]
+            : []),
+          ...(isColumnVisible('flatPercentage')
+            ? [
+                {
+                  id: 'Flat (%)',
+                  value:
+                    total !== null &&
+                    total !== undefined &&
+                    totalUnfiltered !== null &&
+                    totalUnfiltered !== undefined
+                      ? getTextForCumulative(row.flat, total, totalUnfiltered, unit ?? '')
+                      : valueFormatter(row.flat, unit ?? '', 1),
+                },
+              ]
+            : []),
+          ...(isColumnVisible('flatDiff')
+            ? [
+                {
+                  id: 'Flat Diff',
+                  value: row.flatDiff !== 0n ? valueFormatter(row.flatDiff, unit ?? '', 1) : '',
+                },
+              ]
+            : []),
+          ...(isColumnVisible('flatDiffPercentage')
+            ? [
+                {
+                  id: 'Flat Diff (%)',
+                  value: row.flatDiff !== 0n ? valueFormatter(row.flatDiff, unit ?? '', 1) : '',
+                },
+              ]
+            : []),
+          ...(isColumnVisible('cumulative')
+            ? [
+                {
+                  id: 'Cumulative',
+                  value:
+                    total !== null &&
+                    total !== undefined &&
+                    totalUnfiltered !== null &&
+                    totalUnfiltered !== undefined
+                      ? getTextForCumulative(row.cumulative, total, totalUnfiltered, unit ?? '')
+                      : valueFormatter(row.cumulative, unit ?? '', 1),
+                },
+              ]
+            : []),
+          ...(isColumnVisible('cumulativePercentage')
+            ? [
+                {
+                  id: 'Cumulative (%)',
+                  value:
+                    total !== null &&
+                    total !== undefined &&
+                    totalUnfiltered !== null &&
+                    totalUnfiltered !== undefined
+                      ? getTextForCumulative(row.cumulative, total, totalUnfiltered, unit ?? '')
+                      : valueFormatter(row.cumulative, unit ?? '', 1),
+                },
+              ]
+            : []),
+          ...(isColumnVisible('cumulativeDiff')
+            ? [
+                {
+                  id: 'Cumulative Diff',
+                  value:
+                    row.cumulativeDiff !== 0n
+                      ? valueFormatter(row.cumulativeDiff, unit ?? '', 1)
+                      : '',
+                },
+              ]
+            : []),
+          ...(isColumnVisible('cumulativeDiffPercentage')
+            ? [
+                {
+                  id: 'Cumulative Diff (%)',
+                  value:
+                    row.cumulativeDiff !== 0n
+                      ? valueFormatter(row.cumulativeDiff, unit ?? '', 1)
+                      : '',
+                },
+              ]
+            : []),
+          ...(isColumnVisible('name')
+            ? [
+                {
+                  id: 'Name',
+                  value: row.name ?? '',
+                },
+              ]
+            : []),
+          ...(isColumnVisible('functionSystemName')
+            ? [{id: 'Function System Name', value: row.functionSystemName ?? ''}]
+            : []),
+          ...(isColumnVisible('functionFileName')
+            ? [{id: 'Function File Name', value: row.functionFileName ?? ''}]
+            : []),
+          ...(isColumnVisible('mappingFile')
+            ? [{id: 'Mapping File', value: row.mappingFile ?? ''}]
+            : []),
+        ].flat()
+      : [];
 
   const nonEmptyValuesToCopy = valuesToCopy.filter(({value}) => value !== '');
 
