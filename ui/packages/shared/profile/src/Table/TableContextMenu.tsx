@@ -67,55 +67,67 @@ const TableContextMenu = ({
 
   const valuesToCopy = row
     ? [
-        {id: 'Function name', value: row.name || ''},
-        ...(isColumnVisible('functionSystemName')
-          ? [{id: 'Function system name', value: row.functionSystemName || ''}]
+        ...(isColumnVisible('flat')
+          ? [
+              {
+                id: 'Flat',
+                value:
+                  total && total
+                    ? getTextForCumulative(row.flat, total, total, unit ?? '')
+                    : valueFormatter(row.flat, unit ?? '', 1),
+              },
+            ]
           : []),
-        ...(isColumnVisible('cumulative') || isColumnVisible('cumulativePercentage')
+        ...(isColumnVisible('flatDiff')
+          ? [
+              {
+                id: 'Flat Diff',
+                value:
+                  row.flatDiff !== 0n && total && totalUnfiltered
+                    ? getTextForCumulative(row.flatDiff, total, totalUnfiltered, unit ?? '')
+                    : `${valueFormatter(row.flatDiff, unit ?? '', 1)}`,
+              },
+            ]
+          : []),
+        ...(isColumnVisible('cumulative')
           ? [
               {
                 id: 'Cumulative',
                 value:
                   total && totalUnfiltered
-                    ? getTextForCumulative(row.cumulative, totalUnfiltered, total, unit ?? '')
+                    ? getTextForCumulative(row.cumulative, total, totalUnfiltered, unit ?? '')
                     : valueFormatter(row.cumulative, unit ?? '', 1),
               },
             ]
           : []),
-        ...(isColumnVisible('cumulativeDiff') || isColumnVisible('cumulativeDiffPercentage')
+        ...(isColumnVisible('cumulativeDiff')
           ? [
               {
-                id: 'Cumulative diff',
+                id: 'Cumulative Diff',
                 value:
-                  row.cumulativeDiff !== 0n
-                    ? valueFormatter(row.cumulativeDiff, unit ?? '', 1)
-                    : '',
+                  row.cumulativeDiff !== 0n && total && totalUnfiltered
+                    ? getTextForCumulative(row.cumulativeDiff, total, totalUnfiltered, unit ?? '')
+                    : `${valueFormatter(row.cumulativeDiff, unit ?? '', 1)}`,
               },
             ]
           : []),
-        ...(isColumnVisible('flat') || isColumnVisible('flatPercentage')
+        ...(isColumnVisible('name')
           ? [
               {
-                id: 'Flat',
-                value:
-                  total && totalUnfiltered
-                    ? getTextForCumulative(row.flat, totalUnfiltered, total, unit ?? '')
-                    : valueFormatter(row.flat, unit ?? '', 1),
+                id: 'Name',
+                value: row.name || '',
               },
             ]
           : []),
-        ...(isColumnVisible('flatDiff') || isColumnVisible('flatDiffPercentage')
-          ? [
-              {
-                id: 'Flat diff',
-                value: row.flatDiff !== 0n ? valueFormatter(row.flatDiff, unit ?? '', 1) : '',
-              },
-            ]
+        ...(isColumnVisible('functionSystemName')
+          ? [{id: 'Function System Name', value: row.functionSystemName || ''}]
           : []),
         ...(isColumnVisible('functionFileName')
-          ? [{id: 'File', value: row.functionFileName || ''}]
+          ? [{id: 'Function File Name', value: row.functionFileName || ''}]
           : []),
-        ...(isColumnVisible('mappingFile') ? [{id: 'Binary', value: row.mappingFile || ''}] : []),
+        ...(isColumnVisible('mappingFile')
+          ? [{id: 'Mapping File', value: row.mappingFile || ''}]
+          : []),
       ].flat()
     : [];
 
