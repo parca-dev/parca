@@ -240,7 +240,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	bucket, err := client.NewBucket(logger, bucketCfg, "parca")
+	bucket, err := client.NewBucket(logger, bucketCfg, "parca", nil)
 	if err != nil {
 		level.Error(logger).Log("msg", "failed to initialize object storage bucket", "err", err)
 		return err

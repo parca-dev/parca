@@ -51,7 +51,7 @@ func TestMetadata(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	bucket, err := client.NewBucket(logger, cfg, "parca/store")
+	bucket, err := client.NewBucket(logger, cfg, "parca/store", nil)
 	require.NoError(t, err)
 
 	store, err := NewStore(
