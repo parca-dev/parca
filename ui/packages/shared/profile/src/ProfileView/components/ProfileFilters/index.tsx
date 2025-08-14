@@ -168,7 +168,11 @@ const numberMatchTypeItems: SelectItem[] = [
   },
 ];
 
-const ProfileFilters = (): JSX.Element => {
+export interface ProfileFiltersProps {
+  readOnly?: boolean;
+}
+
+const ProfileFilters = ({readOnly = false}: ProfileFiltersProps = {}): JSX.Element => {
   const {profileSource} = useProfileViewContext();
   const currentProfileType = profileSource?.ProfileType()?.toString();
   const filterTypeItems = getFilterTypeItems(currentProfileType);
@@ -213,6 +217,7 @@ const ProfileFilters = (): JSX.Element => {
                 items={filterTypeItems}
                 selectedKey={filter.type}
                 placeholder="Select Filter"
+                disabled={readOnly}
                 onSelection={key => {
                   // Check if this is a preset selection
                   if (isPresetKey(key)) {
@@ -246,10 +251,13 @@ const ProfileFilters = (): JSX.Element => {
                   }
                 }}
                 className={cx(
-                  'rounded-l-md pr-1 gap-0 focus:z-50 focus:relative focus:outline-1',
-                  isPresetFilter ? 'rounded-r-none border-r-0' : 'rounded-r-none',
-                  filter.type != null ? 'border-r-0 w-auto' : 'w-32'
+                  'gap-0 focus:z-50 focus:relative focus:outline-1',
+                  readOnly ? '' : 'pr-1',
+                  readOnly && isPresetFilter ? 'rounded-md' : 'rounded-l-md rounded-r-none',
+                  !readOnly && (isPresetFilter ? 'rounded-r-none border-r-0' : 'rounded-r-none'),
+                  readOnly ? 'w-auto' : filter.type != null ? 'border-r-0 w-auto' : 'w-32'
                 )}
+                hideCaretDropdown={readOnly}
               />
 
               {filter.type != null && !isPresetFilter && (
@@ -257,6 +265,7 @@ const ProfileFilters = (): JSX.Element => {
                   <Select
                     items={fieldItems}
                     selectedKey={filter.field ?? ''}
+                    disabled={readOnly}
                     onSelection={key => {
                       const newField = key as ProfileFilter['field'];
                       const isNewFieldNumber = newField === 'address' || newField === 'line_number';
@@ -272,21 +281,31 @@ const ProfileFilters = (): JSX.Element => {
                         updateFilter(filter.id, {field: newField});
                       }
                     }}
-                    className="rounded-none border-r-0 w-32 pr-1 gap-0 focus:z-50 focus:relative focus:outline-1"
+                    className={cx(
+                      'rounded-none border-r-0 w-32 gap-0 focus:z-50 focus:relative focus:outline-1',
+                      readOnly ? '' : 'pr-1'
+                    )}
+                    hideCaretDropdown={readOnly}
                   />
 
                   <Select
                     items={matchTypeItems}
                     selectedKey={filter.matchType ?? ''}
+                    disabled={readOnly}
                     onSelection={key =>
                       updateFilter(filter.id, {matchType: key as ProfileFilter['matchType']})
                     }
-                    className="rounded-none border-r-0 pr-1 gap-0 focus:z-50 focus:relative focus:outline-1"
+                    className={cx(
+                      'rounded-none border-r-0 gap-0 focus:z-50 focus:relative focus:outline-1',
+                      readOnly ? '' : 'pr-1'
+                    )}
+                    hideCaretDropdown={readOnly}
                   />
 
                   <Input
                     placeholder="Value"
                     value={filter.value}
+                    disabled={readOnly}
                     onChange={e => updateFilter(filter.id, {value: e.target.value})}
                     onKeyDown={handleKeyDown}
                     className="rounded-none w-36 text-sm focus:outline-1"
@@ -294,40 +313,44 @@ const ProfileFilters = (): JSX.Element => {
                 </>
               )}
 
-              <Button
-                variant="neutral"
-                onClick={() => {
-                  // If we're displaying local filters and this is the last one, reset everything
-                  if (localFilters.length > 0 && localFilters.length === 1) {
-                    resetFilters();
-                  }
-                  // If we're displaying applied filters and this is the last one, reset everything
-                  else if (localFilters.length === 0 && filtersToRender.length === 1) {
-                    resetFilters();
-                  }
-                  // Otherwise, just remove this specific filter
-                  else {
-                    removeFilter(filter.id);
-                  }
-                }}
-                className={cx(
-                  'h-[38px] p-3',
-                  filter.type != null ? 'rounded-none rounded-r-md' : 'rounded-l-none rounded-r-md'
-                )}
-              >
-                <Icon icon="mdi:close" className="h-4 w-4" />
-              </Button>
+              {!readOnly && (
+                <Button
+                  variant="neutral"
+                  onClick={() => {
+                    // If we're displaying local filters and this is the last one, reset everything
+                    if (localFilters.length > 0 && localFilters.length === 1) {
+                      resetFilters();
+                    }
+                    // If we're displaying applied filters and this is the last one, reset everything
+                    else if (localFilters.length === 0 && filtersToRender.length === 1) {
+                      resetFilters();
+                    }
+                    // Otherwise, just remove this specific filter
+                    else {
+                      removeFilter(filter.id);
+                    }
+                  }}
+                  className={cx(
+                    'h-[38px] p-3',
+                    filter.type != null
+                      ? 'rounded-none rounded-r-md'
+                      : 'rounded-l-none rounded-r-md'
+                  )}
+                >
+                  <Icon icon="mdi:close" className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           );
         })}
 
-        {localFilters.length > 0 && (
+        {!readOnly && localFilters.length > 0 && (
           <Button variant="neutral" onClick={addFilter} className="p-3 h-[38px]">
             <Icon icon="mdi:filter-plus-outline" className="h-4 w-4" />
           </Button>
         )}
 
-        {localFilters.length === 0 && (appliedFilters?.length ?? 0) === 0 && (
+        {!readOnly && localFilters.length === 0 && (appliedFilters?.length ?? 0) === 0 && (
           <Button variant="neutral" onClick={addFilter} className="flex items-center gap-2">
             <Icon icon="mdi:filter-outline" className="h-4 w-4" />
             <span>Filter</span>
@@ -335,7 +358,7 @@ const ProfileFilters = (): JSX.Element => {
         )}
       </div>
 
-      {localFilters.length > 0 && (
+      {!readOnly && localFilters.length > 0 && (
         <Button
           variant="primary"
           onClick={onApplyFilters}
