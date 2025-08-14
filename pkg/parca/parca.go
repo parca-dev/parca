@@ -53,7 +53,7 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/otel/trace/noop"
-	otelgrpcprofilingpb "go.opentelemetry.io/proto/otlp/collector/profiles/v1experimental"
+	otelgrpcprofilingpb "go.opentelemetry.io/proto/otlp/collector/profiles/v1development"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"

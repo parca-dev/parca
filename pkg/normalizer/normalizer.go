@@ -37,7 +37,7 @@ import (
 	"github.com/polarsignals/frostdb/query/logicalplan"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/util/strutil"
-	pprofextended "go.opentelemetry.io/proto/otlp/profiles/v1experimental"
+	pprofextended "go.opentelemetry.io/proto/otlp/profiles/v1development"
 	"golang.org/x/exp/maps"
 	"google.golang.org/grpc/codes"
 
@@ -93,15 +93,15 @@ func MetaFromPprof(p *pprofpb.Profile, name string, sampleIndex int) profile.Met
 	}
 }
 
-func MetaFromOtelProfile(p *pprofextended.Profile, name string, sampleIndex int, duration int64) profile.Meta {
+func MetaFromOtelProfile(stringTable []string, p *pprofextended.Profile, name string, sampleIndex int, duration int64) profile.Meta {
 	periodType := profile.ValueType{}
 	if p.PeriodType != nil {
-		periodType = profile.ValueType{Type: p.StringTable[p.PeriodType.Type], Unit: p.StringTable[p.PeriodType.Unit]}
+		periodType = profile.ValueType{Type: stringTable[p.PeriodType.TypeStrindex], Unit: stringTable[p.PeriodType.UnitStrindex]}
 	}
 
 	sampleType := profile.ValueType{}
 	if p.SampleType != nil {
-		sampleType = profile.ValueType{Type: p.StringTable[p.SampleType[sampleIndex].Type], Unit: p.StringTable[p.SampleType[sampleIndex].Unit]}
+		sampleType = profile.ValueType{Type: stringTable[p.SampleType[sampleIndex].TypeStrindex], Unit: stringTable[p.SampleType[sampleIndex].UnitStrindex]}
 	}
 
 	return profile.Meta{
