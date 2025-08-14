@@ -454,13 +454,7 @@ mainLoop:
 		b := sl.buffers.Get(sl.lastScrapeSize).([]byte)
 		buf := bytes.NewBuffer(b)
 
-		var profileType string
-		for _, l := range sl.target.labels {
-			if l.Name == ProfileName {
-				profileType = l.Value
-				break
-			}
-		}
+		profileType := sl.target.labels.Get(ProfileName)
 
 		scrapeCtx, cancel := context.WithTimeout(sl.ctx, timeout)
 		scrapeErr := sl.scraper.scrape(scrapeCtx, buf, profileType)
@@ -475,25 +469,21 @@ mainLoop:
 				sl.lastScrapeSize = len(b)
 			}
 
-			tl := sl.target.Labels()
-			tl = append(tl, labels.Label{Name: "__name__", Value: profileType})
+			tl := labels.NewBuilder(sl.target.Labels())
+			tl.Set("__name__", profileType)
 			sl.externalLabels.Range(func(l labels.Label) {
-				tl = append(tl, labels.Label{
-					Name:  l.Name,
-					Value: l.Value,
-				})
+				tl.Set(l.Name, l.Value)
 			})
-			level.Debug(sl.l).Log("msg", "appending new sample", "labels", tl.String())
 
 			protolbls := &profilepb.LabelSet{
 				Labels: []*profilepb.Label{},
 			}
-			for _, l := range tl {
+			tl.Range(func(l labels.Label) {
 				protolbls.Labels = append(protolbls.Labels, &profilepb.Label{
 					Name:  l.Name,
 					Value: l.Value,
 				})
-			}
+			})
 
 			byt := buf.Bytes()
 			p, err := profile.ParseData(byt)

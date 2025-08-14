@@ -523,7 +523,7 @@ func (q *Querier) queryRangeDelta(
 	}
 
 	labelColumnIndices := []int{}
-	labelSet := labels.Labels{}
+	labelSet := labels.NewScratchBuilder(64)
 	resSeries := []*pb.MetricsSeries{}
 	labelsetToIndex := map[string]int{}
 
@@ -563,7 +563,7 @@ func (q *Querier) queryRangeDelta(
 		}
 
 		for i := 0; i < int(ar.NumRows()); i++ {
-			labelSet = labelSet[:0]
+			labelSet.Reset()
 			for _, labelColumnIndex := range labelColumnIndices {
 				col := ar.Column(labelColumnIndex).(*array.Dictionary)
 				if col.IsNull(i) {
@@ -572,21 +572,22 @@ func (q *Querier) queryRangeDelta(
 
 				v := col.Dictionary().(*array.Binary).Value(col.GetValueIndex(i))
 				if len(v) > 0 {
-					labelSet = append(labelSet, labels.Label{Name: strings.TrimPrefix(fields[labelColumnIndex].Name, "labels."), Value: string(v)})
+					labelSet.Add(strings.TrimPrefix(fields[labelColumnIndex].Name, "labels."), string(v))
 				}
 			}
 
-			sort.Sort(labelSet)
-			s := labelSet.String()
+			labelSet.Sort()
+			ls := labelSet.Labels()
+			s := ls.String()
 			index, ok := labelsetToIndex[s]
 			if !ok {
-				pbLabelSet := make([]*profilestorepb.Label, 0, len(labelSet))
-				for _, l := range labelSet {
+				pbLabelSet := make([]*profilestorepb.Label, 0, ls.Len())
+				ls.Range(func(l labels.Label) {
 					pbLabelSet = append(pbLabelSet, &profilestorepb.Label{
 						Name:  l.Name,
 						Value: l.Value,
 					})
-				}
+				})
 				resSeries = append(resSeries, &pb.MetricsSeries{
 					Labelset: &profilestorepb.LabelSet{Labels: pbLabelSet},
 					PeriodType: &pb.ValueType{
@@ -684,7 +685,7 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 		valueSumColumn:          {},
 	}
 	labelColumnIndices := []int{}
-	labelSet := labels.Labels{}
+	labelSet := labels.NewScratchBuilder(64)
 	resSeries := []*pb.MetricsSeries{}
 	resSeriesBuckets := map[int]map[int64]struct{}{}
 	labelsetToIndex := map[string]int{}
@@ -712,7 +713,7 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 		}
 
 		for i := 0; i < int(ar.NumRows()); i++ {
-			labelSet = labelSet[:0]
+			labelSet.Reset()
 			for _, labelColumnIndex := range labelColumnIndices {
 				col, ok := ar.Column(labelColumnIndex).(*array.Dictionary)
 				if col.IsNull(i) || !ok {
@@ -721,21 +722,22 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 
 				v := StringValueFromDictionary(col, i)
 				if len(v) > 0 {
-					labelSet = append(labelSet, labels.Label{Name: strings.TrimPrefix(fields[labelColumnIndex].Name, "labels."), Value: v})
+					labelSet.Add(strings.TrimPrefix(fields[labelColumnIndex].Name, "labels."), v)
 				}
 			}
 
-			sort.Sort(labelSet)
-			s := labelSet.String()
+			labelSet.Sort()
+			ls := labelSet.Labels()
+			s := ls.String()
 			index, ok := labelsetToIndex[s]
 			if !ok {
-				pbLabelSet := make([]*profilestorepb.Label, 0, len(labelSet))
-				for _, l := range labelSet {
+				pbLabelSet := make([]*profilestorepb.Label, 0, ls.Len())
+				ls.Range(func(l labels.Label) {
 					pbLabelSet = append(pbLabelSet, &profilestorepb.Label{
 						Name:  l.Name,
 						Value: l.Value,
 					})
-				}
+				})
 				resSeries = append(resSeries, &pb.MetricsSeries{Labelset: &profilestorepb.LabelSet{Labels: pbLabelSet}})
 				index = len(resSeries) - 1
 				labelsetToIndex[s] = index

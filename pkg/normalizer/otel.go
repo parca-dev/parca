@@ -630,7 +630,8 @@ func ValidateOtelProfile(d *otelprofilingpb.ProfilesDictionary, p *otelprofiling
 	start := uint64(p.TimeNanos)
 	end := start + uint64(p.DurationNanos)
 	for _, s := range p.Sample {
-		if s.LocationsStartIndex < 0 || s.LocationsStartIndex >= int32(len(p.LocationIndices)) {
+		// Location start index must not be negative or the 0 element as that's the nil element.
+		if s.LocationsStartIndex <= 0 || s.LocationsStartIndex >= int32(len(p.LocationIndices)) {
 			return fmt.Errorf("sample locations start index %d out of bounds", s.LocationsStartIndex)
 		}
 
