@@ -264,16 +264,16 @@ const (
 // Returns the original discovered label set found before relabelling was applied if the target is dropped during relabeling.
 func populateLabels(lb *labels.Builder, cfg *config.ScrapeConfig) (res, orig labels.Labels, err error) {
 	// Copy labels into the labelset for the target if they are not set already.
-	scrapeLabels := labels.Labels{
-		{Name: model.JobLabel, Value: cfg.JobName},
-		{Name: model.SchemeLabel, Value: cfg.Scheme},
+	scrapeLabels := model.LabelSet{
+		model.JobLabel:    model.LabelValue(cfg.JobName),
+		model.SchemeLabel: model.LabelValue(cfg.Scheme),
 	}
 
-	scrapeLabels.Range(func(l labels.Label) {
-		if lb.Get(l.Name) == "" {
-			lb.Set(l.Name, l.Value)
+	for name, value := range scrapeLabels {
+		if lb.Get(string(name)) == "" {
+			lb.Set(string(name), string(value))
 		}
-	})
+	}
 	// Encode scrape query parameters as labels.
 	for k, v := range cfg.Params {
 		if len(v) > 0 {

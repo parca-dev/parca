@@ -472,7 +472,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	discoveryManager := discovery.NewManager(ctx, logger, reg, sdMetrics)
+	discoveryManager := discovery.NewManager(ctx, nil, reg, sdMetrics)
 	if err := discoveryManager.ApplyConfig(getDiscoveryConfigs(cfg.ScrapeConfigs)); err != nil {
 		level.Error(logger).Log("msg", "failed to apply discovery configs", "err", err)
 		return err
@@ -744,7 +744,7 @@ func runForwarder(
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	discoveryManager := discovery.NewManager(ctx, logger, reg, sdMetrics)
+	discoveryManager := discovery.NewManager(ctx, nil, reg, sdMetrics)
 	if err := discoveryManager.ApplyConfig(getDiscoveryConfigs(cfg.ScrapeConfigs)); err != nil {
 		level.Error(logger).Log("msg", "failed to apply discovery configs", "err", err)
 		return err
