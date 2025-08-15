@@ -14,92 +14,101 @@
 import {Icon} from '@iconify/react';
 import {Item, Menu, Submenu} from 'react-contexify';
 
-import {Label} from '@parca/client';
 import {useParcaContext} from '@parca/components';
 
-import {HighlightedSeries} from '../';
+import {SeriesPoint, Series} from '../';
+
+export interface ContextMenuItem {
+  id: string;
+  label: React.ReactNode;
+  icon?: string;
+  onClick: (closestPoint: SeriesPoint | null, series: Series[]) => void;
+  disabled?: (closestPoint: SeriesPoint | null, series: Series[]) => boolean;
+}
+
+export interface ContextMenuSubmenu {
+  id: string;
+  label: React.ReactNode;
+  icon?: string;
+  items?: ContextMenuItem[];
+  createDynamicItems?: (closestPoint: SeriesPoint | null, series: Series[]) => ContextMenuItem[];
+}
+
+export type ContextMenuItemOrSubmenu = ContextMenuItem | ContextMenuSubmenu;
 
 interface MetricsContextMenuProps {
   menuId: string;
-  onAddLabelMatcher: (
-    labels: {key: string; value: string} | Array<{key: string; value: string}>
-  ) => void;
-  highlighted: HighlightedSeries | null;
+  closestPoint: SeriesPoint | null;
+  series: Series[];
   trackVisibility: (isVisible: boolean) => void;
-  utilizationMetrics?: boolean;
+  menuItems: ContextMenuItemOrSubmenu[];
 }
-
-const transformUtilizationLabels = (label: string, utilizationMetrics: boolean): string => {
-  if (utilizationMetrics) {
-    return label.replace('attributes.', '').replace('attributes_resource.', '');
-  }
-  return label;
-};
 
 const MetricsContextMenu = ({
   menuId,
-  onAddLabelMatcher,
-  highlighted,
+  closestPoint,
+  series,
   trackVisibility,
-  utilizationMetrics = false,
+  menuItems,
 }: MetricsContextMenuProps): JSX.Element => {
   const {isDarkMode} = useParcaContext();
-  const labels = highlighted?.labels.filter((label: Label) => label.name !== '__name__');
 
-  const handleFocusOnSingleSeries = (): void => {
-    const labelsToAdd = labels?.map((label: Label) => ({
-      key: label.name,
-      value: label.value,
-    }));
+  const renderMenuItem = (item: ContextMenuItemOrSubmenu): React.ReactNode => {
+    if ('items' in item || 'createDynamicItems' in item) {
+      // This is a submenu
+      const submenu = item ;
+      const items = (submenu.createDynamicItems != null) ? submenu.createDynamicItems(closestPoint, series) : submenu.items ?? [];
 
-    labelsToAdd !== undefined && onAddLabelMatcher(labelsToAdd);
+      return (
+        <Submenu
+          key={submenu.id}
+          label={
+            <div className="flex w-full items-center gap-2">
+              {(submenu.icon != null && submenu.icon !== '') && <Icon icon={submenu.icon} />}
+              <div>{submenu.label}</div>
+            </div>
+          }
+        >
+          <div className="max-h-[300px] overflow-auto">
+            {items.map((subItem) => (
+              <Item
+                key={subItem.id}
+                id={subItem.id}
+                onClick={() => subItem.onClick(closestPoint, series)}
+                disabled={subItem.disabled?.(closestPoint, series) ?? false}
+                className="max-w-[400px] overflow-hidden"
+              >
+                <div className="flex w-full items-center gap-2">
+                  {(subItem.icon != null && subItem.icon !== '') && <Icon icon={subItem.icon} />}
+                  <div>{subItem.label}</div>
+                </div>
+              </Item>
+            ))}
+          </div>
+        </Submenu>
+      );
+    } else {
+      // This is a regular menu item
+      const menuItem = item as ContextMenuItem;
+      return (
+        <Item
+          key={menuItem.id}
+          id={menuItem.id}
+          onClick={() => menuItem.onClick(closestPoint, series)}
+          disabled={menuItem.disabled?.(closestPoint, series) ?? false}
+        >
+          <div className="flex w-full items-center gap-2">
+            {(menuItem.icon != null && menuItem.icon !== '') && <Icon icon={menuItem.icon} />}
+            <div>{menuItem.label}</div>
+          </div>
+        </Item>
+      );
+    }
   };
 
   return (
     <Menu id={menuId} onVisibilityChange={trackVisibility} theme={isDarkMode ? 'dark' : ''}>
-      <Item id="focus-on-single-series" onClick={handleFocusOnSingleSeries}>
-        <div className="flex w-full items-center gap-2">
-          <Icon icon="ph:star" />
-          <div>Focus only on this series</div>
-        </div>
-      </Item>
-      <Submenu
-        label={
-          <div className="flex w-full items-center gap-2">
-            <Icon icon="material-symbols:add" />
-            <div>Add to query</div>
-          </div>
-        }
-      >
-        <div className="max-h-[300px] overflow-auto">
-          {labels == null || labels.length === 0 ? (
-            <Item disabled>
-              <div className="flex w-full items-center gap-2">
-                <Icon icon="ph:warning" />
-                <div>No labels available</div>
-              </div>
-            </Item>
-          ) : (
-            labels.map((label: Label) => (
-              <Item
-                key={label.name}
-                id={label.name}
-                onClick={() => {
-                  onAddLabelMatcher({
-                    key: label.name,
-                    value: label.value,
-                  });
-                }}
-                className="max-w-[400px] overflow-hidden"
-              >
-                <div className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                  {`${transformUtilizationLabels(label.name, utilizationMetrics)}="${label.value}"`}
-                </div>
-              </Item>
-            ))
-          )}
-        </div>
-      </Submenu>
+      {menuItems.map(renderMenuItem)}
     </Menu>
   );
 };

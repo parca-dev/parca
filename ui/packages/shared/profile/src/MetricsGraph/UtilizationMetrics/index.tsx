@@ -11,85 +11,157 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Fragment, useCallback, useId, useMemo, useRef, useState} from 'react';
+import {useMemo} from 'react';
 
-import * as d3 from 'd3';
-import {pointer} from 'd3-selection';
 import {AnimatePresence, motion} from 'framer-motion';
-import throttle from 'lodash.throttle';
-import {useContextMenu} from 'react-contexify';
 
-import {DateTimeRange, MetricsGraphSkeleton, useParcaContext, useURLState} from '@parca/components';
-import {formatDate, formatForTimespan, getPrecision, valueFormatter} from '@parca/utilities';
+import {DateTimeRange, MetricsGraphSkeleton, useParcaContext, TextWithTooltip} from '@parca/components';
+import {formatDate, valueFormatter, timePattern} from '@parca/utilities';
+import {Icon} from '@iconify/react';
 
-import MetricsSeries from '../../MetricsSeries';
-import {type UtilizationMetrics as MetricSeries} from '../../ProfileSelector';
-import MetricsContextMenu from '../MetricsContextMenu';
-import MetricsTooltip from '../MetricsTooltip';
-import {type Series} from '../index';
+import MetricsGraph from '../index';
+import {type Series, type ContextMenuItemOrSubmenu} from '../index';
 import {useMetricsGraphDimensions} from '../useMetricsGraphDimensions';
-import {getSeriesColor} from '../utils/colorMapping';
+import {type UtilizationMetrics as MetricSeries} from '../../ProfileSelector';
 
 interface CommonProps {
-  data: MetricSeries[];
-  addLabelMatcher: (
-    labels: {key: string; value: string} | Array<{key: string; value: string}>
-  ) => void;
   setTimeRange: (range: DateTimeRange) => void;
-  name: string;
   humanReadableName: string;
   from: number;
   to: number;
-  onSelectedSeriesChange?: (series: Array<{key: string; value: string}>) => void;
+  onSeriesClick?: (seriesIndex: number) => void;
 }
 
 type RawUtilizationMetricsProps = CommonProps & {
+  data: Series[];
+  originalData: MetricSeries[];
   width: number;
   height: number;
   margin: number;
+  yAxisUnit: string;
+  contextMenuItems?: ContextMenuItemOrSubmenu[];
 };
 
 type Props = CommonProps & {
   data: MetricSeries[];
-  addLabelMatcher: (
+  yAxisUnit: string;
+  utilizationMetricsLoading?: boolean;
+  addLabelMatcher?: (
     labels: {key: string; value: string} | Array<{key: string; value: string}>
   ) => void;
-  setTimeRange: (range: DateTimeRange) => void;
-  utilizationMetricsLoading?: boolean;
+  onSelectedSeriesChange?: (series: Array<{key: string; value: string}>) => void;
 };
 
-interface MetricsSample {
-  timestamp: number;
-  value: number;
-}
+const transformUtilizationLabels = (label: string): string => {
+  return label.replace('attributes.', '').replace('attributes_resource.', '');
+};
 
-function transformToSeries(data: MetricSeries[]): Series[] {
-  const series: Series[] = data.reduce<Series[]>(function (agg: Series[], s: MetricSeries) {
-    if (s.labelset !== undefined) {
-      const metric = s.labelset.labels.sort((a, b) => a.name.localeCompare(b.name));
-      agg.push({
-        metric,
-        isSelected: s.isSelected ?? false,
-        values: s.samples.reduce<number[][]>(function (agg: number[][], d: MetricsSample) {
-          if (d.timestamp !== undefined && d.value !== undefined) {
-            agg.push([d.timestamp, d.value]);
+const createUtilizationContextMenuItems = (
+  addLabelMatcher: (
+    labels: {key: string; value: string} | Array<{key: string; value: string}>
+  ) => void,
+  originalData: MetricSeries[]
+): ContextMenuItemOrSubmenu[] => {
+  return [
+    {
+      id: 'focus-on-single-series',
+      label: 'Focus only on this series',
+      icon: 'ph:star',
+      onClick: (closestPoint, _series) => {
+        if (closestPoint != null && originalData.length > 0 && originalData[closestPoint.seriesIndex] != null) {
+          const originalSeriesData = originalData[closestPoint.seriesIndex];
+          if (originalSeriesData.labelset?.labels != null) {
+            const labels = originalSeriesData.labelset.labels.filter(
+              (label) => label.name !== '__name__'
+            );
+            const labelsToAdd = labels.map((label) => ({
+              key: label.name,
+              value: label.value,
+            }));
+            addLabelMatcher(labelsToAdd);
           }
-          return agg;
-        }, []),
-        labelset: metric.map(m => `${m.name}=${m.value}`).join(','),
-      });
+        }
+      },
+    },
+    {
+      id: 'add-to-query',
+      label: 'Add to query',
+      icon: 'material-symbols:add',
+      createDynamicItems: (closestPoint, _series) => {
+        if (closestPoint == null || originalData.length === 0 || originalData[closestPoint.seriesIndex] == null) {
+          return [
+            {
+              id: 'no-labels-available',
+              label: 'No labels available',
+              icon: 'ph:warning',
+              disabled: () => true,
+              onClick: () => {}, // No-op for disabled item
+            },
+          ];
+        }
+
+        const originalSeriesData = originalData[closestPoint.seriesIndex];
+        if (originalSeriesData.labelset?.labels == null) {
+          return [
+            {
+              id: 'no-labels-available',
+              label: 'No labels available',
+              icon: 'ph:warning',
+              disabled: () => true,
+              onClick: () => {}, // No-op for disabled item
+            },
+          ];
+        }
+
+        const labels = originalSeriesData.labelset.labels.filter(
+          (label) => label.name !== '__name__'
+        );
+
+        return labels.map((label) => ({
+          id: `add-label-${label.name}`,
+          label: (
+            <div className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+              {`${transformUtilizationLabels(label.name)}="${label.value}"`}
+            </div>
+          ),
+          onClick: () => {
+            addLabelMatcher({
+              key: label.name,
+              value: label.value,
+            });
+          },
+        }));
+      },
     }
-    return agg;
-  }, []);
+  ];
+};
 
-  // Sort values by timestamp for each series
-  return series.map(series => ({
-    ...series,
-    values: series.values.sort((a, b) => a[0] - b[0]),
-  }));
-}
+const transformMetricSeriesToSeries = (data: MetricSeries[]): Series[] => {
+  return data.map((metricSeries) => {
+    if (metricSeries.labelset != null) {
+      const labels = metricSeries.labelset.labels ?? [];
+      const sortedLabels = labels
+        .sort((a, b) => a.name.localeCompare(b.name));
+      const id = sortedLabels
+        .map(label => `${label.name}=${label.value}`)
+        .join(',');
 
-const getYAxisUnit = (name: string): string => {
+      return {
+        id: id !== '' ? id : 'default',
+        values: metricSeries.samples.map((sample): [number, number] => [
+          sample.timestamp,
+          sample.value
+        ]),
+      };
+    }
+    return {
+      id: 'default',
+      values: [],
+    };
+  });
+};
+
+const _getYAxisUnit = (name: string): string => {
   switch (name) {
     case 'gpu_power_watt':
       return 'watts';
@@ -104,426 +176,182 @@ const getYAxisUnit = (name: string): string => {
 
 const RawUtilizationMetrics = ({
   data,
-  addLabelMatcher,
+  originalData,
   setTimeRange,
   width,
   height,
   margin,
-  name,
   humanReadableName,
   from,
   to,
-  onSelectedSeriesChange,
+  yAxisUnit,
+  contextMenuItems,
+  onSeriesClick,
 }: RawUtilizationMetricsProps): JSX.Element => {
   const {timezone} = useParcaContext();
-  const graph = useRef(null);
-  const [dragging, setDragging] = useState(false);
-  const [hovering, setHovering] = useState(false);
-  const [relPos, setRelPos] = useState(-1);
-  const [pos, setPos] = useState([0, 0]);
-  const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
-  const idForContextMenu = useId();
-  const [_, setSelectedTimeframe] = useURLState('gpu_selected_timeframe');
-
-  const lineStroke = '1px';
-  const lineStrokeHover = '2px';
-  const lineStrokeSelected = '3px';
-
-  const graphWidth = useMemo(() => width - margin * 1.5 - margin / 2, [width, margin]);
-  const graphTransform = useMemo(() => {
-    // Adds 10px padding which aligns the graph on the grid
-    return `translate(10, 0) scale(${(graphWidth - 10) / graphWidth}, 1)`;
-  }, [graphWidth]);
-
-  const paddedFrom = from;
-  const paddedTo = to;
-
-  const series = useMemo(() => transformToSeries(data), [data]);
-
-  const extentsY = series.map(function (s) {
-    return d3.extent(s.values, function (d) {
-      return d[1];
-    });
-  });
-
-  const minY = d3.min(extentsY, function (d) {
-    return d[0];
-  });
-
-  const maxY = d3.max(extentsY, function (d) {
-    return d[1];
-  });
-
-  // Setup scales with padded time range
-  const xScale = d3.scaleUtc().domain([paddedFrom, paddedTo]).range([0, graphWidth]);
-
-  const yScale = d3
-    .scaleLinear()
-    // tslint:disable-next-line
-    .domain([minY, maxY] as Iterable<d3.NumberValue>)
-    .range([height - margin, 0])
-    .nice();
-
-  const throttledSetPos = throttle(setPos, 20);
-
-  const onMouseMove = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement, MouseEvent>): void => {
-    if (isContextMenuOpen) {
-      return;
-    }
-
-    // X/Y coordinate array relative to svg
-    const rel = pointer(e);
-
-    const xCoordinate = rel[0];
-    const xCoordinateWithoutMargin = xCoordinate - margin;
-    const yCoordinate = rel[1];
-    const yCoordinateWithoutMargin = yCoordinate - margin;
-
-    throttledSetPos([xCoordinateWithoutMargin, yCoordinateWithoutMargin]);
-  };
-
-  const trackVisibility = (isVisible: boolean): void => {
-    setIsContextMenuOpen(isVisible);
-  };
-
-  const MENU_ID = `utilizationmetrics-context-menu-${idForContextMenu}`;
-
-  const {show} = useContextMenu({
-    id: MENU_ID,
-  });
-
-  const displayMenu = useCallback(
-    (e: React.MouseEvent): void => {
-      show({
-        event: e,
-      });
-    },
-    [show]
-  );
-
-  const l = d3.line(
-    d => xScale(d[0]),
-    d => yScale(d[1])
-  );
-
-  const highlighted = useMemo(() => {
-    if (series.length === 0) {
-      return null;
-    }
-
-    // Return the closest point as the highlighted point
-    const closestPointPerSeries = series.map(function (s) {
-      const distances = s.values.map(d => {
-        const x = xScale(d[0]) + margin / 2;
-        const y = yScale(d[1]) - margin / 3;
-
-        return Math.sqrt(Math.pow(pos[0] - x, 2) + Math.pow(pos[1] - y, 2));
-      });
-
-      const pointIndex = d3.minIndex(distances);
-      const minDistance = distances[pointIndex];
-
-      return {
-        pointIndex,
-        distance: minDistance,
-      };
-    });
-
-    const closestSeriesIndex = d3.minIndex(closestPointPerSeries, s => s.distance);
-    const pointIndex = closestPointPerSeries[closestSeriesIndex].pointIndex;
-    const point = series[closestSeriesIndex].values[pointIndex];
-    return {
-      seriesIndex: closestSeriesIndex,
-      labels: series[closestSeriesIndex].metric,
-      timestamp: point[0],
-      valuePerSecond: point[1],
-      value: point[2],
-      duration: point[3],
-      x: xScale(point[0]),
-      y: yScale(point[1]),
-    };
-  }, [pos, series, xScale, yScale, margin]);
-
-  const onMouseDown = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement, MouseEvent>): void => {
-    // only left mouse button
-    if (e.button !== 0) {
-      return;
-    }
-
-    // X/Y coordinate array relative to svg
-    const rel = pointer(e);
-
-    const xCoordinate = rel[0];
-    const xCoordinateWithoutMargin = xCoordinate - margin;
-    if (xCoordinateWithoutMargin >= 0) {
-      setRelPos(xCoordinateWithoutMargin);
-      setDragging(true);
-    }
-
-    e.stopPropagation();
-    e.preventDefault();
-  };
-
-  const onMouseUp = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement, MouseEvent>): void => {
-    setDragging(false);
-
-    if (relPos === -1) {
-      // MouseDown happened outside of this element.
-      return;
-    }
-
-    // This is a normal click. We tolerate tiny movements to still be a
-    // click as they can occur when clicking based on user feedback.
-    if (Math.abs(relPos - pos[0]) <= 1) {
-      setRelPos(-1);
-      return;
-    }
-
-    let startPos = relPos;
-    let endPos = pos[0];
-
-    if (startPos > endPos) {
-      startPos = pos[0];
-      endPos = relPos;
-    }
-
-    const startCorrection = 10;
-    const endCorrection = 30;
-
-    const firstTime = xScale.invert(startPos - startCorrection).valueOf();
-    const secondTime = xScale.invert(endPos - endCorrection).valueOf();
-
-    setTimeRange(DateTimeRange.fromAbsoluteDates(firstTime, secondTime));
-
-    setRelPos(-1);
-
-    e.stopPropagation();
-    e.preventDefault();
-  };
 
   return (
-    <>
-      <MetricsContextMenu
-        onAddLabelMatcher={addLabelMatcher}
-        menuId={MENU_ID}
-        highlighted={highlighted}
-        trackVisibility={trackVisibility}
-        utilizationMetrics={true}
-      />
+    <MetricsGraph
+      data={data}
+      from={from}
+      to={to}
+      setTimeRange={setTimeRange}
+      onSampleClick={(closestPoint) => {
+        if (onSeriesClick != null) {
+          onSeriesClick(closestPoint.seriesIndex);
+        }
+      }}
+      yAxisLabel={humanReadableName}
+      yAxisUnit={yAxisUnit}
+      width={width}
+      height={height}
+      margin={margin}
+      contextMenuItems={contextMenuItems}
+      renderTooltipContent={(seriesIndex: number, pointIndex: number) => {
+        if (originalData?.[seriesIndex]?.samples?.[pointIndex] != null) {
+          const originalSeriesData = originalData[seriesIndex];
+          const originalPoint = originalData[seriesIndex].samples[pointIndex];
 
-      {highlighted != null && hovering && !dragging && pos[0] !== 0 && pos[1] !== 0 && (
-        <div
-          onMouseMove={onMouseMove}
-          onMouseEnter={() => setHovering(true)}
-          onMouseLeave={() => setHovering(false)}
-        >
-          {!isContextMenuOpen && (
-            <MetricsTooltip
-              x={pos[0] + margin}
-              y={pos[1] + margin}
-              highlighted={highlighted}
-              contextElement={graph.current}
-              sampleType={name}
-              sampleUnit={getYAxisUnit(name)}
-              delta={false}
-              utilizationMetrics={true}
-            />
-          )}
-        </div>
-      )}
-      <div
-        ref={graph}
-        onMouseEnter={function () {
-          setHovering(true);
-        }}
-        onMouseLeave={() => setHovering(false)}
-        onContextMenu={displayMenu}
-      >
-        <svg
-          width={`${width}px`}
-          height={`${height + margin}px`}
-          onMouseDown={onMouseDown}
-          onMouseUp={onMouseUp}
-          onMouseMove={onMouseMove}
-        >
-          <g transform={`translate(${margin}, 0)`}>
-            {dragging && (
-              <g className="zoom-time-rect">
-                <rect
-                  className="bar"
-                  x={pos[0] - relPos < 0 ? pos[0] : relPos}
-                  y={0}
-                  height={height}
-                  width={Math.abs(pos[0] - relPos)}
-                  fill={'rgba(0, 0, 0, 0.125)'}
-                />
-              </g>
-            )}
-          </g>
-          <g transform={`translate(${margin * 1.5}, ${margin / 1.5})`}>
-            <g className="y axis" textAnchor="end" fontSize="10" fill="none">
-              {yScale.ticks(3).map((d, i, allTicks) => {
-                let decimals = 2;
-                const intervalBetweenTicks = allTicks[1] - allTicks[0];
+          const labels = originalSeriesData.labelset?.labels ?? [];
+          const nameLabel = labels.find(e => e.name === '__name__');
+          const highlightedNameLabel = nameLabel ?? {name: '', value: ''};
 
-                if (intervalBetweenTicks < 1) {
-                  const precision = getPrecision(intervalBetweenTicks);
-                  decimals = precision;
-                }
+          // Calculate attributes maps for utilization metrics
+          const attributesMap = labels
+            .filter(
+              label =>
+                label.name.startsWith('attributes.') && !label.name.startsWith('attributes_resource.')
+            )
+            .reduce<Record<string, string>>((acc, label) => {
+              const key = label.name.replace('attributes.', '');
+              acc[key] = label.value;
+              return acc;
+            }, {});
 
-                return (
-                  <Fragment key={`${i.toString()}-${d.toString()}`}>
-                    <g
-                      key={`tick-${i}`}
-                      className="tick"
-                      /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
-                      transform={`translate(0, ${yScale(d)})`}
-                    >
-                      <line className="stroke-gray-300 dark:stroke-gray-500" x2={-6} />
-                      <text fill="currentColor" x={-9} dy={'0.32em'}>
-                        {valueFormatter(d, getYAxisUnit(name), decimals)}
-                      </text>
-                    </g>
-                    <g key={`grid-${i}`}>
-                      <line
-                        className="stroke-gray-300 dark:stroke-gray-500"
-                        x1={xScale(from)}
-                        x2={xScale(to)}
-                        y1={yScale(d)}
-                        y2={yScale(d)}
-                      />
-                    </g>
-                  </Fragment>
-                );
-              })}
-              <line
-                className="stroke-gray-300 dark:stroke-gray-500"
-                x1={0}
-                x2={0}
-                y1={0}
-                y2={height - margin}
-              />
-              <line
-                className="stroke-gray-300 dark:stroke-gray-500"
-                x1={xScale(to)}
-                x2={xScale(to)}
-                y1={0}
-                y2={height - margin}
-              />
-              <g transform={`translate(${-margin}, ${(height - margin) / 2}) rotate(270)`}>
-                <text
-                  fill="currentColor"
-                  dy="-0.7em"
-                  className="text-sm capitalize"
-                  textAnchor="middle"
-                >
-                  {humanReadableName}
-                </text>
-              </g>
-            </g>
-            <g
-              className="x axis"
-              fill="none"
-              fontSize="10"
-              textAnchor="middle"
-              transform={`translate(0,${height - margin})`}
-            >
-              {xScale.ticks(5).map((d, i) => (
-                <Fragment key={`${i.toString()}-${d.toString()}`}>
-                  <g
-                    key={`tick-${i}`}
-                    className="tick"
-                    /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
-                    transform={`translate(${xScale(d)}, 0)`}
-                  >
-                    <line y2={6} className="stroke-gray-300 dark:stroke-gray-500" />
-                    <text fill="currentColor" dy=".71em" y={9}>
-                      {formatDate(d, formatForTimespan(from, to), timezone)}
-                    </text>
-                  </g>
-                  <g key={`grid-${i}`}>
-                    <line
-                      className="stroke-gray-300 dark:stroke-gray-500"
-                      x1={xScale(d)}
-                      x2={xScale(d)}
-                      y1={0}
-                      y2={-height + margin}
-                    />
-                  </g>
-                </Fragment>
-              ))}
-              <line
-                className="stroke-gray-300 dark:stroke-gray-500"
-                x1={0}
-                x2={graphWidth}
-                y1={0}
-                y2={0}
-              />
-              <g transform={`translate(${(width - 2.5 * margin) / 2}, ${margin / 2})`}>
-                <text fill="currentColor" dy=".71em" y={5} className="text-sm">
-                  Time
-                </text>
-              </g>
-            </g>
-            <g className="lines fill-transparent" transform={graphTransform}>
-              {series.map((s, i) => {
-                const isLimit =
-                  s.metric.findIndex(m => m.name === '__type__' && m.value === 'limit') > -1;
-                const strokeDasharray = isLimit ? '8 4' : '';
+          const attributesResourceMap = labels
+            .filter(label => label.name.startsWith('attributes_resource.'))
+            .reduce<Record<string, string>>((acc, label) => {
+              const key = label.name.replace('attributes_resource.', '');
+              acc[key] = label.value;
+              return acc;
+            }, {});
 
-                return (
-                  <g key={i} className="line cursor-pointer">
-                    <MetricsSeries
-                      data={s}
-                      line={l}
-                      color={getSeriesColor(s.metric)}
-                      strokeWidth={
-                        s.isSelected === true
-                          ? lineStrokeSelected
-                          : hovering && highlighted != null && i === highlighted.seriesIndex
-                          ? lineStrokeHover
-                          : lineStroke
-                      }
-                      strokeDasharray={strokeDasharray}
-                      xScale={xScale}
-                      yScale={yScale}
-                      onClick={() => {
-                        if (highlighted != null && onSelectedSeriesChange != null) {
-                          onSelectedSeriesChange(
-                            highlighted.labels.map(l => ({
-                              key: l.name,
-                              value: l.value,
-                            }))
-                          );
-                          // reset the selected_timeframe
-                          setSelectedTimeframe(undefined);
-                        }
-                      }}
-                    />
-                  </g>
-                );
-              })}
-            </g>
-          </g>
-        </svg>
-      </div>
-    </>
+          return (
+            <div className="flex flex-row">
+              <div className="ml-2 mr-6">
+                <span className="font-semibold">{highlightedNameLabel.value}</span>
+                <span className="my-2 block text-gray-700 dark:text-gray-300">
+                  <table className="table-auto">
+                    <tbody>
+                      <tr>
+                        <td className="w-1/4">Value</td>
+                        <td className="w-3/4">
+                          {valueFormatter(originalPoint.value, yAxisUnit, 2)}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="w-1/4">At</td>
+                        <td className="w-3/4">
+                          {formatDate(
+                            new Date(originalPoint.timestamp),
+                            timePattern(timezone as string),
+                            timezone
+                          )}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </span>
+                <span className="my-2 block text-gray-500">
+                  {Object.keys(attributesResourceMap).length > 0 ? (
+                    <span className="text-sm font-bold text-gray-700 dark:text-white">
+                      Resource Attributes
+                    </span>
+                  ) : null}
+                  <span className="my-2 block text-gray-500">
+                    {Object.keys(attributesResourceMap).map(name => (
+                      <div
+                        key={'resourceattribute-' + seriesIndex.toString() + '-' + pointIndex.toString() + '-' + name}
+                        className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+                      >
+                        <TextWithTooltip
+                          text={`${transformUtilizationLabels(name)}="${
+                            attributesResourceMap[name] ?? ""
+                          }"`}
+                          maxTextLength={48}
+                          id={`tooltip-${name}-${attributesResourceMap[name] ?? ""}`}
+                        />
+                      </div>
+                    ))}
+                  </span>
+                  {Object.keys(attributesMap).length > 0 ? (
+                    <span className="text-sm font-bold text-gray-700 dark:text-white">
+                      Attributes
+                    </span>
+                  ) : null}
+                  <span className="my-2 block text-gray-500">
+                    {Object.keys(attributesMap).map(name => (
+                      <div
+                        key={'attribute-' + seriesIndex.toString() + '-' + pointIndex.toString() + '-' + name}
+                        className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+                      >
+                        <TextWithTooltip
+                          text={`${transformUtilizationLabels(name)}="${attributesMap[name] ?? ""}"`}
+                          maxTextLength={48}
+                          id={`tooltip-${name}-${attributesMap[name] ?? ""}`}
+                        />
+                      </div>
+                    ))}
+                  </span>
+                  {labels
+                    .filter((label) => label.name !== '__name__' && !label.name.startsWith('attributes'))
+                    .map((label) => (
+                      <div
+                        key={'attribute-' + seriesIndex.toString() + '-' + pointIndex.toString() + '-label-' + label.name}
+                        className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+                      >
+                        <TextWithTooltip
+                          text={`${transformUtilizationLabels(label.name)}="${label.value}"`}
+                          maxTextLength={37}
+                          id={`tooltip-${label.name}`}
+                        />
+                      </div>
+                    ))}
+                </span>
+                <div className="flex w-full items-center gap-1 text-xs text-gray-500">
+                  <Icon icon="iconoir:mouse-button-right" />
+                  <div>Right click to add labels to query.</div>
+                </div>
+              </div>
+            </div>
+          );
+        }
+        return null;
+      }}
+    />
   );
 };
 
 const UtilizationMetrics = ({
   data,
-  addLabelMatcher,
   setTimeRange,
   utilizationMetricsLoading,
-  name,
   humanReadableName,
   from,
   to,
-  onSelectedSeriesChange,
+  yAxisUnit,
+  addLabelMatcher,
+  onSeriesClick,
+  onSelectedSeriesChange: _onSelectedSeriesChange,
 }: Props): JSX.Element => {
   const {isDarkMode} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(false, true);
+
+  const transformedData = useMemo(() => transformMetricSeriesToSeries(data), [data]);
+
+  const contextMenuItems = useMemo(() => {
+    return (addLabelMatcher != null) ? createUtilizationContextMenuItems(addLabelMatcher, data) : [];
+  }, [addLabelMatcher, data]);
 
   return (
     <AnimatePresence>
@@ -538,17 +366,18 @@ const UtilizationMetrics = ({
           <MetricsGraphSkeleton heightStyle={heightStyle} isDarkMode={isDarkMode} isMini={true} />
         ) : (
           <RawUtilizationMetrics
-            data={data}
-            addLabelMatcher={addLabelMatcher}
+            data={transformedData}
+            originalData={data}
             setTimeRange={setTimeRange}
             width={width}
             height={height}
             margin={margin}
-            name={name}
             humanReadableName={humanReadableName}
             from={from}
             to={to}
-            onSelectedSeriesChange={onSelectedSeriesChange}
+            yAxisUnit={yAxisUnit}
+            contextMenuItems={contextMenuItems}
+            onSeriesClick={onSeriesClick}
           />
         )}
       </motion.div>

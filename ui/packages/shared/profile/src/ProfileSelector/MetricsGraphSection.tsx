@@ -47,7 +47,7 @@ interface MetricsGraphSectionProps {
     data: UtilizationMetricsType[];
   }>;
   utilizationMetricsLoading?: boolean;
-  onUtilizationSeriesSelect?: (series: Array<{key: string; value: string}>) => void;
+  onUtilizationSeriesSelect?: (seriesIndex: number) => void;
 }
 
 export function MetricsGraphSection({
@@ -123,7 +123,7 @@ export function MetricsGraphSection({
   };
 
   const handlePointClick = (
-    timestamp: number,
+    timestamp: bigint,
     labels: Label[],
     queryExpression: string,
     duration: number
@@ -136,9 +136,8 @@ export function MetricsGraphSection({
       }
     });
 
-    const durationInMilliseconds = duration / 1000000; // duration is in nanoseconds
     const mergeFrom = timestamp;
-    const mergeTo = query.profileType().delta ? mergeFrom + durationInMilliseconds : mergeFrom;
+    const mergeTo = query.profileType().delta ? mergeFrom + BigInt(duration) : mergeFrom;
 
     resetStateOnSeriesChange(); // reset some state when a new series is selected
     selectProfile(new MergedProfileSelection(mergeFrom, mergeTo, query));
@@ -175,14 +174,19 @@ export function MetricsGraphSection({
                 <UtilizationMetricsGraph
                   key={name}
                   data={data}
-                  addLabelMatcher={addLabelMatcher}
                   setTimeRange={handleTimeRangeChange}
                   utilizationMetricsLoading={utilizationMetricsLoading}
-                  name={name}
                   humanReadableName={humanReadableName}
                   from={querySelection.from}
                   to={querySelection.to}
-                  onSelectedSeriesChange={onUtilizationSeriesSelect}
+                  yAxisUnit="percentage"
+                  addLabelMatcher={addLabelMatcher}
+                  onSeriesClick={(seriesIndex) => {
+                    // For generic UtilizationMetrics, just pass the series index
+                    if (onUtilizationSeriesSelect != null) {
+                      onUtilizationSeriesSelect(seriesIndex);
+                    }
+                  }}
                 />
               </>
             );
@@ -207,7 +211,7 @@ export function MetricsGraphSection({
             to={querySelection.to}
             utilizationMetricsLoading={utilizationMetricsLoading}
             selectedSeries={undefined}
-            onSelectedSeriesChange={onUtilizationSeriesSelect}
+            onSeriesClick={onUtilizationSeriesSelect}
           />
         )}
       </div>

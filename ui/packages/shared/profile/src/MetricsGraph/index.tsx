@@ -18,73 +18,71 @@ import {pointer} from 'd3-selection';
 import throttle from 'lodash.throttle';
 import {useContextMenu} from 'react-contexify';
 
-import {Label, MetricsSample, MetricsSeries as MetricsSeriesPb} from '@parca/client';
 import {DateTimeRange, useParcaContext} from '@parca/components';
 import {
   formatDate,
   formatForTimespan,
   getPrecision,
-  sanitizeHighlightedValues,
   valueFormatter,
 } from '@parca/utilities';
-
-import {MergedProfileSelection} from '..';
 import MetricsCircle from '../MetricsCircle';
 import MetricsSeries from '../MetricsSeries';
-import MetricsContextMenu from './MetricsContextMenu';
+import MetricsContextMenu, {
+  ContextMenuItemOrSubmenu,
+  ContextMenuItem,
+  ContextMenuSubmenu
+} from './MetricsContextMenu';
 import MetricsInfoPanel from './MetricsInfoPanel';
 import MetricsTooltip from './MetricsTooltip';
 
+
 interface Props {
-  data: MetricsSeriesPb[];
+  data: Series[];
   from: number;
   to: number;
-  profile: MergedProfileSelection | null;
-  onSampleClick: (timestamp: number, value: number, labels: Label[], duration: number) => void;
-  addLabelMatcher: (
-    labels: {key: string; value: string} | Array<{key: string; value: string}>
-  ) => void;
+  onSampleClick: (closestPoint: SeriesPoint) => void;
   setTimeRange: (range: DateTimeRange) => void;
-  sampleType: string;
-  sampleUnit: string;
+  yAxisLabel: string;
+  yAxisUnit: string;
   width?: number;
   height?: number;
   margin?: number;
-  sumBy?: string[];
+  selectedPoint?: SeriesPoint | null;
+  contextMenuItems?: ContextMenuItemOrSubmenu[];
+  renderTooltipContent?: (seriesIndex: number, pointIndex: number) => React.ReactNode;
+}
+
+export interface SeriesPoint {
+  seriesIndex: number;
+  pointIndex: number;
 }
 
 export interface HighlightedSeries {
   seriesIndex: number;
-  labels: Label[];
-  timestamp: number;
-  value: number;
-  valuePerSecond: number;
-  duration: number;
+  pointIndex: number;
   x: number;
   y: number;
 }
 
 export interface Series {
-  metric: Label[];
-  values: number[][];
-  labelset: string;
-  isSelected?: boolean;
+  id: string; // opaque string used to determine line color
+  values: Array<[number, number]>; // [timestamp_ms, value]
 }
 
 const MetricsGraph = ({
   data,
   from,
   to,
-  profile,
   onSampleClick,
-  addLabelMatcher,
   setTimeRange,
-  sampleType,
-  sampleUnit,
+  yAxisLabel,
+  yAxisUnit,
   width = 0,
   height = 0,
   margin = 0,
-  sumBy,
+  selectedPoint,
+  contextMenuItems,
+  renderTooltipContent,
 }: Props): JSX.Element => {
   const [isInfoPanelOpen, setIsInfoPanelOpen] = useState<boolean>(false);
   return (
@@ -99,22 +97,23 @@ const MetricsGraph = ({
         data={data}
         from={from}
         to={to}
-        profile={profile}
         onSampleClick={onSampleClick}
-        addLabelMatcher={addLabelMatcher}
         setTimeRange={setTimeRange}
-        sampleType={sampleType}
-        sampleUnit={sampleUnit}
+        yAxisLabel={yAxisLabel}
+        yAxisUnit={yAxisUnit}
         width={width}
         height={height}
         margin={margin}
-        sumBy={sumBy}
+        selectedPoint={selectedPoint}
+        contextMenuItems={contextMenuItems}
+        renderTooltipContent={renderTooltipContent}
       />
     </div>
   );
 };
 
 export default MetricsGraph;
+export type {ContextMenuItemOrSubmenu, ContextMenuItem, ContextMenuSubmenu};
 
 export const parseValue = (value: string): number | null => {
   const val = parseFloat(value);
@@ -130,16 +129,16 @@ export const RawMetricsGraph = ({
   data,
   from,
   to,
-  profile,
   onSampleClick,
-  addLabelMatcher,
   setTimeRange,
-  sampleType,
-  sampleUnit,
+  yAxisLabel,
+  yAxisUnit,
   width,
   height = 50,
   margin = 0,
-  sumBy,
+  selectedPoint,
+  contextMenuItems,
+  renderTooltipContent,
 }: Props): JSX.Element => {
   const {timezone} = useParcaContext();
   const graph = useRef(null);
@@ -151,8 +150,6 @@ export const RawMetricsGraph = ({
   const metricPointRef = useRef(null);
   const idForContextMenu = useId();
 
-  // the time of the selected point is the start of the merge window
-  const time: number = parseFloat(profile?.HistoryParams().merge_from);
 
   if (width === undefined || width == null) {
     width = 0;
@@ -164,30 +161,11 @@ export const RawMetricsGraph = ({
     return `translate(6, 0) scale(${(graphWidth - 6) / graphWidth}, 1)`;
   }, [graphWidth]);
 
-  const series: Series[] = data.reduce<Series[]>(function (agg: Series[], s: MetricsSeriesPb) {
-    if (s.labelset !== undefined) {
-      const metric = s.labelset.labels.sort((a, b) => a.name.localeCompare(b.name));
-      agg.push({
-        metric,
-        values: s.samples.reduce<number[][]>(function (agg: number[][], d: MetricsSample) {
-          if (d.timestamp !== undefined && d.valuePerSecond !== undefined) {
-            const t = (Number(d.timestamp.seconds) * 1e9 + d.timestamp.nanos) / 1e6; // https://github.com/microsoft/TypeScript/issues/5710#issuecomment-157886246
-            agg.push([t, d.valuePerSecond, Number(d.value), Number(d.duration)]);
-          }
-          return agg;
-        }, []),
-        labelset: metric.map(m => `${m.name}=${m.value}`).join(','),
-      });
-    }
-    return agg;
-  }, []);
-
-  // Sort series by id to make sure the colors are consistent
-  series.sort((a, b) => a.labelset.localeCompare(b.labelset));
+  const series = data;
 
   const extentsY = series.map(function (s) {
     return d3.extent(s.values, function (d) {
-      return d[1];
+      return d[1]; // d[1] is the value
     });
   });
 
@@ -208,21 +186,29 @@ export const RawMetricsGraph = ({
     .range([height - margin, 0])
     .nice();
 
-  const color = d3.scaleOrdinal(d3.schemeCategory10);
+  // Create deterministic color mapping based on series IDs
+  const color = useMemo(() => {
+    const scale = d3.scaleOrdinal(d3.schemeCategory10);
+    // Pre-populate the scale with sorted series IDs to ensure consistent colors
+    const sortedIds = [...new Set(series.map(s => s.id))].sort();
+    sortedIds.forEach(id => scale(id));
+    return scale;
+  }, [series]);
 
-  const l = d3.line(
+  const l = d3.line<[number, number]>(
     d => xScale(d[0]),
     d => yScale(d[1])
   );
 
-  const highlighted = useMemo(() => {
+  const closestPoint = useMemo(() => {
     // Return the closest point as the highlighted point
 
     const closestPointPerSeries = series.map(function (s) {
       const distances = s.values.map(d => {
-        const x = xScale(d[0]) + margin / 2;
-        const y = yScale(d[1]) - margin / 3;
+        const x = xScale(d[0]) + margin / 2; // d[0] is timestamp_ms
+        const y = yScale(d[1]) - margin / 3;  // d[1] is value
 
+        // Cartesian distance from the mouse position to the point
         return Math.sqrt(Math.pow(pos[0] - x, 2) + Math.pow(pos[1] - y, 2));
       });
 
@@ -237,18 +223,39 @@ export const RawMetricsGraph = ({
 
     const closestSeriesIndex = d3.minIndex(closestPointPerSeries, s => s.distance);
     const pointIndex = closestPointPerSeries[closestSeriesIndex].pointIndex;
-    const point = series[closestSeriesIndex].values[pointIndex];
     return {
       seriesIndex: closestSeriesIndex,
-      labels: series[closestSeriesIndex].metric,
-      timestamp: point[0],
-      valuePerSecond: point[1],
-      value: point[2],
-      duration: point[3],
+      pointIndex,
+    };
+  }, [pos, series, xScale, yScale, margin]);
+
+  const highlighted = useMemo(() => {
+    if (series.length === 0 || closestPoint == null) {
+      return null;
+    }
+
+    const point = series[closestPoint.seriesIndex].values[closestPoint.pointIndex];
+    return {
+      seriesIndex: closestPoint.seriesIndex,
+      pointIndex: closestPoint.pointIndex,
       x: xScale(point[0]),
       y: yScale(point[1]),
     };
-  }, [pos, series, xScale, yScale, margin]);
+  }, [closestPoint, series, xScale, yScale]);
+
+  const selected = useMemo(() => {
+    if (series.length === 0 || selectedPoint == null) {
+      return null;
+    }
+
+    const point = series[selectedPoint.seriesIndex].values[selectedPoint.pointIndex];
+    return {
+      seriesIndex: selectedPoint.seriesIndex,
+      pointIndex: selectedPoint.pointIndex,
+      x: xScale(point[0]),
+      y: yScale(point[1]),
+    };
+  }, [selectedPoint, series, xScale, yScale]);
 
   const onMouseDown = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement, MouseEvent>): void => {
     // only left mouse button
@@ -270,14 +277,9 @@ export const RawMetricsGraph = ({
     e.preventDefault();
   };
 
-  const openClosestProfile = (): void => {
-    if (highlighted != null) {
-      onSampleClick(
-        Math.round(highlighted.timestamp),
-        highlighted.value,
-        sanitizeHighlightedValues(highlighted.labels), // When a user clicks on any sample in the graph, replace single `\` in the `labelValues` string with doubles `\\` if available.
-        highlighted.duration
-      );
+  const handleClosestPointClick = (): void => {
+    if (closestPoint != null) {
+      onSampleClick(closestPoint);
     }
   };
 
@@ -292,7 +294,7 @@ export const RawMetricsGraph = ({
     // This is a normal click. We tolerate tiny movements to still be a
     // click as they can occur when clicking based on user feedback.
     if (Math.abs(relPos - pos[0]) <= 1) {
-      openClosestProfile();
+      handleClosestPointClick();
       setRelPos(-1);
       return;
     }
@@ -337,69 +339,6 @@ export const RawMetricsGraph = ({
     throttledSetPos([xCoordinateWithoutMargin, yCoordinateWithoutMargin]);
   };
 
-  const findSelectedProfile = (): HighlightedSeries | null => {
-    if (profile == null) {
-      return null;
-    }
-
-    let s: Series | null = null;
-    let seriesIndex = -1;
-
-    // if there are both query matchers and also a sumby value, we need to check if the sumby value is part of the query matchers.
-    // if it is, then we should prioritize using the sumby label name and value to find the selected profile.
-    const useSumBy =
-      sumBy !== undefined &&
-      sumBy.length > 0 &&
-      profile.query.matchers.length > 0 &&
-      profile.query.matchers.some(e => sumBy.includes(e.key));
-
-    // get only the sumby keys and values from the profile query matchers
-    const sumByMatchers =
-      sumBy !== undefined ? profile.query.matchers.filter(e => sumBy.includes(e.key)) : [];
-
-    const keysToMatch = useSumBy ? sumByMatchers : profile.query.matchers;
-
-    outer: for (let i = 0; i < series.length; i++) {
-      const keys = keysToMatch.map(e => e.key);
-      for (let j = 0; j < keys.length; j++) {
-        const matcherKey = keys[j];
-        const label = series[i].metric.find(e => e.name === matcherKey);
-        if (label === undefined) {
-          continue outer; // label doesn't exist to begin with
-        }
-        if (keysToMatch[j].value !== label.value) {
-          continue outer; // label values don't match
-        }
-      }
-      seriesIndex = i;
-      s = series[i];
-    }
-
-    if (s == null) {
-      return null;
-    }
-    // Find the sample that matches the timestamp
-    const sample = s.values.find(v => {
-      return Math.round(v[0]) === time;
-    });
-    if (sample === undefined) {
-      return null;
-    }
-
-    return {
-      labels: [],
-      seriesIndex,
-      timestamp: sample[0],
-      valuePerSecond: sample[1],
-      value: sample[2],
-      duration: sample[3],
-      x: xScale(sample[0]),
-      y: yScale(sample[1]),
-    };
-  };
-
-  const selected = findSelectedProfile();
-
   const MENU_ID = `metrics-context-menu-${idForContextMenu}`;
 
   const {show} = useContextMenu({
@@ -419,33 +358,18 @@ export const RawMetricsGraph = ({
     setIsContextMenuOpen(isVisible);
   };
 
-  const isDeltaType = profile !== null ? profile?.query.profType.delta : false;
-
-  let yAxisLabel = sampleUnit;
-  let yAxisUnit = sampleUnit;
-  if (isDeltaType) {
-    if (sampleUnit === 'nanoseconds') {
-      if (sampleType === 'cpu') {
-        yAxisLabel = 'CPU Cores';
-        yAxisUnit = '';
-      }
-      if (sampleType === 'cuda') {
-        yAxisLabel = 'GPU Time';
-      }
-    }
-    if (sampleUnit === 'bytes') {
-      yAxisLabel = 'Bytes per Second';
-    }
-  }
 
   return (
     <>
-      <MetricsContextMenu
-        onAddLabelMatcher={addLabelMatcher}
-        menuId={MENU_ID}
-        highlighted={highlighted}
-        trackVisibility={trackVisibility}
-      />
+      {(contextMenuItems != null) && (
+        <MetricsContextMenu
+          menuId={MENU_ID}
+          closestPoint={closestPoint}
+          series={series}
+          trackVisibility={trackVisibility}
+          menuItems={contextMenuItems}
+        />
+      )}
       {highlighted != null && hovering && !dragging && pos[0] !== 0 && pos[1] !== 0 && (
         <div
           onMouseMove={onMouseMove}
@@ -456,11 +380,8 @@ export const RawMetricsGraph = ({
             <MetricsTooltip
               x={pos[0] + margin}
               y={pos[1] + margin}
-              highlighted={highlighted}
               contextElement={graph.current}
-              sampleType={sampleType}
-              sampleUnit={sampleUnit}
-              delta={isDeltaType}
+              content={renderTooltipContent?.(highlighted.seriesIndex, highlighted.pointIndex)}
             />
           )}
         </div>
@@ -605,11 +526,11 @@ export const RawMetricsGraph = ({
               width={graphWidth - 100}
             >
               {series.map((s, i) => (
-                <g key={i} className="line">
+                <g key={s.id} className="line">
                   <MetricsSeries
                     data={s}
                     line={l}
-                    color={color(i.toString())}
+                    color={color(s.id)}
                     strokeWidth={
                       hovering && highlighted != null && i === highlighted.seriesIndex
                         ? lineStrokeHover
@@ -625,7 +546,7 @@ export const RawMetricsGraph = ({
               <g
                 className="circle-group"
                 ref={metricPointRef}
-                style={{fill: color(highlighted.seriesIndex.toString())}}
+                style={{fill: color(series[highlighted.seriesIndex]?.id ?? '0')}}
                 transform={graphTransform}
               >
                 <MetricsCircle cx={highlighted.x} cy={highlighted.y} />
@@ -636,7 +557,7 @@ export const RawMetricsGraph = ({
                 className="circle-group"
                 style={
                   selected?.seriesIndex != null
-                    ? {fill: color(selected.seriesIndex.toString())}
+                    ? {fill: color(series[selected.seriesIndex]?.id ?? '0')}
                     : {}
                 }
                 transform={graphTransform}
