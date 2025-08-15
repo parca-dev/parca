@@ -26,6 +26,9 @@ export * from './ProfileTypeSelector';
 export * from './SourceView';
 export * from './ProfileMetricsGraph';
 
+export {default as ProfileFilters} from './ProfileView/components/ProfileFilters';
+export {useProfileFiltersUrlState} from './ProfileView/components/ProfileFilters/useProfileFiltersUrlState';
+
 export const DEFAULT_PROFILE_EXPLORER_PARAM_VALUES = {
   dashboard_items: 'flamegraph',
 };

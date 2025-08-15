@@ -49,6 +49,7 @@ const Select = ({
   disabled = false,
   icon,
   id,
+  hideCaretDropdown,
 }: {
   items: SelectItem[];
   selectedKey: string | undefined;
@@ -61,6 +62,7 @@ const Select = ({
   disabled?: boolean;
   icon?: JSX.Element;
   id?: string;
+  hideCaretDropdown?: boolean;
 }): JSX.Element => {
   const selection = items.find(v => v.key === selectedKey) ?? {
     key: selectedKey,
@@ -83,7 +85,7 @@ const Select = ({
               className={cx(
                 styles,
                 width !== undefined ? `w-${width}` : 'w-full',
-                disabled ? 'cursor-not-allowed opacity-50 pointer-events-none' : '',
+                disabled ? 'cursor-not-allowed pointer-events-none' : '',
                 primary ? primaryStyles : defaultStyles,
                 {[className]: className.length > 0}
               )}
@@ -97,9 +99,11 @@ const Select = ({
                   ? selection.element.active
                   : placeholder}
               </div>
-              <div className={cx(icon != null ? '' : 'pointer-events-none text-gray-400')}>
-                {icon ?? <Icon icon="heroicons:chevron-up-down-20-solid" aria-hidden="true" />}
-              </div>
+              {hideCaretDropdown !== true && (
+                <div className={cx(icon != null ? '' : 'pointer-events-none text-gray-400')}>
+                  {icon ?? <Icon icon="heroicons:chevron-up-down-20-solid" aria-hidden="true" />}
+                </div>
+              )}
             </Listbox.Button>
           </div>
 
