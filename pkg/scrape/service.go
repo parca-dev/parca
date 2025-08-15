@@ -73,15 +73,15 @@ func (m *Manager) Targets(ctx context.Context, req *pb.TargetsRequest) (*pb.Targ
 // ProtoLabelsFromLabels converts labels.Labels into a proto label set.
 func ProtoLabelsFromLabels(l labels.Labels) *profilepb.LabelSet {
 	ls := &profilepb.LabelSet{
-		Labels: make([]*profilepb.Label, 0, len(l)),
+		Labels: make([]*profilepb.Label, 0, l.Len()),
 	}
 
-	for _, lbl := range l {
+	l.Range(func(lbl labels.Label) {
 		ls.Labels = append(ls.Labels, &profilepb.Label{
 			Name:  lbl.Name,
 			Value: lbl.Value,
 		})
-	}
+	})
 	return ls
 }
 

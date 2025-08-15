@@ -17,18 +17,21 @@ import (
 	"encoding/binary"
 
 	"github.com/apache/arrow-go/v18/arrow/array"
-	pprofextended "go.opentelemetry.io/proto/otlp/profiles/v1experimental"
+	semconv "go.opentelemetry.io/otel/semconv/v1.28.0"
+	v1 "go.opentelemetry.io/proto/otlp/common/v1"
+	pprofextended "go.opentelemetry.io/proto/otlp/profiles/v1development"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 )
 
 func EncodeOtelLocation(
+	attributeTable []*v1.KeyValue,
 	l *pprofextended.Location,
 	m *pprofextended.Mapping,
 	funcs []*pprofextended.Function,
 	stringTable []string,
 ) []byte {
-	buf := make([]byte, serializedOtelLocationSize(l, m, funcs, stringTable))
+	buf := make([]byte, serializedOtelLocationSize(attributeTable, l, m, funcs, stringTable))
 	offset := binary.PutUvarint(buf, l.Address)
 	offset = writeIntAsUvarint(buf, offset, len(l.Line))
 	if m == nil {
@@ -39,14 +42,17 @@ func EncodeOtelLocation(
 		offset++
 
 		buildID := ""
-		if m.BuildId != 0 {
-			buildID = stringTable[m.BuildId]
+		for _, idx := range m.AttributeIndices {
+			if attributeTable[idx].Key == string(semconv.ProcessExecutableBuildIDGnuKey) {
+				buildID = attributeTable[idx].Value.GetStringValue()
+				break
+			}
 		}
 		offset = writeString(buf, offset, buildID)
 
 		filename := ""
-		if m.Filename != 0 {
-			filename = stringTable[m.Filename]
+		if m.FilenameStrindex != 0 {
+			filename = stringTable[m.FilenameStrindex]
 		}
 		offset = writeString(buf, offset, filename)
 		offset = writeUint64(buf, offset, m.MemoryStart)
@@ -65,20 +71,20 @@ func EncodeOtelLocation(
 			offset = writeInt64AsUvarint(buf, offset, f.StartLine)
 
 			name := ""
-			if f.Name != 0 {
-				name = stringTable[f.Name]
+			if f.NameStrindex != 0 {
+				name = stringTable[f.NameStrindex]
 			}
 			offset = writeString(buf, offset, name)
 
 			systemName := ""
-			if f.SystemName != 0 {
-				systemName = stringTable[f.SystemName]
+			if f.SystemNameStrindex != 0 {
+				systemName = stringTable[f.SystemNameStrindex]
 			}
 			offset = writeString(buf, offset, systemName)
 
 			filename := ""
-			if f.Filename != 0 {
-				filename = stringTable[f.Filename]
+			if f.FilenameStrindex != 0 {
+				filename = stringTable[f.FilenameStrindex]
 			}
 			offset = writeString(buf, offset, filename)
 		} else {
@@ -90,7 +96,13 @@ func EncodeOtelLocation(
 	return buf
 }
 
-func serializedOtelLocationSize(l *pprofextended.Location, m *pprofextended.Mapping, funcs []*pprofextended.Function, stringTable []string) int {
+func serializedOtelLocationSize(
+	attributeTable []*v1.KeyValue,
+	l *pprofextended.Location,
+	m *pprofextended.Mapping,
+	funcs []*pprofextended.Function,
+	stringTable []string,
+) int {
 	size := UvarintSize(l.Address)
 	size++ // 1 byte for whether there is a mapping
 
@@ -98,14 +110,17 @@ func serializedOtelLocationSize(l *pprofextended.Location, m *pprofextended.Mapp
 
 	if m != nil {
 		buildID := ""
-		if m.BuildId != 0 {
-			buildID = stringTable[m.BuildId]
+		for _, idx := range m.AttributeIndices {
+			if attributeTable[idx].Key == string(semconv.ProcessExecutableBuildIDGnuKey) {
+				buildID = attributeTable[idx].Value.GetStringValue()
+				break
+			}
 		}
 		size = addSerializedStringSize(size, buildID)
 
 		filename := ""
-		if m.Filename != 0 {
-			filename = stringTable[m.Filename]
+		if m.FilenameStrindex != 0 {
+			filename = stringTable[m.FilenameStrindex]
 		}
 		size = addSerializedStringSize(size, filename)
 		size = addSerializedUint64Size(size, m.MemoryStart)
@@ -122,20 +137,20 @@ func serializedOtelLocationSize(l *pprofextended.Location, m *pprofextended.Mapp
 			size = addSerializedInt64AsUvarintSize(size, f.StartLine)
 
 			name := ""
-			if f.Name != 0 {
-				name = stringTable[f.Name]
+			if f.NameStrindex != 0 {
+				name = stringTable[f.NameStrindex]
 			}
 			size = addSerializedStringSize(size, name)
 
 			systemName := ""
-			if f.SystemName != 0 {
-				systemName = stringTable[f.SystemName]
+			if f.SystemNameStrindex != 0 {
+				systemName = stringTable[f.SystemNameStrindex]
 			}
 			size = addSerializedStringSize(size, systemName)
 
 			filename := ""
-			if f.Filename != 0 {
-				filename = stringTable[f.Filename]
+			if f.FilenameStrindex != 0 {
+				filename = stringTable[f.FilenameStrindex]
 			}
 			size = addSerializedStringSize(size, filename)
 		}
