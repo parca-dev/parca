@@ -19,7 +19,7 @@ plugins:
       - paths=source_relative,features=marshal+unmarshal+size+pool+grpc
 
   # renovate: datasource=github-releases depName=timostamm/protobuf-ts
-  - plugin: buf.build/community/timostamm-protobuf-ts:v2.9.6
+  - plugin: buf.build/community/timostamm-protobuf-ts:v2.11.1
     out: ui/packages/shared/client/src
     opt:
       - generate_dependencies
