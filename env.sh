@@ -25,7 +25,7 @@ GOFUMPT_VERSION='v0.8.0'
 go install "mvdan.cc/gofumpt@${GOFUMPT_VERSION}"
 
 # renovate: datasource=go depName=github.com/golangci/golangci-lint/v2
-GOLANGCI_LINT_VERSION='v2.3.0'
+GOLANGCI_LINT_VERSION='v2.3.1'
 go install "github.com/golangci/golangci-lint/v2/cmd/golangci-lint@${GOLANGCI_LINT_VERSION}"
 
 # renovate: datasource=go depName=golang.org/x/vuln
