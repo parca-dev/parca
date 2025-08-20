@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useState, useMemo, useEffect} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 
 import {usePopper} from 'react-popper';
 
@@ -58,13 +58,7 @@ const createDomRect = (x: number, y: number): DOMRect => {
   return domRect;
 };
 
-const MetricsTooltip = ({
-  x,
-  y,
-  contextElement,
-  content,
-}: Props): JSX.Element => {
-
+const MetricsTooltip = ({x, y, contextElement, content}: Props): JSX.Element => {
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
 
   const {styles, attributes, update} = usePopper(virtualElement, popperElement, {

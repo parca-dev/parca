@@ -80,11 +80,7 @@ export function ProfileSelectionFromParams(
       return null;
     }
 
-    return new MergedProfileSelection(
-      BigInt(mergeFrom),
-      BigInt(mergeTo),
-      Query.parse(selection)
-    );
+    return new MergedProfileSelection(BigInt(mergeFrom), BigInt(mergeTo), Query.parse(selection));
   }
 
   return null;
@@ -193,7 +189,7 @@ function nanosToTimestamp(nanos: bigint): Timestamp {
 
   return {
     seconds,
-    nanos: Number(remainingNanos) // Safe since remainingNanos < 1e9
+    nanos: Number(remainingNanos), // Safe since remainingNanos < 1e9
   };
 }
 

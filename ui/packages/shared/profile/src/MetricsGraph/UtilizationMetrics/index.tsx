@@ -13,16 +13,20 @@
 
 import {useMemo} from 'react';
 
+import {Icon} from '@iconify/react';
 import {AnimatePresence, motion} from 'framer-motion';
 
-import {DateTimeRange, MetricsGraphSkeleton, useParcaContext, TextWithTooltip} from '@parca/components';
-import {formatDate, valueFormatter, timePattern} from '@parca/utilities';
-import {Icon} from '@iconify/react';
+import {
+  DateTimeRange,
+  MetricsGraphSkeleton,
+  TextWithTooltip,
+  useParcaContext,
+} from '@parca/components';
+import {formatDate, timePattern, valueFormatter} from '@parca/utilities';
 
-import MetricsGraph from '../index';
-import {type Series, type ContextMenuItemOrSubmenu} from '../index';
-import {useMetricsGraphDimensions} from '../useMetricsGraphDimensions';
 import {type UtilizationMetrics as MetricSeries} from '../../ProfileSelector';
+import MetricsGraph, {type ContextMenuItemOrSubmenu, type Series} from '../index';
+import {useMetricsGraphDimensions} from '../useMetricsGraphDimensions';
 
 interface CommonProps {
   setTimeRange: (range: DateTimeRange) => void;
@@ -68,13 +72,17 @@ const createUtilizationContextMenuItems = (
       label: 'Focus only on this series',
       icon: 'ph:star',
       onClick: (closestPoint, _series) => {
-        if (closestPoint != null && originalData.length > 0 && originalData[closestPoint.seriesIndex] != null) {
+        if (
+          closestPoint != null &&
+          originalData.length > 0 &&
+          originalData[closestPoint.seriesIndex] != null
+        ) {
           const originalSeriesData = originalData[closestPoint.seriesIndex];
           if (originalSeriesData.labelset?.labels != null) {
             const labels = originalSeriesData.labelset.labels.filter(
-              (label) => label.name !== '__name__'
+              label => label.name !== '__name__'
             );
-            const labelsToAdd = labels.map((label) => ({
+            const labelsToAdd = labels.map(label => ({
               key: label.name,
               value: label.value,
             }));
@@ -88,7 +96,11 @@ const createUtilizationContextMenuItems = (
       label: 'Add to query',
       icon: 'material-symbols:add',
       createDynamicItems: (closestPoint, _series) => {
-        if (closestPoint == null || originalData.length === 0 || originalData[closestPoint.seriesIndex] == null) {
+        if (
+          closestPoint == null ||
+          originalData.length === 0 ||
+          originalData[closestPoint.seriesIndex] == null
+        ) {
           return [
             {
               id: 'no-labels-available',
@@ -114,10 +126,10 @@ const createUtilizationContextMenuItems = (
         }
 
         const labels = originalSeriesData.labelset.labels.filter(
-          (label) => label.name !== '__name__'
+          label => label.name !== '__name__'
         );
 
-        return labels.map((label) => ({
+        return labels.map(label => ({
           id: `add-label-${label.name}`,
           label: (
             <div className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-300">
@@ -132,25 +144,22 @@ const createUtilizationContextMenuItems = (
           },
         }));
       },
-    }
+    },
   ];
 };
 
 const transformMetricSeriesToSeries = (data: MetricSeries[]): Series[] => {
-  return data.map((metricSeries) => {
+  return data.map(metricSeries => {
     if (metricSeries.labelset != null) {
       const labels = metricSeries.labelset.labels ?? [];
-      const sortedLabels = labels
-        .sort((a, b) => a.name.localeCompare(b.name));
-      const id = sortedLabels
-        .map(label => `${label.name}=${label.value}`)
-        .join(',');
+      const sortedLabels = labels.sort((a, b) => a.name.localeCompare(b.name));
+      const id = sortedLabels.map(label => `${label.name}=${label.value}`).join(',');
 
       return {
         id: id !== '' ? id : 'default',
         values: metricSeries.samples.map((sample): [number, number] => [
           sample.timestamp,
-          sample.value
+          sample.value,
         ]),
       };
     }
@@ -196,7 +205,7 @@ const RawUtilizationMetrics = ({
       from={from}
       to={to}
       setTimeRange={setTimeRange}
-      onSampleClick={(closestPoint) => {
+      onSampleClick={closestPoint => {
         if (onSeriesClick != null) {
           onSeriesClick(closestPoint.seriesIndex);
         }
@@ -220,7 +229,8 @@ const RawUtilizationMetrics = ({
           const attributesMap = labels
             .filter(
               label =>
-                label.name.startsWith('attributes.') && !label.name.startsWith('attributes_resource.')
+                label.name.startsWith('attributes.') &&
+                !label.name.startsWith('attributes_resource.')
             )
             .reduce<Record<string, string>>((acc, label) => {
               const key = label.name.replace('attributes.', '');
@@ -271,15 +281,22 @@ const RawUtilizationMetrics = ({
                   <span className="my-2 block text-gray-500">
                     {Object.keys(attributesResourceMap).map(name => (
                       <div
-                        key={'resourceattribute-' + seriesIndex.toString() + '-' + pointIndex.toString() + '-' + name}
+                        key={
+                          'resourceattribute-' +
+                          seriesIndex.toString() +
+                          '-' +
+                          pointIndex.toString() +
+                          '-' +
+                          name
+                        }
                         className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
                       >
                         <TextWithTooltip
                           text={`${transformUtilizationLabels(name)}="${
-                            attributesResourceMap[name] ?? ""
+                            attributesResourceMap[name] ?? ''
                           }"`}
                           maxTextLength={48}
-                          id={`tooltip-${name}-${attributesResourceMap[name] ?? ""}`}
+                          id={`tooltip-${name}-${attributesResourceMap[name] ?? ''}`}
                         />
                       </div>
                     ))}
@@ -292,22 +309,40 @@ const RawUtilizationMetrics = ({
                   <span className="my-2 block text-gray-500">
                     {Object.keys(attributesMap).map(name => (
                       <div
-                        key={'attribute-' + seriesIndex.toString() + '-' + pointIndex.toString() + '-' + name}
+                        key={
+                          'attribute-' +
+                          seriesIndex.toString() +
+                          '-' +
+                          pointIndex.toString() +
+                          '-' +
+                          name
+                        }
                         className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
                       >
                         <TextWithTooltip
-                          text={`${transformUtilizationLabels(name)}="${attributesMap[name] ?? ""}"`}
+                          text={`${transformUtilizationLabels(name)}="${
+                            attributesMap[name] ?? ''
+                          }"`}
                           maxTextLength={48}
-                          id={`tooltip-${name}-${attributesMap[name] ?? ""}`}
+                          id={`tooltip-${name}-${attributesMap[name] ?? ''}`}
                         />
                       </div>
                     ))}
                   </span>
                   {labels
-                    .filter((label) => label.name !== '__name__' && !label.name.startsWith('attributes'))
-                    .map((label) => (
+                    .filter(
+                      label => label.name !== '__name__' && !label.name.startsWith('attributes')
+                    )
+                    .map(label => (
                       <div
-                        key={'attribute-' + seriesIndex.toString() + '-' + pointIndex.toString() + '-label-' + label.name}
+                        key={
+                          'attribute-' +
+                          seriesIndex.toString() +
+                          '-' +
+                          pointIndex.toString() +
+                          '-label-' +
+                          label.name
+                        }
                         className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
                       >
                         <TextWithTooltip
@@ -350,7 +385,7 @@ const UtilizationMetrics = ({
   const transformedData = useMemo(() => transformMetricSeriesToSeries(data), [data]);
 
   const contextMenuItems = useMemo(() => {
-    return (addLabelMatcher != null) ? createUtilizationContextMenuItems(addLabelMatcher, data) : [];
+    return addLabelMatcher != null ? createUtilizationContextMenuItems(addLabelMatcher, data) : [];
   }, [addLabelMatcher, data]);
 
   return (

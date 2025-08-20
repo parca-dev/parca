@@ -181,7 +181,7 @@ export function MetricsGraphSection({
                   to={querySelection.to}
                   yAxisUnit="percentage"
                   addLabelMatcher={addLabelMatcher}
-                  onSeriesClick={(seriesIndex) => {
+                  onSeriesClick={seriesIndex => {
                     // For generic UtilizationMetrics, just pass the series index
                     if (onUtilizationSeriesSelect != null) {
                       onUtilizationSeriesSelect(seriesIndex);

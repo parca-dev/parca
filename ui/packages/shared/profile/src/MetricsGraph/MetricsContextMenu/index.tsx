@@ -16,7 +16,7 @@ import {Item, Menu, Submenu} from 'react-contexify';
 
 import {useParcaContext} from '@parca/components';
 
-import {SeriesPoint, Series} from '../';
+import {Series, SeriesPoint} from '../';
 
 export interface ContextMenuItem {
   id: string;
@@ -56,21 +56,24 @@ const MetricsContextMenu = ({
   const renderMenuItem = (item: ContextMenuItemOrSubmenu): React.ReactNode => {
     if ('items' in item || 'createDynamicItems' in item) {
       // This is a submenu
-      const submenu = item ;
-      const items = (submenu.createDynamicItems != null) ? submenu.createDynamicItems(closestPoint, series) : submenu.items ?? [];
+      const submenu = item;
+      const items =
+        submenu.createDynamicItems != null
+          ? submenu.createDynamicItems(closestPoint, series)
+          : submenu.items ?? [];
 
       return (
         <Submenu
           key={submenu.id}
           label={
             <div className="flex w-full items-center gap-2">
-              {(submenu.icon != null && submenu.icon !== '') && <Icon icon={submenu.icon} />}
+              {submenu.icon != null && submenu.icon !== '' && <Icon icon={submenu.icon} />}
               <div>{submenu.label}</div>
             </div>
           }
         >
           <div className="max-h-[300px] overflow-auto">
-            {items.map((subItem) => (
+            {items.map(subItem => (
               <Item
                 key={subItem.id}
                 id={subItem.id}
@@ -79,7 +82,7 @@ const MetricsContextMenu = ({
                 className="max-w-[400px] overflow-hidden"
               >
                 <div className="flex w-full items-center gap-2">
-                  {(subItem.icon != null && subItem.icon !== '') && <Icon icon={subItem.icon} />}
+                  {subItem.icon != null && subItem.icon !== '' && <Icon icon={subItem.icon} />}
                   <div>{subItem.label}</div>
                 </div>
               </Item>
@@ -98,7 +101,7 @@ const MetricsContextMenu = ({
           disabled={menuItem.disabled?.(closestPoint, series) ?? false}
         >
           <div className="flex w-full items-center gap-2">
-            {(menuItem.icon != null && menuItem.icon !== '') && <Icon icon={menuItem.icon} />}
+            {menuItem.icon != null && menuItem.icon !== '' && <Icon icon={menuItem.icon} />}
             <div>{menuItem.label}</div>
           </div>
         </Item>

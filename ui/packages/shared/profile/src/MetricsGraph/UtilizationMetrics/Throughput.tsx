@@ -13,15 +13,19 @@
 
 import {useMemo} from 'react';
 
+import {Icon} from '@iconify/react';
 import {AnimatePresence, motion} from 'framer-motion';
 
-import {DateTimeRange, MetricsGraphSkeleton, useParcaContext, TextWithTooltip} from '@parca/components';
-import {formatDate, valueFormatter, timePattern} from '@parca/utilities';
-import {Icon} from '@iconify/react';
+import {
+  DateTimeRange,
+  MetricsGraphSkeleton,
+  TextWithTooltip,
+  useParcaContext,
+} from '@parca/components';
+import {formatDate, timePattern, valueFormatter} from '@parca/utilities';
 
 import {type UtilizationMetrics as MetricSeries} from '../../ProfileSelector';
-import MetricsGraph from '../index';
-import {type Series, type ContextMenuItemOrSubmenu} from '../index';
+import MetricsGraph, {type ContextMenuItemOrSubmenu, type Series} from '../index';
 import {useMetricsGraphDimensions} from '../useMetricsGraphDimensions';
 
 interface NetworkLabel {
@@ -82,13 +86,17 @@ const createThroughputContextMenuItems = (
       label: 'Focus only on this series',
       icon: 'ph:star',
       onClick: (closestPoint, _series) => {
-        if (closestPoint != null && allData.length > 0 && allData[closestPoint.seriesIndex] != null) {
+        if (
+          closestPoint != null &&
+          allData.length > 0 &&
+          allData[closestPoint.seriesIndex] != null
+        ) {
           const originalSeriesData = allData[closestPoint.seriesIndex];
           if (originalSeriesData.labelset?.labels != null) {
             const labels = originalSeriesData.labelset.labels.filter(
-              (label) => label.name !== '__name__'
+              label => label.name !== '__name__'
             );
-            const labelsToAdd = labels.map((label) => ({
+            const labelsToAdd = labels.map(label => ({
               key: label.name,
               value: label.value,
             }));
@@ -102,7 +110,11 @@ const createThroughputContextMenuItems = (
       label: 'Add to query',
       icon: 'material-symbols:add',
       createDynamicItems: (closestPoint, _series) => {
-        if (closestPoint == null || allData.length === 0 || allData[closestPoint.seriesIndex] == null) {
+        if (
+          closestPoint == null ||
+          allData.length === 0 ||
+          allData[closestPoint.seriesIndex] == null
+        ) {
           return [
             {
               id: 'no-labels-available',
@@ -128,10 +140,10 @@ const createThroughputContextMenuItems = (
         }
 
         const labels = originalSeriesData.labelset.labels.filter(
-          (label) => label.name !== '__name__'
+          label => label.name !== '__name__'
         );
 
-        return labels.map((label) => ({
+        return labels.map(label => ({
           id: `add-label-${label.name}`,
           label: (
             <div className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-300">
@@ -146,7 +158,7 @@ const createThroughputContextMenuItems = (
           },
         }));
       },
-    }
+    },
   ];
 };
 
@@ -187,24 +199,30 @@ function transformToSeries(data: MetricSeries[], isReceive = false): NetworkSeri
   }));
 }
 
-function transformNetworkSeriesToSeries(transmitData: MetricSeries[], receiveData: MetricSeries[]): Series[] {
+function transformNetworkSeriesToSeries(
+  transmitData: MetricSeries[],
+  receiveData: MetricSeries[]
+): Series[] {
   const transmitSeries = transformToSeries(transmitData);
   const receiveSeries = transformToSeries(receiveData, true);
   const allSeries = [...transmitSeries, ...receiveSeries];
 
-  return allSeries.map((networkSeries) => {
+  return allSeries.map(networkSeries => {
     const labels = networkSeries.metric ?? [];
     const sortedLabels = labels
       .filter(label => label.name !== '__name__')
       .sort((a, b) => a.name.localeCompare(b.name));
-    const labelString = sortedLabels
-      .map(label => `${label.name}=${label.value}`)
-      .join(',');
-    const id = (networkSeries.isReceive === true ? 'receive-' : 'transmit-') + (labelString !== '' ? labelString : 'default');
+    const labelString = sortedLabels.map(label => `${label.name}=${label.value}`).join(',');
+    const id =
+      (networkSeries.isReceive === true ? 'receive-' : 'transmit-') +
+      (labelString !== '' ? labelString : 'default');
 
     return {
       id,
-      values: networkSeries.values.map(([timestamp, value]): [number, number] => [timestamp, value]),
+      values: networkSeries.values.map(([timestamp, value]): [number, number] => [
+        timestamp,
+        value,
+      ]),
     };
   });
 }
@@ -228,7 +246,10 @@ const RawAreaChart = ({
   const {timezone} = useParcaContext();
 
   // Compute original series data for rich tooltip
-  const allOriginalData = useMemo(() => [...transmitData, ...receiveData], [transmitData, receiveData]);
+  const allOriginalData = useMemo(
+    () => [...transmitData, ...receiveData],
+    [transmitData, receiveData]
+  );
 
   return (
     <MetricsGraph
@@ -236,7 +257,7 @@ const RawAreaChart = ({
       from={from}
       to={to}
       setTimeRange={setTimeRange}
-      onSampleClick={(closestPoint) => {
+      onSampleClick={closestPoint => {
         if (onSeriesClick != null) {
           onSeriesClick(closestPoint.seriesIndex);
         }
@@ -288,8 +309,8 @@ const RawAreaChart = ({
                 </span>
                 <span className="my-2 block text-gray-500">
                   {labels
-                    .filter((label) => label.name !== '__name__')
-                    .map((label) => (
+                    .filter(label => label.name !== '__name__')
+                    .map(label => (
                       <div
                         key={`${seriesIndex.toString()}-${pointIndex.toString()}-${label.name}`}
                         className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
@@ -297,7 +318,9 @@ const RawAreaChart = ({
                         <TextWithTooltip
                           text={`${transformUtilizationLabels(label.name)}="${label.value}"`}
                           maxTextLength={37}
-                          id={`${seriesIndex.toString()}-${pointIndex.toString()}-tooltip-${label.name}`}
+                          id={`${seriesIndex.toString()}-${pointIndex.toString()}-tooltip-${
+                            label.name
+                          }`}
                         />
                       </div>
                     ))}
@@ -332,7 +355,10 @@ const AreaChart = ({
   const {isDarkMode} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(false, true);
 
-  const transformedData = useMemo(() => transformNetworkSeriesToSeries(transmitData, receiveData), [transmitData, receiveData]);
+  const transformedData = useMemo(
+    () => transformNetworkSeriesToSeries(transmitData, receiveData),
+    [transmitData, receiveData]
+  );
 
   const contextMenuItems = useMemo(() => {
     return createThroughputContextMenuItems(addLabelMatcher, transmitData, receiveData);

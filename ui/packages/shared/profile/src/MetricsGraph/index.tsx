@@ -19,22 +19,17 @@ import throttle from 'lodash.throttle';
 import {useContextMenu} from 'react-contexify';
 
 import {DateTimeRange, useParcaContext} from '@parca/components';
-import {
-  formatDate,
-  formatForTimespan,
-  getPrecision,
-  valueFormatter,
-} from '@parca/utilities';
+import {formatDate, formatForTimespan, getPrecision, valueFormatter} from '@parca/utilities';
+
 import MetricsCircle from '../MetricsCircle';
 import MetricsSeries from '../MetricsSeries';
 import MetricsContextMenu, {
-  ContextMenuItemOrSubmenu,
   ContextMenuItem,
-  ContextMenuSubmenu
+  ContextMenuItemOrSubmenu,
+  ContextMenuSubmenu,
 } from './MetricsContextMenu';
 import MetricsInfoPanel from './MetricsInfoPanel';
 import MetricsTooltip from './MetricsTooltip';
-
 
 interface Props {
   data: Series[];
@@ -150,7 +145,6 @@ export const RawMetricsGraph = ({
   const metricPointRef = useRef(null);
   const idForContextMenu = useId();
 
-
   if (width === undefined || width == null) {
     width = 0;
   }
@@ -206,7 +200,7 @@ export const RawMetricsGraph = ({
     const closestPointPerSeries = series.map(function (s) {
       const distances = s.values.map(d => {
         const x = xScale(d[0]) + margin / 2; // d[0] is timestamp_ms
-        const y = yScale(d[1]) - margin / 3;  // d[1] is value
+        const y = yScale(d[1]) - margin / 3; // d[1] is value
 
         // Cartesian distance from the mouse position to the point
         return Math.sqrt(Math.pow(pos[0] - x, 2) + Math.pow(pos[1] - y, 2));
@@ -358,10 +352,9 @@ export const RawMetricsGraph = ({
     setIsContextMenuOpen(isVisible);
   };
 
-
   return (
     <>
-      {(contextMenuItems != null) && (
+      {contextMenuItems != null && (
         <MetricsContextMenu
           menuId={MENU_ID}
           closestPoint={closestPoint}
