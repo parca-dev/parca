@@ -327,9 +327,6 @@ importers:
       '@parca/store':
         specifier: workspace:*
         version: link:../../shared/store
-      '@parca/test-utils':
-        specifier: workspace:*
-        version: link:../../shared/test-utils
       '@parca/utilities':
         specifier: workspace:*
         version: link:../../shared/utilities
