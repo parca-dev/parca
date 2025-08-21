@@ -93,10 +93,15 @@ export function QueryControls({
   profileTypesError,
 }: QueryControlsProps): JSX.Element {
   return (
-    <div className="flex w-full flex-wrap items-start gap-2" {...testId('QUERY_CONTROLS_CONTAINER')}>
+    <div
+      className="flex w-full flex-wrap items-start gap-2"
+      {...testId('QUERY_CONTROLS_CONTAINER')}
+    >
       {showProfileTypeSelector && (
         <div>
-          <label className="text-xs" {...testId('PROFILE_TYPE_LABEL')}>Profile type</label>
+          <label className="text-xs" {...testId('PROFILE_TYPE_LABEL')}>
+            Profile type
+          </label>
           <ProfileTypeSelector
             profileTypesData={profileTypesData}
             loading={profileTypesLoading}
@@ -108,10 +113,16 @@ export function QueryControls({
         </div>
       )}
 
-      <div className="w-full flex-1 flex flex-col gap-1 mt-auto" ref={queryBrowserRef} {...testId('QUERY_BROWSER_CONTAINER')}>
+      <div
+        className="w-full flex-1 flex flex-col gap-1 mt-auto"
+        ref={queryBrowserRef}
+        {...testId('QUERY_BROWSER_CONTAINER')}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <label className="text-xs" {...testId('QUERY_LABEL')}>Query</label>
+            <label className="text-xs" {...testId('QUERY_LABEL')}>
+              Query
+            </label>
             {viewComponent?.disableExplorativeQuerying !== true && (
               <>
                 <Switch
@@ -133,7 +144,9 @@ export function QueryControls({
                     } pointer-events-none inline-block h-[16px] w-[16px] transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out`}
                   />
                 </Switch>
-                <label className="text-xs" {...testId('QUERY_MODE_LABEL')}>Advanced Mode</label>
+                <label className="text-xs" {...testId('QUERY_MODE_LABEL')}>
+                  Advanced Mode
+                </label>
               </>
             )}
           </div>
@@ -181,7 +194,9 @@ export function QueryControls({
       {showSumBySelector && (
         <div {...testId('SUM_BY_CONTAINER')}>
           <div className="mb-0.5 mt-1.5 flex items-center justify-between">
-            <label className="text-xs" {...testId('SUM_BY_LABEL')}>Sum by</label>
+            <label className="text-xs" {...testId('SUM_BY_LABEL')}>
+              Sum by
+            </label>
           </div>
           <Select<SelectOption, true>
             id="h-sum-by-selector"
@@ -229,10 +244,16 @@ export function QueryControls({
         </div>
       )}
 
-      <DateTimeRangePicker onRangeSelection={setTimeRangeSelection} range={timeRangeSelection} {...testId('DATE_TIME_RANGE_PICKER')} />
+      <DateTimeRangePicker
+        onRangeSelection={setTimeRangeSelection}
+        range={timeRangeSelection}
+        {...testId('DATE_TIME_RANGE_PICKER')}
+      />
 
       <div>
-        <label className="text-xs" {...testId('SEARCH_BUTTON_LABEL')}>&nbsp;</label>
+        <label className="text-xs" {...testId('SEARCH_BUTTON_LABEL')}>
+          &nbsp;
+        </label>
         <Button
           disabled={searchDisabled}
           onClick={(e: React.MouseEvent<HTMLElement>) => {
