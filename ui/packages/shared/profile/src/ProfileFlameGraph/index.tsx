@@ -24,6 +24,7 @@ import {
   useParcaContext,
   useURLState,
 } from '@parca/components';
+import {testId} from '@parca/test-utils';
 import {ProfileType} from '@parca/parser';
 import {capitalizeOnlyFirstLetter, divide} from '@parca/utilities';
 
@@ -380,7 +381,11 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
         transition={{duration: 0.5}}
       >
         {compareMode ? <DiffLegend /> : null}
-        <div className={cx(!isInSandwichView ? 'min-h-48' : '')} id="h-flame-graph">
+        <div 
+          className={cx(!isInSandwichView ? 'min-h-48' : '')} 
+          id="h-flame-graph"
+          {...testId('FLAMEGRAPH_CONTAINER')}
+        >
           <>{flameGraph}</>
         </div>
         {!isInSandwichView && (

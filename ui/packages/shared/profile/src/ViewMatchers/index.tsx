@@ -19,6 +19,7 @@ import cx from 'classnames';
 import {QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata} from '@parca/components';
 import {Query} from '@parca/parser';
+import {testId} from '@parca/test-utils';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
 import CustomSelect, {SelectItem} from '../SimpleMatchers/Select';
@@ -168,7 +169,7 @@ const ViewMatchers: React.FC<Props> = ({
   }, []);
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2" {...testId('VIEW_MATCHERS_CONTAINER')}>
       {labelNames.map(labelName => (
         <div key={labelName} className="flex items-center">
           <div className="relative border shadow-sm px-4 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm flex gap-2 items-center justify-between bg-gray-100 dark:bg-gray-700 rounded-l-md border-gray-300 dark:border-gray-600">

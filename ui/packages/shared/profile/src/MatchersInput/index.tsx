@@ -20,6 +20,7 @@ import TextareaAutosize from 'react-textarea-autosize';
 import {LabelsRequest, LabelsResponse, QueryServiceClient, ValuesRequest} from '@parca/client';
 import {useGrpcMetadata} from '@parca/components';
 import {Query} from '@parca/parser';
+import {testId} from '@parca/test-utils';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
 import {UtilizationLabels} from '../ProfileSelector';
@@ -289,7 +290,7 @@ const MatchersInput = ({
   const profileSelected = currentQuery.profileName() === '';
 
   return (
-    <div className="w-full min-w-[300px] flex-1 font-mono relative">
+    <div className="w-full min-w-[300px] flex-1 font-mono relative" {...testId('MATCHERS_INPUT_CONTAINER')}>
       <TextareaAutosize
         ref={inputRef}
         className={cx(
@@ -304,6 +305,7 @@ const MatchersInput = ({
         onChange={onChange}
         value={value}
         onBlur={unfocus}
+        {...testId('MATCHERS_TEXTAREA')}
         onFocus={focus}
         disabled={profileSelected} // Disable input if no profile has been selected
         title={

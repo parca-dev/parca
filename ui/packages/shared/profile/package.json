@@ -13,6 +13,7 @@
     "@parca/icons": "workspace:*",
     "@parca/parser": "workspace:*",
     "@parca/store": "workspace:*",
+    "@parca/test-utils": "workspace:*",
     "@parca/utilities": "workspace:*",
     "@popperjs/core": "^2.11.8",
     "@protobuf-ts/runtime-rpc": "^2.5.0",

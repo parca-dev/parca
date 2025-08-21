@@ -18,6 +18,7 @@ import Select, {type SelectInstance} from 'react-select';
 import {ProfileTypesResponse, QueryServiceClient} from '@parca/client';
 import {Button, DateTimeRange, DateTimeRangePicker} from '@parca/components';
 import {ProfileType, Query} from '@parca/parser';
+import {testId} from '@parca/test-utils';
 
 import MatchersInput from '../MatchersInput';
 import ProfileTypeSelector from '../ProfileTypeSelector';
@@ -92,10 +93,10 @@ export function QueryControls({
   profileTypesError,
 }: QueryControlsProps): JSX.Element {
   return (
-    <div className="flex w-full flex-wrap items-start gap-2">
+    <div className="flex w-full flex-wrap items-start gap-2" {...testId('QUERY_CONTROLS_CONTAINER')}>
       {showProfileTypeSelector && (
         <div>
-          <label className="text-xs">Profile type</label>
+          <label className="text-xs" {...testId('PROFILE_TYPE_LABEL')}>Profile type</label>
           <ProfileTypeSelector
             profileTypesData={profileTypesData}
             loading={profileTypesLoading}
@@ -107,10 +108,10 @@ export function QueryControls({
         </div>
       )}
 
-      <div className="w-full flex-1 flex flex-col gap-1 mt-auto" ref={queryBrowserRef}>
+      <div className="w-full flex-1 flex flex-col gap-1 mt-auto" ref={queryBrowserRef} {...testId('QUERY_BROWSER_CONTAINER')}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <label className="text-xs">Query</label>
+            <label className="text-xs" {...testId('QUERY_LABEL')}>Query</label>
             {viewComponent?.disableExplorativeQuerying !== true && (
               <>
                 <Switch
@@ -122,6 +123,7 @@ export function QueryControls({
                   className={`${
                     advancedModeForQueryBrowser ? 'bg-indigo-600' : 'bg-gray-400 dark:bg-gray-800'
                   } relative inline-flex h-[20px] w-[44px] shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75`}
+                  {...testId('ADVANCED_MODE_SWITCH')}
                 >
                   <span className="sr-only">Use setting</span>
                   <span
@@ -131,7 +133,7 @@ export function QueryControls({
                     } pointer-events-none inline-block h-[16px] w-[16px] transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out`}
                   />
                 </Switch>
-                <label className="text-xs">Advanced Mode</label>
+                <label className="text-xs" {...testId('QUERY_MODE_LABEL')}>Advanced Mode</label>
               </>
             )}
           </div>
@@ -177,12 +179,13 @@ export function QueryControls({
       </div>
 
       {showSumBySelector && (
-        <div>
+        <div {...testId('SUM_BY_CONTAINER')}>
           <div className="mb-0.5 mt-1.5 flex items-center justify-between">
-            <label className="text-xs">Sum by</label>
+            <label className="text-xs" {...testId('SUM_BY_LABEL')}>Sum by</label>
           </div>
           <Select<SelectOption, true>
             id="h-sum-by-selector"
+            data-testid={testId('SUM_BY_SELECT')['data-testid']}
             defaultValue={[]}
             isMulti
             isClearable={false}
@@ -226,10 +229,10 @@ export function QueryControls({
         </div>
       )}
 
-      <DateTimeRangePicker onRangeSelection={setTimeRangeSelection} range={timeRangeSelection} />
+      <DateTimeRangePicker onRangeSelection={setTimeRangeSelection} range={timeRangeSelection} {...testId('DATE_TIME_RANGE_PICKER')} />
 
       <div>
-        <label className="text-xs">&nbsp;</label>
+        <label className="text-xs" {...testId('SEARCH_BUTTON_LABEL')}>&nbsp;</label>
         <Button
           disabled={searchDisabled}
           onClick={(e: React.MouseEvent<HTMLElement>) => {
@@ -237,6 +240,7 @@ export function QueryControls({
             setQueryExpression(true);
           }}
           id="h-matcher-search-button"
+          {...testId('SEARCH_BUTTON')}
         >
           Search
         </Button>
