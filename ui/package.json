@@ -30,11 +30,11 @@
     "tailwindcss": "3.2.4"
   },
   "devDependencies": {
-    "@babel/core": "7.28.0",
+    "@babel/core": "7.28.3",
     "@babel/node": "7.28.0",
     "@babel/plugin-proposal-export-default-from": "7.27.1",
     "@babel/plugin-proposal-private-property-in-object": "7.21.11",
-    "@babel/preset-env": "7.28.0",
+    "@babel/preset-env": "7.28.3",
     "@chromatic-com/storybook": "1.9.0",
     "@ianvs/prettier-plugin-sort-imports": "3.7.2",
     "@mdx-js/loader": "2.3.0",
