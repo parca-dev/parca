@@ -1,6 +1,6 @@
 {
   "name": "@parca/test-utils",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Test utilities and test IDs for Parca",
   "main": "dist/index.js",
   "scripts": {
