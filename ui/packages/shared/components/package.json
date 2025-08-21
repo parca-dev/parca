@@ -19,6 +19,7 @@
     "@parca/icons": "workspace:*",
     "@parca/parser": "workspace:*",
     "@parca/store": "workspace:*",
+    "@parca/test-utils": "workspace:*",
     "@parca/utilities": "workspace:*",
     "@protobuf-ts/grpcweb-transport": "^2.5.0",
     "@protobuf-ts/runtime-rpc": "^2.5.0",

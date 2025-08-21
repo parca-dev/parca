@@ -1,0 +1,19 @@
+{
+  "name": "@parca/test-utils",
+  "version": "0.0.1",
+  "description": "Test utilities and test IDs for Parca",
+  "main": "dist/index.js",
+  "scripts": {
+    "prepublish": "pnpm run build",
+    "build": "tsc",
+    "build-swc": "swc ./src -d dist --copy-files",
+    "watch": "tsc-watch"
+  },
+  "dependencies": {
+    "tsc-watch": "6.3.1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "private": true
+}

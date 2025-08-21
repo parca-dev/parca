@@ -50,6 +50,7 @@ const Select = ({
   icon,
   id,
   hideCaretDropdown,
+  ...props
 }: {
   items: SelectItem[];
   selectedKey: string | undefined;
@@ -63,7 +64,7 @@ const Select = ({
   icon?: JSX.Element;
   id?: string;
   hideCaretDropdown?: boolean;
-}): JSX.Element => {
+} & React.HTMLAttributes<HTMLButtonElement>): JSX.Element => {
   const selection = items.find(v => v.key === selectedKey) ?? {
     key: selectedKey,
     element: {active: <>{selectedKey}</>, expanded: <>{selectedKey}</>},
@@ -89,6 +90,7 @@ const Select = ({
                 primary ? primaryStyles : defaultStyles,
                 {[className]: className.length > 0}
               )}
+              {...props}
             >
               <div
                 className={cx(
