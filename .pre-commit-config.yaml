@@ -39,7 +39,7 @@ repos:
       hooks:
         - id: go-mod-tidy
   - repo: https://github.com/bufbuild/buf
-    rev: v1.55.1
+    rev: v1.56.0
     hooks:
       # Hijack an existing hook ID to run buf generate
       # It also mean running `pre-commit run buf-format` will run both format and generate
