@@ -77,6 +77,10 @@ const ViewMatchers: React.FC<Props> = ({
     runQueryRef.current = runQuery;
   }, [runQuery]);
 
+  useEffect(() => {
+    selectionsRef.current = initialSelections;
+  }, [initialSelections]);
+
   const fetchLabelValues = useCallback(
     async (labelName: string): Promise<string[]> => {
       try {
