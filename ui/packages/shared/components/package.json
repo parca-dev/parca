@@ -1,6 +1,6 @@
 {
   "name": "@parca/components",
-  "version": "0.16.356",
+  "version": "0.16.361",
   "description": "A component library for Parca",
   "main": "dist/index.js",
   "scripts": {
@@ -19,6 +19,7 @@
     "@parca/icons": "workspace:*",
     "@parca/parser": "workspace:*",
     "@parca/store": "workspace:*",
+    "@parca/test-utils": "workspace:*",
     "@parca/utilities": "workspace:*",
     "@protobuf-ts/grpcweb-transport": "^2.5.0",
     "@protobuf-ts/runtime-rpc": "^2.5.0",
@@ -60,5 +61,5 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
-  "gitHead": "f92c5502bce797d27d67f57a39f8af30d0d04e1e"
+  "gitHead": "95da3f07511621a9ed38476511a7574773ff1b62"
 }

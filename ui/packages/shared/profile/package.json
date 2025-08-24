@@ -1,6 +1,6 @@
 {
   "name": "@parca/profile",
-  "version": "0.19.35",
+  "version": "0.19.40",
   "description": "Profile viewing libraries",
   "dependencies": {
     "@floating-ui/react": "^0.27.12",
@@ -13,6 +13,7 @@
     "@parca/icons": "workspace:*",
     "@parca/parser": "workspace:*",
     "@parca/store": "workspace:*",
+    "@parca/test-utils": "workspace:*",
     "@parca/utilities": "workspace:*",
     "@popperjs/core": "^2.11.8",
     "@protobuf-ts/runtime-rpc": "^2.5.0",
@@ -78,5 +79,5 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
-  "gitHead": "f92c5502bce797d27d67f57a39f8af30d0d04e1e"
+  "gitHead": "95da3f07511621a9ed38476511a7574773ff1b62"
 }

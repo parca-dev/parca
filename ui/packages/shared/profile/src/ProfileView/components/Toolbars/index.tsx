@@ -18,6 +18,7 @@ import {Icon} from '@iconify/react';
 import {QueryServiceClient} from '@parca/client';
 import {Button} from '@parca/components';
 import {ProfileType} from '@parca/parser';
+import {testId} from '@parca/test-utils';
 
 import {CurrentPathFrame} from '../../../ProfileFlameGraph/FlameGraphArrow/utils';
 import {ProfileSource} from '../../../ProfileSource';
@@ -87,6 +88,7 @@ export const FlameGraphToolbar: FC<FlameGraphToolbarProps> = ({curPath, setNewCu
           onClick={() => setNewCurPath([])}
           disabled={curPath.length === 0}
           id="h-reset-graph"
+          {...testId('FLAMEGRAPH_RESET_BUTTON')}
         >
           Reset graph
           <Icon icon="system-uicons:reset" width={20} />
