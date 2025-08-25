@@ -8,5 +8,9 @@
     "noEmit": false,
     "declaration": true
   },
+  "tsc-alias": {
+    "resolveFullPaths": true,
+    "verbose": false
+  },
   "exclude": ["node_modules", "dist", "dist/**/*.d.ts"]
 }
