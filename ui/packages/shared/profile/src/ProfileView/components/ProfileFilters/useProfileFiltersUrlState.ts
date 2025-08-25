@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {useMemo} from 'react';
+
 import {useURLStateCustom, type ParamValueSetterCustom} from '@parca/components';
 import {safeDecode} from '@parca/utilities';
 
@@ -68,6 +70,20 @@ const encodeProfileFilters = (filters: ProfileFilter[]): string => {
     .join(',');
 };
 
+const generateFilterId = (
+  filter: {type?: string; field?: string; matchType?: string; value: string},
+  index: number
+): string => {
+  const parts = [
+    filter.type ?? '',
+    filter.field ?? '',
+    filter.matchType ?? '',
+    filter.value,
+    index.toString(),
+  ];
+  return `filter-${parts.join('-').replace(/[^a-zA-Z0-9-]/g, '_')}`;
+};
+
 // Decode filters from compact string format
 export const decodeProfileFilters = (encoded: string): ProfileFilter[] => {
   if (encoded === '' || encoded === undefined) return [];
@@ -84,8 +100,9 @@ export const decodeProfileFilters = (encoded: string): ProfileFilter[] => {
         const presetKey = parts[1];
         const value = parts.slice(2).join(':'); // Handle values with colons
 
+        const filterData = {type: presetKey, value};
         return {
-          id: `filter-${Date.now()}-${index}`,
+          id: generateFilterId(filterData, index),
           type: presetKey,
           value,
         };
@@ -96,7 +113,15 @@ export const decodeProfileFilters = (encoded: string): ProfileFilter[] => {
       const value = valueParts.join(':'); // Handle values with colons
 
       const decodedFilter = {
-        id: `filter-${Date.now()}-${index}`,
+        id: generateFilterId(
+          {
+            type: TYPE_MAP_REVERSE[type],
+            field: FIELD_MAP_REVERSE[field],
+            matchType: MATCH_MAP_REVERSE[match],
+            value,
+          },
+          index
+        ),
         type: TYPE_MAP_REVERSE[type] as ProfileFilter['type'],
         field: FIELD_MAP_REVERSE[field] as ProfileFilter['field'],
         matchType: MATCH_MAP_REVERSE[match] as ProfileFilter['matchType'],
@@ -128,8 +153,12 @@ export const useProfileFiltersUrlState = (): {
     }
   );
 
+  const memoizedAppliedFilters = useMemo(() => {
+    return appliedFilters ?? [];
+  }, [appliedFilters]);
+
   return {
-    appliedFilters: appliedFilters ?? [],
+    appliedFilters: memoizedAppliedFilters,
     setAppliedFilters,
   };
 };
