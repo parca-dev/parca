@@ -13,20 +13,10 @@
 
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
-import {type Filter} from '@parca/client';
+import {type Filter, type NumberCondition, type StringCondition} from '@parca/client';
 
 import {getPresetByKey, isPresetKey} from './filterPresets';
 import {useProfileFiltersUrlState} from './useProfileFiltersUrlState';
-
-interface FilterCondition {
-  condition?: {
-    oneofKind?: 'equal' | 'notEqual' | 'contains' | 'notContains';
-    equal?: string | bigint;
-    notEqual?: string | bigint;
-    contains?: string;
-    notContains?: string;
-  };
-}
 
 export interface ProfileFilter {
   id: string;
@@ -35,6 +25,24 @@ export interface ProfileFilter {
   matchType?: 'equal' | 'not_equal' | 'contains' | 'not_contains';
   value: string;
 }
+
+const createStringCondition = (matchType: string, value: string): StringCondition => ({
+  condition:
+    matchType === 'equal'
+      ? {oneofKind: 'equal' as const, equal: value}
+      : matchType === 'not_equal'
+      ? {oneofKind: 'notEqual' as const, notEqual: value}
+      : matchType === 'contains'
+      ? {oneofKind: 'contains' as const, contains: value}
+      : {oneofKind: 'notContains' as const, notContains: value},
+});
+
+const createNumberCondition = (matchType: string, value: bigint): NumberCondition => ({
+  condition:
+    matchType === 'equal'
+      ? {oneofKind: 'equal' as const, equal: value}
+      : {oneofKind: 'notEqual' as const, notEqual: value},
+});
 
 // Convert protobuf Filter[] back to ProfileFilter[] format for editing
 export const convertFromProtoFilters = (protoFilters: Filter[]): ProfileFilter[] => {
@@ -148,30 +156,12 @@ export const convertToProtoFilters = (profileFilters: ProfileFilter[]): Filter[]
       // Build the condition based on field type
       const isNumberField = f.field === 'address' || f.field === 'line_number';
 
-      let condition: FilterCondition;
-      if (isNumberField) {
-        const numValue = BigInt(f.value);
-        condition = {
-          condition:
-            f.matchType === 'equal'
-              ? {oneofKind: 'equal' as const, equal: numValue}
-              : {oneofKind: 'notEqual' as const, notEqual: numValue},
-        };
-      } else {
-        condition = {
-          condition:
-            f.matchType === 'equal'
-              ? {oneofKind: 'equal' as const, equal: f.value}
-              : f.matchType === 'not_equal'
-              ? {oneofKind: 'notEqual' as const, notEqual: f.value}
-              : f.matchType === 'contains'
-              ? {oneofKind: 'contains' as const, contains: f.value}
-              : {oneofKind: 'notContains' as const, notContains: f.value},
-        };
-      }
+      const condition: StringCondition | NumberCondition = isNumberField
+        ? createNumberCondition(f.matchType as string, BigInt(f.value))
+        : createStringCondition(f.matchType as string, f.value);
 
       // Create FilterCriteria
-      const criteria: Record<string, FilterCondition> = {};
+      const criteria: Record<string, StringCondition | NumberCondition> = {};
       switch (f.field) {
         case 'function_name':
           criteria.functionName = condition;
