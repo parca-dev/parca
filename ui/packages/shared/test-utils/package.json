@@ -5,12 +5,15 @@
   "main": "dist/index.js",
   "scripts": {
     "prepublish": "pnpm run build",
-    "build": "tsc",
+    "build": "tsc && tsc-alias",
     "build-swc": "swc ./src -d dist --copy-files",
-    "watch": "tsc-watch"
+    "watch": "tsc-watch --onSuccess \"tsc-alias\""
   },
   "dependencies": {
     "tsc-watch": "6.3.1"
+  },
+  "devDependencies": {
+    "tsc-alias": "^1.8.8"
   },
   "keywords": [],
   "author": "",
