@@ -75,7 +75,9 @@ export const validateFlameChartQuery = (
   profileSource: MergedProfileSource
 ): {isValid: boolean; isNonDelta: boolean; isDurationTooLong: boolean} => {
   const isNonDelta = !profileSource.ProfileType().delta;
-  const isDurationTooLong = profileSource.mergeTo - profileSource.mergeFrom > 60000;
+  const duration = profileSource.mergeTo - profileSource.mergeFrom;
+  console.log('duration of flame chart query: ', duration, 'ns');
+  const isDurationTooLong = duration > 60_000_000_000n; // 60 seconds in nanoseconds
   return {isValid: !isNonDelta && !isDurationTooLong, isNonDelta, isDurationTooLong};
 };
 

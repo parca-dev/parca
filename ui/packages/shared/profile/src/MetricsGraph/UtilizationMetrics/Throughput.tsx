@@ -11,23 +11,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Fragment, useCallback, useId, useMemo, useRef, useState} from 'react';
+import {useMemo} from 'react';
 
-import * as d3 from 'd3';
-import {pointer} from 'd3-selection';
+import {Icon} from '@iconify/react';
 import {AnimatePresence, motion} from 'framer-motion';
-import throttle from 'lodash.throttle';
-import {useContextMenu} from 'react-contexify';
 
-import {DateTimeRange, MetricsGraphSkeleton, useParcaContext, useURLState} from '@parca/components';
-import {Matcher} from '@parca/parser';
-import {formatDate, formatForTimespan, getPrecision, valueFormatter} from '@parca/utilities';
+import {
+  DateTimeRange,
+  MetricsGraphSkeleton,
+  TextWithTooltip,
+  useParcaContext,
+} from '@parca/components';
+import {formatDate, timePattern, valueFormatter} from '@parca/utilities';
 
 import {type UtilizationMetrics as MetricSeries} from '../../ProfileSelector';
-import MetricsContextMenu from '../MetricsContextMenu';
-import MetricsTooltip from '../MetricsTooltip';
+import MetricsGraph, {type ContextMenuItemOrSubmenu, type Series} from '../index';
 import {useMetricsGraphDimensions} from '../useMetricsGraphDimensions';
-import {getSeriesColor} from '../utils/colorMapping';
 
 interface NetworkLabel {
   name: string;
@@ -53,17 +52,114 @@ interface CommonProps {
   from: number;
   to: number;
   selectedSeries?: Array<{key: string; value: string}>;
-  onSelectedSeriesChange?: (series: Array<{key: string; value: string}>) => void;
+  onSeriesClick?: (seriesIndex: number) => void;
 }
 
 type RawAreaChartProps = CommonProps & {
+  transformedData: Series[];
   width: number;
   height: number;
   margin: number;
+  contextMenuItems?: ContextMenuItemOrSubmenu[];
 };
 
 type Props = CommonProps & {
   utilizationMetricsLoading?: boolean;
+};
+
+const transformUtilizationLabels = (label: string): string => {
+  return label.replace('attributes.', '').replace('attributes_resource.', '');
+};
+
+const createThroughputContextMenuItems = (
+  addLabelMatcher: (
+    labels: {key: string; value: string} | Array<{key: string; value: string}>
+  ) => void,
+  transmitData: MetricSeries[],
+  receiveData: MetricSeries[]
+): ContextMenuItemOrSubmenu[] => {
+  const allData = [...transmitData, ...receiveData];
+
+  return [
+    {
+      id: 'focus-on-single-series',
+      label: 'Focus only on this series',
+      icon: 'ph:star',
+      onClick: (closestPoint, _series) => {
+        if (
+          closestPoint != null &&
+          allData.length > 0 &&
+          allData[closestPoint.seriesIndex] != null
+        ) {
+          const originalSeriesData = allData[closestPoint.seriesIndex];
+          if (originalSeriesData.labelset?.labels != null) {
+            const labels = originalSeriesData.labelset.labels.filter(
+              label => label.name !== '__name__'
+            );
+            const labelsToAdd = labels.map(label => ({
+              key: label.name,
+              value: label.value,
+            }));
+            addLabelMatcher(labelsToAdd);
+          }
+        }
+      },
+    },
+    {
+      id: 'add-to-query',
+      label: 'Add to query',
+      icon: 'material-symbols:add',
+      createDynamicItems: (closestPoint, _series) => {
+        if (
+          closestPoint == null ||
+          allData.length === 0 ||
+          allData[closestPoint.seriesIndex] == null
+        ) {
+          return [
+            {
+              id: 'no-labels-available',
+              label: 'No labels available',
+              icon: 'ph:warning',
+              disabled: () => true,
+              onClick: () => {}, // No-op for disabled item
+            },
+          ];
+        }
+
+        const originalSeriesData = allData[closestPoint.seriesIndex];
+        if (originalSeriesData.labelset?.labels == null) {
+          return [
+            {
+              id: 'no-labels-available',
+              label: 'No labels available',
+              icon: 'ph:warning',
+              disabled: () => true,
+              onClick: () => {}, // No-op for disabled item
+            },
+          ];
+        }
+
+        const labels = originalSeriesData.labelset.labels.filter(
+          label => label.name !== '__name__'
+        );
+
+        return labels.map(label => ({
+          id: `add-label-${label.name}`,
+          label: (
+            <div className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+              {`${transformUtilizationLabels(label.name)}="${label.value}"`}
+            </div>
+          ),
+          onClick: () => {
+            addLabelMatcher({
+              key: label.name,
+              value: label.value,
+            });
+          },
+        }));
+      },
+    },
+  ];
 };
 
 interface MetricsSample {
@@ -103,10 +199,39 @@ function transformToSeries(data: MetricSeries[], isReceive = false): NetworkSeri
   }));
 }
 
+function transformNetworkSeriesToSeries(
+  transmitData: MetricSeries[],
+  receiveData: MetricSeries[]
+): Series[] {
+  const transmitSeries = transformToSeries(transmitData);
+  const receiveSeries = transformToSeries(receiveData, true);
+  const allSeries = [...transmitSeries, ...receiveSeries];
+
+  return allSeries.map(networkSeries => {
+    const labels = networkSeries.metric ?? [];
+    const sortedLabels = labels
+      .filter(label => label.name !== '__name__')
+      .sort((a, b) => a.name.localeCompare(b.name));
+    const labelString = sortedLabels.map(label => `${label.name}=${label.value}`).join(',');
+    const id =
+      (networkSeries.isReceive === true ? 'receive-' : 'transmit-') +
+      (labelString !== '' ? labelString : 'default');
+
+    return {
+      id,
+      values: networkSeries.values.map(([timestamp, value]): [number, number] => [
+        timestamp,
+        value,
+      ]),
+    };
+  });
+}
+
 const RawAreaChart = ({
   transmitData,
   receiveData,
-  addLabelMatcher,
+  transformedData,
+  addLabelMatcher: _addLabelMatcher,
   setTimeRange,
   width,
   height,
@@ -114,431 +239,103 @@ const RawAreaChart = ({
   humanReadableName,
   from,
   to,
-  selectedSeries,
-  onSelectedSeriesChange,
+  selectedSeries: _selectedSeries,
+  onSeriesClick,
+  contextMenuItems,
 }: RawAreaChartProps): JSX.Element => {
   const {timezone} = useParcaContext();
-  const graph = useRef(null);
-  const [dragging, setDragging] = useState(false);
-  const [hovering, setHovering] = useState(false);
-  const [relPos, setRelPos] = useState(-1);
-  const [pos, setPos] = useState([0, 0]);
-  const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
-  const idForContextMenu = useId();
-  const [_, setSelectedTimeframe] = useURLState('gpu_selected_timeframe');
 
-  const parsedSelectedSeries: Matcher[] = useMemo(() => {
-    if (selectedSeries == null || selectedSeries.length === 0) {
-      return [];
-    }
-
-    return selectedSeries.map(s => ({
-      key: s.key,
-      value: s.value,
-      matcherType: '=' as const,
-    }));
-  }, [selectedSeries]);
-
-  const lineStroke = '1px';
-  const lineStrokeHover = '2px';
-  const lineStrokeSelected = '3px';
-
-  const graphWidth = width - margin * 1.5 - margin / 2;
-
-  const paddedFrom = from;
-  const paddedTo = to;
-
-  const series = useMemo(() => {
-    const transmitSeries = transformToSeries(transmitData);
-    const receiveSeries = transformToSeries(receiveData, true);
-    return [...transmitSeries, ...receiveSeries];
-  }, [transmitData, receiveData]);
-
-  const extentsY = series.map(function (s) {
-    return d3.extent(s.values, function (d) {
-      return d[1];
-    });
-  });
-
-  const minY = d3.min(extentsY, function (d) {
-    return d[0];
-  });
-
-  const maxY = d3.max(extentsY, function (d) {
-    return d[1];
-  });
-
-  // Setup scales with padded time range
-  const xScale = d3.scaleUtc().domain([paddedFrom, paddedTo]).range([0, graphWidth]);
-
-  const yScale = d3
-    .scaleLinear()
-    // Ensure domain is symmetric around 0 for balanced visualization
-    .domain([minY ?? 0, maxY ?? 0])
-    .range([height - margin, 0])
-    .nice();
-
-  const throttledSetPos = throttle(setPos, 20);
-
-  const onMouseMove = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement, MouseEvent>): void => {
-    if (isContextMenuOpen) {
-      return;
-    }
-
-    // X/Y coordinate array relative to svg
-    const rel = pointer(e);
-
-    const xCoordinate = rel[0];
-    const xCoordinateWithoutMargin = xCoordinate - margin;
-    const yCoordinate = rel[1];
-    const yCoordinateWithoutMargin = yCoordinate - margin;
-
-    throttledSetPos([xCoordinateWithoutMargin, yCoordinateWithoutMargin]);
-  };
-
-  const trackVisibility = (isVisible: boolean): void => {
-    setIsContextMenuOpen(isVisible);
-  };
-
-  const MENU_ID = `areachart-context-menu-${idForContextMenu}`;
-
-  const {show} = useContextMenu({
-    id: MENU_ID,
-  });
-
-  const displayMenu = useCallback(
-    (e: React.MouseEvent): void => {
-      show({
-        event: e,
-      });
-    },
-    [show]
+  // Compute original series data for rich tooltip
+  const allOriginalData = useMemo(
+    () => [...transmitData, ...receiveData],
+    [transmitData, receiveData]
   );
 
-  // Create line generator for both transmit and receive
-  const lineGenerator = d3
-    .line<number[]>()
-    .x(d => xScale(d[0]))
-    .y(d => yScale(d[1]));
-
-  const highlighted = useMemo(() => {
-    if (series.length === 0) {
-      return null;
-    }
-
-    // Return the closest point as the highlighted point
-    const closestPointPerSeries = series.map(function (s) {
-      const distances = s.values.map(d => {
-        const x = xScale(d[0]) + margin / 2;
-        const y = yScale(d[1]) - margin / 3;
-
-        return Math.sqrt(Math.pow(pos[0] - x, 2) + Math.pow(pos[1] - y, 2));
-      });
-
-      const pointIndex = d3.minIndex(distances);
-      const minDistance = distances[pointIndex];
-
-      return {
-        pointIndex,
-        distance: minDistance,
-      };
-    });
-
-    const closestSeriesIndex = d3.minIndex(closestPointPerSeries, s => s.distance);
-    const pointIndex = closestPointPerSeries[closestSeriesIndex].pointIndex;
-    const point = series[closestSeriesIndex].values[pointIndex];
-    return {
-      seriesIndex: closestSeriesIndex,
-      labels: series[closestSeriesIndex].metric,
-      timestamp: point[0],
-      valuePerSecond: point[1],
-      value: point[2],
-      duration: point[3],
-      x: xScale(point[0]),
-      y: yScale(point[1]),
-    };
-  }, [pos, series, xScale, yScale, margin]);
-
-  const onMouseDown = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement, MouseEvent>): void => {
-    // only left mouse button
-    if (e.button !== 0) {
-      return;
-    }
-
-    // X/Y coordinate array relative to svg
-    const rel = pointer(e);
-
-    const xCoordinate = rel[0];
-    const xCoordinateWithoutMargin = xCoordinate - margin;
-    if (xCoordinateWithoutMargin >= 0) {
-      setRelPos(xCoordinateWithoutMargin);
-      setDragging(true);
-    }
-
-    e.stopPropagation();
-    e.preventDefault();
-  };
-
-  const onMouseUp = (e: React.MouseEvent<SVGSVGElement | HTMLDivElement, MouseEvent>): void => {
-    setDragging(false);
-
-    if (relPos === -1) {
-      // MouseDown happened outside of this element.
-      return;
-    }
-
-    // This is a normal click. We tolerate tiny movements to still be a
-    // click as they can occur when clicking based on user feedback.
-    if (Math.abs(relPos - pos[0]) <= 1) {
-      setRelPos(-1);
-      return;
-    }
-
-    let startPos = relPos;
-    let endPos = pos[0];
-
-    if (startPos > endPos) {
-      startPos = pos[0];
-      endPos = relPos;
-    }
-
-    const startCorrection = 10;
-    const endCorrection = 30;
-
-    const firstTime = xScale.invert(startPos - startCorrection).valueOf();
-    const secondTime = xScale.invert(endPos - endCorrection).valueOf();
-
-    setTimeRange(DateTimeRange.fromAbsoluteDates(firstTime, secondTime));
-
-    setRelPos(-1);
-
-    e.stopPropagation();
-    e.preventDefault();
-  };
-
   return (
-    <>
-      <MetricsContextMenu
-        onAddLabelMatcher={addLabelMatcher}
-        menuId={MENU_ID}
-        highlighted={highlighted}
-        trackVisibility={trackVisibility}
-        utilizationMetrics={true}
-      />
+    <MetricsGraph
+      data={transformedData}
+      from={from}
+      to={to}
+      setTimeRange={setTimeRange}
+      onSampleClick={closestPoint => {
+        if (onSeriesClick != null) {
+          onSeriesClick(closestPoint.seriesIndex);
+        }
+      }}
+      yAxisLabel={humanReadableName}
+      yAxisUnit="bytes_per_second"
+      width={width}
+      height={height}
+      margin={margin}
+      contextMenuItems={contextMenuItems}
+      renderTooltipContent={(seriesIndex: number, pointIndex: number) => {
+        if (allOriginalData?.[seriesIndex]?.samples?.[pointIndex] != null) {
+          const originalSeriesData = allOriginalData[seriesIndex];
+          const originalPoint = allOriginalData[seriesIndex].samples[pointIndex];
 
-      {highlighted != null && hovering && !dragging && pos[0] !== 0 && pos[1] !== 0 && (
-        <div
-          onMouseMove={onMouseMove}
-          onMouseEnter={() => setHovering(true)}
-          onMouseLeave={() => setHovering(false)}
-        >
-          {!isContextMenuOpen && (
-            <MetricsTooltip
-              x={pos[0] + margin}
-              y={pos[1] + margin}
-              highlighted={{
-                ...highlighted,
-                valuePerSecond: Math.abs(highlighted.valuePerSecond),
-              }}
-              contextElement={graph.current}
-              sampleType={'throughput'}
-              sampleUnit={'bytes_per_second'}
-              delta={false}
-              utilizationMetrics={true}
-              valuePrefix={
-                highlighted.seriesIndex >= transmitData.length ? 'Receive ' : 'Transmit '
-              }
-            />
-          )}
-        </div>
-      )}
-      <div
-        ref={graph}
-        onMouseEnter={() => setHovering(true)}
-        onMouseLeave={() => setHovering(false)}
-        onContextMenu={displayMenu}
-      >
-        <svg
-          width={`${width}px`}
-          height={`${height + margin}px`}
-          onMouseDown={onMouseDown}
-          onMouseUp={onMouseUp}
-          onMouseMove={onMouseMove}
-        >
-          <g transform={`translate(${margin}, 0)`}>
-            {dragging && (
-              <g className="zoom-time-rect">
-                <rect
-                  className="bar"
-                  x={pos[0] - relPos < 0 ? pos[0] : relPos}
-                  y={0}
-                  height={height}
-                  width={Math.abs(pos[0] - relPos)}
-                  fill={'rgba(0, 0, 0, 0.125)'}
-                />
-              </g>
-            )}
-          </g>
-          <g transform={`translate(${margin * 1.5}, ${margin / 1.5})`}>
-            <g className="y axis" textAnchor="end" fontSize="10" fill="none">
-              {yScale.ticks(6).map((d, i, allTicks) => {
-                let decimals = 2;
-                const intervalBetweenTicks = allTicks[1] - allTicks[0];
+          const labels = originalSeriesData.labelset?.labels ?? [];
+          const nameLabel = labels.find(e => e.name === '__name__');
+          const highlightedNameLabel = nameLabel ?? {name: '', value: ''};
 
-                if (intervalBetweenTicks < 1) {
-                  const precision = getPrecision(intervalBetweenTicks);
-                  decimals = precision;
-                }
+          // Determine if this is receive data (negative values)
+          const isReceive = seriesIndex >= transmitData.length;
+          const valuePrefix = isReceive ? 'Receive ' : 'Transmit ';
 
-                return (
-                  <Fragment key={`${i.toString()}-${d.toString()}`}>
-                    <g key={`tick-${i}`} className="tick" transform={`translate(0, ${yScale(d)})`}>
-                      <line className="stroke-gray-300 dark:stroke-gray-500" x2={-6} />
-                      <text fill="currentColor" x={-9} dy={'0.32em'}>
-                        {d < 0 ? '-' : ''}
-                        {valueFormatter(Math.abs(d), 'bytes_per_second', decimals)}
-                      </text>
-                    </g>
-                    <g key={`grid-${i}`}>
-                      <line
-                        className="stroke-gray-300 dark:stroke-gray-500"
-                        x1={xScale(from)}
-                        x2={xScale(to)}
-                        y1={yScale(d)}
-                        y2={yScale(d)}
-                      />
-                    </g>
-                  </Fragment>
-                );
-              })}
-              <line
-                className="stroke-gray-300 dark:stroke-gray-500"
-                x1={0}
-                x2={0}
-                y1={0}
-                y2={height - margin}
-              />
-              <line
-                className="stroke-gray-300 dark:stroke-gray-500"
-                x1={xScale(to)}
-                x2={xScale(to)}
-                y1={0}
-                y2={height - margin}
-              />
-              <g transform={`translate(${-margin}, ${(height - margin) / 2}) rotate(270)`}>
-                <text
-                  fill="currentColor"
-                  dy="-0.7em"
-                  className="text-sm capitalize"
-                  textAnchor="middle"
-                >
-                  {humanReadableName}
-                </text>
-              </g>
-            </g>
-            <g
-              className="x axis"
-              fill="none"
-              fontSize="10"
-              textAnchor="middle"
-              transform={`translate(0,${height - margin})`}
-            >
-              {xScale.ticks(5).map((d, i) => (
-                <Fragment key={`${i.toString()}-${d.toString()}`}>
-                  <g
-                    key={`tick-${i}`}
-                    className="tick"
-                    /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
-                    transform={`translate(${xScale(d)}, 0)`}
-                  >
-                    <line y2={6} className="stroke-gray-300 dark:stroke-gray-500" />
-                    <text fill="currentColor" dy=".71em" y={9}>
-                      {formatDate(d, formatForTimespan(from, to), timezone)}
-                    </text>
-                  </g>
-                  <g key={`grid-${i}`}>
-                    <line
-                      className="stroke-gray-300 dark:stroke-gray-500"
-                      x1={xScale(d)}
-                      x2={xScale(d)}
-                      y1={0}
-                      y2={-height + margin}
-                    />
-                  </g>
-                </Fragment>
-              ))}
-              <line
-                className="stroke-gray-300 dark:stroke-gray-500"
-                x1={0}
-                x2={graphWidth}
-                y1={0}
-                y2={0}
-              />
-              <g transform={`translate(${(width - 2.5 * margin) / 2}, ${margin / 2})`}>
-                <text fill="currentColor" dy=".71em" y={5} className="text-sm">
-                  Time
-                </text>
-              </g>
-            </g>
-            <g className="areas">
-              {/* Draw baseline at y=0 */}
-              <line
-                x1={xScale(from)}
-                x2={xScale(to)}
-                y1={yScale(0)}
-                y2={yScale(0)}
-                stroke="#64748b"
-                strokeDasharray="4 2"
-                strokeWidth={1}
-                opacity={0.7}
-              />
-              {series.map((s, i) => {
-                let isSelected = false;
-                if (parsedSelectedSeries != null && parsedSelectedSeries.length > 0) {
-                  isSelected = parsedSelectedSeries.every(m => {
-                    for (let i = 0; i < s.metric.length; i++) {
-                      if (s.metric[i].name === m.key && s.metric[i].value === m.value) {
-                        return true;
-                      }
-                    }
-                    return false;
-                  });
-                }
-
-                return (
-                  <g key={i} className="line cursor-pointer">
-                    <path
-                      d={lineGenerator(s.values) ?? ''}
-                      fill="none"
-                      stroke={getSeriesColor(s.metric)}
-                      strokeWidth={
-                        isSelected
-                          ? lineStrokeSelected
-                          : hovering && highlighted != null && i === highlighted.seriesIndex
-                          ? lineStrokeHover
-                          : lineStroke
-                      }
-                      strokeOpacity={isSelected ? 1 : 0.8}
-                      onClick={() => {
-                        if (highlighted != null && onSelectedSeriesChange != null) {
-                          onSelectedSeriesChange(
-                            highlighted.labels.map(l => ({
-                              key: l.name,
-                              value: l.value,
-                            }))
-                          );
-                          setSelectedTimeframe(undefined);
-                        }
-                      }}
-                    />
-                  </g>
-                );
-              })}
-            </g>
-          </g>
-        </svg>
-      </div>
-    </>
+          return (
+            <div className="flex flex-row">
+              <div className="ml-2 mr-6">
+                <span className="font-semibold">{highlightedNameLabel.value}</span>
+                <span className="my-2 block text-gray-700 dark:text-gray-300">
+                  <table className="table-auto">
+                    <tbody>
+                      <tr>
+                        <td className="w-1/4">{valuePrefix}Value</td>
+                        <td className="w-3/4">
+                          {valueFormatter(Math.abs(originalPoint.value), 'bytes_per_second', 2)}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="w-1/4">At</td>
+                        <td className="w-3/4">
+                          {formatDate(
+                            new Date(originalPoint.timestamp),
+                            timePattern(timezone as string),
+                            timezone
+                          )}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </span>
+                <span className="my-2 block text-gray-500">
+                  {labels
+                    .filter(label => label.name !== '__name__')
+                    .map(label => (
+                      <div
+                        key={`${seriesIndex.toString()}-${pointIndex.toString()}-${label.name}`}
+                        className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+                      >
+                        <TextWithTooltip
+                          text={`${transformUtilizationLabels(label.name)}="${label.value}"`}
+                          maxTextLength={37}
+                          id={`${seriesIndex.toString()}-${pointIndex.toString()}-tooltip-${
+                            label.name
+                          }`}
+                        />
+                      </div>
+                    ))}
+                </span>
+                <div className="flex w-full items-center gap-1 text-xs text-gray-500">
+                  <Icon icon="iconoir:mouse-button-right" />
+                  <div>Right click to add labels to query.</div>
+                </div>
+              </div>
+            </div>
+          );
+        }
+        return null;
+      }}
+    />
   );
 };
 
@@ -553,10 +350,19 @@ const AreaChart = ({
   from,
   to,
   selectedSeries,
-  onSelectedSeriesChange,
+  onSeriesClick,
 }: Props): JSX.Element => {
   const {isDarkMode} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(false, true);
+
+  const transformedData = useMemo(
+    () => transformNetworkSeriesToSeries(transmitData, receiveData),
+    [transmitData, receiveData]
+  );
+
+  const contextMenuItems = useMemo(() => {
+    return createThroughputContextMenuItems(addLabelMatcher, transmitData, receiveData);
+  }, [addLabelMatcher, transmitData, receiveData]);
 
   return (
     <AnimatePresence>
@@ -573,6 +379,7 @@ const AreaChart = ({
           <RawAreaChart
             transmitData={transmitData}
             receiveData={receiveData}
+            transformedData={transformedData}
             addLabelMatcher={addLabelMatcher}
             setTimeRange={setTimeRange}
             width={width}
@@ -583,7 +390,8 @@ const AreaChart = ({
             from={from}
             to={to}
             selectedSeries={selectedSeries}
-            onSelectedSeriesChange={onSelectedSeriesChange}
+            onSeriesClick={onSeriesClick}
+            contextMenuItems={contextMenuItems}
           />
         )}
       </motion.div>

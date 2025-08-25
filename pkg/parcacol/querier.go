@@ -107,12 +107,12 @@ func (q *Querier) Labels(
 	}
 
 	if startTime.Unix() != 0 && endTime.Unix() != 0 {
-		start := timestamp.FromTime(startTime)
-		end := timestamp.FromTime(endTime)
+		start := startTime.UnixNano()
+		end := endTime.UnixNano()
 
 		filterExpr = append(filterExpr,
-			logicalplan.Col(profile.ColumnTimestamp).Gt(logicalplan.Literal(start)),
-			logicalplan.Col(profile.ColumnTimestamp).Lt(logicalplan.Literal(end)),
+			logicalplan.Col(profile.ColumnTimeNanos).Gt(logicalplan.Literal(start)),
+			logicalplan.Col(profile.ColumnTimeNanos).Lt(logicalplan.Literal(end)),
 		)
 	}
 
@@ -170,11 +170,11 @@ func (q *Querier) Values(
 	}
 
 	if startTime.Unix() != 0 && endTime.Unix() != 0 {
-		start := timestamp.FromTime(startTime)
-		end := timestamp.FromTime(endTime)
+		start := startTime.UnixNano()
+		end := endTime.UnixNano()
 
-		filterExpr = append(filterExpr, logicalplan.Col(profile.ColumnTimestamp).Gt(logicalplan.Literal(start)),
-			logicalplan.Col(profile.ColumnTimestamp).Lt(logicalplan.Literal(end)))
+		filterExpr = append(filterExpr, logicalplan.Col(profile.ColumnTimeNanos).Gt(logicalplan.Literal(start)),
+			logicalplan.Col(profile.ColumnTimeNanos).Lt(logicalplan.Literal(end)))
 	}
 
 	err := q.engine.ScanTable(q.tableName).
@@ -349,18 +349,18 @@ func (q *Querier) QueryRange(
 		return nil, err
 	}
 
-	start := timestamp.FromTime(startTime)
-	end := timestamp.FromTime(endTime)
-
 	// The step cannot be lower than 1s
 	if step < time.Second {
 		step = time.Second
 	}
 
+	start := startTime.UnixNano()
+	end := endTime.UnixNano()
+
 	exprs := append(
 		selectorExprs,
-		logicalplan.Col(profile.ColumnTimestamp).Gt(logicalplan.Literal(start)),
-		logicalplan.Col(profile.ColumnTimestamp).Lt(logicalplan.Literal(end)),
+		logicalplan.Col(profile.ColumnTimeNanos).GtEq(logicalplan.Literal(start)),
+		logicalplan.Col(profile.ColumnTimeNanos).LtEq(logicalplan.Literal(end)),
 	)
 
 	filterExpr := logicalplan.And(exprs...)
@@ -403,17 +403,17 @@ func (q *Querier) queryRangeDelta(
 	totalSum := logicalplan.Sum(logicalplan.Col(profile.ColumnValue))
 	totalSumColumn := totalSum.Name()
 	durationMin := logicalplan.Min(logicalplan.Col(profile.ColumnDuration))
-	timestampUnique := logicalplan.Unique(logicalplan.Col(profile.ColumnTimestamp))
+	timestampUnique := logicalplan.Unique(logicalplan.Col(profile.ColumnTimeNanos))
 
 	preProjection := []logicalplan.Expr{
 		logicalplan.Mul(
 			logicalplan.Div(
-				logicalplan.Col(profile.ColumnTimestamp),
-				logicalplan.Literal(step.Milliseconds()),
+				logicalplan.Col(profile.ColumnTimeNanos),
+				logicalplan.Literal(step.Nanoseconds()),
 			),
-			logicalplan.Literal(step.Milliseconds()),
+			logicalplan.Literal(step.Nanoseconds()),
 		).Alias(TimestampBucket),
-		logicalplan.Col(profile.ColumnTimestamp),
+		logicalplan.Col(profile.ColumnTimeNanos),
 		logicalplan.DynCol(profile.ColumnLabels),
 		logicalplan.Col(profile.ColumnDuration),
 	}
@@ -610,7 +610,7 @@ func (q *Querier) queryRangeDelta(
 
 			series := resSeries[index]
 			series.Samples = append(series.Samples, &pb.MetricsSample{
-				Timestamp:      timestamppb.New(timestamp.Time(ts)),
+				Timestamp:      timestamppb.New(time.Unix(0, ts)),
 				Value:          valueSum,
 				ValuePerSecond: valuePerSecond,
 				Duration:       duration,
@@ -655,7 +655,7 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 				valueSum,
 			},
 			[]logicalplan.Expr{
-				logicalplan.Col(profile.ColumnTimestamp),
+				logicalplan.Col(profile.ColumnTimeNanos),
 				logicalplan.DynCol(profile.ColumnLabels),
 			},
 		).
@@ -681,7 +681,7 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 	}
 	// Add necessary columns and their found value is false by default.
 	columnIndices := map[string]columnIndex{
-		profile.ColumnTimestamp: {},
+		profile.ColumnTimeNanos: {},
 		valueSumColumn:          {},
 	}
 	labelColumnIndices := []int{}
@@ -744,7 +744,7 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 				resSeriesBuckets[index] = map[int64]struct{}{}
 			}
 
-			ts := ar.Column(columnIndices[profile.ColumnTimestamp].index).(*array.Int64).Value(i)
+			ts := ar.Column(columnIndices[profile.ColumnTimeNanos].index).(*array.Int64).Value(i)
 			value := ar.Column(columnIndices[valueSumColumn].index).(*array.Int64).Value(i)
 
 			// Each step bucket will only return one of the timestamps and its value.
@@ -764,7 +764,7 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 
 			series := resSeries[index]
 			series.Samples = append(series.Samples, &pb.MetricsSample{
-				Timestamp:      timestamppb.New(timestamp.Time(ts)),
+				Timestamp:      timestamppb.New(time.Unix(0, ts)),
 				Value:          value,
 				ValuePerSecond: float64(value),
 			})
@@ -966,7 +966,7 @@ func (q *Querier) SymbolizeArrowRecord(
 			defer valuePerSecondColumn.Release()
 		}
 
-		indices = schema.FieldIndices(profile.ColumnTimestamp)
+		indices = schema.FieldIndices(profile.ColumnTimeNanos)
 		var timestampColumn *array.Int64
 		if len(indices) == 1 {
 			timestampColumn = r.Column(indices[0]).(*array.Int64)
@@ -1450,15 +1450,15 @@ func (q *Querier) selectMerge(
 		return nil, "", queryParts, err
 	}
 
-	start := timestamp.FromTime(startTime)
-	end := timestamp.FromTime(endTime)
+	start := startTime.UnixNano()
+	end := endTime.UnixNano()
 	resultType := queryParts.Meta.SampleType
 
 	filterExpr := logicalplan.And(
 		append(
 			selectorExprs,
-			logicalplan.Col(profile.ColumnTimestamp).GtEq(logicalplan.Literal(start)),
-			logicalplan.Col(profile.ColumnTimestamp).LtEq(logicalplan.Literal(end)),
+			logicalplan.Col(profile.ColumnTimeNanos).GtEq(logicalplan.Literal(start)),
+			logicalplan.Col(profile.ColumnTimeNanos).LtEq(logicalplan.Literal(end)),
 		)...,
 	)
 
@@ -1495,9 +1495,9 @@ func (q *Querier) selectMerge(
 
 	for _, col := range groupByLabels {
 		if col == profile.ColumnTimestamp {
-			firstProject = append(firstProject, logicalplan.Col(profile.ColumnTimeNanos).Alias(profile.ColumnTimestamp))
-			columnsGroupBy = append(columnsGroupBy, logicalplan.Col(profile.ColumnTimestamp))
-			finalProject = append(finalProject, logicalplan.Col(profile.ColumnTimestamp))
+			firstProject = append(firstProject, logicalplan.Col(profile.ColumnTimeNanos).Alias(profile.ColumnTimeNanos))
+			columnsGroupBy = append(columnsGroupBy, logicalplan.Col(profile.ColumnTimeNanos))
+			finalProject = append(finalProject, logicalplan.Col(profile.ColumnTimeNanos))
 		}
 	}
 
@@ -1554,13 +1554,13 @@ func (q *Querier) GetProfileMetadataMappings(
 		return nil, err
 	}
 
-	start := timestamp.FromTime(startTime)
-	end := timestamp.FromTime(endTime)
+	start := startTime.UnixNano()
+	end := endTime.UnixNano()
 	filterExpr := logicalplan.And(
 		append(
 			selectorExprs,
-			logicalplan.Col(profile.ColumnTimestamp).GtEq(logicalplan.Literal(start)),
-			logicalplan.Col(profile.ColumnTimestamp).LtEq(logicalplan.Literal(end)),
+			logicalplan.Col(profile.ColumnTimeNanos).GtEq(logicalplan.Literal(start)),
+			logicalplan.Col(profile.ColumnTimeNanos).LtEq(logicalplan.Literal(end)),
 		)...,
 	)
 
@@ -1618,13 +1618,13 @@ func (q *Querier) GetProfileMetadataLabels(
 		return nil, err
 	}
 
-	start := timestamp.FromTime(startTime)
-	end := timestamp.FromTime(endTime)
+	start := startTime.UnixNano()
+	end := endTime.UnixNano()
 	filterExpr := logicalplan.And(
 		append(
 			selectorExprs,
-			logicalplan.Col(profile.ColumnTimestamp).GtEq(logicalplan.Literal(start)),
-			logicalplan.Col(profile.ColumnTimestamp).LtEq(logicalplan.Literal(end)),
+			logicalplan.Col(profile.ColumnTimeNanos).GtEq(logicalplan.Literal(start)),
+			logicalplan.Col(profile.ColumnTimeNanos).LtEq(logicalplan.Literal(end)),
 		)...,
 	)
 

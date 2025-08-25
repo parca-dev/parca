@@ -221,8 +221,8 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 	)
 	res, err := api.QueryRange(ctx, &pb.QueryRangeRequest{
 		Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
-		Start: timestamppb.New(timestamp.Time(0)),
-		End:   timestamppb.New(timestamp.Time(9223372036854775807)),
+		Start: timestamppb.New(time.Unix(0, 0)),
+		End:   timestamppb.New(time.Unix(0, 9223372036854775807)),
 	})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(res.Series))
@@ -462,8 +462,8 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 
 	res, err := api.QueryRange(ctx, &pb.QueryRangeRequest{
 		Query: `fgprof:samples:count:wallclock:nanoseconds:delta`,
-		Start: timestamppb.New(timestamp.Time(0)),
-		End:   timestamppb.New(timestamp.Time(9223372036854775807)),
+		Start: timestamppb.New(time.Unix(0, 0)),
+		End:   timestamppb.New(time.Unix(0, 9223372036854775807)),
 		SumBy: []string{"job"},
 	})
 	require.NoError(t, err)

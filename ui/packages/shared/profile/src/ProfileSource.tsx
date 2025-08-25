@@ -27,6 +27,7 @@ export interface ProfileSource {
   ProfileType: () => ProfileType;
   DiffSelection: () => ProfileDiffSelection;
   toString: (timezone?: string) => string;
+  toKey: () => string;
 }
 
 export interface ProfileSelection {
@@ -79,23 +80,19 @@ export function ProfileSelectionFromParams(
       return null;
     }
 
-    return new MergedProfileSelection(
-      parseInt(mergeFrom),
-      parseInt(mergeTo),
-      Query.parse(selection)
-    );
+    return new MergedProfileSelection(BigInt(mergeFrom), BigInt(mergeTo), Query.parse(selection));
   }
 
   return null;
 }
 
 export class MergedProfileSelection implements ProfileSelection {
-  mergeFrom: number;
-  mergeTo: number;
+  mergeFrom: bigint;
+  mergeTo: bigint;
   query: Query;
   profileSource: ProfileSource;
 
-  constructor(mergeFrom: number, mergeTo: number, query: Query) {
+  constructor(mergeFrom: bigint, mergeTo: bigint, query: Query) {
     this.mergeFrom = mergeFrom;
     this.mergeTo = mergeTo;
     this.query = query;
@@ -178,15 +175,31 @@ export class ProfileDiffSource implements ProfileSource {
 
     return `${this.a.toString()} compared with ${this.b.toString()}`;
   }
+
+  toKey(): string {
+    return `${this.a.toKey()}-${this.b.toKey()}`;
+  }
+}
+
+function nanosToTimestamp(nanos: bigint): Timestamp {
+  const NANOS_PER_SECOND = 1_000_000_000n;
+
+  const seconds = nanos / NANOS_PER_SECOND;
+  const remainingNanos = nanos % NANOS_PER_SECOND;
+
+  return {
+    seconds,
+    nanos: Number(remainingNanos), // Safe since remainingNanos < 1e9
+  };
 }
 
 export class MergedProfileSource implements ProfileSource {
-  mergeFrom: number;
-  mergeTo: number;
+  mergeFrom: bigint;
+  mergeTo: bigint;
   query: Query;
   profileType: ProfileType;
 
-  constructor(mergeFrom: number, mergeTo: number, query: Query) {
+  constructor(mergeFrom: bigint, mergeTo: bigint, query: Query) {
     this.mergeFrom = mergeFrom;
     this.mergeTo = mergeTo;
     this.query = query;
@@ -198,8 +211,8 @@ export class MergedProfileSource implements ProfileSource {
       options: {
         oneofKind: 'merge',
         merge: {
-          start: Timestamp.fromDate(new Date(this.mergeFrom)),
-          end: Timestamp.fromDate(new Date(this.mergeTo)),
+          start: nanosToTimestamp(this.mergeFrom),
+          end: nanosToTimestamp(this.mergeTo),
           query: this.query.toString(),
         },
       },
@@ -212,8 +225,8 @@ export class MergedProfileSource implements ProfileSource {
       options: {
         oneofKind: 'merge',
         merge: {
-          start: Timestamp.fromDate(new Date(this.mergeFrom)),
-          end: Timestamp.fromDate(new Date(this.mergeTo)),
+          start: nanosToTimestamp(this.mergeFrom),
+          end: nanosToTimestamp(this.mergeTo),
           query: this.query.toString(),
         },
       },
@@ -240,9 +253,9 @@ export class MergedProfileSource implements ProfileSource {
     }
 
     let timePart = '';
-    if (this.mergeFrom !== 0) {
+    if (this.mergeFrom !== 0n) {
       timePart = `over ${formatDuration({
-        milliseconds: this.mergeTo - this.mergeFrom,
+        nanos: Number(this.mergeTo - this.mergeFrom),
       })} from ${formatDate(this.mergeFrom, timeFormat(timezone), timezone)} to ${formatDate(
         this.mergeTo,
         timeFormat(timezone),
@@ -251,5 +264,9 @@ export class MergedProfileSource implements ProfileSource {
     }
 
     return `Merged profiles${queryPart}${timePart}`;
+  }
+
+  toKey(): string {
+    return `${this.mergeFrom.toString()}-${this.mergeTo.toString()}-${this.query.toString()}`;
   }
 }
