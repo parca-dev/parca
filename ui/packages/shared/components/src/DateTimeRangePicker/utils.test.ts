@@ -13,7 +13,15 @@
 
 import {describe, expect, it} from 'vitest';
 
-import {UNITS, formatRange, getRelativeTimeRangeBetweenDates, parseInput, formatDateStringForUI, AbsoluteDate, RelativeDate} from './utils';
+import {
+  AbsoluteDate,
+  RelativeDate,
+  UNITS,
+  formatDateStringForUI,
+  formatRange,
+  getRelativeTimeRangeBetweenDates,
+  parseInput,
+} from './utils';
 
 describe('parseInput', () => {
   it('should parse single unit inputs correctly', () => {
@@ -121,7 +129,7 @@ describe('formatDateStringForUI', () => {
   it('should format absolute dates in UTC when no timezone is provided', () => {
     const testDate = new Date('2023-12-01T15:30:00Z');
     const absoluteDate = new AbsoluteDate(testDate);
-    
+
     const result = formatDateStringForUI(absoluteDate);
     expect(result).toBe('2023-12-01 15:30:00');
   });
@@ -129,7 +137,7 @@ describe('formatDateStringForUI', () => {
   it('should format absolute dates in specified timezone when timezone is provided', () => {
     const testDate = new Date('2023-12-01T15:30:00Z');
     const absoluteDate = new AbsoluteDate(testDate);
-    
+
     const result = formatDateStringForUI(absoluteDate, 'America/New_York');
     expect(result).toBe('2023-12-01 10:30:00');
   });
@@ -137,13 +145,13 @@ describe('formatDateStringForUI', () => {
   it('should handle different timezones correctly', () => {
     const testDate = new Date('2023-06-15T12:00:00Z');
     const absoluteDate = new AbsoluteDate(testDate);
-    
+
     const utcResult = formatDateStringForUI(absoluteDate);
     expect(utcResult).toBe('2023-06-15 12:00:00');
-    
+
     const pacificResult = formatDateStringForUI(absoluteDate, 'America/Los_Angeles');
     expect(pacificResult).toBe('2023-06-15 05:00:00');
-    
+
     const tokyoResult = formatDateStringForUI(absoluteDate, 'Asia/Tokyo');
     expect(tokyoResult).toBe('2023-06-15 21:00:00');
   });
@@ -151,7 +159,7 @@ describe('formatDateStringForUI', () => {
   it('should handle timezone date boundary crossing', () => {
     const testDate = new Date('2023-12-01T02:00:00Z');
     const absoluteDate = new AbsoluteDate(testDate);
-    
+
     const result = formatDateStringForUI(absoluteDate, 'America/Los_Angeles');
     expect(result).toBe('2023-11-30 18:00:00');
   });

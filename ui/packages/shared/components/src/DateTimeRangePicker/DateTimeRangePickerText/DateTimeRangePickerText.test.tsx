@@ -11,11 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {render, screen} from '@testing-library/react';
+import {beforeEach, describe, expect, it, vi} from 'vitest';
 
-import { AbsoluteDate, DateTimeRange } from '../utils';
-
+import {AbsoluteDate, DateTimeRange} from '../utils';
 import DateTimeRangePickerText from './index';
 
 describe('DateTimeRangePickerText', () => {
@@ -32,10 +31,7 @@ describe('DateTimeRangePickerText', () => {
       const fromDate = new Date('2023-12-01T10:00:00Z'); // UTC time
       const toDate = new Date('2023-12-01T15:30:00Z'); // UTC time
 
-      const range = new DateTimeRange(
-        new AbsoluteDate(fromDate),
-        new AbsoluteDate(toDate)
-      );
+      const range = new DateTimeRange(new AbsoluteDate(fromDate), new AbsoluteDate(toDate));
 
       render(
         <DateTimeRangePickerText
@@ -76,10 +72,7 @@ describe('DateTimeRangePickerText', () => {
       const fromDate = new Date('2023-12-01T15:30:00Z'); // 15:30 UTC
       const toDate = new Date('2023-12-01T20:00:00Z'); // 20:00 UTC
 
-      const range = new DateTimeRange(
-        new AbsoluteDate(fromDate),
-        new AbsoluteDate(toDate)
-      );
+      const range = new DateTimeRange(new AbsoluteDate(fromDate), new AbsoluteDate(toDate));
 
       render(
         <DateTimeRangePickerText
@@ -116,13 +109,10 @@ describe('DateTimeRangePickerText', () => {
       const fromDate = new Date('2023-06-15T12:00:00Z'); // Noon UTC (summer date for DST)
       const toDate = new Date('2023-06-15T18:00:00Z'); // 6 PM UTC
 
-      const range = new DateTimeRange(
-        new AbsoluteDate(fromDate),
-        new AbsoluteDate(toDate)
-      );
+      const range = new DateTimeRange(new AbsoluteDate(fromDate), new AbsoluteDate(toDate));
 
       // Test with Pacific timezone
-      const { rerender } = render(
+      const {rerender} = render(
         <DateTimeRangePickerText
           range={range}
           onClick={mockOnClick}
@@ -165,10 +155,7 @@ describe('DateTimeRangePickerText', () => {
       const fromDate = new Date('2023-12-01T02:00:00Z'); // 2 AM UTC
       const toDate = new Date('2023-12-01T04:00:00Z'); // 4 AM UTC
 
-      const range = new DateTimeRange(
-        new AbsoluteDate(fromDate),
-        new AbsoluteDate(toDate)
-      );
+      const range = new DateTimeRange(new AbsoluteDate(fromDate), new AbsoluteDate(toDate));
 
       render(
         <DateTimeRangePickerText
