@@ -32,7 +32,7 @@ type ErrUnsupportedProvider struct {
 }
 
 func (e ErrUnsupportedProvider) Error() string {
-	return "provider not supported (only GCS is currently supported): " + string(e.Provider)
+	return "provider not supported (only GCS and S3 are currently supported): " + string(e.Provider)
 }
 
 type Client interface {
@@ -51,21 +51,27 @@ type Client interface {
 }
 
 func NewClient(ctx context.Context, bucketConf *client.BucketConfig) (Client, error) {
-	if bucketConf.Type != client.GCS {
-		return nil, ErrUnsupportedProvider{Provider: bucketConf.Type}
-	}
-
 	config, err := yaml.Marshal(bucketConf.Config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal bucket config: %w", err)
 	}
 
-	c, err := NewGCSClient(ctx, config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create GCS client: %w", err)
+	switch bucketConf.Type {
+	case client.GCS:
+		c, err := NewGCSClient(ctx, config)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create GCS client: %w", err)
+		}
+		return NewPrefixedClient(c, bucketConf.Prefix), nil
+	case client.S3:
+		c, err := NewS3Client(ctx, config)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create S3 client: %w", err)
+		}
+		return NewPrefixedClient(c, bucketConf.Prefix), nil
+	default:
+		return nil, ErrUnsupportedProvider{Provider: bucketConf.Type}
 	}
-
-	return NewPrefixedClient(c, bucketConf.Prefix), nil
 }
 
 func NewPrefixedClient(client Client, prefix string) Client {
