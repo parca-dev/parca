@@ -12,11 +12,10 @@
 // limitations under the License.
 
 // eslint-disable-next-line import/named
-import { render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {render, screen} from '@testing-library/react';
+import {beforeEach, describe, expect, it, vi} from 'vitest';
 
-import { AbsoluteDate, DateTimeRange } from '../utils';
-
+import {AbsoluteDate, DateTimeRange} from '../utils';
 import DateTimeRangePickerText from './index';
 
 describe('DateTimeRangePickerText', () => {
@@ -116,7 +115,7 @@ describe('DateTimeRangePickerText', () => {
       const range = new DateTimeRange(new AbsoluteDate(fromDate), new AbsoluteDate(toDate));
 
       // Test with Pacific timezone
-      const { rerender } = render(
+      const {rerender} = render(
         <DateTimeRangePickerText
           range={range}
           onClick={mockOnClick}

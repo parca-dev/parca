@@ -12,12 +12,12 @@
 // limitations under the License.
 
 // eslint-disable-next-line import/named
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import {render, screen} from '@testing-library/react';
+import {describe, expect, it, vi} from 'vitest';
 
-import { AbsoluteDate } from '../DateTimeRangePicker/utils';
+import {AbsoluteDate} from '../DateTimeRangePicker/utils';
 import ParcaContext from '../ParcaContext';
-import { DateTimePicker } from './index';
+import {DateTimePicker} from './index';
 
 describe('DateTimePicker', () => {
   it('should display times in UTC when in advanced mode (no timezone)', () => {
@@ -64,7 +64,7 @@ describe('DateTimePicker', () => {
       <ParcaContext.Provider
         // @ts-expect-error
         value={{
-          timezone: 'America/New_York'
+          timezone: 'America/New_York',
         }}
       >
         <DateTimePicker selected={absoluteDate} onChange={mockOnChange} />
@@ -93,10 +93,10 @@ describe('DateTimePicker', () => {
 
     const mockOnChange = vi.fn();
 
-    testDates.forEach((testDate) => {
+    testDates.forEach(testDate => {
       const absoluteDate = new AbsoluteDate(testDate);
 
-      const { unmount } = render(
+      const {unmount} = render(
         <ParcaContext.Provider
           // @ts-expect-error
           value={{
