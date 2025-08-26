@@ -120,7 +120,6 @@ func (q *Querier) Labels(
 		Filter(logicalplan.And(filterExpr...)).
 		Distinct(logicalplan.DynCol(profile.ColumnLabels)).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
-			r.Retain()
 			for i := 0; i < int(r.NumCols()); i++ {
 				col := r.ColumnName(i)
 
