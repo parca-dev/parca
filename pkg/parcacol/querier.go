@@ -118,7 +118,7 @@ func (q *Querier) Labels(
 
 	err := q.engine.ScanTable(q.tableName).
 		Filter(logicalplan.And(filterExpr...)).
-		Project(logicalplan.DynCol(profile.ColumnLabels)).
+		Distinct(logicalplan.DynCol(profile.ColumnLabels)).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
 			for i := 0; i < int(r.NumCols()); i++ {
