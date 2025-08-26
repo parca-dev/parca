@@ -174,9 +174,7 @@ export class DateTimeRange {
     const fromDatePart = timezone !== undefined
       ? getStringForDateInTimezone(this.from as AbsoluteDate, timezone, 'YYYY-MM-DD')
       : getUtcStringForDate(this.from as AbsoluteDate, 'YYYY-MM-DD');
-    const formattedTo = formatDateStringForUI(this.to, timezone)
-      .replace(fromDatePart, '')
-      .trim();
+    const formattedTo = formatDateStringForUI(this.to, timezone).replace(fromDatePart, '').trim();
 
     return `${formattedFrom} → ${formattedTo}`;
   }

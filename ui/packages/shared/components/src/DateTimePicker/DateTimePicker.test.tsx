@@ -12,13 +12,12 @@
 // limitations under the License.
 
 // eslint-disable-next-line import/named
-import {render, screen} from '@testing-library/react';
-import {describe, expect, it, vi} from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 
-import {AbsoluteDate} from '../DateTimeRangePicker/utils';
+import { AbsoluteDate } from '../DateTimeRangePicker/utils';
 import ParcaContext from '../ParcaContext';
-
-import {DateTimePicker} from './index';
+import { DateTimePicker } from './index';
 
 describe('DateTimePicker', () => {
   it('should display times in UTC when in advanced mode (no timezone)', () => {
