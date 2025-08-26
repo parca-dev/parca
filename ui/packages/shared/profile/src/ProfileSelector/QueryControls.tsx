@@ -16,7 +16,7 @@ import {RpcError} from '@protobuf-ts/runtime-rpc';
 import Select, {type SelectInstance} from 'react-select';
 
 import {ProfileTypesResponse, QueryServiceClient} from '@parca/client';
-import {Button, DateTimeRange, DateTimeRangePicker} from '@parca/components';
+import {Button, DateTimeRange, DateTimeRangePicker, useParcaContext} from '@parca/components';
 import {ProfileType, Query} from '@parca/parser';
 import {testId} from '@parca/test-utils';
 
@@ -92,6 +92,8 @@ export function QueryControls({
   showSumBySelector,
   profileTypesError,
 }: QueryControlsProps): JSX.Element {
+  const {timezone} = useParcaContext();
+
   return (
     <div
       className="flex w-full flex-wrap items-start gap-2"
@@ -247,6 +249,7 @@ export function QueryControls({
       <DateTimeRangePicker
         onRangeSelection={setTimeRangeSelection}
         range={timeRangeSelection}
+        timezone={timezone}
         {...testId('DATE_TIME_RANGE_PICKER')}
       />
 

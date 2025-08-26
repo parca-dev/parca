@@ -25,9 +25,14 @@ import {DateTimeRange} from './utils';
 interface DateTimeRangePickerProps {
   onRangeSelection: (range: DateTimeRange) => void;
   range: DateTimeRange;
+  timezone?: string;
 }
 
-const DateTimeRangePicker = ({onRangeSelection, range}: DateTimeRangePickerProps): JSX.Element => {
+const DateTimeRangePicker = ({
+  onRangeSelection,
+  range,
+  timezone,
+}: DateTimeRangePickerProps): JSX.Element => {
   const [isActive, setIsActive] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -53,6 +58,7 @@ const DateTimeRangePicker = ({onRangeSelection, range}: DateTimeRangePickerProps
           onRangeSelection={(range: DateTimeRange) => {
             onRangeSelection(range);
           }}
+          timezone={timezone}
         />
 
         {isActive ? (
