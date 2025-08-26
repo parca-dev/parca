@@ -165,14 +165,17 @@ export class DateTimeRange {
     this.to = to ?? new RelativeDate(UNITS.MINUTE, 0);
   }
 
-  getRangeStringForUI(): string {
+  getRangeStringForUI(timezone?: string): string {
     if (this.from.isRelative() && this.to.isRelative() && (this.to as RelativeDate).value === 0) {
       const from = this.from as RelativeDate;
       return `Last ${from.value} ${from.unit}${from.value > 1 ? 's' : ''}`;
     }
-    const formattedFrom = formatDateStringForUI(this.from);
-    const formattedTo = formatDateStringForUI(this.to)
-      .replace(getUtcStringForDate(this.from as AbsoluteDate, 'YYYY-MM-DD'), '')
+    const formattedFrom = formatDateStringForUI(this.from, timezone);
+    const fromDatePart = timezone 
+      ? getStringForDateInTimezone(this.from as AbsoluteDate, timezone, 'YYYY-MM-DD')
+      : getUtcStringForDate(this.from as AbsoluteDate, 'YYYY-MM-DD');
+    const formattedTo = formatDateStringForUI(this.to, timezone)
+      .replace(fromDatePart, '')
       .trim();
 
     return `${formattedFrom} → ${formattedTo}`;
@@ -281,7 +284,8 @@ const parseAbsoluteDateExpression = (expression: string): AbsoluteDate | undefin
   }
 };
 
-export const formatDateStringForUI: (dateString: DateUnion) => string = dateString => {
+export const formatDateStringForUI: (dateString: DateUnion, timezone?: string) => string = (dateString, timezone) => {
+  console.log('timezone', timezone);
   if (dateString.isRelative()) {
     const {unit, value} = dateString as RelativeDate;
     if (value === 0) {
@@ -289,7 +293,7 @@ export const formatDateStringForUI: (dateString: DateUnion) => string = dateStri
     }
     return `${value} ${unit}${value > 1 ? 's' : ''} ago`;
   }
-  return getUtcStringForDate(dateString as AbsoluteDate);
+  return getStringForDateInTimezone(dateString as AbsoluteDate, timezone ?? 'Etc/GMT');
 };
 
 export const getDateHoursAgo = (hours = 1): Date => {

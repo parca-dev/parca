@@ -23,6 +23,7 @@ interface DateTimeRangePickerTextProps {
   onClick: () => void;
   isActive: boolean;
   onRangeSelection: (range: DateTimeRange) => void;
+  timezone?: string;
 }
 
 const DateTimeRangePickerText = ({
@@ -30,9 +31,10 @@ const DateTimeRangePickerText = ({
   onClick,
   isActive,
   onRangeSelection,
+  timezone,
 }: DateTimeRangePickerTextProps): JSX.Element => {
   const isRelativeRange = range.from.isRelative();
-  const dateString = range.getRangeStringForUI();
+  const dateString = range.getRangeStringForUI(timezone);
 
   return (
     <div {...testId('DATE_TIME_RANGE_PICKER_TEXT')}>
