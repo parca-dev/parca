@@ -11,6 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// eslint-disable-next-line import/named
 import {render, screen} from '@testing-library/react';
 import {describe, expect, it, vi} from 'vitest';
 
@@ -24,15 +25,15 @@ describe('DateTimePicker', () => {
     // Create a specific date for testing: 2023-12-01 15:30:00
     const testDate = new Date('2023-12-01T15:30:00Z'); // UTC time
     const absoluteDate = new AbsoluteDate(testDate);
-    
+
     const mockOnChange = vi.fn();
 
     // Render with no timezone context (advanced mode)
     render(
       <ParcaContext.Provider
+        // @ts-expect-error
         value={{
           timezone: undefined, // This triggers advanced mode
-          dark: false,
         }}
       >
         <DateTimePicker selected={absoluteDate} onChange={mockOnChange} />
@@ -41,11 +42,11 @@ describe('DateTimePicker', () => {
 
     // In advanced mode, the component should display UTC time
     // The input field should show the UTC formatted time
-    const input = screen.getByRole('textbox');
-    
+    const input = screen.getByRole('textbox') as HTMLInputElement;
+
     // The time should be displayed in UTC format: YYYY-MM-DD HH:mm:ss
-    expect(input).toHaveValue('2023-12-01 15:30:00');
-    
+    expect(input.value).toBe('2023-12-01 15:30:00');
+
     // Verify that the displayed time matches the UTC time exactly
     // (not adjusted for local timezone)
     const expectedUtcString = absoluteDate.getUIString(); // No timezone means UTC
@@ -56,28 +57,28 @@ describe('DateTimePicker', () => {
     // Create a test date
     const testDate = new Date('2023-12-01T15:30:00Z'); // UTC time
     const absoluteDate = new AbsoluteDate(testDate);
-    
+
     const mockOnChange = vi.fn();
 
     // Render with a specific timezone (e.g., America/New_York)
     render(
       <ParcaContext.Provider
+        // @ts-expect-error
         value={{
-          timezone: 'America/New_York',
-          dark: false,
+          timezone: 'America/New_York'
         }}
       >
         <DateTimePicker selected={absoluteDate} onChange={mockOnChange} />
       </ParcaContext.Provider>
     );
 
-    const input = screen.getByRole('textbox');
-    
+    const input = screen.getByRole('textbox') as HTMLInputElement;
+
     // The time should be displayed in the specified timezone
     // America/New_York is UTC-5 (or UTC-4 with DST), so 15:30 UTC should be adjusted
     const expectedTimezoneString = absoluteDate.getUIString('America/New_York');
     expect(input.value).toBe(expectedTimezoneString);
-    
+
     // Verify it's different from UTC display
     const utcString = absoluteDate.getUIString();
     expect(input.value).not.toBe(utcString);
@@ -93,29 +94,29 @@ describe('DateTimePicker', () => {
 
     const mockOnChange = vi.fn();
 
-    testDates.forEach((testDate, index) => {
+    testDates.forEach((testDate) => {
       const absoluteDate = new AbsoluteDate(testDate);
-      
+
       const { unmount } = render(
         <ParcaContext.Provider
+          // @ts-expect-error
           value={{
             timezone: undefined, // Advanced mode - should always show UTC
-            dark: false,
           }}
         >
           <DateTimePicker selected={absoluteDate} onChange={mockOnChange} />
         </ParcaContext.Provider>
       );
 
-      const input = screen.getByRole('textbox');
-      
+      const input = screen.getByRole('textbox') as HTMLInputElement;
+
       // Each date should display in UTC format
       const expectedUtcString = absoluteDate.getUIString();
       expect(input.value).toBe(expectedUtcString);
-      
+
       // Verify the format matches the expected UTC pattern (YYYY-MM-DD HH:mm:ss)
       expect(input.value).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
-      
+
       // Clean up after each iteration
       unmount();
     });
@@ -127,17 +128,17 @@ describe('DateTimePicker', () => {
 
     render(
       <ParcaContext.Provider
+        // @ts-expect-error
         value={{
           timezone: undefined, // Advanced mode
-          dark: false,
         }}
       >
         <DateTimePicker selected={absoluteDate} onChange={mockOnChange} />
       </ParcaContext.Provider>
     );
 
-    const input = screen.getByRole('textbox');
-    
+    const input = screen.getByRole('textbox') as HTMLInputElement;
+
     // When value is "now", it should display as "now" regardless of timezone mode
     expect(input.value).toBe('now');
   });

@@ -11,6 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// eslint-disable-next-line import/named
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -52,12 +53,13 @@ describe('DateTimeRangePickerText', () => {
 
       // In UTC mode (no timezone), times should be displayed in UTC format
       // Expected format: "YYYY-MM-DD HH:mm:ss → HH:mm:ss"
-      expect(button).toBeInTheDocument();
+      expect(button).toBeDefined();
 
       // The text content should contain UTC formatted times
-      const buttonText = button.textContent || '';
+      const buttonText = button.textContent ?? '';
 
       // Should contain the full from date in UTC format
+      expect(buttonText.length).toBeGreaterThan(0);
       expect(buttonText).toMatch(/2023-12-01 10:00:00/);
 
       // Should contain the to time (same date, so just time portion)
@@ -92,7 +94,7 @@ describe('DateTimeRangePickerText', () => {
       );
 
       const button = screen.getByTestId('date-time-range-picker-button');
-      const buttonText = button.textContent || '';
+      const buttonText = button.textContent ?? '';
 
       // In America/New_York timezone:
       // 15:30 UTC = 10:30 EST (UTC-5) or 11:30 EDT (UTC-4)
@@ -100,6 +102,7 @@ describe('DateTimeRangePickerText', () => {
 
       // The exact time will depend on whether the date falls in EST or EDT
       // But we can verify it's different from UTC and contains timezone-adjusted times
+      expect(buttonText.length).toBeGreaterThan(0);
       expect(buttonText).not.toMatch(/15:30:00/); // Should not show UTC time
       expect(buttonText).not.toMatch(/20:00:00/); // Should not show UTC time
 
@@ -133,9 +136,10 @@ describe('DateTimeRangePickerText', () => {
       );
 
       const button = screen.getByTestId('date-time-range-picker-button');
-      const pacificTime = button.textContent || '';
+      const pacificTime = button.textContent ?? '';
 
       // 12:00 UTC = 05:00 PDT, 18:00 UTC = 11:00 PDT
+      expect(pacificTime.length).toBeGreaterThan(0);
       expect(pacificTime).toMatch(/05:00:00/);
       expect(pacificTime).toMatch(/11:00:00/);
 
@@ -150,9 +154,10 @@ describe('DateTimeRangePickerText', () => {
         />
       );
 
-      const tokyoTime = button.textContent || '';
+      const tokyoTime = button.textContent ?? '';
 
       // 12:00 UTC = 21:00 JST, 18:00 UTC = 03:00 JST (next day)
+      expect(tokyoTime.length).toBeGreaterThan(0);
       const cleanTokyoTime = tokyoTime.replace(/[▼▲]/g, '').trim();
       expect(cleanTokyoTime).toBe('2023-06-15 21:00:00 → 2023-06-16 03:00:00');
 
@@ -181,10 +186,11 @@ describe('DateTimeRangePickerText', () => {
       );
 
       const button = screen.getByTestId('date-time-range-picker-button');
-      const buttonText = button.textContent || '';
+      const buttonText = button.textContent ?? '';
 
       // 02:00 UTC on 2023-12-01 = 18:00 PST on 2023-11-30
       // 04:00 UTC on 2023-12-01 = 20:00 PST on 2023-11-30
+      expect(buttonText.length).toBeGreaterThan(0);
       const cleanButtonText = buttonText.replace(/[▼▲]/g, '').trim();
       expect(cleanButtonText).toBe('2023-11-30 18:00:00 → 20:00:00');
     });
