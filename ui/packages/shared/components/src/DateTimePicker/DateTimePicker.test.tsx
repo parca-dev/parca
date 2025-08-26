@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// eslint-disable-next-line import/named
+/* eslint-disable import/named, @typescript-eslint/no-unnecessary-type-assertion, jest-dom/prefer-to-have-value */
 import {render, screen} from '@testing-library/react';
 import {describe, expect, it, vi} from 'vitest';
 
