@@ -13,6 +13,8 @@
 
 import Select from 'react-select';
 
+import {testId} from '@parca/test-utils';
+
 import {FIELD_LABELS} from '../../../ProfileFlameGraph/FlameGraphArrow';
 
 interface LabelOption {
@@ -28,13 +30,14 @@ interface Props {
 
 const GroupByLabelsDropdown = ({labels, groupBy, setGroupByLabels}: Props): JSX.Element => {
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col" {...testId('GROUP_BY_CONTAINER')}>
       <div className="flex items-center justify-between">
-        <label className="text-sm">Group by</label>
+        <label className="text-sm" {...testId('GROUP_BY_LABEL')}>
+          Group by
+        </label>
       </div>
 
       <Select<LabelOption, true>
-        id="h-group-by-labels-selector"
         isMulti
         defaultMenuIsOpen={false}
         defaultValue={undefined}
@@ -42,6 +45,15 @@ const GroupByLabelsDropdown = ({labels, groupBy, setGroupByLabels}: Props): JSX.
         options={labels.map(label => ({label, value: `${FIELD_LABELS}.${label}`}))}
         className="parca-select-container text-sm rounded-md bg-white"
         classNamePrefix="parca-select"
+        menuPortalTarget={document.body}
+        components={{
+          // eslint-disable-next-line react/prop-types
+          MenuList: ({children, innerProps}) => (
+            <div {...testId('GROUP_BY_SELECT_FLYOUT')} {...innerProps}>
+              {children}
+            </div>
+          ),
+        }}
         value={groupBy
           .filter(l => l.startsWith(FIELD_LABELS))
           .map(l => ({value: l, label: l.slice(FIELD_LABELS.length + 1)}))}

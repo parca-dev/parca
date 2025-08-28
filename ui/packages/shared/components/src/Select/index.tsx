@@ -50,6 +50,7 @@ const Select = ({
   icon,
   id,
   hideCaretDropdown,
+  flyoutTestId,
   ...props
 }: {
   items: SelectItem[];
@@ -64,6 +65,7 @@ const Select = ({
   icon?: JSX.Element;
   id?: string;
   hideCaretDropdown?: boolean;
+  flyoutTestId?: string;
 } & React.HTMLAttributes<HTMLButtonElement>): JSX.Element => {
   const selection = items.find(v => v.key === selectedKey) ?? {
     key: selectedKey,
@@ -120,6 +122,7 @@ const Select = ({
               className={cx(
                 'absolute z-50 mt-1 pt-0 max-h-[50vh] w-max overflow-auto rounded-md bg-gray-50 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:ring-white dark:ring-opacity-20 sm:text-sm'
               )}
+              data-testid={flyoutTestId}
             >
               {loading === true ? (
                 <div className="w-[270px]">{loader}</div>

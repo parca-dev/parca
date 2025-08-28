@@ -87,6 +87,24 @@ export const TEST_IDS = {
   FLAMEGRAPH_CONTAINER: 'flamegraph-container',
   FLAMEGRAPH_RESET_BUTTON: 'flamegraph-reset-button',
 
+  // Profile Filters
+  PROFILE_FILTERS_CONTAINER: 'profile-filters-container',
+  FILTER_TYPE_SELECT: 'filter-type-select',
+  FILTER_TYPE_SELECT_FLYOUT: 'filter-type-select-flyout',
+  FILTER_FIELD_SELECT: 'filter-field-select',
+  FILTER_FIELD_SELECT_FLYOUT: 'filter-field-select-flyout',
+  FILTER_MATCH_TYPE_SELECT: 'filter-match-type-select',
+  FILTER_MATCH_TYPE_SELECT_FLYOUT: 'filter-match-type-select-flyout',
+  FILTER_VALUE_INPUT: 'filter-value-input',
+  FILTER_REMOVE_BUTTON: 'filter-remove-button',
+  ADD_FILTER_BUTTON: 'add-filter-button',
+  APPLY_FILTERS_BUTTON: 'apply-filters-button',
+
+  // Group By Controls
+  GROUP_BY_CONTAINER: 'group-by-container',
+  GROUP_BY_LABEL: 'group-by-label',
+  GROUP_BY_SELECT_FLYOUT: 'group-by-select-flyout',
+
   // Common Interactive Elements
   SELECT_DROPDOWN: 'select-dropdown',
   SELECT_OPTION: 'select-option',
