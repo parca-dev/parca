@@ -48,7 +48,7 @@ const GroupByLabelsDropdown = ({labels, groupBy, setGroupByLabels}: Props): JSX.
         menuPortalTarget={document.body}
         components={{
           // eslint-disable-next-line react/prop-types
-          MenuList: ({ children, innerProps }) => (
+          MenuList: ({children, innerProps}) => (
             <div {...testId('GROUP_BY_SELECT_FLYOUT')} {...innerProps}>
               {children}
             </div>
