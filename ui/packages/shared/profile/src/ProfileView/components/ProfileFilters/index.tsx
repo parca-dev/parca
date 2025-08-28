@@ -354,13 +354,23 @@ const ProfileFilters = ({readOnly = false}: ProfileFiltersProps = {}): JSX.Eleme
         })}
 
         {!readOnly && localFilters.length > 0 && (
-          <Button variant="neutral" onClick={addFilter} className="p-3 h-[38px]" {...testId('ADD_FILTER_BUTTON')}>
+          <Button
+            variant="neutral"
+            onClick={addFilter}
+            className="p-3 h-[38px]"
+            {...testId('ADD_FILTER_BUTTON')}
+          >
             <Icon icon="mdi:filter-plus-outline" className="h-4 w-4" />
           </Button>
         )}
 
         {!readOnly && localFilters.length === 0 && (appliedFilters?.length ?? 0) === 0 && (
-          <Button variant="neutral" onClick={addFilter} className="flex items-center gap-2" {...testId('ADD_FILTER_BUTTON')}>
+          <Button
+            variant="neutral"
+            onClick={addFilter}
+            className="flex items-center gap-2"
+            {...testId('ADD_FILTER_BUTTON')}
+          >
             <Icon icon="mdi:filter-outline" className="h-4 w-4" />
             <span>Filter</span>
           </Button>

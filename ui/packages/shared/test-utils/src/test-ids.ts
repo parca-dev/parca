@@ -105,7 +105,6 @@ export const TEST_IDS = {
   GROUP_BY_LABEL: 'group-by-label',
   GROUP_BY_SELECT_FLYOUT: 'group-by-select-flyout',
 
-
   // Common Interactive Elements
   SELECT_DROPDOWN: 'select-dropdown',
   SELECT_OPTION: 'select-option',

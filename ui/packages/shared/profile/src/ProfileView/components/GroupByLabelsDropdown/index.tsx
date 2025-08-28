@@ -32,7 +32,9 @@ const GroupByLabelsDropdown = ({labels, groupBy, setGroupByLabels}: Props): JSX.
   return (
     <div className="flex flex-col" {...testId('GROUP_BY_CONTAINER')}>
       <div className="flex items-center justify-between">
-        <label className="text-sm" {...testId('GROUP_BY_LABEL')}>Group by</label>
+        <label className="text-sm" {...testId('GROUP_BY_LABEL')}>
+          Group by
+        </label>
       </div>
 
       <Select<LabelOption, true>
@@ -45,7 +47,7 @@ const GroupByLabelsDropdown = ({labels, groupBy, setGroupByLabels}: Props): JSX.
         classNamePrefix="parca-select"
         menuPortalTarget={document.body}
         components={{
-          MenuList: (props) => (
+          MenuList: props => (
             <div {...testId('GROUP_BY_SELECT_FLYOUT')} {...props.innerProps}>
               {props.children}
             </div>
