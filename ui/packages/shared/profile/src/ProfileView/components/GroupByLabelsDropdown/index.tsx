@@ -47,9 +47,10 @@ const GroupByLabelsDropdown = ({labels, groupBy, setGroupByLabels}: Props): JSX.
         classNamePrefix="parca-select"
         menuPortalTarget={document.body}
         components={{
-          MenuList: props => (
-            <div {...testId('GROUP_BY_SELECT_FLYOUT')} {...props.innerProps}>
-              {props.children}
+          // eslint-disable-next-line react/prop-types
+          MenuList: ({ children, innerProps }) => (
+            <div {...testId('GROUP_BY_SELECT_FLYOUT')} {...innerProps}>
+              {children}
             </div>
           ),
         }}

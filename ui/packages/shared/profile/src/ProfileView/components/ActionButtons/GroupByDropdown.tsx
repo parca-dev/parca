@@ -13,8 +13,6 @@
 
 import React from 'react';
 
-import {testId} from '@parca/test-utils';
-
 import GroupByLabelsDropdown from '../GroupByLabelsDropdown';
 
 interface GroupByControlsProps {
