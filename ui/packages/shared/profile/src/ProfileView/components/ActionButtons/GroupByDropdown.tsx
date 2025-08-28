@@ -13,6 +13,8 @@
 
 import React from 'react';
 
+import { testId } from '@parca/test-utils';
+
 import GroupByLabelsDropdown from '../GroupByLabelsDropdown';
 
 interface GroupByControlsProps {
@@ -23,7 +25,7 @@ interface GroupByControlsProps {
 
 const GroupByControls: React.FC<GroupByControlsProps> = ({groupBy, labels, setGroupByLabels}) => {
   return (
-    <div className="relative flex" id="h-group-by-controls">
+    <div className="relative flex">
       <GroupByLabelsDropdown
         labels={labels}
         groupBy={groupBy}

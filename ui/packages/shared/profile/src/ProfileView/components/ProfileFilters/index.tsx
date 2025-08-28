@@ -17,6 +17,7 @@ import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
 import {Button, Input, Select, type SelectItem} from '@parca/components';
+import {testId} from '@parca/test-utils';
 
 import {useProfileViewContext} from '../../context/ProfileViewContext';
 import {getPresetByKey, getPresetsForProfileType, isPresetKey} from './filterPresets';
@@ -204,7 +205,7 @@ const ProfileFilters = ({readOnly = false}: ProfileFiltersProps = {}): JSX.Eleme
   const filtersToRender = localFilters.length > 0 ? localFilters : appliedFilters ?? [];
 
   return (
-    <div className="flex gap-2 w-full items-start">
+    <div className="flex gap-2 w-full items-start" {...testId('PROFILE_FILTERS_CONTAINER')}>
       <div className="flex-1 flex flex-wrap gap-2">
         {filtersToRender.map(filter => {
           const isNumberField = filter.field === 'address' || filter.field === 'line_number';
@@ -218,6 +219,8 @@ const ProfileFilters = ({readOnly = false}: ProfileFiltersProps = {}): JSX.Eleme
                 selectedKey={filter.type}
                 placeholder="Select Filter"
                 disabled={readOnly}
+                {...testId('FILTER_TYPE_SELECT')}
+                flyoutTestId="filter-type-select-flyout"
                 onSelection={key => {
                   // Check if this is a preset selection
                   if (isPresetKey(key)) {
@@ -266,6 +269,8 @@ const ProfileFilters = ({readOnly = false}: ProfileFiltersProps = {}): JSX.Eleme
                     items={fieldItems}
                     selectedKey={filter.field ?? ''}
                     disabled={readOnly}
+                    {...testId('FILTER_FIELD_SELECT')}
+                    flyoutTestId="filter-field-select-flyout"
                     onSelection={key => {
                       const newField = key as ProfileFilter['field'];
                       const isNewFieldNumber = newField === 'address' || newField === 'line_number';
@@ -292,6 +297,8 @@ const ProfileFilters = ({readOnly = false}: ProfileFiltersProps = {}): JSX.Eleme
                     items={matchTypeItems}
                     selectedKey={filter.matchType ?? ''}
                     disabled={readOnly}
+                    {...testId('FILTER_MATCH_TYPE_SELECT')}
+                    flyoutTestId="filter-match-type-select-flyout"
                     onSelection={key =>
                       updateFilter(filter.id, {matchType: key as ProfileFilter['matchType']})
                     }
@@ -309,6 +316,7 @@ const ProfileFilters = ({readOnly = false}: ProfileFiltersProps = {}): JSX.Eleme
                     onChange={e => updateFilter(filter.id, {value: e.target.value})}
                     onKeyDown={handleKeyDown}
                     className="rounded-none w-36 text-sm focus:outline-1"
+                    {...testId('FILTER_VALUE_INPUT')}
                   />
                 </>
               )}
@@ -316,6 +324,7 @@ const ProfileFilters = ({readOnly = false}: ProfileFiltersProps = {}): JSX.Eleme
               {!readOnly && (
                 <Button
                   variant="neutral"
+                  {...testId('FILTER_REMOVE_BUTTON')}
                   onClick={() => {
                     // If we're displaying local filters and this is the last one, reset everything
                     if (localFilters.length > 0 && localFilters.length === 1) {
@@ -345,13 +354,13 @@ const ProfileFilters = ({readOnly = false}: ProfileFiltersProps = {}): JSX.Eleme
         })}
 
         {!readOnly && localFilters.length > 0 && (
-          <Button variant="neutral" onClick={addFilter} className="p-3 h-[38px]">
+          <Button variant="neutral" onClick={addFilter} className="p-3 h-[38px]" {...testId('ADD_FILTER_BUTTON')}>
             <Icon icon="mdi:filter-plus-outline" className="h-4 w-4" />
           </Button>
         )}
 
         {!readOnly && localFilters.length === 0 && (appliedFilters?.length ?? 0) === 0 && (
-          <Button variant="neutral" onClick={addFilter} className="flex items-center gap-2">
+          <Button variant="neutral" onClick={addFilter} className="flex items-center gap-2" {...testId('ADD_FILTER_BUTTON')}>
             <Icon icon="mdi:filter-outline" className="h-4 w-4" />
             <span>Filter</span>
           </Button>
@@ -364,6 +373,7 @@ const ProfileFilters = ({readOnly = false}: ProfileFiltersProps = {}): JSX.Eleme
           onClick={onApplyFilters}
           disabled={!hasUnsavedChanges || !localFilters.some(isFilterComplete)}
           className={cx('flex items-center gap-2 sticky top-0')}
+          {...testId('APPLY_FILTERS_BUTTON')}
         >
           <span>Apply</span>
         </Button>
