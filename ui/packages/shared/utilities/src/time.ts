@@ -125,9 +125,9 @@ export const formatDuration = (timeObject: TimeObject, to?: number): string => {
   return values.join(' ');
 };
 
-export const formatDate = (date: number | Date, timeFormat: string, timezone?: string): string => {
-  if (typeof date === 'number') {
-    date = new Date(date);
+export const formatDate = (date: bigint | Date, timeFormat: string, timezone?: string): string => {
+  if (typeof date === 'bigint') {
+    date = new Date(Number(date / 1_000_000n)); // Date constructor expects milliseconds, so we convert nanoseconds to milliseconds
   }
 
   const ISOString = date.toISOString().slice(0, -1);

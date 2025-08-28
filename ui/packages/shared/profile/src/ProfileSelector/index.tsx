@@ -42,8 +42,8 @@ export interface QuerySelection {
   to: number;
   timeSelection: string;
   sumBy?: string[];
-  mergeFrom?: number;
-  mergeTo?: number;
+  mergeFrom?: string;
+  mergeTo?: string;
 }
 
 interface ProfileSelectorFeatures {
@@ -94,7 +94,7 @@ interface ProfileSelectorProps extends ProfileSelectorFeatures {
   }>;
   utilizationMetricsLoading?: boolean;
   utilizationLabels?: UtilizationLabels;
-  onUtilizationSeriesSelect?: (series: Array<{key: string; value: string}>) => void;
+  onUtilizationSeriesSelect?: (seriesIndex: number) => void;
 }
 
 export interface IProfileTypesResult {
@@ -237,8 +237,8 @@ const ProfileSelector = ({
     const to = timeRangeSelection.getToMs(updateTs);
     const mergeParams = delta
       ? {
-          mergeFrom: from,
-          mergeTo: to,
+          mergeFrom: (BigInt(from) * 1_000_000n).toString(),
+          mergeTo: (BigInt(to) * 1_000_000n).toString(),
         }
       : {};
 

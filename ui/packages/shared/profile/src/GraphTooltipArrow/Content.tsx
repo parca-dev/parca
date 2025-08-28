@@ -159,14 +159,12 @@ const TooltipMetaInfo = ({table, row}: {table: Table<any>; row: number}): React.
 
   return (
     <>
-      {timestamp == null || timestamp === 0n ? (
-        <div className="pt-2" />
-      ) : (
+      {timestamp != null && timestamp !== 0n && (
         <tr>
           <td className="w-1/4 pt-2">Timestamp</td>
           <td className="w-3/4 pt-2 break-all">
             {formatDateTimeDownToMS(new Date(Number(timestamp / 1000000n)), timezone)}
-          </td>{' '}
+          </td>
         </tr>
       )}
       <tr>
