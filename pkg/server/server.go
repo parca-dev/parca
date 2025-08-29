@@ -61,7 +61,7 @@ func (f RegisterableFunc) Register(ctx context.Context, srv *grpc.Server, mux *r
 
 // Server is a wrapper around the http.Server.
 type Server struct {
-	http.Server
+	*http.Server
 	grpcProbe *prober.GRPCProbe
 	reg       *prometheus.Registry
 	version   string
@@ -150,15 +150,20 @@ func (s *Server) ListenAndServe(
 		return fmt.Errorf("failed to walk ui filesystem: %w", err)
 	}
 
-	s.Server = http.Server{
+	h2s := &http2.Server{}
+	s.Server = &http.Server{
 		Addr: addr,
-		Handler: grpcHandlerFunc(
+		Handler: h2c.NewHandler(grpcHandlerFunc(
 			srv,
 			fallbackNotFound(internalMux, uiHandler),
 			allowedCORSOrigins,
-		),
+		), h2s),
 		ReadTimeout:  readTimeout,
 		WriteTimeout: writeTimeout,
+	}
+
+	if err := http2.ConfigureServer(s.Server, h2s); err != nil {
+		return fmt.Errorf("failed to configure HTTP/2 server: %w", err)
 	}
 
 	met.InitializeMetrics(srv)
@@ -285,13 +290,13 @@ func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler, allowed
 		AllowCredentials: true,
 	})
 
-	return corsMiddleware.Handler(h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return corsMiddleware.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.Header.Get("Content-Type"), "application/grpc") {
 			wrappedGrpc.ServeHTTP(w, r)
 			return
 		}
 		otherHandler.ServeHTTP(w, r)
-	}), &http2.Server{}))
+	}))
 }
 
 // InterceptorLogger adapts go-kit logger to interceptor logger.
