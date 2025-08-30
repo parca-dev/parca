@@ -37,8 +37,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -150,20 +148,19 @@ func (s *Server) ListenAndServe(
 		return fmt.Errorf("failed to walk ui filesystem: %w", err)
 	}
 
-	h2s := &http2.Server{}
+	p := new(http.Protocols)
+	p.SetHTTP1(true)
+	p.SetUnencryptedHTTP2(true)
 	s.Server = &http.Server{
 		Addr: addr,
-		Handler: h2c.NewHandler(grpcHandlerFunc(
+		Handler: grpcHandlerFunc(
 			srv,
 			fallbackNotFound(internalMux, uiHandler),
 			allowedCORSOrigins,
-		), h2s),
+		),
+		Protocols:    p,
 		ReadTimeout:  readTimeout,
 		WriteTimeout: writeTimeout,
-	}
-
-	if err := http2.ConfigureServer(s.Server, h2s); err != nil {
-		return fmt.Errorf("failed to configure HTTP/2 server: %w", err)
 	}
 
 	met.InitializeMetrics(srv)
