@@ -24,7 +24,7 @@ import {
 } from '@parca/components';
 import {formatDate, timePattern, valueFormatter} from '@parca/utilities';
 
-import {type UtilizationMetrics as MetricSeries} from '../../ProfileSelector';
+import {type UtilizationSeries as MetricSeries} from '../../contexts/UtilizationContext';
 import MetricsGraph, {type ContextMenuItemOrSubmenu, type Series} from '../index';
 import {useMetricsGraphDimensions} from '../useMetricsGraphDimensions';
 

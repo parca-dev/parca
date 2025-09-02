@@ -30,10 +30,9 @@ import {type NavigateFunction} from '@parca/utilities';
 import {ProfileSelection} from '..';
 import {useLabelNames} from '../MatchersInput/index';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
-import {UtilizationLabelsProvider} from '../contexts/UtilizationLabelsContext';
+import {SharedQueryControls} from '../SharedQueryControls';
 import {useDefaultSumBy, useSumBySelection} from '../useSumBy';
 import {MetricsGraphSection} from './MetricsGraphSection';
-import {QueryControls} from './QueryControls';
 import {useAutoQuerySelector} from './useAutoQuerySelector';
 
 export interface QuerySelection {
@@ -50,29 +49,7 @@ interface ProfileSelectorFeatures {
   showMetricsGraph: boolean;
   showSumBySelector?: boolean;
   showProfileTypeSelector?: boolean;
-  disableExplorativeQuerying?: boolean;
   disableProfileTypesDropdown?: boolean;
-}
-
-export interface UtilizationMetrics {
-  isSelected: boolean;
-  labelset: {
-    labels: Array<{
-      name: string;
-      value: string;
-    }>;
-  };
-  samples: Array<{
-    timestamp: number;
-    value: number;
-  }>;
-}
-
-export interface UtilizationLabels {
-  utilizationLabelNames?: string[];
-  utilizationFetchLabelValues?: (key: string) => Promise<string[]>;
-  utilizationLabelValues?: string[];
-  utilizationLabelNamesLoading?: boolean;
 }
 
 interface ProfileSelectorProps extends ProfileSelectorFeatures {
@@ -87,14 +64,6 @@ interface ProfileSelectorProps extends ProfileSelectorFeatures {
   navigateTo: NavigateFunction;
   setDisplayHideMetricsGraphButton?: Dispatch<SetStateAction<boolean>>;
   suffix?: string;
-  utilizationMetrics?: Array<{
-    name: string;
-    humanReadableName: string;
-    data: UtilizationMetrics[];
-  }>;
-  utilizationMetricsLoading?: boolean;
-  utilizationLabels?: UtilizationLabels;
-  onUtilizationSeriesSelect?: (seriesIndex: number) => void;
 }
 
 export interface IProfileTypesResult {
@@ -136,19 +105,14 @@ const ProfileSelector = ({
   showMetricsGraph = true,
   showSumBySelector = true,
   showProfileTypeSelector = true,
-  disableExplorativeQuerying = false,
   setDisplayHideMetricsGraphButton,
-  utilizationMetrics,
-  utilizationMetricsLoading,
-  utilizationLabels,
-  onUtilizationSeriesSelect,
 }: ProfileSelectorProps): JSX.Element => {
   const {
     loading: profileTypesLoading,
     data: profileTypesData,
     error,
   } = useProfileTypes(queryClient);
-  const {heightStyle} = useMetricsGraphDimensions(comparing, utilizationMetrics != null);
+  const {heightStyle} = useMetricsGraphDimensions(comparing, false);
   const {viewComponent} = useParcaContext();
   const [queryBrowserMode, setQueryBrowserMode] = useURLState('query_browser_mode');
 
@@ -297,71 +261,61 @@ const ProfileSelector = ({
   const sumByRef = useRef(null);
 
   return (
-    <UtilizationLabelsProvider value={{...utilizationLabels}}>
-      <>
-        <div className="mb-2 flex">
-          <QueryControls
-            showProfileTypeSelector={showProfileTypeSelector}
-            showSumBySelector={showSumBySelector}
-            disableExplorativeQuerying={disableExplorativeQuerying}
-            profileTypesData={profileTypesData}
-            profileTypesLoading={profileTypesLoading}
-            selectedProfileName={selectedProfileName}
-            setProfileName={setProfileName}
-            setMatchersString={setMatchersString}
-            setQueryExpression={setQueryExpression}
-            query={query}
-            queryBrowserRef={queryBrowserRef}
-            timeRangeSelection={timeRangeSelection}
-            setTimeRangeSelection={setTimeRangeSelection}
-            searchDisabled={searchDisabled}
-            queryBrowserMode={queryBrowserMode as string}
-            setQueryBrowserMode={setQueryBrowserMode}
-            advancedModeForQueryBrowser={advancedModeForQueryBrowser}
-            setAdvancedModeForQueryBrowser={setAdvancedModeForQueryBrowser}
-            queryClient={queryClient}
-            sumByRef={sumByRef}
-            labels={labels}
-            sumBySelection={sumBySelection ?? []}
-            sumBySelectionLoading={sumBySelectionLoading}
-            setUserSumBySelection={setUserSumBySelection}
-            profileType={profileType}
-            profileTypesError={error}
-            viewComponent={viewComponent}
-          />
-          {comparing && (
-            <div>
-              <IconButton onClick={() => closeProfile()} icon={<CloseIcon />} />
-            </div>
-          )}
-        </div>
-        <MetricsGraphSection
-          showMetricsGraph={showMetricsGraph}
-          setDisplayHideMetricsGraphButton={setDisplayHideMetricsGraphButton}
-          heightStyle={
-            utilizationMetrics !== undefined && utilizationMetrics?.length > 0
-              ? 'auto'
-              : heightStyle
-          }
-          querySelection={querySelection}
-          profileSelection={profileSelection}
-          comparing={comparing}
-          sumBy={querySelection.sumBy ?? defaultSumBy ?? []}
-          defaultSumByLoading={defaultSumByLoading}
+    <>
+      <div className="mb-2 flex">
+        <SharedQueryControls
           queryClient={queryClient}
-          queryExpressionString={queryExpressionString}
-          setTimeRangeSelection={setTimeRangeSelection}
-          selectQuery={selectQuery}
-          selectProfile={selectProfile}
           query={query}
+          profileType={profileType}
+          timeRangeSelection={timeRangeSelection}
+          setTimeRangeSelection={setTimeRangeSelection}
+          setMatchersString={setMatchersString}
           setQueryExpression={setQueryExpression}
-          setNewQueryExpression={setNewQueryExpression}
-          utilizationMetrics={utilizationMetrics}
-          utilizationMetricsLoading={utilizationMetricsLoading}
-          onUtilizationSeriesSelect={onUtilizationSeriesSelect}
+          searchDisabled={searchDisabled}
+          showProfileTypeSelector={showProfileTypeSelector}
+          showSumBySelector={showSumBySelector}
+          showAdvancedMode={true}
+          profileTypesData={profileTypesData}
+          profileTypesLoading={profileTypesLoading}
+          selectedProfileName={selectedProfileName}
+          setProfileName={setProfileName}
+          profileTypesError={error}
+          viewComponent={viewComponent}
+          setQueryBrowserMode={setQueryBrowserMode}
+          advancedModeForQueryBrowser={advancedModeForQueryBrowser}
+          setAdvancedModeForQueryBrowser={setAdvancedModeForQueryBrowser}
+          queryBrowserRef={queryBrowserRef}
+          labels={labels}
+          sumBySelection={sumBySelection ? sumBySelection : []}
+          sumBySelectionLoading={sumBySelectionLoading}
+          setUserSumBySelection={setUserSumBySelection}
+          sumByRef={sumByRef}
         />
-      </>
-    </UtilizationLabelsProvider>
+        {comparing && (
+          <div>
+            <IconButton onClick={() => closeProfile()} icon={<CloseIcon />} />
+          </div>
+        )}
+      </div>
+      <MetricsGraphSection
+        showMetricsGraph={showMetricsGraph}
+        setDisplayHideMetricsGraphButton={setDisplayHideMetricsGraphButton}
+        heightStyle={heightStyle}
+        querySelection={querySelection}
+        profileSelection={profileSelection}
+        comparing={comparing}
+        sumBy={querySelection.sumBy ?? defaultSumBy ?? []}
+        defaultSumByLoading={defaultSumByLoading}
+        queryClient={queryClient}
+        queryExpressionString={queryExpressionString}
+        setTimeRangeSelection={setTimeRangeSelection}
+        selectQuery={selectQuery}
+        selectProfile={selectProfile}
+        query={query}
+        setQueryExpression={setQueryExpression}
+        setNewQueryExpression={setNewQueryExpression}
+      />
+    </>
   );
 };
 

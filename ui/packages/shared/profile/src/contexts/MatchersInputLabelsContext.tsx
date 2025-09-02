@@ -16,7 +16,7 @@ import React, {createContext, useContext, useMemo} from 'react';
 import {QueryServiceClient} from '@parca/client';
 
 import {useFetchUtilizationLabelValues, useLabelNames, useLabelValues} from '../MatchersInput';
-import {useUtilizationLabels} from './UtilizationLabelsContext';
+import {useUtilization} from './UtilizationContext';
 
 interface LabelNameMapping {
   displayName: string;
@@ -54,7 +54,7 @@ export function LabelsProvider({
   end,
 }: LabelsProviderProps): JSX.Element {
   const [currentLabelName, setCurrentLabelName] = React.useState<string | null>(null);
-  const utilizationLabels = useUtilizationLabels();
+  const utilizationContext = useUtilization();
 
   const {result: labelNamesResponse, loading: isLabelNamesLoading} = useLabelNames(
     queryClient,
@@ -81,28 +81,32 @@ export function LabelsProvider({
 
   const utilizationLabelValues = useFetchUtilizationLabelValues(
     currentLabelName ?? '',
-    utilizationLabels
+    utilizationContext
   );
 
-  const shouldHandlePrefixes = utilizationLabels?.utilizationLabelNames !== undefined;
+  const shouldHandlePrefixes = utilizationContext?.utilizationLabels?.labelNames !== undefined;
 
   const labelNameMappings = useMemo(() => {
-    const names = utilizationLabels?.utilizationLabelNames ?? labelNamesFromAPI;
+    const names = utilizationContext?.utilizationLabels?.labelNames ?? labelNamesFromAPI;
     return names.map(name => ({
       displayName: name.replace(/^(attributes\.|attributes_resource\.)/, ''),
       fullName: name,
     }));
-  }, [labelNamesFromAPI, utilizationLabels?.utilizationLabelNames]);
+  }, [labelNamesFromAPI, utilizationContext?.utilizationLabels?.labelNames]);
 
   const labelNames = useMemo(() => {
     return shouldHandlePrefixes ? labelNameMappings.map(m => m.displayName) : labelNamesFromAPI;
   }, [labelNameMappings, labelNamesFromAPI, shouldHandlePrefixes]);
 
   const labelValues = useMemo(() => {
-    return utilizationLabels?.utilizationFetchLabelValues !== undefined
+    return utilizationContext?.utilizationLabels?.fetchLabelValues !== undefined
       ? utilizationLabelValues
       : labelValuesOriginal.response;
-  }, [labelValuesOriginal, utilizationLabelValues, utilizationLabels]);
+  }, [
+    labelValuesOriginal,
+    utilizationLabelValues,
+    utilizationContext?.utilizationLabels?.fetchLabelValues,
+  ]);
 
   const value = useMemo(
     () => ({
