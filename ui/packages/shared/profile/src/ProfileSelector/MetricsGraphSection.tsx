@@ -76,7 +76,7 @@ export function MetricsGraphSection({
     const to = range.getToMs();
     let mergedProfileParams = {};
     if (query.profileType().delta) {
-      mergedProfileParams = {mergeFrom: from, mergeTo: to};
+      mergedProfileParams = { mergeFrom: from * 1_000_000, mergeTo: to * 1_000_000 };
     }
     setTimeRangeSelection(range);
     selectQuery({
