@@ -97,7 +97,7 @@ export function SharedQueryControls({
 }: SharedQueryControlsProps): JSX.Element {
   const {timezone} = useParcaContext();
   const defaultQueryBrowserRef = useRef<HTMLDivElement>(null);
-  const actualQueryBrowserRef = queryBrowserRef || defaultQueryBrowserRef;
+  const actualQueryBrowserRef = queryBrowserRef ?? defaultQueryBrowserRef;
 
   return (
     <div
@@ -166,7 +166,7 @@ export function SharedQueryControls({
           <ViewMatchers
             labelNames={viewComponent.labelnames}
             setMatchersString={setMatchersString}
-            profileType={selectedProfileName || profileType.toString()}
+            profileType={selectedProfileName ?? profileType.toString()}
             runQuery={setQueryExpression}
             currentQuery={query}
             queryClient={queryClient}
@@ -178,7 +178,7 @@ export function SharedQueryControls({
             setMatchersString={setMatchersString}
             runQuery={setQueryExpression}
             currentQuery={query}
-            profileType={selectedProfileName || profileType.toString()}
+            profileType={selectedProfileName ?? profileType.toString()}
             queryClient={queryClient}
             start={timeRangeSelection.getFromMs()}
             end={timeRangeSelection.getToMs()}
@@ -189,7 +189,7 @@ export function SharedQueryControls({
             setMatchersString={setMatchersString}
             runQuery={setQueryExpression}
             currentQuery={query}
-            profileType={selectedProfileName || profileType.toString()}
+            profileType={selectedProfileName ?? profileType.toString()}
             queryBrowserRef={actualQueryBrowserRef}
             queryClient={queryClient}
             start={timeRangeSelection.getFromMs()}

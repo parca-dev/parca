@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useMemo, useState} from 'react';
+import {useState} from 'react';
 
 import {DateTimeRange} from '@parca/components';
 import {Query} from '@parca/parser';
@@ -118,7 +118,7 @@ export const UtilizationMetricsSelector = ({
           />
         </div>
 
-        {utilizationMetrics && utilizationMetrics.metrics.length > 0 && (
+        {utilizationMetrics !== undefined && utilizationMetrics.metrics.length > 0 && (
           <div>
             {utilizationMetrics.metrics.map(({name, humanReadableName, data}) => (
               <UtilizationMetricsGraph
@@ -130,7 +130,7 @@ export const UtilizationMetricsSelector = ({
                 from={querySelection.from}
                 to={querySelection.to}
                 yAxisUnit="percentage"
-                onSeriesClick={seriesIndex => {
+                onSeriesClick={() => {
                   if (onUtilizationSeriesSelect != null) {
                     const globalSeriesIndex =
                       utilizationMetrics?.metrics.findIndex(metric => metric.name === name) ?? 0;

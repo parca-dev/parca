@@ -68,8 +68,5 @@ export function UtilizationProvider({children, value}: UtilizationProviderProps)
 
 export function useUtilization(): UtilizationProps | undefined {
   const context = useContext(UtilizationContext);
-  if (context == null) {
-    throw new Error('useUtilization must be used within a UtilizationProvider');
-  }
   return context;
 }
