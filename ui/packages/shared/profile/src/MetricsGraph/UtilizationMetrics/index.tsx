@@ -22,7 +22,7 @@ import {
   TextWithTooltip,
   useParcaContext,
 } from '@parca/components';
-import {testId, TEST_IDS} from '@parca/test-utils';
+import {TEST_IDS, testId} from '@parca/test-utils';
 import {formatDate, timePattern, valueFormatter} from '@parca/utilities';
 
 import {type UtilizationMetrics as MetricSeries} from '../../ProfileSelector';
@@ -325,9 +325,7 @@ const RawUtilizationMetrics = ({
                           {transformUtilizationLabels(name)}
                         </span>
                         <span>="</span>
-                        <span {...testId('TOOLTIP_LABEL_VALUE')}>
-                          {attributesMap[name] ?? ''}
-                        </span>
+                        <span {...testId('TOOLTIP_LABEL_VALUE')}>{attributesMap[name] ?? ''}</span>
                         <span>"</span>
                       </div>
                     ))}
@@ -353,9 +351,7 @@ const RawUtilizationMetrics = ({
                           {transformUtilizationLabels(label.name)}
                         </span>
                         <span>="</span>
-                        <span {...testId('TOOLTIP_LABEL_VALUE')}>
-                          {label.value}
-                        </span>
+                        <span {...testId('TOOLTIP_LABEL_VALUE')}>{label.value}</span>
                         <span>"</span>
                       </div>
                     ))}

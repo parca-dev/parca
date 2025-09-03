@@ -14,6 +14,7 @@
 import {useEffect, useMemo, useState} from 'react';
 
 import {usePopper} from 'react-popper';
+
 import {testId} from '@parca/test-utils';
 
 interface VirtualElement {
@@ -108,10 +109,10 @@ const MetricsTooltip = ({x, y, contextElement, content}: Props): JSX.Element => 
   }
 
   return (
-    <div 
-      ref={setPopperElement} 
-      style={styles.popper} 
-      {...attributes.popper} 
+    <div
+      ref={setPopperElement}
+      style={styles.popper}
+      {...attributes.popper}
       {...testId('METRICS_GRAPH_TOOLTIP')}
       className="z-50"
     >

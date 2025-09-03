@@ -22,13 +22,9 @@ import {
   MetricsSeries as MetricsSeriesPb,
   QueryServiceClient,
 } from '@parca/client';
-import {
-  DateTimeRange,
-  MetricsGraphSkeleton,
-  useParcaContext,
-} from '@parca/components';
-import {testId} from '@parca/test-utils';
+import {DateTimeRange, MetricsGraphSkeleton, useParcaContext} from '@parca/components';
 import {Query} from '@parca/parser';
+import {testId} from '@parca/test-utils';
 import {capitalizeOnlyFirstLetter, formatDate, timePattern, valueFormatter} from '@parca/utilities';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
@@ -537,13 +533,9 @@ const ProfileMetricsGraph = ({
                                     className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
                                     {...testId('TOOLTIP_LABEL')}
                                   >
-                                    <span {...testId('TOOLTIP_LABEL_KEY')}>
-                                      {label.name}
-                                    </span>
+                                    <span {...testId('TOOLTIP_LABEL_KEY')}>{label.name}</span>
                                     <span>="</span>
-                                    <span {...testId('TOOLTIP_LABEL_VALUE')}>
-                                      {label.value}
-                                    </span>
+                                    <span {...testId('TOOLTIP_LABEL_VALUE')}>{label.value}</span>
                                     <span>"</span>
                                   </div>
                                 ))}

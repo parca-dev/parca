@@ -111,9 +111,9 @@ const MetricsContextMenu = ({
   };
 
   return (
-    <Menu 
-      id={menuId} 
-      onVisibilityChange={trackVisibility} 
+    <Menu
+      id={menuId}
+      onVisibilityChange={trackVisibility}
       theme={isDarkMode ? 'dark' : ''}
       {...testId('METRICS_GRAPH_CONTEXT_MENU')}
     >
