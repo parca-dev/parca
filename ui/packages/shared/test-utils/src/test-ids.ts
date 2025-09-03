@@ -87,6 +87,14 @@ export const TEST_IDS = {
   FLAMEGRAPH_CONTAINER: 'flamegraph-container',
   FLAMEGRAPH_RESET_BUTTON: 'flamegraph-reset-button',
 
+  // Metrics Graph
+  METRICS_GRAPH: 'metrics-graph',
+  METRICS_GRAPH_TOOLTIP: 'metrics-graph-tooltip',
+  TOOLTIP_LABEL: 'tooltip-label',
+  TOOLTIP_LABEL_KEY: 'tooltip-label-key',
+  TOOLTIP_LABEL_VALUE: 'tooltip-label-value',
+  METRICS_GRAPH_CONTEXT_MENU: 'metrics-graph-context-menu',
+
   // Profile Filters
   PROFILE_FILTERS_CONTAINER: 'profile-filters-container',
   FILTER_TYPE_SELECT: 'filter-type-select',

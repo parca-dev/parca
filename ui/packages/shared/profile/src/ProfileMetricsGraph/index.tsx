@@ -29,6 +29,7 @@ import {
   useParcaContext,
 } from '@parca/components';
 import {Query} from '@parca/parser';
+import {testId} from '@parca/test-utils';
 import {capitalizeOnlyFirstLetter, formatDate, timePattern, valueFormatter} from '@parca/utilities';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
@@ -490,6 +491,7 @@ const ProfileMetricsGraph = ({
                                   <div
                                     key={name}
                                     className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+                                    {...testId('TOOLTIP_LABEL')}
                                   >
                                     <TextWithTooltip
                                       text={`${name.replace('attributes.', '')}="${
@@ -511,6 +513,7 @@ const ProfileMetricsGraph = ({
                                   <div
                                     key={name}
                                     className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+                                    {...testId('TOOLTIP_LABEL')}
                                   >
                                     <TextWithTooltip
                                       text={`${name.replace('attributes.', '')}="${
@@ -531,6 +534,7 @@ const ProfileMetricsGraph = ({
                                   <div
                                     key={label.name}
                                     className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+                                    {...testId('TOOLTIP_LABEL')}
                                   >
                                     <TextWithTooltip
                                       text={`${label.name}="${label.value}"`}
