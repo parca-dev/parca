@@ -22,7 +22,7 @@ import {
   MetricsSeries as MetricsSeriesPb,
   QueryServiceClient,
 } from '@parca/client';
-import {DateTimeRange, MetricsGraphSkeleton, useParcaContext} from '@parca/components';
+import { DateTimeRange, MetricsGraphSkeleton, TextWithTooltip, useParcaContext } from '@parca/components';
 import {Query} from '@parca/parser';
 import {testId} from '@parca/test-utils';
 import {capitalizeOnlyFirstLetter, formatDate, timePattern, valueFormatter} from '@parca/utilities';
@@ -488,14 +488,12 @@ const ProfileMetricsGraph = ({
                                     className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
                                     {...testId('TOOLTIP_LABEL')}
                                   >
-                                    <span {...testId('TOOLTIP_LABEL_KEY')}>
-                                      {name.replace('attributes.', '')}
-                                    </span>
-                                    <span>=&quot;</span>
-                                    <span {...testId('TOOLTIP_LABEL_VALUE')}>
-                                      {attributesResourceMap[name]}
-                                    </span>
-                                    <span>&quot;</span>
+                                    <TextWithTooltip
+                                      text={`${name.replace('attributes.', '')}="${attributesResourceMap[name]
+                                        }"`}
+                                      maxTextLength={48}
+                                      id={`tooltip-${name}-${attributesResourceMap[name]}`}
+                                    />
                                   </div>
                                 ))}
                               </span>
@@ -511,14 +509,12 @@ const ProfileMetricsGraph = ({
                                     className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
                                     {...testId('TOOLTIP_LABEL')}
                                   >
-                                    <span {...testId('TOOLTIP_LABEL_KEY')}>
-                                      {name.replace('attributes.', '')}
-                                    </span>
-                                    <span>=&quot;</span>
-                                    <span {...testId('TOOLTIP_LABEL_VALUE')}>
-                                      {attributesMap[name]}
-                                    </span>
-                                    <span>&quot;</span>
+                                    <TextWithTooltip
+                                      text={`${name.replace('attributes.', '')}="${attributesMap[name]
+                                        }"`}
+                                      maxTextLength={48}
+                                      id={`tooltip-${name}-${attributesMap[name]}`}
+                                    />
                                   </div>
                                 ))}
                               </span>
@@ -533,10 +529,11 @@ const ProfileMetricsGraph = ({
                                     className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
                                     {...testId('TOOLTIP_LABEL')}
                                   >
-                                    <span {...testId('TOOLTIP_LABEL_KEY')}>{label.name}</span>
-                                    <span>=&quot;</span>
-                                    <span {...testId('TOOLTIP_LABEL_VALUE')}>{label.value}</span>
-                                    <span>&quot;</span>
+                                    <TextWithTooltip
+                                      text={`${label.name}="${label.value}"`}
+                                      maxTextLength={37}
+                                      id={`tooltip-${label.name}`}
+                                    />
                                   </div>
                                 ))}
                             </>
