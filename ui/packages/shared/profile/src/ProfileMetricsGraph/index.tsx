@@ -22,7 +22,12 @@ import {
   MetricsSeries as MetricsSeriesPb,
   QueryServiceClient,
 } from '@parca/client';
-import { DateTimeRange, MetricsGraphSkeleton, TextWithTooltip, useParcaContext } from '@parca/components';
+import {
+  DateTimeRange,
+  MetricsGraphSkeleton,
+  TextWithTooltip,
+  useParcaContext,
+} from '@parca/components';
 import {Query} from '@parca/parser';
 import {testId} from '@parca/test-utils';
 import {capitalizeOnlyFirstLetter, formatDate, timePattern, valueFormatter} from '@parca/utilities';
@@ -489,8 +494,9 @@ const ProfileMetricsGraph = ({
                                     {...testId('TOOLTIP_LABEL')}
                                   >
                                     <TextWithTooltip
-                                      text={`${name.replace('attributes.', '')}="${attributesResourceMap[name]
-                                        }"`}
+                                      text={`${name.replace('attributes.', '')}="${
+                                        attributesResourceMap[name]
+                                      }"`}
                                       maxTextLength={48}
                                       id={`tooltip-${name}-${attributesResourceMap[name]}`}
                                     />
@@ -510,8 +516,9 @@ const ProfileMetricsGraph = ({
                                     {...testId('TOOLTIP_LABEL')}
                                   >
                                     <TextWithTooltip
-                                      text={`${name.replace('attributes.', '')}="${attributesMap[name]
-                                        }"`}
+                                      text={`${name.replace('attributes.', '')}="${
+                                        attributesMap[name]
+                                      }"`}
                                       maxTextLength={48}
                                       id={`tooltip-${name}-${attributesMap[name]}`}
                                     />
