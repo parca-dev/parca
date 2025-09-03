@@ -347,8 +347,8 @@ const RawUtilizationMetrics = ({
                       >
                         <TextWithTooltip
                           text={`${transformUtilizationLabels(label.name)}="${label.value}"`}
-                          maxTextLength={48}
-                          id={`tooltip-${label.name}-${label.value}`}
+                          maxTextLength={37}
+                          id={`tooltip-${label.name}`}
                         />
                       </div>
                     ))}
