@@ -491,11 +491,11 @@ const ProfileMetricsGraph = ({
                                     <span {...testId('TOOLTIP_LABEL_KEY')}>
                                       {name.replace('attributes.', '')}
                                     </span>
-                                    <span>="</span>
+                                    <span>=&quot;</span>
                                     <span {...testId('TOOLTIP_LABEL_VALUE')}>
                                       {attributesResourceMap[name]}
                                     </span>
-                                    <span>"</span>
+                                    <span>&quot;</span>
                                   </div>
                                 ))}
                               </span>
@@ -514,11 +514,11 @@ const ProfileMetricsGraph = ({
                                     <span {...testId('TOOLTIP_LABEL_KEY')}>
                                       {name.replace('attributes.', '')}
                                     </span>
-                                    <span>="</span>
+                                    <span>=&quot;</span>
                                     <span {...testId('TOOLTIP_LABEL_VALUE')}>
                                       {attributesMap[name]}
                                     </span>
-                                    <span>"</span>
+                                    <span>&quot;</span>
                                   </div>
                                 ))}
                               </span>
@@ -534,9 +534,9 @@ const ProfileMetricsGraph = ({
                                     {...testId('TOOLTIP_LABEL')}
                                   >
                                     <span {...testId('TOOLTIP_LABEL_KEY')}>{label.name}</span>
-                                    <span>="</span>
+                                    <span>=&quot;</span>
                                     <span {...testId('TOOLTIP_LABEL_VALUE')}>{label.value}</span>
-                                    <span>"</span>
+                                    <span>&quot;</span>
                                   </div>
                                 ))}
                             </>
