@@ -20,6 +20,7 @@ import {useContextMenu} from 'react-contexify';
 
 import {DateTimeRange, useParcaContext} from '@parca/components';
 import {formatDate, formatForTimespan, getPrecision, valueFormatter} from '@parca/utilities';
+import {testId} from '@parca/test-utils';
 
 import MetricsCircle from '../MetricsCircle';
 import MetricsSeries from '../MetricsSeries';
@@ -81,7 +82,11 @@ const MetricsGraph = ({
 }: Props): JSX.Element => {
   const [isInfoPanelOpen, setIsInfoPanelOpen] = useState<boolean>(false);
   return (
-    <div className="relative" onClick={() => isInfoPanelOpen && setIsInfoPanelOpen(false)}>
+    <div 
+      className="relative" 
+      {...testId('METRICS_GRAPH')}
+      onClick={() => isInfoPanelOpen && setIsInfoPanelOpen(false)}
+    >
       <div className="absolute right-0 top-0">
         <MetricsInfoPanel
           isInfoPanelOpen={isInfoPanelOpen}

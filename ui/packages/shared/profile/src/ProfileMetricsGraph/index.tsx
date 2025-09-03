@@ -25,9 +25,9 @@ import {
 import {
   DateTimeRange,
   MetricsGraphSkeleton,
-  TextWithTooltip,
   useParcaContext,
 } from '@parca/components';
+import {testId} from '@parca/test-utils';
 import {Query} from '@parca/parser';
 import {capitalizeOnlyFirstLetter, formatDate, timePattern, valueFormatter} from '@parca/utilities';
 
@@ -490,14 +490,16 @@ const ProfileMetricsGraph = ({
                                   <div
                                     key={name}
                                     className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+                                    {...testId('TOOLTIP_LABEL')}
                                   >
-                                    <TextWithTooltip
-                                      text={`${name.replace('attributes.', '')}="${
-                                        attributesResourceMap[name]
-                                      }"`}
-                                      maxTextLength={48}
-                                      id={`tooltip-${name}-${attributesResourceMap[name]}`}
-                                    />
+                                    <span {...testId('TOOLTIP_LABEL_KEY')}>
+                                      {name.replace('attributes.', '')}
+                                    </span>
+                                    <span>="</span>
+                                    <span {...testId('TOOLTIP_LABEL_VALUE')}>
+                                      {attributesResourceMap[name]}
+                                    </span>
+                                    <span>"</span>
                                   </div>
                                 ))}
                               </span>
@@ -511,14 +513,16 @@ const ProfileMetricsGraph = ({
                                   <div
                                     key={name}
                                     className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+                                    {...testId('TOOLTIP_LABEL')}
                                   >
-                                    <TextWithTooltip
-                                      text={`${name.replace('attributes.', '')}="${
-                                        attributesMap[name]
-                                      }"`}
-                                      maxTextLength={48}
-                                      id={`tooltip-${name}-${attributesMap[name]}`}
-                                    />
+                                    <span {...testId('TOOLTIP_LABEL_KEY')}>
+                                      {name.replace('attributes.', '')}
+                                    </span>
+                                    <span>="</span>
+                                    <span {...testId('TOOLTIP_LABEL_VALUE')}>
+                                      {attributesMap[name]}
+                                    </span>
+                                    <span>"</span>
                                   </div>
                                 ))}
                               </span>
@@ -531,12 +535,16 @@ const ProfileMetricsGraph = ({
                                   <div
                                     key={label.name}
                                     className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+                                    {...testId('TOOLTIP_LABEL')}
                                   >
-                                    <TextWithTooltip
-                                      text={`${label.name}="${label.value}"`}
-                                      maxTextLength={37}
-                                      id={`tooltip-${label.name}`}
-                                    />
+                                    <span {...testId('TOOLTIP_LABEL_KEY')}>
+                                      {label.name}
+                                    </span>
+                                    <span>="</span>
+                                    <span {...testId('TOOLTIP_LABEL_VALUE')}>
+                                      {label.value}
+                                    </span>
+                                    <span>"</span>
                                   </div>
                                 ))}
                             </>

@@ -22,6 +22,7 @@ import {
   TextWithTooltip,
   useParcaContext,
 } from '@parca/components';
+import {testId, TEST_IDS} from '@parca/test-utils';
 import {formatDate, timePattern, valueFormatter} from '@parca/utilities';
 
 import {type UtilizationMetrics as MetricSeries} from '../../ProfileSelector';
@@ -318,14 +319,16 @@ const RawUtilizationMetrics = ({
                           name
                         }
                         className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+                        {...testId('TOOLTIP_LABEL')}
                       >
-                        <TextWithTooltip
-                          text={`${transformUtilizationLabels(name)}="${
-                            attributesMap[name] ?? ''
-                          }"`}
-                          maxTextLength={48}
-                          id={`tooltip-${name}-${attributesMap[name] ?? ''}`}
-                        />
+                        <span {...testId('TOOLTIP_LABEL_KEY')}>
+                          {transformUtilizationLabels(name)}
+                        </span>
+                        <span>="</span>
+                        <span {...testId('TOOLTIP_LABEL_VALUE')}>
+                          {attributesMap[name] ?? ''}
+                        </span>
+                        <span>"</span>
                       </div>
                     ))}
                   </span>
@@ -344,12 +347,16 @@ const RawUtilizationMetrics = ({
                           label.name
                         }
                         className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+                        {...testId('TOOLTIP_LABEL')}
                       >
-                        <TextWithTooltip
-                          text={`${transformUtilizationLabels(label.name)}="${label.value}"`}
-                          maxTextLength={37}
-                          id={`tooltip-${label.name}`}
-                        />
+                        <span {...testId('TOOLTIP_LABEL_KEY')}>
+                          {transformUtilizationLabels(label.name)}
+                        </span>
+                        <span>="</span>
+                        <span {...testId('TOOLTIP_LABEL_VALUE')}>
+                          {label.value}
+                        </span>
+                        <span>"</span>
                       </div>
                     ))}
                 </span>
