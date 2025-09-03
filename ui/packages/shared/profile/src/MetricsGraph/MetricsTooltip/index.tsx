@@ -15,6 +15,8 @@ import {useEffect, useMemo, useState} from 'react';
 
 import {usePopper} from 'react-popper';
 
+import {testId} from '@parca/test-utils';
+
 interface VirtualElement {
   getBoundingClientRect: () => DOMRect;
 }
@@ -107,7 +109,13 @@ const MetricsTooltip = ({x, y, contextElement, content}: Props): JSX.Element => 
   }
 
   return (
-    <div ref={setPopperElement} style={styles.popper} {...attributes.popper} className="z-50">
+    <div
+      ref={setPopperElement}
+      style={styles.popper}
+      {...attributes.popper}
+      {...testId('METRICS_GRAPH_TOOLTIP')}
+      className="z-50"
+    >
       <div className="flex max-w-lg">
         <div className="m-auto">
           <div className="border border-gray-300 bg-gray-50 dark:border-gray-500 dark:bg-gray-900 rounded-lg shadow-lg px-3 py-2">
