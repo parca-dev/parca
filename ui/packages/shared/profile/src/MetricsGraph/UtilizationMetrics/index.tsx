@@ -320,7 +320,9 @@ const RawUtilizationMetrics = ({
                         className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
                       >
                         <TextWithTooltip
-                          text={`${transformUtilizationLabels(name)}="${attributesMap[name] ?? ''}"`}
+                          text={`${transformUtilizationLabels(name)}="${
+                            attributesMap[name] ?? ''
+                          }"`}
                           maxTextLength={48}
                           id={`tooltip-${name}-${attributesMap[name] ?? ''}`}
                         />
