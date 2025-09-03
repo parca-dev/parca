@@ -132,7 +132,7 @@ export const UtilizationMetricsSelector = ({
                   humanReadableName={humanReadableName}
                   from={querySelection.from}
                   to={querySelection.to}
-                  yAxisUnit={yAxisUnit || 'percent'}
+                  yAxisUnit={yAxisUnit ?? 'percent'}
                   onSeriesClick={() => {
                     if (onUtilizationSeriesSelect != null) {
                       const globalSeriesIndex =
@@ -152,7 +152,7 @@ export const UtilizationMetricsSelector = ({
               if (throughputMetrics.length === 0) return null;
 
               const groupedMetrics = throughputMetrics.filter(
-                metric => metric.groupWith && metric.groupWith.length > 0
+                metric => metric.groupWith != null && metric.groupWith.length > 0
               );
 
               if (groupedMetrics.length === 0) return null;
@@ -160,11 +160,12 @@ export const UtilizationMetricsSelector = ({
               const primaryMetric = groupedMetrics[0];
               const secondaryMetricName = primaryMetric.groupWith?.[0];
 
-              if (!secondaryMetricName) return null;
+              if (secondaryMetricName == null || secondaryMetricName === '') return null;
 
               const secondaryMetric = throughputMetrics.find(m => m.name === secondaryMetricName);
 
-              if (!primaryMetric.data.length && !secondaryMetric?.data.length) return null;
+              if (primaryMetric.data.length === 0 && (secondaryMetric?.data.length ?? 0) === 0)
+                return null;
 
               return (
                 <AreaChart
@@ -176,7 +177,7 @@ export const UtilizationMetricsSelector = ({
                   humanReadableName={primaryMetric.humanReadableName}
                   from={querySelection.from}
                   to={querySelection.to}
-                  yAxisUnit={primaryMetric.yAxisUnit || 'bytes_per_second'}
+                  yAxisUnit={primaryMetric.yAxisUnit ?? 'bytes_per_second'}
                   utilizationMetricsLoading={utilizationMetrics.loading}
                   selectedSeries={undefined}
                   onSeriesClick={() => {
