@@ -17,6 +17,7 @@ import {DateTimeRange} from '@parca/components';
 import {Query} from '@parca/parser';
 
 import UtilizationMetricsGraph from '../MetricsGraph/UtilizationMetricsGraph';
+import AreaChart from '../MetricsGraph/UtilizationMetricsGraph/Throughput';
 import {SharedQueryControls} from '../SharedQueryControls';
 import {
   UtilizationLabels,
@@ -120,26 +121,76 @@ export const UtilizationMetricsSelector = ({
 
         {utilizationMetrics !== undefined && utilizationMetrics.metrics.length > 0 && (
           <div>
-            {utilizationMetrics.metrics.map(({name, humanReadableName, data}) => (
-              <UtilizationMetricsGraph
-                key={name}
-                data={data}
-                setTimeRange={handleTimeRangeChange}
-                utilizationMetricsLoading={utilizationMetrics.loading}
-                humanReadableName={humanReadableName}
-                from={querySelection.from}
-                to={querySelection.to}
-                yAxisUnit="percentage"
-                onSeriesClick={() => {
-                  if (onUtilizationSeriesSelect != null) {
-                    const globalSeriesIndex =
-                      utilizationMetrics?.metrics.findIndex(metric => metric.name === name) ?? 0;
+            {utilizationMetrics.metrics
+              .filter(({renderAs}) => renderAs !== 'throughput')
+              .map(({name, humanReadableName, data, yAxisUnit}) => (
+                <UtilizationMetricsGraph
+                  key={name}
+                  data={data}
+                  setTimeRange={handleTimeRangeChange}
+                  utilizationMetricsLoading={utilizationMetrics.loading}
+                  humanReadableName={humanReadableName}
+                  from={querySelection.from}
+                  to={querySelection.to}
+                  yAxisUnit={yAxisUnit || 'percent'}
+                  onSeriesClick={() => {
+                    if (onUtilizationSeriesSelect != null) {
+                      const globalSeriesIndex =
+                        utilizationMetrics?.metrics.findIndex(metric => metric.name === name) ?? 0;
 
-                    onUtilizationSeriesSelect(globalSeriesIndex);
-                  }
-                }}
-              />
-            ))}
+                      onUtilizationSeriesSelect(globalSeriesIndex);
+                    }
+                  }}
+                />
+              ))}
+
+            {(() => {
+              const throughputMetrics = utilizationMetrics.metrics.filter(
+                metric => metric.renderAs === 'throughput'
+              );
+
+              if (throughputMetrics.length === 0) return null;
+
+              const groupedMetrics = throughputMetrics.filter(
+                metric => metric.groupWith && metric.groupWith.length > 0
+              );
+
+              if (groupedMetrics.length === 0) return null;
+
+              const primaryMetric = groupedMetrics[0];
+              const secondaryMetricName = primaryMetric.groupWith?.[0];
+
+              if (!secondaryMetricName) return null;
+
+              const secondaryMetric = throughputMetrics.find(m => m.name === secondaryMetricName);
+
+              if (!primaryMetric.data.length && !secondaryMetric?.data.length) return null;
+
+              return (
+                <AreaChart
+                  transmitData={primaryMetric.data}
+                  receiveData={secondaryMetric?.data ?? []}
+                  addLabelMatcher={() => {}}
+                  setTimeRange={handleTimeRangeChange}
+                  name={primaryMetric.name}
+                  humanReadableName={primaryMetric.humanReadableName}
+                  from={querySelection.from}
+                  to={querySelection.to}
+                  yAxisUnit={primaryMetric.yAxisUnit || 'bytes_per_second'}
+                  utilizationMetricsLoading={utilizationMetrics.loading}
+                  selectedSeries={undefined}
+                  onSeriesClick={() => {
+                    if (onUtilizationSeriesSelect != null) {
+                      const globalSeriesIndex =
+                        utilizationMetrics?.metrics.findIndex(
+                          metric => metric.renderAs === 'throughput'
+                        ) ?? 0;
+                      onUtilizationSeriesSelect(globalSeriesIndex);
+                    }
+                  }}
+                />
+              );
+            })()}
           </div>
         )}
       </div>

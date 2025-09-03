@@ -21,6 +21,7 @@ export interface UtilizationMetrics {
     loading?: boolean;
     renderAs?: 'standard' | 'throughput';
     groupWith?: string[];
+    yAxisUnit?: string;
   }>;
   loading: boolean;
 }

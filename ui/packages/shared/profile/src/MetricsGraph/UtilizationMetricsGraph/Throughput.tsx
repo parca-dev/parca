@@ -51,6 +51,7 @@ interface CommonProps {
   humanReadableName: string;
   from: number;
   to: number;
+  yAxisUnit?: string;
   selectedSeries?: Array<{key: string; value: string}>;
   onSeriesClick?: (seriesIndex: number) => void;
 }
@@ -239,6 +240,7 @@ const RawAreaChart = ({
   humanReadableName,
   from,
   to,
+  yAxisUnit = 'bytes_per_second',
   selectedSeries: _selectedSeries,
   onSeriesClick,
   contextMenuItems,
@@ -263,7 +265,7 @@ const RawAreaChart = ({
         }
       }}
       yAxisLabel={humanReadableName}
-      yAxisUnit="bytes_per_second"
+      yAxisUnit={yAxisUnit}
       width={width}
       height={height}
       margin={margin}
@@ -291,7 +293,7 @@ const RawAreaChart = ({
                       <tr>
                         <td className="w-1/4">{valuePrefix}Value</td>
                         <td className="w-3/4">
-                          {valueFormatter(Math.abs(originalPoint.value), 'bytes_per_second', 2)}
+                          {valueFormatter(Math.abs(originalPoint.value), yAxisUnit, 2)}
                         </td>
                       </tr>
                       <tr>
@@ -349,6 +351,7 @@ const AreaChart = ({
   humanReadableName,
   from,
   to,
+  yAxisUnit,
   selectedSeries,
   onSeriesClick,
 }: Props): JSX.Element => {
@@ -389,6 +392,7 @@ const AreaChart = ({
             humanReadableName={humanReadableName}
             from={from}
             to={to}
+            yAxisUnit={yAxisUnit}
             selectedSeries={selectedSeries}
             onSeriesClick={onSeriesClick}
             contextMenuItems={contextMenuItems}
