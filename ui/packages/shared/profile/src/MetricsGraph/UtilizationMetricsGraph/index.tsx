@@ -24,7 +24,7 @@ import {
 } from '@parca/components';
 import {formatDate, timePattern, valueFormatter} from '@parca/utilities';
 
-import {type UtilizationMetrics as MetricSeries} from '../../ProfileSelector';
+import {type UtilizationSeries as MetricSeries} from '../../contexts/UtilizationContext';
 import MetricsGraph, {type ContextMenuItemOrSubmenu, type Series} from '../index';
 import {useMetricsGraphDimensions} from '../useMetricsGraphDimensions';
 
@@ -168,19 +168,6 @@ const transformMetricSeriesToSeries = (data: MetricSeries[]): Series[] => {
       values: [],
     };
   });
-};
-
-const _getYAxisUnit = (name: string): string => {
-  switch (name) {
-    case 'gpu_power_watt':
-      return 'watts';
-    case 'gpu_temperature_celsius':
-      return 'celsius';
-    case 'gpu_clock_hertz':
-      return 'hertz';
-    default:
-      return 'percent';
-  }
 };
 
 const RawUtilizationMetrics = ({
@@ -367,7 +354,7 @@ const RawUtilizationMetrics = ({
   );
 };
 
-const UtilizationMetrics = ({
+const UtilizationMetricsGraph = ({
   data,
   setTimeRange,
   utilizationMetricsLoading,
@@ -420,4 +407,4 @@ const UtilizationMetrics = ({
   );
 };
 
-export default UtilizationMetrics;
+export default UtilizationMetricsGraph;

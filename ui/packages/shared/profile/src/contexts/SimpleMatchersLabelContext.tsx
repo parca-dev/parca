@@ -18,7 +18,7 @@ import {QueryServiceClient} from '@parca/client';
 import {useLabelNames} from '../MatchersInput';
 import {transformLabelsForSelect} from '../SimpleMatchers';
 import type {SelectItem} from '../SimpleMatchers/Select';
-import {useUtilizationLabels} from './UtilizationLabelsContext';
+import {useUtilization} from './UtilizationContext';
 
 interface LabelNameSection {
   type: string;
@@ -53,7 +53,8 @@ export function LabelProvider({
   start,
   end,
 }: LabelProviderProps): JSX.Element {
-  const utilizationLabelResponse = useUtilizationLabels();
+  const utilizationContext = useUtilization();
+  const utilizationLabelResponse = utilizationContext?.utilizationLabels;
   const {loading, result} = useLabelNames(queryClient, profileType, start, end);
 
   const profileValues = useMemo(() => {
@@ -69,22 +70,17 @@ export function LabelProvider({
   }, [result, loading]);
 
   const utilizationValues = useMemo(() => {
-    if (utilizationLabelResponse?.utilizationLabelNamesLoading === true) {
+    if (utilizationLabelResponse?.labelNamesLoading === true) {
       return {labelNameOptions: [] as string[], isLoading: true};
     }
-    if (
-      utilizationLabelResponse == null ||
-      utilizationLabelResponse.utilizationLabelNames == null
-    ) {
+    if (utilizationLabelResponse == null || utilizationLabelResponse.labelNames == null) {
       return {labelNameOptions: [] as string[], isLoading: false};
     }
 
-    const uniqueUtilizationLabelNames = Array.from(
-      new Set(utilizationLabelResponse.utilizationLabelNames)
-    );
+    const uniqueUtilizationLabelNames = Array.from(new Set(utilizationLabelResponse.labelNames));
     return {
       labelNameOptions: uniqueUtilizationLabelNames,
-      isLoading: utilizationLabelResponse.utilizationLabelNamesLoading,
+      isLoading: utilizationLabelResponse.labelNamesLoading,
     };
   }, [utilizationLabelResponse]);
 

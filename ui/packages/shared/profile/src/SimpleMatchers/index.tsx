@@ -24,7 +24,7 @@ import {testId} from '@parca/test-utils';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
 import {LabelProvider, useLabels} from '../contexts/SimpleMatchersLabelContext';
-import {useUtilizationLabels} from '../contexts/UtilizationLabelsContext';
+import {useUtilization} from '../contexts/UtilizationContext';
 import Select, {type SelectItem} from './Select';
 
 interface Props {
@@ -122,7 +122,7 @@ const SimpleMatchers = ({
   start,
   end,
 }: Props): JSX.Element => {
-  const utilizationLabels = useUtilizationLabels();
+  const utilizationContext = useUtilization();
   const [queryRows, setQueryRows] = useState<QueryRow[]>([
     {labelName: '', operator: '=', labelValue: '', labelValues: [], isLoading: false},
   ]);
@@ -179,9 +179,9 @@ const SimpleMatchers = ({
 
   const fetchLabelValuesUtilization = useCallback(
     async (labelName: string): Promise<string[]> => {
-      return (await utilizationLabels?.utilizationFetchLabelValues?.(labelName)) ?? [];
+      return (await utilizationContext?.utilizationLabels?.fetchLabelValues?.(labelName)) ?? [];
     },
-    [utilizationLabels]
+    [utilizationContext]
   );
 
   const updateMatchersString = useCallback(
