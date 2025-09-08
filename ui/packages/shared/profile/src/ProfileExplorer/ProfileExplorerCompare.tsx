@@ -16,8 +16,8 @@ import {useState} from 'react';
 import {QueryServiceClient} from '@parca/client';
 import {useURLState} from '@parca/components';
 import {Query} from '@parca/parser';
-import type {NavigateFunction} from '@parca/utilities';
 import {testId} from '@parca/test-utils';
+import type {NavigateFunction} from '@parca/utilities';
 
 import {ProfileDiffSource, ProfileSelection, ProfileViewWithData} from '..';
 import ProfileSelector, {QuerySelection} from '../ProfileSelector';
