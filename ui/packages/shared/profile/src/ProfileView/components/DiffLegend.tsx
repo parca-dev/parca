@@ -17,6 +17,7 @@ import {Popover, Transition} from '@headlessui/react';
 import {usePopper} from 'react-popper';
 
 import {selectDarkMode, useAppSelector} from '@parca/store';
+import {testId} from '@parca/test-utils';
 import {getIncreasedSpanColor, getNewSpanColor, getReducedSpanColor} from '@parca/utilities';
 
 const transparencyValues = [-100, -80, -60, -40, -20, 0, 20, 40, 60, 80, 100];
@@ -74,7 +75,7 @@ const DiffLegend = (): JSX.Element => {
   };
 
   return (
-    <div className="mt-1 mb-2 hidden md:block" id="h-diff-legend">
+    <div className="mt-1 mb-2 hidden md:block" id="h-diff-legend" {...testId('DIFF_LEGEND')}>
       <div ref={setReferenceElement} className="flex items-center justify-center">
         <span>Better</span>
         <DiffLegendBar onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
