@@ -23,8 +23,8 @@ import {Query} from '@parca/parser';
 import {testId} from '@parca/test-utils';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
-import {LabelProvider, useLabels} from '../contexts/SimpleMatchersLabelContext';
-import {useUtilization} from '../contexts/UtilizationContext';
+import {useLabelNames} from '../MatchersInput';
+import {LabelProvider, LabelSource, useLabels} from '../contexts/SimpleMatchersLabelContext';
 import Select, {type SelectItem} from './Select';
 
 interface Props {
@@ -122,7 +122,6 @@ const SimpleMatchers = ({
   start,
   end,
 }: Props): JSX.Element => {
-  const utilizationContext = useUtilization();
   const [queryRows, setQueryRows] = useState<QueryRow[]>([
     {labelName: '', operator: '=', labelValue: '', labelValues: [], isLoading: false},
   ]);
@@ -177,13 +176,6 @@ const SimpleMatchers = ({
     [queryClient, metadata, profileType, reactQueryClient, start, end]
   );
 
-  const fetchLabelValuesUtilization = useCallback(
-    async (labelName: string): Promise<string[]> => {
-      return (await utilizationContext?.utilizationLabels?.fetchLabelValues?.(labelName)) ?? [];
-    },
-    [utilizationContext]
-  );
-
   const updateMatchersString = useCallback(
     (rows: QueryRow[]) => {
       const matcherString = rows
@@ -199,16 +191,9 @@ const SimpleMatchers = ({
 
   const fetchLabelValuesUnified = useCallback(
     async (labelName: string): Promise<string[]> => {
-      const labelType = labelNameOptions.find(option =>
-        option.values.some(e => e.key === labelName)
-      )?.type;
-      const labelValues =
-        labelType === 'gpu'
-          ? await fetchLabelValuesUtilization(labelName)
-          : await fetchLabelValues(labelName);
-      return labelValues;
+      return await fetchLabelValues(labelName);
     },
-    [fetchLabelValues, fetchLabelValuesUtilization, labelNameOptions]
+    [fetchLabelValues]
   );
 
   useEffect(() => {
@@ -428,6 +413,13 @@ const SimpleMatchers = ({
 };
 
 export default function SimpleMathersWithProvider(props: Props): JSX.Element {
+  const {loading, result} = useLabelNames(
+    props.queryClient,
+    props.profileType,
+    props.start,
+    props.end
+  );
+
   const labelNameFromMatchers = useMemo(() => {
     if (props.currentQuery === undefined) return [];
 
@@ -436,14 +428,27 @@ export default function SimpleMathersWithProvider(props: Props): JSX.Element {
     return matchers.map(matcher => matcher.key);
   }, [props.currentQuery]);
 
+  const labelSources = useMemo(() => {
+    const sources: LabelSource[] = [];
+
+    const profileLabelNames =
+      result.error != null
+        ? []
+        : result.response?.labelNames.filter((e: string) => e !== '__name__') ?? [];
+    const uniqueProfileLabelNames = Array.from(new Set(profileLabelNames));
+
+    sources.push({
+      type: 'cpu',
+      labelNames: uniqueProfileLabelNames,
+      isLoading: loading,
+      error: result.error ?? null,
+    });
+
+    return sources;
+  }, [result, loading]);
+
   return (
-    <LabelProvider
-      queryClient={props.queryClient}
-      profileType={props.profileType}
-      labelNameFromMatchers={labelNameFromMatchers}
-      start={props.start}
-      end={props.end}
-    >
+    <LabelProvider labelSources={labelSources} labelNameFromMatchers={labelNameFromMatchers}>
       <SimpleMatchers {...props} />
     </LabelProvider>
   );

@@ -24,9 +24,22 @@ import {
 } from '@parca/components';
 import {formatDate, timePattern, valueFormatter} from '@parca/utilities';
 
-import {type UtilizationSeries as MetricSeries} from '../../contexts/UtilizationContext';
 import MetricsGraph, {type ContextMenuItemOrSubmenu, type Series} from '../index';
 import {useMetricsGraphDimensions} from '../useMetricsGraphDimensions';
+
+export interface MetricSeries {
+  isSelected: boolean;
+  labelset: {
+    labels: Array<{
+      name: string;
+      value: string;
+    }>;
+  };
+  samples: Array<{
+    timestamp: number;
+    value: number;
+  }>;
+}
 
 interface CommonProps {
   setTimeRange: (range: DateTimeRange) => void;

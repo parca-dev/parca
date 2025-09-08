@@ -15,8 +15,7 @@ import React, {createContext, useContext, useMemo} from 'react';
 
 import {QueryServiceClient} from '@parca/client';
 
-import {useFetchUtilizationLabelValues, useLabelNames, useLabelValues} from '../MatchersInput';
-import {useUtilization} from './UtilizationContext';
+import {useLabelNames, useLabelValues} from '../MatchersInput';
 
 interface LabelNameMapping {
   displayName: string;
@@ -31,7 +30,6 @@ interface LabelsContextType {
   isLabelValuesLoading: boolean;
   currentLabelName: string | null;
   setCurrentLabelName: (name: string | null) => void;
-  shouldHandlePrefixes: boolean;
 }
 
 const LabelsContext = createContext<LabelsContextType | null>(null);
@@ -44,8 +42,6 @@ interface LabelsProviderProps {
   end?: number;
 }
 
-// With there being the possibility of having utilization labels, we need to be able to determine whether the labels to be used are utilization labels or profiling data labels.
-// This context is used to determine this.
 export function LabelsProvider({
   children,
   queryClient,
@@ -54,7 +50,6 @@ export function LabelsProvider({
   end,
 }: LabelsProviderProps): JSX.Element {
   const [currentLabelName, setCurrentLabelName] = React.useState<string | null>(null);
-  const utilizationContext = useUtilization();
 
   const {result: labelNamesResponse, loading: isLabelNamesLoading} = useLabelNames(
     queryClient,
@@ -79,34 +74,20 @@ export function LabelsProvider({
     end
   );
 
-  const utilizationLabelValues = useFetchUtilizationLabelValues(
-    currentLabelName ?? '',
-    utilizationContext
-  );
-
-  const shouldHandlePrefixes = utilizationContext?.utilizationLabels?.labelNames !== undefined;
-
   const labelNameMappings = useMemo(() => {
-    const names = utilizationContext?.utilizationLabels?.labelNames ?? labelNamesFromAPI;
-    return names.map(name => ({
+    return labelNamesFromAPI.map(name => ({
       displayName: name.replace(/^(attributes\.|attributes_resource\.)/, ''),
       fullName: name,
     }));
-  }, [labelNamesFromAPI, utilizationContext?.utilizationLabels?.labelNames]);
+  }, [labelNamesFromAPI]);
 
   const labelNames = useMemo(() => {
-    return shouldHandlePrefixes ? labelNameMappings.map(m => m.displayName) : labelNamesFromAPI;
-  }, [labelNameMappings, labelNamesFromAPI, shouldHandlePrefixes]);
+    return labelNameMappings.map(m => m.displayName);
+  }, [labelNameMappings]);
 
   const labelValues = useMemo(() => {
-    return utilizationContext?.utilizationLabels?.fetchLabelValues !== undefined
-      ? utilizationLabelValues
-      : labelValuesOriginal.response;
-  }, [
-    labelValuesOriginal,
-    utilizationLabelValues,
-    utilizationContext?.utilizationLabels?.fetchLabelValues,
-  ]);
+    return labelValuesOriginal.response;
+  }, [labelValuesOriginal]);
 
   const value = useMemo(
     () => ({
@@ -117,7 +98,6 @@ export function LabelsProvider({
       isLabelValuesLoading,
       currentLabelName,
       setCurrentLabelName,
-      shouldHandlePrefixes,
     }),
     [
       labelNames,
@@ -126,7 +106,6 @@ export function LabelsProvider({
       isLabelNamesLoading,
       isLabelValuesLoading,
       currentLabelName,
-      shouldHandlePrefixes,
     ]
   );
 

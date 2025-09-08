@@ -24,9 +24,9 @@ import {
 } from '@parca/components';
 import {formatDate, timePattern, valueFormatter} from '@parca/utilities';
 
-import {type UtilizationSeries as MetricSeries} from '../../contexts/UtilizationContext';
-import MetricsGraph, {type ContextMenuItemOrSubmenu, type Series} from '../index';
+import MetricsGraph, {type ContextMenuItemOrSubmenu, type Series} from '../.';
 import {useMetricsGraphDimensions} from '../useMetricsGraphDimensions';
+import {type MetricSeries} from './';
 
 interface NetworkLabel {
   name: string;
