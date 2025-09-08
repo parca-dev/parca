@@ -113,6 +113,15 @@ export const TEST_IDS = {
   GROUP_BY_LABEL: 'group-by-label',
   GROUP_BY_SELECT_FLYOUT: 'group-by-select-flyout',
 
+  // Compare Mode
+  COMPARE_CONTAINER: 'compare-container',
+  COMPARE_SIDE_A: 'compare-side-a',
+  COMPARE_SIDE_B: 'compare-side-b',
+  COMPARE_PROFILE_VIEW: 'compare-profile-view',
+  
+  // Diff Legend
+  DIFF_LEGEND: 'diff-legend',
+
   // Common Interactive Elements
   SELECT_DROPDOWN: 'select-dropdown',
   SELECT_OPTION: 'select-option',
