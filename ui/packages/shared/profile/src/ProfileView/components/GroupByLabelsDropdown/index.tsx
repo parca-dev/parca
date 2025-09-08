@@ -30,7 +30,7 @@ interface Props {
 
 const GroupByLabelsDropdown = ({labels, groupBy, setGroupByLabels}: Props): JSX.Element => {
   return (
-    <div className="flex flex-col" {...testId('GROUP_BY_CONTAINER')}>
+    <div className="flex flex-col relative" {...testId('GROUP_BY_CONTAINER')}>
       <div className="flex items-center justify-between">
         <label className="text-sm" {...testId('GROUP_BY_LABEL')}>
           Group by
@@ -45,11 +45,16 @@ const GroupByLabelsDropdown = ({labels, groupBy, setGroupByLabels}: Props): JSX.
         options={labels.map(label => ({label, value: `${FIELD_LABELS}.${label}`}))}
         className="parca-select-container text-sm rounded-md bg-white"
         classNamePrefix="parca-select"
-        menuPortalTarget={document.body}
         components={{
           // eslint-disable-next-line react/prop-types
           MenuList: ({children, innerProps}) => (
-            <div {...testId('GROUP_BY_SELECT_FLYOUT')} {...innerProps}>
+            <div
+              className="overflow-y-auto"
+              {...testId('GROUP_BY_SELECT_FLYOUT')}
+              {...innerProps}
+              // eslint-disable-next-line react/prop-types
+              style={{...innerProps.style, height: '332px', maxHeight: '332px', fontSize: '14px'}}
+            >
               {children}
             </div>
           ),
@@ -65,10 +70,11 @@ const GroupByLabelsDropdown = ({labels, groupBy, setGroupByLabels}: Props): JSX.
           menu: provided => ({
             ...provided,
             marginBottom: 0,
-            boxShadow: 'none',
-            marginTop: 0,
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            marginTop: 10,
             zIndex: 1000,
             minWidth: '320px',
+            position: 'absolute',
           }),
           control: provided => ({
             ...provided,
