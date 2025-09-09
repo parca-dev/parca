@@ -461,106 +461,18 @@ mainLoop:
 		cancel()
 
 		if scrapeErr == nil {
-			b = buf.Bytes()
-			// NOTE: There were issues with misbehaving clients in the past
-			// that occasionally returned empty results. We don't want those
-			// to falsely reset our buffer size.
-			if len(b) > 0 {
-				sl.lastScrapeSize = len(b)
-			}
-
-			tl := labels.NewBuilder(sl.target.Labels())
-			tl.Set("__name__", profileType)
-			sl.externalLabels.Range(func(l labels.Label) {
-				tl.Set(l.Name, l.Value)
-			})
-
-			protolbls := &profilepb.LabelSet{
-				Labels: []*profilepb.Label{},
-			}
-			tl.Range(func(l labels.Label) {
-				protolbls.Labels = append(protolbls.Labels, &profilepb.Label{
-					Name:  l.Name,
-					Value: l.Value,
-				})
-			})
-
-			byt := buf.Bytes()
-			p, err := profile.ParseData(byt)
+			err := processScrapeResp(buf, sl, profileType)
 			if err != nil {
-				level.Error(sl.l).Log("msg", "failed to parse profile data", "err", err)
-				continue
-			}
-
-			var executableInfo []*profilepb.ExecutableInfo
-			for _, comment := range p.Comments {
-				if strings.HasPrefix(comment, "executableInfo=") {
-					ei, err := parseExecutableInfo(comment)
-					if err != nil {
-						level.Error(sl.l).Log("msg", "failed to parse executableInfo", "err", err)
-						continue
-					}
-
-					executableInfo = append(executableInfo, ei)
-				}
-			}
-
-			ks := sl.target.KeepSet()
-			if len(ks) > 0 {
-				keepIndexes := []int{}
-				newTypes := []*profile.ValueType{}
-				for i, st := range p.SampleType {
-					if _, ok := ks[config.SampleType{Type: st.Type, Unit: st.Unit}]; ok {
-						keepIndexes = append(keepIndexes, i)
-						newTypes = append(newTypes, st)
-					}
-				}
-				p.SampleType = newTypes
-				for _, s := range p.Sample {
-					newValues := []int64{}
-					for _, i := range keepIndexes {
-						newValues = append(newValues, s.Value[i])
-					}
-					s.Value = newValues
-				}
-				p = p.Compact()
-				newB := sl.buffers.Get(sl.lastScrapeSize).([]byte)
-				newBuf := bytes.NewBuffer(newB)
-				if err := p.Write(newBuf); err != nil {
-					level.Error(sl.l).Log("msg", "failed to write profile data", "err", err)
-					continue
-				}
-				sl.buffers.Put(b)
-				byt = newBuf.Bytes()
-				b = newB // We want to make sure we return the new buffer to the pool further below.
-			}
-
-			_, err = sl.store.WriteRaw(sl.ctx, &profilepb.WriteRawRequest{
-				Normalized: sl.normalizedAddresses,
-				Series: []*profilepb.RawProfileSeries{
-					{
-						Labels: protolbls,
-						Samples: []*profilepb.RawSample{
-							{
-								RawProfile:     byt,
-								ExecutableInfo: executableInfo,
-							},
-						},
-					},
-				},
-			})
-			if err != nil {
-				switch errc {
-				case nil:
-					level.Error(sl.l).Log("msg", "WriteRaw failed for scraped profile", "err", err)
-				default:
+				if errc != nil {
 					errc <- err
 				}
+				sl.target.health = HealthBad
+				sl.target.lastError = err
+			} else {
+				sl.target.health = HealthGood
 			}
 
-			sl.target.health = HealthGood
 			sl.target.lastScrapeDuration = time.Since(start)
-			sl.target.lastError = nil
 		} else {
 			level.Debug(sl.l).Log("msg", "Scrape failed", "err", scrapeErr.Error())
 			if errc != nil {
@@ -588,6 +500,98 @@ mainLoop:
 	}
 
 	close(sl.stopped)
+}
+
+func processScrapeResp(buf *bytes.Buffer, sl *scrapeLoop, profileType string) error {
+	b := buf.Bytes()
+	// NOTE: There were issues with misbehaving clients in the past
+	// that occasionally returned empty results. We don't want those
+	// to falsely reset our buffer size.
+	if len(b) > 0 {
+		sl.lastScrapeSize = len(b)
+	}
+
+	tl := labels.NewBuilder(sl.target.Labels())
+	tl.Set("__name__", profileType)
+	sl.externalLabels.Range(func(l labels.Label) {
+		tl.Set(l.Name, l.Value)
+	})
+
+	protolbls := &profilepb.LabelSet{
+		Labels: []*profilepb.Label{},
+	}
+	tl.Range(func(l labels.Label) {
+		protolbls.Labels = append(protolbls.Labels, &profilepb.Label{
+			Name:  l.Name,
+			Value: l.Value,
+		})
+	})
+
+	byt := buf.Bytes()
+	p, err := profile.ParseData(byt)
+	if err != nil {
+		level.Error(sl.l).Log("msg", "failed to parse profile data", "err", err)
+		return err
+	}
+
+	var executableInfo []*profilepb.ExecutableInfo
+	for _, comment := range p.Comments {
+		if strings.HasPrefix(comment, "executableInfo=") {
+			ei, err := parseExecutableInfo(comment)
+			if err != nil {
+				level.Error(sl.l).Log("msg", "failed to parse executableInfo", "err", err)
+				continue
+			}
+
+			executableInfo = append(executableInfo, ei)
+		}
+	}
+
+	ks := sl.target.KeepSet()
+	if len(ks) > 0 {
+		keepIndexes := []int{}
+		newTypes := []*profile.ValueType{}
+		for i, st := range p.SampleType {
+			if _, ok := ks[config.SampleType{Type: st.Type, Unit: st.Unit}]; ok {
+				keepIndexes = append(keepIndexes, i)
+				newTypes = append(newTypes, st)
+			}
+		}
+		p.SampleType = newTypes
+		for _, s := range p.Sample {
+			newValues := []int64{}
+			for _, i := range keepIndexes {
+				newValues = append(newValues, s.Value[i])
+			}
+			s.Value = newValues
+		}
+		p = p.Compact()
+		newB := sl.buffers.Get(sl.lastScrapeSize).([]byte)
+		newBuf := bytes.NewBuffer(newB)
+		if err := p.Write(newBuf); err != nil {
+			level.Error(sl.l).Log("msg", "failed to write profile data", "err", err)
+			return err
+		}
+		sl.buffers.Put(b)
+		byt = newBuf.Bytes()
+		b = newB // We want to make sure we return the new buffer to the pool further below.
+	}
+
+	_, err = sl.store.WriteRaw(sl.ctx, &profilepb.WriteRawRequest{
+		Normalized: sl.normalizedAddresses,
+		Series: []*profilepb.RawProfileSeries{
+			{
+				Labels: protolbls,
+				Samples: []*profilepb.RawSample{
+					{
+						RawProfile:     byt,
+						ExecutableInfo: executableInfo,
+					},
+				},
+			},
+		},
+	})
+	return err
 }
 
 // parseExecutableInfo parses the executableInfo string from the comment. It is in the format of: "executableInfo=elfType;offset;vaddr".
