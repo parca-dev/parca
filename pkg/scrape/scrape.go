@@ -484,9 +484,7 @@ mainLoop:
 			sl.target.lastError = scrapeErr
 		}
 
-		sl.buffers.Put(b)
 		last = start
-
 		sl.target.lastScrape = last
 
 		select {
@@ -504,6 +502,7 @@ mainLoop:
 
 func processScrapeResp(buf *bytes.Buffer, sl *scrapeLoop, profileType string) error {
 	b := buf.Bytes()
+	defer sl.buffers.Put(b)
 	// NOTE: There were issues with misbehaving clients in the past
 	// that occasionally returned empty results. We don't want those
 	// to falsely reset our buffer size.
@@ -566,15 +565,14 @@ func processScrapeResp(buf *bytes.Buffer, sl *scrapeLoop, profileType string) er
 			s.Value = newValues
 		}
 		p = p.Compact()
-		newB := sl.buffers.Get(sl.lastScrapeSize).([]byte)
-		newBuf := bytes.NewBuffer(newB)
+		sl.buffers.Put(b)
+		b = sl.buffers.Get(sl.lastScrapeSize).([]byte)
+		newBuf := bytes.NewBuffer(b)
 		if err := p.Write(newBuf); err != nil {
 			level.Error(sl.l).Log("msg", "failed to write profile data", "err", err)
 			return err
 		}
-		sl.buffers.Put(b)
 		byt = newBuf.Bytes()
-		b = newB // We want to make sure we return the new buffer to the pool further below.
 	}
 
 	_, err = sl.store.WriteRaw(sl.ctx, &profilepb.WriteRawRequest{
