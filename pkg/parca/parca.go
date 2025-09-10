@@ -120,7 +120,7 @@ type Flags struct {
 	ProfileShareServer string `default:"api.pprof.me:443" help:"gRPC address to send share profile requests to."`
 
 	StoreAddress       string            `kong:"help='gRPC address to send profiles and symbols to.'"`
-	BearerToken        string            `kong:"help='Bearer token to authenticate with store.'"`
+	BearerToken        string            `kong:"help='Bearer token to authenticate with store.',env='PARCA_BEARER_TOKEN'"`
 	BearerTokenFile    string            `kong:"help='File to read bearer token from to authenticate with store.'"`
 	Insecure           bool              `kong:"help='Send gRPC requests via plaintext instead of TLS.'"`
 	InsecureSkipVerify bool              `kong:"help='Skip TLS certificate verification.'"`
