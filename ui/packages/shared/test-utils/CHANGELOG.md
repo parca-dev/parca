@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 0.0.11 (2025-09-10)
+
+## 0.24.1 (2025-09-09)
+
+**Note:** Version bump only for package @parca/test-utils
+
 ## [0.0.10](https://github.com/parca-dev/parca/compare/@parca/test-utils@0.0.9...@parca/test-utils@0.0.10) (2025-09-08)
 
 **Note:** Version bump only for package @parca/test-utils
