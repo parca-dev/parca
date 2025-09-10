@@ -155,7 +155,8 @@ Flags:
       --profile-share-server="api.pprof.me:443"
                                  gRPC address to send share profile requests to.
       --store-address=STRING     gRPC address to send profiles and symbols to.
-      --bearer-token=STRING      Bearer token to authenticate with store.
+      --bearer-token=STRING      Bearer token to authenticate with store
+                                 ($PARCA_BEARER_TOKEN).
       --bearer-token-file=STRING
                                  File to read bearer token from to authenticate
                                  with store.
