@@ -107,3 +107,66 @@ export const getPresetsForProfileType = (profileType?: string): FilterPreset[] =
     return preset.allowedProfileTypes.includes(profileType);
   });
 };
+
+export const detectPresets = (
+  profileFilters: Array<Omit<ProfileFilter, 'id'>>
+): {
+  detectedPresets: FilterPreset[];
+  remainingFilters: Array<Omit<ProfileFilter, 'id'>>;
+} => {
+  const detectedPresets: FilterPreset[] = [];
+  const remainingFilters: Array<Omit<ProfileFilter, 'id'>> = [...profileFilters];
+
+  for (const preset of filterPresets) {
+    const presetMatches = preset.filters.every(presetFilter => {
+      return remainingFilters.some(
+        filter =>
+          filter.type === presetFilter.type &&
+          filter.field === presetFilter.field &&
+          filter.matchType === presetFilter.matchType &&
+          filter.value === presetFilter.value
+      );
+    });
+
+    if (presetMatches) {
+      detectedPresets.push(preset);
+
+      // Remove the matched filters from remaining filters
+      preset.filters.forEach(presetFilter => {
+        const matchIndex = remainingFilters.findIndex(
+          filter =>
+            filter.type === presetFilter.type &&
+            filter.field === presetFilter.field &&
+            filter.matchType === presetFilter.matchType &&
+            filter.value === presetFilter.value
+        );
+        if (matchIndex !== -1) {
+          remainingFilters.splice(matchIndex, 1);
+        }
+      });
+    }
+  }
+
+  return {detectedPresets, remainingFilters};
+};
+
+export const getFilterDisplayInfo = (
+  profileFilters: Array<Omit<ProfileFilter, 'id'>>
+): {
+  presetNames: string[];
+  individualFilterCount: number;
+  totalFilters: number;
+  displayText: string;
+} => {
+  const {detectedPresets, remainingFilters} = detectPresets(profileFilters);
+
+  return {
+    presetNames: detectedPresets.map(p => p.name),
+    individualFilterCount: remainingFilters.length,
+    totalFilters: profileFilters.length,
+    displayText: [
+      ...detectedPresets.map(p => `"${p.name}"`),
+      ...(remainingFilters.length > 0 ? [`${remainingFilters.length} custom filter(s)`] : []),
+    ].join(', '),
+  };
+};

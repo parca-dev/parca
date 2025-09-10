@@ -20,7 +20,12 @@ import {Button, Input, Select, type SelectItem} from '@parca/components';
 import {testId} from '@parca/test-utils';
 
 import {useProfileViewContext} from '../../context/ProfileViewContext';
-import {getPresetByKey, getPresetsForProfileType, isPresetKey} from './filterPresets';
+import {
+  getPresetByKey,
+  getPresetsForProfileType,
+  isPresetKey,
+  type FilterPreset,
+} from './filterPresets';
 import {useProfileFilters, type ProfileFilter} from './useProfileFilters';
 
 export const isFilterComplete = (filter: ProfileFilter): boolean => {
@@ -176,7 +181,6 @@ export interface ProfileFiltersProps {
 const ProfileFilters = ({readOnly = false}: ProfileFiltersProps = {}): JSX.Element => {
   const {profileSource} = useProfileViewContext();
   const currentProfileType = profileSource?.ProfileType()?.toString();
-  const filterTypeItems = getFilterTypeItems(currentProfileType);
 
   const {
     localFilters,
@@ -188,6 +192,35 @@ const ProfileFilters = ({readOnly = false}: ProfileFiltersProps = {}): JSX.Eleme
     updateFilter,
     resetFilters,
   } = useProfileFilters();
+
+  const baseFilterTypeItems = getFilterTypeItems(currentProfileType);
+  const existingKeys = new Set(baseFilterTypeItems.map(item => item.key));
+
+  const appliedPresetKeys = new Set(
+    [...localFilters, ...appliedFilters]
+      .filter(f => f.type !== undefined && isPresetKey(f.type))
+      .map(f => f.type!)
+  );
+
+  const additionalPresetItems = Array.from(appliedPresetKeys)
+    .filter(key => !existingKeys.has(key))
+    .map(key => getPresetByKey(key))
+    .filter((preset): preset is FilterPreset => preset !== undefined)
+    .map(preset => ({
+      key: preset.key,
+      element: {
+        active: <>{preset.name}</>,
+        expanded: (
+          <>
+            <span>{preset.name}</span>
+            <br />
+            <span className="text-xs">{preset.description}</span>
+          </>
+        ),
+      },
+    }));
+
+  const filterTypeItems = [...baseFilterTypeItems, ...additionalPresetItems];
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {

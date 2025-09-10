@@ -15,7 +15,13 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {type Filter, type NumberCondition, type StringCondition} from '@parca/client';
 
-import {getPresetByKey, isPresetKey} from './filterPresets';
+import {
+  detectPresets,
+  filterPresets,
+  getPresetByKey,
+  getPresetsForProfileType,
+  isPresetKey,
+} from './filterPresets';
 import {useProfileFiltersUrlState} from './useProfileFiltersUrlState';
 
 export interface ProfileFilter {
@@ -45,8 +51,11 @@ const createNumberCondition = (matchType: string, value: bigint): NumberConditio
 });
 
 // Convert protobuf Filter[] back to ProfileFilter[] format for editing
-export const convertFromProtoFilters = (protoFilters: Filter[]): ProfileFilter[] => {
-  const profileFilters: ProfileFilter[] = [];
+export const convertFromProtoFilters = (
+  protoFilters: Filter[],
+  profileType?: string
+): ProfileFilter[] => {
+  const rawProfileFilters: ProfileFilter[] = [];
 
   for (const [index, protoFilter] of protoFilters.entries()) {
     if (protoFilter?.filter == null) continue;
@@ -113,7 +122,7 @@ export const convertFromProtoFilters = (protoFilters: Filter[]): ProfileFilter[]
 
       const field = fieldMap[fieldName] ?? fieldName;
 
-      profileFilters.push({
+      rawProfileFilters.push({
         id: `parsed-${index}-${fieldName}`,
         type: type as ProfileFilter['type'],
         field: field as ProfileFilter['field'],
@@ -123,7 +132,45 @@ export const convertFromProtoFilters = (protoFilters: Filter[]): ProfileFilter[]
     }
   }
 
-  return profileFilters;
+  const filtersWithoutId = rawProfileFilters.map(filter => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const {id, ...rest} = filter;
+    return rest;
+  });
+
+  const {detectedPresets, remainingFilters} = detectPresets(filtersWithoutId);
+
+  const finalFilters: ProfileFilter[] = [];
+
+  const allowedPresets =
+    profileType !== undefined ? getPresetsForProfileType(profileType) : filterPresets;
+  const allowedPresetKeys = new Set(allowedPresets.map(p => p.key));
+
+  detectedPresets.forEach((preset, index) => {
+    if (allowedPresetKeys.has(preset.key)) {
+      finalFilters.push({
+        id: `preset-${preset.key}-${index}`,
+        type: preset.key,
+        value: preset.name,
+      });
+    } else {
+      preset.filters.forEach((presetFilter, filterIndex) => {
+        finalFilters.push({
+          ...presetFilter,
+          id: `fallback-${preset.key}-${filterIndex}`,
+        });
+      });
+    }
+  });
+
+  remainingFilters.forEach((filter, index) => {
+    finalFilters.push({
+      ...filter,
+      id: `remaining-${index}`,
+    });
+  });
+
+  return finalFilters;
 };
 
 // Convert ProfileFilter[] to protobuf Filter[] matching the expected structure
