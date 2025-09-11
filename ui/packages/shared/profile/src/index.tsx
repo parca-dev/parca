@@ -29,6 +29,9 @@ export * from './ProfileTypeSelector';
 export * from './SourceView';
 export * from './ProfileMetricsGraph';
 export * from './useSumBy';
+export * from './SharedQueryControls';
+export {default as UtilizationMetricsGraph} from './MetricsGraph/UtilizationMetricsGraph';
+export {default as AreaChart} from './MetricsGraph/UtilizationMetricsGraph/Throughput';
 
 export {default as ProfileFilters} from './ProfileView/components/ProfileFilters';
 export {useProfileFiltersUrlState} from './ProfileView/components/ProfileFilters/useProfileFiltersUrlState';

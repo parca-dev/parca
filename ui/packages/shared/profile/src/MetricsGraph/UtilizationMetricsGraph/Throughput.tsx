@@ -24,48 +24,63 @@ import {
 } from '@parca/components';
 import {formatDate, timePattern, valueFormatter} from '@parca/utilities';
 
-import {type UtilizationMetrics as MetricSeries} from '../../ProfileSelector';
-import MetricsGraph, {type ContextMenuItemOrSubmenu, type Series} from '../index';
+import MetricsGraph, {type ContextMenuItemOrSubmenu, type Series} from '../.';
 import {useMetricsGraphDimensions} from '../useMetricsGraphDimensions';
+import {type MetricSeries} from './';
+
+interface NetworkLabel {
+  name: string;
+  value: string;
+}
+
+interface NetworkSeries {
+  metric: NetworkLabel[];
+  values: number[][];
+  labelset: string;
+  isReceive?: boolean;
+}
 
 interface CommonProps {
+  transmitData: MetricSeries[];
+  receiveData: MetricSeries[];
+  addLabelMatcher: (
+    labels: {key: string; value: string} | Array<{key: string; value: string}>
+  ) => void;
   setTimeRange: (range: DateTimeRange) => void;
+  name: string;
   humanReadableName: string;
   from: number;
   to: number;
+  yAxisUnit?: string;
+  selectedSeries?: Array<{key: string; value: string}>;
   onSeriesClick?: (seriesIndex: number) => void;
 }
 
-type RawUtilizationMetricsProps = CommonProps & {
-  data: Series[];
-  originalData: MetricSeries[];
+type RawAreaChartProps = CommonProps & {
+  transformedData: Series[];
   width: number;
   height: number;
   margin: number;
-  yAxisUnit: string;
   contextMenuItems?: ContextMenuItemOrSubmenu[];
 };
 
 type Props = CommonProps & {
-  data: MetricSeries[];
-  yAxisUnit: string;
   utilizationMetricsLoading?: boolean;
-  addLabelMatcher?: (
-    labels: {key: string; value: string} | Array<{key: string; value: string}>
-  ) => void;
-  onSelectedSeriesChange?: (series: Array<{key: string; value: string}>) => void;
 };
 
 const transformUtilizationLabels = (label: string): string => {
   return label.replace('attributes.', '').replace('attributes_resource.', '');
 };
 
-const createUtilizationContextMenuItems = (
+const createThroughputContextMenuItems = (
   addLabelMatcher: (
     labels: {key: string; value: string} | Array<{key: string; value: string}>
   ) => void,
-  originalData: MetricSeries[]
+  transmitData: MetricSeries[],
+  receiveData: MetricSeries[]
 ): ContextMenuItemOrSubmenu[] => {
+  const allData = [...transmitData, ...receiveData];
+
   return [
     {
       id: 'focus-on-single-series',
@@ -74,10 +89,10 @@ const createUtilizationContextMenuItems = (
       onClick: (closestPoint, _series) => {
         if (
           closestPoint != null &&
-          originalData.length > 0 &&
-          originalData[closestPoint.seriesIndex] != null
+          allData.length > 0 &&
+          allData[closestPoint.seriesIndex] != null
         ) {
-          const originalSeriesData = originalData[closestPoint.seriesIndex];
+          const originalSeriesData = allData[closestPoint.seriesIndex];
           if (originalSeriesData.labelset?.labels != null) {
             const labels = originalSeriesData.labelset.labels.filter(
               label => label.name !== '__name__'
@@ -98,8 +113,8 @@ const createUtilizationContextMenuItems = (
       createDynamicItems: (closestPoint, _series) => {
         if (
           closestPoint == null ||
-          originalData.length === 0 ||
-          originalData[closestPoint.seriesIndex] == null
+          allData.length === 0 ||
+          allData[closestPoint.seriesIndex] == null
         ) {
           return [
             {
@@ -112,7 +127,7 @@ const createUtilizationContextMenuItems = (
           ];
         }
 
-        const originalSeriesData = originalData[closestPoint.seriesIndex];
+        const originalSeriesData = allData[closestPoint.seriesIndex];
         if (originalSeriesData.labelset?.labels == null) {
           return [
             {
@@ -148,44 +163,76 @@ const createUtilizationContextMenuItems = (
   ];
 };
 
-const transformMetricSeriesToSeries = (data: MetricSeries[]): Series[] => {
-  return data.map(metricSeries => {
-    if (metricSeries.labelset != null) {
-      const labels = metricSeries.labelset.labels ?? [];
-      const sortedLabels = labels.sort((a, b) => a.name.localeCompare(b.name));
-      const id = sortedLabels.map(label => `${label.name}=${label.value}`).join(',');
+interface MetricsSample {
+  timestamp: number;
+  value: number;
+}
 
-      return {
-        id: id !== '' ? id : 'default',
-        values: metricSeries.samples.map((sample): [number, number] => [
-          sample.timestamp,
-          sample.value,
-        ]),
-      };
+function transformToSeries(data: MetricSeries[], isReceive = false): NetworkSeries[] {
+  const series: NetworkSeries[] = data.reduce<NetworkSeries[]>(function (
+    agg: NetworkSeries[],
+    s: MetricSeries
+  ) {
+    if (s.labelset !== undefined) {
+      const metric = s.labelset.labels.sort((a, b) => a.name.localeCompare(b.name));
+      agg.push({
+        metric,
+        values: s.samples.reduce<number[][]>(function (agg: number[][], d: MetricsSample) {
+          if (d.timestamp !== undefined && d.value !== undefined) {
+            // Multiply receive values by -1 to display below zero
+            const value = isReceive ? -1 * d.value : d.value;
+            agg.push([d.timestamp, value]);
+          }
+          return agg;
+        }, []),
+        labelset: metric.map(m => `${m.name}=${m.value}`).join(','),
+        isReceive,
+      });
     }
+    return agg;
+  },
+  []);
+
+  // Sort values by timestamp for each series
+  return series.map(series => ({
+    ...series,
+    values: series.values.sort((a, b) => a[0] - b[0]),
+  }));
+}
+
+function transformNetworkSeriesToSeries(
+  transmitData: MetricSeries[],
+  receiveData: MetricSeries[]
+): Series[] {
+  const transmitSeries = transformToSeries(transmitData);
+  const receiveSeries = transformToSeries(receiveData, true);
+  const allSeries = [...transmitSeries, ...receiveSeries];
+
+  return allSeries.map(networkSeries => {
+    const labels = networkSeries.metric ?? [];
+    const sortedLabels = labels
+      .filter(label => label.name !== '__name__')
+      .sort((a, b) => a.name.localeCompare(b.name));
+    const labelString = sortedLabels.map(label => `${label.name}=${label.value}`).join(',');
+    const id =
+      (networkSeries.isReceive === true ? 'receive-' : 'transmit-') +
+      (labelString !== '' ? labelString : 'default');
+
     return {
-      id: 'default',
-      values: [],
+      id,
+      values: networkSeries.values.map(([timestamp, value]): [number, number] => [
+        timestamp,
+        value,
+      ]),
     };
   });
-};
+}
 
-const _getYAxisUnit = (name: string): string => {
-  switch (name) {
-    case 'gpu_power_watt':
-      return 'watts';
-    case 'gpu_temperature_celsius':
-      return 'celsius';
-    case 'gpu_clock_hertz':
-      return 'hertz';
-    default:
-      return 'percent';
-  }
-};
-
-const RawUtilizationMetrics = ({
-  data,
-  originalData,
+const RawAreaChart = ({
+  transmitData,
+  receiveData,
+  transformedData,
+  addLabelMatcher: _addLabelMatcher,
   setTimeRange,
   width,
   height,
@@ -193,15 +240,22 @@ const RawUtilizationMetrics = ({
   humanReadableName,
   from,
   to,
-  yAxisUnit,
-  contextMenuItems,
+  yAxisUnit = 'bytes_per_second',
+  selectedSeries: _selectedSeries,
   onSeriesClick,
-}: RawUtilizationMetricsProps): JSX.Element => {
+  contextMenuItems,
+}: RawAreaChartProps): JSX.Element => {
   const {timezone} = useParcaContext();
+
+  // Compute original series data for rich tooltip
+  const allOriginalData = useMemo(
+    () => [...transmitData, ...receiveData],
+    [transmitData, receiveData]
+  );
 
   return (
     <MetricsGraph
-      data={data}
+      data={transformedData}
       from={from}
       to={to}
       setTimeRange={setTimeRange}
@@ -217,34 +271,17 @@ const RawUtilizationMetrics = ({
       margin={margin}
       contextMenuItems={contextMenuItems}
       renderTooltipContent={(seriesIndex: number, pointIndex: number) => {
-        if (originalData?.[seriesIndex]?.samples?.[pointIndex] != null) {
-          const originalSeriesData = originalData[seriesIndex];
-          const originalPoint = originalData[seriesIndex].samples[pointIndex];
+        if (allOriginalData?.[seriesIndex]?.samples?.[pointIndex] != null) {
+          const originalSeriesData = allOriginalData[seriesIndex];
+          const originalPoint = allOriginalData[seriesIndex].samples[pointIndex];
 
           const labels = originalSeriesData.labelset?.labels ?? [];
           const nameLabel = labels.find(e => e.name === '__name__');
           const highlightedNameLabel = nameLabel ?? {name: '', value: ''};
 
-          // Calculate attributes maps for utilization metrics
-          const attributesMap = labels
-            .filter(
-              label =>
-                label.name.startsWith('attributes.') &&
-                !label.name.startsWith('attributes_resource.')
-            )
-            .reduce<Record<string, string>>((acc, label) => {
-              const key = label.name.replace('attributes.', '');
-              acc[key] = label.value;
-              return acc;
-            }, {});
-
-          const attributesResourceMap = labels
-            .filter(label => label.name.startsWith('attributes_resource.'))
-            .reduce<Record<string, string>>((acc, label) => {
-              const key = label.name.replace('attributes_resource.', '');
-              acc[key] = label.value;
-              return acc;
-            }, {});
+          // Determine if this is receive data (negative values)
+          const isReceive = seriesIndex >= transmitData.length;
+          const valuePrefix = isReceive ? 'Receive ' : 'Transmit ';
 
           return (
             <div className="flex flex-row">
@@ -254,9 +291,9 @@ const RawUtilizationMetrics = ({
                   <table className="table-auto">
                     <tbody>
                       <tr>
-                        <td className="w-1/4">Value</td>
+                        <td className="w-1/4">{valuePrefix}Value</td>
                         <td className="w-3/4">
-                          {valueFormatter(originalPoint.value, yAxisUnit, 2)}
+                          {valueFormatter(Math.abs(originalPoint.value), yAxisUnit, 2)}
                         </td>
                       </tr>
                       <tr>
@@ -273,82 +310,19 @@ const RawUtilizationMetrics = ({
                   </table>
                 </span>
                 <span className="my-2 block text-gray-500">
-                  {Object.keys(attributesResourceMap).length > 0 ? (
-                    <span className="text-sm font-bold text-gray-700 dark:text-white">
-                      Resource Attributes
-                    </span>
-                  ) : null}
-                  <span className="my-2 block text-gray-500">
-                    {Object.keys(attributesResourceMap).map(name => (
-                      <div
-                        key={
-                          'resourceattribute-' +
-                          seriesIndex.toString() +
-                          '-' +
-                          pointIndex.toString() +
-                          '-' +
-                          name
-                        }
-                        className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
-                      >
-                        <TextWithTooltip
-                          text={`${transformUtilizationLabels(name)}="${
-                            attributesResourceMap[name] ?? ''
-                          }"`}
-                          maxTextLength={48}
-                          id={`tooltip-${name}-${attributesResourceMap[name] ?? ''}`}
-                        />
-                      </div>
-                    ))}
-                  </span>
-                  {Object.keys(attributesMap).length > 0 ? (
-                    <span className="text-sm font-bold text-gray-700 dark:text-white">
-                      Attributes
-                    </span>
-                  ) : null}
-                  <span className="my-2 block text-gray-500">
-                    {Object.keys(attributesMap).map(name => (
-                      <div
-                        key={
-                          'attribute-' +
-                          seriesIndex.toString() +
-                          '-' +
-                          pointIndex.toString() +
-                          '-' +
-                          name
-                        }
-                        className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
-                      >
-                        <TextWithTooltip
-                          text={`${transformUtilizationLabels(name)}="${
-                            attributesMap[name] ?? ''
-                          }"`}
-                          maxTextLength={48}
-                          id={`tooltip-${name}-${attributesMap[name] ?? ''}`}
-                        />
-                      </div>
-                    ))}
-                  </span>
                   {labels
-                    .filter(
-                      label => label.name !== '__name__' && !label.name.startsWith('attributes')
-                    )
+                    .filter(label => label.name !== '__name__')
                     .map(label => (
                       <div
-                        key={
-                          'attribute-' +
-                          seriesIndex.toString() +
-                          '-' +
-                          pointIndex.toString() +
-                          '-label-' +
-                          label.name
-                        }
+                        key={`${seriesIndex.toString()}-${pointIndex.toString()}-${label.name}`}
                         className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
                       >
                         <TextWithTooltip
                           text={`${transformUtilizationLabels(label.name)}="${label.value}"`}
                           maxTextLength={37}
-                          id={`tooltip-${label.name}`}
+                          id={`${seriesIndex.toString()}-${pointIndex.toString()}-tooltip-${
+                            label.name
+                          }`}
                         />
                       </div>
                     ))}
@@ -367,32 +341,37 @@ const RawUtilizationMetrics = ({
   );
 };
 
-const UtilizationMetrics = ({
-  data,
+const AreaChart = ({
+  transmitData,
+  receiveData,
+  addLabelMatcher,
   setTimeRange,
   utilizationMetricsLoading,
+  name,
   humanReadableName,
   from,
   to,
   yAxisUnit,
-  addLabelMatcher,
+  selectedSeries,
   onSeriesClick,
-  onSelectedSeriesChange: _onSelectedSeriesChange,
 }: Props): JSX.Element => {
   const {isDarkMode} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(false, true);
 
-  const transformedData = useMemo(() => transformMetricSeriesToSeries(data), [data]);
+  const transformedData = useMemo(
+    () => transformNetworkSeriesToSeries(transmitData, receiveData),
+    [transmitData, receiveData]
+  );
 
   const contextMenuItems = useMemo(() => {
-    return addLabelMatcher != null ? createUtilizationContextMenuItems(addLabelMatcher, data) : [];
-  }, [addLabelMatcher, data]);
+    return createThroughputContextMenuItems(addLabelMatcher, transmitData, receiveData);
+  }, [addLabelMatcher, transmitData, receiveData]);
 
   return (
     <AnimatePresence>
       <motion.div
         className="w-full relative"
-        key="utilization-metrics-graph-loaded"
+        key="area-chart-graph-loaded"
         initial={{display: 'none', opacity: 0}}
         animate={{display: 'block', opacity: 1}}
         transition={{duration: 0.5}}
@@ -400,19 +379,23 @@ const UtilizationMetrics = ({
         {utilizationMetricsLoading === true ? (
           <MetricsGraphSkeleton heightStyle={heightStyle} isDarkMode={isDarkMode} isMini={true} />
         ) : (
-          <RawUtilizationMetrics
-            data={transformedData}
-            originalData={data}
+          <RawAreaChart
+            transmitData={transmitData}
+            receiveData={receiveData}
+            transformedData={transformedData}
+            addLabelMatcher={addLabelMatcher}
             setTimeRange={setTimeRange}
             width={width}
             height={height}
             margin={margin}
+            name={name}
             humanReadableName={humanReadableName}
             from={from}
             to={to}
             yAxisUnit={yAxisUnit}
-            contextMenuItems={contextMenuItems}
+            selectedSeries={selectedSeries}
             onSeriesClick={onSeriesClick}
+            contextMenuItems={contextMenuItems}
           />
         )}
       </motion.div>
@@ -420,4 +403,4 @@ const UtilizationMetrics = ({
   );
 };
 
-export default UtilizationMetrics;
+export default AreaChart;
