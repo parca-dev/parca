@@ -1,6 +1,6 @@
 {
   "name": "@parca/dynamicsize",
-  "version": "0.16.65",
+  "version": "0.16.66",
   "description": "Library all around dynamically sizing components.",
   "main": "src/index.tsx",
   "scripts": {
