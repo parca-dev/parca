@@ -15,6 +15,7 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {type Filter, type NumberCondition, type StringCondition} from '@parca/client';
 
+import {useResetFlameGraphState} from '../../hooks/useResetFlameGraphState';
 import {getPresetByKey, isPresetKey} from './filterPresets';
 import {useProfileFiltersUrlState} from './useProfileFiltersUrlState';
 
@@ -226,6 +227,7 @@ export const useProfileFilters = (): {
   resetFilters: () => void;
 } => {
   const {appliedFilters, setAppliedFilters} = useProfileFiltersUrlState();
+  const resetFlameGraphState = useResetFlameGraphState();
 
   const [localFilters, setLocalFilters] = useState<ProfileFilter[]>(appliedFilters ?? []);
 
@@ -327,9 +329,10 @@ export const useProfileFilters = (): {
       // Auto-apply the filter since it has a value
       const filtersToApply = [...(appliedFilters ?? []), newFilter];
       setAppliedFilters(filtersToApply);
+      resetFlameGraphState();
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [setAppliedFilters]
+    [setAppliedFilters, resetFlameGraphState]
   );
 
   const removeExcludeBinary = useCallback(
@@ -349,12 +352,13 @@ export const useProfileFilters = (): {
           f => f.id !== filterToRemove.id
         );
         setAppliedFilters(updatedAppliedFilters);
+        resetFlameGraphState();
 
         // Also remove from local filters
         setLocalFilters(localFiltersRef.current.filter(f => f.id !== filterToRemove.id));
       }
     },
-    [appliedFilters, setAppliedFilters]
+    [appliedFilters, setAppliedFilters, resetFlameGraphState]
   );
 
   const removeFilter = useCallback((id: string) => {
@@ -368,7 +372,8 @@ export const useProfileFilters = (): {
   const resetFilters = useCallback(() => {
     setLocalFilters([]);
     setAppliedFilters([]);
-  }, [setAppliedFilters]);
+    resetFlameGraphState();
+  }, [setAppliedFilters, resetFlameGraphState]);
 
   const onApplyFilters = useCallback((): void => {
     const validFilters = localFiltersRef.current.filter(f => {
@@ -386,7 +391,8 @@ export const useProfileFilters = (): {
     }));
 
     setAppliedFilters(filtersToApply);
-  }, [setAppliedFilters]);
+    resetFlameGraphState();
+  }, [setAppliedFilters, resetFlameGraphState]);
 
   const protoFilters = useMemo(() => {
     return convertToProtoFilters(appliedFilters ?? []);

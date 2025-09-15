@@ -56,8 +56,6 @@ export const ProfileView = ({
   const {ref, dimensions} = useContainerDimensions();
 
   const {
-    curPath,
-    setCurPath,
     curPathArrow,
     setCurPathArrow,
     colorStackLegend,
@@ -100,8 +98,6 @@ export const ProfileView = ({
       profileSource,
       total,
       filtered,
-      curPath,
-      setNewCurPath: setCurPath,
       curPathArrow,
       setNewCurPathArrow: setCurPathArrow,
       perf,

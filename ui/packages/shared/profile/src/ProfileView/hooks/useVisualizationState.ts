@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useMemo} from 'react';
 
 import {JSONParser, JSONSerializer, useURLState, useURLStateCustom} from '@parca/components';
 
@@ -23,10 +23,9 @@ import {
   FIELD_MAPPING_FILE,
 } from '../../ProfileFlameGraph/FlameGraphArrow';
 import {CurrentPathFrame} from '../../ProfileFlameGraph/FlameGraphArrow/utils';
+import {useResetFlameGraphState} from './useResetFlameGraphState';
 
 export const useVisualizationState = (): {
-  curPath: string[];
-  setCurPath: (path: string[]) => void;
   curPathArrow: CurrentPathFrame[];
   setCurPathArrow: (path: CurrentPathFrame[]) => void;
   colorStackLegend: string | undefined;
@@ -40,7 +39,6 @@ export const useVisualizationState = (): {
   setSandwichFunctionName: (sandwichFunctionName: string | undefined) => void;
   resetSandwichFunctionName: () => void;
 } => {
-  const [curPath, setCurPath] = useState<string[]>([]);
   const [curPathArrow, setCurPathArrow] = useURLStateCustom<CurrentPathFrame[]>('cur_path', {
     parse: JSONParser<CurrentPathFrame[]>,
     stringify: JSONSerializer,
@@ -55,6 +53,7 @@ export const useVisualizationState = (): {
   const [sandwichFunctionName, setSandwichFunctionName] = useURLState<string | undefined>(
     'sandwich_function_name'
   );
+  const resetFlameGraphState = useResetFlameGraphState();
 
   const levelsOfProfiling = useMemo(
     () => [
@@ -81,8 +80,10 @@ export const useVisualizationState = (): {
         const filteredGroupBy = groupBy.filter(item => !levelsOfProfiling.includes(item));
         setGroupBy([...filteredGroupBy, key]); // add
       }
+
+      resetFlameGraphState();
     },
-    [groupBy, setGroupBy, levelsOfProfiling]
+    [groupBy, setGroupBy, levelsOfProfiling, resetFlameGraphState]
   );
 
   const setGroupByLabels = useCallback(
@@ -97,8 +98,6 @@ export const useVisualizationState = (): {
   }, [setSandwichFunctionName]);
 
   return {
-    curPath,
-    setCurPath,
     curPathArrow,
     setCurPathArrow,
     colorStackLegend,

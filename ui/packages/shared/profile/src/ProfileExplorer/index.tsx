@@ -23,7 +23,7 @@ import {capitalizeOnlyFirstLetter, safeDecode, type NavigateFunction} from '@par
 
 import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
 import {QuerySelection, useProfileTypes} from '../ProfileSelector';
-import {useResetStateOnNewSearch} from '../ProfileView/hooks/useResetStateOnNewSearch';
+import {useResetFlameGraphState} from '../ProfileView/hooks/useResetFlameGraphState';
 import {useResetStateOnProfileTypeChange} from '../ProfileView/hooks/useResetStateOnProfileTypeChange';
 import {sumByToParam, useSumByFromParams} from '../useSumBy';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
@@ -162,7 +162,7 @@ const ProfileExplorerApp = ({
   const [profileB, setProfileB] = useState<ProfileSelection | null>(null);
 
   const resetStateOnProfileTypeChange = useResetStateOnProfileTypeChange();
-  const resetStateOnNewSearch = useResetStateOnNewSearch();
+  const resetFlameGraphState = useResetFlameGraphState();
 
   const sumByA = useSumByFromParams(sum_by_a);
   const sumByB = useSumByFromParams(sum_by_b);
@@ -250,7 +250,7 @@ const ProfileExplorerApp = ({
           resetStateOnProfileTypeChange();
         } else {
           // Reset the state when a new search is performed.
-          resetStateOnNewSearch();
+          resetFlameGraphState();
         }
       }
 
