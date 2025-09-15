@@ -130,8 +130,6 @@ export const FlameNode = React.memo(
     const colorAttribute =
       colorBy === 'filename' ? filename : colorBy === 'binary' ? mappingFile : null;
 
-    const colorsMap = colors;
-
     const hoveringName =
       hoveringRow !== undefined ? arrowToString(functionNameColumn?.get(hoveringRow)) : '';
     const shouldBeHighlighted =
@@ -142,7 +140,7 @@ export const FlameNode = React.memo(
       compareMode,
       cumulative,
       diff,
-      colorsMap,
+      colorsMap: colors,
       colorAttribute,
     });
 
@@ -296,7 +294,9 @@ export const FlameNode = React.memo(
       prevProps.hoveringRow === nextProps.hoveringRow &&
       prevProps.totalWidth === nextProps.totalWidth &&
       prevProps.height === nextProps.height &&
-      prevProps.effectiveDepth === nextProps.effectiveDepth
+      prevProps.effectiveDepth === nextProps.effectiveDepth &&
+      prevProps.colorBy === nextProps.colorBy &&
+      prevProps.colors === nextProps.colors
     );
   }
 );
