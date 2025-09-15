@@ -31,9 +31,10 @@ import {capitalizeOnlyFirstLetter, divide} from '@parca/utilities';
 import {MergedProfileSource, ProfileSource} from '../ProfileSource';
 import DiffLegend from '../ProfileView/components/DiffLegend';
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
+import {useProfileMetadata} from '../ProfileView/hooks/useProfileMetadata';
+import {useVisualizationState} from '../ProfileView/hooks/useVisualizationState';
 import {TimelineGuide} from '../TimelineGuide';
 import {FlameGraphArrow} from './FlameGraphArrow';
-import useMappingList from './FlameGraphArrow/useMappingList';
 import {CurrentPathFrame, boundsFromProfileSource} from './FlameGraphArrow/utils';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
@@ -100,11 +101,13 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
   tooltipId,
   maxFrameCount,
   isExpanded = false,
+  metadataLoading = false,
 }: ProfileFlameGraphProps): JSX.Element {
   const {onError, authenticationErrorMessage, isDarkMode, flamechartHelpText} = useParcaContext();
   const {compareMode} = useProfileViewContext();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [flameChartRef, {height: flameChartHeight}] = useMeasure();
+  const {colorBy, setColorBy} = useVisualizationState();
 
   // Create local state for paths when in sandwich view to avoid URL updates
   const [localCurPathArrow, setLocalCurPathArrow] = useState<CurrentPathFrame[]>([]);
@@ -123,9 +126,12 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
   // Determine which paths to use based on isInSandwichView flag
   const effectiveCurPathArrow = isInSandwichView ? localCurPathArrow : curPathArrow;
 
-  const mappingsList = useMappingList(metadataMappingFiles);
-
-  const [colorBy, setColorBy] = useURLState('color_by');
+  const {mappingsList, filenamesList} = useProfileMetadata({
+    flamegraphArrow: arrow,
+    metadataMappingFiles,
+    metadataLoading,
+    colorBy,
+  });
 
   // By default, we want delta profiles (CPU) to be relatively compared.
   // For non-delta profiles, like goroutines or memory, we want the profiles to be compared absolutely.
@@ -279,6 +285,7 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
               profileType={profileType}
               isHalfScreen={isHalfScreen}
               mappingsListFromMetadata={mappingsList}
+              filenamesListFromMetadata={filenamesList}
               compareAbsolute={isCompareAbsolute}
               isFlameChart={isFlameChart}
               profileSource={profileSource}
@@ -287,6 +294,7 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
               tooltipId={tooltipId}
               maxFrameCount={maxFrameCount}
               isExpanded={isExpanded}
+              colorBy={colorBy}
             />
           </div>
         </div>
@@ -302,7 +310,6 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
     profileType,
     isHalfScreen,
     isDarkMode,
-    mappingsList,
     isCompareAbsolute,
     isFlameChart,
     profileSource,
@@ -316,6 +323,9 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
     tooltipId,
     maxFrameCount,
     isExpanded,
+    mappingsList,
+    filenamesList,
+    colorBy,
   ]);
 
   useEffect(() => {
