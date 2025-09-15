@@ -42,8 +42,6 @@ interface GetDashboardItemProps {
   profileSource: ProfileSource;
   total: bigint;
   filtered: bigint;
-  curPath: string[];
-  setNewCurPath: (path: string[]) => void;
   curPathArrow: CurrentPathFrame[];
   setNewCurPathArrow: (path: CurrentPathFrame[]) => void;
   perf?: {

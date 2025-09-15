@@ -58,7 +58,7 @@ export const ProfileViewWithData = ({
 
   useEffect(() => {
     // If profile type is not delta, remove flamechart from the dashboard items
-    // and set it to flame if no other items are selected.
+    // and set it to flame graph if no other items are selected.
     if (profileSource == null) {
       return;
     }

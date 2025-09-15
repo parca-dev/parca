@@ -13,7 +13,7 @@
 
 import {useURLState} from '@parca/components';
 
-export const useResetStateOnNewSearch = (): (() => void) => {
+export const useResetFlameGraphState = (): (() => void) => {
   const [val, setCurPath] = useURLState('cur_path');
 
   return () => {
