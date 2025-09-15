@@ -23,7 +23,6 @@ import {Query} from '@parca/parser';
 import {testId} from '@parca/test-utils';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
-import {UtilizationLabels} from '../ProfileSelector';
 import {LabelsProvider, useLabels} from '../contexts/MatchersInputLabelsContext';
 import useGrpcQuery from '../useGrpcQuery';
 import SuggestionsList, {Suggestion, Suggestions} from './SuggestionsList';
@@ -121,20 +120,6 @@ export const useLabelValues = (
   });
 
   return {result: {response: data ?? [], error: error as Error}, loading: isLoading};
-};
-
-export const useFetchUtilizationLabelValues = (
-  labelName: string,
-  utilizationLabels?: UtilizationLabels
-): string[] => {
-  const {data} = useQuery({
-    queryKey: ['utilizationLabelValues', labelName],
-    queryFn: async () => {
-      return await utilizationLabels?.utilizationFetchLabelValues?.(labelName);
-    },
-  });
-
-  return data ?? [];
 };
 
 const MatchersInput = ({
