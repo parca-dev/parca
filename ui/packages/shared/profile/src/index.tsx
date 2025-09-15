@@ -12,9 +12,12 @@
 // limitations under the License.
 
 import {useLabelNames} from './MatchersInput';
+import MetricsGraph, {type ContextMenuItemOrSubmenu, type Series} from './MetricsGraph';
 import ProfileExplorer, {getExpressionAsAString} from './ProfileExplorer';
 import ProfileTypeSelector from './ProfileTypeSelector';
 import CustomSelect from './SimpleMatchers/Select';
+
+export {useMetricsGraphDimensions} from './MetricsGraph/useMetricsGraphDimensions';
 
 export * from './ProfileFlameGraph';
 export * from './ProfileSource';
@@ -30,8 +33,6 @@ export * from './SourceView';
 export * from './ProfileMetricsGraph';
 export * from './useSumBy';
 export * from './SharedQueryControls';
-export {default as UtilizationMetricsGraph} from './MetricsGraph/UtilizationMetricsGraph';
-export {default as AreaChart} from './MetricsGraph/UtilizationMetricsGraph/Throughput';
 
 export {default as ProfileFilters} from './ProfileView/components/ProfileFilters';
 export {useProfileFiltersUrlState} from './ProfileView/components/ProfileFilters/useProfileFiltersUrlState';
@@ -40,4 +41,13 @@ export const DEFAULT_PROFILE_EXPLORER_PARAM_VALUES = {
   dashboard_items: 'flamegraph',
 };
 
-export {ProfileExplorer, ProfileTypeSelector, getExpressionAsAString, CustomSelect, useLabelNames};
+export {
+  ProfileExplorer,
+  ProfileTypeSelector,
+  getExpressionAsAString,
+  CustomSelect,
+  useLabelNames,
+  MetricsGraph,
+  type ContextMenuItemOrSubmenu,
+  type Series,
+};
