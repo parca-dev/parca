@@ -21,15 +21,15 @@ import React, {
   useState,
 } from 'react';
 
-import {Dictionary, Table, Vector, tableFromIPC} from 'apache-arrow';
+import {Table, tableFromIPC} from 'apache-arrow';
 import {useContextMenu} from 'react-contexify';
 
 import {FlamegraphArrow} from '@parca/client';
-import {useParcaContext, useURLState} from '@parca/components';
+import {useParcaContext} from '@parca/components';
 import {USER_PREFERENCES, useCurrentColorProfile, useUserPreference} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
 import {getColorForFeature, selectDarkMode, useAppSelector} from '@parca/store';
-import {getLastItem, type ColorConfig} from '@parca/utilities';
+import {type ColorConfig} from '@parca/utilities';
 
 import {ProfileSource} from '../../ProfileSource';
 import {useProfileFilters} from '../../ProfileView/components/ProfileFilters/useProfileFilters';
@@ -38,12 +38,10 @@ import ContextMenuWrapper, {ContextMenuWrapperRef} from './ContextMenuWrapper';
 import {FlameNode, RowHeight, colorByColors} from './FlameGraphNodes';
 import {MemoizedTooltip} from './MemoizedTooltip';
 import {TooltipProvider} from './TooltipContext';
-import {useFilenamesList} from './useMappingList';
 import {useScrollViewport} from './useScrollViewport';
 import {useVisibleNodes} from './useVisibleNodes';
 import {
   CurrentPathFrame,
-  arrowToString,
   extractFeature,
   extractFilenameFeature,
   getCurrentPathFrameData,
@@ -84,6 +82,8 @@ interface FlameGraphArrowProps {
   setCurPath: (path: CurrentPathFrame[]) => void;
   isHalfScreen: boolean;
   mappingsListFromMetadata: string[];
+  filenamesListFromMetadata: string[];
+  colorBy: string;
   compareAbsolute: boolean;
   isFlameChart?: boolean;
   isRenderedAsFlamegraph?: boolean;
@@ -139,6 +139,9 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   tooltipId = 'default',
   maxFrameCount,
   isExpanded = false,
+  mappingsListFromMetadata,
+  filenamesListFromMetadata,
+  colorBy,
 }: FlameGraphArrowProps): React.JSX.Element {
   const [highlightSimilarStacksPreference] = useUserPreference<boolean>(
     USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS.key
@@ -169,49 +172,17 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   const currentColorProfile = useCurrentColorProfile();
   const colorForSimilarNodes = currentColorProfile.colorForSimilarNodes;
 
-  const [colorBy, _] = useURLState('color_by');
-  const colorByValue = colorBy === undefined || colorBy === '' ? 'binary' : (colorBy as string);
-
-  const filenamesList = useFilenamesList(table);
-
-  const mappingsList = useMemo(() => {
-    // Read the mappings from the dictionary that contains all mapping strings.
-    // This is great, as might only have a dozen or so mappings,
-    // and don't need to read through all the rows (potentially thousands).
-    const mappingsDict: Vector<Dictionary> | null = table.getChild(FIELD_MAPPING_FILE);
-    const mappings =
-      mappingsDict?.data
-        .map(mapping => {
-          if (mapping.dictionary == null) {
-            return [];
-          }
-          const len = mapping.dictionary.length;
-          const entries: string[] = [];
-          for (let i = 0; i < len; i++) {
-            const fn = arrowToString(mapping.dictionary.get(i));
-            entries.push(getLastItem(fn) ?? '');
-          }
-          return entries;
-        })
-        .flat() ?? [];
-
-    // We add a EVERYTHING ELSE mapping to the list.
-    mappings.push('');
-
-    // We sort the mappings alphabetically to make sure that the order is always the same.
-    mappings.sort((a, b) => a.localeCompare(b));
-    return mappings;
-  }, [table]);
+  const colorByValue = colorBy === undefined || colorBy === '' ? 'binary' : colorBy;
 
   const filenameColors = useMemo(() => {
-    const colors = getFilenameColors(filenamesList, isDarkMode, currentColorProfile);
+    const colors = getFilenameColors(filenamesListFromMetadata, isDarkMode, currentColorProfile);
     return colors;
-  }, [isDarkMode, filenamesList, currentColorProfile]);
+  }, [isDarkMode, filenamesListFromMetadata, currentColorProfile]);
 
   const mappingColors = useMemo(() => {
-    const colors = getMappingColors(mappingsList, isDarkMode, currentColorProfile);
+    const colors = getMappingColors(mappingsListFromMetadata, isDarkMode, currentColorProfile);
     return colors;
-  }, [isDarkMode, mappingsList, currentColorProfile]);
+  }, [isDarkMode, mappingsListFromMetadata, currentColorProfile]);
 
   const colorByList = {
     filename: filenameColors,
