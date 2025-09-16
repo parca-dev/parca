@@ -19,7 +19,7 @@ import throttle from 'lodash.throttle';
 import {useContextMenu} from 'react-contexify';
 
 import {DateTimeRange, useParcaContext} from '@parca/components';
-import {testId} from '@parca/test-utils';
+import {TEST_IDS, testId} from '@parca/test-utils';
 import {formatDate, formatForTimespan, getPrecision, valueFormatter} from '@parca/utilities';
 
 import MetricsCircle from '../MetricsCircle';
@@ -84,7 +84,7 @@ const MetricsGraph = ({
   return (
     <div
       className="relative"
-      {...testId('METRICS_GRAPH')}
+      {...testId(TEST_IDS.METRICS_GRAPH)}
       onClick={() => isInfoPanelOpen && setIsInfoPanelOpen(false)}
     >
       <div className="absolute right-0 top-0">

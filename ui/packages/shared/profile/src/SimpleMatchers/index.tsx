@@ -20,7 +20,7 @@ import cx from 'classnames';
 import {QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata} from '@parca/components';
 import {Query} from '@parca/parser';
-import {testId} from '@parca/test-utils';
+import {TEST_IDS, testId} from '@parca/test-utils';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
 import {LabelProvider, useLabels} from '../contexts/SimpleMatchersLabelContext';
@@ -357,10 +357,10 @@ const SimpleMatchers = ({
     <div
       className={`flex items-center gap-3 ${maxWidthInPixels} w-full flex-wrap`}
       id="simple-matchers"
-      {...testId('SIMPLE_MATCHERS_CONTAINER')}
+      {...testId(TEST_IDS.SIMPLE_MATCHERS_CONTAINER)}
     >
       {visibleRows.map((row, index) => (
-        <div key={index} className="flex items-center" {...testId('SIMPLE_MATCHER_ROW')}>
+        <div key={index} className="flex items-center" {...testId(TEST_IDS.SIMPLE_MATCHER_ROW)}>
           <Select
             items={labelNameOptions}
             onSelection={value => handleUpdateRow(index, 'labelName', value)}
@@ -369,14 +369,14 @@ const SimpleMatchers = ({
             className="rounded-tr-none rounded-br-none ring-0 focus:ring-0 outline-none"
             loading={labelNamesLoading}
             searchable={true}
-            {...testId('LABEL_NAME_SELECT')}
+            {...testId(TEST_IDS.LABEL_NAME_SELECT)}
           />
           <Select
             items={operatorOptions}
             onSelection={value => handleUpdateRow(index, 'operator', value)}
             selectedKey={row.operator}
             className="rounded-none ring-0 focus:ring-0 outline-none"
-            {...testId('OPERATOR_SELECT')}
+            {...testId(TEST_IDS.OPERATOR_SELECT)}
           />
           <Select
             items={transformLabelsForSelect(row.labelValues)}
@@ -392,14 +392,14 @@ const SimpleMatchers = ({
             loading={row.isLoading}
             onButtonClick={() => handleLabelValueClick(index)}
             editable={isRowRegex(row)}
-            {...testId('LABEL_VALUE_SELECT')}
+            {...testId(TEST_IDS.LABEL_VALUE_SELECT)}
           />
           <button
             onClick={() => removeRow(index)}
             className={cx(
               'p-2 border-gray-200 border rounded rounded-tl-none rounded-bl-none focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900'
             )}
-            {...testId('REMOVE_MATCHER_BUTTON')}
+            {...testId(TEST_IDS.REMOVE_MATCHER_BUTTON)}
           >
             <Icon icon="carbon:close" className="h-5 w-5 text-gray-400" aria-hidden="true" />
           </button>
@@ -410,7 +410,7 @@ const SimpleMatchers = ({
         <button
           onClick={() => setShowAll(!showAll)}
           className="mr-2 px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-900"
-          {...testId(showAll ? 'SHOW_LESS_BUTTON' : 'SHOW_MORE_BUTTON')}
+          {...testId(showAll ? TEST_IDS.SHOW_LESS_BUTTON : TEST_IDS.SHOW_MORE_BUTTON)}
         >
           {showAll ? 'Show less' : `Show ${hiddenRowsCount} more`}
         </button>
@@ -419,7 +419,7 @@ const SimpleMatchers = ({
       <button
         onClick={addNewRow}
         className="p-2 border-gray-200 dark:bg-gray-900 dark:border-gray-600 border rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        {...testId('ADD_MATCHER_BUTTON')}
+        {...testId(TEST_IDS.ADD_MATCHER_BUTTON)}
       >
         <Icon icon="material-symbols:add" className="h-5 w-5 text-gray-400" aria-hidden="true" />
       </button>

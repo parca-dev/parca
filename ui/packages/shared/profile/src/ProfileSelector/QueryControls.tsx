@@ -18,7 +18,7 @@ import Select, {type SelectInstance} from 'react-select';
 import {ProfileTypesResponse, QueryServiceClient} from '@parca/client';
 import {Button, DateTimeRange, DateTimeRangePicker, useParcaContext} from '@parca/components';
 import {ProfileType, Query} from '@parca/parser';
-import {testId} from '@parca/test-utils';
+import {TEST_IDS, testId} from '@parca/test-utils';
 
 import MatchersInput from '../MatchersInput';
 import ProfileTypeSelector from '../ProfileTypeSelector';
@@ -97,11 +97,11 @@ export function QueryControls({
   return (
     <div
       className="flex w-full flex-wrap items-start gap-2"
-      {...testId('QUERY_CONTROLS_CONTAINER')}
+      {...testId(TEST_IDS.QUERY_CONTROLS_CONTAINER)}
     >
       {showProfileTypeSelector && (
         <div>
-          <label className="text-xs" {...testId('PROFILE_TYPE_LABEL')}>
+          <label className="text-xs" {...testId(TEST_IDS.PROFILE_TYPE_LABEL)}>
             Profile type
           </label>
           <ProfileTypeSelector
@@ -118,11 +118,11 @@ export function QueryControls({
       <div
         className="w-full flex-1 flex flex-col gap-1 mt-auto"
         ref={queryBrowserRef}
-        {...testId('QUERY_BROWSER_CONTAINER')}
+        {...testId(TEST_IDS.QUERY_BROWSER_CONTAINER)}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <label className="text-xs" {...testId('QUERY_LABEL')}>
+            <label className="text-xs" {...testId(TEST_IDS.QUERY_LABEL)}>
               Query
             </label>
             {viewComponent?.disableExplorativeQuerying !== true && (
@@ -136,7 +136,7 @@ export function QueryControls({
                   className={`${
                     advancedModeForQueryBrowser ? 'bg-indigo-600' : 'bg-gray-400 dark:bg-gray-800'
                   } relative inline-flex h-[20px] w-[44px] shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75`}
-                  {...testId('ADVANCED_MODE_SWITCH')}
+                  {...testId(TEST_IDS.ADVANCED_MODE_SWITCH)}
                 >
                   <span className="sr-only">Use setting</span>
                   <span
@@ -146,7 +146,7 @@ export function QueryControls({
                     } pointer-events-none inline-block h-[16px] w-[16px] transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out`}
                   />
                 </Switch>
-                <label className="text-xs" {...testId('QUERY_MODE_LABEL')}>
+                <label className="text-xs" {...testId(TEST_IDS.QUERY_MODE_LABEL)}>
                   Advanced Mode
                 </label>
               </>
@@ -194,15 +194,15 @@ export function QueryControls({
       </div>
 
       {showSumBySelector && (
-        <div {...testId('SUM_BY_CONTAINER')}>
+        <div {...testId(TEST_IDS.SUM_BY_CONTAINER)}>
           <div className="mb-0.5 mt-1.5 flex items-center justify-between">
-            <label className="text-xs" {...testId('SUM_BY_LABEL')}>
+            <label className="text-xs" {...testId(TEST_IDS.SUM_BY_LABEL)}>
               Sum by
             </label>
           </div>
           <Select<SelectOption, true>
             id="h-sum-by-selector"
-            data-testid={testId('SUM_BY_SELECT')['data-testid']}
+            data-testid={testId(TEST_IDS.SUM_BY_SELECT)['data-testid']}
             defaultValue={[]}
             isMulti
             isClearable={false}
@@ -250,11 +250,11 @@ export function QueryControls({
         onRangeSelection={setTimeRangeSelection}
         range={timeRangeSelection}
         timezone={timezone}
-        {...testId('DATE_TIME_RANGE_PICKER')}
+        {...testId(TEST_IDS.DATE_TIME_RANGE_PICKER)}
       />
 
       <div>
-        <label className="text-xs" {...testId('SEARCH_BUTTON_LABEL')}>
+        <label className="text-xs" {...testId(TEST_IDS.SEARCH_BUTTON_LABEL)}>
           &nbsp;
         </label>
         <Button
@@ -264,7 +264,7 @@ export function QueryControls({
             setQueryExpression(true);
           }}
           id="h-matcher-search-button"
-          {...testId('SEARCH_BUTTON')}
+          {...testId(TEST_IDS.SEARCH_BUTTON)}
         >
           Search
         </Button>

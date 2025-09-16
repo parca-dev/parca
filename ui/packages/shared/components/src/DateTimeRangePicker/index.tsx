@@ -16,7 +16,7 @@ import {useRef, useState} from 'react';
 import {Popover} from '@headlessui/react';
 import {useClickAway} from 'react-use';
 
-import {testId} from '@parca/test-utils';
+import {TEST_IDS, testId} from '@parca/test-utils';
 
 import DateTimeRangePickerPanel from './DateTimeRangePickerPanel';
 import DateTimeRangePickerText from './DateTimeRangePickerText';
@@ -49,7 +49,7 @@ const DateTimeRangePicker = ({
       <div
         ref={containerRef}
         className="relative w-fit items-center"
-        {...testId('DATE_TIME_RANGE_PICKER_CONTAINER')}
+        {...testId(TEST_IDS.DATE_TIME_RANGE_PICKER_CONTAINER)}
       >
         <DateTimeRangePickerText
           range={range}
@@ -65,7 +65,7 @@ const DateTimeRangePicker = ({
           <Popover.Panel
             className="absolute left-[50%] translate-x-[-50%] z-10 mt-2 w-fit rounded border shadow-lg dark:border-gray-600"
             static
-            {...testId('DATE_TIME_RANGE_PICKER_PANEL')}
+            {...testId(TEST_IDS.DATE_TIME_RANGE_PICKER_PANEL)}
           >
             <DateTimeRangePickerPanel
               range={range}
