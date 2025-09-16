@@ -17,7 +17,7 @@ import {RpcError} from '@protobuf-ts/runtime-rpc';
 
 import {ProfileType, ProfileTypesResponse} from '@parca/client';
 import {Select, type SelectElement} from '@parca/components';
-import {testId} from '@parca/test-utils';
+import {testId, TEST_IDS} from '@parca/test-utils';
 
 interface WellKnownProfile {
   name: string;
@@ -198,7 +198,7 @@ const ProfileTypeSelector = ({
       loading={loading}
       className="bg-white h-profile-type-dropdown"
       disabled={disabled}
-      {...testId('PROFILE_TYPE_SELECTOR')}
+      {...testId(TEST_IDS.PROFILE_TYPE_SELECTOR)}
     />
   );
 };

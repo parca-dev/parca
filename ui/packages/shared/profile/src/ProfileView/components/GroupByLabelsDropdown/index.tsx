@@ -13,7 +13,7 @@
 
 import Select from 'react-select';
 
-import {testId} from '@parca/test-utils';
+import {testId, TEST_IDS} from '@parca/test-utils';
 
 import {FIELD_LABELS} from '../../../ProfileFlameGraph/FlameGraphArrow';
 
@@ -30,9 +30,9 @@ interface Props {
 
 const GroupByLabelsDropdown = ({labels, groupBy, setGroupByLabels}: Props): JSX.Element => {
   return (
-    <div className="flex flex-col relative" {...testId('GROUP_BY_CONTAINER')}>
+    <div className="flex flex-col relative" {...testId(TEST_IDS.GROUP_BY_CONTAINER)}>
       <div className="flex items-center justify-between">
-        <label className="text-sm" {...testId('GROUP_BY_LABEL')}>
+        <label className="text-sm" {...testId(TEST_IDS.GROUP_BY_LABEL)}>
           Group by
         </label>
       </div>
@@ -50,7 +50,7 @@ const GroupByLabelsDropdown = ({labels, groupBy, setGroupByLabels}: Props): JSX.
           MenuList: ({children, innerProps}) => (
             <div
               className="overflow-y-auto"
-              {...testId('GROUP_BY_SELECT_FLYOUT')}
+              {...testId(TEST_IDS.GROUP_BY_SELECT_FLYOUT)}
               {...innerProps}
               // eslint-disable-next-line react/prop-types
               style={{...innerProps.style, height: '332px', maxHeight: '332px', fontSize: '14px'}}

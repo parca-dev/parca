@@ -13,7 +13,7 @@
 
 import cx from 'classnames';
 
-import {testId} from '@parca/test-utils';
+import {testId, TEST_IDS} from '@parca/test-utils';
 
 import RelativeDatePicker from '../RelativeDatePicker';
 import {DateTimeRange, DateUnion} from '../utils';
@@ -37,7 +37,7 @@ const DateTimeRangePickerText = ({
   const dateString = range.getRangeStringForUI(timezone);
 
   return (
-    <div {...testId('DATE_TIME_RANGE_PICKER_TEXT')}>
+    <div {...testId(TEST_IDS.DATE_TIME_RANGE_PICKER_TEXT)}>
       {isRelativeRange ? (
         <RelativeDatePicker
           range={range}
@@ -48,7 +48,7 @@ const DateTimeRangePickerText = ({
         />
       ) : (
         <div>
-          <label htmlFor="range" className="text-xs" {...testId('DATE_TIME_RANGE_LABEL')}>
+          <label htmlFor="range" className="text-xs" {...testId(TEST_IDS.DATE_TIME_RANGE_LABEL)}>
             Range
           </label>
           <div
@@ -58,7 +58,7 @@ const DateTimeRangePickerText = ({
               {'bg-white dark:bg-gray-900': !isActive},
               {'!justify-center, bg-gray-100 dark:bg-gray-800 ': isActive}
             )}
-            {...testId('DATE_TIME_RANGE_PICKER_BUTTON')}
+            {...testId(TEST_IDS.DATE_TIME_RANGE_PICKER_BUTTON)}
           >
             <span className="w-[147px] overflow-hidden text-ellipsis whitespace-nowrap xl:w-auto">
               {dateString}

@@ -15,7 +15,7 @@ import {Icon} from '@iconify/react';
 import {Item, Menu, Submenu} from 'react-contexify';
 
 import {useParcaContext} from '@parca/components';
-import {testId} from '@parca/test-utils';
+import {testId, TEST_IDS} from '@parca/test-utils';
 
 import {Series, SeriesPoint} from '../';
 
@@ -115,7 +115,7 @@ const MetricsContextMenu = ({
       id={menuId}
       onVisibilityChange={trackVisibility}
       theme={isDarkMode ? 'dark' : ''}
-      {...testId('METRICS_GRAPH_CONTEXT_MENU')}
+      {...testId(TEST_IDS.METRICS_GRAPH_CONTEXT_MENU)}
     >
       {menuItems.map(renderMenuItem)}
     </Menu>
