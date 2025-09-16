@@ -118,6 +118,7 @@ export const TEST_IDS = {
   COMPARE_SIDE_A: 'compare-side-a',
   COMPARE_SIDE_B: 'compare-side-b',
   COMPARE_PROFILE_VIEW: 'compare-profile-view',
+  COMPARE_CLOSE_BUTTON: 'compare-close-button',
 
   // Diff Legend
   DIFF_LEGEND: 'diff-legend',

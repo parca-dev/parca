@@ -25,6 +25,7 @@ import {
 } from '@parca/components';
 import {CloseIcon} from '@parca/icons';
 import {Query} from '@parca/parser';
+import {TEST_IDS, testId} from '@parca/test-utils';
 import {type NavigateFunction} from '@parca/utilities';
 
 import {ProfileSelection} from '..';
@@ -331,7 +332,7 @@ const ProfileSelector = ({
           />
           {comparing && (
             <div>
-              <IconButton onClick={() => closeProfile()} icon={<CloseIcon />} />
+              <IconButton onClick={() => closeProfile()} icon={<CloseIcon />} {...testId(TEST_IDS.COMPARE_CLOSE_BUTTON)} />
             </div>
           )}
         </div>
