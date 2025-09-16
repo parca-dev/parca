@@ -18,7 +18,7 @@ import Select, {type SelectInstance} from 'react-select';
 import {ProfileTypesResponse, QueryServiceClient} from '@parca/client';
 import {Button, DateTimeRange, DateTimeRangePicker, useParcaContext} from '@parca/components';
 import {ProfileType, Query} from '@parca/parser';
-import {testId, TEST_IDS} from '@parca/test-utils';
+import {TEST_IDS, testId} from '@parca/test-utils';
 
 import MatchersInput from '../MatchersInput';
 import ProfileTypeSelector from '../ProfileTypeSelector';

@@ -17,7 +17,7 @@ import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
 import {Button, Input, Select, type SelectItem} from '@parca/components';
-import {testId, TEST_IDS} from '@parca/test-utils';
+import {TEST_IDS, testId} from '@parca/test-utils';
 
 import {useProfileViewContext} from '../../context/ProfileViewContext';
 import {getPresetByKey, getPresetsForProfileType, isPresetKey} from './filterPresets';

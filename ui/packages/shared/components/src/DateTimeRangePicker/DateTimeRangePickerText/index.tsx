@@ -13,7 +13,7 @@
 
 import cx from 'classnames';
 
-import {testId, TEST_IDS} from '@parca/test-utils';
+import {TEST_IDS, testId} from '@parca/test-utils';
 
 import RelativeDatePicker from '../RelativeDatePicker';
 import {DateTimeRange, DateUnion} from '../utils';

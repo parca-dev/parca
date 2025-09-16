@@ -13,7 +13,7 @@
 
 import Select from 'react-select';
 
-import {testId, TEST_IDS} from '@parca/test-utils';
+import {TEST_IDS, testId} from '@parca/test-utils';
 
 import {FIELD_LABELS} from '../../../ProfileFlameGraph/FlameGraphArrow';
 

@@ -18,7 +18,7 @@ import {Icon} from '@iconify/react';
 import {QueryServiceClient} from '@parca/client';
 import {Button} from '@parca/components';
 import {ProfileType} from '@parca/parser';
-import {testId, TEST_IDS} from '@parca/test-utils';
+import {TEST_IDS, testId} from '@parca/test-utils';
 
 import {CurrentPathFrame} from '../../../ProfileFlameGraph/FlameGraphArrow/utils';
 import {ProfileSource} from '../../../ProfileSource';

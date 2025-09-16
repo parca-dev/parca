@@ -15,7 +15,7 @@ import {Icon} from '@iconify/react';
 import {Item, Menu, Submenu} from 'react-contexify';
 
 import {useParcaContext} from '@parca/components';
-import {testId, TEST_IDS} from '@parca/test-utils';
+import {TEST_IDS, testId} from '@parca/test-utils';
 
 import {Series, SeriesPoint} from '../';
 

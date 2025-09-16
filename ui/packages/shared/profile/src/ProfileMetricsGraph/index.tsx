@@ -29,7 +29,7 @@ import {
   useParcaContext,
 } from '@parca/components';
 import {Query} from '@parca/parser';
-import {testId, TEST_IDS} from '@parca/test-utils';
+import {TEST_IDS, testId} from '@parca/test-utils';
 import {capitalizeOnlyFirstLetter, formatDate, timePattern, valueFormatter} from '@parca/utilities';
 
 import {MergedProfileSelection, ProfileSelection} from '..';
