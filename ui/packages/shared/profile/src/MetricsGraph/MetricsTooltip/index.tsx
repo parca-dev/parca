@@ -15,7 +15,7 @@ import {useEffect, useMemo, useState} from 'react';
 
 import {usePopper} from 'react-popper';
 
-import {testId, TEST_IDS} from '@parca/test-utils';
+import {TEST_IDS, testId} from '@parca/test-utils';
 
 interface VirtualElement {
   getBoundingClientRect: () => DOMRect;

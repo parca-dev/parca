@@ -16,7 +16,7 @@ import {useState} from 'react';
 import {QueryServiceClient} from '@parca/client';
 import {useURLState} from '@parca/components';
 import {Query} from '@parca/parser';
-import {testId, TEST_IDS} from '@parca/test-utils';
+import {TEST_IDS, testId} from '@parca/test-utils';
 import type {NavigateFunction} from '@parca/utilities';
 
 import {ProfileDiffSource, ProfileSelection, ProfileViewWithData} from '..';
@@ -66,7 +66,10 @@ const ProfileExplorerCompare = ({
   return (
     <div {...testId(TEST_IDS.COMPARE_CONTAINER)}>
       <div className="flex justify-between gap-2 relative mb-2">
-        <div className="flex-column flex-1 p-2 shadow-md rounded-md" {...testId(TEST_IDS.COMPARE_SIDE_A)}>
+        <div
+          className="flex-column flex-1 p-2 shadow-md rounded-md"
+          {...testId(TEST_IDS.COMPARE_SIDE_A)}
+        >
           <ProfileSelector
             queryClient={queryClient}
             querySelection={queryA}
@@ -82,7 +85,10 @@ const ProfileExplorerCompare = ({
             setDisplayHideMetricsGraphButton={setShowMetricsGraph}
           />
         </div>
-        <div className="flex-column flex-1 p-2 shadow-md rounded-md" {...testId(TEST_IDS.COMPARE_SIDE_B)}>
+        <div
+          className="flex-column flex-1 p-2 shadow-md rounded-md"
+          {...testId(TEST_IDS.COMPARE_SIDE_B)}
+        >
           <ProfileSelector
             queryClient={queryClient}
             querySelection={queryB}

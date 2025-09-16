@@ -19,7 +19,7 @@ import throttle from 'lodash.throttle';
 import {useContextMenu} from 'react-contexify';
 
 import {DateTimeRange, useParcaContext} from '@parca/components';
-import {testId, TEST_IDS} from '@parca/test-utils';
+import {TEST_IDS, testId} from '@parca/test-utils';
 import {formatDate, formatForTimespan, getPrecision, valueFormatter} from '@parca/utilities';
 
 import MetricsCircle from '../MetricsCircle';

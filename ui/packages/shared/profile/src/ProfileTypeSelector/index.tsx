@@ -17,7 +17,7 @@ import {RpcError} from '@protobuf-ts/runtime-rpc';
 
 import {ProfileType, ProfileTypesResponse} from '@parca/client';
 import {Select, type SelectElement} from '@parca/components';
-import {testId, TEST_IDS} from '@parca/test-utils';
+import {TEST_IDS, testId} from '@parca/test-utils';
 
 interface WellKnownProfile {
   name: string;

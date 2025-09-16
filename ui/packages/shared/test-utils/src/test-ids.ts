@@ -138,6 +138,6 @@ export const getTestId = (key: keyof typeof TEST_IDS): string => {
 };
 
 // Helper function to create data-testid attribute object
-export const testId = (id: typeof TEST_IDS[keyof typeof TEST_IDS]): Record<string, string> => ({
-  'data-testid': id
+export const testId = (id: (typeof TEST_IDS)[keyof typeof TEST_IDS]): Record<string, string> => ({
+  'data-testid': id,
 });

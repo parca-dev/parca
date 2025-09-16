@@ -25,7 +25,7 @@ import {
   useURLState,
 } from '@parca/components';
 import {ProfileType} from '@parca/parser';
-import {testId, TEST_IDS} from '@parca/test-utils';
+import {TEST_IDS, testId} from '@parca/test-utils';
 import {capitalizeOnlyFirstLetter, divide} from '@parca/utilities';
 
 import {MergedProfileSource, ProfileSource} from '../ProfileSource';

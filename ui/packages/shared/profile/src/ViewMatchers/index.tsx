@@ -19,7 +19,7 @@ import cx from 'classnames';
 import {QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata} from '@parca/components';
 import {Query} from '@parca/parser';
-import {testId, TEST_IDS} from '@parca/test-utils';
+import {TEST_IDS, testId} from '@parca/test-utils';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
 import CustomSelect, {SelectItem} from '../SimpleMatchers/Select';

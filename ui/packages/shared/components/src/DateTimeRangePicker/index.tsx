@@ -16,7 +16,7 @@ import {useRef, useState} from 'react';
 import {Popover} from '@headlessui/react';
 import {useClickAway} from 'react-use';
 
-import {testId, TEST_IDS} from '@parca/test-utils';
+import {TEST_IDS, testId} from '@parca/test-utils';
 
 import DateTimeRangePickerPanel from './DateTimeRangePickerPanel';
 import DateTimeRangePickerText from './DateTimeRangePickerText';

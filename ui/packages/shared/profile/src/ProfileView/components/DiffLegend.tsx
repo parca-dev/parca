@@ -17,7 +17,7 @@ import {Popover, Transition} from '@headlessui/react';
 import {usePopper} from 'react-popper';
 
 import {selectDarkMode, useAppSelector} from '@parca/store';
-import {testId, TEST_IDS} from '@parca/test-utils';
+import {TEST_IDS, testId} from '@parca/test-utils';
 import {getIncreasedSpanColor, getNewSpanColor, getReducedSpanColor} from '@parca/utilities';
 
 const transparencyValues = [-100, -80, -60, -40, -20, 0, 20, 40, 60, 80, 100];
