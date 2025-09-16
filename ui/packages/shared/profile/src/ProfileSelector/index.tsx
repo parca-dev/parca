@@ -332,7 +332,11 @@ const ProfileSelector = ({
           />
           {comparing && (
             <div>
-              <IconButton onClick={() => closeProfile()} icon={<CloseIcon />} {...testId(TEST_IDS.COMPARE_CLOSE_BUTTON)} />
+              <IconButton
+                onClick={() => closeProfile()}
+                icon={<CloseIcon />}
+                {...testId(TEST_IDS.COMPARE_CLOSE_BUTTON)}
+              />
             </div>
           )}
         </div>
