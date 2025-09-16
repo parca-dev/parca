@@ -131,7 +131,7 @@ func (s *Server) ListenAndServe(
 	internalMux := chi.NewRouter()
 
 	internalMux.Route(pathPrefix+"/", func(r chi.Router) {
-		r.Mount("/api", grpcWebMux)
+		r.Mount("/api", http.StripPrefix(pathPrefix+"/api", grpcWebMux))
 
 		r.Handle("/metrics", promhttp.HandlerFor(s.reg, promhttp.HandlerOpts{}))
 
