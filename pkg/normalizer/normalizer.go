@@ -93,7 +93,7 @@ func MetaFromPprof(p *pprofpb.Profile, name string, sampleIndex int) profile.Met
 	}
 }
 
-func MetaFromOtelProfile(stringTable []string, p *pprofextended.Profile, name string, sampleIndex int, duration int64) profile.Meta {
+func MetaFromOtelProfile(stringTable []string, p *pprofextended.Profile, name string, duration uint64) profile.Meta {
 	periodType := profile.ValueType{}
 	if p.PeriodType != nil {
 		periodType = profile.ValueType{Type: stringTable[p.PeriodType.TypeStrindex], Unit: stringTable[p.PeriodType.UnitStrindex]}
@@ -101,14 +101,14 @@ func MetaFromOtelProfile(stringTable []string, p *pprofextended.Profile, name st
 
 	sampleType := profile.ValueType{}
 	if p.SampleType != nil {
-		sampleType = profile.ValueType{Type: stringTable[p.SampleType[sampleIndex].TypeStrindex], Unit: stringTable[p.SampleType[sampleIndex].UnitStrindex]}
+		sampleType = profile.ValueType{Type: stringTable[p.SampleType.TypeStrindex], Unit: stringTable[p.SampleType.UnitStrindex]}
 	}
 
 	return profile.Meta{
 		Name:       name,
-		Timestamp:  p.TimeNanos / time.Millisecond.Nanoseconds(),
-		TimeNanos:  p.TimeNanos,
-		Duration:   duration,
+		Timestamp:  int64(p.TimeUnixNano / uint64(time.Millisecond.Nanoseconds())),
+		TimeNanos:  int64(p.TimeUnixNano),
+		Duration:   int64(duration),
 		Period:     p.Period,
 		PeriodType: periodType,
 		SampleType: sampleType,
