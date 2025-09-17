@@ -1567,7 +1567,7 @@ func (q *Querier) GetProfileMetadataMappings(
 	records := make(map[string]struct{})
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
-		Project(logicalplan.Col("stacktrace")).
+		Distinct(logicalplan.Col("stacktrace")).
 		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
 			r.Retain()
 
@@ -1632,7 +1632,7 @@ func (q *Querier) GetProfileMetadataLabels(
 
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
-		Project(logicalplan.DynCol("labels")).
+		Distinct(logicalplan.DynCol("labels")).
 		Execute(ctx, func(ctx context.Context, ar arrow.Record) error {
 			for i, field := range ar.Schema().Fields() {
 				nulls := ar.Column(i).NullN()
