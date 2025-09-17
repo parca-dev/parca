@@ -18,14 +18,13 @@ import (
 
 	"github.com/apache/arrow-go/v18/arrow/array"
 	semconv "go.opentelemetry.io/otel/semconv/v1.28.0"
-	v1 "go.opentelemetry.io/proto/otlp/common/v1"
 	pprofextended "go.opentelemetry.io/proto/otlp/profiles/v1development"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 )
 
 func EncodeOtelLocation(
-	attributeTable []*v1.KeyValue,
+	attributeTable []*pprofextended.KeyValueAndUnit,
 	l *pprofextended.Location,
 	m *pprofextended.Mapping,
 	funcs []*pprofextended.Function,
@@ -43,7 +42,7 @@ func EncodeOtelLocation(
 
 		buildID := ""
 		for _, idx := range m.AttributeIndices {
-			if attributeTable[idx].Key == string(semconv.ProcessExecutableBuildIDGnuKey) {
+			if stringTable[attributeTable[idx].KeyStrindex] == string(semconv.ProcessExecutableBuildIDGnuKey) {
 				buildID = attributeTable[idx].Value.GetStringValue()
 				break
 			}
@@ -97,7 +96,7 @@ func EncodeOtelLocation(
 }
 
 func serializedOtelLocationSize(
-	attributeTable []*v1.KeyValue,
+	attributeTable []*pprofextended.KeyValueAndUnit,
 	l *pprofextended.Location,
 	m *pprofextended.Mapping,
 	funcs []*pprofextended.Function,
@@ -111,7 +110,7 @@ func serializedOtelLocationSize(
 	if m != nil {
 		buildID := ""
 		for _, idx := range m.AttributeIndices {
-			if attributeTable[idx].Key == string(semconv.ProcessExecutableBuildIDGnuKey) {
+			if stringTable[attributeTable[idx].KeyStrindex] == string(semconv.ProcessExecutableBuildIDGnuKey) {
 				buildID = attributeTable[idx].Value.GetStringValue()
 				break
 			}

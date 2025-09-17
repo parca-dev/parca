@@ -124,10 +124,10 @@ func (s *labelSet) addOtelAttributes(attrs []*v1.KeyValue) {
 	}
 }
 
-func (s *labelSet) addOtelAttributesFromTable(attrs []*v1.KeyValue, idxs []int32) {
+func (s *labelSet) addOtelAttributesFromTable(stringTable []string, attrs []*otelprofilingpb.KeyValueAndUnit, idxs []int32) {
 	for _, idx := range idxs {
 		attr := attrs[idx]
-		s.addLabel(attr.Key, attr.Value.GetStringValue())
+		s.addLabel(stringTable[attr.KeyStrindex], attr.Value.GetStringValue())
 	}
 }
 
@@ -198,28 +198,28 @@ func (w *profileWriter) writeResourceProfiles(
 	for _, rp := range req.ResourceProfiles {
 		for _, sp := range rp.ScopeProfiles {
 			for _, p := range sp.Profiles {
-				metas := []profile.Meta{}
-				for i := range p.SampleType {
-					duration := p.DurationNanos
-					name := sp.Scope.Name
-					if name == "" {
-						name = "unknown"
-					}
-					metas = append(metas, MetaFromOtelProfile(req.Dictionary.StringTable, p, name, i, duration))
+				duration := p.DurationNano
+				name := sp.Scope.Name
+				if name == "" {
+					name = "unknown"
 				}
+				metas := []profile.Meta{MetaFromOtelProfile(req.Dictionary.StringTable, p, name, duration)}
 
 				for _, sample := range p.Sample {
 					ls := newLabelSet()
-					ls.addOtelAttributesFromTable(req.Dictionary.AttributeTable, sample.AttributeIndices)
-					ls.addOtelAttributesFromTable(req.Dictionary.AttributeTable, p.AttributeIndices)
+					ls.addOtelAttributesFromTable(req.Dictionary.StringTable, req.Dictionary.AttributeTable, sample.AttributeIndices)
+					ls.addOtelAttributesFromTable(req.Dictionary.StringTable, req.Dictionary.AttributeTable, p.AttributeIndices)
 					ls.addOtelAttributes(sp.Scope.Attributes)
 					ls.addOtelAttributes(rp.Resource.Attributes)
 
-					// It is unclear how to handle the case where there are
-					// multiple sample types with timestamps. Where do the
-					// timestamps start and end for each sample type?
+					// see https://github.com/open-telemetry/opentelemetry-proto/blob/30fc16100aa513254a71ef83ae2de321fb1bdfeb/opentelemetry/proto/profiles/v1development/profiles.proto#L345
+					// for more information on the TimestampsUnixNano and Values relationship.
 					if len(sample.TimestampsUnixNano) > 0 {
 						for i, ts := range sample.TimestampsUnixNano {
+							value := int64(1)
+							if len(sample.Values) > 0 {
+								value = sample.Values[i]
+							}
 							row := SampleToParquetRow(
 								w.schema,
 								w.row[:0],
@@ -241,9 +241,10 @@ func (w *profileWriter) writeResourceProfiles(
 										req.Dictionary.MappingTable,
 										req.Dictionary.LocationTable,
 										req.Dictionary.AttributeTable,
+										req.Dictionary.StackTable,
 										req.Dictionary.StringTable,
 									),
-									Value: sample.Value[i],
+									Value: value,
 								},
 							)
 							if _, err := w.buffer.WriteRows([]parquet.Row{row}); err != nil {
@@ -251,7 +252,7 @@ func (w *profileWriter) writeResourceProfiles(
 							}
 						}
 					} else {
-						for j, value := range sample.Value {
+						for j, value := range sample.Values {
 							if value == 0 {
 								continue
 							}
@@ -270,6 +271,7 @@ func (w *profileWriter) writeResourceProfiles(
 										req.Dictionary.MappingTable,
 										req.Dictionary.LocationTable,
 										req.Dictionary.AttributeTable,
+										req.Dictionary.StackTable,
 										req.Dictionary.StringTable,
 									),
 									Value: value,
@@ -366,11 +368,7 @@ func isEmptyMapping(m *otelprofilingpb.Mapping) bool {
 		m.MemoryLimit == 0 &&
 		m.FileOffset == 0 &&
 		m.FilenameStrindex == 0 &&
-		len(m.AttributeIndices) == 0 &&
-		!m.HasFunctions &&
-		!m.HasFilenames &&
-		!m.HasLineNumbers &&
-		!m.HasInlineFrames
+		len(m.AttributeIndices) == 0
 }
 
 func isEmptyFunction(f *otelprofilingpb.Function) bool {
@@ -385,13 +383,14 @@ func isEmptyFunction(f *otelprofilingpb.Function) bool {
 		f.StartLine == 0
 }
 
-func isEmptyAttribute(a *v1.KeyValue) bool {
+func isEmptyAttribute(a *otelprofilingpb.KeyValueAndUnit) bool {
 	if a == nil {
 		return true
 	}
 
 	// Check if all fields are zero values or nil.
-	return a.Key == "" &&
+	return a.KeyStrindex == 0 &&
+		a.UnitStrindex == 0 &&
 		a.Value == nil ||
 		a.Value.Value == nil
 }
@@ -402,10 +401,9 @@ func isEmptyLocation(l *otelprofilingpb.Location) bool {
 	}
 
 	// Check if all fields are zero values or nil.
-	return (l.MappingIndex == nil || *l.MappingIndex == 0) &&
+	return l.MappingIndex == 0 &&
 		l.Address == 0 &&
 		len(l.Line) == 0 &&
-		!l.IsFolded &&
 		len(l.AttributeIndices) == 0
 }
 
@@ -419,14 +417,13 @@ func isEmptyLink(l *otelprofilingpb.Link) bool {
 		len(l.SpanId) == 0
 }
 
-func isEmptyAttributeUnit(a *otelprofilingpb.AttributeUnit) bool {
-	if a == nil {
+func isEmptyStack(s *otelprofilingpb.Stack) bool {
+	if s == nil {
 		return true
 	}
 
 	// Check if all fields are zero values or nil.
-	return a.AttributeKeyStrindex == 0 &&
-		a.UnitStrindex == 0
+	return len(s.LocationIndices) == 0
 }
 
 func ValidateOtelDictionary(d *otelprofilingpb.ProfilesDictionary) error {
@@ -505,8 +502,12 @@ func ValidateOtelDictionary(d *otelprofilingpb.ProfilesDictionary) error {
 			return fmt.Errorf("attribute at index %d is nil", i)
 		}
 
-		if a.Key == "" {
-			return fmt.Errorf("attribute key at index %d is empty", i)
+		if !existsInStringTable(a.KeyStrindex, d.StringTable) {
+			return fmt.Errorf("attribute key index %d out of bounds", a.KeyStrindex)
+		}
+
+		if !existsInStringTable(a.UnitStrindex, d.StringTable) {
+			return fmt.Errorf("attribute unit index %d out of bounds", a.UnitStrindex)
 		}
 
 		if a.Value == nil {
@@ -531,8 +532,8 @@ func ValidateOtelDictionary(d *otelprofilingpb.ProfilesDictionary) error {
 			return fmt.Errorf("location at index %d is nil", i)
 		}
 
-		if l.MappingIndex != nil && (*l.MappingIndex < 0 || *l.MappingIndex >= int32(len(d.MappingTable))) {
-			return fmt.Errorf("location mapping index %d out of bounds", *l.MappingIndex)
+		if l.MappingIndex < 0 || l.MappingIndex >= int32(len(d.MappingTable)) {
+			return fmt.Errorf("location mapping index %d out of bounds", l.MappingIndex)
 		}
 
 		for j, line := range l.Line {
@@ -570,25 +571,23 @@ func ValidateOtelDictionary(d *otelprofilingpb.ProfilesDictionary) error {
 		}
 	}
 
-	if len(d.AttributeUnits) == 0 {
-		return fmt.Errorf("attribute units table is empty")
+	if len(d.StackTable) == 0 {
+		return fmt.Errorf("stack table is empty")
 	}
 
-	if !isEmptyAttributeUnit(d.AttributeUnits[0]) {
-		return fmt.Errorf("first attribute unit entry must be nil, got %v", d.AttributeUnits[0])
+	if !isEmptyStack(d.StackTable[0]) {
+		return fmt.Errorf("first stack table entry must be nil, got %v", d.StackTable[0])
 	}
 
-	for i, a := range d.AttributeUnits[1:] { // Skip the first entry which is nil
-		if a == nil {
-			return fmt.Errorf("attribute unit at index %d is nil", i)
+	for i, s := range d.StackTable[1:] { // Skip the first entry which is nil
+		if s == nil {
+			return fmt.Errorf("stack at index %d is nil", i)
 		}
 
-		if !existsInStringTable(a.AttributeKeyStrindex, d.StringTable) {
-			return fmt.Errorf("attribute unit key index %d out of bounds", a.AttributeKeyStrindex)
-		}
-
-		if !existsInStringTable(a.UnitStrindex, d.StringTable) {
-			return fmt.Errorf("attribute unit string index %d out of bounds", a.UnitStrindex)
+		for j, li := range s.LocationIndices {
+			if li < 0 || li >= int32(len(d.LocationTable)) {
+				return fmt.Errorf("stack location index %d out of bounds at position %d", li, j)
+			}
 		}
 	}
 
@@ -600,51 +599,35 @@ func ValidateOtelProfile(d *otelprofilingpb.ProfilesDictionary, p *otelprofiling
 		return fmt.Errorf("profile is nil")
 	}
 
-	// There is already an API change that hasn't landed in the generated code
-	// yet. Where SampleType is no longer a repeated field, but a single SampleType.
-	if len(p.SampleType) != 1 {
-		return fmt.Errorf("sample type is empty")
+	if !existsInStringTable(p.SampleType.TypeStrindex, d.StringTable) {
+		return fmt.Errorf("sample type index %d out of bounds", p.SampleType.TypeStrindex)
 	}
 
-	for i, st := range p.SampleType {
-		if st == nil {
-			return fmt.Errorf("sample type at index %d is nil", i)
-		}
-		if !existsInStringTable(st.TypeStrindex, d.StringTable) {
-			return fmt.Errorf("sample type index %d out of bounds", st.TypeStrindex)
-		}
-
-		if !existsInStringTable(st.UnitStrindex, d.StringTable) {
-			return fmt.Errorf("sample unit index %d out of bounds", st.UnitStrindex)
-		}
+	if !existsInStringTable(p.SampleType.UnitStrindex, d.StringTable) {
+		return fmt.Errorf("sample unit index %d out of bounds", p.SampleType.UnitStrindex)
 	}
 
 	if len(p.Sample) == 0 {
 		return fmt.Errorf("sample is empty")
 	}
 
-	if p.DurationNanos < 0 {
-		return fmt.Errorf("duration nanos %d must be non-negative", p.DurationNanos)
-	}
-
-	start := uint64(p.TimeNanos)
-	end := start + uint64(p.DurationNanos)
+	start := p.TimeUnixNano
+	end := start + p.DurationNano
 	for _, s := range p.Sample {
-		// Location start index must not be negative or the 0 element as that's the nil element.
-		if s.LocationsStartIndex <= 0 || s.LocationsStartIndex >= int32(len(p.LocationIndices)) {
-			return fmt.Errorf("sample locations start index %d out of bounds", s.LocationsStartIndex)
+		if s == nil {
+			return fmt.Errorf("sample is nil")
 		}
 
-		if s.LocationsLength < 0 || s.LocationsStartIndex+s.LocationsLength > int32(len(p.LocationIndices)) {
-			return fmt.Errorf("sample locations length %d out of bounds with start index %d", s.LocationsLength, s.LocationsStartIndex)
+		if s.StackIndex < 0 || s.StackIndex >= int32(len(d.StackTable)) {
+			return fmt.Errorf("sample stack index %d out of bounds", s.StackIndex)
 		}
 
-		if len(s.Value) == 0 && len(s.TimestampsUnixNano) == 0 {
+		if len(s.Values) == 0 && len(s.TimestampsUnixNano) == 0 {
 			return fmt.Errorf("sample value and timestamps cannot both be empty")
 		}
 
-		if len(s.Value) > 0 && len(s.TimestampsUnixNano) > 0 && len(s.Value) != len(s.TimestampsUnixNano) {
-			return fmt.Errorf("sample value length %d does not match sample timestamps length %d", len(s.Value), len(s.TimestampsUnixNano))
+		if len(s.Values) > 0 && len(s.TimestampsUnixNano) > 0 && len(s.Values) != len(s.TimestampsUnixNano) {
+			return fmt.Errorf("sample value length %d does not match sample timestamps length %d", len(s.Values), len(s.TimestampsUnixNano))
 		}
 
 		for _, a := range s.AttributeIndices {
@@ -653,20 +636,14 @@ func ValidateOtelProfile(d *otelprofilingpb.ProfilesDictionary, p *otelprofiling
 			}
 		}
 
-		if s.LinkIndex != nil && (*s.LinkIndex < 0 || *s.LinkIndex >= int32(len(d.LinkTable))) {
-			return fmt.Errorf("sample link index %d out of bounds", *s.LinkIndex)
+		if s.LinkIndex < 0 || s.LinkIndex >= int32(len(d.LinkTable)) {
+			return fmt.Errorf("sample link index %d out of bounds", s.LinkIndex)
 		}
 
 		for _, ts := range s.TimestampsUnixNano {
 			if ts < start || ts > end {
 				return fmt.Errorf("sample timestamp %d out of bounds, must be between %d and %d", ts, start, end)
 			}
-		}
-	}
-
-	for _, i := range p.LocationIndices {
-		if i < 0 || i >= int32(len(d.LocationTable)) {
-			return fmt.Errorf("location indices location index %d out of bounds", i)
 		}
 	}
 
@@ -682,10 +659,6 @@ func ValidateOtelProfile(d *otelprofilingpb.ProfilesDictionary, p *otelprofiling
 		if i < 0 || i >= int32(len(d.StringTable)) {
 			return fmt.Errorf("comment string index %d out of bounds", i)
 		}
-	}
-
-	if p.DefaultSampleTypeIndex < 0 || p.DefaultSampleTypeIndex >= int32(len(p.SampleType)) {
-		return fmt.Errorf("default sample type index %d out of bounds", p.DefaultSampleTypeIndex)
 	}
 
 	if len(p.ProfileId) > 0 {
@@ -731,17 +704,19 @@ func serializeOtelStacktrace(
 	functions []*otelprofilingpb.Function,
 	mappings []*otelprofilingpb.Mapping,
 	locations []*otelprofilingpb.Location,
-	attributes []*v1.KeyValue,
+	attributes []*otelprofilingpb.KeyValueAndUnit,
+	stackTable []*otelprofilingpb.Stack,
 	stringTable []string,
 ) [][]byte {
-	st := make([][]byte, 0, s.LocationsLength)
+	stack := stackTable[s.StackIndex]
+	st := make([][]byte, 0, len(stack.LocationIndices))
 
-	for i := s.LocationsStartIndex; i < s.LocationsStartIndex+s.LocationsLength; i++ {
-		location := locations[p.LocationIndices[i]]
+	for _, locationIndex := range stack.LocationIndices {
+		location := locations[locationIndex]
 		var m *otelprofilingpb.Mapping
 
-		if location.MappingIndex != nil && *location.MappingIndex != 0 && *location.MappingIndex < int32(len(mappings)) {
-			m = mappings[*location.MappingIndex]
+		if location.MappingIndex != 0 {
+			m = mappings[location.MappingIndex]
 		}
 
 		st = append(st, profile.EncodeOtelLocation(
