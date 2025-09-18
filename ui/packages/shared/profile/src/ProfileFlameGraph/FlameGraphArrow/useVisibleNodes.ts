@@ -87,7 +87,9 @@ export const useVisibleNodes = ({
 
   return useMemo(() => {
     // Create a stable key for memoization to prevent unnecessary recalculations
-    const memoKey = `${viewport.scrollTop}-${viewport.containerHeight}-${selectedRow}-${effectiveDepth}-${width}`;
+    const memoKey = `${viewport.scrollTop}-${
+      viewport.containerHeight
+    }-${selectedRow}-${effectiveDepth}-${width}-${Number(total)}-${table.numRows}`;
 
     // Return cached result if viewport hasn't meaningfully changed
     if (lastResultRef.current.key === memoKey) {
@@ -117,7 +119,7 @@ export const useVisibleNodes = ({
         ? BigInt(valueOffsetColumn?.get(selectedRow))
         : 0n;
     const selectionCumulative =
-      cumulativeColumn?.get(selectedRow) !== null ? BigInt(cumulativeColumn?.get(selectedRow)) : 0n;
+      cumulativeColumn?.get(selectedRow) != null ? BigInt(cumulativeColumn?.get(selectedRow)) : 0n;
 
     const totalNumber = Number(total);
     const selectionOffsetNumber = Number(selectionOffset);
@@ -134,7 +136,7 @@ export const useVisibleNodes = ({
 
       for (const row of rowsAtDepth) {
         const cumulative =
-          cumulativeColumn?.get(row) !== null ? Number(cumulativeColumn?.get(row)) : 0;
+          cumulativeColumn?.get(row) != null ? Number(cumulativeColumn?.get(row)) : 0;
 
         const valueOffset =
           valueOffsetColumn?.get(row) !== null && valueOffsetColumn?.get(row) !== undefined

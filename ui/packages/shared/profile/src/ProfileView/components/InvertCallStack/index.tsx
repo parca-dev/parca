@@ -15,9 +15,18 @@ import {Icon} from '@iconify/react';
 
 import {Button, useURLState} from '@parca/components';
 
+import {useResetFlameGraphState} from '../../hooks/useResetFlameGraphState';
+
 const InvertCallStack = (): JSX.Element => {
   const [invertStack = '', setInvertStack] = useURLState('invert_call_stack');
   const isInvert = invertStack === 'true';
+  const resetFlameGraphState = useResetFlameGraphState();
+
+  const handleSetInvert = (value: boolean): void => {
+    setInvertStack(value ? 'true' : '');
+
+    resetFlameGraphState();
+  };
 
   return (
     <div className="flex flex-col">
@@ -25,7 +34,7 @@ const InvertCallStack = (): JSX.Element => {
       <Button
         variant="neutral"
         className="flex items-center gap-2 whitespace-nowrap"
-        onClick={() => setInvertStack(isInvert ? '' : 'true')}
+        onClick={() => handleSetInvert(!isInvert)}
         id="h-invert-call-stack"
       >
         <Icon icon={isInvert ? 'ph:sort-ascending' : 'ph:sort-descending'} className="h-4 w-4" />
