@@ -28,6 +28,7 @@ require (
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/klauspost/compress v1.18.0
 	github.com/m1gwings/treedrawer v0.3.3-beta
+	github.com/minio/minio-go/v7 v7.0.72
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.2.0
 	github.com/olekukonko/tablewriter v0.0.5
@@ -197,7 +198,6 @@ require (
 	github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8 // indirect
 	github.com/minio/c2goasm v0.0.0-20190812172519-36a3d3bbc4f3 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
-	github.com/minio/minio-go/v7 v7.0.72 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
