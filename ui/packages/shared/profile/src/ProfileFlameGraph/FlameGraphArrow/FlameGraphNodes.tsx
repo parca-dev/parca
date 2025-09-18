@@ -116,9 +116,8 @@ export const FlameNode = React.memo(
 
     const mappingFile: string | null = arrowToString(mappingColumn?.get(row));
     const functionName: string | null = arrowToString(functionNameColumn?.get(row));
-    const cumulative =
-      cumulativeColumn?.get(row) !== null ? BigInt(cumulativeColumn?.get(row)) : 0n;
-    const diff: bigint | null = diffColumn?.get(row) !== null ? BigInt(diffColumn?.get(row)) : null;
+    const cumulative = cumulativeColumn?.get(row) != null ? BigInt(cumulativeColumn?.get(row)) : 0n;
+    const diff: bigint | null = diffColumn?.get(row) != null ? BigInt(diffColumn?.get(row)) : null;
     const filename: string | null = arrowToString(filenameColumn?.get(row));
     const depth: number = depthColumn?.get(row) ?? 0;
 
