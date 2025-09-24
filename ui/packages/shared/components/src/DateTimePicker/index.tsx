@@ -16,6 +16,7 @@ import {useEffect, useRef, useState} from 'react';
 import {Popover} from '@headlessui/react';
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
+import moment from 'moment-timezone';
 import ReactDatePicker from 'react-datepicker';
 import {usePopper} from 'react-popper';
 
@@ -67,7 +68,8 @@ export const DateTimePicker = ({selected, onChange}: Props): JSX.Element => {
       onChange(new AbsoluteDate(textInput));
       return;
     }
-    const date = new Date(textInput);
+    const date =
+      timezone !== undefined ? moment.tz(textInput, timezone).toDate() : new Date(textInput);
     if (isNaN(date.getTime())) {
       setTextInput(selected.getUIString(timezone));
       return;
