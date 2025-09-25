@@ -203,3 +203,27 @@ export const millisToProtoTimestamp = (millis: number): Timestamp => {
     nanos: Math.floor((millis % 1000) * 1e6),
   };
 };
+
+function timezoneToOffset(timezone: string): string {
+    const formatter = new Intl.DateTimeFormat('en', {
+      timeZone: timezone,
+      timeZoneName: 'longOffset'
+    });
+
+    return formatter.formatToParts(new Date())
+      .find(part => part.type === 'timeZoneName')?.value?.replace('GMT', '') || '+00:00';
+  }
+
+export function shiftTimeAcrossTimezones(date: Date, fromTimezone: string, toTimezone: string): Date {
+  if (date === null) {
+    return date;
+  }
+
+  const fromOffset = timezoneToOffset(fromTimezone);
+  const toOffset = timezoneToOffset(toTimezone);
+  const [fromHours, fromMinutes] = fromOffset.split(':').map(Number);
+  const [toHours, toMinutes] = toOffset.split(':').map(Number);
+  const [diffHours, diffMinutes] = [fromHours - toHours, fromMinutes - toMinutes];
+  const shiftedDate = new Date(date.getTime() + (diffHours * 60 + diffMinutes) * 60000);
+  return shiftedDate;
+}
