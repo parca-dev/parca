@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useRef, useState} from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {Popover} from '@headlessui/react';
 import {Icon} from '@iconify/react';
@@ -85,6 +85,10 @@ export const DateTimePicker = ({selected, onChange}: Props): JSX.Element => {
     };
   }, []);
 
+  const browserTimezone = useMemo(() => {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  }, []);
+
   return (
     <Popover>
       {({open}) => (
@@ -120,12 +124,12 @@ export const DateTimePicker = ({selected, onChange}: Props): JSX.Element => {
             className="z-10"
           >
             <ReactDatePicker
-              selected={shiftTimeAcrossTimezones(selected.getTime(), timezone ?? 'UTC', Intl.DateTimeFormat().resolvedOptions().timeZone)}
+              selected={shiftTimeAcrossTimezones(selected.getTime(), timezone ?? 'UTC', browserTimezone)}
               onChange={date => {
                 if (date == null) {
                   return;
                 }
-                const utcDate = shiftTimeAcrossTimezones(date, Intl.DateTimeFormat().resolvedOptions().timeZone, timezone ?? 'UTC');
+                const utcDate = shiftTimeAcrossTimezones(date, browserTimezone, timezone ?? 'UTC');
 
                 onChange(
                   new AbsoluteDate(utcDate)
