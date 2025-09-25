@@ -13,18 +13,18 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import {Popover} from '@headlessui/react';
-import {Icon} from '@iconify/react';
+import { Popover } from '@headlessui/react';
+import { Icon } from '@iconify/react';
 import cx from 'classnames';
 import moment from 'moment-timezone';
 import ReactDatePicker from 'react-datepicker';
-import {usePopper} from 'react-popper';
+import { usePopper } from 'react-popper';
 
 import { convertLocalToUTCDate, shiftTimeAcrossTimezones } from '@parca/utilities';
 
-import {AbsoluteDate} from '../DateTimeRangePicker/utils';
+import { AbsoluteDate } from '../DateTimeRangePicker/utils';
 import Input from '../Input';
-import {useParcaContext} from '../ParcaContext';
+import { useParcaContext } from '../ParcaContext';
 
 export const DATE_FORMAT = 'yyyy-MM-DD HH:mm:ss';
 
@@ -43,11 +43,11 @@ interface Props {
   onChange: (date: AbsoluteDate) => void;
 }
 
-export const DateTimePicker = ({selected, onChange}: Props): JSX.Element => {
-  const {timezone} = useParcaContext();
+export const DateTimePicker = ({ selected, onChange }: Props): JSX.Element => {
+  const { timezone } = useParcaContext();
   const [referenceElement, setReferenceElement] = useState<HTMLDivElement | null>();
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>();
-  const {styles, attributes} = usePopper(referenceElement, popperElement, {
+  const { styles, attributes } = usePopper(referenceElement, popperElement, {
     placement: 'bottom-end',
     strategy: 'absolute',
   });
@@ -91,7 +91,7 @@ export const DateTimePicker = ({selected, onChange}: Props): JSX.Element => {
 
   return (
     <Popover>
-      {({open}) => (
+      {({ open }) => (
         <div
           className="flex items-center text-sm w-full [&>div:first-child]:w-full"
           ref={setReferenceElement}
@@ -134,6 +134,8 @@ export const DateTimePicker = ({selected, onChange}: Props): JSX.Element => {
                 onChange(
                   new AbsoluteDate(utcDate)
                 );
+
+                onChange(new AbsoluteDate(utcDate));
                 setIsTextInputDirty(false);
               }}
               showTimeInput
