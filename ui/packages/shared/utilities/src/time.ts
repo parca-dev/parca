@@ -214,7 +214,7 @@ function timezoneToOffset(timezone: string): string {
     formatter
       .formatToParts(new Date())
       .find(part => part.type === 'timeZoneName')
-      ?.value?.replace('GMT', '') || '+00:00'
+      ?.value?.replace('GMT', '') ?? '+00:00'
   );
 }
 
