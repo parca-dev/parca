@@ -14,6 +14,7 @@
 import {Icon} from '@iconify/react';
 
 import {Button, useURLState} from '@parca/components';
+import {TEST_IDS, testId} from '@parca/test-utils';
 
 import {useResetFlameGraphState} from '../../hooks/useResetFlameGraphState';
 
@@ -36,6 +37,7 @@ const InvertCallStack = (): JSX.Element => {
         className="flex items-center gap-2 whitespace-nowrap"
         onClick={() => handleSetInvert(!isInvert)}
         id="h-invert-call-stack"
+        {...testId(TEST_IDS.INVERT_CALL_STACK_BUTTON)}
       >
         <Icon icon={isInvert ? 'ph:sort-ascending' : 'ph:sort-descending'} className="h-4 w-4" />
         {isInvert ? 'Original' : 'Invert'} Call Stack
