@@ -210,12 +210,11 @@ function timezoneToOffset(timezone: string): string {
     timeZoneName: 'longOffset',
   });
 
-  const offset = (
+  const offset =
     formatter
       .formatToParts(new Date())
       .find(part => part.type === 'timeZoneName')
-      ?.value?.replace('GMT', '') ?? '+00:00'
-  );
+      ?.value?.replace('GMT', '') ?? '+00:00';
 
   if (offset === '') {
     return '+00:00';
