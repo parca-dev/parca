@@ -1,6 +1,6 @@
 {
   "name": "@parca/utilities",
-  "version": "0.0.109",
+  "version": "0.0.110",
   "description": "A set of reusable functions for Parca",
   "main": "dist/index.js",
   "scripts": {
