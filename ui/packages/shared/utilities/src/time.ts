@@ -205,16 +205,24 @@ export const millisToProtoTimestamp = (millis: number): Timestamp => {
 };
 
 function timezoneToOffset(timezone: string): string {
-    const formatter = new Intl.DateTimeFormat('en', {
-      timeZone: timezone,
-      timeZoneName: 'longOffset'
-    });
+  const formatter = new Intl.DateTimeFormat('en', {
+    timeZone: timezone,
+    timeZoneName: 'longOffset',
+  });
 
-    return formatter.formatToParts(new Date())
-      .find(part => part.type === 'timeZoneName')?.value?.replace('GMT', '') || '+00:00';
-  }
+  return (
+    formatter
+      .formatToParts(new Date())
+      .find(part => part.type === 'timeZoneName')
+      ?.value?.replace('GMT', '') || '+00:00'
+  );
+}
 
-export function shiftTimeAcrossTimezones(date: Date, fromTimezone: string, toTimezone: string): Date {
+export function shiftTimeAcrossTimezones(
+  date: Date,
+  fromTimezone: string,
+  toTimezone: string
+): Date {
   if (date === null) {
     return date;
   }

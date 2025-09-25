@@ -13,9 +13,7 @@
 
 import {describe, expect, it} from 'vitest';
 
-import {
-  shiftTimeAcrossTimezones,
-} from './time';
+import {shiftTimeAcrossTimezones} from './time';
 
 describe('shiftTimeAcrossTimezones', () => {
   it('shifts time correctly when converting between timezones shifting backwards', () => {

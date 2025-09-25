@@ -20,7 +20,7 @@ import moment from 'moment-timezone';
 import ReactDatePicker from 'react-datepicker';
 import {usePopper} from 'react-popper';
 
-import { convertLocalToUTCDate, shiftTimeAcrossTimezones } from '@parca/utilities';
+import {convertLocalToUTCDate, shiftTimeAcrossTimezones} from '@parca/utilities';
 
 import {AbsoluteDate} from '../DateTimeRangePicker/utils';
 import Input from '../Input';
@@ -120,16 +120,22 @@ export const DateTimePicker = ({selected, onChange}: Props): JSX.Element => {
             className="z-10"
           >
             <ReactDatePicker
-              selected={shiftTimeAcrossTimezones(selected.getTime(), timezone ?? 'UTC', Intl.DateTimeFormat().resolvedOptions().timeZone)}
+              selected={shiftTimeAcrossTimezones(
+                selected.getTime(),
+                timezone ?? 'UTC',
+                Intl.DateTimeFormat().resolvedOptions().timeZone
+              )}
               onChange={date => {
                 if (date == null) {
                   return;
                 }
-                const utcDate = shiftTimeAcrossTimezones(date, Intl.DateTimeFormat().resolvedOptions().timeZone, timezone ?? 'UTC');
-
-                onChange(
-                  new AbsoluteDate(utcDate)
+                const utcDate = shiftTimeAcrossTimezones(
+                  date,
+                  Intl.DateTimeFormat().resolvedOptions().timeZone,
+                  timezone ?? 'UTC'
                 );
+
+                onChange(new AbsoluteDate(utcDate));
                 setIsTextInputDirty(false);
               }}
               showTimeInput
