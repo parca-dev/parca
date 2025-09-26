@@ -15,7 +15,7 @@ import {useQuery, type UseQueryResult} from '@tanstack/react-query';
 
 interface Props<IRes> {
   key: unknown[];
-  queryFn: () => Promise<IRes>;
+  queryFn: (signal?: AbortSignal) => Promise<IRes>;
   options?: {
     enabled?: boolean | undefined;
     staleTime?: number | undefined;
@@ -31,8 +31,8 @@ const useGrpcQuery = <IRes>({
 }: Props<IRes>): UseQueryResult<IRes> => {
   return useQuery<IRes>(
     key,
-    async () => {
-      return await queryFn();
+    async ({signal}) => {
+      return await queryFn(signal);
     },
     {
       enabled,

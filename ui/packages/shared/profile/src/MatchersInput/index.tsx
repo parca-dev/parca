@@ -59,7 +59,7 @@ export const useLabelNames = (
 
   const {data, isLoading, error} = useGrpcQuery<LabelsResponse>({
     key: ['labelNames', profileType, match?.join(','), start, end],
-    queryFn: async () => {
+    queryFn: async signal => {
       const request: LabelsRequest = {match: match !== undefined ? match : []};
       if (start !== undefined && end !== undefined) {
         request.start = millisToProtoTimestamp(start);
@@ -68,7 +68,7 @@ export const useLabelNames = (
       if (profileType !== undefined) {
         request.profileType = profileType;
       }
-      const {response} = await client.labels(request, {meta: metadata});
+      const {response} = await client.labels(request, {meta: metadata, abort: signal});
       return response;
     },
     options: {
@@ -100,13 +100,13 @@ export const useLabelValues = (
 
   const {data, isLoading, error} = useGrpcQuery<string[]>({
     key: ['labelValues', labelName, profileType, start, end],
-    queryFn: async () => {
+    queryFn: async signal => {
       const request: ValuesRequest = {labelName, match: [], profileType};
       if (start !== undefined && end !== undefined) {
         request.start = millisToProtoTimestamp(start);
         request.end = millisToProtoTimestamp(end);
       }
-      const {response} = await client.values(request, {meta: metadata});
+      const {response} = await client.values(request, {meta: metadata, abort: signal});
       return sanitizeLabelValue(response.labelValues);
     },
     options: {
