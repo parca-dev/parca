@@ -89,8 +89,10 @@ export const useVisualizationState = (): {
   const setGroupByLabels = useCallback(
     (labels: string[]): void => {
       setGroupBy(groupBy.filter(l => !l.startsWith(`${FIELD_LABELS}.`)).concat(labels));
+
+      resetFlameGraphState();
     },
-    [groupBy, setGroupBy]
+    [groupBy, setGroupBy, resetFlameGraphState]
   );
 
   const resetSandwichFunctionName = useCallback((): void => {

@@ -113,6 +113,9 @@ export const TEST_IDS = {
   GROUP_BY_LABEL: 'group-by-label',
   GROUP_BY_SELECT_FLYOUT: 'group-by-select-flyout',
 
+  // Invert Call Stack
+  INVERT_CALL_STACK_BUTTON: 'invert-call-stack-button',
+
   // Compare Mode
   COMPARE_CONTAINER: 'compare-container',
   COMPARE_SIDE_A: 'compare-side-a',
