@@ -487,7 +487,15 @@ export enum DebuginfoType {
      *
      * @generated from protobuf enum value: DEBUGINFO_TYPE_SOURCES = 2;
      */
-    SOURCES = 2
+    SOURCES = 2,
+    /**
+     * The type to identify JavaScript/TypeScript source maps. This is meant to
+     * be used for mapping minified JavaScript locations back to original source
+     * code positions for profiling visualization.
+     *
+     * @generated from protobuf enum value: DEBUGINFO_TYPE_SOURCE_MAP = 3;
+     */
+    SOURCE_MAP = 3
 }
 /**
  * BuildIDType is the type of build ID.
@@ -518,7 +526,13 @@ export enum BuildIDType {
      *
      * @generated from protobuf enum value: BUILD_ID_TYPE_GO = 3;
      */
-    BUILD_ID_TYPE_GO = 3
+    BUILD_ID_TYPE_GO = 3,
+    /**
+     * The build ID is a debug ID for source maps (UUID format).
+     *
+     * @generated from protobuf enum value: BUILD_ID_TYPE_SOURCE_MAP_DEBUG_ID = 4;
+     */
+    BUILD_ID_TYPE_SOURCE_MAP_DEBUG_ID = 4
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class ShouldInitiateUploadRequest$Type extends MessageType<ShouldInitiateUploadRequest> {

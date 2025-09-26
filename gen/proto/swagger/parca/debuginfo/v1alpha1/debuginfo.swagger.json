@@ -228,20 +228,22 @@
         "BUILD_ID_TYPE_UNKNOWN_UNSPECIFIED",
         "BUILD_ID_TYPE_GNU",
         "BUILD_ID_TYPE_HASH",
-        "BUILD_ID_TYPE_GO"
+        "BUILD_ID_TYPE_GO",
+        "BUILD_ID_TYPE_SOURCE_MAP_DEBUG_ID"
       ],
       "default": "BUILD_ID_TYPE_UNKNOWN_UNSPECIFIED",
-      "description": "BuildIDType is the type of build ID.\n\n - BUILD_ID_TYPE_UNKNOWN_UNSPECIFIED: The build ID is unknown.\n - BUILD_ID_TYPE_GNU: The build ID is a GNU build ID.\n - BUILD_ID_TYPE_HASH: The build ID is an opaque hash.\n - BUILD_ID_TYPE_GO: The build ID is a Go build ID."
+      "description": "BuildIDType is the type of build ID.\n\n - BUILD_ID_TYPE_UNKNOWN_UNSPECIFIED: The build ID is unknown.\n - BUILD_ID_TYPE_GNU: The build ID is a GNU build ID.\n - BUILD_ID_TYPE_HASH: The build ID is an opaque hash.\n - BUILD_ID_TYPE_GO: The build ID is a Go build ID.\n - BUILD_ID_TYPE_SOURCE_MAP_DEBUG_ID: The build ID is a debug ID for source maps (UUID format)."
     },
     "v1alpha1DebuginfoType": {
       "type": "string",
       "enum": [
         "DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED",
         "DEBUGINFO_TYPE_EXECUTABLE",
-        "DEBUGINFO_TYPE_SOURCES"
+        "DEBUGINFO_TYPE_SOURCES",
+        "DEBUGINFO_TYPE_SOURCE_MAP"
       ],
       "default": "DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED",
-      "description": "Types of debuginfo.\n\n - DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED: The default type that the API always supported. This type is expected to\ncontain debuginfos for symbolizaton purposes.\n - DEBUGINFO_TYPE_EXECUTABLE: The type to identify executables. This is meant to be used for\ndisassembling so it is expected to contain executable `.text` section.\n - DEBUGINFO_TYPE_SOURCES: The type to identify a source tarball. This is expected to contain\nmultiple source files that debuginfo references. It is meant to show code\nwith profiling data inline."
+      "description": "Types of debuginfo.\n\n - DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED: The default type that the API always supported. This type is expected to\ncontain debuginfos for symbolizaton purposes.\n - DEBUGINFO_TYPE_EXECUTABLE: The type to identify executables. This is meant to be used for\ndisassembling so it is expected to contain executable `.text` section.\n - DEBUGINFO_TYPE_SOURCES: The type to identify a source tarball. This is expected to contain\nmultiple source files that debuginfo references. It is meant to show code\nwith profiling data inline.\n - DEBUGINFO_TYPE_SOURCE_MAP: The type to identify JavaScript/TypeScript source maps. This is meant to\nbe used for mapping minified JavaScript locations back to original source\ncode positions for profiling visualization."
     },
     "v1alpha1InitiateUploadRequest": {
       "type": "object",
