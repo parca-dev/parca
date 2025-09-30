@@ -68,7 +68,7 @@ export const useQueryRange = (
 
   const {data, isLoading, error} = useGrpcQuery<QueryRangeResponse | undefined>({
     key: ['query-range', queryExpression, start, end, (sumBy ?? []).join(','), stepCount, metadata],
-    queryFn: async () => {
+    queryFn: async signal => {
       const stepDuration = getStepDuration(start, end, stepCount);
       const {response} = await client.queryRange(
         {
@@ -79,7 +79,7 @@ export const useQueryRange = (
           limit: 0,
           sumBy,
         },
-        {meta: metadata}
+        {meta: metadata, abort: signal}
       );
       return response;
     },
