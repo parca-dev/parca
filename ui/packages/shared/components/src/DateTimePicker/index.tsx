@@ -11,15 +11,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 
 import {Popover} from '@headlessui/react';
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
+import moment from 'moment-timezone';
 import ReactDatePicker from 'react-datepicker';
 import {usePopper} from 'react-popper';
 
-import {convertLocalToUTCDate, convertUTCToLocalDate} from '@parca/utilities';
+import {convertLocalToUTCDate, shiftTimeAcrossTimezones} from '@parca/utilities';
 
 import {AbsoluteDate} from '../DateTimeRangePicker/utils';
 import Input from '../Input';
@@ -67,7 +68,8 @@ export const DateTimePicker = ({selected, onChange}: Props): JSX.Element => {
       onChange(new AbsoluteDate(textInput));
       return;
     }
-    const date = new Date(textInput);
+    const date =
+      timezone !== undefined ? moment.tz(textInput, timezone).toDate() : new Date(textInput);
     if (isNaN(date.getTime())) {
       setTextInput(selected.getUIString(timezone));
       return;
@@ -81,6 +83,10 @@ export const DateTimePicker = ({selected, onChange}: Props): JSX.Element => {
     return () => {
       setValueRef.current?.();
     };
+  }, []);
+
+  const browserTimezone = useMemo(() => {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
   }, []);
 
   return (
@@ -118,18 +124,20 @@ export const DateTimePicker = ({selected, onChange}: Props): JSX.Element => {
             className="z-10"
           >
             <ReactDatePicker
-              selected={
-                timezone !== undefined
-                  ? selected.getTime()
-                  : convertUTCToLocalDate(selected.getTime())
-              }
+              selected={shiftTimeAcrossTimezones(
+                selected.getTime(),
+                timezone ?? 'UTC',
+                browserTimezone
+              )}
               onChange={date => {
                 if (date == null) {
                   return;
                 }
-                onChange(
-                  new AbsoluteDate(timezone !== undefined ? date : convertLocalToUTCDate(date))
-                );
+                const utcDate = shiftTimeAcrossTimezones(date, browserTimezone, timezone ?? 'UTC');
+
+                onChange(new AbsoluteDate(utcDate));
+
+                onChange(new AbsoluteDate(utcDate));
                 setIsTextInputDirty(false);
               }}
               showTimeInput

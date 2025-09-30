@@ -224,7 +224,7 @@ export function MetricsGraphSection({
         <button
           onClick={() => setDisplayHideMetricsGraphButton(!showMetricsGraph)}
           className={cx(
-            'hidden px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-900 z-10',
+            'hidden px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-900 z-[5]',
             showMetricsGraph && 'absolute right-0 bottom-3 !flex',
             !showMetricsGraph && 'relative !flex ml-auto'
           )}
