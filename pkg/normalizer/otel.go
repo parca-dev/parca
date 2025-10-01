@@ -40,7 +40,7 @@ func OtlpRequestToArrowRecord(
 	req *otelgrpcprofilingpb.ExportProfilesServiceRequest,
 	schema *dynparquet.Schema,
 	mem memory.Allocator,
-) (arrow.Record, error) {
+) (arrow.RecordBatch, error) {
 	if err := ValidateOtelExportProfilesServiceRequest(req); err != nil {
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
@@ -290,7 +290,7 @@ func (w *profileWriter) writeResourceProfiles(
 	return nil
 }
 
-func (w *profileWriter) ArrowRecord(ctx context.Context) (arrow.Record, error) {
+func (w *profileWriter) ArrowRecord(ctx context.Context) (arrow.RecordBatch, error) {
 	if w.buffer.NumRows() == 0 {
 		// If there are no rows in the buffer we simply return early
 		return nil, nil

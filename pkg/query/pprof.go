@@ -141,7 +141,7 @@ func (w *PprofWriter) getBuf(capacity int) []byte {
 	return w.buf[:capacity]
 }
 
-func (w *PprofWriter) WriteRecord(rec arrow.Record) {
+func (w *PprofWriter) WriteRecord(rec arrow.RecordBatch) {
 	r := parcaprofile.NewRecordReader(rec)
 	t := w.transpose(r)
 

@@ -30,8 +30,8 @@ import (
 // createTestProfileData creates multiple test profile records with meaningful function names
 // that can be reused across multiple filtering tests. This simulates real-world scenarios
 // where profile data comes in multiple batches/records.
-func createTestProfileData(mem memory.Allocator) ([]arrow.Record, func()) {
-	records := []arrow.Record{}
+func createTestProfileData(mem memory.Allocator) ([]arrow.RecordBatch, func()) {
+	records := []arrow.RecordBatch{}
 	writers := []*profile.Writer{}
 
 	// Record 1: Contains multiple samples
@@ -150,7 +150,7 @@ func createTestProfileData(mem memory.Allocator) ([]arrow.Record, func()) {
 	w1.TimeNanos.Append(2)
 	w1.Period.Append(1)
 
-	record1 := w1.RecordBuilder.NewRecord()
+	record1 := w1.RecordBuilder.NewRecordBatch()
 	records = append(records, record1)
 
 	// Record 2: Contains a single sample (utils.helper -> database.connect)
@@ -197,7 +197,7 @@ func createTestProfileData(mem memory.Allocator) ([]arrow.Record, func()) {
 	w2.TimeNanos.Append(3)
 	w2.Period.Append(1)
 
-	record2 := w2.RecordBuilder.NewRecord()
+	record2 := w2.RecordBuilder.NewRecordBatch()
 	records = append(records, record2)
 
 	// Record 3: Contains multiple samples
@@ -300,7 +300,7 @@ func createTestProfileData(mem memory.Allocator) ([]arrow.Record, func()) {
 	w3.TimeNanos.Append(5)
 	w3.Period.Append(1)
 
-	record3 := w3.RecordBuilder.NewRecord()
+	record3 := w3.RecordBuilder.NewRecordBatch()
 	records = append(records, record3)
 
 	cleanup := func() {

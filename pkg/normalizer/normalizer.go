@@ -120,7 +120,7 @@ func WriteRawRequestToArrowRecord(
 	mem memory.Allocator,
 	req *profilestorepb.WriteRawRequest,
 	schema *dynparquet.Schema,
-) (arrow.Record, error) {
+) (arrow.RecordBatch, error) {
 	normalizedRequest, err := NormalizeWriteRawRequest(
 		ctx,
 		req,
@@ -325,7 +325,7 @@ func WriteRawRequestToArrowRecord(
 		}
 	}
 
-	record := b.NewRecord()
+	record := b.NewRecordBatch()
 	if record.NumRows() == 0 {
 		// If there are no rows in the record we simply return early.
 		record.Release()

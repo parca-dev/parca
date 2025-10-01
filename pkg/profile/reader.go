@@ -31,7 +31,7 @@ type Reader struct {
 }
 
 type RecordReader struct {
-	Record arrow.Record
+	Record arrow.RecordBatch
 
 	LabelFields  []arrow.Field
 	LabelColumns []LabelColumn
@@ -74,7 +74,7 @@ func NewReader(p Profile) Reader {
 	return r
 }
 
-func NewRecordReader(ar arrow.Record) *RecordReader {
+func NewRecordReader(ar arrow.RecordBatch) *RecordReader {
 	schema := ar.Schema()
 
 	labelFields := make([]arrow.Field, 0, schema.NumFields())

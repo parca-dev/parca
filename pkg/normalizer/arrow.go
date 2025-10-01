@@ -95,7 +95,7 @@ func (c *arrowToInternalConverter) HasUnknownStacktraceIDs() (bool, error) {
 	return true, nil
 }
 
-func (c *arrowToInternalConverter) UnknownStacktraceIDsRecord() (arrow.Record, error) {
+func (c *arrowToInternalConverter) UnknownStacktraceIDsRecord() (arrow.RecordBatch, error) {
 	m := arrow.NewMetadata(
 		[]string{MetadataSchemaVersion},
 		[]string{MetadataSchemaVersionV1},
@@ -106,7 +106,7 @@ func (c *arrowToInternalConverter) UnknownStacktraceIDsRecord() (arrow.Record, e
 		return nil, fmt.Errorf("expected stacktrace IDs column to be of type Binary, got %T", c.b.StacktraceIDs.Dictionary())
 	}
 
-	return array.NewRecord(
+	return array.NewRecordBatch(
 		arrow.NewSchema([]arrow.Field{{
 			Name: "stacktrace_id",
 			Type: arrow.BinaryTypes.Binary,
@@ -118,7 +118,7 @@ func (c *arrowToInternalConverter) UnknownStacktraceIDsRecord() (arrow.Record, e
 
 func (c *arrowToInternalConverter) AddLocationsRecord(
 	ctx context.Context,
-	rec arrow.Record,
+	rec arrow.RecordBatch,
 ) error {
 	value, ok := rec.Schema().Metadata().GetValue(MetadataSchemaVersion)
 	if !ok {
@@ -135,7 +135,7 @@ func (c *arrowToInternalConverter) AddLocationsRecord(
 
 func (c *arrowToInternalConverter) AddSampleRecord(
 	ctx context.Context,
-	rec arrow.Record,
+	rec arrow.RecordBatch,
 ) error {
 	value, ok := rec.Schema().Metadata().GetValue(MetadataSchemaVersion)
 	if !ok {
@@ -375,8 +375,8 @@ func (r *InternalRecordBuilderV1) validate() error {
 	return nil
 }
 
-func (c *arrowToInternalConverter) NewRecord(ctx context.Context) (arrow.Record, error) {
-	newRecord := array.NewRecord(
+func (c *arrowToInternalConverter) NewRecord(ctx context.Context) (arrow.RecordBatch, error) {
+	newRecord := array.NewRecordBatch(
 		arrow.NewSchema(append(c.b.LabelFields, []arrow.Field{{
 			Name: profile.ColumnName,
 			Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
@@ -488,7 +488,7 @@ func (c *arrowToInternalConverter) NewRecord(ctx context.Context) (arrow.Record,
 
 func (c *arrowToInternalConverter) AddLocationsRecordV1(
 	ctx context.Context,
-	rec arrow.Record,
+	rec arrow.RecordBatch,
 ) error {
 	schema := rec.Schema()
 	if schema.NumFields() != 3 {
@@ -632,7 +632,7 @@ func unsafeString(b []byte) string {
 
 func (c *arrowToInternalConverter) AddSampleRecordV1(
 	ctx context.Context,
-	rec arrow.Record,
+	rec arrow.RecordBatch,
 ) error {
 	var (
 		ok  bool

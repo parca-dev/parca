@@ -22,11 +22,11 @@ import (
 )
 
 type Ingester interface {
-	Ingest(ctx context.Context, record arrow.Record) error
+	Ingest(ctx context.Context, record arrow.RecordBatch) error
 }
 
 type Table interface {
-	InsertRecord(context.Context, arrow.Record) (tx uint64, err error)
+	InsertRecord(context.Context, arrow.RecordBatch) (tx uint64, err error)
 }
 
 type TableIngester struct {
@@ -44,7 +44,7 @@ func NewIngester(
 	}
 }
 
-func (ing TableIngester) Ingest(ctx context.Context, record arrow.Record) error {
+func (ing TableIngester) Ingest(ctx context.Context, record arrow.RecordBatch) error {
 	if record.NumRows() == 0 {
 		return nil
 	}

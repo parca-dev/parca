@@ -111,7 +111,7 @@ func rowsToColumn(rows []flamegraphRow) flamegraphColumns {
 	return columns
 }
 
-func extractLabelColumns(_ *testing.T, r arrow.Record) []map[string]string {
+func extractLabelColumns(_ *testing.T, r arrow.RecordBatch) []map[string]string {
 	pprofLabels := make([]map[string]string, r.NumRows())
 	for i := 0; i < int(r.NumRows()); i++ {
 		sampleLabels := map[string]string{}
@@ -133,7 +133,7 @@ func extractLabelColumns(_ *testing.T, r arrow.Record) []map[string]string {
 	return pprofLabels
 }
 
-func extractChildrenColumn(_ *testing.T, r arrow.Record) [][]uint32 {
+func extractChildrenColumn(_ *testing.T, r arrow.RecordBatch) [][]uint32 {
 	children := make([][]uint32, r.NumRows())
 	list := r.Column(r.Schema().FieldIndices(FlamegraphFieldChildren)[0]).(*array.List)
 	listValues := list.ListValues().(*array.Uint32).Uint32Values()
@@ -155,7 +155,7 @@ func extractChildrenColumn(_ *testing.T, r arrow.Record) [][]uint32 {
 	return children
 }
 
-func extractParentColumn(_ *testing.T, r arrow.Record) []int32 {
+func extractParentColumn(_ *testing.T, r arrow.RecordBatch) []int32 {
 	parents := make([]int32, r.NumRows())
 	col := r.Column(r.Schema().FieldIndices(FlamegraphFieldParent)[0]).(*array.Int32)
 	for i := 0; i < int(r.NumRows()); i++ {
@@ -164,7 +164,7 @@ func extractParentColumn(_ *testing.T, r arrow.Record) []int32 {
 	return parents
 }
 
-func extractColumn(t *testing.T, r arrow.Record, field string) any {
+func extractColumn(t *testing.T, r arrow.RecordBatch, field string) any {
 	fi := r.Schema().FieldIndices(field)
 	require.Equal(t, 1, len(fi))
 
@@ -503,7 +503,7 @@ func TestGenerateFlamegraphArrow(t *testing.T) {
 			sp, err := PprofToSymbolizedProfile(profile.Meta{Duration: (10 * time.Second).Nanoseconds()}, p, 0, tc.aggregate)
 			require.NoError(t, err)
 
-			sp.Samples = []arrow.Record{
+			sp.Samples = []arrow.RecordBatch{
 				sp.Samples[0].NewSlice(0, 2),
 				sp.Samples[0].NewSlice(2, 5),
 			}
@@ -540,7 +540,7 @@ func newFlamegraphComparer(t *testing.T) *flamegraphComparer {
 	}
 }
 
-func (c *flamegraphComparer) convert(r arrow.Record) {
+func (c *flamegraphComparer) convert(r arrow.RecordBatch) {
 	c.t.Helper()
 	c.actual = flamegraphColumns{
 		labelsOnly:          extractColumn(c.t, r, FlamegraphFieldLabelsOnly).([]bool),
@@ -1541,12 +1541,12 @@ func foldedStacksWithTsToProfile(pool memory.Allocator, input []byte) (profile.P
 	}
 
 	return profile.Profile{
-		Samples: []arrow.Record{w.RecordBuilder.NewRecord()},
+		Samples: []arrow.RecordBatch{w.RecordBuilder.NewRecordBatch()},
 	}, nil
 }
 
 //lint:ignore U1000 Used for debugging purposes
-func drawFlamegraphToConsole(_ *testing.T, record arrow.Record) {
+func drawFlamegraphToConsole(_ *testing.T, record arrow.RecordBatch) {
 	schema := record.Schema()
 	childrenColIdx := schema.FieldIndices("children")[0]
 	functionNameColIdx := schema.FieldIndices("function_name")[0]
