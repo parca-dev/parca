@@ -217,7 +217,7 @@ func (c *ArrowToProfileConverter) Convert(
 	}, nil
 }
 
-func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrace, resolvedLocations []*profile.Location, locationIndex map[string]int) (arrow.Record, error) {
+func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrace, resolvedLocations []*profile.Location, locationIndex map[string]int) (arrow.RecordBatch, error) {
 	w := profile.NewLocationsWriter(allocator)
 	defer w.RecordBuilder.Release()
 
@@ -316,7 +316,7 @@ func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrac
 		}
 	}
 
-	return w.RecordBuilder.NewRecord(), nil
+	return w.RecordBuilder.NewRecordBatch(), nil
 }
 
 func stringToBytes(s string) []byte {

@@ -116,7 +116,7 @@ func generateTableArrowRecord(
 	mem memory.Allocator,
 	tracer trace.Tracer,
 	p profile.Profile,
-) (arrow.Record, int64, error) {
+) (arrow.RecordBatch, int64, error) {
 	_, span := tracer.Start(ctx, "generateTableArrowRecord")
 	defer span.End()
 
@@ -310,7 +310,7 @@ func (tb *tableBuilder) populateCallerAndCalleeData() {
 }
 
 // NewRecord returns a new record from the builders.
-func (tb *tableBuilder) NewRecord() (arrow.Record, error) {
+func (tb *tableBuilder) NewRecord() (arrow.RecordBatch, error) {
 	tb.populateCallerAndCalleeData()
 	return tb.rb.NewRecord(), nil
 }

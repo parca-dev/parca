@@ -140,7 +140,7 @@ type NormalizedSample struct {
 }
 
 type Profile struct {
-	Samples []arrow.Record
+	Samples []arrow.RecordBatch
 	Meta    Meta
 }
 

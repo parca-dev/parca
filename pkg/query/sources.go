@@ -72,7 +72,7 @@ func generateSourceReportRecord(
 	p profile.Profile,
 	ref *pb.SourceReference,
 	source string,
-) (arrow.Record, int64) {
+) (arrow.RecordBatch, int64) {
 	b := newSourceReportBuilder(pool, ref, int64(strings.Count(source, "\n")))
 	for _, record := range p.Samples {
 		b.addRecord(record)
@@ -112,7 +112,7 @@ func newSourceReportBuilder(
 	}
 }
 
-func (b *sourceReportBuilder) finish() (arrow.Record, int64) {
+func (b *sourceReportBuilder) finish() (arrow.RecordBatch, int64) {
 	flat := array.NewInt64Builder(b.pool)
 	defer flat.Release()
 	cumu := array.NewInt64Builder(b.pool)
@@ -126,7 +126,7 @@ func (b *sourceReportBuilder) finish() (arrow.Record, int64) {
 	flatarr := flat.NewInt64Array()
 	defer flatarr.Release()
 
-	return array.NewRecord(
+	return array.NewRecordBatch(
 		arrow.NewSchema(
 			[]arrow.Field{
 				{Name: "cumulative", Type: arrow.PrimitiveTypes.Int64},
@@ -142,7 +142,7 @@ func (b *sourceReportBuilder) finish() (arrow.Record, int64) {
 	), b.cumulative
 }
 
-func (b *sourceReportBuilder) addRecord(rec arrow.Record) {
+func (b *sourceReportBuilder) addRecord(rec arrow.RecordBatch) {
 	r := profile.NewRecordReader(rec)
 	b.cumulative += math.Int64.Sum(r.Value)
 

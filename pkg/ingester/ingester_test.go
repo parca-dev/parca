@@ -47,14 +47,14 @@ func MustReadAllGzip(t require.TestingT, filename string) []byte {
 type fakeTable struct {
 	schema *dynparquet.Schema
 
-	inserts []arrow.Record
+	inserts []arrow.RecordBatch
 }
 
 func (t *fakeTable) Schema() *dynparquet.Schema {
 	return t.schema
 }
 
-func (t *fakeTable) InsertRecord(ctx context.Context, record arrow.Record) (uint64, error) {
+func (t *fakeTable) InsertRecord(ctx context.Context, record arrow.RecordBatch) (uint64, error) {
 	record.Retain()
 	t.inserts = append(t.inserts, record)
 	return 0, nil

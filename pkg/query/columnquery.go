@@ -398,9 +398,9 @@ func FilterProfileData(
 	ctx context.Context,
 	tracer trace.Tracer,
 	pool memory.Allocator,
-	records []arrow.Record,
+	records []arrow.RecordBatch,
 	filters []*pb.Filter,
-) ([]arrow.Record, int64, error) {
+) ([]arrow.RecordBatch, int64, error) {
 	_, span := tracer.Start(ctx, "filterByFunction")
 	defer span.End()
 
@@ -415,7 +415,7 @@ func FilterProfileData(
 		}
 	}()
 
-	res := make([]arrow.Record, 0, len(records))
+	res := make([]arrow.RecordBatch, 0, len(records))
 	allValues := int64(0)
 	allFiltered := int64(0)
 
@@ -445,9 +445,9 @@ func filterRecord(
 	ctx context.Context,
 	tracer trace.Tracer,
 	_ memory.Allocator,
-	rec arrow.Record,
+	rec arrow.RecordBatch,
 	filters []*pb.Filter,
-) ([]arrow.Record, int64, int64, error) {
+) ([]arrow.RecordBatch, int64, int64, error) {
 	_, span := tracer.Start(ctx, "filterRecord")
 	defer span.End()
 
@@ -456,7 +456,7 @@ func filterRecord(
 	// If no filters, return all records
 	if len(filters) == 0 {
 		valueSum := math.Int64.Sum(r.Value)
-		return []arrow.Record{rec}, valueSum, valueSum, nil
+		return []arrow.RecordBatch{rec}, valueSum, valueSum, nil
 	}
 
 	stackFilters := make([]*pb.FilterCriteria, 0)
@@ -542,7 +542,7 @@ func filterRecord(
 
 	if len(rowsInfo) == 0 {
 		// No rows match the filters
-		return []arrow.Record{}, originalValueSum, 0, nil
+		return []arrow.RecordBatch{}, originalValueSum, 0, nil
 	}
 
 	// Now apply frame filtering by nulling out non-matching frames within rows
@@ -1133,7 +1133,7 @@ func RenderReport(
 				if err != nil {
 					return nil, status.Errorf(codes.Internal, "failed to merge flame chart records: %v", err.Error())
 				}
-				p.Samples = []arrow.Record{sorted}
+				p.Samples = []arrow.RecordBatch{sorted}
 			}
 		}
 
@@ -1326,7 +1326,7 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, mem memory.Allocator,
 		}
 	}()
 
-	records := make([]arrow.Record, 0, len(compare.Samples)+len(base.Samples))
+	records := make([]arrow.RecordBatch, 0, len(compare.Samples)+len(base.Samples))
 
 	var (
 		compareCumulativeRatio = 1.0
@@ -1376,7 +1376,7 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, mem memory.Allocator,
 			cols[len(cols)-3] = cols[len(cols)-4] // value as diff
 		}
 
-		records = append(records, array.NewRecord(
+		records = append(records, array.NewRecordBatch(
 			r.Schema(),
 			cols,
 			r.NumRows(),
@@ -1397,7 +1397,7 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, mem memory.Allocator,
 			defer timestamp.Release()
 			duration := zeroInt64Array(mem, int(r.NumRows()))
 			defer duration.Release()
-			records = append(records, array.NewRecord(
+			records = append(records, array.NewRecordBatch(
 				r.Schema(),
 				append(
 					cols[:len(cols)-4], // all other columns like locations
@@ -1483,12 +1483,12 @@ type IndexRange struct {
 
 // sliceRecord returns a set of continguous index ranges from the given indicies
 // ex: [1,2,7,8,9] would return two records of [{Start:1, End:3},{Start:7,End:10}]
-func sliceRecord(r arrow.Record, indices []int64) []arrow.Record {
+func sliceRecord(r arrow.RecordBatch, indices []int64) []arrow.RecordBatch {
 	if len(indices) == 0 {
-		return []arrow.Record{}
+		return []arrow.RecordBatch{}
 	}
 
-	slices := []arrow.Record{}
+	slices := []arrow.RecordBatch{}
 	cur := IndexRange{
 		Start: indices[0],
 		End:   indices[0] + 1,
