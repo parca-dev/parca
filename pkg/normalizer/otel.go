@@ -83,11 +83,11 @@ func (n *labelNames) addOtelAttributes(attrs []*v1.KeyValue) {
 	}
 }
 
-func (n *labelNames) addOtelAttributesFromTable(attrs []*v1.KeyValue, idxs []int32) {
+func (n *labelNames) addOtelAttributesFromTable(stringTable []string, attrs []*otelprofilingpb.KeyValueAndUnit, idxs []int32) {
 	for _, idx := range idxs {
 		attr := attrs[idx]
 		if strings.TrimSpace(attr.Value.GetStringValue()) != "" {
-			n.addLabel(attr.Key)
+			n.addLabel(stringTable[attr.KeyStrindex])
 		}
 	}
 }
@@ -141,10 +141,10 @@ func getAllLabelNames(req *otelgrpcprofilingpb.ExportProfilesServiceRequest) []s
 			allLabelNames.addOtelAttributes(sp.Scope.Attributes)
 
 			for _, p := range sp.Profiles {
-				allLabelNames.addOtelAttributesFromTable(sp.Scope.Attributes, p.AttributeIndices)
+				allLabelNames.addOtelAttributesFromTable(req.Dictionary.StringTable, req.Dictionary.AttributeTable, p.AttributeIndices)
 
 				for _, sample := range p.Sample {
-					allLabelNames.addOtelAttributesFromTable(sp.Scope.Attributes, sample.AttributeIndices)
+					allLabelNames.addOtelAttributesFromTable(req.Dictionary.StringTable, req.Dictionary.AttributeTable, sample.AttributeIndices)
 				}
 			}
 		}
