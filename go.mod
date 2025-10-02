@@ -4,6 +4,7 @@ go 1.24.1
 
 require (
 	cloud.google.com/go/storage v1.56.1
+	github.com/KimMachineGun/automemlimit v0.7.3
 	github.com/alecthomas/kong v0.9.0
 	github.com/apache/arrow-go/v18 v18.4.1
 	github.com/cenkalti/backoff/v4 v4.3.0
@@ -216,6 +217,7 @@ require (
 	github.com/opencontainers/image-spec v1.1.0-rc4 // indirect
 	github.com/oracle/oci-go-sdk/v65 v65.41.1 // indirect
 	github.com/ovh/go-ovh v1.8.0 // indirect
+	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/pkg/errors v0.9.1 // indirect

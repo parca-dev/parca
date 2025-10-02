@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 
+	_ "github.com/KimMachineGun/automemlimit"
 	"github.com/alecthomas/kong"
 	"github.com/common-nighthawk/go-figure"
 	"github.com/go-kit/log/level"
