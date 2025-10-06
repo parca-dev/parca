@@ -32,6 +32,7 @@ interface LabelsContextType {
   currentLabelName: string | null;
   setCurrentLabelName: (name: string | null) => void;
   shouldHandlePrefixes: boolean;
+  refetchLabelValues: () => void;
 }
 
 const LabelsContext = createContext<LabelsContextType | null>(null);
@@ -71,13 +72,11 @@ export function LabelsProvider({
       : [];
   }, [labelNamesResponse]);
 
-  const {result: labelValuesOriginal, loading: isLabelValuesLoading} = useLabelValues(
-    queryClient,
-    currentLabelName ?? '',
-    profileType,
-    start,
-    end
-  );
+  const {
+    result: labelValuesOriginal,
+    loading: isLabelValuesLoading,
+    refetch: refetchLabelValues,
+  } = useLabelValues(queryClient, currentLabelName ?? '', profileType, start, end);
 
   const utilizationLabelValues = useFetchUtilizationLabelValues(
     currentLabelName ?? '',
@@ -114,6 +113,7 @@ export function LabelsProvider({
       currentLabelName,
       setCurrentLabelName,
       shouldHandlePrefixes,
+      refetchLabelValues,
     }),
     [
       labelNames,
@@ -123,6 +123,7 @@ export function LabelsProvider({
       isLabelValuesLoading,
       currentLabelName,
       shouldHandlePrefixes,
+      refetchLabelValues,
     ]
   );
 

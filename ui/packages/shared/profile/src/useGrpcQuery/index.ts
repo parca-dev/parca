@@ -21,13 +21,14 @@ interface Props<IRes> {
     staleTime?: number | undefined;
     retry?: number | boolean;
     keepPreviousData?: boolean | undefined;
+    cacheTime?: number | undefined;
   };
 }
 
 const useGrpcQuery = <IRes>({
   key,
   queryFn,
-  options: {enabled = true, staleTime, retry, keepPreviousData} = {},
+  options: {enabled = true, staleTime, retry, keepPreviousData, cacheTime} = {},
 }: Props<IRes>): UseQueryResult<IRes> => {
   return useQuery<IRes>(
     key,
@@ -39,6 +40,7 @@ const useGrpcQuery = <IRes>({
       staleTime,
       retry,
       keepPreviousData,
+      cacheTime,
     }
   );
 };

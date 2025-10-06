@@ -87,6 +87,7 @@ interface UseLabelValues {
     error?: Error;
   };
   loading: boolean;
+  refetch: () => void;
 }
 
 export const useLabelValues = (
@@ -98,7 +99,7 @@ export const useLabelValues = (
 ): UseLabelValues => {
   const metadata = useGrpcMetadata();
 
-  const {data, isLoading, error} = useGrpcQuery<string[]>({
+  const {data, isLoading, error, refetch} = useGrpcQuery<string[]>({
     key: ['labelValues', labelName, profileType, start, end],
     queryFn: async signal => {
       const request: ValuesRequest = {labelName, match: [], profileType};
@@ -115,12 +116,18 @@ export const useLabelValues = (
         profileType !== '' &&
         labelName !== undefined &&
         labelName !== '',
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      keepPreviousData: false,
+      staleTime: 1000 * 30,
+      keepPreviousData: true,
     },
   });
 
-  return {result: {response: data ?? [], error: error as Error}, loading: isLoading};
+  return {
+    result: {response: data ?? [], error: error as Error},
+    loading: isLoading,
+    refetch: () => {
+      void refetch();
+    },
+  };
 };
 
 export const useFetchUtilizationLabelValues = (

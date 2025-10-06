@@ -165,7 +165,7 @@ const SimpleMatchers = ({
             return sanitizedValues;
           },
           {
-            staleTime: 1000 * 60 * 5, // 5 minutes
+            staleTime: 1000 * 30,
           }
         );
         return values;
@@ -384,7 +384,7 @@ const SimpleMatchers = ({
             placeholder="Select label value"
             selectedKey={row.labelValue}
             className="rounded-none ring-0 focus:ring-0 outline-none max-w-48"
-            optionsClassname={cx('max-w-[300px]', {
+            optionsClassname={cx('w-fit-content', {
               'w-[300px]': isRowRegex(row),
             })}
             searchable={true}
