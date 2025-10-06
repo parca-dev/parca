@@ -187,6 +187,10 @@ interface MultiLevelDropdownProps {
   groupBy: string[];
   toggleGroupBy: (key: string) => void;
   isTableVizOnly: boolean;
+  alignFunctionName: string;
+  setAlignFunctionName: (align: string) => void;
+  colorBy: string;
+  setColorBy: (colorBy: string) => void;
 }
 
 const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
@@ -195,6 +199,10 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
   groupBy,
   toggleGroupBy,
   isTableVizOnly,
+  alignFunctionName,
+  setAlignFunctionName,
+  colorBy,
+  setColorBy,
 }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [shouldOpenLeft, setShouldOpenLeft] = useState(false);
@@ -202,7 +210,6 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
     defaultValue: FIELD_FUNCTION_NAME,
   });
   const [colorStackLegend, setStoreColorStackLegend] = useURLState('color_stack_legend');
-  const [colorBy, setColorBy] = useURLState('color_by');
   const [hiddenBinaries, setHiddenBinaries] = useURLState('hidden_binaries', {
     defaultValue: [],
     alwaysReturnArray: true,
@@ -212,9 +219,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
   const isColorStackLegendEnabled = colorStackLegend === 'true';
-
-  const [alignFunctionName, setAlignFunctionName] = useURLState('align_function_name');
-  const isLeftAligned = alignFunctionName === 'left' || alignFunctionName === undefined;
+  const isLeftAligned = alignFunctionName === 'left';
 
   // By default, we want delta profiles (CPU) to be relatively compared.
   // For non-delta profiles, like goroutines or memory, we want the profiles to be compared absolutely.
