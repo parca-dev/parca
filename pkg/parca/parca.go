@@ -734,7 +734,7 @@ func runForwarder(
 		profilestorepb.NewProfileStoreServiceClient(conn),
 		otelgrpcprofilingpb.NewProfilesServiceClient(conn),
 	)
-	store := profilestore.NewGRPCForwarder(client, logger)
+	store := profilestore.NewGRPCForwarder(client, logger, reg)
 
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(reg)
 	if err != nil {

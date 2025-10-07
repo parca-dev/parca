@@ -20,6 +20,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/gogo/status"
+	"github.com/prometheus/client_golang/prometheus"
 	otelgrpcprofilingpb "go.opentelemetry.io/proto/otlp/collector/profiles/v1development"
 	"google.golang.org/grpc/codes"
 
@@ -29,7 +30,9 @@ import (
 // GRPCForwarder forward profiles via gRPC to another Parca instance
 // instead of storing the profiles locally in a database.
 type GRPCForwarder struct {
-	logger log.Logger
+	logger         log.Logger
+	forwardedBytes prometheus.Counter
+
 	client *Client
 
 	profilestorepb.UnimplementedProfileStoreServiceServer
@@ -51,10 +54,18 @@ func NewClient(
 	}
 }
 
-func NewGRPCForwarder(client *Client, logger log.Logger) *GRPCForwarder {
+func NewGRPCForwarder(client *Client, logger log.Logger, reg *prometheus.Registry) *GRPCForwarder {
+	forwardedBytes := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "parca_forwarded_bytes_total",
+		Help: "The number of profile bytes forwarded to a remote server server.",
+	})
+	reg.MustRegister(forwardedBytes)
+	forwardedBytes.Add(0)
+
 	return &GRPCForwarder{
-		client: client,
-		logger: logger,
+		client:         client,
+		logger:         logger,
+		forwardedBytes: forwardedBytes,
 	}
 }
 
@@ -64,8 +75,19 @@ func (s *GRPCForwarder) WriteRaw(ctx context.Context, req *profilestorepb.WriteR
 	resp, err := s.client.WriteRaw(ctx, req)
 	if err != nil {
 		level.Warn(s.logger).Log("msg", "failed to forward profiles", "err", err)
+		return resp, err
 	}
-	return resp, err
+
+	var written int
+	for _, series := range req.GetSeries() {
+		for _, samples := range series.GetSamples() {
+			written += len(samples.RawProfile)
+		}
+	}
+
+	s.forwardedBytes.Add(float64(written))
+
+	return resp, nil
 }
 
 func (s *GRPCForwarder) Write(srv profilestorepb.ProfileStoreService_WriteServer) error {
