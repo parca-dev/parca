@@ -36,6 +36,8 @@ export const TEST_IDS = {
   // MatchersInput (Advanced Mode)
   MATCHERS_INPUT_CONTAINER: 'matchers-input-container',
   MATCHERS_TEXTAREA: 'matchers-textarea',
+  SUGGESTIONS_REFRESH_BUTTON: 'suggestions-refresh-button',
+  SUGGESTIONS_NO_RESULTS: 'suggestions-no-results',
 
   // SimpleMatchers (Simple Mode)
   SIMPLE_MATCHERS_CONTAINER: 'simple-matchers-container',
@@ -43,6 +45,9 @@ export const TEST_IDS = {
   LABEL_NAME_SELECT: 'label-name-select',
   OPERATOR_SELECT: 'operator-select',
   LABEL_VALUE_SELECT: 'label-value-select',
+  LABEL_VALUE_LOADING_INDICATOR: 'label-value-loading-indicator',
+  LABEL_VALUE_REFRESH_BUTTON: 'label-value-refresh-button',
+  LABEL_VALUE_NO_RESULTS: 'label-value-no-results',
   REMOVE_MATCHER_BUTTON: 'remove-matcher-button',
   ADD_MATCHER_BUTTON: 'add-matcher-button',
   SHOW_MORE_BUTTON: 'show-more-button',

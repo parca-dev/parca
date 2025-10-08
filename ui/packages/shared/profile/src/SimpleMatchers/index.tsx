@@ -36,6 +36,7 @@ interface Props {
   queryBrowserRef: React.RefObject<HTMLDivElement>;
   start?: number;
   end?: number;
+  searchExecutedTimestamp?: number;
 }
 
 interface QueryRow {
@@ -121,6 +122,7 @@ const SimpleMatchers = ({
   queryBrowserRef,
   start,
   end,
+  searchExecutedTimestamp,
 }: Props): JSX.Element => {
   const utilizationLabels = useUtilizationLabels();
   const [queryRows, setQueryRows] = useState<QueryRow[]>([
@@ -130,8 +132,17 @@ const SimpleMatchers = ({
   const metadata = useGrpcMetadata();
 
   const [showAll, setShowAll] = useState(false);
+  const [isActivelyEditing, setIsActivelyEditing] = useState(false);
 
-  const visibleRows = showAll ? queryRows : queryRows.slice(0, 3);
+  // Reset editing mode when search is executed
+  useEffect(() => {
+    if (searchExecutedTimestamp !== undefined && searchExecutedTimestamp > 0) {
+      setIsActivelyEditing(false);
+      setShowAll(false);
+    }
+  }, [searchExecutedTimestamp]);
+
+  const visibleRows = showAll || isActivelyEditing ? queryRows : queryRows.slice(0, 3);
   const hiddenRowsCount = queryRows.length - 3;
 
   const maxWidthInPixels = `max-w-[${queryBrowserRef.current?.offsetWidth.toString() as string}px]`;
@@ -163,9 +174,6 @@ const SimpleMatchers = ({
             ).response;
             const sanitizedValues = sanitizeLabelValue(response.labelValues);
             return sanitizedValues;
-          },
-          {
-            staleTime: 1000 * 60 * 5, // 5 minutes
           }
         );
         return values;
@@ -195,7 +203,70 @@ const SimpleMatchers = ({
     [setMatchersString]
   );
 
-  const {labelNameOptions, isLoading: labelNamesLoading} = useLabels();
+  const {labelNameOptions, isLoading: labelNamesLoading, refetchLabelValues} = useLabels();
+
+  // Helper to ensure selected label name is in the options (for page load before API returns)
+  const getLabelNameOptionsWithSelected = useCallback(
+    (selectedLabelName: string): typeof labelNameOptions => {
+      if (selectedLabelName === '') return labelNameOptions;
+
+      // Check if the selected label name exists in any group
+      const existsInOptions = labelNameOptions.some(group =>
+        group.values.some(item => item.key === selectedLabelName)
+      );
+
+      if (existsInOptions) return labelNameOptions;
+
+      // Add it temporarily to a group with type '' (matching non-matching labels group)
+      if (labelNameOptions.length === 0) {
+        return [
+          {
+            type: '',
+            values: [
+              {
+                key: selectedLabelName,
+                element: {active: <>{selectedLabelName}</>, expanded: <>{selectedLabelName}</>},
+              },
+            ],
+          },
+        ];
+      }
+
+      // Find the group with type '' (non-matching labels) or create it
+      const emptyTypeGroupIndex = labelNameOptions.findIndex(group => group.type === '');
+
+      if (emptyTypeGroupIndex !== -1) {
+        // Add to existing '' type group
+        const updatedOptions = [...labelNameOptions];
+        updatedOptions[emptyTypeGroupIndex] = {
+          ...updatedOptions[emptyTypeGroupIndex],
+          values: [
+            ...updatedOptions[emptyTypeGroupIndex].values,
+            {
+              key: selectedLabelName,
+              element: {active: <>{selectedLabelName}</>, expanded: <>{selectedLabelName}</>},
+            },
+          ],
+        };
+        return updatedOptions;
+      } else {
+        // Create new '' type group
+        return [
+          ...labelNameOptions,
+          {
+            type: '',
+            values: [
+              {
+                key: selectedLabelName,
+                element: {active: <>{selectedLabelName}</>, expanded: <>{selectedLabelName}</>},
+              },
+            ],
+          },
+        ];
+      }
+    },
+    [labelNameOptions]
+  );
 
   const fetchLabelValuesUnified = useCallback(
     async (labelName: string): Promise<string[]> => {
@@ -290,19 +361,29 @@ const SimpleMatchers = ({
 
   const handleUpdateRow = useCallback(
     (index: number, field: keyof QueryRow, value: string) => {
+      // Only set actively editing if not already showing all
+      // If showAll is true, user has explicitly expanded, so keep that state
+      if (!showAll) {
+        setIsActivelyEditing(true);
+      }
       void updateRow(index, field, value);
     },
-    [updateRow]
+    [updateRow, showAll]
   );
 
   const addNewRow = useCallback((): void => {
+    // Only set actively editing if not already showing all label names and values
+    // If showAll is true, user has explicitly expanded, so keep that state
+    if (!showAll) {
+      setIsActivelyEditing(true);
+    }
     const newRows = [
       ...queryRows,
       {labelName: '', operator: '=', labelValue: '', labelValues: [], isLoading: false},
     ];
     setQueryRows(newRows);
     updateMatchersString(newRows);
-  }, [queryRows, updateMatchersString]);
+  }, [queryRows, updateMatchersString, showAll]);
 
   const removeRow = useCallback(
     (index: number): void => {
@@ -362,7 +443,7 @@ const SimpleMatchers = ({
       {visibleRows.map((row, index) => (
         <div key={index} className="flex items-center" {...testId(TEST_IDS.SIMPLE_MATCHER_ROW)}>
           <Select
-            items={labelNameOptions}
+            items={getLabelNameOptionsWithSelected(row.labelName)}
             onSelection={value => handleUpdateRow(index, 'labelName', value)}
             placeholder="Select label name"
             selectedKey={row.labelName}
@@ -379,12 +460,16 @@ const SimpleMatchers = ({
             {...testId(TEST_IDS.OPERATOR_SELECT)}
           />
           <Select
-            items={transformLabelsForSelect(row.labelValues)}
+            items={transformLabelsForSelect(
+              row.labelValue !== '' && !row.labelValues.includes(row.labelValue)
+                ? [...row.labelValues, row.labelValue]
+                : row.labelValues
+            )}
             onSelection={value => handleUpdateRow(index, 'labelValue', value)}
             placeholder="Select label value"
             selectedKey={row.labelValue}
             className="rounded-none ring-0 focus:ring-0 outline-none max-w-48"
-            optionsClassname={cx('max-w-[300px]', {
+            optionsClassname={cx('max-w-[600px]', {
               'w-[300px]': isRowRegex(row),
             })}
             searchable={true}
@@ -393,6 +478,9 @@ const SimpleMatchers = ({
             onButtonClick={() => handleLabelValueClick(index)}
             editable={isRowRegex(row)}
             {...testId(TEST_IDS.LABEL_VALUE_SELECT)}
+            refetchLabelValues={refetchLabelValues}
+            showLoadingInButton={true}
+            hasRefreshButton={true}
           />
           <button
             onClick={() => removeRow(index)}
@@ -406,9 +494,18 @@ const SimpleMatchers = ({
         </div>
       ))}
 
-      {queryRows.length > 3 && (
+      {queryRows.length > 3 && !isActivelyEditing && (
         <button
-          onClick={() => setShowAll(!showAll)}
+          onClick={() => {
+            if (showAll) {
+              // Clicking "Show less" - collapse and stop editing mode
+              setShowAll(false);
+              setIsActivelyEditing(false);
+            } else {
+              // Clicking "Show more" - just expand
+              setShowAll(true);
+            }
+          }}
           className="mr-2 px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-900"
           {...testId(showAll ? TEST_IDS.SHOW_LESS_BUTTON : TEST_IDS.SHOW_MORE_BUTTON)}
         >

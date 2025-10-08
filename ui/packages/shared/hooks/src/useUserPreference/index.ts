@@ -64,6 +64,22 @@ export const USER_PREFERENCES: {[key: string]: UserPreferenceDetails} = {
     description:
       'When enabled, this option adds a new visualization type, allowing you to view your data in an Flame chart format.',
   },
+  COLOR_BY: {
+    name: 'Color by',
+    key: 'COLOR_BY',
+    type: 'string',
+    default: 'binary',
+    description:
+      'Choose how to color the flame graph nodes. Color by binary shows different colors for different binaries, while color by filename shows different colors for different source files.',
+  },
+  ALIGN_FUNCTION_NAME: {
+    name: 'Align function names',
+    key: 'ALIGN_FUNCTION_NAME',
+    type: 'string',
+    default: 'left',
+    description:
+      'Choose how to align function names in the flame graph. Left alignment shows function names starting from the left edge, while right alignment shows them from the right edge.',
+  },
 } as const;
 
 export type UserPreference = keyof typeof USER_PREFERENCES;
