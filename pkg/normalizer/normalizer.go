@@ -512,6 +512,7 @@ func NormalizeWriteRawRequest(ctx context.Context, req *profilestorepb.WriteRawR
 				continue
 			}
 
+			//nolint:staticcheck // SA1019: Update when we actually use the latest Prometheus
 			if valid := model.LabelName(l.Name).IsValid(); !valid {
 				return NormalizedWriteRawRequest{}, status.Errorf(codes.InvalidArgument, "invalid label name: %v", l.Name)
 			}

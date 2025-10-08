@@ -94,6 +94,11 @@ func NewManager(
 				Name: "parca_target_scrapes_sample_out_of_bounds_total",
 				Help: "Total number of samples rejected due to timestamp falling outside of the time bounds",
 			}),
+		sampleCount: prometheus.NewCounter(
+			prometheus.CounterOpts{
+				Name: "parca_target_samples_total",
+				Help: "Total number of samples that were scraped",
+			}),
 	}
 
 	reg.MustRegister(
@@ -105,6 +110,7 @@ func NewManager(
 		m.targetScrapeSampleDuplicate,
 		m.targetScrapeSampleOutOfOrder,
 		m.targetScrapeSampleOutOfBounds,
+		m.sampleCount,
 	)
 
 	c := make(map[string]*config.ScrapeConfig)
@@ -142,6 +148,7 @@ type Manager struct {
 	targetScrapeSampleDuplicate   prometheus.Counter
 	targetScrapeSampleOutOfOrder  prometheus.Counter
 	targetScrapeSampleOutOfBounds prometheus.Counter
+	sampleCount                   prometheus.Counter
 }
 
 // Run starts the manager with a set of scrape configs.
@@ -196,16 +203,23 @@ func (m *Manager) reload() {
 				level.Error(m.logger).Log("msg", "error reloading target set", "err", "invalid config id:"+setName)
 				return
 			}
-			sp = newScrapePool(scrapeConfig, m.store, log.With(m.logger, "scrape_pool", setName), m.externalLabels, &scrapePoolMetrics{
-				targetIntervalLength:          m.targetIntervalLength,
-				targetReloadIntervalLength:    m.targetReloadIntervalLength,
-				targetSyncIntervalLength:      m.targetSyncIntervalLength,
-				targetScrapePoolSyncsCounter:  m.targetScrapePoolSyncsCounter,
-				targetScrapeSampleLimit:       m.targetScrapeSampleLimit,
-				targetScrapeSampleDuplicate:   m.targetScrapeSampleDuplicate,
-				targetScrapeSampleOutOfOrder:  m.targetScrapeSampleOutOfOrder,
-				targetScrapeSampleOutOfBounds: m.targetScrapeSampleOutOfBounds,
-			})
+			sp = newScrapePool(
+				scrapeConfig,
+				m.store,
+				log.With(m.logger, "scrape_pool", setName),
+				m.externalLabels,
+				m.sampleCount,
+				&scrapePoolMetrics{
+					targetIntervalLength:          m.targetIntervalLength,
+					targetReloadIntervalLength:    m.targetReloadIntervalLength,
+					targetSyncIntervalLength:      m.targetSyncIntervalLength,
+					targetScrapePoolSyncsCounter:  m.targetScrapePoolSyncsCounter,
+					targetScrapeSampleLimit:       m.targetScrapeSampleLimit,
+					targetScrapeSampleDuplicate:   m.targetScrapeSampleDuplicate,
+					targetScrapeSampleOutOfOrder:  m.targetScrapeSampleOutOfOrder,
+					targetScrapeSampleOutOfBounds: m.targetScrapeSampleOutOfBounds,
+				},
+			)
 			m.scrapePools[setName] = sp
 		} else {
 			sp = existing
