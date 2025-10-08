@@ -174,9 +174,6 @@ const SimpleMatchers = ({
             ).response;
             const sanitizedValues = sanitizeLabelValue(response.labelValues);
             return sanitizedValues;
-          },
-          {
-            staleTime: 1000 * 60 * 2, // 2 minutes
           }
         );
         return values;

@@ -73,7 +73,6 @@ export const useLabelNames = (
     },
     options: {
       enabled: profileType !== undefined && profileType !== '',
-      staleTime: 1000 * 60 * 2, // 2 minutes
       keepPreviousData: false,
     },
   });
@@ -116,7 +115,6 @@ export const useLabelValues = (
         profileType !== '' &&
         labelName !== undefined &&
         labelName !== '',
-      staleTime: 1000 * 60 * 2, // 2 minutes
       keepPreviousData: false,
     },
   });
