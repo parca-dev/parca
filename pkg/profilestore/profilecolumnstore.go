@@ -216,7 +216,7 @@ func (s *ProfileColumnStore) write(ctx context.Context, server profilestorepb.Pr
 	)
 	defer c.Release()
 
-	if err := c.AddSampleRecord(ctx, r.Record()); err != nil {
+	if err := c.AddSampleRecord(ctx, r.RecordBatch()); err != nil {
 		return status.Error(codes.InvalidArgument, "failed to add sample record")
 	}
 
@@ -267,7 +267,7 @@ func (s *ProfileColumnStore) write(ctx context.Context, server profilestorepb.Pr
 			return status.Errorf(codes.InvalidArgument, "failed to read record: %v", r.Err())
 		}
 
-		if err := c.AddLocationsRecord(ctx, r.Record()); err != nil {
+		if err := c.AddLocationsRecord(ctx, r.RecordBatch()); err != nil {
 			return status.Errorf(codes.InvalidArgument, "failed to add locations record: %v", err)
 		}
 	}

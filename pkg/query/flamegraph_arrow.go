@@ -108,7 +108,7 @@ func GenerateFlamegraphArrow(
 	}, cumulative, nil
 }
 
-func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tracer trace.Tracer, p profile.Profile, groupBy []string, trimFraction float32) (arrow.Record, int64, int32, int64, error) {
+func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tracer trace.Tracer, p profile.Profile, groupBy []string, trimFraction float32) (arrow.RecordBatch, int64, int32, int64, error) {
 	ctx, span := tracer.Start(ctx, "generateFlamegraphArrowRecord")
 	defer span.End()
 
@@ -1154,7 +1154,7 @@ func (fb *flamegraphBuilder) prepareNewRecord() error {
 // NewRecord returns a new record from the builders.
 // It adds the children to the children column and the labels intersection to the labels column.
 // Finally, it assembles all columns from the builders into an arrow record.
-func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
+func (fb *flamegraphBuilder) NewRecord() (arrow.RecordBatch, error) {
 	fields := []arrow.Field{
 		// Location
 		{Name: FlamegraphFieldLabelsOnly, Type: arrow.FixedWidthTypes.Boolean},
@@ -1253,7 +1253,7 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.Record, error) {
 		arrays[numCols+i] = fb.labels[i]
 	}
 
-	return array.NewRecord(
+	return array.NewRecordBatch(
 		arrow.NewSchema(fields, nil),
 		arrays,
 		int64(numRows),
@@ -2117,7 +2117,7 @@ func release(releasers ...compactDictionary.Releasable) {
 	}
 }
 
-func recordStats(r arrow.Record) string {
+func recordStats(r arrow.RecordBatch) string {
 	var totalBytes int
 	type fieldStat struct {
 		valueBytes  int

@@ -1310,7 +1310,7 @@ func PprofToSymbolizedProfile(meta profile.Meta, prof *pprofprofile.Profile, ind
 
 	return profile.Profile{
 		Meta:    meta,
-		Samples: []arrow.Record{w.RecordBuilder.NewRecord()},
+		Samples: []arrow.RecordBatch{w.RecordBuilder.NewRecordBatch()},
 	}, nil
 }
 
@@ -1370,12 +1370,12 @@ func TestFilterData(t *testing.T) {
 	w.TimeNanos.Append(1)
 	w.Period.Append(1)
 
-	originalRecord := w.RecordBuilder.NewRecord()
+	originalRecord := w.RecordBuilder.NewRecordBatch()
 	recs, _, err := FilterProfileData(
 		context.Background(),
 		noop.NewTracerProvider().Tracer(""),
 		mem,
-		[]arrow.Record{originalRecord},
+		[]arrow.RecordBatch{originalRecord},
 		[]*pb.Filter{
 			{
 				Filter: &pb.Filter_FrameFilter{
@@ -1432,12 +1432,12 @@ func TestFilterUnsymbolized(t *testing.T) {
 	w.TimeNanos.Append(1)
 	w.Period.Append(1)
 
-	originalRecord := w.RecordBuilder.NewRecord()
+	originalRecord := w.RecordBuilder.NewRecordBatch()
 	recs, _, err := FilterProfileData(
 		context.Background(),
 		noop.NewTracerProvider().Tracer(""),
 		mem,
-		[]arrow.Record{originalRecord},
+		[]arrow.RecordBatch{originalRecord},
 		[]*pb.Filter{
 			{
 				Filter: &pb.Filter_FrameFilter{
@@ -1529,12 +1529,12 @@ func TestFilterDataWithPath(t *testing.T) {
 	w.TimeNanos.Append(1)
 	w.Period.Append(1)
 
-	originalRecord := w.RecordBuilder.NewRecord()
+	originalRecord := w.RecordBuilder.NewRecordBatch()
 	recs, _, err := FilterProfileData(
 		context.Background(),
 		noop.NewTracerProvider().Tracer(""),
 		mem,
-		[]arrow.Record{originalRecord},
+		[]arrow.RecordBatch{originalRecord},
 		[]*pb.Filter{
 			{
 				Filter: &pb.Filter_FrameFilter{
@@ -1631,12 +1631,12 @@ func TestFilterDataFrameFilter(t *testing.T) {
 	w.TimeNanos.Append(1)
 	w.Period.Append(1)
 
-	originalRecord := w.RecordBuilder.NewRecord()
+	originalRecord := w.RecordBuilder.NewRecordBatch()
 	recs, _, err := FilterProfileData(
 		context.Background(),
 		noop.NewTracerProvider().Tracer(""),
 		mem,
-		[]arrow.Record{originalRecord},
+		[]arrow.RecordBatch{originalRecord},
 		[]*pb.Filter{
 			{
 				Filter: &pb.Filter_FrameFilter{
@@ -1730,7 +1730,7 @@ func BenchmarkFilterData(t *testing.B) {
 		w.Period.Append(1)
 	}
 
-	originalRecord := w.RecordBuilder.NewRecord()
+	originalRecord := w.RecordBuilder.NewRecordBatch()
 	defer originalRecord.Release()
 	for i := 0; i < t.N; i++ {
 		originalRecord.Retain() // retain each time since FilterProfileData will release it
@@ -1738,7 +1738,7 @@ func BenchmarkFilterData(t *testing.B) {
 			context.Background(),
 			noop.NewTracerProvider().Tracer(""),
 			mem,
-			[]arrow.Record{originalRecord},
+			[]arrow.RecordBatch{originalRecord},
 			[]*pb.Filter{
 				{
 					Filter: &pb.Filter_FrameFilter{
@@ -1916,7 +1916,7 @@ func TestFilterDataExclude(t *testing.T) {
 	w.TimeNanos.Append(3)
 	w.Period.Append(1)
 
-	originalRecord := w.RecordBuilder.NewRecord()
+	originalRecord := w.RecordBuilder.NewRecordBatch()
 	defer originalRecord.Release()
 
 	t.Run("exclude=false filters to only samples with foo", func(t *testing.T) {
@@ -1925,7 +1925,7 @@ func TestFilterDataExclude(t *testing.T) {
 			ctx,
 			tracer,
 			mem,
-			[]arrow.Record{originalRecord},
+			[]arrow.RecordBatch{originalRecord},
 			[]*pb.Filter{
 				{
 					Filter: &pb.Filter_StackFilter{
@@ -1973,7 +1973,7 @@ func TestFilterDataExclude(t *testing.T) {
 			ctx,
 			tracer,
 			mem,
-			[]arrow.Record{originalRecord},
+			[]arrow.RecordBatch{originalRecord},
 			[]*pb.Filter{
 				{
 					Filter: &pb.Filter_StackFilter{
@@ -2012,7 +2012,7 @@ func TestFilterDataExclude(t *testing.T) {
 			ctx,
 			tracer,
 			mem,
-			[]arrow.Record{originalRecord},
+			[]arrow.RecordBatch{originalRecord},
 			[]*pb.Filter{}, // no filters
 		)
 		require.NoError(t, err)
@@ -2037,7 +2037,7 @@ func TestFilterDataExclude(t *testing.T) {
 			ctx,
 			tracer,
 			mem,
-			[]arrow.Record{originalRecord},
+			[]arrow.RecordBatch{originalRecord},
 			[]*pb.Filter{}, // no filters
 		)
 		require.NoError(t, err)
@@ -2063,7 +2063,7 @@ func TestFilterDataExclude(t *testing.T) {
 			ctx,
 			tracer,
 			mem,
-			[]arrow.Record{originalRecord},
+			[]arrow.RecordBatch{originalRecord},
 			[]*pb.Filter{
 				{
 					Filter: &pb.Filter_StackFilter{

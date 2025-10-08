@@ -66,7 +66,7 @@ export const useQuery = (
       options?.sandwichByFunction ?? '',
       protoFiltersKey,
     ],
-    queryFn: async () => {
+    queryFn: async signal => {
       const req = profileSource.QueryRequest();
       req.reportType = reportType;
       req.nodeTrimThreshold = options?.nodeTrimThreshold;
@@ -91,7 +91,7 @@ export const useQuery = (
       }
 
       try {
-        const {response} = await client.query(req, {meta: metadata});
+        const {response} = await client.query(req, {meta: metadata, abort: signal});
         return response;
       } catch (e) {
         if (options?.sourceOnly === true) {

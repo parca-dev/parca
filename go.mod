@@ -3,7 +3,7 @@ module github.com/parca-dev/parca
 go 1.24.1
 
 require (
-	cloud.google.com/go/storage v1.56.1
+	cloud.google.com/go/storage v1.57.0
 	github.com/alecthomas/kong v0.9.0
 	github.com/apache/arrow-go/v18 v18.4.1
 	github.com/cenkalti/backoff/v4 v4.3.0
@@ -15,7 +15,7 @@ require (
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/go-chi/chi/v5 v5.2.3
 	github.com/go-chi/cors v1.2.2
-	github.com/go-delve/delve v1.25.1
+	github.com/go-delve/delve v1.25.2
 	github.com/go-kit/log v0.2.1
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/gogo/status v1.1.1
@@ -36,10 +36,10 @@ require (
 	github.com/planetscale/vtprotobuf v0.6.1-0.20250313105119-ba97887b0a25
 	github.com/polarsignals/frostdb v0.0.0-20250728125857-906ebbaef267
 	github.com/polarsignals/iceberg-go v0.0.0-20240502213135-2ee70b71e76b
-	github.com/prometheus/client_golang v1.23.0
-	github.com/prometheus/common v0.65.0
+	github.com/prometheus/client_golang v1.23.2
+	github.com/prometheus/common v0.66.1
 	github.com/prometheus/prometheus v0.305.0
-	github.com/stretchr/testify v1.11.0
+	github.com/stretchr/testify v1.11.1
 	github.com/thanos-io/objstore v0.0.0-20241028145108-31c0873d5266
 	github.com/zeebo/xxh3 v1.0.2
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.62.0
@@ -62,7 +62,7 @@ require (
 	golang.org/x/sync v0.16.0
 	google.golang.org/api v0.248.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20250825161204-c5933d9347a5
-	google.golang.org/grpc v1.75.0
+	google.golang.org/grpc v1.75.1
 	google.golang.org/protobuf v1.36.8
 	gopkg.in/dnaeon/go-vcr.v3 v3.2.2
 	gopkg.in/yaml.v3 v3.0.1
@@ -125,7 +125,7 @@ require (
 	github.com/dgryski/go-metro v0.0.0-20250106013310-edb8663e5e33 // indirect
 	github.com/digitalocean/godo v1.152.0 // indirect
 	github.com/distribution/reference v0.5.0 // indirect
-	github.com/docker/docker v28.2.2+incompatible // indirect
+	github.com/docker/docker v28.3.3+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
@@ -242,6 +242,7 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.62.0 // indirect
 	go.opentelemetry.io/otel/metric v1.37.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.37.0 // indirect
+	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	golang.org/x/crypto v0.41.0 // indirect
 	golang.org/x/mod v0.27.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect

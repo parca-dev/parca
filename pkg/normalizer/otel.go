@@ -40,7 +40,7 @@ func OtlpRequestToArrowRecord(
 	req *otelgrpcprofilingpb.ExportProfilesServiceRequest,
 	schema *dynparquet.Schema,
 	mem memory.Allocator,
-) (arrow.Record, error) {
+) (arrow.RecordBatch, error) {
 	if err := ValidateOtelExportProfilesServiceRequest(req); err != nil {
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
@@ -83,11 +83,11 @@ func (n *labelNames) addOtelAttributes(attrs []*v1.KeyValue) {
 	}
 }
 
-func (n *labelNames) addOtelAttributesFromTable(attrs []*v1.KeyValue, idxs []int32) {
+func (n *labelNames) addOtelAttributesFromTable(stringTable []string, attrs []*otelprofilingpb.KeyValueAndUnit, idxs []int32) {
 	for _, idx := range idxs {
 		attr := attrs[idx]
 		if strings.TrimSpace(attr.Value.GetStringValue()) != "" {
-			n.addLabel(attr.Key)
+			n.addLabel(stringTable[attr.KeyStrindex])
 		}
 	}
 }
@@ -141,10 +141,10 @@ func getAllLabelNames(req *otelgrpcprofilingpb.ExportProfilesServiceRequest) []s
 			allLabelNames.addOtelAttributes(sp.Scope.Attributes)
 
 			for _, p := range sp.Profiles {
-				allLabelNames.addOtelAttributesFromTable(sp.Scope.Attributes, p.AttributeIndices)
+				allLabelNames.addOtelAttributesFromTable(req.Dictionary.StringTable, req.Dictionary.AttributeTable, p.AttributeIndices)
 
 				for _, sample := range p.Sample {
-					allLabelNames.addOtelAttributesFromTable(sp.Scope.Attributes, sample.AttributeIndices)
+					allLabelNames.addOtelAttributesFromTable(req.Dictionary.StringTable, req.Dictionary.AttributeTable, sample.AttributeIndices)
 				}
 			}
 		}
@@ -290,7 +290,7 @@ func (w *profileWriter) writeResourceProfiles(
 	return nil
 }
 
-func (w *profileWriter) ArrowRecord(ctx context.Context) (arrow.Record, error) {
+func (w *profileWriter) ArrowRecord(ctx context.Context) (arrow.RecordBatch, error) {
 	if w.buffer.NumRows() == 0 {
 		// If there are no rows in the buffer we simply return early
 		return nil, nil

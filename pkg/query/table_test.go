@@ -285,7 +285,7 @@ type tableColumns struct {
 	flatDiff           []int64
 }
 
-func tableRecordToColumns(t *testing.T, r arrow.Record) tableColumns {
+func tableRecordToColumns(t *testing.T, r arrow.RecordBatch) tableColumns {
 	return tableColumns{
 		mappingFile:        extractColumn(t, r, TableFieldMappingFile).([]string),
 		mappingBuildID:     extractColumn(t, r, TableFieldMappingBuildID).([]string),

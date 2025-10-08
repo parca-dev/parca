@@ -119,7 +119,7 @@ func (q *Querier) Labels(
 	err := q.engine.ScanTable(q.tableName).
 		Filter(logicalplan.And(filterExpr...)).
 		Distinct(logicalplan.DynCol(profile.ColumnLabels)).
-		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
+		Execute(ctx, func(ctx context.Context, r arrow.RecordBatch) error {
 			for i := 0; i < int(r.NumCols()); i++ {
 				col := r.ColumnName(i)
 
@@ -179,7 +179,7 @@ func (q *Querier) Values(
 	err := q.engine.ScanTable(q.tableName).
 		Filter(logicalplan.And(filterExpr...)).
 		Distinct(logicalplan.Col("labels."+labelName)).
-		Execute(ctx, func(ctx context.Context, ar arrow.Record) error {
+		Execute(ctx, func(ctx context.Context, ar arrow.RecordBatch) error {
 			if ar.NumCols() != 1 {
 				return fmt.Errorf("expected 1 column, got %d", ar.NumCols())
 			}
@@ -391,7 +391,7 @@ func (q *Querier) queryRangeDelta(
 ) ([]*pb.MetricsSeries, error) {
 	resultType := m.SampleType
 
-	records := []arrow.Record{}
+	records := []arrow.RecordBatch{}
 	defer func() {
 		for _, r := range records {
 			r.Release()
@@ -492,7 +492,7 @@ func (q *Querier) queryRangeDelta(
 			logicalplan.DynCol(profile.ColumnLabels),
 			logicalplan.Col(TimestampBucket),
 		).
-		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
+		Execute(ctx, func(ctx context.Context, r arrow.RecordBatch) error {
 			r.Retain()
 			records = append(records, r)
 			rows += int(r.NumRows())
@@ -637,7 +637,7 @@ func getSumByAggregateExprs(sumBy []string) []logicalplan.Expr {
 }
 
 func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan.Expr, step time.Duration, _ []string) ([]*pb.MetricsSeries, error) {
-	records := []arrow.Record{}
+	records := []arrow.RecordBatch{}
 	defer func() {
 		for _, r := range records {
 			r.Release()
@@ -658,7 +658,7 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 				logicalplan.DynCol(profile.ColumnLabels),
 			},
 		).
-		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
+		Execute(ctx, func(ctx context.Context, r arrow.RecordBatch) error {
 			r.Retain()
 			records = append(records, r)
 			rows += int(r.NumRows())
@@ -797,7 +797,7 @@ func (q *Querier) ProfileTypes(
 			logicalplan.Col(profile.ColumnPeriodUnit),
 			logicalplan.Col(profile.ColumnDuration).Gt(logicalplan.Literal(0)),
 		).
-		Execute(ctx, func(ctx context.Context, ar arrow.Record) error {
+		Execute(ctx, func(ctx context.Context, ar arrow.RecordBatch) error {
 			if ar.NumCols() != 6 {
 				return fmt.Errorf("expected 6 column, got %d", ar.NumCols())
 			}
@@ -880,7 +880,7 @@ func StringValueFromDictionary(arr *array.Dictionary, i int) string {
 	}
 }
 
-func DictionaryFromRecord(ar arrow.Record, name string) (*array.Dictionary, error) {
+func DictionaryFromRecord(ar arrow.RecordBatch, name string) (*array.Dictionary, error) {
 	indices := ar.Schema().FieldIndices(name)
 	if len(indices) != 1 {
 		return nil, fmt.Errorf("expected 1 column named %q, got %d", name, len(indices))
@@ -894,7 +894,7 @@ func DictionaryFromRecord(ar arrow.Record, name string) (*array.Dictionary, erro
 	return col, nil
 }
 
-func BinaryFieldFromRecord(ar arrow.Record, name string) (*array.Binary, error) {
+func BinaryFieldFromRecord(ar arrow.RecordBatch, name string) (*array.Binary, error) {
 	indices := ar.Schema().FieldIndices(name)
 	if len(indices) != 1 {
 		return nil, fmt.Errorf("expected 1 column named %q, got %d", name, len(indices))
@@ -908,7 +908,7 @@ func BinaryFieldFromRecord(ar arrow.Record, name string) (*array.Binary, error) 
 	return col, nil
 }
 
-func BooleanFieldFromRecord(ar arrow.Record, name string) (*array.Boolean, error) {
+func BooleanFieldFromRecord(ar arrow.RecordBatch, name string) (*array.Boolean, error) {
 	indices := ar.Schema().FieldIndices(name)
 	if len(indices) != 1 {
 		return nil, fmt.Errorf("expected 1 column named %q, got %d", name, len(indices))
@@ -924,13 +924,13 @@ func BooleanFieldFromRecord(ar arrow.Record, name string) (*array.Boolean, error
 
 func (q *Querier) SymbolizeArrowRecord(
 	ctx context.Context,
-	records []arrow.Record,
+	records []arrow.RecordBatch,
 	valueColumnName string,
 	queryParts QueryParts,
 	invertCallStacks bool,
 	functionToFilterBy string,
-) ([]arrow.Record, error) {
-	res := make([]arrow.Record, len(records))
+) ([]arrow.RecordBatch, error) {
+	res := make([]arrow.RecordBatch, len(records))
 
 	for i, r := range records {
 		schema := r.Schema()
@@ -1010,7 +1010,7 @@ func (q *Querier) SymbolizeArrowRecord(
 		columns[len(columns)-2] = timestampColumn
 		columns[len(columns)-1] = durationColumn
 
-		res[i] = array.NewRecord(profile.ArrowSchema(profileLabels), columns, r.NumRows())
+		res[i] = array.NewRecordBatch(profile.ArrowSchema(profileLabels), columns, r.NumRows())
 	}
 
 	return res, nil
@@ -1029,7 +1029,7 @@ func (q *Querier) resolveStacks(
 	stacktraceColumn *array.List,
 	invertCallStacks bool,
 	functionToFilterBy string,
-) (arrow.Record, error) {
+) (arrow.RecordBatch, error) {
 	functionToFilterByBytes := []byte(functionToFilterBy)
 
 	w := profile.NewLocationsWriter(q.pool)
@@ -1174,7 +1174,7 @@ func (q *Querier) resolveStacks(
 		}
 	}
 
-	return w.RecordBuilder.NewRecord(), nil
+	return w.RecordBuilder.NewRecordBatch(), nil
 }
 
 type MappingLocations struct {
@@ -1320,7 +1320,7 @@ func (q *Querier) QuerySingle(
 	}, nil
 }
 
-func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]arrow.Record, string, QueryParts, error) {
+func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]arrow.RecordBatch, string, QueryParts, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/findSingle")
 	span.SetAttributes(attribute.String("query", query))
 	span.SetAttributes(attribute.Int64("time", t.Unix()))
@@ -1369,7 +1369,7 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]
 		aggrFunctions = append(aggrFunctions, durationSum)
 	}
 
-	records := []arrow.Record{}
+	records := []arrow.RecordBatch{}
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Project(firstProject...).
@@ -1378,7 +1378,7 @@ func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]
 			aggrCols,
 		).
 		Project(finalProject...).
-		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
+		Execute(ctx, func(ctx context.Context, r arrow.RecordBatch) error {
 			r.Retain()
 			records = append(records, r)
 			return nil
@@ -1440,7 +1440,7 @@ func (q *Querier) selectMerge(
 	startTime,
 	endTime time.Time,
 	groupByLabels []string,
-) ([]arrow.Record, string, QueryParts, error) {
+) ([]arrow.RecordBatch, string, QueryParts, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/selectMerge")
 	defer span.End()
 
@@ -1513,7 +1513,7 @@ func (q *Querier) selectMerge(
 		)
 	}
 
-	records := []arrow.Record{}
+	records := []arrow.RecordBatch{}
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Project(firstProject...).
@@ -1522,7 +1522,7 @@ func (q *Querier) selectMerge(
 			columnsGroupBy,
 		).
 		Project(finalProject...).
-		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
+		Execute(ctx, func(ctx context.Context, r arrow.RecordBatch) error {
 			r.Retain()
 			records = append(records, r)
 			return nil
@@ -1567,7 +1567,7 @@ func (q *Querier) GetProfileMetadataMappings(
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Distinct(logicalplan.Col("stacktrace")).
-		Execute(ctx, func(ctx context.Context, r arrow.Record) error {
+		Execute(ctx, func(ctx context.Context, r arrow.RecordBatch) error {
 			r.Retain()
 
 			locations := r.Column(0).(*array.List)
@@ -1632,7 +1632,7 @@ func (q *Querier) GetProfileMetadataLabels(
 	err = q.engine.ScanTable(q.tableName).
 		Filter(filterExpr).
 		Distinct(logicalplan.DynCol("labels")).
-		Execute(ctx, func(ctx context.Context, ar arrow.Record) error {
+		Execute(ctx, func(ctx context.Context, ar arrow.RecordBatch) error {
 			for i, field := range ar.Schema().Fields() {
 				nulls := ar.Column(i).NullN()
 				rows := int(ar.NumRows())
