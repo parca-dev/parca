@@ -11,7 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {createContext, useContext, useMemo} from 'react';
+import {createContext, useCallback, useContext, useMemo} from 'react';
+
+import {useQueryClient} from '@tanstack/react-query';
 
 import {QueryServiceClient} from '@parca/client';
 
@@ -29,6 +31,7 @@ interface LabelContextValue {
   labelNameOptions: LabelNameSection[];
   isLoading: boolean;
   error: Error | null;
+  refetchLabelValues: () => void;
 }
 
 const LabelContext = createContext<LabelContextValue | null>(null);
@@ -53,6 +56,7 @@ export function LabelProvider({
   start,
   end,
 }: LabelProviderProps): JSX.Element {
+  const reactQueryClient = useQueryClient();
   const utilizationLabelResponse = useUtilizationLabels();
   const {loading, result} = useLabelNames(queryClient, profileType, start, end);
 
@@ -131,7 +135,29 @@ export function LabelProvider({
     };
   }, [profileValues, utilizationValues, labelNameFromMatchers]);
 
-  return <LabelContext.Provider value={value}>{children}</LabelContext.Provider>;
+  const refetchLabelValues = useCallback(() => {
+    void reactQueryClient.refetchQueries({
+      predicate: query => {
+        const key = query.queryKey;
+        return (
+          Array.isArray(key) &&
+          key.length === 4 &&
+          typeof key[0] === 'string' &&
+          key[1] === profileType
+        );
+      },
+    });
+  }, [reactQueryClient, profileType]);
+
+  const contextValue = useMemo(
+    () => ({
+      ...value,
+      refetchLabelValues,
+    }),
+    [value, refetchLabelValues]
+  );
+
+  return <LabelContext.Provider value={contextValue}>{children}</LabelContext.Provider>;
 }
 
 export function useLabels(): LabelContextValue {

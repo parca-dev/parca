@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {useState} from 'react';
+
 import {Switch} from '@headlessui/react';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 import Select, {type SelectInstance} from 'react-select';
@@ -93,6 +95,7 @@ export function QueryControls({
   profileTypesError,
 }: QueryControlsProps): JSX.Element {
   const {timezone} = useParcaContext();
+  const [searchExecutedTimestamp, setSearchExecutedTimestamp] = useState<number>(0);
 
   return (
     <div
@@ -180,7 +183,6 @@ export function QueryControls({
           />
         ) : (
           <SimpleMatchers
-            key={query.toString()}
             setMatchersString={setMatchersString}
             runQuery={setQueryExpression}
             currentQuery={query}
@@ -189,6 +191,7 @@ export function QueryControls({
             queryClient={queryClient}
             start={timeRangeSelection.getFromMs()}
             end={timeRangeSelection.getToMs()}
+            searchExecutedTimestamp={searchExecutedTimestamp}
           />
         )}
       </div>
@@ -261,6 +264,7 @@ export function QueryControls({
           disabled={searchDisabled}
           onClick={(e: React.MouseEvent<HTMLElement>) => {
             e.preventDefault();
+            setSearchExecutedTimestamp(Date.now());
             setQueryExpression(true);
           }}
           id="h-matcher-search-button"

@@ -73,7 +73,7 @@ export const useLabelNames = (
     },
     options: {
       enabled: profileType !== undefined && profileType !== '',
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 1000 * 60 * 2, // 2 minutes
       keepPreviousData: false,
     },
   });
@@ -116,8 +116,8 @@ export const useLabelValues = (
         profileType !== '' &&
         labelName !== undefined &&
         labelName !== '',
-      staleTime: 1000 * 30,
-      keepPreviousData: true,
+      staleTime: 1000 * 60 * 2, // 2 minutes
+      keepPreviousData: false,
     },
   });
 
@@ -137,8 +137,10 @@ export const useFetchUtilizationLabelValues = (
   const {data} = useQuery({
     queryKey: ['utilizationLabelValues', labelName],
     queryFn: async () => {
-      return await utilizationLabels?.utilizationFetchLabelValues?.(labelName);
+      const result = await utilizationLabels?.utilizationFetchLabelValues?.(labelName);
+      return result ?? [];
     },
+    enabled: utilizationLabels?.utilizationFetchLabelValues != null && labelName !== '',
   });
 
   return data ?? [];
@@ -162,6 +164,7 @@ const MatchersInput = ({
     currentLabelName,
     setCurrentLabelName,
     shouldHandlePrefixes,
+    refetchLabelValues,
   } = useLabels();
 
   const value = currentQuery.matchersString();
@@ -334,6 +337,7 @@ const MatchersInput = ({
         focusedInput={focusedInput}
         isLabelValuesLoading={isLabelValuesLoading && lastCompleted.type === 'literal'}
         shouldTrimPrefix={shouldHandlePrefixes}
+        refetchLabelValues={refetchLabelValues}
       />
     </div>
   );
