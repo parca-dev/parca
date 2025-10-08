@@ -426,7 +426,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
                       closeDropdown={close}
                       activeValueForSortBy={storeSortBy as string}
                       activeValueForColorBy={
-                        colorBy === undefined || colorBy === '' ? 'binary' : (colorBy as string)
+                        colorBy === undefined || colorBy === '' ? 'binary' : colorBy
                       }
                       activeValuesForLevel={groupBy}
                       renderAsDiv={item.renderAsDiv}
