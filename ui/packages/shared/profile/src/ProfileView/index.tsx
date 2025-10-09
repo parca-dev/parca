@@ -60,11 +60,14 @@ export const ProfileView = ({
     setCurPathArrow,
     colorStackLegend,
     colorBy,
+    setColorBy,
     groupBy,
     toggleGroupBy,
     setGroupByLabels,
     sandwichFunctionName,
     resetSandwichFunctionName,
+    alignFunctionName,
+    setAlignFunctionName,
   } = useVisualizationState();
 
   const {colorMappings} = useProfileMetadata({
@@ -148,6 +151,10 @@ export const ProfileView = ({
             setGroupByLabels={setGroupByLabels}
             showVisualizationSelector={showVisualizationSelector}
             sandwichFunctionName={sandwichFunctionName}
+            alignFunctionName={alignFunctionName}
+            setAlignFunctionName={setAlignFunctionName}
+            colorBy={colorBy}
+            setColorBy={setColorBy}
           />
 
           {isColorStackLegendEnabled && (

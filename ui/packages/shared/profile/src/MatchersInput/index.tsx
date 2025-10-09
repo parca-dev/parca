@@ -73,7 +73,6 @@ export const useLabelNames = (
     },
     options: {
       enabled: profileType !== undefined && profileType !== '',
-      staleTime: 1000 * 60 * 5, // 5 minutes
       keepPreviousData: false,
     },
   });
@@ -87,6 +86,7 @@ interface UseLabelValues {
     error?: Error;
   };
   loading: boolean;
+  refetch: () => void;
 }
 
 export const useLabelValues = (
@@ -98,7 +98,7 @@ export const useLabelValues = (
 ): UseLabelValues => {
   const metadata = useGrpcMetadata();
 
-  const {data, isLoading, error} = useGrpcQuery<string[]>({
+  const {data, isLoading, error, refetch} = useGrpcQuery<string[]>({
     key: ['labelValues', labelName, profileType, start, end],
     queryFn: async signal => {
       const request: ValuesRequest = {labelName, match: [], profileType};
@@ -115,12 +115,17 @@ export const useLabelValues = (
         profileType !== '' &&
         labelName !== undefined &&
         labelName !== '',
-      staleTime: 1000 * 60 * 5, // 5 minutes
       keepPreviousData: false,
     },
   });
 
-  return {result: {response: data ?? [], error: error as Error}, loading: isLoading};
+  return {
+    result: {response: data ?? [], error: error as Error},
+    loading: isLoading,
+    refetch: () => {
+      void refetch();
+    },
+  };
 };
 
 export const useFetchUtilizationLabelValues = (
@@ -130,8 +135,10 @@ export const useFetchUtilizationLabelValues = (
   const {data} = useQuery({
     queryKey: ['utilizationLabelValues', labelName],
     queryFn: async () => {
-      return await utilizationLabels?.utilizationFetchLabelValues?.(labelName);
+      const result = await utilizationLabels?.utilizationFetchLabelValues?.(labelName);
+      return result ?? [];
     },
+    enabled: utilizationLabels?.utilizationFetchLabelValues != null && labelName !== '',
   });
 
   return data ?? [];
@@ -155,6 +162,7 @@ const MatchersInput = ({
     currentLabelName,
     setCurrentLabelName,
     shouldHandlePrefixes,
+    refetchLabelValues,
   } = useLabels();
 
   const value = currentQuery.matchersString();
@@ -327,6 +335,7 @@ const MatchersInput = ({
         focusedInput={focusedInput}
         isLabelValuesLoading={isLabelValuesLoading && lastCompleted.type === 'literal'}
         shouldTrimPrefix={shouldHandlePrefixes}
+        refetchLabelValues={refetchLabelValues}
       />
     </div>
   );

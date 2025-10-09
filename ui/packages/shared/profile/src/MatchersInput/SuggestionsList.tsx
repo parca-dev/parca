@@ -14,6 +14,8 @@
 import {Fragment, useCallback, useEffect, useState} from 'react';
 
 import {Transition} from '@headlessui/react';
+import {Icon} from '@iconify/react';
+import cx from 'classnames';
 import {usePopper} from 'react-popper';
 
 import {useParcaContext} from '@parca/components';
@@ -53,6 +55,7 @@ interface Props {
   isLabelNamesLoading: boolean;
   isLabelValuesLoading: boolean;
   shouldTrimPrefix: boolean;
+  refetchLabelValues: () => void;
 }
 
 const LoadingSpinner = (): JSX.Element => {
@@ -75,6 +78,7 @@ const SuggestionsList = ({
   isLabelNamesLoading,
   isLabelValuesLoading,
   shouldTrimPrefix = false,
+  refetchLabelValues,
 }: Props): JSX.Element => {
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
   const {styles, attributes} = usePopper(inputRef, popperElement, {
@@ -82,6 +86,18 @@ const SuggestionsList = ({
   });
   const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] = useState<number>(-1);
   const [showSuggest, setShowSuggest] = useState(true);
+  const [isRefetching, setIsRefetching] = useState(false);
+
+  const handleRefetch = useCallback(async () => {
+    if (isRefetching) return;
+
+    setIsRefetching(true);
+    try {
+      await refetchLabelValues();
+    } finally {
+      setIsRefetching(false);
+    }
+  }, [refetchLabelValues, isRefetching]);
 
   const suggestionsLength =
     suggestions.literals.length + suggestions.labelNames.length + suggestions.labelValues.length;
@@ -231,43 +247,106 @@ const SuggestionsList = ({
               style={{width: inputRef?.offsetWidth}}
               className="absolute z-10 mt-1 max-h-[400px] overflow-auto rounded-md bg-gray-50 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-900 sm:text-sm"
             >
-              {isLabelNamesLoading ? (
-                <LoadingSpinner />
-              ) : (
-                <>
-                  {suggestions.labelNames.map((l, i) => (
-                    <SuggestionItem
-                      isHighlighted={highlightedSuggestionIndex === i}
-                      onHighlight={() => setHighlightedSuggestionIndex(i)}
-                      onApplySuggestion={() => applySuggestionWithIndex(i)}
-                      onResetHighlight={() => resetHighlight()}
-                      value={transformLabelsForSuggestions(l.value, shouldTrimPrefix)}
-                      key={transformLabelsForSuggestions(l.value, shouldTrimPrefix)}
-                    />
-                  ))}
-                </>
-              )}
+              <div className="relative pb-12">
+                {isLabelNamesLoading ? (
+                  <LoadingSpinner />
+                ) : (
+                  <>
+                    {suggestions.labelNames.map((l, i) => (
+                      <SuggestionItem
+                        isHighlighted={highlightedSuggestionIndex === i}
+                        onHighlight={() => setHighlightedSuggestionIndex(i)}
+                        onApplySuggestion={() => applySuggestionWithIndex(i)}
+                        onResetHighlight={() => resetHighlight()}
+                        value={transformLabelsForSuggestions(l.value, shouldTrimPrefix)}
+                        key={transformLabelsForSuggestions(l.value, shouldTrimPrefix)}
+                      />
+                    ))}
+                  </>
+                )}
 
-              {suggestions.literals.map((l, i) => (
-                <SuggestionItem
-                  isHighlighted={highlightedSuggestionIndex === i + suggestions.labelNames.length}
-                  onHighlight={() =>
-                    setHighlightedSuggestionIndex(i + suggestions.labelNames.length)
-                  }
-                  onApplySuggestion={() =>
-                    applySuggestionWithIndex(i + suggestions.labelNames.length)
-                  }
-                  onResetHighlight={() => resetHighlight()}
-                  value={l.value}
-                  key={l.value}
-                />
-              ))}
+                {suggestions.literals.map((l, i) => (
+                  <SuggestionItem
+                    isHighlighted={highlightedSuggestionIndex === i + suggestions.labelNames.length}
+                    onHighlight={() =>
+                      setHighlightedSuggestionIndex(i + suggestions.labelNames.length)
+                    }
+                    onApplySuggestion={() =>
+                      applySuggestionWithIndex(i + suggestions.labelNames.length)
+                    }
+                    onResetHighlight={() => resetHighlight()}
+                    value={l.value}
+                    key={l.value}
+                  />
+                ))}
 
-              {isLabelValuesLoading ? (
-                <LoadingSpinner />
-              ) : (
-                <>
-                  {suggestions.labelValues.map((l, i) => (
+                {isLabelValuesLoading ? (
+                  <LoadingSpinner />
+                ) : suggestions.labelNames.length === 0 && suggestions.literals.length === 0 ? (
+                  <>
+                    {suggestions.labelValues.length === 0 ? (
+                      <div
+                        className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center"
+                        data-testid="suggestions-no-results"
+                      >
+                        No label values found
+                      </div>
+                    ) : (
+                      suggestions.labelValues.map((l, i) => (
+                        <SuggestionItem
+                          isHighlighted={
+                            highlightedSuggestionIndex ===
+                            i + suggestions.labelNames.length + suggestions.literals.length
+                          }
+                          onHighlight={() =>
+                            setHighlightedSuggestionIndex(
+                              i + suggestions.labelNames.length + suggestions.literals.length
+                            )
+                          }
+                          onApplySuggestion={() =>
+                            applySuggestionWithIndex(
+                              i + suggestions.labelNames.length + suggestions.literals.length
+                            )
+                          }
+                          onResetHighlight={() => resetHighlight()}
+                          value={l.value}
+                          key={l.value}
+                        />
+                      ))
+                    )}
+                    <div className="absolute w-full flex items-center justify-center bottom-0 px-3 py-2 bg-gray-50 dark:bg-gray-800">
+                      <button
+                        onClick={e => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          void handleRefetch();
+                        }}
+                        disabled={isRefetching}
+                        className={cx(
+                          'p-1 flex items-center gap-1 rounded-full transition-all duration-200 w-auto justify-center',
+                          isRefetching
+                            ? 'cursor-wait opacity-50'
+                            : 'hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer'
+                        )}
+                        title="Refresh label values"
+                        type="button"
+                        data-testid="suggestions-refresh-button"
+                      >
+                        <Icon
+                          icon="system-uicons:reset"
+                          className={cx(
+                            'w-3 h-3 text-gray-500 dark:text-gray-400',
+                            isRefetching && 'animate-spin'
+                          )}
+                        />
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          Refresh results
+                        </span>
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  suggestions.labelValues.map((l, i) => (
                     <SuggestionItem
                       isHighlighted={
                         highlightedSuggestionIndex ===
@@ -287,9 +366,9 @@ const SuggestionsList = ({
                       value={l.value}
                       key={l.value}
                     />
-                  ))}
-                </>
-              )}
+                  ))
+                )}
+              </div>
             </div>
           </Transition>
         </div>

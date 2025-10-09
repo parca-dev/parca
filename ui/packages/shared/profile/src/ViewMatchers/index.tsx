@@ -108,26 +108,26 @@ const ViewMatchers: React.FC<Props> = ({
     [queryClient, metadata, profileType, start, end]
   );
 
-  useEffect(() => {
-    const fetchAllLabelValues = async (): Promise<void> => {
-      const newLabelValuesMap: Record<string, string[]> = {};
-      const newIsLoading: Record<string, boolean> = {};
+  const fetchAllLabelValues = useCallback(async (): Promise<void> => {
+    const newLabelValuesMap: Record<string, string[]> = {};
+    const newIsLoading: Record<string, boolean> = {};
 
-      for (const labelName of labelNames) {
-        newIsLoading[labelName] = true;
-        setIsLoading(prev => ({...prev, [labelName]: true}));
+    for (const labelName of labelNames) {
+      newIsLoading[labelName] = true;
+      setIsLoading(prev => ({...prev, [labelName]: true}));
 
-        const values = await fetchLabelValues(labelName);
-        newLabelValuesMap[labelName] = values;
-        newIsLoading[labelName] = false;
-      }
+      const values = await fetchLabelValues(labelName);
+      newLabelValuesMap[labelName] = values;
+      newIsLoading[labelName] = false;
+    }
 
-      setLabelValuesMap(newLabelValuesMap);
-      setIsLoading(newIsLoading);
-    };
-
-    void fetchAllLabelValues();
+    setLabelValuesMap(newLabelValuesMap);
+    setIsLoading(newIsLoading);
   }, [labelNames, fetchLabelValues]);
+
+  useEffect(() => {
+    void fetchAllLabelValues();
+  }, [fetchAllLabelValues]);
 
   const updateMatcherString = useCallback(() => {
     const matcherParts = Object.entries(selectionsRef.current)

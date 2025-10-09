@@ -50,6 +50,10 @@ export interface VisualisationToolbarProps {
   setGroupByLabels: (labels: string[]) => void;
   showVisualizationSelector?: boolean;
   sandwichFunctionName?: string;
+  alignFunctionName: string;
+  setAlignFunctionName: (align: string) => void;
+  colorBy: string;
+  setColorBy: (colorBy: string) => void;
 }
 
 export interface TableToolbarProps {
@@ -139,6 +143,10 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   total,
   filtered,
   showVisualizationSelector = true,
+  alignFunctionName,
+  setAlignFunctionName,
+  colorBy,
+  setColorBy,
 }) => {
   const {dashboardItems} = useDashboard();
 
@@ -183,6 +191,10 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
             profileType={profileType}
             onSelect={() => {}}
             isTableVizOnly={isTableVizOnly}
+            alignFunctionName={alignFunctionName}
+            setAlignFunctionName={setAlignFunctionName}
+            colorBy={colorBy}
+            setColorBy={setColorBy}
           />
 
           <ShareButton

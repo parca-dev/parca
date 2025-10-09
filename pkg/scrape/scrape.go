@@ -76,6 +76,7 @@ func newScrapePool(
 	store profilepb.ProfileStoreServiceServer,
 	logger log.Logger,
 	externalLabels labels.Labels,
+	sampleCount prometheus.Counter,
 	metrics *scrapePoolMetrics,
 ) *scrapePool {
 	if logger == nil {
@@ -109,6 +110,7 @@ func newScrapePool(
 			log.With(logger, "target", t),
 			externalLabels,
 			sp.metrics.targetIntervalLength,
+			sampleCount,
 			buffers,
 			store,
 			cfg.NormalizedAddresses,
@@ -370,6 +372,7 @@ type scrapeLoop struct {
 	scraper        scraper
 	l              log.Logger
 	intervalLength *prometheus.SummaryVec
+	sampleCount    prometheus.Counter
 	lastScrapeSize int
 	externalLabels labels.Labels
 
@@ -390,6 +393,7 @@ func newScrapeLoop(ctx context.Context,
 	l log.Logger,
 	externalLabels labels.Labels,
 	targetIntervalLength *prometheus.SummaryVec,
+	sampleCount prometheus.Counter,
 	buffers *pool.Pool,
 	store profilepb.ProfileStoreServiceServer,
 	normalizedAddresses bool,
@@ -409,6 +413,7 @@ func newScrapeLoop(ctx context.Context,
 		l:                   l,
 		externalLabels:      externalLabels,
 		intervalLength:      targetIntervalLength,
+		sampleCount:         sampleCount,
 		ctx:                 ctx,
 		normalizedAddresses: normalizedAddresses,
 	}
@@ -532,6 +537,8 @@ func processScrapeResp(buf *bytes.Buffer, sl *scrapeLoop, profileType string) er
 		level.Error(sl.l).Log("msg", "failed to parse profile data", "err", err)
 		return err
 	}
+
+	sl.sampleCount.Add(float64(len(p.Sample)))
 
 	var executableInfo []*profilepb.ExecutableInfo
 	for _, comment := range p.Comments {

@@ -14,6 +14,7 @@
 import {useCallback, useMemo} from 'react';
 
 import {JSONParser, JSONSerializer, useURLState, useURLStateCustom} from '@parca/components';
+import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 
 import {
   FIELD_FUNCTION_FILE_NAME,
@@ -38,14 +39,28 @@ export const useVisualizationState = (): {
   sandwichFunctionName: string | undefined;
   setSandwichFunctionName: (sandwichFunctionName: string | undefined) => void;
   resetSandwichFunctionName: () => void;
+  alignFunctionName: string;
+  setAlignFunctionName: (align: string) => void;
 } => {
+  const [colorByPreference, setColorByPreference] = useUserPreference<string>(
+    USER_PREFERENCES.COLOR_BY.key
+  );
+  const [alignFunctionNamePreference, setAlignFunctionNamePreference] = useUserPreference<string>(
+    USER_PREFERENCES.ALIGN_FUNCTION_NAME.key
+  );
+
   const [curPathArrow, setCurPathArrow] = useURLStateCustom<CurrentPathFrame[]>('cur_path', {
     parse: JSONParser<CurrentPathFrame[]>,
     stringify: JSONSerializer,
     defaultValue: '[]',
   });
   const [colorStackLegend] = useURLState<string | undefined>('color_stack_legend');
-  const [colorBy, setColorBy] = useURLState('color_by');
+  const [colorBy, setStoreColorBy] = useURLState('color_by', {
+    defaultValue: colorByPreference,
+  });
+  const [alignFunctionName, setStoreAlignFunctionName] = useURLState('align_function_name', {
+    defaultValue: alignFunctionNamePreference,
+  });
   const [groupBy, setStoreGroupBy] = useURLState<string[]>('group_by', {
     defaultValue: [FIELD_FUNCTION_NAME],
     alwaysReturnArray: true,
@@ -99,6 +114,22 @@ export const useVisualizationState = (): {
     setSandwichFunctionName(undefined);
   }, [setSandwichFunctionName]);
 
+  const setColorBy = useCallback(
+    (value: string): void => {
+      setStoreColorBy(value);
+      setColorByPreference(value);
+    },
+    [setStoreColorBy, setColorByPreference]
+  );
+
+  const setAlignFunctionName = useCallback(
+    (value: string): void => {
+      setStoreAlignFunctionName(value);
+      setAlignFunctionNamePreference(value);
+    },
+    [setStoreAlignFunctionName, setAlignFunctionNamePreference]
+  );
+
   return {
     curPathArrow,
     setCurPathArrow,
@@ -112,5 +143,7 @@ export const useVisualizationState = (): {
     sandwichFunctionName,
     setSandwichFunctionName,
     resetSandwichFunctionName,
+    alignFunctionName: (alignFunctionName as string) ?? 'left',
+    setAlignFunctionName,
   };
 };
