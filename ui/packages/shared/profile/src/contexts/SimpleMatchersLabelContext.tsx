@@ -32,6 +32,7 @@ interface LabelContextValue {
   isLoading: boolean;
   error: Error | null;
   refetchLabelValues: () => void;
+  refetchLabelNames: () => void;
 }
 
 const LabelContext = createContext<LabelContextValue | null>(null);
@@ -58,7 +59,11 @@ export function LabelProvider({
 }: LabelProviderProps): JSX.Element {
   const reactQueryClient = useQueryClient();
   const utilizationLabelResponse = useUtilizationLabels();
-  const {loading, result} = useLabelNames(queryClient, profileType, start, end);
+  const {
+    loading,
+    result,
+    refetch: refetchLabelNamesQuery,
+  } = useLabelNames(queryClient, profileType, start, end);
 
   const profileValues = useMemo(() => {
     const profileLabelNames =
@@ -149,12 +154,17 @@ export function LabelProvider({
     });
   }, [reactQueryClient, profileType]);
 
+  const refetchLabelNames = useCallback(() => {
+    refetchLabelNamesQuery();
+  }, [refetchLabelNamesQuery]);
+
   const contextValue = useMemo(
     () => ({
       ...value,
       refetchLabelValues,
+      refetchLabelNames,
     }),
-    [value, refetchLabelValues]
+    [value, refetchLabelValues, refetchLabelNames]
   );
 
   return <LabelContext.Provider value={contextValue}>{children}</LabelContext.Provider>;

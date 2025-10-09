@@ -203,7 +203,12 @@ const SimpleMatchers = ({
     [setMatchersString]
   );
 
-  const {labelNameOptions, isLoading: labelNamesLoading, refetchLabelValues} = useLabels();
+  const {
+    labelNameOptions,
+    isLoading: labelNamesLoading,
+    refetchLabelValues,
+    refetchLabelNames,
+  } = useLabels();
 
   // Helper to ensure selected label name is in the options (for page load before API returns)
   const getLabelNameOptionsWithSelected = useCallback(
@@ -451,6 +456,8 @@ const SimpleMatchers = ({
             loading={labelNamesLoading}
             searchable={true}
             {...testId(TEST_IDS.LABEL_NAME_SELECT)}
+            refetchLabelValues={refetchLabelNames}
+            hasRefreshButton={true}
           />
           <Select
             items={operatorOptions}
