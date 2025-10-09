@@ -456,7 +456,7 @@ const SimpleMatchers = ({
             loading={labelNamesLoading}
             searchable={true}
             {...testId(TEST_IDS.LABEL_NAME_SELECT)}
-            refetchLabelValues={refetchLabelNames}
+            refetchValues={refetchLabelNames}
             hasRefreshButton={true}
           />
           <Select
@@ -485,7 +485,7 @@ const SimpleMatchers = ({
             onButtonClick={() => handleLabelValueClick(index)}
             editable={isRowRegex(row)}
             {...testId(TEST_IDS.LABEL_VALUE_SELECT)}
-            refetchLabelValues={refetchLabelValues}
+            refetchValues={refetchLabelValues}
             showLoadingInButton={true}
             hasRefreshButton={true}
           />

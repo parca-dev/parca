@@ -56,7 +56,7 @@ interface CustomSelectProps {
   searchable?: boolean;
   onButtonClick?: () => void;
   editable?: boolean;
-  refetchLabelValues?: () => void;
+  refetchValues?: () => void;
   showLoadingInButton?: boolean;
   hasRefreshButton?: boolean;
 }
@@ -77,7 +77,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   searchable = false,
   onButtonClick,
   editable = false,
-  refetchLabelValues,
+  refetchValues,
   showLoadingInButton = false,
   hasRefreshButton = false,
 }) => {
@@ -92,15 +92,15 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   const optionRefs = useRef<Array<HTMLElement | null>>([]);
 
   const handleRefetch = useCallback(async () => {
-    if (refetchLabelValues == null || isRefetching) return;
+    if (refetchValues == null || isRefetching) return;
 
     setIsRefetching(true);
     try {
-      await refetchLabelValues();
+      await refetchValues();
     } finally {
       setIsRefetching(false);
     }
-  }, [refetchLabelValues, isRefetching]);
+  }, [refetchValues, isRefetching]);
 
   let items: TypedSelectItem[] = [];
   if (itemsProp[0] != null && 'type' in itemsProp[0]) {
@@ -338,7 +338,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                 </div>
               </div>
             )}
-            {refetchLabelValues !== undefined && loading !== true && (
+            {refetchValues !== undefined && loading !== true && (
               <div className="absolute w-full flex items-center justify-center bottom-0 px-3 bg-gray-50 dark:bg-gray-900">
                 <button
                   onClick={e => {
