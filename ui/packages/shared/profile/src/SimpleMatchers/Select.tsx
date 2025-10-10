@@ -18,6 +18,7 @@ import cx from 'classnames';
 import levenshtein from 'fast-levenshtein';
 
 import {Button, DividerWithLabel, useParcaContext} from '@parca/components';
+import {TEST_IDS, testId} from '@parca/test-utils/dist/test-ids';
 
 export interface SelectElement {
   active: JSX.Element;
@@ -55,7 +56,7 @@ interface CustomSelectProps {
   searchable?: boolean;
   onButtonClick?: () => void;
   editable?: boolean;
-  refetchLabelValues?: () => void;
+  refetchValues?: () => void;
   showLoadingInButton?: boolean;
   hasRefreshButton?: boolean;
 }
@@ -76,7 +77,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   searchable = false,
   onButtonClick,
   editable = false,
-  refetchLabelValues,
+  refetchValues,
   showLoadingInButton = false,
   hasRefreshButton = false,
 }) => {
@@ -91,15 +92,15 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   const optionRefs = useRef<Array<HTMLElement | null>>([]);
 
   const handleRefetch = useCallback(async () => {
-    if (refetchLabelValues == null || isRefetching) return;
+    if (refetchValues == null || isRefetching) return;
 
     setIsRefetching(true);
     try {
-      await refetchLabelValues();
+      await refetchValues();
     } finally {
       setIsRefetching(false);
     }
-  }, [refetchLabelValues, isRefetching]);
+  }, [refetchValues, isRefetching]);
 
   let items: TypedSelectItem[] = [];
   if (itemsProp[0] != null && 'type' in itemsProp[0]) {
@@ -212,7 +213,10 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   const renderSelection = (selection: SelectItem | string | undefined): string | JSX.Element => {
     if (showLoadingInButton && loading === true && selectedKey === '') {
       return (
-        <span className="flex items-center gap-2" data-testid="label-value-loading-indicator">
+        <span
+          className="flex items-center gap-2"
+          {...testId(TEST_IDS.LABEL_VALUE_LOADING_INDICATOR)}
+        >
           <Icon icon="svg-spinners:ring-resize" className="w-4 h-4" />
           <span>Loading...</span>
         </span>
@@ -334,8 +338,8 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                 </div>
               </div>
             )}
-            {refetchLabelValues !== undefined && loading !== true && (
-              <div className="absolute w-full bottom-0 px-3 bg-gray-50 dark:bg-gray-800">
+            {refetchValues !== undefined && loading !== true && (
+              <div className="absolute w-full flex items-center justify-center bottom-0 px-3 bg-gray-50 dark:bg-gray-900">
                 <button
                   onClick={e => {
                     e.preventDefault();
@@ -344,14 +348,14 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                   }}
                   disabled={isRefetching}
                   className={cx(
-                    'p-1 flex items-center gap-1 rounded-full transition-all duration-200 w-full justify-center',
+                    'py-1 px-2 flex items-center gap-1 rounded-full transition-all duration-200 w-auto justify-center',
                     isRefetching
                       ? 'cursor-wait opacity-50'
                       : 'hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer'
                   )}
                   title="Refresh label values"
                   type="button"
-                  data-testid="label-value-refresh-button"
+                  {...testId(TEST_IDS.LABEL_VALUE_REFRESH_BUTTON)}
                 >
                   <Icon
                     icon="system-uicons:reset"
@@ -369,7 +373,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
             ) : groupedFilteredItems.length === 0 ? (
               <div
                 className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center"
-                data-testid="label-value-no-results"
+                {...testId(TEST_IDS.LABEL_VALUE_NO_RESULTS)}
               >
                 No values found
               </div>

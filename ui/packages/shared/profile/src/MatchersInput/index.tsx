@@ -46,6 +46,7 @@ export interface ILabelNamesResult {
 interface UseLabelNames {
   result: ILabelNamesResult;
   loading: boolean;
+  refetch: () => void;
 }
 
 export const useLabelNames = (
@@ -57,7 +58,7 @@ export const useLabelNames = (
 ): UseLabelNames => {
   const metadata = useGrpcMetadata();
 
-  const {data, isLoading, error} = useGrpcQuery<LabelsResponse>({
+  const {data, isLoading, error, refetch} = useGrpcQuery<LabelsResponse>({
     key: ['labelNames', profileType, match?.join(','), start, end],
     queryFn: async signal => {
       const request: LabelsRequest = {match: match !== undefined ? match : []};
@@ -77,7 +78,13 @@ export const useLabelNames = (
     },
   });
 
-  return {result: {response: data, error: error as Error}, loading: isLoading};
+  return {
+    result: {response: data, error: error as Error},
+    loading: isLoading,
+    refetch: () => {
+      void refetch();
+    },
+  };
 };
 
 interface UseLabelValues {
@@ -163,6 +170,7 @@ const MatchersInput = ({
     setCurrentLabelName,
     shouldHandlePrefixes,
     refetchLabelValues,
+    refetchLabelNames,
   } = useLabels();
 
   const value = currentQuery.matchersString();
@@ -333,9 +341,12 @@ const MatchersInput = ({
         inputRef={inputRef.current}
         runQuery={runQuery}
         focusedInput={focusedInput}
-        isLabelValuesLoading={isLabelValuesLoading && lastCompleted.type === 'literal'}
+        isLabelValuesLoading={
+          isLabelValuesLoading && lastCompleted.type === 'literal' && lastCompleted.value !== ','
+        }
         shouldTrimPrefix={shouldHandlePrefixes}
         refetchLabelValues={refetchLabelValues}
+        refetchLabelNames={refetchLabelNames}
       />
     </div>
   );

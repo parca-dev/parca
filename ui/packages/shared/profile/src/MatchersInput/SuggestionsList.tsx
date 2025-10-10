@@ -19,6 +19,7 @@ import cx from 'classnames';
 import {usePopper} from 'react-popper';
 
 import {useParcaContext} from '@parca/components';
+import {TEST_IDS, testId} from '@parca/test-utils';
 
 import SuggestionItem from './SuggestionItem';
 
@@ -56,12 +57,50 @@ interface Props {
   isLabelValuesLoading: boolean;
   shouldTrimPrefix: boolean;
   refetchLabelValues: () => void;
+  refetchLabelNames: () => void;
 }
 
 const LoadingSpinner = (): JSX.Element => {
   const {loader: Spinner} = useParcaContext();
 
   return <div className="pt-2 pb-4">{Spinner}</div>;
+};
+
+interface RefreshButtonProps {
+  onClick: () => void;
+  disabled: boolean;
+  title: string;
+  testId: string;
+}
+
+const RefreshButton = ({onClick, disabled, title, testId}: RefreshButtonProps): JSX.Element => {
+  return (
+    <div className="absolute w-full flex items-center justify-center bottom-0 px-3 py-2 bg-gray-50 dark:bg-gray-900">
+      <button
+        onClick={e => {
+          e.preventDefault();
+          e.stopPropagation();
+          onClick();
+        }}
+        disabled={disabled}
+        className={cx(
+          'py-1 px-2 flex items-center gap-1 rounded-full transition-all duration-200 w-auto justify-center',
+          disabled
+            ? 'cursor-wait opacity-50'
+            : 'hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer'
+        )}
+        title={title}
+        type="button"
+        data-testid={testId}
+      >
+        <Icon
+          icon="system-uicons:reset"
+          className={cx('w-3 h-3 text-gray-500 dark:text-gray-400', disabled && 'animate-spin')}
+        />
+        <span className="text-xs text-gray-500 dark:text-gray-400">Refresh results</span>
+      </button>
+    </div>
+  );
 };
 
 const transformLabelsForSuggestions = (labelNames: string, shouldTrimPrefix = false): string => {
@@ -79,6 +118,7 @@ const SuggestionsList = ({
   isLabelValuesLoading,
   shouldTrimPrefix = false,
   refetchLabelValues,
+  refetchLabelNames,
 }: Props): JSX.Element => {
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
   const {styles, attributes} = usePopper(inputRef, popperElement, {
@@ -86,18 +126,30 @@ const SuggestionsList = ({
   });
   const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] = useState<number>(-1);
   const [showSuggest, setShowSuggest] = useState(true);
-  const [isRefetching, setIsRefetching] = useState(false);
+  const [isRefetchingValues, setIsRefetchingValues] = useState(false);
+  const [isRefetchingNames, setIsRefetchingNames] = useState(false);
 
-  const handleRefetch = useCallback(async () => {
-    if (isRefetching) return;
+  const handleRefetchValues = useCallback(async () => {
+    if (isRefetchingValues) return;
 
-    setIsRefetching(true);
+    setIsRefetchingValues(true);
     try {
       await refetchLabelValues();
     } finally {
-      setIsRefetching(false);
+      setIsRefetchingValues(false);
     }
-  }, [refetchLabelValues, isRefetching]);
+  }, [refetchLabelValues, isRefetchingValues]);
+
+  const handleRefetchNames = useCallback(async () => {
+    if (isRefetchingNames) return;
+
+    setIsRefetchingNames(true);
+    try {
+      await refetchLabelNames();
+    } finally {
+      setIsRefetchingNames(false);
+    }
+  }, [refetchLabelNames, isRefetchingNames]);
 
   const suggestionsLength =
     suggestions.literals.length + suggestions.labelNames.length + suggestions.labelValues.length;
@@ -227,6 +279,12 @@ const SuggestionsList = ({
     };
   }, [inputRef, highlightedSuggestionIndex, suggestions, handleKeyPress, handleKeyDown]);
 
+  useEffect(() => {
+    if (suggestionsLength > 0 && focusedInput) {
+      setShowSuggest(true);
+    }
+  }, [suggestionsLength, focusedInput]);
+
   return (
     <>
       {suggestionsLength > 0 && (
@@ -247,9 +305,41 @@ const SuggestionsList = ({
               style={{width: inputRef?.offsetWidth}}
               className="absolute z-10 mt-1 max-h-[400px] overflow-auto rounded-md bg-gray-50 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-900 sm:text-sm"
             >
-              <div className="relative pb-12">
+              <div
+                className={cx('relative', {
+                  'pb-12': suggestions.labelNames.length === 0 && suggestions.literals.length === 0,
+                })}
+              >
                 {isLabelNamesLoading ? (
                   <LoadingSpinner />
+                ) : suggestions.literals.length === 0 && suggestions.labelValues.length === 0 ? (
+                  <>
+                    {suggestions.labelNames.length === 0 ? (
+                      <div
+                        className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center"
+                        {...testId(TEST_IDS.SUGGESTIONS_NO_RESULTS)}
+                      >
+                        No label names found
+                      </div>
+                    ) : (
+                      suggestions.labelNames.map((l, i) => (
+                        <SuggestionItem
+                          isHighlighted={highlightedSuggestionIndex === i}
+                          onHighlight={() => setHighlightedSuggestionIndex(i)}
+                          onApplySuggestion={() => applySuggestionWithIndex(i)}
+                          onResetHighlight={() => resetHighlight()}
+                          value={transformLabelsForSuggestions(l.value, shouldTrimPrefix)}
+                          key={transformLabelsForSuggestions(l.value, shouldTrimPrefix)}
+                        />
+                      ))
+                    )}
+                    <RefreshButton
+                      onClick={() => void handleRefetchNames()}
+                      disabled={isRefetchingNames}
+                      title="Refresh label names"
+                      testId="suggestions-refresh-names-button"
+                    />
+                  </>
                 ) : (
                   <>
                     {suggestions.labelNames.map((l, i) => (
@@ -287,7 +377,7 @@ const SuggestionsList = ({
                     {suggestions.labelValues.length === 0 ? (
                       <div
                         className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center"
-                        data-testid="suggestions-no-results"
+                        {...testId(TEST_IDS.SUGGESTIONS_NO_RESULTS)}
                       >
                         No label values found
                       </div>
@@ -314,36 +404,12 @@ const SuggestionsList = ({
                         />
                       ))
                     )}
-                    <div className="absolute w-full flex items-center justify-center bottom-0 px-3 py-2 bg-gray-50 dark:bg-gray-800">
-                      <button
-                        onClick={e => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          void handleRefetch();
-                        }}
-                        disabled={isRefetching}
-                        className={cx(
-                          'p-1 flex items-center gap-1 rounded-full transition-all duration-200 w-auto justify-center',
-                          isRefetching
-                            ? 'cursor-wait opacity-50'
-                            : 'hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer'
-                        )}
-                        title="Refresh label values"
-                        type="button"
-                        data-testid="suggestions-refresh-button"
-                      >
-                        <Icon
-                          icon="system-uicons:reset"
-                          className={cx(
-                            'w-3 h-3 text-gray-500 dark:text-gray-400',
-                            isRefetching && 'animate-spin'
-                          )}
-                        />
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          Refresh results
-                        </span>
-                      </button>
-                    </div>
+                    <RefreshButton
+                      onClick={() => void handleRefetchValues()}
+                      disabled={isRefetchingValues}
+                      title="Refresh label values"
+                      testId="suggestions-refresh-values-button"
+                    />
                   </>
                 ) : (
                   suggestions.labelValues.map((l, i) => (
