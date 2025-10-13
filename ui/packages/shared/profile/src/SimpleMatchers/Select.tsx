@@ -61,7 +61,7 @@ interface CustomSelectProps {
   hasRefreshButton?: boolean;
 }
 
-const CustomSelect: React.FC<CustomSelectProps> = ({
+const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
   items: itemsProp,
   selectedKey,
   onSelection,
@@ -80,6 +80,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   refetchValues,
   showLoadingInButton = false,
   hasRefreshButton = false,
+  ...restProps
 }) => {
   const {loader} = useParcaContext();
   const [isOpen, setIsOpen] = useState(false);
@@ -274,6 +275,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         role="button"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
+        {...restProps}
       >
         <div
           className={cx(
@@ -291,12 +293,12 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         <div
           ref={optionsRef}
           className={cx(
-            'absolute z-50 mt-1 pt-0 max-h-[50vh] w-max overflow-auto rounded-md bg-gray-50 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:ring-white dark:ring-opacity-20 sm:text-sm',
+            'absolute z-50 mt-1 max-h-[50vh] w-max overflow-auto rounded-md bg-gray-50 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:ring-white dark:ring-opacity-20 sm:text-sm',
             {[optionsClassname]: optionsClassname.length > 0}
           )}
           role="listbox"
         >
-          <div className={cx('relative', {'pb-6': hasRefreshButton})}>
+          <div className="relative flex flex-col">
             {searchable && (
               <div className="sticky z-10 top-[-5px] w-auto max-w-full">
                 <div className="flex flex-col">
@@ -338,8 +340,43 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                 </div>
               </div>
             )}
+            <div className="flex-1 min-h-0">
+              {loading === true ? (
+                <div className="w-[270px]">{loader}</div>
+              ) : groupedFilteredItems.length === 0 ? (
+                <div
+                  className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center"
+                  {...testId(TEST_IDS.LABEL_VALUE_NO_RESULTS)}
+                >
+                  No values found
+                </div>
+              ) : (
+                groupedFilteredItems.map(group => (
+                  <>
+                    {groupedFilteredItems.length > 1 &&
+                    groupedFilteredItems.every(g => g.type !== '') &&
+                    group.type !== '' ? (
+                      <div className="pl-2">
+                        <DividerWithLabel label={group.type} />
+                      </div>
+                    ) : null}
+                    {group.values.map((item, index) => (
+                      <OptionItem
+                        key={item.key}
+                        item={item}
+                        index={index}
+                        optionRefs={optionRefs}
+                        focusedIndex={focusedIndex}
+                        selectedKey={selectedKey}
+                        handleSelection={handleSelection}
+                      />
+                    ))}
+                  </>
+                ))
+              )}
+            </div>
             {refetchValues !== undefined && loading !== true && (
-              <div className="absolute w-full flex items-center justify-center bottom-0 px-3 bg-gray-50 dark:bg-gray-900">
+              <div className="sticky bottom-0 w-full flex items-center justify-center px-3 py-2 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 z-20 mt-auto">
                 <button
                   onClick={e => {
                     e.preventDefault();
@@ -367,39 +404,6 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                   <span className="text-xs text-gray-500 dark:text-gray-400">Refresh results</span>
                 </button>
               </div>
-            )}
-            {loading === true ? (
-              <div className="w-[270px]">{loader}</div>
-            ) : groupedFilteredItems.length === 0 ? (
-              <div
-                className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center"
-                {...testId(TEST_IDS.LABEL_VALUE_NO_RESULTS)}
-              >
-                No values found
-              </div>
-            ) : (
-              groupedFilteredItems.map(group => (
-                <>
-                  {groupedFilteredItems.length > 1 &&
-                  groupedFilteredItems.every(g => g.type !== '') &&
-                  group.type !== '' ? (
-                    <div className="pl-2">
-                      <DividerWithLabel label={group.type} />
-                    </div>
-                  ) : null}
-                  {group.values.map((item, index) => (
-                    <OptionItem
-                      key={item.key}
-                      item={item}
-                      index={index}
-                      optionRefs={optionRefs}
-                      focusedIndex={focusedIndex}
-                      selectedKey={selectedKey}
-                      handleSelection={handleSelection}
-                    />
-                  ))}
-                </>
-              ))
             )}
           </div>
         </div>

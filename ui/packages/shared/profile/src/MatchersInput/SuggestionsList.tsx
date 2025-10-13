@@ -75,7 +75,7 @@ interface RefreshButtonProps {
 
 const RefreshButton = ({onClick, disabled, title, testId}: RefreshButtonProps): JSX.Element => {
   return (
-    <div className="absolute w-full flex items-center justify-center bottom-0 px-3 py-2 bg-gray-50 dark:bg-gray-900">
+    <div className="sticky bottom-0 w-full flex items-center justify-center px-3 py-2 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 z-20">
       <button
         onClick={e => {
           e.preventDefault();
@@ -303,13 +303,9 @@ const SuggestionsList = ({
           >
             <div
               style={{width: inputRef?.offsetWidth}}
-              className="absolute z-10 mt-1 max-h-[400px] overflow-auto rounded-md bg-gray-50 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-900 sm:text-sm"
+              className="absolute z-10 mt-1 max-h-[400px] overflow-auto rounded-md bg-gray-50 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-900 sm:text-sm flex flex-col"
             >
-              <div
-                className={cx('relative', {
-                  'pb-12': suggestions.labelNames.length === 0 && suggestions.literals.length === 0,
-                })}
-              >
+              <div className="flex-1 min-h-0">
                 {isLabelNamesLoading ? (
                   <LoadingSpinner />
                 ) : suggestions.literals.length === 0 && suggestions.labelValues.length === 0 ? (
@@ -333,12 +329,6 @@ const SuggestionsList = ({
                         />
                       ))
                     )}
-                    <RefreshButton
-                      onClick={() => void handleRefetchNames()}
-                      disabled={isRefetchingNames}
-                      title="Refresh label names"
-                      testId="suggestions-refresh-names-button"
-                    />
                   </>
                 ) : (
                   <>
@@ -404,12 +394,6 @@ const SuggestionsList = ({
                         />
                       ))
                     )}
-                    <RefreshButton
-                      onClick={() => void handleRefetchValues()}
-                      disabled={isRefetchingValues}
-                      title="Refresh label values"
-                      testId="suggestions-refresh-values-button"
-                    />
                   </>
                 ) : (
                   suggestions.labelValues.map((l, i) => (
@@ -435,6 +419,26 @@ const SuggestionsList = ({
                   ))
                 )}
               </div>
+              {suggestions.literals.length === 0 &&
+                suggestions.labelValues.length === 0 &&
+                !isLabelNamesLoading && (
+                  <RefreshButton
+                    onClick={() => void handleRefetchNames()}
+                    disabled={isRefetchingNames}
+                    title="Refresh label names"
+                    testId="suggestions-refresh-names-button"
+                  />
+                )}
+              {suggestions.labelNames.length === 0 &&
+                suggestions.literals.length === 0 &&
+                !isLabelValuesLoading && (
+                  <RefreshButton
+                    onClick={() => void handleRefetchValues()}
+                    disabled={isRefetchingValues}
+                    title="Refresh label values"
+                    testId="suggestions-refresh-values-button"
+                  />
+                )}
             </div>
           </Transition>
         </div>
