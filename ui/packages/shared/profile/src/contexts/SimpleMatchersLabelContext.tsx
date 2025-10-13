@@ -31,7 +31,7 @@ interface LabelContextValue {
   labelNameOptions: LabelNameSection[];
   isLoading: boolean;
   error: Error | null;
-  refetchLabelValues: () => void;
+  refetchLabelValues: (labelName?: string) => void;
   refetchLabelNames: () => void;
 }
 
@@ -140,19 +140,29 @@ export function LabelProvider({
     };
   }, [profileValues, utilizationValues, labelNameFromMatchers]);
 
-  const refetchLabelValues = useCallback(() => {
-    void reactQueryClient.refetchQueries({
-      predicate: query => {
-        const key = query.queryKey;
-        return (
-          Array.isArray(key) &&
-          key.length === 4 &&
-          typeof key[0] === 'string' &&
-          key[1] === profileType
-        );
-      },
-    });
-  }, [reactQueryClient, profileType]);
+  const refetchLabelValues = useCallback(
+    (labelName?: string) => {
+      void reactQueryClient.refetchQueries({
+        predicate: query => {
+          const key = query.queryKey;
+          const matchesStructure =
+            Array.isArray(key) &&
+            key.length === 4 &&
+            typeof key[0] === 'string' &&
+            key[1] === profileType;
+
+          if (!matchesStructure) return false;
+
+          if (labelName !== undefined && labelName !== '') {
+            return key[0] === labelName;
+          }
+
+          return true;
+        },
+      });
+    },
+    [reactQueryClient, profileType]
+  );
 
   const refetchLabelNames = useCallback(() => {
     refetchLabelNamesQuery();
