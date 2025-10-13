@@ -458,7 +458,6 @@ const SimpleMatchers = ({
             searchable={true}
             {...testId(TEST_IDS.LABEL_NAME_SELECT)}
             refetchValues={refetchLabelNames}
-            hasRefreshButton={true}
           />
           <Select
             items={operatorOptions}
@@ -488,7 +487,6 @@ const SimpleMatchers = ({
             {...testId(TEST_IDS.LABEL_VALUE_SELECT)}
             refetchValues={() => refetchLabelValues(row.labelName)}
             showLoadingInButton={true}
-            hasRefreshButton={true}
           />
           <button
             onClick={() => removeRow(index)}

@@ -58,7 +58,6 @@ interface CustomSelectProps {
   editable?: boolean;
   refetchValues?: () => void;
   showLoadingInButton?: boolean;
-  hasRefreshButton?: boolean;
 }
 
 const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
@@ -79,7 +78,6 @@ const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
   editable = false,
   refetchValues,
   showLoadingInButton = false,
-  hasRefreshButton = false,
   ...restProps
 }) => {
   const {loader} = useParcaContext();
