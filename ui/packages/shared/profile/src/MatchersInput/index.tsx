@@ -78,6 +78,8 @@ export const useLabelNames = (
     },
   });
 
+  console.log('Label names query result:', {data, error, isLoading});
+
   return {
     result: {response: data, error: error as Error},
     loading: isLoading,
@@ -125,6 +127,8 @@ export const useLabelValues = (
       keepPreviousData: false,
     },
   });
+
+  console.log('Label values query result:', {data, error, isLoading, labelName});
 
   return {
     result: {response: data ?? [], error: error as Error},

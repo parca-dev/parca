@@ -172,6 +172,7 @@ const SimpleMatchers = ({
               },
               {meta: metadata}
             ).response;
+            console.log('Fetched label values:', response.labelValues);
             const sanitizedValues = sanitizeLabelValue(response.labelValues);
             return sanitizedValues;
           }
@@ -457,7 +458,6 @@ const SimpleMatchers = ({
             searchable={true}
             {...testId(TEST_IDS.LABEL_NAME_SELECT)}
             refetchValues={refetchLabelNames}
-            hasRefreshButton={true}
           />
           <Select
             items={operatorOptions}
@@ -485,9 +485,8 @@ const SimpleMatchers = ({
             onButtonClick={() => handleLabelValueClick(index)}
             editable={isRowRegex(row)}
             {...testId(TEST_IDS.LABEL_VALUE_SELECT)}
-            refetchValues={refetchLabelValues}
+            refetchValues={() => refetchLabelValues(row.labelName)}
             showLoadingInButton={true}
-            hasRefreshButton={true}
           />
           <button
             onClick={() => removeRow(index)}
