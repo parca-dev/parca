@@ -26,6 +26,7 @@ import {
 import {type NavigateFunction} from '@parca/utilities';
 
 import {getQueryParamsFromURL, sanitize, type ParamValue} from './utils';
+import { compressParam, decompressParam } from './compression';
 
 export type ParamValueSetter = (val: ParamValue) => void;
 
@@ -154,6 +155,69 @@ export const useURLStateCustom = <T,>(
   );
 
   return [val, setVal];
+};
+
+export interface OptionsCompressed<T> {
+  parse?: (val: string) => T;
+  stringify?: (val: T) => string;
+}
+
+/**
+ * Hook for URL state with automatic LZ4 compression/decompression
+ *
+ * This hook automatically compresses values when writing to the URL and
+ * decompresses when reading. Useful for large parameter values like JSON objects.
+ *
+ * If parse/stringify options are provided, the flow is:
+ * - Writing: value -> stringify (if provided) -> compress -> URL
+ * - Reading: URL -> decompress -> parse (if provided) -> value
+ *
+ * @example
+ * // Simple string compression
+ * const [config, setConfig] = useURLStateCompressed('config');
+ * setConfig(JSON.stringify({filters: [...], groupBy: [...]}));
+ *
+ * @example
+ * // With custom parse/stringify
+ * const [filters, setFilters] = useURLStateCompressed<Filter[]>('filters', {
+ *   parse: (str) => JSON.parse(str),
+ *   stringify: (val) => JSON.stringify(val)
+ * });
+ */
+export const useURLStateCompressed = <T,>(
+  param: string,
+  options?: Options & OptionsCompressed<T>
+): [T | undefined, (val: T) => void] => {
+  const { parse, stringify, ...urlStateOptions } = options ?? {};
+
+  return useURLStateCustom<T>(param, {
+    parse: (val: ParamValue): T => {
+      if (val == null || val === '') {
+        return (parse ? parse('') : '') as T;
+      }
+
+      // Decompress first
+      const stringVal = Array.isArray(val) ? val[0] : val;
+      const decompressed = decompressParam(stringVal);
+
+      // Then parse if parser provided
+      if (parse) {
+        return parse(decompressed);
+      }
+
+      return decompressed as T;
+    },
+    stringify: (val: T): ParamValue => {
+      if (val == null || val === '') return '';
+
+      // Stringify first if stringifier provided
+      const stringified = stringify ? stringify(val) : String(val);
+
+      // Then compress
+      return compressParam(stringified);
+    },
+    ...urlStateOptions,
+  });
 };
 
 export const JSONSerializer = (val: object): string => {
