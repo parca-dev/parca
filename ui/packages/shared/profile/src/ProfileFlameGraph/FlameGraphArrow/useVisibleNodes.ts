@@ -151,9 +151,9 @@ export const useVisibleNodes = ({
           continue;
         }
 
-        // Size culling: Skip nodes too small to be visible (< 0.1px width)
+        // Size culling: Skip nodes too small to be visible (< 1px width)
         const computedWidth = (cumulative / totalNumber) * width;
-        if (computedWidth <= 0.1) {
+        if (computedWidth <= 1) {
           continue;
         }
 
