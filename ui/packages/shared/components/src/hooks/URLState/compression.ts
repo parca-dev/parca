@@ -23,7 +23,7 @@ export const compressParam = (value: string): string => {
   const startTime = performance.now();
 
   try {
-    if (!value || value.length === 0) {
+    if (value === '' || value.length === 0) {
       return value;
     }
 
@@ -59,7 +59,7 @@ export const decompressParam = (value: string): string => {
   const startTime = performance.now();
 
   try {
-    if (!value || value.length === 0) {
+    if (value === '' || value.length === 0) {
       return value;
     }
 

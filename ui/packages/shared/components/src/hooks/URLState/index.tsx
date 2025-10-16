@@ -193,7 +193,7 @@ export const useURLStateCompressed = <T,>(
   return useURLStateCustom<T>(param, {
     parse: (val: ParamValue): T => {
       if (val == null || val === '') {
-        return (parse ? parse('') : '') as T;
+        return (parse != null ? parse('') : '') as T;
       }
 
       // Decompress first
@@ -201,7 +201,7 @@ export const useURLStateCompressed = <T,>(
       const decompressed = decompressParam(stringVal);
 
       // Then parse if parser provided
-      if (parse) {
+      if (parse != null) {
         return parse(decompressed);
       }
 
@@ -211,7 +211,7 @@ export const useURLStateCompressed = <T,>(
       if (val == null || val === '') return '';
 
       // Stringify first if stringifier provided
-      const stringified = stringify ? stringify(val) : String(val);
+      const stringified = stringify != null ? stringify(val) : String(val);
 
       // Then compress
       return compressParam(stringified);

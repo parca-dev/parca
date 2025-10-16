@@ -18,7 +18,6 @@ import {
   JSONSerializer,
   useURLState,
   useURLStateCompressed,
-  useURLStateCustom,
 } from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 
@@ -137,7 +136,7 @@ export const useVisualizationState = (): {
   );
 
   return {
-    curPathArrow,
+    curPathArrow: curPathArrow ?? [],
     setCurPathArrow,
     colorStackLegend,
     colorBy: (colorBy as string) ?? '',
