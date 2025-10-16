@@ -13,7 +13,7 @@
 
 import {useCallback, useMemo} from 'react';
 
-import {JSONParser, JSONSerializer, useURLState, useURLStateCustom} from '@parca/components';
+import {JSONParser, JSONSerializer, useURLState, useURLStateCompressed} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 
 import {
@@ -49,7 +49,7 @@ export const useVisualizationState = (): {
     USER_PREFERENCES.ALIGN_FUNCTION_NAME.key
   );
 
-  const [curPathArrow, setCurPathArrow] = useURLStateCustom<CurrentPathFrame[]>('cur_path', {
+  const [curPathArrow, setCurPathArrow] = useURLStateCompressed<CurrentPathFrame[]>('cur_path', {
     parse: JSONParser<CurrentPathFrame[]>,
     stringify: JSONSerializer,
     defaultValue: '[]',
@@ -131,7 +131,7 @@ export const useVisualizationState = (): {
   );
 
   return {
-    curPathArrow,
+    curPathArrow: curPathArrow ?? [],
     setCurPathArrow,
     colorStackLegend,
     colorBy: (colorBy as string) ?? '',
