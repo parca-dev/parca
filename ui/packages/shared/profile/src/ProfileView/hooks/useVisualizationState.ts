@@ -13,7 +13,13 @@
 
 import {useCallback, useMemo} from 'react';
 
-import {JSONParser, JSONSerializer, useURLState, useURLStateCompressed, useURLStateCustom} from '@parca/components';
+import {
+  JSONParser,
+  JSONSerializer,
+  useURLState,
+  useURLStateCompressed,
+  useURLStateCustom,
+} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 
 import {

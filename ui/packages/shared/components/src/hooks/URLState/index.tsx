@@ -25,8 +25,8 @@ import {
 
 import {type NavigateFunction} from '@parca/utilities';
 
+import {compressParam, decompressParam} from './compression';
 import {getQueryParamsFromURL, sanitize, type ParamValue} from './utils';
-import { compressParam, decompressParam } from './compression';
 
 export type ParamValueSetter = (val: ParamValue) => void;
 
@@ -188,7 +188,7 @@ export const useURLStateCompressed = <T,>(
   param: string,
   options?: Options & OptionsCompressed<T>
 ): [T | undefined, (val: T) => void] => {
-  const { parse, stringify, ...urlStateOptions } = options ?? {};
+  const {parse, stringify, ...urlStateOptions} = options ?? {};
 
   return useURLStateCustom<T>(param, {
     parse: (val: ParamValue): T => {
