@@ -44,7 +44,6 @@ export interface VisualisationToolbarProps {
   profileType?: ProfileType;
   total: bigint;
   filtered: bigint;
-  groupByLabels: string[];
   preferencesModal?: boolean;
   profileViewExternalSubActions?: React.ReactNode;
   setGroupByLabels: (labels: string[]) => void;
@@ -54,7 +53,11 @@ export interface VisualisationToolbarProps {
   setAlignFunctionName: (align: string) => void;
   colorBy: string;
   setColorBy: (colorBy: string) => void;
-  metadataRefetch?: () => void;
+  metadata: {
+    labels: string[];
+    refetch?: () => void;
+    loading: boolean;
+  };
 }
 
 export interface TableToolbarProps {
@@ -131,7 +134,6 @@ const Divider = (): JSX.Element => (
 export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   groupBy,
   toggleGroupBy,
-  groupByLabels,
   setGroupByLabels,
   profileType,
   profileSource,
@@ -148,7 +150,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   setAlignFunctionName,
   colorBy,
   setColorBy,
-  metadataRefetch,
+  metadata: {labels: groupByLabels, refetch: metadataRefetch, loading: metadataLoading},
 }) => {
   const {dashboardItems} = useDashboard();
 
@@ -175,6 +177,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
                 labels={groupByLabels}
                 setGroupByLabels={setGroupByLabels}
                 metadataRefetch={metadataRefetch}
+                metadataLoading={metadataLoading}
               />
 
               <InvertCallStack />

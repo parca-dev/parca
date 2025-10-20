@@ -60,6 +60,7 @@ export const TEST_IDS = {
   SUM_BY_CONTAINER: 'sum-by-container',
   SUM_BY_LABEL: 'sum-by-label',
   SUM_BY_SELECT: 'sum-by-select',
+  SUM_BY_SELECT_FLYOUT: 'sum-by-select-flyout',
 
   // Date Time Range Picker
   DATE_TIME_RANGE_PICKER: 'date-time-range-picker',

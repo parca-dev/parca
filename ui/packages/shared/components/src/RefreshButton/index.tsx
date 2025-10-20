@@ -28,7 +28,6 @@ const RefreshButton = ({
   disabled,
   title,
   testId,
-  loading,
   sticky = false,
 }: RefreshButtonProps): JSX.Element => {
   return (

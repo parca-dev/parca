@@ -18,7 +18,13 @@ import {RpcError} from '@protobuf-ts/runtime-rpc';
 import Select, {type SelectInstance} from 'react-select';
 
 import {ProfileTypesResponse, QueryServiceClient} from '@parca/client';
-import {Button, DateTimeRange, DateTimeRangePicker, useParcaContext} from '@parca/components';
+import {
+  Button,
+  DateTimeRange,
+  DateTimeRangePicker,
+  RefreshButton,
+  useParcaContext,
+} from '@parca/components';
 import {ProfileType, Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 
@@ -65,6 +71,7 @@ interface QueryControlsProps {
   setUserSumBySelection: (sumBy: string[]) => void;
   sumByRef: React.RefObject<SelectInstance>;
   profileType: ProfileType;
+  refreshLabelNames: () => void;
 }
 
 export function QueryControls({
@@ -93,6 +100,7 @@ export function QueryControls({
   profileType,
   showSumBySelector,
   profileTypesError,
+  refreshLabelNames,
 }: QueryControlsProps): JSX.Element {
   const {timezone} = useParcaContext();
   const [searchExecutedTimestamp, setSearchExecutedTimestamp] = useState<number>(0);
@@ -220,7 +228,16 @@ export function QueryControls({
             placeholder="Labels..."
             styles={{
               indicatorSeparator: () => ({display: 'none'}),
-              menu: provided => ({...provided, width: 'max-content', zIndex: 50}), // Setting the same zIndex as drop down menus
+              menu: provided => ({
+                ...provided,
+                marginBottom: 0,
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                marginTop: 10,
+                zIndex: 50,
+                minWidth: '320px',
+                position: 'absolute',
+              }),
+              // menu: provided => ({...provided, width: 'max-content', zIndex: 50}), // Setting the same zIndex as drop down menus
             }}
             isLoading={sumBySelectionLoading}
             isDisabled={!profileType.delta}
@@ -244,6 +261,30 @@ export function QueryControls({
                 setQueryExpression(true);
                 currentRef.blur();
               }
+            }}
+            components={{
+              // eslint-disable-next-line react/prop-types
+              MenuList: ({children, innerProps}) => (
+                <div className="flex flex-col" style={{maxHeight: '332px'}}>
+                  <div
+                    className="overflow-y-auto flex-1"
+                    {...testId(TEST_IDS.SUM_BY_SELECT_FLYOUT)}
+                    {...innerProps}
+                    // eslint-disable-next-line react/prop-types
+                    style={{...innerProps.style, fontSize: '14px'}}
+                  >
+                    {children}
+                  </div>
+                  {refreshLabelNames != null && (
+                    <RefreshButton
+                      onClick={() => void refreshLabelNames()}
+                      disabled={sumBySelectionLoading}
+                      title="Refresh label names"
+                      testId="sum-by-refresh-button"
+                    />
+                  )}
+                </div>
+              ),
             }}
           />
         </div>

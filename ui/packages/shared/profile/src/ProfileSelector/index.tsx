@@ -174,12 +174,11 @@ const ProfileSelector = ({
   const from = timeRangeSelection.getFromMs();
   const to = timeRangeSelection.getToMs();
 
-  const {loading: labelNamesLoading, result} = useLabelNames(
-    queryClient,
-    profileType.toString(),
-    from,
-    to
-  );
+  const {
+    loading: labelNamesLoading,
+    result,
+    refetch,
+  } = useLabelNames(queryClient, profileType.toString(), from, to);
   const {loading: selectedLabelNamesLoading, result: selectedLabelNamesResult} = useLabelNames(
     queryClient,
     selectedProfileType.toString(),
@@ -329,6 +328,7 @@ const ProfileSelector = ({
             profileType={profileType}
             profileTypesError={error}
             viewComponent={viewComponent}
+            refreshLabelNames={refetch}
           />
           {comparing && (
             <div>

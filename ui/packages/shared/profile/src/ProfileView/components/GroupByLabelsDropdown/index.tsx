@@ -30,6 +30,7 @@ interface Props {
   groupBy: string[];
   setGroupByLabels: (labels: string[]) => void;
   metadataRefetch?: () => void;
+  metadataLoading: boolean;
 }
 
 const GroupByLabelsDropdown = ({
@@ -37,6 +38,7 @@ const GroupByLabelsDropdown = ({
   groupBy,
   setGroupByLabels,
   metadataRefetch,
+  metadataLoading,
 }: Props): JSX.Element => {
   const [isRefetching, setIsRefetching] = useState(false);
 
@@ -98,6 +100,7 @@ const GroupByLabelsDropdown = ({
           setGroupByLabels(newValue.map(option => option.value));
         }}
         placeholder="Select labels..."
+        isLoading={metadataLoading}
         styles={{
           menu: provided => ({
             ...provided,
