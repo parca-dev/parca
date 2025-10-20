@@ -11,8 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {useCallback, useState} from 'react';
+
 import Select from 'react-select';
 
+import {RefreshButton} from '@parca/components';
 import {TEST_IDS, testId} from '@parca/test-utils';
 
 import {FIELD_LABELS} from '../../../ProfileFlameGraph/FlameGraphArrow';
@@ -26,9 +29,28 @@ interface Props {
   labels: string[];
   groupBy: string[];
   setGroupByLabels: (labels: string[]) => void;
+  metadataRefetch?: () => void;
 }
 
-const GroupByLabelsDropdown = ({labels, groupBy, setGroupByLabels}: Props): JSX.Element => {
+const GroupByLabelsDropdown = ({
+  labels,
+  groupBy,
+  setGroupByLabels,
+  metadataRefetch,
+}: Props): JSX.Element => {
+  const [isRefetching, setIsRefetching] = useState(false);
+
+  const handleRefetch = useCallback(async () => {
+    if (metadataRefetch == null || isRefetching) return;
+
+    setIsRefetching(true);
+    try {
+      await metadataRefetch();
+    } finally {
+      setIsRefetching(false);
+    }
+  }, [metadataRefetch, isRefetching]);
+
   return (
     <div className="flex flex-col relative" {...testId(TEST_IDS.GROUP_BY_CONTAINER)}>
       <div className="flex items-center justify-between">
@@ -48,14 +70,24 @@ const GroupByLabelsDropdown = ({labels, groupBy, setGroupByLabels}: Props): JSX.
         components={{
           // eslint-disable-next-line react/prop-types
           MenuList: ({children, innerProps}) => (
-            <div
-              className="overflow-y-auto"
-              {...testId(TEST_IDS.GROUP_BY_SELECT_FLYOUT)}
-              {...innerProps}
-              // eslint-disable-next-line react/prop-types
-              style={{...innerProps.style, height: '332px', maxHeight: '332px', fontSize: '14px'}}
-            >
-              {children}
+            <div className="flex flex-col" style={{maxHeight: '332px'}}>
+              <div
+                className="overflow-y-auto flex-1"
+                {...testId(TEST_IDS.GROUP_BY_SELECT_FLYOUT)}
+                {...innerProps}
+                // eslint-disable-next-line react/prop-types
+                style={{...innerProps.style, fontSize: '14px'}}
+              >
+                {children}
+              </div>
+              {metadataRefetch != null && (
+                <RefreshButton
+                  onClick={() => void handleRefetch()}
+                  disabled={isRefetching}
+                  title="Refresh label names"
+                  testId="group-by-refresh-button"
+                />
+              )}
             </div>
           ),
         }}

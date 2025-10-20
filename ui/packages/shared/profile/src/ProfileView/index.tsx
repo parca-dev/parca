@@ -155,6 +155,7 @@ export const ProfileView = ({
             setAlignFunctionName={setAlignFunctionName}
             colorBy={colorBy}
             setColorBy={setColorBy}
+            metadataRefetch={flamegraphData.metadataRefetch}
           />
 
           {isColorStackLegendEnabled && (

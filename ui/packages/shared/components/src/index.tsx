@@ -26,6 +26,7 @@ import Modal from './Modal';
 import {NoDataPrompt} from './NoDataPrompt';
 import ParcaContext from './ParcaContext';
 import Pill, {PillVariant} from './Pill';
+import RefreshButton from './RefreshButton';
 import ResponsiveSvg from './ResponsiveSvg';
 import Select, {type SelectElement, type SelectItem} from './Select';
 import FlameGraphSkeleton, {FlameActionButtonPlaceholder} from './Skeletons/FlamegraphSkeleton';
@@ -69,6 +70,7 @@ export {
   ParcaContext,
   Pill,
   ResponsiveSvg,
+  RefreshButton,
   Select,
   SourceSkeleton,
   Spinner,

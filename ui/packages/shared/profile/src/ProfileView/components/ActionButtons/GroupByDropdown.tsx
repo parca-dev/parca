@@ -19,15 +19,22 @@ interface GroupByControlsProps {
   groupBy: string[];
   labels: string[];
   setGroupByLabels: (labels: string[]) => void;
+  metadataRefetch?: () => void;
 }
 
-const GroupByControls: React.FC<GroupByControlsProps> = ({groupBy, labels, setGroupByLabels}) => {
+const GroupByControls: React.FC<GroupByControlsProps> = ({
+  groupBy,
+  labels,
+  setGroupByLabels,
+  metadataRefetch,
+}) => {
   return (
     <div className="relative flex" id="h-group-by-controls">
       <GroupByLabelsDropdown
         labels={labels}
         groupBy={groupBy}
         setGroupByLabels={setGroupByLabels}
+        metadataRefetch={metadataRefetch}
       />
     </div>
   );

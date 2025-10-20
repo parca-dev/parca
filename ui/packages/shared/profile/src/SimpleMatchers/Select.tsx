@@ -17,7 +17,7 @@ import {Icon} from '@iconify/react';
 import cx from 'classnames';
 import levenshtein from 'fast-levenshtein';
 
-import {Button, DividerWithLabel, useParcaContext} from '@parca/components';
+import {Button, DividerWithLabel, RefreshButton, useParcaContext} from '@parca/components';
 import {TEST_IDS, testId} from '@parca/test-utils/dist/test-ids';
 
 export interface SelectElement {
@@ -374,34 +374,13 @@ const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
               )}
             </div>
             {refetchValues !== undefined && loading !== true && (
-              <div className="sticky bottom-0 w-full flex items-center justify-center px-3 py-2 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 z-20 mt-auto">
-                <button
-                  onClick={e => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    void handleRefetch();
-                  }}
-                  disabled={isRefetching}
-                  className={cx(
-                    'py-1 px-2 flex items-center gap-1 rounded-full transition-all duration-200 w-auto justify-center',
-                    isRefetching
-                      ? 'cursor-wait opacity-50'
-                      : 'hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer'
-                  )}
-                  title="Refresh label values"
-                  type="button"
-                  {...testId(TEST_IDS.LABEL_VALUE_REFRESH_BUTTON)}
-                >
-                  <Icon
-                    icon="system-uicons:reset"
-                    className={cx(
-                      'w-3 h-3 text-gray-500 dark:text-gray-400',
-                      isRefetching && 'animate-spin'
-                    )}
-                  />
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Refresh results</span>
-                </button>
-              </div>
+              <RefreshButton
+                onClick={() => void handleRefetch()}
+                disabled={isRefetching}
+                title="Refresh label values"
+                testId={TEST_IDS.LABEL_VALUE_REFRESH_BUTTON}
+                sticky={true}
+              />
             )}
           </div>
         </div>

@@ -54,6 +54,7 @@ export interface VisualisationToolbarProps {
   setAlignFunctionName: (align: string) => void;
   colorBy: string;
   setColorBy: (colorBy: string) => void;
+  metadataRefetch?: () => void;
 }
 
 export interface TableToolbarProps {
@@ -147,6 +148,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   setAlignFunctionName,
   colorBy,
   setColorBy,
+  metadataRefetch,
 }) => {
   const {dashboardItems} = useDashboard();
 
@@ -172,6 +174,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
                 groupBy={groupBy}
                 labels={groupByLabels}
                 setGroupByLabels={setGroupByLabels}
+                metadataRefetch={metadataRefetch}
               />
 
               <InvertCallStack />
