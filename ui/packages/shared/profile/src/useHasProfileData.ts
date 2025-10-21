@@ -18,12 +18,17 @@ import useGrpcQuery from './useGrpcQuery';
 export const useHasProfileData = (
   client: QueryServiceClient
 ): {loading: boolean; data: boolean; error: Error | any} => {
-  const {data, loading, error} = useGrpcQuery<HasProfileDataResponse>({
+  const {data, isLoading, error} = useGrpcQuery<HasProfileDataResponse>({
     key: ['hasProfileData'],
     queryFn: async signal => {
-      return await client.hasProfileData({}, {signal});
+      try {
+        const {response} = await client.hasProfileData({}, {abort: signal});
+        return response;
+      } catch (error) {
+        throw error;
+      }
     },
   });
 
-  return {loading, data: data?.hasData ?? false, error};
+  return {loading: isLoading, data: data?.hasData ?? false, error};
 };

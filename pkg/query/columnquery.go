@@ -180,13 +180,13 @@ func (q *ColumnQueryAPI) ProfileTypes(ctx context.Context, req *pb.ProfileTypesR
 }
 
 func (q *ColumnQueryAPI) HasProfileData(ctx context.Context, req *pb.HasProfileDataRequest) (*pb.HasProfileDataResponse, error) {
-	res, err := q.ProfileTypes(ctx, &pb.ProfileTypesRequest{})
+	types, err := q.querier.ProfileTypes(ctx, time.Time{}, time.Time{})
 	if err != nil {
 		return nil, err
 	}
 
 	return &pb.HasProfileDataResponse{
-		HasData: len(res.Types) > 0,
+		HasData: len(types) > 0,
 	}, nil
 }
 
