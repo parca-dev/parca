@@ -475,16 +475,9 @@ func filterRecord(
 		}
 	}
 
-	// To keep track of which rows and frames to keep, we will build a list of row indices
-	// and the corresponding frames to keep within those rows.
-	type rowInfo struct {
-		rowIndex     int
-		framesToKeep []int // indices of frames to keep within the location list
-	}
-
-	rowsInfo := make([]rowInfo, 0)
 	originalValueSum := math.Int64.Sum(r.Value)
 
+	rowsToKeep := make([]int64, 0, int(rec.NumRows()))
 	for i := 0; i < int(rec.NumRows()); i++ {
 		lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 
@@ -509,89 +502,33 @@ func filterRecord(
 		if !keepRow {
 			continue
 		}
+		rowsToKeep = append(rowsToKeep, int64(i))
 
 		// Apply frame filters - determine which frames to keep
-		framesToKeep := make([]int, 0)
 		if lOffsetEnd-lOffsetStart > 0 {
 			for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
+				keepLocation := false
 				lineStart, lineEnd := r.Lines.ValueOffsets(j)
 				if lineStart >= lineEnd {
 					// For Unsymbolized location, check at location level only
 					if matchesAllFrameFilters(r, j, -1, frameFilters) {
-						framesToKeep = append(framesToKeep, -1)
+						keepLocation = true
 					}
 				} else {
 					// For Symbolized location, check each line/frame
 					for lineIdx := int(lineStart); lineIdx < int(lineEnd); lineIdx++ {
 						if matchesAllFrameFilters(r, j, lineIdx, frameFilters) {
-							framesToKeep = append(framesToKeep, lineIdx)
+							keepLocation = true
+						} else {
+							bitutil.ClearBit(r.Line.NullBitmapBytes(), lineIdx)
 						}
 					}
 				}
-			}
-		}
-
-		// Only keep rows that have at least one frame after filtering
-		if len(framesToKeep) > 0 {
-			rowsInfo = append(rowsInfo, rowInfo{
-				rowIndex:     i,
-				framesToKeep: framesToKeep,
-			})
-		}
-	}
-
-	if len(rowsInfo) == 0 {
-		// No rows match the filters
-		return []arrow.RecordBatch{}, originalValueSum, 0, nil
-	}
-
-	// Now apply frame filtering by nulling out non-matching frames within rows
-	for _, info := range rowsInfo {
-		lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(info.rowIndex)
-
-		// Create a set of frames to keep for quick lookup
-		keepSet := make(map[int]bool)
-		for _, frameIdx := range info.framesToKeep {
-			keepSet[frameIdx] = true
-		}
-
-		// Null out frames that don't match the filters
-		for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
-			lineStart, lineEnd := r.Lines.ValueOffsets(j)
-			allLinesFiltered := true
-
-			// Check if any line in this location is kept (or if this is unsymbolized and kept)
-			for lineIdx := int(lineStart); lineIdx < int(lineEnd); lineIdx++ {
-				if keepSet[lineIdx] {
-					allLinesFiltered = false
-					break
-				}
-			}
-			// Also check for unsymbolized case
-			if keepSet[-1] {
-				allLinesFiltered = false
-			}
-
-			// If all lines in this location are filtered out, invalidate the location
-			if allLinesFiltered {
-				bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
-			}
-
-			// Null out individual lines that are not kept
-			for lineIdx := int(lineStart); lineIdx < int(lineEnd); lineIdx++ {
-				if !keepSet[lineIdx] {
-					if r.Line.Len() > 0 {
-						bitutil.ClearBit(r.Line.NullBitmapBytes(), lineIdx)
-					}
+				if !keepLocation {
+					bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
 				}
 			}
 		}
-	}
-
-	// Extract the rows we want to keep
-	rowsToKeep := make([]int64, len(rowsInfo))
-	for i, info := range rowsInfo {
-		rowsToKeep[i] = int64(info.rowIndex)
 	}
 
 	// Split the record into slices based on the rowsToKeep
