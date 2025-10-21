@@ -11,11 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {useMemo} from 'react';
+
 import {HasProfileDataResponse, QueryServiceClient} from '@parca/client';
+import {useGrpcMetadata} from '@parca/components';
 
 import useGrpcQuery from './useGrpcQuery';
-import { useGrpcMetadata } from '@parca/components';
-import { useMemo } from 'react';
 
 export const useHasProfileData = (
   client: QueryServiceClient
