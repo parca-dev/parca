@@ -485,7 +485,7 @@ const SimpleMatchers = ({
             onButtonClick={() => handleLabelValueClick(index)}
             editable={isRowRegex(row)}
             {...testId(TEST_IDS.LABEL_VALUE_SELECT)}
-            refetchValues={() => refetchLabelValues(row.labelName)}
+            refetchValues={async () => await refetchLabelValues(row.labelName)}
             showLoadingInButton={true}
           />
           <button

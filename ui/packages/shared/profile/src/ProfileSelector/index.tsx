@@ -11,9 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Dispatch, SetStateAction, useEffect, useMemo, useRef, useState} from 'react';
+import { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState } from 'react';
 
-import {RpcError} from '@protobuf-ts/runtime-rpc';
+import { RpcError } from '@protobuf-ts/runtime-rpc';
 
 import { ProfileTypesRequest, ProfileTypesResponse, QueryServiceClient } from '@parca/client';
 import {
@@ -23,19 +23,19 @@ import {
   useParcaContext,
   useURLState,
 } from '@parca/components';
-import {CloseIcon} from '@parca/icons';
-import {Query} from '@parca/parser';
-import {TEST_IDS, testId} from '@parca/test-utils';
+import { CloseIcon } from '@parca/icons';
+import { Query } from '@parca/parser';
+import { TEST_IDS, testId } from '@parca/test-utils';
 import { millisToProtoTimestamp, type NavigateFunction } from '@parca/utilities';
 
-import {ProfileSelection} from '..';
-import {useLabelNames} from '../MatchersInput/index';
-import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
-import {UtilizationLabelsProvider} from '../contexts/UtilizationLabelsContext';
-import {useDefaultSumBy, useSumBySelection} from '../useSumBy';
-import {MetricsGraphSection} from './MetricsGraphSection';
-import {QueryControls} from './QueryControls';
-import {useAutoQuerySelector} from './useAutoQuerySelector';
+import { ProfileSelection } from '..';
+import { useLabelNames } from '../MatchersInput/index';
+import { useMetricsGraphDimensions } from '../MetricsGraph/useMetricsGraphDimensions';
+import { UtilizationLabelsProvider } from '../contexts/UtilizationLabelsContext';
+import { useDefaultSumBy, useSumBySelection } from '../useSumBy';
+import { MetricsGraphSection } from './MetricsGraphSection';
+import { QueryControls } from './QueryControls';
+import { useAutoQuerySelector } from './useAutoQuerySelector';
 import useGrpcQuery from '../useGrpcQuery';
 
 export interface QuerySelection {
@@ -151,8 +151,8 @@ const ProfileSelector = ({
   utilizationLabels,
   onUtilizationSeriesSelect,
 }: ProfileSelectorProps): JSX.Element => {
-  const {heightStyle} = useMetricsGraphDimensions(comparing, utilizationMetrics != null);
-  const {viewComponent} = useParcaContext();
+  const { heightStyle } = useMetricsGraphDimensions(comparing, utilizationMetrics != null);
+  const { viewComponent } = useParcaContext();
   const [queryBrowserMode, setQueryBrowserMode] = useURLState('query_browser_mode');
 
   const [timeRangeSelection, setTimeRangeSelection] = useState(
@@ -182,13 +182,13 @@ const ProfileSelector = ({
     error,
   } = useProfileTypes(queryClient, from, to);
 
-  const {loading: labelNamesLoading, result} = useLabelNames(
+  const { loading: labelNamesLoading, result, refetch } = useLabelNames(
     queryClient,
     profileType.toString(),
     from,
     to
   );
-  const {loading: selectedLabelNamesLoading, result: selectedLabelNamesResult} = useLabelNames(
+  const { loading: selectedLabelNamesLoading, result: selectedLabelNamesResult } = useLabelNames(
     queryClient,
     selectedProfileType.toString(),
     from,
@@ -205,12 +205,12 @@ const ProfileSelector = ({
       : selectedLabelNamesResult.response.labelNames;
   }, [selectedLabelNamesResult]);
 
-  const [sumBySelection, setUserSumBySelection, {isLoading: sumBySelectionLoading}] =
+  const [sumBySelection, setUserSumBySelection, { isLoading: sumBySelectionLoading }] =
     useSumBySelection(profileType, labelNamesLoading, labels, {
       defaultValue: querySelection.sumBy,
     });
 
-  const {defaultSumBy, isLoading: defaultSumByLoading} = useDefaultSumBy(
+  const { defaultSumBy, isLoading: defaultSumByLoading } = useDefaultSumBy(
     selectedProfileType,
     selectedLabelNamesLoading,
     selectedLabels
@@ -246,9 +246,9 @@ const ProfileSelector = ({
     const to = timeRangeSelection.getToMs(updateTs);
     const mergeParams = delta
       ? {
-          mergeFrom: (BigInt(from) * 1_000_000n).toString(),
-          mergeTo: (BigInt(to) * 1_000_000n).toString(),
-        }
+        mergeFrom: (BigInt(from) * 1_000_000n).toString(),
+        mergeTo: (BigInt(to) * 1_000_000n).toString(),
+      }
       : {};
 
     selectQuery({
@@ -292,7 +292,7 @@ const ProfileSelector = ({
     profileTypesData,
     setProfileName,
     setQueryExpression,
-    querySelection: {...querySelection, sumBy: sumBySelection},
+    querySelection: { ...querySelection, sumBy: sumBySelection },
     navigateTo,
     loading: sumBySelectionLoading,
   });
@@ -306,7 +306,7 @@ const ProfileSelector = ({
   const sumByRef = useRef(null);
 
   return (
-    <UtilizationLabelsProvider value={{...utilizationLabels}}>
+    <UtilizationLabelsProvider value={{ ...utilizationLabels }}>
       <>
         <div className="mb-2 flex">
           <QueryControls
@@ -337,6 +337,7 @@ const ProfileSelector = ({
             profileType={profileType}
             profileTypesError={error}
             viewComponent={viewComponent}
+            refreshLabelNames={refetch}
           />
           {comparing && (
             <div>

@@ -31,8 +31,8 @@ interface LabelContextValue {
   labelNameOptions: LabelNameSection[];
   isLoading: boolean;
   error: Error | null;
-  refetchLabelValues: (labelName?: string) => void;
-  refetchLabelNames: () => void;
+  refetchLabelValues: (labelName?: string) => Promise<void>;
+  refetchLabelNames: () => Promise<void>;
 }
 
 const LabelContext = createContext<LabelContextValue | null>(null);
@@ -141,8 +141,8 @@ export function LabelProvider({
   }, [profileValues, utilizationValues, labelNameFromMatchers]);
 
   const refetchLabelValues = useCallback(
-    (labelName?: string) => {
-      void reactQueryClient.refetchQueries({
+    async (labelName?: string) => {
+      await reactQueryClient.refetchQueries({
         predicate: query => {
           const key = query.queryKey;
           const matchesStructure =
@@ -164,8 +164,8 @@ export function LabelProvider({
     [reactQueryClient, profileType]
   );
 
-  const refetchLabelNames = useCallback(() => {
-    refetchLabelNamesQuery();
+  const refetchLabelNames = useCallback(async () => {
+    await refetchLabelNamesQuery();
   }, [refetchLabelNamesQuery]);
 
   const contextValue = useMemo(

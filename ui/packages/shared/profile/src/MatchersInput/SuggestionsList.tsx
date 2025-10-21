@@ -14,11 +14,9 @@
 import {Fragment, useCallback, useEffect, useState} from 'react';
 
 import {Transition} from '@headlessui/react';
-import {Icon} from '@iconify/react';
-import cx from 'classnames';
 import {usePopper} from 'react-popper';
 
-import {useParcaContext} from '@parca/components';
+import {RefreshButton, useParcaContext} from '@parca/components';
 import {TEST_IDS, testId} from '@parca/test-utils';
 
 import SuggestionItem from './SuggestionItem';
@@ -64,43 +62,6 @@ const LoadingSpinner = (): JSX.Element => {
   const {loader: Spinner} = useParcaContext();
 
   return <div className="pt-2 pb-4">{Spinner}</div>;
-};
-
-interface RefreshButtonProps {
-  onClick: () => void;
-  disabled: boolean;
-  title: string;
-  testId: string;
-}
-
-const RefreshButton = ({onClick, disabled, title, testId}: RefreshButtonProps): JSX.Element => {
-  return (
-    <div className="w-full flex items-center justify-center px-3 py-2 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
-      <button
-        onClick={e => {
-          e.preventDefault();
-          e.stopPropagation();
-          onClick();
-        }}
-        disabled={disabled}
-        className={cx(
-          'py-1 px-2 flex items-center gap-1 rounded-full transition-all duration-200 w-auto justify-center',
-          disabled
-            ? 'cursor-wait opacity-50'
-            : 'hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer'
-        )}
-        title={title}
-        type="button"
-        data-testid={testId}
-      >
-        <Icon
-          icon="system-uicons:reset"
-          className={cx('w-3 h-3 text-gray-500 dark:text-gray-400', disabled && 'animate-spin')}
-        />
-        <span className="text-xs text-gray-500 dark:text-gray-400">Refresh results</span>
-      </button>
-    </div>
-  );
 };
 
 const transformLabelsForSuggestions = (labelNames: string, shouldTrimPrefix = false): string => {
