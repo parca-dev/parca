@@ -11,17 +11,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {useMemo} from 'react';
+
 import {HasProfileDataResponse, QueryServiceClient} from '@parca/client';
+import {useGrpcMetadata} from '@parca/components';
 
 import useGrpcQuery from './useGrpcQuery';
 
 export const useHasProfileData = (
   client: QueryServiceClient
 ): {loading: boolean; data: boolean; error: Error | any} => {
+  const metadata = useGrpcMetadata();
+  const metadataString = useMemo(() => JSON.stringify(metadata), [metadata]);
+
   const {data, isLoading, error} = useGrpcQuery<HasProfileDataResponse>({
-    key: ['hasProfileData'],
+    key: ['hasProfileData', metadataString],
     queryFn: async signal => {
-      const {response} = await client.hasProfileData({}, {abort: signal});
+      const {response} = await client.hasProfileData({}, {abort: signal, meta: metadata});
       return response;
     },
   });
