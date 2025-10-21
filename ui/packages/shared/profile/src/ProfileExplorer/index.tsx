@@ -22,13 +22,13 @@ import {createStore} from '@parca/store';
 import {capitalizeOnlyFirstLetter, safeDecode, type NavigateFunction} from '@parca/utilities';
 
 import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
-import { QuerySelection } from '../ProfileSelector';
+import {QuerySelection} from '../ProfileSelector';
 import {useResetFlameGraphState} from '../ProfileView/hooks/useResetFlameGraphState';
 import {useResetStateOnProfileTypeChange} from '../ProfileView/hooks/useResetStateOnProfileTypeChange';
+import {useHasProfileData} from '../useHasProfileData';
 import {sumByToParam, useSumByFromParams} from '../useSumBy';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
 import ProfileExplorerSingle from './ProfileExplorerSingle';
-import { useHasProfileData } from '../useHasProfileData';
 
 interface ProfileExplorerProps {
   queryClient: QueryServiceClient;
@@ -114,7 +114,11 @@ const ProfileExplorerApp = ({
   queryParams,
   navigateTo,
 }: ProfileExplorerProps): JSX.Element => {
-  const { loading: hasProfileDataLoading, data: hasProfileData, error: hasProfileDataError } = useHasProfileData(queryClient);
+  const {
+    loading: hasProfileDataLoading,
+    data: hasProfileData,
+    error: hasProfileDataError,
+  } = useHasProfileData(queryClient);
 
   const {loader, noDataPrompt, onError, authenticationErrorMessage} = useParcaContext();
 
@@ -199,7 +203,10 @@ const ProfileExplorerApp = ({
   }
 
   if (hasProfileDataError !== undefined && hasProfileDataError !== null) {
-    if (authenticationErrorMessage !== undefined && hasProfileDataError.code === 'UNAUTHENTICATED') {
+    if (
+      authenticationErrorMessage !== undefined &&
+      hasProfileDataError.code === 'UNAUTHENTICATED'
+    ) {
       return <ErrorContent errorMessage={authenticationErrorMessage} />;
     }
 
