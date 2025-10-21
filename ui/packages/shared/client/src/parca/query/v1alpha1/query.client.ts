@@ -72,6 +72,8 @@ export interface IQueryServiceClient {
      */
     shareProfile(input: ShareProfileRequest, options?: RpcOptions): UnaryCall<ShareProfileRequest, ShareProfileResponse>;
     /**
+     * HasProfileData checks if there is any profile data available
+     *
      * @generated from protobuf rpc: HasProfileData
      */
     hasProfileData(input: HasProfileDataRequest, options?: RpcOptions): UnaryCall<HasProfileDataRequest, HasProfileDataResponse>;
@@ -151,6 +153,8 @@ export class QueryServiceClient implements IQueryServiceClient, ServiceInfo {
         return stackIntercept<ShareProfileRequest, ShareProfileResponse>("unary", this._transport, method, opt, input);
     }
     /**
+     * HasProfileData checks if there is any profile data available
+     *
      * @generated from protobuf rpc: HasProfileData
      */
     hasProfileData(input: HasProfileDataRequest, options?: RpcOptions): UnaryCall<HasProfileDataRequest, HasProfileDataResponse> {

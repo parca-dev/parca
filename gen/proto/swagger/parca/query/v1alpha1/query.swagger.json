@@ -18,6 +18,7 @@
   "paths": {
     "/profiles/has_profile_data": {
       "get": {
+        "summary": "HasProfileData checks if there is any profile data available",
         "operationId": "QueryService_HasProfileData",
         "responses": {
           "200": {

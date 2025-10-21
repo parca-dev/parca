@@ -53,6 +53,7 @@ type QueryServiceClient interface {
 	Values(ctx context.Context, in *ValuesRequest, opts ...grpc.CallOption) (*ValuesResponse, error)
 	// ShareProfile uploads the given profile to pprof.me and returns a link to the profile.
 	ShareProfile(ctx context.Context, in *ShareProfileRequest, opts ...grpc.CallOption) (*ShareProfileResponse, error)
+	// HasProfileData checks if there is any profile data available
 	HasProfileData(ctx context.Context, in *HasProfileDataRequest, opts ...grpc.CallOption) (*HasProfileDataResponse, error)
 }
 
@@ -154,6 +155,7 @@ type QueryServiceServer interface {
 	Values(context.Context, *ValuesRequest) (*ValuesResponse, error)
 	// ShareProfile uploads the given profile to pprof.me and returns a link to the profile.
 	ShareProfile(context.Context, *ShareProfileRequest) (*ShareProfileResponse, error)
+	// HasProfileData checks if there is any profile data available
 	HasProfileData(context.Context, *HasProfileDataRequest) (*HasProfileDataResponse, error)
 	mustEmbedUnimplementedQueryServiceServer()
 }
