@@ -21,8 +21,8 @@ export const useHasProfileData = (
   const {data, isLoading, error} = useGrpcQuery<HasProfileDataResponse>({
     key: ['hasProfileData'],
     queryFn: async signal => {
-        const {response} = await client.hasProfileData({}, {abort: signal});
-        return response;
+      const {response} = await client.hasProfileData({}, {abort: signal});
+      return response;
     },
   });
 
