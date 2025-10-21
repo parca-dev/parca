@@ -2,9 +2,9 @@
 // @generated from protobuf file "parca/query/v1alpha1/query.proto" (package "parca.query.v1alpha1", syntax proto3)
 // tslint:disable
 import { ServiceType } from "@protobuf-ts/runtime-rpc";
-import { WireType } from "@protobuf-ts/runtime";
 import type { BinaryWriteOptions } from "@protobuf-ts/runtime";
 import type { IBinaryWriter } from "@protobuf-ts/runtime";
+import { WireType } from "@protobuf-ts/runtime";
 import type { BinaryReadOptions } from "@protobuf-ts/runtime";
 import type { IBinaryReader } from "@protobuf-ts/runtime";
 import { UnknownFieldHandler } from "@protobuf-ts/runtime";
@@ -24,6 +24,18 @@ import { Timestamp } from "../../../google/protobuf/timestamp";
  * @generated from protobuf message parca.query.v1alpha1.ProfileTypesRequest
  */
 export interface ProfileTypesRequest {
+    /**
+     * start is the start of the query time window
+     *
+     * @generated from protobuf field: optional google.protobuf.Timestamp start = 1
+     */
+    start?: Timestamp;
+    /**
+     * end is the end of the query time window
+     *
+     * @generated from protobuf field: optional google.protobuf.Timestamp end = 2
+     */
+    end?: Timestamp;
 }
 /**
  * ProfileTypesResponse is the response to retrieve the list of available profile types.
@@ -1595,10 +1607,33 @@ export interface ProfileMetadata {
      */
     labels: string[];
 }
+/**
+ * HasProfileDataRequest is the request to check if there is profile data in the store
+ *
+ * @generated from protobuf message parca.query.v1alpha1.HasProfileDataRequest
+ */
+export interface HasProfileDataRequest {
+}
+/**
+ * HasProfileDataResponse is the response indicating whether there is profile data in the store
+ *
+ * @generated from protobuf message parca.query.v1alpha1.HasProfileDataResponse
+ */
+export interface HasProfileDataResponse {
+    /**
+     * has_data indicates whether there is profile data in the store
+     *
+     * @generated from protobuf field: bool has_data = 1
+     */
+    hasData: boolean;
+}
 // @generated message type with reflection information, may provide speed optimized methods
 class ProfileTypesRequest$Type extends MessageType<ProfileTypesRequest> {
     constructor() {
-        super("parca.query.v1alpha1.ProfileTypesRequest", []);
+        super("parca.query.v1alpha1.ProfileTypesRequest", [
+            { no: 1, name: "start", kind: "message", T: () => Timestamp },
+            { no: 2, name: "end", kind: "message", T: () => Timestamp }
+        ]);
     }
     create(value?: PartialMessage<ProfileTypesRequest>): ProfileTypesRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
@@ -1611,6 +1646,12 @@ class ProfileTypesRequest$Type extends MessageType<ProfileTypesRequest> {
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* optional google.protobuf.Timestamp start */ 1:
+                    message.start = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.start);
+                    break;
+                case /* optional google.protobuf.Timestamp end */ 2:
+                    message.end = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.end);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1623,6 +1664,12 @@ class ProfileTypesRequest$Type extends MessageType<ProfileTypesRequest> {
         return message;
     }
     internalBinaryWrite(message: ProfileTypesRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* optional google.protobuf.Timestamp start = 1; */
+        if (message.start)
+            Timestamp.internalBinaryWrite(message.start, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* optional google.protobuf.Timestamp end = 2; */
+        if (message.end)
+            Timestamp.internalBinaryWrite(message.end, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4807,6 +4854,91 @@ class ProfileMetadata$Type extends MessageType<ProfileMetadata> {
  * @generated MessageType for protobuf message parca.query.v1alpha1.ProfileMetadata
  */
 export const ProfileMetadata = new ProfileMetadata$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class HasProfileDataRequest$Type extends MessageType<HasProfileDataRequest> {
+    constructor() {
+        super("parca.query.v1alpha1.HasProfileDataRequest", []);
+    }
+    create(value?: PartialMessage<HasProfileDataRequest>): HasProfileDataRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<HasProfileDataRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: HasProfileDataRequest): HasProfileDataRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: HasProfileDataRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.query.v1alpha1.HasProfileDataRequest
+ */
+export const HasProfileDataRequest = new HasProfileDataRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class HasProfileDataResponse$Type extends MessageType<HasProfileDataResponse> {
+    constructor() {
+        super("parca.query.v1alpha1.HasProfileDataResponse", [
+            { no: 1, name: "has_data", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<HasProfileDataResponse>): HasProfileDataResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.hasData = false;
+        if (value !== undefined)
+            reflectionMergePartial<HasProfileDataResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: HasProfileDataResponse): HasProfileDataResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool has_data */ 1:
+                    message.hasData = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: HasProfileDataResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool has_data = 1; */
+        if (message.hasData !== false)
+            writer.tag(1, WireType.Varint).bool(message.hasData);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.query.v1alpha1.HasProfileDataResponse
+ */
+export const HasProfileDataResponse = new HasProfileDataResponse$Type();
 /**
  * @generated ServiceType for protobuf service parca.query.v1alpha1.QueryService
  */
@@ -4817,5 +4949,6 @@ export const QueryService = new ServiceType("parca.query.v1alpha1.QueryService",
     { name: "ProfileTypes", options: { "google.api.http": { get: "/profiles/types" } }, I: ProfileTypesRequest, O: ProfileTypesResponse },
     { name: "Labels", options: { "google.api.http": { get: "/profiles/labels" } }, I: LabelsRequest, O: LabelsResponse },
     { name: "Values", options: { "google.api.http": { get: "/profiles/labels/{label_name}/values" } }, I: ValuesRequest, O: ValuesResponse },
-    { name: "ShareProfile", options: { "google.api.http": { post: "/profiles/share", body: "*" } }, I: ShareProfileRequest, O: ShareProfileResponse }
+    { name: "ShareProfile", options: { "google.api.http": { post: "/profiles/share", body: "*" } }, I: ShareProfileRequest, O: ShareProfileResponse },
+    { name: "HasProfileData", options: { "google.api.http": { get: "/profiles/has_profile_data" } }, I: HasProfileDataRequest, O: HasProfileDataResponse }
 ]);

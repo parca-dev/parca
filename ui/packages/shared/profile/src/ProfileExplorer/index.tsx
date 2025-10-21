@@ -22,12 +22,13 @@ import {createStore} from '@parca/store';
 import {capitalizeOnlyFirstLetter, safeDecode, type NavigateFunction} from '@parca/utilities';
 
 import {ProfileSelection, ProfileSelectionFromParams, SuffixParams} from '..';
-import {QuerySelection, useProfileTypes} from '../ProfileSelector';
+import { QuerySelection } from '../ProfileSelector';
 import {useResetFlameGraphState} from '../ProfileView/hooks/useResetFlameGraphState';
 import {useResetStateOnProfileTypeChange} from '../ProfileView/hooks/useResetStateOnProfileTypeChange';
 import {sumByToParam, useSumByFromParams} from '../useSumBy';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
 import ProfileExplorerSingle from './ProfileExplorerSingle';
+import { useHasProfileData } from '../useHasProfileData';
 
 interface ProfileExplorerProps {
   queryClient: QueryServiceClient;
@@ -113,19 +114,15 @@ const ProfileExplorerApp = ({
   queryParams,
   navigateTo,
 }: ProfileExplorerProps): JSX.Element => {
-  const {
-    loading: profileTypesLoading,
-    data: profileTypesData,
-    error: profileTypesError,
-  } = useProfileTypes(queryClient);
+  const { loading: hasProfileDataLoading, data: hasProfileData, error: hasProfileDataError } = useHasProfileData(queryClient);
 
   const {loader, noDataPrompt, onError, authenticationErrorMessage} = useParcaContext();
 
   useEffect(() => {
-    if (profileTypesError !== undefined && profileTypesError !== null) {
-      onError?.(profileTypesError);
+    if (hasProfileDataError !== undefined && hasProfileDataError !== null) {
+      onError?.(hasProfileDataError);
     }
-  }, [profileTypesError, onError]);
+  }, [hasProfileDataError, onError]);
 
   /* eslint-disable @typescript-eslint/naming-convention */
   let {
@@ -193,20 +190,20 @@ const ProfileExplorerApp = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [merge_from_b, merge_to_b, selection_b]);
 
-  if (profileTypesLoading) {
+  if (hasProfileDataLoading) {
     return <>{loader}</>;
   }
 
-  if (profileTypesData?.types.length === 0) {
+  if (!hasProfileData) {
     return <>{noDataPrompt}</>;
   }
 
-  if (profileTypesError !== undefined && profileTypesError !== null) {
-    if (authenticationErrorMessage !== undefined && profileTypesError.code === 'UNAUTHENTICATED') {
+  if (hasProfileDataError !== undefined && hasProfileDataError !== null) {
+    if (authenticationErrorMessage !== undefined && hasProfileDataError.code === 'UNAUTHENTICATED') {
       return <ErrorContent errorMessage={authenticationErrorMessage} />;
     }
 
-    return <ErrorContent errorMessage={capitalizeOnlyFirstLetter(profileTypesError.message)} />;
+    return <ErrorContent errorMessage={capitalizeOnlyFirstLetter(hasProfileDataError.message)} />;
   }
 
   const sanitizedRange = sanitizeDateRange(time_selection_a, from_a, to_a);

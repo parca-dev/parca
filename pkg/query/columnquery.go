@@ -47,7 +47,7 @@ type Querier interface {
 	Labels(ctx context.Context, match []string, start, end time.Time, profileType string) ([]string, error)
 	Values(ctx context.Context, labelName string, match []string, start, end time.Time, profileType string) ([]string, error)
 	QueryRange(ctx context.Context, query string, startTime, endTime time.Time, step time.Duration, limit uint32, sumBy []string) ([]*pb.MetricsSeries, error)
-	ProfileTypes(ctx context.Context) ([]*pb.ProfileType, error)
+	ProfileTypes(ctx context.Context, startTime, endTime time.Time) ([]*pb.ProfileType, error)
 	QuerySingle(ctx context.Context, query string, time time.Time, invertCallStacks bool) (profile.Profile, error)
 	QueryMerge(ctx context.Context, query string, start, end time.Time, aggregateByLabels []string, invertCallStacks bool, functionToFilterBy string) (profile.Profile, error)
 	GetProfileMetadataMappings(ctx context.Context, query string, start, end time.Time) ([]string, error)
@@ -169,13 +169,24 @@ func (q *ColumnQueryAPI) QueryRange(ctx context.Context, req *pb.QueryRangeReque
 
 // Types returns the available types of profiles.
 func (q *ColumnQueryAPI) ProfileTypes(ctx context.Context, req *pb.ProfileTypesRequest) (*pb.ProfileTypesResponse, error) {
-	types, err := q.querier.ProfileTypes(ctx)
+	types, err := q.querier.ProfileTypes(ctx, req.Start.AsTime(), req.End.AsTime())
 	if err != nil {
 		return nil, err
 	}
 
 	return &pb.ProfileTypesResponse{
 		Types: types,
+	}, nil
+}
+
+func (q *ColumnQueryAPI) HasProfileData(ctx context.Context, req *pb.HasProfileDataRequest) (*pb.HasProfileDataResponse, error) {
+	res, err := q.ProfileTypes(ctx, &pb.ProfileTypesRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.HasProfileDataResponse{
+		HasData: len(res.Types) > 0,
 	}, nil
 }
 

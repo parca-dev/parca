@@ -784,11 +784,23 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 
 func (q *Querier) ProfileTypes(
 	ctx context.Context,
+	startTime time.Time,
+	endTime time.Time,
 ) ([]*pb.ProfileType, error) {
 	seen := map[string]struct{}{}
 	res := []*pb.ProfileType{}
+	filterExpr := []logicalplan.Expr{}
+
+	if startTime.Unix() != 0 && endTime.Unix() != 0 {
+		start := startTime.UnixNano()
+		end := endTime.UnixNano()
+
+		filterExpr = append(filterExpr, logicalplan.Col(profile.ColumnTimeNanos).Gt(logicalplan.Literal(start)),
+			logicalplan.Col(profile.ColumnTimeNanos).Lt(logicalplan.Literal(end)))
+	}
 
 	err := q.engine.ScanTable(q.tableName).
+		Filter(logicalplan.And(filterExpr...)).
 		Distinct(
 			logicalplan.Col(profile.ColumnName),
 			logicalplan.Col(profile.ColumnSampleType),
