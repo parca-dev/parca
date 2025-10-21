@@ -55,7 +55,7 @@ export interface VisualisationToolbarProps {
   setColorBy: (colorBy: string) => void;
   metadata: {
     labels: string[];
-    refetch?: () => void;
+    refetch?: () => Promise<void>;
     loading: boolean;
   };
 }

@@ -66,7 +66,7 @@ interface QueryControlsProps {
   setUserSumBySelection: (sumBy: string[]) => void;
   sumByRef: React.RefObject<SelectInstance>;
   profileType: ProfileType;
-  refreshLabelNames: () => void;
+  refreshLabelNames: () => Promise<void>;
 }
 
 export function QueryControls({

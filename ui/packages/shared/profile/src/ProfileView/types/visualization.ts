@@ -24,7 +24,7 @@ export interface FlamegraphData {
   metadataMappingFiles?: string[];
   metadataLoading: boolean;
   metadataLabels?: string[];
-  metadataRefetch?: () => void;
+  metadataRefetch?: () => Promise<void>;
 }
 
 export interface TopTableData {

@@ -56,7 +56,7 @@ interface CustomSelectProps {
   searchable?: boolean;
   onButtonClick?: () => void;
   editable?: boolean;
-  refetchValues?: () => void;
+  refetchValues?: () => Promise<void>;
   showLoadingInButton?: boolean;
 }
 
@@ -380,6 +380,7 @@ const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
                 title="Refresh label values"
                 testId={TEST_IDS.LABEL_VALUE_REFRESH_BUTTON}
                 sticky={true}
+                loading={isRefetching}
               />
             )}
           </div>

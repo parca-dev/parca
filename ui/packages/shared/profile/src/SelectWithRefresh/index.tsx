@@ -19,7 +19,7 @@ import {RefreshButton} from '@parca/components';
 
 export interface SelectWithRefreshProps<Option, IsMulti extends boolean>
   extends ReactSelectProps<Option, IsMulti> {
-  onRefresh?: () => void | Promise<void>;
+  onRefresh?: () => Promise<void>;
   refreshTitle?: string;
   refreshTestId?: string;
   menuTestId?: string;
@@ -45,6 +45,8 @@ export function SelectWithRefresh<Option, IsMulti extends boolean = false>(
     setIsRefreshing(true);
     try {
       await onRefresh();
+    } catch (error) {
+      console.error('Error during refresh:', error);
     } finally {
       setIsRefreshing(false);
     }
@@ -52,7 +54,7 @@ export function SelectWithRefresh<Option, IsMulti extends boolean = false>(
 
   const MenuListWithRefresh = useCallback(
     ({children, innerProps}: MenuListProps<Option, IsMulti>) => {
-      const testIdProps = menuTestId ? {'data-testid': menuTestId} : {};
+      const testIdProps = menuTestId != null ? {'data-testid': menuTestId} : {};
 
       return (
         <div className="flex flex-col" style={{maxHeight: '332px'}}>
@@ -78,9 +80,12 @@ export function SelectWithRefresh<Option, IsMulti extends boolean = false>(
     [onRefresh, isRefreshing, handleRefetch, refreshTitle, refreshTestId, menuTestId]
   );
 
+  const combinedLoadingState = isRefreshing || (selectProps.isLoading ?? false);
+
   return (
     <ReactSelect<Option, IsMulti>
       {...selectProps}
+      isLoading={combinedLoadingState}
       components={{
         ...components,
         // eslint-disable-next-line react/display-name

@@ -25,7 +25,7 @@ interface Props {
   labels: string[];
   groupBy: string[];
   setGroupByLabels: (labels: string[]) => void;
-  metadataRefetch?: () => void;
+  metadataRefetch?: () => Promise<void>;
   metadataLoading: boolean;
 }
 

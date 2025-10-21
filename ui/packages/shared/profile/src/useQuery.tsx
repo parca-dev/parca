@@ -25,7 +25,7 @@ export interface IQueryResult {
   response: QueryResponse | null;
   error: RpcError | null;
   isLoading: boolean;
-  refetch?: () => void;
+  refetch?: () => Promise<void>;
 }
 
 interface UseQueryOptions {
@@ -114,8 +114,8 @@ export const useQuery = (
     isLoading,
     error: error as RpcError | null,
     response: data ?? null,
-    refetch: () => {
-      void refetch();
+    refetch: async () => {
+      await refetch();
     },
   };
 };

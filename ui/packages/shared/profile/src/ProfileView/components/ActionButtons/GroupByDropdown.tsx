@@ -19,7 +19,7 @@ interface GroupByControlsProps {
   groupBy: string[];
   labels: string[];
   setGroupByLabels: (labels: string[]) => void;
-  metadataRefetch?: () => void;
+  metadataRefetch?: () => Promise<void>;
   metadataLoading: boolean;
 }
 

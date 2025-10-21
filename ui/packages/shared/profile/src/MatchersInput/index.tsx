@@ -46,7 +46,7 @@ export interface ILabelNamesResult {
 interface UseLabelNames {
   result: ILabelNamesResult;
   loading: boolean;
-  refetch: () => void;
+  refetch: () => Promise<void>;
 }
 
 export const useLabelNames = (
@@ -83,8 +83,8 @@ export const useLabelNames = (
   return {
     result: {response: data, error: error as Error},
     loading: isLoading,
-    refetch: () => {
-      void refetch();
+    refetch: async () => {
+      await refetch();
     },
   };
 };
