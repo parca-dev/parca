@@ -13,7 +13,6 @@
 
 import React, {useMemo, useRef, useState} from 'react';
 
-import {useQuery} from '@tanstack/react-query';
 import cx from 'classnames';
 import TextareaAutosize from 'react-textarea-autosize';
 
@@ -23,7 +22,6 @@ import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
-import {UtilizationLabels} from '../ProfileSelector';
 import {LabelsProvider, useLabels} from '../contexts/MatchersInputLabelsContext';
 import useGrpcQuery from '../useGrpcQuery';
 import SuggestionsList, {Suggestion, Suggestions} from './SuggestionsList';
@@ -137,22 +135,6 @@ export const useLabelValues = (
       void refetch();
     },
   };
-};
-
-export const useFetchUtilizationLabelValues = (
-  labelName: string,
-  utilizationLabels?: UtilizationLabels
-): string[] => {
-  const {data} = useQuery({
-    queryKey: ['utilizationLabelValues', labelName],
-    queryFn: async () => {
-      const result = await utilizationLabels?.utilizationFetchLabelValues?.(labelName);
-      return result ?? [];
-    },
-    enabled: utilizationLabels?.utilizationFetchLabelValues != null && labelName !== '',
-  });
-
-  return data ?? [];
 };
 
 const MatchersInput = ({

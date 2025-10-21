@@ -11,16 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {createContext, useCallback, useContext, useMemo} from 'react';
+import {createContext, useContext, useMemo} from 'react';
 
-import {useQueryClient} from '@tanstack/react-query';
-
-import {QueryServiceClient} from '@parca/client';
-
-import {useLabelNames} from '../MatchersInput';
 import {transformLabelsForSelect} from '../SimpleMatchers';
 import type {SelectItem} from '../SimpleMatchers/Select';
-import {useUtilizationLabels} from './UtilizationLabelsContext';
 
 interface LabelNameSection {
   type: string;
@@ -31,153 +25,84 @@ interface LabelContextValue {
   labelNameOptions: LabelNameSection[];
   isLoading: boolean;
   error: Error | null;
-  refetchLabelValues: (labelName?: string) => Promise<void>;
-  refetchLabelNames: () => Promise<void>;
+  refetchLabelValues?: (labelName?: string) => Promise<void>;
+  refetchLabelNames?: () => Promise<void>;
 }
 
 const LabelContext = createContext<LabelContextValue | null>(null);
 
-interface LabelProviderProps {
-  children: React.ReactNode;
-  queryClient: QueryServiceClient;
-  profileType: string;
-  labelNameFromMatchers: string[];
-  start?: number;
-  end?: number;
+export interface LabelSource {
+  type: string;
+  labelNames: string[];
+  isLoading: boolean;
+  error?: Error | null;
 }
 
-// With there being the possibility of having utilization labels, we need to be able to determine whether the labels to be used are utilization labels or profiling data labels.
-// This context is used to determine this.
+interface LabelProviderProps {
+  children: React.ReactNode;
+  labelSources: LabelSource[];
+  labelNameFromMatchers: string[];
+  refetchLabelValues?: (labelName?: string) => Promise<void>;
+  refetchLabelNames?: () => Promise<void>;
+}
 
 export function LabelProvider({
   children,
-  queryClient,
-  profileType,
+  labelSources,
   labelNameFromMatchers,
-  start,
-  end,
+  refetchLabelValues,
+  refetchLabelNames,
 }: LabelProviderProps): JSX.Element {
-  const reactQueryClient = useQueryClient();
-  const utilizationLabelResponse = useUtilizationLabels();
-  const {
-    loading,
-    result,
-    refetch: refetchLabelNamesQuery,
-  } = useLabelNames(queryClient, profileType, start, end);
-
-  const profileValues = useMemo(() => {
-    const profileLabelNames =
-      result.error != null ? [] : result.response?.labelNames.filter(e => e !== '__name__') ?? [];
-    const uniqueProfileLabelNames = Array.from(new Set(profileLabelNames));
-
-    return {
-      labelNameOptions: uniqueProfileLabelNames,
-      isLoading: loading,
-      error: result.error ?? null,
-    };
-  }, [result, loading]);
-
-  const utilizationValues = useMemo(() => {
-    if (utilizationLabelResponse?.utilizationLabelNamesLoading === true) {
-      return {labelNameOptions: [] as string[], isLoading: true};
-    }
-    if (
-      utilizationLabelResponse == null ||
-      utilizationLabelResponse.utilizationLabelNames == null
-    ) {
-      return {labelNameOptions: [] as string[], isLoading: false};
-    }
-
-    const uniqueUtilizationLabelNames = Array.from(
-      new Set(utilizationLabelResponse.utilizationLabelNames)
-    );
-    return {
-      labelNameOptions: uniqueUtilizationLabelNames,
-      isLoading: utilizationLabelResponse.utilizationLabelNamesLoading,
-    };
-  }, [utilizationLabelResponse]);
-
   const value = useMemo(() => {
-    if (
-      profileValues.error != null ||
-      profileValues.isLoading ||
-      utilizationValues.isLoading === true
-    ) {
+    const isLoading = labelSources.some(source => source.isLoading);
+    const error = labelSources.find(source => source.error != null)?.error ?? null;
+
+    if (isLoading || error != null) {
       return {
         labelNameOptions: [],
-        isLoading: (profileValues.isLoading || utilizationValues.isLoading) ?? false,
-        error: profileValues.error,
+        isLoading,
+        error,
+        refetchLabelValues,
+        refetchLabelNames,
       };
     }
 
-    let nonMatchingLabels = labelNameFromMatchers.filter(
-      label => !utilizationValues.labelNameOptions.includes(label)
-    );
-    nonMatchingLabels = nonMatchingLabels.filter(
-      label => !profileValues.labelNameOptions.includes(label)
-    );
+    const allLabelNames = new Set<string>();
+    labelSources.forEach(source => {
+      source.labelNames.forEach(name => allLabelNames.add(name));
+    });
 
-    const nonMatchingLabelsSet = Array.from(new Set(nonMatchingLabels));
-    const options = [
-      {
-        type: 'cpu',
-        values: transformLabelsForSelect(profileValues.labelNameOptions),
-      },
-      {
-        type: 'gpu',
-        values: transformLabelsForSelect(utilizationValues.labelNameOptions),
-      },
-      {
+    const nonMatchingLabels = labelNameFromMatchers.filter(label => !allLabelNames.has(label));
+
+    const options: LabelNameSection[] = [];
+
+    labelSources.forEach(source => {
+      if (source.labelNames.length > 0) {
+        options.push({
+          type: source.type,
+          values: transformLabelsForSelect(source.labelNames),
+        });
+      }
+    });
+
+    if (nonMatchingLabels.length > 0) {
+      const uniqueNonMatchingLabels = Array.from(new Set(nonMatchingLabels));
+      options.push({
         type: '',
-        values: transformLabelsForSelect(nonMatchingLabelsSet),
-      },
-    ];
+        values: transformLabelsForSelect(uniqueNonMatchingLabels),
+      });
+    }
 
     return {
-      labelNameOptions: options.filter(e => e.values.length > 0),
+      labelNameOptions: options,
       isLoading: false,
       error: null,
-    };
-  }, [profileValues, utilizationValues, labelNameFromMatchers]);
-
-  const refetchLabelValues = useCallback(
-    async (labelName?: string) => {
-      await reactQueryClient.refetchQueries({
-        predicate: query => {
-          const key = query.queryKey;
-          const matchesStructure =
-            Array.isArray(key) &&
-            key.length === 4 &&
-            typeof key[0] === 'string' &&
-            key[1] === profileType;
-
-          if (!matchesStructure) return false;
-
-          if (labelName !== undefined && labelName !== '') {
-            return key[0] === labelName;
-          }
-
-          return true;
-        },
-      });
-    },
-    [reactQueryClient, profileType]
-  );
-
-  const refetchLabelNames = useCallback(async () => {
-    await refetchLabelNamesQuery();
-  }, [refetchLabelNamesQuery]);
-
-  const contextValue = useMemo(
-    () => ({
-      ...value,
       refetchLabelValues,
       refetchLabelNames,
-    }),
-    [value, refetchLabelValues, refetchLabelNames]
-  );
+    };
+  }, [labelSources, labelNameFromMatchers, refetchLabelValues, refetchLabelNames]);
 
-  return <LabelContext.Provider value={contextValue}>{children}</LabelContext.Provider>;
+  return <LabelContext.Provider value={value}>{children}</LabelContext.Provider>;
 }
 
 export function useLabels(): LabelContextValue {

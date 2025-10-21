@@ -12,10 +12,13 @@
 // limitations under the License.
 
 import {useLabelNames} from './MatchersInput';
+import MetricsGraph, {type ContextMenuItemOrSubmenu, type Series} from './MetricsGraph';
 import ProfileExplorer, {getExpressionAsAString} from './ProfileExplorer';
 import ProfileTypeSelector from './ProfileTypeSelector';
 import SelectWithRefresh from './SelectWithRefresh';
 import CustomSelect from './SimpleMatchers/Select';
+
+export {useMetricsGraphDimensions} from './MetricsGraph/useMetricsGraphDimensions';
 
 export * from './ProfileFlameGraph';
 export * from './ProfileSource';
@@ -30,6 +33,7 @@ export * from './ProfileTypeSelector';
 export * from './SourceView';
 export * from './ProfileMetricsGraph';
 export * from './useSumBy';
+export {SharedQueryControls} from './SharedQueryControls';
 
 export {default as ProfileFilters} from './ProfileView/components/ProfileFilters';
 export {useProfileFiltersUrlState} from './ProfileView/components/ProfileFilters/useProfileFiltersUrlState';
@@ -45,4 +49,7 @@ export {
   CustomSelect,
   SelectWithRefresh,
   useLabelNames,
+  MetricsGraph,
+  type ContextMenuItemOrSubmenu,
+  type Series,
 };

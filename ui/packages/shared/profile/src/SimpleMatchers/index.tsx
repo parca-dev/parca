@@ -23,8 +23,8 @@ import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
-import {LabelProvider, useLabels} from '../contexts/SimpleMatchersLabelContext';
-import {useUtilizationLabels} from '../contexts/UtilizationLabelsContext';
+import {useLabelNames} from '../MatchersInput';
+import {LabelProvider, LabelSource, useLabels} from '../contexts/SimpleMatchersLabelContext';
 import Select, {type SelectItem} from './Select';
 
 interface Props {
@@ -124,7 +124,6 @@ const SimpleMatchers = ({
   end,
   searchExecutedTimestamp,
 }: Props): JSX.Element => {
-  const utilizationLabels = useUtilizationLabels();
   const [queryRows, setQueryRows] = useState<QueryRow[]>([
     {labelName: '', operator: '=', labelValue: '', labelValues: [], isLoading: false},
   ]);
@@ -184,13 +183,6 @@ const SimpleMatchers = ({
       }
     },
     [queryClient, metadata, profileType, reactQueryClient, start, end]
-  );
-
-  const fetchLabelValuesUtilization = useCallback(
-    async (labelName: string): Promise<string[]> => {
-      return (await utilizationLabels?.utilizationFetchLabelValues?.(labelName)) ?? [];
-    },
-    [utilizationLabels]
   );
 
   const updateMatchersString = useCallback(
@@ -276,16 +268,9 @@ const SimpleMatchers = ({
 
   const fetchLabelValuesUnified = useCallback(
     async (labelName: string): Promise<string[]> => {
-      const labelType = labelNameOptions.find(option =>
-        option.values.some(e => e.key === labelName)
-      )?.type;
-      const labelValues =
-        labelType === 'gpu'
-          ? await fetchLabelValuesUtilization(labelName)
-          : await fetchLabelValues(labelName);
-      return labelValues;
+      return await fetchLabelValues(labelName);
     },
-    [fetchLabelValues, fetchLabelValuesUtilization, labelNameOptions]
+    [fetchLabelValues]
   );
 
   useEffect(() => {
@@ -531,6 +516,38 @@ const SimpleMatchers = ({
 };
 
 export default function SimpleMathersWithProvider(props: Props): JSX.Element {
+  const {
+    loading,
+    result,
+    refetch: refetchLabelNames,
+  } = useLabelNames(props.queryClient, props.profileType, props.start, props.end);
+
+  const reactQueryClient = useQueryClient();
+
+  const refetchLabelValues = useCallback(
+    async (labelName?: string) => {
+      await reactQueryClient.refetchQueries({
+        predicate: query => {
+          const key = query.queryKey;
+          const matchesStructure =
+            Array.isArray(key) &&
+            key.length === 4 &&
+            typeof key[0] === 'string' &&
+            key[1] === props.profileType;
+
+          if (!matchesStructure) return false;
+
+          if (labelName !== undefined && labelName !== '') {
+            return key[0] === labelName;
+          }
+
+          return true;
+        },
+      });
+    },
+    [reactQueryClient, props.profileType]
+  );
+
   const labelNameFromMatchers = useMemo(() => {
     if (props.currentQuery === undefined) return [];
 
@@ -539,13 +556,31 @@ export default function SimpleMathersWithProvider(props: Props): JSX.Element {
     return matchers.map(matcher => matcher.key);
   }, [props.currentQuery]);
 
+  const labelSources = useMemo(() => {
+    const sources: LabelSource[] = [];
+
+    const profileLabelNames =
+      result.error != null
+        ? []
+        : (result.response?.labelNames.filter((e: string) => e !== '__name__') ?? []);
+    const uniqueProfileLabelNames = Array.from(new Set(profileLabelNames));
+
+    sources.push({
+      type: 'cpu',
+      labelNames: uniqueProfileLabelNames,
+      isLoading: loading,
+      error: result.error ?? null,
+    });
+
+    return sources;
+  }, [result, loading]);
+
   return (
     <LabelProvider
-      queryClient={props.queryClient}
-      profileType={props.profileType}
+      labelSources={labelSources}
       labelNameFromMatchers={labelNameFromMatchers}
-      start={props.start}
-      end={props.end}
+      refetchLabelNames={refetchLabelNames}
+      refetchLabelValues={refetchLabelValues}
     >
       <SimpleMatchers {...props} />
     </LabelProvider>
