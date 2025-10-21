@@ -532,12 +532,20 @@ func filterRecord(
 						if matchesAllFrameFilters(r, j, lineIdx, frameFilters) {
 							keepLocation = true
 						} else {
-							bitutil.ClearBit(r.Line.NullBitmapBytes(), lineIdx)
+							bitmap := r.Line.NullBitmapBytes()
+							if len(bitmap) == 0 {
+								panic("expected non-nil bitmap for line in record with schema:" + rec.Schema().String())
+							}
+							bitutil.ClearBit(bitmap, lineIdx)
 						}
 					}
 				}
 				if !keepLocation {
-					bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
+					bitmap := r.Locations.ListValues().NullBitmapBytes()
+					if len(bitmap) == 0 {
+						panic("expected non-nil bitmap for line in record with schema:" + rec.Schema().String())
+					}
+					bitutil.ClearBit(bitmap, j)
 				}
 			}
 		}
