@@ -263,8 +263,8 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 				// just like locations, pprof stores lines in reverse order.
 				for k := int(llOffsetEnd - 1); k >= int(llOffsetStart); k-- {
-					// Skip lines that have been filtered out (null function names)
-					if !r.LineFunctionNameIndices.IsValid(k) {
+					// Skip lines that have been filtered out (null)
+					if !r.Line.IsValid(k) {
 						continue
 					}
 
