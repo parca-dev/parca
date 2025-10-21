@@ -881,6 +881,14 @@ func (q *Querier) ProfileTypes(
 	return res, nil
 }
 
+func (q *Querier) HasProfileData(ctx context.Context) (bool, error) {
+	types, err := q.ProfileTypes(ctx, time.Time{}, time.Time{})
+	if err != nil {
+		return false, err
+	}
+	return len(types) > 0, nil
+}
+
 func StringValueFromDictionary(arr *array.Dictionary, i int) string {
 	switch dict := arr.Dictionary().(type) {
 	case *array.Binary:

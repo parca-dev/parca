@@ -52,6 +52,7 @@ type Querier interface {
 	QueryMerge(ctx context.Context, query string, start, end time.Time, aggregateByLabels []string, invertCallStacks bool, functionToFilterBy string) (profile.Profile, error)
 	GetProfileMetadataMappings(ctx context.Context, query string, start, end time.Time) ([]string, error)
 	GetProfileMetadataLabels(ctx context.Context, query string, start, end time.Time) ([]string, error)
+	HasProfileData(ctx context.Context) (bool, error)
 }
 
 var (
@@ -180,13 +181,13 @@ func (q *ColumnQueryAPI) ProfileTypes(ctx context.Context, req *pb.ProfileTypesR
 }
 
 func (q *ColumnQueryAPI) HasProfileData(ctx context.Context, req *pb.HasProfileDataRequest) (*pb.HasProfileDataResponse, error) {
-	types, err := q.querier.ProfileTypes(ctx, time.Time{}, time.Time{})
+	hasData, err := q.querier.HasProfileData(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	return &pb.HasProfileDataResponse{
-		HasData: len(types) > 0,
+		HasData: hasData,
 	}, nil
 }
 
