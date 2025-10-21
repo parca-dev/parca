@@ -14,14 +14,19 @@
 import {HasProfileDataResponse, QueryServiceClient} from '@parca/client';
 
 import useGrpcQuery from './useGrpcQuery';
+import { useGrpcMetadata } from '@parca/components';
+import { useMemo } from 'react';
 
 export const useHasProfileData = (
   client: QueryServiceClient
 ): {loading: boolean; data: boolean; error: Error | any} => {
+  const metadata = useGrpcMetadata();
+  const metadataString = useMemo(() => JSON.stringify(metadata), [metadata]);
+
   const {data, isLoading, error} = useGrpcQuery<HasProfileDataResponse>({
-    key: ['hasProfileData'],
+    key: ['hasProfileData', metadataString],
     queryFn: async signal => {
-      const {response} = await client.hasProfileData({}, {abort: signal});
+      const {response} = await client.hasProfileData({}, {abort: signal, meta: metadata});
       return response;
     },
   });

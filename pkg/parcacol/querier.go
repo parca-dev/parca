@@ -882,7 +882,7 @@ func (q *Querier) ProfileTypes(
 }
 
 func (q *Querier) HasProfileData(ctx context.Context) (bool, error) {
-	types, err := q.ProfileTypes(ctx, time.Time{}, time.Time{})
+	types, err := q.ProfileTypes(ctx, time.UnixMilli(0), time.UnixMilli(0))
 	if err != nil {
 		return false, err
 	}
