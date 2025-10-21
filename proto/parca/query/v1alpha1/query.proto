@@ -50,6 +50,7 @@ service QueryService {
     };
   }
 
+  // HasProfileData checks if there is any profile data available
   rpc HasProfileData(HasProfileDataRequest) returns (HasProfileDataResponse) {
     option (google.api.http) = {get: "/profiles/has_profile_data"};
   }
