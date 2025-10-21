@@ -15,21 +15,16 @@ import {useState} from 'react';
 
 import {Switch} from '@headlessui/react';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
-import Select, {type SelectInstance} from 'react-select';
+import {type SelectInstance} from 'react-select';
 
 import {ProfileTypesResponse, QueryServiceClient} from '@parca/client';
-import {
-  Button,
-  DateTimeRange,
-  DateTimeRangePicker,
-  RefreshButton,
-  useParcaContext,
-} from '@parca/components';
+import {Button, DateTimeRange, DateTimeRangePicker, useParcaContext} from '@parca/components';
 import {ProfileType, Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 
 import MatchersInput from '../MatchersInput';
 import ProfileTypeSelector from '../ProfileTypeSelector';
+import SelectWithRefresh from '../SelectWithRefresh';
 import SimpleMatchers from '../SimpleMatchers';
 import ViewMatchers from '../ViewMatchers';
 
@@ -211,7 +206,7 @@ export function QueryControls({
               Sum by
             </label>
           </div>
-          <Select<SelectOption, true>
+          <SelectWithRefresh<SelectOption, true>
             id="h-sum-by-selector"
             data-testid={testId(TEST_IDS.SUM_BY_SELECT)['data-testid']}
             defaultValue={[]}
@@ -262,30 +257,10 @@ export function QueryControls({
                 currentRef.blur();
               }
             }}
-            components={{
-              // eslint-disable-next-line react/prop-types
-              MenuList: ({children, innerProps}) => (
-                <div className="flex flex-col" style={{maxHeight: '332px'}}>
-                  <div
-                    className="overflow-y-auto flex-1"
-                    {...testId(TEST_IDS.SUM_BY_SELECT_FLYOUT)}
-                    {...innerProps}
-                    // eslint-disable-next-line react/prop-types
-                    style={{...innerProps.style, fontSize: '14px'}}
-                  >
-                    {children}
-                  </div>
-                  {refreshLabelNames != null && (
-                    <RefreshButton
-                      onClick={() => void refreshLabelNames()}
-                      disabled={sumBySelectionLoading}
-                      title="Refresh label names"
-                      testId="sum-by-refresh-button"
-                    />
-                  )}
-                </div>
-              ),
-            }}
+            onRefresh={refreshLabelNames}
+            refreshTitle="Refresh label names"
+            refreshTestId="sum-by-refresh-button"
+            menuTestId={TEST_IDS.SUM_BY_SELECT_FLYOUT}
           />
         </div>
       )}
