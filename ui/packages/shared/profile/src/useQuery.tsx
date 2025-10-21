@@ -25,6 +25,7 @@ export interface IQueryResult {
   response: QueryResponse | null;
   error: RpcError | null;
   isLoading: boolean;
+  refetch?: () => Promise<void>;
 }
 
 interface UseQueryOptions {
@@ -37,6 +38,7 @@ interface UseQueryOptions {
   invertCallStack?: boolean;
   sandwichByFunction?: string;
   protoFilters?: any[]; // Using any[] to match the Filter type from hook
+  staleTime?: number;
 }
 
 export const useQuery = (
@@ -52,7 +54,7 @@ export const useQuery = (
     return JSON.stringify(options?.protoFilters ?? []);
   }, [options?.protoFilters]);
 
-  const {data, isLoading, error} = useGrpcQuery<QueryResponse | undefined>({
+  const {data, isLoading, error, refetch} = useGrpcQuery<QueryResponse | undefined>({
     key: [
       'query',
       profileSource.toKey(),
@@ -104,9 +106,16 @@ export const useQuery = (
     options: {
       retry: false,
       enabled: !skip,
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: options?.staleTime ?? 1000 * 60 * 5, // 5 minutes
     },
   });
 
-  return {isLoading, error: error as RpcError | null, response: data ?? null};
+  return {
+    isLoading,
+    error: error as RpcError | null,
+    response: data ?? null,
+    refetch: async () => {
+      await refetch();
+    },
+  };
 };

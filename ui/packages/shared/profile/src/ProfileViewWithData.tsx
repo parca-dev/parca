@@ -115,10 +115,12 @@ export const ProfileViewWithData = ({
     isLoading: profileMetadataLoading,
     response: profileMetadataResponse,
     error: profileMetadataError,
+    refetch: metadataRefetch,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.PROFILE_METADATA, {
     nodeTrimThreshold,
     groupBy,
     protoFilters,
+    staleTime: 0,
   });
 
   const {perf} = useParcaContext();
@@ -258,6 +260,7 @@ export const ProfileViewWithData = ({
             ? profileMetadataResponse?.report?.profileMetadata?.labels
             : undefined,
         metadataLoading: profileMetadataLoading,
+        metadataRefetch,
       }}
       flamechartData={{
         loading: flamechartLoading && profileMetadataLoading,

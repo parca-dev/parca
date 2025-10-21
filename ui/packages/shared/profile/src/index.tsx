@@ -14,6 +14,7 @@
 import {useLabelNames} from './MatchersInput';
 import ProfileExplorer, {getExpressionAsAString} from './ProfileExplorer';
 import ProfileTypeSelector from './ProfileTypeSelector';
+import SelectWithRefresh from './SelectWithRefresh';
 import CustomSelect from './SimpleMatchers/Select';
 
 export * from './ProfileFlameGraph';
@@ -37,4 +38,11 @@ export const DEFAULT_PROFILE_EXPLORER_PARAM_VALUES = {
   dashboard_items: 'flamegraph',
 };
 
-export {ProfileExplorer, ProfileTypeSelector, getExpressionAsAString, CustomSelect, useLabelNames};
+export {
+  ProfileExplorer,
+  ProfileTypeSelector,
+  getExpressionAsAString,
+  CustomSelect,
+  SelectWithRefresh,
+  useLabelNames,
+};
