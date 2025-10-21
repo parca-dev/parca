@@ -577,24 +577,11 @@ func filterRecord(
 				bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
 			}
 
-			// Null out individual line fields that don't match
+			// Null out individual lines that are not kept
 			for lineIdx := int(lineStart); lineIdx < int(lineEnd); lineIdx++ {
 				if !keepSet[lineIdx] {
-					// Null out the frame fields for this line
-					if r.LineFunctionNameIndices.Len() > 0 {
-						bitutil.ClearBit(r.LineFunctionNameIndices.NullBitmapBytes(), lineIdx)
-					}
-					if r.LineFunctionSystemNameIndices.Len() > 0 {
-						bitutil.ClearBit(r.LineFunctionSystemNameIndices.NullBitmapBytes(), lineIdx)
-					}
-					if r.LineFunctionFilenameIndices.Len() > 0 {
-						bitutil.ClearBit(r.LineFunctionFilenameIndices.NullBitmapBytes(), lineIdx)
-					}
-					if r.LineFunctionStartLine.Len() > 0 {
-						bitutil.ClearBit(r.LineFunctionStartLine.NullBitmapBytes(), lineIdx)
-					}
-					if r.LineNumber.Len() > 0 {
-						bitutil.ClearBit(r.LineNumber.NullBitmapBytes(), lineIdx)
+					if r.Line.Len() > 0 {
+						bitutil.ClearBit(r.Line.NullBitmapBytes(), lineIdx)
 					}
 				}
 			}

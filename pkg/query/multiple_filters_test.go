@@ -783,7 +783,7 @@ func TestFrameFilterFunctionNameSingle(t *testing.T) {
 			// Count valid frames (non-null) and verify they all contain "database"
 			validFrameCount := 0
 			for k := int(firstStart); k < int(lastEnd); k++ {
-				if r.LineFunctionNameIndices.IsValid(k) {
+				if r.Line.IsValid(k) {
 					fnIndex := r.LineFunctionNameIndices.Value(k)
 					functionName := string(r.LineFunctionNameDict.Value(int(fnIndex)))
 
@@ -862,7 +862,7 @@ func TestFrameFilterFunctionNameNotContains(t *testing.T) {
 			// Count valid frames (non-null) and verify none contain "database"
 			validFrameCount := 0
 			for k := int(firstStart); k < int(lastEnd); k++ {
-				if r.LineFunctionNameIndices.IsValid(k) {
+				if r.Line.IsValid(k) {
 					fnIndex := r.LineFunctionNameIndices.Value(k)
 					functionName := string(r.LineFunctionNameDict.Value(int(fnIndex)))
 
