@@ -68,6 +68,15 @@ interface SharedQueryControlsProps {
   sumBySelectionLoading?: boolean;
   setUserSumBySelection?: (sumBy: string[]) => void;
   sumByRef?: React.RefObject<SelectInstance>;
+  externalLabelSource?: {
+    type: string;
+    labelNames: string[];
+    isLoading: boolean;
+    error?: Error | null;
+    fetchLabelValues?: (labelName: string) => Promise<string[]>;
+    refetchLabelNames?: () => Promise<void>;
+    refetchLabelValues?: (labelName?: string) => Promise<void>;
+  };
 }
 
 export function SharedQueryControls({
@@ -97,6 +106,7 @@ export function SharedQueryControls({
   sumBySelectionLoading = false,
   setUserSumBySelection,
   sumByRef,
+  externalLabelSource,
 }: SharedQueryControlsProps): JSX.Element {
   const {timezone} = useParcaContext();
   const defaultQueryBrowserRef = useRef<HTMLDivElement>(null);
@@ -163,8 +173,12 @@ export function SharedQueryControls({
       error: result.error ?? null,
     });
 
+    if (externalLabelSource != null) {
+      sources.push(externalLabelSource);
+    }
+
     return sources;
-  }, [result, loading]);
+  }, [result, loading, externalLabelSource]);
 
   return (
     <LabelProvider
@@ -255,6 +269,11 @@ export function SharedQueryControls({
               queryClient={queryClient}
               start={timeRangeSelection.getFromMs()}
               end={timeRangeSelection.getToMs()}
+              externalLabelNames={externalLabelSource?.labelNames}
+              externalLabelNamesLoading={externalLabelSource?.isLoading}
+              externalFetchLabelValues={externalLabelSource?.fetchLabelValues}
+              externalRefetchLabelNames={externalLabelSource?.refetchLabelNames}
+              externalRefetchLabelValues={externalLabelSource?.refetchLabelValues}
             />
           ) : (
             <SimpleMatchers
