@@ -15,6 +15,7 @@ import {createContext, useContext, useMemo} from 'react';
 
 import {transformLabelsForSelect} from '../SimpleMatchers';
 import type {SelectItem} from '../SimpleMatchers/Select';
+import {aggregateLoadingState, findFirstError} from './utils';
 
 interface LabelNameSection {
   type: string;
@@ -25,6 +26,7 @@ interface LabelContextValue {
   labelNameOptions: LabelNameSection[];
   isLoading: boolean;
   error: Error | null;
+  fetchLabelValues?: (labelName: string) => Promise<string[]>;
   refetchLabelValues?: (labelName?: string) => Promise<void>;
   refetchLabelNames?: () => Promise<void>;
 }
@@ -36,6 +38,7 @@ export interface LabelSource {
   labelNames: string[];
   isLoading: boolean;
   error?: Error | null;
+  fetchLabelValues?: (labelName: string) => Promise<string[]>;
 }
 
 interface LabelProviderProps {
@@ -54,14 +57,36 @@ export function LabelProvider({
   refetchLabelNames,
 }: LabelProviderProps): JSX.Element {
   const value = useMemo(() => {
-    const isLoading = labelSources.some(source => source.isLoading);
-    const error = labelSources.find(source => source.error != null)?.error ?? null;
+    const isLoading = aggregateLoadingState(labelSources);
+    const error = findFirstError(labelSources);
+
+    const unifiedFetchLabelValues = (() => {
+      const sourcesWithFetchers = labelSources.filter(s => s.fetchLabelValues != null);
+
+      if (sourcesWithFetchers.length === 0) return undefined;
+
+      return async (labelName: string): Promise<string[]> => {
+        for (const source of sourcesWithFetchers) {
+          const fetcher = source.fetchLabelValues;
+          if (fetcher == null) continue;
+
+          try {
+            const values = await fetcher(labelName);
+            if (values.length > 0) return values;
+          } catch (error) {
+            console.error('Error fetching from external label source:', error);
+          }
+        }
+        return [];
+      };
+    })();
 
     if (isLoading || error != null) {
       return {
         labelNameOptions: [],
         isLoading,
         error,
+        fetchLabelValues: unifiedFetchLabelValues,
         refetchLabelValues,
         refetchLabelNames,
       };
@@ -97,6 +122,7 @@ export function LabelProvider({
       labelNameOptions: options,
       isLoading: false,
       error: null,
+      fetchLabelValues: unifiedFetchLabelValues,
       refetchLabelValues,
       refetchLabelNames,
     };

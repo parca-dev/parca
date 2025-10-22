@@ -36,6 +36,14 @@ interface MatchersInputProps {
   end?: number;
 }
 
+export interface MatchersInputWithExternalLabelsProps extends MatchersInputProps {
+  externalLabelNames?: string[];
+  externalLabelNamesLoading?: boolean;
+  externalFetchLabelValues?: (labelName: string) => Promise<string[]>;
+  externalRefetchLabelNames?: () => Promise<void>;
+  externalRefetchLabelValues?: (labelName?: string) => Promise<void>;
+}
+
 export interface ILabelNamesResult {
   response?: LabelsResponse;
   error?: Error;
@@ -338,15 +346,31 @@ const MatchersInput = ({
   );
 };
 
-export default function MatchersInputWithProvider(props: MatchersInputProps): JSX.Element {
+export default function MatchersInputWithExternalLabels(
+  props: MatchersInputWithExternalLabelsProps
+): JSX.Element {
+  const {
+    externalLabelNames,
+    externalLabelNamesLoading,
+    externalFetchLabelValues,
+    externalRefetchLabelNames,
+    externalRefetchLabelValues,
+    ...matchersInputProps
+  } = props;
+
   return (
     <LabelsProvider
       queryClient={props.queryClient}
       profileType={props.profileType}
       start={props.start}
       end={props.end}
+      externalLabelNames={externalLabelNames}
+      externalLabelNamesLoading={externalLabelNamesLoading}
+      externalFetchLabelValues={externalFetchLabelValues}
+      externalRefetchLabelNames={externalRefetchLabelNames}
+      externalRefetchLabelValues={externalRefetchLabelValues}
     >
-      <MatchersInput {...props} />
+      <MatchersInput {...matchersInputProps} />
     </LabelsProvider>
   );
 }

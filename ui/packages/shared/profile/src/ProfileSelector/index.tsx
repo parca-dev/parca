@@ -31,7 +31,7 @@ import {millisToProtoTimestamp, type NavigateFunction} from '@parca/utilities';
 import {ProfileSelection} from '..';
 import {useLabelNames} from '../MatchersInput/index';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
-import {SharedQueryControls} from '../SharedQueryControls';
+import {QueryControls} from '../QueryControls';
 import useGrpcQuery from '../useGrpcQuery';
 import {useDefaultSumBy, useSumBySelection} from '../useSumBy';
 import {MetricsGraphSection} from './MetricsGraphSection';
@@ -275,7 +275,7 @@ const ProfileSelector = ({
   return (
     <>
       <div className="mb-2 flex">
-        <SharedQueryControls
+        <QueryControls
           queryClient={queryClient}
           query={query}
           profileType={profileType}
