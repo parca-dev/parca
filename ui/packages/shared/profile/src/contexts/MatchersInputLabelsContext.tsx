@@ -32,8 +32,8 @@ interface LabelsContextType {
   currentLabelName: string | null;
   setCurrentLabelName: (name: string | null) => void;
   shouldHandlePrefixes: boolean;
-  refetchLabelValues: () => void;
-  refetchLabelNames: () => void;
+  refetchLabelValues: () => Promise<void>;
+  refetchLabelNames: () => Promise<void>;
 }
 
 const LabelsContext = createContext<LabelsContextType | null>(null);
