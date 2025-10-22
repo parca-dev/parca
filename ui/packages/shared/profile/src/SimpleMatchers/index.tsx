@@ -114,7 +114,7 @@ const operatorOptions = [
   },
 ];
 
-const SimpleMatchers = ({
+export const SimpleMatchers = ({
   queryClient,
   setMatchersString,
   currentQuery,
@@ -470,7 +470,7 @@ const SimpleMatchers = ({
             onButtonClick={() => handleLabelValueClick(index)}
             editable={isRowRegex(row)}
             {...testId(TEST_IDS.LABEL_VALUE_SELECT)}
-            refetchValues={async () => await refetchLabelValues(row.labelName)}
+            refetchValues={async () => await refetchLabelValues?.(row.labelName)}
             showLoadingInButton={true}
           />
           <button
@@ -515,74 +515,74 @@ const SimpleMatchers = ({
   );
 };
 
-export default function SimpleMathersWithProvider(props: Props): JSX.Element {
-  const {
-    loading,
-    result,
-    refetch: refetchLabelNames,
-  } = useLabelNames(props.queryClient, props.profileType, props.start, props.end);
+// export default function SimpleMathersWithProvider(props: Props): JSX.Element {
+//   const {
+//     loading,
+//     result,
+//     refetch: refetchLabelNames,
+//   } = useLabelNames(props.queryClient, props.profileType, props.start, props.end);
 
-  const reactQueryClient = useQueryClient();
+//   const reactQueryClient = useQueryClient();
 
-  const refetchLabelValues = useCallback(
-    async (labelName?: string) => {
-      await reactQueryClient.refetchQueries({
-        predicate: query => {
-          const key = query.queryKey;
-          const matchesStructure =
-            Array.isArray(key) &&
-            key.length === 4 &&
-            typeof key[0] === 'string' &&
-            key[1] === props.profileType;
+//   const refetchLabelValues = useCallback(
+//     async (labelName?: string) => {
+//       await reactQueryClient.refetchQueries({
+//         predicate: query => {
+//           const key = query.queryKey;
+//           const matchesStructure =
+//             Array.isArray(key) &&
+//             key.length === 4 &&
+//             typeof key[0] === 'string' &&
+//             key[1] === props.profileType;
 
-          if (!matchesStructure) return false;
+//           if (!matchesStructure) return false;
 
-          if (labelName !== undefined && labelName !== '') {
-            return key[0] === labelName;
-          }
+//           if (labelName !== undefined && labelName !== '') {
+//             return key[0] === labelName;
+//           }
 
-          return true;
-        },
-      });
-    },
-    [reactQueryClient, props.profileType]
-  );
+//           return true;
+//         },
+//       });
+//     },
+//     [reactQueryClient, props.profileType]
+//   );
 
-  const labelNameFromMatchers = useMemo(() => {
-    if (props.currentQuery === undefined) return [];
+//   const labelNameFromMatchers = useMemo(() => {
+//     if (props.currentQuery === undefined) return [];
 
-    const matchers = props.currentQuery.matchers;
+//     const matchers = props.currentQuery.matchers;
 
-    return matchers.map(matcher => matcher.key);
-  }, [props.currentQuery]);
+//     return matchers.map(matcher => matcher.key);
+//   }, [props.currentQuery]);
 
-  const labelSources = useMemo(() => {
-    const sources: LabelSource[] = [];
+//   const labelSources = useMemo(() => {
+//     const sources: LabelSource[] = [];
 
-    const profileLabelNames =
-      result.error != null
-        ? []
-        : (result.response?.labelNames.filter((e: string) => e !== '__name__') ?? []);
-    const uniqueProfileLabelNames = Array.from(new Set(profileLabelNames));
+//     const profileLabelNames =
+//       result.error != null
+//         ? []
+//         : (result.response?.labelNames.filter((e: string) => e !== '__name__') ?? []);
+//     const uniqueProfileLabelNames = Array.from(new Set(profileLabelNames));
 
-    sources.push({
-      type: 'cpu',
-      labelNames: uniqueProfileLabelNames,
-      isLoading: loading,
-      error: result.error ?? null,
-    });
+//     sources.push({
+//       type: 'cpu',
+//       labelNames: uniqueProfileLabelNames,
+//       isLoading: loading,
+//       error: result.error ?? null,
+//     });
 
-    return sources;
-  }, [result, loading]);
+//     return sources;
+//   }, [result, loading]);
 
-  return (
-    <LabelProvider
-      labelSources={labelSources}
-      labelNameFromMatchers={labelNameFromMatchers}
-      refetchLabelNames={refetchLabelNames}
-      refetchLabelValues={refetchLabelValues}
-    >
-      <SimpleMatchers {...props} />
-    </LabelProvider>
-  );
-}
+//   return (
+//     <LabelProvider
+//       labelSources={labelSources}
+//       labelNameFromMatchers={labelNameFromMatchers}
+//       refetchLabelNames={refetchLabelNames}
+//       refetchLabelValues={refetchLabelValues}
+//     >
+//       <SimpleMatchers {...props} />
+//     </LabelProvider>
+//   );
+// }
