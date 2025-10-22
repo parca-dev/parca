@@ -54,8 +54,8 @@ interface Props {
   isLabelNamesLoading: boolean;
   isLabelValuesLoading: boolean;
   shouldTrimPrefix: boolean;
-  refetchLabelValues: () => void;
-  refetchLabelNames: () => void;
+  refetchLabelValues: () => Promise<void>;
+  refetchLabelNames: () => Promise<void>;
 }
 
 const LoadingSpinner = (): JSX.Element => {
@@ -388,6 +388,7 @@ const SuggestionsList = ({
                     disabled={isRefetchingNames}
                     title="Refresh label names"
                     testId="suggestions-refresh-names-button"
+                    loading={isRefetchingNames}
                   />
                 )}
               {suggestions.labelNames.length === 0 &&
@@ -398,6 +399,7 @@ const SuggestionsList = ({
                     disabled={isRefetchingValues}
                     title="Refresh label values"
                     testId="suggestions-refresh-values-button"
+                    loading={isRefetchingValues}
                   />
                 )}
             </div>

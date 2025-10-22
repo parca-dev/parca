@@ -30,8 +30,8 @@ interface LabelsContextType {
   isLabelValuesLoading: boolean;
   currentLabelName: string | null;
   setCurrentLabelName: (name: string | null) => void;
-  refetchLabelValues: () => void;
-  refetchLabelNames: () => void;
+  refetchLabelValues: () => Promise<void>;
+  refetchLabelNames: () => Promise<void>;
 }
 
 const LabelsContext = createContext<LabelsContextType | null>(null);
