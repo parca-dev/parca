@@ -95,7 +95,7 @@ interface UseLabelValues {
     error?: Error;
   };
   loading: boolean;
-  refetch: () => void;
+  refetch: () => Promise<void>;
 }
 
 export const useLabelValues = (
@@ -133,8 +133,8 @@ export const useLabelValues = (
   return {
     result: {response: data ?? [], error: error as Error},
     loading: isLoading,
-    refetch: () => {
-      void refetch();
+    refetch: async () => {
+      await refetch();
     },
   };
 };

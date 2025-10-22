@@ -38,8 +38,10 @@ const RefreshButton = ({
       )}
     >
       <button
-        onClick={e => {
+        onMouseDown={e => {
           e.preventDefault();
+        }}
+        onClick={e => {
           e.stopPropagation();
           onClick();
         }}
