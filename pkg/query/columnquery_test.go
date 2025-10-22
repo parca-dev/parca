@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/apache/arrow-go/v18/arrow"
+	"github.com/apache/arrow-go/v18/arrow/array"
 	"github.com/apache/arrow-go/v18/arrow/math"
 	"github.com/apache/arrow-go/v18/arrow/memory"
 	"github.com/go-kit/log"
@@ -2101,4 +2102,51 @@ func TestKwayMerge(t *testing.T) {
 	merged := MergeTwoSortedSlices(arr1, arr2)
 
 	require.Equal(t, []string{"a", "c", "e", "f", "i", "m", "o", "r"}, merged)
+}
+
+func TestSetArrayElementToNull(t *testing.T) {
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
+
+	tests := []struct {
+		name         string
+		buildArray   func() arrow.Array
+		indexToNull  int
+		expectedNull int
+	}{
+		{
+			name: "array with existing null bitmap",
+			buildArray: func() arrow.Array {
+				b := array.NewInt64Builder(mem)
+				defer b.Release()
+				b.AppendValues([]int64{1, 2, 3}, []bool{true, false, true})
+				return b.NewArray()
+			},
+			indexToNull:  0,
+			expectedNull: 2,
+		},
+		{
+			name: "array with no null bitmap",
+			buildArray: func() arrow.Array {
+				b := array.NewInt64Builder(mem)
+				defer b.Release()
+				b.AppendValues([]int64{1, 2, 3}, nil)
+				return b.NewArray()
+			},
+			indexToNull:  1,
+			expectedNull: 1,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			arr := tc.buildArray()
+			defer arr.Release()
+
+			setArrayElementToNull(arr, tc.indexToNull, mem)
+
+			require.True(t, arr.IsNull(tc.indexToNull))
+			require.Equal(t, tc.expectedNull, arr.NullN())
+		})
+	}
 }
