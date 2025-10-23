@@ -22,7 +22,7 @@ FROM docker.io/golang:1.25.1-alpine@sha256:b6ed3fd0452c0e9bcdef5597f29cc1418f616
 ARG DLV_VERSION=v1.25.2
 
 # renovate: datasource=go depName=github.com/grpc-ecosystem/grpc-health-probe
-ARG GRPC_HEALTH_PROBE_VERSION=v0.4.40
+ARG GRPC_HEALTH_PROBE_VERSION=v0.4.41
 
 WORKDIR /app
 
