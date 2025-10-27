@@ -16,6 +16,7 @@ import ProfileExplorer, {getExpressionAsAString} from './ProfileExplorer';
 import ProfileTypeSelector from './ProfileTypeSelector';
 import {SelectWithRefresh} from './SelectWithRefresh';
 import CustomSelect from './SimpleMatchers/Select';
+import {LabelProvider} from './contexts/SimpleMatchersLabelContext';
 import {useLabelNames} from './hooks/useLabels';
 
 export {useMetricsGraphDimensions} from './MetricsGraph/useMetricsGraphDimensions';
@@ -50,6 +51,7 @@ export {
   SelectWithRefresh,
   useLabelNames,
   MetricsGraph,
+  LabelProvider,
   type ContextMenuItemOrSubmenu,
   type Series,
 };

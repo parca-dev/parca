@@ -16,16 +16,6 @@ import {createContext, useContext} from 'react';
 import {QueryServiceClient} from '@parca/client';
 import {Query} from '@parca/parser';
 
-export interface ExternalLabelSource {
-  type: string;
-  labelNames: string[];
-  isLoading: boolean;
-  error?: Error | null;
-  fetchLabelValues?: (labelName: string) => Promise<string[]>;
-  refetchLabelNames?: () => Promise<void>;
-  refetchLabelValues?: (labelName?: string) => Promise<void>;
-}
-
 interface UnifiedLabelsContextType {
   queryClient: QueryServiceClient;
   setMatchersString: (arg: string) => void;
@@ -37,8 +27,6 @@ interface UnifiedLabelsContextType {
 
   queryBrowserRef: React.RefObject<HTMLDivElement>;
   searchExecutedTimestamp?: number;
-
-  externalLabelSource?: ExternalLabelSource;
 }
 
 const UnifiedLabelsContext = createContext<UnifiedLabelsContextType | null>(null);
@@ -56,7 +44,6 @@ interface UnifiedLabelsProviderProps {
 
   queryBrowserRef: React.RefObject<HTMLDivElement>;
   searchExecutedTimestamp?: number;
-  externalLabelSource?: ExternalLabelSource;
 }
 
 export function UnifiedLabelsProvider({
@@ -68,12 +55,10 @@ export function UnifiedLabelsProvider({
   profileType,
   queryBrowserRef,
   searchExecutedTimestamp,
-  externalLabelSource,
   start,
   end,
 }: UnifiedLabelsProviderProps): JSX.Element {
   const value = {
-    externalLabelSource,
     queryClient,
     setMatchersString,
     runQuery,

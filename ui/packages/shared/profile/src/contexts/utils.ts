@@ -18,14 +18,6 @@ export interface LabelNameMapping {
   fullName: string;
 }
 
-export const aggregateLoadingState = (sources: Array<{isLoading: boolean}>): boolean => {
-  return sources.some(source => source.isLoading);
-};
-
-export const findFirstError = (sources: Array<{error?: Error | null}>): Error | null => {
-  return sources.find(source => source.error != null)?.error ?? null;
-};
-
 export const transformLabelName = (labelName: string): string => {
   return labelName.replace(/^(attributes\.|attributes_resource\.)/, '');
 };

@@ -131,12 +131,7 @@ const SimpleMatchers = ({
     }
   }, [searchExecutedTimestamp]);
 
-  const {
-    labelNameOptions,
-    isLoading: labelNamesLoading,
-    fetchLabelValues: contextFetchLabelValues,
-    refetchLabelNames,
-  } = useLabels();
+  const {labelNameOptions, isLoading: labelNamesLoading, refetchLabelNames} = useLabels();
 
   const visibleRows = showAll || isActivelyEditing ? queryRows : queryRows.slice(0, 3);
   const hiddenRowsCount = queryRows.length - 3;
@@ -149,15 +144,6 @@ const SimpleMatchers = ({
     async (labelName: string): Promise<string[]> => {
       if (labelName == null || labelName === '') {
         return [];
-      }
-
-      if (contextFetchLabelValues != null) {
-        try {
-          const values = await contextFetchLabelValues(labelName);
-          if (values.length > 0) return values;
-        } catch (error) {
-          console.error('Error fetching from external source:', error);
-        }
       }
 
       if (profileType == null || profileType === '') {
@@ -192,7 +178,7 @@ const SimpleMatchers = ({
         return [];
       }
     },
-    [contextFetchLabelValues, queryClient, metadata, profileType, reactQueryClient, start, end]
+    [queryClient, metadata, profileType, reactQueryClient, start, end]
   );
 
   const updateMatchersString = useCallback(

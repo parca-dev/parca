@@ -16,7 +16,7 @@ import {useCallback, useMemo} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 
 import SimpleMatchers from '.';
-import {LabelProvider, LabelSource} from '../contexts/SimpleMatchersLabelContext';
+import {LabelProvider} from '../contexts/SimpleMatchersLabelContext';
 import {useUnifiedLabels} from '../contexts/UnifiedLabelsContext';
 import {useLabelNames} from '../hooks/useLabels';
 
@@ -31,7 +31,6 @@ const SimpleMatchersWithProvider = (): JSX.Element => {
     start,
     end,
     searchExecutedTimestamp,
-    externalLabelSource,
   } = useUnifiedLabels();
 
   const {
@@ -50,28 +49,22 @@ const SimpleMatchersWithProvider = (): JSX.Element => {
     return matchers.map(matcher => matcher.key);
   }, [query]);
 
-  const labelSources = useMemo(() => {
-    const sources: LabelSource[] = [];
-
-    const profileLabelNames =
+  const profileLabelNames = useMemo(
+    () =>
       result.error != null
         ? []
-        : result.response?.labelNames.filter((e: string) => e !== '__name__') ?? [];
-    const uniqueProfileLabelNames = Array.from(new Set(profileLabelNames));
+        : result.response?.labelNames.filter((e: string) => e !== '__name__') ?? [],
+    [result]
+  );
 
-    sources.push({
-      type: 'cpu',
-      labelNames: uniqueProfileLabelNames,
-      isLoading: loading,
-      error: result.error ?? null,
-    });
+  const uniqueProfileLabelNames = Array.from(new Set(profileLabelNames));
 
-    if (externalLabelSource != null) {
-      sources.push(externalLabelSource);
-    }
-
-    return sources;
-  }, [result, loading, externalLabelSource]);
+  const labels = {
+    type: 'cpu',
+    labelNames: uniqueProfileLabelNames,
+    isLoading: loading,
+    error: result.error ?? null,
+  };
 
   const refetchLabelValues = useCallback(
     async (labelName?: string) => {
@@ -99,7 +92,7 @@ const SimpleMatchersWithProvider = (): JSX.Element => {
 
   return (
     <LabelProvider
-      labelSources={labelSources}
+      labels={labels}
       labelNameFromMatchers={labelNameFromMatchers}
       refetchLabelNames={refetchLabelNames}
       refetchLabelValues={refetchLabelValues}

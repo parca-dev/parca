@@ -15,7 +15,6 @@ import {createContext, useContext, useMemo} from 'react';
 
 import {transformLabelsForSelect} from '../SimpleMatchers';
 import type {SelectItem} from '../SimpleMatchers/Select';
-import {aggregateLoadingState, findFirstError} from './utils';
 
 interface LabelNameSection {
   type: string;
@@ -26,14 +25,13 @@ interface LabelContextValue {
   labelNameOptions: LabelNameSection[];
   isLoading: boolean;
   error: Error | null;
-  fetchLabelValues?: (labelName: string) => Promise<string[]>;
   refetchLabelValues?: (labelName?: string) => Promise<void>;
   refetchLabelNames?: () => Promise<void>;
 }
 
 const LabelContext = createContext<LabelContextValue | null>(null);
 
-export interface LabelSource {
+export interface Labels {
   type: string;
   labelNames: string[];
   isLoading: boolean;
@@ -43,7 +41,7 @@ export interface LabelSource {
 
 interface LabelProviderProps {
   children: React.ReactNode;
-  labelSources: LabelSource[];
+  labels: Labels;
   labelNameFromMatchers: string[];
   refetchLabelValues?: (labelName?: string) => Promise<void>;
   refetchLabelNames?: () => Promise<void>;
@@ -51,63 +49,35 @@ interface LabelProviderProps {
 
 export function LabelProvider({
   children,
-  labelSources,
+  labels,
   labelNameFromMatchers,
   refetchLabelValues,
   refetchLabelNames,
 }: LabelProviderProps): JSX.Element {
   const value = useMemo(() => {
-    const isLoading = aggregateLoadingState(labelSources);
-    const error = findFirstError(labelSources);
-
-    const unifiedFetchLabelValues = (() => {
-      const sourcesWithFetchers = labelSources.filter(s => s.fetchLabelValues != null);
-
-      if (sourcesWithFetchers.length === 0) return undefined;
-
-      return async (labelName: string): Promise<string[]> => {
-        for (const source of sourcesWithFetchers) {
-          const fetcher = source.fetchLabelValues;
-          if (fetcher == null) continue;
-
-          try {
-            const values = await fetcher(labelName);
-            if (values.length > 0) return values;
-          } catch (error) {
-            console.error('Error fetching from external label source:', error);
-          }
-        }
-        return [];
-      };
-    })();
+    const isLoading = labels.isLoading;
+    const error = labels.error ?? null;
 
     if (isLoading || error != null) {
       return {
         labelNameOptions: [],
         isLoading,
         error,
-        fetchLabelValues: unifiedFetchLabelValues,
+        fetchLabelValues: undefined,
         refetchLabelValues,
         refetchLabelNames,
       };
     }
 
-    const allLabelNames = new Set<string>();
-    labelSources.forEach(source => {
-      source.labelNames.forEach(name => allLabelNames.add(name));
-    });
+    const allLabelNames = new Set(labels.labelNames);
 
     const nonMatchingLabels = labelNameFromMatchers.filter(label => !allLabelNames.has(label));
 
     const options: LabelNameSection[] = [];
 
-    labelSources.forEach(source => {
-      if (source.labelNames.length > 0) {
-        options.push({
-          type: source.type,
-          values: transformLabelsForSelect(source.labelNames),
-        });
-      }
+    options.push({
+      type: labels.type,
+      values: transformLabelsForSelect(labels.labelNames),
     });
 
     if (nonMatchingLabels.length > 0) {
@@ -122,11 +92,10 @@ export function LabelProvider({
       labelNameOptions: options,
       isLoading: false,
       error: null,
-      fetchLabelValues: unifiedFetchLabelValues,
       refetchLabelValues,
       refetchLabelNames,
     };
-  }, [labelSources, labelNameFromMatchers, refetchLabelValues, refetchLabelNames]);
+  }, [labels, labelNameFromMatchers, refetchLabelValues, refetchLabelNames]);
 
   return <LabelContext.Provider value={value}>{children}</LabelContext.Provider>;
 }

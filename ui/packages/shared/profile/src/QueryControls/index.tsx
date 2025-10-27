@@ -68,15 +68,6 @@ interface QueryControlsProps {
   sumBySelectionLoading?: boolean;
   setUserSumBySelection?: (sumBy: string[]) => void;
   sumByRef?: React.RefObject<SelectInstance>;
-  externalLabelSource?: {
-    type: string;
-    labelNames: string[];
-    isLoading: boolean;
-    error?: Error | null;
-    fetchLabelValues?: (labelName: string) => Promise<string[]>;
-    refetchLabelNames?: () => Promise<void>;
-    refetchLabelValues?: (labelName?: string) => Promise<void>;
-  };
 }
 
 export function QueryControls({
@@ -106,7 +97,6 @@ export function QueryControls({
   sumBySelectionLoading = false,
   setUserSumBySelection,
   sumByRef,
-  externalLabelSource,
 }: QueryControlsProps): JSX.Element {
   const {timezone} = useParcaContext();
   const defaultQueryBrowserRef = useRef<HTMLDivElement>(null);
@@ -131,7 +121,6 @@ export function QueryControls({
       end={timeRangeSelection.getToMs()}
       queryBrowserRef={actualQueryBrowserRef}
       searchExecutedTimestamp={searchExecutedTimestamp}
-      externalLabelSource={externalLabelSource}
     >
       <div
         className="flex w-full flex-wrap items-start gap-2"

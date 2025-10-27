@@ -16,25 +16,11 @@ import {LabelsProvider} from '../contexts/MatchersInputLabelsContext';
 import {useUnifiedLabels} from '../contexts/UnifiedLabelsContext';
 
 export default function MatchersInputWithExternalLabels(): JSX.Element {
-  const {
-    queryClient,
-    setMatchersString,
-    runQuery,
-    currentQuery,
-    profileType,
-    start,
-    end,
-    externalLabelSource,
-  } = useUnifiedLabels();
+  const {queryClient, setMatchersString, runQuery, currentQuery, profileType, start, end} =
+    useUnifiedLabels();
 
   return (
-    <LabelsProvider
-      queryClient={queryClient}
-      profileType={profileType}
-      start={start}
-      end={end}
-      externalLabelSource={externalLabelSource}
-    >
+    <LabelsProvider queryClient={queryClient} profileType={profileType} start={start} end={end}>
       <MatchersInput
         setMatchersString={setMatchersString}
         runQuery={runQuery}
