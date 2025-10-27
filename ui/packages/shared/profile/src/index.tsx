@@ -11,12 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useLabelNames} from './MatchersInput';
 import MetricsGraph, {type ContextMenuItemOrSubmenu, type Series} from './MetricsGraph';
 import ProfileExplorer, {getExpressionAsAString} from './ProfileExplorer';
 import ProfileTypeSelector from './ProfileTypeSelector';
-import SelectWithRefresh from './SelectWithRefresh';
+import {SelectWithRefresh} from './SelectWithRefresh';
 import CustomSelect from './SimpleMatchers/Select';
+import {useLabelNames} from './hooks/useLabels';
 
 export {useMetricsGraphDimensions} from './MetricsGraph/useMetricsGraphDimensions';
 
@@ -33,7 +33,7 @@ export * from './ProfileTypeSelector';
 export * from './SourceView';
 export * from './ProfileMetricsGraph';
 export * from './useSumBy';
-export {SharedQueryControls} from './QueryControls';
+export {QueryControls} from './QueryControls';
 
 export {default as ProfileFilters} from './ProfileView/components/ProfileFilters';
 export {useProfileFiltersUrlState} from './ProfileView/components/ProfileFilters/useProfileFiltersUrlState';

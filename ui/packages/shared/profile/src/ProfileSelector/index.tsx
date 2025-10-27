@@ -29,9 +29,9 @@ import {TEST_IDS, testId} from '@parca/test-utils';
 import {millisToProtoTimestamp, type NavigateFunction} from '@parca/utilities';
 
 import {ProfileSelection} from '..';
-import {useLabelNames} from '../MatchersInput/index';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
 import {QueryControls} from '../QueryControls';
+import {useLabelNames} from '../hooks/useLabels';
 import useGrpcQuery from '../useGrpcQuery';
 import {useDefaultSumBy, useSumBySelection} from '../useSumBy';
 import {MetricsGraphSection} from './MetricsGraphSection';

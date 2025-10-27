@@ -11,11 +11,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {createContext, useContext, useMemo} from 'react';
+import {createContext, useCallback, useContext, useMemo, useState} from 'react';
 
 import {QueryServiceClient} from '@parca/client';
 
-import {useLabelNames, useLabelValues} from '../MatchersInput';
+import {ExternalLabelSource} from '../contexts/UnifiedLabelsContext';
+import {useExternalLabelValues} from '../hooks/useExternalLabels';
+import {useLabelNames, useLabelValues} from '../hooks/useLabels';
 import {useExtractedLabelNames, useLabelNameMappings, type LabelNameMapping} from './utils';
 
 interface LabelsContextType {
@@ -27,9 +29,10 @@ interface LabelsContextType {
   currentLabelName: string | null;
   setCurrentLabelName: (name: string | null) => void;
   shouldHandlePrefixes: boolean;
-  fetchLabelValues?: (labelName: string) => Promise<string[]>;
   refetchLabelValues: () => Promise<void>;
   refetchLabelNames: () => Promise<void>;
+
+  externalLabelSource?: ExternalLabelSource;
 }
 
 const LabelsContext = createContext<LabelsContextType | null>(null);
@@ -41,11 +44,8 @@ interface LabelsProviderProps {
   start?: number;
   end?: number;
   shouldHandlePrefixes?: boolean;
-  externalLabelNames?: string[];
-  externalLabelNamesLoading?: boolean;
-  externalFetchLabelValues?: (labelName: string) => Promise<string[]>;
-  externalRefetchLabelNames?: () => Promise<void>;
-  externalRefetchLabelValues?: (labelName?: string) => Promise<void>;
+
+  externalLabelSource?: ExternalLabelSource;
 }
 
 export function LabelsProvider({
@@ -55,13 +55,9 @@ export function LabelsProvider({
   start,
   end,
   shouldHandlePrefixes = true,
-  externalLabelNames,
-  externalLabelNamesLoading = false,
-  externalFetchLabelValues,
-  externalRefetchLabelNames,
-  externalRefetchLabelValues,
+  externalLabelSource,
 }: LabelsProviderProps): JSX.Element {
-  const [currentLabelName, setCurrentLabelName] = React.useState<string | null>(null);
+  const [currentLabelName, setCurrentLabelName] = useState<string | null>(null);
 
   const {
     result: labelNamesResponse,
@@ -76,13 +72,13 @@ export function LabelsProvider({
 
   const labelNamesFromAPI = useMemo(() => {
     const combined = [...internalLabelNames];
-    if (externalLabelNames != null) {
-      combined.push(...externalLabelNames);
+    if (externalLabelSource?.labelNames != null) {
+      combined.push(...externalLabelSource.labelNames);
     }
-    return Array.from(new Set(combined)); // dedupe
-  }, [internalLabelNames, externalLabelNames]);
+    return Array.from(new Set(combined));
+  }, [internalLabelNames, externalLabelSource?.labelNames]);
 
-  const mergedLoading = isLabelNamesLoading || externalLabelNamesLoading;
+  const mergedLoading = isLabelNamesLoading || externalLabelSource?.isLoading === true;
 
   const {
     result: labelValuesOriginal,
@@ -90,58 +86,65 @@ export function LabelsProvider({
     refetch: refetchLabelValuesInternal,
   } = useLabelValues(queryClient, currentLabelName ?? '', profileType, start, end);
 
+  const {
+    data: externalLabelValues,
+    loading: isExternalLabelValuesLoading,
+    refetch: refetchExternalLabelValues,
+  } = useExternalLabelValues(currentLabelName ?? '', externalLabelSource);
+
+  const mergedLabelValuesLoading =
+    isLabelValuesLoading || (externalLabelSource != null && isExternalLabelValuesLoading);
+
+  const mergedLabelValues = useMemo(() => {
+    if (externalLabelValues != null) {
+      return [...labelValuesOriginal.response, ...externalLabelValues];
+    }
+    return labelValuesOriginal.response;
+  }, [labelValuesOriginal, externalLabelValues]);
+
   const labelNameMappings = useLabelNameMappings(labelNamesFromAPI);
 
   const labelNames = useMemo(() => {
     return labelNameMappings.map(m => m.displayName);
   }, [labelNameMappings]);
 
-  const labelValues = useMemo(() => {
-    return labelValuesOriginal.response;
-  }, [labelValuesOriginal]);
-
-  const refetchLabelNames = React.useCallback(async () => {
+  const refetchLabelNames = useCallback(async () => {
     await Promise.all([
       refetchLabelNamesInternal(),
-      externalRefetchLabelNames?.() ?? Promise.resolve(),
+      externalLabelSource?.refetchLabelNames ?? Promise.resolve(),
     ]);
-  }, [refetchLabelNamesInternal, externalRefetchLabelNames]);
+  }, [refetchLabelNamesInternal, externalLabelSource?.refetchLabelNames]);
 
-  const refetchLabelValues = React.useCallback(
-    async (labelName?: string) => {
-      await Promise.all([
-        refetchLabelValuesInternal(),
-        externalRefetchLabelValues?.(labelName) ?? Promise.resolve(),
-      ]);
-    },
-    [refetchLabelValuesInternal, externalRefetchLabelValues]
-  );
+  const refetchLabelValues = useCallback(async () => {
+    await Promise.all([
+      refetchLabelValuesInternal(),
+      refetchExternalLabelValues ?? Promise.resolve(),
+    ]);
+  }, [refetchLabelValuesInternal, refetchExternalLabelValues]);
 
   const value = useMemo(
     () => ({
       labelNames,
-      labelValues,
+      labelValues: mergedLabelValues,
       labelNameMappings,
       isLabelNamesLoading: mergedLoading,
-      isLabelValuesLoading,
+      isLabelValuesLoading: mergedLabelValuesLoading,
       currentLabelName,
       setCurrentLabelName,
       shouldHandlePrefixes,
-      fetchLabelValues: externalFetchLabelValues,
       refetchLabelValues,
       refetchLabelNames,
     }),
     [
       labelNames,
-      labelValues,
+      mergedLabelValues,
       labelNameMappings,
       mergedLoading,
-      isLabelValuesLoading,
       currentLabelName,
       shouldHandlePrefixes,
-      externalFetchLabelValues,
       refetchLabelValues,
       refetchLabelNames,
+      mergedLabelValuesLoading,
     ]
   );
 

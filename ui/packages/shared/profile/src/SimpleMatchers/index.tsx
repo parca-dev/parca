@@ -104,7 +104,7 @@ const operatorOptions = [
   },
 ];
 
-export const SimpleMatchers = ({
+const SimpleMatchers = ({
   queryClient,
   setMatchersString,
   currentQuery,
@@ -135,7 +135,6 @@ export const SimpleMatchers = ({
     labelNameOptions,
     isLoading: labelNamesLoading,
     fetchLabelValues: contextFetchLabelValues,
-    refetchLabelValues,
     refetchLabelNames,
   } = useLabels();
 
@@ -525,3 +524,5 @@ export const SimpleMatchers = ({
     </div>
   );
 };
+
+export default SimpleMatchers;

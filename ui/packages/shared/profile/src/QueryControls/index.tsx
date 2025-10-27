@@ -11,11 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useMemo, useRef, useState} from 'react';
+import {useRef, useState} from 'react';
 
 import {Switch} from '@headlessui/react';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
-import {useQueryClient} from '@tanstack/react-query';
 import {type SelectInstance} from 'react-select';
 
 import {ProfileTypesResponse, QueryServiceClient} from '@parca/client';
@@ -23,12 +22,13 @@ import {Button, DateTimeRange, DateTimeRangePicker, useParcaContext} from '@parc
 import {ProfileType, Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 
-import MatchersInput, {useLabelNames} from '../MatchersInput';
+import MatchersInput from '../MatchersInput/WithProvider';
 import ProfileTypeSelector from '../ProfileTypeSelector';
 import {SelectWithRefresh} from '../SelectWithRefresh';
-import {SimpleMatchers} from '../SimpleMatchers';
+import SimpleMatchers from '../SimpleMatchers/WithProvider';
 import ViewMatchers from '../ViewMatchers';
-import {LabelProvider, LabelSource} from '../contexts/SimpleMatchersLabelContext';
+import {UnifiedLabelsProvider} from '../contexts/UnifiedLabelsContext';
+import {useLabelNames} from '../hooks/useLabels';
 
 interface SelectOption {
   label: string;
@@ -112,80 +112,26 @@ export function QueryControls({
   const defaultQueryBrowserRef = useRef<HTMLDivElement>(null);
   const actualQueryBrowserRef = queryBrowserRef ?? defaultQueryBrowserRef;
   const [searchExecutedTimestamp, setSearchExecutedTimestamp] = useState<number>(0);
-  const reactQueryClient = useQueryClient();
 
-  const {
-    loading,
-    result,
-    refetch: refetchLabelNames,
-  } = useLabelNames(
+  const {refetch: refetchLabelNames} = useLabelNames(
     queryClient,
     profileType as string,
     timeRangeSelection.getFromMs(),
     timeRangeSelection.getToMs()
   );
 
-  const refetchLabelValues = useCallback(
-    async (labelName?: string) => {
-      await reactQueryClient.refetchQueries({
-        predicate: query => {
-          const key = query.queryKey;
-          const matchesStructure =
-            Array.isArray(key) &&
-            key.length === 4 &&
-            typeof key[0] === 'string' &&
-            key[1] === profileType;
-
-          if (!matchesStructure) return false;
-
-          if (labelName !== undefined && labelName !== '') {
-            return key[0] === labelName;
-          }
-
-          return true;
-        },
-      });
-    },
-    [reactQueryClient, profileType]
-  );
-
-  const labelNameFromMatchers = useMemo(() => {
-    if (query === undefined) return [];
-
-    const matchers = query.matchers;
-
-    return matchers.map(matcher => matcher.key);
-  }, [query]);
-
-  const labelSources = useMemo(() => {
-    const sources: LabelSource[] = [];
-
-    const profileLabelNames =
-      result.error != null
-        ? []
-        : result.response?.labelNames.filter((e: string) => e !== '__name__') ?? [];
-    const uniqueProfileLabelNames = Array.from(new Set(profileLabelNames));
-
-    sources.push({
-      type: 'cpu',
-      labelNames: uniqueProfileLabelNames,
-      isLoading: loading,
-      error: result.error ?? null,
-    });
-
-    if (externalLabelSource != null) {
-      sources.push(externalLabelSource);
-    }
-
-    return sources;
-  }, [result, loading, externalLabelSource]);
-
   return (
-    <LabelProvider
-      labelSources={labelSources}
-      labelNameFromMatchers={labelNameFromMatchers}
-      refetchLabelNames={refetchLabelNames}
-      refetchLabelValues={refetchLabelValues}
+    <UnifiedLabelsProvider
+      setMatchersString={setMatchersString}
+      runQuery={setQueryExpression}
+      currentQuery={query}
+      profileType={selectedProfileName ?? profileType.toString()}
+      queryClient={queryClient}
+      start={timeRangeSelection.getFromMs()}
+      end={timeRangeSelection.getToMs()}
+      queryBrowserRef={actualQueryBrowserRef}
+      searchExecutedTimestamp={searchExecutedTimestamp}
+      externalLabelSource={externalLabelSource}
     >
       <div
         className="flex w-full flex-wrap items-start gap-2"
@@ -250,43 +196,11 @@ export function QueryControls({
           {viewComponent?.disableExplorativeQuerying === true &&
           viewComponent?.labelnames !== undefined &&
           viewComponent?.labelnames.length >= 1 ? (
-            <ViewMatchers
-              labelNames={viewComponent.labelnames}
-              setMatchersString={setMatchersString}
-              profileType={selectedProfileName ?? profileType.toString()}
-              runQuery={setQueryExpression}
-              currentQuery={query}
-              queryClient={queryClient}
-              start={timeRangeSelection.getFromMs()}
-              end={timeRangeSelection.getToMs()}
-            />
+            <ViewMatchers labelNames={viewComponent.labelnames} />
           ) : showAdvancedMode && advancedModeForQueryBrowser ? (
-            <MatchersInput
-              setMatchersString={setMatchersString}
-              runQuery={setQueryExpression}
-              currentQuery={query}
-              profileType={selectedProfileName ?? profileType.toString()}
-              queryClient={queryClient}
-              start={timeRangeSelection.getFromMs()}
-              end={timeRangeSelection.getToMs()}
-              externalLabelNames={externalLabelSource?.labelNames}
-              externalLabelNamesLoading={externalLabelSource?.isLoading}
-              externalFetchLabelValues={externalLabelSource?.fetchLabelValues}
-              externalRefetchLabelNames={externalLabelSource?.refetchLabelNames}
-              externalRefetchLabelValues={externalLabelSource?.refetchLabelValues}
-            />
+            <MatchersInput />
           ) : (
-            <SimpleMatchers
-              setMatchersString={setMatchersString}
-              runQuery={setQueryExpression}
-              currentQuery={query}
-              profileType={selectedProfileName ?? profileType.toString()}
-              queryBrowserRef={actualQueryBrowserRef}
-              queryClient={queryClient}
-              start={timeRangeSelection.getFromMs()}
-              end={timeRangeSelection.getToMs()}
-              searchExecutedTimestamp={searchExecutedTimestamp}
-            />
+            <SimpleMatchers />
           )}
         </div>
 
@@ -324,7 +238,6 @@ export function QueryControls({
                   minWidth: '320px',
                   position: 'absolute',
                 }),
-                // menu: provided => ({...provided, width: 'max-content', zIndex: 50}), // Setting the same zIndex as drop down menus
               }}
               isLoading={sumBySelectionLoading}
               isDisabled={!(profileType as ProfileType)?.delta}
@@ -382,6 +295,6 @@ export function QueryControls({
           </Button>
         </div>
       </div>
-    </LabelProvider>
+    </UnifiedLabelsProvider>
   );
 }
