@@ -231,16 +231,18 @@ const ProfileMetricsGraph = ({
     perf?.markInteraction('Metrics graph render', response.series[0].samples.length);
   }, [perf, response]);
 
-
-  const [originalSeries, { isTrimmed, beforeTrim, afterTrim }] = useMemo(() => {
+  const [originalSeries, {isTrimmed, beforeTrim, afterTrim}] = useMemo(() => {
     if (response?.series != null) {
       // Limit the number of series to 100 to avoid performance issues
       if (response.series.length > 100) {
-        return [response.series.slice(0, 100), { isTrimmed: true, beforeTrim: response.series.length, afterTrim: 100 }];
+        return [
+          response.series.slice(0, 100),
+          {isTrimmed: true, beforeTrim: response.series.length, afterTrim: 100},
+        ];
       }
-      return [response.series, { isTrimmed: false, beforeTrim: 0, afterTrim: 0 }];
+      return [response.series, {isTrimmed: false, beforeTrim: 0, afterTrim: 0}];
     }
-    return [null, { isTrimmed: false, beforeTrim: 0, afterTrim: 0 }];
+    return [null, {isTrimmed: false, beforeTrim: 0, afterTrim: 0}];
   }, [response?.series]);
 
   const selectedPoint = useMemo((): SeriesPoint | null => {
@@ -359,7 +361,14 @@ const ProfileMetricsGraph = ({
         animate={{display: 'block', opacity: 1}}
         transition={{duration: 0.5}}
       >
-        {isTrimmed ? <div className="flex justify-center"><span className='text-sm text-amber-800 dark:text-amber-200 bg-amber-100 dark:bg-amber-900 text-center px-2 rounded'>Note: Showing only {afterTrim} of {new Intl.NumberFormat().format(beforeTrim)} series for performance reasons. Please narrow your query to view more.</span></div> : null}
+        {isTrimmed ? (
+          <div className="flex justify-center">
+            <span className="text-sm text-amber-800 dark:text-amber-200 bg-amber-100 dark:bg-amber-900 text-center px-2 rounded">
+              Note: Showing only {afterTrim} of {new Intl.NumberFormat().format(beforeTrim)} series
+              for performance reasons. Please narrow your query to view more.
+            </span>
+          </div>
+        ) : null}
         {loading ? (
           <MetricsGraphSkeleton heightStyle={heightStyle} isDarkMode={isDarkMode} />
         ) : dataAvailable ? (
