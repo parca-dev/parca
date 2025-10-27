@@ -262,7 +262,7 @@ const ProfileMetricsGraph = ({
       if (
         seriesIndex !== undefined &&
         seriesIndex !== -1 &&
-        originalSeries !== undefined &&
+        originalSeries != null &&
         originalSeries[seriesIndex] != null
       ) {
         const series = originalSeries[seriesIndex];
