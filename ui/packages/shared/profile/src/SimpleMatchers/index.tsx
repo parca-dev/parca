@@ -294,7 +294,7 @@ const SimpleMatchers = ({
     const fetchAndSetQueryRows = async (): Promise<void> => {
       const newRows = await Promise.all(
         currentMatchers.split(',').map(async matcher => {
-          const match = matcher.match(/([^=!~]+)([=!~]{1,2})(.+)/);
+          const match = matcher.match(/^([^=!~]+)([=!~]{1,2})(.+)$/);
           if (match === null) return null;
 
           const [, labelName, operator, labelValue] = match;
