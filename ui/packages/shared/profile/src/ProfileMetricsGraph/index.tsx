@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useEffect, useMemo, useState } from 'react';
+import {useEffect, useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import {AnimatePresence, motion} from 'framer-motion';
@@ -216,7 +216,9 @@ const ProfileMetricsGraph = ({
   } = useQueryRange(queryClient, queryExpression, from, to, sumBy, sumByLoading);
   const {onError, perf, authenticationErrorMessage, isDarkMode, timezone} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(comparing);
-  const [showAllSeriesForResponse, setShowAllSeriesForResponse] = useState<typeof response | null>(null);
+  const [showAllSeriesForResponse, setShowAllSeriesForResponse] = useState<typeof response | null>(
+    null
+  );
 
   useEffect(() => {
     if (error !== null) {
