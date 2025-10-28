@@ -77,10 +77,10 @@ const GraphTooltipArrowContent = ({
   return (
     <div className={`flex text-sm ${isFixed ? 'w-full' : ''}`}>
       <div className={`m-auto w-full ${isFixed ? 'w-full' : ''}`}>
-        <div className="min-h-52 flex w-[500px] flex-col justify-between rounded-lg border border-gray-300 bg-gray-50 p-3 shadow-lg dark:border-gray-500 dark:bg-gray-900">
+        <div className="flex w-auto max-w-[600px] min-w-[300px] flex-col justify-start rounded-lg border border-gray-300 bg-gray-50 p-3 shadow-lg dark:border-gray-500 dark:bg-gray-900">
           <div className="flex flex-row">
             <div className="mx-2">
-              <div className="flex h-10 items-start justify-between gap-4 break-all font-semibold">
+              <div className="flex min-h-10 items-start justify-between gap-4 break-all font-semibold mb-2">
                 {row === 0 ? (
                   <p>root</p>
                 ) : (
