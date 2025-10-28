@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useMemo} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import {AnimatePresence, motion} from 'framer-motion';
@@ -216,12 +216,20 @@ const ProfileMetricsGraph = ({
   } = useQueryRange(queryClient, queryExpression, from, to, sumBy, sumByLoading);
   const {onError, perf, authenticationErrorMessage, isDarkMode, timezone} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(comparing);
+  const [showAllSeriesForResponse, setShowAllSeriesForResponse] = useState<typeof response | null>(
+    null
+  );
 
   useEffect(() => {
     if (error !== null) {
       onError?.(error);
     }
   }, [error, onError]);
+
+  // Reset showAllSeriesForResponse when response changes to free memory
+  useEffect(() => {
+    setShowAllSeriesForResponse(null);
+  }, [response]);
 
   useEffect(() => {
     if (response === null) {
@@ -231,7 +239,22 @@ const ProfileMetricsGraph = ({
     perf?.markInteraction('Metrics graph render', response.series[0].samples.length);
   }, [perf, response]);
 
-  const originalSeries = response?.series;
+  const [originalSeries, {isTrimmed, beforeTrim, afterTrim}] = useMemo(() => {
+    if (response?.series != null) {
+      // Check if user wants ALL series for THIS specific response
+      const userWantsAllForThisResponse = showAllSeriesForResponse === response;
+
+      // Limit the number of series to 100 to avoid performance issues (unless user opts to show all)
+      if (response.series.length > 100 && !userWantsAllForThisResponse) {
+        return [
+          response.series.slice(0, 100),
+          {isTrimmed: true, beforeTrim: response.series.length, afterTrim: 100},
+        ];
+      }
+      return [response.series, {isTrimmed: false, beforeTrim: 0, afterTrim: 0}];
+    }
+    return [null, {isTrimmed: false, beforeTrim: 0, afterTrim: 0}];
+  }, [response, showAllSeriesForResponse]);
 
   const selectedPoint = useMemo((): SeriesPoint | null => {
     if (profile !== null && profile instanceof MergedProfileSelection) {
@@ -250,7 +273,7 @@ const ProfileMetricsGraph = ({
       if (
         seriesIndex !== undefined &&
         seriesIndex !== -1 &&
-        originalSeries !== undefined &&
+        originalSeries != null &&
         originalSeries[seriesIndex] != null
       ) {
         const series = originalSeries[seriesIndex];
@@ -349,6 +372,20 @@ const ProfileMetricsGraph = ({
         animate={{display: 'block', opacity: 1}}
         transition={{duration: 0.5}}
       >
+        {isTrimmed ? (
+          <div className="flex justify-center items-center gap-2">
+            <span className="text-sm text-amber-800 dark:text-amber-200 bg-amber-100 dark:bg-amber-900 text-center px-2 rounded">
+              Note: Showing only {afterTrim} of {new Intl.NumberFormat().format(beforeTrim)} series
+              for performance reasons. Please narrow your query to view more.
+            </span>
+            <button
+              onClick={() => setShowAllSeriesForResponse(response)}
+              className="text-sm px-1 bg-amber-600 hover:bg-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600 text-white rounded font-medium transition-colors"
+            >
+              Show all {new Intl.NumberFormat().format(beforeTrim)}
+            </button>
+          </div>
+        ) : null}
         {loading ? (
           <MetricsGraphSkeleton heightStyle={heightStyle} isDarkMode={isDarkMode} />
         ) : dataAvailable ? (
