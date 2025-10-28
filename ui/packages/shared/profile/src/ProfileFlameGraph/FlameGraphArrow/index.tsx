@@ -366,6 +366,7 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
                 maxDepth={maxDepth}
                 effectiveDepth={deferredEffectiveDepth}
                 tooltipId={tooltipId}
+                totalFromResponse={total}
               />
             ))}
           </svg>

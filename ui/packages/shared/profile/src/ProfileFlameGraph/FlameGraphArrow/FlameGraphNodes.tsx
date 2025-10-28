@@ -61,6 +61,7 @@ export interface FlameNodeProps {
   maxDepth?: number;
   effectiveDepth?: number;
   tooltipId?: string;
+  totalFromResponse: bigint; // Total samples after trimming, from the server response
 
   // Hovering row must only ever be used for highlighting similar nodes, otherwise it will cause performance issues as it causes the full flamegraph to get rerendered every time the hovering row changes.
   hoveringRow?: number;
@@ -100,6 +101,7 @@ export const FlameNode = React.memo(
     maxDepth = 0,
     effectiveDepth,
     tooltipId = 'default',
+    totalFromResponse,
   }: FlameNodeProps): React.JSX.Element {
     // get the columns to read from
     const mappingColumn = table.getChild(FIELD_MAPPING_FILE);
@@ -174,7 +176,9 @@ export const FlameNode = React.memo(
 
     // Cumulative can be larger than total when a selection is made. All parents of the selection are likely larger, but we want to only show them as 100% in the graph.
     const tsBounds = boundsFromProfileSource(profileSource);
-    const total = cumulativeColumn?.get(selectedRow);
+    // Use totalFromResponse when viewing the full flamegraph (selectedRow === 0) to account for trimming
+    // Otherwise use the cumulative from the selected row for zoomed-in views
+    const total = selectedRow === 0 ? totalFromResponse : cumulativeColumn?.get(selectedRow);
     const totalRatio = cumulative > total ? 1 : Number(cumulative) / Number(total);
     const width: number = isFlameChart
       ? (Number(cumulative) / (Number(tsBounds[1]) - Number(tsBounds[0]))) * totalWidth

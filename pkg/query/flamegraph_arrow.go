@@ -100,12 +100,21 @@ func GenerateFlamegraphArrow(
 		span.SetAttributes(attribute.String("record_stats", recordStats(record)))
 	}
 
+	// Return the actual total after trimming, not the original cumulative
+	// This ensures the frontend scales the flamegraph correctly
+	actualTotal := cumulative - trimmed
+
+	fmt.Fprintf(os.Stderr, "[FLAMEGRAPH DEBUG] Returning to frontend:\n")
+	fmt.Fprintf(os.Stderr, "  Original cumulative: %d\n", cumulative)
+	fmt.Fprintf(os.Stderr, "  Trimmed amount: %d\n", trimmed)
+	fmt.Fprintf(os.Stderr, "  Actual total (after trim): %d\n", actualTotal)
+
 	return &queryv1alpha1.FlamegraphArrow{
 		Record:  buf.Bytes(),
 		Unit:    p.Meta.SampleType.Unit,
 		Height:  height, // add one for the root
 		Trimmed: trimmed,
-	}, cumulative, nil
+	}, actualTotal, nil
 }
 
 func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tracer trace.Tracer, p profile.Profile, groupBy []string, trimFraction float32) (arrow.RecordBatch, int64, int32, int64, error) {
@@ -347,10 +356,51 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		return nil, 0, 0, 0, fmt.Errorf("failed to prepare the new record: %w", err)
 	}
 
+	// Debug: Check if root node cumulative matches total and sum of children
+	rootCumulative := fb.builderCumulative.Value(0)
+
+	// Calculate sum of root's children
+	var childrenSum int64
+	if len(fb.children[0]) > 0 {
+		for _, childRow := range fb.children[0] {
+			childrenSum += fb.builderCumulative.Value(childRow)
+		}
+	}
+
+	fmt.Fprintf(os.Stderr, "[FLAMEGRAPH DEBUG] Root node analysis:\n")
+	fmt.Fprintf(os.Stderr, "  Expected total (from samples): %d\n", fb.cumulative)
+	fmt.Fprintf(os.Stderr, "  Root node cumulative: %d\n", rootCumulative)
+	fmt.Fprintf(os.Stderr, "  Root's children count: %d\n", len(fb.children[0]))
+	fmt.Fprintf(os.Stderr, "  Sum of root's children: %d\n", childrenSum)
+
+	if rootCumulative != fb.cumulative {
+		fmt.Fprintf(os.Stderr, "  [!] Root mismatch - Difference: %d (%.2f%%)\n",
+			fb.cumulative-rootCumulative,
+			float64(fb.cumulative-rootCumulative)*100.0/float64(fb.cumulative))
+	}
+
+	if childrenSum != rootCumulative {
+		fmt.Fprintf(os.Stderr, "  [!] Children mismatch - Difference: %d (%.2f%%)\n",
+			rootCumulative-childrenSum,
+			float64(rootCumulative-childrenSum)*100.0/float64(rootCumulative))
+	}
+
+	span.SetAttributes(
+		attribute.Int64("total_samples", fb.cumulative),
+		attribute.Int64("root_cumulative", rootCumulative),
+		attribute.Int64("children_sum", childrenSum),
+	)
+
 	// Trim only if we have more rows than the root row.
 	if fb.builderCumulative.Len() > 1 {
 		if err := fb.trim(ctx, tracer, trimFraction); err != nil {
 			return nil, 0, 0, 0, fmt.Errorf("failed to trim flame graph: %w", err)
+		}
+		fmt.Fprintf(os.Stderr, "[FLAMEGRAPH DEBUG] After trimming:\n")
+		fmt.Fprintf(os.Stderr, "  Trimmed sample value: %d\n", fb.trimmed)
+		fmt.Fprintf(os.Stderr, "  Trim fraction setting: %.4f\n", trimFraction)
+		if fb.cumulative > 0 {
+			fmt.Fprintf(os.Stderr, "  Percentage trimmed: %.2f%%\n", float64(fb.trimmed)*100.0/float64(fb.cumulative))
 		}
 	} else {
 		fb.trimmedLocationLine = array.NewUint8Builder(fb.pool)
