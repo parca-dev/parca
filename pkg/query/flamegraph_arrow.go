@@ -100,12 +100,16 @@ func GenerateFlamegraphArrow(
 		span.SetAttributes(attribute.String("record_stats", recordStats(record)))
 	}
 
+	// Return the actual total after trimming, not the original cumulative
+	// This ensures the frontend scales the flamegraph correctly
+	actualTotal := cumulative - trimmed
+
 	return &queryv1alpha1.FlamegraphArrow{
 		Record:  buf.Bytes(),
 		Unit:    p.Meta.SampleType.Unit,
 		Height:  height, // add one for the root
 		Trimmed: trimmed,
-	}, cumulative, nil
+	}, actualTotal, nil
 }
 
 func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tracer trace.Tracer, p profile.Profile, groupBy []string, trimFraction float32) (arrow.RecordBatch, int64, int32, int64, error) {
@@ -1728,6 +1732,10 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 
 		// The following two will never be null.
 		cum := fb.builderCumulative.Value(te.row)
+		// For root row (0), subtract the trimmed values
+		if te.row == 0 {
+			cum = cum - fb.trimmed
+		}
 		switch b := trimmedCumulative.(type) {
 		case *array.Uint64Builder:
 			b.Append(uint64(cum))
