@@ -16,7 +16,30 @@ import {createContext, useContext} from 'react';
 import {QueryServiceClient} from '@parca/client';
 import {Query} from '@parca/parser';
 
+import {transformLabelsForSelect} from '../SimpleMatchers';
+import type {SelectItem} from '../SimpleMatchers/Select';
+import {useLabelNameMappings, type LabelNameMapping} from './utils';
+
+interface LabelNameSection {
+  type: string;
+  values: SelectItem[];
+}
+
 interface UnifiedLabelsContextType {
+  labelNameMappingsForMatchersInput: LabelNameMapping[];
+  labelNameMappingsForSimpleMatchers: LabelNameSection[];
+  labelNames: string[];
+  labelValues: string[];
+
+  isLabelNamesLoading: boolean;
+  isLabelValuesLoading: boolean;
+  currentLabelName: string | null;
+  setCurrentLabelName: (name: string | null) => void;
+  shouldHandlePrefixes: boolean;
+  refetchLabelValues: () => Promise<void>;
+  refetchLabelNames: () => Promise<void>;
+  labelNameFromMatchers: string[];
+
   queryClient: QueryServiceClient;
   setMatchersString: (arg: string) => void;
   runQuery: () => void;
@@ -24,9 +47,6 @@ interface UnifiedLabelsContextType {
   profileType: string;
   start?: number;
   end?: number;
-
-  queryBrowserRef: React.RefObject<HTMLDivElement>;
-  searchExecutedTimestamp?: number;
 }
 
 const UnifiedLabelsContext = createContext<UnifiedLabelsContextType | null>(null);
@@ -42,8 +62,16 @@ interface UnifiedLabelsProviderProps {
   start?: number;
   end?: number;
 
-  queryBrowserRef: React.RefObject<HTMLDivElement>;
-  searchExecutedTimestamp?: number;
+  currentLabelName: string | null;
+  setCurrentLabelName: (name: string | null) => void;
+
+  labelNames: string[];
+  labelValues: string[];
+  isLabelNamesLoading: boolean;
+  isLabelValuesLoading: boolean;
+
+  refetchLabelValues: () => Promise<void>;
+  refetchLabelNames: () => Promise<void>;
 }
 
 export function UnifiedLabelsProvider({
@@ -53,19 +81,70 @@ export function UnifiedLabelsProvider({
   runQuery,
   currentQuery,
   profileType,
-  queryBrowserRef,
-  searchExecutedTimestamp,
   start,
   end,
+  labelNames,
+  isLabelNamesLoading,
+  isLabelValuesLoading,
+  refetchLabelValues,
+  refetchLabelNames,
+  currentLabelName,
+  setCurrentLabelName,
+  labelValues,
 }: UnifiedLabelsProviderProps): JSX.Element {
+  const labelNameFromMatchers: string[] = [];
+
+  const labelNamesFromAPI = labelNames;
+
+  const labelNameMappingsForMatchersInput = useLabelNameMappings(labelNamesFromAPI);
+
+  const allLabelNames = new Set(labelNamesFromAPI);
+
+  const nonMatchingLabels = labelNameFromMatchers.filter(label => !allLabelNames.has(label));
+
+  const labelNameMappingsForSimpleMatchers: LabelNameSection[] = [];
+
+  const labels = {
+    type: 'cpu',
+    labelNames: labelNamesFromAPI,
+    isLoading: isLabelNamesLoading,
+  };
+
+  labelNameMappingsForSimpleMatchers.push({
+    type: labels.type,
+    values: transformLabelsForSelect(labels.labelNames),
+  });
+
+  if (nonMatchingLabels.length > 0) {
+    const uniqueNonMatchingLabels = Array.from(new Set(nonMatchingLabels));
+    labelNameMappingsForSimpleMatchers.push({
+      type: '',
+      values: transformLabelsForSelect(uniqueNonMatchingLabels),
+    });
+  }
+
   const value = {
+    labelNames: labelNamesFromAPI,
+    labelNameMappingsForMatchersInput,
+    isLabelNamesLoading,
+    isLabelValuesLoading,
+    currentLabelName,
+    labelValues,
+    setCurrentLabelName,
+    shouldHandlePrefixes: false,
+    refetchLabelValues: async () => {
+      await refetchLabelValues();
+    },
+    refetchLabelNames: async () => {
+      await refetchLabelNames();
+    },
+    labelNameFromMatchers,
+    labelNameMappingsForSimpleMatchers,
     queryClient,
     setMatchersString,
     runQuery,
     currentQuery,
     profileType,
-    queryBrowserRef,
-    searchExecutedTimestamp,
     start,
     end,
   };

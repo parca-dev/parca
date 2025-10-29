@@ -16,28 +16,13 @@ import React, {useMemo, useRef, useState} from 'react';
 import cx from 'classnames';
 import TextareaAutosize from 'react-textarea-autosize';
 
-import {QueryServiceClient} from '@parca/client';
 import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 
-import {useLabels} from '../contexts/MatchersInputLabelsContext';
+import {useUnifiedLabels} from '../contexts/UnifiedLabelsContext';
 import SuggestionsList, {Suggestion, Suggestions} from './SuggestionsList';
 
-interface MatchersInputProps {
-  queryClient: QueryServiceClient;
-  setMatchersString: (arg: string) => void;
-  runQuery: () => void;
-  currentQuery: Query;
-  profileType: string;
-  start?: number;
-  end?: number;
-}
-
-const MatchersInput = ({
-  setMatchersString,
-  runQuery,
-  currentQuery,
-}: MatchersInputProps): JSX.Element => {
+const MatchersInput = (): JSX.Element => {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const [focusedInput, setFocusedInput] = useState(false);
   const [lastCompleted, setLastCompleted] = useState<Suggestion>(new Suggestion('', '', ''));
@@ -45,7 +30,7 @@ const MatchersInput = ({
   const {
     labelNames,
     labelValues,
-    labelNameMappings,
+    labelNameMappingsForMatchersInput: labelNameMappings,
     isLabelNamesLoading,
     isLabelValuesLoading,
     currentLabelName,
@@ -53,9 +38,12 @@ const MatchersInput = ({
     shouldHandlePrefixes,
     refetchLabelValues,
     refetchLabelNames,
-  } = useLabels();
+    setMatchersString,
+    currentQuery,
+    runQuery,
+  } = useUnifiedLabels();
 
-  const value = currentQuery.matchersString();
+  const value = currentQuery != null ? currentQuery.matchersString() : '';
 
   const suggestionSections = useMemo(() => {
     const suggestionSections = new Suggestions();

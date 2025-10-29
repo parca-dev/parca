@@ -22,12 +22,11 @@ import {Button, DateTimeRange, DateTimeRangePicker, useParcaContext} from '@parc
 import {ProfileType, Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 
-import MatchersInput from '../MatchersInput/WithProvider';
+import MatchersInput from '../MatchersInput';
 import ProfileTypeSelector from '../ProfileTypeSelector';
 import {SelectWithRefresh} from '../SelectWithRefresh';
-import SimpleMatchers from '../SimpleMatchers/WithProvider';
+import SimpleMatchers from '../SimpleMatchers/';
 import ViewMatchers from '../ViewMatchers';
-import {UnifiedLabelsProvider} from '../contexts/UnifiedLabelsContext';
 import {useLabelNames} from '../hooks/useLabels';
 
 interface SelectOption {
@@ -71,12 +70,9 @@ interface QueryControlsProps {
 }
 
 export function QueryControls({
-  queryClient,
-  query,
   profileType,
   timeRangeSelection,
   setTimeRangeSelection,
-  setMatchersString,
   setQueryExpression,
   searchDisabled,
   showProfileTypeSelector = false,
@@ -97,6 +93,7 @@ export function QueryControls({
   sumBySelectionLoading = false,
   setUserSumBySelection,
   sumByRef,
+  queryClient,
 }: QueryControlsProps): JSX.Element {
   const {timezone} = useParcaContext();
   const defaultQueryBrowserRef = useRef<HTMLDivElement>(null);
@@ -111,179 +108,169 @@ export function QueryControls({
   );
 
   return (
-    <UnifiedLabelsProvider
-      setMatchersString={setMatchersString}
-      runQuery={setQueryExpression}
-      currentQuery={query}
-      profileType={selectedProfileName ?? profileType.toString()}
-      queryClient={queryClient}
-      start={timeRangeSelection.getFromMs()}
-      end={timeRangeSelection.getToMs()}
-      queryBrowserRef={actualQueryBrowserRef}
-      searchExecutedTimestamp={searchExecutedTimestamp}
+    <div
+      className="flex w-full flex-wrap items-start gap-2"
+      {...testId(TEST_IDS.QUERY_CONTROLS_CONTAINER)}
     >
-      <div
-        className="flex w-full flex-wrap items-start gap-2"
-        {...testId(TEST_IDS.QUERY_CONTROLS_CONTAINER)}
-      >
-        {showProfileTypeSelector && (
-          <div>
-            <label className="text-xs" {...testId(TEST_IDS.PROFILE_TYPE_LABEL)}>
-              Profile type
-            </label>
-            <ProfileTypeSelector
-              profileTypesData={profileTypesData}
-              loading={profileTypesLoading}
-              selectedKey={selectedProfileName}
-              onSelection={setProfileName ?? (() => {})}
-              error={profileTypesError}
-              disabled={viewComponent?.disableProfileTypesDropdown}
-            />
-          </div>
-        )}
-
-        <div
-          className="w-full flex-1 flex flex-col gap-1 mt-auto"
-          ref={actualQueryBrowserRef}
-          {...testId(TEST_IDS.QUERY_BROWSER_CONTAINER)}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <label className="text-xs" {...testId(TEST_IDS.QUERY_LABEL)}>
-                Query
-              </label>
-              {showAdvancedMode && viewComponent?.disableExplorativeQuerying !== true && (
-                <>
-                  <Switch
-                    checked={advancedModeForQueryBrowser}
-                    onChange={() => {
-                      setAdvancedModeForQueryBrowser?.(!advancedModeForQueryBrowser);
-                      setQueryBrowserMode?.(advancedModeForQueryBrowser ? 'simple' : 'advanced');
-                    }}
-                    className={`${
-                      advancedModeForQueryBrowser ? 'bg-indigo-600' : 'bg-gray-400 dark:bg-gray-800'
-                    } relative inline-flex h-[20px] w-[44px] shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75`}
-                    {...testId(TEST_IDS.ADVANCED_MODE_SWITCH)}
-                  >
-                    <span className="sr-only">Use setting</span>
-                    <span
-                      aria-hidden="true"
-                      className={`${
-                        advancedModeForQueryBrowser ? 'translate-x-6' : 'translate-x-0'
-                      } pointer-events-none inline-block h-[16px] w-[16px] transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out`}
-                    />
-                  </Switch>
-                  <label className="text-xs" {...testId(TEST_IDS.QUERY_MODE_LABEL)}>
-                    Advanced Mode
-                  </label>
-                </>
-              )}
-            </div>
-            {viewComponent?.createViewComponent}
-          </div>
-
-          {viewComponent?.disableExplorativeQuerying === true &&
-          viewComponent?.labelnames !== undefined &&
-          viewComponent?.labelnames.length >= 1 ? (
-            <ViewMatchers labelNames={viewComponent.labelnames} />
-          ) : showAdvancedMode && advancedModeForQueryBrowser ? (
-            <MatchersInput />
-          ) : (
-            <SimpleMatchers />
-          )}
-        </div>
-
-        {showSumBySelector && (
-          <div {...testId(TEST_IDS.SUM_BY_CONTAINER)}>
-            <div className="mb-0.5 mt-1.5 flex items-center justify-between">
-              <label className="text-xs" {...testId(TEST_IDS.SUM_BY_LABEL)}>
-                Sum by
-              </label>
-            </div>
-            <SelectWithRefresh<SelectOption, true>
-              id="h-sum-by-selector"
-              data-testid={testId(TEST_IDS.SUM_BY_SELECT)['data-testid']}
-              defaultValue={[]}
-              isMulti
-              isClearable={false}
-              name="colors"
-              options={labels.map(label => ({label, value: label}))}
-              className="parca-select-container text-sm w-full max-w-80"
-              classNamePrefix="parca-select"
-              value={sumBySelection.map(sumBy => ({label: sumBy, value: sumBy}))}
-              onChange={newValue => {
-                setUserSumBySelection?.(newValue.map(option => option.value));
-              }}
-              placeholder="Labels..."
-              styles={{
-                indicatorSeparator: () => ({display: 'none'}),
-                menu: provided => ({
-                  ...provided,
-                  marginBottom: 0,
-                  boxShadow:
-                    '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                  marginTop: 10,
-                  zIndex: 50,
-                  minWidth: '320px',
-                  position: 'absolute',
-                }),
-              }}
-              isLoading={sumBySelectionLoading}
-              isDisabled={!(profileType as ProfileType)?.delta}
-              // @ts-expect-error
-              ref={sumByRef}
-              onKeyDown={e => {
-                const currentRef = sumByRef?.current as unknown as SelectInstance | null;
-                if (currentRef == null) {
-                  return;
-                }
-                const inputRef = currentRef.inputRef;
-                if (inputRef == null) {
-                  return;
-                }
-
-                if (
-                  e.key === 'Enter' &&
-                  inputRef.value === '' &&
-                  currentRef.state.focusedOptionId === null // menu is not open
-                ) {
-                  setQueryExpression(true);
-                  currentRef.blur();
-                }
-              }}
-              onRefresh={refetchLabelNames}
-              refreshTitle="Refresh label names"
-              refreshTestId="sum-by-refresh-button"
-              menuTestId={TEST_IDS.SUM_BY_SELECT_FLYOUT}
-            />
-          </div>
-        )}
-
-        <DateTimeRangePicker
-          onRangeSelection={setTimeRangeSelection}
-          range={timeRangeSelection}
-          timezone={timezone}
-          {...testId(TEST_IDS.DATE_TIME_RANGE_PICKER)}
-        />
-
+      {showProfileTypeSelector && (
         <div>
-          <label className="text-xs" {...testId(TEST_IDS.SEARCH_BUTTON_LABEL)}>
-            &nbsp;
+          <label className="text-xs" {...testId(TEST_IDS.PROFILE_TYPE_LABEL)}>
+            Profile type
           </label>
-          <Button
-            disabled={searchDisabled}
-            onClick={(e: React.MouseEvent<HTMLElement>) => {
-              e.preventDefault();
-              setSearchExecutedTimestamp(Date.now());
-              setQueryExpression(true);
-            }}
-            id="h-matcher-search-button"
-            {...testId(TEST_IDS.SEARCH_BUTTON)}
-          >
-            Search
-          </Button>
+          <ProfileTypeSelector
+            profileTypesData={profileTypesData}
+            loading={profileTypesLoading}
+            selectedKey={selectedProfileName}
+            onSelection={setProfileName ?? (() => {})}
+            error={profileTypesError}
+            disabled={viewComponent?.disableProfileTypesDropdown}
+          />
         </div>
+      )}
+
+      <div
+        className="w-full flex-1 flex flex-col gap-1 mt-auto"
+        ref={actualQueryBrowserRef}
+        {...testId(TEST_IDS.QUERY_BROWSER_CONTAINER)}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <label className="text-xs" {...testId(TEST_IDS.QUERY_LABEL)}>
+              Query
+            </label>
+            {showAdvancedMode && viewComponent?.disableExplorativeQuerying !== true && (
+              <>
+                <Switch
+                  checked={advancedModeForQueryBrowser}
+                  onChange={() => {
+                    setAdvancedModeForQueryBrowser?.(!advancedModeForQueryBrowser);
+                    setQueryBrowserMode?.(advancedModeForQueryBrowser ? 'simple' : 'advanced');
+                  }}
+                  className={`${
+                    advancedModeForQueryBrowser ? 'bg-indigo-600' : 'bg-gray-400 dark:bg-gray-800'
+                  } relative inline-flex h-[20px] w-[44px] shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75`}
+                  {...testId(TEST_IDS.ADVANCED_MODE_SWITCH)}
+                >
+                  <span className="sr-only">Use setting</span>
+                  <span
+                    aria-hidden="true"
+                    className={`${
+                      advancedModeForQueryBrowser ? 'translate-x-6' : 'translate-x-0'
+                    } pointer-events-none inline-block h-[16px] w-[16px] transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out`}
+                  />
+                </Switch>
+                <label className="text-xs" {...testId(TEST_IDS.QUERY_MODE_LABEL)}>
+                  Advanced Mode
+                </label>
+              </>
+            )}
+          </div>
+          {viewComponent?.createViewComponent}
+        </div>
+
+        {viewComponent?.disableExplorativeQuerying === true &&
+        viewComponent?.labelnames !== undefined &&
+        viewComponent?.labelnames.length >= 1 ? (
+          <ViewMatchers labelNames={viewComponent.labelnames} />
+        ) : showAdvancedMode && advancedModeForQueryBrowser ? (
+          <MatchersInput />
+        ) : (
+          <SimpleMatchers
+            queryBrowserRef={actualQueryBrowserRef}
+            searchExecutedTimestamp={searchExecutedTimestamp}
+          />
+        )}
       </div>
-    </UnifiedLabelsProvider>
+
+      {showSumBySelector && (
+        <div {...testId(TEST_IDS.SUM_BY_CONTAINER)}>
+          <div className="mb-0.5 mt-1.5 flex items-center justify-between">
+            <label className="text-xs" {...testId(TEST_IDS.SUM_BY_LABEL)}>
+              Sum by
+            </label>
+          </div>
+          <SelectWithRefresh<SelectOption, true>
+            id="h-sum-by-selector"
+            data-testid={testId(TEST_IDS.SUM_BY_SELECT)['data-testid']}
+            defaultValue={[]}
+            isMulti
+            isClearable={false}
+            name="colors"
+            options={labels.map(label => ({label, value: label}))}
+            className="parca-select-container text-sm w-full max-w-80"
+            classNamePrefix="parca-select"
+            value={sumBySelection.map(sumBy => ({label: sumBy, value: sumBy}))}
+            onChange={newValue => {
+              setUserSumBySelection?.(newValue.map(option => option.value));
+            }}
+            placeholder="Labels..."
+            styles={{
+              indicatorSeparator: () => ({display: 'none'}),
+              menu: provided => ({
+                ...provided,
+                marginBottom: 0,
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                marginTop: 10,
+                zIndex: 50,
+                minWidth: '320px',
+                position: 'absolute',
+              }),
+            }}
+            isLoading={sumBySelectionLoading}
+            isDisabled={!(profileType as ProfileType)?.delta}
+            // @ts-expect-error
+            ref={sumByRef}
+            onKeyDown={e => {
+              const currentRef = sumByRef?.current as unknown as SelectInstance | null;
+              if (currentRef == null) {
+                return;
+              }
+              const inputRef = currentRef.inputRef;
+              if (inputRef == null) {
+                return;
+              }
+
+              if (
+                e.key === 'Enter' &&
+                inputRef.value === '' &&
+                currentRef.state.focusedOptionId === null // menu is not open
+              ) {
+                setQueryExpression(true);
+                currentRef.blur();
+              }
+            }}
+            onRefresh={refetchLabelNames}
+            refreshTitle="Refresh label names"
+            refreshTestId="sum-by-refresh-button"
+            menuTestId={TEST_IDS.SUM_BY_SELECT_FLYOUT}
+          />
+        </div>
+      )}
+
+      <DateTimeRangePicker
+        onRangeSelection={setTimeRangeSelection}
+        range={timeRangeSelection}
+        timezone={timezone}
+        {...testId(TEST_IDS.DATE_TIME_RANGE_PICKER)}
+      />
+
+      <div>
+        <label className="text-xs" {...testId(TEST_IDS.SEARCH_BUTTON_LABEL)}>
+          &nbsp;
+        </label>
+        <Button
+          disabled={searchDisabled}
+          onClick={(e: React.MouseEvent<HTMLElement>) => {
+            e.preventDefault();
+            setSearchExecutedTimestamp(Date.now());
+            setQueryExpression(true);
+          }}
+          id="h-matcher-search-button"
+          {...testId(TEST_IDS.SEARCH_BUTTON)}
+        >
+          Search
+        </Button>
+      </div>
+    </div>
   );
 }

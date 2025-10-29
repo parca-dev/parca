@@ -17,25 +17,16 @@ import {Icon} from '@iconify/react';
 import {useQueryClient} from '@tanstack/react-query';
 import cx from 'classnames';
 
-import {QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata} from '@parca/components';
-import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
-import {useLabels} from '../contexts/SimpleMatchersLabelContext';
+import {useUnifiedLabels} from '../contexts/UnifiedLabelsContext';
 import {transformLabelName} from '../contexts/utils';
 import Select, {type SelectItem} from './Select';
 
 interface Props {
-  queryClient: QueryServiceClient;
-  setMatchersString: (arg: string) => void;
-  runQuery: () => void;
-  currentQuery: Query;
-  profileType: string;
   queryBrowserRef: React.RefObject<HTMLDivElement>;
-  start?: number;
-  end?: number;
   searchExecutedTimestamp?: number;
 }
 
@@ -105,13 +96,8 @@ const operatorOptions = [
 ];
 
 const SimpleMatchers = ({
-  queryClient,
-  setMatchersString,
-  currentQuery,
-  profileType,
   queryBrowserRef,
-  start,
-  end,
+
   searchExecutedTimestamp,
 }: Props): JSX.Element => {
   const [queryRows, setQueryRows] = useState<QueryRow[]>([
@@ -131,7 +117,17 @@ const SimpleMatchers = ({
     }
   }, [searchExecutedTimestamp]);
 
-  const {labelNameOptions, isLoading: labelNamesLoading, refetchLabelNames} = useLabels();
+  const {
+    labelNameMappingsForSimpleMatchers: labelNameOptions,
+    isLabelNamesLoading: labelNamesLoading,
+    refetchLabelNames,
+    currentQuery,
+    queryClient,
+    setMatchersString,
+    profileType,
+    start,
+    end,
+  } = useUnifiedLabels();
 
   const visibleRows = showAll || isActivelyEditing ? queryRows : queryRows.slice(0, 3);
   const hiddenRowsCount = queryRows.length - 3;

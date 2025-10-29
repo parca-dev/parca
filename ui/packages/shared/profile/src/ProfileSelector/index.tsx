@@ -31,6 +31,8 @@ import {millisToProtoTimestamp, type NavigateFunction} from '@parca/utilities';
 import {ProfileSelection} from '..';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
 import {QueryControls} from '../QueryControls';
+import {LabelsQueryProvider, useLabelsQueryProvider} from '../contexts/LabelsQueryProvider';
+import {UnifiedLabelsProvider} from '../contexts/UnifiedLabelsContext';
 import {useLabelNames} from '../hooks/useLabels';
 import useGrpcQuery from '../useGrpcQuery';
 import {useDefaultSumBy, useSumBySelection} from '../useSumBy';
@@ -275,34 +277,46 @@ const ProfileSelector = ({
   return (
     <>
       <div className="mb-2 flex">
-        <QueryControls
-          queryClient={queryClient}
-          query={query}
-          profileType={profileType}
-          timeRangeSelection={timeRangeSelection}
-          setTimeRangeSelection={setTimeRangeSelection}
+        <LabelsQueryProvider
           setMatchersString={setMatchersString}
-          setQueryExpression={setQueryExpression}
-          searchDisabled={searchDisabled}
-          showProfileTypeSelector={showProfileTypeSelector}
-          showSumBySelector={showSumBySelector}
-          showAdvancedMode={true}
-          profileTypesData={profileTypesData}
-          profileTypesLoading={profileTypesLoading}
-          selectedProfileName={selectedProfileName}
-          setProfileName={setProfileName}
-          profileTypesError={error}
-          viewComponent={viewComponent}
-          setQueryBrowserMode={setQueryBrowserMode}
-          advancedModeForQueryBrowser={advancedModeForQueryBrowser}
-          setAdvancedModeForQueryBrowser={setAdvancedModeForQueryBrowser}
-          queryBrowserRef={queryBrowserRef}
-          labels={labels}
-          sumBySelection={sumBySelection ?? []}
-          sumBySelectionLoading={sumBySelectionLoading}
-          setUserSumBySelection={setUserSumBySelection}
-          sumByRef={sumByRef}
-        />
+          runQuery={setQueryExpression}
+          currentQuery={query}
+          profileType={selectedProfileName ?? profileType.toString()}
+          queryClient={queryClient}
+          start={timeRangeSelection.getFromMs()}
+          end={timeRangeSelection.getToMs()}
+        >
+          <LabelSourceProvider>
+            <QueryControls
+              queryClient={queryClient}
+              query={query}
+              profileType={profileType}
+              timeRangeSelection={timeRangeSelection}
+              setTimeRangeSelection={setTimeRangeSelection}
+              setMatchersString={setMatchersString}
+              setQueryExpression={setQueryExpression}
+              searchDisabled={searchDisabled}
+              showProfileTypeSelector={showProfileTypeSelector}
+              showSumBySelector={showSumBySelector}
+              showAdvancedMode={true}
+              profileTypesData={profileTypesData}
+              profileTypesLoading={profileTypesLoading}
+              selectedProfileName={selectedProfileName}
+              setProfileName={setProfileName}
+              profileTypesError={error}
+              viewComponent={viewComponent}
+              setQueryBrowserMode={setQueryBrowserMode}
+              advancedModeForQueryBrowser={advancedModeForQueryBrowser}
+              setAdvancedModeForQueryBrowser={setAdvancedModeForQueryBrowser}
+              queryBrowserRef={queryBrowserRef}
+              labels={labels}
+              sumBySelection={sumBySelection ?? []}
+              sumBySelectionLoading={sumBySelectionLoading}
+              setUserSumBySelection={setUserSumBySelection}
+              sumByRef={sumByRef}
+            />
+          </LabelSourceProvider>
+        </LabelsQueryProvider>
         {comparing && (
           <div>
             <IconButton
@@ -336,3 +350,45 @@ const ProfileSelector = ({
 };
 
 export default ProfileSelector;
+
+const LabelSourceProvider = ({children}: {children: React.ReactNode}): JSX.Element => {
+  const {
+    labelNames,
+    labelValues,
+    isLabelNamesLoading,
+    isLabelValuesLoading,
+    refetchLabelValues,
+    refetchLabelNames,
+    queryClient,
+    setMatchersString,
+    runQuery,
+    start,
+    end,
+    profileType,
+    currentQuery,
+    currentLabelName,
+    setCurrentLabelName,
+  } = useLabelsQueryProvider();
+
+  return (
+    <UnifiedLabelsProvider
+      setMatchersString={setMatchersString}
+      runQuery={runQuery}
+      currentQuery={currentQuery}
+      profileType={profileType.toString()}
+      queryClient={queryClient}
+      start={start}
+      end={end}
+      labelNames={labelNames}
+      labelValues={labelValues}
+      isLabelNamesLoading={isLabelNamesLoading}
+      isLabelValuesLoading={isLabelValuesLoading}
+      refetchLabelValues={refetchLabelValues}
+      refetchLabelNames={refetchLabelNames}
+      currentLabelName={currentLabelName}
+      setCurrentLabelName={setCurrentLabelName}
+    >
+      {children}
+    </UnifiedLabelsProvider>
+  );
+};
