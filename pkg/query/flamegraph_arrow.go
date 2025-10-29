@@ -357,7 +357,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		fb.trimmedLocationLine.AppendNull()
 		fb.trimmedFunctionStartLine = array.NewUint8Builder(fb.pool)
 		fb.trimmedFunctionStartLine.AppendNull()
-		fb.trimmedCumulative = builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
+		fb.trimmedCumulative = array.NewUint8Builder(fb.pool)
 		fb.trimmedCumulative.AppendNull()
 		fb.trimmedFlat = array.NewUint8Builder(fb.pool)
 		fb.trimmedFlat.AppendNull()
@@ -918,7 +918,7 @@ type flamegraphBuilder struct {
 
 	trimmedLocationLine      array.Builder
 	trimmedFunctionStartLine array.Builder
-	trimmedCumulative        *builder.OptInt64Builder
+	trimmedCumulative        array.Builder
 	trimmedFlat              array.Builder
 	trimmedDiff              array.Builder
 
@@ -1171,7 +1171,7 @@ func (fb *flamegraphBuilder) NewRecord() (arrow.RecordBatch, error) {
 		// Values
 		{Name: FlamegraphFieldChildren, Type: arrow.ListOf(arrow.PrimitiveTypes.Uint32)},
 		{Name: FlamegraphFieldParent, Type: arrow.PrimitiveTypes.Int32},
-		{Name: FlamegraphFieldCumulative, Type: arrow.PrimitiveTypes.Int64},
+		{Name: FlamegraphFieldCumulative, Type: fb.trimmedCumulative.Type()},
 		{Name: FlamegraphFieldFlat, Type: fb.trimmedFlat.Type()},
 		{Name: FlamegraphFieldDiff, Type: fb.trimmedDiff.Type()},
 		// Timestamp
@@ -1917,6 +1917,21 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 
 	trimmedCumulative.Set(0, rootCumulativeTrimmedValue)
 
+	finalMaxCumulative := uint64(0)
+	for i := 0; i < trimmedCumulative.Len(); i++ {
+		finalMaxCumulative = max(finalMaxCumulative, uint64(trimmedCumulative.Value(i)))
+	}
+
+	tempTrimmedCumulativeType := smallestUnsignedTypeFor(finalMaxCumulative)
+	tempTrimmedCumulative := array.NewBuilder(fb.pool, tempTrimmedCumulativeType)
+	tempTrimmedCumulative.Reserve(trimmedCumulative.Len())
+
+	for i := 0; i < trimmedCumulative.Len(); i++ {
+		copyInt64BuilderValueToUnknownUnsigned(trimmedCumulative, tempTrimmedCumulative, i)
+	}
+
+	trimmedCumulative.Release()
+
 	release(
 		fb.builderLabelsOnly,
 		fb.builderLabelsExist,
@@ -1935,7 +1950,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	fb.builderInlined = trimmedInlined
 	fb.trimmedLocationLine = trimmedLocationLine
 	fb.trimmedFunctionStartLine = trimmedFunctionStartLine
-	fb.trimmedCumulative = trimmedCumulative
+	fb.trimmedCumulative = tempTrimmedCumulative
 	fb.trimmedFlat = trimmedFlat
 	fb.trimmedDiff = trimmedDiff
 	fb.trimmedChildren = trimmedChildren

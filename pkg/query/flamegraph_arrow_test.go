@@ -61,7 +61,7 @@ type flamegraphRow struct {
 	Labels             map[string]string
 	Children           []uint32
 	Parent             int32
-	Cumulative         int64
+	Cumulative         uint8
 	Flat               uint8
 	Diff               int8
 	Depth              uint8
@@ -81,7 +81,7 @@ type flamegraphColumns struct {
 	labels              []map[string]string
 	children            [][]uint32
 	parent              []int32
-	cumulative          []int64
+	cumulative          []uint8
 	flat                []uint8
 	diff                []int8
 	depth               []uint8
@@ -556,7 +556,7 @@ func (c *flamegraphComparer) convert(r arrow.RecordBatch) {
 		labels:              extractLabelColumns(c.t, r),
 		children:            extractChildrenColumn(c.t, r),
 		parent:              extractParentColumn(c.t, r),
-		cumulative:          extractColumn(c.t, r, FlamegraphFieldCumulative).([]int64),
+		cumulative:          extractColumn(c.t, r, FlamegraphFieldCumulative).([]uint8),
 		flat:                extractColumn(c.t, r, FlamegraphFieldFlat).([]uint8),
 		diff:                extractColumn(c.t, r, FlamegraphFieldDiff).([]int8),
 		depth:               extractColumn(c.t, r, FlamegraphFieldDepth).([]uint8),
@@ -1003,8 +1003,8 @@ func TestGenerateFlamegraphArrowTrimmingRootCumulative(t *testing.T) {
 	require.NoError(t, err)
 	defer fa.Release()
 
-	cumulativeCol := fa.Column(fa.Schema().FieldIndices("cumulative")[0]).(*array.Int64)
-	rootCumulative := cumulativeCol.Value(0)
+	cumulativeCol := fa.Column(fa.Schema().FieldIndices("cumulative")[0]).(*array.Uint8)
+	rootCumulative := int64(cumulativeCol.Value(0))
 
 	require.Equal(t, cumulative, rootCumulative, "Returned cumulative should match root row cumulative value")
 
