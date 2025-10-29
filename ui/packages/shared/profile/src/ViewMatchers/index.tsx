@@ -16,38 +16,24 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
-import {QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata} from '@parca/components';
-import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
 import CustomSelect, {SelectItem} from '../SimpleMatchers/Select';
+import {useUnifiedLabels} from '../contexts/UnifiedLabelsContext';
 
 interface Props {
   labelNames: string[];
-  profileType: string;
-  runQuery: () => void;
-  currentQuery: Query;
-  queryClient: QueryServiceClient;
-  setMatchersString: (arg: string) => void;
-  start?: number;
-  end?: number;
 }
 
-const ViewMatchers: React.FC<Props> = ({
-  labelNames,
-  profileType,
-  queryClient,
-  runQuery,
-  setMatchersString,
-  start,
-  end,
-  currentQuery,
-}) => {
+const ViewMatchers: React.FC<Props> = ({labelNames}) => {
   const [labelValuesMap, setLabelValuesMap] = useState<Record<string, string[]>>({});
   const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
   const metadata = useGrpcMetadata();
+
+  const {queryClient, setMatchersString, runQuery, currentQuery, profileType, start, end} =
+    useUnifiedLabels();
 
   const currentMatchers = currentQuery.matchersString();
 
