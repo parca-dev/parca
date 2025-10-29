@@ -931,6 +931,86 @@ func TestGenerateFlamegraphArrowTrimming(t *testing.T) {
 	fc.compare(expectedColumns)
 }
 
+func TestGenerateFlamegraphArrowTrimmingRootCumulative(t *testing.T) {
+	ctx := context.Background()
+	mem := memory.NewGoAllocator()
+	var err error
+
+	mappings := []*pprofprofile.Mapping{{
+		ID:   1,
+		File: "a",
+	}}
+
+	functions := []*pprofprofile.Function{{
+		ID:   1,
+		Name: "func1",
+	}, {
+		ID:   2,
+		Name: "func2",
+	}, {
+		ID:   3,
+		Name: "func3",
+	}, {
+		ID:   4,
+		Name: "func4",
+	}}
+
+	locations := []*pprofprofile.Location{{
+		ID:      1,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[0]}},
+	}, {
+		ID:      2,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[1]}},
+	}, {
+		ID:      3,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[2]}},
+	}, {
+		ID:      4,
+		Mapping: mappings[0],
+		Line:    []pprofprofile.Line{{Function: functions[3]}},
+	}}
+
+	// Create a profile with:
+	// root -> func1 (100) -> func2 (80) -> func3 (60)
+	//                     -> func4 (10) [trimmed]
+	p, err := PprofToSymbolizedProfile(
+		profile.Meta{Duration: (10 * time.Second).Nanoseconds()},
+		&pprofprofile.Profile{
+			Sample: []*pprofprofile.Sample{{
+				Location: []*pprofprofile.Location{locations[2], locations[1], locations[0]},
+				Value:    []int64{60},
+			}, {
+				Location: []*pprofprofile.Location{locations[3], locations[1], locations[0]},
+				Value:    []int64{10},
+			}, {
+				Location: []*pprofprofile.Location{locations[1], locations[0]},
+				Value:    []int64{20},
+			}, {
+				Location: []*pprofprofile.Location{locations[0]},
+				Value:    []int64{10},
+			}},
+		},
+		0, []string{},
+	)
+	require.NoError(t, err)
+
+	tracer := noop.NewTracerProvider().Tracer("")
+
+	fa, cumulative, _, _, err := generateFlamegraphArrowRecord(ctx, mem, tracer, p, []string{FlamegraphFieldFunctionName}, float32(0.5))
+	require.NoError(t, err)
+	defer fa.Release()
+
+	cumulativeCol := fa.Column(fa.Schema().FieldIndices("cumulative")[0]).(*array.Int64)
+	rootCumulative := cumulativeCol.Value(0)
+
+	require.Equal(t, cumulative, rootCumulative, "Returned cumulative should match root row cumulative value")
+
+	require.Equal(t, int64(100), rootCumulative, "Root cumulative should be 100 (sum of direct child func1)")
+}
+
 func TestParents(t *testing.T) {
 	p := parent(-1)
 	require.Equal(t, -1, p.Get())
