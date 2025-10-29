@@ -357,7 +357,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		fb.trimmedLocationLine.AppendNull()
 		fb.trimmedFunctionStartLine = array.NewUint8Builder(fb.pool)
 		fb.trimmedFunctionStartLine.AppendNull()
-		fb.trimmedCumulative = array.NewUint8Builder(fb.pool)
+		fb.trimmedCumulative = array.NewUint64Builder(fb.pool)
 		fb.trimmedCumulative.AppendNull()
 		fb.trimmedFlat = array.NewUint8Builder(fb.pool)
 		fb.trimmedFlat.AppendNull()
@@ -1916,16 +1916,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	fb.labels = trimmedLabels
 
 	trimmedCumulative.Set(0, rootCumulativeTrimmedValue)
-
-	finalMaxCumulative := uint64(0)
-	for i := 0; i < trimmedCumulative.Len(); i++ {
-		finalMaxCumulative = max(finalMaxCumulative, uint64(trimmedCumulative.Value(i)))
-	}
-
-	tempTrimmedCumulativeType := smallestUnsignedTypeFor(finalMaxCumulative)
-	tempTrimmedCumulative := array.NewBuilder(fb.pool, tempTrimmedCumulativeType)
-	tempTrimmedCumulative.Reserve(trimmedCumulative.Len())
-
+	tempTrimmedCumulative := array.NewBuilder(fb.pool, smallestUnsignedTypeFor(uint64(rootCumulativeTrimmedValue)))
 	for i := 0; i < trimmedCumulative.Len(); i++ {
 		copyInt64BuilderValueToUnknownUnsigned(trimmedCumulative, tempTrimmedCumulative, i)
 	}
