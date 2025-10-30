@@ -32,7 +32,7 @@ require (
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.2.0
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/parquet-go/parquet-go v0.24.0
+	github.com/parquet-go/parquet-go v0.25.1
 	github.com/planetscale/vtprotobuf v0.6.1-0.20250313105119-ba97887b0a25
 	github.com/polarsignals/frostdb v0.0.0-20250728125857-906ebbaef267
 	github.com/polarsignals/iceberg-go v0.0.0-20240502213135-2ee70b71e76b
