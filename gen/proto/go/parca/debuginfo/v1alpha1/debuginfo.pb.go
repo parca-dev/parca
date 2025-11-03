@@ -253,6 +253,8 @@ const (
 	DebuginfoUpload_STATE_UPLOADING DebuginfoUpload_State = 1
 	// The debuginfo has been uploaded successfully.
 	DebuginfoUpload_STATE_UPLOADED DebuginfoUpload_State = 2
+	// The debuginfo has been purged/cleaned up from storage.
+	DebuginfoUpload_STATE_PURGED DebuginfoUpload_State = 3
 )
 
 // Enum value maps for DebuginfoUpload_State.
@@ -261,11 +263,13 @@ var (
 		0: "STATE_UNKNOWN_UNSPECIFIED",
 		1: "STATE_UPLOADING",
 		2: "STATE_UPLOADED",
+		3: "STATE_PURGED",
 	}
 	DebuginfoUpload_State_value = map[string]int32{
 		"STATE_UNKNOWN_UNSPECIFIED": 0,
 		"STATE_UPLOADING":           1,
 		"STATE_UPLOADED":            2,
+		"STATE_PURGED":              3,
 	}
 )
 
@@ -1278,7 +1282,7 @@ const file_parca_debuginfo_v1alpha1_debuginfo_proto_rawDesc = "" +
 	"\x06Source\x12\x1e\n" +
 	"\x1aSOURCE_UNKNOWN_UNSPECIFIED\x10\x00\x12\x11\n" +
 	"\rSOURCE_UPLOAD\x10\x01\x12\x15\n" +
-	"\x11SOURCE_DEBUGINFOD\x10\x02\"\xc5\x02\n" +
+	"\x11SOURCE_DEBUGINFOD\x10\x02\"\xd7\x02\n" +
 	"\x0fDebuginfoUpload\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04hash\x18\x02 \x01(\tR\x04hash\x12E\n" +
@@ -1286,11 +1290,12 @@ const file_parca_debuginfo_v1alpha1_debuginfo_proto_rawDesc = "" +
 	"\n" +
 	"started_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tstartedAt\x12;\n" +
 	"\vfinished_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"finishedAt\"O\n" +
+	"finishedAt\"a\n" +
 	"\x05State\x12\x1d\n" +
 	"\x19STATE_UNKNOWN_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fSTATE_UPLOADING\x10\x01\x12\x12\n" +
-	"\x0eSTATE_UPLOADED\x10\x02\"\xb7\x01\n" +
+	"\x0eSTATE_UPLOADED\x10\x02\x12\x10\n" +
+	"\fSTATE_PURGED\x10\x03\"\xb7\x01\n" +
 	"\x10DebuginfoQuality\x12\"\n" +
 	"\rnot_valid_elf\x18\x01 \x01(\bR\vnotValidElf\x12\x1b\n" +
 	"\thas_dwarf\x18\x02 \x01(\bR\bhasDwarf\x12$\n" +
