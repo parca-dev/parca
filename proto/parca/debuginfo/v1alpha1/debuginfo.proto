@@ -230,6 +230,8 @@ message DebuginfoUpload {
     STATE_UPLOADING = 1;
     // The debuginfo has been uploaded successfully.
     STATE_UPLOADED = 2;
+    // The debuginfo has been purged/cleaned up from storage.
+    STATE_PURGED = 3;
   }
 
   // State is the current state of the debuginfo upload.

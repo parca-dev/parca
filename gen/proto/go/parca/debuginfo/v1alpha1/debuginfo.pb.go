@@ -253,6 +253,8 @@ const (
 	DebuginfoUpload_STATE_UPLOADING DebuginfoUpload_State = 1
 	// The debuginfo has been uploaded successfully.
 	DebuginfoUpload_STATE_UPLOADED DebuginfoUpload_State = 2
+	// The debuginfo has been purged/cleaned up from storage.
+	DebuginfoUpload_STATE_PURGED DebuginfoUpload_State = 3
 )
 
 // Enum value maps for DebuginfoUpload_State.
@@ -261,11 +263,13 @@ var (
 		0: "STATE_UNKNOWN_UNSPECIFIED",
 		1: "STATE_UPLOADING",
 		2: "STATE_UPLOADED",
+		3: "STATE_PURGED",
 	}
 	DebuginfoUpload_State_value = map[string]int32{
 		"STATE_UNKNOWN_UNSPECIFIED": 0,
 		"STATE_UPLOADING":           1,
 		"STATE_UPLOADED":            2,
+		"STATE_PURGED":              3,
 	}
 )
 
