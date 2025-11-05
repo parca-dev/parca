@@ -1,6 +1,6 @@
 # https://github.com/hadolint/hadolint/issues/861
 # hadolint ignore=DL3029
-FROM --platform="${BUILDPLATFORM:-linux/amd64}" docker.io/busybox:1.37.0@sha256:2f590fc602ce325cbff2ccfc39499014d039546dc400ef8bbf5c6ffb860632e7 as builder
+FROM --platform="${BUILDPLATFORM:-linux/amd64}" docker.io/busybox:1.37.0@sha256:e3652a00a2fabd16ce889f0aa32c38eec347b997e73bd09e69c962ec7f8732ee as builder
 RUN mkdir /.cache && touch -t 202101010000.00 /.cache
 
 ARG TARGETOS=linux
