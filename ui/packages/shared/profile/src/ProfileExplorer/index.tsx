@@ -13,15 +13,15 @@
 
 import { useEffect, useMemo } from 'react';
 
-import {Provider} from 'react-redux';
+import { Provider } from 'react-redux';
 
-import {QueryServiceClient} from '@parca/client';
+import { QueryServiceClient } from '@parca/client';
 import { KeyDownProvider, useParcaContext } from '@parca/components';
-import {createStore} from '@parca/store';
+import { createStore } from '@parca/store';
 import { capitalizeOnlyFirstLetter, type NavigateFunction } from '@parca/utilities';
 
 import { useCompareModeMeta } from '../hooks/useCompareModeMeta';
-import { useProfileTypes } from '../ProfileSelector';
+import { useHasProfileData } from '../useHasProfileData';
 import ProfileExplorerCompare from './ProfileExplorerCompare';
 import ProfileExplorerSingle from './ProfileExplorerSingle';
 
@@ -30,7 +30,7 @@ interface ProfileExplorerProps {
   navigateTo: NavigateFunction;
 }
 
-const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
+const ErrorContent = ({ errorMessage }: { errorMessage: string }): JSX.Element => {
   return (
     <div
       className="relative rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700"
@@ -46,34 +46,37 @@ const ProfileExplorerApp = ({
   navigateTo,
 }: ProfileExplorerProps): JSX.Element => {
   const {
-    loading: profileTypesLoading,
-    data: profileTypesData,
-    error: profileTypesError,
-  } = useProfileTypes(queryClient);
+    loading: hasProfileDataLoading,
+    data: hasProfileData,
+    error: hasProfileDataError,
+  } = useHasProfileData(queryClient);
 
-  const {loader, noDataPrompt, onError, authenticationErrorMessage} = useParcaContext();
+  const { loader, noDataPrompt, onError, authenticationErrorMessage } = useParcaContext();
   const { isCompareMode } = useCompareModeMeta();
 
   useEffect(() => {
-    if (profileTypesError !== undefined && profileTypesError !== null) {
-      onError?.(profileTypesError);
+    if (hasProfileDataError !== undefined && hasProfileDataError !== null) {
+      onError?.(hasProfileDataError);
     }
-  }, [profileTypesError, onError]);
+  }, [hasProfileDataError, onError]);
 
-  if (profileTypesLoading) {
+  if (hasProfileDataLoading) {
     return <>{loader}</>;
   }
 
-  if (profileTypesData?.types.length === 0) {
+  if (!hasProfileData) {
     return <>{noDataPrompt}</>;
   }
 
-  if (profileTypesError !== undefined && profileTypesError !== null) {
-    if (authenticationErrorMessage !== undefined && profileTypesError.code === 'UNAUTHENTICATED') {
+  if (hasProfileDataError !== undefined && hasProfileDataError !== null) {
+    if (
+      authenticationErrorMessage !== undefined &&
+      hasProfileDataError.code === 'UNAUTHENTICATED'
+    ) {
       return <ErrorContent errorMessage={authenticationErrorMessage} />;
     }
 
-    return <ErrorContent errorMessage={capitalizeOnlyFirstLetter(profileTypesError.message)} />;
+    return <ErrorContent errorMessage={capitalizeOnlyFirstLetter(hasProfileDataError.message)} />;
   }
 
   if (isCompareMode) {
@@ -99,9 +102,9 @@ const ProfileExplorer = ({
   queryClient,
   navigateTo,
 }: ProfileExplorerProps): JSX.Element => {
-  const {additionalFlamegraphColorProfiles} = useParcaContext();
+  const { additionalFlamegraphColorProfiles } = useParcaContext();
 
-  const {store: reduxStore} = useMemo(() => {
+  const { store: reduxStore } = useMemo(() => {
     return createStore(additionalFlamegraphColorProfiles);
   }, [additionalFlamegraphColorProfiles]);
 

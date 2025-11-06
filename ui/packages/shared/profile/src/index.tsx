@@ -11,11 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import type {ParamPreferences} from '@parca/components';
+import type { ParamPreferences } from '@parca/components';
 
-import {useLabelNames} from './MatchersInput';
+import { useLabelNames } from './MatchersInput';
 import ProfileExplorer from './ProfileExplorer';
 import ProfileTypeSelector from './ProfileTypeSelector';
+import SelectWithRefresh from './SelectWithRefresh';
 import CustomSelect from './SimpleMatchers/Select';
 
 export * from './ProfileFlameGraph';
@@ -32,8 +33,8 @@ export * from './SourceView';
 export * from './ProfileMetricsGraph';
 export * from './useSumBy';
 
-export {default as ProfileFilters} from './ProfileView/components/ProfileFilters';
-export {useProfileFiltersUrlState} from './ProfileView/components/ProfileFilters/useProfileFiltersUrlState';
+export { default as ProfileFilters } from './ProfileView/components/ProfileFilters';
+export { useProfileFiltersUrlState } from './ProfileView/components/ProfileFilters/useProfileFiltersUrlState';
 
 export const DEFAULT_PROFILE_EXPLORER_PARAM_VALUES: ParamPreferences = {
   dashboard_items: {
@@ -42,4 +43,4 @@ export const DEFAULT_PROFILE_EXPLORER_PARAM_VALUES: ParamPreferences = {
   },
 };
 
-export {ProfileExplorer, ProfileTypeSelector, CustomSelect, useLabelNames};
+export { ProfileExplorer, ProfileTypeSelector, CustomSelect, SelectWithRefresh, useLabelNames };

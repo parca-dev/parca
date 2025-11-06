@@ -145,7 +145,11 @@ export const ProfileView = ({
             profileType={profileSource?.ProfileType()}
             total={total}
             filtered={filtered}
-            groupByLabels={flamegraphData.metadataLabels ?? []}
+            metadata={{
+              labels: flamegraphData.metadataLabels ?? [],
+              refetch: flamegraphData.metadataRefetch,
+              loading: flamegraphData.metadataLoading,
+            }}
             preferencesModal={preferencesModal}
             profileViewExternalSubActions={profileViewExternalSubActions}
             setGroupByLabels={setGroupByLabels}

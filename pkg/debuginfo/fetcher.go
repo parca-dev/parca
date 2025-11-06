@@ -26,6 +26,7 @@ import (
 var (
 	ErrUnknownDebuginfoSource = errors.New("unknown debuginfo source")
 	ErrNotUploadedYet         = errors.New("debuginfo not uploaded yet")
+	ErrDebuginfoPurged        = errors.New("debuginfo has been purged")
 )
 
 type Fetcher struct {

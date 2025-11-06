@@ -45,13 +45,31 @@ import (
 
 type Querier interface {
 	Labels(ctx context.Context, match []string, start, end time.Time, profileType string) ([]string, error)
-	Values(ctx context.Context, labelName string, match []string, start, end time.Time, profileType string) ([]string, error)
-	QueryRange(ctx context.Context, query string, startTime, endTime time.Time, step time.Duration, limit uint32, sumBy []string) ([]*pb.MetricsSeries, error)
-	ProfileTypes(ctx context.Context) ([]*pb.ProfileType, error)
+	Values(ctx context.Context, labelName string, match []string, start, end time.Time, profileType string) (
+		[]string,
+		error,
+	)
+	QueryRange(
+		ctx context.Context,
+		query string,
+		startTime, endTime time.Time,
+		step time.Duration,
+		limit uint32,
+		sumBy []string,
+	) ([]*pb.MetricsSeries, error)
+	ProfileTypes(ctx context.Context, startTime, endTime time.Time) ([]*pb.ProfileType, error)
 	QuerySingle(ctx context.Context, query string, time time.Time, invertCallStacks bool) (profile.Profile, error)
-	QueryMerge(ctx context.Context, query string, start, end time.Time, aggregateByLabels []string, invertCallStacks bool, functionToFilterBy string) (profile.Profile, error)
+	QueryMerge(
+		ctx context.Context,
+		query string,
+		start, end time.Time,
+		aggregateByLabels []string,
+		invertCallStacks bool,
+		functionToFilterBy string,
+	) (profile.Profile, error)
 	GetProfileMetadataMappings(ctx context.Context, query string, start, end time.Time) ([]string, error)
 	GetProfileMetadataLabels(ctx context.Context, query string, start, end time.Time) ([]string, error)
+	HasProfileData(ctx context.Context) (bool, error)
 }
 
 var (
@@ -157,7 +175,15 @@ func (q *ColumnQueryAPI) QueryRange(ctx context.Context, req *pb.QueryRangeReque
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	res, err := q.querier.QueryRange(ctx, req.Query, req.Start.AsTime(), req.End.AsTime(), req.Step.AsDuration(), req.Limit, req.SumBy)
+	res, err := q.querier.QueryRange(
+		ctx,
+		req.Query,
+		req.Start.AsTime(),
+		req.End.AsTime(),
+		req.Step.AsDuration(),
+		req.Limit,
+		req.SumBy,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -168,14 +194,31 @@ func (q *ColumnQueryAPI) QueryRange(ctx context.Context, req *pb.QueryRangeReque
 }
 
 // Types returns the available types of profiles.
-func (q *ColumnQueryAPI) ProfileTypes(ctx context.Context, req *pb.ProfileTypesRequest) (*pb.ProfileTypesResponse, error) {
-	types, err := q.querier.ProfileTypes(ctx)
+func (q *ColumnQueryAPI) ProfileTypes(ctx context.Context, req *pb.ProfileTypesRequest) (
+	*pb.ProfileTypesResponse,
+	error,
+) {
+	types, err := q.querier.ProfileTypes(ctx, req.Start.AsTime(), req.End.AsTime())
 	if err != nil {
 		return nil, err
 	}
 
 	return &pb.ProfileTypesResponse{
 		Types: types,
+	}, nil
+}
+
+func (q *ColumnQueryAPI) HasProfileData(ctx context.Context, req *pb.HasProfileDataRequest) (
+	*pb.HasProfileDataResponse,
+	error,
+) {
+	hasData, err := q.querier.HasProfileData(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.HasProfileDataResponse{
+		HasData: hasData,
 	}, nil
 }
 
@@ -269,7 +312,13 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 	case pb.QueryRequest_MODE_MERGE:
 		switch req.GetReportType() {
 		case pb.QueryRequest_REPORT_TYPE_PROFILE_METADATA:
-			mappingFiles, labels, err := getMappingFilesAndLabels(ctx, q.querier, req.GetMerge().Query, req.GetMerge().Start.AsTime(), req.GetMerge().End.AsTime())
+			mappingFiles, labels, err := getMappingFilesAndLabels(
+				ctx,
+				q.querier,
+				req.GetMerge().Query,
+				req.GetMerge().Start.AsTime(),
+				req.GetMerge().End.AsTime(),
+			)
 			if err != nil {
 				return nil, err
 			}
@@ -293,7 +342,13 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		switch req.GetReportType() {
 		case pb.QueryRequest_REPORT_TYPE_PROFILE_METADATA:
 			// When comparing, we only return the metadata for the profile we are rendering, which is the profile B.
-			mappingFiles, labels, err := getMappingFilesAndLabels(ctx, q.querier, req.GetDiff().B.GetMerge().GetQuery(), req.GetDiff().B.GetMerge().Start.AsTime(), req.GetDiff().B.GetMerge().End.AsTime())
+			mappingFiles, labels, err := getMappingFilesAndLabels(
+				ctx,
+				q.querier,
+				req.GetDiff().B.GetMerge().GetQuery(),
+				req.GetDiff().B.GetMerge().Start.AsTime(),
+				req.GetDiff().B.GetMerge().End.AsTime(),
+			)
 			if err != nil {
 				return nil, err
 			}
@@ -441,10 +496,35 @@ func FilterProfileData(
 	return res, allValues - allFiltered, nil
 }
 
+// setArrayElementToNull sets an element at the given index to null, creating a null bitmap if needed.
+func setArrayElementToNull(arr arrow.Array, index int, mem memory.Allocator) {
+	data := arr.Data().(*array.Data)
+	buffers := data.Buffers()
+
+	if len(buffers) > 0 && (buffers[0] == nil || buffers[0].Len() == 0) {
+		// Create null bitmap with all bits set to 1 (valid). In arrow-go, it is
+		// valid for a zero-length validity bitmap to represent that all
+		// elements are valid.
+		bitmapSize := int(bitutil.BytesForBits(int64(data.Len() + data.Offset())))
+		nullBitmap := memory.NewResizableBuffer(mem)
+		nullBitmap.Resize(bitmapSize)
+		memory.Set(nullBitmap.Bytes(), 0xff)
+
+		if buffers[0] != nil {
+			buffers[0].Release()
+		}
+		buffers[0] = nullBitmap
+	}
+
+	// Clear the bit to mark as null.
+	bitutil.ClearBit(buffers[0].Bytes(), index)
+	data.SetNullN(data.NullN() + 1)
+}
+
 func filterRecord(
 	ctx context.Context,
 	tracer trace.Tracer,
-	_ memory.Allocator,
+	pool memory.Allocator,
 	rec arrow.RecordBatch,
 	filters []*pb.Filter,
 ) ([]arrow.RecordBatch, int64, int64, error) {
@@ -475,16 +555,9 @@ func filterRecord(
 		}
 	}
 
-	// To keep track of which rows and frames to keep, we will build a list of row indices
-	// and the corresponding frames to keep within those rows.
-	type rowInfo struct {
-		rowIndex     int
-		framesToKeep []int // indices of frames to keep within the location list
-	}
-
-	rowsInfo := make([]rowInfo, 0)
 	originalValueSum := math.Int64.Sum(r.Value)
 
+	rowsToKeep := make([]int64, 0, int(rec.NumRows()))
 	for i := 0; i < int(rec.NumRows()); i++ {
 		lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 
@@ -497,7 +570,14 @@ func filterRecord(
 				_, lastEnd := r.Lines.ValueOffsets(int(lOffsetEnd - 1))
 
 				for _, filter := range stackFilters {
-					if !stackMatchesFilter(r, int(firstStart), int(lastEnd-1), int(lOffsetStart), int(lOffsetEnd), filter) {
+					if !stackMatchesFilter(
+						r,
+						int(firstStart),
+						int(lastEnd-1),
+						int(lOffsetStart),
+						int(lOffsetEnd),
+						filter,
+					) {
 						stackMatches = false
 						break
 					}
@@ -509,102 +589,33 @@ func filterRecord(
 		if !keepRow {
 			continue
 		}
+		rowsToKeep = append(rowsToKeep, int64(i))
 
 		// Apply frame filters - determine which frames to keep
-		framesToKeep := make([]int, 0)
 		if lOffsetEnd-lOffsetStart > 0 {
 			for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
+				keepLocation := false
 				lineStart, lineEnd := r.Lines.ValueOffsets(j)
 				if lineStart >= lineEnd {
 					// For Unsymbolized location, check at location level only
 					if matchesAllFrameFilters(r, j, -1, frameFilters) {
-						framesToKeep = append(framesToKeep, -1)
+						keepLocation = true
 					}
 				} else {
 					// For Symbolized location, check each line/frame
 					for lineIdx := int(lineStart); lineIdx < int(lineEnd); lineIdx++ {
 						if matchesAllFrameFilters(r, j, lineIdx, frameFilters) {
-							framesToKeep = append(framesToKeep, lineIdx)
+							keepLocation = true
+						} else {
+							setArrayElementToNull(r.Line, lineIdx, pool)
 						}
 					}
 				}
-			}
-		}
-
-		// Only keep rows that have at least one frame after filtering
-		if len(framesToKeep) > 0 {
-			rowsInfo = append(rowsInfo, rowInfo{
-				rowIndex:     i,
-				framesToKeep: framesToKeep,
-			})
-		}
-	}
-
-	if len(rowsInfo) == 0 {
-		// No rows match the filters
-		return []arrow.RecordBatch{}, originalValueSum, 0, nil
-	}
-
-	// Now apply frame filtering by nulling out non-matching frames within rows
-	for _, info := range rowsInfo {
-		lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(info.rowIndex)
-
-		// Create a set of frames to keep for quick lookup
-		keepSet := make(map[int]bool)
-		for _, frameIdx := range info.framesToKeep {
-			keepSet[frameIdx] = true
-		}
-
-		// Null out frames that don't match the filters
-		for j := int(lOffsetStart); j < int(lOffsetEnd); j++ {
-			lineStart, lineEnd := r.Lines.ValueOffsets(j)
-			allLinesFiltered := true
-
-			// Check if any line in this location is kept (or if this is unsymbolized and kept)
-			for lineIdx := int(lineStart); lineIdx < int(lineEnd); lineIdx++ {
-				if keepSet[lineIdx] {
-					allLinesFiltered = false
-					break
-				}
-			}
-			// Also check for unsymbolized case
-			if keepSet[-1] {
-				allLinesFiltered = false
-			}
-
-			// If all lines in this location are filtered out, invalidate the location
-			if allLinesFiltered {
-				bitutil.ClearBit(r.Locations.ListValues().NullBitmapBytes(), j)
-			}
-
-			// Null out individual line fields that don't match
-			for lineIdx := int(lineStart); lineIdx < int(lineEnd); lineIdx++ {
-				if !keepSet[lineIdx] {
-					// Null out the frame fields for this line
-					if r.LineFunctionNameIndices.Len() > 0 {
-						bitutil.ClearBit(r.LineFunctionNameIndices.NullBitmapBytes(), lineIdx)
-					}
-					if r.LineFunctionSystemNameIndices.Len() > 0 {
-						bitutil.ClearBit(r.LineFunctionSystemNameIndices.NullBitmapBytes(), lineIdx)
-					}
-					if r.LineFunctionFilenameIndices.Len() > 0 {
-						bitutil.ClearBit(r.LineFunctionFilenameIndices.NullBitmapBytes(), lineIdx)
-					}
-					if r.LineFunctionStartLine.Len() > 0 {
-						bitutil.ClearBit(r.LineFunctionStartLine.NullBitmapBytes(), lineIdx)
-					}
-					if r.LineNumber.Len() > 0 {
-						bitutil.ClearBit(r.LineNumber.NullBitmapBytes(), lineIdx)
-					}
+				if !keepLocation {
+					setArrayElementToNull(r.Locations.ListValues(), j, pool)
 				}
 			}
 		}
-	}
-
-	// Extract the rows we want to keep
-	rowsToKeep := make([]int64, len(rowsInfo))
-	for i, info := range rowsInfo {
-		rowsToKeep[i] = int64(info.rowIndex)
 	}
 
 	// Split the record into slices based on the rowsToKeep
@@ -619,7 +630,11 @@ func filterRecord(
 }
 
 // stackMatchesFilter checks if a stack matches the given filter criteria.
-func stackMatchesFilter(r *profile.RecordReader, firstStart, lastEnd, locStart, locEnd int, filter *pb.FilterCriteria) bool {
+func stackMatchesFilter(
+	r *profile.RecordReader,
+	firstStart, lastEnd, locStart, locEnd int,
+	filter *pb.FilterCriteria,
+) bool {
 	if fnCond := filter.GetFunctionName(); fnCond != nil {
 		if r.LineFunctionNameIndices.Len() == 0 {
 			return handleUnsymbolizedFunctionCondition(fnCond)
@@ -838,7 +853,11 @@ func matchesLineNumberInRange(r *profile.RecordReader, firstStart, lastEnd int, 
 	return isNegativeCondition
 }
 
-func matchesAllFrameFilters(r *profile.RecordReader, locationIndex, lineIndex int, frameFilters []*pb.FilterCriteria) bool {
+func matchesAllFrameFilters(
+	r *profile.RecordReader,
+	locationIndex, lineIndex int,
+	frameFilters []*pb.FilterCriteria,
+) bool {
 	// If no frame filters are provided, keep all frames
 	if len(frameFilters) == 0 {
 		return true
@@ -1095,9 +1114,11 @@ func RenderReport(
 				if len(indices) != 1 {
 					return nil, status.Errorf(codes.Internal, "invalid flame chart timestamp indices: %v", indices)
 				}
-				sortedIndices, err := arrowutils.SortRecord(sample, []arrowutils.SortingColumn{
-					{Index: indices[0], Direction: arrowutils.Ascending},
-				})
+				sortedIndices, err := arrowutils.SortRecord(
+					sample, []arrowutils.SortingColumn{
+						{Index: indices[0], Direction: arrowutils.Ascending},
+					},
+				)
 				if err != nil {
 					return nil, status.Errorf(codes.Internal, "failed to sort flame chart record: %v", err.Error())
 				}
@@ -1127,9 +1148,11 @@ func RenderReport(
 				if len(indices) != 1 {
 					return nil, status.Errorf(codes.Internal, "invalid flame chart timestamp indices: %v", indices)
 				}
-				sorted, err := arrowutils.MergeRecords(mem, p.Samples, []arrowutils.SortingColumn{
-					{Index: indices[0], Direction: arrowutils.Ascending},
-				}, 0)
+				sorted, err := arrowutils.MergeRecords(
+					mem, p.Samples, []arrowutils.SortingColumn{
+						{Index: indices[0], Direction: arrowutils.Ascending},
+					}, 0,
+				)
 				if err != nil {
 					return nil, status.Errorf(codes.Internal, "failed to merge flame chart records: %v", err.Error())
 				}
@@ -1235,7 +1258,10 @@ func RenderReport(
 	}
 }
 
-func (q *ColumnQueryAPI) selectSingle(ctx context.Context, s *pb.SingleProfile, isInverted bool) (profile.Profile, error) {
+func (q *ColumnQueryAPI) selectSingle(ctx context.Context, s *pb.SingleProfile, isInverted bool) (
+	profile.Profile,
+	error,
+) {
 	p, err := q.querier.QuerySingle(
 		ctx,
 		s.Query,
@@ -1249,7 +1275,13 @@ func (q *ColumnQueryAPI) selectSingle(ctx context.Context, s *pb.SingleProfile, 
 	return p, nil
 }
 
-func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile, groupByLabels []string, isInverted bool, functionToFilterBy string) (profile.Profile, error) {
+func (q *ColumnQueryAPI) selectMerge(
+	ctx context.Context,
+	m *pb.MergeProfile,
+	groupByLabels []string,
+	isInverted bool,
+	functionToFilterBy string,
+) (profile.Profile, error) {
 	p, err := q.querier.QueryMerge(
 		ctx,
 		m.Query,
@@ -1266,12 +1298,19 @@ func (q *ColumnQueryAPI) selectMerge(ctx context.Context, m *pb.MergeProfile, gr
 	return p, nil
 }
 
-func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile, aggregateByLabels, isInverted bool) (profile.Profile, error) {
+func (q *ColumnQueryAPI) selectDiff(
+	ctx context.Context,
+	d *pb.DiffProfile,
+	aggregateByLabels, isInverted bool,
+) (profile.Profile, error) {
 	ctx, span := q.tracer.Start(ctx, "diffRequest")
 	defer span.End()
 
 	if d == nil {
-		return profile.Profile{}, status.Error(codes.InvalidArgument, "requested diff mode, but did not provide parameters for diff")
+		return profile.Profile{}, status.Error(
+			codes.InvalidArgument,
+			"requested diff mode, but did not provide parameters for diff",
+		)
 	}
 
 	g, ctx := errgroup.WithContext(ctx)
@@ -1281,14 +1320,16 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile, aggr
 			r.Release()
 		}
 	}()
-	g.Go(func() error {
-		var err error
-		base, err = q.selectProfileForDiff(ctx, d.A, aggregateByLabels, isInverted)
-		if err != nil {
-			return fmt.Errorf("reading base profile: %w", err)
-		}
-		return nil
-	})
+	g.Go(
+		func() error {
+			var err error
+			base, err = q.selectProfileForDiff(ctx, d.A, aggregateByLabels, isInverted)
+			if err != nil {
+				return fmt.Errorf("reading base profile: %w", err)
+			}
+			return nil
+		},
+	)
 
 	var compare profile.Profile
 	defer func() {
@@ -1296,14 +1337,16 @@ func (q *ColumnQueryAPI) selectDiff(ctx context.Context, d *pb.DiffProfile, aggr
 			r.Release()
 		}
 	}()
-	g.Go(func() error {
-		var err error
-		compare, err = q.selectProfileForDiff(ctx, d.B, aggregateByLabels, isInverted)
-		if err != nil {
-			return fmt.Errorf("reading compared profile: %w", err)
-		}
-		return nil
-	})
+	g.Go(
+		func() error {
+			var err error
+			compare, err = q.selectProfileForDiff(ctx, d.B, aggregateByLabels, isInverted)
+			if err != nil {
+				return fmt.Errorf("reading compared profile: %w", err)
+			}
+			return nil
+		},
+	)
 
 	if err := g.Wait(); err != nil {
 		return profile.Profile{}, err
@@ -1316,7 +1359,13 @@ type Releasable interface {
 	Release()
 }
 
-func ComputeDiff(ctx context.Context, tracer trace.Tracer, mem memory.Allocator, base, compare profile.Profile, absolute bool) (profile.Profile, error) {
+func ComputeDiff(
+	ctx context.Context,
+	tracer trace.Tracer,
+	mem memory.Allocator,
+	base, compare profile.Profile,
+	absolute bool,
+) (profile.Profile, error) {
 	_, span := tracer.Start(ctx, "ComputeDiff")
 	defer span.End()
 	cleanupArrs := make([]Releasable, 0, len(base.Samples))
@@ -1376,11 +1425,13 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, mem memory.Allocator,
 			cols[len(cols)-3] = cols[len(cols)-4] // value as diff
 		}
 
-		records = append(records, array.NewRecordBatch(
-			r.Schema(),
-			cols,
-			r.NumRows(),
-		))
+		records = append(
+			records, array.NewRecordBatch(
+				r.Schema(),
+				cols,
+				r.NumRows(),
+			),
+		)
 	}
 
 	for _, r := range base.Samples {
@@ -1397,17 +1448,19 @@ func ComputeDiff(ctx context.Context, tracer trace.Tracer, mem memory.Allocator,
 			defer timestamp.Release()
 			duration := zeroInt64Array(mem, int(r.NumRows()))
 			defer duration.Release()
-			records = append(records, array.NewRecordBatch(
-				r.Schema(),
-				append(
-					cols[:len(cols)-4], // all other columns like locations
-					value,
-					diff,
-					timestamp,
-					duration,
+			records = append(
+				records, array.NewRecordBatch(
+					r.Schema(),
+					append(
+						cols[:len(cols)-4], // all other columns like locations
+						value,
+						diff,
+						timestamp,
+						duration,
+					),
+					r.NumRows(),
 				),
-				r.NumRows(),
-			))
+			)
 		}()
 	}
 
@@ -1447,7 +1500,11 @@ func zeroInt64Array(pool memory.Allocator, rows int) arrow.Array {
 	return b.NewArray()
 }
 
-func (q *ColumnQueryAPI) selectProfileForDiff(ctx context.Context, s *pb.ProfileDiffSelection, _, isInverted bool) (profile.Profile, error) {
+func (q *ColumnQueryAPI) selectProfileForDiff(
+	ctx context.Context,
+	s *pb.ProfileDiffSelection,
+	_, isInverted bool,
+) (profile.Profile, error) {
 	switch s.Mode {
 	case pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED:
 		return q.selectSingle(ctx, s.GetSingle(), isInverted)
@@ -1458,16 +1515,21 @@ func (q *ColumnQueryAPI) selectProfileForDiff(ctx context.Context, s *pb.Profile
 	}
 }
 
-func (q *ColumnQueryAPI) ShareProfile(ctx context.Context, req *pb.ShareProfileRequest) (*pb.ShareProfileResponse, error) {
+func (q *ColumnQueryAPI) ShareProfile(ctx context.Context, req *pb.ShareProfileRequest) (
+	*pb.ShareProfileResponse,
+	error,
+) {
 	req.QueryRequest.ReportType = pb.QueryRequest_REPORT_TYPE_PPROF
 	resp, err := q.Query(ctx, req.QueryRequest)
 	if err != nil {
 		return nil, err
 	}
-	uploadResp, err := q.shareClient.Upload(ctx, &sharepb.UploadRequest{
-		Profile:     resp.GetPprof(),
-		Description: *req.Description,
-	})
+	uploadResp, err := q.shareClient.Upload(
+		ctx, &sharepb.UploadRequest{
+			Profile:     resp.GetPprof(),
+			Description: *req.Description,
+		},
+	)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to upload profile: %s", err.Error())
 	}

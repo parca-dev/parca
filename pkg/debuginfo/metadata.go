@@ -105,6 +105,21 @@ func (m *ObjectStoreMetadata) MarkAsUploaded(ctx context.Context, buildID, uploa
 	return m.write(ctx, dbginfo)
 }
 
+func (m *ObjectStoreMetadata) MarkAsPurged(ctx context.Context, buildID string, typ debuginfopb.DebuginfoType) error {
+	dbginfo, err := m.Fetch(ctx, buildID, typ)
+	if err != nil {
+		return err
+	}
+
+	if dbginfo.Upload == nil {
+		return ErrUploadMetadataNotFound
+	}
+
+	dbginfo.Upload.State = debuginfopb.DebuginfoUpload_STATE_PURGED
+
+	return m.write(ctx, dbginfo)
+}
+
 func (m *ObjectStoreMetadata) Fetch(ctx context.Context, buildID string, typ debuginfopb.DebuginfoType) (*debuginfopb.Debuginfo, error) {
 	path := metadataObjectPath(buildID, typ)
 	r, err := m.bucket.Get(ctx, path)

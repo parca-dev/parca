@@ -4,6 +4,8 @@
 import type { RpcTransport } from "@protobuf-ts/runtime-rpc";
 import type { ServiceInfo } from "@protobuf-ts/runtime-rpc";
 import { QueryService } from "./query";
+import type { HasProfileDataResponse } from "./query";
+import type { HasProfileDataRequest } from "./query";
 import type { ShareProfileResponse } from "./query";
 import type { ShareProfileRequest } from "./query";
 import type { ValuesResponse } from "./query";
@@ -69,6 +71,12 @@ export interface IQueryServiceClient {
      * @generated from protobuf rpc: ShareProfile
      */
     shareProfile(input: ShareProfileRequest, options?: RpcOptions): UnaryCall<ShareProfileRequest, ShareProfileResponse>;
+    /**
+     * HasProfileData checks if there is any profile data available
+     *
+     * @generated from protobuf rpc: HasProfileData
+     */
+    hasProfileData(input: HasProfileDataRequest, options?: RpcOptions): UnaryCall<HasProfileDataRequest, HasProfileDataResponse>;
 }
 /**
  * QueryService is the service that provides APIs to retrieve and inspect profiles
@@ -143,5 +151,14 @@ export class QueryServiceClient implements IQueryServiceClient, ServiceInfo {
     shareProfile(input: ShareProfileRequest, options?: RpcOptions): UnaryCall<ShareProfileRequest, ShareProfileResponse> {
         const method = this.methods[6], opt = this._transport.mergeOptions(options);
         return stackIntercept<ShareProfileRequest, ShareProfileResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * HasProfileData checks if there is any profile data available
+     *
+     * @generated from protobuf rpc: HasProfileData
+     */
+    hasProfileData(input: HasProfileDataRequest, options?: RpcOptions): UnaryCall<HasProfileDataRequest, HasProfileDataResponse> {
+        const method = this.methods[7], opt = this._transport.mergeOptions(options);
+        return stackIntercept<HasProfileDataRequest, HasProfileDataResponse>("unary", this._transport, method, opt, input);
     }
 }

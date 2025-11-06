@@ -126,6 +126,7 @@ const (
 	ReasonDebuginfoInvalid                = "Debuginfo already exists but is marked as invalid, therefore a new upload is needed. Hash the debuginfo and initiate the upload."
 	ReasonDebuginfoEqual                  = "Debuginfo already exists and is marked as invalid, but the proposed hash is the same as the one already available, therefore the upload is not accepted as it would result in the same invalid debuginfos."
 	ReasonDebuginfoNotEqual               = "Debuginfo already exists but is marked as invalid, therefore a new upload will be accepted."
+	ReasonDebuginfoPurged                 = "Debuginfo was previously uploaded but has been purged/cleaned up, therefore a new upload is needed."
 	ReasonDebuginfodSource                = "Debuginfo is available from debuginfod already and not marked as invalid, therefore no new upload is needed."
 	ReasonDebuginfodInvalid               = "Debuginfo is available from debuginfod already but is marked as invalid, therefore a new upload is needed."
 )
@@ -236,6 +237,12 @@ func (s *Store) ShouldInitiateUpload(ctx context.Context, req *debuginfopb.Shoul
 				return &debuginfopb.ShouldInitiateUploadResponse{
 					ShouldInitiateUpload: true,
 					Reason:               ReasonDebuginfoNotEqual,
+				}, nil
+			case debuginfopb.DebuginfoUpload_STATE_PURGED:
+				// Debuginfo was purged, allow re-uploading
+				return &debuginfopb.ShouldInitiateUploadResponse{
+					ShouldInitiateUpload: true,
+					Reason:               ReasonDebuginfoPurged,
 				}, nil
 			default:
 				return nil, status.Error(codes.Internal, "metadata inconsistency: unknown upload state")

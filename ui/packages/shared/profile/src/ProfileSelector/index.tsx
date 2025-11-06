@@ -15,7 +15,7 @@ import { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef, useS
 
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 
-import {ProfileTypesResponse, QueryServiceClient} from '@parca/client';
+import {ProfileTypesRequest, ProfileTypesResponse, QueryServiceClient} from '@parca/client';
 import {
   DateTimeRange,
   IconButton,
@@ -26,11 +26,12 @@ import {
 import {CloseIcon} from '@parca/icons';
 import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
-import {type NavigateFunction} from '@parca/utilities';
+import {millisToProtoTimestamp, type NavigateFunction} from '@parca/utilities';
 
 import {useLabelNames} from '../MatchersInput/index';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
 import {UtilizationLabelsProvider} from '../contexts/UtilizationLabelsContext';
+import useGrpcQuery from '../useGrpcQuery';
 import {useDefaultSumBy, useSumBySelection} from '../useSumBy';
 import { useQueryState } from '../hooks/useQueryState';
 import {MetricsGraphSection} from './MetricsGraphSection';
@@ -100,24 +101,32 @@ export interface IProfileTypesResult {
   error?: RpcError;
 }
 
-export const useProfileTypes = (client: QueryServiceClient): IProfileTypesResult => {
-  const [result, setResult] = useState<ProfileTypesResponse | undefined>(undefined);
-  const [error, setError] = useState<RpcError | undefined>(undefined);
-  const [loading, setLoading] = useState(true);
+export const useProfileTypes = (
+  client: QueryServiceClient,
+  start?: number,
+  end?: number
+): IProfileTypesResult => {
   const metadata = useGrpcMetadata();
+  const metadataString = useMemo(() => JSON.stringify(metadata), [metadata]);
+  const request: ProfileTypesRequest = {};
 
-  useEffect(() => {
-    if (!loading) {
-      return;
-    }
-    const call = client.profileTypes({}, {meta: metadata});
-    call.response
-      .then(response => setResult(response))
-      .catch(error => setError(error))
-      .finally(() => setLoading(false));
-  }, [client, metadata, loading]);
+  if (start != null && end != null) {
+    request.start = millisToProtoTimestamp(start);
+    request.end = millisToProtoTimestamp(end);
+  }
 
-  return {loading, data: result, error};
+  const {isLoading, data, error} = useGrpcQuery({
+    key: ['profileTypes', metadataString, start, end],
+    queryFn: async abort => {
+      const {response} = await client.profileTypes(request, {
+        meta: metadata,
+        abort,
+      });
+      return response;
+    },
+  });
+
+  return {loading: isLoading, data, error: error as RpcError};
 };
 
 const ProfileSelector = ({
@@ -137,11 +146,6 @@ const ProfileSelector = ({
   utilizationLabels,
   onUtilizationSeriesSelect,
 }: ProfileSelectorProps): JSX.Element => {
-  const {
-    loading: profileTypesLoading,
-    data: profileTypesData,
-    error,
-  } = useProfileTypes(queryClient);
   const {heightStyle} = useMetricsGraphDimensions(comparing, utilizationMetrics != null);
   const {viewComponent} = useParcaContext();
   const [queryBrowserMode, setQueryBrowserMode] = useURLState('query_browser_mode');
@@ -188,12 +192,17 @@ const ProfileSelector = ({
   const from = timeRangeSelection.getFromMs();
   const to = timeRangeSelection.getToMs();
 
-  const {loading: labelNamesLoading, result} = useLabelNames(
-    queryClient,
-    profileType.toString(),
-    from,
-    to
-  );
+  const {
+    loading: profileTypesLoading,
+    data: profileTypesData,
+    error,
+  } = useProfileTypes(queryClient, from, to);
+
+  const {
+    loading: labelNamesLoading,
+    result,
+    refetch,
+  } = useLabelNames(queryClient, profileType.toString(), from, to);
   const {loading: selectedLabelNamesLoading, result: selectedLabelNamesResult} = useLabelNames(
     queryClient,
     selectedProfileType.toString(),
@@ -345,6 +354,7 @@ const ProfileSelector = ({
             profileType={profileType}
             profileTypesError={error}
             viewComponent={viewComponent}
+            refreshLabelNames={refetch}
           />
           {comparing && (
             <div>
