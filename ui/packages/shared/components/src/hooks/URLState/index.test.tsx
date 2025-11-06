@@ -11,11 +11,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ReactNode } from 'react';
-import { renderHook, act, waitFor } from '@testing-library/react';
-import { describe, expect, it, beforeEach, vi } from 'vitest';
+import {ReactNode} from 'react';
 
-import { URLStateProvider, useURLState, useURLStateBatch, useURLStateCustom, JSONParser, JSONSerializer } from './index';
+import {act, renderHook, waitFor} from '@testing-library/react';
+import {beforeEach, describe, expect, it, vi} from 'vitest';
+
+import {
+  JSONParser,
+  JSONSerializer,
+  URLStateProvider,
+  useURLState,
+  useURLStateBatch,
+  useURLStateCustom,
+} from './index';
 
 // Mock the navigate function
 const mockNavigateTo = vi.fn();
@@ -54,8 +62,10 @@ vi.mock('./utils', async () => {
 });
 
 // Helper to create wrapper with URLStateProvider
-const createWrapper = (paramPreferences = {}): (({ children }: { children: ReactNode }) => JSX.Element) => {
-  const Wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
+const createWrapper = (
+  paramPreferences = {}
+): (({children}: {children: ReactNode}) => JSX.Element) => {
+  const Wrapper = ({children}: {children: ReactNode}): JSX.Element => (
     <URLStateProvider navigateTo={mockNavigateTo} paramPreferences={paramPreferences}>
       {children}
     </URLStateProvider>
@@ -81,20 +91,16 @@ describe('URLState Hooks', () => {
 
   describe('useURLState', () => {
     it('should initialize with default value when no URL param exists', () => {
-      const { result } = renderHook(
-        () => useURLState('testParam', { defaultValue: 'defaultValue' }),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useURLState('testParam', {defaultValue: 'defaultValue'}), {
+        wrapper: createWrapper(),
+      });
 
       const [value] = result.current;
       expect(value).toBe('defaultValue');
     });
 
     it('should update state and trigger URL navigation on setter call', async () => {
-      const { result } = renderHook(
-        () => useURLState('testParam'),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useURLState('testParam'), {wrapper: createWrapper()});
 
       const [, setParam] = result.current;
 
@@ -106,8 +112,8 @@ describe('URLState Hooks', () => {
       await waitFor(() => {
         expect(mockNavigateTo).toHaveBeenCalledWith(
           '/test',
-          { testParam: 'newValue' },
-          { replace: true }
+          {testParam: 'newValue'},
+          {replace: true}
         );
       });
 
@@ -117,12 +123,13 @@ describe('URLState Hooks', () => {
     });
 
     it('should handle array values correctly', () => {
-      const { result } = renderHook(
-        () => useURLState<string[]>('tags', {
-          defaultValue: ['tag1', 'tag2'],
-          alwaysReturnArray: true
-        }),
-        { wrapper: createWrapper() }
+      const {result} = renderHook(
+        () =>
+          useURLState<string[]>('tags', {
+            defaultValue: ['tag1', 'tag2'],
+            alwaysReturnArray: true,
+          }),
+        {wrapper: createWrapper()}
       );
 
       const [value] = result.current;
@@ -132,10 +139,9 @@ describe('URLState Hooks', () => {
     it('should return single value when array has one item and alwaysReturnArray is false', () => {
       mockLocation.search = '?item=single';
 
-      const { result } = renderHook(
-        () => useURLState('item', { alwaysReturnArray: false }),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useURLState('item', {alwaysReturnArray: false}), {
+        wrapper: createWrapper(),
+      });
 
       const [value] = result.current;
       expect(value).toBe('single');
@@ -145,12 +151,13 @@ describe('URLState Hooks', () => {
       // Set up initial state with a single string value
       mockLocation.search = '';
 
-      const { result } = renderHook(
-        () => useURLState<string[]>('item', {
-          defaultValue: ['single'],
-          alwaysReturnArray: true
-        }),
-        { wrapper: createWrapper() }
+      const {result} = renderHook(
+        () =>
+          useURLState<string[]>('item', {
+            defaultValue: ['single'],
+            alwaysReturnArray: true,
+          }),
+        {wrapper: createWrapper()}
       );
 
       const [value] = result.current;
@@ -177,12 +184,12 @@ describe('URLState Hooks', () => {
           size,
           setColor,
           setSize,
-          batchUpdates
+          batchUpdates,
         };
       };
 
-      const { result } = renderHook(() => TestComponent(), {
-        wrapper: createWrapper()
+      const {result} = renderHook(() => TestComponent(), {
+        wrapper: createWrapper(),
       });
 
       act(() => {
@@ -198,8 +205,8 @@ describe('URLState Hooks', () => {
         expect(mockNavigateTo).toHaveBeenCalledTimes(1);
         expect(mockNavigateTo).toHaveBeenCalledWith(
           '/test',
-          { color: 'red', size: 'large' },
-          { replace: true }
+          {color: 'red', size: 'large'},
+          {replace: true}
         );
       });
 
@@ -251,12 +258,12 @@ describe('URLState Hooks', () => {
           setParam1,
           setParam2,
           innerBatchedFunction,
-          batchUpdates
+          batchUpdates,
         };
       };
 
-      const { result } = renderHook(() => TestComponent(), {
-        wrapper: createWrapper()
+      const {result} = renderHook(() => TestComponent(), {
+        wrapper: createWrapper(),
       });
 
       // Outer batchUpdates that calls nested functions which also use batchUpdates
@@ -282,9 +289,9 @@ describe('URLState Hooks', () => {
             param3: 'value3',
             param4: 'value4',
             param5: 'value5',
-            param6: 'value6'
+            param6: 'value6',
           },
-          { replace: true }
+          {replace: true}
         );
       });
 
@@ -300,15 +307,16 @@ describe('URLState Hooks', () => {
 
   describe('useURLStateCustom', () => {
     it('should parse and stringify custom data types', () => {
-      const customData = { foo: 'bar', count: 42 };
+      const customData = {foo: 'bar', count: 42};
 
-      const { result } = renderHook(
-        () => useURLStateCustom('customData', {
-          parse: JSONParser,
-          stringify: JSONSerializer,
-          defaultValue: JSON.stringify(customData),
-        }),
-        { wrapper: createWrapper() }
+      const {result} = renderHook(
+        () =>
+          useURLStateCustom('customData', {
+            parse: JSONParser,
+            stringify: JSONSerializer,
+            defaultValue: JSON.stringify(customData),
+          }),
+        {wrapper: createWrapper()}
       );
 
       const [value] = result.current;
@@ -316,25 +324,26 @@ describe('URLState Hooks', () => {
     });
 
     it('should handle custom serialization for complex objects', async () => {
-      const { result } = renderHook(
-        () => useURLStateCustom<{ items: string[]; enabled: boolean }>('config', {
-          parse: JSONParser,
-          stringify: JSONSerializer,
-        }),
-        { wrapper: createWrapper() }
+      const {result} = renderHook(
+        () =>
+          useURLStateCustom<{items: string[]; enabled: boolean}>('config', {
+            parse: JSONParser,
+            stringify: JSONSerializer,
+          }),
+        {wrapper: createWrapper()}
       );
 
       const [, setConfig] = result.current;
 
       act(() => {
-        setConfig({ items: ['a', 'b', 'c'], enabled: true });
+        setConfig({items: ['a', 'b', 'c'], enabled: true});
       });
 
       await waitFor(() => {
         expect(mockNavigateTo).toHaveBeenCalledWith(
           '/test',
-          { config: '{"items":["a","b","c"],"enabled":true}' },
-          { replace: true }
+          {config: '{"items":["a","b","c"],"enabled":true}'},
+          {replace: true}
         );
       });
     });
@@ -343,12 +352,13 @@ describe('URLState Hooks', () => {
   describe('Real-world use cases', () => {
     it('should handle dashboard panel management', async () => {
       // Simulate ViewSelector component behavior
-      const { result: dashboardResult } = renderHook(
-        () => useURLState<string[]>('dashboard_items', {
-          defaultValue: ['flamegraph'],
-          alwaysReturnArray: true
-        }),
-        { wrapper: createWrapper() }
+      const {result: dashboardResult} = renderHook(
+        () =>
+          useURLState<string[]>('dashboard_items', {
+            defaultValue: ['flamegraph'],
+            alwaysReturnArray: true,
+          }),
+        {wrapper: createWrapper()}
       );
 
       const [dashboardItems, setDashboardItems] = dashboardResult.current;
@@ -362,8 +372,8 @@ describe('URLState Hooks', () => {
       await waitFor(() => {
         expect(mockNavigateTo).toHaveBeenCalledWith(
           '/test',
-          { dashboard_items: 'flamegraph,table' },
-          { replace: true }
+          {dashboard_items: 'flamegraph,table'},
+          {replace: true}
         );
       });
     });
@@ -372,10 +382,10 @@ describe('URLState Hooks', () => {
       // Simulate ProfileSelector component behavior
       // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
       const TestComponent = () => {
-        const [colorBy, setColorBy] = useURLState('color_by', { defaultValue: 'function' });
+        const [colorBy, setColorBy] = useURLState('color_by', {defaultValue: 'function'});
         const [groupBy, setGroupBy] = useURLState<string[]>('group_by', {
           defaultValue: ['function_name'],
-          alwaysReturnArray: true
+          alwaysReturnArray: true,
         });
         const batchUpdates = useURLStateBatch();
 
@@ -384,12 +394,12 @@ describe('URLState Hooks', () => {
           groupBy,
           setColorBy,
           setGroupBy,
-          batchUpdates
+          batchUpdates,
         };
       };
 
-      const { result } = renderHook(() => TestComponent(), {
-        wrapper: createWrapper()
+      const {result} = renderHook(() => TestComponent(), {
+        wrapper: createWrapper(),
       });
 
       // Simulate a complex filter change that updates multiple params
@@ -406,23 +416,22 @@ describe('URLState Hooks', () => {
           '/test',
           {
             color_by: 'filename',
-            group_by: 'function_name,filename'
+            group_by: 'function_name,filename',
           },
-          { replace: true }
+          {replace: true}
         );
       });
     });
 
     it('should not update URL for default values', async () => {
       const paramPreferences = {
-        view: { defaultValue: 'flamegraph' },
-        sort: { defaultValue: 'cumulative' },
+        view: {defaultValue: 'flamegraph'},
+        sort: {defaultValue: 'cumulative'},
       };
 
-      const { result } = renderHook(
-        () => useURLState('view'),
-        { wrapper: createWrapper(paramPreferences) }
-      );
+      const {result} = renderHook(() => useURLState('view'), {
+        wrapper: createWrapper(paramPreferences),
+      });
 
       const [, setView] = result.current;
 
@@ -433,19 +442,12 @@ describe('URLState Hooks', () => {
 
       await waitFor(() => {
         // Should still be called but with empty params (sanitized)
-        expect(mockNavigateTo).toHaveBeenCalledWith(
-          '/test',
-          {},
-          { replace: true }
-        );
+        expect(mockNavigateTo).toHaveBeenCalledWith('/test', {}, {replace: true});
       });
     });
 
     it('should handle rapid successive updates', async () => {
-      const { result } = renderHook(
-        () => useURLState('rapidParam'),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useURLState('rapidParam'), {wrapper: createWrapper()});
 
       const [, setParam] = result.current;
 
@@ -460,8 +462,8 @@ describe('URLState Hooks', () => {
         // Due to the setTimeout(0) debouncing, we expect the last value
         expect(mockNavigateTo).toHaveBeenLastCalledWith(
           '/test',
-          { rapidParam: 'value3' },
-          { replace: true }
+          {rapidParam: 'value3'},
+          {replace: true}
         );
       });
     });
@@ -470,7 +472,8 @@ describe('URLState Hooks', () => {
   describe('URL Parameter Preservation', () => {
     it('should preserve other query parameters when resetting specific ones', async () => {
       // Simulate existing URL parameters
-      mockLocation.search = '?expression_a=process_cpu%7B%7D&from_a=1234567890&to_a=9876543210&time_selection_a=1h&group_by=existing_group&cur_path=/existing/path';
+      mockLocation.search =
+        '?expression_a=process_cpu%7B%7D&from_a=1234567890&to_a=9876543210&time_selection_a=1h&group_by=existing_group&cur_path=/existing/path';
 
       // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
       const TestComponent = () => {
@@ -490,12 +493,12 @@ describe('URLState Hooks', () => {
               setGroupBy(undefined);
               setCurPath(undefined);
             });
-          }
+          },
         };
       };
 
-      const { result } = renderHook(() => TestComponent(), {
-        wrapper: createWrapper()
+      const {result} = renderHook(() => TestComponent(), {
+        wrapper: createWrapper(),
       });
 
       // Verify initial values
@@ -525,12 +528,10 @@ describe('URLState Hooks', () => {
 
     it('should preserve unmanaged parameters during single state updates', async () => {
       // Set up URL with both managed and unmanaged parameters
-      mockLocation.search = '?managed=old_value&unmanaged=should_persist&another_unmanaged=also_persists';
+      mockLocation.search =
+        '?managed=old_value&unmanaged=should_persist&another_unmanaged=also_persists';
 
-      const { result } = renderHook(
-        () => useURLState('managed'),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useURLState('managed'), {wrapper: createWrapper()});
 
       const [, setManaged] = result.current;
 
@@ -545,9 +546,9 @@ describe('URLState Hooks', () => {
           {
             managed: 'new_value',
             unmanaged: 'should_persist',
-            another_unmanaged: 'also_persists'
+            another_unmanaged: 'also_persists',
           },
-          { replace: true }
+          {replace: true}
         );
       });
     });
@@ -556,10 +557,7 @@ describe('URLState Hooks', () => {
       // Start with some unmanaged parameters in URL
       mockLocation.search = '?existing_param=value1&another_param=value2';
 
-      const { result } = renderHook(
-        () => useURLState('new_param'),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useURLState('new_param'), {wrapper: createWrapper()});
 
       const [, setNewParam] = result.current;
 
@@ -574,9 +572,9 @@ describe('URLState Hooks', () => {
           {
             existing_param: 'value1',
             another_param: 'value2',
-            new_param: 'new_value'
+            new_param: 'new_value',
           },
-          { replace: true }
+          {replace: true}
         );
       });
     });
@@ -585,10 +583,7 @@ describe('URLState Hooks', () => {
       // Simulate URL with JSON-encoded objects
       mockLocation.search = '?filter=%7B%22type%22%3A%22cpu%22%2C%22value%22%3A100%7D&managed=test';
 
-      const { result } = renderHook(
-        () => useURLState('managed'),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useURLState('managed'), {wrapper: createWrapper()});
 
       const [, setManaged] = result.current;
 
@@ -601,9 +596,9 @@ describe('URLState Hooks', () => {
           '/test',
           {
             filter: '{"type":"cpu","value":100}',
-            managed: 'updated'
+            managed: 'updated',
           },
-          { replace: true }
+          {replace: true}
         );
       });
     });
@@ -612,10 +607,7 @@ describe('URLState Hooks', () => {
       // URL with array parameters - note that our mock getQueryParamsFromURL processes these
       mockLocation.search = '?tags=tag1&tags=tag2&tags=tag3&managed=value';
 
-      const { result } = renderHook(
-        () => useURLState('managed'),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useURLState('managed'), {wrapper: createWrapper()});
 
       const [, setManaged] = result.current;
 
@@ -635,7 +627,7 @@ describe('URLState Hooks', () => {
   describe('Error handling', () => {
     it('should throw error when used outside URLStateProvider', () => {
       // Suppress console.error for this test
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       expect(() => {
         renderHook(() => useURLState('param'));
@@ -645,7 +637,7 @@ describe('URLState Hooks', () => {
     });
 
     it('should throw error for useURLStateBatch when used outside URLStateProvider', () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       expect(() => {
         renderHook(() => useURLStateBatch());

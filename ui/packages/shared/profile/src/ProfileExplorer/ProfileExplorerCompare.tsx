@@ -11,18 +11,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {QueryServiceClient} from '@parca/client';
-import { useURLStateBatch } from '@parca/components';
+import {useURLStateBatch} from '@parca/components';
 import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 import type {NavigateFunction} from '@parca/utilities';
 
-import { ProfileDiffSource, ProfileViewWithData } from '..';
-import { useCompareModeMeta } from '../hooks/useCompareModeMeta';
-import { useQueryState } from '../hooks/useQueryState';
+import {ProfileDiffSource, ProfileViewWithData} from '..';
 import ProfileSelector from '../ProfileSelector';
+import {useCompareModeMeta} from '../hooks/useCompareModeMeta';
+import {useQueryState} from '../hooks/useQueryState';
 
 interface ProfileExplorerCompareProps {
   queryClient: QueryServiceClient;
@@ -35,20 +35,20 @@ const ProfileExplorerCompare = ({
 }: ProfileExplorerCompareProps): JSX.Element => {
   const [showMetricsGraph, setShowMetricsGraph] = useState(true);
   const batchUpdates = useURLStateBatch();
-  const { closeCompareMode, isCompareMode, isCompareAbsolute } = useCompareModeMeta();
+  const {closeCompareMode, isCompareMode, isCompareAbsolute} = useCompareModeMeta();
 
   // Read ProfileSource states from URL for both sides
-  const {
-    profileSource: profileSourceA,
-    querySelection: querySelectionA,
-  } = useQueryState({ suffix: '_a', comparing: true });
+  const {profileSource: profileSourceA, querySelection: querySelectionA} = useQueryState({
+    suffix: '_a',
+    comparing: true,
+  });
   const {
     profileSource: profileSourceB,
     querySelection: querySelectionB,
     commitDraft: commitDraftB,
     setDraftExpression: setDraftExpressionB,
     setDraftTimeRange: setDraftTimeRangeB,
-  } = useQueryState({ suffix: '_b', comparing: true });
+  } = useQueryState({suffix: '_b', comparing: true});
 
   // Derive enforced profile name from side A's expression
   const enforcedProfileNameA = useMemo(() => {
@@ -133,11 +133,7 @@ const ProfileExplorerCompare = ({
             <ProfileViewWithData
               queryClient={queryClient}
               profileSource={
-                new ProfileDiffSource(
-                  profileSourceA,
-                  profileSourceB,
-                  isCompareAbsolute
-                )
+                new ProfileDiffSource(profileSourceA, profileSourceB, isCompareAbsolute)
               }
             />
           </div>

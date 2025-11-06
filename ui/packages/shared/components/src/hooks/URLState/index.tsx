@@ -26,10 +26,16 @@ import {
 
 import {type NavigateFunction} from '@parca/utilities';
 
-import { getQueryParamsFromURL, sanitize, type ParamValue, type ParamPreferences, type ParamPreference } from './utils';
+import {
+  getQueryParamsFromURL,
+  sanitize,
+  type ParamPreference,
+  type ParamPreferences,
+  type ParamValue,
+} from './utils';
 
 export type ParamValueSetter = (val: ParamValue) => void;
-export type { ParamPreferences, ParamPreference };
+export type {ParamPreferences, ParamPreference};
 
 interface URLState {
   navigateTo: NavigateFunction;
@@ -48,7 +54,7 @@ export const URLStateProvider = ({
 }: {
   children: ReactNode;
   navigateTo: NavigateFunction;
-    paramPreferences?: ParamPreferences;
+  paramPreferences?: ParamPreferences;
 }): JSX.Element => {
   // Extract default values from preferences for backward compatibility
   // TODO(manoj): Check if this backward compatibility support is needed
@@ -113,14 +119,10 @@ export const URLStateProvider = ({
     urlUpdateTimeoutRef.current = setTimeout(() => {
       // ALWAYS merge with existing URL params to preserve them
       const currentParams = getQueryParamsFromURL(paramPreferences);
-      const mergedParams = { ...currentParams, ...state };
+      const mergedParams = {...currentParams, ...state};
 
       const sanitizedParams = sanitize(mergedParams, paramPreferences);
-      navigateTo(
-        window.location.pathname,
-        sanitizedParams,
-        { replace: true }
-      );
+      navigateTo(window.location.pathname, sanitizedParams, {replace: true});
 
       // Update ref to match the URL we just set (to avoid re-syncing)
       const queryString = new URLSearchParams(sanitizedParams as Record<string, string>).toString();
@@ -135,68 +137,68 @@ export const URLStateProvider = ({
   }, [state, navigateTo, paramPreferences]);
 
   // Batch updates function
-  const batchUpdates = useCallback((callback: () => void) => {
-    // Track if we were already batching before this call (for nested batching)
-    const wasAlreadyBatching = isBatchingRef.current;
+  const batchUpdates = useCallback(
+    (callback: () => void) => {
+      // Track if we were already batching before this call (for nested batching)
+      const wasAlreadyBatching = isBatchingRef.current;
 
-    isBatchingRef.current = true;
+      isBatchingRef.current = true;
 
-    // Execute all state updates synchronously
-    callback();
+      // Execute all state updates synchronously
+      callback();
 
-    // If we were already batching, this is a nested call - don't schedule a new timeout
-    // Let the outermost batchUpdates handle the URL navigation
-    if (wasAlreadyBatching) {
-      return;
-    }
+      // If we were already batching, this is a nested call - don't schedule a new timeout
+      // Let the outermost batchUpdates handle the URL navigation
+      if (wasAlreadyBatching) {
+        return;
+      }
 
-    // Clear any existing timeout
-    if (batchTimeoutRef.current !== undefined) {
-      clearTimeout(batchTimeoutRef.current);
-    }
+      // Clear any existing timeout
+      if (batchTimeoutRef.current !== undefined) {
+        clearTimeout(batchTimeoutRef.current);
+      }
 
-    // Use setState to capture the final state after all updates
-    // This ensures we have the latest state including all batched changes
-    setState(currentState => {
-      // Don't actually change the state, just use this to read the latest value
-      // Schedule the batch to complete and trigger URL update
-      batchTimeoutRef.current = setTimeout(() => {
-        isBatchingRef.current = false;
+      // Use setState to capture the final state after all updates
+      // This ensures we have the latest state including all batched changes
+      setState(currentState => {
+        // Don't actually change the state, just use this to read the latest value
+        // Schedule the batch to complete and trigger URL update
+        batchTimeoutRef.current = setTimeout(() => {
+          isBatchingRef.current = false;
 
-        // Navigate with the latest state PLUS existing URL params
-        // ALWAYS merge with existing URL params to preserve them
-        const currentParams = getQueryParamsFromURL(paramPreferences);
-        const mergedParams = { ...currentParams, ...currentState };
+          // Navigate with the latest state PLUS existing URL params
+          // ALWAYS merge with existing URL params to preserve them
+          const currentParams = getQueryParamsFromURL(paramPreferences);
+          const mergedParams = {...currentParams, ...currentState};
 
-        const sanitizedParams = sanitize(mergedParams, paramPreferences);
-        navigateTo(
-          window.location.pathname,
-          sanitizedParams,
-          { replace: true }
-        );
+          const sanitizedParams = sanitize(mergedParams, paramPreferences);
+          navigateTo(window.location.pathname, sanitizedParams, {replace: true});
 
-        // Update ref to match the URL we just set (to avoid re-syncing)
-        const queryString = new URLSearchParams(sanitizedParams as Record<string, string>).toString();
-        lastSyncedURLRef.current = queryString !== '' ? `?${queryString}` : '';
-      }, 0);
+          // Update ref to match the URL we just set (to avoid re-syncing)
+          const queryString = new URLSearchParams(
+            sanitizedParams as Record<string, string>
+          ).toString();
+          lastSyncedURLRef.current = queryString !== '' ? `?${queryString}` : '';
+        }, 0);
 
-      return currentState; // Return unchanged state
-    });
-  }, [paramPreferences, navigateTo]);
-
-  const contextValue = useMemo(() => ({
-    navigateTo,
-    state,
-    setState,
-    paramPreferences,
-    batchUpdates,
-  }), [navigateTo, state, setState, paramPreferences, batchUpdates]);
-
-  return (
-    <URLStateContext.Provider value={contextValue}>
-      {children}
-    </URLStateContext.Provider>
+        return currentState; // Return unchanged state
+      });
+    },
+    [paramPreferences, navigateTo]
   );
+
+  const contextValue = useMemo(
+    () => ({
+      navigateTo,
+      state,
+      setState,
+      paramPreferences,
+      batchUpdates,
+    }),
+    [navigateTo, state, setState, paramPreferences, batchUpdates]
+  );
+
+  return <URLStateContext.Provider value={contextValue}>{children}</URLStateContext.Provider>;
 };
 
 interface Options {
@@ -216,7 +218,7 @@ export const useURLState = <T extends ParamValue>(
 
   const {debugLog, defaultValue, alwaysReturnArray} = _options ?? {};
 
-  const { state, setState } = context;
+  const {state, setState} = context;
 
   const setParam: ParamValueSetter = useCallback(
     (val: ParamValue) => {
@@ -227,7 +229,7 @@ export const useURLState = <T extends ParamValue>(
       // Just update state - Provider handles URL sync automatically!
       setState(currentState => ({
         ...currentState,
-        [param]: val
+        [param]: val,
       }));
     },
     [param, setState, debugLog]

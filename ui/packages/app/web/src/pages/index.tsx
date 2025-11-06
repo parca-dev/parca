@@ -47,7 +47,10 @@ const Profiles = () => {
   );
 
   return (
-    <URLStateProvider navigateTo={navigateTo} paramPreferences={DEFAULT_PROFILE_EXPLORER_PARAM_VALUES}>
+    <URLStateProvider
+      navigateTo={navigateTo}
+      paramPreferences={DEFAULT_PROFILE_EXPLORER_PARAM_VALUES}
+    >
       <ParcaContextProvider
         value={{
           Spinner,
@@ -58,10 +61,7 @@ const Profiles = () => {
         }}
       >
         <div className="bg-white dark:bg-gray-900 p-3">
-          <ProfileExplorer
-            queryClient={queryClient}
-            navigateTo={navigateTo}
-          />
+          <ProfileExplorer queryClient={queryClient} navigateTo={navigateTo} />
         </div>
       </ParcaContextProvider>
     </URLStateProvider>

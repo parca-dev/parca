@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 
@@ -31,9 +31,9 @@ import {millisToProtoTimestamp, type NavigateFunction} from '@parca/utilities';
 import {useLabelNames} from '../MatchersInput/index';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
 import {UtilizationLabelsProvider} from '../contexts/UtilizationLabelsContext';
+import {useQueryState} from '../hooks/useQueryState';
 import useGrpcQuery from '../useGrpcQuery';
 import {useDefaultSumBy, useSumBySelection} from '../useSumBy';
-import { useQueryState } from '../hooks/useQueryState';
 import {MetricsGraphSection} from './MetricsGraphSection';
 import {QueryControls} from './QueryControls';
 import {useAutoQuerySelector} from './useAutoQuerySelector';
@@ -162,7 +162,7 @@ const ProfileSelector = ({
     commitDraft,
     profileSelection,
     setProfileSelection,
-  } = useQueryState({ suffix });
+  } = useQueryState({suffix});
 
   // Use draft state for local state instead of committed state
   const [timeRangeSelection, setTimeRangeSelection] = useState(
@@ -176,10 +176,13 @@ const ProfileSelector = ({
   );
 
   // Handler to update draft when time range changes
-  const handleTimeRangeChange = useCallback((range: DateTimeRange) => {
-    setTimeRangeSelection(range);
-    setDraftTimeRange(range.getFromMs(), range.getToMs(), range.getRangeKey());
-  }, [setDraftTimeRange]);
+  const handleTimeRangeChange = useCallback(
+    (range: DateTimeRange) => {
+      setTimeRangeSelection(range);
+      setDraftTimeRange(range.getFromMs(), range.getToMs(), range.getRangeKey());
+    },
+    [setDraftTimeRange]
+  );
 
   const profileType = useMemo(() => {
     return Query.parse(queryExpressionString).profileType();
@@ -220,16 +223,19 @@ const ProfileSelector = ({
       : selectedLabelNamesResult.response.labelNames;
   }, [selectedLabelNamesResult]);
 
-  const [sumBySelection, setUserSumBySelectionInternal, { isLoading: sumBySelectionLoading }] =
+  const [sumBySelection, setUserSumBySelectionInternal, {isLoading: sumBySelectionLoading}] =
     useSumBySelection(profileType, labelNamesLoading, labels, {
       defaultValue: draftSelection.sumBy,
     });
 
   // Handler to update both local state and draft when labels change
-  const setUserSumBySelection = useCallback((sumBy: string[]) => {
-    setUserSumBySelectionInternal(sumBy);
-    setDraftSumBy(sumBy);
-  }, [setUserSumBySelectionInternal, setDraftSumBy]);
+  const setUserSumBySelection = useCallback(
+    (sumBy: string[]) => {
+      setUserSumBySelectionInternal(sumBy);
+      setDraftSumBy(sumBy);
+    },
+    [setUserSumBySelectionInternal, setDraftSumBy]
+  );
 
   const {defaultSumBy, isLoading: defaultSumByLoading} = useDefaultSumBy(
     selectedProfileType,

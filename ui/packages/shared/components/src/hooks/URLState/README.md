@@ -5,24 +5,22 @@ The `useURLState` hook provides a simple way to sync component state with URL qu
 ## Basic Usage
 
 ```tsx
-import { useURLState } from '@parca/components';
+import {useURLState} from '@parca/components';
 
 function MyComponent() {
   const [colorBy, setColorBy] = useURLState('color_by', {
-    defaultValue: 'function'
+    defaultValue: 'function',
   });
 
   const [groupBy, setGroupBy] = useURLState<string[]>('group_by', {
     defaultValue: ['function_name'],
-    alwaysReturnArray: true
+    alwaysReturnArray: true,
   });
 
   // Use the state values and setters as normal
   return (
     <div>
-      <button onClick={() => setColorBy('filename')}>
-        Change Color
-      </button>
+      <button onClick={() => setColorBy('filename')}>Change Color</button>
     </div>
   );
 }
@@ -33,12 +31,12 @@ function MyComponent() {
 When you need to update multiple URL parameters simultaneously, use `useURLStateBatch` to ensure a single URL update:
 
 ```tsx
-import { useURLState, useURLStateBatch } from '@parca/components';
+import {useURLState, useURLStateBatch} from '@parca/components';
 
 function ProfileFilters() {
   const [colorBy, setColorBy] = useURLState('color_by');
   const [groupBy, setGroupBy] = useURLState<string[]>('group_by', {
-    alwaysReturnArray: true
+    alwaysReturnArray: true,
   });
   const [view, setView] = useURLState('view');
 
@@ -55,22 +53,20 @@ function ProfileFilters() {
     // Results in ONE URL update instead of three!
   };
 
-  return (
-    <button onClick={handleComplexFilterChange}>
-      Apply All Filters
-    </button>
-  );
+  return <button onClick={handleComplexFilterChange}>Apply All Filters</button>;
 }
 ```
 
 ## Key Features
 
 ### Automatic URL Synchronization
+
 - All URL updates are now handled centrally by the `URLStateProvider`
 - Individual hooks only manage state; URL sync happens automatically
 - Built-in debouncing prevents excessive URL updates
 
 ### Batching Support
+
 - Use `batchUpdates` to group multiple parameter changes
 - Prevents multiple browser history entries
 - Improves performance for complex state updates

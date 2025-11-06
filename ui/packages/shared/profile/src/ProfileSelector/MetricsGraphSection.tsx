@@ -17,7 +17,7 @@ import {Label, QueryServiceClient} from '@parca/client';
 import {DateTimeRange} from '@parca/components';
 import {Query} from '@parca/parser';
 
-import { ProfileSelection } from '..';
+import {ProfileSelection} from '..';
 import UtilizationMetricsGraph from '../MetricsGraph/UtilizationMetrics';
 import AreaChart from '../MetricsGraph/UtilizationMetrics/Throughput';
 import ProfileMetricsGraph, {ProfileMetricsEmptyState} from '../ProfileMetricsGraph';
@@ -236,9 +236,9 @@ export function MetricsGraphSection({
       {showMetricsGraph && (
         <>
           <div style={{height: heightStyle}}>
-            {((querySelection.expression !== '' || defaultSumByLoading) &&
+            {(querySelection.expression !== '' || defaultSumByLoading) &&
             querySelection.from !== undefined &&
-              querySelection.to !== undefined) ? (
+            querySelection.to !== undefined ? (
               <>
                 {utilizationMetrics !== undefined ? (
                   <UtilizationGraphToShow utilizationMetrics={utilizationMetrics} />

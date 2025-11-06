@@ -17,8 +17,8 @@ import {QueryServiceClient} from '@parca/client';
 import type {NavigateFunction} from '@parca/utilities';
 
 import {ProfileViewWithData} from '..';
-import {useQueryState} from '../hooks/useQueryState';
 import ProfileSelector from '../ProfileSelector';
+import {useQueryState} from '../hooks/useQueryState';
 
 interface ProfileExplorerSingleProps {
   queryClient: QueryServiceClient;
@@ -30,7 +30,7 @@ const ProfileExplorerSingle = ({
   navigateTo,
 }: ProfileExplorerSingleProps): JSX.Element => {
   const [showMetricsGraph, setShowMetricsGraph] = useState(true);
-  const { profileSource } = useQueryState({ suffix: '_a' });
+  const {profileSource} = useQueryState({suffix: '_a'});
 
   return (
     <>
@@ -48,10 +48,7 @@ const ProfileExplorerSingle = ({
       </div>
 
       {profileSource != null && (
-        <ProfileViewWithData
-          queryClient={queryClient}
-          profileSource={profileSource}
-        />
+        <ProfileViewWithData queryClient={queryClient} profileSource={profileSource} />
       )}
     </>
   );

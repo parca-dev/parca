@@ -11,13 +11,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useMemo, useState, useEffect} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {DateTimeRange, useURLState, useURLStateBatch} from '@parca/components';
 import {Query} from '@parca/parser';
 
-import {ProfileSelection, ProfileSelectionFromParams, ProfileSource} from '../ProfileSource';
 import {QuerySelection} from '../ProfileSelector';
+import {ProfileSelection, ProfileSelectionFromParams, ProfileSource} from '../ProfileSource';
 import {sumByToParam, useSumByFromParams} from '../useSumBy';
 
 interface UseQueryStateOptions {
@@ -44,11 +44,7 @@ interface UseQueryStateReturn {
   setDraftMatchers: (matchers: string) => void;
 
   // Commit function
-  commitDraft: (refreshedTimeRange?: {
-    from: number;
-    to: number;
-    timeSelection: string;
-  }) => void;
+  commitDraft: (refreshedTimeRange?: {from: number; to: number; timeSelection: string}) => void;
 
   // ProfileSelection state (separate from QuerySelection)
   profileSelection: ProfileSelection | null;
@@ -104,7 +100,9 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
   const [draftExpression, setDraftExpression] = useState<string>(expression ?? defaultExpression);
   const [draftFrom, setDraftFrom] = useState<string>(from ?? defaultFrom?.toString() ?? '');
   const [draftTo, setDraftTo] = useState<string>(to ?? defaultTo?.toString() ?? '');
-  const [draftTimeSelection, setDraftTimeSelection] = useState<string>(timeSelection ?? defaultTimeSelection);
+  const [draftTimeSelection, setDraftTimeSelection] = useState<string>(
+    timeSelection ?? defaultTimeSelection
+  );
   const [draftSumBy, setDraftSumBy] = useState<string[] | undefined>(sumBy);
 
   // Sync draft state with URL state when URL changes externally
@@ -154,7 +152,9 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
       to: range.getToMs(),
       timeSelection: range.getRangeKey(),
       sumBy,
-      ...(mergeFrom !== undefined && mergeFrom !== '' && mergeTo !== undefined && mergeTo !== '' ? { mergeFrom, mergeTo } : {}),
+      ...(mergeFrom !== undefined && mergeFrom !== '' && mergeTo !== undefined && mergeTo !== ''
+        ? {mergeFrom, mergeTo}
+        : {}),
     };
   }, [
     expression,
@@ -179,7 +179,9 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     );
 
     const isDelta = draftProfileType.delta;
-    const draftMergeFrom = isDelta ? (BigInt(range.getFromMs()) * 1_000_000n).toString() : undefined;
+    const draftMergeFrom = isDelta
+      ? (BigInt(range.getFromMs()) * 1_000_000n).toString()
+      : undefined;
     const draftMergeTo = isDelta ? (BigInt(range.getToMs()) * 1_000_000n).toString() : undefined;
 
     return {
@@ -188,7 +190,12 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
       to: range.getToMs(),
       timeSelection: range.getRangeKey(),
       sumBy: draftSumBy,
-      ...(draftMergeFrom !== undefined && draftMergeFrom !== '' && draftMergeTo !== undefined && draftMergeTo !== '' ? { mergeFrom: draftMergeFrom, mergeTo: draftMergeTo } : {}),
+      ...(draftMergeFrom !== undefined &&
+      draftMergeFrom !== '' &&
+      draftMergeTo !== undefined &&
+      draftMergeTo !== ''
+        ? {mergeFrom: draftMergeFrom, mergeTo: draftMergeTo}
+        : {}),
     };
   }, [
     draftExpression,
@@ -208,7 +215,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     console.log('[profileSelection] Computing from URL params:', {
       mergeFrom,
       mergeTo,
-      selectionParam
+      selectionParam,
     });
     const result = ProfileSelectionFromParams(mergeFrom, mergeTo, selectionParam);
     console.log('[profileSelection] Result:', result);
@@ -274,79 +281,80 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
   // Commit draft changes to URL
   // Optional refreshedTimeRange parameter allows re-evaluating relative time ranges (e.g., "last 15 minutes")
   // to the current moment when the Search button is clicked
-  const commitDraft = useCallback((refreshedTimeRange?: {
-    from: number;
-    to: number;
-    timeSelection: string;
-  }) => {
-    batchUpdates(() => {
-      // Calculate the actual from/to values from draftSelection if not provided
-      const calculatedFrom = draftSelection.from.toString();
-      const calculatedTo = draftSelection.to.toString();
+  const commitDraft = useCallback(
+    (refreshedTimeRange?: {from: number; to: number; timeSelection: string}) => {
+      batchUpdates(() => {
+        // Calculate the actual from/to values from draftSelection if not provided
+        const calculatedFrom = draftSelection.from.toString();
+        const calculatedTo = draftSelection.to.toString();
 
-      const finalFrom = refreshedTimeRange?.from?.toString() ?? (draftFrom !== '' ? draftFrom : calculatedFrom);
-      const finalTo = refreshedTimeRange?.to?.toString() ?? (draftTo !== '' ? draftTo : calculatedTo);
-      const finalTimeSelection = refreshedTimeRange?.timeSelection ?? draftTimeSelection;
+        const finalFrom =
+          refreshedTimeRange?.from?.toString() ?? (draftFrom !== '' ? draftFrom : calculatedFrom);
+        const finalTo =
+          refreshedTimeRange?.to?.toString() ?? (draftTo !== '' ? draftTo : calculatedTo);
+        const finalTimeSelection = refreshedTimeRange?.timeSelection ?? draftTimeSelection;
 
-      // Update draft state with refreshed time range if provided
-      if (refreshedTimeRange?.from !== undefined) {
-        setDraftFrom(finalFrom);
-      }
-      if (refreshedTimeRange?.to !== undefined) {
-        setDraftTo(finalTo);
-      }
-      if (refreshedTimeRange?.timeSelection !== undefined) {
-        setDraftTimeSelection(finalTimeSelection);
-      }
+        // Update draft state with refreshed time range if provided
+        if (refreshedTimeRange?.from !== undefined) {
+          setDraftFrom(finalFrom);
+        }
+        if (refreshedTimeRange?.to !== undefined) {
+          setDraftTo(finalTo);
+        }
+        if (refreshedTimeRange?.timeSelection !== undefined) {
+          setDraftTimeSelection(finalTimeSelection);
+        }
 
-      setExpressionState(draftExpression);
-      setFromState(finalFrom);
-      setToState(finalTo);
-      setTimeSelectionState(finalTimeSelection);
-      setSumByParam(sumByToParam(draftSumBy));
+        setExpressionState(draftExpression);
+        setFromState(finalFrom);
+        setToState(finalTo);
+        setTimeSelectionState(finalTimeSelection);
+        setSumByParam(sumByToParam(draftSumBy));
 
-      // Auto-calculate merge parameters for delta profiles
-      if (draftProfileType.delta && finalFrom !== '' && finalTo !== '') {
-        const fromMs = parseInt(finalFrom);
-        const toMs = parseInt(finalTo);
-        setMergeFromState((BigInt(fromMs) * 1_000_000n).toString());
-        setMergeToState((BigInt(toMs) * 1_000_000n).toString());
+        // Auto-calculate merge parameters for delta profiles
+        if (draftProfileType.delta && finalFrom !== '' && finalTo !== '') {
+          const fromMs = parseInt(finalFrom);
+          const toMs = parseInt(finalTo);
+          setMergeFromState((BigInt(fromMs) * 1_000_000n).toString());
+          setMergeToState((BigInt(toMs) * 1_000_000n).toString());
 
-        // Auto-select the time range for delta profiles (but not in compare mode)
-        // This applies both on initial load AND when Search is clicked
-        // The selection will use the current draftExpression and the updated time range
-        if (!comparing) {
-          setSelectionParam(draftExpression);
+          // Auto-select the time range for delta profiles (but not in compare mode)
+          // This applies both on initial load AND when Search is clicked
+          // The selection will use the current draftExpression and the updated time range
+          if (!comparing) {
+            setSelectionParam(draftExpression);
+          } else {
+            setSelectionParam(undefined);
+          }
         } else {
+          setMergeFromState(undefined);
+          setMergeToState(undefined);
+          // Clear ProfileSelection for non-delta profiles
           setSelectionParam(undefined);
         }
-      } else {
-        setMergeFromState(undefined);
-        setMergeToState(undefined);
-        // Clear ProfileSelection for non-delta profiles
-        setSelectionParam(undefined);
-      }
-    });
-  }, [
-    batchUpdates,
-    draftExpression,
-    draftFrom,
-    draftTo,
-    draftTimeSelection,
-    draftSumBy,
-    draftProfileType.delta,
-    draftSelection.from,
-    draftSelection.to,
-    comparing,
-    setExpressionState,
-    setFromState,
-    setToState,
-    setTimeSelectionState,
-    setSumByParam,
-    setMergeFromState,
-    setMergeToState,
-    setSelectionParam,
-  ]);
+      });
+    },
+    [
+      batchUpdates,
+      draftExpression,
+      draftFrom,
+      draftTo,
+      draftTimeSelection,
+      draftSumBy,
+      draftProfileType.delta,
+      draftSelection.from,
+      draftSelection.to,
+      comparing,
+      setExpressionState,
+      setFromState,
+      setToState,
+      setTimeSelectionState,
+      setSumByParam,
+      setMergeFromState,
+      setMergeToState,
+      setSelectionParam,
+    ]
+  );
 
   return {
     // Current committed state

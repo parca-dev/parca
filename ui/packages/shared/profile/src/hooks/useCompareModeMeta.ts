@@ -51,50 +51,73 @@ export const useCompareModeMeta = (): {
   const [compareB, setCompareB] = useURLState<string>('compare_b');
   const [compareAbsolute, setCompareAbsolute] = useURLState<string>('compare_absolute');
 
-  const closeCompareMode = useCallback((side: 'A' | 'B') => {
-    batchUpdates(() => {
-      // If closing side A, swap A and B params first (keep B's data as the single view)
-      if (side === 'A') {
-        // Copy B to A
-        setExpressionA(expressionB);
-        setFromA(fromB);
-        setToA(toB);
-        setTimeSelectionA(timeSelectionB);
-        setSumByA(sumByB);
-        setMergeFromA(mergeFromB);
-        setMergeToA(mergeToB);
-        setSelectionA(selectionB);
-      }
+  const closeCompareMode = useCallback(
+    (side: 'A' | 'B') => {
+      batchUpdates(() => {
+        // If closing side A, swap A and B params first (keep B's data as the single view)
+        if (side === 'A') {
+          // Copy B to A
+          setExpressionA(expressionB);
+          setFromA(fromB);
+          setToA(toB);
+          setTimeSelectionA(timeSelectionB);
+          setSumByA(sumByB);
+          setMergeFromA(mergeFromB);
+          setMergeToA(mergeToB);
+          setSelectionA(selectionB);
+        }
 
-      // Clear all B params
-      setExpressionB(undefined);
-      setFromB(undefined);
-      setToB(undefined);
-      setTimeSelectionB(undefined);
-      setSumByB(undefined);
-      setMergeFromB(undefined);
-      setMergeToB(undefined);
-      setSelectionB(undefined);
+        // Clear all B params
+        setExpressionB(undefined);
+        setFromB(undefined);
+        setToB(undefined);
+        setTimeSelectionB(undefined);
+        setSumByB(undefined);
+        setMergeFromB(undefined);
+        setMergeToB(undefined);
+        setSelectionB(undefined);
 
-      // Clear compare mode flags
-      setCompareA(undefined);
-      setCompareB(undefined);
-      setCompareAbsolute(undefined);
-    });
-  }, [
-    batchUpdates,
-    // Side A setters
-    setExpressionA, setFromA, setToA, setTimeSelectionA, setSumByA,
-    setMergeFromA, setMergeToA, setSelectionA,
-    // Side B values (for swapping)
-    expressionB, fromB, toB, timeSelectionB, sumByB,
-    mergeFromB, mergeToB, selectionB,
-    // Side B setters
-    setExpressionB, setFromB, setToB, setTimeSelectionB, setSumByB,
-    setMergeFromB, setMergeToB, setSelectionB,
-    // Compare flags
-    setCompareA, setCompareB, setCompareAbsolute,
-  ]);
+        // Clear compare mode flags
+        setCompareA(undefined);
+        setCompareB(undefined);
+        setCompareAbsolute(undefined);
+      });
+    },
+    [
+      batchUpdates,
+      // Side A setters
+      setExpressionA,
+      setFromA,
+      setToA,
+      setTimeSelectionA,
+      setSumByA,
+      setMergeFromA,
+      setMergeToA,
+      setSelectionA,
+      // Side B values (for swapping)
+      expressionB,
+      fromB,
+      toB,
+      timeSelectionB,
+      sumByB,
+      mergeFromB,
+      mergeToB,
+      selectionB,
+      // Side B setters
+      setExpressionB,
+      setFromB,
+      setToB,
+      setTimeSelectionB,
+      setSumByB,
+      setMergeFromB,
+      setMergeToB,
+      setSelectionB,
+      // Compare flags
+      setCompareA,
+      setCompareB,
+      setCompareAbsolute,
+    ]
+  );
 
   // Derive isCompareMode from flags
   const isCompareMode = compareA === 'true' || compareB === 'true';

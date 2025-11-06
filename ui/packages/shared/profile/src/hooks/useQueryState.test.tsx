@@ -11,13 +11,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ReactNode } from 'react';
-import { renderHook, act, waitFor } from '@testing-library/react';
-import { describe, expect, it, beforeEach, vi } from 'vitest';
+import {ReactNode} from 'react';
 
-import { URLStateProvider } from '@parca/components';
+import {act, renderHook, waitFor} from '@testing-library/react';
+import {beforeEach, describe, expect, it, vi} from 'vitest';
 
-import { useQueryState } from './useQueryState';
+import {URLStateProvider} from '@parca/components';
+
+import {useQueryState} from './useQueryState';
 
 // Mock the navigate function
 const mockNavigateTo = vi.fn();
@@ -54,8 +55,10 @@ vi.mock('@parca/components/src/hooks/URLState/utils', async () => {
 });
 
 // Helper to create wrapper with URLStateProvider
-const createWrapper = (paramPreferences = {}): (({ children }: { children: ReactNode }) => JSX.Element) => {
-  const Wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
+const createWrapper = (
+  paramPreferences = {}
+): (({children}: {children: ReactNode}) => JSX.Element) => {
+  const Wrapper = ({children}: {children: ReactNode}): JSX.Element => (
     <URLStateProvider navigateTo={mockNavigateTo} paramPreferences={paramPreferences}>
       {children}
     </URLStateProvider>
@@ -76,17 +79,18 @@ describe('useQueryState', () => {
 
   describe('Basic functionality', () => {
     it('should initialize with default values', () => {
-      const { result } = renderHook(
-        () => useQueryState({
-          defaultExpression: 'process_cpu{}',
-          defaultTimeSelection: 'relative:hour|1',
-          defaultFrom: 1000,
-          defaultTo: 2000,
-        }),
-        { wrapper: createWrapper() }
+      const {result} = renderHook(
+        () =>
+          useQueryState({
+            defaultExpression: 'process_cpu{}',
+            defaultTimeSelection: 'relative:hour|1',
+            defaultFrom: 1000,
+            defaultTo: 2000,
+          }),
+        {wrapper: createWrapper()}
       );
 
-      const { querySelection } = result.current;
+      const {querySelection} = result.current;
       expect(querySelection.expression).toBe('process_cpu{}');
       expect(querySelection.timeSelection).toBe('relative:hour|1');
       // From/to should be calculated from the range
@@ -95,14 +99,12 @@ describe('useQueryState', () => {
     });
 
     it('should handle suffix for comparison mode', () => {
-      mockLocation.search = '?expression_a=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}&from_a=1000&to_a=2000';
+      mockLocation.search =
+        '?expression_a=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}&from_a=1000&to_a=2000';
 
-      const { result } = renderHook(
-        () => useQueryState({ suffix: '_a' }),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState({suffix: '_a'}), {wrapper: createWrapper()});
 
-      const { querySelection } = result.current;
+      const {querySelection} = result.current;
       expect(querySelection.expression).toBe('process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}');
       expect(querySelection.from).toBe(1000);
       expect(querySelection.to).toBe(2000);
@@ -111,12 +113,13 @@ describe('useQueryState', () => {
 
   describe('Individual setters', () => {
     it('should update expression and handle delta profiles', async () => {
-      const { result } = renderHook(
-        () => useQueryState({
-          defaultFrom: 1000,
-          defaultTo: 2000
-        }),
-        { wrapper: createWrapper() }
+      const {result} = renderHook(
+        () =>
+          useQueryState({
+            defaultFrom: 1000,
+            defaultTo: 2000,
+          }),
+        {wrapper: createWrapper()}
       );
 
       act(() => {
@@ -124,7 +127,9 @@ describe('useQueryState', () => {
       });
 
       // Draft should be updated but not committed
-      expect(result.current.draftSelection.expression).toBe('memory:alloc_objects:count:space:bytes:delta{}');
+      expect(result.current.draftSelection.expression).toBe(
+        'memory:alloc_objects:count:space:bytes:delta{}'
+      );
 
       // Delta profile should auto-calculate merge params in draft
       expect(result.current.draftSelection.mergeFrom).toBe('1000000000');
@@ -147,10 +152,7 @@ describe('useQueryState', () => {
     });
 
     it('should update time range', async () => {
-      const { result } = renderHook(
-        () => useQueryState(),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       act(() => {
         result.current.setDraftTimeRange(3000, 4000, 'relative:minute|5');
@@ -175,10 +177,7 @@ describe('useQueryState', () => {
     });
 
     it('should update sumBy', async () => {
-      const { result } = renderHook(
-        () => useQueryState(),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       act(() => {
         result.current.setDraftSumBy(['namespace', 'container']);
@@ -199,10 +198,7 @@ describe('useQueryState', () => {
     });
 
     it('should auto-calculate merge range for delta profiles', async () => {
-      const { result } = renderHook(
-        () => useQueryState(),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       // Set a delta profile expression
       act(() => {
@@ -229,10 +225,7 @@ describe('useQueryState', () => {
 
   describe('Batch updates', () => {
     it('should batch multiple updates into single navigation', async () => {
-      const { result } = renderHook(
-        () => useQueryState(),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       act(() => {
         // Update multiple draft values
@@ -242,7 +235,9 @@ describe('useQueryState', () => {
       });
 
       // All drafts should be updated
-      expect(result.current.draftSelection.expression).toBe('memory:inuse_space:bytes:space:bytes{}');
+      expect(result.current.draftSelection.expression).toBe(
+        'memory:inuse_space:bytes:space:bytes{}'
+      );
       expect(result.current.draftSelection.from).toBe(7000);
       expect(result.current.draftSelection.to).toBe(8000);
       expect(result.current.draftSelection.sumBy).toEqual(['pod', 'node']);
@@ -264,19 +259,19 @@ describe('useQueryState', () => {
     });
 
     it('should handle partial updates', async () => {
-      mockLocation.search = '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}&from=1000&to=2000&time_selection=relative:hour|1';
+      mockLocation.search =
+        '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}&from=1000&to=2000&time_selection=relative:hour|1';
 
-      const { result } = renderHook(
-        () => useQueryState(),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       act(() => {
         // Only update expression, other values should remain
         result.current.setDraftExpression('memory:inuse_space:bytes:space:bytes{}');
       });
 
-      expect(result.current.draftSelection.expression).toBe('memory:inuse_space:bytes:space:bytes{}');
+      expect(result.current.draftSelection.expression).toBe(
+        'memory:inuse_space:bytes:space:bytes{}'
+      );
       // Other values should be from URL
       expect(result.current.draftSelection.from).toBe(1000);
       expect(result.current.draftSelection.to).toBe(2000);
@@ -296,10 +291,7 @@ describe('useQueryState', () => {
     });
 
     it('should auto-calculate merge params for delta profiles in batch update', async () => {
-      const { result } = renderHook(
-        () => useQueryState(),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       act(() => {
         result.current.setDraftExpression('memory:alloc_space:bytes:space:bytes:delta{}');
@@ -326,19 +318,19 @@ describe('useQueryState', () => {
 
   describe('Helper functions', () => {
     it('should set profile name correctly', async () => {
-      mockLocation.search = '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{job="parca"}';
+      mockLocation.search =
+        '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{job="parca"}';
 
-      const { result } = renderHook(
-        () => useQueryState(),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       act(() => {
         result.current.setDraftProfileName('memory:inuse_space:bytes:space:bytes');
       });
 
       // Draft should be updated
-      expect(result.current.draftSelection.expression).toBe('memory:inuse_space:bytes:space:bytes{job="parca"}');
+      expect(result.current.draftSelection.expression).toBe(
+        'memory:inuse_space:bytes:space:bytes{job="parca"}'
+      );
 
       act(() => {
         result.current.commitDraft();
@@ -354,17 +346,16 @@ describe('useQueryState', () => {
     it('should set matchers correctly using draft', async () => {
       mockLocation.search = '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}';
 
-      const { result } = renderHook(
-        () => useQueryState(),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       act(() => {
         result.current.setDraftMatchers('namespace="default",pod="my-pod"');
       });
 
       // Draft should be updated but not URL yet
-      expect(result.current.draftSelection.expression).toBe('process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{namespace="default",pod="my-pod"}');
+      expect(result.current.draftSelection.expression).toBe(
+        'process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{namespace="default",pod="my-pod"}'
+      );
       expect(mockNavigateTo).not.toHaveBeenCalled();
 
       // Commit the draft
@@ -375,17 +366,16 @@ describe('useQueryState', () => {
       await waitFor(() => {
         expect(mockNavigateTo).toHaveBeenCalled();
         const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
-        expect(params.expression).toBe('process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{namespace="default",pod="my-pod"}');
+        expect(params.expression).toBe(
+          'process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{namespace="default",pod="my-pod"}'
+        );
       });
     });
   });
 
   describe('Comparison mode', () => {
     it('should handle _a suffix correctly', async () => {
-      const { result } = renderHook(
-        () => useQueryState({ suffix: '_a' }),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState({suffix: '_a'}), {wrapper: createWrapper()});
 
       // Update draft state
       act(() => {
@@ -410,10 +400,7 @@ describe('useQueryState', () => {
     });
 
     it('should handle _b suffix correctly', async () => {
-      const { result } = renderHook(
-        () => useQueryState({ suffix: '_b' }),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState({suffix: '_b'}), {wrapper: createWrapper()});
 
       // Update draft state
       act(() => {
@@ -440,10 +427,7 @@ describe('useQueryState', () => {
 
   describe('Draft state pattern', () => {
     it('should not update URL until commit', () => {
-      const { result } = renderHook(
-        () => useQueryState(),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       // Make multiple draft changes
       act(() => {
@@ -472,12 +456,10 @@ describe('useQueryState', () => {
     });
 
     it('should handle draft profile name changes', () => {
-      mockLocation.search = '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{job="test"}';
+      mockLocation.search =
+        '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{job="test"}';
 
-      const { result } = renderHook(
-        () => useQueryState(),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       // Change profile name in draft
       act(() => {
@@ -485,7 +467,9 @@ describe('useQueryState', () => {
       });
 
       // Draft should be updated
-      expect(result.current.draftSelection.expression).toBe('memory:inuse_space:bytes:space:bytes{job="test"}');
+      expect(result.current.draftSelection.expression).toBe(
+        'memory:inuse_space:bytes:space:bytes{job="test"}'
+      );
 
       // URL should not be updated yet
       expect(mockNavigateTo).not.toHaveBeenCalled();
@@ -494,11 +478,12 @@ describe('useQueryState', () => {
 
   describe('Edge cases', () => {
     it('should handle invalid expression gracefully', () => {
-      const { result } = renderHook(
-        () => useQueryState({
-          defaultExpression: 'invalid{{}expression',
-        }),
-        { wrapper: createWrapper() }
+      const {result} = renderHook(
+        () =>
+          useQueryState({
+            defaultExpression: 'invalid{{}expression',
+          }),
+        {wrapper: createWrapper()}
       );
 
       // Should not throw error
@@ -506,12 +491,10 @@ describe('useQueryState', () => {
     });
 
     it('should clear merge params for non-delta profiles', async () => {
-      mockLocation.search = '?expression=memory:alloc_objects:count:space:bytes:delta{}&merge_from=1000000000&merge_to=2000000000';
+      mockLocation.search =
+        '?expression=memory:alloc_objects:count:space:bytes:delta{}&merge_from=1000000000&merge_to=2000000000';
 
-      const { result } = renderHook(
-        () => useQueryState(),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       // Switch to non-delta profile (without :delta suffix) using draft
       act(() => {
@@ -533,12 +516,10 @@ describe('useQueryState', () => {
     });
 
     it('should preserve other URL parameters when updating', async () => {
-      mockLocation.search = '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}&other_param=value&unrelated=test';
+      mockLocation.search =
+        '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}&other_param=value&unrelated=test';
 
-      const { result } = renderHook(
-        () => useQueryState(),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       // Update draft and commit
       act(() => {
@@ -561,12 +542,10 @@ describe('useQueryState', () => {
 
   describe('Commit with refreshed time range (time range re-evaluation)', () => {
     it('should use refreshed time range values instead of draft state when provided', async () => {
-      mockLocation.search = '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds{}&from=1000&to=2000&time_selection=relative:minute|15';
+      mockLocation.search =
+        '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds{}&from=1000&to=2000&time_selection=relative:minute|15';
 
-      const { result } = renderHook(
-        () => useQueryState(),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       // Draft state has original values
       expect(result.current.draftSelection.from).toBe(1000);
@@ -593,14 +572,15 @@ describe('useQueryState', () => {
     });
 
     it('should update draft state with refreshed time range after commit', async () => {
-      const { result } = renderHook(
-        () => useQueryState({
-          defaultExpression: 'process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}',
-          defaultFrom: 1000,
-          defaultTo: 2000,
-          defaultTimeSelection: 'relative:minute|5',
-        }),
-        { wrapper: createWrapper() }
+      const {result} = renderHook(
+        () =>
+          useQueryState({
+            defaultExpression: 'process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}',
+            defaultFrom: 1000,
+            defaultTo: 2000,
+            defaultTimeSelection: 'relative:minute|5',
+          }),
+        {wrapper: createWrapper()}
       );
 
       // Commit with refreshed time values
@@ -622,12 +602,10 @@ describe('useQueryState', () => {
     });
 
     it('should trigger navigation even when expression unchanged (time re-evaluation)', async () => {
-      mockLocation.search = '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds{}&from=1000&to=2000&time_selection=relative:minute|5';
+      mockLocation.search =
+        '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds{}&from=1000&to=2000&time_selection=relative:minute|5';
 
-      const { result } = renderHook(
-        () => useQueryState(),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       mockNavigateTo.mockClear();
 
@@ -672,13 +650,14 @@ describe('useQueryState', () => {
     });
 
     it('should auto-calculate merge params for delta profiles when using refreshed time range', async () => {
-      const { result } = renderHook(
-        () => useQueryState({
-          defaultExpression: 'process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}',
-          defaultFrom: 1000,
-          defaultTo: 2000,
-        }),
-        { wrapper: createWrapper() }
+      const {result} = renderHook(
+        () =>
+          useQueryState({
+            defaultExpression: 'process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}',
+            defaultFrom: 1000,
+            defaultTo: 2000,
+          }),
+        {wrapper: createWrapper()}
       );
 
       // Commit with refreshed time range for delta profile
@@ -696,17 +675,15 @@ describe('useQueryState', () => {
 
         // Verify merge params are calculated from refreshed time range
         expect(params.merge_from).toBe('5000000000'); // 5000ms * 1_000_000
-        expect(params.merge_to).toBe('6000000000');   // 6000ms * 1_000_000
+        expect(params.merge_to).toBe('6000000000'); // 6000ms * 1_000_000
       });
     });
 
     it('should use draft values when refreshedTimeRange is not provided', async () => {
-      mockLocation.search = '?expression=memory:inuse_space:bytes:space:bytes{}&from=1000&to=2000&time_selection=relative:hour|1';
+      mockLocation.search =
+        '?expression=memory:inuse_space:bytes:space:bytes{}&from=1000&to=2000&time_selection=relative:hour|1';
 
-      const { result } = renderHook(
-        () => useQueryState(),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       // Change draft values
       act(() => {
@@ -733,12 +710,12 @@ describe('useQueryState', () => {
   describe('State persistence after page reload', () => {
     it('should retain committed values after page reload simulation', async () => {
       // Initial state
-      mockLocation.search = '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds{}&from=1000&to=2000';
+      mockLocation.search =
+        '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds{}&from=1000&to=2000';
 
-      const { result: result1, unmount } = renderHook(
-        () => useQueryState(),
-        { wrapper: createWrapper() }
-      );
+      const {result: result1, unmount} = renderHook(() => useQueryState(), {
+        wrapper: createWrapper(),
+      });
 
       // User makes changes to draft
       act(() => {
@@ -777,20 +754,21 @@ describe('useQueryState', () => {
       mockNavigateTo.mockClear();
 
       // Create new hook instance (simulating page reload)
-      const { result: result2 } = renderHook(
-        () => useQueryState(),
-        { wrapper: createWrapper() }
-      );
+      const {result: result2} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       // Verify state is loaded from URL after "reload"
-      expect(result2.current.querySelection.expression).toBe('memory:inuse_space:bytes:space:bytes{}');
+      expect(result2.current.querySelection.expression).toBe(
+        'memory:inuse_space:bytes:space:bytes{}'
+      );
       expect(result2.current.querySelection.from).toBe(5000);
       expect(result2.current.querySelection.to).toBe(6000);
       expect(result2.current.querySelection.timeSelection).toBe('relative:minute|15');
       expect(result2.current.querySelection.sumBy).toEqual(['namespace', 'pod']);
 
       // Draft should be synced with URL state on page load
-      expect(result2.current.draftSelection.expression).toBe('memory:inuse_space:bytes:space:bytes{}');
+      expect(result2.current.draftSelection.expression).toBe(
+        'memory:inuse_space:bytes:space:bytes{}'
+      );
       expect(result2.current.draftSelection.from).toBe(5000);
       expect(result2.current.draftSelection.to).toBe(6000);
       expect(result2.current.draftSelection.sumBy).toEqual(['namespace', 'pod']);
@@ -801,12 +779,12 @@ describe('useQueryState', () => {
 
     it('should preserve delta profile merge params after reload', async () => {
       // Initial state with delta profile
-      mockLocation.search = '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}&from=1000&to=2000';
+      mockLocation.search =
+        '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}&from=1000&to=2000';
 
-      const { result: result1, unmount } = renderHook(
-        () => useQueryState(),
-        { wrapper: createWrapper() }
-      );
+      const {result: result1, unmount} = renderHook(() => useQueryState(), {
+        wrapper: createWrapper(),
+      });
 
       // Commit with time override
       act(() => {
@@ -842,10 +820,7 @@ describe('useQueryState', () => {
       mockNavigateTo.mockClear();
 
       // Create new hook instance
-      const { result: result2 } = renderHook(
-        () => useQueryState(),
-        { wrapper: createWrapper() }
-      );
+      const {result: result2} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       // Verify merge params are preserved
       expect(result2.current.querySelection.mergeFrom).toBe('5000000000');
@@ -859,42 +834,38 @@ describe('useQueryState', () => {
 
   describe('ProfileSelection state management', () => {
     it('should initialize with null ProfileSelection when no URL params exist', () => {
-      const { result } = renderHook(
-        () => useQueryState({ suffix: '_a' }),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState({suffix: '_a'}), {wrapper: createWrapper()});
 
       expect(result.current.profileSelection).toBeNull();
     });
 
     it('should compute ProfileSelection from URL params', () => {
       // Set URL with ProfileSelection params - using valid profile type
-      mockLocation.search = '?merge_from_a=1234567890&merge_to_a=9876543210&selection_a=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{pod="test"}';
+      mockLocation.search =
+        '?merge_from_a=1234567890&merge_to_a=9876543210&selection_a=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{pod="test"}';
 
-      const { result } = renderHook(
-        () => useQueryState({ suffix: '_a' }),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState({suffix: '_a'}), {wrapper: createWrapper()});
 
-      const { profileSelection } = result.current;
+      const {profileSelection} = result.current;
       expect(profileSelection).not.toBeNull();
 
       // Test using the interface methods
       expect(profileSelection?.Type()).toBe('merge');
-      expect(profileSelection?.ProfileName()).toBe('process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta');
+      expect(profileSelection?.ProfileName()).toBe(
+        'process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta'
+      );
 
       // Test HistoryParams which should return merge params
       const historyParams = profileSelection?.HistoryParams();
       expect(historyParams?.merge_from).toBe('1234567890');
       expect(historyParams?.merge_to).toBe('9876543210');
-      expect(historyParams?.selection).toBe('process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{pod="test"}');
+      expect(historyParams?.selection).toBe(
+        'process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{pod="test"}'
+      );
     });
 
     it('should auto-commit ProfileSelection to URL when setProfileSelection called', async () => {
-      const { result } = renderHook(
-        () => useQueryState({ suffix: '_a' }),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState({suffix: '_a'}), {wrapper: createWrapper()});
 
       const mergeFrom = BigInt(5000000000);
       const mergeTo = BigInt(6000000000);
@@ -902,7 +873,7 @@ describe('useQueryState', () => {
       // Create a mock Query object - in real code, this would be Query.parse()
       const mockQuery = {
         toString: () => 'memory:inuse_space:bytes:space:bytes{namespace="default"}',
-        profileType: () => ({ delta: false }),
+        profileType: () => ({delta: false}),
       } as any;
 
       act(() => {
@@ -912,24 +883,25 @@ describe('useQueryState', () => {
       await waitFor(() => {
         expect(mockNavigateTo).toHaveBeenCalled();
         const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
-        expect(params.selection_a).toBe('memory:inuse_space:bytes:space:bytes{namespace="default"}');
+        expect(params.selection_a).toBe(
+          'memory:inuse_space:bytes:space:bytes{namespace="default"}'
+        );
         expect(params.merge_from_a).toBe('5000000000');
         expect(params.merge_to_a).toBe('6000000000');
       });
     });
 
     it('should use correct suffix for ProfileSelection in comparison mode', async () => {
-      const { result: resultB } = renderHook(
-        () => useQueryState({ suffix: '_b' }),
-        { wrapper: createWrapper() }
-      );
+      const {result: resultB} = renderHook(() => useQueryState({suffix: '_b'}), {
+        wrapper: createWrapper(),
+      });
 
       const mergeFrom = BigInt(7000000000);
       const mergeTo = BigInt(8000000000);
 
       const mockQuery = {
         toString: () => 'process_cpu:cpu:nanoseconds:cpu:nanoseconds{job="test"}',
-        profileType: () => ({ delta: false }),
+        profileType: () => ({delta: false}),
       } as any;
 
       act(() => {
@@ -947,12 +919,10 @@ describe('useQueryState', () => {
 
     it('should clear ProfileSelection when commitDraft is called', async () => {
       // Start with a ProfileSelection in URL - using valid profile type
-      mockLocation.search = '?expression_a=process_cpu:cpu:nanoseconds:cpu:nanoseconds{}&merge_from_a=1000000000&merge_to_a=2000000000&selection_a=process_cpu:cpu:nanoseconds:cpu:nanoseconds{pod="test"}';
+      mockLocation.search =
+        '?expression_a=process_cpu:cpu:nanoseconds:cpu:nanoseconds{}&merge_from_a=1000000000&merge_to_a=2000000000&selection_a=process_cpu:cpu:nanoseconds:cpu:nanoseconds{pod="test"}';
 
-      const { result } = renderHook(
-        () => useQueryState({ suffix: '_a' }),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState({suffix: '_a'}), {wrapper: createWrapper()});
 
       // Verify ProfileSelection exists
       expect(result.current.profileSelection).not.toBeNull();
@@ -980,18 +950,18 @@ describe('useQueryState', () => {
     });
 
     it('should handle ProfileSelection with delta profiles correctly', () => {
-      mockLocation.search = '?merge_from_a=1000000000&merge_to_a=2000000000&selection_a=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{node="worker"}';
+      mockLocation.search =
+        '?merge_from_a=1000000000&merge_to_a=2000000000&selection_a=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{node="worker"}';
 
-      const { result } = renderHook(
-        () => useQueryState({ suffix: '_a' }),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState({suffix: '_a'}), {wrapper: createWrapper()});
 
-      const { profileSelection } = result.current;
+      const {profileSelection} = result.current;
       expect(profileSelection).not.toBeNull();
 
       // Test that ProfileSelection recognizes delta profile type
-      expect(profileSelection?.ProfileName()).toBe('process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta');
+      expect(profileSelection?.ProfileName()).toBe(
+        'process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta'
+      );
 
       // Test HistoryParams
       const historyParams = profileSelection?.HistoryParams();
@@ -1001,16 +971,15 @@ describe('useQueryState', () => {
 
     it('should persist ProfileSelection across page reloads', async () => {
       // Initial state - user clicks on metrics graph point
-      const { result: result1, unmount } = renderHook(
-        () => useQueryState({ suffix: '_a' }),
-        { wrapper: createWrapper() }
-      );
+      const {result: result1, unmount} = renderHook(() => useQueryState({suffix: '_a'}), {
+        wrapper: createWrapper(),
+      });
 
       const mergeFrom = BigInt(3000000000);
       const mergeTo = BigInt(4000000000);
       const mockQuery = {
         toString: () => 'memory:alloc_objects:count:space:bytes{pod="test"}',
-        profileType: () => ({ delta: false }),
+        profileType: () => ({delta: false}),
       } as any;
 
       // Set ProfileSelection
@@ -1028,15 +997,16 @@ describe('useQueryState', () => {
       const selectionA = String(committedParams.selection_a ?? '');
       const mergeFromA = String(committedParams.merge_from_a ?? '');
       const mergeToA = String(committedParams.merge_to_a ?? '');
-      mockLocation.search = `?selection_a=${encodeURIComponent(selectionA)}&merge_from_a=${mergeFromA}&merge_to_a=${mergeToA}`;
+      mockLocation.search = `?selection_a=${encodeURIComponent(
+        selectionA
+      )}&merge_from_a=${mergeFromA}&merge_to_a=${mergeToA}`;
       unmount();
       mockNavigateTo.mockClear();
 
       // Create new hook instance (simulating page reload)
-      const { result: result2 } = renderHook(
-        () => useQueryState({ suffix: '_a' }),
-        { wrapper: createWrapper() }
-      );
+      const {result: result2} = renderHook(() => useQueryState({suffix: '_a'}), {
+        wrapper: createWrapper(),
+      });
 
       // Verify ProfileSelection is loaded from URL after reload
       const profileSelection = result2.current.profileSelection;
@@ -1057,28 +1027,32 @@ describe('useQueryState', () => {
       // Test component using both hooks with the same URLStateProvider (real-world scenario)
       // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
       const TestComponent = () => {
-        const stateA = useQueryState({ suffix: '_a' });
-        const stateB = useQueryState({ suffix: '_b' });
-        return { stateA, stateB };
+        const stateA = useQueryState({suffix: '_a'});
+        const stateB = useQueryState({suffix: '_b'});
+        return {stateA, stateB};
       };
 
-      const { result } = renderHook(() => TestComponent(), {
-        wrapper: createWrapper()
+      const {result} = renderHook(() => TestComponent(), {
+        wrapper: createWrapper(),
       });
 
       const mockQueryA = {
         toString: () => 'process_cpu:cpu:nanoseconds:cpu:nanoseconds{pod="app-a"}',
-        profileType: () => ({ delta: false }),
+        profileType: () => ({delta: false}),
       } as any;
 
       const mockQueryB = {
         toString: () => 'process_cpu:cpu:nanoseconds:cpu:nanoseconds{pod="app-b"}',
-        profileType: () => ({ delta: false }),
+        profileType: () => ({delta: false}),
       } as any;
 
       // Set ProfileSelection for side A
       act(() => {
-        result.current.stateA.setProfileSelection(BigInt(1000000000), BigInt(2000000000), mockQueryA);
+        result.current.stateA.setProfileSelection(
+          BigInt(1000000000),
+          BigInt(2000000000),
+          mockQueryA
+        );
       });
 
       await waitFor(() => {
@@ -1089,7 +1063,11 @@ describe('useQueryState', () => {
 
       // Set ProfileSelection for side B
       act(() => {
-        result.current.stateB.setProfileSelection(BigInt(3000000000), BigInt(4000000000), mockQueryB);
+        result.current.stateB.setProfileSelection(
+          BigInt(3000000000),
+          BigInt(4000000000),
+          mockQueryB
+        );
       });
 
       await waitFor(() => {
@@ -1112,23 +1090,18 @@ describe('useQueryState', () => {
       // Missing selection param
       mockLocation.search = '?merge_from_a=1000000000&merge_to_a=2000000000';
 
-      const { result } = renderHook(
-        () => useQueryState({ suffix: '_a' }),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState({suffix: '_a'}), {wrapper: createWrapper()});
 
       expect(result.current.profileSelection).toBeNull();
     });
 
     it('should handle ProfileSelection with complex query expressions', async () => {
-      const { result } = renderHook(
-        () => useQueryState({ suffix: '_a' }),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState({suffix: '_a'}), {wrapper: createWrapper()});
 
       const mockQuery = {
-        toString: () => 'memory:alloc_objects:count:space:bytes:delta{namespace="default",pod="app-1",container="main"}',
-        profileType: () => ({ delta: true }),
+        toString: () =>
+          'memory:alloc_objects:count:space:bytes:delta{namespace="default",pod="app-1",container="main"}',
+        profileType: () => ({delta: true}),
       } as any;
 
       act(() => {
@@ -1138,19 +1111,18 @@ describe('useQueryState', () => {
       await waitFor(() => {
         expect(mockNavigateTo).toHaveBeenCalled();
         const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
-        expect(params.selection_a).toBe('memory:alloc_objects:count:space:bytes:delta{namespace="default",pod="app-1",container="main"}');
+        expect(params.selection_a).toBe(
+          'memory:alloc_objects:count:space:bytes:delta{namespace="default",pod="app-1",container="main"}'
+        );
       });
     });
 
     it('should batch ProfileSelection update with other URL state changes', async () => {
-      const { result } = renderHook(
-        () => useQueryState({ suffix: '_a' }),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState({suffix: '_a'}), {wrapper: createWrapper()});
 
       const mockQuery = {
         toString: () => 'process_cpu:cpu:nanoseconds:cpu:nanoseconds{job="test"}',
-        profileType: () => ({ delta: false }),
+        profileType: () => ({delta: false}),
       } as any;
 
       // The batchUpdates is used internally by setProfileSelection
@@ -1171,14 +1143,11 @@ describe('useQueryState', () => {
     it('should preserve other URL params when setting ProfileSelection', async () => {
       mockLocation.search = '?expression_a=process_cpu{}&other_param=value&unrelated=test';
 
-      const { result } = renderHook(
-        () => useQueryState({ suffix: '_a' }),
-        { wrapper: createWrapper() }
-      );
+      const {result} = renderHook(() => useQueryState({suffix: '_a'}), {wrapper: createWrapper()});
 
       const mockQuery = {
         toString: () => 'process_cpu:cpu:nanoseconds:cpu:nanoseconds{pod="test"}',
-        profileType: () => ({ delta: false }),
+        profileType: () => ({delta: false}),
       } as any;
 
       act(() => {

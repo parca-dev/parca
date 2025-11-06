@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 
 import {useQuery} from '@tanstack/react-query';
 import cx from 'classnames';
@@ -79,7 +79,7 @@ export const useLabelNames = (
   });
 
   useEffect(() => {
-    console.log('Label names query result:', { data, error, isLoading });
+    console.log('Label names query result:', {data, error, isLoading});
   }, [data, error, isLoading]);
 
   return {

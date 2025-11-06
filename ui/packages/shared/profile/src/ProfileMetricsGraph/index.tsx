@@ -77,13 +77,15 @@ const createProfileContextMenuItems = (
       label: 'Add to query',
       icon: 'material-symbols:add',
       createDynamicItems: (closestPoint, _series) => {
-        const noLabelsAvailable = [{
-          id: 'no-labels-available',
-          label: 'No labels available',
-          icon: 'ph:warning',
-          disabled: () => true,
-          onClick: () => { }, // No-op for disabled item
-        }]
+        const noLabelsAvailable = [
+          {
+            id: 'no-labels-available',
+            label: 'No labels available',
+            icon: 'ph:warning',
+            disabled: () => true,
+            onClick: () => {}, // No-op for disabled item
+          },
+        ];
         if (closestPoint == null || data.length === 0 || data[closestPoint.seriesIndex] == null) {
           return noLabelsAvailable;
         }
