@@ -179,9 +179,17 @@ export const getLastItem = (thePath: string | undefined | null): string | undefi
 
 const transformToArray = (params: string): string[] => params.split(',');
 
+export interface ParamPreference {
+  defaultValue?: string | string[];
+  splitOnCommas?: boolean; // Default: false
+}
+
+export type ParamPreferences = Record<string, ParamPreference>;
+
 export const parseParams = (
   querystring: string,
-  encodeValues?: boolean
+  encodeValues?: boolean,
+  preferences?: ParamPreferences
 ): Record<string, string | string[] | undefined> => {
   const params = new URLSearchParams(querystring);
 
@@ -220,7 +228,10 @@ export const parseParams = (
     if (values.length > 1) {
       obj[key] = values;
     } else {
-      if (values[0]?.includes(',')) {
+      // Check if this parameter should be split on commas
+      const shouldSplit = preferences?.[key]?.splitOnCommas === true;
+
+      if (shouldSplit && values[0]?.includes(',')) {
         obj[key] = transformToArray(values[0]);
       } else {
         obj[key] = values[0];

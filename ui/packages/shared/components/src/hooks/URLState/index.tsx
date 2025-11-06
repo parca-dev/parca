@@ -20,20 +20,23 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
 import {type NavigateFunction} from '@parca/utilities';
 
-import {getQueryParamsFromURL, sanitize, type ParamValue} from './utils';
+import { getQueryParamsFromURL, sanitize, type ParamValue, type ParamPreferences, type ParamPreference } from './utils';
 
 export type ParamValueSetter = (val: ParamValue) => void;
+export type { ParamPreferences, ParamPreference };
 
 interface URLState {
   navigateTo: NavigateFunction;
   state: Record<string, string | string[] | undefined>;
   setState: Dispatch<SetStateAction<Record<string, ParamValue>>>;
-  defaultValues: Record<string, ParamValue>;
+  paramPreferences: ParamPreferences;
+  batchUpdates: (callback: () => void) => void;
 }
 
 const URLStateContext = createContext<URLState | undefined>(undefined);
@@ -41,19 +44,156 @@ const URLStateContext = createContext<URLState | undefined>(undefined);
 export const URLStateProvider = ({
   children,
   navigateTo,
-  defaultValues = {},
+  paramPreferences = {},
 }: {
   children: ReactNode;
   navigateTo: NavigateFunction;
-  defaultValues?: Record<string, ParamValue>;
+    paramPreferences?: ParamPreferences;
 }): JSX.Element => {
+  // Extract default values from preferences for backward compatibility
+  // TODO(manoj): Check if this backward compatibility support is needed
+  const defaultValues = useMemo(() => {
+    const defaults: Record<string, ParamValue> = {};
+    Object.entries(paramPreferences).forEach(([key, prefs]) => {
+      if (prefs.defaultValue !== undefined) {
+        defaults[key] = prefs.defaultValue;
+      }
+    });
+    return defaults;
+  }, [paramPreferences]);
+
   const [state, setState] = useState<Record<string, ParamValue>>({
     ...defaultValues,
-    ...getQueryParamsFromURL(),
+    ...getQueryParamsFromURL(paramPreferences),
   });
 
+  const isInitialMount = useRef(true);
+  const isBatchingRef = useRef(false);
+  const batchTimeoutRef = useRef<NodeJS.Timeout>();
+  const urlUpdateTimeoutRef = useRef<NodeJS.Timeout>();
+  const lastSyncedURLRef = useRef(window.location.search);
+
+  // Sync state from URL when it changes externally (e.g., clicking nav links)
+  // Runs on every render of the provider to catch URL changes
+  useEffect(() => {
+    const currentURL = window.location.search;
+
+    if (currentURL === lastSyncedURLRef.current) {
+      return;
+    }
+
+    lastSyncedURLRef.current = currentURL;
+
+    const urlParams = getQueryParamsFromURL(paramPreferences);
+    setState({
+      ...defaultValues,
+      ...urlParams,
+    });
+  });
+
+  // Track state changes and sync to URL
+  useEffect(() => {
+    // Skip initial mount to avoid unnecessary navigation as the state was just initialized from URL
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // If we're batching, don't navigate yet - we'll do it at the end of the batch
+    if (isBatchingRef.current) {
+      return;
+    }
+
+    // Clear any existing timeout
+    if (urlUpdateTimeoutRef.current) {
+      clearTimeout(urlUpdateTimeoutRef.current);
+    }
+
+    // Debounce URL updates with a microtask
+    urlUpdateTimeoutRef.current = setTimeout(() => {
+      // ALWAYS merge with existing URL params to preserve them
+      const currentParams = getQueryParamsFromURL(paramPreferences);
+      const mergedParams = { ...currentParams, ...state };
+
+      const sanitizedParams = sanitize(mergedParams, paramPreferences);
+      navigateTo(
+        window.location.pathname,
+        sanitizedParams,
+        { replace: true }
+      );
+
+      // Update ref to match the URL we just set (to avoid re-syncing)
+      const queryString = new URLSearchParams(sanitizedParams as Record<string, string>).toString();
+      lastSyncedURLRef.current = queryString ? `?${queryString}` : '';
+    }, 0);
+
+    return () => {
+      if (urlUpdateTimeoutRef.current) {
+        clearTimeout(urlUpdateTimeoutRef.current);
+      }
+    };
+  }, [state, navigateTo, paramPreferences]);
+
+  // Batch updates function
+  const batchUpdates = useCallback((callback: () => void) => {
+    // Track if we were already batching before this call (for nested batching)
+    const wasAlreadyBatching = isBatchingRef.current;
+
+    isBatchingRef.current = true;
+
+    // Execute all state updates synchronously
+    callback();
+
+    // If we were already batching, this is a nested call - don't schedule a new timeout
+    // Let the outermost batchUpdates handle the URL navigation
+    if (wasAlreadyBatching) {
+      return;
+    }
+
+    // Clear any existing timeout
+    if (batchTimeoutRef.current) {
+      clearTimeout(batchTimeoutRef.current);
+    }
+
+    // Use setState to capture the final state after all updates
+    // This ensures we have the latest state including all batched changes
+    setState(currentState => {
+      // Don't actually change the state, just use this to read the latest value
+      // Schedule the batch to complete and trigger URL update
+      batchTimeoutRef.current = setTimeout(() => {
+        isBatchingRef.current = false;
+
+        // Navigate with the latest state PLUS existing URL params
+        // ALWAYS merge with existing URL params to preserve them
+        const currentParams = getQueryParamsFromURL(paramPreferences);
+        const mergedParams = { ...currentParams, ...currentState };
+
+        const sanitizedParams = sanitize(mergedParams, paramPreferences);
+        navigateTo(
+          window.location.pathname,
+          sanitizedParams,
+          { replace: true }
+        );
+
+        // Update ref to match the URL we just set (to avoid re-syncing)
+        const queryString = new URLSearchParams(sanitizedParams as Record<string, string>).toString();
+        lastSyncedURLRef.current = queryString ? `?${queryString}` : '';
+      }, 0);
+
+      return currentState; // Return unchanged state
+    });
+  }, [paramPreferences, navigateTo]);
+
+  const contextValue = useMemo(() => ({
+    navigateTo,
+    state,
+    setState,
+    paramPreferences,
+    batchUpdates,
+  }), [navigateTo, state, setState, paramPreferences, batchUpdates]);
+
   return (
-    <URLStateContext.Provider value={{navigateTo, state, setState, defaultValues}}>
+    <URLStateContext.Provider value={contextValue}>
       {children}
     </URLStateContext.Provider>
   );
@@ -76,26 +216,21 @@ export const useURLState = <T extends ParamValue>(
 
   const {debugLog, defaultValue, alwaysReturnArray} = _options ?? {};
 
-  const {navigateTo, state, setState, defaultValues} = context;
+  const { state, setState } = context;
 
   const setParam: ParamValueSetter = useCallback(
     (val: ParamValue) => {
-      setTimeout(() => {
-        if (debugLog === true) {
-          console.log('useURLState setParam', param, val);
-        }
-        setState(state => ({...state, [param]: val}));
+      if (debugLog === true) {
+        console.log('useURLState setParam', param, val);
+      }
 
-        navigateTo(
-          window.location.pathname,
-          sanitize({...getQueryParamsFromURL(), [param]: val}, defaultValues),
-          {
-            replace: true,
-          }
-        );
-      });
+      // Just update state - Provider handles URL sync automatically!
+      setState(currentState => ({
+        ...currentState,
+        [param]: val
+      }));
     },
-    [param, navigateTo, setState, defaultValues, debugLog]
+    [param, setState, debugLog]
   );
 
   if (debugLog === true) {
@@ -122,7 +257,6 @@ export const useURLState = <T extends ParamValue>(
     }
   }, [state, param, alwaysReturnArray]);
 
-  // TODO(manoj) Fix the forced type
   return [(value ?? defaultValue) as T, setParam];
 };
 
@@ -176,6 +310,16 @@ export const NumberSerializer = (val: number): string => {
     return '';
   }
   return String(val);
+};
+
+// Hook to access batch functionality
+export const useURLStateBatch = (): ((callback: () => void) => void) => {
+  const context = useContext(URLStateContext);
+  if (context === undefined) {
+    throw new Error('useURLStateBatch must be used within a URLStateProvider');
+  }
+
+  return context.batchUpdates;
 };
 
 export default URLStateContext;

@@ -15,12 +15,21 @@ import {parseParams} from '@parca/utilities';
 
 export type ParamValue = string | string[] | undefined;
 
-export const getQueryParamsFromURL = (): Record<string, ParamValue> => {
+export interface ParamPreference {
+  defaultValue?: ParamValue;
+  splitOnCommas?: boolean; // Default: false
+}
+
+export type ParamPreferences = Record<string, ParamPreference>;
+
+export const getQueryParamsFromURL = (
+  preferences: ParamPreferences = {}
+): Record<string, ParamValue> => {
   if (typeof window === 'undefined') {
     return {};
   }
 
-  return parseParams(window.location.search);
+  return parseParams(window.location.search, false, preferences);
 };
 
 const isEmpty = (val: string | string[] | undefined): boolean => {
@@ -64,11 +73,12 @@ const isEqual = (a: ParamValue, b: ParamValue): boolean => {
 
 export const sanitize = (
   params: Record<string, ParamValue>,
-  defaultValues: Record<string, ParamValue>
+  preferences: ParamPreferences
 ): Record<string, ParamValue> => {
   const sanitized: Record<string, ParamValue> = {};
   for (const [key, value] of Object.entries(params)) {
-    if (isEmpty(value) || isEqual(value, defaultValues[key]) || value == null) {
+    const defaultValue = preferences[key]?.defaultValue;
+    if (isEmpty(value) || isEqual(value, defaultValue) || value == null) {
       continue;
     }
     if (Array.isArray(value)) {

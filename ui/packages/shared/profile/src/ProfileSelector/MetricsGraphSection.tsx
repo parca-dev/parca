@@ -17,7 +17,7 @@ import {Label, QueryServiceClient} from '@parca/client';
 import {DateTimeRange} from '@parca/components';
 import {Query} from '@parca/parser';
 
-import {MergedProfileSelection, ProfileSelection} from '..';
+import { ProfileSelection } from '..';
 import UtilizationMetricsGraph from '../MetricsGraph/UtilizationMetrics';
 import AreaChart from '../MetricsGraph/UtilizationMetrics/Throughput';
 import ProfileMetricsGraph, {ProfileMetricsEmptyState} from '../ProfileMetricsGraph';
@@ -37,7 +37,7 @@ interface MetricsGraphSectionProps {
   queryExpressionString: string;
   setTimeRangeSelection: (range: DateTimeRange) => void;
   selectQuery: (query: QuerySelection) => void;
-  selectProfile: (source: ProfileSelection) => void;
+  setProfileSelection: (mergeFrom: bigint, mergeTo: bigint, query: Query) => void;
   query: Query;
   setNewQueryExpression: (queryExpression: string) => void;
   setQueryExpression: (updateTs?: boolean) => void;
@@ -63,7 +63,7 @@ export function MetricsGraphSection({
   queryExpressionString,
   setTimeRangeSelection,
   selectQuery,
-  selectProfile,
+  setProfileSelection,
   query,
   setNewQueryExpression,
   utilizationMetrics,
@@ -129,6 +129,7 @@ export function MetricsGraphSection({
     duration: number
   ): void => {
     let query = Query.parse(queryExpression);
+
     labels.forEach(l => {
       const [newQuery, updated] = query.setMatcher(l.name, l.value);
       if (updated) {
@@ -140,7 +141,7 @@ export function MetricsGraphSection({
     const mergeTo = query.profileType().delta ? mergeFrom + BigInt(duration) : mergeFrom;
 
     resetStateOnSeriesChange(); // reset some state when a new series is selected
-    selectProfile(new MergedProfileSelection(mergeFrom, mergeTo, query));
+    setProfileSelection(mergeFrom, mergeTo, query);
   };
 
   const UtilizationGraphToShow = ({
@@ -235,9 +236,9 @@ export function MetricsGraphSection({
       {showMetricsGraph && (
         <>
           <div style={{height: heightStyle}}>
-            {querySelection.expression !== '' &&
+            {((querySelection.expression !== '' || defaultSumByLoading) &&
             querySelection.from !== undefined &&
-            querySelection.to !== undefined ? (
+              querySelection.to !== undefined) ? (
               <>
                 {utilizationMetrics !== undefined ? (
                   <UtilizationGraphToShow utilizationMetrics={utilizationMetrics} />

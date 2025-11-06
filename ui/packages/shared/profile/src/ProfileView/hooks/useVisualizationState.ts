@@ -13,7 +13,7 @@
 
 import {useCallback, useMemo} from 'react';
 
-import {JSONParser, JSONSerializer, useURLState, useURLStateCustom} from '@parca/components';
+import {JSONParser, JSONSerializer, useURLState, useURLStateBatch, useURLStateCustom} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 
 import {
@@ -69,6 +69,7 @@ export const useVisualizationState = (): {
     'sandwich_function_name'
   );
   const resetFlameGraphState = useResetFlameGraphState();
+  const batchUpdates = useURLStateBatch();
 
   const levelsOfProfiling = useMemo(
     () => [
@@ -89,25 +90,31 @@ export const useVisualizationState = (): {
 
   const toggleGroupBy = useCallback(
     (key: string): void => {
-      if (groupBy.includes(key)) {
-        setGroupBy(groupBy.filter(v => v !== key)); // remove
-      } else {
-        const filteredGroupBy = groupBy.filter(item => !levelsOfProfiling.includes(item));
-        setGroupBy([...filteredGroupBy, key]); // add
-      }
+      // Batch updates to combine setGroupBy + resetFlameGraphState into single URL navigation
+      batchUpdates(() => {
+        if (groupBy.includes(key)) {
+          setGroupBy(groupBy.filter(v => v !== key)); // remove
+        } else {
+          const filteredGroupBy = groupBy.filter(item => !levelsOfProfiling.includes(item));
+          setGroupBy([...filteredGroupBy, key]); // add
+        }
 
-      resetFlameGraphState();
+        resetFlameGraphState();
+      });
     },
-    [groupBy, setGroupBy, levelsOfProfiling, resetFlameGraphState]
+    [groupBy, setGroupBy, levelsOfProfiling, resetFlameGraphState, batchUpdates]
   );
 
   const setGroupByLabels = useCallback(
     (labels: string[]): void => {
-      setGroupBy(groupBy.filter(l => !l.startsWith(`${FIELD_LABELS}.`)).concat(labels));
+      // Batch updates to combine setGroupBy + resetFlameGraphState into single URL navigation
+      batchUpdates(() => {
+        setGroupBy(groupBy.filter(l => !l.startsWith(`${FIELD_LABELS}.`)).concat(labels));
 
-      resetFlameGraphState();
+        resetFlameGraphState();
+      });
     },
-    [groupBy, setGroupBy, resetFlameGraphState]
+    [groupBy, setGroupBy, resetFlameGraphState, batchUpdates]
   );
 
   const resetSandwichFunctionName = useCallback((): void => {
