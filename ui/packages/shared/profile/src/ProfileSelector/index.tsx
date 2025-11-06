@@ -28,7 +28,6 @@ import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 import {type NavigateFunction} from '@parca/utilities';
 
-import {ProfileSelection} from '..';
 import {useLabelNames} from '../MatchersInput/index';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
 import {UtilizationLabelsProvider} from '../contexts/UtilizationLabelsContext';

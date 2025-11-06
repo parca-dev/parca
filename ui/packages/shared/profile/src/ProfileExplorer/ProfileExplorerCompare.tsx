@@ -52,7 +52,7 @@ const ProfileExplorerCompare = ({
 
   // Derive enforced profile name from side A's expression
   const enforcedProfileNameA = useMemo(() => {
-    return querySelectionA.expression
+    return querySelectionA.expression !== ''
       ? Query.parse(querySelectionA.expression).profileName()
       : '';
   }, [querySelectionA.expression]);

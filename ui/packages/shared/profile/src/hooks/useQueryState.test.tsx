@@ -34,15 +34,16 @@ vi.mock('@parca/components/src/hooks/URLState/utils', async () => {
   return {
     ...actual,
     getQueryParamsFromURL: () => {
-      if (!mockLocation.search) return {};
+      if (mockLocation.search === '') return {};
       const params = new URLSearchParams(mockLocation.search);
       const result: Record<string, string | string[]> = {};
       for (const [key, value] of params.entries()) {
         const decodedValue = decodeURIComponent(value);
-        if (result[key]) {
-          result[key] = Array.isArray(result[key])
-            ? [...(result[key] as string[]), decodedValue]
-            : [result[key] as string, decodedValue];
+        const existing = result[key];
+        if (existing !== undefined) {
+          result[key] = Array.isArray(existing)
+            ? [...existing, decodedValue]
+            : [existing, decodedValue];
         } else {
           result[key] = decodedValue;
         }
@@ -53,12 +54,14 @@ vi.mock('@parca/components/src/hooks/URLState/utils', async () => {
 });
 
 // Helper to create wrapper with URLStateProvider
-const createWrapper = (paramPreferences = {}) => {
-  return ({ children }: { children: ReactNode }) => (
+const createWrapper = (paramPreferences = {}): (({ children }: { children: ReactNode }) => JSX.Element) => {
+  const Wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
     <URLStateProvider navigateTo={mockNavigateTo} paramPreferences={paramPreferences}>
       {children}
     </URLStateProvider>
   );
+  Wrapper.displayName = 'URLStateProviderWrapper';
+  return Wrapper;
 };
 
 describe('useQueryState', () => {
@@ -1022,7 +1025,10 @@ describe('useQueryState', () => {
       const committedParams = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1][1];
 
       // Simulate page reload by updating mockLocation.search
-      mockLocation.search = `?selection_a=${encodeURIComponent(committedParams.selection_a as string)}&merge_from_a=${committedParams.merge_from_a}&merge_to_a=${committedParams.merge_to_a}`;
+      const selectionA = String(committedParams.selection_a ?? '');
+      const mergeFromA = String(committedParams.merge_from_a ?? '');
+      const mergeToA = String(committedParams.merge_to_a ?? '');
+      mockLocation.search = `?selection_a=${encodeURIComponent(selectionA)}&merge_from_a=${mergeFromA}&merge_to_a=${mergeToA}`;
       unmount();
       mockNavigateTo.mockClear();
 
@@ -1049,6 +1055,7 @@ describe('useQueryState', () => {
 
     it('should handle independent ProfileSelection for both sides in comparison mode', async () => {
       // Test component using both hooks with the same URLStateProvider (real-world scenario)
+      // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
       const TestComponent = () => {
         const stateA = useQueryState({ suffix: '_a' });
         const stateB = useQueryState({ suffix: '_b' });

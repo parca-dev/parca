@@ -32,17 +32,18 @@ vi.mock('./utils', async () => {
   return {
     ...actual,
     getQueryParamsFromURL: () => {
-      if (!mockLocation.search) return {};
+      if (mockLocation.search === '') return {};
       const params = new URLSearchParams(mockLocation.search);
       const result: Record<string, string | string[]> = {};
       for (const [key, value] of params.entries()) {
         // Handle decoding
         const decodedValue = decodeURIComponent(value);
-        if (result[key]) {
+        const existing = result[key];
+        if (existing !== undefined) {
           // Convert to array if multiple values
-          result[key] = Array.isArray(result[key])
-            ? [...(result[key] as string[]), decodedValue]
-            : [result[key] as string, decodedValue];
+          result[key] = Array.isArray(existing)
+            ? [...existing, decodedValue]
+            : [existing, decodedValue];
         } else {
           result[key] = decodedValue;
         }
@@ -53,12 +54,14 @@ vi.mock('./utils', async () => {
 });
 
 // Helper to create wrapper with URLStateProvider
-const createWrapper = (paramPreferences = {}) => {
-  return ({ children }: { children: ReactNode }) => (
+const createWrapper = (paramPreferences = {}): (({ children }: { children: ReactNode }) => JSX.Element) => {
+  const Wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
     <URLStateProvider navigateTo={mockNavigateTo} paramPreferences={paramPreferences}>
       {children}
     </URLStateProvider>
   );
+  Wrapper.displayName = 'URLStateProviderWrapper';
+  return Wrapper;
 };
 
 describe('URLState Hooks', () => {
@@ -158,7 +161,13 @@ describe('URLState Hooks', () => {
   describe('useURLStateBatch', () => {
     it('should batch multiple state updates into a single URL navigation', async () => {
       // Create a test component that uses multiple URL states
-      const TestComponent = () => {
+      const TestComponent = (): {
+        color: string | string[] | undefined;
+        size: string | string[] | undefined;
+        setColor: (val: string | string[] | undefined) => void;
+        setSize: (val: string | string[] | undefined) => void;
+        batchUpdates: (callback: () => void) => void;
+      } => {
         const [color, setColor] = useURLState('color');
         const [size, setSize] = useURLState('size');
         const batchUpdates = useURLStateBatch();
@@ -202,6 +211,7 @@ describe('URLState Hooks', () => {
     it('should handle nested batch updates correctly - multiple levels of nesting', async () => {
       // This test simulates real-world scenarios like toggleGroupBy calling resetFlameGraphState,
       // where both functions use batchUpdates, testing 2 levels of nesting
+      // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
       const TestComponent = () => {
         const [param1, setParam1] = useURLState('param1');
         const [param2, setParam2] = useURLState('param2');
@@ -212,6 +222,7 @@ describe('URLState Hooks', () => {
         const batchUpdates = useURLStateBatch();
 
         // Level 2 nesting - deepest function
+        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
         const deeplyNestedFunction = () => {
           batchUpdates(() => {
             setParam5('value5');
@@ -220,6 +231,7 @@ describe('URLState Hooks', () => {
         };
 
         // Level 1 nesting - calls another batched function
+        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
         const innerBatchedFunction = () => {
           batchUpdates(() => {
             setParam3('value3');
@@ -358,6 +370,7 @@ describe('URLState Hooks', () => {
 
     it('should handle complex filter updates with batching', async () => {
       // Simulate ProfileSelector component behavior
+      // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
       const TestComponent = () => {
         const [colorBy, setColorBy] = useURLState('color_by', { defaultValue: 'function' });
         const [groupBy, setGroupBy] = useURLState<string[]>('group_by', {
@@ -459,6 +472,7 @@ describe('URLState Hooks', () => {
       // Simulate existing URL parameters
       mockLocation.search = '?expression_a=process_cpu%7B%7D&from_a=1234567890&to_a=9876543210&time_selection_a=1h&group_by=existing_group&cur_path=/existing/path';
 
+      // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
       const TestComponent = () => {
         const [groupBy, setGroupBy] = useURLState('group_by');
         const [curPath, setCurPath] = useURLState('cur_path');

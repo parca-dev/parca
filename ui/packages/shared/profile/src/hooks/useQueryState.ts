@@ -101,45 +101,37 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
   const sumBy = useSumByFromParams(sumByParam);
 
   // Draft state management
-  const [draftExpression, setDraftExpression] = useState<string>(expression || defaultExpression);
-  const [draftFrom, setDraftFrom] = useState<string>(from || defaultFrom?.toString() || '');
-  const [draftTo, setDraftTo] = useState<string>(to || defaultTo?.toString() || '');
-  const [draftTimeSelection, setDraftTimeSelection] = useState<string>(timeSelection || defaultTimeSelection);
+  const [draftExpression, setDraftExpression] = useState<string>(expression ?? defaultExpression);
+  const [draftFrom, setDraftFrom] = useState<string>(from ?? defaultFrom?.toString() ?? '');
+  const [draftTo, setDraftTo] = useState<string>(to ?? defaultTo?.toString() ?? '');
+  const [draftTimeSelection, setDraftTimeSelection] = useState<string>(timeSelection ?? defaultTimeSelection);
   const [draftSumBy, setDraftSumBy] = useState<string[] | undefined>(sumBy);
 
   // Sync draft state with URL state when URL changes externally
   useEffect(() => {
-    setDraftExpression(expression || defaultExpression);
+    setDraftExpression(expression ?? defaultExpression);
   }, [expression, defaultExpression]);
 
   useEffect(() => {
-    setDraftFrom(from || defaultFrom?.toString() || '');
+    setDraftFrom(from ?? defaultFrom?.toString() ?? '');
   }, [from, defaultFrom]);
 
   useEffect(() => {
-    setDraftTo(to || defaultTo?.toString() || '');
+    setDraftTo(to ?? defaultTo?.toString() ?? '');
   }, [to, defaultTo]);
 
   useEffect(() => {
-    setDraftTimeSelection(timeSelection || defaultTimeSelection);
+    setDraftTimeSelection(timeSelection ?? defaultTimeSelection);
   }, [timeSelection, defaultTimeSelection]);
 
   useEffect(() => {
     setDraftSumBy(sumBy);
   }, [sumBy]);
 
-  // Parse the query to extract profile information
-  const query = useMemo(() => {
-    try {
-      return Query.parse(expression || '');
-    } catch {
-      return Query.parse('');
-    }
-  }, [expression]);
-
+  // Parse the draft query to extract profile information
   const draftQuery = useMemo(() => {
     try {
-      return Query.parse(draftExpression || '');
+      return Query.parse(draftExpression ?? '');
     } catch {
       return Query.parse('');
     }
@@ -151,18 +143,18 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
   // Construct the QuerySelection object
   const querySelection: QuerySelection = useMemo(() => {
     const range = DateTimeRange.fromRangeKey(
-      timeSelection || defaultTimeSelection,
-      from ? parseInt(from) : defaultFrom,
-      to ? parseInt(to) : defaultTo
+      timeSelection ?? defaultTimeSelection,
+      from !== undefined && from !== '' ? parseInt(from) : defaultFrom,
+      to !== undefined && to !== '' ? parseInt(to) : defaultTo
     );
 
     return {
-      expression: expression || defaultExpression,
+      expression: expression ?? defaultExpression,
       from: range.getFromMs(),
       to: range.getToMs(),
       timeSelection: range.getRangeKey(),
       sumBy,
-      ...(mergeFrom && mergeTo ? { mergeFrom, mergeTo } : {}),
+      ...(mergeFrom !== undefined && mergeFrom !== '' && mergeTo !== undefined && mergeTo !== '' ? { mergeFrom, mergeTo } : {}),
     };
   }, [
     expression,
@@ -181,9 +173,9 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
   // Construct the draft QuerySelection object
   const draftSelection: QuerySelection = useMemo(() => {
     const range = DateTimeRange.fromRangeKey(
-      draftTimeSelection || defaultTimeSelection,
-      draftFrom ? parseInt(draftFrom) : defaultFrom,
-      draftTo ? parseInt(draftTo) : defaultTo
+      draftTimeSelection ?? defaultTimeSelection,
+      draftFrom !== '' ? parseInt(draftFrom) : defaultFrom,
+      draftTo !== '' ? parseInt(draftTo) : defaultTo
     );
 
     const isDelta = draftProfileType.delta;
@@ -191,12 +183,12 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     const draftMergeTo = isDelta ? (BigInt(range.getToMs()) * 1_000_000n).toString() : undefined;
 
     return {
-      expression: draftExpression || defaultExpression,
+      expression: draftExpression ?? defaultExpression,
       from: range.getFromMs(),
       to: range.getToMs(),
       timeSelection: range.getRangeKey(),
       sumBy: draftSumBy,
-      ...(draftMergeFrom && draftMergeTo ? { mergeFrom: draftMergeFrom, mergeTo: draftMergeTo } : {}),
+      ...(draftMergeFrom !== undefined && draftMergeFrom !== '' && draftMergeTo !== undefined && draftMergeTo !== '' ? { mergeFrom: draftMergeFrom, mergeTo: draftMergeTo } : {}),
     };
   }, [
     draftExpression,
@@ -249,7 +241,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
 
   const setDraftProfileName = useCallback(
     (newProfileName: string) => {
-      if (!newProfileName) return;
+      if (newProfileName === '') return;
 
       const [newQuery, changed] = draftQuery.setProfileName(newProfileName);
       if (changed) {
@@ -292,9 +284,9 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
       const calculatedFrom = draftSelection.from.toString();
       const calculatedTo = draftSelection.to.toString();
 
-      const finalFrom = refreshedTimeRange?.from?.toString() || draftFrom || calculatedFrom;
-      const finalTo = refreshedTimeRange?.to?.toString() || draftTo || calculatedTo;
-      const finalTimeSelection = refreshedTimeRange?.timeSelection || draftTimeSelection;
+      const finalFrom = refreshedTimeRange?.from?.toString() ?? (draftFrom !== '' ? draftFrom : calculatedFrom);
+      const finalTo = refreshedTimeRange?.to?.toString() ?? (draftTo !== '' ? draftTo : calculatedTo);
+      const finalTimeSelection = refreshedTimeRange?.timeSelection ?? draftTimeSelection;
 
       // Update draft state with refreshed time range if provided
       if (refreshedTimeRange?.from !== undefined) {
@@ -314,7 +306,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
       setSumByParam(sumByToParam(draftSumBy));
 
       // Auto-calculate merge parameters for delta profiles
-      if (draftProfileType.delta && finalFrom && finalTo) {
+      if (draftProfileType.delta && finalFrom !== '' && finalTo !== '') {
         const fromMs = parseInt(finalFrom);
         const toMs = parseInt(finalTo);
         setMergeFromState((BigInt(fromMs) * 1_000_000n).toString());

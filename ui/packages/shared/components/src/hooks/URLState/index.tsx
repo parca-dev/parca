@@ -89,7 +89,7 @@ export const URLStateProvider = ({
       ...defaultValues,
       ...urlParams,
     });
-  });
+  }, [paramPreferences, defaultValues]);
 
   // Track state changes and sync to URL
   useEffect(() => {
@@ -105,7 +105,7 @@ export const URLStateProvider = ({
     }
 
     // Clear any existing timeout
-    if (urlUpdateTimeoutRef.current) {
+    if (urlUpdateTimeoutRef.current !== undefined) {
       clearTimeout(urlUpdateTimeoutRef.current);
     }
 
@@ -124,11 +124,11 @@ export const URLStateProvider = ({
 
       // Update ref to match the URL we just set (to avoid re-syncing)
       const queryString = new URLSearchParams(sanitizedParams as Record<string, string>).toString();
-      lastSyncedURLRef.current = queryString ? `?${queryString}` : '';
+      lastSyncedURLRef.current = queryString !== '' ? `?${queryString}` : '';
     }, 0);
 
     return () => {
-      if (urlUpdateTimeoutRef.current) {
+      if (urlUpdateTimeoutRef.current !== undefined) {
         clearTimeout(urlUpdateTimeoutRef.current);
       }
     };
@@ -151,7 +151,7 @@ export const URLStateProvider = ({
     }
 
     // Clear any existing timeout
-    if (batchTimeoutRef.current) {
+    if (batchTimeoutRef.current !== undefined) {
       clearTimeout(batchTimeoutRef.current);
     }
 
@@ -177,7 +177,7 @@ export const URLStateProvider = ({
 
         // Update ref to match the URL we just set (to avoid re-syncing)
         const queryString = new URLSearchParams(sanitizedParams as Record<string, string>).toString();
-        lastSyncedURLRef.current = queryString ? `?${queryString}` : '';
+        lastSyncedURLRef.current = queryString !== '' ? `?${queryString}` : '';
       }, 0);
 
       return currentState; // Return unchanged state

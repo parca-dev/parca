@@ -19,7 +19,11 @@ import {useURLState, useURLStateBatch} from '@parca/components';
  * Hook to manage compare mode state and operations
  * Returns compare mode flags and a function to close compare mode
  */
-export const useCompareModeMeta = () => {
+export const useCompareModeMeta = (): {
+  isCompareMode: boolean;
+  isCompareAbsolute: boolean;
+  closeCompareMode: (card: 'A' | 'B') => void;
+} => {
   const batchUpdates = useURLStateBatch();
 
   // Side A URL state (only setters needed)
