@@ -56,8 +56,7 @@ export const URLStateProvider = ({
   navigateTo: NavigateFunction;
   paramPreferences?: ParamPreferences;
 }): JSX.Element => {
-  // Extract default values from preferences for backward compatibility
-  // TODO(manoj): Check if this backward compatibility support is needed
+
   const defaultValues = useMemo(() => {
     const defaults: Record<string, ParamValue> = {};
     Object.entries(paramPreferences).forEach(([key, prefs]) => {
