@@ -132,7 +132,7 @@ describe('parseParams', () => {
   });
 
   it('handles multiple dashboard_items with mixed legacy and new values', () => {
-    const result = parseParams('?dashboard_items=icicle,table,iciclechart,flamegraph');
+    const result = parseParams('?dashboard_items=icicle,table,iciclechart,flamegraph', undefined, {dashboard_items: {splitOnCommas: true}});
     expect(result.dashboard_items).toEqual(['flamegraph', 'table', 'flamechart', 'flamegraph']);
   });
 

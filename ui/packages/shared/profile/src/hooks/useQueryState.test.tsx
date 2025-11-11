@@ -20,14 +20,28 @@ import {URLStateProvider} from '@parca/components';
 
 import {useQueryState} from './useQueryState';
 
-// Mock the navigate function
-const mockNavigateTo = vi.fn();
-
 // Mock window.location
 const mockLocation = {
   pathname: '/test',
   search: '',
 };
+
+// Mock the navigate function that actually updates the mock location
+const mockNavigateTo = vi.fn((path: string, params: Record<string, any>) => {
+  // Convert params object to query string
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      if (Array.isArray(value)) {
+        // For arrays, join with commas
+        searchParams.set(key, value.join(','));
+      } else {
+        searchParams.set(key, String(value));
+      }
+    }
+  });
+  mockLocation.search = `?${searchParams.toString()}`;
+});
 
 // Mock the getQueryParamsFromURL function
 vi.mock('@parca/components/src/hooks/URLState/utils', async () => {
@@ -1081,9 +1095,12 @@ describe('useQueryState', () => {
         expect(params.merge_from_b).toBe('3000000000');
       });
 
-      // Verify both ProfileSelections exist in the hook state
-      expect(result.current.stateA.profileSelection).not.toBeNull();
-      expect(result.current.stateB.profileSelection).not.toBeNull();
+      // The mockNavigateTo automatically updates mockLocation.search, so the URL change
+      // should propagate to the hooks automatically. Verify both ProfileSelections exist.
+      await waitFor(() => {
+        expect(result.current.stateA.profileSelection).not.toBeNull();
+        expect(result.current.stateB.profileSelection).not.toBeNull();
+      });
     });
 
     it('should return null ProfileSelection when only partial params exist', () => {
