@@ -91,11 +91,12 @@ export const URLStateProvider = ({
     lastSyncedURLRef.current = currentURL;
 
     const urlParams = getQueryParamsFromURL(paramPreferences);
-    setState({
+    const newState = {
       ...defaultValues,
       ...urlParams,
-    });
-  }, [paramPreferences, defaultValues]);
+    };
+    setState(newState);
+  });
 
   // Track state changes and sync to URL
   useEffect(() => {

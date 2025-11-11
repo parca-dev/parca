@@ -212,14 +212,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
 
   // Compute ProfileSelection from URL params
   const profileSelection = useMemo<ProfileSelection | null>(() => {
-    console.log('[profileSelection] Computing from URL params:', {
-      mergeFrom,
-      mergeTo,
-      selectionParam,
-    });
-    const result = ProfileSelectionFromParams(mergeFrom, mergeTo, selectionParam);
-    console.log('[profileSelection] Result:', result);
-    return result;
+    return ProfileSelectionFromParams(mergeFrom, mergeTo, selectionParam);
   }, [mergeFrom, mergeTo, selectionParam]);
 
   // Compute ProfileSource from ProfileSelection

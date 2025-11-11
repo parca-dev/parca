@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect} from 'react';
+import {useEffect, useRef} from 'react';
 
 import {ProfileTypesResponse} from '@parca/client';
 import {selectAutoQuery, setAutoQuery, useAppDispatch, useAppSelector} from '@parca/store';
@@ -43,15 +43,26 @@ export const useAutoQuerySelector = ({
   const autoQuery = useAppSelector(selectAutoQuery);
   const dispatch = useAppDispatch();
   const queryParams = new URLSearchParams(location.search);
-
-  const comparing = queryParams.get('comparing') === 'true';
+  const compareA = queryParams.get('compare_a');
+  const compareB = queryParams.get('compare_b');
+  const comparing = compareA === 'true' || compareB === 'true';
   const expressionA = queryParams.get('expression_a');
+  const expressionB = queryParams.get('expression_b');
+
+  // Track if we've already set up compare mode to prevent infinite loops
+  const hasSetupCompareMode = useRef(false);
 
   useEffect(() => {
     if (loading) {
       return;
     }
-    if (comparing && expressionA !== null && expressionA !== undefined) {
+
+    // Only run this effect if:
+    // 1. We're in compare mode
+    // 2. expressionA exists
+    // 3. expressionB doesn't exist yet (meaning we need to set it up)
+    // 4. We haven't already set it up in this session
+    if (comparing && expressionA !== null && expressionA !== undefined && expressionB === null && !hasSetupCompareMode.current) {
       if (querySelection.expression === undefined) {
         return;
       }
@@ -96,13 +107,14 @@ export const useAutoQuerySelector = ({
         };
       }
 
+      hasSetupCompareMode.current = true;
       void navigateTo('/', {
         ...compareQuery,
         search_string: '',
         dashboard_items: ['flamegraph'],
       });
     }
-  }, [comparing, querySelection, navigateTo, expressionA, dispatch, loading]);
+  }, [comparing, querySelection, navigateTo, expressionA, expressionB, dispatch, loading]);
 
   // Effect to load some initial data on load when is no selection
   useEffect(() => {

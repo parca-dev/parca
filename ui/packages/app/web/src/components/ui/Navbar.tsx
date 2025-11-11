@@ -58,7 +58,8 @@ const Navbar = () => {
   const queryParams = new URLSearchParams(location.search);
   const expressionA = queryParams.get('expression_a');
   const expressionB = queryParams.get('expression_b');
-  const comparing = queryParams.get('comparing');
+  const compareA = queryParams.get('compare_a');
+  const compareB = queryParams.get('compare_b');
 
   const queryParamsURL = parseParams(window.location.search);
 
@@ -87,9 +88,13 @@ const Navbar = () => {
   const compareExplanation =
     'Compare two profiles and see the relative difference between them more clearly.';
 
-  const isCurrentPage = (item: {label: string; href: string; external: boolean}) =>
-    (item.href === 'compare' && (isComparePage || comparing === 'true')) ||
-    (!isComparePage && comparing !== 'true' && location.pathname === item.href);
+  const isCurrentPage = (item: {label: string; href: string; external: boolean}) => {
+    const isCompareMode = compareA === 'true' || compareB === 'true';
+    return (
+      (item.href === 'compare' && (isComparePage || isCompareMode)) ||
+      (!isComparePage && !isCompareMode && location.pathname === item.href)
+    );
+  };
 
   const navigateTo = useCallback(
     (path: string, queryParams: any, options?: {replace?: boolean}) => {
@@ -107,15 +112,21 @@ const Navbar = () => {
   const queryToBePassed =
     expression_a === undefined
       ? {
-          comparing: 'true',
+          compare_a: 'true',
+          compare_b: 'true',
         }
       : {
-          comparing: 'true',
+          compare_a: 'true',
+          compare_b: 'true',
           dashboard_items: dashboard_items,
           expression_a: expression_a,
+          expression_b: expression_a,
           from_a: from_a,
+          from_b: from_a,
           to_a: to_a,
+          to_b: to_a,
           time_selection_a: time_selection_a,
+          time_selection_b: time_selection_a,
           selection_a: selection_a,
           merge_from_a: merge_from_a,
           merge_to_a: merge_to_a,
