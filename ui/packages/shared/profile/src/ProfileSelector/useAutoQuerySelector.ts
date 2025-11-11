@@ -62,7 +62,13 @@ export const useAutoQuerySelector = ({
     // 2. expressionA exists
     // 3. expressionB doesn't exist yet (meaning we need to set it up)
     // 4. We haven't already set it up in this session
-    if (comparing && expressionA !== null && expressionA !== undefined && expressionB === null && !hasSetupCompareMode.current) {
+    if (
+      comparing &&
+      expressionA !== null &&
+      expressionA !== undefined &&
+      expressionB === null &&
+      !hasSetupCompareMode.current
+    ) {
       if (querySelection.expression === undefined) {
         return;
       }

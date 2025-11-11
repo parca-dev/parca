@@ -284,7 +284,9 @@ export const selectQueryParam = (key: string): string | string[] | undefined => 
   return router[key];
 };
 
-export const convertToQueryParams = (params: {[key: string]: string | string[] | undefined}): string =>
+export const convertToQueryParams = (params: {
+  [key: string]: string | string[] | undefined;
+}): string =>
   Object.keys(params)
     .filter((key: string) => params[key] !== undefined && params[key] !== null)
     .map((key: string) => `${key}=${encodeURIComponent(params[key] as string)}`)
