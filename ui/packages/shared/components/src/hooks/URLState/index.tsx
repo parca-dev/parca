@@ -56,7 +56,6 @@ export const URLStateProvider = ({
   navigateTo: NavigateFunction;
   paramPreferences?: ParamPreferences;
 }): JSX.Element => {
-
   const defaultValues = useMemo(() => {
     const defaults: Record<string, ParamValue> = {};
     Object.entries(paramPreferences).forEach(([key, prefs]) => {
