@@ -39,7 +39,7 @@ interface MetricsGraphSectionProps {
   selectQuery: (query: QuerySelection) => void;
   setProfileSelection: (mergeFrom: bigint, mergeTo: bigint, query: Query) => void;
   query: Query;
-  setNewQueryExpression: (queryExpression: string) => void;
+  setNewQueryExpression: (queryExpression: string, commit?: boolean) => void;
   setQueryExpression: (updateTs?: boolean) => void;
   utilizationMetrics?: Array<{
     name: string;
@@ -118,7 +118,8 @@ export function MetricsGraphSection({
 
     if (hasChanged) {
       // TODO: Change this to store the query object
-      setNewQueryExpression(newQuery.toString());
+      // Pass commit: true to immediately apply the filter when clicking on metrics graph labels
+      setNewQueryExpression(newQuery.toString(), true);
     }
   };
 
