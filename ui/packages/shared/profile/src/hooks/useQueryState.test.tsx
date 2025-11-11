@@ -13,6 +13,7 @@
 
 import {ReactNode} from 'react';
 
+// eslint-disable-next-line import/named
 import {act, renderHook, waitFor} from '@testing-library/react';
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 
@@ -27,7 +28,7 @@ const mockLocation = {
 };
 
 // Mock the navigate function that actually updates the mock location
-const mockNavigateTo = vi.fn((path: string, params: Record<string, any>) => {
+const mockNavigateTo = vi.fn((path: string, params: Record<string, string | string[]>) => {
   // Convert params object to query string
   const searchParams = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
@@ -440,7 +441,7 @@ describe('useQueryState', () => {
   });
 
   describe('Draft state pattern', () => {
-    it('should not update URL until commit', () => {
+    it('should not update URL until commit', async () => {
       const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       // Make multiple draft changes
@@ -459,7 +460,7 @@ describe('useQueryState', () => {
       });
 
       // Now URL should be updated exactly once with all changes
-      waitFor(() => {
+      await waitFor(() => {
         expect(mockNavigateTo).toHaveBeenCalledTimes(1);
         const [, params] = mockNavigateTo.mock.calls[0];
         expect(params.expression).toBe('memory:inuse_space:bytes:space:bytes{}');

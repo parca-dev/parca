@@ -81,6 +81,7 @@ export const URLStateProvider = ({
 
   // Sync state from URL when it changes externally (e.g., clicking nav links)
   // Runs on every render of the provider to catch URL changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const currentURL = window.location.search;
 
