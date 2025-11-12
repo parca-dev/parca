@@ -11,31 +11,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import {useQueryClient} from '@tanstack/react-query';
 import cx from 'classnames';
 
-import {QueryServiceClient} from '@parca/client';
 import {useGrpcMetadata} from '@parca/components';
-import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
-import {LabelProvider, useLabels} from '../contexts/SimpleMatchersLabelContext';
-import {useUtilizationLabels} from '../contexts/UtilizationLabelsContext';
+import {useUnifiedLabels} from '../contexts/UnifiedLabelsContext';
+import {transformLabelName} from '../contexts/utils';
 import Select, {type SelectItem} from './Select';
 
 interface Props {
-  queryClient: QueryServiceClient;
-  setMatchersString: (arg: string) => void;
-  runQuery: () => void;
-  currentQuery: Query;
-  profileType: string;
   queryBrowserRef: React.RefObject<HTMLDivElement>;
-  start?: number;
-  end?: number;
   searchExecutedTimestamp?: number;
 }
 
@@ -47,22 +38,12 @@ interface QueryRow {
   isLoading: boolean;
 }
 
-const trimOtelPrefix = (labelName: string): string => {
-  if (labelName.startsWith('attributes_resource.')) {
-    return labelName.replace('attributes_resource.', '');
-  }
-  if (labelName.startsWith('attributes.')) {
-    return labelName.replace('attributes.', '');
-  }
-  return labelName;
-};
-
 export const transformLabelsForSelect = (labelNames: string[]): SelectItem[] => {
   return labelNames.map(labelName => ({
     key: labelName,
     element: {
-      active: <>{trimOtelPrefix(labelName)}</>,
-      expanded: <>{trimOtelPrefix(labelName)}</>,
+      active: <>{transformLabelName(labelName)}</>,
+      expanded: <>{transformLabelName(labelName)}</>,
     },
   }));
 };
@@ -115,16 +96,10 @@ const operatorOptions = [
 ];
 
 const SimpleMatchers = ({
-  queryClient,
-  setMatchersString,
-  currentQuery,
-  profileType,
   queryBrowserRef,
-  start,
-  end,
+
   searchExecutedTimestamp,
 }: Props): JSX.Element => {
-  const utilizationLabels = useUtilizationLabels();
   const [queryRows, setQueryRows] = useState<QueryRow[]>([
     {labelName: '', operator: '=', labelValue: '', labelValues: [], isLoading: false},
   ]);
@@ -142,6 +117,18 @@ const SimpleMatchers = ({
     }
   }, [searchExecutedTimestamp]);
 
+  const {
+    labelNameMappingsForSimpleMatchers: labelNameOptions,
+    isLabelNamesLoading: labelNamesLoading,
+    refetchLabelNames,
+    currentQuery,
+    queryClient,
+    setMatchersString,
+    profileType,
+    start,
+    end,
+  } = useUnifiedLabels();
+
   const visibleRows = showAll || isActivelyEditing ? queryRows : queryRows.slice(0, 3);
   const hiddenRowsCount = queryRows.length - 3;
 
@@ -151,7 +138,11 @@ const SimpleMatchers = ({
 
   const fetchLabelValues = useCallback(
     async (labelName: string): Promise<string[]> => {
-      if (labelName == null || labelName === '' || profileType == null || profileType === '') {
+      if (labelName == null || labelName === '') {
+        return [];
+      }
+
+      if (profileType == null || profileType === '') {
         return [];
       }
       try {
@@ -186,13 +177,6 @@ const SimpleMatchers = ({
     [queryClient, metadata, profileType, reactQueryClient, start, end]
   );
 
-  const fetchLabelValuesUtilization = useCallback(
-    async (labelName: string): Promise<string[]> => {
-      return (await utilizationLabels?.utilizationFetchLabelValues?.(labelName)) ?? [];
-    },
-    [utilizationLabels]
-  );
-
   const updateMatchersString = useCallback(
     (rows: QueryRow[]) => {
       const matcherString = rows
@@ -203,13 +187,6 @@ const SimpleMatchers = ({
     },
     [setMatchersString]
   );
-
-  const {
-    labelNameOptions,
-    isLoading: labelNamesLoading,
-    refetchLabelValues,
-    refetchLabelNames,
-  } = useLabels();
 
   // Helper to ensure selected label name is in the options (for page load before API returns)
   const getLabelNameOptionsWithSelected = useCallback(
@@ -276,16 +253,9 @@ const SimpleMatchers = ({
 
   const fetchLabelValuesUnified = useCallback(
     async (labelName: string): Promise<string[]> => {
-      const labelType = labelNameOptions.find(option =>
-        option.values.some(e => e.key === labelName)
-      )?.type;
-      const labelValues =
-        labelType === 'gpu'
-          ? await fetchLabelValuesUtilization(labelName)
-          : await fetchLabelValues(labelName);
-      return labelValues;
+      return await fetchLabelValues(labelName);
     },
-    [fetchLabelValues, fetchLabelValuesUtilization, labelNameOptions]
+    [fetchLabelValues]
   );
 
   useEffect(() => {
@@ -306,7 +276,7 @@ const SimpleMatchers = ({
     const fetchAndSetQueryRows = async (): Promise<void> => {
       const newRows = await Promise.all(
         currentMatchers.split(',').map(async matcher => {
-          const match = matcher.match(/([^=!~]+)([=!~]{1,2})(.+)/);
+          const match = matcher.match(/^([^=!~]+)([=!~]{1,2})(.+)$/);
           if (match === null) return null;
 
           const [, labelName, operator, labelValue] = match;
@@ -440,6 +410,13 @@ const SimpleMatchers = ({
 
   const isRowRegex = (row: QueryRow): boolean => row.operator === '=~' || row.operator === '!~';
 
+  const handleRefetchForLabelValues = useCallback(
+    async (labelName: string): Promise<void> => {
+      await fetchLabelValuesUnified(labelName);
+    },
+    [fetchLabelValuesUnified]
+  );
+
   return (
     <div
       className={`flex items-center gap-3 ${maxWidthInPixels} w-full flex-wrap`}
@@ -485,7 +462,7 @@ const SimpleMatchers = ({
             onButtonClick={() => handleLabelValueClick(index)}
             editable={isRowRegex(row)}
             {...testId(TEST_IDS.LABEL_VALUE_SELECT)}
-            refetchValues={async () => await refetchLabelValues(row.labelName)}
+            refetchValues={async () => await handleRefetchForLabelValues(row.labelName)}
             showLoadingInButton={true}
           />
           <button
@@ -530,24 +507,4 @@ const SimpleMatchers = ({
   );
 };
 
-export default function SimpleMathersWithProvider(props: Props): JSX.Element {
-  const labelNameFromMatchers = useMemo(() => {
-    if (props.currentQuery === undefined) return [];
-
-    const matchers = props.currentQuery.matchers;
-
-    return matchers.map(matcher => matcher.key);
-  }, [props.currentQuery]);
-
-  return (
-    <LabelProvider
-      queryClient={props.queryClient}
-      profileType={props.profileType}
-      labelNameFromMatchers={labelNameFromMatchers}
-      start={props.start}
-      end={props.end}
-    >
-      <SimpleMatchers {...props} />
-    </LabelProvider>
-  );
-}
+export default SimpleMatchers;

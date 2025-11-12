@@ -11,11 +11,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useLabelNames} from './MatchersInput';
+import MetricsGraph, {type ContextMenuItemOrSubmenu, type Series} from './MetricsGraph';
 import ProfileExplorer, {getExpressionAsAString} from './ProfileExplorer';
 import ProfileTypeSelector from './ProfileTypeSelector';
-import SelectWithRefresh from './SelectWithRefresh';
+import {SelectWithRefresh} from './SelectWithRefresh';
 import CustomSelect from './SimpleMatchers/Select';
+import {LabelsQueryProvider, useLabelsQueryProvider} from './contexts/LabelsQueryProvider';
+import {UnifiedLabelsProvider, useUnifiedLabels} from './contexts/UnifiedLabelsContext';
+import {useLabelNames} from './hooks/useLabels';
+
+export {useMetricsGraphDimensions} from './MetricsGraph/useMetricsGraphDimensions';
 
 export * from './ProfileFlameGraph';
 export * from './ProfileSource';
@@ -30,6 +35,7 @@ export * from './ProfileTypeSelector';
 export * from './SourceView';
 export * from './ProfileMetricsGraph';
 export * from './useSumBy';
+export {QueryControls} from './QueryControls';
 
 export {default as ProfileFilters} from './ProfileView/components/ProfileFilters';
 export {useProfileFiltersUrlState} from './ProfileView/components/ProfileFilters/useProfileFiltersUrlState';
@@ -45,4 +51,11 @@ export {
   CustomSelect,
   SelectWithRefresh,
   useLabelNames,
+  MetricsGraph,
+  type ContextMenuItemOrSubmenu,
+  type Series,
+  LabelsQueryProvider,
+  useLabelsQueryProvider,
+  UnifiedLabelsProvider,
+  useUnifiedLabels,
 };
