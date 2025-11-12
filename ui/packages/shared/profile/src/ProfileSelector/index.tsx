@@ -33,7 +33,6 @@ import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensio
 import {UtilizationLabelsProvider} from '../contexts/UtilizationLabelsContext';
 import {useQueryState} from '../hooks/useQueryState';
 import useGrpcQuery from '../useGrpcQuery';
-import {useDefaultSumBy, useSumBySelection} from '../useSumBy';
 import {MetricsGraphSection} from './MetricsGraphSection';
 import {QueryControls} from './QueryControls';
 import {useAutoQuerySelector} from './useAutoQuerySelector';
@@ -162,7 +161,8 @@ const ProfileSelector = ({
     commitDraft,
     profileSelection,
     setProfileSelection,
-  } = useQueryState({suffix});
+    sumByLoading,
+  } = useQueryState({suffix, queryClient});
 
   // Use draft state for local state instead of committed state
   const [timeRangeSelection, setTimeRangeSelection] = useState(
@@ -206,42 +206,10 @@ const ProfileSelector = ({
     result,
     refetch,
   } = useLabelNames(queryClient, profileType.toString(), from, to);
-  const {loading: selectedLabelNamesLoading, result: selectedLabelNamesResult} = useLabelNames(
-    queryClient,
-    selectedProfileType.toString(),
-    from,
-    to
-  );
 
   const labels = useMemo(() => {
     return result.response?.labelNames === undefined ? [] : result.response.labelNames;
   }, [result]);
-
-  const selectedLabels = useMemo(() => {
-    return selectedLabelNamesResult.response?.labelNames === undefined
-      ? []
-      : selectedLabelNamesResult.response.labelNames;
-  }, [selectedLabelNamesResult]);
-
-  const [sumBySelection, setUserSumBySelectionInternal, {isLoading: sumBySelectionLoading}] =
-    useSumBySelection(profileType, labelNamesLoading, labels, {
-      defaultValue: draftSelection.sumBy,
-    });
-
-  // Handler to update both local state and draft when labels change
-  const setUserSumBySelection = useCallback(
-    (sumBy: string[]) => {
-      setUserSumBySelectionInternal(sumBy);
-      setDraftSumBy(sumBy);
-    },
-    [setUserSumBySelectionInternal, setDraftSumBy]
-  );
-
-  const {defaultSumBy, isLoading: defaultSumByLoading} = useDefaultSumBy(
-    selectedProfileType,
-    selectedLabelNamesLoading,
-    selectedLabels
-  );
 
   useEffect(() => {
     if (enforcedProfileName !== '') {
@@ -315,9 +283,9 @@ const ProfileSelector = ({
     profileTypesData,
     setProfileName,
     setQueryExpression,
-    querySelection: {...querySelection, sumBy: sumBySelection},
+    querySelection,
     navigateTo,
-    loading: sumBySelectionLoading,
+    loading: sumByLoading,
   });
 
   const searchDisabled =
@@ -354,9 +322,9 @@ const ProfileSelector = ({
             queryClient={queryClient}
             sumByRef={sumByRef}
             labels={labels}
-            sumBySelection={sumBySelection ?? []}
-            sumBySelectionLoading={sumBySelectionLoading}
-            setUserSumBySelection={setUserSumBySelection}
+            sumBySelection={draftSelection.sumBy ?? []}
+            sumBySelectionLoading={sumByLoading}
+            setUserSumBySelection={setDraftSumBy}
             profileType={profileType}
             profileTypesError={error}
             viewComponent={viewComponent}
@@ -383,8 +351,8 @@ const ProfileSelector = ({
           querySelection={querySelection}
           profileSelection={profileSelection}
           comparing={comparing}
-          sumBy={querySelection.sumBy ?? defaultSumBy ?? []}
-          defaultSumByLoading={defaultSumByLoading}
+          sumBy={querySelection.sumBy ?? []}
+          defaultSumByLoading={sumByLoading}
           queryClient={queryClient}
           queryExpressionString={queryExpressionString}
           setTimeRangeSelection={handleTimeRangeChange}

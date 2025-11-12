@@ -13,7 +13,11 @@
 
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
+import {QueryServiceClient} from '@parca/client';
+import {DateTimeRange} from '@parca/components';
 import {ProfileType} from '@parca/parser';
+
+import {useLabelNames} from './MatchersInput/index';
 
 export const DEFAULT_EMPTY_SUM_BY: string[] = [];
 
@@ -176,4 +180,43 @@ export const sumByToParam = (sumBy: string[] | undefined): string | string[] | u
   }
 
   return sumBy;
+};
+
+// Combined hook that handles all sumBy logic: fetching labels, computing defaults, and managing selection
+export const useSumBy = (
+  queryClient: QueryServiceClient | undefined,
+  profileType: ProfileType | undefined,
+  timeRange: DateTimeRange,
+  defaultValue?: string[]
+): {
+  sumBy: string[] | undefined;
+  setSumBy: (sumBy: string[]) => void;
+  isLoading: boolean;
+} => {
+  const {loading: labelNamesLoading, result} =
+    queryClient !== undefined
+      ? useLabelNames(
+          queryClient,
+          profileType?.toString() ?? '',
+          timeRange.getFromMs(),
+          timeRange.getToMs()
+        )
+      : {loading: false, result: {response: {labelNames: []}}};
+
+  const labels = useMemo(() => {
+    return result.response?.labelNames === undefined ? [] : result.response.labelNames;
+  }, [result]);
+
+  const [sumBySelection, setSumByInternal, {isLoading}] = useSumBySelection(
+    profileType,
+    labelNamesLoading,
+    labels,
+    {defaultValue}
+  );
+
+  return {
+    sumBy: sumBySelection,
+    setSumBy: setSumByInternal,
+    isLoading,
+  };
 };

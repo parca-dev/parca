@@ -13,12 +13,13 @@
 
 import {useCallback, useEffect, useMemo, useState} from 'react';
 
+import {QueryServiceClient} from '@parca/client';
 import {DateTimeRange, useURLState, useURLStateBatch} from '@parca/components';
 import {Query} from '@parca/parser';
 
 import {QuerySelection} from '../ProfileSelector';
 import {ProfileSelection, ProfileSelectionFromParams, ProfileSource} from '../ProfileSource';
-import {sumByToParam, useSumByFromParams} from '../useSumBy';
+import {sumByToParam, useSumByFromParams, useSumBy} from '../useSumBy';
 
 interface UseQueryStateOptions {
   suffix?: '_a' | '_b'; // For comparison mode
@@ -27,6 +28,7 @@ interface UseQueryStateOptions {
   defaultFrom?: number;
   defaultTo?: number;
   comparing?: boolean; // If true, don't auto-select for delta profiles
+  queryClient?: QueryServiceClient; // For fetching label names
 }
 
 interface UseQueryStateReturn {
@@ -37,7 +39,7 @@ interface UseQueryStateReturn {
   draftSelection: QuerySelection;
 
   // Draft setters (update local state only)
-  setDraftExpression: (expression: string) => void;
+  setDraftExpression: (expression: string, commit?: boolean) => void;
   setDraftTimeRange: (from: number, to: number, timeSelection: string) => void;
   setDraftSumBy: (sumBy: string[] | undefined) => void;
   setDraftProfileName: (profileName: string) => void;
@@ -54,6 +56,9 @@ interface UseQueryStateReturn {
 
   // ProfileSelection setter (auto-commits to URL)
   setProfileSelection: (mergeFrom: bigint, mergeTo: bigint, query: Query) => void;
+
+  // Loading state for sumBy computation
+  sumByLoading: boolean;
 }
 
 export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryStateReturn => {
@@ -64,6 +69,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     defaultFrom,
     defaultTo,
     comparing = false,
+    queryClient,
   } = options;
 
   const batchUpdates = useURLStateBatch();
@@ -138,7 +144,22 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
   const draftProfileType = useMemo(() => draftQuery.profileType(), [draftQuery]);
   const draftProfileName = useMemo(() => draftQuery.profileName(), [draftQuery]);
 
-  // Construct the QuerySelection object
+  // Compute draft time range for label fetching
+  const draftTimeRange = useMemo(() => {
+    return DateTimeRange.fromRangeKey(
+      draftTimeSelection ?? defaultTimeSelection,
+      draftFrom !== '' ? parseInt(draftFrom) : defaultFrom,
+      draftTo !== '' ? parseInt(draftTo) : defaultTo
+    );
+  }, [draftTimeSelection, draftFrom, draftTo, defaultTimeSelection, defaultFrom, defaultTo]);
+
+  // Use combined sumBy hook for fetching labels and computing defaults (based on committed state)
+  const {
+    sumBy: computedSumByFromURL,
+    isLoading: sumBySelectionLoading,
+  } = useSumBy(queryClient, draftProfileType, draftTimeRange, sumBy);
+
+  // Construct the QuerySelection object (committed state from URL)
   const querySelection: QuerySelection = useMemo(() => {
     const range = DateTimeRange.fromRangeKey(
       timeSelection ?? defaultTimeSelection,
@@ -151,7 +172,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
       from: range.getFromMs(),
       to: range.getToMs(),
       timeSelection: range.getRangeKey(),
-      sumBy,
+      sumBy: computedSumByFromURL,
       ...(mergeFrom !== undefined && mergeFrom !== '' && mergeTo !== undefined && mergeTo !== ''
         ? {mergeFrom, mergeTo}
         : {}),
@@ -161,7 +182,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     from,
     to,
     timeSelection,
-    sumBy,
+    computedSumByFromURL,
     mergeFrom,
     mergeTo,
     defaultExpression,
@@ -170,26 +191,22 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     defaultTo,
   ]);
 
-  // Construct the draft QuerySelection object
+  // Construct the draft QuerySelection object (local draft state)
   const draftSelection: QuerySelection = useMemo(() => {
-    const range = DateTimeRange.fromRangeKey(
-      draftTimeSelection ?? defaultTimeSelection,
-      draftFrom !== '' ? parseInt(draftFrom) : defaultFrom,
-      draftTo !== '' ? parseInt(draftTo) : defaultTo
-    );
-
     const isDelta = draftProfileType.delta;
     const draftMergeFrom = isDelta
-      ? (BigInt(range.getFromMs()) * 1_000_000n).toString()
+      ? (BigInt(draftTimeRange.getFromMs()) * 1_000_000n).toString()
       : undefined;
-    const draftMergeTo = isDelta ? (BigInt(range.getToMs()) * 1_000_000n).toString() : undefined;
+    const draftMergeTo = isDelta
+      ? (BigInt(draftTimeRange.getToMs()) * 1_000_000n).toString()
+      : undefined;
 
     return {
       expression: draftExpression ?? defaultExpression,
-      from: range.getFromMs(),
-      to: range.getToMs(),
-      timeSelection: range.getRangeKey(),
-      sumBy: draftSumBy,
+      from: draftTimeRange.getFromMs(),
+      to: draftTimeRange.getToMs(),
+      timeSelection: draftTimeRange.getRangeKey(),
+      sumBy: draftSumBy ?? computedSumByFromURL, // Use draft if set, otherwise fallback to computed
       ...(draftMergeFrom !== undefined &&
       draftMergeFrom !== '' &&
       draftMergeTo !== undefined &&
@@ -199,15 +216,11 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     };
   }, [
     draftExpression,
-    draftFrom,
-    draftTo,
-    draftTimeSelection,
+    draftTimeRange,
     draftSumBy,
+    computedSumByFromURL,
     draftProfileType.delta,
     defaultExpression,
-    defaultTimeSelection,
-    defaultFrom,
-    defaultTo,
   ]);
 
   // Compute ProfileSelection from URL params
@@ -394,5 +407,8 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     profileSelection,
     profileSource,
     setProfileSelection,
+
+    // Loading state
+    sumByLoading: sumBySelectionLoading,
   };
 };
