@@ -136,7 +136,11 @@ const ContextMenu = ({
     }
 
     if (!successful) {
-      alert('Copy failed. Please copy manually: ' + text.substring(0, 100) + (text.length > 100 ? '...' : ''));
+      alert(
+        'Copy failed. Please copy manually: ' +
+          text.substring(0, 100) +
+          (text.length > 100 ? '...' : '')
+      );
     }
   };
 
