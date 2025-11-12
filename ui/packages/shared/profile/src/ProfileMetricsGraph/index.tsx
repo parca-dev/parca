@@ -209,7 +209,7 @@ const ProfileMetricsGraph = ({
     isLoading: metricsGraphLoading,
     response,
     error,
-  } = useQueryRange(queryClient, queryExpression, from, to, sumBy);
+  } = useQueryRange(queryClient, queryExpression, from, to, sumBy, queryExpression === '');
   const {onError, perf, authenticationErrorMessage, isDarkMode, timezone} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(comparing);
   const [showAllSeriesForResponse, setShowAllSeriesForResponse] = useState<typeof response | null>(
