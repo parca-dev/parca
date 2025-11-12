@@ -19,7 +19,7 @@ import {Query} from '@parca/parser';
 
 import {QuerySelection} from '../ProfileSelector';
 import {ProfileSelection, ProfileSelectionFromParams, ProfileSource} from '../ProfileSource';
-import {sumByToParam, useSumByFromParams, useSumBy} from '../useSumBy';
+import {sumByToParam, useSumBy, useSumByFromParams} from '../useSumBy';
 
 interface UseQueryStateOptions {
   suffix?: '_a' | '_b'; // For comparison mode
@@ -154,10 +154,12 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
   }, [draftTimeSelection, draftFrom, draftTo, defaultTimeSelection, defaultFrom, defaultTo]);
 
   // Use combined sumBy hook for fetching labels and computing defaults (based on committed state)
-  const {
-    sumBy: computedSumByFromURL,
-    isLoading: sumBySelectionLoading,
-  } = useSumBy(queryClient, draftProfileType, draftTimeRange, sumBy);
+  const {sumBy: computedSumByFromURL, isLoading: sumBySelectionLoading} = useSumBy(
+    queryClient,
+    draftProfileType,
+    draftTimeRange,
+    sumBy
+  );
 
   // Construct the QuerySelection object (committed state from URL)
   const querySelection: QuerySelection = useMemo(() => {
