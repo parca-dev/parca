@@ -108,7 +108,36 @@ const ContextMenu = ({
     return isGraphTooltipDocked ? setIsDocked(false) : setIsDocked(true);
   };
   const handleCopyItem = (text: string): void => {
-    void navigator.clipboard.writeText(text);
+    if (navigator.clipboard?.writeText) {
+      void navigator.clipboard.writeText(text).catch(() => {
+        // Fallback to legacy method if modern API fails
+        copyWithLegacyMethod(text);
+      });
+    } else {
+      // Use legacy method if modern API not available
+      copyWithLegacyMethod(text);
+    }
+  };
+
+  const copyWithLegacyMethod = (text: string): void => {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    let successful = false;
+    try {
+      successful = document.execCommand('copy');
+    } catch {
+      // Copy failed
+    } finally {
+      document.body.removeChild(textArea);
+    }
+
+    if (!successful) {
+      alert('Copy failed. Please copy manually: ' + text.substring(0, 100) + (text.length > 100 ? '...' : ''));
+    }
   };
 
   const functionName =
