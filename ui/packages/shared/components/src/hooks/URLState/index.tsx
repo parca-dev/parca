@@ -83,7 +83,11 @@ export const URLStateProvider = ({
   useEffect(() => {
     const currentURL = window.location.search;
 
-    if (currentURL === lastSyncedURLRef.current) {
+    // Normalize URLs for comparison (+ and %20 both represent spaces)
+    const normalizedCurrentURL = currentURL.replace(/\+/g, '%20');
+    const normalizedLastSyncedURL = lastSyncedURLRef.current.replace(/\+/g, '%20');
+
+    if (normalizedCurrentURL === normalizedLastSyncedURL) {
       return;
     }
 

@@ -14,7 +14,7 @@
 import cx from 'classnames';
 
 import {Label, QueryServiceClient} from '@parca/client';
-import {DateTimeRange} from '@parca/components';
+import { DateTimeRange, useURLStateBatch } from '@parca/components';
 import {Query} from '@parca/parser';
 
 import {ProfileSelection} from '..';
@@ -71,6 +71,7 @@ export function MetricsGraphSection({
   onUtilizationSeriesSelect,
 }: MetricsGraphSectionProps): JSX.Element {
   const resetStateOnSeriesChange = useResetStateOnSeriesChange();
+  const batchUpdates = useURLStateBatch();
   const handleTimeRangeChange = (range: DateTimeRange): void => {
     const from = range.getFromMs();
     const to = range.getToMs();
@@ -140,9 +141,10 @@ export function MetricsGraphSection({
 
     const mergeFrom = timestamp;
     const mergeTo = query.profileType().delta ? mergeFrom + BigInt(duration) : mergeFrom;
-
-    resetStateOnSeriesChange(); // reset some state when a new series is selected
-    setProfileSelection(mergeFrom, mergeTo, query);
+    batchUpdates(() => {
+      resetStateOnSeriesChange(); // reset some state when a new series is selected
+      setProfileSelection(mergeFrom, mergeTo, query);
+    });
   };
 
   const UtilizationGraphToShow = ({
