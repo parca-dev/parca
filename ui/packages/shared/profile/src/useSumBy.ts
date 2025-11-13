@@ -184,7 +184,7 @@ export const sumByToParam = (sumBy: string[] | undefined): string | string[] | u
 
 // Combined hook that handles all sumBy logic: fetching labels, computing defaults, and managing selection
 export const useSumBy = (
-  queryClient: QueryServiceClient | undefined,
+  queryClient: QueryServiceClient,
   profileType: ProfileType | undefined,
   timeRange: DateTimeRange,
   defaultValue?: string[]
@@ -193,15 +193,12 @@ export const useSumBy = (
   setSumBy: (sumBy: string[]) => void;
   isLoading: boolean;
 } => {
-  const {loading: labelNamesLoading, result} =
-    queryClient !== undefined
-      ? useLabelNames(
-          queryClient,
-          profileType?.toString() ?? '',
-          timeRange.getFromMs(),
-          timeRange.getToMs()
-        )
-      : {loading: false, result: {response: {labelNames: []}}};
+  const {loading: labelNamesLoading, result} = useLabelNames(
+    queryClient,
+    profileType?.toString() ?? '',
+    timeRange.getFromMs(),
+    timeRange.getToMs()
+  );
 
   const labels = useMemo(() => {
     return result.response?.labelNames === undefined ? [] : result.response.labelNames;

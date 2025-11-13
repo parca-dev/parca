@@ -188,10 +188,6 @@ const ProfileSelector = ({
     return Query.parse(queryExpressionString).profileType();
   }, [queryExpressionString]);
 
-  const selectedProfileType = useMemo(() => {
-    return Query.parse(querySelection.expression).profileType();
-  }, [querySelection.expression]);
-
   const from = timeRangeSelection.getFromMs();
   const to = timeRangeSelection.getToMs();
 
@@ -201,11 +197,7 @@ const ProfileSelector = ({
     error,
   } = useProfileTypes(queryClient, from, to);
 
-  const {
-    loading: labelNamesLoading,
-    result,
-    refetch,
-  } = useLabelNames(queryClient, profileType.toString(), from, to);
+  const {result, refetch} = useLabelNames(queryClient, profileType.toString(), from, to);
 
   const labels = useMemo(() => {
     return result.response?.labelNames === undefined ? [] : result.response.labelNames;
