@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useURLState} from '@parca/components';
+import {useURLState, useURLStateBatch} from '@parca/components';
 
 import {useProfileFilters} from '../components/ProfileFilters/useProfileFilters';
 
@@ -20,9 +20,11 @@ export const useResetStateOnProfileTypeChange = (): (() => void) => {
   const [curPath, setCurPath] = useURLState('cur_path');
   const {resetFilters} = useProfileFilters();
   const [sandwichFunctionName, setSandwichFunctionName] = useURLState('sandwich_function_name');
+  const batchUpdates = useURLStateBatch();
 
   return () => {
-    setTimeout(() => {
+    // Batch all URL state resets into a single navigation
+    batchUpdates(() => {
       if (groupBy !== undefined) {
         setGroupBy(undefined);
       }

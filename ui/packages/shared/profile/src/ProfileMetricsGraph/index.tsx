@@ -77,34 +77,31 @@ const createProfileContextMenuItems = (
       label: 'Add to query',
       icon: 'material-symbols:add',
       createDynamicItems: (closestPoint, _series) => {
+        const noLabelsAvailable = [
+          {
+            id: 'no-labels-available',
+            label: 'No labels available',
+            icon: 'ph:warning',
+            disabled: () => true,
+            onClick: () => {}, // No-op for disabled item
+          },
+        ];
         if (closestPoint == null || data.length === 0 || data[closestPoint.seriesIndex] == null) {
-          return [
-            {
-              id: 'no-labels-available',
-              label: 'No labels available',
-              icon: 'ph:warning',
-              disabled: () => true,
-              onClick: () => {}, // No-op for disabled item
-            },
-          ];
+          return noLabelsAvailable;
         }
 
         const originalSeriesData = data[closestPoint.seriesIndex];
         if (originalSeriesData.labelset?.labels == null) {
-          return [
-            {
-              id: 'no-labels-available',
-              label: 'No labels available',
-              icon: 'ph:warning',
-              disabled: () => true,
-              onClick: () => {}, // No-op for disabled item
-            },
-          ];
+          return noLabelsAvailable;
         }
 
         const labels = originalSeriesData.labelset.labels.filter(
           (label: Label) => label.name !== '__name__'
         );
+
+        if (labels.length === 0) {
+          return noLabelsAvailable;
+        }
 
         return labels.map((label: Label) => ({
           id: `add-label-${label.name}`,
@@ -207,13 +204,12 @@ const ProfileMetricsGraph = ({
   onPointClick,
   comparing = false,
   sumBy,
-  sumByLoading,
 }: ProfileMetricsGraphProps): JSX.Element => {
   const {
     isLoading: metricsGraphLoading,
     response,
     error,
-  } = useQueryRange(queryClient, queryExpression, from, to, sumBy, sumByLoading);
+  } = useQueryRange(queryClient, queryExpression, from, to, sumBy, queryExpression === '');
   const {onError, perf, authenticationErrorMessage, isDarkMode, timezone} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(comparing);
   const [showAllSeriesForResponse, setShowAllSeriesForResponse] = useState<typeof response | null>(

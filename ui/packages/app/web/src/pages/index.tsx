@@ -14,13 +14,13 @@
 import {useCallback} from 'react';
 
 import {GrpcWebFetchTransport} from '@protobuf-ts/grpcweb-transport';
-import {useLocation, useNavigate} from 'react-router-dom';
+import {useNavigate} from 'react-router-dom';
 
 import {QueryServiceClient} from '@parca/client';
 import {ParcaContextProvider, Spinner, URLStateProvider} from '@parca/components';
 import {DEFAULT_PROFILE_EXPLORER_PARAM_VALUES, ProfileExplorer} from '@parca/profile';
 import {selectDarkMode, useAppSelector} from '@parca/store';
-import {convertToQueryParams, parseParams} from '@parca/utilities';
+import {convertToQueryParams} from '@parca/utilities';
 
 const apiEndpoint = import.meta.env.VITE_API_ENDPOINT;
 
@@ -31,7 +31,6 @@ const queryClient = new QueryServiceClient(
 );
 
 const Profiles = () => {
-  const location = useLocation();
   const navigate = useNavigate();
   const isDarkMode = useAppSelector(selectDarkMode);
 
@@ -47,10 +46,11 @@ const Profiles = () => {
     [navigate]
   );
 
-  const queryParams = parseParams(location.search);
-
   return (
-    <URLStateProvider navigateTo={navigateTo} defaultValues={DEFAULT_PROFILE_EXPLORER_PARAM_VALUES}>
+    <URLStateProvider
+      navigateTo={navigateTo}
+      paramPreferences={DEFAULT_PROFILE_EXPLORER_PARAM_VALUES}
+    >
       <ParcaContextProvider
         value={{
           Spinner,
@@ -61,11 +61,7 @@ const Profiles = () => {
         }}
       >
         <div className="bg-white dark:bg-gray-900 p-3">
-          <ProfileExplorer
-            queryClient={queryClient}
-            queryParams={queryParams}
-            navigateTo={navigateTo}
-          />
+          <ProfileExplorer queryClient={queryClient} navigateTo={navigateTo} />
         </div>
       </ParcaContextProvider>
     </URLStateProvider>

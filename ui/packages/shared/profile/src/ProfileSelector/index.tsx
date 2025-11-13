@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Dispatch, SetStateAction, useEffect, useMemo, useRef, useState} from 'react';
+import {Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 
@@ -28,12 +28,11 @@ import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 import {millisToProtoTimestamp, type NavigateFunction} from '@parca/utilities';
 
-import {ProfileSelection} from '..';
 import {useLabelNames} from '../MatchersInput/index';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
 import {UtilizationLabelsProvider} from '../contexts/UtilizationLabelsContext';
+import {useQueryState} from '../hooks/useQueryState';
 import useGrpcQuery from '../useGrpcQuery';
-import {useDefaultSumBy, useSumBySelection} from '../useSumBy';
 import {MetricsGraphSection} from './MetricsGraphSection';
 import {QueryControls} from './QueryControls';
 import {useAutoQuerySelector} from './useAutoQuerySelector';
@@ -79,16 +78,12 @@ export interface UtilizationLabels {
 
 interface ProfileSelectorProps extends ProfileSelectorFeatures {
   queryClient: QueryServiceClient;
-  querySelection: QuerySelection;
-  selectProfile: (source: ProfileSelection) => void;
-  selectQuery: (query: QuerySelection) => void;
   closeProfile: () => void;
   enforcedProfileName: string;
-  profileSelection: ProfileSelection | null;
   comparing: boolean;
   navigateTo: NavigateFunction;
   setDisplayHideMetricsGraphButton?: Dispatch<SetStateAction<boolean>>;
-  suffix?: string;
+  suffix?: '_a' | '_b'; // For comparison mode
   utilizationMetrics?: Array<{
     name: string;
     humanReadableName: string;
@@ -135,12 +130,8 @@ export const useProfileTypes = (
 
 const ProfileSelector = ({
   queryClient,
-  querySelection,
-  selectProfile,
-  selectQuery,
   closeProfile,
   enforcedProfileName,
-  profileSelection,
   comparing,
   navigateTo,
   showMetricsGraph = true,
@@ -148,6 +139,7 @@ const ProfileSelector = ({
   showProfileTypeSelector = true,
   disableExplorativeQuerying = false,
   setDisplayHideMetricsGraphButton,
+  suffix,
   utilizationMetrics,
   utilizationMetricsLoading,
   utilizationLabels,
@@ -157,23 +149,44 @@ const ProfileSelector = ({
   const {viewComponent} = useParcaContext();
   const [queryBrowserMode, setQueryBrowserMode] = useURLState('query_browser_mode');
 
+  // Use the new useQueryState hook - reads directly from URL params
+  const {
+    querySelection,
+    draftSelection,
+    setDraftExpression,
+    setDraftTimeRange,
+    setDraftSumBy,
+    setDraftProfileName,
+    setDraftMatchers,
+    commitDraft,
+    profileSelection,
+    setProfileSelection,
+    sumByLoading,
+  } = useQueryState({suffix});
+
+  // Use draft state for local state instead of committed state
   const [timeRangeSelection, setTimeRangeSelection] = useState(
-    DateTimeRange.fromRangeKey(querySelection.timeSelection, querySelection.from, querySelection.to)
+    DateTimeRange.fromRangeKey(draftSelection.timeSelection, draftSelection.from, draftSelection.to)
   );
 
-  const [queryExpressionString, setQueryExpressionString] = useState(querySelection.expression);
+  const [queryExpressionString, setQueryExpressionString] = useState(draftSelection.expression);
 
   const [advancedModeForQueryBrowser, setAdvancedModeForQueryBrowser] = useState(
     queryBrowserMode === 'advanced'
   );
 
+  // Handler to update draft when time range changes
+  const handleTimeRangeChange = useCallback(
+    (range: DateTimeRange) => {
+      setTimeRangeSelection(range);
+      setDraftTimeRange(range.getFromMs(), range.getToMs(), range.getRangeKey());
+    },
+    [setDraftTimeRange]
+  );
+
   const profileType = useMemo(() => {
     return Query.parse(queryExpressionString).profileType();
   }, [queryExpressionString]);
-
-  const selectedProfileType = useMemo(() => {
-    return Query.parse(querySelection.expression).profileType();
-  }, [querySelection.expression]);
 
   const from = timeRangeSelection.getFromMs();
   const to = timeRangeSelection.getToMs();
@@ -184,38 +197,11 @@ const ProfileSelector = ({
     error,
   } = useProfileTypes(queryClient, from, to);
 
-  const {
-    loading: labelNamesLoading,
-    result,
-    refetch,
-  } = useLabelNames(queryClient, profileType.toString(), from, to);
-  const {loading: selectedLabelNamesLoading, result: selectedLabelNamesResult} = useLabelNames(
-    queryClient,
-    selectedProfileType.toString(),
-    from,
-    to
-  );
+  const {result, refetch} = useLabelNames(queryClient, profileType.toString(), from, to);
 
   const labels = useMemo(() => {
     return result.response?.labelNames === undefined ? [] : result.response.labelNames;
   }, [result]);
-
-  const selectedLabels = useMemo(() => {
-    return selectedLabelNamesResult.response?.labelNames === undefined
-      ? []
-      : selectedLabelNamesResult.response.labelNames;
-  }, [selectedLabelNamesResult]);
-
-  const [sumBySelection, setUserSumBySelection, {isLoading: sumBySelectionLoading}] =
-    useSumBySelection(profileType, labelNamesLoading, labels, {
-      defaultValue: querySelection.sumBy,
-    });
-
-  const {defaultSumBy, isLoading: defaultSumByLoading} = useDefaultSumBy(
-    selectedProfileType,
-    selectedLabelNamesLoading,
-    selectedLabels
-  );
 
   useEffect(() => {
     if (enforcedProfileName !== '') {
@@ -240,41 +226,37 @@ const ProfileSelector = ({
     enforcedProfileName !== '' ? enforcedProfileNameQuery() : Query.parse(queryExpressionString);
   const selectedProfileName = query.profileName();
 
-  const setNewQueryExpression = (expr: string, updateTs = false): void => {
-    const query = enforcedProfileName !== '' ? enforcedProfileNameQuery() : Query.parse(expr);
-    const delta = query.profileType().delta;
-    const from = timeRangeSelection.getFromMs(updateTs);
-    const to = timeRangeSelection.getToMs(updateTs);
-    const mergeParams = delta
-      ? {
-          mergeFrom: (BigInt(from) * 1_000_000n).toString(),
-          mergeTo: (BigInt(to) * 1_000_000n).toString(),
-        }
-      : {};
-
-    selectQuery({
-      expression: expr,
-      from,
-      to,
-      timeSelection: timeRangeSelection.getRangeKey(),
-      sumBy: sumBySelection,
-      ...mergeParams,
-    });
-  };
-
   const setQueryExpression = (updateTs = false): void => {
-    setNewQueryExpression(query.toString(), updateTs);
+    // When updateTs is true, re-evaluate the time range to current values
+    if (updateTs) {
+      // Force re-evaluation of time range (important for relative ranges like "last 15 minutes")
+      const currentFrom = timeRangeSelection.getFromMs(true);
+      const currentTo = timeRangeSelection.getToMs(true);
+      const currentRangeKey = timeRangeSelection.getRangeKey();
+      // Commit with refreshed time range
+      commitDraft({
+        from: currentFrom,
+        to: currentTo,
+        timeSelection: currentRangeKey,
+      });
+    } else {
+      // Commit the draft with existing values
+      commitDraft();
+    }
   };
 
   const setMatchersString = (matchers: string): void => {
-    const newExpressionString = `${selectedProfileName}{${matchers}}`;
-    setQueryExpressionString(newExpressionString);
+    // Update draft state only
+    setDraftMatchers(matchers);
+    setQueryExpressionString(`${selectedProfileName}{${matchers}}`);
   };
 
   const setProfileName = (profileName: string | undefined): void => {
     if (profileName === undefined) {
       return;
     }
+    // Update draft state only
+    setDraftProfileName(profileName);
     const [newQuery, changed] = query.setProfileName(profileName);
     if (changed) {
       const q = newQuery.toString();
@@ -293,9 +275,9 @@ const ProfileSelector = ({
     profileTypesData,
     setProfileName,
     setQueryExpression,
-    querySelection: {...querySelection, sumBy: sumBySelection},
+    querySelection,
     navigateTo,
-    loading: sumBySelectionLoading,
+    loading: sumByLoading,
   });
 
   const searchDisabled =
@@ -323,7 +305,7 @@ const ProfileSelector = ({
             query={query}
             queryBrowserRef={queryBrowserRef}
             timeRangeSelection={timeRangeSelection}
-            setTimeRangeSelection={setTimeRangeSelection}
+            setTimeRangeSelection={handleTimeRangeChange}
             searchDisabled={searchDisabled}
             queryBrowserMode={queryBrowserMode as string}
             setQueryBrowserMode={setQueryBrowserMode}
@@ -332,9 +314,9 @@ const ProfileSelector = ({
             queryClient={queryClient}
             sumByRef={sumByRef}
             labels={labels}
-            sumBySelection={sumBySelection ?? []}
-            sumBySelectionLoading={sumBySelectionLoading}
-            setUserSumBySelection={setUserSumBySelection}
+            sumBySelection={draftSelection.sumBy ?? []}
+            sumBySelectionLoading={sumByLoading}
+            setUserSumBySelection={setDraftSumBy}
             profileType={profileType}
             profileTypesError={error}
             viewComponent={viewComponent}
@@ -361,16 +343,16 @@ const ProfileSelector = ({
           querySelection={querySelection}
           profileSelection={profileSelection}
           comparing={comparing}
-          sumBy={querySelection.sumBy ?? defaultSumBy ?? []}
-          defaultSumByLoading={defaultSumByLoading}
+          sumBy={querySelection.sumBy ?? []}
+          defaultSumByLoading={sumByLoading}
           queryClient={queryClient}
           queryExpressionString={queryExpressionString}
-          setTimeRangeSelection={setTimeRangeSelection}
-          selectQuery={selectQuery}
-          selectProfile={selectProfile}
+          setTimeRangeSelection={handleTimeRangeChange}
+          selectQuery={commitDraft}
+          setProfileSelection={setProfileSelection}
           query={query}
           setQueryExpression={setQueryExpression}
-          setNewQueryExpression={setNewQueryExpression}
+          setNewQueryExpression={setDraftExpression}
           utilizationMetrics={utilizationMetrics}
           utilizationMetricsLoading={utilizationMetricsLoading}
           onUtilizationSeriesSelect={onUtilizationSeriesSelect}

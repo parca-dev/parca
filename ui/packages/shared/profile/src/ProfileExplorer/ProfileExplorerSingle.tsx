@@ -16,40 +16,30 @@ import {useState} from 'react';
 import {QueryServiceClient} from '@parca/client';
 import type {NavigateFunction} from '@parca/utilities';
 
-import {ProfileSelection, ProfileViewWithData} from '..';
-import ProfileSelector, {QuerySelection} from '../ProfileSelector';
+import {ProfileViewWithData} from '..';
+import ProfileSelector from '../ProfileSelector';
+import {useQueryState} from '../hooks/useQueryState';
 
 interface ProfileExplorerSingleProps {
   queryClient: QueryServiceClient;
-  query: QuerySelection;
-  selectQuery: (query: QuerySelection) => void;
-  selectProfile: (source: ProfileSelection) => void;
-  profile: ProfileSelection | null;
   navigateTo: NavigateFunction;
 }
 
 const ProfileExplorerSingle = ({
   queryClient,
-  query,
-  selectQuery,
-  selectProfile,
-  profile,
   navigateTo,
 }: ProfileExplorerSingleProps): JSX.Element => {
   const [showMetricsGraph, setShowMetricsGraph] = useState(true);
+  const {profileSource} = useQueryState({suffix: '_a'});
 
   return (
     <>
       <div className="relative">
         <ProfileSelector
           queryClient={queryClient}
-          querySelection={query}
-          selectQuery={selectQuery}
-          selectProfile={selectProfile}
           closeProfile={() => {}} // eslint-disable-line @typescript-eslint/no-empty-function
-          profileSelection={profile}
           comparing={false}
-          enforcedProfileName={''} // TODO
+          enforcedProfileName={''}
           navigateTo={navigateTo}
           suffix="_a"
           showMetricsGraph={showMetricsGraph}
@@ -57,10 +47,8 @@ const ProfileExplorerSingle = ({
         />
       </div>
 
-      {profile != null ? (
-        <ProfileViewWithData queryClient={queryClient} profileSource={profile.ProfileSource()} />
-      ) : (
-        <></>
+      {profileSource != null && (
+        <ProfileViewWithData queryClient={queryClient} profileSource={profileSource} />
       )}
     </>
   );

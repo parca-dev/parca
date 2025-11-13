@@ -17,7 +17,7 @@ import {Item, Menu, Submenu} from 'react-contexify';
 
 import 'react-contexify/dist/ReactContexify.css';
 
-import {useParcaContext, useURLState} from '@parca/components';
+import {useParcaContext, useURLState, useURLStateBatch} from '@parca/components';
 import {valueFormatter} from '@parca/utilities';
 
 import {type Row} from '.';
@@ -47,13 +47,17 @@ const TableContextMenu = ({
     alwaysReturnArray: true,
   });
   const {enableSandwichView, isDarkMode} = useParcaContext();
+  const batchUpdates = useURLStateBatch();
 
   const onSandwichViewSelect = (): void => {
     if (row?.name != null && row.name.length > 0) {
-      setSandwichFunctionName(row.name.trim());
-      if (!dashboardItems.includes('sandwich')) {
-        setDashboardItems([...dashboardItems, 'sandwich']);
-      }
+      // Batch updates to combine setSandwichFunctionName + setDashboardItems into single URL navigation
+      batchUpdates(() => {
+        setSandwichFunctionName(row.name.trim());
+        if (!dashboardItems.includes('sandwich')) {
+          setDashboardItems([...dashboardItems, 'sandwich']);
+        }
+      });
     }
   };
 

@@ -14,10 +14,10 @@
 import cx from 'classnames';
 
 import {Label, QueryServiceClient} from '@parca/client';
-import {DateTimeRange} from '@parca/components';
+import {DateTimeRange, useURLStateBatch} from '@parca/components';
 import {Query} from '@parca/parser';
 
-import {MergedProfileSelection, ProfileSelection} from '..';
+import {ProfileSelection} from '..';
 import UtilizationMetricsGraph from '../MetricsGraph/UtilizationMetrics';
 import AreaChart from '../MetricsGraph/UtilizationMetrics/Throughput';
 import ProfileMetricsGraph, {ProfileMetricsEmptyState} from '../ProfileMetricsGraph';
@@ -37,9 +37,9 @@ interface MetricsGraphSectionProps {
   queryExpressionString: string;
   setTimeRangeSelection: (range: DateTimeRange) => void;
   selectQuery: (query: QuerySelection) => void;
-  selectProfile: (source: ProfileSelection) => void;
+  setProfileSelection: (mergeFrom: bigint, mergeTo: bigint, query: Query) => void;
   query: Query;
-  setNewQueryExpression: (queryExpression: string) => void;
+  setNewQueryExpression: (queryExpression: string, commit?: boolean) => void;
   setQueryExpression: (updateTs?: boolean) => void;
   utilizationMetrics?: Array<{
     name: string;
@@ -63,7 +63,7 @@ export function MetricsGraphSection({
   queryExpressionString,
   setTimeRangeSelection,
   selectQuery,
-  selectProfile,
+  setProfileSelection,
   query,
   setNewQueryExpression,
   utilizationMetrics,
@@ -71,6 +71,7 @@ export function MetricsGraphSection({
   onUtilizationSeriesSelect,
 }: MetricsGraphSectionProps): JSX.Element {
   const resetStateOnSeriesChange = useResetStateOnSeriesChange();
+  const batchUpdates = useURLStateBatch();
   const handleTimeRangeChange = (range: DateTimeRange): void => {
     const from = range.getFromMs();
     const to = range.getToMs();
@@ -118,7 +119,8 @@ export function MetricsGraphSection({
 
     if (hasChanged) {
       // TODO: Change this to store the query object
-      setNewQueryExpression(newQuery.toString());
+      // Pass commit: true to immediately apply the filter when clicking on metrics graph labels
+      setNewQueryExpression(newQuery.toString(), true);
     }
   };
 
@@ -129,6 +131,7 @@ export function MetricsGraphSection({
     duration: number
   ): void => {
     let query = Query.parse(queryExpression);
+
     labels.forEach(l => {
       const [newQuery, updated] = query.setMatcher(l.name, l.value);
       if (updated) {
@@ -138,9 +141,10 @@ export function MetricsGraphSection({
 
     const mergeFrom = timestamp;
     const mergeTo = query.profileType().delta ? mergeFrom + BigInt(duration) : mergeFrom;
-
-    resetStateOnSeriesChange(); // reset some state when a new series is selected
-    selectProfile(new MergedProfileSelection(mergeFrom, mergeTo, query));
+    batchUpdates(() => {
+      resetStateOnSeriesChange(); // reset some state when a new series is selected
+      setProfileSelection(mergeFrom, mergeTo, query);
+    });
   };
 
   const UtilizationGraphToShow = ({
@@ -235,7 +239,7 @@ export function MetricsGraphSection({
       {showMetricsGraph && (
         <>
           <div style={{height: heightStyle}}>
-            {querySelection.expression !== '' &&
+            {(querySelection.expression !== '' || defaultSumByLoading) &&
             querySelection.from !== undefined &&
             querySelection.to !== undefined ? (
               <>
