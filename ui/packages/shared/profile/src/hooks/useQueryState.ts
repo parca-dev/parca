@@ -13,8 +13,7 @@
 
 import {useCallback, useEffect, useMemo, useState} from 'react';
 
-import {QueryServiceClient} from '@parca/client';
-import {DateTimeRange, useURLState, useURLStateBatch} from '@parca/components';
+import {DateTimeRange, useParcaContext, useURLState, useURLStateBatch} from '@parca/components';
 import {Query} from '@parca/parser';
 
 import {QuerySelection} from '../ProfileSelector';
@@ -28,7 +27,6 @@ interface UseQueryStateOptions {
   defaultFrom?: number;
   defaultTo?: number;
   comparing?: boolean; // If true, don't auto-select for delta profiles
-  queryClient?: QueryServiceClient; // For fetching label names
 }
 
 interface UseQueryStateReturn {
@@ -62,6 +60,7 @@ interface UseQueryStateReturn {
 }
 
 export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryStateReturn => {
+  const {queryServiceClient: queryClient} = useParcaContext();
   const {
     suffix = '',
     defaultExpression = '',
@@ -69,7 +68,6 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     defaultFrom,
     defaultTo,
     comparing = false,
-    queryClient,
   } = options;
 
   const batchUpdates = useURLStateBatch();

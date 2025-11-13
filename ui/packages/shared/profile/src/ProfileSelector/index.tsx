@@ -162,7 +162,7 @@ const ProfileSelector = ({
     profileSelection,
     setProfileSelection,
     sumByLoading,
-  } = useQueryState({suffix, queryClient});
+  } = useQueryState({ suffix });
 
   // Use draft state for local state instead of committed state
   const [timeRangeSelection, setTimeRangeSelection] = useState(
