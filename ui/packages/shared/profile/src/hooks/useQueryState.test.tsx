@@ -69,6 +69,19 @@ vi.mock('@parca/components/src/hooks/URLState/utils', async () => {
   };
 });
 
+// Mock useSumBy to return the sumBy from URL params or undefined
+vi.mock('../useSumBy', async () => {
+  const actual = await vi.importActual('../useSumBy');
+  return {
+    ...actual,
+    useSumBy: (_queryClient: any, _profileType: any, _timeRange: any, defaultValue: any) => ({
+      sumBy: defaultValue,
+      setSumBy: vi.fn(),
+      isLoading: false,
+    }),
+  };
+});
+
 // Helper to create wrapper with URLStateProvider
 const createWrapper = (
   paramPreferences = {}
