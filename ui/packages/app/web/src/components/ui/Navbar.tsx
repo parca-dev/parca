@@ -73,6 +73,7 @@ const Navbar = () => {
     dashboard_items,
     selection_a,
     expression_a,
+    sum_by_a,
   } = queryParamsURL;
 
   const isComparePage = expressionA !== null && expressionB !== null;
@@ -130,6 +131,7 @@ const Navbar = () => {
           selection_a: selection_a,
           merge_from_a: merge_from_a,
           merge_to_a: merge_to_a,
+          ...(sum_by_a !== undefined && sum_by_a !== '' ? {sum_by_a, sum_by_b: sum_by_a} : {}),
         };
 
   return (
