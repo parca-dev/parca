@@ -87,6 +87,43 @@ export const filterPresets: FilterPreset[] = [
       },
     ],
   },
+  {
+    key: 'hide_cuda_internals',
+    name: 'Hide CUDA Internals',
+    description: 'Excludes CUDA and NVIDIA GPU driver internal functions from the profile',
+    filters: [
+      {
+        type: 'frame',
+        field: 'binary',
+        matchType: 'not_contains',
+        value: 'libcudnn_engines_precompiled.so',
+      },
+      {
+        type: 'frame',
+        field: 'binary',
+        matchType: 'not_contains',
+        value: 'libcupti.so',
+      },
+      {
+        type: 'frame',
+        field: 'binary',
+        matchType: 'not_contains',
+        value: 'libparcgpcupti.so',
+      },
+      {
+        type: 'frame',
+        field: 'binary',
+        matchType: 'not_contains',
+        value: 'libcudart.so',
+      },
+      {
+        type: 'frame',
+        field: 'binary',
+        matchType: 'not_contains',
+        value: 'libcuda.so',
+      },
+    ],
+  },
 ];
 
 const presetKeys = new Set(filterPresets.map(preset => preset.key));
