@@ -87,6 +87,81 @@ export const filterPresets: FilterPreset[] = [
       },
     ],
   },
+  {
+    key: 'hide_cuda_internals',
+    name: 'Hide CUDA Internals',
+    description: 'Excludes CUDA and NVIDIA GPU driver internal functions from the profile',
+    filters: [
+      {
+        type: 'frame',
+        field: 'binary',
+        matchType: 'not_contains',
+        value: 'libcudnn_engines_precompiled.so',
+      },
+      {
+        type: 'frame',
+        field: 'binary',
+        matchType: 'not_contains',
+        value: 'libcupti.so',
+      },
+      {
+        type: 'frame',
+        field: 'binary',
+        matchType: 'not_contains',
+        value: 'libparcgpcupti.so',
+      },
+      {
+        type: 'frame',
+        field: 'binary',
+        matchType: 'not_contains',
+        value: 'libcudart.so',
+      },
+      {
+        type: 'frame',
+        field: 'binary',
+        matchType: 'not_contains',
+        value: 'libcuda.so',
+      },
+    ],
+  },
+  {
+    key: 'hide_python_internals',
+    name: 'Hide Python Internals',
+    description: 'Excludes Python interpreter internal functions from the profile',
+    filters: [
+      {
+        type: 'frame',
+        field: 'binary',
+        matchType: 'not_contains',
+        value: 'python3',
+      },
+      {
+        type: 'frame',
+        field: 'function_name',
+        matchType: 'not_equal',
+        value: '<interpreter trampoline>',
+      },
+      {
+        type: 'frame',
+        field: 'function_name',
+        matchType: 'not_equal',
+        value: '<module>',
+      },
+    ],
+  },
+  {
+    key: 'hide_libc',
+    name: 'Hide libc',
+    description: 'Excludes C standard library functions from the profile',
+    filters: [
+      {
+        type: 'frame',
+        field: 'binary',
+        matchType: 'not_contains',
+        value: 'libc.so',
+      },
+    ],
+  },
 ];
 
 const presetKeys = new Set(filterPresets.map(preset => preset.key));
