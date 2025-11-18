@@ -149,6 +149,19 @@ export const filterPresets: FilterPreset[] = [
       },
     ],
   },
+  {
+    key: 'hide_libc',
+    name: 'Hide libc',
+    description: 'Excludes C standard library functions from the profile',
+    filters: [
+      {
+        type: 'frame',
+        field: 'binary',
+        matchType: 'not_contains',
+        value: 'libc.so',
+      },
+    ],
+  },
 ];
 
 const presetKeys = new Set(filterPresets.map(preset => preset.key));
