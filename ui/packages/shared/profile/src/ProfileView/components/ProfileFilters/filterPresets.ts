@@ -124,6 +124,31 @@ export const filterPresets: FilterPreset[] = [
       },
     ],
   },
+  {
+    key: 'hide_python_internals',
+    name: 'Hide Python Internals',
+    description: 'Excludes Python interpreter internal functions from the profile',
+    filters: [
+      {
+        type: 'frame',
+        field: 'binary',
+        matchType: 'not_contains',
+        value: 'python3',
+      },
+      {
+        type: 'frame',
+        field: 'function_name',
+        matchType: 'not_equal',
+        value: '<interpreter trampoline>',
+      },
+      {
+        type: 'frame',
+        field: 'function_name',
+        matchType: 'not_equal',
+        value: '<module>',
+      },
+    ],
+  },
 ];
 
 const presetKeys = new Set(filterPresets.map(preset => preset.key));
