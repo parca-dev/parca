@@ -79,6 +79,14 @@ export const RelativeDatePickerForPanel = ({
   // absolute date range is converted to a relative date range and we then use the `onChange` prop to
   // update the range in the `RelativeDatePicker` component below.
   useEffect(() => {
+    // Only update if the unit/value actually changed from what's in the range
+    if (range.from.isRelative()) {
+      const currentFrom = range.from as RelativeDate;
+      if (currentFrom.unit === unit && currentFrom.value === value) {
+        return;
+      }
+    }
+
     onChange(new RelativeDate(unit, value), createNow());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unit, value]);
@@ -142,6 +150,14 @@ const RelativeDatePicker = ({
   useEffect(() => {
     const formattedRange = formatRange(validRange.value, validRange.unit);
     setRangeInputString(formattedRange);
+
+    // Only update if the value actually changed from what's in the range
+    if (range.from.isRelative()) {
+      const currentFrom = range.from as RelativeDate;
+      if (currentFrom.unit === validRange.unit && currentFrom.value === validRange.value) {
+        return;
+      }
+    }
     onChange(new RelativeDate(validRange.unit, validRange.value), createNow());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [validRange]);
