@@ -92,7 +92,7 @@ interface ProfileSelectorProps extends ProfileSelectorFeatures {
   }>;
   utilizationMetricsLoading?: boolean;
   utilizationLabels?: UtilizationLabels;
-  onUtilizationSeriesSelect?: (seriesIndex: number) => void;
+  onUtilizationSeriesSelect?: (name: string, seriesIndex: number) => void;
   onSearchHook?: () => void;
 }
 
