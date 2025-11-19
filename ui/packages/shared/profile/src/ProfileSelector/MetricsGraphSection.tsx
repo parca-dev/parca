@@ -47,7 +47,7 @@ interface MetricsGraphSectionProps {
     data: UtilizationMetricsType[];
   }>;
   utilizationMetricsLoading?: boolean;
-  onUtilizationSeriesSelect?: (seriesIndex: number) => void;
+  onUtilizationSeriesSelect?: (name: string, seriesIndex: number) => void;
 }
 
 export function MetricsGraphSection({
@@ -161,6 +161,12 @@ export function MetricsGraphSection({
         metric.name === 'gpu_pcie_throughput_transmit_bytes' ||
         metric.name === 'gpu_pcie_throughput_receive_bytes'
     );
+    const transmitData =
+      throughputMetrics.find(metric => metric.name === 'gpu_pcie_throughput_transmit_bytes')
+        ?.data ?? [];
+    const receiveData =
+      throughputMetrics.find(metric => metric.name === 'gpu_pcie_throughput_receive_bytes')?.data ??
+      [];
 
     if (utilizationMetrics.length === 0) {
       return <></>;
@@ -187,7 +193,7 @@ export function MetricsGraphSection({
                 onSeriesClick={seriesIndex => {
                   // For generic UtilizationMetrics, just pass the series index
                   if (onUtilizationSeriesSelect != null) {
-                    onUtilizationSeriesSelect(seriesIndex);
+                    onUtilizationSeriesSelect(name, seriesIndex);
                   }
                 }}
               />
@@ -197,14 +203,8 @@ export function MetricsGraphSection({
         })}
         {throughputMetrics.length > 0 && (
           <AreaChart
-            transmitData={
-              throughputMetrics.find(metric => metric.name === 'gpu_pcie_throughput_transmit_bytes')
-                ?.data ?? []
-            }
-            receiveData={
-              throughputMetrics.find(metric => metric.name === 'gpu_pcie_throughput_receive_bytes')
-                ?.data ?? []
-            }
+            transmitData={transmitData}
+            receiveData={receiveData}
             addLabelMatcher={addLabelMatcher}
             setTimeRange={handleTimeRangeChange}
             name={throughputMetrics[0].name}
@@ -213,7 +213,17 @@ export function MetricsGraphSection({
             to={querySelection.to}
             utilizationMetricsLoading={utilizationMetricsLoading}
             selectedSeries={undefined}
-            onSeriesClick={onUtilizationSeriesSelect}
+            onSeriesClick={(name, seriesIndex) => {
+              // For throughput metrics, just pass the series index
+              if (onUtilizationSeriesSelect != null) {
+                let name = 'gpu_pcie_throughput_transmit_bytes';
+                if (seriesIndex > transmitData.length - 1) {
+                  name = 'gpu_pcie_throughput_receive_bytes';
+                  seriesIndex -= transmitData.length;
+                }
+                onUtilizationSeriesSelect(name, seriesIndex);
+              }
+            }}
           />
         )}
       </div>
