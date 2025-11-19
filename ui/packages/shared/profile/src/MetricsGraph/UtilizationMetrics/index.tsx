@@ -205,7 +205,6 @@ const RawUtilizationMetrics = ({
         ...val,
         highlighted: originalData?.[idx]?.isSelected ?? false,
       }))}
-
       from={from}
       to={to}
       setTimeRange={setTimeRange}

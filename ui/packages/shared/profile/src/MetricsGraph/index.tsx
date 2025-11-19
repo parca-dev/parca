@@ -534,7 +534,8 @@ export const RawMetricsGraph = ({
                     line={l}
                     color={color(s.id)}
                     strokeWidth={
-                      ((hovering && highlighted != null && i === highlighted.seriesIndex) || s.highlighted === true)
+                      (hovering && highlighted != null && i === highlighted.seriesIndex) ||
+                      s.highlighted === true
                         ? lineStrokeHover
                         : lineStroke
                     }

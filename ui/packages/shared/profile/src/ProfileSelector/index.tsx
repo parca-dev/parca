@@ -36,7 +36,7 @@ import {useQueryState} from '../hooks/useQueryState';
 import useGrpcQuery from '../useGrpcQuery';
 import {MetricsGraphSection} from './MetricsGraphSection';
 import {QueryControls} from './QueryControls';
-import { useAutoQuerySelector } from './useAutoQuerySelector';
+import {useAutoQuerySelector} from './useAutoQuerySelector';
 
 export interface QuerySelection {
   expression: string;
@@ -235,22 +235,22 @@ const ProfileSelector = ({
       if (onSearchHook != null) {
         onSearchHook();
       }
-    // When updateTs is true, re-evaluate the time range to current values
-    if (updateTs) {
-      // Force re-evaluation of time range (important for relative ranges like "last 15 minutes")
-      const currentFrom = timeRangeSelection.getFromMs(true);
-      const currentTo = timeRangeSelection.getToMs(true);
-      const currentRangeKey = timeRangeSelection.getRangeKey();
-      // Commit with refreshed time range
-      commitDraft({
-        from: currentFrom,
-        to: currentTo,
-        timeSelection: currentRangeKey,
-      });
-    } else {
-      // Commit the draft with existing values
-      commitDraft();
-    }
+      // When updateTs is true, re-evaluate the time range to current values
+      if (updateTs) {
+        // Force re-evaluation of time range (important for relative ranges like "last 15 minutes")
+        const currentFrom = timeRangeSelection.getFromMs(true);
+        const currentTo = timeRangeSelection.getToMs(true);
+        const currentRangeKey = timeRangeSelection.getRangeKey();
+        // Commit with refreshed time range
+        commitDraft({
+          from: currentFrom,
+          to: currentTo,
+          timeSelection: currentRangeKey,
+        });
+      } else {
+        // Commit the draft with existing values
+        commitDraft();
+      }
     });
   };
 

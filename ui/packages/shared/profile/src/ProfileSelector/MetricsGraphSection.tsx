@@ -168,28 +168,28 @@ export function MetricsGraphSection({
 
     return (
       <div>
-        {utilizationMetrics.map(({ name, humanReadableName, data }) => {
+        {utilizationMetrics.map(({name, humanReadableName, data}) => {
           if (
             name !== 'gpu_pcie_throughput_transmit_bytes' &&
             name !== 'gpu_pcie_throughput_receive_bytes'
           ) {
             return (
-                <UtilizationMetricsGraph
-                  key={name}
-                  data={data}
-                  setTimeRange={handleTimeRangeChange}
-                  utilizationMetricsLoading={utilizationMetricsLoading}
-                  humanReadableName={humanReadableName}
-                  from={querySelection.from}
-                  to={querySelection.to}
-                  yAxisUnit="percentage"
-                  addLabelMatcher={addLabelMatcher}
-                  onSeriesClick={seriesIndex => {
-                    // For generic UtilizationMetrics, just pass the series index
-                    if (onUtilizationSeriesSelect != null) {
-                      onUtilizationSeriesSelect(seriesIndex);
-                    }
-                  }}
+              <UtilizationMetricsGraph
+                key={name}
+                data={data}
+                setTimeRange={handleTimeRangeChange}
+                utilizationMetricsLoading={utilizationMetricsLoading}
+                humanReadableName={humanReadableName}
+                from={querySelection.from}
+                to={querySelection.to}
+                yAxisUnit="percentage"
+                addLabelMatcher={addLabelMatcher}
+                onSeriesClick={seriesIndex => {
+                  // For generic UtilizationMetrics, just pass the series index
+                  if (onUtilizationSeriesSelect != null) {
+                    onUtilizationSeriesSelect(seriesIndex);
+                  }
+                }}
               />
             );
           }
