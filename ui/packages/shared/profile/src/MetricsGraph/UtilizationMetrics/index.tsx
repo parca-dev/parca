@@ -201,7 +201,10 @@ const RawUtilizationMetrics = ({
 
   return (
     <MetricsGraph
-      data={data}
+      data={data.map((val, idx) => ({
+        ...val,
+        highlighted: originalData?.[idx]?.isSelected ?? false,
+      }))}
       from={from}
       to={to}
       setTimeRange={setTimeRange}

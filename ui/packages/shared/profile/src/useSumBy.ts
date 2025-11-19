@@ -145,7 +145,7 @@ const getSumByFromParam = (param: string | string[] | undefined): string[] | und
   }
 
   if (param === '__none__') {
-    return [];
+    return DEFAULT_EMPTY_SUM_BY;
   }
 
   if (typeof param === 'string') {

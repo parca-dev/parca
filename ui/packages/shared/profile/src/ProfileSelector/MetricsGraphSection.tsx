@@ -174,25 +174,23 @@ export function MetricsGraphSection({
             name !== 'gpu_pcie_throughput_receive_bytes'
           ) {
             return (
-              <>
-                <UtilizationMetricsGraph
-                  key={name}
-                  data={data}
-                  setTimeRange={handleTimeRangeChange}
-                  utilizationMetricsLoading={utilizationMetricsLoading}
-                  humanReadableName={humanReadableName}
-                  from={querySelection.from}
-                  to={querySelection.to}
-                  yAxisUnit="percentage"
-                  addLabelMatcher={addLabelMatcher}
-                  onSeriesClick={seriesIndex => {
-                    // For generic UtilizationMetrics, just pass the series index
-                    if (onUtilizationSeriesSelect != null) {
-                      onUtilizationSeriesSelect(seriesIndex);
-                    }
-                  }}
-                />
-              </>
+              <UtilizationMetricsGraph
+                key={name}
+                data={data}
+                setTimeRange={handleTimeRangeChange}
+                utilizationMetricsLoading={utilizationMetricsLoading}
+                humanReadableName={humanReadableName}
+                from={querySelection.from}
+                to={querySelection.to}
+                yAxisUnit="percentage"
+                addLabelMatcher={addLabelMatcher}
+                onSeriesClick={seriesIndex => {
+                  // For generic UtilizationMetrics, just pass the series index
+                  if (onUtilizationSeriesSelect != null) {
+                    onUtilizationSeriesSelect(seriesIndex);
+                  }
+                }}
+              />
             );
           }
           return null;

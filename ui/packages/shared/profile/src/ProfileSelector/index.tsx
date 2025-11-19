@@ -22,6 +22,7 @@ import {
   useGrpcMetadata,
   useParcaContext,
   useURLState,
+  useURLStateBatch,
 } from '@parca/components';
 import {CloseIcon} from '@parca/icons';
 import {Query} from '@parca/parser';
@@ -92,6 +93,7 @@ interface ProfileSelectorProps extends ProfileSelectorFeatures {
   utilizationMetricsLoading?: boolean;
   utilizationLabels?: UtilizationLabels;
   onUtilizationSeriesSelect?: (seriesIndex: number) => void;
+  onSearchHook?: () => void;
 }
 
 export interface IProfileTypesResult {
@@ -144,10 +146,12 @@ const ProfileSelector = ({
   utilizationMetricsLoading,
   utilizationLabels,
   onUtilizationSeriesSelect,
+  onSearchHook,
 }: ProfileSelectorProps): JSX.Element => {
   const {heightStyle} = useMetricsGraphDimensions(comparing, utilizationMetrics != null);
   const {viewComponent} = useParcaContext();
   const [queryBrowserMode, setQueryBrowserMode] = useURLState('query_browser_mode');
+  const batchUpdates = useURLStateBatch();
 
   // Use the new useQueryState hook - reads directly from URL params
   const {
@@ -227,22 +231,27 @@ const ProfileSelector = ({
   const selectedProfileName = query.profileName();
 
   const setQueryExpression = (updateTs = false): void => {
-    // When updateTs is true, re-evaluate the time range to current values
-    if (updateTs) {
-      // Force re-evaluation of time range (important for relative ranges like "last 15 minutes")
-      const currentFrom = timeRangeSelection.getFromMs(true);
-      const currentTo = timeRangeSelection.getToMs(true);
-      const currentRangeKey = timeRangeSelection.getRangeKey();
-      // Commit with refreshed time range
-      commitDraft({
-        from: currentFrom,
-        to: currentTo,
-        timeSelection: currentRangeKey,
-      });
-    } else {
-      // Commit the draft with existing values
-      commitDraft();
-    }
+    batchUpdates(() => {
+      if (onSearchHook != null) {
+        onSearchHook();
+      }
+      // When updateTs is true, re-evaluate the time range to current values
+      if (updateTs) {
+        // Force re-evaluation of time range (important for relative ranges like "last 15 minutes")
+        const currentFrom = timeRangeSelection.getFromMs(true);
+        const currentTo = timeRangeSelection.getToMs(true);
+        const currentRangeKey = timeRangeSelection.getRangeKey();
+        // Commit with refreshed time range
+        commitDraft({
+          from: currentFrom,
+          to: currentTo,
+          timeSelection: currentRangeKey,
+        });
+      } else {
+        // Commit the draft with existing values
+        commitDraft();
+      }
+    });
   };
 
   const setMatchersString = (matchers: string): void => {
