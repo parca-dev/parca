@@ -327,6 +327,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
       setMergeFromState,
       setMergeToState,
       setSelectionParam,
+      resetFlameGraphState,
     ]
   );
 

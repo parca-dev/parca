@@ -273,7 +273,7 @@ export const useURLState = <T extends ParamValue>(
         return state[param];
       }
     }
-  }, [state, param, alwaysReturnArray]);
+  }, [state, param, alwaysReturnArray, debugLog]);
 
   if (value == null) {
     if (debugLog === true) {
