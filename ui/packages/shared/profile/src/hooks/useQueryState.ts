@@ -18,8 +18,8 @@ import {Query} from '@parca/parser';
 
 import {QuerySelection} from '../ProfileSelector';
 import {ProfileSelection, ProfileSelectionFromParams, ProfileSource} from '../ProfileSource';
+import {useResetFlameGraphState} from '../ProfileView/hooks/useResetFlameGraphState';
 import {sumByToParam, useSumBy, useSumByFromParams} from '../useSumBy';
-import { useResetFlameGraphState } from '../ProfileView/hooks/useResetFlameGraphState';
 
 interface UseQueryStateOptions {
   suffix?: '_a' | '_b'; // For comparison mode
