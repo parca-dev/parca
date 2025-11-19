@@ -18,6 +18,7 @@ import {Query} from '@parca/parser';
 
 import {QuerySelection} from '../ProfileSelector';
 import {ProfileSelection, ProfileSelectionFromParams, ProfileSource} from '../ProfileSource';
+import {useResetFlameGraphState} from '../ProfileView/hooks/useResetFlameGraphState';
 import {sumByToParam, useSumBy, useSumByFromParams} from '../useSumBy';
 
 interface UseQueryStateOptions {
@@ -71,6 +72,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
   } = options;
 
   const batchUpdates = useURLStateBatch();
+  const resetFlameGraphState = useResetFlameGraphState();
 
   // URL state hooks with appropriate suffixes
   const [expression, setExpressionState] = useURLState<string>(`expression${suffix}`, {
@@ -304,6 +306,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
           // Clear ProfileSelection for non-delta profiles
           setSelectionParam(undefined);
         }
+        resetFlameGraphState();
       });
     },
     [
@@ -324,6 +327,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
       setMergeFromState,
       setMergeToState,
       setSelectionParam,
+      resetFlameGraphState,
     ]
   );
 

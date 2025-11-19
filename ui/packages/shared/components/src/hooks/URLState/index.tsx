@@ -251,17 +251,46 @@ export const useURLState = <T extends ParamValue>(
   const value = useMemo<ParamValue>(() => {
     if (typeof state[param] === 'string') {
       if (alwaysReturnArray === true) {
+        if (debugLog === true) {
+          console.log('useURLState returning single string value as array for param', param, [
+            state[param],
+          ]);
+        }
         return [state[param]] as ParamValue;
+      }
+      if (debugLog === true) {
+        console.log('useURLState returning string value for param', param, state[param]);
       }
       return state[param];
     } else if (state[param] != null && Array.isArray(state[param])) {
       if (state[param]?.length === 1 && alwaysReturnArray !== true) {
+        if (debugLog === true) {
+          console.log(
+            'useURLState returning first array value as string for param',
+            param,
+            state[param][0]
+          );
+        }
         return state[param]?.[0] as ParamValue;
       } else {
+        if (debugLog === true) {
+          console.log('useURLState returning array value for param', param, state[param]);
+        }
         return state[param];
       }
     }
-  }, [state, param, alwaysReturnArray]);
+  }, [state, param, alwaysReturnArray, debugLog]);
+
+  if (value == null) {
+    if (debugLog === true) {
+      console.log(
+        'useURLState returning defaultValue for param',
+        param,
+        defaultValue,
+        window.location.href
+      );
+    }
+  }
 
   return [(value ?? defaultValue) as T, setParam];
 };
