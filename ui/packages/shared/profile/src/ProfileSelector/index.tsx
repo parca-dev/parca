@@ -36,8 +36,7 @@ import {useQueryState} from '../hooks/useQueryState';
 import useGrpcQuery from '../useGrpcQuery';
 import {MetricsGraphSection} from './MetricsGraphSection';
 import {QueryControls} from './QueryControls';
-import {useAutoQuerySelector} from './useAutoQuerySelector';
-import { on } from 'events';
+import { useAutoQuerySelector } from './useAutoQuerySelector';
 
 export interface QuerySelection {
   expression: string;
