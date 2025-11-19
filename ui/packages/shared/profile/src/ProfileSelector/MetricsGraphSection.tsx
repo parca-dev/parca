@@ -168,13 +168,12 @@ export function MetricsGraphSection({
 
     return (
       <div>
-        {utilizationMetrics.map(({name, humanReadableName, data}) => {
+        {utilizationMetrics.map(({ name, humanReadableName, data }) => {
           if (
             name !== 'gpu_pcie_throughput_transmit_bytes' &&
             name !== 'gpu_pcie_throughput_receive_bytes'
           ) {
             return (
-              <>
                 <UtilizationMetricsGraph
                   key={name}
                   data={data}
@@ -191,8 +190,7 @@ export function MetricsGraphSection({
                       onUtilizationSeriesSelect(seriesIndex);
                     }
                   }}
-                />
-              </>
+              />
             );
           }
           return null;

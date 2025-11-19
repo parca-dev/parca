@@ -22,6 +22,7 @@ import {
   useGrpcMetadata,
   useParcaContext,
   useURLState,
+  useURLStateBatch,
 } from '@parca/components';
 import {CloseIcon} from '@parca/icons';
 import {Query} from '@parca/parser';
@@ -36,6 +37,7 @@ import useGrpcQuery from '../useGrpcQuery';
 import {MetricsGraphSection} from './MetricsGraphSection';
 import {QueryControls} from './QueryControls';
 import {useAutoQuerySelector} from './useAutoQuerySelector';
+import { on } from 'events';
 
 export interface QuerySelection {
   expression: string;
@@ -92,6 +94,7 @@ interface ProfileSelectorProps extends ProfileSelectorFeatures {
   utilizationMetricsLoading?: boolean;
   utilizationLabels?: UtilizationLabels;
   onUtilizationSeriesSelect?: (seriesIndex: number) => void;
+  onSearchHook?: () => void;
 }
 
 export interface IProfileTypesResult {
@@ -144,10 +147,12 @@ const ProfileSelector = ({
   utilizationMetricsLoading,
   utilizationLabels,
   onUtilizationSeriesSelect,
+  onSearchHook,
 }: ProfileSelectorProps): JSX.Element => {
   const {heightStyle} = useMetricsGraphDimensions(comparing, utilizationMetrics != null);
   const {viewComponent} = useParcaContext();
   const [queryBrowserMode, setQueryBrowserMode] = useURLState('query_browser_mode');
+  const batchUpdates = useURLStateBatch();
 
   // Use the new useQueryState hook - reads directly from URL params
   const {
@@ -227,6 +232,10 @@ const ProfileSelector = ({
   const selectedProfileName = query.profileName();
 
   const setQueryExpression = (updateTs = false): void => {
+    batchUpdates(() => {
+      if (onSearchHook != null) {
+        onSearchHook();
+      }
     // When updateTs is true, re-evaluate the time range to current values
     if (updateTs) {
       // Force re-evaluation of time range (important for relative ranges like "last 15 minutes")
@@ -243,6 +252,7 @@ const ProfileSelector = ({
       // Commit the draft with existing values
       commitDraft();
     }
+    });
   };
 
   const setMatchersString = (matchers: string): void => {

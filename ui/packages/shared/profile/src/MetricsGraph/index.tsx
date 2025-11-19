@@ -63,6 +63,7 @@ export interface HighlightedSeries {
 export interface Series {
   id: string; // opaque string used to determine line color
   values: Array<[number, number]>; // [timestamp_ms, value]
+  highlighted?: boolean;
 }
 
 const MetricsGraph = ({
@@ -200,7 +201,10 @@ export const RawMetricsGraph = ({
   );
 
   const closestPoint = useMemo(() => {
-    // Return the closest point as the highlighted point
+    // Guard against empty series
+    if (series.length === 0) {
+      return null;
+    }
 
     const closestPointPerSeries = series.map(function (s) {
       const distances = s.values.map(d => {
@@ -530,7 +534,7 @@ export const RawMetricsGraph = ({
                     line={l}
                     color={color(s.id)}
                     strokeWidth={
-                      hovering && highlighted != null && i === highlighted.seriesIndex
+                      ((hovering && highlighted != null && i === highlighted.seriesIndex) || s.highlighted)
                         ? lineStrokeHover
                         : lineStroke
                     }

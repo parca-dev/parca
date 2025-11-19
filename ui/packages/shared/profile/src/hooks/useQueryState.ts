@@ -150,7 +150,6 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
       draftTo !== '' ? parseInt(draftTo) : defaultTo
     );
   }, [draftTimeSelection, draftFrom, draftTo, defaultTimeSelection, defaultFrom, defaultTo]);
-
   // Use combined sumBy hook for fetching labels and computing defaults (based on committed state)
   const {sumBy: computedSumByFromURL, isLoading: sumBySelectionLoading} = useSumBy(
     queryClient,
@@ -201,12 +200,13 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
       ? (BigInt(draftTimeRange.getToMs()) * 1_000_000n).toString()
       : undefined;
 
+    const finalSumBy = draftSumBy ?? computedSumByFromURL;
     return {
       expression: draftExpression ?? defaultExpression,
       from: draftTimeRange.getFromMs(),
       to: draftTimeRange.getToMs(),
       timeSelection: draftTimeRange.getRangeKey(),
-      sumBy: draftSumBy ?? computedSumByFromURL, // Use draft if set, otherwise fallback to computed
+      sumBy: finalSumBy, // Use draft if set, otherwise fallback to computed
       ...(draftMergeFrom !== undefined &&
       draftMergeFrom !== '' &&
       draftMergeTo !== undefined &&
