@@ -161,12 +161,12 @@ export function MetricsGraphSection({
         metric.name === 'gpu_pcie_throughput_transmit_bytes' ||
         metric.name === 'gpu_pcie_throughput_receive_bytes'
     );
-    const transmitData = throughputMetrics.find(
-      metric => metric.name === 'gpu_pcie_throughput_transmit_bytes'
-    )?.data ?? [];
-    const receiveData = throughputMetrics.find(
-      metric => metric.name === 'gpu_pcie_throughput_receive_bytes'
-    )?.data ?? [];
+    const transmitData =
+      throughputMetrics.find(metric => metric.name === 'gpu_pcie_throughput_transmit_bytes')
+        ?.data ?? [];
+    const receiveData =
+      throughputMetrics.find(metric => metric.name === 'gpu_pcie_throughput_receive_bytes')?.data ??
+      [];
 
     if (utilizationMetrics.length === 0) {
       return <></>;

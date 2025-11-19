@@ -191,7 +191,8 @@ function transformToSeries(data: MetricSeries[], isReceive = false): NetworkSeri
       });
     }
     return agg;
-  }, []);
+  },
+  []);
 
   // Sort values by timestamp for each series
   return series.map(series => ({
