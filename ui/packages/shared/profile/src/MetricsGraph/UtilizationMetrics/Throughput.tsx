@@ -372,7 +372,7 @@ const AreaChart = ({
       <motion.div
         className="w-full relative"
         key="area-chart-graph-loaded"
-        initial={{display: 'none', opacity: 0}}
+        initial={false}
         animate={{display: 'block', opacity: 1}}
         transition={{duration: 0.5}}
       >
