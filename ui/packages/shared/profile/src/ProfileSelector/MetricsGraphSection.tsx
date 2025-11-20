@@ -213,7 +213,7 @@ export function MetricsGraphSection({
             to={querySelection.to}
             utilizationMetricsLoading={utilizationMetricsLoading}
             selectedSeries={undefined}
-            onSeriesClick={(name, seriesIndex) => {
+            onSeriesClick={(_, seriesIndex) => {
               // For throughput metrics, just pass the series index
               if (onUtilizationSeriesSelect != null) {
                 let name = 'gpu_pcie_throughput_transmit_bytes';

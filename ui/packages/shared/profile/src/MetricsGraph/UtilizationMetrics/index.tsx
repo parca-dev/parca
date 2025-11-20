@@ -396,7 +396,7 @@ const UtilizationMetrics = ({
       <motion.div
         className="w-full relative"
         key="utilization-metrics-graph-loaded"
-        initial={{display: 'none', opacity: 0}}
+        initial={false}
         animate={{display: 'block', opacity: 1}}
         transition={{duration: 0.5}}
       >
