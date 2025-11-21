@@ -49,6 +49,12 @@ test('Query.toString With Comma', () => {
   );
 });
 
+test('Query.toString With hyphen', () => {
+  expect(Query.parse('query-memory:inuse_space:bytes:space:bytes{}').toString()).toBe(
+    'query-memory:inuse_space:bytes:space:bytes{}'
+  );
+});
+
 test('Partial Parsing ProfileName and rest', () => {
   [
     {
