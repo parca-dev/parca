@@ -108,12 +108,6 @@ export const filterPresets: FilterPreset[] = [
         type: 'frame',
         field: 'binary',
         matchType: 'not_contains',
-        value: 'libparcgpcupti.so',
-      },
-      {
-        type: 'frame',
-        field: 'binary',
-        matchType: 'not_contains',
         value: 'libcudart.so',
       },
       {
