@@ -120,6 +120,12 @@ export const filterPresets: FilterPreset[] = [
         type: 'frame',
         field: 'binary',
         matchType: 'not_contains',
+        value: 'libcudnn.so',
+      },
+      {
+        type: 'frame',
+        field: 'binary',
+        matchType: 'not_contains',
         value: 'libcudnn_graph.so',
       },
       {
