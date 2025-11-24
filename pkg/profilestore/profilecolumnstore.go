@@ -113,8 +113,17 @@ func (s *ProfileColumnStore) writeSeries(ctx context.Context, req *profilestorep
 		return nil
 	}
 
+	schema := r.Schema()
+
+	nameCol := r.Column(schema.FieldIndices(profile.ColumnName)[0])
+	sampleTypeCol := r.Column(schema.FieldIndices(profile.ColumnSampleType)[0])
+	sampleUnitCol := r.Column(schema.FieldIndices(profile.ColumnSampleUnit)[0])
+	periodTypeCol := r.Column(schema.FieldIndices(profile.ColumnPeriodType)[0])
+	periodUnitCol := r.Column(schema.FieldIndices(profile.ColumnPeriodUnit)[0])
+	durationCol := r.Column(schema.FieldIndices(profile.ColumnDuration)[0])
+
 	for rowIdx := 0; rowIdx < int(r.NumRows()); rowIdx++ {
-		profileType, err := getProfileTypeString(r, rowIdx)
+		profileType, err := getProfileTypeString(rowIdx, nameCol, sampleTypeCol, sampleUnitCol, periodTypeCol, periodUnitCol, durationCol)
 		if err != nil {
 			return fmt.Errorf("failed to get profile type at row %d: %v", rowIdx, err)
 		}
@@ -129,22 +138,13 @@ func (s *ProfileColumnStore) writeSeries(ctx context.Context, req *profilestorep
 	return s.ingester.Ingest(ctx, r)
 }
 
-func getProfileTypeString(r arrow.Record, rowIdx int) (string, error) {
-	schema := r.Schema()
-
-	nameIdx := schema.FieldIndices(profile.ColumnName)
-	sampleTypeIdx := schema.FieldIndices(profile.ColumnSampleType)
-	sampleUnitIdx := schema.FieldIndices(profile.ColumnSampleUnit)
-	periodTypeIdx := schema.FieldIndices(profile.ColumnPeriodType)
-	periodUnitIdx := schema.FieldIndices(profile.ColumnPeriodUnit)
-	durationIdx := schema.FieldIndices(profile.ColumnDuration)
-
-	nameEncoded := r.Column(nameIdx[0]).ValueStr(rowIdx)
-	sampleTypeEncoded := r.Column(sampleTypeIdx[0]).ValueStr(rowIdx)
-	sampleUnitEncoded := r.Column(sampleUnitIdx[0]).ValueStr(rowIdx)
-	periodTypeEncoded := r.Column(periodTypeIdx[0]).ValueStr(rowIdx)
-	periodUnitEncoded := r.Column(periodUnitIdx[0]).ValueStr(rowIdx)
-	duration := r.Column(durationIdx[0]).ValueStr(rowIdx)
+func getProfileTypeString(rowIdx int, nameCol, sampleTypeCol, sampleUnitCol, periodTypeCol, periodUnitCol, durationCol arrow.Array) (string, error) {
+	nameEncoded := nameCol.ValueStr(rowIdx)
+	sampleTypeEncoded := sampleTypeCol.ValueStr(rowIdx)
+	sampleUnitEncoded := sampleUnitCol.ValueStr(rowIdx)
+	periodTypeEncoded := periodTypeCol.ValueStr(rowIdx)
+	periodUnitEncoded := periodUnitCol.ValueStr(rowIdx)
+	duration := durationCol.ValueStr(rowIdx)
 
 	nameBytes, err := base64.StdEncoding.DecodeString(nameEncoded)
 	if err != nil {
