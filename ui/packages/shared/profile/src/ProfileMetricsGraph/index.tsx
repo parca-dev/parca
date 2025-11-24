@@ -249,7 +249,7 @@ const ProfileMetricsGraph = ({
             const value = sample.valuePerSecond ?? 0;
             return value > max ? value : max;
           }, 0);
-          return { series, maxValue };
+          return {series, maxValue};
         });
 
         // Sort by max value descending and take top `maxSeriesLimit` series
@@ -260,7 +260,7 @@ const ProfileMetricsGraph = ({
 
         return [
           topSeries,
-          { isTrimmed: true, beforeTrim: response.series.length, afterTrim: maxSeriesLimit },
+          {isTrimmed: true, beforeTrim: response.series.length, afterTrim: maxSeriesLimit},
         ];
       }
       return [response.series, {isTrimmed: false, beforeTrim: 0, afterTrim: 0}];
