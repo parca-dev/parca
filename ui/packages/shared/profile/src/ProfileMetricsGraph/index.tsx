@@ -239,12 +239,28 @@ const ProfileMetricsGraph = ({
     if (response?.series != null) {
       // Check if user wants ALL series for THIS specific response
       const userWantsAllForThisResponse = showAllSeriesForResponse === response;
+      const maxSeriesLimit = 100;
 
-      // Limit the number of series to 100 to avoid performance issues (unless user opts to show all)
-      if (response.series.length > 100 && !userWantsAllForThisResponse) {
+      // Limit the number of series to maxSeriesLimit to avoid performance issues (unless user opts to show all)
+      if (response.series.length > maxSeriesLimit && !userWantsAllForThisResponse) {
+        // Select top `maxSeriesLimit` series based on their max value (to catch series with large spikes)
+        const seriesWithMaxValue = response.series.map(series => {
+          const maxValue = series.samples.reduce((max, sample) => {
+            const value = sample.valuePerSecond ?? 0;
+            return value > max ? value : max;
+          }, 0);
+          return { series, maxValue };
+        });
+
+        // Sort by max value descending and take top `maxSeriesLimit` series
+        const topSeries = seriesWithMaxValue
+          .sort((a, b) => b.maxValue - a.maxValue)
+          .slice(0, maxSeriesLimit)
+          .map(item => item.series);
+
         return [
-          response.series.slice(0, 100),
-          {isTrimmed: true, beforeTrim: response.series.length, afterTrim: 100},
+          topSeries,
+          { isTrimmed: true, beforeTrim: response.series.length, afterTrim: maxSeriesLimit },
         ];
       }
       return [response.series, {isTrimmed: false, beforeTrim: 0, afterTrim: 0}];
