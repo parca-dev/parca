@@ -115,12 +115,37 @@ func (s *ProfileColumnStore) writeSeries(ctx context.Context, req *profilestorep
 
 	schema := r.Schema()
 
-	nameCol := r.Column(schema.FieldIndices(profile.ColumnName)[0])
-	sampleTypeCol := r.Column(schema.FieldIndices(profile.ColumnSampleType)[0])
-	sampleUnitCol := r.Column(schema.FieldIndices(profile.ColumnSampleUnit)[0])
-	periodTypeCol := r.Column(schema.FieldIndices(profile.ColumnPeriodType)[0])
-	periodUnitCol := r.Column(schema.FieldIndices(profile.ColumnPeriodUnit)[0])
-	durationCol := r.Column(schema.FieldIndices(profile.ColumnDuration)[0])
+	nameIdx := schema.FieldIndices(profile.ColumnName)
+	if len(nameIdx) == 0 {
+		return fmt.Errorf("missing required column: %s", profile.ColumnName)
+	}
+	sampleTypeIdx := schema.FieldIndices(profile.ColumnSampleType)
+	if len(sampleTypeIdx) == 0 {
+		return fmt.Errorf("missing required column: %s", profile.ColumnSampleType)
+	}
+	sampleUnitIdx := schema.FieldIndices(profile.ColumnSampleUnit)
+	if len(sampleUnitIdx) == 0 {
+		return fmt.Errorf("missing required column: %s", profile.ColumnSampleUnit)
+	}
+	periodTypeIdx := schema.FieldIndices(profile.ColumnPeriodType)
+	if len(periodTypeIdx) == 0 {
+		return fmt.Errorf("missing required column: %s", profile.ColumnPeriodType)
+	}
+	periodUnitIdx := schema.FieldIndices(profile.ColumnPeriodUnit)
+	if len(periodUnitIdx) == 0 {
+		return fmt.Errorf("missing required column: %s", profile.ColumnPeriodUnit)
+	}
+	durationIdx := schema.FieldIndices(profile.ColumnDuration)
+	if len(durationIdx) == 0 {
+		return fmt.Errorf("missing required column: %s", profile.ColumnDuration)
+	}
+
+	nameCol := r.Column(nameIdx[0])
+	sampleTypeCol := r.Column(sampleTypeIdx[0])
+	sampleUnitCol := r.Column(sampleUnitIdx[0])
+	periodTypeCol := r.Column(periodTypeIdx[0])
+	periodUnitCol := r.Column(periodUnitIdx[0])
+	durationCol := r.Column(durationIdx[0])
 
 	for rowIdx := 0; rowIdx < int(r.NumRows()); rowIdx++ {
 		profileType, err := getProfileTypeString(rowIdx, nameCol, sampleTypeCol, sampleUnitCol, periodTypeCol, periodUnitCol, durationCol)
