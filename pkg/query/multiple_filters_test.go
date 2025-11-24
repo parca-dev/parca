@@ -1427,3 +1427,279 @@ func TestStackFilterAndLogicValidation(t *testing.T) {
 		}
 	}
 }
+
+func TestStackFilterFunctionNameStartsWith(t *testing.T) {
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
+
+	originalRecords, cleanup := createTestProfileData(mem)
+	defer cleanup()
+
+	// Test stack filter: keep only stacks containing functions that start with "app."
+	// Expected: Only sample 1 from record 1 should remain (contains app.server.handleRequest)
+	recs, _, err := FilterProfileData(
+		context.Background(),
+		noop.NewTracerProvider().Tracer(""),
+		mem,
+		originalRecords,
+		[]*pb.Filter{
+			{
+				Filter: &pb.Filter_StackFilter{
+					StackFilter: &pb.StackFilter{
+						Filter: &pb.StackFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								FunctionName: &pb.StringCondition{
+									Condition: &pb.StringCondition_StartsWith{
+										StartsWith: "app.",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	)
+	require.NoError(t, err)
+	defer func() {
+		for _, r := range recs {
+			r.Release()
+		}
+	}()
+
+	// Should have 3 samples remaining (samples containing app.* functions)
+	totalSamples := int64(0)
+	for _, rec := range recs {
+		totalSamples += rec.NumRows()
+	}
+	require.Equal(t, int64(3), totalSamples, "Should have 3 samples with functions starting with 'app.'")
+
+	// Validate the remaining samples contain at least one function starting with "app."
+	for _, rec := range recs {
+		r := profile.NewRecordReader(rec)
+		for i := 0; i < int(rec.NumRows()); i++ {
+			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
+			firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
+			_, lastEnd := r.Lines.ValueOffsets(int(lOffsetEnd - 1))
+
+			foundAppFunction := false
+			for k := int(firstStart); k < int(lastEnd); k++ {
+				fnIndex := r.LineFunctionNameIndices.Value(k)
+				functionName := string(r.LineFunctionNameDict.Value(int(fnIndex)))
+
+				if strings.HasPrefix(strings.ToLower(functionName), "app.") {
+					foundAppFunction = true
+					break
+				}
+			}
+
+			require.True(t, foundAppFunction, "Sample should contain at least one function starting with 'app.'")
+		}
+	}
+}
+
+func TestStackFilterFunctionNameNotStartsWith(t *testing.T) {
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
+
+	originalRecords, cleanup := createTestProfileData(mem)
+	defer cleanup()
+
+	// Test stack filter: keep only stacks NOT containing functions that start with "database."
+	// Expected: Samples NOT containing database.query should remain (4 out of 5)
+	recs, _, err := FilterProfileData(
+		context.Background(),
+		noop.NewTracerProvider().Tracer(""),
+		mem,
+		originalRecords,
+		[]*pb.Filter{
+			{
+				Filter: &pb.Filter_StackFilter{
+					StackFilter: &pb.StackFilter{
+						Filter: &pb.StackFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								FunctionName: &pb.StringCondition{
+									Condition: &pb.StringCondition_NotStartsWith{
+										NotStartsWith: "database.",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	)
+	require.NoError(t, err)
+	defer func() {
+		for _, r := range recs {
+			r.Release()
+		}
+	}()
+
+	// Should have 2 samples remaining (all except those with database.* functions)
+	totalSamples := int64(0)
+	for _, rec := range recs {
+		totalSamples += rec.NumRows()
+	}
+	require.Equal(t, int64(2), totalSamples, "Should have 2 samples NOT containing functions starting with 'database.'")
+
+	// Validate none of the remaining samples contain functions starting with "database."
+	for _, rec := range recs {
+		r := profile.NewRecordReader(rec)
+		for i := 0; i < int(rec.NumRows()); i++ {
+			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
+			firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
+			_, lastEnd := r.Lines.ValueOffsets(int(lOffsetEnd - 1))
+
+			for k := int(firstStart); k < int(lastEnd); k++ {
+				fnIndex := r.LineFunctionNameIndices.Value(k)
+				functionName := string(r.LineFunctionNameDict.Value(int(fnIndex)))
+
+				require.False(t, strings.HasPrefix(strings.ToLower(functionName), "database."),
+					"Sample should NOT contain functions starting with 'database.', found: %s", functionName)
+			}
+		}
+	}
+}
+
+func TestFrameFilterFunctionNameStartsWith(t *testing.T) {
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
+
+	originalRecords, cleanup := createTestProfileData(mem)
+	defer cleanup()
+
+	// Test frame filter: keep only frames starting with "runtime."
+	// Expected: All 5 samples remain, but only runtime.* frames are kept
+	recs, _, err := FilterProfileData(
+		context.Background(),
+		noop.NewTracerProvider().Tracer(""),
+		mem,
+		originalRecords,
+		[]*pb.Filter{
+			{
+				Filter: &pb.Filter_FrameFilter{
+					FrameFilter: &pb.FrameFilter{
+						Filter: &pb.FrameFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								FunctionName: &pb.StringCondition{
+									Condition: &pb.StringCondition_StartsWith{
+										StartsWith: "runtime.",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	)
+	require.NoError(t, err)
+	defer func() {
+		for _, r := range recs {
+			r.Release()
+		}
+	}()
+
+	// Should have all 5 samples remaining (with only runtime frames kept)
+	totalSamples := int64(0)
+	for _, rec := range recs {
+		totalSamples += rec.NumRows()
+	}
+	require.Equal(t, int64(5), totalSamples, "Should have 5 samples with only runtime.* frames")
+
+	// Validate the remaining frames all start with "runtime."
+	for _, rec := range recs {
+		r := profile.NewRecordReader(rec)
+		for i := 0; i < int(rec.NumRows()); i++ {
+			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
+			firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
+			_, lastEnd := r.Lines.ValueOffsets(int(lOffsetEnd - 1))
+
+			for k := int(firstStart); k < int(lastEnd); k++ {
+				if r.Line.IsValid(k) {
+					fnIndex := r.LineFunctionNameIndices.Value(k)
+					functionName := string(r.LineFunctionNameDict.Value(int(fnIndex)))
+
+					// All remaining frames must start with "runtime."
+					require.True(t, strings.HasPrefix(strings.ToLower(functionName), "runtime."),
+						"All remaining frames should start with 'runtime.', found: %s", functionName)
+				}
+			}
+		}
+	}
+}
+
+func TestFrameFilterFunctionNameNotStartsWith(t *testing.T) {
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
+
+	originalRecords, cleanup := createTestProfileData(mem)
+	defer cleanup()
+
+	// Test frame filter: keep only frames NOT starting with "runtime."
+	// Expected: All 5 samples remain, but runtime.* frames are filtered out
+	recs, _, err := FilterProfileData(
+		context.Background(),
+		noop.NewTracerProvider().Tracer(""),
+		mem,
+		originalRecords,
+		[]*pb.Filter{
+			{
+				Filter: &pb.Filter_FrameFilter{
+					FrameFilter: &pb.FrameFilter{
+						Filter: &pb.FrameFilter_Criteria{
+							Criteria: &pb.FilterCriteria{
+								FunctionName: &pb.StringCondition{
+									Condition: &pb.StringCondition_NotStartsWith{
+										NotStartsWith: "runtime.",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	)
+	require.NoError(t, err)
+	defer func() {
+		for _, r := range recs {
+			r.Release()
+		}
+	}()
+
+	// Should have all 5 samples remaining (with runtime frames filtered out)
+	totalSamples := int64(0)
+	for _, rec := range recs {
+		totalSamples += rec.NumRows()
+	}
+	require.Equal(t, int64(5), totalSamples, "Should have 5 samples with runtime.* frames filtered out")
+
+	// Validate none of the remaining frames start with "runtime."
+	for _, rec := range recs {
+		r := profile.NewRecordReader(rec)
+		for i := 0; i < int(rec.NumRows()); i++ {
+			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
+			firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
+			_, lastEnd := r.Lines.ValueOffsets(int(lOffsetEnd - 1))
+
+			validFrameCount := 0
+			for k := int(firstStart); k < int(lastEnd); k++ {
+				if r.Line.IsValid(k) {
+					fnIndex := r.LineFunctionNameIndices.Value(k)
+					functionName := string(r.LineFunctionNameDict.Value(int(fnIndex)))
+
+					// All remaining frames must NOT start with "runtime."
+					require.False(t, strings.HasPrefix(strings.ToLower(functionName), "runtime."),
+						"All remaining frames should NOT start with 'runtime.', found: %s", functionName)
+					validFrameCount++
+				}
+			}
+
+			// Should have at least 1 frame remaining after filtering out runtime frames
+			require.Greater(t, validFrameCount, 0, "Sample should have at least 1 non-runtime.* frame remaining")
+		}
+	}
+}

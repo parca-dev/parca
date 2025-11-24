@@ -23,7 +23,7 @@ export interface ProfileFilter {
   id: string;
   type?: 'stack' | 'frame' | string; // string allows preset keys
   field?: 'function_name' | 'binary' | 'system_name' | 'filename' | 'address' | 'line_number';
-  matchType?: 'equal' | 'not_equal' | 'contains' | 'not_contains';
+  matchType?: 'equal' | 'not_equal' | 'contains' | 'not_contains' | 'starts_with' | 'not_starts_with';
   value: string;
 }
 
@@ -35,6 +35,12 @@ const createStringCondition = (matchType: string, value: string): StringConditio
       ? {oneofKind: 'notEqual' as const, notEqual: value}
       : matchType === 'contains'
       ? {oneofKind: 'contains' as const, contains: value}
+      : matchType === 'not_contains'
+      ? {oneofKind: 'notContains' as const, notContains: value}
+      : matchType === 'starts_with'
+      ? {oneofKind: 'startsWith' as const, startsWith: value}
+      : matchType === 'not_starts_with'
+      ? {oneofKind: 'notStartsWith' as const, notStartsWith: value}
       : {oneofKind: 'notContains' as const, notContains: value},
 });
 

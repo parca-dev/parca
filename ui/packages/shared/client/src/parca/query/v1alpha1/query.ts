@@ -617,6 +617,22 @@ export interface StringCondition {
          */
         notContains: string;
     } | {
+        oneofKind: "startsWith";
+        /**
+         * starts_with matches strings that start with the specified prefix
+         *
+         * @generated from protobuf field: string starts_with = 5
+         */
+        startsWith: string;
+    } | {
+        oneofKind: "notStartsWith";
+        /**
+         * not_starts_with matches strings that do not start with the specified prefix
+         *
+         * @generated from protobuf field: string not_starts_with = 6
+         */
+        notStartsWith: string;
+    } | {
         oneofKind: undefined;
     };
 }

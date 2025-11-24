@@ -1003,6 +1003,12 @@ func matchesStringCondition(value []byte, condition *pb.StringCondition) bool {
 	case *pb.StringCondition_NotContains:
 		target := bytes.ToLower([]byte(condition.GetNotContains()))
 		return !bytes.Contains(valueLower, target)
+	case *pb.StringCondition_StartsWith:
+		target := bytes.ToLower([]byte(condition.GetStartsWith()))
+		return bytes.HasPrefix(valueLower, target)
+	case *pb.StringCondition_NotStartsWith:
+		target := bytes.ToLower([]byte(condition.GetNotStartsWith()))
+		return !bytes.HasPrefix(valueLower, target)
 	default:
 		return true
 	}

@@ -150,6 +150,20 @@ const stringMatchTypeItems: SelectItem[] = [
       expanded: <>Not Contains</>,
     },
   },
+  {
+    key: 'starts_with',
+    element: {
+      active: <>Starts With</>,
+      expanded: <>Starts With</>,
+    },
+  },
+  {
+    key: 'not_starts_with',
+    element: {
+      active: <>Not Starts With</>,
+      expanded: <>Not Starts With</>,
+    },
+  },
 ];
 
 const numberMatchTypeItems: SelectItem[] = [
