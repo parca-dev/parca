@@ -23,7 +23,13 @@ export interface ProfileFilter {
   id: string;
   type?: 'stack' | 'frame' | string; // string allows preset keys
   field?: 'function_name' | 'binary' | 'system_name' | 'filename' | 'address' | 'line_number';
-  matchType?: 'equal' | 'not_equal' | 'contains' | 'not_contains' | 'starts_with' | 'not_starts_with';
+  matchType?:
+    | 'equal'
+    | 'not_equal'
+    | 'contains'
+    | 'not_contains'
+    | 'starts_with'
+    | 'not_starts_with';
   value: string;
 }
 

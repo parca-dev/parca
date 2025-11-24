@@ -1267,6 +1267,8 @@ type StringCondition struct {
 	//	*StringCondition_NotEqual
 	//	*StringCondition_Contains
 	//	*StringCondition_NotContains
+	//	*StringCondition_StartsWith
+	//	*StringCondition_NotStartsWith
 	Condition     isStringCondition_Condition `protobuf_oneof:"condition"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1345,6 +1347,24 @@ func (x *StringCondition) GetNotContains() string {
 	return ""
 }
 
+func (x *StringCondition) GetStartsWith() string {
+	if x != nil {
+		if x, ok := x.Condition.(*StringCondition_StartsWith); ok {
+			return x.StartsWith
+		}
+	}
+	return ""
+}
+
+func (x *StringCondition) GetNotStartsWith() string {
+	if x != nil {
+		if x, ok := x.Condition.(*StringCondition_NotStartsWith); ok {
+			return x.NotStartsWith
+		}
+	}
+	return ""
+}
+
 type isStringCondition_Condition interface {
 	isStringCondition_Condition()
 }
@@ -1369,6 +1389,16 @@ type StringCondition_NotContains struct {
 	NotContains string `protobuf:"bytes,4,opt,name=not_contains,json=notContains,proto3,oneof"`
 }
 
+type StringCondition_StartsWith struct {
+	// starts_with matches strings that start with the specified prefix
+	StartsWith string `protobuf:"bytes,5,opt,name=starts_with,json=startsWith,proto3,oneof"`
+}
+
+type StringCondition_NotStartsWith struct {
+	// not_starts_with matches strings that do not start with the specified prefix
+	NotStartsWith string `protobuf:"bytes,6,opt,name=not_starts_with,json=notStartsWith,proto3,oneof"`
+}
+
 func (*StringCondition_Equal) isStringCondition_Condition() {}
 
 func (*StringCondition_NotEqual) isStringCondition_Condition() {}
@@ -1376,6 +1406,10 @@ func (*StringCondition_NotEqual) isStringCondition_Condition() {}
 func (*StringCondition_Contains) isStringCondition_Condition() {}
 
 func (*StringCondition_NotContains) isStringCondition_Condition() {}
+
+func (*StringCondition_StartsWith) isStringCondition_Condition() {}
+
+func (*StringCondition_NotStartsWith) isStringCondition_Condition() {}
 
 // NumberCondition defines numeric filtering conditions
 type NumberCondition struct {
@@ -4063,12 +4097,15 @@ const file_parca_query_v1alpha1_query_proto_rawDesc = "" +
 	"\bfilename\x18\x04 \x01(\v2%.parca.query.v1alpha1.StringConditionR\bfilename\x12?\n" +
 	"\aaddress\x18\x05 \x01(\v2%.parca.query.v1alpha1.NumberConditionR\aaddress\x12F\n" +
 	"\vline_number\x18\x06 \x01(\v2%.parca.query.v1alpha1.NumberConditionR\n" +
-	"lineNumber\"\x98\x01\n" +
+	"lineNumber\"\xe5\x01\n" +
 	"\x0fStringCondition\x12\x16\n" +
 	"\x05equal\x18\x01 \x01(\tH\x00R\x05equal\x12\x1d\n" +
 	"\tnot_equal\x18\x02 \x01(\tH\x00R\bnotEqual\x12\x1c\n" +
 	"\bcontains\x18\x03 \x01(\tH\x00R\bcontains\x12#\n" +
-	"\fnot_contains\x18\x04 \x01(\tH\x00R\vnotContainsB\v\n" +
+	"\fnot_contains\x18\x04 \x01(\tH\x00R\vnotContains\x12!\n" +
+	"\vstarts_with\x18\x05 \x01(\tH\x00R\n" +
+	"startsWith\x12(\n" +
+	"\x0fnot_starts_with\x18\x06 \x01(\tH\x00R\rnotStartsWithB\v\n" +
 	"\tcondition\"U\n" +
 	"\x0fNumberCondition\x12\x16\n" +
 	"\x05equal\x18\x01 \x01(\x04H\x00R\x05equal\x12\x1d\n" +
@@ -4463,6 +4500,8 @@ func file_parca_query_v1alpha1_query_proto_init() {
 		(*StringCondition_NotEqual)(nil),
 		(*StringCondition_Contains)(nil),
 		(*StringCondition_NotContains)(nil),
+		(*StringCondition_StartsWith)(nil),
+		(*StringCondition_NotStartsWith)(nil),
 	}
 	file_parca_query_v1alpha1_query_proto_msgTypes[14].OneofWrappers = []any{
 		(*NumberCondition_Equal)(nil),
