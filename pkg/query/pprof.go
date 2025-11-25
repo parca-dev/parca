@@ -64,7 +64,9 @@ func GenerateFlatPprof(
 	w := NewPprofWriter(p.Meta, isDiff)
 
 	for _, rec := range p.Samples {
-		w.WriteRecord(rec)
+		if err := w.WriteRecord(rec); err != nil {
+			return nil, err
+		}
 	}
 
 	return w.res, nil
@@ -141,13 +143,17 @@ func (w *PprofWriter) getBuf(capacity int) []byte {
 	return w.buf[:capacity]
 }
 
-func (w *PprofWriter) WriteRecord(rec arrow.RecordBatch) {
-	r := parcaprofile.NewRecordReader(rec)
+func (w *PprofWriter) WriteRecord(rec arrow.RecordBatch) error {
+	r, err := parcaprofile.NewRecordReader(rec)
+	if err != nil {
+		return fmt.Errorf("failed to create record reader: %w", err)
+	}
 	t := w.transpose(r)
 
 	for i := 0; i < int(rec.NumRows()); i++ {
 		w.sample(r, t, i)
 	}
+	return nil
 }
 
 func (w *PprofWriter) sample(

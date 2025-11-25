@@ -364,7 +364,8 @@ func TestStackFilterFunctionNameSingle(t *testing.T) {
 	// Validate that all returned samples contain "main" in their stack
 	sampleIndex := 0
 	for _, rec := range recs {
-		r := profile.NewRecordReader(rec)
+		r, err := profile.NewRecordReader(rec)
+		require.NoError(t, err)
 		for i := 0; i < int(rec.NumRows()); i++ {
 			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 			firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
@@ -453,7 +454,8 @@ func TestStackFilterFunctionNameDouble(t *testing.T) {
 	// Validate that each returned sample contains BOTH "main" AND "app"
 	sampleIndex := 0
 	for _, rec := range recs {
-		r := profile.NewRecordReader(rec)
+		r, err := profile.NewRecordReader(rec)
+		require.NoError(t, err)
 		for i := 0; i < int(rec.NumRows()); i++ {
 			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 			firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
@@ -561,7 +563,8 @@ func TestStackFilterFunctionNameTriple(t *testing.T) {
 	// Validate that the returned sample contains "runtime" OR "malloc" OR "gc"
 	sampleIndex := 0
 	for _, rec := range recs {
-		r := profile.NewRecordReader(rec)
+		r, err := profile.NewRecordReader(rec)
+		require.NoError(t, err)
 		for i := 0; i < int(rec.NumRows()); i++ {
 			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 			firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
@@ -685,7 +688,8 @@ func TestStackFilterFunctionNamePartialExclusion(t *testing.T) {
 	// AND ensure no runtime functions are present (negative validation)
 	sampleIndex := 0
 	for _, rec := range recs {
-		r := profile.NewRecordReader(rec)
+		r, err := profile.NewRecordReader(rec)
+		require.NoError(t, err)
 		for i := 0; i < int(rec.NumRows()); i++ {
 			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 			firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
@@ -770,7 +774,8 @@ func TestFrameFilterFunctionNameSingle(t *testing.T) {
 	// Validate each remaining sample
 	sampleIndex := 0
 	for _, rec := range recs {
-		r := profile.NewRecordReader(rec)
+		r, err := profile.NewRecordReader(rec)
+		require.NoError(t, err)
 		validFrameCount := 0
 		for i := 0; i < int(rec.NumRows()); i++ {
 			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
@@ -849,7 +854,8 @@ func TestFrameFilterFunctionNameNotContains(t *testing.T) {
 	// Validate the remaining sample
 	sampleIndex := 0
 	for _, rec := range recs {
-		r := profile.NewRecordReader(rec)
+		r, err := profile.NewRecordReader(rec)
+		require.NoError(t, err)
 		for i := 0; i < int(rec.NumRows()); i++ {
 			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 			firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
@@ -925,7 +931,8 @@ func TestStackFilterBinary(t *testing.T) {
 	// Validate that the returned sample contains runtime binary
 	sampleIndex := 0
 	for _, rec := range recs {
-		r := profile.NewRecordReader(rec)
+		r, err := profile.NewRecordReader(rec)
+		require.NoError(t, err)
 		for i := 0; i < int(rec.NumRows()); i++ {
 			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 
@@ -995,7 +1002,8 @@ func TestStackFilterAddress(t *testing.T) {
 	// Validate that each returned sample contains address 0x1000
 	sampleIndex := 0
 	for _, rec := range recs {
-		r := profile.NewRecordReader(rec)
+		r, err := profile.NewRecordReader(rec)
+		require.NoError(t, err)
 		for i := 0; i < int(rec.NumRows()); i++ {
 			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 
@@ -1065,7 +1073,8 @@ func TestStackFilterLineNumber(t *testing.T) {
 	// Validate that the returned sample contains line number 100
 	sampleIndex := 0
 	for _, rec := range recs {
-		r := profile.NewRecordReader(rec)
+		r, err := profile.NewRecordReader(rec)
+		require.NoError(t, err)
 		for i := 0; i < int(rec.NumRows()); i++ {
 			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 			firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
@@ -1136,7 +1145,8 @@ func TestStackFilterSystemName(t *testing.T) {
 	// Validate that each returned sample contains database system name
 	sampleIndex := 0
 	for _, rec := range recs {
-		r := profile.NewRecordReader(rec)
+		r, err := profile.NewRecordReader(rec)
+		require.NoError(t, err)
 		for i := 0; i < int(rec.NumRows()); i++ {
 			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 			firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
@@ -1208,7 +1218,8 @@ func TestStackFilterFilename(t *testing.T) {
 	// Validate that each returned sample contains functions from db.go
 	sampleIndex := 0
 	for _, rec := range recs {
-		r := profile.NewRecordReader(rec)
+		r, err := profile.NewRecordReader(rec)
+		require.NoError(t, err)
 		for i := 0; i < int(rec.NumRows()); i++ {
 			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 			firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
@@ -1283,7 +1294,8 @@ func TestFrameFilterAddress(t *testing.T) {
 	foundTargetAddress := false
 	validFrameCount := 0
 	for _, rec := range recs {
-		r := profile.NewRecordReader(rec)
+		r, err := profile.NewRecordReader(rec)
+		require.NoError(t, err)
 		for i := 0; i < int(rec.NumRows()); i++ {
 			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 
@@ -1366,7 +1378,8 @@ func TestStackFilterAndLogicValidation(t *testing.T) {
 	// Validate the remaining stack contains "main" and does NOT contain "database"
 	sampleIndex := 0
 	for _, rec := range recs {
-		r := profile.NewRecordReader(rec)
+		r, err := profile.NewRecordReader(rec)
+		require.NoError(t, err)
 		for i := 0; i < int(rec.NumRows()); i++ {
 			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 			firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
