@@ -184,7 +184,9 @@ const ProfileTypeSelector = ({
       : [];
   }, [profileTypesData, error]);
 
-  const profileLabels = profileNames.map(name => ({
+  const profileLabels = (
+    profileNames.length > 0 ? profileNames : selectedKey != null ? [selectedKey] : []
+  ).map(name => ({
     key: name,
     element: profileSelectElement(name, flexibleKnownProfilesDetection),
   }));

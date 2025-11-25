@@ -11,9 +11,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
+import {QueryServiceClient} from '@parca/client';
+import {DateTimeRange} from '@parca/components';
 import {ProfileType} from '@parca/parser';
+
+import {useLabelNames} from './hooks/useLabels';
 
 export const DEFAULT_EMPTY_SUM_BY: string[] = [];
 
@@ -92,15 +96,30 @@ export const useSumBySelection = (
 
   const {defaultSumBy} = useDefaultSumBy(profileType, labelNamesLoading, labels);
 
-  let sumBy =
-    userSelectedSumBy[profileType?.toString() ?? ''] ?? defaultSumBy ?? DEFAULT_EMPTY_SUM_BY;
+  // Store the last valid sumBy value to return during loading
+  const lastValidSumByRef = useRef<string[]>(DEFAULT_EMPTY_SUM_BY);
 
-  if (profileType?.delta !== true) {
-    sumBy = DEFAULT_EMPTY_SUM_BY;
-  }
+  const sumBy = useMemo(() => {
+    // If loading, return the last valid value to prevent input from blanking
+    if (labelNamesLoading && lastValidSumByRef.current !== DEFAULT_EMPTY_SUM_BY) {
+      return lastValidSumByRef.current;
+    }
+
+    let result =
+      userSelectedSumBy[profileType?.toString() ?? ''] ?? defaultSumBy ?? DEFAULT_EMPTY_SUM_BY;
+
+    if (profileType?.delta !== true) {
+      result = DEFAULT_EMPTY_SUM_BY;
+    }
+
+    // Store the computed value for next loading state
+    lastValidSumByRef.current = result;
+
+    return result;
+  }, [userSelectedSumBy, profileType, defaultSumBy, labelNamesLoading]);
 
   return [
-    labelNamesLoading ? undefined : sumBy,
+    sumBy,
     setSumBy,
     {
       isLoading: labelNamesLoading,
@@ -126,7 +145,7 @@ const getSumByFromParam = (param: string | string[] | undefined): string[] | und
   }
 
   if (param === '__none__') {
-    return [];
+    return DEFAULT_EMPTY_SUM_BY;
   }
 
   if (typeof param === 'string') {
@@ -161,4 +180,40 @@ export const sumByToParam = (sumBy: string[] | undefined): string | string[] | u
   }
 
   return sumBy;
+};
+
+// Combined hook that handles all sumBy logic: fetching labels, computing defaults, and managing selection
+export const useSumBy = (
+  queryClient: QueryServiceClient,
+  profileType: ProfileType | undefined,
+  timeRange: DateTimeRange,
+  defaultValue?: string[]
+): {
+  sumBy: string[] | undefined;
+  setSumBy: (sumBy: string[]) => void;
+  isLoading: boolean;
+} => {
+  const {loading: labelNamesLoading, result} = useLabelNames(
+    queryClient,
+    profileType?.toString() ?? '',
+    timeRange.getFromMs(),
+    timeRange.getToMs()
+  );
+
+  const labels = useMemo(() => {
+    return result.response?.labelNames === undefined ? [] : result.response.labelNames;
+  }, [result]);
+
+  const [sumBySelection, setSumByInternal, {isLoading}] = useSumBySelection(
+    profileType,
+    labelNamesLoading,
+    labels,
+    {defaultValue}
+  );
+
+  return {
+    sumBy: sumBySelection,
+    setSumBy: setSumByInternal,
+    isLoading,
+  };
 };

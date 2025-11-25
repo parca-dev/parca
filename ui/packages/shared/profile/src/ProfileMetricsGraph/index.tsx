@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useMemo} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import {AnimatePresence, motion} from 'framer-motion';
@@ -69,34 +69,31 @@ const createProfileContextMenuItems = (
       label: 'Add to query',
       icon: 'material-symbols:add',
       createDynamicItems: (closestPoint, _series) => {
+        const noLabelsAvailable = [
+          {
+            id: 'no-labels-available',
+            label: 'No labels available',
+            icon: 'ph:warning',
+            disabled: () => true,
+            onClick: () => {}, // No-op for disabled item
+          },
+        ];
         if (closestPoint == null || data.length === 0 || data[closestPoint.seriesIndex] == null) {
-          return [
-            {
-              id: 'no-labels-available',
-              label: 'No labels available',
-              icon: 'ph:warning',
-              disabled: () => true,
-              onClick: () => {}, // No-op for disabled item
-            },
-          ];
+          return noLabelsAvailable;
         }
 
         const originalSeriesData = data[closestPoint.seriesIndex];
         if (originalSeriesData.labelset?.labels == null) {
-          return [
-            {
-              id: 'no-labels-available',
-              label: 'No labels available',
-              icon: 'ph:warning',
-              disabled: () => true,
-              onClick: () => {}, // No-op for disabled item
-            },
-          ];
+          return noLabelsAvailable;
         }
 
         const labels = originalSeriesData.labelset.labels.filter(
           (label: Label) => label.name !== '__name__'
         );
+
+        if (labels.length === 0) {
+          return noLabelsAvailable;
+        }
 
         return labels.map((label: Label) => ({
           id: `add-label-${label.name}`,
@@ -199,21 +196,28 @@ const ProfileMetricsGraph = ({
   onPointClick,
   comparing = false,
   sumBy,
-  sumByLoading,
 }: ProfileMetricsGraphProps): JSX.Element => {
   const {
     isLoading: metricsGraphLoading,
     response,
     error,
-  } = useQueryRange(queryClient, queryExpression, from, to, sumBy, sumByLoading);
+  } = useQueryRange(queryClient, queryExpression, from, to, sumBy, queryExpression === '');
   const {onError, perf, authenticationErrorMessage, isDarkMode, timezone} = useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(comparing);
+  const [showAllSeriesForResponse, setShowAllSeriesForResponse] = useState<typeof response | null>(
+    null
+  );
 
   useEffect(() => {
     if (error !== null) {
       onError?.(error);
     }
   }, [error, onError]);
+
+  // Reset showAllSeriesForResponse when response changes to free memory
+  useEffect(() => {
+    setShowAllSeriesForResponse(null);
+  }, [response]);
 
   useEffect(() => {
     if (response === null) {
@@ -223,7 +227,38 @@ const ProfileMetricsGraph = ({
     perf?.markInteraction('Metrics graph render', response.series[0].samples.length);
   }, [perf, response]);
 
-  const originalSeries = response?.series;
+  const [originalSeries, {isTrimmed, beforeTrim, afterTrim}] = useMemo(() => {
+    if (response?.series != null) {
+      // Check if user wants ALL series for THIS specific response
+      const userWantsAllForThisResponse = showAllSeriesForResponse === response;
+      const maxSeriesLimit = 100;
+
+      // Limit the number of series to maxSeriesLimit to avoid performance issues (unless user opts to show all)
+      if (response.series.length > maxSeriesLimit && !userWantsAllForThisResponse) {
+        // Select top `maxSeriesLimit` series based on their max value (to catch series with large spikes)
+        const seriesWithMaxValue = response.series.map(series => {
+          const maxValue = series.samples.reduce((max, sample) => {
+            const value = sample.valuePerSecond ?? 0;
+            return value > max ? value : max;
+          }, 0);
+          return {series, maxValue};
+        });
+
+        // Sort by max value descending and take top `maxSeriesLimit` series
+        const topSeries = seriesWithMaxValue
+          .sort((a, b) => b.maxValue - a.maxValue)
+          .slice(0, maxSeriesLimit)
+          .map(item => item.series);
+
+        return [
+          topSeries,
+          {isTrimmed: true, beforeTrim: response.series.length, afterTrim: maxSeriesLimit},
+        ];
+      }
+      return [response.series, {isTrimmed: false, beforeTrim: 0, afterTrim: 0}];
+    }
+    return [null, {isTrimmed: false, beforeTrim: 0, afterTrim: 0}];
+  }, [response, showAllSeriesForResponse]);
 
   const selectedPoint = useMemo((): SeriesPoint | null => {
     if (profile !== null && profile instanceof MergedProfileSelection) {
@@ -242,7 +277,7 @@ const ProfileMetricsGraph = ({
       if (
         seriesIndex !== undefined &&
         seriesIndex !== -1 &&
-        originalSeries !== undefined &&
+        originalSeries != null &&
         originalSeries[seriesIndex] != null
       ) {
         const series = originalSeries[seriesIndex];
@@ -341,6 +376,20 @@ const ProfileMetricsGraph = ({
         animate={{display: 'block', opacity: 1}}
         transition={{duration: 0.5}}
       >
+        {isTrimmed ? (
+          <div className="flex justify-center items-center gap-2">
+            <span className="text-sm text-amber-800 dark:text-amber-200 bg-amber-100 dark:bg-amber-900 text-center px-2 rounded">
+              Note: Showing only {afterTrim} of {new Intl.NumberFormat().format(beforeTrim)} series
+              for performance reasons. Please narrow your query to view more.
+            </span>
+            <button
+              onClick={() => setShowAllSeriesForResponse(response)}
+              className="text-sm px-1 bg-amber-600 hover:bg-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600 text-white rounded font-medium transition-colors"
+            >
+              Show all {new Intl.NumberFormat().format(beforeTrim)}
+            </button>
+          </div>
+        ) : null}
         {loading ? (
           <MetricsGraphSkeleton heightStyle={heightStyle} isDarkMode={isDarkMode} />
         ) : dataAvailable ? (

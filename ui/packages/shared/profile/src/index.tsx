@@ -11,8 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {ParamPreferences} from '@parca/components';
+
 import MetricsGraph, {type ContextMenuItemOrSubmenu, type Series} from './MetricsGraph';
-import ProfileExplorer, {getExpressionAsAString} from './ProfileExplorer';
+import ProfileExplorer from './ProfileExplorer';
 import ProfileTypeSelector from './ProfileTypeSelector';
 import {SelectWithRefresh} from './SelectWithRefresh';
 import CustomSelect from './SimpleMatchers/Select';
@@ -40,14 +42,16 @@ export {QueryControls} from './QueryControls';
 export {default as ProfileFilters} from './ProfileView/components/ProfileFilters';
 export {useProfileFiltersUrlState} from './ProfileView/components/ProfileFilters/useProfileFiltersUrlState';
 
-export const DEFAULT_PROFILE_EXPLORER_PARAM_VALUES = {
-  dashboard_items: 'flamegraph',
+export const DEFAULT_PROFILE_EXPLORER_PARAM_VALUES: ParamPreferences = {
+  dashboard_items: {
+    defaultValue: 'flamegraph',
+    splitOnCommas: true, // This param should split on commas for array values
+  },
 };
 
 export {
   ProfileExplorer,
   ProfileTypeSelector,
-  getExpressionAsAString,
   CustomSelect,
   SelectWithRefresh,
   useLabelNames,

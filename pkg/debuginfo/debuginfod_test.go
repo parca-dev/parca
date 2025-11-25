@@ -16,6 +16,7 @@ package debuginfo
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -32,7 +33,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/objstore"
 	"go.opentelemetry.io/otel/trace/noop"
-	"golang.org/x/net/context"
 	"gopkg.in/dnaeon/go-vcr.v3/recorder"
 )
 
