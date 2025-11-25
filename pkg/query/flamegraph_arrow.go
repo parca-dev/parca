@@ -1592,19 +1592,19 @@ func newChildBuf() childBuf {
 	}
 }
 
-func (b childBuf) reset() {
+func (b *childBuf) reset() {
 	b.values = b.values[:0]
 	b.indexes = b.indexes[:0]
 }
 
-func (b childBuf) reserve(n int) {
+func (b *childBuf) reserve(n int) {
 	if cap(b.values) < n {
 		b.values = make([]int64, 0, n)
 		b.indexes = make([]int, 0, n)
 	}
 }
 
-func (b childBuf) append(value int64, index int) {
+func (b *childBuf) append(value int64, index int) {
 	b.indexes = append(b.indexes, index)
 	b.values = append(b.values, value)
 }
