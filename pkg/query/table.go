@@ -120,7 +120,10 @@ func generateTableArrowRecord(
 	_, span := tracer.Start(ctx, "generateTableArrowRecord")
 	defer span.End()
 
-	profileReader := profile.NewReader(p)
+	profileReader, err := profile.NewReader(p)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to create profile reader: %w", err)
+	}
 
 	tb := newTableBuilder(mem, estimateTableRows(profileReader))
 	defer tb.Release()
