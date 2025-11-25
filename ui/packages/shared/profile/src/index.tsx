@@ -21,6 +21,7 @@ import CustomSelect from './SimpleMatchers/Select';
 import {LabelsQueryProvider, useLabelsQueryProvider} from './contexts/LabelsQueryProvider';
 import {UnifiedLabelsProvider, useUnifiedLabels} from './contexts/UnifiedLabelsContext';
 import {useLabelNames} from './hooks/useLabels';
+import {useQueryState} from './hooks/useQueryState';
 
 export {useMetricsGraphDimensions} from './MetricsGraph/useMetricsGraphDimensions';
 
@@ -62,4 +63,5 @@ export {
   useLabelsQueryProvider,
   UnifiedLabelsProvider,
   useUnifiedLabels,
+  useQueryState,
 };

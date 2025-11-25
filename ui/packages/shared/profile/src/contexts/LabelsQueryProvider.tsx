@@ -11,6 +11,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/**
+ * LabelsQueryProvider - Data Fetching Layer
+ *
+ * This context provider is responsible for fetching label data from the Parca API
+ * and making it available to child components through React Context.
+ *
+ * Purpose:
+ * - Fetches label names and values from the Parca profiling API
+ * - Manages loading states for label data
+ * - Provides refetch functions for manual data refresh
+ * - Acts as the primary data source in the label provider architecture
+ *
+ * Architecture Pattern:
+ * This is the first layer in a three-layer architecture:
+ * 1. LabelsQueryProvider (this file) - Fetches data from API
+ * 2. LabelsSource (in ProfileSelector) - Transforms/merges data
+ * 3. UnifiedLabelsProvider - Provides unified interface to UI components
+ *
+ * Consumer Hook: useLabelsQueryProvider()
+ */
+
 import {createContext, useContext, useState} from 'react';
 
 import {QueryServiceClient} from '@parca/client';

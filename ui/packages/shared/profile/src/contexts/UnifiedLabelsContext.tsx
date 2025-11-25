@@ -11,6 +11,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/**
+ * UnifiedLabelsProvider - UI Presentation Layer
+ *
+ * This context provider transforms raw label data into a format optimized for
+ * UI components (QueryControls, SimpleMatchers, etc.).
+ *
+ * Purpose:
+ * - Transforms label arrays into structured formats for dropdowns and selectors
+ * - Groups labels by type (e.g., 'cpu', 'gpu') for organized display
+ * - Handles label name prefixes and mappings for user-friendly display
+ * - Provides a unified interface regardless of data source(s)
+ *
+ * Architecture Pattern:
+ * This is the final layer in a three-layer architecture:
+ * 1. LabelsQueryProvider - Fetches data from API
+ * 2. LabelsSource (in ProfileSelector) - Transforms/merges data
+ * 3. UnifiedLabelsProvider (this file) - Presents data to UI components
+ *
+ * Consumer Hook: useUnifiedLabels()
+ */
+
 import {createContext, useContext} from 'react';
 
 import {QueryServiceClient} from '@parca/client';

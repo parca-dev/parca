@@ -207,10 +207,6 @@ export const RawMetricsGraph = ({
       return null;
     }
 
-    if (series.length === 0) {
-      return null;
-    }
-
     const closestPointPerSeries = series.map(function (s) {
       if (s.values.length === 0) {
         return {

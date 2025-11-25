@@ -275,7 +275,7 @@ const ProfileSelector = ({
           start={timeRangeSelection.getFromMs()}
           end={timeRangeSelection.getToMs()}
         >
-          <LabelSourceProvider>
+          <LabelsSource>
             <QueryControls
               showProfileTypeSelector={showProfileTypeSelector}
               showSumBySelector={showSumBySelector}
@@ -303,7 +303,7 @@ const ProfileSelector = ({
               profileTypesError={error}
               viewComponent={viewComponent}
             />
-          </LabelSourceProvider>
+          </LabelsSource>
         </LabelsQueryProvider>
         {comparing && (
           <div>
@@ -339,7 +339,7 @@ const ProfileSelector = ({
 
 export default ProfileSelector;
 
-const LabelSourceProvider = ({children}: {children: React.ReactNode}): JSX.Element => {
+const LabelsSource = ({children}: {children: React.ReactNode}): JSX.Element => {
   const {
     labelNames,
     labelValues,
