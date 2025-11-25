@@ -1401,7 +1401,8 @@ func TestFilterData(t *testing.T) {
 			r.Release()
 		}
 	}()
-	r := profile.NewRecordReader(recs[0])
+	r, err := profile.NewRecordReader(recs[0])
+	require.NoError(t, err)
 	valid := 0
 	for i := 0; i < r.Location.Len(); i++ {
 		if r.Location.IsValid(i) {
@@ -1464,7 +1465,8 @@ func TestFilterUnsymbolized(t *testing.T) {
 			r.Release()
 		}
 	}()
-	r := profile.NewRecordReader(recs[0])
+	r, err := profile.NewRecordReader(recs[0])
+	require.NoError(t, err)
 	valid := 0
 	for i := 0; i < r.Location.Len(); i++ {
 		if r.Location.IsValid(i) {
@@ -1560,7 +1562,8 @@ func TestFilterDataWithPath(t *testing.T) {
 			r.Release()
 		}
 	}()
-	r := profile.NewRecordReader(recs[0])
+	r, err := profile.NewRecordReader(recs[0])
+	require.NoError(t, err)
 	validIndexes := []uint32{}
 	for i := 0; i < r.Location.Len(); i++ {
 		if r.Location.IsValid(i) {
@@ -1662,7 +1665,8 @@ func TestFilterDataFrameFilter(t *testing.T) {
 			r.Release()
 		}
 	}()
-	r := profile.NewRecordReader(recs[0])
+	r, err := profile.NewRecordReader(recs[0])
+	require.NoError(t, err)
 	valid := 0
 	for i := 0; i < r.Location.Len(); i++ {
 		if r.Location.IsValid(i) {
@@ -1958,7 +1962,8 @@ func TestFilterDataExclude(t *testing.T) {
 		totalValue := int64(0)
 		for _, rec := range recs {
 			totalRows += rec.NumRows()
-			r := profile.NewRecordReader(rec)
+			r, err := profile.NewRecordReader(rec)
+			require.NoError(t, err)
 			totalValue += math.Int64.Sum(r.Value)
 		}
 		require.Equal(t, int64(2), totalRows)
