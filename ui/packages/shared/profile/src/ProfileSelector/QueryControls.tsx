@@ -15,7 +15,7 @@ import {useState} from 'react';
 
 import {Switch} from '@headlessui/react';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
-import Select, {type SelectInstance} from 'react-select';
+import {type SelectInstance} from 'react-select';
 
 import {ProfileTypesResponse, QueryServiceClient} from '@parca/client';
 import {Button, DateTimeRange, DateTimeRangePicker, useParcaContext} from '@parca/components';
@@ -24,6 +24,7 @@ import {TEST_IDS, testId} from '@parca/test-utils';
 
 import MatchersInput from '../MatchersInput';
 import ProfileTypeSelector from '../ProfileTypeSelector';
+import SelectWithRefresh from '../SelectWithRefresh';
 import SimpleMatchers from '../SimpleMatchers';
 import ViewMatchers from '../ViewMatchers';
 
@@ -65,6 +66,7 @@ interface QueryControlsProps {
   setUserSumBySelection: (sumBy: string[]) => void;
   sumByRef: React.RefObject<SelectInstance>;
   profileType: ProfileType;
+  refreshLabelNames: () => Promise<void>;
 }
 
 export function QueryControls({
@@ -93,6 +95,7 @@ export function QueryControls({
   profileType,
   showSumBySelector,
   profileTypesError,
+  refreshLabelNames,
 }: QueryControlsProps): JSX.Element {
   const {timezone} = useParcaContext();
   const [searchExecutedTimestamp, setSearchExecutedTimestamp] = useState<number>(0);
@@ -203,7 +206,7 @@ export function QueryControls({
               Sum by
             </label>
           </div>
-          <Select<SelectOption, true>
+          <SelectWithRefresh<SelectOption, true>
             id="h-sum-by-selector"
             data-testid={testId(TEST_IDS.SUM_BY_SELECT)['data-testid']}
             defaultValue={[]}
@@ -220,7 +223,16 @@ export function QueryControls({
             placeholder="Labels..."
             styles={{
               indicatorSeparator: () => ({display: 'none'}),
-              menu: provided => ({...provided, width: 'max-content', zIndex: 50}), // Setting the same zIndex as drop down menus
+              menu: provided => ({
+                ...provided,
+                marginBottom: 0,
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                marginTop: 10,
+                zIndex: 50,
+                minWidth: '320px',
+                position: 'absolute',
+              }),
+              // menu: provided => ({...provided, width: 'max-content', zIndex: 50}), // Setting the same zIndex as drop down menus
             }}
             isLoading={sumBySelectionLoading}
             isDisabled={!profileType.delta}
@@ -245,6 +257,10 @@ export function QueryControls({
                 currentRef.blur();
               }
             }}
+            onRefresh={refreshLabelNames}
+            refreshTitle="Refresh label names"
+            refreshTestId="sum-by-refresh-button"
+            menuTestId={TEST_IDS.SUM_BY_SELECT_FLYOUT}
           />
         </div>
       )}

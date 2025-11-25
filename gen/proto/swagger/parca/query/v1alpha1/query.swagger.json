@@ -16,6 +16,29 @@
     "application/json"
   ],
   "paths": {
+    "/profiles/has_profile_data": {
+      "get": {
+        "summary": "HasProfileData checks if there is any profile data available",
+        "operationId": "QueryService_HasProfileData",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1HasProfileDataResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "QueryService"
+        ]
+      }
+    },
     "/profiles/labels": {
       "get": {
         "summary": "Labels returns the set of label names against a given matching string and time frame",
@@ -603,6 +626,24 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "start",
+            "description": "start is the start of the query time window",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "end",
+            "description": "end is the end of the query time window",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          }
+        ],
         "tags": [
           "QueryService"
         ]
@@ -1375,6 +1416,16 @@
         }
       },
       "title": "GroupBy encapsulates the repeated fields to group by"
+    },
+    "v1alpha1HasProfileDataResponse": {
+      "type": "object",
+      "properties": {
+        "hasData": {
+          "type": "boolean",
+          "title": "has_data indicates whether there is profile data in the store"
+        }
+      },
+      "title": "HasProfileDataResponse is the response indicating whether there is profile data in the store"
     },
     "v1alpha1LabelSet": {
       "type": "object",

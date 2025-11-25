@@ -38,6 +38,7 @@ interface NetworkSeries {
   values: number[][];
   labelset: string;
   isReceive?: boolean;
+  isSelected?: boolean;
 }
 
 interface CommonProps {
@@ -52,7 +53,7 @@ interface CommonProps {
   from: number;
   to: number;
   selectedSeries?: Array<{key: string; value: string}>;
-  onSeriesClick?: (seriesIndex: number) => void;
+  onSeriesClick?: (name: string, seriesIndex: number) => void;
 }
 
 type RawAreaChartProps = CommonProps & {
@@ -186,6 +187,7 @@ function transformToSeries(data: MetricSeries[], isReceive = false): NetworkSeri
         }, []),
         labelset: metric.map(m => `${m.name}=${m.value}`).join(','),
         isReceive,
+        isSelected: s.isSelected,
       });
     }
     return agg;
@@ -223,6 +225,7 @@ function transformNetworkSeriesToSeries(
         timestamp,
         value,
       ]),
+      highlighted: networkSeries.isSelected ?? false,
     };
   });
 }
@@ -259,7 +262,7 @@ const RawAreaChart = ({
       setTimeRange={setTimeRange}
       onSampleClick={closestPoint => {
         if (onSeriesClick != null) {
-          onSeriesClick(closestPoint.seriesIndex);
+          onSeriesClick(humanReadableName, closestPoint.seriesIndex);
         }
       }}
       yAxisLabel={humanReadableName}
@@ -369,7 +372,7 @@ const AreaChart = ({
       <motion.div
         className="w-full relative"
         key="area-chart-graph-loaded"
-        initial={{display: 'none', opacity: 0}}
+        initial={false}
         animate={{display: 'block', opacity: 1}}
         transition={{duration: 0.5}}
       >

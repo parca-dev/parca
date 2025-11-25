@@ -172,6 +172,7 @@ const SimpleMatchers = ({
               },
               {meta: metadata}
             ).response;
+            console.log('Fetched label values:', response.labelValues);
             const sanitizedValues = sanitizeLabelValue(response.labelValues);
             return sanitizedValues;
           }
@@ -203,7 +204,12 @@ const SimpleMatchers = ({
     [setMatchersString]
   );
 
-  const {labelNameOptions, isLoading: labelNamesLoading, refetchLabelValues} = useLabels();
+  const {
+    labelNameOptions,
+    isLoading: labelNamesLoading,
+    refetchLabelValues,
+    refetchLabelNames,
+  } = useLabels();
 
   // Helper to ensure selected label name is in the options (for page load before API returns)
   const getLabelNameOptionsWithSelected = useCallback(
@@ -451,6 +457,7 @@ const SimpleMatchers = ({
             loading={labelNamesLoading}
             searchable={true}
             {...testId(TEST_IDS.LABEL_NAME_SELECT)}
+            refetchValues={refetchLabelNames}
           />
           <Select
             items={operatorOptions}
@@ -478,9 +485,8 @@ const SimpleMatchers = ({
             onButtonClick={() => handleLabelValueClick(index)}
             editable={isRowRegex(row)}
             {...testId(TEST_IDS.LABEL_VALUE_SELECT)}
-            refetchLabelValues={refetchLabelValues}
+            refetchValues={async () => await refetchLabelValues(row.labelName)}
             showLoadingInButton={true}
-            hasRefreshButton={true}
           />
           <button
             onClick={() => removeRow(index)}

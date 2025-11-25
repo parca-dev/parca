@@ -13,7 +13,7 @@
 
 import {ReactNode} from 'react';
 
-import {useParcaContext, useURLState} from '@parca/components';
+import {useParcaContext, useURLState, useURLStateBatch} from '@parca/components';
 
 import {ProfileSource} from '../../../ProfileSource';
 import Dropdown, {DropdownElement, InnerAction} from './Dropdown';
@@ -31,6 +31,7 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
   );
   const [, setSandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
   const {enableSourcesView, enableSandwichView} = useParcaContext();
+  const batchUpdates = useURLStateBatch();
 
   const allItems: Array<{
     key: string;
@@ -127,11 +128,15 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
           setDashboardItems([...dashboardItems, item.key]);
         } else {
           const newDashboardItems = dashboardItems.filter(v => v !== item.key);
-          setDashboardItems(newDashboardItems);
 
-          // Reset sandwich function name when removing sandwich panel
+          // Batch updates when removing sandwich panel to combine both URL changes
           if (item.key === 'sandwich') {
-            setSandwichFunctionName(undefined);
+            batchUpdates(() => {
+              setDashboardItems(newDashboardItems);
+              setSandwichFunctionName(undefined);
+            });
+          } else {
+            setDashboardItems(newDashboardItems);
           }
         }
       },

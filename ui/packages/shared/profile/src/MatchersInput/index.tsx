@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useMemo, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 
 import {useQuery} from '@tanstack/react-query';
 import cx from 'classnames';
@@ -46,6 +46,7 @@ export interface ILabelNamesResult {
 interface UseLabelNames {
   result: ILabelNamesResult;
   loading: boolean;
+  refetch: () => Promise<void>;
 }
 
 export const useLabelNames = (
@@ -57,7 +58,7 @@ export const useLabelNames = (
 ): UseLabelNames => {
   const metadata = useGrpcMetadata();
 
-  const {data, isLoading, error} = useGrpcQuery<LabelsResponse>({
+  const {data, isLoading, error, refetch} = useGrpcQuery<LabelsResponse>({
     key: ['labelNames', profileType, match?.join(','), start, end],
     queryFn: async signal => {
       const request: LabelsRequest = {match: match !== undefined ? match : []};
@@ -77,7 +78,17 @@ export const useLabelNames = (
     },
   });
 
-  return {result: {response: data, error: error as Error}, loading: isLoading};
+  useEffect(() => {
+    console.log('Label names query result:', {data, error, isLoading});
+  }, [data, error, isLoading]);
+
+  return {
+    result: {response: data, error: error as Error},
+    loading: isLoading,
+    refetch: async () => {
+      await refetch();
+    },
+  };
 };
 
 interface UseLabelValues {
@@ -86,7 +97,7 @@ interface UseLabelValues {
     error?: Error;
   };
   loading: boolean;
-  refetch: () => void;
+  refetch: () => Promise<void>;
 }
 
 export const useLabelValues = (
@@ -119,11 +130,13 @@ export const useLabelValues = (
     },
   });
 
+  console.log('Label values query result:', {data, error, isLoading, labelName});
+
   return {
     result: {response: data ?? [], error: error as Error},
     loading: isLoading,
-    refetch: () => {
-      void refetch();
+    refetch: async () => {
+      await refetch();
     },
   };
 };
@@ -163,6 +176,7 @@ const MatchersInput = ({
     setCurrentLabelName,
     shouldHandlePrefixes,
     refetchLabelValues,
+    refetchLabelNames,
   } = useLabels();
 
   const value = currentQuery.matchersString();
@@ -333,9 +347,12 @@ const MatchersInput = ({
         inputRef={inputRef.current}
         runQuery={runQuery}
         focusedInput={focusedInput}
-        isLabelValuesLoading={isLabelValuesLoading && lastCompleted.type === 'literal'}
+        isLabelValuesLoading={
+          isLabelValuesLoading && lastCompleted.type === 'literal' && lastCompleted.value !== ','
+        }
         shouldTrimPrefix={shouldHandlePrefixes}
         refetchLabelValues={refetchLabelValues}
+        refetchLabelNames={refetchLabelNames}
       />
     </div>
   );

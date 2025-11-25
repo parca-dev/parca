@@ -17,7 +17,8 @@ import {Icon} from '@iconify/react';
 import cx from 'classnames';
 import levenshtein from 'fast-levenshtein';
 
-import {Button, DividerWithLabel, useParcaContext} from '@parca/components';
+import {Button, DividerWithLabel, RefreshButton, useParcaContext} from '@parca/components';
+import {TEST_IDS, testId} from '@parca/test-utils/dist/test-ids';
 
 export interface SelectElement {
   active: JSX.Element;
@@ -55,12 +56,11 @@ interface CustomSelectProps {
   searchable?: boolean;
   onButtonClick?: () => void;
   editable?: boolean;
-  refetchLabelValues?: () => void;
+  refetchValues?: () => Promise<void>;
   showLoadingInButton?: boolean;
-  hasRefreshButton?: boolean;
 }
 
-const CustomSelect: React.FC<CustomSelectProps> = ({
+const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
   items: itemsProp,
   selectedKey,
   onSelection,
@@ -76,9 +76,9 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   searchable = false,
   onButtonClick,
   editable = false,
-  refetchLabelValues,
+  refetchValues,
   showLoadingInButton = false,
-  hasRefreshButton = false,
+  ...restProps
 }) => {
   const {loader} = useParcaContext();
   const [isOpen, setIsOpen] = useState(false);
@@ -91,15 +91,15 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   const optionRefs = useRef<Array<HTMLElement | null>>([]);
 
   const handleRefetch = useCallback(async () => {
-    if (refetchLabelValues == null || isRefetching) return;
+    if (refetchValues == null || isRefetching) return;
 
     setIsRefetching(true);
     try {
-      await refetchLabelValues();
+      await refetchValues();
     } finally {
       setIsRefetching(false);
     }
-  }, [refetchLabelValues, isRefetching]);
+  }, [refetchValues, isRefetching]);
 
   let items: TypedSelectItem[] = [];
   if (itemsProp[0] != null && 'type' in itemsProp[0]) {
@@ -212,7 +212,10 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   const renderSelection = (selection: SelectItem | string | undefined): string | JSX.Element => {
     if (showLoadingInButton && loading === true && selectedKey === '') {
       return (
-        <span className="flex items-center gap-2" data-testid="label-value-loading-indicator">
+        <span
+          className="flex items-center gap-2"
+          {...testId(TEST_IDS.LABEL_VALUE_LOADING_INDICATOR)}
+        >
           <Icon icon="svg-spinners:ring-resize" className="w-4 h-4" />
           <span>Loading...</span>
         </span>
@@ -270,6 +273,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         role="button"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
+        {...restProps}
       >
         <div
           className={cx(
@@ -287,12 +291,12 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         <div
           ref={optionsRef}
           className={cx(
-            'absolute z-50 mt-1 pt-0 max-h-[50vh] w-max overflow-auto rounded-md bg-gray-50 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:ring-white dark:ring-opacity-20 sm:text-sm',
+            'absolute z-50 mt-1 max-h-[50vh] w-max overflow-auto rounded-md bg-gray-50 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:ring-white dark:ring-opacity-20 sm:text-sm',
             {[optionsClassname]: optionsClassname.length > 0}
           )}
           role="listbox"
         >
-          <div className={cx('relative', {'pb-6': hasRefreshButton})}>
+          <div className="relative flex flex-col">
             {searchable && (
               <div className="sticky z-10 top-[-5px] w-auto max-w-full">
                 <div className="flex flex-col">
@@ -334,68 +338,50 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                 </div>
               </div>
             )}
-            {refetchLabelValues !== undefined && loading !== true && (
-              <div className="absolute w-full bottom-0 px-3 bg-gray-50 dark:bg-gray-800">
-                <button
-                  onClick={e => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    void handleRefetch();
-                  }}
-                  disabled={isRefetching}
-                  className={cx(
-                    'p-1 flex items-center gap-1 rounded-full transition-all duration-200 w-full justify-center',
-                    isRefetching
-                      ? 'cursor-wait opacity-50'
-                      : 'hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer'
-                  )}
-                  title="Refresh label values"
-                  type="button"
-                  data-testid="label-value-refresh-button"
+            <div className="flex-1 min-h-0">
+              {loading === true ? (
+                <div className="w-[270px]">{loader}</div>
+              ) : groupedFilteredItems.length === 0 ? (
+                <div
+                  className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center"
+                  {...testId(TEST_IDS.LABEL_VALUE_NO_RESULTS)}
                 >
-                  <Icon
-                    icon="system-uicons:reset"
-                    className={cx(
-                      'w-3 h-3 text-gray-500 dark:text-gray-400',
-                      isRefetching && 'animate-spin'
-                    )}
-                  />
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Refresh results</span>
-                </button>
-              </div>
-            )}
-            {loading === true ? (
-              <div className="w-[270px]">{loader}</div>
-            ) : groupedFilteredItems.length === 0 ? (
-              <div
-                className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center"
-                data-testid="label-value-no-results"
-              >
-                No values found
-              </div>
-            ) : (
-              groupedFilteredItems.map(group => (
-                <>
-                  {groupedFilteredItems.length > 1 &&
-                  groupedFilteredItems.every(g => g.type !== '') &&
-                  group.type !== '' ? (
-                    <div className="pl-2">
-                      <DividerWithLabel label={group.type} />
-                    </div>
-                  ) : null}
-                  {group.values.map((item, index) => (
-                    <OptionItem
-                      key={item.key}
-                      item={item}
-                      index={index}
-                      optionRefs={optionRefs}
-                      focusedIndex={focusedIndex}
-                      selectedKey={selectedKey}
-                      handleSelection={handleSelection}
-                    />
-                  ))}
-                </>
-              ))
+                  No values found
+                </div>
+              ) : (
+                groupedFilteredItems.map(group => (
+                  <>
+                    {groupedFilteredItems.length > 1 &&
+                    groupedFilteredItems.every(g => g.type !== '') &&
+                    group.type !== '' ? (
+                      <div className="pl-2">
+                        <DividerWithLabel label={group.type} />
+                      </div>
+                    ) : null}
+                    {group.values.map((item, index) => (
+                      <OptionItem
+                        key={item.key}
+                        item={item}
+                        index={index}
+                        optionRefs={optionRefs}
+                        focusedIndex={focusedIndex}
+                        selectedKey={selectedKey}
+                        handleSelection={handleSelection}
+                      />
+                    ))}
+                  </>
+                ))
+              )}
+            </div>
+            {refetchValues !== undefined && loading !== true && (
+              <RefreshButton
+                onClick={() => void handleRefetch()}
+                disabled={isRefetching}
+                title="Refresh label values"
+                testId={TEST_IDS.LABEL_VALUE_REFRESH_BUTTON}
+                sticky={true}
+                loading={isRefetching}
+              />
             )}
           </div>
         </div>

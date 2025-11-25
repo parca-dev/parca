@@ -11,57 +11,87 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {QueryServiceClient} from '@parca/client';
-import {useURLState} from '@parca/components';
+import {useURLStateBatch} from '@parca/components';
 import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 import type {NavigateFunction} from '@parca/utilities';
 
-import {ProfileDiffSource, ProfileSelection, ProfileViewWithData} from '..';
-import ProfileSelector, {QuerySelection} from '../ProfileSelector';
+import {ProfileDiffSource, ProfileViewWithData} from '..';
+import ProfileSelector from '../ProfileSelector';
+import {useCompareModeMeta} from '../hooks/useCompareModeMeta';
+import {useQueryState} from '../hooks/useQueryState';
 
 interface ProfileExplorerCompareProps {
   queryClient: QueryServiceClient;
-
-  queryA: QuerySelection;
-  queryB: QuerySelection;
-  profileA: ProfileSelection | null;
-  profileB: ProfileSelection | null;
-  selectQueryA: (query: QuerySelection) => void;
-  selectQueryB: (query: QuerySelection) => void;
-  selectProfileA: (source: ProfileSelection) => void;
-  selectProfileB: (source: ProfileSelection) => void;
-  closeProfile: (card: string) => void;
-
   navigateTo: NavigateFunction;
 }
 
 const ProfileExplorerCompare = ({
   queryClient,
-  queryA,
-  queryB,
-  profileA,
-  profileB,
-  selectQueryA,
-  selectQueryB,
-  selectProfileA,
-  selectProfileB,
-  closeProfile,
   navigateTo,
 }: ProfileExplorerCompareProps): JSX.Element => {
   const [showMetricsGraph, setShowMetricsGraph] = useState(true);
+  const batchUpdates = useURLStateBatch();
+  const {closeCompareMode, isCompareMode, isCompareAbsolute} = useCompareModeMeta();
 
-  const closeProfileA = (): void => {
-    closeProfile('A');
-  };
+  // Read ProfileSource states from URL for both sides
+  const {profileSource: profileSourceA, querySelection: querySelectionA} = useQueryState({
+    suffix: '_a',
+    comparing: true,
+  });
+  const {
+    profileSource: profileSourceB,
+    querySelection: querySelectionB,
+    commitDraft: commitDraftB,
+    setDraftExpression: setDraftExpressionB,
+    setDraftTimeRange: setDraftTimeRangeB,
+  } = useQueryState({suffix: '_b', comparing: true});
 
-  const closeProfileB = (): void => {
-    closeProfile('B');
-  };
+  // Derive enforced profile name from side A's expression
+  const enforcedProfileNameA = useMemo(() => {
+    return querySelectionA.expression !== ''
+      ? Query.parse(querySelectionA.expression).profileName()
+      : '';
+  }, [querySelectionA.expression]);
 
-  const [compareAbsolute] = useURLState('compare_absolute');
+  // Initialize side B with side A's values if side B is empty
+  useEffect(() => {
+    // If not in compare mode, don't initialize
+    if (!isCompareMode) {
+      return;
+    }
+
+    if (querySelectionB.expression === '' && querySelectionA.expression !== '') {
+      batchUpdates(() => {
+        setDraftExpressionB(querySelectionA.expression);
+        setDraftTimeRangeB(querySelectionA.from, querySelectionA.to, querySelectionA.timeSelection);
+        // Commit to update the URL and trigger metrics graph load
+        commitDraftB();
+      });
+    }
+  }, [
+    isCompareMode,
+    querySelectionA.expression,
+    querySelectionA.from,
+    querySelectionA.to,
+    querySelectionA.timeSelection,
+    querySelectionB.expression,
+    setDraftExpressionB,
+    setDraftTimeRangeB,
+    commitDraftB,
+    batchUpdates,
+  ]);
+
+  const closeProfileA = useCallback((): void => {
+    closeCompareMode('A');
+  }, [closeCompareMode]);
+
+  const closeProfileB = useCallback((): void => {
+    closeCompareMode('B');
+  }, [closeCompareMode]);
 
   return (
     <div {...testId(TEST_IDS.COMPARE_CONTAINER)}>
@@ -72,10 +102,6 @@ const ProfileExplorerCompare = ({
         >
           <ProfileSelector
             queryClient={queryClient}
-            querySelection={queryA}
-            profileSelection={profileA}
-            selectProfile={selectProfileA}
-            selectQuery={selectQueryA}
             closeProfile={closeProfileA}
             enforcedProfileName={''}
             comparing={true}
@@ -91,12 +117,8 @@ const ProfileExplorerCompare = ({
         >
           <ProfileSelector
             queryClient={queryClient}
-            querySelection={queryB}
-            profileSelection={profileB}
-            selectProfile={selectProfileB}
-            selectQuery={selectQueryB}
             closeProfile={closeProfileB}
-            enforcedProfileName={Query.parse(queryA.expression).profileName()}
+            enforcedProfileName={enforcedProfileNameA}
             comparing={true}
             navigateTo={navigateTo}
             suffix="_b"
@@ -106,16 +128,12 @@ const ProfileExplorerCompare = ({
         </div>
       </div>
       <div className="grid grid-cols-1">
-        {profileA != null && profileB != null ? (
+        {profileSourceA != null && profileSourceB != null ? (
           <div {...testId(TEST_IDS.COMPARE_PROFILE_VIEW)}>
             <ProfileViewWithData
               queryClient={queryClient}
               profileSource={
-                new ProfileDiffSource(
-                  profileA.ProfileSource(),
-                  profileB.ProfileSource(),
-                  compareAbsolute === 'true'
-                )
+                new ProfileDiffSource(profileSourceA, profileSourceB, isCompareAbsolute)
               }
             />
           </div>

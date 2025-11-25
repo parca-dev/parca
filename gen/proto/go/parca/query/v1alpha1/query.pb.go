@@ -213,7 +213,11 @@ func (QueryRequest_ReportType) EnumDescriptor() ([]byte, []int) {
 
 // ProfileTypesRequest is the request to retrieve the list of available profile types.
 type ProfileTypesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// start is the start of the query time window
+	Start *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=start,proto3,oneof" json:"start,omitempty"`
+	// end is the end of the query time window
+	End           *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=end,proto3,oneof" json:"end,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -246,6 +250,20 @@ func (x *ProfileTypesRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ProfileTypesRequest.ProtoReflect.Descriptor instead.
 func (*ProfileTypesRequest) Descriptor() ([]byte, []int) {
 	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *ProfileTypesRequest) GetStart() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Start
+	}
+	return nil
+}
+
+func (x *ProfileTypesRequest) GetEnd() *timestamppb.Timestamp {
+	if x != nil {
+		return x.End
+	}
+	return nil
 }
 
 // ProfileTypesResponse is the response to retrieve the list of available profile types.
@@ -3847,12 +3865,99 @@ func (x *ProfileMetadata) GetLabels() []string {
 	return nil
 }
 
+// HasProfileDataRequest is the request to check if there is profile data in the store
+type HasProfileDataRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HasProfileDataRequest) Reset() {
+	*x = HasProfileDataRequest{}
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[48]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HasProfileDataRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HasProfileDataRequest) ProtoMessage() {}
+
+func (x *HasProfileDataRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[48]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HasProfileDataRequest.ProtoReflect.Descriptor instead.
+func (*HasProfileDataRequest) Descriptor() ([]byte, []int) {
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{48}
+}
+
+// HasProfileDataResponse is the response indicating whether there is profile data in the store
+type HasProfileDataResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// has_data indicates whether there is profile data in the store
+	HasData       bool `protobuf:"varint,1,opt,name=has_data,json=hasData,proto3" json:"has_data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HasProfileDataResponse) Reset() {
+	*x = HasProfileDataResponse{}
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[49]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HasProfileDataResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HasProfileDataResponse) ProtoMessage() {}
+
+func (x *HasProfileDataResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_parca_query_v1alpha1_query_proto_msgTypes[49]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HasProfileDataResponse.ProtoReflect.Descriptor instead.
+func (*HasProfileDataResponse) Descriptor() ([]byte, []int) {
+	return file_parca_query_v1alpha1_query_proto_rawDescGZIP(), []int{49}
+}
+
+func (x *HasProfileDataResponse) GetHasData() bool {
+	if x != nil {
+		return x.HasData
+	}
+	return false
+}
+
 var File_parca_query_v1alpha1_query_proto protoreflect.FileDescriptor
 
 const file_parca_query_v1alpha1_query_proto_rawDesc = "" +
 	"\n" +
-	" parca/query/v1alpha1/query.proto\x12\x14parca.query.v1alpha1\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a(parca/metastore/v1alpha1/metastore.proto\x1a.parca/profilestore/v1alpha1/profilestore.proto\"\x15\n" +
-	"\x13ProfileTypesRequest\"O\n" +
+	" parca/query/v1alpha1/query.proto\x12\x14parca.query.v1alpha1\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a(parca/metastore/v1alpha1/metastore.proto\x1a.parca/profilestore/v1alpha1/profilestore.proto\"\x91\x01\n" +
+	"\x13ProfileTypesRequest\x125\n" +
+	"\x05start\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\x05start\x88\x01\x01\x121\n" +
+	"\x03end\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampH\x01R\x03end\x88\x01\x01B\b\n" +
+	"\x06_startB\x06\n" +
+	"\x04_end\"O\n" +
 	"\x14ProfileTypesResponse\x127\n" +
 	"\x05types\x18\x01 \x03(\v2!.parca.query.v1alpha1.ProfileTypeR\x05types\"\xbb\x01\n" +
 	"\vProfileType\x12\x12\n" +
@@ -4141,7 +4246,10 @@ const file_parca_query_v1alpha1_query_proto_rawDesc = "" +
 	"\x04unit\x18\x02 \x01(\tR\x04unit\"N\n" +
 	"\x0fProfileMetadata\x12#\n" +
 	"\rmapping_files\x18\x01 \x03(\tR\fmappingFiles\x12\x16\n" +
-	"\x06labels\x18\x02 \x03(\tR\x06labels2\xdf\x06\n" +
+	"\x06labels\x18\x02 \x03(\tR\x06labels\"\x17\n" +
+	"\x15HasProfileDataRequest\"3\n" +
+	"\x16HasProfileDataResponse\x12\x19\n" +
+	"\bhas_data\x18\x01 \x01(\bR\ahasData2\xf1\a\n" +
 	"\fQueryService\x12~\n" +
 	"\n" +
 	"QueryRange\x12'.parca.query.v1alpha1.QueryRangeRequest\x1a(.parca.query.v1alpha1.QueryRangeResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/profiles/query_range\x12i\n" +
@@ -4150,7 +4258,8 @@ const file_parca_query_v1alpha1_query_proto_rawDesc = "" +
 	"\fProfileTypes\x12).parca.query.v1alpha1.ProfileTypesRequest\x1a*.parca.query.v1alpha1.ProfileTypesResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/profiles/types\x12m\n" +
 	"\x06Labels\x12#.parca.query.v1alpha1.LabelsRequest\x1a$.parca.query.v1alpha1.LabelsResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/profiles/labels\x12\x81\x01\n" +
 	"\x06Values\x12#.parca.query.v1alpha1.ValuesRequest\x1a$.parca.query.v1alpha1.ValuesResponse\",\x82\xd3\xe4\x93\x02&\x12$/profiles/labels/{label_name}/values\x12\x81\x01\n" +
-	"\fShareProfile\x12).parca.query.v1alpha1.ShareProfileRequest\x1a*.parca.query.v1alpha1.ShareProfileResponse\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/profiles/shareB\xe4\x01\n" +
+	"\fShareProfile\x12).parca.query.v1alpha1.ShareProfileRequest\x1a*.parca.query.v1alpha1.ShareProfileResponse\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/profiles/share\x12\x8f\x01\n" +
+	"\x0eHasProfileData\x12+.parca.query.v1alpha1.HasProfileDataRequest\x1a,.parca.query.v1alpha1.HasProfileDataResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/profiles/has_profile_dataB\xe4\x01\n" +
 	"\x18com.parca.query.v1alpha1B\n" +
 	"QueryProtoP\x01ZJgithub.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1;queryv1alpha1\xa2\x02\x03PQX\xaa\x02\x14Parca.Query.V1alpha1\xca\x02\x14Parca\\Query\\V1alpha1\xe2\x02 Parca\\Query\\V1alpha1\\GPBMetadata\xea\x02\x16Parca::Query::V1alpha1b\x06proto3"
 
@@ -4167,7 +4276,7 @@ func file_parca_query_v1alpha1_query_proto_rawDescGZIP() []byte {
 }
 
 var file_parca_query_v1alpha1_query_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_parca_query_v1alpha1_query_proto_msgTypes = make([]protoimpl.MessageInfo, 48)
+var file_parca_query_v1alpha1_query_proto_msgTypes = make([]protoimpl.MessageInfo, 50)
 var file_parca_query_v1alpha1_query_proto_goTypes = []any{
 	(ProfileDiffSelection_Mode)(0),  // 0: parca.query.v1alpha1.ProfileDiffSelection.Mode
 	(QueryRequest_Mode)(0),          // 1: parca.query.v1alpha1.QueryRequest.Mode
@@ -4220,111 +4329,117 @@ var file_parca_query_v1alpha1_query_proto_goTypes = []any{
 	(*ShareProfileResponse)(nil),    // 48: parca.query.v1alpha1.ShareProfileResponse
 	(*TableArrow)(nil),              // 49: parca.query.v1alpha1.TableArrow
 	(*ProfileMetadata)(nil),         // 50: parca.query.v1alpha1.ProfileMetadata
-	(*timestamppb.Timestamp)(nil),   // 51: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),     // 52: google.protobuf.Duration
-	(*v1alpha1.LabelSet)(nil),       // 53: parca.profilestore.v1alpha1.LabelSet
-	(*v1alpha11.Location)(nil),      // 54: parca.metastore.v1alpha1.Location
-	(*v1alpha11.Mapping)(nil),       // 55: parca.metastore.v1alpha1.Mapping
-	(*v1alpha11.Function)(nil),      // 56: parca.metastore.v1alpha1.Function
-	(*v1alpha11.Line)(nil),          // 57: parca.metastore.v1alpha1.Line
+	(*HasProfileDataRequest)(nil),   // 51: parca.query.v1alpha1.HasProfileDataRequest
+	(*HasProfileDataResponse)(nil),  // 52: parca.query.v1alpha1.HasProfileDataResponse
+	(*timestamppb.Timestamp)(nil),   // 53: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),     // 54: google.protobuf.Duration
+	(*v1alpha1.LabelSet)(nil),       // 55: parca.profilestore.v1alpha1.LabelSet
+	(*v1alpha11.Location)(nil),      // 56: parca.metastore.v1alpha1.Location
+	(*v1alpha11.Mapping)(nil),       // 57: parca.metastore.v1alpha1.Mapping
+	(*v1alpha11.Function)(nil),      // 58: parca.metastore.v1alpha1.Function
+	(*v1alpha11.Line)(nil),          // 59: parca.metastore.v1alpha1.Line
 }
 var file_parca_query_v1alpha1_query_proto_depIdxs = []int32{
-	5,  // 0: parca.query.v1alpha1.ProfileTypesResponse.types:type_name -> parca.query.v1alpha1.ProfileType
-	51, // 1: parca.query.v1alpha1.QueryRangeRequest.start:type_name -> google.protobuf.Timestamp
-	51, // 2: parca.query.v1alpha1.QueryRangeRequest.end:type_name -> google.protobuf.Timestamp
-	52, // 3: parca.query.v1alpha1.QueryRangeRequest.step:type_name -> google.protobuf.Duration
-	8,  // 4: parca.query.v1alpha1.QueryRangeResponse.series:type_name -> parca.query.v1alpha1.MetricsSeries
-	53, // 5: parca.query.v1alpha1.MetricsSeries.labelset:type_name -> parca.profilestore.v1alpha1.LabelSet
-	9,  // 6: parca.query.v1alpha1.MetricsSeries.samples:type_name -> parca.query.v1alpha1.MetricsSample
-	46, // 7: parca.query.v1alpha1.MetricsSeries.period_type:type_name -> parca.query.v1alpha1.ValueType
-	46, // 8: parca.query.v1alpha1.MetricsSeries.sample_type:type_name -> parca.query.v1alpha1.ValueType
-	51, // 9: parca.query.v1alpha1.MetricsSample.timestamp:type_name -> google.protobuf.Timestamp
-	51, // 10: parca.query.v1alpha1.MergeProfile.start:type_name -> google.protobuf.Timestamp
-	51, // 11: parca.query.v1alpha1.MergeProfile.end:type_name -> google.protobuf.Timestamp
-	51, // 12: parca.query.v1alpha1.SingleProfile.time:type_name -> google.protobuf.Timestamp
-	13, // 13: parca.query.v1alpha1.DiffProfile.a:type_name -> parca.query.v1alpha1.ProfileDiffSelection
-	13, // 14: parca.query.v1alpha1.DiffProfile.b:type_name -> parca.query.v1alpha1.ProfileDiffSelection
-	0,  // 15: parca.query.v1alpha1.ProfileDiffSelection.mode:type_name -> parca.query.v1alpha1.ProfileDiffSelection.Mode
-	10, // 16: parca.query.v1alpha1.ProfileDiffSelection.merge:type_name -> parca.query.v1alpha1.MergeProfile
-	11, // 17: parca.query.v1alpha1.ProfileDiffSelection.single:type_name -> parca.query.v1alpha1.SingleProfile
-	1,  // 18: parca.query.v1alpha1.QueryRequest.mode:type_name -> parca.query.v1alpha1.QueryRequest.Mode
-	12, // 19: parca.query.v1alpha1.QueryRequest.diff:type_name -> parca.query.v1alpha1.DiffProfile
-	10, // 20: parca.query.v1alpha1.QueryRequest.merge:type_name -> parca.query.v1alpha1.MergeProfile
-	11, // 21: parca.query.v1alpha1.QueryRequest.single:type_name -> parca.query.v1alpha1.SingleProfile
-	2,  // 22: parca.query.v1alpha1.QueryRequest.report_type:type_name -> parca.query.v1alpha1.QueryRequest.ReportType
-	25, // 23: parca.query.v1alpha1.QueryRequest.group_by:type_name -> parca.query.v1alpha1.GroupBy
-	24, // 24: parca.query.v1alpha1.QueryRequest.source_reference:type_name -> parca.query.v1alpha1.SourceReference
-	23, // 25: parca.query.v1alpha1.QueryRequest.runtime_filter:type_name -> parca.query.v1alpha1.RuntimeFilter
-	18, // 26: parca.query.v1alpha1.QueryRequest.filter:type_name -> parca.query.v1alpha1.Filter
-	16, // 27: parca.query.v1alpha1.FilterCriteria.function_name:type_name -> parca.query.v1alpha1.StringCondition
-	16, // 28: parca.query.v1alpha1.FilterCriteria.system_name:type_name -> parca.query.v1alpha1.StringCondition
-	16, // 29: parca.query.v1alpha1.FilterCriteria.binary:type_name -> parca.query.v1alpha1.StringCondition
-	16, // 30: parca.query.v1alpha1.FilterCriteria.filename:type_name -> parca.query.v1alpha1.StringCondition
-	17, // 31: parca.query.v1alpha1.FilterCriteria.address:type_name -> parca.query.v1alpha1.NumberCondition
-	17, // 32: parca.query.v1alpha1.FilterCriteria.line_number:type_name -> parca.query.v1alpha1.NumberCondition
-	19, // 33: parca.query.v1alpha1.Filter.stack_filter:type_name -> parca.query.v1alpha1.StackFilter
-	21, // 34: parca.query.v1alpha1.Filter.frame_filter:type_name -> parca.query.v1alpha1.FrameFilter
-	20, // 35: parca.query.v1alpha1.StackFilter.function_name_stack_filter:type_name -> parca.query.v1alpha1.FunctionNameStackFilter
-	15, // 36: parca.query.v1alpha1.StackFilter.criteria:type_name -> parca.query.v1alpha1.FilterCriteria
-	22, // 37: parca.query.v1alpha1.FrameFilter.binary_frame_filter:type_name -> parca.query.v1alpha1.BinaryFrameFilter
-	15, // 38: parca.query.v1alpha1.FrameFilter.criteria:type_name -> parca.query.v1alpha1.FilterCriteria
-	27, // 39: parca.query.v1alpha1.Top.list:type_name -> parca.query.v1alpha1.TopNode
-	28, // 40: parca.query.v1alpha1.TopNode.meta:type_name -> parca.query.v1alpha1.TopNodeMeta
-	54, // 41: parca.query.v1alpha1.TopNodeMeta.location:type_name -> parca.metastore.v1alpha1.Location
-	55, // 42: parca.query.v1alpha1.TopNodeMeta.mapping:type_name -> parca.metastore.v1alpha1.Mapping
-	56, // 43: parca.query.v1alpha1.TopNodeMeta.function:type_name -> parca.metastore.v1alpha1.Function
-	57, // 44: parca.query.v1alpha1.TopNodeMeta.line:type_name -> parca.metastore.v1alpha1.Line
-	32, // 45: parca.query.v1alpha1.Flamegraph.root:type_name -> parca.query.v1alpha1.FlamegraphRootNode
-	54, // 46: parca.query.v1alpha1.Flamegraph.locations:type_name -> parca.metastore.v1alpha1.Location
-	55, // 47: parca.query.v1alpha1.Flamegraph.mapping:type_name -> parca.metastore.v1alpha1.Mapping
-	56, // 48: parca.query.v1alpha1.Flamegraph.function:type_name -> parca.metastore.v1alpha1.Function
-	33, // 49: parca.query.v1alpha1.FlamegraphRootNode.children:type_name -> parca.query.v1alpha1.FlamegraphNode
-	34, // 50: parca.query.v1alpha1.FlamegraphNode.meta:type_name -> parca.query.v1alpha1.FlamegraphNodeMeta
-	33, // 51: parca.query.v1alpha1.FlamegraphNode.children:type_name -> parca.query.v1alpha1.FlamegraphNode
-	54, // 52: parca.query.v1alpha1.FlamegraphNodeMeta.location:type_name -> parca.metastore.v1alpha1.Location
-	55, // 53: parca.query.v1alpha1.FlamegraphNodeMeta.mapping:type_name -> parca.metastore.v1alpha1.Mapping
-	56, // 54: parca.query.v1alpha1.FlamegraphNodeMeta.function:type_name -> parca.metastore.v1alpha1.Function
-	57, // 55: parca.query.v1alpha1.FlamegraphNodeMeta.line:type_name -> parca.metastore.v1alpha1.Line
-	36, // 56: parca.query.v1alpha1.CallgraphNode.meta:type_name -> parca.query.v1alpha1.CallgraphNodeMeta
-	54, // 57: parca.query.v1alpha1.CallgraphNodeMeta.location:type_name -> parca.metastore.v1alpha1.Location
-	55, // 58: parca.query.v1alpha1.CallgraphNodeMeta.mapping:type_name -> parca.metastore.v1alpha1.Mapping
-	56, // 59: parca.query.v1alpha1.CallgraphNodeMeta.function:type_name -> parca.metastore.v1alpha1.Function
-	57, // 60: parca.query.v1alpha1.CallgraphNodeMeta.line:type_name -> parca.metastore.v1alpha1.Line
-	35, // 61: parca.query.v1alpha1.Callgraph.nodes:type_name -> parca.query.v1alpha1.CallgraphNode
-	37, // 62: parca.query.v1alpha1.Callgraph.edges:type_name -> parca.query.v1alpha1.CallgraphEdge
-	29, // 63: parca.query.v1alpha1.QueryResponse.flamegraph:type_name -> parca.query.v1alpha1.Flamegraph
-	26, // 64: parca.query.v1alpha1.QueryResponse.top:type_name -> parca.query.v1alpha1.Top
-	38, // 65: parca.query.v1alpha1.QueryResponse.callgraph:type_name -> parca.query.v1alpha1.Callgraph
-	30, // 66: parca.query.v1alpha1.QueryResponse.flamegraph_arrow:type_name -> parca.query.v1alpha1.FlamegraphArrow
-	31, // 67: parca.query.v1alpha1.QueryResponse.source:type_name -> parca.query.v1alpha1.Source
-	49, // 68: parca.query.v1alpha1.QueryResponse.table_arrow:type_name -> parca.query.v1alpha1.TableArrow
-	50, // 69: parca.query.v1alpha1.QueryResponse.profile_metadata:type_name -> parca.query.v1alpha1.ProfileMetadata
-	51, // 70: parca.query.v1alpha1.SeriesRequest.start:type_name -> google.protobuf.Timestamp
-	51, // 71: parca.query.v1alpha1.SeriesRequest.end:type_name -> google.protobuf.Timestamp
-	51, // 72: parca.query.v1alpha1.LabelsRequest.start:type_name -> google.protobuf.Timestamp
-	51, // 73: parca.query.v1alpha1.LabelsRequest.end:type_name -> google.protobuf.Timestamp
-	51, // 74: parca.query.v1alpha1.ValuesRequest.start:type_name -> google.protobuf.Timestamp
-	51, // 75: parca.query.v1alpha1.ValuesRequest.end:type_name -> google.protobuf.Timestamp
-	14, // 76: parca.query.v1alpha1.ShareProfileRequest.query_request:type_name -> parca.query.v1alpha1.QueryRequest
-	6,  // 77: parca.query.v1alpha1.QueryService.QueryRange:input_type -> parca.query.v1alpha1.QueryRangeRequest
-	14, // 78: parca.query.v1alpha1.QueryService.Query:input_type -> parca.query.v1alpha1.QueryRequest
-	40, // 79: parca.query.v1alpha1.QueryService.Series:input_type -> parca.query.v1alpha1.SeriesRequest
-	3,  // 80: parca.query.v1alpha1.QueryService.ProfileTypes:input_type -> parca.query.v1alpha1.ProfileTypesRequest
-	42, // 81: parca.query.v1alpha1.QueryService.Labels:input_type -> parca.query.v1alpha1.LabelsRequest
-	44, // 82: parca.query.v1alpha1.QueryService.Values:input_type -> parca.query.v1alpha1.ValuesRequest
-	47, // 83: parca.query.v1alpha1.QueryService.ShareProfile:input_type -> parca.query.v1alpha1.ShareProfileRequest
-	7,  // 84: parca.query.v1alpha1.QueryService.QueryRange:output_type -> parca.query.v1alpha1.QueryRangeResponse
-	39, // 85: parca.query.v1alpha1.QueryService.Query:output_type -> parca.query.v1alpha1.QueryResponse
-	41, // 86: parca.query.v1alpha1.QueryService.Series:output_type -> parca.query.v1alpha1.SeriesResponse
-	4,  // 87: parca.query.v1alpha1.QueryService.ProfileTypes:output_type -> parca.query.v1alpha1.ProfileTypesResponse
-	43, // 88: parca.query.v1alpha1.QueryService.Labels:output_type -> parca.query.v1alpha1.LabelsResponse
-	45, // 89: parca.query.v1alpha1.QueryService.Values:output_type -> parca.query.v1alpha1.ValuesResponse
-	48, // 90: parca.query.v1alpha1.QueryService.ShareProfile:output_type -> parca.query.v1alpha1.ShareProfileResponse
-	84, // [84:91] is the sub-list for method output_type
-	77, // [77:84] is the sub-list for method input_type
-	77, // [77:77] is the sub-list for extension type_name
-	77, // [77:77] is the sub-list for extension extendee
-	0,  // [0:77] is the sub-list for field type_name
+	53, // 0: parca.query.v1alpha1.ProfileTypesRequest.start:type_name -> google.protobuf.Timestamp
+	53, // 1: parca.query.v1alpha1.ProfileTypesRequest.end:type_name -> google.protobuf.Timestamp
+	5,  // 2: parca.query.v1alpha1.ProfileTypesResponse.types:type_name -> parca.query.v1alpha1.ProfileType
+	53, // 3: parca.query.v1alpha1.QueryRangeRequest.start:type_name -> google.protobuf.Timestamp
+	53, // 4: parca.query.v1alpha1.QueryRangeRequest.end:type_name -> google.protobuf.Timestamp
+	54, // 5: parca.query.v1alpha1.QueryRangeRequest.step:type_name -> google.protobuf.Duration
+	8,  // 6: parca.query.v1alpha1.QueryRangeResponse.series:type_name -> parca.query.v1alpha1.MetricsSeries
+	55, // 7: parca.query.v1alpha1.MetricsSeries.labelset:type_name -> parca.profilestore.v1alpha1.LabelSet
+	9,  // 8: parca.query.v1alpha1.MetricsSeries.samples:type_name -> parca.query.v1alpha1.MetricsSample
+	46, // 9: parca.query.v1alpha1.MetricsSeries.period_type:type_name -> parca.query.v1alpha1.ValueType
+	46, // 10: parca.query.v1alpha1.MetricsSeries.sample_type:type_name -> parca.query.v1alpha1.ValueType
+	53, // 11: parca.query.v1alpha1.MetricsSample.timestamp:type_name -> google.protobuf.Timestamp
+	53, // 12: parca.query.v1alpha1.MergeProfile.start:type_name -> google.protobuf.Timestamp
+	53, // 13: parca.query.v1alpha1.MergeProfile.end:type_name -> google.protobuf.Timestamp
+	53, // 14: parca.query.v1alpha1.SingleProfile.time:type_name -> google.protobuf.Timestamp
+	13, // 15: parca.query.v1alpha1.DiffProfile.a:type_name -> parca.query.v1alpha1.ProfileDiffSelection
+	13, // 16: parca.query.v1alpha1.DiffProfile.b:type_name -> parca.query.v1alpha1.ProfileDiffSelection
+	0,  // 17: parca.query.v1alpha1.ProfileDiffSelection.mode:type_name -> parca.query.v1alpha1.ProfileDiffSelection.Mode
+	10, // 18: parca.query.v1alpha1.ProfileDiffSelection.merge:type_name -> parca.query.v1alpha1.MergeProfile
+	11, // 19: parca.query.v1alpha1.ProfileDiffSelection.single:type_name -> parca.query.v1alpha1.SingleProfile
+	1,  // 20: parca.query.v1alpha1.QueryRequest.mode:type_name -> parca.query.v1alpha1.QueryRequest.Mode
+	12, // 21: parca.query.v1alpha1.QueryRequest.diff:type_name -> parca.query.v1alpha1.DiffProfile
+	10, // 22: parca.query.v1alpha1.QueryRequest.merge:type_name -> parca.query.v1alpha1.MergeProfile
+	11, // 23: parca.query.v1alpha1.QueryRequest.single:type_name -> parca.query.v1alpha1.SingleProfile
+	2,  // 24: parca.query.v1alpha1.QueryRequest.report_type:type_name -> parca.query.v1alpha1.QueryRequest.ReportType
+	25, // 25: parca.query.v1alpha1.QueryRequest.group_by:type_name -> parca.query.v1alpha1.GroupBy
+	24, // 26: parca.query.v1alpha1.QueryRequest.source_reference:type_name -> parca.query.v1alpha1.SourceReference
+	23, // 27: parca.query.v1alpha1.QueryRequest.runtime_filter:type_name -> parca.query.v1alpha1.RuntimeFilter
+	18, // 28: parca.query.v1alpha1.QueryRequest.filter:type_name -> parca.query.v1alpha1.Filter
+	16, // 29: parca.query.v1alpha1.FilterCriteria.function_name:type_name -> parca.query.v1alpha1.StringCondition
+	16, // 30: parca.query.v1alpha1.FilterCriteria.system_name:type_name -> parca.query.v1alpha1.StringCondition
+	16, // 31: parca.query.v1alpha1.FilterCriteria.binary:type_name -> parca.query.v1alpha1.StringCondition
+	16, // 32: parca.query.v1alpha1.FilterCriteria.filename:type_name -> parca.query.v1alpha1.StringCondition
+	17, // 33: parca.query.v1alpha1.FilterCriteria.address:type_name -> parca.query.v1alpha1.NumberCondition
+	17, // 34: parca.query.v1alpha1.FilterCriteria.line_number:type_name -> parca.query.v1alpha1.NumberCondition
+	19, // 35: parca.query.v1alpha1.Filter.stack_filter:type_name -> parca.query.v1alpha1.StackFilter
+	21, // 36: parca.query.v1alpha1.Filter.frame_filter:type_name -> parca.query.v1alpha1.FrameFilter
+	20, // 37: parca.query.v1alpha1.StackFilter.function_name_stack_filter:type_name -> parca.query.v1alpha1.FunctionNameStackFilter
+	15, // 38: parca.query.v1alpha1.StackFilter.criteria:type_name -> parca.query.v1alpha1.FilterCriteria
+	22, // 39: parca.query.v1alpha1.FrameFilter.binary_frame_filter:type_name -> parca.query.v1alpha1.BinaryFrameFilter
+	15, // 40: parca.query.v1alpha1.FrameFilter.criteria:type_name -> parca.query.v1alpha1.FilterCriteria
+	27, // 41: parca.query.v1alpha1.Top.list:type_name -> parca.query.v1alpha1.TopNode
+	28, // 42: parca.query.v1alpha1.TopNode.meta:type_name -> parca.query.v1alpha1.TopNodeMeta
+	56, // 43: parca.query.v1alpha1.TopNodeMeta.location:type_name -> parca.metastore.v1alpha1.Location
+	57, // 44: parca.query.v1alpha1.TopNodeMeta.mapping:type_name -> parca.metastore.v1alpha1.Mapping
+	58, // 45: parca.query.v1alpha1.TopNodeMeta.function:type_name -> parca.metastore.v1alpha1.Function
+	59, // 46: parca.query.v1alpha1.TopNodeMeta.line:type_name -> parca.metastore.v1alpha1.Line
+	32, // 47: parca.query.v1alpha1.Flamegraph.root:type_name -> parca.query.v1alpha1.FlamegraphRootNode
+	56, // 48: parca.query.v1alpha1.Flamegraph.locations:type_name -> parca.metastore.v1alpha1.Location
+	57, // 49: parca.query.v1alpha1.Flamegraph.mapping:type_name -> parca.metastore.v1alpha1.Mapping
+	58, // 50: parca.query.v1alpha1.Flamegraph.function:type_name -> parca.metastore.v1alpha1.Function
+	33, // 51: parca.query.v1alpha1.FlamegraphRootNode.children:type_name -> parca.query.v1alpha1.FlamegraphNode
+	34, // 52: parca.query.v1alpha1.FlamegraphNode.meta:type_name -> parca.query.v1alpha1.FlamegraphNodeMeta
+	33, // 53: parca.query.v1alpha1.FlamegraphNode.children:type_name -> parca.query.v1alpha1.FlamegraphNode
+	56, // 54: parca.query.v1alpha1.FlamegraphNodeMeta.location:type_name -> parca.metastore.v1alpha1.Location
+	57, // 55: parca.query.v1alpha1.FlamegraphNodeMeta.mapping:type_name -> parca.metastore.v1alpha1.Mapping
+	58, // 56: parca.query.v1alpha1.FlamegraphNodeMeta.function:type_name -> parca.metastore.v1alpha1.Function
+	59, // 57: parca.query.v1alpha1.FlamegraphNodeMeta.line:type_name -> parca.metastore.v1alpha1.Line
+	36, // 58: parca.query.v1alpha1.CallgraphNode.meta:type_name -> parca.query.v1alpha1.CallgraphNodeMeta
+	56, // 59: parca.query.v1alpha1.CallgraphNodeMeta.location:type_name -> parca.metastore.v1alpha1.Location
+	57, // 60: parca.query.v1alpha1.CallgraphNodeMeta.mapping:type_name -> parca.metastore.v1alpha1.Mapping
+	58, // 61: parca.query.v1alpha1.CallgraphNodeMeta.function:type_name -> parca.metastore.v1alpha1.Function
+	59, // 62: parca.query.v1alpha1.CallgraphNodeMeta.line:type_name -> parca.metastore.v1alpha1.Line
+	35, // 63: parca.query.v1alpha1.Callgraph.nodes:type_name -> parca.query.v1alpha1.CallgraphNode
+	37, // 64: parca.query.v1alpha1.Callgraph.edges:type_name -> parca.query.v1alpha1.CallgraphEdge
+	29, // 65: parca.query.v1alpha1.QueryResponse.flamegraph:type_name -> parca.query.v1alpha1.Flamegraph
+	26, // 66: parca.query.v1alpha1.QueryResponse.top:type_name -> parca.query.v1alpha1.Top
+	38, // 67: parca.query.v1alpha1.QueryResponse.callgraph:type_name -> parca.query.v1alpha1.Callgraph
+	30, // 68: parca.query.v1alpha1.QueryResponse.flamegraph_arrow:type_name -> parca.query.v1alpha1.FlamegraphArrow
+	31, // 69: parca.query.v1alpha1.QueryResponse.source:type_name -> parca.query.v1alpha1.Source
+	49, // 70: parca.query.v1alpha1.QueryResponse.table_arrow:type_name -> parca.query.v1alpha1.TableArrow
+	50, // 71: parca.query.v1alpha1.QueryResponse.profile_metadata:type_name -> parca.query.v1alpha1.ProfileMetadata
+	53, // 72: parca.query.v1alpha1.SeriesRequest.start:type_name -> google.protobuf.Timestamp
+	53, // 73: parca.query.v1alpha1.SeriesRequest.end:type_name -> google.protobuf.Timestamp
+	53, // 74: parca.query.v1alpha1.LabelsRequest.start:type_name -> google.protobuf.Timestamp
+	53, // 75: parca.query.v1alpha1.LabelsRequest.end:type_name -> google.protobuf.Timestamp
+	53, // 76: parca.query.v1alpha1.ValuesRequest.start:type_name -> google.protobuf.Timestamp
+	53, // 77: parca.query.v1alpha1.ValuesRequest.end:type_name -> google.protobuf.Timestamp
+	14, // 78: parca.query.v1alpha1.ShareProfileRequest.query_request:type_name -> parca.query.v1alpha1.QueryRequest
+	6,  // 79: parca.query.v1alpha1.QueryService.QueryRange:input_type -> parca.query.v1alpha1.QueryRangeRequest
+	14, // 80: parca.query.v1alpha1.QueryService.Query:input_type -> parca.query.v1alpha1.QueryRequest
+	40, // 81: parca.query.v1alpha1.QueryService.Series:input_type -> parca.query.v1alpha1.SeriesRequest
+	3,  // 82: parca.query.v1alpha1.QueryService.ProfileTypes:input_type -> parca.query.v1alpha1.ProfileTypesRequest
+	42, // 83: parca.query.v1alpha1.QueryService.Labels:input_type -> parca.query.v1alpha1.LabelsRequest
+	44, // 84: parca.query.v1alpha1.QueryService.Values:input_type -> parca.query.v1alpha1.ValuesRequest
+	47, // 85: parca.query.v1alpha1.QueryService.ShareProfile:input_type -> parca.query.v1alpha1.ShareProfileRequest
+	51, // 86: parca.query.v1alpha1.QueryService.HasProfileData:input_type -> parca.query.v1alpha1.HasProfileDataRequest
+	7,  // 87: parca.query.v1alpha1.QueryService.QueryRange:output_type -> parca.query.v1alpha1.QueryRangeResponse
+	39, // 88: parca.query.v1alpha1.QueryService.Query:output_type -> parca.query.v1alpha1.QueryResponse
+	41, // 89: parca.query.v1alpha1.QueryService.Series:output_type -> parca.query.v1alpha1.SeriesResponse
+	4,  // 90: parca.query.v1alpha1.QueryService.ProfileTypes:output_type -> parca.query.v1alpha1.ProfileTypesResponse
+	43, // 91: parca.query.v1alpha1.QueryService.Labels:output_type -> parca.query.v1alpha1.LabelsResponse
+	45, // 92: parca.query.v1alpha1.QueryService.Values:output_type -> parca.query.v1alpha1.ValuesResponse
+	48, // 93: parca.query.v1alpha1.QueryService.ShareProfile:output_type -> parca.query.v1alpha1.ShareProfileResponse
+	52, // 94: parca.query.v1alpha1.QueryService.HasProfileData:output_type -> parca.query.v1alpha1.HasProfileDataResponse
+	87, // [87:95] is the sub-list for method output_type
+	79, // [79:87] is the sub-list for method input_type
+	79, // [79:79] is the sub-list for extension type_name
+	79, // [79:79] is the sub-list for extension extendee
+	0,  // [0:79] is the sub-list for field type_name
 }
 
 func init() { file_parca_query_v1alpha1_query_proto_init() }
@@ -4332,6 +4447,7 @@ func file_parca_query_v1alpha1_query_proto_init() {
 	if File_parca_query_v1alpha1_query_proto != nil {
 		return
 	}
+	file_parca_query_v1alpha1_query_proto_msgTypes[0].OneofWrappers = []any{}
 	file_parca_query_v1alpha1_query_proto_msgTypes[9].OneofWrappers = []any{}
 	file_parca_query_v1alpha1_query_proto_msgTypes[10].OneofWrappers = []any{
 		(*ProfileDiffSelection_Merge)(nil),
@@ -4383,7 +4499,7 @@ func file_parca_query_v1alpha1_query_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_parca_query_v1alpha1_query_proto_rawDesc), len(file_parca_query_v1alpha1_query_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   48,
+			NumMessages:   50,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

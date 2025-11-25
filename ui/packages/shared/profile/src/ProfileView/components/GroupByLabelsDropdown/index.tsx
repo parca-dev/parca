@@ -11,11 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Select from 'react-select';
-
 import {TEST_IDS, testId} from '@parca/test-utils';
 
 import {FIELD_LABELS} from '../../../ProfileFlameGraph/FlameGraphArrow';
+import {SelectWithRefresh} from '../../../SelectWithRefresh';
 
 interface LabelOption {
   label: string;
@@ -26,9 +25,17 @@ interface Props {
   labels: string[];
   groupBy: string[];
   setGroupByLabels: (labels: string[]) => void;
+  metadataRefetch?: () => Promise<void>;
+  metadataLoading: boolean;
 }
 
-const GroupByLabelsDropdown = ({labels, groupBy, setGroupByLabels}: Props): JSX.Element => {
+const GroupByLabelsDropdown = ({
+  labels,
+  groupBy,
+  setGroupByLabels,
+  metadataRefetch,
+  metadataLoading,
+}: Props): JSX.Element => {
   return (
     <div className="flex flex-col relative" {...testId(TEST_IDS.GROUP_BY_CONTAINER)}>
       <div className="flex items-center justify-between">
@@ -37,7 +44,7 @@ const GroupByLabelsDropdown = ({labels, groupBy, setGroupByLabels}: Props): JSX.
         </label>
       </div>
 
-      <Select<LabelOption, true>
+      <SelectWithRefresh<LabelOption, true>
         isMulti
         defaultMenuIsOpen={false}
         defaultValue={undefined}
@@ -45,20 +52,10 @@ const GroupByLabelsDropdown = ({labels, groupBy, setGroupByLabels}: Props): JSX.
         options={labels.map(label => ({label, value: `${FIELD_LABELS}.${label}`}))}
         className="parca-select-container text-sm rounded-md bg-white"
         classNamePrefix="parca-select"
-        components={{
-          // eslint-disable-next-line react/prop-types
-          MenuList: ({children, innerProps}) => (
-            <div
-              className="overflow-y-auto"
-              {...testId(TEST_IDS.GROUP_BY_SELECT_FLYOUT)}
-              {...innerProps}
-              // eslint-disable-next-line react/prop-types
-              style={{...innerProps.style, height: '332px', maxHeight: '332px', fontSize: '14px'}}
-            >
-              {children}
-            </div>
-          ),
-        }}
+        onRefresh={metadataRefetch}
+        refreshTitle="Refresh label names"
+        refreshTestId="group-by-refresh-button"
+        menuTestId={TEST_IDS.GROUP_BY_SELECT_FLYOUT}
         value={groupBy
           .filter(l => l.startsWith(FIELD_LABELS))
           .map(l => ({value: l, label: l.slice(FIELD_LABELS.length + 1)}))}
@@ -66,6 +63,7 @@ const GroupByLabelsDropdown = ({labels, groupBy, setGroupByLabels}: Props): JSX.
           setGroupByLabels(newValue.map(option => option.value));
         }}
         placeholder="Select labels..."
+        isLoading={metadataLoading}
         styles={{
           menu: provided => ({
             ...provided,

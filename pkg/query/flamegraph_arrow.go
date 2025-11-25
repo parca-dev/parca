@@ -263,8 +263,8 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 
 				// just like locations, pprof stores lines in reverse order.
 				for k := int(llOffsetEnd - 1); k >= int(llOffsetStart); k-- {
-					// Skip lines that have been filtered out (null function names)
-					if !r.LineFunctionNameIndices.IsValid(k) {
+					// Skip lines that have been filtered out (null)
+					if !r.Line.IsValid(k) {
 						continue
 					}
 
@@ -357,7 +357,7 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 		fb.trimmedLocationLine.AppendNull()
 		fb.trimmedFunctionStartLine = array.NewUint8Builder(fb.pool)
 		fb.trimmedFunctionStartLine.AppendNull()
-		fb.trimmedCumulative = array.NewUint8Builder(fb.pool)
+		fb.trimmedCumulative = array.NewUint64Builder(fb.pool)
 		fb.trimmedCumulative.AppendNull()
 		fb.trimmedFlat = array.NewUint8Builder(fb.pool)
 		fb.trimmedFlat.AppendNull()
@@ -1646,8 +1646,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmedFunctionNameIndices := array.NewInt32Builder(fb.pool)
 	trimmedFunctionSystemNameIndices := array.NewInt32Builder(fb.pool)
 	trimmedFunctionFilenameIndices := array.NewInt32Builder(fb.pool)
-	trimmedCumulativeType := smallestUnsignedTypeFor(largestCumulativeValue)
-	trimmedCumulative := array.NewBuilder(fb.pool, trimmedCumulativeType)
+	trimmedCumulative := builder.NewOptInt64Builder(arrow.PrimitiveTypes.Int64)
 	trimmedFlatType := smallestUnsignedTypeFor(largestFlatValue)
 	trimmedFlat := array.NewBuilder(fb.pool, trimmedFlatType)
 	trimmedDiffType := smallestSignedTypeFor(smallestDiffValue, largestDiffValue)
@@ -1660,7 +1659,8 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	// Parent indices use int32 to allow for -1 (null parent)
 	trimmedParent := array.NewInt32Builder(fb.pool)
 
-	valueOffset := array.NewBuilder(fb.pool, trimmedCumulativeType)
+	valueOffsetType := smallestUnsignedTypeFor(largestCumulativeValue)
+	valueOffset := array.NewBuilder(fb.pool, valueOffsetType)
 
 	releasers = append(releasers,
 		trimmedMappingFileIndices,
@@ -1705,6 +1705,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	trimmingQueue.elements = trimmingQueue.elements[:0]
 	trimmingQueue.push(trimmingElement{row: 0})
 
+	rootCumulativeTrimmedValue := int64(0)
 	// keep processing new elements until the queue is empty
 	for trimmingQueue.len() > 0 {
 		// pop the first item from the queue
@@ -1728,18 +1729,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 
 		// The following two will never be null.
 		cum := fb.builderCumulative.Value(te.row)
-		switch b := trimmedCumulative.(type) {
-		case *array.Uint64Builder:
-			b.Append(uint64(cum))
-		case *array.Uint32Builder:
-			b.Append(uint32(cum))
-		case *array.Uint16Builder:
-			b.Append(uint16(cum))
-		case *array.Uint8Builder:
-			b.Append(uint8(cum))
-		default:
-			panic(fmt.Errorf("unsupported type %T", b))
-		}
+		trimmedCumulative.Append(cum)
 
 		switch b := trimmedFlat.(type) {
 		case *array.Uint64Builder:
@@ -1811,6 +1801,10 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 				trimmedChildren[te.parent] = []int{row}
 			} else {
 				trimmedChildren[te.parent] = append(trimmedChildren[te.parent], row)
+			}
+			// Only accumulate direct children of root (parent row 0) for root's cumulative value
+			if te.parent == 0 {
+				rootCumulativeTrimmedValue += cum
 			}
 		}
 
@@ -1921,6 +1915,14 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	}
 	fb.labels = trimmedLabels
 
+	trimmedCumulative.Set(0, rootCumulativeTrimmedValue)
+	tempTrimmedCumulative := array.NewBuilder(fb.pool, smallestUnsignedTypeFor(uint64(rootCumulativeTrimmedValue)))
+	for i := 0; i < trimmedCumulative.Len(); i++ {
+		copyInt64BuilderValueToUnknownUnsigned(trimmedCumulative, tempTrimmedCumulative, i)
+	}
+
+	trimmedCumulative.Release()
+
 	release(
 		fb.builderLabelsOnly,
 		fb.builderLabelsExist,
@@ -1939,7 +1941,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	fb.builderInlined = trimmedInlined
 	fb.trimmedLocationLine = trimmedLocationLine
 	fb.trimmedFunctionStartLine = trimmedFunctionStartLine
-	fb.trimmedCumulative = trimmedCumulative
+	fb.trimmedCumulative = tempTrimmedCumulative
 	fb.trimmedFlat = trimmedFlat
 	fb.trimmedDiff = trimmedDiff
 	fb.trimmedChildren = trimmedChildren

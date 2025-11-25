@@ -31,7 +31,8 @@ interface LabelContextValue {
   labelNameOptions: LabelNameSection[];
   isLoading: boolean;
   error: Error | null;
-  refetchLabelValues: () => void;
+  refetchLabelValues: (labelName?: string) => Promise<void>;
+  refetchLabelNames: () => Promise<void>;
 }
 
 const LabelContext = createContext<LabelContextValue | null>(null);
@@ -58,7 +59,11 @@ export function LabelProvider({
 }: LabelProviderProps): JSX.Element {
   const reactQueryClient = useQueryClient();
   const utilizationLabelResponse = useUtilizationLabels();
-  const {loading, result} = useLabelNames(queryClient, profileType, start, end);
+  const {
+    loading,
+    result,
+    refetch: refetchLabelNamesQuery,
+  } = useLabelNames(queryClient, profileType, start, end);
 
   const profileValues = useMemo(() => {
     const profileLabelNames =
@@ -135,26 +140,41 @@ export function LabelProvider({
     };
   }, [profileValues, utilizationValues, labelNameFromMatchers]);
 
-  const refetchLabelValues = useCallback(() => {
-    void reactQueryClient.refetchQueries({
-      predicate: query => {
-        const key = query.queryKey;
-        return (
-          Array.isArray(key) &&
-          key.length === 4 &&
-          typeof key[0] === 'string' &&
-          key[1] === profileType
-        );
-      },
-    });
-  }, [reactQueryClient, profileType]);
+  const refetchLabelValues = useCallback(
+    async (labelName?: string) => {
+      await reactQueryClient.refetchQueries({
+        predicate: query => {
+          const key = query.queryKey;
+          const matchesStructure =
+            Array.isArray(key) &&
+            key.length === 4 &&
+            typeof key[0] === 'string' &&
+            key[1] === profileType;
+
+          if (!matchesStructure) return false;
+
+          if (labelName !== undefined && labelName !== '') {
+            return key[0] === labelName;
+          }
+
+          return true;
+        },
+      });
+    },
+    [reactQueryClient, profileType]
+  );
+
+  const refetchLabelNames = useCallback(async () => {
+    await refetchLabelNamesQuery();
+  }, [refetchLabelNamesQuery]);
 
   const contextValue = useMemo(
     () => ({
       ...value,
       refetchLabelValues,
+      refetchLabelNames,
     }),
-    [value, refetchLabelValues]
+    [value, refetchLabelValues, refetchLabelNames]
   );
 
   return <LabelContext.Provider value={contextValue}>{children}</LabelContext.Provider>;

@@ -202,7 +202,12 @@ func (s *Symbolizer) getDebuginfo(ctx context.Context, buildID string) (string, 
 
 	switch dbginfo.Source {
 	case debuginfopb.Debuginfo_SOURCE_UPLOAD:
-		if dbginfo.Upload.State != debuginfopb.DebuginfoUpload_STATE_UPLOADED {
+		switch dbginfo.Upload.State {
+		case debuginfopb.DebuginfoUpload_STATE_UPLOADED:
+			// Good to proceed
+		case debuginfopb.DebuginfoUpload_STATE_PURGED:
+			return "", nil, nil, debuginfo.ErrDebuginfoPurged
+		default:
 			return "", nil, nil, debuginfo.ErrNotUploadedYet
 		}
 	case debuginfopb.Debuginfo_SOURCE_DEBUGINFOD:

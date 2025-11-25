@@ -423,7 +423,13 @@ export enum DebuginfoUpload_State {
      *
      * @generated from protobuf enum value: STATE_UPLOADED = 2;
      */
-    UPLOADED = 2
+    UPLOADED = 2,
+    /**
+     * The debuginfo has been purged/cleaned up from storage.
+     *
+     * @generated from protobuf enum value: STATE_PURGED = 3;
+     */
+    PURGED = 3
 }
 /**
  * DebuginfoQuality is the quality of the debuginfo.

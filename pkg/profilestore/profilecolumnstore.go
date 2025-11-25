@@ -16,17 +16,20 @@ package profilestore
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/apache/arrow-go/v18/arrow"
 	"github.com/apache/arrow-go/v18/arrow/ipc"
 	"github.com/apache/arrow-go/v18/arrow/memory"
 	"github.com/go-kit/log"
 	"github.com/gogo/status"
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/prometheus/promql/parser"
 	"go.opentelemetry.io/otel/trace"
 	otelgrpcprofilingpb "go.opentelemetry.io/proto/otlp/collector/profiles/v1development"
 	"google.golang.org/grpc/codes"
@@ -37,6 +40,7 @@ import (
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 	"github.com/parca-dev/parca/pkg/ingester"
 	"github.com/parca-dev/parca/pkg/normalizer"
+	"github.com/parca-dev/parca/pkg/profile"
 )
 
 type agent struct {
@@ -109,7 +113,100 @@ func (s *ProfileColumnStore) writeSeries(ctx context.Context, req *profilestorep
 		return nil
 	}
 
+	schema := r.Schema()
+
+	nameIdx := schema.FieldIndices(profile.ColumnName)
+	if len(nameIdx) == 0 {
+		return fmt.Errorf("missing required column: %s", profile.ColumnName)
+	}
+	sampleTypeIdx := schema.FieldIndices(profile.ColumnSampleType)
+	if len(sampleTypeIdx) == 0 {
+		return fmt.Errorf("missing required column: %s", profile.ColumnSampleType)
+	}
+	sampleUnitIdx := schema.FieldIndices(profile.ColumnSampleUnit)
+	if len(sampleUnitIdx) == 0 {
+		return fmt.Errorf("missing required column: %s", profile.ColumnSampleUnit)
+	}
+	periodTypeIdx := schema.FieldIndices(profile.ColumnPeriodType)
+	if len(periodTypeIdx) == 0 {
+		return fmt.Errorf("missing required column: %s", profile.ColumnPeriodType)
+	}
+	periodUnitIdx := schema.FieldIndices(profile.ColumnPeriodUnit)
+	if len(periodUnitIdx) == 0 {
+		return fmt.Errorf("missing required column: %s", profile.ColumnPeriodUnit)
+	}
+	durationIdx := schema.FieldIndices(profile.ColumnDuration)
+	if len(durationIdx) == 0 {
+		return fmt.Errorf("missing required column: %s", profile.ColumnDuration)
+	}
+
+	nameCol := r.Column(nameIdx[0])
+	sampleTypeCol := r.Column(sampleTypeIdx[0])
+	sampleUnitCol := r.Column(sampleUnitIdx[0])
+	periodTypeCol := r.Column(periodTypeIdx[0])
+	periodUnitCol := r.Column(periodUnitIdx[0])
+	durationCol := r.Column(durationIdx[0])
+
+	for rowIdx := 0; rowIdx < int(r.NumRows()); rowIdx++ {
+		profileType, err := getProfileTypeString(rowIdx, nameCol, sampleTypeCol, sampleUnitCol, periodTypeCol, periodUnitCol, durationCol)
+		if err != nil {
+			return fmt.Errorf("failed to get profile type at row %d: %v", rowIdx, err)
+		}
+
+		// Validate profile type by trying to parse it as a PromQL selector.
+		queryStr := fmt.Sprintf("%s{}", profileType)
+		if _, parseErr := parser.ParseMetricSelector(queryStr); parseErr != nil {
+			return fmt.Errorf("invalid profile type at row %d (%s): %v", rowIdx, profileType, parseErr)
+		}
+	}
+
 	return s.ingester.Ingest(ctx, r)
+}
+
+func getProfileTypeString(rowIdx int, nameCol, sampleTypeCol, sampleUnitCol, periodTypeCol, periodUnitCol, durationCol arrow.Array) (string, error) {
+	nameEncoded := nameCol.ValueStr(rowIdx)
+	sampleTypeEncoded := sampleTypeCol.ValueStr(rowIdx)
+	sampleUnitEncoded := sampleUnitCol.ValueStr(rowIdx)
+	periodTypeEncoded := periodTypeCol.ValueStr(rowIdx)
+	periodUnitEncoded := periodUnitCol.ValueStr(rowIdx)
+	duration := durationCol.ValueStr(rowIdx)
+
+	nameBytes, err := base64.StdEncoding.DecodeString(nameEncoded)
+	if err != nil {
+		return "", fmt.Errorf("failed to decode name: %v", err)
+	}
+	sampleTypeBytes, err := base64.StdEncoding.DecodeString(sampleTypeEncoded)
+	if err != nil {
+		return "", fmt.Errorf("failed to decode sample_type: %v", err)
+	}
+	sampleUnitBytes, err := base64.StdEncoding.DecodeString(sampleUnitEncoded)
+	if err != nil {
+		return "", fmt.Errorf("failed to decode sample_unit: %v", err)
+	}
+	periodTypeBytes, err := base64.StdEncoding.DecodeString(periodTypeEncoded)
+	if err != nil {
+		return "", fmt.Errorf("failed to decode period_type: %v", err)
+	}
+	periodUnitBytes, err := base64.StdEncoding.DecodeString(periodUnitEncoded)
+	if err != nil {
+		return "", fmt.Errorf("failed to decode period_unit: %v", err)
+	}
+
+	name := string(nameBytes)
+	sampleType := string(sampleTypeBytes)
+	sampleUnit := string(sampleUnitBytes)
+	periodType := string(periodTypeBytes)
+	periodUnit := string(periodUnitBytes)
+
+	// Construct profile type string: name:sample_type:sample_unit:period_type:period_unit(:delta)
+	profileType := fmt.Sprintf("%s:%s:%s:%s:%s", name, sampleType, sampleUnit, periodType, periodUnit)
+
+	// Add delta suffix if duration is not 0
+	if duration != "0" {
+		profileType += ":delta"
+	}
+
+	return profileType, nil
 }
 
 func (s *ProfileColumnStore) updateAgents(nodeNameAndIP string, ag agent) {
