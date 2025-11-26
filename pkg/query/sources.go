@@ -16,6 +16,7 @@ package query
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/apache/arrow-go/v18/arrow"
@@ -37,7 +38,7 @@ func GenerateSourceReport(
 	ref *pb.SourceReference,
 	source string,
 ) (*pb.Source, int64, error) {
-	record, cumulative := generateSourceReportRecord(
+	record, cumulative, err := generateSourceReportRecord(
 		ctx,
 		pool,
 		tracer,
@@ -45,6 +46,9 @@ func GenerateSourceReport(
 		ref,
 		source,
 	)
+	if err != nil {
+		return nil, 0, err
+	}
 	defer record.Release()
 
 	var buf bytes.Buffer
@@ -72,13 +76,16 @@ func generateSourceReportRecord(
 	p profile.Profile,
 	ref *pb.SourceReference,
 	source string,
-) (arrow.RecordBatch, int64) {
+) (arrow.RecordBatch, int64, error) {
 	b := newSourceReportBuilder(pool, ref, int64(strings.Count(source, "\n")))
 	for _, record := range p.Samples {
-		b.addRecord(record)
+		if err := b.addRecord(record); err != nil {
+			return nil, 0, err
+		}
 	}
 
-	return b.finish()
+	rec, cumulative := b.finish()
+	return rec, cumulative, nil
 }
 
 type sourceReportBuilder struct {
@@ -142,8 +149,11 @@ func (b *sourceReportBuilder) finish() (arrow.RecordBatch, int64) {
 	), b.cumulative
 }
 
-func (b *sourceReportBuilder) addRecord(rec arrow.RecordBatch) {
-	r := profile.NewRecordReader(rec)
+func (b *sourceReportBuilder) addRecord(rec arrow.RecordBatch) error {
+	r, err := profile.NewRecordReader(rec)
+	if err != nil {
+		return fmt.Errorf("failed to create record reader: %w", err)
+	}
 	b.cumulative += math.Int64.Sum(r.Value)
 
 	for i := 0; i < int(rec.NumRows()); i++ {
@@ -169,4 +179,5 @@ func (b *sourceReportBuilder) addRecord(rec arrow.RecordBatch) {
 			}
 		}
 	}
+	return nil
 }

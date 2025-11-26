@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	stdmath "math"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -126,7 +127,10 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 	// these change with every iteration below
 	row := fb.builderCumulative.Len()
 
-	profileReader := profile.NewReader(p)
+	profileReader, err := profile.NewReader(p)
+	if err != nil {
+		return nil, 0, 0, 0, fmt.Errorf("failed to create profile reader: %w", err)
+	}
 	labelHasher := xxh3.New()
 	for _, r := range profileReader.RecordReaders {
 		fb.cumulative += math.Int64.Sum(r.Value)
@@ -1576,6 +1580,48 @@ func (fb *flamegraphBuilder) addRowValues(r *profile.RecordReader, row, sampleRo
 	}
 }
 
+type childBuf struct {
+	values  []int64
+	indexes []int
+}
+
+func newChildBuf() childBuf {
+	return childBuf{
+		values:  make([]int64, 0, 16),
+		indexes: make([]int, 0, 16),
+	}
+}
+
+func (b *childBuf) reset() {
+	b.values = b.values[:0]
+	b.indexes = b.indexes[:0]
+}
+
+func (b *childBuf) reserve(n int) {
+	if cap(b.values) < n {
+		b.values = make([]int64, 0, n)
+		b.indexes = make([]int, 0, n)
+	}
+}
+
+func (b *childBuf) append(value int64, index int) {
+	b.indexes = append(b.indexes, index)
+	b.values = append(b.values, value)
+}
+
+func (b childBuf) Len() int {
+	return len(b.indexes)
+}
+
+func (b childBuf) Less(i, j int) bool {
+	return b.values[i] < b.values[j]
+}
+
+func (b childBuf) Swap(i, j int) {
+	b.values[i], b.values[j] = b.values[j], b.values[i]
+	b.indexes[i], b.indexes[j] = b.indexes[j], b.indexes[i]
+}
+
 func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, threshold float32) error {
 	_, span := tracer.Start(ctx, "trim")
 	defer span.End()
@@ -1599,6 +1645,7 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 	largestDiffValue := int64(0)
 	smallestDiffValue := int64(0)
 	largestDepth := uint64(0)
+	b := newChildBuf()
 	for trimmingQueue.len() > 0 {
 		// pop the first item from the queue
 		te := trimmingQueue.pop()
@@ -1624,12 +1671,18 @@ func (fb *flamegraphBuilder) trim(ctx context.Context, tracer trace.Tracer, thre
 
 		cumThreshold := float32(cum) * threshold
 
+		b.reset()
+		b.reserve(len(fb.childrenList[te.row]))
 		for _, cr := range fb.childrenList[te.row] {
 			if v := fb.builderCumulative.Value(cr); v > int64(cumThreshold) {
 				// this row is above the threshold, so we need to keep it
 				// add this row to the queue to check its children.
-				trimmingQueue.push(trimmingElement{row: cr, parent: row})
+				b.append(v, cr)
 			}
+		}
+		sort.Sort(b)
+		for _, cr := range b.indexes {
+			trimmingQueue.push(trimmingElement{row: cr, parent: row})
 		}
 	}
 

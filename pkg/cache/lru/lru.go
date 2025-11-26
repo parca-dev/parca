@@ -83,7 +83,7 @@ func (c *LRU[K, V]) Get(key K) (value V, ok bool) {
 		return e.Value.(entry[K, V]).value, true
 	}
 	c.metrics.misses.Inc()
-	return
+	return value, ok
 }
 
 // Peek returns the key value (or undefined if not found) without updating the "recently used"-ness of the key.
@@ -91,7 +91,7 @@ func (c *LRU[K, V]) Peek(key K) (value V, ok bool) {
 	if e, ok := c.items[key]; ok {
 		return e.Value.(entry[K, V]).value, true
 	}
-	return
+	return value, ok
 }
 
 // Remove removes the provided key from the cache.
