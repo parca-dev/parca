@@ -531,7 +531,10 @@ func filterRecord(
 	_, span := tracer.Start(ctx, "filterRecord")
 	defer span.End()
 
-	r := profile.NewRecordReader(rec)
+	r, err := profile.NewRecordReader(rec)
+	if err != nil {
+		return nil, 0, 0, fmt.Errorf("failed to create record reader: %w", err)
+	}
 
 	// If no filters, return all records
 	if len(filters) == 0 {
@@ -623,7 +626,11 @@ func filterRecord(
 
 	filtered := int64(0)
 	for _, r := range recs {
-		filtered += math.Int64.Sum(profile.NewRecordReader(r).Value)
+		rr, err := profile.NewRecordReader(r)
+		if err != nil {
+			return nil, 0, 0, fmt.Errorf("failed to create record reader: %w", err)
+		}
+		filtered += math.Int64.Sum(rr.Value)
 	}
 
 	return recs, originalValueSum, filtered, nil

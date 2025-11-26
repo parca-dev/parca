@@ -3,7 +3,7 @@ module github.com/parca-dev/parca
 go 1.24.1
 
 require (
-	cloud.google.com/go/storage v1.57.1
+	cloud.google.com/go/storage v1.57.2
 	github.com/alecthomas/kong v0.9.0
 	github.com/apache/arrow-go/v18 v18.4.1
 	github.com/cenkalti/backoff/v4 v4.3.0
@@ -37,7 +37,7 @@ require (
 	github.com/polarsignals/frostdb v0.0.0-20250728125857-906ebbaef267
 	github.com/polarsignals/iceberg-go v0.0.0-20240502213135-2ee70b71e76b
 	github.com/prometheus/client_golang v1.23.2
-	github.com/prometheus/common v0.67.2
+	github.com/prometheus/common v0.67.3
 	github.com/prometheus/prometheus v0.305.0
 	github.com/stretchr/testify v1.11.1
 	github.com/thanos-io/objstore v0.0.0-20241028145108-31c0873d5266
@@ -151,7 +151,7 @@ require (
 	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/gogo/googleapis v1.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
+	github.com/golang-jwt/jwt/v5 v5.3.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
 	github.com/google/flatbuffers v25.2.10+incompatible // indirect

@@ -14,6 +14,7 @@
 package profile
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/apache/arrow-go/v18/arrow"
@@ -64,97 +65,172 @@ type RecordReader struct {
 	Diff  *array.Int64
 }
 
-func NewReader(p Profile) Reader {
+func NewReader(p Profile) (Reader, error) {
 	r := Reader{
 		Profile: p,
 	}
 
 	for _, ar := range p.Samples {
-		r.RecordReaders = append(r.RecordReaders, NewRecordReader(ar))
+		rr, err := NewRecordReader(ar)
+		if err != nil {
+			return Reader{}, err
+		}
+		r.RecordReaders = append(r.RecordReaders, rr)
 	}
-	return r
+	return r, nil
 }
 
-func NewRecordReader(ar arrow.RecordBatch) *RecordReader {
+func NewRecordReader(ar arrow.RecordBatch) (*RecordReader, error) {
 	schema := ar.Schema()
 
+	rr := &RecordReader{
+		Record: ar,
+	}
+
 	labelFields := make([]arrow.Field, 0, schema.NumFields())
-	for _, field := range schema.Fields() {
+	labelColumns := make([]LabelColumn, 0, schema.NumFields())
+
+	// Iterate over schema fields once and populate the RecordReader
+	for i, field := range schema.Fields() {
 		if strings.HasPrefix(field.Name, ColumnLabelsPrefix) {
 			labelFields = append(labelFields, field)
+			col := ar.Column(i).(*array.Dictionary)
+			labelColumns = append(labelColumns, LabelColumn{
+				Col:  col.Indices().(*array.Uint32),
+				Dict: col.Dictionary().(*array.Binary),
+			})
+			continue
+		}
+
+		switch field.Name {
+		case "locations":
+			rr.Locations = ar.Column(i).(*array.List)
+			rr.Location = rr.Locations.ListValues().(*array.Struct)
+
+			// Process location struct fields by name
+			locationType := rr.Location.DataType().(*arrow.StructType)
+			for j := 0; j < locationType.NumFields(); j++ {
+				locField := locationType.Field(j)
+				switch locField.Name {
+				case "address":
+					rr.Address = rr.Location.Field(j).(*array.Uint64)
+				case "mapping_start":
+					rr.MappingStart = rr.Location.Field(j).(*array.Uint64)
+				case "mapping_limit":
+					rr.MappingLimit = rr.Location.Field(j).(*array.Uint64)
+				case "mapping_offset":
+					rr.MappingOffset = rr.Location.Field(j).(*array.Uint64)
+				case "mapping_file":
+					mappingFile := rr.Location.Field(j).(*array.Dictionary)
+					rr.MappingFileIndices = mappingFile.Indices().(*array.Uint32)
+					rr.MappingFileDict = mappingFile.Dictionary().(*array.Binary)
+				case "mapping_build_id":
+					mappingBuildID := rr.Location.Field(j).(*array.Dictionary)
+					rr.MappingBuildIDIndices = mappingBuildID.Indices().(*array.Uint32)
+					rr.MappingBuildIDDict = mappingBuildID.Dictionary().(*array.Binary)
+				case "lines":
+					rr.Lines = rr.Location.Field(j).(*array.List)
+					rr.Line = rr.Lines.ListValues().(*array.Struct)
+
+					// Process line struct fields by name
+					lineType := rr.Line.DataType().(*arrow.StructType)
+					for k := 0; k < lineType.NumFields(); k++ {
+						lineField := lineType.Field(k)
+						switch lineField.Name {
+						case "line":
+							rr.LineNumber = rr.Line.Field(k).(*array.Int64)
+						case "column":
+							rr.LineColumn = rr.Line.Field(k).(*array.Uint64)
+						case "function_name":
+							lineFunctionName := rr.Line.Field(k).(*array.Dictionary)
+							rr.LineFunctionNameIndices = lineFunctionName.Indices().(*array.Uint32)
+							rr.LineFunctionNameDict = lineFunctionName.Dictionary().(*array.Binary)
+						case "function_system_name":
+							lineFunctionSystemName := rr.Line.Field(k).(*array.Dictionary)
+							rr.LineFunctionSystemNameIndices = lineFunctionSystemName.Indices().(*array.Uint32)
+							rr.LineFunctionSystemNameDict = lineFunctionSystemName.Dictionary().(*array.Binary)
+						case "function_filename":
+							lineFunctionFilename := rr.Line.Field(k).(*array.Dictionary)
+							rr.LineFunctionFilenameIndices = lineFunctionFilename.Indices().(*array.Uint32)
+							rr.LineFunctionFilenameDict = lineFunctionFilename.Dictionary().(*array.Binary)
+						case "function_start_line":
+							rr.LineFunctionStartLine = rr.Line.Field(k).(*array.Int64)
+						}
+					}
+				}
+			}
+		case "value":
+			rr.Value = ar.Column(i).(*array.Int64)
+		case "diff":
+			rr.Diff = ar.Column(i).(*array.Int64)
+		case ColumnTimestamp:
+			rr.Timestamp = ar.Column(i).(*array.Int64)
+		case ColumnPeriod:
+			rr.Period = ar.Column(i).(*array.Int64)
 		}
 	}
 
-	labelColumns := make([]LabelColumn, len(labelFields))
-	for i := range labelFields {
-		col := ar.Column(i).(*array.Dictionary)
-		labelColumns[i] = LabelColumn{
-			Col:  col.Indices().(*array.Uint32),
-			Dict: col.Dictionary().(*array.Binary),
-		}
-	}
-	labelNum := len(labelFields)
+	rr.LabelFields = labelFields
+	rr.LabelColumns = labelColumns
 
-	// Get readers from the unfiltered profile.
-	locations := ar.Column(labelNum).(*array.List)
-	location := locations.ListValues().(*array.Struct)
-	address := location.Field(0).(*array.Uint64)
-	mappingStart := location.Field(1).(*array.Uint64)
-	mappingLimit := location.Field(2).(*array.Uint64)
-	mappingOffset := location.Field(3).(*array.Uint64)
-	mappingFile := location.Field(4).(*array.Dictionary)
-	mappingFileIndices := mappingFile.Indices().(*array.Uint32)
-	mappingFileDict := mappingFile.Dictionary().(*array.Binary)
-	mappingBuildID := location.Field(5).(*array.Dictionary)
-	mappingBuildIDIndices := mappingBuildID.Indices().(*array.Uint32)
-	mappingBuildIDDict := mappingBuildID.Dictionary().(*array.Binary)
-	lines := location.Field(6).(*array.List)
-	line := lines.ListValues().(*array.Struct)
-	lineNumber := line.Field(0).(*array.Int64)
-	lineColumn := line.Field(1).(*array.Uint64)
-	lineFunctionName := line.Field(2).(*array.Dictionary)
-	lineFunctionNameIndices := lineFunctionName.Indices().(*array.Uint32)
-	lineFunctionNameDict := lineFunctionName.Dictionary().(*array.Binary)
-	lineFunctionSystemName := line.Field(3).(*array.Dictionary)
-	lineFunctionSystemNameIndices := lineFunctionSystemName.Indices().(*array.Uint32)
-	lineFunctionSystemNameDict := lineFunctionSystemName.Dictionary().(*array.Binary)
-	lineFunctionFilename := line.Field(4).(*array.Dictionary)
-	lineFunctionFilenameIndices := lineFunctionFilename.Indices().(*array.Uint32)
-	lineFunctionFilenameDict := lineFunctionFilename.Dictionary().(*array.Binary)
-	lineFunctionStartLine := line.Field(5).(*array.Int64)
-	valueColumn := ar.Column(labelNum + 1).(*array.Int64)
-	diffColumn := ar.Column(labelNum + 2).(*array.Int64)
-	timestamp := ar.Column(labelNum + 3).(*array.Int64)
-	period := ar.Column(labelNum + 4).(*array.Int64)
-
-	return &RecordReader{
-		Record:                        ar,
-		LabelFields:                   labelFields,
-		LabelColumns:                  labelColumns,
-		Locations:                     locations,
-		Location:                      location,
-		Address:                       address,
-		MappingStart:                  mappingStart,
-		MappingLimit:                  mappingLimit,
-		MappingOffset:                 mappingOffset,
-		MappingFileIndices:            mappingFileIndices,
-		MappingFileDict:               mappingFileDict,
-		MappingBuildIDIndices:         mappingBuildIDIndices,
-		MappingBuildIDDict:            mappingBuildIDDict,
-		Lines:                         lines,
-		Line:                          line,
-		LineNumber:                    lineNumber,
-		LineColumn:                    lineColumn,
-		LineFunctionNameIndices:       lineFunctionNameIndices,
-		LineFunctionNameDict:          lineFunctionNameDict,
-		LineFunctionSystemNameIndices: lineFunctionSystemNameIndices,
-		LineFunctionSystemNameDict:    lineFunctionSystemNameDict,
-		LineFunctionFilenameIndices:   lineFunctionFilenameIndices,
-		LineFunctionFilenameDict:      lineFunctionFilenameDict,
-		LineFunctionStartLine:         lineFunctionStartLine,
-		Value:                         valueColumn,
-		Diff:                          diffColumn,
-		Timestamp:                     timestamp,
-		Period:                        period,
+	// Validate that all required fields were found
+	if rr.Locations == nil {
+		return nil, fmt.Errorf("missing required field: locations")
 	}
+	if rr.Location == nil {
+		return nil, fmt.Errorf("missing required field: location")
+	}
+	if rr.Address == nil {
+		return nil, fmt.Errorf("missing required field: address")
+	}
+	if rr.MappingStart == nil {
+		return nil, fmt.Errorf("missing required field: mapping_start")
+	}
+	if rr.MappingLimit == nil {
+		return nil, fmt.Errorf("missing required field: mapping_limit")
+	}
+	if rr.MappingOffset == nil {
+		return nil, fmt.Errorf("missing required field: mapping_offset")
+	}
+	if rr.MappingFileIndices == nil || rr.MappingFileDict == nil {
+		return nil, fmt.Errorf("missing required field: mapping_file")
+	}
+	if rr.MappingBuildIDIndices == nil || rr.MappingBuildIDDict == nil {
+		return nil, fmt.Errorf("missing required field: mapping_build_id")
+	}
+	if rr.Lines == nil {
+		return nil, fmt.Errorf("missing required field: lines")
+	}
+	if rr.Line == nil {
+		return nil, fmt.Errorf("missing required field: line")
+	}
+	if rr.LineNumber == nil {
+		return nil, fmt.Errorf("missing required field: line")
+	}
+	if rr.LineFunctionNameIndices == nil || rr.LineFunctionNameDict == nil {
+		return nil, fmt.Errorf("missing required field: function_name")
+	}
+	if rr.LineFunctionSystemNameIndices == nil || rr.LineFunctionSystemNameDict == nil {
+		return nil, fmt.Errorf("missing required field: function_system_name")
+	}
+	if rr.LineFunctionFilenameIndices == nil || rr.LineFunctionFilenameDict == nil {
+		return nil, fmt.Errorf("missing required field: function_filename")
+	}
+	if rr.LineFunctionStartLine == nil {
+		return nil, fmt.Errorf("missing required field: function_start_line")
+	}
+	if rr.Value == nil {
+		return nil, fmt.Errorf("missing required field: value")
+	}
+	if rr.Diff == nil {
+		return nil, fmt.Errorf("missing required field: diff")
+	}
+	if rr.Timestamp == nil {
+		return nil, fmt.Errorf("missing required field: %s", ColumnTimestamp)
+	}
+	if rr.Period == nil {
+		return nil, fmt.Errorf("missing required field: %s", ColumnPeriod)
+	}
+
+	return rr, nil
 }
