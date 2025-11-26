@@ -37,11 +37,19 @@ import MetricsGraph, {ContextMenuItemOrSubmenu, Series, SeriesPoint} from '../Me
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
 import {useQueryRange} from './hooks/useQueryRange';
 
+const transformUtilizationLabels = (label: string, utilizationMetrics: boolean): string => {
+  if (utilizationMetrics) {
+    return label.replace('attributes.', '').replace('attributes_resource.', '');
+  }
+  return label;
+};
+
 const createProfileContextMenuItems = (
   addLabelMatcher: (
     labels: {key: string; value: string} | Array<{key: string; value: string}>
   ) => void,
-  data: MetricsSeriesPb[] // The original MetricsSeriesPb[] data
+  data: MetricsSeriesPb[], // The original MetricsSeriesPb[] data
+  utilizationMetrics = false
 ): ContextMenuItemOrSubmenu[] => {
   return [
     {
@@ -99,7 +107,7 @@ const createProfileContextMenuItems = (
           id: `add-label-${label.name}`,
           label: (
             <div className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-              {`${label.name}="${label.value}"`}
+              {`${transformUtilizationLabels(label.name, utilizationMetrics)}="${label.value}"`}
             </div>
           ),
           onClick: () => {
@@ -430,6 +438,28 @@ const ProfileMetricsGraph = ({
                   const nameLabel = labels.find(e => e.name === '__name__');
                   const highlightedNameLabel = nameLabel ?? {name: '', value: ''};
 
+                  // Calculate attributes maps for utilization metrics
+                  const utilizationMetrics = false; // This is for profile metrics, not utilization
+                  const attributesMap = labels
+                    .filter(
+                      label =>
+                        label.name.startsWith('attributes.') &&
+                        !label.name.startsWith('attributes_resource.')
+                    )
+                    .reduce<Record<string, string>>((acc, label) => {
+                      const key = label.name.replace('attributes.', '');
+                      acc[key] = label.value;
+                      return acc;
+                    }, {});
+
+                  const attributesResourceMap = labels
+                    .filter(label => label.name.startsWith('attributes_resource.'))
+                    .reduce<Record<string, string>>((acc, label) => {
+                      const key = label.name.replace('attributes_resource.', '');
+                      acc[key] = label.value;
+                      return acc;
+                    }, {});
+
                   const isDeltaType =
                     profile !== null
                       ? (profile as MergedProfileSelection)?.query.profType.delta
@@ -498,21 +528,72 @@ const ProfileMetricsGraph = ({
                           </table>
                         </span>
                         <span className="my-2 block text-gray-500">
-                          {labels
-                            .filter((label: Label) => label.name !== '__name__')
-                            .map((label: Label) => (
-                              <div
-                                key={label.name}
-                                className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
-                                {...testId(TEST_IDS.TOOLTIP_LABEL)}
-                              >
-                                <TextWithTooltip
-                                  text={`${label.name}="${label.value}"`}
-                                  maxTextLength={37}
-                                  id={`tooltip-${label.name}`}
-                                />
-                              </div>
-                            ))}
+                          {utilizationMetrics ? (
+                            <>
+                              {Object.keys(attributesResourceMap).length > 0 && (
+                                <span className="text-sm font-bold text-gray-700 dark:text-white">
+                                  Resource Attributes
+                                </span>
+                              )}
+                              <span className="my-2 block text-gray-500">
+                                {Object.keys(attributesResourceMap).map(name => (
+                                  <div
+                                    key={name}
+                                    className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+                                    {...testId(TEST_IDS.TOOLTIP_LABEL)}
+                                  >
+                                    <TextWithTooltip
+                                      text={`${name.replace('attributes.', '')}="${
+                                        attributesResourceMap[name]
+                                      }"`}
+                                      maxTextLength={48}
+                                      id={`tooltip-${name}-${attributesResourceMap[name]}`}
+                                    />
+                                  </div>
+                                ))}
+                              </span>
+                              {Object.keys(attributesMap).length > 0 && (
+                                <span className="text-sm font-bold text-gray-700 dark:text-white">
+                                  Attributes
+                                </span>
+                              )}
+                              <span className="my-2 block text-gray-500">
+                                {Object.keys(attributesMap).map(name => (
+                                  <div
+                                    key={name}
+                                    className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+                                    {...testId(TEST_IDS.TOOLTIP_LABEL)}
+                                  >
+                                    <TextWithTooltip
+                                      text={`${name.replace('attributes.', '')}="${
+                                        attributesMap[name]
+                                      }"`}
+                                      maxTextLength={48}
+                                      id={`tooltip-${name}-${attributesMap[name]}`}
+                                    />
+                                  </div>
+                                ))}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              {labels
+                                .filter((label: Label) => label.name !== '__name__')
+                                .map((label: Label) => (
+                                  <div
+                                    key={label.name}
+                                    className="mr-3 inline-block rounded-lg bg-gray-200 px-2 py-1 text-xs font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+                                    {...testId(TEST_IDS.TOOLTIP_LABEL)}
+                                  >
+                                    <TextWithTooltip
+                                      text={`${label.name}="${label.value}"`}
+                                      maxTextLength={37}
+                                      id={`tooltip-${label.name}`}
+                                    />
+                                  </div>
+                                ))}
+                            </>
+                          )}
                         </span>
                         <div className="flex w-full items-center gap-1 text-xs text-gray-500">
                           <Icon icon="iconoir:mouse-button-right" />

@@ -377,7 +377,7 @@ const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
               <RefreshButton
                 onClick={() => void handleRefetch()}
                 disabled={isRefetching}
-                title="Refresh results"
+                title="Refresh label values"
                 testId={TEST_IDS.LABEL_VALUE_REFRESH_BUTTON}
                 sticky={true}
                 loading={isRefetching}
