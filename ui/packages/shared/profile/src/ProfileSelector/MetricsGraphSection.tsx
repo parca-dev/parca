@@ -18,11 +18,9 @@ import {DateTimeRange, useURLStateBatch} from '@parca/components';
 import {Query} from '@parca/parser';
 
 import {ProfileSelection} from '..';
-import UtilizationMetricsGraph from '../MetricsGraph/UtilizationMetrics';
-import AreaChart from '../MetricsGraph/UtilizationMetrics/Throughput';
 import ProfileMetricsGraph, {ProfileMetricsEmptyState} from '../ProfileMetricsGraph';
 import {useResetStateOnSeriesChange} from '../ProfileView/hooks/useResetStateOnSeriesChange';
-import {QuerySelection, type UtilizationMetrics as UtilizationMetricsType} from './index';
+import {QuerySelection} from './index';
 
 interface MetricsGraphSectionProps {
   showMetricsGraph: boolean;
@@ -41,13 +39,6 @@ interface MetricsGraphSectionProps {
   query: Query;
   setNewQueryExpression: (queryExpression: string, commit?: boolean) => void;
   setQueryExpression: (updateTs?: boolean) => void;
-  utilizationMetrics?: Array<{
-    name: string;
-    humanReadableName: string;
-    data: UtilizationMetricsType[];
-  }>;
-  utilizationMetricsLoading?: boolean;
-  onUtilizationSeriesSelect?: (name: string, seriesIndex: number) => void;
 }
 
 export function MetricsGraphSection({
@@ -66,9 +57,6 @@ export function MetricsGraphSection({
   setProfileSelection,
   query,
   setNewQueryExpression,
-  utilizationMetrics,
-  utilizationMetricsLoading,
-  onUtilizationSeriesSelect,
 }: MetricsGraphSectionProps): JSX.Element {
   const resetStateOnSeriesChange = useResetStateOnSeriesChange();
   const batchUpdates = useURLStateBatch();
@@ -147,89 +135,6 @@ export function MetricsGraphSection({
     });
   };
 
-  const UtilizationGraphToShow = ({
-    utilizationMetrics,
-  }: {
-    utilizationMetrics: Array<{
-      name: string;
-      humanReadableName: string;
-      data: UtilizationMetricsType[];
-    }>;
-  }): JSX.Element => {
-    const throughputMetrics = utilizationMetrics.filter(
-      metric =>
-        metric.name === 'gpu_pcie_throughput_transmit_bytes' ||
-        metric.name === 'gpu_pcie_throughput_receive_bytes'
-    );
-    const transmitData =
-      throughputMetrics.find(metric => metric.name === 'gpu_pcie_throughput_transmit_bytes')
-        ?.data ?? [];
-    const receiveData =
-      throughputMetrics.find(metric => metric.name === 'gpu_pcie_throughput_receive_bytes')?.data ??
-      [];
-
-    if (utilizationMetrics.length === 0) {
-      return <></>;
-    }
-
-    return (
-      <div>
-        {utilizationMetrics.map(({name, humanReadableName, data}) => {
-          if (
-            name !== 'gpu_pcie_throughput_transmit_bytes' &&
-            name !== 'gpu_pcie_throughput_receive_bytes'
-          ) {
-            return (
-              <UtilizationMetricsGraph
-                key={name}
-                data={data}
-                setTimeRange={handleTimeRangeChange}
-                utilizationMetricsLoading={utilizationMetricsLoading}
-                humanReadableName={humanReadableName}
-                from={querySelection.from}
-                to={querySelection.to}
-                yAxisUnit="percentage"
-                addLabelMatcher={addLabelMatcher}
-                onSeriesClick={seriesIndex => {
-                  // For generic UtilizationMetrics, just pass the series index
-                  if (onUtilizationSeriesSelect != null) {
-                    onUtilizationSeriesSelect(name, seriesIndex);
-                  }
-                }}
-              />
-            );
-          }
-          return null;
-        })}
-        {throughputMetrics.length > 0 && (
-          <AreaChart
-            transmitData={transmitData}
-            receiveData={receiveData}
-            addLabelMatcher={addLabelMatcher}
-            setTimeRange={handleTimeRangeChange}
-            name={throughputMetrics[0].name}
-            humanReadableName={throughputMetrics[0].humanReadableName}
-            from={querySelection.from}
-            to={querySelection.to}
-            utilizationMetricsLoading={utilizationMetricsLoading}
-            selectedSeries={undefined}
-            onSeriesClick={(_, seriesIndex) => {
-              // For throughput metrics, just pass the series index
-              if (onUtilizationSeriesSelect != null) {
-                let name = 'gpu_pcie_throughput_transmit_bytes';
-                if (seriesIndex > transmitData.length - 1) {
-                  name = 'gpu_pcie_throughput_receive_bytes';
-                  seriesIndex -= transmitData.length;
-                }
-                onUtilizationSeriesSelect(name, seriesIndex);
-              }
-            }}
-          />
-        )}
-      </div>
-    );
-  };
-
   return (
     <div className={cx('relative', {'py-4': !showMetricsGraph})}>
       {setDisplayHideMetricsGraphButton != null ? (
@@ -251,25 +156,19 @@ export function MetricsGraphSection({
             querySelection.from !== undefined &&
             querySelection.to !== undefined ? (
               <>
-                {utilizationMetrics !== undefined ? (
-                  <UtilizationGraphToShow utilizationMetrics={utilizationMetrics} />
-                ) : (
-                  <>
-                    <ProfileMetricsGraph
-                      queryClient={queryClient}
-                      queryExpression={querySelection.expression}
-                      from={querySelection.from}
-                      to={querySelection.to}
-                      profile={profileSelection}
-                      comparing={comparing}
-                      sumBy={querySelection.sumBy ?? sumBy ?? []}
-                      sumByLoading={defaultSumByLoading}
-                      setTimeRange={handleTimeRangeChange}
-                      addLabelMatcher={addLabelMatcher}
-                      onPointClick={handlePointClick}
-                    />
-                  </>
-                )}
+                <ProfileMetricsGraph
+                  queryClient={queryClient}
+                  queryExpression={querySelection.expression}
+                  from={querySelection.from}
+                  to={querySelection.to}
+                  profile={profileSelection}
+                  comparing={comparing}
+                  sumBy={querySelection.sumBy ?? sumBy ?? []}
+                  sumByLoading={defaultSumByLoading}
+                  setTimeRange={handleTimeRangeChange}
+                  addLabelMatcher={addLabelMatcher}
+                  onPointClick={handlePointClick}
+                />
               </>
             ) : (
               profileSelection === null && (

@@ -11,157 +11,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useMemo, useRef, useState} from 'react';
 
-import {useQuery} from '@tanstack/react-query';
 import cx from 'classnames';
 import TextareaAutosize from 'react-textarea-autosize';
 
-import {LabelsRequest, LabelsResponse, QueryServiceClient, ValuesRequest} from '@parca/client';
-import {useGrpcMetadata} from '@parca/components';
 import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
-import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
-import {UtilizationLabels} from '../ProfileSelector';
-import {LabelsProvider, useLabels} from '../contexts/MatchersInputLabelsContext';
-import useGrpcQuery from '../useGrpcQuery';
+import {useUnifiedLabels} from '../contexts/UnifiedLabelsContext';
+import {useQueryState} from '../hooks/useQueryState';
 import SuggestionsList, {Suggestion, Suggestions} from './SuggestionsList';
 
-interface MatchersInputProps {
-  queryClient: QueryServiceClient;
-  setMatchersString: (arg: string) => void;
-  runQuery: () => void;
-  currentQuery: Query;
-  profileType: string;
-  start?: number;
-  end?: number;
-}
-
-export interface ILabelNamesResult {
-  response?: LabelsResponse;
-  error?: Error;
-}
-
-interface UseLabelNames {
-  result: ILabelNamesResult;
-  loading: boolean;
-  refetch: () => Promise<void>;
-}
-
-export const useLabelNames = (
-  client: QueryServiceClient,
-  profileType: string,
-  start?: number,
-  end?: number,
-  match?: string[]
-): UseLabelNames => {
-  const metadata = useGrpcMetadata();
-
-  const {data, isLoading, error, refetch} = useGrpcQuery<LabelsResponse>({
-    key: ['labelNames', profileType, match?.join(','), start, end],
-    queryFn: async signal => {
-      const request: LabelsRequest = {match: match !== undefined ? match : []};
-      if (start !== undefined && end !== undefined) {
-        request.start = millisToProtoTimestamp(start);
-        request.end = millisToProtoTimestamp(end);
-      }
-      if (profileType !== undefined) {
-        request.profileType = profileType;
-      }
-      const {response} = await client.labels(request, {meta: metadata, abort: signal});
-      return response;
-    },
-    options: {
-      enabled: profileType !== undefined && profileType !== '',
-      keepPreviousData: false,
-    },
-  });
-
-  useEffect(() => {
-    console.log('Label names query result:', {data, error, isLoading});
-  }, [data, error, isLoading]);
-
-  return {
-    result: {response: data, error: error as Error},
-    loading: isLoading,
-    refetch: async () => {
-      await refetch();
-    },
-  };
-};
-
-interface UseLabelValues {
-  result: {
-    response: string[];
-    error?: Error;
-  };
-  loading: boolean;
-  refetch: () => Promise<void>;
-}
-
-export const useLabelValues = (
-  client: QueryServiceClient,
-  labelName: string,
-  profileType: string,
-  start?: number,
-  end?: number
-): UseLabelValues => {
-  const metadata = useGrpcMetadata();
-
-  const {data, isLoading, error, refetch} = useGrpcQuery<string[]>({
-    key: ['labelValues', labelName, profileType, start, end],
-    queryFn: async signal => {
-      const request: ValuesRequest = {labelName, match: [], profileType};
-      if (start !== undefined && end !== undefined) {
-        request.start = millisToProtoTimestamp(start);
-        request.end = millisToProtoTimestamp(end);
-      }
-      const {response} = await client.values(request, {meta: metadata, abort: signal});
-      return sanitizeLabelValue(response.labelValues);
-    },
-    options: {
-      enabled:
-        profileType !== undefined &&
-        profileType !== '' &&
-        labelName !== undefined &&
-        labelName !== '',
-      keepPreviousData: false,
-    },
-  });
-
-  console.log('Label values query result:', {data, error, isLoading, labelName});
-
-  return {
-    result: {response: data ?? [], error: error as Error},
-    loading: isLoading,
-    refetch: async () => {
-      await refetch();
-    },
-  };
-};
-
-export const useFetchUtilizationLabelValues = (
-  labelName: string,
-  utilizationLabels?: UtilizationLabels
-): string[] => {
-  const {data} = useQuery({
-    queryKey: ['utilizationLabelValues', labelName],
-    queryFn: async () => {
-      const result = await utilizationLabels?.utilizationFetchLabelValues?.(labelName);
-      return result ?? [];
-    },
-    enabled: utilizationLabels?.utilizationFetchLabelValues != null && labelName !== '',
-  });
-
-  return data ?? [];
-};
-
-const MatchersInput = ({
-  setMatchersString,
-  runQuery,
-  currentQuery,
-}: MatchersInputProps): JSX.Element => {
+const MatchersInput = (): JSX.Element => {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const [focusedInput, setFocusedInput] = useState(false);
   const [lastCompleted, setLastCompleted] = useState<Suggestion>(new Suggestion('', '', ''));
@@ -169,7 +31,7 @@ const MatchersInput = ({
   const {
     labelNames,
     labelValues,
-    labelNameMappings,
+    labelNameMappingsForMatchersInput: labelNameMappings,
     isLabelNamesLoading,
     isLabelValuesLoading,
     currentLabelName,
@@ -177,13 +39,16 @@ const MatchersInput = ({
     shouldHandlePrefixes,
     refetchLabelValues,
     refetchLabelNames,
-  } = useLabels();
+    suffix,
+  } = useUnifiedLabels();
 
-  const value = currentQuery.matchersString();
+  const {setDraftMatchers, commitDraft, draftParsedQuery} = useQueryState({suffix});
+
+  const value = draftParsedQuery != null ? draftParsedQuery.matchersString() : '';
 
   const suggestionSections = useMemo(() => {
     const suggestionSections = new Suggestions();
-    Query.suggest(`${currentQuery.profileName()}{${value}`).forEach(function (s) {
+    Query.suggest(`${draftParsedQuery?.profileName() as string}{${value}`).forEach(function (s) {
       // Skip suggestions that we just completed. This really only works,
       // because we know the language is not repetitive. For a language that
       // has a repeating word, this would not work.
@@ -256,7 +121,7 @@ const MatchersInput = ({
     });
     return suggestionSections;
   }, [
-    currentQuery,
+    draftParsedQuery,
     lastCompleted,
     labelNames,
     labelValues,
@@ -271,7 +136,7 @@ const MatchersInput = ({
 
   const onChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
     const newValue = e.target.value;
-    setMatchersString(newValue);
+    setDraftMatchers(newValue);
     resetLastCompleted();
   };
 
@@ -294,7 +159,7 @@ const MatchersInput = ({
   const applySuggestion = (suggestion: Suggestion): void => {
     const newValue = complete(suggestion);
     setLastCompleted(suggestion);
-    setMatchersString(newValue);
+    setDraftMatchers(newValue);
     if (inputRef.current !== null) {
       inputRef.current.value = newValue;
       inputRef.current.focus();
@@ -309,7 +174,7 @@ const MatchersInput = ({
     setFocusedInput(false);
   };
 
-  const profileSelected = currentQuery.profileName() === '';
+  const profileSelected = draftParsedQuery?.profileName() === '';
 
   return (
     <div
@@ -345,7 +210,7 @@ const MatchersInput = ({
         suggestions={suggestionSections}
         applySuggestion={applySuggestion}
         inputRef={inputRef.current}
-        runQuery={runQuery}
+        runQuery={commitDraft}
         focusedInput={focusedInput}
         isLabelValuesLoading={
           isLabelValuesLoading && lastCompleted.type === 'literal' && lastCompleted.value !== ','
@@ -358,15 +223,4 @@ const MatchersInput = ({
   );
 };
 
-export default function MatchersInputWithProvider(props: MatchersInputProps): JSX.Element {
-  return (
-    <LabelsProvider
-      queryClient={props.queryClient}
-      profileType={props.profileType}
-      start={props.start}
-      end={props.end}
-    >
-      <MatchersInput {...props} />
-    </LabelsProvider>
-  );
-}
+export default MatchersInput;
