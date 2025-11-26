@@ -608,6 +608,7 @@ func (c *arrowToInternalConverter) AddLocationsRecordV1(
 				r.Lines,
 				r.Line,
 				r.LineNumber,
+				r.ColumnNumber,
 				r.LineFunctionName,
 				r.LineFunctionNameDict,
 				r.LineFunctionSystemName,
@@ -740,6 +741,7 @@ type locationsReader struct {
 	Lines                          *array.List
 	Line                           *array.Struct
 	LineNumber                     *array.Int64
+	ColumnNumber                   *array.Uint64
 	LineFunctionName               *array.Dictionary
 	LineFunctionNameDict           *array.Binary
 	LineFunctionSystemName         *array.Dictionary
@@ -802,7 +804,7 @@ func getLocationsReader(locations *array.List) (*locationsReader, error) {
 		return nil, fmt.Errorf("expected column line to be of type Struct, got %T", lines.ListValues())
 	}
 
-	const expectedLineFields = 5
+	const expectedLineFields = 6
 	if line.NumField() != expectedLineFields {
 		return nil, fmt.Errorf("expected line struct column to have %d fields, got %d", expectedLineFields, line.NumField())
 	}
@@ -812,24 +814,29 @@ func getLocationsReader(locations *array.List) (*locationsReader, error) {
 		return nil, fmt.Errorf("expected column line_number to be of type Int64, got %T", line.Field(0))
 	}
 
-	lineFunctionName, lineFunctionNameDict, err := getBinaryDict(line.Field(1), "line_function_name")
-	if err != nil {
-		return nil, err
-	}
-
-	lineFunctionSystemName, lineFunctionSystemNameDict, err := getBinaryDict(line.Field(2), "line_function_system_name")
-	if err != nil {
-		return nil, err
-	}
-
-	lineFunctionFilename, lineFunctionFilenameDict, lineFunctionFilenameDictValues, err := getREEBinaryDict(line.Field(3), "line_function_filename")
-	if err != nil {
-		return nil, err
-	}
-
-	lineFunctionStartLine, ok := line.Field(4).(*array.Int64)
+	columnNumber, ok := line.Field(1).(*array.Uint64)
 	if !ok {
-		return nil, fmt.Errorf("expected column line_function_start_line to be of type Int64, got %T", line.Field(4))
+		return nil, fmt.Errorf("expected column column_number to be of type Uint64, got %T", line.Field(1))
+	}
+
+	lineFunctionName, lineFunctionNameDict, err := getBinaryDict(line.Field(2), "line_function_name")
+	if err != nil {
+		return nil, err
+	}
+
+	lineFunctionSystemName, lineFunctionSystemNameDict, err := getBinaryDict(line.Field(3), "line_function_system_name")
+	if err != nil {
+		return nil, err
+	}
+
+	lineFunctionFilename, lineFunctionFilenameDict, lineFunctionFilenameDictValues, err := getREEBinaryDict(line.Field(4), "line_function_filename")
+	if err != nil {
+		return nil, err
+	}
+
+	lineFunctionStartLine, ok := line.Field(5).(*array.Int64)
+	if !ok {
+		return nil, fmt.Errorf("expected column line_function_start_line to be of type Int64, got %T", line.Field(5))
 	}
 
 	return &locationsReader{
@@ -851,6 +858,7 @@ func getLocationsReader(locations *array.List) (*locationsReader, error) {
 		Lines:                          lines,
 		Line:                           line,
 		LineNumber:                     lineNumber,
+		ColumnNumber:                   columnNumber,
 		LineFunctionName:               lineFunctionName,
 		LineFunctionNameDict:           lineFunctionNameDict,
 		LineFunctionSystemName:         lineFunctionSystemName,

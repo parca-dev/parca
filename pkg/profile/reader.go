@@ -51,6 +51,7 @@ type RecordReader struct {
 	Lines                         *array.List
 	Line                          *array.Struct
 	LineNumber                    *array.Int64
+	LineColumn                    *array.Uint64
 	LineFunctionNameIndices       *array.Uint32
 	LineFunctionNameDict          *array.Binary
 	LineFunctionSystemNameIndices *array.Uint32
@@ -110,16 +111,17 @@ func NewRecordReader(ar arrow.RecordBatch) *RecordReader {
 	lines := location.Field(6).(*array.List)
 	line := lines.ListValues().(*array.Struct)
 	lineNumber := line.Field(0).(*array.Int64)
-	lineFunctionName := line.Field(1).(*array.Dictionary)
+	lineColumn := line.Field(1).(*array.Uint64)
+	lineFunctionName := line.Field(2).(*array.Dictionary)
 	lineFunctionNameIndices := lineFunctionName.Indices().(*array.Uint32)
 	lineFunctionNameDict := lineFunctionName.Dictionary().(*array.Binary)
-	lineFunctionSystemName := line.Field(2).(*array.Dictionary)
+	lineFunctionSystemName := line.Field(3).(*array.Dictionary)
 	lineFunctionSystemNameIndices := lineFunctionSystemName.Indices().(*array.Uint32)
 	lineFunctionSystemNameDict := lineFunctionSystemName.Dictionary().(*array.Binary)
-	lineFunctionFilename := line.Field(3).(*array.Dictionary)
+	lineFunctionFilename := line.Field(4).(*array.Dictionary)
 	lineFunctionFilenameIndices := lineFunctionFilename.Indices().(*array.Uint32)
 	lineFunctionFilenameDict := lineFunctionFilename.Dictionary().(*array.Binary)
-	lineFunctionStartLine := line.Field(4).(*array.Int64)
+	lineFunctionStartLine := line.Field(5).(*array.Int64)
 	valueColumn := ar.Column(labelNum + 1).(*array.Int64)
 	diffColumn := ar.Column(labelNum + 2).(*array.Int64)
 	timestamp := ar.Column(labelNum + 3).(*array.Int64)
@@ -142,6 +144,7 @@ func NewRecordReader(ar arrow.RecordBatch) *RecordReader {
 		Lines:                         lines,
 		Line:                          line,
 		LineNumber:                    lineNumber,
+		LineColumn:                    lineColumn,
 		LineFunctionNameIndices:       lineFunctionNameIndices,
 		LineFunctionNameDict:          lineFunctionNameDict,
 		LineFunctionSystemNameIndices: lineFunctionSystemNameIndices,
