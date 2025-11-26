@@ -1,7 +1,7 @@
 {
   "name": "@parca/web",
   "private": true,
-  "version": "0.16.962",
+  "version": "0.16.964",
   "description": "Parca Web Interface",
   "type": "module",
   "scripts": {
@@ -39,7 +39,7 @@
     "@tanstack/react-query": "^4.0.5",
     "@testing-library/jest-dom": "5.17.0",
     "@testing-library/react": "13.4.0",
-    "autoprefixer": "10.4.21",
+    "autoprefixer": "10.4.22",
     "classnames": "^2.3.1",
     "immer": "9.0.21",
     "isomorphic-unfetch": "3.1.0",
@@ -55,7 +55,7 @@
     "react-github-btn": "^1.4.0",
     "react-markdown": "^8.0.4",
     "react-redux": "^8.0.2",
-    "react-router-dom": "6.30.1",
+    "react-router-dom": "6.30.2",
     "react-use": "17.6.0",
     "redux-persist": "^6.0.0",
     "tailwindcss": "3.2.4",
