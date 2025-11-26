@@ -1476,7 +1476,8 @@ func TestStackFilterFunctionNameStartsWith(t *testing.T) {
 
 	// Validate the remaining samples contain at least one function starting with "app."
 	for _, rec := range recs {
-		r := profile.NewRecordReader(rec)
+		r, err := profile.NewRecordReader(rec)
+		require.NoError(t, err)
 		for i := 0; i < int(rec.NumRows()); i++ {
 			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 			firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
@@ -1546,7 +1547,8 @@ func TestStackFilterFunctionNameNotStartsWith(t *testing.T) {
 
 	// Validate none of the remaining samples contain functions starting with "database."
 	for _, rec := range recs {
-		r := profile.NewRecordReader(rec)
+		r, err := profile.NewRecordReader(rec)
+		require.NoError(t, err)
 		for i := 0; i < int(rec.NumRows()); i++ {
 			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 			firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
@@ -1611,7 +1613,8 @@ func TestFrameFilterFunctionNameStartsWith(t *testing.T) {
 
 	// Validate the remaining frames all start with "runtime."
 	for _, rec := range recs {
-		r := profile.NewRecordReader(rec)
+		r, err := profile.NewRecordReader(rec)
+		require.NoError(t, err)
 		for i := 0; i < int(rec.NumRows()); i++ {
 			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 			firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
@@ -1679,7 +1682,8 @@ func TestFrameFilterFunctionNameNotStartsWith(t *testing.T) {
 
 	// Validate none of the remaining frames start with "runtime."
 	for _, rec := range recs {
-		r := profile.NewRecordReader(rec)
+		r, err := profile.NewRecordReader(rec)
+		require.NoError(t, err)
 		for i := 0; i < int(rec.NumRows()); i++ {
 			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(i)
 			firstStart, _ := r.Lines.ValueOffsets(int(lOffsetStart))
