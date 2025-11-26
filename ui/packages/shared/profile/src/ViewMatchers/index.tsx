@@ -11,17 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
 import {useGrpcMetadata, useParcaContext} from '@parca/components';
-import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
 import CustomSelect, {SelectItem} from '../SimpleMatchers/Select';
+import {useUnifiedLabels} from '../contexts/UnifiedLabelsContext';
 import {useQueryState} from '../hooks/useQueryState';
 
 interface Props {
@@ -34,14 +34,12 @@ const ViewMatchers: React.FC<Props> = ({labelNames}) => {
   const metadata = useGrpcMetadata();
   const {queryServiceClient: parcaQueryClient} = useParcaContext();
 
-  const {draftSelection, setDraftMatchers, commitDraft} = useQueryState();
+  const {suffix} = useUnifiedLabels();
 
-  const currentQuery = useMemo(
-    () => Query.parse(draftSelection.expression),
-    [draftSelection.expression]
-  );
-  const currentMatchers = currentQuery.matchersString();
-  const profileType = currentQuery.profileType().toString();
+  const {draftSelection, setDraftMatchers, commitDraft, draftParsedQuery} = useQueryState({suffix});
+
+  const currentMatchers = draftParsedQuery?.matchersString();
+  const profileType = draftParsedQuery?.profileType().toString();
   const start = draftSelection.from;
   const end = draftSelection.to;
 
@@ -62,7 +60,7 @@ const ViewMatchers: React.FC<Props> = ({labelNames}) => {
     );
   }, []);
 
-  const initialSelections = parseCurrentMatchers(currentMatchers);
+  const initialSelections = parseCurrentMatchers(currentMatchers ?? '');
   const selectionsRef = useRef<Record<string, string | null>>(initialSelections);
 
   const commitDraftRef = useRef(commitDraft);

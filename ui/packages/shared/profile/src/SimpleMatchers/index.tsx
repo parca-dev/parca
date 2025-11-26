@@ -11,14 +11,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import {useQueryClient} from '@tanstack/react-query';
 import cx from 'classnames';
 
 import {useGrpcMetadata, useParcaContext} from '@parca/components';
-import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
@@ -112,7 +111,16 @@ const SimpleMatchers = ({
   const [showAll, setShowAll] = useState(false);
   const [isActivelyEditing, setIsActivelyEditing] = useState(false);
 
-  const {draftSelection, setDraftMatchers} = useQueryState();
+  const {
+    labelNameMappingsForSimpleMatchers: labelNameOptions,
+    isLabelNamesLoading: labelNamesLoading,
+    refetchLabelNames,
+    suffix,
+  } = useUnifiedLabels();
+
+  const {draftSelection, setDraftMatchers, draftParsedQuery} = useQueryState({
+    suffix,
+  });
 
   // Reset editing mode when search is executed
   useEffect(() => {
@@ -122,23 +130,13 @@ const SimpleMatchers = ({
     }
   }, [searchExecutedTimestamp]);
 
-  const {
-    labelNameMappingsForSimpleMatchers: labelNameOptions,
-    isLabelNamesLoading: labelNamesLoading,
-    refetchLabelNames,
-  } = useUnifiedLabels();
-
   const visibleRows = showAll || isActivelyEditing ? queryRows : queryRows.slice(0, 3);
   const hiddenRowsCount = queryRows.length - 3;
 
   const maxWidthInPixels = `max-w-[${queryBrowserRef.current?.offsetWidth.toString() as string}px]`;
 
-  const currentQuery = useMemo(
-    () => Query.parse(draftSelection.expression),
-    [draftSelection.expression]
-  );
-  const currentMatchers = currentQuery.matchersString();
-  const profileType = currentQuery.profileType().toString();
+  const currentMatchers = draftParsedQuery?.matchersString();
+  const profileType = draftParsedQuery?.profileType().toString();
   const start = draftSelection.from;
   const end = draftSelection.to;
 
@@ -265,7 +263,7 @@ const SimpleMatchers = ({
   );
 
   useEffect(() => {
-    if (currentMatchers === '') {
+    if (currentMatchers === '' || currentMatchers === undefined) {
       const defaultRow = {
         labelName: '',
         operator: '=',

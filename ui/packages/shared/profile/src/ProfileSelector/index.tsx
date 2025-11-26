@@ -274,6 +274,7 @@ const ProfileSelector = ({
           queryClient={queryClient}
           start={timeRangeSelection.getFromMs()}
           end={timeRangeSelection.getToMs()}
+          suffix={suffix}
         >
           <LabelsSource>
             <QueryControls
@@ -349,6 +350,7 @@ const LabelsSource = ({children}: {children: React.ReactNode}): JSX.Element => {
     refetchLabelNames,
     currentLabelName,
     setCurrentLabelName,
+    suffix,
   } = useLabelsQueryProvider();
 
   return (
@@ -361,6 +363,7 @@ const LabelsSource = ({children}: {children: React.ReactNode}): JSX.Element => {
       refetchLabelNames={refetchLabelNames}
       currentLabelName={currentLabelName}
       setCurrentLabelName={setCurrentLabelName}
+      suffix={suffix}
     >
       {children}
     </UnifiedLabelsProvider>

@@ -58,6 +58,12 @@ interface UseQueryStateReturn {
 
   // Loading state for sumBy computation
   sumByLoading: boolean;
+
+  // draft parsed query
+  draftParsedQuery: Query | null;
+
+  // parsed query
+  parsedQuery: Query | null;
 }
 
 export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryStateReturn => {
@@ -390,6 +396,22 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     [batchUpdates, setSelectionParam, setMergeFromState, setMergeToState]
   );
 
+  const draftParsedQuery = useMemo(() => {
+    try {
+      return Query.parse(draftSelection.expression ?? '');
+    } catch {
+      return Query.parse('');
+    }
+  }, [draftSelection.expression]);
+
+  const parsedQuery = useMemo(() => {
+    try {
+      return Query.parse(querySelection.expression ?? '');
+    } catch {
+      return Query.parse('');
+    }
+  }, [querySelection.expression]);
+
   return {
     // Current committed state
     querySelection,
@@ -414,5 +436,8 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
 
     // Loading state
     sumByLoading: sumBySelectionLoading,
+
+    draftParsedQuery,
+    parsedQuery,
   };
 };

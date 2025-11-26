@@ -39,19 +39,16 @@ const MatchersInput = (): JSX.Element => {
     shouldHandlePrefixes,
     refetchLabelValues,
     refetchLabelNames,
+    suffix,
   } = useUnifiedLabels();
 
-  const {draftSelection, setDraftMatchers, commitDraft} = useQueryState();
+  const {setDraftMatchers, commitDraft, draftParsedQuery} = useQueryState({suffix});
 
-  const currentQuery = useMemo(
-    () => Query.parse(draftSelection.expression),
-    [draftSelection.expression]
-  );
-  const value = currentQuery != null ? currentQuery.matchersString() : '';
+  const value = draftParsedQuery != null ? draftParsedQuery.matchersString() : '';
 
   const suggestionSections = useMemo(() => {
     const suggestionSections = new Suggestions();
-    Query.suggest(`${currentQuery.profileName()}{${value}`).forEach(function (s) {
+    Query.suggest(`${draftParsedQuery?.profileName() as string}{${value}`).forEach(function (s) {
       // Skip suggestions that we just completed. This really only works,
       // because we know the language is not repetitive. For a language that
       // has a repeating word, this would not work.
@@ -124,7 +121,7 @@ const MatchersInput = (): JSX.Element => {
     });
     return suggestionSections;
   }, [
-    currentQuery,
+    draftParsedQuery,
     lastCompleted,
     labelNames,
     labelValues,
@@ -177,7 +174,7 @@ const MatchersInput = (): JSX.Element => {
     setFocusedInput(false);
   };
 
-  const profileSelected = currentQuery.profileName() === '';
+  const profileSelected = draftParsedQuery?.profileName() === '';
 
   return (
     <div

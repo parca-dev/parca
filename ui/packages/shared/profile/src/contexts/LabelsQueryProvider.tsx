@@ -58,6 +58,8 @@ export interface LabelsQueryProviderContextType {
   profileType: string;
   start?: number;
   end?: number;
+
+  suffix?: '_a' | '_b';
 }
 
 const LabelsQueryProviderContext = createContext<LabelsQueryProviderContextType | null>(null);
@@ -72,6 +74,8 @@ interface LabelsQueryProviderProps {
   profileType: string;
   start?: number;
   end?: number;
+
+  suffix?: '_a' | '_b';
 }
 
 export function LabelsQueryProvider({
@@ -83,6 +87,7 @@ export function LabelsQueryProvider({
   profileType,
   start,
   end,
+  suffix,
 }: LabelsQueryProviderProps): JSX.Element {
   const [currentLabelName, setCurrentLabelName] = useState<string | null>(null);
 
@@ -118,6 +123,7 @@ export function LabelsQueryProvider({
     end,
     setCurrentLabelName,
     currentLabelName,
+    suffix,
   };
 
   return (

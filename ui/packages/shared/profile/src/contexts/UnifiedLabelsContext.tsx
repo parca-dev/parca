@@ -57,6 +57,8 @@ interface UnifiedLabelsContextType {
   refetchLabelValues: () => Promise<void>;
   refetchLabelNames: () => Promise<void>;
   labelNameFromMatchers: string[];
+
+  suffix?: '_a' | '_b';
 }
 
 const UnifiedLabelsContext = createContext<UnifiedLabelsContextType | null>(null);
@@ -74,6 +76,8 @@ interface UnifiedLabelsProviderProps {
 
   refetchLabelValues: () => Promise<void>;
   refetchLabelNames: () => Promise<void>;
+
+  suffix?: '_a' | '_b';
 }
 
 export function UnifiedLabelsProvider({
@@ -86,6 +90,7 @@ export function UnifiedLabelsProvider({
   currentLabelName,
   setCurrentLabelName,
   labelValues,
+  suffix,
 }: UnifiedLabelsProviderProps): JSX.Element {
   const labelNameFromMatchers: string[] = [];
 
@@ -135,6 +140,7 @@ export function UnifiedLabelsProvider({
     },
     labelNameFromMatchers,
     labelNameMappingsForSimpleMatchers,
+    suffix,
   };
 
   return <UnifiedLabelsContext.Provider value={value}>{children}</UnifiedLabelsContext.Provider>;
