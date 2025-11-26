@@ -347,26 +347,12 @@ const LabelsSource = ({children}: {children: React.ReactNode}): JSX.Element => {
     isLabelValuesLoading,
     refetchLabelValues,
     refetchLabelNames,
-    queryClient,
-    setMatchersString,
-    runQuery,
-    start,
-    end,
-    profileType,
-    currentQuery,
     currentLabelName,
     setCurrentLabelName,
   } = useLabelsQueryProvider();
 
   return (
     <UnifiedLabelsProvider
-      setMatchersString={setMatchersString}
-      runQuery={runQuery}
-      currentQuery={currentQuery}
-      profileType={profileType.toString()}
-      queryClient={queryClient}
-      start={start}
-      end={end}
       labelNames={labelNames}
       labelValues={labelValues}
       isLabelNamesLoading={isLabelNamesLoading}

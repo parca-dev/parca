@@ -11,14 +11,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {ParamPreferences} from '@parca/components';
+import type {ParamPreferences} from '@parca/components';
 
 import MetricsGraph, {type ContextMenuItemOrSubmenu, type Series} from './MetricsGraph';
 import ProfileExplorer from './ProfileExplorer';
 import ProfileTypeSelector from './ProfileTypeSelector';
 import {SelectWithRefresh} from './SelectWithRefresh';
 import CustomSelect from './SimpleMatchers/Select';
-import {LabelsQueryProvider, useLabelsQueryProvider} from './contexts/LabelsQueryProvider';
+import {
+  LabelsQueryProvider,
+  useLabelsQueryProvider,
+  type LabelsQueryProviderContextType,
+} from './contexts/LabelsQueryProvider';
 import {UnifiedLabelsProvider, useUnifiedLabels} from './contexts/UnifiedLabelsContext';
 import {useLabelNames} from './hooks/useLabels';
 import {useQueryState} from './hooks/useQueryState';
@@ -64,4 +68,5 @@ export {
   UnifiedLabelsProvider,
   useUnifiedLabels,
   useQueryState,
+  type LabelsQueryProviderContextType,
 };

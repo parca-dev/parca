@@ -34,9 +34,6 @@
 
 import {createContext, useContext} from 'react';
 
-import {QueryServiceClient} from '@parca/client';
-import {Query} from '@parca/parser';
-
 import {transformLabelsForSelect} from '../SimpleMatchers';
 import type {SelectItem} from '../SimpleMatchers/Select';
 import {useLabelNameMappings, type LabelNameMapping} from './utils';
@@ -60,28 +57,12 @@ interface UnifiedLabelsContextType {
   refetchLabelValues: () => Promise<void>;
   refetchLabelNames: () => Promise<void>;
   labelNameFromMatchers: string[];
-
-  queryClient: QueryServiceClient;
-  setMatchersString: (arg: string) => void;
-  runQuery: () => void;
-  currentQuery: Query;
-  profileType: string;
-  start?: number;
-  end?: number;
 }
 
 const UnifiedLabelsContext = createContext<UnifiedLabelsContextType | null>(null);
 
 interface UnifiedLabelsProviderProps {
   children: React.ReactNode;
-
-  queryClient: QueryServiceClient;
-  setMatchersString: (arg: string) => void;
-  runQuery: () => void;
-  currentQuery: Query;
-  profileType: string;
-  start?: number;
-  end?: number;
 
   currentLabelName: string | null;
   setCurrentLabelName: (name: string | null) => void;
@@ -97,13 +78,6 @@ interface UnifiedLabelsProviderProps {
 
 export function UnifiedLabelsProvider({
   children,
-  queryClient,
-  setMatchersString,
-  runQuery,
-  currentQuery,
-  profileType,
-  start,
-  end,
   labelNames,
   isLabelNamesLoading,
   isLabelValuesLoading,
@@ -161,13 +135,6 @@ export function UnifiedLabelsProvider({
     },
     labelNameFromMatchers,
     labelNameMappingsForSimpleMatchers,
-    queryClient,
-    setMatchersString,
-    runQuery,
-    currentQuery,
-    profileType,
-    start,
-    end,
   };
 
   return <UnifiedLabelsContext.Provider value={value}>{children}</UnifiedLabelsContext.Provider>;

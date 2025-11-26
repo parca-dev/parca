@@ -11,18 +11,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import {useQueryClient} from '@tanstack/react-query';
 import cx from 'classnames';
 
-import {useGrpcMetadata} from '@parca/components';
+import {useGrpcMetadata, useParcaContext} from '@parca/components';
+import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
 import {useUnifiedLabels} from '../contexts/UnifiedLabelsContext';
 import {transformLabelName} from '../contexts/utils';
+import {useQueryState} from '../hooks/useQueryState';
 import Select, {type SelectItem} from './Select';
 
 interface Props {
@@ -105,9 +107,12 @@ const SimpleMatchers = ({
   ]);
   const reactQueryClient = useQueryClient();
   const metadata = useGrpcMetadata();
+  const {queryServiceClient: parcaQueryClient} = useParcaContext();
 
   const [showAll, setShowAll] = useState(false);
   const [isActivelyEditing, setIsActivelyEditing] = useState(false);
+
+  const {draftSelection, setDraftMatchers} = useQueryState();
 
   // Reset editing mode when search is executed
   useEffect(() => {
@@ -121,12 +126,6 @@ const SimpleMatchers = ({
     labelNameMappingsForSimpleMatchers: labelNameOptions,
     isLabelNamesLoading: labelNamesLoading,
     refetchLabelNames,
-    currentQuery,
-    queryClient,
-    setMatchersString,
-    profileType,
-    start,
-    end,
   } = useUnifiedLabels();
 
   const visibleRows = showAll || isActivelyEditing ? queryRows : queryRows.slice(0, 3);
@@ -134,7 +133,14 @@ const SimpleMatchers = ({
 
   const maxWidthInPixels = `max-w-[${queryBrowserRef.current?.offsetWidth.toString() as string}px]`;
 
+  const currentQuery = useMemo(
+    () => Query.parse(draftSelection.expression),
+    [draftSelection.expression]
+  );
   const currentMatchers = currentQuery.matchersString();
+  const profileType = currentQuery.profileType().toString();
+  const start = draftSelection.from;
+  const end = draftSelection.to;
 
   const fetchLabelValues = useCallback(
     async (labelName: string): Promise<string[]> => {
@@ -149,7 +155,7 @@ const SimpleMatchers = ({
         const values = await reactQueryClient.fetchQuery(
           [labelName, profileType, start, end],
           async () => {
-            const response = await queryClient.values(
+            const response = await parcaQueryClient.values(
               {
                 labelName,
                 match: [],
@@ -174,7 +180,7 @@ const SimpleMatchers = ({
         return [];
       }
     },
-    [queryClient, metadata, profileType, reactQueryClient, start, end]
+    [parcaQueryClient, metadata, profileType, reactQueryClient, start, end]
   );
 
   const updateMatchersString = useCallback(
@@ -183,9 +189,9 @@ const SimpleMatchers = ({
         .filter(row => row.labelName.length > 0 && row.labelValue)
         .map(row => `${row.labelName}${row.operator}"${row.labelValue}"`)
         .join(',');
-      setMatchersString(matcherString);
+      setDraftMatchers(matcherString);
     },
-    [setMatchersString]
+    [setDraftMatchers]
   );
 
   // Helper to ensure selected label name is in the options (for page load before API returns)

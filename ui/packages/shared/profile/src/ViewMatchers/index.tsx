@@ -11,17 +11,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
-import {useGrpcMetadata} from '@parca/components';
+import {useGrpcMetadata, useParcaContext} from '@parca/components';
+import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
 import CustomSelect, {SelectItem} from '../SimpleMatchers/Select';
-import {useUnifiedLabels} from '../contexts/UnifiedLabelsContext';
+import {useQueryState} from '../hooks/useQueryState';
 
 interface Props {
   labelNames: string[];
@@ -31,11 +32,18 @@ const ViewMatchers: React.FC<Props> = ({labelNames}) => {
   const [labelValuesMap, setLabelValuesMap] = useState<Record<string, string[]>>({});
   const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
   const metadata = useGrpcMetadata();
+  const {queryServiceClient: parcaQueryClient} = useParcaContext();
 
-  const {queryClient, setMatchersString, runQuery, currentQuery, profileType, start, end} =
-    useUnifiedLabels();
+  const {draftSelection, setDraftMatchers, commitDraft} = useQueryState();
 
+  const currentQuery = useMemo(
+    () => Query.parse(draftSelection.expression),
+    [draftSelection.expression]
+  );
   const currentMatchers = currentQuery.matchersString();
+  const profileType = currentQuery.profileType().toString();
+  const start = draftSelection.from;
+  const end = draftSelection.to;
 
   const parseCurrentMatchers = useCallback((matchersString: string): Record<string, string> => {
     const matches = matchersString.match(/(\w+)="([^"]+)"/g);
@@ -57,12 +65,12 @@ const ViewMatchers: React.FC<Props> = ({labelNames}) => {
   const initialSelections = parseCurrentMatchers(currentMatchers);
   const selectionsRef = useRef<Record<string, string | null>>(initialSelections);
 
-  const runQueryRef = useRef(runQuery);
+  const commitDraftRef = useRef(commitDraft);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    runQueryRef.current = runQuery;
-  }, [runQuery]);
+    commitDraftRef.current = commitDraft;
+  }, [commitDraft]);
 
   useEffect(() => {
     selectionsRef.current = initialSelections;
@@ -71,7 +79,7 @@ const ViewMatchers: React.FC<Props> = ({labelNames}) => {
   const fetchLabelValues = useCallback(
     async (labelName: string): Promise<string[]> => {
       try {
-        const response = await queryClient.values(
+        const response = await parcaQueryClient.values(
           {
             labelName,
             match: [],
@@ -91,7 +99,7 @@ const ViewMatchers: React.FC<Props> = ({labelNames}) => {
         return [];
       }
     },
-    [queryClient, metadata, profileType, start, end]
+    [parcaQueryClient, metadata, profileType, start, end]
   );
 
   const fetchAllLabelValues = useCallback(async (): Promise<void> => {
@@ -121,16 +129,16 @@ const ViewMatchers: React.FC<Props> = ({labelNames}) => {
       .map(([ln, v]) => `${ln}="${v as string}"`);
 
     const matcherString = matcherParts.join(',');
-    setMatchersString(matcherString);
+    setDraftMatchers(matcherString);
 
     if (timeoutRef.current !== null) {
       clearTimeout(timeoutRef.current);
     }
 
     timeoutRef.current = setTimeout(() => {
-      runQueryRef.current();
+      commitDraftRef.current();
     }, 300);
-  }, [setMatchersString]);
+  }, [setDraftMatchers]);
 
   const handleSelection = useCallback(
     (labelName: string, value: string | null): void => {

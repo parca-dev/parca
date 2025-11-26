@@ -20,6 +20,7 @@ import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 
 import {useUnifiedLabels} from '../contexts/UnifiedLabelsContext';
+import {useQueryState} from '../hooks/useQueryState';
 import SuggestionsList, {Suggestion, Suggestions} from './SuggestionsList';
 
 const MatchersInput = (): JSX.Element => {
@@ -38,11 +39,14 @@ const MatchersInput = (): JSX.Element => {
     shouldHandlePrefixes,
     refetchLabelValues,
     refetchLabelNames,
-    setMatchersString,
-    currentQuery,
-    runQuery,
   } = useUnifiedLabels();
 
+  const {draftSelection, setDraftMatchers, commitDraft} = useQueryState();
+
+  const currentQuery = useMemo(
+    () => Query.parse(draftSelection.expression),
+    [draftSelection.expression]
+  );
   const value = currentQuery != null ? currentQuery.matchersString() : '';
 
   const suggestionSections = useMemo(() => {
@@ -135,7 +139,7 @@ const MatchersInput = (): JSX.Element => {
 
   const onChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
     const newValue = e.target.value;
-    setMatchersString(newValue);
+    setDraftMatchers(newValue);
     resetLastCompleted();
   };
 
@@ -158,7 +162,7 @@ const MatchersInput = (): JSX.Element => {
   const applySuggestion = (suggestion: Suggestion): void => {
     const newValue = complete(suggestion);
     setLastCompleted(suggestion);
-    setMatchersString(newValue);
+    setDraftMatchers(newValue);
     if (inputRef.current !== null) {
       inputRef.current.value = newValue;
       inputRef.current.focus();
@@ -209,7 +213,7 @@ const MatchersInput = (): JSX.Element => {
         suggestions={suggestionSections}
         applySuggestion={applySuggestion}
         inputRef={inputRef.current}
-        runQuery={runQuery}
+        runQuery={commitDraft}
         focusedInput={focusedInput}
         isLabelValuesLoading={
           isLabelValuesLoading && lastCompleted.type === 'literal' && lastCompleted.value !== ','

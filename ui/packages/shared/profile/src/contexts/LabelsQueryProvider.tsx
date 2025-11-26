@@ -40,7 +40,7 @@ import {Query} from '@parca/parser';
 import {useLabelNames, useLabelValues} from '../hooks/useLabels';
 import {useExtractedLabelNames} from './utils';
 
-interface LabelsQueryProviderContextType {
+export interface LabelsQueryProviderContextType {
   isLabelNamesLoading: boolean;
   isLabelValuesLoading: boolean;
   currentLabelName: string | null;
