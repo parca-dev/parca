@@ -11,23 +11,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import {useQueryClient} from '@tanstack/react-query';
 import cx from 'classnames';
 
-import {useGrpcMetadata, useParcaContext} from '@parca/components';
+import {QueryServiceClient} from '@parca/client';
+import {useGrpcMetadata} from '@parca/components';
+import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
-import {useUnifiedLabels} from '../contexts/UnifiedLabelsContext';
-import {transformLabelName} from '../contexts/utils';
-import {useQueryState} from '../hooks/useQueryState';
+import {LabelProvider, useLabels} from '../contexts/SimpleMatchersLabelContext';
+import {useUtilizationLabels} from '../contexts/UtilizationLabelsContext';
 import Select, {type SelectItem} from './Select';
 
 interface Props {
+  queryClient: QueryServiceClient;
+  setMatchersString: (arg: string) => void;
+  runQuery: () => void;
+  currentQuery: Query;
+  profileType: string;
   queryBrowserRef: React.RefObject<HTMLDivElement>;
+  start?: number;
+  end?: number;
   searchExecutedTimestamp?: number;
 }
 
@@ -39,12 +47,22 @@ interface QueryRow {
   isLoading: boolean;
 }
 
+const trimOtelPrefix = (labelName: string): string => {
+  if (labelName.startsWith('attributes_resource.')) {
+    return labelName.replace('attributes_resource.', '');
+  }
+  if (labelName.startsWith('attributes.')) {
+    return labelName.replace('attributes.', '');
+  }
+  return labelName;
+};
+
 export const transformLabelsForSelect = (labelNames: string[]): SelectItem[] => {
   return labelNames.map(labelName => ({
     key: labelName,
     element: {
-      active: <>{transformLabelName(labelName)}</>,
-      expanded: <>{transformLabelName(labelName)}</>,
+      active: <>{trimOtelPrefix(labelName)}</>,
+      expanded: <>{trimOtelPrefix(labelName)}</>,
     },
   }));
 };
@@ -97,30 +115,24 @@ const operatorOptions = [
 ];
 
 const SimpleMatchers = ({
+  queryClient,
+  setMatchersString,
+  currentQuery,
+  profileType,
   queryBrowserRef,
-
+  start,
+  end,
   searchExecutedTimestamp,
 }: Props): JSX.Element => {
+  const utilizationLabels = useUtilizationLabels();
   const [queryRows, setQueryRows] = useState<QueryRow[]>([
     {labelName: '', operator: '=', labelValue: '', labelValues: [], isLoading: false},
   ]);
   const reactQueryClient = useQueryClient();
   const metadata = useGrpcMetadata();
-  const {queryServiceClient: parcaQueryClient} = useParcaContext();
 
   const [showAll, setShowAll] = useState(false);
   const [isActivelyEditing, setIsActivelyEditing] = useState(false);
-
-  const {
-    labelNameMappingsForSimpleMatchers: labelNameOptions,
-    isLabelNamesLoading: labelNamesLoading,
-    refetchLabelNames,
-    suffix,
-  } = useUnifiedLabels();
-
-  const {draftSelection, setDraftMatchers, draftParsedQuery} = useQueryState({
-    suffix,
-  });
 
   // Reset editing mode when search is executed
   useEffect(() => {
@@ -135,25 +147,18 @@ const SimpleMatchers = ({
 
   const maxWidthInPixels = `max-w-[${queryBrowserRef.current?.offsetWidth.toString() as string}px]`;
 
-  const currentMatchers = draftParsedQuery?.matchersString();
-  const profileType = draftParsedQuery?.profileType().toString();
-  const start = draftSelection.from;
-  const end = draftSelection.to;
+  const currentMatchers = currentQuery.matchersString();
 
   const fetchLabelValues = useCallback(
     async (labelName: string): Promise<string[]> => {
-      if (labelName == null || labelName === '') {
-        return [];
-      }
-
-      if (profileType == null || profileType === '') {
+      if (labelName == null || labelName === '' || profileType == null || profileType === '') {
         return [];
       }
       try {
         const values = await reactQueryClient.fetchQuery(
           [labelName, profileType, start, end],
           async () => {
-            const response = await parcaQueryClient.values(
+            const response = await queryClient.values(
               {
                 labelName,
                 match: [],
@@ -178,7 +183,14 @@ const SimpleMatchers = ({
         return [];
       }
     },
-    [parcaQueryClient, metadata, profileType, reactQueryClient, start, end]
+    [queryClient, metadata, profileType, reactQueryClient, start, end]
+  );
+
+  const fetchLabelValuesUtilization = useCallback(
+    async (labelName: string): Promise<string[]> => {
+      return (await utilizationLabels?.utilizationFetchLabelValues?.(labelName)) ?? [];
+    },
+    [utilizationLabels]
   );
 
   const updateMatchersString = useCallback(
@@ -187,10 +199,17 @@ const SimpleMatchers = ({
         .filter(row => row.labelName.length > 0 && row.labelValue)
         .map(row => `${row.labelName}${row.operator}"${row.labelValue}"`)
         .join(',');
-      setDraftMatchers(matcherString);
+      setMatchersString(matcherString);
     },
-    [setDraftMatchers]
+    [setMatchersString]
   );
+
+  const {
+    labelNameOptions,
+    isLoading: labelNamesLoading,
+    refetchLabelValues,
+    refetchLabelNames,
+  } = useLabels();
 
   // Helper to ensure selected label name is in the options (for page load before API returns)
   const getLabelNameOptionsWithSelected = useCallback(
@@ -257,13 +276,20 @@ const SimpleMatchers = ({
 
   const fetchLabelValuesUnified = useCallback(
     async (labelName: string): Promise<string[]> => {
-      return await fetchLabelValues(labelName);
+      const labelType = labelNameOptions.find(option =>
+        option.values.some(e => e.key === labelName)
+      )?.type;
+      const labelValues =
+        labelType === 'gpu'
+          ? await fetchLabelValuesUtilization(labelName)
+          : await fetchLabelValues(labelName);
+      return labelValues;
     },
-    [fetchLabelValues]
+    [fetchLabelValues, fetchLabelValuesUtilization, labelNameOptions]
   );
 
   useEffect(() => {
-    if (currentMatchers === '' || currentMatchers === undefined) {
+    if (currentMatchers === '') {
       const defaultRow = {
         labelName: '',
         operator: '=',
@@ -280,7 +306,7 @@ const SimpleMatchers = ({
     const fetchAndSetQueryRows = async (): Promise<void> => {
       const newRows = await Promise.all(
         currentMatchers.split(',').map(async matcher => {
-          const match = matcher.match(/^([^=!~]+)([=!~]{1,2})(.+)$/);
+          const match = matcher.match(/([^=!~]+)([=!~]{1,2})(.+)/);
           if (match === null) return null;
 
           const [, labelName, operator, labelValue] = match;
@@ -414,13 +440,6 @@ const SimpleMatchers = ({
 
   const isRowRegex = (row: QueryRow): boolean => row.operator === '=~' || row.operator === '!~';
 
-  const handleRefetchForLabelValues = useCallback(
-    async (labelName: string): Promise<void> => {
-      await fetchLabelValuesUnified(labelName);
-    },
-    [fetchLabelValuesUnified]
-  );
-
   return (
     <div
       className={`flex items-center gap-3 ${maxWidthInPixels} w-full flex-wrap`}
@@ -466,7 +485,7 @@ const SimpleMatchers = ({
             onButtonClick={() => handleLabelValueClick(index)}
             editable={isRowRegex(row)}
             {...testId(TEST_IDS.LABEL_VALUE_SELECT)}
-            refetchValues={async () => await handleRefetchForLabelValues(row.labelName)}
+            refetchValues={async () => await refetchLabelValues(row.labelName)}
             showLoadingInButton={true}
           />
           <button
@@ -511,4 +530,24 @@ const SimpleMatchers = ({
   );
 };
 
-export default SimpleMatchers;
+export default function SimpleMathersWithProvider(props: Props): JSX.Element {
+  const labelNameFromMatchers = useMemo(() => {
+    if (props.currentQuery === undefined) return [];
+
+    const matchers = props.currentQuery.matchers;
+
+    return matchers.map(matcher => matcher.key);
+  }, [props.currentQuery]);
+
+  return (
+    <LabelProvider
+      queryClient={props.queryClient}
+      profileType={props.profileType}
+      labelNameFromMatchers={labelNameFromMatchers}
+      start={props.start}
+      end={props.end}
+    >
+      <SimpleMatchers {...props} />
+    </LabelProvider>
+  );
+}

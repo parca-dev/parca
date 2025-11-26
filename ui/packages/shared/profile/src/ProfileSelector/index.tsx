@@ -29,14 +29,13 @@ import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 import {millisToProtoTimestamp, type NavigateFunction} from '@parca/utilities';
 
+import {useLabelNames} from '../MatchersInput/index';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
-import {QueryControls} from '../QueryControls';
-import {LabelsQueryProvider, useLabelsQueryProvider} from '../contexts/LabelsQueryProvider';
-import {UnifiedLabelsProvider} from '../contexts/UnifiedLabelsContext';
-import {useLabelNames} from '../hooks/useLabels';
+import {UtilizationLabelsProvider} from '../contexts/UtilizationLabelsContext';
 import {useQueryState} from '../hooks/useQueryState';
 import useGrpcQuery from '../useGrpcQuery';
 import {MetricsGraphSection} from './MetricsGraphSection';
+import {QueryControls} from './QueryControls';
 import {useAutoQuerySelector} from './useAutoQuerySelector';
 
 export interface QuerySelection {
@@ -53,7 +52,29 @@ interface ProfileSelectorFeatures {
   showMetricsGraph: boolean;
   showSumBySelector?: boolean;
   showProfileTypeSelector?: boolean;
+  disableExplorativeQuerying?: boolean;
   disableProfileTypesDropdown?: boolean;
+}
+
+export interface UtilizationMetrics {
+  isSelected: boolean;
+  labelset: {
+    labels: Array<{
+      name: string;
+      value: string;
+    }>;
+  };
+  samples: Array<{
+    timestamp: number;
+    value: number;
+  }>;
+}
+
+export interface UtilizationLabels {
+  utilizationLabelNames?: string[];
+  utilizationFetchLabelValues?: (key: string) => Promise<string[]>;
+  utilizationLabelValues?: string[];
+  utilizationLabelNamesLoading?: boolean;
 }
 
 interface ProfileSelectorProps extends ProfileSelectorFeatures {
@@ -64,6 +85,14 @@ interface ProfileSelectorProps extends ProfileSelectorFeatures {
   navigateTo: NavigateFunction;
   setDisplayHideMetricsGraphButton?: Dispatch<SetStateAction<boolean>>;
   suffix?: '_a' | '_b'; // For comparison mode
+  utilizationMetrics?: Array<{
+    name: string;
+    humanReadableName: string;
+    data: UtilizationMetrics[];
+  }>;
+  utilizationMetricsLoading?: boolean;
+  utilizationLabels?: UtilizationLabels;
+  onUtilizationSeriesSelect?: (name: string, seriesIndex: number) => void;
   onSearchHook?: () => void;
 }
 
@@ -110,11 +139,16 @@ const ProfileSelector = ({
   showMetricsGraph = true,
   showSumBySelector = true,
   showProfileTypeSelector = true,
+  disableExplorativeQuerying = false,
   setDisplayHideMetricsGraphButton,
   suffix,
+  utilizationMetrics,
+  utilizationMetricsLoading,
+  utilizationLabels,
+  onUtilizationSeriesSelect,
   onSearchHook,
 }: ProfileSelectorProps): JSX.Element => {
-  const {heightStyle} = useMetricsGraphDimensions(comparing, false);
+  const {heightStyle} = useMetricsGraphDimensions(comparing, utilizationMetrics != null);
   const {viewComponent} = useParcaContext();
   const [queryBrowserMode, setQueryBrowserMode] = useURLState('query_browser_mode');
   const batchUpdates = useURLStateBatch();
@@ -167,7 +201,7 @@ const ProfileSelector = ({
     error,
   } = useProfileTypes(queryClient, from, to);
 
-  const {result} = useLabelNames(queryClient, profileType.toString(), from, to);
+  const {result, refetch} = useLabelNames(queryClient, profileType.toString(), from, to);
 
   const labels = useMemo(() => {
     return result.response?.labelNames === undefined ? [] : result.response.labelNames;
@@ -264,108 +298,77 @@ const ProfileSelector = ({
   const sumByRef = useRef(null);
 
   return (
-    <>
-      <div className="mb-2 flex">
-        <LabelsQueryProvider
-          setMatchersString={setMatchersString}
-          runQuery={setQueryExpression}
-          currentQuery={query}
-          profileType={selectedProfileName ?? profileType.toString()}
+    <UtilizationLabelsProvider value={{...utilizationLabels}}>
+      <>
+        <div className="mb-2 flex">
+          <QueryControls
+            showProfileTypeSelector={showProfileTypeSelector}
+            showSumBySelector={showSumBySelector}
+            disableExplorativeQuerying={disableExplorativeQuerying}
+            profileTypesData={profileTypesData}
+            profileTypesLoading={profileTypesLoading}
+            selectedProfileName={selectedProfileName}
+            setProfileName={setProfileName}
+            setMatchersString={setMatchersString}
+            setQueryExpression={setQueryExpression}
+            query={query}
+            queryBrowserRef={queryBrowserRef}
+            timeRangeSelection={timeRangeSelection}
+            setTimeRangeSelection={handleTimeRangeChange}
+            searchDisabled={searchDisabled}
+            queryBrowserMode={queryBrowserMode as string}
+            setQueryBrowserMode={setQueryBrowserMode}
+            advancedModeForQueryBrowser={advancedModeForQueryBrowser}
+            setAdvancedModeForQueryBrowser={setAdvancedModeForQueryBrowser}
+            queryClient={queryClient}
+            sumByRef={sumByRef}
+            labels={labels}
+            sumBySelection={draftSelection.sumBy ?? []}
+            sumBySelectionLoading={sumByLoading}
+            setUserSumBySelection={setDraftSumBy}
+            profileType={profileType}
+            profileTypesError={error}
+            viewComponent={viewComponent}
+            refreshLabelNames={refetch}
+          />
+          {comparing && (
+            <div>
+              <IconButton
+                onClick={() => closeProfile()}
+                icon={<CloseIcon />}
+                {...testId(TEST_IDS.COMPARE_CLOSE_BUTTON)}
+              />
+            </div>
+          )}
+        </div>
+        <MetricsGraphSection
+          showMetricsGraph={showMetricsGraph}
+          setDisplayHideMetricsGraphButton={setDisplayHideMetricsGraphButton}
+          heightStyle={
+            utilizationMetrics !== undefined && utilizationMetrics?.length > 0
+              ? 'auto'
+              : heightStyle
+          }
+          querySelection={querySelection}
+          profileSelection={profileSelection}
+          comparing={comparing}
+          sumBy={querySelection.sumBy ?? []}
+          defaultSumByLoading={sumByLoading}
           queryClient={queryClient}
-          start={timeRangeSelection.getFromMs()}
-          end={timeRangeSelection.getToMs()}
-          suffix={suffix}
-        >
-          <LabelsSource>
-            <QueryControls
-              showProfileTypeSelector={showProfileTypeSelector}
-              showSumBySelector={showSumBySelector}
-              profileTypesData={profileTypesData}
-              profileTypesLoading={profileTypesLoading}
-              selectedProfileName={selectedProfileName}
-              setProfileName={setProfileName}
-              setMatchersString={setMatchersString}
-              setQueryExpression={setQueryExpression}
-              query={query}
-              queryBrowserRef={queryBrowserRef}
-              timeRangeSelection={timeRangeSelection}
-              setTimeRangeSelection={handleTimeRangeChange}
-              searchDisabled={searchDisabled}
-              setQueryBrowserMode={setQueryBrowserMode}
-              advancedModeForQueryBrowser={advancedModeForQueryBrowser}
-              setAdvancedModeForQueryBrowser={setAdvancedModeForQueryBrowser}
-              queryClient={queryClient}
-              sumByRef={sumByRef}
-              labels={labels}
-              sumBySelection={draftSelection.sumBy ?? []}
-              sumBySelectionLoading={sumByLoading}
-              setUserSumBySelection={setDraftSumBy}
-              profileType={profileType}
-              profileTypesError={error}
-              viewComponent={viewComponent}
-            />
-          </LabelsSource>
-        </LabelsQueryProvider>
-        {comparing && (
-          <div>
-            <IconButton
-              onClick={() => closeProfile()}
-              icon={<CloseIcon />}
-              {...testId(TEST_IDS.COMPARE_CLOSE_BUTTON)}
-            />
-          </div>
-        )}
-      </div>
-      <MetricsGraphSection
-        showMetricsGraph={showMetricsGraph}
-        setDisplayHideMetricsGraphButton={setDisplayHideMetricsGraphButton}
-        heightStyle={heightStyle}
-        querySelection={querySelection}
-        profileSelection={profileSelection}
-        comparing={comparing}
-        sumBy={querySelection.sumBy ?? []}
-        defaultSumByLoading={sumByLoading}
-        queryClient={queryClient}
-        queryExpressionString={queryExpressionString}
-        setTimeRangeSelection={handleTimeRangeChange}
-        selectQuery={commitDraft}
-        setProfileSelection={setProfileSelection}
-        query={query}
-        setQueryExpression={setQueryExpression}
-        setNewQueryExpression={setDraftExpression}
-      />
-    </>
+          queryExpressionString={queryExpressionString}
+          setTimeRangeSelection={handleTimeRangeChange}
+          selectQuery={commitDraft}
+          setProfileSelection={setProfileSelection}
+          query={query}
+          setQueryExpression={setQueryExpression}
+          setNewQueryExpression={setDraftExpression}
+          utilizationMetrics={utilizationMetrics}
+          utilizationMetricsLoading={utilizationMetricsLoading}
+          onUtilizationSeriesSelect={onUtilizationSeriesSelect}
+        />
+      </>
+    </UtilizationLabelsProvider>
   );
 };
 
 export default ProfileSelector;
-
-const LabelsSource = ({children}: {children: React.ReactNode}): JSX.Element => {
-  const {
-    labelNames,
-    labelValues,
-    isLabelNamesLoading,
-    isLabelValuesLoading,
-    refetchLabelValues,
-    refetchLabelNames,
-    currentLabelName,
-    setCurrentLabelName,
-    suffix,
-  } = useLabelsQueryProvider();
-
-  return (
-    <UnifiedLabelsProvider
-      labelNames={labelNames}
-      labelValues={labelValues}
-      isLabelNamesLoading={isLabelNamesLoading}
-      isLabelValuesLoading={isLabelValuesLoading}
-      refetchLabelValues={refetchLabelValues}
-      refetchLabelNames={refetchLabelNames}
-      currentLabelName={currentLabelName}
-      setCurrentLabelName={setCurrentLabelName}
-      suffix={suffix}
-    >
-      {children}
-    </UnifiedLabelsProvider>
-  );
-};

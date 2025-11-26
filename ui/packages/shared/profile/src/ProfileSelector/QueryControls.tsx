@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useRef, useState} from 'react';
+import {useState} from 'react';
 
 import {Switch} from '@headlessui/react';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
@@ -24,10 +24,9 @@ import {TEST_IDS, testId} from '@parca/test-utils';
 
 import MatchersInput from '../MatchersInput';
 import ProfileTypeSelector from '../ProfileTypeSelector';
-import {SelectWithRefresh} from '../SelectWithRefresh';
-import SimpleMatchers from '../SimpleMatchers/';
+import SelectWithRefresh from '../SelectWithRefresh';
+import SimpleMatchers from '../SimpleMatchers';
 import ViewMatchers from '../ViewMatchers';
-import {useLabelNames} from '../hooks/useLabels';
 
 interface SelectOption {
   label: string;
@@ -35,22 +34,13 @@ interface SelectOption {
 }
 
 interface QueryControlsProps {
-  queryClient: QueryServiceClient;
-  query: Query;
-  profileType: string | ProfileType;
-  timeRangeSelection: DateTimeRange;
-  setTimeRangeSelection: (range: DateTimeRange) => void;
-  setMatchersString: (matchers: string) => void;
-  setQueryExpression: (updateTs?: boolean) => void;
-  searchDisabled: boolean;
-  showProfileTypeSelector?: boolean;
-  showSumBySelector?: boolean;
-  showAdvancedMode?: boolean;
-  disableExplorativeQuerying?: boolean;
+  showProfileTypeSelector: boolean;
+  showSumBySelector: boolean;
+  disableExplorativeQuerying: boolean;
   profileTypesData?: ProfileTypesResponse;
-  profileTypesLoading?: boolean;
-  selectedProfileName?: string;
-  setProfileName?: (name: string | undefined) => void;
+  profileTypesLoading: boolean;
+  selectedProfileName: string;
+  setProfileName: (name: string | undefined) => void;
   profileTypesError?: RpcError;
   viewComponent?: {
     disableProfileTypesDropdown?: boolean;
@@ -58,54 +48,57 @@ interface QueryControlsProps {
     labelnames?: string[];
     createViewComponent?: React.ReactNode;
   };
-  setQueryBrowserMode?: (mode: string) => void;
-  advancedModeForQueryBrowser?: boolean;
-  setAdvancedModeForQueryBrowser?: (mode: boolean) => void;
-  queryBrowserRef?: React.RefObject<HTMLDivElement>;
-  labels?: string[];
-  sumBySelection?: string[];
-  sumBySelectionLoading?: boolean;
-  setUserSumBySelection?: (sumBy: string[]) => void;
-  sumByRef?: React.RefObject<SelectInstance>;
+  queryBrowserMode: string;
+  setQueryBrowserMode: (mode: string) => void;
+  advancedModeForQueryBrowser: boolean;
+  setAdvancedModeForQueryBrowser: (mode: boolean) => void;
+  setMatchersString: (matchers: string) => void;
+  setQueryExpression: (updateTs?: boolean) => void;
+  query: Query;
+  queryBrowserRef: React.RefObject<HTMLDivElement>;
+  timeRangeSelection: DateTimeRange;
+  setTimeRangeSelection: (range: DateTimeRange) => void;
+  searchDisabled: boolean;
+  queryClient: QueryServiceClient;
+  labels: string[];
+  sumBySelection: string[];
+  sumBySelectionLoading: boolean;
+  setUserSumBySelection: (sumBy: string[]) => void;
+  sumByRef: React.RefObject<SelectInstance>;
+  profileType: ProfileType;
+  refreshLabelNames: () => Promise<void>;
 }
 
 export function QueryControls({
-  profileType,
-  timeRangeSelection,
-  setTimeRangeSelection,
-  setQueryExpression,
-  searchDisabled,
-  showProfileTypeSelector = false,
-  showSumBySelector = false,
-  showAdvancedMode = true,
+  showProfileTypeSelector,
   profileTypesData,
-  profileTypesLoading = false,
+  profileTypesLoading,
   selectedProfileName,
   setProfileName,
-  profileTypesError,
   viewComponent,
   setQueryBrowserMode,
-  advancedModeForQueryBrowser = false,
+  advancedModeForQueryBrowser,
   setAdvancedModeForQueryBrowser,
+  setMatchersString,
+  setQueryExpression,
+  query,
   queryBrowserRef,
-  labels = [],
-  sumBySelection = [],
-  sumBySelectionLoading = false,
+  timeRangeSelection,
+  setTimeRangeSelection,
+  searchDisabled,
+  queryClient,
+  labels,
+  sumBySelection,
+  sumBySelectionLoading,
   setUserSumBySelection,
   sumByRef,
-  queryClient,
+  profileType,
+  showSumBySelector,
+  profileTypesError,
+  refreshLabelNames,
 }: QueryControlsProps): JSX.Element {
   const {timezone} = useParcaContext();
-  const defaultQueryBrowserRef = useRef<HTMLDivElement>(null);
-  const actualQueryBrowserRef = queryBrowserRef ?? defaultQueryBrowserRef;
   const [searchExecutedTimestamp, setSearchExecutedTimestamp] = useState<number>(0);
-
-  const {refetch: refetchLabelNames} = useLabelNames(
-    queryClient,
-    profileType as string,
-    timeRangeSelection.getFromMs(),
-    timeRangeSelection.getToMs()
-  );
 
   return (
     <div
@@ -121,7 +114,7 @@ export function QueryControls({
             profileTypesData={profileTypesData}
             loading={profileTypesLoading}
             selectedKey={selectedProfileName}
-            onSelection={setProfileName ?? (() => {})}
+            onSelection={setProfileName}
             error={profileTypesError}
             disabled={viewComponent?.disableProfileTypesDropdown}
           />
@@ -130,7 +123,7 @@ export function QueryControls({
 
       <div
         className="w-full flex-1 flex flex-col gap-1 mt-auto"
-        ref={actualQueryBrowserRef}
+        ref={queryBrowserRef}
         {...testId(TEST_IDS.QUERY_BROWSER_CONTAINER)}
       >
         <div className="flex items-center justify-between">
@@ -138,13 +131,13 @@ export function QueryControls({
             <label className="text-xs" {...testId(TEST_IDS.QUERY_LABEL)}>
               Query
             </label>
-            {showAdvancedMode && viewComponent?.disableExplorativeQuerying !== true && (
+            {viewComponent?.disableExplorativeQuerying !== true && (
               <>
                 <Switch
                   checked={advancedModeForQueryBrowser}
                   onChange={() => {
-                    setAdvancedModeForQueryBrowser?.(!advancedModeForQueryBrowser);
-                    setQueryBrowserMode?.(advancedModeForQueryBrowser ? 'simple' : 'advanced');
+                    setAdvancedModeForQueryBrowser(!advancedModeForQueryBrowser);
+                    setQueryBrowserMode(advancedModeForQueryBrowser ? 'simple' : 'advanced');
                   }}
                   className={`${
                     advancedModeForQueryBrowser ? 'bg-indigo-600' : 'bg-gray-400 dark:bg-gray-800'
@@ -171,12 +164,36 @@ export function QueryControls({
         {viewComponent?.disableExplorativeQuerying === true &&
         viewComponent?.labelnames !== undefined &&
         viewComponent?.labelnames.length >= 1 ? (
-          <ViewMatchers labelNames={viewComponent.labelnames} />
-        ) : showAdvancedMode && advancedModeForQueryBrowser ? (
-          <MatchersInput />
+          <ViewMatchers
+            labelNames={viewComponent.labelnames}
+            setMatchersString={setMatchersString}
+            profileType={selectedProfileName}
+            runQuery={setQueryExpression}
+            currentQuery={query}
+            queryClient={queryClient}
+            start={timeRangeSelection.getFromMs()}
+            end={timeRangeSelection.getToMs()}
+          />
+        ) : advancedModeForQueryBrowser ? (
+          <MatchersInput
+            setMatchersString={setMatchersString}
+            runQuery={setQueryExpression}
+            currentQuery={query}
+            profileType={selectedProfileName}
+            queryClient={queryClient}
+            start={timeRangeSelection.getFromMs()}
+            end={timeRangeSelection.getToMs()}
+          />
         ) : (
           <SimpleMatchers
-            queryBrowserRef={actualQueryBrowserRef}
+            setMatchersString={setMatchersString}
+            runQuery={setQueryExpression}
+            currentQuery={query}
+            profileType={selectedProfileName}
+            queryBrowserRef={queryBrowserRef}
+            queryClient={queryClient}
+            start={timeRangeSelection.getFromMs()}
+            end={timeRangeSelection.getToMs()}
             searchExecutedTimestamp={searchExecutedTimestamp}
           />
         )}
@@ -199,9 +216,9 @@ export function QueryControls({
             options={labels.map(label => ({label, value: label}))}
             className="parca-select-container text-sm w-full max-w-80"
             classNamePrefix="parca-select"
-            value={sumBySelection.map(sumBy => ({label: sumBy, value: sumBy}))}
+            value={(sumBySelection ?? []).map(sumBy => ({label: sumBy, value: sumBy}))}
             onChange={newValue => {
-              setUserSumBySelection?.(newValue.map(option => option.value));
+              setUserSumBySelection(newValue.map(option => option.value));
             }}
             placeholder="Labels..."
             styles={{
@@ -215,13 +232,14 @@ export function QueryControls({
                 minWidth: '320px',
                 position: 'absolute',
               }),
+              // menu: provided => ({...provided, width: 'max-content', zIndex: 50}), // Setting the same zIndex as drop down menus
             }}
             isLoading={sumBySelectionLoading}
-            isDisabled={!(profileType as ProfileType)?.delta}
+            isDisabled={!profileType.delta}
             // @ts-expect-error
             ref={sumByRef}
             onKeyDown={e => {
-              const currentRef = sumByRef?.current as unknown as SelectInstance | null;
+              const currentRef = sumByRef.current as unknown as SelectInstance | null;
               if (currentRef == null) {
                 return;
               }
@@ -239,7 +257,7 @@ export function QueryControls({
                 currentRef.blur();
               }
             }}
-            onRefresh={refetchLabelNames}
+            onRefresh={refreshLabelNames}
             refreshTitle="Refresh label names"
             refreshTestId="sum-by-refresh-button"
             menuTestId={TEST_IDS.SUM_BY_SELECT_FLYOUT}
