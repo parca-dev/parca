@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.19.83](https://github.com/parca-dev/parca/compare/@parca/profile@0.19.82...@parca/profile@0.19.83) (2025-11-26)
+
+### Reverts
+
+- Revert "Refactor ProfileSelector and MetricsGraphSection components (#6025)" (#6072) ([4dcbafb](https://github.com/parca-dev/parca/commit/4dcbafb3757dca64e2ce4f7a111208ca7ee88355)), closes [#6025](https://github.com/parca-dev/parca/issues/6025) [#6072](https://github.com/parca-dev/parca/issues/6072)
+
+## 0.19.82 (2025-11-26)
+
+**Note:** Version bump only for package @parca/profile
+
 ## [0.19.81](https://github.com/parca-dev/parca/compare/@parca/profile@0.19.80...@parca/profile@0.19.81) (2025-11-24)
 
 **Note:** Version bump only for package @parca/profile
