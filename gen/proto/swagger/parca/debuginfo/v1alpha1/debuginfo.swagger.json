@@ -243,7 +243,7 @@
         "DEBUGINFO_TYPE_SOURCE_MAP"
       ],
       "default": "DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED",
-      "description": "Types of debuginfo.\n\n - DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED: The default type that the API always supported. This type is expected to\ncontain debuginfos for symbolizaton purposes.\n - DEBUGINFO_TYPE_EXECUTABLE: The type to identify executables. This is meant to be used for\ndisassembling so it is expected to contain executable `.text` section.\n - DEBUGINFO_TYPE_SOURCES: The type to identify a source tarball. This is expected to contain\nmultiple source files that debuginfo references. It is meant to show code\nwith profiling data inline.\n - DEBUGINFO_TYPE_SOURCE_MAP: The type to identify JavaScript/TypeScript source maps. This is meant to\nbe used for mapping minified JavaScript locations back to original source\ncode positions for profiling visualization."
+      "description": "Types of debuginfo.\n\n - DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED: The default type that the API always supported. This type is expected to\ncontain debuginfos for symbolizaton purposes.\n - DEBUGINFO_TYPE_EXECUTABLE: The type to identify executables. This is meant to be used for\ndisassembling so it is expected to contain executable `.text` section.\n - DEBUGINFO_TYPE_SOURCES: The type to identify a source tarball. This is expected to contain\nmultiple source files that debuginfo references. It is meant to show code\nwith profiling data inline.\n - DEBUGINFO_TYPE_SOURCE_MAP: The type to identify JavaScript/TypeScript source maps. This is meant to\nbe used for mapping minified JavaScript locations back to original source\ncode positions."
     },
     "v1alpha1InitiateUploadRequest": {
       "type": "object",

@@ -97,7 +97,11 @@ export const useGraphTooltipMetaInfo = ({table, row}: Props): GraphTooltipMetaIn
 
   const getTextForFile = (): string => {
     if (functionFilename === '') return '<unknown>';
-    return `${functionFilename} ${lineNumber !== undefined ? ` +${lineNumber.toString()}${columnNumber > 0 ? `:${columnNumber.toString()}` : ''}` : ''}`;
+    return `${functionFilename} ${
+      lineNumber !== undefined
+        ? ` +${lineNumber.toString()}${columnNumber > 0 ? `:${columnNumber.toString()}` : ''}`
+        : ''
+    }`;
   };
   const file = getTextForFile();
 
