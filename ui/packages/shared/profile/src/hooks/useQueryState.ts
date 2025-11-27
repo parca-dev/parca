@@ -38,7 +38,7 @@ interface UseQueryStateReturn {
   draftSelection: QuerySelection;
 
   // Draft setters (update local state only)
-  setDraftExpression: (expression: string, commit?: boolean) => void;
+  setDraftExpression: (expression: string) => void;
   setDraftTimeRange: (from: number, to: number, timeSelection: string) => void;
   setDraftSumBy: (sumBy: string[] | undefined) => void;
   setDraftProfileName: (profileName: string) => void;

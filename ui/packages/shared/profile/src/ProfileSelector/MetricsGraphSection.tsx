@@ -37,8 +37,12 @@ interface MetricsGraphSectionProps {
   selectQuery: (query: QuerySelection) => void;
   setProfileSelection: (mergeFrom: bigint, mergeTo: bigint, query: Query) => void;
   query: Query;
-  setNewQueryExpression: (queryExpression: string, commit?: boolean) => void;
+  setNewQueryExpression: (queryExpression: string) => void;
   setQueryExpression: (updateTs?: boolean) => void;
+  commitDraft: (
+    refreshedTimeRange?: {from: number; to: number; timeSelection: string},
+    expression?: string
+  ) => void;
 }
 
 export function MetricsGraphSection({
@@ -57,6 +61,7 @@ export function MetricsGraphSection({
   setProfileSelection,
   query,
   setNewQueryExpression,
+  commitDraft,
 }: MetricsGraphSectionProps): JSX.Element {
   const resetStateOnSeriesChange = useResetStateOnSeriesChange();
   const batchUpdates = useURLStateBatch();
@@ -106,9 +111,11 @@ export function MetricsGraphSection({
     }
 
     if (hasChanged) {
-      // TODO: Change this to store the query object
-      // Pass commit: true to immediately apply the filter when clicking on metrics graph labels
-      setNewQueryExpression(newQuery.toString(), true);
+      // Immediately apply the filter when adding label matchers from the graph
+      batchUpdates(() => {
+        setNewQueryExpression(newQuery.toString());
+        commitDraft(undefined, newQuery.toString());
+      });
     }
   };
 
