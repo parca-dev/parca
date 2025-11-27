@@ -1136,6 +1136,7 @@ func (q *Querier) resolveStacks(
 					for _, line := range symbolizedLocations[idx].Lines {
 						w.Line.Append(true)
 						w.LineNumber.Append(line.Line)
+						w.ColumnNumber.Append(0)
 						if len(line.Function.Name) > 0 {
 							if err := w.FunctionName.Append(stringToBytes(line.Function.Name)); err != nil {
 								return nil, fmt.Errorf("failed to append function name: %w", err)

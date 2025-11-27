@@ -145,7 +145,6 @@ func DecodeInto(lw LocationsWriter, data []byte) (DecodeResult, error) {
 
 			column, n := varint.Uvarint(data[offset:])
 			offset += n
-
 			lw.ColumnNumber.Append(column)
 
 			hasFunction := data[offset] == 0x1
@@ -243,7 +242,6 @@ func DecodeFunctionName(data []byte) ([]byte, error) {
 			_, n = varint.Uvarint(data[offset:])
 			offset += n
 
-			// column
 			_, n = varint.Uvarint(data[offset:])
 			offset += n
 

@@ -52,7 +52,6 @@ type RecordReader struct {
 	Lines                         *array.List
 	Line                          *array.Struct
 	LineNumber                    *array.Int64
-	LineColumn                    *array.Uint64
 	LineFunctionNameIndices       *array.Uint32
 	LineFunctionNameDict          *array.Binary
 	LineFunctionSystemNameIndices *array.Uint32
@@ -139,8 +138,6 @@ func NewRecordReader(ar arrow.RecordBatch) (*RecordReader, error) {
 						switch lineField.Name {
 						case "line":
 							rr.LineNumber = rr.Line.Field(k).(*array.Int64)
-						case "column":
-							rr.LineColumn = rr.Line.Field(k).(*array.Uint64)
 						case "function_name":
 							lineFunctionName := rr.Line.Field(k).(*array.Dictionary)
 							rr.LineFunctionNameIndices = lineFunctionName.Indices().(*array.Uint32)

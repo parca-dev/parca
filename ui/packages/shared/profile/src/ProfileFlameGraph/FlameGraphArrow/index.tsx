@@ -54,7 +54,6 @@ export const FIELD_MAPPING_FILE = 'mapping_file';
 export const FIELD_MAPPING_BUILD_ID = 'mapping_build_id';
 export const FIELD_LOCATION_ADDRESS = 'location_address';
 export const FIELD_LOCATION_LINE = 'location_line';
-export const FIELD_LOCATION_COLUMN = 'location_column';
 export const FIELD_INLINED = 'inlined';
 export const FIELD_TIMESTAMP = 'timestamp';
 export const FIELD_DURATION = 'duration';
