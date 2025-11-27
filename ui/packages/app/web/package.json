@@ -1,7 +1,7 @@
 {
   "name": "@parca/web",
   "private": true,
-  "version": "0.16.968",
+  "version": "0.16.969",
   "description": "Parca Web Interface",
   "type": "module",
   "scripts": {
