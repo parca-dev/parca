@@ -15,7 +15,7 @@ import {useCallback, useEffect, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import {useQueryClient} from '@tanstack/react-query';
-import {QuerySelection} from 'ProfileSelector';
+import { QuerySelection } from '../ProfileSelector';
 import cx from 'classnames';
 
 import {useGrpcMetadata, useParcaContext} from '@parca/components';
