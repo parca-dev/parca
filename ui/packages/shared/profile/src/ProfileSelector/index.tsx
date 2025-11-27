@@ -341,6 +341,7 @@ const ProfileSelector = ({
         query={query}
         setQueryExpression={setQueryExpression}
         setNewQueryExpression={setDraftExpression}
+        commitDraft={commitDraft}
       />
     </>
   );
