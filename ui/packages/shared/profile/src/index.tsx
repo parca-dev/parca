@@ -52,6 +52,9 @@ export const DEFAULT_PROFILE_EXPLORER_PARAM_VALUES: ParamPreferences = {
     defaultValue: 'flamegraph',
     splitOnCommas: true, // This param should split on commas for array values
   },
+  group_by: {
+    splitOnCommas: true,
+  },
 };
 
 export {
