@@ -132,6 +132,7 @@ const ProfileSelector = ({
     profileSelection,
     setProfileSelection,
     sumByLoading,
+    draftParsedQuery,
   } = useQueryState({suffix});
 
   // Use draft state for local state instead of committed state
@@ -208,6 +209,7 @@ const ProfileSelector = ({
         const currentTo = timeRangeSelection.getToMs(true);
         const currentRangeKey = timeRangeSelection.getRangeKey();
         // Commit with refreshed time range
+        console.log('[draftExpression] setQueryExpression: committing with refreshed time range:', draftSelection.expression);
         commitDraft({
           from: currentFrom,
           to: currentTo,
@@ -303,6 +305,9 @@ const ProfileSelector = ({
               profileType={profileType}
               profileTypesError={error}
               viewComponent={viewComponent}
+              draftSelection={draftSelection}
+              setDraftMatchers={setDraftMatchers}
+              draftParsedQuery={draftParsedQuery}
             />
           </LabelsSource>
         </LabelsQueryProvider>

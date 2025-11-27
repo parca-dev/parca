@@ -337,20 +337,6 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     ]
   );
 
-  // Draft setters (update local state only, or commit directly if specified)
-  const setDraftExpressionCallback = useCallback(
-    (newExpression: string, commit = false) => {
-      if (commit) {
-        // Commit with the new expression, which will also update merge params and selection
-        commitDraft(undefined, newExpression);
-      } else {
-        // Only update draft state
-        setDraftExpression(newExpression);
-      }
-    },
-    [commitDraft]
-  );
-
   const setDraftTimeRange = useCallback(
     (newFrom: number, newTo: number, newTimeSelection: string) => {
       setDraftFrom(newFrom.toString());
@@ -420,7 +406,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     draftSelection,
 
     // Draft setters
-    setDraftExpression: setDraftExpressionCallback,
+    setDraftExpression,
     setDraftTimeRange,
     setDraftSumBy: setDraftSumByCallback,
     setDraftProfileName,

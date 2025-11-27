@@ -22,13 +22,17 @@ import {TEST_IDS, testId} from '@parca/test-utils';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
 import {useUnifiedLabels} from '../contexts/UnifiedLabelsContext';
-import {transformLabelName} from '../contexts/utils';
-import {useQueryState} from '../hooks/useQueryState';
+import { transformLabelName } from '../contexts/utils';
 import Select, {type SelectItem} from './Select';
+import { QuerySelection } from 'ProfileSelector';
+import { Query } from '@parca/parser';
 
 interface Props {
   queryBrowserRef: React.RefObject<HTMLDivElement>;
   searchExecutedTimestamp?: number;
+  draftSelection: QuerySelection;
+  setDraftMatchers: (selection: string) => void;
+  draftParsedQuery?: Query | null;
 }
 
 interface QueryRow {
@@ -98,8 +102,10 @@ const operatorOptions = [
 
 const SimpleMatchers = ({
   queryBrowserRef,
-
   searchExecutedTimestamp,
+  draftSelection,
+  setDraftMatchers,
+  draftParsedQuery,
 }: Props): JSX.Element => {
   const [queryRows, setQueryRows] = useState<QueryRow[]>([
     {labelName: '', operator: '=', labelValue: '', labelValues: [], isLoading: false},
@@ -115,12 +121,7 @@ const SimpleMatchers = ({
     labelNameMappingsForSimpleMatchers: labelNameOptions,
     isLabelNamesLoading: labelNamesLoading,
     refetchLabelNames,
-    suffix,
   } = useUnifiedLabels();
-
-  const {draftSelection, setDraftMatchers, draftParsedQuery} = useQueryState({
-    suffix,
-  });
 
   // Reset editing mode when search is executed
   useEffect(() => {

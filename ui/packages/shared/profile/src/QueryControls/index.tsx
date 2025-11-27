@@ -28,6 +28,7 @@ import {SelectWithRefresh} from '../SelectWithRefresh';
 import SimpleMatchers from '../SimpleMatchers/';
 import ViewMatchers from '../ViewMatchers';
 import {useLabelNames} from '../hooks/useLabels';
+import { QuerySelection } from '../ProfileSelector';
 
 interface SelectOption {
   label: string;
@@ -67,6 +68,9 @@ interface QueryControlsProps {
   sumBySelectionLoading?: boolean;
   setUserSumBySelection?: (sumBy: string[]) => void;
   sumByRef?: React.RefObject<SelectInstance>;
+  draftSelection: QuerySelection;
+  setDraftMatchers: (selection: string) => void;
+  draftParsedQuery?: Query | null;
 }
 
 export function QueryControls({
@@ -94,6 +98,9 @@ export function QueryControls({
   setUserSumBySelection,
   sumByRef,
   queryClient,
+  draftSelection,
+  setDraftMatchers,
+  draftParsedQuery,
 }: QueryControlsProps): JSX.Element {
   const {timezone} = useParcaContext();
   const defaultQueryBrowserRef = useRef<HTMLDivElement>(null);
@@ -178,6 +185,9 @@ export function QueryControls({
           <SimpleMatchers
             queryBrowserRef={actualQueryBrowserRef}
             searchExecutedTimestamp={searchExecutedTimestamp}
+                draftSelection={draftSelection}
+                setDraftMatchers={setDraftMatchers}
+                draftParsedQuery={draftParsedQuery}
           />
         )}
       </div>
