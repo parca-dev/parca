@@ -15,7 +15,6 @@ import {useCallback, useEffect, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import {useQueryClient} from '@tanstack/react-query';
-import { QuerySelection } from '../ProfileSelector';
 import cx from 'classnames';
 
 import {useGrpcMetadata, useParcaContext} from '@parca/components';
@@ -23,6 +22,7 @@ import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
 
+import {QuerySelection} from '../ProfileSelector';
 import {useUnifiedLabels} from '../contexts/UnifiedLabelsContext';
 import {transformLabelName} from '../contexts/utils';
 import Select, {type SelectItem} from './Select';
