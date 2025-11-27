@@ -499,7 +499,7 @@ export enum DebuginfoType {
     /**
      * The type to identify JavaScript/TypeScript source maps. This is meant to
      * be used for mapping minified JavaScript locations back to original source
-     * code positions for profiling visualization.
+     * code positions.
      *
      * @generated from protobuf enum value: DEBUGINFO_TYPE_SOURCE_MAP = 3;
      */
