@@ -209,7 +209,10 @@ const ProfileSelector = ({
         const currentTo = timeRangeSelection.getToMs(true);
         const currentRangeKey = timeRangeSelection.getRangeKey();
         // Commit with refreshed time range
-        console.log('[draftExpression] setQueryExpression: committing with refreshed time range:', draftSelection.expression);
+        console.log(
+          '[draftExpression] setQueryExpression: committing with refreshed time range:',
+          draftSelection.expression
+        );
         commitDraft({
           from: currentFrom,
           to: currentTo,

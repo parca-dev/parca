@@ -23,12 +23,12 @@ import {ProfileType, Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 
 import MatchersInput from '../MatchersInput';
+import {QuerySelection} from '../ProfileSelector';
 import ProfileTypeSelector from '../ProfileTypeSelector';
 import {SelectWithRefresh} from '../SelectWithRefresh';
 import SimpleMatchers from '../SimpleMatchers/';
 import ViewMatchers from '../ViewMatchers';
 import {useLabelNames} from '../hooks/useLabels';
-import { QuerySelection } from '../ProfileSelector';
 
 interface SelectOption {
   label: string;
@@ -185,9 +185,9 @@ export function QueryControls({
           <SimpleMatchers
             queryBrowserRef={actualQueryBrowserRef}
             searchExecutedTimestamp={searchExecutedTimestamp}
-                draftSelection={draftSelection}
-                setDraftMatchers={setDraftMatchers}
-                draftParsedQuery={draftParsedQuery}
+            draftSelection={draftSelection}
+            setDraftMatchers={setDraftMatchers}
+            draftParsedQuery={draftParsedQuery}
           />
         )}
       </div>
