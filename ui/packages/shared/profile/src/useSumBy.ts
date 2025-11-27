@@ -17,7 +17,7 @@ import {QueryServiceClient} from '@parca/client';
 import {DateTimeRange} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 
-import {useLabelNames} from './MatchersInput/index';
+import {useLabelNames} from './hooks/useLabels';
 
 export const DEFAULT_EMPTY_SUM_BY: string[] = [];
 
