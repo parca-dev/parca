@@ -22,7 +22,6 @@ import {
   FIELD_FUNCTION_SYSTEM_NAME,
   FIELD_INLINED,
   FIELD_LOCATION_ADDRESS,
-  FIELD_LOCATION_COLUMN,
   FIELD_LOCATION_LINE,
   FIELD_MAPPING_BUILD_ID,
   FIELD_MAPPING_FILE,
@@ -67,7 +66,6 @@ export const useGraphTooltipMetaInfo = ({table, row}: Props): GraphTooltipMetaIn
   const functionStartLine: bigint = table.getChild(FIELD_FUNCTION_START_LINE)?.get(row) ?? 0n;
   const lineNumber =
     locationLine !== 0n ? locationLine : functionStartLine !== 0n ? functionStartLine : undefined;
-  const columnNumber = table.getChild(FIELD_LOCATION_COLUMN)?.get(row) ?? 0n;
   const labelPrefix = 'labels.';
   const labelColumnNames = table.schema.fields.filter(field => field.name.startsWith(labelPrefix));
   const timestamp = table.getChild(FIELD_TIMESTAMP)?.get(row);
@@ -97,7 +95,8 @@ export const useGraphTooltipMetaInfo = ({table, row}: Props): GraphTooltipMetaIn
 
   const getTextForFile = (): string => {
     if (functionFilename === '') return '<unknown>';
-    return `${functionFilename} ${lineNumber !== undefined ? ` +${lineNumber.toString()}${columnNumber > 0 ? `:${columnNumber.toString()}` : ''}` : ''}`;
+
+    return `${functionFilename} ${lineNumber !== undefined ? ` +${lineNumber.toString()}` : ''}`;
   };
   const file = getTextForFile();
 
