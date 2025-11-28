@@ -715,22 +715,22 @@ func stackMatchesFilter(
 
 func handleUnsymbolizedFunctionCondition(fnCond *pb.StringCondition) bool {
 	switch fnCond.GetCondition().(type) {
-	case *pb.StringCondition_Contains, *pb.StringCondition_Equal:
-		// For Contains/Equal: no function names means no matches
+	case *pb.StringCondition_Contains, *pb.StringCondition_Equal, *pb.StringCondition_StartsWith:
+		// For Contains/Equal/StartsWith: no function names means no matches
 		return false
-	case *pb.StringCondition_NotContains, *pb.StringCondition_NotEqual:
-		// For NotContains/NotEqual: no function names means condition is satisfied
+	case *pb.StringCondition_NotContains, *pb.StringCondition_NotEqual, *pb.StringCondition_NotStartsWith:
+		// For NotContains/NotEqual/NotStartsWith: no function names means condition is satisfied
 		return true
 	}
 	return false
 }
 
 func matchesFunctionNameInRange(r *profile.RecordReader, firstStart, lastEnd int, fnCond *pb.StringCondition) bool {
-	// For NotContains/NotEqual, we need ALL functions to not contain/equal the target (AND logic)
-	// For Contains/Equal, we need ANY function to contain/equal the target (OR logic)
+	// For NotContains/NotEqual/NotStartsWith, we need ALL functions to not contain/equal/start-with the target (AND logic)
+	// For Contains/Equal/StartsWith, we need ANY function to contain/equal/start-with the target (OR logic)
 	isNegativeCondition := false
 	switch fnCond.GetCondition().(type) {
-	case *pb.StringCondition_NotContains, *pb.StringCondition_NotEqual:
+	case *pb.StringCondition_NotContains, *pb.StringCondition_NotEqual, *pb.StringCondition_NotStartsWith:
 		isNegativeCondition = true
 	}
 
@@ -771,7 +771,7 @@ func matchesFunctionNameInRange(r *profile.RecordReader, firstStart, lastEnd int
 func matchesSystemNameInRange(r *profile.RecordReader, firstStart, lastEnd int, sysCond *pb.StringCondition) bool {
 	isNegativeCondition := false
 	switch sysCond.GetCondition().(type) {
-	case *pb.StringCondition_NotContains, *pb.StringCondition_NotEqual:
+	case *pb.StringCondition_NotContains, *pb.StringCondition_NotEqual, *pb.StringCondition_NotStartsWith:
 		isNegativeCondition = true
 	}
 
@@ -802,7 +802,7 @@ func matchesSystemNameInRange(r *profile.RecordReader, firstStart, lastEnd int, 
 func matchesFilenameInRange(r *profile.RecordReader, firstStart, lastEnd int, fileCond *pb.StringCondition) bool {
 	isNegativeCondition := false
 	switch fileCond.GetCondition().(type) {
-	case *pb.StringCondition_NotContains, *pb.StringCondition_NotEqual:
+	case *pb.StringCondition_NotContains, *pb.StringCondition_NotEqual, *pb.StringCondition_NotStartsWith:
 		isNegativeCondition = true
 	}
 
@@ -1003,6 +1003,12 @@ func matchesStringCondition(value []byte, condition *pb.StringCondition) bool {
 	case *pb.StringCondition_NotContains:
 		target := bytes.ToLower([]byte(condition.GetNotContains()))
 		return !bytes.Contains(valueLower, target)
+	case *pb.StringCondition_StartsWith:
+		target := bytes.ToLower([]byte(condition.GetStartsWith()))
+		return bytes.HasPrefix(valueLower, target)
+	case *pb.StringCondition_NotStartsWith:
+		target := bytes.ToLower([]byte(condition.GetNotStartsWith()))
+		return !bytes.HasPrefix(valueLower, target)
 	default:
 		return true
 	}

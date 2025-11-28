@@ -617,6 +617,22 @@ export interface StringCondition {
          */
         notContains: string;
     } | {
+        oneofKind: "startsWith";
+        /**
+         * starts_with matches strings that start with the specified prefix
+         *
+         * @generated from protobuf field: string starts_with = 5
+         */
+        startsWith: string;
+    } | {
+        oneofKind: "notStartsWith";
+        /**
+         * not_starts_with matches strings that do not start with the specified prefix
+         *
+         * @generated from protobuf field: string not_starts_with = 6
+         */
+        notStartsWith: string;
+    } | {
         oneofKind: undefined;
     };
 }
@@ -2557,7 +2573,9 @@ class StringCondition$Type extends MessageType<StringCondition> {
             { no: 1, name: "equal", kind: "scalar", oneof: "condition", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "not_equal", kind: "scalar", oneof: "condition", T: 9 /*ScalarType.STRING*/ },
             { no: 3, name: "contains", kind: "scalar", oneof: "condition", T: 9 /*ScalarType.STRING*/ },
-            { no: 4, name: "not_contains", kind: "scalar", oneof: "condition", T: 9 /*ScalarType.STRING*/ }
+            { no: 4, name: "not_contains", kind: "scalar", oneof: "condition", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "starts_with", kind: "scalar", oneof: "condition", T: 9 /*ScalarType.STRING*/ },
+            { no: 6, name: "not_starts_with", kind: "scalar", oneof: "condition", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<StringCondition>): StringCondition {
@@ -2596,6 +2614,18 @@ class StringCondition$Type extends MessageType<StringCondition> {
                         notContains: reader.string()
                     };
                     break;
+                case /* string starts_with */ 5:
+                    message.condition = {
+                        oneofKind: "startsWith",
+                        startsWith: reader.string()
+                    };
+                    break;
+                case /* string not_starts_with */ 6:
+                    message.condition = {
+                        oneofKind: "notStartsWith",
+                        notStartsWith: reader.string()
+                    };
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -2620,6 +2650,12 @@ class StringCondition$Type extends MessageType<StringCondition> {
         /* string not_contains = 4; */
         if (message.condition.oneofKind === "notContains")
             writer.tag(4, WireType.LengthDelimited).string(message.condition.notContains);
+        /* string starts_with = 5; */
+        if (message.condition.oneofKind === "startsWith")
+            writer.tag(5, WireType.LengthDelimited).string(message.condition.startsWith);
+        /* string not_starts_with = 6; */
+        if (message.condition.oneofKind === "notStartsWith")
+            writer.tag(6, WireType.LengthDelimited).string(message.condition.notStartsWith);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

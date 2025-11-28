@@ -808,6 +808,14 @@
         "notContains": {
           "type": "string",
           "title": "not_contains matches strings that do not contain the specified substring"
+        },
+        "startsWith": {
+          "type": "string",
+          "title": "starts_with matches strings that start with the specified prefix"
+        },
+        "notStartsWith": {
+          "type": "string",
+          "title": "not_starts_with matches strings that do not start with the specified prefix"
         }
       },
       "title": "StringCondition defines string-based filtering conditions"
