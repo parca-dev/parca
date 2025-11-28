@@ -39,6 +39,8 @@ const MATCH_MAP: Record<string, string> = {
   not_equal: '!=',
   contains: '~',
   not_contains: '!~',
+  starts_with: '^',
+  not_starts_with: '!^',
 };
 
 // Reverse mappings for decoding
