@@ -73,25 +73,67 @@ func (c *ArrowToProfileConverter) Convert(
 		locations := ar.Column(indices[0]).(*array.List)
 		locationOffsets := locations.Offsets()[locations.Offset() : locations.Offset()+1+locations.Len()] // Adjust offsets by the data offset. This happens if this list is a slice of a larger list.
 		location := locations.ListValues().(*array.Struct)
-		address := location.Field(0).(*array.Uint64)
-		mappingStart := location.Field(1).(*array.Uint64)
-		mappingLimit := location.Field(2).(*array.Uint64)
-		mappingOffset := location.Field(3).(*array.Uint64)
-		mappingFile := location.Field(4).(*array.Dictionary)
-		mappingFileDict := mappingFile.Dictionary().(*array.Binary)
-		mappingBuildID := location.Field(5).(*array.Dictionary)
-		mappingBuildIDDict := mappingBuildID.Dictionary().(*array.Binary)
-		lines := location.Field(6).(*array.List)
+
+		// Use name-based field lookup for location fields
+		var address *array.Uint64
+		var mappingStart, mappingLimit, mappingOffset *array.Uint64
+		var mappingFile, mappingBuildID *array.Dictionary
+		var mappingFileDict, mappingBuildIDDict *array.Binary
+		var lines *array.List
+
+		locationType := location.DataType().(*arrow.StructType)
+		for i := 0; i < locationType.NumFields(); i++ {
+			field := locationType.Field(i)
+			switch field.Name {
+			case "address":
+				address = location.Field(i).(*array.Uint64)
+			case "mapping_start":
+				mappingStart = location.Field(i).(*array.Uint64)
+			case "mapping_limit":
+				mappingLimit = location.Field(i).(*array.Uint64)
+			case "mapping_offset":
+				mappingOffset = location.Field(i).(*array.Uint64)
+			case "mapping_file":
+				mappingFile = location.Field(i).(*array.Dictionary)
+				mappingFileDict = mappingFile.Dictionary().(*array.Binary)
+			case "mapping_build_id":
+				mappingBuildID = location.Field(i).(*array.Dictionary)
+				mappingBuildIDDict = mappingBuildID.Dictionary().(*array.Binary)
+			case "lines":
+				lines = location.Field(i).(*array.List)
+			}
+		}
+
 		lineOffsets := lines.Offsets()[lines.Offset() : lines.Offset()+1+lines.Len()] // Adjust offsets by the data offset. This happens if this list is a slice of a larger list.
 		line := lines.ListValues().(*array.Struct)
-		lineNumber := line.Field(0).(*array.Int64)
-		lineFunctionName := line.Field(1).(*array.Dictionary)
-		lineFunctionNameDict := lineFunctionName.Dictionary().(*array.Binary)
-		lineFunctionSystemName := line.Field(2).(*array.Dictionary)
-		lineFunctionSystemNameDict := lineFunctionSystemName.Dictionary().(*array.Binary)
-		lineFunctionFilename := line.Field(3).(*array.Dictionary)
-		lineFunctionFilenameDict := lineFunctionFilename.Dictionary().(*array.Binary)
-		lineFunctionStartLine := line.Field(4).(*array.Int64)
+
+		// Use name-based field lookup for line fields
+		var lineNumber *array.Int64
+		var lineFunctionName, lineFunctionSystemName, lineFunctionFilename *array.Dictionary
+		var lineFunctionNameDict, lineFunctionSystemNameDict, lineFunctionFilenameDict *array.Binary
+		var lineFunctionStartLine *array.Int64
+
+		lineType := line.DataType().(*arrow.StructType)
+		for i := 0; i < lineType.NumFields(); i++ {
+			field := lineType.Field(i)
+			switch field.Name {
+			case "line":
+				lineNumber = line.Field(i).(*array.Int64)
+			case "column":
+				// Column field exists but not used in this code path
+			case "function_name":
+				lineFunctionName = line.Field(i).(*array.Dictionary)
+				lineFunctionNameDict = lineFunctionName.Dictionary().(*array.Binary)
+			case "function_system_name":
+				lineFunctionSystemName = line.Field(i).(*array.Dictionary)
+				lineFunctionSystemNameDict = lineFunctionSystemName.Dictionary().(*array.Binary)
+			case "function_filename":
+				lineFunctionFilename = line.Field(i).(*array.Dictionary)
+				lineFunctionFilenameDict = lineFunctionFilename.Dictionary().(*array.Binary)
+			case "function_start_line":
+				lineFunctionStartLine = line.Field(i).(*array.Int64)
+			}
+		}
 
 		indices = schema.FieldIndices("value")
 		if len(indices) != 1 {
@@ -266,6 +308,7 @@ func BuildArrowLocations(allocator memory.Allocator, stacktraces []*pb.Stacktrac
 				for _, l := range loc.Lines {
 					w.Line.Append(true)
 					w.LineNumber.Append(l.Line)
+					w.ColumnNumber.Append(0) // Column info not available from symbolized locations
 					if l.Function != nil {
 						if len(l.Function.Name) > 0 {
 							if err := w.FunctionName.Append(stringToBytes(l.Function.Name)); err != nil {
