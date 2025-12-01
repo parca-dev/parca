@@ -52,6 +52,7 @@ type RecordReader struct {
 	Lines                         *array.List
 	Line                          *array.Struct
 	LineNumber                    *array.Int64
+	LineColumn                    *array.Uint64
 	LineFunctionNameIndices       *array.Uint32
 	LineFunctionNameDict          *array.Binary
 	LineFunctionSystemNameIndices *array.Uint32
