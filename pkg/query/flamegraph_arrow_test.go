@@ -1613,6 +1613,7 @@ func foldedStacksWithTsToProfile(pool memory.Allocator, input []byte) (profile.P
 			w.Lines.Append(true)
 			w.Line.Append(true)
 			w.LineNumber.Append(0)
+			w.ColumnNumber.Append(0)
 			w.FunctionName.Append([]byte(stackFrames[i]))
 			w.FunctionSystemName.Append([]byte(""))
 			w.FunctionFilename.Append([]byte(""))

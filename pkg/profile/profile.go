@@ -52,6 +52,9 @@ var LocationsField = arrow.Field{
 			Name: "line",
 			Type: arrow.PrimitiveTypes.Int64,
 		}, {
+			Name: "column",
+			Type: arrow.PrimitiveTypes.Uint64,
+		}, {
 			Name: "function_name",
 			Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
 		}, {
