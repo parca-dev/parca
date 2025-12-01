@@ -114,6 +114,7 @@ const MetricsGraph = ({
 };
 
 export default MetricsGraph;
+
 export type {ContextMenuItemOrSubmenu, ContextMenuItem, ContextMenuSubmenu};
 
 export const parseValue = (value: string): number | null => {
@@ -207,6 +208,13 @@ export const RawMetricsGraph = ({
     }
 
     const closestPointPerSeries = series.map(function (s) {
+      if (s.values.length === 0) {
+        return {
+          pointIndex: undefined,
+          distance: Infinity,
+        };
+      }
+
       const distances = s.values.map(d => {
         const x = xScale(d[0]) + margin / 2; // d[0] is timestamp_ms
         const y = yScale(d[1]) - margin / 3; // d[1] is value
@@ -216,7 +224,7 @@ export const RawMetricsGraph = ({
       });
 
       const pointIndex = d3.minIndex(distances);
-      const minDistance = distances[pointIndex];
+      const minDistance = pointIndex != null ? distances[pointIndex] : Infinity;
 
       return {
         pointIndex,
@@ -225,7 +233,15 @@ export const RawMetricsGraph = ({
     });
 
     const closestSeriesIndex = d3.minIndex(closestPointPerSeries, s => s.distance);
+    if (closestSeriesIndex == null || closestPointPerSeries[closestSeriesIndex] == null) {
+      return null;
+    }
+
     const pointIndex = closestPointPerSeries[closestSeriesIndex].pointIndex;
+    if (pointIndex == null) {
+      return null;
+    }
+
     return {
       seriesIndex: closestSeriesIndex,
       pointIndex,

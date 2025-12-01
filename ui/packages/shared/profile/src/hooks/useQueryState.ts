@@ -38,7 +38,7 @@ interface UseQueryStateReturn {
   draftSelection: QuerySelection;
 
   // Draft setters (update local state only)
-  setDraftExpression: (expression: string, commit?: boolean) => void;
+  setDraftExpression: (expression: string) => void;
   setDraftTimeRange: (from: number, to: number, timeSelection: string) => void;
   setDraftSumBy: (sumBy: string[] | undefined) => void;
   setDraftProfileName: (profileName: string) => void;
@@ -58,6 +58,12 @@ interface UseQueryStateReturn {
 
   // Loading state for sumBy computation
   sumByLoading: boolean;
+
+  // draft parsed query
+  draftParsedQuery: Query | null;
+
+  // parsed query
+  parsedQuery: Query | null;
 }
 
 export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryStateReturn => {
@@ -331,20 +337,6 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     ]
   );
 
-  // Draft setters (update local state only, or commit directly if specified)
-  const setDraftExpressionCallback = useCallback(
-    (newExpression: string, commit = false) => {
-      if (commit) {
-        // Commit with the new expression, which will also update merge params and selection
-        commitDraft(undefined, newExpression);
-      } else {
-        // Only update draft state
-        setDraftExpression(newExpression);
-      }
-    },
-    [commitDraft]
-  );
-
   const setDraftTimeRange = useCallback(
     (newFrom: number, newTo: number, newTimeSelection: string) => {
       setDraftFrom(newFrom.toString());
@@ -390,6 +382,22 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     [batchUpdates, setSelectionParam, setMergeFromState, setMergeToState]
   );
 
+  const draftParsedQuery = useMemo(() => {
+    try {
+      return Query.parse(draftSelection.expression ?? '');
+    } catch {
+      return Query.parse('');
+    }
+  }, [draftSelection.expression]);
+
+  const parsedQuery = useMemo(() => {
+    try {
+      return Query.parse(querySelection.expression ?? '');
+    } catch {
+      return Query.parse('');
+    }
+  }, [querySelection.expression]);
+
   return {
     // Current committed state
     querySelection,
@@ -398,7 +406,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     draftSelection,
 
     // Draft setters
-    setDraftExpression: setDraftExpressionCallback,
+    setDraftExpression,
     setDraftTimeRange,
     setDraftSumBy: setDraftSumByCallback,
     setDraftProfileName,
@@ -414,5 +422,8 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
 
     // Loading state
     sumByLoading: sumBySelectionLoading,
+
+    draftParsedQuery,
+    parsedQuery,
   };
 };

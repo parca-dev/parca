@@ -319,6 +319,10 @@ message StringCondition {
     string contains = 3;
     // not_contains matches strings that do not contain the specified substring
     string not_contains = 4;
+    // starts_with matches strings that start with the specified prefix
+    string starts_with = 5;
+    // not_starts_with matches strings that do not start with the specified prefix
+    string not_starts_with = 6;
   }
 }
 

@@ -13,11 +13,21 @@
 
 import type {ParamPreferences} from '@parca/components';
 
-import {useLabelNames} from './MatchersInput';
+import MetricsGraph, {type ContextMenuItemOrSubmenu, type Series} from './MetricsGraph';
 import ProfileExplorer from './ProfileExplorer';
 import ProfileTypeSelector from './ProfileTypeSelector';
-import SelectWithRefresh from './SelectWithRefresh';
+import {SelectWithRefresh} from './SelectWithRefresh';
 import CustomSelect from './SimpleMatchers/Select';
+import {
+  LabelsQueryProvider,
+  useLabelsQueryProvider,
+  type LabelsQueryProviderContextType,
+} from './contexts/LabelsQueryProvider';
+import {UnifiedLabelsProvider, useUnifiedLabels} from './contexts/UnifiedLabelsContext';
+import {useLabelNames} from './hooks/useLabels';
+import {useQueryState} from './hooks/useQueryState';
+
+export {useMetricsGraphDimensions} from './MetricsGraph/useMetricsGraphDimensions';
 
 export * from './ProfileFlameGraph';
 export * from './ProfileSource';
@@ -32,6 +42,7 @@ export * from './ProfileTypeSelector';
 export * from './SourceView';
 export * from './ProfileMetricsGraph';
 export * from './useSumBy';
+export {QueryControls} from './QueryControls';
 
 export {default as ProfileFilters} from './ProfileView/components/ProfileFilters';
 export {useProfileFiltersUrlState} from './ProfileView/components/ProfileFilters/useProfileFiltersUrlState';
@@ -41,6 +52,24 @@ export const DEFAULT_PROFILE_EXPLORER_PARAM_VALUES: ParamPreferences = {
     defaultValue: 'flamegraph',
     splitOnCommas: true, // This param should split on commas for array values
   },
+  group_by: {
+    splitOnCommas: true,
+  },
 };
 
-export {ProfileExplorer, ProfileTypeSelector, CustomSelect, SelectWithRefresh, useLabelNames};
+export {
+  ProfileExplorer,
+  ProfileTypeSelector,
+  CustomSelect,
+  SelectWithRefresh,
+  useLabelNames,
+  MetricsGraph,
+  type ContextMenuItemOrSubmenu,
+  type Series,
+  LabelsQueryProvider,
+  useLabelsQueryProvider,
+  UnifiedLabelsProvider,
+  useUnifiedLabels,
+  useQueryState,
+  type LabelsQueryProviderContextType,
+};
