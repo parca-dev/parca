@@ -311,6 +311,7 @@ const ProfileSelector = ({
               draftSelection={draftSelection}
               setDraftMatchers={setDraftMatchers}
               draftParsedQuery={draftParsedQuery}
+              commitDraft={commitDraft}
             />
           </LabelsSource>
         </LabelsQueryProvider>

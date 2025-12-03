@@ -20,10 +20,15 @@ import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 
 import {useUnifiedLabels} from '../contexts/UnifiedLabelsContext';
-import {useQueryState} from '../hooks/useQueryState';
 import SuggestionsList, {Suggestion, Suggestions} from './SuggestionsList';
 
-const MatchersInput = (): JSX.Element => {
+interface Props {
+  setDraftMatchers: (selection: string) => void;
+  draftParsedQuery: Query | null;
+  commitDraft: () => void;
+}
+
+const MatchersInput = ({setDraftMatchers, draftParsedQuery, commitDraft}: Props): JSX.Element => {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const [focusedInput, setFocusedInput] = useState(false);
   const [lastCompleted, setLastCompleted] = useState<Suggestion>(new Suggestion('', '', ''));
@@ -39,10 +44,7 @@ const MatchersInput = (): JSX.Element => {
     shouldHandlePrefixes,
     refetchLabelValues,
     refetchLabelNames,
-    suffix,
   } = useUnifiedLabels();
-
-  const {setDraftMatchers, commitDraft, draftParsedQuery} = useQueryState({suffix});
 
   const value = draftParsedQuery != null ? draftParsedQuery.matchersString() : '';
 
