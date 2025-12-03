@@ -140,7 +140,7 @@ proto/generate: proto/vendor
 
 .PHONY: proto/vendor
 proto/vendor: proto/google/pprof/profile.proto
-	cd proto && buf mod update
+	cd proto && buf dep update
 
 proto/google/pprof/profile.proto:
 	mkdir -p proto/google/pprof
