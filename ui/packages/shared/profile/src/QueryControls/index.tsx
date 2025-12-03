@@ -70,7 +70,8 @@ interface QueryControlsProps {
   sumByRef?: React.RefObject<SelectInstance>;
   draftSelection: QuerySelection;
   setDraftMatchers: (selection: string) => void;
-  draftParsedQuery?: Query | null;
+  draftParsedQuery: Query | null;
+  commitDraft: () => void;
 }
 
 export function QueryControls({
@@ -101,6 +102,7 @@ export function QueryControls({
   draftSelection,
   setDraftMatchers,
   draftParsedQuery,
+  commitDraft,
 }: QueryControlsProps): JSX.Element {
   const {timezone} = useParcaContext();
   const defaultQueryBrowserRef = useRef<HTMLDivElement>(null);
@@ -180,7 +182,11 @@ export function QueryControls({
         viewComponent?.labelnames.length >= 1 ? (
           <ViewMatchers labelNames={viewComponent.labelnames} />
         ) : showAdvancedMode && advancedModeForQueryBrowser ? (
-          <MatchersInput />
+          <MatchersInput
+            setDraftMatchers={setDraftMatchers}
+            draftParsedQuery={draftParsedQuery}
+            commitDraft={commitDraft}
+          />
         ) : (
           <SimpleMatchers
             queryBrowserRef={actualQueryBrowserRef}
