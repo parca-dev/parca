@@ -166,6 +166,9 @@ Flags:
       --external-label=KEY=VALUE;...
                                  Label(s) to attach to all profiles in
                                  scraper-only mode.
+      --grpc-headers=KEY=VALUE;...
+                                 Additional gRPC headers to send with each
+                                 request to the remote store (key=value pairs).
 ```
 <!-- prettier-ignore-end -->
 
