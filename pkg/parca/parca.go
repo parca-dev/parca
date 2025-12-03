@@ -57,6 +57,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"gopkg.in/yaml.v3"
 
 	debuginfopb "github.com/parca-dev/parca/gen/proto/go/parca/debuginfo/v1alpha1"
@@ -125,6 +126,7 @@ type Flags struct {
 	Insecure           bool              `kong:"help='Send gRPC requests via plaintext instead of TLS.'"`
 	InsecureSkipVerify bool              `kong:"help='Skip TLS certificate verification.'"`
 	ExternalLabel      map[string]string `kong:"help='Label(s) to attach to all profiles in scraper-only mode.'"`
+	GRPCHeaders        map[string]string `kong:"help='Additional gRPC headers to send with each request to the remote store (key=value pairs).'"`
 
 	Hidden FlagsHidden `embed:"" prefix:""`
 }
@@ -661,6 +663,28 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 	return nil
 }
 
+// customHeadersUnaryInterceptor adds custom headers to all unary RPC calls.
+func customHeadersUnaryInterceptor(headers map[string]string) grpc.UnaryClientInterceptor {
+	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		// Add headers to outgoing context
+		for key, value := range headers {
+			ctx = metadata.AppendToOutgoingContext(ctx, key, value)
+		}
+		return invoker(ctx, method, req, reply, cc, opts...)
+	}
+}
+
+// customHeadersStreamInterceptor adds custom headers to all streaming RPC calls.
+func customHeadersStreamInterceptor(headers map[string]string) grpc.StreamClientInterceptor {
+	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+		// Add headers to outgoing context
+		for key, value := range headers {
+			ctx = metadata.AppendToOutgoingContext(ctx, key, value)
+		}
+		return streamer(ctx, desc, cc, method, opts...)
+	}
+}
+
 func runForwarder(
 	ctx context.Context,
 	logger log.Logger,
@@ -686,17 +710,27 @@ func runForwarder(
 
 	propagators := propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
 
+	// Build interceptor chains
+	unaryInterceptors := []grpc.UnaryClientInterceptor{
+		metrics.UnaryClientInterceptor(),
+	}
+	streamInterceptors := []grpc.StreamClientInterceptor{
+		metrics.StreamClientInterceptor(),
+	}
+
+	// Add custom headers interceptor if headers are configured
+	if len(flags.GRPCHeaders) > 0 {
+		unaryInterceptors = append([]grpc.UnaryClientInterceptor{customHeadersUnaryInterceptor(flags.GRPCHeaders)}, unaryInterceptors...)
+		streamInterceptors = append([]grpc.StreamClientInterceptor{customHeadersStreamInterceptor(flags.GRPCHeaders)}, streamInterceptors...)
+	}
+
 	opts := []grpc.DialOption{
 		grpc.WithStatsHandler(otelgrpc.NewServerHandler(
 			otelgrpc.WithTracerProvider(tracer),
 			otelgrpc.WithPropagators(propagators),
 		)),
-		grpc.WithChainUnaryInterceptor(
-			metrics.UnaryClientInterceptor(),
-		),
-		grpc.WithChainStreamInterceptor(
-			metrics.StreamClientInterceptor(),
-		),
+		grpc.WithChainUnaryInterceptor(unaryInterceptors...),
+		grpc.WithChainStreamInterceptor(streamInterceptors...),
 	}
 	if flags.Insecure {
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
