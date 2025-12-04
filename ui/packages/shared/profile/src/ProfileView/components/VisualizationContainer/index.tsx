@@ -51,8 +51,14 @@ export const VisualizationContainer: FC<VisualizationContainerProps> = ({
       className={cx(
         'w-full min-h-96',
         snapshot.isDragging ? 'bg-gray-200 dark:bg-gray-500' : 'bg-inherit dark:bg-gray-900',
-        isMultiPanelView ? 'border-2 border-gray-100 dark:border-gray-700 rounded-md p-3' : ''
+        isMultiPanelView ? 'border-2 border-gray-100 dark:border-gray-700 rounded-md p-3' : '',
+        dashboardItem === 'source' && isMultiPanelView ? 'sticky top-0 self-start' : ''
       )}
+      style={
+        dashboardItem === 'source' && isMultiPanelView
+          ? {maxHeight: 'calc(100vh - 50px)'}
+          : undefined
+      }
     >
       <VisualizationPanel
         handleClosePanel={handleClosePanel}
