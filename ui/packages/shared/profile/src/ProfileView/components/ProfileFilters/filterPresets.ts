@@ -174,6 +174,50 @@ export const filterPresets: FilterPreset[] = [
       },
     ],
   },
+  {
+    key: 'hide_tokio_frames',
+    name: 'Hide Tokio Frames',
+    description: 'Excludes Tokio runtime frames from the profile',
+    filters: [
+      {
+        type: 'frame',
+        field: 'function_name',
+        matchType: 'not_starts_with',
+        value: 'tokio::',
+      },
+      {
+        type: 'frame',
+        field: 'function_name',
+        matchType: 'not_starts_with',
+        value: '<tokio::',
+      },
+    ],
+  },
+  {
+    key: 'hide_rust_panic_backtrace',
+    name: 'Hide Rust Panic Backtrace Infrastructure',
+    description: 'Excludes Rust panic and backtrace infrastructure frames from the profile',
+    filters: [
+      {
+        type: 'frame',
+        field: 'function_name',
+        matchType: 'not_starts_with',
+        value: 'std::panic',
+      },
+      {
+        type: 'frame',
+        field: 'function_name',
+        matchType: 'not_starts_with',
+        value: '<core::panic',
+      },
+      {
+        type: 'frame',
+        field: 'function_name',
+        matchType: 'not_starts_with',
+        value: 'std::sys::backtrace',
+      },
+    ],
+  },
 ];
 
 const presetKeys = new Set(filterPresets.map(preset => preset.key));
