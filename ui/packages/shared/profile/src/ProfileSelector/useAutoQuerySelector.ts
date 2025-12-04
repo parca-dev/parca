@@ -14,6 +14,7 @@
 import {useEffect, useRef} from 'react';
 
 import {ProfileTypesResponse} from '@parca/client';
+import {useURLState} from '@parca/components';
 import {selectAutoQuery, setAutoQuery, useAppDispatch, useAppSelector} from '@parca/store';
 import {type NavigateFunction} from '@parca/utilities';
 
@@ -42,12 +43,11 @@ export const useAutoQuerySelector = ({
 }: Props): void => {
   const autoQuery = useAppSelector(selectAutoQuery);
   const dispatch = useAppDispatch();
-  const queryParams = new URLSearchParams(location.search);
-  const compareA = queryParams.get('compare_a');
-  const compareB = queryParams.get('compare_b');
+  const [compareA] = useURLState<string>('compare_a');
+  const [compareB] = useURLState<string>('compare_b');
   const comparing = compareA === 'true' || compareB === 'true';
-  const expressionA = queryParams.get('expression_a');
-  const expressionB = queryParams.get('expression_b');
+  const [expressionA] = useURLState<string>('expression_a');
+  const [expressionB] = useURLState<string>('expression_b');
 
   // Track if we've already set up compare mode to prevent infinite loops
   const hasSetupCompareMode = useRef(false);
