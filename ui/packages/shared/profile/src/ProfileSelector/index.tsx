@@ -37,6 +37,7 @@ import {useLabelNames} from '../hooks/useLabels';
 import {useQueryState} from '../hooks/useQueryState';
 import useGrpcQuery from '../useGrpcQuery';
 import {MetricsGraphSection} from './MetricsGraphSection';
+import {useAutoFlameChartQuerySelector} from './useAutoFlameChartQuerySelector';
 import {useAutoQuerySelector} from './useAutoQuerySelector';
 
 export interface QuerySelection {
@@ -118,6 +119,9 @@ const ProfileSelector = ({
   const {viewComponent} = useParcaContext();
   const [queryBrowserMode, setQueryBrowserMode] = useURLState('query_browser_mode');
   const batchUpdates = useURLStateBatch();
+  const [dashboardItems] = useURLState<string[]>('dashboard_items', {
+    alwaysReturnArray: true,
+  });
 
   // Use the new useQueryState hook - reads directly from URL params
   const {
@@ -208,11 +212,7 @@ const ProfileSelector = ({
         const currentFrom = timeRangeSelection.getFromMs(true);
         const currentTo = timeRangeSelection.getToMs(true);
         const currentRangeKey = timeRangeSelection.getRangeKey();
-        // Commit with refreshed time range
-        console.log(
-          '[draftExpression] setQueryExpression: committing with refreshed time range:',
-          draftSelection.expression
-        );
+
         commitDraft({
           from: currentFrom,
           to: currentTo,
@@ -258,6 +258,19 @@ const ProfileSelector = ({
     querySelection,
     navigateTo,
     loading: sumByLoading,
+  });
+
+  useAutoFlameChartQuerySelector({
+    queryClient,
+    dashboardItems: dashboardItems ?? [],
+    profileType,
+    timeRange: timeRangeSelection,
+    comparing,
+    loading: sumByLoading || profileTypesLoading,
+    setTimeRangeSelection,
+    setDraftTimeRange,
+    setDraftSumBy,
+    commitDraft,
   });
 
   const searchDisabled =
