@@ -40,7 +40,8 @@ export const downloadPprof = async (
       }`
     );
   }
-  const blob = new Blob([response.report.pprof], {type: 'application/octet-stream'});
+  const blob = new Blob([response.report.pprof.slice()], {type: 'application/octet-stream'});
+
   return blob;
 };
 
