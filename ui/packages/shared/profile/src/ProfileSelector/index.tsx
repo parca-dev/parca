@@ -255,7 +255,7 @@ const ProfileSelector = ({
     profileTypesData,
     setProfileName,
     setQueryExpression,
-    querySelection,
+    querySelection: draftSelection,
     navigateTo,
     loading: sumByLoading,
   });
@@ -342,10 +342,10 @@ const ProfileSelector = ({
         showMetricsGraph={showMetricsGraph}
         setDisplayHideMetricsGraphButton={setDisplayHideMetricsGraphButton}
         heightStyle={heightStyle}
-        querySelection={querySelection}
+        querySelection={draftSelection}
         profileSelection={profileSelection}
         comparing={comparing}
-        sumBy={querySelection.sumBy ?? []}
+        sumBy={draftSelection.sumBy ?? []}
         defaultSumByLoading={sumByLoading}
         queryClient={queryClient}
         queryExpressionString={queryExpressionString}
