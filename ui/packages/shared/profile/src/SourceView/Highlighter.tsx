@@ -218,13 +218,13 @@ export const Highlighter = ({file, content, renderer}: HighlighterProps): JSX.El
           <div>Source</div>
         </div>
       </div>
-      <div className="text-xs">
+      <div className="text-xs overflow-auto" style={{maxHeight: 'calc(100vh - 200px)'}}>
         <SyntaxHighlighter
           language={language}
           style={isDarkMode ? atomOneDark : atomOneLight}
           showLineNumbers
           renderer={renderer}
-          customStyle={{padding: 0, height: '90vh'}}
+          customStyle={{padding: 0}}
         >
           {content}
         </SyntaxHighlighter>
