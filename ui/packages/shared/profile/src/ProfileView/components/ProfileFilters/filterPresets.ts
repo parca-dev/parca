@@ -174,6 +174,25 @@ export const filterPresets: FilterPreset[] = [
       },
     ],
   },
+  {
+    key: 'hide_tokio_frames',
+    name: 'Hide Tokio Frames',
+    description: 'Excludes Tokio runtime frames from the profile',
+    filters: [
+      {
+        type: 'frame',
+        field: 'function_name',
+        matchType: 'not_starts_with',
+        value: 'tokio::',
+      },
+      {
+        type: 'frame',
+        field: 'function_name',
+        matchType: 'not_starts_with',
+        value: '<tokio::',
+      },
+    ],
+  },
 ];
 
 const presetKeys = new Set(filterPresets.map(preset => preset.key));
