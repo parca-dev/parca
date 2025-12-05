@@ -194,6 +194,37 @@ export const filterPresets: FilterPreset[] = [
     ],
   },
   {
+    key: 'hide_rust_futures',
+    name: 'Hide Rust Futures Infrastructure',
+    description: 'Excludes Rust futures infrastructure frames from the profile',
+    filters: [
+      {
+        type: 'frame',
+        field: 'function_name',
+        matchType: 'not_starts_with',
+        value: 'future',
+      },
+      {
+        type: 'frame',
+        field: 'function_name',
+        matchType: 'not_starts_with',
+        value: '<future',
+      },
+      {
+        type: 'frame',
+        field: 'function_name',
+        matchType: 'not_contains',
+        value: 'futures_core',
+      },
+      {
+        type: 'frame',
+        field: 'function_name',
+        matchType: 'not_contains',
+        value: 'core::future::future::Future',
+      },
+    ],
+  },
+  {
     key: 'hide_rust_panic_backtrace',
     name: 'Hide Rust Panic Backtrace Infrastructure',
     description: 'Excludes Rust panic and backtrace infrastructure frames from the profile',
