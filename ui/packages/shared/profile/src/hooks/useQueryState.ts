@@ -152,7 +152,14 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     draftSumBy,
     setDraftSumBy,
     isDraftSumByLoading,
-  } = useSumBy(queryClient, profileType, draftTimeRange, draftProfileType, draftTimeRange, sumBy);
+  } = useSumBy(
+    queryClient,
+    profileType?.profileName !== '' ? profileType : draftProfileType,
+    draftTimeRange,
+    draftProfileType,
+    draftTimeRange,
+    sumBy
+  );
 
   // Sync draft state with URL state when URL changes externally
   useEffect(() => {
@@ -393,7 +400,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
         setDraftSumBy(undefined);
       }
     },
-    [draftQuery, batchUpdates, setDraftSumBy]
+    [draftQuery, setDraftSumBy]
   );
 
   const setDraftMatchers = useCallback(
