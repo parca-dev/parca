@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {useEffect} from 'react';
+
 import {LabelsRequest, LabelsResponse, QueryServiceClient, ValuesRequest} from '@parca/client';
 import {useGrpcMetadata} from '@parca/components';
 import {millisToProtoTimestamp, sanitizeLabelValue} from '@parca/utilities';
@@ -68,7 +70,9 @@ export const useLabelNames = (
     },
   });
 
-  console.log('Label names query result:', {data, error, isLoading});
+  useEffect(() => {
+    console.log('Label names query result:', {data, error, isLoading});
+  }, [data, error, isLoading]);
 
   return {
     result: {response: data, error: error as Error},

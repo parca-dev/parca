@@ -209,10 +209,6 @@ const ProfileSelector = ({
         const currentTo = timeRangeSelection.getToMs(true);
         const currentRangeKey = timeRangeSelection.getRangeKey();
         // Commit with refreshed time range
-        console.log(
-          '[draftExpression] setQueryExpression: committing with refreshed time range:',
-          draftSelection.expression
-        );
         commitDraft({
           from: currentFrom,
           to: currentTo,
@@ -332,7 +328,7 @@ const ProfileSelector = ({
         querySelection={querySelection}
         profileSelection={profileSelection}
         comparing={comparing}
-        sumBy={querySelection.sumBy ?? []}
+        sumBy={querySelection.sumBy}
         defaultSumByLoading={sumByLoading}
         queryClient={queryClient}
         queryExpressionString={queryExpressionString}
