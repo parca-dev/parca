@@ -69,16 +69,33 @@ vi.mock('@parca/components/src/hooks/URLState/utils', async () => {
   };
 });
 
-// Mock useSumBy to return the sumBy from URL params or undefined
+// Mock useSumBy with stateful behavior using React's useState
 vi.mock('../useSumBy', async () => {
   const actual = await vi.importActual('../useSumBy');
+  const react = await import('react');
+
   return {
     ...actual,
-    useSumBy: (_queryClient: any, _profileType: any, _timeRange: any, defaultValue: any) => ({
-      sumBy: defaultValue,
-      setSumBy: vi.fn(),
-      isLoading: false,
-    }),
+    useSumBy: (
+      _queryClient: any,
+      _profileType: any,
+      _timeRange: any,
+      _draftProfileType: any,
+      _draftTimeRange: any,
+      defaultValue: any
+    ) => {
+      const [draftSumBy, setDraftSumBy] = react.useState<string[] | undefined>(defaultValue);
+      const [sumBy, setSumBy] = react.useState<string[] | undefined>(defaultValue);
+
+      return {
+        sumBy,
+        setSumBy,
+        isLoading: false,
+        draftSumBy,
+        setDraftSumBy,
+        isDraftSumByLoading: false,
+      };
+    },
   };
 });
 
@@ -207,7 +224,9 @@ describe('useQueryState', () => {
     it('should update sumBy', async () => {
       const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
+      // sumBy only applies to delta profiles, so we need to set one first
       act(() => {
+        result.current.setDraftExpression('process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}');
         result.current.setDraftSumBy(['namespace', 'container']);
       });
 
@@ -256,15 +275,15 @@ describe('useQueryState', () => {
       const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       act(() => {
-        // Update multiple draft values
-        result.current.setDraftExpression('memory:inuse_space:bytes:space:bytes{}');
+        // Update multiple draft values (using delta profile since sumBy only applies to delta)
+        result.current.setDraftExpression('memory:alloc_space:bytes:space:bytes:delta{}');
         result.current.setDraftTimeRange(7000, 8000, 'relative:minute|30');
         result.current.setDraftSumBy(['pod', 'node']);
       });
 
       // All drafts should be updated
       expect(result.current.draftSelection.expression).toBe(
-        'memory:inuse_space:bytes:space:bytes{}'
+        'memory:alloc_space:bytes:space:bytes:delta{}'
       );
       expect(result.current.draftSelection.from).toBe(7000);
       expect(result.current.draftSelection.to).toBe(8000);
@@ -278,7 +297,7 @@ describe('useQueryState', () => {
         // Should only navigate once for all updates
         expect(mockNavigateTo).toHaveBeenCalledTimes(1);
         const [, params] = mockNavigateTo.mock.calls[0];
-        expect(params.expression).toBe('memory:inuse_space:bytes:space:bytes{}');
+        expect(params.expression).toBe('memory:alloc_space:bytes:space:bytes:delta{}');
         expect(params.from).toBe('7000');
         expect(params.to).toBe('8000');
         expect(params.time_selection).toBe('relative:minute|30');
@@ -430,9 +449,9 @@ describe('useQueryState', () => {
     it('should handle _b suffix correctly', async () => {
       const {result} = renderHook(() => useQueryState({suffix: '_b'}), {wrapper: createWrapper()});
 
-      // Update draft state
+      // Update draft state (using delta profile since sumBy only applies to delta)
       act(() => {
-        result.current.setDraftExpression('memory:inuse_space:bytes:space:bytes{}');
+        result.current.setDraftExpression('memory:alloc_space:bytes:space:bytes:delta{}');
         result.current.setDraftTimeRange(3333, 4444, 'relative:hour|2');
         result.current.setDraftSumBy(['label_b']);
       });
@@ -445,7 +464,7 @@ describe('useQueryState', () => {
       await waitFor(() => {
         expect(mockNavigateTo).toHaveBeenCalled();
         const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
-        expect(params.expression_b).toBe('memory:inuse_space:bytes:space:bytes{}');
+        expect(params.expression_b).toBe('memory:alloc_space:bytes:space:bytes:delta{}');
         expect(params.from_b).toBe('3333');
         expect(params.to_b).toBe('4444');
         expect(params.sum_by_b).toBe('label_b');
@@ -457,9 +476,9 @@ describe('useQueryState', () => {
     it('should not update URL until commit', async () => {
       const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
-      // Make multiple draft changes
+      // Make multiple draft changes (using delta profile since sumBy only applies to delta)
       act(() => {
-        result.current.setDraftExpression('memory:inuse_space:bytes:space:bytes{}');
+        result.current.setDraftExpression('memory:alloc_space:bytes:space:bytes:delta{}');
         result.current.setDraftTimeRange(5000, 6000, 'relative:hour|3');
         result.current.setDraftSumBy(['namespace', 'pod']);
       });
@@ -476,7 +495,7 @@ describe('useQueryState', () => {
       await waitFor(() => {
         expect(mockNavigateTo).toHaveBeenCalledTimes(1);
         const [, params] = mockNavigateTo.mock.calls[0];
-        expect(params.expression).toBe('memory:inuse_space:bytes:space:bytes{}');
+        expect(params.expression).toBe('memory:alloc_space:bytes:space:bytes:delta{}');
         expect(params.from).toBe('5000');
         expect(params.to).toBe('6000');
         expect(params.sum_by).toBe('namespace,pod');
@@ -737,17 +756,17 @@ describe('useQueryState', () => {
 
   describe('State persistence after page reload', () => {
     it('should retain committed values after page reload simulation', async () => {
-      // Initial state
+      // Initial state (using delta profile since sumBy only applies to delta)
       mockLocation.search =
-        '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds{}&from=1000&to=2000';
+        '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}&from=1000&to=2000';
 
       const {result: result1, unmount} = renderHook(() => useQueryState(), {
         wrapper: createWrapper(),
       });
 
-      // User makes changes to draft
+      // User makes changes to draft (using delta profile since sumBy only applies to delta)
       act(() => {
-        result1.current.setDraftExpression('memory:inuse_space:bytes:space:bytes{}');
+        result1.current.setDraftExpression('memory:alloc_space:bytes:space:bytes:delta{}');
         result1.current.setDraftTimeRange(5000, 6000, 'relative:minute|15');
         result1.current.setDraftSumBy(['namespace', 'pod']);
       });
@@ -786,7 +805,7 @@ describe('useQueryState', () => {
 
       // Verify state is loaded from URL after "reload"
       expect(result2.current.querySelection.expression).toBe(
-        'memory:inuse_space:bytes:space:bytes{}'
+        'memory:alloc_space:bytes:space:bytes:delta{}'
       );
       expect(result2.current.querySelection.from).toBe(5000);
       expect(result2.current.querySelection.to).toBe(6000);
@@ -795,7 +814,7 @@ describe('useQueryState', () => {
 
       // Draft should be synced with URL state on page load
       expect(result2.current.draftSelection.expression).toBe(
-        'memory:inuse_space:bytes:space:bytes{}'
+        'memory:alloc_space:bytes:space:bytes:delta{}'
       );
       expect(result2.current.draftSelection.from).toBe(5000);
       expect(result2.current.draftSelection.to).toBe(6000);

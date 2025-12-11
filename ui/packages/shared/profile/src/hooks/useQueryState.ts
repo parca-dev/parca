@@ -389,10 +389,8 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
 
       const [newQuery, changed] = draftQuery.setProfileName(newProfileName);
       if (changed) {
-        batchUpdates(() => {
-          setDraftExpression(newQuery.toString());
-          setDraftSumBy(undefined);
-        });
+        setDraftExpression(newQuery.toString());
+        setDraftSumBy(undefined);
       }
     },
     [draftQuery, batchUpdates, setDraftSumBy]
