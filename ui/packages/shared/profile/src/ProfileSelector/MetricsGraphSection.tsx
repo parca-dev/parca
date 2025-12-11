@@ -170,7 +170,7 @@ export function MetricsGraphSection({
                   to={querySelection.to}
                   profile={profileSelection}
                   comparing={comparing}
-                    sumBy={sumBy ?? []}
+                  sumBy={sumBy ?? []}
                   sumByLoading={defaultSumByLoading}
                   setTimeRange={handleTimeRangeChange}
                   addLabelMatcher={addLabelMatcher}
