@@ -11,21 +11,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
+import {QueryServiceClient} from '@parca/client';
+import {DateTimeRange} from '@parca/components';
+import {ProfileType} from '@parca/parser';
 
-
-import { QueryServiceClient } from '@parca/client';
-import { DateTimeRange } from '@parca/components';
-import { ProfileType } from '@parca/parser';
-
-
-
-import { useLabelNames } from './hooks/useLabels';
-
-
-
-
+import {useLabelNames} from './hooks/useLabels';
 
 export const DEFAULT_EMPTY_SUM_BY: string[] = [];
 
@@ -71,7 +63,7 @@ export const useSumBySelection = (
   (labels: string[]) => void,
   {
     isLoading: boolean;
-  },
+  }
 ] => {
   const [userSelectedSumBy, setUserSelectedSumBy] = useState<Record<string, string[] | undefined>>(
     profileType != null ? {[profileType.toString()]: defaultValue} : {}
