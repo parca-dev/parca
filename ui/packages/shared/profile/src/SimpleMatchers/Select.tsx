@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
@@ -350,7 +350,7 @@ const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
                 </div>
               ) : (
                 groupedFilteredItems.map(group => (
-                  <>
+                  <Fragment key={group.type}>
                     {groupedFilteredItems.length > 1 &&
                     groupedFilteredItems.every(g => g.type !== '') &&
                     group.type !== '' ? (
@@ -369,7 +369,7 @@ const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
                         handleSelection={handleSelection}
                       />
                     ))}
-                  </>
+                  </Fragment>
                 ))
               )}
             </div>

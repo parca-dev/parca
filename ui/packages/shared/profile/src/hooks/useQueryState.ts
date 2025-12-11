@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {DateTimeRange, useParcaContext, useURLState, useURLStateBatch} from '@parca/components';
 import {Query} from '@parca/parser';
@@ -173,7 +173,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
 
   useEffect(() => {
     setDraftSumBy(sumBy);
-  }, [sumBy]);
+  }, [sumBy, setDraftSumBy]);
 
   // Sync computed sumBy to URL if URL doesn't already have a value
   // to ensure the shared URL can always pick it up.
@@ -361,6 +361,9 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
       setMergeToState,
       setSelectionParam,
       resetFlameGraphState,
+      resetStateOnProfileTypeChange,
+      draftProfileType,
+      querySelection.expression,
     ]
   );
 
@@ -373,9 +376,12 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     []
   );
 
-  const setDraftSumByCallback = useCallback((newSumBy: string[] | undefined) => {
-    setDraftSumBy(newSumBy);
-  }, []);
+  const setDraftSumByCallback = useCallback(
+    (newSumBy: string[] | undefined) => {
+      setDraftSumBy(newSumBy);
+    },
+    [setDraftSumBy]
+  );
 
   const setDraftProfileName = useCallback(
     (newProfileName: string) => {
@@ -389,7 +395,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
         });
       }
     },
-    [draftQuery]
+    [draftQuery, batchUpdates, setDraftSumBy]
   );
 
   const setDraftMatchers = useCallback(

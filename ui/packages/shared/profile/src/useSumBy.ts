@@ -131,7 +131,7 @@ export const useSumBySelection = (
     lastValidSumByRef.current = result;
 
     return result;
-  }, [userSelectedSumBy, profileType, defaultSumBy, labelNamesLoading]);
+  }, [userSelectedSumBy, profileType, defaultSumBy, labelNamesLoading, draftSumBy]);
 
   return [
     sumBy,
