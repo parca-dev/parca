@@ -52,6 +52,7 @@ export const useSumBySelection = (
   profileType: ProfileType | undefined,
   labelNamesLoading: boolean,
   labels: string[] | undefined,
+  draftSumBy: string[] | undefined,
   {
     defaultValue,
   }: {
@@ -100,9 +101,15 @@ export const useSumBySelection = (
   const lastValidSumByRef = useRef<string[]>(DEFAULT_EMPTY_SUM_BY);
 
   const sumBy = useMemo(() => {
-    // If loading, return the last valid value to prevent input from blanking
-    if (labelNamesLoading && lastValidSumByRef.current !== DEFAULT_EMPTY_SUM_BY) {
-      return lastValidSumByRef.current;
+    if (labelNamesLoading) {
+      // For smoother UX, return draftSumBy first if available during loading
+      // as this must be recently computed with the draft time range labels.
+      if (draftSumBy !== undefined) {
+        return draftSumBy;
+      }
+      if (lastValidSumByRef.current == null) {
+        return lastValidSumByRef.current;
+      }
     }
 
     let result =
@@ -116,7 +123,7 @@ export const useSumBySelection = (
     lastValidSumByRef.current = result;
 
     return result;
-  }, [userSelectedSumBy, profileType, defaultSumBy, labelNamesLoading]);
+  }, [userSelectedSumBy, profileType, defaultSumBy, labelNamesLoading, draftSumBy]);
 
   return [
     sumBy,
@@ -187,12 +194,64 @@ export const useSumBy = (
   queryClient: QueryServiceClient,
   profileType: ProfileType | undefined,
   timeRange: DateTimeRange,
+  draftProfileType: ProfileType | undefined,
+  draftTimeRange: DateTimeRange,
   defaultValue?: string[]
 ): {
   sumBy: string[] | undefined;
   setSumBy: (sumBy: string[]) => void;
   isLoading: boolean;
+  draftSumBy: string[] | undefined;
+  setDraftSumBy: (sumBy: string[] | undefined) => void;
+  isDraftSumByLoading: boolean;
 } => {
+  const {loading: labelNamesLoading, result} = useLabelNames(
+    queryClient,
+    profileType?.toString() ?? '',
+    timeRange.getFromMs(),
+    timeRange.getToMs()
+  );
+
+  const {draftSumBy, setDraftSumBy, isDraftSumByLoading} = useDraftSumBy(
+    queryClient,
+    draftProfileType,
+    draftTimeRange,
+    defaultValue
+  );
+
+  const labels = useMemo(() => {
+    return result.response?.labelNames === undefined ? [] : result.response.labelNames;
+  }, [result]);
+
+  const [sumBySelection, setSumByInternal, {isLoading}] = useSumBySelection(
+    profileType,
+    labelNamesLoading,
+    labels,
+    draftSumBy,
+    {defaultValue}
+  );
+
+  return {
+    sumBy: sumBySelection,
+    setSumBy: setSumByInternal,
+    isLoading,
+    draftSumBy,
+    setDraftSumBy,
+    isDraftSumByLoading,
+  };
+};
+
+export const useDraftSumBy = (
+  queryClient: QueryServiceClient,
+  profileType: ProfileType | undefined,
+  timeRange: DateTimeRange,
+  defaultValue?: string[]
+): {
+  draftSumBy: string[] | undefined;
+  setDraftSumBy: (sumBy: string[] | undefined) => void;
+  isDraftSumByLoading: boolean;
+} => {
+  const [draftSumBy, setDraftSumBy] = useState<string[] | undefined>(defaultValue);
   const {loading: labelNamesLoading, result} = useLabelNames(
     queryClient,
     profileType?.toString() ?? '',
@@ -204,16 +263,11 @@ export const useSumBy = (
     return result.response?.labelNames === undefined ? [] : result.response.labelNames;
   }, [result]);
 
-  const [sumBySelection, setSumByInternal, {isLoading}] = useSumBySelection(
-    profileType,
-    labelNamesLoading,
-    labels,
-    {defaultValue}
-  );
+  const {defaultSumBy, isLoading} = useDefaultSumBy(profileType, labelNamesLoading, labels);
 
   return {
-    sumBy: sumBySelection,
-    setSumBy: setSumByInternal,
-    isLoading,
+    draftSumBy: draftSumBy ?? defaultSumBy ?? DEFAULT_EMPTY_SUM_BY,
+    setDraftSumBy: setDraftSumBy,
+    isDraftSumByLoading: isLoading,
   };
 };
