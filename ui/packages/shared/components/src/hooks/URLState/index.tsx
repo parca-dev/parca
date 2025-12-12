@@ -46,11 +46,12 @@ interface URLState {
 }
 
 const URLStateContext = createContext<URLState | undefined>(undefined);
+const EMPTY_PREFS = {};
 
 export const URLStateProvider = ({
   children,
   navigateTo,
-  paramPreferences = {},
+  paramPreferences = EMPTY_PREFS,
 }: {
   children: ReactNode;
   navigateTo: NavigateFunction;
