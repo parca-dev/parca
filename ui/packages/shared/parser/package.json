@@ -1,6 +1,6 @@
 {
   "name": "@parca/parser",
-  "version": "0.16.82",
+  "version": "0.16.83",
   "description": "JavaScript parser implementation for the continuous profiling language",
   "main": "dist/index.js",
   "scripts": {
