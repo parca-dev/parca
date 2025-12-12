@@ -67,13 +67,6 @@ jobs:
           cache: 'pnpm'
           cache-dependency-path: ui/pnpm-lock.yaml
 
-      - name: Ensure access
-        working-directory: ui
-        run: |
-          npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
-        env:
-          NPM_TOKEN: ${{ secrets.NPMTOKEN }}
-
       - name: Config git user
         run: |
           git config --global user.name "${{ github.actor }}"
