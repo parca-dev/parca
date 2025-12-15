@@ -91,7 +91,7 @@
     "internal-ip": "7.0.0",
     "jest": "29.7.0",
     "jest-environment-jsdom": "29.7.0",
-    "lerna": "8.2.4",
+    "lerna": "9.0.3",
     "local-web-server": "5.4.0",
     "next-transpile-modules": "9.1.0",
     "ora": "6.3.1",
