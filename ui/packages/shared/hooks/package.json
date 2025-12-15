@@ -1,6 +1,6 @@
 {
   "name": "@parca/hooks",
-  "version": "0.0.111",
+  "version": "0.0.116",
   "description": "A library containing React hooks used in the Parca UI",
   "main": "dist/index.js",
   "scripts": {
@@ -24,6 +24,11 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/parca-dev/parca",
+    "directory": "ui/packages/shared/hooks"
+  },
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"

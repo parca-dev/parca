@@ -1,6 +1,6 @@
 {
   "name": "@parca/icons",
-  "version": "0.16.74",
+  "version": "0.16.79",
   "description": "Parca commonly used icons",
   "main": "dist/index.js",
   "scripts": {
@@ -13,6 +13,11 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/parca-dev/parca",
+    "directory": "ui/packages/shared/icons"
+  },
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"

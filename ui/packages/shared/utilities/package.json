@@ -1,6 +1,6 @@
 {
   "name": "@parca/utilities",
-  "version": "0.0.117",
+  "version": "0.0.122",
   "description": "A set of reusable functions for Parca",
   "main": "dist/index.js",
   "scripts": {
@@ -21,6 +21,11 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/parca-dev/parca",
+    "directory": "ui/packages/shared/utilities"
+  },
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"

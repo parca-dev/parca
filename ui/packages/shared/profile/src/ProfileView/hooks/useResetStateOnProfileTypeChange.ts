@@ -18,6 +18,8 @@ import {useProfileFilters} from '../components/ProfileFilters/useProfileFilters'
 export const useResetStateOnProfileTypeChange = (): (() => void) => {
   const [groupBy, setGroupBy] = useURLState('group_by');
   const [curPath, setCurPath] = useURLState('cur_path');
+  const [sumByA, setSumByA] = useURLState('sum_by_a');
+  const [sumByB, setSumByB] = useURLState('sum_by_b');
   const {resetFilters} = useProfileFilters();
   const [sandwichFunctionName, setSandwichFunctionName] = useURLState('sandwich_function_name');
   const batchUpdates = useURLStateBatch();
@@ -33,6 +35,12 @@ export const useResetStateOnProfileTypeChange = (): (() => void) => {
       }
       if (sandwichFunctionName !== undefined) {
         setSandwichFunctionName(undefined);
+      }
+      if (sumByA !== undefined) {
+        setSumByA(undefined);
+      }
+      if (sumByB !== undefined) {
+        setSumByB(undefined);
       }
 
       resetFilters();

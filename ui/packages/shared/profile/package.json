@@ -1,6 +1,6 @@
 {
   "name": "@parca/profile",
-  "version": "0.19.92",
+  "version": "0.19.102",
   "description": "Profile viewing libraries",
   "dependencies": {
     "@floating-ui/react": "^0.27.12",
@@ -75,6 +75,11 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/parca-dev/parca",
+    "directory": "ui/packages/shared/profile"
+  },
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"

@@ -194,11 +194,13 @@ const ContextMenu = ({
 
             if (dashboardItems.includes('sandwich')) {
               setSandwichFunctionName(functionName);
+              hideMenu();
               return;
             }
 
             setSandwichFunctionName(functionName);
             setDashboardItems([...dashboardItems, 'sandwich']);
+            hideMenu();
           }}
           disabled={functionName === '' || functionName == null}
         >

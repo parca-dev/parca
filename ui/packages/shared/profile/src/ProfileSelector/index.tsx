@@ -212,7 +212,7 @@ const ProfileSelector = ({
         const currentFrom = timeRangeSelection.getFromMs(true);
         const currentTo = timeRangeSelection.getToMs(true);
         const currentRangeKey = timeRangeSelection.getRangeKey();
-
+        // Commit with refreshed time range
         commitDraft({
           from: currentFrom,
           to: currentTo,

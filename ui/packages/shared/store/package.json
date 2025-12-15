@@ -1,6 +1,6 @@
 {
   "name": "@parca/store",
-  "version": "0.16.194",
+  "version": "0.16.199",
   "description": "State management for Parca UI",
   "main": "dist/index.js",
   "scripts": {
@@ -13,6 +13,11 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/parca-dev/parca",
+    "directory": "ui/packages/shared/store"
+  },
   "dependencies": {
     "@parca/client": "workspace:*",
     "@parca/utilities": "workspace:*",

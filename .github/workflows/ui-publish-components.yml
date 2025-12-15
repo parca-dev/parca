@@ -42,10 +42,13 @@ jobs:
     if: ${{ needs.skip-check.outputs.should_skip != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
     env:
       GITHUB_TOKEN: ${{ secrets.GH_PAT_UI }}
     steps:
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           fetch-depth: "0"
           token: ${{ secrets.GH_PAT_UI }}
@@ -61,18 +64,12 @@ jobs:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Set up Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
         with:
           node-version-file: .node-version
+          registry-url: 'https://registry.npmjs.org'
           cache: 'pnpm'
           cache-dependency-path: ui/pnpm-lock.yaml
-
-      - name: Ensure access
-        working-directory: ui
-        run: |
-          npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
-        env:
-          NPM_TOKEN: ${{ secrets.NPMTOKEN }}
 
       - name: Config git user
         run: |

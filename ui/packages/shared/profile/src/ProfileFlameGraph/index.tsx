@@ -375,7 +375,9 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
       <ErrorContent
         errorMessage={
           <>
-            <span>{capitalizeOnlyFirstLetter(error.message)}</span>
+            <span>
+              {error.message ? capitalizeOnlyFirstLetter(error.message) : 'An error occurred'}
+            </span>
             {isFlameChart ? flamechartHelpText ?? null : null}
           </>
         }

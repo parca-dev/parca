@@ -1,6 +1,6 @@
 {
   "name": "@parca/parser",
-  "version": "0.16.81",
+  "version": "0.16.86",
   "description": "JavaScript parser implementation for the continuous profiling language",
   "main": "dist/index.js",
   "scripts": {
@@ -12,6 +12,11 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/parca-dev/parca",
+    "directory": "ui/packages/shared/parser"
+  },
   "dependencies": {
     "moo": "^0.5.2",
     "nearley": "2.20.1",

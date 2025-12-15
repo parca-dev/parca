@@ -29,7 +29,7 @@ interface MetricsGraphSectionProps {
   querySelection: QuerySelection;
   profileSelection: ProfileSelection | null;
   comparing: boolean;
-  sumBy: string[] | null;
+  sumBy: string[] | undefined;
   defaultSumByLoading: boolean;
   queryClient: QueryServiceClient;
   queryExpressionString: string;
@@ -170,7 +170,7 @@ export function MetricsGraphSection({
                   to={querySelection.to}
                   profile={profileSelection}
                   comparing={comparing}
-                  sumBy={querySelection.sumBy ?? sumBy ?? []}
+                  sumBy={sumBy ?? []}
                   sumByLoading={defaultSumByLoading}
                   setTimeRange={handleTimeRangeChange}
                   addLabelMatcher={addLabelMatcher}
