@@ -29,7 +29,11 @@ interface UseAutoFlameChartQuerySelectorProps {
   setTimeRangeSelection: Dispatch<SetStateAction<DateTimeRange>>;
   setDraftTimeRange: (from: number, to: number, timeSelection: string) => void;
   setDraftSumBy: (sumBy: string[] | undefined) => void;
-  commitDraft: (refreshedTimeRange?: {from: number; to: number; timeSelection: string}) => void;
+  commitDraft: (
+    refreshedTimeRange?: {from: number; to: number; timeSelection: string},
+    expression?: string,
+    sumBy?: string[] | undefined
+  ) => void;
 }
 
 export const useAutoFlameChartQuerySelector = ({
@@ -102,11 +106,15 @@ export const useAutoFlameChartQuerySelector = ({
     setDraftTimeRange(fromMs, toMs, timeSelection);
     setDraftSumBy(optimalSumBy);
 
-    commitDraft({
-      from: fromMs,
-      to: toMs,
-      timeSelection,
-    });
+    commitDraft(
+      {
+        from: fromMs,
+        to: toMs,
+        timeSelection,
+      },
+      undefined,
+      optimalSumBy
+    );
 
     previousDashboardItems.current = dashboardItems;
   }, [

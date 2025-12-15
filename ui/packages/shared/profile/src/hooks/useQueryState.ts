@@ -270,10 +270,12 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
   // Optional refreshedTimeRange parameter allows re-evaluating relative time ranges (e.g., "last 15 minutes")
   // to the current moment when the Search button is clicked
   // Optional expression parameter allows updating the expression before committing
+  // Optional sumBy parameter allows updating the sumBy before committing
   const commitDraft = useCallback(
     (
       refreshedTimeRange?: {from: number; to: number; timeSelection: string},
-      expression?: string
+      expression?: string,
+      sumBy?: string[] | undefined
     ) => {
       batchUpdates(() => {
         // Use provided expression or current draft expression
@@ -314,8 +316,12 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
         // Parse the final expression to check if it's a delta profile
         const finalQuery = Query.parse(finalExpression);
         const isDelta = finalQuery.profileType().delta;
+
+        // Use provided sumBy or fall back to draftSumBy
+        const finalSumBy = sumBy !== undefined ? sumBy : draftSumBy;
+
         if (isDelta) {
-          setSumByParam(sumByToParam(draftSumBy));
+          setSumByParam(sumByToParam(finalSumBy));
         } else {
           setSumByParam(DEFAULT_EMPTY_SUM_BY);
         }
