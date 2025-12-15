@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.76](https://github.com/parca-dev/parca/compare/@parca/icons@0.16.75...@parca/icons@0.16.76) (2025-12-12)
+
+**Note:** Version bump only for package @parca/icons
+
 ## 0.16.75 (2025-12-12)
 
 **Note:** Version bump only for package @parca/icons

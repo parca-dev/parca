@@ -1,1 +1,1 @@
-## JS Parser for continuous profiling language
+# JS Parser for continuous profiling language
