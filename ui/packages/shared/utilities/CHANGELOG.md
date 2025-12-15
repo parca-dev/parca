@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.0.121](https://github.com/parca-dev/parca/compare/@parca/utilities@0.0.120...@parca/utilities@0.0.121) (2025-12-15)
+
+**Note:** Version bump only for package @parca/utilities
+
 ## [0.0.120](https://github.com/parca-dev/parca/compare/@parca/utilities@0.0.119...@parca/utilities@0.0.120) (2025-12-15)
 
 **Note:** Version bump only for package @parca/utilities
