@@ -4,7 +4,8 @@
   "tagVersionPrefix": "ui-v",
   "command": {
     "publish": {
-      "conventionalCommits": true
+      "conventionalCommits": true,
+      "provenance": true
     },
     "version": {
       "allowBranch": "main"
