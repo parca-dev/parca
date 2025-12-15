@@ -21,6 +21,11 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/parca-dev/parca",
+    "directory": "ui/packages/shared/utilities"
+  },
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"

@@ -12,6 +12,11 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/parca-dev/parca",
+    "directory": "ui/packages/shared/parser"
+  },
   "dependencies": {
     "moo": "^0.5.2",
     "nearley": "2.20.1",
