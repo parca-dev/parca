@@ -25,7 +25,7 @@ import {Table, tableFromIPC} from 'apache-arrow';
 import {useContextMenu} from 'react-contexify';
 
 import {FlamegraphArrow} from '@parca/client';
-import {useParcaContext} from '@parca/components';
+import {FlameGraphSkeleton, SandwichFlameGraphSkeleton, useParcaContext} from '@parca/components';
 import {USER_PREFERENCES, useCurrentColorProfile, useUserPreference} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
 import {getColorForFeature, selectDarkMode, useAppSelector} from '@parca/store';
@@ -38,6 +38,7 @@ import ContextMenuWrapper, {ContextMenuWrapperRef} from './ContextMenuWrapper';
 import {FlameNode, RowHeight, colorByColors} from './FlameGraphNodes';
 import {MemoizedTooltip} from './MemoizedTooltip';
 import {TooltipProvider} from './TooltipContext';
+import {useBatchedRendering} from './useBatchedRendering';
 import {useScrollViewport} from './useScrollViewport';
 import {useVisibleNodes} from './useVisibleNodes';
 import {
@@ -136,6 +137,7 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   isFlameChart = false,
   isRenderedAsFlamegraph = false,
   isInSandwichView = false,
+  isHalfScreen,
   tooltipId = 'default',
   maxFrameCount,
   isExpanded = false,
@@ -163,6 +165,7 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   const svg = useRef(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const renderStartTime = useRef<number>(0);
+  const hasInitialRenderCompleted = useRef(false);
 
   const [svgElement, setSvgElement] = useState<SVGSVGElement | null>(null);
 
@@ -291,6 +294,18 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
     effectiveDepth: deferredEffectiveDepth,
   });
 
+  // Add nodes in incremental batches to avoid blocking the UI
+  const {items: batchedNodes, isComplete: isBatchingComplete} = useBatchedRendering(visibleNodes, {
+    batchSize: 500,
+  });
+  if (isBatchingComplete) {
+    hasInitialRenderCompleted.current = true;
+  }
+
+  // Show skeleton only during initial load, not during scroll updates
+  const showSkeleton =
+    !hasInitialRenderCompleted.current && batchedNodes.length !== visibleNodes.length;
+
   useEffect(() => {
     if (perf?.markInteraction != null) {
       renderStartTime.current = performance.now();
@@ -327,12 +342,22 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
           isInSandwichView={isInSandwichView}
         />
         <MemoizedTooltip contextElement={svgElement} dockedMetainfo={dockedMetainfo} />
+        {showSkeleton && (
+          <div className="absolute inset-0 z-10">
+            {isRenderedAsFlamegraph ? (
+              <SandwichFlameGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
+            ) : (
+              <FlameGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
+            )}
+          </div>
+        )}
         <div
           ref={containerRef}
           className="overflow-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800 will-change-transform scroll-smooth webkit-overflow-scrolling-touch contain"
           style={{
             width: width ?? '100%',
             contain: 'layout style paint',
+            visibility: !showSkeleton ? 'visible' : 'hidden',
           }}
         >
           <svg
@@ -342,7 +367,7 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
             preserveAspectRatio="xMinYMid"
             ref={svg}
           >
-            {visibleNodes.map(row => (
+            {batchedNodes.map(row => (
               <FlameNode
                 key={row}
                 table={table}

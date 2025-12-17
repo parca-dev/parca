@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useMemo} from 'react';
+import React, {useCallback, useMemo} from 'react';
 
 import {Table} from 'apache-arrow';
 import cx from 'classnames';
@@ -101,36 +101,52 @@ export const FlameNode = React.memo(
     effectiveDepth,
     tooltipId = 'default',
   }: FlameNodeProps): React.JSX.Element {
-    // get the columns to read from
-    const mappingColumn = table.getChild(FIELD_MAPPING_FILE);
-    const functionNameColumn = table.getChild(FIELD_FUNCTION_NAME);
-    const cumulativeColumn = table.getChild(FIELD_CUMULATIVE);
-    const depthColumn = table.getChild(FIELD_DEPTH);
-    const diffColumn = table.getChild(FIELD_DIFF);
-    const filenameColumn = table.getChild(FIELD_FUNCTION_FILE_NAME);
-    const valueOffsetColumn = table.getChild(FIELD_VALUE_OFFSET);
-    const tsColumn = table.getChild(FIELD_TIMESTAMP);
+    // Memoize column references - only changes when table changes
+    const columns = useMemo(
+      () => ({
+        mapping: table.getChild(FIELD_MAPPING_FILE),
+        functionName: table.getChild(FIELD_FUNCTION_NAME),
+        cumulative: table.getChild(FIELD_CUMULATIVE),
+        depth: table.getChild(FIELD_DEPTH),
+        diff: table.getChild(FIELD_DIFF),
+        filename: table.getChild(FIELD_FUNCTION_FILE_NAME),
+        valueOffset: table.getChild(FIELD_VALUE_OFFSET),
+        ts: table.getChild(FIELD_TIMESTAMP),
+      }),
+      [table]
+    );
 
     // get the actual values from the columns
     const binaries = useAppSelector(selectBinaries);
 
-    const mappingFile: string | null = arrowToString(mappingColumn?.get(row));
-    const functionName: string | null = arrowToString(functionNameColumn?.get(row));
-    const cumulative = cumulativeColumn?.get(row) != null ? BigInt(cumulativeColumn?.get(row)) : 0n;
-    const diff: bigint | null = diffColumn?.get(row) != null ? BigInt(diffColumn?.get(row)) : null;
-    const filename: string | null = arrowToString(filenameColumn?.get(row));
-    const depth: number = depthColumn?.get(row) ?? 0;
+    // Memoize row data extraction - only changes when table or row changes
+    const rowData = useMemo(() => {
+      const mappingFile: string | null = arrowToString(columns.mapping?.get(row));
+      const functionName: string | null = arrowToString(columns.functionName?.get(row));
+      const cumulative =
+        columns.cumulative?.get(row) != null ? BigInt(columns.cumulative?.get(row)) : 0n;
+      const diff: bigint | null =
+        columns.diff?.get(row) != null ? BigInt(columns.diff?.get(row)) : null;
+      const filename: string | null = arrowToString(columns.filename?.get(row));
+      const depth: number = columns.depth?.get(row) ?? 0;
+      const valueOffset: bigint =
+        columns.valueOffset?.get(row) !== null && columns.valueOffset?.get(row) !== undefined
+          ? BigInt(columns.valueOffset?.get(row))
+          : 0n;
 
-    const valueOffset: bigint =
-      valueOffsetColumn?.get(row) !== null && valueOffsetColumn?.get(row) !== undefined
-        ? BigInt(valueOffsetColumn?.get(row))
-        : 0n;
+      return {mappingFile, functionName, cumulative, diff, filename, depth, valueOffset};
+    }, [columns, row]);
+
+    const {mappingFile, functionName, cumulative, diff, filename, depth, valueOffset} = rowData;
 
     const colorAttribute =
       colorBy === 'filename' ? filename : colorBy === 'binary' ? mappingFile : null;
 
-    const hoveringName =
-      hoveringRow !== undefined ? arrowToString(functionNameColumn?.get(hoveringRow)) : '';
+    // Memoize hovering name lookup
+    const hoveringName = useMemo(() => {
+      return hoveringRow !== undefined ? arrowToString(columns.functionName?.get(hoveringRow)) : '';
+    }, [columns.functionName, hoveringRow]);
+
     const shouldBeHighlighted =
       functionName != null && hoveringName != null && functionName === hoveringName;
 
@@ -147,18 +163,59 @@ export const FlameNode = React.memo(
       return row === 0 ? 'root' : nodeLabel(table, row, binaries.length > 1);
     }, [table, row, binaries]);
 
+    // Memoize selection data - only changes when selectedRow changes
+    const selectionData = useMemo(() => {
+      const selectionOffset =
+        columns.valueOffset?.get(selectedRow) !== null &&
+        columns.valueOffset?.get(selectedRow) !== undefined
+          ? BigInt(columns.valueOffset?.get(selectedRow))
+          : 0n;
+      const selectionCumulative =
+        columns.cumulative?.get(selectedRow) !== null
+          ? BigInt(columns.cumulative?.get(selectedRow))
+          : 0n;
+      const selectedDepth = columns.depth?.get(selectedRow);
+      const total = columns.cumulative?.get(selectedRow);
+      return {selectionOffset, selectionCumulative, selectedDepth, total};
+    }, [columns, selectedRow]);
+
+    const {selectionOffset, selectionCumulative, selectedDepth, total} = selectionData;
+
+    // Memoize tsBounds - only changes when profileSource changes
+    const tsBounds = useMemo(() => boundsFromProfileSource(profileSource), [profileSource]);
+
+    // Memoize event handlers
+    const onMouseEnter = useCallback((): void => {
+      setHoveringRow(row);
+      window.dispatchEvent(
+        new CustomEvent(`flame-tooltip-update-${tooltipId}`, {
+          detail: {row},
+        })
+      );
+    }, [setHoveringRow, row, tooltipId]);
+
+    const onMouseLeave = useCallback((): void => {
+      setHoveringRow(undefined);
+      window.dispatchEvent(
+        new CustomEvent(`flame-tooltip-update-${tooltipId}`, {
+          detail: {row: null},
+        })
+      );
+    }, [setHoveringRow, tooltipId]);
+
+    const handleContextMenu = useCallback(
+      (e: React.MouseEvent): void => {
+        onContextMenu(e, row);
+      },
+      [onContextMenu, row]
+    );
+
+    // Early returns - all hooks must be called before this point
     // Hide frames beyond effective depth limit
     if (effectiveDepth !== undefined && depth > effectiveDepth) {
       return <></>;
     }
 
-    const selectionOffset =
-      valueOffsetColumn?.get(selectedRow) !== null &&
-      valueOffsetColumn?.get(selectedRow) !== undefined
-        ? BigInt(valueOffsetColumn?.get(selectedRow))
-        : 0n;
-    const selectionCumulative =
-      cumulativeColumn?.get(selectedRow) !== null ? BigInt(cumulativeColumn?.get(selectedRow)) : 0n;
     if (
       valueOffset + cumulative <= selectionOffset ||
       valueOffset >= selectionOffset + selectionCumulative
@@ -173,8 +230,6 @@ export const FlameNode = React.memo(
     }
 
     // Cumulative can be larger than total when a selection is made. All parents of the selection are likely larger, but we want to only show them as 100% in the graph.
-    const tsBounds = boundsFromProfileSource(profileSource);
-    const total = cumulativeColumn?.get(selectedRow);
     const totalRatio = cumulative > total ? 1 : Number(cumulative) / Number(total);
     const width: number = isFlameChart
       ? (Number(cumulative) / (Number(tsBounds[1]) - Number(tsBounds[0]))) * totalWidth
@@ -184,35 +239,12 @@ export const FlameNode = React.memo(
       return <></>;
     }
 
-    const selectedDepth = depthColumn?.get(selectedRow);
     const styles =
       selectedDepth !== undefined && selectedDepth > depth ? fadedFlameRectStyles : flameRectStyles;
 
-    const onMouseEnter = (): void => {
-      setHoveringRow(row);
-      window.dispatchEvent(
-        new CustomEvent(`flame-tooltip-update-${tooltipId}`, {
-          detail: {row},
-        })
-      );
-    };
-
-    const onMouseLeave = (): void => {
-      setHoveringRow(undefined);
-      window.dispatchEvent(
-        new CustomEvent(`flame-tooltip-update-${tooltipId}`, {
-          detail: {row: null},
-        })
-      );
-    };
-
-    const handleContextMenu = (e: React.MouseEvent): void => {
-      onContextMenu(e, row);
-    };
-
-    const ts = tsColumn !== null ? Number(tsColumn.get(row)) : 0;
+    const ts = columns.ts !== null ? Number(columns.ts.get(row)) : 0;
     const x =
-      isFlameChart && tsColumn !== null
+      isFlameChart && columns.ts !== null
         ? ((ts - Number(tsBounds[0])) / (Number(tsBounds[1]) - Number(tsBounds[0]))) * totalWidth
         : selectedDepth > depth
         ? 0
