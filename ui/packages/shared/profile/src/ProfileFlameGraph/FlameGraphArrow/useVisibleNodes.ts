@@ -85,7 +85,19 @@ export const useVisibleNodes = ({
     result: number[];
   }>({key: '', result: []});
 
+  const renderedRangeRef = useRef<{minDepth: number; maxDepth: number; table: Table<any> | null}>({
+    minDepth: Infinity,
+    maxDepth: -Infinity,
+    table: null,
+  });
+
   return useMemo(() => {
+    // This happens when the continer is scrolled off screen, in this case we return all previously rendered nodes
+    // to avoid trimming the rendered nodes to zero which would cause jank when scrolling back into view
+    if (viewport.containerHeight === 0 && lastResultRef.current.result.length > 0) {
+      return lastResultRef.current.result;
+    }
+
     // Create a stable key for memoization to prevent unnecessary recalculations
     const memoKey = `${viewport.scrollTop}-${
       viewport.containerHeight
@@ -96,7 +108,7 @@ export const useVisibleNodes = ({
       return lastResultRef.current.result;
     }
 
-    if (table === null || viewport.containerHeight === 0) return [];
+    if (table === null) return [];
 
     const visibleRows: number[] = [];
     const {scrollTop, containerHeight} = viewport;
@@ -104,11 +116,32 @@ export const useVisibleNodes = ({
     // Viewport Culling Algorithm:
     // 1. Calculate visible depth range based on scroll position and container height
     // 2. Add 5-row buffer above/below for smooth scrolling experience
-    const startDepth = Math.max(0, Math.floor(scrollTop / RowHeight) - 5);
-    const endDepth = Math.min(
+    // Note: We never shrink the rendered range to avoid back and forth node removals (and in turn additions when scrolled down again) to the dom.
+
+    const BUFFER = 15; // Buffer for smoother scrolling
+
+    const visibleStartDepth = Math.max(0, Math.floor(scrollTop / RowHeight) - BUFFER);
+    const visibleDepths = Math.ceil(containerHeight / RowHeight);
+    const visibleEndDepth = Math.min(
       effectiveDepth,
-      Math.ceil((scrollTop + containerHeight) / RowHeight) + 5
+      visibleStartDepth + visibleDepths + BUFFER
     );
+
+    // Reset range if table changed (new data loaded) as this is new data
+    if (renderedRangeRef.current.table !== table) {
+      renderedRangeRef.current = {
+        minDepth: Infinity,
+        maxDepth: -Infinity,
+        table: table,
+      };
+    }
+
+    // Expand the rendered range (never shrink when scrolling up/down)
+    renderedRangeRef.current.minDepth = Math.min(renderedRangeRef.current.minDepth, visibleStartDepth);
+    renderedRangeRef.current.maxDepth = Math.max(renderedRangeRef.current.maxDepth, visibleEndDepth);
+
+    const startDepth = renderedRangeRef.current.minDepth;
+    const endDepth = renderedRangeRef.current.maxDepth;
 
     const cumulativeColumn = table.getChild(FIELD_CUMULATIVE);
     const valueOffsetColumn = table.getChild(FIELD_VALUE_OFFSET);
