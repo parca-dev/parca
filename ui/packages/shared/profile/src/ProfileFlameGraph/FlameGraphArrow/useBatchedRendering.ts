@@ -24,7 +24,7 @@ interface UseBatchedRenderingResult<T> {
   isComplete: boolean;
 }
 
-//useBatchedRendering - Helps in incrementally rendering items in batches to avoid UI blocking.
+// useBatchedRendering - Helps in incrementally rendering items in batches to avoid UI blocking.
 export const useBatchedRendering = <T>(
   items: T[],
   options: UseBatchedRenderingOptions = {}
@@ -56,7 +56,7 @@ export const useBatchedRendering = <T>(
     }
 
     const scheduleNextBatch = (): void => {
-      const incrementState = () => {
+      const incrementState = (): void => {
         setRenderedCount(prev => Math.min(prev + batchSize, items.length));
       };
       if (batchDelay > 0) {

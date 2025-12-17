@@ -158,11 +158,6 @@ export const FlameNode = React.memo(
       return row === 0 ? 'root' : nodeLabel(table, row, binaries.length > 1);
     }, [table, row, binaries]);
 
-    // Hide frames beyond effective depth limit
-    if (effectiveDepth !== undefined && depth > effectiveDepth) {
-      return <></>;
-    }
-
     // Memoize selection data - only changes when selectedRow changes
     const selectionData = useMemo(() => {
       const selectionOffset =
@@ -179,34 +174,8 @@ export const FlameNode = React.memo(
 
     const { selectionOffset, selectionCumulative, selectedDepth, total } = selectionData;
 
-    if (
-      valueOffset + cumulative <= selectionOffset ||
-      valueOffset >= selectionOffset + selectionCumulative
-    ) {
-      // If the end of the node is before the selection offset or the start of the node is after the selection offset + totalWidth, we don't render it.
-      return <></>;
-    }
-
-    if (row === 0 && (isFlameChart || isInSandwichView)) {
-      // The root node is not rendered in the flame chart or sandwich view, so we return null.
-      return <></>;
-    }
-
     // Memoize tsBounds - only changes when profileSource changes
     const tsBounds = useMemo(() => boundsFromProfileSource(profileSource), [profileSource]);
-
-    // Cumulative can be larger than total when a selection is made. All parents of the selection are likely larger, but we want to only show them as 100% in the graph.
-    const totalRatio = cumulative > total ? 1 : Number(cumulative) / Number(total);
-    const width: number = isFlameChart
-      ? (Number(cumulative) / (Number(tsBounds[1]) - Number(tsBounds[0]))) * totalWidth
-      : totalRatio * totalWidth;
-
-    if (width <= 1) {
-      return <></>;
-    }
-
-    const styles =
-      selectedDepth !== undefined && selectedDepth > depth ? fadedFlameRectStyles : flameRectStyles;
 
     // Memoize event handlers
     const onMouseEnter = useCallback((): void => {
@@ -230,6 +199,38 @@ export const FlameNode = React.memo(
     const handleContextMenu = useCallback((e: React.MouseEvent): void => {
       onContextMenu(e, row);
     }, [onContextMenu, row]);
+
+    // Early returns - all hooks must be called before this point
+    // Hide frames beyond effective depth limit
+    if (effectiveDepth !== undefined && depth > effectiveDepth) {
+      return <></>;
+    }
+
+    if (
+      valueOffset + cumulative <= selectionOffset ||
+      valueOffset >= selectionOffset + selectionCumulative
+    ) {
+      // If the end of the node is before the selection offset or the start of the node is after the selection offset + totalWidth, we don't render it.
+      return <></>;
+    }
+
+    if (row === 0 && (isFlameChart || isInSandwichView)) {
+      // The root node is not rendered in the flame chart or sandwich view, so we return null.
+      return <></>;
+    }
+
+    // Cumulative can be larger than total when a selection is made. All parents of the selection are likely larger, but we want to only show them as 100% in the graph.
+    const totalRatio = cumulative > total ? 1 : Number(cumulative) / Number(total);
+    const width: number = isFlameChart
+      ? (Number(cumulative) / (Number(tsBounds[1]) - Number(tsBounds[0]))) * totalWidth
+      : totalRatio * totalWidth;
+
+    if (width <= 1) {
+      return <></>;
+    }
+
+    const styles =
+      selectedDepth !== undefined && selectedDepth > depth ? fadedFlameRectStyles : flameRectStyles;
 
     const ts = columns.ts !== null ? Number(columns.ts.get(row)) : 0;
     const x =
