@@ -1218,4 +1218,123 @@ describe('useQueryState', () => {
       });
     });
   });
+
+  describe('View defaults and profile type parsing', () => {
+    it('should apply view defaults only when URL params are empty', async () => {
+      // Start with empty URL
+      mockLocation.search = '';
+
+      const viewDefaults = {
+        expression: 'process_cpu:samples:count:cpu:nanoseconds:delta{job="default"}',
+        sumBy: ['function'],
+        groupBy: ['namespace'],
+      };
+
+      const {result} = renderHook(() => useQueryState({viewDefaults}), {
+        wrapper: createWrapper(),
+      });
+
+      // Apply view defaults
+      act(() => {
+        result.current.applyViewDefaults();
+      });
+
+      await waitFor(() => {
+        // Should set all defaults since URL is empty
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        expect(params.expression).toBe(
+          'process_cpu:samples:count:cpu:nanoseconds:delta{job="default"}'
+        );
+        expect(params.sum_by).toBe('function');
+        expect(params.group_by).toBe('namespace');
+      });
+
+      // Now set URL params manually
+      mockLocation.search = '?expression=custom{}&sum_by=line&group_by=pod';
+      mockNavigateTo.mockClear();
+
+      const {result: result2} = renderHook(() => useQueryState({viewDefaults}), {
+        wrapper: createWrapper(),
+      });
+
+      // Apply view defaults again
+      act(() => {
+        result2.current.applyViewDefaults();
+      });
+
+      // Should NOT overwrite existing URL params (preserve-existing strategy)
+      // The hook shouldn't navigate since params already exist
+      await waitFor(() => {
+        // Either no navigation or navigation preserves existing values
+        if (mockNavigateTo.mock.calls.length > 0) {
+          const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+          expect(params.expression).toBe('custom{}');
+          expect(params.sum_by).toBe('line');
+          expect(params.group_by).toBe('pod');
+        }
+      });
+    });
+
+    it('should parse profile type from expression using Query.parse()', () => {
+      // Test with profile type
+      mockLocation.search =
+        '?expression=process_cpu:samples:count:cpu:nanoseconds:delta{job="test"}';
+
+      const {result} = renderHook(() => useQueryState({}), {wrapper: createWrapper()});
+
+      expect(result.current.hasProfileType).toBe(true);
+      expect(result.current.profileTypeString).toBe(
+        'process_cpu:samples:count:cpu:nanoseconds:delta'
+      );
+      expect(result.current.matchersOnly).toBe('{job="test"}');
+      expect(result.current.fullExpression).toBe(
+        'process_cpu:samples:count:cpu:nanoseconds:delta{job="test"}'
+      );
+
+      // Test without profile type
+      mockLocation.search = '?expression={comm="prometheus"}';
+
+      const {result: result2} = renderHook(() => useQueryState({}), {wrapper: createWrapper()});
+
+      expect(result2.current.hasProfileType).toBe(false);
+      expect(result2.current.profileTypeString).toBe('');
+      expect(result2.current.matchersOnly).toBe('{comm="prometheus"}');
+    });
+
+    it('should manage group_by only for _a hook in comparison mode', async () => {
+      mockLocation.search = '';
+
+      // Render _a hook
+      const {result: resultA} = renderHook(() => useQueryState({suffix: '_a'}), {
+        wrapper: createWrapper(),
+      });
+
+      // Render _b hook
+      const {result: resultB} = renderHook(() => useQueryState({suffix: '_b'}), {
+        wrapper: createWrapper(),
+      });
+
+      // _a hook should have group-by methods
+      expect(resultA.current.groupBy).toBeDefined();
+      expect(resultA.current.setGroupBy).toBeDefined();
+      expect(resultA.current.isGroupByLoading).toBeDefined();
+
+      // _b hook should NOT have group-by methods
+      expect(resultB.current.groupBy).toBeUndefined();
+      expect(resultB.current.setGroupBy).toBeUndefined();
+      expect(resultB.current.isGroupByLoading).toBeUndefined();
+
+      // Set group_by via _a hook
+      act(() => {
+        resultA.current.setGroupBy?.(['namespace', 'pod']);
+      });
+
+      await waitFor(() => {
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        expect(params.group_by).toBe('namespace,pod');
+      });
+    });
+  });
 });

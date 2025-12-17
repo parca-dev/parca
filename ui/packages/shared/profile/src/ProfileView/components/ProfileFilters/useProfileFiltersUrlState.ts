@@ -11,9 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useMemo} from 'react';
+import {useCallback, useMemo} from 'react';
 
-import {useURLStateCustom, type ParamValueSetterCustom} from '@parca/components';
+import {useURLStateBatch, useURLStateCustom, type ParamValueSetterCustom} from '@parca/components';
 import {safeDecode} from '@parca/utilities';
 
 import {isPresetKey} from './filterPresets';
@@ -137,13 +137,25 @@ export const decodeProfileFilters = (encoded: string): ProfileFilter[] => {
   }
 };
 
-export const useProfileFiltersUrlState = (): {
+interface UseProfileFiltersUrlStateOptions {
+  suffix?: '_a' | '_b';
+  viewDefaults?: ProfileFilter[];
+}
+
+export const useProfileFiltersUrlState = (
+  options: UseProfileFiltersUrlStateOptions = {}
+): {
   appliedFilters: ProfileFilter[];
   setAppliedFilters: ParamValueSetterCustom<ProfileFilter[]>;
+  applyViewDefaults: () => void;
 } => {
+  const {suffix = '', viewDefaults} = options;
+
+  const batchUpdates = useURLStateBatch();
+
   // Store applied filters in URL state for persistence using compact encoding
   const [appliedFilters, setAppliedFilters] = useURLStateCustom<ProfileFilter[]>(
-    'profile_filters',
+    `profile_filters${suffix}`,
     {
       parse: value => {
         return decodeProfileFilters(value as string);
@@ -155,12 +167,37 @@ export const useProfileFiltersUrlState = (): {
     }
   );
 
+  // Setter with preserve-existing strategy for applying view defaults
+  const [, setAppliedFiltersWithPreserve] = useURLStateCustom<ProfileFilter[]>(
+    `profile_filters${suffix}`,
+    {
+      parse: value => {
+        return decodeProfileFilters(value as string);
+      },
+      stringify: value => {
+        return encodeProfileFilters(value);
+      },
+      defaultValue: [],
+      mergeStrategy: 'preserve-existing',
+    }
+  );
+
   const memoizedAppliedFilters = useMemo(() => {
     return appliedFilters ?? [];
   }, [appliedFilters]);
 
+  // Apply view defaults (only if URL is empty)
+  const applyViewDefaults = useCallback(() => {
+    if (viewDefaults === undefined || viewDefaults.length === 0) return;
+
+    batchUpdates(() => {
+      setAppliedFiltersWithPreserve(viewDefaults);
+    });
+  }, [viewDefaults, batchUpdates, setAppliedFiltersWithPreserve]);
+
   return {
     appliedFilters: memoizedAppliedFilters,
     setAppliedFilters,
+    applyViewDefaults,
   };
 };

@@ -22,6 +22,12 @@ import {useResetFlameGraphState} from '../ProfileView/hooks/useResetFlameGraphSt
 import {useResetStateOnProfileTypeChange} from '../ProfileView/hooks/useResetStateOnProfileTypeChange';
 import {DEFAULT_EMPTY_SUM_BY, sumByToParam, useSumBy, useSumByFromParams} from '../useSumBy';
 
+interface ViewDefaults {
+  expression?: string;
+  sumBy?: string[];
+  groupBy?: string[];
+}
+
 interface UseQueryStateOptions {
   suffix?: '_a' | '_b'; // For comparison mode
   defaultExpression?: string;
@@ -29,6 +35,8 @@ interface UseQueryStateOptions {
   defaultFrom?: number;
   defaultTo?: number;
   comparing?: boolean; // If true, don't auto-select for delta profiles
+  viewDefaults?: ViewDefaults; // View-specific defaults that don't overwrite URL params
+  sharedDefaults?: ViewDefaults; // Shared defaults across both comparison sides
 }
 
 interface UseQueryStateReturn {
@@ -65,6 +73,21 @@ interface UseQueryStateReturn {
 
   // parsed query
   parsedQuery: Query | null;
+
+  // Parsed expression components
+  hasProfileType: boolean;
+  profileTypeString: string;
+  matchersOnly: string;
+  fullExpression: string;
+
+  // Group-by state (only for _a hook, undefined for _b)
+  groupBy?: string[];
+  setGroupBy?: (groupBy: string[] | undefined) => void;
+  isGroupByLoading?: boolean;
+
+  // Methods
+  applyViewDefaults: () => void;
+  resetQuery: () => void;
 }
 
 export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryStateReturn => {
@@ -76,6 +99,8 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     defaultFrom,
     defaultTo,
     comparing = false,
+    viewDefaults,
+    sharedDefaults,
   } = options;
 
   const batchUpdates = useURLStateBatch();
@@ -100,6 +125,25 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
   });
 
   const [sumByParam, setSumByParam] = useURLState<string>(`sum_by${suffix}`);
+
+  // Group-by state - only enabled for _a hook (or when no suffix)
+  // This ensures only one hook manages the shared group_by param in comparison mode
+  const isGroupByEnabled = suffix === '' || suffix === '_a';
+  const [groupByParam, setGroupByParam] = useURLState<string>('group_by', {
+    enabled: isGroupByEnabled,
+  });
+
+  // Separate setters for applying view defaults with preserve-existing strategy
+  const [, setExpressionWithPreserve] = useURLState<string>(`expression${suffix}`, {
+    mergeStrategy: 'preserve-existing',
+  });
+  const [, setSumByWithPreserve] = useURLState<string>(`sum_by${suffix}`, {
+    mergeStrategy: 'preserve-existing',
+  });
+  const [, setGroupByWithPreserve] = useURLState<string>('group_by', {
+    enabled: isGroupByEnabled,
+    mergeStrategy: 'preserve-existing',
+  });
 
   const [mergeFrom, setMergeFromState] = useURLState<string>(`merge_from${suffix}`);
   const [mergeTo, setMergeToState] = useURLState<string>(`merge_to${suffix}`);
@@ -423,6 +467,56 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     [batchUpdates, setSelectionParam, setMergeFromState, setMergeToState]
   );
 
+  // Apply view defaults to URL params (only if URL params are empty)
+  const applyViewDefaults = useCallback(() => {
+    batchUpdates(() => {
+      const defaults = suffix === '' || suffix === '_a' ? viewDefaults : sharedDefaults;
+      if (defaults === undefined) return;
+
+      // Apply expression default using preserve-existing strategy
+      if (defaults.expression !== undefined) {
+        setExpressionWithPreserve(defaults.expression);
+      }
+
+      // Apply sum_by default using preserve-existing strategy
+      if (defaults.sumBy !== undefined) {
+        setSumByWithPreserve(sumByToParam(defaults.sumBy));
+      }
+
+      // Apply group_by default only for _a hook using preserve-existing strategy
+      if (isGroupByEnabled && defaults.groupBy !== undefined) {
+        setGroupByWithPreserve(defaults.groupBy.join(','));
+      }
+    });
+  }, [
+    batchUpdates,
+    suffix,
+    viewDefaults,
+    sharedDefaults,
+    setExpressionWithPreserve,
+    setSumByWithPreserve,
+    isGroupByEnabled,
+    setGroupByWithPreserve,
+  ]);
+
+  // Reset query to default state
+  const resetQuery = useCallback(() => {
+    batchUpdates(() => {
+      setExpressionState(defaultExpression);
+      setSumByParam(undefined);
+      if (isGroupByEnabled) {
+        setGroupByParam(undefined);
+      }
+    });
+  }, [
+    batchUpdates,
+    setExpressionState,
+    defaultExpression,
+    setSumByParam,
+    isGroupByEnabled,
+    setGroupByParam,
+  ]);
+
   const draftParsedQuery = useMemo(() => {
     try {
       return Query.parse(draftSelection.expression ?? '');
@@ -438,6 +532,24 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
       return Query.parse('');
     }
   }, [querySelection.expression]);
+
+  // Parse expression components using existing Query parser
+  const {hasProfileType, profileTypeString, matchersOnly, fullExpression} = useMemo(() => {
+    const expr = expression ?? defaultExpression;
+    const parsed = Query.parse(expr);
+
+    const profileType = parsed.profileType();
+    const profileTypeStr = profileType.toString();
+    const hasProfile = profileTypeStr !== '';
+    const matchers = `{${parsed.matchersString()}}`;
+
+    return {
+      hasProfileType: hasProfile,
+      profileTypeString: profileTypeStr,
+      matchersOnly: matchers,
+      fullExpression: parsed.toString(),
+    };
+  }, [expression, defaultExpression]);
 
   return {
     // Current committed state
@@ -466,5 +578,26 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
 
     draftParsedQuery,
     parsedQuery,
+
+    // Parsed expression components
+    hasProfileType,
+    profileTypeString,
+    matchersOnly,
+    fullExpression,
+
+    // Group-by state (only for _a hook)
+    ...(isGroupByEnabled
+      ? {
+          groupBy: groupByParam?.split(',').filter(Boolean),
+          setGroupBy: (groupBy: string[] | undefined) => {
+            setGroupByParam(groupBy?.join(','));
+          },
+          isGroupByLoading: false,
+        }
+      : {}),
+
+    // Methods
+    applyViewDefaults,
+    resetQuery,
   };
 };

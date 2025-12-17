@@ -225,7 +225,14 @@ export const convertToProtoFilters = (profileFilters: ProfileFilter[]): Filter[]
     });
 };
 
-export const useProfileFilters = (): {
+interface UseProfileFiltersOptions {
+  suffix?: '_a' | '_b';
+  viewDefaults?: ProfileFilter[];
+}
+
+export const useProfileFilters = (
+  options: UseProfileFiltersOptions = {}
+): {
   localFilters: ProfileFilter[];
   appliedFilters: ProfileFilter[];
   protoFilters: Filter[];
@@ -237,8 +244,13 @@ export const useProfileFilters = (): {
   removeFilter: (id: string) => void;
   updateFilter: (id: string, updates: Partial<ProfileFilter>) => void;
   resetFilters: () => void;
+  applyViewDefaults: () => void;
 } => {
-  const {appliedFilters, setAppliedFilters} = useProfileFiltersUrlState();
+  const {suffix, viewDefaults} = options;
+  const {appliedFilters, setAppliedFilters, applyViewDefaults} = useProfileFiltersUrlState({
+    suffix,
+    viewDefaults,
+  });
   const resetFlameGraphState = useResetFlameGraphState();
 
   const [localFilters, setLocalFilters] = useState<ProfileFilter[]>(appliedFilters ?? []);
@@ -422,5 +434,6 @@ export const useProfileFilters = (): {
     removeFilter,
     updateFilter,
     resetFilters,
+    applyViewDefaults,
   };
 };
