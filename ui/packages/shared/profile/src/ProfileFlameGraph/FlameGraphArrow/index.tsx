@@ -25,7 +25,7 @@ import {Table, tableFromIPC} from 'apache-arrow';
 import {useContextMenu} from 'react-contexify';
 
 import {FlamegraphArrow} from '@parca/client';
-import { FlameGraphSkeleton, SandwichFlameGraphSkeleton, useParcaContext } from '@parca/components';
+import {FlameGraphSkeleton, SandwichFlameGraphSkeleton, useParcaContext} from '@parca/components';
 import {USER_PREFERENCES, useCurrentColorProfile, useUserPreference} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
 import {getColorForFeature, selectDarkMode, useAppSelector} from '@parca/store';
@@ -38,7 +38,7 @@ import ContextMenuWrapper, {ContextMenuWrapperRef} from './ContextMenuWrapper';
 import {FlameNode, RowHeight, colorByColors} from './FlameGraphNodes';
 import {MemoizedTooltip} from './MemoizedTooltip';
 import {TooltipProvider} from './TooltipContext';
-import { useBatchedRendering } from './useBatchedRendering';
+import {useBatchedRendering} from './useBatchedRendering';
 import {useScrollViewport} from './useScrollViewport';
 import {useVisibleNodes} from './useVisibleNodes';
 import {
@@ -295,13 +295,16 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   });
 
   // Add nodes in incremental batches to avoid blocking the UI
-  const { items: batchedNodes, isComplete: isBatchingComplete } = useBatchedRendering(visibleNodes, { batchSize: 500 });
+  const {items: batchedNodes, isComplete: isBatchingComplete} = useBatchedRendering(visibleNodes, {
+    batchSize: 500,
+  });
   if (isBatchingComplete) {
     hasInitialRenderCompleted.current = true;
   }
 
   // Show skeleton only during initial load, not during scroll updates
-  const showSkeleton = !hasInitialRenderCompleted.current && batchedNodes.length !== visibleNodes.length;
+  const showSkeleton =
+    !hasInitialRenderCompleted.current && batchedNodes.length !== visibleNodes.length;
 
   useEffect(() => {
     if (perf?.markInteraction != null) {
@@ -364,7 +367,7 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
             preserveAspectRatio="xMinYMid"
             ref={svg}
           >
-            {(batchedNodes).map(row => (
+            {batchedNodes.map(row => (
               <FlameNode
                 key={row}
                 table={table}

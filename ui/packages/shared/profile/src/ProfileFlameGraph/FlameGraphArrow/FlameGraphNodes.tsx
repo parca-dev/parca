@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useMemo, useCallback} from 'react';
+import React, {useCallback, useMemo} from 'react';
 
 import {Table} from 'apache-arrow';
 import cx from 'classnames';
@@ -102,16 +102,19 @@ export const FlameNode = React.memo(
     tooltipId = 'default',
   }: FlameNodeProps): React.JSX.Element {
     // Memoize column references - only changes when table changes
-    const columns = useMemo(() => ({
-      mapping: table.getChild(FIELD_MAPPING_FILE),
-      functionName: table.getChild(FIELD_FUNCTION_NAME),
-      cumulative: table.getChild(FIELD_CUMULATIVE),
-      depth: table.getChild(FIELD_DEPTH),
-      diff: table.getChild(FIELD_DIFF),
-      filename: table.getChild(FIELD_FUNCTION_FILE_NAME),
-      valueOffset: table.getChild(FIELD_VALUE_OFFSET),
-      ts: table.getChild(FIELD_TIMESTAMP),
-    }), [table]);
+    const columns = useMemo(
+      () => ({
+        mapping: table.getChild(FIELD_MAPPING_FILE),
+        functionName: table.getChild(FIELD_FUNCTION_NAME),
+        cumulative: table.getChild(FIELD_CUMULATIVE),
+        depth: table.getChild(FIELD_DEPTH),
+        diff: table.getChild(FIELD_DIFF),
+        filename: table.getChild(FIELD_FUNCTION_FILE_NAME),
+        valueOffset: table.getChild(FIELD_VALUE_OFFSET),
+        ts: table.getChild(FIELD_TIMESTAMP),
+      }),
+      [table]
+    );
 
     // get the actual values from the columns
     const binaries = useAppSelector(selectBinaries);
@@ -120,8 +123,10 @@ export const FlameNode = React.memo(
     const rowData = useMemo(() => {
       const mappingFile: string | null = arrowToString(columns.mapping?.get(row));
       const functionName: string | null = arrowToString(columns.functionName?.get(row));
-      const cumulative = columns.cumulative?.get(row) != null ? BigInt(columns.cumulative?.get(row)) : 0n;
-      const diff: bigint | null = columns.diff?.get(row) != null ? BigInt(columns.diff?.get(row)) : null;
+      const cumulative =
+        columns.cumulative?.get(row) != null ? BigInt(columns.cumulative?.get(row)) : 0n;
+      const diff: bigint | null =
+        columns.diff?.get(row) != null ? BigInt(columns.diff?.get(row)) : null;
       const filename: string | null = arrowToString(columns.filename?.get(row));
       const depth: number = columns.depth?.get(row) ?? 0;
       const valueOffset: bigint =
@@ -129,10 +134,10 @@ export const FlameNode = React.memo(
           ? BigInt(columns.valueOffset?.get(row))
           : 0n;
 
-      return { mappingFile, functionName, cumulative, diff, filename, depth, valueOffset };
+      return {mappingFile, functionName, cumulative, diff, filename, depth, valueOffset};
     }, [columns, row]);
 
-    const { mappingFile, functionName, cumulative, diff, filename, depth, valueOffset } = rowData;
+    const {mappingFile, functionName, cumulative, diff, filename, depth, valueOffset} = rowData;
 
     const colorAttribute =
       colorBy === 'filename' ? filename : colorBy === 'binary' ? mappingFile : null;
@@ -166,13 +171,15 @@ export const FlameNode = React.memo(
           ? BigInt(columns.valueOffset?.get(selectedRow))
           : 0n;
       const selectionCumulative =
-        columns.cumulative?.get(selectedRow) !== null ? BigInt(columns.cumulative?.get(selectedRow)) : 0n;
+        columns.cumulative?.get(selectedRow) !== null
+          ? BigInt(columns.cumulative?.get(selectedRow))
+          : 0n;
       const selectedDepth = columns.depth?.get(selectedRow);
       const total = columns.cumulative?.get(selectedRow);
-      return { selectionOffset, selectionCumulative, selectedDepth, total };
+      return {selectionOffset, selectionCumulative, selectedDepth, total};
     }, [columns, selectedRow]);
 
-    const { selectionOffset, selectionCumulative, selectedDepth, total } = selectionData;
+    const {selectionOffset, selectionCumulative, selectedDepth, total} = selectionData;
 
     // Memoize tsBounds - only changes when profileSource changes
     const tsBounds = useMemo(() => boundsFromProfileSource(profileSource), [profileSource]);
@@ -196,9 +203,12 @@ export const FlameNode = React.memo(
       );
     }, [setHoveringRow, tooltipId]);
 
-    const handleContextMenu = useCallback((e: React.MouseEvent): void => {
-      onContextMenu(e, row);
-    }, [onContextMenu, row]);
+    const handleContextMenu = useCallback(
+      (e: React.MouseEvent): void => {
+        onContextMenu(e, row);
+      },
+      [onContextMenu, row]
+    );
 
     // Early returns - all hooks must be called before this point
     // Hide frames beyond effective depth limit
