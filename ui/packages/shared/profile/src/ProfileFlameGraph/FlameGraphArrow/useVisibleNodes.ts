@@ -122,10 +122,7 @@ export const useVisibleNodes = ({
 
     const visibleStartDepth = Math.max(0, Math.floor(scrollTop / RowHeight) - BUFFER);
     const visibleDepths = Math.ceil(containerHeight / RowHeight);
-    const visibleEndDepth = Math.min(
-      effectiveDepth,
-      visibleStartDepth + visibleDepths + BUFFER
-    );
+    const visibleEndDepth = Math.min(effectiveDepth, visibleStartDepth + visibleDepths + BUFFER);
 
     // Reset range if table changed (new data loaded) as this is new data
     if (renderedRangeRef.current.table !== table) {
@@ -137,8 +134,14 @@ export const useVisibleNodes = ({
     }
 
     // Expand the rendered range (never shrink when scrolling up/down)
-    renderedRangeRef.current.minDepth = Math.min(renderedRangeRef.current.minDepth, visibleStartDepth);
-    renderedRangeRef.current.maxDepth = Math.max(renderedRangeRef.current.maxDepth, visibleEndDepth);
+    renderedRangeRef.current.minDepth = Math.min(
+      renderedRangeRef.current.minDepth,
+      visibleStartDepth
+    );
+    renderedRangeRef.current.maxDepth = Math.max(
+      renderedRangeRef.current.maxDepth,
+      visibleEndDepth
+    );
 
     const startDepth = renderedRangeRef.current.minDepth;
     const endDepth = renderedRangeRef.current.maxDepth;
