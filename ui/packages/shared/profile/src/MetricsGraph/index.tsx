@@ -188,13 +188,7 @@ export const RawMetricsGraph = ({
     .nice();
 
   // Create deterministic color mapping based on series IDs
-  const color = useMemo(() => {
-    const scale = d3.scaleOrdinal(d3.schemeCategory10);
-    // Pre-populate the scale with sorted series IDs to ensure consistent colors
-    const sortedIds = [...new Set(series.map(s => s.id))].sort();
-    sortedIds.forEach(id => scale(id));
-    return scale;
-  }, [series]);
+  const color = useMemo(() => d3.scaleOrdinal(d3.schemeCategory10), []);
 
   const l = d3.line<[number, number]>(
     d => xScale(d[0]),
