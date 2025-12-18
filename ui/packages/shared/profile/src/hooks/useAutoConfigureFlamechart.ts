@@ -19,6 +19,7 @@ export const OPTIMAL_LABELS = ['node', 'cpu', 'thread_id'];
 
 export const useAutoConfigureFlamechart = (): (() => void) => {
   const batchUpdates = useURLStateBatch();
+  const [existingSumByA] = useURLState<string>('sum_by_a');
   const [_, setSumByA] = useURLState('sum_by_a');
 
   const [, setSelectionA] = useURLState('selection_a');
@@ -34,13 +35,20 @@ export const useAutoConfigureFlamechart = (): (() => void) => {
     const toMs = Date.now();
     const fromMs = toMs - 60000;
 
+    const existing =
+      existingSumByA !== undefined && existingSumByA !== ''
+        ? existingSumByA.split(',').filter(Boolean)
+        : [];
+    const toAdd = OPTIMAL_LABELS.filter(label => !existing.includes(label));
+    const mergedLabels = [...existing, ...toAdd];
+
     batchUpdates(() => {
       setFromA(fromMs.toString());
       setToA(toMs.toString());
       setTimeSelectionA('relative:minute|1');
       setMergeFromA((BigInt(fromMs) * 1_000_000n).toString());
       setMergeToA((BigInt(toMs) * 1_000_000n).toString());
-      setSumByA(OPTIMAL_LABELS.join(','));
+      setSumByA(mergedLabels.join(','));
 
       // Signal to QueryControls that auto-config was triggered
       setAutoConfigTsA(Date.now().toString());
@@ -52,6 +60,7 @@ export const useAutoConfigureFlamechart = (): (() => void) => {
     });
   }, [
     batchUpdates,
+    existingSumByA,
     setFromA,
     setToA,
     setTimeSelectionA,
