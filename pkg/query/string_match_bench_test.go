@@ -19,7 +19,6 @@ import (
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
 )
 
-// Benchmark comparing old bytes.ToLower approach vs new zero-allocation approach
 func BenchmarkStringMatching(b *testing.B) {
 	testValue := []byte("runtime.goexit")
 	testTarget := []byte("goexit")
