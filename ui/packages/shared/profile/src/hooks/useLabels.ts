@@ -113,7 +113,9 @@ export const useLabelValues = (
     },
   });
 
-  console.log('Label values query result:', {data, error, isLoading, labelName});
+  useEffect(() => {
+    console.log('Label values query result:', {data, error, isLoading, labelName});
+  }, [data, error, isLoading, labelName]);
 
   return {
     result: {response: data ?? [], error: error as Error},
