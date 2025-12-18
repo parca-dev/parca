@@ -76,7 +76,7 @@ const ErrorContent = ({errorMessage}: {errorMessage: string | ReactNode}): JSX.E
 
 const AutoConfigButton = ({onClick}: {onClick: () => void}): JSX.Element => (
   <Button onClick={onClick} variant="secondary" className="my-2">
-    Auto-configure for Flamechart
+    Auto-configure for optimal Flame Chart viewing
   </Button>
 );
 
