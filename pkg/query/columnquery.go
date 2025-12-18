@@ -982,33 +982,92 @@ func matchesFrameFilter(r *profile.RecordReader, locationIndex, lineIndex int, f
 	return true
 }
 
+// toLower converts ASCII byte to lowercase without allocation.
+// Non-ASCII bytes are left unchanged.
+func toLower(b byte) byte {
+	if b >= 'A' && b <= 'Z' {
+		return b + ('a' - 'A')
+	}
+	return b
+}
+
+// equalFoldBytes performs case-insensitive comparison without allocation.
+func equalFoldBytes(s, t []byte) bool {
+	if len(s) != len(t) {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		if toLower(s[i]) != toLower(t[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+// containsFoldBytes performs case-insensitive contains check without allocation.
+func containsFoldBytes(s, substr []byte) bool {
+	if len(substr) == 0 {
+		return true
+	}
+	if len(substr) > len(s) {
+		return false
+	}
+
+	// Search for substring
+	for i := 0; i <= len(s)-len(substr); i++ {
+		// Check if substring matches at position i
+		match := true
+		for j := 0; j < len(substr); j++ {
+			if toLower(s[i+j]) != toLower(substr[j]) {
+				match = false
+				break
+			}
+		}
+		if match {
+			return true
+		}
+	}
+	return false
+}
+
+// hasPrefixFoldBytes performs case-insensitive prefix check without allocation.
+func hasPrefixFoldBytes(s, prefix []byte) bool {
+	if len(prefix) > len(s) {
+		return false
+	}
+	for i := 0; i < len(prefix); i++ {
+		if toLower(s[i]) != toLower(prefix[i]) {
+			return false
+		}
+	}
+	return true
+}
+
 // matchesStringCondition checks if a value matches a string condition.
 func matchesStringCondition(value []byte, condition *pb.StringCondition) bool {
 	if condition == nil {
 		return true
 	}
 
-	valueLower := bytes.ToLower(value)
-
 	switch condition.GetCondition().(type) {
 	case *pb.StringCondition_Equal:
-		target := bytes.ToLower([]byte(condition.GetEqual()))
-		return bytes.Equal(valueLower, target)
+		target := []byte(condition.GetEqual())
+		return equalFoldBytes(value, target)
 	case *pb.StringCondition_NotEqual:
-		target := bytes.ToLower([]byte(condition.GetNotEqual()))
-		return !bytes.Equal(valueLower, target)
+		target := []byte(condition.GetNotEqual())
+		return !equalFoldBytes(value, target)
 	case *pb.StringCondition_Contains:
-		target := bytes.ToLower([]byte(condition.GetContains()))
-		return bytes.Contains(valueLower, target)
+		target := []byte(condition.GetContains())
+		return containsFoldBytes(value, target)
 	case *pb.StringCondition_NotContains:
-		target := bytes.ToLower([]byte(condition.GetNotContains()))
-		return !bytes.Contains(valueLower, target)
+		target := []byte(condition.GetNotContains())
+		return !containsFoldBytes(value, target)
 	case *pb.StringCondition_StartsWith:
-		target := bytes.ToLower([]byte(condition.GetStartsWith()))
-		return bytes.HasPrefix(valueLower, target)
+		target := []byte(condition.GetStartsWith())
+		return hasPrefixFoldBytes(value, target)
 	case *pb.StringCondition_NotStartsWith:
-		target := bytes.ToLower([]byte(condition.GetNotStartsWith()))
-		return !bytes.HasPrefix(valueLower, target)
+		target := []byte(condition.GetNotStartsWith())
+		return !hasPrefixFoldBytes(value, target)
 	default:
 		return true
 	}
