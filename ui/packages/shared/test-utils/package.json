@@ -18,5 +18,10 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "gitHead": "95da3f07511621a9ed38476511a7574773ff1b62"
+  "gitHead": "95da3f07511621a9ed38476511a7574773ff1b62",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/parca-dev/parca",
+    "directory": "ui/packages/shared/test-utils"
+  }
 }
