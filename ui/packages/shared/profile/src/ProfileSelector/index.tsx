@@ -37,7 +37,6 @@ import {useLabelNames} from '../hooks/useLabels';
 import {useQueryState} from '../hooks/useQueryState';
 import useGrpcQuery from '../useGrpcQuery';
 import {MetricsGraphSection} from './MetricsGraphSection';
-import {useAutoFlameChartQuerySelector} from './useAutoFlameChartQuerySelector';
 import {useAutoQuerySelector} from './useAutoQuerySelector';
 
 export interface QuerySelection {
@@ -119,9 +118,6 @@ const ProfileSelector = ({
   const {viewComponent} = useParcaContext();
   const [queryBrowserMode, setQueryBrowserMode] = useURLState('query_browser_mode');
   const batchUpdates = useURLStateBatch();
-  const [dashboardItems] = useURLState<string[]>('dashboard_items', {
-    alwaysReturnArray: true,
-  });
 
   // Use the new useQueryState hook - reads directly from URL params
   const {
@@ -149,6 +145,16 @@ const ProfileSelector = ({
   const [advancedModeForQueryBrowser, setAdvancedModeForQueryBrowser] = useState(
     queryBrowserMode === 'advanced'
   );
+
+  // Sync local timeRangeSelection state when draftSelection changes from external URL updates
+  useEffect(() => {
+    const newTimeRange = DateTimeRange.fromRangeKey(
+      draftSelection.timeSelection,
+      draftSelection.from,
+      draftSelection.to
+    );
+    setTimeRangeSelection(newTimeRange);
+  }, [draftSelection.timeSelection, draftSelection.from, draftSelection.to]);
 
   // Handler to update draft when time range changes
   const handleTimeRangeChange = useCallback(
@@ -258,19 +264,6 @@ const ProfileSelector = ({
     querySelection: draftSelection,
     navigateTo,
     loading: sumByLoading,
-  });
-
-  useAutoFlameChartQuerySelector({
-    queryClient,
-    dashboardItems: dashboardItems ?? [],
-    profileType,
-    timeRange: timeRangeSelection,
-    comparing,
-    loading: sumByLoading || profileTypesLoading,
-    setTimeRangeSelection,
-    setDraftTimeRange,
-    setDraftSumBy,
-    commitDraft,
   });
 
   const searchDisabled =

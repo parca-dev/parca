@@ -11,17 +11,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 
 import {Switch} from '@headlessui/react';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {type SelectInstance} from 'react-select';
 
 import {ProfileTypesResponse, QueryServiceClient} from '@parca/client';
-import {Button, DateTimeRange, DateTimeRangePicker, useParcaContext} from '@parca/components';
+import {
+  Button,
+  DateTimeRange,
+  DateTimeRangePicker,
+  useParcaContext,
+  useURLState,
+} from '@parca/components';
+import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {ProfileType, Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 
+import {FlameChartAutoConfigPopover} from '../FlameChartAutoConfigPopover';
 import MatchersInput from '../MatchersInput';
 import {QuerySelection} from '../ProfileSelector';
 import ProfileTypeSelector from '../ProfileTypeSelector';
@@ -108,6 +116,21 @@ export function QueryControls({
   const defaultQueryBrowserRef = useRef<HTMLDivElement>(null);
   const actualQueryBrowserRef = queryBrowserRef ?? defaultQueryBrowserRef;
   const [searchExecutedTimestamp, setSearchExecutedTimestamp] = useState<number>(0);
+  const sumByContainerRef = useRef<HTMLDivElement>(null);
+  const [dashboardItems] = useURLState('dashboard_items', {
+    alwaysReturnArray: true,
+  });
+
+  const [showPopover, setShowPopover] = useState<boolean>(false);
+
+  const [autoConfigTs] = useURLState('autoconfig_ts_a');
+  const [lastSeenTs, setLastSeenTs] = useState<string>();
+  const [configuredLabels, setConfiguredLabels] = useState<string[]>([]);
+  const [isPopoverDismissed, setIsPopoverDismissed] = useUserPreference<boolean>(
+    USER_PREFERENCES.FLAMECHART_AUTO_CONFIG_POPOVER_DISMISSED.key
+  );
+
+  const isFlameChart = dashboardItems?.includes('flamechart') ?? false;
 
   const {refetch: refetchLabelNames} = useLabelNames(
     queryClient,
@@ -115,6 +138,25 @@ export function QueryControls({
     timeRangeSelection.getFromMs(),
     timeRangeSelection.getToMs()
   );
+
+  // Detect auto-config timestamp changes and show popover
+  useEffect(() => {
+    if (
+      autoConfigTs !== undefined &&
+      autoConfigTs !== '' &&
+      autoConfigTs !== lastSeenTs &&
+      !isPopoverDismissed
+    ) {
+      setShowPopover(true);
+      setConfiguredLabels(sumBySelection ?? []);
+      setLastSeenTs(autoConfigTs as string);
+    }
+  }, [autoConfigTs, lastSeenTs, sumBySelection, isPopoverDismissed]);
+
+  const handleDismissPopover = (): void => {
+    setShowPopover(false);
+    setIsPopoverDismissed(true);
+  };
 
   return (
     <div
@@ -199,7 +241,7 @@ export function QueryControls({
       </div>
 
       {showSumBySelector && (
-        <div {...testId(TEST_IDS.SUM_BY_CONTAINER)}>
+        <div ref={sumByContainerRef} {...testId(TEST_IDS.SUM_BY_CONTAINER)}>
           <div className="mb-0.5 mt-1.5 flex items-center justify-between">
             <label className="text-xs" {...testId(TEST_IDS.SUM_BY_LABEL)}>
               Sum by
@@ -261,6 +303,14 @@ export function QueryControls({
             menuTestId={TEST_IDS.SUM_BY_SELECT_FLYOUT}
           />
         </div>
+      )}
+      {isFlameChart && showPopover && (
+        <FlameChartAutoConfigPopover
+          isOpen={showPopover}
+          onDismiss={handleDismissPopover}
+          anchorRef={sumByContainerRef}
+          currentSumByLabels={configuredLabels}
+        />
       )}
 
       <DateTimeRangePicker

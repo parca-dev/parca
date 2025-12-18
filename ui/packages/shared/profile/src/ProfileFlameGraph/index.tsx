@@ -19,6 +19,7 @@ import {useMeasure} from 'react-use';
 
 import {FlamegraphArrow} from '@parca/client';
 import {
+  Button,
   FlameGraphSkeleton,
   SandwichFlameGraphSkeleton,
   useParcaContext,
@@ -34,6 +35,7 @@ import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
 import {useProfileMetadata} from '../ProfileView/hooks/useProfileMetadata';
 import {useVisualizationState} from '../ProfileView/hooks/useVisualizationState';
 import {TimelineGuide} from '../TimelineGuide';
+import {useAutoConfigureFlamechart} from '../hooks/useAutoConfigureFlamechart';
 import {FlameGraphArrow} from './FlameGraphArrow';
 import {CurrentPathFrame, boundsFromProfileSource} from './FlameGraphArrow/utils';
 
@@ -72,6 +74,12 @@ const ErrorContent = ({errorMessage}: {errorMessage: string | ReactNode}): JSX.E
   );
 };
 
+const AutoConfigButton = ({onClick}: {onClick: () => void}): JSX.Element => (
+  <Button onClick={onClick} variant="secondary" className="my-2">
+    Auto-configure for Flamechart
+  </Button>
+);
+
 export const validateFlameChartQuery = (
   profileSource: MergedProfileSource
 ): {isValid: boolean; isNonDelta: boolean; isDurationTooLong: boolean} => {
@@ -108,6 +116,8 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [flameChartRef, {height: flameChartHeight}] = useMeasure();
   const {colorBy, setColorBy} = useVisualizationState();
+
+  const handleAutoConfigureFlameChart = useAutoConfigureFlamechart();
 
   // Create local state for paths when in sandwich view to avoid URL updates
   const [localCurPathArrow, setLocalCurPathArrow] = useState<CurrentPathFrame[]>([]);
@@ -232,13 +242,14 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
         return (
           <ErrorContent
             errorMessage={
-              <>
+              <div className="flex flex-col items-center">
                 <span>
                   Flame chart is unavailable for queries longer than one minute. Please select a
                   point in the metrics graph to continue.
                 </span>
+                {!compareMode && <AutoConfigButton onClick={handleAutoConfigureFlameChart} />}
                 {flamechartHelpText ?? null}
-              </>
+              </div>
             }
           />
         );
@@ -246,10 +257,11 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
         return (
           <ErrorContent
             errorMessage={
-              <>
+              <div className="flex flex-col items-center">
                 <span>The Flame chart is not available for this query.</span>
+                {!compareMode && <AutoConfigButton onClick={handleAutoConfigureFlameChart} />}
                 {flamechartHelpText ?? null}
-              </>
+              </div>
             }
           />
         );
@@ -326,6 +338,8 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
     mappingsList,
     filenamesList,
     colorBy,
+    handleAutoConfigureFlameChart,
+    compareMode,
   ]);
 
   useEffect(() => {

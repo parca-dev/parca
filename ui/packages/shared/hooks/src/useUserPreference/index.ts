@@ -80,6 +80,14 @@ export const USER_PREFERENCES: {[key: string]: UserPreferenceDetails} = {
     description:
       'Choose how to align function names in the flame graph. Left alignment shows function names starting from the left edge, while right alignment shows them from the right edge.',
   },
+  FLAMECHART_AUTO_CONFIG_POPOVER_DISMISSED: {
+    name: 'Flamechart auto-configuration explanation dismissed',
+    key: 'FLAMECHART_AUTO_CONFIG_POPOVER_DISMISSED',
+    type: 'boolean',
+    default: false,
+    description:
+      'When enabled, the flamechart auto-configuration explanation popover will not be shown.',
+  },
 } as const;
 
 export type UserPreference = keyof typeof USER_PREFERENCES;
