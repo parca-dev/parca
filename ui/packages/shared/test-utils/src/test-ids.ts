@@ -96,6 +96,8 @@ export const TEST_IDS = {
   // Metrics Graph
   METRICS_GRAPH: 'metrics-graph',
   METRICS_GRAPH_TOOLTIP: 'metrics-graph-tooltip',
+  METRICS_GRAPH_TRIMMED_BANNER: 'metrics-graph-trimmed-banner',
+  METRICS_GRAPH_SHOW_ALL_BUTTON: 'metrics-graph-show-all-button',
   TOOLTIP_LABEL: 'tooltip-label',
   TOOLTIP_LABEL_KEY: 'tooltip-label-key',
   TOOLTIP_LABEL_VALUE: 'tooltip-label-value',

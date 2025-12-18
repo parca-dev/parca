@@ -377,7 +377,10 @@ const ProfileMetricsGraph = ({
         transition={{duration: 0.5}}
       >
         {isTrimmed ? (
-          <div className="flex justify-center items-center gap-2">
+          <div
+            className="flex justify-center items-center gap-2"
+            {...testId(TEST_IDS.METRICS_GRAPH_TRIMMED_BANNER)}
+          >
             <span className="text-sm text-amber-800 dark:text-amber-200 bg-amber-100 dark:bg-amber-900 text-center px-2 rounded">
               Note: Showing only {afterTrim} of {new Intl.NumberFormat().format(beforeTrim)} series
               for performance reasons. Please narrow your query to view more.
@@ -385,6 +388,7 @@ const ProfileMetricsGraph = ({
             <button
               onClick={() => setShowAllSeriesForResponse(response)}
               className="text-sm px-1 bg-amber-600 hover:bg-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600 text-white rounded font-medium transition-colors"
+              {...testId(TEST_IDS.METRICS_GRAPH_SHOW_ALL_BUTTON)}
             >
               Show all {new Intl.NumberFormat().format(beforeTrim)}
             </button>
