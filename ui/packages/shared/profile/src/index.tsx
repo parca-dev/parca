@@ -34,6 +34,7 @@ export * from './ProfileSource';
 export {
   convertToProtoFilters,
   convertFromProtoFilters,
+  useProfileFilters,
 } from './ProfileView/components/ProfileFilters/useProfileFilters';
 export * from './ProfileView';
 export * from './ProfileViewWithData';

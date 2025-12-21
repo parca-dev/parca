@@ -245,12 +245,14 @@ export const useProfileFilters = (
   updateFilter: (id: string, updates: Partial<ProfileFilter>) => void;
   resetFilters: () => void;
   applyViewDefaults: () => void;
+  forceApplyFilters: (filters: ProfileFilter[]) => void;
 } => {
   const {suffix, viewDefaults} = options;
-  const {appliedFilters, setAppliedFilters, applyViewDefaults} = useProfileFiltersUrlState({
-    suffix,
-    viewDefaults,
-  });
+  const {appliedFilters, setAppliedFilters, applyViewDefaults, forceApplyFilters} =
+    useProfileFiltersUrlState({
+      suffix,
+      viewDefaults,
+    });
   const resetFlameGraphState = useResetFlameGraphState();
 
   const [localFilters, setLocalFilters] = useState<ProfileFilter[]>(appliedFilters ?? []);
@@ -435,5 +437,6 @@ export const useProfileFilters = (
     updateFilter,
     resetFilters,
     applyViewDefaults,
+    forceApplyFilters,
   };
 };

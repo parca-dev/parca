@@ -148,6 +148,7 @@ export const useProfileFiltersUrlState = (
   appliedFilters: ProfileFilter[];
   setAppliedFilters: ParamValueSetterCustom<ProfileFilter[]>;
   applyViewDefaults: () => void;
+  forceApplyFilters: (filters: ProfileFilter[]) => void;
 } => {
   const {suffix = '', viewDefaults} = options;
 
@@ -172,12 +173,13 @@ export const useProfileFiltersUrlState = (
     `profile_filters${suffix}`,
     {
       parse: value => {
-        return decodeProfileFilters(value as string);
+        const result = decodeProfileFilters(value as string);
+        return result;
       },
       stringify: value => {
-        return encodeProfileFilters(value);
+        const result = encodeProfileFilters(value);
+        return result;
       },
-      defaultValue: [],
       mergeStrategy: 'preserve-existing',
     }
   );
@@ -195,9 +197,20 @@ export const useProfileFiltersUrlState = (
     });
   }, [viewDefaults, batchUpdates, setAppliedFiltersWithPreserve]);
 
+  // Force apply filters (bypasses preserve-existing strategy)
+  const forceApplyFilters = useCallback(
+    (filters: ProfileFilter[]) => {
+      batchUpdates(() => {
+        setAppliedFilters(filters);
+      });
+    },
+    [batchUpdates, setAppliedFilters]
+  );
+
   return {
     appliedFilters: memoizedAppliedFilters,
     setAppliedFilters,
     applyViewDefaults,
+    forceApplyFilters,
   };
 };

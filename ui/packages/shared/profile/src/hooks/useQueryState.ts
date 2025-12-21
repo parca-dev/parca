@@ -13,10 +13,11 @@
 
 import {useCallback, useEffect, useMemo, useState} from 'react';
 
+import {ProfileTypesResponse} from '@parca/client';
 import {DateTimeRange, useParcaContext, useURLState, useURLStateBatch} from '@parca/components';
 import {Query} from '@parca/parser';
 
-import {QuerySelection} from '../ProfileSelector';
+import {IProfileTypesResult, QuerySelection, useProfileTypes} from '../ProfileSelector';
 import {ProfileSelection, ProfileSelectionFromParams, ProfileSource} from '../ProfileSource';
 import {useResetFlameGraphState} from '../ProfileView/hooks/useResetFlameGraphState';
 import {useResetStateOnProfileTypeChange} from '../ProfileView/hooks/useResetStateOnProfileTypeChange';
@@ -26,6 +27,7 @@ interface ViewDefaults {
   expression?: string;
   sumBy?: string[];
   groupBy?: string[];
+  hasProfileFilters?: boolean;
 }
 
 interface UseQueryStateOptions {
@@ -90,6 +92,32 @@ interface UseQueryStateReturn {
   resetQuery: () => void;
 }
 
+/**
+ * Prepends the first available profile type to a matchers-only expression.
+ * Returns the original expression if it already has a profile type or if no profile types are available.
+ */
+function prependProfileTypeToMatchers(
+  expression: string,
+  profileTypesData: ProfileTypesResponse | undefined
+): string {
+  if (!expression.trim().startsWith('{')) {
+    return expression;
+  }
+
+  if (profileTypesData?.types == null || profileTypesData.types.length === 0) {
+    return expression;
+  }
+
+  const firstProfileType = profileTypesData.types[0];
+  const profileTypeString = `${firstProfileType.name}:${firstProfileType.sampleType}:${
+    firstProfileType.sampleUnit
+  }:${firstProfileType.periodType}:${firstProfileType.periodUnit}${
+    firstProfileType.delta ? ':delta' : ''
+  }`;
+
+  return `${profileTypeString}${expression}`;
+}
+
 export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryStateReturn => {
   const {queryServiceClient: queryClient} = useParcaContext();
   const {
@@ -105,7 +133,9 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
 
   const batchUpdates = useURLStateBatch();
   const resetFlameGraphState = useResetFlameGraphState();
-  const resetStateOnProfileTypeChange = useResetStateOnProfileTypeChange();
+  const resetStateOnProfileTypeChange = useResetStateOnProfileTypeChange({
+    resetFilters: viewDefaults?.hasProfileFilters, // Don't reset filters on profile type change in views
+  });
 
   // URL state hooks with appropriate suffixes
   const [expression, setExpressionState] = useURLState<string>(`expression${suffix}`, {
@@ -153,6 +183,33 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
 
   // Parse sumBy from URL parameter format
   const sumBy = useSumByFromParams(sumByParam);
+
+  // Detect if viewDefaults contain matchers-only expression
+  const hasMatchersOnlyDefault = useMemo(() => {
+    const defaults = suffix === '' || suffix === '_a' ? viewDefaults : sharedDefaults;
+    if (defaults?.expression == null || defaults.expression === '') return false;
+    return defaults.expression.trim().startsWith('{');
+  }, [viewDefaults, sharedDefaults, suffix]);
+
+  // Get time range for profile types query
+  const timeRangeForProfileTypes = useMemo(() => {
+    return DateTimeRange.fromRangeKey(
+      timeSelection ?? defaultTimeSelection,
+      from !== undefined && from !== '' ? parseInt(from) : defaultFrom,
+      to !== undefined && to !== '' ? parseInt(to) : defaultTo
+    );
+  }, [timeSelection, from, to, defaultTimeSelection, defaultFrom, defaultTo]);
+
+  // Fetch profile types only when needed
+  const {
+    loading: profileTypesLoading,
+    data: profileTypesData,
+    error: profileTypesError,
+  } = useProfileTypes(
+    queryClient,
+    hasMatchersOnlyDefault ? timeRangeForProfileTypes.getFromMs() : undefined,
+    hasMatchersOnlyDefault ? timeRangeForProfileTypes.getToMs() : undefined
+  );
 
   // Draft state management
   const [draftExpression, setDraftExpression] = useState<string>(expression ?? defaultExpression);
@@ -473,9 +530,35 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
       const defaults = suffix === '' || suffix === '_a' ? viewDefaults : sharedDefaults;
       if (defaults === undefined) return;
 
+      console.log('🚀 ~ useQueryState ~ defaults:', defaults);
+
       // Apply expression default using preserve-existing strategy
       if (defaults.expression !== undefined) {
-        setExpressionWithPreserve(defaults.expression);
+        const isMatchersOnly = defaults.expression.trim().startsWith('{');
+
+        if (isMatchersOnly) {
+          if (profileTypesLoading) return;
+
+          if (
+            profileTypesError != null ||
+            profileTypesData == null ||
+            profileTypesData.types.length === 0
+          ) {
+            console.warn('Cannot apply matchers-only view default: no profile types available', {
+              expression: defaults.expression,
+              error: profileTypesError,
+            });
+            return;
+          }
+
+          const fullExpression = prependProfileTypeToMatchers(
+            defaults.expression,
+            profileTypesData
+          );
+          setExpressionWithPreserve(fullExpression);
+        } else {
+          setExpressionWithPreserve(defaults.expression);
+        }
       }
 
       // Apply sum_by default using preserve-existing strategy
@@ -497,6 +580,9 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     setSumByWithPreserve,
     isGroupByEnabled,
     setGroupByWithPreserve,
+    profileTypesLoading,
+    profileTypesData,
+    profileTypesError,
   ]);
 
   // Reset query to default state
@@ -533,8 +619,16 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     }
   }, [querySelection.expression]);
 
-  // Parse expression components using existing Query parser
   const {hasProfileType, profileTypeString, matchersOnly, fullExpression} = useMemo(() => {
+    if (expression === undefined || expression === '') {
+      return {
+        hasProfileType: false,
+        profileTypeString: '',
+        matchersOnly: '{}',
+        fullExpression: '',
+      };
+    }
+
     const expr = expression ?? defaultExpression;
     const parsed = Query.parse(expr);
 
@@ -550,6 +644,26 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
       fullExpression: parsed.toString(),
     };
   }, [expression, defaultExpression]);
+
+  // Re-apply view defaults when profile types finish loading (for matchers-only expressions)
+  const [profileTypesLoadedOnce, setProfileTypesLoadedOnce] = useState(false);
+  useEffect(() => {
+    if (
+      hasMatchersOnlyDefault &&
+      !profileTypesLoading &&
+      !profileTypesLoadedOnce &&
+      profileTypesData != null
+    ) {
+      setProfileTypesLoadedOnce(true);
+      applyViewDefaults();
+    }
+  }, [
+    hasMatchersOnlyDefault,
+    profileTypesLoading,
+    profileTypesLoadedOnce,
+    profileTypesData,
+    applyViewDefaults,
+  ]);
 
   return {
     // Current committed state
