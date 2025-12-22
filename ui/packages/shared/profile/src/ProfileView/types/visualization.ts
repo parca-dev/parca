@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {RpcError} from '@protobuf-ts/runtime-rpc';
+
 import {FlamegraphArrow, QueryServiceClient, Source, TableArrow} from '@parca/client';
 
 import {ProfileSource} from '../../ProfileSource';
@@ -20,7 +22,7 @@ export interface FlamegraphData {
   arrow?: FlamegraphArrow;
   total?: bigint;
   filtered?: bigint;
-  error?: any;
+  error: RpcError | null;
   metadataMappingFiles?: string[];
   metadataLoading: boolean;
   metadataLabels?: string[];
@@ -32,14 +34,14 @@ export interface TopTableData {
   arrow?: TableArrow;
   total?: bigint;
   filtered?: bigint;
-  error?: any;
+  error: RpcError | null;
   unit?: string;
 }
 
 export interface SourceData {
   loading: boolean;
   data?: Source;
-  error?: any;
+  error: RpcError | null;
 }
 
 export interface SandwichData {

@@ -13,6 +13,7 @@
 
 import React, {useCallback, useEffect, useMemo, useRef} from 'react';
 
+import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {tableFromIPC} from 'apache-arrow';
 import {AnimatePresence, motion} from 'framer-motion';
 import {useContextMenu} from 'react-contexify';
@@ -59,6 +60,7 @@ export interface TableProps {
   isHalfScreen: boolean;
   unit?: string;
   metadataMappingFiles?: string[];
+  error: RpcError | null;
 }
 
 export const Table = React.memo(function Table({
@@ -70,6 +72,7 @@ export const Table = React.memo(function Table({
   isHalfScreen,
   unit,
   metadataMappingFiles,
+  error,
 }: TableProps): React.JSX.Element {
   const currentColorProfile = useCurrentColorProfile();
   const [dashboardItems] = useURLState<string[]>('dashboard_items', {
@@ -219,6 +222,9 @@ export const Table = React.memo(function Table({
         <TableSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
       </div>
     );
+  }
+  if (error != null) {
+    return <div className="mx-auto text-center">Error: {error.message}</div>;
   }
 
   if (rows.length === 0) {
