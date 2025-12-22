@@ -129,7 +129,7 @@ export const useVisibleNodes = ({
       renderedRangeRef.current = {
         minDepth: Infinity,
         maxDepth: -Infinity,
-        table: table,
+        table,
       };
     }
 

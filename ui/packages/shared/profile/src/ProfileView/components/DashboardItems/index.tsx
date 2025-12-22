@@ -128,6 +128,7 @@ export const getDashboardItem = ({
     case 'table':
       return topTableData != null ? (
         <Table
+          error={topTableData.error}
           total={total}
           filtered={filtered}
           loading={topTableData.loading}
