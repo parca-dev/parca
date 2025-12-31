@@ -54,6 +54,10 @@ enum DebuginfoType {
   // multiple source files that debuginfo references. It is meant to show code
   // with profiling data inline.
   DEBUGINFO_TYPE_SOURCES = 2;
+  // The type to identify JavaScript/TypeScript source maps. This is meant to
+  // be used for mapping minified JavaScript locations back to original source
+  // code positions.
+  DEBUGINFO_TYPE_SOURCE_MAP = 3;
 }
 
 // ShouldInitiateUploadRequest is the request for ShouldInitiateUpload.
@@ -80,6 +84,8 @@ enum BuildIDType {
   BUILD_ID_TYPE_HASH = 2;
   // The build ID is a Go build ID.
   BUILD_ID_TYPE_GO = 3;
+  // The build ID is a debug ID for source maps (UUID format).
+  BUILD_ID_TYPE_SOURCE_MAP_DEBUG_ID = 4;
 }
 
 // ShouldInitiateUploadResponse is the response for ShouldInitiateUpload.

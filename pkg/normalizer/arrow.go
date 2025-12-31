@@ -608,6 +608,7 @@ func (c *arrowToInternalConverter) AddLocationsRecordV1(
 				r.Lines,
 				r.Line,
 				r.LineNumber,
+				r.LineColumnNumber,
 				r.LineFunctionName,
 				r.LineFunctionNameDict,
 				r.LineFunctionSystemName,
@@ -740,6 +741,7 @@ type locationsReader struct {
 	Lines                          *array.List
 	Line                           *array.Struct
 	LineNumber                     *array.Int64
+	LineColumnNumber               *array.Uint64
 	LineFunctionName               *array.Dictionary
 	LineFunctionNameDict           *array.Binary
 	LineFunctionSystemName         *array.Dictionary
@@ -756,108 +758,119 @@ func getLocationsReader(locations *array.List) (*locationsReader, error) {
 		return nil, fmt.Errorf("expected column %q to be of type Struct, got %T", "locations", locations.ListValues())
 	}
 
-	const expectedLocationFields = 8
-	if location.NumField() != expectedLocationFields {
-		return nil, fmt.Errorf("expected location struct column to have %d fields, got %d", expectedLocationFields, location.NumField())
+	lr := &locationsReader{
+		Locations: locations,
+		Location:  location,
 	}
 
-	address, ok := location.Field(0).(*array.Uint64)
-	if !ok {
-		return nil, fmt.Errorf("expected column address to be of type Uint64, got %T", location.Field(0))
+	locationType := location.DataType().(*arrow.StructType)
+	for i := 0; i < locationType.NumFields(); i++ {
+		field := locationType.Field(i)
+		switch field.Name {
+		case "address":
+			address, ok := location.Field(i).(*array.Uint64)
+			if !ok {
+				return nil, fmt.Errorf("expected column address to be of type Uint64, got %T", location.Field(i))
+			}
+			lr.Address = address
+		case "mapping_start":
+			mappingStart, mappingStartValues, err := getREEUint64(location.Field(i), "mapping_start")
+			if err != nil {
+				return nil, err
+			}
+			lr.MappingStart = mappingStart
+			lr.MappingStartValues = mappingStartValues
+		case "mapping_limit":
+			mappingLimit, mappingLimitValues, err := getREEUint64(location.Field(i), "mapping_limit")
+			if err != nil {
+				return nil, err
+			}
+			lr.MappingLimit = mappingLimit
+			lr.MappingLimitValues = mappingLimitValues
+		case "mapping_offset":
+			mappingOffset, mappingOffsetValues, err := getREEUint64(location.Field(i), "mapping_offset")
+			if err != nil {
+				return nil, err
+			}
+			lr.MappingOffset = mappingOffset
+			lr.MappingOffsetValues = mappingOffsetValues
+		case "mapping_file":
+			mappingFile, mappingFileDict, mappingFileDictValues, err := getREEBinaryDict(location.Field(i), "mapping_file")
+			if err != nil {
+				return nil, err
+			}
+			lr.MappingFile = mappingFile
+			lr.MappingFileDict = mappingFileDict
+			lr.MappingFileDictValues = mappingFileDictValues
+		case "mapping_build_id":
+			mappingBuildID, mappingBuildIDDict, mappingBuildIDValues, err := getREEBinaryDict(location.Field(i), "mapping_build_id")
+			if err != nil {
+				return nil, err
+			}
+			lr.MappingBuildID = mappingBuildID
+			lr.MappingBuildIDDict = mappingBuildIDDict
+			lr.MappingBuildIDDictValues = mappingBuildIDValues
+		case "lines":
+			lines, ok := location.Field(i).(*array.List)
+			if !ok {
+				return nil, fmt.Errorf("expected column lines to be of type List, got %T", location.Field(i))
+			}
+			lr.Lines = lines
+
+			line, ok := lines.ListValues().(*array.Struct)
+			if !ok {
+				return nil, fmt.Errorf("expected column line to be of type Struct, got %T", lines.ListValues())
+			}
+			lr.Line = line
+
+			lineType := line.DataType().(*arrow.StructType)
+			for j := 0; j < lineType.NumFields(); j++ {
+				lineField := lineType.Field(j)
+				switch lineField.Name {
+				case "line":
+					lineNumber, ok := line.Field(j).(*array.Int64)
+					if !ok {
+						return nil, fmt.Errorf("expected column line to be of type Int64, got %T", line.Field(j))
+					}
+					lr.LineNumber = lineNumber
+				case "function_name":
+					lineFunctionName, lineFunctionNameDict, err := getBinaryDict(line.Field(j), "function_name")
+					if err != nil {
+						return nil, err
+					}
+					lr.LineFunctionName = lineFunctionName
+					lr.LineFunctionNameDict = lineFunctionNameDict
+				case "function_system_name":
+					lineFunctionSystemName, lineFunctionSystemNameDict, err := getBinaryDict(line.Field(j), "function_system_name")
+					if err != nil {
+						return nil, err
+					}
+					lr.LineFunctionSystemName = lineFunctionSystemName
+					lr.LineFunctionSystemNameDict = lineFunctionSystemNameDict
+				case "function_filename":
+					lineFunctionFilename, lineFunctionFilenameDict, lineFunctionFilenameDictValues, err := getREEBinaryDict(line.Field(j), "function_filename")
+					if err != nil {
+						return nil, err
+					}
+					lr.LineFunctionFilename = lineFunctionFilename
+					lr.LineFunctionFilenameDict = lineFunctionFilenameDict
+					lr.LineFunctionFilenameDictValues = lineFunctionFilenameDictValues
+				case "function_start_line":
+					lineFunctionStartLine, ok := line.Field(j).(*array.Int64)
+					if !ok {
+						return nil, fmt.Errorf("expected column function_start_line to be of type Int64, got %T", line.Field(j))
+					}
+					lr.LineFunctionStartLine = lineFunctionStartLine
+				case "column":
+					lineColumnNumber, ok := line.Field(j).(*array.Uint64)
+					if !ok {
+						return nil, fmt.Errorf("expected column column to be of type Uint64, got %T", line.Field(j))
+					}
+					lr.LineColumnNumber = lineColumnNumber
+				}
+			}
+		}
 	}
 
-	// skipping 1 field which is the frame type
-	mappingStart, mappingStartValues, err := getREEUint64(location.Field(2), "mapping_start")
-	if err != nil {
-		return nil, err
-	}
-
-	mappingLimit, mappingLimitValues, err := getREEUint64(location.Field(3), "mapping_limit")
-	if err != nil {
-		return nil, err
-	}
-
-	mappingOffset, mappingOffsetValues, err := getREEUint64(location.Field(4), "mapping_offset")
-	if err != nil {
-		return nil, err
-	}
-
-	mappingFile, mappingFileDict, mappingFileDictValues, err := getREEBinaryDict(location.Field(5), "mapping_file")
-	if err != nil {
-		return nil, err
-	}
-
-	mappingBuildID, mappingBuildIDDict, mappingBuildIDValues, err := getREEBinaryDict(location.Field(6), "mapping_build_id")
-	if err != nil {
-		return nil, err
-	}
-
-	lines, ok := location.Field(7).(*array.List)
-	if !ok {
-		return nil, fmt.Errorf("expected column lines to be of type List, got %T", location.Field(7))
-	}
-
-	line, ok := lines.ListValues().(*array.Struct)
-	if !ok {
-		return nil, fmt.Errorf("expected column line to be of type Struct, got %T", lines.ListValues())
-	}
-
-	const expectedLineFields = 5
-	if line.NumField() != expectedLineFields {
-		return nil, fmt.Errorf("expected line struct column to have %d fields, got %d", expectedLineFields, line.NumField())
-	}
-
-	lineNumber, ok := line.Field(0).(*array.Int64)
-	if !ok {
-		return nil, fmt.Errorf("expected column line_number to be of type Int64, got %T", line.Field(0))
-	}
-
-	lineFunctionName, lineFunctionNameDict, err := getBinaryDict(line.Field(1), "line_function_name")
-	if err != nil {
-		return nil, err
-	}
-
-	lineFunctionSystemName, lineFunctionSystemNameDict, err := getBinaryDict(line.Field(2), "line_function_system_name")
-	if err != nil {
-		return nil, err
-	}
-
-	lineFunctionFilename, lineFunctionFilenameDict, lineFunctionFilenameDictValues, err := getREEBinaryDict(line.Field(3), "line_function_filename")
-	if err != nil {
-		return nil, err
-	}
-
-	lineFunctionStartLine, ok := line.Field(4).(*array.Int64)
-	if !ok {
-		return nil, fmt.Errorf("expected column line_function_start_line to be of type Int64, got %T", line.Field(4))
-	}
-
-	return &locationsReader{
-		Locations:                      locations,
-		Location:                       location,
-		Address:                        address,
-		MappingStart:                   mappingStart,
-		MappingStartValues:             mappingStartValues,
-		MappingLimit:                   mappingLimit,
-		MappingLimitValues:             mappingLimitValues,
-		MappingOffset:                  mappingOffset,
-		MappingOffsetValues:            mappingOffsetValues,
-		MappingFile:                    mappingFile,
-		MappingFileDict:                mappingFileDict,
-		MappingFileDictValues:          mappingFileDictValues,
-		MappingBuildID:                 mappingBuildID,
-		MappingBuildIDDict:             mappingBuildIDDict,
-		MappingBuildIDDictValues:       mappingBuildIDValues,
-		Lines:                          lines,
-		Line:                           line,
-		LineNumber:                     lineNumber,
-		LineFunctionName:               lineFunctionName,
-		LineFunctionNameDict:           lineFunctionNameDict,
-		LineFunctionSystemName:         lineFunctionSystemName,
-		LineFunctionSystemNameDict:     lineFunctionSystemNameDict,
-		LineFunctionFilename:           lineFunctionFilename,
-		LineFunctionFilenameDict:       lineFunctionFilenameDict,
-		LineFunctionFilenameDictValues: lineFunctionFilenameDictValues,
-		LineFunctionStartLine:          lineFunctionStartLine,
-	}, nil
+	return lr, nil
 }

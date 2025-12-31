@@ -143,6 +143,10 @@ func DecodeInto(lw LocationsWriter, data []byte) (DecodeResult, error) {
 
 			lw.LineNumber.Append(int64(line))
 
+			column, n := varint.Uvarint(data[offset:])
+			offset += n
+			lw.ColumnNumber.Append(column)
+
 			hasFunction := data[offset] == 0x1
 			offset++
 
@@ -235,6 +239,9 @@ func DecodeFunctionName(data []byte) ([]byte, error) {
 	if lineNumber > 0 {
 		for i := uint64(0); i < lineNumber; i++ {
 			// line
+			_, n = varint.Uvarint(data[offset:])
+			offset += n
+
 			_, n = varint.Uvarint(data[offset:])
 			offset += n
 
