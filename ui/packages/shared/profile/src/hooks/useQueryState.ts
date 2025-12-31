@@ -643,23 +643,21 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
 
   // Re-apply view defaults when profile types finish loading (for matchers-only expressions)
   const [profileTypesLoadedOnce, setProfileTypesLoadedOnce] = useState(false);
-  useEffect(() => {
-    if (
-      hasMatchersOnlyDefault &&
-      !profileTypesLoading &&
-      !profileTypesLoadedOnce &&
-      profileTypesData != null
-    ) {
-      setProfileTypesLoadedOnce(true);
-      applyViewDefaults();
-    }
-  }, [
-    hasMatchersOnlyDefault,
-    profileTypesLoading,
-    profileTypesLoadedOnce,
-    profileTypesData,
-    applyViewDefaults,
-  ]);
+  useEffect(
+    () => {
+      if (
+        hasMatchersOnlyDefault &&
+        !profileTypesLoading &&
+        !profileTypesLoadedOnce &&
+        profileTypesData != null
+      ) {
+        setProfileTypesLoadedOnce(true);
+        applyViewDefaults();
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [hasMatchersOnlyDefault, profileTypesLoading, profileTypesLoadedOnce, profileTypesData]
+  );
 
   return {
     // Current committed state

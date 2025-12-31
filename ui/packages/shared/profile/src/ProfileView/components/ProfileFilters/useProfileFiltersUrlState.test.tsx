@@ -632,4 +632,253 @@ describe('useProfileFiltersUrlState', () => {
       expect(filter).toHaveProperty('value', 'testFunc');
     });
   });
+
+  describe('View switching scenarios', () => {
+    it('should completely replace filters when switching views using forceApplyFilters', async () => {
+      // Start with View A's filters (2 filters)
+      mockLocation.search = '?profile_filters=s:fn:=:viewAFunc,f:b:!=:viewABinary';
+
+      const {result} = renderHook(() => useProfileFiltersUrlState(), {wrapper: createWrapper()});
+
+      await waitFor(() => {
+        expect(result.current.appliedFilters).toHaveLength(2);
+        expect(result.current.appliedFilters[0].value).toBe('viewAFunc');
+        expect(result.current.appliedFilters[1].value).toBe('viewABinary');
+      });
+
+      // Switch to View B (completely different filter)
+      const viewBFilters: ProfileFilter[] = [
+        {
+          id: 'viewB-1',
+          type: 'frame',
+          field: 'function_name',
+          matchType: 'contains',
+          value: 'viewBOnly',
+        },
+      ];
+
+      act(() => {
+        result.current.forceApplyFilters(viewBFilters);
+      });
+
+      await waitFor(() => {
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+
+        // View A's filters should be completely gone
+        expect(params.profile_filters).not.toContain('viewAFunc');
+        expect(params.profile_filters).not.toContain('viewABinary');
+
+        // Only View B's filter should be present
+        expect(params.profile_filters).toBe('f:fn:~:viewBOnly');
+      });
+    });
+
+    it('should handle sequential view switches correctly', async () => {
+      // Simulate: [default] -> [storage] -> [testing-view]
+      const {result} = renderHook(() => useProfileFiltersUrlState(), {wrapper: createWrapper()});
+
+      // View 1: default view (1 filter)
+      const defaultFilters: ProfileFilter[] = [{id: 'd-1', type: 'hide_libc', value: 'enabled'}];
+
+      act(() => {
+        result.current.forceApplyFilters(defaultFilters);
+      });
+
+      await waitFor(() => {
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        expect(params.profile_filters).toBe('p:hide_libc:enabled');
+      });
+
+      mockNavigateTo.mockClear();
+
+      // View 2: storage view (3 filters)
+      const storageFilters: ProfileFilter[] = [
+        {id: 's-1', type: 'stack', field: 'function_name', matchType: 'not_contains', value: 'io'},
+        {id: 's-2', type: 'frame', field: 'binary', matchType: 'not_contains', value: 'disk'},
+        {id: 's-3', type: 'frame', field: 'function_name', matchType: 'contains', value: 'storage'},
+      ];
+
+      act(() => {
+        result.current.forceApplyFilters(storageFilters);
+      });
+
+      await waitFor(() => {
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        // Default view's filter should be gone
+        expect(params.profile_filters).not.toContain('hide_libc');
+        // Storage view should have 3 filters
+        expect(params.profile_filters).toContain('io');
+        expect(params.profile_filters).toContain('disk');
+        expect(params.profile_filters).toContain('storage');
+      });
+
+      mockNavigateTo.mockClear();
+
+      // View 3: testing-view (2 filters)
+      const testingFilters: ProfileFilter[] = [
+        {id: 't-1', type: 'stack', field: 'function_name', matchType: 'equal', value: 'test_main'},
+        {id: 't-2', type: 'frame', field: 'binary', matchType: 'contains', value: 'test'},
+      ];
+
+      act(() => {
+        result.current.forceApplyFilters(testingFilters);
+      });
+
+      await waitFor(() => {
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        // Storage view's filters should be gone
+        expect(params.profile_filters).not.toContain('io');
+        expect(params.profile_filters).not.toContain('disk');
+        expect(params.profile_filters).not.toContain('storage');
+        // Testing view should have its 2 filters
+        expect(params.profile_filters).toContain('test_main');
+        expect(params.profile_filters).toContain('test');
+      });
+    });
+
+    it('should not change filters when clicking the same view tab', async () => {
+      // Start with existing filters
+      mockLocation.search = '?profile_filters=s:fn:=:existingFilter';
+
+      const {result} = renderHook(() => useProfileFiltersUrlState(), {wrapper: createWrapper()});
+
+      await waitFor(() => {
+        expect(result.current.appliedFilters).toHaveLength(1);
+      });
+
+      mockNavigateTo.mockClear();
+
+      // Apply the same filters (simulating clicking the same view tab)
+      const sameFilters: ProfileFilter[] = [
+        {
+          id: 'same-1',
+          type: 'stack',
+          field: 'function_name',
+          matchType: 'equal',
+          value: 'existingFilter',
+        },
+      ];
+
+      act(() => {
+        result.current.forceApplyFilters(sameFilters);
+      });
+
+      await waitFor(() => {
+        expect(result.current.appliedFilters).toHaveLength(1);
+        expect(result.current.appliedFilters[0].value).toBe('existingFilter');
+      });
+    });
+  });
+
+  describe('Page refresh persistence', () => {
+    it('should persist user customizations in URL after page refresh simulation', async () => {
+      const viewDefaults: ProfileFilter[] = [
+        {id: 'default-1', type: 'hide_libc', value: 'enabled'},
+      ];
+
+      // User has customized filters (different from defaults)
+      mockLocation.search = '?profile_filters=s:fn:=:userCustomFilter';
+
+      const {result, unmount} = renderHook(() => useProfileFiltersUrlState({viewDefaults}), {
+        wrapper: createWrapper(),
+      });
+
+      // Verify user's filter is loaded
+      await waitFor(() => {
+        expect(result.current.appliedFilters).toHaveLength(1);
+        expect(result.current.appliedFilters[0].value).toBe('userCustomFilter');
+      });
+
+      // Apply view defaults - should NOT overwrite user's URL params (preserve-existing)
+      act(() => {
+        result.current.applyViewDefaults();
+      });
+
+      // User's filter should still be preserved
+      await waitFor(() => {
+        expect(result.current.appliedFilters).toHaveLength(1);
+        expect(result.current.appliedFilters[0].value).toBe('userCustomFilter');
+      });
+
+      // Simulate page refresh
+      unmount();
+      mockNavigateTo.mockClear();
+
+      // Re-render hook (simulating page reload)
+      const {result: result2} = renderHook(() => useProfileFiltersUrlState({viewDefaults}), {
+        wrapper: createWrapper(),
+      });
+
+      // After "refresh", filter should still be from URL
+      await waitFor(() => {
+        expect(result2.current.appliedFilters).toHaveLength(1);
+        expect(result2.current.appliedFilters[0].value).toBe('userCustomFilter');
+      });
+    });
+
+    it('should apply view defaults when URL is empty on page load', async () => {
+      const viewDefaults: ProfileFilter[] = [
+        {
+          id: 'default-1',
+          type: 'frame',
+          field: 'binary',
+          matchType: 'not_contains',
+          value: 'libc.so',
+        },
+      ];
+
+      // Empty URL (fresh page load)
+      mockLocation.search = '';
+
+      const {result} = renderHook(() => useProfileFiltersUrlState({viewDefaults}), {
+        wrapper: createWrapper(),
+      });
+
+      // Apply view defaults
+      act(() => {
+        result.current.applyViewDefaults();
+      });
+
+      await waitFor(() => {
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        expect(params.profile_filters).toBe('f:b:!~:libc.so');
+      });
+    });
+
+    it('should handle shared/bookmarked URL with custom params', async () => {
+      const viewDefaults: ProfileFilter[] = [
+        {id: 'default-1', type: 'hide_libc', value: 'enabled'},
+        {id: 'default-2', type: 'hide_python_internals', value: 'enabled'},
+      ];
+
+      // Shared URL with custom params (not matching view defaults)
+      mockLocation.search = '?profile_filters=s:fn:~:customSharedFilter';
+
+      const {result} = renderHook(() => useProfileFiltersUrlState({viewDefaults}), {
+        wrapper: createWrapper(),
+      });
+
+      // Verify custom params are loaded
+      await waitFor(() => {
+        expect(result.current.appliedFilters).toHaveLength(1);
+        expect(result.current.appliedFilters[0].value).toBe('customSharedFilter');
+      });
+
+      // Apply view defaults - should NOT overwrite
+      act(() => {
+        result.current.applyViewDefaults();
+      });
+
+      // Custom params should be honored over view defaults
+      await waitFor(() => {
+        expect(result.current.appliedFilters).toHaveLength(1);
+        expect(result.current.appliedFilters[0].value).toBe('customSharedFilter');
+      });
+    });
+  });
 });

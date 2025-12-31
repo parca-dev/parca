@@ -200,10 +200,22 @@ export const useProfileFiltersUrlState = (
   }, [viewDefaults, batchUpdates, setAppliedFiltersWithPreserve]);
 
   // Force apply filters (bypasses preserve-existing strategy)
+  // This validates filters before applying, similar to onApplyFilters in useProfileFilters.
+  // Use this when switching views to completely replace the current filters.
   const forceApplyFilters = useCallback(
     (filters: ProfileFilter[]) => {
+      // Validate filters before applying
+      const validFilters = filters.filter(f => {
+        // For preset filters, only need type and value
+        if (f.type != null && isPresetKey(f.type)) {
+          return f.value !== '' && f.type != null;
+        }
+        // For regular filters, need all fields
+        return f.value !== '' && f.type != null && f.field != null && f.matchType != null;
+      });
+
       batchUpdates(() => {
-        setAppliedFilters(filters);
+        setAppliedFilters(validFilters);
       });
     },
     [batchUpdates, setAppliedFilters]
