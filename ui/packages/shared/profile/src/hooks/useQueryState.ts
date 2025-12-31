@@ -17,7 +17,7 @@ import {ProfileTypesResponse} from '@parca/client';
 import {DateTimeRange, useParcaContext, useURLState, useURLStateBatch} from '@parca/components';
 import {Query} from '@parca/parser';
 
-import {IProfileTypesResult, QuerySelection, useProfileTypes} from '../ProfileSelector';
+import {QuerySelection, useProfileTypes} from '../ProfileSelector';
 import {ProfileSelection, ProfileSelectionFromParams, ProfileSource} from '../ProfileSource';
 import {useResetFlameGraphState} from '../ProfileView/hooks/useResetFlameGraphState';
 import {useResetStateOnProfileTypeChange} from '../ProfileView/hooks/useResetStateOnProfileTypeChange';
@@ -133,9 +133,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
 
   const batchUpdates = useURLStateBatch();
   const resetFlameGraphState = useResetFlameGraphState();
-  const resetStateOnProfileTypeChange = useResetStateOnProfileTypeChange({
-    resetFilters: viewDefaults?.hasProfileFilters, // Don't reset filters on profile type change in views
-  });
+  const resetStateOnProfileTypeChange = useResetStateOnProfileTypeChange();
 
   // URL state hooks with appropriate suffixes
   const [expression, setExpressionState] = useURLState<string>(`expression${suffix}`, {
@@ -530,8 +528,6 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
       const defaults = suffix === '' || suffix === '_a' ? viewDefaults : sharedDefaults;
       if (defaults === undefined) return;
 
-      console.log('🚀 ~ useQueryState ~ defaults:', defaults);
-
       // Apply expression default using preserve-existing strategy
       if (defaults.expression !== undefined) {
         const isMatchersOnly = defaults.expression.trim().startsWith('{');
@@ -702,7 +698,10 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     // Group-by state (only for _a hook)
     ...(isGroupByEnabled
       ? {
-          groupBy: groupByParam?.split(',').filter(Boolean),
+          groupBy:
+            groupByParam != null && typeof groupByParam === 'string' && groupByParam !== ''
+              ? groupByParam.split(',').filter(Boolean)
+              : undefined,
           setGroupBy: (groupBy: string[] | undefined) => {
             setGroupByParam(groupBy?.join(','));
           },

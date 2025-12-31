@@ -190,7 +190,9 @@ export const useProfileFiltersUrlState = (
 
   // Apply view defaults (only if URL is empty)
   const applyViewDefaults = useCallback(() => {
-    if (viewDefaults === undefined || viewDefaults.length === 0) return;
+    if (viewDefaults === undefined || viewDefaults.length === 0) {
+      return;
+    }
 
     batchUpdates(() => {
       setAppliedFiltersWithPreserve(viewDefaults);
