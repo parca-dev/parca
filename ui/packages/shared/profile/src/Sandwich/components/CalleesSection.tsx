@@ -13,7 +13,7 @@
 
 import React from 'react';
 
-import {testId, TEST_IDS} from '@parca/test-utils';
+import {TEST_IDS, testId} from '@parca/test-utils';
 
 import ProfileFlameGraph from '../../ProfileFlameGraph';
 import {type CurrentPathFrame} from '../../ProfileFlameGraph/FlameGraphArrow/utils';

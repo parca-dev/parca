@@ -16,7 +16,7 @@ import React, {useRef, useState} from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
 
 import {useURLState} from '@parca/components';
-import {testId, TEST_IDS} from '@parca/test-utils';
+import {TEST_IDS, testId} from '@parca/test-utils';
 
 import {ProfileSource} from '../ProfileSource';
 import {useDashboard} from '../ProfileView/context/DashboardContext';

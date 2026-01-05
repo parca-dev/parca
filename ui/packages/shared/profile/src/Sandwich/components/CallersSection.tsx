@@ -17,7 +17,7 @@ import {Vector, tableFromIPC} from 'apache-arrow';
 import {Tooltip} from 'react-tooltip';
 
 import {Button} from '@parca/components';
-import {testId, TEST_IDS} from '@parca/test-utils';
+import {TEST_IDS, testId} from '@parca/test-utils';
 
 import ProfileFlameGraph from '../../ProfileFlameGraph';
 import {type CurrentPathFrame} from '../../ProfileFlameGraph/FlameGraphArrow/utils';
