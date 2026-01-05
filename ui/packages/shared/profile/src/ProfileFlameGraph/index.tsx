@@ -205,7 +205,7 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
 
     if (isLoading && !isInvalidFlameChartQuery) {
       return (
-        <div className="h-auto overflow-clip">
+        <div className="h-auto overflow-clip" data-testid={TEST_IDS.FLAMEGRAPH_SKELETON}>
           {isRenderedAsFlamegraph ? (
             <SandwichFlameGraphSkeleton isHalfScreen={isHalfScreen} isDarkMode={isDarkMode} />
           ) : (

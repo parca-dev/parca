@@ -17,6 +17,7 @@ import {Vector, tableFromIPC} from 'apache-arrow';
 import {Tooltip} from 'react-tooltip';
 
 import {Button} from '@parca/components';
+import {TEST_IDS, testId} from '@parca/test-utils';
 
 import ProfileFlameGraph from '../../ProfileFlameGraph';
 import {type CurrentPathFrame} from '../../ProfileFlameGraph/FlameGraphArrow/utils';
@@ -90,7 +91,11 @@ export function CallersSection({
           <Tooltip id="show-more-frames" />
         </Button>
       )}
-      <div className="flex relative flex-row overflow-hidden" ref={callersRef}>
+      <div
+        className="flex relative flex-row overflow-hidden"
+        ref={callersRef}
+        {...testId(TEST_IDS.SANDWICH_CALLERS_SECTION)}
+      >
         <div className="[writing-mode:vertical-lr] -rotate-180 px-1 uppercase text-[10px] text-left flex-shrink-0">
           Callers {'->'}
         </div>
