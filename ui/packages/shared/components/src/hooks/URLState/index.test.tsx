@@ -11,21 +11,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {ReactNode} from 'react';
+import {ReactNode, act} from 'react';
 
 // eslint-disable-next-line import/named
-import {act, renderHook, waitFor} from '@testing-library/react';
+import {renderHook, waitFor} from '@testing-library/react';
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {
   JSONParser,
   JSONSerializer,
   URLStateProvider,
-  hasQueryParams,
   useURLState,
   useURLStateBatch,
   useURLStateCustom,
-  useURLStateReset,
 } from './index';
 
 // Mock the navigate function
@@ -651,688 +649,119 @@ describe('URLState Hooks', () => {
   });
 
   describe('mergeStrategy option', () => {
-    describe('replace strategy (default)', () => {
-      it('should replace existing value when no mergeStrategy is specified', async () => {
-        const {result} = renderHook(() => useURLState('param'), {wrapper: createWrapper()});
+    it('should replace existing value by default', async () => {
+      const {result} = renderHook(() => useURLState('param'), {wrapper: createWrapper()});
+      const [, setParam] = result.current;
 
-        const [, setParam] = result.current;
-
-        // Set initial value
-        act(() => {
-          setParam('initial');
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toBe('initial');
-        });
-
-        // Replace with new value
-        act(() => {
-          setParam('replaced');
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toBe('replaced');
-          expect(mockNavigateTo).toHaveBeenLastCalledWith(
-            '/test',
-            {param: 'replaced'},
-            {replace: true}
-          );
-        });
+      act(() => {
+        setParam('initial');
+      });
+      await waitFor(() => {
+        expect(result.current[0]).toBe('initial');
       });
 
-      it('should replace existing value when mergeStrategy is "replace"', async () => {
-        const {result} = renderHook(() => useURLState('param', {mergeStrategy: 'replace'}), {
-          wrapper: createWrapper(),
-        });
-
-        const [, setParam] = result.current;
-
-        act(() => {
-          setParam('initial');
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toBe('initial');
-        });
-
-        act(() => {
-          setParam('replaced');
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toBe('replaced');
-        });
+      act(() => {
+        setParam('replaced');
       });
-
-      it('should replace array with string using replace strategy', async () => {
-        const {result} = renderHook(
-          () => useURLState<string | string[]>('param', {mergeStrategy: 'replace'}),
-          {wrapper: createWrapper()}
-        );
-
-        const [, setParam] = result.current;
-
-        act(() => {
-          setParam(['one', 'two']);
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toEqual(['one', 'two']);
-        });
-
-        act(() => {
-          setParam('single');
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toBe('single');
-        });
+      await waitFor(() => {
+        expect(result.current[0]).toBe('replaced');
       });
     });
 
-    describe('preserve-existing strategy', () => {
-      it('should not overwrite existing value with preserve-existing strategy', async () => {
-        const {result} = renderHook(
-          () => useURLState('param', {mergeStrategy: 'preserve-existing'}),
-          {wrapper: createWrapper()}
-        );
+    it('should only set value when empty with preserve-existing strategy', async () => {
+      const {result} = renderHook(
+        () => useURLState('param', {mergeStrategy: 'preserve-existing'}),
+        {wrapper: createWrapper()}
+      );
+      const [, setParam] = result.current;
 
-        const [, setParam] = result.current;
-
-        // Set initial value
-        act(() => {
-          setParam('existing');
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toBe('existing');
-        });
-
-        // Try to set new value - should be ignored
-        act(() => {
-          setParam('should-be-ignored');
-        });
-
-        await waitFor(() => {
-          // Value should remain unchanged
-          expect(result.current[0]).toBe('existing');
-        });
+      // Set when undefined - should work
+      act(() => {
+        setParam('first');
+      });
+      await waitFor(() => {
+        expect(result.current[0]).toBe('first');
       });
 
-      it('should set value when current is undefined with preserve-existing', async () => {
-        const {result} = renderHook(
-          () => useURLState('param', {mergeStrategy: 'preserve-existing'}),
-          {wrapper: createWrapper()}
-        );
-
-        const [, setParam] = result.current;
-
-        // Set value when undefined
-        act(() => {
-          setParam('new-value');
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toBe('new-value');
-          expect(mockNavigateTo).toHaveBeenCalledWith(
-            '/test',
-            {param: 'new-value'},
-            {replace: true}
-          );
-        });
+      // Try to overwrite - should be ignored
+      act(() => {
+        setParam('second');
       });
-
-      it('should set value when current is empty string with preserve-existing', async () => {
-        const {result} = renderHook(
-          () => useURLState('param', {mergeStrategy: 'preserve-existing'}),
-          {wrapper: createWrapper()}
-        );
-
-        const [, setParam] = result.current;
-
-        // Set to empty string first
-        act(() => {
-          setParam('');
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toBe('');
-        });
-
-        // Should overwrite empty string
-        act(() => {
-          setParam('new-value');
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toBe('new-value');
-        });
-      });
-
-      it('should set value when current is empty array with preserve-existing', async () => {
-        const {result} = renderHook(
-          () =>
-            useURLState<string[]>('param', {
-              mergeStrategy: 'preserve-existing',
-              alwaysReturnArray: true,
-            }),
-          {wrapper: createWrapper()}
-        );
-
-        const [, setParam] = result.current;
-
-        // Set to empty array first
-        act(() => {
-          setParam([]);
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toEqual([]);
-        });
-
-        // Should overwrite empty array
-        act(() => {
-          setParam(['value']);
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toEqual(['value']);
-        });
-      });
-
-      it('should preserve existing array with preserve-existing strategy', async () => {
-        const {result} = renderHook(
-          () =>
-            useURLState<string[]>('param', {
-              mergeStrategy: 'preserve-existing',
-              alwaysReturnArray: true,
-            }),
-          {wrapper: createWrapper()}
-        );
-
-        const [, setParam] = result.current;
-
-        // Set initial array
-        act(() => {
-          setParam(['existing']);
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toEqual(['existing']);
-        });
-
-        // Try to set new array - should be ignored
-        act(() => {
-          setParam(['new']);
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toEqual(['existing']);
-        });
+      await waitFor(() => {
+        expect(result.current[0]).toBe('first');
       });
     });
 
-    describe('append strategy', () => {
-      it('should ignore undefined/null values with append strategy', async () => {
-        const {result} = renderHook(() => useURLState('param', {mergeStrategy: 'append'}), {
-          wrapper: createWrapper(),
-        });
+    it('should merge arrays with deduplication using append strategy', async () => {
+      const {result} = renderHook(
+        () => useURLState<string | string[]>('param', {mergeStrategy: 'append'}),
+        {wrapper: createWrapper()}
+      );
+      const [, setParam] = result.current;
 
-        const [, setParam] = result.current;
-
-        // Set initial value
-        act(() => {
-          setParam('existing');
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toBe('existing');
-        });
-
-        // Try to append undefined - should be ignored
-        act(() => {
-          setParam(undefined);
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toBe('existing');
-        });
+      // Set initial array
+      act(() => {
+        setParam(['a', 'b']);
+      });
+      await waitFor(() => {
+        expect(result.current[0]).toEqual(['a', 'b']);
       });
 
-      it('should merge two arrays and deduplicate with append strategy', async () => {
-        const {result} = renderHook(
-          () => useURLState<string[]>('param', {mergeStrategy: 'append'}),
-          {wrapper: createWrapper()}
-        );
-
-        const [, setParam] = result.current;
-
-        // Set initial array
-        act(() => {
-          setParam(['a', 'b']);
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toEqual(['a', 'b']);
-        });
-
-        // Append array with overlap
-        act(() => {
-          setParam(['b', 'c', 'd']);
-        });
-
-        await waitFor(() => {
-          // Should deduplicate 'b'
-          expect(result.current[0]).toEqual(['a', 'b', 'c', 'd']);
-        });
+      // Append with overlap - should deduplicate
+      act(() => {
+        setParam(['b', 'c']);
+      });
+      await waitFor(() => {
+        expect(result.current[0]).toEqual(['a', 'b', 'c']);
       });
 
-      it('should add string to array with append strategy (no duplicates)', async () => {
-        const {result} = renderHook(
-          () => useURLState<string | string[]>('param', {mergeStrategy: 'append'}),
-          {wrapper: createWrapper()}
-        );
-
-        const [, setParam] = result.current;
-
-        // Set initial array
-        act(() => {
-          setParam(['a', 'b']);
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toEqual(['a', 'b']);
-        });
-
-        // Append new string
-        act(() => {
-          setParam('c');
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toEqual(['a', 'b', 'c']);
-        });
+      // Append string to array
+      act(() => {
+        setParam('d');
+      });
+      await waitFor(() => {
+        expect(result.current[0]).toEqual(['a', 'b', 'c', 'd']);
       });
 
-      it('should not add duplicate string to array with append strategy', async () => {
-        const {result} = renderHook(
-          () => useURLState<string | string[]>('param', {mergeStrategy: 'append'}),
-          {wrapper: createWrapper()}
-        );
-
-        const [, setParam] = result.current;
-
-        // Set initial array
-        act(() => {
-          setParam(['a', 'b']);
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toEqual(['a', 'b']);
-        });
-
-        // Try to append existing string
-        act(() => {
-          setParam('b');
-        });
-
-        await waitFor(() => {
-          // Should remain unchanged (no duplicate)
-          expect(result.current[0]).toEqual(['a', 'b']);
-        });
+      // Append duplicate string - should be ignored
+      act(() => {
+        setParam('a');
       });
-
-      it('should merge string with array with append strategy', async () => {
-        const {result} = renderHook(
-          () => useURLState<string | string[]>('param', {mergeStrategy: 'append'}),
-          {wrapper: createWrapper()}
-        );
-
-        const [, setParam] = result.current;
-
-        // Set initial string
-        act(() => {
-          setParam('a');
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toBe('a');
-        });
-
-        // Append array
-        act(() => {
-          setParam(['b', 'c']);
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toEqual(['a', 'b', 'c']);
-        });
-      });
-
-      it('should create array from two different strings with append strategy', async () => {
-        const {result} = renderHook(
-          () => useURLState<string | string[]>('param', {mergeStrategy: 'append'}),
-          {wrapper: createWrapper()}
-        );
-
-        const [, setParam] = result.current;
-
-        // Set initial string
-        act(() => {
-          setParam('first');
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toBe('first');
-        });
-
-        // Append different string
-        act(() => {
-          setParam('second');
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toEqual(['first', 'second']);
-        });
-      });
-
-      it('should not create array when appending same string with append strategy', async () => {
-        const {result} = renderHook(
-          () => useURLState<string | string[]>('param', {mergeStrategy: 'append'}),
-          {wrapper: createWrapper()}
-        );
-
-        const [, setParam] = result.current;
-
-        // Set initial string
-        act(() => {
-          setParam('same');
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toBe('same');
-        });
-
-        // Append same string (should deduplicate)
-        act(() => {
-          setParam('same');
-        });
-
-        await waitFor(() => {
-          // Should remain a single string, not create array
-          expect(result.current[0]).toBe('same');
-        });
-      });
-
-      it('should set value when current is empty with append strategy', async () => {
-        const {result} = renderHook(() => useURLState('param', {mergeStrategy: 'append'}), {
-          wrapper: createWrapper(),
-        });
-
-        const [, setParam] = result.current;
-
-        // Append to undefined (should just set)
-        act(() => {
-          setParam('new-value');
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toBe('new-value');
-        });
-      });
-
-      it('should deduplicate when merging string array with overlapping values', async () => {
-        const {result} = renderHook(
-          () => useURLState<string[]>('param', {mergeStrategy: 'append'}),
-          {wrapper: createWrapper()}
-        );
-
-        const [, setParam] = result.current;
-
-        // Set initial array
-        act(() => {
-          setParam(['a', 'b', 'c']);
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toEqual(['a', 'b', 'c']);
-        });
-
-        // Append array with all duplicates and one new value
-        act(() => {
-          setParam(['a', 'b', 'c', 'd']);
-        });
-
-        await waitFor(() => {
-          // Should only add 'd'
-          expect(result.current[0]).toEqual(['a', 'b', 'c', 'd']);
-        });
+      await waitFor(() => {
+        expect(result.current[0]).toEqual(['a', 'b', 'c', 'd']);
       });
     });
 
-    describe('Real-world view defaults use case', () => {
-      it('should apply view defaults only when URL params are empty (preserve-existing)', async () => {
-        // Simulate view defaults being applied
-        const {result} = renderHook(
-          () =>
-            useURLState('group_by', {
-              defaultValue: ['function_name'],
-              mergeStrategy: 'preserve-existing',
-              alwaysReturnArray: true,
-            }),
-          {wrapper: createWrapper()}
-        );
-
-        // Initial render - should use default
-        expect(result.current[0]).toEqual(['function_name']);
-
-        const [, setGroupBy] = result.current;
-
-        // User modifies the value
-        act(() => {
-          setGroupBy(['custom_label']);
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toEqual(['custom_label']);
-        });
-
-        // Simulate view switching trying to apply defaults again (should be ignored)
-        act(() => {
-          setGroupBy(['function_name']);
-        });
-
-        await waitFor(() => {
-          // Should keep user's custom value
-          expect(result.current[0]).toEqual(['custom_label']);
-        });
+    it('should return undefined and no-op setter when enabled is false', async () => {
+      const {result} = renderHook(() => useURLState('param', {enabled: false}), {
+        wrapper: createWrapper(),
       });
 
-      it('should accumulate filter values with append strategy', async () => {
-        // Simulate adding multiple filters
-        const {result} = renderHook(
-          () =>
-            useURLState<string[]>('filters', {mergeStrategy: 'append', alwaysReturnArray: true}),
-          {wrapper: createWrapper()}
-        );
+      const [value, setParam] = result.current;
+      expect(value).toBeUndefined();
 
-        const [, setFilters] = result.current;
-
-        // Add first filter
-        act(() => {
-          setFilters(['cpu>50']);
-        });
-
-        await waitFor(() => {
-          expect(result.current[0]).toEqual(['cpu>50']);
-        });
-
-        // Add second filter
-        act(() => {
-          setFilters(['memory<1000']);
-        });
-
-        await waitFor(() => {
-          // Should append, not replace
-          expect(result.current[0]).toEqual(['cpu>50', 'memory<1000']);
-        });
-
-        // Try to add duplicate filter
-        act(() => {
-          setFilters(['cpu>50']);
-        });
-
-        await waitFor(() => {
-          // Should not add duplicate
-          expect(result.current[0]).toEqual(['cpu>50', 'memory<1000']);
-        });
+      act(() => {
+        setParam('should-not-work');
+      });
+      await waitFor(() => {
+        expect(mockNavigateTo).not.toHaveBeenCalled();
       });
     });
 
-    describe('enabled option', () => {
-      it('should return undefined and no-op setter when enabled is false', async () => {
-        const {result} = renderHook(() => useURLState('param', {enabled: false}), {
-          wrapper: createWrapper(),
-        });
+    it('should handle compare mode with enabled option', async () => {
+      const TestComponent = (): {
+        groupByA: string | string[] | undefined;
+        groupByB: string | string[] | undefined;
+      } => {
+        const [groupByA] = useURLState('group_by', {enabled: true, defaultValue: ['node']});
+        const [groupByB] = useURLState('group_by', {enabled: false});
+        return {groupByA, groupByB};
+      };
 
-        const [value, setParam] = result.current;
-        expect(value).toBeUndefined();
+      const {result} = renderHook(() => TestComponent(), {wrapper: createWrapper()});
 
-        // Try to set value - should be no-op
-        act(() => {
-          setParam('should-not-work');
-        });
-
-        await waitFor(() => {
-          expect(mockNavigateTo).not.toHaveBeenCalled();
-        });
-      });
-
-      it('should handle compare mode group_by use case', async () => {
-        const TestComponent = (): {
-          groupByA: string | string[] | undefined;
-          groupByB: string | string[] | undefined;
-        } => {
-          const [groupByA] = useURLState('group_by', {enabled: true, defaultValue: ['node']});
-          const [groupByB] = useURLState('group_by', {enabled: false});
-          return {groupByA, groupByB};
-        };
-
-        const {result} = renderHook(() => TestComponent(), {wrapper: createWrapper()});
-
-        expect(result.current.groupByA).toEqual(['node']);
-        expect(result.current.groupByB).toBeUndefined();
-      });
-    });
-
-    describe('namespace option', () => {
-      it('should prefix param name with namespace', async () => {
-        const {result} = renderHook(
-          () => useURLState('setting', {namespace: 'view', defaultValue: 'default'}),
-          {wrapper: createWrapper()}
-        );
-
-        const [, setSetting] = result.current;
-
-        act(() => {
-          setSetting('new-value');
-        });
-
-        await waitFor(() => {
-          expect(mockNavigateTo).toHaveBeenCalledWith(
-            '/test',
-            {'view.setting': 'new-value'},
-            {replace: true}
-          );
-        });
-      });
-
-      it('should allow multiple namespaces without conflict', async () => {
-        const TestComponent = (): {
-          setViewColor: (val: string | string[] | undefined) => void;
-          setAppColor: (val: string | string[] | undefined) => void;
-        } => {
-          const [, setViewColor] = useURLState('color', {namespace: 'view'});
-          const [, setAppColor] = useURLState('color', {namespace: 'app'});
-          return {setViewColor, setAppColor};
-        };
-
-        const {result} = renderHook(() => TestComponent(), {wrapper: createWrapper()});
-
-        act(() => {
-          result.current.setViewColor('red');
-          result.current.setAppColor('blue');
-        });
-
-        await waitFor(() => {
-          expect(mockNavigateTo).toHaveBeenLastCalledWith(
-            '/test',
-            {'view.color': 'red', 'app.color': 'blue'},
-            {replace: true}
-          );
-        });
-      });
-    });
-
-    describe('useURLStateReset', () => {
-      it('should clear specified keys and preserve others', async () => {
-        mockLocation.search = '?param1=value1&param2=value2&param3=value3';
-
-        const TestComponent = (): {
-          reset: (keys: string[]) => void;
-        } => {
-          const reset = useURLStateReset();
-          return {reset};
-        };
-
-        const {result} = renderHook(() => TestComponent(), {wrapper: createWrapper()});
-
-        act(() => {
-          result.current.reset(['param1', 'param2']);
-        });
-
-        await waitFor(() => {
-          expect(mockNavigateTo).toHaveBeenCalledWith(
-            '/test',
-            {param1: undefined, param2: undefined, param3: 'value3'},
-            {replace: true}
-          );
-        });
-      });
-
-      it('should throw error when used outside URLStateProvider', () => {
-        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-        expect(() => {
-          renderHook(() => useURLStateReset());
-        }).toThrow('useURLStateReset must be used within a URLStateProvider');
-
-        consoleSpy.mockRestore();
-      });
-    });
-
-    describe('hasQueryParams helper', () => {
-      it('should return true/false based on params existence', () => {
-        expect(hasQueryParams({param1: 'value1'})).toBe(true);
-        expect(hasQueryParams({})).toBe(false);
-        expect(hasQueryParams({param1: undefined})).toBe(false);
-        expect(hasQueryParams({param1: ''})).toBe(false);
-      });
-
-      it('should exclude specified keys', () => {
-        const state = {routeParam: 'value1', queryParam: 'value2'};
-        expect(hasQueryParams(state, ['routeParam'])).toBe(true); // queryParam exists
-        expect(hasQueryParams(state, ['routeParam', 'queryParam'])).toBe(false); // all excluded
-      });
-
-      it('should handle view switching scenario', () => {
-        const stateWithoutQuery = {'project-id': 'abc', 'view-slug': 'my-view'};
-        expect(hasQueryParams(stateWithoutQuery, ['project-id', 'view-slug'])).toBe(false);
-
-        const stateWithQuery = {...stateWithoutQuery, group_by: ['node']};
-        expect(hasQueryParams(stateWithQuery, ['project-id', 'view-slug'])).toBe(true);
-      });
+      expect(result.current.groupByA).toEqual(['node']);
+      expect(result.current.groupByB).toBeUndefined();
     });
   });
 });

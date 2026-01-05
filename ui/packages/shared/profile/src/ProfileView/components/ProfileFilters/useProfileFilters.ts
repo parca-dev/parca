@@ -226,7 +226,6 @@ export const convertToProtoFilters = (profileFilters: ProfileFilter[]): Filter[]
 };
 
 interface UseProfileFiltersOptions {
-  suffix?: '_a' | '_b';
   viewDefaults?: ProfileFilter[];
 }
 
@@ -247,10 +246,9 @@ export const useProfileFilters = (
   applyViewDefaults: () => void;
   forceApplyFilters: (filters: ProfileFilter[]) => void;
 } => {
-  const {suffix, viewDefaults} = options;
+  const {viewDefaults} = options;
   const {appliedFilters, setAppliedFilters, applyViewDefaults, forceApplyFilters} =
     useProfileFiltersUrlState({
-      suffix,
       viewDefaults,
     });
   const resetFlameGraphState = useResetFlameGraphState();

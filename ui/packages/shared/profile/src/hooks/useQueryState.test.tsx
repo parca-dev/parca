@@ -11,10 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {ReactNode} from 'react';
+import {ReactNode, act} from 'react';
 
 // eslint-disable-next-line import/named
-import {act, renderHook, waitFor} from '@testing-library/react';
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
+import {renderHook, waitFor} from '@testing-library/react';
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {URLStateProvider} from '@parca/components';
@@ -103,10 +104,19 @@ vi.mock('../useSumBy', async () => {
 const createWrapper = (
   paramPreferences = {}
 ): (({children}: {children: ReactNode}) => JSX.Element) => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
   const Wrapper = ({children}: {children: ReactNode}): JSX.Element => (
-    <URLStateProvider navigateTo={mockNavigateTo} paramPreferences={paramPreferences}>
-      {children}
-    </URLStateProvider>
+    <QueryClientProvider client={queryClient}>
+      <URLStateProvider navigateTo={mockNavigateTo} paramPreferences={paramPreferences}>
+        {children}
+      </URLStateProvider>
+    </QueryClientProvider>
   );
   Wrapper.displayName = 'URLStateProviderWrapper';
   return Wrapper;
@@ -127,7 +137,7 @@ describe('useQueryState', () => {
       const {result} = renderHook(
         () =>
           useQueryState({
-            defaultExpression: 'process_cpu{}',
+            defaultExpression: 'process_cpu:cpu:nanoseconds:cpu:nanoseconds{}',
             defaultTimeSelection: 'relative:hour|1',
             defaultFrom: 1000,
             defaultTo: 2000,
@@ -136,7 +146,7 @@ describe('useQueryState', () => {
       );
 
       const {querySelection} = result.current;
-      expect(querySelection.expression).toBe('process_cpu{}');
+      expect(querySelection.expression).toBe('process_cpu:cpu:nanoseconds:cpu:nanoseconds{}');
       expect(querySelection.timeSelection).toBe('relative:hour|1');
       // From/to should be calculated from the range
       expect(querySelection.from).toBeDefined();
@@ -524,7 +534,9 @@ describe('useQueryState', () => {
   });
 
   describe('Edge cases', () => {
-    it('should handle invalid expression gracefully', () => {
+    it('should handle invalid expression gracefully and log warning', () => {
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
       const {result} = renderHook(
         () =>
           useQueryState({
@@ -533,8 +545,33 @@ describe('useQueryState', () => {
         {wrapper: createWrapper()}
       );
 
-      // Should not throw error
+      // Should not throw error - invalid expressions are caught and logged
       expect(() => result.current.querySelection).not.toThrow();
+      // Should fall back to empty expression
+      expect(result.current.querySelection.expression).toBe('invalid{{}expression');
+      // Should log a warning about the parse failure
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Failed to parse expression',
+        expect.objectContaining({
+          expression: 'invalid{{}expression',
+        })
+      );
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should handle empty expression gracefully', () => {
+      const {result} = renderHook(
+        () =>
+          useQueryState({
+            defaultExpression: '',
+          }),
+        {wrapper: createWrapper()}
+      );
+
+      // Should not throw error with empty expression
+      expect(() => result.current.querySelection).not.toThrow();
+      expect(result.current.querySelection.expression).toBe('');
     });
 
     it('should clear merge params for non-delta profiles', async () => {
@@ -583,6 +620,37 @@ describe('useQueryState', () => {
         expect(params.expression).toBe('memory:inuse_space:bytes:space:bytes{}');
         expect(params.other_param).toBe('value');
         expect(params.unrelated).toBe('test');
+      });
+    });
+
+    it('should reset query to default state', async () => {
+      mockLocation.search =
+        '?expression=memory:inuse_space:bytes:space:bytes{}&sum_by=function&group_by=namespace';
+
+      const {result} = renderHook(
+        () =>
+          useQueryState({
+            defaultExpression: 'process_cpu:cpu:nanoseconds:cpu:nanoseconds{}',
+          }),
+        {wrapper: createWrapper()}
+      );
+
+      // Verify initial state from URL
+      expect(result.current.querySelection.expression).toBe(
+        'memory:inuse_space:bytes:space:bytes{}'
+      );
+
+      // Reset query
+      act(() => {
+        result.current.resetQuery();
+      });
+
+      await waitFor(() => {
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        expect(params.expression).toBe('process_cpu:cpu:nanoseconds:cpu:nanoseconds{}');
+        expect(params.sum_by).toBeUndefined();
+        expect(params.group_by).toBeUndefined();
       });
     });
   });
@@ -1191,7 +1259,8 @@ describe('useQueryState', () => {
     });
 
     it('should preserve other URL params when setting ProfileSelection', async () => {
-      mockLocation.search = '?expression_a=process_cpu{}&other_param=value&unrelated=test';
+      mockLocation.search =
+        '?expression_a=process_cpu:cpu:nanoseconds:cpu:nanoseconds{}&other_param=value&unrelated=test';
 
       const {result} = renderHook(() => useQueryState({suffix: '_a'}), {wrapper: createWrapper()});
 
@@ -1212,7 +1281,7 @@ describe('useQueryState', () => {
         expect(params.selection_a).toBe('process_cpu:cpu:nanoseconds:cpu:nanoseconds{pod="test"}');
 
         // Other params should be preserved
-        expect(params.expression_a).toBe('process_cpu{}');
+        expect(params.expression_a).toBe('process_cpu:cpu:nanoseconds:cpu:nanoseconds{}');
         expect(params.other_param).toBe('value');
         expect(params.unrelated).toBe('test');
       });
@@ -1251,7 +1320,8 @@ describe('useQueryState', () => {
       });
 
       // Now set URL params manually
-      mockLocation.search = '?expression=custom{}&sum_by=line&group_by=pod';
+      mockLocation.search =
+        '?expression=memory:inuse_space:bytes:space:bytes{}&sum_by=line&group_by=pod';
       mockNavigateTo.mockClear();
 
       const {result: result2} = renderHook(() => useQueryState({viewDefaults}), {
@@ -1269,7 +1339,7 @@ describe('useQueryState', () => {
         // Either no navigation or navigation preserves existing values
         if (mockNavigateTo.mock.calls.length > 0) {
           const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
-          expect(params.expression).toBe('custom{}');
+          expect(params.expression).toBe('memory:inuse_space:bytes:space:bytes{}');
           expect(params.sum_by).toBe('line');
           expect(params.group_by).toBe('pod');
         }
@@ -1293,48 +1363,12 @@ describe('useQueryState', () => {
       );
 
       // Test without profile type
-      mockLocation.search = '?expression={comm="prometheus"}';
+      mockLocation.search = '';
 
       const {result: result2} = renderHook(() => useQueryState({}), {wrapper: createWrapper()});
 
       expect(result2.current.hasProfileType).toBe(false);
       expect(result2.current.profileTypeString).toBe('');
-      expect(result2.current.matchersOnly).toBe('{comm="prometheus"}');
-    });
-
-    it('should manage group_by only for _a hook in comparison mode', async () => {
-      mockLocation.search = '';
-
-      // Render _a hook
-      const {result: resultA} = renderHook(() => useQueryState({suffix: '_a'}), {
-        wrapper: createWrapper(),
-      });
-
-      // Render _b hook
-      const {result: resultB} = renderHook(() => useQueryState({suffix: '_b'}), {
-        wrapper: createWrapper(),
-      });
-
-      // _a hook should have group-by methods
-      expect(resultA.current.groupBy).toBeDefined();
-      expect(resultA.current.setGroupBy).toBeDefined();
-      expect(resultA.current.isGroupByLoading).toBeDefined();
-
-      // _b hook should NOT have group-by methods
-      expect(resultB.current.groupBy).toBeUndefined();
-      expect(resultB.current.setGroupBy).toBeUndefined();
-      expect(resultB.current.isGroupByLoading).toBeUndefined();
-
-      // Set group_by via _a hook
-      act(() => {
-        resultA.current.setGroupBy?.(['namespace', 'pod']);
-      });
-
-      await waitFor(() => {
-        expect(mockNavigateTo).toHaveBeenCalled();
-        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
-        expect(params.group_by).toBe('namespace,pod');
-      });
     });
   });
 });

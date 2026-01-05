@@ -211,7 +211,6 @@ interface Options {
   debugLog?: boolean;
   alwaysReturnArray?: boolean;
   mergeStrategy?: 'replace' | 'append' | 'preserve-existing';
-  namespace?: string;
   enabled?: boolean;
 }
 
@@ -224,10 +223,7 @@ export const useURLState = <T extends ParamValue>(
     throw new Error('useURLState must be used within a URLStateProvider');
   }
 
-  const {debugLog, defaultValue, alwaysReturnArray, mergeStrategy, enabled, namespace} =
-    _options ?? {};
-
-  const effectiveParam = namespace != null ? `${namespace}.${param}` : param;
+  const {debugLog, defaultValue, alwaysReturnArray, mergeStrategy, enabled} = _options ?? {};
 
   const {state, setState} = context;
 
@@ -237,12 +233,12 @@ export const useURLState = <T extends ParamValue>(
   const setParam: ParamValueSetter = useCallback(
     (val: ParamValue) => {
       if (debugLog === true) {
-        console.log('useURLState setParam', effectiveParam, val);
+        console.log('useURLState setParam', param, val);
       }
 
       // Just update state - Provider handles URL sync automatically!
       setState(currentState => {
-        const currentValue = currentState[effectiveParam];
+        const currentValue = currentState[param];
         let newValue: ParamValue;
 
         if (mergeStrategy === undefined || mergeStrategy === 'replace') {
@@ -288,70 +284,60 @@ export const useURLState = <T extends ParamValue>(
 
         return {
           ...currentState,
-          [effectiveParam]: newValue,
+          [param]: newValue,
         };
       });
     },
-    [effectiveParam, setState, debugLog, mergeStrategy]
+    [param, setState, debugLog, mergeStrategy]
   );
 
   if (debugLog === true) {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
-      console.log('useURLState state change', effectiveParam, state[effectiveParam]);
+      console.log('useURLState state change', param, state[param]);
 
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [state[effectiveParam]]);
+    }, [state[param]]);
   }
 
   const value = useMemo<ParamValue>(() => {
-    if (typeof state[effectiveParam] === 'string') {
+    if (typeof state[param] === 'string') {
       if (alwaysReturnArray === true) {
         if (debugLog === true) {
-          console.log(
-            'useURLState returning single string value as array for param',
-            effectiveParam,
-            [state[effectiveParam]]
-          );
+          console.log('useURLState returning single string value as array for param', param, [
+            state[param],
+          ]);
         }
-        return [state[effectiveParam]] as ParamValue;
+        return [state[param]] as ParamValue;
       }
       if (debugLog === true) {
-        console.log(
-          'useURLState returning string value for param',
-          effectiveParam,
-          state[effectiveParam]
-        );
+        console.log('useURLState returning string value for param', param, state[param]);
       }
-      return state[effectiveParam];
-    } else if (state[effectiveParam] != null && Array.isArray(state[effectiveParam])) {
-      if (state[effectiveParam]?.length === 1 && alwaysReturnArray !== true) {
+      return state[param];
+    } else if (state[param] != null && Array.isArray(state[param])) {
+      if (state[param]?.length === 1 && alwaysReturnArray !== true) {
         if (debugLog === true) {
           console.log(
             'useURLState returning first array value as string for param',
-            effectiveParam,
-            state[effectiveParam][0]
+            param,
+            state[param][0]
           );
         }
-        return state[effectiveParam]?.[0] as ParamValue;
+        return state[param]?.[0] as ParamValue;
       } else {
         if (debugLog === true) {
-          console.log(
-            'useURLState returning array value for param',
-            effectiveParam,
-            state[effectiveParam]
-          );
+          console.log('useURLState returning array value for param', param, state[param]);
         }
-        return state[effectiveParam];
+        return state[param];
       }
     }
-  }, [state, effectiveParam, alwaysReturnArray, debugLog]);
+  }, [state, param, alwaysReturnArray, debugLog]);
 
   if (value == null) {
     if (debugLog === true) {
       console.log(
         'useURLState returning defaultValue for param',
-        effectiveParam,
+        param,
         defaultValue,
         window.location.href
       );
@@ -426,38 +412,6 @@ export const useURLStateBatch = (): ((callback: () => void) => void) => {
   }
 
   return context.batchUpdates;
-};
-
-// Hook to reset/clear specific URL params
-export const useURLStateReset = (): ((keys: string[]) => void) => {
-  const context = useContext(URLStateContext);
-  if (context === undefined) {
-    throw new Error('useURLStateReset must be used within a URLStateProvider');
-  }
-
-  return useCallback(
-    (keys: string[]) => {
-      context.setState(currentState => {
-        const newState = {...currentState};
-        keys.forEach(key => {
-          newState[key] = undefined;
-        });
-        return newState;
-      });
-    },
-    [context]
-  );
-};
-
-// Helper to check if URL has query params (excluding specified keys)
-export const hasQueryParams = (
-  state: Record<string, ParamValue>,
-  exclude: string[] = []
-): boolean => {
-  const params = Object.keys(state).filter(
-    k => !exclude.includes(k) && state[k] !== undefined && state[k] !== ''
-  );
-  return params.length > 0;
 };
 
 export default URLStateContext;

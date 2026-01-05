@@ -82,11 +82,6 @@ interface UseQueryStateReturn {
   matchersOnly: string;
   fullExpression: string;
 
-  // Group-by state (only for _a hook, undefined for _b)
-  groupBy?: string[];
-  setGroupBy?: (groupBy: string[] | undefined) => void;
-  isGroupByLoading?: boolean;
-
   // Methods
   applyViewDefaults: () => void;
   resetQuery: () => void;
@@ -154,11 +149,8 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
 
   const [sumByParam, setSumByParam] = useURLState<string>(`sum_by${suffix}`);
 
-  // Group-by state - only enabled for _a hook (or when no suffix)
-  // This ensures only one hook manages the shared group_by param in comparison mode
-  const isGroupByEnabled = suffix === '' || suffix === '_a';
-  const [groupByParam, setGroupByParam] = useURLState<string>('group_by', {
-    enabled: isGroupByEnabled,
+  const [, setGroupByParam] = useURLState<string>('group_by', {
+    alwaysReturnArray: true,
   });
 
   // Separate setters for applying view defaults with preserve-existing strategy
@@ -169,7 +161,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     mergeStrategy: 'preserve-existing',
   });
   const [, setGroupByWithPreserve] = useURLState<string>('group_by', {
-    enabled: isGroupByEnabled,
+    alwaysReturnArray: true,
     mergeStrategy: 'preserve-existing',
   });
 
@@ -220,7 +212,11 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
   const draftQuery = useMemo(() => {
     try {
       return Query.parse(draftExpression ?? '');
-    } catch {
+    } catch (error) {
+      console.warn('Failed to parse draft expression', {
+        expression: draftExpression,
+        error: error instanceof Error ? error.message : String(error),
+      });
       return Query.parse('');
     }
   }, [draftExpression]);
@@ -228,7 +224,11 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
   const query = useMemo(() => {
     try {
       return Query.parse(expression ?? '');
-    } catch {
+    } catch (error) {
+      console.warn('Failed to parse expression', {
+        expression,
+        error: error instanceof Error ? error.message : String(error),
+      });
       return Query.parse('');
     }
   }, [expression]);
@@ -557,13 +557,11 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
         }
       }
 
-      // Apply sum_by default using preserve-existing strategy
       if (defaults.sumBy !== undefined) {
         setSumByWithPreserve(sumByToParam(defaults.sumBy));
       }
 
-      // Apply group_by default only for _a hook using preserve-existing strategy
-      if (isGroupByEnabled && defaults.groupBy !== undefined) {
+      if (defaults.groupBy !== undefined) {
         setGroupByWithPreserve(defaults.groupBy.join(','));
       }
     });
@@ -574,7 +572,6 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     sharedDefaults,
     setExpressionWithPreserve,
     setSumByWithPreserve,
-    isGroupByEnabled,
     setGroupByWithPreserve,
     profileTypesLoading,
     profileTypesData,
@@ -586,23 +583,18 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     batchUpdates(() => {
       setExpressionState(defaultExpression);
       setSumByParam(undefined);
-      if (isGroupByEnabled) {
-        setGroupByParam(undefined);
-      }
+      setGroupByParam(undefined);
     });
-  }, [
-    batchUpdates,
-    setExpressionState,
-    defaultExpression,
-    setSumByParam,
-    isGroupByEnabled,
-    setGroupByParam,
-  ]);
+  }, [batchUpdates, setExpressionState, defaultExpression, setSumByParam, setGroupByParam]);
 
   const draftParsedQuery = useMemo(() => {
     try {
       return Query.parse(draftSelection.expression ?? '');
-    } catch {
+    } catch (error) {
+      console.warn('Failed to parse draft selection expression', {
+        expression: draftSelection.expression,
+        error: error instanceof Error ? error.message : String(error),
+      });
       return Query.parse('');
     }
   }, [draftSelection.expression]);
@@ -610,7 +602,11 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
   const parsedQuery = useMemo(() => {
     try {
       return Query.parse(querySelection.expression ?? '');
-    } catch {
+    } catch (error) {
+      console.warn('Failed to parse query selection expression', {
+        expression: querySelection.expression,
+        error: error instanceof Error ? error.message : String(error),
+      });
       return Query.parse('');
     }
   }, [querySelection.expression]);
@@ -626,19 +622,32 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     }
 
     const expr = expression ?? defaultExpression;
-    const parsed = Query.parse(expr);
+    try {
+      const parsed = Query.parse(expr);
 
-    const profileType = parsed.profileType();
-    const profileTypeStr = profileType.toString();
-    const hasProfile = profileTypeStr !== '';
-    const matchers = `{${parsed.matchersString()}}`;
+      const profileType = parsed.profileType();
+      const profileTypeStr = profileType.toString();
+      const hasProfile = profileTypeStr !== '';
+      const matchers = `{${parsed.matchersString()}}`;
 
-    return {
-      hasProfileType: hasProfile,
-      profileTypeString: profileTypeStr,
-      matchersOnly: matchers,
-      fullExpression: parsed.toString(),
-    };
+      return {
+        hasProfileType: hasProfile,
+        profileTypeString: profileTypeStr,
+        matchersOnly: matchers,
+        fullExpression: parsed.toString(),
+      };
+    } catch (error) {
+      console.warn('Failed to parse expression for profile type extraction', {
+        expression: expr,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return {
+        hasProfileType: false,
+        profileTypeString: '',
+        matchersOnly: '{}',
+        fullExpression: expr,
+      };
+    }
   }, [expression, defaultExpression]);
 
   // Re-apply view defaults when profile types finish loading (for matchers-only expressions)
@@ -693,21 +702,6 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     matchersOnly,
     fullExpression,
 
-    // Group-by state (only for _a hook)
-    ...(isGroupByEnabled
-      ? {
-          groupBy:
-            groupByParam != null && typeof groupByParam === 'string' && groupByParam !== ''
-              ? groupByParam.split(',').filter(Boolean)
-              : undefined,
-          setGroupBy: (groupBy: string[] | undefined) => {
-            setGroupByParam(groupBy?.join(','));
-          },
-          isGroupByLoading: false,
-        }
-      : {}),
-
-    // Methods
     applyViewDefaults,
     resetQuery,
   };

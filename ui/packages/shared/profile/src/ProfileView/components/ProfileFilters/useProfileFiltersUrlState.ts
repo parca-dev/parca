@@ -138,7 +138,6 @@ export const decodeProfileFilters = (encoded: string): ProfileFilter[] => {
 };
 
 interface UseProfileFiltersUrlStateOptions {
-  suffix?: '_a' | '_b';
   viewDefaults?: ProfileFilter[];
 }
 
@@ -150,13 +149,13 @@ export const useProfileFiltersUrlState = (
   applyViewDefaults: () => void;
   forceApplyFilters: (filters: ProfileFilter[]) => void;
 } => {
-  const {suffix = '', viewDefaults} = options;
+  const {viewDefaults} = options;
 
   const batchUpdates = useURLStateBatch();
 
   // Store applied filters in URL state for persistence using compact encoding
   const [appliedFilters, setAppliedFilters] = useURLStateCustom<ProfileFilter[]>(
-    `profile_filters${suffix}`,
+    `profile_filters`,
     {
       parse: value => {
         return decodeProfileFilters(value as string);
@@ -169,20 +168,17 @@ export const useProfileFiltersUrlState = (
   );
 
   // Setter with preserve-existing strategy for applying view defaults
-  const [, setAppliedFiltersWithPreserve] = useURLStateCustom<ProfileFilter[]>(
-    `profile_filters${suffix}`,
-    {
-      parse: value => {
-        const result = decodeProfileFilters(value as string);
-        return result;
-      },
-      stringify: value => {
-        const result = encodeProfileFilters(value);
-        return result;
-      },
-      mergeStrategy: 'preserve-existing',
-    }
-  );
+  const [, setAppliedFiltersWithPreserve] = useURLStateCustom<ProfileFilter[]>(`profile_filters`, {
+    parse: value => {
+      const result = decodeProfileFilters(value as string);
+      return result;
+    },
+    stringify: value => {
+      const result = encodeProfileFilters(value);
+      return result;
+    },
+    mergeStrategy: 'preserve-existing',
+  });
 
   const memoizedAppliedFilters = useMemo(() => {
     return appliedFilters ?? [];
@@ -204,13 +200,10 @@ export const useProfileFiltersUrlState = (
   // Use this when switching views to completely replace the current filters.
   const forceApplyFilters = useCallback(
     (filters: ProfileFilter[]) => {
-      // Validate filters before applying
       const validFilters = filters.filter(f => {
-        // For preset filters, only need type and value
         if (f.type != null && isPresetKey(f.type)) {
           return f.value !== '' && f.type != null;
         }
-        // For regular filters, need all fields
         return f.value !== '' && f.type != null && f.field != null && f.matchType != null;
       });
 
