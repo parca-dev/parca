@@ -16,6 +16,7 @@ import React, {useRef, useState} from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
 
 import {useURLState} from '@parca/components';
+import {testId, TEST_IDS} from '@parca/test-utils';
 
 import {ProfileSource} from '../ProfileSource';
 import {useDashboard} from '../ProfileView/context/DashboardContext';
@@ -46,7 +47,7 @@ const Sandwich = React.memo(function Sandwich({
   const {curPathArrow, setCurPathArrow} = useVisualizationState();
 
   return (
-    <section className="flex flex-row h-full w-full">
+    <section className="flex flex-row h-full w-full" {...testId(TEST_IDS.SANDWICH_CONTAINER)}>
       <AnimatePresence>
         <motion.div
           className="h-full w-full"
@@ -78,7 +79,10 @@ const Sandwich = React.memo(function Sandwich({
                 />
               </div>
             ) : (
-              <div className="items-center justify-center flex h-full w-full">
+              <div
+                className="items-center justify-center flex h-full w-full"
+                {...testId(TEST_IDS.SANDWICH_NO_FUNCTION_SELECTED)}
+              >
                 <p className="text-sm">
                   {dashboardItems.includes('table') ? (
                     'Please select a function to view its callers and callees.'

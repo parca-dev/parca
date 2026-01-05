@@ -13,6 +13,8 @@
 
 import React from 'react';
 
+import {testId, TEST_IDS} from '@parca/test-utils';
+
 import ProfileFlameGraph from '../../ProfileFlameGraph';
 import {type CurrentPathFrame} from '../../ProfileFlameGraph/FlameGraphArrow/utils';
 import {type ProfileSource} from '../../ProfileSource';
@@ -35,7 +37,11 @@ export function CalleesSection({
   setCurPathArrow,
 }: CalleesSectionProps): JSX.Element {
   return (
-    <div className="flex relative items-start flex-row" ref={calleesRef}>
+    <div
+      className="flex relative items-start flex-row"
+      ref={calleesRef}
+      {...testId(TEST_IDS.SANDWICH_CALLEES_SECTION)}
+    >
       <div className="[writing-mode:vertical-lr] -rotate-180 px-1 uppercase text-[10px] text-left">
         {'<-'} Callees
       </div>
