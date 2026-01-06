@@ -100,6 +100,43 @@ vi.mock('../useSumBy', async () => {
   };
 });
 
+// Track profile types loading state for tests
+let mockProfileTypesLoading = false;
+let mockProfileTypesData:
+  | {
+      types: Array<{
+        name: string;
+        sampleType: string;
+        sampleUnit: string;
+        periodType: string;
+        periodUnit: string;
+        delta: boolean;
+      }>;
+    }
+  | undefined = undefined;
+
+// Mock useProfileTypes to control loading state in tests
+vi.mock('../ProfileSelector', async () => {
+  const actual = await vi.importActual('../ProfileSelector');
+  return {
+    ...actual,
+    useProfileTypes: () => ({
+      loading: mockProfileTypesLoading,
+      data: mockProfileTypesData,
+      error: null,
+    }),
+  };
+});
+
+// Helper to set profile types loading state for tests
+const setProfileTypesLoading = (loading: boolean) => {
+  mockProfileTypesLoading = loading;
+};
+
+const setProfileTypesData = (data: typeof mockProfileTypesData) => {
+  mockProfileTypesData = data;
+};
+
 // Helper to create wrapper with URLStateProvider
 const createWrapper = (
   paramPreferences = {}
@@ -130,6 +167,9 @@ describe('useQueryState', () => {
       writable: true,
     });
     mockLocation.search = '';
+    // Reset profile types mock state
+    setProfileTypesLoading(false);
+    setProfileTypesData(undefined);
   });
 
   describe('Basic functionality', () => {
@@ -1369,6 +1409,205 @@ describe('useQueryState', () => {
 
       expect(result2.current.hasProfileType).toBe(false);
       expect(result2.current.profileTypeString).toBe('');
+    });
+
+    it('should force apply view defaults and overwrite existing URL params', async () => {
+      // Start with existing URL params
+      mockLocation.search =
+        '?expression=memory:inuse_space:bytes:space:bytes{}&sum_by=line&group_by=pod';
+
+      const viewDefaults = {
+        expression: 'process_cpu:samples:count:cpu:nanoseconds:delta{job="default"}',
+        sumBy: ['function'],
+        groupBy: ['namespace'],
+      };
+
+      const {result} = renderHook(() => useQueryState({viewDefaults}), {
+        wrapper: createWrapper(),
+      });
+
+      // Force apply view defaults - should overwrite existing values
+      act(() => {
+        result.current.forceApplyViewDefaults();
+      });
+
+      await waitFor(() => {
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        // Should overwrite with view defaults, not preserve existing
+        expect(params.expression).toBe(
+          'process_cpu:samples:count:cpu:nanoseconds:delta{job="default"}'
+        );
+        expect(params.sum_by).toBe('function');
+        expect(params.group_by).toBe('namespace');
+      });
+    });
+
+    it('should force apply only provided view defaults', async () => {
+      // Start with existing URL params
+      mockLocation.search =
+        '?expression=memory:inuse_space:bytes:space:bytes{}&sum_by=line&group_by=pod';
+
+      // Only provide expression in viewDefaults
+      const viewDefaults = {
+        expression: 'process_cpu:samples:count:cpu:nanoseconds:delta{job="new"}',
+      };
+
+      const {result} = renderHook(() => useQueryState({viewDefaults}), {
+        wrapper: createWrapper(),
+      });
+
+      act(() => {
+        result.current.forceApplyViewDefaults();
+      });
+
+      await waitFor(() => {
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        // Should overwrite expression
+        expect(params.expression).toBe(
+          'process_cpu:samples:count:cpu:nanoseconds:delta{job="new"}'
+        );
+        // sum_by and group_by should remain from URL since not in viewDefaults
+        expect(params.sum_by).toBe('line');
+        expect(params.group_by).toBe('pod');
+      });
+    });
+
+    it('should force apply view defaults with suffix for comparison mode', async () => {
+      // Start with existing URL params for side _a
+      mockLocation.search = '?expression_a=memory:inuse_space:bytes:space:bytes{}&sum_by_a=line';
+
+      const viewDefaults = {
+        expression: 'process_cpu:samples:count:cpu:nanoseconds:delta{job="default"}',
+        sumBy: ['function'],
+      };
+
+      const {result} = renderHook(() => useQueryState({suffix: '_a', viewDefaults}), {
+        wrapper: createWrapper(),
+      });
+
+      act(() => {
+        result.current.forceApplyViewDefaults();
+      });
+
+      await waitFor(() => {
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        // Should overwrite _a suffixed params
+        expect(params.expression_a).toBe(
+          'process_cpu:samples:count:cpu:nanoseconds:delta{job="default"}'
+        );
+        expect(params.sum_by_a).toBe('function');
+      });
+    });
+
+    it('should not apply anything when viewDefaults is undefined', async () => {
+      mockLocation.search = '?expression=memory:inuse_space:bytes:space:bytes{}';
+
+      const {result} = renderHook(() => useQueryState({}), {
+        wrapper: createWrapper(),
+      });
+
+      act(() => {
+        result.current.forceApplyViewDefaults();
+      });
+
+      // Should not navigate since there are no defaults to apply
+      expect(mockNavigateTo).not.toHaveBeenCalled();
+    });
+
+    it('should use sharedDefaults for _b suffix when viewDefaults not provided', async () => {
+      mockLocation.search = '?expression_b=memory:inuse_space:bytes:space:bytes{}&group_by=pod';
+
+      const sharedDefaults = {
+        groupBy: ['function_name'],
+      };
+
+      const {result} = renderHook(() => useQueryState({suffix: '_b', sharedDefaults}), {
+        wrapper: createWrapper(),
+      });
+
+      act(() => {
+        result.current.forceApplyViewDefaults();
+      });
+
+      await waitFor(() => {
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        // Should overwrite group_by with sharedDefaults value
+        expect(params.group_by).toBe('function_name');
+      });
+    });
+
+    it('should still apply groupBy and sumBy when profile types are loading for matchers-only expression', async () => {
+      // This test covers the bug where forceApplyViewDefaults would bail out entirely
+      // when profile types were still loading, even though groupBy and sumBy don't depend on profile types
+      mockLocation.search =
+        '?expression=parca_agent:wallclock:nanoseconds{}&group_by=old_value&sum_by=old_sum';
+
+      // Simulate profile types still loading
+      setProfileTypesLoading(true);
+
+      const viewDefaults = {
+        expression: '{namespace="test"}', // Matchers-only expression that needs profile types
+        sumBy: ['new_sum'],
+        groupBy: ['new_group', 'another_group'],
+      };
+
+      const {result} = renderHook(() => useQueryState({viewDefaults}), {
+        wrapper: createWrapper(),
+      });
+
+      act(() => {
+        result.current.forceApplyViewDefaults();
+      });
+
+      await waitFor(() => {
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        // Expression should NOT be set (profile types still loading)
+        // But groupBy and sumBy SHOULD still be applied
+        expect(params.sum_by).toBe('new_sum');
+        expect(params.group_by).toBe('new_group,another_group');
+      });
+    });
+
+    it('should still apply groupBy and sumBy when profile types are unavailable for matchers-only expression', async () => {
+      // Similar to above but for when profile types finished loading with no data
+      mockLocation.search =
+        '?expression=process_cpu:samples:count:cpu:nanoseconds:delta{}&group_by=old_value';
+
+      // Simulate profile types loaded but with empty types array
+      // Set loading to false and data to undefined to avoid triggering the auto-apply useEffect
+      // (the auto-apply requires profileTypesData != null)
+      setProfileTypesLoading(false);
+      setProfileTypesData(undefined);
+
+      const viewDefaults = {
+        expression: '{namespace="test"}', // Matchers-only expression that will fail to apply
+        groupBy: ['function_name', 'labels.cpu'],
+      };
+
+      const {result} = renderHook(() => useQueryState({viewDefaults}), {
+        wrapper: createWrapper(),
+      });
+
+      // Clear any calls from initial render
+      mockNavigateTo.mockClear();
+
+      act(() => {
+        result.current.forceApplyViewDefaults();
+      });
+
+      await waitFor(() => {
+        expect(mockNavigateTo).toHaveBeenCalled();
+        // The forceApplyViewDefaults call should set group_by to the new value
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        // groupBy should still be applied even though expression couldn't be
+        // (because profileTypesData is undefined, making the matchers-only expression fail)
+        expect(params.group_by).toBe('function_name,labels.cpu');
+      });
     });
   });
 });

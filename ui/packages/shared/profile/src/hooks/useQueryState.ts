@@ -84,6 +84,7 @@ interface UseQueryStateReturn {
 
   // Methods
   applyViewDefaults: () => void;
+  forceApplyViewDefaults: () => void;
   resetQuery: () => void;
 }
 
@@ -160,7 +161,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
   const [, setSumByWithPreserve] = useURLState<string>(`sum_by${suffix}`, {
     mergeStrategy: 'preserve-existing',
   });
-  const [, setGroupByWithPreserve] = useURLState<string>('group_by', {
+  const [, setGroupByWithPreserve] = useURLState<string[]>('group_by', {
     alwaysReturnArray: true,
     mergeStrategy: 'preserve-existing',
   });
@@ -200,6 +201,10 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     hasMatchersOnlyDefault ? timeRangeForProfileTypes.getFromMs() : undefined,
     hasMatchersOnlyDefault ? timeRangeForProfileTypes.getToMs() : undefined
   );
+
+  // Track if we need to force-apply view defaults after profile types load
+  // (when forceApplyViewDefaults was called but skipped due to profile types still loading)
+  const [pendingForceApply, setPendingForceApply] = useState(false);
 
   // Draft state management
   const [draftExpression, setDraftExpression] = useState<string>(expression ?? defaultExpression);
@@ -533,25 +538,20 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
         const isMatchersOnly = defaults.expression.trim().startsWith('{');
 
         if (isMatchersOnly) {
-          if (profileTypesLoading) return;
+          // Skip if profile types are still loading - will be retried via useEffect
+          const canApplyMatchersOnly =
+            !profileTypesLoading &&
+            profileTypesError == null &&
+            profileTypesData != null &&
+            profileTypesData.types.length > 0;
 
-          if (
-            profileTypesError != null ||
-            profileTypesData == null ||
-            profileTypesData.types.length === 0
-          ) {
-            console.warn('Cannot apply matchers-only view default: no profile types available', {
-              expression: defaults.expression,
-              error: profileTypesError,
-            });
-            return;
+          if (canApplyMatchersOnly) {
+            const fullExpression = prependProfileTypeToMatchers(
+              defaults.expression,
+              profileTypesData
+            );
+            setExpressionWithPreserve(fullExpression);
           }
-
-          const fullExpression = prependProfileTypeToMatchers(
-            defaults.expression,
-            profileTypesData
-          );
-          setExpressionWithPreserve(fullExpression);
         } else {
           setExpressionWithPreserve(defaults.expression);
         }
@@ -562,7 +562,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
       }
 
       if (defaults.groupBy !== undefined) {
-        setGroupByWithPreserve(defaults.groupBy.join(','));
+        setGroupByWithPreserve(defaults.groupBy);
       }
     });
   }, [
@@ -576,6 +576,62 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     profileTypesLoading,
     profileTypesData,
     profileTypesError,
+  ]);
+
+  // Force apply view defaults to URL params (overwrites existing values)
+  const forceApplyViewDefaults = useCallback(() => {
+    batchUpdates(() => {
+      const defaults = suffix === '' || suffix === '_a' ? viewDefaults : sharedDefaults;
+      if (defaults === undefined) {
+        return;
+      }
+
+      if (defaults.expression !== undefined) {
+        const isMatchersOnly = defaults.expression.trim().startsWith('{');
+
+        if (isMatchersOnly) {
+          // Skip if profile types not ready - pendingForceApply triggers retry
+          const canApplyMatchersOnly =
+            !profileTypesLoading &&
+            profileTypesError == null &&
+            profileTypesData != null &&
+            profileTypesData.types.length > 0;
+
+          if (canApplyMatchersOnly) {
+            const fullExpression = prependProfileTypeToMatchers(
+              defaults.expression,
+              profileTypesData
+            );
+            setExpressionState(fullExpression);
+            setPendingForceApply(false);
+          } else {
+            setPendingForceApply(true);
+          }
+        } else {
+          setExpressionState(defaults.expression);
+        }
+      }
+
+      if (defaults.sumBy !== undefined) {
+        setSumByParam(sumByToParam(defaults.sumBy));
+      }
+
+      if (defaults.groupBy !== undefined) {
+        setGroupByParam(defaults.groupBy);
+      }
+    });
+  }, [
+    batchUpdates,
+    suffix,
+    viewDefaults,
+    sharedDefaults,
+    setExpressionState,
+    setSumByParam,
+    setGroupByParam,
+    profileTypesLoading,
+    profileTypesData,
+    profileTypesError,
+    setPendingForceApply,
   ]);
 
   // Reset query to default state
@@ -652,6 +708,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
 
   // Re-apply view defaults when profile types finish loading (for matchers-only expressions)
   const [profileTypesLoadedOnce, setProfileTypesLoadedOnce] = useState(false);
+
   useEffect(
     () => {
       if (
@@ -661,11 +718,23 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
         profileTypesData != null
       ) {
         setProfileTypesLoadedOnce(true);
-        applyViewDefaults();
+        // Use forceApplyViewDefaults if we had a pending force apply, otherwise use regular apply
+        if (pendingForceApply) {
+          setPendingForceApply(false);
+          forceApplyViewDefaults();
+        } else {
+          applyViewDefaults();
+        }
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [hasMatchersOnlyDefault, profileTypesLoading, profileTypesLoadedOnce, profileTypesData]
+    [
+      hasMatchersOnlyDefault,
+      profileTypesLoading,
+      profileTypesLoadedOnce,
+      profileTypesData,
+      pendingForceApply,
+    ]
   );
 
   return {
@@ -703,6 +772,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     fullExpression,
 
     applyViewDefaults,
+    forceApplyViewDefaults,
     resetQuery,
   };
 };
