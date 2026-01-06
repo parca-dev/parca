@@ -21,7 +21,7 @@ env:
   # renovate: datasource=go depName=github.com/goreleaser/goreleaser
   GORELEASER_VERSION: v1.26.2
   # renovate: datasource=npm depName=pnpm versioning=npm
-  PNPM_VERSION: '10.26.2'
+  PNPM_VERSION: '10.27.0'
 
 jobs:
   skip-check:
