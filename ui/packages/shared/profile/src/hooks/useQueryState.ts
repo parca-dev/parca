@@ -39,6 +39,7 @@ interface UseQueryStateOptions {
   comparing?: boolean; // If true, don't auto-select for delta profiles
   viewDefaults?: ViewDefaults; // View-specific defaults that don't overwrite URL params
   sharedDefaults?: ViewDefaults; // Shared defaults across both comparison sides
+  onProfileTypeChange?: () => void; // Called when profile type changes on commit, after reset
 }
 
 interface UseQueryStateReturn {
@@ -125,6 +126,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     comparing = false,
     viewDefaults,
     sharedDefaults,
+    onProfileTypeChange,
   } = options;
 
   const batchUpdates = useURLStateBatch();
@@ -450,6 +452,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
           Query.parse(querySelection.expression).profileType().toString()
         ) {
           resetStateOnProfileTypeChange();
+          onProfileTypeChange?.();
         }
       });
     },
@@ -473,6 +476,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
       setSelectionParam,
       resetFlameGraphState,
       resetStateOnProfileTypeChange,
+      onProfileTypeChange,
       draftProfileType,
       querySelection.expression,
     ]
@@ -706,35 +710,24 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     }
   }, [expression, defaultExpression]);
 
-  // Re-apply view defaults when profile types finish loading (for matchers-only expressions)
-  const [profileTypesLoadedOnce, setProfileTypesLoadedOnce] = useState(false);
-
+  // Handle pending force apply when profile types finish loading (for matchers-only expressions)
+  // This effect only handles the async case where forceApplyViewDefaults was called
+  // but profile types weren't ready yet
   useEffect(
     () => {
       if (
+        pendingForceApply &&
         hasMatchersOnlyDefault &&
         !profileTypesLoading &&
-        !profileTypesLoadedOnce &&
-        profileTypesData != null
+        profileTypesData != null &&
+        profileTypesData.types.length > 0
       ) {
-        setProfileTypesLoadedOnce(true);
-        // Use forceApplyViewDefaults if we had a pending force apply, otherwise use regular apply
-        if (pendingForceApply) {
-          setPendingForceApply(false);
-          forceApplyViewDefaults();
-        } else {
-          applyViewDefaults();
-        }
+        setPendingForceApply(false);
+        forceApplyViewDefaults();
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      hasMatchersOnlyDefault,
-      profileTypesLoading,
-      profileTypesLoadedOnce,
-      profileTypesData,
-      pendingForceApply,
-    ]
+    [hasMatchersOnlyDefault, profileTypesLoading, profileTypesData, pendingForceApply]
   );
 
   return {

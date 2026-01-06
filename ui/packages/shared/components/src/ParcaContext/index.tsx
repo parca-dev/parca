@@ -68,6 +68,7 @@ interface Props {
     disableProfileTypesDropdown?: boolean;
     labelnames?: string[];
     disableExplorativeQuerying?: boolean;
+    profileFilterDefaults?: unknown[];
   };
   profileViewExternalMainActions?: ReactNode;
   profileViewExternalSubActions?: ReactNode;
