@@ -267,7 +267,7 @@ export const useDraftSumBy = (
 
   return {
     draftSumBy: draftSumBy ?? defaultSumBy ?? DEFAULT_EMPTY_SUM_BY,
-    setDraftSumBy: setDraftSumBy,
+    setDraftSumBy,
     isDraftSumByLoading: isLoading,
   };
 };

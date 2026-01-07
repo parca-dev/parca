@@ -23,7 +23,7 @@ concurrency:
 
 env:
   # renovate: datasource=npm depName=pnpm versioning=npm
-  PNPM_VERSION: '10.25.0'
+  PNPM_VERSION: '10.27.0'
 
 # List of jobs
 jobs:

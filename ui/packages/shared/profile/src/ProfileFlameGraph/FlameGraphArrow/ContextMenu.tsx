@@ -20,6 +20,7 @@ import {Tooltip} from 'react-tooltip';
 import {useParcaContext, useURLState} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
+import {TEST_IDS} from '@parca/test-utils';
 import {getLastItem} from '@parca/utilities';
 
 import {useGraphTooltip} from '../../GraphTooltipArrow/useGraphTooltip';
@@ -187,6 +188,7 @@ const ContextMenu = ({
       {enableSandwichView === true && (
         <Item
           id="show-in-sandwich"
+          data-testid={TEST_IDS.CONTEXT_MENU_SHOW_IN_SANDWICH}
           onClick={() => {
             if (functionName === '' || functionName == null) {
               return;

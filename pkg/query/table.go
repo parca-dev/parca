@@ -145,7 +145,7 @@ func generateTableArrowRecord(
 
 					isLeaf := isFirstNonNil(sampleRow, locationRow, r.Locations)
 					var buildID []byte
-					if r.MappingBuildIDDict.IsValid(locationRow) {
+					if r.MappingBuildIDIndices.IsValid(locationRow) {
 						buildID = r.MappingBuildIDDict.Value(int(r.MappingBuildIDIndices.Value(locationRow)))
 					}
 					addr := r.Address.Value(locationRow)

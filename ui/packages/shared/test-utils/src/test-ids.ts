@@ -96,6 +96,8 @@ export const TEST_IDS = {
   // Metrics Graph
   METRICS_GRAPH: 'metrics-graph',
   METRICS_GRAPH_TOOLTIP: 'metrics-graph-tooltip',
+  METRICS_GRAPH_TRIMMED_BANNER: 'metrics-graph-trimmed-banner',
+  METRICS_GRAPH_SHOW_ALL_BUTTON: 'metrics-graph-show-all-button',
   TOOLTIP_LABEL: 'tooltip-label',
   TOOLTIP_LABEL_KEY: 'tooltip-label-key',
   TOOLTIP_LABEL_VALUE: 'tooltip-label-value',
@@ -131,6 +133,19 @@ export const TEST_IDS = {
 
   // Diff Legend
   DIFF_LEGEND: 'diff-legend',
+
+  // Sandwich View
+  SANDWICH_CONTAINER: 'sandwich-container',
+  SANDWICH_CALLERS_SECTION: 'sandwich-callers-section',
+  SANDWICH_CALLEES_SECTION: 'sandwich-callees-section',
+  SANDWICH_NO_FUNCTION_SELECTED: 'sandwich-no-function-selected',
+
+  // Loading Skeletons
+  FLAMEGRAPH_SKELETON: 'flamegraph-skeleton',
+
+  // Flamegraph Context Menu
+  FLAMEGRAPH_CONTEXT_MENU: 'flamegraph-context-menu',
+  CONTEXT_MENU_SHOW_IN_SANDWICH: 'context-menu-show-in-sandwich',
 
   // Common Interactive Elements
   SELECT_DROPDOWN: 'select-dropdown',

@@ -134,6 +134,12 @@ export const filterPresets: FilterPreset[] = [
         matchType: 'not_contains',
         value: 'libparcagpucupti.so',
       },
+      {
+        type: 'frame',
+        field: 'binary',
+        matchType: 'not_starts_with',
+        value: 'libcublas',
+      },
     ],
   },
   {
