@@ -113,7 +113,7 @@ let mockProfileTypesData:
         delta: boolean;
       }>;
     }
-  | undefined = undefined;
+  | undefined;
 
 // Mock useProfileTypes to control loading state in tests
 vi.mock('../ProfileSelector', async () => {
@@ -129,11 +129,11 @@ vi.mock('../ProfileSelector', async () => {
 });
 
 // Helper to set profile types loading state for tests
-const setProfileTypesLoading = (loading: boolean) => {
+const setProfileTypesLoading = (loading: boolean): void => {
   mockProfileTypesLoading = loading;
 };
 
-const setProfileTypesData = (data: typeof mockProfileTypesData) => {
+const setProfileTypesData = (data: typeof mockProfileTypesData): void => {
   mockProfileTypesData = data;
 };
 
