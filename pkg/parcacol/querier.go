@@ -508,25 +508,24 @@ func (q *Querier) queryRangeDelta(
 		)
 	}
 
-	// Add necessary columns and their found value is false by default.
-	columnIndices := struct {
-		Timestamp      int
-		PerSecondValue int
-		ValueSum       int
-		Duration       int
-	}{
-		Timestamp:      -1,
-		PerSecondValue: -1,
-		ValueSum:       -1,
-		Duration:       -1,
-	}
-
-	labelColumnIndices := []int{}
 	labelSet := labels.NewScratchBuilder(64)
 	resSeries := []*pb.MetricsSeries{}
 	labelsetToIndex := map[string]int{}
 
 	for _, ar := range records {
+		// Add necessary columns and their found value is false by default.
+		columnIndices := struct {
+			Timestamp      int
+			PerSecondValue int
+			ValueSum       int
+			Duration       int
+		}{
+			Timestamp:      -1,
+			PerSecondValue: -1,
+			ValueSum:       -1,
+			Duration:       -1,
+		}
+		labelColumnIndices := []int{}
 		fields := ar.Schema().Fields()
 		for i, field := range fields {
 			switch field.Name {
@@ -678,18 +677,18 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 		index int
 		found bool
 	}
-	// Add necessary columns and their found value is false by default.
-	columnIndices := map[string]columnIndex{
-		profile.ColumnTimeNanos: {},
-		valueSumColumn:          {},
-	}
-	labelColumnIndices := []int{}
 	labelSet := labels.NewScratchBuilder(64)
 	resSeries := []*pb.MetricsSeries{}
 	resSeriesBuckets := map[int]map[int64]struct{}{}
 	labelsetToIndex := map[string]int{}
 
 	for _, ar := range records {
+		// Add necessary columns and their found value is false by default.
+		columnIndices := map[string]columnIndex{
+			profile.ColumnTimeNanos: {},
+			valueSumColumn:          {},
+		}
+		labelColumnIndices := []int{}
 		fields := ar.Schema().Fields()
 		for i, field := range fields {
 			if _, ok := columnIndices[field.Name]; ok {
