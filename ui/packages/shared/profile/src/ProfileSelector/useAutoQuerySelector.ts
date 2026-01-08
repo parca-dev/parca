@@ -137,7 +137,7 @@ export const useAutoQuerySelector = ({
       }
       dispatch(setAutoQuery('true'));
       let profileType = profileTypesData.types.find(
-        type => type.name === 'parca_agent' && type.delta
+        type => type.name === 'parca_agent' && type.sampleType === 'samples' && type.delta
       );
       if (profileType == null) {
         profileType = profileTypesData.types.find(

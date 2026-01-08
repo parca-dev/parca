@@ -30,6 +30,10 @@ import {TEST_IDS, testId} from '@parca/test-utils';
 import {millisToProtoTimestamp, type NavigateFunction} from '@parca/utilities';
 
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
+import {
+  ProfileFilter,
+  useProfileFilters,
+} from '../ProfileView/components/ProfileFilters/useProfileFilters';
 import {QueryControls} from '../QueryControls';
 import {LabelsQueryProvider, useLabelsQueryProvider} from '../contexts/LabelsQueryProvider';
 import {UnifiedLabelsProvider} from '../contexts/UnifiedLabelsContext';
@@ -119,6 +123,15 @@ const ProfileSelector = ({
   const [queryBrowserMode, setQueryBrowserMode] = useURLState('query_browser_mode');
   const batchUpdates = useURLStateBatch();
 
+  const profileFilterDefaults = viewComponent?.profileFilterDefaults as ProfileFilter[] | undefined;
+  const {forceApplyFilters} = useProfileFilters();
+
+  const handleProfileTypeChange = useCallback(() => {
+    if (profileFilterDefaults != null && profileFilterDefaults.length > 0) {
+      forceApplyFilters(profileFilterDefaults);
+    }
+  }, [forceApplyFilters, profileFilterDefaults]);
+
   // Use the new useQueryState hook - reads directly from URL params
   const {
     querySelection,
@@ -133,7 +146,7 @@ const ProfileSelector = ({
     setProfileSelection,
     sumByLoading,
     draftParsedQuery,
-  } = useQueryState({suffix});
+  } = useQueryState({suffix, onProfileTypeChange: handleProfileTypeChange});
 
   // Use draft state for local state instead of committed state
   const [timeRangeSelection, setTimeRangeSelection] = useState(

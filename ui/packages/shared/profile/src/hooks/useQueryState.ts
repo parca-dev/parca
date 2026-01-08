@@ -29,6 +29,7 @@ interface UseQueryStateOptions {
   defaultFrom?: number;
   defaultTo?: number;
   comparing?: boolean; // If true, don't auto-select for delta profiles
+  onProfileTypeChange?: () => void; // Called when profile type changes on commit, after reset
 }
 
 interface UseQueryStateReturn {
@@ -65,6 +66,10 @@ interface UseQueryStateReturn {
 
   // parsed query
   parsedQuery: Query | null;
+
+  setExpressionParam: (value: string | undefined) => void;
+  setSumByParam: (value: string | undefined) => void;
+  setGroupByParam: (value: string[] | undefined) => void;
 }
 
 export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryStateReturn => {
@@ -76,6 +81,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     defaultFrom,
     defaultTo,
     comparing = false,
+    onProfileTypeChange,
   } = options;
 
   const batchUpdates = useURLStateBatch();
@@ -101,6 +107,10 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
 
   const [sumByParam, setSumByParam] = useURLState<string>(`sum_by${suffix}`);
 
+  const [, setGroupByParam] = useURLState<string>('group_by', {
+    alwaysReturnArray: true,
+  });
+
   const [mergeFrom, setMergeFromState] = useURLState<string>(`merge_from${suffix}`);
   const [mergeTo, setMergeToState] = useURLState<string>(`merge_to${suffix}`);
 
@@ -121,7 +131,11 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
   const draftQuery = useMemo(() => {
     try {
       return Query.parse(draftExpression ?? '');
-    } catch {
+    } catch (error) {
+      console.warn('Failed to parse draft expression', {
+        expression: draftExpression,
+        error: error instanceof Error ? error.message : String(error),
+      });
       return Query.parse('');
     }
   }, [draftExpression]);
@@ -129,7 +143,11 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
   const query = useMemo(() => {
     try {
       return Query.parse(expression ?? '');
-    } catch {
+    } catch (error) {
+      console.warn('Failed to parse expression', {
+        expression,
+        error: error instanceof Error ? error.message : String(error),
+      });
       return Query.parse('');
     }
   }, [expression]);
@@ -346,6 +364,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
           Query.parse(querySelection.expression).profileType().toString()
         ) {
           resetStateOnProfileTypeChange();
+          onProfileTypeChange?.();
         }
       });
     },
@@ -369,6 +388,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
       setSelectionParam,
       resetFlameGraphState,
       resetStateOnProfileTypeChange,
+      onProfileTypeChange,
       draftProfileType,
       querySelection.expression,
     ]
@@ -426,7 +446,11 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
   const draftParsedQuery = useMemo(() => {
     try {
       return Query.parse(draftSelection.expression ?? '');
-    } catch {
+    } catch (error) {
+      console.warn('Failed to parse draft selection expression', {
+        expression: draftSelection.expression,
+        error: error instanceof Error ? error.message : String(error),
+      });
       return Query.parse('');
     }
   }, [draftSelection.expression]);
@@ -434,7 +458,11 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
   const parsedQuery = useMemo(() => {
     try {
       return Query.parse(querySelection.expression ?? '');
-    } catch {
+    } catch (error) {
+      console.warn('Failed to parse query selection expression', {
+        expression: querySelection.expression,
+        error: error instanceof Error ? error.message : String(error),
+      });
       return Query.parse('');
     }
   }, [querySelection.expression]);
@@ -466,5 +494,9 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
 
     draftParsedQuery,
     parsedQuery,
+
+    setExpressionParam: setExpressionState,
+    setSumByParam,
+    setGroupByParam,
   };
 };
