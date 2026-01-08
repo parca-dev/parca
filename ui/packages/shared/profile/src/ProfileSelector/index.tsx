@@ -146,6 +146,16 @@ const ProfileSelector = ({
     queryBrowserMode === 'advanced'
   );
 
+  // Sync local timeRangeSelection state when draftSelection changes from external URL updates
+  useEffect(() => {
+    const newTimeRange = DateTimeRange.fromRangeKey(
+      draftSelection.timeSelection,
+      draftSelection.from,
+      draftSelection.to
+    );
+    setTimeRangeSelection(newTimeRange);
+  }, [draftSelection.timeSelection, draftSelection.from, draftSelection.to]);
+
   // Handler to update draft when time range changes
   const handleTimeRangeChange = useCallback(
     (range: DateTimeRange) => {
@@ -251,7 +261,7 @@ const ProfileSelector = ({
     profileTypesData,
     setProfileName,
     setQueryExpression,
-    querySelection,
+    querySelection: draftSelection,
     navigateTo,
     loading: sumByLoading,
   });
@@ -325,10 +335,10 @@ const ProfileSelector = ({
         showMetricsGraph={showMetricsGraph}
         setDisplayHideMetricsGraphButton={setDisplayHideMetricsGraphButton}
         heightStyle={heightStyle}
-        querySelection={querySelection}
+        querySelection={draftSelection}
         profileSelection={profileSelection}
         comparing={comparing}
-        sumBy={querySelection.sumBy}
+        sumBy={draftSelection.sumBy ?? []}
         defaultSumByLoading={sumByLoading}
         queryClient={queryClient}
         queryExpressionString={queryExpressionString}
