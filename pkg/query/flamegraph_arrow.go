@@ -1400,11 +1400,26 @@ func (fb *flamegraphBuilder) appendRow(
 		// something has already gone terribly wrong.
 		fb.builderLocationLine.Append(r.LineNumber.Value(lineRow))
 
-		if r.LineFunctionNameIndices.IsValid(lineRow) && t.functionSystemName.indices.Len() > 0 {
+		if r.LineFunctionNameIndices.IsValid(lineRow) {
 			fb.builderFunctionStartLine.Append(r.LineFunctionStartLine.Value(lineRow))
-			fb.builderFunctionNameIndices.Append(t.functionName.indices.Value(int(r.LineFunctionNameIndices.Value(lineRow))))
-			fb.builderFunctionSystemNameIndices.Append(t.functionSystemName.indices.Value(int(r.LineFunctionSystemNameIndices.Value(lineRow))))
-			fb.builderFunctionFilenameIndices.Append(t.functionFilename.indices.Value(int(r.LineFunctionFilenameIndices.Value(lineRow))))
+
+			if t.functionName.indices.Len() > 0 {
+				fb.builderFunctionNameIndices.Append(t.functionName.indices.Value(int(r.LineFunctionNameIndices.Value(lineRow))))
+			} else {
+				fb.builderFunctionNameIndices.AppendNull()
+			}
+
+			if t.functionSystemName.indices.Len() > 0 {
+				fb.builderFunctionSystemNameIndices.Append(t.functionSystemName.indices.Value(int(r.LineFunctionSystemNameIndices.Value(lineRow))))
+			} else {
+				fb.builderFunctionSystemNameIndices.AppendNull()
+			}
+
+			if t.functionFilename.indices.Len() > 0 {
+				fb.builderFunctionFilenameIndices.Append(t.functionFilename.indices.Value(int(r.LineFunctionFilenameIndices.Value(lineRow))))
+			} else {
+				fb.builderFunctionFilenameIndices.AppendNull()
+			}
 		} else {
 			fb.builderFunctionStartLine.AppendNull()
 			fb.builderFunctionNameIndices.AppendNull()
