@@ -34,6 +34,8 @@ export * from './ProfileSource';
 export {
   convertToProtoFilters,
   convertFromProtoFilters,
+  useProfileFilters,
+  type ProfileFilter,
 } from './ProfileView/components/ProfileFilters/useProfileFilters';
 export * from './ProfileView';
 export * from './ProfileViewWithData';
@@ -56,6 +58,8 @@ export const DEFAULT_PROFILE_EXPLORER_PARAM_VALUES: ParamPreferences = {
     splitOnCommas: true,
   },
 };
+
+export {useProfileTypes} from './ProfileSelector';
 
 export {
   ProfileExplorer,

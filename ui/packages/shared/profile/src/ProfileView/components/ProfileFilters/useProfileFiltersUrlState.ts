@@ -11,9 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useMemo} from 'react';
+import {useCallback, useMemo} from 'react';
 
-import {useURLStateCustom, type ParamValueSetterCustom} from '@parca/components';
+import {useURLStateBatch, useURLStateCustom, type ParamValueSetterCustom} from '@parca/components';
 import {safeDecode} from '@parca/utilities';
 
 import {isPresetKey} from './filterPresets';
@@ -140,10 +140,13 @@ export const decodeProfileFilters = (encoded: string): ProfileFilter[] => {
 export const useProfileFiltersUrlState = (): {
   appliedFilters: ProfileFilter[];
   setAppliedFilters: ParamValueSetterCustom<ProfileFilter[]>;
+  forceApplyFilters: (filters: ProfileFilter[]) => void;
 } => {
+  const batchUpdates = useURLStateBatch();
+
   // Store applied filters in URL state for persistence using compact encoding
   const [appliedFilters, setAppliedFilters] = useURLStateCustom<ProfileFilter[]>(
-    'profile_filters',
+    `profile_filters`,
     {
       parse: value => {
         return decodeProfileFilters(value as string);
@@ -159,8 +162,26 @@ export const useProfileFiltersUrlState = (): {
     return appliedFilters ?? [];
   }, [appliedFilters]);
 
+  // Force apply filters (bypasses preserve-existing strategy)
+  const forceApplyFilters = useCallback(
+    (filters: ProfileFilter[]) => {
+      const validFilters = filters.filter(f => {
+        if (f.type != null && isPresetKey(f.type)) {
+          return f.value !== '' && f.type != null;
+        }
+        return f.value !== '' && f.type != null && f.field != null && f.matchType != null;
+      });
+
+      batchUpdates(() => {
+        setAppliedFilters(validFilters);
+      });
+    },
+    [batchUpdates, setAppliedFilters]
+  );
+
   return {
     appliedFilters: memoizedAppliedFilters,
     setAppliedFilters,
+    forceApplyFilters,
   };
 };

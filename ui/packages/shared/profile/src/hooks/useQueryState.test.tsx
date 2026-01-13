@@ -11,10 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {ReactNode} from 'react';
+import {ReactNode, act} from 'react';
 
 // eslint-disable-next-line import/named
-import {act, renderHook, waitFor} from '@testing-library/react';
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
+// eslint-disable-next-line import/named
+import {renderHook, waitFor} from '@testing-library/react';
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {URLStateProvider} from '@parca/components';
@@ -99,14 +101,60 @@ vi.mock('../useSumBy', async () => {
   };
 });
 
+// Track profile types loading state for tests
+let mockProfileTypesLoading = false;
+let mockProfileTypesData:
+  | {
+      types: Array<{
+        name: string;
+        sampleType: string;
+        sampleUnit: string;
+        periodType: string;
+        periodUnit: string;
+        delta: boolean;
+      }>;
+    }
+  | undefined;
+
+// Mock useProfileTypes to control loading state in tests
+vi.mock('../ProfileSelector', async () => {
+  const actual = await vi.importActual('../ProfileSelector');
+  return {
+    ...actual,
+    useProfileTypes: () => ({
+      loading: mockProfileTypesLoading,
+      data: mockProfileTypesData,
+      error: null,
+    }),
+  };
+});
+
+// Helper to set profile types loading state for tests
+const setProfileTypesLoading = (loading: boolean): void => {
+  mockProfileTypesLoading = loading;
+};
+
+const setProfileTypesData = (data: typeof mockProfileTypesData): void => {
+  mockProfileTypesData = data;
+};
+
 // Helper to create wrapper with URLStateProvider
 const createWrapper = (
   paramPreferences = {}
 ): (({children}: {children: ReactNode}) => JSX.Element) => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
   const Wrapper = ({children}: {children: ReactNode}): JSX.Element => (
-    <URLStateProvider navigateTo={mockNavigateTo} paramPreferences={paramPreferences}>
-      {children}
-    </URLStateProvider>
+    <QueryClientProvider client={queryClient}>
+      <URLStateProvider navigateTo={mockNavigateTo} paramPreferences={paramPreferences}>
+        {children}
+      </URLStateProvider>
+    </QueryClientProvider>
   );
   Wrapper.displayName = 'URLStateProviderWrapper';
   return Wrapper;
@@ -120,6 +168,9 @@ describe('useQueryState', () => {
       writable: true,
     });
     mockLocation.search = '';
+    // Reset profile types mock state
+    setProfileTypesLoading(false);
+    setProfileTypesData(undefined);
   });
 
   describe('Basic functionality', () => {
@@ -127,7 +178,7 @@ describe('useQueryState', () => {
       const {result} = renderHook(
         () =>
           useQueryState({
-            defaultExpression: 'process_cpu{}',
+            defaultExpression: 'process_cpu:cpu:nanoseconds:cpu:nanoseconds{}',
             defaultTimeSelection: 'relative:hour|1',
             defaultFrom: 1000,
             defaultTo: 2000,
@@ -136,7 +187,7 @@ describe('useQueryState', () => {
       );
 
       const {querySelection} = result.current;
-      expect(querySelection.expression).toBe('process_cpu{}');
+      expect(querySelection.expression).toBe('process_cpu:cpu:nanoseconds:cpu:nanoseconds{}');
       expect(querySelection.timeSelection).toBe('relative:hour|1');
       // From/to should be calculated from the range
       expect(querySelection.from).toBeDefined();
@@ -524,7 +575,9 @@ describe('useQueryState', () => {
   });
 
   describe('Edge cases', () => {
-    it('should handle invalid expression gracefully', () => {
+    it('should handle invalid expression gracefully and log warning', () => {
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
       const {result} = renderHook(
         () =>
           useQueryState({
@@ -533,8 +586,33 @@ describe('useQueryState', () => {
         {wrapper: createWrapper()}
       );
 
-      // Should not throw error
+      // Should not throw error - invalid expressions are caught and logged
       expect(() => result.current.querySelection).not.toThrow();
+      // Should fall back to empty expression
+      expect(result.current.querySelection.expression).toBe('invalid{{}expression');
+      // Should log a warning about the parse failure
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Failed to parse expression',
+        expect.objectContaining({
+          expression: 'invalid{{}expression',
+        })
+      );
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should handle empty expression gracefully', () => {
+      const {result} = renderHook(
+        () =>
+          useQueryState({
+            defaultExpression: '',
+          }),
+        {wrapper: createWrapper()}
+      );
+
+      // Should not throw error with empty expression
+      expect(() => result.current.querySelection).not.toThrow();
+      expect(result.current.querySelection.expression).toBe('');
     });
 
     it('should clear merge params for non-delta profiles', async () => {
@@ -1191,7 +1269,8 @@ describe('useQueryState', () => {
     });
 
     it('should preserve other URL params when setting ProfileSelection', async () => {
-      mockLocation.search = '?expression_a=process_cpu{}&other_param=value&unrelated=test';
+      mockLocation.search =
+        '?expression_a=process_cpu:cpu:nanoseconds:cpu:nanoseconds{}&other_param=value&unrelated=test';
 
       const {result} = renderHook(() => useQueryState({suffix: '_a'}), {wrapper: createWrapper()});
 
@@ -1212,7 +1291,7 @@ describe('useQueryState', () => {
         expect(params.selection_a).toBe('process_cpu:cpu:nanoseconds:cpu:nanoseconds{pod="test"}');
 
         // Other params should be preserved
-        expect(params.expression_a).toBe('process_cpu{}');
+        expect(params.expression_a).toBe('process_cpu:cpu:nanoseconds:cpu:nanoseconds{}');
         expect(params.other_param).toBe('value');
         expect(params.unrelated).toBe('test');
       });

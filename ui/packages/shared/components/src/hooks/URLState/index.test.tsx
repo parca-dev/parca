@@ -11,10 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {ReactNode} from 'react';
+import {ReactNode, act} from 'react';
 
 // eslint-disable-next-line import/named
-import {act, renderHook, waitFor} from '@testing-library/react';
+import {renderHook, waitFor} from '@testing-library/react';
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {

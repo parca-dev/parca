@@ -177,9 +177,7 @@ export function QueryControls({
           {viewComponent?.createViewComponent}
         </div>
 
-        {viewComponent?.disableExplorativeQuerying === true &&
-        viewComponent?.labelnames !== undefined &&
-        viewComponent?.labelnames.length >= 1 ? (
+        {viewComponent?.labelnames !== undefined && viewComponent?.labelnames.length >= 1 ? (
           <ViewMatchers labelNames={viewComponent.labelnames} />
         ) : showAdvancedMode && advancedModeForQueryBrowser ? (
           <MatchersInput
