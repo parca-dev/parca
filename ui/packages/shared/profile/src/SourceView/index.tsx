@@ -102,7 +102,7 @@ export const SourceView = React.memo(function SourceView({
   );
 
   const getProfileDataForLine = useCallback(
-    (line: number, newLine: number): ProfileData | undefined => {
+    (line: number): ProfileData | undefined => {
       const data = getLineData(line);
       if (data === undefined) {
         return undefined;
@@ -111,7 +111,7 @@ export const SourceView = React.memo(function SourceView({
         return undefined;
       }
       return {
-        line: newLine,
+        line,
         cumulative: Number(data.cumulative),
         flat: Number(data.flat),
       };
@@ -125,7 +125,7 @@ export const SourceView = React.memo(function SourceView({
     }
     if (startLine === endLine) {
       const profileData: ProfileData[] = [];
-      const profileDataForLine = getProfileDataForLine(startLine, 1);
+      const profileDataForLine = getProfileDataForLine(startLine);
       if (profileDataForLine != null) {
         profileData.push(profileDataForLine);
       }
@@ -133,15 +133,13 @@ export const SourceView = React.memo(function SourceView({
       return [sourceCode[startLine - 1], profileData];
     }
     let code = '';
-    let line = 1;
     const profileData: ProfileData[] = [];
     for (let i = startLine; i <= endLine; i++) {
       code += sourceCode[i] + '\n';
-      const profileDataForLine = getProfileDataForLine(i, line);
+      const profileDataForLine = getProfileDataForLine(i);
       if (profileDataForLine != null) {
         profileData.push(profileDataForLine);
       }
-      line++;
     }
     return [code, profileData];
   }, [startLine, endLine, sourceCode, getProfileDataForLine]);
