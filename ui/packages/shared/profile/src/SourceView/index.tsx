@@ -22,7 +22,7 @@ import {SourceSkeleton, useParcaContext, useURLState, type ProfileData} from '@p
 
 import {ExpandOnHover} from '../GraphTooltipArrow/ExpandOnHoverValue';
 import {truncateStringReverse} from '../utils';
-import {Highlighter, profileAwareRenderer} from './Highlighter';
+import {Highlighter, profileAwareRenderer, type LineDataLookup} from './Highlighter';
 import useLineRange from './useSelectedLineRange';
 
 interface SourceViewProps {
@@ -59,31 +59,64 @@ export const SourceView = React.memo(function SourceView({
 
   const {startLine, endLine} = useLineRange();
 
-  const [cumulative, flat] = useMemo(() => {
+  const sourceTable = useMemo(() => {
     if (data === undefined) {
-      return [null, null];
+      return null;
     }
     const table = tableFromIPC(data.record);
-    const cumulative = table.getChild('cumulative');
-    const flat = table.getChild('flat');
-    return [cumulative, flat];
+    return {
+      numRows: table.numRows,
+      lineNumbers: table.getChild('line_number'),
+      cumulative: table.getChild('cumulative'),
+      flat: table.getChild('flat'),
+    };
   }, [data]);
+
+  const getLineData: LineDataLookup = useCallback(
+    (lineNumber: number) => {
+      if (sourceTable === null || sourceTable.lineNumbers === null) {
+        return undefined;
+      }
+      const {numRows, lineNumbers, cumulative, flat} = sourceTable;
+
+      let lo = 0;
+      let hi = numRows - 1;
+      while (lo <= hi) {
+        const mid = (lo + hi) >>> 1;
+        const midVal = Number(lineNumbers.get(mid));
+        if (midVal === lineNumber) {
+          return {
+            cumulative: (cumulative?.get(mid) as bigint) ?? 0n,
+            flat: (flat?.get(mid) as bigint) ?? 0n,
+          };
+        }
+        if (midVal < lineNumber) {
+          lo = mid + 1;
+        } else {
+          hi = mid - 1;
+        }
+      }
+      return undefined;
+    },
+    [sourceTable]
+  );
 
   const getProfileDataForLine = useCallback(
     (line: number, newLine: number): ProfileData | undefined => {
-      if (cumulative == null && flat == null) {
+      const data = getLineData(line);
+      if (data === undefined) {
         return undefined;
       }
-      if (cumulative?.get(line - 1) === 0n && flat?.get(line - 1) === 0n) {
+      if (data.cumulative === 0n && data.flat === 0n) {
         return undefined;
       }
       return {
         line: newLine,
-        cumulative: Number(cumulative?.get(line - 1) ?? 0),
-        flat: Number(flat?.get(line - 1) ?? 0),
+        cumulative: Number(data.cumulative),
+        flat: Number(data.flat),
       };
     },
-    [cumulative, flat]
+    [getLineData]
   );
 
   const [selectedCode, profileData] = useMemo(() => {
@@ -155,7 +188,7 @@ export const SourceView = React.memo(function SourceView({
         <Highlighter
           file={sourceFileName as string}
           content={data.source}
-          renderer={profileAwareRenderer(cumulative, flat, total, filtered, onContextMenu)}
+          renderer={profileAwareRenderer(getLineData, total, filtered, onContextMenu)}
         />
         {sourceViewContextMenuItems.length > 0 ? (
           <Menu id={MENU_ID}>

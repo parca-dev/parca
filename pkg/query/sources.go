@@ -17,7 +17,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"strings"
+	"slices"
 
 	"github.com/apache/arrow-go/v18/arrow"
 	"github.com/apache/arrow-go/v18/arrow/array"
@@ -75,9 +75,9 @@ func generateSourceReportRecord(
 	_ trace.Tracer,
 	p profile.Profile,
 	ref *pb.SourceReference,
-	source string,
+	_ string,
 ) (arrow.RecordBatch, int64, error) {
-	b := newSourceReportBuilder(pool, ref, int64(strings.Count(source, "\n")))
+	b := newSourceReportBuilder(pool, ref)
 	for _, record := range p.Samples {
 		if err := b.addRecord(record); err != nil {
 			return nil, 0, err
@@ -88,64 +88,80 @@ func generateSourceReportRecord(
 	return rec, cumulative, nil
 }
 
+type lineMetrics struct {
+	cumulative int64
+	flat       int64
+}
+
 type sourceReportBuilder struct {
 	pool memory.Allocator
 
 	filename []byte
 	buildID  []byte
-	numLines int64
 
-	flatValues       []int64
-	cumulativeValues []int64
-
+	lineData   map[int64]*lineMetrics
 	cumulative int64
 }
 
 func newSourceReportBuilder(
 	pool memory.Allocator,
 	ref *pb.SourceReference,
-	numLines int64,
 ) *sourceReportBuilder {
 	return &sourceReportBuilder{
-		pool: pool,
-
+		pool:     pool,
 		filename: []byte(ref.Filename),
 		buildID:  []byte(ref.BuildId),
-
-		flatValues:       make([]int64, numLines),
-		cumulativeValues: make([]int64, numLines),
-
-		numLines: numLines,
+		lineData: make(map[int64]*lineMetrics),
 	}
 }
 
 func (b *sourceReportBuilder) finish() (arrow.RecordBatch, int64) {
-	flat := array.NewInt64Builder(b.pool)
-	defer flat.Release()
-	cumu := array.NewInt64Builder(b.pool)
-	defer cumu.Release()
+	lineNumbers := make([]int64, 0, len(b.lineData))
+	for ln := range b.lineData {
+		lineNumbers = append(lineNumbers, ln)
+	}
+	slices.Sort(lineNumbers)
 
-	flat.AppendValues(b.flatValues, nil)
-	cumu.AppendValues(b.cumulativeValues, nil)
+	lineNumBuilder := array.NewInt64Builder(b.pool)
+	defer lineNumBuilder.Release()
+	cumuBuilder := array.NewInt64Builder(b.pool)
+	defer cumuBuilder.Release()
+	flatBuilder := array.NewInt64Builder(b.pool)
+	defer flatBuilder.Release()
 
-	cumarr := cumu.NewInt64Array()
-	defer cumarr.Release()
-	flatarr := flat.NewInt64Array()
-	defer flatarr.Release()
+	lineNumBuilder.Reserve(len(lineNumbers))
+	cumuBuilder.Reserve(len(lineNumbers))
+	flatBuilder.Reserve(len(lineNumbers))
+
+	for _, ln := range lineNumbers {
+		metrics := b.lineData[ln]
+		lineNumBuilder.Append(ln)
+		cumuBuilder.Append(metrics.cumulative)
+		flatBuilder.Append(metrics.flat)
+	}
+
+	lineNumArr := lineNumBuilder.NewInt64Array()
+	defer lineNumArr.Release()
+	cumuArr := cumuBuilder.NewInt64Array()
+	defer cumuArr.Release()
+	flatArr := flatBuilder.NewInt64Array()
+	defer flatArr.Release()
 
 	return array.NewRecordBatch(
 		arrow.NewSchema(
 			[]arrow.Field{
+				{Name: "line_number", Type: arrow.PrimitiveTypes.Int64},
 				{Name: "cumulative", Type: arrow.PrimitiveTypes.Int64},
 				{Name: "flat", Type: arrow.PrimitiveTypes.Int64},
 			},
 			nil,
 		),
 		[]arrow.Array{
-			cumarr,
-			flatarr,
+			lineNumArr,
+			cumuArr,
+			flatArr,
 		},
-		int64(len(b.flatValues)),
+		int64(len(lineNumbers)),
 	), b.cumulative
 }
 
@@ -166,13 +182,21 @@ func (b *sourceReportBuilder) addRecord(rec arrow.RecordBatch) error {
 				llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
 
 				for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
-					if r.Line.IsValid(k) && r.LineNumber.Value(k) <= b.numLines &&
-						r.LineFunctionNameIndices.IsValid(k) && bytes.Equal(r.LineFunctionFilenameDict.Value(int(r.LineFunctionFilenameIndices.Value(k))), b.filename) {
-						b.cumulativeValues[r.LineNumber.Value(k)-1] += r.Value.Value(i)
+					if r.Line.IsValid(k) &&
+						r.LineFunctionNameIndices.IsValid(k) &&
+						bytes.Equal(r.LineFunctionFilenameDict.Value(int(r.LineFunctionFilenameIndices.Value(k))), b.filename) {
+						lineNum := r.LineNumber.Value(k)
+						metrics, exists := b.lineData[lineNum]
+						if !exists {
+							metrics = &lineMetrics{}
+							b.lineData[lineNum] = metrics
+						}
+
+						metrics.cumulative += r.Value.Value(i)
 
 						isLeaf := isFirstNonNil(i, j, r.Locations) && isFirstNonNil(j, k, r.Lines)
 						if isLeaf {
-							b.flatValues[r.LineNumber.Value(k)-1] += r.Value.Value(i)
+							metrics.flat += r.Value.Value(i)
 						}
 					}
 				}

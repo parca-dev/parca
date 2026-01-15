@@ -261,9 +261,10 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 		source, err = q.getSource(ctx, req.SourceReference)
 		if err != nil {
 			if errors.Is(err, ErrSourceNotFound) || errors.Is(err, ErrNoSourceForBuildID) {
-				return nil, status.Error(codes.NotFound, err.Error())
+				source = ""
+			} else {
+				return nil, err
 			}
-			return nil, err
 		}
 	}
 

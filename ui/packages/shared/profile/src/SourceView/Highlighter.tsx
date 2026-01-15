@@ -13,7 +13,6 @@
 
 import {MouseEventHandler, useId, useMemo} from 'react';
 
-import {Vector} from 'apache-arrow';
 import cx from 'classnames';
 import {scaleLinear} from 'd3-scale';
 import {type createElementProps} from 'react-syntax-highlighter';
@@ -114,9 +113,10 @@ const charsToWidth = (chars: number): string => {
   return charsToWidthMap[chars];
 };
 
+export type LineDataLookup = (lineNumber: number) => {cumulative: bigint; flat: bigint} | undefined;
+
 export const profileAwareRenderer = (
-  cumulative: Vector | null,
-  flat: Vector | null,
+  getLineData: LineDataLookup,
   total: bigint,
   filtered: bigint,
   onContextMenu: MouseEventHandler<HTMLDivElement>
@@ -135,6 +135,7 @@ export const profileAwareRenderer = (
           const lineNumber: number = node.children[0].children[0].value as number;
           const isCurrentLine = lineNumber >= startLine && lineNumber <= endLine;
           node.children = node.children.slice(1);
+          const data = getLineData(lineNumber);
           return (
             <div className="flex gap-1" key={`${i}`}>
               <div
@@ -161,11 +162,11 @@ export const profileAwareRenderer = (
                 />
               </div>
               <LineProfileMetadata
-                value={cumulative?.get(i) ?? 0n}
+                value={data?.cumulative ?? 0n}
                 total={total}
                 filtered={filtered}
               />
-              <LineProfileMetadata value={flat?.get(i) ?? 0n} total={total} filtered={filtered} />
+              <LineProfileMetadata value={data?.flat ?? 0n} total={total} filtered={filtered} />
               <div
                 className={cx(
                   'w-full flex-grow-0 border-l border-gray-200 pl-1 dark:border-gray-700',
