@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/apache/arrow-go/v18/arrow/array"
 	"github.com/apache/arrow-go/v18/arrow/memory"
 	"github.com/go-kit/log"
 	"github.com/stretchr/testify/require"
@@ -63,7 +64,7 @@ func TestSourcesOnlyRequest(t *testing.T) {
 		NewBucketSourceFinder(bucket, &debuginfo.NopDebuginfodClients{}),
 	)
 
-	_, err = api.Query(ctx, &pb.QueryRequest{
+	resp, err := api.Query(ctx, &pb.QueryRequest{
 		Mode: pb.QueryRequest_MODE_MERGE,
 		Options: &pb.QueryRequest_Merge{
 			Merge: &pb.MergeProfile{
@@ -78,7 +79,8 @@ func TestSourcesOnlyRequest(t *testing.T) {
 			Filename: "file",
 		},
 	})
-	require.ErrorContains(t, err, "rpc error: code = NotFound desc = source file not found; either profiling metadata is wrong, or the referenced file was not included in the uploaded sources")
+	require.NoError(t, err)
+	require.Equal(t, "", resp.GetSource().Source)
 
 	_, err = api.Query(ctx, &pb.QueryRequest{
 		Mode: pb.QueryRequest_MODE_MERGE,
@@ -98,7 +100,7 @@ func TestSourcesOnlyRequest(t *testing.T) {
 	})
 	require.ErrorContains(t, err, "rpc error: code = NotFound desc = no sources for this build id have been uploaded")
 
-	resp, err := api.Query(ctx, &pb.QueryRequest{
+	resp, err = api.Query(ctx, &pb.QueryRequest{
 		Mode: pb.QueryRequest_MODE_MERGE,
 		Options: &pb.QueryRequest_Merge{
 			Merge: &pb.MergeProfile{
@@ -117,4 +119,47 @@ func TestSourcesOnlyRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, 0, len(resp.GetSource().Source)) // Source only only checks if any sources exist it doesn't retrieve them.
+}
+
+func TestSourceReportArrowSchema(t *testing.T) {
+	allocator := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer allocator.AssertSize(t, 0)
+
+	builder := newSourceReportBuilder(allocator, &pb.SourceReference{
+		BuildId:  "test-build-id",
+		Filename: "test.go",
+	})
+
+	builder.lineData[10] = &lineMetrics{cumulative: 100, flat: 50}
+	builder.lineData[25] = &lineMetrics{cumulative: 200, flat: 75}
+	builder.lineData[5] = &lineMetrics{cumulative: 50, flat: 25}
+
+	record, cumulative := builder.finish()
+	defer record.Release()
+
+	require.Equal(t, int64(0), cumulative)
+
+	schema := record.Schema()
+	require.Equal(t, 3, schema.NumFields())
+
+	require.Equal(t, "line_number", schema.Field(0).Name)
+	require.Equal(t, "cumulative", schema.Field(1).Name)
+	require.Equal(t, "flat", schema.Field(2).Name)
+
+	require.Equal(t, int64(3), record.NumRows())
+
+	lineNumbers := record.Column(0)
+	require.Equal(t, int64(5), lineNumbers.(*array.Int64).Value(0))
+	require.Equal(t, int64(10), lineNumbers.(*array.Int64).Value(1))
+	require.Equal(t, int64(25), lineNumbers.(*array.Int64).Value(2))
+
+	cumulativeCol := record.Column(1)
+	require.Equal(t, int64(50), cumulativeCol.(*array.Int64).Value(0))
+	require.Equal(t, int64(100), cumulativeCol.(*array.Int64).Value(1))
+	require.Equal(t, int64(200), cumulativeCol.(*array.Int64).Value(2))
+
+	flatCol := record.Column(2)
+	require.Equal(t, int64(25), flatCol.(*array.Int64).Value(0))
+	require.Equal(t, int64(50), flatCol.(*array.Int64).Value(1))
+	require.Equal(t, int64(75), flatCol.(*array.Int64).Value(2))
 }
