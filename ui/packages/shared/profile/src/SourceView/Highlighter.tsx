@@ -84,7 +84,7 @@ const LineProfileMetadata = ({
 
   const valueWithUnit = valueFormatter(
     value,
-    profileSource?.ProfileType().sampleUnit ?? '',
+    profileSource?.ProfileType().periodUnit ?? '',
     1,
     true
   );
