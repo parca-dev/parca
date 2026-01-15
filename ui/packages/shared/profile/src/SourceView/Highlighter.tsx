@@ -113,8 +113,10 @@ const charsToWidth = (chars: number): string => {
   return charsToWidthMap[chars];
 };
 
+export type LineDataLookup = (lineNumber: number) => {cumulative: bigint; flat: bigint} | undefined;
+
 export const profileAwareRenderer = (
-  lineMetrics: Map<number, {cumulative: bigint; flat: bigint}>,
+  getLineData: LineDataLookup,
   total: bigint,
   filtered: bigint,
   onContextMenu: MouseEventHandler<HTMLDivElement>
@@ -133,7 +135,7 @@ export const profileAwareRenderer = (
           const lineNumber: number = node.children[0].children[0].value as number;
           const isCurrentLine = lineNumber >= startLine && lineNumber <= endLine;
           node.children = node.children.slice(1);
-          const metrics = lineMetrics.get(lineNumber);
+          const data = getLineData(lineNumber);
           return (
             <div className="flex gap-1" key={`${i}`}>
               <div
@@ -160,11 +162,11 @@ export const profileAwareRenderer = (
                 />
               </div>
               <LineProfileMetadata
-                value={metrics?.cumulative ?? 0n}
+                value={data?.cumulative ?? 0n}
                 total={total}
                 filtered={filtered}
               />
-              <LineProfileMetadata value={metrics?.flat ?? 0n} total={total} filtered={filtered} />
+              <LineProfileMetadata value={data?.flat ?? 0n} total={total} filtered={filtered} />
               <div
                 className={cx(
                   'w-full flex-grow-0 border-l border-gray-200 pl-1 dark:border-gray-700',

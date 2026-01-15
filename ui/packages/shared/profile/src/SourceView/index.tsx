@@ -22,7 +22,7 @@ import {SourceSkeleton, useParcaContext, useURLState, type ProfileData} from '@p
 
 import {ExpandOnHover} from '../GraphTooltipArrow/ExpandOnHoverValue';
 import {truncateStringReverse} from '../utils';
-import {Highlighter, profileAwareRenderer} from './Highlighter';
+import {Highlighter, profileAwareRenderer, type LineDataLookup} from './Highlighter';
 import useLineRange from './useSelectedLineRange';
 
 interface SourceViewProps {
@@ -59,41 +59,64 @@ export const SourceView = React.memo(function SourceView({
 
   const {startLine, endLine} = useLineRange();
 
-  const lineMetrics = useMemo(() => {
+  const sourceTable = useMemo(() => {
     if (data === undefined) {
-      return new Map<number, {cumulative: bigint; flat: bigint}>();
+      return null;
     }
     const table = tableFromIPC(data.record);
-    const lineNumbers = table.getChild('line_number');
-    const cumulative = table.getChild('cumulative');
-    const flat = table.getChild('flat');
-
-    const metrics = new Map<number, {cumulative: bigint; flat: bigint}>();
-    for (let i = 0; i < table.numRows; i++) {
-      metrics.set(Number(lineNumbers?.get(i)), {
-        cumulative: (cumulative?.get(i) as bigint) ?? 0n,
-        flat: (flat?.get(i) as bigint) ?? 0n,
-      });
-    }
-    return metrics;
+    return {
+      numRows: table.numRows,
+      lineNumbers: table.getChild('line_number'),
+      cumulative: table.getChild('cumulative'),
+      flat: table.getChild('flat'),
+    };
   }, [data]);
+
+  const getLineData: LineDataLookup = useCallback(
+    (lineNumber: number) => {
+      if (sourceTable === null || sourceTable.lineNumbers === null) {
+        return undefined;
+      }
+      const {numRows, lineNumbers, cumulative, flat} = sourceTable;
+
+      let lo = 0;
+      let hi = numRows - 1;
+      while (lo <= hi) {
+        const mid = (lo + hi) >>> 1;
+        const midVal = Number(lineNumbers.get(mid));
+        if (midVal === lineNumber) {
+          return {
+            cumulative: (cumulative?.get(mid) as bigint) ?? 0n,
+            flat: (flat?.get(mid) as bigint) ?? 0n,
+          };
+        }
+        if (midVal < lineNumber) {
+          lo = mid + 1;
+        } else {
+          hi = mid - 1;
+        }
+      }
+      return undefined;
+    },
+    [sourceTable]
+  );
 
   const getProfileDataForLine = useCallback(
     (line: number, newLine: number): ProfileData | undefined => {
-      const metrics = lineMetrics.get(line);
-      if (metrics === undefined) {
+      const data = getLineData(line);
+      if (data === undefined) {
         return undefined;
       }
-      if (metrics.cumulative === 0n && metrics.flat === 0n) {
+      if (data.cumulative === 0n && data.flat === 0n) {
         return undefined;
       }
       return {
         line: newLine,
-        cumulative: Number(metrics.cumulative),
-        flat: Number(metrics.flat),
+        cumulative: Number(data.cumulative),
+        flat: Number(data.flat),
       };
     },
-    [lineMetrics]
+    [getLineData]
   );
 
   const [selectedCode, profileData] = useMemo(() => {
@@ -165,7 +188,7 @@ export const SourceView = React.memo(function SourceView({
         <Highlighter
           file={sourceFileName as string}
           content={data.source}
-          renderer={profileAwareRenderer(lineMetrics, total, filtered, onContextMenu)}
+          renderer={profileAwareRenderer(getLineData, total, filtered, onContextMenu)}
         />
         {sourceViewContextMenuItems.length > 0 ? (
           <Menu id={MENU_ID}>
