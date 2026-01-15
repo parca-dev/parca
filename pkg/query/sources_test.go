@@ -68,15 +68,16 @@ func TestSourcesOnlyRequest(t *testing.T) {
 		Mode: pb.QueryRequest_MODE_MERGE,
 		Options: &pb.QueryRequest_Merge{
 			Merge: &pb.MergeProfile{
-				Query: "test_profile",
+				Query: "test:samples:count:cpu:nanoseconds",
 				Start: timestamppb.New(time.Now()),
 				End:   timestamppb.New(time.Now().Add(time.Hour)),
 			},
 		},
 		ReportType: pb.QueryRequest_REPORT_TYPE_SOURCE,
 		SourceReference: &pb.SourceReference{
-			BuildId:  "test",
-			Filename: "file",
+			SourceOnly: true,
+			BuildId:    "test",
+			Filename:   "file",
 		},
 	})
 	require.NoError(t, err)
@@ -86,7 +87,7 @@ func TestSourcesOnlyRequest(t *testing.T) {
 		Mode: pb.QueryRequest_MODE_MERGE,
 		Options: &pb.QueryRequest_Merge{
 			Merge: &pb.MergeProfile{
-				Query: "test_profile",
+				Query: "test:samples:count:cpu:nanoseconds",
 				Start: timestamppb.New(time.Now()),
 				End:   timestamppb.New(time.Now().Add(time.Hour)),
 			},
@@ -104,7 +105,7 @@ func TestSourcesOnlyRequest(t *testing.T) {
 		Mode: pb.QueryRequest_MODE_MERGE,
 		Options: &pb.QueryRequest_Merge{
 			Merge: &pb.MergeProfile{
-				Query: "test_profile",
+				Query: "test:samples:count:cpu:nanoseconds",
 				Start: timestamppb.New(time.Now()),
 				End:   timestamppb.New(time.Now().Add(time.Hour)),
 			},

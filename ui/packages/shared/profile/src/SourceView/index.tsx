@@ -59,31 +59,41 @@ export const SourceView = React.memo(function SourceView({
 
   const {startLine, endLine} = useLineRange();
 
-  const [cumulative, flat] = useMemo(() => {
+  const lineMetrics = useMemo(() => {
     if (data === undefined) {
-      return [null, null];
+      return new Map<number, {cumulative: bigint; flat: bigint}>();
     }
     const table = tableFromIPC(data.record);
+    const lineNumbers = table.getChild('line_number');
     const cumulative = table.getChild('cumulative');
     const flat = table.getChild('flat');
-    return [cumulative, flat];
+
+    const metrics = new Map<number, {cumulative: bigint; flat: bigint}>();
+    for (let i = 0; i < table.numRows; i++) {
+      metrics.set(Number(lineNumbers?.get(i)), {
+        cumulative: (cumulative?.get(i) as bigint) ?? 0n,
+        flat: (flat?.get(i) as bigint) ?? 0n,
+      });
+    }
+    return metrics;
   }, [data]);
 
   const getProfileDataForLine = useCallback(
     (line: number, newLine: number): ProfileData | undefined => {
-      if (cumulative == null && flat == null) {
+      const metrics = lineMetrics.get(line);
+      if (metrics === undefined) {
         return undefined;
       }
-      if (cumulative?.get(line - 1) === 0n && flat?.get(line - 1) === 0n) {
+      if (metrics.cumulative === 0n && metrics.flat === 0n) {
         return undefined;
       }
       return {
         line: newLine,
-        cumulative: Number(cumulative?.get(line - 1) ?? 0),
-        flat: Number(flat?.get(line - 1) ?? 0),
+        cumulative: Number(metrics.cumulative),
+        flat: Number(metrics.flat),
       };
     },
-    [cumulative, flat]
+    [lineMetrics]
   );
 
   const [selectedCode, profileData] = useMemo(() => {
@@ -155,7 +165,7 @@ export const SourceView = React.memo(function SourceView({
         <Highlighter
           file={sourceFileName as string}
           content={data.source}
-          renderer={profileAwareRenderer(cumulative, flat, total, filtered, onContextMenu)}
+          renderer={profileAwareRenderer(lineMetrics, total, filtered, onContextMenu)}
         />
         {sourceViewContextMenuItems.length > 0 ? (
           <Menu id={MENU_ID}>
