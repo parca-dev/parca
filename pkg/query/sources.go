@@ -178,7 +178,8 @@ func (b *sourceReportBuilder) addRecord(rec arrow.RecordBatch) error {
 			if !r.Locations.ListValues().IsValid(j) {
 				continue // Skip null locations; they have been filtered out
 			}
-			if r.MappingStart.IsValid(j) && bytes.Equal(r.MappingBuildIDDict.Value(int(r.MappingBuildIDIndices.Value(j))), b.buildID) {
+			buildIDMatches := len(b.buildID) == 0 || bytes.Equal(r.MappingBuildIDDict.Value(int(r.MappingBuildIDIndices.Value(j))), b.buildID)
+			if r.MappingStart.IsValid(j) && buildIDMatches {
 				llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
 
 				for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
