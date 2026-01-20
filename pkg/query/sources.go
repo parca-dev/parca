@@ -38,7 +38,7 @@ func GenerateSourceReport(
 	ref *pb.SourceReference,
 	source string,
 ) (*pb.Source, int64, error) {
-	record, cumulative, matchedFilenames, err := generateSourceReportRecord(
+	record, cumulative, err := generateSourceReportRecord(
 		ctx,
 		pool,
 		tracer,
@@ -63,10 +63,9 @@ func GenerateSourceReport(
 	}
 
 	return &pb.Source{
-		Record:           buf.Bytes(),
-		Source:           source,
-		Unit:             p.Meta.SampleType.Unit,
-		MatchedFilenames: matchedFilenames,
+		Record: buf.Bytes(),
+		Source: source,
+		Unit:   p.Meta.SampleType.Unit,
 	}, cumulative, nil
 }
 
@@ -77,29 +76,27 @@ func generateSourceReportRecord(
 	p profile.Profile,
 	ref *pb.SourceReference,
 	_ string,
-) (arrow.RecordBatch, int64, []string, error) {
+) (arrow.RecordBatch, int64, error) {
 	b := newSourceReportBuilder(pool, ref)
 	for _, record := range p.Samples {
 		if err := b.addRecord(record); err != nil {
-			return nil, 0, nil, err
+			return nil, 0, err
 		}
 	}
 
 	rec, cumulative := b.finish()
-
-	// Extract matched filenames from the map
-	matchedFilenames := make([]string, 0, len(b.matchedFilenames))
-	for filename := range b.matchedFilenames {
-		matchedFilenames = append(matchedFilenames, filename)
-	}
-	slices.Sort(matchedFilenames)
-
-	return rec, cumulative, matchedFilenames, nil
+	return rec, cumulative, nil
 }
 
 type lineMetrics struct {
 	cumulative int64
 	flat       int64
+}
+
+// lineKey uniquely identifies a line within a specific file.
+type lineKey struct {
+	filename   string
+	lineNumber int64
 }
 
 type sourceReportBuilder struct {
@@ -108,9 +105,9 @@ type sourceReportBuilder struct {
 	filename []byte
 	buildID  []byte
 
-	lineData         map[int64]*lineMetrics
-	matchedFilenames map[string]struct{}
-	cumulative       int64
+	lineData       map[lineKey]*lineMetrics
+	filenameIntern map[string]string // dedupes filename strings to reduce allocations
+	cumulative     int64
 }
 
 // filenameMatches checks if profileFilename matches queryFilename using suffix matching.
@@ -135,21 +132,40 @@ func newSourceReportBuilder(
 	ref *pb.SourceReference,
 ) *sourceReportBuilder {
 	return &sourceReportBuilder{
-		pool:             pool,
-		filename:         []byte(ref.Filename),
-		buildID:          []byte(ref.BuildId),
-		lineData:         make(map[int64]*lineMetrics),
-		matchedFilenames: make(map[string]struct{}),
+		pool:           pool,
+		filename:       []byte(ref.Filename),
+		buildID:        []byte(ref.BuildId),
+		lineData:       make(map[lineKey]*lineMetrics),
+		filenameIntern: make(map[string]string),
 	}
 }
 
 func (b *sourceReportBuilder) finish() (arrow.RecordBatch, int64) {
-	lineNumbers := make([]int64, 0, len(b.lineData))
-	for ln := range b.lineData {
-		lineNumbers = append(lineNumbers, ln)
+	// Collect and sort keys for deterministic output
+	keys := make([]lineKey, 0, len(b.lineData))
+	for k := range b.lineData {
+		keys = append(keys, k)
 	}
-	slices.Sort(lineNumbers)
+	slices.SortFunc(keys, func(a, b lineKey) int {
+		if a.filename < b.filename {
+			return -1
+		}
+		if a.filename > b.filename {
+			return 1
+		}
+		if a.lineNumber < b.lineNumber {
+			return -1
+		}
+		if a.lineNumber > b.lineNumber {
+			return 1
+		}
+		return 0
+	})
 
+	// Build filename column with dictionary encoding
+	filenameDictType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.String}
+	filenameBuilder := array.NewBuilder(b.pool, filenameDictType).(*array.BinaryDictionaryBuilder)
+	defer filenameBuilder.Release()
 	lineNumBuilder := array.NewInt64Builder(b.pool)
 	defer lineNumBuilder.Release()
 	cumuBuilder := array.NewInt64Builder(b.pool)
@@ -157,17 +173,24 @@ func (b *sourceReportBuilder) finish() (arrow.RecordBatch, int64) {
 	flatBuilder := array.NewInt64Builder(b.pool)
 	defer flatBuilder.Release()
 
-	lineNumBuilder.Reserve(len(lineNumbers))
-	cumuBuilder.Reserve(len(lineNumbers))
-	flatBuilder.Reserve(len(lineNumbers))
+	filenameBuilder.Reserve(len(keys))
+	lineNumBuilder.Reserve(len(keys))
+	cumuBuilder.Reserve(len(keys))
+	flatBuilder.Reserve(len(keys))
 
-	for _, ln := range lineNumbers {
-		metrics := b.lineData[ln]
-		lineNumBuilder.Append(ln)
+	for _, key := range keys {
+		metrics := b.lineData[key]
+		if err := filenameBuilder.AppendString(key.filename); err != nil {
+			// Dictionary append shouldn't fail, but handle gracefully
+			filenameBuilder.AppendNull()
+		}
+		lineNumBuilder.Append(key.lineNumber)
 		cumuBuilder.Append(metrics.cumulative)
 		flatBuilder.Append(metrics.flat)
 	}
 
+	filenameArr := filenameBuilder.NewDictionaryArray()
+	defer filenameArr.Release()
 	lineNumArr := lineNumBuilder.NewInt64Array()
 	defer lineNumArr.Release()
 	cumuArr := cumuBuilder.NewInt64Array()
@@ -178,6 +201,7 @@ func (b *sourceReportBuilder) finish() (arrow.RecordBatch, int64) {
 	return array.NewRecordBatch(
 		arrow.NewSchema(
 			[]arrow.Field{
+				{Name: "filename", Type: filenameDictType},
 				{Name: "line_number", Type: arrow.PrimitiveTypes.Int64},
 				{Name: "cumulative", Type: arrow.PrimitiveTypes.Int64},
 				{Name: "flat", Type: arrow.PrimitiveTypes.Int64},
@@ -185,11 +209,12 @@ func (b *sourceReportBuilder) finish() (arrow.RecordBatch, int64) {
 			nil,
 		),
 		[]arrow.Array{
+			filenameArr,
 			lineNumArr,
 			cumuArr,
 			flatArr,
 		},
-		int64(len(lineNumbers)),
+		int64(len(keys)),
 	), b.cumulative
 }
 
@@ -214,13 +239,19 @@ func (b *sourceReportBuilder) addRecord(rec arrow.RecordBatch) error {
 					if r.Line.IsValid(k) && r.LineFunctionNameIndices.IsValid(k) {
 						profileFilename := r.LineFunctionFilenameDict.Value(int(r.LineFunctionFilenameIndices.Value(k)))
 						if filenameMatches(profileFilename, b.filename) {
-							b.matchedFilenames[string(profileFilename)] = struct{}{}
-
 							lineNum := r.LineNumber.Value(k)
-							metrics, exists := b.lineData[lineNum]
+							// Intern filename to avoid repeated string allocations
+							fn := string(profileFilename)
+							if interned, ok := b.filenameIntern[fn]; ok {
+								fn = interned
+							} else {
+								b.filenameIntern[fn] = fn
+							}
+							key := lineKey{filename: fn, lineNumber: lineNum}
+							metrics, exists := b.lineData[key]
 							if !exists {
 								metrics = &lineMetrics{}
-								b.lineData[lineNum] = metrics
+								b.lineData[key] = metrics
 							}
 
 							metrics.cumulative += r.Value.Value(i)

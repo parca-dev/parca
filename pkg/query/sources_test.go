@@ -131,9 +131,10 @@ func TestSourceReportArrowSchema(t *testing.T) {
 		Filename: "test.go",
 	})
 
-	builder.lineData[10] = &lineMetrics{cumulative: 100, flat: 50}
-	builder.lineData[25] = &lineMetrics{cumulative: 200, flat: 75}
-	builder.lineData[5] = &lineMetrics{cumulative: 50, flat: 25}
+	// Use lineKey with filename and line number
+	builder.lineData[lineKey{filename: "/app/test.go", lineNumber: 10}] = &lineMetrics{cumulative: 100, flat: 50}
+	builder.lineData[lineKey{filename: "/app/test.go", lineNumber: 25}] = &lineMetrics{cumulative: 200, flat: 75}
+	builder.lineData[lineKey{filename: "/app/test.go", lineNumber: 5}] = &lineMetrics{cumulative: 50, flat: 25}
 
 	record, cumulative := builder.finish()
 	defer record.Release()
@@ -141,25 +142,32 @@ func TestSourceReportArrowSchema(t *testing.T) {
 	require.Equal(t, int64(0), cumulative)
 
 	schema := record.Schema()
-	require.Equal(t, 3, schema.NumFields())
+	require.Equal(t, 4, schema.NumFields())
 
-	require.Equal(t, "line_number", schema.Field(0).Name)
-	require.Equal(t, "cumulative", schema.Field(1).Name)
-	require.Equal(t, "flat", schema.Field(2).Name)
+	require.Equal(t, "filename", schema.Field(0).Name)
+	require.Equal(t, "line_number", schema.Field(1).Name)
+	require.Equal(t, "cumulative", schema.Field(2).Name)
+	require.Equal(t, "flat", schema.Field(3).Name)
 
 	require.Equal(t, int64(3), record.NumRows())
 
-	lineNumbers := record.Column(0)
+	// Filename column (dictionary encoded)
+	filenameCol := record.Column(0).(*array.Dictionary)
+	require.Equal(t, "/app/test.go", filenameCol.Dictionary().(*array.String).Value(int(filenameCol.GetValueIndex(0))))
+	require.Equal(t, "/app/test.go", filenameCol.Dictionary().(*array.String).Value(int(filenameCol.GetValueIndex(1))))
+	require.Equal(t, "/app/test.go", filenameCol.Dictionary().(*array.String).Value(int(filenameCol.GetValueIndex(2))))
+
+	lineNumbers := record.Column(1)
 	require.Equal(t, int64(5), lineNumbers.(*array.Int64).Value(0))
 	require.Equal(t, int64(10), lineNumbers.(*array.Int64).Value(1))
 	require.Equal(t, int64(25), lineNumbers.(*array.Int64).Value(2))
 
-	cumulativeCol := record.Column(1)
+	cumulativeCol := record.Column(2)
 	require.Equal(t, int64(50), cumulativeCol.(*array.Int64).Value(0))
 	require.Equal(t, int64(100), cumulativeCol.(*array.Int64).Value(1))
 	require.Equal(t, int64(200), cumulativeCol.(*array.Int64).Value(2))
 
-	flatCol := record.Column(2)
+	flatCol := record.Column(3)
 	require.Equal(t, int64(25), flatCol.(*array.Int64).Value(0))
 	require.Equal(t, int64(50), flatCol.(*array.Int64).Value(1))
 	require.Equal(t, int64(75), flatCol.(*array.Int64).Value(2))
@@ -198,7 +206,7 @@ func TestFilenameMatches(t *testing.T) {
 	}
 }
 
-func TestSourceReportMatchedFilenames(t *testing.T) {
+func TestSourceReportMultipleFilenames(t *testing.T) {
 	allocator := memory.NewCheckedAllocator(memory.DefaultAllocator)
 	defer allocator.AssertSize(t, 0)
 
@@ -207,20 +215,27 @@ func TestSourceReportMatchedFilenames(t *testing.T) {
 		Filename: "sources.go",
 	})
 
-	// Simulate adding matched filenames (as would happen during addRecord)
-	builder.matchedFilenames["/home/ci/build/pkg/query/sources.go"] = struct{}{}
-	builder.matchedFilenames["github.com/parca/pkg/query/sources.go"] = struct{}{}
-
-	// Verify the map contains expected entries
-	require.Len(t, builder.matchedFilenames, 2)
-	require.Contains(t, builder.matchedFilenames, "/home/ci/build/pkg/query/sources.go")
-	require.Contains(t, builder.matchedFilenames, "github.com/parca/pkg/query/sources.go")
+	// Simulate lines from multiple files matching the suffix
+	builder.lineData[lineKey{filename: "/home/ci/build/pkg/query/sources.go", lineNumber: 42}] = &lineMetrics{cumulative: 100, flat: 50}
+	builder.lineData[lineKey{filename: "github.com/parca/pkg/query/sources.go", lineNumber: 42}] = &lineMetrics{cumulative: 200, flat: 75}
+	builder.lineData[lineKey{filename: "/home/ci/build/pkg/query/sources.go", lineNumber: 100}] = &lineMetrics{cumulative: 50, flat: 25}
 
 	record, cumulative := builder.finish()
 	defer record.Release()
 
 	require.Equal(t, int64(0), cumulative)
-	require.Equal(t, int64(0), record.NumRows())
+	require.Equal(t, int64(3), record.NumRows())
+
+	// Verify filename column contains both filenames
+	filenameCol := record.Column(0).(*array.Dictionary)
+	filenames := make(map[string]bool)
+	for i := 0; i < int(record.NumRows()); i++ {
+		idx := filenameCol.GetValueIndex(i)
+		filename := filenameCol.Dictionary().(*array.String).Value(int(idx))
+		filenames[filename] = true
+	}
+	require.Contains(t, filenames, "/home/ci/build/pkg/query/sources.go")
+	require.Contains(t, filenames, "github.com/parca/pkg/query/sources.go")
 }
 
 func TestSourceReportBuilderEmptyBuildID(t *testing.T) {
@@ -235,7 +250,6 @@ func TestSourceReportBuilderEmptyBuildID(t *testing.T) {
 
 	require.Equal(t, 0, len(builder.buildID))
 	require.Equal(t, []byte("test.go"), builder.filename)
-
-	require.NotNil(t, builder.matchedFilenames)
-	require.Len(t, builder.matchedFilenames, 0)
+	require.NotNil(t, builder.lineData)
+	require.Len(t, builder.lineData, 0)
 }

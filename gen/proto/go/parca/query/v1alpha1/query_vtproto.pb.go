@@ -2441,15 +2441,6 @@ func (m *Source) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.MatchedFilenames) > 0 {
-		for iNdEx := len(m.MatchedFilenames) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.MatchedFilenames[iNdEx])
-			copy(dAtA[i:], m.MatchedFilenames[iNdEx])
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.MatchedFilenames[iNdEx])))
-			i--
-			dAtA[i] = 0x22
-		}
-	}
 	if len(m.Unit) > 0 {
 		i -= len(m.Unit)
 		copy(dAtA[i:], m.Unit)
@@ -4658,12 +4649,6 @@ func (m *Source) SizeVT() (n int) {
 	l = len(m.Unit)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	if len(m.MatchedFilenames) > 0 {
-		for _, s := range m.MatchedFilenames {
-			l = len(s)
-			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-		}
 	}
 	n += len(m.unknownFields)
 	return n
@@ -9953,38 +9938,6 @@ func (m *Source) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Unit = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field MatchedFilenames", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.MatchedFilenames = append(m.MatchedFilenames, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

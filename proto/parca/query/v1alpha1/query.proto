@@ -518,8 +518,6 @@ message Source {
   string source = 2;
   // The unit of the values in the record.
   string unit = 3;
-  // If multiple filenames match, the client may prompt the user to select one.
-  repeated string matched_filenames = 4;
 }
 
 // FlamegraphRootNode is a root node of a flame graph
