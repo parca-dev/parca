@@ -131,7 +131,6 @@ func TestSourceReportArrowSchema(t *testing.T) {
 		Filename: "test.go",
 	})
 
-	// Use lineKey with filename and line number
 	builder.lineData[lineKey{filename: "/app/test.go", lineNumber: 10}] = &lineMetrics{cumulative: 100, flat: 50}
 	builder.lineData[lineKey{filename: "/app/test.go", lineNumber: 25}] = &lineMetrics{cumulative: 200, flat: 75}
 	builder.lineData[lineKey{filename: "/app/test.go", lineNumber: 5}] = &lineMetrics{cumulative: 50, flat: 25}

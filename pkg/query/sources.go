@@ -15,6 +15,7 @@ package query
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"fmt"
 	"slices"
@@ -93,7 +94,6 @@ type lineMetrics struct {
 	flat       int64
 }
 
-// lineKey uniquely identifies a line within a specific file.
 type lineKey struct {
 	filename   string
 	lineNumber int64
@@ -106,7 +106,7 @@ type sourceReportBuilder struct {
 	buildID  []byte
 
 	lineData       map[lineKey]*lineMetrics
-	filenameIntern map[string]string // dedupes filename strings to reduce allocations
+	filenameIntern map[string]string
 	cumulative     int64
 }
 
@@ -141,28 +141,17 @@ func newSourceReportBuilder(
 }
 
 func (b *sourceReportBuilder) finish() (arrow.RecordBatch, int64) {
-	// Collect and sort keys for deterministic output
 	keys := make([]lineKey, 0, len(b.lineData))
 	for k := range b.lineData {
 		keys = append(keys, k)
 	}
 	slices.SortFunc(keys, func(a, b lineKey) int {
-		if a.filename < b.filename {
-			return -1
-		}
-		if a.filename > b.filename {
-			return 1
-		}
-		if a.lineNumber < b.lineNumber {
-			return -1
-		}
-		if a.lineNumber > b.lineNumber {
-			return 1
-		}
-		return 0
+		return cmp.Or(
+			cmp.Compare(a.filename, b.filename),
+			cmp.Compare(a.lineNumber, b.lineNumber),
+		)
 	})
 
-	// Build filename column with dictionary encoding
 	filenameDictType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.String}
 	filenameBuilder := array.NewBuilder(b.pool, filenameDictType).(*array.BinaryDictionaryBuilder)
 	defer filenameBuilder.Release()
@@ -180,10 +169,7 @@ func (b *sourceReportBuilder) finish() (arrow.RecordBatch, int64) {
 
 	for _, key := range keys {
 		metrics := b.lineData[key]
-		if err := filenameBuilder.AppendString(key.filename); err != nil {
-			// Dictionary append shouldn't fail, but handle gracefully
-			filenameBuilder.AppendNull()
-		}
+		_ = filenameBuilder.AppendString(key.filename)
 		lineNumBuilder.Append(key.lineNumber)
 		cumuBuilder.Append(metrics.cumulative)
 		flatBuilder.Append(metrics.flat)
@@ -240,7 +226,6 @@ func (b *sourceReportBuilder) addRecord(rec arrow.RecordBatch) error {
 						profileFilename := r.LineFunctionFilenameDict.Value(int(r.LineFunctionFilenameIndices.Value(k)))
 						if filenameMatches(profileFilename, b.filename) {
 							lineNum := r.LineNumber.Value(k)
-							// Intern filename to avoid repeated string allocations
 							fn := string(profileFilename)
 							if interned, ok := b.filenameIntern[fn]; ok {
 								fn = interned
