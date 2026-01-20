@@ -164,3 +164,78 @@ func TestSourceReportArrowSchema(t *testing.T) {
 	require.Equal(t, int64(50), flatCol.(*array.Int64).Value(1))
 	require.Equal(t, int64(75), flatCol.(*array.Int64).Value(2))
 }
+
+func TestFilenameMatches(t *testing.T) {
+	tests := []struct {
+		name            string
+		profileFilename string
+		queryFilename   string
+		want            bool
+	}{
+		{"exact match", "pkg/query/sources.go", "pkg/query/sources.go", true},
+		{"exact match full path", "/home/ci/build/main.go", "/home/ci/build/main.go", true},
+
+		{"suffix match with /", "/home/ci/build/pkg/query/sources.go", "pkg/query/sources.go", true},
+		{"suffix match single dir", "/app/main.go", "main.go", true},
+		{"suffix match deep path", "github.com/parca-dev/parca/pkg/query/sources.go", "pkg/query/sources.go", true},
+
+		{"no match - no path boundary", "/home/ci/buildpkg/query/sources.go", "pkg/query/sources.go", false},
+		{"no match - partial filename", "xsources.go", "sources.go", false},
+
+		{"no match - different file", "pkg/query/other.go", "sources.go", false},
+		{"no match - different path", "pkg/other/sources.go", "pkg/query/sources.go", false},
+
+		{"empty query", "pkg/query/sources.go", "", false},
+		{"empty profile", "", "sources.go", false},
+		{"both empty", "", "", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := filenameMatches([]byte(tt.profileFilename), []byte(tt.queryFilename))
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestSourceReportMatchedFilenames(t *testing.T) {
+	allocator := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer allocator.AssertSize(t, 0)
+
+	builder := newSourceReportBuilder(allocator, &pb.SourceReference{
+		BuildId:  "",
+		Filename: "sources.go",
+	})
+
+	// Simulate adding matched filenames (as would happen during addRecord)
+	builder.matchedFilenames["/home/ci/build/pkg/query/sources.go"] = struct{}{}
+	builder.matchedFilenames["github.com/parca/pkg/query/sources.go"] = struct{}{}
+
+	// Verify the map contains expected entries
+	require.Len(t, builder.matchedFilenames, 2)
+	require.Contains(t, builder.matchedFilenames, "/home/ci/build/pkg/query/sources.go")
+	require.Contains(t, builder.matchedFilenames, "github.com/parca/pkg/query/sources.go")
+
+	record, cumulative := builder.finish()
+	defer record.Release()
+
+	require.Equal(t, int64(0), cumulative)
+	require.Equal(t, int64(0), record.NumRows())
+}
+
+func TestSourceReportBuilderEmptyBuildID(t *testing.T) {
+	allocator := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer allocator.AssertSize(t, 0)
+
+	// When buildId is empty, the builder should be configured to match all buildIds
+	builder := newSourceReportBuilder(allocator, &pb.SourceReference{
+		BuildId:  "",
+		Filename: "test.go",
+	})
+
+	require.Equal(t, 0, len(builder.buildID))
+	require.Equal(t, []byte("test.go"), builder.filename)
+
+	require.NotNil(t, builder.matchedFilenames)
+	require.Len(t, builder.matchedFilenames, 0)
+}

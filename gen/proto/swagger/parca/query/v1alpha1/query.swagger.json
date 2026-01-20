@@ -990,6 +990,13 @@
         "unit": {
           "type": "string",
           "description": "The unit of the values in the record."
+        },
+        "matchedFilenames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "If multiple filenames match, the client may prompt the user to select one."
         }
       },
       "description": "Source is the result of the source report type."

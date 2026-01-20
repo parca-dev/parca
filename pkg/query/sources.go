@@ -38,7 +38,7 @@ func GenerateSourceReport(
 	ref *pb.SourceReference,
 	source string,
 ) (*pb.Source, int64, error) {
-	record, cumulative, err := generateSourceReportRecord(
+	record, cumulative, matchedFilenames, err := generateSourceReportRecord(
 		ctx,
 		pool,
 		tracer,
@@ -63,9 +63,10 @@ func GenerateSourceReport(
 	}
 
 	return &pb.Source{
-		Record: buf.Bytes(),
-		Source: source,
-		Unit:   p.Meta.SampleType.Unit,
+		Record:           buf.Bytes(),
+		Source:           source,
+		Unit:             p.Meta.SampleType.Unit,
+		MatchedFilenames: matchedFilenames,
 	}, cumulative, nil
 }
 
@@ -76,16 +77,24 @@ func generateSourceReportRecord(
 	p profile.Profile,
 	ref *pb.SourceReference,
 	_ string,
-) (arrow.RecordBatch, int64, error) {
+) (arrow.RecordBatch, int64, []string, error) {
 	b := newSourceReportBuilder(pool, ref)
 	for _, record := range p.Samples {
 		if err := b.addRecord(record); err != nil {
-			return nil, 0, err
+			return nil, 0, nil, err
 		}
 	}
 
 	rec, cumulative := b.finish()
-	return rec, cumulative, nil
+
+	// Extract matched filenames from the map
+	matchedFilenames := make([]string, 0, len(b.matchedFilenames))
+	for filename := range b.matchedFilenames {
+		matchedFilenames = append(matchedFilenames, filename)
+	}
+	slices.Sort(matchedFilenames)
+
+	return rec, cumulative, matchedFilenames, nil
 }
 
 type lineMetrics struct {
@@ -99,8 +108,26 @@ type sourceReportBuilder struct {
 	filename []byte
 	buildID  []byte
 
-	lineData   map[int64]*lineMetrics
-	cumulative int64
+	lineData         map[int64]*lineMetrics
+	matchedFilenames map[string]struct{}
+	cumulative       int64
+}
+
+// filenameMatches checks if profileFilename matches queryFilename using suffix matching.
+// It returns true if:
+// - They are exactly equal, OR
+// - profileFilename ends with queryFilename AND is preceded by a '/' (path boundary).
+func filenameMatches(profileFilename, queryFilename []byte) bool {
+	if bytes.Equal(profileFilename, queryFilename) {
+		return true
+	}
+	if len(queryFilename) > 0 && bytes.HasSuffix(profileFilename, queryFilename) {
+		idx := len(profileFilename) - len(queryFilename) - 1
+		if idx >= 0 && profileFilename[idx] == '/' {
+			return true
+		}
+	}
+	return false
 }
 
 func newSourceReportBuilder(
@@ -108,10 +135,11 @@ func newSourceReportBuilder(
 	ref *pb.SourceReference,
 ) *sourceReportBuilder {
 	return &sourceReportBuilder{
-		pool:     pool,
-		filename: []byte(ref.Filename),
-		buildID:  []byte(ref.BuildId),
-		lineData: make(map[int64]*lineMetrics),
+		pool:             pool,
+		filename:         []byte(ref.Filename),
+		buildID:          []byte(ref.BuildId),
+		lineData:         make(map[int64]*lineMetrics),
+		matchedFilenames: make(map[string]struct{}),
 	}
 }
 
@@ -183,21 +211,24 @@ func (b *sourceReportBuilder) addRecord(rec arrow.RecordBatch) error {
 				llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
 
 				for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
-					if r.Line.IsValid(k) &&
-						r.LineFunctionNameIndices.IsValid(k) &&
-						bytes.Equal(r.LineFunctionFilenameDict.Value(int(r.LineFunctionFilenameIndices.Value(k))), b.filename) {
-						lineNum := r.LineNumber.Value(k)
-						metrics, exists := b.lineData[lineNum]
-						if !exists {
-							metrics = &lineMetrics{}
-							b.lineData[lineNum] = metrics
-						}
+					if r.Line.IsValid(k) && r.LineFunctionNameIndices.IsValid(k) {
+						profileFilename := r.LineFunctionFilenameDict.Value(int(r.LineFunctionFilenameIndices.Value(k)))
+						if filenameMatches(profileFilename, b.filename) {
+							b.matchedFilenames[string(profileFilename)] = struct{}{}
 
-						metrics.cumulative += r.Value.Value(i)
+							lineNum := r.LineNumber.Value(k)
+							metrics, exists := b.lineData[lineNum]
+							if !exists {
+								metrics = &lineMetrics{}
+								b.lineData[lineNum] = metrics
+							}
 
-						isLeaf := isFirstNonNil(i, j, r.Locations) && isFirstNonNil(j, k, r.Lines)
-						if isLeaf {
-							metrics.flat += r.Value.Value(i)
+							metrics.cumulative += r.Value.Value(i)
+
+							isLeaf := isFirstNonNil(i, j, r.Locations) && isFirstNonNil(j, k, r.Lines)
+							if isLeaf {
+								metrics.flat += r.Value.Value(i)
+							}
 						}
 					}
 				}

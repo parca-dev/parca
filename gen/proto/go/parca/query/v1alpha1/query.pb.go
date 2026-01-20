@@ -2480,9 +2480,11 @@ type Source struct {
 	// The actual source file content.
 	Source string `protobuf:"bytes,2,opt,name=source,proto3" json:"source,omitempty"`
 	// The unit of the values in the record.
-	Unit          string `protobuf:"bytes,3,opt,name=unit,proto3" json:"unit,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Unit string `protobuf:"bytes,3,opt,name=unit,proto3" json:"unit,omitempty"`
+	// If multiple filenames match, the client may prompt the user to select one.
+	MatchedFilenames []string `protobuf:"bytes,4,rep,name=matched_filenames,json=matchedFilenames,proto3" json:"matched_filenames,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *Source) Reset() {
@@ -2534,6 +2536,13 @@ func (x *Source) GetUnit() string {
 		return x.Unit
 	}
 	return ""
+}
+
+func (x *Source) GetMatchedFilenames() []string {
+	if x != nil {
+		return x.MatchedFilenames
+	}
+	return nil
 }
 
 // FlamegraphRootNode is a root node of a flame graph
@@ -4174,11 +4183,12 @@ const file_parca_query_v1alpha1_query_proto_rawDesc = "" +
 	"\x06record\x18\x01 \x01(\fR\x06record\x12\x12\n" +
 	"\x04unit\x18\x02 \x01(\tR\x04unit\x12\x16\n" +
 	"\x06height\x18\x03 \x01(\x05R\x06height\x12\x18\n" +
-	"\atrimmed\x18\x04 \x01(\x03R\atrimmed\"L\n" +
+	"\atrimmed\x18\x04 \x01(\x03R\atrimmed\"y\n" +
 	"\x06Source\x12\x16\n" +
 	"\x06record\x18\x01 \x01(\fR\x06record\x12\x16\n" +
 	"\x06source\x18\x02 \x01(\tR\x06source\x12\x12\n" +
-	"\x04unit\x18\x03 \x01(\tR\x04unit\"\x8a\x01\n" +
+	"\x04unit\x18\x03 \x01(\tR\x04unit\x12+\n" +
+	"\x11matched_filenames\x18\x04 \x03(\tR\x10matchedFilenames\"\x8a\x01\n" +
 	"\x12FlamegraphRootNode\x12\x1e\n" +
 	"\n" +
 	"cumulative\x18\x01 \x01(\x03R\n" +

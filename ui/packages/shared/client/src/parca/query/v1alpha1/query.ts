@@ -1079,6 +1079,12 @@ export interface Source {
      * @generated from protobuf field: string unit = 3
      */
     unit: string;
+    /**
+     * If multiple filenames match, the client may prompt the user to select one.
+     *
+     * @generated from protobuf field: repeated string matched_filenames = 4
+     */
+    matchedFilenames: string[];
 }
 /**
  * FlamegraphRootNode is a root node of a flame graph
@@ -3584,7 +3590,8 @@ class Source$Type extends MessageType<Source> {
         super("parca.query.v1alpha1.Source", [
             { no: 1, name: "record", kind: "scalar", T: 12 /*ScalarType.BYTES*/ },
             { no: 2, name: "source", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 3, name: "unit", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 3, name: "unit", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "matched_filenames", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<Source>): Source {
@@ -3592,6 +3599,7 @@ class Source$Type extends MessageType<Source> {
         message.record = new Uint8Array(0);
         message.source = "";
         message.unit = "";
+        message.matchedFilenames = [];
         if (value !== undefined)
             reflectionMergePartial<Source>(this, message, value);
         return message;
@@ -3609,6 +3617,9 @@ class Source$Type extends MessageType<Source> {
                     break;
                 case /* string unit */ 3:
                     message.unit = reader.string();
+                    break;
+                case /* repeated string matched_filenames */ 4:
+                    message.matchedFilenames.push(reader.string());
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -3631,6 +3642,9 @@ class Source$Type extends MessageType<Source> {
         /* string unit = 3; */
         if (message.unit !== "")
             writer.tag(3, WireType.LengthDelimited).string(message.unit);
+        /* repeated string matched_filenames = 4; */
+        for (let i = 0; i < message.matchedFilenames.length; i++)
+            writer.tag(4, WireType.LengthDelimited).string(message.matchedFilenames[i]);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
