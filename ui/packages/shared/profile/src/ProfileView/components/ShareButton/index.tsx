@@ -11,14 +11,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useState} from 'react';
+import React, {useCallback, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 
 import {QueryRequest, QueryServiceClient} from '@parca/client';
-import {Button, Dropdown, Modal, useGrpcMetadata, useParcaContext} from '@parca/components';
+import {
+  Button,
+  Dropdown,
+  Modal,
+  useGrpcMetadata,
+  useParcaContext,
+  useURLState,
+} from '@parca/components';
 
 import {ProfileSource} from '../../../ProfileSource';
+import {openInVSCode} from '../../../utils/vscodeDeepLink';
+import {useProfileFiltersUrlState} from '../ProfileFilters/useProfileFiltersUrlState';
 import ResultBox from './ResultBox';
 
 interface Props {
@@ -137,6 +146,19 @@ const ShareButton = ({
 }: Props): JSX.Element => {
   const [showProfileShareModal, setShowProfileShareModal] = useState(false);
 
+  // Get current query state from URL for VS Code deep linking
+  const [expression] = useURLState<string>('expression');
+  const [timeSelection] = useURLState<string>('time_selection');
+  const {appliedFilters} = useProfileFiltersUrlState();
+
+  const handleOpenInVSCode = useCallback(() => {
+    openInVSCode({
+      expression: expression ?? undefined,
+      timeRange: timeSelection ?? undefined,
+      profileFilters: appliedFilters,
+    });
+  }, [expression, timeSelection, appliedFilters]);
+
   const actions = [
     {
       key: 'shareProfile',
@@ -154,6 +176,14 @@ const ShareButton = ({
       id: 'h-download-pprof',
       disabled: pprofdownloading,
       icon: 'material-symbols:download',
+    },
+    {
+      key: 'openInVSCode',
+      label: 'Open in VS Code',
+      onSelect: handleOpenInVSCode,
+      id: 'h-open-in-vscode',
+      disabled: expression === undefined || expression === '',
+      icon: 'simple-icons:visualstudiocode',
     },
   ];
 

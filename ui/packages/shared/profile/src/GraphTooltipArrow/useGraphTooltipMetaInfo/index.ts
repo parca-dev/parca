@@ -112,7 +112,7 @@ export const useGraphTooltipMetaInfo = ({table, row}: Props): GraphTooltipMetaIn
   });
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [unusedBuildId, setSourceBuildId] = useURLState('source_buildid');
+  const [unusedBuildId, setSourceBuildId] = useURLState('source_build_id');
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [unusedFilename, setSourceFilename] = useURLState('source_filename');

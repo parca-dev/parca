@@ -15,13 +15,15 @@ import React, {useCallback, useEffect, useMemo} from 'react';
 
 import {tableFromIPC} from 'apache-arrow';
 import {AnimatePresence, motion} from 'framer-motion';
-import {Item, Menu, useContextMenu} from 'react-contexify';
+import {Item, Menu, Separator, useContextMenu} from 'react-contexify';
 
 import {Source} from '@parca/client';
 import {SourceSkeleton, useParcaContext, useURLState, type ProfileData} from '@parca/components';
 
 import {ExpandOnHover} from '../GraphTooltipArrow/ExpandOnHoverValue';
+import {useProfileFiltersUrlState} from '../ProfileView/components/ProfileFilters/useProfileFiltersUrlState';
 import {truncateStringReverse} from '../utils';
+import {openInVSCode} from '../utils/vscodeDeepLink';
 import {Highlighter, profileAwareRenderer, type LineDataLookup} from './Highlighter';
 import useLineRange from './useSelectedLineRange';
 
@@ -43,6 +45,12 @@ export const SourceView = React.memo(function SourceView({
   setActionButtons,
 }: SourceViewProps): JSX.Element {
   const [sourceFileName] = useURLState<string | undefined>('source_filename');
+  const [sourceBuildId] = useURLState<string | undefined>('source_build_id');
+  const [expression] = useURLState<string>('expression');
+  const [timeSelection] = useURLState<string>('time_selection');
+  const [fromParam] = useURLState<string | undefined>('from');
+  const [toParam] = useURLState<string | undefined>('to');
+  const {appliedFilters} = useProfileFiltersUrlState();
   const {isDarkMode, sourceViewContextMenuItems = []} = useParcaContext();
 
   const sourceCode = useMemo(() => {
@@ -144,6 +152,28 @@ export const SourceView = React.memo(function SourceView({
     return [code, profileData];
   }, [startLine, endLine, sourceCode, getProfileDataForLine]);
 
+  const handleOpenInVSCode = useCallback(() => {
+    openInVSCode({
+      expression: expression ?? undefined,
+      timeRange: timeSelection ?? undefined,
+      from: fromParam != null ? parseInt(fromParam, 10) : undefined,
+      to: toParam != null ? parseInt(toParam, 10) : undefined,
+      profileFilters: appliedFilters,
+      filename: sourceFileName ?? undefined,
+      buildId: sourceBuildId ?? undefined,
+      line: startLine > 0 ? startLine : undefined,
+    });
+  }, [
+    expression,
+    timeSelection,
+    fromParam,
+    toParam,
+    appliedFilters,
+    sourceFileName,
+    sourceBuildId,
+    startLine,
+  ]);
+
   useEffect(() => {
     setActionButtons?.(
       <div className="px-2">
@@ -188,15 +218,19 @@ export const SourceView = React.memo(function SourceView({
           content={data.source}
           renderer={profileAwareRenderer(getLineData, total, filtered, onContextMenu)}
         />
-        {sourceViewContextMenuItems.length > 0 ? (
-          <Menu id={MENU_ID}>
-            {sourceViewContextMenuItems.map(item => (
-              <Item key={item.id} onClick={() => item.action(selectedCode, profileData)}>
-                {item.label}
-              </Item>
-            ))}
-          </Menu>
-        ) : null}
+        <Menu id={MENU_ID}>
+          <Item onClick={handleOpenInVSCode}>Open in VS Code</Item>
+          {sourceViewContextMenuItems.length > 0 ? (
+            <>
+              <Separator />
+              {sourceViewContextMenuItems.map(item => (
+                <Item key={item.id} onClick={() => item.action(selectedCode, profileData)}>
+                  {item.label}
+                </Item>
+              ))}
+            </>
+          ) : null}
+        </Menu>
       </motion.div>
     </AnimatePresence>
   );
