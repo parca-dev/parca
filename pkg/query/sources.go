@@ -90,13 +90,9 @@ func generateSourceReportRecord(
 }
 
 type lineMetrics struct {
+	lineNumber int64
 	cumulative int64
 	flat       int64
-}
-
-type lineKey struct {
-	filename   string
-	lineNumber int64
 }
 
 type sourceReportBuilder struct {
@@ -105,9 +101,8 @@ type sourceReportBuilder struct {
 	filename []byte
 	buildID  []byte
 
-	lineData       map[lineKey]*lineMetrics
-	filenameIntern map[string]string
-	cumulative     int64
+	lineData   map[string][]lineMetrics
+	cumulative int64
 }
 
 // filenameMatches checks if profileFilename matches queryFilename using suffix matching.
@@ -132,25 +127,28 @@ func newSourceReportBuilder(
 	ref *pb.SourceReference,
 ) *sourceReportBuilder {
 	return &sourceReportBuilder{
-		pool:           pool,
-		filename:       []byte(ref.Filename),
-		buildID:        []byte(ref.BuildId),
-		lineData:       make(map[lineKey]*lineMetrics),
-		filenameIntern: make(map[string]string),
+		pool:     pool,
+		filename: []byte(ref.Filename),
+		buildID:  []byte(ref.BuildId),
+		lineData: make(map[string][]lineMetrics),
 	}
 }
 
 func (b *sourceReportBuilder) finish() (arrow.RecordBatch, int64) {
-	keys := make([]lineKey, 0, len(b.lineData))
-	for k := range b.lineData {
-		keys = append(keys, k)
+	filenames := make([]string, 0, len(b.lineData))
+	for filename := range b.lineData {
+		filenames = append(filenames, filename)
 	}
-	slices.SortFunc(keys, func(a, b lineKey) int {
-		return cmp.Or(
-			cmp.Compare(a.filename, b.filename),
-			cmp.Compare(a.lineNumber, b.lineNumber),
-		)
-	})
+	slices.Sort(filenames)
+
+	totalRows := 0
+	for _, filename := range filenames {
+		metrics := b.lineData[filename]
+		slices.SortFunc(metrics, func(a, b lineMetrics) int {
+			return cmp.Compare(a.lineNumber, b.lineNumber)
+		})
+		totalRows += len(metrics)
+	}
 
 	filenameDictType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.String}
 	filenameBuilder := array.NewBuilder(b.pool, filenameDictType).(*array.BinaryDictionaryBuilder)
@@ -162,17 +160,18 @@ func (b *sourceReportBuilder) finish() (arrow.RecordBatch, int64) {
 	flatBuilder := array.NewInt64Builder(b.pool)
 	defer flatBuilder.Release()
 
-	filenameBuilder.Reserve(len(keys))
-	lineNumBuilder.Reserve(len(keys))
-	cumuBuilder.Reserve(len(keys))
-	flatBuilder.Reserve(len(keys))
+	filenameBuilder.Reserve(totalRows)
+	lineNumBuilder.Reserve(totalRows)
+	cumuBuilder.Reserve(totalRows)
+	flatBuilder.Reserve(totalRows)
 
-	for _, key := range keys {
-		metrics := b.lineData[key]
-		_ = filenameBuilder.AppendString(key.filename)
-		lineNumBuilder.Append(key.lineNumber)
-		cumuBuilder.Append(metrics.cumulative)
-		flatBuilder.Append(metrics.flat)
+	for _, filename := range filenames {
+		for _, metrics := range b.lineData[filename] {
+			_ = filenameBuilder.AppendString(filename)
+			lineNumBuilder.Append(metrics.lineNumber)
+			cumuBuilder.Append(metrics.cumulative)
+			flatBuilder.Append(metrics.flat)
+		}
 	}
 
 	filenameArr := filenameBuilder.NewDictionaryArray()
@@ -200,7 +199,7 @@ func (b *sourceReportBuilder) finish() (arrow.RecordBatch, int64) {
 			cumuArr,
 			flatArr,
 		},
-		int64(len(keys)),
+		int64(totalRows),
 	), b.cumulative
 }
 
@@ -226,24 +225,33 @@ func (b *sourceReportBuilder) addRecord(rec arrow.RecordBatch) error {
 						profileFilename := r.LineFunctionFilenameDict.Value(int(r.LineFunctionFilenameIndices.Value(k)))
 						if filenameMatches(profileFilename, b.filename) {
 							lineNum := r.LineNumber.Value(k)
-							fn := string(profileFilename)
-							if interned, ok := b.filenameIntern[fn]; ok {
-								fn = interned
-							} else {
-								b.filenameIntern[fn] = fn
-							}
-							key := lineKey{filename: fn, lineNumber: lineNum}
-							metrics, exists := b.lineData[key]
-							if !exists {
-								metrics = &lineMetrics{}
-								b.lineData[key] = metrics
-							}
-
-							metrics.cumulative += r.Value.Value(i)
+							filename := string(profileFilename)
+							value := r.Value.Value(i)
 
 							isLeaf := isFirstNonNil(i, j, r.Locations) && isFirstNonNil(j, k, r.Lines)
-							if isLeaf {
-								metrics.flat += r.Value.Value(i)
+
+							metrics := b.lineData[filename]
+							found := false
+							for idx := range metrics {
+								if metrics[idx].lineNumber == lineNum {
+									metrics[idx].cumulative += value
+									if isLeaf {
+										metrics[idx].flat += value
+									}
+									found = true
+									break
+								}
+							}
+							if !found {
+								flat := int64(0)
+								if isLeaf {
+									flat = value
+								}
+								b.lineData[filename] = append(metrics, lineMetrics{
+									lineNumber: lineNum,
+									cumulative: value,
+									flat:       flat,
+								})
 							}
 						}
 					}

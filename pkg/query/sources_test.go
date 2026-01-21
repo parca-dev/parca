@@ -131,9 +131,11 @@ func TestSourceReportArrowSchema(t *testing.T) {
 		Filename: "test.go",
 	})
 
-	builder.lineData[lineKey{filename: "/app/test.go", lineNumber: 10}] = &lineMetrics{cumulative: 100, flat: 50}
-	builder.lineData[lineKey{filename: "/app/test.go", lineNumber: 25}] = &lineMetrics{cumulative: 200, flat: 75}
-	builder.lineData[lineKey{filename: "/app/test.go", lineNumber: 5}] = &lineMetrics{cumulative: 50, flat: 25}
+	builder.lineData["/app/test.go"] = []lineMetrics{
+		{lineNumber: 10, cumulative: 100, flat: 50},
+		{lineNumber: 25, cumulative: 200, flat: 75},
+		{lineNumber: 5, cumulative: 50, flat: 25},
+	}
 
 	record, cumulative := builder.finish()
 	defer record.Release()
@@ -215,9 +217,13 @@ func TestSourceReportMultipleFilenames(t *testing.T) {
 	})
 
 	// Simulate lines from multiple files matching the suffix
-	builder.lineData[lineKey{filename: "/home/ci/build/pkg/query/sources.go", lineNumber: 42}] = &lineMetrics{cumulative: 100, flat: 50}
-	builder.lineData[lineKey{filename: "github.com/parca/pkg/query/sources.go", lineNumber: 42}] = &lineMetrics{cumulative: 200, flat: 75}
-	builder.lineData[lineKey{filename: "/home/ci/build/pkg/query/sources.go", lineNumber: 100}] = &lineMetrics{cumulative: 50, flat: 25}
+	builder.lineData["/home/ci/build/pkg/query/sources.go"] = []lineMetrics{
+		{lineNumber: 42, cumulative: 100, flat: 50},
+		{lineNumber: 100, cumulative: 50, flat: 25},
+	}
+	builder.lineData["github.com/parca/pkg/query/sources.go"] = []lineMetrics{
+		{lineNumber: 42, cumulative: 200, flat: 75},
+	}
 
 	record, cumulative := builder.finish()
 	defer record.Release()
