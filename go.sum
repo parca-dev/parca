@@ -750,8 +750,8 @@ github.com/planetscale/vtprotobuf v0.6.1-0.20250313105119-ba97887b0a25/go.mod h1
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/polarsignals/frostdb v0.0.0-20260120092516-2618296ae181 h1:F6R4uquRSr/ytsuJkv+CZ2IGs0/P8D2H3Kny/hvSXpc=
-github.com/polarsignals/frostdb v0.0.0-20260120092516-2618296ae181/go.mod h1:/s+TPtlT5A2Tfc9XuX3375vyUMc1om+QlJFtOkWPOec=
+github.com/polarsignals/frostdb v0.0.0-20260121113628-9e5cfe0171ad h1:tN+33DEz2/abTDSRSPuq6giixIy5NOBr7IcX107Uhec=
+github.com/polarsignals/frostdb v0.0.0-20260121113628-9e5cfe0171ad/go.mod h1:/s+TPtlT5A2Tfc9XuX3375vyUMc1om+QlJFtOkWPOec=
 github.com/polarsignals/iceberg-go v0.0.0-20240502213135-2ee70b71e76b h1:Dbm5itapR0uYIMujR8OntWpDJ/nm5OM6JiaKauLcZ4Y=
 github.com/polarsignals/iceberg-go v0.0.0-20240502213135-2ee70b71e76b/go.mod h1:5T9ChEZjRNhAGGLwH1cqzDA7wXB84SmU+WkXQr/ZAjo=
 github.com/polarsignals/wal v0.0.0-20240619104840-9da940027f9c h1:ReFgEXqZ9/y+/9ZdNHOa1L62wqt8mWqoqrWutWj2x+A=
