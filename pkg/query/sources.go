@@ -15,6 +15,7 @@ package query
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"fmt"
 	"slices"
@@ -89,6 +90,7 @@ func generateSourceReportRecord(
 }
 
 type lineMetrics struct {
+	lineNumber int64
 	cumulative int64
 	flat       int64
 }
@@ -99,8 +101,25 @@ type sourceReportBuilder struct {
 	filename []byte
 	buildID  []byte
 
-	lineData   map[int64]*lineMetrics
+	lineData   map[string][]lineMetrics
 	cumulative int64
+}
+
+// filenameMatches checks if profileFilename matches queryFilename using suffix matching.
+// It returns true if:
+// - They are exactly equal, OR
+// - profileFilename ends with queryFilename AND is preceded by a '/' (path boundary).
+func filenameMatches(profileFilename, queryFilename []byte) bool {
+	if bytes.Equal(profileFilename, queryFilename) {
+		return true
+	}
+	if len(queryFilename) > 0 && bytes.HasSuffix(profileFilename, queryFilename) {
+		idx := len(profileFilename) - len(queryFilename) - 1
+		if idx >= 0 && profileFilename[idx] == '/' {
+			return true
+		}
+	}
+	return false
 }
 
 func newSourceReportBuilder(
@@ -111,17 +130,29 @@ func newSourceReportBuilder(
 		pool:     pool,
 		filename: []byte(ref.Filename),
 		buildID:  []byte(ref.BuildId),
-		lineData: make(map[int64]*lineMetrics),
+		lineData: make(map[string][]lineMetrics),
 	}
 }
 
 func (b *sourceReportBuilder) finish() (arrow.RecordBatch, int64) {
-	lineNumbers := make([]int64, 0, len(b.lineData))
-	for ln := range b.lineData {
-		lineNumbers = append(lineNumbers, ln)
+	filenames := make([]string, 0, len(b.lineData))
+	for filename := range b.lineData {
+		filenames = append(filenames, filename)
 	}
-	slices.Sort(lineNumbers)
+	slices.Sort(filenames)
 
+	totalRows := 0
+	for _, filename := range filenames {
+		metrics := b.lineData[filename]
+		slices.SortFunc(metrics, func(a, b lineMetrics) int {
+			return cmp.Compare(a.lineNumber, b.lineNumber)
+		})
+		totalRows += len(metrics)
+	}
+
+	filenameDictType := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.String}
+	filenameBuilder := array.NewBuilder(b.pool, filenameDictType).(*array.BinaryDictionaryBuilder)
+	defer filenameBuilder.Release()
 	lineNumBuilder := array.NewInt64Builder(b.pool)
 	defer lineNumBuilder.Release()
 	cumuBuilder := array.NewInt64Builder(b.pool)
@@ -129,17 +160,22 @@ func (b *sourceReportBuilder) finish() (arrow.RecordBatch, int64) {
 	flatBuilder := array.NewInt64Builder(b.pool)
 	defer flatBuilder.Release()
 
-	lineNumBuilder.Reserve(len(lineNumbers))
-	cumuBuilder.Reserve(len(lineNumbers))
-	flatBuilder.Reserve(len(lineNumbers))
+	filenameBuilder.Reserve(totalRows)
+	lineNumBuilder.Reserve(totalRows)
+	cumuBuilder.Reserve(totalRows)
+	flatBuilder.Reserve(totalRows)
 
-	for _, ln := range lineNumbers {
-		metrics := b.lineData[ln]
-		lineNumBuilder.Append(ln)
-		cumuBuilder.Append(metrics.cumulative)
-		flatBuilder.Append(metrics.flat)
+	for _, filename := range filenames {
+		for _, metrics := range b.lineData[filename] {
+			_ = filenameBuilder.AppendString(filename)
+			lineNumBuilder.Append(metrics.lineNumber)
+			cumuBuilder.Append(metrics.cumulative)
+			flatBuilder.Append(metrics.flat)
+		}
 	}
 
+	filenameArr := filenameBuilder.NewDictionaryArray()
+	defer filenameArr.Release()
 	lineNumArr := lineNumBuilder.NewInt64Array()
 	defer lineNumArr.Release()
 	cumuArr := cumuBuilder.NewInt64Array()
@@ -150,6 +186,7 @@ func (b *sourceReportBuilder) finish() (arrow.RecordBatch, int64) {
 	return array.NewRecordBatch(
 		arrow.NewSchema(
 			[]arrow.Field{
+				{Name: "filename", Type: filenameDictType},
 				{Name: "line_number", Type: arrow.PrimitiveTypes.Int64},
 				{Name: "cumulative", Type: arrow.PrimitiveTypes.Int64},
 				{Name: "flat", Type: arrow.PrimitiveTypes.Int64},
@@ -157,11 +194,12 @@ func (b *sourceReportBuilder) finish() (arrow.RecordBatch, int64) {
 			nil,
 		),
 		[]arrow.Array{
+			filenameArr,
 			lineNumArr,
 			cumuArr,
 			flatArr,
 		},
-		int64(len(lineNumbers)),
+		int64(totalRows),
 	), b.cumulative
 }
 
@@ -178,25 +216,43 @@ func (b *sourceReportBuilder) addRecord(rec arrow.RecordBatch) error {
 			if !r.Locations.ListValues().IsValid(j) {
 				continue // Skip null locations; they have been filtered out
 			}
-			if r.MappingStart.IsValid(j) && bytes.Equal(r.MappingBuildIDDict.Value(int(r.MappingBuildIDIndices.Value(j))), b.buildID) {
+			buildIDMatches := len(b.buildID) == 0 || bytes.Equal(r.MappingBuildIDDict.Value(int(r.MappingBuildIDIndices.Value(j))), b.buildID)
+			if r.MappingStart.IsValid(j) && buildIDMatches {
 				llOffsetStart, llOffsetEnd := r.Lines.ValueOffsets(j)
 
 				for k := int(llOffsetStart); k < int(llOffsetEnd); k++ {
-					if r.Line.IsValid(k) &&
-						r.LineFunctionNameIndices.IsValid(k) &&
-						bytes.Equal(r.LineFunctionFilenameDict.Value(int(r.LineFunctionFilenameIndices.Value(k))), b.filename) {
-						lineNum := r.LineNumber.Value(k)
-						metrics, exists := b.lineData[lineNum]
-						if !exists {
-							metrics = &lineMetrics{}
-							b.lineData[lineNum] = metrics
-						}
+					if r.Line.IsValid(k) && r.LineFunctionNameIndices.IsValid(k) {
+						profileFilename := r.LineFunctionFilenameDict.Value(int(r.LineFunctionFilenameIndices.Value(k)))
+						if filenameMatches(profileFilename, b.filename) {
+							lineNum := r.LineNumber.Value(k)
+							filename := string(profileFilename)
+							value := r.Value.Value(i)
 
-						metrics.cumulative += r.Value.Value(i)
+							isLeaf := isFirstNonNil(i, j, r.Locations) && isFirstNonNil(j, k, r.Lines)
 
-						isLeaf := isFirstNonNil(i, j, r.Locations) && isFirstNonNil(j, k, r.Lines)
-						if isLeaf {
-							metrics.flat += r.Value.Value(i)
+							metrics := b.lineData[filename]
+							found := false
+							for idx := range metrics {
+								if metrics[idx].lineNumber == lineNum {
+									metrics[idx].cumulative += value
+									if isLeaf {
+										metrics[idx].flat += value
+									}
+									found = true
+									break
+								}
+							}
+							if !found {
+								flat := int64(0)
+								if isLeaf {
+									flat = value
+								}
+								b.lineData[filename] = append(metrics, lineMetrics{
+									lineNumber: lineNum,
+									cumulative: value,
+									flat:       flat,
+								})
+							}
 						}
 					}
 				}

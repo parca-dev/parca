@@ -131,9 +131,11 @@ func TestSourceReportArrowSchema(t *testing.T) {
 		Filename: "test.go",
 	})
 
-	builder.lineData[10] = &lineMetrics{cumulative: 100, flat: 50}
-	builder.lineData[25] = &lineMetrics{cumulative: 200, flat: 75}
-	builder.lineData[5] = &lineMetrics{cumulative: 50, flat: 25}
+	builder.lineData["/app/test.go"] = []lineMetrics{
+		{lineNumber: 10, cumulative: 100, flat: 50},
+		{lineNumber: 25, cumulative: 200, flat: 75},
+		{lineNumber: 5, cumulative: 50, flat: 25},
+	}
 
 	record, cumulative := builder.finish()
 	defer record.Release()
@@ -141,26 +143,118 @@ func TestSourceReportArrowSchema(t *testing.T) {
 	require.Equal(t, int64(0), cumulative)
 
 	schema := record.Schema()
-	require.Equal(t, 3, schema.NumFields())
+	require.Equal(t, 4, schema.NumFields())
 
-	require.Equal(t, "line_number", schema.Field(0).Name)
-	require.Equal(t, "cumulative", schema.Field(1).Name)
-	require.Equal(t, "flat", schema.Field(2).Name)
+	require.Equal(t, "filename", schema.Field(0).Name)
+	require.Equal(t, "line_number", schema.Field(1).Name)
+	require.Equal(t, "cumulative", schema.Field(2).Name)
+	require.Equal(t, "flat", schema.Field(3).Name)
 
 	require.Equal(t, int64(3), record.NumRows())
 
-	lineNumbers := record.Column(0)
+	// Filename column (dictionary encoded)
+	filenameCol := record.Column(0).(*array.Dictionary)
+	require.Equal(t, "/app/test.go", filenameCol.Dictionary().(*array.String).Value(int(filenameCol.GetValueIndex(0))))
+	require.Equal(t, "/app/test.go", filenameCol.Dictionary().(*array.String).Value(int(filenameCol.GetValueIndex(1))))
+	require.Equal(t, "/app/test.go", filenameCol.Dictionary().(*array.String).Value(int(filenameCol.GetValueIndex(2))))
+
+	lineNumbers := record.Column(1)
 	require.Equal(t, int64(5), lineNumbers.(*array.Int64).Value(0))
 	require.Equal(t, int64(10), lineNumbers.(*array.Int64).Value(1))
 	require.Equal(t, int64(25), lineNumbers.(*array.Int64).Value(2))
 
-	cumulativeCol := record.Column(1)
+	cumulativeCol := record.Column(2)
 	require.Equal(t, int64(50), cumulativeCol.(*array.Int64).Value(0))
 	require.Equal(t, int64(100), cumulativeCol.(*array.Int64).Value(1))
 	require.Equal(t, int64(200), cumulativeCol.(*array.Int64).Value(2))
 
-	flatCol := record.Column(2)
+	flatCol := record.Column(3)
 	require.Equal(t, int64(25), flatCol.(*array.Int64).Value(0))
 	require.Equal(t, int64(50), flatCol.(*array.Int64).Value(1))
 	require.Equal(t, int64(75), flatCol.(*array.Int64).Value(2))
+}
+
+func TestFilenameMatches(t *testing.T) {
+	tests := []struct {
+		name            string
+		profileFilename string
+		queryFilename   string
+		want            bool
+	}{
+		{"exact match", "pkg/query/sources.go", "pkg/query/sources.go", true},
+		{"exact match full path", "/home/ci/build/main.go", "/home/ci/build/main.go", true},
+
+		{"suffix match with /", "/home/ci/build/pkg/query/sources.go", "pkg/query/sources.go", true},
+		{"suffix match single dir", "/app/main.go", "main.go", true},
+		{"suffix match deep path", "github.com/parca-dev/parca/pkg/query/sources.go", "pkg/query/sources.go", true},
+
+		{"no match - no path boundary", "/home/ci/buildpkg/query/sources.go", "pkg/query/sources.go", false},
+		{"no match - partial filename", "xsources.go", "sources.go", false},
+
+		{"no match - different file", "pkg/query/other.go", "sources.go", false},
+		{"no match - different path", "pkg/other/sources.go", "pkg/query/sources.go", false},
+
+		{"empty query", "pkg/query/sources.go", "", false},
+		{"empty profile", "", "sources.go", false},
+		{"both empty", "", "", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := filenameMatches([]byte(tt.profileFilename), []byte(tt.queryFilename))
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestSourceReportMultipleFilenames(t *testing.T) {
+	allocator := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer allocator.AssertSize(t, 0)
+
+	builder := newSourceReportBuilder(allocator, &pb.SourceReference{
+		BuildId:  "",
+		Filename: "sources.go",
+	})
+
+	// Simulate lines from multiple files matching the suffix
+	builder.lineData["/home/ci/build/pkg/query/sources.go"] = []lineMetrics{
+		{lineNumber: 42, cumulative: 100, flat: 50},
+		{lineNumber: 100, cumulative: 50, flat: 25},
+	}
+	builder.lineData["github.com/parca/pkg/query/sources.go"] = []lineMetrics{
+		{lineNumber: 42, cumulative: 200, flat: 75},
+	}
+
+	record, cumulative := builder.finish()
+	defer record.Release()
+
+	require.Equal(t, int64(0), cumulative)
+	require.Equal(t, int64(3), record.NumRows())
+
+	// Verify filename column contains both filenames
+	filenameCol := record.Column(0).(*array.Dictionary)
+	filenames := make(map[string]bool)
+	for i := 0; i < int(record.NumRows()); i++ {
+		idx := filenameCol.GetValueIndex(i)
+		filename := filenameCol.Dictionary().(*array.String).Value(int(idx))
+		filenames[filename] = true
+	}
+	require.Contains(t, filenames, "/home/ci/build/pkg/query/sources.go")
+	require.Contains(t, filenames, "github.com/parca/pkg/query/sources.go")
+}
+
+func TestSourceReportBuilderEmptyBuildID(t *testing.T) {
+	allocator := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer allocator.AssertSize(t, 0)
+
+	// When buildId is empty, the builder should be configured to match all buildIds
+	builder := newSourceReportBuilder(allocator, &pb.SourceReference{
+		BuildId:  "",
+		Filename: "test.go",
+	})
+
+	require.Equal(t, 0, len(builder.buildID))
+	require.Equal(t, []byte("test.go"), builder.filename)
+	require.NotNil(t, builder.lineData)
+	require.Len(t, builder.lineData, 0)
 }
