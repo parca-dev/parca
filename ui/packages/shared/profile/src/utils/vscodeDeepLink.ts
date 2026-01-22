@@ -65,10 +65,10 @@ export const encodeProfileFilters = (filters: ProfileFilter[]): string => {
 };
 
 export interface VSCodeDeepLinkParams {
-  expression?: string;
-  timeRange?: string;
-  from?: number; // Absolute timestamp (milliseconds)
-  to?: number; // Absolute timestamp (milliseconds)
+  expression_a?: string;
+  time_selection_a?: string;
+  from_a?: number; // Absolute timestamp (milliseconds)
+  to_a?: number; // Absolute timestamp (milliseconds)
   profileFilters?: ProfileFilter[];
   filename?: string;
   buildId?: string;
@@ -78,47 +78,51 @@ export interface VSCodeDeepLinkParams {
 /**
  * Build a VS Code deep link URL for opening profiling data in the Polar Signals extension.
  *
- * URL format: vscode://polarsignals.profiler/open?expression=...&time_range=...
+ * URL format: vscode://parca.profiler/open?expression=...&time_selection=...
  */
 export function buildVSCodeDeepLink(params: VSCodeDeepLinkParams): string {
   const searchParams = new URLSearchParams();
 
-  if (params.expression) {
-    searchParams.set('expression', params.expression);
+  console.log(params);
+
+  if (params.expression_a != null && params.expression_a !== '') {
+    searchParams.set('expression_a', params.expression_a);
   }
 
-  if (params.timeRange) {
-    searchParams.set('time_range', params.timeRange);
+  if (params.time_selection_a != null && params.time_selection_a !== '') {
+    searchParams.set('time_selection_a', params.time_selection_a);
   }
 
-  if (params.from !== undefined) {
-    searchParams.set('from', params.from.toString());
+  if (params.from_a !== undefined) {
+    searchParams.set('from_a', params.from_a.toString());
   }
 
-  if (params.to !== undefined) {
-    searchParams.set('to', params.to.toString());
+  if (params.to_a !== undefined) {
+    searchParams.set('to_a', params.to_a.toString());
   }
 
-  if (params.profileFilters && params.profileFilters.length > 0) {
+  if (params.profileFilters != null && params.profileFilters.length > 0) {
     const encoded = encodeProfileFilters(params.profileFilters);
-    if (encoded) {
+    if (encoded != null && encoded !== '') {
       searchParams.set('profile_filters', encoded);
     }
   }
 
-  if (params.filename) {
+  if (params.filename != null && params.filename !== '') {
     searchParams.set('filename', params.filename);
   }
 
-  if (params.buildId) {
+  if (params.buildId != null && params.buildId !== '') {
     searchParams.set('build_id', params.buildId);
   }
 
-  if (params.line !== undefined && params.line > 0) {
+  if (params.line != null && params.line > 0) {
     searchParams.set('line', params.line.toString());
   }
 
-  return `vscode://polarsignals.profiler/open?${searchParams.toString()}`;
+  console.log(searchParams.toString());
+
+  return `vscode://parca.parca-profiler/open?${searchParams.toString()}`;
 }
 
 /**
@@ -127,6 +131,7 @@ export function buildVSCodeDeepLink(params: VSCodeDeepLinkParams): string {
  */
 export function openInVSCode(params: VSCodeDeepLinkParams): boolean {
   const url = buildVSCodeDeepLink(params);
+  console.log(url);
 
   try {
     // Attempt to open the VS Code URI

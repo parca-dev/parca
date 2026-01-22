@@ -46,10 +46,10 @@ export const SourceView = React.memo(function SourceView({
 }: SourceViewProps): JSX.Element {
   const [sourceFileName] = useURLState<string | undefined>('source_filename');
   const [sourceBuildId] = useURLState<string | undefined>('source_build_id');
-  const [expression] = useURLState<string>('expression');
-  const [timeSelection] = useURLState<string>('time_selection');
-  const [fromParam] = useURLState<string | undefined>('from');
-  const [toParam] = useURLState<string | undefined>('to');
+  const [expressionA] = useURLState<string>('expression_a');
+  const [timeSelectionA] = useURLState<string>('time_selection_a');
+  const [fromParamA] = useURLState<string | undefined>('from_a');
+  const [toParamA] = useURLState<string | undefined>('to_a');
   const {appliedFilters} = useProfileFiltersUrlState();
   const {isDarkMode, sourceViewContextMenuItems = []} = useParcaContext();
 
@@ -154,20 +154,20 @@ export const SourceView = React.memo(function SourceView({
 
   const handleOpenInVSCode = useCallback(() => {
     openInVSCode({
-      expression: expression ?? undefined,
-      timeRange: timeSelection ?? undefined,
-      from: fromParam != null ? parseInt(fromParam, 10) : undefined,
-      to: toParam != null ? parseInt(toParam, 10) : undefined,
+      expression_a: expressionA ?? undefined,
+      time_selection_a: timeSelectionA ?? undefined,
+      from_a: fromParamA != null ? parseInt(fromParamA, 10) : undefined,
+      to_a: toParamA != null ? parseInt(toParamA, 10) : undefined,
       profileFilters: appliedFilters,
       filename: sourceFileName ?? undefined,
       buildId: sourceBuildId ?? undefined,
       line: startLine > 0 ? startLine : undefined,
     });
   }, [
-    expression,
-    timeSelection,
-    fromParam,
-    toParam,
+    expressionA,
+    timeSelectionA,
+    fromParamA,
+    toParamA,
     appliedFilters,
     sourceFileName,
     sourceBuildId,

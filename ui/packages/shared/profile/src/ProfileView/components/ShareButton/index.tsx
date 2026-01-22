@@ -147,17 +147,17 @@ const ShareButton = ({
   const [showProfileShareModal, setShowProfileShareModal] = useState(false);
 
   // Get current query state from URL for VS Code deep linking
-  const [expression] = useURLState<string>('expression');
-  const [timeSelection] = useURLState<string>('time_selection');
+  const [expressionA] = useURLState<string>('expression_a');
+  const [timeSelectionA] = useURLState<string>('time_selection_a');
   const {appliedFilters} = useProfileFiltersUrlState();
 
   const handleOpenInVSCode = useCallback(() => {
     openInVSCode({
-      expression: expression ?? undefined,
-      timeRange: timeSelection ?? undefined,
+      expression_a: expressionA ?? undefined,
+      time_selection_a: timeSelectionA ?? undefined,
       profileFilters: appliedFilters,
     });
-  }, [expression, timeSelection, appliedFilters]);
+  }, [expressionA, timeSelectionA, appliedFilters]);
 
   const actions = [
     {
@@ -182,7 +182,6 @@ const ShareButton = ({
       label: 'Open in VS Code',
       onSelect: handleOpenInVSCode,
       id: 'h-open-in-vscode',
-      disabled: expression === undefined || expression === '',
       icon: 'simple-icons:visualstudiocode',
     },
   ];
