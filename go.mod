@@ -13,7 +13,7 @@ require (
 	github.com/dgraph-io/badger/v4 v4.8.0
 	github.com/felixge/fgprof v0.9.5
 	github.com/fsnotify/fsnotify v1.9.0
-	github.com/go-chi/chi/v5 v5.2.3
+	github.com/go-chi/chi/v5 v5.2.4
 	github.com/go-chi/cors v1.2.2
 	github.com/go-delve/delve v1.25.2
 	github.com/go-kit/log v0.2.1
