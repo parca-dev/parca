@@ -7,7 +7,7 @@ repos:
       - id: trailing-whitespace
         exclude: ^ui/packages/shared/client/
   - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.5.5
+    rev: v1.5.6
     hooks:
       - id: insert-license
         name: Insert license in comments (Go)
