@@ -63,8 +63,11 @@ func GenerateSourceReport(
 		return nil, 0, err
 	}
 
+	// Add padding to ensure 8-byte alignment for Arrow IPC data in the client.
+	paddedRecord := GetAlignedSourceArrowBytes(buf.Bytes(), cumulative, source, p.Meta.SampleType.Unit)
+
 	return &pb.Source{
-		Record: buf.Bytes(),
+		Record: paddedRecord,
 		Source: source,
 		Unit:   p.Meta.SampleType.Unit,
 	}, cumulative, nil

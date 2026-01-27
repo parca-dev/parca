@@ -23,6 +23,7 @@ import ProfileFlameGraph from '../../ProfileFlameGraph';
 import {type CurrentPathFrame} from '../../ProfileFlameGraph/FlameGraphArrow/utils';
 import {type ProfileSource} from '../../ProfileSource';
 import {FlamegraphData} from '../../ProfileView/types/visualization';
+import {extractArrowData} from '../../utils';
 
 const FIELD_DEPTH = 'depth';
 
@@ -60,10 +61,9 @@ export function CallersSection({
 }: CallersSectionProps): JSX.Element {
   const maxDepth = useMemo(() => {
     if (callersFlamegraphData?.arrow != null) {
-      // Copy to aligned buffer only if byteOffset is not 8-byte aligned (required for BigUint64Array)
-      const record = callersFlamegraphData.arrow.record;
-      const aligned = record.byteOffset % 8 === 0 ? record : new Uint8Array(record);
-      const table = tableFromIPC(aligned, {useBigInt: true});
+      // Extract Arrow data from padded record (server adds padding for 8-byte alignment)
+      const arrowData = extractArrowData(callersFlamegraphData.arrow.record);
+      const table = tableFromIPC(arrowData, {useBigInt: true});
       const depthColumn = table.getChild(FIELD_DEPTH);
       return getMaxDepth(depthColumn);
     }

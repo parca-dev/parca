@@ -34,6 +34,7 @@ import {type ColorConfig} from '@parca/utilities';
 import {ProfileSource} from '../../ProfileSource';
 import {useProfileFilters} from '../../ProfileView/components/ProfileFilters/useProfileFilters';
 import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
+import {extractArrowData} from '../../utils';
 import ContextMenuWrapper, {ContextMenuWrapperRef} from './ContextMenuWrapper';
 import {FlameNode, RowHeight, colorByColors} from './FlameGraphNodes';
 import {MemoizedTooltip} from './MemoizedTooltip';
@@ -154,10 +155,9 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   const {perf} = useParcaContext();
 
   const table: Table = useMemo(() => {
-    // Copy to aligned buffer only if byteOffset is not 8-byte aligned (required for BigUint64Array)
-    const record = arrow.record;
-    const aligned = record.byteOffset % 8 === 0 ? record : new Uint8Array(record);
-    const result = tableFromIPC(aligned, {useBigInt: true});
+    // Extract Arrow data from padded record (server adds padding for 8-byte alignment)
+    const arrowData = extractArrowData(arrow.record);
+    const result = tableFromIPC(arrowData, {useBigInt: true});
 
     if (perf?.setMeasurement != null) {
       perf.setMeasurement('flamegraph.node_count', result.numRows);
