@@ -31,6 +31,7 @@ import useMappingList, {
   useFilenamesList,
 } from '../ProfileFlameGraph/FlameGraphArrow/useMappingList';
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
+import {extractArrowData} from '../utils';
 import TableContextMenuWrapper, {TableContextMenuWrapperRef} from './TableContextMenuWrapper';
 import {useColorManagement} from './hooks/useColorManagement';
 import {useTableConfiguration} from './hooks/useTableConfiguration';
@@ -94,9 +95,9 @@ export const Table = React.memo(function Table({
       return null;
     }
 
-    // Copy to aligned buffer only if byteOffset is not 8-byte aligned (required for BigUint64Array)
-    const aligned = data.byteOffset % 8 === 0 ? data : new Uint8Array(data);
-    return tableFromIPC(aligned, {useBigInt: true});
+    // Extract Arrow data from padded record (server adds padding for 8-byte alignment)
+    const arrowData = extractArrowData(data);
+    return tableFromIPC(arrowData, {useBigInt: true});
   }, [data, loading]);
 
   const mappingsList = useMappingList(metadataMappingFiles);

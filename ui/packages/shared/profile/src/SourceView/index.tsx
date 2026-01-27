@@ -21,7 +21,7 @@ import {Source} from '@parca/client';
 import {SourceSkeleton, useParcaContext, useURLState, type ProfileData} from '@parca/components';
 
 import {ExpandOnHover} from '../GraphTooltipArrow/ExpandOnHoverValue';
-import {truncateStringReverse} from '../utils';
+import {extractArrowData, truncateStringReverse} from '../utils';
 import {Highlighter, profileAwareRenderer, type LineDataLookup} from './Highlighter';
 import useLineRange from './useSelectedLineRange';
 
@@ -63,10 +63,9 @@ export const SourceView = React.memo(function SourceView({
     if (data === undefined) {
       return null;
     }
-    // Copy to aligned buffer only if byteOffset is not 8-byte aligned (required for BigUint64Array)
-    const record = data.record;
-    const aligned = record.byteOffset % 8 === 0 ? record : new Uint8Array(record);
-    const table = tableFromIPC(aligned, {useBigInt: true});
+    // Extract Arrow data from padded record (server adds padding for 8-byte alignment)
+    const arrowData = extractArrowData(data.record);
+    const table = tableFromIPC(arrowData, {useBigInt: true});
     return {
       numRows: table.numRows,
       lineNumbers: table.getChild('line_number'),

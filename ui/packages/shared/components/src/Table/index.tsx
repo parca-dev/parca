@@ -273,7 +273,7 @@ const Table = <T,>({
                         },
                       ]);
                     }}
-                    style={{width: header.getSize()}}
+                    style={{width: Number.isNaN(header.getSize()) ? 'auto' : header.getSize()}}
                   >
                     <span
                       className={cx('flex items-center gap-2', {

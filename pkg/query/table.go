@@ -85,8 +85,11 @@ func GenerateTable(
 		span.SetAttributes(attribute.String("record_stats", recordStats(record)))
 	}
 
+	// Add padding to ensure 8-byte alignment for Arrow IPC data in the client.
+	paddedRecord := GetAlignedTableArrowBytes(buf.Bytes(), cumulative, p.Meta.SampleType.Unit)
+
 	return &queryv1alpha1.TableArrow{
-		Record: buf.Bytes(),
+		Record: paddedRecord,
 		Unit:   p.Meta.SampleType.Unit,
 	}, cumulative, nil
 }
