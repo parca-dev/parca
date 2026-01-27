@@ -13,7 +13,7 @@
 
 import {useMemo} from 'react';
 
-import {Dictionary, Table, Vector} from 'apache-arrow';
+import {Table, Column} from '@uwdata/flechette';
 
 import {getLastItem} from '@parca/utilities';
 
@@ -48,25 +48,25 @@ export const useFilenamesList = (table: Table | null): string[] => {
   if (table === null) {
     return [];
   }
-  const filenamesDict: Vector<Dictionary> | null = table.getChild(FIELD_FUNCTION_FILE_NAME);
-  const filenames =
-    filenamesDict?.data
-      .map(file => {
-        if (file.dictionary == null) {
-          return [];
-        }
-        const len = file.dictionary.length;
-        const entries: string[] = [];
-        for (let i = 0; i < len; i++) {
-          const fn = arrowToString(file.dictionary.get(i));
-          entries.push(getLastItem(fn) ?? '');
-        }
-        return entries;
-      })
-      .flat() ?? [];
+  const filenamesColumn: Column<string> | null = table.getChild(FIELD_FUNCTION_FILE_NAME);
+  if (filenamesColumn === null) {
+    return [];
+  }
 
-  filenames.push('');
+  // Use Set to collect unique filenames (Flechette decodes dictionaries upfront)
+  const uniqueFilenames = new Set<string>();
+  for (const value of filenamesColumn) {
+    const fn = arrowToString(value);
+    if (fn != null) {
+      uniqueFilenames.add(getLastItem(fn) ?? '');
+    }
+  }
 
+  // Add empty string for "Everything else"
+  uniqueFilenames.add('');
+
+  // Convert to sorted array
+  const filenames = Array.from(uniqueFilenames);
   filenames.sort((a, b) => a.localeCompare(b));
   return filenames;
 };

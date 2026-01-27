@@ -12,7 +12,7 @@
 // limitations under the License.
 
 import {Icon} from '@iconify/react';
-import {Table} from 'apache-arrow';
+import {Table} from '@uwdata/flechette';
 import cx from 'classnames';
 import {useWindowSize} from 'react-use';
 
@@ -25,7 +25,7 @@ import {useGraphTooltip} from '../useGraphTooltip';
 import {useGraphTooltipMetaInfo} from '../useGraphTooltipMetaInfo';
 
 interface Props {
-  table: Table<any>;
+  table: Table;
   total: bigint;
   totalUnfiltered: bigint;
   row: number | null;

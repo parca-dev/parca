@@ -13,7 +13,7 @@
 
 import React, {useCallback, useEffect, useMemo} from 'react';
 
-import {tableFromIPC} from 'apache-arrow';
+import {tableFromIPC} from '@uwdata/flechette';
 import {AnimatePresence, motion} from 'framer-motion';
 import {Item, Menu, useContextMenu} from 'react-contexify';
 
@@ -63,7 +63,10 @@ export const SourceView = React.memo(function SourceView({
     if (data === undefined) {
       return null;
     }
-    const table = tableFromIPC(data.record);
+    // Copy to aligned buffer only if byteOffset is not 8-byte aligned (required for BigUint64Array)
+    const record = data.record;
+    const aligned = record.byteOffset % 8 === 0 ? record : new Uint8Array(record);
+    const table = tableFromIPC(aligned, {useBigInt: true});
     return {
       numRows: table.numRows,
       lineNumbers: table.getChild('line_number'),

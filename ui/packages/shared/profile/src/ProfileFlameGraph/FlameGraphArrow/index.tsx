@@ -21,7 +21,7 @@ import React, {
   useState,
 } from 'react';
 
-import {Table, tableFromIPC} from 'apache-arrow';
+import { Table, tableFromIPC } from '@uwdata/flechette';
 import {useContextMenu} from 'react-contexify';
 
 import {FlamegraphArrow} from '@parca/client';
@@ -153,8 +153,11 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   const isDarkMode = useAppSelector(selectDarkMode);
   const {perf} = useParcaContext();
 
-  const table: Table<any> = useMemo(() => {
-    const result = tableFromIPC(arrow.record);
+  const table: Table = useMemo(() => {
+    // Copy to aligned buffer only if byteOffset is not 8-byte aligned (required for BigUint64Array)
+    const record = arrow.record;
+    const aligned = record.byteOffset % 8 === 0 ? record : new Uint8Array(record);
+    const result = tableFromIPC(aligned, {useBigInt: true});
 
     if (perf?.setMeasurement != null) {
       perf.setMeasurement('flamegraph.node_count', result.numRows);

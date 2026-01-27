@@ -14,7 +14,7 @@
 import React, {useCallback, useEffect, useMemo, useRef} from 'react';
 
 import {RpcError} from '@protobuf-ts/runtime-rpc';
-import {tableFromIPC} from 'apache-arrow';
+import {tableFromIPC} from '@uwdata/flechette';
 import {AnimatePresence, motion} from 'framer-motion';
 import {useContextMenu} from 'react-contexify';
 
@@ -94,7 +94,9 @@ export const Table = React.memo(function Table({
       return null;
     }
 
-    return tableFromIPC(data);
+    // Copy to aligned buffer only if byteOffset is not 8-byte aligned (required for BigUint64Array)
+    const aligned = data.byteOffset % 8 === 0 ? data : new Uint8Array(data);
+    return tableFromIPC(aligned, {useBigInt: true});
   }, [data, loading]);
 
   const mappingsList = useMappingList(metadataMappingFiles);

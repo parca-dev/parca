@@ -13,7 +13,7 @@
 
 import {useMemo} from 'react';
 
-import {Table as ArrowTable, tableFromIPC} from 'apache-arrow';
+import {Table, tableFromIPC} from '@uwdata/flechette';
 
 import {FlamegraphArrow} from '@parca/client';
 
@@ -34,14 +34,20 @@ export const useProfileMetadata = ({
   metadataLoading,
   colorBy,
 }: UseProfileMetadataProps): {
-  table: ArrowTable<any> | null;
+  table: Table | null;
   mappingsList: string[];
   filenamesList: string[];
   colorMappings: string[];
   metadataLoading: boolean;
 } => {
-  const table: ArrowTable<any> | null = useMemo(() => {
-    return flamegraphArrow !== undefined ? tableFromIPC(flamegraphArrow.record) : null;
+  const table: Table | null = useMemo(() => {
+    if (flamegraphArrow === undefined) {
+      return null;
+    }
+    // Copy to aligned buffer only if byteOffset is not 8-byte aligned (required for BigUint64Array)
+    const record = flamegraphArrow.record;
+    const aligned = record.byteOffset % 8 === 0 ? record : new Uint8Array(record);
+    return tableFromIPC(aligned, {useBigInt: true});
   }, [flamegraphArrow]);
 
   const mappingsList = useMappingList(metadataMappingFiles);

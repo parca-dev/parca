@@ -13,7 +13,7 @@
 
 import React, {useMemo} from 'react';
 
-import {Vector, tableFromIPC} from 'apache-arrow';
+import {Column, tableFromIPC} from '@uwdata/flechette';
 import {Tooltip} from 'react-tooltip';
 
 import {Button} from '@parca/components';
@@ -26,7 +26,7 @@ import {FlamegraphData} from '../../ProfileView/types/visualization';
 
 const FIELD_DEPTH = 'depth';
 
-function getMaxDepth(depthColumn: Vector<any> | null): number {
+function getMaxDepth(depthColumn: Column<number> | null): number {
   if (depthColumn === null) return 0;
 
   let max = 0;
@@ -60,7 +60,10 @@ export function CallersSection({
 }: CallersSectionProps): JSX.Element {
   const maxDepth = useMemo(() => {
     if (callersFlamegraphData?.arrow != null) {
-      const table = tableFromIPC(callersFlamegraphData.arrow.record);
+      // Copy to aligned buffer only if byteOffset is not 8-byte aligned (required for BigUint64Array)
+      const record = callersFlamegraphData.arrow.record;
+      const aligned = record.byteOffset % 8 === 0 ? record : new Uint8Array(record);
+      const table = tableFromIPC(aligned, {useBigInt: true});
       const depthColumn = table.getChild(FIELD_DEPTH);
       return getMaxDepth(depthColumn);
     }

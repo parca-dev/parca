@@ -13,7 +13,7 @@
 
 import {forwardRef, useImperativeHandle, useState} from 'react';
 
-import {Table} from 'apache-arrow';
+import {Table} from '@uwdata/flechette';
 
 import {ProfileType} from '@parca/parser';
 
@@ -21,7 +21,7 @@ import ContextMenu from './ContextMenu';
 
 interface ContextMenuWrapperProps {
   menuId: string;
-  table: Table<any>;
+  table: Table;
   total: bigint;
   totalUnfiltered: bigint;
   profileType?: ProfileType;

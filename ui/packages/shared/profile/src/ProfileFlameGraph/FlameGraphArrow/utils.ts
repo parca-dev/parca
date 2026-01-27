@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Table, Vector} from 'apache-arrow';
+import {Table, Column} from '@uwdata/flechette';
 
 import {
   BINARY_FEATURE_TYPES,
@@ -34,7 +34,7 @@ import {
   FIELD_MAPPING_FILE,
 } from './index';
 
-export function nodeLabel(table: Table<any>, row: number, showBinaryName: boolean): string {
+export function nodeLabel(table: Table, row: number, showBinaryName: boolean): string {
   const labelsOnly: boolean | null = table.getChild(FIELD_LABELS_ONLY)?.get(row);
   const depth: number = table.getChild(FIELD_DEPTH)?.get(row) ?? 0;
   if (depth === 1 && labelsOnly !== null && labelsOnly) {
@@ -147,7 +147,7 @@ export interface CurrentPathFrame {
   labels?: string;
 }
 
-export const getCurrentPathFrameData = (table: Table<any>, row: number): CurrentPathFrame => {
+export const getCurrentPathFrameData = (table: Table, row: number): CurrentPathFrame => {
   const functionName: string | null = arrowToString(table.getChild(FIELD_FUNCTION_NAME)?.get(row));
   const systemName: string | null = arrowToString(table.getChild(FIELD_FUNCTION_NAME)?.get(row));
   const fileName: string | null = arrowToString(table.getChild(FIELD_MAPPING_FILE)?.get(row));
@@ -173,7 +173,7 @@ export const getCurrentPathFrameData = (table: Table<any>, row: number): Current
   };
 };
 
-function getLabelSet(table: Table<any>, row: number): string {
+function getLabelSet(table: Table, row: number): string {
   const labelPrefix = 'labels.';
   const labelColumnNames = table.schema.fields.filter(field => field.name.startsWith(labelPrefix));
 
@@ -188,7 +188,7 @@ function getLabelSet(table: Table<any>, row: number): string {
 }
 
 export function isCurrentPathFrameMatch(
-  table: Table<any>,
+  table: Table,
   row: number,
   b: CurrentPathFrame
 ): boolean {
@@ -204,7 +204,7 @@ export function isCurrentPathFrameMatch(
   );
 }
 
-export function getMaxDepth(depthColumn: Vector<any> | null): number {
+export function getMaxDepth(depthColumn: Column<number> | null): number {
   if (depthColumn === null) return 0;
 
   let max = 0;
