@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Table, Column} from '@uwdata/flechette';
+import {Column, Table} from '@uwdata/flechette';
 
 import {
   BINARY_FEATURE_TYPES,
@@ -187,11 +187,7 @@ function getLabelSet(table: Table, row: number): string {
     .join(', ');
 }
 
-export function isCurrentPathFrameMatch(
-  table: Table,
-  row: number,
-  b: CurrentPathFrame
-): boolean {
+export function isCurrentPathFrameMatch(table: Table, row: number, b: CurrentPathFrame): boolean {
   const a = getCurrentPathFrameData(table, row);
   return (
     a.functionName === b.functionName &&

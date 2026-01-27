@@ -13,7 +13,7 @@
 
 import {useMemo} from 'react';
 
-import {Table, Column} from '@uwdata/flechette';
+import {Column, Table} from '@uwdata/flechette';
 
 import {getLastItem} from '@parca/utilities';
 

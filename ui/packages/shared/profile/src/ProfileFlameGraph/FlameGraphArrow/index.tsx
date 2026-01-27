@@ -21,7 +21,7 @@ import React, {
   useState,
 } from 'react';
 
-import { Table, tableFromIPC } from '@uwdata/flechette';
+import {Table, tableFromIPC} from '@uwdata/flechette';
 import {useContextMenu} from 'react-contexify';
 
 import {FlamegraphArrow} from '@parca/client';
