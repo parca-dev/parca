@@ -13,7 +13,7 @@
 
 import React, {createContext, useCallback, useContext, useMemo, useRef} from 'react';
 
-import {Table} from 'apache-arrow';
+import {Table} from '@uwdata/flechette';
 
 import {ProfileType} from '@parca/parser';
 
@@ -24,7 +24,7 @@ interface TooltipState {
 }
 
 interface TooltipContextValue {
-  table: Table<any>;
+  table: Table;
   total: bigint;
   totalUnfiltered: bigint;
   profileType?: ProfileType;
@@ -47,7 +47,7 @@ export const useTooltipContext = (): TooltipContextValue => {
 
 interface TooltipProviderProps {
   children: React.ReactNode;
-  table: Table<any>;
+  table: Table;
   total: bigint;
   totalUnfiltered: bigint;
   profileType?: ProfileType;

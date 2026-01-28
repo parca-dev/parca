@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Table} from 'apache-arrow';
+import {Table} from '@uwdata/flechette';
 
 import {QueryRequest_ReportType} from '@parca/client';
 import {useParcaContext, useURLState} from '@parca/components';
@@ -33,7 +33,7 @@ import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContex
 import {useQuery} from '../../useQuery';
 
 interface Props {
-  table: Table<any>;
+  table: Table;
   row: number;
 }
 

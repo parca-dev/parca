@@ -26,7 +26,7 @@
     "@types/d3-selection": "^3.0.10",
     "@types/fast-levenshtein": "^0.0.4",
     "@types/react-beautiful-dnd": "^13.1.8",
-    "apache-arrow": "^19.0.1",
+    "@uwdata/flechette": "^2.2.7",
     "classnames": "^2.3.1",
     "d3": "7.9.0",
     "d3-array": "^3.2.4",

@@ -14,7 +14,7 @@
 import React from 'react';
 
 import {Icon} from '@iconify/react';
-import {Table} from 'apache-arrow';
+import {Table} from '@uwdata/flechette';
 
 import {useParcaContext} from '@parca/components';
 import {ProfileType} from '@parca/parser';
@@ -26,7 +26,7 @@ import {useGraphTooltip} from './useGraphTooltip';
 import {useGraphTooltipMetaInfo} from './useGraphTooltipMetaInfo';
 
 interface GraphTooltipArrowContentProps {
-  table: Table<any>;
+  table: Table;
   profileType?: ProfileType;
   unit?: string;
   total: bigint;
@@ -130,7 +130,7 @@ const GraphTooltipArrowContent = ({
   );
 };
 
-const TooltipMetaInfo = ({table, row}: {table: Table<any>; row: number}): React.JSX.Element => {
+const TooltipMetaInfo = ({table, row}: {table: Table; row: number}): React.JSX.Element => {
   const {
     labelPairs,
     functionFilename,

@@ -13,7 +13,7 @@
 
 import {useMemo, useRef} from 'react';
 
-import {Table} from 'apache-arrow';
+import {Table} from '@uwdata/flechette';
 
 import {RowHeight} from './FlameGraphNodes';
 import {FIELD_CUMULATIVE, FIELD_DEPTH, FIELD_VALUE_OFFSET} from './index';
@@ -25,9 +25,7 @@ import {getMaxDepth} from './utils';
  * Instead of scanning all rows to find depth matches, we pre-compute
  * buckets so viewport rendering only examines depth ranges that are relevant.
  */
-const useDepthBuckets = <TRow extends Record<string, any>>(
-  table: Table<TRow> | undefined
-): number[][] => {
+const useDepthBuckets = (table: Table | undefined): number[][] => {
   return useMemo(() => {
     if (table === undefined) return [];
 
@@ -51,7 +49,7 @@ const useDepthBuckets = <TRow extends Record<string, any>>(
 };
 
 export interface UseVisibleNodesParams {
-  table: Table<any>;
+  table: Table;
   viewport: ViewportState;
   total: bigint;
   width: number;
@@ -85,7 +83,7 @@ export const useVisibleNodes = ({
     result: number[];
   }>({key: '', result: []});
 
-  const renderedRangeRef = useRef<{minDepth: number; maxDepth: number; table: Table<any> | null}>({
+  const renderedRangeRef = useRef<{minDepth: number; maxDepth: number; table: Table | null}>({
     minDepth: Infinity,
     maxDepth: -Infinity,
     table: null,

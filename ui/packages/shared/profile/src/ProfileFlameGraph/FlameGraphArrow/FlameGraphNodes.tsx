@@ -13,7 +13,7 @@
 
 import React, {useCallback, useMemo} from 'react';
 
-import {Table} from 'apache-arrow';
+import {Table} from '@uwdata/flechette';
 import cx from 'classnames';
 
 import {selectBinaries, useAppSelector} from '@parca/store';
@@ -44,7 +44,7 @@ export interface colorByColors {
 export interface FlameNodeProps {
   height: number;
   totalWidth: number;
-  table: Table<any>;
+  table: Table;
   row: number;
   colors: colorByColors;
   colorBy: string;

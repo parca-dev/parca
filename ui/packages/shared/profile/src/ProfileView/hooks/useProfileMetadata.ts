@@ -13,13 +13,14 @@
 
 import {useMemo} from 'react';
 
-import {Table as ArrowTable, tableFromIPC} from 'apache-arrow';
+import {Table, tableFromIPC} from '@uwdata/flechette';
 
 import {FlamegraphArrow} from '@parca/client';
 
 import useMappingList, {
   useFilenamesList,
 } from '../../ProfileFlameGraph/FlameGraphArrow/useMappingList';
+import {alignedUint8Array} from '../../utils';
 
 interface UseProfileMetadataProps {
   flamegraphArrow?: FlamegraphArrow;
@@ -34,14 +35,17 @@ export const useProfileMetadata = ({
   metadataLoading,
   colorBy,
 }: UseProfileMetadataProps): {
-  table: ArrowTable<any> | null;
+  table: Table | null;
   mappingsList: string[];
   filenamesList: string[];
   colorMappings: string[];
   metadataLoading: boolean;
 } => {
-  const table: ArrowTable<any> | null = useMemo(() => {
-    return flamegraphArrow !== undefined ? tableFromIPC(flamegraphArrow.record) : null;
+  const table: Table | null = useMemo(() => {
+    if (flamegraphArrow === undefined) {
+      return null;
+    }
+    return tableFromIPC(alignedUint8Array(flamegraphArrow.record), {useBigInt: true});
   }, [flamegraphArrow]);
 
   const mappingsList = useMappingList(metadataMappingFiles);

@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {type Table} from 'apache-arrow';
+import {type Table} from '@uwdata/flechette';
 
 import {type colorByColors} from '../../ProfileFlameGraph/FlameGraphArrow/FlameGraphNodes';
 import {

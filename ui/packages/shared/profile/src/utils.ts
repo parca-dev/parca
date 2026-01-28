@@ -63,3 +63,12 @@ export const truncateStringReverse = (str: string, num: number): string => {
 
 export type NumberDuo = [number, number];
 export type BigIntDuo = [bigint, bigint];
+
+/**
+ * Ensures the buffer is 8-byte aligned for Arrow IPC parsing with BigInt support.
+ * Arrow's BigInt64Array/BigUint64Array require 8-byte aligned memory.
+ * If not aligned, creates a copy which will be properly aligned.
+ */
+export const alignedUint8Array = (buffer: Uint8Array): Uint8Array => {
+  return buffer.byteOffset % 8 === 0 ? buffer : new Uint8Array(buffer);
+};

@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Table} from 'apache-arrow';
+import {Table} from '@uwdata/flechette';
 
 import {ProfileType} from '@parca/parser';
 import {divide, valueFormatter} from '@parca/utilities';
@@ -25,7 +25,7 @@ import {
 import {getTextForCumulative, nodeLabel} from '../../ProfileFlameGraph/FlameGraphArrow/utils';
 
 interface Props {
-  table: Table<any>;
+  table: Table;
   profileType?: ProfileType;
   unit?: string;
   total: bigint;

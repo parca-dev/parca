@@ -21,7 +21,7 @@ import React, {
   useState,
 } from 'react';
 
-import {Table, tableFromIPC} from 'apache-arrow';
+import {Table, tableFromIPC} from '@uwdata/flechette';
 import {useContextMenu} from 'react-contexify';
 
 import {FlamegraphArrow} from '@parca/client';
@@ -34,6 +34,7 @@ import {type ColorConfig} from '@parca/utilities';
 import {ProfileSource} from '../../ProfileSource';
 import {useProfileFilters} from '../../ProfileView/components/ProfileFilters/useProfileFilters';
 import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
+import {alignedUint8Array} from '../../utils';
 import ContextMenuWrapper, {ContextMenuWrapperRef} from './ContextMenuWrapper';
 import {FlameNode, RowHeight, colorByColors} from './FlameGraphNodes';
 import {MemoizedTooltip} from './MemoizedTooltip';
@@ -153,8 +154,8 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   const isDarkMode = useAppSelector(selectDarkMode);
   const {perf} = useParcaContext();
 
-  const table: Table<any> = useMemo(() => {
-    const result = tableFromIPC(arrow.record);
+  const table: Table = useMemo(() => {
+    const result = tableFromIPC(alignedUint8Array(arrow.record), {useBigInt: true});
 
     if (perf?.setMeasurement != null) {
       perf.setMeasurement('flamegraph.node_count', result.numRows);
