@@ -49,6 +49,7 @@ import {
   getMaxDepth,
   isCurrentPathFrameMatch,
 } from './utils';
+import {alignedUint8Array} from '../../utils';
 
 export const FIELD_LABELS_ONLY = 'labels_only';
 export const FIELD_MAPPING_FILE = 'mapping_file';
@@ -154,10 +155,7 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   const {perf} = useParcaContext();
 
   const table: Table = useMemo(() => {
-    // Copy to aligned buffer only if byteOffset is not 8-byte aligned (required for BigUint64Array)
-    const record = arrow.record;
-    const aligned = record.byteOffset % 8 === 0 ? record : new Uint8Array(record);
-    const result = tableFromIPC(aligned, {useBigInt: true});
+    const result = tableFromIPC(alignedUint8Array(arrow.record), {useBigInt: true});
 
     if (perf?.setMeasurement != null) {
       perf.setMeasurement('flamegraph.node_count', result.numRows);

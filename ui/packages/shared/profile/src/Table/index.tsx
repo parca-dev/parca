@@ -35,6 +35,7 @@ import TableContextMenuWrapper, {TableContextMenuWrapperRef} from './TableContex
 import {useColorManagement} from './hooks/useColorManagement';
 import {useTableConfiguration} from './hooks/useTableConfiguration';
 import {DataRow, ROW_HEIGHT, RowName, getRowColor} from './utils/functions';
+import {alignedUint8Array} from '../utils';
 
 export const FIELD_MAPPING_FILE = 'mapping_file';
 export const FIELD_LOCATION_ADDRESS = 'location_address';
@@ -93,10 +94,7 @@ export const Table = React.memo(function Table({
     if (loading || data == null) {
       return null;
     }
-
-    // Copy to aligned buffer only if byteOffset is not 8-byte aligned (required for BigUint64Array)
-    const aligned = data.byteOffset % 8 === 0 ? data : new Uint8Array(data);
-    return tableFromIPC(aligned, {useBigInt: true});
+    return tableFromIPC(alignedUint8Array(data), {useBigInt: true});
   }, [data, loading]);
 
   const mappingsList = useMappingList(metadataMappingFiles);

@@ -20,6 +20,7 @@ import {FlamegraphArrow} from '@parca/client';
 import useMappingList, {
   useFilenamesList,
 } from '../../ProfileFlameGraph/FlameGraphArrow/useMappingList';
+import {alignedUint8Array} from '../../utils';
 
 interface UseProfileMetadataProps {
   flamegraphArrow?: FlamegraphArrow;
@@ -44,10 +45,7 @@ export const useProfileMetadata = ({
     if (flamegraphArrow === undefined) {
       return null;
     }
-    // Copy to aligned buffer only if byteOffset is not 8-byte aligned (required for BigUint64Array)
-    const record = flamegraphArrow.record;
-    const aligned = record.byteOffset % 8 === 0 ? record : new Uint8Array(record);
-    return tableFromIPC(aligned, {useBigInt: true});
+    return tableFromIPC(alignedUint8Array(flamegraphArrow.record), {useBigInt: true});
   }, [flamegraphArrow]);
 
   const mappingsList = useMappingList(metadataMappingFiles);
