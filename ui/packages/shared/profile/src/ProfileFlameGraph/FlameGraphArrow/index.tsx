@@ -34,6 +34,7 @@ import {type ColorConfig} from '@parca/utilities';
 import {ProfileSource} from '../../ProfileSource';
 import {useProfileFilters} from '../../ProfileView/components/ProfileFilters/useProfileFilters';
 import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
+import {alignedUint8Array} from '../../utils';
 import ContextMenuWrapper, {ContextMenuWrapperRef} from './ContextMenuWrapper';
 import {FlameNode, RowHeight, colorByColors} from './FlameGraphNodes';
 import {MemoizedTooltip} from './MemoizedTooltip';
@@ -49,7 +50,6 @@ import {
   getMaxDepth,
   isCurrentPathFrameMatch,
 } from './utils';
-import {alignedUint8Array} from '../../utils';
 
 export const FIELD_LABELS_ONLY = 'labels_only';
 export const FIELD_MAPPING_FILE = 'mapping_file';

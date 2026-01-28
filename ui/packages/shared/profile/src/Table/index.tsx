@@ -31,11 +31,11 @@ import useMappingList, {
   useFilenamesList,
 } from '../ProfileFlameGraph/FlameGraphArrow/useMappingList';
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
+import {alignedUint8Array} from '../utils';
 import TableContextMenuWrapper, {TableContextMenuWrapperRef} from './TableContextMenuWrapper';
 import {useColorManagement} from './hooks/useColorManagement';
 import {useTableConfiguration} from './hooks/useTableConfiguration';
 import {DataRow, ROW_HEIGHT, RowName, getRowColor} from './utils/functions';
-import {alignedUint8Array} from '../utils';
 
 export const FIELD_MAPPING_FILE = 'mapping_file';
 export const FIELD_LOCATION_ADDRESS = 'location_address';
