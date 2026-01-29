@@ -33,6 +33,20 @@ export interface SourceViewContextMenuItem {
   action: (selectedCode: string, profileData: ProfileData[]) => void;
 }
 
+export interface AdditionalMetricsGraphProps {
+  querySelection: {
+    expression: string;
+    from: number;
+    to: number;
+    timeSelection: string;
+    sumBy?: string[];
+    mergeFrom?: string;
+    mergeTo?: string;
+  };
+  queryClient: QueryServiceClient;
+  suffix?: '_a' | '_b';
+}
+
 interface Props {
   Spinner: FC<SpinnerProps>;
   loader?: ReactNode;
@@ -78,6 +92,7 @@ interface Props {
   preferencesModal?: boolean;
   checkDebuginfoStatusHandler?: (buildId: string) => void;
   flamechartHelpText?: ReactNode;
+  additionalMetricsGraph?: (props: AdditionalMetricsGraphProps) => ReactNode;
 }
 
 export const defaultValue: Props = {
