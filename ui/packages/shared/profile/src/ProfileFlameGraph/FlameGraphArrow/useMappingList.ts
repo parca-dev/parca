@@ -63,7 +63,7 @@ export const useFilenamesList = (table: Table | null): string[] => {
   const filenames = Array.from(dictionary.toArray())
     .map(value => {
       const fn = arrowToString(value);
-      return fn != null ? (getLastItem(fn) ?? '') : '';
+      return fn != null ? getLastItem(fn) ?? '' : '';
     })
     .concat('') // Add empty string for "Everything else"
     .sort((a, b) => a.localeCompare(b));
