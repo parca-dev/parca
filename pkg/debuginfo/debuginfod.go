@@ -427,6 +427,8 @@ func (c *HTTPDebuginfodClient) handleResponse(ctx context.Context, resp *http.Re
 		}
 	}
 
+	// Close the response body before returning error for too many redirects
+	resp.Body.Close()
 	return nil, errors.New("too many redirects")
 }
 
