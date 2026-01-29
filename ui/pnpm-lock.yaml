@@ -724,8 +724,8 @@ importers:
         specifier: ^13.1.8
         version: 13.1.8
       '@uwdata/flechette':
-        specifier: ^2.2.7
-        version: 2.2.7
+        specifier: ^2.3.0
+        version: 2.3.0
       classnames:
         specifier: ^2.3.1
         version: 2.5.1
@@ -4652,8 +4652,8 @@ packages:
     resolution: {integrity: sha512-LZ2NqIHFhvFwxG0qZeLL9DvdNAHPGCY5dIRwBhyYeU+LfLhcStE1ImjsuTG/WaVh3XysGaeLW8Rqq7cGkPCFvw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@uwdata/flechette@2.2.7':
-    resolution: {integrity: sha512-RkNLpmlaO3FIRxC4eU8j0lb+780FuakDyIpeUAMdjxVMsIH5SdpYhrsVZtwnbOEIwbcXoGqUYjTzaZkwObWN7A==}
+  '@uwdata/flechette@2.3.0':
+    resolution: {integrity: sha512-FdTqVEJZL4MwTv+vY1jOUMW2i5pr/G5S4BGdmQ/7wSOCtA0I74UP117kzXiKe1FrB5+ydM4tFxrCdF8Dq9WgNA==}
 
   '@vitejs/plugin-react-swc@3.11.0':
     resolution: {integrity: sha512-YTJCGFdNMHCMfjODYtxRNVAYmTWQ1Lb8PulP/2/f/oEEtglw8oKxKIZmmRkyXrVrHfsKOaVkAc3NT9/dMutO5w==}
@@ -18422,7 +18422,7 @@ snapshots:
       '@typescript-eslint/types': 8.53.0
       eslint-visitor-keys: 4.2.1
 
-  '@uwdata/flechette@2.2.7': {}
+  '@uwdata/flechette@2.3.0': {}
 
   '@vitejs/plugin-react-swc@3.11.0(@swc/helpers@0.5.18)(vite@5.4.21(@types/node@24.10.9)(sass@1.90.0)(terser@5.46.0))':
     dependencies:
