@@ -14,7 +14,7 @@
 import React, {useCallback, useEffect, useMemo, useRef} from 'react';
 
 import {RpcError} from '@protobuf-ts/runtime-rpc';
-import {tableFromIPC} from 'apache-arrow';
+import {tableFromIPC} from '@uwdata/flechette';
 import {AnimatePresence, motion} from 'framer-motion';
 import {useContextMenu} from 'react-contexify';
 
@@ -31,6 +31,7 @@ import useMappingList, {
   useFilenamesList,
 } from '../ProfileFlameGraph/FlameGraphArrow/useMappingList';
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
+import {alignedUint8Array} from '../utils';
 import TableContextMenuWrapper, {TableContextMenuWrapperRef} from './TableContextMenuWrapper';
 import {useColorManagement} from './hooks/useColorManagement';
 import {useTableConfiguration} from './hooks/useTableConfiguration';
@@ -93,8 +94,7 @@ export const Table = React.memo(function Table({
     if (loading || data == null) {
       return null;
     }
-
-    return tableFromIPC(data);
+    return tableFromIPC(alignedUint8Array(data), {useBigInt: true});
   }, [data, loading]);
 
   const mappingsList = useMappingList(metadataMappingFiles);

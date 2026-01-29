@@ -12,7 +12,7 @@
 // limitations under the License.
 
 import {type Row as RowType} from '@tanstack/table-core';
-import {Vector} from 'apache-arrow';
+import {Column} from '@uwdata/flechette';
 
 import {getLastItem} from '@parca/utilities';
 
@@ -60,9 +60,9 @@ export const addPlusSign = (num: string): string => {
 
 export const getRowColor = (
   colorByColors: colorByColors,
-  mappingFileColumn: Vector | null,
+  mappingFileColumn: Column<string> | null,
   row: number,
-  functionFileNameColumn: Vector | null,
+  functionFileNameColumn: Column<string> | null,
   colorBy: string
 ): string => {
   if (mappingFileColumn === null) {
@@ -70,8 +70,8 @@ export const getRowColor = (
     return '';
   }
 
-  const mappingFile: string | null = mappingFileColumn?.get(row);
-  const functionFileName: string | null = functionFileNameColumn?.get(row);
+  const mappingFile: string | null = mappingFileColumn?.get(row) ?? null;
+  const functionFileName: string | null = functionFileNameColumn?.get(row) ?? null;
   let mapping = '';
   let filename = '';
 
@@ -91,9 +91,9 @@ export const getRowColor = (
 };
 
 export const RowName = (
-  mappingFileColumn: Vector | null,
-  locationAddressColumn: Vector | null,
-  functionNameColumn: Vector | null,
+  mappingFileColumn: Column<string> | null,
+  locationAddressColumn: Column<bigint> | null,
+  functionNameColumn: Column<string> | null,
   row: number
 ): string => {
   if (mappingFileColumn === null) {
@@ -112,7 +112,7 @@ export const RowName = (
     return `${mapping} ${functionName}`;
   }
 
-  const address: bigint = locationAddressColumn?.get(row) ?? 0;
+  const address: bigint = locationAddressColumn?.get(row) ?? 0n;
 
   return hexifyAddress(address);
 };
