@@ -53,21 +53,21 @@ export const useFilenamesList = (table: Table | null): string[] => {
     return [];
   }
 
-  // Use Set to collect unique filenames (Flechette decodes dictionaries upfront)
-  const uniqueFilenames = new Set<string>();
-  for (const value of filenamesColumn) {
-    const fn = arrowToString(value);
-    if (fn != null) {
-      uniqueFilenames.add(getLastItem(fn) ?? '');
-    }
+  // Access dictionary directly instead of iterating all rows
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const dictionary: Column<string> | undefined = (filenamesColumn.data[0] as any)?.dictionary;
+  if (dictionary == null) {
+    return [''];
   }
 
-  // Add empty string for "Everything else"
-  uniqueFilenames.add('');
+  const filenames = Array.from(dictionary.toArray())
+    .map(value => {
+      const fn = arrowToString(value);
+      return fn != null ? (getLastItem(fn) ?? '') : '';
+    })
+    .concat('') // Add empty string for "Everything else"
+    .sort((a, b) => a.localeCompare(b));
 
-  // Convert to sorted array
-  const filenames = Array.from(uniqueFilenames);
-  filenames.sort((a, b) => a.localeCompare(b));
   return filenames;
 };
 
