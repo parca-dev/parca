@@ -761,7 +761,10 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 			// This needs to be moved to FrostDB to not even query all of this data in the first place.
 			// With a scrape interval of 10s and a query range of 1d we'd query 8640 samples and at most return 960.
 			// Even worse for a week, we'd query 60480 samples and only return 1000.
-			tsBucket := ts / 1000 / int64(step.Seconds())
+			tsBucket := ts
+			if stepNanos := step.Nanoseconds(); stepNanos > 0 {
+				tsBucket = ts / stepNanos
+			}
 			if sampleIdx, found := resSeriesBuckets[index][tsBucket]; found {
 				// We already have a MetricsSample for this timestamp bucket, increment its count.
 				resSeries[index].Samples[sampleIdx].Count++
