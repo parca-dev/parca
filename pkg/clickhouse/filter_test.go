@@ -18,6 +18,8 @@ import (
 
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
+
+	"github.com/parca-dev/parca/pkg/profile"
 )
 
 func TestParseQuery(t *testing.T) {
@@ -70,7 +72,7 @@ func TestParseQuery(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			qp, err := ParseQuery(tt.query)
+			qp, err := profile.ParseQuery(tt.query)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -84,7 +86,7 @@ func TestParseQuery(t *testing.T) {
 }
 
 func TestProfileTypeFilter(t *testing.T) {
-	qp, err := ParseQuery("process_cpu:samples:count:cpu:nanoseconds{}")
+	qp, err := profile.ParseQuery("process_cpu:samples:count:cpu:nanoseconds{}")
 	require.NoError(t, err)
 
 	filter, args := ProfileTypeFilter(qp)
@@ -100,7 +102,7 @@ func TestProfileTypeFilter(t *testing.T) {
 }
 
 func TestProfileTypeFilterDelta(t *testing.T) {
-	qp, err := ParseQuery("process_cpu:samples:count:cpu:nanoseconds:delta{}")
+	qp, err := profile.ParseQuery("process_cpu:samples:count:cpu:nanoseconds:delta{}")
 	require.NoError(t, err)
 
 	filter, _ := ProfileTypeFilter(qp)

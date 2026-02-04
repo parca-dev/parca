@@ -18,65 +18,12 @@ import (
 	"strings"
 
 	"github.com/prometheus/prometheus/model/labels"
-	"github.com/prometheus/prometheus/promql/parser"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
-// QueryParts contains parsed query components.
-type QueryParts struct {
-	Meta     profile.Meta
-	Delta    bool
-	Matchers []*labels.Matcher
-}
-
-// ParseQuery parses a Parca query string into its components.
-func ParseQuery(query string) (QueryParts, error) {
-	parsedSelector, err := parser.ParseMetricSelector(query)
-	if err != nil {
-		return QueryParts{}, status.Error(codes.InvalidArgument, "failed to parse query")
-	}
-
-	sel := make([]*labels.Matcher, 0, len(parsedSelector))
-	var nameLabel *labels.Matcher
-	for _, matcher := range parsedSelector {
-		if matcher.Name == labels.MetricName {
-			nameLabel = matcher
-		} else {
-			sel = append(sel, matcher)
-		}
-	}
-	if nameLabel == nil {
-		return QueryParts{}, status.Error(codes.InvalidArgument, "query must contain a profile-type selection")
-	}
-
-	parts := strings.Split(nameLabel.Value, ":")
-	if len(parts) != 5 && len(parts) != 6 {
-		return QueryParts{}, status.Errorf(codes.InvalidArgument, "profile-type selection must be of the form <name>:<sample-type>:<sample-unit>:<period-type>:<period-unit>(:delta), got(%d): %q", len(parts), nameLabel.Value)
-	}
-	delta := len(parts) == 6 && parts[5] == "delta"
-
-	return QueryParts{
-		Meta: profile.Meta{
-			Name: parts[0],
-			SampleType: profile.ValueType{
-				Type: parts[1],
-				Unit: parts[2],
-			},
-			PeriodType: profile.ValueType{
-				Type: parts[3],
-				Unit: parts[4],
-			},
-		},
-		Delta:    delta,
-		Matchers: sel,
-	}, nil
-}
-
 // ProfileTypeFilter generates SQL WHERE clause conditions for profile type filtering.
-func ProfileTypeFilter(qp QueryParts) (string, []interface{}) {
+func ProfileTypeFilter(qp profile.QueryParts) (string, []interface{}) {
 	conditions := []string{
 		"name = ?",
 		"sample_type = ?",
@@ -178,8 +125,8 @@ func BuildWhereClause(conditions []string, allArgs []interface{}) (string, []int
 }
 
 // QueryToFilters converts a query string and time range to SQL filter components.
-func QueryToFilters(query string, startNanos, endNanos int64) (string, []interface{}, QueryParts, error) {
-	qp, err := ParseQuery(query)
+func QueryToFilters(query string, startNanos, endNanos int64) (string, []interface{}, profile.QueryParts, error) {
+	qp, err := profile.ParseQuery(query)
 	if err != nil {
 		return "", nil, qp, err
 	}

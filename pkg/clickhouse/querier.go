@@ -92,7 +92,7 @@ func (q *Querier) Labels(
 		// ParseQuery expects a full query string like "profile_type{label=value}", so we
 		// append "{}" to create a valid query with empty matchers, then extract the profile
 		// type components (name, sample type/unit, period type/unit, delta) for filtering.
-		qp, err := ParseQuery(profileType + "{}")
+		qp, err := profile.ParseQuery(profileType + "{}")
 		if err == nil {
 			profileFilter, profileArgs := ProfileTypeFilter(qp)
 			conditions = append(conditions, profileFilter)
@@ -162,7 +162,7 @@ func (q *Querier) Values(
 		// ParseQuery expects a full query string like "profile_type{label=value}", so we
 		// append "{}" to create a valid query with empty matchers, then extract the profile
 		// type components (name, sample type/unit, period type/unit, delta) for filtering.
-		qp, err := ParseQuery(profileType + "{}")
+		qp, err := profile.ParseQuery(profileType + "{}")
 		if err == nil {
 			profileFilter, profileArgs := ProfileTypeFilter(qp)
 			query += " AND " + profileFilter
@@ -285,7 +285,7 @@ func (q *Querier) QueryRange(
 	ctx, span := q.tracer.Start(ctx, "ClickHouse/QueryRange")
 	defer span.End()
 
-	qp, err := ParseQuery(query)
+	qp, err := profile.ParseQuery(query)
 	if err != nil {
 		return nil, err
 	}
@@ -460,7 +460,7 @@ func (q *Querier) QuerySingle(
 	ctx, span := q.tracer.Start(ctx, "ClickHouse/QuerySingle")
 	defer span.End()
 
-	qp, err := ParseQuery(query)
+	qp, err := profile.ParseQuery(query)
 	if err != nil {
 		return profile.Profile{}, err
 	}
@@ -565,7 +565,7 @@ func (q *Querier) QueryMerge(
 	ctx, span := q.tracer.Start(ctx, "ClickHouse/QueryMerge")
 	defer span.End()
 
-	qp, err := ParseQuery(query)
+	qp, err := profile.ParseQuery(query)
 	if err != nil {
 		return profile.Profile{}, err
 	}
@@ -680,7 +680,7 @@ func (q *Querier) GetProfileMetadataMappings(
 	ctx, span := q.tracer.Start(ctx, "ClickHouse/GetProfileMetadataMappings")
 	defer span.End()
 
-	qp, err := ParseQuery(query)
+	qp, err := profile.ParseQuery(query)
 	if err != nil {
 		return nil, err
 	}
@@ -747,7 +747,7 @@ func (q *Querier) GetProfileMetadataLabels(
 	ctx, span := q.tracer.Start(ctx, "ClickHouse/GetProfileMetadataLabels")
 	defer span.End()
 
-	qp, err := ParseQuery(query)
+	qp, err := profile.ParseQuery(query)
 	if err != nil {
 		return nil, err
 	}
