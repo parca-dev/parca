@@ -110,11 +110,11 @@ func TestProfileTypeFilterDelta(t *testing.T) {
 
 func TestLabelMatchersToSQL(t *testing.T) {
 	tests := []struct {
-		name       string
-		matchers   []*labels.Matcher
-		wantSQL    string
-		wantArgs   []interface{}
-		wantErr    bool
+		name     string
+		matchers []*labels.Matcher
+		wantSQL  string
+		wantArgs []interface{}
+		wantErr  bool
 	}{
 		{
 			name:     "empty matchers",

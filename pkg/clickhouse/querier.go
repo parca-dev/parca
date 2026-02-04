@@ -16,12 +16,10 @@ package clickhouse
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strings"
 	"time"
 
 	"github.com/apache/arrow-go/v18/arrow"
-	"github.com/apache/arrow-go/v18/arrow/array"
 	"github.com/apache/arrow-go/v18/arrow/memory"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -38,18 +36,13 @@ import (
 	"github.com/parca-dev/parca/pkg/symbolizer"
 )
 
-// Symbolizer is the interface for symbolizing locations.
-type Symbolizer interface {
-	Symbolize(ctx context.Context, req symbolizer.SymbolizationRequest) error
-}
-
 // Querier implements the query.Querier interface for ClickHouse.
 type Querier struct {
 	client     *Client
 	logger     log.Logger
 	tracer     trace.Tracer
 	mem        memory.Allocator
-	symbolizer Symbolizer
+	symbolizer symbolizer.SymbolizationClient
 }
 
 // NewQuerier creates a new ClickHouse querier.
@@ -58,7 +51,7 @@ func NewQuerier(
 	logger log.Logger,
 	tracer trace.Tracer,
 	mem memory.Allocator,
-	sym Symbolizer,
+	sym symbolizer.SymbolizationClient,
 ) *Querier {
 	return &Querier{
 		client:     client,
@@ -95,6 +88,10 @@ func (q *Querier) Labels(
 	}
 
 	if profileType != "" {
+		// profileType is a string like "process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta".
+		// ParseQuery expects a full query string like "profile_type{label=value}", so we
+		// append "{}" to create a valid query with empty matchers, then extract the profile
+		// type components (name, sample type/unit, period type/unit, delta) for filtering.
 		qp, err := ParseQuery(profileType + "{}")
 		if err == nil {
 			profileFilter, profileArgs := ProfileTypeFilter(qp)
@@ -107,30 +104,26 @@ func (q *Querier) Labels(
 		query += " WHERE " + strings.Join(conditions, " AND ")
 	}
 
+	query += " ORDER BY label_name"
+
 	rows, err := q.client.Query(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query labels: %w", err)
 	}
 	defer rows.Close()
 
-	seen := make(map[string]struct{})
+	var result []string
 	for rows.Next() {
 		var labelName string
 		if err := rows.Scan(&labelName); err != nil {
 			return nil, fmt.Errorf("failed to scan label name: %w", err)
 		}
-		seen[labelName] = struct{}{}
+		result = append(result, labelName)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("error iterating rows: %w", err)
 	}
-
-	result := make([]string, 0, len(seen))
-	for label := range seen {
-		result = append(result, label)
-	}
-	sort.Strings(result)
 
 	return result, nil
 }
@@ -149,8 +142,9 @@ func (q *Querier) Values(
 	table := q.client.FullTableName()
 	labelPath := fmt.Sprintf("labels.%s", labelName)
 
+	// Cast to String to avoid dynamic type issues with DISTINCT and ORDER BY
 	query := fmt.Sprintf(`
-		SELECT DISTINCT %s
+		SELECT DISTINCT CAST(%s AS String) as label_value
 		FROM %s
 		WHERE %s IS NOT NULL
 	`, labelPath, table, labelPath)
@@ -164,6 +158,10 @@ func (q *Querier) Values(
 	}
 
 	if profileType != "" {
+		// profileType is a string like "process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta".
+		// ParseQuery expects a full query string like "profile_type{label=value}", so we
+		// append "{}" to create a valid query with empty matchers, then extract the profile
+		// type components (name, sample type/unit, period type/unit, delta) for filtering.
 		qp, err := ParseQuery(profileType + "{}")
 		if err == nil {
 			profileFilter, profileArgs := ProfileTypeFilter(qp)
@@ -171,6 +169,8 @@ func (q *Querier) Values(
 			args = append(args, profileArgs...)
 		}
 	}
+
+	query += " ORDER BY label_value"
 
 	rows, err := q.client.Query(ctx, query, args...)
 	if err != nil {
@@ -193,7 +193,6 @@ func (q *Querier) Values(
 		return nil, fmt.Errorf("error iterating rows: %w", err)
 	}
 
-	sort.Strings(result)
 	return result, nil
 }
 
@@ -231,7 +230,6 @@ func (q *Querier) ProfileTypes(
 	}
 	defer rows.Close()
 
-	seen := make(map[string]struct{})
 	var result []*pb.ProfileType
 
 	for rows.Next() {
@@ -246,16 +244,6 @@ func (q *Querier) ProfileTypes(
 		if err := rows.Scan(&name, &sampleType, &sampleUnit, &periodType, &periodUnit, &delta); err != nil {
 			return nil, fmt.Errorf("failed to scan profile type: %w", err)
 		}
-
-		key := fmt.Sprintf("%s:%s:%s:%s:%s", name, sampleType, sampleUnit, periodType, periodUnit)
-		if delta {
-			key += ":delta"
-		}
-
-		if _, ok := seen[key]; ok {
-			continue
-		}
-		seen[key] = struct{}{}
 
 		result = append(result, &pb.ProfileType{
 			Name:       name,
@@ -284,6 +272,8 @@ func (q *Querier) HasProfileData(ctx context.Context) (bool, error) {
 }
 
 // QueryRange executes a range query and returns time series data.
+// It aggregates samples by timestamp bucket and labels in ClickHouse,
+// returning one row per unique labelset with an array of time series samples.
 func (q *Querier) QueryRange(
 	ctx context.Context,
 	query string,
@@ -318,22 +308,27 @@ func (q *Querier) QueryRange(
 		return nil, err
 	}
 
-	// Build sumBy label selections - cast to String to avoid dynamic type GROUP BY issues
+	// Build sumBy label selections - cast to String because by default it is forbidden to group by
+	// dynamic types in ClickHouse
 	sumBySelects := ""
-	sumByGroupBy := ""
+	outerLabelSelects := ""
 	if len(sumBy) > 0 {
 		selects := make([]string, len(sumBy))
-		groupBys := make([]string, len(sumBy))
+		outerSelects := make([]string, len(sumBy))
 		for i, s := range sumBy {
 			labelPath := fmt.Sprintf("labels.%s", s)
 			selects[i] = fmt.Sprintf("CAST(%s AS String) AS label_%s", labelPath, s)
-			groupBys[i] = fmt.Sprintf("label_%s", s)
+			outerSelects[i] = fmt.Sprintf("label_%s", s)
 		}
 		sumBySelects = ", " + strings.Join(selects, ", ")
-		sumByGroupBy = ", " + strings.Join(groupBys, ", ")
+		outerLabelSelects = strings.Join(outerSelects, ", ") + ", "
 	}
 
-	sqlQuery := fmt.Sprintf(`
+	// Build the query with a subquery that aggregates by timestamp and labels,
+	// then an outer query that groups by labels and collects samples into an array.
+	// This reduces the number of rows returned and moves grouping logic to ClickHouse.
+	// GROUP BY ALL automatically groups by all non-aggregate columns.
+	innerQuery := fmt.Sprintf(`
 		SELECT
 			intDiv(time_nanos, ?) * ? as timestamp_bucket,
 			sum(value) as total_sum,
@@ -350,14 +345,25 @@ func (q *Querier) QueryRange(
 	args = append(args, start, end)
 
 	if labelFilter != "" {
-		sqlQuery += " AND " + labelFilter
+		innerQuery += " AND " + labelFilter
 		args = append(args, labelArgs...)
 	}
 
-	sqlQuery += fmt.Sprintf(`
-		GROUP BY timestamp_bucket %s
+	innerQuery += `
+		GROUP BY ALL
 		ORDER BY timestamp_bucket
-	`, sumByGroupBy)
+	`
+
+	// Outer query groups by labels and collects (timestamp, value, duration) tuples.
+	// GROUP BY ALL handles both cases: with labels it groups by them, without labels
+	// it returns a single row with all samples.
+	sqlQuery := fmt.Sprintf(`
+		SELECT
+			%s
+			groupArray(tuple(timestamp_bucket, total_sum, duration_min)) as samples
+		FROM (%s)
+		GROUP BY ALL
+	`, outerLabelSelects, innerQuery)
 
 	rows, err := q.client.Query(ctx, sqlQuery, args...)
 	if err != nil {
@@ -365,68 +371,68 @@ func (q *Querier) QueryRange(
 	}
 	defer rows.Close()
 
-	// Build result series
-	labelsetToIndex := make(map[string]int)
 	var resSeries []*pb.MetricsSeries
 
+	// Each row represents one unique labelset with all its samples
 	for rows.Next() {
-		var (
-			timestampBucket int64
-			totalSum        int64
-			durationMin     int64
-		)
-
-		// Scan base columns
-		scanArgs := []interface{}{&timestampBucket, &totalSum, &durationMin}
-
-		// Add label columns for scanning
+		// Scan label columns
 		labelValues := make([]string, len(sumBy))
+		scanArgs := make([]interface{}, 0, len(sumBy)+1)
 		for i := range sumBy {
 			scanArgs = append(scanArgs, &labelValues[i])
 		}
+
+		// Scan samples array - ClickHouse returns array of tuples as slice of slices
+		// Each tuple element becomes []interface{}{timestamp_bucket, total_sum, duration_min}
+		var samples [][]interface{}
+		scanArgs = append(scanArgs, &samples)
 
 		if err := rows.Scan(scanArgs...); err != nil {
 			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
 
-		// Build labelset key
-		labelSetKey := strings.Join(labelValues, ",")
-		index, ok := labelsetToIndex[labelSetKey]
-		if !ok {
-			pbLabelSet := make([]*profilestorepb.Label, len(sumBy))
-			for i, s := range sumBy {
-				pbLabelSet[i] = &profilestorepb.Label{
-					Name:  s,
-					Value: labelValues[i],
-				}
+		// Build labelset
+		pbLabelSet := make([]*profilestorepb.Label, len(sumBy))
+		for i, s := range sumBy {
+			pbLabelSet[i] = &profilestorepb.Label{
+				Name:  s,
+				Value: labelValues[i],
 			}
-			resSeries = append(resSeries, &pb.MetricsSeries{
-				Labelset: &profilestorepb.LabelSet{Labels: pbLabelSet},
-				PeriodType: &pb.ValueType{
-					Type: qp.Meta.PeriodType.Type,
-					Unit: qp.Meta.PeriodType.Unit,
-				},
-				SampleType: &pb.ValueType{
-					Type: qp.Meta.SampleType.Type,
-					Unit: qp.Meta.SampleType.Unit,
-				},
+		}
+
+		// Build samples for this series
+		pbSamples := make([]*pb.MetricsSample, 0, len(samples))
+		for _, sample := range samples {
+			// Extract values from tuple (timestamp_bucket, total_sum, duration_min)
+			timestampBucket := sample[0].(int64)
+			totalSum := sample[1].(int64)
+			durationMin := sample[2].(int64)
+
+			// Calculate value per second
+			valuePerSecond := float64(totalSum)
+			if durationMin > 0 {
+				valuePerSecond = float64(totalSum) / (float64(durationMin) / float64(time.Second.Nanoseconds()))
+			}
+
+			pbSamples = append(pbSamples, &pb.MetricsSample{
+				Timestamp:      timestamppb.New(time.Unix(0, timestampBucket)),
+				Value:          totalSum,
+				ValuePerSecond: valuePerSecond,
+				Duration:       durationMin,
 			})
-			index = len(resSeries) - 1
-			labelsetToIndex[labelSetKey] = index
 		}
 
-		// Calculate value per second
-		valuePerSecond := float64(totalSum)
-		if durationMin > 0 {
-			valuePerSecond = float64(totalSum) / (float64(durationMin) / float64(time.Second.Nanoseconds()))
-		}
-
-		series := resSeries[index]
-		series.Samples = append(series.Samples, &pb.MetricsSample{
-			Timestamp:      timestamppb.New(time.Unix(0, timestampBucket)),
-			Value:          totalSum,
-			ValuePerSecond: valuePerSecond,
-			Duration:       durationMin,
+		resSeries = append(resSeries, &pb.MetricsSeries{
+			Labelset: &profilestorepb.LabelSet{Labels: pbLabelSet},
+			PeriodType: &pb.ValueType{
+				Type: qp.Meta.PeriodType.Type,
+				Unit: qp.Meta.PeriodType.Unit,
+			},
+			SampleType: &pb.ValueType{
+				Type: qp.Meta.SampleType.Type,
+				Unit: qp.Meta.SampleType.Unit,
+			},
+			Samples: pbSamples,
 		})
 	}
 
@@ -471,6 +477,10 @@ func (q *Querier) QuerySingle(
 		return profile.Profile{}, err
 	}
 
+	// Query aggregates by stacktrace and labels, summing values and durations.
+	// sum(duration) matches FrostDB behavior for per-second value calculation.
+	// Period is grouped by since it should be constant for a profile type.
+	// Cast to Int64 explicitly to ensure correct type for Go scanning.
 	sqlQuery := fmt.Sprintf(`
 		SELECT
 			stacktrace.address,
@@ -486,8 +496,8 @@ func (q *Querier) QuerySingle(
 			stacktrace.function_start_line,
 			sum(value) as value,
 			toString(labels) as labels_json,
-			any(duration) as sample_duration,
-			any(period) as sample_period
+			CAST(sum(duration) AS Int64) as sample_duration,
+			period as sample_period
 		FROM %s
 		WHERE %s
 		  AND timestamp = ?
@@ -515,7 +525,8 @@ func (q *Querier) QuerySingle(
 			stacktrace.function_system_name,
 			stacktrace.function_filename,
 			stacktrace.function_start_line,
-			labels_json
+			labels_json,
+			period
 	`
 
 	rows, err := q.client.Query(ctx, sqlQuery, args...)
@@ -587,6 +598,11 @@ func (q *Querier) QueryMerge(
 		groupByLabels = ", " + strings.Join(labels, ", ")
 	}
 
+	// Query aggregates by stacktrace, period, and optional labels.
+	// Period is grouped by (like FrostDB's ColumnPeriod in selectMerge).
+	// Duration uses the query time range for per-second calculation (matching FrostDB).
+	// Cast to Int64 explicitly to ensure correct type for Go scanning.
+	queryDuration := endNanos - startNanos
 	sqlQuery := fmt.Sprintf(`
 		SELECT
 			stacktrace.address,
@@ -602,12 +618,12 @@ func (q *Querier) QueryMerge(
 			stacktrace.function_start_line,
 			sum(value) as value_sum,
 			'' as labels_json,
-			any(duration) as sample_duration,
-			any(period) as sample_period
+			CAST(%d AS Int64) as sample_duration,
+			period as sample_period
 		FROM %s
 		WHERE %s
 		  AND time_nanos >= ? AND time_nanos <= ?
-	`, table, profileFilter)
+	`, queryDuration, table, profileFilter)
 
 	// Build args in the correct order matching placeholder positions
 	args := append([]interface{}{}, profileArgs...)
@@ -630,7 +646,8 @@ func (q *Querier) QueryMerge(
 			stacktrace.function_name,
 			stacktrace.function_system_name,
 			stacktrace.function_filename,
-			stacktrace.function_start_line
+			stacktrace.function_start_line,
+			period
 			%s
 	`, groupByLabels)
 
@@ -697,6 +714,8 @@ func (q *Querier) GetProfileMetadataMappings(
 		args = append(args, labelArgs...)
 	}
 
+	sqlQuery += " ORDER BY mapping_file"
+
 	rows, err := q.client.Query(ctx, sqlQuery, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query mapping files: %w", err)
@@ -716,7 +735,6 @@ func (q *Querier) GetProfileMetadataMappings(
 		return nil, fmt.Errorf("error iterating rows: %w", err)
 	}
 
-	sort.Strings(result)
 	return result, nil
 }
 
@@ -763,6 +781,8 @@ func (q *Querier) GetProfileMetadataLabels(
 		args = append(args, labelArgs...)
 	}
 
+	sqlQuery += " ORDER BY label_name"
+
 	rows, err := q.client.Query(ctx, sqlQuery, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query labels: %w", err)
@@ -782,7 +802,6 @@ func (q *Querier) GetProfileMetadataLabels(
 		return nil, fmt.Errorf("error iterating rows: %w", err)
 	}
 
-	sort.Strings(result)
 	return result, nil
 }
 
@@ -808,7 +827,11 @@ type sampleData struct {
 // rowsToArrowRecords converts ClickHouse query results to Arrow records.
 func (q *Querier) rowsToArrowRecords(
 	ctx context.Context,
-	rows interface{ Next() bool; Scan(dest ...interface{}) error; Err() error },
+	rows interface {
+		Next() bool
+		Scan(dest ...interface{}) error
+		Err() error
+	},
 	invertCallStacks bool,
 ) ([]arrow.RecordBatch, error) {
 	_, span := q.tracer.Start(ctx, "ClickHouse/rowsToArrowRecords")
@@ -1045,19 +1068,4 @@ func (q *Querier) rowsToArrowRecords(
 
 	record := w.RecordBuilder.NewRecordBatch()
 	return []arrow.RecordBatch{record}, nil
-}
-
-// createDiffColumn creates a zero-filled diff column.
-func createDiffColumn(pool memory.Allocator, rows int) arrow.Array {
-	b := array.NewInt64Builder(pool)
-	defer b.Release()
-
-	values := make([]int64, rows)
-	valid := make([]bool, rows)
-	for i := range values {
-		valid[i] = true
-	}
-
-	b.AppendValues(values, valid)
-	return b.NewInt64Array()
 }

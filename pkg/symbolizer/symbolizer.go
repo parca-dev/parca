@@ -129,6 +129,12 @@ type SymbolizationRequest struct {
 	Mappings []SymbolizationRequestMappingAddrs
 }
 
+// SymbolizationClient is the interface for components that can symbolize locations.
+// The concrete *Symbolizer type implements this interface.
+type SymbolizationClient interface {
+	Symbolize(ctx context.Context, req SymbolizationRequest) error
+}
+
 func (s *Symbolizer) Symbolize(
 	ctx context.Context,
 	req SymbolizationRequest,

@@ -52,19 +52,12 @@ type Engine interface {
 	ScanSchema(name string) query.Builder
 }
 
-type Symbolizer interface {
-	Symbolize(
-		ctx context.Context,
-		req symbolizer.SymbolizationRequest,
-	) error
-}
-
 func NewQuerier(
 	logger log.Logger,
 	tracer trace.Tracer,
 	engine Engine,
 	tableName string,
-	symbolizer Symbolizer,
+	sym symbolizer.SymbolizationClient,
 	pool memory.Allocator,
 ) *Querier {
 	return &Querier{
@@ -72,7 +65,7 @@ func NewQuerier(
 		tracer:     tracer,
 		engine:     engine,
 		tableName:  tableName,
-		symbolizer: symbolizer,
+		symbolizer: sym,
 		pool:       pool,
 	}
 }
@@ -81,7 +74,7 @@ type Querier struct {
 	logger     log.Logger
 	engine     Engine
 	tableName  string
-	symbolizer Symbolizer
+	symbolizer symbolizer.SymbolizationClient
 	tracer     trace.Tracer
 	pool       memory.Allocator
 }
