@@ -210,6 +210,12 @@ export interface MetricsSample {
      * @generated from protobuf field: int64 duration = 4
      */
     duration: bigint;
+    /**
+     * count is the number of samples aggregated into this data point.
+     *
+     * @generated from protobuf field: int32 count = 5
+     */
+    count: number;
 }
 /**
  * MergeProfile contains parameters for a merge request
@@ -2036,7 +2042,8 @@ class MetricsSample$Type extends MessageType<MetricsSample> {
             { no: 1, name: "timestamp", kind: "message", T: () => Timestamp },
             { no: 2, name: "value", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ },
             { no: 3, name: "value_per_second", kind: "scalar", T: 1 /*ScalarType.DOUBLE*/ },
-            { no: 4, name: "duration", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ }
+            { no: 4, name: "duration", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ },
+            { no: 5, name: "count", kind: "scalar", T: 5 /*ScalarType.INT32*/ }
         ]);
     }
     create(value?: PartialMessage<MetricsSample>): MetricsSample {
@@ -2044,6 +2051,7 @@ class MetricsSample$Type extends MessageType<MetricsSample> {
         message.value = 0n;
         message.valuePerSecond = 0;
         message.duration = 0n;
+        message.count = 0;
         if (value !== undefined)
             reflectionMergePartial<MetricsSample>(this, message, value);
         return message;
@@ -2064,6 +2072,9 @@ class MetricsSample$Type extends MessageType<MetricsSample> {
                     break;
                 case /* int64 duration */ 4:
                     message.duration = reader.int64().toBigInt();
+                    break;
+                case /* int32 count */ 5:
+                    message.count = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2089,6 +2100,9 @@ class MetricsSample$Type extends MessageType<MetricsSample> {
         /* int64 duration = 4; */
         if (message.duration !== 0n)
             writer.tag(4, WireType.Varint).int64(message.duration);
+        /* int32 count = 5; */
+        if (message.count !== 0)
+            writer.tag(5, WireType.Varint).int32(message.count);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

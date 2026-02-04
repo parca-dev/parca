@@ -348,11 +348,6 @@ func (q *Querier) QueryRange(
 		return nil, err
 	}
 
-	// The step cannot be lower than 1s
-	if step < time.Second {
-		step = time.Second
-	}
-
 	start := startTime.UnixNano()
 	end := endTime.UnixNano()
 
@@ -401,6 +396,8 @@ func (q *Querier) queryRangeDelta(
 
 	totalSum := logicalplan.Sum(logicalplan.Col(profile.ColumnValue))
 	totalSumColumn := totalSum.Name()
+	totalCount := logicalplan.Count(logicalplan.Col(profile.ColumnValue))
+	totalCountColumn := totalCount.Name()
 	durationMin := logicalplan.Min(logicalplan.Col(profile.ColumnDuration))
 	timestampUnique := logicalplan.Unique(logicalplan.Col(profile.ColumnTimeNanos))
 
@@ -476,6 +473,7 @@ func (q *Querier) queryRangeDelta(
 				durationMin,
 				timestampUnique,
 				totalSum,
+				totalCount,
 			},
 			append([]logicalplan.Expr{
 				logicalplan.Col(TimestampBucket),
@@ -489,6 +487,7 @@ func (q *Querier) queryRangeDelta(
 				durationMin,
 			).Alias(profile.ColumnDuration),
 			totalSum,
+			totalCount,
 			logicalplan.DynCol(profile.ColumnLabels),
 			logicalplan.Col(TimestampBucket),
 		).
@@ -514,11 +513,13 @@ func (q *Querier) queryRangeDelta(
 		PerSecondValue int
 		ValueSum       int
 		Duration       int
+		Count          int
 	}{
 		Timestamp:      -1,
 		PerSecondValue: -1,
 		ValueSum:       -1,
 		Duration:       -1,
+		Count:          -1,
 	}
 
 	labelColumnIndices := []int{}
@@ -541,6 +542,9 @@ func (q *Querier) queryRangeDelta(
 				continue
 			case profile.ColumnDuration:
 				columnIndices.Duration = i
+			case totalCountColumn:
+				columnIndices.Count = i
+				continue
 			}
 
 			if strings.HasPrefix(field.Name, "labels.") {
@@ -606,6 +610,7 @@ func (q *Querier) queryRangeDelta(
 			valueSum := ar.Column(columnIndices.ValueSum).(*array.Int64).Value(i)
 			valuePerSecond := ar.Column(columnIndices.PerSecondValue).(*array.Float64).Value(i)
 			duration := ar.Column(columnIndices.Duration).(*array.Int64).Value(i)
+			count := ar.Column(columnIndices.Count).(*array.Int64).Value(i)
 
 			series := resSeries[index]
 			series.Samples = append(series.Samples, &pb.MetricsSample{
@@ -613,6 +618,7 @@ func (q *Querier) queryRangeDelta(
 				Value:          valueSum,
 				ValuePerSecond: valuePerSecond,
 				Duration:       duration,
+				Count:          int32(count),
 			})
 		}
 	}
@@ -686,7 +692,7 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 	labelColumnIndices := []int{}
 	labelSet := labels.NewScratchBuilder(64)
 	resSeries := []*pb.MetricsSeries{}
-	resSeriesBuckets := map[int]map[int64]struct{}{}
+	resSeriesBuckets := map[int]map[int64]int{}
 	labelsetToIndex := map[string]int{}
 
 	for _, ar := range records {
@@ -740,7 +746,7 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 				resSeries = append(resSeries, &pb.MetricsSeries{Labelset: &profilestorepb.LabelSet{Labels: pbLabelSet}})
 				index = len(resSeries) - 1
 				labelsetToIndex[s] = index
-				resSeriesBuckets[index] = map[int64]struct{}{}
+				resSeriesBuckets[index] = map[int64]int{}
 			}
 
 			ts := ar.Column(columnIndices[profile.ColumnTimeNanos].index).(*array.Int64).Value(i)
@@ -756,8 +762,9 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 			// With a scrape interval of 10s and a query range of 1d we'd query 8640 samples and at most return 960.
 			// Even worse for a week, we'd query 60480 samples and only return 1000.
 			tsBucket := ts / 1000 / int64(step.Seconds())
-			if _, found := resSeriesBuckets[index][tsBucket]; found {
-				// We already have a MetricsSample for this timestamp bucket, ignore it.
+			if sampleIdx, found := resSeriesBuckets[index][tsBucket]; found {
+				// We already have a MetricsSample for this timestamp bucket, increment its count.
+				resSeries[index].Samples[sampleIdx].Count++
 				continue
 			}
 
@@ -766,9 +773,10 @@ func (q *Querier) queryRangeNonDelta(ctx context.Context, filterExpr logicalplan
 				Timestamp:      timestamppb.New(time.Unix(0, ts)),
 				Value:          value,
 				ValuePerSecond: float64(value),
+				Count:          1,
 			})
-			// Mark the timestamp bucket as filled by the above MetricsSample.
-			resSeriesBuckets[index][tsBucket] = struct{}{}
+			// Mark the timestamp bucket as filled by the above MetricsSample, storing its index.
+			resSeriesBuckets[index][tsBucket] = len(series.Samples) - 1
 		}
 	}
 

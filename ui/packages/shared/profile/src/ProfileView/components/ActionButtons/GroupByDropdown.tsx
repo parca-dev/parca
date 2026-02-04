@@ -21,6 +21,7 @@ interface GroupByControlsProps {
   setGroupByLabels: (labels: string[]) => void;
   metadataRefetch?: () => Promise<void>;
   metadataLoading: boolean;
+  label?: string;
 }
 
 const GroupByControls: React.FC<GroupByControlsProps> = ({
@@ -29,6 +30,7 @@ const GroupByControls: React.FC<GroupByControlsProps> = ({
   setGroupByLabels,
   metadataRefetch,
   metadataLoading,
+  label,
 }) => {
   return (
     <div className="relative flex" id="h-group-by-controls">
@@ -38,6 +40,7 @@ const GroupByControls: React.FC<GroupByControlsProps> = ({
         setGroupByLabels={setGroupByLabels}
         metadataRefetch={metadataRefetch}
         metadataLoading={metadataLoading}
+        label={label}
       />
     </div>
   );

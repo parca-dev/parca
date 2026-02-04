@@ -623,7 +623,9 @@ type MetricsSample struct {
 	// value_per_second is the calculated per second average in the steps duration
 	ValuePerSecond float64 `protobuf:"fixed64,3,opt,name=value_per_second,json=valuePerSecond,proto3" json:"value_per_second,omitempty"`
 	// duration is the normalized aggregated duration the metric samples has been observed over.
-	Duration      int64 `protobuf:"varint,4,opt,name=duration,proto3" json:"duration,omitempty"`
+	Duration int64 `protobuf:"varint,4,opt,name=duration,proto3" json:"duration,omitempty"`
+	// count is the number of samples aggregated into this data point.
+	Count         int32 `protobuf:"varint,5,opt,name=count,proto3" json:"count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -682,6 +684,13 @@ func (x *MetricsSample) GetValuePerSecond() float64 {
 func (x *MetricsSample) GetDuration() int64 {
 	if x != nil {
 		return x.Duration
+	}
+	return 0
+}
+
+func (x *MetricsSample) GetCount() int32 {
+	if x != nil {
+		return x.Count
 	}
 	return 0
 }
@@ -4020,12 +4029,13 @@ const file_parca_query_v1alpha1_query_proto_rawDesc = "" +
 	"\vperiod_type\x18\x03 \x01(\v2\x1f.parca.query.v1alpha1.ValueTypeR\n" +
 	"periodType\x12@\n" +
 	"\vsample_type\x18\x04 \x01(\v2\x1f.parca.query.v1alpha1.ValueTypeR\n" +
-	"sampleType\"\xa5\x01\n" +
+	"sampleType\"\xbb\x01\n" +
 	"\rMetricsSample\x128\n" +
 	"\ttimestamp\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x03R\x05value\x12(\n" +
 	"\x10value_per_second\x18\x03 \x01(\x01R\x0evaluePerSecond\x12\x1a\n" +
-	"\bduration\x18\x04 \x01(\x03R\bduration\"\x84\x01\n" +
+	"\bduration\x18\x04 \x01(\x03R\bduration\x12\x14\n" +
+	"\x05count\x18\x05 \x01(\x05R\x05count\"\x84\x01\n" +
 	"\fMergeProfile\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x120\n" +
 	"\x05start\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x05start\x12,\n" +

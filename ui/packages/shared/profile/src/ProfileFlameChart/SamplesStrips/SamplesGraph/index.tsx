@@ -17,12 +17,12 @@ import {Icon} from '@iconify/react';
 import cx from 'classnames';
 import * as d3 from 'd3';
 
-import {NumberDuo} from '../../utils';
-import {Tooltip} from './Tooltip';
+import {NumberDuo} from '../../../utils';
 
 export interface DataPoint {
   timestamp: number;
   value: number;
+  sampleCount?: number;
 }
 
 interface Props {
@@ -36,7 +36,7 @@ interface Props {
   data: DataPoint[];
   selectionBounds?: NumberDuo | undefined;
   setSelectionBounds: (newBounds: NumberDuo | undefined) => void;
-  valueBounds: NumberDuo;
+  stepMs: number;
 }
 
 const DraggingWindow = ({
@@ -189,7 +189,7 @@ const ZoomWindow = ({
   );
 };
 
-export const AreaGraph = ({
+export const SamplesGraph = ({
   data,
   height,
   width,
@@ -200,13 +200,11 @@ export const AreaGraph = ({
   fill = 'gray',
   selectionBounds,
   setSelectionBounds,
-  valueBounds,
+  stepMs,
 }: Props): JSX.Element => {
   const [mousePosition, setMousePosition] = useState<NumberDuo | undefined>(undefined);
   const [dragStart, setDragStart] = useState<number | undefined>(undefined);
   const [isHoveringDragHandle, setIsHoveringDragHandle] = useState(false);
-  const [hoverData, setHoverData] = useState<{timestamp: number; value: number} | null>(null);
-  const [isMouseOverGraph, setIsMouseOverGraph] = useState(false);
   const isDragging = dragStart !== undefined;
 
   // Declare the x (horizontal position) scale.
@@ -215,14 +213,17 @@ export const AreaGraph = ({
     width - marginRight,
   ]);
 
-  // Declare the y (vertical position) scale.
-  const y = d3.scaleLinear([valueBounds[0], valueBounds[1]], [height - marginBottom, marginTop]);
-  const area = d3
-    .area<DataPoint>()
-    .curve(d3.curveMonotoneX)
-    .x(d => x(d.timestamp))
-    .y0(y(0))
-    .y1(d => y(d.value));
+  // Calculate sample count range for opacity scaling
+  const sampleCounts = data.map(d => Number(d.sampleCount ?? 1));
+  const maxSampleCount = Math.max(...sampleCounts);
+  const minSampleCount = Math.min(...sampleCounts);
+
+  // Create opacity scale: more samples = higher opacity
+  const opacityScale = d3
+    .scaleLinear()
+    .domain([minSampleCount, maxSampleCount])
+    .range([0.5, 1.0])
+    .clamp(true);
 
   const zoomWindow: NumberDuo | undefined = useMemo(() => {
     if (selectionBounds === undefined) {
@@ -250,30 +251,13 @@ export const AreaGraph = ({
           yPos <= height - marginBottom
         ) {
           setMousePosition([xPos, yPos]);
-
-          // Find the closest data point
-          if (!isHoveringDragHandle && !isDragging) {
-            const xDate = x.invert(xPos);
-            const bisect = d3.bisector((d: DataPoint) => d.timestamp).left;
-            const index = bisect(data, xDate.getTime());
-            const dataPoint = data[index];
-            if (dataPoint !== undefined) {
-              setHoverData(dataPoint);
-            }
-          }
         } else {
           setMousePosition(undefined);
-          setHoverData(null);
         }
       }}
-      onMouseEnter={() => {
-        setIsMouseOverGraph(true);
-      }}
       onMouseLeave={() => {
-        setIsMouseOverGraph(false);
         setMousePosition(undefined);
         setDragStart(undefined);
-        setHoverData(null);
       }}
       onMouseDown={e => {
         // only left mouse button
@@ -329,23 +313,38 @@ export const AreaGraph = ({
         setIsHoveringDragHandle={setIsHoveringDragHandle}
       />
 
-      {/* Update Tooltip conditional render */}
-      {mousePosition !== undefined &&
-        hoverData !== null &&
-        !isDragging &&
-        !isHoveringDragHandle &&
-        isMouseOverGraph && (
-          <Tooltip
-            x={mousePosition[0]}
-            y={mousePosition[1]}
-            timestamp={hoverData.timestamp}
-            value={hoverData.value}
-            containerWidth={width}
-          />
-        )}
-
       <svg style={{width: '100%', height: '100%'}}>
-        <path fill={fill} d={area(data) as string} className="opacity-80" />
+        {/* Background for the full strip area */}
+        <rect
+          x={marginLeft}
+          y={0}
+          width={width - marginLeft - marginRight}
+          height={height}
+          fill={fill}
+          fillOpacity={0.1}
+        />
+        <g>
+          {data.map((d, i) => {
+            const xPosition = x(d.timestamp);
+            // Use stepMs for bucket width
+            const rectWidth = x(d.timestamp + stepMs) - xPosition;
+
+            // Calculate opacity based on sample count
+            const opacity = opacityScale(Number(d.sampleCount ?? 1));
+
+            return (
+              <rect
+                key={i}
+                x={xPosition}
+                y={0}
+                width={rectWidth}
+                height={height}
+                fill={fill}
+                fillOpacity={opacity}
+              />
+            );
+          })}
+        </g>
       </svg>
     </div>
   );

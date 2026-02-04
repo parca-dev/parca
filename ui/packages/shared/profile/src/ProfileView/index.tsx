@@ -27,6 +27,7 @@ import {
 } from './components/Toolbars';
 import {DashboardProvider} from './context/DashboardContext';
 import {ProfileViewContextProvider} from './context/ProfileViewContext';
+import {useAutoSelectDimension} from './hooks/useAutoSelectDimension';
 import {useProfileMetadata} from './hooks/useProfileMetadata';
 import {useVisualizationState} from './hooks/useVisualizationState';
 import type {ProfileViewProps, VisualizationType} from './types/visualization';
@@ -35,7 +36,7 @@ export const ProfileView = ({
   total,
   filtered,
   flamegraphData,
-  flamechartData,
+  samplesData,
   topTableData,
   sourceData,
   profileSource,
@@ -64,11 +65,19 @@ export const ProfileView = ({
     groupBy,
     toggleGroupBy,
     setGroupByLabels,
+    flamechartDimension,
+    setFlamechartDimension,
     sandwichFunctionName,
     resetSandwichFunctionName,
     alignFunctionName,
     setAlignFunctionName,
   } = useVisualizationState();
+
+  useAutoSelectDimension(
+    flamegraphData.metadataLabels,
+    flamechartDimension,
+    setFlamechartDimension
+  );
 
   const {colorMappings} = useProfileMetadata({
     flamegraphArrow: flamegraphData.arrow,
@@ -95,7 +104,7 @@ export const ProfileView = ({
       isHalfScreen,
       dimensions,
       flamegraphData,
-      flamechartData,
+      samplesData,
       topTableData,
       sourceData,
       profileSource,
@@ -153,6 +162,8 @@ export const ProfileView = ({
             preferencesModal={preferencesModal}
             profileViewExternalSubActions={profileViewExternalSubActions}
             setGroupByLabels={setGroupByLabels}
+            flamechartDimension={flamechartDimension}
+            setFlamechartDimension={setFlamechartDimension}
             showVisualizationSelector={showVisualizationSelector}
             sandwichFunctionName={sandwichFunctionName}
             alignFunctionName={alignFunctionName}

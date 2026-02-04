@@ -42,6 +42,8 @@ export const useVisualizationState = (): {
   setGroupBy: (keys: string[]) => void;
   toggleGroupBy: (key: string) => void;
   setGroupByLabels: (labels: string[]) => void;
+  flamechartDimension: string[];
+  setFlamechartDimension: (labels: string[]) => void;
   sandwichFunctionName: string | undefined;
   setSandwichFunctionName: (sandwichFunctionName: string | undefined) => void;
   resetSandwichFunctionName: () => void;
@@ -73,6 +75,12 @@ export const useVisualizationState = (): {
   });
   const [sandwichFunctionName, setSandwichFunctionName] = useURLState<string | undefined>(
     'sandwich_function_name'
+  );
+  const [flamechartDimension, setStoreFlamechartDimension] = useURLState<string[]>(
+    'flamechart_dimension',
+    {
+      alwaysReturnArray: true,
+    }
   );
   const resetFlameGraphState = useResetFlameGraphState();
   const batchUpdates = useURLStateBatch();
@@ -123,6 +131,13 @@ export const useVisualizationState = (): {
     [groupBy, setGroupBy, resetFlameGraphState, batchUpdates]
   );
 
+  const setFlamechartDimension = useCallback(
+    (labels: string[]): void => {
+      setStoreFlamechartDimension(labels.filter(l => l.startsWith(`${FIELD_LABELS}.`)));
+    },
+    [setStoreFlamechartDimension]
+  );
+
   const resetSandwichFunctionName = useCallback((): void => {
     setSandwichFunctionName(undefined);
   }, [setSandwichFunctionName]);
@@ -153,6 +168,8 @@ export const useVisualizationState = (): {
     setGroupBy,
     toggleGroupBy,
     setGroupByLabels,
+    flamechartDimension,
+    setFlamechartDimension,
     sandwichFunctionName,
     setSandwichFunctionName,
     resetSandwichFunctionName,

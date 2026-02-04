@@ -27,6 +27,7 @@ interface Props {
   setGroupByLabels: (labels: string[]) => void;
   metadataRefetch?: () => Promise<void>;
   metadataLoading: boolean;
+  label?: string;
 }
 
 const GroupByLabelsDropdown = ({
@@ -35,12 +36,13 @@ const GroupByLabelsDropdown = ({
   setGroupByLabels,
   metadataRefetch,
   metadataLoading,
+  label = 'Group by',
 }: Props): JSX.Element => {
   return (
     <div className="flex flex-col relative" {...testId(TEST_IDS.GROUP_BY_CONTAINER)}>
       <div className="flex items-center justify-between">
         <label className="text-sm" {...testId(TEST_IDS.GROUP_BY_LABEL)}>
-          Group by
+          {label}
         </label>
       </div>
 
@@ -56,7 +58,7 @@ const GroupByLabelsDropdown = ({
         refreshTitle="Refresh label names"
         refreshTestId="group-by-refresh-button"
         menuTestId={TEST_IDS.GROUP_BY_SELECT_FLYOUT}
-        value={groupBy
+        value={(groupBy ?? [])
           .filter(l => l.startsWith(FIELD_LABELS))
           .map(l => ({value: l, label: l.slice(FIELD_LABELS.length + 1)}))}
         onChange={newValue => {

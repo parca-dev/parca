@@ -47,6 +47,8 @@ export interface VisualisationToolbarProps {
   preferencesModal?: boolean;
   profileViewExternalSubActions?: React.ReactNode;
   setGroupByLabels: (labels: string[]) => void;
+  flamechartDimension: string[];
+  setFlamechartDimension: (labels: string[]) => void;
   showVisualizationSelector?: boolean;
   sandwichFunctionName?: string;
   alignFunctionName: string;
@@ -135,6 +137,8 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   groupBy,
   toggleGroupBy,
   setGroupByLabels,
+  flamechartDimension,
+  setFlamechartDimension,
   profileType,
   profileSource,
   queryClient,
@@ -158,6 +162,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   const isTableVizOnly = dashboardItems?.length === 1 && isTableViz;
   const isGraphViz = dashboardItems?.includes('flamegraph');
   const isGraphVizOnly = dashboardItems?.length === 1 && isGraphViz;
+  const isFlamechartViz = dashboardItems?.includes('flamechart');
 
   const req = profileSource?.QueryRequest();
   if (req !== null && req !== undefined) {
@@ -182,6 +187,17 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
 
               <InvertCallStack />
             </>
+          )}
+
+          {isFlamechartViz && (
+            <GroupByDropdown
+              groupBy={flamechartDimension}
+              labels={groupByLabels}
+              setGroupByLabels={setFlamechartDimension}
+              metadataRefetch={metadataRefetch}
+              metadataLoading={metadataLoading}
+              label="Samples group by"
+            />
           )}
 
           <div className="flex mt-5">
