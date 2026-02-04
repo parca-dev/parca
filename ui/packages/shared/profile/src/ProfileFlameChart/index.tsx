@@ -37,8 +37,8 @@ interface SelectedTimeframe {
 }
 
 const TimeframeStateSerializer: OptionsCustom<SelectedTimeframe | undefined> = {
-  parse: (value: string) => {
-    if (value == null || value === '' || value === 'undefined') {
+  parse: (value: string | string[] | undefined) => {
+    if (value == null || value === '' || value === 'undefined' || Array.isArray(value)) {
       return undefined;
     }
     try {

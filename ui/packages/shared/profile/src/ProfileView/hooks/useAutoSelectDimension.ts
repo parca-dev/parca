@@ -28,7 +28,7 @@ export const useAutoSelectDimension = (
 
   useEffect(() => {
     if (hasAutoSelected.current) return;
-    if (!metadataLabels || metadataLabels.length === 0) return;
+    if (metadataLabels == null || metadataLabels.length === 0) return;
     if ((flamechartDimension ?? []).length > 0) {
       hasAutoSelected.current = true;
       return;
