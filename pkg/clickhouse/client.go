@@ -60,10 +60,6 @@ func NewClient(ctx context.Context, cfg Config) (*Client, error) {
 		return nil, fmt.Errorf("failed to open ClickHouse connection: %w", err)
 	}
 
-	if err := conn.Ping(ctx); err != nil {
-		return nil, fmt.Errorf("failed to ping ClickHouse: %w", err)
-	}
-
 	// Create database if it doesn't exist
 	if err := conn.Exec(ctx, fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", cfg.Database)); err != nil {
 		conn.Close()
@@ -78,10 +74,6 @@ func NewClient(ctx context.Context, cfg Config) (*Client, error) {
 	conn, err = clickhouse.Open(opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open ClickHouse connection with database: %w", err)
-	}
-
-	if err := conn.Ping(ctx); err != nil {
-		return nil, fmt.Errorf("failed to ping ClickHouse with database: %w", err)
 	}
 
 	return &Client{
