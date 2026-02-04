@@ -13,7 +13,7 @@
 
 import React, {useMemo} from 'react';
 
-import {Vector, tableFromIPC} from 'apache-arrow';
+import {Column, tableFromIPC} from '@uwdata/flechette';
 import {Tooltip} from 'react-tooltip';
 
 import {Button} from '@parca/components';
@@ -23,10 +23,11 @@ import ProfileFlameGraph from '../../ProfileFlameGraph';
 import {type CurrentPathFrame} from '../../ProfileFlameGraph/FlameGraphArrow/utils';
 import {type ProfileSource} from '../../ProfileSource';
 import {FlamegraphData} from '../../ProfileView/types/visualization';
+import {alignedUint8Array} from '../../utils';
 
 const FIELD_DEPTH = 'depth';
 
-function getMaxDepth(depthColumn: Vector<any> | null): number {
+function getMaxDepth(depthColumn: Column<number> | null): number {
   if (depthColumn === null) return 0;
 
   let max = 0;
@@ -60,7 +61,9 @@ export function CallersSection({
 }: CallersSectionProps): JSX.Element {
   const maxDepth = useMemo(() => {
     if (callersFlamegraphData?.arrow != null) {
-      const table = tableFromIPC(callersFlamegraphData.arrow.record);
+      const table = tableFromIPC(alignedUint8Array(callersFlamegraphData.arrow.record), {
+        useBigInt: true,
+      });
       const depthColumn = table.getChild(FIELD_DEPTH);
       return getMaxDepth(depthColumn);
     }

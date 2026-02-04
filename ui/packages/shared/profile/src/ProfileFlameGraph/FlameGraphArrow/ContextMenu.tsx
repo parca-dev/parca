@@ -12,7 +12,7 @@
 // limitations under the License.
 
 import {Icon} from '@iconify/react';
-import {Table} from 'apache-arrow';
+import {Table} from '@uwdata/flechette';
 import cx from 'classnames';
 import {Item, Menu, Separator, Submenu} from 'react-contexify';
 import {Tooltip} from 'react-tooltip';
@@ -29,7 +29,7 @@ import {hexifyAddress, truncateString} from '../../utils';
 
 interface ContextMenuProps {
   menuId: string;
-  table: Table<any>;
+  table: Table;
   profileType?: ProfileType;
   unit?: string;
   total: bigint;

@@ -13,7 +13,7 @@
 
 import React, {useCallback, useEffect, useMemo} from 'react';
 
-import {tableFromIPC} from 'apache-arrow';
+import {tableFromIPC} from '@uwdata/flechette';
 import {AnimatePresence, motion} from 'framer-motion';
 import {Item, Menu, useContextMenu} from 'react-contexify';
 
@@ -21,7 +21,7 @@ import {Source} from '@parca/client';
 import {SourceSkeleton, useParcaContext, useURLState, type ProfileData} from '@parca/components';
 
 import {ExpandOnHover} from '../GraphTooltipArrow/ExpandOnHoverValue';
-import {truncateStringReverse} from '../utils';
+import {alignedUint8Array, truncateStringReverse} from '../utils';
 import {Highlighter, profileAwareRenderer, type LineDataLookup} from './Highlighter';
 import useLineRange from './useSelectedLineRange';
 
@@ -63,7 +63,7 @@ export const SourceView = React.memo(function SourceView({
     if (data === undefined) {
       return null;
     }
-    const table = tableFromIPC(data.record);
+    const table = tableFromIPC(alignedUint8Array(data.record), {useBigInt: true});
     return {
       numRows: table.numRows,
       lineNumbers: table.getChild('line_number'),

@@ -13,7 +13,7 @@
 
 import {useMemo} from 'react';
 
-import {Dictionary, Table, Vector} from 'apache-arrow';
+import {Column, Table} from '@uwdata/flechette';
 
 import {getLastItem} from '@parca/utilities';
 
@@ -48,26 +48,26 @@ export const useFilenamesList = (table: Table | null): string[] => {
   if (table === null) {
     return [];
   }
-  const filenamesDict: Vector<Dictionary> | null = table.getChild(FIELD_FUNCTION_FILE_NAME);
-  const filenames =
-    filenamesDict?.data
-      .map(file => {
-        if (file.dictionary == null) {
-          return [];
-        }
-        const len = file.dictionary.length;
-        const entries: string[] = [];
-        for (let i = 0; i < len; i++) {
-          const fn = arrowToString(file.dictionary.get(i));
-          entries.push(getLastItem(fn) ?? '');
-        }
-        return entries;
-      })
-      .flat() ?? [];
+  const filenamesColumn: Column<string> | null = table.getChild(FIELD_FUNCTION_FILE_NAME);
+  if (filenamesColumn === null) {
+    return [];
+  }
 
-  filenames.push('');
+  // Access dictionary directly instead of iterating all rows
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const dictionary: Column<string> | undefined = (filenamesColumn.data[0] as any)?.dictionary;
+  if (dictionary == null) {
+    return [''];
+  }
 
-  filenames.sort((a, b) => a.localeCompare(b));
+  const filenames = Array.from(dictionary.toArray())
+    .map(value => {
+      const fn = arrowToString(value);
+      return fn != null ? getLastItem(fn) ?? '' : '';
+    })
+    .concat('') // Add empty string for "Everything else"
+    .sort((a, b) => a.localeCompare(b));
+
   return filenames;
 };
 
