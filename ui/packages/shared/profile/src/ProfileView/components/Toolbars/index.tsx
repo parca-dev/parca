@@ -163,6 +163,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   const isGraphViz = dashboardItems?.includes('flamegraph');
   const isGraphVizOnly = dashboardItems?.length === 1 && isGraphViz;
   const isFlamechartViz = dashboardItems?.includes('flamechart');
+  const isFlamechartVizOnly = dashboardItems?.length === 1 && isFlamechartViz;
 
   const req = profileSource?.QueryRequest();
   if (req !== null && req !== undefined) {
@@ -201,7 +202,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
           )}
 
           <div className="flex mt-5">
-            <ProfileFilters />
+            {!isFlamechartVizOnly && <ProfileFilters />}
 
             {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
           </div>

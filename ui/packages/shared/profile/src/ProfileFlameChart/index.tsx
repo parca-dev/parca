@@ -23,7 +23,6 @@ import {
 import {Matcher, MatcherTypes, ProfileType, Query} from '@parca/parser';
 
 import ProfileFlameGraph, {validateFlameChartQuery} from '../ProfileFlameGraph';
-import {FIELD_LABELS} from '../ProfileFlameGraph/FlameGraphArrow';
 import {boundsFromProfileSource} from '../ProfileFlameGraph/FlameGraphArrow/utils';
 import {MergedProfileSource, ProfileSource} from '../ProfileSource';
 import type {SamplesData} from '../ProfileView/types/visualization';
@@ -222,6 +221,11 @@ export const ProfileFlameChart = ({
   }
 
   const hasDimension = (flamechartDimension ?? []).length > 0;
+
+  // Show loader while metadata labels are loading (needed for dimension auto-selection)
+  if (metadataLoading === true) {
+    return <>{loader}</>;
+  }
 
   if (!hasDimension) {
     return (

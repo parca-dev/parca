@@ -13,16 +13,48 @@
 
 import {useEffect, useRef} from 'react';
 
-const PREFERRED_DIMENSIONS = ['cpu', 'cpuid', 'thread', 'thread_id'];
+import {ProfileType} from '@parca/parser';
+
+import {wellKnownProfiles} from '../../ProfileTypeSelector';
+
+const CPU_PREFERRED_DIMENSIONS = ['cpu', 'cpuid', 'thread', 'thread_id'];
+
+const GPU_DIMENSIONS = ['node', 'gpu', 'stream'];
+
+const getWellKnownProfileName = (profileType?: ProfileType): string | undefined => {
+  if (profileType == null) return undefined;
+  const key = profileType.toString();
+  return wellKnownProfiles[key]?.name;
+};
+
+const isOnGpuProfile = (profileType?: ProfileType): boolean => {
+  const wellKnownName = getWellKnownProfileName(profileType);
+  return wellKnownName === 'On-GPU';
+};
+
+const isOnCpuProfile = (profileType?: ProfileType): boolean => {
+  const wellKnownName = getWellKnownProfileName(profileType);
+  return wellKnownName === 'On-CPU';
+};
 
 /**
  * Auto-selects the best flamechart "group by" dimension on first load.
- * Priority: cpu > cpuid > thread > thread_id
+ *
+ * For On-GPU profiles:
+ *   - Selects all available from: ['node', 'gpu', 'stream']
+ *
+ * For On-CPU profiles:
+ *   - Priority: cpu > cpuid > thread > thread_id
+ *   - Adds 'node' alongside the primary dimension if available
+ *
+ * For all other profile types:
+ *   - No auto-selection
  */
 export const useAutoSelectDimension = (
   metadataLabels: string[] | undefined,
   flamechartDimension: string[] | undefined,
-  setFlamechartDimension: (v: string[]) => void
+  setFlamechartDimension: (v: string[]) => void,
+  profileType?: ProfileType
 ): void => {
   const hasAutoSelected = useRef(false);
 
@@ -34,12 +66,25 @@ export const useAutoSelectDimension = (
       return;
     }
 
-    for (const name of PREFERRED_DIMENSIONS) {
-      if (metadataLabels.includes(name)) {
-        setFlamechartDimension([`labels.${name}`]);
+    if (isOnGpuProfile(profileType)) {
+      const availableGpuDims = GPU_DIMENSIONS.filter(d => metadataLabels.includes(d));
+      if (availableGpuDims.length > 0) {
+        setFlamechartDimension(availableGpuDims.map(d => `labels.${d}`));
         hasAutoSelected.current = true;
         return;
       }
     }
-  }, [metadataLabels, flamechartDimension, setFlamechartDimension]);
+
+    if (isOnCpuProfile(profileType)) {
+      const hasNode = metadataLabels.includes('node');
+      for (const name of CPU_PREFERRED_DIMENSIONS) {
+        if (metadataLabels.includes(name)) {
+          const dims = hasNode ? ['node', name] : [name];
+          setFlamechartDimension(dims.map(d => `labels.${d}`));
+          hasAutoSelected.current = true;
+          return;
+        }
+      }
+    }
+  }, [metadataLabels, flamechartDimension, setFlamechartDimension, profileType]);
 };

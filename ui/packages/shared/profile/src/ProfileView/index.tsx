@@ -76,7 +76,8 @@ export const ProfileView = ({
   useAutoSelectDimension(
     flamegraphData.metadataLabels,
     flamechartDimension,
-    setFlamechartDimension
+    setFlamechartDimension,
+    profileSource?.ProfileType()
   );
 
   const {colorMappings} = useProfileMetadata({
