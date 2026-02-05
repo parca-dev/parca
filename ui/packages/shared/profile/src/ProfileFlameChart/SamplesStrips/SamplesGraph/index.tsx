@@ -25,6 +25,12 @@ export interface DataPoint {
   sampleCount?: number;
 }
 
+interface DragState {
+  stripIndex: number;
+  startX: number;
+  currentX: number;
+}
+
 interface Props {
   width: number;
   height: number;
@@ -37,6 +43,9 @@ interface Props {
   selectionBounds?: NumberDuo | undefined;
   setSelectionBounds: (newBounds: NumberDuo | undefined) => void;
   stepMs: number;
+  onDragStart?: (startX: number) => void;
+  dragState?: DragState;
+  isAnyDragActive?: boolean;
 }
 
 const DraggingWindow = ({
@@ -201,11 +210,12 @@ export const SamplesGraph = ({
   selectionBounds,
   setSelectionBounds,
   stepMs,
+  onDragStart,
+  dragState,
+  isAnyDragActive = false,
 }: Props): JSX.Element => {
   const [mousePosition, setMousePosition] = useState<NumberDuo | undefined>(undefined);
-  const [dragStart, setDragStart] = useState<number | undefined>(undefined);
   const [isHoveringDragHandle, setIsHoveringDragHandle] = useState(false);
-  const isDragging = dragStart !== undefined;
 
   // Declare the x (horizontal position) scale.
   const x = d3.scaleUtc(d3.extent(data, d => d.timestamp) as NumberDuo, [
@@ -241,7 +251,11 @@ export const SamplesGraph = ({
   return (
     <div
       style={{height, width}}
+      className="relative"
       onMouseMove={e => {
+        // Only track hover position when no drag is active anywhere
+        if (isAnyDragActive) return;
+
         const [xPos, yPos] = d3.pointer(e);
 
         if (
@@ -256,8 +270,8 @@ export const SamplesGraph = ({
         }
       }}
       onMouseLeave={() => {
+        // Only clear hover position, drag is managed by parent
         setMousePosition(undefined);
-        setDragStart(undefined);
       }}
       onMouseDown={e => {
         // only left mouse button
@@ -265,45 +279,28 @@ export const SamplesGraph = ({
           return;
         }
 
-        // X/Y coordinate array relative to svg
+        // X/Y coordinate array relative to element
         const rel = d3.pointer(e);
-
         const xCoordinate = rel[0];
-        const xCoordinateWithoutMargin = xCoordinate - marginLeft;
-        if (xCoordinateWithoutMargin >= 0) {
-          setDragStart(xCoordinateWithoutMargin);
+
+        if (xCoordinate >= 0 && onDragStart !== undefined) {
+          onDragStart(xCoordinate);
         }
 
         e.stopPropagation();
         e.preventDefault();
       }}
-      onMouseUp={e => {
-        if (dragStart === undefined) {
-          return;
-        }
-
-        const rel = d3.pointer(e);
-        const xCoordinate = rel[0];
-        const xCoordinateWithoutMargin = xCoordinate - marginLeft;
-        if (xCoordinateWithoutMargin >= 0 && dragStart !== xCoordinateWithoutMargin) {
-          const start = Math.min(dragStart, xCoordinateWithoutMargin);
-          const end = Math.max(dragStart, xCoordinateWithoutMargin);
-          setSelectionBoundsWithScaling([start, end]);
-        }
-        setDragStart(undefined);
-      }}
-      className="relative"
     >
       {/* onHover guide, only visible when hovering and not dragging and not having an active zoom window */}
       <div
         style={{height, width: 2, left: mousePosition?.[0] ?? -1}}
         className={cx('bg-gray-700/75 dark:bg-gray-200/75 absolute top-0', {
-          hidden: mousePosition === undefined || isDragging || isHoveringDragHandle,
+          hidden: mousePosition === undefined || isAnyDragActive || isHoveringDragHandle,
         })}
       ></div>
 
       {/* drag guide, only visible when dragging */}
-      <DraggingWindow dragStart={dragStart} currentX={mousePosition?.[0]} />
+      <DraggingWindow dragStart={dragState?.startX} currentX={dragState?.currentX} />
 
       {/* zoom window */}
       <ZoomWindow

@@ -93,8 +93,9 @@ const createFilteredProfileSource = (
   }
 
   // The bounds are in milliseconds, convert to nanoseconds for the profile source
-  const mergeFrom = BigInt(selectedTimeframe.bounds[0]) * 1_000_000n;
-  const mergeTo = BigInt(selectedTimeframe.bounds[1]) * 1_000_000n;
+  // Round to integers since BigInt requires integer values
+  const mergeFrom = BigInt(Math.round(selectedTimeframe.bounds[0])) * 1_000_000n;
+  const mergeTo = BigInt(Math.round(selectedTimeframe.bounds[1])) * 1_000_000n;
 
   // Add dimension labels as additional matchers to the query
   const dimensionMatchers = selectedTimeframe.labels.labels.map(

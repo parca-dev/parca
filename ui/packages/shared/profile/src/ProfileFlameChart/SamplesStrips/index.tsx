@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useMemo, useState} from 'react';
+import {useMemo, useRef, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
@@ -26,6 +26,12 @@ import {NumberDuo} from '../../utils';
 import {DataPoint, SamplesGraph} from './SamplesGraph';
 
 export type {DataPoint} from './SamplesGraph';
+
+interface DragState {
+  stripIndex: number;
+  startX: number;
+  currentX: number;
+}
 
 interface Props {
   cpus: LabelSet[];
@@ -86,6 +92,10 @@ const SamplesGraphContainer = ({
   setSelectionBounds,
   color,
   stepMs,
+  onDragStart,
+  dragState,
+  stripIndex,
+  isAnyDragActive,
 }: {
   isSelected: boolean;
   isCollapsed: boolean;
@@ -97,6 +107,10 @@ const SamplesGraphContainer = ({
   setSelectionBounds: (bounds: NumberDuo | undefined) => void;
   color: (label: string) => string;
   stepMs: number;
+  onDragStart: (stripIndex: number, startX: number) => void;
+  dragState: DragState | undefined;
+  stripIndex: number;
+  isAnyDragActive: boolean;
 }): JSX.Element => {
   const labelStr = labelSetToString(cpu);
 
@@ -138,6 +152,9 @@ const SamplesGraphContainer = ({
           selectionBounds={selectionBounds}
           setSelectionBounds={setSelectionBounds}
           stepMs={stepMs}
+          onDragStart={(startX: number) => onDragStart(stripIndex, startX)}
+          dragState={dragState?.stripIndex === stripIndex ? dragState : undefined}
+          isAnyDragActive={isAnyDragActive}
         />
       ) : null}
     </div>
@@ -154,6 +171,10 @@ export const SamplesStrip = ({
   stepMs,
 }: Props): JSX.Element => {
   const [collapsedIndices, setCollapsedIndices] = useState<number[]>([]);
+  const [dragState, setDragState] = useState<DragState | undefined>(undefined);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const isDragging = dragState !== undefined;
 
   // Deterministic color: hash the label string so the same label always gets the same color
   // regardless of render order.
@@ -169,6 +190,45 @@ export const SamplesStrip = ({
     return (label: string): string => palette[hashStr(label) % palette.length];
   }, []);
 
+  const handleDragStart = (stripIndex: number, startX: number): void => {
+    setDragState({stripIndex, startX, currentX: startX});
+  };
+
+  const handleMouseMove = (e: React.MouseEvent): void => {
+    if (dragState === undefined || containerRef.current === null) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    // Clamp to container bounds
+    const clampedX = Math.max(0, Math.min(x, width ?? rect.width));
+    setDragState({...dragState, currentX: clampedX});
+  };
+
+  const handleMouseUp = (e: React.MouseEvent): void => {
+    if (dragState === undefined || containerRef.current === null) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const clampedX = Math.max(0, Math.min(x, width ?? rect.width));
+
+    const {stripIndex, startX} = dragState;
+    if (startX !== clampedX) {
+      const start = Math.min(startX, clampedX);
+      const end = Math.max(startX, clampedX);
+      // Convert pixel positions to timestamps
+      const innerWidth = width ?? rect.width;
+      const startTs = bounds[0] + (start / innerWidth) * (bounds[1] - bounds[0]);
+      const endTs = bounds[0] + (end / innerWidth) * (bounds[1] - bounds[0]);
+      onSelectedTimeframe(cpus[stripIndex], [startTs, endTs]);
+    }
+
+    setDragState(undefined);
+  };
+
+  const handleMouseLeave = (): void => {
+    setDragState(undefined);
+  };
+
   if (data.length === 0) {
     return (
       <span className="flex justify-center my-10">
@@ -178,7 +238,14 @@ export const SamplesStrip = ({
   }
 
   return (
-    <div className="flex flex-col gap-1 relative my-0" style={{width: width ?? '100%'}}>
+    <div
+      ref={containerRef}
+      className={cx('flex flex-col gap-1 relative my-0', {'cursor-ew-resize': isDragging})}
+      style={{width: width ?? '100%'}}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
+    >
       <TimelineGuide
         bounds={[BigInt(0), BigInt(bounds[1] - bounds[0])]}
         width={width ?? 1468}
@@ -211,6 +278,10 @@ export const SamplesStrip = ({
             }}
             color={color}
             stepMs={stepMs}
+            onDragStart={handleDragStart}
+            dragState={dragState}
+            stripIndex={i}
+            isAnyDragActive={isDragging}
             key={labelSetToString(cpu)}
           />
         );
