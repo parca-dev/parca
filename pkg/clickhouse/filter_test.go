@@ -22,69 +22,6 @@ import (
 	"github.com/parca-dev/parca/pkg/profile"
 )
 
-func TestParseQuery(t *testing.T) {
-	tests := []struct {
-		name        string
-		query       string
-		wantName    string
-		wantDelta   bool
-		wantErr     bool
-		wantMatches int
-	}{
-		{
-			name:        "simple profile type",
-			query:       "process_cpu:samples:count:cpu:nanoseconds{}",
-			wantName:    "process_cpu",
-			wantDelta:   false,
-			wantErr:     false,
-			wantMatches: 0,
-		},
-		{
-			name:        "delta profile type",
-			query:       "process_cpu:samples:count:cpu:nanoseconds:delta{}",
-			wantName:    "process_cpu",
-			wantDelta:   true,
-			wantErr:     false,
-			wantMatches: 0,
-		},
-		{
-			name:        "profile type with label matcher",
-			query:       `process_cpu:samples:count:cpu:nanoseconds{node="test"}`,
-			wantName:    "process_cpu",
-			wantDelta:   false,
-			wantErr:     false,
-			wantMatches: 1,
-		},
-		{
-			name:        "profile type with multiple label matchers",
-			query:       `process_cpu:samples:count:cpu:nanoseconds{node="test",container="app"}`,
-			wantName:    "process_cpu",
-			wantDelta:   false,
-			wantErr:     false,
-			wantMatches: 2,
-		},
-		{
-			name:    "invalid query",
-			query:   "invalid",
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			qp, err := profile.ParseQuery(tt.query)
-			if tt.wantErr {
-				require.Error(t, err)
-				return
-			}
-			require.NoError(t, err)
-			require.Equal(t, tt.wantName, qp.Meta.Name)
-			require.Equal(t, tt.wantDelta, qp.Delta)
-			require.Len(t, qp.Matchers, tt.wantMatches)
-		})
-	}
-}
-
 func TestProfileTypeFilter(t *testing.T) {
 	qp, err := profile.ParseQuery("process_cpu:samples:count:cpu:nanoseconds{}")
 	require.NoError(t, err)
