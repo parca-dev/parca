@@ -70,13 +70,8 @@ export const labelSetToString = (labelSet?: LabelSet): string => {
 
 const STRIP_HEIGHT = 24;
 
-const getTimelineGuideHeight = (cpus: LabelSet[], collapsedIndices: number[]): number => {
-  return (
-    (STRIP_HEIGHT + 4) * (cpus.length - collapsedIndices.length) +
-    20 * collapsedIndices.length +
-    24 -
-    6
-  );
+const getTimelineGuideHeight = (cpusCount: number, collapsedCount: number): number => {
+  return (STRIP_HEIGHT + 4) * (cpusCount - collapsedCount) + 20 * collapsedCount + 24 - 6;
 };
 
 const stickyPx = 0;
@@ -96,6 +91,7 @@ const SamplesGraphContainer = ({
   dragState,
   stripIndex,
   isAnyDragActive,
+  timeBounds,
 }: {
   isSelected: boolean;
   isCollapsed: boolean;
@@ -111,6 +107,7 @@ const SamplesGraphContainer = ({
   dragState: DragState | undefined;
   stripIndex: number;
   isAnyDragActive: boolean;
+  timeBounds: NumberDuo;
 }): JSX.Element => {
   const labelStr = labelSetToString(cpu);
 
@@ -155,6 +152,7 @@ const SamplesGraphContainer = ({
           onDragStart={(startX: number) => onDragStart(stripIndex, startX)}
           dragState={dragState?.stripIndex === stripIndex ? dragState : undefined}
           isAnyDragActive={isAnyDragActive}
+          timeBounds={timeBounds}
         />
       ) : null}
     </div>
@@ -170,11 +168,21 @@ export const SamplesStrip = ({
   bounds,
   stepMs,
 }: Props): JSX.Element => {
-  const [collapsedIndices, setCollapsedIndices] = useState<number[]>([]);
+  const [collapsedLabels, setCollapsedLabels] = useState<Set<string>>(new Set());
   const [dragState, setDragState] = useState<DragState | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const isDragging = dragState !== undefined;
+
+  // Sort cpus and data by label string for consistent ordering across reloads
+  const sortedItems = useMemo(() => {
+    const items = cpus.map((cpu, i) => ({
+      cpu,
+      data: data[i],
+      label: labelSetToString(cpu),
+    }));
+    return items.sort((a, b) => a.label.localeCompare(b.label));
+  }, [cpus, data]);
 
   // Deterministic color: hash the label string so the same label always gets the same color
   // regardless of render order.
@@ -219,7 +227,8 @@ export const SamplesStrip = ({
       const innerWidth = width ?? rect.width;
       const startTs = bounds[0] + (start / innerWidth) * (bounds[1] - bounds[0]);
       const endTs = bounds[0] + (end / innerWidth) * (bounds[1] - bounds[0]);
-      onSelectedTimeframe(cpus[stripIndex], [startTs, endTs]);
+      // Use sortedItems to get the correct cpu for the strip index
+      onSelectedTimeframe(sortedItems[stripIndex].cpu, [startTs, endTs]);
     }
 
     setDragState(undefined);
@@ -249,32 +258,32 @@ export const SamplesStrip = ({
       <TimelineGuide
         bounds={[BigInt(0), BigInt(bounds[1] - bounds[0])]}
         width={width ?? 1468}
-        height={getTimelineGuideHeight(cpus, collapsedIndices)}
+        height={getTimelineGuideHeight(sortedItems.length, collapsedLabels.size)}
         margin={1}
       />
-      {cpus.map((cpu, i) => {
-        const isCollapsed = collapsedIndices.includes(i);
-        const isSelected = isEqual(cpu, selectedTimeframe?.labels);
+      {sortedItems.map((item, i) => {
+        const isCollapsed = collapsedLabels.has(item.label);
+        const isSelected = isEqual(item.cpu, selectedTimeframe?.labels);
 
         return (
           <SamplesGraphContainer
             isSelected={isSelected}
             isCollapsed={isCollapsed}
-            cpu={cpu}
+            cpu={item.cpu}
             width={width}
-            data={data[i]}
+            data={item.data}
             onToggleCollapse={() => {
-              const newCollapsedIndices = [...collapsedIndices];
-              if (collapsedIndices.includes(i)) {
-                newCollapsedIndices.splice(newCollapsedIndices.indexOf(i), 1);
+              const newCollapsedLabels = new Set(collapsedLabels);
+              if (collapsedLabels.has(item.label)) {
+                newCollapsedLabels.delete(item.label);
               } else {
-                newCollapsedIndices.push(i);
+                newCollapsedLabels.add(item.label);
               }
-              setCollapsedIndices(newCollapsedIndices);
+              setCollapsedLabels(newCollapsedLabels);
             }}
             selectionBounds={isSelected ? selectedTimeframe?.bounds : undefined}
-            setSelectionBounds={bounds => {
-              onSelectedTimeframe(cpu, bounds);
+            setSelectionBounds={newBounds => {
+              onSelectedTimeframe(item.cpu, newBounds);
             }}
             color={color}
             stepMs={stepMs}
@@ -282,7 +291,8 @@ export const SamplesStrip = ({
             dragState={dragState}
             stripIndex={i}
             isAnyDragActive={isDragging}
-            key={labelSetToString(cpu)}
+            timeBounds={bounds}
+            key={item.label}
           />
         );
       })}

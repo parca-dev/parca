@@ -15,6 +15,7 @@ import {useEffect, useMemo, useRef} from 'react';
 
 import {LabelSet, QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 import {
+  Button,
   useParcaContext,
   useURLState,
   useURLStateCustom,
@@ -80,6 +81,7 @@ interface ProfileFlameChartProps {
   isHalfScreen: boolean;
   metadataMappingFiles?: string[];
   metadataLoading?: boolean;
+  onSwitchToOneMinute?: () => void;
 }
 
 // Helper to create a filtered profile source with narrowed time bounds
@@ -122,6 +124,7 @@ export const ProfileFlameChart = ({
   isHalfScreen,
   metadataMappingFiles,
   metadataLoading,
+  onSwitchToOneMinute,
 }: ProfileFlameChartProps): JSX.Element => {
   const {loader} = useParcaContext();
 
@@ -211,10 +214,24 @@ export const ProfileFlameChart = ({
   );
 
   if (!isValid) {
+    if (isDurationTooLong) {
+      return (
+        <div className="flex flex-col justify-center items-center p-10 text-center gap-4 text-sm">
+          <span>
+            Flame chart is unavailable for queries longer than one minute. Try reducing the time
+            range to one minute or selecting a point in the metrics graph.
+          </span>
+          {onSwitchToOneMinute != null && (
+            <Button variant="primary" onClick={onSwitchToOneMinute}>
+              Switch to last 1 minute
+            </Button>
+          )}
+        </div>
+      );
+    }
+
     const message = isNonDelta
       ? 'To use the Flame chart, please switch to a Delta profile.'
-      : isDurationTooLong
-      ? 'Flame chart is unavailable for queries longer than one minute. Try reducing the time range to one minute or selecting a point in the metrics graph.'
       : 'Flame chart is unavailable for this query.';
     return (
       <div className="flex flex-col justify-center p-10 text-center gap-6 text-sm">{message}</div>

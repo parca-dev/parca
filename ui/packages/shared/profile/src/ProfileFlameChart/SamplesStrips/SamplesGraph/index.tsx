@@ -46,6 +46,7 @@ interface Props {
   onDragStart?: (startX: number) => void;
   dragState?: DragState;
   isAnyDragActive?: boolean;
+  timeBounds?: NumberDuo;
 }
 
 const DraggingWindow = ({
@@ -213,15 +214,14 @@ export const SamplesGraph = ({
   onDragStart,
   dragState,
   isAnyDragActive = false,
+  timeBounds,
 }: Props): JSX.Element => {
   const [mousePosition, setMousePosition] = useState<NumberDuo | undefined>(undefined);
   const [isHoveringDragHandle, setIsHoveringDragHandle] = useState(false);
 
-  // Declare the x (horizontal position) scale.
-  const x = d3.scaleUtc(d3.extent(data, d => d.timestamp) as NumberDuo, [
-    marginLeft,
-    width - marginRight,
-  ]);
+  // use the bounds from props if provided, else compute from data
+  const xDomain = timeBounds ?? (d3.extent(data, d => d.timestamp) as NumberDuo);
+  const x = d3.scaleUtc(xDomain, [marginLeft, width - marginRight]);
 
   // Calculate sample count range for opacity scaling
   const sampleCounts = data.map(d => Number(d.sampleCount ?? 1));

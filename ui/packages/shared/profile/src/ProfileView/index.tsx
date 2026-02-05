@@ -46,6 +46,7 @@ export const ProfileView = ({
   compare,
   showVisualizationSelector,
   sandwichData,
+  onSwitchToOneMinute,
 }: ProfileViewProps): JSX.Element => {
   const {
     timezone,
@@ -115,6 +116,7 @@ export const ProfileView = ({
       setNewCurPathArrow: setCurPathArrow,
       perf,
       queryClient,
+      onSwitchToOneMinute,
     });
   };
 
