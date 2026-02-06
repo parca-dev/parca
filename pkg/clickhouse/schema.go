@@ -17,8 +17,8 @@ import "fmt"
 
 // CreateTableSQL returns the SQL statement to create the profile data table.
 // The schema uses:
-// - JSON type for dynamic labels (native ClickHouse support for dynamic columns)
-// - Nested type for stacktrace data with explicit columns for each location field
+// - JSON type for dynamic labels (native ClickHouse support for dynamic columns).
+// - Nested type for stacktrace data with explicit columns for each location field.
 func CreateTableSQL(database, table string) string {
 	return fmt.Sprintf(`
 CREATE TABLE IF NOT EXISTS %s.%s (
@@ -75,7 +75,7 @@ const (
 	ColValue      = "value"
 	ColLabels     = "labels"
 
-	// Stacktrace nested columns
+	// Stacktrace nested columns.
 	ColStacktraceAddress            = "stacktrace.address"
 	ColStacktraceMappingStart       = "stacktrace.mapping_start"
 	ColStacktraceMappingLimit       = "stacktrace.mapping_limit"

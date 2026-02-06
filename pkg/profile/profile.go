@@ -204,7 +204,7 @@ type QueryParts struct {
 }
 
 // ParseQuery parses a Parca query string into its components.
-// The query format is: <name>:<sample-type>:<sample-unit>:<period-type>:<period-unit>[:delta]{label=value,...}
+// The query format is: <name>:<sample-type>:<sample-unit>:<period-type>:<period-unit>[:delta]{label=value,...}.
 func ParseQuery(query string) (QueryParts, error) {
 	parsedSelector, err := parser.ParseMetricSelector(query)
 	if err != nil {
