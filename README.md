@@ -82,93 +82,106 @@ Flags:
 Usage: parca [flags]
 
 Flags:
-  -h, --help                     Show context-sensitive help.
+  -h, --help                      Show context-sensitive help.
       --config-path="parca.yaml"
-                                 Path to config file.
-      --mode="all"               Scraper only runs a scraper that sends to a
-                                 remote gRPC endpoint. All runs all components.
-      --http-address=":7070"     Address to bind HTTP server to.
-      --http-read-timeout=5s     Timeout duration for HTTP server to read
-                                 request body.
-      --http-write-timeout=1m    Timeout duration for HTTP server to write
-                                 response body.
-      --port=""                  (DEPRECATED) Use http-address instead.
-      --log-level="info"         Log level.
-      --log-format="logfmt"      Configure if structured logging as JSON or as
-                                 logfmt
-      --otlp-address=STRING      The endpoint to send OTLP traces to.
-      --otlp-exporter="grpc"     The OTLP exporter to use.
-      --otlp-insecure            If true, disables TLS for OTLP exporters (both
-                                 gRPC and HTTP).
+                                  Path to config file.
+      --mode="all"                Scraper only runs a scraper that sends to a
+                                  remote gRPC endpoint. All runs all components.
+      --http-address=":7070"      Address to bind HTTP server to.
+      --http-read-timeout=5s      Timeout duration for HTTP server to read
+                                  request body.
+      --http-write-timeout=1m     Timeout duration for HTTP server to write
+                                  response body.
+      --port=""                   (DEPRECATED) Use http-address instead.
+      --log-level="info"          Log level.
+      --log-format="logfmt"       Configure if structured logging as JSON or as
+                                  logfmt
+      --otlp-address=STRING       The endpoint to send OTLP traces to.
+      --otlp-exporter="grpc"      The OTLP exporter to use.
+      --otlp-insecure             If true, disables TLS for OTLP exporters (both
+                                  gRPC and HTTP).
       --cors-allowed-origins=CORS-ALLOWED-ORIGINS,...
-                                 Allowed CORS origins.
-      --version                  Show application version.
-      --path-prefix=""           Path prefix for the UI
+                                  Allowed CORS origins.
+      --version                   Show application version.
+      --path-prefix=""            Path prefix for the UI
       --mutex-profile-fraction=0
-                                 Fraction of mutex profile samples to collect.
-      --block-profile-rate=0     Sample rate for block profile.
-      --enable-persistence       Turn on persistent storage for the metastore
-                                 and profile storage.
+                                  Fraction of mutex profile samples to collect.
+      --block-profile-rate=0      Sample rate for block profile.
+      --enable-persistence        Turn on persistent storage for the metastore
+                                  and profile storage.
       --storage-active-memory=536870912
-                                 Amount of memory to use for active storage.
-                                 Defaults to 512MB.
-      --storage-path="data"      Path to storage directory.
-      --storage-enable-wal       Enables write ahead log for profile storage.
+                                  Amount of memory to use for active storage.
+                                  Defaults to 512MB.
+      --storage-path="data"       Path to storage directory.
+      --storage-enable-wal        Enables write ahead log for profile storage.
       --storage-snapshot-trigger-size=134217728
-                                 Number of bytes to trigger a snapshot. Defaults
-                                 to 1/4 of active memory. This is only used if
-                                 enable-wal is set.
+                                  Number of bytes to trigger a snapshot.
+                                  Defaults to 1/4 of active memory. This is only
+                                  used if enable-wal is set.
       --storage-row-group-size=8192
-                                 Number of rows in each row group during
-                                 compaction and persistence. Setting to <= 0
-                                 results in a single row group per file.
-      --storage-index-on-disk    Whether to store the index on disk instead
-                                 of in memory. Useful to reduce the memory
-                                 footprint of the store.
+                                  Number of rows in each row group during
+                                  compaction and persistence. Setting to <= 0
+                                  results in a single row group per file.
+      --storage-index-on-disk     Whether to store the index on disk instead
+                                  of in memory. Useful to reduce the memory
+                                  footprint of the store.
       --symbolizer-demangle-mode="simple"
-                                 Mode to demangle C++ symbols. Default mode
-                                 is simplified: no parameters, no templates,
-                                 no return type
+                                  Mode to demangle C++ symbols. Default mode
+                                  is simplified: no parameters, no templates,
+                                  no return type
       --symbolizer-external-addr-2-line-path=""
-                                 Path to addr2line utility, to be used for
-                                 symbolization instead of native implementation
+                                  Path to addr2line utility, to be used for
+                                  symbolization instead of native implementation
       --symbolizer-number-of-tries=3
-                                 Number of tries to attempt to symbolize an
-                                 unsybolized location
+                                  Number of tries to attempt to symbolize an
+                                  unsybolized location
       --debuginfo-cache-dir="/tmp"
-                                 Path to directory where debuginfo is cached.
+                                  Path to directory where debuginfo is cached.
       --debuginfo-upload-max-size=1000000000
-                                 Maximum size of debuginfo upload in bytes.
+                                  Maximum size of debuginfo upload in bytes.
       --debuginfo-upload-max-duration=15m
-                                 Maximum duration of debuginfo upload.
+                                  Maximum duration of debuginfo upload.
       --debuginfo-uploads-signed-url
-                                 Whether to use signed URLs for debuginfo
-                                 uploads.
+                                  Whether to use signed URLs for debuginfo
+                                  uploads.
       --debuginfod-upstream-servers=debuginfod.elfutils.org,...
-                                 Upstream debuginfod servers. Defaults to
-                                 debuginfod.elfutils.org. It is an ordered
-                                 list of servers to try. Learn more at
-                                 https://sourceware.org/elfutils/Debuginfod.html
+                                  Upstream debuginfod servers. Defaults to
+                                  debuginfod.elfutils.org. It is an ordered
+                                  list of servers to try. Learn more at
+                                  https://sourceware.org/elfutils/Debuginfod.html
       --debuginfod-http-request-timeout=5m
-                                 Timeout duration for HTTP request to upstream
-                                 debuginfod server. Defaults to 5m
+                                  Timeout duration for HTTP request to upstream
+                                  debuginfod server. Defaults to 5m
+      --clickhouse-enabled        Enable ClickHouse storage backend instead of
+                                  FrostDB.
+      --clickhouse-address="localhost:9000"
+                                  ClickHouse server address.
+      --clickhouse-database="parca"
+                                  ClickHouse database name.
+      --clickhouse-username=""    ClickHouse username.
+      --clickhouse-password=""    ClickHouse password
+                                  ($PARCA_CLICKHOUSE_PASSWORD).
+      --clickhouse-table="stacktraces"
+                                  ClickHouse table name for profile data.
+      --clickhouse-secure         Use TLS for ClickHouse connection.
       --profile-share-server="api.pprof.me:443"
-                                 gRPC address to send share profile requests to.
-      --store-address=STRING     gRPC address to send profiles and symbols to.
-      --bearer-token=STRING      Bearer token to authenticate with store
-                                 ($PARCA_BEARER_TOKEN).
+                                  gRPC address to send share profile requests
+                                  to.
+      --store-address=STRING      gRPC address to send profiles and symbols to.
+      --bearer-token=STRING       Bearer token to authenticate with store
+                                  ($PARCA_BEARER_TOKEN).
       --bearer-token-file=STRING
-                                 File to read bearer token from to authenticate
-                                 with store.
-      --insecure                 Send gRPC requests via plaintext instead of
-                                 TLS.
-      --insecure-skip-verify     Skip TLS certificate verification.
+                                  File to read bearer token from to authenticate
+                                  with store.
+      --insecure                  Send gRPC requests via plaintext instead of
+                                  TLS.
+      --insecure-skip-verify      Skip TLS certificate verification.
       --external-label=KEY=VALUE;...
-                                 Label(s) to attach to all profiles in
-                                 scraper-only mode.
+                                  Label(s) to attach to all profiles in
+                                  scraper-only mode.
       --grpc-headers=KEY=VALUE;...
-                                 Additional gRPC headers to send with each
-                                 request to the remote store (key=value pairs).
+                                  Additional gRPC headers to send with each
+                                  request to the remote store (key=value pairs).
 ```
 <!-- prettier-ignore-end -->
 

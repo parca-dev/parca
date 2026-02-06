@@ -32,7 +32,6 @@ import (
 	"github.com/polarsignals/frostdb/query/logicalplan"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/timestamp"
-	"github.com/prometheus/prometheus/promql/parser"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
@@ -52,19 +51,12 @@ type Engine interface {
 	ScanSchema(name string) query.Builder
 }
 
-type Symbolizer interface {
-	Symbolize(
-		ctx context.Context,
-		req symbolizer.SymbolizationRequest,
-	) error
-}
-
 func NewQuerier(
 	logger log.Logger,
 	tracer trace.Tracer,
 	engine Engine,
 	tableName string,
-	symbolizer Symbolizer,
+	sym symbolizer.SymbolizationClient,
 	pool memory.Allocator,
 ) *Querier {
 	return &Querier{
@@ -72,7 +64,7 @@ func NewQuerier(
 		tracer:     tracer,
 		engine:     engine,
 		tableName:  tableName,
-		symbolizer: symbolizer,
+		symbolizer: sym,
 		pool:       pool,
 	}
 }
@@ -81,7 +73,7 @@ type Querier struct {
 	logger     log.Logger
 	engine     Engine
 	tableName  string
-	symbolizer Symbolizer
+	symbolizer symbolizer.SymbolizationClient
 	tracer     trace.Tracer
 	pool       memory.Allocator
 }
@@ -257,8 +249,8 @@ func MatchersToBooleanExpressions(matchers []*labels.Matcher) ([]logicalplan.Exp
 	return exprs, nil
 }
 
-func QueryToFilterExprs(query string) (QueryParts, []logicalplan.Expr, error) {
-	qp, err := ParseQuery(query)
+func QueryToFilterExprs(query string) (profile.QueryParts, []logicalplan.Expr, error) {
+	qp, err := profile.ParseQuery(query)
 	if err != nil {
 		return qp, nil, err
 	}
@@ -284,55 +276,6 @@ func QueryToFilterExprs(query string) (QueryParts, []logicalplan.Expr, error) {
 	exprs = append(exprs, deltaPlan)
 
 	return qp, exprs, nil
-}
-
-type QueryParts struct {
-	Meta     profile.Meta
-	Delta    bool
-	Matchers []*labels.Matcher
-}
-
-// ParseQuery from a string into the QueryParts struct.
-func ParseQuery(query string) (QueryParts, error) {
-	parsedSelector, err := parser.ParseMetricSelector(query)
-	if err != nil {
-		return QueryParts{}, status.Error(codes.InvalidArgument, "failed to parse query")
-	}
-
-	sel := make([]*labels.Matcher, 0, len(parsedSelector))
-	var nameLabel *labels.Matcher
-	for _, matcher := range parsedSelector {
-		if matcher.Name == labels.MetricName {
-			nameLabel = matcher
-		} else {
-			sel = append(sel, matcher)
-		}
-	}
-	if nameLabel == nil {
-		return QueryParts{}, status.Error(codes.InvalidArgument, "query must contain a profile-type selection")
-	}
-
-	parts := strings.Split(nameLabel.Value, ":")
-	if len(parts) != 5 && len(parts) != 6 {
-		return QueryParts{}, status.Errorf(codes.InvalidArgument, "profile-type selection must be of the form <name>:<sample-type>:<sample-unit>:<period-type>:<period-unit>(:delta), got(%d): %q", len(parts), nameLabel.Value)
-	}
-	delta := len(parts) == 6 && parts[5] == "delta"
-
-	return QueryParts{
-		Meta: profile.Meta{
-			Name: parts[0],
-			SampleType: profile.ValueType{
-				Type: parts[1],
-				Unit: parts[2],
-			},
-			PeriodType: profile.ValueType{
-				Type: parts[3],
-				Unit: parts[4],
-			},
-		},
-		Delta:    delta,
-		Matchers: sel,
-	}, nil
 }
 
 func (q *Querier) QueryRange(
@@ -957,7 +900,7 @@ func (q *Querier) SymbolizeArrowRecord(
 	ctx context.Context,
 	records []arrow.RecordBatch,
 	valueColumnName string,
-	queryParts QueryParts,
+	queryParts profile.QueryParts,
 	invertCallStacks bool,
 	functionToFilterBy string,
 ) ([]arrow.RecordBatch, error) {
@@ -1351,7 +1294,7 @@ func (q *Querier) QuerySingle(
 	}, nil
 }
 
-func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]arrow.RecordBatch, string, QueryParts, error) {
+func (q *Querier) findSingle(ctx context.Context, query string, t time.Time) ([]arrow.RecordBatch, string, profile.QueryParts, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/findSingle")
 	span.SetAttributes(attribute.String("query", query))
 	span.SetAttributes(attribute.Int64("time", t.Unix()))
@@ -1471,7 +1414,7 @@ func (q *Querier) selectMerge(
 	startTime,
 	endTime time.Time,
 	groupByLabels []string,
-) ([]arrow.RecordBatch, string, QueryParts, error) {
+) ([]arrow.RecordBatch, string, profile.QueryParts, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/selectMerge")
 	defer span.End()
 
