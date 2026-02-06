@@ -16,6 +16,7 @@ import {Profiler, ProfilerOnRenderCallback} from 'react';
 import {QueryServiceClient} from '@parca/client';
 import {ConditionalWrapper} from '@parca/components';
 
+import ProfileFlameChart from '../../../ProfileFlameChart';
 import ProfileFlameGraph from '../../../ProfileFlameGraph';
 import {CurrentPathFrame} from '../../../ProfileFlameGraph/FlameGraphArrow/utils';
 import {ProfileSource} from '../../../ProfileSource';
@@ -24,6 +25,7 @@ import {SourceView} from '../../../SourceView';
 import {Table} from '../../../Table';
 import type {
   FlamegraphData,
+  SamplesData,
   SandwichData,
   SourceData,
   TopTableData,
@@ -35,7 +37,7 @@ interface GetDashboardItemProps {
   isHalfScreen: boolean;
   dimensions: DOMRect | undefined;
   flamegraphData: FlamegraphData;
-  flamechartData: FlamegraphData;
+  samplesData?: SamplesData;
   topTableData?: TopTableData;
   sandwichData: SandwichData;
   sourceData?: SourceData;
@@ -47,7 +49,8 @@ interface GetDashboardItemProps {
   perf?: {
     onRender?: ProfilerOnRenderCallback;
   };
-  queryClient?: QueryServiceClient;
+  queryClient: QueryServiceClient;
+  onSwitchToOneMinute?: () => void;
 }
 
 export const getDashboardItem = ({
@@ -55,7 +58,7 @@ export const getDashboardItem = ({
   isHalfScreen,
   dimensions,
   flamegraphData,
-  flamechartData,
+  samplesData,
   topTableData,
   sourceData,
   sandwichData,
@@ -65,6 +68,8 @@ export const getDashboardItem = ({
   curPathArrow,
   setNewCurPathArrow,
   perf,
+  queryClient,
+  onSwitchToOneMinute,
 }: GetDashboardItemProps): JSX.Element => {
   switch (type) {
     case 'flamegraph':
@@ -102,16 +107,10 @@ export const getDashboardItem = ({
       );
     case 'flamechart':
       return (
-        <ProfileFlameGraph
-          curPathArrow={[]}
-          setNewCurPathArrow={() => {}}
-          arrow={flamechartData?.arrow}
-          total={total}
-          filtered={filtered}
-          profileType={profileSource?.ProfileType()}
-          loading={flamechartData.loading}
-          error={flamechartData.error}
-          isHalfScreen={isHalfScreen}
+        <ProfileFlameChart
+          samplesData={samplesData}
+          queryClient={queryClient}
+          profileSource={profileSource}
           width={
             dimensions?.width !== undefined
               ? isHalfScreen
@@ -119,10 +118,13 @@ export const getDashboardItem = ({
                 : dimensions.width - 16
               : 0
           }
-          metadataMappingFiles={flamechartData.metadataMappingFiles}
-          metadataLoading={flamechartData.metadataLoading}
-          profileSource={profileSource}
-          isFlameChart={true}
+          total={total}
+          filtered={filtered}
+          profileType={profileSource?.ProfileType()}
+          isHalfScreen={isHalfScreen}
+          metadataMappingFiles={flamegraphData.metadataMappingFiles}
+          metadataLoading={flamegraphData.metadataLoading}
+          onSwitchToOneMinute={onSwitchToOneMinute}
         />
       );
     case 'table':

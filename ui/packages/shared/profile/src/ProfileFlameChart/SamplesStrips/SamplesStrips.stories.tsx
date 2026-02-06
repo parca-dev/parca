@@ -16,9 +16,9 @@ import {useArgs} from '@storybook/preview-api';
 // eslint-disable-next-line import/named
 import {Meta} from '@storybook/react';
 
-import {NumberDuo} from '../utils';
-import {DataPoint} from './AreaGraph';
-import {MetricsGraphStrips} from './index';
+import {NumberDuo} from '../../utils';
+import {DataPoint} from './SamplesGraph';
+import {SamplesStrip} from './index';
 
 function seededRandom(seed: number): () => number {
   return () => {
@@ -39,8 +39,8 @@ for (let i = 0; i < 200; i++) {
   }
 }
 const meta: Meta = {
-  title: 'components/MetricsGraphStrips',
-  component: MetricsGraphStrips,
+  title: 'components/SamplesStrip',
+  component: SamplesStrip,
 };
 export default meta;
 
@@ -53,6 +53,7 @@ export const ThreeCPUStrips = {
       console.log('onSelectedTimeframe', index, bounds);
     },
     bounds: [mockData[0][0].timestamp, mockData[0][mockData[0].length - 1].timestamp],
+    stepMs: 100,
   },
   render: function Component(args: any): JSX.Element {
     const [, setArgs] = useArgs();
@@ -62,6 +63,6 @@ export const ThreeCPUStrips = {
       setArgs({...args, selectedTimeframe: {index, bounds}});
     };
 
-    return <MetricsGraphStrips {...args} onSelectedTimeframe={onSelectedTimeframe} />;
+    return <SamplesStrip {...args} onSelectedTimeframe={onSelectedTimeframe} />;
   },
 };

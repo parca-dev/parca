@@ -153,6 +153,17 @@ const ProfileSelector = ({
     DateTimeRange.fromRangeKey(draftSelection.timeSelection, draftSelection.from, draftSelection.to)
   );
 
+  // Sync local timeRangeSelection when URL state changes externally (e.g., "Switch to 1 minute" button)
+  useEffect(() => {
+    setTimeRangeSelection(
+      DateTimeRange.fromRangeKey(
+        querySelection.timeSelection,
+        querySelection.from,
+        querySelection.to
+      )
+    );
+  }, [querySelection.timeSelection, querySelection.from, querySelection.to]);
+
   const [queryExpressionString, setQueryExpressionString] = useState(draftSelection.expression);
 
   const [advancedModeForQueryBrowser, setAdvancedModeForQueryBrowser] = useState(

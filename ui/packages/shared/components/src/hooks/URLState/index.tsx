@@ -334,9 +334,12 @@ export const JSONParser = <T,>(val: ParamValue): T => {
   return JSON.parse(val as string);
 };
 
-export const NumberParser = (val: string): number => {
+export const NumberParser = (val: ParamValue): number => {
   if (val == null || val === '' || val === 'undefined') {
     return 0;
+  }
+  if (Array.isArray(val)) {
+    return val.length > 0 ? Number(val[0]) : 0;
   }
   return Number(val);
 };

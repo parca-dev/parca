@@ -29,6 +29,7 @@ import {useQueryState} from './hooks/useQueryState';
 
 export {useMetricsGraphDimensions} from './MetricsGraph/useMetricsGraphDimensions';
 
+export * from './ProfileFlameChart';
 export * from './ProfileFlameGraph';
 export * from './ProfileSource';
 export {
@@ -55,6 +56,9 @@ export const DEFAULT_PROFILE_EXPLORER_PARAM_VALUES: ParamPreferences = {
     splitOnCommas: true, // This param should split on commas for array values
   },
   group_by: {
+    splitOnCommas: true,
+  },
+  flamechart_dimension: {
     splitOnCommas: true,
   },
 };
