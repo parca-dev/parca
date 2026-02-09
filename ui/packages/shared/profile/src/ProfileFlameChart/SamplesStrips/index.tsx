@@ -20,6 +20,7 @@ import isEqual from 'fast-deep-equal';
 import {useIntersectionObserver} from 'usehooks-ts';
 
 import {LabelSet} from '@parca/client';
+import {Button} from '@parca/components';
 
 import {TimelineGuide} from '../../TimelineGuide';
 import {NumberDuo} from '../../utils';
@@ -69,6 +70,7 @@ export const labelSetToString = (labelSet?: LabelSet): string => {
 };
 
 const STRIP_HEIGHT = 24;
+const MAX_VISIBLE_STRIPS = 20;
 
 const getTimelineGuideHeight = (cpusCount: number, collapsedCount: number): number => {
   return (STRIP_HEIGHT + 4) * (cpusCount - collapsedCount) + 20 * collapsedCount + 24 - 6;
@@ -169,6 +171,7 @@ export const SamplesStrip = ({
   stepMs,
 }: Props): JSX.Element => {
   const [collapsedLabels, setCollapsedLabels] = useState<Set<string>>(new Set());
+  const [showAll, setShowAll] = useState(false);
   const [dragState, setDragState] = useState<DragState | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -183,6 +186,12 @@ export const SamplesStrip = ({
     }));
     return items.sort((a, b) => a.label.localeCompare(b.label));
   }, [cpus, data]);
+
+  const hasMore = useMemo(() => sortedItems.length > MAX_VISIBLE_STRIPS, [sortedItems]);
+  const visibleItems = useMemo(
+    () => (showAll || !hasMore ? sortedItems : sortedItems.slice(0, MAX_VISIBLE_STRIPS)),
+    [sortedItems, showAll, hasMore]
+  );
 
   // Deterministic color: hash the label string so the same label always gets the same color
   // regardless of render order.
@@ -227,8 +236,7 @@ export const SamplesStrip = ({
       const innerWidth = width ?? rect.width;
       const startTs = bounds[0] + (start / innerWidth) * (bounds[1] - bounds[0]);
       const endTs = bounds[0] + (end / innerWidth) * (bounds[1] - bounds[0]);
-      // Use sortedItems to get the correct cpu for the strip index
-      onSelectedTimeframe(sortedItems[stripIndex].cpu, [startTs, endTs]);
+      onSelectedTimeframe(visibleItems[stripIndex].cpu, [startTs, endTs]);
     }
 
     setDragState(undefined);
@@ -258,10 +266,13 @@ export const SamplesStrip = ({
       <TimelineGuide
         bounds={[BigInt(0), BigInt(bounds[1] - bounds[0])]}
         width={width ?? 1468}
-        height={getTimelineGuideHeight(sortedItems.length, collapsedLabels.size)}
+        height={getTimelineGuideHeight(
+          visibleItems.length,
+          [...collapsedLabels].filter(l => visibleItems.some(item => item.label === l)).length
+        )}
         margin={1}
       />
-      {sortedItems.map((item, i) => {
+      {visibleItems.map((item, i) => {
         const isCollapsed = collapsedLabels.has(item.label);
         const isSelected = isEqual(item.cpu, selectedTimeframe?.labels);
 
@@ -296,6 +307,11 @@ export const SamplesStrip = ({
           />
         );
       })}
+      {hasMore && !showAll && (
+        <Button variant="secondary" onClick={() => setShowAll(true)} className="w-fit mx-auto mt-2">
+          Show all {sortedItems.length} rows
+        </Button>
+      )}
     </div>
   );
 };
