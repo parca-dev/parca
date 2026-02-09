@@ -197,6 +197,12 @@ export const filterPresets: FilterPreset[] = [
         matchType: 'not_starts_with',
         value: '<tokio::',
       },
+      {
+        type: 'frame',
+        field: 'function_name',
+        matchType: 'not_contains',
+        value: 'tokio::runtime',
+      },
     ],
   },
   {
@@ -238,6 +244,12 @@ export const filterPresets: FilterPreset[] = [
         type: 'frame',
         field: 'function_name',
         matchType: 'not_starts_with',
+        value: 'try_poll',
+      },
+      {
+        type: 'frame',
+        field: 'function_name',
+        matchType: 'not_starts_with',
         value: '{closure#',
       },
       {
@@ -251,6 +263,12 @@ export const filterPresets: FilterPreset[] = [
         field: 'function_name',
         matchType: 'not_equal',
         value: 'invoke',
+      },
+      {
+        type: 'frame',
+        field: 'function_name',
+        matchType: 'not_equal',
+        value: 'run',
       },
       {
         type: 'frame',
