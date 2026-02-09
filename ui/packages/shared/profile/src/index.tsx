@@ -11,6 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {CompressionType, setCompressionCodec} from '@uwdata/flechette';
+import * as lz4 from 'lz4js';
+
 import type {ParamPreferences} from '@parca/components';
 
 import MetricsGraph, {type ContextMenuItemOrSubmenu, type Series} from './MetricsGraph';
@@ -26,6 +29,11 @@ import {
 import {UnifiedLabelsProvider, useUnifiedLabels} from './contexts/UnifiedLabelsContext';
 import {useLabelNames} from './hooks/useLabels';
 import {useQueryState} from './hooks/useQueryState';
+
+setCompressionCodec(CompressionType.LZ4_FRAME, {
+  encode: (data: Uint8Array) => lz4.compress(data),
+  decode: (data: Uint8Array) => lz4.decompress(data),
+});
 
 export {useMetricsGraphDimensions} from './MetricsGraph/useMetricsGraphDimensions';
 
