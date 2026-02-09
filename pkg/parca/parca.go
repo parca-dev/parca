@@ -119,8 +119,6 @@ type Flags struct {
 	Debuginfo  FlagsDebuginfo  `embed:"" prefix:"debuginfo-"`
 	Debuginfod FlagsDebuginfod `embed:"" prefix:"debuginfod-"`
 
-	ClickHouse FlagsClickHouse `embed:"" prefix:"clickhouse-"`
-
 	ProfileShareServer string `default:"api.pprof.me:443" help:"gRPC address to send share profile requests to."`
 
 	StoreAddress       string            `kong:"help='gRPC address to send profiles and symbols to.'"`
@@ -177,13 +175,13 @@ type FlagsDebuginfod struct {
 
 // FlagsClickHouse configures the ClickHouse storage backend.
 type FlagsClickHouse struct {
-	Enabled  bool   `default:"false" help:"Enable ClickHouse storage backend instead of FrostDB."`
-	Address  string `default:"localhost:9000" help:"ClickHouse server address."`
-	Database string `default:"parca" help:"ClickHouse database name."`
-	Username string `default:"" help:"ClickHouse username."`
-	Password string `default:"" help:"ClickHouse password." env:"PARCA_CLICKHOUSE_PASSWORD"`
-	Table    string `default:"stacktraces" help:"ClickHouse table name for profile data."`
-	Secure   bool   `default:"false" help:"Use TLS for ClickHouse connection."`
+	Enabled  bool   `kong:"help='Enable ClickHouse storage backend instead of FrostDB.',default='false',hidden=''"`
+	Address  string `kong:"help='ClickHouse server address.',default='localhost:9000',hidden=''"`
+	Database string `kong:"help='ClickHouse database name.',default='parca',hidden=''"`
+	Username string `kong:"help='ClickHouse username.',default='',hidden=''"`
+	Password string `kong:"help='ClickHouse password.',default='',env='PARCA_CLICKHOUSE_PASSWORD',hidden=''"`
+	Table    string `kong:"help='ClickHouse table name for profile data.',default='stacktraces',hidden=''"`
+	Secure   bool   `kong:"help='Use TLS for ClickHouse connection.',default='false',hidden=''"`
 }
 
 // FlagsHidden contains hidden flags intended only for debugging or experimental features.
@@ -192,6 +190,8 @@ type FlagsHidden struct {
 
 	// IcebergStorage is a experimental feature that enables Apache Iceberg storage for profile storage. This can be used with the enable-persistence flag.
 	IcebergStorage bool `kong:"help='Use iceberg storage for profile storage. Requires enable-persistence flag.',default='false',hidden=''"`
+
+	ClickHouse FlagsClickHouse `embed:"" prefix:"clickhouse-"`
 }
 
 // Run the parca server.
@@ -337,17 +337,17 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		chClient        *clickhouse.Client
 	)
 
-	if flags.ClickHouse.Enabled {
+	if flags.Hidden.ClickHouse.Enabled {
 		// Initialize ClickHouse storage backend
-		level.Info(logger).Log("msg", "initializing ClickHouse storage backend", "address", flags.ClickHouse.Address)
+		level.Info(logger).Log("msg", "initializing ClickHouse storage backend", "address", flags.Hidden.ClickHouse.Address)
 
 		chClient, err = clickhouse.NewClient(ctx, clickhouse.Config{
-			Address:  flags.ClickHouse.Address,
-			Database: flags.ClickHouse.Database,
-			Username: flags.ClickHouse.Username,
-			Password: flags.ClickHouse.Password,
-			Table:    flags.ClickHouse.Table,
-			Secure:   flags.ClickHouse.Secure,
+			Address:  flags.Hidden.ClickHouse.Address,
+			Database: flags.Hidden.ClickHouse.Database,
+			Username: flags.Hidden.ClickHouse.Username,
+			Password: flags.Hidden.ClickHouse.Password,
+			Table:    flags.Hidden.ClickHouse.Table,
+			Secure:   flags.Hidden.ClickHouse.Secure,
 		})
 		if err != nil {
 			level.Error(logger).Log("msg", "failed to connect to ClickHouse", "err", err)
