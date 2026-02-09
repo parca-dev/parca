@@ -13,10 +13,12 @@
 
 import type {ParamPreferences} from '@parca/components';
 
+import MatchersInput from './MatchersInput';
 import MetricsGraph, {type ContextMenuItemOrSubmenu, type Series} from './MetricsGraph';
 import ProfileExplorer from './ProfileExplorer';
 import ProfileTypeSelector from './ProfileTypeSelector';
 import {SelectWithRefresh} from './SelectWithRefresh';
+import SimpleMatchers from './SimpleMatchers';
 import CustomSelect from './SimpleMatchers/Select';
 import {
   LabelsQueryProvider,
@@ -68,6 +70,8 @@ export {
   SelectWithRefresh,
   useLabelNames,
   MetricsGraph,
+  SimpleMatchers,
+  MatchersInput,
   type ContextMenuItemOrSubmenu,
   type Series,
   LabelsQueryProvider,
