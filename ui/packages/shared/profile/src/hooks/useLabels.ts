@@ -47,6 +47,7 @@ export const useLabelNames = (
   match?: string[]
 ): UseLabelNames => {
   const metadata = useGrpcMetadata();
+  const enabled = profileType !== undefined && profileType !== '';
 
   const {data, isLoading, error, refetch} = useGrpcQuery<LabelsResponse>({
     key: ['labelNames', profileType, match?.join(','), start, end],
@@ -63,14 +64,14 @@ export const useLabelNames = (
       return response;
     },
     options: {
-      enabled: profileType !== undefined && profileType !== '',
+      enabled,
       keepPreviousData: false,
     },
   });
 
   return {
     result: {response: data, error: error as Error},
-    loading: isLoading,
+    loading: enabled && isLoading,
     refetch: async () => {
       await refetch();
     },

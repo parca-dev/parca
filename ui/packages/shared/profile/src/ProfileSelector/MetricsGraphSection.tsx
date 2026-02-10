@@ -43,6 +43,8 @@ interface MetricsGraphSectionProps {
     refreshedTimeRange?: {from: number; to: number; timeSelection: string},
     expression?: string
   ) => void;
+  profileTypesLoading?: boolean;
+  hasNoProfileTypes?: boolean;
 }
 
 export function MetricsGraphSection({
@@ -62,6 +64,8 @@ export function MetricsGraphSection({
   query,
   setNewQueryExpression,
   commitDraft,
+  profileTypesLoading = false,
+  hasNoProfileTypes = false,
 }: MetricsGraphSectionProps): JSX.Element {
   const resetStateOnSeriesChange = useResetStateOnSeriesChange();
   const batchUpdates = useURLStateBatch();
@@ -177,13 +181,15 @@ export function MetricsGraphSection({
                   onPointClick={handlePointClick}
                 />
               </>
-            ) : (
-              profileSelection === null && (
-                <div className="p-2">
+            ) : profileSelection === null && !profileTypesLoading ? (
+              <div className="p-2">
+                {hasNoProfileTypes ? (
+                  <ProfileMetricsEmptyState message="No profiling data found in the selected time range. Try selecting a longer time range." />
+                ) : (
                   <ProfileMetricsEmptyState message="Please select a profile type and click 'Search' to begin." />
-                </div>
-              )
-            )}
+                )}
+              </div>
+            ) : null}
           </div>
         </>
       )}
