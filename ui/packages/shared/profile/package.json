@@ -1,6 +1,6 @@
 {
   "name": "@parca/profile",
-  "version": "0.19.116",
+  "version": "0.19.117",
   "description": "Profile viewing libraries",
   "dependencies": {
     "@floating-ui/react": "^0.27.12",
@@ -27,7 +27,6 @@
     "@types/fast-levenshtein": "^0.0.4",
     "@types/react-beautiful-dnd": "^13.1.8",
     "@uwdata/flechette": "^2.3.0",
-    "lz4js": "^0.2.0",
     "classnames": "^2.3.1",
     "d3": "7.9.0",
     "d3-array": "^3.2.4",
@@ -41,6 +40,7 @@
     "framer-motion": "6.5.1",
     "graphviz-wasm": "3.0.2",
     "lodash.throttle": "^4.1.1",
+    "lz4js": "^0.2.0",
     "react": "18.3.1",
     "react-beautiful-dnd": "^13.1.1",
     "react-contexify": "^6.0.0",
