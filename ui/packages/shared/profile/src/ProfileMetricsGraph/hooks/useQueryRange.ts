@@ -11,20 +11,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useMemo} from 'react';
-
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 
 import {Duration, QueryRangeResponse, QueryServiceClient, Timestamp} from '@parca/client';
-import {useGrpcMetadata, useURLState} from '@parca/components';
-import {getStepDuration} from '@parca/utilities';
+import {useGrpcMetadata} from '@parca/components';
+import {getStepDuration, getStepDurationInMilliseconds} from '@parca/utilities';
 
 import useGrpcQuery from '../../useGrpcQuery';
+
+interface QueryRangeResult {
+  response: QueryRangeResponse;
+  stepDurationMs: number;
+}
 
 interface IQueryRangeState {
   response: QueryRangeResponse | null;
   isLoading: boolean;
   error: RpcError | null;
+  stepDurationMs: number;
 }
 
 export const getStepCountFromScreenWidth = (pixelsPerPoint: number): number => {
@@ -43,33 +47,16 @@ export const useQueryRange = (
   start: number,
   end: number,
   sumBy: string[],
+  stepCount: number,
   skip = false
 ): IQueryRangeState => {
   const metadata = useGrpcMetadata();
-  const [stepCountStr, setStepCount] = useURLState('step_count');
 
-  const defaultStepCount = useMemo(() => {
-    return getStepCountFromScreenWidth(10);
-  }, []);
-
-  const stepCount = useMemo(() => {
-    if (stepCountStr != null) {
-      return parseInt(stepCountStr as string, 10);
-    }
-
-    return defaultStepCount;
-  }, [stepCountStr, defaultStepCount]);
-
-  useEffect(() => {
-    if (stepCountStr == null) {
-      setStepCount(defaultStepCount.toString());
-    }
-  }, [stepCountStr, defaultStepCount, setStepCount]);
-
-  const {data, isLoading, error} = useGrpcQuery<QueryRangeResponse | undefined>({
+  const {data, isLoading, error} = useGrpcQuery<QueryRangeResult | undefined>({
     key: ['query-range', queryExpression, start, end, (sumBy ?? []).join(','), stepCount, metadata],
     queryFn: async signal => {
       const stepDuration = getStepDuration(start, end, stepCount);
+      const stepDurationMs = getStepDurationInMilliseconds(stepDuration);
       const {response} = await client.queryRange(
         {
           query: queryExpression,
@@ -81,7 +68,7 @@ export const useQueryRange = (
         },
         {meta: metadata, abort: signal}
       );
-      return response;
+      return {response, stepDurationMs};
     },
     options: {
       retry: false,
@@ -90,5 +77,10 @@ export const useQueryRange = (
     },
   });
 
-  return {isLoading, error: error as RpcError | null, response: data ?? null};
+  return {
+    isLoading,
+    error: error as RpcError | null,
+    response: data?.response ?? null,
+    stepDurationMs: data?.stepDurationMs ?? 0,
+  };
 };

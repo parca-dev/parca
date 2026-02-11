@@ -764,6 +764,9 @@ importers:
       lodash.throttle:
         specifier: ^4.1.1
         version: 4.1.1
+      lz4js:
+        specifier: ^0.2.0
+        version: 0.2.0
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -815,6 +818,9 @@ importers:
       tsc-watch:
         specifier: 6.3.1
         version: 6.3.1(typescript@5.9.3)
+      usehooks-ts:
+        specifier: ^3.1.1
+        version: 3.1.1(react@18.3.1)
       with-alpha-hex:
         specifier: ^1.0.6
         version: 1.0.6
@@ -822,6 +828,9 @@ importers:
       '@types/lodash.throttle':
         specifier: 4.1.9
         version: 4.1.9
+      '@types/lz4js':
+        specifier: ^0.2.1
+        version: 0.2.2
       '@types/react-syntax-highlighter':
         specifier: 15.5.13
         version: 15.5.13
@@ -6496,6 +6505,12 @@ packages:
     resolution:
       {
         integrity: sha512-RDvF6wTulMPjrNdCoYRC8gNR880JNGT8uB+REUpC2Ns4pRqQJhGz90wh7rgdXDPpCczF3VGktDuFGVnz8zP7HA==,
+      }
+
+  '@types/lz4js@0.2.2':
+    resolution:
+      {
+        integrity: sha512-pqXfoJ2AwllcLTf1Nia0+HT1KHj8z4wWo3bBP6vn7Aen5ySywBqrh/u1TyBwWxuKDS+mPzVHkPbHivqZEfk6pA==,
       }
 
   '@types/mdast@3.0.15':
@@ -14867,6 +14882,12 @@ packages:
       }
     hasBin: true
 
+  lz4js@0.2.0:
+    resolution:
+      {
+        integrity: sha512-gY2Ia9Lm7Ep8qMiuGRhvUq0Q7qUereeldZPP1PMEJxPtEWHJLqw9pgX68oHajBH0nzJK4MaZEA/YNV3jT8u8Bg==,
+      }
+
   magic-string@0.25.9:
     resolution:
       {
@@ -21796,6 +21817,15 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
+  usehooks-ts@3.1.1:
+    resolution:
+      {
+        integrity: sha512-I4diPp9Cq6ieSUH2wu+fDAVQO43xwtulo+fKEidHUwZPnYImbtkTjzIJYcDcJqxgmX31GVqNFURodvcgHcW0pA==,
+      }
+    engines: {node: '>=16.15.0'}
+    peerDependencies:
+      react: ^16.8.0  || ^17 || ^18 || ^19 || ^19.0.0-rc
+
   util-deprecate@1.0.2:
     resolution:
       {
@@ -26916,6 +26946,8 @@ snapshots:
       '@types/lodash': 4.17.23
 
   '@types/lodash@4.17.23': {}
+
+  '@types/lz4js@0.2.2': {}
 
   '@types/mdast@3.0.15':
     dependencies:
@@ -33198,6 +33230,8 @@ snapshots:
 
   lz-string@1.5.0: {}
 
+  lz4js@0.2.0: {}
+
   magic-string@0.25.9:
     dependencies:
       sourcemap-codec: 1.4.8
@@ -38197,6 +38231,11 @@ snapshots:
 
   use-sync-external-store@1.6.0(react@18.3.1):
     dependencies:
+      react: 18.3.1
+
+  usehooks-ts@3.1.1(react@18.3.1):
+    dependencies:
+      lodash.debounce: 4.0.8
       react: 18.3.1
 
   util-deprecate@1.0.2: {}

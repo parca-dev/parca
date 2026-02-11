@@ -14,14 +14,27 @@
 import {useEffect, useMemo, useState} from 'react';
 
 import {QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
-import {useGrpcMetadata, useParcaContext, useURLState} from '@parca/components';
+import {
+  NumberParser,
+  NumberSerializer,
+  useGrpcMetadata,
+  useParcaContext,
+  useURLState,
+  useURLStateCustom,
+} from '@parca/components';
 import {saveAsBlob} from '@parca/utilities';
 
 import {validateFlameChartQuery} from './ProfileFlameGraph';
-import {FIELD_FUNCTION_NAME} from './ProfileFlameGraph/FlameGraphArrow';
+import {FIELD_FUNCTION_NAME, FIELD_LABELS} from './ProfileFlameGraph/FlameGraphArrow';
+import {boundsFromProfileSource} from './ProfileFlameGraph/FlameGraphArrow/utils';
+import {
+  getStepCountFromScreenWidth,
+  useQueryRange,
+} from './ProfileMetricsGraph/hooks/useQueryRange';
 import {MergedProfileSource, ProfileSource} from './ProfileSource';
 import {ProfileView} from './ProfileView';
 import {useProfileFilters} from './ProfileView/components/ProfileFilters/useProfileFilters';
+import type {SamplesSeries} from './ProfileView/types/visualization';
 import {useQuery} from './useQuery';
 import {downloadPprof} from './utils';
 
@@ -30,12 +43,14 @@ interface ProfileViewWithDataProps {
   profileSource: ProfileSource;
   compare?: boolean;
   showVisualizationSelector?: boolean;
+  onSwitchToOneMinute?: () => void;
 }
 
 export const ProfileViewWithData = ({
   queryClient,
   profileSource,
   showVisualizationSelector,
+  onSwitchToOneMinute,
 }: ProfileViewWithDataProps): JSX.Element => {
   const metadata = useGrpcMetadata();
   const [dashboardItems, setDashboardItems] = useURLState<string[]>('dashboard_items', {
@@ -48,6 +63,9 @@ export const ProfileViewWithData = ({
     alwaysReturnArray: true,
   });
   const [sandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
+  const [flamechartDimension] = useURLState<string[]>('flamechart_dimension', {
+    alwaysReturnArray: true,
+  });
 
   const [invertStack] = useURLState('invert_call_stack');
   const invertCallStack = invertStack === 'true';
@@ -96,20 +114,65 @@ export const ProfileViewWithData = ({
     protoFilters,
   });
 
-  const {
-    isLoading: flamechartLoading,
-    response: flamechartResponse,
-    error: flamechartError,
-  } = useQuery(queryClient, profileSource, QueryRequest_ReportType.FLAMECHART, {
-    skip: !(
-      dashboardItems.includes('flamechart') &&
-      validateFlameChartQuery(profileSource as MergedProfileSource).isValid
-    ),
-    nodeTrimThreshold,
-    groupBy,
-    invertCallStack,
-    protoFilters,
+  const samplesEnabled = !!(
+    dashboardItems.includes('flamechart') &&
+    validateFlameChartQuery(profileSource as MergedProfileSource).isValid &&
+    (flamechartDimension ?? []).length > 0
+  );
+
+  const [samplesFromMs, samplesToMs] = useMemo(() => {
+    const bounds = boundsFromProfileSource(profileSource);
+    return [Number(bounds[0] / 1_000_000n), Number(bounds[1] / 1_000_000n)];
+  }, [profileSource]);
+
+  const samplesSumBy = useMemo(
+    () =>
+      (flamechartDimension ?? []).map(f =>
+        f.startsWith('labels.') ? f.slice('labels.'.length) : f
+      ),
+    [flamechartDimension]
+  );
+
+  // Samples step count: 2px per data point for finer granularity in strips
+  const [samplesStepCount] = useURLStateCustom<number>('samples_step_count', {
+    defaultValue: String(getStepCountFromScreenWidth(2)),
+    parse: NumberParser,
+    stringify: NumberSerializer,
   });
+
+  const {
+    isLoading: samplesLoading,
+    response: samplesRangeResponse,
+    error: samplesError,
+    stepDurationMs: samplesStepMs,
+  } = useQueryRange(
+    queryClient,
+    samplesEnabled ? (profileSource as MergedProfileSource).query.toString() : '',
+    samplesFromMs,
+    samplesToMs,
+    samplesSumBy,
+    samplesStepCount,
+    !samplesEnabled
+  );
+
+  // Map QueryRange response to SamplesData
+  // TODO (manoj): Check if we can skip this mapping and adapt the CPUSampleStrips to work directly with the QueryRange response format.
+  const samplesData = useMemo(() => {
+    if (samplesLoading) return {loading: true, error: null};
+    if (samplesError != null) return {loading: false, error: samplesError};
+    if (samplesRangeResponse?.series?.length == null) return {loading: false, error: null};
+
+    const series: SamplesSeries[] = samplesRangeResponse.series.map(ms => ({
+      labelset: ms.labelset ?? {labels: []},
+      data: ms.samples.map(s => ({
+        timestamp: Number(s.timestamp!.seconds) * 1000 + Math.floor(s.timestamp!.nanos / 1_000_000),
+        value: Number(s.value),
+        sampleCount: Number(s.count),
+      })),
+    }));
+
+    return {loading: false, series, error: null, stepMs: samplesStepMs};
+  }, [samplesLoading, samplesRangeResponse, samplesError, samplesStepMs]);
 
   const {
     isLoading: profileMetadataLoading,
@@ -227,9 +290,6 @@ export const ProfileViewWithData = ({
   } else if (sourceResponse !== null) {
     total = BigInt(sourceResponse.total);
     filtered = BigInt(sourceResponse.filtered);
-  } else if (flamechartResponse !== null) {
-    total = BigInt(flamechartResponse.total);
-    filtered = BigInt(flamechartResponse.filtered);
   } else if (callersFlamegraphResponse !== null) {
     total = BigInt(callersFlamegraphResponse.total);
     filtered = BigInt(callersFlamegraphResponse.filtered);
@@ -261,25 +321,6 @@ export const ProfileViewWithData = ({
             : undefined,
         metadataLoading: profileMetadataLoading,
         metadataRefetch,
-      }}
-      flamechartData={{
-        loading: flamechartLoading && profileMetadataLoading,
-        arrow:
-          flamechartResponse?.report.oneofKind === 'flamegraphArrow'
-            ? flamechartResponse?.report?.flamegraphArrow
-            : undefined,
-        total: BigInt(flamechartResponse?.total ?? '0'),
-        filtered: BigInt(flamechartResponse?.filtered ?? '0'),
-        error: flamechartError,
-        metadataMappingFiles:
-          profileMetadataResponse?.report.oneofKind === 'profileMetadata'
-            ? profileMetadataResponse?.report?.profileMetadata?.mappingFiles
-            : undefined,
-        metadataLabels:
-          profileMetadataResponse?.report.oneofKind === 'profileMetadata'
-            ? profileMetadataResponse?.report?.profileMetadata?.labels
-            : undefined,
-        metadataLoading: profileMetadataLoading,
       }}
       topTableData={{
         loading: tableLoading,
@@ -333,11 +374,13 @@ export const ProfileViewWithData = ({
           metadataLoading: profileMetadataLoading,
         },
       }}
+      samplesData={samplesData}
       profileSource={profileSource}
       queryClient={queryClient}
       onDownloadPProf={() => void downloadPProfClick()}
       pprofDownloading={pprofDownloading}
       showVisualizationSelector={showVisualizationSelector}
+      onSwitchToOneMinute={onSwitchToOneMinute}
     />
   );
 };

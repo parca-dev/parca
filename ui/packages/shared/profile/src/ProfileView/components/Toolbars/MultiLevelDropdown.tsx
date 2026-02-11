@@ -412,7 +412,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
               <Menu.Items
                 className={cx(
                   isTableVizOnly ? 'w-64' : 'w-80',
-                  'absolute z-30 mt-2 py-2 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border dark:bg-gray-900 dark:border-gray-600',
+                  'absolute z-50 mt-2 py-2 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border dark:bg-gray-900 dark:border-gray-600',
                   shouldOpenLeft ? 'right-0 origin-top-right' : 'left-0 origin-top-left'
                 )}
               >

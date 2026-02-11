@@ -73,6 +73,7 @@ func GenerateTable(
 	w := ipc.NewWriter(&buf,
 		ipc.WithSchema(record.Schema()),
 		ipc.WithAllocator(mem),
+		ipc.WithLZ4(),
 	)
 	defer w.Close()
 

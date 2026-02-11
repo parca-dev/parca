@@ -56,6 +56,7 @@ func GenerateSourceReport(
 	w := ipc.NewWriter(&buf,
 		ipc.WithSchema(record.Schema()),
 		ipc.WithAllocator(pool),
+		ipc.WithLZ4(),
 	)
 	defer w.Close()
 

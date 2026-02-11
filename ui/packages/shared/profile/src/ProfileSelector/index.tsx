@@ -153,6 +153,17 @@ const ProfileSelector = ({
     DateTimeRange.fromRangeKey(draftSelection.timeSelection, draftSelection.from, draftSelection.to)
   );
 
+  // Sync local timeRangeSelection when URL state changes externally (e.g., "Switch to 1 minute" button)
+  useEffect(() => {
+    setTimeRangeSelection(
+      DateTimeRange.fromRangeKey(
+        querySelection.timeSelection,
+        querySelection.from,
+        querySelection.to
+      )
+    );
+  }, [querySelection.timeSelection, querySelection.from, querySelection.to]);
+
   const [queryExpressionString, setQueryExpressionString] = useState(draftSelection.expression);
 
   const [advancedModeForQueryBrowser, setAdvancedModeForQueryBrowser] = useState(
@@ -354,6 +365,11 @@ const ProfileSelector = ({
         setQueryExpression={setQueryExpression}
         setNewQueryExpression={setDraftExpression}
         commitDraft={commitDraft}
+        profileTypesLoading={profileTypesLoading}
+        hasNoProfileTypes={
+          !profileTypesLoading &&
+          (profileTypesData?.types == null || profileTypesData.types.length === 0)
+        }
       />
       {additionalMetricsGraphPosition === 'bottom' &&
         additionalMetricsGraph?.({querySelection, queryClient, suffix})}

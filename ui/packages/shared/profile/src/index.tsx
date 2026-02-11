@@ -11,6 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {CompressionType, setCompressionCodec} from '@uwdata/flechette';
+import * as lz4 from 'lz4js';
+
 import type {ParamPreferences} from '@parca/components';
 
 import MatchersInput from './MatchersInput';
@@ -29,8 +32,14 @@ import {UnifiedLabelsProvider, useUnifiedLabels} from './contexts/UnifiedLabelsC
 import {useLabelNames} from './hooks/useLabels';
 import {useQueryState} from './hooks/useQueryState';
 
+setCompressionCodec(CompressionType.LZ4_FRAME, {
+  encode: (data: Uint8Array) => lz4.compress(data),
+  decode: (data: Uint8Array) => lz4.decompress(data),
+});
+
 export {useMetricsGraphDimensions} from './MetricsGraph/useMetricsGraphDimensions';
 
+export * from './ProfileFlameChart';
 export * from './ProfileFlameGraph';
 export * from './ProfileSource';
 export {
@@ -57,6 +66,9 @@ export const DEFAULT_PROFILE_EXPLORER_PARAM_VALUES: ParamPreferences = {
     splitOnCommas: true, // This param should split on commas for array values
   },
   group_by: {
+    splitOnCommas: true,
+  },
+  flamechart_dimension: {
     splitOnCommas: true,
   },
 };

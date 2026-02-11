@@ -1503,6 +1503,11 @@
           "type": "string",
           "format": "int64",
           "description": "duration is the normalized aggregated duration the metric samples has been observed over."
+        },
+        "count": {
+          "type": "integer",
+          "format": "int32",
+          "description": "count is the number of samples aggregated into this data point."
         }
       },
       "title": "MetricsSample is a cumulative value and timestamp of a profile"

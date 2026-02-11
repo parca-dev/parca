@@ -13,8 +13,9 @@
 
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 
-import {FlamegraphArrow, QueryServiceClient, Source, TableArrow} from '@parca/client';
+import {FlamegraphArrow, LabelSet, QueryServiceClient, Source, TableArrow} from '@parca/client';
 
+import {DataPoint} from '../../ProfileFlameChart/SamplesStrips/SamplesGraph';
 import {ProfileSource} from '../../ProfileSource';
 
 export interface FlamegraphData {
@@ -49,6 +50,18 @@ export interface SandwichData {
   callers: FlamegraphData;
 }
 
+export interface SamplesSeries {
+  labelset: LabelSet;
+  data: DataPoint[];
+}
+
+export interface SamplesData {
+  loading: boolean;
+  series?: SamplesSeries[];
+  error: RpcError | null;
+  stepMs?: number;
+}
+
 export type VisualizationType =
   | 'flamegraph'
   | 'callgraph'
@@ -61,14 +74,15 @@ export interface ProfileViewProps {
   total: bigint;
   filtered: bigint;
   flamegraphData: FlamegraphData;
-  flamechartData: FlamegraphData;
+  samplesData?: SamplesData;
   sandwichData: SandwichData;
   topTableData?: TopTableData;
   sourceData?: SourceData;
   profileSource: ProfileSource;
-  queryClient?: QueryServiceClient;
+  queryClient: QueryServiceClient;
   compare?: boolean;
   onDownloadPProf: () => void;
   pprofDownloading?: boolean;
   showVisualizationSelector?: boolean;
+  onSwitchToOneMinute?: () => void;
 }

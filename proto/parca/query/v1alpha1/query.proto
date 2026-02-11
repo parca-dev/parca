@@ -142,6 +142,9 @@ message MetricsSample {
 
   // duration is the normalized aggregated duration the metric samples has been observed over.
   int64 duration = 4;
+
+  // count is the number of samples aggregated into this data point.
+  int32 count = 5;
 }
 
 // MergeProfile contains parameters for a merge request
