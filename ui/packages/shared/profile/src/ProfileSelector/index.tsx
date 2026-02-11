@@ -363,6 +363,11 @@ const ProfileSelector = ({
         setQueryExpression={setQueryExpression}
         setNewQueryExpression={setDraftExpression}
         commitDraft={commitDraft}
+        profileTypesLoading={profileTypesLoading}
+        hasNoProfileTypes={
+          !profileTypesLoading &&
+          (profileTypesData?.types == null || profileTypesData.types.length === 0)
+        }
       />
     </>
   );
