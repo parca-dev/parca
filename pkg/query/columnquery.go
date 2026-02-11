@@ -66,6 +66,7 @@ type Querier interface {
 		aggregateByLabels []string,
 		invertCallStacks bool,
 		functionToFilterBy string,
+		includeAllLabels bool,
 	) (profile.Profile, error)
 	GetProfileMetadataMappings(ctx context.Context, query string, start, end time.Time) ([]string, error)
 	GetProfileMetadataLabels(ctx context.Context, query string, start, end time.Time) ([]string, error)
@@ -336,6 +337,7 @@ func (q *ColumnQueryAPI) Query(ctx context.Context, req *pb.QueryRequest) (*pb.Q
 				groupByLabels,
 				isInvert,
 				req.GetSandwichByFunction(),
+				req.GetReportType() == pb.QueryRequest_REPORT_TYPE_PPROF,
 			)
 		}
 	case pb.QueryRequest_MODE_DIFF:
@@ -1354,6 +1356,7 @@ func (q *ColumnQueryAPI) selectMerge(
 	groupByLabels []string,
 	isInverted bool,
 	functionToFilterBy string,
+	includeAllLabels bool,
 ) (profile.Profile, error) {
 	p, err := q.querier.QueryMerge(
 		ctx,
@@ -1363,6 +1366,7 @@ func (q *ColumnQueryAPI) selectMerge(
 		groupByLabels,
 		isInverted,
 		functionToFilterBy,
+		includeAllLabels,
 	)
 	if err != nil {
 		return profile.Profile{}, err
@@ -1582,7 +1586,7 @@ func (q *ColumnQueryAPI) selectProfileForDiff(
 	case pb.ProfileDiffSelection_MODE_SINGLE_UNSPECIFIED:
 		return q.selectSingle(ctx, s.GetSingle(), isInverted)
 	case pb.ProfileDiffSelection_MODE_MERGE:
-		return q.selectMerge(ctx, s.GetMerge(), []string{}, isInverted, "")
+		return q.selectMerge(ctx, s.GetMerge(), []string{}, isInverted, "", false)
 	default:
 		return profile.Profile{}, status.Error(codes.InvalidArgument, "unknown mode for diff profile selection")
 	}

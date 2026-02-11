@@ -2155,3 +2155,158 @@ func TestSetArrayElementToNull(t *testing.T) {
 		})
 	}
 }
+
+func TestColumnQueryAPIMergePprofLabels(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	logger := log.NewNopLogger()
+	reg := prometheus.NewRegistry()
+	tracer := noop.NewTracerProvider().Tracer("")
+	col, err := columnstore.New()
+	require.NoError(t, err)
+	colDB, err := col.DB(context.Background(), "parca")
+	require.NoError(t, err)
+
+	schema, err := profile.Schema()
+	require.NoError(t, err)
+
+	table, err := colDB.Table(
+		"stacktraces",
+		columnstore.NewTableConfig(profile.SchemaDefinition()),
+	)
+	require.NoError(t, err)
+
+	p := &pprofpb.Profile{
+		StringTable: []string{
+			"",
+			"funcA",
+			"funcB",
+			"alloc_objects",
+			"count",
+			"space",
+			"bytes",
+		},
+		Function: []*pprofpb.Function{
+			{Id: 1, Name: 1},
+			{Id: 2, Name: 2},
+		},
+		Location: []*pprofpb.Location{
+			{
+				Id:      1,
+				Address: 0x1,
+				Line:    []*pprofpb.Line{{Line: 1, FunctionId: 1}},
+			},
+			{
+				Id:      2,
+				Address: 0x2,
+				Line:    []*pprofpb.Line{{Line: 2, FunctionId: 2}},
+			},
+		},
+		SampleType: []*pprofpb.ValueType{{Type: 3, Unit: 4}},
+		PeriodType: &pprofpb.ValueType{Type: 5, Unit: 6},
+		TimeNanos:  1000000,
+		Sample: []*pprofpb.Sample{
+			{Value: []int64{10}, LocationId: []uint64{1, 2}},
+			{Value: []int64{20}, LocationId: []uint64{2}},
+		},
+	}
+
+	ing := ingester.NewIngester(logger, table)
+	store := profilestore.NewProfileColumnStore(
+		reg,
+		logger,
+		tracer,
+		ing,
+		schema,
+		memory.DefaultAllocator,
+	)
+
+	// Ingest a profile with labels job=default and node=node1
+	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{
+		Series: []*profilestorepb.RawProfileSeries{{
+			Labels: &profilestorepb.LabelSet{
+				Labels: []*profilestorepb.Label{
+					{Name: "__name__", Value: "memory"},
+					{Name: "job", Value: "default"},
+					{Name: "node", Value: "node1"},
+				},
+			},
+			Samples: []*profilestorepb.RawSample{{
+				RawProfile: MustCompressGzip(t, p),
+			}},
+		}},
+	})
+	require.NoError(t, err)
+
+	mem := memory.NewCheckedAllocator(memory.DefaultAllocator)
+	defer mem.AssertSize(t, 0)
+	api := NewColumnQueryAPI(
+		logger,
+		tracer,
+		getShareServerConn(t),
+		parcacol.NewQuerier(
+			logger,
+			tracer,
+			query.NewEngine(
+				mem,
+				colDB.TableProvider(),
+			),
+			"stacktraces",
+			nil,
+			mem,
+		),
+		mem,
+		parcacol.NewArrowToProfileConverter(tracer, kv.NewKeyMaker()),
+		nil,
+	)
+
+	ts := timestamppb.New(timestamp.Time(1))
+
+	// Query merge pprof - this should include labels in the output
+	res, err := api.Query(ctx, &pb.QueryRequest{
+		Mode:       pb.QueryRequest_MODE_MERGE,
+		ReportType: pb.QueryRequest_REPORT_TYPE_PPROF,
+		Options: &pb.QueryRequest_Merge{
+			Merge: &pb.MergeProfile{
+				Query: `memory:alloc_objects:count:space:bytes{job="default"}`,
+				Start: timestamppb.New(time.Unix(0, 0)),
+				End:   timestamppb.New(ts.AsTime().Add(time.Minute)),
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	testProf := &pprofpb.Profile{}
+	err = testProf.UnmarshalVT(MustDecompressGzip(t, res.Report.(*pb.QueryResponse_Pprof).Pprof))
+	require.NoError(t, err)
+
+	require.Greater(t, len(testProf.Sample), 0, "expected at least one sample")
+
+	// Collect all label keys present across all samples
+	labelKeys := map[string]struct{}{}
+	for _, s := range testProf.Sample {
+		for _, l := range s.Label {
+			labelKeys[testProf.StringTable[l.Key]] = struct{}{}
+		}
+	}
+
+	require.Contains(t, labelKeys, "job", "pprof output should contain 'job' label")
+	require.Contains(t, labelKeys, "node", "pprof output should contain 'node' label")
+
+	// Also verify label values are correct
+	labelValues := map[string]map[string]struct{}{}
+	for _, s := range testProf.Sample {
+		for _, l := range s.Label {
+			key := testProf.StringTable[l.Key]
+			val := testProf.StringTable[l.Str]
+			if labelValues[key] == nil {
+				labelValues[key] = map[string]struct{}{}
+			}
+			labelValues[key][val] = struct{}{}
+		}
+	}
+
+	require.Contains(t, labelValues["job"], "default", "job label should have value 'default'")
+	require.Contains(t, labelValues["node"], "node1", "node label should have value 'node1'")
+}

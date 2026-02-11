@@ -1433,11 +1433,12 @@ func (q *Querier) QueryMerge(
 	groupByLabels []string,
 	invertCallStacks bool,
 	functionToFilterBy string,
+	includeAllLabels bool,
 ) (profile.Profile, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/QueryMerge")
 	defer span.End()
 
-	records, valueColumn, queryParts, err := q.selectMerge(ctx, query, start, end, groupByLabels)
+	records, valueColumn, queryParts, err := q.selectMerge(ctx, query, start, end, groupByLabels, includeAllLabels)
 	if err != nil {
 		return profile.Profile{}, err
 	}
@@ -1471,6 +1472,7 @@ func (q *Querier) selectMerge(
 	startTime,
 	endTime time.Time,
 	groupByLabels []string,
+	includeAllLabels bool,
 ) ([]arrow.RecordBatch, string, QueryParts, error) {
 	ctx, span := q.tracer.Start(ctx, "Querier/selectMerge")
 	defer span.End()
@@ -1503,6 +1505,10 @@ func (q *Querier) selectMerge(
 		if col != profile.ColumnTimestamp {
 			columnsGroupBy = append(columnsGroupBy, logicalplan.Col(col))
 		}
+	}
+
+	if includeAllLabels {
+		columnsGroupBy = append(columnsGroupBy, logicalplan.DynCol(profile.ColumnLabels))
 	}
 
 	var valueCol logicalplan.Expr = logicalplan.Col(profile.ColumnValue)
