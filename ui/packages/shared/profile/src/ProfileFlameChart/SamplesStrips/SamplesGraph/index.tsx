@@ -156,7 +156,7 @@ const ZoomWindow = ({
           left: zoomWindowState[0],
         }}
         className={cx(
-          'bg-gray-500/50 dark:bg-gray-100/90 absolute top-0 border-x-2 border-gray-900 dark:border-gray-100 z-20'
+          'bg-gray-500/50 dark:bg-gray-400/90 absolute top-0 border-x-2 border-gray-900 dark:border-gray-100 z-20'
         )}
       >
         <div

@@ -49,8 +49,8 @@ export const TimelineGuide = ({
 
   return (
     <div className="relative h-5">
-      <div className="absolute" style={{width, height}}>
-        <svg style={{width: '100%', height: '100%'}} className="z-[5]">
+      <div className="pointer-events-none absolute" style={{width, height}}>
+        <svg style={{width: '100%', height: '100%'}}>
           <g
             className="x axis"
             fill="none"
