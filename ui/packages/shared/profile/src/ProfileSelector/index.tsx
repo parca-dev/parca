@@ -291,7 +291,14 @@ const ProfileSelector = ({
   return (
     <>
       <div className="mb-2 flex flex-col">
-        {additionalMetricsGraph?.({querySelection, queryClient, suffix})}
+        {additionalMetricsGraph?.({
+          querySelection,
+          queryClient,
+          suffix,
+          timeRange: timeRangeSelection,
+          onTimeRangeChange: handleTimeRangeChange,
+          commitTimeRange: () => setQueryExpression(true),
+        })}
         <LabelsQueryProvider
           setMatchersString={setMatchersString}
           runQuery={setQueryExpression}
