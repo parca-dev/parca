@@ -11,9 +11,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useEffect, useRef, useState} from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import {flushSync} from 'react-dom';
+
+
+import { flushSync } from 'react-dom';
+
+
+
+
 
 const MIN_ZOOM = 1.0;
 const MAX_ZOOM = 20.0;
@@ -91,7 +97,18 @@ export const useZoom = (containerRef: React.RefObject<HTMLDivElement | null>): U
     const handleWheel = (e: WheelEvent): void => {
       if (!e.ctrlKey && !e.metaKey) return;
       e.preventDefault();
-      const newZoom = clampZoom(zoomLevelRef.current * (1 - e.deltaY * WHEEL_ZOOM_SENSITIVITY));
+
+      let delta = e.deltaY;
+      if (e.deltaMode === 1) {
+        delta *= 20;
+      }
+
+      // Limiting the max zoom step per event to 15%, so to fix the huge jumps in Linux OS.
+      const MAX_FACTOR = 0.15;
+      const rawFactor = -delta * WHEEL_ZOOM_SENSITIVITY;
+      const zoomFactor = 1 + Math.max(-MAX_FACTOR, Math.min(MAX_FACTOR, rawFactor));
+
+      const newZoom = clampZoom(zoomLevelRef.current * zoomFactor);
       applyZoom(newZoom, e.clientX - container.getBoundingClientRect().left);
     };
 
