@@ -407,7 +407,9 @@ func (c *HTTPDebuginfodClient) handleResponse(ctx context.Context, resp *http.Re
 		case 2:
 			return resp.Body, nil
 		case 3:
-			resp, err = c.doRequest(ctx, resp.Header.Get("Location"))
+			redirectURL := resp.Header.Get("Location")
+			resp.Body.Close() // Close old response before redirect
+			resp, err = c.doRequest(ctx, redirectURL)
 			if err != nil {
 				return nil, fmt.Errorf("request failed: %w", err)
 			}
@@ -425,6 +427,8 @@ func (c *HTTPDebuginfodClient) handleResponse(ctx context.Context, resp *http.Re
 		}
 	}
 
+	// Close the response body before returning error for too many redirects
+	resp.Body.Close()
 	return nil, errors.New("too many redirects")
 }
 
