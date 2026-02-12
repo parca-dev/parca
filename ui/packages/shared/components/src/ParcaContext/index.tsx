@@ -18,6 +18,7 @@ import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {QueryServiceClient} from '@parca/client';
 import type {ColorConfig, NavigateFunction} from '@parca/utilities';
 
+import {DateTimeRange} from '../DateTimeRangePicker/utils';
 import {NoDataPrompt} from '../NoDataPrompt';
 import Spinner, {SpinnerProps} from '../Spinner';
 
@@ -45,6 +46,9 @@ export interface AdditionalMetricsGraphProps {
   };
   queryClient: QueryServiceClient;
   suffix?: '_a' | '_b';
+  timeRange: DateTimeRange;
+  onTimeRangeChange: (range: DateTimeRange) => void;
+  commitTimeRange: () => void;
 }
 
 interface Props {
