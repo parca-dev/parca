@@ -100,6 +100,17 @@ const unitsInCelsius = {
   unit: {multiplier: 1, symbol: '°C'},
 };
 
+const unitsInMillicelsius = {
+  unit: {multiplier: 1e7, symbol: '°C'},
+};
+
+const unitsInMicrowatts = {
+  unit: {multiplier: 1e6, symbol: 'W'},
+  kilo: {multiplier: 1e9, symbol: 'kW'},
+  mega: {multiplier: 1e12, symbol: 'MW'},
+  giga: {multiplier: 1e15, symbol: 'GW'},
+};
+
 const unitsInHertz = {
   unit: {multiplier: 1, symbol: 'Hz'},
   kilo: {multiplier: 1e3, symbol: 'kHz'},
@@ -115,8 +126,10 @@ const knownValueFormatters = {
   'CPU Cores': unitsInCores,
   milliseconds: unitsInTimeMs,
   watts: unitsInWatts,
+  microwatts: unitsInMicrowatts,
   bytes_per_second: unitsInBytesPerSecond,
   celsius: unitsInCelsius,
+  millicelsius: unitsInMillicelsius,
   hertz: unitsInHertz,
 };
 
