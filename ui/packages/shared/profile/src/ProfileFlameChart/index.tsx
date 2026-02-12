@@ -278,19 +278,24 @@ export const ProfileFlameChart = ({
       )}
 
       {/* Selected timeframe description + zoom controls */}
-      {selectedTimeframe != null && (() => {
-        const labels = selectedTimeframe.labels.labels.map(l => `${l.name} = ${l.value}`).join(', ');
-        const durationMs = selectedTimeframe.bounds[1] - selectedTimeframe.bounds[0];
-        const duration = formatDuration({[TimeUnits.Milliseconds]: durationMs});
-        return (
-          <div className="flex items-center justify-between px-2 py-1">
-            <div className="text-xs font-medium text-gray-500 dark:text-gray-400">
-              Samples matching {labels} over {duration} from {formatDateTimeDownToMS(selectedTimeframe.bounds[0])} to {formatDateTimeDownToMS(selectedTimeframe.bounds[1])}
+      {selectedTimeframe != null &&
+        (() => {
+          const labels = selectedTimeframe.labels.labels
+            .map(l => `${l.name} = ${l.value}`)
+            .join(', ');
+          const durationMs = selectedTimeframe.bounds[1] - selectedTimeframe.bounds[0];
+          const duration = formatDuration({[TimeUnits.Milliseconds]: durationMs});
+          return (
+            <div className="flex items-center justify-between px-2 py-1">
+              <div className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                Samples matching {labels} over {duration} from{' '}
+                {formatDateTimeDownToMS(selectedTimeframe.bounds[0])} to{' '}
+                {formatDateTimeDownToMS(selectedTimeframe.bounds[1])}
+              </div>
+              <div ref={zoomControlsRef} />
             </div>
-            <div ref={zoomControlsRef} />
-          </div>
-        );
-      })()}
+          );
+        })()}
 
       {/* Flamegraph visualization - only shown when a time range is selected in the strips */}
       {selectedTimeframe != null && filteredProfileSource != null ? (
