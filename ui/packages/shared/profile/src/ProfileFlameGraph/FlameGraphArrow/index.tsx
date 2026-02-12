@@ -34,18 +34,18 @@ import {type ColorConfig} from '@parca/utilities';
 import {ProfileSource} from '../../ProfileSource';
 import {useProfileFilters} from '../../ProfileView/components/ProfileFilters/useProfileFilters';
 import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
-import { TimelineGuide } from '../../TimelineGuide';
+import {TimelineGuide} from '../../TimelineGuide';
 import {alignedUint8Array} from '../../utils';
 import ContextMenuWrapper, {ContextMenuWrapperRef} from './ContextMenuWrapper';
 import {FlameNode, RowHeight, colorByColors} from './FlameGraphNodes';
 import {MemoizedTooltip} from './MemoizedTooltip';
-import { MiniMap } from './MiniMap';
+import {MiniMap} from './MiniMap';
 import {TooltipProvider} from './TooltipContext';
-import { ZoomControls } from './ZoomControls';
+import {ZoomControls} from './ZoomControls';
 import {useBatchedRendering} from './useBatchedRendering';
 import {useScrollViewport} from './useScrollViewport';
 import {useVisibleNodes} from './useVisibleNodes';
-import { useZoom } from './useZoom';
+import {useZoom} from './useZoom';
 import {
   CurrentPathFrame,
   boundsFromProfileSource,
@@ -269,8 +269,10 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
 
   const isZoomEnabled = isFlameChart;
 
-  const { zoomLevel, zoomIn, zoomOut, resetZoom } = useZoom(isZoomEnabled ? containerRef : { current: null });
-  const zoomedWidth = isZoomEnabled ? Math.round((width ?? 1) * zoomLevel) : (width ?? 0);
+  const {zoomLevel, zoomIn, zoomOut, resetZoom} = useZoom(
+    isZoomEnabled ? containerRef : {current: null}
+  );
+  const zoomedWidth = isZoomEnabled ? Math.round((width ?? 1) * zoomLevel) : width ?? 0;
 
   // Reset zoom when the data changes (e.g. new query, different time range)
   useEffect(() => {
@@ -394,10 +396,14 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
         )}
         <div
           ref={containerRef}
-          className={`${isZoomEnabled ? '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : ''} will-change-transform webkit-overflow-scrolling-touch contain ${!isZoomEnabled ? 'overflow-auto' : ''}`}
+          className={`${
+            isZoomEnabled ? '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : ''
+          } will-change-transform webkit-overflow-scrolling-touch contain ${
+            !isZoomEnabled ? 'overflow-auto' : ''
+          }`}
           style={{
             width: width ?? '100%',
-            ...(isZoomEnabled ? { overflowX: 'scroll' as const, overflowY: 'auto' as const } : {}),
+            ...(isZoomEnabled ? {overflowX: 'scroll' as const, overflowY: 'auto' as const} : {}),
             contain: 'layout style paint',
             visibility: !showSkeleton ? 'visible' : 'hidden',
           }}

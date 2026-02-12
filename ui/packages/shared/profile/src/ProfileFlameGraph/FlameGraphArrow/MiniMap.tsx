@@ -11,15 +11,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, {useCallback, useEffect, useRef} from 'react';
 
-import { Table } from '@uwdata/flechette';
+import {Table} from '@uwdata/flechette';
 
-import { EVERYTHING_ELSE } from '@parca/store';
-import { getLastItem } from '@parca/utilities';
+import {EVERYTHING_ELSE} from '@parca/store';
+import {getLastItem} from '@parca/utilities';
 
-import { ProfileSource } from '../../ProfileSource';
-import { RowHeight, type colorByColors } from './FlameGraphNodes';
+import {ProfileSource} from '../../ProfileSource';
+import {RowHeight, type colorByColors} from './FlameGraphNodes';
 import {
   FIELD_CUMULATIVE,
   FIELD_DEPTH,
@@ -27,7 +27,7 @@ import {
   FIELD_MAPPING_FILE,
   FIELD_TIMESTAMP,
 } from './index';
-import { arrowToString, boundsFromProfileSource } from './utils';
+import {arrowToString, boundsFromProfileSource} from './utils';
 
 const MINIMAP_HEIGHT = 20;
 
@@ -122,14 +122,24 @@ export const MiniMap = React.memo(function MiniMap({
         colorBy === 'filename'
           ? arrowToString(filenameCol?.get(row))
           : colorBy === 'binary'
-            ? arrowToString(mappingCol?.get(row))
-            : null;
+          ? arrowToString(mappingCol?.get(row))
+          : null;
 
       const color = colors[getLastItem(colorAttribute ?? '') ?? EVERYTHING_ELSE];
       ctx.fillStyle = color ?? (isDarkMode ? '#6b7280' : '#9ca3af');
       ctx.fillRect(x, y, Math.max(0.5, nodeWidth), h);
     }
-  }, [table, width, zoomedWidth, totalHeight, maxDepth, colorBy, colors, isDarkMode, profileSource]);
+  }, [
+    table,
+    width,
+    zoomedWidth,
+    totalHeight,
+    maxDepth,
+    colorBy,
+    colors,
+    isDarkMode,
+    profileSource,
+  ]);
 
   const isZoomed = zoomedWidth > width;
   const sliderWidth = Math.max(20, (width / zoomedWidth) * width);
@@ -212,7 +222,7 @@ export const MiniMap = React.memo(function MiniMap({
       );
     };
 
-    el.addEventListener('wheel', handleWheel, { passive: false });
+    el.addEventListener('wheel', handleWheel, {passive: false});
     return () => {
       el.removeEventListener('wheel', handleWheel);
     };
@@ -224,29 +234,34 @@ export const MiniMap = React.memo(function MiniMap({
     <div
       ref={containerElRef}
       className="relative select-none"
-      style={{ width, height: MINIMAP_HEIGHT, cursor: isZoomed ? 'pointer' : 'default' }}
+      style={{width, height: MINIMAP_HEIGHT, cursor: isZoomed ? 'pointer' : 'default'}}
       onMouseDown={isZoomed ? handleMouseDown : undefined}
     >
       <canvas
         ref={canvasRef}
-        style={{ width, height: MINIMAP_HEIGHT, display: 'block', visibility: isZoomed ? 'visible' : 'hidden' }}
+        style={{
+          width,
+          height: MINIMAP_HEIGHT,
+          display: 'block',
+          visibility: isZoomed ? 'visible' : 'hidden',
+        }}
       />
       {isZoomed && (
         <>
           {/* Left overlay */}
           <div
             className="absolute top-0 bottom-0 bg-black/30 dark:bg-black/50"
-            style={{ left: 0, width: Math.max(0, sliderLeft) }}
+            style={{left: 0, width: Math.max(0, sliderLeft)}}
           />
           {/* Viewport slider */}
           <div
             className="absolute top-0 bottom-0 border-x-2 border-gray-500"
-            style={{ left: sliderLeft, width: sliderWidth }}
+            style={{left: sliderLeft, width: sliderWidth}}
           />
           {/* Right overlay */}
           <div
             className="absolute top-0 bottom-0 bg-black/30 dark:bg-black/50"
-            style={{ left: sliderLeft + sliderWidth, right: 0 }}
+            style={{left: sliderLeft + sliderWidth, right: 0}}
           />
         </>
       )}
