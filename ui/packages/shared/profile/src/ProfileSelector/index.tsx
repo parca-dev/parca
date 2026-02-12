@@ -119,7 +119,7 @@ const ProfileSelector = ({
   onSearchHook,
 }: ProfileSelectorProps): JSX.Element => {
   const {heightStyle} = useMetricsGraphDimensions(comparing, false);
-  const {viewComponent, additionalMetricsGraph, additionalMetricsGraphPosition} = useParcaContext();
+  const {viewComponent, additionalMetricsGraph} = useParcaContext();
   const [queryBrowserMode, setQueryBrowserMode] = useURLState('query_browser_mode');
   const batchUpdates = useURLStateBatch();
 
@@ -291,8 +291,7 @@ const ProfileSelector = ({
   return (
     <>
       <div className="mb-2 flex flex-col">
-        {additionalMetricsGraphPosition === 'top' &&
-          additionalMetricsGraph?.({querySelection, queryClient, suffix})}
+        {additionalMetricsGraph?.({querySelection, queryClient, suffix})}
         <LabelsQueryProvider
           setMatchersString={setMatchersString}
           runQuery={setQueryExpression}
@@ -371,8 +370,6 @@ const ProfileSelector = ({
           (profileTypesData?.types == null || profileTypesData.types.length === 0)
         }
       />
-      {additionalMetricsGraphPosition === 'bottom' &&
-        additionalMetricsGraph?.({querySelection, queryClient, suffix})}
     </>
   );
 };
