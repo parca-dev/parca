@@ -175,7 +175,7 @@ const TooltipMetaInfo = ({table, row}: {table: Table; row: number}): React.JSX.E
           ) : (
             <div className="flex gap-4">
               <div className="whitespace-nowrap text-left">
-                <ExpandOnHover value={file} displayValue={truncateStringReverse(file, 60)} />
+                <ExpandOnHover value={file} displayValue={truncateStringReverse(file, 50)} />
               </div>
             </div>
           )}

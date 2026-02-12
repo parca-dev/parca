@@ -117,7 +117,7 @@ const ProfileSelector = ({
   suffix,
   onSearchHook,
 }: ProfileSelectorProps): JSX.Element => {
-  const {viewComponent, additionalMetricsGraph, timezone} = useParcaContext();
+  const {viewComponent, additionalMetricsGraph} = useParcaContext();
   const [queryBrowserMode, setQueryBrowserMode] = useURLState('query_browser_mode');
   const batchUpdates = useURLStateBatch();
 
@@ -303,7 +303,6 @@ const ProfileSelector = ({
               timeSelection: range.getRangeKey(),
             });
           },
-          timezone,
         })}
         <LabelsQueryProvider
           setMatchersString={setMatchersString}
