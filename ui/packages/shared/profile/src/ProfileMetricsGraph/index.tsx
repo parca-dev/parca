@@ -225,7 +225,11 @@ const ProfileMetricsGraph = ({
     queryExpression === ''
   );
   const {onError, perf, authenticationErrorMessage, isDarkMode, timezone} = useParcaContext();
-  const {width, height, margin, heightStyle} = useMetricsGraphDimensions(comparing);
+  const isGpuProfileType = queryExpression.includes(':cuda:');
+  const {width, height, margin, heightStyle} = useMetricsGraphDimensions(
+    comparing,
+    isGpuProfileType
+  );
   const [showAllSeriesForResponse, setShowAllSeriesForResponse] = useState<typeof response | null>(
     null
   );

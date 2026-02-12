@@ -49,6 +49,8 @@ export interface AdditionalMetricsGraphProps {
   timeRange: DateTimeRange;
   onTimeRangeChange: (range: DateTimeRange) => void;
   commitTimeRange: () => void;
+  selectTimeRange: (range: DateTimeRange) => void;
+  timezone?: string;
 }
 
 interface Props {

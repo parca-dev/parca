@@ -18,6 +18,7 @@ import {DateTimeRange, useURLStateBatch} from '@parca/components';
 import {Query} from '@parca/parser';
 
 import {ProfileSelection} from '..';
+import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
 import ProfileMetricsGraph, {ProfileMetricsEmptyState} from '../ProfileMetricsGraph';
 import {useResetStateOnSeriesChange} from '../ProfileView/hooks/useResetStateOnSeriesChange';
 import {QuerySelection} from './index';
@@ -25,7 +26,6 @@ import {QuerySelection} from './index';
 interface MetricsGraphSectionProps {
   showMetricsGraph: boolean;
   setDisplayHideMetricsGraphButton?: (show: boolean) => void;
-  heightStyle: string;
   querySelection: QuerySelection;
   profileSelection: ProfileSelection | null;
   comparing: boolean;
@@ -50,7 +50,6 @@ interface MetricsGraphSectionProps {
 export function MetricsGraphSection({
   showMetricsGraph,
   setDisplayHideMetricsGraphButton,
-  heightStyle,
   querySelection,
   profileSelection,
   comparing,
@@ -69,6 +68,8 @@ export function MetricsGraphSection({
 }: MetricsGraphSectionProps): JSX.Element {
   const resetStateOnSeriesChange = useResetStateOnSeriesChange();
   const batchUpdates = useURLStateBatch();
+  const isGpuProfileType = querySelection.expression.includes(':cuda:');
+  const {heightStyle} = useMetricsGraphDimensions(comparing, isGpuProfileType);
   const handleTimeRangeChange = (range: DateTimeRange): void => {
     const from = range.getFromMs();
     const to = range.getToMs();
