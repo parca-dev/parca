@@ -414,7 +414,7 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
               />
             )}
             <svg
-              className="font-robotoMono"
+              className="relative font-robotoMono"
               width={zoomedWidth}
               height={totalHeight}
               preserveAspectRatio="xMinYMid"
