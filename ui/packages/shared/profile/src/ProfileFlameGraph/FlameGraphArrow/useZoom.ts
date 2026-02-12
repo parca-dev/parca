@@ -11,15 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 
-
-
-import { flushSync } from 'react-dom';
-
-
-
-
+import {flushSync} from 'react-dom';
 
 const MIN_ZOOM = 1.0;
 const MAX_ZOOM = 20.0;
