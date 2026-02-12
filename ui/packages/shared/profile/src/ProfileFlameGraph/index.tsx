@@ -106,7 +106,7 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
   const {onError, authenticationErrorMessage, isDarkMode, flamechartHelpText} = useParcaContext();
   const {compareMode} = useProfileViewContext();
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [flameChartRef, {height: flameChartHeight}] = useMeasure();
+  const [flameChartRef] = useMeasure();
   const {colorBy, setColorBy} = useVisualizationState();
 
   // Create local state for paths when in sandwich view to avoid URL updates
@@ -316,6 +316,7 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
     mappingsList,
     filenamesList,
     colorBy,
+    zoomControlsRef,
   ]);
 
   useEffect(() => {

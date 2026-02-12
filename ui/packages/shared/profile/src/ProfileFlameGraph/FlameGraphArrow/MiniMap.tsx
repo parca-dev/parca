@@ -69,7 +69,7 @@ export const MiniMap = React.memo(function MiniMap({
     const canvas = canvasRef.current;
     if (canvas == null || width <= 0 || zoomedWidth <= 0) return;
 
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = window.devicePixelRatio !== 0 ? window.devicePixelRatio : 1;
     canvas.width = width * dpr;
     canvas.height = MINIMAP_HEIGHT * dpr;
 
