@@ -28,22 +28,27 @@ import {FlamegraphArrow} from '@parca/client';
 import {FlameGraphSkeleton, SandwichFlameGraphSkeleton, useParcaContext} from '@parca/components';
 import {USER_PREFERENCES, useCurrentColorProfile, useUserPreference} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
-import {getColorForFeature, selectDarkMode, useAppSelector} from '@parca/store';
+import {getColorForFeature} from '@parca/store';
 import {type ColorConfig} from '@parca/utilities';
 
 import {ProfileSource} from '../../ProfileSource';
 import {useProfileFilters} from '../../ProfileView/components/ProfileFilters/useProfileFilters';
 import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
+import { TimelineGuide } from '../../TimelineGuide';
 import {alignedUint8Array} from '../../utils';
 import ContextMenuWrapper, {ContextMenuWrapperRef} from './ContextMenuWrapper';
 import {FlameNode, RowHeight, colorByColors} from './FlameGraphNodes';
 import {MemoizedTooltip} from './MemoizedTooltip';
+import { MiniMap } from './MiniMap';
 import {TooltipProvider} from './TooltipContext';
+import { ZoomControls } from './ZoomControls';
 import {useBatchedRendering} from './useBatchedRendering';
 import {useScrollViewport} from './useScrollViewport';
 import {useVisibleNodes} from './useVisibleNodes';
+import { useZoom } from './useZoom';
 import {
   CurrentPathFrame,
+  boundsFromProfileSource,
   extractFeature,
   extractFilenameFeature,
   getCurrentPathFrameData,
@@ -93,6 +98,7 @@ interface FlameGraphArrowProps {
   tooltipId?: string;
   maxFrameCount?: number;
   isExpanded?: boolean;
+  zoomControlsRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export const getMappingColors = (
@@ -145,14 +151,14 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   mappingsListFromMetadata,
   filenamesListFromMetadata,
   colorBy,
+  zoomControlsRef,
 }: FlameGraphArrowProps): React.JSX.Element {
   const [highlightSimilarStacksPreference] = useUserPreference<boolean>(
     USER_PREFERENCES.HIGHLIGHT_SIMILAR_STACKS.key
   );
   const [hoveringRow, setHoveringRow] = useState<number | undefined>(undefined);
   const [dockedMetainfo] = useUserPreference<boolean>(USER_PREFERENCES.GRAPH_METAINFO_DOCKED.key);
-  const isDarkMode = useAppSelector(selectDarkMode);
-  const {perf} = useParcaContext();
+  const {perf, isDarkMode} = useParcaContext();
 
   const table: Table = useMemo(() => {
     const result = tableFromIPC(alignedUint8Array(arrow.record), {useBigInt: true});
@@ -261,6 +267,16 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   // Get the viewport of the container, this is used to determine which rows are visible.
   const viewport = useScrollViewport(containerRef);
 
+  const isZoomEnabled = isFlameChart;
+
+  const { zoomLevel, zoomIn, zoomOut, resetZoom } = useZoom(isZoomEnabled ? containerRef : { current: null });
+  const zoomedWidth = isZoomEnabled ? Math.round((width ?? 1) * zoomLevel) : (width ?? 0);
+
+  // Reset zoom when the data changes (e.g. new query, different time range)
+  useEffect(() => {
+    resetZoom();
+  }, [table, resetZoom]);
+
   // To find the selected row, we must walk the current path and look at which
   // children of the current frame matches the path element exactly. Until the
   // end, the row we find at the end is our selected row.
@@ -290,7 +306,7 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
     table,
     viewport,
     total,
-    width: width ?? 1,
+    width: zoomedWidth,
     selectedRow,
     effectiveDepth: deferredEffectiveDepth,
   });
@@ -328,6 +344,15 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
       tooltipId={tooltipId}
     >
       <div className="relative">
+        {isZoomEnabled && (
+          <ZoomControls
+            zoomLevel={zoomLevel}
+            zoomIn={zoomIn}
+            zoomOut={zoomOut}
+            resetZoom={resetZoom}
+            portalRef={zoomControlsRef}
+          />
+        )}
         <ContextMenuWrapper
           ref={contextMenuRef}
           menuId={MENU_ID}
@@ -352,49 +377,77 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
             )}
           </div>
         )}
+        {isZoomEnabled && (
+          <MiniMap
+            containerRef={containerRef}
+            table={table}
+            width={width ?? 0}
+            zoomedWidth={zoomedWidth}
+            totalHeight={totalHeight}
+            maxDepth={deferredEffectiveDepth}
+            colorByColors={colorByColors}
+            colorBy={colorByValue}
+            profileSource={profileSource}
+            isDarkMode={isDarkMode}
+            scrollLeft={viewport.scrollLeft}
+          />
+        )}
         <div
           ref={containerRef}
-          className="overflow-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800 will-change-transform scroll-smooth webkit-overflow-scrolling-touch contain"
+          className={`${isZoomEnabled ? '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : ''} will-change-transform webkit-overflow-scrolling-touch contain ${!isZoomEnabled ? 'overflow-auto' : ''}`}
           style={{
             width: width ?? '100%',
+            ...(isZoomEnabled ? { overflowX: 'scroll' as const, overflowY: 'auto' as const } : {}),
             contain: 'layout style paint',
             visibility: !showSkeleton ? 'visible' : 'hidden',
           }}
         >
-          <svg
-            className="font-robotoMono"
-            width={width ?? 0}
-            height={totalHeight}
-            preserveAspectRatio="xMinYMid"
-            ref={svg}
-          >
-            {batchedNodes.map(row => (
-              <FlameNode
-                key={row}
-                table={table}
-                row={row}
-                colors={colorByColors}
-                colorBy={colorByValue}
-                totalWidth={width ?? 1}
-                height={RowHeight}
-                darkMode={isDarkMode}
-                compareMode={compareMode}
-                colorForSimilarNodes={colorForSimilarNodes}
-                selectedRow={selectedRow}
-                onClick={() => handleRowClick(row)}
-                onContextMenu={displayMenu}
-                hoveringRow={highlightSimilarStacksPreference ? hoveringRow : undefined}
-                setHoveringRow={highlightSimilarStacksPreference ? setHoveringRow : noop}
-                isFlameChart={isFlameChart}
-                profileSource={profileSource}
-                isRenderedAsFlamegraph={isRenderedAsFlamegraph}
-                isInSandwichView={isInSandwichView}
-                maxDepth={maxDepth}
-                effectiveDepth={deferredEffectiveDepth}
-                tooltipId={tooltipId}
+          <div>
+            {isFlameChart && (
+              <TimelineGuide
+                bounds={boundsFromProfileSource(profileSource)}
+                width={zoomedWidth}
+                height={totalHeight}
+                margin={0}
+                ticks={12}
+                timeUnit="nanoseconds"
               />
-            ))}
-          </svg>
+            )}
+            <svg
+              className="font-robotoMono"
+              width={zoomedWidth}
+              height={totalHeight}
+              preserveAspectRatio="xMinYMid"
+              ref={svg}
+            >
+              {batchedNodes.map(row => (
+                <FlameNode
+                  key={row}
+                  table={table}
+                  row={row}
+                  colors={colorByColors}
+                  colorBy={colorByValue}
+                  totalWidth={zoomedWidth}
+                  height={RowHeight}
+                  darkMode={isDarkMode}
+                  compareMode={compareMode}
+                  colorForSimilarNodes={colorForSimilarNodes}
+                  selectedRow={selectedRow}
+                  onClick={() => handleRowClick(row)}
+                  onContextMenu={displayMenu}
+                  hoveringRow={highlightSimilarStacksPreference ? hoveringRow : undefined}
+                  setHoveringRow={highlightSimilarStacksPreference ? setHoveringRow : noop}
+                  isFlameChart={isFlameChart}
+                  profileSource={profileSource}
+                  isRenderedAsFlamegraph={isRenderedAsFlamegraph}
+                  isInSandwichView={isInSandwichView}
+                  maxDepth={maxDepth}
+                  effectiveDepth={deferredEffectiveDepth}
+                  tooltipId={tooltipId}
+                />
+              ))}
+            </svg>
+          </div>
         </div>
       </div>
     </TooltipProvider>
