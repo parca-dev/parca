@@ -18,6 +18,7 @@ import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {QueryServiceClient} from '@parca/client';
 import type {ColorConfig, NavigateFunction} from '@parca/utilities';
 
+import {DateTimeRange} from '../DateTimeRangePicker/utils';
 import {NoDataPrompt} from '../NoDataPrompt';
 import Spinner, {SpinnerProps} from '../Spinner';
 
@@ -31,6 +32,23 @@ export interface SourceViewContextMenuItem {
   id: string;
   label: string;
   action: (selectedCode: string, profileData: ProfileData[]) => void;
+}
+
+export interface AdditionalMetricsGraphProps {
+  querySelection: {
+    expression: string;
+    from: number;
+    to: number;
+    timeSelection: string;
+    sumBy?: string[];
+    mergeFrom?: string;
+    mergeTo?: string;
+  };
+  queryClient: QueryServiceClient;
+  suffix?: '_a' | '_b';
+  timeRange: DateTimeRange;
+  onTimeRangeChange: (range: DateTimeRange) => void;
+  commitTimeRange: () => void;
 }
 
 interface Props {
@@ -78,6 +96,7 @@ interface Props {
   preferencesModal?: boolean;
   checkDebuginfoStatusHandler?: (buildId: string) => void;
   flamechartHelpText?: ReactNode;
+  additionalMetricsGraph?: (props: AdditionalMetricsGraphProps) => ReactNode;
 }
 
 export const defaultValue: Props = {
