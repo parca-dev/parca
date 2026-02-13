@@ -1,6 +1,6 @@
 {
   "name": "@parca/profile",
-  "version": "0.19.121",
+  "version": "0.19.122",
   "description": "Profile viewing libraries",
   "dependencies": {
     "@floating-ui/react": "^0.27.12",
