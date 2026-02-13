@@ -29,7 +29,6 @@ import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 import {millisToProtoTimestamp, type NavigateFunction} from '@parca/utilities';
 
-import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
 import {
   ProfileFilter,
   useProfileFilters,
@@ -118,7 +117,6 @@ const ProfileSelector = ({
   suffix,
   onSearchHook,
 }: ProfileSelectorProps): JSX.Element => {
-  const {heightStyle} = useMetricsGraphDimensions(comparing, false);
   const {viewComponent, additionalMetricsGraph} = useParcaContext();
   const [queryBrowserMode, setQueryBrowserMode] = useURLState('query_browser_mode');
   const batchUpdates = useURLStateBatch();
@@ -298,6 +296,13 @@ const ProfileSelector = ({
           timeRange: timeRangeSelection,
           onTimeRangeChange: handleTimeRangeChange,
           commitTimeRange: () => setQueryExpression(true),
+          selectTimeRange: (range: DateTimeRange) => {
+            commitDraft({
+              from: range.getFromMs(),
+              to: range.getToMs(),
+              timeSelection: range.getRangeKey(),
+            });
+          },
         })}
         <LabelsQueryProvider
           setMatchersString={setMatchersString}
@@ -356,7 +361,6 @@ const ProfileSelector = ({
       <MetricsGraphSection
         showMetricsGraph={showMetricsGraph}
         setDisplayHideMetricsGraphButton={setDisplayHideMetricsGraphButton}
-        heightStyle={heightStyle}
         querySelection={querySelection}
         profileSelection={profileSelection}
         comparing={comparing}

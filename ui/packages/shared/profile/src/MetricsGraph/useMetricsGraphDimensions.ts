@@ -46,11 +46,13 @@ export const useMetricsGraphDimensions = (
     width = width / 2 - 32;
   }
   const height = isMini ? MINI_VARIANT_HEIGHT : Math.min(width / 2.5, maxHeight);
-  const heightStyle = `min(${maxHeight + margin}px, ${
-    comparing
-      ? profileExplorer.metricsGraph.maxHeightStyle.compareMode
-      : profileExplorer.metricsGraph.maxHeightStyle.default
-  })`;
+  const heightStyle = isMini
+    ? `${MINI_VARIANT_HEIGHT + margin}px`
+    : `min(${maxHeight + margin}px, ${
+        comparing
+          ? profileExplorer.metricsGraph.maxHeightStyle.compareMode
+          : profileExplorer.metricsGraph.maxHeightStyle.default
+      })`;
   return {
     width,
     height,
