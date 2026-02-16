@@ -22,6 +22,7 @@ import {
   type OptionsCustom,
 } from '@parca/components';
 import {Matcher, MatcherTypes, ProfileType, Query} from '@parca/parser';
+import {TimeUnits, formatDateTimeDownToMS, formatDuration} from '@parca/utilities';
 
 import ProfileFlameGraph, {validateFlameChartQuery} from '../ProfileFlameGraph';
 import {boundsFromProfileSource} from '../ProfileFlameGraph/FlameGraphArrow/utils';
@@ -127,6 +128,7 @@ export const ProfileFlameChart = ({
   onSwitchToOneMinute,
 }: ProfileFlameChartProps): JSX.Element => {
   const {loader} = useParcaContext();
+  const zoomControlsRef = useRef<HTMLDivElement>(null);
 
   const [selectedTimeframe, setSelectedTimeframe] = useURLStateCustom<
     SelectedTimeframe | undefined
@@ -275,6 +277,26 @@ export const ProfileFlameChart = ({
         </div>
       )}
 
+      {/* Selected timeframe description + zoom controls */}
+      {selectedTimeframe != null &&
+        (() => {
+          const labels = selectedTimeframe.labels.labels
+            .map(l => `${l.name} = ${l.value}`)
+            .join(', ');
+          const durationMs = selectedTimeframe.bounds[1] - selectedTimeframe.bounds[0];
+          const duration = formatDuration({[TimeUnits.Milliseconds]: durationMs});
+          return (
+            <div className="flex items-center justify-between px-2 py-1">
+              <div className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                Samples matching {labels} over {duration} from{' '}
+                {formatDateTimeDownToMS(selectedTimeframe.bounds[0])} to{' '}
+                {formatDateTimeDownToMS(selectedTimeframe.bounds[1])}
+              </div>
+              <div ref={zoomControlsRef} />
+            </div>
+          );
+        })()}
+
       {/* Flamegraph visualization - only shown when a time range is selected in the strips */}
       {selectedTimeframe != null && filteredProfileSource != null ? (
         <ProfileFlameGraph
@@ -292,6 +314,7 @@ export const ProfileFlameChart = ({
           isFlameChart={true}
           curPathArrow={[]}
           setNewCurPathArrow={() => {}}
+          zoomControlsRef={zoomControlsRef}
         />
       ) : (
         <div className="flex justify-center items-center py-10 text-gray-500 dark:text-gray-400 text-sm">

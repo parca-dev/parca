@@ -33,9 +33,8 @@ import DiffLegend from '../ProfileView/components/DiffLegend';
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
 import {useProfileMetadata} from '../ProfileView/hooks/useProfileMetadata';
 import {useVisualizationState} from '../ProfileView/hooks/useVisualizationState';
-import {TimelineGuide} from '../TimelineGuide';
 import {FlameGraphArrow} from './FlameGraphArrow';
-import {CurrentPathFrame, boundsFromProfileSource} from './FlameGraphArrow/utils';
+import {CurrentPathFrame} from './FlameGraphArrow/utils';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 
@@ -62,6 +61,7 @@ interface ProfileFlameGraphProps {
   tooltipId?: string;
   maxFrameCount?: number;
   isExpanded?: boolean;
+  zoomControlsRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 const ErrorContent = ({errorMessage}: {errorMessage: string | ReactNode}): JSX.Element => {
@@ -101,11 +101,12 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
   maxFrameCount,
   isExpanded = false,
   metadataLoading = false,
+  zoomControlsRef,
 }: ProfileFlameGraphProps): JSX.Element {
   const {onError, authenticationErrorMessage, isDarkMode, flamechartHelpText} = useParcaContext();
   const {compareMode} = useProfileViewContext();
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [flameChartRef, {height: flameChartHeight}] = useMeasure();
+  const [flameChartRef] = useMeasure();
   const {colorBy, setColorBy} = useVisualizationState();
 
   // Create local state for paths when in sandwich view to avoid URL updates
@@ -263,16 +264,6 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
     if (arrow !== undefined) {
       return (
         <div className="relative">
-          {isFlameChart ? (
-            <TimelineGuide
-              bounds={boundsFromProfileSource(profileSource)}
-              width={width}
-              height={flameChartHeight ?? 420}
-              margin={0}
-              ticks={12}
-              timeUnit="nanoseconds"
-            />
-          ) : null}
           <div ref={flameChartRef as LegacyRef<HTMLDivElement>}>
             <FlameGraphArrow
               width={width}
@@ -294,6 +285,7 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
               maxFrameCount={maxFrameCount}
               isExpanded={isExpanded}
               colorBy={colorBy}
+              zoomControlsRef={zoomControlsRef}
             />
           </div>
         </div>
@@ -312,7 +304,6 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
     isCompareAbsolute,
     isFlameChart,
     profileSource,
-    flameChartHeight,
     flameChartRef,
     flamechartHelpText,
     isRenderedAsFlamegraph,
@@ -325,6 +316,7 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
     mappingsList,
     filenamesList,
     colorBy,
+    zoomControlsRef,
   ]);
 
   useEffect(() => {
