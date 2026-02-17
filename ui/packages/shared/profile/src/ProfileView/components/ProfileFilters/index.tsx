@@ -21,6 +21,7 @@ import {TEST_IDS, testId} from '@parca/test-utils';
 
 import {useProfileViewContext} from '../../context/ProfileViewContext';
 import {getPresetByKey, getPresetsForProfileType, isPresetKey} from './filterPresets';
+import useFunctionNamesDictionary from './useFunctionNamesDictionary';
 import {useProfileFilters, type ProfileFilter} from './useProfileFilters';
 
 export const isFilterComplete = (filter: ProfileFilter): boolean => {
@@ -34,7 +35,11 @@ export const isFilterComplete = (filter: ProfileFilter): boolean => {
   );
 };
 
-const getFilterTypeItems = (currentProfileType?: string): SelectItem[] => [
+const getFilterTypeItems = (
+  currentProfileType?: string,
+  mappingFiles?: string[],
+  functionNames?: string[]
+): SelectItem[] => [
   {
     key: 'stack',
     element: {
@@ -61,7 +66,7 @@ const getFilterTypeItems = (currentProfileType?: string): SelectItem[] => [
       ),
     },
   },
-  ...getPresetsForProfileType(currentProfileType).map(preset => ({
+  ...getPresetsForProfileType(currentProfileType, mappingFiles, functionNames).map(preset => ({
     key: preset.key,
     element: {
       active: <>{preset.name}</>,
@@ -188,9 +193,14 @@ export interface ProfileFiltersProps {
 }
 
 const ProfileFilters = ({readOnly = false}: ProfileFiltersProps = {}): JSX.Element => {
-  const {profileSource} = useProfileViewContext();
+  const {profileSource, metadataMappingFiles, flamegraphTable} = useProfileViewContext();
   const currentProfileType = profileSource?.ProfileType()?.toString();
-  const filterTypeItems = getFilterTypeItems(currentProfileType);
+  const functionNames = useFunctionNamesDictionary(flamegraphTable);
+  const filterTypeItems = getFilterTypeItems(
+    currentProfileType,
+    metadataMappingFiles,
+    functionNames
+  );
 
   const {
     localFilters,

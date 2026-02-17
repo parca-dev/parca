@@ -13,6 +13,8 @@
 
 import {ReactNode, createContext, useContext} from 'react';
 
+import {Table} from '@uwdata/flechette';
+
 import {ProfileSource} from '../../ProfileSource';
 import {NumberDuo} from '../../utils';
 
@@ -29,6 +31,8 @@ interface Props {
   profileSource?: ProfileSource;
   compareMode: boolean;
   timelineGuide?: TimelineGuideData;
+  metadataMappingFiles?: string[];
+  flamegraphTable?: Table | null;
 }
 
 export const defaultValue: Props = {

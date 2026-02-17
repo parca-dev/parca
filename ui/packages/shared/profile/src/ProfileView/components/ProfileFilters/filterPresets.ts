@@ -19,6 +19,7 @@ export interface FilterPreset {
   description: string;
   filters: Array<Omit<ProfileFilter, 'id'>>;
   allowedProfileTypes?: string[];
+  detect?: (mappingFiles: string[], functionNames: string[]) => boolean;
 }
 
 export const filterPresets: FilterPreset[] = [
@@ -27,6 +28,8 @@ export const filterPresets: FilterPreset[] = [
     name: 'Go Runtime Expected Off-CPU',
     description: 'Excludes expected Go runtime blocking functions',
     allowedProfileTypes: ['parca_agent:wallclock:nanoseconds:samples:count:delta'],
+    detect: (_mappingFiles, functionNames) =>
+      functionNames.some(fn => fn === 'runtime.usleep' || fn === 'runtime.futex'),
     filters: [
       {
         type: 'stack',
@@ -47,6 +50,8 @@ export const filterPresets: FilterPreset[] = [
     name: 'Rust Expected Off-CPU',
     description: 'Excludes expected Rust runtime blocking functions',
     allowedProfileTypes: ['parca_agent:wallclock:nanoseconds:samples:count:delta'],
+    detect: (_mappingFiles, functionNames) =>
+      functionNames.some(fn => fn.includes('parking_lot_core::') || fn.includes('tokio::runtime')),
     filters: [
       {
         type: 'stack',
@@ -72,6 +77,7 @@ export const filterPresets: FilterPreset[] = [
     key: 'hide_v8_internals',
     name: 'Hide V8 internals',
     description: 'Excludes Node.js and V8 internal functions from the profile',
+    detect: mappingFiles => mappingFiles.some(f => f.includes('node')),
     filters: [
       {
         type: 'frame',
@@ -91,6 +97,12 @@ export const filterPresets: FilterPreset[] = [
     key: 'hide_cuda_internals',
     name: 'Hide CUDA Internals',
     description: 'Excludes CUDA and NVIDIA GPU driver internal functions from the profile',
+    detect: mappingFiles =>
+      mappingFiles.some(f =>
+        ['libcudnn', 'libcupti', 'libcudart', 'libcuda', 'libcublas', 'libparcagpucupti'].some(c =>
+          f.includes(c)
+        )
+      ),
     filters: [
       {
         type: 'frame',
@@ -146,6 +158,7 @@ export const filterPresets: FilterPreset[] = [
     key: 'hide_python_internals',
     name: 'Hide Python Internals',
     description: 'Excludes Python interpreter internal functions from the profile',
+    detect: mappingFiles => mappingFiles.some(f => f.includes('python3')),
     filters: [
       {
         type: 'frame',
@@ -171,6 +184,7 @@ export const filterPresets: FilterPreset[] = [
     key: 'hide_libc',
     name: 'Hide libc',
     description: 'Excludes C standard library functions from the profile',
+    detect: mappingFiles => mappingFiles.some(f => f.includes('libc.so')),
     filters: [
       {
         type: 'frame',
@@ -184,6 +198,8 @@ export const filterPresets: FilterPreset[] = [
     key: 'hide_tokio_frames',
     name: 'Hide Tokio Frames',
     description: 'Excludes Tokio runtime frames from the profile',
+    detect: (_mappingFiles, functionNames) =>
+      functionNames.some(fn => fn.startsWith('tokio::') || fn.startsWith('<tokio::')),
     filters: [
       {
         type: 'frame',
@@ -209,6 +225,10 @@ export const filterPresets: FilterPreset[] = [
     key: 'hide_rust_futures',
     name: 'Hide Rust Futures Infrastructure',
     description: 'Excludes Rust futures infrastructure frames from the profile',
+    detect: (_mappingFiles, functionNames) =>
+      functionNames.some(
+        fn => fn.includes('futures_core') || fn.includes('core::future::future::Future')
+      ),
     filters: [
       {
         type: 'frame',
@@ -282,6 +302,13 @@ export const filterPresets: FilterPreset[] = [
     key: 'hide_rust_panic_backtrace',
     name: 'Hide Rust Panic Backtrace Infrastructure',
     description: 'Excludes Rust panic and backtrace infrastructure frames from the profile',
+    detect: (_mappingFiles, functionNames) =>
+      functionNames.some(
+        fn =>
+          fn.startsWith('std::panic') ||
+          fn.startsWith('<core::panic') ||
+          fn.startsWith('std::sys::backtrace')
+      ),
     filters: [
       {
         type: 'frame',
@@ -333,11 +360,22 @@ export const getPresetByKey = (key: string): FilterPreset | undefined => {
   return filterPresets.find(preset => preset.key === key);
 };
 
-export const getPresetsForProfileType = (profileType?: string): FilterPreset[] => {
-  if (profileType === undefined || profileType === '') return filterPresets;
-
+export const getPresetsForProfileType = (
+  profileType?: string,
+  mappingFiles?: string[],
+  functionNames?: string[]
+): FilterPreset[] => {
   return filterPresets.filter(preset => {
-    if (preset.allowedProfileTypes === undefined) return true;
-    return preset.allowedProfileTypes.includes(profileType);
+    if (
+      preset.allowedProfileTypes !== undefined &&
+      profileType !== undefined &&
+      profileType !== '' &&
+      !preset.allowedProfileTypes.includes(profileType)
+    ) {
+      return false;
+    }
+    if (preset.detect === undefined) return true;
+    if (mappingFiles === undefined || functionNames === undefined) return true;
+    return preset.detect(mappingFiles, functionNames);
   });
 };

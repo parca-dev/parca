@@ -81,7 +81,7 @@ export const ProfileView = ({
     profileSource?.ProfileType()
   );
 
-  const {colorMappings} = useProfileMetadata({
+  const {colorMappings, table: flamegraphTable} = useProfileMetadata({
     flamegraphArrow: flamegraphData.arrow,
     metadataMappingFiles: flamegraphData.metadataMappingFiles,
     metadataLoading: flamegraphData.metadataLoading,
@@ -137,7 +137,14 @@ export const ProfileView = ({
 
   return (
     <KeyDownProvider>
-      <ProfileViewContextProvider value={{profileSource, compareMode}}>
+      <ProfileViewContextProvider
+        value={{
+          profileSource,
+          compareMode,
+          metadataMappingFiles: flamegraphData.metadataMappingFiles,
+          flamegraphTable,
+        }}
+      >
         <DashboardProvider>
           <ProfileHeader
             profileSourceString={profileSource?.toString(timezone)}
