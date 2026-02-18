@@ -276,6 +276,7 @@ const ProfileSelector = ({
     querySelection,
     navigateTo,
     loading: sumByLoading,
+    defaultProfileType: viewComponent?.defaultProfileType,
   });
 
   const searchDisabled =
