@@ -29,6 +29,7 @@ interface Props {
   querySelection: QuerySelection;
   navigateTo: NavigateFunction;
   loading: boolean;
+  defaultProfileType?: string;
 }
 
 export const useAutoQuerySelector = ({
@@ -39,6 +40,7 @@ export const useAutoQuerySelector = ({
   querySelection,
   navigateTo,
   loading,
+  defaultProfileType,
 }: Props): void => {
   const autoQuery = useAppSelector(selectAutoQuery);
   const dispatch = useAppDispatch();
@@ -136,6 +138,12 @@ export const useAutoQuerySelector = ({
         return;
       }
       dispatch(setAutoQuery('true'));
+
+      if (defaultProfileType != null && defaultProfileType.length > 0) {
+        setProfileName(defaultProfileType);
+        return;
+      }
+
       let profileType = profileTypesData.types.find(
         type => type.name === 'parca_agent' && type.sampleType === 'samples' && type.delta
       );
@@ -166,6 +174,7 @@ export const useAutoQuerySelector = ({
     dispatch,
     setQueryExpression,
     setProfileName,
+    defaultProfileType,
   ]);
 
   useEffect(() => {

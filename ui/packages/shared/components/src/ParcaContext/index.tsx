@@ -85,6 +85,7 @@ interface Props {
     emitQuery: (query: string) => void;
     createViewComponent?: ReactNode;
     disableProfileTypesDropdown?: boolean;
+    defaultProfileType?: string;
     labelnames?: string[];
     disableExplorativeQuerying?: boolean;
     profileFilterDefaults?: unknown[];
