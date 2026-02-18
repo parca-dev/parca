@@ -80,7 +80,7 @@ const Select = ({
     'text-gray-100 dark:gray-900 bg-indigo-600 border-indigo-500 font-medium py-2 px-4 focus:ring-indigo-500 focus:border-indigo-500';
 
   return (
-    <Listbox value={selectedKey} onChange={onSelection}>
+    <Listbox value={selectedKey} onChange={onSelection} disabled={disabled}>
       {({open}) => (
         <div className="relative">
           <div id={id}>
@@ -88,7 +88,7 @@ const Select = ({
               className={cx(
                 styles,
                 width !== undefined ? `w-${width}` : 'w-full',
-                disabled ? 'cursor-not-allowed pointer-events-none' : '',
+                disabled ? 'opacity-50 cursor-not-allowed' : '',
                 primary ? primaryStyles : defaultStyles,
                 {[className]: className.length > 0}
               )}
