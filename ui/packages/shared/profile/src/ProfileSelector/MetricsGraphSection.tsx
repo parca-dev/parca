@@ -14,7 +14,7 @@
 import cx from 'classnames';
 
 import {Label, QueryServiceClient} from '@parca/client';
-import {DateTimeRange, useParcaContext, useURLStateBatch} from '@parca/components';
+import {DateTimeRange, useURLStateBatch} from '@parca/components';
 import {Query} from '@parca/parser';
 
 import {ProfileSelection} from '..';
