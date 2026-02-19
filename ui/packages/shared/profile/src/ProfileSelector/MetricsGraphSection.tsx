@@ -14,7 +14,7 @@
 import cx from 'classnames';
 
 import {Label, QueryServiceClient} from '@parca/client';
-import {DateTimeRange, useURLStateBatch} from '@parca/components';
+import {DateTimeRange, useParcaContext, useURLStateBatch} from '@parca/components';
 import {Query} from '@parca/parser';
 
 import {ProfileSelection} from '..';
@@ -68,7 +68,8 @@ export function MetricsGraphSection({
 }: MetricsGraphSectionProps): JSX.Element {
   const resetStateOnSeriesChange = useResetStateOnSeriesChange();
   const batchUpdates = useURLStateBatch();
-  const {heightStyle} = useMetricsGraphDimensions(comparing);
+  const {profileExplorer} = useParcaContext();
+  const {heightStyle} = useMetricsGraphDimensions(comparing, profileExplorer?.metricsGraph.height);
   const handleTimeRangeChange = (range: DateTimeRange): void => {
     const from = range.getFromMs();
     const to = range.getToMs();

@@ -26,7 +26,7 @@ const margin = 50;
 
 export const useMetricsGraphDimensions = (
   comparing: boolean,
-  overrideHeight?: number
+  maxHeight = 402
 ): MetricsGraphDimensions => {
   let {width} = useWindowSize();
   const {profileExplorer} = useParcaContext();
@@ -38,7 +38,6 @@ export const useMetricsGraphDimensions = (
       margin: 0,
     };
   }
-  const maxHeight: number = overrideHeight ?? profileExplorer.metricsGraph.height;
   width = width - profileExplorer.PaddingX;
   if (comparing) {
     width = width / 2 - 32;

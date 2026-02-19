@@ -224,8 +224,12 @@ const ProfileMetricsGraph = ({
     stepCount,
     queryExpression === ''
   );
-  const {onError, perf, authenticationErrorMessage, isDarkMode, timezone} = useParcaContext();
-  const {width, height, margin, heightStyle} = useMetricsGraphDimensions(comparing);
+  const {onError, perf, authenticationErrorMessage, isDarkMode, timezone, profileExplorer} =
+    useParcaContext();
+  const {width, height, margin, heightStyle} = useMetricsGraphDimensions(
+    comparing,
+    profileExplorer?.metricsGraph.height
+  );
   const [showAllSeriesForResponse, setShowAllSeriesForResponse] = useState<typeof response | null>(
     null
   );
