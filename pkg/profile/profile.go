@@ -14,9 +14,14 @@
 package profile
 
 import (
+	"strings"
 	"time"
 
 	"github.com/apache/arrow-go/v18/arrow"
+	"github.com/prometheus/prometheus/model/labels"
+	"github.com/prometheus/prometheus/promql/parser"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	pprofproto "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
@@ -189,4 +194,55 @@ func MetaFromPprof(p *pprofproto.Profile, name string, sampleIndex int) Meta {
 		PeriodType: periodType,
 		SampleType: sampleType,
 	}
+}
+
+// QueryParts contains parsed query components.
+type QueryParts struct {
+	Meta     Meta
+	Delta    bool
+	Matchers []*labels.Matcher
+}
+
+// ParseQuery parses a Parca query string into its components.
+// The query format is: <name>:<sample-type>:<sample-unit>:<period-type>:<period-unit>[:delta]{label=value,...}.
+func ParseQuery(query string) (QueryParts, error) {
+	parsedSelector, err := parser.ParseMetricSelector(query)
+	if err != nil {
+		return QueryParts{}, status.Error(codes.InvalidArgument, "failed to parse query")
+	}
+
+	sel := make([]*labels.Matcher, 0, len(parsedSelector))
+	var nameLabel *labels.Matcher
+	for _, matcher := range parsedSelector {
+		if matcher.Name == labels.MetricName {
+			nameLabel = matcher
+		} else {
+			sel = append(sel, matcher)
+		}
+	}
+	if nameLabel == nil {
+		return QueryParts{}, status.Error(codes.InvalidArgument, "query must contain a profile-type selection")
+	}
+
+	parts := strings.Split(nameLabel.Value, ":")
+	if len(parts) != 5 && len(parts) != 6 {
+		return QueryParts{}, status.Errorf(codes.InvalidArgument, "profile-type selection must be of the form <name>:<sample-type>:<sample-unit>:<period-type>:<period-unit>(:delta), got(%d): %q", len(parts), nameLabel.Value)
+	}
+	delta := len(parts) == 6 && parts[5] == "delta"
+
+	return QueryParts{
+		Meta: Meta{
+			Name: parts[0],
+			SampleType: ValueType{
+				Type: parts[1],
+				Unit: parts[2],
+			},
+			PeriodType: ValueType{
+				Type: parts[3],
+				Unit: parts[4],
+			},
+		},
+		Delta:    delta,
+		Matchers: sel,
+	}, nil
 }

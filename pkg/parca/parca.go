@@ -67,6 +67,7 @@ import (
 	sharepb "github.com/parca-dev/parca/gen/proto/go/parca/share/v1alpha1"
 	telemetry "github.com/parca-dev/parca/gen/proto/go/parca/telemetry/v1alpha1"
 	"github.com/parca-dev/parca/pkg/badgerlogger"
+	"github.com/parca-dev/parca/pkg/clickhouse"
 	"github.com/parca-dev/parca/pkg/config"
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/ingester"
@@ -172,12 +173,25 @@ type FlagsDebuginfod struct {
 	HTTPRequestTimeout time.Duration `default:"5m" help:"Timeout duration for HTTP request to upstream debuginfod server. Defaults to 5m"`
 }
 
+// FlagsClickHouse configures the ClickHouse storage backend.
+type FlagsClickHouse struct {
+	Enabled  bool   `kong:"help='Enable ClickHouse storage backend instead of FrostDB.',default='false',hidden=''"`
+	Address  string `kong:"help='ClickHouse server address.',default='localhost:9000',hidden=''"`
+	Database string `kong:"help='ClickHouse database name.',default='parca',hidden=''"`
+	Username string `kong:"help='ClickHouse username.',default='',hidden=''"`
+	Password string `kong:"help='ClickHouse password.',default='',env='PARCA_CLICKHOUSE_PASSWORD',hidden=''"`
+	Table    string `kong:"help='ClickHouse table name for profile data.',default='stacktraces',hidden=''"`
+	Secure   bool   `kong:"help='Use TLS for ClickHouse connection.',default='false',hidden=''"`
+}
+
 // FlagsHidden contains hidden flags intended only for debugging or experimental features.
 type FlagsHidden struct {
 	DebugNormalizeAddresses bool `kong:"help='Normalize sampled addresses.',default='true',hidden=''"`
 
 	// IcebergStorage is a experimental feature that enables Apache Iceberg storage for profile storage. This can be used with the enable-persistence flag.
 	IcebergStorage bool `kong:"help='Use iceberg storage for profile storage. Requires enable-persistence flag.',default='false',hidden=''"`
+
+	ClickHouse FlagsClickHouse `embed:"" prefix:"clickhouse-"`
 }
 
 // Run the parca server.
@@ -280,94 +294,6 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	frostdbOptions := []frostdb.Option{
-		frostdb.WithActiveMemorySize(flags.Storage.ActiveMemory),
-		frostdb.WithLogger(logger),
-		frostdb.WithRegistry(reg),
-		frostdb.WithTracer(tracerProvider.Tracer("frostdb")),
-	}
-
-	if flags.EnablePersistence {
-		blocksDirectory := "blocks"
-		prefixedBucket := objstore.NewPrefixedBucket(bucket, blocksDirectory)
-		var store frostdb.DataSinkSource
-		if flags.Hidden.IcebergStorage { // Experimental Iceberg storage.
-			// Optain the bucket URI from the config
-			uri, err := BucketURIFromConfig(bucketCfg)
-			if err != nil {
-				level.Error(logger).Log("msg", "failed to get bucket URI from config", "err", err)
-				return err
-			}
-			path := filepath.Join(uri, blocksDirectory)
-			store, err = storage.NewIceberg(path, catalog.NewHDFS(path, prefixedBucket), prefixedBucket,
-				storage.WithIcebergPartitionSpec(
-					iceberg.NewPartitionSpec( // Partition the table by timestamp.
-						iceberg.PartitionField{
-							Name:      profile.ColumnTimestamp,
-							Transform: iceberg.IdentityTransform{},
-						},
-					),
-				))
-			if err != nil {
-				level.Error(logger).Log("msg", "failed to initialize iceberg", "err", err)
-				return err
-			}
-		} else {
-			store = frostdb.NewDefaultObjstoreBucket(prefixedBucket)
-		}
-		frostdbOptions = append(
-			frostdbOptions,
-			frostdb.WithReadWriteStorage(store),
-		)
-	}
-
-	if flags.Storage.EnableWAL {
-		frostdbOptions = append(
-			frostdbOptions,
-			frostdb.WithWAL(),
-			frostdb.WithStoragePath(flags.Storage.Path),
-			frostdb.WithSnapshotTriggerSize(flags.Storage.SnapshotTriggerSize),
-		)
-
-		if flags.Storage.IndexOnDisk {
-			frostdbOptions = append(frostdbOptions, frostdb.WithIndexConfig(
-				[]*index.LevelConfig{
-					{Level: index.L0, MaxSize: 1024 * 1024 * 15, Type: index.CompactionTypeParquetDisk},
-					{Level: index.L1, MaxSize: 1024 * 1024 * 128, Type: index.CompactionTypeParquetDisk},
-					{Level: index.L2, MaxSize: 1024 * 1024 * 512},
-				}))
-		}
-	}
-
-	col, err := frostdb.New(frostdbOptions...)
-	if err != nil {
-		level.Error(logger).Log("msg", "failed to initialize storage", "err", err)
-		return err
-	}
-
-	colDB, err := col.DB(ctx, "parca")
-	if err != nil {
-		level.Error(logger).Log("msg", "failed to load database", "err", err)
-		return err
-	}
-
-	def := profile.SchemaDefinition()
-	table, err := colDB.Table("stacktraces",
-		frostdb.NewTableConfig(
-			def,
-			frostdb.WithRowGroupSize(flags.Storage.RowGroupSize),
-		),
-	)
-	if err != nil {
-		level.Error(logger).Log("msg", "create table", "err", err)
-		return err
-	}
-	schema, err := dynparquet.SchemaFromDefinition(def)
-	if err != nil {
-		level.Error(logger).Log("msg", "schema from definition", "err", err)
-		return err
-	}
-
 	var debuginfodClients debuginfo.DebuginfodClients = debuginfo.NopDebuginfodClients{}
 	if len(flags.Debuginfod.UpstreamServers) > 0 {
 		debuginfodClients = debuginfo.NewDebuginfodClients(
@@ -402,36 +328,191 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	ingester := ingester.NewIngester(logger, table)
-	querier := parcacol.NewQuerier(
-		logger,
-		tracerProvider.Tracer("querier"),
-		query.NewEngine(
-			memory.DefaultAllocator,
-			colDB.TableProvider(),
-			query.WithTracer(tracerProvider.Tracer("query-engine")),
-		),
-		"stacktraces",
-		symbolizer.New(
-			logger,
-			debuginfoMetadata,
-			symbolizer.NewBadgerCache(db),
-			debuginfo.NewFetcher(debuginfodClients, debuginfoBucket),
-			flags.Debuginfo.CacheDir,
-			flags.Symbolizer.ExternalAddr2linePath,
-			symbolizer.WithDemangleMode(flags.Symbolizer.DemangleMode),
-		),
-		memory.DefaultAllocator,
+	// Initialize storage backend - either ClickHouse or FrostDB
+	var (
+		profileIngester ingester.Ingester
+		querier         queryservice.Querier
+		s               *profilestore.ProfileColumnStore
+		col             *frostdb.ColumnStore
+		chClient        *clickhouse.Client
 	)
 
-	s := profilestore.NewProfileColumnStore(
-		reg,
-		logger,
-		tracerProvider.Tracer("profilestore"),
-		ingester,
-		schema,
-		memory.DefaultAllocator,
-	)
+	if flags.Hidden.ClickHouse.Enabled {
+		// Initialize ClickHouse storage backend
+		level.Info(logger).Log("msg", "initializing ClickHouse storage backend", "address", flags.Hidden.ClickHouse.Address)
+
+		chClient, err = clickhouse.NewClient(ctx, clickhouse.Config{
+			Address:  flags.Hidden.ClickHouse.Address,
+			Database: flags.Hidden.ClickHouse.Database,
+			Username: flags.Hidden.ClickHouse.Username,
+			Password: flags.Hidden.ClickHouse.Password,
+			Table:    flags.Hidden.ClickHouse.Table,
+			Secure:   flags.Hidden.ClickHouse.Secure,
+		})
+		if err != nil {
+			level.Error(logger).Log("msg", "failed to connect to ClickHouse", "err", err)
+			return fmt.Errorf("failed to connect to ClickHouse: %w", err)
+		}
+
+		if err := chClient.EnsureSchema(ctx); err != nil {
+			level.Error(logger).Log("msg", "failed to ensure ClickHouse schema", "err", err)
+			return fmt.Errorf("failed to ensure ClickHouse schema: %w", err)
+		}
+
+		profileIngester = clickhouse.NewIngester(logger, chClient)
+		querier = clickhouse.NewQuerier(
+			chClient,
+			logger,
+			tracerProvider.Tracer("clickhouse-querier"),
+			memory.DefaultAllocator,
+			symbolizer.New(
+				logger,
+				debuginfoMetadata,
+				symbolizer.NewBadgerCache(db),
+				debuginfo.NewFetcher(debuginfodClients, debuginfoBucket),
+				flags.Debuginfo.CacheDir,
+				flags.Symbolizer.ExternalAddr2linePath,
+				symbolizer.WithDemangleMode(flags.Symbolizer.DemangleMode),
+			),
+		)
+
+		// We still need the schema for ProfileColumnStore
+		def := profile.SchemaDefinition()
+		schema, err := dynparquet.SchemaFromDefinition(def)
+		if err != nil {
+			level.Error(logger).Log("msg", "schema from definition", "err", err)
+			return err
+		}
+
+		s = profilestore.NewProfileColumnStore(
+			reg,
+			logger,
+			tracerProvider.Tracer("profilestore"),
+			profileIngester,
+			schema,
+			memory.DefaultAllocator,
+		)
+	} else {
+		// Initialize FrostDB storage backend (default)
+		frostdbOptions := []frostdb.Option{
+			frostdb.WithActiveMemorySize(flags.Storage.ActiveMemory),
+			frostdb.WithLogger(logger),
+			frostdb.WithRegistry(reg),
+			frostdb.WithTracer(tracerProvider.Tracer("frostdb")),
+		}
+
+		if flags.EnablePersistence {
+			blocksDirectory := "blocks"
+			prefixedBucket := objstore.NewPrefixedBucket(bucket, blocksDirectory)
+			var store frostdb.DataSinkSource
+			if flags.Hidden.IcebergStorage { // Experimental Iceberg storage.
+				// Optain the bucket URI from the config
+				uri, err := BucketURIFromConfig(bucketCfg)
+				if err != nil {
+					level.Error(logger).Log("msg", "failed to get bucket URI from config", "err", err)
+					return err
+				}
+				path := filepath.Join(uri, blocksDirectory)
+				store, err = storage.NewIceberg(path, catalog.NewHDFS(path, prefixedBucket), prefixedBucket,
+					storage.WithIcebergPartitionSpec(
+						iceberg.NewPartitionSpec( // Partition the table by timestamp.
+							iceberg.PartitionField{
+								Name:      profile.ColumnTimestamp,
+								Transform: iceberg.IdentityTransform{},
+							},
+						),
+					))
+				if err != nil {
+					level.Error(logger).Log("msg", "failed to initialize iceberg", "err", err)
+					return err
+				}
+			} else {
+				store = frostdb.NewDefaultObjstoreBucket(prefixedBucket)
+			}
+			frostdbOptions = append(
+				frostdbOptions,
+				frostdb.WithReadWriteStorage(store),
+			)
+		}
+
+		if flags.Storage.EnableWAL {
+			frostdbOptions = append(
+				frostdbOptions,
+				frostdb.WithWAL(),
+				frostdb.WithStoragePath(flags.Storage.Path),
+				frostdb.WithSnapshotTriggerSize(flags.Storage.SnapshotTriggerSize),
+			)
+
+			if flags.Storage.IndexOnDisk {
+				frostdbOptions = append(frostdbOptions, frostdb.WithIndexConfig(
+					[]*index.LevelConfig{
+						{Level: index.L0, MaxSize: 1024 * 1024 * 15, Type: index.CompactionTypeParquetDisk},
+						{Level: index.L1, MaxSize: 1024 * 1024 * 128, Type: index.CompactionTypeParquetDisk},
+						{Level: index.L2, MaxSize: 1024 * 1024 * 512},
+					}))
+			}
+		}
+
+		col, err = frostdb.New(frostdbOptions...)
+		if err != nil {
+			level.Error(logger).Log("msg", "failed to initialize storage", "err", err)
+			return err
+		}
+
+		colDB, err := col.DB(ctx, "parca")
+		if err != nil {
+			level.Error(logger).Log("msg", "failed to load database", "err", err)
+			return err
+		}
+
+		def := profile.SchemaDefinition()
+		table, err := colDB.Table("stacktraces",
+			frostdb.NewTableConfig(
+				def,
+				frostdb.WithRowGroupSize(flags.Storage.RowGroupSize),
+			),
+		)
+		if err != nil {
+			level.Error(logger).Log("msg", "create table", "err", err)
+			return err
+		}
+		schema, err := dynparquet.SchemaFromDefinition(def)
+		if err != nil {
+			level.Error(logger).Log("msg", "schema from definition", "err", err)
+			return err
+		}
+
+		profileIngester = ingester.NewIngester(logger, table)
+		querier = parcacol.NewQuerier(
+			logger,
+			tracerProvider.Tracer("querier"),
+			query.NewEngine(
+				memory.DefaultAllocator,
+				colDB.TableProvider(),
+				query.WithTracer(tracerProvider.Tracer("query-engine")),
+			),
+			"stacktraces",
+			symbolizer.New(
+				logger,
+				debuginfoMetadata,
+				symbolizer.NewBadgerCache(db),
+				debuginfo.NewFetcher(debuginfodClients, debuginfoBucket),
+				flags.Debuginfo.CacheDir,
+				flags.Symbolizer.ExternalAddr2linePath,
+				symbolizer.WithDemangleMode(flags.Symbolizer.DemangleMode),
+			),
+			memory.DefaultAllocator,
+		)
+
+		s = profilestore.NewProfileColumnStore(
+			reg,
+			logger,
+			tracerProvider.Tracer("profilestore"),
+			profileIngester,
+			schema,
+			memory.DefaultAllocator,
+		)
+	}
 
 	propagators := propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
 	opts := []grpc.DialOption{
@@ -643,11 +724,17 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 				level.Error(logger).Log("msg", "error shutting down server", "err", err)
 			}
 
-			// Close the columnstore after the parcaserver has shutdown to ensure no more writes occur against it.
+			// Close the storage backend after the parcaserver has shutdown to ensure no more writes occur against it.
 
 			if col != nil {
 				if err := col.Close(); err != nil {
 					level.Error(logger).Log("msg", "error closing columnstore", "err", err)
+				}
+			}
+
+			if chClient != nil {
+				if err := chClient.Close(); err != nil {
+					level.Error(logger).Log("msg", "error closing ClickHouse client", "err", err)
 				}
 			}
 		},
