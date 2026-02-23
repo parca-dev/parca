@@ -22,15 +22,12 @@ interface MetricsGraphDimensions {
   margin: number;
 }
 
-const MAX_HEIGHT = 402;
-const MINI_VARIANT_HEIGHT = 180;
 const margin = 50;
 
 export const useMetricsGraphDimensions = (
   comparing: boolean,
-  isMini = false
+  maxHeight = 402
 ): MetricsGraphDimensions => {
-  const maxHeight = isMini ? MINI_VARIANT_HEIGHT : MAX_HEIGHT;
   let {width} = useWindowSize();
   const {profileExplorer} = useParcaContext();
   if (profileExplorer == null) {
@@ -45,14 +42,12 @@ export const useMetricsGraphDimensions = (
   if (comparing) {
     width = width / 2 - 32;
   }
-  const height = isMini ? MINI_VARIANT_HEIGHT : Math.min(width / 2.5, maxHeight);
-  const heightStyle = isMini
-    ? `${MINI_VARIANT_HEIGHT + margin}px`
-    : `min(${maxHeight + margin}px, ${
-        comparing
-          ? profileExplorer.metricsGraph.maxHeightStyle.compareMode
-          : profileExplorer.metricsGraph.maxHeightStyle.default
-      })`;
+  const height = Math.min(width / 2.5, maxHeight);
+  const heightStyle = `min(${maxHeight + margin}px, ${
+    comparing
+      ? profileExplorer.metricsGraph.maxHeightStyle.compareMode
+      : profileExplorer.metricsGraph.maxHeightStyle.default
+  })`;
   return {
     width,
     height,

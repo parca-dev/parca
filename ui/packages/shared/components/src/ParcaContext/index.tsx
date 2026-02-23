@@ -59,6 +59,7 @@ interface Props {
   profileExplorer?: {
     PaddingX: number;
     metricsGraph: {
+      height: number;
       maxHeightStyle: {
         default: string;
         compareMode: string;
@@ -108,6 +109,7 @@ export const defaultValue: Props = {
   profileExplorer: {
     PaddingX: 32,
     metricsGraph: {
+      height: 402,
       maxHeightStyle: {
         default: 'calc(47vw - 24px)',
         compareMode: 'calc(23.5vw - 24px)',

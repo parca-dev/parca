@@ -224,11 +224,11 @@ const ProfileMetricsGraph = ({
     stepCount,
     queryExpression === ''
   );
-  const {onError, perf, authenticationErrorMessage, isDarkMode, timezone} = useParcaContext();
-  const isGpuProfileType = queryExpression.includes(':cuda:');
+  const {onError, perf, authenticationErrorMessage, isDarkMode, timezone, profileExplorer} =
+    useParcaContext();
   const {width, height, margin, heightStyle} = useMetricsGraphDimensions(
     comparing,
-    isGpuProfileType
+    profileExplorer?.metricsGraph.height
   );
   const [showAllSeriesForResponse, setShowAllSeriesForResponse] = useState<typeof response | null>(
     null
