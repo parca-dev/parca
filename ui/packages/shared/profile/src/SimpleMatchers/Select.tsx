@@ -86,6 +86,7 @@ const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [isRefetching, setIsRefetching] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const optionsRef = useRef<HTMLDivElement>(null);
@@ -102,6 +103,11 @@ const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
     }
   }, [refetchValues, isRefetching]);
 
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 150);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   let items: TypedSelectItem[] = [];
   if (itemsProp[0] != null && 'type' in itemsProp[0]) {
     items = (itemsProp as GroupedSelectItem[]).flatMap(item =>
@@ -111,21 +117,19 @@ const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
     items = (itemsProp as SelectItem[]).map(item => ({...item, type: ''}));
   }
 
-  const filteredItems = searchable
-    ? items
-        .filter(item =>
-          item.element.active.props.children
-            .toString()
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase())
-        )
-        .sort((a, b) => {
-          if (searchTerm === '') {
-            return a.key.localeCompare(b.key);
-          }
-          return levenshtein.get(a.key, searchTerm) - levenshtein.get(b.key, searchTerm);
-        })
-    : items;
+  const filteredItems = useMemo(() => {
+    if (!searchable) return items;
+    const lowerSearch = debouncedSearchTerm.toLowerCase();
+    const filtered = items.filter(item =>
+      item.element.active.props.children.toString().toLowerCase().includes(lowerSearch)
+    );
+    if (debouncedSearchTerm === '') {
+      return filtered.sort((a, b) => a.key.localeCompare(b.key));
+    }
+    return filtered.sort(
+      (a, b) => levenshtein.get(a.key, debouncedSearchTerm) - levenshtein.get(b.key, debouncedSearchTerm)
+    );
+  }, [items, debouncedSearchTerm, searchable]);
 
   const selection = editable ? selectedKey : items.find(v => v.key === selectedKey);
 
@@ -224,20 +228,24 @@ const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
     e.target.value = value;
   };
 
-  const groupedFilteredItems = filteredItems
-    .reduce((acc: GroupedSelectItem[], item) => {
-      const group = acc.find(g => g.type === item.type);
-      if (group != null) {
-        group.values.push(item);
-      } else {
-        acc.push({type: item.type, values: [item]});
-      }
-      return acc;
-    }, [])
-    .sort((a, b) => a.values.length - b.values.length);
+  const groupedFilteredItems = useMemo(() => {
+    return filteredItems
+      .reduce((acc: GroupedSelectItem[], item) => {
+        const group = acc.find(g => g.type === item.type);
+        if (group != null) {
+          group.values.push(item);
+        } else {
+          acc.push({type: item.type, values: [item]});
+        }
+        return acc;
+      }, [])
+      .sort((a, b) => a.values.length - b.values.length);
+  }, [filteredItems]);
 
-  const showHeaders =
-    groupedFilteredItems.length > 1 && groupedFilteredItems.every(g => g.type !== '');
+  const showHeaders = useMemo(
+    () => groupedFilteredItems.length > 1 && groupedFilteredItems.every(g => g.type !== ''),
+    [groupedFilteredItems]
+  );
 
   const flatList = useMemo(() => {
     const list: Array<
