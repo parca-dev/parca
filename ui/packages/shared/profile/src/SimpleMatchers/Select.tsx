@@ -13,9 +13,8 @@
 
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
-import {useVirtualizer} from '@tanstack/react-virtual';
-
 import {Icon} from '@iconify/react';
+import {useVirtualizer} from '@tanstack/react-virtual';
 import cx from 'classnames';
 import levenshtein from 'fast-levenshtein';
 
@@ -127,7 +126,8 @@ const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
       return filtered.sort((a, b) => a.key.localeCompare(b.key));
     }
     return filtered.sort(
-      (a, b) => levenshtein.get(a.key, debouncedSearchTerm) - levenshtein.get(b.key, debouncedSearchTerm)
+      (a, b) =>
+        levenshtein.get(a.key, debouncedSearchTerm) - levenshtein.get(b.key, debouncedSearchTerm)
     );
   }, [items, debouncedSearchTerm, searchable]);
 
