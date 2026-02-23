@@ -107,14 +107,14 @@ const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  let items: TypedSelectItem[] = [];
-  if (itemsProp[0] != null && 'type' in itemsProp[0]) {
-    items = (itemsProp as GroupedSelectItem[]).flatMap(item =>
-      item.values.map(v => ({...v, type: item.type}))
-    );
-  } else {
-    items = (itemsProp as SelectItem[]).map(item => ({...item, type: ''}));
-  }
+  const items = useMemo<TypedSelectItem[]>(() => {
+    if (itemsProp[0] != null && 'type' in itemsProp[0]) {
+      return (itemsProp as GroupedSelectItem[]).flatMap(item =>
+        item.values.map(v => ({...v, type: item.type}))
+      );
+    }
+    return (itemsProp as SelectItem[]).map(item => ({...item, type: ''}));
+  }, [itemsProp]);
 
   const filteredItems = useMemo(() => {
     if (!searchable) return items;
