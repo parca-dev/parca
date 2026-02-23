@@ -11,9 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {Fragment, useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {Icon} from '@iconify/react';
+import {useVirtualizer} from '@tanstack/react-virtual';
 import cx from 'classnames';
 import levenshtein from 'fast-levenshtein';
 
@@ -84,11 +85,11 @@ const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [isRefetching, setIsRefetching] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const optionsRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
-  const optionRefs = useRef<Array<HTMLElement | null>>([]);
 
   const handleRefetch = useCallback(async () => {
     if (refetchValues == null || isRefetching) return;
@@ -101,30 +102,34 @@ const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
     }
   }, [refetchValues, isRefetching]);
 
-  let items: TypedSelectItem[] = [];
-  if (itemsProp[0] != null && 'type' in itemsProp[0]) {
-    items = (itemsProp as GroupedSelectItem[]).flatMap(item =>
-      item.values.map(v => ({...v, type: item.type}))
-    );
-  } else {
-    items = (itemsProp as SelectItem[]).map(item => ({...item, type: ''}));
-  }
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 150);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
-  const filteredItems = searchable
-    ? items
-        .filter(item =>
-          item.element.active.props.children
-            .toString()
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase())
-        )
-        .sort((a, b) => {
-          if (searchTerm === '') {
-            return a.key.localeCompare(b.key);
-          }
-          return levenshtein.get(a.key, searchTerm) - levenshtein.get(b.key, searchTerm);
-        })
-    : items;
+  const items = useMemo<TypedSelectItem[]>(() => {
+    if (itemsProp[0] != null && 'type' in itemsProp[0]) {
+      return (itemsProp as GroupedSelectItem[]).flatMap(item =>
+        item.values.map(v => ({...v, type: item.type}))
+      );
+    }
+    return (itemsProp as SelectItem[]).map(item => ({...item, type: ''}));
+  }, [itemsProp]);
+
+  const filteredItems = useMemo(() => {
+    if (!searchable) return items;
+    const lowerSearch = debouncedSearchTerm.toLowerCase();
+    const filtered = items.filter(item =>
+      item.element.active.props.children.toString().toLowerCase().includes(lowerSearch)
+    );
+    if (debouncedSearchTerm === '') {
+      return filtered.sort((a, b) => a.key.localeCompare(b.key));
+    }
+    return filtered.sort(
+      (a, b) =>
+        levenshtein.get(a.key, debouncedSearchTerm) - levenshtein.get(b.key, debouncedSearchTerm)
+    );
+  }, [items, debouncedSearchTerm, searchable]);
 
   const selection = editable ? selectedKey : items.find(v => v.key === selectedKey);
 
@@ -146,28 +151,6 @@ const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
       searchInputRef.current?.focus();
     }
   }, [isOpen, searchable]);
-
-  useEffect(() => {
-    if (
-      focusedIndex !== -1 &&
-      optionsRef.current !== null &&
-      optionRefs.current[focusedIndex] !== null
-    ) {
-      const optionElement = optionRefs.current[focusedIndex];
-      const optionsContainer = optionsRef.current;
-
-      if (optionElement !== null && optionsContainer !== null) {
-        const optionRect = optionElement.getBoundingClientRect();
-        const containerRect = optionsContainer.getBoundingClientRect();
-
-        if (optionRect.bottom > containerRect.bottom) {
-          optionsContainer.scrollTop += optionRect.bottom - containerRect.bottom;
-        } else if (optionRect.top < containerRect.top) {
-          optionsContainer.scrollTop -= containerRect.top - optionRect.top;
-        }
-      }
-    }
-  }, [focusedIndex]);
 
   const handleKeyDown = (e: React.KeyboardEvent): void => {
     if (e.key === 'Enter') {
@@ -245,17 +228,66 @@ const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
     e.target.value = value;
   };
 
-  const groupedFilteredItems = filteredItems
-    .reduce((acc: GroupedSelectItem[], item) => {
-      const group = acc.find(g => g.type === item.type);
-      if (group != null) {
-        group.values.push(item);
-      } else {
-        acc.push({type: item.type, values: [item]});
+  const groupedFilteredItems = useMemo(() => {
+    return filteredItems
+      .reduce((acc: GroupedSelectItem[], item) => {
+        const group = acc.find(g => g.type === item.type);
+        if (group != null) {
+          group.values.push(item);
+        } else {
+          acc.push({type: item.type, values: [item]});
+        }
+        return acc;
+      }, [])
+      .sort((a, b) => a.values.length - b.values.length);
+  }, [filteredItems]);
+
+  const showHeaders = useMemo(
+    () => groupedFilteredItems.length > 1 && groupedFilteredItems.every(g => g.type !== ''),
+    [groupedFilteredItems]
+  );
+
+  const flatList = useMemo(() => {
+    const list: Array<
+      {type: 'header'; label: string} | {type: 'option'; item: TypedSelectItem; flatIndex: number}
+    > = [];
+    let optionIndex = 0;
+    for (const group of groupedFilteredItems) {
+      if (showHeaders && group.type !== '') {
+        list.push({type: 'header', label: group.type});
       }
-      return acc;
-    }, [])
-    .sort((a, b) => a.values.length - b.values.length);
+      for (const item of group.values) {
+        list.push({type: 'option', item: item as TypedSelectItem, flatIndex: optionIndex});
+        optionIndex++;
+      }
+    }
+    return list;
+  }, [groupedFilteredItems, showHeaders]);
+
+  const longestKey = useMemo(
+    () =>
+      filteredItems.reduce((a, b) => (a.key.length > b.key.length ? a : b), filteredItems[0])
+        ?.key ?? '',
+    [filteredItems]
+  );
+
+  const rowVirtualizer = useVirtualizer({
+    count: flatList.length,
+    getScrollElement: () => optionsRef.current,
+    estimateSize: () => 36,
+    overscan: 500,
+  });
+
+  useEffect(() => {
+    if (focusedIndex !== -1) {
+      const flatIdx = flatList.findIndex(
+        entry => entry.type === 'option' && entry.flatIndex === focusedIndex
+      );
+      if (flatIdx !== -1) {
+        rowVirtualizer.scrollToIndex(flatIdx, {align: 'auto'});
+      }
+    }
+  }, [focusedIndex, flatList, rowVirtualizer]);
 
   return (
     <div ref={containerRef} className="relative" onKeyDown={handleKeyDown} onClick={onButtonClick}>
@@ -349,28 +381,45 @@ const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
                   No values found
                 </div>
               ) : (
-                groupedFilteredItems.map(group => (
-                  <Fragment key={group.type}>
-                    {groupedFilteredItems.length > 1 &&
-                    groupedFilteredItems.every(g => g.type !== '') &&
-                    group.type !== '' ? (
-                      <div className="pl-2">
-                        <DividerWithLabel label={group.type} />
+                (() => {
+                  const virtualItems = rowVirtualizer.getVirtualItems();
+                  const paddingTop = virtualItems.length > 0 ? virtualItems[0]?.start ?? 0 : 0;
+                  const paddingBottom =
+                    virtualItems.length > 0
+                      ? rowVirtualizer.getTotalSize() -
+                        (virtualItems[virtualItems.length - 1]?.end ?? 0)
+                      : 0;
+                  return (
+                    <div>
+                      <div
+                        aria-hidden
+                        className="pl-3 pr-9 whitespace-nowrap overflow-hidden"
+                        style={{height: 0, visibility: 'hidden'}}
+                      >
+                        {longestKey}
                       </div>
-                    ) : null}
-                    {group.values.map((item, index) => (
-                      <OptionItem
-                        key={item.key}
-                        item={item}
-                        index={index}
-                        optionRefs={optionRefs}
-                        focusedIndex={focusedIndex}
-                        selectedKey={selectedKey}
-                        handleSelection={handleSelection}
-                      />
-                    ))}
-                  </Fragment>
-                ))
+                      {paddingTop > 0 && <div style={{height: paddingTop}} />}
+                      {virtualItems.map(virtualItem => {
+                        const entry = flatList[virtualItem.index];
+                        return entry.type === 'header' ? (
+                          <div key={virtualItem.key} className="pl-2">
+                            <DividerWithLabel label={entry.label} />
+                          </div>
+                        ) : (
+                          <OptionItem
+                            key={virtualItem.key}
+                            item={entry.item}
+                            index={entry.flatIndex}
+                            focusedIndex={focusedIndex}
+                            selectedKey={selectedKey}
+                            handleSelection={handleSelection}
+                          />
+                        );
+                      })}
+                      {paddingBottom > 0 && <div style={{height: paddingBottom}} />}
+                    </div>
+                  );
+                })()
               )}
             </div>
             {refetchValues !== undefined && loading !== true && (
@@ -392,14 +441,12 @@ const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
 
 const OptionItem = ({
   item,
-  optionRefs,
   index,
   focusedIndex,
   selectedKey,
   handleSelection,
 }: {
   item: SelectItem;
-  optionRefs: React.MutableRefObject<Array<HTMLElement | null>>;
   index: number;
   focusedIndex: number;
   selectedKey: string | undefined;
@@ -407,11 +454,6 @@ const OptionItem = ({
 }): JSX.Element => {
   return (
     <div
-      ref={el => {
-        if (el !== null) {
-          optionRefs.current[index] = el;
-        }
-      }}
       className={cx(
         'relative cursor-default select-none py-2 pl-3 pr-9',
         index === focusedIndex && 'bg-indigo-600 text-white',
