@@ -1,6 +1,6 @@
 {
   "name": "@parca/profile",
-  "version": "0.19.125",
+  "version": "0.19.126",
   "description": "Profile viewing libraries",
   "dependencies": {
     "@floating-ui/react": "^0.27.12",
@@ -20,6 +20,7 @@
     "@storybook/preview-api": "^8.4.3",
     "@tanstack/react-query": "^4.0.5",
     "@tanstack/react-table": "^8.17.3",
+    "@tanstack/react-virtual": "^3.5.0",
     "@tanstack/table-core": "^8.16.0",
     "@types/d3": "^7.4.3",
     "@types/d3-scale": "^4.0.8",
