@@ -29,6 +29,14 @@ service ProfileStoreService {
       body: "*"
     };
   }
+
+  // WriteArrow accepts an arrow IPC buffer containing profiling data.
+  rpc WriteArrow(WriteArrowRequest) returns (WriteArrowResponse) {
+    option (google.api.http) = {
+      post: "/profiles/writearrow"
+      body: "*"
+    };
+  }
 }
 
 // WriteRequest may contain an apache arrow record that only contains profiling
@@ -48,6 +56,15 @@ message WriteResponse {
   // contains a column containing the stacktraces that are unknown.
   bytes record = 1;
 }
+
+// WriteArrowRequest is the request containing an arrow IPC buffer.
+message WriteArrowRequest {
+  // ipc_buffer is the raw bytes of an arrow IPC file.
+  bytes ipc_buffer = 1;
+}
+
+// WriteArrowResponse is the response for the WriteArrow RPC.
+message WriteArrowResponse {}
 
 // WriteRawRequest writes a pprof profile for a given tenant
 message WriteRawRequest {
