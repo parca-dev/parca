@@ -57,6 +57,7 @@ func TestSourcesOnlyRequest(t *testing.T) {
 			nil,
 			"stacktraces",
 			nil,
+			nil,
 			allocator,
 		),
 		allocator,

@@ -57,6 +57,7 @@ func NewQuerier(
 	engine Engine,
 	tableName string,
 	sym symbolizer.SymbolizationClient,
+	demangler profile.Demangler,
 	pool memory.Allocator,
 ) *Querier {
 	return &Querier{
@@ -65,6 +66,7 @@ func NewQuerier(
 		engine:     engine,
 		tableName:  tableName,
 		symbolizer: sym,
+		demangler:  demangler,
 		pool:       pool,
 	}
 }
@@ -74,6 +76,7 @@ type Querier struct {
 	engine     Engine
 	tableName  string
 	symbolizer symbolizer.SymbolizationClient
+	demangler  profile.Demangler
 	tracer     trace.Tracer
 	pool       memory.Allocator
 }
@@ -1126,7 +1129,7 @@ func (q *Querier) resolveStacks(
 			}
 
 			encodedLocation := valueDict.Value(idx)
-			res, err := profile.DecodeInto(w, encodedLocation)
+			res, err := profile.DecodeInto(w, encodedLocation, q.demangler)
 			if err != nil {
 				return nil, err
 			}

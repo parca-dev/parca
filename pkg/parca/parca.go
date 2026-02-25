@@ -70,6 +70,7 @@ import (
 	"github.com/parca-dev/parca/pkg/clickhouse"
 	"github.com/parca-dev/parca/pkg/config"
 	"github.com/parca-dev/parca/pkg/debuginfo"
+	"github.com/parca-dev/parca/pkg/demangle"
 	"github.com/parca-dev/parca/pkg/ingester"
 	"github.com/parca-dev/parca/pkg/kv"
 	"github.com/parca-dev/parca/pkg/parcacol"
@@ -483,6 +484,11 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		}
 
 		profileIngester = ingester.NewIngester(logger, table)
+		queryDemangler, err := demangle.NewDefaultDemangler()
+		if err != nil {
+			level.Error(logger).Log("msg", "failed to initialize demangler", "err", err)
+			return err
+		}
 		querier = parcacol.NewQuerier(
 			logger,
 			tracerProvider.Tracer("querier"),
@@ -501,6 +507,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 				flags.Symbolizer.ExternalAddr2linePath,
 				symbolizer.WithDemangleMode(flags.Symbolizer.DemangleMode),
 			),
+			queryDemangler,
 			memory.DefaultAllocator,
 		)
 
