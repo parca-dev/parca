@@ -52,6 +52,14 @@ export interface AdditionalMetricsGraphProps {
   selectTimeRange: (range: DateTimeRange) => void;
 }
 
+interface ExternalProfilerComponentProps {
+  disableProfileTypesDropdown?: boolean;
+  defaultProfileType?: string;
+  configuredLabelNames?: string[];
+  disableExplorativeQuerying?: boolean;
+  profileFilterDefaults?: unknown[];
+}
+
 interface Props {
   Spinner: FC<SpinnerProps>;
   loader?: ReactNode;
@@ -82,15 +90,7 @@ interface Props {
   authenticationErrorMessage?: string;
   isDarkMode: boolean;
   flamegraphHint?: ReactNode;
-  viewComponent?: {
-    emitQuery: (query: string) => void;
-    createViewComponent?: ReactNode;
-    disableProfileTypesDropdown?: boolean;
-    defaultProfileType?: string;
-    labelnames?: string[];
-    disableExplorativeQuerying?: boolean;
-    profileFilterDefaults?: unknown[];
-  };
+  externalProfilerComponent?: ExternalProfilerComponentProps;
   profileViewExternalMainActions?: ReactNode;
   profileViewExternalSubActions?: ReactNode;
   sourceViewContextMenuItems?: SourceViewContextMenuItem[];

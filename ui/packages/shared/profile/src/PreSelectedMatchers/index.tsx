@@ -28,7 +28,7 @@ interface Props {
   labelNames: string[];
 }
 
-const ViewMatchers: React.FC<Props> = ({labelNames}) => {
+const PreSelectedMatchers: React.FC<Props> = ({labelNames}) => {
   const [labelValuesMap, setLabelValuesMap] = useState<Record<string, string[]>>({});
   const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
   const metadata = useGrpcMetadata();
@@ -198,4 +198,4 @@ const ViewMatchers: React.FC<Props> = ({labelNames}) => {
   );
 };
 
-export default ViewMatchers;
+export default PreSelectedMatchers;

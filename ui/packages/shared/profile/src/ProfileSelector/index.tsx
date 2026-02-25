@@ -117,11 +117,13 @@ const ProfileSelector = ({
   suffix,
   onSearchHook,
 }: ProfileSelectorProps): JSX.Element => {
-  const {viewComponent, additionalMetricsGraph} = useParcaContext();
+  const {externalProfilerComponent, additionalMetricsGraph} = useParcaContext();
   const [queryBrowserMode, setQueryBrowserMode] = useURLState('query_browser_mode');
   const batchUpdates = useURLStateBatch();
 
-  const profileFilterDefaults = viewComponent?.profileFilterDefaults as ProfileFilter[] | undefined;
+  const profileFilterDefaults = externalProfilerComponent?.profileFilterDefaults as
+    | ProfileFilter[]
+    | undefined;
   const {forceApplyFilters} = useProfileFilters();
 
   const handleProfileTypeChange = useCallback(() => {
@@ -262,12 +264,6 @@ const ProfileSelector = ({
     }
   };
 
-  useEffect(() => {
-    if (viewComponent !== undefined) {
-      viewComponent.emitQuery(query.toString());
-    }
-  }, [query, viewComponent]);
-
   useAutoQuerySelector({
     selectedProfileName,
     profileTypesData,
@@ -276,7 +272,7 @@ const ProfileSelector = ({
     querySelection,
     navigateTo,
     loading: sumByLoading,
-    defaultProfileType: viewComponent?.defaultProfileType,
+    defaultProfileType: externalProfilerComponent?.defaultProfileType,
   });
 
   const searchDisabled =
@@ -341,7 +337,7 @@ const ProfileSelector = ({
               setUserSumBySelection={setDraftSumBy}
               profileType={profileType}
               profileTypesError={error}
-              viewComponent={viewComponent}
+              externalProfilerComponent={externalProfilerComponent}
               draftSelection={draftSelection}
               setDraftMatchers={setDraftMatchers}
               draftParsedQuery={draftParsedQuery}
