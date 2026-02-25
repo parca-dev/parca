@@ -23,11 +23,11 @@ import {ProfileType, Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 
 import MatchersInput from '../MatchersInput';
-import {QuerySelection} from '../ProfileSelector';
+import PreSelectedMatchers from '../PreSelectedMatchers';
+import {ExternalProfilerComponentProps, QuerySelection} from '../ProfileSelector';
 import ProfileTypeSelector from '../ProfileTypeSelector';
 import {SelectWithRefresh} from '../SelectWithRefresh';
 import SimpleMatchers from '../SimpleMatchers/';
-import ViewMatchers from '../ViewMatchers';
 import {useLabelNames} from '../hooks/useLabels';
 
 interface SelectOption {
@@ -53,12 +53,7 @@ interface QueryControlsProps {
   selectedProfileName?: string;
   setProfileName?: (name: string | undefined) => void;
   profileTypesError?: RpcError;
-  viewComponent?: {
-    disableProfileTypesDropdown?: boolean;
-    disableExplorativeQuerying?: boolean;
-    labelnames?: string[];
-    createViewComponent?: React.ReactNode;
-  };
+  externalProfilerComponent?: ExternalProfilerComponentProps;
   setQueryBrowserMode?: (mode: string) => void;
   advancedModeForQueryBrowser?: boolean;
   setAdvancedModeForQueryBrowser?: (mode: boolean) => void;
@@ -88,7 +83,7 @@ export function QueryControls({
   selectedProfileName,
   setProfileName,
   profileTypesError,
-  viewComponent,
+  externalProfilerComponent,
   setQueryBrowserMode,
   advancedModeForQueryBrowser = false,
   setAdvancedModeForQueryBrowser,
@@ -132,7 +127,7 @@ export function QueryControls({
             selectedKey={selectedProfileName}
             onSelection={setProfileName ?? (() => {})}
             error={profileTypesError}
-            disabled={viewComponent?.disableProfileTypesDropdown}
+            disabled={externalProfilerComponent?.disableProfileTypesDropdown}
           />
         </div>
       )}
@@ -147,7 +142,7 @@ export function QueryControls({
             <label className="text-xs" {...testId(TEST_IDS.QUERY_LABEL)}>
               Query
             </label>
-            {showAdvancedMode && viewComponent?.disableExplorativeQuerying !== true && (
+            {showAdvancedMode && externalProfilerComponent?.disableExplorativeQuerying !== true && (
               <>
                 <Switch
                   checked={advancedModeForQueryBrowser}
@@ -174,11 +169,11 @@ export function QueryControls({
               </>
             )}
           </div>
-          {viewComponent?.createViewComponent}
         </div>
 
-        {viewComponent?.labelnames !== undefined && viewComponent?.labelnames.length >= 1 ? (
-          <ViewMatchers labelNames={viewComponent.labelnames} />
+        {externalProfilerComponent?.configuredLabelNames !== undefined &&
+        externalProfilerComponent?.configuredLabelNames.length >= 1 ? (
+          <PreSelectedMatchers labelNames={externalProfilerComponent.configuredLabelNames} />
         ) : showAdvancedMode && advancedModeForQueryBrowser ? (
           <MatchersInput
             setDraftMatchers={setDraftMatchers}
