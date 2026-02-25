@@ -124,7 +124,7 @@ export const defaultValue: Props = {
   },
   queryServiceClient: {} as unknown as QueryServiceClient,
   navigateTo: () => {},
-  enableSourcesView: false,
+  enableSourcesView: true,
   enableSandwichView: false,
   isDarkMode: false,
   preferencesModal: false,
