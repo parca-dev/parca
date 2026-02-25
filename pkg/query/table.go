@@ -136,6 +136,10 @@ func generateTableArrowRecord(
 
 		for sampleRow := 0; sampleRow < int(r.Record.NumRows()); sampleRow++ {
 			previousTableRow := -1
+			// Track which table rows have been counted for this sample to avoid
+			// double-counting cumulative values for recursive functions.
+			seenInSample := make(map[int]struct{})
+
 			lOffsetStart, lOffsetEnd := r.Locations.ValueOffsets(sampleRow)
 			for locationRow := int(lOffsetStart); locationRow < int(lOffsetEnd); locationRow++ {
 				if r.Locations.ListValues().IsNull(locationRow) {
@@ -165,10 +169,17 @@ func generateTableArrowRecord(
 						} else {
 							tb.addresses[string(buildID)][addr] = tableRow
 						}
+						seenInSample[tableRow] = struct{}{}
 						previousTableRow = tableRow
 						tableRow++
 					} else {
-						tb.mergeRow(r, cr, sampleRow, locationRow, -1, tb.addresses[unsafeString(buildID)][addr], previousTableRow, isLeaf)
+						// Only add to cumulative if this is the first occurrence in this sample
+						_, alreadySeen := seenInSample[cr]
+						addCumulative := !alreadySeen
+						if addCumulative {
+							seenInSample[cr] = struct{}{}
+						}
+						tb.mergeRow(r, cr, sampleRow, locationRow, -1, tb.addresses[unsafeString(buildID)][addr], previousTableRow, isLeaf, addCumulative)
 						previousTableRow = tb.addresses[unsafeString(buildID)][addr]
 					}
 				} else {
@@ -185,10 +196,17 @@ func generateTableArrowRecord(
 									return nil, 0, err
 								}
 								tb.functions[string(fn)] = tableRow
+								seenInSample[tableRow] = struct{}{}
 								previousTableRow = tableRow
 								tableRow++
 							} else {
-								tb.mergeRow(r, cr, sampleRow, locationRow, lineRow, tb.functions[unsafeString(fn)], previousTableRow, isLeaf)
+								// Only add to cumulative if this is the first occurrence in this sample
+								_, alreadySeen := seenInSample[cr]
+								addCumulative := !alreadySeen
+								if addCumulative {
+									seenInSample[cr] = struct{}{}
+								}
+								tb.mergeRow(r, cr, sampleRow, locationRow, lineRow, tb.functions[unsafeString(fn)], previousTableRow, isLeaf, addCumulative)
 								previousTableRow = tb.functions[unsafeString(fn)]
 							}
 						}
@@ -433,10 +451,15 @@ func (tb *tableBuilder) appendRow(
 	return nil
 }
 
-func (tb *tableBuilder) mergeRow(r *profile.RecordReader, mergeRow, sampleRow, _, lineRow, currentTableRow, previousTableRow int, isLeaf bool) {
-	tb.builderCumulative.Add(mergeRow, r.Value.Value(sampleRow))
-	if r.Diff.Value(sampleRow) != 0 {
-		tb.builderCumulativeDiff.Add(mergeRow, r.Diff.Value(sampleRow))
+// mergeRow merges sample data into an existing table row.
+// If addCumulative is false, only caller/callee relationships and flat values (if leaf) are updated.
+// This is used to avoid double-counting cumulative values for recursive functions.
+func (tb *tableBuilder) mergeRow(r *profile.RecordReader, mergeRow, sampleRow, _, lineRow, currentTableRow, previousTableRow int, isLeaf, addCumulative bool) {
+	if addCumulative {
+		tb.builderCumulative.Add(mergeRow, r.Value.Value(sampleRow))
+		if r.Diff.Value(sampleRow) != 0 {
+			tb.builderCumulativeDiff.Add(mergeRow, r.Diff.Value(sampleRow))
+		}
 	}
 
 	if isLeaf {
