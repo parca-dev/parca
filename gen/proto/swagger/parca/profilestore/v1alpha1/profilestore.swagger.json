@@ -85,6 +85,40 @@
         ]
       }
     },
+    "/profiles/writearrow": {
+      "post": {
+        "summary": "WriteArrow accepts an arrow IPC buffer containing profiling data.",
+        "operationId": "ProfileStoreService_WriteArrow",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1WriteArrowResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "WriteArrowRequest is the request containing an arrow IPC buffer.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1alpha1WriteArrowRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ProfileStoreService"
+        ]
+      }
+    },
     "/profiles/writeraw": {
       "post": {
         "summary": "WriteRaw accepts a raw set of bytes of a pprof file",
@@ -280,6 +314,21 @@
         }
       },
       "title": "RawSample is the set of bytes that correspond to a pprof profile"
+    },
+    "v1alpha1WriteArrowRequest": {
+      "type": "object",
+      "properties": {
+        "ipcBuffer": {
+          "type": "string",
+          "format": "byte",
+          "description": "ipc_buffer is the raw bytes of an arrow IPC file."
+        }
+      },
+      "description": "WriteArrowRequest is the request containing an arrow IPC buffer."
+    },
+    "v1alpha1WriteArrowResponse": {
+      "type": "object",
+      "description": "WriteArrowResponse is the response for the WriteArrow RPC."
     },
     "v1alpha1WriteRawRequest": {
       "type": "object",

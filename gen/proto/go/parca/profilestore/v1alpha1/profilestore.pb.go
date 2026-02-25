@@ -122,6 +122,89 @@ func (x *WriteResponse) GetRecord() []byte {
 	return nil
 }
 
+// WriteArrowRequest is the request containing an arrow IPC buffer.
+type WriteArrowRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ipc_buffer is the raw bytes of an arrow IPC file.
+	IpcBuffer     []byte `protobuf:"bytes,1,opt,name=ipc_buffer,json=ipcBuffer,proto3" json:"ipc_buffer,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WriteArrowRequest) Reset() {
+	*x = WriteArrowRequest{}
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WriteArrowRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WriteArrowRequest) ProtoMessage() {}
+
+func (x *WriteArrowRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WriteArrowRequest.ProtoReflect.Descriptor instead.
+func (*WriteArrowRequest) Descriptor() ([]byte, []int) {
+	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *WriteArrowRequest) GetIpcBuffer() []byte {
+	if x != nil {
+		return x.IpcBuffer
+	}
+	return nil
+}
+
+// WriteArrowResponse is the response for the WriteArrow RPC.
+type WriteArrowResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WriteArrowResponse) Reset() {
+	*x = WriteArrowResponse{}
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WriteArrowResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WriteArrowResponse) ProtoMessage() {}
+
+func (x *WriteArrowResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WriteArrowResponse.ProtoReflect.Descriptor instead.
+func (*WriteArrowResponse) Descriptor() ([]byte, []int) {
+	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{3}
+}
+
 // WriteRawRequest writes a pprof profile for a given tenant
 type WriteRawRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -139,7 +222,7 @@ type WriteRawRequest struct {
 
 func (x *WriteRawRequest) Reset() {
 	*x = WriteRawRequest{}
-	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[2]
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -151,7 +234,7 @@ func (x *WriteRawRequest) String() string {
 func (*WriteRawRequest) ProtoMessage() {}
 
 func (x *WriteRawRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[2]
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -164,7 +247,7 @@ func (x *WriteRawRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteRawRequest.ProtoReflect.Descriptor instead.
 func (*WriteRawRequest) Descriptor() ([]byte, []int) {
-	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{2}
+	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{4}
 }
 
 // Deprecated: Marked as deprecated in parca/profilestore/v1alpha1/profilestore.proto.
@@ -198,7 +281,7 @@ type WriteRawResponse struct {
 
 func (x *WriteRawResponse) Reset() {
 	*x = WriteRawResponse{}
-	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[3]
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -210,7 +293,7 @@ func (x *WriteRawResponse) String() string {
 func (*WriteRawResponse) ProtoMessage() {}
 
 func (x *WriteRawResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[3]
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -223,7 +306,7 @@ func (x *WriteRawResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteRawResponse.ProtoReflect.Descriptor instead.
 func (*WriteRawResponse) Descriptor() ([]byte, []int) {
-	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{3}
+	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{5}
 }
 
 // RawProfileSeries represents the pprof profile and its associated labels
@@ -239,7 +322,7 @@ type RawProfileSeries struct {
 
 func (x *RawProfileSeries) Reset() {
 	*x = RawProfileSeries{}
-	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[4]
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -251,7 +334,7 @@ func (x *RawProfileSeries) String() string {
 func (*RawProfileSeries) ProtoMessage() {}
 
 func (x *RawProfileSeries) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[4]
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -264,7 +347,7 @@ func (x *RawProfileSeries) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RawProfileSeries.ProtoReflect.Descriptor instead.
 func (*RawProfileSeries) Descriptor() ([]byte, []int) {
-	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{4}
+	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *RawProfileSeries) GetLabels() *LabelSet {
@@ -294,7 +377,7 @@ type Label struct {
 
 func (x *Label) Reset() {
 	*x = Label{}
-	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[5]
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -306,7 +389,7 @@ func (x *Label) String() string {
 func (*Label) ProtoMessage() {}
 
 func (x *Label) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[5]
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -319,7 +402,7 @@ func (x *Label) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Label.ProtoReflect.Descriptor instead.
 func (*Label) Descriptor() ([]byte, []int) {
-	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{5}
+	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *Label) GetName() string {
@@ -347,7 +430,7 @@ type LabelSet struct {
 
 func (x *LabelSet) Reset() {
 	*x = LabelSet{}
-	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[6]
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -359,7 +442,7 @@ func (x *LabelSet) String() string {
 func (*LabelSet) ProtoMessage() {}
 
 func (x *LabelSet) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[6]
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -372,7 +455,7 @@ func (x *LabelSet) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LabelSet.ProtoReflect.Descriptor instead.
 func (*LabelSet) Descriptor() ([]byte, []int) {
-	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{6}
+	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *LabelSet) GetLabels() []*Label {
@@ -396,7 +479,7 @@ type RawSample struct {
 
 func (x *RawSample) Reset() {
 	*x = RawSample{}
-	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[7]
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -408,7 +491,7 @@ func (x *RawSample) String() string {
 func (*RawSample) ProtoMessage() {}
 
 func (x *RawSample) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[7]
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -421,7 +504,7 @@ func (x *RawSample) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RawSample.ProtoReflect.Descriptor instead.
 func (*RawSample) Descriptor() ([]byte, []int) {
-	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{7}
+	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *RawSample) GetRawProfile() []byte {
@@ -453,7 +536,7 @@ type ExecutableInfo struct {
 
 func (x *ExecutableInfo) Reset() {
 	*x = ExecutableInfo{}
-	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[8]
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -465,7 +548,7 @@ func (x *ExecutableInfo) String() string {
 func (*ExecutableInfo) ProtoMessage() {}
 
 func (x *ExecutableInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[8]
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -478,7 +561,7 @@ func (x *ExecutableInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutableInfo.ProtoReflect.Descriptor instead.
 func (*ExecutableInfo) Descriptor() ([]byte, []int) {
-	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{8}
+	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ExecutableInfo) GetElfType() uint32 {
@@ -508,7 +591,7 @@ type LoadSegment struct {
 
 func (x *LoadSegment) Reset() {
 	*x = LoadSegment{}
-	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[9]
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -520,7 +603,7 @@ func (x *LoadSegment) String() string {
 func (*LoadSegment) ProtoMessage() {}
 
 func (x *LoadSegment) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[9]
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -533,7 +616,7 @@ func (x *LoadSegment) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoadSegment.ProtoReflect.Descriptor instead.
 func (*LoadSegment) Descriptor() ([]byte, []int) {
-	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{9}
+	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *LoadSegment) GetOffset() uint64 {
@@ -559,7 +642,7 @@ type AgentsRequest struct {
 
 func (x *AgentsRequest) Reset() {
 	*x = AgentsRequest{}
-	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[10]
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -571,7 +654,7 @@ func (x *AgentsRequest) String() string {
 func (*AgentsRequest) ProtoMessage() {}
 
 func (x *AgentsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[10]
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -584,7 +667,7 @@ func (x *AgentsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentsRequest.ProtoReflect.Descriptor instead.
 func (*AgentsRequest) Descriptor() ([]byte, []int) {
-	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{10}
+	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{12}
 }
 
 // AgentsResponse is the request to retrieve a list of agents
@@ -598,7 +681,7 @@ type AgentsResponse struct {
 
 func (x *AgentsResponse) Reset() {
 	*x = AgentsResponse{}
-	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[11]
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -610,7 +693,7 @@ func (x *AgentsResponse) String() string {
 func (*AgentsResponse) ProtoMessage() {}
 
 func (x *AgentsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[11]
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -623,7 +706,7 @@ func (x *AgentsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentsResponse.ProtoReflect.Descriptor instead.
 func (*AgentsResponse) Descriptor() ([]byte, []int) {
-	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{11}
+	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *AgentsResponse) GetAgents() []*Agent {
@@ -651,7 +734,7 @@ type Agent struct {
 
 func (x *Agent) Reset() {
 	*x = Agent{}
-	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[12]
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -663,7 +746,7 @@ func (x *Agent) String() string {
 func (*Agent) ProtoMessage() {}
 
 func (x *Agent) ProtoReflect() protoreflect.Message {
-	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[12]
+	mi := &file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -676,7 +759,7 @@ func (x *Agent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Agent.ProtoReflect.Descriptor instead.
 func (*Agent) Descriptor() ([]byte, []int) {
-	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{12}
+	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *Agent) GetId() string {
@@ -715,7 +798,11 @@ const file_parca_profilestore_v1alpha1_profilestore_proto_rawDesc = "" +
 	"\fWriteRequest\x12\x16\n" +
 	"\x06record\x18\x01 \x01(\fR\x06record\"'\n" +
 	"\rWriteResponse\x12\x16\n" +
-	"\x06record\x18\x01 \x01(\fR\x06record\"\x94\x01\n" +
+	"\x06record\x18\x01 \x01(\fR\x06record\"2\n" +
+	"\x11WriteArrowRequest\x12\x1d\n" +
+	"\n" +
+	"ipc_buffer\x18\x01 \x01(\fR\tipcBuffer\"\x14\n" +
+	"\x12WriteArrowResponse\"\x94\x01\n" +
 	"\x0fWriteRawRequest\x12\x1a\n" +
 	"\x06tenant\x18\x01 \x01(\tB\x02\x18\x01R\x06tenant\x12E\n" +
 	"\x06series\x18\x02 \x03(\v2-.parca.profilestore.v1alpha1.RawProfileSeriesR\x06series\x12\x1e\n" +
@@ -749,10 +836,12 @@ const file_parca_profilestore_v1alpha1_profilestore_proto_rawDesc = "" +
 	"\n" +
 	"last_error\x18\x02 \x01(\tR\tlastError\x127\n" +
 	"\tlast_push\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\blastPush\x12G\n" +
-	"\x12last_push_duration\x18\x04 \x01(\v2\x19.google.protobuf.DurationR\x10lastPushDuration2\x9e\x02\n" +
+	"\x12last_push_duration\x18\x04 \x01(\v2\x19.google.protobuf.DurationR\x10lastPushDuration2\xaf\x03\n" +
 	"\x13ProfileStoreService\x12\x86\x01\n" +
 	"\bWriteRaw\x12,.parca.profilestore.v1alpha1.WriteRawRequest\x1a-.parca.profilestore.v1alpha1.WriteRawResponse\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/profiles/writeraw\x12~\n" +
-	"\x05Write\x12).parca.profilestore.v1alpha1.WriteRequest\x1a*.parca.profilestore.v1alpha1.WriteResponse\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/profiles/write(\x010\x012\x83\x01\n" +
+	"\x05Write\x12).parca.profilestore.v1alpha1.WriteRequest\x1a*.parca.profilestore.v1alpha1.WriteResponse\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/profiles/write(\x010\x01\x12\x8e\x01\n" +
+	"\n" +
+	"WriteArrow\x12..parca.profilestore.v1alpha1.WriteArrowRequest\x1a/.parca.profilestore.v1alpha1.WriteArrowResponse\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/profiles/writearrow2\x83\x01\n" +
 	"\rAgentsService\x12r\n" +
 	"\x06Agents\x12*.parca.profilestore.v1alpha1.AgentsRequest\x1a+.parca.profilestore.v1alpha1.AgentsResponse\"\x0f\x82\xd3\xe4\x93\x02\t\x12\a/agentsB\x9c\x02\n" +
 	"\x1fcom.parca.profilestore.v1alpha1B\x11ProfilestoreProtoP\x01ZXgithub.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1;profilestorev1alpha1\xa2\x02\x03PPX\xaa\x02\x1bParca.Profilestore.V1alpha1\xca\x02\x1bParca\\Profilestore\\V1alpha1\xe2\x02'Parca\\Profilestore\\V1alpha1\\GPBMetadata\xea\x02\x1dParca::Profilestore::V1alpha1b\x06proto3"
@@ -769,42 +858,46 @@ func file_parca_profilestore_v1alpha1_profilestore_proto_rawDescGZIP() []byte {
 	return file_parca_profilestore_v1alpha1_profilestore_proto_rawDescData
 }
 
-var file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_parca_profilestore_v1alpha1_profilestore_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_parca_profilestore_v1alpha1_profilestore_proto_goTypes = []any{
 	(*WriteRequest)(nil),          // 0: parca.profilestore.v1alpha1.WriteRequest
 	(*WriteResponse)(nil),         // 1: parca.profilestore.v1alpha1.WriteResponse
-	(*WriteRawRequest)(nil),       // 2: parca.profilestore.v1alpha1.WriteRawRequest
-	(*WriteRawResponse)(nil),      // 3: parca.profilestore.v1alpha1.WriteRawResponse
-	(*RawProfileSeries)(nil),      // 4: parca.profilestore.v1alpha1.RawProfileSeries
-	(*Label)(nil),                 // 5: parca.profilestore.v1alpha1.Label
-	(*LabelSet)(nil),              // 6: parca.profilestore.v1alpha1.LabelSet
-	(*RawSample)(nil),             // 7: parca.profilestore.v1alpha1.RawSample
-	(*ExecutableInfo)(nil),        // 8: parca.profilestore.v1alpha1.ExecutableInfo
-	(*LoadSegment)(nil),           // 9: parca.profilestore.v1alpha1.LoadSegment
-	(*AgentsRequest)(nil),         // 10: parca.profilestore.v1alpha1.AgentsRequest
-	(*AgentsResponse)(nil),        // 11: parca.profilestore.v1alpha1.AgentsResponse
-	(*Agent)(nil),                 // 12: parca.profilestore.v1alpha1.Agent
-	(*timestamppb.Timestamp)(nil), // 13: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),   // 14: google.protobuf.Duration
+	(*WriteArrowRequest)(nil),     // 2: parca.profilestore.v1alpha1.WriteArrowRequest
+	(*WriteArrowResponse)(nil),    // 3: parca.profilestore.v1alpha1.WriteArrowResponse
+	(*WriteRawRequest)(nil),       // 4: parca.profilestore.v1alpha1.WriteRawRequest
+	(*WriteRawResponse)(nil),      // 5: parca.profilestore.v1alpha1.WriteRawResponse
+	(*RawProfileSeries)(nil),      // 6: parca.profilestore.v1alpha1.RawProfileSeries
+	(*Label)(nil),                 // 7: parca.profilestore.v1alpha1.Label
+	(*LabelSet)(nil),              // 8: parca.profilestore.v1alpha1.LabelSet
+	(*RawSample)(nil),             // 9: parca.profilestore.v1alpha1.RawSample
+	(*ExecutableInfo)(nil),        // 10: parca.profilestore.v1alpha1.ExecutableInfo
+	(*LoadSegment)(nil),           // 11: parca.profilestore.v1alpha1.LoadSegment
+	(*AgentsRequest)(nil),         // 12: parca.profilestore.v1alpha1.AgentsRequest
+	(*AgentsResponse)(nil),        // 13: parca.profilestore.v1alpha1.AgentsResponse
+	(*Agent)(nil),                 // 14: parca.profilestore.v1alpha1.Agent
+	(*timestamppb.Timestamp)(nil), // 15: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),   // 16: google.protobuf.Duration
 }
 var file_parca_profilestore_v1alpha1_profilestore_proto_depIdxs = []int32{
-	4,  // 0: parca.profilestore.v1alpha1.WriteRawRequest.series:type_name -> parca.profilestore.v1alpha1.RawProfileSeries
-	6,  // 1: parca.profilestore.v1alpha1.RawProfileSeries.labels:type_name -> parca.profilestore.v1alpha1.LabelSet
-	7,  // 2: parca.profilestore.v1alpha1.RawProfileSeries.samples:type_name -> parca.profilestore.v1alpha1.RawSample
-	5,  // 3: parca.profilestore.v1alpha1.LabelSet.labels:type_name -> parca.profilestore.v1alpha1.Label
-	8,  // 4: parca.profilestore.v1alpha1.RawSample.executable_info:type_name -> parca.profilestore.v1alpha1.ExecutableInfo
-	9,  // 5: parca.profilestore.v1alpha1.ExecutableInfo.load_segment:type_name -> parca.profilestore.v1alpha1.LoadSegment
-	12, // 6: parca.profilestore.v1alpha1.AgentsResponse.agents:type_name -> parca.profilestore.v1alpha1.Agent
-	13, // 7: parca.profilestore.v1alpha1.Agent.last_push:type_name -> google.protobuf.Timestamp
-	14, // 8: parca.profilestore.v1alpha1.Agent.last_push_duration:type_name -> google.protobuf.Duration
-	2,  // 9: parca.profilestore.v1alpha1.ProfileStoreService.WriteRaw:input_type -> parca.profilestore.v1alpha1.WriteRawRequest
+	6,  // 0: parca.profilestore.v1alpha1.WriteRawRequest.series:type_name -> parca.profilestore.v1alpha1.RawProfileSeries
+	8,  // 1: parca.profilestore.v1alpha1.RawProfileSeries.labels:type_name -> parca.profilestore.v1alpha1.LabelSet
+	9,  // 2: parca.profilestore.v1alpha1.RawProfileSeries.samples:type_name -> parca.profilestore.v1alpha1.RawSample
+	7,  // 3: parca.profilestore.v1alpha1.LabelSet.labels:type_name -> parca.profilestore.v1alpha1.Label
+	10, // 4: parca.profilestore.v1alpha1.RawSample.executable_info:type_name -> parca.profilestore.v1alpha1.ExecutableInfo
+	11, // 5: parca.profilestore.v1alpha1.ExecutableInfo.load_segment:type_name -> parca.profilestore.v1alpha1.LoadSegment
+	14, // 6: parca.profilestore.v1alpha1.AgentsResponse.agents:type_name -> parca.profilestore.v1alpha1.Agent
+	15, // 7: parca.profilestore.v1alpha1.Agent.last_push:type_name -> google.protobuf.Timestamp
+	16, // 8: parca.profilestore.v1alpha1.Agent.last_push_duration:type_name -> google.protobuf.Duration
+	4,  // 9: parca.profilestore.v1alpha1.ProfileStoreService.WriteRaw:input_type -> parca.profilestore.v1alpha1.WriteRawRequest
 	0,  // 10: parca.profilestore.v1alpha1.ProfileStoreService.Write:input_type -> parca.profilestore.v1alpha1.WriteRequest
-	10, // 11: parca.profilestore.v1alpha1.AgentsService.Agents:input_type -> parca.profilestore.v1alpha1.AgentsRequest
-	3,  // 12: parca.profilestore.v1alpha1.ProfileStoreService.WriteRaw:output_type -> parca.profilestore.v1alpha1.WriteRawResponse
-	1,  // 13: parca.profilestore.v1alpha1.ProfileStoreService.Write:output_type -> parca.profilestore.v1alpha1.WriteResponse
-	11, // 14: parca.profilestore.v1alpha1.AgentsService.Agents:output_type -> parca.profilestore.v1alpha1.AgentsResponse
-	12, // [12:15] is the sub-list for method output_type
-	9,  // [9:12] is the sub-list for method input_type
+	2,  // 11: parca.profilestore.v1alpha1.ProfileStoreService.WriteArrow:input_type -> parca.profilestore.v1alpha1.WriteArrowRequest
+	12, // 12: parca.profilestore.v1alpha1.AgentsService.Agents:input_type -> parca.profilestore.v1alpha1.AgentsRequest
+	5,  // 13: parca.profilestore.v1alpha1.ProfileStoreService.WriteRaw:output_type -> parca.profilestore.v1alpha1.WriteRawResponse
+	1,  // 14: parca.profilestore.v1alpha1.ProfileStoreService.Write:output_type -> parca.profilestore.v1alpha1.WriteResponse
+	3,  // 15: parca.profilestore.v1alpha1.ProfileStoreService.WriteArrow:output_type -> parca.profilestore.v1alpha1.WriteArrowResponse
+	13, // 16: parca.profilestore.v1alpha1.AgentsService.Agents:output_type -> parca.profilestore.v1alpha1.AgentsResponse
+	13, // [13:17] is the sub-list for method output_type
+	9,  // [9:13] is the sub-list for method input_type
 	9,  // [9:9] is the sub-list for extension type_name
 	9,  // [9:9] is the sub-list for extension extendee
 	0,  // [0:9] is the sub-list for field type_name
@@ -821,7 +914,7 @@ func file_parca_profilestore_v1alpha1_profilestore_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_parca_profilestore_v1alpha1_profilestore_proto_rawDesc), len(file_parca_profilestore_v1alpha1_profilestore_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   13,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

@@ -46,6 +46,26 @@ export interface WriteResponse {
     record: Uint8Array;
 }
 /**
+ * WriteArrowRequest is the request containing an arrow IPC buffer.
+ *
+ * @generated from protobuf message parca.profilestore.v1alpha1.WriteArrowRequest
+ */
+export interface WriteArrowRequest {
+    /**
+     * ipc_buffer is the raw bytes of an arrow IPC file.
+     *
+     * @generated from protobuf field: bytes ipc_buffer = 1
+     */
+    ipcBuffer: Uint8Array;
+}
+/**
+ * WriteArrowResponse is the response for the WriteArrow RPC.
+ *
+ * @generated from protobuf message parca.profilestore.v1alpha1.WriteArrowResponse
+ */
+export interface WriteArrowResponse {
+}
+/**
  * WriteRawRequest writes a pprof profile for a given tenant
  *
  * @generated from protobuf message parca.profilestore.v1alpha1.WriteRawRequest
@@ -335,6 +355,91 @@ class WriteResponse$Type extends MessageType<WriteResponse> {
  * @generated MessageType for protobuf message parca.profilestore.v1alpha1.WriteResponse
  */
 export const WriteResponse = new WriteResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class WriteArrowRequest$Type extends MessageType<WriteArrowRequest> {
+    constructor() {
+        super("parca.profilestore.v1alpha1.WriteArrowRequest", [
+            { no: 1, name: "ipc_buffer", kind: "scalar", T: 12 /*ScalarType.BYTES*/ }
+        ]);
+    }
+    create(value?: PartialMessage<WriteArrowRequest>): WriteArrowRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.ipcBuffer = new Uint8Array(0);
+        if (value !== undefined)
+            reflectionMergePartial<WriteArrowRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: WriteArrowRequest): WriteArrowRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bytes ipc_buffer */ 1:
+                    message.ipcBuffer = reader.bytes();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: WriteArrowRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bytes ipc_buffer = 1; */
+        if (message.ipcBuffer.length)
+            writer.tag(1, WireType.LengthDelimited).bytes(message.ipcBuffer);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.profilestore.v1alpha1.WriteArrowRequest
+ */
+export const WriteArrowRequest = new WriteArrowRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class WriteArrowResponse$Type extends MessageType<WriteArrowResponse> {
+    constructor() {
+        super("parca.profilestore.v1alpha1.WriteArrowResponse", []);
+    }
+    create(value?: PartialMessage<WriteArrowResponse>): WriteArrowResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<WriteArrowResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: WriteArrowResponse): WriteArrowResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: WriteArrowResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message parca.profilestore.v1alpha1.WriteArrowResponse
+ */
+export const WriteArrowResponse = new WriteArrowResponse$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class WriteRawRequest$Type extends MessageType<WriteRawRequest> {
     constructor() {
@@ -915,7 +1020,8 @@ export const Agent = new Agent$Type();
  */
 export const ProfileStoreService = new ServiceType("parca.profilestore.v1alpha1.ProfileStoreService", [
     { name: "WriteRaw", options: { "google.api.http": { post: "/profiles/writeraw", body: "*" } }, I: WriteRawRequest, O: WriteRawResponse },
-    { name: "Write", serverStreaming: true, clientStreaming: true, options: { "google.api.http": { post: "/profiles/write", body: "*" } }, I: WriteRequest, O: WriteResponse }
+    { name: "Write", serverStreaming: true, clientStreaming: true, options: { "google.api.http": { post: "/profiles/write", body: "*" } }, I: WriteRequest, O: WriteResponse },
+    { name: "WriteArrow", options: { "google.api.http": { post: "/profiles/writearrow", body: "*" } }, I: WriteArrowRequest, O: WriteArrowResponse }
 ]);
 /**
  * @generated ServiceType for protobuf service parca.profilestore.v1alpha1.AgentsService
