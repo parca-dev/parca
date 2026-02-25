@@ -34,6 +34,7 @@ type Writer struct {
 	Lines              *array.ListBuilder
 	Line               *array.StructBuilder
 	LineNumber         *array.Int64Builder
+	ColumnNumber       *array.Uint64Builder
 	FunctionName       *array.BinaryDictionaryBuilder
 	FunctionSystemName *array.BinaryDictionaryBuilder
 	FunctionFilename   *array.BinaryDictionaryBuilder
@@ -82,10 +83,11 @@ func NewWriter(pool memory.Allocator, labelNames []string) Writer {
 	lines := locations.FieldBuilder(6).(*array.ListBuilder)
 	line := lines.ValueBuilder().(*array.StructBuilder)
 	lineNumber := line.FieldBuilder(0).(*array.Int64Builder)
-	functionName := line.FieldBuilder(1).(*array.BinaryDictionaryBuilder)
-	functionSystemName := line.FieldBuilder(2).(*array.BinaryDictionaryBuilder)
-	functionFilename := line.FieldBuilder(3).(*array.BinaryDictionaryBuilder)
-	functionStartLine := line.FieldBuilder(4).(*array.Int64Builder)
+	columnNumber := line.FieldBuilder(1).(*array.Uint64Builder)
+	functionName := line.FieldBuilder(2).(*array.BinaryDictionaryBuilder)
+	functionSystemName := line.FieldBuilder(3).(*array.BinaryDictionaryBuilder)
+	functionFilename := line.FieldBuilder(4).(*array.BinaryDictionaryBuilder)
+	functionStartLine := line.FieldBuilder(5).(*array.Int64Builder)
 
 	value := b.Field(labelNum + 1).(*array.Int64Builder)
 	diff := b.Field(labelNum + 2).(*array.Int64Builder)
@@ -107,6 +109,7 @@ func NewWriter(pool memory.Allocator, labelNames []string) Writer {
 		Lines:              lines,
 		Line:               line,
 		LineNumber:         lineNumber,
+		ColumnNumber:       columnNumber,
 		FunctionName:       functionName,
 		FunctionSystemName: functionSystemName,
 		FunctionFilename:   functionFilename,
@@ -133,6 +136,7 @@ type LocationsWriter struct {
 	Lines              *array.ListBuilder
 	Line               *array.StructBuilder
 	LineNumber         *array.Int64Builder
+	ColumnNumber       *array.Uint64Builder
 	FunctionName       *array.BinaryDictionaryBuilder
 	FunctionSystemName *array.BinaryDictionaryBuilder
 	FunctionFilename   *array.BinaryDictionaryBuilder
@@ -158,10 +162,11 @@ func NewLocationsWriter(pool memory.Allocator) LocationsWriter {
 	lines := locations.FieldBuilder(6).(*array.ListBuilder)
 	line := lines.ValueBuilder().(*array.StructBuilder)
 	lineNumber := line.FieldBuilder(0).(*array.Int64Builder)
-	functionName := line.FieldBuilder(1).(*array.BinaryDictionaryBuilder)
-	functionSystemName := line.FieldBuilder(2).(*array.BinaryDictionaryBuilder)
-	functionFilename := line.FieldBuilder(3).(*array.BinaryDictionaryBuilder)
-	functionStartLine := line.FieldBuilder(4).(*array.Int64Builder)
+	columnNumber := line.FieldBuilder(1).(*array.Uint64Builder)
+	functionName := line.FieldBuilder(2).(*array.BinaryDictionaryBuilder)
+	functionSystemName := line.FieldBuilder(3).(*array.BinaryDictionaryBuilder)
+	functionFilename := line.FieldBuilder(4).(*array.BinaryDictionaryBuilder)
+	functionStartLine := line.FieldBuilder(5).(*array.Int64Builder)
 
 	return LocationsWriter{
 		RecordBuilder:      b,
@@ -176,6 +181,7 @@ func NewLocationsWriter(pool memory.Allocator) LocationsWriter {
 		Lines:              lines,
 		Line:               line,
 		LineNumber:         lineNumber,
+		ColumnNumber:       columnNumber,
 		FunctionName:       functionName,
 		FunctionSystemName: functionSystemName,
 		FunctionFilename:   functionFilename,

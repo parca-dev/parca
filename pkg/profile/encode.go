@@ -61,6 +61,7 @@ func EncodeOtelLocation(
 
 	for _, line := range l.Line {
 		offset = writeInt64AsUvarint(buf, offset, line.Line)
+		offset = writeUint64(buf, offset, uint64(line.Column))
 
 		if line.FunctionIndex != 0 {
 			buf[offset] = 0x1
@@ -129,6 +130,7 @@ func serializedOtelLocationSize(
 
 	for _, line := range l.Line {
 		size = addSerializedInt64AsUvarintSize(size, line.Line)
+		size = addSerializedUint64Size(size, uint64(line.Column))
 
 		size++ // 1 byte for whether there is a function
 		if line.FunctionIndex != 0 {
@@ -192,6 +194,7 @@ func EncodePprofLocation(
 
 	for _, line := range l.Line {
 		offset = writeInt64AsUvarint(buf, offset, line.Line)
+		offset = writeUint64(buf, offset, 0) // pprof doesn't have column info
 
 		if line.FunctionId != 0 {
 			buf[offset] = 0x1
@@ -256,6 +259,7 @@ func serializedPprofLocationSize(
 
 	for _, line := range l.Line {
 		size = addSerializedInt64AsUvarintSize(size, line.Line)
+		size = addSerializedUint64Size(size, 0) // pprof doesn't have column info
 
 		size++ // 1 byte for whether there is a function
 		if line.FunctionId != 0 {
@@ -298,6 +302,7 @@ func EncodeArrowLocation(
 	_ *array.List,
 	_ *array.Struct,
 	lineNumber *array.Int64,
+	lineColumnNumber *array.Uint64,
 	lineFunctionName *array.Dictionary,
 	lineFunctionNameDict *array.Binary,
 	lineFunctionSystemName *array.Dictionary,
@@ -320,6 +325,7 @@ func EncodeArrowLocation(
 		nil,
 		nil,
 		lineNumber,
+		lineColumnNumber,
 		lineFunctionName,
 		lineFunctionNameDict,
 		lineFunctionSystemName,
@@ -347,6 +353,11 @@ func EncodeArrowLocation(
 
 	for i := linesStartOffset; i < linesEndOffset; i++ {
 		offset = writeInt64AsUvarint(buf, offset, lineNumber.Value(i))
+		if lineColumnNumber != nil {
+			offset = writeUint64(buf, offset, lineColumnNumber.Value(i))
+		} else {
+			offset = writeUint64(buf, offset, 0)
+		}
 
 		buf[offset] = 0x1
 		offset++
@@ -378,6 +389,7 @@ func serializedArrowLocationSize(
 	_ *array.List,
 	_ *array.Struct,
 	lineNumber *array.Int64,
+	lineColumnNumber *array.Uint64,
 	lineFunctionName *array.Dictionary,
 	lineFunctionNameDict *array.Binary,
 	lineFunctionSystemName *array.Dictionary,
@@ -402,6 +414,11 @@ func serializedArrowLocationSize(
 
 	for i := linesStartOffset; i < linesEndOffset; i++ {
 		size = addSerializedInt64AsUvarintSize(size, lineNumber.Value(i))
+		if lineColumnNumber != nil {
+			size = addSerializedUint64Size(size, lineColumnNumber.Value(i))
+		} else {
+			size = addSerializedUint64Size(size, 0)
+		}
 
 		size++ // 1 byte for whether there is a function
 		if lineFunctionName.IsValid(i) {
