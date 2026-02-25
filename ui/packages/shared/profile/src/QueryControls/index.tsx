@@ -24,11 +24,19 @@ import {TEST_IDS, testId} from '@parca/test-utils';
 
 import MatchersInput from '../MatchersInput';
 import PreSelectedMatchers from '../PreSelectedMatchers';
-import {ExternalProfilerComponentProps, QuerySelection} from '../ProfileSelector';
+import {QuerySelection} from '../ProfileSelector';
 import ProfileTypeSelector from '../ProfileTypeSelector';
 import {SelectWithRefresh} from '../SelectWithRefresh';
 import SimpleMatchers from '../SimpleMatchers/';
 import {useLabelNames} from '../hooks/useLabels';
+
+export interface ExternalProfilerComponentProps {
+  disableProfileTypesDropdown?: boolean;
+  defaultProfileType?: string;
+  configuredLabelNames?: string[];
+  disableExplorativeQuerying?: boolean;
+  profileFilterDefaults?: unknown[];
+}
 
 interface SelectOption {
   label: string;

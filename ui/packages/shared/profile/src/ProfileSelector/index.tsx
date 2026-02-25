@@ -76,14 +76,6 @@ export interface IProfileTypesResult {
   error?: RpcError;
 }
 
-export interface ExternalProfilerComponentProps {
-  disableProfileTypesDropdown?: boolean;
-  defaultProfileType?: string;
-  configuredLabelNames?: string[];
-  disableExplorativeQuerying?: boolean;
-  profileFilterDefaults?: unknown[];
-}
-
 export const useProfileTypes = (
   client: QueryServiceClient,
   start?: number,
