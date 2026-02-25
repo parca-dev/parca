@@ -7,6 +7,8 @@ import type { AgentsRequest } from "./profilestore";
 import type { RpcTransport } from "@protobuf-ts/runtime-rpc";
 import type { ServiceInfo } from "@protobuf-ts/runtime-rpc";
 import { ProfileStoreService } from "./profilestore";
+import type { WriteArrowResponse } from "./profilestore";
+import type { WriteArrowRequest } from "./profilestore";
 import type { WriteResponse } from "./profilestore";
 import type { WriteRequest } from "./profilestore";
 import type { DuplexStreamingCall } from "@protobuf-ts/runtime-rpc";
@@ -37,6 +39,12 @@ export interface IProfileStoreServiceClient {
      * @generated from protobuf rpc: Write
      */
     write(options?: RpcOptions): DuplexStreamingCall<WriteRequest, WriteResponse>;
+    /**
+     * WriteArrow accepts an arrow IPC buffer containing profiling data.
+     *
+     * @generated from protobuf rpc: WriteArrow
+     */
+    writeArrow(input: WriteArrowRequest, options?: RpcOptions): UnaryCall<WriteArrowRequest, WriteArrowResponse>;
 }
 /**
  * ProfileStoreService is the service the accepts pprof writes
@@ -70,6 +78,15 @@ export class ProfileStoreServiceClient implements IProfileStoreServiceClient, Se
     write(options?: RpcOptions): DuplexStreamingCall<WriteRequest, WriteResponse> {
         const method = this.methods[1], opt = this._transport.mergeOptions(options);
         return stackIntercept<WriteRequest, WriteResponse>("duplex", this._transport, method, opt);
+    }
+    /**
+     * WriteArrow accepts an arrow IPC buffer containing profiling data.
+     *
+     * @generated from protobuf rpc: WriteArrow
+     */
+    writeArrow(input: WriteArrowRequest, options?: RpcOptions): UnaryCall<WriteArrowRequest, WriteArrowResponse> {
+        const method = this.methods[2], opt = this._transport.mergeOptions(options);
+        return stackIntercept<WriteArrowRequest, WriteArrowResponse>("unary", this._transport, method, opt, input);
     }
 }
 /**

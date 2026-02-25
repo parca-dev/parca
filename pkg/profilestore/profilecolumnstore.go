@@ -26,6 +26,7 @@ import (
 	"github.com/apache/arrow-go/v18/arrow/ipc"
 	"github.com/apache/arrow-go/v18/arrow/memory"
 	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/gogo/status"
 	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/prometheus/client_golang/prometheus"
@@ -266,6 +267,24 @@ func (s *ProfileColumnStore) WriteRaw(ctx context.Context, req *profilestorepb.W
 	}
 
 	return &profilestorepb.WriteRawResponse{}, nil
+}
+
+func (s *ProfileColumnStore) WriteArrow(ctx context.Context, req *profilestorepb.WriteArrowRequest) (*profilestorepb.WriteArrowResponse, error) {
+	r, err := ipc.NewReader(bytes.NewReader(req.IpcBuffer))
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "failed to create arrow IPC reader: %v", err)
+	}
+	defer r.Release()
+
+	for r.Next() {
+		rec := r.RecordBatch()
+		level.Debug(s.logger).Log("msg", "received arrow record", "rows", rec.NumRows())
+	}
+	if r.Err() != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "failed to read arrow IPC record: %v", r.Err())
+	}
+
+	return nil, status.Error(codes.Unimplemented, "WriteArrow is not yet implemented")
 }
 
 func (s *ProfileColumnStore) Write(server profilestorepb.ProfileStoreService_WriteServer) error {

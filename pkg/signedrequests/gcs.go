@@ -51,7 +51,7 @@ func NewGCSBucketWithConfig(ctx context.Context, gc gcs.Config) (*GCSClient, err
 
 	// If ServiceAccount is provided, use them in GCS client, otherwise fallback to Google default logic.
 	if gc.ServiceAccount != "" {
-		credentials, err := google.CredentialsFromJSON(ctx, []byte(gc.ServiceAccount), storage.ScopeFullControl)
+		credentials, err := google.CredentialsFromJSONWithType(ctx, []byte(gc.ServiceAccount), google.ServiceAccount, storage.ScopeFullControl)
 		if err != nil {
 			return nil, fmt.Errorf("create credentials from JSON: %w", err)
 		}
