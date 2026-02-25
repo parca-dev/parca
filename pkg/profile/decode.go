@@ -79,7 +79,7 @@ type DecodeResult struct {
 	Mapping    Mapping
 }
 
-func DecodeInto(lw LocationsWriter, data []byte) (DecodeResult, error) {
+func DecodeInto(lw LocationsWriter, data []byte, demangler Demangler) (DecodeResult, error) {
 	var (
 		n             int
 		buildID       []byte
@@ -155,12 +155,19 @@ func DecodeInto(lw LocationsWriter, data []byte) (DecodeResult, error) {
 				name, n := decodeString(data[offset:])
 				offset += n
 
-				if err := lw.FunctionName.Append(name); err != nil {
-					return DecodeResult{}, fmt.Errorf("append function name: %w", err)
-				}
-
 				systemName, n := decodeString(data[offset:])
 				offset += n
+
+				if demangler != nil && len(systemName) > 0 {
+					demangled := demangler.Demangle(systemName)
+					if err := lw.FunctionName.Append([]byte(demangled)); err != nil {
+						return DecodeResult{}, fmt.Errorf("append function name: %w", err)
+					}
+				} else {
+					if err := lw.FunctionName.Append(name); err != nil {
+						return DecodeResult{}, fmt.Errorf("append function name: %w", err)
+					}
+				}
 
 				if err := lw.FunctionSystemName.Append(systemName); err != nil {
 					return DecodeResult{}, fmt.Errorf("append function system name: %w", err)

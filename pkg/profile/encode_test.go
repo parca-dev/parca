@@ -65,7 +65,7 @@ func TestEncodeDecode(t *testing.T) {
 				tc.stringTable,
 			)
 			lw := NewLocationsWriter(memory.DefaultAllocator)
-			_, err := DecodeInto(lw, buf)
+			_, err := DecodeInto(lw, buf, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
