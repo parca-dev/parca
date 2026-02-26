@@ -12,11 +12,13 @@ else
 endif
 COMMIT_TIMESTAMP := $(shell $(CMD_GIT) show --no-patch --format=%ct)-
 ifeq ($(GITHUB_SHA),)
-	COMMIT := $(shell $(CMD_GIT) rev-parse --short=8 HEAD)
+	COMMIT := $(shell $(CMD_GIT) rev-parse HEAD)
+	COMMIT_SHORT := $(shell $(CMD_GIT) rev-parse --short=8 HEAD)
 else
-	COMMIT := $(shell echo $(GITHUB_SHA) | cut -c1-8)
+	COMMIT := $(GITHUB_SHA)
+	COMMIT_SHORT := $(shell echo $(GITHUB_SHA) | cut -c1-8)
 endif
-VERSION ?= $(if $(RELEASE_TAG),$(RELEASE_TAG),$(shell $(CMD_GIT) describe --tags --match='v*' || echo '$(subst /,-,$(BRANCH))$(COMMIT_TIMESTAMP)$(COMMIT)'))
+VERSION ?= $(if $(RELEASE_TAG),$(RELEASE_TAG),$(shell $(CMD_GIT) describe --tags --match='v*' || echo '$(subst /,-,$(BRANCH))$(COMMIT_TIMESTAMP)$(COMMIT_SHORT)'))
 OUT_DOCKER ?= ghcr.io/parca-dev/parca
 
 ENABLE_RACE := no
@@ -154,6 +156,11 @@ container-dev:
 .PHONY: container
 container:
 	podman build \
+		--annotation "org.opencontainers.image.created=1970-01-01T00:00:00Z" \
+		--annotation "org.opencontainers.image.revision=$(COMMIT)" \
+		--annotation "org.opencontainers.image.source=https://github.com/parca-dev/parca" \
+		--annotation "org.opencontainers.image.url=https://github.com/parca-dev/parca" \
+		--annotation "org.opencontainers.image.version=$(VERSION)" \
 		--platform linux/amd64,linux/arm64 \
 		--timestamp 0 \
 		--manifest $(OUT_DOCKER):$(VERSION) .
@@ -165,7 +172,7 @@ push-container:
 .PHONY: sign-container
 sign-container:
 	crane digest $(OUT_DOCKER):$(VERSION)
-	cosign sign --yes -a GIT_HASH=$(COMMIT) -a GIT_VERSION=$(VERSION) $(OUT_DOCKER)@$(shell crane digest $(OUT_DOCKER):$(VERSION))
+	cosign sign --yes -a GIT_HASH=$(COMMIT_SHORT) -a GIT_VERSION=$(VERSION) $(OUT_DOCKER)@$(shell crane digest $(OUT_DOCKER):$(VERSION))
 
 .PHONY: push-quay-container
 push-quay-container:
