@@ -106,7 +106,7 @@
     "rimraf": "3.0.2",
     "sass": "1.90.0",
     "sass-loader": "13.3.3",
-    "storybook": "8.6.15",
+    "storybook": "8.6.17",
     "storybook-dark-mode": "4.0.2",
     "style-loader": "3.3.4",
     "ts-jest": "29.4.6",
