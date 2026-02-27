@@ -963,8 +963,8 @@ go.opentelemetry.io/proto/otlp v1.9.0 h1:l706jCMITVouPOqEnii2fIAuO3IVGBRPV5ICjce
 go.opentelemetry.io/proto/otlp v1.9.0/go.mod h1:xE+Cx5E/eEHw+ISFkwPLwCZefwVjY+pqKg1qcK03+/4=
 go.opentelemetry.io/proto/otlp/collector/profiles/v1development v0.2.0 h1:40vBjolEOioNBl8zPj1wxqlA7kJ82RxR4HnUv7W8zRI=
 go.opentelemetry.io/proto/otlp/collector/profiles/v1development v0.2.0/go.mod h1:4wAsc1dEVb4D1ZykBNC9AriTU9uLYtmziLrB+7G4lb4=
-go.opentelemetry.io/proto/otlp/profiles/v1development v0.1.0 h1:2SRSI1tq9ShNZDTDdawabG2rvibKNZukZbgptYPDYY4=
-go.opentelemetry.io/proto/otlp/profiles/v1development v0.1.0/go.mod h1:wCIS2dJxwlpeaYQtCyibP1/S5i6/Z06yZIFX5jnUjG8=
+go.opentelemetry.io/proto/otlp/profiles/v1development v0.2.0 h1:yXinc284C6bmzA1r9jk7MxAhrBIIOH3qwmqwBmylZrA=
+go.opentelemetry.io/proto/otlp/profiles/v1development v0.2.0/go.mod h1:ygxocDWPB6Y6bySAjxmHyTebjAJ8jcEUAZc03gu1pxk=
 go.uber.org/atomic v1.3.2/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
 go.uber.org/atomic v1.4.0/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
 go.uber.org/atomic v1.5.0/go.mod h1:sABNBOSYdrvTF6hTgEIbc7YasKWGhgEQZyfxyTvoXHQ=
