@@ -1,6 +1,6 @@
 module github.com/parca-dev/parca
 
-go 1.24.1
+go 1.25.0
 
 require (
 	cloud.google.com/go/storage v1.59.1
@@ -61,7 +61,7 @@ require (
 	golang.org/x/net v0.49.0
 	golang.org/x/oauth2 v0.35.0
 	golang.org/x/sync v0.19.0
-	google.golang.org/api v0.267.0
+	google.golang.org/api v0.268.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20260128011058-8636f8732409
 	google.golang.org/grpc v1.78.0
 	google.golang.org/protobuf v1.36.11
