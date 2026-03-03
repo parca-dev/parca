@@ -112,8 +112,14 @@ export const useSumBySelection = (
       }
     }
 
+    // Prefer non-empty URL default over auto-computed default to avoid a
+    // one-render race where defaultSumBy overwrites the default value from upstream.
+    const hasExplicitDefault = defaultValue != null && defaultValue.length > 0;
     let result =
-      userSelectedSumBy[profileType?.toString() ?? ''] ?? defaultSumBy ?? DEFAULT_EMPTY_SUM_BY;
+      userSelectedSumBy[profileType?.toString() ?? ''] ??
+      (hasExplicitDefault ? defaultValue : undefined) ??
+      defaultSumBy ??
+      DEFAULT_EMPTY_SUM_BY;
 
     if (profileType?.delta !== true) {
       result = DEFAULT_EMPTY_SUM_BY;
@@ -123,7 +129,7 @@ export const useSumBySelection = (
     lastValidSumByRef.current = result;
 
     return result;
-  }, [userSelectedSumBy, profileType, defaultSumBy, labelNamesLoading, draftSumBy]);
+  }, [userSelectedSumBy, profileType, defaultSumBy, labelNamesLoading, draftSumBy, defaultValue]);
 
   return [
     sumBy,
@@ -266,7 +272,11 @@ export const useDraftSumBy = (
   const {defaultSumBy, isLoading} = useDefaultSumBy(profileType, labelNamesLoading, labels);
 
   return {
-    draftSumBy: draftSumBy ?? defaultSumBy ?? DEFAULT_EMPTY_SUM_BY,
+    draftSumBy:
+      draftSumBy ??
+      (defaultValue != null && defaultValue.length > 0 ? defaultValue : undefined) ??
+      defaultSumBy ??
+      DEFAULT_EMPTY_SUM_BY,
     setDraftSumBy,
     isDraftSumByLoading: isLoading,
   };
