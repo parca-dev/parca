@@ -253,6 +253,10 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   const depthColumn = table.getChild(FIELD_DEPTH);
   const maxDepth = getMaxDepth(depthColumn);
 
+  const rootCumulative = table.getChild(FIELD_CUMULATIVE)?.get(0);
+  const isEmptySandwichView =
+    isInSandwichView && table.numRows > 0 && (rootCumulative === null || rootCumulative === 0n);
+
   // Apply frame limit if maxFrameCount is provided and not expanded
   const effectiveDepth =
     maxFrameCount !== undefined && !isExpanded ? Math.min(maxDepth, maxFrameCount) : maxDepth;
@@ -334,6 +338,10 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   useEffect(() => {
     setSvgElement(svg.current);
   }, [tooltipId]);
+
+  if (isEmptySandwichView) {
+    return <div className="mx-auto text-center">No matching samples found</div>;
+  }
 
   return (
     <TooltipProvider
