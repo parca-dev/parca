@@ -113,7 +113,7 @@ export const useSumBySelection = (
     }
 
     // Prefer non-empty URL default over auto-computed default to avoid a
-    // one-render race where defaultSumBy overwrites the view-configured value.
+    // one-render race where defaultSumBy overwrites the default value from upstream.
     const hasExplicitDefault = defaultValue != null && defaultValue.length > 0;
     let result =
       userSelectedSumBy[profileType?.toString() ?? ''] ??
