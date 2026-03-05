@@ -1,6 +1,6 @@
 {
   "name": "@parca/profile",
-  "version": "0.19.132",
+  "version": "0.19.133",
   "description": "Profile viewing libraries",
   "dependencies": {
     "@floating-ui/react": "^0.27.12",
@@ -64,7 +64,7 @@
   },
   "devDependencies": {
     "@types/lodash.throttle": "4.1.9",
-    "@types/lz4js": "^0.2.1",
+    "@types/lz4js": "0.2.2",
     "@types/react-syntax-highlighter": "15.5.13"
   },
   "main": "dist/index.js",
