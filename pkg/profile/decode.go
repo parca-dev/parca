@@ -186,6 +186,7 @@ func DecodeInto(lw LocationsWriter, data []byte, demangler Demangler) (DecodeRes
 
 		return DecodeResult{
 			WroteLines: true,
+			Addr:       addr,
 		}, nil
 	} else {
 		return DecodeResult{
