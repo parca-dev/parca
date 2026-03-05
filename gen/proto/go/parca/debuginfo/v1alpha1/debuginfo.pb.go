@@ -39,7 +39,7 @@ const (
 	DebuginfoType_DEBUGINFO_TYPE_SOURCES DebuginfoType = 2
 	// The type to identify JavaScript/TypeScript source maps. This is meant to
 	// be used for mapping minified JavaScript locations back to original source
-	// code positions for profiling visualization.
+	// code positions.
 	DebuginfoType_DEBUGINFO_TYPE_SOURCE_MAP DebuginfoType = 3
 )
 
