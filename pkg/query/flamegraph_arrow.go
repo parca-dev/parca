@@ -287,22 +287,26 @@ func generateFlamegraphArrowRecord(ctx context.Context, mem memory.Allocator, tr
 						fb.height = 0
 					}
 
-					translatedFunctionNameIndex := t.functionName.indices.Value(int(r.LineFunctionNameIndices.Value(k)))
-					key := uint64(translatedFunctionNameIndex)
+					var key uint64
+					if idx := int(r.LineFunctionNameIndices.Value(k)); idx < t.functionName.indices.Len() {
+						key = uint64(t.functionName.indices.Value(idx))
+					}
 
 					if len(fb.aggregationConfig.aggregateByLabels) > 0 {
 						key = hashCombine(key, labelHash)
 					}
 					if fb.aggregationConfig.aggregateByMappingFile {
-						translatedMappingFileIndex := t.mappingFile.indices.Value(int(r.MappingFileIndices.Value(j)))
-						key = hashCombine(key, uint64(translatedMappingFileIndex))
+						if idx := int(r.MappingFileIndices.Value(j)); idx < t.mappingFile.indices.Len() {
+							key = hashCombine(key, uint64(t.mappingFile.indices.Value(idx)))
+						}
 					}
 					if fb.aggregationConfig.aggregateByLocationAddress {
 						key = hashCombine(key, r.Address.Value(j))
 					}
 					if fb.aggregationConfig.aggregateByFunctionFilename {
-						translatedFunctionFilenameIndex := t.functionFilename.indices.Value(int(r.LineFunctionFilenameIndices.Value(k)))
-						key = hashCombine(key, uint64(translatedFunctionFilenameIndex))
+						if idx := int(r.LineFunctionFilenameIndices.Value(k)); idx < t.functionFilename.indices.Len() {
+							key = hashCombine(key, uint64(t.functionFilename.indices.Value(idx)))
+						}
 					}
 
 					merged, err := fb.mergeSymbolizedRows(
@@ -615,7 +619,7 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 		{
 			if !fb.builderMappingFileIndices.IsNull(cr) {
 				oldIndex := int(r.MappingFileIndices.Value(locationIndex))
-				if t.mappingFile.indices.IsNull(oldIndex) {
+				if oldIndex >= t.mappingFile.indices.Len() || t.mappingFile.indices.IsNull(oldIndex) {
 					fb.builderMappingFileIndices.SetNull(cr)
 				} else {
 					a := fb.builderMappingFileIndices.Value(cr)
@@ -629,7 +633,7 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 		{
 			if !fb.builderMappingBuildIDIndices.IsNull(cr) {
 				oldIndex := int(r.MappingBuildIDIndices.Value(locationIndex))
-				if t.mappingBuildID.indices.IsNull(oldIndex) {
+				if oldIndex >= t.mappingBuildID.indices.Len() || t.mappingBuildID.indices.IsNull(oldIndex) {
 					fb.builderMappingBuildIDIndices.SetNull(cr)
 				} else {
 					a := fb.builderMappingBuildIDIndices.Value(cr)
@@ -687,7 +691,7 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 		{
 			if !fb.builderFunctionSystemNameIndices.IsNull(cr) {
 				oldIndex := int(r.LineFunctionSystemNameIndices.Value(lineIndex))
-				if t.functionSystemName.indices.IsNull(oldIndex) {
+				if oldIndex >= t.functionSystemName.indices.Len() || t.functionSystemName.indices.IsNull(oldIndex) {
 					fb.builderFunctionSystemNameIndices.SetNull(cr)
 				} else {
 					a := fb.builderFunctionSystemNameIndices.Value(cr)
@@ -701,7 +705,7 @@ func (fb *flamegraphBuilder) mergeSymbolizedRows(
 		{
 			if !fb.builderFunctionFilenameIndices.IsNull(cr) {
 				oldIndex := int(r.LineFunctionFilenameIndices.Value(lineIndex))
-				if t.functionFilename.indices.IsNull(oldIndex) {
+				if oldIndex >= t.functionFilename.indices.Len() || t.functionFilename.indices.IsNull(oldIndex) {
 					fb.builderFunctionFilenameIndices.SetNull(cr)
 				} else {
 					a := fb.builderFunctionFilenameIndices.Value(cr)
