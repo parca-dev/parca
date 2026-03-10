@@ -13,8 +13,6 @@
 
 import {useEffect, useMemo, useRef} from 'react';
 
-import {useProfileFilters} from '../ProfileView/components/ProfileFilters/useProfileFilters';
-
 import {LabelSet, QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 import {
   Button,
@@ -29,6 +27,7 @@ import {TimeUnits, formatDateTimeDownToMS, formatDuration} from '@parca/utilitie
 import ProfileFlameGraph, {validateFlameChartQuery} from '../ProfileFlameGraph';
 import {boundsFromProfileSource} from '../ProfileFlameGraph/FlameGraphArrow/utils';
 import {MergedProfileSource, ProfileSource} from '../ProfileSource';
+import {useProfileFilters} from '../ProfileView/components/ProfileFilters/useProfileFilters';
 import type {SamplesData} from '../ProfileView/types/visualization';
 import {useQuery} from '../useQuery';
 import {NumberDuo} from '../utils';
