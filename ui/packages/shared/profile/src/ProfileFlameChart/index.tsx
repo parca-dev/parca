@@ -13,6 +13,8 @@
 
 import {useEffect, useMemo, useRef} from 'react';
 
+import {useProfileFilters} from '../ProfileView/components/ProfileFilters/useProfileFilters';
+
 import {LabelSet, QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
 import {
   Button,
@@ -128,6 +130,7 @@ export const ProfileFlameChart = ({
   onSwitchToOneMinute,
 }: ProfileFlameChartProps): JSX.Element => {
   const {loader} = useParcaContext();
+  const {protoFilters} = useProfileFilters();
   const zoomControlsRef = useRef<HTMLDivElement>(null);
 
   const [selectedTimeframe, setSelectedTimeframe] = useURLStateCustom<
@@ -185,6 +188,7 @@ export const ProfileFlameChart = ({
     QueryRequest_ReportType.FLAMECHART,
     {
       skip: selectedTimeframe == null || filteredProfileSource == null,
+      protoFilters,
     }
   );
 

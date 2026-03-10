@@ -202,7 +202,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
           )}
 
           <div className="flex mt-5">
-            {!isFlamechartVizOnly && <ProfileFilters />}
+            <ProfileFilters />
 
             {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
           </div>
