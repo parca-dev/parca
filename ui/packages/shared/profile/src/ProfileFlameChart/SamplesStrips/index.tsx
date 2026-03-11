@@ -25,6 +25,7 @@ import {Button} from '@parca/components';
 import {TimelineGuide} from '../../TimelineGuide';
 import {NumberDuo} from '../../utils';
 import {DataPoint, SamplesGraph} from './SamplesGraph';
+import {createLabelSetComparator, labelSetToString} from './labelSetUtils';
 
 export type {DataPoint} from './SamplesGraph';
 
@@ -47,28 +48,6 @@ interface Props {
   stepMs: number;
 }
 
-export const labelSetToString = (labelSet?: LabelSet): string => {
-  if (labelSet === undefined) {
-    return '{}';
-  }
-
-  let str = '{';
-
-  let isFirst = true;
-  for (const label of labelSet.labels) {
-    if (!isFirst) {
-      str += ', ';
-    } else {
-      isFirst = false;
-    }
-    str += `${label.name}: ${label.value}`;
-  }
-
-  str += '}';
-
-  return str;
-};
-
 const STRIP_HEIGHT = 24;
 const MAX_VISIBLE_STRIPS = 20;
 
@@ -81,7 +60,7 @@ const stickyPx = 0;
 const SamplesGraphContainer = ({
   isSelected,
   isCollapsed,
-  cpu,
+  label: labelStr,
   width,
   onToggleCollapse,
   data,
@@ -97,7 +76,7 @@ const SamplesGraphContainer = ({
 }: {
   isSelected: boolean;
   isCollapsed: boolean;
-  cpu: LabelSet;
+  label: string;
   width: number | undefined;
   onToggleCollapse: () => void;
   data: DataPoint[];
@@ -111,8 +90,6 @@ const SamplesGraphContainer = ({
   isAnyDragActive: boolean;
   timeBounds: NumberDuo;
 }): JSX.Element => {
-  const labelStr = labelSetToString(cpu);
-
   const {isIntersecting, ref} = useIntersectionObserver({
     rootMargin: `${stickyPx}px 0px 0px 0px`,
   });
@@ -174,15 +151,16 @@ export const SamplesStrip = ({
 
   const isDragging = dragState !== undefined;
 
-  // Sort cpus and data by label string for consistent ordering across reloads
+  const {compare, keyOrder} = useMemo(() => createLabelSetComparator(cpus), [cpus]);
+
   const sortedItems = useMemo(() => {
     const items = cpus.map((cpu, i) => ({
       cpu,
       data: data[i],
-      label: labelSetToString(cpu),
+      label: labelSetToString(cpu, keyOrder),
     }));
-    return items.sort((a, b) => a.label.localeCompare(b.label));
-  }, [cpus, data]);
+    return items.sort((a, b) => compare(a.cpu, b.cpu));
+  }, [cpus, data, compare, keyOrder]);
 
   const hasMore = useMemo(() => sortedItems.length > MAX_VISIBLE_STRIPS, [sortedItems]);
   const visibleItems = useMemo(
@@ -277,7 +255,7 @@ export const SamplesStrip = ({
           <SamplesGraphContainer
             isSelected={isSelected}
             isCollapsed={isCollapsed}
-            cpu={item.cpu}
+            label={item.label}
             width={width}
             data={item.data}
             onToggleCollapse={() => {
