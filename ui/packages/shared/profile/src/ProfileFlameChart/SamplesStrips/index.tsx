@@ -49,10 +49,19 @@ interface Props {
 }
 
 const STRIP_HEIGHT = 24;
+const LABEL_ROW_HEIGHT = 16; // text-xs label row above each strip
+const GAP = 4; // gap-1 between flex children
 const MAX_VISIBLE_STRIPS = 20;
 
 const getTimelineGuideHeight = (cpusCount: number, collapsedCount: number): number => {
-  return (STRIP_HEIGHT + 4) * (cpusCount - collapsedCount) + 20 * collapsedCount + 24 - 6;
+  const expandedCount = cpusCount - collapsedCount;
+  // Each expanded strip: label row + graph height
+  // Each collapsed strip: min-h-5 (20px)
+  // Gaps between strips (gap-1 = 4px)
+  const expandedTotal = expandedCount * (LABEL_ROW_HEIGHT + STRIP_HEIGHT);
+  const collapsedTotal = collapsedCount * 20; // min-h-5
+  const gaps = cpusCount * GAP + 20; // timeline header
+  return expandedTotal + collapsedTotal + gaps;
 };
 
 const stickyPx = 0;

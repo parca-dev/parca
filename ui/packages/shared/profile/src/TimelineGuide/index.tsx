@@ -48,7 +48,7 @@ export const TimelineGuide = ({
   const xScale = scaleLinear(bounds, [0, width]);
 
   return (
-    <div className="relative h-5">
+    <div className="relative h-5 z-40">
       <div className="pointer-events-none absolute" style={{width, height}}>
         <svg style={{width: '100%', height: '100%'}}>
           <g
