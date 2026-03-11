@@ -74,11 +74,9 @@ const ErrorContent = ({errorMessage}: {errorMessage: string | ReactNode}): JSX.E
 
 export const validateFlameChartQuery = (
   profileSource: MergedProfileSource
-): {isValid: boolean; isNonDelta: boolean; isDurationTooLong: boolean} => {
+): {isValid: boolean; isNonDelta: boolean} => {
   const isNonDelta = !profileSource.ProfileType().delta;
-  const duration = profileSource.mergeTo - profileSource.mergeFrom;
-  const isDurationTooLong = duration > 60_000_000_000n; // 60 seconds in nanoseconds
-  return {isValid: !isNonDelta && !isDurationTooLong, isNonDelta, isDurationTooLong};
+  return {isValid: !isNonDelta, isNonDelta};
 };
 
 const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
@@ -194,13 +192,9 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
   }, [loadingState]);
 
   const flameGraph = useMemo(() => {
-    const {
-      isValid: isFlameChartValid,
-      isNonDelta,
-      isDurationTooLong,
-    } = isFlameChart
+    const {isValid: isFlameChartValid, isNonDelta} = isFlameChart
       ? validateFlameChartQuery(profileSource as MergedProfileSource)
-      : {isValid: true, isNonDelta: false, isDurationTooLong: false};
+      : {isValid: true, isNonDelta: false};
     const isInvalidFlameChartQuery = isFlameChart && !isFlameChartValid;
 
     if (isLoading && !isInvalidFlameChartQuery) {
@@ -223,20 +217,6 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
             errorMessage={
               <>
                 <span>To use the Flame chart, please switch to a Delta profile.</span>
-                {flamechartHelpText ?? null}
-              </>
-            }
-          />
-        );
-      } else if (isDurationTooLong) {
-        return (
-          <ErrorContent
-            errorMessage={
-              <>
-                <span>
-                  Flame chart is unavailable for queries longer than one minute. Please select a
-                  point in the metrics graph to continue.
-                </span>
                 {flamechartHelpText ?? null}
               </>
             }
