@@ -133,13 +133,10 @@ const SamplesGraphContainer = ({
       ref={ref}
     >
       <div
-        className="text-xs absolute top-0 left-0 flex gap-[2px] items-center bg-white/50 dark:bg-black/50 px-1 rounded-sm cursor-pointer"
-        style={{
-          zIndex: 15,
-        }}
+        className="text-xs flex gap-[2px] items-center px-1 cursor-pointer text-gray-600 dark:text-gray-400"
         onClick={onToggleCollapse}
       >
-        <Icon icon={isCollapsed ? 'bxs:right-arrow' : 'bxs:down-arrow'} />
+        <Icon icon={isCollapsed ? 'bxs:right-arrow' : 'bxs:down-arrow'} className="shrink-0" />
         {labelStr}
       </div>
       {!isCollapsed ? (
