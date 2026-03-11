@@ -27,6 +27,8 @@ interface UseZoomResult {
   zoomOut: () => void;
   resetZoom: () => void;
   zoomToPosition: (normalizedX: number, targetZoom: number) => void;
+  setZoomWithScroll: (zoom: number, scrollLeft: number) => void;
+  scrollLeftRef: React.RefObject<number>;
 }
 
 const clampZoom = (zoom: number): number => {
@@ -36,32 +38,42 @@ const clampZoom = (zoom: number): number => {
 export const useZoom = (containerRef: React.RefObject<HTMLDivElement | null>): UseZoomResult => {
   const [zoomLevel, setZoomLevel] = useState(MIN_ZOOM);
   const zoomLevelRef = useRef(MIN_ZOOM);
+  const scrollLeftRef = useRef(0);
 
-  // Adjust scrollLeft so the content under focalX stays fixed after zoom change.
-  const adjustScroll = useCallback(
-    (oldZoom: number, newZoom: number, focalX: number) => {
-      const container = containerRef.current;
-      if (container === null) return;
+  // Keep scrollLeftRef in sync with actual scroll position during regular scrolling
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container === null) return;
 
-      const contentX = container.scrollLeft + focalX;
-      const ratio = contentX / oldZoom;
-      container.scrollLeft = ratio * newZoom - focalX;
-    },
-    [containerRef]
-  );
+    const onScroll = (): void => {
+      scrollLeftRef.current = container.scrollLeft;
+    };
+    container.addEventListener('scroll', onScroll, {passive: true});
+    return () => container.removeEventListener('scroll', onScroll);
+  }, [containerRef]);
 
   // Apply a new zoom level around a focal point
   const applyZoom = useCallback(
     (newZoom: number, focalX: number) => {
+      const container = containerRef.current;
+      if (container === null) return;
+
       const oldZoom = zoomLevelRef.current;
       if (newZoom === oldZoom) return;
-      zoomLevelRef.current = newZoom;
 
-      // flushSync ensures the DOM updates with the new content width before adjustScroll reads it
+      // Pre-compute intended scrollLeft BEFORE flushSync so MiniMap reads correct value during render
+      const contentX = container.scrollLeft + focalX;
+      const ratio = contentX / oldZoom;
+      const newScrollLeft = ratio * newZoom - focalX;
+      scrollLeftRef.current = newScrollLeft;
+
+      zoomLevelRef.current = newZoom;
       flushSync(() => setZoomLevel(newZoom));
-      adjustScroll(oldZoom, newZoom, focalX);
+
+      // Apply scroll to DOM after render (content is now wide enough)
+      container.scrollLeft = newScrollLeft;
     },
-    [adjustScroll]
+    [containerRef]
   );
 
   const zoomIn = useCallback(() => {
@@ -78,6 +90,7 @@ export const useZoom = (containerRef: React.RefObject<HTMLDivElement | null>): U
 
   const resetZoom = useCallback(() => {
     zoomLevelRef.current = MIN_ZOOM;
+    scrollLeftRef.current = 0;
     setZoomLevel(MIN_ZOOM);
     const container = containerRef.current;
     if (container !== null) {
@@ -122,16 +135,43 @@ export const useZoom = (containerRef: React.RefObject<HTMLDivElement | null>): U
       if (newZoom === zoomLevelRef.current) return;
 
       const containerWidth = container.clientWidth;
+      const contentWidth = containerWidth * newZoom;
+      const targetScrollLeft = Math.max(
+        0,
+        Math.min(normalizedX * contentWidth - containerWidth / 2, contentWidth - containerWidth)
+      );
+
+      // Pre-set scrollLeftRef before flushSync so MiniMap reads correct value during render
+      scrollLeftRef.current = targetScrollLeft;
       zoomLevelRef.current = newZoom;
       flushSync(() => setZoomLevel(newZoom));
 
-      // Center the viewport on the target position in the new zoomed content
-      const contentWidth = containerWidth * newZoom;
-      const targetScrollLeft = normalizedX * contentWidth - containerWidth / 2;
-      container.scrollLeft = Math.max(0, Math.min(targetScrollLeft, contentWidth - containerWidth));
+      container.scrollLeft = targetScrollLeft;
     },
     [containerRef]
   );
 
-  return {zoomLevel, zoomIn, zoomOut, resetZoom, zoomToPosition};
+  const setZoomWithScroll = useCallback(
+    (zoom: number, newScrollLeft: number) => {
+      const container = containerRef.current;
+      if (container === null) return;
+
+      const clamped = clampZoom(zoom);
+      const contentWidth = container.clientWidth * clamped;
+      const clampedScroll = Math.max(
+        0,
+        Math.min(newScrollLeft, contentWidth - container.clientWidth)
+      );
+
+      // Pre-set scrollLeftRef before flushSync so MiniMap reads correct value during render
+      scrollLeftRef.current = clampedScroll;
+      zoomLevelRef.current = clamped;
+      flushSync(() => setZoomLevel(clamped));
+
+      container.scrollLeft = clampedScroll;
+    },
+    [containerRef]
+  );
+
+  return {zoomLevel, zoomIn, zoomOut, resetZoom, zoomToPosition, setZoomWithScroll, scrollLeftRef};
 };

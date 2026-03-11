@@ -21,11 +21,11 @@ import {
   type OptionsCustom,
 } from '@parca/components';
 import {Matcher, MatcherTypes, ProfileType, Query} from '@parca/parser';
-import {TimeUnits, formatDateTimeDownToMS, formatDuration} from '@parca/utilities';
+import {TimeUnits, formatDate, formatDuration} from '@parca/utilities';
 
 import ProfileFlameGraph, {validateFlameChartQuery} from '../ProfileFlameGraph';
 import {boundsFromProfileSource} from '../ProfileFlameGraph/FlameGraphArrow/utils';
-import {MergedProfileSource, ProfileSource} from '../ProfileSource';
+import {MergedProfileSource, ProfileSource, timeFormat} from '../ProfileSource';
 import type {SamplesData} from '../ProfileView/types/visualization';
 import {useQuery} from '../useQuery';
 import {NumberDuo} from '../utils';
@@ -263,13 +263,17 @@ export const ProfileFlameChart = ({
             .map(l => `${l.name} = ${l.value}`)
             .join(', ');
           const durationMs = selectedTimeframe.bounds[1] - selectedTimeframe.bounds[0];
-          const duration = formatDuration({[TimeUnits.Milliseconds]: durationMs});
+          const duration =
+            durationMs < 5000
+              ? `${(durationMs / 1000).toFixed(1)}s`
+              : formatDuration({[TimeUnits.Milliseconds]: durationMs});
+          const fmt = durationMs < 5000 ? "yyyy-MM-dd HH:mm:ss.SSS '(UTC)'" : timeFormat();
           return (
             <div className="flex items-center justify-between px-2 py-1">
               <div className="text-xs font-medium text-gray-500 dark:text-gray-400">
                 Samples matching {labels} over {duration} from{' '}
-                {formatDateTimeDownToMS(selectedTimeframe.bounds[0])} to{' '}
-                {formatDateTimeDownToMS(selectedTimeframe.bounds[1])}
+                {formatDate(new Date(selectedTimeframe.bounds[0]), fmt)} to{' '}
+                {formatDate(new Date(selectedTimeframe.bounds[1]), fmt)}
               </div>
               <div ref={zoomControlsRef} />
             </div>

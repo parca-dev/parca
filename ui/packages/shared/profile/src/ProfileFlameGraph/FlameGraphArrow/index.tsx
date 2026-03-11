@@ -273,9 +273,8 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
 
   const isZoomEnabled = isFlameChart;
 
-  const {zoomLevel, zoomIn, zoomOut, resetZoom, zoomToPosition} = useZoom(
-    isZoomEnabled ? containerRef : {current: null}
-  );
+  const {zoomLevel, zoomIn, zoomOut, resetZoom, zoomToPosition, setZoomWithScroll, scrollLeftRef} =
+    useZoom(isZoomEnabled ? containerRef : {current: null});
   const zoomedWidth = isZoomEnabled ? Math.round((width ?? 1) * zoomLevel) : width ?? 0;
 
   // Reset zoom when the data changes (e.g. new query, different time range)
@@ -400,7 +399,9 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
             profileSource={profileSource}
             isDarkMode={isDarkMode}
             scrollLeft={viewport.scrollLeft}
+            scrollLeftRef={scrollLeftRef}
             onZoomToPosition={zoomToPosition}
+            onSetZoomWithScroll={setZoomWithScroll}
           />
         )}
         <div
