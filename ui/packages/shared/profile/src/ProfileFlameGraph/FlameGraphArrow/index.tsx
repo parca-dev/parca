@@ -273,7 +273,7 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
 
   const isZoomEnabled = isFlameChart;
 
-  const {zoomLevel, zoomIn, zoomOut, resetZoom} = useZoom(
+  const {zoomLevel, zoomIn, zoomOut, resetZoom, zoomToPosition} = useZoom(
     isZoomEnabled ? containerRef : {current: null}
   );
   const zoomedWidth = isZoomEnabled ? Math.round((width ?? 1) * zoomLevel) : width ?? 0;
@@ -400,6 +400,7 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
             profileSource={profileSource}
             isDarkMode={isDarkMode}
             scrollLeft={viewport.scrollLeft}
+            onZoomToPosition={zoomToPosition}
           />
         )}
         <div

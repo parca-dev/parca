@@ -16,7 +16,7 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import {flushSync} from 'react-dom';
 
 const MIN_ZOOM = 1.0;
-const MAX_ZOOM = 20.0;
+export const MAX_ZOOM = 100.0;
 const BUTTON_ZOOM_STEP = 1.5;
 // Sensitivity for trackpad/wheel zoom - smaller = smoother
 const WHEEL_ZOOM_SENSITIVITY = 0.01;
@@ -26,6 +26,7 @@ interface UseZoomResult {
   zoomIn: () => void;
   zoomOut: () => void;
   resetZoom: () => void;
+  zoomToPosition: (normalizedX: number, targetZoom: number) => void;
 }
 
 const clampZoom = (zoom: number): number => {
@@ -112,5 +113,25 @@ export const useZoom = (containerRef: React.RefObject<HTMLDivElement | null>): U
     };
   }, [containerRef, applyZoom]);
 
-  return {zoomLevel, zoomIn, zoomOut, resetZoom};
+  const zoomToPosition = useCallback(
+    (normalizedX: number, targetZoom: number) => {
+      const container = containerRef.current;
+      if (container === null) return;
+
+      const newZoom = clampZoom(targetZoom);
+      if (newZoom === zoomLevelRef.current) return;
+
+      const containerWidth = container.clientWidth;
+      zoomLevelRef.current = newZoom;
+      flushSync(() => setZoomLevel(newZoom));
+
+      // Center the viewport on the target position in the new zoomed content
+      const contentWidth = containerWidth * newZoom;
+      const targetScrollLeft = normalizedX * contentWidth - containerWidth / 2;
+      container.scrollLeft = Math.max(0, Math.min(targetScrollLeft, contentWidth - containerWidth));
+    },
+    [containerRef]
+  );
+
+  return {zoomLevel, zoomIn, zoomOut, resetZoom, zoomToPosition};
 };

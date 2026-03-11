@@ -43,6 +43,7 @@ interface MiniMapProps {
   profileSource: ProfileSource;
   isDarkMode: boolean;
   scrollLeft: number;
+  onZoomToPosition?: (normalizedX: number, targetZoom: number) => void;
 }
 
 export const MiniMap = React.memo(function MiniMap({
@@ -57,6 +58,7 @@ export const MiniMap = React.memo(function MiniMap({
   profileSource,
   isDarkMode,
   scrollLeft,
+  onZoomToPosition,
 }: MiniMapProps): React.JSX.Element | null {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerElRef = useRef<HTMLDivElement>(null);
@@ -153,6 +155,14 @@ export const MiniMap = React.memo(function MiniMap({
 
       const clickX = e.clientX - rect.left;
 
+      // When not zoomed, clicking the minimap zooms into a +-50px region
+      if (!isZoomed) {
+        const regionPx = 100; // 50px on each side of the click
+        const targetZoom = width / regionPx;
+        onZoomToPosition?.(clickX / width, targetZoom);
+        return;
+      }
+
       // Check if clicking inside the slider
       if (clickX >= sliderLeft && clickX <= sliderLeft + sliderWidth) {
         // Start dragging
@@ -198,7 +208,16 @@ export const MiniMap = React.memo(function MiniMap({
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     },
-    [sliderLeft, sliderWidth, scrollLeft, width, zoomedWidth, containerRef]
+    [
+      sliderLeft,
+      sliderWidth,
+      scrollLeft,
+      width,
+      zoomedWidth,
+      containerRef,
+      isZoomed,
+      onZoomToPosition,
+    ]
   );
 
   // Forward wheel events to the container so zoom (Ctrl+scroll) works on the minimap
@@ -233,9 +252,9 @@ export const MiniMap = React.memo(function MiniMap({
   return (
     <div
       ref={containerElRef}
-      className="relative select-none"
-      style={{width, height: MINIMAP_HEIGHT, cursor: isZoomed ? 'pointer' : 'default'}}
-      onMouseDown={isZoomed ? handleMouseDown : undefined}
+      className="relative select-none cursor-pointer"
+      style={{width, height: MINIMAP_HEIGHT}}
+      onMouseDown={handleMouseDown}
     >
       <canvas
         ref={canvasRef}
@@ -243,7 +262,6 @@ export const MiniMap = React.memo(function MiniMap({
           width,
           height: MINIMAP_HEIGHT,
           display: 'block',
-          visibility: isZoomed ? 'visible' : 'hidden',
         }}
       />
       {isZoomed && (

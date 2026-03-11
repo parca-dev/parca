@@ -16,6 +16,8 @@ import React from 'react';
 import {Icon} from '@iconify/react';
 import {createPortal} from 'react-dom';
 
+import {MAX_ZOOM} from './useZoom';
+
 interface ZoomControlsProps {
   zoomLevel: number;
   zoomIn: () => void;
@@ -50,7 +52,7 @@ export const ZoomControls = ({
       </button>
       <button
         onClick={zoomIn}
-        disabled={zoomLevel >= 20}
+        disabled={zoomLevel >= MAX_ZOOM}
         className="rounded p-1 text-gray-600 hover:bg-gray-100 disabled:opacity-30 dark:text-gray-300 dark:hover:bg-gray-700"
         title="Zoom in"
       >

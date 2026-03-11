@@ -84,5 +84,4 @@ export interface ProfileViewProps {
   onDownloadPProf: () => void;
   pprofDownloading?: boolean;
   showVisualizationSelector?: boolean;
-  onSwitchToOneMinute?: () => void;
 }
