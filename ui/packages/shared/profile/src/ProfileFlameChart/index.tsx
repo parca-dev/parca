@@ -14,12 +14,7 @@
 import {useEffect, useMemo, useRef} from 'react';
 
 import {LabelSet, QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
-import {
-  useParcaContext,
-  useURLState,
-  useURLStateCustom,
-  type OptionsCustom,
-} from '@parca/components';
+import {useURLState, useURLStateCustom, type OptionsCustom} from '@parca/components';
 import {Matcher, MatcherTypes, ProfileType, Query} from '@parca/parser';
 import {TimeUnits, formatDate, formatDuration} from '@parca/utilities';
 
@@ -124,7 +119,6 @@ export const ProfileFlameChart = ({
   metadataMappingFiles,
   metadataLoading,
 }: ProfileFlameChartProps): JSX.Element => {
-  const {loader} = useParcaContext();
   const zoomControlsRef = useRef<HTMLDivElement>(null);
 
   const [selectedTimeframe, setSelectedTimeframe] = useURLStateCustom<
@@ -221,12 +215,10 @@ export const ProfileFlameChart = ({
 
   const hasDimension = (flamechartDimension ?? []).length > 0;
 
-  // Show loader while metadata labels are loading (needed for dimension auto-selection)
-  if (metadataLoading === true) {
-    return <>{loader}</>;
-  }
+  const isStripsLoading =
+    metadataLoading === true || !hasDimension || samplesData?.loading === true;
 
-  if (!hasDimension) {
+  if (!hasDimension && metadataLoading !== true) {
     return (
       <div className="flex justify-center items-center py-10 text-gray-500 dark:text-gray-400 text-sm">
         Select a label in the &quot;Samples group by&quot; dropdown above to view the samples
@@ -235,16 +227,12 @@ export const ProfileFlameChart = ({
     );
   }
 
-  if (samplesData?.loading === true) {
-    return <>{loader}</>;
-  }
-
   return (
     <div>
-      {/* Samples Strips - rendered above flamechart */}
-      {stripsData.cpus.length > 0 && stripsData.data.length > 0 && (
+      {(isStripsLoading || (stripsData.cpus.length > 0 && stripsData.data.length > 0)) && (
         <div className="mb-2">
           <SamplesStrip
+            loading={isStripsLoading}
             cpus={stripsData.cpus}
             data={stripsData.data}
             selectedTimeframe={selectedTimeframe}

@@ -20,7 +20,7 @@ import isEqual from 'fast-deep-equal';
 import {useIntersectionObserver} from 'usehooks-ts';
 
 import {LabelSet} from '@parca/client';
-import {Button} from '@parca/components';
+import {Button, useParcaContext} from '@parca/components';
 
 import {TimelineGuide} from '../../TimelineGuide';
 import {NumberDuo} from '../../utils';
@@ -36,6 +36,7 @@ interface DragState {
 }
 
 interface Props {
+  loading?: boolean;
   cpus: LabelSet[];
   data: DataPoint[][];
   selectedTimeframe?: {
@@ -52,6 +53,31 @@ const STRIP_HEIGHT = 24;
 const LABEL_ROW_HEIGHT = 16; // text-xs label row above each strip
 const GAP = 4; // gap-1 between flex children
 const MAX_VISIBLE_STRIPS = 20;
+const LOADING_STRIP_COUNT = 8;
+
+const generateMockStripData = (
+  bounds: NumberDuo
+): {cpus: LabelSet[]; data: DataPoint[][]; stepMs: number} => {
+  const stepMs = Math.max(Math.floor((bounds[1] - bounds[0]) / 240), 100);
+  const cpus: LabelSet[] = Array.from({length: LOADING_STRIP_COUNT}, (_, i) => ({
+    labels: [{name: 'cpu', value: String(i)}],
+  }));
+
+  let seed = 42;
+  const data = cpus.map(() => {
+    const points: DataPoint[] = [];
+    for (let ts = bounds[0]; ts < bounds[1]; ts += stepMs) {
+      seed = (seed * 16807 + 11) % 2147483647;
+      const value = (seed % 80) + 10;
+      seed = (seed * 16807 + 11) % 2147483647;
+      const sampleCount = (seed % 50) + 1;
+      points.push({timestamp: ts, value, sampleCount});
+    }
+    return points;
+  });
+
+  return {cpus, data, stepMs};
+};
 
 const getTimelineGuideHeight = (cpusCount: number, collapsedCount: number): number => {
   const expandedCount = cpusCount - collapsedCount;
@@ -82,6 +108,7 @@ const SamplesGraphContainer = ({
   stripIndex,
   isAnyDragActive,
   timeBounds,
+  loading,
 }: {
   isSelected: boolean;
   isCollapsed: boolean;
@@ -98,6 +125,7 @@ const SamplesGraphContainer = ({
   stripIndex: number;
   isAnyDragActive: boolean;
   timeBounds: NumberDuo;
+  loading?: boolean;
 }): JSX.Element => {
   const {isIntersecting, ref} = useIntersectionObserver({
     rootMargin: `${stickyPx}px 0px 0px 0px`,
@@ -120,10 +148,16 @@ const SamplesGraphContainer = ({
     >
       <div
         className="text-xs flex gap-[2px] items-center px-1 cursor-pointer text-gray-600 dark:text-gray-400"
-        onClick={onToggleCollapse}
+        onClick={loading === true ? undefined : onToggleCollapse}
       >
-        <Icon icon={isCollapsed ? 'bxs:right-arrow' : 'bxs:down-arrow'} className="shrink-0" />
-        {labelStr}
+        {loading === true ? (
+          <div className="h-3 w-24 rounded bg-gray-200 dark:bg-gray-700 mb-1" />
+        ) : (
+          <>
+            <Icon icon={isCollapsed ? 'bxs:right-arrow' : 'bxs:down-arrow'} className="shrink-0" />
+            {labelStr}
+          </>
+        )}
       </div>
       {!isCollapsed ? (
         <SamplesGraph
@@ -145,6 +179,7 @@ const SamplesGraphContainer = ({
 };
 
 export const SamplesStrip = ({
+  loading,
   cpus,
   data,
   selectedTimeframe,
@@ -153,6 +188,18 @@ export const SamplesStrip = ({
   bounds,
   stepMs,
 }: Props): JSX.Element => {
+  const {isDarkMode} = useParcaContext();
+  const effectiveLoading = loading === true;
+
+  // When loading, use mock data to render a pixel-perfect skeleton
+  const mockData = useMemo(
+    () => (effectiveLoading && bounds[0] !== bounds[1] ? generateMockStripData(bounds) : null),
+    [effectiveLoading, bounds]
+  );
+  const effectiveCpus = mockData?.cpus ?? cpus;
+  const effectiveData = mockData?.data ?? data;
+  const effectiveStepMs = mockData?.stepMs ?? stepMs;
+
   const [collapsedLabels, setCollapsedLabels] = useState<Set<string>>(new Set());
   const [showAll, setShowAll] = useState(false);
   const [dragState, setDragState] = useState<DragState | undefined>(undefined);
@@ -160,16 +207,19 @@ export const SamplesStrip = ({
 
   const isDragging = dragState !== undefined;
 
-  const {compare, keyOrder} = useMemo(() => createLabelSetComparator(cpus), [cpus]);
+  const {compare, keyOrder} = useMemo(
+    () => createLabelSetComparator(effectiveCpus),
+    [effectiveCpus]
+  );
 
   const sortedItems = useMemo(() => {
-    const items = cpus.map((cpu, i) => ({
+    const items = effectiveCpus.map((cpu, i) => ({
       cpu,
-      data: data[i],
+      data: effectiveData[i],
       label: labelSetToString(cpu, keyOrder),
     }));
     return items.sort((a, b) => compare(a.cpu, b.cpu));
-  }, [cpus, data, compare, keyOrder]);
+  }, [effectiveCpus, effectiveData, compare, keyOrder]);
 
   const hasMore = useMemo(() => sortedItems.length > MAX_VISIBLE_STRIPS, [sortedItems]);
   const visibleItems = useMemo(
@@ -178,8 +228,11 @@ export const SamplesStrip = ({
   );
 
   // Deterministic color: hash the label string so the same label always gets the same color
-  // regardless of render order.
+  // regardless of render order. When loading, use muted gray.
   const color = useMemo(() => {
+    if (effectiveLoading) {
+      return (_label: string): string => (isDarkMode ? '#374151' : '#d1d5db');
+    }
     const palette = d3.schemeObservable10;
     const hashStr = (s: string): number => {
       let h = 0;
@@ -189,7 +242,7 @@ export const SamplesStrip = ({
       return Math.abs(h);
     };
     return (label: string): string => palette[hashStr(label) % palette.length];
-  }, []);
+  }, [effectiveLoading, isDarkMode]);
 
   const handleDragStart = (stripIndex: number, startX: number): void => {
     setDragState({stripIndex, startX, currentX: startX});
@@ -230,7 +283,7 @@ export const SamplesStrip = ({
     setDragState(undefined);
   };
 
-  if (data.length === 0) {
+  if (!effectiveLoading && effectiveData.length === 0) {
     return (
       <span className="flex justify-center my-10">
         There is no data matching your filter criteria, please try changing the filter.
@@ -241,11 +294,14 @@ export const SamplesStrip = ({
   return (
     <div
       ref={containerRef}
-      className={cx('flex flex-col gap-1 relative my-0', {'cursor-ew-resize': isDragging})}
+      className={cx('flex flex-col gap-1 relative my-0', {
+        'cursor-ew-resize': isDragging,
+        'animate-pulse pointer-events-none': effectiveLoading,
+      })}
       style={{width: width ?? '100%'}}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseLeave}
+      onMouseMove={effectiveLoading ? undefined : handleMouseMove}
+      onMouseUp={effectiveLoading ? undefined : handleMouseUp}
+      onMouseLeave={effectiveLoading ? undefined : handleMouseLeave}
     >
       <TimelineGuide
         bounds={[BigInt(0), BigInt(bounds[1] - bounds[0])]}
@@ -281,12 +337,13 @@ export const SamplesStrip = ({
               onSelectedTimeframe(item.cpu, newBounds);
             }}
             color={color}
-            stepMs={stepMs}
+            stepMs={effectiveStepMs}
             onDragStart={handleDragStart}
             dragState={dragState}
             stripIndex={i}
             isAnyDragActive={isDragging}
             timeBounds={bounds}
+            loading={effectiveLoading}
             key={item.label}
           />
         );
