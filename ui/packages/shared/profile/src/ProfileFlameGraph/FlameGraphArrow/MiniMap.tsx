@@ -43,6 +43,9 @@ interface MiniMapProps {
   profileSource: ProfileSource;
   isDarkMode: boolean;
   scrollLeft: number;
+  scrollLeftRef: React.RefObject<number>;
+  onZoomToPosition?: (normalizedX: number, targetZoom: number) => void;
+  onSetZoomWithScroll?: (zoom: number, scrollLeft: number) => void;
 }
 
 export const MiniMap = React.memo(function MiniMap({
@@ -56,7 +59,10 @@ export const MiniMap = React.memo(function MiniMap({
   colorBy,
   profileSource,
   isDarkMode,
-  scrollLeft,
+  scrollLeft: _scrollLeft,
+  scrollLeftRef,
+  onZoomToPosition,
+  onSetZoomWithScroll,
 }: MiniMapProps): React.JSX.Element | null {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerElRef = useRef<HTMLDivElement>(null);
@@ -83,7 +89,6 @@ export const MiniMap = React.memo(function MiniMap({
     ctx.fillStyle = isDarkMode ? '#374151' : '#f3f4f6';
     ctx.fillRect(0, 0, width, MINIMAP_HEIGHT);
 
-    const xScale = width / zoomedWidth;
     const yScale = MINIMAP_HEIGHT / totalHeight;
 
     const tsBounds = boundsFromProfileSource(profileSource);
@@ -109,11 +114,11 @@ export const MiniMap = React.memo(function MiniMap({
       const cumulative = Number(cumulativeCol.get(row) ?? 0n);
       if (cumulative <= 0) continue;
 
-      const nodeWidth = (cumulative / tsRange) * zoomedWidth * xScale;
+      const nodeWidth = (cumulative / tsRange) * width;
       if (nodeWidth < 0.5) continue;
 
       const ts = tsCol != null ? Number(tsCol.get(row)) : 0;
-      const x = ((ts - Number(tsBounds[0])) / tsRange) * zoomedWidth * xScale;
+      const x = ((ts - Number(tsBounds[0])) / tsRange) * width;
       const y = (depth - 1) * RowHeight * yScale;
       const h = Math.max(1, RowHeight * yScale);
 
@@ -129,21 +134,17 @@ export const MiniMap = React.memo(function MiniMap({
       ctx.fillStyle = color ?? (isDarkMode ? '#6b7280' : '#9ca3af');
       ctx.fillRect(x, y, Math.max(0.5, nodeWidth), h);
     }
-  }, [
-    table,
-    width,
-    zoomedWidth,
-    totalHeight,
-    maxDepth,
-    colorBy,
-    colors,
-    isDarkMode,
-    profileSource,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- zoomedWidth intentionally excluded: canvas is zoom-independent
+  }, [table, width, totalHeight, maxDepth, colorBy, colors, isDarkMode, profileSource]);
 
   const isZoomed = zoomedWidth > width;
   const sliderWidth = Math.max(20, (width / zoomedWidth) * width);
-  const sliderLeft = Math.min((scrollLeft / zoomedWidth) * width, width - sliderWidth);
+  // Use scrollLeftRef for positioning — it's pre-set before flushSync during zoom changes,
+  // avoiding the 1-frame lag where viewport.scrollLeft is stale but zoomedWidth is already updated.
+  const currentScrollLeft = scrollLeftRef.current ?? 0;
+  const sliderLeft = Math.min((currentScrollLeft / zoomedWidth) * width, width - sliderWidth);
+
+  const EDGE_HIT_ZONE = 6;
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -153,12 +154,86 @@ export const MiniMap = React.memo(function MiniMap({
 
       const clickX = e.clientX - rect.left;
 
-      // Check if clicking inside the slider
-      if (clickX >= sliderLeft && clickX <= sliderLeft + sliderWidth) {
-        // Start dragging
+      // When not zoomed, clicking the minimap zooms into a +-50px region
+      if (!isZoomed) {
+        const regionPx = 100; // 50px on each side of the click
+        const targetZoom = width / regionPx;
+        onZoomToPosition?.(clickX / width, targetZoom);
+        return;
+      }
+
+      const sliderRight = sliderLeft + sliderWidth;
+      const isNearLeftEdge =
+        Math.abs(clickX - sliderLeft) <= EDGE_HIT_ZONE && clickX <= sliderLeft + EDGE_HIT_ZONE;
+      const isNearRightEdge =
+        Math.abs(clickX - sliderRight) <= EDGE_HIT_ZONE && clickX >= sliderRight - EDGE_HIT_ZONE;
+
+      // Edge drag: resize the zoomed region by dragging one bound
+      if (isNearLeftEdge || isNearRightEdge) {
+        const edge = isNearLeftEdge ? 'left' : 'right';
+        // The opposite edge stays fixed in minimap coordinates
+        const anchorPx = edge === 'left' ? sliderRight : sliderLeft;
+        const MIN_SLIDER_PX = 10;
+
+        let edgeRafId: number | null = null;
+        let pendingEdgeEvent: MouseEvent | null = null;
+
+        const applyEdgeMove = (): void => {
+          edgeRafId = null;
+          const moveEvent = pendingEdgeEvent;
+          if (moveEvent == null) return;
+          pendingEdgeEvent = null;
+
+          const moveRect = containerElRef.current?.getBoundingClientRect();
+          if (moveRect == null) return;
+
+          let edgePx = moveEvent.clientX - moveRect.left;
+          edgePx = Math.max(0, Math.min(edgePx, width));
+
+          let newLeft: number;
+          let newRight: number;
+
+          if (edge === 'left') {
+            newLeft = Math.min(edgePx, anchorPx - MIN_SLIDER_PX);
+            newRight = anchorPx;
+          } else {
+            newLeft = anchorPx;
+            newRight = Math.max(edgePx, anchorPx + MIN_SLIDER_PX);
+          }
+
+          const newSliderWidth = newRight - newLeft;
+          const newZoom = width / newSliderWidth;
+          const newScrollLeft = newLeft * newZoom;
+          onSetZoomWithScroll?.(newZoom, newScrollLeft);
+        };
+
+        const handleEdgeMove = (moveEvent: MouseEvent): void => {
+          pendingEdgeEvent = moveEvent;
+          if (edgeRafId === null) {
+            edgeRafId = requestAnimationFrame(applyEdgeMove);
+          }
+        };
+
+        const handleEdgeUp = (): void => {
+          if (edgeRafId !== null) {
+            cancelAnimationFrame(edgeRafId);
+            // Apply final position immediately on mouse up
+            applyEdgeMove();
+          }
+          document.removeEventListener('mousemove', handleEdgeMove);
+          document.removeEventListener('mouseup', handleEdgeUp);
+        };
+
+        document.addEventListener('mousemove', handleEdgeMove);
+        document.addEventListener('mouseup', handleEdgeUp);
+        return;
+      }
+
+      // Check if clicking inside the slider — start pan drag
+      if (clickX >= sliderLeft && clickX <= sliderRight) {
         isDragging.current = true;
         dragStartX.current = e.clientX;
-        dragStartScrollLeft.current = scrollLeft;
+        dragStartScrollLeft.current = currentScrollLeft;
       } else {
         // Click-to-jump: center viewport at click position
         const targetCenter = (clickX / width) * zoomedWidth;
@@ -198,7 +273,17 @@ export const MiniMap = React.memo(function MiniMap({
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     },
-    [sliderLeft, sliderWidth, scrollLeft, width, zoomedWidth, containerRef]
+    [
+      sliderLeft,
+      sliderWidth,
+      currentScrollLeft,
+      width,
+      zoomedWidth,
+      containerRef,
+      isZoomed,
+      onZoomToPosition,
+      onSetZoomWithScroll,
+    ]
   );
 
   // Forward wheel events to the container so zoom (Ctrl+scroll) works on the minimap
@@ -233,9 +318,9 @@ export const MiniMap = React.memo(function MiniMap({
   return (
     <div
       ref={containerElRef}
-      className="relative select-none"
-      style={{width, height: MINIMAP_HEIGHT, cursor: isZoomed ? 'pointer' : 'default'}}
-      onMouseDown={isZoomed ? handleMouseDown : undefined}
+      className="relative select-none cursor-pointer"
+      style={{width, height: MINIMAP_HEIGHT}}
+      onMouseDown={handleMouseDown}
     >
       <canvas
         ref={canvasRef}
@@ -243,7 +328,6 @@ export const MiniMap = React.memo(function MiniMap({
           width,
           height: MINIMAP_HEIGHT,
           display: 'block',
-          visibility: isZoomed ? 'visible' : 'hidden',
         }}
       />
       {isZoomed && (
@@ -257,6 +341,16 @@ export const MiniMap = React.memo(function MiniMap({
           <div
             className="absolute top-0 bottom-0 border-x-2 border-gray-500"
             style={{left: sliderLeft, width: sliderWidth}}
+          />
+          {/* Left edge drag handle */}
+          <div
+            className="absolute top-0 bottom-0 cursor-col-resize"
+            style={{left: sliderLeft - EDGE_HIT_ZONE, width: EDGE_HIT_ZONE * 2}}
+          />
+          {/* Right edge drag handle */}
+          <div
+            className="absolute top-0 bottom-0 cursor-col-resize"
+            style={{left: sliderLeft + sliderWidth - EDGE_HIT_ZONE, width: EDGE_HIT_ZONE * 2}}
           />
           {/* Right overlay */}
           <div

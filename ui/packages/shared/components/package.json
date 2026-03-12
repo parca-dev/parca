@@ -1,6 +1,6 @@
 {
   "name": "@parca/components",
-  "version": "0.16.407",
+  "version": "0.16.408",
   "description": "A component library for Parca",
   "main": "dist/index.js",
   "scripts": {

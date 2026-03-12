@@ -20,11 +20,12 @@ import isEqual from 'fast-deep-equal';
 import {useIntersectionObserver} from 'usehooks-ts';
 
 import {LabelSet} from '@parca/client';
-import {Button} from '@parca/components';
+import {Button, useParcaContext} from '@parca/components';
 
 import {TimelineGuide} from '../../TimelineGuide';
 import {NumberDuo} from '../../utils';
 import {DataPoint, SamplesGraph} from './SamplesGraph';
+import {createLabelSetComparator, labelSetToString} from './labelSetUtils';
 
 export type {DataPoint} from './SamplesGraph';
 
@@ -35,6 +36,7 @@ interface DragState {
 }
 
 interface Props {
+  loading?: boolean;
   cpus: LabelSet[];
   data: DataPoint[][];
   selectedTimeframe?: {
@@ -47,33 +49,45 @@ interface Props {
   stepMs: number;
 }
 
-export const labelSetToString = (labelSet?: LabelSet): string => {
-  if (labelSet === undefined) {
-    return '{}';
-  }
+const STRIP_HEIGHT = 24;
+const LABEL_ROW_HEIGHT = 16; // text-xs label row above each strip
+const GAP = 4; // gap-1 between flex children
+const MAX_VISIBLE_STRIPS = 20;
+const LOADING_STRIP_COUNT = 8;
 
-  let str = '{';
+const generateMockStripData = (
+  bounds: NumberDuo
+): {cpus: LabelSet[]; data: DataPoint[][]; stepMs: number} => {
+  const stepMs = Math.max(Math.floor((bounds[1] - bounds[0]) / 240), 100);
+  const cpus: LabelSet[] = Array.from({length: LOADING_STRIP_COUNT}, (_, i) => ({
+    labels: [{name: 'cpu', value: String(i)}],
+  }));
 
-  let isFirst = true;
-  for (const label of labelSet.labels) {
-    if (!isFirst) {
-      str += ', ';
-    } else {
-      isFirst = false;
+  let seed = 42;
+  const data = cpus.map(() => {
+    const points: DataPoint[] = [];
+    for (let ts = bounds[0]; ts < bounds[1]; ts += stepMs) {
+      seed = (seed * 16807 + 11) % 2147483647;
+      const value = (seed % 80) + 10;
+      seed = (seed * 16807 + 11) % 2147483647;
+      const sampleCount = (seed % 50) + 1;
+      points.push({timestamp: ts, value, sampleCount});
     }
-    str += `${label.name}: ${label.value}`;
-  }
+    return points;
+  });
 
-  str += '}';
-
-  return str;
+  return {cpus, data, stepMs};
 };
 
-const STRIP_HEIGHT = 24;
-const MAX_VISIBLE_STRIPS = 20;
-
 const getTimelineGuideHeight = (cpusCount: number, collapsedCount: number): number => {
-  return (STRIP_HEIGHT + 4) * (cpusCount - collapsedCount) + 20 * collapsedCount + 24 - 6;
+  const expandedCount = cpusCount - collapsedCount;
+  // Each expanded strip: label row + graph height
+  // Each collapsed strip: min-h-5 (20px)
+  // Gaps between strips (gap-1 = 4px)
+  const expandedTotal = expandedCount * (LABEL_ROW_HEIGHT + STRIP_HEIGHT);
+  const collapsedTotal = collapsedCount * 20; // min-h-5
+  const gaps = cpusCount * GAP + 20; // timeline header
+  return expandedTotal + collapsedTotal + gaps;
 };
 
 const stickyPx = 0;
@@ -81,7 +95,7 @@ const stickyPx = 0;
 const SamplesGraphContainer = ({
   isSelected,
   isCollapsed,
-  cpu,
+  label: labelStr,
   width,
   onToggleCollapse,
   data,
@@ -94,10 +108,11 @@ const SamplesGraphContainer = ({
   stripIndex,
   isAnyDragActive,
   timeBounds,
+  loading,
 }: {
   isSelected: boolean;
   isCollapsed: boolean;
-  cpu: LabelSet;
+  label: string;
   width: number | undefined;
   onToggleCollapse: () => void;
   data: DataPoint[];
@@ -110,9 +125,8 @@ const SamplesGraphContainer = ({
   stripIndex: number;
   isAnyDragActive: boolean;
   timeBounds: NumberDuo;
+  loading?: boolean;
 }): JSX.Element => {
-  const labelStr = labelSetToString(cpu);
-
   const {isIntersecting, ref} = useIntersectionObserver({
     rootMargin: `${stickyPx}px 0px 0px 0px`,
   });
@@ -133,14 +147,17 @@ const SamplesGraphContainer = ({
       ref={ref}
     >
       <div
-        className="text-xs absolute top-0 left-0 flex gap-[2px] items-center bg-white/50 dark:bg-black/50 px-1 rounded-sm cursor-pointer"
-        style={{
-          zIndex: 15,
-        }}
-        onClick={onToggleCollapse}
+        className="text-xs flex gap-[2px] items-center px-1 cursor-pointer text-gray-600 dark:text-gray-400"
+        onClick={loading === true ? undefined : onToggleCollapse}
       >
-        <Icon icon={isCollapsed ? 'bxs:right-arrow' : 'bxs:down-arrow'} />
-        {labelStr}
+        {loading === true ? (
+          <div className="h-3 w-24 rounded bg-gray-200 dark:bg-gray-700 mb-1" />
+        ) : (
+          <>
+            <Icon icon={isCollapsed ? 'bxs:right-arrow' : 'bxs:down-arrow'} className="shrink-0" />
+            {labelStr}
+          </>
+        )}
       </div>
       {!isCollapsed ? (
         <SamplesGraph
@@ -162,6 +179,7 @@ const SamplesGraphContainer = ({
 };
 
 export const SamplesStrip = ({
+  loading,
   cpus,
   data,
   selectedTimeframe,
@@ -170,6 +188,18 @@ export const SamplesStrip = ({
   bounds,
   stepMs,
 }: Props): JSX.Element => {
+  const {isDarkMode} = useParcaContext();
+  const effectiveLoading = loading === true;
+
+  // When loading, use mock data to render a pixel-perfect skeleton
+  const mockData = useMemo(
+    () => (effectiveLoading && bounds[0] !== bounds[1] ? generateMockStripData(bounds) : null),
+    [effectiveLoading, bounds]
+  );
+  const effectiveCpus = mockData?.cpus ?? cpus;
+  const effectiveData = mockData?.data ?? data;
+  const effectiveStepMs = mockData?.stepMs ?? stepMs;
+
   const [collapsedLabels, setCollapsedLabels] = useState<Set<string>>(new Set());
   const [showAll, setShowAll] = useState(false);
   const [dragState, setDragState] = useState<DragState | undefined>(undefined);
@@ -177,15 +207,19 @@ export const SamplesStrip = ({
 
   const isDragging = dragState !== undefined;
 
-  // Sort cpus and data by label string for consistent ordering across reloads
+  const {compare, keyOrder} = useMemo(
+    () => createLabelSetComparator(effectiveCpus),
+    [effectiveCpus]
+  );
+
   const sortedItems = useMemo(() => {
-    const items = cpus.map((cpu, i) => ({
+    const items = effectiveCpus.map((cpu, i) => ({
       cpu,
-      data: data[i],
-      label: labelSetToString(cpu),
+      data: effectiveData[i],
+      label: labelSetToString(cpu, keyOrder),
     }));
-    return items.sort((a, b) => a.label.localeCompare(b.label));
-  }, [cpus, data]);
+    return items.sort((a, b) => compare(a.cpu, b.cpu));
+  }, [effectiveCpus, effectiveData, compare, keyOrder]);
 
   const hasMore = useMemo(() => sortedItems.length > MAX_VISIBLE_STRIPS, [sortedItems]);
   const visibleItems = useMemo(
@@ -194,8 +228,11 @@ export const SamplesStrip = ({
   );
 
   // Deterministic color: hash the label string so the same label always gets the same color
-  // regardless of render order.
+  // regardless of render order. When loading, use muted gray.
   const color = useMemo(() => {
+    if (effectiveLoading) {
+      return (_label: string): string => (isDarkMode ? '#374151' : '#d1d5db');
+    }
     const palette = d3.schemeObservable10;
     const hashStr = (s: string): number => {
       let h = 0;
@@ -205,7 +242,7 @@ export const SamplesStrip = ({
       return Math.abs(h);
     };
     return (label: string): string => palette[hashStr(label) % palette.length];
-  }, []);
+  }, [effectiveLoading, isDarkMode]);
 
   const handleDragStart = (stripIndex: number, startX: number): void => {
     setDragState({stripIndex, startX, currentX: startX});
@@ -246,7 +283,7 @@ export const SamplesStrip = ({
     setDragState(undefined);
   };
 
-  if (data.length === 0) {
+  if (!effectiveLoading && effectiveData.length === 0) {
     return (
       <span className="flex justify-center my-10">
         There is no data matching your filter criteria, please try changing the filter.
@@ -257,11 +294,14 @@ export const SamplesStrip = ({
   return (
     <div
       ref={containerRef}
-      className={cx('flex flex-col gap-1 relative my-0', {'cursor-ew-resize': isDragging})}
+      className={cx('flex flex-col gap-1 relative my-0', {
+        'cursor-ew-resize': isDragging,
+        'animate-pulse pointer-events-none': effectiveLoading,
+      })}
       style={{width: width ?? '100%'}}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseLeave}
+      onMouseMove={effectiveLoading ? undefined : handleMouseMove}
+      onMouseUp={effectiveLoading ? undefined : handleMouseUp}
+      onMouseLeave={effectiveLoading ? undefined : handleMouseLeave}
     >
       <TimelineGuide
         bounds={[BigInt(0), BigInt(bounds[1] - bounds[0])]}
@@ -280,7 +320,7 @@ export const SamplesStrip = ({
           <SamplesGraphContainer
             isSelected={isSelected}
             isCollapsed={isCollapsed}
-            cpu={item.cpu}
+            label={item.label}
             width={width}
             data={item.data}
             onToggleCollapse={() => {
@@ -297,12 +337,13 @@ export const SamplesStrip = ({
               onSelectedTimeframe(item.cpu, newBounds);
             }}
             color={color}
-            stepMs={stepMs}
+            stepMs={effectiveStepMs}
             onDragStart={handleDragStart}
             dragState={dragState}
             stripIndex={i}
             isAnyDragActive={isDragging}
             timeBounds={bounds}
+            loading={effectiveLoading}
             key={item.label}
           />
         );

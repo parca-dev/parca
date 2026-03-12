@@ -14,19 +14,13 @@
 import {useEffect, useMemo, useRef} from 'react';
 
 import {LabelSet, QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
-import {
-  Button,
-  useParcaContext,
-  useURLState,
-  useURLStateCustom,
-  type OptionsCustom,
-} from '@parca/components';
+import {useURLState, useURLStateCustom, type OptionsCustom} from '@parca/components';
 import {Matcher, MatcherTypes, ProfileType, Query} from '@parca/parser';
-import {TimeUnits, formatDateTimeDownToMS, formatDuration} from '@parca/utilities';
+import {TimeUnits, formatDate, formatDuration} from '@parca/utilities';
 
 import ProfileFlameGraph, {validateFlameChartQuery} from '../ProfileFlameGraph';
 import {boundsFromProfileSource} from '../ProfileFlameGraph/FlameGraphArrow/utils';
-import {MergedProfileSource, ProfileSource} from '../ProfileSource';
+import {MergedProfileSource, ProfileSource, timeFormat} from '../ProfileSource';
 import type {SamplesData} from '../ProfileView/types/visualization';
 import {useQuery} from '../useQuery';
 import {NumberDuo} from '../utils';
@@ -82,7 +76,6 @@ interface ProfileFlameChartProps {
   isHalfScreen: boolean;
   metadataMappingFiles?: string[];
   metadataLoading?: boolean;
-  onSwitchToOneMinute?: () => void;
 }
 
 // Helper to create a filtered profile source with narrowed time bounds
@@ -125,9 +118,7 @@ export const ProfileFlameChart = ({
   isHalfScreen,
   metadataMappingFiles,
   metadataLoading,
-  onSwitchToOneMinute,
 }: ProfileFlameChartProps): JSX.Element => {
-  const {loader} = useParcaContext();
   const zoomControlsRef = useRef<HTMLDivElement>(null);
 
   const [selectedTimeframe, setSelectedTimeframe] = useURLStateCustom<
@@ -211,27 +202,9 @@ export const ProfileFlameChart = ({
     return {cpus, data, stepMs};
   }, [samplesData?.series, samplesData?.stepMs]);
 
-  const {isValid, isNonDelta, isDurationTooLong} = validateFlameChartQuery(
-    profileSource as MergedProfileSource
-  );
+  const {isValid, isNonDelta} = validateFlameChartQuery(profileSource as MergedProfileSource);
 
   if (!isValid) {
-    if (isDurationTooLong) {
-      return (
-        <div className="flex flex-col justify-center items-center p-10 text-center gap-4 text-sm">
-          <span>
-            Flame chart is unavailable for queries longer than one minute. Try reducing the time
-            range to one minute or selecting a point in the metrics graph.
-          </span>
-          {onSwitchToOneMinute != null && (
-            <Button variant="primary" onClick={onSwitchToOneMinute}>
-              Switch to last 1 minute
-            </Button>
-          )}
-        </div>
-      );
-    }
-
     const message = isNonDelta
       ? 'To use the Flame chart, please switch to a Delta profile.'
       : 'Flame chart is unavailable for this query.';
@@ -242,12 +215,10 @@ export const ProfileFlameChart = ({
 
   const hasDimension = (flamechartDimension ?? []).length > 0;
 
-  // Show loader while metadata labels are loading (needed for dimension auto-selection)
-  if (metadataLoading === true) {
-    return <>{loader}</>;
-  }
+  const isStripsLoading =
+    metadataLoading === true || !hasDimension || samplesData?.loading === true;
 
-  if (!hasDimension) {
+  if (!hasDimension && metadataLoading !== true) {
     return (
       <div className="flex justify-center items-center py-10 text-gray-500 dark:text-gray-400 text-sm">
         Select a label in the &quot;Samples group by&quot; dropdown above to view the samples
@@ -256,16 +227,12 @@ export const ProfileFlameChart = ({
     );
   }
 
-  if (samplesData?.loading === true) {
-    return <>{loader}</>;
-  }
-
   return (
     <div>
-      {/* Samples Strips - rendered above flamechart */}
-      {stripsData.cpus.length > 0 && stripsData.data.length > 0 && (
+      {(isStripsLoading || (stripsData.cpus.length > 0 && stripsData.data.length > 0)) && (
         <div className="mb-2">
           <SamplesStrip
+            loading={isStripsLoading}
             cpus={stripsData.cpus}
             data={stripsData.data}
             selectedTimeframe={selectedTimeframe}
@@ -284,13 +251,17 @@ export const ProfileFlameChart = ({
             .map(l => `${l.name} = ${l.value}`)
             .join(', ');
           const durationMs = selectedTimeframe.bounds[1] - selectedTimeframe.bounds[0];
-          const duration = formatDuration({[TimeUnits.Milliseconds]: durationMs});
+          const duration =
+            durationMs < 5000
+              ? `${(durationMs / 1000).toFixed(1)}s`
+              : formatDuration({[TimeUnits.Milliseconds]: durationMs});
+          const fmt = durationMs < 5000 ? "yyyy-MM-dd HH:mm:ss.SSS '(UTC)'" : timeFormat();
           return (
             <div className="flex items-center justify-between px-2 py-1">
               <div className="text-xs font-medium text-gray-500 dark:text-gray-400">
                 Samples matching {labels} over {duration} from{' '}
-                {formatDateTimeDownToMS(selectedTimeframe.bounds[0])} to{' '}
-                {formatDateTimeDownToMS(selectedTimeframe.bounds[1])}
+                {formatDate(new Date(selectedTimeframe.bounds[0]), fmt)} to{' '}
+                {formatDate(new Date(selectedTimeframe.bounds[1]), fmt)}
               </div>
               <div ref={zoomControlsRef} />
             </div>
