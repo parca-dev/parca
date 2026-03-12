@@ -1372,21 +1372,21 @@ func (fb *flamegraphBuilder) appendRow(
 	fb.builderLabelsOnly.Append(false)
 
 	if r.MappingFileIndices.IsValid(locationRow) {
-		fb.builderMappingFileIndices.Append(
-			t.mappingFile.indices.Value(
-				int(r.MappingFileIndices.Value(locationRow)),
-			),
-		)
+		if idx := int(r.MappingFileIndices.Value(locationRow)); idx < t.mappingFile.indices.Len() {
+			fb.builderMappingFileIndices.Append(t.mappingFile.indices.Value(idx))
+		} else {
+			fb.builderMappingFileIndices.AppendNull()
+		}
 	} else {
 		fb.builderMappingFileIndices.AppendNull()
 	}
 
 	if r.MappingBuildIDIndices.IsValid(locationRow) {
-		fb.builderMappingBuildIDIndices.Append(
-			t.mappingBuildID.indices.Value(
-				int(r.MappingBuildIDIndices.Value(locationRow)),
-			),
-		)
+		if idx := int(r.MappingBuildIDIndices.Value(locationRow)); idx < t.mappingBuildID.indices.Len() {
+			fb.builderMappingBuildIDIndices.Append(t.mappingBuildID.indices.Value(idx))
+		} else {
+			fb.builderMappingBuildIDIndices.AppendNull()
+		}
 	} else {
 		fb.builderMappingBuildIDIndices.AppendNull()
 	}
@@ -1408,20 +1408,20 @@ func (fb *flamegraphBuilder) appendRow(
 		if r.LineFunctionNameIndices.IsValid(lineRow) {
 			fb.builderFunctionStartLine.Append(r.LineFunctionStartLine.Value(lineRow))
 
-			if t.functionName.indices.Len() > 0 {
-				fb.builderFunctionNameIndices.Append(t.functionName.indices.Value(int(r.LineFunctionNameIndices.Value(lineRow))))
+			if idx := int(r.LineFunctionNameIndices.Value(lineRow)); idx < t.functionName.indices.Len() {
+				fb.builderFunctionNameIndices.Append(t.functionName.indices.Value(idx))
 			} else {
 				fb.builderFunctionNameIndices.AppendNull()
 			}
 
-			if t.functionSystemName.indices.Len() > 0 {
-				fb.builderFunctionSystemNameIndices.Append(t.functionSystemName.indices.Value(int(r.LineFunctionSystemNameIndices.Value(lineRow))))
+			if idx := int(r.LineFunctionSystemNameIndices.Value(lineRow)); idx < t.functionSystemName.indices.Len() {
+				fb.builderFunctionSystemNameIndices.Append(t.functionSystemName.indices.Value(idx))
 			} else {
 				fb.builderFunctionSystemNameIndices.AppendNull()
 			}
 
-			if t.functionFilename.indices.Len() > 0 {
-				fb.builderFunctionFilenameIndices.Append(t.functionFilename.indices.Value(int(r.LineFunctionFilenameIndices.Value(lineRow))))
+			if idx := int(r.LineFunctionFilenameIndices.Value(lineRow)); idx < t.functionFilename.indices.Len() {
+				fb.builderFunctionFilenameIndices.Append(t.functionFilename.indices.Value(idx))
 			} else {
 				fb.builderFunctionFilenameIndices.AppendNull()
 			}

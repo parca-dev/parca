@@ -311,6 +311,7 @@ export const SamplesStrip = ({
           [...collapsedLabels].filter(l => visibleItems.some(item => item.label === l)).length
         )}
         margin={1}
+        elevateGuideLines
       />
       {visibleItems.map((item, i) => {
         const isCollapsed = collapsedLabels.has(item.label);

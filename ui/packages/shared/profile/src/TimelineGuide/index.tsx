@@ -24,6 +24,7 @@ interface Props {
   bounds: BigIntDuo;
   ticks?: number;
   timeUnit?: string;
+  elevateGuideLines?: boolean;
 }
 
 const alignBeforeAxisCorrection = (val: bigint): number => {
@@ -44,11 +45,12 @@ export const TimelineGuide = ({
   margin,
   ticks,
   timeUnit = 'milliseconds',
+  elevateGuideLines = false,
 }: Props): JSX.Element => {
   const xScale = scaleLinear(bounds, [0, width]);
 
   return (
-    <div className="relative h-5 z-40">
+    <div className={`relative h-5${elevateGuideLines ? ' z-40' : ''}`}>
       <div className="pointer-events-none absolute" style={{width, height}}>
         <svg style={{width: '100%', height: '100%'}}>
           <g
