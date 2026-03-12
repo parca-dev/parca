@@ -37,6 +37,10 @@ const (
 	// multiple source files that debuginfo references. It is meant to show code
 	// with profiling data inline.
 	DebuginfoType_DEBUGINFO_TYPE_SOURCES DebuginfoType = 2
+	// The type to identify JavaScript/TypeScript source maps. This is meant to
+	// be used for mapping minified JavaScript locations back to original source
+	// code positions.
+	DebuginfoType_DEBUGINFO_TYPE_SOURCE_MAP DebuginfoType = 3
 )
 
 // Enum value maps for DebuginfoType.
@@ -45,11 +49,13 @@ var (
 		0: "DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED",
 		1: "DEBUGINFO_TYPE_EXECUTABLE",
 		2: "DEBUGINFO_TYPE_SOURCES",
+		3: "DEBUGINFO_TYPE_SOURCE_MAP",
 	}
 	DebuginfoType_value = map[string]int32{
 		"DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED": 0,
 		"DEBUGINFO_TYPE_EXECUTABLE":            1,
 		"DEBUGINFO_TYPE_SOURCES":               2,
+		"DEBUGINFO_TYPE_SOURCE_MAP":            3,
 	}
 )
 
@@ -92,6 +98,8 @@ const (
 	BuildIDType_BUILD_ID_TYPE_HASH BuildIDType = 2
 	// The build ID is a Go build ID.
 	BuildIDType_BUILD_ID_TYPE_GO BuildIDType = 3
+	// The build ID is a debug ID for source maps (UUID format).
+	BuildIDType_BUILD_ID_TYPE_SOURCE_MAP_DEBUG_ID BuildIDType = 4
 )
 
 // Enum value maps for BuildIDType.
@@ -101,12 +109,14 @@ var (
 		1: "BUILD_ID_TYPE_GNU",
 		2: "BUILD_ID_TYPE_HASH",
 		3: "BUILD_ID_TYPE_GO",
+		4: "BUILD_ID_TYPE_SOURCE_MAP_DEBUG_ID",
 	}
 	BuildIDType_value = map[string]int32{
 		"BUILD_ID_TYPE_UNKNOWN_UNSPECIFIED": 0,
 		"BUILD_ID_TYPE_GNU":                 1,
 		"BUILD_ID_TYPE_HASH":                2,
 		"BUILD_ID_TYPE_GO":                  3,
+		"BUILD_ID_TYPE_SOURCE_MAP_DEBUG_ID": 4,
 	}
 )
 
@@ -1303,16 +1313,18 @@ const file_parca_debuginfo_v1alpha1_debuginfo_proto_rawDesc = "" +
 	"\n" +
 	"has_symtab\x18\x04 \x01(\bR\thasSymtab\x12\x1d\n" +
 	"\n" +
-	"has_dynsym\x18\x05 \x01(\bR\thasDynsym*t\n" +
+	"has_dynsym\x18\x05 \x01(\bR\thasDynsym*\x93\x01\n" +
 	"\rDebuginfoType\x12(\n" +
 	"$DEBUGINFO_TYPE_DEBUGINFO_UNSPECIFIED\x10\x00\x12\x1d\n" +
 	"\x19DEBUGINFO_TYPE_EXECUTABLE\x10\x01\x12\x1a\n" +
-	"\x16DEBUGINFO_TYPE_SOURCES\x10\x02*y\n" +
+	"\x16DEBUGINFO_TYPE_SOURCES\x10\x02\x12\x1d\n" +
+	"\x19DEBUGINFO_TYPE_SOURCE_MAP\x10\x03*\xa0\x01\n" +
 	"\vBuildIDType\x12%\n" +
 	"!BUILD_ID_TYPE_UNKNOWN_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11BUILD_ID_TYPE_GNU\x10\x01\x12\x16\n" +
 	"\x12BUILD_ID_TYPE_HASH\x10\x02\x12\x14\n" +
-	"\x10BUILD_ID_TYPE_GO\x10\x032\xe3\x04\n" +
+	"\x10BUILD_ID_TYPE_GO\x10\x03\x12%\n" +
+	"!BUILD_ID_TYPE_SOURCE_MAP_DEBUG_ID\x10\x042\xe3\x04\n" +
 	"\x10DebuginfoService\x12q\n" +
 	"\x06Upload\x12'.parca.debuginfo.v1alpha1.UploadRequest\x1a(.parca.debuginfo.v1alpha1.UploadResponse\"\x12\x82\xd3\xe4\x93\x02\f:\x01*\"\a/upload(\x01\x12\xa7\x01\n" +
 	"\x14ShouldInitiateUpload\x125.parca.debuginfo.v1alpha1.ShouldInitiateUploadRequest\x1a6.parca.debuginfo.v1alpha1.ShouldInitiateUploadResponse\" \x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/shouldinitiateupload\x12\x8f\x01\n" +

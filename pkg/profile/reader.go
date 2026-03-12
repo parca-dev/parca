@@ -52,6 +52,7 @@ type RecordReader struct {
 	Lines                         *array.List
 	Line                          *array.Struct
 	LineNumber                    *array.Int64
+	LineColumn                    *array.Uint64
 	LineFunctionNameIndices       *array.Uint32
 	LineFunctionNameDict          *array.Binary
 	LineFunctionSystemNameIndices *array.Uint32
@@ -152,6 +153,8 @@ func NewRecordReader(ar arrow.RecordBatch) (*RecordReader, error) {
 							rr.LineFunctionFilenameDict = lineFunctionFilename.Dictionary().(*array.Binary)
 						case "function_start_line":
 							rr.LineFunctionStartLine = rr.Line.Field(k).(*array.Int64)
+						case "column":
+							rr.LineColumn = rr.Line.Field(k).(*array.Uint64)
 						}
 					}
 				}
