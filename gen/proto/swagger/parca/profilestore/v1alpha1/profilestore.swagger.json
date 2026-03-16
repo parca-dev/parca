@@ -154,7 +154,7 @@
     }
   },
   "definitions": {
-    "profilestorev1alpha1Label": {
+    "profilestoreV1alpha1Label": {
       "type": "object",
       "properties": {
         "name": {
@@ -255,7 +255,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/profilestorev1alpha1Label"
+            "$ref": "#/definitions/profilestoreV1alpha1Label"
           },
           "title": "labels are the grouping of labels"
         }

@@ -67,7 +67,18 @@
       "description": "- HEALTH_UNKNOWN_UNSPECIFIED: HEALTH_UNKNOWN_UNSPECIFIED unspecified\n - HEALTH_GOOD: HEALTH_GOOD healthy target\n - HEALTH_BAD: HEALTH_BAD unhealthy target",
       "title": "Health are the possible health values of a target"
     },
-    "profilestorev1alpha1Label": {
+    "TargetsRequestState": {
+      "type": "string",
+      "enum": [
+        "STATE_ANY_UNSPECIFIED",
+        "STATE_ACTIVE",
+        "STATE_DROPPED"
+      ],
+      "default": "STATE_ANY_UNSPECIFIED",
+      "description": "- STATE_ANY_UNSPECIFIED: STATE_ANY_UNSPECIFIED unspecified\n - STATE_ACTIVE: STATE_ACTIVE target active state\n - STATE_DROPPED: STATE_DROPPED target dropped state",
+      "title": "State represents the current state of a target"
+    },
+    "profilestoreV1alpha1Label": {
       "type": "object",
       "properties": {
         "name": {
@@ -109,7 +120,7 @@
         }
       }
     },
-    "scrapev1alpha1Targets": {
+    "scrapeV1alpha1Targets": {
       "type": "object",
       "properties": {
         "targets": {
@@ -130,7 +141,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/profilestorev1alpha1Label"
+            "$ref": "#/definitions/profilestoreV1alpha1Label"
           },
           "title": "labels are the grouping of labels"
         }
@@ -172,24 +183,13 @@
       },
       "title": "Target is the scrape target representation"
     },
-    "v1alpha1TargetsRequestState": {
-      "type": "string",
-      "enum": [
-        "STATE_ANY_UNSPECIFIED",
-        "STATE_ACTIVE",
-        "STATE_DROPPED"
-      ],
-      "default": "STATE_ANY_UNSPECIFIED",
-      "description": "- STATE_ANY_UNSPECIFIED: STATE_ANY_UNSPECIFIED unspecified\n - STATE_ACTIVE: STATE_ACTIVE target active state\n - STATE_DROPPED: STATE_DROPPED target dropped state",
-      "title": "State represents the current state of a target"
-    },
     "v1alpha1TargetsResponse": {
       "type": "object",
       "properties": {
         "targets": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/scrapev1alpha1Targets"
+            "$ref": "#/definitions/scrapeV1alpha1Targets"
           },
           "title": "targets is the mapping of targets"
         }

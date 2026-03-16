@@ -17,17 +17,6 @@
   ],
   "paths": {},
   "definitions": {
-    "HealthCheckResponseServingStatus": {
-      "type": "string",
-      "enum": [
-        "UNKNOWN",
-        "SERVING",
-        "NOT_SERVING",
-        "SERVICE_UNKNOWN"
-      ],
-      "default": "UNKNOWN",
-      "description": " - SERVICE_UNKNOWN: Used only by the Watch method."
-    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -53,26 +42,6 @@
             "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
-        }
-      }
-    },
-    "v1HealthCheckResponse": {
-      "type": "object",
-      "properties": {
-        "status": {
-          "$ref": "#/definitions/HealthCheckResponseServingStatus"
-        }
-      }
-    },
-    "v1HealthListResponse": {
-      "type": "object",
-      "properties": {
-        "statuses": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/v1HealthCheckResponse"
-          },
-          "description": "statuses contains all the services and their respective status."
         }
       }
     }

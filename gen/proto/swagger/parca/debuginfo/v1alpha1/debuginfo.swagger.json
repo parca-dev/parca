@@ -126,7 +126,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/parcadebuginfov1alpha1UploadResponse"
+              "$ref": "#/definitions/v1alpha1UploadResponse"
             }
           },
           "default": {
@@ -143,7 +143,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/parcadebuginfov1alpha1UploadRequest"
+              "$ref": "#/definitions/v1alpha1UploadRequest"
             }
           }
         ],
@@ -163,36 +163,6 @@
       ],
       "default": "UPLOAD_STRATEGY_UNSPECIFIED",
       "description": "The strategy to use for uploading.\n\n - UPLOAD_STRATEGY_UNSPECIFIED: The upload is not allowed.\n - UPLOAD_STRATEGY_GRPC: The upload is allowed and should be done via the Upload RPC.\n - UPLOAD_STRATEGY_SIGNED_URL: The upload is allowed and should be done via a returned signed URL."
-    },
-    "parcadebuginfov1alpha1UploadRequest": {
-      "type": "object",
-      "properties": {
-        "info": {
-          "$ref": "#/definitions/v1alpha1UploadInfo",
-          "title": "info is the metadata for the debug info"
-        },
-        "chunkData": {
-          "type": "string",
-          "format": "byte",
-          "title": "chunk_data is the raw bytes of the debug info"
-        }
-      },
-      "title": "UploadRequest upload debug info"
-    },
-    "parcadebuginfov1alpha1UploadResponse": {
-      "type": "object",
-      "properties": {
-        "buildId": {
-          "type": "string",
-          "title": "build_id is a unique identifier for the debug data"
-        },
-        "size": {
-          "type": "string",
-          "format": "uint64",
-          "title": "size is the number of bytes of the debug info"
-        }
-      },
-      "title": "UploadResponse returns the build_id and the size of the uploaded debug info"
     },
     "protobufAny": {
       "type": "object",
@@ -391,6 +361,36 @@
         }
       },
       "description": "UploadInstructions contains the instructions for the client to upload debuginfo."
+    },
+    "v1alpha1UploadRequest": {
+      "type": "object",
+      "properties": {
+        "info": {
+          "$ref": "#/definitions/v1alpha1UploadInfo",
+          "title": "info is the metadata for the debug info"
+        },
+        "chunkData": {
+          "type": "string",
+          "format": "byte",
+          "title": "chunk_data is the raw bytes of the debug info"
+        }
+      },
+      "title": "UploadRequest upload debug info"
+    },
+    "v1alpha1UploadResponse": {
+      "type": "object",
+      "properties": {
+        "buildId": {
+          "type": "string",
+          "title": "build_id is a unique identifier for the debug data"
+        },
+        "size": {
+          "type": "string",
+          "format": "uint64",
+          "title": "size is the number of bytes of the debug info"
+        }
+      },
+      "title": "UploadResponse returns the build_id and the size of the uploaded debug info"
     }
   }
 }
