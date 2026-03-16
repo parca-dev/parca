@@ -32,7 +32,7 @@ func EncodeOtelLocation(
 ) []byte {
 	buf := make([]byte, serializedOtelLocationSize(attributeTable, l, m, funcs, stringTable))
 	offset := binary.PutUvarint(buf, l.Address)
-	offset = writeIntAsUvarint(buf, offset, len(l.Line))
+	offset = writeIntAsUvarint(buf, offset, len(l.Lines))
 	if m == nil {
 		buf[offset] = 0x0
 		offset++
@@ -59,7 +59,7 @@ func EncodeOtelLocation(
 		offset = writeUint64(buf, offset, m.FileOffset)
 	}
 
-	for _, line := range l.Line {
+	for _, line := range l.Lines {
 		offset = writeInt64AsUvarint(buf, offset, line.Line)
 		offset = writeUint64(buf, offset, uint64(line.Column))
 
@@ -106,7 +106,7 @@ func serializedOtelLocationSize(
 	size := UvarintSize(l.Address)
 	size++ // 1 byte for whether there is a mapping
 
-	size = addSerializedIntAsUvarintSize(size, len(l.Line))
+	size = addSerializedIntAsUvarintSize(size, len(l.Lines))
 
 	if m != nil {
 		buildID := ""
@@ -128,7 +128,7 @@ func serializedOtelLocationSize(
 		size = addSerializedUint64Size(size, m.FileOffset)
 	}
 
-	for _, line := range l.Line {
+	for _, line := range l.Lines {
 		size = addSerializedInt64AsUvarintSize(size, line.Line)
 		size = addSerializedUint64Size(size, uint64(line.Column))
 

@@ -143,7 +143,7 @@ func getAllLabelNames(req *otelgrpcprofilingpb.ExportProfilesServiceRequest) []s
 			for _, p := range sp.Profiles {
 				allLabelNames.addOtelAttributesFromTable(req.Dictionary.StringTable, req.Dictionary.AttributeTable, p.AttributeIndices)
 
-				for _, sample := range p.Sample {
+				for _, sample := range p.Samples {
 					allLabelNames.addOtelAttributesFromTable(req.Dictionary.StringTable, req.Dictionary.AttributeTable, sample.AttributeIndices)
 				}
 			}
@@ -199,13 +199,13 @@ func (w *profileWriter) writeResourceProfiles(
 		for _, sp := range rp.ScopeProfiles {
 			for _, p := range sp.Profiles {
 				duration := p.DurationNano
-				name := sp.Scope.Name
+				name := strutil.SanitizeLabelName(sp.Scope.Name)
 				if name == "" {
 					name = "unknown"
 				}
 				metas := []profile.Meta{MetaFromOtelProfile(req.Dictionary.StringTable, p, name, duration)}
 
-				for _, sample := range p.Sample {
+				for _, sample := range p.Samples {
 					ls := newLabelSet()
 					ls.addOtelAttributesFromTable(req.Dictionary.StringTable, req.Dictionary.AttributeTable, sample.AttributeIndices)
 					ls.addOtelAttributesFromTable(req.Dictionary.StringTable, req.Dictionary.AttributeTable, p.AttributeIndices)
@@ -230,6 +230,7 @@ func (w *profileWriter) writeResourceProfiles(
 									PeriodType: metas[0].PeriodType,
 									SampleType: metas[0].SampleType,
 									Timestamp:  int64(ts) / time.Millisecond.Nanoseconds(),
+									TimeNanos:  int64(ts),
 									Duration:   metas[0].Duration,
 									Period:     metas[0].Period,
 								},
@@ -403,7 +404,7 @@ func isEmptyLocation(l *otelprofilingpb.Location) bool {
 	// Check if all fields are zero values or nil.
 	return l.MappingIndex == 0 &&
 		l.Address == 0 &&
-		len(l.Line) == 0 &&
+		len(l.Lines) == 0 &&
 		len(l.AttributeIndices) == 0
 }
 
@@ -536,7 +537,7 @@ func ValidateOtelDictionary(d *otelprofilingpb.ProfilesDictionary) error {
 			return fmt.Errorf("location mapping index %d out of bounds", l.MappingIndex)
 		}
 
-		for j, line := range l.Line {
+		for j, line := range l.Lines {
 			if j < 0 || line.FunctionIndex >= int32(len(d.FunctionTable)) {
 				return fmt.Errorf("location line function id %d out of bounds at line %d", line.FunctionIndex, j)
 			}
@@ -607,13 +608,13 @@ func ValidateOtelProfile(d *otelprofilingpb.ProfilesDictionary, p *otelprofiling
 		return fmt.Errorf("sample unit index %d out of bounds", p.SampleType.UnitStrindex)
 	}
 
-	if len(p.Sample) == 0 {
+	if len(p.Samples) == 0 {
 		return fmt.Errorf("sample is empty")
 	}
 
 	start := p.TimeUnixNano
 	end := start + p.DurationNano
-	for _, s := range p.Sample {
+	for _, s := range p.Samples {
 		if s == nil {
 			return fmt.Errorf("sample is nil")
 		}
@@ -653,12 +654,6 @@ func ValidateOtelProfile(d *otelprofilingpb.ProfilesDictionary, p *otelprofiling
 
 	if p.Period < 0 {
 		return fmt.Errorf("period %d must be non-negative", p.Period)
-	}
-
-	for _, i := range p.CommentStrindices {
-		if i < 0 || i >= int32(len(d.StringTable)) {
-			return fmt.Errorf("comment string index %d out of bounds", i)
-		}
 	}
 
 	if len(p.ProfileId) > 0 {
