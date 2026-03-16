@@ -14,13 +14,19 @@
 import {useEffect, useMemo, useRef} from 'react';
 
 import {LabelSet, QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
-import {useURLState, useURLStateCustom, type OptionsCustom} from '@parca/components';
+import {
+  useParcaContext,
+  useURLState,
+  useURLStateCustom,
+  type OptionsCustom,
+} from '@parca/components';
 import {Matcher, MatcherTypes, ProfileType, Query} from '@parca/parser';
 import {TimeUnits, formatDate, formatDuration} from '@parca/utilities';
 
 import ProfileFlameGraph, {validateFlameChartQuery} from '../ProfileFlameGraph';
 import {boundsFromProfileSource} from '../ProfileFlameGraph/FlameGraphArrow/utils';
 import {MergedProfileSource, ProfileSource, timeFormat} from '../ProfileSource';
+import {useProfileFilters} from '../ProfileView/components/ProfileFilters/useProfileFilters';
 import type {SamplesData} from '../ProfileView/types/visualization';
 import {useQuery} from '../useQuery';
 import {NumberDuo} from '../utils';
@@ -119,6 +125,8 @@ export const ProfileFlameChart = ({
   metadataMappingFiles,
   metadataLoading,
 }: ProfileFlameChartProps): JSX.Element => {
+  const {enableFlamechartFiltering} = useParcaContext();
+  const {protoFilters} = useProfileFilters();
   const zoomControlsRef = useRef<HTMLDivElement>(null);
 
   const [selectedTimeframe, setSelectedTimeframe] = useURLStateCustom<
@@ -176,6 +184,7 @@ export const ProfileFlameChart = ({
     QueryRequest_ReportType.FLAMECHART,
     {
       skip: selectedTimeframe == null || filteredProfileSource == null,
+      ...(enableFlamechartFiltering === true ? {protoFilters} : {}),
     }
   );
 
